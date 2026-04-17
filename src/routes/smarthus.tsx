@@ -2,7 +2,12 @@ import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useState, useTransition } from "react";
 import { PageShell, PageHero } from "@/components/PageShell";
-import { getHomeySnapshot, setHomeyCapability, type HomeyCapValue } from "@/server/homey";
+import {
+  getHomeySnapshot,
+  setHomeyCapability,
+  disconnectHomey,
+  type HomeyCapValue,
+} from "@/server/homey";
 import heroImg from "@/assets/smarthus-hero.jpg";
 
 export const Route = createFileRoute("/smarthus")({
@@ -60,30 +65,46 @@ function classifyLabel(cls?: string) {
   return CLASS_LABEL[cls] ?? cls;
 }
 
+function ConnectPanel({ message }: { message?: string }) {
+  return (
+    <PageShell>
+      <PageHero
+        eyebrow="Krøniken om"
+        title="Maesterens Tårn"
+        subtitle="Bind ravnene til Homey for å våkne tårnet."
+        image={heroImg}
+      />
+      <section className="container mx-auto px-4 py-12">
+        <div className="panel rounded-lg p-8 max-w-2xl mx-auto text-center">
+          <h2 className="text-display text-primary text-xl mb-3 tracking-[0.25em]">
+            INGEN BÅND TIL HOMEY
+          </h2>
+          <p className="text-sm text-muted-foreground mb-6">
+            {message ?? "For å våkne tårnet må du binde det til din Homey-konto via Athom."}
+          </p>
+          <a
+            href="/api/homey/start"
+            className="inline-block px-6 py-3 rounded border border-primary text-primary text-sm tracking-[0.3em] uppercase hover:bg-primary/10 transition-colors"
+          >
+            ✦ Bind ravnene til Homey
+          </a>
+          <p className="text-xs text-muted-foreground mt-6">
+            Du sendes til Athom for å gi tilgang. Tokens lagres trygt på serveren.
+          </p>
+        </div>
+      </section>
+    </PageShell>
+  );
+}
+
 function SmarthusPage() {
   const data = Route.useLoaderData() as Awaited<ReturnType<typeof getHomeySnapshot>>;
+  const router = useRouter();
+  const disconnect = useServerFn(disconnectHomey);
+  const [disconnecting, setDisconnecting] = useState(false);
 
   if (!data.ok) {
-    return (
-      <PageShell>
-        <PageHero
-          eyebrow="Krøniken om"
-          title="Maesterens Tårn"
-          subtitle="Ravnene fant ikke veien hjem."
-          image={heroImg}
-        />
-        <section className="container mx-auto px-4 py-12">
-          <div className="panel rounded-lg p-6">
-            <h2 className="text-display text-primary text-lg mb-2">Tårnet er stille</h2>
-            <p className="text-sm text-muted-foreground">{data.error}</p>
-            <p className="text-xs text-muted-foreground mt-3">
-              Kontroller at HOMEY_PAT er gyldig og har scopes <code>homey</code>,{" "}
-              <code>homey.device.readonly</code> og <code>homey.device.control</code>.
-            </p>
-          </div>
-        </section>
-      </PageShell>
-    );
+    return <ConnectPanel message={data.needsConnect ? undefined : data.error} />;
   }
 
   // Group devices by zone
@@ -95,7 +116,6 @@ function SmarthusPage() {
     grouped.get(key)!.push(d);
   }
 
-  // Stable sort: zones alphabetically, "no zone" last
   const zoneEntries = Array.from(grouped.entries()).sort((a, b) => {
     if (a[0] === "__no_zone__") return 1;
     if (b[0] === "__no_zone__") return -1;
@@ -104,9 +124,10 @@ function SmarthusPage() {
     return an.localeCompare(bn, "nb");
   });
 
-  // Quick stats
   const totalDevices = data.devices.length;
-  const lights = data.devices.filter((d) => "onoff" in d.capabilities && (d.class === "light" || d.class === "socket")).length;
+  const lights = data.devices.filter(
+    (d) => "onoff" in d.capabilities && (d.class === "light" || d.class === "socket"),
+  ).length;
   const tempReadings = data.devices
     .map((d) => d.capabilities["measure_temperature"]?.value)
     .filter((v): v is number => typeof v === "number");
@@ -115,12 +136,27 @@ function SmarthusPage() {
       ? (tempReadings.reduce((a, b) => a + b, 0) / tempReadings.length).toFixed(1)
       : null;
 
+  const handleDisconnect = async () => {
+    if (!confirm("Bryt båndet til Homey?")) return;
+    setDisconnecting(true);
+    try {
+      await disconnect();
+      await router.invalidate();
+    } finally {
+      setDisconnecting(false);
+    }
+  };
+
   return (
     <PageShell>
       <PageHero
         eyebrow="Krøniken om"
         title="Maesterens Tårn"
-        subtitle={data.homeName ? `${data.homeName} — husets smarthus, voktet av ravnene fra Homey.` : "Husets smarthus, voktet av ravnene fra Homey."}
+        subtitle={
+          data.homeName
+            ? `${data.homeName} — husets smarthus, voktet av ravnene fra Homey.`
+            : "Husets smarthus, voktet av ravnene fra Homey."
+        }
         image={heroImg}
       />
 
@@ -135,7 +171,10 @@ function SmarthusPage() {
 
       <section className="container mx-auto px-4 py-12 space-y-12">
         {zoneEntries.map(([zoneKey, devices]) => {
-          const zoneName = zoneKey === "__no_zone__" ? "Ukjent sal" : zoneById.get(zoneKey)?.name ?? "Ukjent sal";
+          const zoneName =
+            zoneKey === "__no_zone__"
+              ? "Ukjent sal"
+              : zoneById.get(zoneKey)?.name ?? "Ukjent sal";
           return (
             <div key={zoneKey}>
               <div className="ornate-divider mb-6">
@@ -151,6 +190,16 @@ function SmarthusPage() {
             </div>
           );
         })}
+
+        <div className="text-center pt-6">
+          <button
+            onClick={handleDisconnect}
+            disabled={disconnecting}
+            className="text-xs tracking-[0.25em] uppercase text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50"
+          >
+            {disconnecting ? "Bryter bånd…" : "Bryt bånd til Homey"}
+          </button>
+        </div>
       </section>
     </PageShell>
   );
@@ -166,8 +215,6 @@ function Stat({ label, value }: { label: string; value: string }) {
     </div>
   );
 }
-
-type Device = ReturnType<typeof Route.useLoaderData> extends { devices: infer D } ? D extends Array<infer X> ? X : never : never;
 
 function DeviceCard({ device }: { device: any }) {
   const router = useRouter();
@@ -187,7 +234,6 @@ function DeviceCard({ device }: { device: any }) {
     startTransition(async () => {
       try {
         await setCap({ data: { deviceId: device.id, capabilityId, value } });
-        // refresh loader so server-state catches up
         router.invalidate();
       } catch (e: any) {
         setError(e?.message ?? "Klarte ikke å styre");
@@ -222,7 +268,6 @@ function DeviceCard({ device }: { device: any }) {
         )}
       </div>
 
-      {/* Sensor readouts */}
       <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground mb-3">
         {typeof temp === "number" && <span>🌡 {temp.toFixed(1)}°C</span>}
         {typeof hum === "number" && <span>💧 {hum.toFixed(0)}%</span>}
@@ -230,7 +275,6 @@ function DeviceCard({ device }: { device: any }) {
         {typeof battery === "number" && <span>🔋 {battery.toFixed(0)}%</span>}
       </div>
 
-      {/* On/off toggle */}
       {onoff && onoff.setable && (
         <button
           onClick={() => send("onoff", !getVal("onoff"))}
@@ -245,7 +289,6 @@ function DeviceCard({ device }: { device: any }) {
         </button>
       )}
 
-      {/* Dim slider */}
       {dim && dim.setable && getVal("onoff") !== false && (
         <div className="mt-3">
           <div className="flex items-center justify-between text-[10px] uppercase tracking-widest text-muted-foreground mb-1">
@@ -264,7 +307,6 @@ function DeviceCard({ device }: { device: any }) {
         </div>
       )}
 
-      {/* Target temperature */}
       {target && target.setable && (
         <div className="mt-3">
           <div className="flex items-center justify-between text-[10px] uppercase tracking-widest text-muted-foreground mb-1">
@@ -273,14 +315,24 @@ function DeviceCard({ device }: { device: any }) {
           </div>
           <div className="flex gap-2">
             <button
-              onClick={() => send("target_temperature", Number((getVal("target_temperature") as number) ?? 20) - 0.5)}
+              onClick={() =>
+                send(
+                  "target_temperature",
+                  Number((getVal("target_temperature") as number) ?? 20) - 0.5,
+                )
+              }
               disabled={pending}
               className="flex-1 py-1 rounded border border-border hover:border-primary/50 text-sm"
             >
               −
             </button>
             <button
-              onClick={() => send("target_temperature", Number((getVal("target_temperature") as number) ?? 20) + 0.5)}
+              onClick={() =>
+                send(
+                  "target_temperature",
+                  Number((getVal("target_temperature") as number) ?? 20) + 0.5,
+                )
+              }
               disabled={pending}
               className="flex-1 py-1 rounded border border-border hover:border-primary/50 text-sm"
             >
