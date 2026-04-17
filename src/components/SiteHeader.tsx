@@ -39,6 +39,14 @@ export function SiteHeader() {
               {l.label}
             </Link>
           ))}
+          <button
+            onClick={handleLogout}
+            className="ml-2 px-3 py-2 text-sm tracking-wider uppercase text-muted-foreground hover:text-primary transition-colors flex items-center gap-1"
+            aria-label="Logg ut"
+            title="Logg ut"
+          >
+            <LogOut size={14} />
+          </button>
         </nav>
 
         <button
@@ -64,6 +72,15 @@ export function SiteHeader() {
                 {l.label}
               </Link>
             ))}
+            <button
+              onClick={() => {
+                setOpen(false);
+                handleLogout();
+              }}
+              className="px-2 py-3 text-sm tracking-wider uppercase text-muted-foreground hover:text-primary text-left flex items-center gap-2"
+            >
+              <LogOut size={14} /> Logg ut
+            </button>
           </div>
         </nav>
       )}
