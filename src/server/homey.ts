@@ -172,35 +172,21 @@ export const getHomeySnapshot = createServerFn({ method: "GET" }).handler(
     if (!conn) return { ok: false, needsConnect: true };
 
     try {
-      // Try several known endpoint shapes — Athom has changed these over time.
-      const candidates = ["/user/me/homeys", "/users/me/homeys", "/homey", "/user/me/homey"];
-      let homey: AthomHomey | null = null;
-      let lastErr = "";
-      for (const path of candidates) {
-        try {
-          const result = await athom<any>(path, conn.access_token);
-          const list: AthomHomey[] = Array.isArray(result)
-            ? result
-            : Array.isArray(result?.homeys)
-              ? result.homeys
-              : Array.isArray(result?.data)
-                ? result.data
-                : result && typeof result === "object" && (result._id || result.id)
-                  ? [result]
-                  : [];
-          if (list.length > 0) {
-            homey = list[0];
-            break;
-          }
-        } catch (e: any) {
-          lastErr = e?.message ?? String(e);
-        }
+      // Athom CloudAPI: GET /user/me returns the user object with `homeys` map.
+      const me = await athom<any>(`/user/me`, conn.access_token);
+      const rawHomeys = me?.homeys ?? me?.user?.homeys ?? null;
+      let list: AthomHomey[] = [];
+      if (Array.isArray(rawHomeys)) {
+        list = rawHomeys;
+      } else if (rawHomeys && typeof rawHomeys === "object") {
+        list = Object.values(rawHomeys) as AthomHomey[];
       }
+      const homey = list[0] ?? null;
       if (!homey) {
         return {
           ok: false,
           needsConnect: false,
-          error: `Fant ingen Homey på kontoen${lastErr ? ` — ${lastErr}` : ""}`,
+          error: `Fant ingen Homey på kontoen (bruker: ${me?.firstname ?? me?.email ?? "ukjent"}).`,
         };
       }
 
