@@ -26,7 +26,7 @@ type Msg = {
   created_at: string;
 };
 
-const WHO = ["Begge", "Arne", "Rebekka", "Marita", "Nora", "Celine", "Mira"] as const;
+const WHO = ["Alle", "Arne", "Rebekka", "Marita", "Nora", "Celine", "Mira"] as const;
 
 function AgendaPage() {
   const [items, setItems] = useState<Msg[]>([]);
@@ -41,10 +41,7 @@ function AgendaPage() {
 
   async function load() {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("agenda_messages")
-      .select("*")
-      .order("event_date", { ascending: true });
+    const { data, error } = await supabase.from("agenda_messages").select("*").order("event_date", { ascending: true });
     if (!error && data) setItems(data as Msg[]);
     setLoading(false);
   }
@@ -85,7 +82,9 @@ function AgendaPage() {
   }, {});
 
   const upcoming = Object.entries(grouped).filter(([d]) => d >= today);
-  const past = Object.entries(grouped).filter(([d]) => d < today).reverse();
+  const past = Object.entries(grouped)
+    .filter(([d]) => d < today)
+    .reverse();
 
   return (
     <PageShell>
@@ -97,16 +96,11 @@ function AgendaPage() {
       />
 
       <section className="container mx-auto px-4 py-12 grid lg:grid-cols-3 gap-8">
-        <form
-          onSubmit={handleSubmit}
-          className="panel rounded-lg p-6 lg:sticky lg:top-24 h-fit"
-        >
+        <form onSubmit={handleSubmit} className="panel rounded-lg p-6 lg:sticky lg:top-24 h-fit">
           <h2 className="text-xl text-primary mb-4 flex items-center gap-2">
             <Plus size={20} /> Ny oppføring
           </h2>
-          <label className="block text-xs uppercase tracking-wider text-muted-foreground mb-1">
-            Emne
-          </label>
+          <label className="block text-xs uppercase tracking-wider text-muted-foreground mb-1">Emne</label>
           <input
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
@@ -129,9 +123,7 @@ function AgendaPage() {
 
           <div className="grid grid-cols-2 gap-3 mb-4">
             <div>
-              <label className="block text-xs uppercase tracking-wider text-muted-foreground mb-1">
-                Dato
-              </label>
+              <label className="block text-xs uppercase tracking-wider text-muted-foreground mb-1">Dato</label>
               <input
                 type="date"
                 value={date}
@@ -141,9 +133,7 @@ function AgendaPage() {
               />
             </div>
             <div>
-              <label className="block text-xs uppercase tracking-wider text-muted-foreground mb-1">
-                For
-              </label>
+              <label className="block text-xs uppercase tracking-wider text-muted-foreground mb-1">For</label>
               <select
                 value={who}
                 onChange={(e) => setWho(e.target.value as (typeof WHO)[number])}
@@ -168,10 +158,14 @@ function AgendaPage() {
         </form>
 
         <div className="lg:col-span-2 space-y-10">
-          <DateSection title="Kommende" entries={upcoming} onDelete={remove} loading={loading} empty="Ingen kommende oppføringer." />
-          {past.length > 0 && (
-            <DateSection title="Tidligere" entries={past} onDelete={remove} loading={false} muted />
-          )}
+          <DateSection
+            title="Kommende"
+            entries={upcoming}
+            onDelete={remove}
+            loading={loading}
+            empty="Ingen kommende oppføringer."
+          />
+          {past.length > 0 && <DateSection title="Tidligere" entries={past} onDelete={remove} loading={false} muted />}
         </div>
       </section>
     </PageShell>
@@ -196,45 +190,28 @@ function DateSection({
   return (
     <div>
       <div className="ornate-divider mb-6">
-        <span className="text-display tracking-[0.3em] text-primary text-sm uppercase">
-          {title}
-        </span>
+        <span className="text-display tracking-[0.3em] text-primary text-sm uppercase">{title}</span>
       </div>
       {loading && <p className="text-muted-foreground">Henter krøniken...</p>}
-      {!loading && entries.length === 0 && empty && (
-        <p className="text-muted-foreground italic">{empty}</p>
-      )}
+      {!loading && entries.length === 0 && empty && <p className="text-muted-foreground italic">{empty}</p>}
       <div className="space-y-6">
         {entries.map(([date, msgs]) => (
           <div key={date} className={muted ? "opacity-70" : ""}>
             <div className="flex items-baseline gap-3 mb-3">
-              <span className="text-medieval text-2xl text-primary">
-                {formatDate(date)}
-              </span>
-              <span className="text-xs text-muted-foreground tracking-wider uppercase">
-                {weekday(date)}
-              </span>
+              <span className="text-medieval text-2xl text-primary">{formatDate(date)}</span>
+              <span className="text-xs text-muted-foreground tracking-wider uppercase">{weekday(date)}</span>
             </div>
             <ul className="space-y-2">
               {msgs.map((m) => (
-                <li
-                  key={m.id}
-                  className="panel rounded p-4 flex gap-3 items-start"
-                >
+                <li key={m.id} className="panel rounded p-4 flex gap-3 items-start">
                   <span
-                    className={`px-2 py-0.5 text-[10px] uppercase tracking-wider rounded border ${whoBadge(
-                      m.who,
-                    )}`}
+                    className={`px-2 py-0.5 text-[10px] uppercase tracking-wider rounded border ${whoBadge(m.who)}`}
                   >
                     {m.who}
                   </span>
                   <div className="flex-1 min-w-0">
                     <h4 className="text-foreground font-semibold">{m.subject}</h4>
-                    {m.body && (
-                      <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">
-                        {m.body}
-                      </p>
-                    )}
+                    {m.body && <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{m.body}</p>}
                   </div>
                   <button
                     onClick={() => onDelete(m.id)}
