@@ -9,12 +9,14 @@ type HomeyZone = {
   parent?: string | null;
 };
 
+export type HomeyCapValue = string | number | boolean | null;
+
 type HomeyCapability = {
   id: string;
   type?: string;
   title?: string;
   units?: string;
-  value?: unknown;
+  value?: HomeyCapValue;
   getable?: boolean;
   setable?: boolean;
 };
@@ -116,12 +118,19 @@ export const getHomeySnapshot = createServerFn({ method: "GET" }).handler(async 
     const caps: Record<string, HomeyCapability> = {};
     const capsObj = d.capabilitiesObj ?? {};
     for (const [capId, cap] of Object.entries<any>(capsObj)) {
+      const raw = cap?.value;
+      const value: HomeyCapValue =
+        raw === null || raw === undefined
+          ? null
+          : typeof raw === "string" || typeof raw === "number" || typeof raw === "boolean"
+            ? raw
+            : null;
       caps[capId] = {
         id: capId,
         type: cap?.type,
         title: cap?.title,
         units: cap?.units,
-        value: cap?.value,
+        value,
         getable: cap?.getable,
         setable: cap?.setable,
       };
@@ -147,7 +156,7 @@ export const getHomeySnapshot = createServerFn({ method: "GET" }).handler(async 
 });
 
 export const setHomeyCapability = createServerFn({ method: "POST" })
-  .inputValidator((input: { deviceId: string; capabilityId: string; value: unknown }) => {
+  .inputValidator((input: { deviceId: string; capabilityId: string; value: HomeyCapValue }) => {
     if (
       typeof input?.deviceId !== "string" ||
       typeof input?.capabilityId !== "string" ||
