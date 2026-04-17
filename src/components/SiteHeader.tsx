@@ -10,7 +10,7 @@ const links = [
   { to: "/hytta", label: "Hytta" },
   { to: "/hundene", label: "Hundene" },
   { to: "/trening", label: "Trening" },
-  { to: "/smarthus", label: "Borgens Smarthus" },
+  { to: "/smarthus", label: "Borgens-Smarthus" },
 ] as const;
 
 export function SiteHeader() {
@@ -60,11 +60,7 @@ export function SiteHeader() {
           </button>
         </nav>
 
-        <button
-          className="md:hidden text-primary p-2"
-          onClick={() => setOpen((v) => !v)}
-          aria-label="Meny"
-        >
+        <button className="md:hidden text-primary p-2" onClick={() => setOpen((v) => !v)} aria-label="Meny">
           {open ? <X size={22} /> : <Menu size={22} />}
         </button>
       </div>
