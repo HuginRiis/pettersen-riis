@@ -43,22 +43,25 @@ function HyttaPage() {
             stjernene står klarere.
           </p>
 
-          <div className="grid grid-cols-2 gap-3 pt-4">
-            <Stat label="Soveplasser" value="6" />
-            <Stat label="Høyde" value="820 moh" />
-            <Stat label="Peiser" value="2" />
-            <Stat label="Skiløyper" value="∞" />
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-4">
+            <Stat label="Hovedhall — sengeplasser" value="4" />
+            <Stat label="Annekset — sengeplasser" value="4" />
+            <Stat label="Høyde over havet" value="598 moh" />
+            <Stat label="Ildsted" value="1" />
+            <Stat label="Forbrenningsdoer" value="2" />
+            <Stat label="Boblebad" value="1" />
           </div>
         </div>
 
         <aside className="panel rounded-lg p-6 h-fit">
           <h3 className="text-lg text-primary mb-3">Hyttebudet</h3>
           <ul className="space-y-2 text-sm text-muted-foreground">
-            <li>🔥 Sjekk peisen før sengetid</li>
-            <li>🪵 Fyll vedkurven om kvelden</li>
-            <li>❄️ Måk trappa etter snøvær</li>
-            <li>🐺 Hold hundene under oppsyn ved fjellkanten</li>
-            <li>🕯 Slokk alle lys før dere drar</li>
+            <li>🔥 Mat ildstedet før mørket faller</li>
+            <li>🪵 Fyll vedkurven — vinteren kommer</li>
+            <li>♨️ Tem boblebadet, men vokt dampen</li>
+            <li>🚽 Brenn det som brennes må — to forbrenningstroner venter</li>
+            <li>🐺 Hold ulveflokken samlet ved fjellkanten</li>
+            <li>🕯 Slokk hver flamme før dere rir ut</li>
           </ul>
         </aside>
       </section>
