@@ -27,14 +27,14 @@ const dogs = [
     traits: ["Lojal", "Mild", "Vaktsom"],
   },
   {
-    name: "Skygge",
+    name: "Blomst",
     image: dogShadow,
     breed: "Husets jeger",
     words: "Sterk som vinternatten",
     traits: ["Modig", "Skarp", "Urokkelig"],
   },
   {
-    name: "Ild",
+    name: "Lilje",
     image: dogEmber,
     breed: "Husets flamme",
     words: "Rask som lynet",
