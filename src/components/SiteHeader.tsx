@@ -34,7 +34,7 @@ export function SiteHeader() {
             ❦
           </div>
           <div className="leading-tight">
-            <div className="text-display text-sm tracking-[0.25em] text-primary">HOUSE RIIS</div>
+            <div className="text-display text-sm tracking-[0.25em] text-primary">HOUSE PETTERSEN RIIS</div>
             <div className="text-[10px] text-muted-foreground tracking-widest">OF SKIEN</div>
           </div>
         </Link>
