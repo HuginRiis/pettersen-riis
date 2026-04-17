@@ -159,8 +159,9 @@ export const getHomeySnapshot = createServerFn({ method: "GET" }).handler(
   async (): Promise<HomeySnapshot> => {
     // Prefer PAT if configured — direct access to all devices, no OAuth flow needed.
     const pat = process.env.HOMEY_PAT;
-    if (pat && pat.length > 0) {
-      return await snapshotViaPat(pat);
+    const homeyId = process.env.HOMEY_ID;
+    if (pat && pat.length > 0 && homeyId && homeyId.length > 0) {
+      return await snapshotViaPat(pat, homeyId);
     }
 
     // Fallback: OAuth Web API client
