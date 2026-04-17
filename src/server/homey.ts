@@ -100,13 +100,48 @@ export type HomeySnapshot =
     };
 
 async function snapshotViaPat(pat: string, homeyId: string): Promise<HomeySnapshot> {
+  // PAT-tokens fra my.homey.app må veksles til en sesjons-token via /delegation/token
+  // før de kan brukes mot {homeyId}.connect.athom.com/api.
   const base = `https://${homeyId}.connect.athom.com/api`;
 
   try {
+    // Steg 1: veksle PAT til en lokal sesjons-token
+    const delegationRes = await fetch(
+      `https://api.athom.com/delegation/token?audience=homey`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${pat}`,
+          Accept: "application/json",
+        },
+      },
+    );
+    if (!delegationRes.ok) {
+      const text = await delegationRes.text();
+      return {
+        ok: false,
+        needsConnect: false,
+        error: `Kunne ikke veksle PAT til sesjon (${delegationRes.status}): ${text.slice(0, 200)}`,
+      };
+    }
+    // Athom returnerer enten en JWT-streng direkte eller { token: "..." }
+    const delegationText = await delegationRes.text();
+    let sessionToken = delegationText.trim();
+    if (sessionToken.startsWith("{")) {
+      try {
+        const parsed = JSON.parse(sessionToken);
+        sessionToken = parsed.token ?? parsed.access_token ?? sessionToken;
+      } catch {
+        // behold rå tekst
+      }
+    }
+    // Strip eventuelle anførselstegn
+    sessionToken = sessionToken.replace(/^"|"$/g, "");
+
     const [systemRaw, zonesRaw, devicesRaw] = await Promise.all([
-      fetchJson<any>(`${base}/manager/system/`, pat).catch(() => null),
-      fetchJson<any>(`${base}/manager/zones/zone`, pat),
-      fetchJson<any>(`${base}/manager/devices/device`, pat),
+      fetchJson<any>(`${base}/manager/system/`, sessionToken).catch(() => null),
+      fetchJson<any>(`${base}/manager/zones/zone`, sessionToken),
+      fetchJson<any>(`${base}/manager/devices/device`, sessionToken),
     ]);
 
     const homeName: string | null = systemRaw?.hostname ?? systemRaw?.name ?? null;
