@@ -207,9 +207,28 @@ function SmarthusPage() {
             tone={litLights > 0 ? "primary" : "muted"}
           />
           <Stat
-            label="Effekt nå"
+            label="Effekt · Hjemme"
+            value={hjemmePower > 0 ? formatPower(hjemmePower) : "—"}
+            hint="Borgen · sanntid"
+          />
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <Stat
+            label="Effekt · Hytta"
+            value={
+              hyttaPower !== null && hyttaPower > 0
+                ? formatPower(hyttaPower)
+                : hyttaPower === null
+                  ? "—"
+                  : "0 W"
+            }
+            hint={hyttaPower === null ? "Ingen Hytta-sone funnet" : "Fjellet · sanntid"}
+            tone={hyttaPower === null ? "muted" : "default"}
+          />
+          <Stat
+            label="Effekt · Totalt"
             value={totalPower > 0 ? formatPower(totalPower) : "—"}
-            hint="Hjemme · sanntid"
+            hint="Alle sale"
           />
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
