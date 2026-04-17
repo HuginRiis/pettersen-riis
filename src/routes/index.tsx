@@ -4,6 +4,9 @@ import { WeatherWidget } from "@/components/WeatherWidget";
 import { TollnesCameraStrip } from "@/components/TollnesCameraStrip";
 import arnePortrait from "@/assets/arne-portrait.jpg";
 import rebekkaPortrait from "@/assets/rebekka-portrait.jpg";
+import maritaPortrait from "@/assets/marita-portrait.jpg";
+import noraPortrait from "@/assets/nora-portrait.jpg";
+import miraPortrait from "@/assets/mira-portrait.jpg";
 import heroImg from "@/assets/hero-westeros.jpg";
 
 // Coordinates
@@ -53,12 +56,39 @@ function Home() {
             words="Med ære og ravner"
             image={arnePortrait}
           />
-          <PortraitCard
-            name="Rebekka Riis Pettersen"
-            title="Lady av Skien"
-            words="Sterk som vinterstormen"
-            image={rebekkaPortrait}
-          />
+          <div className="flex flex-col">
+            <PortraitCard
+              name="Rebekka Riis Pettersen"
+              title="Lady av Skien"
+              words="Sterk som vinterstormen"
+              image={rebekkaPortrait}
+            />
+            <div className="mt-4">
+              <div className="text-[9px] tracking-[0.3em] text-primary/80 uppercase text-center mb-2">
+                Husets døtre
+              </div>
+              <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                <MiniPortrait
+                  name="Marita"
+                  title="Den første"
+                  words="Ætt av sommerlys"
+                  image={maritaPortrait}
+                />
+                <MiniPortrait
+                  name="Nora"
+                  title="Den andre"
+                  words="Stille som måneskinn"
+                  image={noraPortrait}
+                />
+                <MiniPortrait
+                  name="Mira"
+                  title="Den yngste"
+                  words="Liten løve"
+                  image={miraPortrait}
+                />
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -138,6 +168,38 @@ function PortraitCard({
         </div>
         <h3 className="text-base sm:text-lg mt-1 text-foreground">{name}</h3>
         <p className="mt-1.5 text-medieval text-primary text-sm sm:text-base">"{words}"</p>
+      </div>
+    </article>
+  );
+}
+
+function MiniPortrait({
+  name,
+  title,
+  words,
+  image,
+}: {
+  name: string;
+  title: string;
+  words: string;
+  image: string;
+}) {
+  return (
+    <article className="panel rounded-md overflow-hidden glow-on-hover">
+      <div className="aspect-square overflow-hidden border-b border-border">
+        <img
+          src={image}
+          alt={name}
+          className="w-full h-full object-cover"
+          loading="lazy"
+        />
+      </div>
+      <div className="p-1.5 sm:p-2 text-center">
+        <div className="text-[7px] sm:text-[8px] tracking-[0.2em] text-muted-foreground uppercase leading-tight">
+          {title}
+        </div>
+        <h4 className="text-xs sm:text-sm mt-0.5 text-foreground leading-tight">{name}</h4>
+        <p className="mt-0.5 text-medieval text-primary text-[10px] sm:text-xs leading-tight">"{words}"</p>
       </div>
     </article>
   );
