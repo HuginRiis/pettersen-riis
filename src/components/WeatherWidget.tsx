@@ -1,0 +1,234 @@
+import { useEffect, useState } from "react";
+
+type Props = {
+  title: string;
+  subtitle: string;
+  lat: number;
+  lon: number;
+  mode: "tomorrow" | "weekend";
+};
+
+type Slot = {
+  time: string;
+  temp: number;
+  symbol: string | null;
+  precip: number;
+  wind: number;
+};
+
+type DaySummary = {
+  date: string;
+  tempMin: number;
+  tempMax: number;
+  symbol: string | null;
+  precip: number;
+  slots: Slot[];
+};
+
+export function WeatherWidget({ title, subtitle, lat, lon, mode }: Props) {
+  const [days, setDays] = useState<DaySummary[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch(
+          `https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=${lat}&lon=${lon}`,
+          { headers: { Accept: "application/json" } },
+        );
+        if (!res.ok) throw new Error("Kunne ikke hente værmelding");
+        const data = await res.json();
+        const all = parseDays(data);
+        const targets = mode === "tomorrow" ? pickTomorrow(all) : pickWeekend(all);
+        setDays(targets);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Ukjent feil");
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [lat, lon, mode]);
+
+  return (
+    <article className="panel rounded-lg p-6 glow-on-hover">
+      <div className="flex items-baseline justify-between gap-2">
+        <h3 className="text-xl text-primary">{title}</h3>
+        <span className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+          MET.no
+        </span>
+      </div>
+      <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>
+
+      <div className="mt-4">
+        {loading && (
+          <p className="text-sm text-muted-foreground italic">Sender ravn...</p>
+        )}
+        {error && <p className="text-sm text-destructive">{error}</p>}
+        {days && days.length === 0 && (
+          <p className="text-sm text-muted-foreground italic">
+            Ingen data tilgjengelig.
+          </p>
+        )}
+        {days && days.length > 0 && (
+          <div className="space-y-3">
+            {days.map((d) => (
+              <DayRow key={d.date} day={d} compact={mode === "weekend"} />
+            ))}
+          </div>
+        )}
+      </div>
+    </article>
+  );
+}
+
+function DayRow({ day, compact }: { day: DaySummary; compact: boolean }) {
+  return (
+    <div className="border border-border rounded-md p-3 bg-background/40">
+      <div className="flex items-center justify-between mb-2">
+        <div>
+          <div className="text-medieval text-lg text-primary leading-none">
+            {weekday(day.date)}
+          </div>
+          <div className="text-[11px] text-muted-foreground tracking-wider uppercase">
+            {dayMonth(day.date)}
+          </div>
+        </div>
+        <div className="text-3xl">{symbolEmoji(day.symbol)}</div>
+        <div className="text-right">
+          <div className="text-foreground font-semibold">
+            {Math.round(day.tempMax)}°
+          </div>
+          <div className="text-xs text-muted-foreground">
+            min {Math.round(day.tempMin)}°
+          </div>
+        </div>
+      </div>
+      {compact ? (
+        <div className="text-xs text-muted-foreground flex gap-4">
+          {day.precip > 0 && <span>💧 {day.precip.toFixed(1)} mm</span>}
+        </div>
+      ) : (
+        <div className="grid grid-cols-4 gap-1 text-center">
+          {pickHourSlots(day.slots).map((s) => (
+            <div key={s.time} className="bg-card/60 rounded p-1.5">
+              <div className="text-[10px] text-muted-foreground">
+                {s.time.slice(11, 13)}:00
+              </div>
+              <div className="text-base">{symbolEmoji(s.symbol)}</div>
+              <div className="text-xs text-foreground">
+                {Math.round(s.temp)}°
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function pickHourSlots(slots: Slot[]): Slot[] {
+  const targets = [6, 12, 18, 22];
+  return targets
+    .map((h) =>
+      slots.reduce<Slot | null>((best, s) => {
+        const sh = parseInt(s.time.slice(11, 13));
+        if (best === null) return s;
+        const bh = parseInt(best.time.slice(11, 13));
+        return Math.abs(sh - h) < Math.abs(bh - h) ? s : best;
+      }, null),
+    )
+    .filter((s): s is Slot => s !== null);
+}
+
+function parseDays(data: any): DaySummary[] {
+  const series = data?.properties?.timeseries ?? [];
+  const map = new Map<string, DaySummary>();
+  for (const entry of series) {
+    const time: string = entry.time;
+    const date = time.slice(0, 10);
+    const inst = entry.data?.instant?.details ?? {};
+    const next6 = entry.data?.next_6_hours;
+    const next1 = entry.data?.next_1_hours;
+    const temp = inst.air_temperature;
+    const wind = inst.wind_speed ?? 0;
+    if (typeof temp !== "number") continue;
+    const symbol =
+      next1?.summary?.symbol_code ?? next6?.summary?.symbol_code ?? null;
+    const precip =
+      next1?.details?.precipitation_amount ??
+      next6?.details?.precipitation_amount ??
+      0;
+    const slot: Slot = { time, temp, symbol, precip, wind };
+    const existing = map.get(date);
+    if (!existing) {
+      map.set(date, {
+        date,
+        tempMin: temp,
+        tempMax: temp,
+        symbol,
+        precip,
+        slots: [slot],
+      });
+    } else {
+      existing.tempMin = Math.min(existing.tempMin, temp);
+      existing.tempMax = Math.max(existing.tempMax, temp);
+      existing.precip += precip;
+      const hour = parseInt(time.slice(11, 13));
+      if (hour >= 11 && hour <= 14 && symbol) existing.symbol = symbol;
+      existing.slots.push(slot);
+    }
+  }
+  return Array.from(map.values()).sort((a, b) => a.date.localeCompare(b.date));
+}
+
+function pickTomorrow(days: DaySummary[]): DaySummary[] {
+  const tmr = new Date();
+  tmr.setDate(tmr.getDate() + 1);
+  const iso = tmr.toISOString().slice(0, 10);
+  return days.filter((d) => d.date === iso);
+}
+
+function pickWeekend(days: DaySummary[]): DaySummary[] {
+  // Find next Saturday and Sunday from today (if today is Sat/Sun, use this weekend)
+  const today = new Date();
+  const dow = today.getDay(); // 0 sun, 6 sat
+  let satOffset: number;
+  if (dow === 6) satOffset = 0;
+  else if (dow === 0) satOffset = -1; // Sunday → Sat was yesterday; use today (sun) and -1? Use upcoming next Sat
+  else satOffset = 6 - dow;
+  // For Sunday, jump to next Saturday (6 days ahead) so we always show upcoming weekend
+  if (dow === 0) satOffset = 6;
+  const sat = new Date(today);
+  sat.setDate(sat.getDate() + satOffset);
+  const sun = new Date(sat);
+  sun.setDate(sun.getDate() + 1);
+  const targets = [sat.toISOString().slice(0, 10), sun.toISOString().slice(0, 10)];
+  return days.filter((d) => targets.includes(d.date));
+}
+
+function symbolEmoji(symbol: string | null): string {
+  if (!symbol) return "—";
+  if (symbol.includes("clearsky")) return "☀️";
+  if (symbol.includes("fair")) return "🌤";
+  if (symbol.includes("partlycloudy")) return "⛅";
+  if (symbol.includes("cloudy")) return "☁️";
+  if (symbol.includes("snow")) return "❄️";
+  if (symbol.includes("sleet")) return "🌨";
+  if (symbol.includes("rain")) return "🌧";
+  if (symbol.includes("thunder")) return "⛈";
+  if (symbol.includes("fog")) return "🌫";
+  return "🌥";
+}
+
+function weekday(iso: string) {
+  return new Date(iso + "T00:00:00").toLocaleDateString("nb-NO", {
+    weekday: "long",
+  });
+}
+function dayMonth(iso: string) {
+  return new Date(iso + "T00:00:00").toLocaleDateString("nb-NO", {
+    day: "numeric",
+    month: "long",
+  });
+}
