@@ -11,11 +11,14 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as VarRouteImport } from './routes/var'
 import { Route as TreningRouteImport } from './routes/trening'
+import { Route as SmarthusRouteImport } from './routes/smarthus'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as HyttaRouteImport } from './routes/hytta'
 import { Route as HundeneRouteImport } from './routes/hundene'
 import { Route as AgendaRouteImport } from './routes/agenda'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiHomeyStartRouteImport } from './routes/api.homey.start'
+import { Route as ApiHomeyCallbackRouteImport } from './routes/api.homey.callback'
 
 const VarRoute = VarRouteImport.update({
   id: '/var',
@@ -25,6 +28,11 @@ const VarRoute = VarRouteImport.update({
 const TreningRoute = TreningRouteImport.update({
   id: '/trening',
   path: '/trening',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SmarthusRoute = SmarthusRouteImport.update({
+  id: '/smarthus',
+  path: '/smarthus',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -52,6 +60,16 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiHomeyStartRoute = ApiHomeyStartRouteImport.update({
+  id: '/api/homey/start',
+  path: '/api/homey/start',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiHomeyCallbackRoute = ApiHomeyCallbackRouteImport.update({
+  id: '/api/homey/callback',
+  path: '/api/homey/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -59,8 +77,11 @@ export interface FileRoutesByFullPath {
   '/hundene': typeof HundeneRoute
   '/hytta': typeof HyttaRoute
   '/login': typeof LoginRoute
+  '/smarthus': typeof SmarthusRoute
   '/trening': typeof TreningRoute
   '/var': typeof VarRoute
+  '/api/homey/callback': typeof ApiHomeyCallbackRoute
+  '/api/homey/start': typeof ApiHomeyStartRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -68,8 +89,11 @@ export interface FileRoutesByTo {
   '/hundene': typeof HundeneRoute
   '/hytta': typeof HyttaRoute
   '/login': typeof LoginRoute
+  '/smarthus': typeof SmarthusRoute
   '/trening': typeof TreningRoute
   '/var': typeof VarRoute
+  '/api/homey/callback': typeof ApiHomeyCallbackRoute
+  '/api/homey/start': typeof ApiHomeyStartRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -78,8 +102,11 @@ export interface FileRoutesById {
   '/hundene': typeof HundeneRoute
   '/hytta': typeof HyttaRoute
   '/login': typeof LoginRoute
+  '/smarthus': typeof SmarthusRoute
   '/trening': typeof TreningRoute
   '/var': typeof VarRoute
+  '/api/homey/callback': typeof ApiHomeyCallbackRoute
+  '/api/homey/start': typeof ApiHomeyStartRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -89,10 +116,23 @@ export interface FileRouteTypes {
     | '/hundene'
     | '/hytta'
     | '/login'
+    | '/smarthus'
     | '/trening'
     | '/var'
+    | '/api/homey/callback'
+    | '/api/homey/start'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/agenda' | '/hundene' | '/hytta' | '/login' | '/trening' | '/var'
+  to:
+    | '/'
+    | '/agenda'
+    | '/hundene'
+    | '/hytta'
+    | '/login'
+    | '/smarthus'
+    | '/trening'
+    | '/var'
+    | '/api/homey/callback'
+    | '/api/homey/start'
   id:
     | '__root__'
     | '/'
@@ -100,8 +140,11 @@ export interface FileRouteTypes {
     | '/hundene'
     | '/hytta'
     | '/login'
+    | '/smarthus'
     | '/trening'
     | '/var'
+    | '/api/homey/callback'
+    | '/api/homey/start'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -110,8 +153,11 @@ export interface RootRouteChildren {
   HundeneRoute: typeof HundeneRoute
   HyttaRoute: typeof HyttaRoute
   LoginRoute: typeof LoginRoute
+  SmarthusRoute: typeof SmarthusRoute
   TreningRoute: typeof TreningRoute
   VarRoute: typeof VarRoute
+  ApiHomeyCallbackRoute: typeof ApiHomeyCallbackRoute
+  ApiHomeyStartRoute: typeof ApiHomeyStartRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -128,6 +174,13 @@ declare module '@tanstack/react-router' {
       path: '/trening'
       fullPath: '/trening'
       preLoaderRoute: typeof TreningRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/smarthus': {
+      id: '/smarthus'
+      path: '/smarthus'
+      fullPath: '/smarthus'
+      preLoaderRoute: typeof SmarthusRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -165,6 +218,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/homey/start': {
+      id: '/api/homey/start'
+      path: '/api/homey/start'
+      fullPath: '/api/homey/start'
+      preLoaderRoute: typeof ApiHomeyStartRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/homey/callback': {
+      id: '/api/homey/callback'
+      path: '/api/homey/callback'
+      fullPath: '/api/homey/callback'
+      preLoaderRoute: typeof ApiHomeyCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -174,8 +241,11 @@ const rootRouteChildren: RootRouteChildren = {
   HundeneRoute: HundeneRoute,
   HyttaRoute: HyttaRoute,
   LoginRoute: LoginRoute,
+  SmarthusRoute: SmarthusRoute,
   TreningRoute: TreningRoute,
   VarRoute: VarRoute,
+  ApiHomeyCallbackRoute: ApiHomeyCallbackRoute,
+  ApiHomeyStartRoute: ApiHomeyStartRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
