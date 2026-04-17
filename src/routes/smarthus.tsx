@@ -128,6 +128,33 @@ function SmarthusPage() {
     .filter((v): v is number => typeof v === "number")
     .reduce((a, b) => a + b, 0);
 
+  // Effekt per sone
+  const powerByZone = new Map<string, number>();
+  for (const d of data.devices) {
+    const p = d.capabilities["measure_power"]?.value;
+    if (typeof p !== "number") continue;
+    const key = d.zone ?? "__no_zone__";
+    powerByZone.set(key, (powerByZone.get(key) ?? 0) + p);
+  }
+
+  const findZonePower = (matcher: (name: string) => boolean) => {
+    let total = 0;
+    let matched = false;
+    for (const [zoneKey, watts] of powerByZone.entries()) {
+      const name = zoneById.get(zoneKey)?.name ?? "";
+      if (matcher(name.toLowerCase())) {
+        total += watts;
+        matched = true;
+      }
+    }
+    return matched ? total : null;
+  };
+
+  const hyttaPower = findZonePower((n) => n.includes("hytt"));
+  const hjemmePower =
+    findZonePower((n) => n.includes("hjem") || n.includes("borg") || n.includes("hus")) ??
+    (hyttaPower !== null ? totalPower - hyttaPower : totalPower);
+
   const LOW_BATTERY_THRESHOLD = 20;
   const lowBatteries = data.devices.filter((d) => {
     const b = d.capabilities["measure_battery"]?.value;
@@ -180,9 +207,28 @@ function SmarthusPage() {
             tone={litLights > 0 ? "primary" : "muted"}
           />
           <Stat
-            label="Effekt nå"
+            label="Effekt · Hjemme"
+            value={hjemmePower > 0 ? formatPower(hjemmePower) : "—"}
+            hint="Borgen · sanntid"
+          />
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <Stat
+            label="Effekt · Hytta"
+            value={
+              hyttaPower !== null && hyttaPower > 0
+                ? formatPower(hyttaPower)
+                : hyttaPower === null
+                  ? "—"
+                  : "0 W"
+            }
+            hint={hyttaPower === null ? "Ingen Hytta-sone funnet" : "Fjellet · sanntid"}
+            tone={hyttaPower === null ? "muted" : "default"}
+          />
+          <Stat
+            label="Effekt · Totalt"
             value={totalPower > 0 ? formatPower(totalPower) : "—"}
-            hint="Hjemme · sanntid"
+            hint="Alle sale"
           />
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
