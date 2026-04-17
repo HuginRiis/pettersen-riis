@@ -37,7 +37,7 @@ function AgendaPage() {
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [date, setDate] = useState(today);
-  const [who, setWho] = useState<(typeof WHO)[number]>("Begge");
+  const [who, setWho] = useState<(typeof WHO)[number]>("Alle");
 
   async function load() {
     setLoading(true);
@@ -65,7 +65,7 @@ function AgendaPage() {
       setSubject("");
       setBody("");
       setDate(today);
-      setWho("Begge");
+      setWho("Alle");
       load();
     }
   }
