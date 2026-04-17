@@ -26,7 +26,7 @@ type Msg = {
   created_at: string;
 };
 
-const WHO = ["Begge", "Arne", "Rebekka"] as const;
+const WHO = ["Begge", "Arne", "Rebekka", "Marita", "Nora", "Celine", "Mira"] as const;
 
 function AgendaPage() {
   const [items, setItems] = useState<Msg[]>([]);
