@@ -9,8 +9,38 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as VarRouteImport } from './routes/var'
+import { Route as TreningRouteImport } from './routes/trening'
+import { Route as HyttaRouteImport } from './routes/hytta'
+import { Route as HundeneRouteImport } from './routes/hundene'
+import { Route as AgendaRouteImport } from './routes/agenda'
 import { Route as IndexRouteImport } from './routes/index'
 
+const VarRoute = VarRouteImport.update({
+  id: '/var',
+  path: '/var',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TreningRoute = TreningRouteImport.update({
+  id: '/trening',
+  path: '/trening',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HyttaRoute = HyttaRouteImport.update({
+  id: '/hytta',
+  path: '/hytta',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HundeneRoute = HundeneRouteImport.update({
+  id: '/hundene',
+  path: '/hundene',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AgendaRoute = AgendaRouteImport.update({
+  id: '/agenda',
+  path: '/agenda',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -19,28 +49,83 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/agenda': typeof AgendaRoute
+  '/hundene': typeof HundeneRoute
+  '/hytta': typeof HyttaRoute
+  '/trening': typeof TreningRoute
+  '/var': typeof VarRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/agenda': typeof AgendaRoute
+  '/hundene': typeof HundeneRoute
+  '/hytta': typeof HyttaRoute
+  '/trening': typeof TreningRoute
+  '/var': typeof VarRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/agenda': typeof AgendaRoute
+  '/hundene': typeof HundeneRoute
+  '/hytta': typeof HyttaRoute
+  '/trening': typeof TreningRoute
+  '/var': typeof VarRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/agenda' | '/hundene' | '/hytta' | '/trening' | '/var'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/agenda' | '/hundene' | '/hytta' | '/trening' | '/var'
+  id: '__root__' | '/' | '/agenda' | '/hundene' | '/hytta' | '/trening' | '/var'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AgendaRoute: typeof AgendaRoute
+  HundeneRoute: typeof HundeneRoute
+  HyttaRoute: typeof HyttaRoute
+  TreningRoute: typeof TreningRoute
+  VarRoute: typeof VarRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/var': {
+      id: '/var'
+      path: '/var'
+      fullPath: '/var'
+      preLoaderRoute: typeof VarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/trening': {
+      id: '/trening'
+      path: '/trening'
+      fullPath: '/trening'
+      preLoaderRoute: typeof TreningRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/hytta': {
+      id: '/hytta'
+      path: '/hytta'
+      fullPath: '/hytta'
+      preLoaderRoute: typeof HyttaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/hundene': {
+      id: '/hundene'
+      path: '/hundene'
+      fullPath: '/hundene'
+      preLoaderRoute: typeof HundeneRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/agenda': {
+      id: '/agenda'
+      path: '/agenda'
+      fullPath: '/agenda'
+      preLoaderRoute: typeof AgendaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -53,7 +138,21 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AgendaRoute: AgendaRoute,
+  HundeneRoute: HundeneRoute,
+  HyttaRoute: HyttaRoute,
+  TreningRoute: TreningRoute,
+  VarRoute: VarRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
