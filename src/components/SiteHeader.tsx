@@ -1,6 +1,7 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
-import { Menu, X } from "lucide-react";
+import { Menu, X, LogOut } from "lucide-react";
+import { logoutFn } from "@/server/auth";
 
 const links = [
   { to: "/", label: "Hjem" },
@@ -13,6 +14,16 @@ const links = [
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    try {
+      await logoutFn();
+    } finally {
+      await router.invalidate();
+      router.navigate({ to: "/login" });
+    }
+  };
 
   return (
     <header className="sticky top-0 z-50 backdrop-blur-md bg-background/80 border-b border-border">
@@ -38,6 +49,14 @@ export function SiteHeader() {
               {l.label}
             </Link>
           ))}
+          <button
+            onClick={handleLogout}
+            className="ml-2 px-3 py-2 text-sm tracking-wider uppercase text-muted-foreground hover:text-primary transition-colors flex items-center gap-1"
+            aria-label="Logg ut"
+            title="Logg ut"
+          >
+            <LogOut size={14} />
+          </button>
         </nav>
 
         <button
@@ -63,6 +82,15 @@ export function SiteHeader() {
                 {l.label}
               </Link>
             ))}
+            <button
+              onClick={() => {
+                setOpen(false);
+                handleLogout();
+              }}
+              className="px-2 py-3 text-sm tracking-wider uppercase text-muted-foreground hover:text-primary text-left flex items-center gap-2"
+            >
+              <LogOut size={14} /> Logg ut
+            </button>
           </div>
         </nav>
       )}
