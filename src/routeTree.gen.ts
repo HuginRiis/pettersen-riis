@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as VarRouteImport } from './routes/var'
 import { Route as TreningRouteImport } from './routes/trening'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as HyttaRouteImport } from './routes/hytta'
 import { Route as HundeneRouteImport } from './routes/hundene'
 import { Route as AgendaRouteImport } from './routes/agenda'
@@ -24,6 +25,11 @@ const VarRoute = VarRouteImport.update({
 const TreningRoute = TreningRouteImport.update({
   id: '/trening',
   path: '/trening',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HyttaRoute = HyttaRouteImport.update({
@@ -52,6 +58,7 @@ export interface FileRoutesByFullPath {
   '/agenda': typeof AgendaRoute
   '/hundene': typeof HundeneRoute
   '/hytta': typeof HyttaRoute
+  '/login': typeof LoginRoute
   '/trening': typeof TreningRoute
   '/var': typeof VarRoute
 }
@@ -60,6 +67,7 @@ export interface FileRoutesByTo {
   '/agenda': typeof AgendaRoute
   '/hundene': typeof HundeneRoute
   '/hytta': typeof HyttaRoute
+  '/login': typeof LoginRoute
   '/trening': typeof TreningRoute
   '/var': typeof VarRoute
 }
@@ -69,15 +77,31 @@ export interface FileRoutesById {
   '/agenda': typeof AgendaRoute
   '/hundene': typeof HundeneRoute
   '/hytta': typeof HyttaRoute
+  '/login': typeof LoginRoute
   '/trening': typeof TreningRoute
   '/var': typeof VarRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/agenda' | '/hundene' | '/hytta' | '/trening' | '/var'
+  fullPaths:
+    | '/'
+    | '/agenda'
+    | '/hundene'
+    | '/hytta'
+    | '/login'
+    | '/trening'
+    | '/var'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/agenda' | '/hundene' | '/hytta' | '/trening' | '/var'
-  id: '__root__' | '/' | '/agenda' | '/hundene' | '/hytta' | '/trening' | '/var'
+  to: '/' | '/agenda' | '/hundene' | '/hytta' | '/login' | '/trening' | '/var'
+  id:
+    | '__root__'
+    | '/'
+    | '/agenda'
+    | '/hundene'
+    | '/hytta'
+    | '/login'
+    | '/trening'
+    | '/var'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -85,6 +109,7 @@ export interface RootRouteChildren {
   AgendaRoute: typeof AgendaRoute
   HundeneRoute: typeof HundeneRoute
   HyttaRoute: typeof HyttaRoute
+  LoginRoute: typeof LoginRoute
   TreningRoute: typeof TreningRoute
   VarRoute: typeof VarRoute
 }
@@ -103,6 +128,13 @@ declare module '@tanstack/react-router' {
       path: '/trening'
       fullPath: '/trening'
       preLoaderRoute: typeof TreningRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/hytta': {
@@ -141,9 +173,19 @@ const rootRouteChildren: RootRouteChildren = {
   AgendaRoute: AgendaRoute,
   HundeneRoute: HundeneRoute,
   HyttaRoute: HyttaRoute,
+  LoginRoute: LoginRoute,
   TreningRoute: TreningRoute,
   VarRoute: VarRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
