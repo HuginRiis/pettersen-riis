@@ -306,7 +306,7 @@ export const setHomeyCapability = createServerFn({ method: "POST" })
     const valid = await getValidAccessToken();
     if (!valid) throw new Error("Homey er ikke koblet til. Koble til først.");
 
-    const resolved = await resolveHomeyBase(valid.token);
+    const resolved = await resolveHomeyTarget(valid.token);
     if ("error" in resolved) throw new Error(resolved.error);
 
     const res = await fetch(
@@ -316,7 +316,7 @@ export const setHomeyCapability = createServerFn({ method: "POST" })
       {
         method: "PUT",
         headers: {
-          Authorization: `Bearer ${valid.token}`,
+          Authorization: `Bearer ${resolved.sessionToken}`,
           "Content-Type": "application/json",
           Accept: "application/json",
         },
