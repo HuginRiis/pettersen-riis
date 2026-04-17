@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { HOMEY_SCOPES } from "@/server/homey";
 
-const ATHOM_AUTH_BASE = "https://accounts.athom.com";
+const ATHOM_AUTH_BASE = "https://api.athom.com";
 
 export const Route = createFileRoute("/api/homey/start")({
   server: {
@@ -16,6 +16,7 @@ export const Route = createFileRoute("/api/homey/start")({
 
         const state = crypto.randomUUID();
         const authUrl = new URL(`${ATHOM_AUTH_BASE}/oauth2/authorise`);
+        authUrl.searchParams.set("authorization_type", "code");
         authUrl.searchParams.set("response_type", "code");
         authUrl.searchParams.set("client_id", clientId);
         authUrl.searchParams.set("redirect_uri", redirectUri);
