@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { PageShell, PageHero } from "@/components/PageShell";
 import { WeatherWidget } from "@/components/WeatherWidget";
+import { TollnesCameraStrip } from "@/components/TollnesCameraStrip";
 import arnePortrait from "@/assets/arne-portrait.jpg";
 import rebekkaPortrait from "@/assets/rebekka-portrait.jpg";
 import heroImg from "@/assets/hero-westeros.jpg";
