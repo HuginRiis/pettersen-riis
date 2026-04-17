@@ -294,3 +294,163 @@ export const disconnectHomey = createServerFn({ method: "POST" }).handler(async 
   await deleteHomeyConnection();
   return { ok: true };
 });
+
+// ============================================================
+// Camera snapshot (Netatmo / generic Homey camera devices)
+// ============================================================
+
+export type CameraSnapshotResult =
+  | { ok: false; error: string }
+  | { ok: true; dataUrl: string; deviceName: string; capturedAt: string };
+
+async function fetchBinary(
+  url: string,
+  init: RequestInit,
+): Promise<{ buffer: ArrayBuffer; contentType: string }> {
+  const res = await fetch(url, init);
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`${url} feilet (${res.status}): ${text.slice(0, 200)}`);
+  }
+  const contentType = res.headers.get("content-type") ?? "image/jpeg";
+  const buffer = await res.arrayBuffer();
+  return { buffer, contentType };
+}
+
+function bufferToDataUrl(buffer: ArrayBuffer, contentType: string) {
+  const bytes = new Uint8Array(buffer);
+  let binary = "";
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+  }
+  const base64 = btoa(binary);
+  return `data:${contentType};base64,${base64}`;
+}
+
+async function findCameraDevice(
+  sessionToken: string,
+  baseUrl: string,
+  hint: string,
+): Promise<{ id: string; name: string; raw: any } | null> {
+  const devicesRaw = await fetchJson<any>(
+    `${baseUrl}/api/manager/devices/device`,
+    sessionToken,
+  );
+  const list: any[] = Array.isArray(devicesRaw)
+    ? devicesRaw
+    : devicesRaw && typeof devicesRaw === "object"
+      ? Object.values(devicesRaw)
+      : [];
+
+  const hintLc = hint.toLowerCase();
+  const cameras = list.filter(
+    (d) =>
+      d?.class === "camera" ||
+      d?.virtualClass === "camera" ||
+      (typeof d?.driverUri === "string" && d.driverUri.toLowerCase().includes("netatmo")) ||
+      (typeof d?.name === "string" && d.name.toLowerCase().includes("netatmo")),
+  );
+
+  const pool = cameras.length > 0 ? cameras : list;
+  const matched =
+    pool.find((d) => typeof d?.name === "string" && d.name.toLowerCase().includes(hintLc)) ??
+    cameras[0] ??
+    null;
+
+  if (!matched) return null;
+  return {
+    id: matched.id ?? matched._id,
+    name: matched.name ?? "Kamera",
+    raw: matched,
+  };
+}
+
+async function tryCameraSnapshot(
+  sessionToken: string,
+  baseUrl: string,
+  device: { id: string; name: string; raw: any },
+): Promise<{ buffer: ArrayBuffer; contentType: string }> {
+  const apiBase = `${baseUrl}/api`;
+
+  // Strategy 1: trigger a fresh snapshot via Homey camera manager,
+  // which returns { url } pointing to /api/image/<id>
+  try {
+    const created = await fetch(
+      `${apiBase}/manager/devices/device/${device.id}/snapshot`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${sessionToken}`,
+          Accept: "application/json",
+        },
+      },
+    );
+    if (created.ok) {
+      const text = await created.text();
+      let imageUrl: string | null = null;
+      try {
+        const parsed = JSON.parse(text);
+        imageUrl =
+          parsed?.url ??
+          parsed?.imageUrl ??
+          parsed?.image?.url ??
+          (typeof parsed === "string" ? parsed : null);
+      } catch {
+        if (text.startsWith("/")) imageUrl = text;
+      }
+      if (imageUrl) {
+        const fullUrl = imageUrl.startsWith("http") ? imageUrl : `${baseUrl}${imageUrl}`;
+        return await fetchBinary(fullUrl, {
+          headers: { Authorization: `Bearer ${sessionToken}` },
+        });
+      }
+    }
+  } catch {
+    // continue to next strategy
+  }
+
+  // Strategy 2: read existing camera image cached by Homey
+  const direct = `${apiBase}/manager/devices/device/${device.id}/snapshot`;
+  return await fetchBinary(direct, {
+    headers: { Authorization: `Bearer ${sessionToken}`, Accept: "image/*" },
+  });
+}
+
+export const getTollnesCameraSnapshot = createServerFn({ method: "GET" }).handler(
+  async (): Promise<CameraSnapshotResult> => {
+    let conn: HomeyConnection | null;
+    try {
+      conn = await getValidConnection();
+    } catch (e: any) {
+      return { ok: false, error: e?.message ?? "Token-feil" };
+    }
+    if (!conn) return { ok: false, error: "Ingen Homey-tilkobling" };
+
+    try {
+      const target = await resolveHomeyTarget(conn.access_token);
+      if (!target) return { ok: false, error: "Fant ingen Homey" };
+
+      const delegationToken = await createDelegationToken(conn.access_token);
+      const sessionToken = await createSessionToken(target.baseUrl, delegationToken);
+
+      const device = await findCameraDevice(sessionToken, target.baseUrl, "tollnes");
+      if (!device) return { ok: false, error: "Fant ingen Netatmo-kamera" };
+
+      const { buffer, contentType } = await tryCameraSnapshot(
+        sessionToken,
+        target.baseUrl,
+        device,
+      );
+
+      return {
+        ok: true,
+        dataUrl: bufferToDataUrl(buffer, contentType),
+        deviceName: device.name,
+        capturedAt: new Date().toISOString(),
+      };
+    } catch (e: any) {
+      return { ok: false, error: e?.message ?? "Klarte ikke hente snapshot" };
+    }
+  },
+);
