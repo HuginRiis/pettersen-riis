@@ -29,10 +29,14 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "House Riis — Arne & Rebekka av Skien" },
+      { title: "Arne & Rebekka av Skien" },
       { name: "description", content: "Den digitale storsalen til Arne Riis og Rebekka Riis Pettersen i Skien." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { property: "og:title", content: "Arne & Rebekka av Skien" },
+      { name: "twitter:title", content: "Arne & Rebekka av Skien" },
+      { property: "og:description", content: "Den digitale storsalen til Arne Riis og Rebekka Riis Pettersen i Skien." },
+      { name: "twitter:description", content: "Den digitale storsalen til Arne Riis og Rebekka Riis Pettersen i Skien." },
     ],
     links: [
       {
