@@ -29,27 +29,43 @@ type ForecastDay = {
   precip: number;
 };
 
+type LocationState = {
+  days: ForecastDay[] | null;
+  error: string | null;
+  loading: boolean;
+};
+
 function WeatherPage() {
-  const [days, setDays] = useState<ForecastDay[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [state, setState] = useState<Record<string, LocationState>>(() =>
+    Object.fromEntries(
+      LOCATIONS.map((l) => [l.key, { days: null, error: null, loading: true }]),
+    ),
+  );
 
   useEffect(() => {
-    (async () => {
+    LOCATIONS.forEach(async (loc) => {
       try {
         const res = await fetch(
-          `https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=${LAT}&lon=${LON}`,
+          `https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=${loc.lat}&lon=${loc.lon}`,
           { headers: { Accept: "application/json" } },
         );
         if (!res.ok) throw new Error("Kunne ikke hente værmelding");
         const data = await res.json();
-        setDays(parseForecast(data));
+        setState((s) => ({
+          ...s,
+          [loc.key]: { days: parseForecast(data), error: null, loading: false },
+        }));
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Ukjent feil");
-      } finally {
-        setLoading(false);
+        setState((s) => ({
+          ...s,
+          [loc.key]: {
+            days: null,
+            error: e instanceof Error ? e.message : "Ukjent feil",
+            loading: false,
+          },
+        }));
       }
-    })();
+    });
   }, []);
 
   const pollen = pollenForToday();
@@ -57,7 +73,7 @@ function WeatherPage() {
   return (
     <PageShell>
       <PageHero
-        eyebrow="Skien · Norge"
+        eyebrow="Skien & Numedal · Norge"
         title="Værens budskap"
         subtitle="Ravnen kommer fra MET.no med varsler om vind, snø og pollen."
         image={heroImg}
@@ -97,97 +113,61 @@ function WeatherPage() {
           </p>
         </div>
 
-        <div>
-          <div className="ornate-divider mb-6">
-            <span className="text-display tracking-[0.3em] text-primary text-sm uppercase">
-              Værmelding · 7 dager
-            </span>
-          </div>
+        {LOCATIONS.map((loc) => {
+          const s = state[loc.key];
+          return (
+            <div key={loc.key}>
+              <div className="ornate-divider mb-6">
+                <span className="text-display tracking-[0.3em] text-primary text-sm uppercase">
+                  {loc.name} · 7 dager
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground mb-4 -mt-3">
+                {loc.subtitle}
+              </p>
 
-          {loading && <p className="text-muted-foreground">Sender ravn til MET.no...</p>}
-          {error && <p className="text-destructive">{error}</p>}
-          {days && (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
-              {days.slice(0, 7).map((d) => (
-                <div
-                  key={d.date}
-                  className="panel rounded-lg p-4 text-center"
-                >
-                  <div className="text-xs uppercase tracking-wider text-muted-foreground">
-                    {weekdayShort(d.date)}
-                  </div>
-                  <div className="text-medieval text-lg text-primary mt-1">
-                    {dayMonth(d.date)}
-                  </div>
-                  <div className="text-3xl my-3">{symbolEmoji(d.symbol)}</div>
-                  <div className="text-foreground font-semibold">
-                    {Math.round(d.tempMax)}°
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    min {Math.round(d.tempMin)}°
-                  </div>
-                  {d.precip > 0 && (
-                    <div className="text-xs text-ice mt-1">{d.precip.toFixed(1)} mm</div>
-                  )}
+              {s?.loading && (
+                <p className="text-muted-foreground">Sender ravn til MET.no...</p>
+              )}
+              {s?.error && <p className="text-destructive">{s.error}</p>}
+              {s?.days && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
+                  {s.days.slice(0, 7).map((d) => (
+                    <div
+                      key={d.date}
+                      className="panel rounded-lg p-4 text-center"
+                    >
+                      <div className="text-xs uppercase tracking-wider text-muted-foreground">
+                        {weekdayShort(d.date)}
+                      </div>
+                      <div className="text-medieval text-lg text-primary mt-1">
+                        {dayMonth(d.date)}
+                      </div>
+                      <div className="text-3xl my-3">{symbolEmoji(d.symbol)}</div>
+                      <div className="text-foreground font-semibold">
+                        {Math.round(d.tempMax)}°
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        min {Math.round(d.tempMin)}°
+                      </div>
+                      {d.precip > 0 && (
+                        <div className="text-xs text-ice mt-1">
+                          {d.precip.toFixed(1)} mm
+                        </div>
+                      )}
+                    </div>
+                  ))}
                 </div>
-              ))}
+              )}
             </div>
-          )}
-          <p className="mt-3 text-xs text-muted-foreground italic">
-            Data fra MET.no (Meteorologisk institutt).
-          </p>
-        </div>
+          );
+        })}
+        <p className="text-xs text-muted-foreground italic">
+          Data fra MET.no (Meteorologisk institutt).
+        </p>
       </section>
     </PageShell>
   );
-}
-
-function parseForecast(data: any): ForecastDay[] {
-  const series = data?.properties?.timeseries ?? [];
-  const map = new Map<string, ForecastDay>();
-  for (const entry of series) {
-    const date = entry.time.slice(0, 10);
-    const inst = entry.data?.instant?.details ?? {};
-    const next6 = entry.data?.next_6_hours;
-    const next1 = entry.data?.next_1_hours;
-    const temp = inst.air_temperature;
-    if (typeof temp !== "number") continue;
-    const symbol = next6?.summary?.symbol_code ?? next1?.summary?.symbol_code ?? null;
-    const precip = next6?.details?.precipitation_amount ?? next1?.details?.precipitation_amount ?? 0;
-    const existing = map.get(date);
-    if (!existing) {
-      map.set(date, { date, tempMin: temp, tempMax: temp, symbol, precip });
-    } else {
-      existing.tempMin = Math.min(existing.tempMin, temp);
-      existing.tempMax = Math.max(existing.tempMax, temp);
-      existing.precip += precip;
-      // Use midday symbol if available
-      const hour = parseInt(entry.time.slice(11, 13));
-      if (hour >= 11 && hour <= 14 && symbol) existing.symbol = symbol;
-    }
-  }
-  return Array.from(map.values()).sort((a, b) => a.date.localeCompare(b.date));
-}
-
-function symbolEmoji(symbol: string | null): string {
-  if (!symbol) return "—";
-  if (symbol.includes("clearsky")) return "☀️";
-  if (symbol.includes("fair")) return "🌤";
-  if (symbol.includes("partlycloudy")) return "⛅";
-  if (symbol.includes("cloudy")) return "☁️";
-  if (symbol.includes("snow")) return "❄️";
-  if (symbol.includes("sleet")) return "🌨";
-  if (symbol.includes("rain")) return "🌧";
-  if (symbol.includes("thunder")) return "⛈";
-  if (symbol.includes("fog")) return "🌫";
-  return "🌥";
-}
-
-function weekdayShort(iso: string) {
-  return new Date(iso + "T00:00:00").toLocaleDateString("nb-NO", { weekday: "short" });
-}
-function dayMonth(iso: string) {
-  return new Date(iso + "T00:00:00").toLocaleDateString("nb-NO", { day: "numeric", month: "short" });
 }
 
 type Pollen = {
