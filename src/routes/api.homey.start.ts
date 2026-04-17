@@ -11,8 +11,7 @@ export const Route = createFileRoute("/api/homey/start")({
         if (!clientId) {
           return new Response("HOMEY_CLIENT_ID mangler", { status: 500 });
         }
-        const url = new URL(request.url);
-        const redirectUri = `${url.origin}/api/homey/callback`;
+        const redirectUri = "https://pettersen-riis.lovable.app/api/homey/callback";
 
         const state = crypto.randomUUID();
         const authUrl = new URL(`${ATHOM_AUTH_BASE}/oauth2/authorise`);
