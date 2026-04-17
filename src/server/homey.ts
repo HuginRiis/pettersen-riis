@@ -113,44 +113,42 @@ export const getHomeySnapshot = createServerFn({ method: "GET" }).handler(
     if (!conn) return { ok: false, needsConnect: true };
 
     try {
-      // Athom CloudAPI: GET /user/me returns the user object with `homeys` map.
-      const me = await athom<any>(`/user/me`, conn.access_token);
-      const rawHomeys = me?.homeys ?? me?.user?.homeys ?? null;
-      let list: AthomHomey[] = [];
-      if (Array.isArray(rawHomeys)) {
-        list = rawHomeys;
-      } else if (rawHomeys && typeof rawHomeys === "object") {
-        list = Object.values(rawHomeys) as AthomHomey[];
-      }
-      const homey = list[0] ?? null;
-      if (!homey) {
-        return {
-          ok: false,
-          needsConnect: false,
-          error: `Fant ingen Homey på kontoen (bruker: ${me?.firstname ?? me?.email ?? "ukjent"}).`,
-        };
-      }
-
-      const sessionToken = await getHomeySessionToken(homey, conn.access_token);
-
-      const [zonesObj, devicesObj] = await Promise.all([
-        homeyApi<Record<string, { id?: string; name: string }>>(
-          homey,
-          sessionToken,
-          `/api/manager/zones`,
-        ),
-        homeyApi<Record<string, any>>(homey, sessionToken, `/api/manager/devices/device`),
+      // Web API: /me/devices and /me/zones return all devices/zones the token has access to.
+      const [meRaw, zonesRaw, devicesRaw] = await Promise.all([
+        athom<any>(`/user/me`, conn.access_token).catch(() => null),
+        athom<any>(`/me/zones`, conn.access_token).catch(() => null),
+        athom<any>(`/me/devices`, conn.access_token),
       ]);
 
-      const zones: HomeyZone[] = Object.entries(zonesObj ?? {}).map(([id, z]) => ({
-        id: z.id ?? id,
-        name: z.name,
+      const homeysVal = meRaw?.homeys ?? null;
+      const firstHomey =
+        Array.isArray(homeysVal)
+          ? homeysVal[0]
+          : homeysVal && typeof homeysVal === "object"
+            ? (Object.values(homeysVal)[0] as any)
+            : null;
+      const homeName: string | null = firstHomey?.name ?? null;
+
+      const zonesList: any[] = Array.isArray(zonesRaw)
+        ? zonesRaw
+        : zonesRaw && typeof zonesRaw === "object"
+          ? Object.values(zonesRaw)
+          : [];
+      const zones: HomeyZone[] = zonesList.map((z: any, i: number) => ({
+        id: z.id ?? z._id ?? String(i),
+        name: z.name ?? "Ukjent sal",
       }));
 
-      const devices: HomeyDeviceSnapshot[] = Object.entries(devicesObj ?? {}).map(
-        ([id, d]: [string, any]) => {
-          const caps: Record<string, { value: HomeyCapValue }> = {};
-          const obj = d.capabilitiesObj ?? {};
+      const devicesList: any[] = Array.isArray(devicesRaw)
+        ? devicesRaw
+        : devicesRaw && typeof devicesRaw === "object"
+          ? Object.values(devicesRaw)
+          : [];
+
+      const devices: HomeyDeviceSnapshot[] = devicesList.map((d: any, i: number) => {
+        const caps: Record<string, { value: HomeyCapValue }> = {};
+        const obj = d.capabilitiesObj ?? d.capabilities_obj ?? {};
+        if (obj && typeof obj === "object" && !Array.isArray(obj)) {
           for (const [capId, capVal] of Object.entries(obj)) {
             const v = (capVal as any)?.value;
             caps[capId] =
@@ -158,20 +156,20 @@ export const getHomeySnapshot = createServerFn({ method: "GET" }).handler(
                 ? { value: v }
                 : { value: null };
           }
-          return {
-            id: d.id ?? id,
-            name: d.name ?? "Ukjent",
-            class: d.class,
-            zone: d.zone ?? null,
-            available: d.available !== false,
-            capabilities: caps,
-          };
-        },
-      );
+        }
+        return {
+          id: d.id ?? d._id ?? String(i),
+          name: d.name ?? "Ukjent",
+          class: d.class,
+          zone: d.zone ?? null,
+          available: d.available !== false,
+          capabilities: caps,
+        };
+      });
 
       return {
         ok: true,
-        homeName: homey.name ?? null,
+        homeName,
         zones,
         devices,
       };
