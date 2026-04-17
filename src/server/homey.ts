@@ -1,5 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import {
+  deleteHomeyConnection,
+  loadHomeyConnection,
+  saveHomeyConnection,
+  type StoredHomeyConnection,
+} from "@/server/homey-connection";
 
 // Athom OAuth endpoints
 const ATHOM_AUTH_BASE = "https://accounts.athom.com";
@@ -50,31 +55,20 @@ export type HomeySnapshot =
       needsConnect?: boolean;
     };
 
-type StoredConnection = {
-  access_token: string;
-  refresh_token: string;
-  expires_at: string;
-  athom_user_name: string | null;
-};
+type StoredConnection = StoredHomeyConnection;
 
 async function loadConnection(): Promise<StoredConnection | null> {
-  const { data, error } = await supabaseAdmin
-    .from("homey_connections")
-    .select("access_token, refresh_token, expires_at, athom_user_name")
-    .eq("provider", "athom")
-    .maybeSingle();
-  if (error) throw new Error(`Kunne ikke lese tilkobling: ${error.message}`);
-  return (data as StoredConnection | null) ?? null;
+  return loadHomeyConnection();
 }
 
-async function refreshAccessToken(refreshToken: string): Promise<StoredConnection> {
+async function refreshAccessToken(conn: StoredConnection): Promise<StoredConnection> {
   const clientId = process.env.HOMEY_CLIENT_ID;
   const clientSecret = process.env.HOMEY_CLIENT_SECRET;
   if (!clientId || !clientSecret) throw new Error("Mangler HOMEY_CLIENT_ID/SECRET");
 
   const body = new URLSearchParams({
     grant_type: "refresh_token",
-    refresh_token: refreshToken,
+    refresh_token: conn.refresh_token,
     client_id: clientId,
     client_secret: clientSecret,
   });
@@ -97,20 +91,16 @@ async function refreshAccessToken(refreshToken: string): Promise<StoredConnectio
   };
 
   const expiresAt = new Date(Date.now() + (tok.expires_in - 60) * 1000).toISOString();
-  const newRefresh = tok.refresh_token ?? refreshToken;
+  const newRefresh = tok.refresh_token ?? conn.refresh_token;
 
-  const { data, error } = await supabaseAdmin
-    .from("homey_connections")
-    .update({
+  return saveHomeyConnection({
       access_token: tok.access_token,
       refresh_token: newRefresh,
       expires_at: expiresAt,
-    })
-    .eq("provider", "athom")
-    .select("access_token, refresh_token, expires_at, athom_user_name")
-    .single();
-  if (error) throw new Error(`Kunne ikke lagre nytt token: ${error.message}`);
-  return data as StoredConnection;
+      scope: conn.scope ?? null,
+      athom_user_id: conn.athom_user_id ?? null,
+      athom_user_name: conn.athom_user_name ?? null,
+    });
 }
 
 async function getValidAccessToken(): Promise<{ token: string; conn: StoredConnection } | null> {
@@ -120,7 +110,7 @@ async function getValidAccessToken(): Promise<{ token: string; conn: StoredConne
   if (Number.isFinite(expiresMs) && expiresMs - Date.now() > 30_000) {
     return { token: conn.access_token, conn };
   }
-  const refreshed = await refreshAccessToken(conn.refresh_token);
+  const refreshed = await refreshAccessToken(conn);
   return { token: refreshed.access_token, conn: refreshed };
 }
 
@@ -279,10 +269,6 @@ export const setHomeyCapability = createServerFn({ method: "POST" })
   });
 
 export const disconnectHomey = createServerFn({ method: "POST" }).handler(async () => {
-  const { error } = await supabaseAdmin
-    .from("homey_connections")
-    .delete()
-    .eq("provider", "athom");
-  if (error) throw new Error(error.message);
+  await deleteHomeyConnection();
   return { ok: true };
 });
