@@ -79,65 +79,6 @@ async function athom<T>(path: string, accessToken: string): Promise<T> {
   return (await res.json()) as T;
 }
 
-type AthomHomey = {
-  _id?: string;
-  id?: string;
-  name?: string;
-  ip?: string;
-  ipInternal?: string;
-  remoteUrl?: string;
-  remoteForwarded?: boolean;
-};
-
-type DelegationToken = { token?: string; sessionToken?: string; access_token?: string };
-type SessionToken = { token?: string; sessionToken?: string };
-
-async function getHomeySessionToken(homey: AthomHomey, accessToken: string): Promise<string> {
-  const homeyId = (homey._id ?? homey.id) as string;
-  const cached = sessionCache.get(homeyId);
-  if (cached && cached.expiresAt > Date.now()) return cached.token;
-
-  // 1) Get delegation token from Athom cloud
-  const delegation = await athom<DelegationToken>(
-    `/delegation/token?audience=homey`,
-    accessToken,
-  );
-  const delegationToken = delegation.token ?? delegation.sessionToken ?? delegation.access_token;
-  if (!delegationToken) throw new Error("Klarte ikke hente delegation token fra Athom");
-
-  // 2) Exchange delegation token for a Homey session token via cloud relay
-  const baseUrl = `https://${homeyId}.connect.athom.com`;
-  const loginRes = await fetch(`${baseUrl}/api/manager/users/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Accept: "application/json" },
-    body: JSON.stringify({ token: delegationToken }),
-  });
-  if (!loginRes.ok) {
-    const text = await loginRes.text();
-    throw new Error(`Login til Homey feilet (${loginRes.status}): ${text.slice(0, 200)}`);
-  }
-  const session = (await loginRes.json()) as SessionToken;
-  const sessionToken = session.token ?? session.sessionToken;
-  if (!sessionToken) throw new Error("Mangler session token fra Homey");
-
-  // Cache for 50 minutes
-  sessionCache.set(homeyId, { token: sessionToken, expiresAt: Date.now() + 50 * 60 * 1000 });
-  return sessionToken;
-}
-
-async function homeyApi<T>(homey: AthomHomey, sessionToken: string, path: string): Promise<T> {
-  const homeyId = (homey._id ?? homey.id) as string;
-  const url = `https://${homeyId}.connect.athom.com${path}`;
-  const res = await fetch(url, {
-    headers: { Authorization: `Bearer ${sessionToken}`, Accept: "application/json" },
-  });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Homey ${path} feilet (${res.status}): ${text.slice(0, 200)}`);
-  }
-  return (await res.json()) as T;
-}
-
 export type HomeyCapValue = string | number | boolean | null;
 
 export type HomeyDeviceSnapshot = {
@@ -172,44 +113,42 @@ export const getHomeySnapshot = createServerFn({ method: "GET" }).handler(
     if (!conn) return { ok: false, needsConnect: true };
 
     try {
-      // Athom CloudAPI: GET /user/me returns the user object with `homeys` map.
-      const me = await athom<any>(`/user/me`, conn.access_token);
-      const rawHomeys = me?.homeys ?? me?.user?.homeys ?? null;
-      let list: AthomHomey[] = [];
-      if (Array.isArray(rawHomeys)) {
-        list = rawHomeys;
-      } else if (rawHomeys && typeof rawHomeys === "object") {
-        list = Object.values(rawHomeys) as AthomHomey[];
-      }
-      const homey = list[0] ?? null;
-      if (!homey) {
-        return {
-          ok: false,
-          needsConnect: false,
-          error: `Fant ingen Homey på kontoen (bruker: ${me?.firstname ?? me?.email ?? "ukjent"}).`,
-        };
-      }
-
-      const sessionToken = await getHomeySessionToken(homey, conn.access_token);
-
-      const [zonesObj, devicesObj] = await Promise.all([
-        homeyApi<Record<string, { id?: string; name: string }>>(
-          homey,
-          sessionToken,
-          `/api/manager/zones`,
-        ),
-        homeyApi<Record<string, any>>(homey, sessionToken, `/api/manager/devices/device`),
+      // Web API: /me/devices and /me/zones return all devices/zones the token has access to.
+      const [meRaw, zonesRaw, devicesRaw] = await Promise.all([
+        athom<any>(`/user/me`, conn.access_token).catch(() => null),
+        athom<any>(`/me/zones`, conn.access_token).catch(() => null),
+        athom<any>(`/me/devices`, conn.access_token),
       ]);
 
-      const zones: HomeyZone[] = Object.entries(zonesObj ?? {}).map(([id, z]) => ({
-        id: z.id ?? id,
-        name: z.name,
+      const homeysVal = meRaw?.homeys ?? null;
+      const firstHomey =
+        Array.isArray(homeysVal)
+          ? homeysVal[0]
+          : homeysVal && typeof homeysVal === "object"
+            ? (Object.values(homeysVal)[0] as any)
+            : null;
+      const homeName: string | null = firstHomey?.name ?? null;
+
+      const zonesList: any[] = Array.isArray(zonesRaw)
+        ? zonesRaw
+        : zonesRaw && typeof zonesRaw === "object"
+          ? Object.values(zonesRaw)
+          : [];
+      const zones: HomeyZone[] = zonesList.map((z: any, i: number) => ({
+        id: z.id ?? z._id ?? String(i),
+        name: z.name ?? "Ukjent sal",
       }));
 
-      const devices: HomeyDeviceSnapshot[] = Object.entries(devicesObj ?? {}).map(
-        ([id, d]: [string, any]) => {
-          const caps: Record<string, { value: HomeyCapValue }> = {};
-          const obj = d.capabilitiesObj ?? {};
+      const devicesList: any[] = Array.isArray(devicesRaw)
+        ? devicesRaw
+        : devicesRaw && typeof devicesRaw === "object"
+          ? Object.values(devicesRaw)
+          : [];
+
+      const devices: HomeyDeviceSnapshot[] = devicesList.map((d: any, i: number) => {
+        const caps: Record<string, { value: HomeyCapValue }> = {};
+        const obj = d.capabilitiesObj ?? d.capabilities_obj ?? {};
+        if (obj && typeof obj === "object" && !Array.isArray(obj)) {
           for (const [capId, capVal] of Object.entries(obj)) {
             const v = (capVal as any)?.value;
             caps[capId] =
@@ -217,20 +156,20 @@ export const getHomeySnapshot = createServerFn({ method: "GET" }).handler(
                 ? { value: v }
                 : { value: null };
           }
-          return {
-            id: d.id ?? id,
-            name: d.name ?? "Ukjent",
-            class: d.class,
-            zone: d.zone ?? null,
-            available: d.available !== false,
-            capabilities: caps,
-          };
-        },
-      );
+        }
+        return {
+          id: d.id ?? d._id ?? String(i),
+          name: d.name ?? "Ukjent",
+          class: d.class,
+          zone: d.zone ?? null,
+          available: d.available !== false,
+          capabilities: caps,
+        };
+      });
 
       return {
         ok: true,
-        homeName: homey.name ?? null,
+        homeName,
         zones,
         devices,
       };
