@@ -1,8 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { PageShell, PageHero } from "@/components/PageShell";
+import { WeatherWidget } from "@/components/WeatherWidget";
 import arnePortrait from "@/assets/arne-portrait.jpg";
 import rebekkaPortrait from "@/assets/rebekka-portrait.jpg";
 import heroImg from "@/assets/hero-westeros.jpg";
+
+// Coordinates
+const HYTTA = { lat: 59.8733, lon: 9.4297 }; // Øvre Bjørkesetvegen 123, Flesberg
+const TOLLNES = { lat: 59.1789, lon: 9.5732 }; // Tollnes, Skien
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -40,7 +45,7 @@ function Home() {
           </span>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-8">
+        <div className="grid grid-cols-2 gap-4 sm:gap-6 max-w-2xl mx-auto">
           <PortraitCard
             name="Arne Riis"
             title="Lord av Skien"
@@ -52,6 +57,30 @@ function Home() {
             title="Lady av Skien"
             words="Sterk som vinterstormen"
             image={rebekkaPortrait}
+          />
+        </div>
+      </section>
+
+      <section className="container mx-auto px-4 pb-16">
+        <div className="ornate-divider mb-8">
+          <span className="text-display tracking-[0.3em] text-primary text-sm uppercase">
+            Værens ravner
+          </span>
+        </div>
+        <div className="grid md:grid-cols-2 gap-5">
+          <WeatherWidget
+            title="Hytta · Kommende helg"
+            subtitle="Øvre Bjørkesetvegen 123, Flesberg"
+            lat={HYTTA.lat}
+            lon={HYTTA.lon}
+            mode="weekend"
+          />
+          <WeatherWidget
+            title="Tollnes · I morgen"
+            subtitle="Tollnes, Skien"
+            lat={TOLLNES.lat}
+            lon={TOLLNES.lon}
+            mode="tomorrow"
           />
         </div>
       </section>
