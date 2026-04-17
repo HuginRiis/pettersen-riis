@@ -14,6 +14,16 @@ const links = [
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    try {
+      await logoutFn();
+    } finally {
+      await router.invalidate();
+      router.navigate({ to: "/login" });
+    }
+  };
 
   return (
     <header className="sticky top-0 z-50 backdrop-blur-md bg-background/80 border-b border-border">
