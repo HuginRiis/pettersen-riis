@@ -103,6 +103,8 @@ function Home() {
           <HallCard to="/agenda" title="Send melding" desc="Skriv en kort hilsen til kalenderen." icon="🪶" />
         </div>
       </section>
+
+      <TollnesCameraStrip />
     </PageShell>
   );
 }
