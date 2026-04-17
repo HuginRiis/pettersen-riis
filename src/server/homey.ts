@@ -79,65 +79,6 @@ async function athom<T>(path: string, accessToken: string): Promise<T> {
   return (await res.json()) as T;
 }
 
-type AthomHomey = {
-  _id?: string;
-  id?: string;
-  name?: string;
-  ip?: string;
-  ipInternal?: string;
-  remoteUrl?: string;
-  remoteForwarded?: boolean;
-};
-
-type DelegationToken = { token?: string; sessionToken?: string; access_token?: string };
-type SessionToken = { token?: string; sessionToken?: string };
-
-async function getHomeySessionToken(homey: AthomHomey, accessToken: string): Promise<string> {
-  const homeyId = (homey._id ?? homey.id) as string;
-  const cached = sessionCache.get(homeyId);
-  if (cached && cached.expiresAt > Date.now()) return cached.token;
-
-  // 1) Get delegation token from Athom cloud
-  const delegation = await athom<DelegationToken>(
-    `/delegation/token?audience=homey`,
-    accessToken,
-  );
-  const delegationToken = delegation.token ?? delegation.sessionToken ?? delegation.access_token;
-  if (!delegationToken) throw new Error("Klarte ikke hente delegation token fra Athom");
-
-  // 2) Exchange delegation token for a Homey session token via cloud relay
-  const baseUrl = `https://${homeyId}.connect.athom.com`;
-  const loginRes = await fetch(`${baseUrl}/api/manager/users/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Accept: "application/json" },
-    body: JSON.stringify({ token: delegationToken }),
-  });
-  if (!loginRes.ok) {
-    const text = await loginRes.text();
-    throw new Error(`Login til Homey feilet (${loginRes.status}): ${text.slice(0, 200)}`);
-  }
-  const session = (await loginRes.json()) as SessionToken;
-  const sessionToken = session.token ?? session.sessionToken;
-  if (!sessionToken) throw new Error("Mangler session token fra Homey");
-
-  // Cache for 50 minutes
-  sessionCache.set(homeyId, { token: sessionToken, expiresAt: Date.now() + 50 * 60 * 1000 });
-  return sessionToken;
-}
-
-async function homeyApi<T>(homey: AthomHomey, sessionToken: string, path: string): Promise<T> {
-  const homeyId = (homey._id ?? homey.id) as string;
-  const url = `https://${homeyId}.connect.athom.com${path}`;
-  const res = await fetch(url, {
-    headers: { Authorization: `Bearer ${sessionToken}`, Accept: "application/json" },
-  });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Homey ${path} feilet (${res.status}): ${text.slice(0, 200)}`);
-  }
-  return (await res.json()) as T;
-}
-
 export type HomeyCapValue = string | number | boolean | null;
 
 export type HomeyDeviceSnapshot = {
