@@ -138,13 +138,15 @@ async function homeyApi<T>(homey: AthomHomey, sessionToken: string, path: string
   return (await res.json()) as T;
 }
 
+export type HomeyCapValue = string | number | boolean | null;
+
 export type HomeyDeviceSnapshot = {
   id: string;
   name: string;
   class?: string;
   zone?: string | null;
   available?: boolean;
-  capabilities: Record<string, { value: unknown }>;
+  capabilities: Record<string, { value: HomeyCapValue }>;
 };
 
 export type HomeyZone = { id: string; name: string };
@@ -195,10 +197,14 @@ export const getHomeySnapshot = createServerFn({ method: "GET" }).handler(
 
       const devices: HomeyDeviceSnapshot[] = Object.entries(devicesObj ?? {}).map(
         ([id, d]: [string, any]) => {
-          const caps: Record<string, { value: unknown }> = {};
+          const caps: Record<string, { value: HomeyCapValue }> = {};
           const obj = d.capabilitiesObj ?? {};
           for (const [capId, capVal] of Object.entries(obj)) {
-            caps[capId] = { value: (capVal as any)?.value ?? null };
+            const v = (capVal as any)?.value;
+            caps[capId] =
+              typeof v === "string" || typeof v === "number" || typeof v === "boolean"
+                ? { value: v }
+                : { value: null };
           }
           return {
             id: d.id ?? id,
