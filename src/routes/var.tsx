@@ -68,7 +68,8 @@ function WeatherPage() {
     });
   }, []);
 
-  const pollen = pollenForToday();
+  const pollenSkien = pollenForToday("skien");
+  const pollenHytta = pollenForToday("hytta");
 
   return (
     <PageShell>
@@ -80,38 +81,43 @@ function WeatherPage() {
       />
 
       <section className="container mx-auto px-4 py-12 space-y-12">
-        <div>
-          <div className="ornate-divider mb-6">
-            <span className="text-display tracking-[0.3em] text-primary text-sm uppercase">
-              Pollenvarsel
-            </span>
-          </div>
-          <div className="grid sm:grid-cols-3 gap-4">
-            {pollen.map((p) => (
-              <div key={p.name} className="panel rounded-lg p-5">
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-lg text-foreground">{p.name}</h3>
-                  <span
-                    className="text-xs uppercase tracking-wider px-2 py-0.5 rounded border"
-                    style={{ borderColor: p.color, color: p.color }}
-                  >
-                    {p.level}
-                  </span>
+        {[
+          { key: "skien", label: "Skien · Tollnes", items: pollenSkien },
+          { key: "hytta", label: "Hytta · Lyngdal i Numedal", items: pollenHytta },
+        ].map((group) => (
+          <div key={group.key}>
+            <div className="ornate-divider mb-6">
+              <span className="text-display tracking-[0.3em] text-primary text-sm uppercase">
+                Pollenvarsel — {group.label}
+              </span>
+            </div>
+            <div className="grid sm:grid-cols-3 gap-4">
+              {group.items.map((p) => (
+                <div key={p.name} className="panel rounded-lg p-5">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-lg text-foreground">{p.name}</h3>
+                    <span
+                      className="text-xs uppercase tracking-wider px-2 py-0.5 rounded border"
+                      style={{ borderColor: p.color, color: p.color }}
+                    >
+                      {p.level}
+                    </span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">{p.note}</p>
+                  <div className="mt-3 h-1.5 rounded-full bg-muted overflow-hidden">
+                    <div
+                      className="h-full rounded-full"
+                      style={{ width: `${p.intensity}%`, backgroundColor: p.color }}
+                    />
+                  </div>
                 </div>
-                <p className="text-sm text-muted-foreground">{p.note}</p>
-                <div className="mt-3 h-1.5 rounded-full bg-muted overflow-hidden">
-                  <div
-                    className="h-full rounded-full"
-                    style={{ width: `${p.intensity}%`, backgroundColor: p.color }}
-                  />
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
+            <p className="mt-3 text-xs text-muted-foreground italic">
+              Estimat basert på sesong (NAAF). For sanntidsvarsel se naaf.no.
+            </p>
           </div>
-          <p className="mt-3 text-xs text-muted-foreground italic">
-            Estimat basert på sesong (NAAF). For sanntidsvarsel se naaf.no.
-          </p>
-        </div>
+        ))}
 
         {LOCATIONS.map((loc) => {
           const s = state[loc.key];
@@ -225,55 +231,85 @@ type Pollen = {
   note: string;
 };
 
-// Approx seasonal pollen for Sør-Norge / Skien (NAAF veiledning)
-function pollenForToday(): Pollen[] {
+// Approx seasonal pollen (NAAF veiledning).
+// "skien" = lavland Sør-Norge, "hytta" = innland/høyere Numedal (1-2 uker forsinket, kortere sesong)
+function pollenForToday(region: "skien" | "hytta" = "skien"): Pollen[] {
   const month = new Date().getMonth() + 1; // 1-12
+  const isHytta = region === "hytta";
   const items = [
     {
       name: "Or",
-      ...rate(month, [
-        { months: [2, 3], level: "Høy", intensity: 80 },
-        { months: [1, 4], level: "Lav", intensity: 25 },
-      ]),
+      ...rate(month, isHytta
+        ? [
+            { months: [3, 4], level: "Høy", intensity: 75 },
+            { months: [2, 5], level: "Lav", intensity: 20 },
+          ]
+        : [
+            { months: [2, 3], level: "Høy", intensity: 80 },
+            { months: [1, 4], level: "Lav", intensity: 25 },
+          ]),
       note: "Or blomstrer tidlig vår.",
     },
     {
       name: "Hassel",
-      ...rate(month, [
-        { months: [2, 3], level: "Moderat", intensity: 55 },
-        { months: [1, 4], level: "Lav", intensity: 20 },
-      ]),
+      ...rate(month, isHytta
+        ? [
+            { months: [3, 4], level: "Moderat", intensity: 50 },
+            { months: [2, 5], level: "Lav", intensity: 18 },
+          ]
+        : [
+            { months: [2, 3], level: "Moderat", intensity: 55 },
+            { months: [1, 4], level: "Lav", intensity: 20 },
+          ]),
       note: "Hassel kommer ofte sammen med or.",
     },
     {
       name: "Bjørk",
-      ...rate(month, [
-        { months: [4, 5], level: "Høy", intensity: 90 },
-        { months: [6], level: "Moderat", intensity: 40 },
-      ]),
-      note: "Den vanligste pollenallergien i Norge.",
+      ...rate(month, isHytta
+        ? [
+            { months: [5, 6], level: "Høy", intensity: 95 },
+            { months: [4, 7], level: "Moderat", intensity: 45 },
+          ]
+        : [
+            { months: [4, 5], level: "Høy", intensity: 90 },
+            { months: [6], level: "Moderat", intensity: 40 },
+          ]),
+      note: isHytta
+        ? "Bjørkesesongen kommer 1-2 uker senere i Numedal."
+        : "Den vanligste pollenallergien i Norge.",
     },
     {
       name: "Gress",
-      ...rate(month, [
-        { months: [6, 7], level: "Høy", intensity: 85 },
-        { months: [5, 8], level: "Moderat", intensity: 50 },
-      ]),
+      ...rate(month, isHytta
+        ? [
+            { months: [6, 7], level: "Høy", intensity: 80 },
+            { months: [8], level: "Moderat", intensity: 45 },
+          ]
+        : [
+            { months: [6, 7], level: "Høy", intensity: 85 },
+            { months: [5, 8], level: "Moderat", intensity: 50 },
+          ]),
       note: "Toppsesong midtsommer.",
     },
     {
       name: "Burot",
-      ...rate(month, [
-        { months: [7, 8], level: "Moderat", intensity: 60 },
-        { months: [9], level: "Lav", intensity: 25 },
-      ]),
-      note: "Sensommer-allergen.",
+      ...rate(month, isHytta
+        ? [
+            { months: [7, 8], level: "Lav", intensity: 25 },
+          ]
+        : [
+            { months: [7, 8], level: "Moderat", intensity: 60 },
+            { months: [9], level: "Lav", intensity: 25 },
+          ]),
+      note: isHytta
+        ? "Mindre burot i innlandet/fjellet."
+        : "Sensommer-allergen.",
     },
     {
       name: "Salix",
-      ...rate(month, [
-        { months: [4, 5], level: "Moderat", intensity: 50 },
-      ]),
+      ...rate(month, isHytta
+        ? [{ months: [5, 6], level: "Moderat", intensity: 55 }]
+        : [{ months: [4, 5], level: "Moderat", intensity: 50 }]),
       note: "Selje/vier om våren.",
     },
   ];
