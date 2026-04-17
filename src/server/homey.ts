@@ -1,7 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
-// Homey Cloud API base. The PAT identifies the user; the API resolves to their Homey.
-const HOMEY_API_BASE = "https://api.athom.com";
+// Athom OAuth endpoints
+const ATHOM_AUTH_BASE = "https://accounts.athom.com";
+const ATHOM_API_BASE = "https://api.athom.com";
+
+export const HOMEY_SCOPES = ["homey", "homey.device.readonly", "homey.device.control"];
 
 type HomeyZone = {
   id: string;
@@ -32,164 +36,234 @@ type HomeyDevice = {
   capabilities: Record<string, HomeyCapability>;
 };
 
-export type HomeySnapshot = {
-  ok: true;
-  homeName?: string;
-  zones: HomeyZone[];
-  devices: HomeyDevice[];
-} | {
-  ok: false;
-  error: string;
-  status?: number;
+export type HomeySnapshot =
+  | {
+      ok: true;
+      homeName?: string;
+      zones: HomeyZone[];
+      devices: HomeyDevice[];
+    }
+  | {
+      ok: false;
+      error: string;
+      status?: number;
+      needsConnect?: boolean;
+    };
+
+type StoredConnection = {
+  access_token: string;
+  refresh_token: string;
+  expires_at: string;
+  athom_user_name: string | null;
 };
 
-function normalizeHomeyToken(rawToken: string) {
-  return rawToken.trim().replace(/^Bearer\s+/i, "");
+async function loadConnection(): Promise<StoredConnection | null> {
+  const { data, error } = await supabaseAdmin
+    .from("homey_connections")
+    .select("access_token, refresh_token, expires_at, athom_user_name")
+    .eq("provider", "athom")
+    .maybeSingle();
+  if (error) throw new Error(`Kunne ikke lese tilkobling: ${error.message}`);
+  return (data as StoredConnection | null) ?? null;
+}
+
+async function refreshAccessToken(refreshToken: string): Promise<StoredConnection> {
+  const clientId = process.env.HOMEY_CLIENT_ID;
+  const clientSecret = process.env.HOMEY_CLIENT_SECRET;
+  if (!clientId || !clientSecret) throw new Error("Mangler HOMEY_CLIENT_ID/SECRET");
+
+  const body = new URLSearchParams({
+    grant_type: "refresh_token",
+    refresh_token: refreshToken,
+    client_id: clientId,
+    client_secret: clientSecret,
+  });
+
+  const res = await fetch(`${ATHOM_AUTH_BASE}/oauth2/token`, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded", Accept: "application/json" },
+    body,
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Refresh feilet (${res.status}): ${text.slice(0, 200)}`);
+  }
+
+  const tok = (await res.json()) as {
+    access_token: string;
+    refresh_token?: string;
+    expires_in: number;
+  };
+
+  const expiresAt = new Date(Date.now() + (tok.expires_in - 60) * 1000).toISOString();
+  const newRefresh = tok.refresh_token ?? refreshToken;
+
+  const { data, error } = await supabaseAdmin
+    .from("homey_connections")
+    .update({
+      access_token: tok.access_token,
+      refresh_token: newRefresh,
+      expires_at: expiresAt,
+    })
+    .eq("provider", "athom")
+    .select("access_token, refresh_token, expires_at, athom_user_name")
+    .single();
+  if (error) throw new Error(`Kunne ikke lagre nytt token: ${error.message}`);
+  return data as StoredConnection;
+}
+
+async function getValidAccessToken(): Promise<{ token: string; conn: StoredConnection } | null> {
+  const conn = await loadConnection();
+  if (!conn) return null;
+  const expiresMs = new Date(conn.expires_at).getTime();
+  if (Number.isFinite(expiresMs) && expiresMs - Date.now() > 30_000) {
+    return { token: conn.access_token, conn };
+  }
+  const refreshed = await refreshAccessToken(conn.refresh_token);
+  return { token: refreshed.access_token, conn: refreshed };
 }
 
 async function homeyFetch(path: string, token: string) {
-  const res = await fetch(`${HOMEY_API_BASE}${path}`, {
-    headers: {
-      Authorization: `Bearer ${normalizeHomeyToken(token)}`,
-      Accept: "application/json",
-    },
+  return fetch(`${ATHOM_API_BASE}${path}`, {
+    headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
   });
-  return res;
 }
 
-/**
- * Resolve the user's first Homey (webhook URL) from /user/me, then return the
- * Homey-specific base URL we should use for device/zone calls.
- */
-async function resolveHomeyBase(token: string): Promise<{ base: string; name?: string } | { error: string; status: number }> {
+async function resolveHomeyBase(
+  token: string,
+): Promise<{ base: string; name?: string } | { error: string; status: number }> {
   const meRes = await homeyFetch("/user/me", token);
   if (!meRes.ok) {
     const text = await meRes.text();
     return { error: `Homey /user/me feilet: ${text.slice(0, 200)}`, status: meRes.status };
   }
   const me = await meRes.json();
-  const homeys: Array<{ id: string; name?: string; remoteUrl?: string; localUrl?: string }> =
+  const homeys: Array<{ id: string; name?: string; remoteUrl?: string }> =
     me?.homeys ?? me?.user?.homeys ?? [];
-  if (!homeys.length) {
-    return { error: "Ingen Homey funnet på kontoen", status: 404 };
-  }
+  if (!homeys.length) return { error: "Ingen Homey funnet på kontoen", status: 404 };
   const homey = homeys[0];
-  const base =
-    homey.remoteUrl?.replace(/\/$/, "") ||
-    `https://${homey.id}.connect.athom.com`;
+  const base = homey.remoteUrl?.replace(/\/$/, "") || `https://${homey.id}.connect.athom.com`;
   return { base, name: homey.name };
 }
 
-export const getHomeySnapshot = createServerFn({ method: "GET" }).handler(async (): Promise<HomeySnapshot> => {
-  const token = process.env.HOMEY_PAT;
-  if (!token) {
-    return { ok: false, error: "HOMEY_PAT mangler i serverkonfigurasjonen" };
-  }
-
-  const normalizedToken = normalizeHomeyToken(token);
-  const resolved = await resolveHomeyBase(normalizedToken);
-  if ("error" in resolved) {
-    return { ok: false, error: resolved.error, status: resolved.status };
-  }
-
-  // Fetch zones and devices in parallel
-  const [zonesRes, devicesRes] = await Promise.all([
-    fetch(`${resolved.base}/api/manager/zones/zone/`, {
-      headers: { Authorization: `Bearer ${normalizedToken}`, Accept: "application/json" },
-    }),
-    fetch(`${resolved.base}/api/manager/devices/device/`, {
-      headers: { Authorization: `Bearer ${normalizedToken}`, Accept: "application/json" },
-    }),
-  ]);
-
-  if (!zonesRes.ok || !devicesRes.ok) {
-    const status = !zonesRes.ok ? zonesRes.status : devicesRes.status;
-    const body = !zonesRes.ok ? await zonesRes.text() : await devicesRes.text();
-    return { ok: false, error: `Homey API feilet (${status}): ${body.slice(0, 200)}`, status };
-  }
-
-  const zonesRaw = (await zonesRes.json()) as Record<string, { id: string; name: string; parent?: string | null }>;
-  const devicesRaw = (await devicesRes.json()) as Record<string, any>;
-
-  const zones: HomeyZone[] = Object.values(zonesRaw).map((z) => ({
-    id: z.id,
-    name: z.name,
-    parent: z.parent ?? null,
-  }));
-
-  const zoneNameById = new Map(zones.map((z) => [z.id, z.name]));
-
-  const devices: HomeyDevice[] = Object.values(devicesRaw).map((d) => {
-    const caps: Record<string, HomeyCapability> = {};
-    const capsObj = d.capabilitiesObj ?? {};
-    for (const [capId, cap] of Object.entries<any>(capsObj)) {
-      const raw = cap?.value;
-      const value: HomeyCapValue =
-        raw === null || raw === undefined
-          ? null
-          : typeof raw === "string" || typeof raw === "number" || typeof raw === "boolean"
-            ? raw
-            : null;
-      caps[capId] = {
-        id: capId,
-        type: cap?.type,
-        title: cap?.title,
-        units: cap?.units,
-        value,
-        getable: cap?.getable,
-        setable: cap?.setable,
-      };
-    }
-    return {
-      id: d.id,
-      name: d.name,
-      zone: d.zone ?? null,
-      zoneName: d.zone ? zoneNameById.get(d.zone) : undefined,
-      class: d.class,
-      iconObj: d.iconObj ?? null,
-      available: d.available,
-      capabilities: caps,
-    };
-  });
-
+export const getHomeyConnectionStatus = createServerFn({ method: "GET" }).handler(async () => {
+  const conn = await loadConnection();
+  if (!conn) return { connected: false as const };
   return {
-    ok: true,
-    homeName: resolved.name,
-    zones,
-    devices,
+    connected: true as const,
+    accountName: conn.athom_user_name ?? null,
   };
 });
 
-export const setHomeyCapability = createServerFn({ method: "POST" })
-  .inputValidator((input: { deviceId: string; capabilityId: string; value: HomeyCapValue }) => {
-    if (
-      typeof input?.deviceId !== "string" ||
-      typeof input?.capabilityId !== "string" ||
-      input.deviceId.length === 0 ||
-      input.deviceId.length > 200 ||
-      input.capabilityId.length === 0 ||
-      input.capabilityId.length > 200
-    ) {
-      throw new Error("Ugyldig forespørsel");
+export const getHomeySnapshot = createServerFn({ method: "GET" }).handler(
+  async (): Promise<HomeySnapshot> => {
+    const valid = await getValidAccessToken();
+    if (!valid) {
+      return { ok: false, error: "Homey er ikke koblet til ennå.", needsConnect: true };
     }
-    return input;
-  })
-  .handler(async ({ data }) => {
-    const token = process.env.HOMEY_PAT;
-    if (!token) throw new Error("HOMEY_PAT mangler");
 
-    const normalizedToken = normalizeHomeyToken(token);
-    const resolved = await resolveHomeyBase(normalizedToken);
+    const resolved = await resolveHomeyBase(valid.token);
     if ("error" in resolved) {
-      throw new Error(resolved.error);
+      return { ok: false, error: resolved.error, status: resolved.status };
     }
+
+    const [zonesRes, devicesRes] = await Promise.all([
+      fetch(`${resolved.base}/api/manager/zones/zone/`, {
+        headers: { Authorization: `Bearer ${valid.token}`, Accept: "application/json" },
+      }),
+      fetch(`${resolved.base}/api/manager/devices/device/`, {
+        headers: { Authorization: `Bearer ${valid.token}`, Accept: "application/json" },
+      }),
+    ]);
+
+    if (!zonesRes.ok || !devicesRes.ok) {
+      const status = !zonesRes.ok ? zonesRes.status : devicesRes.status;
+      const body = !zonesRes.ok ? await zonesRes.text() : await devicesRes.text();
+      return { ok: false, error: `Homey API feilet (${status}): ${body.slice(0, 200)}`, status };
+    }
+
+    const zonesRaw = (await zonesRes.json()) as Record<
+      string,
+      { id: string; name: string; parent?: string | null }
+    >;
+    const devicesRaw = (await devicesRes.json()) as Record<string, any>;
+
+    const zones: HomeyZone[] = Object.values(zonesRaw).map((z) => ({
+      id: z.id,
+      name: z.name,
+      parent: z.parent ?? null,
+    }));
+    const zoneNameById = new Map(zones.map((z) => [z.id, z.name]));
+
+    const devices: HomeyDevice[] = Object.values(devicesRaw).map((d) => {
+      const caps: Record<string, HomeyCapability> = {};
+      const capsObj = d.capabilitiesObj ?? {};
+      for (const [capId, cap] of Object.entries<any>(capsObj)) {
+        const raw = cap?.value;
+        const value: HomeyCapValue =
+          raw === null || raw === undefined
+            ? null
+            : typeof raw === "string" || typeof raw === "number" || typeof raw === "boolean"
+              ? raw
+              : null;
+        caps[capId] = {
+          id: capId,
+          type: cap?.type,
+          title: cap?.title,
+          units: cap?.units,
+          value,
+          getable: cap?.getable,
+          setable: cap?.setable,
+        };
+      }
+      return {
+        id: d.id,
+        name: d.name,
+        zone: d.zone ?? null,
+        zoneName: d.zone ? zoneNameById.get(d.zone) : undefined,
+        class: d.class,
+        iconObj: d.iconObj ?? null,
+        available: d.available,
+        capabilities: caps,
+      };
+    });
+
+    return { ok: true, homeName: resolved.name, zones, devices };
+  },
+);
+
+export const setHomeyCapability = createServerFn({ method: "POST" })
+  .inputValidator(
+    (input: { deviceId: string; capabilityId: string; value: HomeyCapValue }) => {
+      if (
+        typeof input?.deviceId !== "string" ||
+        typeof input?.capabilityId !== "string" ||
+        input.deviceId.length === 0 ||
+        input.deviceId.length > 200 ||
+        input.capabilityId.length === 0 ||
+        input.capabilityId.length > 200
+      ) {
+        throw new Error("Ugyldig forespørsel");
+      }
+      return input;
+    },
+  )
+  .handler(async ({ data }) => {
+    const valid = await getValidAccessToken();
+    if (!valid) throw new Error("Homey er ikke koblet til. Koble til først.");
+
+    const resolved = await resolveHomeyBase(valid.token);
+    if ("error" in resolved) throw new Error(resolved.error);
 
     const res = await fetch(
-      `${resolved.base}/api/manager/devices/device/${encodeURIComponent(data.deviceId)}/capability/${encodeURIComponent(data.capabilityId)}`,
+      `${resolved.base}/api/manager/devices/device/${encodeURIComponent(
+        data.deviceId,
+      )}/capability/${encodeURIComponent(data.capabilityId)}`,
       {
         method: "PUT",
         headers: {
-          Authorization: `Bearer ${normalizedToken}`,
+          Authorization: `Bearer ${valid.token}`,
           "Content-Type": "application/json",
           Accept: "application/json",
         },
@@ -201,6 +275,14 @@ export const setHomeyCapability = createServerFn({ method: "POST" })
       const text = await res.text();
       throw new Error(`Klarte ikke styre enhet (${res.status}): ${text.slice(0, 200)}`);
     }
-
     return { ok: true };
   });
+
+export const disconnectHomey = createServerFn({ method: "POST" }).handler(async () => {
+  const { error } = await supabaseAdmin
+    .from("homey_connections")
+    .delete()
+    .eq("provider", "athom");
+  if (error) throw new Error(error.message);
+  return { ok: true };
+});
