@@ -251,6 +251,20 @@ function SmarthusPage() {
             value={totalPower > 0 ? formatPower(totalPower) : "—"}
             hint="Alle sale"
           />
+          {pulseDevice && (
+            <Stat
+              label="Pulse · Hytta"
+              value={pulsePower !== null ? formatPower(Math.abs(pulsePower)) : "—"}
+              hint={
+                pulsePower === null
+                  ? "Ingen avlesning"
+                  : pulsePower < 0
+                    ? `↑ Tjener på strøm${pulseToday !== null ? ` · ${pulseToday.toFixed(1)} kWh i dag` : ""}`
+                    : `↓ Bruker strøm${pulseToday !== null ? ` · ${pulseToday.toFixed(1)} kWh i dag` : ""}`
+              }
+              tone={pulsePower !== null && pulsePower < 0 ? "primary" : "default"}
+            />
+          )}
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Stat label="Snitt-varme" value={avgTemp ? `${avgTemp}°` : "—"} />
