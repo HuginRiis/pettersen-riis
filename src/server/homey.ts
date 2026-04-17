@@ -366,6 +366,30 @@ async function findCameraDevice(
   };
 }
 
+async function fetchImageById(
+  baseUrl: string,
+  sessionToken: string,
+  imageId: string,
+): Promise<{ buffer: ArrayBuffer; contentType: string }> {
+  // Try a few known Homey image endpoints
+  const candidates = [
+    `${baseUrl}/api/image/${imageId}/image`,
+    `${baseUrl}/api/image/${imageId}`,
+    `${baseUrl}/api/manager/images/image/${imageId}/image`,
+  ];
+  let lastErr: Error | null = null;
+  for (const url of candidates) {
+    try {
+      return await fetchBinary(url, {
+        headers: { Authorization: `Bearer ${sessionToken}`, Accept: "image/*" },
+      });
+    } catch (e: any) {
+      lastErr = e;
+    }
+  }
+  throw lastErr ?? new Error("Fant ikke bilde");
+}
+
 async function tryCameraSnapshot(
   sessionToken: string,
   baseUrl: string,
@@ -373,48 +397,79 @@ async function tryCameraSnapshot(
 ): Promise<{ buffer: ArrayBuffer; contentType: string }> {
   const apiBase = `${baseUrl}/api`;
 
-  // Strategy 1: trigger a fresh snapshot via Homey camera manager,
-  // which returns { url } pointing to /api/image/<id>
-  try {
-    const created = await fetch(
-      `${apiBase}/manager/devices/device/${device.id}/snapshot`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${sessionToken}`,
-          Accept: "application/json",
-        },
-      },
-    );
-    if (created.ok) {
-      const text = await created.text();
-      let imageUrl: string | null = null;
-      try {
-        const parsed = JSON.parse(text);
-        imageUrl =
-          parsed?.url ??
-          parsed?.imageUrl ??
-          parsed?.image?.url ??
-          (typeof parsed === "string" ? parsed : null);
-      } catch {
-        if (text.startsWith("/")) imageUrl = text;
+  // Strategy 1: device.images array (most cameras expose this)
+  const images = Array.isArray(device.raw?.images) ? device.raw.images : [];
+  if (images.length > 0) {
+    const lastErrors: string[] = [];
+    // Prefer the last image (typically newest snapshot)
+    for (const img of [...images].reverse()) {
+      const imgId =
+        img?.id ??
+        img?._id ??
+        img?.imageId ??
+        (typeof img?.url === "string" ? img.url.split("/").filter(Boolean).pop() : null);
+      const directUrl = typeof img?.url === "string" ? img.url : null;
+
+      if (directUrl) {
+        try {
+          const fullUrl = directUrl.startsWith("http") ? directUrl : `${baseUrl}${directUrl}`;
+          return await fetchBinary(fullUrl, {
+            headers: { Authorization: `Bearer ${sessionToken}`, Accept: "image/*" },
+          });
+        } catch (e: any) {
+          lastErrors.push(`url ${directUrl}: ${e?.message ?? e}`);
+        }
       }
-      if (imageUrl) {
-        const fullUrl = imageUrl.startsWith("http") ? imageUrl : `${baseUrl}${imageUrl}`;
-        return await fetchBinary(fullUrl, {
-          headers: { Authorization: `Bearer ${sessionToken}` },
-        });
+      if (imgId) {
+        try {
+          return await fetchImageById(baseUrl, sessionToken, imgId);
+        } catch (e: any) {
+          lastErrors.push(`id ${imgId}: ${e?.message ?? e}`);
+        }
       }
     }
-  } catch {
-    // continue to next strategy
+    if (lastErrors.length > 0) {
+      throw new Error(`Klarte ikke hente kamera-bilde (${lastErrors.join(" | ")})`);
+    }
   }
 
-  // Strategy 2: read existing camera image cached by Homey
-  const direct = `${apiBase}/manager/devices/device/${device.id}/snapshot`;
-  return await fetchBinary(direct, {
-    headers: { Authorization: `Bearer ${sessionToken}`, Accept: "image/*" },
-  });
+  // Strategy 2: refresh capability (camera devices often support this) then re-fetch device
+  try {
+    await fetch(`${apiBase}/manager/devices/device/${device.id}/capability/camera_refresh`, {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${sessionToken}`,
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({ value: true }),
+    });
+  } catch {
+    // ignore — fall through
+  }
+
+  const refreshed = await fetchJson<any>(
+    `${apiBase}/manager/devices/device/${device.id}`,
+    sessionToken,
+  );
+  const imgs2 = Array.isArray(refreshed?.images) ? refreshed.images : [];
+  if (imgs2.length > 0) {
+    const last = imgs2[imgs2.length - 1];
+    const imgId = last?.id ?? last?._id ?? last?.imageId;
+    if (last?.url) {
+      const fullUrl = String(last.url).startsWith("http")
+        ? last.url
+        : `${baseUrl}${last.url}`;
+      return await fetchBinary(fullUrl, {
+        headers: { Authorization: `Bearer ${sessionToken}`, Accept: "image/*" },
+      });
+    }
+    if (imgId) {
+      return await fetchImageById(baseUrl, sessionToken, imgId);
+    }
+  }
+
+  throw new Error("Kameraet eksponerer ingen bilder via Homey API");
 }
 
 export const getTollnesCameraSnapshot = createServerFn({ method: "GET" }).handler(
