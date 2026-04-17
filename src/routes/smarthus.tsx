@@ -169,12 +169,57 @@ function SmarthusPage() {
         image={heroImg}
       />
 
-      <section className="container mx-auto px-4 pt-10">
+      <section className="container mx-auto px-4 pt-10 space-y-4">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Stat label="Tjenere" value={String(totalDevices)} />
           <Stat label="Sale" value={String(zoneEntries.length)} />
-          <Stat label="Ildsteler" value={String(lights)} />
+          <Stat
+            label="Tente ildsteder"
+            value={`${litLights} / ${lights.length}`}
+            hint={litLights > 0 ? "Lyset brenner" : "Mørke i salene"}
+            tone={litLights > 0 ? "primary" : "muted"}
+          />
+          <Stat
+            label="Effekt nå"
+            value={totalPower > 0 ? formatPower(totalPower) : "—"}
+            hint="Hjemme · sanntid"
+          />
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Stat label="Snitt-varme" value={avgTemp ? `${avgTemp}°` : "—"} />
+          <Stat
+            label="Lave batterier"
+            value={String(lowBatteries.length)}
+            hint={
+              lowBatteries.length === 0
+                ? "Alle fulle"
+                : `≤ ${LOW_BATTERY_THRESHOLD}% — bør byttes`
+            }
+            tone={lowBatteries.length > 0 ? "warning" : "muted"}
+          />
+          {lowBatteries.length > 0 && (
+            <div className="panel rounded-lg p-4 col-span-2 md:col-span-2">
+              <div className="text-[10px] tracking-[0.3em] text-muted-foreground uppercase mb-2">
+                Trenger nye batterier
+              </div>
+              <ul className="text-sm space-y-1 max-h-28 overflow-auto">
+                {lowBatteries
+                  .sort(
+                    (a, b) =>
+                      (a.capabilities["measure_battery"]?.value as number) -
+                      (b.capabilities["measure_battery"]?.value as number),
+                  )
+                  .map((d) => (
+                    <li key={d.id} className="flex items-center justify-between gap-3">
+                      <span className="truncate text-foreground">{d.name}</span>
+                      <span className="text-destructive shrink-0">
+                        🔋 {Math.round(d.capabilities["measure_battery"]?.value as number)}%
+                      </span>
+                    </li>
+                  ))}
+              </ul>
+            </div>
+          )}
         </div>
       </section>
 
