@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { saveHomeyConnection } from "@/server/homey-connection";
 
 const ATHOM_AUTH_BASE = "https://accounts.athom.com";
 const ATHOM_API_BASE = "https://api.athom.com";
@@ -99,23 +99,18 @@ export const Route = createFileRoute("/api/homey/callback")({
 
         const expiresAt = new Date(Date.now() + (tok.expires_in - 60) * 1000).toISOString();
 
-        const { error: upsertErr } = await supabaseAdmin
-          .from("homey_connections")
-          .upsert(
-            {
-              provider: "athom",
-              access_token: tok.access_token,
-              refresh_token: tok.refresh_token,
-              expires_at: expiresAt,
-              scope: tok.scope ?? null,
-              athom_user_id: athomUserId,
-              athom_user_name: athomUserName,
-            },
-            { onConflict: "provider" },
-          );
-
-        if (upsertErr) {
-          return errorPage(`Kunne ikke lagre tilkobling: ${upsertErr.message}`, 500);
+        try {
+          await saveHomeyConnection({
+            access_token: tok.access_token,
+            refresh_token: tok.refresh_token,
+            expires_at: expiresAt,
+            scope: tok.scope ?? null,
+            athom_user_id: athomUserId,
+            athom_user_name: athomUserName,
+          });
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "Ukjent feil";
+          return errorPage(`Kunne ikke lagre tilkobling: ${message}`, 500);
         }
 
         return new Response(null, {
