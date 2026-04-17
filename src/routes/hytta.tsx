@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { PageShell, PageHero } from "@/components/PageShell";
-import hyttaImg from "@/assets/hytta.jpg";
+import hyttaImg from "@/assets/hytta-aurora.jpg";
 
 export const Route = createFileRoute("/hytta")({
   head: () => ({
