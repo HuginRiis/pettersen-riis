@@ -61,7 +61,7 @@ function classifyLabel(cls?: string) {
 }
 
 function SmarthusPage() {
-  const data = Route.useLoaderData();
+  const data = Route.useLoaderData() as Awaited<ReturnType<typeof getHomeySnapshot>>;
 
   if (!data.ok) {
     return (
