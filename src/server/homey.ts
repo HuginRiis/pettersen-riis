@@ -172,11 +172,36 @@ export const getHomeySnapshot = createServerFn({ method: "GET" }).handler(
     if (!conn) return { ok: false, needsConnect: true };
 
     try {
-      // Pick the first Homey from the user's account
-      const homeys = await athom<AthomHomey[]>(`/user/me/homey`, conn.access_token);
-      const homey = Array.isArray(homeys) ? homeys[0] : null;
+      // Try several known endpoint shapes — Athom has changed these over time.
+      const candidates = ["/user/me/homeys", "/users/me/homeys", "/homey", "/user/me/homey"];
+      let homey: AthomHomey | null = null;
+      let lastErr = "";
+      for (const path of candidates) {
+        try {
+          const result = await athom<any>(path, conn.access_token);
+          const list: AthomHomey[] = Array.isArray(result)
+            ? result
+            : Array.isArray(result?.homeys)
+              ? result.homeys
+              : Array.isArray(result?.data)
+                ? result.data
+                : result && typeof result === "object" && (result._id || result.id)
+                  ? [result]
+                  : [];
+          if (list.length > 0) {
+            homey = list[0];
+            break;
+          }
+        } catch (e: any) {
+          lastErr = e?.message ?? String(e);
+        }
+      }
       if (!homey) {
-        return { ok: false, needsConnect: false, error: "Fant ingen Homey på kontoen" };
+        return {
+          ok: false,
+          needsConnect: false,
+          error: `Fant ingen Homey på kontoen${lastErr ? ` — ${lastErr}` : ""}`,
+        };
       }
 
       const sessionToken = await getHomeySessionToken(homey, conn.access_token);
