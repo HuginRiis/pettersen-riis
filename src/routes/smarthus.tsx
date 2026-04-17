@@ -259,13 +259,32 @@ function SmarthusPage() {
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+function Stat({
+  label,
+  value,
+  hint,
+  tone = "default",
+}: {
+  label: string;
+  value: string;
+  hint?: string;
+  tone?: "default" | "primary" | "muted" | "warning";
+}) {
+  const valueClass =
+    tone === "warning"
+      ? "text-destructive"
+      : tone === "muted"
+        ? "text-muted-foreground"
+        : "text-primary";
   return (
     <div className="panel rounded-lg p-4 text-center">
-      <div className="text-2xl text-primary text-display">{value}</div>
+      <div className={`text-2xl text-display ${valueClass}`}>{value}</div>
       <div className="text-[10px] tracking-[0.3em] text-muted-foreground uppercase mt-1">
         {label}
       </div>
+      {hint && (
+        <div className="text-[10px] text-muted-foreground/80 mt-1 italic">{hint}</div>
+      )}
     </div>
   );
 }
