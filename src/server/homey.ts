@@ -61,14 +61,14 @@ async function loadConnection(): Promise<StoredConnection | null> {
   return loadHomeyConnection();
 }
 
-async function refreshAccessToken(refreshToken: string): Promise<StoredConnection> {
+async function refreshAccessToken(conn: StoredConnection): Promise<StoredConnection> {
   const clientId = process.env.HOMEY_CLIENT_ID;
   const clientSecret = process.env.HOMEY_CLIENT_SECRET;
   if (!clientId || !clientSecret) throw new Error("Mangler HOMEY_CLIENT_ID/SECRET");
 
   const body = new URLSearchParams({
     grant_type: "refresh_token",
-    refresh_token: refreshToken,
+    refresh_token: conn.refresh_token,
     client_id: clientId,
     client_secret: clientSecret,
   });
@@ -91,7 +91,7 @@ async function refreshAccessToken(refreshToken: string): Promise<StoredConnectio
   };
 
   const expiresAt = new Date(Date.now() + (tok.expires_in - 60) * 1000).toISOString();
-  const newRefresh = tok.refresh_token ?? refreshToken;
+  const newRefresh = tok.refresh_token ?? conn.refresh_token;
 
   return saveHomeyConnection({
       access_token: tok.access_token,
@@ -110,7 +110,7 @@ async function getValidAccessToken(): Promise<{ token: string; conn: StoredConne
   if (Number.isFinite(expiresMs) && expiresMs - Date.now() > 30_000) {
     return { token: conn.access_token, conn };
   }
-  const refreshed = await refreshAccessToken(conn.refresh_token);
+  const refreshed = await refreshAccessToken(conn);
   return { token: refreshed.access_token, conn: refreshed };
 }
 
