@@ -70,19 +70,19 @@ function Home() {
               <div className="grid grid-cols-3 gap-2 sm:gap-3">
                 <MiniPortrait
                   name="Marita"
-                  title="Den første"
+                  title="Den andre"
                   words="Ætt av sommerlys"
                   image={maritaPortrait}
                 />
                 <MiniPortrait
                   name="Nora"
-                  title="Den andre"
+                  title="Den første"
                   words="Stille som måneskinn"
                   image={noraPortrait}
                 />
                 <MiniPortrait
                   name="Mira"
-                  title="Den yngste"
+                  title="Avkommet til Nora"
                   words="Liten løve"
                   image={miraPortrait}
                 />
