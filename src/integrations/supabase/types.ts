@@ -41,45 +41,6 @@ export type Database = {
         }
         Relationships: []
       }
-      homey_connections: {
-        Row: {
-          access_token: string
-          athom_user_id: string | null
-          athom_user_name: string | null
-          created_at: string
-          expires_at: string
-          id: string
-          provider: string
-          refresh_token: string
-          scope: string | null
-          updated_at: string
-        }
-        Insert: {
-          access_token: string
-          athom_user_id?: string | null
-          athom_user_name?: string | null
-          created_at?: string
-          expires_at: string
-          id?: string
-          provider?: string
-          refresh_token: string
-          scope?: string | null
-          updated_at?: string
-        }
-        Update: {
-          access_token?: string
-          athom_user_id?: string | null
-          athom_user_name?: string | null
-          created_at?: string
-          expires_at?: string
-          id?: string
-          provider?: string
-          refresh_token?: string
-          scope?: string | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
     }
     Views: {
       [_ in never]: never
