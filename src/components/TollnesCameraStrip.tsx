@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { getTollnesCameraSnapshot } from "@/server/homey";
+import { getNetatmoTollnesSnapshot } from "@/server/netatmo";
 
 export function TollnesCameraStrip() {
-  const fetchSnap = useServerFn(getTollnesCameraSnapshot);
+  const fetchSnap = useServerFn(getNetatmoTollnesSnapshot);
   const [state, setState] = useState<
     | { status: "loading" }
     | { status: "ok"; dataUrl: string; name: string; at: string }
