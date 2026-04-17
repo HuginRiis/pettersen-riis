@@ -155,6 +155,27 @@ function SmarthusPage() {
     findZonePower((n) => n.includes("hjem") || n.includes("borg") || n.includes("hus")) ??
     (hyttaPower !== null ? totalPower - hyttaPower : totalPower);
 
+  // Pulse-måler (Tibber Pulse / strømmåler på hytta)
+  const pulseDevice = data.devices.find((d) => {
+    const n = (d.name ?? "").toLowerCase();
+    return (
+      n.includes("pulse") ||
+      n.includes("bjørkeset") ||
+      n.includes("bjorkeset") ||
+      n.includes("tibber")
+    );
+  });
+  const pulsePower =
+    pulseDevice && typeof pulseDevice.capabilities["measure_power"]?.value === "number"
+      ? (pulseDevice.capabilities["measure_power"]!.value as number)
+      : null;
+  // Andre vanlige Tibber-cap'er for forbruk i dag / måned
+  const pulseToday =
+    pulseDevice &&
+    typeof pulseDevice.capabilities["meter_power"]?.value === "number"
+      ? (pulseDevice.capabilities["meter_power"]!.value as number)
+      : null;
+
   const LOW_BATTERY_THRESHOLD = 20;
   const lowBatteries = data.devices.filter((d) => {
     const b = d.capabilities["measure_battery"]?.value;
@@ -230,6 +251,20 @@ function SmarthusPage() {
             value={totalPower > 0 ? formatPower(totalPower) : "—"}
             hint="Alle sale"
           />
+          {pulseDevice && (
+            <Stat
+              label="Pulse · Hytta"
+              value={pulsePower !== null ? formatPower(Math.abs(pulsePower)) : "—"}
+              hint={
+                pulsePower === null
+                  ? "Ingen avlesning"
+                  : pulsePower < 0
+                    ? `↑ Tjener på strøm${pulseToday !== null ? ` · ${pulseToday.toFixed(1)} kWh i dag` : ""}`
+                    : `↓ Bruker strøm${pulseToday !== null ? ` · ${pulseToday.toFixed(1)} kWh i dag` : ""}`
+              }
+              tone={pulsePower !== null && pulsePower < 0 ? "primary" : "default"}
+            />
+          )}
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Stat label="Snitt-varme" value={avgTemp ? `${avgTemp}°` : "—"} />
