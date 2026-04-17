@@ -216,18 +216,18 @@ export const getHomeySnapshot = createServerFn({ method: "GET" }).handler(
       return { ok: false, error: "Homey er ikke koblet til ennå.", needsConnect: true };
     }
 
-    const resolved = await resolveHomeyBase(valid.token);
+    const resolved = await resolveHomeyTarget(valid.token);
     if ("error" in resolved) {
       return { ok: false, error: resolved.error, status: resolved.status };
     }
 
+    const homeyAuth = {
+      Authorization: `Bearer ${resolved.sessionToken}`,
+      Accept: "application/json",
+    };
     const [zonesRes, devicesRes] = await Promise.all([
-      fetch(`${resolved.base}/api/manager/zones/zone/`, {
-        headers: { Authorization: `Bearer ${valid.token}`, Accept: "application/json" },
-      }),
-      fetch(`${resolved.base}/api/manager/devices/device/`, {
-        headers: { Authorization: `Bearer ${valid.token}`, Accept: "application/json" },
-      }),
+      fetch(`${resolved.base}/api/manager/zones/zone`, { headers: homeyAuth }),
+      fetch(`${resolved.base}/api/manager/devices/device`, { headers: homeyAuth }),
     ]);
 
     if (!zonesRes.ok || !devicesRes.ok) {
