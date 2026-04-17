@@ -10,7 +10,6 @@ const links = [
   { to: "/hytta", label: "Hytta" },
   { to: "/hundene", label: "Hundene" },
   { to: "/trening", label: "Trening" },
-  { to: "/smarthus", label: "Maesterens Tårn" },
 ] as const;
 
 export function SiteHeader() {
