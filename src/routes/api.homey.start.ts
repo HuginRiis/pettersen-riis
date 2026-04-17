@@ -15,11 +15,15 @@ export const Route = createFileRoute("/api/homey/start")({
 
         const state = crypto.randomUUID();
         const authUrl = new URL(`${ATHOM_AUTH_BASE}/oauth2/authorise`);
+        // Athom bruker `authorization_type` (ikke `response_type`) per dokumentasjonen.
+        // Scopes bestemmes av OAuth2-klienten i Homey Developer Tools, ikke i URLen.
+        authUrl.searchParams.set("authorization_type", "code");
         authUrl.searchParams.set("response_type", "code");
         authUrl.searchParams.set("client_id", clientId);
         authUrl.searchParams.set("redirect_uri", REDIRECT_URI);
-        authUrl.searchParams.set("scope", HOMEY_SCOPES.join(" "));
         authUrl.searchParams.set("state", state);
+        // Fjern referanse til ubrukte scopes
+        void HOMEY_SCOPES;
 
         return new Response(null, {
           status: 302,
