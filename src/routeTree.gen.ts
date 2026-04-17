@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as VarRouteImport } from './routes/var'
 import { Route as TreningRouteImport } from './routes/trening'
+import { Route as SmarthusRouteImport } from './routes/smarthus'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as HyttaRouteImport } from './routes/hytta'
 import { Route as HundeneRouteImport } from './routes/hundene'
@@ -25,6 +26,11 @@ const VarRoute = VarRouteImport.update({
 const TreningRoute = TreningRouteImport.update({
   id: '/trening',
   path: '/trening',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SmarthusRoute = SmarthusRouteImport.update({
+  id: '/smarthus',
+  path: '/smarthus',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -59,6 +65,7 @@ export interface FileRoutesByFullPath {
   '/hundene': typeof HundeneRoute
   '/hytta': typeof HyttaRoute
   '/login': typeof LoginRoute
+  '/smarthus': typeof SmarthusRoute
   '/trening': typeof TreningRoute
   '/var': typeof VarRoute
 }
@@ -68,6 +75,7 @@ export interface FileRoutesByTo {
   '/hundene': typeof HundeneRoute
   '/hytta': typeof HyttaRoute
   '/login': typeof LoginRoute
+  '/smarthus': typeof SmarthusRoute
   '/trening': typeof TreningRoute
   '/var': typeof VarRoute
 }
@@ -78,6 +86,7 @@ export interface FileRoutesById {
   '/hundene': typeof HundeneRoute
   '/hytta': typeof HyttaRoute
   '/login': typeof LoginRoute
+  '/smarthus': typeof SmarthusRoute
   '/trening': typeof TreningRoute
   '/var': typeof VarRoute
 }
@@ -89,10 +98,19 @@ export interface FileRouteTypes {
     | '/hundene'
     | '/hytta'
     | '/login'
+    | '/smarthus'
     | '/trening'
     | '/var'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/agenda' | '/hundene' | '/hytta' | '/login' | '/trening' | '/var'
+  to:
+    | '/'
+    | '/agenda'
+    | '/hundene'
+    | '/hytta'
+    | '/login'
+    | '/smarthus'
+    | '/trening'
+    | '/var'
   id:
     | '__root__'
     | '/'
@@ -100,6 +118,7 @@ export interface FileRouteTypes {
     | '/hundene'
     | '/hytta'
     | '/login'
+    | '/smarthus'
     | '/trening'
     | '/var'
   fileRoutesById: FileRoutesById
@@ -110,6 +129,7 @@ export interface RootRouteChildren {
   HundeneRoute: typeof HundeneRoute
   HyttaRoute: typeof HyttaRoute
   LoginRoute: typeof LoginRoute
+  SmarthusRoute: typeof SmarthusRoute
   TreningRoute: typeof TreningRoute
   VarRoute: typeof VarRoute
 }
@@ -128,6 +148,13 @@ declare module '@tanstack/react-router' {
       path: '/trening'
       fullPath: '/trening'
       preLoaderRoute: typeof TreningRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/smarthus': {
+      id: '/smarthus'
+      path: '/smarthus'
+      fullPath: '/smarthus'
+      preLoaderRoute: typeof SmarthusRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -174,9 +201,19 @@ const rootRouteChildren: RootRouteChildren = {
   HundeneRoute: HundeneRoute,
   HyttaRoute: HyttaRoute,
   LoginRoute: LoginRoute,
+  SmarthusRoute: SmarthusRoute,
   TreningRoute: TreningRoute,
   VarRoute: VarRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
