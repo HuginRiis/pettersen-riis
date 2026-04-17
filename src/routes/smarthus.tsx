@@ -120,7 +120,20 @@ function SmarthusPage() {
   const totalDevices = data.devices.length;
   const lights = data.devices.filter(
     (d) => "onoff" in d.capabilities && (d.class === "light" || d.class === "socket"),
-  ).length;
+  );
+  const litLights = lights.filter((d) => d.capabilities["onoff"]?.value === true).length;
+
+  const totalPower = data.devices
+    .map((d) => d.capabilities["measure_power"]?.value)
+    .filter((v): v is number => typeof v === "number")
+    .reduce((a, b) => a + b, 0);
+
+  const LOW_BATTERY_THRESHOLD = 20;
+  const lowBatteries = data.devices.filter((d) => {
+    const b = d.capabilities["measure_battery"]?.value;
+    return typeof b === "number" && b <= LOW_BATTERY_THRESHOLD;
+  });
+
   const tempReadings = data.devices
     .map((d) => d.capabilities["measure_temperature"]?.value)
     .filter((v): v is number => typeof v === "number");
@@ -128,6 +141,9 @@ function SmarthusPage() {
     tempReadings.length > 0
       ? (tempReadings.reduce((a, b) => a + b, 0) / tempReadings.length).toFixed(1)
       : null;
+
+  const formatPower = (w: number) =>
+    w >= 1000 ? `${(w / 1000).toFixed(2)} kW` : `${Math.round(w)} W`;
 
   const handleDisconnect = async () => {
     if (!confirm("Bryt båndet til Homey?")) return;
