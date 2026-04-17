@@ -170,6 +170,53 @@ function WeatherPage() {
   );
 }
 
+function parseForecast(data: any): ForecastDay[] {
+  const series = data?.properties?.timeseries ?? [];
+  const map = new Map<string, ForecastDay>();
+  for (const entry of series) {
+    const date = entry.time.slice(0, 10);
+    const inst = entry.data?.instant?.details ?? {};
+    const next6 = entry.data?.next_6_hours;
+    const next1 = entry.data?.next_1_hours;
+    const temp = inst.air_temperature;
+    if (typeof temp !== "number") continue;
+    const symbol = next6?.summary?.symbol_code ?? next1?.summary?.symbol_code ?? null;
+    const precip = next6?.details?.precipitation_amount ?? next1?.details?.precipitation_amount ?? 0;
+    const existing = map.get(date);
+    if (!existing) {
+      map.set(date, { date, tempMin: temp, tempMax: temp, symbol, precip });
+    } else {
+      existing.tempMin = Math.min(existing.tempMin, temp);
+      existing.tempMax = Math.max(existing.tempMax, temp);
+      existing.precip += precip;
+      const hour = parseInt(entry.time.slice(11, 13));
+      if (hour >= 11 && hour <= 14 && symbol) existing.symbol = symbol;
+    }
+  }
+  return Array.from(map.values()).sort((a, b) => a.date.localeCompare(b.date));
+}
+
+function symbolEmoji(symbol: string | null): string {
+  if (!symbol) return "—";
+  if (symbol.includes("clearsky")) return "☀️";
+  if (symbol.includes("fair")) return "🌤";
+  if (symbol.includes("partlycloudy")) return "⛅";
+  if (symbol.includes("cloudy")) return "☁️";
+  if (symbol.includes("snow")) return "❄️";
+  if (symbol.includes("sleet")) return "🌨";
+  if (symbol.includes("rain")) return "🌧";
+  if (symbol.includes("thunder")) return "⛈";
+  if (symbol.includes("fog")) return "🌫";
+  return "🌥";
+}
+
+function weekdayShort(iso: string) {
+  return new Date(iso + "T00:00:00").toLocaleDateString("nb-NO", { weekday: "short" });
+}
+function dayMonth(iso: string) {
+  return new Date(iso + "T00:00:00").toLocaleDateString("nb-NO", { day: "numeric", month: "short" });
+}
+
 type Pollen = {
   name: string;
   level: string;
