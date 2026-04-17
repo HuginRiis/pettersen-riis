@@ -21,26 +21,22 @@ function HyttaPage() {
       <PageHero
         eyebrow="Husets tilflukt"
         title="Hytta"
-        subtitle="Bortenfor fjordene venter peisens varme."
+        subtitle="Bortenfor fjordene venter peisens varme"
         image={hyttaImg}
       />
 
       <section className="container mx-auto px-4 py-12 grid md:grid-cols-3 gap-8">
         <div className="md:col-span-2 space-y-5">
           <div className="ornate-divider mb-2">
-            <span className="text-display tracking-[0.3em] text-primary text-sm uppercase">
-              Krøniken om hytta
-            </span>
+            <span className="text-display tracking-[0.3em] text-primary text-sm uppercase">Krøniken om hytta</span>
           </div>
           <p className="text-foreground/90 leading-relaxed">
-            Når vintervindene feier over Skien, søker House Riis tilflukt i
-            tømmerhytta. Røyken stiger fra pipa, peisen knitrer, og ravnene
-            holder vakt i grantrærne utenfor.
+            Når vintervindene feier over Skien, søker House Riis tilflukt i tømmerhytta. Røyken stiger fra pipa, peisen
+            knitrer, og ravnene holder vakt i grantrærne utenfor.
           </p>
           <p className="text-muted-foreground leading-relaxed">
-            Her samles familien til turer, brettspill, og lange måltider. Hytta
-            er hjertet av husets ro — et sted hvor tiden går saktere og hvor
-            stjernene står klarere.
+            Her samles familien til turer, brettspill, og lange måltider. Hytta er hjertet av husets ro — et sted hvor
+            tiden går saktere og hvor stjernene står klarere.
           </p>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-4">
@@ -73,9 +69,7 @@ function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="panel rounded p-4 text-center">
       <div className="text-2xl text-primary text-medieval">{value}</div>
-      <div className="text-xs uppercase tracking-wider text-muted-foreground mt-1">
-        {label}
-      </div>
+      <div className="text-xs uppercase tracking-wider text-muted-foreground mt-1">{label}</div>
     </div>
   );
 }
