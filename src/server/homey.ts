@@ -10,9 +10,6 @@ export const HOMEY_SCOPES = ["homey", "homey.device.readonly"];
 
 const ATHOM_API_BASE = "https://api.athom.com";
 
-// In-memory cache of Homey session tokens (per Homey id)
-const sessionCache = new Map<string, { token: string; expiresAt: number }>();
-
 async function refreshAccessToken(conn: HomeyConnection): Promise<HomeyConnection> {
   const clientId = process.env.HOMEY_CLIENT_ID;
   const clientSecret = process.env.HOMEY_CLIENT_SECRET;
@@ -68,13 +65,13 @@ async function getValidConnection(): Promise<HomeyConnection | null> {
   return conn;
 }
 
-async function athom<T>(path: string, accessToken: string): Promise<T> {
-  const res = await fetch(`${ATHOM_API_BASE}${path}`, {
-    headers: { Authorization: `Bearer ${accessToken}`, Accept: "application/json" },
+async function fetchJson<T>(url: string, token: string): Promise<T> {
+  const res = await fetch(url, {
+    headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
   });
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(`Athom ${path} feilet (${res.status}): ${text.slice(0, 200)}`);
+    throw new Error(`${url} feilet (${res.status}): ${text.slice(0, 200)}`);
   }
   return (await res.json()) as T;
 }
@@ -102,8 +99,95 @@ export type HomeySnapshot =
       devices: HomeyDeviceSnapshot[];
     };
 
+function decodeJwtPayload(token: string): any | null {
+  try {
+    const parts = token.split(".");
+    if (parts.length < 2) return null;
+    const b64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+    const padded = b64 + "=".repeat((4 - (b64.length % 4)) % 4);
+    return JSON.parse(atob(padded));
+  } catch {
+    return null;
+  }
+}
+
+async function snapshotViaPat(pat: string): Promise<HomeySnapshot> {
+  // PAT is a JWT signed by the user's Homey. The audience/sub contains the Homey id.
+  const payload = decodeJwtPayload(pat);
+  const homeyId: string | undefined =
+    payload?.homey_id ?? payload?.aud ?? payload?.sub ?? payload?.cloud_id;
+  if (!homeyId || typeof homeyId !== "string") {
+    return {
+      ok: false,
+      needsConnect: false,
+      error: "Klarte ikke lese Homey-ID fra PAT. Sjekk at HOMEY_PAT er riktig.",
+    };
+  }
+
+  const base = `https://${homeyId}.connect.athom.com/api`;
+
+  try {
+    const [systemRaw, zonesRaw, devicesRaw] = await Promise.all([
+      fetchJson<any>(`${base}/manager/system/`, pat).catch(() => null),
+      fetchJson<any>(`${base}/manager/zones/zone`, pat),
+      fetchJson<any>(`${base}/manager/devices/device`, pat),
+    ]);
+
+    const homeName: string | null = systemRaw?.hostname ?? systemRaw?.name ?? null;
+
+    const zonesList: any[] = Array.isArray(zonesRaw)
+      ? zonesRaw
+      : zonesRaw && typeof zonesRaw === "object"
+        ? Object.values(zonesRaw)
+        : [];
+    const zones: HomeyZone[] = zonesList.map((z: any, i: number) => ({
+      id: z.id ?? z._id ?? String(i),
+      name: z.name ?? "Ukjent sal",
+    }));
+
+    const devicesList: any[] = Array.isArray(devicesRaw)
+      ? devicesRaw
+      : devicesRaw && typeof devicesRaw === "object"
+        ? Object.values(devicesRaw)
+        : [];
+
+    const devices: HomeyDeviceSnapshot[] = devicesList.map((d: any, i: number) => {
+      const caps: Record<string, { value: HomeyCapValue }> = {};
+      const obj = d.capabilitiesObj ?? d.capabilities_obj ?? {};
+      if (obj && typeof obj === "object" && !Array.isArray(obj)) {
+        for (const [capId, capVal] of Object.entries(obj)) {
+          const v = (capVal as any)?.value;
+          caps[capId] =
+            typeof v === "string" || typeof v === "number" || typeof v === "boolean"
+              ? { value: v }
+              : { value: null };
+        }
+      }
+      return {
+        id: d.id ?? d._id ?? String(i),
+        name: d.name ?? "Ukjent",
+        class: d.class,
+        zone: d.zone ?? null,
+        available: d.available !== false,
+        capabilities: caps,
+      };
+    });
+
+    return { ok: true, homeName, zones, devices };
+  } catch (e: any) {
+    return { ok: false, needsConnect: false, error: e?.message ?? "Klarte ikke hente data" };
+  }
+}
+
 export const getHomeySnapshot = createServerFn({ method: "GET" }).handler(
   async (): Promise<HomeySnapshot> => {
+    // Prefer PAT if configured — direct access to all devices, no OAuth flow needed.
+    const pat = process.env.HOMEY_PAT;
+    if (pat && pat.length > 0) {
+      return await snapshotViaPat(pat);
+    }
+
+    // Fallback: OAuth Web API client
     let conn: HomeyConnection | null;
     try {
       conn = await getValidConnection();
@@ -113,20 +197,18 @@ export const getHomeySnapshot = createServerFn({ method: "GET" }).handler(
     if (!conn) return { ok: false, needsConnect: true };
 
     try {
-      // Web API: /me/devices and /me/zones return all devices/zones the token has access to.
       const [meRaw, zonesRaw, devicesRaw] = await Promise.all([
-        athom<any>(`/user/me`, conn.access_token).catch(() => null),
-        athom<any>(`/me/zones`, conn.access_token).catch(() => null),
-        athom<any>(`/me/devices`, conn.access_token),
+        fetchJson<any>(`${ATHOM_API_BASE}/user/me`, conn.access_token).catch(() => null),
+        fetchJson<any>(`${ATHOM_API_BASE}/me/zones`, conn.access_token).catch(() => null),
+        fetchJson<any>(`${ATHOM_API_BASE}/me/devices`, conn.access_token),
       ]);
 
       const homeysVal = meRaw?.homeys ?? null;
-      const firstHomey =
-        Array.isArray(homeysVal)
-          ? homeysVal[0]
-          : homeysVal && typeof homeysVal === "object"
-            ? (Object.values(homeysVal)[0] as any)
-            : null;
+      const firstHomey = Array.isArray(homeysVal)
+        ? homeysVal[0]
+        : homeysVal && typeof homeysVal === "object"
+          ? (Object.values(homeysVal)[0] as any)
+          : null;
       const homeName: string | null = firstHomey?.name ?? null;
 
       const zonesList: any[] = Array.isArray(zonesRaw)
@@ -167,12 +249,7 @@ export const getHomeySnapshot = createServerFn({ method: "GET" }).handler(
         };
       });
 
-      return {
-        ok: true,
-        homeName,
-        zones,
-        devices,
-      };
+      return { ok: true, homeName, zones, devices };
     } catch (e: any) {
       return { ok: false, needsConnect: false, error: e?.message ?? "Klarte ikke hente data" };
     }
