@@ -60,7 +60,7 @@ function Home() {
             />
             <div className="mt-4">
               <div className="text-[9px] tracking-[0.3em] text-primary/80 uppercase text-center mb-2">
-                Husets venn
+                Husets datter
               </div>
               <div className="grid grid-cols-3 gap-2 sm:gap-3">
                 <div />
