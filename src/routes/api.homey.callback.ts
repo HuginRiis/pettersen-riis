@@ -50,8 +50,6 @@ export const Route = createFileRoute("/api/homey/callback")({
           return errorPage("Ugyldig state — start tilkoblingen på nytt.", 400);
         }
 
-        const redirectUri = `${url.origin}/api/homey/callback`;
-
         // Exchange code for tokens — Athom spec: Basic auth + form body { grant_type, authorization_code }
         // NOTE: Athom does NOT accept redirect_uri in the token request and will respond with
         // "redirect_uri does not match" if it is included.
