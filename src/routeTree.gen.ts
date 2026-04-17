@@ -17,6 +17,8 @@ import { Route as HyttaRouteImport } from './routes/hytta'
 import { Route as HundeneRouteImport } from './routes/hundene'
 import { Route as AgendaRouteImport } from './routes/agenda'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiStravaStartRouteImport } from './routes/api.strava.start'
+import { Route as ApiStravaCallbackRouteImport } from './routes/api.strava.callback'
 import { Route as ApiHomeyStartRouteImport } from './routes/api.homey.start'
 import { Route as ApiHomeyCallbackRouteImport } from './routes/api.homey.callback'
 
@@ -60,6 +62,16 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiStravaStartRoute = ApiStravaStartRouteImport.update({
+  id: '/api/strava/start',
+  path: '/api/strava/start',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiStravaCallbackRoute = ApiStravaCallbackRouteImport.update({
+  id: '/api/strava/callback',
+  path: '/api/strava/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiHomeyStartRoute = ApiHomeyStartRouteImport.update({
   id: '/api/homey/start',
   path: '/api/homey/start',
@@ -82,6 +94,8 @@ export interface FileRoutesByFullPath {
   '/var': typeof VarRoute
   '/api/homey/callback': typeof ApiHomeyCallbackRoute
   '/api/homey/start': typeof ApiHomeyStartRoute
+  '/api/strava/callback': typeof ApiStravaCallbackRoute
+  '/api/strava/start': typeof ApiStravaStartRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -94,6 +108,8 @@ export interface FileRoutesByTo {
   '/var': typeof VarRoute
   '/api/homey/callback': typeof ApiHomeyCallbackRoute
   '/api/homey/start': typeof ApiHomeyStartRoute
+  '/api/strava/callback': typeof ApiStravaCallbackRoute
+  '/api/strava/start': typeof ApiStravaStartRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -107,6 +123,8 @@ export interface FileRoutesById {
   '/var': typeof VarRoute
   '/api/homey/callback': typeof ApiHomeyCallbackRoute
   '/api/homey/start': typeof ApiHomeyStartRoute
+  '/api/strava/callback': typeof ApiStravaCallbackRoute
+  '/api/strava/start': typeof ApiStravaStartRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -121,6 +139,8 @@ export interface FileRouteTypes {
     | '/var'
     | '/api/homey/callback'
     | '/api/homey/start'
+    | '/api/strava/callback'
+    | '/api/strava/start'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -133,6 +153,8 @@ export interface FileRouteTypes {
     | '/var'
     | '/api/homey/callback'
     | '/api/homey/start'
+    | '/api/strava/callback'
+    | '/api/strava/start'
   id:
     | '__root__'
     | '/'
@@ -145,6 +167,8 @@ export interface FileRouteTypes {
     | '/var'
     | '/api/homey/callback'
     | '/api/homey/start'
+    | '/api/strava/callback'
+    | '/api/strava/start'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -158,6 +182,8 @@ export interface RootRouteChildren {
   VarRoute: typeof VarRoute
   ApiHomeyCallbackRoute: typeof ApiHomeyCallbackRoute
   ApiHomeyStartRoute: typeof ApiHomeyStartRoute
+  ApiStravaCallbackRoute: typeof ApiStravaCallbackRoute
+  ApiStravaStartRoute: typeof ApiStravaStartRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -218,6 +244,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/strava/start': {
+      id: '/api/strava/start'
+      path: '/api/strava/start'
+      fullPath: '/api/strava/start'
+      preLoaderRoute: typeof ApiStravaStartRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/strava/callback': {
+      id: '/api/strava/callback'
+      path: '/api/strava/callback'
+      fullPath: '/api/strava/callback'
+      preLoaderRoute: typeof ApiStravaCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/homey/start': {
       id: '/api/homey/start'
       path: '/api/homey/start'
@@ -246,6 +286,8 @@ const rootRouteChildren: RootRouteChildren = {
   VarRoute: VarRoute,
   ApiHomeyCallbackRoute: ApiHomeyCallbackRoute,
   ApiHomeyStartRoute: ApiHomeyStartRoute,
+  ApiStravaCallbackRoute: ApiStravaCallbackRoute,
+  ApiStravaStartRoute: ApiStravaStartRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
