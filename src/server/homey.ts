@@ -99,31 +99,7 @@ export type HomeySnapshot =
       devices: HomeyDeviceSnapshot[];
     };
 
-function decodeJwtPayload(token: string): any | null {
-  try {
-    const parts = token.split(".");
-    if (parts.length < 2) return null;
-    const b64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
-    const padded = b64 + "=".repeat((4 - (b64.length % 4)) % 4);
-    return JSON.parse(atob(padded));
-  } catch {
-    return null;
-  }
-}
-
-async function snapshotViaPat(pat: string): Promise<HomeySnapshot> {
-  // PAT is a JWT signed by the user's Homey. The audience/sub contains the Homey id.
-  const payload = decodeJwtPayload(pat);
-  const homeyId: string | undefined =
-    payload?.homey_id ?? payload?.aud ?? payload?.sub ?? payload?.cloud_id;
-  if (!homeyId || typeof homeyId !== "string") {
-    return {
-      ok: false,
-      needsConnect: false,
-      error: "Klarte ikke lese Homey-ID fra PAT. Sjekk at HOMEY_PAT er riktig.",
-    };
-  }
-
+async function snapshotViaPat(pat: string, homeyId: string): Promise<HomeySnapshot> {
   const base = `https://${homeyId}.connect.athom.com/api`;
 
   try {
@@ -183,8 +159,9 @@ export const getHomeySnapshot = createServerFn({ method: "GET" }).handler(
   async (): Promise<HomeySnapshot> => {
     // Prefer PAT if configured — direct access to all devices, no OAuth flow needed.
     const pat = process.env.HOMEY_PAT;
-    if (pat && pat.length > 0) {
-      return await snapshotViaPat(pat);
+    const homeyId = process.env.HOMEY_ID;
+    if (pat && pat.length > 0 && homeyId && homeyId.length > 0) {
+      return await snapshotViaPat(pat, homeyId);
     }
 
     // Fallback: OAuth Web API client
