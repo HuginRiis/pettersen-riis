@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { PageShell, PageHero } from "@/components/PageShell";
-import hundeneImg from "@/assets/hundene.jpg";
+import hundeneImg from "@/assets/hundene-pack.jpg";
 import dogSnow from "@/assets/dog-snow.jpg";
 import dogShadow from "@/assets/dog-shadow.jpg";
 import dogEmber from "@/assets/dog-ember.jpg";
