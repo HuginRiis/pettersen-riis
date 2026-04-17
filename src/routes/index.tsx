@@ -4,6 +4,7 @@ import { WeatherWidget } from "@/components/WeatherWidget";
 import { TollnesCameraStrip } from "@/components/TollnesCameraStrip";
 import arnePortrait from "@/assets/arne-portrait.jpg";
 import rebekkaPortrait from "@/assets/rebekka-portrait.jpg";
+import celinePortrait from "@/assets/celine-portrait.jpg";
 import maritaPortrait from "@/assets/marita-portrait.jpg";
 import noraPortrait from "@/assets/nora-portrait.jpg";
 import miraPortrait from "@/assets/mira-portrait.jpg";
@@ -50,12 +51,29 @@ function Home() {
         </div>
 
         <div className="grid grid-cols-2 gap-4 sm:gap-6 max-w-2xl mx-auto">
-          <PortraitCard
-            name="Arne Pettersen Riis"
-            title="Lord av Skien"
-            words="Med ære og ravner"
-            image={arnePortrait}
-          />
+          <div className="flex flex-col">
+            <PortraitCard
+              name="Arne Pettersen Riis"
+              title="Lord av Skien"
+              words="Med ære og ravner"
+              image={arnePortrait}
+            />
+            <div className="mt-4">
+              <div className="text-[9px] tracking-[0.3em] text-primary/80 uppercase text-center mb-2">
+                Husets venn
+              </div>
+              <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                <div />
+                <MiniPortrait
+                  name="Celine"
+                  title="Den røde flamme"
+                  words="Ild av Skien"
+                  image={celinePortrait}
+                />
+                <div />
+              </div>
+            </div>
+          </div>
           <div className="flex flex-col">
             <PortraitCard
               name="Rebekka Riis Pettersen"
