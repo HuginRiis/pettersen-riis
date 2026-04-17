@@ -73,7 +73,7 @@ async function refreshAccessToken(conn: StoredConnection): Promise<StoredConnect
     client_secret: clientSecret,
   });
 
-  const res = await fetch(`${ATHOM_AUTH_BASE}/oauth2/token`, {
+  const res = await fetch(`${ATHOM_API_BASE}/oauth2/token`, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded", Accept: "application/json" },
     body,

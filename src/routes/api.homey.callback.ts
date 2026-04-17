@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { saveHomeyConnection } from "@/server/homey-connection";
 
-const ATHOM_AUTH_BASE = "https://accounts.athom.com";
 const ATHOM_API_BASE = "https://api.athom.com";
 
 function htmlResponse(body: string, status = 200) {
@@ -53,8 +52,8 @@ export const Route = createFileRoute("/api/homey/callback")({
 
         const redirectUri = `${url.origin}/api/homey/callback`;
 
-        // Exchange code for tokens
-        const tokenRes = await fetch(`${ATHOM_AUTH_BASE}/oauth2/token`, {
+        // Exchange code for tokens (Athom token endpoint lives on api.athom.com)
+        const tokenRes = await fetch(`${ATHOM_API_BASE}/oauth2/token`, {
           method: "POST",
           headers: {
             "Content-Type": "application/x-www-form-urlencoded",
