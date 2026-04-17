@@ -99,49 +99,17 @@ export type HomeySnapshot =
       devices: HomeyDeviceSnapshot[];
     };
 
-async function snapshotViaPat(pat: string, homeyId: string): Promise<HomeySnapshot> {
-  // PAT-tokens fra my.homey.app må veksles til en sesjons-token via /delegation/token
-  // før de kan brukes mot {homeyId}.connect.athom.com/api.
+async function snapshotFromCloud(
+  token: string,
+  homeyId: string,
+): Promise<HomeySnapshot> {
   const base = `https://${homeyId}.connect.athom.com/api`;
 
   try {
-    // Steg 1: veksle PAT til en lokal sesjons-token
-    const delegationRes = await fetch(
-      `https://api.athom.com/delegation/token?audience=homey`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${pat}`,
-          Accept: "application/json",
-        },
-      },
-    );
-    if (!delegationRes.ok) {
-      const text = await delegationRes.text();
-      return {
-        ok: false,
-        needsConnect: false,
-        error: `Kunne ikke veksle PAT til sesjon (${delegationRes.status}): ${text.slice(0, 200)}`,
-      };
-    }
-    // Athom returnerer enten en JWT-streng direkte eller { token: "..." }
-    const delegationText = await delegationRes.text();
-    let sessionToken = delegationText.trim();
-    if (sessionToken.startsWith("{")) {
-      try {
-        const parsed = JSON.parse(sessionToken);
-        sessionToken = parsed.token ?? parsed.access_token ?? sessionToken;
-      } catch {
-        // behold rå tekst
-      }
-    }
-    // Strip eventuelle anførselstegn
-    sessionToken = sessionToken.replace(/^"|"$/g, "");
-
     const [systemRaw, zonesRaw, devicesRaw] = await Promise.all([
-      fetchJson<any>(`${base}/manager/system/`, sessionToken).catch(() => null),
-      fetchJson<any>(`${base}/manager/zones/zone`, sessionToken),
-      fetchJson<any>(`${base}/manager/devices/device`, sessionToken),
+      fetchJson<any>(`${base}/manager/system/`, token).catch(() => null),
+      fetchJson<any>(`${base}/manager/zones/zone`, token),
+      fetchJson<any>(`${base}/manager/devices/device`, token),
     ]);
 
     const homeName: string | null = systemRaw?.hostname ?? systemRaw?.name ?? null;
@@ -190,16 +158,23 @@ async function snapshotViaPat(pat: string, homeyId: string): Promise<HomeySnapsh
   }
 }
 
+async function resolveHomeyId(token: string): Promise<string | null> {
+  const envId = process.env.HOMEY_ID;
+  if (envId && envId.length > 0) return envId;
+
+  // Forsøk å hente første Homey fra brukerens konto via Athom Web API
+  const me = await fetchJson<any>(`${ATHOM_API_BASE}/user/me`, token).catch(() => null);
+  const homeysVal = me?.homeys ?? null;
+  const first = Array.isArray(homeysVal)
+    ? homeysVal[0]
+    : homeysVal && typeof homeysVal === "object"
+      ? (Object.values(homeysVal)[0] as any)
+      : null;
+  return first?.id ?? first?._id ?? null;
+}
+
 export const getHomeySnapshot = createServerFn({ method: "GET" }).handler(
   async (): Promise<HomeySnapshot> => {
-    // Prefer PAT if configured — direct access to all devices, no OAuth flow needed.
-    const pat = process.env.HOMEY_PAT;
-    const homeyId = process.env.HOMEY_ID;
-    if (pat && pat.length > 0 && homeyId && homeyId.length > 0) {
-      return await snapshotViaPat(pat, homeyId);
-    }
-
-    // Fallback: OAuth Web API client
     let conn: HomeyConnection | null;
     try {
       conn = await getValidConnection();
@@ -208,63 +183,16 @@ export const getHomeySnapshot = createServerFn({ method: "GET" }).handler(
     }
     if (!conn) return { ok: false, needsConnect: true };
 
-    try {
-      const [meRaw, zonesRaw, devicesRaw] = await Promise.all([
-        fetchJson<any>(`${ATHOM_API_BASE}/user/me`, conn.access_token).catch(() => null),
-        fetchJson<any>(`${ATHOM_API_BASE}/me/zones`, conn.access_token).catch(() => null),
-        fetchJson<any>(`${ATHOM_API_BASE}/me/devices`, conn.access_token),
-      ]);
-
-      const homeysVal = meRaw?.homeys ?? null;
-      const firstHomey = Array.isArray(homeysVal)
-        ? homeysVal[0]
-        : homeysVal && typeof homeysVal === "object"
-          ? (Object.values(homeysVal)[0] as any)
-          : null;
-      const homeName: string | null = firstHomey?.name ?? null;
-
-      const zonesList: any[] = Array.isArray(zonesRaw)
-        ? zonesRaw
-        : zonesRaw && typeof zonesRaw === "object"
-          ? Object.values(zonesRaw)
-          : [];
-      const zones: HomeyZone[] = zonesList.map((z: any, i: number) => ({
-        id: z.id ?? z._id ?? String(i),
-        name: z.name ?? "Ukjent sal",
-      }));
-
-      const devicesList: any[] = Array.isArray(devicesRaw)
-        ? devicesRaw
-        : devicesRaw && typeof devicesRaw === "object"
-          ? Object.values(devicesRaw)
-          : [];
-
-      const devices: HomeyDeviceSnapshot[] = devicesList.map((d: any, i: number) => {
-        const caps: Record<string, { value: HomeyCapValue }> = {};
-        const obj = d.capabilitiesObj ?? d.capabilities_obj ?? {};
-        if (obj && typeof obj === "object" && !Array.isArray(obj)) {
-          for (const [capId, capVal] of Object.entries(obj)) {
-            const v = (capVal as any)?.value;
-            caps[capId] =
-              typeof v === "string" || typeof v === "number" || typeof v === "boolean"
-                ? { value: v }
-                : { value: null };
-          }
-        }
-        return {
-          id: d.id ?? d._id ?? String(i),
-          name: d.name ?? "Ukjent",
-          class: d.class,
-          zone: d.zone ?? null,
-          available: d.available !== false,
-          capabilities: caps,
-        };
-      });
-
-      return { ok: true, homeName, zones, devices };
-    } catch (e: any) {
-      return { ok: false, needsConnect: false, error: e?.message ?? "Klarte ikke hente data" };
+    const homeyId = await resolveHomeyId(conn.access_token);
+    if (!homeyId) {
+      return {
+        ok: false,
+        needsConnect: false,
+        error: "Fant ingen Homey knyttet til kontoen.",
+      };
     }
+
+    return await snapshotFromCloud(conn.access_token, homeyId);
   },
 );
 
