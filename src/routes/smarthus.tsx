@@ -155,7 +155,7 @@ function SmarthusPage() {
     findZonePower((n) => n.includes("hjem") || n.includes("borg") || n.includes("hus")) ??
     (hyttaPower !== null ? totalPower - hyttaPower : totalPower);
 
-  // Pulse-måler (Tibber Pulse / strømmåler på hytta)
+  // Pulse-måler (Tibber Pulse / strømmåler på hytta — Øvre Bjørkesetvegen 12)
   const pulseDevice = data.devices.find((d) => {
     const n = (d.name ?? "").toLowerCase();
     return (
@@ -165,16 +165,37 @@ function SmarthusPage() {
       n.includes("tibber")
     );
   });
+
+  // Tibber Pulse eksponerer effekt via flere mulige capability-id'er.
+  // Vi prøver kjente først, faller deretter tilbake til den første cap'en
+  // som inneholder "power" (f.eks. measure_power.consumed) og har et tall.
+  const readCapNumber = (capId: string): number | null => {
+    const v = pulseDevice?.capabilities[capId]?.value;
+    return typeof v === "number" ? v : null;
+  };
+  const findFirstNumber = (predicate: (id: string) => boolean): number | null => {
+    if (!pulseDevice) return null;
+    for (const [capId, cap] of Object.entries(pulseDevice.capabilities)) {
+      if (predicate(capId.toLowerCase()) && typeof cap.value === "number") {
+        return cap.value as number;
+      }
+    }
+    return null;
+  };
+
   const pulsePower =
-    pulseDevice && typeof pulseDevice.capabilities["measure_power"]?.value === "number"
-      ? (pulseDevice.capabilities["measure_power"]!.value as number)
-      : null;
-  // Andre vanlige Tibber-cap'er for forbruk i dag / måned
+    readCapNumber("measure_power") ??
+    readCapNumber("measure_power.consumed") ??
+    readCapNumber("measure_power.delivered") ??
+    findFirstNumber((id) => id.startsWith("measure_power")) ??
+    findFirstNumber((id) => id.includes("power") && !id.includes("meter"));
+
+  // Forbruk i dag (kWh) — Tibber bruker ofte meter_power.* varianter
   const pulseToday =
-    pulseDevice &&
-    typeof pulseDevice.capabilities["meter_power"]?.value === "number"
-      ? (pulseDevice.capabilities["meter_power"]!.value as number)
-      : null;
+    readCapNumber("meter_power") ??
+    readCapNumber("meter_power.consumed") ??
+    readCapNumber("meter_power.today") ??
+    findFirstNumber((id) => id.startsWith("meter_power"));
 
   const LOW_BATTERY_THRESHOLD = 20;
   const lowBatteries = data.devices.filter((d) => {
