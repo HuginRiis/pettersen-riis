@@ -7,12 +7,11 @@ type SessionData = {
 };
 
 function getSessionConfig() {
-  const password = process.env.SESSION_SECRET;
-  if (!password || password.length < 32) {
-    throw new Error("SESSION_SECRET must be at least 32 characters");
-  }
+  const base = process.env.HOUSE_RIIS_PASSWORD ?? "";
+  // Derive a stable 64-char encryption key from the password so we don't need a separate secret
+  const derived = (base + "::house-riis-session-v1::winter-is-ours").repeat(4).slice(0, 64);
   return {
-    password,
+    password: derived,
     name: "house_riis_session",
     maxAge: 60 * 60 * 24 * 30, // 30 days
     cookie: {
