@@ -89,8 +89,12 @@ export const Route = createFileRoute("/api/homey/callback")({
           });
           if (meRes.ok) {
             const me = (await meRes.json()) as any;
-            athomUserId = me?.id ?? me?.user?.id ?? null;
-            athomUserName = me?.name ?? me?.user?.name ?? null;
+            athomUserId = me?._id ?? me?.id ?? me?.user?._id ?? me?.user?.id ?? null;
+            athomUserName =
+              [me?.firstname, me?.lastname].filter(Boolean).join(" ") ||
+              me?.name ||
+              me?.email ||
+              null;
           }
         } catch {
           // non-fatal
