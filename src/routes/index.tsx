@@ -12,13 +12,13 @@ const TOLLNES = { lat: 59.1789, lon: 9.5732 }; // Tollnes, Skien
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "House Riis — Arne & Rebekka av Skien" },
+      { title: "House Riis-Pettersen — Arne & Rebekka av Skien" },
       {
         name: "description",
         content:
-          "Den offisielle krøniken om House Riis: Arne Riis og Rebekka Riis Pettersen i Skien. Agenda, vær, pollen, hytta, hundene og trening.",
+          "Den offisielle krøniken om House Riis-Pettersen: Arne Pettersen Riis og Rebekka Riis Pettersen i Skien. Agenda, vær, pollen, hytta, hundene og trening.",
       },
-      { property: "og:title", content: "House Riis — Arne & Rebekka av Skien" },
+      { property: "og:title", content: "House Riis-Pettersen — Arne & Rebekka av Skien" },
       {
         property: "og:description",
         content: "Familiens digitale storsal — i Game of Thrones-ånd.",
@@ -33,8 +33,8 @@ function Home() {
     <PageShell>
       <PageHero
         eyebrow="Krøniken om"
-        title="House Riis av Skien"
-        subtitle="Arne Riis og Rebekka Riis Pettersen — vinterens voktere ved fjorden."
+        title="House Riis-Pettersen av Skien"
+        subtitle="Arne Pettersen Riis og Rebekka Riis Pettersen — vinterens voktere ved fjorden."
         image={heroImg}
       />
 
@@ -47,7 +47,7 @@ function Home() {
 
         <div className="grid grid-cols-2 gap-4 sm:gap-6 max-w-2xl mx-auto">
           <PortraitCard
-            name="Arne Riis"
+            name="Arne Pettersen Riis"
             title="Lord av Skien"
             words="Med ære og ravner"
             image={arnePortrait}
