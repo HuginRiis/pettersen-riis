@@ -9,7 +9,7 @@ export const Route = createFileRoute("/agenda")({
   head: () => ({
     meta: [
       { title: "Krøniken — Agenda | House Riis" },
-      { name: "description", content: "Husets kalender og meldinger med dato og emne." },
+      { name: "description", content: "Husets kalender & meldinger med dato og emne." },
       { property: "og:title", content: "Krøniken — Agenda | House Riis" },
       { property: "og:description", content: "Send korte meldinger med dato og emne til familiens agenda." },
     ],
