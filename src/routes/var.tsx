@@ -15,9 +15,11 @@ export const Route = createFileRoute("/var")({
   component: WeatherPage,
 });
 
-// Skien koordinater
-const LAT = 59.2096;
-const LON = 9.6090;
+// Lokasjoner
+const LOCATIONS = [
+  { key: "skien", name: "Skien", subtitle: "Tollnes · House Pettersen Riis", lat: 59.2096, lon: 9.609 },
+  { key: "hytta", name: "Hytta", subtitle: "Lyngdal i Numedal · Øvre Bjørkesethvegen", lat: 59.92, lon: 9.30 },
+] as const;
 
 type ForecastDay = {
   date: string;
