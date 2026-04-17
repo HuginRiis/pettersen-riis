@@ -43,10 +43,14 @@ export type HomeySnapshot = {
   status?: number;
 };
 
+function normalizeHomeyToken(rawToken: string) {
+  return rawToken.trim().replace(/^Bearer\s+/i, "");
+}
+
 async function homeyFetch(path: string, token: string) {
   const res = await fetch(`${HOMEY_API_BASE}${path}`, {
     headers: {
-      Authorization: `Bearer ${token}`,
+      Authorization: `Bearer ${normalizeHomeyToken(token)}`,
       Accept: "application/json",
     },
   });
@@ -82,7 +86,8 @@ export const getHomeySnapshot = createServerFn({ method: "GET" }).handler(async 
     return { ok: false, error: "HOMEY_PAT mangler i serverkonfigurasjonen" };
   }
 
-  const resolved = await resolveHomeyBase(token);
+  const normalizedToken = normalizeHomeyToken(token);
+  const resolved = await resolveHomeyBase(normalizedToken);
   if ("error" in resolved) {
     return { ok: false, error: resolved.error, status: resolved.status };
   }
@@ -90,10 +95,10 @@ export const getHomeySnapshot = createServerFn({ method: "GET" }).handler(async 
   // Fetch zones and devices in parallel
   const [zonesRes, devicesRes] = await Promise.all([
     fetch(`${resolved.base}/api/manager/zones/zone/`, {
-      headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+      headers: { Authorization: `Bearer ${normalizedToken}`, Accept: "application/json" },
     }),
     fetch(`${resolved.base}/api/manager/devices/device/`, {
-      headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+      headers: { Authorization: `Bearer ${normalizedToken}`, Accept: "application/json" },
     }),
   ]);
 
@@ -173,7 +178,8 @@ export const setHomeyCapability = createServerFn({ method: "POST" })
     const token = process.env.HOMEY_PAT;
     if (!token) throw new Error("HOMEY_PAT mangler");
 
-    const resolved = await resolveHomeyBase(token);
+    const normalizedToken = normalizeHomeyToken(token);
+    const resolved = await resolveHomeyBase(normalizedToken);
     if ("error" in resolved) {
       throw new Error(resolved.error);
     }
@@ -183,7 +189,7 @@ export const setHomeyCapability = createServerFn({ method: "POST" })
       {
         method: "PUT",
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${normalizedToken}`,
           "Content-Type": "application/json",
           Accept: "application/json",
         },
