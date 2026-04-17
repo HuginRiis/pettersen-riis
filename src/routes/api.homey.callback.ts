@@ -52,18 +52,18 @@ export const Route = createFileRoute("/api/homey/callback")({
 
         const redirectUri = `${url.origin}/api/homey/callback`;
 
-        // Exchange code for tokens (Athom token endpoint lives on api.athom.com)
+        // Exchange code for tokens — Athom uses HTTP Basic auth + form body with `authorization_code` field
+        const basic = btoa(`${clientId}:${clientSecret}`);
         const tokenRes = await fetch(`${ATHOM_API_BASE}/oauth2/token`, {
           method: "POST",
           headers: {
             "Content-Type": "application/x-www-form-urlencoded",
+            Authorization: `Basic ${basic}`,
             Accept: "application/json",
           },
           body: new URLSearchParams({
             grant_type: "authorization_code",
-            code,
-            client_id: clientId,
-            client_secret: clientSecret,
+            authorization_code: code,
             redirect_uri: redirectUri,
           }),
         });
