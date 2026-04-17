@@ -128,12 +128,12 @@ function PortraitCard({
           height={1280}
         />
       </div>
-      <div className="p-6 text-center">
-        <div className="text-xs tracking-[0.3em] text-muted-foreground uppercase">
+      <div className="p-3 sm:p-4 text-center">
+        <div className="text-[10px] tracking-[0.25em] text-muted-foreground uppercase">
           {title}
         </div>
-        <h3 className="text-2xl mt-2 text-foreground">{name}</h3>
-        <p className="mt-3 text-medieval text-primary text-lg">"{words}"</p>
+        <h3 className="text-base sm:text-lg mt-1 text-foreground">{name}</h3>
+        <p className="mt-1.5 text-medieval text-primary text-sm sm:text-base">"{words}"</p>
       </div>
     </article>
   );
