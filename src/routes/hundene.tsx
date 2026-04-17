@@ -1,6 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { PageShell, PageHero } from "@/components/PageShell";
 import hundeneImg from "@/assets/hundene.jpg";
+import dogSnow from "@/assets/dog-snow.jpg";
+import dogShadow from "@/assets/dog-shadow.jpg";
+import dogEmber from "@/assets/dog-ember.jpg";
 
 export const Route = createFileRoute("/hundene")({
   head: () => ({
@@ -14,6 +17,30 @@ export const Route = createFileRoute("/hundene")({
   }),
   component: HundenePage,
 });
+
+const dogs = [
+  {
+    name: "Snø",
+    image: dogSnow,
+    breed: "Husets vokter",
+    words: "Stille som snøfall",
+    traits: ["Lojal", "Mild", "Vaktsom"],
+  },
+  {
+    name: "Skygge",
+    image: dogShadow,
+    breed: "Husets jeger",
+    words: "Sterk som vinternatten",
+    traits: ["Modig", "Skarp", "Urokkelig"],
+  },
+  {
+    name: "Ild",
+    image: dogEmber,
+    breed: "Husets flamme",
+    words: "Rask som lynet",
+    traits: ["Energisk", "Lekende", "Uredd"],
+  },
+];
 
 function HundenePage() {
   return (
@@ -32,19 +59,10 @@ function HundenePage() {
           </span>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-6">
-          <DogCard
-            name="Skygge"
-            breed="Husets vokter"
-            words="Stille som vinden"
-            traits={["Lojal", "Modig", "Rolig"]}
-          />
-          <DogCard
-            name="Storm"
-            breed="Husets jeger"
-            words="Rask som lynet"
-            traits={["Energisk", "Lekende", "Skarp"]}
-          />
+        <div className="grid md:grid-cols-3 gap-6">
+          {dogs.map((d) => (
+            <DogCard key={d.name} {...d} />
+          ))}
         </div>
 
         <div className="mt-12 panel rounded-lg p-6">
@@ -68,28 +86,51 @@ function DogCard({
   breed,
   words,
   traits,
+  image,
 }: {
   name: string;
   breed: string;
   words: string;
   traits: string[];
+  image: string;
 }) {
   return (
-    <article className="panel rounded-lg p-6 glow-on-hover">
-      <div className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
-        {breed}
+    <article className="panel rounded-lg overflow-hidden glow-on-hover flex flex-col">
+      <div className="relative aspect-[3/4] overflow-hidden">
+        <img
+          src={image}
+          alt={`${name} — ${breed}`}
+          loading="lazy"
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(180deg, transparent 50%, oklch(0.10 0.01 240 / 0.85) 100%)",
+          }}
+        />
+        <div className="absolute bottom-0 left-0 right-0 p-4">
+          <div className="text-[10px] uppercase tracking-[0.3em] text-primary/90">
+            {breed}
+          </div>
+          <h3 className="text-3xl text-primary text-medieval leading-none mt-1">
+            {name}
+          </h3>
+        </div>
       </div>
-      <h3 className="text-3xl text-primary mt-1">{name}</h3>
-      <p className="text-medieval text-lg mt-2 text-foreground/90">"{words}"</p>
-      <div className="flex flex-wrap gap-2 mt-4">
-        {traits.map((t) => (
-          <span
-            key={t}
-            className="text-xs px-2.5 py-1 rounded-full border border-primary/40 text-primary tracking-wider uppercase"
-          >
-            {t}
-          </span>
-        ))}
+      <div className="p-5 flex-1 flex flex-col">
+        <p className="text-medieval text-base text-foreground/90">"{words}"</p>
+        <div className="flex flex-wrap gap-2 mt-4">
+          {traits.map((t) => (
+            <span
+              key={t}
+              className="text-[10px] px-2.5 py-1 rounded-full border border-primary/40 text-primary tracking-wider uppercase"
+            >
+              {t}
+            </span>
+          ))}
+        </div>
       </div>
     </article>
   );
