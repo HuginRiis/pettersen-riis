@@ -95,7 +95,10 @@ function SmarthusPage() {
   const data = Route.useLoaderData() as Awaited<ReturnType<typeof getHomeySnapshot>>;
   const router = useRouter();
   const disconnect = useServerFn(disconnectHomey);
+  const toggleOutdoorLights = useServerFn(setAllOutdoorLights);
   const [disconnecting, setDisconnecting] = useState(false);
+  const [togglingLights, setTogglingLights] = useState(false);
+  const [lightsMessage, setLightsMessage] = useState<string | null>(null);
 
   if (!data.ok) {
     return <ConnectPanel message={data.needsConnect ? undefined : data.error} />;
