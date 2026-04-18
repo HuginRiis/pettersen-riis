@@ -88,30 +88,24 @@ function WeatherPage() {
   const devices = homeyOk ? data.devices : [];
   const zones = homeyOk ? data.zones : [];
 
-  // Totalt regn i dag: Netatmo eksponerer 'meter_rain' (akkumulert dag-total i mm).
-  // Faller tilbake til 'measure_rain' (mm/t) hvis dag-totalen ikke er tilgjengelig.
-  const tollnesRainToday =
-    readCap(
-      findDeviceFuzzy(devices, zones, "tollnes", (d) => hasCap(d, "meter_rain")),
-      "meter_rain",
-    ) ??
-    readCap(
-      findDeviceFuzzy(devices, zones, "tollnes", (d) => hasCap(d, "measure_rain")),
-      "measure_rain",
-    );
+  // Finn regnsensoren på hvert sted (matcher 'regn' i navn/sone),
+  // og les beste tilgjengelige "totalt regn i dag"-måling.
+  const tollnesRainSensor =
+    findDeviceFuzzy(devices, zones, "regn tollnes", () => true) ??
+    findDeviceFuzzy(devices, zones, "regnsensor tollnes", () => true) ??
+    findDeviceFuzzy(devices, zones, "tollnes", (d) => hasAnyRainCap(d));
+  const hyttaRainSensor =
+    findDeviceFuzzy(devices, zones, "regn hytta", () => true) ??
+    findDeviceFuzzy(devices, zones, "regnsensor hytta", () => true) ??
+    findDeviceFuzzy(devices, zones, "hytta", (d) => hasAnyRainCap(d));
+
+  const tollnesRainToday = readDailyRain(tollnesRainSensor);
+  const hyttaRainToday = readDailyRain(hyttaRainSensor);
+
   const tollnesWind = readCap(
     findDeviceFuzzy(devices, zones, "tollnes", (d) => hasCap(d, "measure_wind_strength")),
     "measure_wind_strength",
   );
-  const hyttaRainToday =
-    readCap(
-      findDeviceFuzzy(devices, zones, "hytta", (d) => hasCap(d, "meter_rain")),
-      "meter_rain",
-    ) ??
-    readCap(
-      findDeviceFuzzy(devices, zones, "hytta", (d) => hasCap(d, "measure_rain")),
-      "measure_rain",
-    );
   const hyttaWind = readCap(
     findDeviceFuzzy(devices, zones, "hytta", (d) => hasCap(d, "measure_wind_strength")),
     "measure_wind_strength",
@@ -140,9 +134,21 @@ function WeatherPage() {
             </p>
           ) : (
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <LiveMetric label="Regn i dag · Tollnes" value={tollnesRainToday} unit="mm" icon="🌧" />
+              <LiveMetric
+                label="Regn i dag · Tollnes"
+                value={tollnesRainToday}
+                unit="mm"
+                icon="🌧"
+                source={tollnesRainSensor?.name ?? null}
+              />
               <LiveMetric label="Vind · Tollnes" value={tollnesWind} unit="m/s" icon="💨" />
-              <LiveMetric label="Regn i dag · Hytta" value={hyttaRainToday} unit="mm" icon="🌧" />
+              <LiveMetric
+                label="Regn i dag · Hytta"
+                value={hyttaRainToday}
+                unit="mm"
+                icon="🌧"
+                source={hyttaRainSensor?.name ?? null}
+              />
               <LiveMetric label="Vind · Hytta" value={hyttaWind} unit="m/s" icon="💨" />
             </div>
           )}
@@ -210,11 +216,13 @@ function LiveMetric({
   value,
   unit,
   icon,
+  source,
 }: {
   label: string;
   value: number | null;
   unit: string;
   icon: string;
+  source?: string | null;
 }) {
   return (
     <article className="panel rounded-lg p-5 text-center">
@@ -228,6 +236,11 @@ function LiveMetric({
       <div className="text-[10px] tracking-[0.2em] text-muted-foreground/70 uppercase mt-1">
         {unit}
       </div>
+      {source && (
+        <div className="text-[9px] tracking-[0.15em] text-muted-foreground/60 uppercase mt-2 truncate">
+          {source}
+        </div>
+      )}
     </article>
   );
 }
@@ -239,6 +252,49 @@ function hasCap(d: DeviceLike | null | undefined, cap: string): boolean {
 function readCap(d: DeviceLike | null | undefined, cap: string): number | null {
   const v = d?.capabilities?.[cap]?.value;
   return typeof v === "number" ? v : null;
+}
+
+function hasAnyRainCap(d: DeviceLike | null | undefined): boolean {
+  if (!d?.capabilities) return false;
+  for (const k of Object.keys(d.capabilities)) {
+    if (k.toLowerCase().includes("rain") && typeof d.capabilities[k]?.value === "number") {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Les "totalt regn i dag" — prøver Netatmo-kapabiliteter i prioritert rekkefølge.
+ * Netatmo-rainmodulen i Homey eksponerer typisk:
+ *   measure_rain (mm/t nå), measure_rain.1h, measure_rain.24h,
+ *   meter_rain (akkumulert), meter_rain.today / .daily.
+ */
+function readDailyRain(d: DeviceLike | null | undefined): number | null {
+  if (!d?.capabilities) return null;
+  const caps = d.capabilities;
+  const priority = [
+    "meter_rain.today",
+    "meter_rain.daily",
+    "meter_rain.day",
+    "measure_rain.today",
+    "measure_rain.daily",
+    "measure_rain.day",
+    "meter_rain",
+    "measure_rain.24h",
+    "measure_rain.1h",
+    "measure_rain",
+  ];
+  for (const cap of priority) {
+    const v = caps[cap]?.value;
+    if (typeof v === "number") return v;
+  }
+  for (const [k, val] of Object.entries(caps)) {
+    if (k.toLowerCase().includes("rain") && typeof val?.value === "number") {
+      return val.value as number;
+    }
+  }
+  return null;
 }
 
 function parseForecast(data: any): ForecastDay[] {
