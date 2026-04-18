@@ -293,3 +293,32 @@ function Li({ children }: { children: React.ReactNode }) {
     </li>
   );
 }
+
+function Portrait({
+  src,
+  title,
+  caption,
+}: {
+  src: string;
+  title: string;
+  caption: string;
+}) {
+  return (
+    <figure className="panel rounded-lg overflow-hidden glow-on-hover">
+      <div className="aspect-[4/3] overflow-hidden">
+        <img
+          src={src}
+          alt={title}
+          className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
+          loading="lazy"
+        />
+      </div>
+      <figcaption className="p-4">
+        <h3 className="text-primary text-lg mb-1 text-display tracking-wide">
+          {title}
+        </h3>
+        <p className="text-sm text-foreground/80 leading-relaxed">{caption}</p>
+      </figcaption>
+    </figure>
+  );
+}
