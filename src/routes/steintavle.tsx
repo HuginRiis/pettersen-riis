@@ -6,9 +6,7 @@ import { TollnesCameraStrip } from "@/components/TollnesCameraStrip";
 import { getHomeySnapshot } from "@/server/homey";
 import { findDeviceFuzzy, readTemp } from "@/lib/homey-match";
 import {
-  getMetRadarSouthernNorway,
   getTollnesAlerts,
-  type RadarResult,
   type AlertsResult,
   type MetAlert,
 } from "@/server/lightning";
@@ -46,22 +44,13 @@ export const Route = createFileRoute("/steintavle")({
 function SteintavlePage() {
   const data = Route.useLoaderData() as Awaited<ReturnType<typeof getHomeySnapshot>>;
   const router = useRouter();
-  const fetchRadar = useServerFn(getMetRadarSouthernNorway);
   const fetchAlerts = useServerFn(getTollnesAlerts);
-  const [radar, setRadar] = useState<RadarResult | null>(null);
   const [alerts, setAlerts] = useState<AlertsResult | null>(null);
-  const [now, setNow] = useState(() => new Date());
+  const [now, setNow] = useState<Date | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    const loadRadar = async () => {
-      try {
-        const res = await fetchRadar();
-        if (!cancelled) setRadar(res);
-      } catch (e: any) {
-        if (!cancelled) setRadar({ ok: false, error: e?.message ?? "Feil" });
-      }
-    };
+    setNow(new Date());
     const loadAlerts = async () => {
       try {
         const res = await fetchAlerts();
@@ -70,21 +59,18 @@ function SteintavlePage() {
         if (!cancelled) setAlerts({ ok: false, error: e?.message ?? "Feil" });
       }
     };
-    loadRadar();
     loadAlerts();
-    const r = setInterval(loadRadar, 5 * 60_000); // radar hvert 5. min
     const a = setInterval(loadAlerts, 5 * 60_000);
     const c = setInterval(() => setNow(new Date()), 30_000);
     // Hent ferske Homey-temperaturer hvert 60. sek
     const t = setInterval(() => router.invalidate(), 60_000);
     return () => {
       cancelled = true;
-      clearInterval(r);
       clearInterval(a);
       clearInterval(c);
       clearInterval(t);
     };
-  }, [fetchRadar, fetchAlerts, router]);
+  }, [fetchAlerts, router]);
 
   if (!data.ok) {
     return (
