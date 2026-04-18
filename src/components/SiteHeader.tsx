@@ -64,6 +64,7 @@ export function SiteHeader() {
             <Link
               key={l.to}
               to={l.to}
+              onClick={l.to === "/" ? playGotTheme : undefined}
               className="px-3 py-2 text-sm tracking-wider uppercase text-muted-foreground hover:text-primary transition-colors data-[status=active]:text-primary data-[status=active]:font-semibold"
               activeOptions={{ exact: l.to === "/" }}
             >
