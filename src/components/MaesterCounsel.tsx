@@ -317,6 +317,12 @@ function buildAdvice({
   if (dayPart === "nattevakt") travel.push("Tenn lyktene foran og bak kjerren — banditter og rådyr er begge dårlig kledd for natten.");
   if (isWindy && !isStorm) travel.push("Hold tømmene fast i kastevind — særlig ved Bryggevannet.");
 
+  // Prepend ekte farevarsler for Telemark fra Met.no (oppdateres hvert 15. min)
+  const alertLines = alertsToCounselLines(alerts, 4);
+  if (alertLines.length > 0) {
+    travel.unshift(...alertLines);
+  }
+
   /* ── Pollen & plager (heuristikk pr. måned) ────────────────────── */
   const pollen: string[] = [];
   // Norge, grovt: hassel/or feb-mar, bjørk apr-mai, gress jun-jul, burot aug
