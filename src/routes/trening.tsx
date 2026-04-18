@@ -411,5 +411,41 @@ function Quote({ text }: { text: string }) {
   );
 }
 
+function Metric({
+  label,
+  value,
+  icon,
+  hint,
+}: {
+  label: string;
+  value: string;
+  icon?: string;
+  hint?: string;
+}) {
+  return (
+    <div className="rounded border border-primary/20 bg-background/40 p-3">
+      <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-1">
+        {icon && <span className="text-primary/80">{icon}</span>}
+        {label}
+      </div>
+      <div className="text-base text-primary mt-1">{value}</div>
+      {hint && <div className="text-[10px] text-muted-foreground mt-0.5">{hint}</div>}
+    </div>
+  );
+}
+
+function romanNumeral(n: number) {
+  const map: Record<number, string> = {
+    1: "I",
+    2: "II",
+    3: "III",
+    4: "IV",
+    5: "V",
+    6: "VI",
+    7: "VII",
+  };
+  return map[n] ?? String(n);
+}
+
 // Marker as used to keep import tree-shaken correctly
 void Link;
