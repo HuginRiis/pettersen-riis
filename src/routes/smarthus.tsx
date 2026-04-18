@@ -1,7 +1,8 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { PageShell, PageHero } from "@/components/PageShell";
+import { LastUpdated } from "@/components/LastUpdated";
 import { getHomeySnapshot, disconnectHomey, setAllOutdoorLights } from "@/server/homey";
 import { findDeviceFuzzy, readTemp } from "@/lib/homey-match";
 import heroImg from "@/assets/smarthus-hero.jpg";
@@ -100,6 +101,12 @@ function SmarthusPage() {
   const [disconnecting, setDisconnecting] = useState(false);
   const [togglingLights, setTogglingLights] = useState(false);
   const [lightsMessage, setLightsMessage] = useState<string | null>(null);
+  const [homeyUpdated, setHomeyUpdated] = useState<Date>(() => new Date());
+
+  // Hver gang loader-data endres (etter router.invalidate) — merk tidspunktet.
+  useEffect(() => {
+    setHomeyUpdated(new Date());
+  }, [data]);
 
   if (!data.ok) {
     return <ConnectPanel message={data.needsConnect ? undefined : data.error} />;
@@ -367,7 +374,11 @@ function SmarthusPage() {
         image={heroImg}
       />
 
-      <section className="container mx-auto px-4 pt-10 space-y-4">
+      <section className="container mx-auto px-4 pt-6 flex justify-center">
+        <LastUpdated label="Homey" timestamp={homeyUpdated} />
+      </section>
+
+      <section className="container mx-auto px-4 pt-6 space-y-4">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Stat label="Tjenere" value={String(totalDevices)} />
           <Stat label="Sale" value={String(zoneEntries.length)} />

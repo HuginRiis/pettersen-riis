@@ -2,6 +2,7 @@ import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { PageShell, PageHero } from "@/components/PageShell";
+import { LastUpdated } from "@/components/LastUpdated";
 import heroImg from "@/assets/hero-westeros.jpg";
 import { getHomeySnapshot } from "@/server/homey";
 import { findDeviceFuzzy, type DeviceLike } from "@/lib/homey-match";
@@ -67,6 +68,8 @@ function WeatherPage() {
   const fetchAlerts = useServerFn(getTollnesAlerts);
   const [alerts, setAlerts] = useState<AlertsResult | null>(null);
   const [now, setNow] = useState<Date | null>(null);
+  const [weatherUpdated, setWeatherUpdated] = useState<Date | null>(null);
+  const [homeyUpdated, setHomeyUpdated] = useState<Date | null>(() => new Date());
   const [state, setState] = useState<Record<string, LocationState>>(() =>
     Object.fromEntries(
       LOCATIONS.map((l) => [
@@ -76,8 +79,14 @@ function WeatherPage() {
     ),
   );
 
+  // Homey-data oppdateres ved hver router.invalidate — merk tidspunktet.
+  useEffect(() => {
+    setHomeyUpdated(new Date());
+  }, [data]);
+
   useEffect(() => {
     setNow(new Date());
+    let pending = LOCATIONS.length;
     LOCATIONS.forEach(async (loc) => {
       try {
         const res = await fetch(
@@ -102,6 +111,9 @@ function WeatherPage() {
             loading: false,
           },
         }));
+      } finally {
+        pending -= 1;
+        if (pending === 0) setWeatherUpdated(new Date());
       }
     });
     // Hent varsler fra MET
@@ -183,6 +195,11 @@ function WeatherPage() {
         subtitle="Ravnen kommer fra MET.no. Live regn- og vindmålinger fra Netatmo via Homey."
         image={heroImg}
       />
+
+      <section className="container mx-auto px-4 pt-6 flex flex-wrap gap-2 justify-center">
+        <LastUpdated label="Vær (MET.no)" timestamp={weatherUpdated} />
+        <LastUpdated label="Homey" timestamp={homeyUpdated} />
+      </section>
 
       <section className="container mx-auto px-4 py-12 space-y-12">
         {/* === VARSLER FRA MAESTERNE === */}
