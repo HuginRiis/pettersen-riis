@@ -217,6 +217,63 @@ function SmarthusPage() {
   const formatPower = (w: number) =>
     w >= 1000 ? `${(w / 1000).toFixed(2)} kW` : `${Math.round(w)} W`;
 
+  // Temperaturer per rom — alle enheter med measure_temperature
+  type RoomTemp = {
+    deviceId: string;
+    deviceName: string;
+    zoneName: string;
+    temp: number;
+    isOutdoor: boolean;
+    isNetatmo: boolean;
+  };
+
+  const isNetatmoDevice = (d: any): boolean => {
+    const name = (d.name ?? "").toLowerCase();
+    if (name.includes("netatmo")) return true;
+    // fallback: typical Netatmo outdoor module name patterns
+    return false;
+  };
+
+  const isOutdoorByName = (name: string) => {
+    const n = name.toLowerCase();
+    return (
+      n.includes("ute") ||
+      n.includes("uten") ||
+      n.includes("outdoor") ||
+      n.includes("yard") ||
+      n.includes("hage")
+    );
+  };
+
+  const roomTemps: RoomTemp[] = data.devices
+    .map((d): RoomTemp | null => {
+      const t = d.capabilities["measure_temperature"]?.value;
+      if (typeof t !== "number") return null;
+      const zoneName = d.zone ? zoneById.get(d.zone)?.name ?? "Ukjent" : "Ukjent";
+      const netatmo = isNetatmoDevice(d);
+      const outdoor = isOutdoorByName(d.name) || isOutdoorByName(zoneName);
+      return {
+        deviceId: d.id,
+        deviceName: d.name,
+        zoneName,
+        temp: t,
+        isOutdoor: outdoor,
+        isNetatmo: netatmo,
+      };
+    })
+    .filter((x): x is RoomTemp => x !== null);
+
+  // Ute-temperatur: helst Netatmo + ute, ellers bare Netatmo, ellers første ute
+  const outdoorTemp =
+    roomTemps.find((r) => r.isNetatmo && r.isOutdoor) ??
+    roomTemps.find((r) => r.isNetatmo) ??
+    roomTemps.find((r) => r.isOutdoor) ??
+    null;
+
+  const indoorTemps = roomTemps
+    .filter((r) => r.deviceId !== outdoorTemp?.deviceId)
+    .sort((a, b) => a.zoneName.localeCompare(b.zoneName, "nb"));
+
   const handleDisconnect = async () => {
     if (!confirm("Bryt båndet til Homey?")) return;
     setDisconnecting(true);
@@ -225,6 +282,29 @@ function SmarthusPage() {
       await router.invalidate();
     } finally {
       setDisconnecting(false);
+    }
+  };
+
+  const handleToggleOutdoorLights = async (on: boolean) => {
+    setTogglingLights(true);
+    setLightsMessage(null);
+    try {
+      const res = await toggleOutdoorLights({ data: { on } });
+      if (res.ok) {
+        setLightsMessage(
+          on
+            ? `✦ Tente ${res.toggled} utelys`
+            : `○ Slokte ${res.toggled} utelys`,
+        );
+        await router.invalidate();
+      } else {
+        setLightsMessage(res.error ?? "Klarte ikke styre lysene");
+      }
+    } catch (e: any) {
+      setLightsMessage(e?.message ?? "Klarte ikke styre lysene");
+    } finally {
+      setTogglingLights(false);
+      setTimeout(() => setLightsMessage(null), 4000);
     }
   };
 
