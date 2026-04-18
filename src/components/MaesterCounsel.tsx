@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
+import { getTelemarkAlerts, type TelemarkAlert } from "@/server/met-alerts";
+import { alertsToCounselLines, severityBadge } from "@/lib/telemark-alerts-got";
 
 /**
  * MaesterCounsel — "Hærmesterens råd"
@@ -48,6 +50,8 @@ export function MaesterCounsel() {
   const [now, setNow] = useState<Now | null>(null);
   const [date, setDate] = useState<Date | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [alerts, setAlerts] = useState<TelemarkAlert[]>([]);
+  const [alertsFetchedAt, setAlertsFetchedAt] = useState<number | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -75,10 +79,38 @@ export function MaesterCounsel() {
     })();
   }, []);
 
+  // Hent Telemark-farevarsler hvert 15. minutt
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      try {
+        const r = await getTelemarkAlerts();
+        if (cancelled) return;
+        setAlerts(r.alerts ?? []);
+        setAlertsFetchedAt(r.fetchedAt ?? Date.now());
+      } catch (e) {
+        console.warn("Kunne ikke hente Telemark-varsler:", e);
+      }
+    }
+    load();
+    const id = setInterval(load, 15 * 60 * 1000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, []);
+
   const advice = useMemo(() => {
     if (!mounted || !date) return null;
-    return buildAdvice({ date, weather: now });
-  }, [mounted, date, now]);
+    return buildAdvice({ date, weather: now, alerts });
+  }, [mounted, date, now, alerts]);
+
+  const badge = useMemo(() => severityBadge(alerts), [alerts]);
+  const lastUpdated = useMemo(() => {
+    if (!alertsFetchedAt) return null;
+    const d = new Date(alertsFetchedAt);
+    return d.toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit" });
+  }, [alertsFetchedAt]);
 
   return (
     <section className="container mx-auto px-4 pb-16">
@@ -102,8 +134,29 @@ export function MaesterCounsel() {
             </p>
           </div>
           {advice && (
-            <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
-              {advice.season} · {advice.dayPart}
+            <div className="flex flex-col items-end gap-1">
+              {badge && (
+                <span
+                  className={`text-[9px] tracking-[0.2em] uppercase px-2 py-0.5 rounded-sm border ${
+                    badge.color === "Red"
+                      ? "border-destructive text-destructive bg-destructive/10"
+                      : badge.color === "Orange"
+                        ? "border-orange-500/70 text-orange-400 bg-orange-500/10"
+                        : "border-yellow-500/60 text-yellow-300 bg-yellow-500/10"
+                  }`}
+                  title="Aktive farevarsler i Telemark fra Met.no"
+                >
+                  ⚠ {badge.label}
+                </span>
+              )}
+              <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
+                {advice.season} · {advice.dayPart}
+              </div>
+              {lastUpdated && (
+                <div className="text-[9px] text-muted-foreground/70 italic">
+                  Ravnene landet kl. {lastUpdated}
+                </div>
+              )}
             </div>
           )}
         </header>
@@ -183,7 +236,15 @@ function getDayPart(hour: number): DayPart {
   return "nattevakt";
 }
 
-function buildAdvice({ date, weather }: { date: Date; weather: Now | null }) {
+function buildAdvice({
+  date,
+  weather,
+  alerts = [],
+}: {
+  date: Date;
+  weather: Now | null;
+  alerts?: TelemarkAlert[];
+}) {
   const month = date.getMonth(); // 0-11
   const hour = date.getHours();
   const season = getSeason(month);
@@ -255,6 +316,12 @@ function buildAdvice({ date, weather }: { date: Date; weather: Now | null }) {
   }
   if (dayPart === "nattevakt") travel.push("Tenn lyktene foran og bak kjerren — banditter og rådyr er begge dårlig kledd for natten.");
   if (isWindy && !isStorm) travel.push("Hold tømmene fast i kastevind — særlig ved Bryggevannet.");
+
+  // Prepend ekte farevarsler for Telemark fra Met.no (oppdateres hvert 15. min)
+  const alertLines = alertsToCounselLines(alerts, 4);
+  if (alertLines.length > 0) {
+    travel.unshift(...alertLines);
+  }
 
   /* ── Pollen & plager (heuristikk pr. måned) ────────────────────── */
   const pollen: string[] = [];
