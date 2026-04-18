@@ -8,9 +8,9 @@ import dogEmber from "@/assets/dog-ember.jpg";
 export const Route = createFileRoute("/hundene")({
   head: () => ({
     meta: [
-      { title: "Hundene — Husets ulver | House Riis Pettersen" },
-      { name: "description", content: "House Riis Pettersen' tro følgesvenner — husets vakthunder." },
-      { property: "og:title", content: "Hundene | House Riis Pettersen" },
+      { title: "Hundene — Husets ulver | House Pettersen Riis" },
+      { name: "description", content: "House Pettersen Riis' tro følgesvenner — husets vakthunder." },
+      { property: "og:title", content: "Hundene | House Pettersen Riis" },
       { property: "og:description", content: "Husets tro følgesvenner og vakthunder." },
       { property: "og:image", content: hundeneImg },
     ],

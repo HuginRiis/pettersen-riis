@@ -24,13 +24,13 @@ import {
 export const Route = createFileRoute("/steintavle")({
   head: () => ({
     meta: [
-      { title: "Steintavle | House Riis-Pettersen" },
+      { title: "Steintavle | House Pettersen-Riis" },
       {
         name: "description",
         content:
           "Steintavlen — borgens raske blikk på temperatur, kamera og torden over Tollnes.",
       },
-      { property: "og:title", content: "Steintavle — House Riis-Pettersen" },
+      { property: "og:title", content: "Steintavle — House Pettersen-Riis" },
       {
         property: "og:description",
         content: "Temperatur, live kamera og tordenvarsel over Tollnes.",

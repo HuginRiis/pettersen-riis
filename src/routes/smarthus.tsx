@@ -10,7 +10,7 @@ import heroImg from "@/assets/smarthus-hero.jpg";
 export const Route = createFileRoute("/smarthus")({
   head: () => ({
     meta: [
-      { title: "Borgens Smarthus | House Riis-Pettersen" },
+      { title: "Borgens Smarthus | House Pettersen-Riis" },
       {
         name: "description",
         content: "Borgens Smarthus — oversikt over alle Homey-enhetene i huset.",
