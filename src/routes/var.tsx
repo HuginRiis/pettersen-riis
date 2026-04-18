@@ -196,6 +196,11 @@ function WeatherPage() {
         image={heroImg}
       />
 
+      <section className="container mx-auto px-4 pt-6 flex flex-wrap gap-2 justify-center">
+        <LastUpdated label="Vær (MET.no)" timestamp={weatherUpdated} />
+        <LastUpdated label="Homey" timestamp={homeyUpdated} />
+      </section>
+
       <section className="container mx-auto px-4 py-12 space-y-12">
         {/* === VARSLER FRA MAESTERNE === */}
         <Block title="Varselravnen · MET.no">
