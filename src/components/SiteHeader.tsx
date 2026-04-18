@@ -11,6 +11,7 @@ const links = [
   { to: "/hundene", label: "Hundene" },
   { to: "/trening", label: "Trening" },
   { to: "/smarthus", label: "Borgens Smarthus" },
+  { to: "/steintavle", label: "Steintavle" },
 ] as const;
 
 export function SiteHeader() {
