@@ -25,7 +25,7 @@ type Plate = {
 const GALLERY: Plate[] = [
   {
     src: g1820,
-    house: "House Riis Pettersen · Krøniken",
+    house: "House Pettersen Riis · Krøniken",
     title: "Vinterens Vakt",
     caption: "Snøen faller i tunge kapper. Hytta står som en festning bak grantrærnes hvite ringbrynjer.",
     span: "wide",
@@ -95,9 +95,9 @@ const GALLERY: Plate[] = [
 export const Route = createFileRoute("/hytta")({
   head: () => ({
     meta: [
-      { title: "Hytta — House Riis Pettersen' tilflukt" },
+      { title: "Hytta — House Pettersen Riis' tilflukt" },
       { name: "description", content: "Husets hytte — fjellets ro, peiskos og lange skiturer." },
-      { property: "og:title", content: "Hytta | House Riis Pettersen" },
+      { property: "og:title", content: "Hytta | House Pettersen Riis" },
       { property: "og:description", content: "Vinterens favorittsted i fjellet." },
       { property: "og:image", content: hyttaImg },
     ],
@@ -121,7 +121,7 @@ function HyttaPage() {
             <span className="text-display tracking-[0.3em] text-primary text-sm uppercase">Krøniken om hytta</span>
           </div>
           <p className="text-foreground/90 leading-relaxed">
-            Når vintervindene feier over Skien, søker House Riis Pettersen tilflukt i tømmerhytta. Røyken stiger fra pipa, peisen
+            Når vintervindene feier over Skien, søker House Pettersen Riis tilflukt i tømmerhytta. Røyken stiger fra pipa, peisen
             knitrer, og ravnene holder vakt i grantrærne utenfor.
           </p>
           <p className="text-muted-foreground leading-relaxed">
@@ -157,7 +157,7 @@ function HyttaPage() {
         stationMatch="hytta"
       />
 
-      {/* Galleriet — Krøniken om House Riis Pettersen i fjellet */}
+      {/* Galleriet — Krøniken om House Pettersen Riis i fjellet */}
       <section className="container mx-auto px-4 pb-16">
         <div className="ornate-divider mb-6">
           <span className="text-display tracking-[0.3em] text-primary text-sm uppercase">
@@ -168,7 +168,7 @@ function HyttaPage() {
         <header className="text-center max-w-2xl mx-auto mb-10">
           <h2 className="text-3xl md:text-4xl heading-hero mb-3">Galleria Hyemalis</h2>
           <p className="text-muted-foreground italic">
-            "Vinteren kommer alltid. Og hver vinter skriver House Riis Pettersen et nytt kapittel i snøen."
+            "Vinteren kommer alltid. Og hver vinter skriver House Pettersen Riis et nytt kapittel i snøen."
           </p>
         </header>
 

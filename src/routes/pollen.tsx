@@ -8,9 +8,9 @@ import heroImg from "@/assets/hero-westeros.jpg";
 export const Route = createFileRoute("/pollen")({
   head: () => ({
     meta: [
-      { title: "Pollenvarsel | House Riis Pettersen" },
+      { title: "Pollenvarsel | House Pettersen Riis" },
       { name: "description", content: "Pollenvarsel for Skien og hytta i Numedal — kalender, kurver og sesong-oversikt." },
-      { property: "og:title", content: "Pollenvarsel | House Riis Pettersen" },
+      { property: "og:title", content: "Pollenvarsel | House Pettersen Riis" },
       { property: "og:description", content: "Pollenestimat for Skien og Lyngdal i Numedal." },
     ],
   }),

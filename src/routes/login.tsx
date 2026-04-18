@@ -12,7 +12,7 @@ export const Route = createFileRoute("/login")({
     }
   },
   head: () => ({
-    meta: [{ title: "House Riis Pettersen — Inngang til storsalen" }],
+    meta: [{ title: "House Pettersen Riis — Inngang til storsalen" }],
   }),
   component: LoginPage,
 });

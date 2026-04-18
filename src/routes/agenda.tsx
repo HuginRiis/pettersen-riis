@@ -8,9 +8,9 @@ import { Trash2, Plus } from "lucide-react";
 export const Route = createFileRoute("/agenda")({
   head: () => ({
     meta: [
-      { title: "Krøniken — Agenda | House Riis Pettersen" },
+      { title: "Krøniken — Agenda | House Pettersen Riis" },
       { name: "description", content: "Husets kalender & meldinger med dato og emne." },
-      { property: "og:title", content: "Krøniken — Agenda | House Riis Pettersen" },
+      { property: "og:title", content: "Krøniken — Agenda | House Pettersen Riis" },
       { property: "og:description", content: "Send korte meldinger med dato og emne til familiens agenda." },
     ],
   }),

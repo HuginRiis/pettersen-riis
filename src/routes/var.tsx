@@ -11,9 +11,9 @@ import { getTollnesAlerts, type AlertsResult, type MetAlert } from "@/server/lig
 export const Route = createFileRoute("/var")({
   head: () => ({
     meta: [
-      { title: "Værens budskap — Vær | House Riis Pettersen" },
+      { title: "Værens budskap — Vær | House Pettersen Riis" },
       { name: "description", content: "Værmelding, regn og vind for Skien og hytta." },
-      { property: "og:title", content: "Værens budskap | House Riis Pettersen" },
+      { property: "og:title", content: "Værens budskap | House Pettersen Riis" },
       { property: "og:description", content: "Sjusiffret værmelding, regn og vind fra Tollnes og Numedal." },
     ],
   }),
