@@ -200,32 +200,23 @@ function TreningPage() {
             <div className="flex items-center justify-between mb-6">
               <p className="text-sm text-muted-foreground">
                 Lenket til{" "}
-                <span className="text-primary">
+                <span className="text-primary text-medieval">
                   {dash.kind === "ok" && dash.athleteName ? dash.athleteName : status.athleteName ?? "Arne"}
                 </span>
               </p>
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={loadDash}
-                  disabled={dash.kind === "loading"}
-                  className="text-xs uppercase tracking-[0.2em] text-muted-foreground hover:text-primary disabled:opacity-50"
-                >
-                  ↻ Oppfrisk
-                </button>
-                <button
-                  onClick={async () => {
-                    await disconnect();
-                    await loadStatus();
-                  }}
-                  className="text-xs uppercase tracking-[0.2em] text-muted-foreground hover:text-destructive"
-                >
-                  Koble fra
-                </button>
-              </div>
+              <button
+                onClick={loadDash}
+                disabled={dash.kind === "loading"}
+                className="text-xs uppercase tracking-[0.2em] text-muted-foreground hover:text-primary disabled:opacity-50"
+              >
+                ↻ Oppfrisk krøniken
+              </button>
             </div>
 
             {dash.kind === "loading" && (
-              <p className="text-center text-sm text-muted-foreground">Henter ukens dåder…</p>
+              <p className="text-center text-sm text-muted-foreground italic">
+                Budbringeren rir gjennom marka…
+              </p>
             )}
 
             {dash.kind === "error" && (
@@ -240,7 +231,7 @@ function TreningPage() {
             {dash.kind === "ok" && (
               <>
                 {/* Ukens stats */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-10">
                   <Stat
                     label="Økter denne uka"
                     value={String(dash.week.count)}
@@ -267,72 +258,94 @@ function TreningPage() {
                   />
                 </div>
 
-                {/* Kart over siste tur */}
-                {lastWithMap && lastWithMap.polyline && (
-                  <article className="panel rounded-lg overflow-hidden mb-8">
-                    <div className="flex items-baseline justify-between p-4">
-                      <div>
-                        <h3 className="text-lg text-primary">
-                          {activityIcon(lastWithMap.type)} {lastWithMap.name}
-                        </h3>
-                        <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground mt-1">
-                          {formatDate(lastWithMap.startDate)} ·{" "}
-                          {formatKm(lastWithMap.distance)} ·{" "}
-                          {formatDuration(lastWithMap.movingTime)}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="aspect-video bg-muted">
-                      <ActivityMap encoded={lastWithMap.polyline} />
-                    </div>
-                  </article>
-                )}
-
-                {/* Liste over aktiviteter */}
-                <div className="grid sm:grid-cols-2 gap-3">
-                  {dash.activities.map((a) => (
-                    <article key={a.id} className="panel rounded-lg p-4 glow-on-hover">
-                      <div className="flex items-baseline justify-between gap-2">
-                        <h4 className="text-base text-primary truncate">
-                          {activityIcon(a.type)} {a.name}
-                        </h4>
-                        <span className="text-[10px] uppercase tracking-wider text-muted-foreground shrink-0">
-                          {formatDate(a.startDate)}
-                        </span>
-                      </div>
-                      <div className="mt-2 grid grid-cols-3 gap-2 text-xs text-foreground/90">
-                        <div>
-                          <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                            Distanse
-                          </div>
-                          <div>{formatKm(a.distance)}</div>
-                        </div>
-                        <div>
-                          <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                            Tid
-                          </div>
-                          <div>{formatDuration(a.movingTime)}</div>
-                        </div>
-                        <div>
-                          <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                            {a.type.toLowerCase().includes("run") ? "Tempo" : "Stigning"}
-                          </div>
-                          <div>
-                            {a.type.toLowerCase().includes("run")
-                              ? formatPace(a.distance, a.movingTime)
-                              : `${Math.round(a.elevation)} m`}
-                          </div>
-                        </div>
-                      </div>
-                      {a.avgHeartrate && (
-                        <div className="mt-2 text-[11px] text-muted-foreground">
-                          ❤ Snittpuls {Math.round(a.avgHeartrate)} bpm
-                          {a.maxHeartrate ? ` · maks ${Math.round(a.maxHeartrate)}` : ""}
-                        </div>
-                      )}
-                    </article>
-                  ))}
+                <div className="ornate-divider mb-6">
+                  <span className="text-display tracking-[0.3em] text-primary text-sm uppercase">
+                    De syv siste dåder
+                  </span>
                 </div>
+
+                {/* Liste over de 7 siste aktivitetene med kart */}
+                <ol className="space-y-6">
+                  {dash.activities.slice(0, 7).map((a, idx) => (
+                    <li key={a.id}>
+                      <article className="panel rounded-lg overflow-hidden glow-on-hover relative">
+                        {/* Sigil-nummer */}
+                        <div className="absolute top-3 left-3 z-10 w-10 h-10 rounded-full bg-background/80 border border-primary/40 flex items-center justify-center">
+                          <span className="text-medieval text-primary text-lg leading-none">
+                            {romanNumeral(idx + 1)}
+                          </span>
+                        </div>
+
+                        {/* Kart, eller ornament hvis ingen polyline */}
+                        {a.polyline ? (
+                          <div className="aspect-[16/7] bg-muted">
+                            <ActivityMap encoded={a.polyline} />
+                          </div>
+                        ) : (
+                          <div className="aspect-[16/7] bg-muted/40 flex items-center justify-center">
+                            <span className="text-4xl opacity-30">⚔</span>
+                          </div>
+                        )}
+
+                        <div className="p-5">
+                          <div className="flex items-baseline justify-between gap-3 mb-1">
+                            <h3 className="text-xl text-primary text-medieval truncate">
+                              {activityIcon(a.type)} {a.name}
+                            </h3>
+                            <span className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground shrink-0">
+                              {formatDate(a.startDate)}
+                            </span>
+                          </div>
+                          <p className="text-[11px] uppercase tracking-[0.25em] text-muted-foreground mb-4">
+                            {a.type}
+                          </p>
+
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm text-foreground/90">
+                            <Metric
+                              label="Distanse"
+                              value={formatKm(a.distance)}
+                              icon="🛡"
+                            />
+                            <Metric
+                              label="Tid"
+                              value={formatDuration(a.movingTime)}
+                              icon="⌛"
+                            />
+                            <Metric
+                              label={
+                                a.type.toLowerCase().includes("run")
+                                  ? "Tempo"
+                                  : "Stigning"
+                              }
+                              value={
+                                a.type.toLowerCase().includes("run")
+                                  ? formatPace(a.distance, a.movingTime)
+                                  : `${Math.round(a.elevation)} m`
+                              }
+                              icon={
+                                a.type.toLowerCase().includes("run") ? "🏹" : "⛰"
+                              }
+                            />
+                            <Metric
+                              label="Snittpuls"
+                              value={
+                                a.avgHeartrate
+                                  ? `${Math.round(a.avgHeartrate)} bpm`
+                                  : "—"
+                              }
+                              icon="❤"
+                              hint={
+                                a.maxHeartrate
+                                  ? `maks ${Math.round(a.maxHeartrate)}`
+                                  : undefined
+                              }
+                            />
+                          </div>
+                        </div>
+                      </article>
+                    </li>
+                  ))}
+                </ol>
               </>
             )}
           </>
