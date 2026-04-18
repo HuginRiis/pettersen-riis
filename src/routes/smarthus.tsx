@@ -223,56 +223,94 @@ function SmarthusPage() {
     deviceName: string;
     zoneName: string;
     temp: number;
-    isOutdoor: boolean;
-    isNetatmo: boolean;
   };
 
-  const isNetatmoDevice = (d: any): boolean => {
-    const name = (d.name ?? "").toLowerCase();
-    if (name.includes("netatmo")) return true;
-    // fallback: typical Netatmo outdoor module name patterns
-    return false;
+  const norm = (s: string) =>
+    s
+      .toLowerCase()
+      .replace(/\s+/g, " ")
+      .trim();
+
+  const findDeviceByName = (needle: string) => {
+    const n = norm(needle);
+    return data.devices.find((d) => norm(d.name) === n) ??
+      data.devices.find((d) => norm(d.name).includes(n));
   };
 
-  const isOutdoorByName = (name: string) => {
-    const n = name.toLowerCase();
-    return (
-      n.includes("ute") ||
-      n.includes("uten") ||
-      n.includes("outdoor") ||
-      n.includes("yard") ||
-      n.includes("hage")
-    );
+  // Eksplisitte ute-sensorer (etter ønske fra bruker)
+  const outdoorTollnesDevice = findDeviceByName("Ute Tollnes Ute");
+  const outdoorHyttaDevice = findDeviceByName("Hytta Hytta ute");
+
+  const readTemp = (d: any | undefined) => {
+    const v = d?.capabilities["measure_temperature"]?.value;
+    return typeof v === "number" ? v : null;
   };
 
-  const roomTemps: RoomTemp[] = data.devices
-    .map((d): RoomTemp | null => {
-      const t = d.capabilities["measure_temperature"]?.value;
-      if (typeof t !== "number") return null;
-      const zoneName = d.zone ? zoneById.get(d.zone)?.name ?? "Ukjent" : "Ukjent";
-      const netatmo = isNetatmoDevice(d);
-      const outdoor = isOutdoorByName(d.name) || isOutdoorByName(zoneName);
-      return {
+  const outdoorTollnesTemp = readTemp(outdoorTollnesDevice);
+  const outdoorHyttaTemp = readTemp(outdoorHyttaDevice);
+
+  const excludedOutdoorIds = new Set(
+    [outdoorTollnesDevice?.id, outdoorHyttaDevice?.id].filter(Boolean) as string[],
+  );
+
+  // Én temperatur per rom (sone). Foretrekk Netatmo, ellers første treff.
+  const tempByZone = new Map<string, RoomTemp>();
+  for (const d of data.devices) {
+    if (excludedOutdoorIds.has(d.id)) continue;
+    const t = d.capabilities["measure_temperature"]?.value;
+    if (typeof t !== "number") continue;
+    const zoneKey = d.zone ?? "__no_zone__";
+    const zoneName = d.zone ? zoneById.get(d.zone)?.name ?? "Ukjent" : "Ukjent";
+    const isNetatmo = (d.name ?? "").toLowerCase().includes("netatmo");
+    const existing = tempByZone.get(zoneKey);
+    if (!existing) {
+      tempByZone.set(zoneKey, {
         deviceId: d.id,
         deviceName: d.name,
         zoneName,
         temp: t,
-        isOutdoor: outdoor,
-        isNetatmo: netatmo,
-      };
-    })
-    .filter((x): x is RoomTemp => x !== null);
+      });
+    } else {
+      const existingIsNetatmo = existing.deviceName.toLowerCase().includes("netatmo");
+      if (isNetatmo && !existingIsNetatmo) {
+        tempByZone.set(zoneKey, {
+          deviceId: d.id,
+          deviceName: d.name,
+          zoneName,
+          temp: t,
+        });
+      }
+    }
+  }
 
-  // Ute-temperatur: helst Netatmo + ute, ellers bare Netatmo, ellers første ute
-  const outdoorTemp =
-    roomTemps.find((r) => r.isNetatmo && r.isOutdoor) ??
-    roomTemps.find((r) => r.isNetatmo) ??
-    roomTemps.find((r) => r.isOutdoor) ??
-    null;
+  const indoorTemps = Array.from(tempByZone.values()).sort((a, b) =>
+    a.zoneName.localeCompare(b.zoneName, "nb"),
+  );
 
-  const indoorTemps = roomTemps
-    .filter((r) => r.deviceId !== outdoorTemp?.deviceId)
-    .sort((a, b) => a.zoneName.localeCompare(b.zoneName, "nb"));
+  // CO2-sensorer (Netatmo). Finn Hytte og Tollnes.
+  const co2Devices = data.devices.filter((d) => {
+    const v = d.capabilities["measure_co2"]?.value;
+    return typeof v === "number";
+  });
+
+  const findCo2 = (matcher: (combined: string) => boolean) => {
+    const hit = co2Devices.find((d) => {
+      const zoneName = d.zone ? zoneById.get(d.zone)?.name ?? "" : "";
+      const combined = `${d.name} ${zoneName}`.toLowerCase();
+      return matcher(combined);
+    });
+    if (!hit) return null;
+    return {
+      device: hit,
+      zoneName: hit.zone ? zoneById.get(hit.zone)?.name ?? "" : "",
+      value: hit.capabilities["measure_co2"]?.value as number,
+    };
+  };
+
+  const co2Hytta = findCo2((c) => c.includes("hytt"));
+  const co2Tollnes = findCo2(
+    (c) => c.includes("tollnes") || c.includes("skien") || (!c.includes("hytt") && c.includes("netatmo")),
+  );
 
   const handleDisconnect = async () => {
     if (!confirm("Bryt båndet til Homey?")) return;
