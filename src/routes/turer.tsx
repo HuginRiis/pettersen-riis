@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { MapPin, Loader2, Mountain, Bike, Car, Footprints, Compass } from "lucide-react";
 import { PageShell, PageHero } from "@/components/PageShell";
+import { TripDetailDialog } from "@/components/TripDetailDialog";
 import { getTripSuggestions, reverseGeocode, type TripSuggestion } from "@/server/turer";
 import turerImg from "@/assets/turer.jpg";
 
