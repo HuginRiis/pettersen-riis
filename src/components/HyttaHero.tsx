@@ -69,15 +69,18 @@ export function HyttaHero({ image, eyebrow, title, subtitle }: {
   title: string;
   subtitle?: string;
 }) {
-  // Oppdater hvert minutt så overgang dag/natt skjer naturlig
-  const [now, setNow] = useState<Date>(() => new Date());
+  // SSR-trygg: ikke les klokka før etter mount, ellers får vi hydreringsmismatch
+  const [mounted, setMounted] = useState(false);
+  const [now, setNow] = useState<Date | null>(null);
   useEffect(() => {
+    setMounted(true);
+    setNow(new Date());
     const t = setInterval(() => setNow(new Date()), 60_000);
     return () => clearInterval(t);
   }, []);
 
-  const season = getSeason(now);
-  const dayPart = getDayPart(now);
+  const season = now ? getSeason(now) : "winter";
+  const dayPart = now ? getDayPart(now) : "evening";
   const overlay = dayPartOverlay(dayPart);
 
   return (
@@ -99,22 +102,22 @@ export function HyttaHero({ image, eyebrow, title, subtitle }: {
       />
 
       {/* Himmellegeme: sol/måne */}
-      <CelestialBody dayPart={dayPart} />
+      {mounted && <CelestialBody dayPart={dayPart} />}
 
       {/* Stjerner om natten/skumring */}
-      {(dayPart === "night" || dayPart === "evening") && <Stars density={dayPart === "night" ? 60 : 25} />}
+      {mounted && (dayPart === "night" || dayPart === "evening") && <Stars density={dayPart === "night" ? 60 : 25} />}
 
       {/* Sesongbaserte partikler */}
-      {season === "winter" && <Snowfall />}
-      {season === "autumn" && <Leaves />}
-      {season === "spring" && <Pollen />}
-      {season === "summer" && <Fireflies dayPart={dayPart} />}
+      {mounted && season === "winter" && <Snowfall />}
+      {mounted && season === "autumn" && <Leaves />}
+      {mounted && season === "spring" && <Pollen />}
+      {mounted && season === "summer" && <Fireflies dayPart={dayPart} />}
 
       {/* Glødende ember om kvelden (peisrøyk-stemning) */}
-      {dayPart === "evening" && <Embers />}
+      {mounted && dayPart === "evening" && <Embers />}
 
       {/* Ravner i silhuett — alltid, men flere om natten */}
-      <Ravens count={dayPart === "night" ? 3 : 2} />
+      {mounted && <Ravens count={dayPart === "night" ? 3 : 2} />}
 
       {/* Vignett rundt kantene */}
       <div
