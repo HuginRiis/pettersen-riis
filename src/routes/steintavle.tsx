@@ -8,8 +8,11 @@ import {
   getHomeySnapshot,
   setLivingRoomLights,
 } from "@/server/homey";
-import { findDeviceFuzzy, readTemp } from "@/lib/homey-match";
 import { useDailyMinMax, type MinMax } from "@/hooks/use-daily-minmax";
+import {
+  getNetatmoWeatherStation,
+  type WeatherModule,
+} from "@/server/netatmo-weather";
 import {
   getTollnesAlerts,
   getMetRadarSouthernNorway,
