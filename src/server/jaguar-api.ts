@@ -18,6 +18,19 @@ const IF9_BASE = "https://if9.prod-row.jlrmotor.com/if9/jlr";
 
 const BASIC_AUTH = "Basic YXM6YXNwYXNz"; // "as:aspass" — the public client used by the JLR mobile app
 
+// Extra headers required by JLR's IF9 endpoints (matches what the official Android app sends).
+// Without `x-App-Id` + `x-App-Secret` you get "Invalid client" / 401 even with a valid token.
+function jlrHeaders(accessToken: string, deviceId: string): Record<string, string> {
+  return {
+    Authorization: `Bearer ${accessToken}`,
+    "X-Device-Id": deviceId,
+    "x-telematicsprogramtype": "jlrpy",
+    "x-App-Id": "ICR_JAGUAR_ANDROID",
+    "x-App-Secret": "7bf6f544-1926-4714-8066-ceceb40d538d",
+    "Content-Type": "application/json",
+  };
+}
+
 export type JaguarAuthResult = {
   access_token: string;
   refresh_token: string;
@@ -55,14 +68,14 @@ export type JaguarVehicleStatus = {
 
 // ── 1. IFAS auth ──────────────────────────────────────────────────────
 async function ifasAuth(email: string, password: string) {
-  const res = await fetch(`${IFAS_BASE}/tokens`, {
+  // jlrpy uses /tokens/tokensSSO — plain /tokens returns "Invalid credentials" for many EU accounts
+  const res = await fetch(`${IFAS_BASE}/tokens/tokensSSO`, {
     method: "POST",
     headers: {
       Authorization: BASIC_AUTH,
       "Content-Type": "application/json",
       Accept: "application/json",
-      "X-Device-Id": crypto.randomUUID(),
-      "Connection": "close",
+      "User-Agent": "jlrpy",
     },
     body: JSON.stringify({
       grant_type: "password",
@@ -73,7 +86,7 @@ async function ifasAuth(email: string, password: string) {
   if (!res.ok) {
     const text = await res.text();
     throw new Error(
-      `Jaguar-innlogging avslått (HTTP ${res.status}). Sjekk e-post og passord. Detaljer: ${text.slice(0, 200)}`,
+      `Jaguar-innlogging avslått (HTTP ${res.status}). Sjekk e-post og passord på https://incontrol.jaguar.com. Detaljer: ${text.slice(0, 300)}`,
     );
   }
   return (await res.json()) as {
@@ -94,12 +107,7 @@ async function ifopRegisterDevice(args: {
 }) {
   const res = await fetch(`${IFOP_BASE}/users/${encodeURIComponent(args.email)}/clients`, {
     method: "POST",
-    headers: {
-      Authorization: `Bearer ${args.accessToken}`,
-      "Content-Type": "application/json",
-      Accept: "application/json",
-      "X-Device-Id": args.deviceId,
-    },
+    headers: jlrHeaders(args.accessToken, args.deviceId),
     body: JSON.stringify({
       access_token: args.accessToken,
       authorization_token: args.authorizationToken ?? args.accessToken,
@@ -110,7 +118,7 @@ async function ifopRegisterDevice(args: {
   if (!res.ok && res.status !== 204) {
     const text = await res.text();
     throw new Error(
-      `Jaguar enhetsregistrering feilet (HTTP ${res.status}): ${text.slice(0, 200)}`,
+      `Jaguar enhetsregistrering feilet (HTTP ${res.status}): ${text.slice(0, 300)}`,
     );
   }
 }
@@ -120,15 +128,13 @@ async function if9GetUser(args: { email: string; accessToken: string; deviceId: 
   const res = await fetch(`${IF9_BASE}/users?loginName=${encodeURIComponent(args.email)}`, {
     method: "GET",
     headers: {
-      Authorization: `Bearer ${args.accessToken}`,
+      ...jlrHeaders(args.accessToken, args.deviceId),
       Accept: "application/vnd.wirelesscar.ngtp.if9.User-v3+json",
-      "Content-Type": "application/json",
-      "X-Device-Id": args.deviceId,
     },
   });
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(`Jaguar bruker-oppslag feilet (HTTP ${res.status}): ${text.slice(0, 200)}`);
+    throw new Error(`Jaguar bruker-oppslag feilet (HTTP ${res.status}): ${text.slice(0, 300)}`);
   }
   return (await res.json()) as { userId: string };
 }
@@ -137,15 +143,11 @@ async function if9GetUser(args: { email: string; accessToken: string; deviceId: 
 async function if9GetVehicles(args: { userId: string; accessToken: string; deviceId: string }) {
   const res = await fetch(`${IF9_BASE}/users/${args.userId}/vehicles?primaryOnly=true`, {
     method: "GET",
-    headers: {
-      Authorization: `Bearer ${args.accessToken}`,
-      Accept: "application/json",
-      "X-Device-Id": args.deviceId,
-    },
+    headers: jlrHeaders(args.accessToken, args.deviceId),
   });
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(`Jaguar kjøretøy-oppslag feilet (HTTP ${res.status}): ${text.slice(0, 200)}`);
+    throw new Error(`Jaguar kjøretøy-oppslag feilet (HTTP ${res.status}): ${text.slice(0, 300)}`);
   }
   const data = (await res.json()) as {
     vehicles: Array<{ vin: string; role?: string }>;
@@ -157,9 +159,8 @@ async function if9GetVehicleAttributes(args: { vin: string; accessToken: string;
   const res = await fetch(`${IF9_BASE}/vehicles/${args.vin}/attributes`, {
     method: "GET",
     headers: {
-      Authorization: `Bearer ${args.accessToken}`,
+      ...jlrHeaders(args.accessToken, args.deviceId),
       Accept: "application/vnd.ngtp.org.VehicleAttributes-v8+json",
-      "X-Device-Id": args.deviceId,
     },
   });
   if (!res.ok) return null;
@@ -223,12 +224,13 @@ export async function jaguarSignIn(input: {
 
 // ── Refresh ───────────────────────────────────────────────────────────
 export async function jaguarRefresh(refreshToken: string) {
-  const res = await fetch(`${IFAS_BASE}/tokens`, {
+  const res = await fetch(`${IFAS_BASE}/tokens/tokensSSO`, {
     method: "POST",
     headers: {
       Authorization: BASIC_AUTH,
       "Content-Type": "application/json",
       Accept: "application/json",
+      "User-Agent": "jlrpy",
     },
     body: JSON.stringify({
       grant_type: "refresh_token",
@@ -251,9 +253,8 @@ export async function jaguarRefresh(refreshToken: string) {
 async function fetchJson(url: string, accessToken: string, deviceId: string, accept: string) {
   const res = await fetch(url, {
     headers: {
-      Authorization: `Bearer ${accessToken}`,
+      ...jlrHeaders(accessToken, deviceId),
       Accept: accept,
-      "X-Device-Id": deviceId,
     },
   });
   if (!res.ok) return null;
