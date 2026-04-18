@@ -50,6 +50,8 @@ export function MaesterCounsel() {
   const [now, setNow] = useState<Now | null>(null);
   const [date, setDate] = useState<Date | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [alerts, setAlerts] = useState<TelemarkAlert[]>([]);
+  const [alertsFetchedAt, setAlertsFetchedAt] = useState<number | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -77,10 +79,38 @@ export function MaesterCounsel() {
     })();
   }, []);
 
+  // Hent Telemark-farevarsler hvert 15. minutt
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      try {
+        const r = await getTelemarkAlerts();
+        if (cancelled) return;
+        setAlerts(r.alerts ?? []);
+        setAlertsFetchedAt(r.fetchedAt ?? Date.now());
+      } catch (e) {
+        console.warn("Kunne ikke hente Telemark-varsler:", e);
+      }
+    }
+    load();
+    const id = setInterval(load, 15 * 60 * 1000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, []);
+
   const advice = useMemo(() => {
     if (!mounted || !date) return null;
-    return buildAdvice({ date, weather: now });
-  }, [mounted, date, now]);
+    return buildAdvice({ date, weather: now, alerts });
+  }, [mounted, date, now, alerts]);
+
+  const badge = useMemo(() => severityBadge(alerts), [alerts]);
+  const lastUpdated = useMemo(() => {
+    if (!alertsFetchedAt) return null;
+    const d = new Date(alertsFetchedAt);
+    return d.toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit" });
+  }, [alertsFetchedAt]);
 
   return (
     <section className="container mx-auto px-4 pb-16">
