@@ -18,6 +18,24 @@ const links = [
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
   const router = useRouter();
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const playGotTheme = () => {
+    try {
+      if (!audioRef.current) {
+        audioRef.current = new Audio("/audio/got-theme.mp3");
+        audioRef.current.volume = 0.6;
+      }
+      const a = audioRef.current;
+      a.pause();
+      a.currentTime = 0;
+      void a.play().catch(() => {
+        /* autoplay/user-gesture issues silently ignored */
+      });
+    } catch {
+      /* no-op */
+    }
+  };
 
   const handleLogout = async () => {
     try {
