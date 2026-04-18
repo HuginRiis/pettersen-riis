@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { PageShell } from "@/components/PageShell";
 import { TollnesCameraStrip } from "@/components/TollnesCameraStrip";
 import { getHomeySnapshot } from "@/server/homey";
+import { findDeviceFuzzy, readTemp } from "@/lib/homey-match";
 import {
   getMetRadarSouthernNorway,
   getTollnesAlerts,
