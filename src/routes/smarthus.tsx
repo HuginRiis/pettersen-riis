@@ -459,12 +459,12 @@ function SmarthusPage() {
         <div className="grid sm:grid-cols-2 gap-4">
           <OutdoorTempCard
             label="Ute · Tollnes"
-            sourceName="Ute Tollnes Ute"
+            sourceName={outdoorTollnesDevice?.name ?? "Ute Tollnes"}
             temp={outdoorTollnesTemp}
           />
           <OutdoorTempCard
             label="Ute · Hytta"
-            sourceName="Hytta Hytta ute"
+            sourceName={outdoorHyttaDevice?.name ?? "Hytta Ute"}
             temp={outdoorHyttaTemp}
           />
         </div>
