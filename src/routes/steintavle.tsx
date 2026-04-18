@@ -186,7 +186,7 @@ function SteintavlePage() {
   const hasThunder = thunderAlerts.length > 0;
 
   return (
-    <PageShell>
+    <PageShell minimalHeader>
       <header className="container mx-auto px-6 pt-6 pb-3 text-center">
         <div className="text-display tracking-[0.5em] text-primary text-sm uppercase mb-1">
           Steintavlen
@@ -203,11 +203,25 @@ function SteintavlePage() {
       </header>
 
       <main className="container mx-auto px-4 sm:px-6 pb-10 space-y-5">
-        {/* Tre store temperaturbokser */}
-        <section className="grid grid-cols-3 gap-3 sm:gap-4">
+        {/* Fire bokser: Inne, Soverom, Ute, Lyd */}
+        <section
+          className={`grid gap-3 sm:gap-4 ${
+            noiseDb !== null ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-3"
+          }`}
+        >
           <BigTemp label="Inne" temp={tempInne} accent="primary" />
           <BigTemp label="Soverom" temp={tempSov} accent="primary" />
           <BigTemp label="Ute · Tollnes" temp={tempUte} accent="ice" big />
+          {noiseDb !== null && <BigNoise label="Lyd · Tollnes" db={noiseDb} />}
+        </section>
+
+        {/* Lysstyring · Stuen */}
+        <section>
+          <LightsControl
+            on={lightsOn}
+            busy={lightsBusy}
+            onToggle={handleToggleLights}
+          />
         </section>
 
         {/* Live kamera */}
@@ -217,14 +231,6 @@ function SteintavlePage() {
             <TollnesCameraStrip intervalMs={5000} aspectClass="aspect-video" />
           </div>
         </section>
-
-        {/* dB-måling fra Tollnes */}
-        {noiseDb !== null && (
-          <section>
-            <SectionTitle>Lydvakten · Tollnes</SectionTitle>
-            <NoiseBox db={noiseDb} />
-          </section>
-        )}
 
         {/* Tordenvarsel-banner (kun hvis aktivt) */}
         {hasThunder && (
