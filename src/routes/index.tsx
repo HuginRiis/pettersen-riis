@@ -239,7 +239,7 @@ function HallCard({
   desc,
   icon,
 }: {
-  to: "/agenda" | "/var" | "/hytta" | "/hundene" | "/trening" | "/smarthus";
+  to: "/agenda" | "/var" | "/pollen" | "/hytta" | "/hundene" | "/trening" | "/turer" | "/jernhesten" | "/smarthus" | "/steintavle";
   title: string;
   desc: string;
   icon: string;
