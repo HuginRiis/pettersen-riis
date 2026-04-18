@@ -291,6 +291,45 @@ function BigTemp({
   );
 }
 
+function NoiseBox({ db }: { db: number }) {
+  const pct = Math.max(0, Math.min(100, ((db - 30) / 50) * 100));
+  const loud = db >= 65;
+  const color = loud ? "var(--destructive)" : db >= 55 ? "var(--gold)" : "var(--primary)";
+  return (
+    <article
+      className="panel rounded-lg p-5 sm:p-6 flex items-center gap-5"
+      style={{
+        boxShadow: loud
+          ? `inset 0 0 0 1px color-mix(in oklab, ${color} 30%, transparent), 0 0 24px color-mix(in oklab, ${color} 18%, transparent)`
+          : undefined,
+      }}
+    >
+      <div className="text-4xl">{loud ? "📢" : db >= 55 ? "🔊" : "🔈"}</div>
+      <div className="flex-1">
+        <div className="text-[10px] tracking-[0.3em] text-muted-foreground uppercase">
+          Lydnivå · Tollnes
+        </div>
+        <div className="flex items-baseline gap-2 mt-1">
+          <span className="text-display text-4xl sm:text-5xl" style={{ color }}>
+            {db.toFixed(0)}
+          </span>
+          <span className="text-sm tracking-[0.2em] text-muted-foreground uppercase">dB</span>
+        </div>
+        <div className="mt-3 h-1.5 rounded-full bg-muted overflow-hidden">
+          <div
+            className="h-full rounded-full transition-all"
+            style={{ width: `${pct}%`, background: color }}
+          />
+        </div>
+        <div className="flex justify-between text-[9px] tracking-[0.2em] text-muted-foreground/70 uppercase mt-1">
+          <span>Stille (30 dB)</span>
+          <span>Høyt (80 dB)</span>
+        </div>
+      </div>
+    </article>
+  );
+}
+
 function ThunderBanner({ alerts }: { alerts: MetAlert[] }) {
   return (
     <div
