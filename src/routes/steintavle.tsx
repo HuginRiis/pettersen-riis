@@ -368,39 +368,50 @@ function alertColor(c: string): string {
  * og tegner en gylden markør oppå.
  */
 function RadarImage({ dataUrl, hasThunder }: { dataUrl: string; hasThunder: boolean }) {
-  const containerRef = useRef<HTMLDivElement>(null);
+  // Zoom inn ~12x og sentrer på Tollnes (omtrent 52% / 62% i bildet).
+  const ZOOM = 12;
+  const TOLLNES_X = 52; // %
+  const TOLLNES_Y = 62; // %
+
   return (
     <div
-      ref={containerRef}
       className="absolute inset-0 overflow-hidden"
-      style={{
-        background: "oklch(0.12 0.012 240)",
-      }}
+      style={{ background: "oklch(0.12 0.012 240)" }}
     >
-      <img
-        src={dataUrl}
-        alt="Met.no værradar over sør-Norge"
-        className="absolute inset-0 w-full h-full object-contain"
+      {/* Zoom-laget — skaler bildet og forskyv så Tollnes havner i midten */}
+      <div
+        className="absolute inset-0"
         style={{
-          filter: "brightness(1.1) contrast(1.05)",
-          mixBlendMode: "screen",
+          transform: `scale(${ZOOM})`,
+          transformOrigin: `${TOLLNES_X}% ${TOLLNES_Y}%`,
         }}
-      />
-      {/* Tollnes-markør — omtrent midten av sør-Norge-bildet */}
+      >
+        <img
+          src={dataUrl}
+          alt="Met.no værradar zoomet inn på Tollnes"
+          className="absolute inset-0 w-full h-full object-contain"
+          style={{
+            filter: "brightness(1.15) contrast(1.1)",
+            mixBlendMode: "screen",
+            imageRendering: "pixelated",
+          }}
+        />
+      </div>
+
+      {/* Tollnes-markør — alltid midt i visningen */}
       <div
         className="absolute pointer-events-none"
         style={{
-          // Tollnes ligger ca midt-sør (Telemark) i bildet
-          left: "52%",
-          top: "62%",
+          left: "50%",
+          top: "50%",
           transform: "translate(-50%, -50%)",
         }}
       >
         <div
           className={`relative ${hasThunder ? "animate-pulse" : ""}`}
           style={{
-            width: "16px",
-            height: "16px",
+            width: "18px",
+            height: "18px",
             borderRadius: "9999px",
             background: hasThunder ? "var(--destructive)" : "var(--gold)",
             boxShadow: hasThunder
@@ -408,14 +419,26 @@ function RadarImage({ dataUrl, hasThunder }: { dataUrl: string; hasThunder: bool
               : "0 0 0 4px color-mix(in oklab, var(--gold) 25%, transparent), 0 0 22px color-mix(in oklab, var(--gold) 70%, transparent)",
           }}
         />
+        {/* ~5 km radius-ring (visuell indikasjon — radar er ca 1px/km) */}
         <div
-          className="absolute left-1/2 -translate-x-1/2 mt-2 text-[10px] tracking-[0.3em] uppercase whitespace-nowrap"
+          className="absolute left-1/2 top-1/2 pointer-events-none"
+          style={{
+            width: "120px",
+            height: "120px",
+            transform: "translate(-50%, -50%)",
+            borderRadius: "9999px",
+            border: "1px dashed color-mix(in oklab, var(--gold) 60%, transparent)",
+            boxShadow: "inset 0 0 30px color-mix(in oklab, var(--gold) 8%, transparent)",
+          }}
+        />
+        <div
+          className="absolute left-1/2 -translate-x-1/2 mt-3 text-[10px] tracking-[0.3em] uppercase whitespace-nowrap"
           style={{
             color: hasThunder ? "var(--destructive)" : "var(--gold)",
             textShadow: "0 0 8px oklch(0.10 0.01 240), 0 0 4px oklch(0.10 0.01 240)",
           }}
         >
-          Tollnes
+          Tollnes · ~5 km
         </div>
       </div>
     </div>
