@@ -92,7 +92,7 @@ export async function saveJaguarConnection(input: {
     .select("*")
     .single();
   if (error) throw new Error(error.message);
-  return data as JaguarConnection;
+  return data as unknown as JaguarConnection;
 }
 
 export async function deleteJaguarConnection() {

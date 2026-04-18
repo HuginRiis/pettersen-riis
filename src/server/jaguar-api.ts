@@ -50,8 +50,6 @@ export type JaguarVehicleStatus = {
   tyrePressuresOk: boolean | null;
   // Service
   serviceDistanceKm: number | null;
-  // Raw blob for debugging / extra fields
-  raw: unknown;
   fetchedAt: string; // ISO
 };
 
@@ -395,7 +393,6 @@ export async function getVehicleStatus(args: {
     odometerKm: odoKm,
     tyrePressuresOk: tyresOk,
     serviceDistanceKm,
-    raw: { status, position: positionRes, attributes: attrsRes },
     fetchedAt: new Date().toISOString(),
   };
 }
