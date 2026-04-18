@@ -88,30 +88,24 @@ function WeatherPage() {
   const devices = homeyOk ? data.devices : [];
   const zones = homeyOk ? data.zones : [];
 
-  // Totalt regn i dag: Netatmo eksponerer 'meter_rain' (akkumulert dag-total i mm).
-  // Faller tilbake til 'measure_rain' (mm/t) hvis dag-totalen ikke er tilgjengelig.
-  const tollnesRainToday =
-    readCap(
-      findDeviceFuzzy(devices, zones, "tollnes", (d) => hasCap(d, "meter_rain")),
-      "meter_rain",
-    ) ??
-    readCap(
-      findDeviceFuzzy(devices, zones, "tollnes", (d) => hasCap(d, "measure_rain")),
-      "measure_rain",
-    );
+  // Finn regnsensoren på hvert sted (matcher 'regn' i navn/sone),
+  // og les beste tilgjengelige "totalt regn i dag"-måling.
+  const tollnesRainSensor =
+    findDeviceFuzzy(devices, zones, "regn tollnes", () => true) ??
+    findDeviceFuzzy(devices, zones, "regnsensor tollnes", () => true) ??
+    findDeviceFuzzy(devices, zones, "tollnes", (d) => hasAnyRainCap(d));
+  const hyttaRainSensor =
+    findDeviceFuzzy(devices, zones, "regn hytta", () => true) ??
+    findDeviceFuzzy(devices, zones, "regnsensor hytta", () => true) ??
+    findDeviceFuzzy(devices, zones, "hytta", (d) => hasAnyRainCap(d));
+
+  const tollnesRainToday = readDailyRain(tollnesRainSensor);
+  const hyttaRainToday = readDailyRain(hyttaRainSensor);
+
   const tollnesWind = readCap(
     findDeviceFuzzy(devices, zones, "tollnes", (d) => hasCap(d, "measure_wind_strength")),
     "measure_wind_strength",
   );
-  const hyttaRainToday =
-    readCap(
-      findDeviceFuzzy(devices, zones, "hytta", (d) => hasCap(d, "meter_rain")),
-      "meter_rain",
-    ) ??
-    readCap(
-      findDeviceFuzzy(devices, zones, "hytta", (d) => hasCap(d, "measure_rain")),
-      "measure_rain",
-    );
   const hyttaWind = readCap(
     findDeviceFuzzy(devices, zones, "hytta", (d) => hasCap(d, "measure_wind_strength")),
     "measure_wind_strength",
