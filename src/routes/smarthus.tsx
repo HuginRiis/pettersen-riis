@@ -2,7 +2,7 @@ import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { PageShell, PageHero } from "@/components/PageShell";
-import { getHomeySnapshot, disconnectHomey } from "@/server/homey";
+import { getHomeySnapshot, disconnectHomey, setAllOutdoorLights } from "@/server/homey";
 import heroImg from "@/assets/smarthus-hero.jpg";
 
 export const Route = createFileRoute("/smarthus")({
