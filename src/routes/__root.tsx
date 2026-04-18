@@ -48,10 +48,8 @@ export const Route = createRootRoute({
       { name: "twitter:description", content: "Den digitale storsalen til Arne Pettersen Riis og Rebekka Riis Pettersen i Skien." },
     ],
     links: [
-      {
-        rel: "stylesheet",
-        href: appCss,
-      },
+      { rel: "stylesheet", href: appCss },
+      { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
     ],
   }),
   shellComponent: RootShell,
