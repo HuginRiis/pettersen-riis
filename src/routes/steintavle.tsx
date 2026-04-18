@@ -228,7 +228,7 @@ function SteintavlePage() {
           <LightsControl
             on={lightsOn}
             busy={lightsBusy}
-            onToggle={handleToggleLights}
+            onSet={handleSetLights}
           />
         </section>
 
