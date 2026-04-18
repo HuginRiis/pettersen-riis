@@ -4,7 +4,7 @@
  */
 
 import opentype from "opentype.js";
-import type { Stitch, ColorBlock } from "./pes-writer";
+import { nearestPaletteIndex, type Stitch, type ColorBlock } from "./pes-writer";
 
 const SATIN_DENSITY_MM = 0.4; // distance between satin lines
 const FILL_DENSITY_MM = 0.45; // distance between fill rows
