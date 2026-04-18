@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { PageShell, PageHero } from "@/components/PageShell";
+import { PageShell } from "@/components/PageShell";
+import { HouseHero } from "@/components/HouseHero";
 import { WeatherWidget } from "@/components/WeatherWidget";
 import { TollnesCameraSection } from "@/components/TollnesCameraStrip";
 import { NetatmoWeatherStationSection } from "@/components/NetatmoWeatherStation";
@@ -37,7 +38,7 @@ export const Route = createFileRoute("/")({
 function Home() {
   return (
     <PageShell>
-      <PageHero
+      <HouseHero
         eyebrow="Krøniken om"
         title="House Riis-Pettersen av Skien"
         subtitle="Arne Pettersen Riis og Rebekka Riis Pettersen — vinterens voktere ved fjorden."
