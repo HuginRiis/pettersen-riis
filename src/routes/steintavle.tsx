@@ -43,9 +43,6 @@ export const Route = createFileRoute("/steintavle")({
   ),
 });
 
-const norm = (s: string) =>
-  s.toLowerCase().replace(/\s+/g, " ").trim();
-
 function SteintavlePage() {
   const data = Route.useLoaderData() as Awaited<ReturnType<typeof getHomeySnapshot>>;
   const fetchRadar = useServerFn(getMetRadarSouthernNorway);
