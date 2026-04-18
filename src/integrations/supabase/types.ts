@@ -80,57 +80,6 @@ export type Database = {
         }
         Relationships: []
       }
-      jaguar_connections: {
-        Row: {
-          access_token: string | null
-          authorization_token: string | null
-          created_at: string
-          device_id: string
-          email: string
-          expires_at: string | null
-          id: string
-          password_encrypted: string
-          refresh_token: string | null
-          updated_at: string
-          user_id: string | null
-          user_id_jaguar: string | null
-          vehicle_nickname: string | null
-          vin: string | null
-        }
-        Insert: {
-          access_token?: string | null
-          authorization_token?: string | null
-          created_at?: string
-          device_id?: string
-          email: string
-          expires_at?: string | null
-          id?: string
-          password_encrypted: string
-          refresh_token?: string | null
-          updated_at?: string
-          user_id?: string | null
-          user_id_jaguar?: string | null
-          vehicle_nickname?: string | null
-          vin?: string | null
-        }
-        Update: {
-          access_token?: string | null
-          authorization_token?: string | null
-          created_at?: string
-          device_id?: string
-          email?: string
-          expires_at?: string | null
-          id?: string
-          password_encrypted?: string
-          refresh_token?: string | null
-          updated_at?: string
-          user_id?: string | null
-          user_id_jaguar?: string | null
-          vehicle_nickname?: string | null
-          vin?: string | null
-        }
-        Relationships: []
-      }
       strava_connections: {
         Row: {
           access_token: string
