@@ -590,6 +590,127 @@ export const setAllOutdoorLights = createServerFn({ method: "POST" })
     }
   });
 
+// ============================================================
+// Living room lights — bulk control of "stue"
+// ============================================================
+
+function isLivingRoomZoneName(name: string): boolean {
+  const n = name.toLowerCase();
+  return (
+    n.includes("stue") ||
+    n.includes("stua") ||
+    n.includes("living") ||
+    n.includes("livingroom")
+  );
+}
+
+export const getLivingRoomLightsState = createServerFn({ method: "GET" }).handler(
+  async (): Promise<{ ok: boolean; anyOn: boolean; total: number; error?: string }> => {
+    let conn: HomeyConnection | null;
+    try {
+      conn = await getValidConnection();
+    } catch (e: any) {
+      return { ok: false, anyOn: false, total: 0, error: e?.message ?? "Token-feil" };
+    }
+    if (!conn) return { ok: false, anyOn: false, total: 0, error: "Ingen Homey-tilkobling" };
+
+    try {
+      const target = await resolveHomeyTarget(conn.access_token);
+      if (!target) return { ok: false, anyOn: false, total: 0, error: "Fant ingen Homey" };
+
+      const delegationToken = await createDelegationToken(conn.access_token);
+      const sessionToken = await createSessionToken(target.baseUrl, delegationToken);
+
+      const [zones, devices] = await Promise.all([
+        listZonesRaw(sessionToken, target.baseUrl),
+        listAllDevicesRaw(sessionToken, target.baseUrl),
+      ]);
+
+      const livingRoomZoneIds = new Set<string>(
+        zones
+          .filter((z) => isLivingRoomZoneName(z?.name ?? ""))
+          .map((z) => z.id ?? z._id)
+          .filter(Boolean),
+      );
+
+      const lights = devices.filter((d) => {
+        const cls = d?.class;
+        const virt = d?.virtualClass;
+        const isLight = cls === "light" || virt === "light";
+        if (!isLight) return false;
+        const caps = d?.capabilitiesObj ?? d?.capabilities_obj ?? {};
+        if (!caps || typeof caps !== "object" || !("onoff" in caps)) return false;
+        return d?.zone && livingRoomZoneIds.has(d.zone);
+      });
+
+      const anyOn = lights.some((d) => {
+        const caps = d?.capabilitiesObj ?? d?.capabilities_obj ?? {};
+        return caps?.onoff?.value === true;
+      });
+
+      return { ok: true, anyOn, total: lights.length };
+    } catch (e: any) {
+      return { ok: false, anyOn: false, total: 0, error: e?.message ?? "Feil" };
+    }
+  },
+);
+
+export const setLivingRoomLights = createServerFn({ method: "POST" })
+  .inputValidator((input: { on: boolean }) => input)
+  .handler(async ({ data }): Promise<{ ok: boolean; toggled: number; error?: string }> => {
+    let conn: HomeyConnection | null;
+    try {
+      conn = await getValidConnection();
+    } catch (e: any) {
+      return { ok: false, toggled: 0, error: e?.message ?? "Token-feil" };
+    }
+    if (!conn) return { ok: false, toggled: 0, error: "Ingen Homey-tilkobling" };
+
+    try {
+      const target = await resolveHomeyTarget(conn.access_token);
+      if (!target) return { ok: false, toggled: 0, error: "Fant ingen Homey" };
+
+      const delegationToken = await createDelegationToken(conn.access_token);
+      const sessionToken = await createSessionToken(target.baseUrl, delegationToken);
+
+      const [zones, devices] = await Promise.all([
+        listZonesRaw(sessionToken, target.baseUrl),
+        listAllDevicesRaw(sessionToken, target.baseUrl),
+      ]);
+
+      const livingRoomZoneIds = new Set<string>(
+        zones
+          .filter((z) => isLivingRoomZoneName(z?.name ?? ""))
+          .map((z) => z.id ?? z._id)
+          .filter(Boolean),
+      );
+
+      const targets = devices.filter((d) => {
+        const cls = d?.class;
+        const virt = d?.virtualClass;
+        const isLight = cls === "light" || virt === "light";
+        if (!isLight) return false;
+        const caps = d?.capabilitiesObj ?? d?.capabilities_obj ?? {};
+        if (!caps || typeof caps !== "object" || !("onoff" in caps)) return false;
+        return d?.zone && livingRoomZoneIds.has(d.zone);
+      });
+
+      let toggled = 0;
+      await Promise.all(
+        targets.map(async (d) => {
+          const id = d.id ?? d._id;
+          if (!id) return;
+          const ok = await setDeviceOnoff(sessionToken, target.baseUrl, id, data.on);
+          if (ok) toggled += 1;
+        }),
+      );
+
+      return { ok: true, toggled };
+    } catch (e: any) {
+      return { ok: false, toggled: 0, error: e?.message ?? "Klarte ikke styre lys" };
+    }
+  });
+
 export const getTollnesCameraSnapshot = createServerFn({ method: "GET" }).handler(
   async (): Promise<CameraSnapshotResult> => {
     let conn: HomeyConnection | null;
