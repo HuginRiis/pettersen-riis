@@ -1,5 +1,5 @@
 import { Link, useRouter } from "@tanstack/react-router";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Menu, X, LogOut } from "lucide-react";
 import { logoutFn } from "@/server/auth";
 
@@ -18,6 +18,24 @@ const links = [
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
   const router = useRouter();
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const playGotTheme = () => {
+    try {
+      if (!audioRef.current) {
+        audioRef.current = new Audio("/audio/got-theme.mp3");
+        audioRef.current.volume = 0.6;
+      }
+      const a = audioRef.current;
+      a.pause();
+      a.currentTime = 0;
+      void a.play().catch(() => {
+        /* autoplay/user-gesture issues silently ignored */
+      });
+    } catch {
+      /* no-op */
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -31,7 +49,7 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-50 backdrop-blur-md bg-background/80 border-b border-border">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-3 group">
+        <Link to="/" onClick={playGotTheme} className="flex items-center gap-3 group">
           <div className="w-9 h-9 rounded-full border border-primary/40 flex items-center justify-center text-primary font-display text-lg group-hover:shadow-[0_0_20px_var(--color-primary)] transition-shadow">
             ❦
           </div>
@@ -46,6 +64,7 @@ export function SiteHeader() {
             <Link
               key={l.to}
               to={l.to}
+              onClick={l.to === "/" ? playGotTheme : undefined}
               className="px-3 py-2 text-sm tracking-wider uppercase text-muted-foreground hover:text-primary transition-colors data-[status=active]:text-primary data-[status=active]:font-semibold"
               activeOptions={{ exact: l.to === "/" }}
             >
@@ -74,7 +93,10 @@ export function SiteHeader() {
               <Link
                 key={l.to}
                 to={l.to}
-                onClick={() => setOpen(false)}
+                onClick={() => {
+                  setOpen(false);
+                  if (l.to === "/") playGotTheme();
+                }}
                 className="px-2 py-3 text-sm tracking-wider uppercase text-muted-foreground hover:text-primary border-b border-border last:border-0 data-[status=active]:text-primary"
                 activeOptions={{ exact: l.to === "/" }}
               >
