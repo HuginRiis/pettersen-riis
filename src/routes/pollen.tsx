@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
 import { PageShell, PageHero } from "@/components/PageShell";
+import { LastUpdated } from "@/components/LastUpdated";
 import heroImg from "@/assets/hero-westeros.jpg";
 
 export const Route = createFileRoute("/pollen")({
