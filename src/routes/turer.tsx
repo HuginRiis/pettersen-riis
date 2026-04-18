@@ -60,6 +60,7 @@ function TurerPage() {
   const [category, setCategory] = useState<Category>("fottur");
   const [state, setState] = useState<State>({ kind: "idle" });
   const [gpsLoading, setGpsLoading] = useState(false);
+  const [activeTrip, setActiveTrip] = useState<TripSuggestion | null>(null);
 
   const fetchSuggestions = useServerFn(getTripSuggestions);
   const reverse = useServerFn(reverseGeocode);
