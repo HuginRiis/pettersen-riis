@@ -540,13 +540,18 @@ function AllergenCodex({ month }: { month: number }) {
           return (
             <article
               key={a.key}
-              className="panel rounded-lg p-5 glow-on-hover flex flex-col"
+              className={`panel rounded-lg p-5 glow-on-hover flex flex-col ${
+                MY_ALLERGEN_KEYS.has(a.key) ? "ring-1 ring-primary/40" : ""
+              }`}
             >
               <div className="flex items-start justify-between mb-3">
                 <div>
                   <div className="text-3xl mb-1">{a.sigil}</div>
-                  <h3 className="text-display text-lg text-primary tracking-wider uppercase">
+                  <h3 className="text-display text-lg text-primary tracking-wider uppercase flex items-center gap-2">
                     {a.name}
+                    {MY_ALLERGEN_KEYS.has(a.key) && (
+                      <span className="text-sm" title="Plager Arne">⚔</span>
+                    )}
                   </h3>
                   <p className="text-[11px] italic text-muted-foreground">{a.latin}</p>
                 </div>
