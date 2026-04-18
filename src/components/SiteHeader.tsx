@@ -1,5 +1,5 @@
 import { Link, useRouter } from "@tanstack/react-router";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Menu, X, LogOut } from "lucide-react";
 import { logoutFn } from "@/server/auth";
 
