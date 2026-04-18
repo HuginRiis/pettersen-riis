@@ -134,9 +134,21 @@ function WeatherPage() {
             </p>
           ) : (
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <LiveMetric label="Regn i dag · Tollnes" value={tollnesRainToday} unit="mm" icon="🌧" />
+              <LiveMetric
+                label="Regn i dag · Tollnes"
+                value={tollnesRainToday}
+                unit="mm"
+                icon="🌧"
+                source={tollnesRainSensor?.name ?? null}
+              />
               <LiveMetric label="Vind · Tollnes" value={tollnesWind} unit="m/s" icon="💨" />
-              <LiveMetric label="Regn i dag · Hytta" value={hyttaRainToday} unit="mm" icon="🌧" />
+              <LiveMetric
+                label="Regn i dag · Hytta"
+                value={hyttaRainToday}
+                unit="mm"
+                icon="🌧"
+                source={hyttaRainSensor?.name ?? null}
+              />
               <LiveMetric label="Vind · Hytta" value={hyttaWind} unit="m/s" icon="💨" />
             </div>
           )}
@@ -204,11 +216,13 @@ function LiveMetric({
   value,
   unit,
   icon,
+  source,
 }: {
   label: string;
   value: number | null;
   unit: string;
   icon: string;
+  source?: string | null;
 }) {
   return (
     <article className="panel rounded-lg p-5 text-center">
@@ -222,6 +236,11 @@ function LiveMetric({
       <div className="text-[10px] tracking-[0.2em] text-muted-foreground/70 uppercase mt-1">
         {unit}
       </div>
+      {source && (
+        <div className="text-[9px] tracking-[0.15em] text-muted-foreground/60 uppercase mt-2 truncate">
+          {source}
+        </div>
+      )}
     </article>
   );
 }
