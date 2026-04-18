@@ -177,6 +177,7 @@ function SteintavlePage() {
       if (!document.hidden) {
         loadAlerts();
         loadRadar();
+        loadNetatmo();
         refreshSnapshot();
         setNow(new Date());
       }
@@ -189,13 +190,14 @@ function SteintavlePage() {
       cancelled = true;
       clearInterval(a);
       clearInterval(r);
+      clearInterval(n);
       clearInterval(c);
       clearInterval(t);
       if (typeof document !== "undefined") {
         document.removeEventListener("visibilitychange", onVisibility);
       }
     };
-  }, [fetchAlerts, fetchRadar, router]);
+  }, [fetchAlerts, fetchRadar, fetchNetatmo, router]);
 
   const handleSetLights = async (next: boolean) => {
     if (lightsBusy) return;
