@@ -498,15 +498,23 @@ function CurveChart({
 
       {/* Legend */}
       <div className="flex flex-wrap gap-x-3 gap-y-1.5 mt-3 pt-3 border-t border-border/50">
-        {ALLERGENS.map((a) => (
-          <div key={a.key} className="flex items-center gap-1.5">
-            <div
-              className="h-2.5 w-2.5 rounded-full"
-              style={{ backgroundColor: allergenColor(a.key) }}
-            />
-            <span className="text-xs text-muted-foreground">{a.name}</span>
-          </div>
-        ))}
+        {ALLERGENS.map((a) => {
+          const isMine = MY_ALLERGEN_KEYS.has(a.key);
+          return (
+            <div key={a.key} className="flex items-center gap-1.5">
+              <div
+                className="h-2.5 w-2.5 rounded-full"
+                style={{ backgroundColor: allergenColor(a.key) }}
+              />
+              <span
+                className={`text-xs ${isMine ? "text-foreground font-medium" : "text-muted-foreground"}`}
+              >
+                {a.name}
+                {isMine && <span className="text-primary ml-0.5">⚔</span>}
+              </span>
+            </div>
+          );
+        })}
       </div>
     </article>
   );
