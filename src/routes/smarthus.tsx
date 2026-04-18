@@ -495,6 +495,9 @@ function SmarthusPage() {
                   <span className="text-display text-primary text-xl mt-1">
                     {r.temp.toFixed(1)}°
                   </span>
+                  <span className="text-[9px] text-muted-foreground/70 truncate mt-0.5" title={r.deviceName}>
+                    {r.deviceName}
+                  </span>
                 </li>
               ))}
             </ul>
