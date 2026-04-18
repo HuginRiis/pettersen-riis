@@ -89,7 +89,12 @@ function deriveLivingRoomLightsOn(
 }
 
 function SteintavlePage() {
-  const data = Route.useLoaderData() as Awaited<ReturnType<typeof getHomeySnapshot>>;
+  const { homey: data, netatmo } = Route.useLoaderData() as {
+    homey: Awaited<ReturnType<typeof getHomeySnapshot>>;
+    netatmo: Awaited<ReturnType<typeof getNetatmoWeatherStation>>;
+  };
+  const fetchNetatmo = useServerFn(getNetatmoWeatherStation);
+  const [liveNetatmo, setLiveNetatmo] = useState(netatmo);
   const router = useRouter();
   const fetchAlerts = useServerFn(getTollnesAlerts);
   const fetchRadar = useServerFn(getMetRadarSouthernNorway);
