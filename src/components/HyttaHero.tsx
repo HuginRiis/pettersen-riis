@@ -1,125 +1,103 @@
 import { useEffect, useMemo, useState } from "react";
 
-/**
- * HyttaHero — animert helteseksjon for Hytta-fanen.
- *
- * Variasjoner:
- *  - Årstid (vår, sommer, høst, vinter) bestemmer partikler og fargetone
- *  - Tid på døgnet (morgen, dag, kveld, natt) bestemmer himmel-overlay,
- *    sol/måne-posisjon og atmosfæriske detaljer
- *
- * Game of Thrones-preg: dyp blå/gull palett, ravner i silhuett, glødende
- * ember om kvelden, snøstorm om vinteren, gylne lysstråler om sommeren.
- */
+// 12 månedsbilder for hytta — bytter automatisk basert på dagens måned
+import jan from "@/assets/hytta-months/01-januar.jpg";
+import feb from "@/assets/hytta-months/02-februar.jpg";
+import mar from "@/assets/hytta-months/03-mars.jpg";
+import apr from "@/assets/hytta-months/04-april.jpg";
+import mai from "@/assets/hytta-months/05-mai.jpg";
+import jun from "@/assets/hytta-months/06-juni.jpg";
+import jul from "@/assets/hytta-months/07-juli.jpg";
+import aug from "@/assets/hytta-months/08-august.jpg";
+import sep from "@/assets/hytta-months/09-september.jpg";
+import okt from "@/assets/hytta-months/10-oktober.jpg";
+import nov from "@/assets/hytta-months/11-november.jpg";
+import des from "@/assets/hytta-months/12-desember.jpg";
+
+const MONTH_IMAGES: { src: string; label: string; season: Season }[] = [
+  { src: jan, label: "Januar — Dyp vinter", season: "winter" },
+  { src: feb, label: "Februar — Issnø", season: "winter" },
+  { src: mar, label: "Mars — Vintersol", season: "winter" },
+  { src: apr, label: "April — Snøsmelting", season: "spring" },
+  { src: mai, label: "Mai — Spirende vår", season: "spring" },
+  { src: jun, label: "Juni — Midnattssol", season: "summer" },
+  { src: jul, label: "Juli — Høysommer", season: "summer" },
+  { src: aug, label: "August — Sensommer", season: "summer" },
+  { src: sep, label: "September — Gylden høst", season: "autumn" },
+  { src: okt, label: "Oktober — Tåkeland", season: "autumn" },
+  { src: nov, label: "November — Frosten kommer", season: "autumn" },
+  { src: des, label: "Desember — Vinterstillhet", season: "winter" },
+];
 
 type Season = "spring" | "summer" | "autumn" | "winter";
-type DayPart = "morning" | "day" | "evening" | "night";
 
-function getSeason(date: Date): Season {
-  const m = date.getMonth(); // 0-11
-  if (m >= 2 && m <= 4) return "spring";
-  if (m >= 5 && m <= 7) return "summer";
-  if (m >= 8 && m <= 10) return "autumn";
-  return "winter";
+function getSeasonForMonth(monthIndex: number): Season {
+  return MONTH_IMAGES[monthIndex].season;
 }
 
-function getDayPart(date: Date): DayPart {
-  const h = date.getHours();
-  if (h >= 5 && h < 9) return "morning";
-  if (h >= 9 && h < 17) return "day";
-  if (h >= 17 && h < 21) return "evening";
-  return "night";
-}
-
-const SEASON_LABEL: Record<Season, string> = {
-  spring: "Vår",
-  summer: "Sommer",
-  autumn: "Høst",
-  winter: "Vinter",
-};
-
-const DAYPART_LABEL: Record<DayPart, string> = {
-  morning: "Morgengry",
-  day: "Dagslys",
-  evening: "Skumring",
-  night: "Nattevakt",
-};
-
-// Atmosfærisk overlay per tid på døgnet
-function dayPartOverlay(part: DayPart): string {
-  switch (part) {
-    case "morning":
-      // Rosa/gylden morgengry
-      return "linear-gradient(180deg, oklch(0.45 0.12 40 / 0.55) 0%, oklch(0.20 0.06 30 / 0.65) 55%, oklch(0.10 0.01 240) 100%)";
-    case "day":
-      // Lysere, blålig dagshimmel med varm bunn
-      return "linear-gradient(180deg, oklch(0.45 0.08 230 / 0.45) 0%, oklch(0.20 0.03 230 / 0.65) 55%, oklch(0.10 0.01 240) 100%)";
-    case "evening":
-      // Dyp ravoransje-skumring (mest GoT)
-      return "linear-gradient(180deg, oklch(0.40 0.16 35 / 0.65) 0%, oklch(0.18 0.08 25 / 0.78) 50%, oklch(0.08 0.01 240) 100%)";
-    case "night":
-      // Stjerneklar nattehimmel, dypblå
-      return "linear-gradient(180deg, oklch(0.18 0.04 250 / 0.85) 0%, oklch(0.12 0.02 245 / 0.92) 55%, oklch(0.06 0.005 240) 100%)";
-  }
-}
-
-export function HyttaHero({ image, eyebrow, title, subtitle }: {
-  image: string;
+export function HyttaHero({
+  eyebrow,
+  title,
+  subtitle,
+}: {
   eyebrow?: string;
   title: string;
   subtitle?: string;
+  /** Beholdes for bakoverkompatibilitet, men ignoreres — bilde velges fra måned */
+  image?: string;
 }) {
-  // SSR-trygg: ikke les klokka før etter mount, ellers får vi hydreringsmismatch
+  // SSR-trygg: server rendrer alltid januar (index 0); klient bytter etter mount
   const [mounted, setMounted] = useState(false);
-  const [now, setNow] = useState<Date | null>(null);
+  const [monthIndex, setMonthIndex] = useState<number>(0);
+
   useEffect(() => {
     setMounted(true);
-    setNow(new Date());
-    const t = setInterval(() => setNow(new Date()), 60_000);
+    setMonthIndex(new Date().getMonth());
+    // Sjekk hver time om måneden har skiftet
+    const t = setInterval(() => setMonthIndex(new Date().getMonth()), 60 * 60 * 1000);
     return () => clearInterval(t);
   }, []);
 
-  const season = now ? getSeason(now) : "winter";
-  const dayPart = now ? getDayPart(now) : "evening";
-  const overlay = dayPartOverlay(dayPart);
+  const current = MONTH_IMAGES[monthIndex];
+  const season = getSeasonForMonth(monthIndex);
 
   return (
     <section className="relative h-[58vh] min-h-[360px] w-full overflow-hidden border-b border-border">
-      {/* Bakgrunnsbilde med subtil zoom (Ken Burns) */}
-      <div className="hytta-kenburns absolute inset-0">
-        <img
-          src={image}
-          alt=""
-          className="absolute inset-0 w-full h-full object-cover"
-          loading="eager"
-        />
+      <HyttaHeroStyles />
+
+      {/* Crossfade mellom alle 12 bilder — kun det aktive vises */}
+      <div className="absolute inset-0">
+        {MONTH_IMAGES.map((m, i) => (
+          <img
+            key={m.src}
+            src={m.src}
+            alt=""
+            loading={i === 0 ? "eager" : "lazy"}
+            className="hytta-kenburns absolute inset-0 w-full h-full object-cover transition-opacity duration-[1500ms] ease-in-out"
+            style={{ opacity: i === monthIndex ? 1 : 0 }}
+          />
+        ))}
       </div>
 
-      {/* Tid-på-døgnet overlay */}
+      {/* Lett mørkt overlay for tekstlesbarhet — ikke tid-på-døgnet (bildet bærer stemningen) */}
       <div
-        className="absolute inset-0 transition-[background] duration-1000"
-        style={{ background: overlay }}
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background:
+            "linear-gradient(180deg, oklch(0.10 0.01 240 / 0.15) 0%, oklch(0.10 0.01 240 / 0.40) 55%, oklch(0.08 0.01 240 / 0.85) 100%)",
+        }}
       />
 
-      {/* Himmellegeme: sol/måne */}
-      {mounted && <CelestialBody dayPart={dayPart} />}
-
-      {/* Stjerner om natten/skumring */}
-      {mounted && (dayPart === "night" || dayPart === "evening") && <Stars density={dayPart === "night" ? 60 : 25} />}
-
-      {/* Sesongbaserte partikler */}
+      {/* Sesongbaserte partikler — kun etter mount for SSR-trygghet */}
       {mounted && season === "winter" && <Snowfall />}
       {mounted && season === "autumn" && <Leaves />}
       {mounted && season === "spring" && <Pollen />}
-      {mounted && season === "summer" && <Fireflies dayPart={dayPart} />}
+      {mounted && season === "summer" && <SummerHaze />}
 
-      {/* Glødende ember om kvelden (peisrøyk-stemning) */}
-      {mounted && dayPart === "evening" && <Embers />}
+      {/* Ravner i silhuett — alltid */}
+      {mounted && <Ravens count={2} />}
 
-      {/* Ravner i silhuett — alltid, men flere om natten */}
-      {mounted && <Ravens count={dayPart === "night" ? 3 : 2} />}
-
-      {/* Vignett rundt kantene */}
+      {/* Vignett */}
       <div
         className="pointer-events-none absolute inset-0"
         style={{
@@ -144,124 +122,31 @@ export function HyttaHero({ image, eyebrow, title, subtitle }: {
           </p>
         )}
 
-        {/* Liten "krønike-stripe" nederst — sesong + døgn */}
-        <div className="mt-5 flex items-center gap-3 text-[10px] md:text-xs uppercase tracking-[0.35em] text-primary/90">
-          <span className="inline-block w-8 h-px bg-primary/60" />
-          <span>{SEASON_LABEL[season]}</span>
-          <span className="text-primary/40">❦</span>
-          <span>{DAYPART_LABEL[dayPart]}</span>
-          <span className="inline-block w-8 h-px bg-primary/60" />
-        </div>
+        {/* Måneds-stripe — kun etter mount så SSR ikke får mismatch */}
+        {mounted && (
+          <div className="mt-5 flex items-center gap-3 text-[10px] md:text-xs uppercase tracking-[0.35em] text-primary/90">
+            <span className="inline-block w-8 h-px bg-primary/60" />
+            <span>{current.label}</span>
+            <span className="inline-block w-8 h-px bg-primary/60" />
+          </div>
+        )}
       </div>
-
-      <HyttaHeroStyles />
     </section>
   );
 }
 
-/* ─── Himmellegeme ───────────────────────────────────────────────────── */
-
-function CelestialBody({ dayPart }: { dayPart: DayPart }) {
-  const isMoon = dayPart === "night";
-
-  // Posisjon: morgen lavt øst, dag høyt, kveld lavt vest, natt måne høyt
-  const pos = useMemo(() => {
-    switch (dayPart) {
-      case "morning":
-        return { left: "12%", top: "62%" };
-      case "day":
-        return { left: "75%", top: "18%" };
-      case "evening":
-        return { left: "82%", top: "58%" };
-      case "night":
-        return { left: "78%", top: "20%" };
-    }
-  }, [dayPart]);
-
-  const color = isMoon
-    ? "oklch(0.92 0.02 230)"
-    : dayPart === "evening"
-    ? "oklch(0.78 0.18 45)"
-    : dayPart === "morning"
-    ? "oklch(0.85 0.14 60)"
-    : "oklch(0.92 0.10 90)";
-
-  const glow = isMoon
-    ? "0 0 60px 20px oklch(0.85 0.04 230 / 0.35)"
-    : dayPart === "evening"
-    ? "0 0 80px 30px oklch(0.7 0.20 40 / 0.5)"
-    : "0 0 100px 40px oklch(0.85 0.14 70 / 0.4)";
-
-  return (
-    <div
-      className="hytta-celestial absolute rounded-full"
-      style={{
-        left: pos.left,
-        top: pos.top,
-        width: isMoon ? 56 : 72,
-        height: isMoon ? 56 : 72,
-        background: color,
-        boxShadow: glow,
-        opacity: 0.9,
-      }}
-    >
-      {isMoon && (
-        // Subtle "kratere" på månen
-        <>
-          <span className="absolute rounded-full" style={{ left: "22%", top: "30%", width: 8, height: 8, background: "oklch(0.78 0.02 230 / 0.6)" }} />
-          <span className="absolute rounded-full" style={{ left: "55%", top: "55%", width: 12, height: 12, background: "oklch(0.78 0.02 230 / 0.5)" }} />
-          <span className="absolute rounded-full" style={{ left: "60%", top: "20%", width: 5, height: 5, background: "oklch(0.78 0.02 230 / 0.7)" }} />
-        </>
-      )}
-    </div>
-  );
-}
-
-/* ─── Stjerner ───────────────────────────────────────────────────────── */
-
-function Stars({ density }: { density: number }) {
-  const stars = useMemo(
-    () =>
-      Array.from({ length: density }, (_, i) => ({
-        id: i,
-        left: Math.random() * 100,
-        top: Math.random() * 55,
-        size: Math.random() * 2 + 0.5,
-        delay: Math.random() * 4,
-      })),
-    [density],
-  );
-  return (
-    <div className="pointer-events-none absolute inset-0">
-      {stars.map((s) => (
-        <span
-          key={s.id}
-          className="hytta-star absolute rounded-full bg-foreground"
-          style={{
-            left: `${s.left}%`,
-            top: `${s.top}%`,
-            width: s.size,
-            height: s.size,
-            animationDelay: `${s.delay}s`,
-          }}
-        />
-      ))}
-    </div>
-  );
-}
-
-/* ─── Snøfall (vinter) ───────────────────────────────────────────────── */
+/* ─── Snøfall ───────────────────────────────────────────────────────── */
 
 function Snowfall() {
   const flakes = useMemo(
     () =>
-      Array.from({ length: 80 }, (_, i) => ({
+      Array.from({ length: 70 }, (_, i) => ({
         id: i,
-        left: Math.random() * 100,
-        size: Math.random() * 4 + 2,
-        duration: Math.random() * 6 + 6,
-        delay: Math.random() * 8,
-        drift: (Math.random() - 0.5) * 80,
+        left: (i * 17) % 100,
+        size: 2 + ((i * 0.31) % 4),
+        duration: 6 + ((i * 0.7) % 6),
+        delay: (i * 0.43) % 8,
+        drift: ((i * 13) % 80) - 40,
       })),
     [],
   );
@@ -286,19 +171,19 @@ function Snowfall() {
   );
 }
 
-/* ─── Fallende blader (høst) ─────────────────────────────────────────── */
+/* ─── Blader ────────────────────────────────────────────────────────── */
 
 function Leaves() {
   const leaves = useMemo(
     () =>
-      Array.from({ length: 24 }, (_, i) => ({
+      Array.from({ length: 22 }, (_, i) => ({
         id: i,
-        left: Math.random() * 100,
-        duration: Math.random() * 8 + 8,
-        delay: Math.random() * 10,
-        size: Math.random() * 10 + 8,
-        hue: Math.random() * 30 + 25, // gul-oransje
-        rot: Math.random() * 360,
+        left: (i * 23) % 100,
+        duration: 8 + ((i * 0.7) % 8),
+        delay: (i * 0.91) % 10,
+        size: 8 + ((i * 0.7) % 10),
+        hue: 25 + ((i * 7) % 30),
+        rot: (i * 47) % 360,
       })),
     [],
   );
@@ -325,18 +210,18 @@ function Leaves() {
   );
 }
 
-/* ─── Pollen / blomsterstøv (vår) ────────────────────────────────────── */
+/* ─── Pollen ────────────────────────────────────────────────────────── */
 
 function Pollen() {
   const dots = useMemo(
     () =>
-      Array.from({ length: 40 }, (_, i) => ({
+      Array.from({ length: 35 }, (_, i) => ({
         id: i,
-        left: Math.random() * 100,
-        top: Math.random() * 100,
-        size: Math.random() * 3 + 1.5,
-        duration: Math.random() * 8 + 8,
-        delay: Math.random() * 6,
+        left: (i * 19) % 100,
+        top: (i * 29) % 100,
+        size: 1.5 + ((i * 0.17) % 3),
+        duration: 8 + ((i * 0.7) % 8),
+        delay: (i * 0.53) % 6,
       })),
     [],
   );
@@ -362,72 +247,36 @@ function Pollen() {
   );
 }
 
-/* ─── Ildfluer (sommernatt/skumring) ─────────────────────────────────── */
+/* ─── Sommerdis (bittesmå glitrende støvkorn) ───────────────────────── */
 
-function Fireflies({ dayPart }: { dayPart: DayPart }) {
-  // Ildfluer vises tydeligst om kvelden/natta — om dagen vises gylne lysstråler i stedet
-  const isDark = dayPart === "evening" || dayPart === "night";
-  const flies = useMemo(
+function SummerHaze() {
+  const dots = useMemo(
     () =>
-      Array.from({ length: isDark ? 30 : 18 }, (_, i) => ({
+      Array.from({ length: 30 }, (_, i) => ({
         id: i,
-        left: Math.random() * 100,
-        top: Math.random() * 80 + 10,
-        duration: Math.random() * 6 + 5,
-        delay: Math.random() * 5,
-      })),
-    [isDark],
-  );
-  return (
-    <div className="pointer-events-none absolute inset-0 overflow-hidden">
-      {flies.map((f) => (
-        <span
-          key={f.id}
-          className="hytta-firefly absolute rounded-full"
-          style={{
-            left: `${f.left}%`,
-            top: `${f.top}%`,
-            width: 4,
-            height: 4,
-            background: "oklch(0.9 0.18 95)",
-            boxShadow: "0 0 12px oklch(0.85 0.18 90 / 0.9)",
-            animationDuration: `${f.duration}s`,
-            animationDelay: `${f.delay}s`,
-          }}
-        />
-      ))}
-    </div>
-  );
-}
-
-/* ─── Glødende ember (kveld) ─────────────────────────────────────────── */
-
-function Embers() {
-  const embers = useMemo(
-    () =>
-      Array.from({ length: 18 }, (_, i) => ({
-        id: i,
-        left: Math.random() * 100,
-        size: Math.random() * 3 + 1.5,
-        duration: Math.random() * 5 + 5,
-        delay: Math.random() * 6,
+        left: (i * 13) % 100,
+        top: (i * 19) % 100,
+        size: 1.5 + ((i * 0.11) % 2.5),
+        duration: 10 + ((i * 0.41) % 8),
+        delay: (i * 0.31) % 5,
       })),
     [],
   );
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden">
-      {embers.map((e) => (
+      {dots.map((d) => (
         <span
-          key={e.id}
-          className="hytta-ember absolute rounded-full"
+          key={d.id}
+          className="hytta-pollen absolute rounded-full"
           style={{
-            left: `${e.left}%`,
-            width: e.size,
-            height: e.size,
-            background: "oklch(0.78 0.20 40)",
-            boxShadow: "0 0 8px oklch(0.7 0.22 35 / 0.9)",
-            animationDuration: `${e.duration}s`,
-            animationDelay: `${e.delay}s`,
+            left: `${d.left}%`,
+            top: `${d.top}%`,
+            width: d.size,
+            height: d.size,
+            background: "oklch(0.92 0.06 90 / 0.6)",
+            boxShadow: "0 0 4px oklch(0.92 0.06 90 / 0.5)",
+            animationDuration: `${d.duration}s`,
+            animationDelay: `${d.delay}s`,
           }}
         />
       ))}
@@ -435,17 +284,17 @@ function Embers() {
   );
 }
 
-/* ─── Ravner ─────────────────────────────────────────────────────────── */
+/* ─── Ravner ────────────────────────────────────────────────────────── */
 
 function Ravens({ count }: { count: number }) {
   const ravens = useMemo(
     () =>
       Array.from({ length: count }, (_, i) => ({
         id: i,
-        top: Math.random() * 35 + 10,
-        duration: Math.random() * 12 + 14,
-        delay: i * 6 + Math.random() * 4,
-        scale: Math.random() * 0.4 + 0.7,
+        top: 12 + ((i * 31) % 22),
+        duration: 16 + ((i * 7) % 10),
+        delay: i * 5 + ((i * 3) % 4),
+        scale: 0.7 + ((i * 0.17) % 0.4),
       })),
     [count],
   );
@@ -460,13 +309,16 @@ function Ravens({ count }: { count: number }) {
             animationDuration: `${r.duration}s`,
             animationDelay: `${r.delay}s`,
             transform: `scale(${r.scale})`,
-            width: 36,
+            width: 38,
             height: 18,
           }}
           viewBox="0 0 36 18"
-          fill="oklch(0.08 0.005 240)"
+          fill="oklch(0.06 0.005 240)"
         >
-          <path className="hytta-wing" d="M2 9 Q 9 2, 18 9 Q 27 2, 34 9 Q 27 6, 18 9 Q 9 6, 2 9 Z" />
+          <path
+            className="hytta-wing"
+            d="M2 9 Q 9 2, 18 9 Q 27 2, 34 9 Q 27 6, 18 9 Q 9 6, 2 9 Z"
+          />
         </svg>
       ))}
     </div>
@@ -483,19 +335,7 @@ function HyttaHeroStyles() {
         50%  { transform: scale(1.12) translate(-1.5%, -1%); }
         100% { transform: scale(1.05) translate(0, 0); }
       }
-      .hytta-kenburns { animation: hytta-kenburns 40s ease-in-out infinite; }
-
-      @keyframes hytta-celestial-glow {
-        0%, 100% { filter: brightness(1); }
-        50%      { filter: brightness(1.15); }
-      }
-      .hytta-celestial { animation: hytta-celestial-glow 6s ease-in-out infinite; }
-
-      @keyframes hytta-twinkle {
-        0%, 100% { opacity: 0.2; transform: scale(0.8); }
-        50%      { opacity: 1;   transform: scale(1.2); }
-      }
-      .hytta-star { animation: hytta-twinkle 3.5s ease-in-out infinite; }
+      .hytta-kenburns { animation: hytta-kenburns 50s ease-in-out infinite; }
 
       @keyframes hytta-snowfall {
         0%   { transform: translate3d(0, -10vh, 0) rotate(0deg); opacity: 0; }
@@ -527,26 +367,6 @@ function HyttaHeroStyles() {
       }
       .hytta-pollen { animation: hytta-drift ease-in-out infinite; }
 
-      @keyframes hytta-firefly {
-        0%, 100% { opacity: 0.1; transform: translate(0, 0) scale(0.6); }
-        25%      { opacity: 1;   transform: translate(15px, -10px) scale(1.2); }
-        50%      { opacity: 0.4; transform: translate(-10px, -25px) scale(0.9); }
-        75%      { opacity: 1;   transform: translate(20px, -15px) scale(1.1); }
-      }
-      .hytta-firefly { animation: hytta-firefly ease-in-out infinite; }
-
-      @keyframes hytta-emberrise {
-        0%   { transform: translate3d(0, 60vh, 0) scale(1); opacity: 0; }
-        20%  { opacity: 1; }
-        100% { transform: translate3d(30px, -20vh, 0) scale(0.4); opacity: 0; }
-      }
-      .hytta-ember {
-        bottom: 0;
-        animation-name: hytta-emberrise;
-        animation-timing-function: ease-out;
-        animation-iteration-count: infinite;
-      }
-
       @keyframes hytta-ravenfly {
         0%   { transform: translateX(-15vw); opacity: 0; }
         10%  { opacity: 1; }
@@ -563,12 +383,11 @@ function HyttaHeroStyles() {
         0%, 100% { transform: scaleY(1); }
         50%      { transform: scaleY(0.4); }
       }
-      .hytta-wing { transform-origin: center; animation: hytta-wingflap 0.35s ease-in-out infinite; }
+      .hytta-wing { transform-origin: center; animation: hytta-wingflap 0.32s ease-in-out infinite; }
 
       @media (prefers-reduced-motion: reduce) {
-        .hytta-kenburns, .hytta-celestial, .hytta-star,
-        .hytta-snow, .hytta-leaf, .hytta-pollen,
-        .hytta-firefly, .hytta-ember, .hytta-raven, .hytta-wing {
+        .hytta-kenburns, .hytta-snow, .hytta-leaf, .hytta-pollen,
+        .hytta-raven, .hytta-wing {
           animation: none !important;
         }
       }
