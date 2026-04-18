@@ -136,12 +136,73 @@ export function LivePollen({ lat, lon, title, subtitle }: Props) {
 
       {days && days.length > 0 && (
         <div className="space-y-5">
+          <MyAllergenAlert day={days[0]} />
           <NowPanel day={days[0]} />
           <HourlyChart day={days[0]} />
           <ForecastDays days={days.slice(1)} />
         </div>
       )}
     </article>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+function MyAllergenAlert({ day }: { day: DayBucket }) {
+  const worst = MY_ALLERGENS.map((k) => {
+    const peak = day.hours.reduce(
+      (m, h) => (h.pollen[k] > m.v ? { v: h.pollen[k], hour: h.hour } : m),
+      { v: 0, hour: 0 },
+    );
+    return { k, peak, lvl: levelFor(k, peak.v) };
+  })
+    .filter((x) => x.lvl.rank >= 2)
+    .sort((a, b) => b.lvl.rank - a.lvl.rank || b.peak.v - a.peak.v);
+
+  if (worst.length === 0) {
+    return (
+      <div className="rounded-md border border-border/60 bg-background/40 p-3 flex items-center gap-2">
+        <span className="text-lg">🛡</span>
+        <span className="text-xs text-muted-foreground">
+          Mine allergener (bjørk, gress, or, burot) er rolige i dag.
+        </span>
+      </div>
+    );
+  }
+
+  const top = worst[0];
+  const isHigh = top.lvl.rank >= 3;
+
+  return (
+    <div
+      className="rounded-md border-2 p-3"
+      style={{
+        borderColor: top.lvl.color,
+        backgroundColor: `color-mix(in oklab, ${top.lvl.color} 12%, transparent)`,
+      }}
+    >
+      <div className="flex items-center gap-2 mb-1">
+        <span className="text-lg">{isHigh ? "⚔" : "⚠"}</span>
+        <span
+          className="text-[10px] uppercase tracking-[0.25em] font-semibold"
+          style={{ color: top.lvl.color }}
+        >
+          {isHigh ? "Varsel · Mine allergener" : "OBS · Mine allergener"}
+        </span>
+      </div>
+      <p className="text-sm text-foreground leading-snug">
+        <strong>{ALLERGEN_META[top.k].name}</strong> når{" "}
+        <span style={{ color: top.lvl.color }}>{top.lvl.label.toLowerCase()}</span> nivå
+        kl. {String(top.peak.hour).padStart(2, "0")}:00 ({top.peak.v.toFixed(1)} korn/m³).
+        {worst.length > 1 && (
+          <>
+            {" "}Også{" "}
+            {worst.slice(1).map((w) => ALLERGEN_META[w.k].name.toLowerCase()).join(", ")} er
+            aktive.
+          </>
+        )}
+      </p>
+    </div>
   );
 }
 
