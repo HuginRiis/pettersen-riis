@@ -146,6 +146,44 @@ function RangerPage() {
           </article>
         </section>
 
+        {/* Wildtrak-eksklusivt utstyr */}
+        <section>
+          <h2 className="text-2xl text-primary mb-2 flex items-center gap-2">
+            <Crown size={22} /> Wildtraks tegn · Shadow Black
+          </h2>
+          <p className="text-sm text-muted-foreground mb-5">
+            Husets Ranger bærer Wildtrak-seglet i Shadow Black — natten selv,
+            polert til speilglans. Toppmodellens utstyr som skiller den fra
+            menige tropper.
+          </p>
+          <div className="grid md:grid-cols-3 gap-4">
+            <Card title="Sportsbar & roll-cover">
+              Matt-svart sportsbar over lasteplanet og elektrisk roll-cover —
+              lasten skjult for ravnenes blikk.
+            </Card>
+            <Card title="18″ sorte alu-felger">
+              Wildtrak-eksklusive felger i matt sort, kledd i 265/60 R18
+              terreng-dekk. Føttene til en grenseridder.
+            </Card>
+            <Card title="Skinnseter m/oransje sting">
+              Delskinn med Wildtraks signatur-oransje sømmer, oppvarmede
+              forseter og 8-veis elektrisk justerbart førersete.
+            </Card>
+            <Card title="Bi-LED hovedlys">
+              LED-frontlys med signaturlys, LED-tåkelys og automatisk fjernlys
+              — natten viker for Shadow Black.
+            </Card>
+            <Card title="Keyless Entry & Start">
+              Inn og ut uten å rote etter nøkkel, motorstart med trykknapp.
+              Husets herre slipper å avsløre sin posisjon.
+            </Card>
+            <Card title="Klima, regnsensor & DAB+">
+              Automatisk tosone-klimaanlegg, regnsensor på vindusviskerne og
+              DAB+ radio for de lange ferder.
+            </Card>
+          </div>
+        </section>
+
         {/* Mesterens råd */}
         <article className="panel rounded-lg p-6 md:p-8 border-primary/30">
           <h2 className="text-2xl text-primary mb-3 flex items-center gap-2">
