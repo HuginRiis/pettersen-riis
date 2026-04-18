@@ -187,6 +187,35 @@ function JernhestenPage() {
           </article>
         </section>
 
+        {/* Galleri — Gangerens portretter */}
+        <section>
+          <h2 className="text-2xl text-primary mb-5 flex items-center gap-2">
+            <Crown size={22} /> Gangerens portretter
+          </h2>
+          <div className="grid md:grid-cols-2 gap-4">
+            <Portrait
+              src={jernhestenSkog}
+              title="Vokteren av Vintervedet"
+              caption="Jernhesten hviler ved skogkanten, der snøen ennå holder fjellets ord. Tre stille vakter står bak — en konge mellom ulvene."
+            />
+            <Portrait
+              src={jernhestenFrontLading}
+              title="Når gangeren drikker fra lynet"
+              caption="Ved borgens egen kilde mettes Jernhesten med strøm fra Vesterlandets nett. En lydløs rite, gjentatt hver natt."
+            />
+            <Portrait
+              src={jernhestenBak}
+              title="EV400 — Hertugen av Coventry"
+              caption="Fra hekkens skygge skuer den ut over forstaden. To motorer, fire hjul, og en hale av rødt lys som varsler avreise."
+            />
+            <Portrait
+              src={jernhestenByen}
+              title="Jernhesten i Skien-by"
+              caption="Mellom borgerhus og torg står den parkert som en svart ridder — I-PACE preget i krom, Jaguarens hode lyser stille."
+            />
+          </div>
+        </section>
+
         {/* Mesterens råd */}
         <article className="panel rounded-lg p-6 md:p-8 border-primary/30">
           <h2 className="text-2xl text-primary mb-3">Mesterens råd</h2>
