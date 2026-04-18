@@ -6,7 +6,6 @@ import { PageShell } from "@/components/PageShell";
 import { TollnesCameraStrip } from "@/components/TollnesCameraStrip";
 import {
   getHomeySnapshot,
-  getLivingRoomLightsState,
   setLivingRoomLights,
 } from "@/server/homey";
 import { findDeviceFuzzy, readTemp } from "@/lib/homey-match";
@@ -49,23 +48,68 @@ export const Route = createFileRoute("/steintavle")({
   ),
 });
 
+// Speiler server-logikken i `getLivingRoomLightsState` slik at vi kan utlede
+// lys-status fra eksisterende snapshot uten et eget Athom-kall.
+function isLivingRoomZoneName(name: string): boolean {
+  const n = name.toLowerCase();
+  return (
+    n.includes("stue") ||
+    n.includes("stua") ||
+    n.includes("living") ||
+    n.includes("livingroom")
+  );
+}
+
+function deriveLivingRoomLightsOn(
+  snapshot: Extract<Awaited<ReturnType<typeof getHomeySnapshot>>, { ok: true }>,
+): boolean | null {
+  const livingRoomZoneIds = new Set(
+    snapshot.zones.filter((z) => isLivingRoomZoneName(z.name)).map((z) => z.id),
+  );
+  const lights = snapshot.devices.filter(
+    (d) =>
+      d.zone &&
+      livingRoomZoneIds.has(d.zone) &&
+      d.capabilities &&
+      "onoff" in d.capabilities,
+  );
+  if (lights.length === 0) return null;
+  return lights.some((d) => d.capabilities["onoff"]?.value === true);
+}
+
 function SteintavlePage() {
   const data = Route.useLoaderData() as Awaited<ReturnType<typeof getHomeySnapshot>>;
   const router = useRouter();
   const fetchAlerts = useServerFn(getTollnesAlerts);
   const fetchRadar = useServerFn(getMetRadarSouthernNorway);
-  const fetchLightsState = useServerFn(getLivingRoomLightsState);
   const toggleLights = useServerFn(setLivingRoomLights);
   const [alerts, setAlerts] = useState<AlertsResult | null>(null);
   const [radar, setRadar] = useState<RadarResult | null>(null);
   const [now, setNow] = useState<Date | null>(null);
-  const [lightsOn, setLightsOn] = useState<boolean | null>(null);
+  // Optimistisk overstyring av lys-status — null betyr "bruk verdien fra snapshot".
+  const [lightsOverride, setLightsOverride] = useState<boolean | null>(null);
   const [lightsBusy, setLightsBusy] = useState(false);
+
+  // Lys-status leses fra snapshot (samme zone-logikk som server),
+  // så vi unngår et eget API-kall mot Athom.
+  const lightsFromSnapshot = data.ok ? deriveLivingRoomLightsOn(data) : null;
+  const lightsOn = lightsOverride ?? lightsFromSnapshot;
+
+  // Når snapshot oppdateres og matcher overstyringen → dropp overstyringen.
+  useEffect(() => {
+    if (lightsOverride !== null && lightsFromSnapshot === lightsOverride) {
+      setLightsOverride(null);
+    }
+  }, [lightsFromSnapshot, lightsOverride]);
 
   useEffect(() => {
     let cancelled = false;
     setNow(new Date());
+
+    const isHidden = () => typeof document !== "undefined" && document.hidden;
+
     const loadAlerts = async () => {
+      if (isHidden()) return;
       try {
         const res = await fetchAlerts();
         if (!cancelled) setAlerts(res);
@@ -74,6 +118,7 @@ function SteintavlePage() {
       }
     };
     const loadRadar = async () => {
+      if (isHidden()) return;
       try {
         const res = await fetchRadar();
         if (!cancelled) setRadar(res);
@@ -81,44 +126,63 @@ function SteintavlePage() {
         if (!cancelled) setRadar({ ok: false, error: e?.message ?? "Feil" });
       }
     };
-    const loadLights = async () => {
-      try {
-        const res = await fetchLightsState();
-        if (!cancelled && res.ok) setLightsOn(res.anyOn);
-      } catch {
-        // ignore
-      }
+    const refreshSnapshot = () => {
+      if (isHidden()) return;
+      router.invalidate();
     };
+
     loadAlerts();
     loadRadar();
-    loadLights();
-    const a = setInterval(loadAlerts, 5 * 60_000);
-    const r = setInterval(loadRadar, 5 * 60_000);
+
+    // Snillere polling for å unngå Athom 429:
+    // - Værvarsel & radar: 10 min (var 5 min)
+    // - Klokke: 30 sek (lokal, ingen API)
+    // - Homey-snapshot: 3 min (var 1 min, og vi droppet eget lys-kall)
+    const a = setInterval(loadAlerts, 10 * 60_000);
+    const r = setInterval(loadRadar, 10 * 60_000);
     const c = setInterval(() => setNow(new Date()), 30_000);
-    const l = setInterval(loadLights, 30_000);
-    // Hent ferske Homey-temperaturer hvert 60. sek
-    const t = setInterval(() => router.invalidate(), 60_000);
+    const t = setInterval(refreshSnapshot, 3 * 60_000);
+
+    // Når fanen blir synlig igjen, hent ferskt umiddelbart.
+    const onVisibility = () => {
+      if (!document.hidden) {
+        loadAlerts();
+        loadRadar();
+        refreshSnapshot();
+        setNow(new Date());
+      }
+    };
+    if (typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", onVisibility);
+    }
+
     return () => {
       cancelled = true;
       clearInterval(a);
       clearInterval(r);
       clearInterval(c);
-      clearInterval(l);
       clearInterval(t);
+      if (typeof document !== "undefined") {
+        document.removeEventListener("visibilitychange", onVisibility);
+      }
     };
-  }, [fetchAlerts, fetchRadar, fetchLightsState, router]);
+  }, [fetchAlerts, fetchRadar, router]);
 
   const handleSetLights = async (next: boolean) => {
     if (lightsBusy) return;
     if (lightsOn === next) return; // already in desired state
     setLightsBusy(true);
-    const prev = lightsOn;
-    setLightsOn(next); // optimistic
+    setLightsOverride(next); // optimistic
     try {
       const res = await toggleLights({ data: { on: next } });
-      if (!res.ok) setLightsOn(prev);
+      if (!res.ok) {
+        setLightsOverride(null);
+      } else {
+        // Hent fersk snapshot så lights-state synkes (og overstyringen kan slippes).
+        router.invalidate();
+      }
     } catch {
-      setLightsOn(prev);
+      setLightsOverride(null);
     } finally {
       setLightsBusy(false);
     }
