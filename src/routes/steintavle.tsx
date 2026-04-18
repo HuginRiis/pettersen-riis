@@ -1,5 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { PageShell } from "@/components/PageShell";
 import { TollnesCameraStrip } from "@/components/TollnesCameraStrip";
@@ -45,6 +45,7 @@ export const Route = createFileRoute("/steintavle")({
 
 function SteintavlePage() {
   const data = Route.useLoaderData() as Awaited<ReturnType<typeof getHomeySnapshot>>;
+  const router = useRouter();
   const fetchRadar = useServerFn(getMetRadarSouthernNorway);
   const fetchAlerts = useServerFn(getTollnesAlerts);
   const [radar, setRadar] = useState<RadarResult | null>(null);
@@ -74,13 +75,16 @@ function SteintavlePage() {
     const r = setInterval(loadRadar, 5 * 60_000); // radar hvert 5. min
     const a = setInterval(loadAlerts, 5 * 60_000);
     const c = setInterval(() => setNow(new Date()), 30_000);
+    // Hent ferske Homey-temperaturer hvert 60. sek
+    const t = setInterval(() => router.invalidate(), 60_000);
     return () => {
       cancelled = true;
       clearInterval(r);
       clearInterval(a);
       clearInterval(c);
+      clearInterval(t);
     };
-  }, [fetchRadar, fetchAlerts]);
+  }, [fetchRadar, fetchAlerts, router]);
 
   if (!data.ok) {
     return (
