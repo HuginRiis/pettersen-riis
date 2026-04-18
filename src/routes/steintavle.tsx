@@ -125,7 +125,7 @@ function SteintavlePage() {
 
   if (!data.ok) {
     return (
-      <PageShell>
+      <PageShell minimalHeader>
         <section className="container mx-auto px-4 py-20 text-center">
           <h1 className="heading-hero text-4xl mb-4">Steintavlen sover</h1>
           <p className="text-muted-foreground">
