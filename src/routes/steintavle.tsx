@@ -182,6 +182,14 @@ function SteintavlePage() {
           </div>
         </section>
 
+        {/* dB-måling fra Tollnes */}
+        {noiseDb !== null && (
+          <section>
+            <SectionTitle>Lydvakten · Tollnes</SectionTitle>
+            <NoiseBox db={noiseDb} />
+          </section>
+        )}
+
         {/* Tordenvarsel-banner (kun hvis aktivt) */}
         {hasThunder && (
           <section>
@@ -189,7 +197,34 @@ function SteintavlePage() {
           </section>
         )}
 
-        {/* Radar-kart */}
+        {/* Yr lynradar — ekte live data, sentrert på Tollnes */}
+        <section>
+          <SectionTitle>Lynvarsel · Yr.no over Tollnes</SectionTitle>
+          <div className="panel rounded-lg overflow-hidden">
+            <div className="relative w-full" style={{ aspectRatio: "4 / 3", maxHeight: "min(60vh, 600px)" }}>
+              <iframe
+                title="Yr lynkart sentrert på Tollnes"
+                src="https://www.yr.no/nb/kart/lyn/1-3429877"
+                className="absolute inset-0 w-full h-full border-0"
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+              />
+            </div>
+            <div className="px-4 py-3 flex items-center justify-between text-[11px] tracking-[0.25em] uppercase text-muted-foreground border-t border-border">
+              <span>Yr.no · Live lyn</span>
+              <a
+                href="https://www.yr.no/nb/kart/lyn/1-3429877"
+                target="_blank"
+                rel="noreferrer"
+                className="text-primary hover:underline"
+              >
+                Åpne i Yr ↗
+              </a>
+            </div>
+          </div>
+        </section>
+
+        {/* Met.no radar-kart (nedbørs-skyer) */}
         <section>
           <SectionTitle>
             Tordenravnene · Værradar over Telemark
