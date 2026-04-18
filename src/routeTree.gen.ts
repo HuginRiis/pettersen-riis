@@ -14,6 +14,7 @@ import { Route as TurerRouteImport } from './routes/turer'
 import { Route as TreningRouteImport } from './routes/trening'
 import { Route as SteintavleRouteImport } from './routes/steintavle'
 import { Route as SmarthusRouteImport } from './routes/smarthus'
+import { Route as RangerRouteImport } from './routes/ranger'
 import { Route as PollenRouteImport } from './routes/pollen'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as JernhestenRouteImport } from './routes/jernhesten'
@@ -50,6 +51,11 @@ const SteintavleRoute = SteintavleRouteImport.update({
 const SmarthusRoute = SmarthusRouteImport.update({
   id: '/smarthus',
   path: '/smarthus',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RangerRoute = RangerRouteImport.update({
+  id: '/ranger',
+  path: '/ranger',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PollenRoute = PollenRouteImport.update({
@@ -122,6 +128,7 @@ export interface FileRoutesByFullPath {
   '/jernhesten': typeof JernhestenRoute
   '/login': typeof LoginRoute
   '/pollen': typeof PollenRoute
+  '/ranger': typeof RangerRoute
   '/smarthus': typeof SmarthusRoute
   '/steintavle': typeof SteintavleRoute
   '/trening': typeof TreningRoute
@@ -141,6 +148,7 @@ export interface FileRoutesByTo {
   '/jernhesten': typeof JernhestenRoute
   '/login': typeof LoginRoute
   '/pollen': typeof PollenRoute
+  '/ranger': typeof RangerRoute
   '/smarthus': typeof SmarthusRoute
   '/steintavle': typeof SteintavleRoute
   '/trening': typeof TreningRoute
@@ -161,6 +169,7 @@ export interface FileRoutesById {
   '/jernhesten': typeof JernhestenRoute
   '/login': typeof LoginRoute
   '/pollen': typeof PollenRoute
+  '/ranger': typeof RangerRoute
   '/smarthus': typeof SmarthusRoute
   '/steintavle': typeof SteintavleRoute
   '/trening': typeof TreningRoute
@@ -182,6 +191,7 @@ export interface FileRouteTypes {
     | '/jernhesten'
     | '/login'
     | '/pollen'
+    | '/ranger'
     | '/smarthus'
     | '/steintavle'
     | '/trening'
@@ -201,6 +211,7 @@ export interface FileRouteTypes {
     | '/jernhesten'
     | '/login'
     | '/pollen'
+    | '/ranger'
     | '/smarthus'
     | '/steintavle'
     | '/trening'
@@ -220,6 +231,7 @@ export interface FileRouteTypes {
     | '/jernhesten'
     | '/login'
     | '/pollen'
+    | '/ranger'
     | '/smarthus'
     | '/steintavle'
     | '/trening'
@@ -240,6 +252,7 @@ export interface RootRouteChildren {
   JernhestenRoute: typeof JernhestenRoute
   LoginRoute: typeof LoginRoute
   PollenRoute: typeof PollenRoute
+  RangerRoute: typeof RangerRoute
   SmarthusRoute: typeof SmarthusRoute
   SteintavleRoute: typeof SteintavleRoute
   TreningRoute: typeof TreningRoute
@@ -286,6 +299,13 @@ declare module '@tanstack/react-router' {
       path: '/smarthus'
       fullPath: '/smarthus'
       preLoaderRoute: typeof SmarthusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ranger': {
+      id: '/ranger'
+      path: '/ranger'
+      fullPath: '/ranger'
+      preLoaderRoute: typeof RangerRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/pollen': {
@@ -384,6 +404,7 @@ const rootRouteChildren: RootRouteChildren = {
   JernhestenRoute: JernhestenRoute,
   LoginRoute: LoginRoute,
   PollenRoute: PollenRoute,
+  RangerRoute: RangerRoute,
   SmarthusRoute: SmarthusRoute,
   SteintavleRoute: SteintavleRoute,
   TreningRoute: TreningRoute,
