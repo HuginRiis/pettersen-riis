@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
+import { getTelemarkAlerts, type TelemarkAlert } from "@/server/met-alerts";
+import { alertsToCounselLines, severityBadge } from "@/lib/telemark-alerts-got";
 
 /**
  * MaesterCounsel — "Hærmesterens råd"
