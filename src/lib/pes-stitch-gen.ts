@@ -159,9 +159,6 @@ export function generateImageStitches(opts: ImageOptions): {
 /* ------------------------------------------------------------------ */
 
 function nearest(hex: string): number {
-  // Lazy import to avoid circular
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { nearestPaletteIndex } = require("./pes-writer") as typeof import("./pes-writer");
   return nearestPaletteIndex(hex);
 }
 
