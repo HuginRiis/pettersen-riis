@@ -1,9 +1,11 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { PageShell, PageHero } from "@/components/PageShell";
 import heroImg from "@/assets/hero-westeros.jpg";
 import { getHomeySnapshot } from "@/server/homey";
 import { findDeviceFuzzy, type DeviceLike } from "@/lib/homey-match";
+import { getTollnesAlerts, type AlertsResult, type MetAlert } from "@/server/lightning";
 
 export const Route = createFileRoute("/var")({
   head: () => ({
@@ -27,8 +29,8 @@ export const Route = createFileRoute("/var")({
 });
 
 const LOCATIONS = [
-  { key: "skien", name: "Skien", subtitle: "Tollnes · House Pettersen Riis", lat: 59.2096, lon: 9.609 },
-  { key: "hytta", name: "Hytta", subtitle: "Lyngdal i Numedal · Øvre Bjørkesethvegen", lat: 59.92, lon: 9.30 },
+  { key: "skien", name: "Skien · Tollnes", subtitle: "House Pettersen Riis · Sør-Norge", lat: 59.2096, lon: 9.609 },
+  { key: "hytta", name: "Hytta · Numedal", subtitle: "Lyngdal · Øvre Bjørkesethvegen", lat: 59.92, lon: 9.30 },
 ] as const;
 
 type ForecastDay = {
@@ -39,8 +41,22 @@ type ForecastDay = {
   precip: number;
 };
 
+type Hour = {
+  time: string;
+  temp: number;
+  precip: number;
+  wind: number;
+  windDir: number;
+  pressure: number;
+  humidity: number;
+  cloud: number;
+  symbol: string | null;
+};
+
 type LocationState = {
   days: ForecastDay[] | null;
+  hours: Hour[] | null;
+  meta: { sunrise: string | null; sunset: string | null } | null;
   error: string | null;
   loading: boolean;
 };
@@ -48,13 +64,20 @@ type LocationState = {
 function WeatherPage() {
   const data = Route.useLoaderData() as Awaited<ReturnType<typeof getHomeySnapshot>>;
   const router = useRouter();
+  const fetchAlerts = useServerFn(getTollnesAlerts);
+  const [alerts, setAlerts] = useState<AlertsResult | null>(null);
+  const [now, setNow] = useState<Date | null>(null);
   const [state, setState] = useState<Record<string, LocationState>>(() =>
     Object.fromEntries(
-      LOCATIONS.map((l) => [l.key, { days: null, error: null, loading: true }]),
+      LOCATIONS.map((l) => [
+        l.key,
+        { days: null, hours: null, meta: null, error: null, loading: true },
+      ]),
     ),
   );
 
   useEffect(() => {
+    setNow(new Date());
     LOCATIONS.forEach(async (loc) => {
       try {
         const res = await fetch(
@@ -63,33 +86,47 @@ function WeatherPage() {
         );
         if (!res.ok) throw new Error("Kunne ikke hente værmelding");
         const data = await res.json();
+        const { days, hours } = parseForecast(data);
         setState((s) => ({
           ...s,
-          [loc.key]: { days: parseForecast(data), error: null, loading: false },
+          [loc.key]: { days, hours, meta: null, error: null, loading: false },
         }));
       } catch (e) {
         setState((s) => ({
           ...s,
           [loc.key]: {
             days: null,
+            hours: null,
+            meta: null,
             error: e instanceof Error ? e.message : "Ukjent feil",
             loading: false,
           },
         }));
       }
     });
-    // Oppfrisk Homey-data hvert 60. sek
-    const t = setInterval(() => router.invalidate(), 60_000);
-    return () => clearInterval(t);
-  }, [router]);
+    // Hent varsler fra MET
+    (async () => {
+      try {
+        const res = await fetchAlerts();
+        setAlerts(res);
+      } catch (e: any) {
+        setAlerts({ ok: false, error: e?.message ?? "Feil" });
+      }
+    })();
 
-  // ---- Homey-sensorer (regn + vind) ----
+    const t = setInterval(() => router.invalidate(), 60_000);
+    const c = setInterval(() => setNow(new Date()), 30_000);
+    return () => {
+      clearInterval(t);
+      clearInterval(c);
+    };
+  }, [router, fetchAlerts]);
+
+  // ---- Homey-sensorer ----
   const homeyOk = data?.ok === true;
   const devices = homeyOk ? data.devices : [];
   const zones = homeyOk ? data.zones : [];
 
-  // Finn regnsensoren på hvert sted (matcher 'regn' i navn/sone),
-  // og les beste tilgjengelige "totalt regn i dag"-måling.
   const tollnesRainSensor =
     findDeviceFuzzy(devices, zones, "regn tollnes", () => true) ??
     findDeviceFuzzy(devices, zones, "regnsensor tollnes", () => true) ??
@@ -111,6 +148,33 @@ function WeatherPage() {
     "measure_wind_strength",
   );
 
+  const tollnesPressureDev = findDeviceFuzzy(devices, zones, "tollnes", (d) =>
+    hasCap(d, "measure_pressure"),
+  );
+  const hyttaPressureDev = findDeviceFuzzy(devices, zones, "hytta", (d) =>
+    hasCap(d, "measure_pressure"),
+  );
+  const tollnesPressure = readCap(tollnesPressureDev, "measure_pressure");
+  const hyttaPressure = readCap(hyttaPressureDev, "measure_pressure");
+
+  const tollnesHumidityDev = findDeviceFuzzy(devices, zones, "tollnes", (d) =>
+    hasCap(d, "measure_humidity"),
+  );
+  const hyttaHumidityDev = findDeviceFuzzy(devices, zones, "hytta", (d) =>
+    hasCap(d, "measure_humidity"),
+  );
+  const tollnesHumidity = readCap(tollnesHumidityDev, "measure_humidity");
+  const hyttaHumidity = readCap(hyttaHumidityDev, "measure_humidity");
+
+  const skienHours = state.skien?.hours ?? null;
+  const hyttaHours = state.hytta?.hours ?? null;
+
+  // ---- Astronomi: sol & måne ----
+  const sun = useMemo(() => (now ? sunTimes(now, 59.2096, 9.609) : null), [now]);
+  const moon = useMemo(() => (now ? moonPhase(now) : null), [now]);
+
+  const allAlerts = alerts?.ok === true ? alerts.alerts : [];
+
   return (
     <PageShell>
       <PageHero
@@ -121,16 +185,40 @@ function WeatherPage() {
       />
 
       <section className="container mx-auto px-4 py-12 space-y-12">
-        {/* Live målinger fra Homey */}
-        <div>
-          <div className="ornate-divider mb-6">
-            <span className="text-display tracking-[0.3em] text-primary text-sm uppercase">
-              Live målinger · Netatmo
-            </span>
-          </div>
+        {/* === VARSLER FRA MAESTERNE === */}
+        <Block title="Varselravnen · MET.no">
+          {alerts === null && (
+            <p className="text-muted-foreground italic text-sm">Sender ravn…</p>
+          )}
+          {alerts?.ok === false && (
+            <p className="text-destructive text-sm">{alerts.error}</p>
+          )}
+          {alerts?.ok === true && allAlerts.length === 0 && (
+            <div className="panel rounded-lg p-6 text-center">
+              <div className="text-3xl mb-2">🕊</div>
+              <div className="text-display tracking-[0.3em] text-primary text-sm uppercase">
+                Stille over Riket
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                Ingen aktive farevarsler fra Maesternes Citadel.
+              </p>
+            </div>
+          )}
+          {alerts?.ok === true && allAlerts.length > 0 && (
+            <div className="grid gap-3 sm:grid-cols-2">
+              {allAlerts.map((a) => (
+                <AlertCard key={a.id} alert={a} />
+              ))}
+            </div>
+          )}
+        </Block>
+
+        {/* === LIVE MÅLINGER FRA NETATMO === */}
+        <Block title="Borgens målere · Netatmo Live">
           {!homeyOk ? (
             <p className="text-muted-foreground italic text-sm">
-              Smarthuset er ikke bundet — gå til <a href="/smarthus" className="text-primary underline">Smarthus</a> for å koble til Homey.
+              Smarthuset er ikke bundet — gå til{" "}
+              <a href="/smarthus" className="text-primary underline">Smarthus</a> for å koble til Homey.
             </p>
           ) : (
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -142,6 +230,8 @@ function WeatherPage() {
                 source={tollnesRainSensor?.name ?? null}
               />
               <LiveMetric label="Vind · Tollnes" value={tollnesWind} unit="m/s" icon="💨" />
+              <LiveMetric label="Trykk · Tollnes" value={tollnesPressure} unit="hPa" icon="🜨" digits={0} />
+              <LiveMetric label="Fuktighet · Tollnes" value={tollnesHumidity} unit="%" icon="💧" digits={0} />
               <LiveMetric
                 label="Regn i dag · Hytta"
                 value={hyttaRainToday}
@@ -150,23 +240,64 @@ function WeatherPage() {
                 source={hyttaRainSensor?.name ?? null}
               />
               <LiveMetric label="Vind · Hytta" value={hyttaWind} unit="m/s" icon="💨" />
+              <LiveMetric label="Trykk · Hytta" value={hyttaPressure} unit="hPa" icon="🜨" digits={0} />
+              <LiveMetric label="Fuktighet · Hytta" value={hyttaHumidity} unit="%" icon="💧" digits={0} />
             </div>
           )}
-        </div>
+        </Block>
 
+        {/* === SOL OG MÅNE OVER WESTEROS === */}
+        <Block title="Himmelens Vandrere · Sol & Måne">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <SkyCard
+              label="Soloppgang"
+              value={sun ? formatTime(sun.sunrise) : "—"}
+              icon="🌅"
+              hint="Tollnes"
+            />
+            <SkyCard
+              label="Solnedgang"
+              value={sun ? formatTime(sun.sunset) : "—"}
+              icon="🌇"
+              hint="Tollnes"
+            />
+            <SkyCard
+              label="Dagens lengde"
+              value={sun ? formatDuration(sun.dayLengthMinutes) : "—"}
+              icon="☀️"
+              hint={sun ? `${sun.deltaMinutes >= 0 ? "+" : ""}${Math.round(sun.deltaMinutes)} min siden i går` : "—"}
+            />
+            <SkyCard
+              label="Månefase"
+              value={moon ? moon.name : "—"}
+              icon={moon ? moon.icon : "🌑"}
+              hint={moon ? `${Math.round(moon.illumination * 100)}% opplyst` : "—"}
+            />
+          </div>
+        </Block>
+
+        {/* === 24-TIMERS KURVER === */}
+        <Block title="Tre dager med MET.no · Time for time">
+          <div className="grid lg:grid-cols-2 gap-6">
+            <HourPanel name="Skien · Tollnes" hours={skienHours} accent="primary" />
+            <HourPanel name="Hytta · Numedal" hours={hyttaHours} accent="ice" />
+          </div>
+        </Block>
+
+        {/* === VINDROSE === */}
+        <Block title="Stormvaktens Rose · Vindretning de neste 24 t">
+          <div className="grid sm:grid-cols-2 gap-6">
+            <WindRoseCard name="Tollnes" hours={skienHours} />
+            <WindRoseCard name="Hytta" hours={hyttaHours} />
+          </div>
+        </Block>
+
+        {/* === 7 DAGER === */}
         {LOCATIONS.map((loc) => {
           const s = state[loc.key];
           return (
-            <div key={loc.key}>
-              <div className="ornate-divider mb-6">
-                <span className="text-display tracking-[0.3em] text-primary text-sm uppercase">
-                  {loc.name} · 7 dager
-                </span>
-              </div>
-              <p className="text-xs text-muted-foreground mb-4 -mt-3">
-                {loc.subtitle}
-              </p>
-
+            <Block key={loc.key} title={`${loc.name} · 7 dager`}>
+              <p className="text-xs text-muted-foreground mb-4 -mt-2">{loc.subtitle}</p>
               {s?.loading && (
                 <p className="text-muted-foreground">Sender ravn til MET.no...</p>
               )}
@@ -176,7 +307,7 @@ function WeatherPage() {
                   {s.days.slice(0, 7).map((d) => (
                     <div
                       key={d.date}
-                      className="panel rounded-lg p-4 text-center"
+                      className="panel rounded-lg p-4 text-center glow-on-hover"
                     >
                       <div className="text-xs uppercase tracking-wider text-muted-foreground">
                         {weekdayShort(d.date)}
@@ -200,14 +331,32 @@ function WeatherPage() {
                   ))}
                 </div>
               )}
-            </div>
+            </Block>
           );
         })}
+
         <p className="text-xs text-muted-foreground italic">
-          Værdata fra MET.no. Live målinger fra Netatmo via Homey.
+          Værdata fra MET.no. Live målinger fra Netatmo via Homey. Astronomi beregnet lokalt.
         </p>
       </section>
     </PageShell>
+  );
+}
+
+// ============================================================
+// Building blocks — Game of Thrones-stil
+// ============================================================
+
+function Block({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <div className="ornate-divider mb-6">
+        <span className="text-display tracking-[0.3em] text-primary text-sm uppercase">
+          {title}
+        </span>
+      </div>
+      {children}
+    </div>
   );
 }
 
@@ -217,21 +366,23 @@ function LiveMetric({
   unit,
   icon,
   source,
+  digits = 1,
 }: {
   label: string;
   value: number | null;
   unit: string;
   icon: string;
   source?: string | null;
+  digits?: number;
 }) {
   return (
-    <article className="panel rounded-lg p-5 text-center">
+    <article className="panel rounded-lg p-5 text-center glow-on-hover">
       <div className="text-2xl mb-1">{icon}</div>
       <div className="text-[10px] tracking-[0.3em] text-muted-foreground uppercase">
         {label}
       </div>
       <div className="text-display text-primary text-3xl mt-2">
-        {value !== null ? value.toFixed(1) : "—"}
+        {value !== null ? value.toFixed(digits) : "—"}
       </div>
       <div className="text-[10px] tracking-[0.2em] text-muted-foreground/70 uppercase mt-1">
         {unit}
@@ -243,6 +394,338 @@ function LiveMetric({
       )}
     </article>
   );
+}
+
+function SkyCard({
+  label,
+  value,
+  icon,
+  hint,
+}: {
+  label: string;
+  value: string;
+  icon: string;
+  hint?: string;
+}) {
+  return (
+    <article className="panel rounded-lg p-5 text-center glow-on-hover">
+      <div className="text-3xl mb-2">{icon}</div>
+      <div className="text-[10px] tracking-[0.3em] text-muted-foreground uppercase">
+        {label}
+      </div>
+      <div className="text-display text-primary text-2xl mt-2">{value}</div>
+      {hint && (
+        <div className="text-[10px] tracking-[0.15em] text-muted-foreground/70 uppercase mt-2">
+          {hint}
+        </div>
+      )}
+    </article>
+  );
+}
+
+function AlertCard({ alert }: { alert: MetAlert }) {
+  const color = alertColor(alert.awarenessColor);
+  const isThunder = alert.isThunder;
+  return (
+    <article
+      className="panel rounded-lg p-5 border-l-4"
+      style={{
+        borderLeftColor: color,
+        boxShadow: isThunder
+          ? `0 0 24px color-mix(in oklab, ${color} 25%, transparent)`
+          : undefined,
+      }}
+    >
+      <div className="flex items-start gap-3">
+        <div className="text-3xl">{isThunder ? "⚡" : "⚠️"}</div>
+        <div className="flex-1">
+          <div
+            className="text-[10px] tracking-[0.3em] uppercase font-semibold"
+            style={{ color }}
+          >
+            {alert.awarenessColor} · {alert.severity}
+          </div>
+          <div className="text-display text-foreground text-lg mt-1">{alert.title}</div>
+          {alert.description && (
+            <p className="text-sm text-muted-foreground mt-1 line-clamp-3">
+              {alert.description}
+            </p>
+          )}
+          {alert.area && (
+            <div className="text-[10px] tracking-[0.2em] text-muted-foreground/70 uppercase mt-2">
+              {alert.area}
+            </div>
+          )}
+        </div>
+      </div>
+    </article>
+  );
+}
+
+function HourPanel({
+  name,
+  hours,
+  accent,
+}: {
+  name: string;
+  hours: Hour[] | null;
+  accent: "primary" | "ice";
+}) {
+  if (!hours) {
+    return (
+      <article className="panel rounded-lg p-6">
+        <h3 className="text-display text-primary text-lg">{name}</h3>
+        <p className="text-sm text-muted-foreground italic mt-2">Sender ravn…</p>
+      </article>
+    );
+  }
+  const next = hours.slice(0, 24);
+  const color = accent === "ice" ? "var(--ice)" : "var(--primary)";
+  return (
+    <article className="panel rounded-lg p-5 glow-on-hover">
+      <div className="flex items-baseline justify-between mb-3">
+        <h3 className="text-display text-primary text-lg">{name}</h3>
+        <span className="text-[10px] tracking-[0.25em] text-muted-foreground uppercase">
+          24 timer
+        </span>
+      </div>
+      <TempPrecipChart hours={next} color={color} />
+      <div className="grid grid-cols-6 sm:grid-cols-8 gap-1 mt-4">
+        {next.filter((_, i) => i % 3 === 0).map((h) => (
+          <div key={h.time} className="text-center">
+            <div className="text-[9px] text-muted-foreground tracking-wider">
+              {h.time.slice(11, 13)}
+            </div>
+            <div className="text-base">{symbolEmoji(h.symbol)}</div>
+            <div className="text-xs text-foreground">{Math.round(h.temp)}°</div>
+          </div>
+        ))}
+      </div>
+    </article>
+  );
+}
+
+function TempPrecipChart({ hours, color }: { hours: Hour[]; color: string }) {
+  const W = 600;
+  const H = 140;
+  const pad = { l: 28, r: 16, t: 12, b: 22 };
+  const innerW = W - pad.l - pad.r;
+  const innerH = H - pad.t - pad.b;
+  if (hours.length < 2) return null;
+
+  const temps = hours.map((h) => h.temp);
+  const tMin = Math.floor(Math.min(...temps) - 1);
+  const tMax = Math.ceil(Math.max(...temps) + 1);
+  const tRange = Math.max(1, tMax - tMin);
+
+  const precips = hours.map((h) => h.precip);
+  const pMax = Math.max(2, Math.ceil(Math.max(...precips) * 1.2));
+
+  const xFor = (i: number) => pad.l + (i / (hours.length - 1)) * innerW;
+  const yForT = (t: number) => pad.t + innerH - ((t - tMin) / tRange) * innerH;
+  const yForP = (p: number) => pad.t + innerH - (p / pMax) * innerH;
+
+  const path = hours
+    .map((h, i) => `${i === 0 ? "M" : "L"} ${xFor(i).toFixed(1)} ${yForT(h.temp).toFixed(1)}`)
+    .join(" ");
+
+  const barW = innerW / hours.length;
+
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto" preserveAspectRatio="none">
+      {/* Y-aksen temp */}
+      {[tMin, Math.round((tMin + tMax) / 2), tMax].map((v) => (
+        <g key={v}>
+          <line
+            x1={pad.l}
+            x2={W - pad.r}
+            y1={yForT(v)}
+            y2={yForT(v)}
+            stroke="var(--border)"
+            strokeDasharray="2 4"
+            opacity="0.5"
+          />
+          <text x={4} y={yForT(v) + 4} fontSize="10" fill="var(--muted-foreground)">
+            {v}°
+          </text>
+        </g>
+      ))}
+      {/* Regn-stolper */}
+      {hours.map((h, i) => {
+        if (h.precip <= 0) return null;
+        const x = xFor(i) - barW / 2;
+        const y = yForP(h.precip);
+        return (
+          <rect
+            key={h.time}
+            x={x}
+            y={y}
+            width={Math.max(2, barW - 1)}
+            height={pad.t + innerH - y}
+            fill="var(--ice)"
+            opacity="0.55"
+            rx="1"
+          />
+        );
+      })}
+      {/* Temp-linje */}
+      <path d={path} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" />
+      {/* X-aksen labels */}
+      {hours.filter((_, i) => i % 6 === 0).map((h, idx) => {
+        const i = idx * 6;
+        return (
+          <text
+            key={h.time}
+            x={xFor(i)}
+            y={H - 6}
+            fontSize="10"
+            fill="var(--muted-foreground)"
+            textAnchor="middle"
+          >
+            {h.time.slice(11, 13)}
+          </text>
+        );
+      })}
+    </svg>
+  );
+}
+
+function WindRoseCard({ name, hours }: { name: string; hours: Hour[] | null }) {
+  if (!hours) {
+    return (
+      <article className="panel rounded-lg p-6">
+        <h3 className="text-display text-primary text-lg">{name}</h3>
+        <p className="text-sm text-muted-foreground italic mt-2">Sender ravn…</p>
+      </article>
+    );
+  }
+  const next = hours.slice(0, 24);
+  // 8 hovedretninger
+  const dirs = ["N", "NØ", "Ø", "SØ", "S", "SV", "V", "NV"];
+  const buckets = new Array(8).fill(0).map(() => ({ count: 0, sumWind: 0 }));
+  for (const h of next) {
+    const idx = Math.round(((h.windDir % 360) / 45)) % 8;
+    buckets[idx].count += 1;
+    buckets[idx].sumWind += h.wind;
+  }
+  const maxCount = Math.max(1, ...buckets.map((b) => b.count));
+  const maxWind = Math.max(...next.map((h) => h.wind));
+  const avgWind = next.reduce((sum, h) => sum + h.wind, 0) / next.length;
+  const dominantIdx = buckets.indexOf(buckets.reduce((a, b) => (b.count > a.count ? b : a)));
+
+  const cx = 100;
+  const cy = 100;
+  const rOuter = 80;
+  return (
+    <article className="panel rounded-lg p-5 glow-on-hover">
+      <div className="flex items-baseline justify-between mb-3">
+        <h3 className="text-display text-primary text-lg">{name}</h3>
+        <span className="text-[10px] tracking-[0.25em] text-muted-foreground uppercase">
+          24 t · vindrose
+        </span>
+      </div>
+      <div className="grid grid-cols-[1fr_auto] gap-4 items-center">
+        <svg viewBox="0 0 200 200" className="w-full max-w-[220px] mx-auto">
+          {/* Ringer */}
+          {[0.33, 0.66, 1].map((f) => (
+            <circle
+              key={f}
+              cx={cx}
+              cy={cy}
+              r={rOuter * f}
+              fill="none"
+              stroke="var(--border)"
+              strokeDasharray="2 3"
+              opacity="0.5"
+            />
+          ))}
+          {/* Akser N-S, E-W */}
+          <line x1={cx} y1={cy - rOuter} x2={cx} y2={cy + rOuter} stroke="var(--border)" opacity="0.4" />
+          <line x1={cx - rOuter} y1={cy} x2={cx + rOuter} y2={cy} stroke="var(--border)" opacity="0.4" />
+          {/* Sektorer */}
+          {buckets.map((b, i) => {
+            if (b.count === 0) return null;
+            const startAngle = i * 45 - 22.5 - 90; // North up
+            const endAngle = startAngle + 45;
+            const r = (b.count / maxCount) * rOuter;
+            const a1 = (startAngle * Math.PI) / 180;
+            const a2 = (endAngle * Math.PI) / 180;
+            const x1 = cx + r * Math.cos(a1);
+            const y1 = cy + r * Math.sin(a1);
+            const x2 = cx + r * Math.cos(a2);
+            const y2 = cy + r * Math.sin(a2);
+            const largeArc = 0;
+            const path = `M ${cx} ${cy} L ${x1.toFixed(1)} ${y1.toFixed(1)} A ${r} ${r} 0 ${largeArc} 1 ${x2.toFixed(1)} ${y2.toFixed(1)} Z`;
+            const intensity = b.sumWind / Math.max(1, b.count) / Math.max(1, maxWind);
+            return (
+              <path
+                key={i}
+                d={path}
+                fill="var(--primary)"
+                opacity={0.3 + intensity * 0.5}
+                stroke="var(--primary)"
+                strokeWidth="0.5"
+              />
+            );
+          })}
+          {/* Retnings-labels */}
+          {dirs.map((d, i) => {
+            const angle = (i * 45 - 90) * (Math.PI / 180);
+            const x = cx + (rOuter + 12) * Math.cos(angle);
+            const y = cy + (rOuter + 12) * Math.sin(angle) + 3;
+            return (
+              <text
+                key={d}
+                x={x}
+                y={y}
+                fontSize="10"
+                fill={i === dominantIdx ? "var(--primary)" : "var(--muted-foreground)"}
+                textAnchor="middle"
+                fontWeight={i === dominantIdx ? "700" : "400"}
+              >
+                {d}
+              </text>
+            );
+          })}
+        </svg>
+        <div className="space-y-3 text-center">
+          <div>
+            <div className="text-[10px] tracking-[0.25em] text-muted-foreground uppercase">
+              Snitt
+            </div>
+            <div className="text-display text-primary text-2xl">{avgWind.toFixed(1)}</div>
+            <div className="text-[10px] text-muted-foreground tracking-wider uppercase">m/s</div>
+          </div>
+          <div>
+            <div className="text-[10px] tracking-[0.25em] text-muted-foreground uppercase">
+              Maks
+            </div>
+            <div className="text-display text-foreground text-xl">{maxWind.toFixed(1)}</div>
+            <div className="text-[10px] text-muted-foreground tracking-wider uppercase">m/s</div>
+          </div>
+          <div>
+            <div className="text-[10px] tracking-[0.25em] text-muted-foreground uppercase">
+              Fra
+            </div>
+            <div className="text-display text-primary text-xl">{dirs[dominantIdx]}</div>
+          </div>
+        </div>
+      </div>
+    </article>
+  );
+}
+
+// ============================================================
+// Helpers
+// ============================================================
+
+function alertColor(c: string): string {
+  switch (c) {
+    case "red": return "oklch(0.55 0.22 25)";
+    case "orange": return "oklch(0.70 0.18 50)";
+    case "yellow": return "oklch(0.80 0.16 90)";
+    default: return "oklch(0.65 0.10 150)";
+  }
 }
 
 function hasCap(d: DeviceLike | null | undefined, cap: string): boolean {
@@ -264,12 +747,6 @@ function hasAnyRainCap(d: DeviceLike | null | undefined): boolean {
   return false;
 }
 
-/**
- * Les "totalt regn i dag" — prøver Netatmo-kapabiliteter i prioritert rekkefølge.
- * Netatmo-rainmodulen i Homey eksponerer typisk:
- *   measure_rain (mm/t nå), measure_rain.1h, measure_rain.24h,
- *   meter_rain (akkumulert), meter_rain.today / .daily.
- */
 function readDailyRain(d: DeviceLike | null | undefined): number | null {
   if (!d?.capabilities) return null;
   const caps = d.capabilities;
@@ -297,30 +774,49 @@ function readDailyRain(d: DeviceLike | null | undefined): number | null {
   return null;
 }
 
-function parseForecast(data: any): ForecastDay[] {
+function parseForecast(data: any): { days: ForecastDay[]; hours: Hour[] } {
   const series = data?.properties?.timeseries ?? [];
-  const map = new Map<string, ForecastDay>();
+  const dayMap = new Map<string, ForecastDay>();
+  const hours: Hour[] = [];
   for (const entry of series) {
-    const date = entry.time.slice(0, 10);
+    const time: string = entry.time;
+    const date = time.slice(0, 10);
     const inst = entry.data?.instant?.details ?? {};
     const next6 = entry.data?.next_6_hours;
     const next1 = entry.data?.next_1_hours;
     const temp = inst.air_temperature;
     if (typeof temp !== "number") continue;
-    const symbol = next6?.summary?.symbol_code ?? next1?.summary?.symbol_code ?? null;
-    const precip = next6?.details?.precipitation_amount ?? next1?.details?.precipitation_amount ?? 0;
-    const existing = map.get(date);
+    const symbol = next1?.summary?.symbol_code ?? next6?.summary?.symbol_code ?? null;
+    const precip =
+      next1?.details?.precipitation_amount ??
+      next6?.details?.precipitation_amount ??
+      0;
+    hours.push({
+      time,
+      temp,
+      precip,
+      wind: inst.wind_speed ?? 0,
+      windDir: inst.wind_from_direction ?? 0,
+      pressure: inst.air_pressure_at_sea_level ?? 0,
+      humidity: inst.relative_humidity ?? 0,
+      cloud: inst.cloud_area_fraction ?? 0,
+      symbol,
+    });
+    const existing = dayMap.get(date);
     if (!existing) {
-      map.set(date, { date, tempMin: temp, tempMax: temp, symbol, precip });
+      dayMap.set(date, { date, tempMin: temp, tempMax: temp, symbol, precip });
     } else {
       existing.tempMin = Math.min(existing.tempMin, temp);
       existing.tempMax = Math.max(existing.tempMax, temp);
       existing.precip += precip;
-      const hour = parseInt(entry.time.slice(11, 13));
+      const hour = parseInt(time.slice(11, 13));
       if (hour >= 11 && hour <= 14 && symbol) existing.symbol = symbol;
     }
   }
-  return Array.from(map.values()).sort((a, b) => a.date.localeCompare(b.date));
+  return {
+    days: Array.from(dayMap.values()).sort((a, b) => a.date.localeCompare(b.date)),
+    hours,
+  };
 }
 
 function symbolEmoji(symbol: string | null): string {
@@ -342,4 +838,76 @@ function weekdayShort(iso: string) {
 }
 function dayMonth(iso: string) {
   return new Date(iso + "T00:00:00").toLocaleDateString("nb-NO", { day: "numeric", month: "short" });
+}
+function formatTime(d: Date | null): string {
+  if (!d) return "—";
+  return d.toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit" });
+}
+function formatDuration(min: number): string {
+  const h = Math.floor(min / 60);
+  const m = Math.round(min % 60);
+  return `${h}t ${m}m`;
+}
+
+// --- Sun position (NOAA approximation) ---
+function sunTimes(date: Date, lat: number, lon: number) {
+  const today = computeSunForDate(date, lat, lon);
+  const yesterday = computeSunForDate(new Date(date.getTime() - 86_400_000), lat, lon);
+  return {
+    sunrise: today.sunrise,
+    sunset: today.sunset,
+    dayLengthMinutes: today.dayLengthMinutes,
+    deltaMinutes: today.dayLengthMinutes - yesterday.dayLengthMinutes,
+  };
+}
+
+function computeSunForDate(date: Date, lat: number, lon: number) {
+  const rad = Math.PI / 180;
+  const y = date.getUTCFullYear();
+  const m = date.getUTCMonth() + 1;
+  const d = date.getUTCDate();
+  // Julian date for noon UTC
+  const a = Math.floor((14 - m) / 12);
+  const yy = y + 4800 - a;
+  const mm = m + 12 * a - 3;
+  const JDN = d + Math.floor((153 * mm + 2) / 5) + 365 * yy + Math.floor(yy / 4) - Math.floor(yy / 100) + Math.floor(yy / 400) - 32045;
+  const n = JDN - 2451545.0 + 0.0008;
+  const Jstar = n - lon / 360;
+  const M = (357.5291 + 0.98560028 * Jstar) % 360;
+  const C = 1.9148 * Math.sin(M * rad) + 0.02 * Math.sin(2 * M * rad) + 0.0003 * Math.sin(3 * M * rad);
+  const lambda = (M + C + 180 + 102.9372) % 360;
+  const Jtransit = 2451545.0 + Jstar + 0.0053 * Math.sin(M * rad) - 0.0069 * Math.sin(2 * lambda * rad);
+  const delta = Math.asin(Math.sin(lambda * rad) * Math.sin(23.44 * rad));
+  const cosH = (Math.sin(-0.83 * rad) - Math.sin(lat * rad) * Math.sin(delta)) / (Math.cos(lat * rad) * Math.cos(delta));
+  if (cosH > 1 || cosH < -1) {
+    return { sunrise: null, sunset: null, dayLengthMinutes: cosH > 1 ? 0 : 24 * 60 };
+  }
+  const H = Math.acos(cosH) / rad;
+  const Jrise = Jtransit - H / 360;
+  const Jset = Jtransit + H / 360;
+  const sunrise = new Date((Jrise - 2440587.5) * 86_400_000);
+  const sunset = new Date((Jset - 2440587.5) * 86_400_000);
+  const dayLengthMinutes = (sunset.getTime() - sunrise.getTime()) / 60_000;
+  return { sunrise, sunset, dayLengthMinutes };
+}
+
+// --- Moon phase ---
+function moonPhase(date: Date) {
+  const synodic = 29.53058867;
+  const ref = Date.UTC(2000, 0, 6, 18, 14, 0); // Known new moon
+  const days = (date.getTime() - ref) / 86_400_000;
+  const phase = ((days % synodic) + synodic) % synodic;
+  const illumination = (1 - Math.cos((2 * Math.PI * phase) / synodic)) / 2;
+  let name: string;
+  let icon: string;
+  if (phase < 1.84566) { name = "Nymåne"; icon = "🌑"; }
+  else if (phase < 5.53699) { name = "Voksende månesigd"; icon = "🌒"; }
+  else if (phase < 9.22831) { name = "Første kvarter"; icon = "🌓"; }
+  else if (phase < 12.91963) { name = "Voksende halvmåne"; icon = "🌔"; }
+  else if (phase < 16.61096) { name = "Fullmåne"; icon = "🌕"; }
+  else if (phase < 20.30228) { name = "Avtagende halvmåne"; icon = "🌖"; }
+  else if (phase < 23.99361) { name = "Siste kvarter"; icon = "🌗"; }
+  else if (phase < 27.68493) { name = "Avtagende månesigd"; icon = "🌘"; }
+  else { name = "Nymåne"; icon = "🌑"; }
+  return { name, icon, illumination };
 }
