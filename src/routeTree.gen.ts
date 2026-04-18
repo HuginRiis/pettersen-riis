@@ -15,6 +15,7 @@ import { Route as SteintavleRouteImport } from './routes/steintavle'
 import { Route as SmarthusRouteImport } from './routes/smarthus'
 import { Route as PollenRouteImport } from './routes/pollen'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as JaguarRouteImport } from './routes/jaguar'
 import { Route as HyttaRouteImport } from './routes/hytta'
 import { Route as HundeneRouteImport } from './routes/hundene'
 import { Route as AgendaRouteImport } from './routes/agenda'
@@ -52,6 +53,11 @@ const PollenRoute = PollenRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const JaguarRoute = JaguarRouteImport.update({
+  id: '/jaguar',
+  path: '/jaguar',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HyttaRoute = HyttaRouteImport.update({
@@ -100,6 +106,7 @@ export interface FileRoutesByFullPath {
   '/agenda': typeof AgendaRoute
   '/hundene': typeof HundeneRoute
   '/hytta': typeof HyttaRoute
+  '/jaguar': typeof JaguarRoute
   '/login': typeof LoginRoute
   '/pollen': typeof PollenRoute
   '/smarthus': typeof SmarthusRoute
@@ -116,6 +123,7 @@ export interface FileRoutesByTo {
   '/agenda': typeof AgendaRoute
   '/hundene': typeof HundeneRoute
   '/hytta': typeof HyttaRoute
+  '/jaguar': typeof JaguarRoute
   '/login': typeof LoginRoute
   '/pollen': typeof PollenRoute
   '/smarthus': typeof SmarthusRoute
@@ -133,6 +141,7 @@ export interface FileRoutesById {
   '/agenda': typeof AgendaRoute
   '/hundene': typeof HundeneRoute
   '/hytta': typeof HyttaRoute
+  '/jaguar': typeof JaguarRoute
   '/login': typeof LoginRoute
   '/pollen': typeof PollenRoute
   '/smarthus': typeof SmarthusRoute
@@ -151,6 +160,7 @@ export interface FileRouteTypes {
     | '/agenda'
     | '/hundene'
     | '/hytta'
+    | '/jaguar'
     | '/login'
     | '/pollen'
     | '/smarthus'
@@ -167,6 +177,7 @@ export interface FileRouteTypes {
     | '/agenda'
     | '/hundene'
     | '/hytta'
+    | '/jaguar'
     | '/login'
     | '/pollen'
     | '/smarthus'
@@ -183,6 +194,7 @@ export interface FileRouteTypes {
     | '/agenda'
     | '/hundene'
     | '/hytta'
+    | '/jaguar'
     | '/login'
     | '/pollen'
     | '/smarthus'
@@ -200,6 +212,7 @@ export interface RootRouteChildren {
   AgendaRoute: typeof AgendaRoute
   HundeneRoute: typeof HundeneRoute
   HyttaRoute: typeof HyttaRoute
+  JaguarRoute: typeof JaguarRoute
   LoginRoute: typeof LoginRoute
   PollenRoute: typeof PollenRoute
   SmarthusRoute: typeof SmarthusRoute
@@ -254,6 +267,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/jaguar': {
+      id: '/jaguar'
+      path: '/jaguar'
+      fullPath: '/jaguar'
+      preLoaderRoute: typeof JaguarRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/hytta': {
@@ -320,6 +340,7 @@ const rootRouteChildren: RootRouteChildren = {
   AgendaRoute: AgendaRoute,
   HundeneRoute: HundeneRoute,
   HyttaRoute: HyttaRoute,
+  JaguarRoute: JaguarRoute,
   LoginRoute: LoginRoute,
   PollenRoute: PollenRoute,
   SmarthusRoute: SmarthusRoute,
