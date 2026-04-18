@@ -275,8 +275,7 @@ function Snowfall() {
             opacity: 0.85,
             animationDuration: `${f.duration}s`,
             animationDelay: `${f.delay}s`,
-            // @ts-expect-error css custom prop
-            "--drift": `${f.drift}px`,
+            ["--drift" as string]: `${f.drift}px`,
           } as React.CSSProperties}
         />
       ))}
@@ -315,8 +314,7 @@ function Leaves() {
               "polygon(50% 0%, 65% 25%, 100% 35%, 75% 55%, 80% 90%, 50% 75%, 20% 90%, 25% 55%, 0% 35%, 35% 25%)",
             animationDuration: `${l.duration}s`,
             animationDelay: `${l.delay}s`,
-            // @ts-expect-error css var
-            "--rot": `${l.rot}deg`,
+            ["--rot" as string]: `${l.rot}deg`,
           } as React.CSSProperties}
         />
       ))}
