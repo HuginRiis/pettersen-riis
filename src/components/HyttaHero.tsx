@@ -102,22 +102,22 @@ export function HyttaHero({ image, eyebrow, title, subtitle }: {
       />
 
       {/* Himmellegeme: sol/måne */}
-      <CelestialBody dayPart={dayPart} />
+      {mounted && <CelestialBody dayPart={dayPart} />}
 
       {/* Stjerner om natten/skumring */}
-      {(dayPart === "night" || dayPart === "evening") && <Stars density={dayPart === "night" ? 60 : 25} />}
+      {mounted && (dayPart === "night" || dayPart === "evening") && <Stars density={dayPart === "night" ? 60 : 25} />}
 
       {/* Sesongbaserte partikler */}
-      {season === "winter" && <Snowfall />}
-      {season === "autumn" && <Leaves />}
-      {season === "spring" && <Pollen />}
-      {season === "summer" && <Fireflies dayPart={dayPart} />}
+      {mounted && season === "winter" && <Snowfall />}
+      {mounted && season === "autumn" && <Leaves />}
+      {mounted && season === "spring" && <Pollen />}
+      {mounted && season === "summer" && <Fireflies dayPart={dayPart} />}
 
       {/* Glødende ember om kvelden (peisrøyk-stemning) */}
-      {dayPart === "evening" && <Embers />}
+      {mounted && dayPart === "evening" && <Embers />}
 
       {/* Ravner i silhuett — alltid, men flere om natten */}
-      <Ravens count={dayPart === "night" ? 3 : 2} />
+      {mounted && <Ravens count={dayPart === "night" ? 3 : 2} />}
 
       {/* Vignett rundt kantene */}
       <div
