@@ -126,6 +126,21 @@ function SteintavlePage() {
       findDeviceFuzzy(data.devices, data.zones, "sovrom", (d) => hasTemp(d)),
   );
 
+  // Lydmåling (dB) fra Netatmo innendørs på Tollnes
+  const noiseDevice =
+    findDeviceFuzzy(data.devices, data.zones, "tollnes", (d) =>
+      typeof d?.capabilities?.["measure_noise"]?.value === "number",
+    ) ??
+    findDeviceFuzzy(data.devices, data.zones, "netatmo", (d, c) =>
+      typeof d?.capabilities?.["measure_noise"]?.value === "number" &&
+      !c.includes("hytt") &&
+      !c.includes("ute"),
+    );
+  const noiseDb =
+    typeof noiseDevice?.capabilities?.["measure_noise"]?.value === "number"
+      ? (noiseDevice.capabilities["measure_noise"].value as number)
+      : null;
+
   // ---- Varsler ----
   const thunderAlerts =
     alerts?.ok === true ? alerts.alerts.filter((a) => a.isThunder) : [];
