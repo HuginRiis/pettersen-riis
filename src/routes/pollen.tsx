@@ -115,7 +115,7 @@ function PollenPage() {
       <PageHero
         eyebrow="Skien & Numedal · Norge"
         title="Pollenvarsel"
-        subtitle="Sesongkart, kurver og varslinger — i House Riis sin stil."
+        subtitle="Sesongkart, kurver og varslinger — i House Riis Pettersen sin stil."
         image={heroImg}
       />
 
