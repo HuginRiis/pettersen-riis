@@ -9,13 +9,13 @@ import treningImg from "@/assets/trening.jpg";
 export const Route = createFileRoute("/trening")({
   head: () => ({
     meta: [
-      { title: "Treningssalen — Kroppen som rustning | House Riis" },
+      { title: "Treningssalen — Kroppen som rustning | House Riis Pettersen" },
       {
         name: "description",
         content:
           "Husets treningsrutine — Arnes Strava-data, ukens innsats og siste tur på kartet.",
       },
-      { property: "og:title", content: "Treningssalen | House Riis" },
+      { property: "og:title", content: "Treningssalen | House Riis Pettersen" },
       { property: "og:description", content: "Styrke, utholdenhet og disiplin." },
       { property: "og:image", content: treningImg },
     ],

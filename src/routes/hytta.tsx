@@ -93,9 +93,9 @@ const GALLERY: Plate[] = [
 export const Route = createFileRoute("/hytta")({
   head: () => ({
     meta: [
-      { title: "Hytta — House Riis' tilflukt" },
+      { title: "Hytta — House Riis Pettersen' tilflukt" },
       { name: "description", content: "Husets hytte — fjellets ro, peiskos og lange skiturer." },
-      { property: "og:title", content: "Hytta | House Riis" },
+      { property: "og:title", content: "Hytta | House Riis Pettersen" },
       { property: "og:description", content: "Vinterens favorittsted i fjellet." },
       { property: "og:image", content: hyttaImg },
     ],
