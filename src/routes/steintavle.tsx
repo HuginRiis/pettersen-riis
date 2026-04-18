@@ -108,16 +108,17 @@ function SteintavlePage() {
     };
   }, [fetchAlerts, fetchRadar, fetchLightsState, router]);
 
-  const handleToggleLights = async () => {
+  const handleSetLights = async (next: boolean) => {
     if (lightsBusy) return;
-    const next = !(lightsOn ?? false);
+    if (lightsOn === next) return; // already in desired state
     setLightsBusy(true);
+    const prev = lightsOn;
     setLightsOn(next); // optimistic
     try {
       const res = await toggleLights({ data: { on: next } });
-      if (!res.ok) setLightsOn(!next);
+      if (!res.ok) setLightsOn(prev);
     } catch {
-      setLightsOn(!next);
+      setLightsOn(prev);
     } finally {
       setLightsBusy(false);
     }
