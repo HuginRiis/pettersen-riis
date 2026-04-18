@@ -99,29 +99,28 @@ function SteintavlePage() {
     );
   }
 
-  // ---- Temperaturer ----
-  const findDevice = (needle: string) => {
-    const n = norm(needle);
-    return (
-      data.devices.find((d) => norm(d.name) === n) ??
-      data.devices.find((d) => norm(d.name).includes(n))
-    );
-  };
+  // ---- Temperaturer (fuzzy match — finner riktig sensor uavhengig av eksakt navn) ----
+  const hasTemp = (d: any) =>
+    typeof d?.capabilities?.["measure_temperature"]?.value === "number";
 
-  const readTemp = (d: any | undefined) => {
-    const v = d?.capabilities["measure_temperature"]?.value;
-    return typeof v === "number" ? v : null;
-  };
+  const tempUte = readTemp(
+    findDeviceFuzzy(data.devices, data.zones, "ute tollnes", (d, c) => hasTemp(d) && c.includes("ute")) ??
+      findDeviceFuzzy(data.devices, data.zones, "tollnes ute", (d) => hasTemp(d)) ??
+      findDeviceFuzzy(data.devices, data.zones, "ute", (d, c) => hasTemp(d) && !c.includes("hytt")),
+  );
 
-  const tempUte = readTemp(findDevice("Ute Tollnes Ute"));
-  const tempInne =
-    readTemp(findDevice("Inne Tollnes")) ??
-    readTemp(findDevice("Stue")) ??
-    readTemp(findDevice("Netatmo Inne"));
-  const tempSov =
-    readTemp(findDevice("Soverom")) ??
-    readTemp(findDevice("Sov ")) ??
-    readTemp(findDevice("Sovrom"));
+  const tempInne = readTemp(
+    findDeviceFuzzy(data.devices, data.zones, "inne tollnes", (d) => hasTemp(d)) ??
+      findDeviceFuzzy(data.devices, data.zones, "netatmo inne", (d) => hasTemp(d)) ??
+      findDeviceFuzzy(data.devices, data.zones, "stue", (d) => hasTemp(d)) ??
+      findDeviceFuzzy(data.devices, data.zones, "netatmo", (d, c) => hasTemp(d) && !c.includes("ute") && !c.includes("hytt") && !c.includes("sov")),
+  );
+
+  const tempSov = readTemp(
+    findDeviceFuzzy(data.devices, data.zones, "soverom", (d) => hasTemp(d)) ??
+      findDeviceFuzzy(data.devices, data.zones, "sov", (d) => hasTemp(d)) ??
+      findDeviceFuzzy(data.devices, data.zones, "sovrom", (d) => hasTemp(d)),
+  );
 
   // ---- Varsler ----
   const thunderAlerts =
