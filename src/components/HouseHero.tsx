@@ -149,9 +149,6 @@ export function HouseHero({
         <Fireflies />
       )}
 
-      {/* Blafrende lys på huset */}
-      <CandleLights lights={HOUSE_LIGHTS} visible={lightsVisible} />
-
       {/* Ravner over taket */}
       {mounted && <Ravens count={dayPart === "night" ? 3 : 2} />}
 
