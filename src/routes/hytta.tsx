@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { PageShell, PageHero } from "@/components/PageShell";
+import { PageShell } from "@/components/PageShell";
+import { HyttaHero } from "@/components/HyttaHero";
 import { NetatmoWeatherStationSection } from "@/components/NetatmoWeatherStation";
 import hyttaImg from "@/assets/hytta-aurora.jpg";
 import g0314 from "@/assets/hytta-gallery/0314.jpg";
@@ -107,7 +108,7 @@ export const Route = createFileRoute("/hytta")({
 function HyttaPage() {
   return (
     <PageShell>
-      <PageHero
+      <HyttaHero
         eyebrow="Husets tilflukt"
         title="Hytta"
         subtitle="Bortenfor fjordene venter peisens varme"
