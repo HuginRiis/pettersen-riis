@@ -24,7 +24,7 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "Den offisielle krøniken om House Pettersen-Riis: Arne Pettersen Riis og Rebekka Pettersen Riis i Skien. Agenda, vær, pollen, hytta, hundene og trening.",
+          "Den offisielle krøniken om House Pettersen-Riis: Arne Pettersen Riis og Rebekka Riis Pettersen i Skien. Agenda, vær, pollen, hytta, hundene og trening.",
       },
       { property: "og:title", content: "House Pettersen-Riis — Arne & Rebekka av Skien" },
       {
@@ -42,7 +42,7 @@ function Home() {
       <HouseHero
         eyebrow="Krøniken om"
         title="House Pettersen-Riis av Skien"
-        subtitle="Arne Pettersen Riis og Rebekka Pettersen Riis — vinterens voktere ved fjorden."
+        subtitle="Arne Pettersen Riis og Rebekka Riis Pettersen — vinterens voktere ved fjorden."
         image={heroImg}
       />
 
@@ -79,7 +79,7 @@ function Home() {
           </div>
           <div className="flex flex-col">
             <PortraitCard
-              name="Rebekka Pettersen Riis"
+              name="Rebekka Riis Pettersen"
               title="Lady av Skien"
               words="Sterk som vinterstormen"
               image={rebekkaPortrait}
