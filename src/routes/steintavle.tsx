@@ -222,43 +222,29 @@ function SteintavlePage() {
     );
   }
 
-  // ---- Temperaturer (fuzzy match — finner riktig sensor uavhengig av eksakt navn) ----
-  const hasTemp = (d: any) =>
-    typeof d?.capabilities?.["measure_temperature"]?.value === "number";
+  // ---- Temperaturer fra Netatmo værstasjon (Tollnes) ----
+  const ns = liveNetatmo.ok ? liveNetatmo : null;
+  const modules: WeatherModule[] = ns?.modules ?? [];
 
-  const tempUte = readTemp(
-    findDeviceFuzzy(data.devices, data.zones, "ute tollnes", (d, c) => hasTemp(d) && c.includes("ute")) ??
-      findDeviceFuzzy(data.devices, data.zones, "tollnes ute", (d) => hasTemp(d)) ??
-      findDeviceFuzzy(data.devices, data.zones, "ute", (d, c) => hasTemp(d) && !c.includes("hytt")),
-  );
-
-  const tempInne = readTemp(
-    findDeviceFuzzy(data.devices, data.zones, "inne tollnes", (d) => hasTemp(d)) ??
-      findDeviceFuzzy(data.devices, data.zones, "netatmo inne", (d) => hasTemp(d)) ??
-      findDeviceFuzzy(data.devices, data.zones, "stue", (d) => hasTemp(d)) ??
-      findDeviceFuzzy(data.devices, data.zones, "netatmo", (d, c) => hasTemp(d) && !c.includes("ute") && !c.includes("hytt") && !c.includes("sov")),
-  );
-
-  const tempSov = readTemp(
-    findDeviceFuzzy(data.devices, data.zones, "soverom", (d) => hasTemp(d)) ??
-      findDeviceFuzzy(data.devices, data.zones, "sov", (d) => hasTemp(d)) ??
-      findDeviceFuzzy(data.devices, data.zones, "sovrom", (d) => hasTemp(d)),
-  );
-
-  // Lydmåling (dB) fra Netatmo innendørs på Tollnes
-  const noiseDevice =
-    findDeviceFuzzy(data.devices, data.zones, "tollnes", (d) =>
-      typeof d?.capabilities?.["measure_noise"]?.value === "number",
+  // Hovedmodulen (NAMain) = inne i hovedplan, har temp + CO2 + lyd
+  const mainModule = modules.find((m) => m.type === "NAMain") ?? null;
+  // Utemodul (NAModule1)
+  const outdoorModule = modules.find((m) => m.type === "NAModule1") ?? null;
+  // Soverom: ekstra innemodul (NAModule4) — finn én med "sov" i navnet, ellers første NAModule4
+  const bedroomModule =
+    modules.find(
+      (m) => m.type === "NAModule4" && /sov|sove|bed/i.test(m.name),
     ) ??
-    findDeviceFuzzy(data.devices, data.zones, "netatmo", (d, c) =>
-      typeof d?.capabilities?.["measure_noise"]?.value === "number" &&
-      !c.includes("hytt") &&
-      !c.includes("ute"),
-    );
-  const noiseDb =
-    typeof noiseDevice?.capabilities?.["measure_noise"]?.value === "number"
-      ? (noiseDevice.capabilities["measure_noise"].value as number)
-      : null;
+    modules.find((m) => m.type === "NAModule4") ??
+    null;
+
+  const tempInne = mainModule?.metrics.temperature ?? null;
+  const tempSov = bedroomModule?.metrics.temperature ?? null;
+  const tempUte = outdoorModule?.metrics.temperature ?? null;
+  const noiseDb = mainModule?.metrics.noise ?? null;
+  const co2Inne = mainModule?.metrics.co2 ?? null;
+  const humInne = mainModule?.metrics.humidity ?? null;
+  const humUte = outdoorModule?.metrics.humidity ?? null;
 
   // ---- Daglig min/maks (lagres i localStorage, resettes ved døgnskifte) ----
   const innerMM = useDailyMinMax("st.mm.inne", tempInne);
