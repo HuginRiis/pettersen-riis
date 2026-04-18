@@ -102,7 +102,7 @@ export const getStravaDashboard = createServerFn({ method: "GET" }).handler(asyn
         elevationMeters: weekStats.elevation,
         avgHeartrate: weekStats.hrTime > 0 ? Math.round(weekStats.hrSum / weekStats.hrTime) : null,
       },
-      activities: activities.slice(0, 10).map((a) => ({
+      activities: activities.slice(0, 7).map((a) => ({
         id: a.id,
         name: a.name,
         type: a.sport_type || a.type,
