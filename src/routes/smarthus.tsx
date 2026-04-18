@@ -1,7 +1,8 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { PageShell, PageHero } from "@/components/PageShell";
+import { LastUpdated } from "@/components/LastUpdated";
 import { getHomeySnapshot, disconnectHomey, setAllOutdoorLights } from "@/server/homey";
 import { findDeviceFuzzy, readTemp } from "@/lib/homey-match";
 import heroImg from "@/assets/smarthus-hero.jpg";
