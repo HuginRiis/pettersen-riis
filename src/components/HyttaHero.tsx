@@ -160,8 +160,6 @@ export function HyttaHero({ image, eyebrow, title, subtitle }: {
 
 function CelestialBody({ dayPart }: { dayPart: DayPart }) {
   const isMoon = dayPart === "night";
-  const isHidden = false;
-  if (isHidden) return null;
 
   // Posisjon: morgen lavt øst, dag høyt, kveld lavt vest, natt måne høyt
   const pos = useMemo(() => {
