@@ -88,18 +88,30 @@ function WeatherPage() {
   const devices = homeyOk ? data.devices : [];
   const zones = homeyOk ? data.zones : [];
 
-  const tollnesRain = readCap(
-    findDeviceFuzzy(devices, zones, "tollnes", (d) => hasCap(d, "measure_rain")),
-    "measure_rain",
-  );
+  // Totalt regn i dag: Netatmo eksponerer 'meter_rain' (akkumulert dag-total i mm).
+  // Faller tilbake til 'measure_rain' (mm/t) hvis dag-totalen ikke er tilgjengelig.
+  const tollnesRainToday =
+    readCap(
+      findDeviceFuzzy(devices, zones, "tollnes", (d) => hasCap(d, "meter_rain")),
+      "meter_rain",
+    ) ??
+    readCap(
+      findDeviceFuzzy(devices, zones, "tollnes", (d) => hasCap(d, "measure_rain")),
+      "measure_rain",
+    );
   const tollnesWind = readCap(
     findDeviceFuzzy(devices, zones, "tollnes", (d) => hasCap(d, "measure_wind_strength")),
     "measure_wind_strength",
   );
-  const hyttaRain = readCap(
-    findDeviceFuzzy(devices, zones, "hytta", (d) => hasCap(d, "measure_rain")),
-    "measure_rain",
-  );
+  const hyttaRainToday =
+    readCap(
+      findDeviceFuzzy(devices, zones, "hytta", (d) => hasCap(d, "meter_rain")),
+      "meter_rain",
+    ) ??
+    readCap(
+      findDeviceFuzzy(devices, zones, "hytta", (d) => hasCap(d, "measure_rain")),
+      "measure_rain",
+    );
   const hyttaWind = readCap(
     findDeviceFuzzy(devices, zones, "hytta", (d) => hasCap(d, "measure_wind_strength")),
     "measure_wind_strength",
@@ -128,9 +140,9 @@ function WeatherPage() {
             </p>
           ) : (
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <LiveMetric label="Regn · Tollnes" value={tollnesRain} unit="mm/t" icon="🌧" />
+              <LiveMetric label="Regn i dag · Tollnes" value={tollnesRainToday} unit="mm" icon="🌧" />
               <LiveMetric label="Vind · Tollnes" value={tollnesWind} unit="m/s" icon="💨" />
-              <LiveMetric label="Regn · Hytta" value={hyttaRain} unit="mm/t" icon="🌧" />
+              <LiveMetric label="Regn i dag · Hytta" value={hyttaRainToday} unit="mm" icon="🌧" />
               <LiveMetric label="Vind · Hytta" value={hyttaWind} unit="m/s" icon="💨" />
             </div>
           )}

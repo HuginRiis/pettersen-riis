@@ -6,9 +6,7 @@ import { TollnesCameraStrip } from "@/components/TollnesCameraStrip";
 import { getHomeySnapshot } from "@/server/homey";
 import { findDeviceFuzzy, readTemp } from "@/lib/homey-match";
 import {
-  getMetRadarSouthernNorway,
   getTollnesAlerts,
-  type RadarResult,
   type AlertsResult,
   type MetAlert,
 } from "@/server/lightning";
@@ -46,22 +44,13 @@ export const Route = createFileRoute("/steintavle")({
 function SteintavlePage() {
   const data = Route.useLoaderData() as Awaited<ReturnType<typeof getHomeySnapshot>>;
   const router = useRouter();
-  const fetchRadar = useServerFn(getMetRadarSouthernNorway);
   const fetchAlerts = useServerFn(getTollnesAlerts);
-  const [radar, setRadar] = useState<RadarResult | null>(null);
   const [alerts, setAlerts] = useState<AlertsResult | null>(null);
-  const [now, setNow] = useState(() => new Date());
+  const [now, setNow] = useState<Date | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    const loadRadar = async () => {
-      try {
-        const res = await fetchRadar();
-        if (!cancelled) setRadar(res);
-      } catch (e: any) {
-        if (!cancelled) setRadar({ ok: false, error: e?.message ?? "Feil" });
-      }
-    };
+    setNow(new Date());
     const loadAlerts = async () => {
       try {
         const res = await fetchAlerts();
@@ -70,21 +59,18 @@ function SteintavlePage() {
         if (!cancelled) setAlerts({ ok: false, error: e?.message ?? "Feil" });
       }
     };
-    loadRadar();
     loadAlerts();
-    const r = setInterval(loadRadar, 5 * 60_000); // radar hvert 5. min
     const a = setInterval(loadAlerts, 5 * 60_000);
     const c = setInterval(() => setNow(new Date()), 30_000);
     // Hent ferske Homey-temperaturer hvert 60. sek
     const t = setInterval(() => router.invalidate(), 60_000);
     return () => {
       cancelled = true;
-      clearInterval(r);
       clearInterval(a);
       clearInterval(c);
       clearInterval(t);
     };
-  }, [fetchRadar, fetchAlerts, router]);
+  }, [fetchAlerts, router]);
 
   if (!data.ok) {
     return (
@@ -156,10 +142,9 @@ function SteintavlePage() {
         </div>
         <div className="text-[11px] tracking-[0.3em] text-muted-foreground uppercase">
           Borgens raske blikk · Tollnes ·{" "}
-          {now.toLocaleTimeString("nb-NO", {
-            hour: "2-digit",
-            minute: "2-digit",
-          })}
+          {now
+            ? now.toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit" })
+            : "—"}
         </div>
         <div className="ornate-divider mt-3">
           <span className="text-medieval text-primary text-base">❦</span>
@@ -197,23 +182,31 @@ function SteintavlePage() {
           </section>
         )}
 
-        {/* Yr lynradar — ekte live data, sentrert på Tollnes */}
+        {/* Yr lynradar — ekte live data, sentrert på Tollnes (Skien, Telemark) */}
         <section>
           <SectionTitle>Lynvarsel · Yr.no over Tollnes</SectionTitle>
           <div className="panel rounded-lg overflow-hidden">
             <div className="relative w-full" style={{ aspectRatio: "4 / 3", maxHeight: "min(60vh, 600px)" }}>
               <iframe
-                title="Yr lynkart sentrert på Tollnes"
-                src="https://www.yr.no/nb/kart/lyn/1-3429877"
+                title="Yr lynkart sentrert på Tollnes, Skien"
+                src="https://www.yr.no/nb/kart/lyn/1-2337230"
                 className="absolute inset-0 w-full h-full border-0"
                 loading="lazy"
                 referrerPolicy="no-referrer-when-downgrade"
               />
             </div>
             <div className="px-4 py-3 flex items-center justify-between text-[11px] tracking-[0.25em] uppercase text-muted-foreground border-t border-border">
-              <span>Yr.no · Live lyn</span>
+              <span>
+                {hasThunder ? (
+                  <span className="text-destructive font-semibold">⚡ Torden i området</span>
+                ) : otherAlerts.length > 0 ? (
+                  <span className="text-primary">⚠ {otherAlerts.length} aktivt varsel</span>
+                ) : (
+                  <span>Yr.no · Live lyn</span>
+                )}
+              </span>
               <a
-                href="https://www.yr.no/nb/kart/lyn/1-3429877"
+                href="https://www.yr.no/nb/kart/lyn/1-2337230"
                 target="_blank"
                 rel="noreferrer"
                 className="text-primary hover:underline"
@@ -221,15 +214,27 @@ function SteintavlePage() {
                 Åpne i Yr ↗
               </a>
             </div>
+            {otherAlerts.length > 0 && (
+              <div className="px-4 py-3 border-t border-border space-y-2">
+                {otherAlerts.map((a) => (
+                  <div key={a.id} className="flex items-start gap-3 text-sm">
+                    <span
+                      className="mt-1 w-2.5 h-2.5 rounded-full shrink-0"
+                      style={{ background: alertColor(a.awarenessColor) }}
+                    />
+                    <div className="flex-1">
+                      <div className="text-foreground">{a.title}</div>
+                      {a.area && (
+                        <div className="text-[10px] tracking-[0.2em] text-muted-foreground uppercase mt-0.5">
+                          {a.area}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-        </section>
-
-        {/* Met.no radar-kart (nedbørs-skyer) */}
-        <section>
-          <SectionTitle>
-            Tordenravnene · Værradar over Telemark
-          </SectionTitle>
-          <RadarPanel radar={radar} alerts={otherAlerts} hasThunder={hasThunder} />
         </section>
       </main>
     </PageShell>
@@ -364,80 +369,6 @@ function ThunderBanner({ alerts }: { alerts: MetAlert[] }) {
   );
 }
 
-function RadarPanel({
-  radar,
-  alerts,
-  hasThunder,
-}: {
-  radar: RadarResult | null;
-  alerts: MetAlert[];
-  hasThunder: boolean;
-}) {
-  return (
-    <div className="panel rounded-lg overflow-hidden">
-      <div className="relative w-full bg-background/60" style={{ aspectRatio: "1 / 1", maxHeight: "min(50vh, 520px)" }}>
-        {radar === null && (
-          <div className="absolute inset-0 flex items-center justify-center text-xs tracking-[0.3em] text-muted-foreground uppercase">
-            Speider etter regn-skyer…
-          </div>
-        )}
-        {radar?.ok === false && (
-          <div className="absolute inset-0 flex items-center justify-center px-6 text-center">
-            <div>
-              <div className="text-xs tracking-[0.3em] text-destructive uppercase mb-2">
-                Radarravnen tier
-              </div>
-              <p className="text-xs text-muted-foreground">{radar.error}</p>
-            </div>
-          </div>
-        )}
-        {radar?.ok === true && (
-          <RadarImage dataUrl={radar.dataUrl} hasThunder={hasThunder} />
-        )}
-      </div>
-      <div className="px-4 py-3 flex flex-wrap items-center justify-between gap-2 text-[11px] tracking-[0.25em] uppercase text-muted-foreground border-t border-border">
-        <span>
-          {hasThunder ? (
-            <span className="text-destructive font-semibold">⚡ Torden i området</span>
-          ) : alerts.length > 0 ? (
-            <span className="text-primary">⚠ {alerts.length} aktivt varsel</span>
-          ) : (
-            <span>Ingen aktive varsler</span>
-          )}
-        </span>
-        <span className="text-primary/70">
-          {radar?.ok === true
-            ? `Met.no · ${new Date(radar.capturedAt).toLocaleTimeString("nb-NO", {
-                hour: "2-digit",
-                minute: "2-digit",
-              })}`
-            : "Met.no radar"}
-        </span>
-      </div>
-      {alerts.length > 0 && (
-        <div className="px-4 py-3 border-t border-border space-y-2">
-          {alerts.map((a) => (
-            <div key={a.id} className="flex items-start gap-3 text-sm">
-              <span
-                className="mt-1 w-2.5 h-2.5 rounded-full shrink-0"
-                style={{ background: alertColor(a.awarenessColor) }}
-              />
-              <div className="flex-1">
-                <div className="text-foreground">{a.title}</div>
-                {a.area && (
-                  <div className="text-[10px] tracking-[0.2em] text-muted-foreground uppercase mt-0.5">
-                    {a.area}
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
 function alertColor(c: string): string {
   switch (c) {
     case "red":
@@ -449,87 +380,4 @@ function alertColor(c: string): string {
     default:
       return "oklch(0.65 0.10 150)";
   }
-}
-
-/**
- * Radarbildet er en PNG over sør-Norge. Vi vet ikke nøyaktig bbox,
- * men sentrerer kartet visuelt på Tollnes (omtrent midt-sør i bildet)
- * og tegner en gylden markør oppå.
- */
-function RadarImage({ dataUrl, hasThunder }: { dataUrl: string; hasThunder: boolean }) {
-  // Zoom inn ~12x og sentrer på Tollnes (omtrent 52% / 62% i bildet).
-  const ZOOM = 12;
-  const TOLLNES_X = 52; // %
-  const TOLLNES_Y = 62; // %
-
-  return (
-    <div
-      className="absolute inset-0 overflow-hidden"
-      style={{ background: "oklch(0.12 0.012 240)" }}
-    >
-      {/* Zoom-laget — skaler bildet og forskyv så Tollnes havner i midten */}
-      <div
-        className="absolute inset-0"
-        style={{
-          transform: `scale(${ZOOM})`,
-          transformOrigin: `${TOLLNES_X}% ${TOLLNES_Y}%`,
-        }}
-      >
-        <img
-          src={dataUrl}
-          alt="Met.no værradar zoomet inn på Tollnes"
-          className="absolute inset-0 w-full h-full object-contain"
-          style={{
-            filter: "brightness(1.15) contrast(1.1)",
-            mixBlendMode: "screen",
-            imageRendering: "pixelated",
-          }}
-        />
-      </div>
-
-      {/* Tollnes-markør — alltid midt i visningen */}
-      <div
-        className="absolute pointer-events-none"
-        style={{
-          left: "50%",
-          top: "50%",
-          transform: "translate(-50%, -50%)",
-        }}
-      >
-        <div
-          className={`relative ${hasThunder ? "animate-pulse" : ""}`}
-          style={{
-            width: "18px",
-            height: "18px",
-            borderRadius: "9999px",
-            background: hasThunder ? "var(--destructive)" : "var(--gold)",
-            boxShadow: hasThunder
-              ? "0 0 0 4px color-mix(in oklab, var(--destructive) 30%, transparent), 0 0 22px var(--destructive)"
-              : "0 0 0 4px color-mix(in oklab, var(--gold) 25%, transparent), 0 0 22px color-mix(in oklab, var(--gold) 70%, transparent)",
-          }}
-        />
-        {/* ~5 km radius-ring (visuell indikasjon — radar er ca 1px/km) */}
-        <div
-          className="absolute left-1/2 top-1/2 pointer-events-none"
-          style={{
-            width: "120px",
-            height: "120px",
-            transform: "translate(-50%, -50%)",
-            borderRadius: "9999px",
-            border: "1px dashed color-mix(in oklab, var(--gold) 60%, transparent)",
-            boxShadow: "inset 0 0 30px color-mix(in oklab, var(--gold) 8%, transparent)",
-          }}
-        />
-        <div
-          className="absolute left-1/2 -translate-x-1/2 mt-3 text-[10px] tracking-[0.3em] uppercase whitespace-nowrap"
-          style={{
-            color: hasThunder ? "var(--destructive)" : "var(--gold)",
-            textShadow: "0 0 8px oklch(0.10 0.01 240), 0 0 4px oklch(0.10 0.01 240)",
-          }}
-        >
-          Tollnes · ~5 km
-        </div>
-      </div>
-    </div>
-  );
 }
