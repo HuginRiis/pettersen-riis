@@ -287,10 +287,24 @@ export const getTripSuggestions = createServerFn({ method: "POST" })
       if (!Array.isArray(suggestions) || suggestions.length === 0) {
         return { ok: false, error: "Ingen turforslag funnet for dette området." };
       }
-      // Normaliser distanceKm: 0 betyr "ukjent"
-      const cleaned: TripSuggestion[] = suggestions.map((s) => ({
+      // Normaliser tomme/nullverdier
+      const cleaned: TripSuggestion[] = suggestions.map((s: any) => ({
         ...s,
         distanceKm: s.distanceKm && s.distanceKm > 0 ? s.distanceKm : null,
+        elevationGainM: s.elevationGainM && s.elevationGainM > 0 ? s.elevationGainM : null,
+        startLat:
+          typeof s.startLat === "number" && s.startLat >= 57 && s.startLat <= 72
+            ? s.startLat
+            : null,
+        startLon:
+          typeof s.startLon === "number" && s.startLon >= 3 && s.startLon <= 32
+            ? s.startLon
+            : null,
+        endHint: s.endHint && s.endHint.trim().length > 0 ? s.endHint : null,
+        routeSteps: Array.isArray(s.routeSteps) ? s.routeSteps : [],
+        recommendedGear: Array.isArray(s.recommendedGear) ? s.recommendedGear : [],
+        warnings: Array.isArray(s.warnings) ? s.warnings : [],
+        facilities: Array.isArray(s.facilities) ? s.facilities : [],
       }));
       return {
         ok: true,
