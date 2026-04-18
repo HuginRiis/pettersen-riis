@@ -53,9 +53,13 @@ function SteintavlePage() {
   const router = useRouter();
   const fetchAlerts = useServerFn(getTollnesAlerts);
   const fetchRadar = useServerFn(getMetRadarSouthernNorway);
+  const fetchLightsState = useServerFn(getLivingRoomLightsState);
+  const toggleLights = useServerFn(setLivingRoomLights);
   const [alerts, setAlerts] = useState<AlertsResult | null>(null);
   const [radar, setRadar] = useState<RadarResult | null>(null);
   const [now, setNow] = useState<Date | null>(null);
+  const [lightsOn, setLightsOn] = useState<boolean | null>(null);
+  const [lightsBusy, setLightsBusy] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -76,11 +80,21 @@ function SteintavlePage() {
         if (!cancelled) setRadar({ ok: false, error: e?.message ?? "Feil" });
       }
     };
+    const loadLights = async () => {
+      try {
+        const res = await fetchLightsState();
+        if (!cancelled && res.ok) setLightsOn(res.anyOn);
+      } catch {
+        // ignore
+      }
+    };
     loadAlerts();
     loadRadar();
+    loadLights();
     const a = setInterval(loadAlerts, 5 * 60_000);
     const r = setInterval(loadRadar, 5 * 60_000);
     const c = setInterval(() => setNow(new Date()), 30_000);
+    const l = setInterval(loadLights, 30_000);
     // Hent ferske Homey-temperaturer hvert 60. sek
     const t = setInterval(() => router.invalidate(), 60_000);
     return () => {
@@ -88,9 +102,26 @@ function SteintavlePage() {
       clearInterval(a);
       clearInterval(r);
       clearInterval(c);
+      clearInterval(l);
       clearInterval(t);
     };
-  }, [fetchAlerts, fetchRadar, router]);
+  }, [fetchAlerts, fetchRadar, fetchLightsState, router]);
+
+  const handleToggleLights = async () => {
+    if (lightsBusy) return;
+    const next = !(lightsOn ?? false);
+    setLightsBusy(true);
+    setLightsOn(next); // optimistic
+    try {
+      const res = await toggleLights({ data: { on: next } });
+      if (!res.ok) setLightsOn(!next);
+    } catch {
+      setLightsOn(!next);
+    } finally {
+      setLightsBusy(false);
+    }
+  };
+
 
   if (!data.ok) {
     return (
