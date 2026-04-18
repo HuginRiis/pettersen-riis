@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { PageShell, PageHero } from "@/components/PageShell";
 import { LastUpdated } from "@/components/LastUpdated";
+import { LivePollen } from "@/components/LivePollen";
 import heroImg from "@/assets/hero-westeros.jpg";
 
 export const Route = createFileRoute("/pollen")({
@@ -110,25 +111,49 @@ const MONTHS = ["Jan", "Feb", "Mar", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "
 
 function PollenPage() {
   const month = new Date().getMonth(); // 0..11
-  const monthLabel = MONTHS[month];
-  const [loadedAt] = useState(() => new Date());
+  const [loadedAt, setLoadedAt] = useState(() => new Date());
+
+  // Bump "lastet"-tid hver time slik at pillen reflekterer at vi har refresh-loop
+  useEffect(() => {
+    const id = setInterval(() => setLoadedAt(new Date()), 60 * 60 * 1000);
+    return () => clearInterval(id);
+  }, []);
 
   return (
     <PageShell>
       <PageHero
         eyebrow="Skien & Numedal · Norge"
         title="Pollenvarsel"
-        subtitle="Sesongkart, kurver og varslinger — i House Riis Pettersen sin stil."
+        subtitle="Live time-for-time pollennivå — oppdateres hver time."
         image={heroImg}
       />
 
       <section className="container mx-auto px-4 pt-6 flex justify-center">
-        <LastUpdated label="Pollen (NAAF-estimat)" timestamp={loadedAt} />
+        <LastUpdated label="Pollen (sidelast)" timestamp={loadedAt} />
       </section>
 
       <section className="container mx-auto px-4 py-10 space-y-12">
-        {/* Today summary */}
-        <TodayPanel month={month} monthLabel={monthLabel} />
+        {/* LIVE — what's flying right now, hourly forecast */}
+        <div>
+          <SectionHeader
+            eyebrow="Live målinger · Open-Meteo"
+            title="Hva som flyr akkurat nå"
+          />
+          <div className="grid lg:grid-cols-2 gap-6 mt-6">
+            <LivePollen
+              lat={59.21}
+              lon={9.61}
+              title="Skien · Tollnes"
+              subtitle="Live pollen for Tollnes — oppdateres hver time"
+            />
+            <LivePollen
+              lat={59.91}
+              lon={9.07}
+              title="Hytta · Lyngdal i Numedal"
+              subtitle="Live pollen for Numedal — sesongen kommer 1–2 uker senere"
+            />
+          </div>
+        </div>
 
         {/* Year heatmap */}
         <YearHeatmap region="skien" title="Skien · Tollnes" subtitle="Måned-for-måned belastning" />
