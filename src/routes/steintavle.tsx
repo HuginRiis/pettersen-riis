@@ -37,7 +37,15 @@ export const Route = createFileRoute("/steintavle")({
       },
     ],
   }),
-  loader: () => getHomeySnapshot(),
+  loader: async () => {
+    const [homey, netatmo] = await Promise.all([
+      getHomeySnapshot(),
+      getNetatmoWeatherStation({ data: { stationMatch: "tollnes" } }).catch(
+        (e) => ({ ok: false as const, error: e?.message ?? "Netatmo-feil" }),
+      ),
+    ]);
+    return { homey, netatmo };
+  },
   component: SteintavlePage,
   errorComponent: ({ error }) => (
     <PageShell minimalHeader>
