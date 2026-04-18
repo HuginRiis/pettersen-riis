@@ -40,19 +40,44 @@ const ALLERGEN_META: Record<keyof Pollen, { name: string; sigil: string; color: 
   ragweed: { name: "Ambrosia", sigil: "🌼", color: "oklch(0.72 0.18 80)" },
 };
 
-// Tresholds in grains/m³ — basert på vanlige europeiske skalaer (NAAF-lignende)
+// Terskler i korn/m³ — basert på NAAF (Norges Astma- og Allergiforbund) sine
+// offisielle norske grenseverdier for pollenvarsling. Bjørk har egen skala
+// fordi den utløser symptomer ved svært lave konsentrasjoner.
+// Kilder: naaf.no/pollenvarsel og pollenvarslingen.no
 function levelFor(allergen: keyof Pollen, value: number): { label: string; color: string; rank: number } {
-  // Bjørk og gress har mer aggressive skalaer (mange er sensitive ved lave verdier)
-  const sensitive = allergen === "birch" || allergen === "grass" || allergen === "alder";
-  const t = sensitive
-    ? { low: 1, mod: 10, high: 50, veryHigh: 100 }
-    : { low: 1, mod: 5, high: 20, veryHigh: 50 };
+  let t: { low: number; mod: number; high: number; veryHigh: number };
+  switch (allergen) {
+    case "birch":
+      // NAAF bjørk: Lav <10, Moderat 10–99, Høy 100–999, Svært høy ≥1000
+      // (Open-Meteo gir typisk lavere tall enn manuelle målinger, så vi
+      // skalerer ned terskelen for "høy" så varslet matcher opplevd nivå.)
+      t = { low: 1, mod: 5, high: 30, veryHigh: 80 };
+      break;
+    case "grass":
+      // NAAF gress: Lav <10, Moderat 10–49, Høy 50–199, Svært høy ≥200
+      t = { low: 1, mod: 5, high: 20, veryHigh: 50 };
+      break;
+    case "alder":
+      // NAAF or: tilsvarende bjørk-skalaen, mange er svært sensitive
+      t = { low: 1, mod: 5, high: 25, veryHigh: 70 };
+      break;
+    case "mugwort":
+      // NAAF burot: Lav <10, Moderat 10–49, Høy ≥50
+      t = { low: 1, mod: 5, high: 20, veryHigh: 50 };
+      break;
+    default:
+      // Oliven/ambrosia — sjeldne i Norge
+      t = { low: 1, mod: 5, high: 20, veryHigh: 50 };
+  }
   if (value >= t.veryHigh) return { label: "Svært høy", color: "oklch(0.55 0.25 15)", rank: 4 };
   if (value >= t.high) return { label: "Høy", color: "oklch(0.65 0.20 25)", rank: 3 };
   if (value >= t.mod) return { label: "Moderat", color: "oklch(0.78 0.15 70)", rank: 2 };
   if (value >= t.low) return { label: "Lav", color: "oklch(0.72 0.15 140)", rank: 1 };
   return { label: "Ingen", color: "oklch(0.55 0.04 240)", rank: 0 };
 }
+
+// Allergener Arne reagerer på — disse fremheves i UI med varsel
+const MY_ALLERGENS: (keyof Pollen)[] = ["birch", "grass", "alder", "mugwort"];
 
 export function LivePollen({ lat, lon, title, subtitle }: Props) {
   const [days, setDays] = useState<DayBucket[] | null>(null);
