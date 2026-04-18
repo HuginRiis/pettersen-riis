@@ -235,6 +235,49 @@ function readCap(d: DeviceLike | null | undefined, cap: string): number | null {
   return typeof v === "number" ? v : null;
 }
 
+function hasAnyRainCap(d: DeviceLike | null | undefined): boolean {
+  if (!d?.capabilities) return false;
+  for (const k of Object.keys(d.capabilities)) {
+    if (k.toLowerCase().includes("rain") && typeof d.capabilities[k]?.value === "number") {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Les "totalt regn i dag" — prøver Netatmo-kapabiliteter i prioritert rekkefølge.
+ * Netatmo-rainmodulen i Homey eksponerer typisk:
+ *   measure_rain (mm/t nå), measure_rain.1h, measure_rain.24h,
+ *   meter_rain (akkumulert), meter_rain.today / .daily.
+ */
+function readDailyRain(d: DeviceLike | null | undefined): number | null {
+  if (!d?.capabilities) return null;
+  const caps = d.capabilities;
+  const priority = [
+    "meter_rain.today",
+    "meter_rain.daily",
+    "meter_rain.day",
+    "measure_rain.today",
+    "measure_rain.daily",
+    "measure_rain.day",
+    "meter_rain",
+    "measure_rain.24h",
+    "measure_rain.1h",
+    "measure_rain",
+  ];
+  for (const cap of priority) {
+    const v = caps[cap]?.value;
+    if (typeof v === "number") return v;
+  }
+  for (const [k, val] of Object.entries(caps)) {
+    if (k.toLowerCase().includes("rain") && typeof val?.value === "number") {
+      return val.value as number;
+    }
+  }
+  return null;
+}
+
 function parseForecast(data: any): ForecastDay[] {
   const series = data?.properties?.timeseries ?? [];
   const map = new Map<string, ForecastDay>();
