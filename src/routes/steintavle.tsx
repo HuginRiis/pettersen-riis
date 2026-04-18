@@ -142,6 +142,16 @@ function SteintavlePage() {
         if (!cancelled) setRadar({ ok: false, error: e?.message ?? "Feil" });
       }
     };
+    const loadNetatmo = async () => {
+      if (isHidden()) return;
+      try {
+        const res = await fetchNetatmo({ data: { stationMatch: "tollnes" } });
+        if (!cancelled) setLiveNetatmo(res);
+      } catch (e: any) {
+        if (!cancelled)
+          setLiveNetatmo({ ok: false, error: e?.message ?? "Netatmo-feil" });
+      }
+    };
     const refreshSnapshot = () => {
       if (isHidden()) return;
       router.invalidate();
@@ -149,13 +159,16 @@ function SteintavlePage() {
 
     loadAlerts();
     loadRadar();
+    loadNetatmo();
 
-    // Snillere polling for å unngå Athom 429:
-    // - Værvarsel & radar: 10 min (var 5 min)
-    // - Klokke: 30 sek (lokal, ingen API)
-    // - Homey-snapshot: 3 min (var 1 min, og vi droppet eget lys-kall)
+    // Polling-intervaller (skånsomme mot APIene):
+    // - Netatmo: 5 min (Netatmo oppdaterer selv hvert 10. min)
+    // - Værvarsel & radar: 10 min
+    // - Klokke: 30 sek
+    // - Homey-snapshot: 3 min (lyskontroll)
     const a = setInterval(loadAlerts, 10 * 60_000);
     const r = setInterval(loadRadar, 10 * 60_000);
+    const n = setInterval(loadNetatmo, 5 * 60_000);
     const c = setInterval(() => setNow(new Date()), 30_000);
     const t = setInterval(refreshSnapshot, 3 * 60_000);
 
