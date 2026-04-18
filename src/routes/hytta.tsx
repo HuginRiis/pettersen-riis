@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { PageShell, PageHero } from "@/components/PageShell";
+import { NetatmoWeatherStationSection } from "@/components/NetatmoWeatherStation";
 import hyttaImg from "@/assets/hytta-aurora.jpg";
 import g0314 from "@/assets/hytta-gallery/0314.jpg";
 import g0342 from "@/assets/hytta-gallery/0342.jpg";
@@ -149,6 +150,11 @@ function HyttaPage() {
           </ul>
         </aside>
       </section>
+
+      <NetatmoWeatherStationSection
+        title="Værstasjonen — Hytta"
+        stationMatch="hytta"
+      />
 
       {/* Galleriet — Krøniken om House Riis Pettersen i fjellet */}
       <section className="container mx-auto px-4 pb-16">

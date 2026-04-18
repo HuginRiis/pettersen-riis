@@ -88,6 +88,7 @@ export type WeatherStationResult =
       stationName: string;
       modules: WeatherModule[];
       fetchedAt: string;
+      availableStations: string[];
     };
 
 function moduleLabel(type: string, name: string): string {
@@ -107,8 +108,41 @@ function moduleLabel(type: string, name: string): string {
   }
 }
 
-export const getNetatmoWeatherStation = createServerFn({ method: "GET" }).handler(
-  async (): Promise<WeatherStationResult> => {
+function mapDevice(device: any): WeatherModule[] {
+  const allRaw = [device, ...(device.modules ?? [])];
+  return allRaw.map((m: any) => {
+    const dd = m.dashboard_data ?? {};
+    const lastSeen = m.last_message ?? m.last_seen ?? m.last_status_store;
+    return {
+      id: m._id,
+      type: m.type,
+      name: moduleLabel(m.type, m.module_name ?? m.station_name ?? ""),
+      battery: m.battery_percent,
+      reachable: m.reachable !== false,
+      lastSeen: lastSeen ? new Date(lastSeen * 1000).toISOString() : undefined,
+      metrics: {
+        temperature: dd.Temperature,
+        minTemp: dd.min_temp,
+        maxTemp: dd.max_temp,
+        humidity: dd.Humidity,
+        co2: dd.CO2,
+        pressure: dd.Pressure,
+        absolutePressure: dd.AbsolutePressure,
+        noise: dd.Noise,
+        rain: dd.Rain,
+        rainDay: dd.sum_rain_24,
+        windStrength: dd.WindStrength,
+        windAngle: dd.WindAngle,
+        gustStrength: dd.GustStrength,
+        gustAngle: dd.GustAngle,
+      },
+    };
+  });
+}
+
+export const getNetatmoWeatherStation = createServerFn({ method: "GET" })
+  .inputValidator((data: { stationMatch?: string }) => data ?? {})
+  .handler(async ({ data }): Promise<WeatherStationResult> => {
     try {
       const token = await getAccessToken();
 
@@ -130,48 +164,33 @@ export const getNetatmoWeatherStation = createServerFn({ method: "GET" }).handle
         return { ok: false, error: "Fant ingen værstasjoner på kontoen" };
       }
 
-      const device = devices[0];
+      const availableStations = devices.map(
+        (d: any) => d.station_name ?? d.module_name ?? "Ukjent",
+      );
+
+      const match = data?.stationMatch?.toLowerCase().trim();
+      let device = devices[0];
+      if (match) {
+        const found = devices.find((d: any) => {
+          const sn = (d.station_name ?? "").toLowerCase();
+          const mn = (d.module_name ?? "").toLowerCase();
+          return sn.includes(match) || mn.includes(match);
+        });
+        if (found) device = found;
+      }
+
       const stationName: string = device.station_name ?? device.module_name ?? "Værstasjonen";
-
-      const allRaw = [device, ...(device.modules ?? [])];
-
-      const modules: WeatherModule[] = allRaw.map((m: any) => {
-        const dd = m.dashboard_data ?? {};
-        const lastSeen = m.last_message ?? m.last_seen ?? m.last_status_store;
-        return {
-          id: m._id,
-          type: m.type,
-          name: moduleLabel(m.type, m.module_name ?? m.station_name ?? ""),
-          battery: m.battery_percent,
-          reachable: m.reachable !== false,
-          lastSeen: lastSeen ? new Date(lastSeen * 1000).toISOString() : undefined,
-          metrics: {
-            temperature: dd.Temperature,
-            minTemp: dd.min_temp,
-            maxTemp: dd.max_temp,
-            humidity: dd.Humidity,
-            co2: dd.CO2,
-            pressure: dd.Pressure,
-            absolutePressure: dd.AbsolutePressure,
-            noise: dd.Noise,
-            rain: dd.Rain,
-            rainDay: dd.sum_rain_24,
-            windStrength: dd.WindStrength,
-            windAngle: dd.WindAngle,
-            gustStrength: dd.GustStrength,
-            gustAngle: dd.GustAngle,
-          },
-        };
-      });
+      const modules = mapDevice(device);
 
       return {
         ok: true,
         stationName,
         modules,
         fetchedAt: new Date().toISOString(),
+        availableStations,
       };
     } catch (e: any) {
       return { ok: false, error: e?.message ?? "Ukjent feil" };
     }
-  },
-);
+  });
+

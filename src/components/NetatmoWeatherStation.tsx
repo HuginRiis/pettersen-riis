@@ -211,7 +211,13 @@ function Stat({
   );
 }
 
-export function NetatmoWeatherStationSection() {
+export function NetatmoWeatherStationSection({
+  title = "Værstasjonen — Tollnes",
+  stationMatch,
+}: {
+  title?: string;
+  stationMatch?: string;
+} = {}) {
   const fetchData = useServerFn(getNetatmoWeatherStation);
   const [state, setState] = useState<
     | { status: "loading" }
@@ -225,7 +231,7 @@ export function NetatmoWeatherStationSection() {
     if (typeof document !== "undefined" && document.hidden) return;
     inFlight.current = true;
     try {
-      const res = await fetchData();
+      const res = await fetchData({ data: { stationMatch } });
       if (res.ok) {
         setState({ status: "ok", data: res });
       } else {
@@ -249,13 +255,13 @@ export function NetatmoWeatherStationSection() {
     const id = setInterval(load, REFRESH_MS);
     return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [stationMatch]);
 
   return (
     <section className="container mx-auto px-4 pb-16">
       <div className="ornate-divider mb-8">
         <span className="text-display tracking-[0.3em] text-primary text-sm uppercase">
-          Værstasjonen — Tollnes
+          {title}
         </span>
       </div>
 
