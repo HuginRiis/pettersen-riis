@@ -8,8 +8,11 @@ import {
   getHomeySnapshot,
   setLivingRoomLights,
 } from "@/server/homey";
-import { findDeviceFuzzy, readTemp } from "@/lib/homey-match";
 import { useDailyMinMax, type MinMax } from "@/hooks/use-daily-minmax";
+import {
+  getNetatmoWeatherStation,
+  type WeatherModule,
+} from "@/server/netatmo-weather";
 import {
   getTollnesAlerts,
   getMetRadarSouthernNorway,
@@ -34,7 +37,15 @@ export const Route = createFileRoute("/steintavle")({
       },
     ],
   }),
-  loader: () => getHomeySnapshot(),
+  loader: async () => {
+    const [homey, netatmo] = await Promise.all([
+      getHomeySnapshot(),
+      getNetatmoWeatherStation({ data: { stationMatch: "tollnes" } }).catch(
+        (e) => ({ ok: false as const, error: e?.message ?? "Netatmo-feil" }),
+      ),
+    ]);
+    return { homey, netatmo };
+  },
   component: SteintavlePage,
   errorComponent: ({ error }) => (
     <PageShell minimalHeader>
@@ -78,7 +89,12 @@ function deriveLivingRoomLightsOn(
 }
 
 function SteintavlePage() {
-  const data = Route.useLoaderData() as Awaited<ReturnType<typeof getHomeySnapshot>>;
+  const { homey: data, netatmo } = Route.useLoaderData() as {
+    homey: Awaited<ReturnType<typeof getHomeySnapshot>>;
+    netatmo: Awaited<ReturnType<typeof getNetatmoWeatherStation>>;
+  };
+  const fetchNetatmo = useServerFn(getNetatmoWeatherStation);
+  const [liveNetatmo, setLiveNetatmo] = useState(netatmo);
   const router = useRouter();
   const fetchAlerts = useServerFn(getTollnesAlerts);
   const fetchRadar = useServerFn(getMetRadarSouthernNorway);
@@ -126,6 +142,16 @@ function SteintavlePage() {
         if (!cancelled) setRadar({ ok: false, error: e?.message ?? "Feil" });
       }
     };
+    const loadNetatmo = async () => {
+      if (isHidden()) return;
+      try {
+        const res = await fetchNetatmo({ data: { stationMatch: "tollnes" } });
+        if (!cancelled) setLiveNetatmo(res);
+      } catch (e: any) {
+        if (!cancelled)
+          setLiveNetatmo({ ok: false, error: e?.message ?? "Netatmo-feil" });
+      }
+    };
     const refreshSnapshot = () => {
       if (isHidden()) return;
       router.invalidate();
@@ -133,13 +159,16 @@ function SteintavlePage() {
 
     loadAlerts();
     loadRadar();
+    loadNetatmo();
 
-    // Snillere polling for å unngå Athom 429:
-    // - Værvarsel & radar: 10 min (var 5 min)
-    // - Klokke: 30 sek (lokal, ingen API)
-    // - Homey-snapshot: 3 min (var 1 min, og vi droppet eget lys-kall)
+    // Polling-intervaller (skånsomme mot APIene):
+    // - Netatmo: 5 min (Netatmo oppdaterer selv hvert 10. min)
+    // - Værvarsel & radar: 10 min
+    // - Klokke: 30 sek
+    // - Homey-snapshot: 3 min (lyskontroll)
     const a = setInterval(loadAlerts, 10 * 60_000);
     const r = setInterval(loadRadar, 10 * 60_000);
+    const n = setInterval(loadNetatmo, 5 * 60_000);
     const c = setInterval(() => setNow(new Date()), 30_000);
     const t = setInterval(refreshSnapshot, 3 * 60_000);
 
@@ -148,6 +177,7 @@ function SteintavlePage() {
       if (!document.hidden) {
         loadAlerts();
         loadRadar();
+        loadNetatmo();
         refreshSnapshot();
         setNow(new Date());
       }
@@ -160,13 +190,14 @@ function SteintavlePage() {
       cancelled = true;
       clearInterval(a);
       clearInterval(r);
+      clearInterval(n);
       clearInterval(c);
       clearInterval(t);
       if (typeof document !== "undefined") {
         document.removeEventListener("visibilitychange", onVisibility);
       }
     };
-  }, [fetchAlerts, fetchRadar, router]);
+  }, [fetchAlerts, fetchRadar, fetchNetatmo, router]);
 
   const handleSetLights = async (next: boolean) => {
     if (lightsBusy) return;
@@ -206,43 +237,29 @@ function SteintavlePage() {
     );
   }
 
-  // ---- Temperaturer (fuzzy match — finner riktig sensor uavhengig av eksakt navn) ----
-  const hasTemp = (d: any) =>
-    typeof d?.capabilities?.["measure_temperature"]?.value === "number";
+  // ---- Temperaturer fra Netatmo værstasjon (Tollnes) ----
+  const ns = liveNetatmo.ok ? liveNetatmo : null;
+  const modules: WeatherModule[] = ns?.modules ?? [];
 
-  const tempUte = readTemp(
-    findDeviceFuzzy(data.devices, data.zones, "ute tollnes", (d, c) => hasTemp(d) && c.includes("ute")) ??
-      findDeviceFuzzy(data.devices, data.zones, "tollnes ute", (d) => hasTemp(d)) ??
-      findDeviceFuzzy(data.devices, data.zones, "ute", (d, c) => hasTemp(d) && !c.includes("hytt")),
-  );
-
-  const tempInne = readTemp(
-    findDeviceFuzzy(data.devices, data.zones, "inne tollnes", (d) => hasTemp(d)) ??
-      findDeviceFuzzy(data.devices, data.zones, "netatmo inne", (d) => hasTemp(d)) ??
-      findDeviceFuzzy(data.devices, data.zones, "stue", (d) => hasTemp(d)) ??
-      findDeviceFuzzy(data.devices, data.zones, "netatmo", (d, c) => hasTemp(d) && !c.includes("ute") && !c.includes("hytt") && !c.includes("sov")),
-  );
-
-  const tempSov = readTemp(
-    findDeviceFuzzy(data.devices, data.zones, "soverom", (d) => hasTemp(d)) ??
-      findDeviceFuzzy(data.devices, data.zones, "sov", (d) => hasTemp(d)) ??
-      findDeviceFuzzy(data.devices, data.zones, "sovrom", (d) => hasTemp(d)),
-  );
-
-  // Lydmåling (dB) fra Netatmo innendørs på Tollnes
-  const noiseDevice =
-    findDeviceFuzzy(data.devices, data.zones, "tollnes", (d) =>
-      typeof d?.capabilities?.["measure_noise"]?.value === "number",
+  // Hovedmodulen (NAMain) = inne i hovedplan, har temp + CO2 + lyd
+  const mainModule = modules.find((m) => m.type === "NAMain") ?? null;
+  // Utemodul (NAModule1)
+  const outdoorModule = modules.find((m) => m.type === "NAModule1") ?? null;
+  // Soverom: ekstra innemodul (NAModule4) — finn én med "sov" i navnet, ellers første NAModule4
+  const bedroomModule =
+    modules.find(
+      (m) => m.type === "NAModule4" && /sov|sove|bed/i.test(m.name),
     ) ??
-    findDeviceFuzzy(data.devices, data.zones, "netatmo", (d, c) =>
-      typeof d?.capabilities?.["measure_noise"]?.value === "number" &&
-      !c.includes("hytt") &&
-      !c.includes("ute"),
-    );
-  const noiseDb =
-    typeof noiseDevice?.capabilities?.["measure_noise"]?.value === "number"
-      ? (noiseDevice.capabilities["measure_noise"].value as number)
-      : null;
+    modules.find((m) => m.type === "NAModule4") ??
+    null;
+
+  const tempInne = mainModule?.metrics.temperature ?? null;
+  const tempSov = bedroomModule?.metrics.temperature ?? null;
+  const tempUte = outdoorModule?.metrics.temperature ?? null;
+  const noiseDb = mainModule?.metrics.noise ?? null;
+  const co2Inne = mainModule?.metrics.co2 ?? null;
+  const humInne = mainModule?.metrics.humidity ?? null;
+  const humUte = outdoorModule?.metrics.humidity ?? null;
 
   // ---- Daglig min/maks (lagres i localStorage, resettes ved døgnskifte) ----
   const innerMM = useDailyMinMax("st.mm.inne", tempInne);
@@ -261,34 +278,70 @@ function SteintavlePage() {
 
   return (
     <PageShell minimalHeader>
-      <header className="container mx-auto px-6 pt-6 pb-3 text-center">
-        <div className="text-display tracking-[0.5em] text-primary text-sm uppercase mb-1">
-          Steintavlen
-        </div>
-        <div className="text-[11px] tracking-[0.3em] text-muted-foreground uppercase">
-          Borgens raske blikk · Tollnes ·{" "}
-          {now
-            ? now.toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit" })
-            : "—"}
-        </div>
-        <div className="ornate-divider mt-3">
-          <span className="text-medieval text-primary text-base">❦</span>
+      <header className="container mx-auto px-6 pt-3 pb-2 text-center">
+        <div className="text-display tracking-[0.5em] text-primary text-xs sm:text-sm uppercase">
+          Steintavlen · Tollnes ·{" "}
+          <span className="text-muted-foreground">
+            {now
+              ? now.toLocaleTimeString("nb-NO", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })
+              : "—"}
+          </span>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 sm:px-6 pb-10 space-y-5">
-        {/* Øverste rad: temperaturer + lyd + lysstyring (iPad-vennlig) */}
+      {hasThunder && (
+        <div className="container mx-auto px-4 sm:px-6 mb-2">
+          <ThunderBanner alerts={thunderAlerts} />
+        </div>
+      )}
+
+      <main className="container mx-auto px-3 sm:px-4 pb-3">
+        {/* Øverste rad: temperaturer + lyd + lysstyring (iPad-vennlig, ingen scroll) */}
         <section
-          className={`grid gap-3 sm:gap-4 ${
+          className={`grid gap-2 sm:gap-3 mb-3 ${
             hasNoise
-              ? "grid-cols-2 sm:grid-cols-3 md:grid-cols-5"
-              : "grid-cols-2 sm:grid-cols-2 md:grid-cols-4"
+              ? "grid-cols-3 sm:grid-cols-3 lg:grid-cols-5"
+              : "grid-cols-2 sm:grid-cols-2 lg:grid-cols-4"
           }`}
         >
-          <BigTemp label="Inne" temp={tempInne} mm={innerMM} accent="primary" />
-          <BigTemp label="Soverom" temp={tempSov} mm={sovMM} accent="primary" />
-          <BigTemp label="Ute · Tollnes" temp={tempUte} mm={uteMM} accent="ice" big />
-          {hasNoise && <BigNoise label="Lyd · Tollnes" db={noiseDb!} mm={noiseMM} />}
+          <BigTemp
+            label="Inne"
+            temp={tempInne}
+            mm={innerMM}
+            accent="primary"
+            sub={
+              co2Inne !== null || humInne !== null
+                ? `${humInne !== null ? `${Math.round(humInne)}% fukt` : ""}${
+                    co2Inne !== null && humInne !== null ? " · " : ""
+                  }${co2Inne !== null ? `${co2Inne} ppm` : ""}`
+                : undefined
+            }
+          />
+          <BigTemp
+            label="Soverom"
+            temp={tempSov}
+            mm={sovMM}
+            accent="primary"
+            sub={
+              bedroomModule?.metrics.humidity !== undefined
+                ? `${Math.round(bedroomModule.metrics.humidity!)}% fukt`
+                : undefined
+            }
+          />
+          <BigTemp
+            label="Ute · Tollnes"
+            temp={tempUte}
+            mm={uteMM}
+            accent="ice"
+            big
+            sub={humUte !== null ? `${Math.round(humUte)}% fukt` : undefined}
+          />
+          {hasNoise && (
+            <BigNoise label="Lyd · Tollnes" db={noiseDb!} mm={noiseMM} />
+          )}
           <LightsControl
             on={lightsOn}
             busy={lightsBusy}
@@ -296,28 +349,46 @@ function SteintavlePage() {
           />
         </section>
 
-        {/* Live kamera */}
-        <section>
-          <SectionTitle>Vakttårnet · Live</SectionTitle>
-          <div className="max-w-3xl mx-auto">
-            <TollnesCameraStrip intervalMs={5000} aspectClass="aspect-video" />
+        {/* Nederste rad: kamera + radar side om side på iPad-landscape */}
+        <section className="grid gap-3 lg:grid-cols-2">
+          <div className="panel rounded-lg overflow-hidden flex flex-col">
+            <div className="px-4 py-2 border-b border-border flex items-center justify-between">
+              <span className="text-display tracking-[0.3em] text-primary text-[10px] sm:text-xs uppercase">
+                Vakttårnet · Live
+              </span>
+              <span className="text-[9px] tracking-[0.25em] text-muted-foreground/70 uppercase">
+                Netatmo
+              </span>
+            </div>
+            <div className="flex-1">
+              <TollnesCameraStrip
+                intervalMs={5000}
+                aspectClass="aspect-video"
+                compact
+              />
+            </div>
           </div>
-        </section>
 
-        {/* Tordenvarsel-banner (kun hvis aktivt) */}
-        {hasThunder && (
-          <section>
-            <ThunderBanner alerts={thunderAlerts} />
-          </section>
-        )}
-
-        {/* MET.no radar — offisielt nedbørs/lyn-radarbilde over Sør-Norge */}
-        <section>
-          <SectionTitle>Stormens Øye · MET.no Radar</SectionTitle>
-          <div className="panel rounded-lg overflow-hidden">
+          <div className="panel rounded-lg overflow-hidden flex flex-col">
+            <div className="px-4 py-2 border-b border-border flex items-center justify-between">
+              <span className="text-display tracking-[0.3em] text-primary text-[10px] sm:text-xs uppercase">
+                Stormens Øye · Radar
+              </span>
+              <span className="text-[9px] tracking-[0.25em] text-muted-foreground/70 uppercase">
+                {hasThunder ? (
+                  <span className="text-destructive font-semibold">⚡ Torden</span>
+                ) : otherAlerts.length > 0 ? (
+                  <span className="text-primary">⚠ {otherAlerts.length} varsel</span>
+                ) : radar?.ok === true ? (
+                  `MET.no · ${new Date(radar.capturedAt).toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit" })}`
+                ) : (
+                  "MET.no"
+                )}
+              </span>
+            </div>
             <div
-              className="relative w-full bg-background flex items-center justify-center"
-              style={{ aspectRatio: "4 / 3", maxHeight: "min(60vh, 600px)" }}
+              className="relative w-full bg-background flex items-center justify-center flex-1"
+              style={{ aspectRatio: "4 / 3" }}
             >
               {radar === null && (
                 <div className="text-[11px] tracking-[0.3em] text-muted-foreground uppercase">
@@ -328,14 +399,6 @@ function SteintavlePage() {
                 <div className="text-center px-6">
                   <div className="text-2xl mb-2">🌫</div>
                   <div className="text-sm text-destructive">{radar.error}</div>
-                  <a
-                    href="https://www.yr.no/nb/kart/lyn/1-2337230"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-primary hover:underline text-xs mt-2 inline-block"
-                  >
-                    Åpne Yr lynkart ↗
-                  </a>
                 </div>
               )}
               {radar?.ok === true && (
@@ -345,7 +408,6 @@ function SteintavlePage() {
                     alt="MET.no radar — Sør-Norge"
                     className="absolute inset-0 w-full h-full object-contain"
                   />
-                  {/* Tollnes-markør (omtrent midt i Sør-Norge) */}
                   <div
                     className="absolute pointer-events-none"
                     style={{
@@ -365,41 +427,20 @@ function SteintavlePage() {
                 </>
               )}
             </div>
-            <div className="px-4 py-3 flex items-center justify-between text-[11px] tracking-[0.25em] uppercase text-muted-foreground border-t border-border gap-3 flex-wrap">
-              <span>
-                {hasThunder ? (
-                  <span className="text-destructive font-semibold">⚡ Torden i området</span>
-                ) : otherAlerts.length > 0 ? (
-                  <span className="text-primary">⚠ {otherAlerts.length} aktivt varsel</span>
-                ) : radar?.ok === true ? (
-                  <span>MET.no · {new Date(radar.capturedAt).toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit" })}</span>
-                ) : (
-                  <span>MET.no · Sør-Norge</span>
-                )}
-              </span>
-              <a
-                href="https://www.yr.no/nb/kart/lyn/1-2337230"
-                target="_blank"
-                rel="noreferrer"
-                className="text-primary hover:underline"
-              >
-                Yr lynkart ↗
-              </a>
-            </div>
             {otherAlerts.length > 0 && (
-              <div className="px-4 py-3 border-t border-border space-y-2">
+              <div className="px-3 py-2 border-t border-border space-y-1 max-h-24 overflow-y-auto">
                 {otherAlerts.map((a) => (
-                  <div key={a.id} className="flex items-start gap-3 text-sm">
+                  <div key={a.id} className="flex items-start gap-2 text-[11px]">
                     <span
-                      className="mt-1 w-2.5 h-2.5 rounded-full shrink-0"
+                      className="mt-1 w-2 h-2 rounded-full shrink-0"
                       style={{ background: alertColor(a.awarenessColor) }}
                     />
-                    <div className="flex-1">
-                      <div className="text-foreground">{a.title}</div>
+                    <div className="flex-1 truncate">
+                      <span className="text-foreground">{a.title}</span>
                       {a.area && (
-                        <div className="text-[10px] tracking-[0.2em] text-muted-foreground uppercase mt-0.5">
-                          {a.area}
-                        </div>
+                        <span className="text-[9px] tracking-[0.2em] text-muted-foreground uppercase ml-2">
+                          · {a.area}
+                        </span>
                       )}
                     </div>
                   </div>
@@ -457,17 +498,19 @@ function BigTemp({
   mm,
   accent = "primary",
   big = false,
+  sub,
 }: {
   label: string;
   temp: number | null;
   mm: MinMax;
   accent?: "primary" | "ice";
   big?: boolean;
+  sub?: string;
 }) {
   const color = accent === "ice" ? "var(--ice)" : "var(--primary)";
   return (
     <article
-      className="panel rounded-lg p-4 sm:p-5 text-center flex flex-col items-center justify-center"
+      className="panel rounded-lg p-3 sm:p-4 text-center flex flex-col items-center justify-center"
       style={
         big
           ? {
@@ -480,16 +523,21 @@ function BigTemp({
         {label}
       </div>
       <div
-        className={`text-display leading-none mt-2 ${
+        className={`text-display leading-none mt-1.5 ${
           big
-            ? "text-5xl sm:text-6xl md:text-7xl"
-            : "text-4xl sm:text-5xl md:text-5xl"
+            ? "text-4xl sm:text-5xl md:text-6xl"
+            : "text-3xl sm:text-4xl md:text-5xl"
         }`}
         style={{ color }}
       >
         {temp !== null ? `${temp.toFixed(1)}°` : "—"}
       </div>
       <MinMaxRow mm={mm} unit="°" />
+      {sub && (
+        <div className="text-[9px] sm:text-[10px] tracking-[0.2em] text-muted-foreground/70 uppercase mt-1.5">
+          {sub}
+        </div>
+      )}
     </article>
   );
 }
