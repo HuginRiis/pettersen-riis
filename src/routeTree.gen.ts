@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as VarRouteImport } from './routes/var'
+import { Route as TurerRouteImport } from './routes/turer'
 import { Route as TreningRouteImport } from './routes/trening'
 import { Route as SteintavleRouteImport } from './routes/steintavle'
 import { Route as SmarthusRouteImport } from './routes/smarthus'
@@ -27,6 +28,11 @@ import { Route as ApiHomeyCallbackRouteImport } from './routes/api.homey.callbac
 const VarRoute = VarRouteImport.update({
   id: '/var',
   path: '/var',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TurerRoute = TurerRouteImport.update({
+  id: '/turer',
+  path: '/turer',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TreningRoute = TreningRouteImport.update({
@@ -105,6 +111,7 @@ export interface FileRoutesByFullPath {
   '/smarthus': typeof SmarthusRoute
   '/steintavle': typeof SteintavleRoute
   '/trening': typeof TreningRoute
+  '/turer': typeof TurerRoute
   '/var': typeof VarRoute
   '/api/homey/callback': typeof ApiHomeyCallbackRoute
   '/api/homey/start': typeof ApiHomeyStartRoute
@@ -121,6 +128,7 @@ export interface FileRoutesByTo {
   '/smarthus': typeof SmarthusRoute
   '/steintavle': typeof SteintavleRoute
   '/trening': typeof TreningRoute
+  '/turer': typeof TurerRoute
   '/var': typeof VarRoute
   '/api/homey/callback': typeof ApiHomeyCallbackRoute
   '/api/homey/start': typeof ApiHomeyStartRoute
@@ -138,6 +146,7 @@ export interface FileRoutesById {
   '/smarthus': typeof SmarthusRoute
   '/steintavle': typeof SteintavleRoute
   '/trening': typeof TreningRoute
+  '/turer': typeof TurerRoute
   '/var': typeof VarRoute
   '/api/homey/callback': typeof ApiHomeyCallbackRoute
   '/api/homey/start': typeof ApiHomeyStartRoute
@@ -156,6 +165,7 @@ export interface FileRouteTypes {
     | '/smarthus'
     | '/steintavle'
     | '/trening'
+    | '/turer'
     | '/var'
     | '/api/homey/callback'
     | '/api/homey/start'
@@ -172,6 +182,7 @@ export interface FileRouteTypes {
     | '/smarthus'
     | '/steintavle'
     | '/trening'
+    | '/turer'
     | '/var'
     | '/api/homey/callback'
     | '/api/homey/start'
@@ -188,6 +199,7 @@ export interface FileRouteTypes {
     | '/smarthus'
     | '/steintavle'
     | '/trening'
+    | '/turer'
     | '/var'
     | '/api/homey/callback'
     | '/api/homey/start'
@@ -205,6 +217,7 @@ export interface RootRouteChildren {
   SmarthusRoute: typeof SmarthusRoute
   SteintavleRoute: typeof SteintavleRoute
   TreningRoute: typeof TreningRoute
+  TurerRoute: typeof TurerRoute
   VarRoute: typeof VarRoute
   ApiHomeyCallbackRoute: typeof ApiHomeyCallbackRoute
   ApiHomeyStartRoute: typeof ApiHomeyStartRoute
@@ -219,6 +232,13 @@ declare module '@tanstack/react-router' {
       path: '/var'
       fullPath: '/var'
       preLoaderRoute: typeof VarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/turer': {
+      id: '/turer'
+      path: '/turer'
+      fullPath: '/turer'
+      preLoaderRoute: typeof TurerRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/trening': {
@@ -325,6 +345,7 @@ const rootRouteChildren: RootRouteChildren = {
   SmarthusRoute: SmarthusRoute,
   SteintavleRoute: SteintavleRoute,
   TreningRoute: TreningRoute,
+  TurerRoute: TurerRoute,
   VarRoute: VarRoute,
   ApiHomeyCallbackRoute: ApiHomeyCallbackRoute,
   ApiHomeyStartRoute: ApiHomeyStartRoute,
@@ -334,3 +355,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
