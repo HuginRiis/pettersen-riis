@@ -92,7 +92,7 @@ export type Database = {
           password_encrypted: string
           refresh_token: string | null
           updated_at: string
-          user_id: string
+          user_id: string | null
           user_id_jaguar: string | null
           vehicle_nickname: string | null
           vin: string | null
@@ -108,7 +108,7 @@ export type Database = {
           password_encrypted: string
           refresh_token?: string | null
           updated_at?: string
-          user_id: string
+          user_id?: string | null
           user_id_jaguar?: string | null
           vehicle_nickname?: string | null
           vin?: string | null
@@ -124,7 +124,7 @@ export type Database = {
           password_encrypted?: string
           refresh_token?: string | null
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
           user_id_jaguar?: string | null
           vehicle_nickname?: string | null
           vin?: string | null
