@@ -235,14 +235,28 @@ function NowPanel({ day }: { day: DayBucket }) {
         <div className="space-y-2">
           {entries.map(({ k, v, lvl }) => {
             const meta = ALLERGEN_META[k];
-            // Skala visning: cap ved 100 for bar
+            const isMine = MY_ALLERGENS.includes(k);
             const pct = Math.min(100, (v / 50) * 100);
             return (
               <div key={k} className="flex items-center gap-3">
-                <span className="text-xl w-6 text-center">{meta.sigil}</span>
+                <span className="text-xl w-6 text-center relative">
+                  {meta.sigil}
+                  {isMine && (
+                    <span
+                      className="absolute -top-1.5 -right-1.5 text-[9px] text-primary"
+                      title="Plager deg"
+                    >
+                      ⚔
+                    </span>
+                  )}
+                </span>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-baseline justify-between gap-2">
-                    <span className="text-sm text-foreground">{meta.name}</span>
+                    <span
+                      className={`text-sm ${isMine ? "text-foreground font-medium" : "text-foreground"}`}
+                    >
+                      {meta.name}
+                    </span>
                     <span className="flex items-baseline gap-2">
                       <span className="text-xs text-foreground font-mono">
                         {v.toFixed(1)}
