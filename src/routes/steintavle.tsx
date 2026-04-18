@@ -126,6 +126,21 @@ function SteintavlePage() {
       findDeviceFuzzy(data.devices, data.zones, "sovrom", (d) => hasTemp(d)),
   );
 
+  // Lydmåling (dB) fra Netatmo innendørs på Tollnes
+  const noiseDevice =
+    findDeviceFuzzy(data.devices, data.zones, "tollnes", (d) =>
+      typeof d?.capabilities?.["measure_noise"]?.value === "number",
+    ) ??
+    findDeviceFuzzy(data.devices, data.zones, "netatmo", (d, c) =>
+      typeof d?.capabilities?.["measure_noise"]?.value === "number" &&
+      !c.includes("hytt") &&
+      !c.includes("ute"),
+    );
+  const noiseDb =
+    typeof noiseDevice?.capabilities?.["measure_noise"]?.value === "number"
+      ? (noiseDevice.capabilities["measure_noise"].value as number)
+      : null;
+
   // ---- Varsler ----
   const thunderAlerts =
     alerts?.ok === true ? alerts.alerts.filter((a) => a.isThunder) : [];
@@ -167,6 +182,14 @@ function SteintavlePage() {
           </div>
         </section>
 
+        {/* dB-måling fra Tollnes */}
+        {noiseDb !== null && (
+          <section>
+            <SectionTitle>Lydvakten · Tollnes</SectionTitle>
+            <NoiseBox db={noiseDb} />
+          </section>
+        )}
+
         {/* Tordenvarsel-banner (kun hvis aktivt) */}
         {hasThunder && (
           <section>
@@ -174,7 +197,34 @@ function SteintavlePage() {
           </section>
         )}
 
-        {/* Radar-kart */}
+        {/* Yr lynradar — ekte live data, sentrert på Tollnes */}
+        <section>
+          <SectionTitle>Lynvarsel · Yr.no over Tollnes</SectionTitle>
+          <div className="panel rounded-lg overflow-hidden">
+            <div className="relative w-full" style={{ aspectRatio: "4 / 3", maxHeight: "min(60vh, 600px)" }}>
+              <iframe
+                title="Yr lynkart sentrert på Tollnes"
+                src="https://www.yr.no/nb/kart/lyn/1-3429877"
+                className="absolute inset-0 w-full h-full border-0"
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+              />
+            </div>
+            <div className="px-4 py-3 flex items-center justify-between text-[11px] tracking-[0.25em] uppercase text-muted-foreground border-t border-border">
+              <span>Yr.no · Live lyn</span>
+              <a
+                href="https://www.yr.no/nb/kart/lyn/1-3429877"
+                target="_blank"
+                rel="noreferrer"
+                className="text-primary hover:underline"
+              >
+                Åpne i Yr ↗
+              </a>
+            </div>
+          </div>
+        </section>
+
+        {/* Met.no radar-kart (nedbørs-skyer) */}
         <section>
           <SectionTitle>
             Tordenravnene · Værradar over Telemark
@@ -237,6 +287,45 @@ function BigTemp({
           Netatmo
         </div>
       )}
+    </article>
+  );
+}
+
+function NoiseBox({ db }: { db: number }) {
+  const pct = Math.max(0, Math.min(100, ((db - 30) / 50) * 100));
+  const loud = db >= 65;
+  const color = loud ? "var(--destructive)" : db >= 55 ? "var(--gold)" : "var(--primary)";
+  return (
+    <article
+      className="panel rounded-lg p-5 sm:p-6 flex items-center gap-5"
+      style={{
+        boxShadow: loud
+          ? `inset 0 0 0 1px color-mix(in oklab, ${color} 30%, transparent), 0 0 24px color-mix(in oklab, ${color} 18%, transparent)`
+          : undefined,
+      }}
+    >
+      <div className="text-4xl">{loud ? "📢" : db >= 55 ? "🔊" : "🔈"}</div>
+      <div className="flex-1">
+        <div className="text-[10px] tracking-[0.3em] text-muted-foreground uppercase">
+          Lydnivå · Tollnes
+        </div>
+        <div className="flex items-baseline gap-2 mt-1">
+          <span className="text-display text-4xl sm:text-5xl" style={{ color }}>
+            {db.toFixed(0)}
+          </span>
+          <span className="text-sm tracking-[0.2em] text-muted-foreground uppercase">dB</span>
+        </div>
+        <div className="mt-3 h-1.5 rounded-full bg-muted overflow-hidden">
+          <div
+            className="h-full rounded-full transition-all"
+            style={{ width: `${pct}%`, background: color }}
+          />
+        </div>
+        <div className="flex justify-between text-[9px] tracking-[0.2em] text-muted-foreground/70 uppercase mt-1">
+          <span>Stille (30 dB)</span>
+          <span>Høyt (80 dB)</span>
+        </div>
+      </div>
     </article>
   );
 }

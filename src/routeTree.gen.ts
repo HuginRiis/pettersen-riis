@@ -13,6 +13,7 @@ import { Route as VarRouteImport } from './routes/var'
 import { Route as TreningRouteImport } from './routes/trening'
 import { Route as SteintavleRouteImport } from './routes/steintavle'
 import { Route as SmarthusRouteImport } from './routes/smarthus'
+import { Route as PollenRouteImport } from './routes/pollen'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as HyttaRouteImport } from './routes/hytta'
 import { Route as HundeneRouteImport } from './routes/hundene'
@@ -41,6 +42,11 @@ const SteintavleRoute = SteintavleRouteImport.update({
 const SmarthusRoute = SmarthusRouteImport.update({
   id: '/smarthus',
   path: '/smarthus',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PollenRoute = PollenRouteImport.update({
+  id: '/pollen',
+  path: '/pollen',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -95,6 +101,7 @@ export interface FileRoutesByFullPath {
   '/hundene': typeof HundeneRoute
   '/hytta': typeof HyttaRoute
   '/login': typeof LoginRoute
+  '/pollen': typeof PollenRoute
   '/smarthus': typeof SmarthusRoute
   '/steintavle': typeof SteintavleRoute
   '/trening': typeof TreningRoute
@@ -110,6 +117,7 @@ export interface FileRoutesByTo {
   '/hundene': typeof HundeneRoute
   '/hytta': typeof HyttaRoute
   '/login': typeof LoginRoute
+  '/pollen': typeof PollenRoute
   '/smarthus': typeof SmarthusRoute
   '/steintavle': typeof SteintavleRoute
   '/trening': typeof TreningRoute
@@ -126,6 +134,7 @@ export interface FileRoutesById {
   '/hundene': typeof HundeneRoute
   '/hytta': typeof HyttaRoute
   '/login': typeof LoginRoute
+  '/pollen': typeof PollenRoute
   '/smarthus': typeof SmarthusRoute
   '/steintavle': typeof SteintavleRoute
   '/trening': typeof TreningRoute
@@ -143,6 +152,7 @@ export interface FileRouteTypes {
     | '/hundene'
     | '/hytta'
     | '/login'
+    | '/pollen'
     | '/smarthus'
     | '/steintavle'
     | '/trening'
@@ -158,6 +168,7 @@ export interface FileRouteTypes {
     | '/hundene'
     | '/hytta'
     | '/login'
+    | '/pollen'
     | '/smarthus'
     | '/steintavle'
     | '/trening'
@@ -173,6 +184,7 @@ export interface FileRouteTypes {
     | '/hundene'
     | '/hytta'
     | '/login'
+    | '/pollen'
     | '/smarthus'
     | '/steintavle'
     | '/trening'
@@ -189,6 +201,7 @@ export interface RootRouteChildren {
   HundeneRoute: typeof HundeneRoute
   HyttaRoute: typeof HyttaRoute
   LoginRoute: typeof LoginRoute
+  PollenRoute: typeof PollenRoute
   SmarthusRoute: typeof SmarthusRoute
   SteintavleRoute: typeof SteintavleRoute
   TreningRoute: typeof TreningRoute
@@ -227,6 +240,13 @@ declare module '@tanstack/react-router' {
       path: '/smarthus'
       fullPath: '/smarthus'
       preLoaderRoute: typeof SmarthusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pollen': {
+      id: '/pollen'
+      path: '/pollen'
+      fullPath: '/pollen'
+      preLoaderRoute: typeof PollenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -301,6 +321,7 @@ const rootRouteChildren: RootRouteChildren = {
   HundeneRoute: HundeneRoute,
   HyttaRoute: HyttaRoute,
   LoginRoute: LoginRoute,
+  PollenRoute: PollenRoute,
   SmarthusRoute: SmarthusRoute,
   SteintavleRoute: SteintavleRoute,
   TreningRoute: TreningRoute,
