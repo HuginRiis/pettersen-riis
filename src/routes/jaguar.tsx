@@ -11,6 +11,7 @@ import {
   type JaguarDashboard,
 } from "@/server/jaguar";
 import jaguarImg from "@/assets/jaguar.jpg";
+import jaguarImg from "@/assets/jaguar.jpg";
 
 export const Route = createFileRoute("/jaguar")({
   head: () => ({
@@ -26,6 +27,7 @@ export const Route = createFileRoute("/jaguar")({
         property: "og:description",
         content: "Den lydløse jernhesten — batteri, rekkevidde og klima fra borgens stallplass.",
       },
+      { property: "og:image", content: jaguarImg },
     ],
   }),
   component: JaguarPage,
@@ -66,27 +68,29 @@ function JaguarPage() {
         eyebrow="Husets Stallplass"
         title="Jernhesten"
         subtitle="Den lydløse hesten av sølv og glass — alltid klar for ferden."
+        image={jaguarImg}
       />
+      <div className="container mx-auto px-4 py-10 space-y-6">
+        {state.kind === "loading" && (
+          <div className="text-center text-muted-foreground py-12">
+            Sender ravner til stallen…
+          </div>
+        )}
 
-      {state.kind === "loading" && (
-        <div className="text-center text-muted-foreground py-12">
-          Sender ravner til stallen…
-        </div>
-      )}
+        {state.kind === "error" && (
+          <div className="rounded-lg border border-destructive/40 bg-destructive/10 text-destructive px-4 py-3">
+            {state.message}
+          </div>
+        )}
 
-      {state.kind === "error" && (
-        <div className="rounded-lg border border-destructive/40 bg-destructive/10 text-destructive px-4 py-3">
-          {state.message}
-        </div>
-      )}
+        {state.kind === "ok" && !state.data.connected && (
+          <ConnectForm onConnected={load} />
+        )}
 
-      {state.kind === "ok" && !state.data.connected && (
-        <ConnectForm onConnected={load} />
-      )}
-
-      {state.kind === "ok" && state.data.connected && (
-        <Dashboard data={state.data} onChanged={load} />
-      )}
+        {state.kind === "ok" && state.data.connected && (
+          <Dashboard data={state.data} onChanged={load} />
+        )}
+      </div>
     </PageShell>
   );
 }
