@@ -31,15 +31,33 @@ const inputSchema = z.object({
   category: z.enum(["fottur", "topptur", "sykkel", "bil"]),
 });
 
+export type RouteStep = {
+  step: number;
+  instruction: string;
+};
+
 export type TripSuggestion = {
   name: string;
   area: string;
   difficulty: "Lett" | "Middels" | "Krevende";
   duration: string;
   distanceKm: number | null;
+  elevationGainM: number | null;
   highlights: string[];
   description: string;
+  longDescription: string;
   startHint: string;
+  startLat: number | null;
+  startLon: number | null;
+  endHint: string | null;
+  routeSteps: RouteStep[];
+  recommendedGear: string[];
+  bestSeason: string;
+  transport: string;
+  parking: string;
+  warnings: string[];
+  facilities: string[];
+  scenery: string;
 };
 
 export type TripResponse =
@@ -66,7 +84,7 @@ export const getTripSuggestions = createServerFn({ method: "POST" })
 
     const systemPrompt = `Du er en kunnskapsrik norsk turguide som kjenner Norges natur, fjell, fjorder og kulturlandskap fra innerst i fjordene til Lofoten og Finnmark. Du svarer ALLTID på norsk (bokmål) i en lett episk, fortellerglad tone som passer en Game of Thrones-inspirert hjemmeside ("House Pettersen Riis of Skien"). Bruk gjerne uttrykk som "ferden", "raste", "stien", "jernhesten" (sykkel/bil), men hold informasjonen praktisk og korrekt. Ikke finn på steder — hold deg til reelle, kjente turmål.`;
 
-    const userPrompt = `Foreslå 5 konkrete ${categoryLabel[data.category]} i nærheten av "${data.location}", Norge. Velg ekte, kjente turer i området (innen rimelig kjøreavstand for bil/sykkel, eller gangavstand for fotturer). Returner strukturert data via verktøyet "return_trip_suggestions". Sørg for variasjon i vanskelighet og lengde.`;
+    const userPrompt = `Foreslå 5 konkrete ${categoryLabel[data.category]} i nærheten av "${data.location}", Norge. Velg ekte, kjente turer i området (innen rimelig kjøreavstand for bil/sykkel, eller gangavstand for fotturer). Returner detaljert, strukturert data via verktøyet "return_trip_suggestions". Sørg for variasjon i vanskelighet og lengde. Inkluder ALLE feltene i skjemaet — særlig rute-steg (3-7 konkrete trinn), GPS-koordinater for startpunkt (Norge: lat ~58-71, lon ~4-31), anbefalt utstyr, beste sesong, transport og parkering. Vær så nøyaktig som mulig.`;
 
     try {
       const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -86,7 +104,7 @@ export const getTripSuggestions = createServerFn({ method: "POST" })
               type: "function",
               function: {
                 name: "return_trip_suggestions",
-                description: "Returnerer en strukturert liste med turforslag.",
+                description: "Returnerer en strukturert liste med rike turforslag.",
                 parameters: {
                   type: "object",
                   properties: {
@@ -109,24 +127,96 @@ export const getTripSuggestions = createServerFn({ method: "POST" })
                           },
                           distanceKm: {
                             type: "number",
-                            description: "Total lengde i km (rundtur eller tur/retur). Bruk 0 hvis ukjent.",
+                            description: "Total lengde i km. Bruk 0 hvis ukjent.",
+                          },
+                          elevationGainM: {
+                            type: "number",
+                            description: "Høydemeter stigning totalt. Bruk 0 hvis flatt eller ukjent.",
                           },
                           highlights: {
                             type: "array",
                             items: { type: "string" },
                             minItems: 2,
-                            maxItems: 4,
+                            maxItems: 5,
                             description: "Korte stikkord om hva som gjør turen verdt det",
                           },
                           description: {
                             type: "string",
+                            description: "1-2 setninger kort sammendrag i episk tone.",
+                          },
+                          longDescription: {
+                            type: "string",
                             description:
-                              "1-3 setninger som beskriver turen i en lett episk, fortellerglad tone.",
+                              "3-6 setninger som beskriver turen i detalj — landskap, hva man ser, atmosfære. Lett episk tone.",
                           },
                           startHint: {
                             type: "string",
-                            description:
-                              "Hvordan komme til startpunkt (parkering, transport eller adresse)",
+                            description: "Beskrivelse av startpunkt (sted, parkering, adresse)",
+                          },
+                          startLat: {
+                            type: "number",
+                            description: "Breddegrad for startpunkt (Norge: 58-71). Bruk 0 hvis ukjent.",
+                          },
+                          startLon: {
+                            type: "number",
+                            description: "Lengdegrad for startpunkt (Norge: 4-31). Bruk 0 hvis ukjent.",
+                          },
+                          endHint: {
+                            type: "string",
+                            description: "Beskrivelse av sluttpunkt hvis annerledes enn start (ellers tom streng).",
+                          },
+                          routeSteps: {
+                            type: "array",
+                            minItems: 3,
+                            maxItems: 7,
+                            items: {
+                              type: "object",
+                              properties: {
+                                step: { type: "number", description: "Trinn-nummer (1, 2, 3...)" },
+                                instruction: {
+                                  type: "string",
+                                  description: "Konkret instruksjon for dette trinnet av turen",
+                                },
+                              },
+                              required: ["step", "instruction"],
+                              additionalProperties: false,
+                            },
+                            description: "Steg-for-steg ruteveiledning fra start til mål.",
+                          },
+                          recommendedGear: {
+                            type: "array",
+                            items: { type: "string" },
+                            minItems: 2,
+                            maxItems: 8,
+                            description: "Anbefalt utstyr (sko, klær, mat, kart osv.)",
+                          },
+                          bestSeason: {
+                            type: "string",
+                            description: "Beste tid på året, f.eks. 'Juni–september' eller 'Hele året'",
+                          },
+                          transport: {
+                            type: "string",
+                            description: "Hvordan komme seg dit (bil, buss, tog, fly + lokal transport)",
+                          },
+                          parking: {
+                            type: "string",
+                            description: "Parkeringsmuligheter ved start (gratis/avgift/begrenset)",
+                          },
+                          warnings: {
+                            type: "array",
+                            items: { type: "string" },
+                            maxItems: 5,
+                            description: "Advarsler — vær, terreng, dyreliv, sesongstenging osv.",
+                          },
+                          facilities: {
+                            type: "array",
+                            items: { type: "string" },
+                            maxItems: 6,
+                            description: "Fasiliteter underveis (toalett, hytter, vann, mat osv.)",
+                          },
+                          scenery: {
+                            type: "string",
+                            description: "Hva slags landskap dominerer (fjell, skog, kyst, kulturlandskap...)",
                           },
                         },
                         required: [
@@ -135,9 +225,22 @@ export const getTripSuggestions = createServerFn({ method: "POST" })
                           "difficulty",
                           "duration",
                           "distanceKm",
+                          "elevationGainM",
                           "highlights",
                           "description",
+                          "longDescription",
                           "startHint",
+                          "startLat",
+                          "startLon",
+                          "endHint",
+                          "routeSteps",
+                          "recommendedGear",
+                          "bestSeason",
+                          "transport",
+                          "parking",
+                          "warnings",
+                          "facilities",
+                          "scenery",
                         ],
                         additionalProperties: false,
                       },
@@ -184,10 +287,24 @@ export const getTripSuggestions = createServerFn({ method: "POST" })
       if (!Array.isArray(suggestions) || suggestions.length === 0) {
         return { ok: false, error: "Ingen turforslag funnet for dette området." };
       }
-      // Normaliser distanceKm: 0 betyr "ukjent"
-      const cleaned: TripSuggestion[] = suggestions.map((s) => ({
+      // Normaliser tomme/nullverdier
+      const cleaned: TripSuggestion[] = suggestions.map((s: any) => ({
         ...s,
         distanceKm: s.distanceKm && s.distanceKm > 0 ? s.distanceKm : null,
+        elevationGainM: s.elevationGainM && s.elevationGainM > 0 ? s.elevationGainM : null,
+        startLat:
+          typeof s.startLat === "number" && s.startLat >= 57 && s.startLat <= 72
+            ? s.startLat
+            : null,
+        startLon:
+          typeof s.startLon === "number" && s.startLon >= 3 && s.startLon <= 32
+            ? s.startLon
+            : null,
+        endHint: s.endHint && s.endHint.trim().length > 0 ? s.endHint : null,
+        routeSteps: Array.isArray(s.routeSteps) ? s.routeSteps : [],
+        recommendedGear: Array.isArray(s.recommendedGear) ? s.recommendedGear : [],
+        warnings: Array.isArray(s.warnings) ? s.warnings : [],
+        facilities: Array.isArray(s.facilities) ? s.facilities : [],
       }));
       return {
         ok: true,

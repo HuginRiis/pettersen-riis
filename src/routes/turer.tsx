@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { MapPin, Loader2, Mountain, Bike, Car, Footprints, Compass } from "lucide-react";
 import { PageShell, PageHero } from "@/components/PageShell";
+import { TripDetailDialog } from "@/components/TripDetailDialog";
 import { getTripSuggestions, reverseGeocode, type TripSuggestion } from "@/server/turer";
 import turerImg from "@/assets/turer.jpg";
 
@@ -59,6 +60,7 @@ function TurerPage() {
   const [category, setCategory] = useState<Category>("fottur");
   const [state, setState] = useState<State>({ kind: "idle" });
   const [gpsLoading, setGpsLoading] = useState(false);
+  const [activeTrip, setActiveTrip] = useState<TripSuggestion | null>(null);
 
   const fetchSuggestions = useServerFn(getTripSuggestions);
   const reverse = useServerFn(reverseGeocode);
@@ -256,12 +258,22 @@ function TurerPage() {
             </div>
             <div className="grid gap-4 md:grid-cols-2">
               {state.suggestions.map((s, i) => (
-                <TripCard key={`${s.name}-${i}`} trip={s} />
+                <TripCard
+                  key={`${s.name}-${i}`}
+                  trip={s}
+                  onOpen={() => setActiveTrip(s)}
+                />
               ))}
             </div>
           </div>
         )}
       </section>
+
+      <TripDetailDialog
+        trip={activeTrip}
+        open={activeTrip !== null}
+        onOpenChange={(v) => !v && setActiveTrip(null)}
+      />
     </PageShell>
   );
 }
@@ -270,7 +282,7 @@ function labelForCategory(c: Category) {
   return categories.find((x) => x.key === c)?.label ?? c;
 }
 
-function TripCard({ trip }: { trip: TripSuggestion }) {
+function TripCard({ trip, onOpen }: { trip: TripSuggestion; onOpen: () => void }) {
   const diffColor =
     trip.difficulty === "Lett"
       ? "text-emerald-400 border-emerald-400/40"
@@ -279,7 +291,12 @@ function TripCard({ trip }: { trip: TripSuggestion }) {
         : "text-rose-400 border-rose-400/40";
 
   return (
-    <article className="panel rounded-lg p-5 glow-on-hover h-full flex flex-col">
+    <button
+      type="button"
+      onClick={onOpen}
+      className="panel rounded-lg p-5 glow-on-hover h-full flex flex-col text-left hover:border-primary/60 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/40"
+      aria-label={`Åpne detaljer for ${trip.name}`}
+    >
       <header className="mb-2">
         <h3 className="text-lg text-primary leading-tight">{trip.name}</h3>
         <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground mt-0.5">
@@ -299,13 +316,18 @@ function TripCard({ trip }: { trip: TripSuggestion }) {
             {trip.distanceKm.toFixed(1)} km
           </span>
         )}
+        {trip.elevationGainM !== null && (
+          <span className="px-2 py-0.5 rounded border border-border text-muted-foreground">
+            +{trip.elevationGainM} hm
+          </span>
+        )}
       </div>
 
       <p className="text-sm text-foreground/85 mb-3 flex-1">{trip.description}</p>
 
       {trip.highlights.length > 0 && (
         <ul className="text-xs text-muted-foreground space-y-1 mb-3">
-          {trip.highlights.map((h, i) => (
+          {trip.highlights.slice(0, 3).map((h, i) => (
             <li key={i} className="flex gap-2">
               <span className="text-primary">❦</span>
               <span>{h}</span>
@@ -314,10 +336,9 @@ function TripCard({ trip }: { trip: TripSuggestion }) {
         </ul>
       )}
 
-      <div className="text-[11px] text-muted-foreground border-t border-border pt-2 mt-auto">
-        <span className="uppercase tracking-wider text-primary/80">Start: </span>
-        {trip.startHint}
+      <div className="text-[11px] text-primary/90 border-t border-border pt-2 mt-auto uppercase tracking-wider">
+        Les hele krøniken →
       </div>
-    </article>
+    </button>
   );
 }
