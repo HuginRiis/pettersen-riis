@@ -7,8 +7,10 @@ import { getHomeySnapshot } from "@/server/homey";
 import { findDeviceFuzzy, readTemp } from "@/lib/homey-match";
 import {
   getTollnesAlerts,
+  getMetRadarSouthernNorway,
   type AlertsResult,
   type MetAlert,
+  type RadarResult,
 } from "@/server/lightning";
 
 export const Route = createFileRoute("/steintavle")({
@@ -45,7 +47,9 @@ function SteintavlePage() {
   const data = Route.useLoaderData() as Awaited<ReturnType<typeof getHomeySnapshot>>;
   const router = useRouter();
   const fetchAlerts = useServerFn(getTollnesAlerts);
+  const fetchRadar = useServerFn(getMetRadarSouthernNorway);
   const [alerts, setAlerts] = useState<AlertsResult | null>(null);
+  const [radar, setRadar] = useState<RadarResult | null>(null);
   const [now, setNow] = useState<Date | null>(null);
 
   useEffect(() => {
@@ -59,18 +63,29 @@ function SteintavlePage() {
         if (!cancelled) setAlerts({ ok: false, error: e?.message ?? "Feil" });
       }
     };
+    const loadRadar = async () => {
+      try {
+        const res = await fetchRadar();
+        if (!cancelled) setRadar(res);
+      } catch (e: any) {
+        if (!cancelled) setRadar({ ok: false, error: e?.message ?? "Feil" });
+      }
+    };
     loadAlerts();
+    loadRadar();
     const a = setInterval(loadAlerts, 5 * 60_000);
+    const r = setInterval(loadRadar, 5 * 60_000);
     const c = setInterval(() => setNow(new Date()), 30_000);
     // Hent ferske Homey-temperaturer hvert 60. sek
     const t = setInterval(() => router.invalidate(), 60_000);
     return () => {
       cancelled = true;
       clearInterval(a);
+      clearInterval(r);
       clearInterval(c);
       clearInterval(t);
     };
-  }, [fetchAlerts, router]);
+  }, [fetchAlerts, fetchRadar, router]);
 
   if (!data.ok) {
     return (
@@ -182,27 +197,70 @@ function SteintavlePage() {
           </section>
         )}
 
-        {/* Yr lynradar — ekte live data, sentrert på Tollnes (Skien, Telemark) */}
+        {/* MET.no radar — offisielt nedbørs/lyn-radarbilde over Sør-Norge */}
         <section>
-          <SectionTitle>Lynvarsel · Yr.no over Tollnes</SectionTitle>
+          <SectionTitle>Stormens Øye · MET.no Radar</SectionTitle>
           <div className="panel rounded-lg overflow-hidden">
-            <div className="relative w-full" style={{ aspectRatio: "4 / 3", maxHeight: "min(60vh, 600px)" }}>
-              <iframe
-                title="Yr lynkart sentrert på Tollnes, Skien"
-                src="https://www.yr.no/nb/kart/lyn/1-2337230"
-                className="absolute inset-0 w-full h-full border-0"
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-              />
+            <div
+              className="relative w-full bg-background flex items-center justify-center"
+              style={{ aspectRatio: "4 / 3", maxHeight: "min(60vh, 600px)" }}
+            >
+              {radar === null && (
+                <div className="text-[11px] tracking-[0.3em] text-muted-foreground uppercase">
+                  Sender ravn til MET.no…
+                </div>
+              )}
+              {radar?.ok === false && (
+                <div className="text-center px-6">
+                  <div className="text-2xl mb-2">🌫</div>
+                  <div className="text-sm text-destructive">{radar.error}</div>
+                  <a
+                    href="https://www.yr.no/nb/kart/lyn/1-2337230"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-primary hover:underline text-xs mt-2 inline-block"
+                  >
+                    Åpne Yr lynkart ↗
+                  </a>
+                </div>
+              )}
+              {radar?.ok === true && (
+                <>
+                  <img
+                    src={radar.dataUrl}
+                    alt="MET.no radar — Sør-Norge"
+                    className="absolute inset-0 w-full h-full object-contain"
+                  />
+                  {/* Tollnes-markør (omtrent midt i Sør-Norge) */}
+                  <div
+                    className="absolute pointer-events-none"
+                    style={{
+                      left: "44%",
+                      top: "62%",
+                      transform: "translate(-50%, -50%)",
+                    }}
+                    title="Tollnes, Skien"
+                  >
+                    <div className="relative">
+                      <div className="w-3 h-3 rounded-full bg-primary border-2 border-background shadow-[0_0_12px_var(--primary)] animate-pulse" />
+                      <div className="absolute top-4 left-1/2 -translate-x-1/2 text-[9px] tracking-[0.2em] text-primary uppercase whitespace-nowrap font-semibold drop-shadow-[0_1px_2px_black]">
+                        Tollnes
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
-            <div className="px-4 py-3 flex items-center justify-between text-[11px] tracking-[0.25em] uppercase text-muted-foreground border-t border-border">
+            <div className="px-4 py-3 flex items-center justify-between text-[11px] tracking-[0.25em] uppercase text-muted-foreground border-t border-border gap-3 flex-wrap">
               <span>
                 {hasThunder ? (
                   <span className="text-destructive font-semibold">⚡ Torden i området</span>
                 ) : otherAlerts.length > 0 ? (
                   <span className="text-primary">⚠ {otherAlerts.length} aktivt varsel</span>
+                ) : radar?.ok === true ? (
+                  <span>MET.no · {new Date(radar.capturedAt).toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit" })}</span>
                 ) : (
-                  <span>Yr.no · Live lyn</span>
+                  <span>MET.no · Sør-Norge</span>
                 )}
               </span>
               <a
@@ -211,7 +269,7 @@ function SteintavlePage() {
                 rel="noreferrer"
                 className="text-primary hover:underline"
               >
-                Åpne i Yr ↗
+                Yr lynkart ↗
               </a>
             </div>
             {otherAlerts.length > 0 && (
