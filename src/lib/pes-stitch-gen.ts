@@ -4,7 +4,7 @@
  */
 
 import opentype from "opentype.js";
-import type { Stitch, ColorBlock } from "./pes-writer";
+import { nearestPaletteIndex, type Stitch, type ColorBlock } from "./pes-writer";
 
 const SATIN_DENSITY_MM = 0.4; // distance between satin lines
 const FILL_DENSITY_MM = 0.45; // distance between fill rows
@@ -159,9 +159,6 @@ export function generateImageStitches(opts: ImageOptions): {
 /* ------------------------------------------------------------------ */
 
 function nearest(hex: string): number {
-  // Lazy import to avoid circular
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { nearestPaletteIndex } = require("./pes-writer") as typeof import("./pes-writer");
   return nearestPaletteIndex(hex);
 }
 
