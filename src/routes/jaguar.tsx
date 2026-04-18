@@ -11,7 +11,6 @@ import {
   type JaguarDashboard,
 } from "@/server/jaguar";
 import jaguarImg from "@/assets/jaguar.jpg";
-import jaguarImg from "@/assets/jaguar.jpg";
 
 export const Route = createFileRoute("/jaguar")({
   head: () => ({
