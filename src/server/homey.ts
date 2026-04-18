@@ -472,6 +472,124 @@ async function tryCameraSnapshot(
   throw new Error("Kameraet eksponerer ingen bilder via Homey API");
 }
 
+// ============================================================
+// Bulk control: turn outdoor lights on/off
+// ============================================================
+
+async function listAllDevicesRaw(sessionToken: string, baseUrl: string): Promise<any[]> {
+  const raw = await fetchJson<any>(`${baseUrl}/api/manager/devices/device`, sessionToken);
+  if (Array.isArray(raw)) return raw;
+  if (raw && typeof raw === "object") return Object.values(raw);
+  return [];
+}
+
+async function listZonesRaw(sessionToken: string, baseUrl: string): Promise<any[]> {
+  const raw = await fetchJson<any>(`${baseUrl}/api/manager/zones/zone`, sessionToken);
+  if (Array.isArray(raw)) return raw;
+  if (raw && typeof raw === "object") return Object.values(raw);
+  return [];
+}
+
+function isOutdoorZoneName(name: string): boolean {
+  const n = name.toLowerCase();
+  return (
+    n.includes("ute") ||
+    n.includes("ut ") ||
+    n === "ut" ||
+    n.includes("hage") ||
+    n.includes("garasje") ||
+    n.includes("inngang") ||
+    n.includes("terrasse") ||
+    n.includes("veranda") ||
+    n.includes("uteområd") ||
+    n.includes("utvendig") ||
+    n.includes("outdoor") ||
+    n.includes("garden") ||
+    n.includes("yard")
+  );
+}
+
+async function setDeviceOnoff(
+  sessionToken: string,
+  baseUrl: string,
+  deviceId: string,
+  value: boolean,
+): Promise<boolean> {
+  const res = await fetch(
+    `${baseUrl}/api/manager/devices/device/${deviceId}/capability/onoff`,
+    {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${sessionToken}`,
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({ value }),
+    },
+  );
+  return res.ok;
+}
+
+export const setAllOutdoorLights = createServerFn({ method: "POST" })
+  .inputValidator((input: { on: boolean }) => input)
+  .handler(async ({ data }): Promise<{ ok: boolean; toggled: number; error?: string }> => {
+    let conn: HomeyConnection | null;
+    try {
+      conn = await getValidConnection();
+    } catch (e: any) {
+      return { ok: false, toggled: 0, error: e?.message ?? "Token-feil" };
+    }
+    if (!conn) return { ok: false, toggled: 0, error: "Ingen Homey-tilkobling" };
+
+    try {
+      const target = await resolveHomeyTarget(conn.access_token);
+      if (!target) return { ok: false, toggled: 0, error: "Fant ingen Homey" };
+
+      const delegationToken = await createDelegationToken(conn.access_token);
+      const sessionToken = await createSessionToken(target.baseUrl, delegationToken);
+
+      const [zones, devices] = await Promise.all([
+        listZonesRaw(sessionToken, target.baseUrl),
+        listAllDevicesRaw(sessionToken, target.baseUrl),
+      ]);
+
+      const outdoorZoneIds = new Set<string>(
+        zones
+          .filter((z) => isOutdoorZoneName(z?.name ?? ""))
+          .map((z) => z.id ?? z._id)
+          .filter(Boolean),
+      );
+
+      const targets = devices.filter((d) => {
+        const cls = d?.class;
+        const virt = d?.virtualClass;
+        const isLight = cls === "light" || virt === "light";
+        if (!isLight) return false;
+        const caps = d?.capabilitiesObj ?? d?.capabilities_obj ?? {};
+        if (!caps || typeof caps !== "object" || !("onoff" in caps)) return false;
+        const inOutdoorZone = d?.zone && outdoorZoneIds.has(d.zone);
+        const nameOutdoor =
+          typeof d?.name === "string" &&
+          /\b(ute|hage|garasje|inngang|terrasse|veranda|outdoor|garden|yard)\b/i.test(d.name);
+        return inOutdoorZone || nameOutdoor;
+      });
+
+      let toggled = 0;
+      await Promise.all(
+        targets.map(async (d) => {
+          const id = d.id ?? d._id;
+          if (!id) return;
+          const ok = await setDeviceOnoff(sessionToken, target.baseUrl, id, data.on);
+          if (ok) toggled += 1;
+        }),
+      );
+
+      return { ok: true, toggled };
+    } catch (e: any) {
+      return { ok: false, toggled: 0, error: e?.message ?? "Klarte ikke styre lys" };
+    }
+  });
+
 export const getTollnesCameraSnapshot = createServerFn({ method: "GET" }).handler(
   async (): Promise<CameraSnapshotResult> => {
     let conn: HomeyConnection | null;
