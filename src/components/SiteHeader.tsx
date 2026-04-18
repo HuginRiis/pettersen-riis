@@ -14,6 +14,7 @@ const links = [
   { to: "/turer", label: "Ferden" },
   { to: "/jernhesten", label: "Jernhesten" },
   { to: "/smarthus", label: "Borgens Smarthus" },
+  { to: "/brodering", label: "Brodering" },
   { to: "/steintavle", label: "Steintavle" },
 ] as const;
 
