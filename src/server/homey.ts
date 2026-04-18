@@ -656,27 +656,8 @@ export const getLivingRoomLightsState = createServerFn({ method: "GET" }).handle
       const delegationToken = await createDelegationToken(conn.access_token);
       const sessionToken = await createSessionToken(target.baseUrl, delegationToken);
 
-      const [zones, devices] = await Promise.all([
-        listZonesRaw(sessionToken, target.baseUrl),
-        listAllDevicesRaw(sessionToken, target.baseUrl),
-      ]);
-
-      const livingRoomZoneIds = new Set<string>(
-        zones
-          .filter((z) => isLivingRoomZoneName(z?.name ?? ""))
-          .map((z) => z.id ?? z._id)
-          .filter(Boolean),
-      );
-
-      const lights = devices.filter((d) => {
-        const cls = d?.class;
-        const virt = d?.virtualClass;
-        const isLight = cls === "light" || virt === "light";
-        if (!isLight) return false;
-        const caps = d?.capabilitiesObj ?? d?.capabilities_obj ?? {};
-        if (!caps || typeof caps !== "object" || !("onoff" in caps)) return false;
-        return d?.zone && livingRoomZoneIds.has(d.zone);
-      });
+      const devices = await listAllDevicesRaw(sessionToken, target.baseUrl);
+      const lights = findLivingRoomTargets(devices);
 
       const anyOn = lights.some((d) => {
         const caps = d?.capabilitiesObj ?? d?.capabilities_obj ?? {};
