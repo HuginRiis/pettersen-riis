@@ -136,18 +136,7 @@ export function HouseHero({
         style={{ background: overlay }}
       />
 
-      {/* Stjerner om natten/skumring — kun etter mount */}
-      {mounted && (dayPart === "night" || dayPart === "evening") && (
-        <Stars density={dayPart === "night" ? 50 : 20} />
-      )}
-
-      {/* Sesongpartikler — kun etter mount */}
-      {mounted && season === "winter" && <Snowfall />}
-      {mounted && season === "autumn" && <Leaves />}
-      {mounted && season === "spring" && <Pollen />}
-      {mounted && season === "summer" && (dayPart === "evening" || dayPart === "night") && (
-        <Fireflies />
-      )}
+      {/* Stjerner og sesongpartikler er fjernet etter ønske */}
 
       {/* Ravner over taket */}
       {mounted && <Ravens count={dayPart === "night" ? 3 : 2} />}
