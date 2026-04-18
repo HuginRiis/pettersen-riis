@@ -156,6 +156,7 @@ function Home() {
           <HallCard to="/turer" title="Ferden" desc="Tips til turer i nærheten." icon="🧭" />
           <HallCard to="/jernhesten" title="Jernhesten" desc="Husets lydløse ganger — Jaguar I-Pace." icon="⚡" />
           <HallCard to="/smarthus" title="Borgens Smarthus" desc="Lys, varme og varslere fra Homey." icon="🏰" />
+          <HallCard to="/brodering" title="Brodering" desc="Lag PES-filer for Brother — tekst og bilder." icon="🧵" />
           <HallCard to="/steintavle" title="Steintavle" desc="Husets innskrifter og notater." icon="🪨" />
         </div>
       </section>
@@ -239,7 +240,7 @@ function HallCard({
   desc,
   icon,
 }: {
-  to: "/agenda" | "/var" | "/pollen" | "/hytta" | "/hundene" | "/trening" | "/turer" | "/jernhesten" | "/smarthus" | "/steintavle";
+  to: "/agenda" | "/var" | "/pollen" | "/hytta" | "/hundene" | "/trening" | "/turer" | "/jernhesten" | "/smarthus" | "/brodering" | "/steintavle";
   title: string;
   desc: string;
   icon: string;
