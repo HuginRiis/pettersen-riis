@@ -1,13 +1,38 @@
+import { Link } from "@tanstack/react-router";
+import { Home } from "lucide-react";
 import { SiteHeader } from "./SiteHeader";
 import { SiteFooter } from "./SiteFooter";
 
-export function PageShell({ children }: { children: React.ReactNode }) {
+export function PageShell({
+  children,
+  minimalHeader = false,
+}: {
+  children: React.ReactNode;
+  minimalHeader?: boolean;
+}) {
   return (
     <div className="min-h-screen flex flex-col">
-      <SiteHeader />
+      {minimalHeader ? <MinimalHeader /> : <SiteHeader />}
       <main className="flex-1">{children}</main>
       <SiteFooter />
     </div>
+  );
+}
+
+function MinimalHeader() {
+  return (
+    <header className="sticky top-0 z-50 backdrop-blur-md bg-background/80 border-b border-border">
+      <div className="container mx-auto px-4 h-14 flex items-center justify-center">
+        <Link
+          to="/"
+          aria-label="Hjem"
+          title="Hjem"
+          className="w-10 h-10 rounded-full border border-primary/40 flex items-center justify-center text-primary hover:shadow-[0_0_20px_var(--color-primary)] transition-shadow"
+        >
+          <Home size={18} />
+        </Link>
+      </div>
+    </header>
   );
 }
 

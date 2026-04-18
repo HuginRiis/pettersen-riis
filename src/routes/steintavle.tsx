@@ -1,9 +1,14 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
+import { Lightbulb, LightbulbOff, Loader2 } from "lucide-react";
 import { PageShell } from "@/components/PageShell";
 import { TollnesCameraStrip } from "@/components/TollnesCameraStrip";
-import { getHomeySnapshot } from "@/server/homey";
+import {
+  getHomeySnapshot,
+  getLivingRoomLightsState,
+  setLivingRoomLights,
+} from "@/server/homey";
 import { findDeviceFuzzy, readTemp } from "@/lib/homey-match";
 import {
   getTollnesAlerts,
@@ -32,7 +37,7 @@ export const Route = createFileRoute("/steintavle")({
   loader: () => getHomeySnapshot(),
   component: SteintavlePage,
   errorComponent: ({ error }) => (
-    <PageShell>
+    <PageShell minimalHeader>
       <section className="container mx-auto px-4 py-16">
         <div className="panel rounded-lg p-8 text-center">
           <h1 className="heading-hero text-3xl mb-4">Steintavlen er stum</h1>
@@ -48,9 +53,13 @@ function SteintavlePage() {
   const router = useRouter();
   const fetchAlerts = useServerFn(getTollnesAlerts);
   const fetchRadar = useServerFn(getMetRadarSouthernNorway);
+  const fetchLightsState = useServerFn(getLivingRoomLightsState);
+  const toggleLights = useServerFn(setLivingRoomLights);
   const [alerts, setAlerts] = useState<AlertsResult | null>(null);
   const [radar, setRadar] = useState<RadarResult | null>(null);
   const [now, setNow] = useState<Date | null>(null);
+  const [lightsOn, setLightsOn] = useState<boolean | null>(null);
+  const [lightsBusy, setLightsBusy] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -71,11 +80,21 @@ function SteintavlePage() {
         if (!cancelled) setRadar({ ok: false, error: e?.message ?? "Feil" });
       }
     };
+    const loadLights = async () => {
+      try {
+        const res = await fetchLightsState();
+        if (!cancelled && res.ok) setLightsOn(res.anyOn);
+      } catch {
+        // ignore
+      }
+    };
     loadAlerts();
     loadRadar();
+    loadLights();
     const a = setInterval(loadAlerts, 5 * 60_000);
     const r = setInterval(loadRadar, 5 * 60_000);
     const c = setInterval(() => setNow(new Date()), 30_000);
+    const l = setInterval(loadLights, 30_000);
     // Hent ferske Homey-temperaturer hvert 60. sek
     const t = setInterval(() => router.invalidate(), 60_000);
     return () => {
@@ -83,13 +102,30 @@ function SteintavlePage() {
       clearInterval(a);
       clearInterval(r);
       clearInterval(c);
+      clearInterval(l);
       clearInterval(t);
     };
-  }, [fetchAlerts, fetchRadar, router]);
+  }, [fetchAlerts, fetchRadar, fetchLightsState, router]);
+
+  const handleToggleLights = async () => {
+    if (lightsBusy) return;
+    const next = !(lightsOn ?? false);
+    setLightsBusy(true);
+    setLightsOn(next); // optimistic
+    try {
+      const res = await toggleLights({ data: { on: next } });
+      if (!res.ok) setLightsOn(!next);
+    } catch {
+      setLightsOn(!next);
+    } finally {
+      setLightsBusy(false);
+    }
+  };
+
 
   if (!data.ok) {
     return (
-      <PageShell>
+      <PageShell minimalHeader>
         <section className="container mx-auto px-4 py-20 text-center">
           <h1 className="heading-hero text-4xl mb-4">Steintavlen sover</h1>
           <p className="text-muted-foreground">
@@ -150,7 +186,7 @@ function SteintavlePage() {
   const hasThunder = thunderAlerts.length > 0;
 
   return (
-    <PageShell>
+    <PageShell minimalHeader>
       <header className="container mx-auto px-6 pt-6 pb-3 text-center">
         <div className="text-display tracking-[0.5em] text-primary text-sm uppercase mb-1">
           Steintavlen
@@ -167,11 +203,25 @@ function SteintavlePage() {
       </header>
 
       <main className="container mx-auto px-4 sm:px-6 pb-10 space-y-5">
-        {/* Tre store temperaturbokser */}
-        <section className="grid grid-cols-3 gap-3 sm:gap-4">
+        {/* Fire bokser: Inne, Soverom, Ute, Lyd */}
+        <section
+          className={`grid gap-3 sm:gap-4 ${
+            noiseDb !== null ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-3"
+          }`}
+        >
           <BigTemp label="Inne" temp={tempInne} accent="primary" />
           <BigTemp label="Soverom" temp={tempSov} accent="primary" />
           <BigTemp label="Ute · Tollnes" temp={tempUte} accent="ice" big />
+          {noiseDb !== null && <BigNoise label="Lyd · Tollnes" db={noiseDb} />}
+        </section>
+
+        {/* Lysstyring · Stuen */}
+        <section>
+          <LightsControl
+            on={lightsOn}
+            busy={lightsBusy}
+            onToggle={handleToggleLights}
+          />
         </section>
 
         {/* Live kamera */}
@@ -181,14 +231,6 @@ function SteintavlePage() {
             <TollnesCameraStrip intervalMs={5000} aspectClass="aspect-video" />
           </div>
         </section>
-
-        {/* dB-måling fra Tollnes */}
-        {noiseDb !== null && (
-          <section>
-            <SectionTitle>Lydvakten · Tollnes</SectionTitle>
-            <NoiseBox db={noiseDb} />
-          </section>
-        )}
 
         {/* Tordenvarsel-banner (kun hvis aktivt) */}
         {hasThunder && (
@@ -354,44 +396,102 @@ function BigTemp({
   );
 }
 
-function NoiseBox({ db }: { db: number }) {
-  const pct = Math.max(0, Math.min(100, ((db - 30) / 50) * 100));
+function BigNoise({ label, db }: { label: string; db: number }) {
   const loud = db >= 65;
-  const color = loud ? "var(--destructive)" : db >= 55 ? "var(--gold)" : "var(--primary)";
+  const moderate = db >= 55;
+  const color = loud
+    ? "var(--destructive)"
+    : moderate
+      ? "var(--gold)"
+      : "var(--primary)";
   return (
     <article
-      className="panel rounded-lg p-5 sm:p-6 flex items-center gap-5"
-      style={{
-        boxShadow: loud
-          ? `inset 0 0 0 1px color-mix(in oklab, ${color} 30%, transparent), 0 0 24px color-mix(in oklab, ${color} 18%, transparent)`
-          : undefined,
-      }}
+      className="panel rounded-lg p-4 sm:p-5 text-center flex flex-col items-center justify-center"
+      style={
+        loud
+          ? {
+              boxShadow: `inset 0 0 0 1px color-mix(in oklab, ${color} 30%, transparent), 0 0 24px color-mix(in oklab, ${color} 18%, transparent)`,
+            }
+          : undefined
+      }
     >
-      <div className="text-4xl">{loud ? "📢" : db >= 55 ? "🔊" : "🔈"}</div>
-      <div className="flex-1">
-        <div className="text-[10px] tracking-[0.3em] text-muted-foreground uppercase">
-          Lydnivå · Tollnes
-        </div>
-        <div className="flex items-baseline gap-2 mt-1">
-          <span className="text-display text-4xl sm:text-5xl" style={{ color }}>
-            {db.toFixed(0)}
-          </span>
-          <span className="text-sm tracking-[0.2em] text-muted-foreground uppercase">dB</span>
-        </div>
-        <div className="mt-3 h-1.5 rounded-full bg-muted overflow-hidden">
-          <div
-            className="h-full rounded-full transition-all"
-            style={{ width: `${pct}%`, background: color }}
-          />
-        </div>
-        <div className="flex justify-between text-[9px] tracking-[0.2em] text-muted-foreground/70 uppercase mt-1">
-          <span>Stille (30 dB)</span>
-          <span>Høyt (80 dB)</span>
-        </div>
+      <div className="text-[9px] sm:text-[11px] tracking-[0.3em] text-muted-foreground uppercase">
+        {label}
+      </div>
+      <div
+        className="text-display leading-none mt-2 text-4xl sm:text-5xl md:text-6xl"
+        style={{ color }}
+      >
+        {db.toFixed(0)}
+      </div>
+      <div className="text-[10px] tracking-[0.3em] text-muted-foreground/70 uppercase mt-2">
+        dB · {loud ? "Høyt" : moderate ? "Middels" : "Stille"}
       </div>
     </article>
   );
 }
+
+function LightsControl({
+  on,
+  busy,
+  onToggle,
+}: {
+  on: boolean | null;
+  busy: boolean;
+  onToggle: () => void;
+}) {
+  const isOn = on === true;
+  const color = isOn ? "var(--gold)" : "var(--muted-foreground)";
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      disabled={busy || on === null}
+      aria-pressed={isOn}
+      className="panel rounded-lg p-5 sm:p-6 w-full flex items-center gap-5 text-left transition-all hover:brightness-110 disabled:opacity-60 disabled:cursor-wait"
+      style={
+        isOn
+          ? {
+              boxShadow: `inset 0 0 0 1px color-mix(in oklab, ${color} 35%, transparent), 0 0 32px color-mix(in oklab, ${color} 22%, transparent)`,
+            }
+          : undefined
+      }
+    >
+      <div
+        className="w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center shrink-0"
+        style={{
+          background: isOn
+            ? `radial-gradient(circle, color-mix(in oklab, ${color} 35%, transparent), transparent 70%)`
+            : "transparent",
+          border: `1px solid color-mix(in oklab, ${color} 40%, transparent)`,
+        }}
+      >
+        {busy ? (
+          <Loader2 className="animate-spin" size={26} style={{ color }} />
+        ) : isOn ? (
+          <Lightbulb size={28} style={{ color }} />
+        ) : (
+          <LightbulbOff size={28} style={{ color }} />
+        )}
+      </div>
+      <div className="flex-1">
+        <div className="text-[10px] tracking-[0.3em] text-muted-foreground uppercase">
+          Stuens lys
+        </div>
+        <div
+          className="text-display text-2xl sm:text-3xl mt-1"
+          style={{ color: isOn ? color : "var(--foreground)" }}
+        >
+          {on === null ? "Henter…" : isOn ? "Tent" : "Slukket"}
+        </div>
+        <div className="text-[10px] tracking-[0.25em] text-muted-foreground/70 uppercase mt-1">
+          Trykk for å {isOn ? "slukke" : "tenne"} alt
+        </div>
+      </div>
+    </button>
+  );
+}
+
 
 function ThunderBanner({ alerts }: { alerts: MetAlert[] }) {
   return (
