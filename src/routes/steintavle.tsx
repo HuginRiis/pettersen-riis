@@ -10,6 +10,7 @@ import {
   setLivingRoomLights,
 } from "@/server/homey";
 import { findDeviceFuzzy, readTemp } from "@/lib/homey-match";
+import { useDailyMinMax, type MinMax } from "@/hooks/use-daily-minmax";
 import {
   getTollnesAlerts,
   getMetRadarSouthernNorway,
