@@ -10,6 +10,7 @@ import {
   setLivingRoomLights,
 } from "@/server/homey";
 import { findDeviceFuzzy, readTemp } from "@/lib/homey-match";
+import { useDailyMinMax, type MinMax } from "@/hooks/use-daily-minmax";
 import {
   getTollnesAlerts,
   getMetRadarSouthernNorway,
@@ -107,16 +108,17 @@ function SteintavlePage() {
     };
   }, [fetchAlerts, fetchRadar, fetchLightsState, router]);
 
-  const handleToggleLights = async () => {
+  const handleSetLights = async (next: boolean) => {
     if (lightsBusy) return;
-    const next = !(lightsOn ?? false);
+    if (lightsOn === next) return; // already in desired state
     setLightsBusy(true);
+    const prev = lightsOn;
     setLightsOn(next); // optimistic
     try {
       const res = await toggleLights({ data: { on: next } });
-      if (!res.ok) setLightsOn(!next);
+      if (!res.ok) setLightsOn(prev);
     } catch {
-      setLightsOn(!next);
+      setLightsOn(prev);
     } finally {
       setLightsBusy(false);
     }
@@ -178,12 +180,20 @@ function SteintavlePage() {
       ? (noiseDevice.capabilities["measure_noise"].value as number)
       : null;
 
+  // ---- Daglig min/maks (lagres i localStorage, resettes ved døgnskifte) ----
+  const innerMM = useDailyMinMax("st.mm.inne", tempInne);
+  const sovMM = useDailyMinMax("st.mm.sov", tempSov);
+  const uteMM = useDailyMinMax("st.mm.ute", tempUte);
+  const noiseMM = useDailyMinMax("st.mm.noise", noiseDb);
+
   // ---- Varsler ----
   const thunderAlerts =
     alerts?.ok === true ? alerts.alerts.filter((a) => a.isThunder) : [];
   const otherAlerts =
     alerts?.ok === true ? alerts.alerts.filter((a) => !a.isThunder) : [];
   const hasThunder = thunderAlerts.length > 0;
+
+  const hasNoise = noiseDb !== null;
 
   return (
     <PageShell minimalHeader>
@@ -203,24 +213,22 @@ function SteintavlePage() {
       </header>
 
       <main className="container mx-auto px-4 sm:px-6 pb-10 space-y-5">
-        {/* Fire bokser: Inne, Soverom, Ute, Lyd */}
+        {/* Øverste rad: temperaturer + lyd + lysstyring (iPad-vennlig) */}
         <section
           className={`grid gap-3 sm:gap-4 ${
-            noiseDb !== null ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-3"
+            hasNoise
+              ? "grid-cols-2 sm:grid-cols-3 md:grid-cols-5"
+              : "grid-cols-2 sm:grid-cols-2 md:grid-cols-4"
           }`}
         >
-          <BigTemp label="Inne" temp={tempInne} accent="primary" />
-          <BigTemp label="Soverom" temp={tempSov} accent="primary" />
-          <BigTemp label="Ute · Tollnes" temp={tempUte} accent="ice" big />
-          {noiseDb !== null && <BigNoise label="Lyd · Tollnes" db={noiseDb} />}
-        </section>
-
-        {/* Lysstyring · Stuen */}
-        <section>
+          <BigTemp label="Inne" temp={tempInne} mm={innerMM} accent="primary" />
+          <BigTemp label="Soverom" temp={tempSov} mm={sovMM} accent="primary" />
+          <BigTemp label="Ute · Tollnes" temp={tempUte} mm={uteMM} accent="ice" big />
+          {hasNoise && <BigNoise label="Lyd · Tollnes" db={noiseDb!} mm={noiseMM} />}
           <LightsControl
             on={lightsOn}
             busy={lightsBusy}
-            onToggle={handleToggleLights}
+            onSet={handleSetLights}
           />
         </section>
 
@@ -351,14 +359,44 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
   );
 }
 
+function MinMaxRow({
+  mm,
+  unit,
+  decimals = 1,
+}: {
+  mm: MinMax;
+  unit: string;
+  decimals?: number;
+}) {
+  return (
+    <div className="mt-2 flex items-center justify-center gap-3 text-[9px] sm:text-[10px] tracking-[0.2em] uppercase">
+      <span className="flex items-center gap-1 text-[var(--ice)]/80">
+        <span className="opacity-70">▼</span>
+        <span className="tabular-nums">
+          {mm ? `${mm.min.toFixed(decimals)}${unit}` : "—"}
+        </span>
+      </span>
+      <span className="text-muted-foreground/40">·</span>
+      <span className="flex items-center gap-1 text-[var(--gold)]/90">
+        <span className="opacity-70">▲</span>
+        <span className="tabular-nums">
+          {mm ? `${mm.max.toFixed(decimals)}${unit}` : "—"}
+        </span>
+      </span>
+    </div>
+  );
+}
+
 function BigTemp({
   label,
   temp,
+  mm,
   accent = "primary",
   big = false,
 }: {
   label: string;
   temp: number | null;
+  mm: MinMax;
   accent?: "primary" | "ice";
   big?: boolean;
 }) {
@@ -380,23 +418,27 @@ function BigTemp({
       <div
         className={`text-display leading-none mt-2 ${
           big
-            ? "text-6xl sm:text-7xl md:text-8xl"
-            : "text-4xl sm:text-5xl md:text-6xl"
+            ? "text-5xl sm:text-6xl md:text-7xl"
+            : "text-4xl sm:text-5xl md:text-5xl"
         }`}
         style={{ color }}
       >
         {temp !== null ? `${temp.toFixed(1)}°` : "—"}
       </div>
-      {big && (
-        <div className="text-[10px] tracking-[0.3em] text-muted-foreground/70 uppercase mt-2">
-          Netatmo
-        </div>
-      )}
+      <MinMaxRow mm={mm} unit="°" />
     </article>
   );
 }
 
-function BigNoise({ label, db }: { label: string; db: number }) {
+function BigNoise({
+  label,
+  db,
+  mm,
+}: {
+  label: string;
+  db: number;
+  mm: MinMax;
+}) {
   const loud = db >= 65;
   const moderate = db >= 55;
   const color = loud
@@ -419,14 +461,15 @@ function BigNoise({ label, db }: { label: string; db: number }) {
         {label}
       </div>
       <div
-        className="text-display leading-none mt-2 text-4xl sm:text-5xl md:text-6xl"
+        className="text-display leading-none mt-2 text-4xl sm:text-5xl md:text-5xl"
         style={{ color }}
       >
         {db.toFixed(0)}
       </div>
-      <div className="text-[10px] tracking-[0.3em] text-muted-foreground/70 uppercase mt-2">
+      <div className="text-[9px] sm:text-[10px] tracking-[0.3em] text-muted-foreground/70 uppercase mt-1">
         dB · {loud ? "Høyt" : moderate ? "Middels" : "Stille"}
       </div>
+      <MinMaxRow mm={mm} unit="" decimals={0} />
     </article>
   );
 }
@@ -434,61 +477,94 @@ function BigNoise({ label, db }: { label: string; db: number }) {
 function LightsControl({
   on,
   busy,
-  onToggle,
+  onSet,
 }: {
   on: boolean | null;
   busy: boolean;
-  onToggle: () => void;
+  onSet: (next: boolean) => void;
 }) {
   const isOn = on === true;
-  const color = isOn ? "var(--gold)" : "var(--muted-foreground)";
+  const isOff = on === false;
+  const glowColor = "var(--gold)";
   return (
-    <button
-      type="button"
-      onClick={onToggle}
-      disabled={busy || on === null}
-      aria-pressed={isOn}
-      className="panel rounded-lg p-5 sm:p-6 w-full flex items-center gap-5 text-left transition-all hover:brightness-110 disabled:opacity-60 disabled:cursor-wait"
+    <article
+      className="panel rounded-lg p-4 sm:p-5 flex flex-col items-center justify-center text-center"
       style={
         isOn
           ? {
-              boxShadow: `inset 0 0 0 1px color-mix(in oklab, ${color} 35%, transparent), 0 0 32px color-mix(in oklab, ${color} 22%, transparent)`,
+              boxShadow: `inset 0 0 0 1px color-mix(in oklab, ${glowColor} 35%, transparent), 0 0 28px color-mix(in oklab, ${glowColor} 22%, transparent)`,
             }
           : undefined
       }
     >
-      <div
-        className="w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center shrink-0"
-        style={{
-          background: isOn
-            ? `radial-gradient(circle, color-mix(in oklab, ${color} 35%, transparent), transparent 70%)`
-            : "transparent",
-          border: `1px solid color-mix(in oklab, ${color} 40%, transparent)`,
-        }}
-      >
+      <div className="text-[9px] sm:text-[11px] tracking-[0.3em] text-muted-foreground uppercase">
+        Stuens lys
+      </div>
+      <div className="mt-2 mb-2 flex items-center justify-center">
         {busy ? (
-          <Loader2 className="animate-spin" size={26} style={{ color }} />
+          <Loader2 className="animate-spin" size={32} style={{ color: glowColor }} />
         ) : isOn ? (
-          <Lightbulb size={28} style={{ color }} />
+          <Lightbulb size={36} style={{ color: glowColor }} />
         ) : (
-          <LightbulbOff size={28} style={{ color }} />
+          <LightbulbOff size={36} style={{ color: "var(--muted-foreground)" }} />
         )}
       </div>
-      <div className="flex-1">
-        <div className="text-[10px] tracking-[0.3em] text-muted-foreground uppercase">
-          Stuens lys
-        </div>
-        <div
-          className="text-display text-2xl sm:text-3xl mt-1"
-          style={{ color: isOn ? color : "var(--foreground)" }}
-        >
-          {on === null ? "Henter…" : isOn ? "Tent" : "Slukket"}
-        </div>
-        <div className="text-[10px] tracking-[0.25em] text-muted-foreground/70 uppercase mt-1">
-          Trykk for å {isOn ? "slukke" : "tenne"} alt
-        </div>
+      <div
+        className="text-display text-xs sm:text-sm tracking-[0.3em] uppercase mb-3"
+        style={{
+          color:
+            on === null
+              ? "var(--muted-foreground)"
+              : isOn
+                ? glowColor
+                : "var(--muted-foreground)",
+        }}
+      >
+        {on === null ? "Henter…" : isOn ? "Tent" : "Slukket"}
       </div>
-    </button>
+      <div className="grid grid-cols-2 gap-2 w-full">
+        <button
+          type="button"
+          onClick={() => onSet(true)}
+          disabled={busy || on === null || isOn}
+          aria-pressed={isOn}
+          aria-label="Tenn stuens lys"
+          className="rounded-md py-2 sm:py-2.5 text-[10px] sm:text-xs tracking-[0.25em] uppercase font-semibold transition-all disabled:cursor-not-allowed"
+          style={{
+            background: isOn
+              ? `color-mix(in oklab, ${glowColor} 25%, transparent)`
+              : "color-mix(in oklab, var(--foreground) 6%, transparent)",
+            color: isOn ? glowColor : "var(--foreground)",
+            border: `1px solid color-mix(in oklab, ${glowColor} ${
+              isOn ? 60 : 25
+            }%, transparent)`,
+            opacity: busy || on === null ? 0.6 : 1,
+          }}
+        >
+          På
+        </button>
+        <button
+          type="button"
+          onClick={() => onSet(false)}
+          disabled={busy || on === null || isOff}
+          aria-pressed={isOff}
+          aria-label="Slukk stuens lys"
+          className="rounded-md py-2 sm:py-2.5 text-[10px] sm:text-xs tracking-[0.25em] uppercase font-semibold transition-all disabled:cursor-not-allowed"
+          style={{
+            background: isOff
+              ? "color-mix(in oklab, var(--muted-foreground) 20%, transparent)"
+              : "color-mix(in oklab, var(--foreground) 6%, transparent)",
+            color: isOff ? "var(--foreground)" : "var(--muted-foreground)",
+            border: `1px solid color-mix(in oklab, var(--muted-foreground) ${
+              isOff ? 50 : 25
+            }%, transparent)`,
+            opacity: busy || on === null ? 0.6 : 1,
+          }}
+        >
+          Av
+        </button>
+      </div>
+    </article>
   );
 }
 
