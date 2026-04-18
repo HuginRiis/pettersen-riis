@@ -69,15 +69,18 @@ export function HyttaHero({ image, eyebrow, title, subtitle }: {
   title: string;
   subtitle?: string;
 }) {
-  // Oppdater hvert minutt så overgang dag/natt skjer naturlig
-  const [now, setNow] = useState<Date>(() => new Date());
+  // SSR-trygg: ikke les klokka før etter mount, ellers får vi hydreringsmismatch
+  const [mounted, setMounted] = useState(false);
+  const [now, setNow] = useState<Date | null>(null);
   useEffect(() => {
+    setMounted(true);
+    setNow(new Date());
     const t = setInterval(() => setNow(new Date()), 60_000);
     return () => clearInterval(t);
   }, []);
 
-  const season = getSeason(now);
-  const dayPart = getDayPart(now);
+  const season = now ? getSeason(now) : "winter";
+  const dayPart = now ? getDayPart(now) : "evening";
   const overlay = dayPartOverlay(dayPart);
 
   return (
