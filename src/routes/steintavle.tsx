@@ -179,12 +179,20 @@ function SteintavlePage() {
       ? (noiseDevice.capabilities["measure_noise"].value as number)
       : null;
 
+  // ---- Daglig min/maks (lagres i localStorage, resettes ved døgnskifte) ----
+  const innerMM = useDailyMinMax("st.mm.inne", tempInne);
+  const sovMM = useDailyMinMax("st.mm.sov", tempSov);
+  const uteMM = useDailyMinMax("st.mm.ute", tempUte);
+  const noiseMM = useDailyMinMax("st.mm.noise", noiseDb);
+
   // ---- Varsler ----
   const thunderAlerts =
     alerts?.ok === true ? alerts.alerts.filter((a) => a.isThunder) : [];
   const otherAlerts =
     alerts?.ok === true ? alerts.alerts.filter((a) => !a.isThunder) : [];
   const hasThunder = thunderAlerts.length > 0;
+
+  const hasNoise = noiseDb !== null;
 
   return (
     <PageShell minimalHeader>
@@ -204,20 +212,18 @@ function SteintavlePage() {
       </header>
 
       <main className="container mx-auto px-4 sm:px-6 pb-10 space-y-5">
-        {/* Fire bokser: Inne, Soverom, Ute, Lyd */}
+        {/* Øverste rad: temperaturer + lyd + lysstyring (iPad-vennlig) */}
         <section
           className={`grid gap-3 sm:gap-4 ${
-            noiseDb !== null ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-3"
+            hasNoise
+              ? "grid-cols-2 sm:grid-cols-3 md:grid-cols-5"
+              : "grid-cols-2 sm:grid-cols-2 md:grid-cols-4"
           }`}
         >
-          <BigTemp label="Inne" temp={tempInne} accent="primary" />
-          <BigTemp label="Soverom" temp={tempSov} accent="primary" />
-          <BigTemp label="Ute · Tollnes" temp={tempUte} accent="ice" big />
-          {noiseDb !== null && <BigNoise label="Lyd · Tollnes" db={noiseDb} />}
-        </section>
-
-        {/* Lysstyring · Stuen */}
-        <section>
+          <BigTemp label="Inne" temp={tempInne} mm={innerMM} accent="primary" />
+          <BigTemp label="Soverom" temp={tempSov} mm={sovMM} accent="primary" />
+          <BigTemp label="Ute · Tollnes" temp={tempUte} mm={uteMM} accent="ice" big />
+          {hasNoise && <BigNoise label="Lyd · Tollnes" db={noiseDb!} mm={noiseMM} />}
           <LightsControl
             on={lightsOn}
             busy={lightsBusy}
