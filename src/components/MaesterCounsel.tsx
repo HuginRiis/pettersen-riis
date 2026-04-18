@@ -215,7 +215,15 @@ function getDayPart(hour: number): DayPart {
   return "nattevakt";
 }
 
-function buildAdvice({ date, weather }: { date: Date; weather: Now | null }) {
+function buildAdvice({
+  date,
+  weather,
+  alerts = [],
+}: {
+  date: Date;
+  weather: Now | null;
+  alerts?: TelemarkAlert[];
+}) {
   const month = date.getMonth(); // 0-11
   const hour = date.getHours();
   const season = getSeason(month);
