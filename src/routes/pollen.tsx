@@ -111,6 +111,7 @@ const MONTHS = ["Jan", "Feb", "Mar", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "
 function PollenPage() {
   const month = new Date().getMonth(); // 0..11
   const monthLabel = MONTHS[month];
+  const [loadedAt] = useState(() => new Date());
 
   return (
     <PageShell>
@@ -120,6 +121,10 @@ function PollenPage() {
         subtitle="Sesongkart, kurver og varslinger — i House Riis Pettersen sin stil."
         image={heroImg}
       />
+
+      <section className="container mx-auto px-4 pt-6 flex justify-center">
+        <LastUpdated label="Pollen (NAAF-estimat)" timestamp={loadedAt} />
+      </section>
 
       <section className="container mx-auto px-4 py-10 space-y-12">
         {/* Today summary */}
