@@ -396,44 +396,102 @@ function BigTemp({
   );
 }
 
-function NoiseBox({ db }: { db: number }) {
-  const pct = Math.max(0, Math.min(100, ((db - 30) / 50) * 100));
+function BigNoise({ label, db }: { label: string; db: number }) {
   const loud = db >= 65;
-  const color = loud ? "var(--destructive)" : db >= 55 ? "var(--gold)" : "var(--primary)";
+  const moderate = db >= 55;
+  const color = loud
+    ? "var(--destructive)"
+    : moderate
+      ? "var(--gold)"
+      : "var(--primary)";
   return (
     <article
-      className="panel rounded-lg p-5 sm:p-6 flex items-center gap-5"
-      style={{
-        boxShadow: loud
-          ? `inset 0 0 0 1px color-mix(in oklab, ${color} 30%, transparent), 0 0 24px color-mix(in oklab, ${color} 18%, transparent)`
-          : undefined,
-      }}
+      className="panel rounded-lg p-4 sm:p-5 text-center flex flex-col items-center justify-center"
+      style={
+        loud
+          ? {
+              boxShadow: `inset 0 0 0 1px color-mix(in oklab, ${color} 30%, transparent), 0 0 24px color-mix(in oklab, ${color} 18%, transparent)`,
+            }
+          : undefined
+      }
     >
-      <div className="text-4xl">{loud ? "📢" : db >= 55 ? "🔊" : "🔈"}</div>
-      <div className="flex-1">
-        <div className="text-[10px] tracking-[0.3em] text-muted-foreground uppercase">
-          Lydnivå · Tollnes
-        </div>
-        <div className="flex items-baseline gap-2 mt-1">
-          <span className="text-display text-4xl sm:text-5xl" style={{ color }}>
-            {db.toFixed(0)}
-          </span>
-          <span className="text-sm tracking-[0.2em] text-muted-foreground uppercase">dB</span>
-        </div>
-        <div className="mt-3 h-1.5 rounded-full bg-muted overflow-hidden">
-          <div
-            className="h-full rounded-full transition-all"
-            style={{ width: `${pct}%`, background: color }}
-          />
-        </div>
-        <div className="flex justify-between text-[9px] tracking-[0.2em] text-muted-foreground/70 uppercase mt-1">
-          <span>Stille (30 dB)</span>
-          <span>Høyt (80 dB)</span>
-        </div>
+      <div className="text-[9px] sm:text-[11px] tracking-[0.3em] text-muted-foreground uppercase">
+        {label}
+      </div>
+      <div
+        className="text-display leading-none mt-2 text-4xl sm:text-5xl md:text-6xl"
+        style={{ color }}
+      >
+        {db.toFixed(0)}
+      </div>
+      <div className="text-[10px] tracking-[0.3em] text-muted-foreground/70 uppercase mt-2">
+        dB · {loud ? "Høyt" : moderate ? "Middels" : "Stille"}
       </div>
     </article>
   );
 }
+
+function LightsControl({
+  on,
+  busy,
+  onToggle,
+}: {
+  on: boolean | null;
+  busy: boolean;
+  onToggle: () => void;
+}) {
+  const isOn = on === true;
+  const color = isOn ? "var(--gold)" : "var(--muted-foreground)";
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      disabled={busy || on === null}
+      aria-pressed={isOn}
+      className="panel rounded-lg p-5 sm:p-6 w-full flex items-center gap-5 text-left transition-all hover:brightness-110 disabled:opacity-60 disabled:cursor-wait"
+      style={
+        isOn
+          ? {
+              boxShadow: `inset 0 0 0 1px color-mix(in oklab, ${color} 35%, transparent), 0 0 32px color-mix(in oklab, ${color} 22%, transparent)`,
+            }
+          : undefined
+      }
+    >
+      <div
+        className="w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center shrink-0"
+        style={{
+          background: isOn
+            ? `radial-gradient(circle, color-mix(in oklab, ${color} 35%, transparent), transparent 70%)`
+            : "transparent",
+          border: `1px solid color-mix(in oklab, ${color} 40%, transparent)`,
+        }}
+      >
+        {busy ? (
+          <Loader2 className="animate-spin" size={26} style={{ color }} />
+        ) : isOn ? (
+          <Lightbulb size={28} style={{ color }} />
+        ) : (
+          <LightbulbOff size={28} style={{ color }} />
+        )}
+      </div>
+      <div className="flex-1">
+        <div className="text-[10px] tracking-[0.3em] text-muted-foreground uppercase">
+          Stuens lys
+        </div>
+        <div
+          className="text-display text-2xl sm:text-3xl mt-1"
+          style={{ color: isOn ? color : "var(--foreground)" }}
+        >
+          {on === null ? "Henter…" : isOn ? "Tent" : "Slukket"}
+        </div>
+        <div className="text-[10px] tracking-[0.25em] text-muted-foreground/70 uppercase mt-1">
+          Trykk for å {isOn ? "slukke" : "tenne"} alt
+        </div>
+      </div>
+    </button>
+  );
+}
+
 
 function ThunderBanner({ alerts }: { alerts: MetAlert[] }) {
   return (
