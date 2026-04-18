@@ -1,9 +1,10 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { PageShell } from "@/components/PageShell";
 import { TollnesCameraStrip } from "@/components/TollnesCameraStrip";
 import { getHomeySnapshot } from "@/server/homey";
+import { findDeviceFuzzy, readTemp } from "@/lib/homey-match";
 import {
   getMetRadarSouthernNorway,
   getTollnesAlerts,
@@ -42,11 +43,9 @@ export const Route = createFileRoute("/steintavle")({
   ),
 });
 
-const norm = (s: string) =>
-  s.toLowerCase().replace(/\s+/g, " ").trim();
-
 function SteintavlePage() {
   const data = Route.useLoaderData() as Awaited<ReturnType<typeof getHomeySnapshot>>;
+  const router = useRouter();
   const fetchRadar = useServerFn(getMetRadarSouthernNorway);
   const fetchAlerts = useServerFn(getTollnesAlerts);
   const [radar, setRadar] = useState<RadarResult | null>(null);
@@ -76,13 +75,16 @@ function SteintavlePage() {
     const r = setInterval(loadRadar, 5 * 60_000); // radar hvert 5. min
     const a = setInterval(loadAlerts, 5 * 60_000);
     const c = setInterval(() => setNow(new Date()), 30_000);
+    // Hent ferske Homey-temperaturer hvert 60. sek
+    const t = setInterval(() => router.invalidate(), 60_000);
     return () => {
       cancelled = true;
       clearInterval(r);
       clearInterval(a);
       clearInterval(c);
+      clearInterval(t);
     };
-  }, [fetchRadar, fetchAlerts]);
+  }, [fetchRadar, fetchAlerts, router]);
 
   if (!data.ok) {
     return (
@@ -101,29 +103,28 @@ function SteintavlePage() {
     );
   }
 
-  // ---- Temperaturer ----
-  const findDevice = (needle: string) => {
-    const n = norm(needle);
-    return (
-      data.devices.find((d) => norm(d.name) === n) ??
-      data.devices.find((d) => norm(d.name).includes(n))
-    );
-  };
+  // ---- Temperaturer (fuzzy match — finner riktig sensor uavhengig av eksakt navn) ----
+  const hasTemp = (d: any) =>
+    typeof d?.capabilities?.["measure_temperature"]?.value === "number";
 
-  const readTemp = (d: any | undefined) => {
-    const v = d?.capabilities["measure_temperature"]?.value;
-    return typeof v === "number" ? v : null;
-  };
+  const tempUte = readTemp(
+    findDeviceFuzzy(data.devices, data.zones, "ute tollnes", (d, c) => hasTemp(d) && c.includes("ute")) ??
+      findDeviceFuzzy(data.devices, data.zones, "tollnes ute", (d) => hasTemp(d)) ??
+      findDeviceFuzzy(data.devices, data.zones, "ute", (d, c) => hasTemp(d) && !c.includes("hytt")),
+  );
 
-  const tempUte = readTemp(findDevice("Ute Tollnes Ute"));
-  const tempInne =
-    readTemp(findDevice("Inne Tollnes")) ??
-    readTemp(findDevice("Stue")) ??
-    readTemp(findDevice("Netatmo Inne"));
-  const tempSov =
-    readTemp(findDevice("Soverom")) ??
-    readTemp(findDevice("Sov ")) ??
-    readTemp(findDevice("Sovrom"));
+  const tempInne = readTemp(
+    findDeviceFuzzy(data.devices, data.zones, "inne tollnes", (d) => hasTemp(d)) ??
+      findDeviceFuzzy(data.devices, data.zones, "netatmo inne", (d) => hasTemp(d)) ??
+      findDeviceFuzzy(data.devices, data.zones, "stue", (d) => hasTemp(d)) ??
+      findDeviceFuzzy(data.devices, data.zones, "netatmo", (d, c) => hasTemp(d) && !c.includes("ute") && !c.includes("hytt") && !c.includes("sov")),
+  );
+
+  const tempSov = readTemp(
+    findDeviceFuzzy(data.devices, data.zones, "soverom", (d) => hasTemp(d)) ??
+      findDeviceFuzzy(data.devices, data.zones, "sov", (d) => hasTemp(d)) ??
+      findDeviceFuzzy(data.devices, data.zones, "sovrom", (d) => hasTemp(d)),
+  );
 
   // ---- Varsler ----
   const thunderAlerts =
@@ -367,39 +368,50 @@ function alertColor(c: string): string {
  * og tegner en gylden markør oppå.
  */
 function RadarImage({ dataUrl, hasThunder }: { dataUrl: string; hasThunder: boolean }) {
-  const containerRef = useRef<HTMLDivElement>(null);
+  // Zoom inn ~12x og sentrer på Tollnes (omtrent 52% / 62% i bildet).
+  const ZOOM = 12;
+  const TOLLNES_X = 52; // %
+  const TOLLNES_Y = 62; // %
+
   return (
     <div
-      ref={containerRef}
       className="absolute inset-0 overflow-hidden"
-      style={{
-        background: "oklch(0.12 0.012 240)",
-      }}
+      style={{ background: "oklch(0.12 0.012 240)" }}
     >
-      <img
-        src={dataUrl}
-        alt="Met.no værradar over sør-Norge"
-        className="absolute inset-0 w-full h-full object-contain"
+      {/* Zoom-laget — skaler bildet og forskyv så Tollnes havner i midten */}
+      <div
+        className="absolute inset-0"
         style={{
-          filter: "brightness(1.1) contrast(1.05)",
-          mixBlendMode: "screen",
+          transform: `scale(${ZOOM})`,
+          transformOrigin: `${TOLLNES_X}% ${TOLLNES_Y}%`,
         }}
-      />
-      {/* Tollnes-markør — omtrent midten av sør-Norge-bildet */}
+      >
+        <img
+          src={dataUrl}
+          alt="Met.no værradar zoomet inn på Tollnes"
+          className="absolute inset-0 w-full h-full object-contain"
+          style={{
+            filter: "brightness(1.15) contrast(1.1)",
+            mixBlendMode: "screen",
+            imageRendering: "pixelated",
+          }}
+        />
+      </div>
+
+      {/* Tollnes-markør — alltid midt i visningen */}
       <div
         className="absolute pointer-events-none"
         style={{
-          // Tollnes ligger ca midt-sør (Telemark) i bildet
-          left: "52%",
-          top: "62%",
+          left: "50%",
+          top: "50%",
           transform: "translate(-50%, -50%)",
         }}
       >
         <div
           className={`relative ${hasThunder ? "animate-pulse" : ""}`}
           style={{
-            width: "16px",
-            height: "16px",
+            width: "18px",
+            height: "18px",
             borderRadius: "9999px",
             background: hasThunder ? "var(--destructive)" : "var(--gold)",
             boxShadow: hasThunder
@@ -407,14 +419,26 @@ function RadarImage({ dataUrl, hasThunder }: { dataUrl: string; hasThunder: bool
               : "0 0 0 4px color-mix(in oklab, var(--gold) 25%, transparent), 0 0 22px color-mix(in oklab, var(--gold) 70%, transparent)",
           }}
         />
+        {/* ~5 km radius-ring (visuell indikasjon — radar er ca 1px/km) */}
         <div
-          className="absolute left-1/2 -translate-x-1/2 mt-2 text-[10px] tracking-[0.3em] uppercase whitespace-nowrap"
+          className="absolute left-1/2 top-1/2 pointer-events-none"
+          style={{
+            width: "120px",
+            height: "120px",
+            transform: "translate(-50%, -50%)",
+            borderRadius: "9999px",
+            border: "1px dashed color-mix(in oklab, var(--gold) 60%, transparent)",
+            boxShadow: "inset 0 0 30px color-mix(in oklab, var(--gold) 8%, transparent)",
+          }}
+        />
+        <div
+          className="absolute left-1/2 -translate-x-1/2 mt-3 text-[10px] tracking-[0.3em] uppercase whitespace-nowrap"
           style={{
             color: hasThunder ? "var(--destructive)" : "var(--gold)",
             textShadow: "0 0 8px oklch(0.10 0.01 240), 0 0 4px oklch(0.10 0.01 240)",
           }}
         >
-          Tollnes
+          Tollnes · ~5 km
         </div>
       </div>
     </div>
