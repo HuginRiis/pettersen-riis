@@ -151,6 +151,11 @@ function HyttaPage() {
         </aside>
       </section>
 
+      <NetatmoWeatherStationSection
+        title="Værstasjonen — Hytta"
+        stationMatch="hytta"
+      />
+
       {/* Galleriet — Krøniken om House Riis Pettersen i fjellet */}
       <section className="container mx-auto px-4 pb-16">
         <div className="ornate-divider mb-6">
