@@ -31,15 +31,33 @@ const inputSchema = z.object({
   category: z.enum(["fottur", "topptur", "sykkel", "bil"]),
 });
 
+export type RouteStep = {
+  step: number;
+  instruction: string;
+};
+
 export type TripSuggestion = {
   name: string;
   area: string;
   difficulty: "Lett" | "Middels" | "Krevende";
   duration: string;
   distanceKm: number | null;
+  elevationGainM: number | null;
   highlights: string[];
   description: string;
+  longDescription: string;
   startHint: string;
+  startLat: number | null;
+  startLon: number | null;
+  endHint: string | null;
+  routeSteps: RouteStep[];
+  recommendedGear: string[];
+  bestSeason: string;
+  transport: string;
+  parking: string;
+  warnings: string[];
+  facilities: string[];
+  scenery: string;
 };
 
 export type TripResponse =
