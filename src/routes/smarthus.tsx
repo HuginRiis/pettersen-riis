@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { PageShell, PageHero } from "@/components/PageShell";
 import { getHomeySnapshot, disconnectHomey, setAllOutdoorLights } from "@/server/homey";
+import { findDeviceFuzzy, readTemp } from "@/lib/homey-match";
 import heroImg from "@/assets/smarthus-hero.jpg";
 
 export const Route = createFileRoute("/smarthus")({
@@ -226,25 +227,32 @@ function SmarthusPage() {
   };
 
   const norm = (s: string) =>
-    s
-      .toLowerCase()
-      .replace(/\s+/g, " ")
-      .trim();
+    s.toLowerCase().replace(/\s+/g, " ").trim();
 
-  const findDeviceByName = (needle: string) => {
-    const n = norm(needle);
-    return data.devices.find((d) => norm(d.name) === n) ??
-      data.devices.find((d) => norm(d.name).includes(n));
-  };
+  // Eksplisitte ute-sensorer — krever measure_temperature, og helst at
+  // navn/sone inneholder "ute" / "hytt".
+  const hasTemp = (d: any) =>
+    typeof d?.capabilities?.["measure_temperature"]?.value === "number";
 
-  // Eksplisitte ute-sensorer (etter ønske fra bruker)
-  const outdoorTollnesDevice = findDeviceByName("Ute Tollnes Ute");
-  const outdoorHyttaDevice = findDeviceByName("Hytta Hytta ute");
+  const outdoorTollnesDevice =
+    findDeviceFuzzy(
+      data.devices,
+      data.zones,
+      "ute tollnes",
+      (d, c) => hasTemp(d) && c.includes("ute"),
+    ) ??
+    findDeviceFuzzy(data.devices, data.zones, "tollnes ute", (d) => hasTemp(d)) ??
+    findDeviceFuzzy(data.devices, data.zones, "ute", (d, c) => hasTemp(d) && !c.includes("hytt"));
 
-  const readTemp = (d: any | undefined) => {
-    const v = d?.capabilities["measure_temperature"]?.value;
-    return typeof v === "number" ? v : null;
-  };
+  const outdoorHyttaDevice =
+    findDeviceFuzzy(
+      data.devices,
+      data.zones,
+      "hytta ute",
+      (d, c) => hasTemp(d) && c.includes("hytt") && c.includes("ute"),
+    ) ??
+    findDeviceFuzzy(data.devices, data.zones, "hytt ute", (d) => hasTemp(d)) ??
+    findDeviceFuzzy(data.devices, data.zones, "ute hytt", (d) => hasTemp(d));
 
   const outdoorTollnesTemp = readTemp(outdoorTollnesDevice);
   const outdoorHyttaTemp = readTemp(outdoorHyttaDevice);
