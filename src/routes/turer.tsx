@@ -258,12 +258,22 @@ function TurerPage() {
             </div>
             <div className="grid gap-4 md:grid-cols-2">
               {state.suggestions.map((s, i) => (
-                <TripCard key={`${s.name}-${i}`} trip={s} />
+                <TripCard
+                  key={`${s.name}-${i}`}
+                  trip={s}
+                  onOpen={() => setActiveTrip(s)}
+                />
               ))}
             </div>
           </div>
         )}
       </section>
+
+      <TripDetailDialog
+        trip={activeTrip}
+        open={activeTrip !== null}
+        onOpenChange={(v) => !v && setActiveTrip(null)}
+      />
     </PageShell>
   );
 }
