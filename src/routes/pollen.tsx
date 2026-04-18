@@ -103,6 +103,9 @@ const ALLERGENS: Allergen[] = [
   },
 ];
 
+// Allergener Arne reagerer på — fremheves i UI
+const MY_ALLERGEN_KEYS = new Set(["bjork", "gress", "or", "burot"]);
+
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Des"];
 
 // ─────────────────────────────────────────────────────────────────────────────
