@@ -128,8 +128,15 @@ function PollenPage() {
         image={heroImg}
       />
 
-      <section className="container mx-auto px-4 pt-6 flex justify-center">
+      <section className="container mx-auto px-4 pt-6 flex flex-col items-center gap-3">
         <LastUpdated label="Pollen (sidelast)" timestamp={loadedAt} />
+        <div className="panel rounded-md px-4 py-2 flex items-center gap-2 text-xs">
+          <span className="text-primary">⚔</span>
+          <span className="text-muted-foreground">
+            Allergener merket med <span className="text-primary">⚔</span> plager Arne:{" "}
+            <span className="text-foreground">bjørk, gress, or, burot</span>
+          </span>
+        </div>
       </section>
 
       <section className="container mx-auto px-4 py-10 space-y-12">
