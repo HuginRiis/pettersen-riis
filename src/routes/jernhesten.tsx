@@ -18,6 +18,10 @@ import {
 import { PageShell, PageHero } from "@/components/PageShell";
 import jernhestenImg from "@/assets/jernhesten.jpg";
 import jernhestenLading from "@/assets/jernhesten-lading.jpg";
+import jernhestenSkog from "@/assets/jernhesten-skog.jpg";
+import jernhestenFrontLading from "@/assets/jernhesten-front-lading.jpg";
+import jernhestenBak from "@/assets/jernhesten-bak.jpg";
+import jernhestenByen from "@/assets/jernhesten-byen.jpg";
 
 export const Route = createFileRoute("/jernhesten")({
   head: () => ({
