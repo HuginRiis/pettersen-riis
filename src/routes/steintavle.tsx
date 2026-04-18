@@ -48,6 +48,35 @@ export const Route = createFileRoute("/steintavle")({
   ),
 });
 
+// Speiler server-logikken i `getLivingRoomLightsState` slik at vi kan utlede
+// lys-status fra eksisterende snapshot uten et eget Athom-kall.
+function isLivingRoomZoneName(name: string): boolean {
+  const n = name.toLowerCase();
+  return (
+    n.includes("stue") ||
+    n.includes("stua") ||
+    n.includes("living") ||
+    n.includes("livingroom")
+  );
+}
+
+function deriveLivingRoomLightsOn(
+  snapshot: Extract<Awaited<ReturnType<typeof getHomeySnapshot>>, { ok: true }>,
+): boolean | null {
+  const livingRoomZoneIds = new Set(
+    snapshot.zones.filter((z) => isLivingRoomZoneName(z.name)).map((z) => z.id),
+  );
+  const lights = snapshot.devices.filter(
+    (d) =>
+      d.zone &&
+      livingRoomZoneIds.has(d.zone) &&
+      d.capabilities &&
+      "onoff" in d.capabilities,
+  );
+  if (lights.length === 0) return null;
+  return lights.some((d) => d.capabilities["onoff"]?.value === true);
+}
+
 function SteintavlePage() {
   const data = Route.useLoaderData() as Awaited<ReturnType<typeof getHomeySnapshot>>;
   const router = useRouter();
