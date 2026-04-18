@@ -300,13 +300,19 @@ function YearHeatmap({
           <tbody>
             {ALLERGENS.map((a) => {
               const row = a[region];
+              const isMine = MY_ALLERGEN_KEYS.has(a.key);
               return (
                 <tr key={a.key} className="border-t border-border/50">
                   <td className="py-1.5 pr-3">
                     <div className="flex items-center gap-2">
                       <span className="text-lg">{a.sigil}</span>
                       <div className="leading-tight">
-                        <div className="text-sm text-foreground">{a.name}</div>
+                        <div className="text-sm text-foreground flex items-center gap-1">
+                          {a.name}
+                          {isMine && (
+                            <span className="text-primary text-xs" title="Plager Arne">⚔</span>
+                          )}
+                        </div>
                         <div className="text-[10px] text-muted-foreground italic">
                           {a.latin}
                         </div>
