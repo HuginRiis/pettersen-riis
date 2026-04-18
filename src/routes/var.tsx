@@ -68,6 +68,8 @@ function WeatherPage() {
   const fetchAlerts = useServerFn(getTollnesAlerts);
   const [alerts, setAlerts] = useState<AlertsResult | null>(null);
   const [now, setNow] = useState<Date | null>(null);
+  const [weatherUpdated, setWeatherUpdated] = useState<Date | null>(null);
+  const [homeyUpdated, setHomeyUpdated] = useState<Date | null>(() => new Date());
   const [state, setState] = useState<Record<string, LocationState>>(() =>
     Object.fromEntries(
       LOCATIONS.map((l) => [
@@ -77,8 +79,14 @@ function WeatherPage() {
     ),
   );
 
+  // Homey-data oppdateres ved hver router.invalidate — merk tidspunktet.
+  useEffect(() => {
+    setHomeyUpdated(new Date());
+  }, [data]);
+
   useEffect(() => {
     setNow(new Date());
+    let pending = LOCATIONS.length;
     LOCATIONS.forEach(async (loc) => {
       try {
         const res = await fetch(
@@ -103,6 +111,9 @@ function WeatherPage() {
             loading: false,
           },
         }));
+      } finally {
+        pending -= 1;
+        if (pending === 0) setWeatherUpdated(new Date());
       }
     });
     // Hent varsler fra MET
