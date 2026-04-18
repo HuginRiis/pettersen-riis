@@ -42,9 +42,9 @@ function RangerPage() {
   return (
     <PageShell>
       <PageHero
-        eyebrow="Borgens grenseridder"
+        eyebrow="Borgens grenseridder · Anno 2019"
         title="Ranger"
-        subtitle="Ford Ranger — den brede skuldrede ulven fra Dearborn. Bygget for grus, gjørme og gjerdeposter, lojal som en ed."
+        subtitle="Ford Ranger Wildtrak 2019 — den brede skuldrede ulven fra Silverton. Bygget for grus, gjørme og gjerdeposter, lojal som en ed."
         image={rangerImg}
       />
 
@@ -55,10 +55,10 @@ function RangerPage() {
             <Crown size={22} /> Krønikens åpning
           </h2>
           <p className="text-foreground/85 leading-relaxed mb-3">
-            Ranger er ikke en ganger av lyn, men av jern og diesel — født av
-            mestre i Dearborn og smidd for ridt over alle riker. Der Jernhesten
-            gleder seg over asfaltens silke, sukker Ranger først når veien
-            slipper opp og terrenget tar over.
+            I året 2019 trådte den fornyede Ranger frem fra Fords smie i Silverton —
+            T6-generasjonens ansiktsløftning bar nytt 2,0-liters bi-turbo
+            EcoBlue-hjerte og en 10-trinns automat smidd i samarbeid med rivalen
+            fra General Motors. Et sjeldent forbund mellom to jarler.
           </p>
           <p className="text-foreground/85 leading-relaxed">
             I borgens stall står den som grensevakten — en pickup med rikets
@@ -70,49 +70,49 @@ function RangerPage() {
         {/* Spesifikasjoner */}
         <section>
           <h2 className="text-2xl text-primary mb-5 flex items-center gap-2">
-            <Award size={22} /> Gangerens segl
+            <Award size={22} /> Gangerens segl · 2019 Wildtrak 2.0 Bi-Turbo
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <Spec icon={Fuel} label="Motor" value="2,0 EcoBlue" sub="Bi-turbo diesel" />
-            <Spec icon={Zap} label="Effekt" value="213 hk" sub="500 Nm dreiemoment" />
-            <Spec icon={Gauge} label="0–100 km/t" value="≈ 9,0 sek" sub="Tungvektsadel" />
-            <Spec icon={Cog} label="Drev" value="4WD" sub="10-trinns automat" />
+            <Spec icon={Fuel} label="Motor" value="2,0 EcoBlue" sub="Bi-turbo diesel · 1 996 ccm" />
+            <Spec icon={Zap} label="Effekt" value="213 hk" sub="500 Nm @ 1 750–2 000 o/min" />
+            <Spec icon={Gauge} label="0–100 km/t" value="≈ 9,0 sek" sub="Toppfart 180 km/t" />
+            <Spec icon={Cog} label="Drev" value="4WD" sub="10-trinns automat · low-range" />
             <Spec icon={Mountain} label="Bakkeklaring" value="232 mm" sub="Vader 800 mm" />
             <Spec icon={Truck} label="Hengervekt" value="3 500 kg" sub="Tilhenger m/brems" />
-            <Spec icon={Ruler} label="Lasteplan" value="1 544 mm" sub="× 1 224 mm bredt" />
-            <Spec icon={Shield} label="Vekt" value="≈ 2 300 kg" sub="Bygget av jern" />
+            <Spec icon={Ruler} label="Lasteplan" value="1 549 mm" sub="× 1 560 mm bredt" />
+            <Spec icon={Shield} label="Egenvekt" value="≈ 2 269 kg" sub="Bygget av jern" />
           </div>
         </section>
 
         {/* Funksjoner */}
         <section>
           <h2 className="text-2xl text-primary mb-5 flex items-center gap-2">
-            <Sparkles size={22} /> Borgens utstyr
+            <Sparkles size={22} /> Borgens utstyr · 2019-årgangen
           </h2>
           <div className="grid md:grid-cols-3 gap-4">
-            <Card title="Terreng-modi">
-              Sand, gjørme, stein, snø — Ranger leser undergrunnen og fordeler
-              kraften slik en gammel speider leser sporet.
+            <Card title="Terrain Management System">
+              Fire kjøremoduser — Normal, Gress/Grus/Snø, Sand og Stein — og
+              Ranger leser undergrunnen som en gammel speider leser sporet.
             </Card>
             <Card title="Differensialsperre bak">
-              Når ett hjul sklir på isen, holder den andre stand. En grenseridder
-              gir ikke opp ved første glatte kne.
+              Elektronisk låsing av bakdifferensialet. Når ett hjul sklir på
+              isen, holder den andre stand.
             </Card>
-            <Card title="SYNC 4 / 12-tommers skjerm">
-              Navigasjon, Apple CarPlay og Android Auto trådløst — kart over
-              borgens grenseland alltid for hånden.
+            <Card title="SYNC 3 · 8-tommers skjerm">
+              Apple CarPlay og Android Auto med kabel, navigasjon og DAB+ —
+              kart over borgens grenseland alltid for hånden.
             </Card>
-            <Card title="Adaptiv cruise & spor">
-              Holder avstand og kjørefelt på den lange marsj — også med
-              tilhenger på slep.
+            <Card title="Adaptiv cruise & nødbrems">
+              Adaptiv fartsholder med Forward Collision Alert og Active Braking
+              — nyttig på den lange marsj med tilhenger på slep.
             </Card>
-            <Card title="360° kamera">
-              Fugleperspektiv ved trange tun og bratte stier — et øye for hver
-              himmelretning.
+            <Card title="Ryggekamera & parksensorer">
+              Ryggekamera med dynamiske linjer, sensorer foran og bak. Et øye
+              for trange tun og bratte stier.
             </Card>
-            <Card title="Tilhengerassistent">
-              Reverserer hengeren med en knottevri — selv stallmesteren får hvile
-              skuldrene.
+            <Card title="Hill Descent Control">
+              Holder lav fart automatisk i bratte nedoverbakker — selv på is og
+              våt grus. Stallmesteren får hvile skuldrene.
             </Card>
           </div>
         </section>
@@ -120,24 +120,27 @@ function RangerPage() {
         {/* Praktisk */}
         <section className="grid md:grid-cols-2 gap-4">
           <article className="panel rounded-lg p-6">
-            <h3 className="text-xl text-primary mb-3">Mål & last</h3>
+            <h3 className="text-xl text-primary mb-3">Mål & last · 2019 Double Cab</h3>
             <ul className="space-y-1.5 text-sm text-foreground/85">
-              <Li>Lengde: <strong>5 370 mm</strong></Li>
-              <Li>Bredde: <strong>1 918 mm</strong> (uten speil)</Li>
-              <Li>Akselavstand: <strong>3 270 mm</strong></Li>
-              <Li>Lasteplan: <strong>1 544 × 1 224 mm</strong></Li>
-              <Li>Nyttelast: <strong>≈ 1 000 kg</strong></Li>
+              <Li>Lengde: <strong>5 362 mm</strong></Li>
+              <Li>Bredde: <strong>1 860 mm</strong> (uten speil · 2 163 m/speil)</Li>
+              <Li>Høyde: <strong>1 848 mm</strong></Li>
+              <Li>Akselavstand: <strong>3 220 mm</strong></Li>
+              <Li>Lasteplan: <strong>1 549 × 1 560 mm</strong> (1 139 mm mellom hjulkasser)</Li>
+              <Li>Nyttelast: <strong>≈ 1 015 kg</strong></Li>
               <Li>Hengervekt m/brems: <strong>3 500 kg</strong></Li>
+              <Li>Totalvekt (GVM): <strong>3 270 kg</strong></Li>
             </ul>
           </article>
           <article className="panel rounded-lg p-6">
             <h3 className="text-xl text-primary mb-3">Forbruk & terreng</h3>
             <ul className="space-y-1.5 text-sm text-foreground/85">
-              <Li>Forbruk WLTP: <strong>≈ 8,7 l/100 km</strong></Li>
-              <Li>CO₂: <strong>≈ 230 g/km</strong></Li>
-              <Li>Tankvolum: <strong>80 liter</strong></Li>
+              <Li>Forbruk WLTP: <strong>≈ 8,9 l/100 km</strong> (blandet)</Li>
+              <Li>CO₂-utslipp: <strong>≈ 232 g/km</strong></Li>
+              <Li>Tankvolum: <strong>80 liter</strong> diesel</Li>
+              <Li>AdBlue-tank: <strong>21 liter</strong> (SCR Euro 6d-Temp)</Li>
               <Li>Vadedybde: <strong>800 mm</strong></Li>
-              <Li>Stigning: <strong>opptil 45°</strong></Li>
+              <Li>Påkjøringsvinkel: <strong>29°</strong> · avgang <strong>21°</strong></Li>
               <Li>Service-intervall: <strong>1 år / 30 000 km</strong></Li>
             </ul>
           </article>
