@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { PageShell, PageHero } from "@/components/PageShell";
 import { WeatherWidget } from "@/components/WeatherWidget";
 import { TollnesCameraSection } from "@/components/TollnesCameraStrip";
+import { NetatmoWeatherStationSection } from "@/components/NetatmoWeatherStation";
 import arnePortrait from "@/assets/arne-portrait.jpg";
 import rebekkaPortrait from "@/assets/rebekka-portrait.jpg";
 import celinePortrait from "@/assets/celine-portrait.jpg";
@@ -151,6 +152,8 @@ function Home() {
           <HallCard to="/agenda" title="Send melding" desc="Skriv en kort hilsen til kalenderen." icon="🪶" />
         </div>
       </section>
+
+      <NetatmoWeatherStationSection />
 
       <TollnesCameraSection />
     </PageShell>
