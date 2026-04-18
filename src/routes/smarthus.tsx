@@ -223,56 +223,94 @@ function SmarthusPage() {
     deviceName: string;
     zoneName: string;
     temp: number;
-    isOutdoor: boolean;
-    isNetatmo: boolean;
   };
 
-  const isNetatmoDevice = (d: any): boolean => {
-    const name = (d.name ?? "").toLowerCase();
-    if (name.includes("netatmo")) return true;
-    // fallback: typical Netatmo outdoor module name patterns
-    return false;
+  const norm = (s: string) =>
+    s
+      .toLowerCase()
+      .replace(/\s+/g, " ")
+      .trim();
+
+  const findDeviceByName = (needle: string) => {
+    const n = norm(needle);
+    return data.devices.find((d) => norm(d.name) === n) ??
+      data.devices.find((d) => norm(d.name).includes(n));
   };
 
-  const isOutdoorByName = (name: string) => {
-    const n = name.toLowerCase();
-    return (
-      n.includes("ute") ||
-      n.includes("uten") ||
-      n.includes("outdoor") ||
-      n.includes("yard") ||
-      n.includes("hage")
-    );
+  // Eksplisitte ute-sensorer (etter ønske fra bruker)
+  const outdoorTollnesDevice = findDeviceByName("Ute Tollnes Ute");
+  const outdoorHyttaDevice = findDeviceByName("Hytta Hytta ute");
+
+  const readTemp = (d: any | undefined) => {
+    const v = d?.capabilities["measure_temperature"]?.value;
+    return typeof v === "number" ? v : null;
   };
 
-  const roomTemps: RoomTemp[] = data.devices
-    .map((d): RoomTemp | null => {
-      const t = d.capabilities["measure_temperature"]?.value;
-      if (typeof t !== "number") return null;
-      const zoneName = d.zone ? zoneById.get(d.zone)?.name ?? "Ukjent" : "Ukjent";
-      const netatmo = isNetatmoDevice(d);
-      const outdoor = isOutdoorByName(d.name) || isOutdoorByName(zoneName);
-      return {
+  const outdoorTollnesTemp = readTemp(outdoorTollnesDevice);
+  const outdoorHyttaTemp = readTemp(outdoorHyttaDevice);
+
+  const excludedOutdoorIds = new Set(
+    [outdoorTollnesDevice?.id, outdoorHyttaDevice?.id].filter(Boolean) as string[],
+  );
+
+  // Én temperatur per rom (sone). Foretrekk Netatmo, ellers første treff.
+  const tempByZone = new Map<string, RoomTemp>();
+  for (const d of data.devices) {
+    if (excludedOutdoorIds.has(d.id)) continue;
+    const t = d.capabilities["measure_temperature"]?.value;
+    if (typeof t !== "number") continue;
+    const zoneKey = d.zone ?? "__no_zone__";
+    const zoneName = d.zone ? zoneById.get(d.zone)?.name ?? "Ukjent" : "Ukjent";
+    const isNetatmo = (d.name ?? "").toLowerCase().includes("netatmo");
+    const existing = tempByZone.get(zoneKey);
+    if (!existing) {
+      tempByZone.set(zoneKey, {
         deviceId: d.id,
         deviceName: d.name,
         zoneName,
         temp: t,
-        isOutdoor: outdoor,
-        isNetatmo: netatmo,
-      };
-    })
-    .filter((x): x is RoomTemp => x !== null);
+      });
+    } else {
+      const existingIsNetatmo = existing.deviceName.toLowerCase().includes("netatmo");
+      if (isNetatmo && !existingIsNetatmo) {
+        tempByZone.set(zoneKey, {
+          deviceId: d.id,
+          deviceName: d.name,
+          zoneName,
+          temp: t,
+        });
+      }
+    }
+  }
 
-  // Ute-temperatur: helst Netatmo + ute, ellers bare Netatmo, ellers første ute
-  const outdoorTemp =
-    roomTemps.find((r) => r.isNetatmo && r.isOutdoor) ??
-    roomTemps.find((r) => r.isNetatmo) ??
-    roomTemps.find((r) => r.isOutdoor) ??
-    null;
+  const indoorTemps = Array.from(tempByZone.values()).sort((a, b) =>
+    a.zoneName.localeCompare(b.zoneName, "nb"),
+  );
 
-  const indoorTemps = roomTemps
-    .filter((r) => r.deviceId !== outdoorTemp?.deviceId)
-    .sort((a, b) => a.zoneName.localeCompare(b.zoneName, "nb"));
+  // CO2-sensorer (Netatmo). Finn Hytte og Tollnes.
+  const co2Devices = data.devices.filter((d) => {
+    const v = d.capabilities["measure_co2"]?.value;
+    return typeof v === "number";
+  });
+
+  const findCo2 = (matcher: (combined: string) => boolean) => {
+    const hit = co2Devices.find((d) => {
+      const zoneName = d.zone ? zoneById.get(d.zone)?.name ?? "" : "";
+      const combined = `${d.name} ${zoneName}`.toLowerCase();
+      return matcher(combined);
+    });
+    if (!hit) return null;
+    return {
+      device: hit,
+      zoneName: hit.zone ? zoneById.get(hit.zone)?.name ?? "" : "",
+      value: hit.capabilities["measure_co2"]?.value as number,
+    };
+  };
+
+  const co2Hytta = findCo2((c) => c.includes("hytt"));
+  const co2Tollnes = findCo2(
+    (c) => c.includes("tollnes") || c.includes("skien") || (!c.includes("hytt") && c.includes("netatmo")),
+  );
 
   const handleDisconnect = async () => {
     if (!confirm("Bryt båndet til Homey?")) return;
@@ -408,95 +446,89 @@ function SmarthusPage() {
         </div>
       </section>
 
-      {/* Temperatur-tårn + utelys-knapp */}
+      {/* Ute-temperaturer (Tollnes + Hytta) */}
       <section className="container mx-auto px-4 pt-10">
-        <div className="grid lg:grid-cols-3 gap-4">
-          {/* Temperatur-boks */}
-          <div className="panel rounded-lg p-6 lg:col-span-2">
-            <div className="text-[10px] tracking-[0.3em] text-muted-foreground uppercase mb-4">
-              Termometrenes sang
-            </div>
+        <div className="grid sm:grid-cols-2 gap-4">
+          <OutdoorTempCard
+            label="Ute · Tollnes"
+            sourceName="Ute Tollnes Ute"
+            temp={outdoorTollnesTemp}
+          />
+          <OutdoorTempCard
+            label="Ute · Hytta"
+            sourceName="Hytta Hytta ute"
+            temp={outdoorHyttaTemp}
+          />
+        </div>
+      </section>
 
-            {outdoorTemp ? (
-              <div className="flex items-end justify-between gap-4 pb-4 mb-4 border-b border-primary/20">
-                <div className="min-w-0">
-                  <div className="text-[10px] tracking-[0.3em] text-primary uppercase mb-1">
-                    {outdoorTemp.isNetatmo ? "Ute · Netatmo" : "Ute"}
-                  </div>
-                  <div className="text-sm text-muted-foreground truncate">
-                    {outdoorTemp.deviceName}
-                  </div>
-                </div>
-                <div className="text-display text-primary text-5xl sm:text-6xl shrink-0 leading-none">
-                  {outdoorTemp.temp.toFixed(1)}°
-                </div>
-              </div>
-            ) : (
-              <div className="text-sm text-muted-foreground italic mb-4">
-                Ingen ute-temperatur funnet (Netatmo).
-              </div>
-            )}
+      {/* CO2-bokser (Netatmo) */}
+      <section className="container mx-auto px-4 pt-6">
+        <div className="grid sm:grid-cols-2 gap-4">
+          <Co2Card label="CO₂ · Hytte" data={co2Hytta} />
+          <Co2Card label="CO₂ · Tollnes Skien" data={co2Tollnes} />
+        </div>
+      </section>
 
-            {indoorTemps.length > 0 ? (
-              <ul className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {indoorTemps.map((r) => (
-                  <li
-                    key={r.deviceId}
-                    className="flex flex-col py-2 px-3 rounded border border-primary/10 bg-background/40"
-                  >
-                    <span className="text-[10px] tracking-[0.25em] text-muted-foreground uppercase truncate">
-                      {r.zoneName}
-                    </span>
-                    <span className="text-sm text-foreground/80 truncate">
-                      {r.deviceName}
-                    </span>
-                    <span className="text-display text-primary text-xl mt-1">
-                      {r.temp.toFixed(1)}°
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-sm text-muted-foreground italic">
-                Ingen inne-termometre.
-              </p>
-            )}
+      {/* Inne-termometre (én per rom) */}
+      <section className="container mx-auto px-4 pt-6">
+        <div className="panel rounded-lg p-6">
+          <div className="text-[10px] tracking-[0.3em] text-muted-foreground uppercase mb-4">
+            Termometrenes sang
           </div>
+          {indoorTemps.length > 0 ? (
+            <ul className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+              {indoorTemps.map((r) => (
+                <li
+                  key={r.deviceId}
+                  className="flex flex-col py-2 px-3 rounded border border-primary/10 bg-background/40"
+                >
+                  <span className="text-[10px] tracking-[0.25em] text-muted-foreground uppercase truncate">
+                    {r.zoneName}
+                  </span>
+                  <span className="text-display text-primary text-xl mt-1">
+                    {r.temp.toFixed(1)}°
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-muted-foreground italic">Ingen inne-termometre.</p>
+          )}
+        </div>
+      </section>
 
-          {/* Utelys-styring */}
-          <div className="panel rounded-lg p-6 flex flex-col">
-            <div className="text-[10px] tracking-[0.3em] text-muted-foreground uppercase mb-4">
-              Vakttårnene
-            </div>
-            <h3 className="text-display text-primary text-lg tracking-[0.2em] mb-2">
-              UTELYS
-            </h3>
-            <p className="text-sm text-muted-foreground mb-6 flex-1">
-              Tenn alle ildstedene i hagen, ved porten og på terrassen — eller la
-              mørket falle.
-            </p>
-            <div className="flex flex-col gap-3">
-              <button
-                onClick={() => handleToggleOutdoorLights(true)}
-                disabled={togglingLights}
-                className="px-4 py-3 rounded border border-primary text-primary text-xs tracking-[0.3em] uppercase hover:bg-primary/10 transition-colors disabled:opacity-50"
-              >
-                {togglingLights ? "Tenner ravnene…" : "✦ Tenn alle utelys"}
-              </button>
-              <button
-                onClick={() => handleToggleOutdoorLights(false)}
-                disabled={togglingLights}
-                className="px-4 py-3 rounded border border-muted-foreground/30 text-muted-foreground text-xs tracking-[0.3em] uppercase hover:bg-muted/30 transition-colors disabled:opacity-50"
-              >
-                ○ Slokk alle utelys
-              </button>
-            </div>
-            {lightsMessage && (
-              <p className="text-xs text-muted-foreground italic mt-4 text-center">
-                {lightsMessage}
-              </p>
-            )}
+      {/* Utelys-styring i egen boks */}
+      <section className="container mx-auto px-4 pt-6">
+        <div className="panel rounded-lg p-6">
+          <div className="text-[10px] tracking-[0.3em] text-muted-foreground uppercase mb-4">
+            Vakttårnene
           </div>
+          <h3 className="text-display text-primary text-lg tracking-[0.2em] mb-2">
+            UTELYS
+          </h3>
+          <p className="text-sm text-muted-foreground mb-6">
+            Tenn alle ildstedene i hagen, ved porten og på terrassen — eller la mørket falle.
+          </p>
+          <div className="grid sm:grid-cols-2 gap-3 max-w-xl">
+            <button
+              onClick={() => handleToggleOutdoorLights(true)}
+              disabled={togglingLights}
+              className="px-4 py-3 rounded border border-primary text-primary text-xs tracking-[0.3em] uppercase hover:bg-primary/10 transition-colors disabled:opacity-50"
+            >
+              {togglingLights ? "Tenner ravnene…" : "✦ Tenn alle utelys"}
+            </button>
+            <button
+              onClick={() => handleToggleOutdoorLights(false)}
+              disabled={togglingLights}
+              className="px-4 py-3 rounded border border-muted-foreground/30 text-muted-foreground text-xs tracking-[0.3em] uppercase hover:bg-muted/30 transition-colors disabled:opacity-50"
+            >
+              ○ Slokk alle utelys
+            </button>
+          </div>
+          {lightsMessage && (
+            <p className="text-xs text-muted-foreground italic mt-4">{lightsMessage}</p>
+          )}
         </div>
       </section>
 
@@ -601,5 +633,84 @@ function DeviceCard({ device }: { device: any }) {
         {typeof battery === "number" && <span>🔋 {battery.toFixed(0)}%</span>}
       </div>
     </article>
+  );
+}
+
+function OutdoorTempCard({
+  label,
+  sourceName,
+  temp,
+}: {
+  label: string;
+  sourceName: string;
+  temp: number | null;
+}) {
+  return (
+    <div className="panel rounded-lg p-6">
+      <div className="text-[10px] tracking-[0.3em] text-primary uppercase mb-2">{label}</div>
+      <div className="flex items-end justify-between gap-4">
+        <div className="text-xs text-muted-foreground truncate">{sourceName}</div>
+        <div className="text-display text-primary text-5xl sm:text-6xl shrink-0 leading-none">
+          {temp !== null ? `${temp.toFixed(1)}°` : "—"}
+        </div>
+      </div>
+      {temp === null && (
+        <p className="text-xs text-muted-foreground italic mt-3">
+          Sensoren «{sourceName}» ble ikke funnet i Homey.
+        </p>
+      )}
+    </div>
+  );
+}
+
+function Co2Card({
+  label,
+  data,
+}: {
+  label: string;
+  data: { device: any; zoneName: string; value: number } | null;
+}) {
+  const tone =
+    data === null
+      ? "muted"
+      : data.value < 1000
+        ? "primary"
+        : data.value < 1500
+          ? "default"
+          : "warning";
+  const valueClass =
+    tone === "warning"
+      ? "text-destructive"
+      : tone === "muted"
+        ? "text-muted-foreground"
+        : "text-primary";
+  const status =
+    data === null
+      ? "Ingen Netatmo-CO₂-sensor funnet"
+      : data.value < 1000
+        ? "Frisk luft"
+        : data.value < 1500
+          ? "Litt tett"
+          : "Luft ut!";
+  return (
+    <div className="panel rounded-lg p-6">
+      <div className="text-[10px] tracking-[0.3em] text-muted-foreground uppercase mb-2">
+        {label}
+      </div>
+      <div className="flex items-end justify-between gap-4">
+        <div className="min-w-0">
+          {data && (
+            <div className="text-xs text-muted-foreground truncate">{data.device.name}</div>
+          )}
+          <div className="text-[10px] tracking-[0.25em] text-muted-foreground/80 uppercase mt-1 italic">
+            {status}
+          </div>
+        </div>
+        <div className={`text-display ${valueClass} text-4xl sm:text-5xl shrink-0 leading-none`}>
+          {data !== null ? Math.round(data.value) : "—"}
+          <span className="text-xs tracking-[0.25em] ml-2 align-middle">PPM</span>
+        </div>
+      </div>
+    </div>
   );
 }
