@@ -146,14 +146,17 @@ function Home() {
           </span>
         </div>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
           <HallCard to="/agenda" title="Krøniken" desc="Agenda og meldinger med dato og emne." icon="📜" />
-          <HallCard to="/var" title="Værens budskap" desc="Værmelding og pollenvarsel for Skien." icon="🌨" />
+          <HallCard to="/var" title="Værens budskap" desc="Værmelding for Skien og hytta." icon="🌨" />
+          <HallCard to="/pollen" title="Pollenvarsel" desc="Dagens pollen i lufta." icon="🌾" />
           <HallCard to="/hytta" title="Hytta" desc="Husets tilflukt i fjellet." icon="🏔" />
           <HallCard to="/hundene" title="Hundene" desc="Husets tro følgesvenner." icon="🐺" />
           <HallCard to="/trening" title="Treningssalen" desc="Kroppen som rustning." icon="⚔️" />
+          <HallCard to="/turer" title="Ferden" desc="Tips til turer i nærheten." icon="🧭" />
+          <HallCard to="/jernhesten" title="Jernhesten" desc="Husets lydløse ganger — Jaguar I-Pace." icon="⚡" />
           <HallCard to="/smarthus" title="Borgens Smarthus" desc="Lys, varme og varslere fra Homey." icon="🏰" />
-          <HallCard to="/agenda" title="Send melding" desc="Skriv en kort hilsen til kalenderen." icon="🪶" />
+          <HallCard to="/steintavle" title="Steintavle" desc="Husets innskrifter og notater." icon="🪨" />
         </div>
       </section>
 
