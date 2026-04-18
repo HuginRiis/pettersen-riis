@@ -103,6 +103,9 @@ const ALLERGENS: Allergen[] = [
   },
 ];
 
+// Allergener Arne reagerer på — fremheves i UI
+const MY_ALLERGEN_KEYS = new Set(["bjork", "gress", "or", "burot"]);
+
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Des"];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -128,8 +131,15 @@ function PollenPage() {
         image={heroImg}
       />
 
-      <section className="container mx-auto px-4 pt-6 flex justify-center">
+      <section className="container mx-auto px-4 pt-6 flex flex-col items-center gap-3">
         <LastUpdated label="Pollen (sidelast)" timestamp={loadedAt} />
+        <div className="panel rounded-md px-4 py-2 flex items-center gap-2 text-xs">
+          <span className="text-primary">⚔</span>
+          <span className="text-muted-foreground">
+            Allergener merket med <span className="text-primary">⚔</span> plager Arne:{" "}
+            <span className="text-foreground">bjørk, gress, or, burot</span>
+          </span>
+        </div>
       </section>
 
       <section className="container mx-auto px-4 py-10 space-y-12">
@@ -290,13 +300,19 @@ function YearHeatmap({
           <tbody>
             {ALLERGENS.map((a) => {
               const row = a[region];
+              const isMine = MY_ALLERGEN_KEYS.has(a.key);
               return (
                 <tr key={a.key} className="border-t border-border/50">
                   <td className="py-1.5 pr-3">
                     <div className="flex items-center gap-2">
                       <span className="text-lg">{a.sigil}</span>
                       <div className="leading-tight">
-                        <div className="text-sm text-foreground">{a.name}</div>
+                        <div className="text-sm text-foreground flex items-center gap-1">
+                          {a.name}
+                          {isMine && (
+                            <span className="text-primary text-xs" title="Plager Arne">⚔</span>
+                          )}
+                        </div>
                         <div className="text-[10px] text-muted-foreground italic">
                           {a.latin}
                         </div>
@@ -482,15 +498,23 @@ function CurveChart({
 
       {/* Legend */}
       <div className="flex flex-wrap gap-x-3 gap-y-1.5 mt-3 pt-3 border-t border-border/50">
-        {ALLERGENS.map((a) => (
-          <div key={a.key} className="flex items-center gap-1.5">
-            <div
-              className="h-2.5 w-2.5 rounded-full"
-              style={{ backgroundColor: allergenColor(a.key) }}
-            />
-            <span className="text-xs text-muted-foreground">{a.name}</span>
-          </div>
-        ))}
+        {ALLERGENS.map((a) => {
+          const isMine = MY_ALLERGEN_KEYS.has(a.key);
+          return (
+            <div key={a.key} className="flex items-center gap-1.5">
+              <div
+                className="h-2.5 w-2.5 rounded-full"
+                style={{ backgroundColor: allergenColor(a.key) }}
+              />
+              <span
+                className={`text-xs ${isMine ? "text-foreground font-medium" : "text-muted-foreground"}`}
+              >
+                {a.name}
+                {isMine && <span className="text-primary ml-0.5">⚔</span>}
+              </span>
+            </div>
+          );
+        })}
       </div>
     </article>
   );
@@ -516,13 +540,18 @@ function AllergenCodex({ month }: { month: number }) {
           return (
             <article
               key={a.key}
-              className="panel rounded-lg p-5 glow-on-hover flex flex-col"
+              className={`panel rounded-lg p-5 glow-on-hover flex flex-col ${
+                MY_ALLERGEN_KEYS.has(a.key) ? "ring-1 ring-primary/40" : ""
+              }`}
             >
               <div className="flex items-start justify-between mb-3">
                 <div>
                   <div className="text-3xl mb-1">{a.sigil}</div>
-                  <h3 className="text-display text-lg text-primary tracking-wider uppercase">
+                  <h3 className="text-display text-lg text-primary tracking-wider uppercase flex items-center gap-2">
                     {a.name}
+                    {MY_ALLERGEN_KEYS.has(a.key) && (
+                      <span className="text-sm" title="Plager Arne">⚔</span>
+                    )}
                   </h3>
                   <p className="text-[11px] italic text-muted-foreground">{a.latin}</p>
                 </div>

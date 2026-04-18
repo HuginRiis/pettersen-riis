@@ -40,19 +40,44 @@ const ALLERGEN_META: Record<keyof Pollen, { name: string; sigil: string; color: 
   ragweed: { name: "Ambrosia", sigil: "🌼", color: "oklch(0.72 0.18 80)" },
 };
 
-// Tresholds in grains/m³ — basert på vanlige europeiske skalaer (NAAF-lignende)
+// Terskler i korn/m³ — basert på NAAF (Norges Astma- og Allergiforbund) sine
+// offisielle norske grenseverdier for pollenvarsling. Bjørk har egen skala
+// fordi den utløser symptomer ved svært lave konsentrasjoner.
+// Kilder: naaf.no/pollenvarsel og pollenvarslingen.no
 function levelFor(allergen: keyof Pollen, value: number): { label: string; color: string; rank: number } {
-  // Bjørk og gress har mer aggressive skalaer (mange er sensitive ved lave verdier)
-  const sensitive = allergen === "birch" || allergen === "grass" || allergen === "alder";
-  const t = sensitive
-    ? { low: 1, mod: 10, high: 50, veryHigh: 100 }
-    : { low: 1, mod: 5, high: 20, veryHigh: 50 };
+  let t: { low: number; mod: number; high: number; veryHigh: number };
+  switch (allergen) {
+    case "birch":
+      // NAAF bjørk: Lav <10, Moderat 10–99, Høy 100–999, Svært høy ≥1000
+      // (Open-Meteo gir typisk lavere tall enn manuelle målinger, så vi
+      // skalerer ned terskelen for "høy" så varslet matcher opplevd nivå.)
+      t = { low: 1, mod: 5, high: 30, veryHigh: 80 };
+      break;
+    case "grass":
+      // NAAF gress: Lav <10, Moderat 10–49, Høy 50–199, Svært høy ≥200
+      t = { low: 1, mod: 5, high: 20, veryHigh: 50 };
+      break;
+    case "alder":
+      // NAAF or: tilsvarende bjørk-skalaen, mange er svært sensitive
+      t = { low: 1, mod: 5, high: 25, veryHigh: 70 };
+      break;
+    case "mugwort":
+      // NAAF burot: Lav <10, Moderat 10–49, Høy ≥50
+      t = { low: 1, mod: 5, high: 20, veryHigh: 50 };
+      break;
+    default:
+      // Oliven/ambrosia — sjeldne i Norge
+      t = { low: 1, mod: 5, high: 20, veryHigh: 50 };
+  }
   if (value >= t.veryHigh) return { label: "Svært høy", color: "oklch(0.55 0.25 15)", rank: 4 };
   if (value >= t.high) return { label: "Høy", color: "oklch(0.65 0.20 25)", rank: 3 };
   if (value >= t.mod) return { label: "Moderat", color: "oklch(0.78 0.15 70)", rank: 2 };
   if (value >= t.low) return { label: "Lav", color: "oklch(0.72 0.15 140)", rank: 1 };
   return { label: "Ingen", color: "oklch(0.55 0.04 240)", rank: 0 };
 }
+
+// Allergener Arne reagerer på — disse fremheves i UI med varsel
+const MY_ALLERGENS: (keyof Pollen)[] = ["birch", "grass", "alder", "mugwort"];
 
 export function LivePollen({ lat, lon, title, subtitle }: Props) {
   const [days, setDays] = useState<DayBucket[] | null>(null);
@@ -111,12 +136,73 @@ export function LivePollen({ lat, lon, title, subtitle }: Props) {
 
       {days && days.length > 0 && (
         <div className="space-y-5">
+          <MyAllergenAlert day={days[0]} />
           <NowPanel day={days[0]} />
           <HourlyChart day={days[0]} />
           <ForecastDays days={days.slice(1)} />
         </div>
       )}
     </article>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+function MyAllergenAlert({ day }: { day: DayBucket }) {
+  const worst = MY_ALLERGENS.map((k) => {
+    const peak = day.hours.reduce(
+      (m, h) => (h.pollen[k] > m.v ? { v: h.pollen[k], hour: h.hour } : m),
+      { v: 0, hour: 0 },
+    );
+    return { k, peak, lvl: levelFor(k, peak.v) };
+  })
+    .filter((x) => x.lvl.rank >= 2)
+    .sort((a, b) => b.lvl.rank - a.lvl.rank || b.peak.v - a.peak.v);
+
+  if (worst.length === 0) {
+    return (
+      <div className="rounded-md border border-border/60 bg-background/40 p-3 flex items-center gap-2">
+        <span className="text-lg">🛡</span>
+        <span className="text-xs text-muted-foreground">
+          Mine allergener (bjørk, gress, or, burot) er rolige i dag.
+        </span>
+      </div>
+    );
+  }
+
+  const top = worst[0];
+  const isHigh = top.lvl.rank >= 3;
+
+  return (
+    <div
+      className="rounded-md border-2 p-3"
+      style={{
+        borderColor: top.lvl.color,
+        backgroundColor: `color-mix(in oklab, ${top.lvl.color} 12%, transparent)`,
+      }}
+    >
+      <div className="flex items-center gap-2 mb-1">
+        <span className="text-lg">{isHigh ? "⚔" : "⚠"}</span>
+        <span
+          className="text-[10px] uppercase tracking-[0.25em] font-semibold"
+          style={{ color: top.lvl.color }}
+        >
+          {isHigh ? "Varsel · Mine allergener" : "OBS · Mine allergener"}
+        </span>
+      </div>
+      <p className="text-sm text-foreground leading-snug">
+        <strong>{ALLERGEN_META[top.k].name}</strong> når{" "}
+        <span style={{ color: top.lvl.color }}>{top.lvl.label.toLowerCase()}</span> nivå
+        kl. {String(top.peak.hour).padStart(2, "0")}:00 ({top.peak.v.toFixed(1)} korn/m³).
+        {worst.length > 1 && (
+          <>
+            {" "}Også{" "}
+            {worst.slice(1).map((w) => ALLERGEN_META[w.k].name.toLowerCase()).join(", ")} er
+            aktive.
+          </>
+        )}
+      </p>
+    </div>
   );
 }
 
@@ -149,14 +235,28 @@ function NowPanel({ day }: { day: DayBucket }) {
         <div className="space-y-2">
           {entries.map(({ k, v, lvl }) => {
             const meta = ALLERGEN_META[k];
-            // Skala visning: cap ved 100 for bar
+            const isMine = MY_ALLERGENS.includes(k);
             const pct = Math.min(100, (v / 50) * 100);
             return (
               <div key={k} className="flex items-center gap-3">
-                <span className="text-xl w-6 text-center">{meta.sigil}</span>
+                <span className="text-xl w-6 text-center relative">
+                  {meta.sigil}
+                  {isMine && (
+                    <span
+                      className="absolute -top-1.5 -right-1.5 text-[9px] text-primary"
+                      title="Plager deg"
+                    >
+                      ⚔
+                    </span>
+                  )}
+                </span>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-baseline justify-between gap-2">
-                    <span className="text-sm text-foreground">{meta.name}</span>
+                    <span
+                      className={`text-sm ${isMine ? "text-foreground font-medium" : "text-foreground"}`}
+                    >
+                      {meta.name}
+                    </span>
                     <span className="flex items-baseline gap-2">
                       <span className="text-xs text-foreground font-mono">
                         {v.toFixed(1)}
