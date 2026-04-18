@@ -37,7 +37,7 @@ export const Route = createFileRoute("/steintavle")({
   loader: () => getHomeySnapshot(),
   component: SteintavlePage,
   errorComponent: ({ error }) => (
-    <PageShell>
+    <PageShell minimalHeader>
       <section className="container mx-auto px-4 py-16">
         <div className="panel rounded-lg p-8 text-center">
           <h1 className="heading-hero text-3xl mb-4">Steintavlen er stum</h1>
