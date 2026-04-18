@@ -197,23 +197,31 @@ function SteintavlePage() {
           </section>
         )}
 
-        {/* Yr lynradar — ekte live data, sentrert på Tollnes */}
+        {/* Yr lynradar — ekte live data, sentrert på Tollnes (Skien, Telemark) */}
         <section>
           <SectionTitle>Lynvarsel · Yr.no over Tollnes</SectionTitle>
           <div className="panel rounded-lg overflow-hidden">
             <div className="relative w-full" style={{ aspectRatio: "4 / 3", maxHeight: "min(60vh, 600px)" }}>
               <iframe
-                title="Yr lynkart sentrert på Tollnes"
-                src="https://www.yr.no/nb/kart/lyn/1-3429877"
+                title="Yr lynkart sentrert på Tollnes, Skien"
+                src="https://www.yr.no/nb/kart/lyn/1-2337230"
                 className="absolute inset-0 w-full h-full border-0"
                 loading="lazy"
                 referrerPolicy="no-referrer-when-downgrade"
               />
             </div>
             <div className="px-4 py-3 flex items-center justify-between text-[11px] tracking-[0.25em] uppercase text-muted-foreground border-t border-border">
-              <span>Yr.no · Live lyn</span>
+              <span>
+                {hasThunder ? (
+                  <span className="text-destructive font-semibold">⚡ Torden i området</span>
+                ) : otherAlerts.length > 0 ? (
+                  <span className="text-primary">⚠ {otherAlerts.length} aktivt varsel</span>
+                ) : (
+                  <span>Yr.no · Live lyn</span>
+                )}
+              </span>
               <a
-                href="https://www.yr.no/nb/kart/lyn/1-3429877"
+                href="https://www.yr.no/nb/kart/lyn/1-2337230"
                 target="_blank"
                 rel="noreferrer"
                 className="text-primary hover:underline"
@@ -221,15 +229,27 @@ function SteintavlePage() {
                 Åpne i Yr ↗
               </a>
             </div>
+            {otherAlerts.length > 0 && (
+              <div className="px-4 py-3 border-t border-border space-y-2">
+                {otherAlerts.map((a) => (
+                  <div key={a.id} className="flex items-start gap-3 text-sm">
+                    <span
+                      className="mt-1 w-2.5 h-2.5 rounded-full shrink-0"
+                      style={{ background: alertColor(a.awarenessColor) }}
+                    />
+                    <div className="flex-1">
+                      <div className="text-foreground">{a.title}</div>
+                      {a.area && (
+                        <div className="text-[10px] tracking-[0.2em] text-muted-foreground uppercase mt-0.5">
+                          {a.area}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-        </section>
-
-        {/* Met.no radar-kart (nedbørs-skyer) */}
-        <section>
-          <SectionTitle>
-            Tordenravnene · Værradar over Telemark
-          </SectionTitle>
-          <RadarPanel radar={radar} alerts={otherAlerts} hasThunder={hasThunder} />
         </section>
       </main>
     </PageShell>
