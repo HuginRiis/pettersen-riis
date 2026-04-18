@@ -1,120 +1,151 @@
 import { createServerFn } from "@tanstack/react-start";
 
-export type LightningStrike = {
-  /** ISO timestamp */
-  time: string;
-  lat: number;
-  lon: number;
-  /** Peak current in kA (signed) */
-  current: number;
-  /** Distance in km from center */
-  distanceKm: number;
-};
+const TOLLNES = { lat: 59.1789, lon: 9.5732 };
 
-export type LightningResult =
+// ============================================================
+// MET.NO RADAR (sør-Norge, 5-nivå reflectivity = nedbørsintensitet)
+// ============================================================
+
+export type RadarResult =
   | { ok: false; error: string }
   | {
       ok: true;
-      center: { lat: number; lon: number };
-      radiusKm: number;
-      strikes: LightningStrike[];
-      fetchedAt: string;
+      dataUrl: string;
+      capturedAt: string;
+      area: "southern_norway";
     };
 
-function haversineKm(
-  lat1: number,
-  lon1: number,
-  lat2: number,
-  lon2: number,
-): number {
-  const R = 6371;
-  const toRad = (d: number) => (d * Math.PI) / 180;
-  const dLat = toRad(lat2 - lat1);
-  const dLon = toRad(lon2 - lon1);
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
-  return 2 * R * Math.asin(Math.sqrt(a));
+const MET_UA = "house-riis-pettersen/1.0 (https://riis.cc)";
+
+function bufferToDataUrl(buffer: ArrayBuffer, contentType: string) {
+  const bytes = new Uint8Array(buffer);
+  let binary = "";
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+  }
+  return `data:${contentType};base64,${btoa(binary)}`;
 }
 
-/**
- * Met.no lightning API — siste ~60 min lynnedslag i Norge.
- * Returnerer plain text, en linje per nedslag i UALF-format.
- * Felt-indeks (de viktigste):
- *   0  version
- *   1  year
- *   2  month
- *   3  day
- *   4  hour
- *   5  min
- *   6  sec
- *   7  nanosec
- *   8  lat
- *   9  lon
- *   10 peak current (kA, signed)
- */
-async function fetchMetLightning(): Promise<LightningStrike[]> {
-  const url = "https://api.met.no/weatherapi/lightning/2.0/?";
-  const res = await fetch(url, {
-    headers: {
-      // Met.no krever en identifiserende User-Agent
-      "User-Agent": "house-riis-pettersen/1.0 (https://riis.cc)",
-      Accept: "text/plain",
-    },
-  });
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(`Met.no lyn-API feilet (${res.status}): ${text.slice(0, 120)}`);
-  }
-  const text = await res.text();
-  const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
-  const strikes: Omit<LightningStrike, "distanceKm">[] = [];
-  for (const line of lines) {
-    const parts = line.trim().split(/\s+/);
-    if (parts.length < 11) continue;
-    const year = Number(parts[1]);
-    const month = Number(parts[2]);
-    const day = Number(parts[3]);
-    const hour = Number(parts[4]);
-    const min = Number(parts[5]);
-    const sec = Number(parts[6]);
-    const lat = Number(parts[8]);
-    const lon = Number(parts[9]);
-    const current = Number(parts[10]);
-    if (!Number.isFinite(lat) || !Number.isFinite(lon)) continue;
-    const dt = new Date(Date.UTC(year, month - 1, day, hour, min, sec));
-    strikes.push({
-      time: dt.toISOString(),
-      lat,
-      lon,
-      current,
-      // distance fylles inn av kallende kode
-      ...({} as { distanceKm: number }),
-    });
-  }
-  return strikes as LightningStrike[];
+function parseRadarTimestamp(disposition: string | null): string {
+  // content-disposition: inline;filename="web5color-sornorge_20260418T070000Z.png"
+  if (!disposition) return new Date().toISOString();
+  const m = disposition.match(/(\d{8})T(\d{6})Z/);
+  if (!m) return new Date().toISOString();
+  const d = m[1];
+  const t = m[2];
+  const iso = `${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6, 8)}T${t.slice(0, 2)}:${t.slice(2, 4)}:${t.slice(4, 6)}Z`;
+  const dt = new Date(iso);
+  return Number.isNaN(dt.getTime()) ? new Date().toISOString() : dt.toISOString();
 }
 
-export const getLightningNearTollnes = createServerFn({ method: "GET" }).handler(
-  async (): Promise<LightningResult> => {
-    const center = { lat: 59.1789, lon: 9.5732 }; // Tollnes
-    const radiusKm = 150;
+export const getMetRadarSouthernNorway = createServerFn({ method: "GET" }).handler(
+  async (): Promise<RadarResult> => {
     try {
-      const all = await fetchMetLightning();
-      const within: LightningStrike[] = [];
-      for (const s of all) {
-        const d = haversineKm(center.lat, center.lon, s.lat, s.lon);
-        if (d <= radiusKm) {
-          within.push({ ...s, distanceKm: d });
-        }
+      const res = await fetch(
+        "https://api.met.no/weatherapi/radar/2.0/?type=5level_reflectivity&area=southern_norway&content=image",
+        { headers: { "User-Agent": MET_UA, Accept: "image/png" } },
+      );
+      if (!res.ok) {
+        return { ok: false, error: `Radar feilet (${res.status})` };
       }
-      within.sort((a, b) => (a.time < b.time ? 1 : -1));
+      const ct = res.headers.get("content-type") ?? "image/png";
+      const disposition = res.headers.get("content-disposition");
+      const buf = await res.arrayBuffer();
       return {
         ok: true,
-        center,
-        radiusKm,
-        strikes: within,
-        fetchedAt: new Date().toISOString(),
+        dataUrl: bufferToDataUrl(buf, ct.split(";")[0]),
+        capturedAt: parseRadarTimestamp(disposition),
+        area: "southern_norway",
+      };
+    } catch (e: any) {
+      return { ok: false, error: e?.message ?? "Ukjent feil" };
+    }
+  },
+);
+
+// ============================================================
+// MET.NO METALERTS (offisielle varsler — torden, regn, vind etc.)
+// ============================================================
+
+export type MetAlert = {
+  id: string;
+  event: string; // f.eks. "thunderstorm", "rain", "wind"
+  title: string;
+  description: string;
+  severity: "Minor" | "Moderate" | "Severe" | "Extreme" | string;
+  certainty: string;
+  awarenessLevel: string; // "2; yellow; Moderate"
+  awarenessColor: "yellow" | "orange" | "red" | "green" | string;
+  start: string;
+  end: string;
+  area: string;
+  isThunder: boolean;
+};
+
+export type AlertsResult =
+  | { ok: false; error: string }
+  | {
+      ok: true;
+      alerts: MetAlert[];
+      lastChange: string;
+    };
+
+function parseAwareness(raw: string | undefined): {
+  level: string;
+  color: string;
+} {
+  if (!raw) return { level: "1", color: "green" };
+  // Format: "2; yellow; Moderate"
+  const parts = raw.split(";").map((p) => p.trim());
+  return {
+    level: parts[0] ?? "1",
+    color: (parts[1] ?? "green").toLowerCase(),
+  };
+}
+
+export const getTollnesAlerts = createServerFn({ method: "GET" }).handler(
+  async (): Promise<AlertsResult> => {
+    try {
+      const url = `https://api.met.no/weatherapi/metalerts/2.0/current.json?lat=${TOLLNES.lat}&lon=${TOLLNES.lon}`;
+      const res = await fetch(url, {
+        headers: { "User-Agent": MET_UA, Accept: "application/json" },
+      });
+      if (!res.ok) {
+        return { ok: false, error: `MetAlerts feilet (${res.status})` };
+      }
+      const json = (await res.json()) as any;
+      const features: any[] = Array.isArray(json?.features) ? json.features : [];
+
+      const alerts: MetAlert[] = features.map((f, i) => {
+        const props = f?.properties ?? {};
+        const awareness = parseAwareness(props.awareness_level);
+        const event: string = String(props.event ?? "").toLowerCase();
+        const title: string = props.eventAwarenessName ?? props.event ?? "Varsel";
+        const desc: string = props.description ?? props.instruction ?? "";
+        return {
+          id: props.id ?? `alert-${i}`,
+          event,
+          title,
+          description: desc,
+          severity: props.severity ?? "Minor",
+          certainty: props.certainty ?? "Unknown",
+          awarenessLevel: awareness.level,
+          awarenessColor: awareness.color,
+          start: props.eventEndingTime ? props.onset ?? props.effective ?? "" : props.onset ?? "",
+          end: props.eventEndingTime ?? props.expires ?? "",
+          area: props.area ?? "",
+          isThunder:
+            event.includes("thunder") ||
+            event.includes("torden") ||
+            (typeof title === "string" && title.toLowerCase().includes("torden")),
+        };
+      });
+
+      return {
+        ok: true,
+        alerts,
+        lastChange: json?.lastChange ?? new Date().toISOString(),
       };
     } catch (e: any) {
       return { ok: false, error: e?.message ?? "Ukjent feil" };
