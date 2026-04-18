@@ -101,6 +101,12 @@ function SmarthusPage() {
   const [disconnecting, setDisconnecting] = useState(false);
   const [togglingLights, setTogglingLights] = useState(false);
   const [lightsMessage, setLightsMessage] = useState<string | null>(null);
+  const [homeyUpdated, setHomeyUpdated] = useState<Date>(() => new Date());
+
+  // Hver gang loader-data endres (etter router.invalidate) — merk tidspunktet.
+  useEffect(() => {
+    setHomeyUpdated(new Date());
+  }, [data]);
 
   if (!data.ok) {
     return <ConnectPanel message={data.needsConnect ? undefined : data.error} />;
