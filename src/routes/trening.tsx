@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { PageShell, PageHero } from "@/components/PageShell";
 import { ActivityMap } from "@/components/ActivityMap";
-import { getStravaDashboard, getStravaStatus, disconnectStrava } from "@/server/strava";
+import { getStravaDashboard, getStravaStatus } from "@/server/strava";
 import treningImg from "@/assets/trening.jpg";
 
 export const Route = createFileRoute("/trening")({
@@ -106,7 +106,7 @@ function TreningPage() {
   const [dash, setDash] = useState<DashState>({ kind: "idle" });
   const fetchStatus = useServerFn(getStravaStatus);
   const fetchDash = useServerFn(getStravaDashboard);
-  const disconnect = useServerFn(disconnectStrava);
+  // disconnect intentionally removed from UI
 
   const loadStatus = async () => {
     try {
