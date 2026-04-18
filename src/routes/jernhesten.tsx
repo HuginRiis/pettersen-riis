@@ -18,6 +18,10 @@ import {
 import { PageShell, PageHero } from "@/components/PageShell";
 import jernhestenImg from "@/assets/jernhesten.jpg";
 import jernhestenLading from "@/assets/jernhesten-lading.jpg";
+import jernhestenSkog from "@/assets/jernhesten-skog.jpg";
+import jernhestenFrontLading from "@/assets/jernhesten-front-lading.jpg";
+import jernhestenBak from "@/assets/jernhesten-bak.jpg";
+import jernhestenByen from "@/assets/jernhesten-byen.jpg";
 
 export const Route = createFileRoute("/jernhesten")({
   head: () => ({
@@ -183,6 +187,35 @@ function JernhestenPage() {
           </article>
         </section>
 
+        {/* Galleri — Gangerens portretter */}
+        <section>
+          <h2 className="text-2xl text-primary mb-5 flex items-center gap-2">
+            <Crown size={22} /> Gangerens portretter
+          </h2>
+          <div className="grid md:grid-cols-2 gap-4">
+            <Portrait
+              src={jernhestenSkog}
+              title="Vokteren av Vintervedet"
+              caption="Jernhesten hviler ved skogkanten, der snøen ennå holder fjellets ord. Tre stille vakter står bak — en konge mellom ulvene."
+            />
+            <Portrait
+              src={jernhestenFrontLading}
+              title="Når gangeren drikker fra lynet"
+              caption="Ved borgens egen kilde mettes Jernhesten med strøm fra Vesterlandets nett. En lydløs rite, gjentatt hver natt."
+            />
+            <Portrait
+              src={jernhestenBak}
+              title="EV400 — Hertugen av Coventry"
+              caption="Fra hekkens skygge skuer den ut over forstaden. To motorer, fire hjul, og en hale av rødt lys som varsler avreise."
+            />
+            <Portrait
+              src={jernhestenByen}
+              title="Jernhesten i Skien-by"
+              caption="Mellom borgerhus og torg står den parkert som en svart ridder — I-PACE preget i krom, Jaguarens hode lyser stille."
+            />
+          </div>
+        </section>
+
         {/* Mesterens råd */}
         <article className="panel rounded-lg p-6 md:p-8 border-primary/30">
           <h2 className="text-2xl text-primary mb-3">Mesterens råd</h2>
@@ -258,5 +291,34 @@ function Li({ children }: { children: React.ReactNode }) {
       <span className="text-primary">·</span>
       <span>{children}</span>
     </li>
+  );
+}
+
+function Portrait({
+  src,
+  title,
+  caption,
+}: {
+  src: string;
+  title: string;
+  caption: string;
+}) {
+  return (
+    <figure className="panel rounded-lg overflow-hidden glow-on-hover">
+      <div className="aspect-[4/3] overflow-hidden">
+        <img
+          src={src}
+          alt={title}
+          className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
+          loading="lazy"
+        />
+      </div>
+      <figcaption className="p-4">
+        <h3 className="text-primary text-lg mb-1 text-display tracking-wide">
+          {title}
+        </h3>
+        <p className="text-sm text-foreground/80 leading-relaxed">{caption}</p>
+      </figcaption>
+    </figure>
   );
 }
