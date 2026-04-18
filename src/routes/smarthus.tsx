@@ -268,39 +268,26 @@ function SmarthusPage() {
     [outdoorTollnesDevice?.id, outdoorHyttaDevice?.id].filter(Boolean) as string[],
   );
 
-  // Én temperatur per rom (sone). Foretrekk Netatmo, ellers første treff.
-  const tempByZone = new Map<string, RoomTemp>();
+  // Alle inne-termometre — vis hver sensor for seg, så bruker ser kilden.
+  // (Tidligere foretrakk vi Netatmo, men den kan være unøyaktig.)
+  const indoorTemps: RoomTemp[] = [];
   for (const d of data.devices) {
     if (excludedOutdoorIds.has(d.id)) continue;
     const t = d.capabilities["measure_temperature"]?.value;
     if (typeof t !== "number") continue;
-    const zoneKey = d.zone ?? "__no_zone__";
     const zoneName = d.zone ? zoneById.get(d.zone)?.name ?? "Ukjent" : "Ukjent";
-    const isNetatmo = (d.name ?? "").toLowerCase().includes("netatmo");
-    const existing = tempByZone.get(zoneKey);
-    if (!existing) {
-      tempByZone.set(zoneKey, {
-        deviceId: d.id,
-        deviceName: d.name,
-        zoneName,
-        temp: t,
-      });
-    } else {
-      const existingIsNetatmo = existing.deviceName.toLowerCase().includes("netatmo");
-      if (isNetatmo && !existingIsNetatmo) {
-        tempByZone.set(zoneKey, {
-          deviceId: d.id,
-          deviceName: d.name,
-          zoneName,
-          temp: t,
-        });
-      }
-    }
+    indoorTemps.push({
+      deviceId: d.id,
+      deviceName: d.name,
+      zoneName,
+      temp: t,
+    });
   }
-
-  const indoorTemps = Array.from(tempByZone.values()).sort((a, b) =>
-    a.zoneName.localeCompare(b.zoneName, "nb"),
-  );
+  indoorTemps.sort((a, b) => {
+    const z = a.zoneName.localeCompare(b.zoneName, "nb");
+    if (z !== 0) return z;
+    return a.deviceName.localeCompare(b.deviceName, "nb");
+  });
 
   // CO2-sensorer (Netatmo). Finn Hytte og Tollnes.
   const co2Devices = data.devices.filter((d) => {
