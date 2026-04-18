@@ -498,17 +498,19 @@ function BigTemp({
   mm,
   accent = "primary",
   big = false,
+  sub,
 }: {
   label: string;
   temp: number | null;
   mm: MinMax;
   accent?: "primary" | "ice";
   big?: boolean;
+  sub?: string;
 }) {
   const color = accent === "ice" ? "var(--ice)" : "var(--primary)";
   return (
     <article
-      className="panel rounded-lg p-4 sm:p-5 text-center flex flex-col items-center justify-center"
+      className="panel rounded-lg p-3 sm:p-4 text-center flex flex-col items-center justify-center"
       style={
         big
           ? {
@@ -521,16 +523,21 @@ function BigTemp({
         {label}
       </div>
       <div
-        className={`text-display leading-none mt-2 ${
+        className={`text-display leading-none mt-1.5 ${
           big
-            ? "text-5xl sm:text-6xl md:text-7xl"
-            : "text-4xl sm:text-5xl md:text-5xl"
+            ? "text-4xl sm:text-5xl md:text-6xl"
+            : "text-3xl sm:text-4xl md:text-5xl"
         }`}
         style={{ color }}
       >
         {temp !== null ? `${temp.toFixed(1)}°` : "—"}
       </div>
       <MinMaxRow mm={mm} unit="°" />
+      {sub && (
+        <div className="text-[9px] sm:text-[10px] tracking-[0.2em] text-muted-foreground/70 uppercase mt-1.5">
+          {sub}
+        </div>
+      )}
     </article>
   );
 }
