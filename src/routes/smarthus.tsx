@@ -573,15 +573,6 @@ function SmarthusPage() {
           );
         })}
 
-        <div className="text-center pt-6">
-          <button
-            onClick={handleDisconnect}
-            disabled={disconnecting}
-            className="text-xs tracking-[0.25em] uppercase text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50"
-          >
-            {disconnecting ? "Bryter bånd…" : "Bryt bånd til Homey"}
-          </button>
-        </div>
       </section>
     </PageShell>
   );
