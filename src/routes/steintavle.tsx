@@ -59,33 +59,36 @@ export const Route = createFileRoute("/steintavle")({
   ),
 });
 
-// Speiler server-logikken i `getLivingRoomLightsState` slik at vi kan utlede
-// lys-status fra eksisterende snapshot uten et eget Athom-kall.
-function isLivingRoomZoneName(name: string): boolean {
-  const n = name.toLowerCase();
-  return (
-    n.includes("stue") ||
-    n.includes("stua") ||
-    n.includes("living") ||
-    n.includes("livingroom")
-  );
+// Speiler `LIVING_ROOM_TARGETS` på serveren — samme navne-tokens slik at
+// Steintavlen kan derive lys-status fra eksisterende snapshot uten ekstra kall.
+const LIVING_ROOM_TARGET_TOKENS: string[][] = [
+  ["høyt", "peis"],
+  ["høyt", "tv"],
+  ["lampett"],
+  ["sweet", "høyre"],
+  ["sweet", "venstre"],
+  ["taklys"],
+  ["stålampe"],
+];
+
+function normName(s: string): string {
+  return s.toLowerCase().replace(/\s+/g, " ").trim();
 }
 
 function deriveLivingRoomLightsOn(
   snapshot: Extract<Awaited<ReturnType<typeof getHomeySnapshot>>, { ok: true }>,
 ): boolean | null {
-  const livingRoomZoneIds = new Set(
-    snapshot.zones.filter((z) => isLivingRoomZoneName(z.name)).map((z) => z.id),
-  );
-  const lights = snapshot.devices.filter(
-    (d) =>
-      d.zone &&
-      livingRoomZoneIds.has(d.zone) &&
-      d.capabilities &&
-      "onoff" in d.capabilities,
-  );
-  if (lights.length === 0) return null;
-  return lights.some((d) => d.capabilities["onoff"]?.value === true);
+  const matched: typeof snapshot.devices = [];
+  for (const tokens of LIVING_ROOM_TARGET_TOKENS) {
+    const hit = snapshot.devices.find((d) => {
+      if (!d.capabilities || !("onoff" in d.capabilities)) return false;
+      const name = normName(d.name);
+      return tokens.every((t) => name.includes(t));
+    });
+    if (hit && !matched.includes(hit)) matched.push(hit);
+  }
+  if (matched.length === 0) return null;
+  return matched.some((d) => d.capabilities["onoff"]?.value === true);
 }
 
 function SteintavlePage() {

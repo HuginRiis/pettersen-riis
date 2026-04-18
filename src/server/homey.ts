@@ -591,7 +591,7 @@ export const setAllOutdoorLights = createServerFn({ method: "POST" })
   });
 
 // ============================================================
-// Living room lights — bulk control of "stue"
+// Living room lights — bulk control of named devices in "stue"
 // ============================================================
 
 function isLivingRoomZoneName(name: string): boolean {
@@ -602,6 +602,41 @@ function isLivingRoomZoneName(name: string): boolean {
     n.includes("living") ||
     n.includes("livingroom")
   );
+}
+
+// Konkrete enheter Steintavlen skal styre (navn matches fuzzy, case-insensitivt).
+// Hver entry er en liste med tokens som ALLE må finnes i enhetsnavnet for å matche.
+// Dette tillater både lyspærer, stikkontakter (Taklys) og hva enn klasse Homey gir dem.
+const LIVING_ROOM_TARGETS: Array<{ label: string; tokens: string[] }> = [
+  { label: "Høyttaler peis veranda", tokens: ["høyt", "peis"] },
+  { label: "Høyttaler TV veranda", tokens: ["høyt", "tv"] },
+  { label: "Lampett under projector", tokens: ["lampett"] },
+  { label: "Sweet høyre", tokens: ["sweet", "høyre"] },
+  { label: "Sweet venstre", tokens: ["sweet", "venstre"] },
+  { label: "Taklys (stikkontakt)", tokens: ["taklys"] },
+  { label: "Stålampe", tokens: ["stålampe"] },
+];
+
+function normalizeName(s: string): string {
+  return s.toLowerCase().replace(/\s+/g, " ").trim();
+}
+
+function findLivingRoomTargets(devices: any[]): any[] {
+  const matched = new Map<string, any>();
+  for (const t of LIVING_ROOM_TARGETS) {
+    const candidate = devices.find((d) => {
+      if (!d) return false;
+      const caps = d?.capabilitiesObj ?? d?.capabilities_obj ?? {};
+      if (!caps || typeof caps !== "object" || !("onoff" in caps)) return false;
+      const name = normalizeName(String(d?.name ?? ""));
+      return t.tokens.every((tok) => name.includes(tok.toLowerCase()));
+    });
+    if (candidate) {
+      const id = candidate.id ?? candidate._id;
+      if (id) matched.set(id, candidate);
+    }
+  }
+  return Array.from(matched.values());
 }
 
 export const getLivingRoomLightsState = createServerFn({ method: "GET" }).handler(
@@ -621,27 +656,8 @@ export const getLivingRoomLightsState = createServerFn({ method: "GET" }).handle
       const delegationToken = await createDelegationToken(conn.access_token);
       const sessionToken = await createSessionToken(target.baseUrl, delegationToken);
 
-      const [zones, devices] = await Promise.all([
-        listZonesRaw(sessionToken, target.baseUrl),
-        listAllDevicesRaw(sessionToken, target.baseUrl),
-      ]);
-
-      const livingRoomZoneIds = new Set<string>(
-        zones
-          .filter((z) => isLivingRoomZoneName(z?.name ?? ""))
-          .map((z) => z.id ?? z._id)
-          .filter(Boolean),
-      );
-
-      const lights = devices.filter((d) => {
-        const cls = d?.class;
-        const virt = d?.virtualClass;
-        const isLight = cls === "light" || virt === "light";
-        if (!isLight) return false;
-        const caps = d?.capabilitiesObj ?? d?.capabilities_obj ?? {};
-        if (!caps || typeof caps !== "object" || !("onoff" in caps)) return false;
-        return d?.zone && livingRoomZoneIds.has(d.zone);
-      });
+      const devices = await listAllDevicesRaw(sessionToken, target.baseUrl);
+      const lights = findLivingRoomTargets(devices);
 
       const anyOn = lights.some((d) => {
         const caps = d?.capabilitiesObj ?? d?.capabilities_obj ?? {};
@@ -673,27 +689,8 @@ export const setLivingRoomLights = createServerFn({ method: "POST" })
       const delegationToken = await createDelegationToken(conn.access_token);
       const sessionToken = await createSessionToken(target.baseUrl, delegationToken);
 
-      const [zones, devices] = await Promise.all([
-        listZonesRaw(sessionToken, target.baseUrl),
-        listAllDevicesRaw(sessionToken, target.baseUrl),
-      ]);
-
-      const livingRoomZoneIds = new Set<string>(
-        zones
-          .filter((z) => isLivingRoomZoneName(z?.name ?? ""))
-          .map((z) => z.id ?? z._id)
-          .filter(Boolean),
-      );
-
-      const targets = devices.filter((d) => {
-        const cls = d?.class;
-        const virt = d?.virtualClass;
-        const isLight = cls === "light" || virt === "light";
-        if (!isLight) return false;
-        const caps = d?.capabilitiesObj ?? d?.capabilities_obj ?? {};
-        if (!caps || typeof caps !== "object" || !("onoff" in caps)) return false;
-        return d?.zone && livingRoomZoneIds.has(d.zone);
-      });
+      const devices = await listAllDevicesRaw(sessionToken, target.baseUrl);
+      const targets = findLivingRoomTargets(devices);
 
       let toggled = 0;
       await Promise.all(
