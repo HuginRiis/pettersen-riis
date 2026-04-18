@@ -23,11 +23,19 @@ export function SiteHeader() {
   const router = useRouter();
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
+  const pickSoundForHour = (hour: number): string => {
+    // Dag (06–15): fuglekvitter · Ettermiddag (15–20): GOT-krig · Kveld/natt (20–06): ugle
+    if (hour >= 6 && hour < 15) return "/audio/birds.mp3";
+    if (hour >= 15 && hour < 20) return "/audio/war.mp3";
+    return "/audio/owl.mp3";
+  };
+
   const playGotTheme = () => {
     try {
-      if (!audioRef.current) {
-        audioRef.current = new Audio("/audio/got-theme.mp3");
-        audioRef.current.volume = 0.35;
+      const src = pickSoundForHour(new Date().getHours());
+      if (!audioRef.current || audioRef.current.src.indexOf(src) === -1) {
+        audioRef.current = new Audio(src);
+        audioRef.current.volume = 0.45;
       }
       const a = audioRef.current;
       a.pause();
