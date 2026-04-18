@@ -635,3 +635,82 @@ function DeviceCard({ device }: { device: any }) {
     </article>
   );
 }
+
+function OutdoorTempCard({
+  label,
+  sourceName,
+  temp,
+}: {
+  label: string;
+  sourceName: string;
+  temp: number | null;
+}) {
+  return (
+    <div className="panel rounded-lg p-6">
+      <div className="text-[10px] tracking-[0.3em] text-primary uppercase mb-2">{label}</div>
+      <div className="flex items-end justify-between gap-4">
+        <div className="text-xs text-muted-foreground truncate">{sourceName}</div>
+        <div className="text-display text-primary text-5xl sm:text-6xl shrink-0 leading-none">
+          {temp !== null ? `${temp.toFixed(1)}°` : "—"}
+        </div>
+      </div>
+      {temp === null && (
+        <p className="text-xs text-muted-foreground italic mt-3">
+          Sensoren «{sourceName}» ble ikke funnet i Homey.
+        </p>
+      )}
+    </div>
+  );
+}
+
+function Co2Card({
+  label,
+  data,
+}: {
+  label: string;
+  data: { device: any; zoneName: string; value: number } | null;
+}) {
+  const tone =
+    data === null
+      ? "muted"
+      : data.value < 1000
+        ? "primary"
+        : data.value < 1500
+          ? "default"
+          : "warning";
+  const valueClass =
+    tone === "warning"
+      ? "text-destructive"
+      : tone === "muted"
+        ? "text-muted-foreground"
+        : "text-primary";
+  const status =
+    data === null
+      ? "Ingen Netatmo-CO₂-sensor funnet"
+      : data.value < 1000
+        ? "Frisk luft"
+        : data.value < 1500
+          ? "Litt tett"
+          : "Luft ut!";
+  return (
+    <div className="panel rounded-lg p-6">
+      <div className="text-[10px] tracking-[0.3em] text-muted-foreground uppercase mb-2">
+        {label}
+      </div>
+      <div className="flex items-end justify-between gap-4">
+        <div className="min-w-0">
+          {data && (
+            <div className="text-xs text-muted-foreground truncate">{data.device.name}</div>
+          )}
+          <div className="text-[10px] tracking-[0.25em] text-muted-foreground/80 uppercase mt-1 italic">
+            {status}
+          </div>
+        </div>
+        <div className={`text-display ${valueClass} text-4xl sm:text-5xl shrink-0 leading-none`}>
+          {data !== null ? Math.round(data.value) : "—"}
+          <span className="text-xs tracking-[0.25em] ml-2 align-middle">PPM</span>
+        </div>
+      </div>
+    </div>
+  );
+}
