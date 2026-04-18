@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Needle, Upload, Download, Type as TypeIcon, Image as ImageIcon } from "lucide-react";
+import { Scissors, Upload, Download, Type as TypeIcon, Image as ImageIcon } from "lucide-react";
 import {
   generateImageStitches,
   generateTextStitches,
@@ -94,7 +94,7 @@ function BroderingPage() {
         <Card className="mt-10 border-primary/20">
           <CardHeader>
             <CardTitle className="text-primary text-base flex items-center gap-2">
-              <Needle size={16} /> Råd fra mesteren
+              <Scissors size={16} /> Råd fra mesteren
             </CardTitle>
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground space-y-2">
@@ -159,7 +159,7 @@ function TextPanel() {
   const download = () => {
     if (!result) return;
     const bytes = writePES(result.blocks);
-    const blob = new Blob([bytes], { type: "application/octet-stream" });
+    const blob = new Blob([bytes.buffer as ArrayBuffer], { type: "application/octet-stream" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -322,7 +322,7 @@ function ImagePanel() {
   const download = () => {
     if (!result) return;
     const bytes = writePES(result.blocks);
-    const blob = new Blob([bytes], { type: "application/octet-stream" });
+    const blob = new Blob([bytes.buffer as ArrayBuffer], { type: "application/octet-stream" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
