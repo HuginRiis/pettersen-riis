@@ -6,7 +6,8 @@ import { logoutFn } from "@/server/auth";
 const links = [
   { to: "/", label: "Hjem" },
   { to: "/agenda", label: "Agenda" },
-  { to: "/var", label: "Vær & Pollen" },
+  { to: "/var", label: "Vær" },
+  { to: "/pollen", label: "Pollen" },
   { to: "/hytta", label: "Hytta" },
   { to: "/hundene", label: "Hundene" },
   { to: "/trening", label: "Trening" },

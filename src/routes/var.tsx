@@ -1,21 +1,31 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { PageShell, PageHero } from "@/components/PageShell";
 import heroImg from "@/assets/hero-westeros.jpg";
+import { getHomeySnapshot } from "@/server/homey";
+import { findDeviceFuzzy, type DeviceLike } from "@/lib/homey-match";
 
 export const Route = createFileRoute("/var")({
   head: () => ({
     meta: [
-      { title: "Værens budskap — Vær & Pollen | House Riis" },
-      { name: "description", content: "Værmelding og pollenvarsel for Skien." },
+      { title: "Værens budskap — Vær | House Riis" },
+      { name: "description", content: "Værmelding, regn og vind for Skien og hytta." },
       { property: "og:title", content: "Værens budskap | House Riis" },
-      { property: "og:description", content: "Sjusiffret værmelding og pollenestimat for Skien." },
+      { property: "og:description", content: "Sjusiffret værmelding, regn og vind fra Tollnes og Numedal." },
     ],
   }),
+  loader: () => getHomeySnapshot(),
   component: WeatherPage,
+  errorComponent: ({ error }) => (
+    <PageShell>
+      <section className="container mx-auto px-4 py-16 text-center">
+        <h1 className="heading-hero text-3xl mb-4">Værravnen er forsinket</h1>
+        <p className="text-muted-foreground">{error.message}</p>
+      </section>
+    </PageShell>
+  ),
 });
 
-// Lokasjoner
 const LOCATIONS = [
   { key: "skien", name: "Skien", subtitle: "Tollnes · House Pettersen Riis", lat: 59.2096, lon: 9.609 },
   { key: "hytta", name: "Hytta", subtitle: "Lyngdal i Numedal · Øvre Bjørkesethvegen", lat: 59.92, lon: 9.30 },
@@ -36,6 +46,8 @@ type LocationState = {
 };
 
 function WeatherPage() {
+  const data = Route.useLoaderData() as Awaited<ReturnType<typeof getHomeySnapshot>>;
+  const router = useRouter();
   const [state, setState] = useState<Record<string, LocationState>>(() =>
     Object.fromEntries(
       LOCATIONS.map((l) => [l.key, { days: null, error: null, loading: true }]),
@@ -66,58 +78,63 @@ function WeatherPage() {
         }));
       }
     });
-  }, []);
+    // Oppfrisk Homey-data hvert 60. sek
+    const t = setInterval(() => router.invalidate(), 60_000);
+    return () => clearInterval(t);
+  }, [router]);
 
-  const pollenSkien = pollenForToday("skien");
-  const pollenHytta = pollenForToday("hytta");
+  // ---- Homey-sensorer (regn + vind) ----
+  const homeyOk = data?.ok === true;
+  const devices = homeyOk ? data.devices : [];
+  const zones = homeyOk ? data.zones : [];
+
+  const tollnesRain = readCap(
+    findDeviceFuzzy(devices, zones, "tollnes", (d) => hasCap(d, "measure_rain")),
+    "measure_rain",
+  );
+  const tollnesWind = readCap(
+    findDeviceFuzzy(devices, zones, "tollnes", (d) => hasCap(d, "measure_wind_strength")),
+    "measure_wind_strength",
+  );
+  const hyttaRain = readCap(
+    findDeviceFuzzy(devices, zones, "hytta", (d) => hasCap(d, "measure_rain")),
+    "measure_rain",
+  );
+  const hyttaWind = readCap(
+    findDeviceFuzzy(devices, zones, "hytta", (d) => hasCap(d, "measure_wind_strength")),
+    "measure_wind_strength",
+  );
 
   return (
     <PageShell>
       <PageHero
         eyebrow="Skien & Numedal · Norge"
         title="Værens budskap"
-        subtitle="Ravnen kommer fra MET.no med varsler om vind, snø og pollen."
+        subtitle="Ravnen kommer fra MET.no. Live regn- og vindmålinger fra Netatmo via Homey."
         image={heroImg}
       />
 
       <section className="container mx-auto px-4 py-12 space-y-12">
-        {[
-          { key: "skien", label: "Skien · Tollnes", items: pollenSkien },
-          { key: "hytta", label: "Hytta · Lyngdal i Numedal", items: pollenHytta },
-        ].map((group) => (
-          <div key={group.key}>
-            <div className="ornate-divider mb-6">
-              <span className="text-display tracking-[0.3em] text-primary text-sm uppercase">
-                Pollenvarsel — {group.label}
-              </span>
-            </div>
-            <div className="grid sm:grid-cols-3 gap-4">
-              {group.items.map((p) => (
-                <div key={p.name} className="panel rounded-lg p-5">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-lg text-foreground">{p.name}</h3>
-                    <span
-                      className="text-xs uppercase tracking-wider px-2 py-0.5 rounded border"
-                      style={{ borderColor: p.color, color: p.color }}
-                    >
-                      {p.level}
-                    </span>
-                  </div>
-                  <p className="text-sm text-muted-foreground">{p.note}</p>
-                  <div className="mt-3 h-1.5 rounded-full bg-muted overflow-hidden">
-                    <div
-                      className="h-full rounded-full"
-                      style={{ width: `${p.intensity}%`, backgroundColor: p.color }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-            <p className="mt-3 text-xs text-muted-foreground italic">
-              Estimat basert på sesong (NAAF). For sanntidsvarsel se naaf.no.
-            </p>
+        {/* Live målinger fra Homey */}
+        <div>
+          <div className="ornate-divider mb-6">
+            <span className="text-display tracking-[0.3em] text-primary text-sm uppercase">
+              Live målinger · Netatmo
+            </span>
           </div>
-        ))}
+          {!homeyOk ? (
+            <p className="text-muted-foreground italic text-sm">
+              Smarthuset er ikke bundet — gå til <a href="/smarthus" className="text-primary underline">Smarthus</a> for å koble til Homey.
+            </p>
+          ) : (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <LiveMetric label="Regn · Tollnes" value={tollnesRain} unit="mm/t" icon="🌧" />
+              <LiveMetric label="Vind · Tollnes" value={tollnesWind} unit="m/s" icon="💨" />
+              <LiveMetric label="Regn · Hytta" value={hyttaRain} unit="mm/t" icon="🌧" />
+              <LiveMetric label="Vind · Hytta" value={hyttaWind} unit="m/s" icon="💨" />
+            </div>
+          )}
+        </div>
 
         {LOCATIONS.map((loc) => {
           const s = state[loc.key];
@@ -169,11 +186,47 @@ function WeatherPage() {
           );
         })}
         <p className="text-xs text-muted-foreground italic">
-          Data fra MET.no (Meteorologisk institutt).
+          Værdata fra MET.no. Live målinger fra Netatmo via Homey.
         </p>
       </section>
     </PageShell>
   );
+}
+
+function LiveMetric({
+  label,
+  value,
+  unit,
+  icon,
+}: {
+  label: string;
+  value: number | null;
+  unit: string;
+  icon: string;
+}) {
+  return (
+    <article className="panel rounded-lg p-5 text-center">
+      <div className="text-2xl mb-1">{icon}</div>
+      <div className="text-[10px] tracking-[0.3em] text-muted-foreground uppercase">
+        {label}
+      </div>
+      <div className="text-display text-primary text-3xl mt-2">
+        {value !== null ? value.toFixed(1) : "—"}
+      </div>
+      <div className="text-[10px] tracking-[0.2em] text-muted-foreground/70 uppercase mt-1">
+        {unit}
+      </div>
+    </article>
+  );
+}
+
+function hasCap(d: DeviceLike | null | undefined, cap: string): boolean {
+  return typeof d?.capabilities?.[cap]?.value === "number";
+}
+
+function readCap(d: DeviceLike | null | undefined, cap: string): number | null {
+  const v = d?.capabilities?.[cap]?.value;
+  return typeof v === "number" ? v : null;
 }
 
 function parseForecast(data: any): ForecastDay[] {
@@ -221,122 +274,4 @@ function weekdayShort(iso: string) {
 }
 function dayMonth(iso: string) {
   return new Date(iso + "T00:00:00").toLocaleDateString("nb-NO", { day: "numeric", month: "short" });
-}
-
-type Pollen = {
-  name: string;
-  level: string;
-  intensity: number;
-  color: string;
-  note: string;
-};
-
-// Approx seasonal pollen (NAAF veiledning).
-// "skien" = lavland Sør-Norge, "hytta" = innland/høyere Numedal (1-2 uker forsinket, kortere sesong)
-function pollenForToday(region: "skien" | "hytta" = "skien"): Pollen[] {
-  const month = new Date().getMonth() + 1; // 1-12
-  const isHytta = region === "hytta";
-  const items = [
-    {
-      name: "Or",
-      ...rate(month, isHytta
-        ? [
-            { months: [3, 4], level: "Høy", intensity: 75 },
-            { months: [2, 5], level: "Lav", intensity: 20 },
-          ]
-        : [
-            { months: [2, 3], level: "Høy", intensity: 80 },
-            { months: [1, 4], level: "Lav", intensity: 25 },
-          ]),
-      note: "Or blomstrer tidlig vår.",
-    },
-    {
-      name: "Hassel",
-      ...rate(month, isHytta
-        ? [
-            { months: [3, 4], level: "Moderat", intensity: 50 },
-            { months: [2, 5], level: "Lav", intensity: 18 },
-          ]
-        : [
-            { months: [2, 3], level: "Moderat", intensity: 55 },
-            { months: [1, 4], level: "Lav", intensity: 20 },
-          ]),
-      note: "Hassel kommer ofte sammen med or.",
-    },
-    {
-      name: "Bjørk",
-      ...rate(month, isHytta
-        ? [
-            { months: [5, 6], level: "Høy", intensity: 95 },
-            { months: [4, 7], level: "Moderat", intensity: 45 },
-          ]
-        : [
-            { months: [4, 5], level: "Høy", intensity: 90 },
-            { months: [6], level: "Moderat", intensity: 40 },
-          ]),
-      note: isHytta
-        ? "Bjørkesesongen kommer 1-2 uker senere i Numedal."
-        : "Den vanligste pollenallergien i Norge.",
-    },
-    {
-      name: "Gress",
-      ...rate(month, isHytta
-        ? [
-            { months: [6, 7], level: "Høy", intensity: 80 },
-            { months: [8], level: "Moderat", intensity: 45 },
-          ]
-        : [
-            { months: [6, 7], level: "Høy", intensity: 85 },
-            { months: [5, 8], level: "Moderat", intensity: 50 },
-          ]),
-      note: "Toppsesong midtsommer.",
-    },
-    {
-      name: "Burot",
-      ...rate(month, isHytta
-        ? [
-            { months: [7, 8], level: "Lav", intensity: 25 },
-          ]
-        : [
-            { months: [7, 8], level: "Moderat", intensity: 60 },
-            { months: [9], level: "Lav", intensity: 25 },
-          ]),
-      note: isHytta
-        ? "Mindre burot i innlandet/fjellet."
-        : "Sensommer-allergen.",
-    },
-    {
-      name: "Salix",
-      ...rate(month, isHytta
-        ? [{ months: [5, 6], level: "Moderat", intensity: 55 }]
-        : [{ months: [4, 5], level: "Moderat", intensity: 50 }]),
-      note: "Selje/vier om våren.",
-    },
-  ];
-  return items;
-}
-
-function rate(
-  month: number,
-  rules: { months: number[]; level: string; intensity: number }[],
-): { level: string; intensity: number; color: string } {
-  for (const r of rules) {
-    if (r.months.includes(month)) {
-      return { level: r.level, intensity: r.intensity, color: levelColor(r.level) };
-    }
-  }
-  return { level: "Ingen", intensity: 5, color: "oklch(0.55 0.04 240)" };
-}
-
-function levelColor(level: string) {
-  switch (level) {
-    case "Høy":
-      return "oklch(0.65 0.20 25)";
-    case "Moderat":
-      return "oklch(0.78 0.15 70)";
-    case "Lav":
-      return "oklch(0.72 0.15 140)";
-    default:
-      return "oklch(0.55 0.04 240)";
-  }
 }
