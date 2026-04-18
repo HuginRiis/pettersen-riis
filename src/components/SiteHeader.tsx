@@ -13,6 +13,7 @@ const links = [
   { to: "/trening", label: "Trening" },
   { to: "/turer", label: "Ferden" },
   { to: "/jernhesten", label: "Jernhesten" },
+  { to: "/ranger", label: "Ranger" },
   { to: "/smarthus", label: "Borgens Smarthus" },
   { to: "/brodering", label: "Brodering" },
   { to: "/steintavle", label: "Steintavle" },
