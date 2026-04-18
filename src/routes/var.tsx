@@ -8,9 +8,9 @@ import { findDeviceFuzzy, type DeviceLike } from "@/lib/homey-match";
 export const Route = createFileRoute("/var")({
   head: () => ({
     meta: [
-      { title: "Værens budskap — Vær | House Riis" },
+      { title: "Værens budskap — Vær | House Riis Pettersen" },
       { name: "description", content: "Værmelding, regn og vind for Skien og hytta." },
-      { property: "og:title", content: "Værens budskap | House Riis" },
+      { property: "og:title", content: "Værens budskap | House Riis Pettersen" },
       { property: "og:description", content: "Sjusiffret værmelding, regn og vind fra Tollnes og Numedal." },
     ],
   }),
