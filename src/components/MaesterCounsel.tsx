@@ -134,8 +134,29 @@ export function MaesterCounsel() {
             </p>
           </div>
           {advice && (
-            <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
-              {advice.season} · {advice.dayPart}
+            <div className="flex flex-col items-end gap-1">
+              {badge && (
+                <span
+                  className={`text-[9px] tracking-[0.2em] uppercase px-2 py-0.5 rounded-sm border ${
+                    badge.color === "Red"
+                      ? "border-destructive text-destructive bg-destructive/10"
+                      : badge.color === "Orange"
+                        ? "border-orange-500/70 text-orange-400 bg-orange-500/10"
+                        : "border-yellow-500/60 text-yellow-300 bg-yellow-500/10"
+                  }`}
+                  title="Aktive farevarsler i Telemark fra Met.no"
+                >
+                  ⚠ {badge.label}
+                </span>
+              )}
+              <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
+                {advice.season} · {advice.dayPart}
+              </div>
+              {lastUpdated && (
+                <div className="text-[9px] text-muted-foreground/70 italic">
+                  Ravnene landet kl. {lastUpdated}
+                </div>
+              )}
             </div>
           )}
         </header>
