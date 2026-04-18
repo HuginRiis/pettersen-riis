@@ -142,10 +142,9 @@ function SteintavlePage() {
         </div>
         <div className="text-[11px] tracking-[0.3em] text-muted-foreground uppercase">
           Borgens raske blikk · Tollnes ·{" "}
-          {now.toLocaleTimeString("nb-NO", {
-            hour: "2-digit",
-            minute: "2-digit",
-          })}
+          {now
+            ? now.toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit" })
+            : "—"}
         </div>
         <div className="ornate-divider mt-3">
           <span className="text-medieval text-primary text-base">❦</span>
