@@ -4,6 +4,7 @@ import { HouseHero } from "@/components/HouseHero";
 import { WeatherWidget } from "@/components/WeatherWidget";
 import { TollnesCameraSection } from "@/components/TollnesCameraStrip";
 import { NetatmoWeatherStationSection } from "@/components/NetatmoWeatherStation";
+import { MaesterCounsel } from "@/components/MaesterCounsel";
 import arnePortrait from "@/assets/arne-portrait.jpg";
 import rebekkaPortrait from "@/assets/rebekka-portrait.jpg";
 import celinePortrait from "@/assets/celine-portrait.jpg";
@@ -111,6 +112,8 @@ function Home() {
           </div>
         </div>
       </section>
+
+      <MaesterCounsel />
 
       <section className="container mx-auto px-4 pb-16">
         <div className="ornate-divider mb-8">
