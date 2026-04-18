@@ -359,14 +359,44 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
   );
 }
 
+function MinMaxRow({
+  mm,
+  unit,
+  decimals = 1,
+}: {
+  mm: MinMax;
+  unit: string;
+  decimals?: number;
+}) {
+  return (
+    <div className="mt-2 flex items-center justify-center gap-3 text-[9px] sm:text-[10px] tracking-[0.2em] uppercase">
+      <span className="flex items-center gap-1 text-[var(--ice)]/80">
+        <span className="opacity-70">▼</span>
+        <span className="tabular-nums">
+          {mm ? `${mm.min.toFixed(decimals)}${unit}` : "—"}
+        </span>
+      </span>
+      <span className="text-muted-foreground/40">·</span>
+      <span className="flex items-center gap-1 text-[var(--gold)]/90">
+        <span className="opacity-70">▲</span>
+        <span className="tabular-nums">
+          {mm ? `${mm.max.toFixed(decimals)}${unit}` : "—"}
+        </span>
+      </span>
+    </div>
+  );
+}
+
 function BigTemp({
   label,
   temp,
+  mm,
   accent = "primary",
   big = false,
 }: {
   label: string;
   temp: number | null;
+  mm: MinMax;
   accent?: "primary" | "ice";
   big?: boolean;
 }) {
@@ -388,18 +418,14 @@ function BigTemp({
       <div
         className={`text-display leading-none mt-2 ${
           big
-            ? "text-6xl sm:text-7xl md:text-8xl"
-            : "text-4xl sm:text-5xl md:text-6xl"
+            ? "text-5xl sm:text-6xl md:text-7xl"
+            : "text-4xl sm:text-5xl md:text-5xl"
         }`}
         style={{ color }}
       >
         {temp !== null ? `${temp.toFixed(1)}°` : "—"}
       </div>
-      {big && (
-        <div className="text-[10px] tracking-[0.3em] text-muted-foreground/70 uppercase mt-2">
-          Netatmo
-        </div>
-      )}
+      <MinMaxRow mm={mm} unit="°" />
     </article>
   );
 }
