@@ -16,7 +16,7 @@ const HOMEY_API_PAUSED_MESSAGE =
 // Default: åpen (false) — kan pauses manuelt via setHomeyApiPaused() / UI-knapp.
 const g = globalThis as unknown as { __homeyApiPaused?: boolean };
 if (typeof g.__homeyApiPaused !== "boolean") {
-  g.__homeyApiPaused = false;
+  g.__homeyApiPaused = true;
 }
 
 function isHomeyApiPaused(): boolean {
