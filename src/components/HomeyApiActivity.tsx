@@ -65,11 +65,9 @@ function buildSnapshot(now: number): Snapshot {
     perSecond,
     perMinute,
     totalLastHour: events.length,
-    rpm: perMinute.slice(-1)[0]?.calls ?? 0,
+    rpm: rpmWindow,
     cps,
     lastEventAt: events.length > 0 ? events[events.length - 1] : null,
-    // overskriv rpm med rullende 60-sek vindu (mer responsivt enn én bucket)
-    ...{ rpm: rpmWindow },
   };
 }
 
