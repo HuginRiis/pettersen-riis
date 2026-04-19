@@ -1,5 +1,6 @@
 import { Outlet, Link, createRootRoute, HeadContent, Scripts, redirect } from "@tanstack/react-router";
 import { checkAuth } from "@/server/auth";
+import { VisitorTracker } from "@/components/VisitorTracker";
 
 import appCss from "../styles.css?url";
 
@@ -72,5 +73,10 @@ function RootShell({ children }: { children: React.ReactNode }) {
 }
 
 function RootComponent() {
-  return <Outlet />;
+  return (
+    <>
+      <VisitorTracker />
+      <Outlet />
+    </>
+  );
 }

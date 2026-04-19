@@ -8,6 +8,7 @@ type RoutePath =
   | "/agenda"
   | "/var"
   | "/pollen"
+  | "/vakttarnet"
   | "/hytta"
   | "/hundene"
   | "/trening"
@@ -35,6 +36,7 @@ const groups: NavGroup[] = [
       { to: "/agenda", label: "Agenda", icon: "📜" },
       { to: "/var", label: "Vær", icon: "🌨" },
       { to: "/pollen", label: "Pollen", icon: "🌾" },
+      { to: "/vakttarnet", label: "Vakttårnet", icon: "👁" },
     ],
   },
   {

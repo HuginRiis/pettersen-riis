@@ -358,6 +358,167 @@ export type Database = {
         }
         Relationships: []
       }
+      visitor_login_attempts: {
+        Row: {
+          attempted_at: string
+          browser: string | null
+          city: string | null
+          country: string | null
+          country_code: string | null
+          device_type: string | null
+          id: string
+          ip: string | null
+          latitude: number | null
+          longitude: number | null
+          os: string | null
+          region: string | null
+          success: boolean
+          user_agent: string | null
+        }
+        Insert: {
+          attempted_at?: string
+          browser?: string | null
+          city?: string | null
+          country?: string | null
+          country_code?: string | null
+          device_type?: string | null
+          id?: string
+          ip?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          os?: string | null
+          region?: string | null
+          success?: boolean
+          user_agent?: string | null
+        }
+        Update: {
+          attempted_at?: string
+          browser?: string | null
+          city?: string | null
+          country?: string | null
+          country_code?: string | null
+          device_type?: string | null
+          id?: string
+          ip?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          os?: string | null
+          region?: string | null
+          success?: boolean
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
+      visitor_pageviews: {
+        Row: {
+          duration_seconds: number
+          entered_at: string
+          id: string
+          path: string
+          session_id: string
+          title: string | null
+        }
+        Insert: {
+          duration_seconds?: number
+          entered_at?: string
+          id?: string
+          path: string
+          session_id: string
+          title?: string | null
+        }
+        Update: {
+          duration_seconds?: number
+          entered_at?: string
+          id?: string
+          path?: string
+          session_id?: string
+          title?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "visitor_pageviews_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "visitor_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      visitor_sessions: {
+        Row: {
+          browser: string | null
+          city: string | null
+          client_session_id: string
+          country: string | null
+          country_code: string | null
+          device_type: string | null
+          duration_seconds: number
+          id: string
+          ip: string | null
+          isp: string | null
+          language: string | null
+          last_seen_at: string
+          latitude: number | null
+          longitude: number | null
+          os: string | null
+          pageview_count: number
+          referrer: string | null
+          region: string | null
+          screen: string | null
+          started_at: string
+          timezone: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          browser?: string | null
+          city?: string | null
+          client_session_id: string
+          country?: string | null
+          country_code?: string | null
+          device_type?: string | null
+          duration_seconds?: number
+          id?: string
+          ip?: string | null
+          isp?: string | null
+          language?: string | null
+          last_seen_at?: string
+          latitude?: number | null
+          longitude?: number | null
+          os?: string | null
+          pageview_count?: number
+          referrer?: string | null
+          region?: string | null
+          screen?: string | null
+          started_at?: string
+          timezone?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          browser?: string | null
+          city?: string | null
+          client_session_id?: string
+          country?: string | null
+          country_code?: string | null
+          device_type?: string | null
+          duration_seconds?: number
+          id?: string
+          ip?: string | null
+          isp?: string | null
+          language?: string | null
+          last_seen_at?: string
+          latitude?: number | null
+          longitude?: number | null
+          os?: string | null
+          pageview_count?: number
+          referrer?: string | null
+          region?: string | null
+          screen?: string | null
+          started_at?: string
+          timezone?: string | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
