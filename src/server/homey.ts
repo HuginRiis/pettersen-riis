@@ -141,8 +141,77 @@ type HomeyTarget = {
   baseUrl: string;
 };
 
+type HomeySessionContext = {
+  target: HomeyTarget;
+  sessionToken: string;
+};
+
+type HomeyRawSnapshot = {
+  homeName: string | null;
+  zonesRaw: any[];
+  devicesRaw: any[];
+};
+
+type CacheEntry<T> = {
+  key: string;
+  value: T;
+  expiresAt: number;
+};
+
+type InflightEntry<T> = {
+  key: string;
+  promise: Promise<T>;
+};
+
+const HOMEY_TARGET_TTL_MS = 30 * 60_000;
+const HOMEY_SESSION_TTL_MS = 8 * 60_000;
+const HOMEY_SNAPSHOT_TTL_MS = 30_000;
+
+let homeyTargetCache: CacheEntry<HomeyTarget | null> | null = null;
+let homeySessionCache: CacheEntry<HomeySessionContext> | null = null;
+let homeySnapshotCache: CacheEntry<HomeyRawSnapshot> | null = null;
+
+let homeyTargetInflight: InflightEntry<HomeyTarget | null> | null = null;
+let homeySessionInflight: InflightEntry<HomeySessionContext | null> | null = null;
+let homeySnapshotInflight: InflightEntry<HomeyRawSnapshot> | null = null;
+
 function normalizeBaseUrl(url: string) {
   return url.replace(/\/+$/, "");
+}
+
+function getHomeyCacheKey(conn: HomeyConnection) {
+  return `${conn.id}:${conn.access_token}`;
+}
+
+function getCacheEntry<T>(
+  entry: CacheEntry<T> | null,
+  key: string,
+  allowStale = false,
+): CacheEntry<T> | null {
+  if (!entry || entry.key !== key) return null;
+  if (allowStale || entry.expiresAt > Date.now()) return entry;
+  return null;
+}
+
+function isRateLimitedMessage(message: string) {
+  return /(^|[^\d])429([^\d]|$)|too_many_requests|rate-limit/i.test(message);
+}
+
+function isHomeyAuthError(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error ?? "");
+  return /(^|[^\d])401([^\d]|$)|unauthorized|forbidden/i.test(message);
+}
+
+function clearHomeyDataCaches() {
+  homeySnapshotCache = null;
+  homeySnapshotInflight = null;
+  livingRoomCache = null;
+}
+
+function clearHomeySessionCaches() {
+  homeySessionCache = null;
+  homeySessionInflight = null;
+  clearHomeyDataCaches();
 }
 
 async function resolveHomeyTarget(accessToken: string): Promise<HomeyTarget | null> {
