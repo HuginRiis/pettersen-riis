@@ -41,8 +41,13 @@ export const Route = createFileRoute("/steintavle")({
     ],
   }),
   loader: async () => {
+    // Begge feil-håndteres separat — Netatmo skal vises selv om Homey er nede
+    // (f.eks. utløpt token), og omvendt.
     const [homey, netatmo] = await Promise.all([
-      getHomeySnapshot(),
+      getHomeySnapshot().catch((e) => ({
+        ok: false as const,
+        error: e?.message ?? "Homey-feil",
+      })),
       getNetatmoWeatherStation({ data: { stationMatch: "tollnes" } }).catch(
         (e) => ({ ok: false as const, error: e?.message ?? "Netatmo-feil" }),
       ),
@@ -211,22 +216,9 @@ function SteintavlePage() {
   };
 
 
-  if (!data.ok) {
-    return (
-      <PageShell minimalHeader>
-        <section className="container mx-auto px-4 py-20 text-center">
-          <h1 className="heading-hero text-4xl mb-4">Steintavlen sover</h1>
-          <p className="text-muted-foreground">
-            Borgens smarthus er ikke bundet enda. Gå til{" "}
-            <a href="/smarthus" className="text-primary underline">
-              Smarthus
-            </a>{" "}
-            for å binde ravnene til Homey.
-          </p>
-        </section>
-      </PageShell>
-    );
-  }
+  // Merk: vi viser Steintavlen selv om Homey er nede — Netatmo (temp/kamera)
+  // og MET-varsler skal alltid vises. Kun smarthus-tiles markerer Homey-feil.
+  const homeyDown = !data.ok;
 
   // ---- Temperaturer fra Netatmo værstasjon (Tollnes) ----
   const ns = liveNetatmo.ok ? liveNetatmo : null;
@@ -333,15 +325,19 @@ function SteintavlePage() {
           {hasNoise && (
             <BigNoise label="Lyd · Tollnes" db={noiseDb!} mm={noiseMM} />
           )}
-          <LightsControl
-            on={lightsOn}
-            busy={lightsBusy}
-            onSet={handleSetLights}
-          />
+          {!homeyDown && (
+            <LightsControl
+              on={lightsOn}
+              busy={lightsBusy}
+              onSet={handleSetLights}
+            />
+          )}
         </section>
 
-        {/* Nederste rad: kamera + varmepumpe + taklampe (3 kolonner på iPad-landscape) */}
-        <section className="grid gap-3 lg:grid-cols-3">
+        {/* Nederste rad: kamera + (varmepumpe + taklampe når Homey er oppe) */}
+        <section
+          className={`grid gap-3 ${homeyDown ? "" : "lg:grid-cols-3"}`}
+        >
           <div className="panel rounded-lg overflow-hidden flex flex-col lg:col-span-1">
             <div className="px-4 py-2 border-b border-border flex items-center justify-between">
               <span className="text-display tracking-[0.3em] text-primary text-[10px] sm:text-xs uppercase">
@@ -360,10 +356,31 @@ function SteintavlePage() {
             </div>
           </div>
 
-          <LivingRoomProvider>
-            <HeatPumpTile />
-            <CeilingLampTile />
-          </LivingRoomProvider>
+          {!homeyDown && (
+            <LivingRoomProvider>
+              <HeatPumpTile />
+              <CeilingLampTile />
+            </LivingRoomProvider>
+          )}
+
+          {homeyDown && (
+            <div className="panel rounded-lg p-4 lg:col-span-2 flex flex-col items-center justify-center text-center">
+              <div className="text-[10px] tracking-[0.3em] text-muted-foreground uppercase mb-2">
+                Smarthus · sover
+              </div>
+              <p className="text-sm text-muted-foreground max-w-sm">
+                Ravnene til Homey svarer ikke akkurat nå
+                {!data.ok && data.error ? ` (${data.error})` : ""}.
+                Netatmo og varslene fungerer som vanlig.
+              </p>
+              <a
+                href="/smarthus"
+                className="mt-2 text-xs tracking-[0.25em] uppercase text-primary underline"
+              >
+                Bind ravnene på nytt
+              </a>
+            </div>
+          )}
         </section>
 
         {otherAlerts.length > 0 && (
