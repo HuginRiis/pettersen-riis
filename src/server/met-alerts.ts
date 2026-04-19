@@ -5,8 +5,14 @@ import { createServerFn } from "@tanstack/react-start";
  * Cacher i 15 minutter på server (Worker-instans).
  *
  * Dekker fylker: Oslo, Akershus, Østfold, Buskerud, Vestfold, Telemark,
- * Innlandet (sørlige deler), Agder, og delvis Rogaland (sørøst).
+ * Innlandet (sørlige deler), Agder.
  */
+
+export type AlertGeometry =
+  | { type: "Polygon"; coordinates: number[][][] }
+  | { type: "MultiPolygon"; coordinates: number[][][][] }
+  | { type: "Point"; coordinates: number[] }
+  | null;
 
 export type TelemarkAlert = {
   id: string;
@@ -20,6 +26,8 @@ export type TelemarkAlert = {
   consequences: string | null;
   start: string | null;
   end: string | null;
+  counties: string[];
+  geometry: AlertGeometry;
 };
 
 // Fylkesnummer som dekker Sør- og Østlandet
@@ -37,12 +45,14 @@ const SOR_OST_COUNTIES = new Set<string>([
   "42", // Agder
 ]);
 
+// Brukes KUN som fallback når feature mangler county-metadata.
+// Holdt strengt til konkrete sted-/region-navn i sør/øst.
 const SOR_OST_KEYWORDS = [
   // Telemark
   "telemark", "skien", "porsgrunn", "notodden", "bamble", "kragerø",
   "drangedal", "siljan", "nome", "midt-telemark", "tinn", "hjartdal",
   "seljord", "kviteseid", "tokke", "vinje", "fyresdal", "nissedal",
-  "rjukan", "bø", "grenland",
+  "rjukan", "grenland",
   // Vestfold
   "vestfold", "tønsberg", "sandefjord", "larvik", "horten", "holmestrand",
   // Oslo / Akershus / Østfold / Buskerud
@@ -52,12 +62,21 @@ const SOR_OST_KEYWORDS = [
   "hadeland", "hallingdal", "numedal",
   // Innlandet (sørlige deler)
   "hamar", "lillehammer", "gjøvik", "elverum", "kongsvinger",
-  "hedmark", "oppland", "valdres", "gudbrandsdal",
+  "hedmark", "valdres", "gudbrandsdal",
   // Agder
   "agder", "kristiansand", "arendal", "grimstad", "mandal", "lillesand",
   "farsund", "flekkefjord", "setesdal",
-  // Generelle regionnavn
-  "østlandet", "sørlandet", "sør-norge", "sørøst-norge", "østafjells",
+  // Generelle regionnavn (kun øst/sør-spesifikke)
+  "østlandet", "sørlandet", "østafjells",
+];
+
+// Eksklusjonsord — hvis en feature uten county nevner disse, ekskluderes den
+// selv om den treffer et nøytralt nøkkelord.
+const EXCLUDE_KEYWORDS = [
+  "nordland", "troms", "finnmark", "trøndelag", "møre og romsdal",
+  "vestland", "rogaland", "bergen", "stavanger", "ålesund", "bodø",
+  "tromsø", "kristiansund", "trondheim", "haugesund", "molde",
+  "nord-norge", "midt-norge", "vestlandet",
 ];
 
 type CacheEntry = { ts: number; data: TelemarkAlert[] };
@@ -89,6 +108,7 @@ async function fetchAlerts(): Promise<TelemarkAlert[]> {
         county?: string[];
       };
       when?: { interval?: string[] };
+      geometry?: AlertGeometry;
     }>;
   };
 
@@ -98,9 +118,18 @@ async function fetchAlerts(): Promise<TelemarkAlert[]> {
     const p = f.properties ?? {};
     const counties = Array.isArray(p.county) ? p.county : [];
     const text = `${p.area ?? ""} ${p.description ?? ""}`.toLowerCase();
-    const matchesCounty = counties.some((c) => SOR_OST_COUNTIES.has(c));
-    const matchesKeyword = SOR_OST_KEYWORDS.some((k) => text.includes(k));
-    if (!matchesCounty && !matchesKeyword) continue;
+
+    let include = false;
+    if (counties.length > 0) {
+      // Strengt: har metadata — krever match i vårt sett.
+      include = counties.some((c) => SOR_OST_COUNTIES.has(c));
+    } else {
+      // Fallback på tekst, men ekskluder hvis tekst nevner andre landsdeler.
+      const matchesKeyword = SOR_OST_KEYWORDS.some((k) => text.includes(k));
+      const hasExcluded = EXCLUDE_KEYWORDS.some((k) => text.includes(k));
+      include = matchesKeyword && !hasExcluded;
+    }
+    if (!include) continue;
 
     const interval = f.when?.interval ?? [];
     filtered.push({
@@ -115,6 +144,8 @@ async function fetchAlerts(): Promise<TelemarkAlert[]> {
       consequences: p.consequences ?? null,
       start: interval[0] ?? null,
       end: interval[1] ?? null,
+      counties,
+      geometry: f.geometry ?? null,
     });
   }
 
