@@ -4,7 +4,11 @@ import { useServerFn } from "@tanstack/react-start";
 import { Lightbulb, LightbulbOff, Loader2 } from "lucide-react";
 import { PageShell } from "@/components/PageShell";
 import { TollnesCameraStrip } from "@/components/TollnesCameraStrip";
-import { HeatPumpTile, CeilingLampTile } from "@/components/LivingRoomDevicesPanel";
+import {
+  HeatPumpTile,
+  CeilingLampTile,
+  LivingRoomProvider,
+} from "@/components/LivingRoomDevicesPanel";
 import {
   getHomeySnapshot,
   setLivingRoomLights,
@@ -356,8 +360,10 @@ function SteintavlePage() {
             </div>
           </div>
 
-          <HeatPumpTile />
-          <CeilingLampTile />
+          <LivingRoomProvider>
+            <HeatPumpTile />
+            <CeilingLampTile />
+          </LivingRoomProvider>
         </section>
 
         {otherAlerts.length > 0 && (

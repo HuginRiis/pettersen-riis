@@ -743,8 +743,20 @@ function readCapMeta(caps: any, id: string, key: string): any {
   return caps?.[id]?.[key];
 }
 
+// In-memory cache for living-room devices to avoid hammering Athom from
+// always-on iPads. TTL ~45s; invalideres når en capability settes.
+let livingRoomCache: { at: number; data: LivingRoomDevicesResult } | null = null;
+const LIVING_ROOM_TTL_MS = 45_000;
+function invalidateLivingRoomCache() {
+  livingRoomCache = null;
+}
+
 export const getLivingRoomDevices = createServerFn({ method: "GET" }).handler(
   async (): Promise<LivingRoomDevicesResult> => {
+    // Server-side cache: returner forrige svar om det er ferskt nok.
+    if (livingRoomCache && Date.now() - livingRoomCache.at < LIVING_ROOM_TTL_MS) {
+      return livingRoomCache.data;
+    }
     let conn: HomeyConnection | null;
     try {
       conn = await getValidConnection();
@@ -820,9 +832,21 @@ export const getLivingRoomDevices = createServerFn({ method: "GET" }).handler(
             d.capabilities.dim !== undefined,
         );
 
-      return { ok: true, devices: result };
+      const out: LivingRoomDevicesResult = { ok: true, devices: result };
+      livingRoomCache = { at: Date.now(), data: out };
+      return out;
     } catch (e: any) {
-      return { ok: false, error: e?.message ?? "Klarte ikke hente stue-enheter" };
+      // Spesialhåndter rate-limit fra Athom så klienten kan backe av
+      const msg = e?.message ?? "Klarte ikke hente stue-enheter";
+      if (/429|too_many_requests/i.test(msg)) {
+        // Hold på forrige cache litt lenger så UI fortsatt viser noe
+        if (livingRoomCache) {
+          livingRoomCache.at = Date.now() - LIVING_ROOM_TTL_MS + 30_000;
+          return livingRoomCache.data;
+        }
+        return { ok: false, error: "Athom rate-limit (429) — venter litt" };
+      }
+      return { ok: false, error: msg };
     }
   },
 );
@@ -881,6 +905,8 @@ export const setLivingRoomDeviceCapability = createServerFn({ method: "POST" })
         data.value,
       );
       if (!ok) return { ok: false, error: "Homey avviste kommandoen" };
+      // Drop cache slik at neste poll henter fersk state.
+      invalidateLivingRoomCache();
       return { ok: true };
     } catch (e: any) {
       return { ok: false, error: e?.message ?? "Kommando feilet" };

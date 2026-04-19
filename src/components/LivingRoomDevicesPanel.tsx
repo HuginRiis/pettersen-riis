@@ -1,4 +1,13 @@
-import { useEffect, useRef, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Loader2, Lightbulb, Thermometer, Minus, Plus } from "lucide-react";
 import {
@@ -7,7 +16,9 @@ import {
   type LivingRoomDevice,
 } from "@/server/homey";
 
-const REFRESH_MS = 60_000; // 1 min
+// Skånsom polling for alltid-på iPad: 5 min normalt, dobles ved 429-feil.
+const REFRESH_MS = 5 * 60_000;
+const MAX_BACKOFF_MS = 30 * 60_000;
 
 type State =
   | { status: "loading" }
@@ -18,7 +29,6 @@ type Kind = "heatpump" | "ceiling";
 
 function matchKind(d: LivingRoomDevice): Kind | null {
   const n = d.name.toLowerCase();
-  // Varmepumpe: har target_temperature
   if (d.capabilities.target_temperature !== undefined) {
     if (
       n.includes("varmepump") ||
@@ -29,10 +39,8 @@ function matchKind(d: LivingRoomDevice): Kind | null {
     ) {
       return "heatpump";
     }
-    // Fallback: enhver thermostat i stua antas å være varmepumpa
     return "heatpump";
   }
-  // Taklampe EYCR-201
   if (d.capabilities.dim !== undefined) {
     if (
       n.includes("eycr") ||
@@ -47,7 +55,21 @@ function matchKind(d: LivingRoomDevice): Kind | null {
   return null;
 }
 
-function useLivingRoomState() {
+type Ctx = {
+  state: State;
+  overrides: Record<string, Partial<LivingRoomDevice["capabilities"]>>;
+  busy: Record<string, boolean>;
+  sendCap: (
+    device: LivingRoomDevice,
+    capability: "onoff" | "target_temperature" | "dim",
+    value: boolean | number,
+  ) => Promise<void>;
+  findByKind: (kind: Kind) => LivingRoomDevice | null;
+};
+
+const LivingRoomCtx = createContext<Ctx | null>(null);
+
+export function LivingRoomProvider({ children }: { children: ReactNode }) {
   const fetchDevices = useServerFn(getLivingRoomDevices);
   const setCap = useServerFn(setLivingRoomDeviceCapability);
   const [state, setState] = useState<State>({ status: "loading" });
@@ -56,14 +78,30 @@ function useLivingRoomState() {
   >({});
   const [busy, setBusy] = useState<Record<string, boolean>>({});
   const inFlight = useRef(false);
+  // Eksponentiell backoff ved 429
+  const backoffRef = useRef<number>(REFRESH_MS);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const load = async () => {
+  const scheduleNext = useCallback((delay: number) => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => {
+      load();
+    }, delay);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const load = useCallback(async () => {
     if (inFlight.current) return;
-    if (typeof document !== "undefined" && document.hidden) return;
+    if (typeof document !== "undefined" && document.hidden) {
+      // Ikke poll når fanen er skjult — sjekk igjen om 1 min
+      scheduleNext(60_000);
+      return;
+    }
     inFlight.current = true;
     try {
       const res = await fetchDevices();
       if (res.ok) {
+        backoffRef.current = REFRESH_MS; // reset backoff
         setState({ status: "ok", devices: res.devices });
         setOverrides((prev) => {
           const next = { ...prev };
@@ -79,10 +117,17 @@ function useLivingRoomState() {
           }
           return next;
         });
+        scheduleNext(REFRESH_MS);
       } else {
+        // Ved 429 / rate-limit: doble intervallet, maks 30 min
+        const is429 = /429|rate-limit|too_many/i.test(res.error);
+        if (is429) {
+          backoffRef.current = Math.min(backoffRef.current * 2, MAX_BACKOFF_MS);
+        }
         setState((prev) =>
           prev.status === "ok" ? prev : { status: "error", message: res.error },
         );
+        scheduleNext(is429 ? backoffRef.current : REFRESH_MS);
       }
     } catch (e: any) {
       setState((prev) =>
@@ -90,44 +135,63 @@ function useLivingRoomState() {
           ? prev
           : { status: "error", message: e?.message ?? "Ukjent feil" },
       );
+      scheduleNext(REFRESH_MS);
     } finally {
       inFlight.current = false;
     }
-  };
+  }, [fetchDevices, scheduleNext]);
 
   useEffect(() => {
     load();
-    const id = setInterval(load, REFRESH_MS);
     const onVis = () => {
-      if (typeof document !== "undefined" && !document.hidden) load();
+      if (typeof document !== "undefined" && !document.hidden) {
+        // Hent fersk når brukeren kommer tilbake — men maks én gang per 30s
+        const since = backoffRef.current;
+        if (since > 30_000) load();
+      }
     };
     if (typeof document !== "undefined") {
       document.addEventListener("visibilitychange", onVis);
     }
     return () => {
-      clearInterval(id);
+      if (timerRef.current) clearTimeout(timerRef.current);
       if (typeof document !== "undefined") {
         document.removeEventListener("visibilitychange", onVis);
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [load]);
 
-  const sendCap = async (
-    device: LivingRoomDevice,
-    capability: "onoff" | "target_temperature" | "dim",
-    value: boolean | number,
-  ) => {
-    const key = `${device.id}:${capability}`;
-    if (busy[key]) return;
-    setBusy((b) => ({ ...b, [key]: true }));
-    setOverrides((o) => ({
-      ...o,
-      [device.id]: { ...(o[device.id] ?? {}), [capability]: value },
-    }));
-    try {
-      const res = await setCap({ data: { deviceId: device.id, capability, value } });
-      if (!res.ok) {
+  const sendCap = useCallback(
+    async (
+      device: LivingRoomDevice,
+      capability: "onoff" | "target_temperature" | "dim",
+      value: boolean | number,
+    ) => {
+      const key = `${device.id}:${capability}`;
+      if (busy[key]) return;
+      setBusy((b) => ({ ...b, [key]: true }));
+      setOverrides((o) => ({
+        ...o,
+        [device.id]: { ...(o[device.id] ?? {}), [capability]: value },
+      }));
+      try {
+        const res = await setCap({ data: { deviceId: device.id, capability, value } });
+        if (!res.ok) {
+          setOverrides((o) => {
+            const next = { ...o };
+            if (next[device.id]) {
+              const { [capability]: _drop, ...rest } = next[device.id]!;
+              if (Object.keys(rest).length === 0) delete next[device.id];
+              else next[device.id] = rest;
+            }
+            return next;
+          });
+        } else {
+          // Hent ferskt etter en kort pause så Homey rekker å speile.
+          // Bruker scheduleNext, ikke umiddelbar load — unngår å trigge 429.
+          scheduleNext(2_000);
+        }
+      } catch {
         setOverrides((o) => {
           const next = { ...o };
           if (next[device.id]) {
@@ -137,47 +201,51 @@ function useLivingRoomState() {
           }
           return next;
         });
-      } else {
-        setTimeout(load, 800);
+      } finally {
+        setBusy((b) => {
+          const { [key]: _drop, ...rest } = b;
+          return rest;
+        });
       }
-    } catch {
-      setOverrides((o) => {
-        const next = { ...o };
-        if (next[device.id]) {
-          const { [capability]: _drop, ...rest } = next[device.id]!;
-          if (Object.keys(rest).length === 0) delete next[device.id];
-          else next[device.id] = rest;
-        }
-        return next;
-      });
-    } finally {
-      setBusy((b) => {
-        const { [key]: _drop, ...rest } = b;
-        return rest;
-      });
-    }
-  };
+    },
+    [busy, setCap, scheduleNext],
+  );
 
-  const findByKind = (kind: Kind): LivingRoomDevice | null => {
-    if (state.status !== "ok") return null;
-    // Eksakte navne-treff først
-    if (kind === "ceiling") {
-      const eycr = state.devices.find(
-        (d) =>
-          d.capabilities.dim !== undefined &&
-          (d.name.toLowerCase().includes("eycr") ||
-            d.name.toLowerCase().includes("201")),
-      );
-      if (eycr) return eycr;
-    }
-    return state.devices.find((d) => matchKind(d) === kind) ?? null;
-  };
+  const findByKind = useCallback(
+    (kind: Kind): LivingRoomDevice | null => {
+      if (state.status !== "ok") return null;
+      if (kind === "ceiling") {
+        const eycr = state.devices.find(
+          (d) =>
+            d.capabilities.dim !== undefined &&
+            (d.name.toLowerCase().includes("eycr") ||
+              d.name.toLowerCase().includes("201")),
+        );
+        if (eycr) return eycr;
+      }
+      return state.devices.find((d) => matchKind(d) === kind) ?? null;
+    },
+    [state],
+  );
 
-  return { state, overrides, busy, sendCap, findByKind };
+  const value = useMemo<Ctx>(
+    () => ({ state, overrides, busy, sendCap, findByKind }),
+    [state, overrides, busy, sendCap, findByKind],
+  );
+
+  return <LivingRoomCtx.Provider value={value}>{children}</LivingRoomCtx.Provider>;
+}
+
+function useLivingRoom(): Ctx {
+  const ctx = useContext(LivingRoomCtx);
+  if (!ctx) {
+    throw new Error("LivingRoom-tiles må wrappes i <LivingRoomProvider>");
+  }
+  return ctx;
 }
 
 export function HeatPumpTile() {
-  const { state, overrides, busy, sendCap, findByKind } = useLivingRoomState();
+  const { state, overrides, busy, sendCap, findByKind } = useLivingRoom();
   const device = findByKind("heatpump");
   const accent = "var(--ice)";
 
@@ -219,7 +287,7 @@ export function HeatPumpTile() {
 }
 
 export function CeilingLampTile() {
-  const { state, overrides, busy, sendCap, findByKind } = useLivingRoomState();
+  const { state, overrides, busy, sendCap, findByKind } = useLivingRoom();
   const device = findByKind("ceiling");
   const accent = "var(--gold)";
 
