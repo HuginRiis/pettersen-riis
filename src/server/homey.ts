@@ -743,6 +743,14 @@ function readCapMeta(caps: any, id: string, key: string): any {
   return caps?.[id]?.[key];
 }
 
+// In-memory cache for living-room devices to avoid hammering Athom from
+// always-on iPads. TTL ~45s; invalideres når en capability settes.
+let livingRoomCache: { at: number; data: LivingRoomDevicesResult } | null = null;
+const LIVING_ROOM_TTL_MS = 45_000;
+function invalidateLivingRoomCache() {
+  livingRoomCache = null;
+}
+
 export const getLivingRoomDevices = createServerFn({ method: "GET" }).handler(
   async (): Promise<LivingRoomDevicesResult> => {
     let conn: HomeyConnection | null;
