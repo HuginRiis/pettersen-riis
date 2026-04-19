@@ -983,37 +983,30 @@ export const getLivingRoomDevices = createServerFn({ method: "GET" }).handler(
     if (!conn) return { ok: false, error: "Ingen Homey-tilkobling" };
 
     try {
-      const target = await resolveHomeyTarget(conn.access_token);
-      if (!target) return { ok: false, error: "Fant ingen Homey" };
+      const raw = await getHomeyRawSnapshot(conn);
+      if (!raw) return { ok: false, error: "Fant ingen Homey" };
 
-      const delegationToken = await createDelegationToken(conn.access_token);
-      const sessionToken = await createSessionToken(target.baseUrl, delegationToken);
-
-      const [zones, devices] = await Promise.all([
-        listZonesRaw(sessionToken, target.baseUrl),
-        listAllDevicesRaw(sessionToken, target.baseUrl),
-      ]);
+      const [zones, devices] = [raw.zonesRaw, raw.devicesRaw];
+      const zoneNameById = new Map<string, string>(
+        zones.map((z: any) => [z.id ?? z._id, z.name ?? "Ukjent sone"]),
+      );
 
       const livingZoneIds = new Set<string>(
         zones
-          .filter((z) => isLivingRoomZoneName(String(z?.name ?? "")))
-          .map((z) => z.id ?? z._id)
+          .filter((z: any) => isLivingRoomZoneName(String(z?.name ?? "")))
+          .map((z: any) => z.id ?? z._id)
           .filter(Boolean),
       );
-      const zoneNameById = new Map<string, string>(
-        zones.map((z) => [z.id ?? z._id, z.name ?? "Ukjent sone"]),
-      );
 
-      const inLiving = devices.filter((d) => {
+      const inLiving = devices.filter((d: any) => {
         if (!d) return false;
         if (d.zone && livingZoneIds.has(d.zone)) return true;
-        // fallback: navn inneholder "stue"/"stua"
         const n = String(d?.name ?? "").toLowerCase();
         return n.includes("stue") || n.includes("stua");
       });
 
       const result: LivingRoomDevice[] = inLiving
-        .map((d) => {
+        .map((d: any) => {
           const caps = d?.capabilitiesObj ?? d?.capabilities_obj ?? {};
           const out: LivingRoomDevice = {
             id: d.id ?? d._id,
@@ -1053,10 +1046,8 @@ export const getLivingRoomDevices = createServerFn({ method: "GET" }).handler(
       livingRoomCache = { at: Date.now(), data: out };
       return out;
     } catch (e: any) {
-      // Spesialhåndter rate-limit fra Athom så klienten kan backe av
       const msg = e?.message ?? "Klarte ikke hente stue-enheter";
       if (/429|too_many_requests/i.test(msg)) {
-        // Hold på forrige cache litt lenger så UI fortsatt viser noe
         if (livingRoomCache) {
           livingRoomCache.at = Date.now() - LIVING_ROOM_TTL_MS + 30_000;
           return livingRoomCache.data;
