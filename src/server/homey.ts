@@ -141,11 +141,80 @@ type HomeyTarget = {
   baseUrl: string;
 };
 
+type HomeySessionContext = {
+  target: HomeyTarget;
+  sessionToken: string;
+};
+
+type HomeyRawSnapshot = {
+  homeName: string | null;
+  zonesRaw: any[];
+  devicesRaw: any[];
+};
+
+type CacheEntry<T> = {
+  key: string;
+  value: T;
+  expiresAt: number;
+};
+
+type InflightEntry<T> = {
+  key: string;
+  promise: Promise<T>;
+};
+
+const HOMEY_TARGET_TTL_MS = 30 * 60_000;
+const HOMEY_SESSION_TTL_MS = 8 * 60_000;
+const HOMEY_SNAPSHOT_TTL_MS = 30_000;
+
+let homeyTargetCache: CacheEntry<HomeyTarget | null> | null = null;
+let homeySessionCache: CacheEntry<HomeySessionContext> | null = null;
+let homeySnapshotCache: CacheEntry<HomeyRawSnapshot> | null = null;
+
+let homeyTargetInflight: InflightEntry<HomeyTarget | null> | null = null;
+let homeySessionInflight: InflightEntry<HomeySessionContext | null> | null = null;
+let homeySnapshotInflight: InflightEntry<HomeyRawSnapshot | null> | null = null;
+
 function normalizeBaseUrl(url: string) {
   return url.replace(/\/+$/, "");
 }
 
-async function resolveHomeyTarget(accessToken: string): Promise<HomeyTarget | null> {
+function getHomeyCacheKey(conn: HomeyConnection) {
+  return `${conn.id}:${conn.access_token}`;
+}
+
+function getCacheEntry<T>(
+  entry: CacheEntry<T> | null,
+  key: string,
+  allowStale = false,
+): CacheEntry<T> | null {
+  if (!entry || entry.key !== key) return null;
+  if (allowStale || entry.expiresAt > Date.now()) return entry;
+  return null;
+}
+
+function isRateLimitedMessage(message: string) {
+  return /(^|[^\d])429([^\d]|$)|too_many_requests|rate-limit/i.test(message);
+}
+
+function isHomeyAuthError(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error ?? "");
+  return /(^|[^\d])401([^\d]|$)|unauthorized|forbidden/i.test(message);
+}
+
+function clearHomeyDataCaches() {
+  homeySnapshotCache = null;
+  homeySnapshotInflight = null;
+  livingRoomCache = null;
+}
+
+function clearHomeySessionCaches() {
+  homeySessionCache = null;
+  homeySessionInflight = null;
+  clearHomeyDataCaches();
+}
+
+async function resolveHomeyTargetRaw(accessToken: string): Promise<HomeyTarget | null> {
   const me = await fetchJson<any>(`${ATHOM_API_BASE}/user/me`, accessToken);
   const homeysVal = me?.homeys ?? null;
   const homeys: any[] = Array.isArray(homeysVal)
@@ -179,6 +248,36 @@ async function resolveHomeyTarget(accessToken: string): Promise<HomeyTarget | nu
   };
 }
 
+async function getResolvedHomeyTarget(conn: HomeyConnection): Promise<HomeyTarget | null> {
+  const key = getHomeyCacheKey(conn);
+  const cached = getCacheEntry(homeyTargetCache, key);
+  if (cached) return cached.value;
+  if (homeyTargetInflight?.key === key) return await homeyTargetInflight.promise;
+
+  const promise = resolveHomeyTargetRaw(conn.access_token)
+    .then((target) => {
+      homeyTargetCache = {
+        key,
+        value: target,
+        expiresAt: Date.now() + HOMEY_TARGET_TTL_MS,
+      };
+      return target;
+    })
+    .catch((error) => {
+      const stale = getCacheEntry(homeyTargetCache, key, true);
+      const message = error instanceof Error ? error.message : String(error ?? "");
+      if (stale && isRateLimitedMessage(message)) return stale.value;
+      if (isHomeyAuthError(error)) clearHomeySessionCaches();
+      throw error;
+    })
+    .finally(() => {
+      if (homeyTargetInflight?.key === key) homeyTargetInflight = null;
+    });
+
+  homeyTargetInflight = { key, promise };
+  return await promise;
+}
+
 async function createDelegationToken(accessToken: string): Promise<string> {
   return await fetchTokenLike(`${ATHOM_API_BASE}/delegation/token?audience=homey`, {
     method: "POST",
@@ -198,6 +297,40 @@ async function createSessionToken(baseUrl: string, delegationToken: string): Pro
     },
     body: JSON.stringify({ token: delegationToken }),
   });
+}
+
+async function getHomeySessionContext(conn: HomeyConnection): Promise<HomeySessionContext | null> {
+  const key = getHomeyCacheKey(conn);
+  const cached = getCacheEntry(homeySessionCache, key);
+  if (cached) return cached.value;
+  if (homeySessionInflight?.key === key) return await homeySessionInflight.promise;
+
+  const promise = (async () => {
+    const target = await getResolvedHomeyTarget(conn);
+    if (!target) return null;
+    const delegationToken = await createDelegationToken(conn.access_token);
+    const sessionToken = await createSessionToken(target.baseUrl, delegationToken);
+    const context = { target, sessionToken };
+    homeySessionCache = {
+      key,
+      value: context,
+      expiresAt: Date.now() + HOMEY_SESSION_TTL_MS,
+    };
+    return context;
+  })()
+    .catch((error) => {
+      const stale = getCacheEntry(homeySessionCache, key, true);
+      const message = error instanceof Error ? error.message : String(error ?? "");
+      if (stale && isRateLimitedMessage(message)) return stale.value;
+      if (isHomeyAuthError(error)) clearHomeySessionCaches();
+      throw error;
+    })
+    .finally(() => {
+      if (homeySessionInflight?.key === key) homeySessionInflight = null;
+    });
+
+  homeySessionInflight = { key, promise };
+  return await promise;
 }
 
 async function snapshotFromSession(
@@ -260,6 +393,90 @@ async function snapshotFromSession(
   }
 }
 
+function mapSnapshotFromRaw(raw: HomeyRawSnapshot): HomeySnapshot {
+  const zones: HomeyZone[] = raw.zonesRaw.map((z: any, i: number) => ({
+    id: z.id ?? z._id ?? String(i),
+    name: z.name ?? "Ukjent sal",
+  }));
+
+  const devices: HomeyDeviceSnapshot[] = raw.devicesRaw.map((d: any, i: number) => {
+    const caps: Record<string, { value: HomeyCapValue }> = {};
+    const obj = d.capabilitiesObj ?? d.capabilities_obj ?? {};
+    if (obj && typeof obj === "object" && !Array.isArray(obj)) {
+      for (const [capId, capVal] of Object.entries(obj)) {
+        const v = (capVal as any)?.value;
+        caps[capId] =
+          typeof v === "string" || typeof v === "number" || typeof v === "boolean"
+            ? { value: v }
+            : { value: null };
+      }
+    }
+
+    return {
+      id: d.id ?? d._id ?? String(i),
+      name: d.name ?? "Ukjent",
+      class: d.class,
+      zone: d.zone ?? null,
+      available: d.available !== false,
+      capabilities: caps,
+    };
+  });
+
+  return { ok: true, homeName: raw.homeName, zones, devices };
+}
+
+async function getHomeyRawSnapshot(conn: HomeyConnection): Promise<HomeyRawSnapshot | null> {
+  const key = getHomeyCacheKey(conn);
+  const cached = getCacheEntry(homeySnapshotCache, key);
+  if (cached) return cached.value;
+  if (homeySnapshotInflight?.key === key) return await homeySnapshotInflight.promise;
+
+  const promise = (async () => {
+    const session = await getHomeySessionContext(conn);
+    if (!session) return null;
+    const apiBase = `${session.target.baseUrl}/api`;
+    const [systemRaw, zonesRaw, devicesRaw] = await Promise.all([
+      fetchJson<any>(`${apiBase}/manager/system/`, session.sessionToken).catch(() => null),
+      fetchJson<any>(`${apiBase}/manager/zones/zone`, session.sessionToken),
+      fetchJson<any>(`${apiBase}/manager/devices/device`, session.sessionToken),
+    ]);
+
+    const raw: HomeyRawSnapshot = {
+      homeName: systemRaw?.hostname ?? systemRaw?.name ?? session.target.name,
+      zonesRaw: Array.isArray(zonesRaw)
+        ? zonesRaw
+        : zonesRaw && typeof zonesRaw === "object"
+          ? Object.values(zonesRaw)
+          : [],
+      devicesRaw: Array.isArray(devicesRaw)
+        ? devicesRaw
+        : devicesRaw && typeof devicesRaw === "object"
+          ? Object.values(devicesRaw)
+          : [],
+    };
+
+    homeySnapshotCache = {
+      key,
+      value: raw,
+      expiresAt: Date.now() + HOMEY_SNAPSHOT_TTL_MS,
+    };
+    return raw;
+  })()
+    .catch((error) => {
+      const stale = getCacheEntry(homeySnapshotCache, key, true);
+      const message = error instanceof Error ? error.message : String(error ?? "");
+      if (stale && isRateLimitedMessage(message)) return stale.value;
+      if (isHomeyAuthError(error)) clearHomeySessionCaches();
+      throw error;
+    })
+    .finally(() => {
+      if (homeySnapshotInflight?.key === key) homeySnapshotInflight = null;
+    });
+
+  homeySnapshotInflight = { key, promise };
+  return await promise;
+}
+
 export const getHomeySnapshot = createServerFn({ method: "GET" }).handler(
   async (): Promise<HomeySnapshot> => {
     let conn: HomeyConnection | null;
@@ -272,18 +489,15 @@ export const getHomeySnapshot = createServerFn({ method: "GET" }).handler(
     if (!conn) return { ok: false, needsConnect: true };
 
     try {
-      const target = await resolveHomeyTarget(conn.access_token);
-      if (!target) {
+      const raw = await getHomeyRawSnapshot(conn);
+      if (!raw) {
         return {
           ok: false,
           needsConnect: false,
           error: "Fant ingen Homey knyttet til kontoen.",
         };
       }
-
-      const delegationToken = await createDelegationToken(conn.access_token);
-      const sessionToken = await createSessionToken(target.baseUrl, delegationToken);
-      return await snapshotFromSession(sessionToken, target);
+      return mapSnapshotFromRaw(raw);
     } catch (e: any) {
       return { ok: false, needsConnect: false, error: e?.message ?? "Klarte ikke hente data" };
     }
@@ -292,6 +506,8 @@ export const getHomeySnapshot = createServerFn({ method: "GET" }).handler(
 
 export const disconnectHomey = createServerFn({ method: "POST" }).handler(async () => {
   await deleteHomeyConnection();
+  homeyTargetCache = null;
+  clearHomeySessionCaches();
   return { ok: true };
 });
 
@@ -542,15 +758,12 @@ export const setAllOutdoorLights = createServerFn({ method: "POST" })
     if (!conn) return { ok: false, toggled: 0, error: "Ingen Homey-tilkobling" };
 
     try {
-      const target = await resolveHomeyTarget(conn.access_token);
-      if (!target) return { ok: false, toggled: 0, error: "Fant ingen Homey" };
-
-      const delegationToken = await createDelegationToken(conn.access_token);
-      const sessionToken = await createSessionToken(target.baseUrl, delegationToken);
+      const session = await getHomeySessionContext(conn);
+      if (!session) return { ok: false, toggled: 0, error: "Fant ingen Homey" };
 
       const [zones, devices] = await Promise.all([
-        listZonesRaw(sessionToken, target.baseUrl),
-        listAllDevicesRaw(sessionToken, target.baseUrl),
+        listZonesRaw(session.sessionToken, session.target.baseUrl),
+        listAllDevicesRaw(session.sessionToken, session.target.baseUrl),
       ]);
 
       const outdoorZoneIds = new Set<string>(
@@ -579,7 +792,12 @@ export const setAllOutdoorLights = createServerFn({ method: "POST" })
         targets.map(async (d) => {
           const id = d.id ?? d._id;
           if (!id) return;
-          const ok = await setDeviceOnoff(sessionToken, target.baseUrl, id, data.on);
+          const ok = await setDeviceOnoff(
+            session.sessionToken,
+            session.target.baseUrl,
+            id,
+            data.on,
+          );
           if (ok) toggled += 1;
         }),
       );
@@ -650,13 +868,10 @@ export const getLivingRoomLightsState = createServerFn({ method: "GET" }).handle
     if (!conn) return { ok: false, anyOn: false, total: 0, error: "Ingen Homey-tilkobling" };
 
     try {
-      const target = await resolveHomeyTarget(conn.access_token);
-      if (!target) return { ok: false, anyOn: false, total: 0, error: "Fant ingen Homey" };
+      const raw = await getHomeyRawSnapshot(conn);
+      if (!raw) return { ok: false, anyOn: false, total: 0, error: "Fant ingen Homey" };
 
-      const delegationToken = await createDelegationToken(conn.access_token);
-      const sessionToken = await createSessionToken(target.baseUrl, delegationToken);
-
-      const devices = await listAllDevicesRaw(sessionToken, target.baseUrl);
+      const devices = raw.devicesRaw;
       const lights = findLivingRoomTargets(devices);
 
       const anyOn = lights.some((d) => {
@@ -683,13 +898,10 @@ export const setLivingRoomLights = createServerFn({ method: "POST" })
     if (!conn) return { ok: false, toggled: 0, error: "Ingen Homey-tilkobling" };
 
     try {
-      const target = await resolveHomeyTarget(conn.access_token);
-      if (!target) return { ok: false, toggled: 0, error: "Fant ingen Homey" };
+      const session = await getHomeySessionContext(conn);
+      if (!session) return { ok: false, toggled: 0, error: "Fant ingen Homey" };
 
-      const delegationToken = await createDelegationToken(conn.access_token);
-      const sessionToken = await createSessionToken(target.baseUrl, delegationToken);
-
-      const devices = await listAllDevicesRaw(sessionToken, target.baseUrl);
+      const devices = await listAllDevicesRaw(session.sessionToken, session.target.baseUrl);
       const targets = findLivingRoomTargets(devices);
 
       let toggled = 0;
@@ -697,7 +909,12 @@ export const setLivingRoomLights = createServerFn({ method: "POST" })
         targets.map(async (d) => {
           const id = d.id ?? d._id;
           if (!id) return;
-          const ok = await setDeviceOnoff(sessionToken, target.baseUrl, id, data.on);
+          const ok = await setDeviceOnoff(
+            session.sessionToken,
+            session.target.baseUrl,
+            id,
+            data.on,
+          );
           if (ok) toggled += 1;
         }),
       );
@@ -766,37 +983,30 @@ export const getLivingRoomDevices = createServerFn({ method: "GET" }).handler(
     if (!conn) return { ok: false, error: "Ingen Homey-tilkobling" };
 
     try {
-      const target = await resolveHomeyTarget(conn.access_token);
-      if (!target) return { ok: false, error: "Fant ingen Homey" };
+      const raw = await getHomeyRawSnapshot(conn);
+      if (!raw) return { ok: false, error: "Fant ingen Homey" };
 
-      const delegationToken = await createDelegationToken(conn.access_token);
-      const sessionToken = await createSessionToken(target.baseUrl, delegationToken);
-
-      const [zones, devices] = await Promise.all([
-        listZonesRaw(sessionToken, target.baseUrl),
-        listAllDevicesRaw(sessionToken, target.baseUrl),
-      ]);
+      const [zones, devices] = [raw.zonesRaw, raw.devicesRaw];
+      const zoneNameById = new Map<string, string>(
+        zones.map((z: any) => [z.id ?? z._id, z.name ?? "Ukjent sone"]),
+      );
 
       const livingZoneIds = new Set<string>(
         zones
-          .filter((z) => isLivingRoomZoneName(String(z?.name ?? "")))
-          .map((z) => z.id ?? z._id)
+          .filter((z: any) => isLivingRoomZoneName(String(z?.name ?? "")))
+          .map((z: any) => z.id ?? z._id)
           .filter(Boolean),
       );
-      const zoneNameById = new Map<string, string>(
-        zones.map((z) => [z.id ?? z._id, z.name ?? "Ukjent sone"]),
-      );
 
-      const inLiving = devices.filter((d) => {
+      const inLiving = devices.filter((d: any) => {
         if (!d) return false;
         if (d.zone && livingZoneIds.has(d.zone)) return true;
-        // fallback: navn inneholder "stue"/"stua"
         const n = String(d?.name ?? "").toLowerCase();
         return n.includes("stue") || n.includes("stua");
       });
 
       const result: LivingRoomDevice[] = inLiving
-        .map((d) => {
+        .map((d: any) => {
           const caps = d?.capabilitiesObj ?? d?.capabilities_obj ?? {};
           const out: LivingRoomDevice = {
             id: d.id ?? d._id,
@@ -836,10 +1046,8 @@ export const getLivingRoomDevices = createServerFn({ method: "GET" }).handler(
       livingRoomCache = { at: Date.now(), data: out };
       return out;
     } catch (e: any) {
-      // Spesialhåndter rate-limit fra Athom så klienten kan backe av
       const msg = e?.message ?? "Klarte ikke hente stue-enheter";
       if (/429|too_many_requests/i.test(msg)) {
-        // Hold på forrige cache litt lenger så UI fortsatt viser noe
         if (livingRoomCache) {
           livingRoomCache.at = Date.now() - LIVING_ROOM_TTL_MS + 30_000;
           return livingRoomCache.data;
@@ -891,15 +1099,12 @@ export const setLivingRoomDeviceCapability = createServerFn({ method: "POST" })
     if (!conn) return { ok: false, error: "Ingen Homey-tilkobling" };
 
     try {
-      const target = await resolveHomeyTarget(conn.access_token);
-      if (!target) return { ok: false, error: "Fant ingen Homey" };
-
-      const delegationToken = await createDelegationToken(conn.access_token);
-      const sessionToken = await createSessionToken(target.baseUrl, delegationToken);
+      const session = await getHomeySessionContext(conn);
+      if (!session) return { ok: false, error: "Fant ingen Homey" };
 
       const ok = await setDeviceCapabilityRaw(
-        sessionToken,
-        target.baseUrl,
+        session.sessionToken,
+        session.target.baseUrl,
         data.deviceId,
         data.capability,
         data.value,
@@ -924,18 +1129,19 @@ export const getTollnesCameraSnapshot = createServerFn({ method: "GET" }).handle
     if (!conn) return { ok: false, error: "Ingen Homey-tilkobling" };
 
     try {
-      const target = await resolveHomeyTarget(conn.access_token);
-      if (!target) return { ok: false, error: "Fant ingen Homey" };
+      const session = await getHomeySessionContext(conn);
+      if (!session) return { ok: false, error: "Fant ingen Homey" };
 
-      const delegationToken = await createDelegationToken(conn.access_token);
-      const sessionToken = await createSessionToken(target.baseUrl, delegationToken);
-
-      const device = await findCameraDevice(sessionToken, target.baseUrl, "tollnes");
+      const device = await findCameraDevice(
+        session.sessionToken,
+        session.target.baseUrl,
+        "tollnes",
+      );
       if (!device) return { ok: false, error: "Fant ingen Netatmo-kamera" };
 
       const { buffer, contentType } = await tryCameraSnapshot(
-        sessionToken,
-        target.baseUrl,
+        session.sessionToken,
+        session.target.baseUrl,
         device,
       );
 

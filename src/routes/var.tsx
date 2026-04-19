@@ -64,7 +64,6 @@ type LocationState = {
 
 function WeatherPage() {
   const data = Route.useLoaderData() as Awaited<ReturnType<typeof getHomeySnapshot>>;
-  const router = useRouter();
   const fetchAlerts = useServerFn(getTollnesAlerts);
   const [alerts, setAlerts] = useState<AlertsResult | null>(null);
   const [now, setNow] = useState<Date | null>(null);
@@ -126,13 +125,11 @@ function WeatherPage() {
       }
     })();
 
-    const t = setInterval(() => router.invalidate(), 60_000);
     const c = setInterval(() => setNow(new Date()), 30_000);
     return () => {
-      clearInterval(t);
       clearInterval(c);
     };
-  }, [router, fetchAlerts]);
+  }, [fetchAlerts]);
 
   // ---- Homey-sensorer ----
   const homeyOk = data?.ok === true;
