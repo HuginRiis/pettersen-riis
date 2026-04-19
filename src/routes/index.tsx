@@ -6,6 +6,7 @@ import { TollnesCameraSection } from "@/components/TollnesCameraStrip";
 import { NetatmoWeatherStationSection } from "@/components/NetatmoWeatherStation";
 import { MaesterCounsel } from "@/components/MaesterCounsel";
 import { BirthdayBanner } from "@/components/BirthdayBanner";
+import { UpcomingHolidays } from "@/components/UpcomingHolidays";
 import arnePortrait from "@/assets/arne-portrait.jpg";
 import rebekkaPortrait from "@/assets/rebekka-portrait.jpg";
 import celinePortrait from "@/assets/celine-portrait.jpg";
@@ -137,6 +138,8 @@ function Home() {
       </section>
 
       <SeasonsOfBorgen />
+
+      <UpcomingHolidays />
 
       <MaesterCounsel />
 
