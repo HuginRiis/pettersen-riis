@@ -214,7 +214,7 @@ function clearHomeySessionCaches() {
   clearHomeyDataCaches();
 }
 
-async function resolveHomeyTarget(accessToken: string): Promise<HomeyTarget | null> {
+async function resolveHomeyTargetRaw(accessToken: string): Promise<HomeyTarget | null> {
   const me = await fetchJson<any>(`${ATHOM_API_BASE}/user/me`, accessToken);
   const homeysVal = me?.homeys ?? null;
   const homeys: any[] = Array.isArray(homeysVal)
@@ -248,6 +248,36 @@ async function resolveHomeyTarget(accessToken: string): Promise<HomeyTarget | nu
   };
 }
 
+async function getResolvedHomeyTarget(conn: HomeyConnection): Promise<HomeyTarget | null> {
+  const key = getHomeyCacheKey(conn);
+  const cached = getCacheEntry(homeyTargetCache, key);
+  if (cached) return cached.value;
+  if (homeyTargetInflight?.key === key) return await homeyTargetInflight.promise;
+
+  const promise = resolveHomeyTargetRaw(conn.access_token)
+    .then((target) => {
+      homeyTargetCache = {
+        key,
+        value: target,
+        expiresAt: Date.now() + HOMEY_TARGET_TTL_MS,
+      };
+      return target;
+    })
+    .catch((error) => {
+      const stale = getCacheEntry(homeyTargetCache, key, true);
+      const message = error instanceof Error ? error.message : String(error ?? "");
+      if (stale && isRateLimitedMessage(message)) return stale.value;
+      if (isHomeyAuthError(error)) clearHomeySessionCaches();
+      throw error;
+    })
+    .finally(() => {
+      if (homeyTargetInflight?.key === key) homeyTargetInflight = null;
+    });
+
+  homeyTargetInflight = { key, promise };
+  return await promise;
+}
+
 async function createDelegationToken(accessToken: string): Promise<string> {
   return await fetchTokenLike(`${ATHOM_API_BASE}/delegation/token?audience=homey`, {
     method: "POST",
@@ -267,6 +297,40 @@ async function createSessionToken(baseUrl: string, delegationToken: string): Pro
     },
     body: JSON.stringify({ token: delegationToken }),
   });
+}
+
+async function getHomeySessionContext(conn: HomeyConnection): Promise<HomeySessionContext | null> {
+  const key = getHomeyCacheKey(conn);
+  const cached = getCacheEntry(homeySessionCache, key);
+  if (cached) return cached.value;
+  if (homeySessionInflight?.key === key) return await homeySessionInflight.promise;
+
+  const promise = (async () => {
+    const target = await getResolvedHomeyTarget(conn);
+    if (!target) return null;
+    const delegationToken = await createDelegationToken(conn.access_token);
+    const sessionToken = await createSessionToken(target.baseUrl, delegationToken);
+    const context = { target, sessionToken };
+    homeySessionCache = {
+      key,
+      value: context,
+      expiresAt: Date.now() + HOMEY_SESSION_TTL_MS,
+    };
+    return context;
+  })()
+    .catch((error) => {
+      const stale = getCacheEntry(homeySessionCache, key, true);
+      const message = error instanceof Error ? error.message : String(error ?? "");
+      if (stale && isRateLimitedMessage(message)) return stale.value;
+      if (isHomeyAuthError(error)) clearHomeySessionCaches();
+      throw error;
+    })
+    .finally(() => {
+      if (homeySessionInflight?.key === key) homeySessionInflight = null;
+    });
+
+  homeySessionInflight = { key, promise };
+  return await promise;
 }
 
 async function snapshotFromSession(
