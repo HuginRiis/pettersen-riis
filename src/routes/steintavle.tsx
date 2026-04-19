@@ -149,16 +149,14 @@ function SteintavlePage() {
     };
 
     loadAlerts();
-    loadRadar();
     loadNetatmo();
 
     // Polling-intervaller (skånsomme mot APIene):
     // - Netatmo: 5 min (Netatmo oppdaterer selv hvert 10. min)
-    // - Værvarsel & radar: 10 min
+    // - Værvarsel: 10 min
     // - Klokke: 30 sek
     // - Homey-snapshot: 3 min (lyskontroll)
     const a = setInterval(loadAlerts, 10 * 60_000);
-    const r = setInterval(loadRadar, 10 * 60_000);
     const n = setInterval(loadNetatmo, 5 * 60_000);
     const c = setInterval(() => setNow(new Date()), 30_000);
     const t = setInterval(refreshSnapshot, 3 * 60_000);
@@ -167,7 +165,6 @@ function SteintavlePage() {
     const onVisibility = () => {
       if (!document.hidden) {
         loadAlerts();
-        loadRadar();
         loadNetatmo();
         refreshSnapshot();
         setNow(new Date());
@@ -180,7 +177,6 @@ function SteintavlePage() {
     return () => {
       cancelled = true;
       clearInterval(a);
-      clearInterval(r);
       clearInterval(n);
       clearInterval(c);
       clearInterval(t);
@@ -188,7 +184,7 @@ function SteintavlePage() {
         document.removeEventListener("visibilitychange", onVisibility);
       }
     };
-  }, [fetchAlerts, fetchRadar, fetchNetatmo, router]);
+  }, [fetchAlerts, fetchNetatmo, router]);
 
   const handleSetLights = async (next: boolean) => {
     if (lightsBusy) return;
