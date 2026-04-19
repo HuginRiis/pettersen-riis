@@ -9,15 +9,42 @@ import {
 export const HOMEY_SCOPES = ["homey", "homey.device.readonly"];
 
 const ATHOM_API_BASE = "https://api.athom.com";
-const HOMEY_API_PAUSED = true;
 const HOMEY_API_PAUSED_MESSAGE =
   "Homey API er midlertidig pauset for å la 429-låsen slippe. Prøv igjen litt senere.";
 
+// Runtime flag — bevares mellom kall i samme worker-instans.
+// Default: pauset (true) etter 429 — kan skrues av via setHomeyApiPaused().
+const g = globalThis as unknown as { __homeyApiPaused?: boolean };
+if (typeof g.__homeyApiPaused !== "boolean") {
+  g.__homeyApiPaused = true;
+}
+
+function isHomeyApiPaused(): boolean {
+  return g.__homeyApiPaused === true;
+}
+
 function ensureHomeyApiAvailable() {
-  if (HOMEY_API_PAUSED) {
+  if (isHomeyApiPaused()) {
     throw new Error(HOMEY_API_PAUSED_MESSAGE);
   }
 }
+
+export const getHomeyApiPaused = createServerFn({ method: "GET" }).handler(
+  async (): Promise<{ paused: boolean }> => {
+    return { paused: isHomeyApiPaused() };
+  },
+);
+
+export const setHomeyApiPaused = createServerFn({ method: "POST" })
+  .inputValidator((input: { paused: boolean }) => input)
+  .handler(async ({ data }): Promise<{ paused: boolean }> => {
+    g.__homeyApiPaused = data.paused === true;
+    if (!g.__homeyApiPaused) {
+      // Når vi åpner igjen — tøm caches slik at neste kall får ferske tokens.
+      clearHomeyDataCaches();
+    }
+    return { paused: g.__homeyApiPaused };
+  });
 
 async function refreshAccessToken(conn: HomeyConnection): Promise<HomeyConnection> {
   ensureHomeyApiAvailable();

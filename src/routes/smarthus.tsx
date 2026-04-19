@@ -6,6 +6,7 @@ import { LastUpdated } from "@/components/LastUpdated";
 import { getHomeySnapshot, disconnectHomey, setAllOutdoorLights } from "@/server/homey";
 import { findDeviceFuzzy, readTemp } from "@/lib/homey-match";
 import { HomeyApiActivity } from "@/components/HomeyApiActivity";
+import { HomeyApiPauseToggle } from "@/components/HomeyApiPauseToggle";
 import { recordHomeyApiCall } from "@/lib/homey-api-tracker";
 import heroImg from "@/assets/smarthus-hero.jpg";
 
@@ -78,6 +79,7 @@ function ConnectPanel({ message }: { message?: string }) {
         subtitle="Bind ravnene til Homey for å våkne borgen."
         image={heroImg}
       />
+      <HomeyApiPauseToggle />
       <section className="container mx-auto px-4 py-12">
         <div className="panel rounded-lg p-8 max-w-2xl mx-auto text-center">
           <h2 className="text-display text-primary text-xl mb-3 tracking-[0.25em]">
@@ -373,6 +375,7 @@ function SmarthusPage() {
       <section className="container mx-auto px-4 pt-6 flex justify-center">
         <LastUpdated label="Homey" timestamp={homeyUpdated} />
       </section>
+      <HomeyApiPauseToggle />
 
       <section className="container mx-auto px-4 pt-6 space-y-4">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
