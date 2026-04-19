@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { getNetatmoTollnesSnapshot } from "@/server/netatmo";
+import { getNetatmoCameraSnapshot } from "@/server/netatmo";
 
 type Props = {
   /** Refresh interval in ms. Default 5000. */
@@ -9,14 +9,20 @@ type Props = {
   compact?: boolean;
   /** Aspect ratio class. Default aspect-video. */
   aspectClass?: string;
+  /** Substring-match på Netatmo-kameranavn. Default "tollnes". */
+  cameraMatch?: string;
+  /** Visningsetikett i footer/fallback. */
+  label?: string;
 };
 
 export function TollnesCameraStrip({
   intervalMs = 5000,
   compact = false,
   aspectClass = "aspect-video",
+  cameraMatch = "tollnes",
+  label,
 }: Props) {
-  const fetchSnap = useServerFn(getNetatmoTollnesSnapshot);
+  const fetchSnap = useServerFn(getNetatmoCameraSnapshot);
   const [state, setState] = useState<
     | { status: "loading" }
     | { status: "ok"; dataUrl: string; name: string; at: string }
@@ -29,7 +35,7 @@ export function TollnesCameraStrip({
     if (inFlight.current) return;
     inFlight.current = true;
     try {
-      const res = await fetchSnap();
+      const res = await fetchSnap({ data: { match: cameraMatch } });
       if (res.ok) {
         setState({
           status: "ok",
@@ -99,7 +105,7 @@ export function TollnesCameraStrip({
       </div>
       {!compact && (
         <div className="p-3 flex items-center justify-between text-[11px] tracking-[0.2em] uppercase text-muted-foreground">
-          <span>{state.status === "ok" ? state.name : "Netatmo · Tollnes"}</span>
+          <span>{state.status === "ok" ? state.name : (label ?? "Netatmo")}</span>
           <span className="text-primary/70">↻ Oppdateres hvert {Math.round(intervalMs / 1000)}s</span>
         </div>
       )}

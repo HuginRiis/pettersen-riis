@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { PageShell } from "@/components/PageShell";
 import { HyttaHero } from "@/components/HyttaHero";
 import { NetatmoWeatherStationSection } from "@/components/NetatmoWeatherStation";
+import { TollnesCameraStrip } from "@/components/TollnesCameraStrip";
 import hyttaImg from "@/assets/hytta-aurora.jpg";
 import g0314 from "@/assets/hytta-gallery/0314.jpg";
 import g0342 from "@/assets/hytta-gallery/0342.jpg";
@@ -156,6 +157,18 @@ function HyttaPage() {
         title="Værstasjonen — Hytta"
         stationMatch="hytta"
       />
+
+      {/* Vakttårnet på Hytta — Netatmo-kamera kalt "Hytta" */}
+      <section className="container mx-auto px-4 pb-16">
+        <div className="ornate-divider mb-6">
+          <span className="text-display tracking-[0.3em] text-primary text-sm uppercase">
+            Vakttårnet ved Hytta
+          </span>
+        </div>
+        <div className="max-w-3xl mx-auto">
+          <TollnesCameraStrip cameraMatch="hytta" label="Netatmo · Hytta" />
+        </div>
+      </section>
 
       {/* Galleriet — Krøniken om House Pettersen Riis i fjellet */}
       <section className="container mx-auto px-4 pb-16">

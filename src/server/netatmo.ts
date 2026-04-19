@@ -81,62 +81,83 @@ function bufferToDataUrl(buffer: ArrayBuffer, contentType: string) {
   return `data:${contentType};base64,${btoa(binary)}`;
 }
 
+// Per-kamera snapshot-cache. Netatmo-kameraet leverer ~1 fps internt og
+// vi vil unngå at flere klienter spør samtidig (f.eks. iPad + telefon).
+const SNAP_TTL_MS = 3_500;
+const snapCache = new Map<string, { at: number; data: NetatmoCameraResult }>();
+
+async function getCameraSnapshot(match: string): Promise<NetatmoCameraResult> {
+  const key = match.toLowerCase().trim();
+  const cached = snapCache.get(key);
+  if (cached && Date.now() - cached.at < SNAP_TTL_MS && cached.data.ok) {
+    return cached.data;
+  }
+
+  try {
+    const token = await getAccessToken();
+
+    const home = await fetchJson<any>(
+      `${NETATMO_BASE}/api/gethomedata?size=1`,
+      token,
+    );
+
+    const homes: any[] = home?.body?.homes ?? [];
+    const cameras: any[] = [];
+    for (const h of homes) {
+      for (const c of h.cameras ?? []) {
+        cameras.push({ ...c, _homeName: h.name });
+      }
+    }
+
+    if (cameras.length === 0) {
+      return { ok: false, error: "Fant ingen Netatmo-kameraer på kontoen" };
+    }
+
+    const cam =
+      cameras.find((c) =>
+        typeof c.name === "string" ? c.name.toLowerCase().includes(key) : false,
+      ) ?? cameras[0];
+
+    const vpn: string | undefined = cam.vpn_url;
+    if (!vpn) {
+      return { ok: false, error: `Kamera "${cam.name}" mangler vpn_url (offline?)` };
+    }
+
+    const snapUrl = `${vpn.replace(/\/+$/, "")}/live/snapshot_720.jpg`;
+    const snapRes = await fetch(snapUrl);
+    if (!snapRes.ok) {
+      // 429 / midlertidig feil → fall tilbake til siste cache hvis mulig
+      if (cached?.data.ok) return cached.data;
+      return { ok: false, error: `Snapshot feilet (${snapRes.status})` };
+    }
+
+    const contentType = snapRes.headers.get("content-type") ?? "image/jpeg";
+    const buffer = await snapRes.arrayBuffer();
+
+    const out: NetatmoCameraResult = {
+      ok: true,
+      dataUrl: bufferToDataUrl(buffer, contentType),
+      deviceName: cam.name ?? "Netatmo",
+      capturedAt: new Date().toISOString(),
+    };
+    snapCache.set(key, { at: Date.now(), data: out });
+    return out;
+  } catch (e: any) {
+    if (cached?.data.ok) return cached.data;
+    return { ok: false, error: e?.message ?? "Ukjent feil" };
+  }
+}
+
+export const getNetatmoCameraSnapshot = createServerFn({ method: "GET" })
+  .inputValidator((data: { match?: string }) => data ?? {})
+  .handler(async ({ data }) => {
+    const match = (data?.match ?? "tollnes").toLowerCase().trim();
+    return await getCameraSnapshot(match);
+  });
+
+// Bakoverkompatibel: Tollnes-spesifikk
 export const getNetatmoTollnesSnapshot = createServerFn({ method: "GET" }).handler(
   async (): Promise<NetatmoCameraResult> => {
-    try {
-      const token = await getAccessToken();
-
-      // gethomedata returns Welcome (indoor) cameras
-      // homesdata + Presence flow uses /api/gethomedata for legacy too
-      const home = await fetchJson<any>(
-        `${NETATMO_BASE}/api/gethomedata?size=1`,
-        token,
-      );
-
-      const homes: any[] = home?.body?.homes ?? [];
-      const cameras: any[] = [];
-      for (const h of homes) {
-        for (const c of h.cameras ?? []) {
-          cameras.push({ ...c, _homeName: h.name });
-        }
-      }
-
-      if (cameras.length === 0) {
-        return { ok: false, error: "Fant ingen Netatmo-kameraer på kontoen" };
-      }
-
-      // Prefer camera with "tollnes" in name, else first
-      const cam =
-        cameras.find((c) =>
-          typeof c.name === "string" ? c.name.toLowerCase().includes("tollnes") : false,
-        ) ?? cameras[0];
-
-      const vpn: string | undefined = cam.vpn_url;
-      if (!vpn) {
-        return { ok: false, error: "Kamera mangler vpn_url (er det online?)" };
-      }
-
-      // Snapshot URL: vpn_url + /live/snapshot_720.jpg
-      const snapUrl = `${vpn.replace(/\/+$/, "")}/live/snapshot_720.jpg`;
-      const snapRes = await fetch(snapUrl);
-      if (!snapRes.ok) {
-        return {
-          ok: false,
-          error: `Snapshot feilet (${snapRes.status})`,
-        };
-      }
-
-      const contentType = snapRes.headers.get("content-type") ?? "image/jpeg";
-      const buffer = await snapRes.arrayBuffer();
-
-      return {
-        ok: true,
-        dataUrl: bufferToDataUrl(buffer, contentType),
-        deviceName: cam.name ?? "Netatmo",
-        capturedAt: new Date().toISOString(),
-      };
-    } catch (e: any) {
-      return { ok: false, error: e?.message ?? "Ukjent feil" };
-    }
+    return await getCameraSnapshot("tollnes");
   },
 );
