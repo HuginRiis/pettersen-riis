@@ -832,9 +832,21 @@ export const getLivingRoomDevices = createServerFn({ method: "GET" }).handler(
             d.capabilities.dim !== undefined,
         );
 
-      return { ok: true, devices: result };
+      const out: LivingRoomDevicesResult = { ok: true, devices: result };
+      livingRoomCache = { at: Date.now(), data: out };
+      return out;
     } catch (e: any) {
-      return { ok: false, error: e?.message ?? "Klarte ikke hente stue-enheter" };
+      // Spesialhåndter rate-limit fra Athom så klienten kan backe av
+      const msg = e?.message ?? "Klarte ikke hente stue-enheter";
+      if (/429|too_many_requests/i.test(msg)) {
+        // Hold på forrige cache litt lenger så UI fortsatt viser noe
+        if (livingRoomCache) {
+          livingRoomCache.at = Date.now() - LIVING_ROOM_TTL_MS + 30_000;
+          return livingRoomCache.data;
+        }
+        return { ok: false, error: "Athom rate-limit (429) — venter litt" };
+      }
+      return { ok: false, error: msg };
     }
   },
 );
