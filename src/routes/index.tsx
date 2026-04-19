@@ -200,58 +200,39 @@ function Home() {
 function SeasonsOfBorgen() {
   const season = getCurrentSeason();
   const meta = SEASON_META[season];
-  // Quadrant order in image: TL=spring, TR=summer, BL=autumn, BR=winter
-  const QUADRANTS: Array<{
-    key: "spring" | "summer" | "autumn" | "winter";
-    label: string;
-    pos: string;
-  }> = [
-    { key: "spring", label: "Vår", pos: "top-0 left-0" },
-    { key: "summer", label: "Sommer", pos: "top-0 right-0" },
-    { key: "autumn", label: "Høst", pos: "bottom-0 left-0" },
-    { key: "winter", label: "Vinter", pos: "bottom-0 right-0" },
-  ];
+  // Quadrant order in source image: TL=spring, TR=summer, BL=autumn, BR=winter
+  // object-position percentages for a 2x2 grid: 0% = left/top, 100% = right/bottom
+  const POS: Record<"spring" | "summer" | "autumn" | "winter", string> = {
+    spring: "0% 0%",
+    summer: "100% 0%",
+    autumn: "0% 100%",
+    winter: "100% 100%",
+  };
   return (
     <section className="container mx-auto px-4 pb-16">
       <div className="ornate-divider mb-8">
         <span className="text-display tracking-[0.3em] text-primary text-sm uppercase">
-          Borgens fire årstider
+          Borgen nå · {meta.label}
         </span>
       </div>
-      <article className="panel rounded-lg overflow-hidden">
-        <div className="relative">
+      <article className="panel rounded-lg overflow-hidden max-w-3xl mx-auto">
+        <div className="relative aspect-[3/2] overflow-hidden bg-background">
           <img
             src={borgenSeasons}
-            alt="Borgen gjennom de fire årstidene — vår, sommer, høst og vinter"
-            className="w-full h-auto block"
+            alt={`Borgen i ${meta.label.toLowerCase()}`}
+            className="absolute inset-0 w-full h-full"
+            style={{
+              objectFit: "cover",
+              objectPosition: POS[season],
+              // Source is 2x2 grid — scale 200% so one quadrant fills the frame
+              transform: "scale(2)",
+              transformOrigin: POS[season],
+            }}
             loading="lazy"
           />
-          {/* Dim non-current quadrants */}
-          <div className="absolute inset-0 grid grid-cols-2 grid-rows-2 pointer-events-none">
-            {QUADRANTS.map((q) => (
-              <div
-                key={q.key}
-                className={
-                  q.key === season
-                    ? "ring-2 ring-primary ring-inset shadow-[inset_0_0_60px_rgba(0,0,0,0.0)]"
-                    : "bg-background/55"
-                }
-              />
-            ))}
+          <div className="absolute top-3 left-3 px-2.5 py-1 rounded bg-primary text-primary-foreground text-[10px] tracking-[0.3em] uppercase">
+            {meta.label}
           </div>
-          {/* Quadrant labels */}
-          {QUADRANTS.map((q) => (
-            <div
-              key={q.key}
-              className={`absolute ${q.pos} m-2 sm:m-3 px-2 py-1 rounded text-[9px] sm:text-[10px] tracking-[0.25em] uppercase ${
-                q.key === season
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-background/70 text-muted-foreground"
-              }`}
-            >
-              {q.label}
-            </div>
-          ))}
         </div>
         <div className="p-4 sm:p-5 text-center border-t border-border">
           <div className="text-[10px] tracking-[0.3em] text-muted-foreground uppercase">
