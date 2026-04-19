@@ -258,10 +258,42 @@ function useLivingRoom(): Ctx {
   return ctx;
 }
 
+const HEATPUMP_LS_KEY = "steintavle.heatpumpDeviceId";
+
 export function HeatPumpTile() {
-  const { state, overrides, busy, sendCap, findByKind } = useLivingRoom();
-  const device = findByKind("heatpump");
+  const { state, overrides, busy, sendCap } = useLivingRoom();
   const accent = "var(--ice)";
+
+  // Alle stua-enheter som har target_temperature (= varmepumper / termostater)
+  const heatpumps =
+    state.status === "ok"
+      ? state.devices.filter(
+          (d) => d.capabilities.target_temperature !== undefined,
+        )
+      : [];
+
+  const [selectedId, setSelectedId] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    return window.localStorage.getItem(HEATPUMP_LS_KEY);
+  });
+
+  // Velg automatisk: lagret valg → den som står på 22° → første
+  const device =
+    heatpumps.find((d) => d.id === selectedId) ??
+    heatpumps.find(
+      (d) =>
+        typeof d.capabilities.target_temperature === "number" &&
+        Math.round(d.capabilities.target_temperature) === 22,
+    ) ??
+    heatpumps[0] ??
+    null;
+
+  const pickDevice = (id: string) => {
+    setSelectedId(id);
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(HEATPUMP_LS_KEY, id);
+    }
+  };
 
   return (
     <article className="panel rounded-lg overflow-hidden flex flex-col">
@@ -269,9 +301,25 @@ export function HeatPumpTile() {
         <span className="text-display tracking-[0.3em] text-primary text-[10px] sm:text-xs uppercase">
           Varmepumpe · Stua
         </span>
-        <span className="text-[9px] tracking-[0.25em] text-muted-foreground/70 uppercase">
-          Mitsubishi
-        </span>
+        {heatpumps.length > 1 && device && (
+          <button
+            type="button"
+            onClick={() => {
+              const idx = heatpumps.findIndex((d) => d.id === device.id);
+              const next = heatpumps[(idx + 1) % heatpumps.length];
+              pickDevice(next.id);
+            }}
+            className="text-[9px] tracking-[0.25em] text-muted-foreground/70 hover:text-primary uppercase"
+            title="Bytt varmepumpe"
+          >
+            Bytt ({heatpumps.length})
+          </button>
+        )}
+        {heatpumps.length <= 1 && (
+          <span className="text-[9px] tracking-[0.25em] text-muted-foreground/70 uppercase">
+            Homey
+          </span>
+        )}
       </div>
       <div className="flex-1 p-4 flex flex-col items-center justify-center">
         {state.status === "loading" && (
