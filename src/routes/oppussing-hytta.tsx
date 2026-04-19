@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { RenovationPage } from "@/components/RenovationPage";
+import { RenovationPage } from "@/components/renovation/RenovationPage";
 import heroImg from "@/assets/hero-westeros.jpg";
 
 export const Route = createFileRoute("/oppussing-hytta")({
