@@ -102,10 +102,10 @@ function VakttarnetPage() {
         image={heroImg}
       />
 
-      <section className="container mx-auto px-4 py-10 space-y-10">
+      <section className="container mx-auto px-3 sm:px-4 py-6 sm:py-10 space-y-6 sm:space-y-10">
         <StatsCards sessions={sessions} pageviews={pageviews} attempts={attempts} />
 
-        <div className="grid lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
           <Panel
             title="Vaktens kart"
             icon={<MapIcon size={14} />}
@@ -123,7 +123,7 @@ function VakttarnetPage() {
           </Panel>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
           <Panel
             title="Banker på porten"
             icon={<ShieldAlert size={14} />}
@@ -157,7 +157,7 @@ function Panel({
   children: React.ReactNode;
 }) {
   return (
-    <div className="panel rounded-lg border border-border bg-card/60 backdrop-blur p-5">
+    <div className="panel rounded-lg border border-border bg-card/60 backdrop-blur p-3 sm:p-5 min-w-0">
       <div className="flex items-center gap-2 mb-1">
         {icon && <span className="text-primary">{icon}</span>}
         <h2 className="text-display tracking-[0.25em] text-primary uppercase text-xs">
@@ -165,7 +165,7 @@ function Panel({
         </h2>
       </div>
       {subtitle && (
-        <p className="text-[11px] text-muted-foreground italic mb-4">{subtitle}</p>
+        <p className="text-[11px] text-muted-foreground italic mb-3 sm:mb-4">{subtitle}</p>
       )}
       {children}
     </div>
@@ -226,7 +226,7 @@ function StatsCards({
   }, [sessions, pageviews, attempts]);
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3">
       <StatCard label="Sjeler i alt" value={stats.totalSessions.toString()} />
       <StatCard label="Siste døgn" value={stats.todayCount.toString()} />
       <StatCard label="Sidevisninger" value={stats.totalViews.toString()} />
@@ -381,8 +381,7 @@ function VisitorMap({
   return (
     <div
       ref={containerRef}
-      className="w-full rounded-md border border-border overflow-hidden"
-      style={{ height: 360 }}
+      className="w-full rounded-md border border-border overflow-hidden h-[260px] sm:h-[320px] lg:h-[360px]"
     />
   );
 }
