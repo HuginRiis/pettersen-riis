@@ -905,6 +905,8 @@ export const setLivingRoomDeviceCapability = createServerFn({ method: "POST" })
         data.value,
       );
       if (!ok) return { ok: false, error: "Homey avviste kommandoen" };
+      // Drop cache slik at neste poll henter fersk state.
+      invalidateLivingRoomCache();
       return { ok: true };
     } catch (e: any) {
       return { ok: false, error: e?.message ?? "Kommando feilet" };
