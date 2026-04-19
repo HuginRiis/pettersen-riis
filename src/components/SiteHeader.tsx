@@ -15,6 +15,7 @@ type RoutePath =
   | "/turer"
   | "/jernhesten"
   | "/ranger"
+  | "/varsler"
   | "/smarthus"
   | "/brodering"
   | "/steintavle"
@@ -71,6 +72,7 @@ const groups: NavGroup[] = [
     description: "Reisen gjennom riket — til fots, med kraft eller med maskin.",
     links: [
       { to: "/turer", label: "Ferden", icon: "🧭" },
+      { to: "/varsler", label: "Farevarsler", icon: "⚠️" },
       { to: "/jernhesten", label: "Jernhesten", icon: "⚡" },
       { to: "/ranger", label: "Ranger", icon: "🛡" },
     ],

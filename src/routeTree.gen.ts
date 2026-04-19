@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as VarslerRouteImport } from './routes/varsler'
 import { Route as VarRouteImport } from './routes/var'
 import { Route as VakttarnetRouteImport } from './routes/vakttarnet'
 import { Route as TurerRouteImport } from './routes/turer'
@@ -31,6 +32,11 @@ import { Route as ApiStravaCallbackRouteImport } from './routes/api.strava.callb
 import { Route as ApiHomeyStartRouteImport } from './routes/api.homey.start'
 import { Route as ApiHomeyCallbackRouteImport } from './routes/api.homey.callback'
 
+const VarslerRoute = VarslerRouteImport.update({
+  id: '/varsler',
+  path: '/varsler',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const VarRoute = VarRouteImport.update({
   id: '/var',
   path: '/var',
@@ -155,6 +161,7 @@ export interface FileRoutesByFullPath {
   '/turer': typeof TurerRoute
   '/vakttarnet': typeof VakttarnetRoute
   '/var': typeof VarRoute
+  '/varsler': typeof VarslerRoute
   '/api/homey/callback': typeof ApiHomeyCallbackRoute
   '/api/homey/start': typeof ApiHomeyStartRoute
   '/api/strava/callback': typeof ApiStravaCallbackRoute
@@ -178,6 +185,7 @@ export interface FileRoutesByTo {
   '/turer': typeof TurerRoute
   '/vakttarnet': typeof VakttarnetRoute
   '/var': typeof VarRoute
+  '/varsler': typeof VarslerRoute
   '/api/homey/callback': typeof ApiHomeyCallbackRoute
   '/api/homey/start': typeof ApiHomeyStartRoute
   '/api/strava/callback': typeof ApiStravaCallbackRoute
@@ -202,6 +210,7 @@ export interface FileRoutesById {
   '/turer': typeof TurerRoute
   '/vakttarnet': typeof VakttarnetRoute
   '/var': typeof VarRoute
+  '/varsler': typeof VarslerRoute
   '/api/homey/callback': typeof ApiHomeyCallbackRoute
   '/api/homey/start': typeof ApiHomeyStartRoute
   '/api/strava/callback': typeof ApiStravaCallbackRoute
@@ -227,6 +236,7 @@ export interface FileRouteTypes {
     | '/turer'
     | '/vakttarnet'
     | '/var'
+    | '/varsler'
     | '/api/homey/callback'
     | '/api/homey/start'
     | '/api/strava/callback'
@@ -250,6 +260,7 @@ export interface FileRouteTypes {
     | '/turer'
     | '/vakttarnet'
     | '/var'
+    | '/varsler'
     | '/api/homey/callback'
     | '/api/homey/start'
     | '/api/strava/callback'
@@ -273,6 +284,7 @@ export interface FileRouteTypes {
     | '/turer'
     | '/vakttarnet'
     | '/var'
+    | '/varsler'
     | '/api/homey/callback'
     | '/api/homey/start'
     | '/api/strava/callback'
@@ -297,6 +309,7 @@ export interface RootRouteChildren {
   TurerRoute: typeof TurerRoute
   VakttarnetRoute: typeof VakttarnetRoute
   VarRoute: typeof VarRoute
+  VarslerRoute: typeof VarslerRoute
   ApiHomeyCallbackRoute: typeof ApiHomeyCallbackRoute
   ApiHomeyStartRoute: typeof ApiHomeyStartRoute
   ApiStravaCallbackRoute: typeof ApiStravaCallbackRoute
@@ -305,6 +318,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/varsler': {
+      id: '/varsler'
+      path: '/varsler'
+      fullPath: '/varsler'
+      preLoaderRoute: typeof VarslerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/var': {
       id: '/var'
       path: '/var'
@@ -473,6 +493,7 @@ const rootRouteChildren: RootRouteChildren = {
   TurerRoute: TurerRoute,
   VakttarnetRoute: VakttarnetRoute,
   VarRoute: VarRoute,
+  VarslerRoute: VarslerRoute,
   ApiHomeyCallbackRoute: ApiHomeyCallbackRoute,
   ApiHomeyStartRoute: ApiHomeyStartRoute,
   ApiStravaCallbackRoute: ApiStravaCallbackRoute,
