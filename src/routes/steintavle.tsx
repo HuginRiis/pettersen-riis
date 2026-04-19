@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Lightbulb, LightbulbOff, Loader2 } from "lucide-react";
 import { PageShell } from "@/components/PageShell";
 import { TollnesCameraStrip } from "@/components/TollnesCameraStrip";
+import { LivingRoomDevicesPanel } from "@/components/LivingRoomDevicesPanel";
 import {
   getHomeySnapshot,
   setLivingRoomLights,
@@ -15,10 +16,8 @@ import {
 } from "@/server/netatmo-weather";
 import {
   getTollnesAlerts,
-  getMetRadarSouthernNorway,
   type AlertsResult,
   type MetAlert,
-  type RadarResult,
 } from "@/server/lightning";
 
 export const Route = createFileRoute("/steintavle")({
