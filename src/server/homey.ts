@@ -173,7 +173,7 @@ let homeySnapshotCache: CacheEntry<HomeyRawSnapshot> | null = null;
 
 let homeyTargetInflight: InflightEntry<HomeyTarget | null> | null = null;
 let homeySessionInflight: InflightEntry<HomeySessionContext | null> | null = null;
-let homeySnapshotInflight: InflightEntry<HomeyRawSnapshot> | null = null;
+let homeySnapshotInflight: InflightEntry<HomeyRawSnapshot | null> | null = null;
 
 function normalizeBaseUrl(url: string) {
   return url.replace(/\/+$/, "");
@@ -489,18 +489,15 @@ export const getHomeySnapshot = createServerFn({ method: "GET" }).handler(
     if (!conn) return { ok: false, needsConnect: true };
 
     try {
-      const target = await resolveHomeyTarget(conn.access_token);
-      if (!target) {
+      const raw = await getHomeyRawSnapshot(conn);
+      if (!raw) {
         return {
           ok: false,
           needsConnect: false,
           error: "Fant ingen Homey knyttet til kontoen.",
         };
       }
-
-      const delegationToken = await createDelegationToken(conn.access_token);
-      const sessionToken = await createSessionToken(target.baseUrl, delegationToken);
-      return await snapshotFromSession(sessionToken, target);
+      return mapSnapshotFromRaw(raw);
     } catch (e: any) {
       return { ok: false, needsConnect: false, error: e?.message ?? "Klarte ikke hente data" };
     }
