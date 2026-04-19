@@ -2,22 +2,24 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { PageShell, PageHero } from "@/components/PageShell";
 import { AlertsMap } from "@/components/AlertsMap";
+import { NrkTrafficSection } from "@/components/NrkTrafficSection";
 import { getTelemarkAlerts, type TelemarkAlert } from "@/server/met-alerts";
 import heroImg from "@/assets/hero-westeros.jpg";
 
 export const Route = createFileRoute("/varsler")({
   head: () => ({
     meta: [
-      { title: "Farevarsler | House Pettersen Riis" },
+      { title: "Farevarsler & Trafikk | House Pettersen Riis" },
       {
         name: "description",
         content:
-          "Aktive farevarsler fra Met.no for Sør- og Østlandet — kart og full oversikt.",
+          "Aktive farevarsler fra Met.no og trafikkmeldinger fra NRK for Sør- og Østlandet.",
       },
-      { property: "og:title", content: "Farevarsler — Sør- og Østlandet" },
+      { property: "og:title", content: "Farevarsler & Trafikk — Sør- og Østlandet" },
       {
         property: "og:description",
-        content: "Live farevarsler med kart for Oslo, Telemark, Agder og resten av sør/øst.",
+        content:
+          "Live farevarsler med kart, og ferske trafikkmeldinger fra NRK for Telemark, Buskerud, Innlandet og Agder.",
       },
     ],
   }),
@@ -115,6 +117,8 @@ function VarslerPage() {
             </p>
           )}
         </div>
+
+        <NrkTrafficSection />
       </section>
     </PageShell>
   );
