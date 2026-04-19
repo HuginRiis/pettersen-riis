@@ -45,8 +45,8 @@ const groups: NavGroup[] = [
     links: [
       { to: "/hytta", label: "Hytta", icon: "🏔" },
       { to: "/smarthus", label: "Borgens Smarthus", icon: "🏰" },
-      { to: "/oppussing-borgen", label: "Oppussing av borgen", icon: "🔨" },
-      { to: "/oppussing-hytta", label: "Oppussing av hytta", icon: "🪵" },
+      { to: "/oppussing-borgen", label: "Prosjekter på Borgen", icon: "🔨" },
+      { to: "/oppussing-hytta", label: "Prosjekter på hytta", icon: "🪵" },
       { to: "/brodering", label: "Brodering", icon: "🧵" },
       { to: "/steintavle", label: "Steintavle", icon: "🪨" },
     ],
