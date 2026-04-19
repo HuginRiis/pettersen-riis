@@ -223,7 +223,6 @@ export const recordPageview = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
 
     // Bump session counters
-    await supabaseAdmin.rpc as any; // noop placeholder to keep imports stable
     const { data: sess } = await supabaseAdmin
       .from("visitor_sessions" as any)
       .select("pageview_count")
