@@ -105,7 +105,7 @@ export function TollnesCameraStrip({
       </div>
       {!compact && (
         <div className="p-3 flex items-center justify-between text-[11px] tracking-[0.2em] uppercase text-muted-foreground">
-          <span>{state.status === "ok" ? state.name : "Netatmo · Tollnes"}</span>
+          <span>{state.status === "ok" ? state.name : (label ?? "Netatmo")}</span>
           <span className="text-primary/70">↻ Oppdateres hvert {Math.round(intervalMs / 1000)}s</span>
         </div>
       )}
