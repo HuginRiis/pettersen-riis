@@ -153,6 +153,7 @@ function Home() {
           <HallCard to="/agenda" title="Krøniken" desc="Agenda og meldinger med dato og emne." icon="📜" />
           <HallCard to="/var" title="Værens budskap" desc="Værmelding for Skien og hytta." icon="🌨" />
           <HallCard to="/pollen" title="Pollenvarsel" desc="Dagens pollen i lufta." icon="🌾" />
+          <HallCard to="/vakttarnet" title="Vakttårnet" desc="Vaktene rapporterer hvem som nærmer seg porten." icon="👁" />
           <HallCard to="/hytta" title="Hytta" desc="Husets tilflukt i fjellet." icon="🏔" />
           <HallCard to="/hundene" title="Hundene" desc="Husets tro følgesvenner." icon="🐺" />
           <HallCard to="/trening" title="Treningssalen" desc="Kroppen som rustning." icon="⚔️" />
