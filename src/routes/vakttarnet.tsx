@@ -9,6 +9,7 @@ import type {
   LoginAttemptRow,
   PageviewRow,
 } from "@/server/visitors";
+import heroImg from "@/assets/hero-westeros.jpg";
 import { Eye, Globe2, Smartphone, Monitor, Tablet, Clock, Crown, ShieldAlert, Map as MapIcon } from "lucide-react";
 
 export const Route = createFileRoute("/vakttarnet")({
@@ -64,6 +65,7 @@ function VakttarnetPage() {
         eyebrow="Husets vakt"
         title="Vakttårnet"
         subtitle="Vaktene ved muren rapporterer hver eneste sjel som nærmer seg porten."
+        image={heroImg}
       />
 
       <section className="container mx-auto px-4 py-10 space-y-10">
