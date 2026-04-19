@@ -41,8 +41,13 @@ export const Route = createFileRoute("/steintavle")({
     ],
   }),
   loader: async () => {
+    // Begge feil-håndteres separat — Netatmo skal vises selv om Homey er nede
+    // (f.eks. utløpt token), og omvendt.
     const [homey, netatmo] = await Promise.all([
-      getHomeySnapshot(),
+      getHomeySnapshot().catch((e) => ({
+        ok: false as const,
+        error: e?.message ?? "Homey-feil",
+      })),
       getNetatmoWeatherStation({ data: { stationMatch: "tollnes" } }).catch(
         (e) => ({ ok: false as const, error: e?.message ?? "Netatmo-feil" }),
       ),
