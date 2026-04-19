@@ -99,10 +99,8 @@ function SteintavlePage() {
   const [liveNetatmo, setLiveNetatmo] = useState(netatmo);
   const router = useRouter();
   const fetchAlerts = useServerFn(getTollnesAlerts);
-  const fetchRadar = useServerFn(getMetRadarSouthernNorway);
   const toggleLights = useServerFn(setLivingRoomLights);
   const [alerts, setAlerts] = useState<AlertsResult | null>(null);
-  const [radar, setRadar] = useState<RadarResult | null>(null);
   const [now, setNow] = useState<Date | null>(null);
   // Optimistisk overstyring av lys-status — null betyr "bruk verdien fra snapshot".
   const [lightsOverride, setLightsOverride] = useState<boolean | null>(null);
