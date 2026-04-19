@@ -251,6 +251,7 @@ function HallCard({
     | "/agenda"
     | "/var"
     | "/pollen"
+    | "/vakttarnet"
     | "/hytta"
     | "/hundene"
     | "/trening"
