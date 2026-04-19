@@ -393,6 +393,90 @@ async function snapshotFromSession(
   }
 }
 
+function mapSnapshotFromRaw(raw: HomeyRawSnapshot): HomeySnapshot {
+  const zones: HomeyZone[] = raw.zonesRaw.map((z: any, i: number) => ({
+    id: z.id ?? z._id ?? String(i),
+    name: z.name ?? "Ukjent sal",
+  }));
+
+  const devices: HomeyDeviceSnapshot[] = raw.devicesRaw.map((d: any, i: number) => {
+    const caps: Record<string, { value: HomeyCapValue }> = {};
+    const obj = d.capabilitiesObj ?? d.capabilities_obj ?? {};
+    if (obj && typeof obj === "object" && !Array.isArray(obj)) {
+      for (const [capId, capVal] of Object.entries(obj)) {
+        const v = (capVal as any)?.value;
+        caps[capId] =
+          typeof v === "string" || typeof v === "number" || typeof v === "boolean"
+            ? { value: v }
+            : { value: null };
+      }
+    }
+
+    return {
+      id: d.id ?? d._id ?? String(i),
+      name: d.name ?? "Ukjent",
+      class: d.class,
+      zone: d.zone ?? null,
+      available: d.available !== false,
+      capabilities: caps,
+    };
+  });
+
+  return { ok: true, homeName: raw.homeName, zones, devices };
+}
+
+async function getHomeyRawSnapshot(conn: HomeyConnection): Promise<HomeyRawSnapshot | null> {
+  const key = getHomeyCacheKey(conn);
+  const cached = getCacheEntry(homeySnapshotCache, key);
+  if (cached) return cached.value;
+  if (homeySnapshotInflight?.key === key) return await homeySnapshotInflight.promise;
+
+  const promise = (async () => {
+    const session = await getHomeySessionContext(conn);
+    if (!session) return null;
+    const apiBase = `${session.target.baseUrl}/api`;
+    const [systemRaw, zonesRaw, devicesRaw] = await Promise.all([
+      fetchJson<any>(`${apiBase}/manager/system/`, session.sessionToken).catch(() => null),
+      fetchJson<any>(`${apiBase}/manager/zones/zone`, session.sessionToken),
+      fetchJson<any>(`${apiBase}/manager/devices/device`, session.sessionToken),
+    ]);
+
+    const raw: HomeyRawSnapshot = {
+      homeName: systemRaw?.hostname ?? systemRaw?.name ?? session.target.name,
+      zonesRaw: Array.isArray(zonesRaw)
+        ? zonesRaw
+        : zonesRaw && typeof zonesRaw === "object"
+          ? Object.values(zonesRaw)
+          : [],
+      devicesRaw: Array.isArray(devicesRaw)
+        ? devicesRaw
+        : devicesRaw && typeof devicesRaw === "object"
+          ? Object.values(devicesRaw)
+          : [],
+    };
+
+    homeySnapshotCache = {
+      key,
+      value: raw,
+      expiresAt: Date.now() + HOMEY_SNAPSHOT_TTL_MS,
+    };
+    return raw;
+  })()
+    .catch((error) => {
+      const stale = getCacheEntry(homeySnapshotCache, key, true);
+      const message = error instanceof Error ? error.message : String(error ?? "");
+      if (stale && isRateLimitedMessage(message)) return stale.value;
+      if (isHomeyAuthError(error)) clearHomeySessionCaches();
+      throw error;
+    })
+    .finally(() => {
+      if (homeySnapshotInflight?.key === key) homeySnapshotInflight = null;
+    });
+
+  homeySnapshotInflight = { key, promise };
+  return await promise;
+}
+
 export const getHomeySnapshot = createServerFn({ method: "GET" }).handler(
   async (): Promise<HomeySnapshot> => {
     let conn: HomeyConnection | null;
