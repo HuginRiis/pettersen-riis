@@ -140,9 +140,21 @@ function mapDevice(device: any): WeatherModule[] {
   });
 }
 
+// Delt server-cache per stationMatch — Netatmo oppdaterer kun hvert 10. min,
+// så vi kan trygt servere det samme svaret til alle klienter (forsiden +
+// Steintavlen + iPad) uten å spamme api.netatmo.com.
+const WEATHER_TTL_MS = 5 * 60_000;
+const weatherCache = new Map<string, { at: number; data: WeatherStationResult }>();
+
 export const getNetatmoWeatherStation = createServerFn({ method: "GET" })
   .inputValidator((data: { stationMatch?: string }) => data ?? {})
   .handler(async ({ data }): Promise<WeatherStationResult> => {
+    const cacheKey = (data?.stationMatch ?? "").toLowerCase().trim() || "__default";
+    const cached = weatherCache.get(cacheKey);
+    if (cached && Date.now() - cached.at < WEATHER_TTL_MS && cached.data.ok) {
+      return cached.data;
+    }
+
     try {
       const token = await getAccessToken();
 
@@ -152,6 +164,11 @@ export const getNetatmoWeatherStation = createServerFn({ method: "GET" })
 
       if (!res.ok) {
         const text = await res.text();
+        // 429 → server forrige cache litt lenger om vi har den
+        if (res.status === 429 && cached?.data.ok) {
+          weatherCache.set(cacheKey, { at: Date.now() - WEATHER_TTL_MS + 60_000, data: cached.data });
+          return cached.data;
+        }
         return {
           ok: false,
           error: `getstationsdata feilet (${res.status}): ${text.slice(0, 160)}`,
@@ -182,13 +199,15 @@ export const getNetatmoWeatherStation = createServerFn({ method: "GET" })
       const stationName: string = device.station_name ?? device.module_name ?? "Værstasjonen";
       const modules = mapDevice(device);
 
-      return {
+      const out: WeatherStationResult = {
         ok: true,
         stationName,
         modules,
         fetchedAt: new Date().toISOString(),
         availableStations,
       };
+      weatherCache.set(cacheKey, { at: Date.now(), data: out });
+      return out;
     } catch (e: any) {
       return { ok: false, error: e?.message ?? "Ukjent feil" };
     }
