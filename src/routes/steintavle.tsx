@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Lightbulb, LightbulbOff, Loader2 } from "lucide-react";
 import { PageShell } from "@/components/PageShell";
 import { TollnesCameraStrip } from "@/components/TollnesCameraStrip";
+import { LivingRoomDevicesPanel } from "@/components/LivingRoomDevicesPanel";
 import {
   getHomeySnapshot,
   setLivingRoomLights,
@@ -15,10 +16,8 @@ import {
 } from "@/server/netatmo-weather";
 import {
   getTollnesAlerts,
-  getMetRadarSouthernNorway,
   type AlertsResult,
   type MetAlert,
-  type RadarResult,
 } from "@/server/lightning";
 
 export const Route = createFileRoute("/steintavle")({
@@ -100,10 +99,8 @@ function SteintavlePage() {
   const [liveNetatmo, setLiveNetatmo] = useState(netatmo);
   const router = useRouter();
   const fetchAlerts = useServerFn(getTollnesAlerts);
-  const fetchRadar = useServerFn(getMetRadarSouthernNorway);
   const toggleLights = useServerFn(setLivingRoomLights);
   const [alerts, setAlerts] = useState<AlertsResult | null>(null);
-  const [radar, setRadar] = useState<RadarResult | null>(null);
   const [now, setNow] = useState<Date | null>(null);
   // Optimistisk overstyring av lys-status — null betyr "bruk verdien fra snapshot".
   const [lightsOverride, setLightsOverride] = useState<boolean | null>(null);
@@ -136,15 +133,6 @@ function SteintavlePage() {
         if (!cancelled) setAlerts({ ok: false, error: e?.message ?? "Feil" });
       }
     };
-    const loadRadar = async () => {
-      if (isHidden()) return;
-      try {
-        const res = await fetchRadar();
-        if (!cancelled) setRadar(res);
-      } catch (e: any) {
-        if (!cancelled) setRadar({ ok: false, error: e?.message ?? "Feil" });
-      }
-    };
     const loadNetatmo = async () => {
       if (isHidden()) return;
       try {
@@ -161,16 +149,14 @@ function SteintavlePage() {
     };
 
     loadAlerts();
-    loadRadar();
     loadNetatmo();
 
     // Polling-intervaller (skånsomme mot APIene):
     // - Netatmo: 5 min (Netatmo oppdaterer selv hvert 10. min)
-    // - Værvarsel & radar: 10 min
+    // - Værvarsel: 10 min
     // - Klokke: 30 sek
     // - Homey-snapshot: 3 min (lyskontroll)
     const a = setInterval(loadAlerts, 10 * 60_000);
-    const r = setInterval(loadRadar, 10 * 60_000);
     const n = setInterval(loadNetatmo, 5 * 60_000);
     const c = setInterval(() => setNow(new Date()), 30_000);
     const t = setInterval(refreshSnapshot, 3 * 60_000);
@@ -179,7 +165,6 @@ function SteintavlePage() {
     const onVisibility = () => {
       if (!document.hidden) {
         loadAlerts();
-        loadRadar();
         loadNetatmo();
         refreshSnapshot();
         setNow(new Date());
@@ -192,7 +177,6 @@ function SteintavlePage() {
     return () => {
       cancelled = true;
       clearInterval(a);
-      clearInterval(r);
       clearInterval(n);
       clearInterval(c);
       clearInterval(t);
@@ -200,7 +184,7 @@ function SteintavlePage() {
         document.removeEventListener("visibilitychange", onVisibility);
       }
     };
-  }, [fetchAlerts, fetchRadar, fetchNetatmo, router]);
+  }, [fetchAlerts, fetchNetatmo, router]);
 
   const handleSetLights = async (next: boolean) => {
     if (lightsBusy) return;
@@ -372,86 +356,32 @@ function SteintavlePage() {
             </div>
           </div>
 
-          <div className="panel rounded-lg overflow-hidden flex flex-col">
-            <div className="px-4 py-2 border-b border-border flex items-center justify-between">
-              <span className="text-display tracking-[0.3em] text-primary text-[10px] sm:text-xs uppercase">
-                Stormens Øye · Radar
-              </span>
-              <span className="text-[9px] tracking-[0.25em] text-muted-foreground/70 uppercase">
-                {hasThunder ? (
-                  <span className="text-destructive font-semibold">⚡ Torden</span>
-                ) : otherAlerts.length > 0 ? (
-                  <span className="text-primary">⚠ {otherAlerts.length} varsel</span>
-                ) : radar?.ok === true ? (
-                  `MET.no · ${new Date(radar.capturedAt).toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit" })}`
-                ) : (
-                  "MET.no"
-                )}
-              </span>
-            </div>
-            <div
-              className="relative w-full bg-background flex items-center justify-center flex-1"
-              style={{ aspectRatio: "4 / 3" }}
-            >
-              {radar === null && (
-                <div className="text-[11px] tracking-[0.3em] text-muted-foreground uppercase">
-                  Sender ravn til MET.no…
-                </div>
-              )}
-              {radar?.ok === false && (
-                <div className="text-center px-6">
-                  <div className="text-2xl mb-2">🌫</div>
-                  <div className="text-sm text-destructive">{radar.error}</div>
-                </div>
-              )}
-              {radar?.ok === true && (
-                <>
-                  <img
-                    src={radar.dataUrl}
-                    alt="MET.no radar — Sør-Norge"
-                    className="absolute inset-0 w-full h-full object-contain"
-                  />
-                  <div
-                    className="absolute pointer-events-none"
-                    style={{
-                      left: "44%",
-                      top: "62%",
-                      transform: "translate(-50%, -50%)",
-                    }}
-                    title="Tollnes, Skien"
-                  >
-                    <div className="relative">
-                      <div className="w-3 h-3 rounded-full bg-primary border-2 border-background shadow-[0_0_12px_var(--primary)] animate-pulse" />
-                      <div className="absolute top-4 left-1/2 -translate-x-1/2 text-[9px] tracking-[0.2em] text-primary uppercase whitespace-nowrap font-semibold drop-shadow-[0_1px_2px_black]">
-                        Tollnes
-                      </div>
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-            {otherAlerts.length > 0 && (
-              <div className="px-3 py-2 border-t border-border space-y-1 max-h-24 overflow-y-auto">
-                {otherAlerts.map((a) => (
-                  <div key={a.id} className="flex items-start gap-2 text-[11px]">
-                    <span
-                      className="mt-1 w-2 h-2 rounded-full shrink-0"
-                      style={{ background: alertColor(a.awarenessColor) }}
-                    />
-                    <div className="flex-1 truncate">
-                      <span className="text-foreground">{a.title}</span>
-                      {a.area && (
-                        <span className="text-[9px] tracking-[0.2em] text-muted-foreground uppercase ml-2">
-                          · {a.area}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          <LivingRoomDevicesPanel />
         </section>
+
+        {otherAlerts.length > 0 && (
+          <section className="mt-3 panel rounded-lg px-3 py-2 space-y-1">
+            <div className="text-[9px] tracking-[0.3em] text-primary uppercase mb-1">
+              Andre varsler
+            </div>
+            {otherAlerts.map((a) => (
+              <div key={a.id} className="flex items-start gap-2 text-[11px]">
+                <span
+                  className="mt-1 w-2 h-2 rounded-full shrink-0"
+                  style={{ background: alertColor(a.awarenessColor) }}
+                />
+                <div className="flex-1 truncate">
+                  <span className="text-foreground">{a.title}</span>
+                  {a.area && (
+                    <span className="text-[9px] tracking-[0.2em] text-muted-foreground uppercase ml-2">
+                      · {a.area}
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </section>
+        )}
       </main>
     </PageShell>
   );

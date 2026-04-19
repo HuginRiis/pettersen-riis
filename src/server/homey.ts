@@ -708,6 +708,185 @@ export const setLivingRoomLights = createServerFn({ method: "POST" })
     }
   });
 
+// ============================================================
+// Living room — full device list (lights, heat pump, etc.)
+// Returnerer alle enheter i sone "stue/stua/living" med
+// styrbare capabilities (onoff, target_temperature, dim).
+// ============================================================
+
+export type LivingRoomDevice = {
+  id: string;
+  name: string;
+  class?: string;
+  zoneName: string | null;
+  capabilities: {
+    onoff?: boolean;
+    target_temperature?: number;
+    target_temperature_min?: number;
+    target_temperature_max?: number;
+    target_temperature_step?: number;
+    measure_temperature?: number;
+    dim?: number;
+    thermostat_mode?: string;
+  };
+};
+
+export type LivingRoomDevicesResult =
+  | { ok: false; error: string }
+  | { ok: true; devices: LivingRoomDevice[] };
+
+function readCapValue(caps: any, id: string): any {
+  return caps?.[id]?.value;
+}
+
+function readCapMeta(caps: any, id: string, key: string): any {
+  return caps?.[id]?.[key];
+}
+
+export const getLivingRoomDevices = createServerFn({ method: "GET" }).handler(
+  async (): Promise<LivingRoomDevicesResult> => {
+    let conn: HomeyConnection | null;
+    try {
+      conn = await getValidConnection();
+    } catch (e: any) {
+      return { ok: false, error: e?.message ?? "Token-feil" };
+    }
+    if (!conn) return { ok: false, error: "Ingen Homey-tilkobling" };
+
+    try {
+      const target = await resolveHomeyTarget(conn.access_token);
+      if (!target) return { ok: false, error: "Fant ingen Homey" };
+
+      const delegationToken = await createDelegationToken(conn.access_token);
+      const sessionToken = await createSessionToken(target.baseUrl, delegationToken);
+
+      const [zones, devices] = await Promise.all([
+        listZonesRaw(sessionToken, target.baseUrl),
+        listAllDevicesRaw(sessionToken, target.baseUrl),
+      ]);
+
+      const livingZoneIds = new Set<string>(
+        zones
+          .filter((z) => isLivingRoomZoneName(String(z?.name ?? "")))
+          .map((z) => z.id ?? z._id)
+          .filter(Boolean),
+      );
+      const zoneNameById = new Map<string, string>(
+        zones.map((z) => [z.id ?? z._id, z.name ?? "Ukjent sone"]),
+      );
+
+      const inLiving = devices.filter((d) => {
+        if (!d) return false;
+        if (d.zone && livingZoneIds.has(d.zone)) return true;
+        // fallback: navn inneholder "stue"/"stua"
+        const n = String(d?.name ?? "").toLowerCase();
+        return n.includes("stue") || n.includes("stua");
+      });
+
+      const result: LivingRoomDevice[] = inLiving
+        .map((d) => {
+          const caps = d?.capabilitiesObj ?? d?.capabilities_obj ?? {};
+          const out: LivingRoomDevice = {
+            id: d.id ?? d._id,
+            name: d.name ?? "Ukjent",
+            class: d.class,
+            zoneName: d.zone ? zoneNameById.get(d.zone) ?? null : null,
+            capabilities: {},
+          };
+          const onoff = readCapValue(caps, "onoff");
+          if (typeof onoff === "boolean") out.capabilities.onoff = onoff;
+          const tt = readCapValue(caps, "target_temperature");
+          if (typeof tt === "number") {
+            out.capabilities.target_temperature = tt;
+            const min = readCapMeta(caps, "target_temperature", "min");
+            const max = readCapMeta(caps, "target_temperature", "max");
+            const step = readCapMeta(caps, "target_temperature", "step");
+            if (typeof min === "number") out.capabilities.target_temperature_min = min;
+            if (typeof max === "number") out.capabilities.target_temperature_max = max;
+            if (typeof step === "number") out.capabilities.target_temperature_step = step;
+          }
+          const mt = readCapValue(caps, "measure_temperature");
+          if (typeof mt === "number") out.capabilities.measure_temperature = mt;
+          const dim = readCapValue(caps, "dim");
+          if (typeof dim === "number") out.capabilities.dim = dim;
+          const tm = readCapValue(caps, "thermostat_mode");
+          if (typeof tm === "string") out.capabilities.thermostat_mode = tm;
+          return out;
+        })
+        .filter(
+          (d) =>
+            d.capabilities.onoff !== undefined ||
+            d.capabilities.target_temperature !== undefined ||
+            d.capabilities.dim !== undefined,
+        );
+
+      return { ok: true, devices: result };
+    } catch (e: any) {
+      return { ok: false, error: e?.message ?? "Klarte ikke hente stue-enheter" };
+    }
+  },
+);
+
+async function setDeviceCapabilityRaw(
+  sessionToken: string,
+  baseUrl: string,
+  deviceId: string,
+  capabilityId: string,
+  value: boolean | number | string,
+): Promise<boolean> {
+  const res = await fetch(
+    `${baseUrl}/api/manager/devices/device/${deviceId}/capability/${capabilityId}`,
+    {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${sessionToken}`,
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({ value }),
+    },
+  );
+  return res.ok;
+}
+
+export const setLivingRoomDeviceCapability = createServerFn({ method: "POST" })
+  .inputValidator(
+    (input: {
+      deviceId: string;
+      capability: "onoff" | "target_temperature" | "dim" | "thermostat_mode";
+      value: boolean | number | string;
+    }) => input,
+  )
+  .handler(async ({ data }): Promise<{ ok: boolean; error?: string }> => {
+    let conn: HomeyConnection | null;
+    try {
+      conn = await getValidConnection();
+    } catch (e: any) {
+      return { ok: false, error: e?.message ?? "Token-feil" };
+    }
+    if (!conn) return { ok: false, error: "Ingen Homey-tilkobling" };
+
+    try {
+      const target = await resolveHomeyTarget(conn.access_token);
+      if (!target) return { ok: false, error: "Fant ingen Homey" };
+
+      const delegationToken = await createDelegationToken(conn.access_token);
+      const sessionToken = await createSessionToken(target.baseUrl, delegationToken);
+
+      const ok = await setDeviceCapabilityRaw(
+        sessionToken,
+        target.baseUrl,
+        data.deviceId,
+        data.capability,
+        data.value,
+      );
+      if (!ok) return { ok: false, error: "Homey avviste kommandoen" };
+      return { ok: true };
+    } catch (e: any) {
+      return { ok: false, error: e?.message ?? "Kommando feilet" };
+    }
+  });
+
 export const getTollnesCameraSnapshot = createServerFn({ method: "GET" }).handler(
   async (): Promise<CameraSnapshotResult> => {
     let conn: HomeyConnection | null;
