@@ -5,6 +5,7 @@ import { WeatherWidget } from "@/components/WeatherWidget";
 import { TollnesCameraSection } from "@/components/TollnesCameraStrip";
 import { NetatmoWeatherStationSection } from "@/components/NetatmoWeatherStation";
 import { MaesterCounsel } from "@/components/MaesterCounsel";
+import { BirthdayBanner } from "@/components/BirthdayBanner";
 import arnePortrait from "@/assets/arne-portrait.jpg";
 import rebekkaPortrait from "@/assets/rebekka-portrait.jpg";
 import celinePortrait from "@/assets/celine-portrait.jpg";
@@ -45,6 +46,8 @@ function Home() {
         subtitle="Arne Pettersen Riis og Rebekka Riis Pettersen — vinterens voktere ved fjorden."
         image={heroImg}
       />
+
+      <BirthdayBanner />
 
       <section className="container mx-auto px-4 py-16">
         <div className="ornate-divider mb-10">
