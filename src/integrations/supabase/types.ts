@@ -80,6 +80,109 @@ export type Database = {
         }
         Relationships: []
       }
+      renovation_images: {
+        Row: {
+          caption: string | null
+          created_at: string
+          id: string
+          project_id: string
+          sort_order: number
+          url: string
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string
+          id?: string
+          project_id: string
+          sort_order?: number
+          url: string
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string
+          id?: string
+          project_id?: string
+          sort_order?: number
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "renovation_images_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "renovation_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      renovation_projects: {
+        Row: {
+          cover_image_url: string | null
+          created_at: string
+          description: string | null
+          id: string
+          location: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          cover_image_url?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          location: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          cover_image_url?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          location?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      renovation_tasks: {
+        Row: {
+          created_at: string
+          done: boolean
+          id: string
+          label: string
+          project_id: string
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          done?: boolean
+          id?: string
+          label: string
+          project_id: string
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          done?: boolean
+          id?: string
+          label?: string
+          project_id?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "renovation_tasks_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "renovation_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       strava_connections: {
         Row: {
           access_token: string
