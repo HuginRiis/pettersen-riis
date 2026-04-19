@@ -1,6 +1,6 @@
 import { Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { Menu, X, LogOut, ChevronDown } from "lucide-react";
+import { Menu, X, LogOut, ChevronDown, Crown, Swords, Shield } from "lucide-react";
 import { logoutFn } from "@/server/auth";
 
 type RoutePath =
