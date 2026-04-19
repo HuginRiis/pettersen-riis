@@ -158,6 +158,18 @@ function HyttaPage() {
         stationMatch="hytta"
       />
 
+      {/* Vakttårnet på Hytta — Netatmo-kamera kalt "Hytta" */}
+      <section className="container mx-auto px-4 pb-16">
+        <div className="ornate-divider mb-6">
+          <span className="text-display tracking-[0.3em] text-primary text-sm uppercase">
+            Vakttårnet ved Hytta
+          </span>
+        </div>
+        <div className="max-w-3xl mx-auto">
+          <TollnesCameraStrip cameraMatch="hytta" label="Netatmo · Hytta" />
+        </div>
+      </section>
+
       {/* Galleriet — Krøniken om House Pettersen Riis i fjellet */}
       <section className="container mx-auto px-4 pb-16">
         <div className="ornate-divider mb-6">
