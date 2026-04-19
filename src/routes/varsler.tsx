@@ -117,6 +117,8 @@ function VarslerPage() {
             </p>
           )}
         </div>
+
+        <NrkTrafficSection />
       </section>
     </PageShell>
   );
