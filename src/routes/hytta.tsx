@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { PageShell } from "@/components/PageShell";
 import { HyttaHero } from "@/components/HyttaHero";
 import { NetatmoWeatherStationSection } from "@/components/NetatmoWeatherStation";
+import { TollnesCameraStrip } from "@/components/TollnesCameraStrip";
 import hyttaImg from "@/assets/hytta-aurora.jpg";
 import g0314 from "@/assets/hytta-gallery/0314.jpg";
 import g0342 from "@/assets/hytta-gallery/0342.jpg";
