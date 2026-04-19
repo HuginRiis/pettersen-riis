@@ -266,30 +266,34 @@ function buildAdvice({
   const isMild = t !== null && t >= 8 && t < 17;
   const isWarm = t !== null && t >= 17;
 
-  /* ── Bekledning ────────────────────────────────────────────────── */
+  /* ── Bekledning (2026, men i Hærmesterens tunge) ──────────────── */
   const clothing: string[] = [];
   if (isFreezing) {
-    clothing.push("Trekk på pelskappen av dirvolv — selv en Stark fryser i kveld.");
-    clothing.push("Ullhoser under brynjen, og votter av kalveskinn. Ingen kjenner is som vinterens barn.");
+    clothing.push("Dunjakke av Norrøna-merke — slik dirvolvens pels for vår tid; lukk glidelåsen helt opp til strupen.");
+    clothing.push("Merinoull innerst, fôrede vinterstøvler ytterst, og en lue av strikket ull. Selv en Stark ville nikket.");
+    clothing.push("Hansker med berøringsfingre — så ravnens lille glassbrett (mobilen) kan tales til uten å blottlegge huden.");
   } else if (isCold) {
-    clothing.push("En tung ullkappe og lærhansker — vinden fra fjorden bærer minner fra Muren.");
-    clothing.push("Skjerf om halsen, ellers vil ravnene le.");
+    clothing.push("Skalljakke med varmt fleece-fôr og lange bukser av softshell — vinden fra fjorden bærer minner fra Muren.");
+    clothing.push("Buff om halsen og en strikket lue; uten dem vil ravnene le høyt.");
+    clothing.push("Goretex-støvler eller solide sneakers — våte tær fortjener ingen herre.");
   } else if (isMild) {
-    clothing.push("Lett kappe over linskjorten. Hærmesteren godtar både brokade og bomull.");
-    clothing.push("Ta med en ekstra kjortel — Skiens vær er like upålitelig som en Lannister.");
+    clothing.push("En lett dunvest over genseren, eller en regnskall i sekken — Skiens vær er like upålitelig som en Lannister.");
+    clothing.push("Jeans eller chinos, og en t-skjorte i merinoull under — slik kler en mann seg i åttende måne av 2026.");
+    clothing.push("Ta med en cap eller lue; hodet skal hverken brennes eller fryses.");
   } else if (isWarm) {
-    clothing.push("Lin og lette farger — la rustningen hvile i våpenhuset i dag.");
-    clothing.push("En vidbredt hatt mot solen, slik som handelsmennene i Dorne.");
+    clothing.push("Linskjorte og shorts av lett bomull — la dunjakken hvile i skapet til høstvindene blåser.");
+    clothing.push("Solbriller med UV-vern og en cap — slik som handelsmennene i Dorne ville bedt om.");
+    clothing.push("Solkrem faktor 30 på blottede armer; selv den modigste hud brenner i nordlandets sommer.");
   } else {
-    clothing.push("Kle deg i lag — ravnene har ennå ikke meldt sikkert om temperaturen.");
+    clothing.push("Kle deg i lag av merinoull og lett skall — ravnene har ennå ikke meldt sikkert om temperaturen.");
   }
-  if (isRain) clothing.push("Olje inn lærstøvlene og ta hetten godt over hodet — regnet kommer som drager fra vest.");
-  if (isSnow) clothing.push("Skinnstøvler med ullinnlegg, og piggene under sålen om Bymuren skal forseres.");
-  if (isWindy && !isStorm) clothing.push("Spenn kappen godt — vinden napper i alt som er løst.");
-  if (isStorm) clothing.push("Storm! La kappen være hjemme; bruk tett jakke som ikke flagrer som et banner i kamp.");
-  if (isFog) clothing.push("Bær lyse farger — i tåken ser man knapt sin egen skygge.");
-  if (dayPart === "nattevakt") clothing.push("En lykt og varm hette — Nattens voktere ferdes ikke uten lys.");
-  if (dayPart === "morgengry" && (isCold || isFreezing)) clothing.push("Forvarmede sokker ved peisen før man trår ut — gull verdt en gulldrage.");
+  if (isRain) clothing.push("Regnjakke med tapede sømmer og vanntette joggesko — regnet kommer som drager fra vest.");
+  if (isSnow) clothing.push("Vinterstøvler med god mønster i sålen, og brodder i lommen om fortauet er som speil.");
+  if (isWindy && !isStorm) clothing.push("Vindtett ytterjakke og lue som ikke blåser av — vinden napper i alt som er løst.");
+  if (isStorm) clothing.push("Storm! Tett skalljakke med stram hette; ingen lange frakker som flagrer som banner i kamp.");
+  if (isFog) clothing.push("Refleksvest eller lyse farger — i tåken ser bilistene knapt sin egen panserhjelm.");
+  if (dayPart === "nattevakt") clothing.push("Pannelykt og refleks på jakken — Nattens voktere av vår tid bærer LED, ikke fakkel.");
+  if (dayPart === "morgengry" && (isCold || isFreezing)) clothing.push("Forvarm støvlene ved varmeovnen før du trår ut — gull verdt en gulldrage.");
 
   /* ── Reise: hest & kjerre ──────────────────────────────────────── */
   const travel: string[] = [];
