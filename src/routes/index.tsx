@@ -13,6 +13,26 @@ import maritaPortrait from "@/assets/marita-portrait.jpg";
 import noraPortrait from "@/assets/nora-portrait.jpg";
 import miraPortrait from "@/assets/mira-portrait.jpg";
 import heroImg from "@/assets/hero-westeros.jpg";
+import borgenSeasons from "@/assets/borgen-seasons.png";
+
+// Current season based on month (Northern Hemisphere)
+function getCurrentSeason(): "spring" | "summer" | "autumn" | "winter" {
+  const m = new Date().getMonth(); // 0=Jan
+  if (m >= 2 && m <= 4) return "spring";
+  if (m >= 5 && m <= 7) return "summer";
+  if (m >= 8 && m <= 10) return "autumn";
+  return "winter";
+}
+
+const SEASON_META: Record<
+  "spring" | "summer" | "autumn" | "winter",
+  { label: string; words: string }
+> = {
+  spring: { label: "Vår", words: "Når blomstene våkner ved borgens mur" },
+  summer: { label: "Sommer", words: "Når solen aldri synker over Skien" },
+  autumn: { label: "Høst", words: "Når løvet faller som gull i tunet" },
+  winter: { label: "Vinter", words: "Når snøen kler borgen i hvitt" },
+};
 
 // Coordinates
 const HYTTA = { lat: 59.8733, lon: 9.4297 }; // Øvre Bjørkesetvegen 123, Flesberg
