@@ -506,6 +506,8 @@ export const getHomeySnapshot = createServerFn({ method: "GET" }).handler(
 
 export const disconnectHomey = createServerFn({ method: "POST" }).handler(async () => {
   await deleteHomeyConnection();
+  homeyTargetCache = null;
+  clearHomeySessionCaches();
   return { ok: true };
 });
 
@@ -756,15 +758,12 @@ export const setAllOutdoorLights = createServerFn({ method: "POST" })
     if (!conn) return { ok: false, toggled: 0, error: "Ingen Homey-tilkobling" };
 
     try {
-      const target = await resolveHomeyTarget(conn.access_token);
-      if (!target) return { ok: false, toggled: 0, error: "Fant ingen Homey" };
-
-      const delegationToken = await createDelegationToken(conn.access_token);
-      const sessionToken = await createSessionToken(target.baseUrl, delegationToken);
+      const session = await getHomeySessionContext(conn);
+      if (!session) return { ok: false, toggled: 0, error: "Fant ingen Homey" };
 
       const [zones, devices] = await Promise.all([
-        listZonesRaw(sessionToken, target.baseUrl),
-        listAllDevicesRaw(sessionToken, target.baseUrl),
+        listZonesRaw(session.sessionToken, session.target.baseUrl),
+        listAllDevicesRaw(session.sessionToken, session.target.baseUrl),
       ]);
 
       const outdoorZoneIds = new Set<string>(
@@ -793,7 +792,12 @@ export const setAllOutdoorLights = createServerFn({ method: "POST" })
         targets.map(async (d) => {
           const id = d.id ?? d._id;
           if (!id) return;
-          const ok = await setDeviceOnoff(sessionToken, target.baseUrl, id, data.on);
+          const ok = await setDeviceOnoff(
+            session.sessionToken,
+            session.target.baseUrl,
+            id,
+            data.on,
+          );
           if (ok) toggled += 1;
         }),
       );
@@ -864,13 +868,10 @@ export const getLivingRoomLightsState = createServerFn({ method: "GET" }).handle
     if (!conn) return { ok: false, anyOn: false, total: 0, error: "Ingen Homey-tilkobling" };
 
     try {
-      const target = await resolveHomeyTarget(conn.access_token);
-      if (!target) return { ok: false, anyOn: false, total: 0, error: "Fant ingen Homey" };
+      const raw = await getHomeyRawSnapshot(conn);
+      if (!raw) return { ok: false, anyOn: false, total: 0, error: "Fant ingen Homey" };
 
-      const delegationToken = await createDelegationToken(conn.access_token);
-      const sessionToken = await createSessionToken(target.baseUrl, delegationToken);
-
-      const devices = await listAllDevicesRaw(sessionToken, target.baseUrl);
+      const devices = raw.devicesRaw;
       const lights = findLivingRoomTargets(devices);
 
       const anyOn = lights.some((d) => {
@@ -897,13 +898,10 @@ export const setLivingRoomLights = createServerFn({ method: "POST" })
     if (!conn) return { ok: false, toggled: 0, error: "Ingen Homey-tilkobling" };
 
     try {
-      const target = await resolveHomeyTarget(conn.access_token);
-      if (!target) return { ok: false, toggled: 0, error: "Fant ingen Homey" };
+      const session = await getHomeySessionContext(conn);
+      if (!session) return { ok: false, toggled: 0, error: "Fant ingen Homey" };
 
-      const delegationToken = await createDelegationToken(conn.access_token);
-      const sessionToken = await createSessionToken(target.baseUrl, delegationToken);
-
-      const devices = await listAllDevicesRaw(sessionToken, target.baseUrl);
+      const devices = await listAllDevicesRaw(session.sessionToken, session.target.baseUrl);
       const targets = findLivingRoomTargets(devices);
 
       let toggled = 0;
@@ -911,7 +909,12 @@ export const setLivingRoomLights = createServerFn({ method: "POST" })
         targets.map(async (d) => {
           const id = d.id ?? d._id;
           if (!id) return;
-          const ok = await setDeviceOnoff(sessionToken, target.baseUrl, id, data.on);
+          const ok = await setDeviceOnoff(
+            session.sessionToken,
+            session.target.baseUrl,
+            id,
+            data.on,
+          );
           if (ok) toggled += 1;
         }),
       );
