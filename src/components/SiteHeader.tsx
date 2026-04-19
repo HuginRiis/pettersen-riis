@@ -16,7 +16,9 @@ type RoutePath =
   | "/ranger"
   | "/smarthus"
   | "/brodering"
-  | "/steintavle";
+  | "/steintavle"
+  | "/oppussing-borgen"
+  | "/oppussing-hytta";
 
 type NavLink = { to: RoutePath; label: string; icon?: string };
 type NavGroup = { label: string; icon: string; description: string; links: NavLink[] };
@@ -41,6 +43,8 @@ const groups: NavGroup[] = [
     links: [
       { to: "/hytta", label: "Hytta", icon: "🏔" },
       { to: "/smarthus", label: "Borgens Smarthus", icon: "🏰" },
+      { to: "/oppussing-borgen", label: "Oppussing av borgen", icon: "🔨" },
+      { to: "/oppussing-hytta", label: "Oppussing av hytta", icon: "🪵" },
       { to: "/brodering", label: "Brodering", icon: "🧵" },
       { to: "/steintavle", label: "Steintavle", icon: "🪨" },
     ],
