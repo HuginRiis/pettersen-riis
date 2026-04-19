@@ -143,10 +143,15 @@ export function SiteHeader() {
             ❦
           </div>
           <div className="leading-tight">
-            <div className="text-display text-sm tracking-[0.25em] text-primary">
-              HOUSE PETTERSEN RIIS
+            <div className="text-display text-sm tracking-[0.25em] text-primary flex items-center gap-1.5">
+              <Crown size={12} className="text-primary/80" />
+              <span>HOUSE PETTERSEN RIIS</span>
+              <Swords size={12} className="text-primary/80" />
             </div>
-            <div className="text-[10px] text-muted-foreground tracking-widest">OF SKIEN</div>
+            <div className="text-[10px] text-muted-foreground tracking-widest flex items-center gap-1.5">
+              <Shield size={9} className="text-muted-foreground/70" />
+              <span>OF SKIEN</span>
+            </div>
           </div>
         </Link>
 
