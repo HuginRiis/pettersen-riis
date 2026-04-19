@@ -267,31 +267,8 @@ export const heartbeat = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-export async function logLoginAttempt(success: boolean) {
-  try {
-    const req = getRequest();
-    const ua = req.headers.get("user-agent") ?? "";
-    const ip = parseClientIp();
-    const uaInfo = parseUserAgent(ua);
-    const geo = await lookupGeo(ip);
-    await supabaseAdmin.from("visitor_login_attempts" as any).insert({
-      success,
-      ip: geo.ip,
-      city: geo.city,
-      region: geo.region,
-      country: geo.country,
-      country_code: geo.countryCode,
-      latitude: geo.latitude,
-      longitude: geo.longitude,
-      user_agent: ua.slice(0, 500),
-      device_type: uaInfo.deviceType,
-      os: uaInfo.os,
-      browser: uaInfo.browser,
-    });
-  } catch {
-    // never fail login flow because of analytics
-  }
-}
+// logLoginAttempt moved to visitors-log.server.ts to keep this file
+// safely importable from client code (server functions get RPC-bridged).
 
 export type VisitorSessionRow = {
   id: string;

@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { useSession } from "@tanstack/react-start/server";
-import { logLoginAttempt } from "./visitors";
+import { logLoginAttempt } from "./visitors-log.server";
 
 type SessionData = {
   authenticated?: boolean;
