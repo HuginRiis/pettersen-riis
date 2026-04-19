@@ -19,6 +19,8 @@ export const Route = createFileRoute("/smarthus")({
       { property: "og:description", content: "Husets smarthus, drevet av Homey." },
     ],
   }),
+  staleTime: 30_000,
+  preloadStaleTime: 30_000,
   loader: () => getHomeySnapshot(),
   component: SmarthusPage,
   errorComponent: ({ error }) => (
@@ -101,7 +103,7 @@ function SmarthusPage() {
   const [disconnecting, setDisconnecting] = useState(false);
   const [togglingLights, setTogglingLights] = useState(false);
   const [lightsMessage, setLightsMessage] = useState<string | null>(null);
-  const [homeyUpdated, setHomeyUpdated] = useState<Date>(() => new Date());
+  const [homeyUpdated, setHomeyUpdated] = useState<Date | null>(null);
 
   // Hver gang loader-data endres (etter router.invalidate) — merk tidspunktet.
   useEffect(() => {
