@@ -5,16 +5,16 @@ import heroImg from "@/assets/hero-westeros.jpg";
 export const Route = createFileRoute("/oppussing-hytta")({
   head: () => ({
     meta: [
-      { title: "Oppussing av hytta — House Pettersen Riis" },
+      { title: "Prosjekter på hytta — House Pettersen Riis" },
       {
         name: "description",
         content:
           "Krøniken om byggverk på hytta — prosjekter, planer og fremdrift i fjellet ved Flesberg.",
       },
-      { property: "og:title", content: "Oppussing av hytta — House Pettersen Riis" },
+      { property: "og:title", content: "Prosjekter på hytta — House Pettersen Riis" },
       {
         property: "og:description",
-        content: "Husets pågående og planlagte byggverk på hytta.",
+        content: "Husets pågående og planlagte prosjekter på hytta.",
       },
     ],
   }),
@@ -23,7 +23,7 @@ export const Route = createFileRoute("/oppussing-hytta")({
       location="hytta"
       hero={{
         eyebrow: "Tilflukt i fjellet",
-        title: "Oppussing av hytta",
+        title: "Prosjekter på hytta",
         subtitle:
           "Tømmer og torv, hammer og hånd — krøniken om husets tilflukt ved Bjørkesetvegen.",
         image: heroImg,

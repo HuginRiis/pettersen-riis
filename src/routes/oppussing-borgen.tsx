@@ -5,16 +5,16 @@ import heroImg from "@/assets/hero-westeros.jpg";
 export const Route = createFileRoute("/oppussing-borgen")({
   head: () => ({
     meta: [
-      { title: "Oppussing av borgen — House Pettersen Riis" },
+      { title: "Prosjekter på Borgen — House Pettersen Riis" },
       {
         name: "description",
         content:
-          "Krøniken om byggverk i borgen — prosjekter, planer og fremdrift for hjemmet i Skien.",
+          "Krøniken om byggverk på borgen — prosjekter, planer og fremdrift for hjemmet i Skien.",
       },
-      { property: "og:title", content: "Oppussing av borgen — House Pettersen Riis" },
+      { property: "og:title", content: "Prosjekter på Borgen — House Pettersen Riis" },
       {
         property: "og:description",
-        content: "Husets pågående og planlagte byggverk i borgen.",
+        content: "Husets pågående og planlagte prosjekter på borgen.",
       },
     ],
   }),
@@ -23,7 +23,7 @@ export const Route = createFileRoute("/oppussing-borgen")({
       location="borg"
       hero={{
         eyebrow: "Husets byggmestere",
-        title: "Oppussing av borgen",
+        title: "Prosjekter på Borgen",
         subtitle:
           "Stein på stein, planke etter planke — krøniken om hjemmets gjenreisning i Skien.",
         image: heroImg,
