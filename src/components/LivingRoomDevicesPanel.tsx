@@ -223,6 +223,20 @@ export function LivingRoomProvider({ children }: { children: ReactNode }) {
         );
         if (eycr) return eycr;
       }
+      if (kind === "heatpump") {
+        // Foretrekk Mitsubishi / MELCloud-varmepumpa i stua
+        const mits = state.devices.find((d) => {
+          if (d.capabilities.target_temperature === undefined) return false;
+          const n = d.name.toLowerCase();
+          return (
+            n.includes("mitsubishi") ||
+            n.includes("melcloud") ||
+            n.includes("mel cloud") ||
+            n.includes("mel-cloud")
+          );
+        });
+        if (mits) return mits;
+      }
       return state.devices.find((d) => matchKind(d) === kind) ?? null;
     },
     [state],
