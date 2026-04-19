@@ -60,9 +60,21 @@ const SOR_OST_KEYWORDS = [
   "moss", "halden", "askim", "drammen", "kongsberg", "ringerike", "hønefoss",
   "asker", "bærum", "lillestrøm", "follo", "nordre follo", "ski",
   "hadeland", "hallingdal", "numedal",
-  // Innlandet (sørlige deler)
-  "hamar", "lillehammer", "gjøvik", "elverum", "kongsvinger",
-  "hedmark", "valdres", "gudbrandsdal",
+  // Innlandet (hele fylket)
+  "innlandet", "hamar", "lillehammer", "gjøvik", "elverum", "kongsvinger",
+  "hedmark", "oppland", "valdres", "gudbrandsdal", "østerdalen",
+  "trysil", "engerdal", "rendalen", "tynset", "alvdal", "folldal",
+  "os", "tolga", "stor-elvdal", "åmot", "våler", "løten", "stange",
+  "ringsaker", "nord-odal", "sør-odal", "grue", "åsnes", "eidskog",
+  "nord-aurdal", "sør-aurdal", "etnedal", "vang", "vestre slidre",
+  "øystre slidre", "lom", "skjåk", "vågå", "sel", "dovre", "lesja",
+  "nord-fron", "sør-fron", "ringebu", "øyer", "gausdal", "søndre land",
+  "nordre land", "østre toten", "vestre toten", "lunner", "jevnaker",
+  "gran",
+  // Buskerud (hele fylket)
+  "hole", "modum", "øvre eiker", "nedre eiker", "lier", "krødsherad",
+  "sigdal", "rollag", "nore og uvdal", "flesberg", "flå", "nesbyen",
+  "gol", "hemsedal", "ål", "hol", "geilo",
   // Agder
   "agder", "kristiansand", "arendal", "grimstad", "mandal", "lillesand",
   "farsund", "flekkefjord", "setesdal",
