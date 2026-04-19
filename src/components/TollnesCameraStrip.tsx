@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { getNetatmoTollnesSnapshot } from "@/server/netatmo";
+import { getNetatmoCameraSnapshot } from "@/server/netatmo";
 
 type Props = {
   /** Refresh interval in ms. Default 5000. */
@@ -9,14 +9,20 @@ type Props = {
   compact?: boolean;
   /** Aspect ratio class. Default aspect-video. */
   aspectClass?: string;
+  /** Substring-match på Netatmo-kameranavn. Default "tollnes". */
+  cameraMatch?: string;
+  /** Visningsetikett i footer/fallback. */
+  label?: string;
 };
 
 export function TollnesCameraStrip({
   intervalMs = 5000,
   compact = false,
   aspectClass = "aspect-video",
+  cameraMatch = "tollnes",
+  label,
 }: Props) {
-  const fetchSnap = useServerFn(getNetatmoTollnesSnapshot);
+  const fetchSnap = useServerFn(getNetatmoCameraSnapshot);
   const [state, setState] = useState<
     | { status: "loading" }
     | { status: "ok"; dataUrl: string; name: string; at: string }
