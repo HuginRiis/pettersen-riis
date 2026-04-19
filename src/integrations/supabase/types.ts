@@ -80,6 +80,115 @@ export type Database = {
         }
         Relationships: []
       }
+      homey_rooms: {
+        Row: {
+          created_at: string
+          homey_zone_id: string
+          id: string
+          location: string
+          name: string
+          parent_zone_id: string | null
+          synced_at: string
+        }
+        Insert: {
+          created_at?: string
+          homey_zone_id: string
+          id?: string
+          location: string
+          name: string
+          parent_zone_id?: string | null
+          synced_at?: string
+        }
+        Update: {
+          created_at?: string
+          homey_zone_id?: string
+          id?: string
+          location?: string
+          name?: string
+          parent_zone_id?: string | null
+          synced_at?: string
+        }
+        Relationships: []
+      }
+      renovation_contractors: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          notes: string | null
+          phone: string | null
+          project_id: string
+          role: string | null
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          phone?: string | null
+          project_id: string
+          role?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          project_id?: string
+          role?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "renovation_contractors_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "renovation_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      renovation_costs: {
+        Row: {
+          amount_nok: number
+          cost_date: string
+          created_at: string
+          description: string
+          id: string
+          kind: string
+          project_id: string
+        }
+        Insert: {
+          amount_nok?: number
+          cost_date?: string
+          created_at?: string
+          description: string
+          id?: string
+          kind?: string
+          project_id: string
+        }
+        Update: {
+          amount_nok?: number
+          cost_date?: string
+          created_at?: string
+          description?: string
+          id?: string
+          kind?: string
+          project_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "renovation_costs_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "renovation_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       renovation_images: {
         Row: {
           caption: string | null
@@ -117,31 +226,58 @@ export type Database = {
       }
       renovation_projects: {
         Row: {
+          budget_nok: number | null
+          category: string
+          completed_at: string | null
           cover_image_url: string | null
           created_at: string
           description: string | null
+          homey_zone_id: string | null
           id: string
           location: string
+          notes: string | null
+          planned_end: string | null
+          planned_start: string | null
+          priority: string
+          room_name: string | null
           status: string
           title: string
           updated_at: string
         }
         Insert: {
+          budget_nok?: number | null
+          category?: string
+          completed_at?: string | null
           cover_image_url?: string | null
           created_at?: string
           description?: string | null
+          homey_zone_id?: string | null
           id?: string
           location: string
+          notes?: string | null
+          planned_end?: string | null
+          planned_start?: string | null
+          priority?: string
+          room_name?: string | null
           status?: string
           title: string
           updated_at?: string
         }
         Update: {
+          budget_nok?: number | null
+          category?: string
+          completed_at?: string | null
           cover_image_url?: string | null
           created_at?: string
           description?: string | null
+          homey_zone_id?: string | null
           id?: string
           location?: string
+          notes?: string | null
+          planned_end?: string | null
+          planned_start?: string | null
+          priority?: string
+          room_name?: string | null
           status?: string
           title?: string
           updated_at?: string
