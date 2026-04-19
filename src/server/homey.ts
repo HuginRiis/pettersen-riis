@@ -1099,15 +1099,12 @@ export const setLivingRoomDeviceCapability = createServerFn({ method: "POST" })
     if (!conn) return { ok: false, error: "Ingen Homey-tilkobling" };
 
     try {
-      const target = await resolveHomeyTarget(conn.access_token);
-      if (!target) return { ok: false, error: "Fant ingen Homey" };
-
-      const delegationToken = await createDelegationToken(conn.access_token);
-      const sessionToken = await createSessionToken(target.baseUrl, delegationToken);
+      const session = await getHomeySessionContext(conn);
+      if (!session) return { ok: false, error: "Fant ingen Homey" };
 
       const ok = await setDeviceCapabilityRaw(
-        sessionToken,
-        target.baseUrl,
+        session.sessionToken,
+        session.target.baseUrl,
         data.deviceId,
         data.capability,
         data.value,
@@ -1132,18 +1129,19 @@ export const getTollnesCameraSnapshot = createServerFn({ method: "GET" }).handle
     if (!conn) return { ok: false, error: "Ingen Homey-tilkobling" };
 
     try {
-      const target = await resolveHomeyTarget(conn.access_token);
-      if (!target) return { ok: false, error: "Fant ingen Homey" };
+      const session = await getHomeySessionContext(conn);
+      if (!session) return { ok: false, error: "Fant ingen Homey" };
 
-      const delegationToken = await createDelegationToken(conn.access_token);
-      const sessionToken = await createSessionToken(target.baseUrl, delegationToken);
-
-      const device = await findCameraDevice(sessionToken, target.baseUrl, "tollnes");
+      const device = await findCameraDevice(
+        session.sessionToken,
+        session.target.baseUrl,
+        "tollnes",
+      );
       if (!device) return { ok: false, error: "Fant ingen Netatmo-kamera" };
 
       const { buffer, contentType } = await tryCameraSnapshot(
-        sessionToken,
-        target.baseUrl,
+        session.sessionToken,
+        session.target.baseUrl,
         device,
       );
 
