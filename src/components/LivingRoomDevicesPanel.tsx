@@ -16,8 +16,8 @@ import {
   type LivingRoomDevice,
 } from "@/server/homey";
 
-// Skånsom polling for alltid-på iPad: 5 min normalt, dobles ved 429-feil.
-const REFRESH_MS = 5 * 60_000;
+// Skånsom polling for alltid-på iPad: 3 min normalt, dobles ved 429-feil.
+const REFRESH_MS = 3 * 60_000;
 const MAX_BACKOFF_MS = 30 * 60_000;
 
 type State =

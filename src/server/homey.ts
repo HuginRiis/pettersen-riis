@@ -16,7 +16,7 @@ const HOMEY_API_PAUSED_MESSAGE =
 // Default: åpen (false) — kan pauses manuelt via setHomeyApiPaused() / UI-knapp.
 const g = globalThis as unknown as { __homeyApiPaused?: boolean };
 if (typeof g.__homeyApiPaused !== "boolean") {
-  g.__homeyApiPaused = true;
+  g.__homeyApiPaused = false;
 }
 
 function isHomeyApiPaused(): boolean {
@@ -204,7 +204,8 @@ type InflightEntry<T> = {
 
 const HOMEY_TARGET_TTL_MS = 30 * 60_000;
 const HOMEY_SESSION_TTL_MS = 8 * 60_000;
-const HOMEY_SNAPSHOT_TTL_MS = 30_000;
+// Snapshot caches i 3 minutter — alle Homey-baserte sider deler denne.
+const HOMEY_SNAPSHOT_TTL_MS = 3 * 60_000;
 
 let homeyTargetCache: CacheEntry<HomeyTarget | null> | null = null;
 let homeySessionCache: CacheEntry<HomeySessionContext> | null = null;
@@ -1004,7 +1005,8 @@ function readCapMeta(caps: any, id: string, key: string): any {
 // In-memory cache for living-room devices to avoid hammering Athom from
 // always-on iPads. TTL ~45s; invalideres når en capability settes.
 let livingRoomCache: { at: number; data: LivingRoomDevicesResult } | null = null;
-const LIVING_ROOM_TTL_MS = 45_000;
+// Stue-enheter caches i 3 minutter for å være snill mot Athom-API'et.
+const LIVING_ROOM_TTL_MS = 3 * 60_000;
 function invalidateLivingRoomCache() {
   livingRoomCache = null;
 }

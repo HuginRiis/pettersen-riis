@@ -40,6 +40,9 @@ export const Route = createFileRoute("/steintavle")({
       },
     ],
   }),
+  // Cache i 3 minutter for å spare Homey API-kall
+  staleTime: 3 * 60_000,
+  preloadStaleTime: 3 * 60_000,
   loader: async () => {
     // Begge feil-håndteres separat — Netatmo skal vises selv om Homey er nede
     // (f.eks. utløpt token), og omvendt.

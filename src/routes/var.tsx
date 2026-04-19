@@ -17,6 +17,9 @@ export const Route = createFileRoute("/var")({
       { property: "og:description", content: "Sjusiffret værmelding, regn og vind fra Tollnes og Numedal." },
     ],
   }),
+  // Cache i 3 minutter for å spare Homey API-kall
+  staleTime: 3 * 60_000,
+  preloadStaleTime: 3 * 60_000,
   loader: () => getHomeySnapshot(),
   component: WeatherPage,
   errorComponent: ({ error }) => (
