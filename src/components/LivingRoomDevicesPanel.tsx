@@ -245,7 +245,7 @@ function useLivingRoom(): Ctx {
 }
 
 export function HeatPumpTile() {
-  const { state, overrides, busy, sendCap, findByKind } = useLivingRoomState();
+  const { state, overrides, busy, sendCap, findByKind } = useLivingRoom();
   const device = findByKind("heatpump");
   const accent = "var(--ice)";
 
@@ -287,7 +287,7 @@ export function HeatPumpTile() {
 }
 
 export function CeilingLampTile() {
-  const { state, overrides, busy, sendCap, findByKind } = useLivingRoomState();
+  const { state, overrides, busy, sendCap, findByKind } = useLivingRoom();
   const device = findByKind("ceiling");
   const accent = "var(--gold)";
 
