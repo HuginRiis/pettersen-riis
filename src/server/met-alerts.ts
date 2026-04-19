@@ -1,16 +1,19 @@
 import { createServerFn } from "@tanstack/react-start";
 
 /**
- * Henter aktive farevarsler fra Met.no for Telemark-området.
+ * Henter aktive farevarsler fra Met.no for Sør- og Østlandet.
  * Cacher i 15 minutter på server (Worker-instans).
+ *
+ * Dekker fylker: Oslo, Akershus, Østfold, Buskerud, Vestfold, Telemark,
+ * Innlandet (sørlige deler), Agder, og delvis Rogaland (sørøst).
  */
 
 export type TelemarkAlert = {
   id: string;
-  event: string; // "gale", "rain", "snow", "ice", "forestFire", ...
-  eventAwarenessName: string | null; // norsk navn, f.eks "Kuling", "Kraftig regn"
-  severity: string | null; // "Minor" | "Moderate" | "Severe" | "Extreme"
-  riskMatrixColor: string | null; // "Yellow" | "Orange" | "Red"
+  event: string;
+  eventAwarenessName: string | null;
+  severity: string | null;
+  riskMatrixColor: string | null;
   area: string | null;
   description: string | null;
   instruction: string | null;
@@ -19,37 +22,49 @@ export type TelemarkAlert = {
   end: string | null;
 };
 
-const COUNTY_TELEMARK = "40"; // Telemark fylke (fra 2024)
-const COUNTY_VESTFOLD_TELEMARK = "38"; // gammelt fylkesnummer, fortsatt brukt av enkelte varsler
-const TELEMARK_KEYWORDS = [
-  "telemark",
-  "skien",
-  "porsgrunn",
-  "notodden",
-  "bamble",
-  "kragerø",
-  "drangedal",
-  "siljan",
-  "nome",
-  "midt-telemark",
-  "tinn",
-  "hjartdal",
-  "seljord",
-  "kviteseid",
-  "tokke",
-  "vinje",
-  "fyresdal",
-  "nissedal",
-  "rjukan",
-  "bø",
-  "grenland",
+// Fylkesnummer som dekker Sør- og Østlandet
+// Nye fylker (2024) + gamle som fortsatt dukker opp i datasett
+const SOR_OST_COUNTIES = new Set<string>([
+  "03", // Oslo
+  "30", // Viken (gammelt — Akershus/Buskerud/Østfold)
+  "31", // Østfold
+  "32", // Akershus
+  "33", // Buskerud
+  "34", // Innlandet
+  "38", // Vestfold og Telemark (gammelt)
+  "39", // Vestfold
+  "40", // Telemark
+  "42", // Agder
+]);
+
+const SOR_OST_KEYWORDS = [
+  // Telemark
+  "telemark", "skien", "porsgrunn", "notodden", "bamble", "kragerø",
+  "drangedal", "siljan", "nome", "midt-telemark", "tinn", "hjartdal",
+  "seljord", "kviteseid", "tokke", "vinje", "fyresdal", "nissedal",
+  "rjukan", "bø", "grenland",
+  // Vestfold
+  "vestfold", "tønsberg", "sandefjord", "larvik", "horten", "holmestrand",
+  // Oslo / Akershus / Østfold / Buskerud
+  "oslo", "akershus", "østfold", "buskerud", "fredrikstad", "sarpsborg",
+  "moss", "halden", "askim", "drammen", "kongsberg", "ringerike", "hønefoss",
+  "asker", "bærum", "lillestrøm", "follo", "nordre follo", "ski",
+  "hadeland", "hallingdal", "numedal",
+  // Innlandet (sørlige deler)
+  "hamar", "lillehammer", "gjøvik", "elverum", "kongsvinger",
+  "hedmark", "oppland", "valdres", "gudbrandsdal",
+  // Agder
+  "agder", "kristiansand", "arendal", "grimstad", "mandal", "lillesand",
+  "farsund", "flekkefjord", "setesdal",
+  // Generelle regionnavn
+  "østlandet", "sørlandet", "sør-norge", "sørøst-norge", "østafjells",
 ];
 
 type CacheEntry = { ts: number; data: TelemarkAlert[] };
 let cache: CacheEntry | null = null;
 const TTL_MS = 15 * 60 * 1000;
 
-async function fetchTelemarkAlerts(): Promise<TelemarkAlert[]> {
+async function fetchAlerts(): Promise<TelemarkAlert[]> {
   const res = await fetch("https://api.met.no/weatherapi/metalerts/2.0/current.json", {
     headers: {
       "User-Agent": "House-RiisPettersen/1.0 (https://arne.riis.cc)",
@@ -83,9 +98,8 @@ async function fetchTelemarkAlerts(): Promise<TelemarkAlert[]> {
     const p = f.properties ?? {};
     const counties = Array.isArray(p.county) ? p.county : [];
     const text = `${p.area ?? ""} ${p.description ?? ""}`.toLowerCase();
-    const matchesCounty =
-      counties.includes(COUNTY_TELEMARK) || counties.includes(COUNTY_VESTFOLD_TELEMARK);
-    const matchesKeyword = TELEMARK_KEYWORDS.some((k) => text.includes(k));
+    const matchesCounty = counties.some((c) => SOR_OST_COUNTIES.has(c));
+    const matchesKeyword = SOR_OST_KEYWORDS.some((k) => text.includes(k));
     if (!matchesCounty && !matchesKeyword) continue;
 
     const interval = f.when?.interval ?? [];
@@ -104,7 +118,6 @@ async function fetchTelemarkAlerts(): Promise<TelemarkAlert[]> {
     });
   }
 
-  // Sorter: Red > Orange > Yellow > resten
   const colorRank: Record<string, number> = { Red: 0, Orange: 1, Yellow: 2 };
   filtered.sort(
     (a, b) =>
@@ -119,11 +132,11 @@ export const getTelemarkAlerts = createServerFn({ method: "GET" }).handler(async
     return { alerts: cache.data, fetchedAt: cache.ts, cached: true };
   }
   try {
-    const data = await fetchTelemarkAlerts();
+    const data = await fetchAlerts();
     cache = { ts: now, data };
     return { alerts: data, fetchedAt: now, cached: false };
   } catch (err) {
-    console.error("Telemark alerts fetch failed:", err);
+    console.error("Sør-/Østlandet alerts fetch failed:", err);
     if (cache) {
       return { alerts: cache.data, fetchedAt: cache.ts, cached: true, stale: true };
     }
