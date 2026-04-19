@@ -162,8 +162,8 @@ function Home() {
           <HallCard to="/brodering" title="Brodering" desc="Lag PES-filer for Brother — tekst og bilder." icon="🧵" />
           <HallCard to="/steintavle" title="Steintavle" desc="Husets innskrifter og notater." icon="🪨" />
           <HallCard to="/ranger" title="Ranger" desc="Husets robuste følgesvenn på veiene." icon="🛡" />
-          <HallCard to="/oppussing-borgen" title="Oppussing av borgen" desc="Prosjekter, planer og bilder fra borgen." icon="🔨" />
-          <HallCard to="/oppussing-hytta" title="Oppussing av hytta" desc="Prosjekter, planer og bilder fra hytta." icon="🪵" />
+          <HallCard to="/oppussing-borgen" title="Prosjekter på Borgen" desc="Prosjekter, planer og bilder fra borgen." icon="🔨" />
+          <HallCard to="/oppussing-hytta" title="Prosjekter på hytta" desc="Prosjekter, planer og bilder fra hytta." icon="🪵" />
         </div>
       </section>
 
