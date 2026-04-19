@@ -5,6 +5,8 @@ import { PageShell, PageHero } from "@/components/PageShell";
 import { LastUpdated } from "@/components/LastUpdated";
 import { getHomeySnapshot, disconnectHomey, setAllOutdoorLights } from "@/server/homey";
 import { findDeviceFuzzy, readTemp } from "@/lib/homey-match";
+import { HomeyApiActivity } from "@/components/HomeyApiActivity";
+import { recordHomeyApiCall } from "@/lib/homey-api-tracker";
 import heroImg from "@/assets/smarthus-hero.jpg";
 
 export const Route = createFileRoute("/smarthus")({
@@ -21,7 +23,11 @@ export const Route = createFileRoute("/smarthus")({
   }),
   staleTime: 30_000,
   preloadStaleTime: 30_000,
-  loader: () => getHomeySnapshot(),
+  loader: async () => {
+    const res = await getHomeySnapshot();
+    recordHomeyApiCall();
+    return res;
+  },
   component: SmarthusPage,
   errorComponent: ({ error }) => (
     <PageShell>
@@ -332,6 +338,7 @@ function SmarthusPage() {
     setLightsMessage(null);
     try {
       const res = await toggleOutdoorLights({ data: { on } });
+      recordHomeyApiCall();
       if (res.ok) {
         setLightsMessage(
           on
@@ -566,6 +573,8 @@ function SmarthusPage() {
         })}
 
       </section>
+
+      <HomeyApiActivity />
     </PageShell>
   );
 }
