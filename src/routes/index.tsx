@@ -248,9 +248,11 @@ function HallCard({
   desc: string;
   icon: string;
 }) {
+  const disablePreload = to === "/smarthus" || to === "/var" || to === "/steintavle";
   return (
     <Link
       to={to}
+      preload={disablePreload ? false : undefined}
       className="panel rounded-lg p-6 glow-on-hover block group"
     >
       <div className="text-3xl mb-3">{icon}</div>

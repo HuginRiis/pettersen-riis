@@ -23,6 +23,8 @@ type RoutePath =
 type NavLink = { to: RoutePath; label: string; icon?: string };
 type NavGroup = { label: string; icon: string; description: string; links: NavLink[] };
 
+const HOMEY_BACKED_ROUTES: RoutePath[] = ["/smarthus", "/var", "/steintavle"];
+
 const groups: NavGroup[] = [
   {
     label: "Hverdag",
@@ -192,6 +194,7 @@ export function SiteHeader() {
                         <li key={l.to}>
                           <Link
                             to={l.to}
+                            preload={HOMEY_BACKED_ROUTES.includes(l.to) ? false : undefined}
                             onClick={() => setOpenGroup(null)}
                             className="flex items-center gap-2 px-2 py-2 rounded text-sm tracking-wider uppercase text-muted-foreground hover:text-primary hover:bg-primary/5 data-[status=active]:text-primary data-[status=active]:font-semibold"
                           >
@@ -266,6 +269,7 @@ export function SiteHeader() {
                         <li key={l.to}>
                           <Link
                             to={l.to}
+                            preload={HOMEY_BACKED_ROUTES.includes(l.to) ? false : undefined}
                             onClick={() => {
                               setOpen(false);
                               setOpenMobileGroup(null);
