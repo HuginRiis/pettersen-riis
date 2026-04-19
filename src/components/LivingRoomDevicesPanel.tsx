@@ -223,6 +223,20 @@ export function LivingRoomProvider({ children }: { children: ReactNode }) {
         );
         if (eycr) return eycr;
       }
+      if (kind === "heatpump") {
+        // Foretrekk Mitsubishi / MELCloud-varmepumpa i stua
+        const mits = state.devices.find((d) => {
+          if (d.capabilities.target_temperature === undefined) return false;
+          const n = d.name.toLowerCase();
+          return (
+            n.includes("mitsubishi") ||
+            n.includes("melcloud") ||
+            n.includes("mel cloud") ||
+            n.includes("mel-cloud")
+          );
+        });
+        if (mits) return mits;
+      }
       return state.devices.find((d) => matchKind(d) === kind) ?? null;
     },
     [state],
@@ -256,7 +270,7 @@ export function HeatPumpTile() {
           Varmepumpe · Stua
         </span>
         <span className="text-[9px] tracking-[0.25em] text-muted-foreground/70 uppercase">
-          Homey
+          Mitsubishi
         </span>
       </div>
       <div className="flex-1 p-4 flex flex-col items-center justify-center">
