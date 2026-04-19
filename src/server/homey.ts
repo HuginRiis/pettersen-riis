@@ -9,8 +9,18 @@ import {
 export const HOMEY_SCOPES = ["homey", "homey.device.readonly"];
 
 const ATHOM_API_BASE = "https://api.athom.com";
+const HOMEY_API_PAUSED = true;
+const HOMEY_API_PAUSED_MESSAGE =
+  "Homey API er midlertidig pauset for å la 429-låsen slippe. Prøv igjen litt senere.";
+
+function ensureHomeyApiAvailable() {
+  if (HOMEY_API_PAUSED) {
+    throw new Error(HOMEY_API_PAUSED_MESSAGE);
+  }
+}
 
 async function refreshAccessToken(conn: HomeyConnection): Promise<HomeyConnection> {
+  ensureHomeyApiAvailable();
   const clientId = process.env.HOMEY_CLIENT_ID;
   const clientSecret = process.env.HOMEY_CLIENT_SECRET;
   if (!clientId || !clientSecret) {
@@ -74,6 +84,7 @@ async function getValidConnection(): Promise<HomeyConnection | null> {
 }
 
 async function fetchJson<T>(url: string, token: string): Promise<T> {
+  ensureHomeyApiAvailable();
   const res = await fetch(url, {
     headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
   });
@@ -87,6 +98,7 @@ async function fetchJson<T>(url: string, token: string): Promise<T> {
 }
 
 async function fetchTokenLike(url: string, init: RequestInit): Promise<string> {
+  ensureHomeyApiAvailable();
   const res = await fetch(url, init);
   if (!res.ok) {
     const text = await res.text();
@@ -523,6 +535,7 @@ async function fetchBinary(
   url: string,
   init: RequestInit,
 ): Promise<{ buffer: ArrayBuffer; contentType: string }> {
+  ensureHomeyApiAvailable();
   const res = await fetch(url, init);
   if (!res.ok) {
     const text = await res.text().catch(() => "");
@@ -731,6 +744,7 @@ async function setDeviceOnoff(
   deviceId: string,
   value: boolean,
 ): Promise<boolean> {
+  ensureHomeyApiAvailable();
   const res = await fetch(
     `${baseUrl}/api/manager/devices/device/${deviceId}/capability/onoff`,
     {
@@ -1066,6 +1080,7 @@ async function setDeviceCapabilityRaw(
   capabilityId: string,
   value: boolean | number | string,
 ): Promise<boolean> {
+  ensureHomeyApiAvailable();
   const res = await fetch(
     `${baseUrl}/api/manager/devices/device/${deviceId}/capability/${capabilityId}`,
     {
