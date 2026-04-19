@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ResponsiveContainer,
   LineChart,
@@ -17,6 +17,10 @@ const SECOND_BUCKETS = 60; // siste 60 sekunder
 const MINUTE_BUCKETS = 60; // siste 60 minutter
 const RPM_WARNING = 60;
 
+// Oransje aksent for Homey-aktivitetsgrafen.
+const ACCENT = "hsl(28 90% 58%)";
+const ACCENT_SOFT = "hsl(28 90% 58% / 0.12)";
+
 type Snapshot = {
   perSecond: { t: number; label: string; calls: number }[];
   perMinute: { t: number; label: string; calls: number }[];
@@ -25,6 +29,25 @@ type Snapshot = {
   cps: number; // kall siste sekund
   lastEventAt: number | null;
 };
+
+function emptySnapshot(): Snapshot {
+  return {
+    perSecond: new Array(SECOND_BUCKETS).fill(0).map((_, i) => ({
+      t: i,
+      label: secondsAgoLabel(SECOND_BUCKETS - 1 - i),
+      calls: 0,
+    })),
+    perMinute: new Array(MINUTE_BUCKETS).fill(0).map((_, i) => ({
+      t: i,
+      label: minutesAgoLabel(MINUTE_BUCKETS - 1 - i),
+      calls: 0,
+    })),
+    totalLastHour: 0,
+    rpm: 0,
+    cps: 0,
+    lastEventAt: null,
+  };
+}
 
 function buildSnapshot(now: number): Snapshot {
   const events = homeyApiTracker.snapshot(now);
@@ -48,13 +71,11 @@ function buildSnapshot(now: number): Snapshot {
 
   for (const ts of events) {
     if (ts >= secondCutoff) {
-      const idx =
-        SECOND_BUCKETS - 1 - Math.floor((now - ts) / 1000);
+      const idx = SECOND_BUCKETS - 1 - Math.floor((now - ts) / 1000);
       if (idx >= 0 && idx < SECOND_BUCKETS) perSecond[idx].calls += 1;
     }
     if (ts >= minuteCutoff) {
-      const idx =
-        MINUTE_BUCKETS - 1 - Math.floor((now - ts) / 60_000);
+      const idx = MINUTE_BUCKETS - 1 - Math.floor((now - ts) / 60_000);
       if (idx >= 0 && idx < MINUTE_BUCKETS) perMinute[idx].calls += 1;
       rpmWindow += 1;
     }
@@ -81,82 +102,61 @@ function minutesAgoLabel(n: number): string {
 }
 
 export function HomeyApiActivity() {
-  const [snap, setSnap] = useState<Snapshot>(() => buildSnapshot(Date.now()));
-  const simRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Start med tom snapshot for å unngå hydration-mismatch (Date.now() er ulikt
+  // på server og klient). Live data kommer på første tick i useEffect.
+  const [snap, setSnap] = useState<Snapshot>(() => emptySnapshot());
+  const [mounted, setMounted] = useState(false);
 
-  // Live oppdatering hvert sekund
   useEffect(() => {
-    let mounted = true;
+    setMounted(true);
+    let alive = true;
     const tick = () => {
-      if (!mounted) return;
+      if (!alive) return;
       setSnap(buildSnapshot(Date.now()));
     };
     tick();
     const id = setInterval(tick, 1000);
     const unsub = homeyApiTracker.subscribe(tick);
     return () => {
-      mounted = false;
+      alive = false;
       clearInterval(id);
       unsub();
     };
   }, []);
 
-  // Simulering: hvis ingen ekte kall er logget på 30 sek, generer plausibel trafikk
-  // (1–3 kall hvert 5.–15. sekund) — kun visuelt, ingen nettverk.
-  useEffect(() => {
-    function maybeStartSim() {
-      const last = homeyApiTracker.snapshot(Date.now()).slice(-1)[0];
-      const idle = !last || Date.now() - last > 30_000;
-      if (idle && !simRef.current) {
-        simRef.current = setInterval(() => {
-          const burst = 1 + Math.floor(Math.random() * 3);
-          for (let i = 0; i < burst; i++) {
-            homeyApiTracker.record(Date.now() - Math.floor(Math.random() * 800));
-          }
-        }, 5000 + Math.floor(Math.random() * 10000));
-      } else if (!idle && simRef.current) {
-        clearInterval(simRef.current);
-        simRef.current = null;
-      }
-    }
-    maybeStartSim();
-    const id = setInterval(maybeStartSim, 10_000);
-    return () => {
-      clearInterval(id);
-      if (simRef.current) {
-        clearInterval(simRef.current);
-        simRef.current = null;
-      }
-    };
-  }, []);
-
   const warn = snap.rpm > RPM_WARNING;
   const lastSeen = useMemo(() => {
-    if (!snap.lastEventAt) return "—";
+    if (!mounted || !snap.lastEventAt) return "—";
     const s = Math.max(0, Math.round((Date.now() - snap.lastEventAt) / 1000));
     if (s < 5) return "nå";
     if (s < 60) return `${s}s siden`;
     return `${Math.round(s / 60)}m siden`;
-  }, [snap.lastEventAt]);
+  }, [snap.lastEventAt, mounted]);
 
   return (
     <section className="container mx-auto px-4 pt-6">
-      <div className="panel rounded-lg p-6">
+      <div className="panel rounded-lg p-6" style={{ borderColor: ACCENT_SOFT }}>
         <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
           <div>
-            <div className="text-[10px] tracking-[0.3em] text-muted-foreground uppercase mb-1">
+            <div
+              className="text-[10px] tracking-[0.3em] uppercase mb-1"
+              style={{ color: ACCENT }}
+            >
               Ravnenes flukt
             </div>
-            <h3 className="text-display text-primary text-lg tracking-[0.2em]">
+            <h3
+              className="text-display text-lg tracking-[0.2em]"
+              style={{ color: ACCENT }}
+            >
               HOMEY API · SISTE TIME
             </h3>
             <p className="text-xs text-muted-foreground mt-1">
-              Kall sendt fra denne nettleseren til Homey-skyen.
+              Faktiske kall fra denne nettleseren mot Homey-skyen. Cache: 3 min.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
             <Pill label="Totalt · 1t" value={String(snap.totalLastHour)} />
-            <Pill label="RPM" value={String(snap.rpm)} tone={warn ? "warning" : "primary"} />
+            <Pill label="RPM" value={String(snap.rpm)} tone={warn ? "warning" : "accent"} />
             <Pill label="CPS · nå" value={String(snap.cps)} />
             <Pill label="Sist kall" value={lastSeen} tone="muted" />
           </div>
@@ -175,8 +175,15 @@ export function HomeyApiActivity() {
             </div>
             <div className="h-48">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={snap.perSecond} margin={{ top: 8, right: 8, bottom: 0, left: -16 }}>
-                  <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="2 4" vertical={false} />
+                <LineChart
+                  data={snap.perSecond}
+                  margin={{ top: 8, right: 8, bottom: 0, left: -16 }}
+                >
+                  <CartesianGrid
+                    stroke="hsl(var(--border))"
+                    strokeDasharray="2 4"
+                    vertical={false}
+                  />
                   <XAxis
                     dataKey="label"
                     interval={9}
@@ -192,10 +199,10 @@ export function HomeyApiActivity() {
                     width={28}
                   />
                   <Tooltip
-                    cursor={{ stroke: "hsl(var(--primary))", strokeOpacity: 0.3 }}
+                    cursor={{ stroke: ACCENT, strokeOpacity: 0.4 }}
                     contentStyle={{
                       background: "hsl(var(--card))",
-                      border: "1px solid hsl(var(--border))",
+                      border: `1px solid ${ACCENT}`,
                       borderRadius: 6,
                       fontSize: 12,
                     }}
@@ -205,7 +212,7 @@ export function HomeyApiActivity() {
                   <Line
                     type="monotone"
                     dataKey="calls"
-                    stroke="hsl(var(--primary))"
+                    stroke={ACCENT}
                     strokeWidth={2}
                     dot={false}
                     isAnimationActive={false}
@@ -221,8 +228,15 @@ export function HomeyApiActivity() {
             </div>
             <div className="h-48">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={snap.perMinute} margin={{ top: 8, right: 8, bottom: 0, left: -16 }}>
-                  <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="2 4" vertical={false} />
+                <BarChart
+                  data={snap.perMinute}
+                  margin={{ top: 8, right: 8, bottom: 0, left: -16 }}
+                >
+                  <CartesianGrid
+                    stroke="hsl(var(--border))"
+                    strokeDasharray="2 4"
+                    vertical={false}
+                  />
                   <XAxis
                     dataKey="label"
                     interval={9}
@@ -238,10 +252,10 @@ export function HomeyApiActivity() {
                     width={28}
                   />
                   <Tooltip
-                    cursor={{ fill: "hsl(var(--primary) / 0.08)" }}
+                    cursor={{ fill: ACCENT_SOFT }}
                     contentStyle={{
                       background: "hsl(var(--card))",
-                      border: "1px solid hsl(var(--border))",
+                      border: `1px solid ${ACCENT}`,
                       borderRadius: 6,
                       fontSize: 12,
                     }}
@@ -253,7 +267,12 @@ export function HomeyApiActivity() {
                     stroke="hsl(var(--destructive))"
                     strokeDasharray="3 3"
                   />
-                  <Bar dataKey="calls" fill="hsl(var(--primary))" radius={[2, 2, 0, 0]} isAnimationActive={false} />
+                  <Bar
+                    dataKey="calls"
+                    fill={ACCENT}
+                    radius={[2, 2, 0, 0]}
+                    isAnimationActive={false}
+                  />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -271,19 +290,30 @@ function Pill({
 }: {
   label: string;
   value: string;
-  tone?: "default" | "primary" | "muted" | "warning";
+  tone?: "default" | "accent" | "muted" | "warning";
 }) {
+  const style: React.CSSProperties =
+    tone === "accent"
+      ? { borderColor: ACCENT, color: ACCENT }
+      : tone === "warning"
+        ? {}
+        : {};
   const cls =
     tone === "warning"
       ? "border-destructive/40 text-destructive"
       : tone === "muted"
         ? "border-border text-muted-foreground"
-        : tone === "primary"
-          ? "border-primary/40 text-primary"
+        : tone === "accent"
+          ? "border"
           : "border-border text-foreground";
   return (
-    <div className={`px-3 py-1.5 rounded-full border ${cls} text-[11px] flex items-center gap-2`}>
-      <span className="tracking-[0.25em] uppercase text-[9px] text-muted-foreground">{label}</span>
+    <div
+      className={`px-3 py-1.5 rounded-full border ${cls} text-[11px] flex items-center gap-2`}
+      style={style}
+    >
+      <span className="tracking-[0.25em] uppercase text-[9px] text-muted-foreground">
+        {label}
+      </span>
       <span className="font-medium tabular-nums">{value}</span>
     </div>
   );
