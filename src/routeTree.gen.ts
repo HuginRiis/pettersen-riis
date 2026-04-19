@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as VarRouteImport } from './routes/var'
+import { Route as VakttarnetRouteImport } from './routes/vakttarnet'
 import { Route as TurerRouteImport } from './routes/turer'
 import { Route as TreningRouteImport } from './routes/trening'
 import { Route as SteintavleRouteImport } from './routes/steintavle'
@@ -33,6 +34,11 @@ import { Route as ApiHomeyCallbackRouteImport } from './routes/api.homey.callbac
 const VarRoute = VarRouteImport.update({
   id: '/var',
   path: '/var',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VakttarnetRoute = VakttarnetRouteImport.update({
+  id: '/vakttarnet',
+  path: '/vakttarnet',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TurerRoute = TurerRouteImport.update({
@@ -147,6 +153,7 @@ export interface FileRoutesByFullPath {
   '/steintavle': typeof SteintavleRoute
   '/trening': typeof TreningRoute
   '/turer': typeof TurerRoute
+  '/vakttarnet': typeof VakttarnetRoute
   '/var': typeof VarRoute
   '/api/homey/callback': typeof ApiHomeyCallbackRoute
   '/api/homey/start': typeof ApiHomeyStartRoute
@@ -169,6 +176,7 @@ export interface FileRoutesByTo {
   '/steintavle': typeof SteintavleRoute
   '/trening': typeof TreningRoute
   '/turer': typeof TurerRoute
+  '/vakttarnet': typeof VakttarnetRoute
   '/var': typeof VarRoute
   '/api/homey/callback': typeof ApiHomeyCallbackRoute
   '/api/homey/start': typeof ApiHomeyStartRoute
@@ -192,6 +200,7 @@ export interface FileRoutesById {
   '/steintavle': typeof SteintavleRoute
   '/trening': typeof TreningRoute
   '/turer': typeof TurerRoute
+  '/vakttarnet': typeof VakttarnetRoute
   '/var': typeof VarRoute
   '/api/homey/callback': typeof ApiHomeyCallbackRoute
   '/api/homey/start': typeof ApiHomeyStartRoute
@@ -216,6 +225,7 @@ export interface FileRouteTypes {
     | '/steintavle'
     | '/trening'
     | '/turer'
+    | '/vakttarnet'
     | '/var'
     | '/api/homey/callback'
     | '/api/homey/start'
@@ -238,6 +248,7 @@ export interface FileRouteTypes {
     | '/steintavle'
     | '/trening'
     | '/turer'
+    | '/vakttarnet'
     | '/var'
     | '/api/homey/callback'
     | '/api/homey/start'
@@ -260,6 +271,7 @@ export interface FileRouteTypes {
     | '/steintavle'
     | '/trening'
     | '/turer'
+    | '/vakttarnet'
     | '/var'
     | '/api/homey/callback'
     | '/api/homey/start'
@@ -283,6 +295,7 @@ export interface RootRouteChildren {
   SteintavleRoute: typeof SteintavleRoute
   TreningRoute: typeof TreningRoute
   TurerRoute: typeof TurerRoute
+  VakttarnetRoute: typeof VakttarnetRoute
   VarRoute: typeof VarRoute
   ApiHomeyCallbackRoute: typeof ApiHomeyCallbackRoute
   ApiHomeyStartRoute: typeof ApiHomeyStartRoute
@@ -297,6 +310,13 @@ declare module '@tanstack/react-router' {
       path: '/var'
       fullPath: '/var'
       preLoaderRoute: typeof VarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/vakttarnet': {
+      id: '/vakttarnet'
+      path: '/vakttarnet'
+      fullPath: '/vakttarnet'
+      preLoaderRoute: typeof VakttarnetRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/turer': {
@@ -451,6 +471,7 @@ const rootRouteChildren: RootRouteChildren = {
   SteintavleRoute: SteintavleRoute,
   TreningRoute: TreningRoute,
   TurerRoute: TurerRoute,
+  VakttarnetRoute: VakttarnetRoute,
   VarRoute: VarRoute,
   ApiHomeyCallbackRoute: ApiHomeyCallbackRoute,
   ApiHomeyStartRoute: ApiHomeyStartRoute,
