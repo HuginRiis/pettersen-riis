@@ -197,6 +197,76 @@ function Home() {
   );
 }
 
+function SeasonsOfBorgen() {
+  const season = getCurrentSeason();
+  const meta = SEASON_META[season];
+  // Quadrant order in image: TL=spring, TR=summer, BL=autumn, BR=winter
+  const QUADRANTS: Array<{
+    key: "spring" | "summer" | "autumn" | "winter";
+    label: string;
+    pos: string;
+  }> = [
+    { key: "spring", label: "Vår", pos: "top-0 left-0" },
+    { key: "summer", label: "Sommer", pos: "top-0 right-0" },
+    { key: "autumn", label: "Høst", pos: "bottom-0 left-0" },
+    { key: "winter", label: "Vinter", pos: "bottom-0 right-0" },
+  ];
+  return (
+    <section className="container mx-auto px-4 pb-16">
+      <div className="ornate-divider mb-8">
+        <span className="text-display tracking-[0.3em] text-primary text-sm uppercase">
+          Borgens fire årstider
+        </span>
+      </div>
+      <article className="panel rounded-lg overflow-hidden">
+        <div className="relative">
+          <img
+            src={borgenSeasons}
+            alt="Borgen gjennom de fire årstidene — vår, sommer, høst og vinter"
+            className="w-full h-auto block"
+            loading="lazy"
+          />
+          {/* Dim non-current quadrants */}
+          <div className="absolute inset-0 grid grid-cols-2 grid-rows-2 pointer-events-none">
+            {QUADRANTS.map((q) => (
+              <div
+                key={q.key}
+                className={
+                  q.key === season
+                    ? "ring-2 ring-primary ring-inset shadow-[inset_0_0_60px_rgba(0,0,0,0.0)]"
+                    : "bg-background/55"
+                }
+              />
+            ))}
+          </div>
+          {/* Quadrant labels */}
+          {QUADRANTS.map((q) => (
+            <div
+              key={q.key}
+              className={`absolute ${q.pos} m-2 sm:m-3 px-2 py-1 rounded text-[9px] sm:text-[10px] tracking-[0.25em] uppercase ${
+                q.key === season
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-background/70 text-muted-foreground"
+              }`}
+            >
+              {q.label}
+            </div>
+          ))}
+        </div>
+        <div className="p-4 sm:p-5 text-center border-t border-border">
+          <div className="text-[10px] tracking-[0.3em] text-muted-foreground uppercase">
+            Nå råder
+          </div>
+          <h3 className="text-lg sm:text-xl mt-1 text-primary">{meta.label} over borgen</h3>
+          <p className="mt-1.5 text-medieval text-foreground/85 text-sm sm:text-base">
+            "{meta.words}"
+          </p>
+        </div>
+      </article>
+    </section>
+  );
+}
+
 function PortraitCard({
   name,
   title,
