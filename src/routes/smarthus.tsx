@@ -22,8 +22,9 @@ export const Route = createFileRoute("/smarthus")({
       { property: "og:description", content: "Husets smarthus, drevet av Homey." },
     ],
   }),
-  staleTime: 30_000,
-  preloadStaleTime: 30_000,
+  // Cache i 3 minutter for å spare Homey API-kall
+  staleTime: 3 * 60_000,
+  preloadStaleTime: 3 * 60_000,
   loader: async () => {
     const res = await getHomeySnapshot();
     recordHomeyApiCall();
