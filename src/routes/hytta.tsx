@@ -2,7 +2,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import { PageShell } from "@/components/PageShell";
 import { HyttaHero } from "@/components/HyttaHero";
 import { NetatmoWeatherStationSection } from "@/components/NetatmoWeatherStation";
-import { TollnesCameraStrip } from "@/components/TollnesCameraStrip";
 import hyttaImg from "@/assets/hytta-aurora.jpg";
 import g0314 from "@/assets/hytta-gallery/0314.jpg";
 import g0342 from "@/assets/hytta-gallery/0342.jpg";
@@ -28,7 +27,7 @@ const GALLERY: Plate[] = [
     src: g1820,
     house: "House Pettersen Riis · Krøniken",
     title: "Vinterens Vakt",
-    caption: "Snøen faller i tunge kapper. Hytta står som en festning bak grantrærnes hvite ringbrynjer.",
+    caption: "Snøen faller i tunge kapper, Hytta står som en festning bak grantrærnes hvite ringbrynjer.",
     span: "wide",
   },
   {
@@ -122,8 +121,8 @@ function HyttaPage() {
             <span className="text-display tracking-[0.3em] text-primary text-sm uppercase">Krøniken om hytta</span>
           </div>
           <p className="text-foreground/90 leading-relaxed">
-            Når vintervindene feier over Skien, søker House Pettersen Riis tilflukt i tømmerhytta. Røyken stiger fra pipa, peisen
-            knitrer, og ravnene holder vakt i grantrærne utenfor.
+            Når vintervindene feier over Skien, søker House Pettersen Riis tilflukt i tømmerhytta. Røyken stiger fra
+            pipa, peisen knitrer, og ravnene holder vakt i grantrærne utenfor.
           </p>
           <p className="text-muted-foreground leading-relaxed">
             Her samles familien til turer, brettspill, og lange måltider. Hytta er hjertet av husets ro — et sted hvor
@@ -153,29 +152,12 @@ function HyttaPage() {
         </aside>
       </section>
 
-      <NetatmoWeatherStationSection
-        title="Værstasjonen — Hytta"
-        stationMatch="hytta"
-      />
-
-      {/* Vakttårnet på Hytta — Netatmo-kamera kalt "Hytta" */}
-      <section className="container mx-auto px-4 pb-16">
-        <div className="ornate-divider mb-6">
-          <span className="text-display tracking-[0.3em] text-primary text-sm uppercase">
-            Vakttårnet ved Hytta
-          </span>
-        </div>
-        <div className="max-w-3xl mx-auto">
-          <TollnesCameraStrip cameraMatch="hytta" label="Netatmo · Hytta" />
-        </div>
-      </section>
+      <NetatmoWeatherStationSection title="Værstasjonen — Hytta" stationMatch="hytta" />
 
       {/* Galleriet — Krøniken om House Pettersen Riis i fjellet */}
       <section className="container mx-auto px-4 pb-16">
         <div className="ornate-divider mb-6">
-          <span className="text-display tracking-[0.3em] text-primary text-sm uppercase">
-            Krøniken i bilder
-          </span>
+          <span className="text-display tracking-[0.3em] text-primary text-sm uppercase">Krøniken i bilder</span>
         </div>
 
         <header className="text-center max-w-2xl mx-auto mb-10">
@@ -210,16 +192,10 @@ function Stat({ label, value }: { label: string; value: string }) {
 
 function GalleryCard({ plate }: { plate: Plate }) {
   const spanClass =
-    plate.span === "wide"
-      ? "sm:col-span-2 sm:row-span-1"
-      : plate.span === "tall"
-        ? "sm:row-span-2"
-        : "";
+    plate.span === "wide" ? "sm:col-span-2 sm:row-span-1" : plate.span === "tall" ? "sm:row-span-2" : "";
 
   return (
-    <figure
-      className={`panel relative overflow-hidden rounded-lg group glow-on-hover ${spanClass}`}
-    >
+    <figure className={`panel relative overflow-hidden rounded-lg group glow-on-hover ${spanClass}`}>
       <img
         src={plate.src}
         alt={plate.title}
@@ -243,12 +219,8 @@ function GalleryCard({ plate }: { plate: Plate }) {
       />
 
       <figcaption className="absolute inset-x-0 bottom-0 p-4 sm:p-5">
-        <div className="text-[10px] tracking-[0.3em] uppercase text-primary/90 mb-1">
-          {plate.house}
-        </div>
-        <h3 className="text-medieval text-xl sm:text-2xl text-foreground leading-tight mb-1.5">
-          {plate.title}
-        </h3>
+        <div className="text-[10px] tracking-[0.3em] uppercase text-primary/90 mb-1">{plate.house}</div>
+        <h3 className="text-medieval text-xl sm:text-2xl text-foreground leading-tight mb-1.5">{plate.title}</h3>
         <p className="text-xs sm:text-sm text-muted-foreground/95 leading-snug max-h-0 overflow-hidden opacity-0 group-hover:max-h-32 group-hover:opacity-100 transition-all duration-500">
           {plate.caption}
         </p>
