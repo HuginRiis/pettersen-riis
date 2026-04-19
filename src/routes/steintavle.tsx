@@ -360,8 +360,10 @@ function SteintavlePage() {
             </div>
           </div>
 
-          <HeatPumpTile />
-          <CeilingLampTile />
+          <LivingRoomProvider>
+            <HeatPumpTile />
+            <CeilingLampTile />
+          </LivingRoomProvider>
         </section>
 
         {otherAlerts.length > 0 && (
