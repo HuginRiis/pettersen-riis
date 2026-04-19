@@ -133,15 +133,6 @@ function SteintavlePage() {
         if (!cancelled) setAlerts({ ok: false, error: e?.message ?? "Feil" });
       }
     };
-    const loadRadar = async () => {
-      if (isHidden()) return;
-      try {
-        const res = await fetchRadar();
-        if (!cancelled) setRadar(res);
-      } catch (e: any) {
-        if (!cancelled) setRadar({ ok: false, error: e?.message ?? "Feil" });
-      }
-    };
     const loadNetatmo = async () => {
       if (isHidden()) return;
       try {
