@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { useSession } from "@tanstack/react-start/server";
+import { logLoginAttempt } from "./visitors";
 
 type SessionData = {
   authenticated?: boolean;
@@ -54,9 +55,11 @@ export const loginFn = createServerFn({ method: "POST" })
     if (!ok) {
       // Small delay to slow brute force
       await new Promise((r) => setTimeout(r, 400));
+      await logLoginAttempt(false);
       throw new Error("Feil passord");
     }
 
+    await logLoginAttempt(true);
     const session = await useSession<SessionData>(getSessionConfig());
     await session.update({ authenticated: true, loggedInAt: Date.now() });
     return { ok: true };
