@@ -136,6 +136,8 @@ function Home() {
         </div>
       </section>
 
+      <SeasonsOfBorgen />
+
       <MaesterCounsel />
 
       <section className="container mx-auto px-4 pb-16">
