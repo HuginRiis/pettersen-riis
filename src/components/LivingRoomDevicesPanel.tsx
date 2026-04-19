@@ -270,7 +270,7 @@ export function HeatPumpTile() {
           Varmepumpe · Stua
         </span>
         <span className="text-[9px] tracking-[0.25em] text-muted-foreground/70 uppercase">
-          Homey
+          Mitsubishi
         </span>
       </div>
       <div className="flex-1 p-4 flex flex-col items-center justify-center">
