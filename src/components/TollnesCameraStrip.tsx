@@ -35,7 +35,7 @@ export function TollnesCameraStrip({
     if (inFlight.current) return;
     inFlight.current = true;
     try {
-      const res = await fetchSnap();
+      const res = await fetchSnap({ data: { match: cameraMatch } });
       if (res.ok) {
         setState({
           status: "ok",
