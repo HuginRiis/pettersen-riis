@@ -171,11 +171,10 @@ export function SiteHeader() {
                 <button
                   type="button"
                   onClick={() => setOpenGroup(isOpen ? null : g.label)}
-                  className="px-3 py-2 text-sm tracking-wider uppercase text-muted-foreground hover:text-primary transition-colors flex items-center gap-1.5"
+                  className="px-3 py-2 text-sm tracking-wider uppercase text-muted-foreground hover:text-primary transition-colors flex items-center gap-1"
                   aria-expanded={isOpen}
                   aria-haspopup="menu"
                 >
-                  <span className="text-base leading-none">{g.icon}</span>
                   <span>{g.label}</span>
                   <ChevronDown
                     size={12}
