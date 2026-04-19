@@ -1,24 +1,56 @@
 import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, Lightbulb, LightbulbOff, Plug, Thermometer, Minus, Plus } from "lucide-react";
+import { Loader2, Lightbulb, Thermometer, Minus, Plus } from "lucide-react";
 import {
   getLivingRoomDevices,
   setLivingRoomDeviceCapability,
   type LivingRoomDevice,
 } from "@/server/homey";
 
-const REFRESH_MS = 60_000; // 1 min — stua endrer seg ofte
+const REFRESH_MS = 60_000; // 1 min
 
 type State =
   | { status: "loading" }
   | { status: "ok"; devices: LivingRoomDevice[] }
   | { status: "error"; message: string };
 
-export function LivingRoomDevicesPanel() {
+type Kind = "heatpump" | "ceiling";
+
+function matchKind(d: LivingRoomDevice): Kind | null {
+  const n = d.name.toLowerCase();
+  // Varmepumpe: har target_temperature
+  if (d.capabilities.target_temperature !== undefined) {
+    if (
+      n.includes("varmepump") ||
+      n.includes("heat") ||
+      n.includes("pump") ||
+      n.includes("aircon") ||
+      n.includes("ac")
+    ) {
+      return "heatpump";
+    }
+    // Fallback: enhver thermostat i stua antas å være varmepumpa
+    return "heatpump";
+  }
+  // Taklampe EYCR-201
+  if (d.capabilities.dim !== undefined) {
+    if (
+      n.includes("eycr") ||
+      n.includes("201") ||
+      n.includes("taklys") ||
+      n.includes("taklamp") ||
+      n.includes("ceiling")
+    ) {
+      return "ceiling";
+    }
+  }
+  return null;
+}
+
+function useLivingRoomState() {
   const fetchDevices = useServerFn(getLivingRoomDevices);
   const setCap = useServerFn(setLivingRoomDeviceCapability);
   const [state, setState] = useState<State>({ status: "loading" });
-  // Optimistiske overstyringer per enhet — droppes når serveren bekrefter.
   const [overrides, setOverrides] = useState<
     Record<string, Partial<LivingRoomDevice["capabilities"]>>
   >({});
@@ -33,7 +65,6 @@ export function LivingRoomDevicesPanel() {
       const res = await fetchDevices();
       if (res.ok) {
         setState({ status: "ok", devices: res.devices });
-        // Slipp overrides som matcher serverens nye verdi
         setOverrides((prev) => {
           const next = { ...prev };
           for (const d of res.devices) {
@@ -97,7 +128,6 @@ export function LivingRoomDevicesPanel() {
     try {
       const res = await setCap({ data: { deviceId: device.id, capability, value } });
       if (!res.ok) {
-        // Rull tilbake
         setOverrides((o) => {
           const next = { ...o };
           if (next[device.id]) {
@@ -108,7 +138,6 @@ export function LivingRoomDevicesPanel() {
           return next;
         });
       } else {
-        // Hent fersk state etter en kort pause så Homey rekker å oppdatere
         setTimeout(load, 800);
       }
     } catch {
@@ -129,91 +158,132 @@ export function LivingRoomDevicesPanel() {
     }
   };
 
+  const findByKind = (kind: Kind): LivingRoomDevice | null => {
+    if (state.status !== "ok") return null;
+    // Eksakte navne-treff først
+    if (kind === "ceiling") {
+      const eycr = state.devices.find(
+        (d) =>
+          d.capabilities.dim !== undefined &&
+          (d.name.toLowerCase().includes("eycr") ||
+            d.name.toLowerCase().includes("201")),
+      );
+      if (eycr) return eycr;
+    }
+    return state.devices.find((d) => matchKind(d) === kind) ?? null;
+  };
+
+  return { state, overrides, busy, sendCap, findByKind };
+}
+
+export function HeatPumpTile() {
+  const { state, overrides, busy, sendCap, findByKind } = useLivingRoomState();
+  const device = findByKind("heatpump");
+  const accent = "var(--ice)";
+
   return (
-    <div className="panel rounded-lg overflow-hidden flex flex-col">
+    <article className="panel rounded-lg overflow-hidden flex flex-col">
       <div className="px-4 py-2 border-b border-border flex items-center justify-between">
         <span className="text-display tracking-[0.3em] text-primary text-[10px] sm:text-xs uppercase">
-          Stuens hall · Enheter
+          Varmepumpe · Stua
         </span>
         <span className="text-[9px] tracking-[0.25em] text-muted-foreground/70 uppercase">
-          {state.status === "ok" ? `${state.devices.length} enheter` : "Homey"}
+          Homey
         </span>
       </div>
-
-      <div className="flex-1 p-3 sm:p-4">
+      <div className="flex-1 p-4 flex flex-col items-center justify-center">
         {state.status === "loading" && (
-          <div className="text-center text-[11px] tracking-[0.3em] text-muted-foreground uppercase py-8">
-            Sender ravn til stua…
-          </div>
+          <Loader2 className="animate-spin text-muted-foreground" size={24} />
         )}
         {state.status === "error" && (
-          <div className="text-center py-6">
-            <div className="text-2xl mb-2">⚠</div>
-            <div className="text-sm text-destructive">{state.message}</div>
+          <div className="text-center text-sm text-destructive">{state.message}</div>
+        )}
+        {state.status === "ok" && !device && (
+          <div className="text-center text-[11px] tracking-[0.3em] text-muted-foreground uppercase">
+            Fant ikke varmepumpe
           </div>
         )}
-        {state.status === "ok" && state.devices.length === 0 && (
-          <div className="text-center text-[11px] tracking-[0.3em] text-muted-foreground uppercase py-8">
-            Ingen styrbare enheter funnet i stua
-          </div>
-        )}
-        {state.status === "ok" && state.devices.length > 0 && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-            {state.devices.map((d) => (
-              <DeviceTile
-                key={d.id}
-                device={d}
-                override={overrides[d.id]}
-                busy={busy}
-                onToggle={(v) => sendCap(d, "onoff", v)}
-                onSetTemp={(v) => sendCap(d, "target_temperature", v)}
-              />
-            ))}
-          </div>
+        {device && (
+          <ThermostatBody
+            device={device}
+            override={overrides[device.id]}
+            busy={busy}
+            accent={accent}
+            onSetTemp={(v) => sendCap(device, "target_temperature", v)}
+            onToggle={(v) => sendCap(device, "onoff", v)}
+          />
         )}
       </div>
-    </div>
+    </article>
   );
 }
 
-function DeviceTile({
+export function CeilingLampTile() {
+  const { state, overrides, busy, sendCap, findByKind } = useLivingRoomState();
+  const device = findByKind("ceiling");
+  const accent = "var(--gold)";
+
+  return (
+    <article className="panel rounded-lg overflow-hidden flex flex-col">
+      <div className="px-4 py-2 border-b border-border flex items-center justify-between">
+        <span className="text-display tracking-[0.3em] text-primary text-[10px] sm:text-xs uppercase">
+          Taklampe · Stua
+        </span>
+        <span className="text-[9px] tracking-[0.25em] text-muted-foreground/70 uppercase">
+          EYCR-201
+        </span>
+      </div>
+      <div className="flex-1 p-4 flex flex-col items-center justify-center">
+        {state.status === "loading" && (
+          <Loader2 className="animate-spin text-muted-foreground" size={24} />
+        )}
+        {state.status === "error" && (
+          <div className="text-center text-sm text-destructive">{state.message}</div>
+        )}
+        {state.status === "ok" && !device && (
+          <div className="text-center text-[11px] tracking-[0.3em] text-muted-foreground uppercase">
+            Fant ikke EYCR-201
+          </div>
+        )}
+        {device && (
+          <DimmerBody
+            device={device}
+            override={overrides[device.id]}
+            busy={busy}
+            accent={accent}
+            onSetDim={(v) => sendCap(device, "dim", v)}
+            onToggle={(v) => sendCap(device, "onoff", v)}
+          />
+        )}
+      </div>
+    </article>
+  );
+}
+
+function ThermostatBody({
   device,
   override,
   busy,
-  onToggle,
+  accent,
   onSetTemp,
+  onToggle,
 }: {
   device: LivingRoomDevice;
   override?: Partial<LivingRoomDevice["capabilities"]>;
   busy: Record<string, boolean>;
-  onToggle: (v: boolean) => void;
+  accent: string;
   onSetTemp: (v: number) => void;
+  onToggle: (v: boolean) => void;
 }) {
   const caps = { ...device.capabilities, ...(override ?? {}) };
-  const isThermo = caps.target_temperature !== undefined;
-  const onoffBusy = busy[`${device.id}:onoff`];
-  const tempBusy = busy[`${device.id}:target_temperature`];
-
   const min = device.capabilities.target_temperature_min ?? 16;
   const max = device.capabilities.target_temperature_max ?? 30;
   const step = device.capabilities.target_temperature_step ?? 0.5;
+  const tempBusy = busy[`${device.id}:target_temperature`];
+  const onoffBusy = busy[`${device.id}:onoff`];
+  const isOn = caps.onoff !== false;
 
-  const isOn = caps.onoff === true;
-  const accent = isThermo
-    ? "var(--ice)"
-    : isOn
-      ? "var(--gold)"
-      : "var(--muted-foreground)";
-
-  const Icon = isThermo
-    ? Thermometer
-    : device.class === "socket"
-      ? Plug
-      : isOn
-        ? Lightbulb
-        : LightbulbOff;
-
-  const adjustTemp = (delta: number) => {
+  const adjust = (delta: number) => {
     const cur = caps.target_temperature ?? 21;
     const next = Math.min(max, Math.max(min, +(cur + delta).toFixed(1)));
     if (next === cur) return;
@@ -221,117 +291,208 @@ function DeviceTile({
   };
 
   return (
-    <article
-      className="panel rounded-md p-2.5 flex flex-col text-center"
-      style={
-        isOn && !isThermo
-          ? {
-              boxShadow: `inset 0 0 0 1px color-mix(in oklab, ${accent} 35%, transparent), 0 0 14px color-mix(in oklab, ${accent} 18%, transparent)`,
-            }
-          : isThermo
-            ? {
-                boxShadow: `inset 0 0 0 1px color-mix(in oklab, ${accent} 25%, transparent)`,
-              }
-            : undefined
-      }
-    >
-      <div className="flex items-center justify-center gap-1.5 mb-1">
-        <Icon size={14} style={{ color: accent }} />
+    <div className="w-full flex flex-col items-center gap-3">
+      <div className="flex items-center gap-2">
+        <Thermometer size={18} style={{ color: accent }} />
         <div
-          className="text-[9px] tracking-[0.2em] uppercase truncate"
-          style={{ color: "var(--foreground)" }}
+          className="text-[10px] tracking-[0.25em] uppercase text-muted-foreground truncate max-w-[200px]"
           title={device.name}
         >
           {device.name}
         </div>
       </div>
 
-      {isThermo ? (
-        <>
-          <div className="text-display leading-none my-1" style={{ color: accent }}>
-            <span className="text-2xl sm:text-3xl tabular-nums">
-              {(caps.target_temperature ?? 0).toFixed(1)}°
-            </span>
-          </div>
-          {caps.measure_temperature !== undefined && (
-            <div className="text-[9px] tracking-[0.2em] text-muted-foreground/80 uppercase">
-              Nå {caps.measure_temperature.toFixed(1)}°
-            </div>
-          )}
-          <div className="grid grid-cols-3 gap-1 mt-2">
-            <button
-              type="button"
-              onClick={() => adjustTemp(-step)}
-              disabled={tempBusy || (caps.target_temperature ?? 0) <= min}
-              aria-label="Senk temperatur"
-              className="rounded py-1.5 flex items-center justify-center transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-              style={{
-                background: "color-mix(in oklab, var(--foreground) 6%, transparent)",
-                border: `1px solid color-mix(in oklab, ${accent} 25%, transparent)`,
-                color: accent,
-              }}
-            >
-              <Minus size={14} />
-            </button>
-            <div className="flex items-center justify-center text-[9px] tracking-[0.2em] uppercase text-muted-foreground">
-              {tempBusy ? <Loader2 size={12} className="animate-spin" /> : "Sett"}
-            </div>
-            <button
-              type="button"
-              onClick={() => adjustTemp(step)}
-              disabled={tempBusy || (caps.target_temperature ?? 0) >= max}
-              aria-label="Hev temperatur"
-              className="rounded py-1.5 flex items-center justify-center transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-              style={{
-                background: "color-mix(in oklab, var(--foreground) 6%, transparent)",
-                border: `1px solid color-mix(in oklab, ${accent} 25%, transparent)`,
-                color: accent,
-              }}
-            >
-              <Plus size={14} />
-            </button>
-          </div>
-          {caps.onoff !== undefined && (
-            <button
-              type="button"
-              onClick={() => onToggle(!isOn)}
-              disabled={onoffBusy}
-              className="mt-2 rounded py-1 text-[9px] tracking-[0.25em] uppercase font-semibold transition-all disabled:opacity-50"
-              style={{
-                background: isOn
-                  ? `color-mix(in oklab, ${accent} 20%, transparent)`
-                  : "color-mix(in oklab, var(--foreground) 6%, transparent)",
-                border: `1px solid color-mix(in oklab, ${accent} ${isOn ? 50 : 20}%, transparent)`,
-                color: isOn ? accent : "var(--muted-foreground)",
-              }}
-            >
-              {onoffBusy ? "…" : isOn ? "På" : "Av"}
-            </button>
-          )}
-        </>
-      ) : (
+      <div
+        className="text-display leading-none tabular-nums"
+        style={{ color: accent, fontSize: "clamp(2.5rem, 8vw, 4.5rem)" }}
+      >
+        {(caps.target_temperature ?? 0).toFixed(1)}°
+      </div>
+
+      {caps.measure_temperature !== undefined && (
+        <div className="text-[10px] tracking-[0.25em] text-muted-foreground/80 uppercase">
+          Måler {caps.measure_temperature.toFixed(1)}° nå
+        </div>
+      )}
+
+      <div className="grid grid-cols-3 gap-2 w-full max-w-[280px] mt-1">
+        <button
+          type="button"
+          onClick={() => adjust(-step)}
+          disabled={tempBusy || (caps.target_temperature ?? 0) <= min}
+          aria-label="Senk temperatur"
+          className="rounded py-3 flex items-center justify-center transition-all disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
+          style={{
+            background: "color-mix(in oklab, var(--foreground) 6%, transparent)",
+            border: `1px solid color-mix(in oklab, ${accent} 30%, transparent)`,
+            color: accent,
+          }}
+        >
+          <Minus size={20} />
+        </button>
+        <div className="flex items-center justify-center text-[9px] tracking-[0.25em] uppercase text-muted-foreground">
+          {tempBusy ? <Loader2 size={14} className="animate-spin" /> : `${step}°`}
+        </div>
+        <button
+          type="button"
+          onClick={() => adjust(step)}
+          disabled={tempBusy || (caps.target_temperature ?? 0) >= max}
+          aria-label="Hev temperatur"
+          className="rounded py-3 flex items-center justify-center transition-all disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
+          style={{
+            background: "color-mix(in oklab, var(--foreground) 6%, transparent)",
+            border: `1px solid color-mix(in oklab, ${accent} 30%, transparent)`,
+            color: accent,
+          }}
+        >
+          <Plus size={20} />
+        </button>
+      </div>
+
+      {caps.onoff !== undefined && (
         <button
           type="button"
           onClick={() => onToggle(!isOn)}
-          disabled={onoffBusy || caps.onoff === undefined}
-          className="mt-2 rounded py-2 text-[10px] tracking-[0.25em] uppercase font-semibold transition-all disabled:opacity-50"
+          disabled={onoffBusy}
+          className="rounded px-4 py-1.5 text-[10px] tracking-[0.3em] uppercase font-semibold transition-all disabled:opacity-50"
           style={{
             background: isOn
-              ? `color-mix(in oklab, ${accent} 25%, transparent)`
+              ? `color-mix(in oklab, ${accent} 22%, transparent)`
               : "color-mix(in oklab, var(--foreground) 6%, transparent)",
-            border: `1px solid color-mix(in oklab, ${accent} ${isOn ? 55 : 22}%, transparent)`,
+            border: `1px solid color-mix(in oklab, ${accent} ${isOn ? 50 : 22}%, transparent)`,
             color: isOn ? accent : "var(--muted-foreground)",
           }}
         >
-          {onoffBusy ? (
-            <Loader2 size={12} className="animate-spin inline" />
-          ) : isOn ? (
-            "Tent"
-          ) : (
-            "Slukket"
-          )}
+          {onoffBusy ? "…" : isOn ? "På" : "Av"}
         </button>
       )}
-    </article>
+    </div>
+  );
+}
+
+function DimmerBody({
+  device,
+  override,
+  busy,
+  accent,
+  onSetDim,
+  onToggle,
+}: {
+  device: LivingRoomDevice;
+  override?: Partial<LivingRoomDevice["capabilities"]>;
+  busy: Record<string, boolean>;
+  accent: string;
+  onSetDim: (v: number) => void;
+  onToggle: (v: boolean) => void;
+}) {
+  const caps = { ...device.capabilities, ...(override ?? {}) };
+  const dim = caps.dim ?? 0; // 0..1
+  const isOn = caps.onoff !== false && dim > 0;
+  const dimBusy = busy[`${device.id}:dim`];
+  const onoffBusy = busy[`${device.id}:onoff`];
+
+  // Lokalt slider-state for jevn dragging — committer ved release
+  const [local, setLocal] = useState<number | null>(null);
+  const value = local ?? dim;
+  const pct = Math.round(value * 100);
+
+  // Reset lokalt state når serveren bekrefter ny verdi
+  useEffect(() => {
+    if (local !== null && Math.abs(local - dim) < 0.01) setLocal(null);
+  }, [dim, local]);
+
+  return (
+    <div className="w-full flex flex-col items-center gap-3">
+      <div className="flex items-center gap-2">
+        <Lightbulb
+          size={18}
+          style={{ color: isOn ? accent : "var(--muted-foreground)" }}
+        />
+        <div
+          className="text-[10px] tracking-[0.25em] uppercase text-muted-foreground truncate max-w-[200px]"
+          title={device.name}
+        >
+          {device.name}
+        </div>
+      </div>
+
+      <div
+        className="text-display leading-none tabular-nums"
+        style={{
+          color: isOn ? accent : "var(--muted-foreground)",
+          fontSize: "clamp(2.5rem, 8vw, 4.5rem)",
+        }}
+      >
+        {pct}%
+      </div>
+
+      <div className="text-[10px] tracking-[0.25em] text-muted-foreground/80 uppercase">
+        {isOn ? "Tent" : "Slukket"}
+      </div>
+
+      <div className="w-full max-w-[280px] px-2">
+        <input
+          type="range"
+          min={0}
+          max={100}
+          step={1}
+          value={pct}
+          onChange={(e) => setLocal(Number(e.target.value) / 100)}
+          onPointerUp={(e) => {
+            const v = Number((e.target as HTMLInputElement).value) / 100;
+            onSetDim(v);
+          }}
+          onTouchEnd={(e) => {
+            const v = Number((e.target as HTMLInputElement).value) / 100;
+            onSetDim(v);
+          }}
+          onKeyUp={(e) => {
+            if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+              const v = Number((e.target as HTMLInputElement).value) / 100;
+              onSetDim(v);
+            }
+          }}
+          disabled={dimBusy}
+          aria-label="Lysstyrke"
+          className="w-full h-2 rounded-full appearance-none cursor-pointer disabled:opacity-50 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[var(--gold)] [&::-webkit-slider-thumb]:shadow-md [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-[var(--gold)] [&::-moz-range-thumb]:border-0"
+          style={{
+            background: `linear-gradient(to right, ${accent} 0%, ${accent} ${pct}%, color-mix(in oklab, var(--foreground) 12%, transparent) ${pct}%, color-mix(in oklab, var(--foreground) 12%, transparent) 100%)`,
+          }}
+        />
+        <div className="flex justify-between text-[8px] tracking-[0.2em] uppercase text-muted-foreground/60 mt-1">
+          <span>0%</span>
+          <span>50%</span>
+          <span>100%</span>
+        </div>
+      </div>
+
+      {caps.onoff !== undefined && (
+        <button
+          type="button"
+          onClick={() => onToggle(!isOn)}
+          disabled={onoffBusy}
+          className="rounded px-4 py-1.5 text-[10px] tracking-[0.3em] uppercase font-semibold transition-all disabled:opacity-50"
+          style={{
+            background: isOn
+              ? `color-mix(in oklab, ${accent} 22%, transparent)`
+              : "color-mix(in oklab, var(--foreground) 6%, transparent)",
+            border: `1px solid color-mix(in oklab, ${accent} ${isOn ? 50 : 22}%, transparent)`,
+            color: isOn ? accent : "var(--muted-foreground)",
+          }}
+        >
+          {onoffBusy ? "…" : isOn ? "På" : "Av"}
+        </button>
+      )}
+    </div>
+  );
+}
+
+// Bakoverkompatibel eksport — viser begge tiles stablet (brukes ikke lenger på Steintavle).
+export function LivingRoomDevicesPanel() {
+  return (
+    <div className="flex flex-col gap-3">
+      <HeatPumpTile />
+      <CeilingLampTile />
+    </div>
   );
 }

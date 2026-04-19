@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Lightbulb, LightbulbOff, Loader2 } from "lucide-react";
 import { PageShell } from "@/components/PageShell";
 import { TollnesCameraStrip } from "@/components/TollnesCameraStrip";
-import { LivingRoomDevicesPanel } from "@/components/LivingRoomDevicesPanel";
+import { HeatPumpTile, CeilingLampTile } from "@/components/LivingRoomDevicesPanel";
 import {
   getHomeySnapshot,
   setLivingRoomLights,
@@ -336,9 +336,9 @@ function SteintavlePage() {
           />
         </section>
 
-        {/* Nederste rad: kamera + radar side om side på iPad-landscape */}
-        <section className="grid gap-3 lg:grid-cols-2">
-          <div className="panel rounded-lg overflow-hidden flex flex-col">
+        {/* Nederste rad: kamera + varmepumpe + taklampe (3 kolonner på iPad-landscape) */}
+        <section className="grid gap-3 lg:grid-cols-3">
+          <div className="panel rounded-lg overflow-hidden flex flex-col lg:col-span-1">
             <div className="px-4 py-2 border-b border-border flex items-center justify-between">
               <span className="text-display tracking-[0.3em] text-primary text-[10px] sm:text-xs uppercase">
                 Vakttårnet · Live
@@ -356,7 +356,8 @@ function SteintavlePage() {
             </div>
           </div>
 
-          <LivingRoomDevicesPanel />
+          <HeatPumpTile />
+          <CeilingLampTile />
         </section>
 
         {otherAlerts.length > 0 && (
