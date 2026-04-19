@@ -216,22 +216,9 @@ function SteintavlePage() {
   };
 
 
-  if (!data.ok) {
-    return (
-      <PageShell minimalHeader>
-        <section className="container mx-auto px-4 py-20 text-center">
-          <h1 className="heading-hero text-4xl mb-4">Steintavlen sover</h1>
-          <p className="text-muted-foreground">
-            Borgens smarthus er ikke bundet enda. Gå til{" "}
-            <a href="/smarthus" className="text-primary underline">
-              Smarthus
-            </a>{" "}
-            for å binde ravnene til Homey.
-          </p>
-        </section>
-      </PageShell>
-    );
-  }
+  // Merk: vi viser Steintavlen selv om Homey er nede — Netatmo (temp/kamera)
+  // og MET-varsler skal alltid vises. Kun smarthus-tiles markerer Homey-feil.
+  const homeyDown = !data.ok;
 
   // ---- Temperaturer fra Netatmo værstasjon (Tollnes) ----
   const ns = liveNetatmo.ok ? liveNetatmo : null;
