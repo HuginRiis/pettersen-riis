@@ -161,6 +161,9 @@ function Home() {
           <HallCard to="/smarthus" title="Borgens Smarthus" desc="Lys, varme og varslere fra Homey." icon="🏰" />
           <HallCard to="/brodering" title="Brodering" desc="Lag PES-filer for Brother — tekst og bilder." icon="🧵" />
           <HallCard to="/steintavle" title="Steintavle" desc="Husets innskrifter og notater." icon="🪨" />
+          <HallCard to="/ranger" title="Ranger" desc="Husets robuste følgesvenn på veiene." icon="🛡" />
+          <HallCard to="/oppussing-borgen" title="Oppussing av borgen" desc="Prosjekter, planer og bilder fra borgen." icon="🔨" />
+          <HallCard to="/oppussing-hytta" title="Oppussing av hytta" desc="Prosjekter, planer og bilder fra hytta." icon="🪵" />
         </div>
       </section>
 
@@ -243,7 +246,21 @@ function HallCard({
   desc,
   icon,
 }: {
-  to: "/agenda" | "/var" | "/pollen" | "/hytta" | "/hundene" | "/trening" | "/turer" | "/jernhesten" | "/smarthus" | "/brodering" | "/steintavle";
+  to:
+    | "/agenda"
+    | "/var"
+    | "/pollen"
+    | "/hytta"
+    | "/hundene"
+    | "/trening"
+    | "/turer"
+    | "/jernhesten"
+    | "/ranger"
+    | "/smarthus"
+    | "/brodering"
+    | "/steintavle"
+    | "/oppussing-borgen"
+    | "/oppussing-hytta";
   title: string;
   desc: string;
   icon: string;
