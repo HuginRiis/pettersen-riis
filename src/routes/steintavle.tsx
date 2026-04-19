@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Lightbulb, LightbulbOff, Loader2 } from "lucide-react";
 import { PageShell } from "@/components/PageShell";
 import { TollnesCameraStrip } from "@/components/TollnesCameraStrip";
-import { LivingRoomDevicesPanel } from "@/components/LivingRoomDevicesPanel";
+import { HeatPumpTile, CeilingLampTile } from "@/components/LivingRoomDevicesPanel";
 import {
   getHomeySnapshot,
   setLivingRoomLights,
