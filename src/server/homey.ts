@@ -13,10 +13,10 @@ const HOMEY_API_PAUSED_MESSAGE =
   "Homey API er midlertidig pauset for å la 429-låsen slippe. Prøv igjen litt senere.";
 
 // Runtime flag — bevares mellom kall i samme worker-instans.
-// Default: pauset (true) etter 429 — kan skrues av via setHomeyApiPaused().
+// Default: åpen (false) — kan pauses manuelt via setHomeyApiPaused() / UI-knapp.
 const g = globalThis as unknown as { __homeyApiPaused?: boolean };
 if (typeof g.__homeyApiPaused !== "boolean") {
-  g.__homeyApiPaused = true;
+  g.__homeyApiPaused = false;
 }
 
 function isHomeyApiPaused(): boolean {
