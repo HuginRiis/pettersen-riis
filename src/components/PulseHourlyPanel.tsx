@@ -172,6 +172,3 @@ export function PulseHourlyPanel({
     </article>
   );
 }
-
-// Inline import av Cell for å unngå ekstra import-linje
-import { Cell } from "recharts";
