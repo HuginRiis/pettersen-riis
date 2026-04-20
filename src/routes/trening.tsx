@@ -535,28 +535,81 @@ function ActivityStreams({ activityId }: { activityId: number }) {
   }
 
   return (
-    <div className="grid grid-cols-3 gap-1.5">
-      <Sparkline
-        data={state.altitude}
-        color="#5aa9ff"
-        fill="rgba(90, 169, 255, 0.18)"
-        label="Stigning"
-        unit="m"
-      />
-      <Sparkline
-        data={state.speed}
-        color="#4ade80"
-        fill="rgba(74, 222, 128, 0.18)"
-        label="Fart"
-        unit="km/t"
-      />
-      <Sparkline
-        data={state.heartrate}
-        color="#d96666"
-        fill="rgba(217, 102, 102, 0.18)"
-        label="Puls"
-        unit="bpm"
-      />
+    <div className="space-y-1.5">
+      <div className="grid grid-cols-3 gap-1.5">
+        <Sparkline
+          data={state.altitude}
+          color="#5aa9ff"
+          fill="rgba(90, 169, 255, 0.18)"
+          label="Stigning"
+          unit="m"
+        />
+        <Sparkline
+          data={state.speed}
+          color="#4ade80"
+          fill="rgba(74, 222, 128, 0.18)"
+          label="Fart"
+          unit="km/t"
+        />
+        <Sparkline
+          data={state.heartrate}
+          color="#d96666"
+          fill="rgba(217, 102, 102, 0.18)"
+          label="Puls"
+          unit="bpm"
+        />
+      </div>
+      <div className="grid grid-cols-3 gap-1.5">
+        <StreamStats data={state.altitude} unit="m" color="#5aa9ff" decimals={0} />
+        <StreamStats data={state.speed} unit="km/t" color="#4ade80" decimals={1} />
+        <StreamStats data={state.heartrate} unit="" color="#d96666" decimals={0} />
+      </div>
+    </div>
+  );
+}
+
+function StreamStats({
+  data,
+  unit,
+  color,
+  decimals,
+}: {
+  data: number[] | null;
+  unit: string;
+  color: string;
+  decimals: number;
+}) {
+  if (!data || data.length === 0) {
+    return (
+      <div className="rounded border border-primary/10 bg-background/30 px-1 py-1 flex items-center justify-center">
+        <span className="text-[8px] uppercase tracking-[0.15em] text-muted-foreground">—</span>
+      </div>
+    );
+  }
+  const min = Math.min(...data);
+  const max = Math.max(...data);
+  const avg = data.reduce((s, v) => s + v, 0) / data.length;
+  const fmt = (v: number) => v.toFixed(decimals);
+  return (
+    <div
+      className="rounded border bg-background/40 px-1 py-1 grid grid-cols-3 gap-0.5"
+      style={{ borderColor: `${color}33` }}
+    >
+      <StatCell label="Min" value={fmt(min)} unit={unit} />
+      <StatCell label="Snitt" value={fmt(avg)} unit={unit} />
+      <StatCell label="Maks" value={fmt(max)} unit={unit} />
+    </div>
+  );
+}
+
+function StatCell({ label, value, unit }: { label: string; value: string; unit: string }) {
+  return (
+    <div className="text-center leading-tight">
+      <div className="text-[8px] uppercase tracking-[0.1em] text-muted-foreground">{label}</div>
+      <div className="text-[10px] text-primary truncate">
+        {value}
+        {unit && <span className="text-muted-foreground/70">{unit}</span>}
+      </div>
     </div>
   );
 }
