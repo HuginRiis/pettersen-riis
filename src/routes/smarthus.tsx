@@ -10,7 +10,7 @@ import { HomeyApiPauseToggle } from "@/components/HomeyApiPauseToggle";
 import { HeatersPanel } from "@/components/HeatersPanel";
 import { PulseHourlyPanel } from "@/components/PulseHourlyPanel";
 import { recordHomeyApiCall } from "@/lib/homey-api-tracker";
-import heroImg from "@/assets/smarthus-hero.jpg";
+import heroImg from "@/assets/got-smarthus.jpg";
 
 export const Route = createFileRoute("/smarthus")({
   head: () => ({

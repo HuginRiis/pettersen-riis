@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { PageShell, PageHero } from "@/components/PageShell";
 import { ActivityMap } from "@/components/ActivityMap";
 import { getActivityStreams, getStravaDashboard, getStravaStatus } from "@/server/strava";
-import treningImg from "@/assets/trening.jpg";
+import treningImg from "@/assets/got-trening.jpg";
 
 export const Route = createFileRoute("/trening")({
   head: () => ({

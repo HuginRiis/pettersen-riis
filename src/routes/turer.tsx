@@ -5,7 +5,7 @@ import { MapPin, Loader2, Mountain, Bike, Car, Footprints, Compass } from "lucid
 import { PageShell, PageHero } from "@/components/PageShell";
 import { TripDetailDialog } from "@/components/TripDetailDialog";
 import { getTripSuggestions, reverseGeocode, type TripSuggestion } from "@/server/turer";
-import turerImg from "@/assets/turer.jpg";
+import turerImg from "@/assets/got-turer.jpg";
 
 export const Route = createFileRoute("/turer")({
   head: () => ({
