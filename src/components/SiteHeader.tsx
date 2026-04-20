@@ -177,11 +177,31 @@ export function SiteHeader() {
 
         <nav ref={navRef} className="hidden md:flex items-center gap-1">
           <Link
+            to={prevRoute}
+            preload={HOMEY_BACKED_ROUTES.includes(prevRoute) ? false : undefined}
+            className="p-1.5 text-muted-foreground hover:text-primary transition-colors"
+            aria-label="Forrige side"
+            title="Forrige side"
+          >
+            <ChevronLeft size={16} />
+          </Link>
+
+          <Link
             to="/"
             className="px-3 py-2 text-sm tracking-wider uppercase text-muted-foreground hover:text-primary transition-colors data-[status=active]:text-primary data-[status=active]:font-semibold"
             activeOptions={{ exact: true }}
           >
             Hjem
+          </Link>
+
+          <Link
+            to={nextRoute}
+            preload={HOMEY_BACKED_ROUTES.includes(nextRoute) ? false : undefined}
+            className="p-1.5 text-muted-foreground hover:text-primary transition-colors"
+            aria-label="Neste side"
+            title="Neste side"
+          >
+            <ChevronRight size={16} />
           </Link>
 
           {favorites.map((f) => (
