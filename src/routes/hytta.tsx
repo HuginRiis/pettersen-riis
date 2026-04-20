@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { PageShell } from "@/components/PageShell";
 import { HyttaHero } from "@/components/HyttaHero";
 import { NetatmoWeatherStationSection } from "@/components/NetatmoWeatherStation";
+import { HeatersPanel } from "@/components/HeatersPanel";
 import hyttaImg from "@/assets/hytta-aurora.jpg";
 import g0314 from "@/assets/hytta-gallery/0314.jpg";
 import g0342 from "@/assets/hytta-gallery/0342.jpg";
@@ -153,6 +154,12 @@ function HyttaPage() {
       </section>
 
       <NetatmoWeatherStationSection title="Værstasjonen — Hytta" stationMatch="hytta" />
+
+      <HeatersPanel
+        location="hytta"
+        title="Varmemestrene · Hytta"
+        emptyHint="Ingen varmeovner med termostat funnet for hytta i Homey."
+      />
 
       {/* Galleriet — Krøniken om House Pettersen Riis i fjellet */}
       <section className="container mx-auto px-4 pb-16">

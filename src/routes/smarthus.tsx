@@ -7,6 +7,7 @@ import { getHomeySnapshot, disconnectHomey, setAllOutdoorLights } from "@/server
 import { findDeviceFuzzy, readTemp } from "@/lib/homey-match";
 import { HomeyApiActivity } from "@/components/HomeyApiActivity";
 import { HomeyApiPauseToggle } from "@/components/HomeyApiPauseToggle";
+import { HeatersPanel } from "@/components/HeatersPanel";
 import { recordHomeyApiCall } from "@/lib/homey-api-tracker";
 import heroImg from "@/assets/smarthus-hero.jpg";
 
@@ -553,6 +554,12 @@ function SmarthusPage() {
           )}
         </div>
       </section>
+
+      <HeatersPanel
+        location="borg"
+        title="Varmemestrene · Borgen"
+        emptyHint="Ingen varmeovner med termostat funnet for Borgen i Homey."
+      />
 
       <section className="container mx-auto px-4 py-12 space-y-12">
         {zoneEntries.map(([zoneKey, devices]) => {
