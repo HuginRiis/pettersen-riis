@@ -358,6 +358,30 @@ export type Database = {
         }
         Relationships: []
       }
+      user_favorites: {
+        Row: {
+          created_at: string
+          icon: string | null
+          id: string
+          path: string
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          icon?: string | null
+          id?: string
+          path: string
+          title: string
+        }
+        Update: {
+          created_at?: string
+          icon?: string | null
+          id?: string
+          path?: string
+          title?: string
+        }
+        Relationships: []
+      }
       visitor_login_attempts: {
         Row: {
           attempted_at: string
