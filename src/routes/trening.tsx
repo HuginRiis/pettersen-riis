@@ -440,7 +440,7 @@ function SubHeader({ text }: { text: string }) {
 function WeeklyTrendChart({
   data,
 }: {
-  data: Array<{ label: string; distanceKm: number; movingMin: number; elevation: number; count: number }>;
+  data: Array<{ weekStart: string; label: string; distanceKm: number; movingMin: number; elevation: number; count: number }>;
 }) {
   const maxKm = useMemo(() => Math.max(1, ...data.map((d) => d.distanceKm)), [data]);
   const maxElev = useMemo(() => Math.max(1, ...data.map((d) => d.elevation)), [data]);
