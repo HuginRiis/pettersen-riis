@@ -172,9 +172,21 @@ export function MaesterCounsel() {
 
         {advice && (
           <div className="mt-6 grid md:grid-cols-3 gap-5">
-            <CounselBlock icon="🧥" title="Bekledning" lines={advice.clothing} />
-            <CounselBlock icon="🐴" title="Hest & kjerre" lines={advice.travel} />
-            <CounselBlock icon="🌿" title="Pollen & plager" lines={advice.pollen} />
+            <CounselBlock
+              icon={<CloakIcon className="w-8 h-8 text-primary" />}
+              title="Bekledning"
+              lines={advice.clothing}
+            />
+            <CounselBlock
+              icon={<HorseCartIcon className="w-10 h-8 text-primary" />}
+              title="Hest & kjerre"
+              lines={advice.travel}
+            />
+            <CounselBlock
+              icon={<PollenIcon className="w-8 h-8 text-primary" />}
+              title="Pollen & plager"
+              lines={advice.pollen}
+            />
           </div>
         )}
 
