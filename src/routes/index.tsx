@@ -8,7 +8,6 @@ import { NetatmoWeatherStationSection } from "@/components/NetatmoWeatherStation
 import { MaesterCounsel } from "@/components/MaesterCounsel";
 import { BirthdayBanner } from "@/components/BirthdayBanner";
 import { UpcomingHolidays } from "@/components/UpcomingHolidays";
-import { Torch } from "@/components/Torch";
 import { useFavorites } from "@/hooks/use-favorites";
 import arnePortrait from "@/assets/arne-portrait.jpg";
 import rebekkaPortrait from "@/assets/rebekka-portrait.jpg";
@@ -82,22 +81,12 @@ function Home() {
 
         <div className="grid grid-cols-2 gap-4 sm:gap-6 max-w-2xl mx-auto">
           <div className="flex flex-col">
-            <div className="relative">
-              <Torch
-                side="left"
-                className="absolute top-1/2 -translate-y-1/2 -left-6 sm:-left-10 md:-left-14 w-10 sm:w-14 md:w-16 h-44 sm:h-56 md:h-64 z-10"
-              />
-              <Torch
-                side="right"
-                className="absolute top-1/2 -translate-y-1/2 -right-6 sm:-right-10 md:-right-14 w-10 sm:w-14 md:w-16 h-44 sm:h-56 md:h-64 z-10"
-              />
-              <PortraitCard
-                name="Arne Pettersen Riis"
-                title="Lord av Skien"
-                words="Med ære og ravner"
-                image={arnePortrait}
-              />
-            </div>
+            <PortraitCard
+              name="Arne Pettersen Riis"
+              title="Lord av Skien"
+              words="Med ære og ravner"
+              image={arnePortrait}
+            />
             <div className="mt-4">
               <div className="text-[9px] tracking-[0.3em] text-primary/80 uppercase text-center mb-2">
                 Husets datter
@@ -115,22 +104,12 @@ function Home() {
             </div>
           </div>
           <div className="flex flex-col">
-            <div className="relative">
-              <Torch
-                side="left"
-                className="absolute top-1/2 -translate-y-1/2 -left-6 sm:-left-10 md:-left-14 w-10 sm:w-14 md:w-16 h-44 sm:h-56 md:h-64 z-10"
-              />
-              <Torch
-                side="right"
-                className="absolute top-1/2 -translate-y-1/2 -right-6 sm:-right-10 md:-right-14 w-10 sm:w-14 md:w-16 h-44 sm:h-56 md:h-64 z-10"
-              />
-              <PortraitCard
-                name="Rebekka Riis Pettersen"
-                title="Lady av Skien"
-                words="Sterk som vinterstormen"
-                image={rebekkaPortrait}
-              />
-            </div>
+            <PortraitCard
+              name="Rebekka Riis Pettersen"
+              title="Lady av Skien"
+              words="Sterk som vinterstormen"
+              image={rebekkaPortrait}
+            />
             <div className="mt-4">
               <div className="text-[9px] tracking-[0.3em] text-primary/80 uppercase text-center mb-2">
                 Husets døtre
