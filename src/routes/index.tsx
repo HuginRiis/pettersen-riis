@@ -8,6 +8,7 @@ import { NetatmoWeatherStationSection } from "@/components/NetatmoWeatherStation
 import { MaesterCounsel } from "@/components/MaesterCounsel";
 import { BirthdayBanner } from "@/components/BirthdayBanner";
 import { UpcomingHolidays } from "@/components/UpcomingHolidays";
+import { Torch } from "@/components/Torch";
 import { useFavorites } from "@/hooks/use-favorites";
 import arnePortrait from "@/assets/arne-portrait.jpg";
 import rebekkaPortrait from "@/assets/rebekka-portrait.jpg";
