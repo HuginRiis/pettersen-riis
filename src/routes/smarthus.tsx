@@ -8,7 +8,7 @@ import { findDeviceFuzzy, readTemp } from "@/lib/homey-match";
 import { HomeyApiActivity } from "@/components/HomeyApiActivity";
 import { HomeyApiPauseToggle } from "@/components/HomeyApiPauseToggle";
 import { HeatersPanel } from "@/components/HeatersPanel";
-import { PulseMonthlyChart } from "@/components/PulseMonthlyChart";
+import { PulseHourlyPanel } from "@/components/PulseHourlyPanel";
 import { recordHomeyApiCall } from "@/lib/homey-api-tracker";
 import heroImg from "@/assets/smarthus-hero.jpg";
 
