@@ -76,15 +76,19 @@ export const getActivityStreams = createServerFn({ method: "GET" })
     }
     try {
       const streams = await stravaFetch<StreamSet>(
-        `/activities/${data.activityId}/streams?keys=altitude,heartrate,distance&key_by_type=true`,
+        `/activities/${data.activityId}/streams?keys=altitude,heartrate,distance,velocity_smooth&key_by_type=true`,
         auth.accessToken,
       );
       const altitude = streams.altitude?.data ?? null;
       const heartrate = streams.heartrate?.data ?? null;
+      const velocity = streams.velocity_smooth?.data ?? null;
+      // Convert m/s -> km/h for display
+      const speedKmh = velocity ? velocity.map((v) => v * 3.6) : null;
       return {
         ok: true as const,
         altitude: altitude ? downsample(altitude, 60) : null,
         heartrate: heartrate ? downsample(heartrate, 60) : null,
+        speed: speedKmh ? downsample(speedKmh, 60) : null,
       };
     } catch (error) {
       const message = error instanceof Error ? error.message : "Ukjent feil";
