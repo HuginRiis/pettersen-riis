@@ -493,7 +493,12 @@ function ActivityStreams({ activityId }: { activityId: number }) {
   const [state, setState] = useState<
     | { kind: "idle" }
     | { kind: "loading" }
-    | { kind: "ok"; altitude: number[] | null; heartrate: number[] | null }
+    | {
+        kind: "ok";
+        altitude: number[] | null;
+        heartrate: number[] | null;
+        speed: number[] | null;
+      }
     | { kind: "error" }
   >({ kind: "idle" });
 
@@ -504,7 +509,12 @@ function ActivityStreams({ activityId }: { activityId: number }) {
       .then((res) => {
         if (cancelled) return;
         if (res.ok) {
-          setState({ kind: "ok", altitude: res.altitude, heartrate: res.heartrate });
+          setState({
+            kind: "ok",
+            altitude: res.altitude,
+            heartrate: res.heartrate,
+            speed: res.speed,
+          });
         } else {
           setState({ kind: "error" });
         }
@@ -525,13 +535,20 @@ function ActivityStreams({ activityId }: { activityId: number }) {
   }
 
   return (
-    <div className="grid grid-cols-2 gap-2">
+    <div className="grid grid-cols-3 gap-1.5">
       <Sparkline
         data={state.altitude}
         color="#5aa9ff"
         fill="rgba(90, 169, 255, 0.18)"
         label="Stigning"
         unit="m"
+      />
+      <Sparkline
+        data={state.speed}
+        color="#4ade80"
+        fill="rgba(74, 222, 128, 0.18)"
+        label="Fart"
+        unit="km/t"
       />
       <Sparkline
         data={state.heartrate}
