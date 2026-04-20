@@ -153,3 +153,114 @@
     transform: translateY(-2px);
   }
 }
+
+/* ─────────────────────────────────────────────────────────────
+   Holiday emoji animations — naturlige bevegelser per ikon.
+   Beholder farge (emoji native) og størrelse — kun transform.
+   ───────────────────────────────────────────────────────────── */
+
+.holiday-icon {
+  display: inline-block;
+  transform-origin: center;
+  will-change: transform, filter;
+}
+
+/* 🎆 Fyrverkeri — pulserende glød + lett sprett */
+@keyframes holiday-firework {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 0 transparent); }
+  40% { transform: scale(1.15); filter: drop-shadow(0 0 8px oklch(0.78 0.16 60 / 0.7)); }
+  60% { transform: scale(0.95); filter: drop-shadow(0 0 12px oklch(0.78 0.16 60 / 0.5)); }
+}
+.holiday-anim-firework { animation: holiday-firework 2.4s ease-in-out infinite; }
+
+/* 🕯 Stearinlys — flakkende flamme */
+@keyframes holiday-candle {
+  0%, 100% { transform: rotate(-1.5deg) scaleY(1); filter: drop-shadow(0 0 4px oklch(0.85 0.15 75 / 0.6)); }
+  25% { transform: rotate(1deg) scaleY(1.04); filter: drop-shadow(0 0 7px oklch(0.85 0.15 75 / 0.8)); }
+  50% { transform: rotate(-0.5deg) scaleY(0.98); }
+  75% { transform: rotate(2deg) scaleY(1.02); filter: drop-shadow(0 0 6px oklch(0.85 0.15 75 / 0.7)); }
+}
+.holiday-anim-candle { animation: holiday-candle 1.6s ease-in-out infinite; }
+
+/* ✝️ Kors — rolig pust */
+@keyframes holiday-cross {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 0 transparent); }
+  50% { transform: scale(1.06); filter: drop-shadow(0 0 6px oklch(0.92 0.01 80 / 0.5)); }
+}
+.holiday-anim-cross { animation: holiday-cross 3.6s ease-in-out infinite; }
+
+/* 🐣 Kylling — hopper */
+@keyframes holiday-hatch {
+  0%, 100% { transform: translateY(0) rotate(0); }
+  20% { transform: translateY(-3px) rotate(-4deg); }
+  40% { transform: translateY(0) rotate(0); }
+  60% { transform: translateY(-2px) rotate(3deg); }
+  80% { transform: translateY(0) rotate(0); }
+}
+.holiday-anim-hatch { animation: holiday-hatch 2s ease-in-out infinite; }
+
+/* 🥚 Egg — vagger */
+@keyframes holiday-egg {
+  0%, 100% { transform: rotate(-6deg); }
+  50% { transform: rotate(6deg); }
+}
+.holiday-anim-egg { animation: holiday-egg 1.8s ease-in-out infinite; }
+
+/* 🛠 Hammer — banker */
+@keyframes holiday-hammer {
+  0%, 100% { transform: rotate(0); }
+  30% { transform: rotate(-18deg); }
+  45% { transform: rotate(8deg); }
+  60% { transform: rotate(-4deg); }
+}
+.holiday-anim-hammer { animation: holiday-hammer 1.6s ease-in-out infinite; transform-origin: 70% 70%; }
+
+/* 🇳🇴 Flagg — vaier i vinden */
+@keyframes holiday-flag {
+  0%, 100% { transform: skewX(0deg) scaleX(1); }
+  25% { transform: skewX(-6deg) scaleX(0.97); }
+  50% { transform: skewX(0deg) scaleX(1); }
+  75% { transform: skewX(6deg) scaleX(0.97); }
+}
+.holiday-anim-flag { animation: holiday-flag 2.4s ease-in-out infinite; transform-origin: left center; }
+
+/* ☁️ Sky — driver sakte */
+@keyframes holiday-cloud {
+  0%, 100% { transform: translateX(-2px); }
+  50% { transform: translateX(2px); }
+}
+.holiday-anim-cloud { animation: holiday-cloud 4s ease-in-out infinite; }
+
+/* 🔥 Flamme — flakker */
+@keyframes holiday-fire {
+  0%, 100% { transform: scaleY(1) scaleX(1); filter: drop-shadow(0 0 4px oklch(0.7 0.2 30 / 0.6)); }
+  25% { transform: scaleY(1.08) scaleX(0.95); filter: drop-shadow(0 0 8px oklch(0.7 0.2 30 / 0.8)); }
+  50% { transform: scaleY(0.96) scaleX(1.04); }
+  75% { transform: scaleY(1.05) scaleX(0.98); filter: drop-shadow(0 0 7px oklch(0.7 0.2 30 / 0.7)); }
+}
+.holiday-anim-fire { animation: holiday-fire 1.2s ease-in-out infinite; transform-origin: bottom center; }
+
+/* 🕊 Due — flyr opp og ned */
+@keyframes holiday-dove {
+  0%, 100% { transform: translateY(0) rotate(-2deg); }
+  50% { transform: translateY(-4px) rotate(2deg); }
+}
+.holiday-anim-dove { animation: holiday-dove 2.6s ease-in-out infinite; }
+
+/* 🎄 Juletre — gynger forsiktig */
+@keyframes holiday-tree {
+  0%, 100% { transform: rotate(-2deg); filter: drop-shadow(0 0 4px oklch(0.78 0.16 140 / 0.4)); }
+  50% { transform: rotate(2deg); filter: drop-shadow(0 0 6px oklch(0.78 0.16 60 / 0.5)); }
+}
+.holiday-anim-tree { animation: holiday-tree 3s ease-in-out infinite; transform-origin: bottom center; }
+
+/* 🎁 Gave — rister av spenning */
+@keyframes holiday-gift {
+  0%, 100% { transform: rotate(0) scale(1); }
+  10% { transform: rotate(-4deg) scale(1.04); }
+  20% { transform: rotate(4deg) scale(1.04); }
+  30% { transform: rotate(-3deg); }
+  40% { transform: rotate(3deg); }
+  50%, 100% { transform: rotate(0) scale(1); }
+}
+.holiday-anim-gift { animation: holiday-gift 3s ease-in-out infinite; }
