@@ -8,6 +8,7 @@ import { findDeviceFuzzy, readTemp } from "@/lib/homey-match";
 import { HomeyApiActivity } from "@/components/HomeyApiActivity";
 import { HomeyApiPauseToggle } from "@/components/HomeyApiPauseToggle";
 import { HeatersPanel } from "@/components/HeatersPanel";
+import { PulseMonthlyChart } from "@/components/PulseMonthlyChart";
 import { recordHomeyApiCall } from "@/lib/homey-api-tracker";
 import heroImg from "@/assets/smarthus-hero.jpg";
 
@@ -178,15 +179,14 @@ function SmarthusPage() {
     findZonePower((n) => n.includes("hjem") || n.includes("borg") || n.includes("hus")) ??
     (hyttaPower !== null ? totalPower - hyttaPower : totalPower);
 
-  // Pulse-måler (Tibber Pulse / strømmåler på hytta — Øvre Bjørkesetvegen 12)
+  // Pulse-måler (Tibber Pulse / strømmåler på hytta — Øvre Bjørkesetvegen 12).
+  // Vi krever bjørkeset/hytt for å unngå å plukke opp Pulse Tollnes ved en feil.
   const pulseDevice = data.devices.find((d) => {
     const n = (d.name ?? "").toLowerCase();
-    return (
-      n.includes("pulse") ||
-      n.includes("bjørkeset") ||
-      n.includes("bjorkeset") ||
-      n.includes("tibber")
-    );
+    const isPulse = n.includes("pulse") || n.includes("tibber");
+    const isHytta =
+      n.includes("bjørkeset") || n.includes("bjorkeset") || n.includes("hytt");
+    return isPulse && isHytta;
   });
 
   // Tibber Pulse eksponerer effekt via flere mulige capability-id'er.
