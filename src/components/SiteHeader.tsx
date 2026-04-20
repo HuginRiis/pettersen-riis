@@ -1,6 +1,6 @@
-import { Link, useRouter } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
-import { Menu, X, LogOut, ChevronDown, Crown, Swords, Shield, Star } from "lucide-react";
+import { Link, useRouter, useLocation } from "@tanstack/react-router";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Menu, X, LogOut, ChevronDown, ChevronLeft, ChevronRight, Crown, Swords, Shield, Star } from "lucide-react";
 import { logoutFn } from "@/server/auth";
 import { useFavorites } from "@/hooks/use-favorites";
 
