@@ -411,7 +411,7 @@ function SmarthusPage() {
           <Stat
             label="Effekt · Totalt"
             value={totalPower > 0 ? formatPower(totalPower) : "—"}
-            hint="Alle sale"
+            hint="Alle saler"
           />
           {pulseDevice && (
             <Stat
