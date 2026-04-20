@@ -1,7 +1,8 @@
 import { Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { Menu, X, LogOut, ChevronDown, Crown, Swords, Shield } from "lucide-react";
+import { Menu, X, LogOut, ChevronDown, Crown, Swords, Shield, Star } from "lucide-react";
 import { logoutFn } from "@/server/auth";
+import { useFavorites } from "@/hooks/use-favorites";
 
 type RoutePath =
   | "/"
@@ -55,7 +56,7 @@ const groups: NavGroup[] = [
     ],
   },
   {
-    label: "Dyr & Familie",
+    label: "Familie",
     icon: "🐾",
     description: "Alt som angår dine firbeinte følgesvenner — trivsel, aktivitet og omsorg.",
     links: [{ to: "/hundene", label: "Hundene", icon: "🐺" }],
