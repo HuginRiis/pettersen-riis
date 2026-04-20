@@ -4,7 +4,7 @@ import { PageShell, PageHero } from "@/components/PageShell";
 import { AlertsMap } from "@/components/AlertsMap";
 import { NrkTrafficSection } from "@/components/NrkTrafficSection";
 import { getTelemarkAlerts, type TelemarkAlert } from "@/server/met-alerts";
-import heroImg from "@/assets/hero-westeros.jpg";
+import heroImg from "@/assets/hero-alerts.jpg";
 
 export const Route = createFileRoute("/varsler")({
   head: () => ({
