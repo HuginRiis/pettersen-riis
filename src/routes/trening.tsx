@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { PageShell, PageHero } from "@/components/PageShell";
 import { ActivityMap } from "@/components/ActivityMap";
-import { getStravaDashboard, getStravaStatus } from "@/server/strava";
+import { getActivityStreams, getStravaDashboard, getStravaStatus } from "@/server/strava";
 import treningImg from "@/assets/trening.jpg";
 
 export const Route = createFileRoute("/trening")({
@@ -376,51 +376,67 @@ function ActivitiesPaginated({ activities }: { activities: DashOk["activities"] 
           const isRun = a.type.toLowerCase().includes("run");
           return (
             <li key={a.id}>
-              <article className="panel rounded-lg overflow-hidden glow-on-hover relative h-full flex flex-col">
-                <div className="absolute top-2 left-2 z-10 w-7 h-7 rounded-full bg-background/80 border border-primary/40 flex items-center justify-center">
-                  <span className="text-medieval text-primary text-xs leading-none">
-                    {globalIdx}
-                  </span>
-                </div>
+              <a
+                href={`https://www.strava.com/activities/${a.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block h-full"
+                title="Åpne i Strava"
+              >
+                <article className="panel rounded-lg overflow-hidden glow-on-hover relative h-full flex flex-col transition-transform hover:-translate-y-0.5">
+                  <div className="absolute top-2 left-2 z-10 w-7 h-7 rounded-full bg-background/80 border border-primary/40 flex items-center justify-center">
+                    <span className="text-medieval text-primary text-xs leading-none">
+                      {globalIdx}
+                    </span>
+                  </div>
+                  <div
+                    className="absolute top-2 right-2 z-10 px-2 py-0.5 rounded-full bg-[#FC4C02]/90 text-[9px] uppercase tracking-[0.15em] text-white font-medium"
+                    title="Åpne i Strava"
+                  >
+                    Strava ↗
+                  </div>
 
-                {a.polyline ? (
-                  <div className="aspect-[16/9] bg-muted">
-                    <ActivityMap encoded={a.polyline} />
-                  </div>
-                ) : (
-                  <div className="aspect-[16/9] bg-muted/40 flex items-center justify-center">
-                    <span className="text-3xl opacity-30">{activityIcon(a.type)}</span>
-                  </div>
-                )}
+                  {a.polyline ? (
+                    <div className="aspect-[16/9] bg-muted">
+                      <ActivityMap encoded={a.polyline} />
+                    </div>
+                  ) : (
+                    <div className="aspect-[16/9] bg-muted/40 flex items-center justify-center">
+                      <span className="text-3xl opacity-30">{activityIcon(a.type)}</span>
+                    </div>
+                  )}
 
-                <div className="p-3 flex flex-col flex-1">
-                  <div className="flex items-baseline justify-between gap-2 mb-0.5">
-                    <h3 className="text-sm text-primary text-medieval truncate">
-                      {activityIcon(a.type)} {a.name}
-                    </h3>
-                  </div>
-                  <p className="text-[9px] uppercase tracking-[0.2em] text-muted-foreground mb-2 truncate">
-                    {formatDate(a.startDate)} · {a.type}
-                  </p>
+                  <div className="p-3 flex flex-col flex-1">
+                    <div className="flex items-baseline justify-between gap-2 mb-0.5">
+                      <h3 className="text-sm text-primary text-medieval truncate">
+                        {activityIcon(a.type)} {a.name}
+                      </h3>
+                    </div>
+                    <p className="text-[9px] uppercase tracking-[0.2em] text-muted-foreground mb-2 truncate">
+                      {formatDate(a.startDate)} · {a.type}
+                    </p>
 
-                  <div className="grid grid-cols-2 gap-1.5 text-xs text-foreground/90 mt-auto">
-                    <MiniMetric label="Dist" value={formatKm(a.distance)} />
-                    <MiniMetric label="Tid" value={formatDuration(a.movingTime)} />
-                    <MiniMetric
-                      label={isRun ? "Tempo" : "Stigning"}
-                      value={
-                        isRun
-                          ? formatPace(a.distance, a.movingTime)
-                          : `${Math.round(a.elevation)} m`
-                      }
-                    />
-                    <MiniMetric
-                      label="Puls"
-                      value={a.avgHeartrate ? `${Math.round(a.avgHeartrate)}` : "—"}
-                    />
+                    <ActivityStreams activityId={a.id} />
+
+                    <div className="grid grid-cols-2 gap-1.5 text-xs text-foreground/90 mt-2">
+                      <MiniMetric label="Dist" value={formatKm(a.distance)} />
+                      <MiniMetric label="Tid" value={formatDuration(a.movingTime)} />
+                      <MiniMetric
+                        label={isRun ? "Tempo" : "Stigning"}
+                        value={
+                          isRun
+                            ? formatPace(a.distance, a.movingTime)
+                            : `${Math.round(a.elevation)} m`
+                        }
+                      />
+                      <MiniMetric
+                        label="Puls"
+                        value={a.avgHeartrate ? `${Math.round(a.avgHeartrate)}` : "—"}
+                      />
+                    </div>
                   </div>
-                </div>
-              </article>
+                </article>
+              </a>
             </li>
           );
         })}
@@ -471,6 +487,124 @@ function MiniMetric({ label, value }: { label: string; value: string }) {
     </div>
   );
 }
+
+function ActivityStreams({ activityId }: { activityId: number }) {
+  const fetchStreams = useServerFn(getActivityStreams);
+  const [state, setState] = useState<
+    | { kind: "idle" }
+    | { kind: "loading" }
+    | { kind: "ok"; altitude: number[] | null; heartrate: number[] | null }
+    | { kind: "error" }
+  >({ kind: "idle" });
+
+  useEffect(() => {
+    let cancelled = false;
+    setState({ kind: "loading" });
+    fetchStreams({ data: { activityId } })
+      .then((res) => {
+        if (cancelled) return;
+        if (res.ok) {
+          setState({ kind: "ok", altitude: res.altitude, heartrate: res.heartrate });
+        } else {
+          setState({ kind: "error" });
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setState({ kind: "error" });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [activityId, fetchStreams]);
+
+  if (state.kind === "loading" || state.kind === "idle") {
+    return <div className="h-12 rounded bg-muted/30 animate-pulse" />;
+  }
+  if (state.kind === "error") {
+    return null;
+  }
+
+  return (
+    <div className="grid grid-cols-2 gap-2">
+      <Sparkline
+        data={state.altitude}
+        color="hsl(var(--primary))"
+        fill="hsl(var(--primary) / 0.18)"
+        label="Stigning"
+        unit="m"
+      />
+      <Sparkline
+        data={state.heartrate}
+        color="#d96666"
+        fill="rgba(217, 102, 102, 0.18)"
+        label="Puls"
+        unit="bpm"
+      />
+    </div>
+  );
+}
+
+function Sparkline({
+  data,
+  color,
+  fill,
+  label,
+  unit,
+}: {
+  data: number[] | null;
+  color: string;
+  fill: string;
+  label: string;
+  unit: string;
+}) {
+  if (!data || data.length < 2) {
+    return (
+      <div className="rounded border border-primary/10 bg-background/40 p-1.5 flex items-center justify-center h-12">
+        <span className="text-[9px] uppercase tracking-[0.15em] text-muted-foreground">
+          {label} —
+        </span>
+      </div>
+    );
+  }
+  const W = 100;
+  const H = 28;
+  const min = Math.min(...data);
+  const max = Math.max(...data);
+  const range = max - min || 1;
+  const stepX = W / (data.length - 1);
+  const pts = data.map((v, i) => {
+    const x = i * stepX;
+    const y = H - ((v - min) / range) * H;
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  });
+  const linePath = `M${pts.join(" L")}`;
+  const areaPath = `M0,${H} L${pts.join(" L")} L${W},${H} Z`;
+  const last = Math.round(data[data.length - 1]);
+  const peak = Math.round(max);
+
+  return (
+    <div className="rounded border border-primary/10 bg-background/40 p-1.5">
+      <div className="flex items-baseline justify-between mb-0.5">
+        <span className="text-[9px] uppercase tracking-[0.15em] text-muted-foreground">
+          {label}
+        </span>
+        <span className="text-[9px] text-primary/80">
+          {peak}
+          {unit}
+        </span>
+      </div>
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-7" preserveAspectRatio="none">
+        <path d={areaPath} fill={fill} />
+        <path d={linePath} fill="none" stroke={color} strokeWidth={1.2} strokeLinejoin="round" />
+      </svg>
+      <div className="text-[9px] text-muted-foreground text-right leading-none mt-0.5">
+        nå {last}
+        {unit}
+      </div>
+    </div>
+  );
+}
+
 
 function SubHeader({ text }: { text: string }) {
   return (

@@ -55,6 +55,44 @@ export const disconnectStrava = createServerFn({ method: "POST" }).handler(async
   return { ok: true };
 });
 
+type StreamSet = Record<string, { data: number[]; series_type?: string; original_size?: number }>;
+
+function downsample(arr: number[], target: number): number[] {
+  if (arr.length <= target) return arr;
+  const step = arr.length / target;
+  const out: number[] = [];
+  for (let i = 0; i < target; i++) {
+    out.push(arr[Math.floor(i * step)]);
+  }
+  return out;
+}
+
+export const getActivityStreams = createServerFn({ method: "GET" })
+  .inputValidator((input: { activityId: number }) => input)
+  .handler(async ({ data }) => {
+    const auth = await getValidStravaAccessToken();
+    if (!auth) {
+      return { ok: false as const, error: "Ikke koblet til Strava" };
+    }
+    try {
+      const streams = await stravaFetch<StreamSet>(
+        `/activities/${data.activityId}/streams?keys=altitude,heartrate,distance&key_by_type=true`,
+        auth.accessToken,
+      );
+      const altitude = streams.altitude?.data ?? null;
+      const heartrate = streams.heartrate?.data ?? null;
+      return {
+        ok: true as const,
+        altitude: altitude ? downsample(altitude, 60) : null,
+        heartrate: heartrate ? downsample(heartrate, 60) : null,
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Ukjent feil";
+      return { ok: false as const, error: message };
+    }
+  });
+
+
 type AthleteStats = {
   recent_run_totals?: TotalBlock;
   recent_ride_totals?: TotalBlock;
