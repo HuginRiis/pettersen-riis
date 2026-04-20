@@ -933,3 +933,97 @@ function moonPhase(date: Date) {
   else { name = "Nymåne"; icon = "🌑"; }
   return { name, icon, illumination };
 }
+
+// ============================================================
+// Windy live-kart med valgbare lag og tidslinje
+// ============================================================
+
+const WINDY_OVERLAYS: { key: string; label: string; icon: string }[] = [
+  { key: "wind", label: "Vind", icon: "💨" },
+  { key: "rain", label: "Regn", icon: "🌧" },
+  { key: "rainAccu", label: "Akk. nedbør", icon: "☔" },
+  { key: "snowAccu", label: "Snø", icon: "❄️" },
+  { key: "temp", label: "Temperatur", icon: "🌡" },
+  { key: "clouds", label: "Skyer", icon: "☁️" },
+  { key: "thunder", label: "Torden", icon: "⚡" },
+  { key: "pressure", label: "Trykk", icon: "🜨" },
+  { key: "gust", label: "Vindkast", icon: "🌬" },
+  { key: "rh", label: "Fuktighet", icon: "💧" },
+  { key: "waves", label: "Bølger", icon: "🌊" },
+  { key: "visibility", label: "Sikt", icon: "👁" },
+  { key: "fog", label: "Tåke", icon: "🌫" },
+  { key: "uvIndex", label: "UV-indeks", icon: "🔆" },
+  { key: "cape", label: "CAPE (uvær)", icon: "🌩" },
+  { key: "satellite", label: "Satellitt", icon: "🛰" },
+  { key: "radar", label: "Radar", icon: "📡" },
+];
+
+function WindyMap() {
+  const [overlay, setOverlay] = useState<string>("wind");
+
+  const src = useMemo(() => {
+    const params = new URLSearchParams({
+      lat: "59.6",
+      lon: "9.2",
+      detailLat: "59.21",
+      detailLon: "9.61",
+      zoom: "8",
+      level: "surface",
+      overlay,
+      product: "ecmwf",
+      menu: "",
+      message: "true",
+      marker: "",
+      calendar: "now",
+      pressure: "",
+      type: "map",
+      location: "coordinates",
+      detail: "true",
+      metricWind: "m/s",
+      metricTemp: "°C",
+      radarRange: "-1",
+    });
+    return `https://embed.windy.com/embed2.html?${params.toString()}`;
+  }, [overlay]);
+
+  return (
+    <article className="panel rounded-lg p-2 sm:p-3 overflow-hidden">
+      <div className="flex flex-wrap gap-1.5 mb-3 px-1">
+        {WINDY_OVERLAYS.map((o) => {
+          const active = o.key === overlay;
+          return (
+            <button
+              key={o.key}
+              type="button"
+              onClick={() => setOverlay(o.key)}
+              className={
+                "px-2.5 py-1 rounded-md text-xs tracking-wider uppercase border transition-colors " +
+                (active
+                  ? "bg-primary/20 border-primary text-primary shadow-[0_0_12px_color-mix(in_oklab,var(--primary)_30%,transparent)]"
+                  : "bg-background/40 border-border text-muted-foreground hover:text-foreground hover:border-primary/50")
+              }
+              aria-pressed={active}
+            >
+              <span className="mr-1">{o.icon}</span>
+              {o.label}
+            </button>
+          );
+        })}
+      </div>
+      <div className="relative w-full overflow-hidden rounded-md" style={{ aspectRatio: "16 / 11" }}>
+        <iframe
+          key={overlay}
+          title={`Windy live værkart — ${overlay}`}
+          src={src}
+          className="absolute inset-0 w-full h-full border-0"
+          loading="lazy"
+          referrerPolicy="no-referrer"
+          allow="fullscreen"
+        />
+      </div>
+      <p className="text-[10px] tracking-[0.2em] text-muted-foreground/70 uppercase mt-2 text-center">
+        Kart fra Windy.com · Velg lag over · Tidslinje nederst i kartet
+      </p>
+    </article>
+  );
+}
