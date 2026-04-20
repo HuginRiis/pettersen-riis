@@ -207,14 +207,14 @@ function CounselBlock({
   title,
   lines,
 }: {
-  icon: string;
+  icon: ReactNode;
   title: string;
   lines: string[];
 }) {
   return (
     <div className="rounded-md border border-border/70 bg-card/40 p-4">
       <div className="flex items-center gap-2 mb-2">
-        <span className="text-lg" aria-hidden>
+        <span className="shrink-0" aria-hidden>
           {icon}
         </span>
         <h4 className="text-[11px] tracking-[0.3em] uppercase text-primary">{title}</h4>
