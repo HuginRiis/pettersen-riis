@@ -488,6 +488,124 @@ function MiniMetric({ label, value }: { label: string; value: string }) {
   );
 }
 
+function ActivityStreams({ activityId }: { activityId: number }) {
+  const fetchStreams = useServerFn(getActivityStreams);
+  const [state, setState] = useState<
+    | { kind: "idle" }
+    | { kind: "loading" }
+    | { kind: "ok"; altitude: number[] | null; heartrate: number[] | null }
+    | { kind: "error" }
+  >({ kind: "idle" });
+
+  useEffect(() => {
+    let cancelled = false;
+    setState({ kind: "loading" });
+    fetchStreams({ data: { activityId } })
+      .then((res) => {
+        if (cancelled) return;
+        if (res.ok) {
+          setState({ kind: "ok", altitude: res.altitude, heartrate: res.heartrate });
+        } else {
+          setState({ kind: "error" });
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setState({ kind: "error" });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [activityId, fetchStreams]);
+
+  if (state.kind === "loading" || state.kind === "idle") {
+    return <div className="h-12 rounded bg-muted/30 animate-pulse" />;
+  }
+  if (state.kind === "error") {
+    return null;
+  }
+
+  return (
+    <div className="grid grid-cols-2 gap-2">
+      <Sparkline
+        data={state.altitude}
+        color="hsl(var(--primary))"
+        fill="hsl(var(--primary) / 0.18)"
+        label="Stigning"
+        unit="m"
+      />
+      <Sparkline
+        data={state.heartrate}
+        color="#d96666"
+        fill="rgba(217, 102, 102, 0.18)"
+        label="Puls"
+        unit="bpm"
+      />
+    </div>
+  );
+}
+
+function Sparkline({
+  data,
+  color,
+  fill,
+  label,
+  unit,
+}: {
+  data: number[] | null;
+  color: string;
+  fill: string;
+  label: string;
+  unit: string;
+}) {
+  if (!data || data.length < 2) {
+    return (
+      <div className="rounded border border-primary/10 bg-background/40 p-1.5 flex items-center justify-center h-12">
+        <span className="text-[9px] uppercase tracking-[0.15em] text-muted-foreground">
+          {label} —
+        </span>
+      </div>
+    );
+  }
+  const W = 100;
+  const H = 28;
+  const min = Math.min(...data);
+  const max = Math.max(...data);
+  const range = max - min || 1;
+  const stepX = W / (data.length - 1);
+  const pts = data.map((v, i) => {
+    const x = i * stepX;
+    const y = H - ((v - min) / range) * H;
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  });
+  const linePath = `M${pts.join(" L")}`;
+  const areaPath = `M0,${H} L${pts.join(" L")} L${W},${H} Z`;
+  const last = Math.round(data[data.length - 1]);
+  const peak = Math.round(max);
+
+  return (
+    <div className="rounded border border-primary/10 bg-background/40 p-1.5">
+      <div className="flex items-baseline justify-between mb-0.5">
+        <span className="text-[9px] uppercase tracking-[0.15em] text-muted-foreground">
+          {label}
+        </span>
+        <span className="text-[9px] text-primary/80">
+          {peak}
+          {unit}
+        </span>
+      </div>
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-7" preserveAspectRatio="none">
+        <path d={areaPath} fill={fill} />
+        <path d={linePath} fill="none" stroke={color} strokeWidth={1.2} strokeLinejoin="round" />
+      </svg>
+      <div className="text-[9px] text-muted-foreground text-right leading-none mt-0.5">
+        nå {last}
+        {unit}
+      </div>
+    </div>
+  );
+}
+
+
 function SubHeader({ text }: { text: string }) {
   return (
     <div className="ornate-divider mb-6 mt-12">
