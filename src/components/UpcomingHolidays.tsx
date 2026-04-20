@@ -83,7 +83,7 @@ export function UpcomingHolidays() {
   const yearNow = today.getFullYear();
   const all = [...getNorwegianHolidays(yearNow), ...getNorwegianHolidays(yearNow + 1)];
 
-  const horizon = addDays(today, 14);
+  const horizon = addDays(today, 30);
   const upcoming = all
     .filter((h) => h.date >= today && h.date <= horizon)
     .sort((a, b) => a.date.getTime() - b.date.getTime());
