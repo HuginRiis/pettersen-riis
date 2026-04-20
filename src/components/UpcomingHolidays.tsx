@@ -3,7 +3,7 @@
  * Beregner bevegelige helligdager (påske m.fl.) med Meeus/Butcher-algoritmen.
  */
 
-type Holiday = { date: Date; name: string; emoji: string };
+type Holiday = { date: Date; name: string; emoji: string; anim: string };
 
 function computeEaster(year: number): Date {
   // Meeus/Jones/Butcher algoritme — gregoriansk påskedag
