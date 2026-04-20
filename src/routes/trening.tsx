@@ -528,8 +528,8 @@ function ActivityStreams({ activityId }: { activityId: number }) {
     <div className="grid grid-cols-2 gap-2">
       <Sparkline
         data={state.altitude}
-        color="hsl(var(--primary))"
-        fill="hsl(var(--primary) / 0.18)"
+        color="#5aa9ff"
+        fill="rgba(90, 169, 255, 0.18)"
         label="Stigning"
         unit="m"
       />
