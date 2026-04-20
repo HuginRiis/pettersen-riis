@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { Star } from "lucide-react";
 import { PageShell } from "@/components/PageShell";
 import { HouseHero } from "@/components/HouseHero";
 import { WeatherWidget } from "@/components/WeatherWidget";
@@ -7,6 +8,7 @@ import { NetatmoWeatherStationSection } from "@/components/NetatmoWeatherStation
 import { MaesterCounsel } from "@/components/MaesterCounsel";
 import { BirthdayBanner } from "@/components/BirthdayBanner";
 import { UpcomingHolidays } from "@/components/UpcomingHolidays";
+import { useFavorites } from "@/hooks/use-favorites";
 import arnePortrait from "@/assets/arne-portrait.jpg";
 import rebekkaPortrait from "@/assets/rebekka-portrait.jpg";
 import celinePortrait from "@/assets/celine-portrait.jpg";
@@ -328,6 +330,7 @@ function HallCard({
     | "/var"
     | "/pollen"
     | "/vakttarnet"
+    | "/varsler"
     | "/hytta"
     | "/hundene"
     | "/trening"
@@ -344,17 +347,37 @@ function HallCard({
   icon: string;
 }) {
   const disablePreload = to === "/smarthus" || to === "/var" || to === "/steintavle";
+  const { isFavorite, toggleFavorite } = useFavorites();
+  const fav = isFavorite(to);
   return (
-    <Link
-      to={to}
-      preload={disablePreload ? false : undefined}
-      className="panel rounded-lg p-6 glow-on-hover block group"
-    >
-      <div className="text-3xl mb-3">{icon}</div>
-      <h3 className="text-xl text-primary group-hover:text-gold transition-colors">
-        {title}
-      </h3>
-      <p className="mt-2 text-sm text-muted-foreground">{desc}</p>
-    </Link>
+    <div className="relative">
+      <button
+        type="button"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          void toggleFavorite(to, title, icon);
+        }}
+        className="absolute top-2 right-2 z-10 p-1.5 rounded-full bg-background/70 backdrop-blur border border-border hover:border-primary hover:bg-primary/10 transition-colors"
+        aria-label={fav ? `Fjern ${title} fra favoritter` : `Legg ${title} til favoritter`}
+        title={fav ? "Fjern fra favoritter" : "Legg til favoritter"}
+      >
+        <Star
+          size={14}
+          className={fav ? "fill-primary text-primary" : "text-muted-foreground"}
+        />
+      </button>
+      <Link
+        to={to}
+        preload={disablePreload ? false : undefined}
+        className="panel rounded-lg p-6 glow-on-hover block group"
+      >
+        <div className="text-3xl mb-3">{icon}</div>
+        <h3 className="text-xl text-primary group-hover:text-gold transition-colors">
+          {title}
+        </h3>
+        <p className="mt-2 text-sm text-muted-foreground">{desc}</p>
+      </Link>
+    </div>
   );
 }
