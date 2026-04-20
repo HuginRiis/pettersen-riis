@@ -85,9 +85,25 @@ export function SiteHeader() {
   const [openGroup, setOpenGroup] = useState<string | null>(null);
   const [openMobileGroup, setOpenMobileGroup] = useState<string | null>(null);
   const router = useRouter();
+  const location = useLocation();
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const navRef = useRef<HTMLDivElement | null>(null);
   const { favorites } = useFavorites();
+
+  // Flat ordered list of all routes for prev/next navigation
+  const orderedRoutes = useMemo<RoutePath[]>(() => {
+    const all: RoutePath[] = ["/"];
+    for (const g of groups) for (const l of g.links) all.push(l.to);
+    return all;
+  }, []);
+
+  const { prevRoute, nextRoute } = useMemo(() => {
+    const idx = orderedRoutes.indexOf(location.pathname as RoutePath);
+    if (idx === -1) return { prevRoute: orderedRoutes[orderedRoutes.length - 1], nextRoute: orderedRoutes[0] };
+    const prev = orderedRoutes[(idx - 1 + orderedRoutes.length) % orderedRoutes.length];
+    const next = orderedRoutes[(idx + 1) % orderedRoutes.length];
+    return { prevRoute: prev, nextRoute: next };
+  }, [orderedRoutes, location.pathname]);
 
   // Lukk dropdown ved klikk utenfor
   useEffect(() => {
