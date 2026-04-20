@@ -264,7 +264,7 @@ export const getStravaDashboard = createServerFn({ method: "GET" }).handler(asyn
             biggestClimb: stats.biggest_climb_elevation_gain ?? null,
           }
         : null,
-      activities: activities.slice(0, 10).map((a) => ({
+      activities: activities.slice(0, 30).map((a) => ({
         id: a.id,
         name: a.name,
         type: a.sport_type || a.type,
