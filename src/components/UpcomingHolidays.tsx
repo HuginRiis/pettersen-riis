@@ -83,7 +83,7 @@ export function UpcomingHolidays() {
   const yearNow = today.getFullYear();
   const all = [...getNorwegianHolidays(yearNow), ...getNorwegianHolidays(yearNow + 1)];
 
-  const horizon = addDays(today, 14);
+  const horizon = addDays(today, 30);
   const upcoming = all
     .filter((h) => h.date >= today && h.date <= horizon)
     .sort((a, b) => a.date.getTime() - b.date.getTime());
@@ -94,7 +94,7 @@ export function UpcomingHolidays() {
     <section className="container mx-auto px-4 pb-16">
       <div className="ornate-divider mb-8">
         <span className="text-display tracking-[0.3em] text-primary text-sm uppercase">
-          Helligdager innen kort tid
+          Helligdager innen 30 dager
         </span>
       </div>
 
