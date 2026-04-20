@@ -8,7 +8,7 @@ import { findDeviceFuzzy, readTemp } from "@/lib/homey-match";
 import { HomeyApiActivity } from "@/components/HomeyApiActivity";
 import { HomeyApiPauseToggle } from "@/components/HomeyApiPauseToggle";
 import { HeatersPanel } from "@/components/HeatersPanel";
-import { PulseMonthlyChart } from "@/components/PulseMonthlyChart";
+import { PulseHourlyPanel } from "@/components/PulseHourlyPanel";
 import { recordHomeyApiCall } from "@/lib/homey-api-tracker";
 import heroImg from "@/assets/smarthus-hero.jpg";
 
@@ -562,7 +562,11 @@ function SmarthusPage() {
       />
 
       <section className="container mx-auto px-4 pt-8">
-        <PulseMonthlyChart />
+        <PulseHourlyPanel
+          location="tollnes"
+          title="Strømforbruk · Tollnes (hjemme)"
+          subtitle="Tibber — siste 24 timer, oppdateres hvert minutt"
+        />
       </section>
 
       <section className="container mx-auto px-4 py-12 space-y-12">
