@@ -87,6 +87,7 @@ export function SiteHeader() {
   const router = useRouter();
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const navRef = useRef<HTMLDivElement | null>(null);
+  const { favorites } = useFavorites();
 
   // Lukk dropdown ved klikk utenfor
   useEffect(() => {
@@ -166,6 +167,19 @@ export function SiteHeader() {
           >
             Hjem
           </Link>
+
+          {favorites.map((f) => (
+            <Link
+              key={f.id}
+              to={f.path as RoutePath}
+              preload={HOMEY_BACKED_ROUTES.includes(f.path as RoutePath) ? false : undefined}
+              className="px-2 py-2 text-sm tracking-wider uppercase text-primary/90 hover:text-primary transition-colors flex items-center gap-1 data-[status=active]:font-semibold"
+              title={f.title}
+            >
+              <Star size={11} className="fill-primary text-primary" />
+              <span>{f.icon ? `${f.icon} ` : ""}{f.title}</span>
+            </Link>
+          ))}
 
           {groups.map((g) => {
             const isOpen = openGroup === g.label;
