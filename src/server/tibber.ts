@@ -43,7 +43,14 @@ function classifyHome(h: HomeNode): "hytta" | "tollnes" | null {
   if (hay.includes("bjørkeset") || hay.includes("bjorkeset") || hay.includes("hytt")) {
     return "hytta";
   }
-  if (hay.includes("tollnes")) return "tollnes";
+  if (
+    hay.includes("tollnes") ||
+    hay.includes("lensmannsveg") ||
+    hay.includes("lensmannsvei") ||
+    hay.includes("nordre lensmann")
+  ) {
+    return "tollnes";
+  }
   return null;
 }
 
