@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { PageShell, PageHero } from "@/components/PageShell";
 import { LastUpdated } from "@/components/LastUpdated";
 import { LivePollen } from "@/components/LivePollen";
-import heroImg from "@/assets/hero-pollen.jpg";
+import heroImg from "@/assets/got-pollen.jpg";
 
 export const Route = createFileRoute("/pollen")({
   head: () => ({

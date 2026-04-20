@@ -9,7 +9,7 @@ import type {
   LoginAttemptRow,
   PageviewRow,
 } from "@/server/visitors";
-import heroImg from "@/assets/hero-vakttarnet.jpg";
+import heroImg from "@/assets/got-vakttarnet.jpg";
 import { Eye, Globe2, Smartphone, Monitor, Tablet, Clock, Crown, ShieldAlert, Map as MapIcon } from "lucide-react";
 
 export const Route = createFileRoute("/vakttarnet")({

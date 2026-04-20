@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { PageShell, PageHero } from "@/components/PageShell";
 import { supabase } from "@/integrations/supabase/client";
-import heroImg from "@/assets/hero-westeros.jpg";
+import heroImg from "@/assets/got-agenda.jpg";
 import { Trash2, Plus } from "lucide-react";
 
 export const Route = createFileRoute("/agenda")({
