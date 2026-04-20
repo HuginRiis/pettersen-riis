@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { getTelemarkAlerts, type TelemarkAlert } from "@/server/met-alerts";
 import { alertsToCounselLines, severityBadge } from "@/lib/telemark-alerts-got";
+import { CloakIcon, HorseCartIcon, PollenIcon } from "@/components/MaesterIcons";
 
 /**
  * MaesterCounsel — "Hærmesterens råd"
@@ -171,9 +172,21 @@ export function MaesterCounsel() {
 
         {advice && (
           <div className="mt-6 grid md:grid-cols-3 gap-5">
-            <CounselBlock icon="🧥" title="Bekledning" lines={advice.clothing} />
-            <CounselBlock icon="🐴" title="Hest & kjerre" lines={advice.travel} />
-            <CounselBlock icon="🌿" title="Pollen & plager" lines={advice.pollen} />
+            <CounselBlock
+              icon={<CloakIcon className="w-8 h-8 text-primary" />}
+              title="Bekledning"
+              lines={advice.clothing}
+            />
+            <CounselBlock
+              icon={<HorseCartIcon className="w-10 h-8 text-primary" />}
+              title="Hest & kjerre"
+              lines={advice.travel}
+            />
+            <CounselBlock
+              icon={<PollenIcon className="w-8 h-8 text-primary" />}
+              title="Pollen & plager"
+              lines={advice.pollen}
+            />
           </div>
         )}
 
@@ -194,14 +207,14 @@ function CounselBlock({
   title,
   lines,
 }: {
-  icon: string;
+  icon: ReactNode;
   title: string;
   lines: string[];
 }) {
   return (
     <div className="rounded-md border border-border/70 bg-card/40 p-4">
       <div className="flex items-center gap-2 mb-2">
-        <span className="text-lg" aria-hidden>
+        <span className="shrink-0" aria-hidden>
           {icon}
         </span>
         <h4 className="text-[11px] tracking-[0.3em] uppercase text-primary">{title}</h4>
