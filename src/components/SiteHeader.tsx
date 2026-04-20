@@ -181,18 +181,18 @@ export function SiteHeader() {
             </Link>
           ))}
 
-          {groups.map((g) => {
-            const isOpen = openGroup === g.label;
+          {(() => {
+            const isOpen = openGroup === "__meny";
             return (
-              <div key={g.label} className="relative">
+              <div className="relative">
                 <button
                   type="button"
-                  onClick={() => setOpenGroup(isOpen ? null : g.label)}
+                  onClick={() => setOpenGroup(isOpen ? null : "__meny")}
                   className="px-3 py-2 text-sm tracking-wider uppercase text-muted-foreground hover:text-primary transition-colors flex items-center gap-1"
                   aria-expanded={isOpen}
                   aria-haspopup="menu"
                 >
-                  <span>{g.label}</span>
+                  <span>Meny</span>
                   <ChevronDown
                     size={12}
                     className={`transition-transform ${isOpen ? "rotate-180" : ""}`}
@@ -201,37 +201,38 @@ export function SiteHeader() {
                 {isOpen && (
                   <div
                     role="menu"
-                    className="absolute left-0 top-full mt-2 w-72 panel rounded-lg border border-border bg-card/95 backdrop-blur shadow-lg p-3 z-50"
+                    className="absolute right-0 top-full mt-2 w-[34rem] max-w-[calc(100vw-2rem)] panel rounded-lg border border-border bg-card/95 backdrop-blur shadow-lg p-4 z-50 grid grid-cols-2 gap-4"
                   >
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-lg">{g.icon}</span>
-                      <span className="text-[10px] tracking-[0.3em] uppercase text-primary">
-                        {g.label}
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-muted-foreground italic mb-3 leading-snug">
-                      {g.description}
-                    </p>
-                    <ul className="flex flex-col">
-                      {g.links.map((l) => (
-                        <li key={l.to}>
-                          <Link
-                            to={l.to}
-                            preload={HOMEY_BACKED_ROUTES.includes(l.to) ? false : undefined}
-                            onClick={() => setOpenGroup(null)}
-                            className="flex items-center gap-2 px-2 py-2 rounded text-sm tracking-wider uppercase text-muted-foreground hover:text-primary hover:bg-primary/5 data-[status=active]:text-primary data-[status=active]:font-semibold"
-                          >
-                            {l.icon && <span className="text-base">{l.icon}</span>}
-                            <span>{l.label}</span>
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
+                    {groups.map((g) => (
+                      <div key={g.label}>
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <span className="text-base">{g.icon}</span>
+                          <span className="text-[10px] tracking-[0.3em] uppercase text-primary">
+                            {g.label}
+                          </span>
+                        </div>
+                        <ul className="flex flex-col">
+                          {g.links.map((l) => (
+                            <li key={l.to}>
+                              <Link
+                                to={l.to}
+                                preload={HOMEY_BACKED_ROUTES.includes(l.to) ? false : undefined}
+                                onClick={() => setOpenGroup(null)}
+                                className="flex items-center gap-2 px-2 py-1.5 rounded text-xs tracking-wider uppercase text-muted-foreground hover:text-primary hover:bg-primary/5 data-[status=active]:text-primary data-[status=active]:font-semibold"
+                              >
+                                {l.icon && <span className="text-sm">{l.icon}</span>}
+                                <span>{l.label}</span>
+                              </Link>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
             );
-          })}
+          })()}
 
           <button
             onClick={handleLogout}
