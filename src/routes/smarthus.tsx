@@ -561,6 +561,10 @@ function SmarthusPage() {
         emptyHint="Ingen varmeovner med termostat funnet for Borgen i Homey."
       />
 
+      <section className="container mx-auto px-4 pt-8">
+        <PulseMonthlyChart />
+      </section>
+
       <section className="container mx-auto px-4 py-12 space-y-12">
         {zoneEntries.map(([zoneKey, devices]) => {
           const zoneName =
