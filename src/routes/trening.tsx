@@ -356,76 +356,119 @@ function DashboardView({ dash }: { dash: DashOk }) {
 
       {/* Aktiviteter */}
       <SubHeader text="De siste dåder" />
-      <ol className="space-y-6">
-        {dash.activities.map((a, idx) => (
-          <li key={a.id}>
-            <article className="panel rounded-lg overflow-hidden glow-on-hover relative">
-              <div className="absolute top-3 left-3 z-10 w-10 h-10 rounded-full bg-background/80 border border-primary/40 flex items-center justify-center">
-                <span className="text-medieval text-primary text-lg leading-none">
-                  {romanNumeral(idx + 1)}
-                </span>
-              </div>
+      <ActivitiesPaginated activities={dash.activities} />
+    </>
+  );
+}
 
-              {a.polyline ? (
-                <div className="aspect-[16/7] bg-muted">
-                  <ActivityMap encoded={a.polyline} />
-                </div>
-              ) : (
-                <div className="aspect-[16/7] bg-muted/40 flex items-center justify-center">
-                  <span className="text-4xl opacity-30">⚔</span>
-                </div>
-              )}
+function ActivitiesPaginated({ activities }: { activities: DashOk["activities"] }) {
+  const PAGE_SIZE = 9;
+  const [page, setPage] = useState(0);
+  const totalPages = Math.max(1, Math.ceil(activities.length / PAGE_SIZE));
+  const start = page * PAGE_SIZE;
+  const slice = activities.slice(start, start + PAGE_SIZE);
 
-              <div className="p-5">
-                <div className="flex items-baseline justify-between gap-3 mb-1">
-                  <h3 className="text-xl text-primary text-medieval truncate">
-                    {activityIcon(a.type)} {a.name}
-                  </h3>
-                  <span className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground shrink-0">
-                    {formatDate(a.startDate)}
+  return (
+    <>
+      <ol className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {slice.map((a, idx) => {
+          const globalIdx = start + idx + 1;
+          const isRun = a.type.toLowerCase().includes("run");
+          return (
+            <li key={a.id}>
+              <article className="panel rounded-lg overflow-hidden glow-on-hover relative h-full flex flex-col">
+                <div className="absolute top-2 left-2 z-10 w-7 h-7 rounded-full bg-background/80 border border-primary/40 flex items-center justify-center">
+                  <span className="text-medieval text-primary text-xs leading-none">
+                    {globalIdx}
                   </span>
                 </div>
-                <p className="text-[11px] uppercase tracking-[0.25em] text-muted-foreground mb-4">
-                  {a.type}
-                  {a.kudos > 0 && (
-                    <span className="ml-3 text-primary/70">★ {a.kudos} hyllester</span>
-                  )}
-                  {a.achievements > 0 && (
-                    <span className="ml-3 text-primary/70">⚜ {a.achievements} bragder</span>
-                  )}
-                </p>
 
-                <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 text-sm text-foreground/90">
-                  <Metric label="Distanse" value={formatKm(a.distance)} icon="🛡" />
-                  <Metric label="Tid" value={formatDuration(a.movingTime)} icon="⌛" />
-                  <Metric
-                    label={a.type.toLowerCase().includes("run") ? "Tempo" : "Stigning"}
-                    value={
-                      a.type.toLowerCase().includes("run")
-                        ? formatPace(a.distance, a.movingTime)
-                        : `${Math.round(a.elevation)} m`
-                    }
-                    icon={a.type.toLowerCase().includes("run") ? "🏹" : "⛰"}
-                  />
-                  <Metric
-                    label="Snittfart"
-                    value={formatSpeedKmh(a.avgSpeed)}
-                    icon="💨"
-                    hint={a.maxSpeed ? `maks ${formatSpeedKmh(a.maxSpeed)}` : undefined}
-                  />
-                  <Metric
-                    label="Snittpuls"
-                    value={a.avgHeartrate ? `${Math.round(a.avgHeartrate)} bpm` : "—"}
-                    icon="❤"
-                    hint={a.maxHeartrate ? `maks ${Math.round(a.maxHeartrate)}` : undefined}
-                  />
+                {a.polyline ? (
+                  <div className="aspect-[16/9] bg-muted">
+                    <ActivityMap encoded={a.polyline} />
+                  </div>
+                ) : (
+                  <div className="aspect-[16/9] bg-muted/40 flex items-center justify-center">
+                    <span className="text-3xl opacity-30">{activityIcon(a.type)}</span>
+                  </div>
+                )}
+
+                <div className="p-3 flex flex-col flex-1">
+                  <div className="flex items-baseline justify-between gap-2 mb-0.5">
+                    <h3 className="text-sm text-primary text-medieval truncate">
+                      {activityIcon(a.type)} {a.name}
+                    </h3>
+                  </div>
+                  <p className="text-[9px] uppercase tracking-[0.2em] text-muted-foreground mb-2 truncate">
+                    {formatDate(a.startDate)} · {a.type}
+                  </p>
+
+                  <div className="grid grid-cols-2 gap-1.5 text-xs text-foreground/90 mt-auto">
+                    <MiniMetric label="Dist" value={formatKm(a.distance)} />
+                    <MiniMetric label="Tid" value={formatDuration(a.movingTime)} />
+                    <MiniMetric
+                      label={isRun ? "Tempo" : "Stigning"}
+                      value={
+                        isRun
+                          ? formatPace(a.distance, a.movingTime)
+                          : `${Math.round(a.elevation)} m`
+                      }
+                    />
+                    <MiniMetric
+                      label="Puls"
+                      value={a.avgHeartrate ? `${Math.round(a.avgHeartrate)}` : "—"}
+                    />
+                  </div>
                 </div>
-              </div>
-            </article>
-          </li>
-        ))}
+              </article>
+            </li>
+          );
+        })}
       </ol>
+
+      {totalPages > 1 && (
+        <div className="mt-6 flex items-center justify-center gap-2 flex-wrap">
+          <button
+            onClick={() => setPage((p) => Math.max(0, p - 1))}
+            disabled={page === 0}
+            className="px-3 py-1.5 rounded border border-primary/30 text-xs uppercase tracking-[0.2em] text-muted-foreground hover:text-primary hover:border-primary disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            ← Forrige
+          </button>
+          {Array.from({ length: totalPages }).map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setPage(i)}
+              className={`w-8 h-8 rounded border text-xs text-medieval transition-colors ${
+                i === page
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-primary/20 text-muted-foreground hover:text-primary hover:border-primary/50"
+              }`}
+            >
+              {i + 1}
+            </button>
+          ))}
+          <button
+            onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+            disabled={page === totalPages - 1}
+            className="px-3 py-1.5 rounded border border-primary/30 text-xs uppercase tracking-[0.2em] text-muted-foreground hover:text-primary hover:border-primary disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            Neste →
+          </button>
+        </div>
+      )}
     </>
+  );
+}
+
+function MiniMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded border border-primary/15 bg-background/40 px-1.5 py-1">
+      <div className="text-[9px] uppercase tracking-[0.15em] text-muted-foreground leading-tight">
+        {label}
+      </div>
+      <div className="text-xs text-primary leading-tight mt-0.5 truncate">{value}</div>
+    </div>
   );
 }
 
