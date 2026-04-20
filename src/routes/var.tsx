@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { PageShell, PageHero } from "@/components/PageShell";
 import { LastUpdated } from "@/components/LastUpdated";
-import heroImg from "@/assets/hero-westeros.jpg";
+import heroImg from "@/assets/hero-weather.jpg";
 import { getHomeySnapshot } from "@/server/homey";
 import { findDeviceFuzzy, type DeviceLike } from "@/lib/homey-match";
 import { getTollnesAlerts, type AlertsResult, type MetAlert } from "@/server/lightning";
