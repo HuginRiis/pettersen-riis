@@ -382,7 +382,7 @@ function SmarthusPage() {
       <section className="container mx-auto px-4 pt-6 space-y-4">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Stat label="Tjenere" value={String(totalDevices)} />
-          <Stat label="Sale" value={String(zoneEntries.length)} />
+          <Stat label="Saler" value={String(zoneEntries.length)} />
           <Stat
             label="Tente ildsteder"
             value={`${litLights} / ${lights.length}`}
@@ -411,7 +411,7 @@ function SmarthusPage() {
           <Stat
             label="Effekt · Totalt"
             value={totalPower > 0 ? formatPower(totalPower) : "—"}
-            hint="Alle sale"
+            hint="Alle saler"
           />
           {pulseDevice && (
             <Stat
