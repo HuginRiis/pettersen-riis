@@ -48,7 +48,7 @@ const groups: NavGroup[] = [
       "Kontroll over hjem og eiendom — fra digital borg til kreative sysler og faste beskjeder.",
     links: [
       { to: "/hytta", label: "Hytta", icon: "🏔" },
-      { to: "/smarthus", label: "Borgens Smarthus", icon: "🏰" },
+      { to: "/smarthus", label: "Smartborg", icon: "🏰" },
       { to: "/oppussing-borgen", label: "Prosjekter på Borgen", icon: "🔨" },
       { to: "/oppussing-hytta", label: "Prosjekter på hytta", icon: "🪵" },
       { to: "/brodering", label: "Brodering", icon: "🧵" },
