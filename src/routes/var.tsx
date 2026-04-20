@@ -354,21 +354,7 @@ function WeatherPage() {
 
         {/* === LIVE VÆRKART === */}
         <Block title="Stormvaktens Kart · Live vær over Telemark & Buskerud">
-          <article className="panel rounded-lg p-2 sm:p-3 overflow-hidden">
-            <div className="relative w-full overflow-hidden rounded-md" style={{ aspectRatio: "16 / 10" }}>
-              <iframe
-                title="Windy live værkart over Telemark og Buskerud"
-                src="https://embed.windy.com/embed2.html?lat=59.6&lon=9.2&detailLat=59.21&detailLon=9.61&width=650&height=450&zoom=8&level=surface&overlay=wind&product=ecmwf&menu=&message=&marker=&calendar=now&pressure=&type=map&location=coordinates&detail=&metricWind=m%2Fs&metricTemp=%C2%B0C&radarRange=-1"
-                className="absolute inset-0 w-full h-full border-0"
-                loading="lazy"
-                referrerPolicy="no-referrer"
-                allow="fullscreen"
-              />
-            </div>
-            <p className="text-[10px] tracking-[0.2em] text-muted-foreground/70 uppercase mt-2 text-center">
-              Kart fra Windy.com · Vind, regn og temperatur over Sør-Norge
-            </p>
-          </article>
+          <WindyMap />
         </Block>
 
         <p className="text-xs text-muted-foreground italic">
