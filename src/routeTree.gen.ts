@@ -27,6 +27,7 @@ import { Route as HundeneRouteImport } from './routes/hundene'
 import { Route as BroderingRouteImport } from './routes/brodering'
 import { Route as AgendaRouteImport } from './routes/agenda'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as HooksLogPulseRouteImport } from './routes/hooks.log-pulse'
 import { Route as ApiStravaStartRouteImport } from './routes/api.strava.start'
 import { Route as ApiStravaCallbackRouteImport } from './routes/api.strava.callback'
 import { Route as ApiHomeyStartRouteImport } from './routes/api.homey.start'
@@ -122,6 +123,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const HooksLogPulseRoute = HooksLogPulseRouteImport.update({
+  id: '/hooks/log-pulse',
+  path: '/hooks/log-pulse',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiStravaStartRoute = ApiStravaStartRouteImport.update({
   id: '/api/strava/start',
   path: '/api/strava/start',
@@ -162,6 +168,7 @@ export interface FileRoutesByFullPath {
   '/vakttarnet': typeof VakttarnetRoute
   '/var': typeof VarRoute
   '/varsler': typeof VarslerRoute
+  '/hooks/log-pulse': typeof HooksLogPulseRoute
   '/api/homey/callback': typeof ApiHomeyCallbackRoute
   '/api/homey/start': typeof ApiHomeyStartRoute
   '/api/strava/callback': typeof ApiStravaCallbackRoute
@@ -186,6 +193,7 @@ export interface FileRoutesByTo {
   '/vakttarnet': typeof VakttarnetRoute
   '/var': typeof VarRoute
   '/varsler': typeof VarslerRoute
+  '/hooks/log-pulse': typeof HooksLogPulseRoute
   '/api/homey/callback': typeof ApiHomeyCallbackRoute
   '/api/homey/start': typeof ApiHomeyStartRoute
   '/api/strava/callback': typeof ApiStravaCallbackRoute
@@ -211,6 +219,7 @@ export interface FileRoutesById {
   '/vakttarnet': typeof VakttarnetRoute
   '/var': typeof VarRoute
   '/varsler': typeof VarslerRoute
+  '/hooks/log-pulse': typeof HooksLogPulseRoute
   '/api/homey/callback': typeof ApiHomeyCallbackRoute
   '/api/homey/start': typeof ApiHomeyStartRoute
   '/api/strava/callback': typeof ApiStravaCallbackRoute
@@ -237,6 +246,7 @@ export interface FileRouteTypes {
     | '/vakttarnet'
     | '/var'
     | '/varsler'
+    | '/hooks/log-pulse'
     | '/api/homey/callback'
     | '/api/homey/start'
     | '/api/strava/callback'
@@ -261,6 +271,7 @@ export interface FileRouteTypes {
     | '/vakttarnet'
     | '/var'
     | '/varsler'
+    | '/hooks/log-pulse'
     | '/api/homey/callback'
     | '/api/homey/start'
     | '/api/strava/callback'
@@ -285,6 +296,7 @@ export interface FileRouteTypes {
     | '/vakttarnet'
     | '/var'
     | '/varsler'
+    | '/hooks/log-pulse'
     | '/api/homey/callback'
     | '/api/homey/start'
     | '/api/strava/callback'
@@ -310,6 +322,7 @@ export interface RootRouteChildren {
   VakttarnetRoute: typeof VakttarnetRoute
   VarRoute: typeof VarRoute
   VarslerRoute: typeof VarslerRoute
+  HooksLogPulseRoute: typeof HooksLogPulseRoute
   ApiHomeyCallbackRoute: typeof ApiHomeyCallbackRoute
   ApiHomeyStartRoute: typeof ApiHomeyStartRoute
   ApiStravaCallbackRoute: typeof ApiStravaCallbackRoute
@@ -444,6 +457,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/hooks/log-pulse': {
+      id: '/hooks/log-pulse'
+      path: '/hooks/log-pulse'
+      fullPath: '/hooks/log-pulse'
+      preLoaderRoute: typeof HooksLogPulseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/strava/start': {
       id: '/api/strava/start'
       path: '/api/strava/start'
@@ -494,6 +514,7 @@ const rootRouteChildren: RootRouteChildren = {
   VakttarnetRoute: VakttarnetRoute,
   VarRoute: VarRoute,
   VarslerRoute: VarslerRoute,
+  HooksLogPulseRoute: HooksLogPulseRoute,
   ApiHomeyCallbackRoute: ApiHomeyCallbackRoute,
   ApiHomeyStartRoute: ApiHomeyStartRoute,
   ApiStravaCallbackRoute: ApiStravaCallbackRoute,
