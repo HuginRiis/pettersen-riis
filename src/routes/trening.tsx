@@ -376,51 +376,67 @@ function ActivitiesPaginated({ activities }: { activities: DashOk["activities"] 
           const isRun = a.type.toLowerCase().includes("run");
           return (
             <li key={a.id}>
-              <article className="panel rounded-lg overflow-hidden glow-on-hover relative h-full flex flex-col">
-                <div className="absolute top-2 left-2 z-10 w-7 h-7 rounded-full bg-background/80 border border-primary/40 flex items-center justify-center">
-                  <span className="text-medieval text-primary text-xs leading-none">
-                    {globalIdx}
-                  </span>
-                </div>
+              <a
+                href={`https://www.strava.com/activities/${a.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block h-full"
+                title="Åpne i Strava"
+              >
+                <article className="panel rounded-lg overflow-hidden glow-on-hover relative h-full flex flex-col transition-transform hover:-translate-y-0.5">
+                  <div className="absolute top-2 left-2 z-10 w-7 h-7 rounded-full bg-background/80 border border-primary/40 flex items-center justify-center">
+                    <span className="text-medieval text-primary text-xs leading-none">
+                      {globalIdx}
+                    </span>
+                  </div>
+                  <div
+                    className="absolute top-2 right-2 z-10 px-2 py-0.5 rounded-full bg-[#FC4C02]/90 text-[9px] uppercase tracking-[0.15em] text-white font-medium"
+                    title="Åpne i Strava"
+                  >
+                    Strava ↗
+                  </div>
 
-                {a.polyline ? (
-                  <div className="aspect-[16/9] bg-muted">
-                    <ActivityMap encoded={a.polyline} />
-                  </div>
-                ) : (
-                  <div className="aspect-[16/9] bg-muted/40 flex items-center justify-center">
-                    <span className="text-3xl opacity-30">{activityIcon(a.type)}</span>
-                  </div>
-                )}
+                  {a.polyline ? (
+                    <div className="aspect-[16/9] bg-muted">
+                      <ActivityMap encoded={a.polyline} />
+                    </div>
+                  ) : (
+                    <div className="aspect-[16/9] bg-muted/40 flex items-center justify-center">
+                      <span className="text-3xl opacity-30">{activityIcon(a.type)}</span>
+                    </div>
+                  )}
 
-                <div className="p-3 flex flex-col flex-1">
-                  <div className="flex items-baseline justify-between gap-2 mb-0.5">
-                    <h3 className="text-sm text-primary text-medieval truncate">
-                      {activityIcon(a.type)} {a.name}
-                    </h3>
-                  </div>
-                  <p className="text-[9px] uppercase tracking-[0.2em] text-muted-foreground mb-2 truncate">
-                    {formatDate(a.startDate)} · {a.type}
-                  </p>
+                  <div className="p-3 flex flex-col flex-1">
+                    <div className="flex items-baseline justify-between gap-2 mb-0.5">
+                      <h3 className="text-sm text-primary text-medieval truncate">
+                        {activityIcon(a.type)} {a.name}
+                      </h3>
+                    </div>
+                    <p className="text-[9px] uppercase tracking-[0.2em] text-muted-foreground mb-2 truncate">
+                      {formatDate(a.startDate)} · {a.type}
+                    </p>
 
-                  <div className="grid grid-cols-2 gap-1.5 text-xs text-foreground/90 mt-auto">
-                    <MiniMetric label="Dist" value={formatKm(a.distance)} />
-                    <MiniMetric label="Tid" value={formatDuration(a.movingTime)} />
-                    <MiniMetric
-                      label={isRun ? "Tempo" : "Stigning"}
-                      value={
-                        isRun
-                          ? formatPace(a.distance, a.movingTime)
-                          : `${Math.round(a.elevation)} m`
-                      }
-                    />
-                    <MiniMetric
-                      label="Puls"
-                      value={a.avgHeartrate ? `${Math.round(a.avgHeartrate)}` : "—"}
-                    />
+                    <ActivityStreams activityId={a.id} />
+
+                    <div className="grid grid-cols-2 gap-1.5 text-xs text-foreground/90 mt-2">
+                      <MiniMetric label="Dist" value={formatKm(a.distance)} />
+                      <MiniMetric label="Tid" value={formatDuration(a.movingTime)} />
+                      <MiniMetric
+                        label={isRun ? "Tempo" : "Stigning"}
+                        value={
+                          isRun
+                            ? formatPace(a.distance, a.movingTime)
+                            : `${Math.round(a.elevation)} m`
+                        }
+                      />
+                      <MiniMetric
+                        label="Puls"
+                        value={a.avgHeartrate ? `${Math.round(a.avgHeartrate)}` : "—"}
+                      />
+                    </div>
                   </div>
-                </div>
-              </article>
+                </article>
+              </a>
             </li>
           );
         })}
