@@ -172,7 +172,7 @@ function Home() {
       <section className="container mx-auto px-4 pb-20">
         <div className="ornate-divider mb-10">
           <span className="text-display tracking-[0.3em] text-primary text-sm uppercase">
-            Husets sale
+            Husets saler
           </span>
         </div>
 
