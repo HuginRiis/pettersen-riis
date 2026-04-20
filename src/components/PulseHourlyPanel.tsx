@@ -10,7 +10,7 @@ import {
   Tooltip,
   CartesianGrid,
 } from "recharts";
-import { getTibberHourly, type TibberHourlyResult } from "@/server/tibber";
+import { getPulseLive, type PulseLiveResult } from "@/server/pulse-readings";
 
 export function PulseHourlyPanel({
   location,
@@ -21,8 +21,8 @@ export function PulseHourlyPanel({
   title: string;
   subtitle?: string;
 }) {
-  const fetchHourly = useServerFn(getTibberHourly);
-  const [state, setState] = useState<TibberHourlyResult | null>(null);
+  const fetchLive = useServerFn(getPulseLive);
+  const [state, setState] = useState<PulseLiveResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [updated, setUpdated] = useState<Date | null>(null);
 
@@ -30,7 +30,7 @@ export function PulseHourlyPanel({
     let cancelled = false;
     async function load() {
       try {
-        const res = await fetchHourly({ data: { location } });
+        const res = await fetchLive({ data: { location } });
         if (cancelled) return;
         setState(res);
         setUpdated(new Date());
@@ -46,30 +46,19 @@ export function PulseHourlyPanel({
       cancelled = true;
       clearInterval(id);
     };
-  }, [fetchHourly, location]);
+  }, [fetchLive, location]);
 
   const hours = state?.hours ?? [];
   const error = state?.error ?? null;
 
-  // Vis siste 24 timer (data kommer som kronologisk liste, siste først? Sortér just in case)
-  const sorted = [...hours].sort((a, b) => a.from.localeCompare(b.from));
-  const last24 = sorted.slice(-24);
+  const chartData = hours.map((h) => ({
+    hour: h.hour,
+    kwh: h.kwh,
+    isToday: h.isToday,
+  }));
 
-  // Marker timene som tilhører "i dag" (Oslo)
-  const todayKey = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Oslo" });
-  const chartData = last24.map((h) => {
-    const dKey = new Date(h.from).toLocaleDateString("sv-SE", { timeZone: "Europe/Oslo" });
-    return {
-      hour: h.hour,
-      kwh: h.kwh,
-      isToday: dKey === todayKey,
-    };
-  });
-
-  const todayKwh = state?.todayKwh ?? 0;
-  const latestKwh = state?.latestHourKwh ?? null;
-  const latestWatt = latestKwh != null ? Math.round(latestKwh * 1000) : null;
-  const todayCost = state?.todayCost ?? null;
+  const watt = state?.watt ?? null;
+  const kwhToday = state?.kwhToday ?? null;
   const updatedLabel = updated
     ? updated.toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit" })
     : "—";
@@ -82,11 +71,11 @@ export function PulseHourlyPanel({
           <div className="text-xs text-muted-foreground mt-0.5">{subtitle}</div>
         )}
         {error && (
-          <div className="text-[11px] text-destructive mt-1">Tibber: {error}</div>
+          <div className="text-[11px] text-destructive mt-1">{error}</div>
         )}
       </div>
 
-      <div className="grid lg:grid-cols-[1fr,200px] gap-4">
+      <div className="grid lg:grid-cols-[1fr,210px] gap-4">
         {/* Graf */}
         <div className="h-56 w-full order-2 lg:order-1">
           {loading && chartData.length === 0 ? (
@@ -95,7 +84,7 @@ export function PulseHourlyPanel({
             </div>
           ) : chartData.length === 0 ? (
             <div className="h-full flex items-center justify-center text-xs text-muted-foreground text-center px-4">
-              Ingen timesdata fra Tibber.
+              Grafen fyller seg etter hvert som loggeren samler timesdata fra Pulse.
             </div>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
@@ -138,16 +127,18 @@ export function PulseHourlyPanel({
         <div className="order-1 lg:order-2 panel rounded-md p-4 bg-background/40 border border-border/40 flex flex-col justify-between gap-3">
           <div>
             <div className="text-[10px] tracking-[0.3em] uppercase text-muted-foreground">
-              Siste time
+              Akkurat nå
             </div>
             <div className="text-2xl font-semibold text-foreground tabular-nums mt-1">
-              {latestKwh != null ? `${latestKwh.toFixed(2)} kWh` : "—"}
+              {watt != null ? `${Math.round(Math.abs(watt))} W` : "—"}
             </div>
-            {latestWatt != null && (
-              <div className="text-[11px] text-muted-foreground mt-0.5">
-                ≈ {latestWatt} W snitt
-              </div>
-            )}
+            <div className="text-[11px] text-muted-foreground mt-0.5">
+              {watt == null
+                ? "Ingen avlesning"
+                : watt < 0
+                  ? "↑ Leverer strøm"
+                  : "↓ Bruker strøm"}
+            </div>
           </div>
 
           <div>
@@ -155,13 +146,8 @@ export function PulseHourlyPanel({
               I dag
             </div>
             <div className="text-xl font-semibold text-primary tabular-nums mt-1">
-              {todayKwh.toFixed(1)} kWh
+              {kwhToday != null ? `${kwhToday.toFixed(2)} kWh` : "—"}
             </div>
-            {todayCost != null && (
-              <div className="text-[11px] text-muted-foreground mt-0.5">
-                {todayCost.toFixed(2).replace(".", ",")} kr
-              </div>
-            )}
           </div>
 
           <div className="text-[9px] tracking-[0.25em] uppercase text-muted-foreground/70">
