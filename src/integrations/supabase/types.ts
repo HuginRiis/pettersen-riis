@@ -110,6 +110,33 @@ export type Database = {
         }
         Relationships: []
       }
+      pulse_readings: {
+        Row: {
+          device_name: string | null
+          id: string
+          kwh_today: number | null
+          location: string
+          recorded_at: string
+          watt: number | null
+        }
+        Insert: {
+          device_name?: string | null
+          id?: string
+          kwh_today?: number | null
+          location: string
+          recorded_at?: string
+          watt?: number | null
+        }
+        Update: {
+          device_name?: string | null
+          id?: string
+          kwh_today?: number | null
+          location?: string
+          recorded_at?: string
+          watt?: number | null
+        }
+        Relationships: []
+      }
       renovation_contractors: {
         Row: {
           created_at: string
