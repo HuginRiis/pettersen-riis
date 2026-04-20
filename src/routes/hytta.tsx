@@ -157,10 +157,10 @@ function HyttaPage() {
       <NetatmoWeatherStationSection title="Værstasjonen — Hytta" stationMatch="hytta" />
 
       <section className="container mx-auto px-4 pb-8">
-        <PulseLiveChart
+        <PulseHourlyPanel
           location="hytta"
-          title="Pulse · Hytta"
-          subtitle="Pulse Øvre Bjørkesetvegen 12 — watt siste timen"
+          title="Strømforbruk · Hytta"
+          subtitle="Tibber — siste 24 timer, oppdateres hvert minutt"
         />
       </section>
 
