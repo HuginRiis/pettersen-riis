@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { PageShell, PageHero } from "@/components/PageShell";
 import { ActivityMap } from "@/components/ActivityMap";
-import { getStravaDashboard, getStravaStatus } from "@/server/strava";
+import { getActivityStreams, getStravaDashboard, getStravaStatus } from "@/server/strava";
 import treningImg from "@/assets/trening.jpg";
 
 export const Route = createFileRoute("/trening")({
