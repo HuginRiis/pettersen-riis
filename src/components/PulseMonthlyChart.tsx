@@ -10,7 +10,7 @@ import {
   CartesianGrid,
   Legend,
 } from "recharts";
-import { getPulseMonthly, type MonthlyKwh } from "@/server/pulse-readings";
+import { getTibberMonthly, type MonthlyKwh } from "@/server/tibber";
 
 const MONTHS_NB = [
   "jan",
@@ -33,17 +33,23 @@ function formatMonth(ym: string) {
 }
 
 export function PulseMonthlyChart() {
-  const fetchMonthly = useServerFn(getPulseMonthly);
+  const fetchMonthly = useServerFn(getTibberMonthly);
   const [data, setData] = useState<MonthlyKwh[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     fetchMonthly()
       .then((res) => {
-        if (!cancelled) setData(res.months);
+        if (cancelled) return;
+        setData(res.months);
+        setError(res.error ?? null);
       })
-      .catch((err) => console.error("[PulseMonthlyChart] failed", err))
+      .catch((err) => {
+        console.error("[PulseMonthlyChart] failed", err);
+        if (!cancelled) setError(String(err));
+      })
       .finally(() => {
         if (!cancelled) setLoading(false);
       });
@@ -65,8 +71,11 @@ export function PulseMonthlyChart() {
           Strømforbruk · måned
         </div>
         <div className="text-xs text-muted-foreground mt-0.5">
-          kWh per måned for Pulse Hytta og Pulse Tollnes
+          kWh per måned fra Tibber — Hytta og Tollnes
         </div>
+        {error && (
+          <div className="text-[11px] text-destructive mt-1">Tibber: {error}</div>
+        )}
       </div>
 
       <div className="h-64 w-full">
@@ -76,8 +85,7 @@ export function PulseMonthlyChart() {
           </div>
         ) : chartData.length === 0 ? (
           <div className="h-full flex items-center justify-center text-xs text-muted-foreground text-center px-4">
-            Ingen månedsdata ennå. Loggeren kjører hvert 5. min — grafen fyller seg utover
-            i måneden.
+            Ingen månedsdata fra Tibber ennå.
           </div>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
