@@ -33,18 +33,18 @@ function addDays(d: Date, n: number): Date {
 function getNorwegianHolidays(year: number): Holiday[] {
   const easter = computeEaster(year);
   return [
-    { date: new Date(year, 0, 1), name: "Første nyttårsdag", emoji: "🎆" },
-    { date: addDays(easter, -3), name: "Skjærtorsdag", emoji: "🕯" },
-    { date: addDays(easter, -2), name: "Langfredag", emoji: "✝️" },
-    { date: easter, name: "Første påskedag", emoji: "🐣" },
-    { date: addDays(easter, 1), name: "Andre påskedag", emoji: "🥚" },
-    { date: new Date(year, 4, 1), name: "Arbeidernes dag", emoji: "🛠" },
-    { date: new Date(year, 4, 17), name: "Grunnlovsdag", emoji: "🇳🇴" },
-    { date: addDays(easter, 39), name: "Kristi himmelfartsdag", emoji: "☁️" },
-    { date: addDays(easter, 49), name: "Første pinsedag", emoji: "🔥" },
-    { date: addDays(easter, 50), name: "Andre pinsedag", emoji: "🕊" },
-    { date: new Date(year, 11, 25), name: "Første juledag", emoji: "🎄" },
-    { date: new Date(year, 11, 26), name: "Andre juledag", emoji: "🎁" },
+    { date: new Date(year, 0, 1), name: "Første nyttårsdag", emoji: "🎆", anim: "holiday-anim-firework" },
+    { date: addDays(easter, -3), name: "Skjærtorsdag", emoji: "🕯", anim: "holiday-anim-candle" },
+    { date: addDays(easter, -2), name: "Langfredag", emoji: "✝️", anim: "holiday-anim-cross" },
+    { date: easter, name: "Første påskedag", emoji: "🐣", anim: "holiday-anim-hatch" },
+    { date: addDays(easter, 1), name: "Andre påskedag", emoji: "🥚", anim: "holiday-anim-egg" },
+    { date: new Date(year, 4, 1), name: "Arbeidernes dag", emoji: "🛠", anim: "holiday-anim-hammer" },
+    { date: new Date(year, 4, 17), name: "Grunnlovsdag", emoji: "🇳🇴", anim: "holiday-anim-flag" },
+    { date: addDays(easter, 39), name: "Kristi himmelfartsdag", emoji: "☁️", anim: "holiday-anim-cloud" },
+    { date: addDays(easter, 49), name: "Første pinsedag", emoji: "🔥", anim: "holiday-anim-fire" },
+    { date: addDays(easter, 50), name: "Andre pinsedag", emoji: "🕊", anim: "holiday-anim-dove" },
+    { date: new Date(year, 11, 25), name: "Første juledag", emoji: "🎄", anim: "holiday-anim-tree" },
+    { date: new Date(year, 11, 26), name: "Andre juledag", emoji: "🎁", anim: "holiday-anim-gift" },
   ];
 }
 
