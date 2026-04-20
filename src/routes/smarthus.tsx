@@ -562,7 +562,11 @@ function SmarthusPage() {
       />
 
       <section className="container mx-auto px-4 pt-8">
-        <PulseMonthlyChart />
+        <PulseHourlyPanel
+          location="tollnes"
+          title="Strømforbruk · Tollnes (hjemme)"
+          subtitle="Tibber — siste 24 timer, oppdateres hvert minutt"
+        />
       </section>
 
       <section className="container mx-auto px-4 py-12 space-y-12">
