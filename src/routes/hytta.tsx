@@ -3,6 +3,7 @@ import { PageShell } from "@/components/PageShell";
 import { HyttaHero } from "@/components/HyttaHero";
 import { NetatmoWeatherStationSection } from "@/components/NetatmoWeatherStation";
 import { HeatersPanel } from "@/components/HeatersPanel";
+import { PulseLiveChart } from "@/components/PulseLiveChart";
 import hyttaImg from "@/assets/hytta-aurora.jpg";
 import g0314 from "@/assets/hytta-gallery/0314.jpg";
 import g0342 from "@/assets/hytta-gallery/0342.jpg";
@@ -154,6 +155,14 @@ function HyttaPage() {
       </section>
 
       <NetatmoWeatherStationSection title="Værstasjonen — Hytta" stationMatch="hytta" />
+
+      <section className="container mx-auto px-4 pb-8">
+        <PulseLiveChart
+          location="hytta"
+          title="Pulse · Hytta"
+          subtitle="Pulse Øvre Bjørkesetvegen 12 — watt siste timen"
+        />
+      </section>
 
       <HeatersPanel
         location="hytta"
