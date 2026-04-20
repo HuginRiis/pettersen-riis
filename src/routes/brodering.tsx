@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { PageShell } from "@/components/PageShell";
+import { PageShell, PageHero } from "@/components/PageShell";
+import broderingImg from "@/assets/got-brodering.jpg";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -55,23 +56,20 @@ type Generated = {
 function BroderingPage() {
   return (
     <PageShell>
-      <section className="container mx-auto px-4 py-12 max-w-5xl">
-        <div className="text-center mb-10">
-          <div className="text-[10px] tracking-[0.4em] text-primary uppercase mb-3">
-            Husets nålemestere
-          </div>
-          <h1 className="heading-hero text-4xl md:text-5xl">Brodering</h1>
-          <p className="mt-4 text-muted-foreground max-w-2xl mx-auto">
-            Skap broderifiler for Brother-maskinen. Skriv et navn eller last opp et
-            enkelt bilde, og last ned en PES-fil — alltid innenfor 8 × 8 cm.
-          </p>
-        </div>
+      <PageHero
+        eyebrow="Husets nålemestere"
+        title="Brodering"
+        subtitle="Skap broderifiler for Brother-maskinen — skriv et navn eller last opp et bilde, og last ned en PES-fil innenfor 8 × 8 cm."
+        image={broderingImg}
+      />
 
+      <section className="container mx-auto px-4 py-12 max-w-5xl">
         <div className="ornate-divider mb-10">
           <span className="text-display tracking-[0.3em] text-primary text-sm uppercase">
             Verkstedet
           </span>
         </div>
+
 
         <Tabs defaultValue="text">
           <TabsList className="grid w-full grid-cols-2 max-w-md mx-auto">
