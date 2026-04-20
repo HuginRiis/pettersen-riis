@@ -94,7 +94,7 @@ export function UpcomingHolidays() {
     <section className="container mx-auto px-4 pb-16">
       <div className="ornate-divider mb-8">
         <span className="text-display tracking-[0.3em] text-primary text-sm uppercase">
-          Helligdager innen kort tid
+          Helligdager innen 30 dager
         </span>
       </div>
 
