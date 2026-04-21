@@ -423,10 +423,10 @@ function PriceBox({
 
 function CostBars({ highlights: h }: { highlights: PbthHomeData["highlights"] }) {
   const data = [
-    { label: "I går", value: h.costYesterday ?? 0, color: "hsl(var(--muted-foreground))" },
-    { label: "I dag", value: h.costToday ?? 0, color: "hsl(var(--primary))" },
-    { label: "Forrige måned", value: h.costLastMonth ?? 0, color: "hsl(var(--muted-foreground))" },
-    { label: "Denne måneden", value: h.costThisMonth ?? 0, color: "hsl(var(--primary))" },
+    { label: "I går", value: h.costYesterday ?? 0, color: "oklch(0.65 0.04 250)" },
+    { label: "I dag", value: h.costToday ?? 0, color: "oklch(0.62 0.18 250)" },
+    { label: "Forrige måned", value: h.costLastMonth ?? 0, color: "oklch(0.65 0.04 250)" },
+    { label: "Denne måneden", value: h.costThisMonth ?? 0, color: "oklch(0.62 0.18 250)" },
     { label: "I år", value: h.costThisYear ?? 0, color: "oklch(0.78 0.13 85)" },
   ].filter((d) => d.value > 0);
 
@@ -490,7 +490,7 @@ function EnergyBars({ highlights: h }: { highlights: PbthHomeData["highlights"] 
             }}
             formatter={(v: number) => [`${v.toFixed(1)} kWh`, "Forbruk"]}
           />
-          <Bar dataKey="value" radius={[3, 3, 0, 0]} fill="hsl(var(--primary))" />
+          <Bar dataKey="value" radius={[3, 3, 0, 0]} fill="oklch(0.62 0.18 250)" />
         </BarChart>
       </ResponsiveContainer>
     </div>
@@ -535,8 +535,8 @@ function DayDeltaPanel({ highlights: h }: { highlights: PbthHomeData["highlights
                 fontSize: 12,
               }}
             />
-            <Bar dataKey="I går" fill="hsl(var(--muted-foreground))" radius={[3, 3, 0, 0]} />
-            <Bar dataKey="I dag" fill="hsl(var(--primary))" radius={[3, 3, 0, 0]} />
+            <Bar dataKey="I går" fill="oklch(0.65 0.04 250)" radius={[3, 3, 0, 0]} />
+            <Bar dataKey="I dag" fill="oklch(0.62 0.18 250)" radius={[3, 3, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>
@@ -679,7 +679,7 @@ function ComparisonBlock({
                 }}
                 formatter={(v: number) => [`${v.toFixed(0)} kr`, ""]}
               />
-              <Bar dataKey="Borgen" fill="hsl(var(--primary))" radius={[3, 3, 0, 0]} />
+              <Bar dataKey="Borgen" fill="oklch(0.62 0.18 250)" radius={[3, 3, 0, 0]} />
               <Bar dataKey="Hytta" fill="oklch(0.78 0.13 85)" radius={[3, 3, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
