@@ -78,14 +78,14 @@ export function SiteHeader() {
           </div>
         </Link>
 
-        <nav className="hidden md:flex flex-1 flex-wrap items-center justify-start gap-x-3 gap-y-1">
+        <nav className="hidden md:flex flex-1 flex-wrap items-center justify-start gap-x-2 gap-y-2">
           {navLinks.map((l) => (
             <Link
               key={l.to}
               to={l.to}
               preload={HOMEY_BACKED_ROUTES.includes(l.to) ? false : undefined}
               activeOptions={l.to === "/" ? { exact: true } : undefined}
-              className="text-xs tracking-wider uppercase text-muted-foreground hover:text-primary transition-colors data-[status=active]:text-primary data-[status=active]:font-semibold"
+              className="got-nav-btn"
             >
               {l.label}
             </Link>
