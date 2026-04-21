@@ -42,7 +42,7 @@ export type PbthResult =
       fetchedAt: string;
     };
 
-const ADDRESS_BORGEN = "Nordre Lensmannsveg 17";
+const ADDRESS_BORGEN = "Pbth Nordre Lensmannsveg 17";
 const ADDRESS_HYTTA = "Øvre Bjørkesetvegen 222";
 
 // Power-by-the-Hour-app brukernavn på enheter inneholder typisk adressen.
