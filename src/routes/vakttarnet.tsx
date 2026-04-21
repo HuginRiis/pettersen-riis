@@ -10,7 +10,7 @@ import type {
   PageviewRow,
 } from "@/server/visitors";
 import heroImg from "@/assets/got-vakttarnet.jpg";
-import { Eye, Globe2, Smartphone, Monitor, Tablet, Clock, Crown, ShieldAlert, Map as MapIcon } from "lucide-react";
+import { Eye, Globe2, Smartphone, Monitor, Tablet, Clock, Crown, ShieldAlert, Map as MapIcon, Lock } from "lucide-react";
 
 export const Route = createFileRoute("/vakttarnet")({
   head: () => ({
@@ -133,13 +133,21 @@ function VakttarnetPage() {
           </Panel>
 
           <Panel
-            title="Topplister"
-            icon={<Crown size={14} />}
-            subtitle="Hvem og hva troner øverst"
+            title="Stengte porter"
+            icon={<Lock size={14} />}
+            subtitle="IP-er som ble låst ute — og hvor lenge"
           >
-            <TopLists sessions={sessions} pageviews={pageviews} />
+            <Lockouts attempts={attempts} />
           </Panel>
         </div>
+
+        <Panel
+          title="Topplister"
+          icon={<Crown size={14} />}
+          subtitle="Hvem og hva troner øverst"
+        >
+          <TopLists sessions={sessions} pageviews={pageviews} />
+        </Panel>
       </section>
     </PageShell>
   );
@@ -494,6 +502,175 @@ function LoginAttempts({ attempts }: { attempts: LoginAttemptRow[] }) {
           </div>
         </li>
       ))}
+    </ul>
+  );
+}
+
+// ───────────────────────── Lockouts ─────────────────────────
+// Mirrors the escalation logic in src/server/auth.ts so the dashboard
+// shows exactly which IPs got locked out, when, and for how long.
+const LOCKOUT_THRESHOLD = 5;
+const LOCKOUT_WINDOW_MIN = 15;
+const ESCALATION_LOOKBACK_HOURS = 24;
+const LOCKOUT_DURATIONS_MIN = [1, 15, 60] as const;
+
+type LockoutEpisode = {
+  ip: string;
+  triggeredAt: Date;
+  unlockAt: Date;
+  durationMin: number;
+  tier: number; // 0,1,2 (1 min / 15 min / 60 min)
+  failuresInWindow: number;
+  lastAttempt: LoginAttemptRow;
+};
+
+function detectIpEpisodes(failuresAsc: Date[]): { triggerIdx: number; tier: number; count: number }[] {
+  const episodes: { triggerIdx: number; tier: number; count: number }[] = [];
+  const windowMs = LOCKOUT_WINDOW_MIN * 60 * 1000;
+  let i = 0;
+  while (i < failuresAsc.length) {
+    const windowEnd = failuresAsc[i]!.getTime() + windowMs;
+    let j = i;
+    while (j < failuresAsc.length && failuresAsc[j]!.getTime() <= windowEnd) j++;
+    const count = j - i;
+    if (count >= LOCKOUT_THRESHOLD) {
+      const triggerIdx = i + LOCKOUT_THRESHOLD - 1;
+      const tier = Math.min(episodes.length, LOCKOUT_DURATIONS_MIN.length - 1);
+      episodes.push({ triggerIdx, tier, count });
+      i = j;
+    } else {
+      i++;
+    }
+  }
+  return episodes;
+}
+
+function computeLockouts(attempts: LoginAttemptRow[]): LockoutEpisode[] {
+  const lookbackMs = ESCALATION_LOOKBACK_HOURS * 60 * 60 * 1000;
+  const cutoff = Date.now() - lookbackMs;
+  // Group failed attempts by IP, keep originals so we can show metadata
+  const byIp = new Map<string, LoginAttemptRow[]>();
+  for (const a of attempts) {
+    if (a.success || !a.ip) continue;
+    if (new Date(a.attempted_at).getTime() < cutoff) continue;
+    const list = byIp.get(a.ip) ?? [];
+    list.push(a);
+    byIp.set(a.ip, list);
+  }
+
+  const episodes: LockoutEpisode[] = [];
+  for (const [ip, list] of byIp) {
+    // Ensure ascending order
+    list.sort(
+      (a, b) =>
+        new Date(a.attempted_at).getTime() - new Date(b.attempted_at).getTime(),
+    );
+    const dates = list.map((r) => new Date(r.attempted_at));
+    const eps = detectIpEpisodes(dates);
+    for (const ep of eps) {
+      const triggerRow = list[ep.triggerIdx]!;
+      const triggeredAt = new Date(triggerRow.attempted_at);
+      const durationMin = LOCKOUT_DURATIONS_MIN[ep.tier]!;
+      episodes.push({
+        ip,
+        triggeredAt,
+        unlockAt: new Date(triggeredAt.getTime() + durationMin * 60 * 1000),
+        durationMin,
+        tier: ep.tier,
+        failuresInWindow: ep.count,
+        lastAttempt: triggerRow,
+      });
+    }
+  }
+
+  // Newest first
+  episodes.sort((a, b) => b.triggeredAt.getTime() - a.triggeredAt.getTime());
+  return episodes;
+}
+
+function Lockouts({ attempts }: { attempts: LoginAttemptRow[] }) {
+  const episodes = useMemo(() => computeLockouts(attempts), [attempts]);
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = window.setInterval(() => setNow(Date.now()), 30_000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  if (episodes.length === 0) {
+    return (
+      <div className="text-sm text-muted-foreground italic">
+        Ingen porter har blitt stengt siste døgn.
+      </div>
+    );
+  }
+
+  return (
+    <ul className="space-y-2 max-h-[360px] overflow-y-auto pr-1">
+      {episodes.map((ep, idx) => {
+        const active = ep.unlockAt.getTime() > now;
+        const remainingMs = ep.unlockAt.getTime() - now;
+        const remainingMin = Math.max(1, Math.ceil(remainingMs / 60000));
+        const tierLabel =
+          ep.tier === 0 ? "Første stengning" : ep.tier === 1 ? "Andre stengning" : "Tredje+ stengning";
+        return (
+          <li
+            key={`${ep.ip}-${ep.triggeredAt.getTime()}-${idx}`}
+            className={`rounded-md border p-2.5 text-xs ${
+              active
+                ? "border-destructive/50 bg-destructive/10"
+                : "border-border bg-background/40"
+            }`}
+          >
+            <div className="flex items-center gap-2 flex-wrap">
+              <span
+                className={`text-[10px] tracking-widest uppercase font-semibold ${
+                  active ? "text-destructive" : "text-muted-foreground"
+                }`}
+              >
+                {active ? "Stengt nå" : "Var stengt"}
+              </span>
+              <span className="text-[10px] tracking-widest uppercase text-primary">
+                {tierLabel}
+              </span>
+              <span className="text-[10px] text-muted-foreground">
+                · {ep.durationMin} min
+              </span>
+              {active && (
+                <span className="text-[10px] text-destructive ml-auto">
+                  ~{remainingMin} min igjen
+                </span>
+              )}
+            </div>
+            <div className="mt-1 text-foreground font-mono text-[11px] break-all">
+              {ep.ip}
+            </div>
+            <div className="text-[10px] text-muted-foreground mt-0.5">
+              {ep.lastAttempt.city ?? "Ukjent"}
+              {ep.lastAttempt.country ? `, ${ep.lastAttempt.country}` : ""}
+              {ep.lastAttempt.country_code && (
+                <span className="ml-1">{flagEmoji(ep.lastAttempt.country_code)}</span>
+              )}
+              {" · "}
+              {[ep.lastAttempt.device_type, ep.lastAttempt.browser]
+                .filter(Boolean)
+                .join(" · ")}
+            </div>
+            <div className="text-[10px] text-muted-foreground mt-0.5 flex justify-between gap-2 flex-wrap">
+              <span>
+                {ep.failuresInWindow} feilforsøk · utløst{" "}
+                {relativeTime(ep.triggeredAt.toISOString())}
+              </span>
+              <span>
+                {active ? "Åpner" : "Åpnet"}{" "}
+                {ep.unlockAt.toLocaleTimeString("nb-NO", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </span>
+            </div>
+          </li>
+        );
+      })}
     </ul>
   );
 }
