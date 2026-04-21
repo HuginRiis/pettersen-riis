@@ -20,7 +20,6 @@ import { Route as RangerRouteImport } from './routes/ranger'
 import { Route as PollenRouteImport } from './routes/pollen'
 import { Route as OppussingHyttaRouteImport } from './routes/oppussing-hytta'
 import { Route as OppussingBorgenRouteImport } from './routes/oppussing-borgen'
-import { Route as LoginRouteImport } from './routes/login'
 import { Route as JernhestenRouteImport } from './routes/jernhesten'
 import { Route as HyttaRouteImport } from './routes/hytta'
 import { Route as HundeneRouteImport } from './routes/hundene'
@@ -87,11 +86,6 @@ const OppussingBorgenRoute = OppussingBorgenRouteImport.update({
   path: '/oppussing-borgen',
   getParentRoute: () => rootRouteImport,
 } as any)
-const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const JernhestenRoute = JernhestenRouteImport.update({
   id: '/jernhesten',
   path: '/jernhesten',
@@ -149,7 +143,6 @@ export interface FileRoutesByFullPath {
   '/hundene': typeof HundeneRoute
   '/hytta': typeof HyttaRoute
   '/jernhesten': typeof JernhestenRoute
-  '/login': typeof LoginRoute
   '/oppussing-borgen': typeof OppussingBorgenRoute
   '/oppussing-hytta': typeof OppussingHyttaRoute
   '/pollen': typeof PollenRoute
@@ -173,7 +166,6 @@ export interface FileRoutesByTo {
   '/hundene': typeof HundeneRoute
   '/hytta': typeof HyttaRoute
   '/jernhesten': typeof JernhestenRoute
-  '/login': typeof LoginRoute
   '/oppussing-borgen': typeof OppussingBorgenRoute
   '/oppussing-hytta': typeof OppussingHyttaRoute
   '/pollen': typeof PollenRoute
@@ -198,7 +190,6 @@ export interface FileRoutesById {
   '/hundene': typeof HundeneRoute
   '/hytta': typeof HyttaRoute
   '/jernhesten': typeof JernhestenRoute
-  '/login': typeof LoginRoute
   '/oppussing-borgen': typeof OppussingBorgenRoute
   '/oppussing-hytta': typeof OppussingHyttaRoute
   '/pollen': typeof PollenRoute
@@ -224,7 +215,6 @@ export interface FileRouteTypes {
     | '/hundene'
     | '/hytta'
     | '/jernhesten'
-    | '/login'
     | '/oppussing-borgen'
     | '/oppussing-hytta'
     | '/pollen'
@@ -248,7 +238,6 @@ export interface FileRouteTypes {
     | '/hundene'
     | '/hytta'
     | '/jernhesten'
-    | '/login'
     | '/oppussing-borgen'
     | '/oppussing-hytta'
     | '/pollen'
@@ -272,7 +261,6 @@ export interface FileRouteTypes {
     | '/hundene'
     | '/hytta'
     | '/jernhesten'
-    | '/login'
     | '/oppussing-borgen'
     | '/oppussing-hytta'
     | '/pollen'
@@ -297,7 +285,6 @@ export interface RootRouteChildren {
   HundeneRoute: typeof HundeneRoute
   HyttaRoute: typeof HyttaRoute
   JernhestenRoute: typeof JernhestenRoute
-  LoginRoute: typeof LoginRoute
   OppussingBorgenRoute: typeof OppussingBorgenRoute
   OppussingHyttaRoute: typeof OppussingHyttaRoute
   PollenRoute: typeof PollenRoute
@@ -395,13 +382,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OppussingBorgenRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/jernhesten': {
       id: '/jernhesten'
       path: '/jernhesten'
@@ -481,7 +461,6 @@ const rootRouteChildren: RootRouteChildren = {
   HundeneRoute: HundeneRoute,
   HyttaRoute: HyttaRoute,
   JernhestenRoute: JernhestenRoute,
-  LoginRoute: LoginRoute,
   OppussingBorgenRoute: OppussingBorgenRoute,
   OppussingHyttaRoute: OppussingHyttaRoute,
   PollenRoute: PollenRoute,
