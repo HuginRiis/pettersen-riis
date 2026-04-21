@@ -36,14 +36,13 @@ const navLinks: NavLink[] = [
   { to: "/smarthus", label: "Smartborg" },
   { to: "/oppussing-borgen", label: "Prosjekter på Borgen" },
   { to: "/oppussing-hytta", label: "Prosjekter på hytta" },
-  { to: "/brodering", label: "Brodering" },
-  { to: "/steintavle", label: "Steintavle" },
   { to: "/hundene", label: "Hundene" },
   { to: "/trening", label: "Trening" },
   { to: "/turer", label: "Ferden" },
   { to: "/varsler", label: "Farevarsler" },
   { to: "/jernhesten", label: "Jernhesten" },
   { to: "/ranger", label: "Ranger" },
+  { to: "/steintavle", label: "Steintavle" },
 ];
 
 export function SiteHeader() {
