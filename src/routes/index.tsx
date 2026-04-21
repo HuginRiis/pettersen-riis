@@ -467,9 +467,6 @@ function PortalGate({
           <div className="mx-auto w-14 h-14 rounded-full border border-primary/50 flex items-center justify-center text-primary text-2xl mb-4">
             ❦
           </div>
-          <div className="text-[10px] tracking-[0.4em] uppercase text-primary/80 mb-2">
-            &nbsp;
-          </div>
           <h2 className="text-display text-xl sm:text-2xl text-primary tracking-[0.2em] uppercase">
             Vandreren er velkommen
           </h2>
