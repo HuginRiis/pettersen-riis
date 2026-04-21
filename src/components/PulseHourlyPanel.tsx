@@ -135,17 +135,13 @@ export function PulseHourlyPanel({
         <div className="order-1 lg:order-2 panel rounded-md p-4 bg-background/40 border border-border/40 flex flex-col justify-between gap-3">
           <div>
             <div className="text-[10px] tracking-[0.3em] uppercase text-muted-foreground">
-              Akkurat nå
+              Siste time
             </div>
             <div className="text-2xl font-semibold text-foreground tabular-nums mt-1">
-              {watt != null ? `${Math.round(Math.abs(watt))} W` : "—"}
+              {watt != null ? `${watt} W` : "—"}
             </div>
             <div className="text-[11px] text-muted-foreground mt-0.5">
-              {watt == null
-                ? "Ingen avlesning"
-                : watt < 0
-                  ? "↑ Leverer strøm"
-                  : "↓ Bruker strøm"}
+              {watt == null ? "Ingen avlesning" : "Snitt forrige time"}
             </div>
           </div>
 
