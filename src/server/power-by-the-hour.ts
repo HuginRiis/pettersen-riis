@@ -30,6 +30,8 @@ export type PbthHomeData = {
     priceAvgToday?: number;
     priceMinToday?: number;
     priceMaxToday?: number;
+    /** Estimert kr/kWh brukt for å regne kostnader fra kWh (fallback). */
+    derivedRate?: number;
   };
 };
 
