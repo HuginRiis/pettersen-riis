@@ -287,26 +287,40 @@ function PortraitCard({
   words: string;
   image: string;
 }) {
+  const [open, setOpen] = useState(false);
   return (
-    <article className="panel rounded-lg overflow-hidden glow-on-hover">
-      <div className="aspect-[4/5] overflow-hidden border-b border-border">
-        <img
-          src={image}
-          alt={name}
-          className="w-full h-full object-cover"
-          loading="lazy"
-          width={1024}
-          height={1280}
-        />
-      </div>
-      <div className="p-3 sm:p-4 text-center">
-        <div className="text-[10px] tracking-[0.25em] text-muted-foreground uppercase">
-          {title}
+    <>
+      <article
+        onClick={() => setOpen(true)}
+        className="panel rounded-lg overflow-hidden glow-on-hover cursor-zoom-in transition-transform duration-300 hover:scale-[1.02]"
+      >
+        <div className="aspect-[4/5] overflow-hidden border-b border-border">
+          <img
+            src={image}
+            alt={name}
+            className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
+            loading="lazy"
+            width={1024}
+            height={1280}
+          />
         </div>
-        <h3 className="text-base sm:text-lg mt-1 text-foreground">{name}</h3>
-        <p className="mt-1.5 text-medieval text-primary text-sm sm:text-base">"{words}"</p>
-      </div>
-    </article>
+        <div className="p-3 sm:p-4 text-center">
+          <div className="text-[10px] tracking-[0.25em] text-muted-foreground uppercase">
+            {title}
+          </div>
+          <h3 className="text-base sm:text-lg mt-1 text-foreground">{name}</h3>
+          <p className="mt-1.5 text-medieval text-primary text-sm sm:text-base">"{words}"</p>
+        </div>
+      </article>
+      <PortraitZoomDialog
+        open={open}
+        onOpenChange={setOpen}
+        name={name}
+        title={title}
+        words={words}
+        image={image}
+      />
+    </>
   );
 }
 
@@ -321,24 +335,79 @@ function MiniPortrait({
   words: string;
   image: string;
 }) {
+  const [open, setOpen] = useState(false);
   return (
-    <article className="panel rounded-md overflow-hidden glow-on-hover">
-      <div className="aspect-square overflow-hidden border-b border-border">
-        <img
-          src={image}
-          alt={name}
-          className="w-full h-full object-cover"
-          loading="lazy"
-        />
-      </div>
-      <div className="p-1.5 sm:p-2 text-center">
-        <div className="text-[7px] sm:text-[8px] tracking-[0.2em] text-muted-foreground uppercase leading-tight">
-          {title}
+    <>
+      <article
+        onClick={() => setOpen(true)}
+        className="panel rounded-md overflow-hidden glow-on-hover cursor-zoom-in transition-transform duration-300 hover:scale-[1.05]"
+      >
+        <div className="aspect-square overflow-hidden border-b border-border">
+          <img
+            src={image}
+            alt={name}
+            className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
+            loading="lazy"
+          />
         </div>
-        <h4 className="text-xs sm:text-sm mt-0.5 text-foreground leading-tight">{name}</h4>
-        <p className="mt-0.5 text-medieval text-primary text-[10px] sm:text-xs leading-tight">"{words}"</p>
-      </div>
-    </article>
+        <div className="p-1.5 sm:p-2 text-center">
+          <div className="text-[7px] sm:text-[8px] tracking-[0.2em] text-muted-foreground uppercase leading-tight">
+            {title}
+          </div>
+          <h4 className="text-xs sm:text-sm mt-0.5 text-foreground leading-tight">{name}</h4>
+          <p className="mt-0.5 text-medieval text-primary text-[10px] sm:text-xs leading-tight">"{words}"</p>
+        </div>
+      </article>
+      <PortraitZoomDialog
+        open={open}
+        onOpenChange={setOpen}
+        name={name}
+        title={title}
+        words={words}
+        image={image}
+      />
+    </>
+  );
+}
+
+function PortraitZoomDialog({
+  open,
+  onOpenChange,
+  name,
+  title,
+  words,
+  image,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  name: string;
+  title: string;
+  words: string;
+  image: string;
+}) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl p-0 border-primary/40 bg-background overflow-hidden">
+        <DialogTitle className="sr-only">{name}</DialogTitle>
+        <DialogDescription className="sr-only">{title} — {words}</DialogDescription>
+        <div className="relative">
+          <div className="aspect-[4/5] sm:aspect-[3/4] overflow-hidden bg-background">
+            <img
+              src={image}
+              alt={name}
+              className="w-full h-full object-cover"
+            />
+          </div>
+          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-background via-background/85 to-transparent p-5 sm:p-7 text-center">
+            <div className="text-[10px] sm:text-xs tracking-[0.3em] text-primary/90 uppercase">
+              {title}
+            </div>
+            <h3 className="mt-1 text-xl sm:text-2xl text-foreground text-display">{name}</h3>
+            <p className="mt-2 text-medieval text-primary text-base sm:text-lg">"{words}"</p>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
