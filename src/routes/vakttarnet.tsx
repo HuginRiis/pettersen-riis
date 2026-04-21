@@ -602,13 +602,38 @@ function computeLockouts(attempts: LoginAttemptRow[]): LockoutEpisode[] {
   return episodes;
 }
 
-function Lockouts({ attempts }: { attempts: LoginAttemptRow[] }) {
+function Lockouts({
+  attempts,
+  onReleased,
+}: {
+  attempts: LoginAttemptRow[];
+  onReleased?: () => void | Promise<void>;
+}) {
   const episodes = useMemo(() => computeLockouts(attempts), [attempts]);
   const [now, setNow] = useState(() => Date.now());
+  const [releasingIp, setReleasingIp] = useState<string | null>(null);
+  const [releaseError, setReleaseError] = useState<string | null>(null);
+  const release = useServerFn(releaseIpFn);
+  const { authenticated } = useAuthStatus();
+  const isAuthed = authenticated === true;
+
   useEffect(() => {
     const id = window.setInterval(() => setNow(Date.now()), 30_000);
     return () => window.clearInterval(id);
   }, []);
+
+  const handleRelease = async (ip: string) => {
+    setReleasingIp(ip);
+    setReleaseError(null);
+    try {
+      await release({ data: { ip } });
+      if (onReleased) await onReleased();
+    } catch (err) {
+      setReleaseError(err instanceof Error ? err.message : "Kunne ikke slippe løs hestene");
+    } finally {
+      setReleasingIp(null);
+    }
+  };
 
   if (episodes.length === 0) {
     return (
@@ -619,73 +644,95 @@ function Lockouts({ attempts }: { attempts: LoginAttemptRow[] }) {
   }
 
   return (
-    <ul className="space-y-2 max-h-[360px] overflow-y-auto pr-1">
-      {episodes.map((ep, idx) => {
-        const active = ep.unlockAt.getTime() > now;
-        const remainingMs = ep.unlockAt.getTime() - now;
-        const remainingMin = Math.max(1, Math.ceil(remainingMs / 60000));
-        const tierLabel =
-          ep.tier === 0 ? "Første stengning" : ep.tier === 1 ? "Andre stengning" : "Tredje+ stengning";
-        return (
-          <li
-            key={`${ep.ip}-${ep.triggeredAt.getTime()}-${idx}`}
-            className={`rounded-md border p-2.5 text-xs ${
-              active
-                ? "border-destructive/50 bg-destructive/10"
-                : "border-border bg-background/40"
-            }`}
-          >
-            <div className="flex items-center gap-2 flex-wrap">
-              <span
-                className={`text-[10px] tracking-widest uppercase font-semibold ${
-                  active ? "text-destructive" : "text-muted-foreground"
-                }`}
-              >
-                {active ? "Stengt nå" : "Var stengt"}
-              </span>
-              <span className="text-[10px] tracking-widest uppercase text-primary">
-                {tierLabel}
-              </span>
-              <span className="text-[10px] text-muted-foreground">
-                · {ep.durationMin} min
-              </span>
-              {active && (
-                <span className="text-[10px] text-destructive ml-auto">
-                  ~{remainingMin} min igjen
+    <>
+      {releaseError && (
+        <div className="mb-2 rounded-md border border-destructive/40 bg-destructive/10 text-destructive text-xs px-2.5 py-1.5">
+          {releaseError}
+        </div>
+      )}
+      <ul className="space-y-2 max-h-[360px] overflow-y-auto pr-1">
+        {episodes.map((ep, idx) => {
+          const active = ep.unlockAt.getTime() > now;
+          const remainingMs = ep.unlockAt.getTime() - now;
+          const remainingMin = Math.max(1, Math.ceil(remainingMs / 60000));
+          const tierLabel =
+            ep.tier === 0 ? "Første stengning" : ep.tier === 1 ? "Andre stengning" : "Tredje+ stengning";
+          const isReleasing = releasingIp === ep.ip;
+          return (
+            <li
+              key={`${ep.ip}-${ep.triggeredAt.getTime()}-${idx}`}
+              className={`rounded-md border p-2.5 text-xs ${
+                active
+                  ? "border-destructive/50 bg-destructive/10"
+                  : "border-border bg-background/40"
+              }`}
+            >
+              <div className="flex items-center gap-2 flex-wrap">
+                <span
+                  className={`text-[10px] tracking-widest uppercase font-semibold ${
+                    active ? "text-destructive" : "text-muted-foreground"
+                  }`}
+                >
+                  {active ? "Stengt nå" : "Var stengt"}
                 </span>
+                <span className="text-[10px] tracking-widest uppercase text-primary">
+                  {tierLabel}
+                </span>
+                <span className="text-[10px] text-muted-foreground">
+                  · {ep.durationMin} min
+                </span>
+                {active && (
+                  <span className="text-[10px] text-destructive ml-auto">
+                    ~{remainingMin} min igjen
+                  </span>
+                )}
+              </div>
+              <div className="mt-1 text-foreground font-mono text-[11px] break-all">
+                {ep.ip}
+              </div>
+              <div className="text-[10px] text-muted-foreground mt-0.5">
+                {ep.lastAttempt.city ?? "Ukjent"}
+                {ep.lastAttempt.country ? `, ${ep.lastAttempt.country}` : ""}
+                {ep.lastAttempt.country_code && (
+                  <span className="ml-1">{flagEmoji(ep.lastAttempt.country_code)}</span>
+                )}
+                {" · "}
+                {[ep.lastAttempt.device_type, ep.lastAttempt.browser]
+                  .filter(Boolean)
+                  .join(" · ")}
+              </div>
+              <div className="text-[10px] text-muted-foreground mt-0.5 flex justify-between gap-2 flex-wrap">
+                <span>
+                  {ep.failuresInWindow} feilforsøk · utløst{" "}
+                  {relativeTime(ep.triggeredAt.toISOString())}
+                </span>
+                <span>
+                  {active ? "Åpner" : "Åpnet"}{" "}
+                  {ep.unlockAt.toLocaleTimeString("nb-NO", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </span>
+              </div>
+              {active && isAuthed && (
+                <div className="mt-2 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => handleRelease(ep.ip)}
+                    disabled={isReleasing}
+                    className="inline-flex items-center gap-1.5 rounded-md border border-primary/40 bg-primary/10 hover:bg-primary/20 hover:border-primary px-2.5 py-1 text-[10px] tracking-[0.2em] uppercase text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Slett alle feilforsøk fra denne IP-en og åpne porten"
+                  >
+                    <Unlock size={11} />
+                    {isReleasing ? "Slipper løs…" : "Slipp løs hestene"}
+                  </button>
+                </div>
               )}
-            </div>
-            <div className="mt-1 text-foreground font-mono text-[11px] break-all">
-              {ep.ip}
-            </div>
-            <div className="text-[10px] text-muted-foreground mt-0.5">
-              {ep.lastAttempt.city ?? "Ukjent"}
-              {ep.lastAttempt.country ? `, ${ep.lastAttempt.country}` : ""}
-              {ep.lastAttempt.country_code && (
-                <span className="ml-1">{flagEmoji(ep.lastAttempt.country_code)}</span>
-              )}
-              {" · "}
-              {[ep.lastAttempt.device_type, ep.lastAttempt.browser]
-                .filter(Boolean)
-                .join(" · ")}
-            </div>
-            <div className="text-[10px] text-muted-foreground mt-0.5 flex justify-between gap-2 flex-wrap">
-              <span>
-                {ep.failuresInWindow} feilforsøk · utløst{" "}
-                {relativeTime(ep.triggeredAt.toISOString())}
-              </span>
-              <span>
-                {active ? "Åpner" : "Åpnet"}{" "}
-                {ep.unlockAt.toLocaleTimeString("nb-NO", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </span>
-            </div>
-          </li>
-        );
-      })}
-    </ul>
+            </li>
+          );
+        })}
+      </ul>
+    </>
   );
 }
 
