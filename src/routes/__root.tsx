@@ -1,9 +1,12 @@
 import { Outlet, Link, createRootRoute, HeadContent, Scripts, redirect } from "@tanstack/react-router";
 import { checkAuth } from "@/server/auth";
 import { VisitorTracker } from "@/components/VisitorTracker";
+import { LoginDialog } from "@/components/LoginDialog";
 
-// Routes that are accessible without logging in (visitors entering the castle gates)
-const PUBLIC_PATHS = new Set<string>(["/", "/login", "/var", "/pollen", "/turer"]);
+// Routes that are accessible without logging in (visitors entering the castle gates).
+// Locked routes now redirect to "/" (where the login dialog opens automatically) instead
+// of a dedicated /login page.
+const PUBLIC_PATHS = new Set<string>(["/", "/var", "/pollen", "/turer"]);
 
 import appCss from "../styles.css?url";
 
@@ -35,7 +38,8 @@ export const Route = createRootRoute({
     if (PUBLIC_PATHS.has(location.pathname)) return;
     const { authenticated } = await checkAuth();
     if (!authenticated) {
-      throw redirect({ to: "/login" });
+      // Send the wanderer back to the great hall — the login dialog will pop up there.
+      throw redirect({ to: "/", search: { login: "1" } as never });
     }
   },
   head: () => ({
@@ -80,6 +84,7 @@ function RootComponent() {
     <>
       <VisitorTracker />
       <Outlet />
+      <LoginDialog />
     </>
   );
 }

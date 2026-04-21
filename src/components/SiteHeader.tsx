@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Menu, X, LogOut, Crown, Swords, Shield, KeyRound } from "lucide-react";
 import { logoutFn } from "@/server/auth";
 import { useAuthStatus } from "@/hooks/use-auth-status";
+import { openLoginDialog } from "@/components/LoginDialog";
 
 type RoutePath =
   | "/"
@@ -70,7 +71,7 @@ export function SiteHeader() {
   };
 
   const handleLogin = () => {
-    router.navigate({ to: "/login" });
+    openLoginDialog();
   };
 
   return (
