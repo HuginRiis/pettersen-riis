@@ -1,6 +1,16 @@
 import { createServerFn } from "@tanstack/react-start";
 import { useSession } from "@tanstack/react-start/server";
-import { logLoginAttempt } from "./visitors-log.server";
+import {
+  logLoginAttempt,
+  getRecentFailedAttemptsForIp,
+  getLastFailedAttemptForIp,
+  getCurrentRequestIp,
+} from "./visitors-log.server";
+
+// Rate-limit configuration — keep brute-forcers out of the gate.
+const LOCKOUT_THRESHOLD = 5; // failed attempts before lockout kicks in
+const LOCKOUT_WINDOW_MIN = 15; // minutes — we count failures in this rolling window
+const LOCKOUT_DURATION_MIN = 15; // how long the gate stays barred after threshold
 
 type SessionData = {
   authenticated?: boolean;
