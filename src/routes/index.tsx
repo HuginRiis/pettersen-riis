@@ -188,7 +188,7 @@ function Home() {
           <HallCard to="/turer" title="Ferden" desc="Tips til turer i nærheten." icon="🧭" />
           <HallCard to="/jernhesten" title="Jernhesten" desc="Husets lydløse ganger — Jaguar I-Pace." icon="⚡" />
           <HallCard to="/smarthus" title="Smartborg" desc="Lys, varme og varslere fra Homey." icon="🏰" />
-          <HallCard to="/brodering" title="Brodering" desc="Lag PES-filer for Brother — tekst og bilder." icon="🧵" />
+          
           <HallCard to="/steintavle" title="Steintavle" desc="Husets innskrifter og notater." icon="🪨" />
           <HallCard to="/ranger" title="Ranger" desc="Husets robuste følgesvenn på veiene." icon="🛡" />
           <HallCard to="/oppussing-borgen" title="Prosjekter på Borgen" desc="Prosjekter, planer og bilder fra borgen." icon="🔨" />
@@ -339,7 +339,7 @@ function HallCard({
     | "/jernhesten"
     | "/ranger"
     | "/smarthus"
-    | "/brodering"
+    
     | "/steintavle"
     | "/oppussing-borgen"
     | "/oppussing-hytta";
