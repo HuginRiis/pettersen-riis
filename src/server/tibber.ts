@@ -40,14 +40,19 @@ const HOURLY_TTL_MS = 60_000; // 1 min
 
 function classifyHome(h: HomeNode): "hytta" | "tollnes" | null {
   const hay = `${h.appNickname ?? ""} ${h.address?.address1 ?? ""}`.toLowerCase();
-  if (hay.includes("bjørkeset") || hay.includes("bjorkeset") || hay.includes("hytt")) {
+  if (
+    hay.includes("bjørkeset") ||
+    hay.includes("bjorkeset") ||
+    hay.includes("hytt") ||
+    hay.trim() === "hytta"
+  ) {
     return "hytta";
   }
   if (
     hay.includes("tollnes") ||
     hay.includes("lensmannsveg") ||
     hay.includes("lensmannsvei") ||
-    hay.includes("nordre lensmann")
+    hay.includes("lensmann")
   ) {
     return "tollnes";
   }
