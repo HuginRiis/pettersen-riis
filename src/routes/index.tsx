@@ -228,10 +228,9 @@ function Home() {
           <HallCard to="/hytta" title="Hytta" desc="Husets tilflukt i fjellet." icon="🏔" locked={!isAuthed} />
           <HallCard to="/hundene" title="Hundene" desc="Husets tro følgesvenner." icon="🐺" locked={!isAuthed} />
           <HallCard to="/trening" title="Treningssalen" desc="Kroppen som rustning." icon="⚔️" locked={!isAuthed} />
-          <HallCard to="/jernhesten" title="Jernhesten" desc="Husets lydløse ganger — Jaguar I-Pace." icon="⚡" locked={!isAuthed} />
           <HallCard to="/smarthus" title="Smartborg" desc="Lys, varme og varslere fra Homey." icon="🏰" locked={!isAuthed} />
+          <HallCard to="/stromkroniken" title="Strømkrøniken" desc="Husets strømgull — kostnader, forbruk og priser." icon="⚡" locked={!isAuthed} />
           <HallCard to="/steintavle" title="Steintavle" desc="Husets innskrifter og notater." icon="🪨" locked={!isAuthed} />
-          <HallCard to="/ranger" title="Ranger" desc="Husets robuste følgesvenn på veiene." icon="🛡" locked={!isAuthed} />
           <HallCard to="/oppussing-borgen" title="Prosjekter på Borgen" desc="Prosjekter, planer og bilder fra borgen." icon="🔨" locked={!isAuthed} />
           <HallCard to="/oppussing-hytta" title="Prosjekter på hytta" desc="Prosjekter, planer og bilder fra hytta." icon="🪵" locked={!isAuthed} />
         </div>
@@ -443,8 +442,7 @@ function HallCard({
     | "/hundene"
     | "/trening"
     | "/turer"
-    | "/jernhesten"
-    | "/ranger"
+    | "/stromkroniken"
     | "/smarthus"
     | "/steintavle"
     | "/oppussing-borgen"
