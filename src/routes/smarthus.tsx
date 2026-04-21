@@ -8,7 +8,7 @@ import { findDeviceFuzzy, readTemp } from "@/lib/homey-match";
 import { HomeyApiActivity } from "@/components/HomeyApiActivity";
 import { HomeyApiPauseToggle } from "@/components/HomeyApiPauseToggle";
 import { HeatersPanel } from "@/components/HeatersPanel";
-import { PulseHourlyPanel } from "@/components/PulseHourlyPanel";
+import { TibberLivePanel } from "@/components/TibberLivePanel";
 import { recordHomeyApiCall } from "@/lib/homey-api-tracker";
 import heroImg from "@/assets/got-smarthus.jpg";
 
@@ -562,10 +562,10 @@ function SmarthusPage() {
       />
 
       <section className="container mx-auto px-4 pt-8">
-        <PulseHourlyPanel
+        <TibberLivePanel
           location="tollnes"
           title="Strømforbruk · Tollnes (hjemme)"
-          subtitle="Tibber — siste 24 timer, oppdateres hvert minutt"
+          subtitle="Tibber Pulse · sanntid"
         />
       </section>
 
