@@ -73,6 +73,19 @@ function VakttarnetPage() {
     };
   }, []);
 
+  const reload = useMemo(() => {
+    return async () => {
+      try {
+        const data = await fetch();
+        setSessions(data.sessions);
+        setAttempts(data.attempts);
+        setPageviews(data.pageviews);
+      } finally {
+        setLoading(false);
+      }
+    };
+  }, [fetch]);
+
   useEffect(() => {
     let alive = true;
     const load = async () => {
@@ -136,9 +149,9 @@ function VakttarnetPage() {
           <Panel
             title="Stengte porter"
             icon={<Lock size={14} />}
-            subtitle="IP-er som ble låst ute — og hvor lenge"
+            subtitle="IP-er som ble låst ute — slipp løs hestene for å frigi dem"
           >
-            <Lockouts attempts={attempts} />
+            <Lockouts attempts={attempts} onReleased={reload} />
           </Panel>
         </div>
 
