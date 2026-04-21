@@ -256,6 +256,22 @@ function HomeBlock({
         <EnergyBars highlights={h} />
       </div>
 
+      {/* Daglig sammenligning */}
+      <div>
+        <h3 className="text-sm tracking-[0.3em] uppercase text-primary mb-3 flex items-center gap-2">
+          <TrendingDown size={14} /> I dag mot i går
+        </h3>
+        <DayDeltaPanel highlights={h} />
+      </div>
+
+      {/* Måneds-prognose */}
+      <div>
+        <h3 className="text-sm tracking-[0.3em] uppercase text-primary mb-3 flex items-center gap-2">
+          <Sparkles size={14} /> Månedens spådom
+        </h3>
+        <MonthForecastPanel highlights={h} />
+      </div>
+
       {/* Alle capabilities — tabell */}
       <details className="group">
         <summary className="cursor-pointer text-sm tracking-[0.3em] uppercase text-primary flex items-center gap-2 hover:text-gold transition-colors">
