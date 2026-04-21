@@ -15,8 +15,7 @@ type RoutePath =
   | "/hundene"
   | "/trening"
   | "/turer"
-  | "/jernhesten"
-  | "/ranger"
+  | "/stromkroniken"
   | "/varsler"
   | "/smarthus"
   | "/steintavle"
@@ -38,13 +37,12 @@ const navLinks: NavLink[] = [
   { to: "/vakttarnet", label: "Vakttårnet" },
   { to: "/hytta", label: "Hytta" },
   { to: "/smarthus", label: "Smartborg" },
+  { to: "/stromkroniken", label: "Strømkrøniken" },
   { to: "/oppussing-borgen", label: "Prosjekter på Borgen" },
   { to: "/oppussing-hytta", label: "Prosjekter på hytta" },
   { to: "/hundene", label: "Hundene" },
   { to: "/trening", label: "Trening" },
   { to: "/varsler", label: "Farevarsler" },
-  { to: "/jernhesten", label: "Jernhesten" },
-  { to: "/ranger", label: "Ranger" },
   { to: "/steintavle", label: "Steintavle" },
 ];
 
