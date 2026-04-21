@@ -143,7 +143,9 @@ export const Route = createFileRoute("/api/tibber/live")({
             // `webSocket` fra responsen. Dette mønsteret fungerer både i
             // Workers og i lokal Node-bun dev (via undici/ws-shim).
             try {
-              const upgradeRes = await fetch(wsUrl!, {
+              // Cloudflare fetch-upgrade krever http/https, ikke ws/wss.
+              const httpUrl = wsUrl!.replace(/^ws:/, "http:").replace(/^wss:/, "https:");
+              const upgradeRes = await fetch(httpUrl, {
                 headers: {
                   Upgrade: "websocket",
                   "Sec-WebSocket-Protocol": "graphql-transport-ws",
