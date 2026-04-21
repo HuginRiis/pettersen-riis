@@ -498,6 +498,134 @@ function EnergyBars({ highlights: h }: { highlights: PbthHomeData["highlights"] 
 }
 
 // ============================================================
+// Day delta — today vs yesterday
+// ============================================================
+
+function DayDeltaPanel({ highlights: h }: { highlights: PbthHomeData["highlights"] }) {
+  const eToday = h.energyToday ?? 0;
+  const eYest = h.energyYesterday ?? 0;
+  const cToday = h.costToday ?? 0;
+  const cYest = h.costYesterday ?? 0;
+
+  if (eToday === 0 && eYest === 0) {
+    return <p className="text-xs text-muted-foreground">Ingen data å sammenligne ennå.</p>;
+  }
+
+  const energyDelta = eYest > 0 ? ((eToday - eYest) / eYest) * 100 : 0;
+  const costDelta = cYest > 0 ? ((cToday - cYest) / cYest) * 100 : 0;
+
+  const data = [
+    { label: "kWh", "I går": eYest, "I dag": eToday },
+    { label: "kr", "I går": cYest, "I dag": cToday },
+  ];
+
+  return (
+    <div className="grid md:grid-cols-[1fr,200px] gap-4 items-center">
+      <div className="h-44 w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={data} margin={{ top: 5, right: 8, left: -8, bottom: 0 }}>
+            <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" vertical={false} />
+            <XAxis dataKey="label" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} />
+            <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} width={40} />
+            <Tooltip
+              contentStyle={{
+                background: "hsl(var(--card))",
+                border: "1px solid hsl(var(--border))",
+                borderRadius: 6,
+                fontSize: 12,
+              }}
+            />
+            <Bar dataKey="I går" fill="hsl(var(--muted-foreground))" radius={[3, 3, 0, 0]} />
+            <Bar dataKey="I dag" fill="hsl(var(--primary))" radius={[3, 3, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+      <div className="space-y-2">
+        <DeltaBadge label="Energi" delta={energyDelta} />
+        <DeltaBadge label="Kostnad" delta={costDelta} />
+      </div>
+    </div>
+  );
+}
+
+function DeltaBadge({ label, delta }: { label: string; delta: number }) {
+  const up = delta > 0;
+  const flat = Math.abs(delta) < 0.5;
+  const color = flat
+    ? "text-muted-foreground"
+    : up
+      ? "text-[oklch(0.65_0.22_25)]"
+      : "text-[oklch(0.72_0.16_150)]";
+  const Icon = flat ? Sparkles : up ? TrendingUp : TrendingDown;
+  return (
+    <div className="panel rounded-md p-3 bg-background/30 border border-border/40">
+      <div className="text-[9px] tracking-[0.25em] uppercase text-muted-foreground">{label}</div>
+      <div className={`text-lg font-semibold tabular-nums mt-0.5 flex items-center gap-1.5 ${color}`}>
+        <Icon size={14} />
+        {flat ? "≈ 0%" : `${up ? "+" : ""}${delta.toFixed(1)}%`}
+      </div>
+      <div className="text-[10px] text-muted-foreground mt-0.5">vs i går</div>
+    </div>
+  );
+}
+
+// ============================================================
+// Month forecast — projection based on daily pace
+// ============================================================
+
+function MonthForecastPanel({ highlights: h }: { highlights: PbthHomeData["highlights"] }) {
+  const energyMonth = h.energyThisMonth;
+  const costMonth = h.costThisMonth;
+  if (energyMonth == null && costMonth == null) {
+    return <p className="text-xs text-muted-foreground">Ingen månedsdata tilgjengelig.</p>;
+  }
+
+  const now = new Date();
+  const dayOfMonth = now.getDate();
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const fraction = dayOfMonth / daysInMonth;
+
+  const projectedEnergy = energyMonth != null ? energyMonth / fraction : undefined;
+  const projectedCost = costMonth != null ? costMonth / fraction : undefined;
+  const remainingCost =
+    projectedCost != null && costMonth != null ? projectedCost - costMonth : undefined;
+
+  const pctOfMonth = Math.round(fraction * 100);
+
+  return (
+    <div className="grid sm:grid-cols-2 gap-3">
+      <div className="panel rounded-md p-4 bg-background/30 border border-border/40">
+        <div className="text-[10px] tracking-[0.25em] uppercase text-muted-foreground">
+          Energi · spådom for måneden
+        </div>
+        <div className="text-2xl font-semibold tabular-nums text-primary mt-1">
+          {projectedEnergy != null ? `${projectedEnergy.toFixed(0)} kWh` : "—"}
+        </div>
+        <div className="text-[10px] text-muted-foreground mt-0.5">
+          Per nå: {energyMonth?.toFixed(0) ?? "—"} kWh · {pctOfMonth}% av måneden gått
+        </div>
+      </div>
+      <div className="panel rounded-md p-4 bg-background/30 border border-border/40">
+        <div className="text-[10px] tracking-[0.25em] uppercase text-muted-foreground">
+          Kostnad · spådom for måneden
+        </div>
+        <div className="text-2xl font-semibold tabular-nums text-[oklch(0.78_0.13_85)] mt-1">
+          {projectedCost != null ? `${projectedCost.toFixed(0)} kr` : "—"}
+        </div>
+        <div className="text-[10px] text-muted-foreground mt-0.5">
+          Per nå: {costMonth?.toFixed(0) ?? "—"} kr · gjenstår ~{remainingCost?.toFixed(0) ?? "—"} kr
+        </div>
+        {h.derivedRate != null && (
+          <div className="text-[10px] text-muted-foreground mt-2 italic">
+            Kostnad estimert fra forbruk × {h.derivedRate.toFixed(2)} kr/kWh
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
 // Comparison block
 // ============================================================
 
