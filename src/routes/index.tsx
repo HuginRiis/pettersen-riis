@@ -76,6 +76,20 @@ function Home() {
   const { authenticated } = useAuthStatus();
   const isAuthed = authenticated === true;
 
+  // If the wanderer was sent here from a locked hall (root redirect adds ?login=1),
+  // open the login dialog automatically so they can step through the gate.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("login") === "1" && !isAuthed) {
+      openLoginDialog();
+      params.delete("login");
+      const qs = params.toString();
+      const url = window.location.pathname + (qs ? `?${qs}` : "") + window.location.hash;
+      window.history.replaceState({}, "", url);
+    }
+  }, [isAuthed]);
+
   const handleLogout = async () => {
     try {
       await logoutFn();
@@ -447,9 +461,10 @@ function HallCard({
   if (locked) {
     return (
       <div className="relative">
-        <Link
-          to="/login"
-          className="panel rounded-lg p-6 block group opacity-60 hover:opacity-100 transition-opacity relative overflow-hidden"
+        <button
+          type="button"
+          onClick={() => openLoginDialog()}
+          className="panel rounded-lg p-6 block group opacity-60 hover:opacity-100 transition-opacity relative overflow-hidden text-left w-full"
           title={`${title} — krever passord`}
         >
           <div className="absolute top-2 right-2 p-1.5 rounded-full bg-background/70 backdrop-blur border border-border">
@@ -463,7 +478,7 @@ function HallCard({
           <p className="mt-2 text-[10px] tracking-[0.25em] uppercase text-primary/70">
             Bak portalen
           </p>
-        </Link>
+        </button>
       </div>
     );
   }
@@ -552,13 +567,14 @@ function PortalGate({
             For å tre dypere inn i borgens saler — krønike, vakttårn, hytta og smartborgen — må du åpne portalen med husets nøkkel.
           </p>
           <div className="mt-5 flex items-center justify-center gap-3">
-            <Link
-              to="/login"
+            <button
+              type="button"
+              onClick={() => openLoginDialog()}
               className="got-nav-btn"
             >
               <KeyRound size={14} className="inline mr-1.5 -mt-0.5" />
               Tre inn i borgen
-            </Link>
+            </button>
           </div>
         </div>
       </div>

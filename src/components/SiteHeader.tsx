@@ -70,7 +70,7 @@ export function SiteHeader() {
   };
 
   const handleLogin = () => {
-    router.navigate({ to: "/login" });
+    openLoginDialog();
   };
 
   return (
