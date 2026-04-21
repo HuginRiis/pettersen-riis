@@ -82,6 +82,65 @@ async function lookupGeo(ip: string | null) {
   }
 }
 
+/**
+ * Returns number of failed login attempts from a given IP within the last `windowMinutes`.
+ * Used by the login flow to enforce rate-limiting / temporary lockout.
+ */
+export async function getRecentFailedAttemptsForIp(
+  ip: string | null,
+  windowMinutes: number,
+): Promise<number> {
+  if (!ip) return 0;
+  try {
+    const since = new Date(Date.now() - windowMinutes * 60 * 1000).toISOString();
+    const { count, error } = await supabaseAdmin
+      .from("visitor_login_attempts" as any)
+      .select("id", { count: "exact", head: true })
+      .eq("ip", ip)
+      .eq("success", false)
+      .gte("attempted_at", since);
+    if (error) return 0;
+    return count ?? 0;
+  } catch {
+    return 0;
+  }
+}
+
+/**
+ * Returns the timestamp of the most recent failed attempt from this IP, or null.
+ * Used to compute when the lockout expires.
+ */
+export async function getLastFailedAttemptForIp(ip: string | null): Promise<Date | null> {
+  if (!ip) return null;
+  try {
+    const { data, error } = await supabaseAdmin
+      .from("visitor_login_attempts" as any)
+      .select("attempted_at")
+      .eq("ip", ip)
+      .eq("success", false)
+      .order("attempted_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (error || !data) return null;
+    return new Date((data as any).attempted_at);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Helper to read the caller's IP from the current request — exposed so the auth
+ * flow can rate-limit by IP without re-parsing headers.
+ */
+export function getCurrentRequestIp(): string | null {
+  try {
+    const req = getRequest();
+    return parseClientIpFromHeaders(req.headers);
+  } catch {
+    return null;
+  }
+}
+
 export async function logLoginAttempt(success: boolean) {
   try {
     const req = getRequest();
