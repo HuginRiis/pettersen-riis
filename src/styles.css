@@ -264,3 +264,82 @@
   50%, 100% { transform: rotate(0) scale(1); }
 }
 .holiday-anim-gift { animation: holiday-gift 3s ease-in-out infinite; }
+
+/* ─────────────────────────────────────────────────────────────
+   GOT-style menu buttons
+   ───────────────────────────────────────────────────────────── */
+
+.got-nav-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.35rem 0.75rem;
+  font-family: var(--font-display);
+  font-size: 0.68rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: oklch(0.68 0.02 80);
+  background: linear-gradient(180deg, oklch(0.22 0.014 240), oklch(0.16 0.012 240));
+  border: 1px solid oklch(0.30 0.014 240 / 70%);
+  border-radius: 2px;
+  box-shadow:
+    inset 0 1px 0 oklch(0.32 0.014 240 / 60%),
+    0 1px 2px oklch(0 0 0 / 0.4);
+  transition: color 200ms ease, border-color 200ms ease, box-shadow 200ms ease, transform 200ms ease;
+}
+
+.got-nav-btn::before,
+.got-nav-btn::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 4px;
+  height: 4px;
+  background: var(--color-primary);
+  opacity: 0;
+  transform: translateY(-50%) rotate(45deg);
+  transition: opacity 200ms ease;
+}
+.got-nav-btn::before { left: -2px; }
+.got-nav-btn::after { right: -2px; }
+
+.got-nav-btn:hover {
+  color: var(--color-primary);
+  border-color: oklch(0.72 0.13 75 / 60%);
+  box-shadow:
+    inset 0 1px 0 oklch(0.72 0.13 75 / 20%),
+    0 0 12px oklch(0.72 0.13 75 / 25%);
+  transform: translateY(-1px);
+}
+.got-nav-btn:hover::before,
+.got-nav-btn:hover::after {
+  opacity: 0.8;
+}
+
+.got-nav-btn[data-status="active"] {
+  color: var(--color-primary);
+  background: linear-gradient(180deg, oklch(0.28 0.04 75 / 60%), oklch(0.18 0.02 240));
+  border-color: oklch(0.72 0.13 75 / 80%);
+  font-weight: 600;
+  animation: got-nav-pulse 2.2s ease-in-out infinite;
+}
+.got-nav-btn[data-status="active"]::before,
+.got-nav-btn[data-status="active"]::after {
+  opacity: 1;
+}
+
+@keyframes got-nav-pulse {
+  0%, 100% {
+    box-shadow:
+      inset 0 1px 0 oklch(0.72 0.13 75 / 25%),
+      0 0 8px oklch(0.72 0.13 75 / 30%),
+      0 0 0 0 oklch(0.72 0.13 75 / 0.5);
+  }
+  50% {
+    box-shadow:
+      inset 0 1px 0 oklch(0.72 0.13 75 / 40%),
+      0 0 18px oklch(0.72 0.13 75 / 60%),
+      0 0 0 4px oklch(0.72 0.13 75 / 0);
+  }
+}
