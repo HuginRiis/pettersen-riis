@@ -132,6 +132,31 @@ export async function getLastFailedAttemptForIp(ip: string | null): Promise<Date
  * Helper to read the caller's IP from the current request — exposed so the auth
  * flow can rate-limit by IP without re-parsing headers.
  */
+/**
+ * Returns timestamps of all failed attempts from this IP within the last `windowHours`,
+ * ordered ascending. Used to compute escalating lockout durations.
+ */
+export async function getFailedAttemptTimestampsForIp(
+  ip: string | null,
+  windowHours: number,
+): Promise<Date[]> {
+  if (!ip) return [];
+  try {
+    const since = new Date(Date.now() - windowHours * 60 * 60 * 1000).toISOString();
+    const { data, error } = await supabaseAdmin
+      .from("visitor_login_attempts" as any)
+      .select("attempted_at")
+      .eq("ip", ip)
+      .eq("success", false)
+      .gte("attempted_at", since)
+      .order("attempted_at", { ascending: true });
+    if (error || !data) return [];
+    return (data as any[]).map((r) => new Date(r.attempted_at));
+  } catch {
+    return [];
+  }
+}
+
 export function getCurrentRequestIp(): string | null {
   try {
     const req = getRequest();

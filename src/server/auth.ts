@@ -2,15 +2,51 @@ import { createServerFn } from "@tanstack/react-start";
 import { useSession } from "@tanstack/react-start/server";
 import {
   logLoginAttempt,
-  getRecentFailedAttemptsForIp,
-  getLastFailedAttemptForIp,
+  getFailedAttemptTimestampsForIp,
   getCurrentRequestIp,
 } from "./visitors-log.server";
 
 // Rate-limit configuration — keep brute-forcers out of the gate.
-const LOCKOUT_THRESHOLD = 5; // failed attempts before lockout kicks in
-const LOCKOUT_WINDOW_MIN = 15; // minutes — we count failures in this rolling window
-const LOCKOUT_DURATION_MIN = 15; // how long the gate stays barred after threshold
+const LOCKOUT_THRESHOLD = 5; // failed attempts inside the rolling window before a lockout episode triggers
+const LOCKOUT_WINDOW_MIN = 15; // rolling window we count failures within
+const ESCALATION_LOOKBACK_HOURS = 24; // how far back we look to count prior lockout episodes
+// Escalating lockout durations (minutes) per episode within the lookback window.
+// 1st lockout = 1 min, 2nd = 15 min, 3rd or more = 60 min.
+const LOCKOUT_DURATIONS_MIN = [1, 15, 60] as const;
+
+/**
+ * Group failure timestamps into "lockout episodes". An episode is a cluster of
+ * ≥ LOCKOUT_THRESHOLD failures inside any LOCKOUT_WINDOW_MIN window. We walk the
+ * sorted timestamps once: each time we cross the threshold we mark an episode
+ * starting at the threshold-th failure, then skip forward past that episode's
+ * window before counting the next one. This lets us count distinct lockout
+ * incidents instead of every failed click.
+ *
+ * Returns the start time of every detected episode (ascending).
+ */
+function detectLockoutEpisodes(failures: Date[]): Date[] {
+  const episodes: Date[] = [];
+  const windowMs = LOCKOUT_WINDOW_MIN * 60 * 1000;
+  let i = 0;
+  while (i < failures.length) {
+    // Check if there's a window starting at i that contains ≥ THRESHOLD failures
+    const windowEnd = failures[i]!.getTime() + windowMs;
+    let j = i;
+    while (j < failures.length && failures[j]!.getTime() <= windowEnd) j++;
+    const count = j - i;
+    if (count >= LOCKOUT_THRESHOLD) {
+      // Episode triggered at the threshold-th failure
+      const triggerIdx = i + LOCKOUT_THRESHOLD - 1;
+      episodes.push(failures[triggerIdx]!);
+      // Skip past the rest of this cluster so we don't double-count
+      i = j;
+    } else {
+      i++;
+    }
+  }
+  return episodes;
+}
+
 
 type SessionData = {
   authenticated?: boolean;
@@ -52,15 +88,19 @@ export const loginFn = createServerFn({ method: "POST" })
       throw new Error("Server mangler passord-konfigurasjon");
     }
 
-    // ---- Rate limiting: bar the gate after too many failed attempts from one IP ----
+    // ---- Escalating rate-limit: 1st lockout = 1 min, 2nd = 15 min, 3rd+ = 60 min ----
     const ip = getCurrentRequestIp();
     if (ip) {
-      const failures = await getRecentFailedAttemptsForIp(ip, LOCKOUT_WINDOW_MIN);
-      if (failures >= LOCKOUT_THRESHOLD) {
-        const last = await getLastFailedAttemptForIp(ip);
-        const unlockAt = last
-          ? new Date(last.getTime() + LOCKOUT_DURATION_MIN * 60 * 1000)
-          : new Date(Date.now() + LOCKOUT_DURATION_MIN * 60 * 1000);
+      const failures = await getFailedAttemptTimestampsForIp(ip, ESCALATION_LOOKBACK_HOURS);
+      const episodes = detectLockoutEpisodes(failures);
+      if (episodes.length > 0) {
+        // The most recent episode determines the active lockout (if still pending)
+        const lastEpisode = episodes[episodes.length - 1]!;
+        // The episode count BEFORE this one tells us which escalation tier to use:
+        // 1st episode → tier 0 (1 min), 2nd → tier 1 (15 min), 3rd+ → tier 2 (60 min)
+        const tier = Math.min(episodes.length - 1, LOCKOUT_DURATIONS_MIN.length - 1);
+        const durationMin = LOCKOUT_DURATIONS_MIN[tier]!;
+        const unlockAt = new Date(lastEpisode.getTime() + durationMin * 60 * 1000);
         const remainingMs = unlockAt.getTime() - Date.now();
         if (remainingMs > 0) {
           const minutes = Math.max(1, Math.ceil(remainingMs / 60000));
@@ -72,6 +112,7 @@ export const loginFn = createServerFn({ method: "POST" })
         }
       }
     }
+
 
     // Constant-time-ish comparison
     const a = Buffer.from(data.password);
