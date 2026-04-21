@@ -3,14 +3,15 @@ import { createFileRoute } from "@tanstack/react-router";
 import { PageShell } from "@/components/PageShell";
 import { HouseHero } from "@/components/HouseHero";
 import { useServerFn } from "@tanstack/react-start";
-import { fetchVakttarnetData } from "@/server/visitors";
+import { fetchVakttarnetData, releaseIpFn } from "@/server/visitors";
 import type {
   VisitorSessionRow,
   LoginAttemptRow,
   PageviewRow,
 } from "@/server/visitors";
+import { useAuthStatus } from "@/hooks/use-auth-status";
 import heroImg from "@/assets/got-vakttarnet.jpg";
-import { Eye, Globe2, Smartphone, Monitor, Tablet, Clock, Crown, ShieldAlert, Map as MapIcon, Lock } from "lucide-react";
+import { Eye, Globe2, Smartphone, Monitor, Tablet, Clock, Crown, ShieldAlert, Map as MapIcon, Lock, Unlock } from "lucide-react";
 
 export const Route = createFileRoute("/vakttarnet")({
   head: () => ({
