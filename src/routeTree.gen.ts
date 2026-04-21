@@ -14,6 +14,7 @@ import { Route as VarRouteImport } from './routes/var'
 import { Route as VakttarnetRouteImport } from './routes/vakttarnet'
 import { Route as TurerRouteImport } from './routes/turer'
 import { Route as TreningRouteImport } from './routes/trening'
+import { Route as StromkronikenRouteImport } from './routes/stromkroniken'
 import { Route as SteintavleRouteImport } from './routes/steintavle'
 import { Route as SmarthusRouteImport } from './routes/smarthus'
 import { Route as PollenRouteImport } from './routes/pollen'
@@ -52,6 +53,11 @@ const TurerRoute = TurerRouteImport.update({
 const TreningRoute = TreningRouteImport.update({
   id: '/trening',
   path: '/trening',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StromkronikenRoute = StromkronikenRouteImport.update({
+  id: '/stromkroniken',
+  path: '/stromkroniken',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SteintavleRoute = SteintavleRouteImport.update({
@@ -135,6 +141,7 @@ export interface FileRoutesByFullPath {
   '/pollen': typeof PollenRoute
   '/smarthus': typeof SmarthusRoute
   '/steintavle': typeof SteintavleRoute
+  '/stromkroniken': typeof StromkronikenRoute
   '/trening': typeof TreningRoute
   '/turer': typeof TurerRoute
   '/vakttarnet': typeof VakttarnetRoute
@@ -156,6 +163,7 @@ export interface FileRoutesByTo {
   '/pollen': typeof PollenRoute
   '/smarthus': typeof SmarthusRoute
   '/steintavle': typeof SteintavleRoute
+  '/stromkroniken': typeof StromkronikenRoute
   '/trening': typeof TreningRoute
   '/turer': typeof TurerRoute
   '/vakttarnet': typeof VakttarnetRoute
@@ -178,6 +186,7 @@ export interface FileRoutesById {
   '/pollen': typeof PollenRoute
   '/smarthus': typeof SmarthusRoute
   '/steintavle': typeof SteintavleRoute
+  '/stromkroniken': typeof StromkronikenRoute
   '/trening': typeof TreningRoute
   '/turer': typeof TurerRoute
   '/vakttarnet': typeof VakttarnetRoute
@@ -201,6 +210,7 @@ export interface FileRouteTypes {
     | '/pollen'
     | '/smarthus'
     | '/steintavle'
+    | '/stromkroniken'
     | '/trening'
     | '/turer'
     | '/vakttarnet'
@@ -222,6 +232,7 @@ export interface FileRouteTypes {
     | '/pollen'
     | '/smarthus'
     | '/steintavle'
+    | '/stromkroniken'
     | '/trening'
     | '/turer'
     | '/vakttarnet'
@@ -243,6 +254,7 @@ export interface FileRouteTypes {
     | '/pollen'
     | '/smarthus'
     | '/steintavle'
+    | '/stromkroniken'
     | '/trening'
     | '/turer'
     | '/vakttarnet'
@@ -265,6 +277,7 @@ export interface RootRouteChildren {
   PollenRoute: typeof PollenRoute
   SmarthusRoute: typeof SmarthusRoute
   SteintavleRoute: typeof SteintavleRoute
+  StromkronikenRoute: typeof StromkronikenRoute
   TreningRoute: typeof TreningRoute
   TurerRoute: typeof TurerRoute
   VakttarnetRoute: typeof VakttarnetRoute
@@ -312,6 +325,13 @@ declare module '@tanstack/react-router' {
       path: '/trening'
       fullPath: '/trening'
       preLoaderRoute: typeof TreningRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/stromkroniken': {
+      id: '/stromkroniken'
+      path: '/stromkroniken'
+      fullPath: '/stromkroniken'
+      preLoaderRoute: typeof StromkronikenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/steintavle': {
@@ -425,6 +445,7 @@ const rootRouteChildren: RootRouteChildren = {
   PollenRoute: PollenRoute,
   SmarthusRoute: SmarthusRoute,
   SteintavleRoute: SteintavleRoute,
+  StromkronikenRoute: StromkronikenRoute,
   TreningRoute: TreningRoute,
   TurerRoute: TurerRoute,
   VakttarnetRoute: VakttarnetRoute,
