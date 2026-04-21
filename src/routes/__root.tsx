@@ -2,6 +2,9 @@ import { Outlet, Link, createRootRoute, HeadContent, Scripts, redirect } from "@
 import { checkAuth } from "@/server/auth";
 import { VisitorTracker } from "@/components/VisitorTracker";
 
+// Routes that are accessible without logging in (visitors entering the castle gates)
+const PUBLIC_PATHS = new Set<string>(["/", "/login", "/var", "/pollen", "/turer"]);
+
 import appCss from "../styles.css?url";
 
 function NotFoundComponent() {
@@ -28,8 +31,8 @@ function NotFoundComponent() {
 
 export const Route = createRootRoute({
   beforeLoad: async ({ location }) => {
-    // Public paths that do not require auth
-    if (location.pathname === "/login") return;
+    // Public paths that do not require auth — visitors may enter the courtyard freely
+    if (PUBLIC_PATHS.has(location.pathname)) return;
     const { authenticated } = await checkAuth();
     if (!authenticated) {
       throw redirect({ to: "/login" });
