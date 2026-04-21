@@ -1,6 +1,26 @@
 import { createServerFn } from "@tanstack/react-start";
-import { getRequest, getRequestHeader } from "@tanstack/react-start/server";
+import { getRequest, getRequestHeader, useSession } from "@tanstack/react-start/server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+
+// Mirror of the session config in src/server/auth.ts — kept inline to avoid a
+// circular import. Used by `releaseIpFn` to ensure only authenticated users
+// (the lord and lady of the house) can free a locked-out IP.
+type AuthSessionData = { authenticated?: boolean; loggedInAt?: number };
+function getAuthSessionConfig() {
+  const base = process.env.HOUSE_RIIS_PASSWORD ?? "";
+  const derived = (base + "::house-riis-session-v1::winter-is-ours").repeat(4).slice(0, 64);
+  return {
+    password: derived,
+    name: "house_riis_session",
+    maxAge: 60 * 60 * 24 * 30,
+    cookie: {
+      httpOnly: true,
+      secure: true,
+      sameSite: "none" as const,
+      path: "/",
+    },
+  };
+}
 
 type GeoInfo = {
   ip: string | null;
@@ -344,3 +364,34 @@ export const fetchVakttarnetData = createServerFn({ method: "GET" }).handler(asy
     pageviews: (pageviews ?? []) as unknown as PageviewRow[],
   };
 });
+
+/**
+ * "Slipp løs hestene" — frees a locked-out IP by deleting all of its failed
+ * login attempts in the last 24 hours. The escalation logic in src/server/auth.ts
+ * counts failures within this rolling window, so removing them clears the lockout
+ * immediately. Successful attempts are left intact for the audit trail.
+ *
+ * Requires an authenticated session — only the house can free wanderers.
+ */
+export const releaseIpFn = createServerFn({ method: "POST" })
+  .inputValidator((data: { ip: string }) => {
+    if (typeof data?.ip !== "string" || data.ip.length === 0 || data.ip.length > 64) {
+      throw new Error("Ugyldig IP");
+    }
+    return { ip: data.ip };
+  })
+  .handler(async ({ data }) => {
+    const session = await useSession<AuthSessionData>(getAuthSessionConfig());
+    if (session.data?.authenticated !== true) {
+      throw new Error("Bare husets herskere kan slippe løs hestene");
+    }
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const { error, count } = await supabaseAdmin
+      .from("visitor_login_attempts" as any)
+      .delete({ count: "exact" })
+      .eq("ip", data.ip)
+      .eq("success", false)
+      .gte("attempted_at", since);
+    if (error) throw new Error(error.message);
+    return { released: true, removed: count ?? 0, ip: data.ip };
+  });
