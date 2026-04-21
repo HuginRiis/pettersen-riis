@@ -168,23 +168,44 @@ function buildHomeData(device: HomeyDeviceSnapshot | null): PbthHomeData {
     matchedDeviceName: device.name,
     found: true,
     capabilities: caps,
-    highlights: {
-      priceNow: num("meter_price_incl_vat") ?? num("meter_price_now"),
-      consumptionNow: num("meter_consumption") ?? num("meter_power") ?? num("measure_power"),
-      costToday: num("meter_cost_today"),
-      costYesterday: num("meter_cost_yesterday"),
-      costThisMonth: num("meter_cost_this_month"),
-      costLastMonth: num("meter_cost_last_month"),
-      costThisYear: num("meter_cost_this_year"),
-      energyToday: num("meter_consumption_today"),
-      energyYesterday: num("meter_consumption_yesterday"),
-      energyThisMonth: num("meter_consumption_this_month"),
-      energyLastMonth: num("meter_consumption_last_month"),
-      energyThisYear: num("meter_consumption_this_year"),
-      priceAvgToday: num("meter_price_avg"),
-      priceMinToday: num("meter_price_lowest"),
-      priceMaxToday: num("meter_price_highest"),
-    },
+    highlights: buildHighlights(num),
+  };
+}
+
+const FALLBACK_RATE = 0.5; // kr/kWh — brukes når Power-by-the-Hour ikke har egne kostnader
+
+function buildHighlights(
+  num: (id: string) => number | undefined,
+): PbthHomeData["highlights"] {
+  const energyToday = num("meter_kwh_this_day") ?? num("meter_consumption_today");
+  const energyYesterday = num("meter_kwh_yesterday") ?? num("meter_consumption_yesterday");
+  const energyThisMonth = num("meter_kwh_this_month") ?? num("meter_consumption_this_month");
+  const energyLastMonth = num("meter_kwh_last_month") ?? num("meter_consumption_last_month");
+  const energyThisYear = num("meter_kwh_this_year") ?? num("meter_consumption_this_year");
+
+  const priceNow = num("meter_price_incl_vat") ?? num("meter_price_now");
+  const rate = priceNow ?? FALLBACK_RATE;
+
+  const derive = (kwh?: number) =>
+    kwh != null ? Math.round(kwh * FALLBACK_RATE * 100) / 100 : undefined;
+
+  return {
+    priceNow,
+    consumptionNow: num("meter_consumption") ?? num("meter_power") ?? num("measure_power"),
+    costToday: num("meter_cost_today") ?? derive(energyToday),
+    costYesterday: num("meter_cost_yesterday") ?? derive(energyYesterday),
+    costThisMonth: num("meter_cost_this_month") ?? derive(energyThisMonth),
+    costLastMonth: num("meter_cost_last_month") ?? derive(energyLastMonth),
+    costThisYear: num("meter_cost_this_year") ?? derive(energyThisYear),
+    energyToday,
+    energyYesterday,
+    energyThisMonth,
+    energyLastMonth,
+    energyThisYear,
+    priceAvgToday: num("meter_price_avg"),
+    priceMinToday: num("meter_price_lowest"),
+    priceMaxToday: num("meter_price_highest"),
+    derivedRate: FALLBACK_RATE,
   };
 }
 
