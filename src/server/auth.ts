@@ -88,15 +88,19 @@ export const loginFn = createServerFn({ method: "POST" })
       throw new Error("Server mangler passord-konfigurasjon");
     }
 
-    // ---- Rate limiting: bar the gate after too many failed attempts from one IP ----
+    // ---- Escalating rate-limit: 1st lockout = 1 min, 2nd = 15 min, 3rd+ = 60 min ----
     const ip = getCurrentRequestIp();
     if (ip) {
-      const failures = await getRecentFailedAttemptsForIp(ip, LOCKOUT_WINDOW_MIN);
-      if (failures >= LOCKOUT_THRESHOLD) {
-        const last = await getLastFailedAttemptForIp(ip);
-        const unlockAt = last
-          ? new Date(last.getTime() + LOCKOUT_DURATION_MIN * 60 * 1000)
-          : new Date(Date.now() + LOCKOUT_DURATION_MIN * 60 * 1000);
+      const failures = await getFailedAttemptTimestampsForIp(ip, ESCALATION_LOOKBACK_HOURS);
+      const episodes = detectLockoutEpisodes(failures);
+      if (episodes.length > 0) {
+        // The most recent episode determines the active lockout (if still pending)
+        const lastEpisode = episodes[episodes.length - 1]!;
+        // The episode count BEFORE this one tells us which escalation tier to use:
+        // 1st episode → tier 0 (1 min), 2nd → tier 1 (15 min), 3rd+ → tier 2 (60 min)
+        const tier = Math.min(episodes.length - 1, LOCKOUT_DURATIONS_MIN.length - 1);
+        const durationMin = LOCKOUT_DURATIONS_MIN[tier]!;
+        const unlockAt = new Date(lastEpisode.getTime() + durationMin * 60 * 1000);
         const remainingMs = unlockAt.getTime() - Date.now();
         if (remainingMs > 0) {
           const minutes = Math.max(1, Math.ceil(remainingMs / 60000));
@@ -108,6 +112,7 @@ export const loginFn = createServerFn({ method: "POST" })
         }
       }
     }
+
 
     // Constant-time-ish comparison
     const a = Buffer.from(data.password);
