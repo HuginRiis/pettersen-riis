@@ -108,7 +108,7 @@ export const Route = createFileRoute("/api/tibber/live")({
         let closed = false;
 
         const stream = new ReadableStream({
-          start(controller) {
+          async start(controller) {
             const send = (event: string, data: unknown) => {
               if (closed) return;
               try {
@@ -136,27 +136,51 @@ export const Route = createFileRoute("/api/tibber/live")({
               }
             };
 
-            // SSE krever at vi sender noe raskt for å unngå proxy-timeouts.
             send("ready", { homeId });
 
+            // Cloudflare Workers støtter ikke `new WebSocket(url)` for utgående
+            // tilkoblinger — vi må bruke fetch() med Upgrade-header og lese
+            // `webSocket` fra responsen. Dette mønsteret fungerer både i
+            // Workers og i lokal Node-bun dev (via undici/ws-shim).
             try {
-              socket = new WebSocket(wsUrl!, "graphql-transport-ws");
+              const upgradeRes = await fetch(wsUrl!, {
+                headers: {
+                  Upgrade: "websocket",
+                  "Sec-WebSocket-Protocol": "graphql-transport-ws",
+                },
+              });
+              const ws = (upgradeRes as unknown as { webSocket?: WebSocket }).webSocket;
+              if (!ws) {
+                send("error", {
+                  message: `WS-upgrade feilet (status ${upgradeRes.status})`,
+                });
+                cleanup();
+                return;
+              }
+              // Cloudflare krever .accept() før send/receive.
+              (ws as unknown as { accept?: () => void }).accept?.();
+              socket = ws;
             } catch (e: any) {
               send("error", { message: `WS feilet: ${e?.message ?? e}` });
               cleanup();
               return;
             }
 
-            socket.addEventListener("open", () => {
-              socket?.send(
+            // Init etter accept.
+            try {
+              socket.send(
                 JSON.stringify({
                   type: "connection_init",
                   payload: { token },
                 }),
               );
-            });
+            } catch (e: any) {
+              send("error", { message: `WS init feilet: ${e?.message ?? e}` });
+              cleanup();
+              return;
+            }
 
-            socket.addEventListener("message", (ev) => {
+            socket.addEventListener("message", (ev: MessageEvent) => {
               let msg: any;
               try {
                 msg = JSON.parse(typeof ev.data === "string" ? ev.data : "");
@@ -209,7 +233,6 @@ export const Route = createFileRoute("/api/tibber/live")({
               cleanup();
             });
 
-            // Hold koblingen åpen gjennom proxyer.
             heartbeat = setInterval(() => {
               if (closed) return;
               try {
@@ -219,7 +242,6 @@ export const Route = createFileRoute("/api/tibber/live")({
               }
             }, 25_000);
 
-            // Hvis klienten lukker SSE.
             request.signal.addEventListener("abort", cleanup);
           },
           cancel() {
