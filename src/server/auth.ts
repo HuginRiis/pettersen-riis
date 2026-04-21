@@ -51,6 +51,28 @@ export const loginFn = createServerFn({ method: "POST" })
     if (!expected) {
       throw new Error("Server mangler passord-konfigurasjon");
     }
+
+    // ---- Rate limiting: bar the gate after too many failed attempts from one IP ----
+    const ip = getCurrentRequestIp();
+    if (ip) {
+      const failures = await getRecentFailedAttemptsForIp(ip, LOCKOUT_WINDOW_MIN);
+      if (failures >= LOCKOUT_THRESHOLD) {
+        const last = await getLastFailedAttemptForIp(ip);
+        const unlockAt = last
+          ? new Date(last.getTime() + LOCKOUT_DURATION_MIN * 60 * 1000)
+          : new Date(Date.now() + LOCKOUT_DURATION_MIN * 60 * 1000);
+        const remainingMs = unlockAt.getTime() - Date.now();
+        if (remainingMs > 0) {
+          const minutes = Math.max(1, Math.ceil(remainingMs / 60000));
+          // Slow the response down a bit — adds friction to scripted attempts
+          await new Promise((r) => setTimeout(r, 800));
+          throw new Error(
+            `For mange feil-forsøk. Porten er stengt i ca. ${minutes} minutt${minutes === 1 ? "" : "er"}.`,
+          );
+        }
+      }
+    }
+
     // Constant-time-ish comparison
     const a = Buffer.from(data.password);
     const b = Buffer.from(expected);
