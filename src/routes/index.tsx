@@ -73,6 +73,9 @@ function Home() {
       await logoutFn();
     } finally {
       await router.invalidate();
+      if (typeof window !== "undefined") {
+        window.location.reload();
+      }
     }
   };
 
@@ -438,7 +441,7 @@ function PortalGate({
             </div>
             <div>
               <div className="text-[10px] tracking-[0.3em] uppercase text-primary/80">
-                Portalen er åpen
+                Borgen er åpne
               </div>
               <div className="text-sm sm:text-base text-foreground">
                 Velkommen, herskere av huset.
