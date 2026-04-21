@@ -78,7 +78,7 @@ export function SiteHeader() {
           </div>
         </Link>
 
-        <nav className="hidden md:flex flex-1 flex-wrap items-center justify-end gap-x-3 gap-y-1">
+        <nav className="hidden md:flex flex-1 flex-wrap items-center justify-start gap-x-3 gap-y-1">
           {navLinks.map((l) => (
             <Link
               key={l.to}
