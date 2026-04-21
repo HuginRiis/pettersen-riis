@@ -10,7 +10,7 @@ import {
   Tooltip,
   CartesianGrid,
 } from "recharts";
-import { getPulseLive, type PulseLiveResult } from "@/server/pulse-readings";
+import { getTibberHourly, type TibberHourlyResult } from "@/server/tibber";
 
 export function PulseHourlyPanel({
   location,
@@ -21,8 +21,8 @@ export function PulseHourlyPanel({
   title: string;
   subtitle?: string;
 }) {
-  const fetchLive = useServerFn(getPulseLive);
-  const [state, setState] = useState<PulseLiveResult | null>(null);
+  const fetchLive = useServerFn(getTibberHourly);
+  const [state, setState] = useState<TibberHourlyResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [updated, setUpdated] = useState<Date | null>(null);
 
@@ -51,14 +51,22 @@ export function PulseHourlyPanel({
   const hours = state?.hours ?? [];
   const error = state?.error ?? null;
 
-  const chartData = hours.map((h) => ({
-    hour: h.hour,
-    kwh: h.kwh,
-    isToday: h.isToday,
-  }));
+  // Marker timer som tilhører i dag (Oslo-tid) for fargelegging av søylene.
+  const todayKey = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Oslo" });
+  const chartData = hours.map((h) => {
+    const dKey = new Date(h.from).toLocaleDateString("sv-SE", { timeZone: "Europe/Oslo" });
+    return {
+      hour: h.hour,
+      kwh: h.kwh,
+      isToday: dKey === todayKey,
+    };
+  });
 
-  const watt = state?.watt ?? null;
-  const kwhToday = state?.kwhToday ?? null;
+  // Tibber leverer ikke "watt akkurat nå" — vi viser siste fullførte
+  // time som proxy (kWh i siste time × 1000 = gjennomsnittlig watt).
+  const latestKwh = state?.latestHourKwh ?? null;
+  const watt = latestKwh != null ? Math.round(latestKwh * 1000) : null;
+  const kwhToday = state?.todayKwh ?? null;
   const updatedLabel = updated
     ? updated.toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit" })
     : "—";
