@@ -1,6 +1,26 @@
 import { createServerFn } from "@tanstack/react-start";
-import { getRequest, getRequestHeader } from "@tanstack/react-start/server";
+import { getRequest, getRequestHeader, useSession } from "@tanstack/react-start/server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+
+// Mirror of the session config in src/server/auth.ts — kept inline to avoid a
+// circular import. Used by `releaseIpFn` to ensure only authenticated users
+// (the lord and lady of the house) can free a locked-out IP.
+type AuthSessionData = { authenticated?: boolean; loggedInAt?: number };
+function getAuthSessionConfig() {
+  const base = process.env.HOUSE_RIIS_PASSWORD ?? "";
+  const derived = (base + "::house-riis-session-v1::winter-is-ours").repeat(4).slice(0, 64);
+  return {
+    password: derived,
+    name: "house_riis_session",
+    maxAge: 60 * 60 * 24 * 30,
+    cookie: {
+      httpOnly: true,
+      secure: true,
+      sameSite: "none" as const,
+      path: "/",
+    },
+  };
+}
 
 type GeoInfo = {
   ip: string | null;
