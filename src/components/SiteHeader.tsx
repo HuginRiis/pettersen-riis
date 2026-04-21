@@ -17,7 +17,7 @@ type RoutePath =
   | "/ranger"
   | "/varsler"
   | "/smarthus"
-  | "/brodering"
+  
   | "/steintavle"
   | "/oppussing-borgen"
   | "/oppussing-hytta";

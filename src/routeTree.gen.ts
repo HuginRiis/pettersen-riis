@@ -24,7 +24,6 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as JernhestenRouteImport } from './routes/jernhesten'
 import { Route as HyttaRouteImport } from './routes/hytta'
 import { Route as HundeneRouteImport } from './routes/hundene'
-import { Route as BroderingRouteImport } from './routes/brodering'
 import { Route as AgendaRouteImport } from './routes/agenda'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as HooksLogPulseRouteImport } from './routes/hooks.log-pulse'
@@ -108,11 +107,6 @@ const HundeneRoute = HundeneRouteImport.update({
   path: '/hundene',
   getParentRoute: () => rootRouteImport,
 } as any)
-const BroderingRoute = BroderingRouteImport.update({
-  id: '/brodering',
-  path: '/brodering',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AgendaRoute = AgendaRouteImport.update({
   id: '/agenda',
   path: '/agenda',
@@ -152,7 +146,6 @@ const ApiHomeyCallbackRoute = ApiHomeyCallbackRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/agenda': typeof AgendaRoute
-  '/brodering': typeof BroderingRoute
   '/hundene': typeof HundeneRoute
   '/hytta': typeof HyttaRoute
   '/jernhesten': typeof JernhestenRoute
@@ -177,7 +170,6 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/agenda': typeof AgendaRoute
-  '/brodering': typeof BroderingRoute
   '/hundene': typeof HundeneRoute
   '/hytta': typeof HyttaRoute
   '/jernhesten': typeof JernhestenRoute
@@ -203,7 +195,6 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/agenda': typeof AgendaRoute
-  '/brodering': typeof BroderingRoute
   '/hundene': typeof HundeneRoute
   '/hytta': typeof HyttaRoute
   '/jernhesten': typeof JernhestenRoute
@@ -230,7 +221,6 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/agenda'
-    | '/brodering'
     | '/hundene'
     | '/hytta'
     | '/jernhesten'
@@ -255,7 +245,6 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/agenda'
-    | '/brodering'
     | '/hundene'
     | '/hytta'
     | '/jernhesten'
@@ -280,7 +269,6 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/agenda'
-    | '/brodering'
     | '/hundene'
     | '/hytta'
     | '/jernhesten'
@@ -306,7 +294,6 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AgendaRoute: typeof AgendaRoute
-  BroderingRoute: typeof BroderingRoute
   HundeneRoute: typeof HundeneRoute
   HyttaRoute: typeof HyttaRoute
   JernhestenRoute: typeof JernhestenRoute
@@ -436,13 +423,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HundeneRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/brodering': {
-      id: '/brodering'
-      path: '/brodering'
-      fullPath: '/brodering'
-      preLoaderRoute: typeof BroderingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/agenda': {
       id: '/agenda'
       path: '/agenda'
@@ -498,7 +478,6 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AgendaRoute: AgendaRoute,
-  BroderingRoute: BroderingRoute,
   HundeneRoute: HundeneRoute,
   HyttaRoute: HyttaRoute,
   JernhestenRoute: JernhestenRoute,
@@ -523,3 +502,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
