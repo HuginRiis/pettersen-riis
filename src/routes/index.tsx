@@ -1,14 +1,14 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { Star } from "lucide-react";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { Star, KeyRound } from "lucide-react";
 import { PageShell } from "@/components/PageShell";
 import { HouseHero } from "@/components/HouseHero";
 import { WeatherWidget } from "@/components/WeatherWidget";
-import { TollnesCameraSection } from "@/components/TollnesCameraStrip";
-import { NetatmoWeatherStationSection } from "@/components/NetatmoWeatherStation";
 import { MaesterCounsel } from "@/components/MaesterCounsel";
 import { BirthdayBanner } from "@/components/BirthdayBanner";
 import { UpcomingHolidays } from "@/components/UpcomingHolidays";
 import { useFavorites } from "@/hooks/use-favorites";
+import { useAuthStatus } from "@/hooks/use-auth-status";
+import { logoutFn } from "@/server/auth";
 import arnePortrait from "@/assets/arne-portrait.jpg";
 import rebekkaPortrait from "@/assets/rebekka-portrait.jpg";
 import celinePortrait from "@/assets/celine-portrait.jpg";
@@ -17,6 +17,9 @@ import noraPortrait from "@/assets/nora-portrait.jpg";
 import miraPortrait from "@/assets/mira-portrait.jpg";
 import heroImg from "@/assets/hero-westeros.jpg";
 import borgenSeasons from "@/assets/borgen-seasons.png";
+
+// Halls available to anyone who steps into the courtyard (no password required)
+const PUBLIC_HALL_PATHS = new Set<string>(["/var", "/pollen", "/turer"]);
 
 // Current season based on month (Northern Hemisphere)
 function getCurrentSeason(): "spring" | "summer" | "autumn" | "winter" {
