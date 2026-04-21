@@ -8,7 +8,7 @@ import { findDeviceFuzzy, readTemp } from "@/lib/homey-match";
 import { HomeyApiActivity } from "@/components/HomeyApiActivity";
 import { HomeyApiPauseToggle } from "@/components/HomeyApiPauseToggle";
 import { HeatersPanel } from "@/components/HeatersPanel";
-import { TibberLivePanel } from "@/components/TibberLivePanel";
+
 import { recordHomeyApiCall } from "@/lib/homey-api-tracker";
 import heroImg from "@/assets/got-smarthus.jpg";
 
@@ -561,13 +561,6 @@ function SmarthusPage() {
         emptyHint="Ingen varmeovner med termostat funnet for Borgen i Homey."
       />
 
-      <section className="container mx-auto px-4 pt-8">
-        <TibberLivePanel
-          location="tollnes"
-          title="Strømforbruk · Tollnes (hjemme)"
-          subtitle="Tibber Pulse · sanntid"
-        />
-      </section>
 
       <section className="container mx-auto px-4 py-12 space-y-12">
         {zoneEntries.map(([zoneKey, devices]) => {
