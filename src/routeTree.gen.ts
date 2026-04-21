@@ -26,7 +26,6 @@ import { Route as HundeneRouteImport } from './routes/hundene'
 import { Route as AgendaRouteImport } from './routes/agenda'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as HooksLogPulseRouteImport } from './routes/hooks.log-pulse'
-import { Route as ApiTibberLiveRouteImport } from './routes/api.tibber.live'
 import { Route as ApiStravaStartRouteImport } from './routes/api.strava.start'
 import { Route as ApiStravaCallbackRouteImport } from './routes/api.strava.callback'
 import { Route as ApiHomeyStartRouteImport } from './routes/api.homey.start'
@@ -117,11 +116,6 @@ const HooksLogPulseRoute = HooksLogPulseRouteImport.update({
   path: '/hooks/log-pulse',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiTibberLiveRoute = ApiTibberLiveRouteImport.update({
-  id: '/api/tibber/live',
-  path: '/api/tibber/live',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ApiStravaStartRoute = ApiStravaStartRouteImport.update({
   id: '/api/strava/start',
   path: '/api/strava/start',
@@ -165,7 +159,6 @@ export interface FileRoutesByFullPath {
   '/api/homey/start': typeof ApiHomeyStartRoute
   '/api/strava/callback': typeof ApiStravaCallbackRoute
   '/api/strava/start': typeof ApiStravaStartRoute
-  '/api/tibber/live': typeof ApiTibberLiveRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -189,7 +182,6 @@ export interface FileRoutesByTo {
   '/api/homey/start': typeof ApiHomeyStartRoute
   '/api/strava/callback': typeof ApiStravaCallbackRoute
   '/api/strava/start': typeof ApiStravaStartRoute
-  '/api/tibber/live': typeof ApiTibberLiveRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -214,7 +206,6 @@ export interface FileRoutesById {
   '/api/homey/start': typeof ApiHomeyStartRoute
   '/api/strava/callback': typeof ApiStravaCallbackRoute
   '/api/strava/start': typeof ApiStravaStartRoute
-  '/api/tibber/live': typeof ApiTibberLiveRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -240,7 +231,6 @@ export interface FileRouteTypes {
     | '/api/homey/start'
     | '/api/strava/callback'
     | '/api/strava/start'
-    | '/api/tibber/live'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -264,7 +254,6 @@ export interface FileRouteTypes {
     | '/api/homey/start'
     | '/api/strava/callback'
     | '/api/strava/start'
-    | '/api/tibber/live'
   id:
     | '__root__'
     | '/'
@@ -288,7 +277,6 @@ export interface FileRouteTypes {
     | '/api/homey/start'
     | '/api/strava/callback'
     | '/api/strava/start'
-    | '/api/tibber/live'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -313,7 +301,6 @@ export interface RootRouteChildren {
   ApiHomeyStartRoute: typeof ApiHomeyStartRoute
   ApiStravaCallbackRoute: typeof ApiStravaCallbackRoute
   ApiStravaStartRoute: typeof ApiStravaStartRoute
-  ApiTibberLiveRoute: typeof ApiTibberLiveRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -437,13 +424,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HooksLogPulseRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/tibber/live': {
-      id: '/api/tibber/live'
-      path: '/api/tibber/live'
-      fullPath: '/api/tibber/live'
-      preLoaderRoute: typeof ApiTibberLiveRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/strava/start': {
       id: '/api/strava/start'
       path: '/api/strava/start'
@@ -497,7 +477,6 @@ const rootRouteChildren: RootRouteChildren = {
   ApiHomeyStartRoute: ApiHomeyStartRoute,
   ApiStravaCallbackRoute: ApiStravaCallbackRoute,
   ApiStravaStartRoute: ApiStravaStartRoute,
-  ApiTibberLiveRoute: ApiTibberLiveRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
