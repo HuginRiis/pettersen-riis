@@ -714,14 +714,14 @@ function Lockouts({
                   })}
                 </span>
               </div>
-              {active && isAuthed && (
+              {isAuthed && (
                 <div className="mt-2 flex justify-end">
                   <button
                     type="button"
                     onClick={() => handleRelease(ep.ip)}
                     disabled={isReleasing}
                     className="inline-flex items-center gap-1.5 rounded-md border border-primary/40 bg-primary/10 hover:bg-primary/20 hover:border-primary px-2.5 py-1 text-[10px] tracking-[0.2em] uppercase text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    title="Slett alle feilforsøk fra denne IP-en og åpne porten"
+                    title="Slett alle feilforsøk fra denne IP-en og fjern oppføringen"
                   >
                     <Unlock size={11} />
                     {isReleasing ? "Slipper løs…" : "Slipp løs hestene"}
