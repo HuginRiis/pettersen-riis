@@ -133,13 +133,21 @@ function VakttarnetPage() {
           </Panel>
 
           <Panel
-            title="Topplister"
-            icon={<Crown size={14} />}
-            subtitle="Hvem og hva troner øverst"
+            title="Stengte porter"
+            icon={<Lock size={14} />}
+            subtitle="IP-er som ble låst ute — og hvor lenge"
           >
-            <TopLists sessions={sessions} pageviews={pageviews} />
+            <Lockouts attempts={attempts} />
           </Panel>
         </div>
+
+        <Panel
+          title="Topplister"
+          icon={<Crown size={14} />}
+          subtitle="Hvem og hva troner øverst"
+        >
+          <TopLists sessions={sessions} pageviews={pageviews} />
+        </Panel>
       </section>
     </PageShell>
   );
