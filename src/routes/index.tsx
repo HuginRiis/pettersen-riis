@@ -1,5 +1,12 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { useState } from "react";
 import { Star, KeyRound } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { PageShell } from "@/components/PageShell";
 import { HouseHero } from "@/components/HouseHero";
 import { WeatherWidget } from "@/components/WeatherWidget";
