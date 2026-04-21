@@ -60,8 +60,12 @@ export function SiteHeader() {
     try {
       await logoutFn();
     } finally {
-      await router.invalidate();
-      router.navigate({ to: "/" });
+      if (typeof window !== "undefined") {
+        window.location.href = "/";
+      } else {
+        await router.invalidate();
+        router.navigate({ to: "/" });
+      }
     }
   };
 
