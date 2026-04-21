@@ -1,7 +1,8 @@
 import { Link, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
-import { Menu, X, LogOut, Crown, Swords, Shield } from "lucide-react";
+import { Menu, X, LogOut, Crown, Swords, Shield, KeyRound } from "lucide-react";
 import { logoutFn } from "@/server/auth";
+import { useAuthStatus } from "@/hooks/use-auth-status";
 
 type RoutePath =
   | "/"
@@ -17,20 +18,22 @@ type RoutePath =
   | "/ranger"
   | "/varsler"
   | "/smarthus"
-  
   | "/steintavle"
   | "/oppussing-borgen"
   | "/oppussing-hytta";
 
-type NavLink = { to: RoutePath; label: string };
+type NavLink = { to: RoutePath; label: string; public?: boolean };
 
 const HOMEY_BACKED_ROUTES: RoutePath[] = ["/smarthus", "/var", "/steintavle"];
 
+// Public halls — open to any visitor entering the courtyard.
+// Other halls only appear after the portal is opened (login).
 const navLinks: NavLink[] = [
-  { to: "/", label: "Hjem" },
+  { to: "/", label: "Hjem", public: true },
+  { to: "/var", label: "Vær", public: true },
+  { to: "/pollen", label: "Pollen", public: true },
+  { to: "/turer", label: "Ferden", public: true },
   { to: "/agenda", label: "Agenda" },
-  { to: "/var", label: "Vær" },
-  { to: "/pollen", label: "Pollen" },
   { to: "/vakttarnet", label: "Vakttårnet" },
   { to: "/hytta", label: "Hytta" },
   { to: "/smarthus", label: "Smartborg" },
@@ -38,7 +41,6 @@ const navLinks: NavLink[] = [
   { to: "/oppussing-hytta", label: "Prosjekter på hytta" },
   { to: "/hundene", label: "Hundene" },
   { to: "/trening", label: "Trening" },
-  { to: "/turer", label: "Ferden" },
   { to: "/varsler", label: "Farevarsler" },
   { to: "/jernhesten", label: "Jernhesten" },
   { to: "/ranger", label: "Ranger" },
@@ -48,14 +50,23 @@ const navLinks: NavLink[] = [
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
   const router = useRouter();
+  const { authenticated } = useAuthStatus();
+  const isAuthed = authenticated === true;
+
+  // Visitors outside the gate only see public halls; authed users see everything.
+  const visibleLinks = isAuthed ? navLinks : navLinks.filter((l) => l.public);
 
   const handleLogout = async () => {
     try {
       await logoutFn();
     } finally {
       await router.invalidate();
-      router.navigate({ to: "/login" });
+      router.navigate({ to: "/" });
     }
+  };
+
+  const handleLogin = () => {
+    router.navigate({ to: "/login" });
   };
 
   return (
@@ -79,7 +90,7 @@ export function SiteHeader() {
         </Link>
 
         <nav className="hidden md:flex flex-1 flex-wrap items-center justify-start gap-x-2 gap-y-2">
-          {navLinks.map((l) => (
+          {visibleLinks.map((l) => (
             <Link
               key={l.to}
               to={l.to}
@@ -90,14 +101,26 @@ export function SiteHeader() {
               {l.label}
             </Link>
           ))}
-          <button
-            onClick={handleLogout}
-            className="ml-1 text-muted-foreground hover:text-primary transition-colors"
-            aria-label="Logg ut"
-            title="Logg ut"
-          >
-            <LogOut size={14} />
-          </button>
+          {isAuthed ? (
+            <button
+              onClick={handleLogout}
+              className="ml-1 text-muted-foreground hover:text-primary transition-colors"
+              aria-label="Logg ut"
+              title="Steng porten"
+            >
+              <LogOut size={14} />
+            </button>
+          ) : (
+            <button
+              onClick={handleLogin}
+              className="ml-1 text-primary hover:text-gold transition-colors flex items-center gap-1.5 text-xs tracking-[0.25em] uppercase"
+              aria-label="Tre inn i borgen"
+              title="Tre inn i borgen"
+            >
+              <KeyRound size={14} />
+              <span className="hidden lg:inline">Tre inn</span>
+            </button>
+          )}
         </nav>
 
         <button
@@ -112,7 +135,7 @@ export function SiteHeader() {
       {open && (
         <nav className="md:hidden border-t border-border bg-card/95 backdrop-blur">
           <div className="container mx-auto px-4 py-2 flex flex-col">
-            {navLinks.map((l) => (
+            {visibleLinks.map((l) => (
               <Link
                 key={l.to}
                 to={l.to}
@@ -124,15 +147,27 @@ export function SiteHeader() {
                 {l.label}
               </Link>
             ))}
-            <button
-              onClick={() => {
-                setOpen(false);
-                handleLogout();
-              }}
-              className="px-2 py-3 text-xs tracking-wider uppercase text-muted-foreground hover:text-primary text-left flex items-center gap-2"
-            >
-              <LogOut size={14} /> Logg ut
-            </button>
+            {isAuthed ? (
+              <button
+                onClick={() => {
+                  setOpen(false);
+                  handleLogout();
+                }}
+                className="px-2 py-3 text-xs tracking-wider uppercase text-muted-foreground hover:text-primary text-left flex items-center gap-2"
+              >
+                <LogOut size={14} /> Steng porten
+              </button>
+            ) : (
+              <button
+                onClick={() => {
+                  setOpen(false);
+                  handleLogin();
+                }}
+                className="px-2 py-3 text-xs tracking-wider uppercase text-primary hover:text-gold text-left flex items-center gap-2"
+              >
+                <KeyRound size={14} /> Tre inn i borgen
+              </button>
+            )}
           </div>
         </nav>
       )}

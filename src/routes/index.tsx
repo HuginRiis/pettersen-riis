@@ -1,14 +1,14 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { Star } from "lucide-react";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { Star, KeyRound } from "lucide-react";
 import { PageShell } from "@/components/PageShell";
 import { HouseHero } from "@/components/HouseHero";
 import { WeatherWidget } from "@/components/WeatherWidget";
-import { TollnesCameraSection } from "@/components/TollnesCameraStrip";
-import { NetatmoWeatherStationSection } from "@/components/NetatmoWeatherStation";
 import { MaesterCounsel } from "@/components/MaesterCounsel";
 import { BirthdayBanner } from "@/components/BirthdayBanner";
 import { UpcomingHolidays } from "@/components/UpcomingHolidays";
 import { useFavorites } from "@/hooks/use-favorites";
+import { useAuthStatus } from "@/hooks/use-auth-status";
+import { logoutFn } from "@/server/auth";
 import arnePortrait from "@/assets/arne-portrait.jpg";
 import rebekkaPortrait from "@/assets/rebekka-portrait.jpg";
 import celinePortrait from "@/assets/celine-portrait.jpg";
@@ -17,6 +17,9 @@ import noraPortrait from "@/assets/nora-portrait.jpg";
 import miraPortrait from "@/assets/mira-portrait.jpg";
 import heroImg from "@/assets/hero-westeros.jpg";
 import borgenSeasons from "@/assets/borgen-seasons.png";
+
+// Halls available to anyone who steps into the courtyard (no password required)
+const PUBLIC_HALL_PATHS = new Set<string>(["/var", "/pollen", "/turer"]);
 
 // Current season based on month (Northern Hemisphere)
 function getCurrentSeason(): "spring" | "summer" | "autumn" | "winter" {
@@ -61,6 +64,18 @@ export const Route = createFileRoute("/")({
 });
 
 function Home() {
+  const router = useRouter();
+  const { authenticated } = useAuthStatus();
+  const isAuthed = authenticated === true;
+
+  const handleLogout = async () => {
+    try {
+      await logoutFn();
+    } finally {
+      await router.invalidate();
+    }
+  };
+
   return (
     <PageShell>
       <HouseHero
@@ -69,6 +84,8 @@ function Home() {
         subtitle="Arne Pettersen Riis og Rebekka Riis Pettersen — vinterens voktere ved fjorden."
         image={heroImg}
       />
+
+      <PortalGate authenticated={isAuthed} onLogout={handleLogout} />
 
       <BirthdayBanner />
 
@@ -177,28 +194,23 @@ function Home() {
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
-          <HallCard to="/agenda" title="Krøniken" desc="Agenda og meldinger med dato og emne." icon="📜" />
-          <HallCard to="/var" title="Værens budskap" desc="Værmelding for Skien og hytta." icon="🌨" />
-          <HallCard to="/pollen" title="Pollen" desc="Dagens pollen i lufta." icon="🌾" />
-          <HallCard to="/varsler" title="Farevarsler" desc="Aktive farevarsler og trafikkmeldinger." icon="⚠️" />
-          <HallCard to="/vakttarnet" title="Vakttårnet" desc="Vaktene rapporterer hvem som nærmer seg porten." icon="👁" />
-          <HallCard to="/hytta" title="Hytta" desc="Husets tilflukt i fjellet." icon="🏔" />
-          <HallCard to="/hundene" title="Hundene" desc="Husets tro følgesvenner." icon="🐺" />
-          <HallCard to="/trening" title="Treningssalen" desc="Kroppen som rustning." icon="⚔️" />
-          <HallCard to="/turer" title="Ferden" desc="Tips til turer i nærheten." icon="🧭" />
-          <HallCard to="/jernhesten" title="Jernhesten" desc="Husets lydløse ganger — Jaguar I-Pace." icon="⚡" />
-          <HallCard to="/smarthus" title="Smartborg" desc="Lys, varme og varslere fra Homey." icon="🏰" />
-          
-          <HallCard to="/steintavle" title="Steintavle" desc="Husets innskrifter og notater." icon="🪨" />
-          <HallCard to="/ranger" title="Ranger" desc="Husets robuste følgesvenn på veiene." icon="🛡" />
-          <HallCard to="/oppussing-borgen" title="Prosjekter på Borgen" desc="Prosjekter, planer og bilder fra borgen." icon="🔨" />
-          <HallCard to="/oppussing-hytta" title="Prosjekter på hytta" desc="Prosjekter, planer og bilder fra hytta." icon="🪵" />
+          <HallCard to="/var" title="Værens budskap" desc="Værmelding for Skien og hytta." icon="🌨" locked={false} />
+          <HallCard to="/pollen" title="Pollen" desc="Dagens pollen i lufta." icon="🌾" locked={false} />
+          <HallCard to="/turer" title="Ferden" desc="Tips til turer i nærheten." icon="🧭" locked={false} />
+          <HallCard to="/agenda" title="Krøniken" desc="Agenda og meldinger med dato og emne." icon="📜" locked={!isAuthed} />
+          <HallCard to="/varsler" title="Farevarsler" desc="Aktive farevarsler og trafikkmeldinger." icon="⚠️" locked={!isAuthed} />
+          <HallCard to="/vakttarnet" title="Vakttårnet" desc="Vaktene rapporterer hvem som nærmer seg porten." icon="👁" locked={!isAuthed} />
+          <HallCard to="/hytta" title="Hytta" desc="Husets tilflukt i fjellet." icon="🏔" locked={!isAuthed} />
+          <HallCard to="/hundene" title="Hundene" desc="Husets tro følgesvenner." icon="🐺" locked={!isAuthed} />
+          <HallCard to="/trening" title="Treningssalen" desc="Kroppen som rustning." icon="⚔️" locked={!isAuthed} />
+          <HallCard to="/jernhesten" title="Jernhesten" desc="Husets lydløse ganger — Jaguar I-Pace." icon="⚡" locked={!isAuthed} />
+          <HallCard to="/smarthus" title="Smartborg" desc="Lys, varme og varslere fra Homey." icon="🏰" locked={!isAuthed} />
+          <HallCard to="/steintavle" title="Steintavle" desc="Husets innskrifter og notater." icon="🪨" locked={!isAuthed} />
+          <HallCard to="/ranger" title="Ranger" desc="Husets robuste følgesvenn på veiene." icon="🛡" locked={!isAuthed} />
+          <HallCard to="/oppussing-borgen" title="Prosjekter på Borgen" desc="Prosjekter, planer og bilder fra borgen." icon="🔨" locked={!isAuthed} />
+          <HallCard to="/oppussing-hytta" title="Prosjekter på hytta" desc="Prosjekter, planer og bilder fra hytta." icon="🪵" locked={!isAuthed} />
         </div>
       </section>
-
-      <NetatmoWeatherStationSection />
-
-      <TollnesCameraSection />
     </PageShell>
   );
 }
@@ -325,6 +337,7 @@ function HallCard({
   title,
   desc,
   icon,
+  locked = false,
 }: {
   to:
     | "/agenda"
@@ -339,17 +352,42 @@ function HallCard({
     | "/jernhesten"
     | "/ranger"
     | "/smarthus"
-    
     | "/steintavle"
     | "/oppussing-borgen"
     | "/oppussing-hytta";
   title: string;
   desc: string;
   icon: string;
+  locked?: boolean;
 }) {
   const disablePreload = to === "/smarthus" || to === "/var" || to === "/steintavle";
   const { isFavorite, toggleFavorite } = useFavorites();
   const fav = isFavorite(to);
+
+  if (locked) {
+    return (
+      <div className="relative">
+        <Link
+          to="/login"
+          className="panel rounded-lg p-6 block group opacity-60 hover:opacity-100 transition-opacity relative overflow-hidden"
+          title={`${title} — krever passord`}
+        >
+          <div className="absolute top-2 right-2 p-1.5 rounded-full bg-background/70 backdrop-blur border border-border">
+            <KeyRound size={12} className="text-primary/80" />
+          </div>
+          <div className="text-3xl mb-3 grayscale">{icon}</div>
+          <h3 className="text-xl text-muted-foreground group-hover:text-primary transition-colors">
+            {title}
+          </h3>
+          <p className="mt-2 text-sm text-muted-foreground/70">{desc}</p>
+          <p className="mt-2 text-[10px] tracking-[0.25em] uppercase text-primary/70">
+            Bak portalen
+          </p>
+        </Link>
+      </div>
+    );
+  }
+
   return (
     <div className="relative">
       <button
@@ -380,5 +418,73 @@ function HallCard({
         <p className="mt-2 text-sm text-muted-foreground">{desc}</p>
       </Link>
     </div>
+  );
+}
+
+function PortalGate({
+  authenticated,
+  onLogout,
+}: {
+  authenticated: boolean;
+  onLogout: () => void;
+}) {
+  if (authenticated) {
+    return (
+      <section className="container mx-auto px-4 pt-10">
+        <div className="max-w-3xl mx-auto panel rounded-lg p-5 sm:p-6 flex items-center justify-between gap-4 border border-primary/30">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full border border-primary/40 flex items-center justify-center text-primary text-lg shrink-0">
+              ❦
+            </div>
+            <div>
+              <div className="text-[10px] tracking-[0.3em] uppercase text-primary/80">
+                Portalen er åpen
+              </div>
+              <div className="text-sm sm:text-base text-foreground">
+                Velkommen, herskere av huset.
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={onLogout}
+            className="text-xs tracking-[0.25em] uppercase text-muted-foreground hover:text-primary transition-colors px-3 py-2 border border-border rounded-md hover:border-primary/60"
+          >
+            Steng porten
+          </button>
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section className="container mx-auto px-4 pt-10">
+      <div className="max-w-3xl mx-auto panel rounded-lg p-6 sm:p-8 text-center border border-primary/30 relative overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none opacity-30 bg-gradient-to-b from-primary/10 via-transparent to-primary/10" />
+        <div className="relative">
+          <div className="mx-auto w-14 h-14 rounded-full border border-primary/50 flex items-center justify-center text-primary text-2xl mb-4">
+            ❦
+          </div>
+          <div className="text-[10px] tracking-[0.4em] uppercase text-primary/80 mb-2">
+            Portalen til borgen
+          </div>
+          <h2 className="text-display text-xl sm:text-2xl text-primary tracking-[0.2em] uppercase">
+            Vandreren er velkommen
+          </h2>
+          <p className="mt-3 text-sm text-foreground/80 max-w-xl mx-auto">
+            Værets ravner, pollenets bud og ferdens stier står åpne for alle.
+            For å tre dypere inn i borgens saler — krønike, vakttårn, hytta og smartborgen — må du åpne portalen med husets nøkkel.
+          </p>
+          <div className="mt-5 flex items-center justify-center gap-3">
+            <Link
+              to="/login"
+              className="got-nav-btn"
+            >
+              <KeyRound size={14} className="inline mr-1.5 -mt-0.5" />
+              Tre inn i borgen
+            </Link>
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }
