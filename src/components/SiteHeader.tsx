@@ -22,128 +22,33 @@ type RoutePath =
   | "/oppussing-borgen"
   | "/oppussing-hytta";
 
-type NavLink = { to: RoutePath; label: string; icon?: string };
-type NavGroup = { label: string; icon: string; description: string; links: NavLink[] };
+type NavLink = { to: RoutePath; label: string };
 
 const HOMEY_BACKED_ROUTES: RoutePath[] = ["/smarthus", "/var", "/steintavle"];
 
-const groups: NavGroup[] = [
-  {
-    label: "Hverdag",
-    icon: "📅",
-    description:
-      "Oversikt over dagen og omgivelsene — vær, luft og planer før du går ut døren.",
-    links: [
-      { to: "/agenda", label: "Agenda", icon: "📜" },
-      { to: "/var", label: "Vær", icon: "🌨" },
-      { to: "/pollen", label: "Pollen", icon: "🌾" },
-      { to: "/vakttarnet", label: "Vakttårnet", icon: "👁" },
-    ],
-  },
-  {
-    label: "Eiendom",
-    icon: "🏡",
-    description:
-      "Kontroll over hjem og eiendom — fra digital borg til kreative sysler og faste beskjeder.",
-    links: [
-      { to: "/hytta", label: "Hytta", icon: "🏔" },
-      { to: "/smarthus", label: "Smartborg", icon: "🏰" },
-      { to: "/oppussing-borgen", label: "Prosjekter på Borgen", icon: "🔨" },
-      { to: "/oppussing-hytta", label: "Prosjekter på hytta", icon: "🪵" },
-      { to: "/brodering", label: "Brodering", icon: "🧵" },
-      { to: "/steintavle", label: "Steintavle", icon: "🪨" },
-    ],
-  },
-  {
-    label: "Familie",
-    icon: "🐾",
-    description: "Alt som angår dine firbeinte følgesvenner — trivsel, aktivitet og omsorg.",
-    links: [{ to: "/hundene", label: "Hundene", icon: "🐺" }],
-  },
-  {
-    label: "Kropp",
-    icon: "💪",
-    description: "Styrke, utholdenhet og disiplin — her formes kroppen, dag for dag.",
-    links: [{ to: "/trening", label: "Trening", icon: "⚔️" }],
-  },
-  {
-    label: "Ferdsel",
-    icon: "🚗",
-    description: "Reisen gjennom riket — til fots, med kraft eller med maskin.",
-    links: [
-      { to: "/turer", label: "Ferden", icon: "🧭" },
-      { to: "/varsler", label: "Farevarsler", icon: "⚠️" },
-      { to: "/jernhesten", label: "Jernhesten", icon: "⚡" },
-      { to: "/ranger", label: "Ranger", icon: "🛡" },
-    ],
-  },
+const navLinks: NavLink[] = [
+  { to: "/", label: "Hjem" },
+  { to: "/agenda", label: "Agenda" },
+  { to: "/var", label: "Vær" },
+  { to: "/pollen", label: "Pollen" },
+  { to: "/vakttarnet", label: "Vakttårnet" },
+  { to: "/hytta", label: "Hytta" },
+  { to: "/smarthus", label: "Smartborg" },
+  { to: "/oppussing-borgen", label: "Prosjekter på Borgen" },
+  { to: "/oppussing-hytta", label: "Prosjekter på hytta" },
+  { to: "/brodering", label: "Brodering" },
+  { to: "/steintavle", label: "Steintavle" },
+  { to: "/hundene", label: "Hundene" },
+  { to: "/trening", label: "Trening" },
+  { to: "/turer", label: "Ferden" },
+  { to: "/varsler", label: "Farevarsler" },
+  { to: "/jernhesten", label: "Jernhesten" },
+  { to: "/ranger", label: "Ranger" },
 ];
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
-  const [openGroup, setOpenGroup] = useState<string | null>(null);
-  const [openMobileGroup, setOpenMobileGroup] = useState<string | null>(null);
   const router = useRouter();
-  const location = useLocation();
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const navRef = useRef<HTMLDivElement | null>(null);
-  const { favorites } = useFavorites();
-
-  // Flat ordered list of all routes for prev/next navigation
-  const orderedRoutes = useMemo<RoutePath[]>(() => {
-    const all: RoutePath[] = ["/"];
-    for (const g of groups) for (const l of g.links) all.push(l.to);
-    return all;
-  }, []);
-
-  const { prevRoute, nextRoute } = useMemo(() => {
-    const idx = orderedRoutes.indexOf(location.pathname as RoutePath);
-    if (idx === -1) return { prevRoute: orderedRoutes[orderedRoutes.length - 1], nextRoute: orderedRoutes[0] };
-    const prev = orderedRoutes[(idx - 1 + orderedRoutes.length) % orderedRoutes.length];
-    const next = orderedRoutes[(idx + 1) % orderedRoutes.length];
-    return { prevRoute: prev, nextRoute: next };
-  }, [orderedRoutes, location.pathname]);
-
-  // Lukk dropdown ved klikk utenfor
-  useEffect(() => {
-    if (!openGroup) return;
-    const onDocClick = (e: MouseEvent) => {
-      if (navRef.current && !navRef.current.contains(e.target as Node)) {
-        setOpenGroup(null);
-      }
-    };
-    const onEsc = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpenGroup(null);
-    };
-    document.addEventListener("mousedown", onDocClick);
-    document.addEventListener("keydown", onEsc);
-    return () => {
-      document.removeEventListener("mousedown", onDocClick);
-      document.removeEventListener("keydown", onEsc);
-    };
-  }, [openGroup]);
-
-  const pickSoundForHour = (hour: number): string => {
-    if (hour >= 6 && hour < 15) return "/audio/birds.mp3";
-    if (hour >= 15 && hour < 20) return "/audio/war.mp3";
-    return "/audio/owl.mp3";
-  };
-
-  const playGotTheme = () => {
-    try {
-      const src = pickSoundForHour(new Date().getHours());
-      if (!audioRef.current || audioRef.current.src.indexOf(src) === -1) {
-        audioRef.current = new Audio(src);
-        audioRef.current.volume = 0.45;
-      }
-      const a = audioRef.current;
-      a.pause();
-      a.currentTime = 0;
-      void a.play().catch(() => {});
-    } catch {
-      /* no-op */
-    }
-  };
 
   const handleLogout = async () => {
     try {
@@ -156,7 +61,7 @@ export function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-50 backdrop-blur-md bg-background/80 border-b border-border">
-      <div className="container mx-auto px-4 h-16 flex items-center justify-between gap-4">
+      <div className="container mx-auto px-4 py-3 flex items-center justify-between gap-4">
         <Link to="/" className="flex items-center gap-3 group shrink-0">
           <div className="w-9 h-9 rounded-full border border-primary/40 flex items-center justify-center text-primary font-display text-lg group-hover:shadow-[0_0_20px_var(--color-primary)] transition-shadow">
             ❦
@@ -174,104 +79,21 @@ export function SiteHeader() {
           </div>
         </Link>
 
-        <nav ref={navRef} className="hidden md:flex items-center gap-1">
-          <Link
-            to={prevRoute}
-            preload={HOMEY_BACKED_ROUTES.includes(prevRoute) ? false : undefined}
-            className="p-1.5 text-muted-foreground hover:text-primary transition-colors"
-            aria-label="Forrige side"
-            title="Forrige side"
-          >
-            <ChevronLeft size={16} />
-          </Link>
-
-          <Link
-            to="/"
-            className="px-3 py-2 text-sm tracking-wider uppercase text-muted-foreground hover:text-primary transition-colors data-[status=active]:text-primary data-[status=active]:font-semibold"
-            activeOptions={{ exact: true }}
-          >
-            Hjem
-          </Link>
-
-          <Link
-            to={nextRoute}
-            preload={HOMEY_BACKED_ROUTES.includes(nextRoute) ? false : undefined}
-            className="p-1.5 text-muted-foreground hover:text-primary transition-colors"
-            aria-label="Neste side"
-            title="Neste side"
-          >
-            <ChevronRight size={16} />
-          </Link>
-
-          {favorites.map((f) => (
+        <nav className="hidden md:flex flex-1 flex-wrap items-center justify-end gap-x-3 gap-y-1">
+          {navLinks.map((l) => (
             <Link
-              key={f.id}
-              to={f.path as RoutePath}
-              preload={HOMEY_BACKED_ROUTES.includes(f.path as RoutePath) ? false : undefined}
-              className="px-2 py-2 text-sm tracking-wider uppercase text-muted-foreground hover:text-primary transition-colors flex items-center gap-1 data-[status=active]:text-primary data-[status=active]:font-semibold group"
-              title={f.title}
+              key={l.to}
+              to={l.to}
+              preload={HOMEY_BACKED_ROUTES.includes(l.to) ? false : undefined}
+              activeOptions={l.to === "/" ? { exact: true } : undefined}
+              className="text-xs tracking-wider uppercase text-muted-foreground hover:text-primary transition-colors data-[status=active]:text-primary data-[status=active]:font-semibold"
             >
-              <Star size={11} className="text-muted-foreground/60 group-hover:text-primary group-data-[status=active]:fill-primary group-data-[status=active]:text-primary" />
-              <span>{f.icon ? `${f.icon} ` : ""}{f.title}</span>
+              {l.label}
             </Link>
           ))}
-
-          {(() => {
-            const isOpen = openGroup === "__meny";
-            return (
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => setOpenGroup(isOpen ? null : "__meny")}
-                  className="px-3 py-2 text-sm tracking-wider uppercase text-muted-foreground hover:text-primary transition-colors flex items-center gap-1"
-                  aria-expanded={isOpen}
-                  aria-haspopup="menu"
-                >
-                  <span>Meny</span>
-                  <ChevronDown
-                    size={12}
-                    className={`transition-transform ${isOpen ? "rotate-180" : ""}`}
-                  />
-                </button>
-                {isOpen && (
-                  <div
-                    role="menu"
-                    className="absolute right-0 top-full mt-2 w-[34rem] max-w-[calc(100vw-2rem)] panel rounded-lg border border-border bg-card/95 backdrop-blur shadow-lg p-4 z-50 grid grid-cols-2 gap-4"
-                  >
-                    {groups.map((g) => (
-                      <div key={g.label}>
-                        <div className="flex items-center gap-2 mb-1.5">
-                          <span className="text-base">{g.icon}</span>
-                          <span className="text-[10px] tracking-[0.3em] uppercase text-primary">
-                            {g.label}
-                          </span>
-                        </div>
-                        <ul className="flex flex-col">
-                          {g.links.map((l) => (
-                            <li key={l.to}>
-                              <Link
-                                to={l.to}
-                                preload={HOMEY_BACKED_ROUTES.includes(l.to) ? false : undefined}
-                                onClick={() => setOpenGroup(null)}
-                                className="flex items-center gap-2 px-2 py-1.5 rounded text-xs tracking-wider uppercase text-muted-foreground hover:text-primary hover:bg-primary/5 data-[status=active]:text-primary data-[status=active]:font-semibold"
-                              >
-                                {l.icon && <span className="text-sm">{l.icon}</span>}
-                                <span>{l.label}</span>
-                              </Link>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            );
-          })()}
-
           <button
             onClick={handleLogout}
-            className="ml-2 px-3 py-2 text-sm tracking-wider uppercase text-muted-foreground hover:text-primary transition-colors flex items-center gap-1"
+            className="ml-1 text-muted-foreground hover:text-primary transition-colors"
             aria-label="Logg ut"
             title="Logg ut"
           >
@@ -291,64 +113,24 @@ export function SiteHeader() {
       {open && (
         <nav className="md:hidden border-t border-border bg-card/95 backdrop-blur">
           <div className="container mx-auto px-4 py-2 flex flex-col">
-            <Link
-              to="/"
-              onClick={() => setOpen(false)}
-              className="px-2 py-3 text-sm tracking-wider uppercase text-muted-foreground hover:text-primary border-b border-border data-[status=active]:text-primary"
-              activeOptions={{ exact: true }}
-            >
-              Hjem
-            </Link>
-
-            {groups.map((g) => {
-              const isOpen = openMobileGroup === g.label;
-              return (
-                <div key={g.label} className="border-b border-border last:border-0">
-                  <button
-                    type="button"
-                    onClick={() => setOpenMobileGroup(isOpen ? null : g.label)}
-                    className="w-full px-2 py-3 text-sm tracking-wider uppercase text-muted-foreground hover:text-primary flex items-center justify-between"
-                    aria-expanded={isOpen}
-                  >
-                    <span className="flex items-center gap-2">
-                      <span>{g.icon}</span>
-                      <span>{g.label}</span>
-                    </span>
-                    <ChevronDown
-                      size={14}
-                      className={`transition-transform ${isOpen ? "rotate-180" : ""}`}
-                    />
-                  </button>
-                  {isOpen && (
-                    <ul className="pb-2 pl-6 flex flex-col">
-                      {g.links.map((l) => (
-                        <li key={l.to}>
-                          <Link
-                            to={l.to}
-                            preload={HOMEY_BACKED_ROUTES.includes(l.to) ? false : undefined}
-                            onClick={() => {
-                              setOpen(false);
-                              setOpenMobileGroup(null);
-                            }}
-                            className="flex items-center gap-2 px-2 py-2 text-sm tracking-wider uppercase text-muted-foreground hover:text-primary data-[status=active]:text-primary"
-                          >
-                            {l.icon && <span>{l.icon}</span>}
-                            <span>{l.label}</span>
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              );
-            })}
-
+            {navLinks.map((l) => (
+              <Link
+                key={l.to}
+                to={l.to}
+                preload={HOMEY_BACKED_ROUTES.includes(l.to) ? false : undefined}
+                activeOptions={l.to === "/" ? { exact: true } : undefined}
+                onClick={() => setOpen(false)}
+                className="px-2 py-2.5 text-xs tracking-wider uppercase text-muted-foreground hover:text-primary border-b border-border last:border-0 data-[status=active]:text-primary data-[status=active]:font-semibold"
+              >
+                {l.label}
+              </Link>
+            ))}
             <button
               onClick={() => {
                 setOpen(false);
                 handleLogout();
               }}
-              className="px-2 py-3 text-sm tracking-wider uppercase text-muted-foreground hover:text-primary text-left flex items-center gap-2"
+              className="px-2 py-3 text-xs tracking-wider uppercase text-muted-foreground hover:text-primary text-left flex items-center gap-2"
             >
               <LogOut size={14} /> Logg ut
             </button>
