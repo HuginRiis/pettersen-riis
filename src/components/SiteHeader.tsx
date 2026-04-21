@@ -1,7 +1,8 @@
 import { Link, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
-import { Menu, X, LogOut, Crown, Swords, Shield } from "lucide-react";
+import { Menu, X, LogOut, Crown, Swords, Shield, KeyRound } from "lucide-react";
 import { logoutFn } from "@/server/auth";
+import { useAuthStatus } from "@/hooks/use-auth-status";
 
 type RoutePath =
   | "/"
@@ -17,20 +18,22 @@ type RoutePath =
   | "/ranger"
   | "/varsler"
   | "/smarthus"
-  
   | "/steintavle"
   | "/oppussing-borgen"
   | "/oppussing-hytta";
 
-type NavLink = { to: RoutePath; label: string };
+type NavLink = { to: RoutePath; label: string; public?: boolean };
 
 const HOMEY_BACKED_ROUTES: RoutePath[] = ["/smarthus", "/var", "/steintavle"];
 
+// Public halls — open to any visitor entering the courtyard.
+// Other halls only appear after the portal is opened (login).
 const navLinks: NavLink[] = [
-  { to: "/", label: "Hjem" },
+  { to: "/", label: "Hjem", public: true },
+  { to: "/var", label: "Vær", public: true },
+  { to: "/pollen", label: "Pollen", public: true },
+  { to: "/turer", label: "Ferden", public: true },
   { to: "/agenda", label: "Agenda" },
-  { to: "/var", label: "Vær" },
-  { to: "/pollen", label: "Pollen" },
   { to: "/vakttarnet", label: "Vakttårnet" },
   { to: "/hytta", label: "Hytta" },
   { to: "/smarthus", label: "Smartborg" },
@@ -38,7 +41,6 @@ const navLinks: NavLink[] = [
   { to: "/oppussing-hytta", label: "Prosjekter på hytta" },
   { to: "/hundene", label: "Hundene" },
   { to: "/trening", label: "Trening" },
-  { to: "/turer", label: "Ferden" },
   { to: "/varsler", label: "Farevarsler" },
   { to: "/jernhesten", label: "Jernhesten" },
   { to: "/ranger", label: "Ranger" },
