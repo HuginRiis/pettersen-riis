@@ -468,7 +468,7 @@ function PortalGate({
             ❦
           </div>
           <div className="text-[10px] tracking-[0.4em] uppercase text-primary/80 mb-2">
-            Portalen til borgen
+            &nbsp;
           </div>
           <h2 className="text-display text-xl sm:text-2xl text-primary tracking-[0.2em] uppercase">
             Vandreren er velkommen
