@@ -184,7 +184,6 @@ function buildHighlights(
   const energyThisYear = num("meter_kwh_this_year") ?? num("meter_consumption_this_year");
 
   const priceNow = num("meter_price_incl_vat") ?? num("meter_price_now");
-  const rate = priceNow ?? FALLBACK_RATE;
 
   const derive = (kwh?: number) =>
     kwh != null ? Math.round(kwh * FALLBACK_RATE * 100) / 100 : undefined;
