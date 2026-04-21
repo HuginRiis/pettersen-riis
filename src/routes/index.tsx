@@ -64,6 +64,18 @@ export const Route = createFileRoute("/")({
 });
 
 function Home() {
+  const router = useRouter();
+  const { authenticated } = useAuthStatus();
+  const isAuthed = authenticated === true;
+
+  const handleLogout = async () => {
+    try {
+      await logoutFn();
+    } finally {
+      await router.invalidate();
+    }
+  };
+
   return (
     <PageShell>
       <HouseHero
@@ -72,6 +84,8 @@ function Home() {
         subtitle="Arne Pettersen Riis og Rebekka Riis Pettersen — vinterens voktere ved fjorden."
         image={heroImg}
       />
+
+      <PortalGate authenticated={isAuthed} onLogout={handleLogout} />
 
       <BirthdayBanner />
 
@@ -180,28 +194,23 @@ function Home() {
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
-          <HallCard to="/agenda" title="Krøniken" desc="Agenda og meldinger med dato og emne." icon="📜" />
-          <HallCard to="/var" title="Værens budskap" desc="Værmelding for Skien og hytta." icon="🌨" />
-          <HallCard to="/pollen" title="Pollen" desc="Dagens pollen i lufta." icon="🌾" />
-          <HallCard to="/varsler" title="Farevarsler" desc="Aktive farevarsler og trafikkmeldinger." icon="⚠️" />
-          <HallCard to="/vakttarnet" title="Vakttårnet" desc="Vaktene rapporterer hvem som nærmer seg porten." icon="👁" />
-          <HallCard to="/hytta" title="Hytta" desc="Husets tilflukt i fjellet." icon="🏔" />
-          <HallCard to="/hundene" title="Hundene" desc="Husets tro følgesvenner." icon="🐺" />
-          <HallCard to="/trening" title="Treningssalen" desc="Kroppen som rustning." icon="⚔️" />
-          <HallCard to="/turer" title="Ferden" desc="Tips til turer i nærheten." icon="🧭" />
-          <HallCard to="/jernhesten" title="Jernhesten" desc="Husets lydløse ganger — Jaguar I-Pace." icon="⚡" />
-          <HallCard to="/smarthus" title="Smartborg" desc="Lys, varme og varslere fra Homey." icon="🏰" />
-          
-          <HallCard to="/steintavle" title="Steintavle" desc="Husets innskrifter og notater." icon="🪨" />
-          <HallCard to="/ranger" title="Ranger" desc="Husets robuste følgesvenn på veiene." icon="🛡" />
-          <HallCard to="/oppussing-borgen" title="Prosjekter på Borgen" desc="Prosjekter, planer og bilder fra borgen." icon="🔨" />
-          <HallCard to="/oppussing-hytta" title="Prosjekter på hytta" desc="Prosjekter, planer og bilder fra hytta." icon="🪵" />
+          <HallCard to="/var" title="Værens budskap" desc="Værmelding for Skien og hytta." icon="🌨" locked={false} />
+          <HallCard to="/pollen" title="Pollen" desc="Dagens pollen i lufta." icon="🌾" locked={false} />
+          <HallCard to="/turer" title="Ferden" desc="Tips til turer i nærheten." icon="🧭" locked={false} />
+          <HallCard to="/agenda" title="Krøniken" desc="Agenda og meldinger med dato og emne." icon="📜" locked={!isAuthed} />
+          <HallCard to="/varsler" title="Farevarsler" desc="Aktive farevarsler og trafikkmeldinger." icon="⚠️" locked={!isAuthed} />
+          <HallCard to="/vakttarnet" title="Vakttårnet" desc="Vaktene rapporterer hvem som nærmer seg porten." icon="👁" locked={!isAuthed} />
+          <HallCard to="/hytta" title="Hytta" desc="Husets tilflukt i fjellet." icon="🏔" locked={!isAuthed} />
+          <HallCard to="/hundene" title="Hundene" desc="Husets tro følgesvenner." icon="🐺" locked={!isAuthed} />
+          <HallCard to="/trening" title="Treningssalen" desc="Kroppen som rustning." icon="⚔️" locked={!isAuthed} />
+          <HallCard to="/jernhesten" title="Jernhesten" desc="Husets lydløse ganger — Jaguar I-Pace." icon="⚡" locked={!isAuthed} />
+          <HallCard to="/smarthus" title="Smartborg" desc="Lys, varme og varslere fra Homey." icon="🏰" locked={!isAuthed} />
+          <HallCard to="/steintavle" title="Steintavle" desc="Husets innskrifter og notater." icon="🪨" locked={!isAuthed} />
+          <HallCard to="/ranger" title="Ranger" desc="Husets robuste følgesvenn på veiene." icon="🛡" locked={!isAuthed} />
+          <HallCard to="/oppussing-borgen" title="Prosjekter på Borgen" desc="Prosjekter, planer og bilder fra borgen." icon="🔨" locked={!isAuthed} />
+          <HallCard to="/oppussing-hytta" title="Prosjekter på hytta" desc="Prosjekter, planer og bilder fra hytta." icon="🪵" locked={!isAuthed} />
         </div>
       </section>
-
-      <NetatmoWeatherStationSection />
-
-      <TollnesCameraSection />
     </PageShell>
   );
 }
