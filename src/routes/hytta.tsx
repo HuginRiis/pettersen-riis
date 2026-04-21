@@ -3,7 +3,7 @@ import { PageShell } from "@/components/PageShell";
 import { HyttaHero } from "@/components/HyttaHero";
 import { NetatmoWeatherStationSection } from "@/components/NetatmoWeatherStation";
 import { HeatersPanel } from "@/components/HeatersPanel";
-import { TibberLivePanel } from "@/components/TibberLivePanel";
+
 import hyttaImg from "@/assets/hytta-aurora.jpg";
 import g0314 from "@/assets/hytta-gallery/0314.jpg";
 import g0342 from "@/assets/hytta-gallery/0342.jpg";
@@ -156,13 +156,6 @@ function HyttaPage() {
 
       <NetatmoWeatherStationSection title="Værstasjonen — Hytta" stationMatch="hytta" />
 
-      <section className="container mx-auto px-4 pb-8">
-        <TibberLivePanel
-          location="hytta"
-          title="Strømforbruk · Hytta"
-          subtitle="Tibber Pulse · sanntid"
-        />
-      </section>
 
       <HeatersPanel
         location="hytta"
