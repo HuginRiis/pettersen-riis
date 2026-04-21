@@ -1,0 +1,1 @@
+DELETE FROM public.visitor_login_attempts WHERE success = false AND attempted_at > now() - interval '24 hours';
