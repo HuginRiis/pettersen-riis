@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Eye, Users } from "lucide-react";
+import { Eye, Users, TrendingUp, TrendingDown, Minus, MousePointerClick } from "lucide-react";
 import { getVisitorCounts, type VisitorCounts } from "@/server/visitors";
 
 /**
@@ -194,39 +194,11 @@ export function HouseHero({
             <span>{SEASON_LABEL[season]}</span>
             <span className="text-primary/40">❦</span>
             <span>{DAYPART_LABEL[dayPart]}</span>
-            {counts && (
-              <>
-                <span className="text-primary/40">❦</span>
-                <span
-                  className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded border border-primary/40 bg-background/40 backdrop-blur-sm normal-case tracking-normal text-[11px] md:text-xs"
-                  title={`Unike sjeler: ${counts.total.toLocaleString("nb-NO")} totalt, ${counts.today} i dag, ${counts.online} nå.\nØkter: ${counts.totalSessions.toLocaleString("nb-NO")} totalt, ${counts.todaySessions} i dag, ${counts.onlineSessions} nå.`}
-                >
-                  <Eye size={12} className="text-primary" />
-                  <span className="text-foreground font-semibold">
-                    {counts.online}
-                  </span>
-                  <span className="text-muted-foreground">nå</span>
-                  <span className="text-primary/40 mx-0.5">·</span>
-                  <Users size={12} className="text-primary" />
-                  <span className="text-foreground font-semibold">
-                    {counts.today}
-                  </span>
-                  <span className="text-muted-foreground">
-                    i dag ({counts.todaySessions} økt{counts.todaySessions === 1 ? "" : "er"})
-                  </span>
-                  <span className="text-primary/40 mx-0.5">·</span>
-                  <span className="text-foreground font-semibold">
-                    {counts.total.toLocaleString("nb-NO")}
-                  </span>
-                  <span className="text-muted-foreground">
-                    totalt ({counts.totalSessions.toLocaleString("nb-NO")} økter)
-                  </span>
-                </span>
-              </>
-            )}
             <span className="inline-block w-8 h-px bg-primary/60" />
           </div>
         )}
+
+        {mounted && counts && <VisitorTrendsBar counts={counts} />}
       </div>
 
       <HouseHeroStyles />
@@ -234,7 +206,87 @@ export function HouseHero({
   );
 }
 
-/* ─── Blafrende lys (stearinlys-effekt) ─────────────────────────────── */
+/* ─── Besøkende-trender ─────────────────────────────────────────────── */
+
+function Delta({ current, previous }: { current: number; previous: number }) {
+  const diff = current - previous;
+  if (diff === 0 || (current === 0 && previous === 0)) {
+    return (
+      <span className="inline-flex items-center gap-0.5 text-muted-foreground">
+        <Minus size={10} />
+        <span className="text-[10px]">0</span>
+      </span>
+    );
+  }
+  const up = diff > 0;
+  return (
+    <span
+      className={`inline-flex items-center gap-0.5 ${up ? "text-emerald-400" : "text-rose-400"}`}
+    >
+      {up ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
+      <span className="text-[10px] font-semibold">
+        {up ? "+" : ""}
+        {diff}
+      </span>
+    </span>
+  );
+}
+
+function VisitorTrendsBar({ counts }: { counts: VisitorCounts }) {
+  return (
+    <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-[11px] md:text-xs normal-case tracking-normal">
+      {/* NÅ — siste time vs forrige time */}
+      <span
+        className="inline-flex items-center gap-1.5 px-2 py-1 rounded border border-primary/40 bg-background/50 backdrop-blur-sm"
+        title={`Siste time: ${counts.lastHour} unike sjeler. Forrige time: ${counts.prevHour}.`}
+      >
+        <Eye size={12} className="text-primary" />
+        <span className="text-muted-foreground uppercase tracking-wider text-[9px]">Nå</span>
+        <span className="text-foreground font-semibold">{counts.online}</span>
+        <span className="text-primary/40 mx-0.5">·</span>
+        <span className="text-muted-foreground text-[10px]">siste time</span>
+        <Delta current={counts.lastHour} previous={counts.prevHour} />
+      </span>
+
+      {/* I DAG vs i går */}
+      <span
+        className="inline-flex items-center gap-1.5 px-2 py-1 rounded border border-primary/40 bg-background/50 backdrop-blur-sm"
+        title={`I dag: ${counts.today} sjeler (${counts.todaySessions} økter). I går: ${counts.yesterday} sjeler (${counts.yesterdaySessions} økter).`}
+      >
+        <Users size={12} className="text-primary" />
+        <span className="text-muted-foreground uppercase tracking-wider text-[9px]">I dag</span>
+        <span className="text-foreground font-semibold">{counts.today}</span>
+        <span className="text-muted-foreground text-[10px]">
+          ({counts.todaySessions} økt{counts.todaySessions === 1 ? "" : "er"})
+        </span>
+        <span className="text-primary/40 mx-0.5">·</span>
+        <span className="text-muted-foreground text-[10px]">i går {counts.yesterday}</span>
+        <Delta current={counts.today} previous={counts.yesterday} />
+      </span>
+
+      {/* TOTALT — klikk + siste 24t */}
+      <span
+        className="inline-flex items-center gap-1.5 px-2 py-1 rounded border border-primary/40 bg-background/50 backdrop-blur-sm"
+        title={`Totalt: ${counts.total.toLocaleString("nb-NO")} sjeler, ${counts.totalSessions.toLocaleString("nb-NO")} økter, ${counts.totalPageviews.toLocaleString("nb-NO")} klikk. Siste 24t: ${counts.last24h} sjeler (${counts.last24hSessions} økter).`}
+      >
+        <MousePointerClick size={12} className="text-primary" />
+        <span className="text-muted-foreground uppercase tracking-wider text-[9px]">Totalt</span>
+        <span className="text-foreground font-semibold">
+          {counts.totalPageviews.toLocaleString("nb-NO")}
+        </span>
+        <span className="text-muted-foreground text-[10px]">klikk</span>
+        <span className="text-primary/40 mx-0.5">·</span>
+        <span className="text-muted-foreground text-[10px]">
+          {counts.total.toLocaleString("nb-NO")} sjeler
+        </span>
+        <span className="text-primary/40 mx-0.5">·</span>
+        <span className="text-muted-foreground text-[10px]">
+          24t: <span className="text-foreground font-semibold">{counts.last24h}</span>
+        </span>
+      </span>
+    </div>
+  );
+}
 
 function CandleLights({ lights, visible }: { lights: LightSpot[]; visible: boolean }) {
   // Bruk en stabil "tilfeldig" delay basert på indeks (ingen Math.random) for SSR-trygghet

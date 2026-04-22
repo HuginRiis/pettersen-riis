@@ -397,8 +397,8 @@ export const releaseIpFn = createServerFn({ method: "POST" })
   });
 
 // ── Lite tellverk for forsiden — antall besøkende totalt, i dag og akkurat nå
-// Vi teller både unike sjeler (IP/client-session) og rå økter, slik at
-// forsiden kan vise begge tallene side om side.
+// Vi teller både unike sjeler (IP/client-session) og rå økter, og legger på
+// trender: siste time vs forrige time, i dag vs i går, og siste 24t totalt.
 export type VisitorCounts = {
   total: number;
   today: number;
@@ -406,19 +406,48 @@ export type VisitorCounts = {
   totalSessions: number;
   todaySessions: number;
   onlineSessions: number;
+  // Nye trend-felter
+  lastHour: number;          // unike sjeler siste 60 min
+  prevHour: number;          // unike sjeler i timen før det
+  yesterday: number;         // unike sjeler i går (samme kalenderdag)
+  yesterdaySessions: number; // økter i går
+  last24h: number;           // unike sjeler siste 24t
+  last24hSessions: number;   // økter siste 24t
+  totalPageviews: number;    // totalt antall klikk/sidevisninger
 };
+
+function uniqueSouls(rows: Array<{ ip: string | null; client_session_id: string }> | null) {
+  if (!rows) return 0;
+  const seen = new Set<string>();
+  for (const r of rows) {
+    seen.add(r.ip && r.ip.length > 0 ? `ip:${r.ip}` : `cs:${r.client_session_id}`);
+  }
+  return seen.size;
+}
 
 export const getVisitorCounts = createServerFn({ method: "GET" }).handler(
   async (): Promise<VisitorCounts> => {
+    const now = Date.now();
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
-    const onlineCutoff = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+    const startOfYesterday = new Date(startOfDay);
+    startOfYesterday.setDate(startOfYesterday.getDate() - 1);
 
-    // Hent alle økter med IP og tidsstempler. Vi teller unike IP-er
-    // (= unike sjeler), ikke økter, slik at samme person som besøker
-    // fra to nettlesere/enheter ikke blir telt dobbelt.
-    // Økter uten IP (lokale/private) faller tilbake på client_session_id.
-    const [allRes, todayRes, onlineRes] = await Promise.all([
+    const onlineCutoff = new Date(now - 5 * 60 * 1000).toISOString();
+    const lastHourCutoff = new Date(now - 60 * 60 * 1000).toISOString();
+    const prevHourStart = new Date(now - 2 * 60 * 60 * 1000).toISOString();
+    const last24hCutoff = new Date(now - 24 * 60 * 60 * 1000).toISOString();
+
+    const [
+      allRes,
+      todayRes,
+      onlineRes,
+      lastHourRes,
+      prevHourRes,
+      yesterdayRes,
+      last24hRes,
+      pvCountRes,
+    ] = await Promise.all([
       supabaseAdmin
         .from("visitor_sessions" as any)
         .select("ip, client_session_id")
@@ -433,16 +462,37 @@ export const getVisitorCounts = createServerFn({ method: "GET" }).handler(
         .select("ip, client_session_id")
         .gte("last_seen_at", onlineCutoff)
         .limit(50000),
+      // Siste time (basert på siste aktivitet)
+      supabaseAdmin
+        .from("visitor_sessions" as any)
+        .select("ip, client_session_id")
+        .gte("last_seen_at", lastHourCutoff)
+        .limit(50000),
+      // Forrige time (mellom -2t og -1t)
+      supabaseAdmin
+        .from("visitor_sessions" as any)
+        .select("ip, client_session_id")
+        .gte("last_seen_at", prevHourStart)
+        .lt("last_seen_at", lastHourCutoff)
+        .limit(50000),
+      // I går (kalenderdag)
+      supabaseAdmin
+        .from("visitor_sessions" as any)
+        .select("ip, client_session_id")
+        .gte("started_at", startOfYesterday.toISOString())
+        .lt("started_at", startOfDay.toISOString())
+        .limit(50000),
+      // Siste 24t (rullerende)
+      supabaseAdmin
+        .from("visitor_sessions" as any)
+        .select("ip, client_session_id")
+        .gte("started_at", last24hCutoff)
+        .limit(50000),
+      // Totalt antall klikk = pageviews
+      supabaseAdmin
+        .from("visitor_pageviews" as any)
+        .select("*", { count: "exact", head: true }),
     ]);
-
-    function uniqueSouls(rows: Array<{ ip: string | null; client_session_id: string }> | null) {
-      if (!rows) return 0;
-      const seen = new Set<string>();
-      for (const r of rows) {
-        seen.add(r.ip && r.ip.length > 0 ? `ip:${r.ip}` : `cs:${r.client_session_id}`);
-      }
-      return seen.size;
-    }
 
     return {
       total: uniqueSouls(allRes.data as any),
@@ -451,6 +501,13 @@ export const getVisitorCounts = createServerFn({ method: "GET" }).handler(
       totalSessions: allRes.data?.length ?? 0,
       todaySessions: todayRes.data?.length ?? 0,
       onlineSessions: onlineRes.data?.length ?? 0,
+      lastHour: uniqueSouls(lastHourRes.data as any),
+      prevHour: uniqueSouls(prevHourRes.data as any),
+      yesterday: uniqueSouls(yesterdayRes.data as any),
+      yesterdaySessions: yesterdayRes.data?.length ?? 0,
+      last24h: uniqueSouls(last24hRes.data as any),
+      last24hSessions: last24hRes.data?.length ?? 0,
+      totalPageviews: pvCountRes.count ?? 0,
     };
   },
 );
