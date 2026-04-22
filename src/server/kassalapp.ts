@@ -203,6 +203,7 @@ export const searchGroceryProducts = createServerFn({ method: "POST" })
         name: g.name,
         brand: g.brand,
         image: g.image,
+        kassalCategory: g.kassalCategory,
         cheapestPrice: cheapest?.price ?? null,
         cheapestStore: cheapest?.storeName ?? null,
         remaPrice: remaRow?.price ?? null,
