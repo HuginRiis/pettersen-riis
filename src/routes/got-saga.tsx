@@ -24,7 +24,21 @@ import {
   Sword,
   ChevronRight,
   X,
+  Filter,
+  Trophy,
+  PlayCircle,
+  Hourglass,
+  CheckCircle2,
 } from "lucide-react";
+
+type FilterKey = "alle" | "pågår" | "kommende" | "ferdig";
+
+const FILTERS: { key: FilterKey; label: string; icon: typeof Filter; hint: string }[] = [
+  { key: "alle", label: "Alle kapitler", icon: Filter, hint: "Vis alt" },
+  { key: "pågår", label: "Pågår nå", icon: PlayCircle, hint: "Serier som ruller" },
+  { key: "kommende", label: "Hva kommer", icon: Hourglass, hint: "Annonsert / i utvikling" },
+  { key: "ferdig", label: "Hvor gikk", icon: CheckCircle2, hint: "Avsluttet" },
+];
 
 export const Route = createFileRoute("/got-saga")({
   head: () => ({
