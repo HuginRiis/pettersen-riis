@@ -41,6 +41,60 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_search_log: {
+        Row: {
+          authenticated: boolean
+          city: string | null
+          completion_tokens: number | null
+          country: string | null
+          created_at: string
+          estimated_cost_usd: number | null
+          feature: string
+          id: string
+          ip: string | null
+          model: string | null
+          prompt_tokens: number | null
+          query: string | null
+          status: string
+          total_tokens: number | null
+          user_agent: string | null
+        }
+        Insert: {
+          authenticated?: boolean
+          city?: string | null
+          completion_tokens?: number | null
+          country?: string | null
+          created_at?: string
+          estimated_cost_usd?: number | null
+          feature: string
+          id?: string
+          ip?: string | null
+          model?: string | null
+          prompt_tokens?: number | null
+          query?: string | null
+          status?: string
+          total_tokens?: number | null
+          user_agent?: string | null
+        }
+        Update: {
+          authenticated?: boolean
+          city?: string | null
+          completion_tokens?: number | null
+          country?: string | null
+          created_at?: string
+          estimated_cost_usd?: number | null
+          feature?: string
+          id?: string
+          ip?: string | null
+          model?: string | null
+          prompt_tokens?: number | null
+          query?: string | null
+          status?: string
+          total_tokens?: number | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       grocery_favorites: {
         Row: {
           brand: string | null

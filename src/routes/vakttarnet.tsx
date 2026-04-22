@@ -9,9 +9,10 @@ import type {
   LoginAttemptRow,
   PageviewRow,
 } from "@/server/visitors";
+import { getAiUsageStats, type AiUsageStats } from "@/server/ai-usage";
 import { useAuthStatus } from "@/hooks/use-auth-status";
 import heroImg from "@/assets/got-vakttarnet.jpg";
-import { Eye, Globe2, Smartphone, Monitor, Tablet, Clock, Crown, ShieldAlert, Map as MapIcon, Lock, Unlock } from "lucide-react";
+import { Eye, Globe2, Smartphone, Monitor, Tablet, Clock, Crown, ShieldAlert, Map as MapIcon, Lock, Unlock, Sparkles } from "lucide-react";
 
 export const Route = createFileRoute("/vakttarnet")({
   head: () => ({
@@ -34,9 +35,11 @@ export const Route = createFileRoute("/vakttarnet")({
 
 function VakttarnetPage() {
   const fetch = useServerFn(fetchVakttarnetData);
+  const fetchAi = useServerFn(getAiUsageStats);
   const [sessions, setSessions] = useState<VisitorSessionRow[]>([]);
   const [attempts, setAttempts] = useState<LoginAttemptRow[]>([]);
   const [pageviews, setPageviews] = useState<PageviewRow[]>([]);
+  const [aiStats, setAiStats] = useState<AiUsageStats | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Spill GoT-tema lavt i 3-4 sek når Vakttårnet åpnes
@@ -90,11 +93,12 @@ function VakttarnetPage() {
     let alive = true;
     const load = async () => {
       try {
-        const data = await fetch();
+        const [data, ai] = await Promise.all([fetch(), fetchAi()]);
         if (!alive) return;
         setSessions(data.sessions);
         setAttempts(data.attempts);
         setPageviews(data.pageviews);
+        setAiStats(ai);
       } finally {
         if (alive) setLoading(false);
       }
@@ -105,7 +109,7 @@ function VakttarnetPage() {
       alive = false;
       window.clearInterval(i);
     };
-  }, [fetch]);
+  }, [fetch, fetchAi]);
 
   return (
     <PageShell>
@@ -161,6 +165,14 @@ function VakttarnetPage() {
           subtitle="Hvem og hva troner øverst"
         >
           <TopLists sessions={sessions} pageviews={pageviews} />
+        </Panel>
+
+        <Panel
+          title="Mesterens orakel"
+          icon={<Sparkles size={14} />}
+          subtitle="AI-søk, tokens og estimerte credits brukt på huset"
+        >
+          <AiUsagePanel stats={aiStats} />
         </Panel>
       </section>
     </PageShell>
@@ -892,4 +904,142 @@ function escapeHtml(s: string): string {
       default: return c;
     }
   });
+}
+
+// ── AI-bruk ───────────────────────────────────────────────────────────
+function AiUsagePanel({ stats }: { stats: AiUsageStats | null }) {
+  if (!stats) {
+    return <div className="text-sm text-muted-foreground">Henter orakelets logg…</div>;
+  }
+  if (stats.totalSearches === 0) {
+    return (
+      <div className="text-sm text-muted-foreground italic">
+        Ingen har enda spurt orakelet.
+      </div>
+    );
+  }
+  const fmtUsd = (n: number) => `$${n.toFixed(4)}`;
+  const fmtTokens = (n: number) =>
+    n >= 1000 ? `${(n / 1000).toFixed(1)}k` : n.toString();
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3">
+        <StatCard label="Søk i alt" value={stats.totalSearches.toString()} />
+        <StatCard label="I dag" value={stats.searchesToday.toString()} />
+        <StatCard label="Denne måneden" value={stats.searchesMonth.toString()} />
+        <StatCard
+          label="Tokens"
+          value={fmtTokens(stats.totalTokens)}
+          sub={`~${fmtUsd(stats.estimatedCostUsd)} totalt`}
+        />
+        <StatCard
+          label="Rate-limit"
+          value={stats.rateLimited.toString()}
+          tone={stats.rateLimited > 0 ? "warn" : "ok"}
+          sub="Avviste pga. dagsgrense"
+        />
+        <StatCard
+          label="Innlogget vs offentlig"
+          value={`${stats.authenticatedSearches} / ${stats.publicSearches}`}
+          wide
+        />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+        <div className="rounded-md border border-border bg-background/40 p-3">
+          <div className="text-[10px] tracking-[0.25em] text-muted-foreground uppercase mb-2">
+            Per funksjon
+          </div>
+          <ul className="text-xs space-y-1">
+            {stats.byFeature.map((f) => (
+              <li key={f.feature} className="flex justify-between gap-2">
+                <span className="text-foreground">{f.feature}</span>
+                <span className="text-muted-foreground">
+                  {f.count} søk · ~{fmtUsd(f.costUsd)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div className="rounded-md border border-border bg-background/40 p-3">
+          <div className="text-[10px] tracking-[0.25em] text-muted-foreground uppercase mb-2">
+            Per modell
+          </div>
+          <ul className="text-xs space-y-1">
+            {stats.byModel.map((m) => (
+              <li key={m.model} className="flex justify-between gap-2">
+                <span className="text-foreground truncate" title={m.model}>
+                  {m.model}
+                </span>
+                <span className="text-muted-foreground whitespace-nowrap">
+                  {m.count} · ~{fmtUsd(m.costUsd)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+
+      {stats.topQueries.length > 0 && (
+        <div className="rounded-md border border-border bg-background/40 p-3">
+          <div className="text-[10px] tracking-[0.25em] text-muted-foreground uppercase mb-2">
+            Mest stilte spørsmål
+          </div>
+          <ul className="text-xs space-y-1">
+            {stats.topQueries.map((q) => (
+              <li key={q.query} className="flex justify-between gap-2">
+                <span className="text-foreground truncate" title={q.query}>
+                  {q.query}
+                </span>
+                <span className="text-muted-foreground">{q.count}×</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      <div className="rounded-md border border-border bg-background/40 p-3">
+        <div className="text-[10px] tracking-[0.25em] text-muted-foreground uppercase mb-2">
+          Siste søk
+        </div>
+        <ul className="text-xs space-y-1 max-h-64 overflow-y-auto pr-1">
+          {stats.recent.map((r) => (
+            <li
+              key={r.id}
+              className="flex justify-between gap-2 border-b border-border/40 pb-1 last:border-0"
+            >
+              <span className="truncate" title={r.query ?? ""}>
+                <span
+                  className={`mr-2 text-[9px] uppercase tracking-widest ${
+                    r.status === "ok"
+                      ? "text-primary"
+                      : r.status === "rate_limited"
+                        ? "text-yellow-500"
+                        : "text-destructive"
+                  }`}
+                >
+                  {r.status}
+                </span>
+                {r.query ?? "—"}
+              </span>
+              <span className="text-muted-foreground whitespace-nowrap">
+                {r.authenticated ? "🔓" : "🌐"}{" "}
+                {new Date(r.created_at).toLocaleString("nb-NO", {
+                  day: "2-digit",
+                  month: "short",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <p className="text-[10px] text-muted-foreground italic">
+        Estimerte kostnader er omtrentlige (basert på Lovable AI Gateway-priser
+        per modell). Eksakte credits ser du i workspace-innstillingene.
+      </p>
+    </div>
+  );
 }
