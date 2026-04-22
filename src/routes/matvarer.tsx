@@ -537,6 +537,7 @@ function ShoppingListPanel({
   const [manualCategory, setManualCategory] = useState<string>("Annet");
   const [manualQty, setManualQty] = useState("");
   const [manualUnit, setManualUnit] = useState("");
+  const [manualPrice, setManualPrice] = useState("");
   const [hideChecked, setHideChecked] = useState(false);
 
   const grouped = useMemo(() => {
@@ -548,7 +549,6 @@ function ShoppingListPanel({
       arr.push(f);
       map.set(c, arr);
     }
-    // Sorter i rekkefølgen til CATEGORIES, deretter alfabetisk
     const order = new Map<string, number>(
       CATEGORIES.map((c, i) => [c as string, i] as [string, number]),
     );
@@ -562,20 +562,36 @@ function ShoppingListPanel({
   const totalCount = favorites.length;
   const checkedCount = favorites.filter((f) => f.checked).length;
 
+  // Total-sum (alle ikke-avhakede varer med kjent pris × antall)
+  const totalSum = useMemo(() => {
+    return favorites
+      .filter((f) => !f.checked && f.price_nok != null)
+      .reduce((sum, f) => sum + (f.price_nok ?? 0) * (f.quantity ?? 1), 0);
+  }, [favorites]);
+
+  const checkedSum = useMemo(() => {
+    return favorites
+      .filter((f) => f.checked && f.price_nok != null)
+      .reduce((sum, f) => sum + (f.price_nok ?? 0) * (f.quantity ?? 1), 0);
+  }, [favorites]);
+
   const submitManual = (e: React.FormEvent) => {
     e.preventDefault();
     const name = manualName.trim();
     if (!name) return;
     const qty = manualQty.trim() ? Number(manualQty.replace(",", ".")) : null;
+    const price = manualPrice.trim() ? Number(manualPrice.replace(",", ".")) : null;
     onAddManual(
       name,
       manualCategory,
       Number.isFinite(qty as number) ? (qty as number) : null,
       manualUnit.trim() || null,
+      Number.isFinite(price as number) ? (price as number) : null,
     );
     setManualName("");
     setManualQty("");
     setManualUnit("");
+    setManualPrice("");
   };
 
   return (
