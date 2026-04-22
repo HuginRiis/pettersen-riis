@@ -35,9 +35,11 @@ export const Route = createFileRoute("/vakttarnet")({
 
 function VakttarnetPage() {
   const fetch = useServerFn(fetchVakttarnetData);
+  const fetchAi = useServerFn(getAiUsageStats);
   const [sessions, setSessions] = useState<VisitorSessionRow[]>([]);
   const [attempts, setAttempts] = useState<LoginAttemptRow[]>([]);
   const [pageviews, setPageviews] = useState<PageviewRow[]>([]);
+  const [aiStats, setAiStats] = useState<AiUsageStats | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Spill GoT-tema lavt i 3-4 sek når Vakttårnet åpnes
