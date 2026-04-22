@@ -4,6 +4,7 @@
  *
  * Tidssone: alle hendelser tolkes som Europe/Oslo lokaltid.
  */
+import { createServerFn } from "@tanstack/react-start";
 import webpush from "web-push";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
@@ -51,6 +52,50 @@ function osloLocalToUtc(dateStr: string, timeStr: string): Date {
 
 function formatOsloTime(date: string, time: string): string {
   return `${time}`;
+}
+
+function formatPushError(error: unknown): { message: string; statusCode?: number } {
+  const err = error as {
+    message?: string;
+    body?: string;
+    statusCode?: number;
+  };
+  const parts = [err?.message || String(error)];
+  if (err?.statusCode) parts.push(`status ${err.statusCode}`);
+  if (typeof err?.body === "string" && err.body.trim()) {
+    parts.push(err.body.trim().slice(0, 240));
+  }
+  return {
+    message: parts.join(" — "),
+    statusCode: err?.statusCode,
+  };
+}
+
+async function sendPushToSubscription(
+  sub: { endpoint: string; p256dh: string; auth: string },
+  payload: string,
+): Promise<{ ok: true } | { ok: false; statusCode?: number; error: string }> {
+  try {
+    await webpush.sendNotification(
+      {
+        endpoint: sub.endpoint,
+        keys: { p256dh: sub.p256dh, auth: sub.auth },
+      },
+      payload,
+    );
+    return { ok: true };
+  } catch (error) {
+    const formatted = formatPushError(error);
+    if (formatted.statusCode === 404 || formatted.statusCode === 410) {
+      await supabaseAdmin.from("push_subscriptions").delete().eq("endpoint", sub.endpoint);
+    }
+    console.error("[agenda-push] send error", {
+      endpoint: sub.endpoint,
+      statusCode: formatted.statusCode,
+      error: formatted.message,
+    });
+    return { ok: false, statusCode: formatted.statusCode, error: formatted.message };
+  }
 }
 
 export async function processAgendaNotifications(): Promise<{ checked: number; sent: number; errors: number }> {
@@ -106,11 +151,7 @@ export async function processAgendaNotifications(): Promise<{ checked: number; s
       console.error("[agenda-push] sub fetch error", subErr);
       continue;
     }
-    if (!subs || subs.length === 0) {
-      // marker som varslet for å unngå retry uendelig
-      await supabaseAdmin.from("agenda_messages").update({ notified_at: new Date().toISOString() }).eq("id", item.id);
-      continue;
-    }
+    if (!subs || subs.length === 0) continue;
 
     const timeLabel = formatOsloTime(eventDate, eventTime);
     const whenLabel =
@@ -125,33 +166,97 @@ export async function processAgendaNotifications(): Promise<{ checked: number; s
       url: "/agenda",
     });
 
+    let sentForItem = 0;
     for (const sub of subs) {
-      try {
-        await webpush.sendNotification(
-          {
-            endpoint: sub.endpoint as string,
-            keys: { p256dh: sub.p256dh as string, auth: sub.auth as string },
-          },
-          payload
-        );
+      const result = await sendPushToSubscription(
+        {
+          endpoint: sub.endpoint as string,
+          p256dh: sub.p256dh as string,
+          auth: sub.auth as string,
+        },
+        payload,
+      );
+      if (result.ok) {
         sent++;
-      } catch (e: unknown) {
+        sentForItem++;
+      } else {
         errors++;
-        const status = (e as { statusCode?: number })?.statusCode;
-        if (status === 404 || status === 410) {
-          // Død subscription — slett
-          await supabaseAdmin.from("push_subscriptions").delete().eq("endpoint", sub.endpoint as string);
-        } else {
-          console.error("[agenda-push] send error", e);
-        }
       }
     }
 
-    await supabaseAdmin
-      .from("agenda_messages")
-      .update({ notified_at: new Date().toISOString() })
-      .eq("id", item.id);
+    if (sentForItem > 0) {
+      await supabaseAdmin
+        .from("agenda_messages")
+        .update({ notified_at: new Date().toISOString() })
+        .eq("id", item.id);
+    }
   }
 
   return { checked: items.length, sent, errors };
 }
+
+export const getPushPublicKey = createServerFn({ method: "GET" }).handler(async () => {
+  return { vapidPublicKey: VAPID_PUBLIC };
+});
+
+export const sendAgendaTestPush = createServerFn({ method: "POST" })
+  .inputValidator((input: { endpoint: string; who: string }) => {
+    if (typeof input?.endpoint !== "string" || input.endpoint.length < 10 || input.endpoint.length > 2000) {
+      throw new Error("Ugyldig abonnement for test-push.");
+    }
+    if (typeof input?.who !== "string" || input.who.length < 1 || input.who.length > 40) {
+      throw new Error("Ugyldig mottaker for test-push.");
+    }
+    return { endpoint: input.endpoint, who: input.who };
+  })
+  .handler(async ({ data }) => {
+    ensureConfigured();
+
+    const { data: sub, error } = await supabaseAdmin
+      .from("push_subscriptions")
+      .select("endpoint, p256dh, auth, who")
+      .eq("endpoint", data.endpoint)
+      .maybeSingle();
+
+    if (error) throw error;
+    if (!sub) {
+      throw new Error("Fant ikke abonnementet på denne enheten. Slå push av og på igjen.");
+    }
+
+    const sentAt = new Date().toISOString();
+    const timeLabel = new Date(sentAt).toLocaleTimeString("nb-NO", {
+      timeZone: "Europe/Oslo",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
+    const payload = JSON.stringify({
+      title: "🧪 Test av agenda-push",
+      body: `Til ${data.who} • sendt ${timeLabel} • Hvis du ser denne virker push på mobilen.`,
+      tag: `agenda-test-${Date.now()}`,
+      url: "/agenda",
+    });
+
+    const result = await sendPushToSubscription(
+      {
+        endpoint: sub.endpoint as string,
+        p256dh: sub.p256dh as string,
+        auth: sub.auth as string,
+      },
+      payload,
+    );
+
+    if (!result.ok) {
+      if (result.statusCode === 400 || result.statusCode === 403) {
+        throw new Error("Push-abonnementet ble avvist. Slå push av og på igjen på mobilen, og prøv test-knappen på nytt.");
+      }
+      throw new Error(result.error);
+    }
+
+    await supabaseAdmin
+      .from("push_subscriptions")
+      .update({ last_used_at: sentAt })
+      .eq("endpoint", data.endpoint);
+
+    return { ok: true, sentAt };
+  });
