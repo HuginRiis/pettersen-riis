@@ -240,28 +240,12 @@ function HomeBlock({
         </div>
       )}
 
-      {/* Kostnad-graf */}
+      {/* Kumulativ kWh denne måneden */}
       <div>
         <h3 className="text-sm tracking-[0.3em] uppercase text-primary mb-3 flex items-center gap-2">
-          <Calendar size={14} /> Kostnad over tid
+          <TrendingUp size={14} /> kWh denne måneden
         </h3>
-        <CostBars highlights={h} />
-      </div>
-
-      {/* Forbruk-graf */}
-      <div>
-        <h3 className="text-sm tracking-[0.3em] uppercase text-primary mb-3 flex items-center gap-2">
-          <TrendingUp size={14} /> Energiforbruk over tid
-        </h3>
-        <EnergyBars highlights={h} />
-      </div>
-
-      {/* Daglig sammenligning */}
-      <div>
-        <h3 className="text-sm tracking-[0.3em] uppercase text-primary mb-3 flex items-center gap-2">
-          <TrendingDown size={14} /> I dag mot i går
-        </h3>
-        <DayDeltaPanel highlights={h} />
+        <MonthCumulativeChart highlights={h} />
       </div>
 
       {/* Måneds-prognose */}
