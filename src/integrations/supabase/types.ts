@@ -104,8 +104,10 @@ export type Database = {
           ean: string | null
           id: string
           image_url: string | null
+          kassal_category: string | null
           manual: boolean
           name: string
+          price_nok: number | null
           quantity: number | null
           sort_order: number
           unit: string | null
@@ -119,8 +121,10 @@ export type Database = {
           ean?: string | null
           id?: string
           image_url?: string | null
+          kassal_category?: string | null
           manual?: boolean
           name: string
+          price_nok?: number | null
           quantity?: number | null
           sort_order?: number
           unit?: string | null
@@ -134,8 +138,10 @@ export type Database = {
           ean?: string | null
           id?: string
           image_url?: string | null
+          kassal_category?: string | null
           manual?: boolean
           name?: string
+          price_nok?: number | null
           quantity?: number | null
           sort_order?: number
           unit?: string | null

@@ -98,6 +98,7 @@ export const searchGroceryProducts = createServerFn({ method: "POST" })
       name: string;
       brand: string | null;
       image: string | null;
+      kassalCategory: string | null;
       rows: StorePriceRow[];
     };
     const groups = new Map<string, Group>();
@@ -106,12 +107,21 @@ export const searchGroceryProducts = createServerFn({ method: "POST" })
       const productName: string = p?.name ?? "Ukjent vare";
       const brand: string | null = p?.brand ?? null;
       const image: string | null = p?.image ?? null;
+      // Kassalapp returnerer en hierarkisk kategori-array — bruk dypeste nivå
+      // (depth: 0 er bladnoden, eller siste element hvis depth mangler).
+      const kassalCategory: string | null = (() => {
+        const arr = Array.isArray(p?.category) ? p.category : [];
+        if (arr.length === 0) return null;
+        const leaf = arr.find((c: any) => c?.depth === 0) ?? arr[arr.length - 1];
+        return leaf?.name ?? null;
+      })();
       const key = ean ?? `name:${productName.toLowerCase().trim()}`;
       const g =
         groups.get(key) ??
-        ({ ean, name: productName, brand, image, rows: [] } as Group);
+        ({ ean, name: productName, brand, image, kassalCategory, rows: [] } as Group);
       if (!g.image && image) g.image = image;
       if (!g.brand && brand) g.brand = brand;
+      if (!g.kassalCategory && kassalCategory) g.kassalCategory = kassalCategory;
 
       const cp = p?.current_price;
       const price =
@@ -193,6 +203,7 @@ export const searchGroceryProducts = createServerFn({ method: "POST" })
         name: g.name,
         brand: g.brand,
         image: g.image,
+        kassalCategory: g.kassalCategory,
         cheapestPrice: cheapest?.price ?? null,
         cheapestStore: cheapest?.storeName ?? null,
         remaPrice: remaRow?.price ?? null,
