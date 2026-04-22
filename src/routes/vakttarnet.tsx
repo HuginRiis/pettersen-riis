@@ -93,11 +93,12 @@ function VakttarnetPage() {
     let alive = true;
     const load = async () => {
       try {
-        const data = await fetch();
+        const [data, ai] = await Promise.all([fetch(), fetchAi()]);
         if (!alive) return;
         setSessions(data.sessions);
         setAttempts(data.attempts);
         setPageviews(data.pageviews);
+        setAiStats(ai);
       } finally {
         if (alive) setLoading(false);
       }
@@ -108,7 +109,7 @@ function VakttarnetPage() {
       alive = false;
       window.clearInterval(i);
     };
-  }, [fetch]);
+  }, [fetch, fetchAi]);
 
   return (
     <PageShell>
@@ -164,6 +165,14 @@ function VakttarnetPage() {
           subtitle="Hvem og hva troner øverst"
         >
           <TopLists sessions={sessions} pageviews={pageviews} />
+        </Panel>
+
+        <Panel
+          title="Mesterens orakel"
+          icon={<Sparkles size={14} />}
+          subtitle="AI-søk, tokens og estimerte credits brukt på huset"
+        >
+          <AiUsagePanel stats={aiStats} />
         </Panel>
       </section>
     </PageShell>
