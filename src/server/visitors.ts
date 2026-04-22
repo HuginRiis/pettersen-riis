@@ -340,7 +340,13 @@ export type PageviewRow = {
 };
 
 export const fetchVakttarnetData = createServerFn({ method: "GET" }).handler(async () => {
-  const [{ data: sessions }, { data: attempts }, { data: pageviews }] = await Promise.all([
+  const [
+    { data: sessions },
+    { data: attempts },
+    { data: pageviews },
+    { count: totalPageviewsCount },
+    { data: allSoulsRows },
+  ] = await Promise.all([
     supabaseAdmin
       .from("visitor_sessions" as any)
       .select("*")
@@ -356,12 +362,23 @@ export const fetchVakttarnetData = createServerFn({ method: "GET" }).handler(asy
       .select("*")
       .order("entered_at", { ascending: false })
       .limit(1000),
+    // Ekte totalt antall sidevisninger (ikke bare de 1000 nyeste)
+    supabaseAdmin
+      .from("visitor_pageviews" as any)
+      .select("*", { count: "exact", head: true }),
+    // Alle økter — bare de to feltene vi trenger for å telle unike sjeler
+    supabaseAdmin
+      .from("visitor_sessions" as any)
+      .select("ip, client_session_id")
+      .limit(50000),
   ]);
 
   return {
     sessions: (sessions ?? []) as unknown as VisitorSessionRow[],
     attempts: (attempts ?? []) as unknown as LoginAttemptRow[],
     pageviews: (pageviews ?? []) as unknown as PageviewRow[],
+    totalPageviews: totalPageviewsCount ?? 0,
+    totalSouls: uniqueSouls(allSoulsRows as any),
   };
 });
 

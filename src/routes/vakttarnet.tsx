@@ -39,6 +39,8 @@ function VakttarnetPage() {
   const [sessions, setSessions] = useState<VisitorSessionRow[]>([]);
   const [attempts, setAttempts] = useState<LoginAttemptRow[]>([]);
   const [pageviews, setPageviews] = useState<PageviewRow[]>([]);
+  const [totalPageviews, setTotalPageviews] = useState<number>(0);
+  const [totalSouls, setTotalSouls] = useState<number>(0);
   const [aiStats, setAiStats] = useState<AiUsageStats | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -83,6 +85,8 @@ function VakttarnetPage() {
         setSessions(data.sessions);
         setAttempts(data.attempts);
         setPageviews(data.pageviews);
+        setTotalPageviews(data.totalPageviews);
+        setTotalSouls(data.totalSouls);
       } finally {
         setLoading(false);
       }
@@ -98,6 +102,8 @@ function VakttarnetPage() {
         setSessions(data.sessions);
         setAttempts(data.attempts);
         setPageviews(data.pageviews);
+        setTotalPageviews(data.totalPageviews);
+        setTotalSouls(data.totalSouls);
         setAiStats(ai);
       } finally {
         if (alive) setLoading(false);
@@ -121,7 +127,13 @@ function VakttarnetPage() {
       />
 
       <section className="container mx-auto px-3 sm:px-4 py-6 sm:py-10 space-y-6 sm:space-y-10">
-        <StatsCards sessions={sessions} pageviews={pageviews} attempts={attempts} />
+        <StatsCards
+          sessions={sessions}
+          pageviews={pageviews}
+          attempts={attempts}
+          totalPageviews={totalPageviews}
+          totalSouls={totalSouls}
+        />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
           <Panel
@@ -210,29 +222,29 @@ function StatsCards({
   sessions,
   pageviews,
   attempts,
+  totalPageviews,
+  totalSouls,
 }: {
   sessions: VisitorSessionRow[];
   pageviews: PageviewRow[];
   attempts: LoginAttemptRow[];
+  totalPageviews: number;
+  totalSouls: number;
 }) {
   const stats = useMemo(() => {
     const now = Date.now();
     const dayAgo = now - 24 * 60 * 60 * 1000;
-    // Unike sjeler = deduplisert per IP (eller client_session_id som fallback),
-    // samme logikk som getVisitorCounts på serveren — slik at tallet matcher forsiden.
+    // Sjeler siste døgn — deduplisert per IP/client_session_id, samme logikk
+    // som forsiden bruker.
     const soulKey = (s: VisitorSessionRow) =>
       s.ip && s.ip.length > 0 ? `ip:${s.ip}` : `cs:${s.client_session_id}`;
-    const allSouls = new Set<string>();
     const todaySouls = new Set<string>();
     for (const s of sessions) {
-      allSouls.add(soulKey(s));
       if (new Date(s.last_seen_at).getTime() >= dayAgo) {
         todaySouls.add(soulKey(s));
       }
     }
-    const totalSessions = allSouls.size;
     const todayCount = todaySouls.size;
-    const totalViews = pageviews.length;
     const avgDuration =
       sessions.length === 0
         ? 0
@@ -259,9 +271,7 @@ function StatsCards({
     ).length;
 
     return {
-      totalSessions,
       todayCount,
-      totalViews,
       avgDuration,
       topPath,
       topPathHits,
@@ -271,9 +281,9 @@ function StatsCards({
 
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3">
-      <StatCard label="Unike sjeler" value={stats.totalSessions.toString()} />
+      <StatCard label="Unike sjeler" value={totalSouls.toLocaleString("nb-NO")} />
       <StatCard label="Sjeler siste døgn" value={stats.todayCount.toString()} />
-      <StatCard label="Sidevisninger" value={stats.totalViews.toString()} />
+      <StatCard label="Sidevisninger" value={totalPageviews.toLocaleString("nb-NO")} />
       <StatCard label="Snitt-økt" value={formatDuration(stats.avgDuration)} />
       <StatCard
         label="Mest besøkte"
