@@ -267,14 +267,14 @@ function VisitorTrendsBar({ counts }: { counts: VisitorCounts }) {
       {/* TOTALT — klikk + siste 24t */}
       <span
         className="inline-flex items-center gap-1.5 px-2 py-1 rounded border border-primary/40 bg-background/50 backdrop-blur-sm"
-        title={`Totalt: ${counts.total.toLocaleString("nb-NO")} sjeler, ${counts.totalSessions.toLocaleString("nb-NO")} økter, ${counts.totalPageviews.toLocaleString("nb-NO")} klikk. Siste 24t: ${counts.last24h} sjeler (${counts.last24hSessions} økter).`}
+        title={`Totalt: ${counts.total.toLocaleString("nb-NO")} sjeler, ${counts.totalSessions.toLocaleString("nb-NO")} økter, ${counts.totalPageviews.toLocaleString("nb-NO")} sidevisninger. Siste 24t: ${counts.last24h} sjeler (${counts.last24hSessions} økter).`}
       >
         <MousePointerClick size={12} className="text-primary" />
         <span className="text-muted-foreground uppercase tracking-wider text-[9px]">Totalt</span>
         <span className="text-foreground font-semibold">
           {counts.totalPageviews.toLocaleString("nb-NO")}
         </span>
-        <span className="text-muted-foreground text-[10px]">klikk</span>
+        <span className="text-muted-foreground text-[10px]">sider</span>
         <span className="text-primary/40 mx-0.5">·</span>
         <span className="text-muted-foreground text-[10px]">
           {counts.total.toLocaleString("nb-NO")} sjeler
