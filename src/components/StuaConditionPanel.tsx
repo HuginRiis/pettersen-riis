@@ -174,7 +174,7 @@ export function StuaConditionPanel({
             reading={tempR}
             unit="°C"
             digits={1}
-            norm="20–22 °C"
+            norm="20–24,8 °C"
           />
           <MetricBlock
             icon="💧"
