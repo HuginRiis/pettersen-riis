@@ -84,6 +84,7 @@ type ProductGroup = {
   image: string | null;
   cheapestPrice: number | null;
   cheapestStore: string | null;
+  remaPrice: number | null;
   storeCount: number;
   rows: StoreRow[];
 };
