@@ -346,6 +346,12 @@ function MatvarerPage() {
           }}
         />
       )}
+
+      <BarcodeScannerDialog
+        open={scannerOpen}
+        onClose={() => setScannerOpen(false)}
+        onDetected={onBarcodeDetected}
+      />
     </PageShell>
   );
 }
