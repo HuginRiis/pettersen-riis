@@ -6,7 +6,7 @@ import {
   isHouseAuthenticated,
   logAiSearch,
   readClientIp,
-} from "@/server/ai-usage";
+} from "@/server/ai-usage.server";
 
 // Beholdt for `requireHouseAuth` som brukes i reverseGeocode lenger nede.
 type SessionData = { authenticated?: boolean };
