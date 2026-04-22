@@ -217,8 +217,14 @@ function HomeBlock({
         <BigStat
           icon={Coins}
           label="Pris nå"
-          value={h.priceNow != null ? `${h.priceNow.toFixed(3)} kr` : "—"}
-          sub="per kWh inkl. mva"
+          value={
+            spotNow != null
+              ? `${spotNow.toFixed(3)} kr`
+              : h.priceNow != null
+                ? `${h.priceNow.toFixed(3)} kr`
+                : "—"
+          }
+          sub={spotNow != null ? "Nord Pool · NO2 inkl. mva" : "per kWh inkl. mva"}
           tone="gold"
         />
         <BigStat
