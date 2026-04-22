@@ -2,10 +2,14 @@ import { createServerFn } from "@tanstack/react-start";
 import { useSession } from "@tanstack/react-start/server";
 import { z } from "zod";
 import {
-  canUseAiToday,
+  getWeeklyQuotaForIp,
+  getRecentSearchesForIp,
+  getLastVisitForIp,
   isHouseAuthenticated,
   logAiSearch,
   readClientIp,
+  PUBLIC_WEEKLY_LIMIT,
+  type RecentSearchRow,
 } from "@/server/ai-usage.server";
 
 // Beholdt for `requireHouseAuth` som brukes i reverseGeocode lenger nede.
