@@ -20,6 +20,7 @@ import { Route as SmarthusRouteImport } from './routes/smarthus'
 import { Route as PollenRouteImport } from './routes/pollen'
 import { Route as OppussingHyttaRouteImport } from './routes/oppussing-hytta'
 import { Route as OppussingBorgenRouteImport } from './routes/oppussing-borgen'
+import { Route as MatvarerRouteImport } from './routes/matvarer'
 import { Route as HyttaRouteImport } from './routes/hytta'
 import { Route as HundeneRouteImport } from './routes/hundene'
 import { Route as AgendaRouteImport } from './routes/agenda'
@@ -85,6 +86,11 @@ const OppussingBorgenRoute = OppussingBorgenRouteImport.update({
   path: '/oppussing-borgen',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MatvarerRoute = MatvarerRouteImport.update({
+  id: '/matvarer',
+  path: '/matvarer',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const HyttaRoute = HyttaRouteImport.update({
   id: '/hytta',
   path: '/hytta',
@@ -136,6 +142,7 @@ export interface FileRoutesByFullPath {
   '/agenda': typeof AgendaRoute
   '/hundene': typeof HundeneRoute
   '/hytta': typeof HyttaRoute
+  '/matvarer': typeof MatvarerRoute
   '/oppussing-borgen': typeof OppussingBorgenRoute
   '/oppussing-hytta': typeof OppussingHyttaRoute
   '/pollen': typeof PollenRoute
@@ -158,6 +165,7 @@ export interface FileRoutesByTo {
   '/agenda': typeof AgendaRoute
   '/hundene': typeof HundeneRoute
   '/hytta': typeof HyttaRoute
+  '/matvarer': typeof MatvarerRoute
   '/oppussing-borgen': typeof OppussingBorgenRoute
   '/oppussing-hytta': typeof OppussingHyttaRoute
   '/pollen': typeof PollenRoute
@@ -181,6 +189,7 @@ export interface FileRoutesById {
   '/agenda': typeof AgendaRoute
   '/hundene': typeof HundeneRoute
   '/hytta': typeof HyttaRoute
+  '/matvarer': typeof MatvarerRoute
   '/oppussing-borgen': typeof OppussingBorgenRoute
   '/oppussing-hytta': typeof OppussingHyttaRoute
   '/pollen': typeof PollenRoute
@@ -205,6 +214,7 @@ export interface FileRouteTypes {
     | '/agenda'
     | '/hundene'
     | '/hytta'
+    | '/matvarer'
     | '/oppussing-borgen'
     | '/oppussing-hytta'
     | '/pollen'
@@ -227,6 +237,7 @@ export interface FileRouteTypes {
     | '/agenda'
     | '/hundene'
     | '/hytta'
+    | '/matvarer'
     | '/oppussing-borgen'
     | '/oppussing-hytta'
     | '/pollen'
@@ -249,6 +260,7 @@ export interface FileRouteTypes {
     | '/agenda'
     | '/hundene'
     | '/hytta'
+    | '/matvarer'
     | '/oppussing-borgen'
     | '/oppussing-hytta'
     | '/pollen'
@@ -272,6 +284,7 @@ export interface RootRouteChildren {
   AgendaRoute: typeof AgendaRoute
   HundeneRoute: typeof HundeneRoute
   HyttaRoute: typeof HyttaRoute
+  MatvarerRoute: typeof MatvarerRoute
   OppussingBorgenRoute: typeof OppussingBorgenRoute
   OppussingHyttaRoute: typeof OppussingHyttaRoute
   PollenRoute: typeof PollenRoute
@@ -369,6 +382,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OppussingBorgenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/matvarer': {
+      id: '/matvarer'
+      path: '/matvarer'
+      fullPath: '/matvarer'
+      preLoaderRoute: typeof MatvarerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/hytta': {
       id: '/hytta'
       path: '/hytta'
@@ -440,6 +460,7 @@ const rootRouteChildren: RootRouteChildren = {
   AgendaRoute: AgendaRoute,
   HundeneRoute: HundeneRoute,
   HyttaRoute: HyttaRoute,
+  MatvarerRoute: MatvarerRoute,
   OppussingBorgenRoute: OppussingBorgenRoute,
   OppussingHyttaRoute: OppussingHyttaRoute,
   PollenRoute: PollenRoute,
