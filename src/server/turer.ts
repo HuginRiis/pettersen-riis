@@ -1,8 +1,14 @@
 import { createServerFn } from "@tanstack/react-start";
 import { useSession } from "@tanstack/react-start/server";
 import { z } from "zod";
+import {
+  canUseAiToday,
+  isHouseAuthenticated,
+  logAiSearch,
+  readClientIp,
+} from "@/server/ai-usage";
 
-// ── House auth gate (samme mønster som de andre serverfunksjonene) ──
+// Beholdt for `requireHouseAuth` som brukes i reverseGeocode lenger nede.
 type SessionData = { authenticated?: boolean };
 function getSessionConfig() {
   const base = process.env.HOUSE_RIIS_PASSWORD ?? "";
