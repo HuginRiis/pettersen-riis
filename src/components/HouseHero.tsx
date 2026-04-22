@@ -212,6 +212,11 @@ export function HouseHero({
                     {counts.today}
                   </span>
                   <span className="text-muted-foreground">i dag</span>
+                  <span className="text-primary/40 mx-0.5">·</span>
+                  <span className="text-foreground font-semibold">
+                    {counts.total.toLocaleString("nb-NO")}
+                  </span>
+                  <span className="text-muted-foreground">totalt</span>
                 </span>
               </>
             )}
