@@ -32,13 +32,6 @@ import {
 import { PageShell, PageHero } from "@/components/PageShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import {
   searchGroceryProducts,
@@ -121,20 +114,7 @@ type GroceryFavorite = {
   sort_order: number;
 };
 
-const CATEGORIES = [
-  "Frukt & grønt",
-  "Meieri",
-  "Brød & bakst",
-  "Kjøtt",
-  "Fisk",
-  "Pålegg",
-  "Frossen",
-  "Tørrvarer",
-  "Drikke",
-  "Snacks",
-  "Husholdning",
-  "Annet",
-] as const;
+
 
 const fmtPrice = (n: number | null | undefined) =>
   typeof n === "number" ? `kr ${n.toFixed(2).replace(".", ",")}` : "—";
@@ -172,7 +152,6 @@ function MatvarerPage() {
   const [favHistory, setFavHistory] = useState<BulkHistory[]>([]);
   const [favLoading, setFavLoading] = useState(true);
   const [scannerOpen, setScannerOpen] = useState(false);
-  const [defaultCategory, setDefaultCategory] = useState<string>("Annet");
 
   // ── Favoritter (Lovable Cloud) ─────────────────────────────────────
   const SELECT_COLS =
@@ -209,7 +188,7 @@ function MatvarerPage() {
   const isFav = (ean: string | null) =>
     !!ean && favorites.some((f) => f.ean === ean);
 
-  const toggleFavorite = async (g: ProductGroup, category: string) => {
+  const toggleFavorite = async (g: ProductGroup) => {
     if (!g.ean) return;
     const existing = favorites.find((f) => f.ean === g.ean);
     if (existing) {
@@ -225,9 +204,10 @@ function MatvarerPage() {
           brand: g.brand,
           image_url: g.image,
           vendor: g.rows[0]?.storeName ?? null,
-          category,
+          category: "Annet",
           kassal_category: g.kassalCategory,
           price_nok: price,
+          quantity: 1,
         })
         .select(SELECT_COLS)
         .single();
@@ -249,9 +229,7 @@ function MatvarerPage() {
 
   const addManualItem = async (
     name: string,
-    category: string,
     quantity: number | null,
-    unit: string | null,
     price: number | null,
   ) => {
     const { data } = await supabase
@@ -262,10 +240,10 @@ function MatvarerPage() {
         brand: null,
         image_url: null,
         vendor: null,
-        category,
+        category: "Annet",
         manual: true,
-        quantity,
-        unit,
+        quantity: quantity ?? 1,
+        unit: null,
         price_nok: price,
       })
       .select(SELECT_COLS)
@@ -345,7 +323,7 @@ function MatvarerPage() {
           favorites={favorites}
           loading={favLoading}
           onToggleChecked={(id, checked) => updateFavorite(id, { checked })}
-          onChangeCategory={(id, category) => updateFavorite(id, { category })}
+          onChangeQuantity={(id, quantity) => updateFavorite(id, { quantity })}
           onRemove={removeFavoriteById}
           onAddManual={addManualItem}
           onClearChecked={clearChecked}
@@ -397,7 +375,7 @@ function MatvarerPage() {
             </Button>
           </form>
 
-          {/* Filter-rad: Rema-only + standard kategori for nye varer */}
+          {/* Filter-rad: Rema-only */}
           <div className="mt-4 flex flex-wrap items-center gap-3">
             <button
               type="button"
@@ -412,21 +390,6 @@ function MatvarerPage() {
               <Filter size={12} />
               Kun Rema 1000
             </button>
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <span className="uppercase tracking-widest">Legg til i kategori</span>
-              <Select value={defaultCategory} onValueChange={setDefaultCategory}>
-                <SelectTrigger className="h-8 w-[160px] text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {CATEGORIES.map((c) => (
-                    <SelectItem key={c} value={c} className="text-xs">
-                      {c}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
           </div>
         </div>
 
@@ -442,7 +405,7 @@ function MatvarerPage() {
                 key={(g.ean ?? g.name) + idx}
                 group={g}
                 onOpen={() => openProduct(g)}
-                onAddToList={() => toggleFavorite(g, defaultCategory)}
+                onAddToList={() => toggleFavorite(g)}
                 isFav={isFav(g.ean)}
               />
             ))}
@@ -514,7 +477,7 @@ function ShoppingListPanel({
   favorites,
   loading,
   onToggleChecked,
-  onChangeCategory,
+  onChangeQuantity,
   onRemove,
   onAddManual,
   onClearChecked,
@@ -522,40 +485,25 @@ function ShoppingListPanel({
   favorites: GroceryFavorite[];
   loading: boolean;
   onToggleChecked: (id: string, checked: boolean) => void;
-  onChangeCategory: (id: string, category: string) => void;
+  onChangeQuantity: (id: string, quantity: number) => void;
   onRemove: (id: string) => void;
   onAddManual: (
     name: string,
-    category: string,
     quantity: number | null,
-    unit: string | null,
     price: number | null,
   ) => void;
   onClearChecked: () => void;
 }) {
   const [manualName, setManualName] = useState("");
-  const [manualCategory, setManualCategory] = useState<string>("Annet");
   const [manualQty, setManualQty] = useState("");
-  const [manualUnit, setManualUnit] = useState("");
   const [manualPrice, setManualPrice] = useState("");
   const [hideChecked, setHideChecked] = useState(false);
 
-  const grouped = useMemo(() => {
+  const visible = useMemo(() => {
     const filtered = hideChecked ? favorites.filter((f) => !f.checked) : favorites;
-    const map = new Map<string, GroceryFavorite[]>();
-    for (const f of filtered) {
-      const c = f.category || "Annet";
-      const arr = map.get(c) ?? [];
-      arr.push(f);
-      map.set(c, arr);
-    }
-    const order = new Map<string, number>(
-      CATEGORIES.map((c, i) => [c as string, i] as [string, number]),
-    );
-    return Array.from(map.entries()).sort((a, b) => {
-      const ai = order.get(a[0]) ?? 999;
-      const bi = order.get(b[0]) ?? 999;
-      return ai - bi;
+    return [...filtered].sort((a, b) => {
+      if (a.checked !== b.checked) return a.checked ? 1 : -1;
+      return a.name.localeCompare(b.name, "nb");
     });
   }, [favorites, hideChecked]);
 
@@ -583,14 +531,11 @@ function ShoppingListPanel({
     const price = manualPrice.trim() ? Number(manualPrice.replace(",", ".")) : null;
     onAddManual(
       name,
-      manualCategory,
       Number.isFinite(qty as number) ? (qty as number) : null,
-      manualUnit.trim() || null,
       Number.isFinite(price as number) ? (price as number) : null,
     );
     setManualName("");
     setManualQty("");
-    setManualUnit("");
     setManualPrice("");
   };
 
@@ -660,30 +605,12 @@ function ShoppingListPanel({
           inputMode="decimal"
         />
         <Input
-          value={manualUnit}
-          onChange={(e) => setManualUnit(e.target.value)}
-          placeholder="Enhet"
-          className="w-24 h-9"
-        />
-        <Input
           value={manualPrice}
           onChange={(e) => setManualPrice(e.target.value)}
           placeholder="kr/stk"
           className="w-24 h-9"
           inputMode="decimal"
         />
-        <Select value={manualCategory} onValueChange={setManualCategory}>
-          <SelectTrigger className="w-[160px] h-9 text-sm">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {CATEGORIES.map((c) => (
-              <SelectItem key={c} value={c}>
-                {c}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
         <Button type="submit" size="sm" disabled={!manualName.trim()}>
           <Plus size={14} className="mr-1" /> Legg til
         </Button>
@@ -692,117 +619,99 @@ function ShoppingListPanel({
       {/* Liste */}
       {loading ? (
         <p className="px-4 py-6 text-sm text-muted-foreground">Henter handleliste…</p>
-      ) : grouped.length === 0 ? (
+      ) : visible.length === 0 ? (
         <p className="px-4 py-6 text-sm text-muted-foreground">
           Handlelista er tom. Legg til varer manuelt over, eller søk i markedet
           og trykk «Legg til».
         </p>
       ) : (
-        <div className="divide-y divide-border">
-          {grouped.map(([category, items]) => {
-            const subtotal = items
-              .filter((f) => !f.checked && f.price_nok != null)
-              .reduce((s, f) => s + (f.price_nok ?? 0) * (f.quantity ?? 1), 0);
+        <ul className="divide-y divide-border">
+          {visible.map((f) => {
+            const qty = f.quantity ?? 1;
+            const lineTotal = f.price_nok != null ? f.price_nok * qty : null;
             return (
-              <div key={category} className="px-4 py-3">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="text-[10px] uppercase tracking-widest text-primary/80">
-                    {category} · {items.length}
+              <li
+                key={f.id}
+                className={`flex items-center gap-2 px-4 py-2 text-sm ${
+                  f.checked ? "opacity-50 line-through" : ""
+                }`}
+              >
+                <button
+                  type="button"
+                  onClick={() => onToggleChecked(f.id, !f.checked)}
+                  className={`w-5 h-5 shrink-0 rounded border flex items-center justify-center transition-colors ${
+                    f.checked
+                      ? "bg-primary border-primary text-primary-foreground"
+                      : "border-border hover:border-primary"
+                  }`}
+                  aria-label={f.checked ? "Hak av som ikke kjøpt" : "Hak av som kjøpt"}
+                >
+                  {f.checked && <Check size={12} />}
+                </button>
+                {f.image_url && !f.manual ? (
+                  <img
+                    src={f.image_url}
+                    alt=""
+                    className="w-6 h-6 rounded object-contain bg-background/40 shrink-0"
+                  />
+                ) : null}
+                <div className="flex-1 min-w-0">
+                  <div className="truncate">
+                    {f.name}
+                    {f.manual && (
+                      <span className="ml-2 text-[9px] uppercase tracking-widest text-muted-foreground">
+                        manuelt
+                      </span>
+                    )}
                   </div>
-                  {subtotal > 0 && (
-                    <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
-                      {fmtPrice(subtotal)}
+                  {f.brand && !f.manual && (
+                    <div className="text-[10px] text-muted-foreground/80 truncate">
+                      {f.brand}
                     </div>
                   )}
                 </div>
-                <ul className="space-y-1.5">
-                  {items.map((f) => {
-                    const lineTotal =
-                      f.price_nok != null ? f.price_nok * (f.quantity ?? 1) : null;
-                    return (
-                      <li
-                        key={f.id}
-                        className={`flex items-center gap-2 text-sm ${
-                          f.checked ? "opacity-50 line-through" : ""
-                        }`}
-                      >
-                        <button
-                          type="button"
-                          onClick={() => onToggleChecked(f.id, !f.checked)}
-                          className={`w-5 h-5 shrink-0 rounded border flex items-center justify-center transition-colors ${
-                            f.checked
-                              ? "bg-primary border-primary text-primary-foreground"
-                              : "border-border hover:border-primary"
-                          }`}
-                          aria-label={f.checked ? "Hak av som ikke kjøpt" : "Hak av som kjøpt"}
-                        >
-                          {f.checked && <Check size={12} />}
-                        </button>
-                        {f.image_url && !f.manual ? (
-                          <img
-                            src={f.image_url}
-                            alt=""
-                            className="w-6 h-6 rounded object-contain bg-background/40 shrink-0"
-                          />
-                        ) : null}
-                        <div className="flex-1 min-w-0">
-                          <div className="truncate">
-                            {f.name}
-                            {f.quantity != null && (
-                              <span className="text-muted-foreground">
-                                {" "}
-                                · {f.quantity}
-                                {f.unit ? ` ${f.unit}` : ""}
-                              </span>
-                            )}
-                            {f.manual && (
-                              <span className="ml-2 text-[9px] uppercase tracking-widest text-muted-foreground">
-                                manuelt
-                              </span>
-                            )}
-                          </div>
-                          {f.kassal_category && (
-                            <div className="text-[10px] text-muted-foreground/80">
-                              {f.kassal_category}
-                            </div>
-                          )}
-                        </div>
-                        {lineTotal != null && (
-                          <span className="text-xs font-display text-primary shrink-0 tabular-nums">
-                            {fmtPrice(lineTotal)}
-                          </span>
-                        )}
-                        <Select
-                          value={f.category}
-                          onValueChange={(v) => onChangeCategory(f.id, v)}
-                        >
-                          <SelectTrigger className="h-7 w-[130px] text-xs shrink-0">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {CATEGORIES.map((c) => (
-                              <SelectItem key={c} value={c} className="text-xs">
-                                {c}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <button
-                          type="button"
-                          onClick={() => onRemove(f.id)}
-                          className="text-muted-foreground hover:text-destructive p-1 shrink-0"
-                          aria-label="Fjern"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
+
+                {/* Antall +/- */}
+                <div className="flex items-center gap-1 shrink-0 no-underline">
+                  <button
+                    type="button"
+                    onClick={() => onChangeQuantity(f.id, Math.max(1, qty - 1))}
+                    disabled={qty <= 1}
+                    className="w-6 h-6 rounded border border-border text-muted-foreground hover:text-primary hover:border-primary disabled:opacity-30 disabled:hover:text-muted-foreground disabled:hover:border-border flex items-center justify-center text-sm leading-none"
+                    aria-label="Færre"
+                  >
+                    −
+                  </button>
+                  <span className="w-7 text-center text-xs font-display tabular-nums">
+                    {qty}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => onChangeQuantity(f.id, qty + 1)}
+                    className="w-6 h-6 rounded border border-border text-muted-foreground hover:text-primary hover:border-primary flex items-center justify-center text-sm leading-none"
+                    aria-label="Flere"
+                  >
+                    +
+                  </button>
+                </div>
+
+                {lineTotal != null && (
+                  <span className="text-xs font-display text-primary shrink-0 tabular-nums w-20 text-right">
+                    {fmtPrice(lineTotal)}
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={() => onRemove(f.id)}
+                  className="text-muted-foreground hover:text-destructive p-1 shrink-0"
+                  aria-label="Fjern"
+                >
+                  <Trash2 size={14} />
+                </button>
+              </li>
             );
           })}
-        </div>
+        </ul>
       )}
     </div>
   );
