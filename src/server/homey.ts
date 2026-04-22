@@ -788,6 +788,38 @@ async function setDeviceOnoff(
   return res.ok;
 }
 
+/**
+ * Sjekker om en Homey-enhet er en Philips Hue lyspære.
+ * Vi vil KUN telle ekte Hue-lyspærer som "utelys" — ikke plugger,
+ * sensorer, brytere eller andre Hue-tilbehør, og ikke andre lys-merker.
+ */
+function isPhilipsHueBulb(d: any): boolean {
+  if (!d) return false;
+  // Må være lys-klasse (kalles fra filter, men dobbeltsjekk)
+  const cls = d?.class;
+  const virt = d?.virtualClass;
+  if (cls !== "light" && virt !== "light") return false;
+
+  // Samle alle felter som identifiserer driver/app/merke
+  const haystack = [
+    d?.driverUri,
+    d?.driverId,
+    d?.driver?.uri,
+    d?.driver?.id,
+    d?.ownerUri,
+    d?.ownerName,
+    d?.appId,
+    d?.app?.id,
+  ]
+    .filter((x) => typeof x === "string")
+    .join(" ")
+    .toLowerCase();
+
+  // Hue-app i Homey heter typisk "com.philips.hue" eller "athom:app:com.philips.hue"
+  // (offisiell Athom Hue-app). Aksepter også eldre/alternative pakker.
+  return /philips\.?hue|hue-zigbee|com\.athom\.hue/.test(haystack);
+}
+
 export type OutdoorLightsStatus = {
   ok: boolean;
   anyOn: boolean;
@@ -827,6 +859,7 @@ export const getOutdoorLightsStatus = createServerFn({ method: "GET" }).handler(
         const virt = d?.virtualClass;
         const isLight = cls === "light" || virt === "light";
         if (!isLight) return false;
+        if (!isPhilipsHueBulb(d)) return false;
         const caps = d?.capabilitiesObj ?? d?.capabilities_obj ?? {};
         if (!caps || typeof caps !== "object" || !("onoff" in caps)) return false;
         const inOutdoorZone = d?.zone && outdoorZoneIds.has(d.zone);
@@ -879,6 +912,7 @@ export const setAllOutdoorLights = createServerFn({ method: "POST" })
         const virt = d?.virtualClass;
         const isLight = cls === "light" || virt === "light";
         if (!isLight) return false;
+        if (!isPhilipsHueBulb(d)) return false;
         const caps = d?.capabilitiesObj ?? d?.capabilities_obj ?? {};
         if (!caps || typeof caps !== "object" || !("onoff" in caps)) return false;
         const inOutdoorZone = d?.zone && outdoorZoneIds.has(d.zone);
