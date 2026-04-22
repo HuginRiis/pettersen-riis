@@ -172,7 +172,6 @@ function MatvarerPage() {
   const [favHistory, setFavHistory] = useState<BulkHistory[]>([]);
   const [favLoading, setFavLoading] = useState(true);
   const [scannerOpen, setScannerOpen] = useState(false);
-  const [defaultCategory, setDefaultCategory] = useState<string>("Annet");
 
   // ── Favoritter (Lovable Cloud) ─────────────────────────────────────
   const SELECT_COLS =
