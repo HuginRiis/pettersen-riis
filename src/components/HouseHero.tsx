@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Eye, Users, TrendingUp, TrendingDown, Minus, MousePointerClick } from "lucide-react";
 import { getVisitorCounts, type VisitorCounts } from "@/server/visitors";
+import { getOutdoorLightsStatus, type OutdoorLightsStatus } from "@/server/homey";
 
 /**
  * HouseHero — animert helteseksjon for forsiden.
@@ -110,6 +111,9 @@ export function HouseHero({
   const [counts, setCounts] = useState<VisitorCounts | null>(null);
   const fetchCounts = useServerFn(getVisitorCounts);
 
+  const [lights, setLights] = useState<OutdoorLightsStatus | null>(null);
+  const fetchLights = useServerFn(getOutdoorLightsStatus);
+
   useEffect(() => {
     setMounted(true);
     setNow(new Date());
@@ -132,6 +136,22 @@ export function HouseHero({
       clearInterval(t);
     };
   }, [fetchCounts]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = () =>
+      fetchLights()
+        .then((s) => {
+          if (!cancelled) setLights(s);
+        })
+        .catch(() => {});
+    load();
+    const t = setInterval(load, 60_000);
+    return () => {
+      cancelled = true;
+      clearInterval(t);
+    };
+  }, [fetchLights]);
 
   const season: Season = now ? getSeason(now) : "winter";
   const dayPart: DayPart = now ? getDayPart(now) : "evening";
@@ -194,6 +214,17 @@ export function HouseHero({
             <span>{SEASON_LABEL[season]}</span>
             <span className="text-primary/40">❦</span>
             <span>{DAYPART_LABEL[dayPart]}</span>
+            {lights?.ok && lights.totalCount > 0 && (
+              <>
+                <span className="text-primary/40">❦</span>
+                <span
+                  className={lights.anyOn ? "text-amber-300" : "text-muted-foreground"}
+                  title={`${lights.onCount} av ${lights.totalCount} utelys på`}
+                >
+                  {lights.anyOn ? "✦ Utelys tent" : "○ Utelys slokt"}
+                </span>
+              </>
+            )}
             <span className="inline-block w-8 h-px bg-primary/60" />
           </div>
         )}
