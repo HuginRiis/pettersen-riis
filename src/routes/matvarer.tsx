@@ -191,15 +191,14 @@ function MatvarerPage() {
   };
 
   // ── Søk ────────────────────────────────────────────────────────────
-  const onSearch = async (e?: React.FormEvent) => {
-    e?.preventDefault();
-    if (query.trim().length < 2) return;
+  const runSearch = async (term: string) => {
+    if (term.trim().length < 2) return;
     setLoading(true);
     setError(null);
     setSelected(null);
     setDetail(null);
     try {
-      const res = await search({ data: { query: query.trim() } });
+      const res = await search({ data: { query: term.trim() } });
       setProducts(res.products as ProductGroup[]);
     } catch (err: any) {
       setError(err?.message ?? "Søket feilet");
@@ -207,6 +206,17 @@ function MatvarerPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const onSearch = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    await runSearch(query);
+  };
+
+  const onBarcodeDetected = async (code: string) => {
+    setScannerOpen(false);
+    setQuery(code);
+    await runSearch(code);
   };
 
   const openProduct = async (g: ProductGroup) => {
