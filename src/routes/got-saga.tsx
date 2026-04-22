@@ -339,7 +339,42 @@ const STREAMING_GUIDE = [
 
 function GotSagaPage() {
   const [openId, setOpenId] = useState<string | null>(null);
+  const [filter, setFilter] = useState<FilterKey>("alle");
   const open = useMemo(() => SAGA.find((s) => s.id === openId) ?? null, [openId]);
+
+  const filteredSaga = useMemo(() => {
+    if (filter === "alle") return SAGA;
+    if (filter === "pågår") return SAGA.filter((s) => s.status === "Pågår");
+    if (filter === "kommende")
+      return SAGA.filter((s) => s.status === "Kommende" || s.status === "Utvikling");
+    return SAGA.filter((s) => s.status === "Ferdig");
+  }, [filter]);
+
+  const counts = useMemo(
+    () => ({
+      alle: SAGA.length,
+      pågår: SAGA.filter((s) => s.status === "Pågår").length,
+      kommende: SAGA.filter((s) => s.status === "Kommende" || s.status === "Utvikling").length,
+      ferdig: SAGA.filter((s) => s.status === "Ferdig").length,
+    }),
+    [],
+  );
+
+  // Top 5 IMDB — basert på sesong-scorer
+  const topSeasons = useMemo(
+    () => [...SEASON_SCORES].sort((a, b) => b.score - a.score).slice(0, 5),
+    [],
+  );
+
+  // Top 5 "filmer/relaterte" — Westeros på lerretet (siden HBO-serien aldri ble til kinofilmer
+  // bruker vi de mest kjente GoT-relaterte filmprosjektene + skuespillernes største filmer)
+  const TOP_FILMS = [
+    { title: "Eternals (Kit Harington)", year: 2021, score: 6.3, note: "Marvel-debut for Jon Snow" },
+    { title: "Pottersville (Dinklage)", year: 2017, score: 4.8, note: "Komedie m/ Tyrion-skuespiller" },
+    { title: "Last Christmas (Clarke)", year: 2019, score: 6.4, note: "Daenerys i romkom" },
+    { title: "X-Men: Dark Phoenix (Turner)", year: 2019, score: 5.7, note: "Sansa som Jean Grey" },
+    { title: "The New Mutants (Williams)", year: 2020, score: 5.2, note: "Arya i Marvel-mørke" },
+  ];
 
   return (
     <PageShell>
