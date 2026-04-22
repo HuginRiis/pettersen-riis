@@ -1,4 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { Eye, Users } from "lucide-react";
+import { getVisitorCounts, type VisitorCounts } from "@/server/visitors";
 
 /**
  * HouseHero — animert helteseksjon for forsiden.
