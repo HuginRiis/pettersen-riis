@@ -19,7 +19,10 @@ export type Database = {
           body: string | null
           created_at: string
           event_date: string
+          event_time: string | null
           id: string
+          notified_at: string | null
+          notify_minutes_before: number | null
           subject: string
           who: string
         }
@@ -27,7 +30,10 @@ export type Database = {
           body?: string | null
           created_at?: string
           event_date: string
+          event_time?: string | null
           id?: string
+          notified_at?: string | null
+          notify_minutes_before?: number | null
           subject: string
           who?: string
         }
@@ -35,7 +41,10 @@ export type Database = {
           body?: string | null
           created_at?: string
           event_date?: string
+          event_time?: string | null
           id?: string
+          notified_at?: string | null
+          notify_minutes_before?: number | null
           subject?: string
           who?: string
         }
@@ -242,6 +251,39 @@ export type Database = {
           location?: string
           recorded_at?: string
           watt?: number | null
+        }
+        Relationships: []
+      }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          endpoint: string
+          id: string
+          last_used_at: string
+          p256dh: string
+          user_agent: string | null
+          who: string
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          last_used_at?: string
+          p256dh: string
+          user_agent?: string | null
+          who?: string
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          last_used_at?: string
+          p256dh?: string
+          user_agent?: string | null
+          who?: string
         }
         Relationships: []
       }
