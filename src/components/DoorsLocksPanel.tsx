@@ -380,66 +380,97 @@ export function DoorsLocksPanel() {
       </div>
 
       {/* Låser */}
-      {locks.length > 0 && (
-        <Section
-          title="Husets låser"
-          count={locks.length}
-          badge={
-            unlocked.length === 0
-              ? "Alle forseglet"
-              : `${unlocked.length} åpne`
-          }
-          badgeTone={unlocked.length === 0 ? "ok" : "warn"}
-        >
-          <ul className="space-y-2">
-            {locks.map((l) => (
-              <LockRow key={l.id} entry={l} />
-            ))}
-          </ul>
-        </Section>
-      )}
+      {locks.length > 0 && (() => {
+        const sealed = locks.filter((l) => l.locked === true);
+        const rest = locks.filter((l) => l.locked !== true);
+        return (
+          <Section
+            title="Husets låser"
+            count={locks.length}
+            badge={
+              unlocked.length === 0
+                ? "Alle forseglet"
+                : `${unlocked.length} åpne`
+            }
+            badgeTone={unlocked.length === 0 ? "ok" : "warn"}
+          >
+            {rest.length > 0 && (
+              <ul className="space-y-2">
+                {rest.map((l) => (
+                  <LockRow key={l.id} entry={l} />
+                ))}
+              </ul>
+            )}
+            <SealedCollapsible label="Forseglede låser" count={sealed.length}>
+              {sealed.map((l) => (
+                <LockRow key={l.id} entry={l} />
+              ))}
+            </SealedCollapsible>
+          </Section>
+        );
+      })()}
 
       {/* Dører */}
-      {doors.length > 0 && (
-        <Section
-          title="Borgens porter"
-          count={doors.length}
-          badge={
-            openDoors.length === 0
-              ? "Alle stengt"
-              : `${openDoors.length} åpne`
-          }
-          badgeTone={openDoors.length === 0 ? "ok" : "warn"}
-        >
-          <ul className="space-y-2">
-            {doors.map((d) => (
-              <ContactRow key={d.id} entry={d} />
-            ))}
-          </ul>
-        </Section>
-      )}
+      {doors.length > 0 && (() => {
+        const sealed = doors.filter((d) => d.contactOpen === false);
+        const rest = doors.filter((d) => d.contactOpen !== false);
+        return (
+          <Section
+            title="Borgens porter"
+            count={doors.length}
+            badge={
+              openDoors.length === 0
+                ? "Alle stengt"
+                : `${openDoors.length} åpne`
+            }
+            badgeTone={openDoors.length === 0 ? "ok" : "warn"}
+          >
+            {rest.length > 0 && (
+              <ul className="space-y-2">
+                {rest.map((d) => (
+                  <ContactRow key={d.id} entry={d} />
+                ))}
+              </ul>
+            )}
+            <SealedCollapsible label="Stengte porter" count={sealed.length}>
+              {sealed.map((d) => (
+                <ContactRow key={d.id} entry={d} />
+              ))}
+            </SealedCollapsible>
+          </Section>
+        );
+      })()}
 
       {/* Vinduer */}
-      {windows.length > 0 && (
-        <Section
-          title="Borgens vinduer"
-          count={windows.length}
-          badge={
-            openWindows.length === 0
-              ? "Alle lukket"
-              : `${openWindows.length} oppe`
-          }
-          badgeTone={openWindows.length === 0 ? "ok" : "warn"}
-        >
-          <ul className="space-y-2">
-            {windows.map((w) => (
-              <ContactRow key={w.id} entry={w} />
-            ))}
-          </ul>
-        </Section>
-      )}
-
-      {/* Bevegelser */}
+      {windows.length > 0 && (() => {
+        const sealed = windows.filter((w) => w.contactOpen === false);
+        const rest = windows.filter((w) => w.contactOpen !== false);
+        return (
+          <Section
+            title="Borgens vinduer"
+            count={windows.length}
+            badge={
+              openWindows.length === 0
+                ? "Alle lukket"
+                : `${openWindows.length} oppe`
+            }
+            badgeTone={openWindows.length === 0 ? "ok" : "warn"}
+          >
+            {rest.length > 0 && (
+              <ul className="space-y-2">
+                {rest.map((w) => (
+                  <ContactRow key={w.id} entry={w} />
+                ))}
+              </ul>
+            )}
+            <SealedCollapsible label="Lukkede vinduer" count={sealed.length}>
+              {sealed.map((w) => (
+                <ContactRow key={w.id} entry={w} />
+              ))}
+            </SealedCollapsible>
+          </Section>
+        );
+      })()}
       {motions.length > 0 && (
         <Section title="Siste bevegelser" count={motions.length}>
           <ul className="space-y-2">
