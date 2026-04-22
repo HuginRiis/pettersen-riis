@@ -372,3 +372,121 @@ function TripCard({ trip, onOpen }: { trip: TripSuggestion; onOpen: () => void }
     </button>
   );
 }
+
+// ── Banner som forteller hvor mange søk man har igjen ─────────────────
+function QuotaBanner({ quota }: { quota: TripQuotaInfo | null }) {
+  if (!quota) return null;
+
+  const lastVisitTxt = quota.lastVisitAt
+    ? new Date(quota.lastVisitAt).toLocaleString("nb-NO", {
+        day: "2-digit",
+        month: "short",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : null;
+
+  if (quota.authenticated) {
+    return (
+      <div className="panel rounded-lg p-4 mb-4 border-primary/30 bg-primary/5 flex flex-wrap items-center gap-3 text-sm">
+        <Sparkles size={16} className="text-primary" />
+        <span className="text-foreground">
+          Du er innlogget — <span className="text-primary font-semibold">ubegrenset</span> tilgang til Mesterens kart.
+        </span>
+        {lastVisitTxt && (
+          <span className="text-xs text-muted-foreground flex items-center gap-1.5 ml-auto">
+            <Clock size={12} /> Sist innom {lastVisitTxt}
+          </span>
+        )}
+      </div>
+    );
+  }
+
+  const exhausted = quota.remaining <= 0;
+  const resetTxt = quota.resetAt
+    ? new Date(quota.resetAt).toLocaleString("nb-NO", {
+        day: "2-digit",
+        month: "short",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : null;
+
+  return (
+    <div
+      className={[
+        "panel rounded-lg p-4 mb-4 flex flex-wrap items-center gap-3 text-sm",
+        exhausted ? "border-destructive/40 bg-destructive/5" : "border-primary/30 bg-primary/5",
+      ].join(" ")}
+    >
+      <Sparkles size={16} className={exhausted ? "text-destructive" : "text-primary"} />
+      <div className="flex-1 min-w-[200px]">
+        <div className="text-foreground">
+          {exhausted ? (
+            <>Du har brukt alle <span className="font-semibold">{quota.limit}</span> gratis søk denne uken.</>
+          ) : (
+            <>
+              <span className="text-primary font-semibold">{quota.remaining}</span> av {quota.limit} gratis søk
+              igjen denne uken.
+            </>
+          )}
+        </div>
+        {resetTxt && (
+          <div className="text-xs text-muted-foreground mt-0.5">
+            Kvoten fornyes {resetTxt}
+          </div>
+        )}
+      </div>
+      <button
+        type="button"
+        onClick={() => openLoginDialog()}
+        className="px-3 py-1.5 rounded-md border border-primary/60 text-primary text-xs uppercase tracking-wider hover:bg-primary/10 transition-colors"
+      >
+        Logg inn for ubegrenset
+      </button>
+      {lastVisitTxt && (
+        <span className="basis-full text-xs text-muted-foreground flex items-center gap-1.5">
+          <Clock size={12} /> Sist innom {lastVisitTxt}
+        </span>
+      )}
+    </div>
+  );
+}
+
+// ── Innloggedes egen søkehistorikk basert på IP ──────────────────────
+function RecentSearches({ quota }: { quota: TripQuotaInfo | null }) {
+  if (!quota?.authenticated || quota.recent.length === 0) return null;
+
+  return (
+    <article className="panel rounded-lg p-5 mt-8">
+      <h3 className="text-sm uppercase tracking-[0.25em] text-primary mb-3 flex items-center gap-2">
+        <History size={14} /> Dine siste søk
+      </h3>
+      <ul className="divide-y divide-border/60">
+        {quota.recent.map((r, i) => (
+          <li key={i} className="py-2 flex items-baseline justify-between gap-3 text-sm">
+            <div className="min-w-0">
+              <span className="text-[10px] uppercase tracking-wider text-muted-foreground mr-2">
+                {r.feature}
+              </span>
+              <span className="text-foreground truncate">{r.query ?? "—"}</span>
+              {r.status !== "ok" && (
+                <span className="ml-2 text-[10px] uppercase tracking-wider text-amber-400">
+                  {r.status}
+                </span>
+              )}
+            </div>
+            <time className="text-xs text-muted-foreground shrink-0">
+              {new Date(r.created_at).toLocaleString("nb-NO", {
+                day: "2-digit",
+                month: "short",
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </time>
+          </li>
+        ))}
+      </ul>
+    </article>
+  );
+}
