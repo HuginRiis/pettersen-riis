@@ -24,7 +24,21 @@ import {
   Sword,
   ChevronRight,
   X,
+  Filter,
+  Trophy,
+  PlayCircle,
+  Hourglass,
+  CheckCircle2,
 } from "lucide-react";
+
+type FilterKey = "alle" | "pågår" | "kommende" | "ferdig";
+
+const FILTERS: { key: FilterKey; label: string; icon: typeof Filter; hint: string }[] = [
+  { key: "alle", label: "Alle kapitler", icon: Filter, hint: "Vis alt" },
+  { key: "pågår", label: "Pågår nå", icon: PlayCircle, hint: "Serier som ruller" },
+  { key: "kommende", label: "Hva kommer", icon: Hourglass, hint: "Annonsert / i utvikling" },
+  { key: "ferdig", label: "Hvor gikk", icon: CheckCircle2, hint: "Avsluttet" },
+];
 
 export const Route = createFileRoute("/got-saga")({
   head: () => ({
@@ -325,7 +339,42 @@ const STREAMING_GUIDE = [
 
 function GotSagaPage() {
   const [openId, setOpenId] = useState<string | null>(null);
+  const [filter, setFilter] = useState<FilterKey>("alle");
   const open = useMemo(() => SAGA.find((s) => s.id === openId) ?? null, [openId]);
+
+  const filteredSaga = useMemo(() => {
+    if (filter === "alle") return SAGA;
+    if (filter === "pågår") return SAGA.filter((s) => s.status === "Pågår");
+    if (filter === "kommende")
+      return SAGA.filter((s) => s.status === "Kommende" || s.status === "Utvikling");
+    return SAGA.filter((s) => s.status === "Ferdig");
+  }, [filter]);
+
+  const counts = useMemo(
+    () => ({
+      alle: SAGA.length,
+      pågår: SAGA.filter((s) => s.status === "Pågår").length,
+      kommende: SAGA.filter((s) => s.status === "Kommende" || s.status === "Utvikling").length,
+      ferdig: SAGA.filter((s) => s.status === "Ferdig").length,
+    }),
+    [],
+  );
+
+  // Top 5 IMDB — basert på sesong-scorer
+  const topSeasons = useMemo(
+    () => [...SEASON_SCORES].sort((a, b) => b.score - a.score).slice(0, 5),
+    [],
+  );
+
+  // Top 5 "filmer/relaterte" — Westeros på lerretet (siden HBO-serien aldri ble til kinofilmer
+  // bruker vi de mest kjente GoT-relaterte filmprosjektene + skuespillernes største filmer)
+  const TOP_FILMS = [
+    { title: "Eternals (Kit Harington)", year: 2021, score: 6.3, note: "Marvel-debut for Jon Snow" },
+    { title: "Pottersville (Dinklage)", year: 2017, score: 4.8, note: "Komedie m/ Tyrion-skuespiller" },
+    { title: "Last Christmas (Clarke)", year: 2019, score: 6.4, note: "Daenerys i romkom" },
+    { title: "X-Men: Dark Phoenix (Turner)", year: 2019, score: 5.7, note: "Sansa som Jean Grey" },
+    { title: "The New Mutants (Williams)", year: 2020, score: 5.2, note: "Arya i Marvel-mørke" },
+  ];
 
   return (
     <PageShell>
@@ -442,17 +491,132 @@ function GotSagaPage() {
         </div>
       </section>
 
+      {/* TOP 5 LISTER */}
+      <section className="container mx-auto px-4 py-12 border-t border-border">
+        <h2 className="text-display text-2xl md:text-3xl text-primary text-center mb-2 tracking-widest">
+          MAESTERENS TOPPLISTER
+        </h2>
+        <p className="text-center text-muted-foreground text-sm mb-8">
+          De fem beste — fra sesongene og fra det store lerretet
+        </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          {/* Top 5 sesonger */}
+          <div className="panel rounded-sm p-5">
+            <div className="flex items-center gap-2 mb-4 pb-3 border-b border-border">
+              <Trophy className="text-gold" size={18} />
+              <h3 className="text-display text-lg text-primary tracking-wider">
+                TOP 5 SESONGER (IMDB)
+              </h3>
+            </div>
+            <ol className="space-y-2.5">
+              {topSeasons.map((s, i) => (
+                <li
+                  key={s.name}
+                  className="flex items-center gap-3 p-2.5 rounded-sm bg-secondary/40 border border-border/60"
+                >
+                  <span className="text-display text-2xl text-gold w-7 text-center">{i + 1}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm text-foreground font-medium">{s.name}</div>
+                    <div className="text-[10px] tracking-widest uppercase text-muted-foreground">
+                      Topp {s.viewers}M seere/ep
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1 px-2 py-1 rounded-sm bg-background/80 border border-border">
+                    <Star size={11} className="text-gold fill-gold" />
+                    <span className="text-sm font-semibold text-foreground">{s.score}</span>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </div>
+
+          {/* Top 5 filmer */}
+          <div className="panel rounded-sm p-5">
+            <div className="flex items-center gap-2 mb-4 pb-3 border-b border-border">
+              <Film className="text-primary" size={18} />
+              <h3 className="text-display text-lg text-primary tracking-wider">
+                TOP 5 FILMER (CAST PÅ LERRETET)
+              </h3>
+            </div>
+            <ol className="space-y-2.5">
+              {[...TOP_FILMS]
+                .sort((a, b) => b.score - a.score)
+                .map((f, i) => (
+                  <li
+                    key={f.title}
+                    className="flex items-center gap-3 p-2.5 rounded-sm bg-secondary/40 border border-border/60"
+                  >
+                    <span className="text-display text-2xl text-primary w-7 text-center">
+                      {i + 1}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm text-foreground font-medium truncate">{f.title}</div>
+                      <div className="text-[10px] tracking-widest uppercase text-muted-foreground">
+                        {f.year} · {f.note}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 px-2 py-1 rounded-sm bg-background/80 border border-border">
+                      <Star size={11} className="text-gold fill-gold" />
+                      <span className="text-sm font-semibold text-foreground">{f.score}</span>
+                    </div>
+                  </li>
+                ))}
+            </ol>
+            <p className="text-[10px] text-muted-foreground italic mt-3">
+              * GoT-universet har (ennå) ingen kinofilm — listen viser cast-medlemmenes mest kjente
+              filmroller.
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* SAGA LIST */}
       <section className="container mx-auto px-4 py-12 border-t border-border">
         <h2 className="text-display text-2xl md:text-3xl text-primary text-center mb-2 tracking-widest">
           KAPITLENE I SAGAEN
         </h2>
-        <p className="text-center text-muted-foreground text-sm mb-8">
+        <p className="text-center text-muted-foreground text-sm mb-6">
           Klikk for å åpne kongelig dossier — fra det som var, til det som kommer
         </p>
 
+        {/* FILTER BAR */}
+        <div className="flex flex-wrap items-center justify-center gap-2 mb-8">
+          {FILTERS.map((f) => {
+            const Icon = f.icon;
+            const active = filter === f.key;
+            const count = counts[f.key];
+            return (
+              <button
+                key={f.key}
+                onClick={() => setFilter(f.key)}
+                title={f.hint}
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-sm border text-xs tracking-widest uppercase transition-all ${
+                  active
+                    ? "bg-primary text-primary-foreground border-primary shadow-[0_0_15px_var(--color-primary)]"
+                    : "bg-secondary/30 text-muted-foreground border-border hover:text-primary hover:border-primary/60"
+                }`}
+              >
+                <Icon size={13} />
+                <span>{f.label}</span>
+                <span
+                  className={`text-[10px] px-1.5 py-0.5 rounded-sm ${
+                    active ? "bg-primary-foreground/20" : "bg-background/60"
+                  }`}
+                >
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {SAGA.map((item) => (
+          {filteredSaga.length === 0 ? (
+            <div className="col-span-full text-center text-muted-foreground italic py-10">
+              Ingen kapitler funnet i dette filtret.
+            </div>
+          ) : (
+            filteredSaga.map((item) => (
             <button
               key={item.id}
               onClick={() => setOpenId(item.id)}
@@ -525,7 +689,8 @@ function GotSagaPage() {
                 </div>
               </div>
             </button>
-          ))}
+            ))
+          )}
         </div>
       </section>
 
