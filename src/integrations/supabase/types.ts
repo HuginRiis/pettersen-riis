@@ -227,6 +227,36 @@ export type Database = {
         }
         Relationships: []
       }
+      hytta_checklist: {
+        Row: {
+          added_by: string
+          checked: boolean
+          created_at: string
+          id: string
+          label: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          added_by?: string
+          checked?: boolean
+          created_at?: string
+          id?: string
+          label: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          added_by?: string
+          checked?: boolean
+          created_at?: string
+          id?: string
+          label?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       pulse_readings: {
         Row: {
           device_name: string | null
