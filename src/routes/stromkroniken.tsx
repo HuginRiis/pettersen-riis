@@ -84,7 +84,8 @@ function StromkronikenPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const spotNow = spot && spot.ok ? spot.priceNow : null;
+  const spotBorgen = spot && spot.ok ? spot.zones.NO2?.priceNow ?? null : null;
+  const spotHytta = spot && spot.ok ? spot.zones.NO1?.priceNow ?? null : null;
 
   return (
     <PageShell>
@@ -125,7 +126,7 @@ function StromkronikenPage() {
                   <>
                     {" · "}
                     <span className="text-foreground/70">
-                      Spotpris NO2 fra Nord Pool
+                      Spotpris fra Nord Pool · Borgen NO2, Hytta NO1
                     </span>
                   </>
                 )}
@@ -145,13 +146,15 @@ function StromkronikenPage() {
               title="Borgen · Nordre Lensmannsveg 17"
               eyebrow="Husets sete"
               data={state.borgen}
-              spotNow={spotNow}
+              spotNow={spotBorgen}
+              zoneLabel="NO2"
             />
             <HomeBlock
-              title="Hytta · Øvre Bjørkesetvegen 222"
+              title="Hytta · Øvre Bjerkesetvegen 222"
               eyebrow="Vinterboligen"
               data={state.hytta}
-              spotNow={spotNow}
+              spotNow={spotHytta}
+              zoneLabel="NO1"
             />
 
             <ComparisonBlock borgen={state.borgen} hytta={state.hytta} />
