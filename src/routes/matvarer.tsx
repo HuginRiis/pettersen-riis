@@ -34,6 +34,7 @@ import {
   type BulkHistory,
 } from "@/server/kassalapp";
 import matvarerImg from "@/assets/got-matvarer.jpg";
+import { BarcodeScannerDialog } from "@/components/BarcodeScannerDialog";
 
 export const Route = createFileRoute("/matvarer")({
   head: () => ({
