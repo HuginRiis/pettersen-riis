@@ -500,8 +500,8 @@ export const getTripQuotaInfo = createServerFn({ method: "GET" }).handler(
     const [quota, lastVisitAt, recent] = await Promise.all([
       getWeeklyQuotaForIp(ip, "turer"),
       getLastVisitForIp(ip),
-      // Bare innloggede ser sin egen søkehistorikk.
-      authenticated ? getRecentSearchesForIp(ip, 10) : Promise.resolve([]),
+      // Alle besøkende får se egen historikk fra denne IP-en.
+      getRecentSearchesForIp(ip, 10),
     ]);
     return {
       authenticated,
