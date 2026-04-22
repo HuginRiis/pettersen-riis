@@ -820,6 +820,26 @@ function isPhilipsHueBulb(d: any): boolean {
   return /philips\.?hue|hue-zigbee|com\.athom\.hue/.test(haystack);
 }
 
+/**
+ * Eksakt liste over enheter som regnes som "utelys" i HouseHero.
+ * Kun disse fire navnene skal trigge "Utelys tent" — alt annet ignoreres.
+ */
+const OUTDOOR_LIGHT_NAMES = new Set<string>([
+  "ute lys vinterhage",
+  "utelampe høyre",
+  "ute venstre veranda",
+  "utelampe venstre",
+]);
+
+function normalizeDeviceName(name: unknown): string {
+  if (typeof name !== "string") return "";
+  return name.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+function isAllowedOutdoorLight(d: any): boolean {
+  return OUTDOOR_LIGHT_NAMES.has(normalizeDeviceName(d?.name));
+}
+
 export type OutdoorLightsStatus = {
   ok: boolean;
   anyOn: boolean;
@@ -855,18 +875,10 @@ export const getOutdoorLightsStatus = createServerFn({ method: "GET" }).handler(
           .filter(Boolean),
       );
       const targets = devices.filter((d) => {
-        const cls = d?.class;
-        const virt = d?.virtualClass;
-        const isLight = cls === "light" || virt === "light";
-        if (!isLight) return false;
-        if (!isPhilipsHueBulb(d)) return false;
+        if (!isAllowedOutdoorLight(d)) return false;
         const caps = d?.capabilitiesObj ?? d?.capabilities_obj ?? {};
         if (!caps || typeof caps !== "object" || !("onoff" in caps)) return false;
-        const inOutdoorZone = d?.zone && outdoorZoneIds.has(d.zone);
-        const nameOutdoor =
-          typeof d?.name === "string" &&
-          /\b(ute|hage|garasje|inngang|terrasse|veranda|outdoor|garden|yard)\b/i.test(d.name);
-        return inOutdoorZone || nameOutdoor;
+        return true;
       });
       let onCount = 0;
       for (const d of targets) {
@@ -908,18 +920,10 @@ export const setAllOutdoorLights = createServerFn({ method: "POST" })
       );
 
       const targets = devices.filter((d) => {
-        const cls = d?.class;
-        const virt = d?.virtualClass;
-        const isLight = cls === "light" || virt === "light";
-        if (!isLight) return false;
-        if (!isPhilipsHueBulb(d)) return false;
+        if (!isAllowedOutdoorLight(d)) return false;
         const caps = d?.capabilitiesObj ?? d?.capabilities_obj ?? {};
         if (!caps || typeof caps !== "object" || !("onoff" in caps)) return false;
-        const inOutdoorZone = d?.zone && outdoorZoneIds.has(d.zone);
-        const nameOutdoor =
-          typeof d?.name === "string" &&
-          /\b(ute|hage|garasje|inngang|terrasse|veranda|outdoor|garden|yard)\b/i.test(d.name);
-        return inOutdoorZone || nameOutdoor;
+        return true;
       });
 
       let toggled = 0;
