@@ -273,6 +273,16 @@ function HomeBlock({
         <MonthCumulativeChart highlights={h} />
       </div>
 
+      {/* Denne måneden vs forrige måned */}
+      {(h.energyThisMonth != null || h.energyLastMonth != null) && (
+        <div>
+          <h3 className="text-sm tracking-[0.3em] uppercase text-primary mb-3 flex items-center gap-2">
+            <Calendar size={14} /> Denne måneden mot forrige
+          </h3>
+          <MonthVsLastMonthChart highlights={h} />
+        </div>
+      )}
+
       {/* Måneds-prognose */}
       <div>
         <h3 className="text-sm tracking-[0.3em] uppercase text-primary mb-3 flex items-center gap-2">
