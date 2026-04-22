@@ -174,11 +174,13 @@ function HomeBlock({
   eyebrow,
   data,
   spotNow,
+  zoneLabel,
 }: {
   title: string;
   eyebrow: string;
   data: PbthHomeData;
   spotNow: number | null;
+  zoneLabel: string;
 }) {
   if (!data.found) {
     return (
@@ -227,7 +229,7 @@ function HomeBlock({
                 ? `${h.priceNow.toFixed(3)} kr`
                 : "—"
           }
-          sub={spotNow != null ? "Nord Pool · NO2 inkl. mva" : "per kWh inkl. mva"}
+          sub={spotNow != null ? `Nord Pool · ${zoneLabel} inkl. mva` : "per kWh inkl. mva"}
           tone="gold"
         />
         <BigStat
