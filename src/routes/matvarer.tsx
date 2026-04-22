@@ -249,9 +249,7 @@ function MatvarerPage() {
 
   const addManualItem = async (
     name: string,
-    category: string,
     quantity: number | null,
-    unit: string | null,
     price: number | null,
   ) => {
     const { data } = await supabase
@@ -262,10 +260,10 @@ function MatvarerPage() {
         brand: null,
         image_url: null,
         vendor: null,
-        category,
+        category: "Annet",
         manual: true,
-        quantity,
-        unit,
+        quantity: quantity ?? 1,
+        unit: null,
         price_nok: price,
       })
       .select(SELECT_COLS)
