@@ -85,6 +85,8 @@ function VakttarnetPage() {
         setSessions(data.sessions);
         setAttempts(data.attempts);
         setPageviews(data.pageviews);
+        setTotalPageviews(data.totalPageviews);
+        setTotalSouls(data.totalSouls);
       } finally {
         setLoading(false);
       }
@@ -100,6 +102,8 @@ function VakttarnetPage() {
         setSessions(data.sessions);
         setAttempts(data.attempts);
         setPageviews(data.pageviews);
+        setTotalPageviews(data.totalPageviews);
+        setTotalSouls(data.totalSouls);
         setAiStats(ai);
       } finally {
         if (alive) setLoading(false);
