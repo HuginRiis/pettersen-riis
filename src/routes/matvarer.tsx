@@ -208,7 +208,7 @@ function MatvarerPage() {
   const isFav = (ean: string | null) =>
     !!ean && favorites.some((f) => f.ean === ean);
 
-  const toggleFavorite = async (g: ProductGroup, category: string) => {
+  const toggleFavorite = async (g: ProductGroup) => {
     if (!g.ean) return;
     const existing = favorites.find((f) => f.ean === g.ean);
     if (existing) {
@@ -224,9 +224,10 @@ function MatvarerPage() {
           brand: g.brand,
           image_url: g.image,
           vendor: g.rows[0]?.storeName ?? null,
-          category,
+          category: "Annet",
           kassal_category: g.kassalCategory,
           price_nok: price,
+          quantity: 1,
         })
         .select(SELECT_COLS)
         .single();
