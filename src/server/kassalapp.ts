@@ -224,6 +224,9 @@ export type BulkHistory = {
   currentPrice: number | null;
   currentMin: number | null;
   currentStore: string | null;
+  /** Pris pr butikk akkurat nå (fra produktsøk på EAN). */
+  storePrices: Array<{ store: string; price: number | null; url: string | null }>;
+  remaPrice: number | null;
 };
 
 export const getGroceryPriceHistory = createServerFn({ method: "POST" })
