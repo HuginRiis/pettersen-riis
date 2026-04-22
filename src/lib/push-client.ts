@@ -62,9 +62,28 @@ export async function isCurrentlySubscribed(): Promise<boolean> {
   }
 }
 
-export async function subscribePush(who: Who): Promise<{ ok: boolean; error?: string }> {
+export async function getCurrentSubscriptionDetails(): Promise<{ endpoint: string; who: Who } | null> {
+  if (!isPushSupported()) return null;
+  try {
+    const reg = await navigator.serviceWorker.getRegistration("/sw.js");
+    if (!reg) return null;
+    const sub = await reg.pushManager.getSubscription();
+    if (!sub) return null;
+    return {
+      endpoint: sub.endpoint,
+      who: getStoredWho(),
+    };
+  } catch {
+    return null;
+  }
+}
+
+export async function subscribePush(
+  who: Who,
+  vapidPublicKey = VAPID_PUBLIC_KEY,
+): Promise<{ ok: boolean; error?: string }> {
   if (!isPushSupported()) return { ok: false, error: "Enheten støtter ikke push-varsler." };
-  if (!VAPID_PUBLIC_KEY) return { ok: false, error: "VAPID public key mangler i miljøvariabler." };
+  if (!vapidPublicKey) return { ok: false, error: "VAPID public key mangler i miljøvariabler." };
 
   const permission = await Notification.requestPermission();
   if (permission !== "granted") return { ok: false, error: "Du må tillate varsler i nettleseren." };
@@ -76,7 +95,7 @@ export async function subscribePush(who: Who): Promise<{ ok: boolean; error?: st
   if (!sub) {
     sub = await reg.pushManager.subscribe({
       userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+      applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
     });
   }
 

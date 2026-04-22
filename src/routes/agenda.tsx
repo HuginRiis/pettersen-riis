@@ -1,11 +1,14 @@
+import { useServerFn } from "@tanstack/react-start";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { PageShell, PageHero } from "@/components/PageShell";
 import { supabase } from "@/integrations/supabase/client";
 import heroImg from "@/assets/got-agenda.jpg";
 import { Trash2, Plus, Bell, BellOff, Clock } from "lucide-react";
+import { getPushPublicKey, sendAgendaTestPush } from "@/server/agenda-push";
 import {
   type Who,
+  getCurrentSubscriptionDetails,
   getStoredWho,
   isPushSupported,
   isCurrentlySubscribed,
@@ -226,11 +229,14 @@ function AgendaPage() {
           {past.length > 0 && <DateSection title="Tidligere" entries={past} onDelete={remove} loading={false} muted />}
         </div>
       </section>
+
+      <TestPushPanel />
     </PageShell>
   );
 }
 
 function PushSubscribeBar() {
+  const fetchPushPublicKey = useServerFn(getPushPublicKey);
   const [supported, setSupported] = useState<boolean>(true);
   const [subscribed, setSubscribed] = useState<boolean>(false);
   const [who, setWho] = useState<Who>("Alle");
@@ -253,7 +259,8 @@ function PushSubscribeBar() {
         setMsg("Varsler slått av på denne enheten.");
       } else setMsg(r.error || "Kunne ikke slå av.");
     } else {
-      const r = await subscribePush(who);
+      const { vapidPublicKey } = await fetchPushPublicKey();
+      const r = await subscribePush(who, vapidPublicKey);
       if (r.ok) {
         setSubscribed(true);
         setMsg(`Varsler slått på for "${who}" på denne enheten.`);
@@ -325,6 +332,59 @@ function PushSubscribeBar() {
   );
 }
 
+function TestPushPanel() {
+  const sendTestPush = useServerFn(sendAgendaTestPush);
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+
+  async function handleSendTestPush() {
+    setBusy(true);
+    setMessage(null);
+    try {
+      const subscription = await getCurrentSubscriptionDetails();
+      if (!subscription) {
+        setMessage('Fant ikke aktiv push på denne enheten. Slå push av/på først.');
+        return;
+      }
+
+      const result = await sendTestPush({
+        data: { endpoint: subscription.endpoint, who: subscription.who },
+      });
+      setMessage(`Test-push sendt ${formatDateTimeNorwegian(result.sentAt)}.`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Kunne ikke sende test-push.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <section className="container mx-auto px-4 pb-12">
+      <div className="panel rounded-lg p-6 flex flex-col gap-4">
+        <div className="space-y-1">
+          <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Test push</p>
+          <h2 className="text-xl text-primary">Sjekk denne mobilen</h2>
+          <p className="text-sm text-muted-foreground">
+            Trykk her for å sende en test direkte til enheten som er aktivert på denne siden.
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={handleSendTestPush}
+            disabled={busy}
+            className="bg-primary text-primary-foreground font-semibold tracking-wider uppercase py-2.5 px-4 rounded hover:opacity-90 disabled:opacity-50 transition"
+          >
+            {busy ? 'Sender test…' : 'Send test-push'}
+          </button>
+          {message && <p className="text-sm text-muted-foreground">{message}</p>}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function DateSection({
   title,
   entries,
@@ -375,6 +435,11 @@ function DateSection({
                           <Bell size={10} /> {m.notify_minutes_before} min før
                         </span>
                       )}
+                      {m.notified_at && (
+                        <span className="text-[10px] uppercase tracking-wider text-primary/80 flex items-center gap-1">
+                          <Bell size={10} /> Sendt {formatDateTimeNorwegian(m.notified_at)}
+                        </span>
+                      )}
                     </div>
                     {m.body && <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{m.body}</p>}
                   </div>
@@ -408,4 +473,14 @@ function formatDate(iso: string) {
 function weekday(iso: string) {
   const d = new Date(iso + "T00:00:00");
   return d.toLocaleDateString("nb-NO", { weekday: "long" });
+}
+
+function formatDateTimeNorwegian(iso: string) {
+  return new Date(iso).toLocaleString("nb-NO", {
+    timeZone: "Europe/Oslo",
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
