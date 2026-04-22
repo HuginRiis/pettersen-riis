@@ -13,6 +13,11 @@ import {
   ScanLine,
   LineChart as LineChartIcon,
   EyeOff,
+  Plus,
+  Check,
+  ListChecks,
+  Filter,
+  Trash2,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -27,6 +32,13 @@ import {
 import { PageShell, PageHero } from "@/components/PageShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import {
   searchGroceryProducts,
@@ -93,12 +105,33 @@ type ProductGroup = {
 
 type GroceryFavorite = {
   id: string;
-  ean: string;
+  ean: string | null;
   name: string;
   brand: string | null;
   image_url: string | null;
   vendor: string | null;
+  category: string;
+  checked: boolean;
+  manual: boolean;
+  quantity: number | null;
+  unit: string | null;
+  sort_order: number;
 };
+
+const CATEGORIES = [
+  "Frukt & grønt",
+  "Meieri",
+  "Brød & bakst",
+  "Kjøtt",
+  "Fisk",
+  "Pålegg",
+  "Frossen",
+  "Tørrvarer",
+  "Drikke",
+  "Snacks",
+  "Husholdning",
+  "Annet",
+] as const;
 
 const fmtPrice = (n: number | null | undefined) =>
   typeof n === "number" ? `kr ${n.toFixed(2).replace(".", ",")}` : "—";
@@ -130,19 +163,25 @@ function MatvarerPage() {
   const [selected, setSelected] = useState<ProductGroup | null>(null);
   const [detail, setDetail] = useState<KassalProduct | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [remaOnly, setRemaOnly] = useState(false);
 
   const [favorites, setFavorites] = useState<GroceryFavorite[]>([]);
   const [favHistory, setFavHistory] = useState<BulkHistory[]>([]);
   const [favLoading, setFavLoading] = useState(true);
   const [scannerOpen, setScannerOpen] = useState(false);
+  const [defaultCategory, setDefaultCategory] = useState<string>("Annet");
 
   // ── Favoritter (Lovable Cloud) ─────────────────────────────────────
   const loadFavorites = async () => {
     setFavLoading(true);
     const { data } = await supabase
       .from("grocery_favorites")
-      .select("id, ean, name, brand, image_url, vendor")
-      .order("created_at", { ascending: false });
+      .select(
+        "id, ean, name, brand, image_url, vendor, category, checked, manual, quantity, unit, sort_order",
+      )
+      .order("checked", { ascending: true })
+      .order("category", { ascending: true })
+      .order("created_at", { ascending: true });
     setFavorites((data as GroceryFavorite[]) ?? []);
     setFavLoading(false);
   };
@@ -151,9 +190,9 @@ function MatvarerPage() {
     loadFavorites();
   }, []);
 
-  // Hent prishistorikk for alle favoritter når lista endres
+  // Hent prishistorikk for alle favoritter med EAN
   useEffect(() => {
-    const eans = favorites.map((f) => f.ean).filter(Boolean);
+    const eans = favorites.map((f) => f.ean).filter((x): x is string => !!x);
     if (eans.length === 0) {
       setFavHistory([]);
       return;
@@ -166,7 +205,7 @@ function MatvarerPage() {
   const isFav = (ean: string | null) =>
     !!ean && favorites.some((f) => f.ean === ean);
 
-  const toggleFavorite = async (g: ProductGroup) => {
+  const toggleFavorite = async (g: ProductGroup, category: string) => {
     if (!g.ean) return;
     const existing = favorites.find((f) => f.ean === g.ean);
     if (existing) {
@@ -181,8 +220,11 @@ function MatvarerPage() {
           brand: g.brand,
           image_url: g.image,
           vendor: g.rows[0]?.storeName ?? null,
+          category,
         })
-        .select("id, ean, name, brand, image_url, vendor")
+        .select(
+          "id, ean, name, brand, image_url, vendor, category, checked, manual, quantity, unit, sort_order",
+        )
         .single();
       if (data) setFavorites([data as GroceryFavorite, ...favorites]);
     }
@@ -191,6 +233,46 @@ function MatvarerPage() {
   const removeFavoriteById = async (id: string) => {
     setFavorites(favorites.filter((f) => f.id !== id));
     await supabase.from("grocery_favorites").delete().eq("id", id);
+  };
+
+  const updateFavorite = async (id: string, patch: Partial<GroceryFavorite>) => {
+    setFavorites((prev) =>
+      prev.map((f) => (f.id === id ? { ...f, ...patch } : f)),
+    );
+    await supabase.from("grocery_favorites").update(patch).eq("id", id);
+  };
+
+  const addManualItem = async (
+    name: string,
+    category: string,
+    quantity: number | null,
+    unit: string | null,
+  ) => {
+    const { data } = await supabase
+      .from("grocery_favorites")
+      .insert({
+        ean: null,
+        name,
+        brand: null,
+        image_url: null,
+        vendor: null,
+        category,
+        manual: true,
+        quantity,
+        unit,
+      })
+      .select(
+        "id, ean, name, brand, image_url, vendor, category, checked, manual, quantity, unit, sort_order",
+      )
+      .single();
+    if (data) setFavorites([data as GroceryFavorite, ...favorites]);
+  };
+
+  const clearChecked = async () => {
+    const ids = favorites.filter((f) => f.checked).map((f) => f.id);
+    if (ids.length === 0) return;
+    setFavorites(favorites.filter((f) => !f.checked));
+    await supabase.from("grocery_favorites").delete().in("id", ids);
   };
 
   // ── Søk ────────────────────────────────────────────────────────────
@@ -238,6 +320,11 @@ function MatvarerPage() {
     }
   };
 
+  const visibleProducts = useMemo(
+    () => (remaOnly ? products.filter((p) => p.remaPrice != null) : products),
+    [products, remaOnly],
+  );
+
   return (
     <PageShell>
       <PageHero
@@ -248,60 +335,119 @@ function MatvarerPage() {
       />
 
       <section className="container mx-auto px-4 py-8 md:py-12">
+        {/* HANDLELISTE — øverst på siden */}
+        <ShoppingListPanel
+          favorites={favorites}
+          loading={favLoading}
+          onToggleChecked={(id, checked) => updateFavorite(id, { checked })}
+          onChangeCategory={(id, category) => updateFavorite(id, { category })}
+          onRemove={removeFavoriteById}
+          onAddManual={addManualItem}
+          onClearChecked={clearChecked}
+        />
+
         {/* Søkefelt */}
-        <form
-          onSubmit={onSearch}
-          className="flex flex-col sm:flex-row gap-3 max-w-2xl"
-        >
-          <div className="relative flex-1">
-            <Search
-              size={16}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-            />
-            <Input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Søk på vare — f.eks. 'grandiosa kjøttdeig'"
-              className="pl-9 pr-12"
-            />
+        <div className="mt-12">
+          <div className="flex items-center gap-3 mb-4">
+            <Search size={18} className="text-primary" />
+            <h2 className="text-display tracking-[0.2em] text-primary text-sm uppercase">
+              Søk i markedet
+            </h2>
+            <div className="h-px flex-1 bg-border" />
+          </div>
+
+          <form
+            onSubmit={onSearch}
+            className="flex flex-col sm:flex-row gap-3 max-w-2xl"
+          >
+            <div className="relative flex-1">
+              <Search
+                size={16}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+              />
+              <Input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Søk på vare — f.eks. 'grandiosa kjøttdeig'"
+                className="pl-9 pr-12"
+              />
+              <button
+                type="button"
+                onClick={() => setScannerOpen(true)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10"
+                aria-label="Skann strekkode"
+                title="Skann strekkode"
+              >
+                <ScanLine size={18} />
+              </button>
+            </div>
+            <Button type="submit" disabled={loading || query.trim().length < 2}>
+              {loading ? (
+                <>
+                  <Loader2 size={16} className="mr-2 animate-spin" /> Leter…
+                </>
+              ) : (
+                <>Søk i markedet</>
+              )}
+            </Button>
+          </form>
+
+          {/* Filter-rad: Rema-only + standard kategori for nye varer */}
+          <div className="mt-4 flex flex-wrap items-center gap-3">
             <button
               type="button"
-              onClick={() => setScannerOpen(true)}
-              className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10"
-              aria-label="Skann strekkode"
-              title="Skann strekkode"
+              onClick={() => setRemaOnly((v) => !v)}
+              className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs tracking-widest uppercase border transition-colors ${
+                remaOnly
+                  ? "border-primary bg-primary/15 text-primary"
+                  : "border-border text-muted-foreground hover:text-primary hover:border-primary/60"
+              }`}
+              aria-pressed={remaOnly}
             >
-              <ScanLine size={18} />
+              <Filter size={12} />
+              Kun Rema 1000
             </button>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <span className="uppercase tracking-widest">Legg til i kategori</span>
+              <Select value={defaultCategory} onValueChange={setDefaultCategory}>
+                <SelectTrigger className="h-8 w-[160px] text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {CATEGORIES.map((c) => (
+                    <SelectItem key={c} value={c} className="text-xs">
+                      {c}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-          <Button type="submit" disabled={loading || query.trim().length < 2}>
-            {loading ? (
-              <>
-                <Loader2 size={16} className="mr-2 animate-spin" /> Leter…
-              </>
-            ) : (
-              <>Søk i markedet</>
-            )}
-          </Button>
-        </form>
+        </div>
 
         {error && (
           <p className="mt-4 text-sm text-destructive">{error}</p>
         )}
 
         {/* Søkeresultater */}
-        {products.length > 0 && (
+        {visibleProducts.length > 0 && (
           <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {products.slice(0, 30).map((g, idx) => (
+            {visibleProducts.slice(0, 30).map((g, idx) => (
               <ProductCard
                 key={(g.ean ?? g.name) + idx}
                 group={g}
                 onOpen={() => openProduct(g)}
-                onToggleFav={() => toggleFavorite(g)}
+                onAddToList={() => toggleFavorite(g, defaultCategory)}
                 isFav={isFav(g.ean)}
               />
             ))}
           </div>
+        )}
+
+        {!loading && products.length > 0 && visibleProducts.length === 0 && remaOnly && (
+          <p className="mt-8 text-sm text-muted-foreground">
+            Ingen av treffene finnes på Rema 1000. Skru av filteret for å se alle.
+          </p>
         )}
 
         {!loading && products.length === 0 && query && !error && (
@@ -310,28 +456,27 @@ function MatvarerPage() {
           </p>
         )}
 
-        {/* Favoritter */}
+        {/* Favoritter med graf */}
         <div className="mt-16">
           <div className="flex items-center gap-3 mb-6">
             <Star size={18} className="text-primary" />
             <h2 className="text-display tracking-[0.2em] text-primary text-sm uppercase">
-              Husets handleliste
+              Prishistorikk — favoritter
             </h2>
             <div className="h-px flex-1 bg-border" />
           </div>
 
           {favLoading ? (
             <p className="text-sm text-muted-foreground">Henter favoritter…</p>
-          ) : favorites.length === 0 ? (
+          ) : favorites.filter((f) => f.ean).length === 0 ? (
             <p className="text-sm text-muted-foreground">
-              Du har ingen favoritter enda. Trykk på stjernen i et søkeresultat
-              for å følge varen over tid.
+              Ingen Kassalapp-varer i lista enda. Søk og trykk «Legg til» for å
+              følge prisutvikling.
             </p>
           ) : (
-            <FavoritesPanel
-              favorites={favorites}
+            <FavoritesGraph
+              favorites={favorites.filter((f) => f.ean) as (GroceryFavorite & { ean: string })[]}
               history={favHistory}
-              onRemove={removeFavoriteById}
             />
           )}
         </div>
@@ -359,16 +504,250 @@ function MatvarerPage() {
   );
 }
 
+// ── Handleliste øverst på siden ──────────────────────────────────────
+function ShoppingListPanel({
+  favorites,
+  loading,
+  onToggleChecked,
+  onChangeCategory,
+  onRemove,
+  onAddManual,
+  onClearChecked,
+}: {
+  favorites: GroceryFavorite[];
+  loading: boolean;
+  onToggleChecked: (id: string, checked: boolean) => void;
+  onChangeCategory: (id: string, category: string) => void;
+  onRemove: (id: string) => void;
+  onAddManual: (
+    name: string,
+    category: string,
+    quantity: number | null,
+    unit: string | null,
+  ) => void;
+  onClearChecked: () => void;
+}) {
+  const [manualName, setManualName] = useState("");
+  const [manualCategory, setManualCategory] = useState<string>("Annet");
+  const [manualQty, setManualQty] = useState("");
+  const [manualUnit, setManualUnit] = useState("");
+  const [hideChecked, setHideChecked] = useState(false);
+
+  const grouped = useMemo(() => {
+    const filtered = hideChecked ? favorites.filter((f) => !f.checked) : favorites;
+    const map = new Map<string, GroceryFavorite[]>();
+    for (const f of filtered) {
+      const c = f.category || "Annet";
+      const arr = map.get(c) ?? [];
+      arr.push(f);
+      map.set(c, arr);
+    }
+    // Sorter i rekkefølgen til CATEGORIES, deretter alfabetisk
+    const order = new Map<string, number>(
+      CATEGORIES.map((c, i) => [c as string, i] as [string, number]),
+    );
+    return Array.from(map.entries()).sort((a, b) => {
+      const ai = order.get(a[0]) ?? 999;
+      const bi = order.get(b[0]) ?? 999;
+      return ai - bi;
+    });
+  }, [favorites, hideChecked]);
+
+  const totalCount = favorites.length;
+  const checkedCount = favorites.filter((f) => f.checked).length;
+
+  const submitManual = (e: React.FormEvent) => {
+    e.preventDefault();
+    const name = manualName.trim();
+    if (!name) return;
+    const qty = manualQty.trim() ? Number(manualQty.replace(",", ".")) : null;
+    onAddManual(
+      name,
+      manualCategory,
+      Number.isFinite(qty as number) ? (qty as number) : null,
+      manualUnit.trim() || null,
+    );
+    setManualName("");
+    setManualQty("");
+    setManualUnit("");
+  };
+
+  return (
+    <div className="rounded-lg border border-border bg-card">
+      <div className="flex items-center gap-3 px-4 py-3 border-b border-border">
+        <ListChecks size={18} className="text-primary" />
+        <h2 className="text-display tracking-[0.2em] text-primary text-sm uppercase">
+          Husets handleliste
+        </h2>
+        <span className="text-xs text-muted-foreground">
+          {checkedCount}/{totalCount} kjøpt
+        </span>
+        <div className="ml-auto flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setHideChecked((v) => !v)}
+            className={`text-[11px] tracking-widest uppercase px-2 py-1 rounded border transition-colors ${
+              hideChecked
+                ? "border-primary text-primary"
+                : "border-border text-muted-foreground hover:text-primary"
+            }`}
+          >
+            {hideChecked ? "Vis kjøpte" : "Skjul kjøpte"}
+          </button>
+          {checkedCount > 0 && (
+            <button
+              type="button"
+              onClick={onClearChecked}
+              className="text-[11px] tracking-widest uppercase px-2 py-1 rounded border border-destructive/50 text-destructive hover:bg-destructive/10"
+            >
+              Tøm kjøpte
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Manuelt tillegg */}
+      <form
+        onSubmit={submitManual}
+        className="flex flex-wrap gap-2 px-4 py-3 border-b border-border bg-background/30"
+      >
+        <Input
+          value={manualName}
+          onChange={(e) => setManualName(e.target.value)}
+          placeholder="Legg til manuelt — f.eks. 'Bananer'"
+          className="flex-1 min-w-[180px] h-9"
+        />
+        <Input
+          value={manualQty}
+          onChange={(e) => setManualQty(e.target.value)}
+          placeholder="Antall"
+          className="w-20 h-9"
+          inputMode="decimal"
+        />
+        <Input
+          value={manualUnit}
+          onChange={(e) => setManualUnit(e.target.value)}
+          placeholder="Enhet"
+          className="w-24 h-9"
+        />
+        <Select value={manualCategory} onValueChange={setManualCategory}>
+          <SelectTrigger className="w-[160px] h-9 text-sm">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {CATEGORIES.map((c) => (
+              <SelectItem key={c} value={c}>
+                {c}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Button type="submit" size="sm" disabled={!manualName.trim()}>
+          <Plus size={14} className="mr-1" /> Legg til
+        </Button>
+      </form>
+
+      {/* Liste */}
+      {loading ? (
+        <p className="px-4 py-6 text-sm text-muted-foreground">Henter handleliste…</p>
+      ) : grouped.length === 0 ? (
+        <p className="px-4 py-6 text-sm text-muted-foreground">
+          Handlelista er tom. Legg til varer manuelt over, eller søk i markedet
+          og trykk «Legg til».
+        </p>
+      ) : (
+        <div className="divide-y divide-border">
+          {grouped.map(([category, items]) => (
+            <div key={category} className="px-4 py-3">
+              <div className="text-[10px] uppercase tracking-widest text-primary/80 mb-2">
+                {category} · {items.length}
+              </div>
+              <ul className="space-y-1.5">
+                {items.map((f) => (
+                  <li
+                    key={f.id}
+                    className={`flex items-center gap-2 text-sm ${
+                      f.checked ? "opacity-50 line-through" : ""
+                    }`}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => onToggleChecked(f.id, !f.checked)}
+                      className={`w-5 h-5 shrink-0 rounded border flex items-center justify-center transition-colors ${
+                        f.checked
+                          ? "bg-primary border-primary text-primary-foreground"
+                          : "border-border hover:border-primary"
+                      }`}
+                      aria-label={f.checked ? "Hak av som ikke kjøpt" : "Hak av som kjøpt"}
+                    >
+                      {f.checked && <Check size={12} />}
+                    </button>
+                    {f.image_url && !f.manual ? (
+                      <img
+                        src={f.image_url}
+                        alt=""
+                        className="w-6 h-6 rounded object-contain bg-background/40 shrink-0"
+                      />
+                    ) : null}
+                    <span className="flex-1 truncate">
+                      {f.name}
+                      {f.quantity != null && (
+                        <span className="text-muted-foreground">
+                          {" "}
+                          · {f.quantity}
+                          {f.unit ? ` ${f.unit}` : ""}
+                        </span>
+                      )}
+                      {f.manual && (
+                        <span className="ml-2 text-[9px] uppercase tracking-widest text-muted-foreground">
+                          manuelt
+                        </span>
+                      )}
+                    </span>
+                    <Select
+                      value={f.category}
+                      onValueChange={(v) => onChangeCategory(f.id, v)}
+                    >
+                      <SelectTrigger className="h-7 w-[130px] text-xs shrink-0">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {CATEGORIES.map((c) => (
+                          <SelectItem key={c} value={c} className="text-xs">
+                            {c}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <button
+                      type="button"
+                      onClick={() => onRemove(f.id)}
+                      className="text-muted-foreground hover:text-destructive p-1 shrink-0"
+                      aria-label="Fjern"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Produkt-kort i søk ────────────────────────────────────────────────
 function ProductCard({
   group,
   onOpen,
-  onToggleFav,
+  onAddToList,
   isFav,
 }: {
   group: ProductGroup;
   onOpen: () => void;
-  onToggleFav: () => void;
+  onAddToList: () => void;
   isFav: boolean;
 }) {
   return (
@@ -399,15 +778,6 @@ function ProductCard({
             </div>
           )}
         </div>
-        <button
-          onClick={onToggleFav}
-          disabled={!group.ean}
-          className="text-primary disabled:opacity-30"
-          title={isFav ? "Fjern fra handleliste" : "Legg til handleliste"}
-          aria-label={isFav ? "Fjern fra handleliste" : "Legg til handleliste"}
-        >
-          {isFav ? <Star size={16} className="fill-primary" /> : <StarOff size={16} />}
-        </button>
       </div>
 
       <div className="flex items-end justify-between gap-2">
@@ -436,12 +806,32 @@ function ProductCard({
         </div>
       </div>
 
-      <button
-        onClick={onOpen}
-        className="text-xs tracking-widest uppercase text-primary/80 hover:text-primary text-left"
-      >
-        Se sammenligning →
-      </button>
+      <div className="flex items-center gap-2">
+        <Button
+          type="button"
+          size="sm"
+          variant={isFav ? "outline" : "default"}
+          onClick={onAddToList}
+          disabled={!group.ean}
+          className="flex-1"
+        >
+          {isFav ? (
+            <>
+              <Star size={14} className="mr-1 fill-current" /> På lista
+            </>
+          ) : (
+            <>
+              <Plus size={14} className="mr-1" /> Legg til
+            </>
+          )}
+        </Button>
+        <button
+          onClick={onOpen}
+          className="text-xs tracking-widest uppercase text-primary/80 hover:text-primary px-2"
+        >
+          Detaljer →
+        </button>
+      </div>
     </div>
   );
 }
@@ -674,16 +1064,13 @@ function ProductDetailDialog({
 }
 
 // ── Favoritter med samlet historikk-graf ───────────────────────────────
-function FavoritesPanel({
+function FavoritesGraph({
   favorites,
   history,
-  onRemove,
 }: {
-  favorites: GroceryFavorite[];
+  favorites: (GroceryFavorite & { ean: string })[];
   history: BulkHistory[];
-  onRemove: (id: string) => void;
 }) {
-  // EAN-er som er skjult fra grafen
   const [hidden, setHidden] = useState<Set<string>>(new Set());
   const toggleHidden = (ean: string) =>
     setHidden((prev) => {
@@ -693,8 +1080,6 @@ function FavoritesPanel({
       return next;
     });
 
-  // Bygg datasett: alle datoer på tvers av favoritter, én linje per vare.
-  // Skjulte EAN-er hoppes over.
   const chart = useMemo(() => {
     const map = new Map<string, Record<string, number | string>>();
     const keys: { ean: string; label: string }[] = [];
@@ -719,7 +1104,6 @@ function FavoritesPanel({
 
   return (
     <div className="space-y-6">
-      {/* Liste */}
       <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
         {favorites.map((f) => {
           const h = history.find((x) => x.ean === f.ean);
@@ -752,7 +1136,6 @@ function FavoritesPanel({
                   {f.name}
                 </div>
 
-                {/* Pris-blokker: Rema 1000 + billigste butikk */}
                 <div className="mt-2 grid grid-cols-2 gap-2">
                   <div className="rounded border border-border/60 bg-background/30 px-2 py-1.5">
                     <div className="text-[9px] uppercase tracking-widest text-muted-foreground">
@@ -793,34 +1176,23 @@ function FavoritesPanel({
                   </div>
                 )}
               </div>
-              <div className="flex flex-col gap-1">
-                <button
-                  onClick={() => toggleHidden(f.ean)}
-                  className={`p-1 ${
-                    isHidden
-                      ? "text-muted-foreground hover:text-primary"
-                      : "text-primary hover:text-primary/70"
-                  }`}
-                  aria-label={isHidden ? "Vis i graf" : "Skjul fra graf"}
-                  title={isHidden ? "Vis i graf" : "Skjul fra graf"}
-                >
-                  {isHidden ? <EyeOff size={14} /> : <LineChartIcon size={14} />}
-                </button>
-                <button
-                  onClick={() => onRemove(f.id)}
-                  className="text-muted-foreground hover:text-destructive p-1"
-                  aria-label="Fjern"
-                  title="Fjern fra handleliste"
-                >
-                  <X size={14} />
-                </button>
-              </div>
+              <button
+                onClick={() => toggleHidden(f.ean)}
+                className={`p-1 ${
+                  isHidden
+                    ? "text-muted-foreground hover:text-primary"
+                    : "text-primary hover:text-primary/70"
+                }`}
+                aria-label={isHidden ? "Vis i graf" : "Skjul fra graf"}
+                title={isHidden ? "Vis i graf" : "Skjul fra graf"}
+              >
+                {isHidden ? <EyeOff size={14} /> : <LineChartIcon size={14} />}
+              </button>
             </div>
           );
         })}
       </div>
 
-      {/* Samlet historikk-graf */}
       {chart.keys.length > 0 && chart.rows.length > 1 && (
         <div className="rounded-lg border border-border bg-card p-4">
           <h3 className="text-xs tracking-widest uppercase text-muted-foreground mb-3">
@@ -841,10 +1213,7 @@ function FavoritesPanel({
                   }}
                   formatter={(v: any) => [fmtPrice(Number(v)), ""]}
                 />
-                <Legend
-                  wrapperStyle={{ fontSize: 11 }}
-                  iconType="line"
-                />
+                <Legend wrapperStyle={{ fontSize: 11 }} iconType="line" />
                 {chart.keys.map((k, i) => (
                   <Line
                     key={k.ean}
