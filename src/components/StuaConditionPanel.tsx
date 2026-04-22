@@ -20,11 +20,11 @@ function rateTemp(t: number | null): Reading {
 
 function rateHumidity(h: number | null): Reading {
   if (h === null) return { value: null, verdict: "ukjent", label: "Ingen avlesning" };
-  // Normen: 40–60 % ideelt, 30–70 % akseptabelt
-  if (h >= 40 && h <= 60) return { value: h, verdict: "bra", label: "Lufta er i balanse" };
-  if (h >= 30 && h < 40) return { value: h, verdict: "middels", label: "Tørr som Dorne" };
+  // Normen: 30–60 % ideelt, 20–70 % akseptabelt
+  if (h >= 30 && h <= 60) return { value: h, verdict: "bra", label: "Lufta er i balanse" };
+  if (h >= 20 && h < 30) return { value: h, verdict: "middels", label: "Tørr som Dorne" };
   if (h > 60 && h <= 70) return { value: h, verdict: "middels", label: "Klam som Sothoryos" };
-  if (h < 30) return { value: h, verdict: "darlig", label: "Knusktørr luft" };
+  if (h < 20) return { value: h, verdict: "darlig", label: "Knusktørr luft" };
   return { value: h, verdict: "darlig", label: "Tåke i borgen" };
 }
 
@@ -182,7 +182,7 @@ export function StuaConditionPanel({
             reading={humR}
             unit="%"
             digits={0}
-            norm="40–60 %"
+            norm="30–60 %"
           />
           <MetricBlock
             icon="🜁"
