@@ -788,6 +788,65 @@ async function setDeviceOnoff(
   return res.ok;
 }
 
+export type OutdoorLightsStatus = {
+  ok: boolean;
+  anyOn: boolean;
+  onCount: number;
+  totalCount: number;
+  error?: string;
+};
+
+export const getOutdoorLightsStatus = createServerFn({ method: "GET" }).handler(
+  async (): Promise<OutdoorLightsStatus> => {
+    let conn: HomeyConnection | null;
+    try {
+      conn = await getValidConnection();
+    } catch (e: any) {
+      return { ok: false, anyOn: false, onCount: 0, totalCount: 0, error: e?.message ?? "Token-feil" };
+    }
+    if (!conn) {
+      return { ok: false, anyOn: false, onCount: 0, totalCount: 0, error: "Ingen Homey-tilkobling" };
+    }
+    try {
+      const session = await getHomeySessionContext(conn);
+      if (!session) {
+        return { ok: false, anyOn: false, onCount: 0, totalCount: 0, error: "Fant ingen Homey" };
+      }
+      const [zones, devices] = await Promise.all([
+        listZonesRaw(session.sessionToken, session.target.baseUrl),
+        listAllDevicesRaw(session.sessionToken, session.target.baseUrl),
+      ]);
+      const outdoorZoneIds = new Set<string>(
+        zones
+          .filter((z) => isOutdoorZoneName(z?.name ?? ""))
+          .map((z) => z.id ?? z._id)
+          .filter(Boolean),
+      );
+      const targets = devices.filter((d) => {
+        const cls = d?.class;
+        const virt = d?.virtualClass;
+        const isLight = cls === "light" || virt === "light";
+        if (!isLight) return false;
+        const caps = d?.capabilitiesObj ?? d?.capabilities_obj ?? {};
+        if (!caps || typeof caps !== "object" || !("onoff" in caps)) return false;
+        const inOutdoorZone = d?.zone && outdoorZoneIds.has(d.zone);
+        const nameOutdoor =
+          typeof d?.name === "string" &&
+          /\b(ute|hage|garasje|inngang|terrasse|veranda|outdoor|garden|yard)\b/i.test(d.name);
+        return inOutdoorZone || nameOutdoor;
+      });
+      let onCount = 0;
+      for (const d of targets) {
+        const caps = d?.capabilitiesObj ?? d?.capabilities_obj ?? {};
+        if (caps?.onoff?.value === true) onCount += 1;
+      }
+      return { ok: true, anyOn: onCount > 0, onCount, totalCount: targets.length };
+    } catch (e: any) {
+      return { ok: false, anyOn: false, onCount: 0, totalCount: 0, error: e?.message ?? "Klarte ikke lese lys" };
+    }
+  },
+);
+
 export const setAllOutdoorLights = createServerFn({ method: "POST" })
   .inputValidator((input: { on: boolean }) => input)
   .handler(async ({ data }): Promise<{ ok: boolean; toggled: number; error?: string }> => {
