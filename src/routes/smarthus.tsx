@@ -327,6 +327,41 @@ function SmarthusPage() {
     (c) => c.includes("tollnes") || c.includes("skien") || (!c.includes("hytt") && c.includes("netatmo")),
   );
 
+  // Stua-tilstand: finn Netatmo-sensor i stua. Vi prefererer en enhet som
+  // har både CO₂ og temperatur (typisk Netatmo NAMain/NAModule4 i stua).
+  const stuaDevice =
+    data.devices.find((d) => {
+      const zoneName = d.zone ? zoneById.get(d.zone)?.name ?? "" : "";
+      const combined = `${d.name} ${zoneName}`.toLowerCase();
+      const inStua = combined.includes("stue") || combined.includes("stua") || combined.includes("living");
+      const hasCo2 = typeof d.capabilities["measure_co2"]?.value === "number";
+      const hasTemp = typeof d.capabilities["measure_temperature"]?.value === "number";
+      return inStua && hasCo2 && hasTemp && !combined.includes("hytt");
+    }) ??
+    data.devices.find((d) => {
+      const zoneName = d.zone ? zoneById.get(d.zone)?.name ?? "" : "";
+      const combined = `${d.name} ${zoneName}`.toLowerCase();
+      const inStua = combined.includes("stue") || combined.includes("stua");
+      const hasTemp = typeof d.capabilities["measure_temperature"]?.value === "number";
+      return inStua && hasTemp && !combined.includes("hytt");
+    });
+
+  const stuaTemp =
+    typeof stuaDevice?.capabilities["measure_temperature"]?.value === "number"
+      ? (stuaDevice.capabilities["measure_temperature"].value as number)
+      : null;
+  const stuaHum =
+    typeof stuaDevice?.capabilities["measure_humidity"]?.value === "number"
+      ? (stuaDevice.capabilities["measure_humidity"].value as number)
+      : null;
+  const stuaCo2 =
+    typeof stuaDevice?.capabilities["measure_co2"]?.value === "number"
+      ? (stuaDevice.capabilities["measure_co2"].value as number)
+      : null;
+  const stuaSourceName = stuaDevice
+    ? `${stuaDevice.name}${stuaDevice.zone ? ` · ${zoneById.get(stuaDevice.zone)?.name ?? ""}` : ""}`
+    : null;
+
   const handleDisconnect = async () => {
     if (!confirm("Bryt båndet til Homey?")) return;
     setDisconnecting(true);
