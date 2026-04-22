@@ -41,6 +41,36 @@ export type Database = {
         }
         Relationships: []
       }
+      grocery_favorites: {
+        Row: {
+          brand: string | null
+          created_at: string
+          ean: string
+          id: string
+          image_url: string | null
+          name: string
+          vendor: string | null
+        }
+        Insert: {
+          brand?: string | null
+          created_at?: string
+          ean: string
+          id?: string
+          image_url?: string | null
+          name: string
+          vendor?: string | null
+        }
+        Update: {
+          brand?: string | null
+          created_at?: string
+          ean?: string
+          id?: string
+          image_url?: string | null
+          name?: string
+          vendor?: string | null
+        }
+        Relationships: []
+      }
       homey_connections: {
         Row: {
           access_token: string
