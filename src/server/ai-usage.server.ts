@@ -85,29 +85,106 @@ export function estimateCostUsd(
   return (inTok * p.input + outTok * p.output) / 1_000_000;
 }
 
-// ── Sjekker om en (uinnlogget) IP allerede har brukt sitt daglige
-// AI-søk. Innloggede passerer alltid.
+// ── Ukentlig kvote for uinnloggede besøkende. Rullerende 7-dagers
+// vindu, 5 vellykkede søk per IP per feature. Innloggede passerer alltid.
+export const PUBLIC_WEEKLY_LIMIT = 5;
+
+export async function getWeeklyQuotaForIp(
+  ip: string | null,
+  feature: string,
+): Promise<{
+  used: number;
+  limit: number;
+  remaining: number;
+  resetAt: string | null;
+  windowStart: string;
+}> {
+  const limit = PUBLIC_WEEKLY_LIMIT;
+  const windowStart = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  const empty = {
+    used: 0,
+    limit,
+    remaining: limit,
+    resetAt: null as string | null,
+    windowStart: windowStart.toISOString(),
+  };
+  if (!ip) return empty;
+  const { data, error } = await supabaseAdmin
+    .from("ai_search_log")
+    .select("created_at")
+    .eq("ip", ip)
+    .eq("authenticated", false)
+    .eq("status", "ok")
+    .eq("feature", feature)
+    .gte("created_at", windowStart.toISOString())
+    .order("created_at", { ascending: true });
+  if (error) {
+    console.warn("getWeeklyQuotaForIp lookup failed:", error.message);
+    return empty;
+  }
+  const used = data?.length ?? 0;
+  // Når kvoten er brukt opp ruller den eldste loggen ut etter 7 dager.
+  const oldest = data?.[0]?.created_at ?? null;
+  const resetAt = oldest
+    ? new Date(new Date(oldest).getTime() + 7 * 24 * 60 * 60 * 1000).toISOString()
+    : null;
+  return {
+    used,
+    limit,
+    remaining: Math.max(0, limit - used),
+    resetAt,
+    windowStart: windowStart.toISOString(),
+  };
+}
+
+// Bakoverkompatibel innpakning brukt av eksisterende kall.
 export async function canUseAiToday(ip: string | null): Promise<{
   allowed: boolean;
   resetAt: string | null;
 }> {
-  if (!ip) return { allowed: true, resetAt: null };
-  const since = new Date();
-  since.setUTCHours(0, 0, 0, 0);
-  const { count, error } = await supabaseAdmin
+  const q = await getWeeklyQuotaForIp(ip, "turer");
+  return { allowed: q.remaining > 0, resetAt: q.resetAt };
+}
+
+// ── Siste vellykkede søk fra denne IP-en (brukes til å vise historikk
+// for innloggede). Returnerer maks 10.
+export type RecentSearchRow = {
+  feature: string;
+  query: string | null;
+  created_at: string;
+  status: string;
+};
+
+export async function getRecentSearchesForIp(
+  ip: string | null,
+  limit = 10,
+): Promise<RecentSearchRow[]> {
+  if (!ip) return [];
+  const { data, error } = await supabaseAdmin
     .from("ai_search_log")
-    .select("id", { count: "exact", head: true })
+    .select("feature, query, created_at, status")
     .eq("ip", ip)
-    .eq("authenticated", false)
-    .eq("status", "ok")
-    .gte("created_at", since.toISOString());
+    .order("created_at", { ascending: false })
+    .limit(limit);
   if (error) {
-    console.warn("canUseAiToday lookup failed:", error.message);
-    return { allowed: true, resetAt: null };
+    console.warn("getRecentSearchesForIp failed:", error.message);
+    return [];
   }
-  const next = new Date(since);
-  next.setUTCDate(next.getUTCDate() + 1);
-  return { allowed: (count ?? 0) < 1, resetAt: next.toISOString() };
+  return (data ?? []) as RecentSearchRow[];
+}
+
+// Siste gang denne IP-en var innom (uansett feature/status).
+export async function getLastVisitForIp(ip: string | null): Promise<string | null> {
+  if (!ip) return null;
+  const { data, error } = await supabaseAdmin
+    .from("ai_search_log")
+    .select("created_at")
+    .eq("ip", ip)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error || !data) return null;
+  return (data as { created_at: string }).created_at;
 }
 
 // ── Logg ett AI-søk. Skriver direkte med admin-klienten så det også

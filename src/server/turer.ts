@@ -2,10 +2,14 @@ import { createServerFn } from "@tanstack/react-start";
 import { useSession } from "@tanstack/react-start/server";
 import { z } from "zod";
 import {
-  canUseAiToday,
+  getWeeklyQuotaForIp,
+  getRecentSearchesForIp,
+  getLastVisitForIp,
   isHouseAuthenticated,
   logAiSearch,
   readClientIp,
+  PUBLIC_WEEKLY_LIMIT,
+  type RecentSearchRow,
 } from "@/server/ai-usage.server";
 
 // Beholdt for `requireHouseAuth` som brukes i reverseGeocode lenger nede.
@@ -77,11 +81,11 @@ export const getTripSuggestions = createServerFn({ method: "POST" })
     const authenticated = await isHouseAuthenticated();
     const model = "google/gemini-3-flash-preview";
 
-    // Uinnloggede besøkende får 1 AI-søk per kalenderdøgn (UTC).
+    // Uinnloggede besøkende får 5 AI-søk per rullerende uke per IP.
     if (!authenticated) {
       const ip = readClientIp();
-      const limit = await canUseAiToday(ip);
-      if (!limit.allowed) {
+      const quota = await getWeeklyQuotaForIp(ip, "turer");
+      if (quota.remaining <= 0) {
         await logAiSearch({
           feature: "turer",
           query: data.location,
@@ -89,10 +93,17 @@ export const getTripSuggestions = createServerFn({ method: "POST" })
           authenticated: false,
           status: "rate_limited",
         });
+        const resetTxt = quota.resetAt
+          ? new Date(quota.resetAt).toLocaleString("nb-NO", {
+              day: "2-digit",
+              month: "short",
+              hour: "2-digit",
+              minute: "2-digit",
+            })
+          : "om en uke";
         return {
           ok: false,
-          error:
-            "Du har brukt dagens gratis AI-søk. Logg inn på huset for ubegrenset bruk, eller prøv igjen i morgen.",
+          error: `Du har brukt dine ${PUBLIC_WEEKLY_LIMIT} gratis ferd-søk denne uken. Logg inn på huset for ubegrenset bruk, eller prøv igjen ${resetTxt}.`,
         };
       }
     }
@@ -470,3 +481,36 @@ export const reverseGeocode = createServerFn({ method: "POST" })
       };
     }
   });
+
+// ── Kvote + historikk for visningen på /turer ──────────────────────────
+export type TripQuotaInfo = {
+  authenticated: boolean;
+  limit: number;
+  used: number;
+  remaining: number;
+  resetAt: string | null;
+  lastVisitAt: string | null;
+  recent: RecentSearchRow[];
+};
+
+export const getTripQuotaInfo = createServerFn({ method: "GET" }).handler(
+  async (): Promise<TripQuotaInfo> => {
+    const authenticated = await isHouseAuthenticated();
+    const ip = readClientIp();
+    const [quota, lastVisitAt, recent] = await Promise.all([
+      getWeeklyQuotaForIp(ip, "turer"),
+      getLastVisitForIp(ip),
+      // Bare innloggede ser sin egen søkehistorikk.
+      authenticated ? getRecentSearchesForIp(ip, 10) : Promise.resolve([]),
+    ]);
+    return {
+      authenticated,
+      limit: quota.limit,
+      used: quota.used,
+      remaining: authenticated ? quota.limit : quota.remaining,
+      resetAt: quota.resetAt,
+      lastVisitAt,
+      recent,
+    };
+  },
+);
