@@ -199,24 +199,30 @@ export function HouseHero({
                 <span className="text-primary/40">❦</span>
                 <span
                   className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded border border-primary/40 bg-background/40 backdrop-blur-sm normal-case tracking-normal text-[11px] md:text-xs"
-                  title={`Totalt ${counts.total.toLocaleString("nb-NO")} besøkende noensinne`}
+                  title={`Unike sjeler: ${counts.total.toLocaleString("nb-NO")} totalt, ${counts.today} i dag, ${counts.online} nå.\nØkter: ${counts.totalSessions.toLocaleString("nb-NO")} totalt, ${counts.todaySessions} i dag, ${counts.onlineSessions} nå.`}
                 >
                   <Eye size={12} className="text-primary" />
                   <span className="text-foreground font-semibold">
                     {counts.online}
                   </span>
-                  <span className="text-muted-foreground">nå</span>
+                  <span className="text-muted-foreground">
+                    nå ({counts.onlineSessions} økt{counts.onlineSessions === 1 ? "" : "er"})
+                  </span>
                   <span className="text-primary/40 mx-0.5">·</span>
                   <Users size={12} className="text-primary" />
                   <span className="text-foreground font-semibold">
                     {counts.today}
                   </span>
-                  <span className="text-muted-foreground">i dag</span>
+                  <span className="text-muted-foreground">
+                    i dag ({counts.todaySessions} økt{counts.todaySessions === 1 ? "" : "er"})
+                  </span>
                   <span className="text-primary/40 mx-0.5">·</span>
                   <span className="text-foreground font-semibold">
                     {counts.total.toLocaleString("nb-NO")}
                   </span>
-                  <span className="text-muted-foreground">totalt</span>
+                  <span className="text-muted-foreground">
+                    totalt ({counts.totalSessions.toLocaleString("nb-NO")} økter)
+                  </span>
                 </span>
               </>
             )}
