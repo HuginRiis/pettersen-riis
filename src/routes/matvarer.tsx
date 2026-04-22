@@ -96,6 +96,7 @@ type ProductGroup = {
   name: string;
   brand: string | null;
   image: string | null;
+  kassalCategory: string | null;
   cheapestPrice: number | null;
   cheapestStore: string | null;
   remaPrice: number | null;
@@ -111,6 +112,8 @@ type GroceryFavorite = {
   image_url: string | null;
   vendor: string | null;
   category: string;
+  kassal_category: string | null;
+  price_nok: number | null;
   checked: boolean;
   manual: boolean;
   quantity: number | null;
