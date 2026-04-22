@@ -50,6 +50,7 @@
     "@types/leaflet": "^1.9.21",
     "@types/mapbox__polyline": "^1.0.5",
     "@types/opentype.js": "1.3.8",
+    "@types/web-push": "^3.6.4",
     "@zxing/browser": "^0.1.5",
     "@zxing/library": "^0.21.3",
     "class-variance-authority": "^0.7.1",
@@ -74,6 +75,7 @@
     "tw-animate-css": "^1.3.4",
     "vaul": "^1.1.2",
     "vite-tsconfig-paths": "^6.0.2",
+    "web-push": "^3.6.7",
     "zod": "^3.24.2"
   },
   "devDependencies": {
