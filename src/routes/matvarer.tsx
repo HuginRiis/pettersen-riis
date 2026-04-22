@@ -10,6 +10,7 @@ import {
   TrendingDown,
   ShoppingBasket,
   X,
+  ScanLine,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -33,6 +34,7 @@ import {
   type BulkHistory,
 } from "@/server/kassalapp";
 import matvarerImg from "@/assets/got-matvarer.jpg";
+import { BarcodeScannerDialog } from "@/components/BarcodeScannerDialog";
 
 export const Route = createFileRoute("/matvarer")({
   head: () => ({
@@ -129,6 +131,7 @@ function MatvarerPage() {
   const [favorites, setFavorites] = useState<GroceryFavorite[]>([]);
   const [favHistory, setFavHistory] = useState<BulkHistory[]>([]);
   const [favLoading, setFavLoading] = useState(true);
+  const [scannerOpen, setScannerOpen] = useState(false);
 
   // ── Favoritter (Lovable Cloud) ─────────────────────────────────────
   const loadFavorites = async () => {
@@ -188,15 +191,14 @@ function MatvarerPage() {
   };
 
   // ── Søk ────────────────────────────────────────────────────────────
-  const onSearch = async (e?: React.FormEvent) => {
-    e?.preventDefault();
-    if (query.trim().length < 2) return;
+  const runSearch = async (term: string) => {
+    if (term.trim().length < 2) return;
     setLoading(true);
     setError(null);
     setSelected(null);
     setDetail(null);
     try {
-      const res = await search({ data: { query: query.trim() } });
+      const res = await search({ data: { query: term.trim() } });
       setProducts(res.products as ProductGroup[]);
     } catch (err: any) {
       setError(err?.message ?? "Søket feilet");
@@ -204,6 +206,17 @@ function MatvarerPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const onSearch = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    await runSearch(query);
+  };
+
+  const onBarcodeDetected = async (code: string) => {
+    setScannerOpen(false);
+    setQuery(code);
+    await runSearch(code);
   };
 
   const openProduct = async (g: ProductGroup) => {
@@ -246,8 +259,17 @@ function MatvarerPage() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Søk på vare — f.eks. 'grandiosa kjøttdeig'"
-              className="pl-9"
+              className="pl-9 pr-12"
             />
+            <button
+              type="button"
+              onClick={() => setScannerOpen(true)}
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10"
+              aria-label="Skann strekkode"
+              title="Skann strekkode"
+            >
+              <ScanLine size={18} />
+            </button>
           </div>
           <Button type="submit" disabled={loading || query.trim().length < 2}>
             {loading ? (
@@ -324,6 +346,12 @@ function MatvarerPage() {
           }}
         />
       )}
+
+      <BarcodeScannerDialog
+        open={scannerOpen}
+        onClose={() => setScannerOpen(false)}
+        onDetected={onBarcodeDetected}
+      />
     </PageShell>
   );
 }
