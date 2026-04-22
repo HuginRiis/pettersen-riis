@@ -1,4 +1,3 @@
-import { createServerFn } from "@tanstack/react-start";
 import {
   getRequest,
   getRequestHeader,
@@ -187,8 +186,8 @@ export type AiUsageStats = {
   perDay: Array<{ date: string; count: number; costUsd: number }>;
 };
 
-export const getAiUsageStats = createServerFn({ method: "GET" }).handler(
-  async (): Promise<AiUsageStats> => {
+export async function computeAiUsageStats(): Promise<AiUsageStats> {
+  {
     const { data, error } = await supabaseAdmin
       .from("ai_search_log")
       .select(
