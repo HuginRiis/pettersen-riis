@@ -21,7 +21,8 @@ type RoutePath =
   | "/steintavle"
   | "/oppussing-borgen"
   | "/oppussing-hytta"
-  | "/matvarer";
+  | "/matvarer"
+  | "/got-saga";
 
 type NavLink = { to: RoutePath; label: string; public?: boolean };
 
@@ -34,6 +35,7 @@ const navLinks: NavLink[] = [
   { to: "/var", label: "Vær", public: true },
   { to: "/pollen", label: "Pollen", public: true },
   { to: "/turer", label: "Ferden", public: true },
+  { to: "/got-saga", label: "Westeros", public: true },
   { to: "/agenda", label: "Agenda" },
   { to: "/vakttarnet", label: "Vakttårnet" },
   { to: "/hytta", label: "Hytta" },
