@@ -689,7 +689,8 @@ function GotSagaPage() {
                 </div>
               </div>
             </button>
-          ))}
+            ))
+          )}
         </div>
       </section>
 
