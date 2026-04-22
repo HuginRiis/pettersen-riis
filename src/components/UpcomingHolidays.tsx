@@ -112,7 +112,7 @@ export function UpcomingHolidays() {
             >
               <div className="flex items-start gap-3">
                 <div className="text-3xl sm:text-4xl shrink-0" aria-hidden>
-                  <span className={`holiday-icon ${h.anim}`}>{h.emoji}</span>
+                  <span className="holiday-icon">{h.emoji}</span>
                 </div>
                 <div className="min-w-0">
                   <div className="text-[10px] tracking-[0.3em] text-primary uppercase">

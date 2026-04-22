@@ -1,8 +1,8 @@
 /**
  * MaesterIcons — animerte SVG-ikoner for Hærmesterens råd.
  *
- *  - CloakIcon: kappe som bølger (svinger sakte)
- *  - HorseCartIcon: hest og kjerre som triller fram og tilbake, med hjul som spinner
+ *  - CloakIcon: kappe som bølger mykt i vinden
+ *  - HorseCartIcon: hest og kjerre som triller jevnt — hjul ruller, hest galopperer
  *  - PollenIcon: blad som svaier, med pollen-prikker som flyr
  */
 
@@ -15,42 +15,81 @@ export function CloakIcon({ className = "" }: { className?: string }) {
       aria-hidden
     >
       {/* Spenne / krage */}
-      <circle cx="24" cy="9" r="2.5" fill="currentColor" opacity="0.9" />
-      {/* Kappe — animeres med d-attributt for bølge */}
+      <circle cx="24" cy="9" r="2.5" fill="currentColor" opacity="0.95" />
+      {/* Snøre fra spenne */}
       <path
-        fill="currentColor"
-        opacity="0.85"
-        d="M24 11 C 16 14, 10 24, 8 40 L 40 40 C 38 24, 32 14, 24 11 Z"
-      >
-        <animate
-          attributeName="d"
-          dur="3.2s"
-          repeatCount="indefinite"
-          values="
-            M24 11 C 16 14, 10 24, 8 40 L 40 40 C 38 24, 32 14, 24 11 Z;
-            M24 11 C 18 14, 12 26, 10 40 L 38 40 C 36 26, 30 14, 24 11 Z;
-            M24 11 C 16 14, 10 24, 8 40 L 40 40 C 38 24, 32 14, 24 11 Z
-          "
-        />
-      </path>
-      {/* Indre fold */}
-      <path
-        d="M24 13 L 24 38"
+        d="M22 10 Q 24 12 26 10"
         stroke="currentColor"
-        strokeWidth="0.8"
-        opacity="0.4"
-      >
+        strokeWidth="0.6"
+        fill="none"
+        opacity="0.5"
+      />
+
+      {/* Kappe — myk bølge i vinden */}
+      <path fill="currentColor" opacity="0.85">
         <animate
           attributeName="d"
-          dur="3.2s"
+          dur="4s"
           repeatCount="indefinite"
+          calcMode="spline"
+          keySplines="0.42 0 0.58 1; 0.42 0 0.58 1"
           values="
-            M24 13 L 24 38;
-            M24 13 L 25 38;
-            M24 13 L 24 38
+            M24 11 C 17 14, 11 25, 9 40 L 39 40 C 37 25, 31 14, 24 11 Z;
+            M24 11 C 18 14, 13 26, 11 40 L 41 40 C 38 25, 31 14, 24 11 Z;
+            M24 11 C 17 14, 11 25, 9 40 L 39 40 C 37 25, 31 14, 24 11 Z
           "
         />
       </path>
+
+      {/* Folder — gir dybde */}
+      <path
+        stroke="currentColor"
+        strokeWidth="0.6"
+        fill="none"
+        opacity="0.35"
+      >
+        <animate
+          attributeName="d"
+          dur="4s"
+          repeatCount="indefinite"
+          calcMode="spline"
+          keySplines="0.42 0 0.58 1; 0.42 0 0.58 1"
+          values="
+            M18 16 Q 16 28 14 39;
+            M18 16 Q 17 28 16 39;
+            M18 16 Q 16 28 14 39
+          "
+        />
+      </path>
+      <path
+        stroke="currentColor"
+        strokeWidth="0.6"
+        fill="none"
+        opacity="0.35"
+      >
+        <animate
+          attributeName="d"
+          dur="4s"
+          repeatCount="indefinite"
+          calcMode="spline"
+          keySplines="0.42 0 0.58 1; 0.42 0 0.58 1"
+          values="
+            M30 16 Q 32 28 34 39;
+            M30 16 Q 31 28 32 39;
+            M30 16 Q 32 28 34 39
+          "
+        />
+      </path>
+      {/* Midtfold */}
+      <line
+        x1="24"
+        y1="13"
+        x2="24"
+        y2="39"
+        stroke="currentColor"
+        strokeWidth="0.5"
+        opacity="0.3"
+      />
     </svg>
   );
 }
@@ -63,80 +102,146 @@ export function HorseCartIcon({ className = "" }: { className?: string }) {
       xmlns="http://www.w3.org/2000/svg"
       aria-hidden
     >
-      {/* Hele ekvipasjen triller */}
+      {/* Hele ekvipasjen vugger lett opp/ned (ujevn vei) */}
       <g>
         <animateTransform
           attributeName="transform"
           attributeType="XML"
           type="translate"
-          values="0 0; 3 0; 0 0; -3 0; 0 0"
-          dur="4s"
+          values="0 0; 0 -0.6; 0 0; 0 -0.4; 0 0"
+          dur="0.8s"
           repeatCount="indefinite"
         />
 
+        {/* ── Kjerre ──────────────────────────────── */}
+        {/* Skjefter / drag fra hest til kjerre */}
+        <line x1="22" y1="28" x2="34" y2="28" stroke="currentColor" strokeWidth="1" opacity="0.7" />
+        <line x1="22" y1="30" x2="34" y2="30" stroke="currentColor" strokeWidth="1" opacity="0.7" />
+
         {/* Kjerre-kasse */}
-        <rect x="32" y="22" width="22" height="10" rx="1" fill="currentColor" opacity="0.85" />
-        {/* Skjefter / drag */}
-        <line x1="20" y1="28" x2="32" y2="26" stroke="currentColor" strokeWidth="1.2" />
+        <path
+          d="M34 22 L 56 22 L 56 32 L 34 32 Z"
+          fill="currentColor"
+          opacity="0.85"
+        />
+        {/* Plankedetalj */}
+        <line x1="40" y1="22" x2="40" y2="32" stroke="currentColor" strokeWidth="0.4" opacity="0.4" />
+        <line x1="46" y1="22" x2="46" y2="32" stroke="currentColor" strokeWidth="0.4" opacity="0.4" />
+        <line x1="52" y1="22" x2="52" y2="32" stroke="currentColor" strokeWidth="0.4" opacity="0.4" />
 
-        {/* Hest — kropp */}
-        <ellipse cx="14" cy="28" rx="8" ry="5" fill="currentColor" opacity="0.9" />
+        {/* ── Hest ────────────────────────────────── */}
+        {/* Kropp */}
+        <ellipse cx="14" cy="26" rx="8" ry="5" fill="currentColor" opacity="0.9" />
         {/* Hals */}
-        <path d="M19 25 L 23 18 L 21 18 L 17 24 Z" fill="currentColor" opacity="0.9" />
+        <path d="M19 23 L 23 17 L 25 18 L 21 24 Z" fill="currentColor" opacity="0.9" />
         {/* Hode */}
-        <path d="M22 19 L 26 17 L 26 21 L 22 22 Z" fill="currentColor" opacity="0.9" />
+        <path d="M22 17 L 27 16 L 27 21 L 23 21 Z" fill="currentColor" opacity="0.9" />
+        {/* Snute-detalj */}
+        <circle cx="26" cy="19" r="0.5" fill="currentColor" opacity="0.5" />
         {/* Øre */}
-        <path d="M24 17 L 25 15 L 26 17 Z" fill="currentColor" />
+        <path d="M24 16 L 25 13 L 26 16 Z" fill="currentColor" />
         {/* Manke */}
-        <path d="M19 20 L 22 17 L 21 21 Z" fill="currentColor" opacity="0.6" />
-        {/* Hale */}
-        <path d="M6 26 L 3 23 L 4 28 L 2 30 Z" fill="currentColor" opacity="0.7">
+        <path d="M19 19 L 22 16 L 22 21 Z" fill="currentColor" opacity="0.6" />
+
+        {/* Hale — vifter */}
+        <g style={{ transformOrigin: "6px 25px" }}>
           <animateTransform
             attributeName="transform"
             attributeType="XML"
             type="rotate"
-            values="0 6 26; 8 6 26; 0 6 26; -8 6 26; 0 6 26"
-            dur="1.6s"
+            values="-15 6 25; 15 6 25; -15 6 25"
+            dur="1.2s"
             repeatCount="indefinite"
           />
-        </path>
-
-        {/* Bein — alternerende */}
-        <line x1="10" y1="33" x2="10" y2="40" stroke="currentColor" strokeWidth="1.6">
-          <animate attributeName="x2" values="10;12;10;8;10" dur="0.8s" repeatCount="indefinite" />
-        </line>
-        <line x1="18" y1="33" x2="18" y2="40" stroke="currentColor" strokeWidth="1.6">
-          <animate attributeName="x2" values="18;16;18;20;18" dur="0.8s" repeatCount="indefinite" />
-        </line>
-
-        {/* Hjul bak */}
-        <g>
-          <animateTransform
-            attributeName="transform"
-            attributeType="XML"
-            type="rotate"
-            from="0 36 36"
-            to="360 36 36"
-            dur="2s"
-            repeatCount="indefinite"
-          />
-          <circle cx="36" cy="36" r="5" fill="none" stroke="currentColor" strokeWidth="1.4" />
-          <line x1="31" y1="36" x2="41" y2="36" stroke="currentColor" strokeWidth="1" />
-          <line x1="36" y1="31" x2="36" y2="41" stroke="currentColor" strokeWidth="1" />
+          <path d="M6 25 Q 2 24 1 28 Q 3 27 6 27 Z" fill="currentColor" opacity="0.75" />
         </g>
-        <g>
+
+        {/* Bein — galopp (forbein og bakbein i takt) */}
+        {/* Forbein 1 */}
+        <line
+          x1="11"
+          y1="30"
+          x2="11"
+          y2="38"
+          stroke="currentColor"
+          strokeWidth="1.6"
+          strokeLinecap="round"
+        >
+          <animate
+            attributeName="x2"
+            values="11; 8; 11; 13; 11"
+            dur="0.6s"
+            repeatCount="indefinite"
+          />
+          <animate
+            attributeName="y2"
+            values="38; 36; 38; 36; 38"
+            dur="0.6s"
+            repeatCount="indefinite"
+          />
+        </line>
+        {/* Forbein 2 (motfase) */}
+        <line
+          x1="17"
+          y1="30"
+          x2="17"
+          y2="38"
+          stroke="currentColor"
+          strokeWidth="1.6"
+          strokeLinecap="round"
+        >
+          <animate
+            attributeName="x2"
+            values="17; 20; 17; 14; 17"
+            dur="0.6s"
+            repeatCount="indefinite"
+          />
+          <animate
+            attributeName="y2"
+            values="38; 36; 38; 36; 38"
+            dur="0.6s"
+            repeatCount="indefinite"
+          />
+        </line>
+
+        {/* Bakke-skygge under hest og hjul */}
+        <ellipse cx="14" cy="40" rx="9" ry="0.8" fill="currentColor" opacity="0.15" />
+        <ellipse cx="45" cy="40" rx="14" ry="0.8" fill="currentColor" opacity="0.15" />
+
+        {/* ── Hjul (rullende) ─────────────────────── */}
+        <g style={{ transformOrigin: "38px 36px" }}>
           <animateTransform
             attributeName="transform"
             attributeType="XML"
             type="rotate"
-            from="0 50 36"
-            to="360 50 36"
-            dur="2s"
+            from="0 38 36"
+            to="360 38 36"
+            dur="1.2s"
             repeatCount="indefinite"
           />
-          <circle cx="50" cy="36" r="5" fill="none" stroke="currentColor" strokeWidth="1.4" />
-          <line x1="45" y1="36" x2="55" y2="36" stroke="currentColor" strokeWidth="1" />
-          <line x1="50" y1="31" x2="50" y2="41" stroke="currentColor" strokeWidth="1" />
+          <circle cx="38" cy="36" r="4.5" fill="none" stroke="currentColor" strokeWidth="1.4" />
+          <line x1="33.5" y1="36" x2="42.5" y2="36" stroke="currentColor" strokeWidth="0.8" />
+          <line x1="38" y1="31.5" x2="38" y2="40.5" stroke="currentColor" strokeWidth="0.8" />
+          <line x1="34.8" y1="32.8" x2="41.2" y2="39.2" stroke="currentColor" strokeWidth="0.8" />
+          <line x1="34.8" y1="39.2" x2="41.2" y2="32.8" stroke="currentColor" strokeWidth="0.8" />
+          <circle cx="38" cy="36" r="0.8" fill="currentColor" />
+        </g>
+        <g style={{ transformOrigin: "52px 36px" }}>
+          <animateTransform
+            attributeName="transform"
+            attributeType="XML"
+            type="rotate"
+            from="0 52 36"
+            to="360 52 36"
+            dur="1.2s"
+            repeatCount="indefinite"
+          />
+          <circle cx="52" cy="36" r="4.5" fill="none" stroke="currentColor" strokeWidth="1.4" />
+          <line x1="47.5" y1="36" x2="56.5" y2="36" stroke="currentColor" strokeWidth="0.8" />
+          <line x1="52" y1="31.5" x2="52" y2="40.5" stroke="currentColor" strokeWidth="0.8" />
+          <line x1="48.8" y1="32.8" x2="55.2" y2="39.2" stroke="currentColor" strokeWidth="0.8" />
+          <line x1="48.8" y1="39.2" x2="55.2" y2="32.8" stroke="currentColor" strokeWidth="0.8" />
+          <circle cx="52" cy="36" r="0.8" fill="currentColor" />
         </g>
       </g>
     </svg>
