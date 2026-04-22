@@ -366,15 +366,76 @@ function GotSagaPage() {
     [],
   );
 
-  // Top 5 "filmer/relaterte" — Westeros på lerretet (siden HBO-serien aldri ble til kinofilmer
-  // bruker vi de mest kjente GoT-relaterte filmprosjektene + skuespillernes største filmer)
-  const TOP_FILMS = [
-    { title: "Eternals (Kit Harington)", year: 2021, score: 6.3, note: "Marvel-debut for Jon Snow" },
-    { title: "Pottersville (Dinklage)", year: 2017, score: 4.8, note: "Komedie m/ Tyrion-skuespiller" },
-    { title: "Last Christmas (Clarke)", year: 2019, score: 6.4, note: "Daenerys i romkom" },
-    { title: "X-Men: Dark Phoenix (Turner)", year: 2019, score: 5.7, note: "Sansa som Jean Grey" },
-    { title: "The New Mutants (Williams)", year: 2020, score: 5.2, note: "Arya i Marvel-mørke" },
+  // Top 5 GoT-relaterte spin-off / tilleggsserier (ikke hovedseriene)
+  const TOP_RELATED: {
+    title: string;
+    year: string;
+    score: number;
+    type: string;
+    cost: string;
+    popularity: string;
+    streaming: string[];
+    description: string;
+  }[] = [
+    {
+      title: "Game of Thrones: Conquest & Rebellion",
+      year: "2017",
+      score: 7.7,
+      type: "Animert spesial",
+      cost: "~$1–2 mill",
+      popularity: "Bonusmateriale på Blu-ray S7 — kultstatus blant fans",
+      streaming: ["HBO Max", "Blu-ray S7"],
+      description:
+        "45 minutters animert kortfilm fortalt av GoT-skuespillere (Harry Lloyd, Nikolaj Coster-Waldau m.fl.) som dramatiserer Aegon Targaryens erobring av Westeros 300 år før hovedserien.",
+    },
+    {
+      title: "Game of Thrones: Histories & Lore",
+      year: "2012–2019",
+      score: 8.9,
+      type: "Animert sidekrønike",
+      cost: "Ukjent (lavbudsjett)",
+      popularity: "Hyllet av fans — ofte kalt «den beste delen av Blu-ray-pakkene»",
+      streaming: ["HBO Max", "Blu-ray-utgaver"],
+      description:
+        "Kortfilmserie i animert form som fyller ut Westeros-historien. Fortalt av karakterer fra serien, dekker alt fra Aegons erobring til Robert's Rebellion. Over 70 episoder fordelt på 8 sesonger.",
+    },
+    {
+      title: "Game of Thrones: The Last Watch",
+      year: "2019",
+      score: 8.0,
+      type: "Dokumentar",
+      cost: "~$3 mill",
+      popularity: "1,4 mill seere premiere — hjertevarmende blikk bak kulissene",
+      streaming: ["HBO Max"],
+      description:
+        "To timer lang dokumentar av Jeanie Finlay som følger produksjonen av sesong 8. Mer fokus på crew enn stjerner — gir et rørende bilde av hvor mye arbeid som gikk inn i finalen.",
+    },
+    {
+      title: "Thronecast",
+      year: "2011–2019",
+      score: 7.2,
+      type: "Etter-show / talkshow",
+      cost: "~£500k/sesong",
+      popularity: "Sky Atlantic UK — fast følge for hardcore fans",
+      streaming: ["Sky / NOW (UK)"],
+      description:
+        "Britisk etter-show som ble sendt etter hver GoT-episode. Sue Perkins og Jamie East intervjuet skuespillere og analyserte handlingen ferskt. Avsluttet med GoT-finalen.",
+    },
+    {
+      title: "After the Thrones",
+      year: "2016",
+      score: 7.5,
+      type: "Etter-show / analyse",
+      cost: "~$2 mill",
+      popularity: "Andrew Rector og Chris Ryan — Bill Simmons-produksjon",
+      streaming: ["HBO Max"],
+      description:
+        "Amerikansk etter-show kun for sesong 6. Dypanalyse av hver episode med teorier og kontekst — fikk én sesong før HBO valgte å satse på sosiale medier i stedet.",
+    },
   ];
+
+  const [openRelated, setOpenRelated] = useState<string | null>(null);
+
 
   return (
     <PageShell>
