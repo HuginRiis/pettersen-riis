@@ -543,7 +543,9 @@ function ShoppingListPanel({
       map.set(c, arr);
     }
     // Sorter i rekkefølgen til CATEGORIES, deretter alfabetisk
-    const order = new Map(CATEGORIES.map((c, i) => [c, i] as const));
+    const order = new Map<string, number>(
+      CATEGORIES.map((c, i) => [c as string, i] as [string, number]),
+    );
     return Array.from(map.entries()).sort((a, b) => {
       const ai = order.get(a[0]) ?? 999;
       const bi = order.get(b[0]) ?? 999;
