@@ -405,150 +405,96 @@ function PriceBox({
   );
 }
 
-function CostBars({ highlights: h }: { highlights: PbthHomeData["highlights"] }) {
-  const data = [
-    { label: "I går", value: h.costYesterday ?? 0, color: "oklch(0.65 0.04 250)" },
-    { label: "I dag", value: h.costToday ?? 0, color: "oklch(0.62 0.18 250)" },
-    { label: "Forrige måned", value: h.costLastMonth ?? 0, color: "oklch(0.65 0.04 250)" },
-    { label: "Denne måneden", value: h.costThisMonth ?? 0, color: "oklch(0.62 0.18 250)" },
-    { label: "I år", value: h.costThisYear ?? 0, color: "oklch(0.78 0.13 85)" },
-  ].filter((d) => d.value > 0);
-
-  if (data.length === 0) {
-    return <p className="text-xs text-muted-foreground">Ingen kostnadsdata tilgjengelig.</p>;
-  }
-
-  return (
-    <div className="h-56 w-full">
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data} margin={{ top: 5, right: 8, left: -8, bottom: 0 }}>
-          <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" vertical={false} />
-          <XAxis dataKey="label" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} />
-          <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} width={48} unit=" kr" />
-          <Tooltip
-            contentStyle={{
-              background: "hsl(var(--card))",
-              border: "1px solid hsl(var(--border))",
-              borderRadius: 6,
-              fontSize: 12,
-            }}
-            formatter={(v: number) => [`${v.toFixed(0)} kr`, "Kostnad"]}
-          />
-          <Bar dataKey="value" radius={[3, 3, 0, 0]}>
-            {data.map((d, i) => (
-              <Cell key={i} fill={d.color} />
-            ))}
-          </Bar>
-        </BarChart>
-      </ResponsiveContainer>
-    </div>
-  );
-}
-
-function EnergyBars({ highlights: h }: { highlights: PbthHomeData["highlights"] }) {
-  const data = [
-    { label: "I går", value: h.energyYesterday ?? 0 },
-    { label: "I dag", value: h.energyToday ?? 0 },
-    { label: "Forrige måned", value: h.energyLastMonth ?? 0 },
-    { label: "Denne måneden", value: h.energyThisMonth ?? 0 },
-    { label: "I år", value: h.energyThisYear ?? 0 },
-  ].filter((d) => d.value > 0);
-
-  if (data.length === 0) {
-    return <p className="text-xs text-muted-foreground">Ingen forbruksdata tilgjengelig.</p>;
-  }
-
-  return (
-    <div className="h-56 w-full">
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data} margin={{ top: 5, right: 8, left: -8, bottom: 0 }}>
-          <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" vertical={false} />
-          <XAxis dataKey="label" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} />
-          <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} width={48} unit=" kWh" />
-          <Tooltip
-            contentStyle={{
-              background: "hsl(var(--card))",
-              border: "1px solid hsl(var(--border))",
-              borderRadius: 6,
-              fontSize: 12,
-            }}
-            formatter={(v: number) => [`${v.toFixed(1)} kWh`, "Forbruk"]}
-          />
-          <Bar dataKey="value" radius={[3, 3, 0, 0]} fill="oklch(0.62 0.18 250)" />
-        </BarChart>
-      </ResponsiveContainer>
-    </div>
-  );
-}
-
 // ============================================================
-// Day delta — today vs yesterday
+// Month cumulative kWh — Homey-style area chart
 // ============================================================
 
-function DayDeltaPanel({ highlights: h }: { highlights: PbthHomeData["highlights"] }) {
-  const eToday = h.energyToday ?? 0;
-  const eYest = h.energyYesterday ?? 0;
-  const cToday = h.costToday ?? 0;
-  const cYest = h.costYesterday ?? 0;
+function MonthCumulativeChart({ highlights: h }: { highlights: PbthHomeData["highlights"] }) {
+  const monthTotal = h.energyThisMonth;
+  const today = h.energyToday ?? 0;
 
-  if (eToday === 0 && eYest === 0) {
-    return <p className="text-xs text-muted-foreground">Ingen data å sammenligne ennå.</p>;
+  if (monthTotal == null || monthTotal <= 0) {
+    return <p className="text-xs text-muted-foreground">Ingen månedsdata tilgjengelig.</p>;
   }
 
-  const energyDelta = eYest > 0 ? ((eToday - eYest) / eYest) * 100 : 0;
-  const costDelta = cYest > 0 ? ((cToday - cYest) / cYest) * 100 : 0;
+  const now = new Date();
+  const dayOfMonth = now.getDate();
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
 
-  const data = [
-    { label: "kWh", "I går": eYest, "I dag": eToday },
-    { label: "kr", "I går": cYest, "I dag": cToday },
-  ];
+  // Anta jevn fordeling for tidligere dager — siste dag justeres til faktisk total.
+  const earlierDays = Math.max(1, dayOfMonth - 1);
+  const beforeToday = Math.max(0, monthTotal - today);
+  const perEarlierDay = beforeToday / earlierDays;
+
+  // Bygg datapunkter for hele måneden — fremtidige dager = null (ikke tegnet)
+  const data: Array<{ day: number; kwh: number | null }> = [];
+  let cum = 0;
+  for (let d = 1; d <= daysInMonth; d++) {
+    if (d < dayOfMonth) {
+      cum += perEarlierDay;
+      data.push({ day: d, kwh: Math.round(cum * 10) / 10 });
+    } else if (d === dayOfMonth) {
+      cum = monthTotal;
+      data.push({ day: d, kwh: Math.round(cum * 10) / 10 });
+    } else {
+      data.push({ day: d, kwh: null });
+    }
+  }
+
+  const maxKwh = Math.max(...data.map((d) => d.kwh ?? 0));
+  const yMax = Math.ceil(maxKwh / 100) * 100 || 100;
 
   return (
-    <div className="grid md:grid-cols-[1fr,200px] gap-4 items-center">
-      <div className="h-44 w-full">
+    <div className="rounded-xl bg-[oklch(0.18_0.02_270)] p-4 border border-border/40">
+      <div className="h-56 w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} margin={{ top: 5, right: 8, left: -8, bottom: 0 }}>
-            <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" vertical={false} />
-            <XAxis dataKey="label" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} />
-            <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} width={40} />
+          <AreaChart data={data} margin={{ top: 8, right: 12, left: -8, bottom: 0 }}>
+            <defs>
+              <linearGradient id="kwhGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="oklch(0.62 0.22 290)" stopOpacity={0.7} />
+                <stop offset="100%" stopColor="oklch(0.62 0.22 290)" stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid stroke="oklch(0.3 0.02 270)" strokeDasharray="2 4" vertical={false} />
+            <XAxis
+              dataKey="day"
+              tick={{ fill: "oklch(0.65 0.02 270)", fontSize: 11 }}
+              ticks={[1, 5, 9, 13, 17, 21, 25, 29]}
+              axisLine={false}
+              tickLine={false}
+            />
+            <YAxis
+              tick={{ fill: "oklch(0.65 0.02 270)", fontSize: 11 }}
+              width={40}
+              axisLine={false}
+              tickLine={false}
+              domain={[0, yMax]}
+            />
             <Tooltip
               contentStyle={{
-                background: "hsl(var(--card))",
-                border: "1px solid hsl(var(--border))",
+                background: "oklch(0.22 0.02 270)",
+                border: "1px solid oklch(0.35 0.02 270)",
                 borderRadius: 6,
                 fontSize: 12,
               }}
+              labelStyle={{ color: "oklch(0.85 0.02 270)" }}
+              formatter={(v: number | null) =>
+                v != null ? [`${v.toFixed(1)} kWh`, "Akkumulert"] : ["—", ""]
+              }
+              labelFormatter={(d: number) => `Dag ${d}`}
             />
-            <Bar dataKey="I går" fill="oklch(0.65 0.04 250)" radius={[3, 3, 0, 0]} />
-            <Bar dataKey="I dag" fill="oklch(0.62 0.18 250)" radius={[3, 3, 0, 0]} />
-          </BarChart>
+            <Area
+              type="monotone"
+              dataKey="kwh"
+              stroke="oklch(0.62 0.22 290)"
+              strokeWidth={2.5}
+              fill="url(#kwhGradient)"
+              connectNulls={false}
+              isAnimationActive={false}
+            />
+          </AreaChart>
         </ResponsiveContainer>
       </div>
-      <div className="space-y-2">
-        <DeltaBadge label="Energi" delta={energyDelta} />
-        <DeltaBadge label="Kostnad" delta={costDelta} />
-      </div>
-    </div>
-  );
-}
-
-function DeltaBadge({ label, delta }: { label: string; delta: number }) {
-  const up = delta > 0;
-  const flat = Math.abs(delta) < 0.5;
-  const color = flat
-    ? "text-muted-foreground"
-    : up
-      ? "text-[oklch(0.65_0.22_25)]"
-      : "text-[oklch(0.72_0.16_150)]";
-  const Icon = flat ? Sparkles : up ? TrendingUp : TrendingDown;
-  return (
-    <div className="panel rounded-md p-3 bg-background/30 border border-border/40">
-      <div className="text-[9px] tracking-[0.25em] uppercase text-muted-foreground">{label}</div>
-      <div className={`text-lg font-semibold tabular-nums mt-0.5 flex items-center gap-1.5 ${color}`}>
-        <Icon size={14} />
-        {flat ? "≈ 0%" : `${up ? "+" : ""}${delta.toFixed(1)}%`}
-      </div>
-      <div className="text-[10px] text-muted-foreground mt-0.5">vs i går</div>
     </div>
   );
 }
