@@ -1,4 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { Eye, Users } from "lucide-react";
+import { getVisitorCounts, type VisitorCounts } from "@/server/visitors";
 
 /**
  * HouseHero — animert helteseksjon for forsiden.
@@ -104,12 +107,31 @@ export function HouseHero({
   const [mounted, setMounted] = useState(false);
   const [now, setNow] = useState<Date | null>(null);
 
+  const [counts, setCounts] = useState<VisitorCounts | null>(null);
+  const fetchCounts = useServerFn(getVisitorCounts);
+
   useEffect(() => {
     setMounted(true);
     setNow(new Date());
     const t = setInterval(() => setNow(new Date()), 60_000);
     return () => clearInterval(t);
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = () =>
+      fetchCounts()
+        .then((c) => {
+          if (!cancelled) setCounts(c);
+        })
+        .catch(() => {});
+    load();
+    const t = setInterval(load, 60_000);
+    return () => {
+      cancelled = true;
+      clearInterval(t);
+    };
+  }, [fetchCounts]);
 
   const season: Season = now ? getSeason(now) : "winter";
   const dayPart: DayPart = now ? getDayPart(now) : "evening";
@@ -167,11 +189,32 @@ export function HouseHero({
         )}
 
         {mounted && now && (
-          <div className="mt-5 flex items-center gap-3 text-[10px] md:text-xs uppercase tracking-[0.35em] text-primary/90">
+          <div className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-2 text-[10px] md:text-xs uppercase tracking-[0.35em] text-primary/90">
             <span className="inline-block w-8 h-px bg-primary/60" />
             <span>{SEASON_LABEL[season]}</span>
             <span className="text-primary/40">❦</span>
             <span>{DAYPART_LABEL[dayPart]}</span>
+            {counts && (
+              <>
+                <span className="text-primary/40">❦</span>
+                <span
+                  className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded border border-primary/40 bg-background/40 backdrop-blur-sm normal-case tracking-normal text-[11px] md:text-xs"
+                  title={`Totalt ${counts.total.toLocaleString("nb-NO")} besøkende noensinne`}
+                >
+                  <Eye size={12} className="text-primary" />
+                  <span className="text-foreground font-semibold">
+                    {counts.online}
+                  </span>
+                  <span className="text-muted-foreground">nå</span>
+                  <span className="text-primary/40 mx-0.5">·</span>
+                  <Users size={12} className="text-primary" />
+                  <span className="text-foreground font-semibold">
+                    {counts.today}
+                  </span>
+                  <span className="text-muted-foreground">i dag</span>
+                </span>
+              </>
+            )}
             <span className="inline-block w-8 h-px bg-primary/60" />
           </div>
         )}

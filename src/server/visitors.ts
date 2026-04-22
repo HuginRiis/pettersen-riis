@@ -395,3 +395,38 @@ export const releaseIpFn = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { released: true, removed: count ?? 0, ip: data.ip };
   });
+
+// ── Lite tellverk for forsiden — antall besøkende totalt, i dag og akkurat nå
+export type VisitorCounts = {
+  total: number;
+  today: number;
+  online: number;
+};
+
+export const getVisitorCounts = createServerFn({ method: "GET" }).handler(
+  async (): Promise<VisitorCounts> => {
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+    const onlineCutoff = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+
+    const [totalRes, todayRes, onlineRes] = await Promise.all([
+      supabaseAdmin
+        .from("visitor_sessions" as any)
+        .select("id", { count: "exact", head: true }),
+      supabaseAdmin
+        .from("visitor_sessions" as any)
+        .select("id", { count: "exact", head: true })
+        .gte("started_at", startOfDay.toISOString()),
+      supabaseAdmin
+        .from("visitor_sessions" as any)
+        .select("id", { count: "exact", head: true })
+        .gte("last_seen_at", onlineCutoff),
+    ]);
+
+    return {
+      total: totalRes.count ?? 0,
+      today: todayRes.count ?? 0,
+      online: onlineRes.count ?? 0,
+    };
+  },
+);
