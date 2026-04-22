@@ -170,10 +170,12 @@ function HomeBlock({
   title,
   eyebrow,
   data,
+  spotNow,
 }: {
   title: string;
   eyebrow: string;
   data: PbthHomeData;
+  spotNow: number | null;
 }) {
   if (!data.found) {
     return (
