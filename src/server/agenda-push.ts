@@ -24,3 +24,20 @@ export const sendAgendaTestPush = createServerFn({ method: "POST" })
     const mod = await import("./agenda-push.server");
     return mod.sendAgendaTestPushByEndpoint(data);
   });
+
+export const sendHyttaChecklistPush = createServerFn({ method: "POST" })
+  .inputValidator((input: { title: string; body: string; url?: string }) => {
+    const title = String(input?.title ?? "").trim();
+    const body = String(input?.body ?? "").trim();
+    if (title.length < 1 || title.length > 120) throw new Error("Ugyldig tittel.");
+    if (body.length < 1 || body.length > 600) throw new Error("Ugyldig innhold.");
+    return {
+      title,
+      body,
+      url: typeof input?.url === "string" ? input.url.slice(0, 200) : "/hytta",
+    };
+  })
+  .handler(async ({ data }) => {
+    const mod = await import("./agenda-push.server");
+    return mod.sendHyttaChecklistPush(data);
+  });
