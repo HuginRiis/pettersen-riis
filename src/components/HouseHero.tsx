@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Eye, Users } from "lucide-react";
+import { Eye, Users, TrendingUp, TrendingDown, Minus, MousePointerClick } from "lucide-react";
 import { getVisitorCounts, type VisitorCounts } from "@/server/visitors";
 
 /**
