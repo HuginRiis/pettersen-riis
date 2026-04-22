@@ -237,6 +237,36 @@ function Section({
   );
 }
 
+function SealedCollapsible({
+  label,
+  count,
+  children,
+}: {
+  label: string;
+  count: number;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
+  if (count === 0) return null;
+  return (
+    <Collapsible open={open} onOpenChange={setOpen} className="mt-2">
+      <CollapsibleTrigger className="w-full flex items-center justify-between gap-2 rounded-md border border-emerald-400/20 bg-emerald-400/5 px-3 py-2 text-left hover:bg-emerald-400/10 transition-colors">
+        <span className="text-[10px] tracking-[0.25em] uppercase text-emerald-400/90 italic">
+          « {label} » <span className="text-muted-foreground/70 not-italic">({count})</span>
+        </span>
+        {open ? (
+          <Minus size={14} className="text-emerald-400/80 shrink-0" />
+        ) : (
+          <Plus size={14} className="text-emerald-400/80 shrink-0" />
+        )}
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        <ul className="space-y-2 mt-2">{children}</ul>
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}
+
 export function DoorsLocksPanel() {
   const fetchData = useServerFn(getDoorsLocksSnapshot);
   const [state, setState] = useState<
