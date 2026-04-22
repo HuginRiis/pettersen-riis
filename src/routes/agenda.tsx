@@ -3,15 +3,24 @@ import { useEffect, useState } from "react";
 import { PageShell, PageHero } from "@/components/PageShell";
 import { supabase } from "@/integrations/supabase/client";
 import heroImg from "@/assets/got-agenda.jpg";
-import { Trash2, Plus } from "lucide-react";
+import { Trash2, Plus, Bell, BellOff, Clock } from "lucide-react";
+import {
+  type Who,
+  getStoredWho,
+  isPushSupported,
+  isCurrentlySubscribed,
+  subscribePush,
+  unsubscribePush,
+  updateSubscriptionWho,
+} from "@/lib/push-client";
 
 export const Route = createFileRoute("/agenda")({
   head: () => ({
     meta: [
       { title: "Krøniken — Agenda | House Pettersen Riis" },
-      { name: "description", content: "Husets kalender & meldinger med dato og emne." },
+      { name: "description", content: "Husets kalender & meldinger med dato, tid og push-varsler." },
       { property: "og:title", content: "Krøniken — Agenda | House Pettersen Riis" },
-      { property: "og:description", content: "Send korte meldinger med dato og emne til familiens agenda." },
+      { property: "og:description", content: "Send korte meldinger med dato, tid og varsler til familiens agenda." },
     ],
   }),
   component: AgendaPage,
@@ -22,11 +31,21 @@ type Msg = {
   subject: string;
   body: string | null;
   event_date: string;
+  event_time: string | null;
   who: string;
+  notify_minutes_before: number | null;
+  notified_at: string | null;
   created_at: string;
 };
 
-const WHO = ["Alle", "Arne", "Rebekka", "Marita", "Nora", "Celine", "Mira"] as const;
+const WHO: Who[] = ["Alle", "Arne", "Rebekka", "Marita", "Nora", "Celine", "Mira"];
+const NOTIFY_OPTIONS: { value: number | null; label: string }[] = [
+  { value: null, label: "Ingen varsling" },
+  { value: 5, label: "5 min før" },
+  { value: 15, label: "15 min før" },
+  { value: 30, label: "30 min før" },
+  { value: 60, label: "1 time før" },
+];
 
 function AgendaPage() {
   const [items, setItems] = useState<Msg[]>([]);
@@ -37,11 +56,17 @@ function AgendaPage() {
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [date, setDate] = useState(today);
-  const [who, setWho] = useState<(typeof WHO)[number]>("Alle");
+  const [time, setTime] = useState("09:00");
+  const [who, setWho] = useState<Who>("Alle");
+  const [notifyMin, setNotifyMin] = useState<number | null>(15);
 
   async function load() {
     setLoading(true);
-    const { data, error } = await supabase.from("agenda_messages").select("*").order("event_date", { ascending: true });
+    const { data, error } = await supabase
+      .from("agenda_messages")
+      .select("*")
+      .order("event_date", { ascending: true })
+      .order("event_time", { ascending: true, nullsFirst: false });
     if (!error && data) setItems(data as Msg[]);
     setLoading(false);
   }
@@ -58,14 +83,18 @@ function AgendaPage() {
       subject: subject.trim(),
       body: body.trim() || null,
       event_date: date,
+      event_time: time || null,
       who,
+      notify_minutes_before: notifyMin,
     });
     setSubmitting(false);
     if (!error) {
       setSubject("");
       setBody("");
       setDate(today);
+      setTime("09:00");
       setWho("Alle");
+      setNotifyMin(15);
       load();
     }
   }
@@ -91,9 +120,11 @@ function AgendaPage() {
       <PageHero
         eyebrow="Husets krønike"
         title="Agenda & Meldinger"
-        subtitle="Skriv korte meldinger med dato og emne — så husker huset hva som venter."
+        subtitle="Skriv korte meldinger med dato, tid og varsler — så husker huset hva som venter."
         image={heroImg}
       />
+
+      <PushSubscribeBar />
 
       <section className="container mx-auto px-4 py-12 grid lg:grid-cols-3 gap-8">
         <form onSubmit={handleSubmit} className="panel rounded-lg p-6 lg:sticky lg:top-24 h-fit">
@@ -121,7 +152,7 @@ function AgendaPage() {
             className="w-full bg-input border border-border rounded px-3 py-2 mb-3 text-foreground resize-none focus:outline-none focus:ring-1 focus:ring-primary"
           />
 
-          <div className="grid grid-cols-2 gap-3 mb-4">
+          <div className="grid grid-cols-2 gap-3 mb-3">
             <div>
               <label className="block text-xs uppercase tracking-wider text-muted-foreground mb-1">Dato</label>
               <input
@@ -133,15 +164,42 @@ function AgendaPage() {
               />
             </div>
             <div>
+              <label className="block text-xs uppercase tracking-wider text-muted-foreground mb-1">Tid</label>
+              <input
+                type="time"
+                value={time}
+                onChange={(e) => setTime(e.target.value)}
+                required
+                className="w-full bg-input border border-border rounded px-3 py-2 text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 mb-4">
+            <div>
               <label className="block text-xs uppercase tracking-wider text-muted-foreground mb-1">For</label>
               <select
                 value={who}
-                onChange={(e) => setWho(e.target.value as (typeof WHO)[number])}
+                onChange={(e) => setWho(e.target.value as Who)}
                 className="w-full bg-input border border-border rounded px-3 py-2 text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
               >
                 {WHO.map((w) => (
                   <option key={w} value={w}>
                     {w}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs uppercase tracking-wider text-muted-foreground mb-1">Varsle</label>
+              <select
+                value={notifyMin === null ? "" : String(notifyMin)}
+                onChange={(e) => setNotifyMin(e.target.value === "" ? null : Number(e.target.value))}
+                className="w-full bg-input border border-border rounded px-3 py-2 text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+              >
+                {NOTIFY_OPTIONS.map((o) => (
+                  <option key={o.label} value={o.value === null ? "" : String(o.value)}>
+                    {o.label}
                   </option>
                 ))}
               </select>
@@ -169,6 +227,101 @@ function AgendaPage() {
         </div>
       </section>
     </PageShell>
+  );
+}
+
+function PushSubscribeBar() {
+  const [supported, setSupported] = useState<boolean>(true);
+  const [subscribed, setSubscribed] = useState<boolean>(false);
+  const [who, setWho] = useState<Who>("Alle");
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    setSupported(isPushSupported());
+    setWho(getStoredWho());
+    isCurrentlySubscribed().then(setSubscribed);
+  }, []);
+
+  async function toggle() {
+    setBusy(true);
+    setMsg(null);
+    if (subscribed) {
+      const r = await unsubscribePush();
+      if (r.ok) {
+        setSubscribed(false);
+        setMsg("Varsler slått av på denne enheten.");
+      } else setMsg(r.error || "Kunne ikke slå av.");
+    } else {
+      const r = await subscribePush(who);
+      if (r.ok) {
+        setSubscribed(true);
+        setMsg(`Varsler slått på for "${who}" på denne enheten.`);
+      } else setMsg(r.error || "Kunne ikke slå på.");
+    }
+    setBusy(false);
+  }
+
+  async function changeWho(next: Who) {
+    setWho(next);
+    if (subscribed) {
+      setBusy(true);
+      const r = await updateSubscriptionWho(next);
+      setBusy(false);
+      setMsg(r.ok ? `Denne enheten er nå satt som "${next}".` : r.error || "Feil");
+    }
+  }
+
+  if (!supported) {
+    return (
+      <section className="container mx-auto px-4 pt-6">
+        <div className="panel rounded-lg p-4 text-sm text-muted-foreground flex items-center gap-2">
+          <BellOff size={16} /> Denne enheten støtter ikke push-varsler (åpne i Chrome/Safari/Firefox på mobil eller PC).
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section className="container mx-auto px-4 pt-6">
+      <div className="panel rounded-lg p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+        <div className="flex items-center gap-2 text-sm">
+          {subscribed ? <Bell size={18} className="text-primary" /> : <BellOff size={18} className="text-muted-foreground" />}
+          <span className="font-medium text-foreground">Push-varsler</span>
+          <span className="text-muted-foreground">
+            {subscribed ? "Aktivert på denne enheten" : "Av — slå på for å få påminnelser"}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2 sm:ml-auto">
+          <label className="text-xs uppercase tracking-wider text-muted-foreground">Jeg er</label>
+          <select
+            value={who}
+            onChange={(e) => changeWho(e.target.value as Who)}
+            className="bg-input border border-border rounded px-2 py-1.5 text-sm text-foreground"
+          >
+            {WHO.map((w) => (
+              <option key={w} value={w}>
+                {w}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            onClick={toggle}
+            disabled={busy}
+            className={`px-3 py-1.5 rounded text-sm font-medium border transition ${
+              subscribed
+                ? "border-border text-foreground hover:bg-accent/40"
+                : "bg-primary text-primary-foreground border-primary hover:opacity-90"
+            } disabled:opacity-50`}
+          >
+            {busy ? "..." : subscribed ? "Slå av" : "Slå på"}
+          </button>
+        </div>
+      </div>
+      {msg && <p className="text-xs text-muted-foreground mt-2 px-1">{msg}</p>}
+    </section>
   );
 }
 
@@ -205,12 +358,24 @@ function DateSection({
               {msgs.map((m) => (
                 <li key={m.id} className="panel rounded p-4 flex gap-3 items-start">
                   <span
-                    className={`px-2 py-0.5 text-[10px] uppercase tracking-wider rounded border ${whoBadge(m.who)}`}
+                    className={`px-2 py-0.5 text-[10px] uppercase tracking-wider rounded border shrink-0 ${whoBadge(m.who)}`}
                   >
                     {m.who}
                   </span>
                   <div className="flex-1 min-w-0">
-                    <h4 className="text-foreground font-semibold">{m.subject}</h4>
+                    <div className="flex items-baseline gap-2 flex-wrap">
+                      <h4 className="text-foreground font-semibold">{m.subject}</h4>
+                      {m.event_time && (
+                        <span className="text-xs text-primary/80 tabular-nums flex items-center gap-1">
+                          <Clock size={11} /> {m.event_time.slice(0, 5)}
+                        </span>
+                      )}
+                      {m.notify_minutes_before !== null && (
+                        <span className="text-[10px] uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+                          <Bell size={10} /> {m.notify_minutes_before} min før
+                        </span>
+                      )}
+                    </div>
                     {m.body && <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{m.body}</p>}
                   </div>
                   <button
