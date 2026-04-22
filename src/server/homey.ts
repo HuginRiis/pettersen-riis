@@ -609,9 +609,11 @@ function classifyKind(
   if (cls === "lock" || "locked" in caps) return "lock";
   const n = name.toLowerCase();
   if ("alarm_contact" in caps) {
-    if (/vindu|window/.test(n)) return "window";
+    // Check door keywords FIRST — many sensor model names include both "door" and "window"
+    // (e.g. "Door and Window Sensor"), so door must win when both appear.
     if (/dør|dor|door|port|inngang|ytter|garasje|terasse|terrasse|veranda|balkong/.test(n))
       return "door";
+    if (/vindu|window/.test(n)) return "window";
     return "door"; // default contact = door
   }
   if ("alarm_motion" in caps) return "motion";
