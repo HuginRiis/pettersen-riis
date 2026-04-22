@@ -259,8 +259,17 @@ function MatvarerPage() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Søk på vare — f.eks. 'grandiosa kjøttdeig'"
-              className="pl-9"
+              className="pl-9 pr-12"
             />
+            <button
+              type="button"
+              onClick={() => setScannerOpen(true)}
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10"
+              aria-label="Skann strekkode"
+              title="Skann strekkode"
+            >
+              <ScanLine size={18} />
+            </button>
           </div>
           <Button type="submit" disabled={loading || query.trim().length < 2}>
             {loading ? (
