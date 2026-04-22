@@ -148,6 +148,43 @@ export async function sendAgendaTestPushByEndpoint(data: { endpoint: string; who
   return { ok: true, sentAt };
 }
 
+export async function sendHyttaChecklistPush(data: { title: string; body: string; url?: string }) {
+  ensureConfigured();
+
+  const { data: subs, error } = await supabaseAdmin
+    .from("push_subscriptions")
+    .select("endpoint, p256dh, auth");
+
+  if (error) throw error;
+  if (!subs || subs.length === 0) {
+    return { sent: 0, errors: 0, total: 0 };
+  }
+
+  const payload = JSON.stringify({
+    title: data.title,
+    body: data.body,
+    tag: `hytta-checklist-${Date.now()}`,
+    url: data.url || "/hytta",
+  });
+
+  let sent = 0;
+  let errors = 0;
+  for (const sub of subs) {
+    const result = await sendPushToSubscription(
+      {
+        endpoint: sub.endpoint as string,
+        p256dh: sub.p256dh as string,
+        auth: sub.auth as string,
+      },
+      payload,
+    );
+    if (result.ok) sent++;
+    else errors++;
+  }
+
+  return { sent, errors, total: subs.length };
+}
+
 export async function processAgendaNotifications(): Promise<{ checked: number; sent: number; errors: number }> {
   ensureConfigured();
   const now = new Date();
