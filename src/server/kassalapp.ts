@@ -218,16 +218,68 @@ export const getGroceryProduct = createServerFn({ method: "POST" })
   });
 
 // ── Bulk prishistorikk for en liste EAN (favoritter) ───────────────────
+//
+// Vi kaller `/products/ean/{ean}` per favoritt — det endepunktet returnerer
+// ALLE butikker som fører varen, med både gjeldende pris og prishistorikk.
+// Det er den eneste pålitelige måten å få Rema 1000 + billigste butikk på.
 export type BulkHistory = {
   ean: string;
   history: Array<{ date: string; price: number }>;
   currentPrice: number | null;
   currentMin: number | null;
   currentStore: string | null;
-  /** Pris pr butikk akkurat nå (fra produktsøk på EAN). */
+  /** Pris pr butikk akkurat nå. */
   storePrices: Array<{ store: string; price: number | null; url: string | null }>;
   remaPrice: number | null;
 };
+
+type EanProduct = {
+  store: string;
+  price: number | null;
+  url: string | null;
+  history: Array<{ date: string; price: number }>;
+};
+
+async function fetchEanProducts(ean: string): Promise<EanProduct[]> {
+  try {
+    const res = (await kassalFetch(`/products/ean/${encodeURIComponent(ean)}`)) as {
+      data?: { products?: any[] } | any[];
+    };
+    // API kan returnere enten { data: { products: [...] } } eller { data: [...] }
+    const root: any = (res as any)?.data ?? {};
+    const items: any[] = Array.isArray(root)
+      ? root
+      : Array.isArray(root?.products)
+        ? root.products
+        : [];
+
+    return items.map((p: any) => {
+      const storeName: string =
+        p?.store?.name ?? p?.store ?? p?.vendor ?? "Ukjent";
+      const price =
+        typeof p?.current_price === "number"
+          ? p.current_price
+          : typeof p?.price === "number"
+            ? p.price
+            : null;
+      const history: Array<{ date: string; price: number }> = Array.isArray(
+        p?.price_history,
+      )
+        ? p.price_history
+            .map((h: any) => ({
+              date: String(h?.date ?? "").slice(0, 10),
+              price:
+                typeof h?.price === "number" ? h.price : Number(h?.price ?? NaN),
+            }))
+            .filter((h: any) => h.date && Number.isFinite(h.price))
+        : [];
+      return { store: storeName, price, url: p?.url ?? null, history };
+    });
+  } catch (e) {
+    console.warn("fetchEanProducts feilet for", ean, e);
+    return [];
+  }
+}
 
 export const getGroceryPriceHistory = createServerFn({ method: "POST" })
   .inputValidator((input: { eans: string[]; days?: number }) =>
@@ -240,107 +292,67 @@ export const getGroceryPriceHistory = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     await requireHouseAuth();
-    const json = (await kassalFetch("/products/prices-bulk", {
-      method: "POST",
-      body: JSON.stringify({
-        eans: data.eans,
-        days: data.days ?? 60,
-        aggregation: "min",
-      }),
-    })) as { data?: any[] };
 
-    const arr = Array.isArray(json?.data) ? json.data : [];
+    const days = data.days ?? 60;
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - days);
+    const cutoffIso = cutoff.toISOString().slice(0, 10);
 
-    // Hent pris pr butikk for hver EAN parallelt (Kassalapp har ikke
-    // dette i bulk-endepunktet, så vi gjør et lite EAN-søk pr vare).
-    const perStore = await Promise.all(
+    const out: BulkHistory[] = await Promise.all(
       data.eans.map(async (ean) => {
-        try {
-          const res = (await kassalFetch(
-            `/products?search=${encodeURIComponent(ean)}&size=30`,
-          )) as { data?: any[] };
-          const items = Array.isArray(res?.data) ? res.data : [];
-          const map = new Map<
-            string,
-            { store: string; price: number | null; url: string | null }
-          >();
-          for (const p of items) {
-            if (p?.ean && String(p.ean) !== ean) continue;
-            const store = p?.store?.name ?? p?.store ?? "Ukjent";
-            const price =
-              typeof p?.current_price === "number"
-                ? p.current_price
-                : typeof p?.price === "number"
-                  ? p.price
-                  : null;
-            const url = p?.url ?? null;
-            const existing = map.get(store);
-            if (
-              !existing ||
-              (price != null && (existing.price ?? Infinity) > price)
-            ) {
-              map.set(store, { store, price, url });
-            }
+        const products = await fetchEanProducts(ean);
+
+        // Behold kun billigste rad pr butikk (fjern duplikater)
+        const byStore = new Map<string, EanProduct>();
+        for (const p of products) {
+          const existing = byStore.get(p.store);
+          if (!existing) byStore.set(p.store, p);
+          else if (
+            p.price != null &&
+            (existing.price == null || p.price < existing.price)
+          ) {
+            byStore.set(p.store, p);
           }
-          return { ean, stores: Array.from(map.values()) };
-        } catch {
-          return {
-            ean,
-            stores: [] as Array<{ store: string; price: number | null; url: string | null }>,
-          };
         }
-      }),
-    );
-    const storeIndex = new Map(perStore.map((s) => [s.ean, s.stores]));
+        const stores = Array.from(byStore.values());
 
-    const out: BulkHistory[] = arr.map((row: any) => {
-      const ean = String(row?.ean ?? "");
-      const history: Array<{ date: string; price: number }> = Array.isArray(
-        row?.prices,
-      )
-        ? row.prices
-            .map((h: any) => ({
-              date: String(h?.date ?? ""),
-              price:
-                typeof h?.price === "number" ? h.price : Number(h?.price ?? NaN),
-            }))
-            .filter((h: any) => h.date && Number.isFinite(h.price))
-            .sort((a: any, b: any) => a.date.localeCompare(b.date))
-        : [];
-      const stores = storeIndex.get(ean) ?? [];
-      const rema = stores.find((s) => /rema/i.test(s.store));
-      return {
-        ean,
-        history,
-        currentPrice:
-          typeof row?.current_price === "number" ? row.current_price : null,
-        currentMin:
-          typeof row?.current_min_price === "number" ? row.current_min_price : null,
-        currentStore: row?.current_min_store ?? null,
-        storePrices: stores,
-        remaPrice: rema?.price ?? null,
-      };
-    });
+        // Slå sammen prishistorikk på tvers av butikker — laveste pr dag.
+        const dayMap = new Map<string, number>();
+        for (const p of stores) {
+          for (const h of p.history) {
+            if (h.date < cutoffIso) continue;
+            const cur = dayMap.get(h.date);
+            if (cur == null || h.price < cur) dayMap.set(h.date, h.price);
+          }
+        }
+        const history = Array.from(dayMap.entries())
+          .map(([date, price]) => ({ date, price }))
+          .sort((a, b) => a.date.localeCompare(b.date));
 
-    // Sørg for at vi alltid har en rad pr forespurt EAN
-    for (const ean of data.eans) {
-      if (!out.some((o) => o.ean === ean)) {
-        const stores = storeIndex.get(ean) ?? [];
+        // Billigste butikk akkurat nå
+        const priced = stores.filter((s) => s.price != null);
+        const cheapest = priced.sort(
+          (a, b) => (a.price ?? Infinity) - (b.price ?? Infinity),
+        )[0];
+
+        // Rema 1000-pris
         const rema = stores.find((s) => /rema/i.test(s.store));
-        const cheapest = stores
-          .filter((s) => s.price != null)
-          .sort((a, b) => (a.price ?? Infinity) - (b.price ?? Infinity))[0];
-        out.push({
+
+        return {
           ean,
-          history: [],
-          currentPrice: null,
+          history,
+          currentPrice: cheapest?.price ?? null,
           currentMin: cheapest?.price ?? null,
           currentStore: cheapest?.store ?? null,
-          storePrices: stores,
+          storePrices: stores.map((s) => ({
+            store: s.store,
+            price: s.price,
+            url: s.url,
+          })),
           remaPrice: rema?.price ?? null,
-        });
-      }
-    }
+        };
+      }),
+    );
 
     return { items: out };
   });
