@@ -683,11 +683,23 @@ function FavoritesPanel({
   history: BulkHistory[];
   onRemove: (id: string) => void;
 }) {
+  // EAN-er som er skjult fra grafen
+  const [hidden, setHidden] = useState<Set<string>>(new Set());
+  const toggleHidden = (ean: string) =>
+    setHidden((prev) => {
+      const next = new Set(prev);
+      if (next.has(ean)) next.delete(ean);
+      else next.add(ean);
+      return next;
+    });
+
   // Bygg datasett: alle datoer på tvers av favoritter, én linje per vare.
+  // Skjulte EAN-er hoppes over.
   const chart = useMemo(() => {
     const map = new Map<string, Record<string, number | string>>();
     const keys: { ean: string; label: string }[] = [];
     for (const fav of favorites) {
+      if (hidden.has(fav.ean)) continue;
       const entry = history.find((h) => h.ean === fav.ean);
       if (!entry) continue;
       const label = fav.name.length > 28 ? fav.name.slice(0, 28) + "…" : fav.name;
@@ -703,7 +715,7 @@ function FavoritesPanel({
     );
     const display = rows.map((r) => ({ ...r, date: fmtDate(String(r.date)) }));
     return { rows: display, keys };
-  }, [favorites, history]);
+  }, [favorites, history, hidden]);
 
   return (
     <div className="space-y-6">
@@ -720,6 +732,7 @@ function FavoritesPanel({
             remaPrice != null &&
             cheapestPrice != null &&
             Math.abs(remaPrice - cheapestPrice) < 0.005;
+          const isHidden = hidden.has(f.ean);
           return (
             <div
               key={f.id}
@@ -780,14 +793,28 @@ function FavoritesPanel({
                   </div>
                 )}
               </div>
-              <button
-                onClick={() => onRemove(f.id)}
-                className="text-muted-foreground hover:text-destructive p-1"
-                aria-label="Fjern"
-                title="Fjern fra handleliste"
-              >
-                <X size={14} />
-              </button>
+              <div className="flex flex-col gap-1">
+                <button
+                  onClick={() => toggleHidden(f.ean)}
+                  className={`p-1 ${
+                    isHidden
+                      ? "text-muted-foreground hover:text-primary"
+                      : "text-primary hover:text-primary/70"
+                  }`}
+                  aria-label={isHidden ? "Vis i graf" : "Skjul fra graf"}
+                  title={isHidden ? "Vis i graf" : "Skjul fra graf"}
+                >
+                  {isHidden ? <EyeOff size={14} /> : <LineChartIcon size={14} />}
+                </button>
+                <button
+                  onClick={() => onRemove(f.id)}
+                  className="text-muted-foreground hover:text-destructive p-1"
+                  aria-label="Fjern"
+                  title="Fjern fra handleliste"
+                >
+                  <X size={14} />
+                </button>
+              </div>
             </div>
           );
         })}
