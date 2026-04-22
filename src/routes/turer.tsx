@@ -455,12 +455,17 @@ function QuotaBanner({ quota }: { quota: TripQuotaInfo | null }) {
 
 // ── Innloggedes egen søkehistorikk basert på IP ──────────────────────
 function RecentSearches({ quota }: { quota: TripQuotaInfo | null }) {
-  if (!quota?.authenticated || quota.recent.length === 0) return null;
+  if (!quota || quota.recent.length === 0) return null;
 
   return (
     <article className="panel rounded-lg p-5 mt-8">
       <h3 className="text-sm uppercase tracking-[0.25em] text-primary mb-3 flex items-center gap-2">
         <History size={14} /> Dine siste søk
+        {!quota.authenticated && (
+          <span className="text-[10px] normal-case tracking-normal text-muted-foreground font-normal">
+            (fra denne IP-en)
+          </span>
+        )}
       </h3>
       <ul className="divide-y divide-border/60">
         {quota.recent.map((r, i) => (
