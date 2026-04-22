@@ -39,6 +39,8 @@ function VakttarnetPage() {
   const [sessions, setSessions] = useState<VisitorSessionRow[]>([]);
   const [attempts, setAttempts] = useState<LoginAttemptRow[]>([]);
   const [pageviews, setPageviews] = useState<PageviewRow[]>([]);
+  const [totalPageviews, setTotalPageviews] = useState<number>(0);
+  const [totalSouls, setTotalSouls] = useState<number>(0);
   const [aiStats, setAiStats] = useState<AiUsageStats | null>(null);
   const [loading, setLoading] = useState(true);
 
