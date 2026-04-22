@@ -12,7 +12,8 @@ import type {
 import { getAiUsageStats, type AiUsageStats } from "@/server/ai-usage";
 import { useAuthStatus } from "@/hooks/use-auth-status";
 import heroImg from "@/assets/got-vakttarnet.jpg";
-import { Eye, Globe2, Smartphone, Monitor, Tablet, Clock, Crown, ShieldAlert, Map as MapIcon, Lock, Unlock, Sparkles } from "lucide-react";
+import { Eye, Globe2, Smartphone, Monitor, Tablet, Clock, Crown, ShieldAlert, Map as MapIcon, Lock, Unlock, Sparkles, DoorClosed } from "lucide-react";
+import { DoorsLocksPanel } from "@/components/DoorsLocksPanel";
 
 export const Route = createFileRoute("/vakttarnet")({
   head: () => ({
@@ -134,6 +135,14 @@ function VakttarnetPage() {
           totalPageviews={totalPageviews}
           totalSouls={totalSouls}
         />
+
+        <Panel
+          title="Borgens porter og låser"
+          icon={<DoorClosed size={14} />}
+          subtitle="Yale Doorman og Verisure rapporterer hva som er åpent og lukket"
+        >
+          <DoorsLocksPanel />
+        </Panel>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
           <Panel

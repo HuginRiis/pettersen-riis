@@ -552,6 +552,172 @@ export const disconnectHomey = createServerFn({ method: "POST" }).handler(async 
 });
 
 // ============================================================
+// Doors & Locks snapshot (Verisure / Yale Doorman / contact sensors)
+// ============================================================
+
+export type DoorOrLockEntry = {
+  id: string;
+  name: string;
+  zoneName: string;
+  available: boolean;
+  // For locks (Yale Doorman, Verisure smartlocks)
+  locked?: boolean | null;
+  // For door/window contact sensors (Verisure)
+  contactOpen?: boolean | null; // true = open, false = closed
+  // For motion sensors
+  motion?: boolean | null;
+  battery?: number | null;
+  tamper?: boolean | null;
+  brand: "yale" | "verisure" | "annet";
+  kind: "lock" | "door" | "window" | "motion" | "other";
+  lastUpdated: string | null;
+};
+
+export type DoorsLocksResult =
+  | { ok: false; needsConnect?: boolean; error: string }
+  | {
+      ok: true;
+      locks: DoorOrLockEntry[];
+      doors: DoorOrLockEntry[];
+      windows: DoorOrLockEntry[];
+      motions: DoorOrLockEntry[];
+      fetchedAt: string;
+    };
+
+function detectBrand(d: any): DoorOrLockEntry["brand"] {
+  const hay = [d?.driverUri, d?.appId, d?.ownerName, d?.driverId, d?.name]
+    .map((x) => (typeof x === "string" ? x.toLowerCase() : ""))
+    .join(" ");
+  if (/yale|doorman|com\.yale|assa.?abloy/.test(hay)) return "yale";
+  if (/verisure|securitas/.test(hay)) return "verisure";
+  return "annet";
+}
+
+function pickCapTimestamp(capObj: any): string | null {
+  const t = capObj?.lastUpdated ?? capObj?.last_updated ?? capObj?.lastChanged;
+  if (!t) return null;
+  if (typeof t === "string") return t;
+  if (typeof t === "number") return new Date(t).toISOString();
+  return null;
+}
+
+function classifyKind(
+  cls: string | undefined,
+  caps: any,
+  name: string,
+): DoorOrLockEntry["kind"] {
+  if (cls === "lock" || "locked" in caps) return "lock";
+  const n = name.toLowerCase();
+  if ("alarm_contact" in caps) {
+    if (/vindu|window/.test(n)) return "window";
+    if (/dør|dor|door|port|inngang|ytter|garasje|terasse|terrasse|veranda|balkong/.test(n))
+      return "door";
+    return "door"; // default contact = door
+  }
+  if ("alarm_motion" in caps) return "motion";
+  return "other";
+}
+
+export const getDoorsLocksSnapshot = createServerFn({ method: "GET" }).handler(
+  async (): Promise<DoorsLocksResult> => {
+    let conn: HomeyConnection | null;
+    try {
+      conn = await getValidConnection();
+    } catch (e: any) {
+      return { ok: false, error: e?.message ?? "Token-feil" };
+    }
+    if (!conn) return { ok: false, needsConnect: true, error: "Ikke tilkoblet Homey" };
+
+    try {
+      const raw = await getHomeyRawSnapshot(conn);
+      if (!raw) return { ok: false, error: "Fant ingen Homey-data" };
+
+      const zoneById = new Map<string, string>();
+      for (const z of raw.zonesRaw) {
+        zoneById.set(z.id ?? z._id, z.name ?? "Ukjent sal");
+      }
+
+      const locks: DoorOrLockEntry[] = [];
+      const doors: DoorOrLockEntry[] = [];
+      const windows: DoorOrLockEntry[] = [];
+      const motions: DoorOrLockEntry[] = [];
+
+      for (const d of raw.devicesRaw) {
+        const caps = d.capabilitiesObj ?? d.capabilities_obj ?? {};
+        if (!caps || typeof caps !== "object") continue;
+
+        const hasLock = "locked" in caps;
+        const hasContact = "alarm_contact" in caps;
+        const hasMotion = "alarm_motion" in caps;
+        if (!hasLock && !hasContact && !hasMotion) continue;
+
+        const name = d.name ?? "Ukjent";
+        const kind = classifyKind(d.class, caps, name);
+        const brand = detectBrand(d);
+
+        const lockedCap = caps.locked;
+        const contactCap = caps.alarm_contact;
+        const motionCap = caps.alarm_motion;
+        const tamperCap = caps.alarm_tamper;
+        const batteryCap = caps.measure_battery;
+
+        const tsCandidates = [
+          pickCapTimestamp(lockedCap),
+          pickCapTimestamp(contactCap),
+          pickCapTimestamp(motionCap),
+        ].filter(Boolean) as string[];
+        tsCandidates.sort();
+        const lastUpdated = tsCandidates.length > 0 ? tsCandidates[tsCandidates.length - 1] : null;
+
+        const entry: DoorOrLockEntry = {
+          id: d.id ?? d._id,
+          name,
+          zoneName: zoneById.get(d.zone) ?? "Ukjent sal",
+          available: d.available !== false,
+          locked: hasLock ? (lockedCap?.value ?? null) : undefined,
+          contactOpen: hasContact ? (contactCap?.value ?? null) : undefined,
+          motion: hasMotion ? (motionCap?.value ?? null) : undefined,
+          battery: typeof batteryCap?.value === "number" ? batteryCap.value : null,
+          tamper: typeof tamperCap?.value === "boolean" ? tamperCap.value : null,
+          brand,
+          kind,
+          lastUpdated,
+        };
+
+        if (kind === "lock") locks.push(entry);
+        else if (kind === "door") doors.push(entry);
+        else if (kind === "window") windows.push(entry);
+        else if (kind === "motion") motions.push(entry);
+      }
+
+      const sortByName = (a: DoorOrLockEntry, b: DoorOrLockEntry) =>
+        a.name.localeCompare(b.name, "nb");
+      locks.sort(sortByName);
+      doors.sort(sortByName);
+      windows.sort(sortByName);
+      motions.sort((a, b) => {
+        // Recent motion first
+        const at = a.lastUpdated ? new Date(a.lastUpdated).getTime() : 0;
+        const bt = b.lastUpdated ? new Date(b.lastUpdated).getTime() : 0;
+        return bt - at;
+      });
+
+      return {
+        ok: true,
+        locks,
+        doors,
+        windows,
+        motions,
+        fetchedAt: new Date().toISOString(),
+      };
+    } catch (e: any) {
+      return { ok: false, error: e?.message ?? "Klarte ikke hente dør/lås-data" };
+    }
+  },
+);
+
+
+// ============================================================
 // Camera snapshot (Netatmo / generic Homey camera devices)
 // ============================================================
 
