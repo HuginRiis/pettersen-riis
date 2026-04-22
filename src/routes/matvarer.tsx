@@ -529,6 +529,7 @@ function ShoppingListPanel({
     category: string,
     quantity: number | null,
     unit: string | null,
+    price: number | null,
   ) => void;
   onClearChecked: () => void;
 }) {
