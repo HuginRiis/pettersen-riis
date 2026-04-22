@@ -408,20 +408,27 @@ function ProductCard({
         </button>
       </div>
 
-      <div className="flex items-end justify-between">
+      <div className="flex items-end justify-between gap-2">
         <div>
           <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
-            Billigst nå
+            Rema 1000
           </div>
-          <div className="text-lg font-display text-primary">
-            {fmtPrice(group.cheapestPrice)}
+          <div
+            className={`text-base font-display ${
+              group.remaPrice != null ? "text-primary" : "text-muted-foreground"
+            }`}
+          >
+            {group.remaPrice != null ? fmtPrice(group.remaPrice) : "Ikke i Rema"}
           </div>
         </div>
         <div className="text-right">
           <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
-            {group.cheapestStore ?? "—"}
+            Billigst{group.cheapestStore ? ` — ${group.cheapestStore}` : ""}
           </div>
-          <div className="text-xs text-muted-foreground">
+          <div className="text-base font-display text-primary">
+            {fmtPrice(group.cheapestPrice)}
+          </div>
+          <div className="text-[10px] text-muted-foreground">
             {group.storeCount} butikk{group.storeCount === 1 ? "" : "er"}
           </div>
         </div>
