@@ -5,7 +5,8 @@ import {
   type DoorOrLockEntry,
   type DoorsLocksResult,
 } from "@/server/homey";
-import { DoorClosed, DoorOpen, Lock, Unlock, Activity, ShieldAlert, BatteryLow } from "lucide-react";
+import { DoorClosed, DoorOpen, Lock, Unlock, Activity, ShieldAlert, BatteryLow, Plus, Minus } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 const REFRESH_MS = 30_000;
 
