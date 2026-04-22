@@ -218,10 +218,20 @@ function StatsCards({
   const stats = useMemo(() => {
     const now = Date.now();
     const dayAgo = now - 24 * 60 * 60 * 1000;
-    const todayCount = sessions.filter(
-      (s) => new Date(s.last_seen_at).getTime() >= dayAgo,
-    ).length;
-    const totalSessions = sessions.length;
+    // Unike sjeler = deduplisert per IP (eller client_session_id som fallback),
+    // samme logikk som getVisitorCounts på serveren — slik at tallet matcher forsiden.
+    const soulKey = (s: VisitorSessionRow) =>
+      s.ip && s.ip.length > 0 ? `ip:${s.ip}` : `cs:${s.client_session_id}`;
+    const allSouls = new Set<string>();
+    const todaySouls = new Set<string>();
+    for (const s of sessions) {
+      allSouls.add(soulKey(s));
+      if (new Date(s.last_seen_at).getTime() >= dayAgo) {
+        todaySouls.add(soulKey(s));
+      }
+    }
+    const totalSessions = allSouls.size;
+    const todayCount = todaySouls.size;
     const totalViews = pageviews.length;
     const avgDuration =
       sessions.length === 0
@@ -261,8 +271,8 @@ function StatsCards({
 
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3">
-      <StatCard label="Sjeler i alt" value={stats.totalSessions.toString()} />
-      <StatCard label="Siste døgn" value={stats.todayCount.toString()} />
+      <StatCard label="Unike sjeler" value={stats.totalSessions.toString()} />
+      <StatCard label="Sjeler siste døgn" value={stats.todayCount.toString()} />
       <StatCard label="Sidevisninger" value={stats.totalViews.toString()} />
       <StatCard label="Snitt-økt" value={formatDuration(stats.avgDuration)} />
       <StatCard
