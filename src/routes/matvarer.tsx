@@ -675,8 +675,13 @@ function FavoritesPanel({
           const h = history.find((x) => x.ean === f.ean);
           const series = h?.history ?? [];
           const min = series.length ? Math.min(...series.map((s) => s.price)) : null;
-          const max = series.length ? Math.max(...series.map((s) => s.price)) : null;
-          const now = h?.currentMin ?? h?.currentPrice ?? null;
+          const remaPrice = h?.remaPrice ?? null;
+          const cheapestPrice = h?.currentMin ?? null;
+          const cheapestStore = h?.currentStore ?? null;
+          const remaIsCheapest =
+            remaPrice != null &&
+            cheapestPrice != null &&
+            Math.abs(remaPrice - cheapestPrice) < 0.005;
           return (
             <div
               key={f.id}
@@ -695,22 +700,45 @@ function FavoritesPanel({
                 <div className="text-sm font-medium leading-snug line-clamp-2">
                   {f.name}
                 </div>
-                <div className="text-[11px] text-muted-foreground mt-1 flex flex-wrap gap-x-3">
-                  <span>
-                    Nå: <span className="text-primary">{fmtPrice(now)}</span>
-                  </span>
-                  {min != null && (
-                    <span>
-                      Lavest: <span className="text-primary/80">{fmtPrice(min)}</span>
-                    </span>
-                  )}
-                  {max != null && (
-                    <span>Høyest: {fmtPrice(max)}</span>
-                  )}
+
+                {/* Pris-blokker: Rema 1000 + billigste butikk */}
+                <div className="mt-2 grid grid-cols-2 gap-2">
+                  <div className="rounded border border-border/60 bg-background/30 px-2 py-1.5">
+                    <div className="text-[9px] uppercase tracking-widest text-muted-foreground">
+                      Rema 1000
+                    </div>
+                    <div
+                      className={`text-sm font-display ${
+                        remaPrice != null ? "text-primary" : "text-muted-foreground"
+                      }`}
+                    >
+                      {remaPrice != null ? fmtPrice(remaPrice) : "Ikke i Rema"}
+                    </div>
+                  </div>
+                  <div
+                    className={`rounded border px-2 py-1.5 ${
+                      remaIsCheapest
+                        ? "border-primary/40 bg-primary/5"
+                        : "border-border/60 bg-background/30"
+                    }`}
+                  >
+                    <div className="text-[9px] uppercase tracking-widest text-muted-foreground">
+                      Billigst{cheapestStore ? ` — ${cheapestStore}` : ""}
+                    </div>
+                    <div
+                      className={`text-sm font-display ${
+                        cheapestPrice != null ? "text-primary" : "text-muted-foreground"
+                      }`}
+                    >
+                      {fmtPrice(cheapestPrice)}
+                    </div>
+                  </div>
                 </div>
-                {h?.currentStore && (
-                  <div className="text-[11px] text-muted-foreground mt-0.5">
-                    Billigst hos {h.currentStore}
+
+                {min != null && (
+                  <div className="text-[11px] text-muted-foreground mt-1.5">
+                    Lavest siste 60 dager:{" "}
+                    <span className="text-primary/80">{fmtPrice(min)}</span>
                   </div>
                 )}
               </div>
