@@ -9,9 +9,10 @@ import type {
   LoginAttemptRow,
   PageviewRow,
 } from "@/server/visitors";
+import { getAiUsageStats, type AiUsageStats } from "@/server/ai-usage";
 import { useAuthStatus } from "@/hooks/use-auth-status";
 import heroImg from "@/assets/got-vakttarnet.jpg";
-import { Eye, Globe2, Smartphone, Monitor, Tablet, Clock, Crown, ShieldAlert, Map as MapIcon, Lock, Unlock } from "lucide-react";
+import { Eye, Globe2, Smartphone, Monitor, Tablet, Clock, Crown, ShieldAlert, Map as MapIcon, Lock, Unlock, Sparkles } from "lucide-react";
 
 export const Route = createFileRoute("/vakttarnet")({
   head: () => ({
