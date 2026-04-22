@@ -10,10 +10,10 @@ type Reading = {
 
 function rateTemp(t: number | null): Reading {
   if (t === null) return { value: null, verdict: "ukjent", label: "Ingen avlesning" };
-  // Normen: 20–22 ideelt, 18–24 akseptabelt
-  if (t >= 20 && t <= 22) return { value: t, verdict: "bra", label: "Mestret av maesteren" };
+  // Normen: 20–24,8 ideelt, 18–24,8 akseptabelt
+  if (t >= 20 && t <= 24.8) return { value: t, verdict: "bra", label: "Mestret av maesteren" };
   if (t >= 18 && t < 20) return { value: t, verdict: "middels", label: "Litt kjølig i salen" };
-  if (t > 22 && t <= 24) return { value: t, verdict: "middels", label: "Litt vel lummert" };
+  if (t > 24.8 && t <= 26) return { value: t, verdict: "middels", label: "Litt vel lummert" };
   if (t < 18) return { value: t, verdict: "darlig", label: "Kalde gufs fra Nord" };
   return { value: t, verdict: "darlig", label: "Drage-hete i salen" };
 }
@@ -174,7 +174,7 @@ export function StuaConditionPanel({
             reading={tempR}
             unit="°C"
             digits={1}
-            norm="20–22 °C"
+            norm="20–24,8 °C"
           />
           <MetricBlock
             icon="💧"
