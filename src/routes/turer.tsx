@@ -295,6 +295,8 @@ function TurerPage() {
             </div>
           </div>
         )}
+
+        <RecentSearches quota={quota} />
       </section>
 
       <TripDetailDialog
