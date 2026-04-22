@@ -234,6 +234,8 @@ export type Database = {
           created_at: string
           id: string
           label: string
+          notified_at: string | null
+          notify_at: string | null
           sort_order: number
           updated_at: string
         }
@@ -243,6 +245,8 @@ export type Database = {
           created_at?: string
           id?: string
           label: string
+          notified_at?: string | null
+          notify_at?: string | null
           sort_order?: number
           updated_at?: string
         }
@@ -252,6 +256,8 @@ export type Database = {
           created_at?: string
           id?: string
           label?: string
+          notified_at?: string | null
+          notify_at?: string | null
           sort_order?: number
           updated_at?: string
         }
