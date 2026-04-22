@@ -118,6 +118,8 @@ function HyttaPage() {
         image={hyttaImg}
       />
 
+      <HyttaChecklist />
+
       <section className="container mx-auto px-4 py-12 grid md:grid-cols-3 gap-8">
         <div className="md:col-span-2 space-y-5">
           <div className="ornate-divider mb-2">
