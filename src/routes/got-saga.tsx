@@ -591,45 +591,107 @@ function GotSagaPage() {
             </ol>
           </div>
 
-          {/* Top 5 filmer */}
+          {/* Top 5 GoT-relaterte tilleggsserier */}
           <div className="panel rounded-sm p-5">
             <div className="flex items-center gap-2 mb-4 pb-3 border-b border-border">
-              <Film className="text-primary" size={18} />
+              <Tv className="text-primary" size={18} />
               <h3 className="text-display text-lg text-primary tracking-wider">
-                TOP 5 FILMER (CAST PÅ LERRETET)
+                TOP 5 GOT-RELATERTE SERIER
               </h3>
             </div>
-            <ol className="space-y-2.5">
-              {[...TOP_FILMS]
+            <ol className="space-y-2">
+              {[...TOP_RELATED]
                 .sort((a, b) => b.score - a.score)
-                .map((f, i) => (
-                  <li
-                    key={f.title}
-                    className="flex items-center gap-3 p-2.5 rounded-sm bg-secondary/40 border border-border/60"
-                  >
-                    <span className="text-display text-2xl text-primary w-7 text-center">
-                      {i + 1}
-                    </span>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm text-foreground font-medium truncate">{f.title}</div>
-                      <div className="text-[10px] tracking-widest uppercase text-muted-foreground">
-                        {f.year} · {f.note}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1 px-2 py-1 rounded-sm bg-background/80 border border-border">
-                      <Star size={11} className="text-gold fill-gold" />
-                      <span className="text-sm font-semibold text-foreground">{f.score}</span>
-                    </div>
-                  </li>
-                ))}
+                .map((r, i) => {
+                  const isOpen = openRelated === r.title;
+                  return (
+                    <li
+                      key={r.title}
+                      className="rounded-sm bg-secondary/40 border border-border/60 overflow-hidden"
+                    >
+                      <button
+                        onClick={() => setOpenRelated(isOpen ? null : r.title)}
+                        className="w-full flex items-center gap-3 p-2.5 text-left hover:bg-secondary/70 transition-colors"
+                      >
+                        <span className="text-display text-2xl text-primary w-7 text-center">
+                          {i + 1}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm text-foreground font-medium truncate">
+                            {r.title}
+                          </div>
+                          <div className="text-[10px] tracking-widest uppercase text-muted-foreground">
+                            {r.year} · {r.type}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1 px-2 py-1 rounded-sm bg-background/80 border border-border">
+                          <Star size={11} className="text-gold fill-gold" />
+                          <span className="text-sm font-semibold text-foreground">{r.score}</span>
+                        </div>
+                        <ChevronRight
+                          size={14}
+                          className={`text-muted-foreground transition-transform ${
+                            isOpen ? "rotate-90" : ""
+                          }`}
+                        />
+                      </button>
+                      {isOpen && (
+                        <div className="px-4 pb-4 pt-1 border-t border-border/60 space-y-3 bg-background/40">
+                          <p className="text-xs text-foreground/85 leading-relaxed">
+                            {r.description}
+                          </p>
+                          <div className="grid grid-cols-2 gap-2 text-[11px]">
+                            <div className="bg-secondary/50 rounded-sm p-2 border border-border/60">
+                              <div className="flex items-center gap-1 text-[9px] tracking-widest uppercase text-primary mb-0.5">
+                                <Star size={10} className="text-gold fill-gold" /> IMDB
+                              </div>
+                              <div className="text-sm font-semibold text-foreground">
+                                {r.score} / 10
+                              </div>
+                            </div>
+                            <div className="bg-secondary/50 rounded-sm p-2 border border-border/60">
+                              <div className="flex items-center gap-1 text-[9px] tracking-widest uppercase text-primary mb-0.5">
+                                <Flame size={10} /> Kostnad
+                              </div>
+                              <div className="text-sm font-semibold text-foreground">
+                                {r.cost}
+                              </div>
+                            </div>
+                            <div className="col-span-2 bg-secondary/50 rounded-sm p-2 border border-border/60">
+                              <div className="flex items-center gap-1 text-[9px] tracking-widest uppercase text-primary mb-0.5">
+                                <Users size={10} /> Popularitet
+                              </div>
+                              <div className="text-xs text-foreground/85">{r.popularity}</div>
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-[9px] tracking-widest uppercase text-primary mb-1.5">
+                              Hvor du kan se den
+                            </div>
+                            <div className="flex flex-wrap gap-1.5">
+                              {r.streaming.map((s) => (
+                                <span
+                                  key={s}
+                                  className="px-2 py-1 rounded-sm bg-primary/10 border border-primary/40 text-primary text-[10px]"
+                                >
+                                  {s}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
             </ol>
             <p className="text-[10px] text-muted-foreground italic mt-3">
-              * GoT-universet har (ennå) ingen kinofilm — listen viser cast-medlemmenes mest kjente
-              filmroller.
+              Spin-off, dokumentarer og animerte tilleggsserier fra Westeros-universet.
             </p>
           </div>
         </div>
       </section>
+
 
       {/* SAGA LIST */}
       <section className="container mx-auto px-4 py-12 border-t border-border">
