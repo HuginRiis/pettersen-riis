@@ -632,52 +632,57 @@ function ShoppingListPanel({
             return (
               <li
                 key={f.id}
-                className={`flex items-center gap-2 px-4 py-2 text-sm ${
-                  f.checked ? "opacity-50 line-through" : ""
-                }`}
+                className="flex items-center gap-2 px-2 py-1"
               >
+                {/* Stort tappebart område: hak + bilde + navn */}
                 <button
                   type="button"
                   onClick={() => onToggleChecked(f.id, !f.checked)}
-                  className={`w-5 h-5 shrink-0 rounded border flex items-center justify-center transition-colors ${
-                    f.checked
-                      ? "bg-primary border-primary text-primary-foreground"
-                      : "border-border hover:border-primary"
+                  className={`flex-1 min-w-0 flex items-center gap-2 text-left text-sm py-2 px-2 -mx-2 rounded-md hover:bg-accent/30 active:bg-accent/40 transition-colors ${
+                    f.checked ? "opacity-50" : ""
                   }`}
                   aria-label={f.checked ? "Hak av som ikke kjøpt" : "Hak av som kjøpt"}
                 >
-                  {f.checked && <Check size={12} />}
-                </button>
-                {f.image_url && !f.manual ? (
-                  <img
-                    src={f.image_url}
-                    alt=""
-                    className="w-6 h-6 rounded object-contain bg-background/40 shrink-0"
-                  />
-                ) : null}
-                <div className="flex-1 min-w-0">
-                  <div className="truncate">
-                    {f.name}
-                    {f.manual && (
-                      <span className="ml-2 text-[9px] uppercase tracking-widest text-muted-foreground">
-                        manuelt
+                  <span
+                    className={`w-6 h-6 shrink-0 rounded border flex items-center justify-center transition-colors ${
+                      f.checked
+                        ? "bg-primary border-primary text-primary-foreground"
+                        : "border-border"
+                    }`}
+                  >
+                    {f.checked && <Check size={14} />}
+                  </span>
+                  {f.image_url && !f.manual ? (
+                    <img
+                      src={f.image_url}
+                      alt=""
+                      className="w-7 h-7 rounded object-contain bg-background/40 shrink-0"
+                    />
+                  ) : null}
+                  <span className="flex-1 min-w-0">
+                    <span className={`block truncate ${f.checked ? "line-through" : ""}`}>
+                      {f.name}
+                      {f.manual && (
+                        <span className="ml-2 text-[9px] uppercase tracking-widest text-muted-foreground">
+                          manuelt
+                        </span>
+                      )}
+                    </span>
+                    {f.brand && !f.manual && (
+                      <span className="block text-[10px] text-muted-foreground/80 truncate">
+                        {f.brand}
                       </span>
                     )}
-                  </div>
-                  {f.brand && !f.manual && (
-                    <div className="text-[10px] text-muted-foreground/80 truncate">
-                      {f.brand}
-                    </div>
-                  )}
-                </div>
+                  </span>
+                </button>
 
                 {/* Antall +/- */}
-                <div className="flex items-center gap-1 shrink-0 no-underline">
+                <div className="flex items-center gap-1 shrink-0">
                   <button
                     type="button"
                     onClick={() => onChangeQuantity(f.id, Math.max(1, qty - 1))}
                     disabled={qty <= 1}
-                    className="w-6 h-6 rounded border border-border text-muted-foreground hover:text-primary hover:border-primary disabled:opacity-30 disabled:hover:text-muted-foreground disabled:hover:border-border flex items-center justify-center text-sm leading-none"
+                    className="w-7 h-7 rounded border border-border text-muted-foreground hover:text-primary hover:border-primary disabled:opacity-30 disabled:hover:text-muted-foreground disabled:hover:border-border flex items-center justify-center text-base leading-none"
                     aria-label="Færre"
                   >
                     −
@@ -688,7 +693,7 @@ function ShoppingListPanel({
                   <button
                     type="button"
                     onClick={() => onChangeQuantity(f.id, qty + 1)}
-                    className="w-6 h-6 rounded border border-border text-muted-foreground hover:text-primary hover:border-primary flex items-center justify-center text-sm leading-none"
+                    className="w-7 h-7 rounded border border-border text-muted-foreground hover:text-primary hover:border-primary flex items-center justify-center text-base leading-none"
                     aria-label="Flere"
                   >
                     +
@@ -696,14 +701,18 @@ function ShoppingListPanel({
                 </div>
 
                 {lineTotal != null && (
-                  <span className="text-xs font-display text-primary shrink-0 tabular-nums w-20 text-right">
+                  <span
+                    className={`text-xs font-display text-primary shrink-0 tabular-nums w-16 text-right ${
+                      f.checked ? "opacity-50 line-through" : ""
+                    }`}
+                  >
                     {fmtPrice(lineTotal)}
                   </span>
                 )}
                 <button
                   type="button"
                   onClick={() => onRemove(f.id)}
-                  className="text-muted-foreground hover:text-destructive p-1 shrink-0"
+                  className="text-muted-foreground hover:text-destructive p-1.5 shrink-0"
                   aria-label="Fjern"
                 >
                   <Trash2 size={14} />
