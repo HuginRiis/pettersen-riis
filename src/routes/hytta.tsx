@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { PageShell } from "@/components/PageShell";
 import { HyttaHero } from "@/components/HyttaHero";
+import { HyttaChecklist } from "@/components/HyttaChecklist";
 import { NetatmoWeatherStationSection } from "@/components/NetatmoWeatherStation";
 import { HeatersPanel } from "@/components/HeatersPanel";
 
@@ -116,6 +117,8 @@ function HyttaPage() {
         subtitle="Bortenfor fjordene venter peisens varme"
         image={hyttaImg}
       />
+
+      <HyttaChecklist />
 
       <section className="container mx-auto px-4 py-12 grid md:grid-cols-3 gap-8">
         <div className="md:col-span-2 space-y-5">
