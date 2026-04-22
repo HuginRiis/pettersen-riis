@@ -81,11 +81,11 @@ export const getTripSuggestions = createServerFn({ method: "POST" })
     const authenticated = await isHouseAuthenticated();
     const model = "google/gemini-3-flash-preview";
 
-    // Uinnloggede besøkende får 1 AI-søk per kalenderdøgn (UTC).
+    // Uinnloggede besøkende får 5 AI-søk per rullerende uke per IP.
     if (!authenticated) {
       const ip = readClientIp();
-      const limit = await canUseAiToday(ip);
-      if (!limit.allowed) {
+      const quota = await getWeeklyQuotaForIp(ip, "turer");
+      if (quota.remaining <= 0) {
         await logAiSearch({
           feature: "turer",
           query: data.location,
@@ -93,10 +93,17 @@ export const getTripSuggestions = createServerFn({ method: "POST" })
           authenticated: false,
           status: "rate_limited",
         });
+        const resetTxt = quota.resetAt
+          ? new Date(quota.resetAt).toLocaleString("nb-NO", {
+              day: "2-digit",
+              month: "short",
+              hour: "2-digit",
+              minute: "2-digit",
+            })
+          : "om en uke";
         return {
           ok: false,
-          error:
-            "Du har brukt dagens gratis AI-søk. Logg inn på huset for ubegrenset bruk, eller prøv igjen i morgen.",
+          error: `Du har brukt dine ${PUBLIC_WEEKLY_LIMIT} gratis ferd-søk denne uken. Logg inn på huset for ubegrenset bruk, eller prøv igjen ${resetTxt}.`,
         };
       }
     }
