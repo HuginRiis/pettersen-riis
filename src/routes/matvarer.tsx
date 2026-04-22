@@ -343,7 +343,7 @@ function MatvarerPage() {
           favorites={favorites}
           loading={favLoading}
           onToggleChecked={(id, checked) => updateFavorite(id, { checked })}
-          onChangeCategory={(id, category) => updateFavorite(id, { category })}
+          onChangeQuantity={(id, quantity) => updateFavorite(id, { quantity })}
           onRemove={removeFavoriteById}
           onAddManual={addManualItem}
           onClearChecked={clearChecked}
