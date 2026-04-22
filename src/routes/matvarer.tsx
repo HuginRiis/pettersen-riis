@@ -596,7 +596,7 @@ function ShoppingListPanel({
 
   return (
     <div className="rounded-lg border border-border bg-card">
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-border">
+      <div className="flex items-center gap-3 px-4 py-3 border-b border-border flex-wrap">
         <ListChecks size={18} className="text-primary" />
         <h2 className="text-display tracking-[0.2em] text-primary text-sm uppercase">
           Husets handleliste
@@ -604,7 +604,20 @@ function ShoppingListPanel({
         <span className="text-xs text-muted-foreground">
           {checkedCount}/{totalCount} kjøpt
         </span>
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex items-center gap-3">
+          <div className="text-right">
+            <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
+              Total å handle
+            </div>
+            <div className="text-base font-display text-primary leading-tight">
+              {fmtPrice(totalSum)}
+            </div>
+            {checkedSum > 0 && (
+              <div className="text-[10px] text-muted-foreground">
+                Kjøpt: {fmtPrice(checkedSum)}
+              </div>
+            )}
+          </div>
           <button
             type="button"
             onClick={() => setHideChecked((v) => !v)}
@@ -652,6 +665,13 @@ function ShoppingListPanel({
           placeholder="Enhet"
           className="w-24 h-9"
         />
+        <Input
+          value={manualPrice}
+          onChange={(e) => setManualPrice(e.target.value)}
+          placeholder="kr/stk"
+          className="w-24 h-9"
+          inputMode="decimal"
+        />
         <Select value={manualCategory} onValueChange={setManualCategory}>
           <SelectTrigger className="w-[160px] h-9 text-sm">
             <SelectValue />
@@ -679,81 +699,109 @@ function ShoppingListPanel({
         </p>
       ) : (
         <div className="divide-y divide-border">
-          {grouped.map(([category, items]) => (
-            <div key={category} className="px-4 py-3">
-              <div className="text-[10px] uppercase tracking-widest text-primary/80 mb-2">
-                {category} · {items.length}
+          {grouped.map(([category, items]) => {
+            const subtotal = items
+              .filter((f) => !f.checked && f.price_nok != null)
+              .reduce((s, f) => s + (f.price_nok ?? 0) * (f.quantity ?? 1), 0);
+            return (
+              <div key={category} className="px-4 py-3">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-[10px] uppercase tracking-widest text-primary/80">
+                    {category} · {items.length}
+                  </div>
+                  {subtotal > 0 && (
+                    <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                      {fmtPrice(subtotal)}
+                    </div>
+                  )}
+                </div>
+                <ul className="space-y-1.5">
+                  {items.map((f) => {
+                    const lineTotal =
+                      f.price_nok != null ? f.price_nok * (f.quantity ?? 1) : null;
+                    return (
+                      <li
+                        key={f.id}
+                        className={`flex items-center gap-2 text-sm ${
+                          f.checked ? "opacity-50 line-through" : ""
+                        }`}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => onToggleChecked(f.id, !f.checked)}
+                          className={`w-5 h-5 shrink-0 rounded border flex items-center justify-center transition-colors ${
+                            f.checked
+                              ? "bg-primary border-primary text-primary-foreground"
+                              : "border-border hover:border-primary"
+                          }`}
+                          aria-label={f.checked ? "Hak av som ikke kjøpt" : "Hak av som kjøpt"}
+                        >
+                          {f.checked && <Check size={12} />}
+                        </button>
+                        {f.image_url && !f.manual ? (
+                          <img
+                            src={f.image_url}
+                            alt=""
+                            className="w-6 h-6 rounded object-contain bg-background/40 shrink-0"
+                          />
+                        ) : null}
+                        <div className="flex-1 min-w-0">
+                          <div className="truncate">
+                            {f.name}
+                            {f.quantity != null && (
+                              <span className="text-muted-foreground">
+                                {" "}
+                                · {f.quantity}
+                                {f.unit ? ` ${f.unit}` : ""}
+                              </span>
+                            )}
+                            {f.manual && (
+                              <span className="ml-2 text-[9px] uppercase tracking-widest text-muted-foreground">
+                                manuelt
+                              </span>
+                            )}
+                          </div>
+                          {f.kassal_category && (
+                            <div className="text-[10px] text-muted-foreground/80">
+                              {f.kassal_category}
+                            </div>
+                          )}
+                        </div>
+                        {lineTotal != null && (
+                          <span className="text-xs font-display text-primary shrink-0 tabular-nums">
+                            {fmtPrice(lineTotal)}
+                          </span>
+                        )}
+                        <Select
+                          value={f.category}
+                          onValueChange={(v) => onChangeCategory(f.id, v)}
+                        >
+                          <SelectTrigger className="h-7 w-[130px] text-xs shrink-0">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {CATEGORIES.map((c) => (
+                              <SelectItem key={c} value={c} className="text-xs">
+                                {c}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <button
+                          type="button"
+                          onClick={() => onRemove(f.id)}
+                          className="text-muted-foreground hover:text-destructive p-1 shrink-0"
+                          aria-label="Fjern"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
               </div>
-              <ul className="space-y-1.5">
-                {items.map((f) => (
-                  <li
-                    key={f.id}
-                    className={`flex items-center gap-2 text-sm ${
-                      f.checked ? "opacity-50 line-through" : ""
-                    }`}
-                  >
-                    <button
-                      type="button"
-                      onClick={() => onToggleChecked(f.id, !f.checked)}
-                      className={`w-5 h-5 shrink-0 rounded border flex items-center justify-center transition-colors ${
-                        f.checked
-                          ? "bg-primary border-primary text-primary-foreground"
-                          : "border-border hover:border-primary"
-                      }`}
-                      aria-label={f.checked ? "Hak av som ikke kjøpt" : "Hak av som kjøpt"}
-                    >
-                      {f.checked && <Check size={12} />}
-                    </button>
-                    {f.image_url && !f.manual ? (
-                      <img
-                        src={f.image_url}
-                        alt=""
-                        className="w-6 h-6 rounded object-contain bg-background/40 shrink-0"
-                      />
-                    ) : null}
-                    <span className="flex-1 truncate">
-                      {f.name}
-                      {f.quantity != null && (
-                        <span className="text-muted-foreground">
-                          {" "}
-                          · {f.quantity}
-                          {f.unit ? ` ${f.unit}` : ""}
-                        </span>
-                      )}
-                      {f.manual && (
-                        <span className="ml-2 text-[9px] uppercase tracking-widest text-muted-foreground">
-                          manuelt
-                        </span>
-                      )}
-                    </span>
-                    <Select
-                      value={f.category}
-                      onValueChange={(v) => onChangeCategory(f.id, v)}
-                    >
-                      <SelectTrigger className="h-7 w-[130px] text-xs shrink-0">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {CATEGORIES.map((c) => (
-                          <SelectItem key={c} value={c} className="text-xs">
-                            {c}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <button
-                      type="button"
-                      onClick={() => onRemove(f.id)}
-                      className="text-muted-foreground hover:text-destructive p-1 shrink-0"
-                      aria-label="Fjern"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
