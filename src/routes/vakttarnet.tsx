@@ -127,7 +127,13 @@ function VakttarnetPage() {
       />
 
       <section className="container mx-auto px-3 sm:px-4 py-6 sm:py-10 space-y-6 sm:space-y-10">
-        <StatsCards sessions={sessions} pageviews={pageviews} attempts={attempts} />
+        <StatsCards
+          sessions={sessions}
+          pageviews={pageviews}
+          attempts={attempts}
+          totalPageviews={totalPageviews}
+          totalSouls={totalSouls}
+        />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
           <Panel
