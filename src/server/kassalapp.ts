@@ -91,52 +91,103 @@ export const searchGroceryProducts = createServerFn({ method: "POST" })
     };
     const items = Array.isArray(json?.data) ? json.data : [];
 
-    const rows: StorePriceRow[] = items.map((p: any) => {
-      const price =
-        typeof p?.current_price === "number"
-          ? p.current_price
-          : typeof p?.price === "number"
-            ? p.price
-            : null;
-      return {
-        productId: Number(p?.id ?? 0),
-        storeName: p?.store?.name ?? p?.store ?? "Ukjent butikk",
-        storeLogo: p?.store?.logo ?? null,
-        productName: p?.name ?? "Ukjent vare",
-        brand: p?.brand ?? null,
-        image: p?.image ?? null,
-        ean: p?.ean ?? null,
-        price,
-        unitPrice: typeof p?.current_unit_price === "number" ? p.current_unit_price : null,
-        url: p?.url ?? null,
-      };
-    });
-
-    // Grupper på EAN (eller normalisert navn hvis EAN mangler) og hold kun
-    // billigste pris per butikk innen samme produkt.
-    const groups = new Map<
-      string,
-      { ean: string | null; name: string; brand: string | null; image: string | null; rows: StorePriceRow[] }
-    >();
-    for (const r of rows) {
-      const key = r.ean ?? `name:${r.productName.toLowerCase().trim()}`;
+    // Første pass: bygg én rad pr produkt-treff. Vi grupperer på EAN
+    // (eller navn hvis EAN mangler).
+    type Group = {
+      ean: string | null;
+      name: string;
+      brand: string | null;
+      image: string | null;
+      rows: StorePriceRow[];
+    };
+    const groups = new Map<string, Group>();
+    for (const p of items) {
+      const ean: string | null = p?.ean ?? null;
+      const productName: string = p?.name ?? "Ukjent vare";
+      const brand: string | null = p?.brand ?? null;
+      const image: string | null = p?.image ?? null;
+      const key = ean ?? `name:${productName.toLowerCase().trim()}`;
       const g =
         groups.get(key) ??
-        { ean: r.ean, name: r.productName, brand: r.brand, image: r.image, rows: [] as StorePriceRow[] };
-      // Bare billigste pr butikk
-      const existing = g.rows.find((x) => x.storeName === r.storeName);
-      if (!existing) g.rows.push(r);
-      else if ((r.price ?? Infinity) < (existing.price ?? Infinity)) {
-        Object.assign(existing, r);
+        ({ ean, name: productName, brand, image, rows: [] } as Group);
+      if (!g.image && image) g.image = image;
+      if (!g.brand && brand) g.brand = brand;
+
+      const cp = p?.current_price;
+      const price =
+        typeof cp === "number"
+          ? cp
+          : typeof cp?.price === "number"
+            ? cp.price
+            : typeof p?.price === "number"
+              ? p.price
+              : null;
+      const storeName: string =
+        (typeof p?.store === "string" ? p.store : p?.store?.name) ??
+        p?.vendor ??
+        "Ukjent butikk";
+      const row: StorePriceRow = {
+        productId: Number(p?.id ?? 0),
+        storeName,
+        storeLogo: typeof p?.store === "object" ? p?.store?.logo ?? null : null,
+        productName,
+        brand,
+        image,
+        ean,
+        price,
+        unitPrice:
+          typeof p?.current_unit_price === "number" ? p.current_unit_price : null,
+        url: p?.url ?? null,
+      };
+      const existing = g.rows.find((x) => x.storeName === row.storeName);
+      if (!existing) g.rows.push(row);
+      else if ((row.price ?? Infinity) < (existing.price ?? Infinity)) {
+        Object.assign(existing, row);
       }
       groups.set(key, g);
     }
+
+    // /products?search returnerer ofte BARE ett produkt pr EAN — vanligvis
+    // Meny eller Spar — selv om varen finnes på Rema 1000 og Kiwi. Slå derfor
+    // opp hver EAN via /products/ean/{ean} for å få ALLE butikker.
+    const enrichTargets = Array.from(groups.values())
+      .filter((g) => g.ean)
+      .slice(0, 18); // begrense for å holde latency nede
+    await Promise.all(
+      enrichTargets.map(async (g) => {
+        const products = await fetchEanProducts(g.ean as string);
+        for (const p of products) {
+          const existing = g.rows.find((x) => x.storeName === p.store);
+          const row: StorePriceRow = {
+            productId: 0,
+            storeName: p.store,
+            storeLogo: null,
+            productName: g.name,
+            brand: g.brand,
+            image: g.image,
+            ean: g.ean,
+            price: p.price,
+            unitPrice: null,
+            url: p.url,
+          };
+          if (!existing) g.rows.push(row);
+          else if (
+            existing.price == null ||
+            (p.price != null && p.price < existing.price)
+          ) {
+            Object.assign(existing, { ...existing, price: p.price, url: p.url });
+          }
+        }
+      }),
+    );
 
     const products = Array.from(groups.values()).map((g) => {
       const sorted = [...g.rows].sort(
         (a, b) => (a.price ?? Infinity) - (b.price ?? Infinity),
       );
       const cheapest = sorted.find((r) => r.price != null) ?? null;
+      const remaRow =
+        sorted.find((r) => /rema/i.test(r.storeName) && r.price != null) ?? null;
       return {
         ean: g.ean,
         name: g.name,
@@ -144,15 +195,21 @@ export const searchGroceryProducts = createServerFn({ method: "POST" })
         image: g.image,
         cheapestPrice: cheapest?.price ?? null,
         cheapestStore: cheapest?.storeName ?? null,
-        storeCount: sorted.length,
+        remaPrice: remaRow?.price ?? null,
+        storeCount: sorted.filter((r) => r.price != null).length,
         rows: sorted,
       };
     });
 
-    // Sorter produktgrupper etter billigste pris
-    products.sort(
-      (a, b) => (a.cheapestPrice ?? Infinity) - (b.cheapestPrice ?? Infinity),
-    );
+    // Sorter: Rema-varer først (etter Rema-pris), deretter resten etter billigste pris.
+    products.sort((a, b) => {
+      const aHasRema = a.remaPrice != null ? 0 : 1;
+      const bHasRema = b.remaPrice != null ? 0 : 1;
+      if (aHasRema !== bHasRema) return aHasRema - bHasRema;
+      const aPrice = a.remaPrice ?? a.cheapestPrice ?? Infinity;
+      const bPrice = b.remaPrice ?? b.cheapestPrice ?? Infinity;
+      return aPrice - bPrice;
+    });
 
     return { products };
   });
