@@ -11,6 +11,8 @@ import {
   ShoppingBasket,
   X,
   ScanLine,
+  LineChart as LineChartIcon,
+  EyeOff,
 } from "lucide-react";
 import {
   ResponsiveContainer,
