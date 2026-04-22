@@ -131,6 +131,7 @@ function MatvarerPage() {
   const [favorites, setFavorites] = useState<GroceryFavorite[]>([]);
   const [favHistory, setFavHistory] = useState<BulkHistory[]>([]);
   const [favLoading, setFavLoading] = useState(true);
+  const [scannerOpen, setScannerOpen] = useState(false);
 
   // ── Favoritter (Lovable Cloud) ─────────────────────────────────────
   const loadFavorites = async () => {
