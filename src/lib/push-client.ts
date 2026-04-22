@@ -1,0 +1,139 @@
+/**
+ * Klient-side hjelper for Web Push abonnement.
+ * Bruker localStorage for å huske valgt person på enheten.
+ */
+import { supabase } from "@/integrations/supabase/client";
+
+const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY as string | undefined;
+const WHO_KEY = "agenda_push_who";
+
+export type Who = "Alle" | "Arne" | "Rebekka" | "Marita" | "Nora" | "Celine" | "Mira";
+
+export function getStoredWho(): Who {
+  if (typeof window === "undefined") return "Alle";
+  return ((localStorage.getItem(WHO_KEY) as Who) || "Alle");
+}
+
+export function setStoredWho(w: Who) {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(WHO_KEY, w);
+}
+
+export function isPushSupported() {
+  return (
+    typeof window !== "undefined" &&
+    "serviceWorker" in navigator &&
+    "PushManager" in window &&
+    "Notification" in window
+  );
+}
+
+function urlBase64ToUint8Array(base64String: string) {
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const rawData = atob(base64);
+  const out = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) out[i] = rawData.charCodeAt(i);
+  return out;
+}
+
+async function getRegistration(): Promise<ServiceWorkerRegistration> {
+  const existing = await navigator.serviceWorker.getRegistration("/sw.js");
+  if (existing) return existing;
+  return navigator.serviceWorker.register("/sw.js");
+}
+
+export async function getSubscriptionStatus(): Promise<"granted" | "denied" | "default" | "unsupported"> {
+  if (!isPushSupported()) return "unsupported";
+  return Notification.permission;
+}
+
+export async function isCurrentlySubscribed(): Promise<boolean> {
+  if (!isPushSupported()) return false;
+  try {
+    const reg = await navigator.serviceWorker.getRegistration("/sw.js");
+    if (!reg) return false;
+    const sub = await reg.pushManager.getSubscription();
+    return !!sub;
+  } catch {
+    return false;
+  }
+}
+
+export async function subscribePush(who: Who): Promise<{ ok: boolean; error?: string }> {
+  if (!isPushSupported()) return { ok: false, error: "Enheten støtter ikke push-varsler." };
+  if (!VAPID_PUBLIC_KEY) return { ok: false, error: "VAPID public key mangler i miljøvariabler." };
+
+  const permission = await Notification.requestPermission();
+  if (permission !== "granted") return { ok: false, error: "Du må tillate varsler i nettleseren." };
+
+  const reg = await getRegistration();
+  await navigator.serviceWorker.ready;
+
+  let sub = await reg.pushManager.getSubscription();
+  if (!sub) {
+    sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+    });
+  }
+
+  const json = sub.toJSON();
+  const endpoint = json.endpoint!;
+  const p256dh = json.keys?.p256dh!;
+  const auth = json.keys?.auth!;
+
+  // Upsert via endpoint (unique)
+  const { error } = await supabase
+    .from("push_subscriptions")
+    .upsert(
+      {
+        endpoint,
+        p256dh,
+        auth,
+        who,
+        user_agent: navigator.userAgent,
+        last_used_at: new Date().toISOString(),
+      },
+      { onConflict: "endpoint" }
+    );
+
+  if (error) return { ok: false, error: error.message };
+  setStoredWho(who);
+  return { ok: true };
+}
+
+export async function unsubscribePush(): Promise<{ ok: boolean; error?: string }> {
+  if (!isPushSupported()) return { ok: false, error: "Enheten støtter ikke push-varsler." };
+  try {
+    const reg = await navigator.serviceWorker.getRegistration("/sw.js");
+    if (!reg) return { ok: true };
+    const sub = await reg.pushManager.getSubscription();
+    if (!sub) return { ok: true };
+    const endpoint = sub.endpoint;
+    await sub.unsubscribe();
+    await supabase.from("push_subscriptions").delete().eq("endpoint", endpoint);
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: String(e) };
+  }
+}
+
+export async function updateSubscriptionWho(who: Who): Promise<{ ok: boolean; error?: string }> {
+  if (!isPushSupported()) return { ok: false, error: "Enheten støtter ikke push-varsler." };
+  try {
+    const reg = await navigator.serviceWorker.getRegistration("/sw.js");
+    if (!reg) return { ok: false, error: "Ingen service worker" };
+    const sub = await reg.pushManager.getSubscription();
+    if (!sub) return { ok: false, error: "Ikke abonnert" };
+    const { error } = await supabase
+      .from("push_subscriptions")
+      .update({ who, last_used_at: new Date().toISOString() })
+      .eq("endpoint", sub.endpoint);
+    if (error) return { ok: false, error: error.message };
+    setStoredWho(who);
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: String(e) };
+  }
+}
