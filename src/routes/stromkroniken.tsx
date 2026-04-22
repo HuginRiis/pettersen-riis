@@ -57,14 +57,17 @@ export const Route = createFileRoute("/stromkroniken")({
 
 function StromkronikenPage() {
   const fetchData = useServerFn(getPowerByTheHour);
+  const fetchSpot = useServerFn(getSpotPrices);
   const [state, setState] = useState<PbthResult | null>(null);
+  const [spot, setSpot] = useState<SpotPriceResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [updated, setUpdated] = useState<Date | null>(null);
 
   const load = async () => {
     try {
-      const res = await fetchData();
+      const [res, spotRes] = await Promise.all([fetchData(), fetchSpot()]);
       setState(res);
+      setSpot(spotRes);
       setUpdated(new Date());
     } catch (err) {
       console.error("[Stromkroniken] failed", err);
@@ -80,6 +83,8 @@ function StromkronikenPage() {
     return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const spotNow = spot && spot.ok ? spot.priceNow : null;
 
   return (
     <PageShell>
@@ -116,6 +121,14 @@ function StromkronikenPage() {
                 <span className="text-primary">
                   {updated?.toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit" }) ?? "—"}
                 </span>
+                {spot && spot.ok && (
+                  <>
+                    {" · "}
+                    <span className="text-foreground/70">
+                      Spotpris NO2 fra Nord Pool
+                    </span>
+                  </>
+                )}
               </p>
               <button
                 onClick={() => {
@@ -132,11 +145,13 @@ function StromkronikenPage() {
               title="Borgen · Nordre Lensmannsveg 17"
               eyebrow="Husets sete"
               data={state.borgen}
+              spotNow={spotNow}
             />
             <HomeBlock
               title="Hytta · Øvre Bjørkesetvegen 222"
               eyebrow="Vinterboligen"
               data={state.hytta}
+              spotNow={spotNow}
             />
 
             <ComparisonBlock borgen={state.borgen} hytta={state.hytta} />
