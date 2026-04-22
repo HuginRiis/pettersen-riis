@@ -55,7 +55,7 @@ export const Route = createRootRoute({
       { name: "twitter:title", content: "Arne & Rebekka av Skien" },
       { property: "og:description", content: "Den digitale storsalen til Arne Pettersen Riis og Rebekka Riis Pettersen i Skien." },
       { name: "twitter:description", content: "Den digitale storsalen til Arne Pettersen Riis og Rebekka Riis Pettersen i Skien." },
-      { name: "apple-mobile-web-app-title", content: "Pettersen Riis" },
+      { name: "apple-mobile-web-app-title", content: "Skien´s huset" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
       { name: "theme-color", content: "#1a1d24" },
