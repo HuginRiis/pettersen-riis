@@ -827,6 +827,7 @@ export const getOutdoorLightsStatus = createServerFn({ method: "GET" }).handler(
         const virt = d?.virtualClass;
         const isLight = cls === "light" || virt === "light";
         if (!isLight) return false;
+        if (!isPhilipsHueBulb(d)) return false;
         const caps = d?.capabilitiesObj ?? d?.capabilities_obj ?? {};
         if (!caps || typeof caps !== "object" || !("onoff" in caps)) return false;
         const inOutdoorZone = d?.zone && outdoorZoneIds.has(d.zone);
@@ -879,6 +880,7 @@ export const setAllOutdoorLights = createServerFn({ method: "POST" })
         const virt = d?.virtualClass;
         const isLight = cls === "light" || virt === "light";
         if (!isLight) return false;
+        if (!isPhilipsHueBulb(d)) return false;
         const caps = d?.capabilitiesObj ?? d?.capabilities_obj ?? {};
         if (!caps || typeof caps !== "object" || !("onoff" in caps)) return false;
         const inOutdoorZone = d?.zone && outdoorZoneIds.has(d.zone);
