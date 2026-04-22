@@ -425,7 +425,7 @@ function MatvarerPage() {
                 key={(g.ean ?? g.name) + idx}
                 group={g}
                 onOpen={() => openProduct(g)}
-                onAddToList={() => toggleFavorite(g, defaultCategory)}
+                onAddToList={() => toggleFavorite(g)}
                 isFav={isFav(g.ean)}
               />
             ))}
