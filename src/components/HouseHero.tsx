@@ -205,9 +205,7 @@ export function HouseHero({
                   <span className="text-foreground font-semibold">
                     {counts.online}
                   </span>
-                  <span className="text-muted-foreground">
-                    nå ({counts.onlineSessions} økt{counts.onlineSessions === 1 ? "" : "er"})
-                  </span>
+                  <span className="text-muted-foreground">nå</span>
                   <span className="text-primary/40 mx-0.5">·</span>
                   <Users size={12} className="text-primary" />
                   <span className="text-foreground font-semibold">
