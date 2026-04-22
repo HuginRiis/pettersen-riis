@@ -395,7 +395,7 @@ function MatvarerPage() {
             </Button>
           </form>
 
-          {/* Filter-rad: Rema-only + standard kategori for nye varer */}
+          {/* Filter-rad: Rema-only */}
           <div className="mt-4 flex flex-wrap items-center gap-3">
             <button
               type="button"
@@ -410,21 +410,6 @@ function MatvarerPage() {
               <Filter size={12} />
               Kun Rema 1000
             </button>
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <span className="uppercase tracking-widest">Legg til i kategori</span>
-              <Select value={defaultCategory} onValueChange={setDefaultCategory}>
-                <SelectTrigger className="h-8 w-[160px] text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {CATEGORIES.map((c) => (
-                    <SelectItem key={c} value={c} className="text-xs">
-                      {c}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
           </div>
         </div>
 
