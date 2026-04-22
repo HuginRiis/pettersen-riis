@@ -101,6 +101,7 @@ function TurerPage() {
       const res = await fetchSuggestions({ data: { location: loc, category } });
       if (!res.ok) {
         setState({ kind: "error", message: res.error });
+        refreshQuota();
         return;
       }
       setState({
@@ -109,11 +110,13 @@ function TurerPage() {
         locationLabel: res.locationLabel,
         category,
       });
+      refreshQuota();
     } catch (err) {
       setState({
         kind: "error",
         message: err instanceof Error ? err.message : "Ukjent feil.",
       });
+      refreshQuota();
     }
   };
 
