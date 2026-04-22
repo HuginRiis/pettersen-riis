@@ -10,6 +10,7 @@ import {
   TrendingDown,
   ShoppingBasket,
   X,
+  ScanLine,
 } from "lucide-react";
 import {
   ResponsiveContainer,
