@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import { PageShell, PageHero } from "@/components/PageShell";
 import { getPowerByTheHour, type PbthHomeData, type PbthResult } from "@/server/power-by-the-hour";
+import { getSpotPrices, type SpotPriceResult } from "@/server/spot-price";
 import stromImg from "@/assets/stromkroniken.jpg";
 
 export const Route = createFileRoute("/stromkroniken")({
