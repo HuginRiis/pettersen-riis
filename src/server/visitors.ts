@@ -409,24 +409,40 @@ export const getVisitorCounts = createServerFn({ method: "GET" }).handler(
     startOfDay.setHours(0, 0, 0, 0);
     const onlineCutoff = new Date(Date.now() - 5 * 60 * 1000).toISOString();
 
-    const [totalRes, todayRes, onlineRes] = await Promise.all([
+    // Hent alle økter med IP og tidsstempler. Vi teller unike IP-er
+    // (= unike sjeler), ikke økter, slik at samme person som besøker
+    // fra to nettlesere/enheter ikke blir telt dobbelt.
+    // Økter uten IP (lokale/private) faller tilbake på client_session_id.
+    const [allRes, todayRes, onlineRes] = await Promise.all([
       supabaseAdmin
         .from("visitor_sessions" as any)
-        .select("id", { count: "exact", head: true }),
+        .select("ip, client_session_id")
+        .limit(50000),
       supabaseAdmin
         .from("visitor_sessions" as any)
-        .select("id", { count: "exact", head: true })
-        .gte("started_at", startOfDay.toISOString()),
+        .select("ip, client_session_id")
+        .gte("started_at", startOfDay.toISOString())
+        .limit(50000),
       supabaseAdmin
         .from("visitor_sessions" as any)
-        .select("id", { count: "exact", head: true })
-        .gte("last_seen_at", onlineCutoff),
+        .select("ip, client_session_id")
+        .gte("last_seen_at", onlineCutoff)
+        .limit(50000),
     ]);
 
+    function uniqueSouls(rows: Array<{ ip: string | null; client_session_id: string }> | null) {
+      if (!rows) return 0;
+      const seen = new Set<string>();
+      for (const r of rows) {
+        seen.add(r.ip && r.ip.length > 0 ? `ip:${r.ip}` : `cs:${r.client_session_id}`);
+      }
+      return seen.size;
+    }
+
     return {
-      total: totalRes.count ?? 0,
-      today: todayRes.count ?? 0,
-      online: onlineRes.count ?? 0,
+      total: uniqueSouls(allRes.data as any),
+      today: uniqueSouls(todayRes.data as any),
+      online: uniqueSouls(onlineRes.data as any),
     };
   },
 );
