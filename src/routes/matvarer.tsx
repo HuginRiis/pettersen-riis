@@ -630,15 +630,12 @@ function ShoppingListPanel({
             const qty = f.quantity ?? 1;
             const lineTotal = f.price_nok != null ? f.price_nok * qty : null;
             return (
-              <li
-                key={f.id}
-                className="flex items-center gap-2 px-2 py-1"
-              >
+              <li key={f.id} className="flex items-center gap-2 px-3 min-h-[56px]">
                 {/* Stort tappebart område: hak + bilde + navn */}
                 <button
                   type="button"
                   onClick={() => onToggleChecked(f.id, !f.checked)}
-                  className={`flex-1 min-w-0 flex items-center gap-2 text-left text-sm py-2 px-2 -mx-2 rounded-md hover:bg-accent/30 active:bg-accent/40 transition-colors ${
+                  className={`flex-1 min-w-0 flex items-center gap-2 text-left text-sm py-3 rounded-md hover:bg-accent/30 active:bg-accent/40 transition-colors ${
                     f.checked ? "opacity-50" : ""
                   }`}
                   aria-label={f.checked ? "Hak av som ikke kjøpt" : "Hak av som kjøpt"}
@@ -677,23 +674,23 @@ function ShoppingListPanel({
                 </button>
 
                 {/* Antall +/- */}
-                <div className="flex items-center gap-1 shrink-0">
+                <div className="flex items-center gap-0.5 shrink-0">
                   <button
                     type="button"
                     onClick={() => onChangeQuantity(f.id, Math.max(1, qty - 1))}
                     disabled={qty <= 1}
-                    className="w-7 h-7 rounded border border-border text-muted-foreground hover:text-primary hover:border-primary disabled:opacity-30 disabled:hover:text-muted-foreground disabled:hover:border-border flex items-center justify-center text-base leading-none"
+                    className="w-9 h-9 rounded border border-border text-muted-foreground hover:text-primary hover:border-primary disabled:opacity-30 disabled:hover:text-muted-foreground disabled:hover:border-border flex items-center justify-center text-lg leading-none"
                     aria-label="Færre"
                   >
                     −
                   </button>
-                  <span className="w-7 text-center text-xs font-display tabular-nums">
+                  <span className="w-7 text-center text-sm font-display tabular-nums">
                     {qty}
                   </span>
                   <button
                     type="button"
                     onClick={() => onChangeQuantity(f.id, qty + 1)}
-                    className="w-7 h-7 rounded border border-border text-muted-foreground hover:text-primary hover:border-primary flex items-center justify-center text-base leading-none"
+                    className="w-9 h-9 rounded border border-border text-muted-foreground hover:text-primary hover:border-primary flex items-center justify-center text-lg leading-none"
                     aria-label="Flere"
                   >
                     +
@@ -702,7 +699,7 @@ function ShoppingListPanel({
 
                 {lineTotal != null && (
                   <span
-                    className={`text-xs font-display text-primary shrink-0 tabular-nums w-16 text-right ${
+                    className={`hidden sm:inline text-xs font-display text-primary shrink-0 tabular-nums w-16 text-right ${
                       f.checked ? "opacity-50 line-through" : ""
                     }`}
                   >
@@ -712,10 +709,10 @@ function ShoppingListPanel({
                 <button
                   type="button"
                   onClick={() => onRemove(f.id)}
-                  className="text-muted-foreground hover:text-destructive p-1.5 shrink-0"
+                  className="text-muted-foreground hover:text-destructive w-9 h-9 flex items-center justify-center shrink-0"
                   aria-label="Fjern"
                 >
-                  <Trash2 size={14} />
+                  <Trash2 size={16} />
                 </button>
               </li>
             );
