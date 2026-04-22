@@ -107,12 +107,31 @@ export function HouseHero({
   const [mounted, setMounted] = useState(false);
   const [now, setNow] = useState<Date | null>(null);
 
+  const [counts, setCounts] = useState<VisitorCounts | null>(null);
+  const fetchCounts = useServerFn(getVisitorCounts);
+
   useEffect(() => {
     setMounted(true);
     setNow(new Date());
     const t = setInterval(() => setNow(new Date()), 60_000);
     return () => clearInterval(t);
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = () =>
+      fetchCounts()
+        .then((c) => {
+          if (!cancelled) setCounts(c);
+        })
+        .catch(() => {});
+    load();
+    const t = setInterval(load, 60_000);
+    return () => {
+      cancelled = true;
+      clearInterval(t);
+    };
+  }, [fetchCounts]);
 
   const season: Season = now ? getSeason(now) : "winter";
   const dayPart: DayPart = now ? getDayPart(now) : "evening";
