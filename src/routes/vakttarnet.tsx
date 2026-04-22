@@ -136,6 +136,14 @@ function VakttarnetPage() {
           totalSouls={totalSouls}
         />
 
+        <Panel
+          title="Borgens porter og låser"
+          icon={<DoorClosed size={14} />}
+          subtitle="Yale Doorman og Verisure rapporterer hva som er åpent og lukket"
+        >
+          <DoorsLocksPanel />
+        </Panel>
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
           <Panel
             title="Vaktens kart"
