@@ -481,3 +481,36 @@ export const reverseGeocode = createServerFn({ method: "POST" })
       };
     }
   });
+
+// ── Kvote + historikk for visningen på /turer ──────────────────────────
+export type TripQuotaInfo = {
+  authenticated: boolean;
+  limit: number;
+  used: number;
+  remaining: number;
+  resetAt: string | null;
+  lastVisitAt: string | null;
+  recent: RecentSearchRow[];
+};
+
+export const getTripQuotaInfo = createServerFn({ method: "GET" }).handler(
+  async (): Promise<TripQuotaInfo> => {
+    const authenticated = await isHouseAuthenticated();
+    const ip = readClientIp();
+    const [quota, lastVisitAt, recent] = await Promise.all([
+      getWeeklyQuotaForIp(ip, "turer"),
+      getLastVisitForIp(ip),
+      // Bare innloggede ser sin egen søkehistorikk.
+      authenticated ? getRecentSearchesForIp(ip, 10) : Promise.resolve([]),
+    ]);
+    return {
+      authenticated,
+      limit: quota.limit,
+      used: quota.used,
+      remaining: authenticated ? quota.limit : quota.remaining,
+      resetAt: quota.resetAt,
+      lastVisitAt,
+      recent,
+    };
+  },
+);
