@@ -535,6 +535,152 @@ function MonthCumulativeChart({ highlights: h }: { highlights: PbthHomeData["hig
 }
 
 // ============================================================
+// Denne måned vs forrige måned — sammenligning dag-for-dag
+// ============================================================
+
+function MonthVsLastMonthChart({ highlights: h }: { highlights: PbthHomeData["highlights"] }) {
+  const thisTotal = h.energyThisMonth;
+  const lastTotal = h.energyLastMonth;
+  const today = h.energyToday ?? 0;
+
+  if ((thisTotal == null || thisTotal <= 0) && (lastTotal == null || lastTotal <= 0)) {
+    return <p className="text-xs text-muted-foreground">Ingen månedsdata tilgjengelig.</p>;
+  }
+
+  const now = new Date();
+  const dayOfMonth = now.getDate();
+  const daysInThis = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const lastMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const daysInLast = new Date(lastMonthDate.getFullYear(), lastMonthDate.getMonth() + 1, 0).getDate();
+
+  const earlier = Math.max(1, dayOfMonth - 1);
+  const beforeToday = Math.max(0, (thisTotal ?? 0) - today);
+  const perEarlier = beforeToday / earlier;
+  const lastPerDay = lastTotal != null ? lastTotal / daysInLast : 0;
+
+  const maxDays = Math.max(daysInThis, daysInLast);
+  const data: Array<{ day: number; "Denne måned": number | null; "Forrige måned": number | null }> = [];
+  let cumThis = 0;
+  let cumLast = 0;
+  for (let d = 1; d <= maxDays; d++) {
+    let thisVal: number | null = null;
+    if (thisTotal != null) {
+      if (d < dayOfMonth) {
+        cumThis += perEarlier;
+        thisVal = Math.round(cumThis * 10) / 10;
+      } else if (d === dayOfMonth) {
+        cumThis = thisTotal;
+        thisVal = Math.round(cumThis * 10) / 10;
+      }
+    }
+    let lastVal: number | null = null;
+    if (lastTotal != null && d <= daysInLast) {
+      cumLast += lastPerDay;
+      lastVal = Math.round(cumLast * 10) / 10;
+    }
+    data.push({ day: d, "Denne måned": thisVal, "Forrige måned": lastVal });
+  }
+
+  const maxKwh = Math.max(thisTotal ?? 0, lastTotal ?? 0);
+  const yMax = Math.ceil(maxKwh / 100) * 100 || 100;
+
+  const lastSameDay = lastTotal != null ? Math.min(dayOfMonth, daysInLast) * lastPerDay : null;
+  const thisSoFar = thisTotal ?? 0;
+  const delta = lastSameDay != null ? thisSoFar - lastSameDay : null;
+  const deltaPct = lastSameDay != null && lastSameDay > 0 ? (delta! / lastSameDay) * 100 : null;
+
+  return (
+    <div className="rounded-xl bg-[oklch(0.18_0.02_270)] p-4 border border-border/40 space-y-3">
+      <div className="flex items-center justify-between flex-wrap gap-2 text-xs">
+        <div className="flex items-center gap-4">
+          <span className="flex items-center gap-1.5 text-foreground/85">
+            <span className="inline-block w-3 h-3 rounded-sm bg-[oklch(0.62_0.22_290)]" />
+            Denne måned: <span className="tabular-nums">{(thisTotal ?? 0).toFixed(0)} kWh</span>
+          </span>
+          <span className="flex items-center gap-1.5 text-foreground/65">
+            <span className="inline-block w-3 h-3 rounded-sm bg-[oklch(0.65_0.04_250)]" />
+            Forrige: <span className="tabular-nums">{(lastTotal ?? 0).toFixed(0)} kWh</span>
+          </span>
+        </div>
+        {delta != null && deltaPct != null && (
+          <span
+            className={`tabular-nums font-medium ${
+              delta < 0 ? "text-[oklch(0.72_0.16_150)]" : "text-[oklch(0.7_0.18_25)]"
+            }`}
+          >
+            {delta < 0 ? "▼" : "▲"} {Math.abs(delta).toFixed(0)} kWh ({deltaPct >= 0 ? "+" : ""}
+            {deltaPct.toFixed(0)}%) mot samme dag forrige måned
+          </span>
+        )}
+      </div>
+      <div className="h-56 w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart data={data} margin={{ top: 8, right: 12, left: -8, bottom: 0 }}>
+            <defs>
+              <linearGradient id="kwhThis" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="oklch(0.62 0.22 290)" stopOpacity={0.55} />
+                <stop offset="100%" stopColor="oklch(0.62 0.22 290)" stopOpacity={0} />
+              </linearGradient>
+              <linearGradient id="kwhLast" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="oklch(0.65 0.04 250)" stopOpacity={0.35} />
+                <stop offset="100%" stopColor="oklch(0.65 0.04 250)" stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid stroke="oklch(0.3 0.02 270)" strokeDasharray="2 4" vertical={false} />
+            <XAxis
+              dataKey="day"
+              tick={{ fill: "oklch(0.65 0.02 270)", fontSize: 11 }}
+              ticks={[1, 5, 9, 13, 17, 21, 25, 29]}
+              axisLine={false}
+              tickLine={false}
+            />
+            <YAxis
+              tick={{ fill: "oklch(0.65 0.02 270)", fontSize: 11 }}
+              width={40}
+              axisLine={false}
+              tickLine={false}
+              domain={[0, yMax]}
+            />
+            <Tooltip
+              contentStyle={{
+                background: "oklch(0.22 0.02 270)",
+                border: "1px solid oklch(0.35 0.02 270)",
+                borderRadius: 6,
+                fontSize: 12,
+              }}
+              labelStyle={{ color: "oklch(0.85 0.02 270)" }}
+              formatter={(v: unknown, name: unknown) =>
+                typeof v === "number" ? [`${v.toFixed(0)} kWh`, String(name)] : ["—", String(name)]
+              }
+              labelFormatter={(d: number) => `Dag ${d}`}
+            />
+            <Area
+              type="monotone"
+              dataKey="Forrige måned"
+              stroke="oklch(0.65 0.04 250)"
+              strokeWidth={2}
+              strokeDasharray="4 4"
+              fill="url(#kwhLast)"
+              connectNulls={false}
+              isAnimationActive={false}
+            />
+            <Area
+              type="monotone"
+              dataKey="Denne måned"
+              stroke="oklch(0.62 0.22 290)"
+              strokeWidth={2.5}
+              fill="url(#kwhThis)"
+              connectNulls={false}
+              isAnimationActive={false}
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
 // Month forecast — projection based on daily pace
 // ============================================================
 
