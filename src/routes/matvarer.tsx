@@ -497,7 +497,7 @@ function ShoppingListPanel({
   favorites,
   loading,
   onToggleChecked,
-  onChangeCategory,
+  onChangeQuantity,
   onRemove,
   onAddManual,
   onClearChecked,
@@ -505,40 +505,25 @@ function ShoppingListPanel({
   favorites: GroceryFavorite[];
   loading: boolean;
   onToggleChecked: (id: string, checked: boolean) => void;
-  onChangeCategory: (id: string, category: string) => void;
+  onChangeQuantity: (id: string, quantity: number) => void;
   onRemove: (id: string) => void;
   onAddManual: (
     name: string,
-    category: string,
     quantity: number | null,
-    unit: string | null,
     price: number | null,
   ) => void;
   onClearChecked: () => void;
 }) {
   const [manualName, setManualName] = useState("");
-  const [manualCategory, setManualCategory] = useState<string>("Annet");
   const [manualQty, setManualQty] = useState("");
-  const [manualUnit, setManualUnit] = useState("");
   const [manualPrice, setManualPrice] = useState("");
   const [hideChecked, setHideChecked] = useState(false);
 
-  const grouped = useMemo(() => {
+  const visible = useMemo(() => {
     const filtered = hideChecked ? favorites.filter((f) => !f.checked) : favorites;
-    const map = new Map<string, GroceryFavorite[]>();
-    for (const f of filtered) {
-      const c = f.category || "Annet";
-      const arr = map.get(c) ?? [];
-      arr.push(f);
-      map.set(c, arr);
-    }
-    const order = new Map<string, number>(
-      CATEGORIES.map((c, i) => [c as string, i] as [string, number]),
-    );
-    return Array.from(map.entries()).sort((a, b) => {
-      const ai = order.get(a[0]) ?? 999;
-      const bi = order.get(b[0]) ?? 999;
-      return ai - bi;
+    return [...filtered].sort((a, b) => {
+      if (a.checked !== b.checked) return a.checked ? 1 : -1;
+      return a.name.localeCompare(b.name, "nb");
     });
   }, [favorites, hideChecked]);
 
@@ -566,14 +551,11 @@ function ShoppingListPanel({
     const price = manualPrice.trim() ? Number(manualPrice.replace(",", ".")) : null;
     onAddManual(
       name,
-      manualCategory,
       Number.isFinite(qty as number) ? (qty as number) : null,
-      manualUnit.trim() || null,
       Number.isFinite(price as number) ? (price as number) : null,
     );
     setManualName("");
     setManualQty("");
-    setManualUnit("");
     setManualPrice("");
   };
 
@@ -643,30 +625,12 @@ function ShoppingListPanel({
           inputMode="decimal"
         />
         <Input
-          value={manualUnit}
-          onChange={(e) => setManualUnit(e.target.value)}
-          placeholder="Enhet"
-          className="w-24 h-9"
-        />
-        <Input
           value={manualPrice}
           onChange={(e) => setManualPrice(e.target.value)}
           placeholder="kr/stk"
           className="w-24 h-9"
           inputMode="decimal"
         />
-        <Select value={manualCategory} onValueChange={setManualCategory}>
-          <SelectTrigger className="w-[160px] h-9 text-sm">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {CATEGORIES.map((c) => (
-              <SelectItem key={c} value={c}>
-                {c}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
         <Button type="submit" size="sm" disabled={!manualName.trim()}>
           <Plus size={14} className="mr-1" /> Legg til
         </Button>
@@ -675,117 +639,99 @@ function ShoppingListPanel({
       {/* Liste */}
       {loading ? (
         <p className="px-4 py-6 text-sm text-muted-foreground">Henter handleliste…</p>
-      ) : grouped.length === 0 ? (
+      ) : visible.length === 0 ? (
         <p className="px-4 py-6 text-sm text-muted-foreground">
           Handlelista er tom. Legg til varer manuelt over, eller søk i markedet
           og trykk «Legg til».
         </p>
       ) : (
-        <div className="divide-y divide-border">
-          {grouped.map(([category, items]) => {
-            const subtotal = items
-              .filter((f) => !f.checked && f.price_nok != null)
-              .reduce((s, f) => s + (f.price_nok ?? 0) * (f.quantity ?? 1), 0);
+        <ul className="divide-y divide-border">
+          {visible.map((f) => {
+            const qty = f.quantity ?? 1;
+            const lineTotal = f.price_nok != null ? f.price_nok * qty : null;
             return (
-              <div key={category} className="px-4 py-3">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="text-[10px] uppercase tracking-widest text-primary/80">
-                    {category} · {items.length}
+              <li
+                key={f.id}
+                className={`flex items-center gap-2 px-4 py-2 text-sm ${
+                  f.checked ? "opacity-50 line-through" : ""
+                }`}
+              >
+                <button
+                  type="button"
+                  onClick={() => onToggleChecked(f.id, !f.checked)}
+                  className={`w-5 h-5 shrink-0 rounded border flex items-center justify-center transition-colors ${
+                    f.checked
+                      ? "bg-primary border-primary text-primary-foreground"
+                      : "border-border hover:border-primary"
+                  }`}
+                  aria-label={f.checked ? "Hak av som ikke kjøpt" : "Hak av som kjøpt"}
+                >
+                  {f.checked && <Check size={12} />}
+                </button>
+                {f.image_url && !f.manual ? (
+                  <img
+                    src={f.image_url}
+                    alt=""
+                    className="w-6 h-6 rounded object-contain bg-background/40 shrink-0"
+                  />
+                ) : null}
+                <div className="flex-1 min-w-0">
+                  <div className="truncate">
+                    {f.name}
+                    {f.manual && (
+                      <span className="ml-2 text-[9px] uppercase tracking-widest text-muted-foreground">
+                        manuelt
+                      </span>
+                    )}
                   </div>
-                  {subtotal > 0 && (
-                    <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
-                      {fmtPrice(subtotal)}
+                  {f.brand && !f.manual && (
+                    <div className="text-[10px] text-muted-foreground/80 truncate">
+                      {f.brand}
                     </div>
                   )}
                 </div>
-                <ul className="space-y-1.5">
-                  {items.map((f) => {
-                    const lineTotal =
-                      f.price_nok != null ? f.price_nok * (f.quantity ?? 1) : null;
-                    return (
-                      <li
-                        key={f.id}
-                        className={`flex items-center gap-2 text-sm ${
-                          f.checked ? "opacity-50 line-through" : ""
-                        }`}
-                      >
-                        <button
-                          type="button"
-                          onClick={() => onToggleChecked(f.id, !f.checked)}
-                          className={`w-5 h-5 shrink-0 rounded border flex items-center justify-center transition-colors ${
-                            f.checked
-                              ? "bg-primary border-primary text-primary-foreground"
-                              : "border-border hover:border-primary"
-                          }`}
-                          aria-label={f.checked ? "Hak av som ikke kjøpt" : "Hak av som kjøpt"}
-                        >
-                          {f.checked && <Check size={12} />}
-                        </button>
-                        {f.image_url && !f.manual ? (
-                          <img
-                            src={f.image_url}
-                            alt=""
-                            className="w-6 h-6 rounded object-contain bg-background/40 shrink-0"
-                          />
-                        ) : null}
-                        <div className="flex-1 min-w-0">
-                          <div className="truncate">
-                            {f.name}
-                            {f.quantity != null && (
-                              <span className="text-muted-foreground">
-                                {" "}
-                                · {f.quantity}
-                                {f.unit ? ` ${f.unit}` : ""}
-                              </span>
-                            )}
-                            {f.manual && (
-                              <span className="ml-2 text-[9px] uppercase tracking-widest text-muted-foreground">
-                                manuelt
-                              </span>
-                            )}
-                          </div>
-                          {f.kassal_category && (
-                            <div className="text-[10px] text-muted-foreground/80">
-                              {f.kassal_category}
-                            </div>
-                          )}
-                        </div>
-                        {lineTotal != null && (
-                          <span className="text-xs font-display text-primary shrink-0 tabular-nums">
-                            {fmtPrice(lineTotal)}
-                          </span>
-                        )}
-                        <Select
-                          value={f.category}
-                          onValueChange={(v) => onChangeCategory(f.id, v)}
-                        >
-                          <SelectTrigger className="h-7 w-[130px] text-xs shrink-0">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {CATEGORIES.map((c) => (
-                              <SelectItem key={c} value={c} className="text-xs">
-                                {c}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <button
-                          type="button"
-                          onClick={() => onRemove(f.id)}
-                          className="text-muted-foreground hover:text-destructive p-1 shrink-0"
-                          aria-label="Fjern"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
+
+                {/* Antall +/- */}
+                <div className="flex items-center gap-1 shrink-0 no-underline">
+                  <button
+                    type="button"
+                    onClick={() => onChangeQuantity(f.id, Math.max(1, qty - 1))}
+                    disabled={qty <= 1}
+                    className="w-6 h-6 rounded border border-border text-muted-foreground hover:text-primary hover:border-primary disabled:opacity-30 disabled:hover:text-muted-foreground disabled:hover:border-border flex items-center justify-center text-sm leading-none"
+                    aria-label="Færre"
+                  >
+                    −
+                  </button>
+                  <span className="w-7 text-center text-xs font-display tabular-nums">
+                    {qty}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => onChangeQuantity(f.id, qty + 1)}
+                    className="w-6 h-6 rounded border border-border text-muted-foreground hover:text-primary hover:border-primary flex items-center justify-center text-sm leading-none"
+                    aria-label="Flere"
+                  >
+                    +
+                  </button>
+                </div>
+
+                {lineTotal != null && (
+                  <span className="text-xs font-display text-primary shrink-0 tabular-nums w-20 text-right">
+                    {fmtPrice(lineTotal)}
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={() => onRemove(f.id)}
+                  className="text-muted-foreground hover:text-destructive p-1 shrink-0"
+                  aria-label="Fjern"
+                >
+                  <Trash2 size={14} />
+                </button>
+              </li>
             );
           })}
-        </div>
+        </ul>
       )}
     </div>
   );
