@@ -2,6 +2,7 @@ import { Outlet, Link, createRootRoute, HeadContent, Scripts, redirect } from "@
 import { checkAuth } from "@/server/auth";
 import { VisitorTracker } from "@/components/VisitorTracker";
 import { LoginDialog } from "@/components/LoginDialog";
+import { PullToRefresh } from "@/components/PullToRefresh";
 
 // Routes that are accessible without logging in (visitors entering the castle gates).
 // Locked routes now redirect to "/" (where the login dialog opens automatically) instead
@@ -88,6 +89,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
 function RootComponent() {
   return (
     <>
+      <PullToRefresh />
       <VisitorTracker />
       <Outlet />
       <LoginDialog />
