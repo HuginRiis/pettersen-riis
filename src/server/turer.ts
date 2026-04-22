@@ -121,7 +121,7 @@ export const getTripSuggestions = createServerFn({ method: "POST" })
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "google/gemini-3-flash-preview",
+          model,
           messages: [
             { role: "system", content: systemPrompt },
             { role: "user", content: userPrompt },
@@ -284,9 +284,23 @@ export const getTripSuggestions = createServerFn({ method: "POST" })
       });
 
       if (res.status === 429) {
+        await logAiSearch({
+          feature: "turer",
+          query: data.location,
+          model,
+          authenticated,
+          status: "rate_limited",
+        });
         return { ok: false, error: "AI-portalen tar imot for mange kall — prøv igjen om litt." };
       }
       if (res.status === 402) {
+        await logAiSearch({
+          feature: "turer",
+          query: data.location,
+          model,
+          authenticated,
+          status: "error",
+        });
         return {
           ok: false,
           error: "AI-kreditten er brukt opp. Fyll på i Lovable Cloud-innstillingene.",
@@ -295,23 +309,70 @@ export const getTripSuggestions = createServerFn({ method: "POST" })
       if (!res.ok) {
         const txt = await res.text().catch(() => "");
         console.error("AI gateway error:", res.status, txt.slice(0, 200));
+        await logAiSearch({
+          feature: "turer",
+          query: data.location,
+          model,
+          authenticated,
+          status: "error",
+        });
         return { ok: false, error: `AI-portalen svarte med feil (${res.status}).` };
       }
 
       const json = await res.json();
+      const usage = json?.usage ?? {};
+      const promptTokens =
+        typeof usage?.prompt_tokens === "number" ? usage.prompt_tokens : null;
+      const completionTokens =
+        typeof usage?.completion_tokens === "number"
+          ? usage.completion_tokens
+          : null;
+      const totalTokens =
+        typeof usage?.total_tokens === "number" ? usage.total_tokens : null;
+
       const toolCall = json?.choices?.[0]?.message?.tool_calls?.[0];
       const argsStr = toolCall?.function?.arguments;
       if (!argsStr) {
+        await logAiSearch({
+          feature: "turer",
+          query: data.location,
+          model,
+          authenticated,
+          status: "error",
+          promptTokens,
+          completionTokens,
+          totalTokens,
+        });
         return { ok: false, error: "Mesteren svarte uten et lesbart turforslag." };
       }
       let parsed: unknown;
       try {
         parsed = JSON.parse(argsStr);
       } catch {
+        await logAiSearch({
+          feature: "turer",
+          query: data.location,
+          model,
+          authenticated,
+          status: "error",
+          promptTokens,
+          completionTokens,
+          totalTokens,
+        });
         return { ok: false, error: "Mesterens svar var ulesbart." };
       }
       const suggestions = (parsed as { suggestions?: TripSuggestion[] })?.suggestions ?? [];
       if (!Array.isArray(suggestions) || suggestions.length === 0) {
+        await logAiSearch({
+          feature: "turer",
+          query: data.location,
+          model,
+          authenticated,
+          status: "error",
+          promptTokens,
+          completionTokens,
+          totalTokens,
+        });
         return { ok: false, error: "Ingen turforslag funnet for dette området." };
       }
       // Normaliser tomme/nullverdier
@@ -333,6 +394,16 @@ export const getTripSuggestions = createServerFn({ method: "POST" })
         warnings: Array.isArray(s.warnings) ? s.warnings : [],
         facilities: Array.isArray(s.facilities) ? s.facilities : [],
       }));
+      await logAiSearch({
+        feature: "turer",
+        query: `${data.category}: ${data.location}`,
+        model,
+        authenticated,
+        status: "ok",
+        promptTokens,
+        completionTokens,
+        totalTokens,
+      });
       return {
         ok: true,
         suggestions: cleaned,
@@ -341,6 +412,13 @@ export const getTripSuggestions = createServerFn({ method: "POST" })
       };
     } catch (e) {
       console.error("getTripSuggestions failed:", e);
+      await logAiSearch({
+        feature: "turer",
+        query: data.location,
+        model,
+        authenticated,
+        status: "error",
+      });
       return {
         ok: false,
         error: e instanceof Error ? e.message : "Ukjent feil ved henting av turforslag.",
