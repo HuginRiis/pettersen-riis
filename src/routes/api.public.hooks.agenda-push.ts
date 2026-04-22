@@ -6,8 +6,12 @@ export const Route = createFileRoute("/api/public/hooks/agenda-push")({
     handlers: {
       POST: async ({ request }) => {
         const auth = request.headers.get("authorization");
-        const expected = process.env.AGENDA_PUSH_HOOK_TOKEN;
-        if (!expected || auth !== `Bearer ${expected}`) {
+        const token = auth?.startsWith("Bearer ") ? auth.slice(7) : null;
+        const expected =
+          process.env.AGENDA_PUSH_HOOK_TOKEN ||
+          process.env.SUPABASE_ANON_KEY ||
+          process.env.SUPABASE_PUBLISHABLE_KEY;
+        if (!token || !expected || token !== expected) {
           return new Response(JSON.stringify({ error: "unauthorized" }), {
             status: 401,
             headers: { "Content-Type": "application/json" },
