@@ -447,7 +447,8 @@ function HallCard({
     | "/smarthus"
     | "/steintavle"
     | "/oppussing-borgen"
-    | "/oppussing-hytta";
+    | "/oppussing-hytta"
+    | "/matvarer";
   title: string;
   desc: string;
   icon: string;
