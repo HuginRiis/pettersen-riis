@@ -74,7 +74,28 @@ export type TripResponse =
 export const getTripSuggestions = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => inputSchema.parse(input))
   .handler(async ({ data }): Promise<TripResponse> => {
-    await requireHouseAuth();
+    const authenticated = await isHouseAuthenticated();
+    const model = "google/gemini-3-flash-preview";
+
+    // Uinnloggede besøkende får 1 AI-søk per kalenderdøgn (UTC).
+    if (!authenticated) {
+      const ip = readClientIp();
+      const limit = await canUseAiToday(ip);
+      if (!limit.allowed) {
+        await logAiSearch({
+          feature: "turer",
+          query: data.location,
+          model,
+          authenticated: false,
+          status: "rate_limited",
+        });
+        return {
+          ok: false,
+          error:
+            "Du har brukt dagens gratis AI-søk. Logg inn på huset for ubegrenset bruk, eller prøv igjen i morgen.",
+        };
+      }
+    }
 
     const apiKey = process.env.LOVABLE_API_KEY;
     if (!apiKey) {
