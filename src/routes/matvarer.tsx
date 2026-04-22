@@ -114,20 +114,7 @@ type GroceryFavorite = {
   sort_order: number;
 };
 
-const CATEGORIES = [
-  "Frukt & grønt",
-  "Meieri",
-  "Brød & bakst",
-  "Kjøtt",
-  "Fisk",
-  "Pålegg",
-  "Frossen",
-  "Tørrvarer",
-  "Drikke",
-  "Snacks",
-  "Husholdning",
-  "Annet",
-] as const;
+
 
 const fmtPrice = (n: number | null | undefined) =>
   typeof n === "number" ? `kr ${n.toFixed(2).replace(".", ",")}` : "—";
