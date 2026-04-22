@@ -479,8 +479,8 @@ function MonthCumulativeChart({ highlights: h }: { highlights: PbthHomeData["hig
                 fontSize: 12,
               }}
               labelStyle={{ color: "oklch(0.85 0.02 270)" }}
-              formatter={(v: number | null) =>
-                v != null ? [`${v.toFixed(1)} kWh`, "Akkumulert"] : ["—", ""]
+              formatter={(v: unknown) =>
+                typeof v === "number" ? [`${v.toFixed(1)} kWh`, "Akkumulert"] : ["—", ""]
               }
               labelFormatter={(d: number) => `Dag ${d}`}
             />
