@@ -62,9 +62,32 @@ function TurerPage() {
   const [state, setState] = useState<State>({ kind: "idle" });
   const [gpsLoading, setGpsLoading] = useState(false);
   const [activeTrip, setActiveTrip] = useState<TripSuggestion | null>(null);
+  const [quota, setQuota] = useState<TripQuotaInfo | null>(null);
 
   const fetchSuggestions = useServerFn(getTripSuggestions);
   const reverse = useServerFn(reverseGeocode);
+  const fetchQuota = useServerFn(getTripQuotaInfo);
+
+  // Hent kvote/historikk ved mount.
+  useEffect(() => {
+    let cancelled = false;
+    fetchQuota()
+      .then((q) => {
+        if (!cancelled) setQuota(q);
+      })
+      .catch(() => {
+        /* stille — ikke kritisk */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [fetchQuota]);
+
+  const refreshQuota = () => {
+    fetchQuota()
+      .then(setQuota)
+      .catch(() => {});
+  };
 
   const onSearch = async (e: React.FormEvent) => {
     e.preventDefault();
