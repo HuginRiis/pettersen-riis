@@ -175,13 +175,14 @@ function MatvarerPage() {
   const [defaultCategory, setDefaultCategory] = useState<string>("Annet");
 
   // ── Favoritter (Lovable Cloud) ─────────────────────────────────────
+  const SELECT_COLS =
+    "id, ean, name, brand, image_url, vendor, category, kassal_category, price_nok, checked, manual, quantity, unit, sort_order";
+
   const loadFavorites = async () => {
     setFavLoading(true);
     const { data } = await supabase
       .from("grocery_favorites")
-      .select(
-        "id, ean, name, brand, image_url, vendor, category, checked, manual, quantity, unit, sort_order",
-      )
+      .select(SELECT_COLS)
       .order("checked", { ascending: true })
       .order("category", { ascending: true })
       .order("created_at", { ascending: true });
@@ -215,6 +216,7 @@ function MatvarerPage() {
       setFavorites(favorites.filter((f) => f.id !== existing.id));
       await supabase.from("grocery_favorites").delete().eq("id", existing.id);
     } else {
+      const price = g.remaPrice ?? g.cheapestPrice ?? null;
       const { data } = await supabase
         .from("grocery_favorites")
         .insert({
@@ -224,10 +226,10 @@ function MatvarerPage() {
           image_url: g.image,
           vendor: g.rows[0]?.storeName ?? null,
           category,
+          kassal_category: g.kassalCategory,
+          price_nok: price,
         })
-        .select(
-          "id, ean, name, brand, image_url, vendor, category, checked, manual, quantity, unit, sort_order",
-        )
+        .select(SELECT_COLS)
         .single();
       if (data) setFavorites([data as GroceryFavorite, ...favorites]);
     }
@@ -250,6 +252,7 @@ function MatvarerPage() {
     category: string,
     quantity: number | null,
     unit: string | null,
+    price: number | null,
   ) => {
     const { data } = await supabase
       .from("grocery_favorites")
@@ -263,10 +266,9 @@ function MatvarerPage() {
         manual: true,
         quantity,
         unit,
+        price_nok: price,
       })
-      .select(
-        "id, ean, name, brand, image_url, vendor, category, checked, manual, quantity, unit, sort_order",
-      )
+      .select(SELECT_COLS)
       .single();
     if (data) setFavorites([data as GroceryFavorite, ...favorites]);
   };
