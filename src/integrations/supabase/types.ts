@@ -98,29 +98,47 @@ export type Database = {
       grocery_favorites: {
         Row: {
           brand: string | null
+          category: string
+          checked: boolean
           created_at: string
-          ean: string
+          ean: string | null
           id: string
           image_url: string | null
+          manual: boolean
           name: string
+          quantity: number | null
+          sort_order: number
+          unit: string | null
           vendor: string | null
         }
         Insert: {
           brand?: string | null
+          category?: string
+          checked?: boolean
           created_at?: string
-          ean: string
+          ean?: string | null
           id?: string
           image_url?: string | null
+          manual?: boolean
           name: string
+          quantity?: number | null
+          sort_order?: number
+          unit?: string | null
           vendor?: string | null
         }
         Update: {
           brand?: string | null
+          category?: string
+          checked?: boolean
           created_at?: string
-          ean?: string
+          ean?: string | null
           id?: string
           image_url?: string | null
+          manual?: boolean
           name?: string
+          quantity?: number | null
+          sort_order?: number
+          unit?: string | null
           vendor?: string | null
         }
         Relationships: []
