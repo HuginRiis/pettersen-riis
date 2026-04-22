@@ -397,10 +397,15 @@ export const releaseIpFn = createServerFn({ method: "POST" })
   });
 
 // ── Lite tellverk for forsiden — antall besøkende totalt, i dag og akkurat nå
+// Vi teller både unike sjeler (IP/client-session) og rå økter, slik at
+// forsiden kan vise begge tallene side om side.
 export type VisitorCounts = {
   total: number;
   today: number;
   online: number;
+  totalSessions: number;
+  todaySessions: number;
+  onlineSessions: number;
 };
 
 export const getVisitorCounts = createServerFn({ method: "GET" }).handler(
@@ -443,6 +448,9 @@ export const getVisitorCounts = createServerFn({ method: "GET" }).handler(
       total: uniqueSouls(allRes.data as any),
       today: uniqueSouls(todayRes.data as any),
       online: uniqueSouls(onlineRes.data as any),
+      totalSessions: allRes.data?.length ?? 0,
+      todaySessions: todayRes.data?.length ?? 0,
+      onlineSessions: onlineRes.data?.length ?? 0,
     };
   },
 );
