@@ -170,6 +170,7 @@ function TurerPage() {
       />
 
       <section className="container mx-auto px-4 py-10 max-w-5xl">
+        <QuotaBanner quota={quota} />
         <article className="panel rounded-lg p-6 mb-8">
           <h2 className="text-xl text-primary mb-4 flex items-center gap-2">
             <Compass size={20} /> Hvor skal ferden gå?
