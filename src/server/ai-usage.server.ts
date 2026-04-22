@@ -314,5 +314,5 @@ export async function computeAiUsageStats(): Promise<AiUsageStats> {
       recent: rows.slice(0, 25),
       perDay,
     };
-  },
-);
+  }
+}
