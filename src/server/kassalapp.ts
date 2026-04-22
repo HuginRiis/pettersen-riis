@@ -254,14 +254,21 @@ async function fetchEanProducts(ean: string): Promise<EanProduct[]> {
         : [];
 
     return items.map((p: any) => {
+      // /products/ean/{ean} returnerer butikknavnet som streng direkte i `store`
       const storeName: string =
-        p?.store?.name ?? p?.store ?? p?.vendor ?? "Ukjent";
+        (typeof p?.store === "string" ? p.store : p?.store?.name) ??
+        p?.vendor ??
+        "Ukjent";
+      // Og current_price er et OBJEKT { price, unit_price, date } — ikke et tall.
+      const cp = p?.current_price;
       const price =
-        typeof p?.current_price === "number"
-          ? p.current_price
-          : typeof p?.price === "number"
-            ? p.price
-            : null;
+        typeof cp === "number"
+          ? cp
+          : typeof cp?.price === "number"
+            ? cp.price
+            : typeof p?.price === "number"
+              ? p.price
+              : null;
       const history: Array<{ date: string; price: number }> = Array.isArray(
         p?.price_history,
       )
