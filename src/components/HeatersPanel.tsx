@@ -347,12 +347,11 @@ function HeaterCard({
             max={heater.max}
             step={heater.step}
             disabled={tempBusy}
-            onValueChange={(vals) => {
+            onValueCommit={(vals) => {
               const v = vals[0];
               if (typeof v === "number" && v !== heater.target) onSetTemp(+v.toFixed(1));
             }}
             aria-label="Velg temperatur"
-            style={{ ["--primary" as any]: accent }}
           />
         </div>
 
