@@ -117,6 +117,7 @@ function SmarthusPage() {
   const [togglingLights, setTogglingLights] = useState(false);
   const [lightsMessage, setLightsMessage] = useState<string | null>(null);
   const [homeyUpdated, setHomeyUpdated] = useState<Date | null>(null);
+  const [showLitLights, setShowLitLights] = useState(false);
 
   // Hver gang loader-data endres (etter router.invalidate) — merk tidspunktet.
   useEffect(() => {
@@ -148,6 +149,19 @@ function SmarthusPage() {
     (d) => "onoff" in d.capabilities && (d.class === "light" || d.class === "socket"),
   );
   const litLights = lights.filter((d) => d.capabilities["onoff"]?.value === true).length;
+  const litLightsList = lights
+    .filter((d) => d.capabilities["onoff"]?.value === true)
+    .map((d) => ({
+      id: d.id,
+      name: d.name,
+      zoneName: d.zone ? zoneById.get(d.zone)?.name ?? "Ukjent sal" : "Ukjent sal",
+      dim: typeof d.capabilities["dim"]?.value === "number"
+        ? (d.capabilities["dim"]?.value as number)
+        : null,
+      power: typeof d.capabilities["measure_power"]?.value === "number"
+        ? (d.capabilities["measure_power"]?.value as number)
+        : null,
+    }));
 
   const totalPower = data.devices
     .map((d) => d.capabilities["measure_power"]?.value)
@@ -430,8 +444,10 @@ function SmarthusPage() {
           <Stat
             label="Tente ildsteder"
             value={`${litLights} / ${lights.length}`}
-            hint={litLights > 0 ? "Lyset brenner" : "Mørke i salene"}
+            hint={litLights > 0 ? (showLitLights ? "Skjul listen" : "Trykk for å se hvilke") : "Mørke i salene"}
             tone={litLights > 0 ? "primary" : "muted"}
+            onClick={litLights > 0 ? () => setShowLitLights((v) => !v) : undefined}
+            active={showLitLights}
           />
           <Stat
             label="Effekt · Hjemme"
@@ -508,6 +524,73 @@ function SmarthusPage() {
             </div>
           )}
         </div>
+
+        {showLitLights && litLightsList.length > 0 && (
+          <div className="panel rounded-lg p-5 mt-4 animate-in fade-in slide-in-from-top-2 duration-200">
+            <div className="flex items-center gap-2 mb-4">
+              <Flame size={14} className="text-primary" />
+              <span className="text-[10px] tracking-[0.3em] text-primary uppercase">
+                Tente ildsteder · {litLightsList.length}
+              </span>
+            </div>
+            {(() => {
+              const byZone = new Map<string, typeof litLightsList>();
+              for (const l of litLightsList) {
+                const arr = byZone.get(l.zoneName) ?? [];
+                arr.push(l);
+                byZone.set(l.zoneName, arr);
+              }
+              const sortedZones = Array.from(byZone.entries()).sort((a, b) =>
+                a[0].localeCompare(b[0], "nb"),
+              );
+              return (
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {sortedZones.map(([zoneName, items]) => (
+                    <div
+                      key={zoneName}
+                      className="rounded border border-primary/15 p-3"
+                      style={{
+                        background:
+                          "linear-gradient(180deg, color-mix(in oklab, var(--gold) 6%, transparent), transparent)",
+                      }}
+                    >
+                      <div className="flex items-center gap-2 mb-2">
+                        <Shield size={11} className="text-primary/80" />
+                        <span className="text-[10px] tracking-[0.25em] text-primary uppercase truncate">
+                          {zoneName}
+                        </span>
+                      </div>
+                      <ul className="space-y-1">
+                        {items.map((l) => (
+                          <li
+                            key={l.id}
+                            className="flex items-center gap-2 text-xs"
+                          >
+                            <Flame
+                              size={10}
+                              className="text-primary shrink-0"
+                              style={{
+                                filter:
+                                  "drop-shadow(0 0 4px color-mix(in oklab, var(--gold) 60%, transparent))",
+                              }}
+                            />
+                            <span className="truncate flex-1 text-foreground/90" title={l.name}>
+                              {l.name}
+                            </span>
+                            <span className="text-[10px] text-muted-foreground tabular-nums shrink-0">
+                              {l.dim !== null && `${Math.round(l.dim * 100)}%`}
+                              {l.power !== null && ` · ${Math.round(l.power)}W`}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
+          </div>
+        )}
       </section>
 
       {/* Ute-temperaturer (Tollnes + Hytta) */}
@@ -534,31 +617,112 @@ function SmarthusPage() {
         </div>
       </section>
 
-      {/* Inne-termometre (én per rom) */}
+      {/* Inne-termometre — gruppert per sal */}
       <section className="container mx-auto px-4 pt-6">
         <div className="panel rounded-lg p-6">
-          <div className="text-[10px] tracking-[0.3em] text-muted-foreground uppercase mb-4">
-            Termometrenes sang
+          <div className="flex items-center gap-2 mb-5">
+            <Crown size={14} className="text-primary" />
+            <span className="text-[10px] tracking-[0.3em] text-primary uppercase">
+              Termometrenes sang
+            </span>
           </div>
           {indoorTemps.length > 0 ? (
-            <ul className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-              {indoorTemps.map((r) => (
-                <li
-                  key={r.deviceId}
-                  className="flex flex-col py-2 px-3 rounded border border-primary/10 bg-background/40"
-                >
-                  <span className="text-[10px] tracking-[0.25em] text-muted-foreground uppercase truncate">
-                    {r.zoneName}
-                  </span>
-                  <span className="text-display text-primary text-xl mt-1">
-                    {r.temp.toFixed(1)}°
-                  </span>
-                  <span className="text-[9px] text-muted-foreground/70 truncate mt-0.5" title={r.deviceName}>
-                    {r.deviceName}
-                  </span>
-                </li>
-              ))}
-            </ul>
+            (() => {
+              const grouped = new Map<string, typeof indoorTemps>();
+              for (const t of indoorTemps) {
+                const arr = grouped.get(t.zoneName) ?? [];
+                arr.push(t);
+                grouped.set(t.zoneName, arr);
+              }
+              const sortedGrouped = Array.from(grouped.entries()).sort((a, b) =>
+                a[0].localeCompare(b[0], "nb"),
+              );
+              // Gjennomsnitt per rom for hovedtall
+              const roomAverages = sortedGrouped.map(([zoneName, list]) => {
+                const avg = list.reduce((a, b) => a + b.temp, 0) / list.length;
+                return { zoneName, avg, list };
+              });
+              return (
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                  {roomAverages.map(({ zoneName, avg, list }) => {
+                    const tone =
+                      avg < 16
+                        ? "cold"
+                        : avg < 19
+                          ? "cool"
+                          : avg < 24
+                            ? "warm"
+                            : "hot";
+                    const toneColor =
+                      tone === "cold"
+                        ? "color-mix(in oklab, #5fa8d3 70%, transparent)"
+                        : tone === "cool"
+                          ? "color-mix(in oklab, #8db7d2 60%, transparent)"
+                          : tone === "warm"
+                            ? "var(--gold)"
+                            : "color-mix(in oklab, #d97757 80%, transparent)";
+                    return (
+                      <div
+                        key={zoneName}
+                        className="rounded border border-primary/15 p-3 flex flex-col"
+                        style={{
+                          background:
+                            "linear-gradient(180deg, color-mix(in oklab, var(--foreground) 4%, transparent), transparent)",
+                        }}
+                      >
+                        <div className="flex items-center gap-1.5 mb-2 min-w-0">
+                          <Shield size={10} className="text-primary/70 shrink-0" />
+                          <span className="text-[10px] tracking-[0.2em] text-primary uppercase truncate">
+                            {zoneName}
+                          </span>
+                        </div>
+                        <div
+                          className="text-display leading-none tabular-nums"
+                          style={{
+                            color: toneColor,
+                            fontSize: "clamp(1.5rem, 4vw, 2rem)",
+                          }}
+                        >
+                          {avg.toFixed(1)}°
+                        </div>
+                        {list.length > 1 ? (
+                          <div className="text-[9px] text-muted-foreground/70 mt-1 italic">
+                            snitt av {list.length} sensorer
+                          </div>
+                        ) : (
+                          <div
+                            className="text-[9px] text-muted-foreground/70 mt-1 truncate"
+                            title={list[0].deviceName}
+                          >
+                            {list[0].deviceName}
+                          </div>
+                        )}
+                        {list.length > 1 && (
+                          <ul className="mt-2 pt-2 border-t border-primary/10 space-y-0.5">
+                            {list.map((r) => (
+                              <li
+                                key={r.deviceId}
+                                className="flex items-center justify-between gap-2 text-[10px]"
+                              >
+                                <span
+                                  className="truncate text-muted-foreground/80"
+                                  title={r.deviceName}
+                                >
+                                  {r.deviceName}
+                                </span>
+                                <span className="tabular-nums text-foreground/80 shrink-0">
+                                  {r.temp.toFixed(1)}°
+                                </span>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()
           ) : (
             <p className="text-sm text-muted-foreground italic">Ingen inne-termometre.</p>
           )}
@@ -623,11 +787,15 @@ function Stat({
   value,
   hint,
   tone = "default",
+  onClick,
+  active = false,
 }: {
   label: string;
   value: string;
   hint?: string;
   tone?: "default" | "primary" | "muted" | "warning";
+  onClick?: () => void;
+  active?: boolean;
 }) {
   const valueClass =
     tone === "warning"
@@ -635,8 +803,11 @@ function Stat({
       : tone === "muted"
         ? "text-muted-foreground"
         : "text-primary";
-  return (
-    <div className="panel rounded-lg p-4 text-center">
+  const baseClass = `panel rounded-lg p-4 text-center transition-all ${
+    onClick ? "cursor-pointer hover:border-primary/40 hover:bg-primary/5" : ""
+  } ${active ? "ring-1 ring-primary/40" : ""}`;
+  const inner = (
+    <>
       <div className={`text-2xl text-display ${valueClass}`}>{value}</div>
       <div className="text-[10px] tracking-[0.3em] text-muted-foreground uppercase mt-1">
         {label}
@@ -644,8 +815,16 @@ function Stat({
       {hint && (
         <div className="text-[10px] text-muted-foreground/80 mt-1 italic">{hint}</div>
       )}
-    </div>
+    </>
   );
+  if (onClick) {
+    return (
+      <button type="button" onClick={onClick} className={baseClass + " w-full"}>
+        {inner}
+      </button>
+    );
+  }
+  return <div className={baseClass}>{inner}</div>;
 }
 
 function DeviceCard({ device }: { device: any }) {
