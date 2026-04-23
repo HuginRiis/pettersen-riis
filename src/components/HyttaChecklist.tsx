@@ -262,25 +262,6 @@ export function HyttaChecklist() {
     if (error) toast.error("Kunne ikke slette");
   };
 
-  const clearScheduledReminder = async () => {
-    const scheduledIds = items
-      .filter((i) => i.notify_at && !i.notified_at)
-      .map((i) => i.id);
-    if (scheduledIds.length === 0) {
-      toast.info("Ingen planlagt påminnelse å fjerne.");
-      return;
-    }
-    const { error } = await supabase
-      .from("hytta_checklist")
-      .update({ notify_at: null, notified_at: null })
-      .in("id", scheduledIds);
-    if (error) {
-      toast.error("Kunne ikke fjerne påminnelsen");
-      return;
-    }
-    toast.info("Planlagt påminnelse fjernet");
-  };
-
   const sendListPushNow = async () => {
     const open = items.filter((i) => !i.checked);
     if (open.length === 0) {
@@ -309,11 +290,6 @@ export function HyttaChecklist() {
   };
 
   const scheduleBulkPush = async () => {
-    const open = items.filter((i) => !i.checked);
-    if (open.length === 0) {
-      toast.info("Ingen åpne punkter å planlegge varsel for.");
-      return;
-    }
     const iso = combineDateTimeToIso(bulkDate, bulkTime);
     if (!iso) {
       toast.error("Velg dag og tid først.");
@@ -323,9 +299,22 @@ export function HyttaChecklist() {
       toast.error("Tidspunktet må være i fremtiden.");
       return;
     }
+
+    let toUpdate: string[];
+    if (editingReminder) {
+      // Editing: only update items that belonged to this reminder
+      toUpdate = editingReminder.itemIds;
+    } else {
+      // Creating new: apply to all open items (overwrites any existing)
+      const open = items.filter((i) => !i.checked);
+      if (open.length === 0) {
+        toast.info("Ingen åpne punkter å planlegge varsel for.");
+        return;
+      }
+      toUpdate = open.map((i) => i.id);
+    }
+
     setScheduling(true);
-    // Sett samme notify_at + notify_who på ALLE åpne punkter (overskriver tidligere planlagt verdi)
-    const toUpdate = open.map((i) => i.id);
     const { error } = await supabase
       .from("hytta_checklist")
       .update({ notify_at: iso, notified_at: null, notify_who: bulkWho })
@@ -337,39 +326,82 @@ export function HyttaChecklist() {
     }
     setBulkOpen(false);
     setBulkDate(undefined);
+    setEditingReminder(null);
     const target = bulkWho === "Alle" ? "alle" : bulkWho;
     toast.success(
-      `Ravn planlagt ${formatNotifyOslo(iso)} til ${target} med ${toUpdate.length} punkt${toUpdate.length === 1 ? "" : "er"}`,
+      `${editingReminder ? "Påminnelse oppdatert" : "Ravn planlagt"} ${formatNotifyOslo(iso)} til ${target} med ${toUpdate.length} punkt${toUpdate.length === 1 ? "" : "er"}`,
     );
   };
 
+
   const openCount = items.filter((i) => !i.checked).length;
-  const nextScheduledItem = useMemo(() => {
-    return [...items]
-      .filter(
-        (i) =>
-          !i.checked &&
-          i.notify_at &&
-          !i.notified_at &&
-          new Date(i.notify_at).getTime() > Date.now(),
-      )
-      .sort((a, b) => new Date(a.notify_at!).getTime() - new Date(b.notify_at!).getTime())[0];
+
+  // Group scheduled reminders by (notify_at + notify_who) — each unique combo is one "påminnelse"
+  const scheduledReminders = useMemo(() => {
+    const groups = new Map<
+      string,
+      { notify_at: string; notify_who: string; itemIds: string[] }
+    >();
+    for (const i of items) {
+      if (
+        !i.checked &&
+        i.notify_at &&
+        !i.notified_at &&
+        new Date(i.notify_at).getTime() > Date.now()
+      ) {
+        const key = `${i.notify_at}__${i.notify_who || "Alle"}`;
+        const existing = groups.get(key);
+        if (existing) existing.itemIds.push(i.id);
+        else
+          groups.set(key, {
+            notify_at: i.notify_at,
+            notify_who: i.notify_who || "Alle",
+            itemIds: [i.id],
+          });
+      }
+    }
+    return Array.from(groups.values()).sort(
+      (a, b) => new Date(a.notify_at).getTime() - new Date(b.notify_at).getTime(),
+    );
   }, [items]);
 
-  const openSchedulePopover = (forEdit: boolean) => {
-    if (forEdit && nextScheduledItem?.notify_at) {
-      const d = new Date(nextScheduledItem.notify_at);
+  // Track which reminder is being edited (null = creating new)
+  const [editingReminder, setEditingReminder] = useState<{
+    notify_at: string;
+    notify_who: string;
+    itemIds: string[];
+  } | null>(null);
+
+  const openSchedulePopover = (
+    reminder?: { notify_at: string; notify_who: string; itemIds: string[] } | null,
+  ) => {
+    if (reminder) {
+      const d = new Date(reminder.notify_at);
       setBulkDate(d);
       setBulkTime(
         `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`,
       );
-      setBulkWho(nextScheduledItem.notify_who || "Alle");
+      setBulkWho(reminder.notify_who);
+      setEditingReminder(reminder);
     } else {
       setBulkDate(undefined);
       setBulkTime("18:00");
       setBulkWho("Alle");
+      setEditingReminder(null);
     }
     setBulkOpen(true);
+  };
+
+  const removeReminder = async (itemIds: string[]) => {
+    const { error } = await supabase
+      .from("hytta_checklist")
+      .update({ notify_at: null, notified_at: null })
+      .in("id", itemIds);
+    if (error) {
+      toast.error("Kunne ikke fjerne påminnelsen");
+      return;
+    }
+    toast.info("Påminnelse fjernet");
   };
 
   return (
@@ -386,38 +418,51 @@ export function HyttaChecklist() {
                 ? `${openCount} punkt${openCount === 1 ? "" : "er"} ventes brakt til borgen`
                 : "Alt er besørget — ravnene hviler"}
             </p>
-            {nextScheduledItem && (
-              <p className="text-xs text-primary mt-1 inline-flex items-center gap-1.5 flex-wrap">
-                <BellRing className="h-3 w-3" />
-                Ravn planlagt {formatNotifyOslo(nextScheduledItem.notify_at!)} til{" "}
-                <span className="font-medium">
-                  {nextScheduledItem.notify_who === "Alle" ? "alle" : nextScheduledItem.notify_who}
-                </span>
-                <button
-                  onClick={() => openSchedulePopover(true)}
-                  className="ml-1 text-muted-foreground/70 hover:text-primary inline-flex items-center"
-                  aria-label="Rediger planlagt påminnelse"
-                  title="Rediger planlagt påminnelse"
-                >
-                  <Pencil className="h-3 w-3" />
-                </button>
-                <button
-                  onClick={clearScheduledReminder}
-                  className="text-muted-foreground/70 hover:text-destructive inline-flex items-center"
-                  aria-label="Fjern planlagt påminnelse"
-                  title="Fjern planlagt påminnelse"
-                >
-                  <BellOff className="h-3 w-3" />
-                </button>
-              </p>
+            {scheduledReminders.length > 0 && (
+              <div className="mt-2 space-y-1">
+                {scheduledReminders.map((r) => (
+                  <p
+                    key={`${r.notify_at}__${r.notify_who}`}
+                    className="text-xs text-primary inline-flex items-center gap-1.5 flex-wrap mr-3"
+                  >
+                    <BellRing className="h-3 w-3" />
+                    Ravn planlagt {formatNotifyOslo(r.notify_at)} til{" "}
+                    <span className="font-medium">
+                      {r.notify_who === "Alle" ? "alle" : r.notify_who}
+                    </span>
+                    <span className="text-muted-foreground/70">
+                      ({r.itemIds.length} punkt{r.itemIds.length === 1 ? "" : "er"})
+                    </span>
+                    <button
+                      onClick={() => openSchedulePopover(r)}
+                      className="ml-1 text-muted-foreground/70 hover:text-primary inline-flex items-center"
+                      aria-label="Rediger påminnelse"
+                      title="Rediger påminnelse"
+                    >
+                      <Pencil className="h-3 w-3" />
+                    </button>
+                    <button
+                      onClick={() => removeReminder(r.itemIds)}
+                      className="text-muted-foreground/70 hover:text-destructive inline-flex items-center"
+                      aria-label="Fjern påminnelse"
+                      title="Fjern påminnelse"
+                    >
+                      <BellOff className="h-3 w-3" />
+                    </button>
+                  </p>
+                ))}
+              </div>
             )}
           </div>
           <div className="flex gap-2 flex-wrap">
             <Popover
               open={bulkOpen}
               onOpenChange={(o) => {
-                if (o) openSchedulePopover(false);
-                else setBulkOpen(false);
+                if (o) openSchedulePopover(null);
+                else {
+                  setBulkOpen(false);
+                  setEditingReminder(null);
+                }
               }}
             >
               <PopoverTrigger asChild>
@@ -473,7 +518,7 @@ export function HyttaChecklist() {
                   size="sm"
                 >
                   {scheduling ? <Loader2 className="h-4 w-4 animate-spin" /> : <BellRing className="h-4 w-4" />}
-                  {nextScheduledItem ? "Oppdater varsel" : "Planlegg varsel"}
+                  {editingReminder ? "Oppdater påminnelse" : "Planlegg varsel"}
                 </Button>
               </PopoverContent>
             </Popover>
