@@ -5,6 +5,7 @@ import { HyttaChecklist } from "@/components/HyttaChecklist";
 import { NetatmoWeatherStationSection } from "@/components/NetatmoWeatherStation";
 import { HeatersPanel } from "@/components/HeatersPanel";
 import { HyttaIndreSal } from "@/components/HyttaIndreSal";
+import { useAuthStatus } from "@/hooks/use-auth-status";
 
 import hyttaImg from "@/assets/hytta-aurora.jpg";
 import g0314 from "@/assets/hytta-gallery/0314.jpg";
@@ -110,6 +111,8 @@ export const Route = createFileRoute("/hytta")({
 });
 
 function HyttaPage() {
+  const { authenticated } = useAuthStatus();
+
   return (
     <PageShell>
       <HyttaHero
@@ -119,7 +122,7 @@ function HyttaPage() {
         image={hyttaImg}
       />
 
-      <HyttaChecklist />
+      {authenticated && <HyttaChecklist />}
 
       <section className="container mx-auto px-4 py-12 space-y-5">
         <div className="ornate-divider mb-2">
@@ -151,11 +154,13 @@ function HyttaPage() {
       <NetatmoWeatherStationSection title="Værstasjonen — Hytta" stationMatch="hytta" />
 
 
-      <HeatersPanel
-        location="hytta"
-        title="Varmemestrene · Hytta"
-        emptyHint="Ingen varmeovner med termostat funnet for hytta i Homey."
-      />
+      {authenticated && (
+        <HeatersPanel
+          location="hytta"
+          title="Varmemestrene · Hytta"
+          emptyHint="Ingen varmeovner med termostat funnet for hytta i Homey."
+        />
+      )}
 
       {/* Galleriet — Krøniken om House Pettersen Riis i fjellet */}
       <section className="container mx-auto px-4 pb-16">
