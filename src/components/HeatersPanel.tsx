@@ -84,12 +84,14 @@ export function HeatersPanel({
   emptyHint,
   collapsible = false,
   defaultCollapsed = false,
+  compact = false,
 }: {
   location: HeaterLocation;
   title: string;
   emptyHint?: string;
   collapsible?: boolean;
   defaultCollapsed?: boolean;
+  compact?: boolean;
 }) {
   const fetchSnapshot = useServerFn(getHomeySnapshot);
   const setCap = useServerFn(setLivingRoomDeviceCapability);
