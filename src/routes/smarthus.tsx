@@ -768,7 +768,6 @@ function SmarthusPage() {
         title="Varmemestrene · Borgen"
         emptyHint="Ingen varmeovner med termostat funnet for Borgen i Homey."
         collapsible
-        defaultCollapsed
       />
 
       <AllZonesPanel
