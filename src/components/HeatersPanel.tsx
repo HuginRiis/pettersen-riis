@@ -340,6 +340,22 @@ function HeaterCard({
           </div>
         )}
 
+        <div className="w-full max-w-[260px] mt-1 px-1">
+          <Slider
+            value={[heater.target ?? heater.min]}
+            min={heater.min}
+            max={heater.max}
+            step={heater.step}
+            disabled={tempBusy}
+            onValueChange={(vals) => {
+              const v = vals[0];
+              if (typeof v === "number" && v !== heater.target) onSetTemp(+v.toFixed(1));
+            }}
+            aria-label="Velg temperatur"
+            style={{ ["--primary" as any]: accent }}
+          />
+        </div>
+
         <div className="grid grid-cols-3 gap-2 w-full max-w-[260px] mt-1">
           <button
             type="button"
