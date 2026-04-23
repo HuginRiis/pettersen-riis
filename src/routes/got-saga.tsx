@@ -11,6 +11,7 @@ import {
   CartesianGrid,
   Cell,
 } from "recharts";
+import westerosHero from "@/assets/got-westeros-hero.jpg";
 import {
   Crown,
   Star,
@@ -441,16 +442,20 @@ function GotSagaPage() {
     <PageShell>
       {/* HERO */}
       <section className="relative overflow-hidden border-b border-border">
-        <div
-          className="absolute inset-0 bg-cover bg-center opacity-30"
-          style={{
-            backgroundImage:
-              "url('https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=1920&q=80')",
-          }}
+        <img
+          src={westerosHero}
+          alt="Westeros — kontinentet fra Game of Thrones"
+          className="absolute inset-0 w-full h-full object-cover opacity-60"
+          loading="eager"
+          width={1920}
+          height={1080}
         />
         <div
           className="absolute inset-0"
-          style={{ background: "var(--gradient-overlay)" }}
+          style={{
+            background:
+              "linear-gradient(180deg, oklch(0.08 0.02 30 / 0.55) 0%, oklch(0.06 0.01 240 / 0.75) 100%)",
+          }}
         />
         <div className="relative container mx-auto px-4 py-16 md:py-24 text-center">
           <div className="ornate-divider mb-6 max-w-md mx-auto">
