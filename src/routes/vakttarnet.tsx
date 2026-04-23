@@ -45,39 +45,7 @@ function VakttarnetPage() {
   const [aiStats, setAiStats] = useState<AiUsageStats | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Spill GoT-tema lavt i 3-4 sek når Vakttårnet åpnes
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const audio = new Audio("/audio/got-theme.mp3");
-    audio.volume = 0.08;
-    let stopped = false;
-    const stopTimer = window.setTimeout(() => {
-      stopped = true;
-      try {
-        audio.pause();
-        audio.currentTime = 0;
-      } catch {
-        /* no-op */
-      }
-    }, 3500);
-    void audio.play().catch(() => {
-      // Autoplay blokkert — spill ved første klikk
-      const onFirst = () => {
-        if (stopped) return;
-        void audio.play().catch(() => {});
-        window.removeEventListener("pointerdown", onFirst);
-      };
-      window.addEventListener("pointerdown", onFirst, { once: true });
-    });
-    return () => {
-      window.clearTimeout(stopTimer);
-      try {
-        audio.pause();
-      } catch {
-        /* no-op */
-      }
-    };
-  }, []);
+
 
   const reload = useMemo(() => {
     return async () => {
