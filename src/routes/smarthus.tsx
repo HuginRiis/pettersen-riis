@@ -731,6 +731,10 @@ function SmarthusPage() {
           </div>
         </section>
       )}
+
+      {/* Ute-temperaturer (Tollnes + Hytta) */}
+      <section className="container mx-auto px-4 pt-10">
+        <div className="grid sm:grid-cols-2 gap-4">
           <OutdoorTempCard
             label="Ute · Tollnes"
             sourceName={outdoorTollnesDevice?.name ?? "Ute Tollnes"}
