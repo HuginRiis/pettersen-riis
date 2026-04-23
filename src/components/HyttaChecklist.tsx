@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getStoredWho, type Who } from "@/lib/push-client";
 import { sendHyttaChecklistPush } from "@/server/agenda-push";
@@ -11,9 +11,33 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { Bell, Trash2, Plus, Loader2, BellRing, BellOff, CalendarIcon, Clock } from "lucide-react";
+import {
+  Bell,
+  Trash2,
+  Plus,
+  Loader2,
+  BellRing,
+  BellOff,
+  CalendarIcon,
+  Clock,
+  Pencil,
+  Users,
+} from "lucide-react";
+
+const RECIPIENT_OPTIONS: { value: string; label: string }[] = [
+  { value: "Alle", label: "Alle" },
+  { value: "Arne", label: "Arne" },
+  { value: "Rebekka", label: "Rebekka" },
+];
 
 type ChecklistItem = {
   id: string;
@@ -25,6 +49,7 @@ type ChecklistItem = {
   updated_at: string;
   notify_at: string | null;
   notified_at: string | null;
+  notify_who: string;
 };
 
 function formatRelativeOslo(iso: string): string {
