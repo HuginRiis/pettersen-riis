@@ -254,6 +254,33 @@ export type Database = {
         }
         Relationships: []
       }
+      home_alarm_log: {
+        Row: {
+          changed_at: string
+          id: string
+          note: string | null
+          source: string
+          state: string
+          who: string
+        }
+        Insert: {
+          changed_at?: string
+          id?: string
+          note?: string | null
+          source?: string
+          state: string
+          who?: string
+        }
+        Update: {
+          changed_at?: string
+          id?: string
+          note?: string | null
+          source?: string
+          state?: string
+          who?: string
+        }
+        Relationships: []
+      }
       homey_connections: {
         Row: {
           access_token: string
