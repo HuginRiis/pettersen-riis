@@ -386,13 +386,24 @@ export function HyttaChecklist() {
                 ? `${openCount} punkt${openCount === 1 ? "" : "er"} ventes brakt til borgen`
                 : "Alt er besørget — ravnene hviler"}
             </p>
-            {nextScheduled && (
-              <p className="text-xs text-primary mt-1 inline-flex items-center gap-1.5">
+            {nextScheduledItem && (
+              <p className="text-xs text-primary mt-1 inline-flex items-center gap-1.5 flex-wrap">
                 <BellRing className="h-3 w-3" />
-                Ravn planlagt {formatNotifyOslo(new Date(nextScheduled).toISOString())}
+                Ravn planlagt {formatNotifyOslo(nextScheduledItem.notify_at!)} til{" "}
+                <span className="font-medium">
+                  {nextScheduledItem.notify_who === "Alle" ? "alle" : nextScheduledItem.notify_who}
+                </span>
+                <button
+                  onClick={() => openSchedulePopover(true)}
+                  className="ml-1 text-muted-foreground/70 hover:text-primary inline-flex items-center"
+                  aria-label="Rediger planlagt påminnelse"
+                  title="Rediger planlagt påminnelse"
+                >
+                  <Pencil className="h-3 w-3" />
+                </button>
                 <button
                   onClick={clearScheduledReminder}
-                  className="ml-1 text-muted-foreground/70 hover:text-destructive inline-flex items-center"
+                  className="text-muted-foreground/70 hover:text-destructive inline-flex items-center"
                   aria-label="Fjern planlagt påminnelse"
                   title="Fjern planlagt påminnelse"
                 >
