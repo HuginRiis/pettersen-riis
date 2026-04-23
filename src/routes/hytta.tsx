@@ -152,6 +152,17 @@ function HyttaPage() {
         <HyttaIndreSal stationMatch="hytta" />
       </section>
 
+      <section className="container mx-auto px-4 pb-12">
+        <div className="ornate-divider mb-6">
+          <span className="text-display tracking-[0.3em] text-primary text-sm uppercase">
+            Vakttårnet på Hytta
+          </span>
+        </div>
+        <div className="max-w-3xl mx-auto">
+          <TollnesCameraStrip cameraMatch="hytta" label="Hytta" />
+        </div>
+      </section>
+
       <NetatmoWeatherStationSection title="Værstasjonen — Hytta" stationMatch="hytta" />
 
 
