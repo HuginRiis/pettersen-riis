@@ -83,6 +83,12 @@ export function WeatherWidget({ title, subtitle, lat, lon, mode }: Props) {
 }
 
 function DayRow({ day, compact }: { day: DaySummary; compact: boolean }) {
+  void compact; // alltid detaljert nå — vi viser timeslot + sammendrag for begge modus
+  const avgWind =
+    day.slots.length > 0
+      ? day.slots.reduce((s, x) => s + x.wind, 0) / day.slots.length
+      : 0;
+  const maxWind = day.slots.reduce((m, x) => Math.max(m, x.wind), 0);
   return (
     <div className="border border-border rounded-md p-3 bg-background/40">
       <div className="flex items-center justify-between mb-2">
@@ -104,25 +110,31 @@ function DayRow({ day, compact }: { day: DaySummary; compact: boolean }) {
           </div>
         </div>
       </div>
-      {compact ? (
-        <div className="text-xs text-muted-foreground flex gap-4">
-          {day.precip > 0 && <span>💧 {day.precip.toFixed(1)} mm</span>}
-        </div>
-      ) : (
-        <div className="grid grid-cols-4 gap-1 text-center">
-          {pickHourSlots(day.slots).map((s) => (
-            <div key={s.time} className="bg-card/60 rounded p-1.5">
-              <div className="text-[10px] text-muted-foreground">
-                {s.time.slice(11, 13)}:00
-              </div>
-              <div className="text-base">{symbolEmoji(s.symbol)}</div>
-              <div className="text-xs text-foreground">
-                {Math.round(s.temp)}°
-              </div>
+
+      <div className="flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-muted-foreground mb-2">
+        <span title="Total nedbør">💧 {day.precip.toFixed(1)} mm</span>
+        <span title="Snittvind">🌬 {avgWind.toFixed(1)} m/s</span>
+        {maxWind > avgWind + 1 && (
+          <span title="Maks vindkast">↑ {maxWind.toFixed(1)} m/s</span>
+        )}
+      </div>
+
+      <div className="grid grid-cols-4 gap-1 text-center">
+        {pickHourSlots(day.slots).map((s) => (
+          <div key={s.time} className="bg-card/60 rounded p-1.5">
+            <div className="text-[10px] text-muted-foreground">
+              {s.time.slice(11, 13)}:00
             </div>
-          ))}
-        </div>
-      )}
+            <div className="text-base">{symbolEmoji(s.symbol)}</div>
+            <div className="text-xs text-foreground">
+              {Math.round(s.temp)}°
+            </div>
+            <div className="text-[9px] text-muted-foreground/80 mt-0.5">
+              🌬 {Math.round(s.wind)}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
