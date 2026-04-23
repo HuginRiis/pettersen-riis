@@ -665,10 +665,12 @@ function SmarthusPage() {
                 />
                 <div>
                   <div className="text-display text-primary text-base sm:text-lg tracking-[0.2em] uppercase">
-                    Tente ildsteder
+                    {litLightsList.length > 0 ? "Tente ildsteder" : "Mørke i salene"}
                   </div>
                   <div className="text-[10px] tracking-[0.25em] text-muted-foreground uppercase mt-0.5">
-                    Philips Hue · {litLightsList.length} lys brenner i borgen
+                    {litLightsList.length > 0
+                      ? `Philips Hue · ${litLightsList.length} lys brenner i borgen`
+                      : `Philips Hue · ${offLightsList.length} slukkede lys`}
                   </div>
                 </div>
               </div>
