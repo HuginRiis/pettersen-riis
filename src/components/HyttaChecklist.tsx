@@ -293,13 +293,8 @@ export function HyttaChecklist() {
       return;
     }
     setScheduling(true);
-    // Sett samme notify_at på alle åpne punkter som ikke allerede har et tidspunkt
-    const toUpdate = open.filter((i) => !i.notify_at).map((i) => i.id);
-    if (toUpdate.length === 0) {
-      setScheduling(false);
-      toast.info("Alle åpne punkter har allerede et varslingstidspunkt.");
-      return;
-    }
+    // Sett samme notify_at på ALLE åpne punkter (overskriver tidligere planlagt tid)
+    const toUpdate = open.map((i) => i.id);
     const { error } = await supabase
       .from("hytta_checklist")
       .update({ notify_at: iso, notified_at: null })
@@ -312,7 +307,7 @@ export function HyttaChecklist() {
     setBulkOpen(false);
     setBulkDate(undefined);
     toast.success(
-      `Påminnelse satt på ${toUpdate.length} punkt${toUpdate.length === 1 ? "" : "er"} – ${formatNotifyOslo(iso)}`,
+      `Ravn planlagt ${formatNotifyOslo(iso)} med ${toUpdate.length} punkt${toUpdate.length === 1 ? "" : "er"}`,
     );
   };
 
