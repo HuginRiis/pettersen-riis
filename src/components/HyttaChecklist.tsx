@@ -361,7 +361,7 @@ export function HyttaChecklist() {
               </PopoverTrigger>
               <PopoverContent align="end" className="w-auto p-3 space-y-3">
                 <p className="text-xs text-muted-foreground">
-                  Sett påminnelse på alle åpne punkter uten tidspunkt.
+                  Sett én påminnelse for hele huskelisten. Varselet inneholder alle åpne punkter.
                 </p>
                 <Calendar
                   mode="single"
