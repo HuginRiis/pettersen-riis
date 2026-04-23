@@ -312,6 +312,10 @@ export function HyttaChecklist() {
   };
 
   const openCount = items.filter((i) => !i.checked).length;
+  const nextScheduled = items
+    .filter((i) => !i.checked && i.notify_at && !i.notified_at && new Date(i.notify_at).getTime() > Date.now())
+    .map((i) => new Date(i.notify_at!).getTime())
+    .sort((a, b) => a - b)[0];
 
   return (
     <section className="container mx-auto px-4 pt-8">
