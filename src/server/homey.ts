@@ -1252,6 +1252,7 @@ export type LivingRoomDevice = {
     measure_temperature?: number;
     dim?: number;
     thermostat_mode?: string;
+    thermostat_mode_values?: { id: string; title?: string }[];
   };
 };
 
@@ -1341,6 +1342,30 @@ export const getLivingRoomDevices = createServerFn({ method: "GET" }).handler(
           if (typeof dim === "number") out.capabilities.dim = dim;
           const tm = readCapValue(caps, "thermostat_mode");
           if (typeof tm === "string") out.capabilities.thermostat_mode = tm;
+          // Hent enum-verdier fra capability-meta hvis tilgjengelig
+          const tmValues = readCapMeta(caps, "thermostat_mode", "values");
+          if (Array.isArray(tmValues)) {
+            const cleaned = tmValues
+              .map((v: any) => {
+                if (typeof v === "string") return { id: v };
+                if (v && typeof v === "object" && typeof v.id === "string") {
+                  return {
+                    id: v.id,
+                    title:
+                      typeof v.title === "string"
+                        ? v.title
+                        : typeof v?.title?.no === "string"
+                          ? v.title.no
+                          : typeof v?.title?.en === "string"
+                            ? v.title.en
+                            : undefined,
+                  };
+                }
+                return null;
+              })
+              .filter(Boolean) as { id: string; title?: string }[];
+            if (cleaned.length > 0) out.capabilities.thermostat_mode_values = cleaned;
+          }
           return out;
         })
         .filter(

@@ -9,7 +9,19 @@ import {
   type ReactNode,
 } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, Lightbulb, Thermometer, Minus, Plus } from "lucide-react";
+import {
+  Loader2,
+  Lightbulb,
+  Thermometer,
+  Minus,
+  Plus,
+  Sun,
+  Snowflake,
+  Wind,
+  Droplets,
+  RefreshCw,
+  Power,
+} from "lucide-react";
 import {
   getLivingRoomDevices,
   setLivingRoomDeviceCapability,
@@ -61,8 +73,8 @@ type Ctx = {
   busy: Record<string, boolean>;
   sendCap: (
     device: LivingRoomDevice,
-    capability: "onoff" | "target_temperature" | "dim",
-    value: boolean | number,
+    capability: "onoff" | "target_temperature" | "dim" | "thermostat_mode",
+    value: boolean | number | string,
   ) => Promise<void>;
   findByKind: (kind: Kind) => LivingRoomDevice | null;
 };
@@ -164,8 +176,8 @@ export function LivingRoomProvider({ children }: { children: ReactNode }) {
   const sendCap = useCallback(
     async (
       device: LivingRoomDevice,
-      capability: "onoff" | "target_temperature" | "dim",
-      value: boolean | number,
+      capability: "onoff" | "target_temperature" | "dim" | "thermostat_mode",
+      value: boolean | number | string,
     ) => {
       const key = `${device.id}:${capability}`;
       if (busy[key]) return;
@@ -341,6 +353,7 @@ export function HeatPumpTile() {
             accent={accent}
             onSetTemp={(v) => sendCap(device, "target_temperature", v)}
             onToggle={(v) => sendCap(device, "onoff", v)}
+            onSetMode={(v) => sendCap(device, "thermostat_mode", v)}
           />
         )}
       </div>
@@ -390,6 +403,34 @@ export function CeilingLampTile() {
   );
 }
 
+// Mitsubishi / MELCloud / Z-wave-termostater rapporterer som regel disse
+// modusene. Vi viser ikoner basert på id (case-insensitive substring-match).
+const MODE_META: { match: RegExp; label: string; Icon: typeof Sun }[] = [
+  { match: /auto/i, label: "Auto", Icon: RefreshCw },
+  { match: /heat|varm/i, label: "Varme", Icon: Sun },
+  { match: /cool|kjøl|kjol/i, label: "Kjøl", Icon: Snowflake },
+  { match: /dry|tørk|tork/i, label: "Tørk", Icon: Droplets },
+  { match: /fan|vift/i, label: "Vifte", Icon: Wind },
+  { match: /off|av/i, label: "Av", Icon: Power },
+];
+
+function modeMeta(id: string, fallbackTitle?: string) {
+  const hit = MODE_META.find((m) => m.match.test(id));
+  return {
+    label: hit?.label ?? fallbackTitle ?? id,
+    Icon: hit?.Icon ?? RefreshCw,
+  };
+}
+
+// Default-modi når Homey ikke gir oss capability-enum (typisk MELCloud).
+const DEFAULT_MODES: { id: string; title?: string }[] = [
+  { id: "auto" },
+  { id: "heat" },
+  { id: "cool" },
+  { id: "dry" },
+  { id: "fan" },
+];
+
 function ThermostatBody({
   device,
   override,
@@ -397,6 +438,7 @@ function ThermostatBody({
   accent,
   onSetTemp,
   onToggle,
+  onSetMode,
 }: {
   device: LivingRoomDevice;
   override?: Partial<LivingRoomDevice["capabilities"]>;
@@ -404,6 +446,7 @@ function ThermostatBody({
   accent: string;
   onSetTemp: (v: number) => void;
   onToggle: (v: boolean) => void;
+  onSetMode: (v: string) => void;
 }) {
   const caps = { ...device.capabilities, ...(override ?? {}) };
   const min = device.capabilities.target_temperature_min ?? 16;
@@ -411,7 +454,16 @@ function ThermostatBody({
   const step = device.capabilities.target_temperature_step ?? 0.5;
   const tempBusy = busy[`${device.id}:target_temperature`];
   const onoffBusy = busy[`${device.id}:onoff`];
+  const modeBusy = busy[`${device.id}:thermostat_mode`];
   const isOn = caps.onoff !== false;
+  const currentMode = caps.thermostat_mode;
+  const supportsMode =
+    currentMode !== undefined ||
+    (device.capabilities.thermostat_mode_values?.length ?? 0) > 0;
+  const modes =
+    device.capabilities.thermostat_mode_values?.length
+      ? device.capabilities.thermostat_mode_values
+      : DEFAULT_MODES;
 
   const adjust = (delta: number) => {
     const cur = caps.target_temperature ?? 21;
@@ -478,6 +530,55 @@ function ThermostatBody({
           <Plus size={20} />
         </button>
       </div>
+
+      {supportsMode && (
+        <div className="w-full max-w-[280px] mt-1">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground">
+              Modus
+            </span>
+            {modeBusy && (
+              <Loader2 size={12} className="animate-spin text-muted-foreground" />
+            )}
+          </div>
+          <div className="grid grid-cols-5 gap-1.5">
+            {modes.map((m) => {
+              const meta = modeMeta(m.id, m.title);
+              const active =
+                currentMode !== undefined &&
+                currentMode.toLowerCase() === m.id.toLowerCase();
+              return (
+                <button
+                  key={m.id}
+                  type="button"
+                  onClick={() => {
+                    if (active || modeBusy) return;
+                    onSetMode(m.id);
+                  }}
+                  disabled={modeBusy}
+                  aria-label={`Modus ${meta.label}`}
+                  title={meta.label}
+                  className="rounded py-2 flex flex-col items-center justify-center gap-0.5 transition-all disabled:opacity-50 active:scale-95"
+                  style={{
+                    background: active
+                      ? `color-mix(in oklab, ${accent} 22%, transparent)`
+                      : "color-mix(in oklab, var(--foreground) 6%, transparent)",
+                    border: `1px solid color-mix(in oklab, ${accent} ${
+                      active ? 55 : 18
+                    }%, transparent)`,
+                    color: active ? accent : "var(--muted-foreground)",
+                  }}
+                >
+                  <meta.Icon size={14} />
+                  <span className="text-[8px] tracking-[0.2em] uppercase">
+                    {meta.label}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {caps.onoff !== undefined && (
         <button
