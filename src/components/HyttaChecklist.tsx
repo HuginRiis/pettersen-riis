@@ -413,7 +413,13 @@ export function HyttaChecklist() {
             )}
           </div>
           <div className="flex gap-2 flex-wrap">
-            <Popover open={bulkOpen} onOpenChange={setBulkOpen}>
+            <Popover
+              open={bulkOpen}
+              onOpenChange={(o) => {
+                if (o) openSchedulePopover(false);
+                else setBulkOpen(false);
+              }}
+            >
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
@@ -445,6 +451,21 @@ export function HyttaChecklist() {
                     className="flex-1"
                   />
                 </div>
+                <div className="flex items-center gap-2">
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                  <Select value={bulkWho} onValueChange={setBulkWho}>
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder="Mottaker" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {RECIPIENT_OPTIONS.map((o) => (
+                        <SelectItem key={o.value} value={o.value}>
+                          {o.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
                 <Button
                   onClick={scheduleBulkPush}
                   disabled={scheduling || !bulkDate}
@@ -452,20 +473,34 @@ export function HyttaChecklist() {
                   size="sm"
                 >
                   {scheduling ? <Loader2 className="h-4 w-4 animate-spin" /> : <BellRing className="h-4 w-4" />}
-                  Planlegg varsel
+                  {nextScheduledItem ? "Oppdater varsel" : "Planlegg varsel"}
                 </Button>
               </PopoverContent>
             </Popover>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={sendListPushNow}
-              disabled={notifying || openCount === 0}
-              className="gap-2"
-            >
-              {notifying ? <Loader2 className="h-4 w-4 animate-spin" /> : <Bell className="h-4 w-4" />}
-              Send nå
-            </Button>
+            <div className="flex items-center gap-1.5">
+              <Select value={sendNowWho} onValueChange={setSendNowWho}>
+                <SelectTrigger className="h-9 w-[110px]" aria-label="Mottaker for push">
+                  <SelectValue placeholder="Mottaker" />
+                </SelectTrigger>
+                <SelectContent>
+                  {RECIPIENT_OPTIONS.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>
+                      {o.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={sendListPushNow}
+                disabled={notifying || openCount === 0}
+                className="gap-2"
+              >
+                {notifying ? <Loader2 className="h-4 w-4 animate-spin" /> : <Bell className="h-4 w-4" />}
+                Send nå
+              </Button>
+            </div>
           </div>
         </div>
 
