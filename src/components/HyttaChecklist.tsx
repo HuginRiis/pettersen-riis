@@ -344,32 +344,73 @@ export function HyttaChecklist() {
   };
 
   const openCount = items.filter((i) => !i.checked).length;
-  const nextScheduledItem = useMemo(() => {
-    return [...items]
-      .filter(
-        (i) =>
-          !i.checked &&
-          i.notify_at &&
-          !i.notified_at &&
-          new Date(i.notify_at).getTime() > Date.now(),
-      )
-      .sort((a, b) => new Date(a.notify_at!).getTime() - new Date(b.notify_at!).getTime())[0];
+
+  // Group scheduled reminders by (notify_at + notify_who) — each unique combo is one "påminnelse"
+  const scheduledReminders = useMemo(() => {
+    const groups = new Map<
+      string,
+      { notify_at: string; notify_who: string; itemIds: string[] }
+    >();
+    for (const i of items) {
+      if (
+        !i.checked &&
+        i.notify_at &&
+        !i.notified_at &&
+        new Date(i.notify_at).getTime() > Date.now()
+      ) {
+        const key = `${i.notify_at}__${i.notify_who || "Alle"}`;
+        const existing = groups.get(key);
+        if (existing) existing.itemIds.push(i.id);
+        else
+          groups.set(key, {
+            notify_at: i.notify_at,
+            notify_who: i.notify_who || "Alle",
+            itemIds: [i.id],
+          });
+      }
+    }
+    return Array.from(groups.values()).sort(
+      (a, b) => new Date(a.notify_at).getTime() - new Date(b.notify_at).getTime(),
+    );
   }, [items]);
 
-  const openSchedulePopover = (forEdit: boolean) => {
-    if (forEdit && nextScheduledItem?.notify_at) {
-      const d = new Date(nextScheduledItem.notify_at);
+  // Track which reminder is being edited (null = creating new)
+  const [editingReminder, setEditingReminder] = useState<{
+    notify_at: string;
+    notify_who: string;
+    itemIds: string[];
+  } | null>(null);
+
+  const openSchedulePopover = (
+    reminder?: { notify_at: string; notify_who: string; itemIds: string[] } | null,
+  ) => {
+    if (reminder) {
+      const d = new Date(reminder.notify_at);
       setBulkDate(d);
       setBulkTime(
         `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`,
       );
-      setBulkWho(nextScheduledItem.notify_who || "Alle");
+      setBulkWho(reminder.notify_who);
+      setEditingReminder(reminder);
     } else {
       setBulkDate(undefined);
       setBulkTime("18:00");
       setBulkWho("Alle");
+      setEditingReminder(null);
     }
     setBulkOpen(true);
+  };
+
+  const removeReminder = async (itemIds: string[]) => {
+    const { error } = await supabase
+      .from("hytta_checklist")
+      .update({ notify_at: null, notified_at: null })
+      .in("id", itemIds);
+    if (error) {
+      toast.error("Kunne ikke fjerne påminnelsen");
+      return;
+    }
+    toast.info("Påminnelse fjernet");
   };
 
   return (
