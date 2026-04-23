@@ -138,24 +138,24 @@ export function StuaConditionPanel({
   const meta = VERDICT_META[overall];
 
   const panel = (
-    <div className={`panel rounded-lg p-6 relative overflow-hidden bg-gradient-to-br ${meta.ring} to-transparent`}>
-      <div className="flex items-start justify-between gap-4 mb-5 flex-wrap">
-        <div>
-          <div className="text-[10px] tracking-[0.3em] text-muted-foreground uppercase mb-1">
+    <div className={`panel rounded-lg p-3 sm:p-6 relative overflow-hidden bg-gradient-to-br ${meta.ring} to-transparent`}>
+      <div className="flex items-start justify-between gap-3 sm:gap-4 mb-3 sm:mb-5 flex-wrap">
+        <div className="min-w-0">
+          <div className="text-[9px] sm:text-[10px] tracking-[0.25em] sm:tracking-[0.3em] text-muted-foreground uppercase mb-0.5 sm:mb-1">
             Maesterens lesning
           </div>
-          <h3 className="text-display text-primary text-lg sm:text-xl tracking-[0.25em] uppercase">
+          <h3 className="text-display text-primary text-sm sm:text-xl tracking-[0.2em] sm:tracking-[0.25em] uppercase">
             Stuens tilstand
           </h3>
           {sourceName && (
-            <div className="text-[10px] tracking-[0.25em] uppercase text-muted-foreground/70 mt-1">
+            <div className="hidden sm:block text-[10px] tracking-[0.25em] uppercase text-muted-foreground/70 mt-1">
               {sourceName}
             </div>
           )}
         </div>
         <div className={`text-right ${meta.tone}`}>
-          <div className="text-3xl">{meta.sigil}</div>
-          <div className="text-[10px] tracking-[0.3em] uppercase mt-1">
+          <div className="text-xl sm:text-3xl">{meta.sigil}</div>
+          <div className="text-[9px] sm:text-[10px] tracking-[0.25em] sm:tracking-[0.3em] uppercase mt-0.5 sm:mt-1">
             {overall === "bra" && "Bra"}
             {overall === "middels" && "Middels"}
             {overall === "darlig" && "Dårlig"}
@@ -164,14 +164,14 @@ export function StuaConditionPanel({
         </div>
       </div>
 
-      <p className={`text-xs italic tracking-[0.15em] mb-5 ${meta.tone}`}>
+      <p className={`hidden sm:block text-xs italic tracking-[0.15em] mb-5 ${meta.tone}`}>
         « {meta.banner} »
       </p>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-3 gap-2 sm:gap-3">
         <MetricBlock
           icon="🌡"
-          label="Temperatur"
+          label="Temp"
           reading={tempR}
           unit="°C"
           digits={1}
@@ -179,7 +179,7 @@ export function StuaConditionPanel({
         />
         <MetricBlock
           icon="💧"
-          label="Hygrostat"
+          label="Fukt"
           reading={humR}
           unit="%"
           digits={0}
@@ -200,7 +200,7 @@ export function StuaConditionPanel({
   if (bare) return panel;
 
   return (
-    <section className="container mx-auto px-4 pt-6">
+    <section className="container mx-auto px-4 pt-4 sm:pt-6">
       {panel}
     </section>
   );
