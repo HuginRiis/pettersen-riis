@@ -5,6 +5,7 @@ import { HyttaChecklist } from "@/components/HyttaChecklist";
 import { NetatmoWeatherStationSection } from "@/components/NetatmoWeatherStation";
 import { HeatersPanel } from "@/components/HeatersPanel";
 import { HyttaIndreSal } from "@/components/HyttaIndreSal";
+import { useAuthStatus } from "@/hooks/use-auth-status";
 
 import hyttaImg from "@/assets/hytta-aurora.jpg";
 import g0314 from "@/assets/hytta-gallery/0314.jpg";
