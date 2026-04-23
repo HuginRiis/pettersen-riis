@@ -262,25 +262,6 @@ export function HyttaChecklist() {
     if (error) toast.error("Kunne ikke slette");
   };
 
-  const clearScheduledReminder = async () => {
-    const scheduledIds = items
-      .filter((i) => i.notify_at && !i.notified_at)
-      .map((i) => i.id);
-    if (scheduledIds.length === 0) {
-      toast.info("Ingen planlagt påminnelse å fjerne.");
-      return;
-    }
-    const { error } = await supabase
-      .from("hytta_checklist")
-      .update({ notify_at: null, notified_at: null })
-      .in("id", scheduledIds);
-    if (error) {
-      toast.error("Kunne ikke fjerne påminnelsen");
-      return;
-    }
-    toast.info("Planlagt påminnelse fjernet");
-  };
-
   const sendListPushNow = async () => {
     const open = items.filter((i) => !i.checked);
     if (open.length === 0) {
