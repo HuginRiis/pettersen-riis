@@ -64,6 +64,7 @@ export function HyttaIndreSal({ stationMatch = "hytta" }: { stationMatch?: strin
       humidity={indoor?.metrics.humidity ?? null}
       co2={indoor?.metrics.co2 ?? null}
       sourceName={sourceName}
+      bare
     />
   );
 }

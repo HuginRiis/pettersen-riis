@@ -145,7 +145,7 @@ function HyttaPage() {
           </div>
         </div>
 
-        <div className="md:col-span-1 [&>section]:!container-none [&>section]:!mx-0 [&>section]:!px-0 [&>section]:!pt-0">
+        <div className="md:col-span-1">
           <HyttaIndreSal stationMatch="hytta" />
         </div>
       </section>
