@@ -117,6 +117,7 @@ function SmarthusPage() {
   const [togglingLights, setTogglingLights] = useState(false);
   const [lightsMessage, setLightsMessage] = useState<string | null>(null);
   const [homeyUpdated, setHomeyUpdated] = useState<Date | null>(null);
+  const [showLitLights, setShowLitLights] = useState(false);
 
   // Hver gang loader-data endres (etter router.invalidate) — merk tidspunktet.
   useEffect(() => {
@@ -443,8 +444,10 @@ function SmarthusPage() {
           <Stat
             label="Tente ildsteder"
             value={`${litLights} / ${lights.length}`}
-            hint={litLights > 0 ? "Lyset brenner" : "Mørke i salene"}
+            hint={litLights > 0 ? (showLitLights ? "Skjul listen" : "Trykk for å se hvilke") : "Mørke i salene"}
             tone={litLights > 0 ? "primary" : "muted"}
+            onClick={litLights > 0 ? () => setShowLitLights((v) => !v) : undefined}
+            active={showLitLights}
           />
           <Stat
             label="Effekt · Hjemme"
