@@ -264,7 +264,14 @@ export async function updateGarbagePref(input: {
     .eq("fraksjon_id", input.fraksjon_id)
     .maybeSingle();
 
-  const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
+  const patch: {
+    updated_at: string;
+    enabled?: boolean;
+    days_before?: number;
+    notify_hour?: number;
+    notify_minute?: number;
+    fraksjon_navn?: string;
+  } = { updated_at: new Date().toISOString() };
   if (typeof input.enabled === "boolean") patch.enabled = input.enabled;
   if (typeof input.days_before === "number") patch.days_before = Math.max(0, Math.min(7, input.days_before));
   if (typeof input.notify_hour === "number") patch.notify_hour = Math.max(0, Math.min(23, input.notify_hour));
