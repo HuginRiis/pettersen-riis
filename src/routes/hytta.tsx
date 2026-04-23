@@ -4,6 +4,7 @@ import { HyttaHero } from "@/components/HyttaHero";
 import { HyttaChecklist } from "@/components/HyttaChecklist";
 import { NetatmoWeatherStationSection } from "@/components/NetatmoWeatherStation";
 import { HeatersPanel } from "@/components/HeatersPanel";
+import { HyttaIndreSal } from "@/components/HyttaIndreSal";
 
 import hyttaImg from "@/assets/hytta-aurora.jpg";
 import g0314 from "@/assets/hytta-gallery/0314.jpg";
@@ -120,7 +121,7 @@ function HyttaPage() {
 
       <HyttaChecklist />
 
-      <section className="container mx-auto px-4 py-12 grid md:grid-cols-3 gap-8">
+      <section className="container mx-auto px-4 py-12 grid md:grid-cols-3 gap-8 items-start">
         <div className="md:col-span-2 space-y-5">
           <div className="ornate-divider mb-2">
             <span className="text-display tracking-[0.3em] text-primary text-sm uppercase">Krøniken om hytta</span>
@@ -144,17 +145,9 @@ function HyttaPage() {
           </div>
         </div>
 
-        <aside className="panel rounded-lg p-6 h-fit">
-          <h3 className="text-lg text-primary mb-3">Hyttebudet</h3>
-          <ul className="space-y-2 text-sm text-muted-foreground">
-            <li>🔥 Mat ildstedet før mørket faller</li>
-            <li>🪵 Fyll vedkurven — vinteren kommer</li>
-            <li>♨️ Tem boblebadet, men vokt dampen</li>
-            <li>🚽 Brenn det som brennes må — to forbrenningstroner venter</li>
-            <li>🐺 Hold ulveflokken samlet ved fjellkanten</li>
-            <li>🕯 Slokk hver flamme før dere rir ut</li>
-          </ul>
-        </aside>
+        <div className="md:col-span-1">
+          <HyttaIndreSal stationMatch="hytta" />
+        </div>
       </section>
 
       <NetatmoWeatherStationSection title="Værstasjonen — Hytta" stationMatch="hytta" />
