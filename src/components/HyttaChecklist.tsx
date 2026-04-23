@@ -150,12 +150,11 @@ export function HyttaChecklist() {
   const [items, setItems] = useState<ChecklistItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [newLabel, setNewLabel] = useState("");
-  const [newNotifyAt, setNewNotifyAt] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
   const [notifying, setNotifying] = useState(false);
   const [who, setWho] = useState<Who>("Alle");
 
-  // Bulk-varsling tidspunkt
+  // Bulk-varsling tidspunkt (gjelder hele listen)
   const [bulkDate, setBulkDate] = useState<Date | undefined>(undefined);
   const [bulkTime, setBulkTime] = useState<string>("18:00");
   const [bulkOpen, setBulkOpen] = useState(false);
@@ -212,7 +211,6 @@ export function HyttaChecklist() {
       label,
       added_by: who,
       sort_order: maxOrder + 1,
-      notify_at: newNotifyAt,
     });
     setAdding(false);
     if (error) {
@@ -220,10 +218,6 @@ export function HyttaChecklist() {
       return;
     }
     setNewLabel("");
-    setNewNotifyAt(null);
-    if (newNotifyAt) {
-      toast.success(`Påminnelse satt til ${formatNotifyOslo(newNotifyAt)}`);
-    }
   };
 
   const toggleItem = async (item: ChecklistItem) => {
@@ -239,17 +233,23 @@ export function HyttaChecklist() {
     if (error) toast.error("Kunne ikke slette");
   };
 
-  const updateNotifyAt = async (item: ChecklistItem, iso: string | null) => {
-    const { error } = await supabase
-      .from("hytta_checklist")
-      .update({ notify_at: iso, notified_at: null })
-      .eq("id", item.id);
-    if (error) {
-      toast.error("Kunne ikke oppdatere varsling");
+  const clearScheduledReminder = async () => {
+    const scheduledIds = items
+      .filter((i) => i.notify_at && !i.notified_at)
+      .map((i) => i.id);
+    if (scheduledIds.length === 0) {
+      toast.info("Ingen planlagt påminnelse å fjerne.");
       return;
     }
-    if (iso) toast.success(`Påminnelse: ${formatNotifyOslo(iso)}`);
-    else toast.info("Varsling fjernet");
+    const { error } = await supabase
+      .from("hytta_checklist")
+      .update({ notify_at: null, notified_at: null })
+      .in("id", scheduledIds);
+    if (error) {
+      toast.error("Kunne ikke fjerne påminnelsen");
+      return;
+    }
+    toast.info("Planlagt påminnelse fjernet");
   };
 
   const sendListPushNow = async () => {
@@ -293,13 +293,8 @@ export function HyttaChecklist() {
       return;
     }
     setScheduling(true);
-    // Sett samme notify_at på alle åpne punkter som ikke allerede har et tidspunkt
-    const toUpdate = open.filter((i) => !i.notify_at).map((i) => i.id);
-    if (toUpdate.length === 0) {
-      setScheduling(false);
-      toast.info("Alle åpne punkter har allerede et varslingstidspunkt.");
-      return;
-    }
+    // Sett samme notify_at på ALLE åpne punkter (overskriver tidligere planlagt tid)
+    const toUpdate = open.map((i) => i.id);
     const { error } = await supabase
       .from("hytta_checklist")
       .update({ notify_at: iso, notified_at: null })
@@ -312,11 +307,15 @@ export function HyttaChecklist() {
     setBulkOpen(false);
     setBulkDate(undefined);
     toast.success(
-      `Påminnelse satt på ${toUpdate.length} punkt${toUpdate.length === 1 ? "" : "er"} – ${formatNotifyOslo(iso)}`,
+      `Ravn planlagt ${formatNotifyOslo(iso)} med ${toUpdate.length} punkt${toUpdate.length === 1 ? "" : "er"}`,
     );
   };
 
   const openCount = items.filter((i) => !i.checked).length;
+  const nextScheduled = items
+    .filter((i) => !i.checked && i.notify_at && !i.notified_at && new Date(i.notify_at).getTime() > Date.now())
+    .map((i) => new Date(i.notify_at!).getTime())
+    .sort((a, b) => a - b)[0];
 
   return (
     <section className="container mx-auto px-4 pt-8">
@@ -332,6 +331,20 @@ export function HyttaChecklist() {
                 ? `${openCount} punkt${openCount === 1 ? "" : "er"} ventes brakt til borgen`
                 : "Alt er besørget — ravnene hviler"}
             </p>
+            {nextScheduled && (
+              <p className="text-xs text-primary mt-1 inline-flex items-center gap-1.5">
+                <BellRing className="h-3 w-3" />
+                Ravn planlagt {formatNotifyOslo(new Date(nextScheduled).toISOString())}
+                <button
+                  onClick={clearScheduledReminder}
+                  className="ml-1 text-muted-foreground/70 hover:text-destructive inline-flex items-center"
+                  aria-label="Fjern planlagt påminnelse"
+                  title="Fjern planlagt påminnelse"
+                >
+                  <BellOff className="h-3 w-3" />
+                </button>
+              </p>
+            )}
           </div>
           <div className="flex gap-2 flex-wrap">
             <Popover open={bulkOpen} onOpenChange={setBulkOpen}>
@@ -348,7 +361,7 @@ export function HyttaChecklist() {
               </PopoverTrigger>
               <PopoverContent align="end" className="w-auto p-3 space-y-3">
                 <p className="text-xs text-muted-foreground">
-                  Sett påminnelse på alle åpne punkter uten tidspunkt.
+                  Sett én påminnelse for hele huskelisten. Varselet inneholder alle åpne punkter.
                 </p>
                 <Calendar
                   mode="single"
@@ -410,11 +423,8 @@ export function HyttaChecklist() {
               Legg til
             </Button>
           </div>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
-            <span className="opacity-70">Påminnelse (valgfritt):</span>
-            <DateTimePicker value={newNotifyAt} onChange={setNewNotifyAt} small />
-          </div>
         </div>
+
 
         {loading ? (
           <p className="text-sm text-muted-foreground italic">Henter pergamentet…</p>
@@ -469,16 +479,8 @@ export function HyttaChecklist() {
                         </>
                       )}
                     </div>
-                    {!item.checked && (
-                      <div className="mt-2">
-                        <DateTimePicker
-                          value={item.notify_at}
-                          onChange={(iso) => updateNotifyAt(item, iso)}
-                          small
-                        />
-                      </div>
-                    )}
                   </div>
+
                   <button
                     onClick={() => deleteItem(item.id)}
                     className="text-muted-foreground/60 hover:text-destructive transition p-1"
