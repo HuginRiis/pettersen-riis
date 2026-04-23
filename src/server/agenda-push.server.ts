@@ -148,12 +148,20 @@ export async function sendAgendaTestPushByEndpoint(data: { endpoint: string; who
   return { ok: true, sentAt };
 }
 
-export async function sendHyttaChecklistPush(data: { title: string; body: string; url?: string }) {
+export async function sendHyttaChecklistPush(data: {
+  title: string;
+  body: string;
+  url?: string;
+  who?: string;
+}) {
   ensureConfigured();
 
-  const { data: subs, error } = await supabaseAdmin
-    .from("push_subscriptions")
-    .select("endpoint, p256dh, auth");
+  const targetWho = data.who && data.who !== "Alle" ? data.who : null;
+  let query = supabaseAdmin.from("push_subscriptions").select("endpoint, p256dh, auth, who");
+  if (targetWho) {
+    query = query.eq("who", targetWho);
+  }
+  const { data: subs, error } = await query;
 
   if (error) throw error;
   if (!subs || subs.length === 0) {
