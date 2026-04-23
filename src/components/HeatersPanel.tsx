@@ -84,12 +84,14 @@ export function HeatersPanel({
   emptyHint,
   collapsible = false,
   defaultCollapsed = false,
+  compact = false,
 }: {
   location: HeaterLocation;
   title: string;
   emptyHint?: string;
   collapsible?: boolean;
   defaultCollapsed?: boolean;
+  compact?: boolean;
 }) {
   const fetchSnapshot = useServerFn(getHomeySnapshot);
   const setCap = useServerFn(setLivingRoomDeviceCapability);
@@ -324,12 +326,13 @@ export function HeatersPanel({
                   <div className="text-[10px] tracking-[0.3em] text-muted-foreground uppercase mb-3">
                     {zone}
                   </div>
-                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className={compact ? "grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4" : "grid sm:grid-cols-2 lg:grid-cols-3 gap-4"}>
                     {list.map((h) => (
                       <HeaterCard
                         key={h.id}
                         heater={h}
                         busy={busy}
+                        compact={compact}
                         onSetTemp={(v) => sendCap(h.id, "target_temperature", v)}
                         onToggle={(v) => sendCap(h.id, "onoff", v)}
                       />
@@ -348,11 +351,13 @@ export function HeatersPanel({
 function HeaterCard({
   heater,
   busy,
+  compact = false,
   onSetTemp,
   onToggle,
 }: {
   heater: HeaterDevice;
   busy: Record<string, boolean>;
+  compact?: boolean;
   onSetTemp: (v: number) => void;
   onToggle: (v: boolean) => void;
 }) {
@@ -368,36 +373,46 @@ function HeaterCard({
     onSetTemp(next);
   };
 
+  // Mindre padding/font på mobil når compact er på (men full størrelse fra sm: og oppover)
+  const headerPad = compact ? "px-2.5 py-1.5 sm:px-4 sm:py-2" : "px-4 py-2";
+  const bodyPad = compact ? "p-2.5 sm:p-4" : "p-4";
+  const bodyGap = compact ? "gap-1.5 sm:gap-3" : "gap-3";
+  const titleSize = compact ? "text-[9px] sm:text-[10px]" : "text-[10px]";
+  const tempFontSize = compact ? "clamp(1.5rem, 9vw, 3.5rem)" : "clamp(2rem, 6vw, 3.5rem)";
+  const measureText = compact ? "text-[9px] sm:text-[10px]" : "text-[10px]";
+  const btnPad = compact ? "py-1.5 sm:py-2.5" : "py-2.5";
+  const onoffPad = compact ? "px-3 py-1 sm:px-4 sm:py-1.5 text-[9px] sm:text-[10px]" : "px-4 py-1.5 text-[10px]";
+
   return (
     <article className="panel rounded-lg overflow-hidden flex flex-col">
-      <div className="px-4 py-2 border-b border-border flex items-center justify-between">
+      <div className={`${headerPad} border-b border-border flex items-center justify-between`}>
         <span
-          className="text-display tracking-[0.3em] text-primary text-[10px] uppercase truncate"
+          className={`text-display tracking-[0.25em] sm:tracking-[0.3em] text-primary ${titleSize} uppercase truncate`}
           title={heater.name}
         >
           {heater.name}
         </span>
-        <span className="text-[9px] tracking-[0.25em] text-muted-foreground/70 uppercase shrink-0 ml-2">
+        <span className="hidden sm:inline text-[9px] tracking-[0.25em] text-muted-foreground/70 uppercase shrink-0 ml-2">
           Ovn
         </span>
       </div>
-      <div className="flex-1 p-4 flex flex-col items-center justify-center gap-3">
-        <Thermometer size={18} style={{ color: accent }} />
+      <div className={`flex-1 ${bodyPad} flex flex-col items-center justify-center ${bodyGap}`}>
+        <Thermometer size={compact ? 14 : 18} className={compact ? "sm:size-[18px]" : ""} style={{ color: accent }} />
 
         <div
           className="text-display leading-none tabular-nums"
-          style={{ color: accent, fontSize: "clamp(2rem, 6vw, 3.5rem)" }}
+          style={{ color: accent, fontSize: tempFontSize }}
         >
           {(heater.target ?? 0).toFixed(1)}°
         </div>
 
         {heater.measure !== undefined && (
-          <div className="text-[10px] tracking-[0.25em] text-muted-foreground/80 uppercase">
-            Måler {heater.measure.toFixed(1)}° nå
+          <div className={`${measureText} tracking-[0.2em] sm:tracking-[0.25em] text-muted-foreground/80 uppercase text-center`}>
+            {compact ? `Nå ${heater.measure.toFixed(1)}°` : `Måler ${heater.measure.toFixed(1)}° nå`}
           </div>
         )}
 
-        <div className="w-full max-w-[260px] mt-1 px-1">
+        <div className="w-full max-w-[260px] mt-0.5 sm:mt-1 px-1">
           <Slider
             value={[heater.target ?? heater.min]}
             min={heater.min}
@@ -412,37 +427,37 @@ function HeaterCard({
           />
         </div>
 
-        <div className="grid grid-cols-3 gap-2 w-full max-w-[260px] mt-1">
+        <div className="grid grid-cols-3 gap-1.5 sm:gap-2 w-full max-w-[260px] mt-0.5 sm:mt-1">
           <button
             type="button"
             onClick={() => adjust(-heater.step)}
             disabled={tempBusy || (heater.target ?? 0) <= heater.min}
             aria-label="Senk temperatur"
-            className="rounded py-2.5 flex items-center justify-center transition-all disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
+            className={`rounded ${btnPad} flex items-center justify-center transition-all disabled:opacity-40 disabled:cursor-not-allowed active:scale-95`}
             style={{
               background: "color-mix(in oklab, var(--foreground) 6%, transparent)",
               border: `1px solid color-mix(in oklab, ${accent} 30%, transparent)`,
               color: accent,
             }}
           >
-            <Minus size={18} />
+            <Minus size={compact ? 14 : 18} />
           </button>
-          <div className="flex items-center justify-center text-[9px] tracking-[0.25em] uppercase text-muted-foreground">
-            {tempBusy ? <Loader2 size={14} className="animate-spin" /> : `${heater.step}°`}
+          <div className="flex items-center justify-center text-[9px] tracking-[0.2em] sm:tracking-[0.25em] uppercase text-muted-foreground">
+            {tempBusy ? <Loader2 size={12} className="animate-spin" /> : `${heater.step}°`}
           </div>
           <button
             type="button"
             onClick={() => adjust(heater.step)}
             disabled={tempBusy || (heater.target ?? 0) >= heater.max}
             aria-label="Hev temperatur"
-            className="rounded py-2.5 flex items-center justify-center transition-all disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
+            className={`rounded ${btnPad} flex items-center justify-center transition-all disabled:opacity-40 disabled:cursor-not-allowed active:scale-95`}
             style={{
               background: "color-mix(in oklab, var(--foreground) 6%, transparent)",
               border: `1px solid color-mix(in oklab, ${accent} 30%, transparent)`,
               color: accent,
             }}
           >
-            <Plus size={18} />
+            <Plus size={compact ? 14 : 18} />
           </button>
         </div>
 
@@ -451,7 +466,7 @@ function HeaterCard({
             type="button"
             onClick={() => onToggle(!isOn)}
             disabled={onoffBusy}
-            className="rounded px-4 py-1.5 text-[10px] tracking-[0.3em] uppercase font-semibold transition-all disabled:opacity-50"
+            className={`rounded ${onoffPad} tracking-[0.25em] sm:tracking-[0.3em] uppercase font-semibold transition-all disabled:opacity-50`}
             style={{
               background: isOn
                 ? `color-mix(in oklab, ${accent} 22%, transparent)`

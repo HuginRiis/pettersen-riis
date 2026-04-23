@@ -767,7 +767,7 @@ function SmarthusPage() {
         location="borg"
         title="Varmemestrene · Borgen"
         emptyHint="Ingen varmeovner med termostat funnet for Borgen i Homey."
-        collapsible
+        compact
       />
 
       <AllZonesPanel
