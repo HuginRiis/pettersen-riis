@@ -466,15 +466,8 @@ export function HyttaChecklist() {
                         </>
                       )}
                     </div>
-                    {!item.checked && (
-                      <div className="mt-2">
-                        <DateTimePicker
-                          value={item.notify_at}
-                          onChange={(iso) => updateNotifyAt(item, iso)}
-                          small
-                        />
-                      </div>
-                    )}
+                  </div>
+
                   </div>
                   <button
                     onClick={() => deleteItem(item.id)}
