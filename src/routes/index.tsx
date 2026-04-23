@@ -225,7 +225,7 @@ function Home() {
           <HallCard to="/agenda" title="Krøniken" desc="Agenda og meldinger med dato og emne." icon="📜" locked={!isAuthed} />
           <HallCard to="/varsler" title="Farevarsler" desc="Aktive farevarsler og trafikkmeldinger." icon="⚠️" locked={!isAuthed} />
           <HallCard to="/vakttarnet" title="Vakttårnet" desc="Vaktene rapporterer hvem som nærmer seg porten." icon="👁" locked={!isAuthed} />
-          <HallCard to="/hytta" title="Hytta" desc="Husets tilflukt i fjellet." icon="🏔" locked={!isAuthed} />
+          <HallCard to="/hytta" title="Hytta" desc="Husets tilflukt i fjellet." icon="🏔" locked={false} />
           <HallCard to="/hundene" title="Hundene" desc="Husets tro følgesvenner." icon="🐺" locked={!isAuthed} />
           <HallCard to="/trening" title="Treningssalen" desc="Kroppen som rustning." icon="⚔️" locked={!isAuthed} />
           <HallCard to="/smarthus" title="Smartborg" desc="Lys, varme og varslere fra Homey." icon="🏰" locked={!isAuthed} />
