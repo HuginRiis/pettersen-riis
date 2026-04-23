@@ -423,7 +423,7 @@ function modeMeta(id: string, fallbackTitle?: string) {
 }
 
 // Default-modi når Homey ikke gir oss capability-enum (typisk MELCloud).
-const DEFAULT_MODES: { id: string }[] = [
+const DEFAULT_MODES: { id: string; title?: string }[] = [
   { id: "auto" },
   { id: "heat" },
   { id: "cool" },
