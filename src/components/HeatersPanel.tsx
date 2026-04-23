@@ -82,15 +82,20 @@ export function HeatersPanel({
   location,
   title,
   emptyHint,
+  collapsible = false,
+  defaultCollapsed = false,
 }: {
   location: HeaterLocation;
   title: string;
   emptyHint?: string;
+  collapsible?: boolean;
+  defaultCollapsed?: boolean;
 }) {
   const fetchSnapshot = useServerFn(getHomeySnapshot);
   const setCap = useServerFn(setLivingRoomDeviceCapability);
 
   const [state, setState] = useState<State>({ status: "loading" });
+  const [collapsed, setCollapsed] = useState<boolean>(collapsible && defaultCollapsed);
   const [overrides, setOverrides] = useState<
     Record<string, { onoff?: boolean; target?: number }>
   >({});
