@@ -472,6 +472,14 @@ function ThermostatBody({
     onSetTemp(next);
   };
 
+  // Lokalt slider-state for jevn dragging — committer ved release
+  const [localTemp, setLocalTemp] = useState<number | null>(null);
+  const sliderValue = localTemp ?? caps.target_temperature ?? min;
+  const sliderPct = Math.max(
+    0,
+    Math.min(100, ((sliderValue - min) / Math.max(0.0001, max - min)) * 100),
+  );
+
   return (
     <div className="w-full flex flex-col items-center gap-3">
       <div className="flex items-center gap-2">
@@ -496,6 +504,39 @@ function ThermostatBody({
           Måler {caps.measure_temperature.toFixed(1)}° nå
         </div>
       )}
+
+      <div className="w-full max-w-[280px] mt-1 px-1">
+        <input
+          type="range"
+          min={min}
+          max={max}
+          step={step}
+          value={sliderValue}
+          onChange={(e) => setLocalTemp(parseFloat(e.target.value))}
+          onPointerUp={() => {
+            if (localTemp !== null) {
+              const v = +localTemp.toFixed(1);
+              setLocalTemp(null);
+              if (v !== caps.target_temperature) onSetTemp(v);
+            }
+          }}
+          onPointerCancel={() => setLocalTemp(null)}
+          onKeyUp={() => {
+            if (localTemp !== null) {
+              const v = +localTemp.toFixed(1);
+              setLocalTemp(null);
+              if (v !== caps.target_temperature) onSetTemp(v);
+            }
+          }}
+          disabled={tempBusy}
+          aria-label="Velg temperatur"
+          className="w-full h-2 rounded-full appearance-none cursor-pointer disabled:opacity-50 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[var(--thumb)] [&::-webkit-slider-thumb]:shadow-md [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-[var(--thumb)] [&::-moz-range-thumb]:border-0"
+          style={{
+            background: `linear-gradient(to right, ${accent} 0%, ${accent} ${sliderPct}%, color-mix(in oklab, var(--foreground) 12%, transparent) ${sliderPct}%, color-mix(in oklab, var(--foreground) 12%, transparent) 100%)`,
+            ["--thumb" as any]: accent,
+          }}
+        />
+      </div>
 
       <div className="grid grid-cols-3 gap-2 w-full max-w-[280px] mt-1">
         <button

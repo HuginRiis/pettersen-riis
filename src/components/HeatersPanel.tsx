@@ -8,6 +8,7 @@ import {
   type HomeyZone,
 } from "@/server/homey";
 import { recordHomeyApiCall } from "@/lib/homey-api-tracker";
+import { Slider } from "@/components/ui/slider";
 
 // Skånsom polling — gjenbruker samme cache-vindu som Smarthus (3 min server-side).
 const REFRESH_MS = 3 * 60_000;
@@ -338,6 +339,21 @@ function HeaterCard({
             Måler {heater.measure.toFixed(1)}° nå
           </div>
         )}
+
+        <div className="w-full max-w-[260px] mt-1 px-1">
+          <Slider
+            value={[heater.target ?? heater.min]}
+            min={heater.min}
+            max={heater.max}
+            step={heater.step}
+            disabled={tempBusy}
+            onValueCommit={(vals) => {
+              const v = vals[0];
+              if (typeof v === "number" && v !== heater.target) onSetTemp(+v.toFixed(1));
+            }}
+            aria-label="Velg temperatur"
+          />
+        </div>
 
         <div className="grid grid-cols-3 gap-2 w-full max-w-[260px] mt-1">
           <button
