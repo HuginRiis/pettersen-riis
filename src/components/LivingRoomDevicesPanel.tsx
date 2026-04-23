@@ -341,6 +341,7 @@ export function HeatPumpTile() {
             accent={accent}
             onSetTemp={(v) => sendCap(device, "target_temperature", v)}
             onToggle={(v) => sendCap(device, "onoff", v)}
+            onSetMode={(v) => sendCap(device, "thermostat_mode", v)}
           />
         )}
       </div>
