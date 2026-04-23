@@ -117,7 +117,7 @@ function SmarthusPage() {
   const [togglingLights, setTogglingLights] = useState(false);
   const [lightsMessage, setLightsMessage] = useState<string | null>(null);
   const [homeyUpdated, setHomeyUpdated] = useState<Date | null>(null);
-  const [showLitLights, setShowLitLights] = useState(false);
+  
 
   // Hver gang loader-data endres (etter router.invalidate) — merk tidspunktet.
   useEffect(() => {
