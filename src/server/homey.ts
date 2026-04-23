@@ -159,6 +159,8 @@ export type HomeyDeviceSnapshot = {
   class?: string;
   zone?: string | null;
   available?: boolean;
+  /** Driver/app-identifikator (f.eks. "homey:app:com.philips.hue") — brukes for å skille merker som Philips Hue. */
+  driverUri?: string | null;
   capabilities: Record<string, { value: HomeyCapValue }>;
 };
 
