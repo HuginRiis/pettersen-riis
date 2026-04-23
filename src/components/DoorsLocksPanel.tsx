@@ -1,14 +1,30 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import {
   getDoorsLocksSnapshot,
+  getHomeAlarmStatus,
+  setHomeAlarmState,
   type DoorOrLockEntry,
   type DoorsLocksResult,
+  type HomeAlarmStatusResult,
+  type HomeAlarmState,
 } from "@/server/homey";
-import { DoorClosed, DoorOpen, Lock, Unlock, Activity, ShieldAlert, BatteryLow, Plus, Minus } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { getStoredWho, setStoredWho, type Who } from "@/lib/push-client";
+import { DoorClosed, DoorOpen, Lock, Unlock, Activity, ShieldAlert, BatteryLow, Plus, Minus, ShieldCheck, ShieldOff, Loader2 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 const REFRESH_MS = 30_000;
+const ALARM_REFRESH_MS = 20_000;
+
+type AlarmLogRow = {
+  id: string;
+  state: string;
+  who: string;
+  changed_at: string;
+};
+
+const WHO_OPTIONS: Who[] = ["Alle", "Arne", "Rebekka", "Marita", "Nora", "Celine", "Mira"];
 
 function ago(iso: string | null): string {
   if (!iso) return "ukjent";
