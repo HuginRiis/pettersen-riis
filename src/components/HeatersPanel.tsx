@@ -239,55 +239,107 @@ export function HeatersPanel({
     return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0], "nb"));
   }, [heaters]);
 
+  // Sammendrag for collapse-knapp
+  const summary = useMemo(() => {
+    if (state.status !== "ok") return null;
+    const total = heaters.length;
+    const onCount = heaters.filter((h) => h.onoff !== false).length;
+    const targets = heaters.map((h) => h.target).filter((t): t is number => typeof t === "number");
+    const avgTarget = targets.length
+      ? targets.reduce((s, n) => s + n, 0) / targets.length
+      : null;
+    return { total, onCount, avgTarget };
+  }, [state, heaters]);
+
+  const isCollapsed = collapsible && collapsed;
+
   return (
     <section className="container mx-auto px-4 py-12">
-      <div className="ornate-divider mb-6">
-        <span className="text-display tracking-[0.3em] text-primary text-sm uppercase">
-          {title}
-        </span>
-      </div>
+      {collapsible
+        ? (
+          <button
+            type="button"
+            onClick={() => setCollapsed((c) => !c)}
+            aria-expanded={!isCollapsed}
+            className="ornate-divider mb-6 w-full flex items-center justify-between gap-3 cursor-pointer group"
+          >
+            <span className="text-display tracking-[0.3em] text-primary text-sm uppercase">
+              {title}
+            </span>
+            <span className="flex items-center gap-3 text-[10px] tracking-[0.25em] text-muted-foreground uppercase shrink-0">
+              {summary && summary.total > 0 && (
+                <>
+                  <span className="hidden sm:inline-flex items-center gap-1">
+                    <Flame size={11} className="text-primary/70" />
+                    {summary.onCount}/{summary.total}
+                  </span>
+                  {summary.avgTarget !== null && (
+                    <span className="tabular-nums">{summary.avgTarget.toFixed(1)}°</span>
+                  )}
+                </>
+              )}
+              <ChevronDown
+                size={16}
+                className={`text-primary/70 transition-transform duration-300 ${
+                  isCollapsed ? "" : "rotate-180"
+                }`}
+              />
+            </span>
+          </button>
+        )
+        : (
+          <div className="ornate-divider mb-6">
+            <span className="text-display tracking-[0.3em] text-primary text-sm uppercase">
+              {title}
+            </span>
+          </div>
+        )}
 
-      {state.status === "loading" && (
-        <div className="panel rounded-lg p-8 flex items-center justify-center">
-          <Loader2 className="animate-spin text-muted-foreground" />
-        </div>
-      )}
-
-      {state.status === "error" && (
-        <div className="panel rounded-lg p-6">
-          <p className="text-sm text-destructive">{state.message}</p>
-        </div>
-      )}
-
-      {state.status === "ok" && heaters.length === 0 && (
-        <div className="panel rounded-lg p-6">
-          <p className="text-sm text-muted-foreground italic">
-            {emptyHint ?? "Ingen varmeovner funnet i Homey for denne lokasjonen."}
-          </p>
-        </div>
-      )}
-
-      {state.status === "ok" && heaters.length > 0 && (
-        <div className="space-y-8">
-          {grouped.map(([zone, list]) => (
-            <div key={zone}>
-              <div className="text-[10px] tracking-[0.3em] text-muted-foreground uppercase mb-3">
-                {zone}
-              </div>
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {list.map((h) => (
-                  <HeaterCard
-                    key={h.id}
-                    heater={h}
-                    busy={busy}
-                    onSetTemp={(v) => sendCap(h.id, "target_temperature", v)}
-                    onToggle={(v) => sendCap(h.id, "onoff", v)}
-                  />
-                ))}
-              </div>
+      {!isCollapsed && (
+        <>
+          {state.status === "loading" && (
+            <div className="panel rounded-lg p-8 flex items-center justify-center">
+              <Loader2 className="animate-spin text-muted-foreground" />
             </div>
-          ))}
-        </div>
+          )}
+
+          {state.status === "error" && (
+            <div className="panel rounded-lg p-6">
+              <p className="text-sm text-destructive">{state.message}</p>
+            </div>
+          )}
+
+          {state.status === "ok" && heaters.length === 0 && (
+            <div className="panel rounded-lg p-6">
+              <p className="text-sm text-muted-foreground italic">
+                {emptyHint ?? "Ingen varmeovner funnet i Homey for denne lokasjonen."}
+              </p>
+            </div>
+          )}
+
+          {state.status === "ok" && heaters.length > 0 && (
+            <div className="space-y-8">
+              {grouped.map(([zone, list]) => (
+                <div key={zone}>
+                  <div className="text-[10px] tracking-[0.3em] text-muted-foreground uppercase mb-3">
+                    {zone}
+                  </div>
+                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {list.map((h) => (
+                      <HeaterCard
+                        key={h.id}
+                        heater={h}
+                        busy={busy}
+                        onSetTemp={(v) => sendCap(h.id, "target_temperature", v)}
+                        onToggle={(v) => sendCap(h.id, "onoff", v)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
       )}
     </section>
   );
