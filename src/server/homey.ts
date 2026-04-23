@@ -461,6 +461,7 @@ function mapSnapshotFromRaw(raw: HomeyRawSnapshot): HomeySnapshot {
       class: d.class,
       zone: d.zone ?? null,
       available: d.available !== false,
+      driverUri: d.driverUri ?? d.driverId ?? d.driver?.uri ?? d.driver?.id ?? null,
       capabilities: caps,
     };
   });
