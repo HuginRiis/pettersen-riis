@@ -705,9 +705,99 @@ function SmarthusPage() {
         )}
       </section>
 
-      {/* Ute-temperaturer (Tollnes + Hytta) */}
-      <section className="container mx-auto px-4 pt-10">
-        <div className="grid sm:grid-cols-2 gap-4">
+      {/* Tente Hue-lyspærer — egen prominent boks, alltid synlig når noe brenner */}
+      {litLightsList.length > 0 && (
+        <section className="container mx-auto px-4 pt-8">
+          <div
+            className="panel rounded-lg p-6"
+            style={{
+              background:
+                "linear-gradient(180deg, color-mix(in oklab, var(--gold) 8%, transparent), var(--gradient-iron))",
+              borderColor: "color-mix(in oklab, var(--gold) 30%, transparent)",
+            }}
+          >
+            <div className="flex items-center justify-between gap-3 mb-5 flex-wrap">
+              <div className="flex items-center gap-3">
+                <Flame
+                  size={20}
+                  className="text-primary"
+                  style={{
+                    filter:
+                      "drop-shadow(0 0 8px color-mix(in oklab, var(--gold) 70%, transparent))",
+                  }}
+                />
+                <div>
+                  <div className="text-display text-primary text-base sm:text-lg tracking-[0.2em] uppercase">
+                    Tente ildsteder
+                  </div>
+                  <div className="text-[10px] tracking-[0.25em] text-muted-foreground uppercase mt-0.5">
+                    Philips Hue · {litLightsList.length} lys brenner i borgen
+                  </div>
+                </div>
+              </div>
+              <span className="text-[10px] tracking-[0.3em] text-primary/80 uppercase border border-primary/30 rounded px-2 py-1">
+                {litLightsList.length} / {lights.length}
+              </span>
+            </div>
+            {(() => {
+              const byZone = new Map<string, typeof litLightsList>();
+              for (const l of litLightsList) {
+                const arr = byZone.get(l.zoneName) ?? [];
+                arr.push(l);
+                byZone.set(l.zoneName, arr);
+              }
+              const sortedZones = Array.from(byZone.entries()).sort((a, b) =>
+                a[0].localeCompare(b[0], "nb"),
+              );
+              return (
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {sortedZones.map(([zoneName, items]) => (
+                    <div
+                      key={zoneName}
+                      className="rounded border border-primary/15 p-3"
+                      style={{
+                        background:
+                          "linear-gradient(180deg, color-mix(in oklab, var(--gold) 6%, transparent), transparent)",
+                      }}
+                    >
+                      <div className="flex items-center gap-2 mb-2">
+                        <Shield size={11} className="text-primary/80" />
+                        <span className="text-[10px] tracking-[0.25em] text-primary uppercase truncate">
+                          {zoneName}
+                        </span>
+                      </div>
+                      <ul className="space-y-1">
+                        {items.map((l) => (
+                          <li
+                            key={l.id}
+                            className="flex items-center gap-2 text-xs"
+                          >
+                            <Flame
+                              size={10}
+                              className="text-primary shrink-0"
+                              style={{
+                                filter:
+                                  "drop-shadow(0 0 4px color-mix(in oklab, var(--gold) 60%, transparent))",
+                              }}
+                            />
+                            <span className="truncate flex-1 text-foreground/90" title={l.name}>
+                              {l.name}
+                            </span>
+                            <span className="text-[10px] text-muted-foreground tabular-nums shrink-0">
+                              {l.dim !== null && `${Math.round(l.dim * 100)}%`}
+                              {l.power !== null && ` · ${Math.round(l.power)}W`}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
+          </div>
+        </section>
+      )}
           <OutdoorTempCard
             label="Ute · Tollnes"
             sourceName={outdoorTollnesDevice?.name ?? "Ute Tollnes"}
