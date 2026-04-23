@@ -410,11 +410,8 @@ export function HyttaChecklist() {
               Legg til
             </Button>
           </div>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
-            <span className="opacity-70">Påminnelse (valgfritt):</span>
-            <DateTimePicker value={newNotifyAt} onChange={setNewNotifyAt} small />
-          </div>
         </div>
+
 
         {loading ? (
           <p className="text-sm text-muted-foreground italic">Henter pergamentet…</p>
