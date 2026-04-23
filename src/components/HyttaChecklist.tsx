@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getStoredWho, type Who } from "@/lib/push-client";
 import { sendHyttaChecklistPush } from "@/server/agenda-push";
@@ -11,9 +11,33 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { Bell, Trash2, Plus, Loader2, BellRing, BellOff, CalendarIcon, Clock } from "lucide-react";
+import {
+  Bell,
+  Trash2,
+  Plus,
+  Loader2,
+  BellRing,
+  BellOff,
+  CalendarIcon,
+  Clock,
+  Pencil,
+  Users,
+} from "lucide-react";
+
+const RECIPIENT_OPTIONS: { value: string; label: string }[] = [
+  { value: "Alle", label: "Alle" },
+  { value: "Arne", label: "Arne" },
+  { value: "Rebekka", label: "Rebekka" },
+];
 
 type ChecklistItem = {
   id: string;
@@ -25,6 +49,7 @@ type ChecklistItem = {
   updated_at: string;
   notify_at: string | null;
   notified_at: string | null;
+  notify_who: string;
 };
 
 function formatRelativeOslo(iso: string): string {
@@ -157,8 +182,12 @@ export function HyttaChecklist() {
   // Bulk-varsling tidspunkt (gjelder hele listen)
   const [bulkDate, setBulkDate] = useState<Date | undefined>(undefined);
   const [bulkTime, setBulkTime] = useState<string>("18:00");
+  const [bulkWho, setBulkWho] = useState<string>("Alle");
   const [bulkOpen, setBulkOpen] = useState(false);
   const [scheduling, setScheduling] = useState(false);
+
+  // Mottaker for "Send nå"
+  const [sendNowWho, setSendNowWho] = useState<string>("Alle");
 
   useEffect(() => {
     setWho(getStoredWho());
@@ -267,9 +296,11 @@ export function HyttaChecklist() {
           title: "📜 Huskeliste til hytta",
           body: `${open.length} punkt${open.length === 1 ? "" : "er"} venter:\n${lines}${more}`,
           url: "/hytta",
+          who: sendNowWho,
         },
       });
-      toast.success(`Ravnen fløy til ${res.sent} av ${res.total} mottakere`);
+      const target = sendNowWho === "Alle" ? "alle" : sendNowWho;
+      toast.success(`Ravnen fløy til ${res.sent} av ${res.total} mottakere (${target})`);
     } catch (e) {
       toast.error(`Kunne ikke sende varsel: ${e instanceof Error ? e.message : String(e)}`);
     } finally {
@@ -293,11 +324,11 @@ export function HyttaChecklist() {
       return;
     }
     setScheduling(true);
-    // Sett samme notify_at på ALLE åpne punkter (overskriver tidligere planlagt tid)
+    // Sett samme notify_at + notify_who på ALLE åpne punkter (overskriver tidligere planlagt verdi)
     const toUpdate = open.map((i) => i.id);
     const { error } = await supabase
       .from("hytta_checklist")
-      .update({ notify_at: iso, notified_at: null })
+      .update({ notify_at: iso, notified_at: null, notify_who: bulkWho })
       .in("id", toUpdate);
     setScheduling(false);
     if (error) {
@@ -306,16 +337,40 @@ export function HyttaChecklist() {
     }
     setBulkOpen(false);
     setBulkDate(undefined);
+    const target = bulkWho === "Alle" ? "alle" : bulkWho;
     toast.success(
-      `Ravn planlagt ${formatNotifyOslo(iso)} med ${toUpdate.length} punkt${toUpdate.length === 1 ? "" : "er"}`,
+      `Ravn planlagt ${formatNotifyOslo(iso)} til ${target} med ${toUpdate.length} punkt${toUpdate.length === 1 ? "" : "er"}`,
     );
   };
 
   const openCount = items.filter((i) => !i.checked).length;
-  const nextScheduled = items
-    .filter((i) => !i.checked && i.notify_at && !i.notified_at && new Date(i.notify_at).getTime() > Date.now())
-    .map((i) => new Date(i.notify_at!).getTime())
-    .sort((a, b) => a - b)[0];
+  const nextScheduledItem = useMemo(() => {
+    return [...items]
+      .filter(
+        (i) =>
+          !i.checked &&
+          i.notify_at &&
+          !i.notified_at &&
+          new Date(i.notify_at).getTime() > Date.now(),
+      )
+      .sort((a, b) => new Date(a.notify_at!).getTime() - new Date(b.notify_at!).getTime())[0];
+  }, [items]);
+
+  const openSchedulePopover = (forEdit: boolean) => {
+    if (forEdit && nextScheduledItem?.notify_at) {
+      const d = new Date(nextScheduledItem.notify_at);
+      setBulkDate(d);
+      setBulkTime(
+        `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`,
+      );
+      setBulkWho(nextScheduledItem.notify_who || "Alle");
+    } else {
+      setBulkDate(undefined);
+      setBulkTime("18:00");
+      setBulkWho("Alle");
+    }
+    setBulkOpen(true);
+  };
 
   return (
     <section className="container mx-auto px-4 pt-8">
@@ -331,13 +386,24 @@ export function HyttaChecklist() {
                 ? `${openCount} punkt${openCount === 1 ? "" : "er"} ventes brakt til borgen`
                 : "Alt er besørget — ravnene hviler"}
             </p>
-            {nextScheduled && (
-              <p className="text-xs text-primary mt-1 inline-flex items-center gap-1.5">
+            {nextScheduledItem && (
+              <p className="text-xs text-primary mt-1 inline-flex items-center gap-1.5 flex-wrap">
                 <BellRing className="h-3 w-3" />
-                Ravn planlagt {formatNotifyOslo(new Date(nextScheduled).toISOString())}
+                Ravn planlagt {formatNotifyOslo(nextScheduledItem.notify_at!)} til{" "}
+                <span className="font-medium">
+                  {nextScheduledItem.notify_who === "Alle" ? "alle" : nextScheduledItem.notify_who}
+                </span>
+                <button
+                  onClick={() => openSchedulePopover(true)}
+                  className="ml-1 text-muted-foreground/70 hover:text-primary inline-flex items-center"
+                  aria-label="Rediger planlagt påminnelse"
+                  title="Rediger planlagt påminnelse"
+                >
+                  <Pencil className="h-3 w-3" />
+                </button>
                 <button
                   onClick={clearScheduledReminder}
-                  className="ml-1 text-muted-foreground/70 hover:text-destructive inline-flex items-center"
+                  className="text-muted-foreground/70 hover:text-destructive inline-flex items-center"
                   aria-label="Fjern planlagt påminnelse"
                   title="Fjern planlagt påminnelse"
                 >
@@ -347,7 +413,13 @@ export function HyttaChecklist() {
             )}
           </div>
           <div className="flex gap-2 flex-wrap">
-            <Popover open={bulkOpen} onOpenChange={setBulkOpen}>
+            <Popover
+              open={bulkOpen}
+              onOpenChange={(o) => {
+                if (o) openSchedulePopover(false);
+                else setBulkOpen(false);
+              }}
+            >
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
@@ -379,6 +451,21 @@ export function HyttaChecklist() {
                     className="flex-1"
                   />
                 </div>
+                <div className="flex items-center gap-2">
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                  <Select value={bulkWho} onValueChange={setBulkWho}>
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder="Mottaker" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {RECIPIENT_OPTIONS.map((o) => (
+                        <SelectItem key={o.value} value={o.value}>
+                          {o.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
                 <Button
                   onClick={scheduleBulkPush}
                   disabled={scheduling || !bulkDate}
@@ -386,20 +473,34 @@ export function HyttaChecklist() {
                   size="sm"
                 >
                   {scheduling ? <Loader2 className="h-4 w-4 animate-spin" /> : <BellRing className="h-4 w-4" />}
-                  Planlegg varsel
+                  {nextScheduledItem ? "Oppdater varsel" : "Planlegg varsel"}
                 </Button>
               </PopoverContent>
             </Popover>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={sendListPushNow}
-              disabled={notifying || openCount === 0}
-              className="gap-2"
-            >
-              {notifying ? <Loader2 className="h-4 w-4 animate-spin" /> : <Bell className="h-4 w-4" />}
-              Send nå
-            </Button>
+            <div className="flex items-center gap-1.5">
+              <Select value={sendNowWho} onValueChange={setSendNowWho}>
+                <SelectTrigger className="h-9 w-[110px]" aria-label="Mottaker for push">
+                  <SelectValue placeholder="Mottaker" />
+                </SelectTrigger>
+                <SelectContent>
+                  {RECIPIENT_OPTIONS.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>
+                      {o.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={sendListPushNow}
+                disabled={notifying || openCount === 0}
+                className="gap-2"
+              >
+                {notifying ? <Loader2 className="h-4 w-4 animate-spin" /> : <Bell className="h-4 w-4" />}
+                Send nå
+              </Button>
+            </div>
           </div>
         </div>
 

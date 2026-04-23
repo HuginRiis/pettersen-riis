@@ -148,12 +148,20 @@ export async function sendAgendaTestPushByEndpoint(data: { endpoint: string; who
   return { ok: true, sentAt };
 }
 
-export async function sendHyttaChecklistPush(data: { title: string; body: string; url?: string }) {
+export async function sendHyttaChecklistPush(data: {
+  title: string;
+  body: string;
+  url?: string;
+  who?: string;
+}) {
   ensureConfigured();
 
-  const { data: subs, error } = await supabaseAdmin
-    .from("push_subscriptions")
-    .select("endpoint, p256dh, auth");
+  const targetWho = data.who && data.who !== "Alle" ? data.who : null;
+  let query = supabaseAdmin.from("push_subscriptions").select("endpoint, p256dh, auth, who");
+  if (targetWho) {
+    query = query.eq("who", targetWho);
+  }
+  const { data: subs, error } = await query;
 
   if (error) throw error;
   if (!subs || subs.length === 0) {
@@ -203,7 +211,7 @@ export async function processHyttaChecklistNotifications(): Promise<{
   // Finn punkter med passert notify_at som ennå ikke er varslet (triggere).
   const { data: triggers, error } = await supabaseAdmin
     .from("hytta_checklist")
-    .select("id, notify_at")
+    .select("id, notify_at, notify_who")
     .is("notified_at", null)
     .not("notify_at", "is", null)
     .gte("notify_at", fromIso)
@@ -211,6 +219,10 @@ export async function processHyttaChecklistNotifications(): Promise<{
 
   if (error) throw error;
   if (!triggers || triggers.length === 0) return { checked: 0, sent: 0, errors: 0 };
+
+  // Bruk mottaker fra første trigger (alle åpne punkter har samme verdi etter bulk-planlegging).
+  const targetWhoRaw = (triggers[0] as { notify_who?: string }).notify_who || "Alle";
+  const targetWho = targetWhoRaw !== "Alle" ? targetWhoRaw : null;
 
   // Hent alle ÅPNE (ikke-avhakede) punkter — det er disse som skal med i varselet.
   const { data: openItems, error: openErr } = await supabaseAdmin
@@ -226,7 +238,6 @@ export async function processHyttaChecklistNotifications(): Promise<{
   const nowIso = new Date().toISOString();
 
   if (!openItems || openItems.length === 0) {
-    // Ingenting å varsle om — marker triggerne som behandlet.
     await supabaseAdmin
       .from("hytta_checklist")
       .update({ notified_at: nowIso })
@@ -234,9 +245,9 @@ export async function processHyttaChecklistNotifications(): Promise<{
     return { checked: triggers.length, sent: 0, errors: 0 };
   }
 
-  const { data: subs, error: subErr } = await supabaseAdmin
-    .from("push_subscriptions")
-    .select("endpoint, p256dh, auth");
+  let subQuery = supabaseAdmin.from("push_subscriptions").select("endpoint, p256dh, auth, who");
+  if (targetWho) subQuery = subQuery.eq("who", targetWho);
+  const { data: subs, error: subErr } = await subQuery;
 
   if (subErr) throw subErr;
   if (!subs || subs.length === 0) {

@@ -26,15 +26,19 @@ export const sendAgendaTestPush = createServerFn({ method: "POST" })
   });
 
 export const sendHyttaChecklistPush = createServerFn({ method: "POST" })
-  .inputValidator((input: { title: string; body: string; url?: string }) => {
+  .inputValidator((input: { title: string; body: string; url?: string; who?: string }) => {
     const title = String(input?.title ?? "").trim();
     const body = String(input?.body ?? "").trim();
     if (title.length < 1 || title.length > 120) throw new Error("Ugyldig tittel.");
     if (body.length < 1 || body.length > 600) throw new Error("Ugyldig innhold.");
+    const who = typeof input?.who === "string" && input.who.length > 0 && input.who.length <= 40
+      ? input.who
+      : "Alle";
     return {
       title,
       body,
       url: typeof input?.url === "string" ? input.url.slice(0, 200) : "/hytta",
+      who,
     };
   })
   .handler(async ({ data }) => {
