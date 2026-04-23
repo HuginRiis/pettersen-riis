@@ -10,6 +10,7 @@ import { HomeyApiActivity } from "@/components/HomeyApiActivity";
 import { HomeyApiPauseToggle } from "@/components/HomeyApiPauseToggle";
 import { HeatersPanel } from "@/components/HeatersPanel";
 import { StuaConditionPanel } from "@/components/StuaConditionPanel";
+import { GarbageCollectionPanel } from "@/components/GarbageCollectionPanel";
 
 import { recordHomeyApiCall } from "@/lib/homey-api-tracker";
 import heroImg from "@/assets/got-smarthus.jpg";
@@ -642,7 +643,9 @@ function SmarthusPage() {
         </div>
       </section>
 
-      {/* Hue-lyspærer — alltid synlig når det finnes Hue-lys */}
+      <GarbageCollectionPanel />
+
+
       {lights.length > 0 && (
         <section className="container mx-auto px-4 pt-8">
           <div
