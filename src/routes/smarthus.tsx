@@ -117,7 +117,7 @@ function SmarthusPage() {
   const [togglingLights, setTogglingLights] = useState(false);
   const [lightsMessage, setLightsMessage] = useState<string | null>(null);
   const [homeyUpdated, setHomeyUpdated] = useState<Date | null>(null);
-  
+  const [showOffLights, setShowOffLights] = useState(false);
 
   // Hver gang loader-data endres (etter router.invalidate) — merk tidspunktet.
   useEffect(() => {
@@ -154,20 +154,24 @@ function SmarthusPage() {
     return driver.includes("hue") || driver.includes("philips") || name.includes("hue");
   };
   const lights = data.devices.filter(isHueLight);
+  const mapLight = (d: typeof data.devices[number]) => ({
+    id: d.id,
+    name: d.name,
+    zoneName: d.zone ? zoneById.get(d.zone)?.name ?? "Ukjent sal" : "Ukjent sal",
+    dim: typeof d.capabilities["dim"]?.value === "number"
+      ? (d.capabilities["dim"]?.value as number)
+      : null,
+    power: typeof d.capabilities["measure_power"]?.value === "number"
+      ? (d.capabilities["measure_power"]?.value as number)
+      : null,
+  });
   const litLights = lights.filter((d) => d.capabilities["onoff"]?.value === true).length;
   const litLightsList = lights
     .filter((d) => d.capabilities["onoff"]?.value === true)
-    .map((d) => ({
-      id: d.id,
-      name: d.name,
-      zoneName: d.zone ? zoneById.get(d.zone)?.name ?? "Ukjent sal" : "Ukjent sal",
-      dim: typeof d.capabilities["dim"]?.value === "number"
-        ? (d.capabilities["dim"]?.value as number)
-        : null,
-      power: typeof d.capabilities["measure_power"]?.value === "number"
-        ? (d.capabilities["measure_power"]?.value as number)
-        : null,
-    }));
+    .map(mapLight);
+  const offLightsList = lights
+    .filter((d) => d.capabilities["onoff"]?.value !== true)
+    .map(mapLight);
 
   const totalPower = data.devices
     .map((d) => d.capabilities["measure_power"]?.value)
@@ -638,8 +642,8 @@ function SmarthusPage() {
         </div>
       </section>
 
-      {/* Tente Hue-lyspærer — egen prominent boks, alltid synlig når noe brenner */}
-      {litLightsList.length > 0 && (
+      {/* Hue-lyspærer — alltid synlig når det finnes Hue-lys */}
+      {lights.length > 0 && (
         <section className="container mx-auto px-4 pt-8">
           <div
             className="panel rounded-lg p-6"
@@ -661,10 +665,12 @@ function SmarthusPage() {
                 />
                 <div>
                   <div className="text-display text-primary text-base sm:text-lg tracking-[0.2em] uppercase">
-                    Tente ildsteder
+                    {litLightsList.length > 0 ? "Tente ildsteder" : "Mørke i salene"}
                   </div>
                   <div className="text-[10px] tracking-[0.25em] text-muted-foreground uppercase mt-0.5">
-                    Philips Hue · {litLightsList.length} lys brenner i borgen
+                    {litLightsList.length > 0
+                      ? `Philips Hue · ${litLightsList.length} lys brenner i borgen`
+                      : `Philips Hue · ${offLightsList.length} slukkede lys`}
                   </div>
                 </div>
               </div>
@@ -672,7 +678,7 @@ function SmarthusPage() {
                 {litLightsList.length} / {lights.length}
               </span>
             </div>
-            {(() => {
+            {litLightsList.length > 0 && (() => {
               const byZone = new Map<string, typeof litLightsList>();
               for (const l of litLightsList) {
                 const arr = byZone.get(l.zoneName) ?? [];
@@ -728,6 +734,73 @@ function SmarthusPage() {
                 </div>
               );
             })()}
+
+            {/* Slukkede Hue-lys — expandable */}
+            {offLightsList.length > 0 && (
+              <div className={litLightsList.length > 0 ? "mt-5 pt-5 border-t border-primary/15" : ""}>
+                <button
+                  type="button"
+                  onClick={() => setShowOffLights((v) => !v)}
+                  className="flex items-center justify-between w-full gap-2 text-left group"
+                >
+                  <div className="flex items-center gap-2">
+                    <Lightbulb size={12} className="text-muted-foreground" />
+                    <span className="text-[10px] tracking-[0.3em] text-muted-foreground uppercase group-hover:text-foreground transition-colors">
+                      Slukkede lys · {offLightsList.length}
+                    </span>
+                  </div>
+                  <ChevronDown
+                    size={14}
+                    className={`text-muted-foreground transition-transform ${showOffLights ? "rotate-180" : ""}`}
+                  />
+                </button>
+                {showOffLights && (() => {
+                  const byZone = new Map<string, typeof offLightsList>();
+                  for (const l of offLightsList) {
+                    const arr = byZone.get(l.zoneName) ?? [];
+                    arr.push(l);
+                    byZone.set(l.zoneName, arr);
+                  }
+                  const sortedZones = Array.from(byZone.entries()).sort((a, b) =>
+                    a[0].localeCompare(b[0], "nb"),
+                  );
+                  return (
+                    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4 animate-in fade-in slide-in-from-top-2 duration-200">
+                      {sortedZones.map(([zoneName, items]) => (
+                        <div
+                          key={zoneName}
+                          className="rounded border border-border/60 p-3"
+                          style={{
+                            background:
+                              "linear-gradient(180deg, color-mix(in oklab, var(--foreground) 3%, transparent), transparent)",
+                          }}
+                        >
+                          <div className="flex items-center gap-2 mb-2">
+                            <Shield size={11} className="text-muted-foreground" />
+                            <span className="text-[10px] tracking-[0.25em] text-muted-foreground uppercase truncate">
+                              {zoneName}
+                            </span>
+                          </div>
+                          <ul className="space-y-1">
+                            {items.map((l) => (
+                              <li
+                                key={l.id}
+                                className="flex items-center gap-2 text-xs"
+                              >
+                                <Lightbulb size={10} className="text-muted-foreground/60 shrink-0" />
+                                <span className="truncate flex-1 text-muted-foreground" title={l.name}>
+                                  {l.name}
+                                </span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
           </div>
         </section>
       )}
