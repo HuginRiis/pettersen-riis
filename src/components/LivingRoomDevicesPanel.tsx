@@ -530,9 +530,10 @@ function ThermostatBody({
           }}
           disabled={tempBusy}
           aria-label="Velg temperatur"
-          className="w-full h-2 rounded-full appearance-none cursor-pointer disabled:opacity-50 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:shadow-md [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0"
+          className="w-full h-2 rounded-full appearance-none cursor-pointer disabled:opacity-50 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[var(--thumb)] [&::-webkit-slider-thumb]:shadow-md [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-[var(--thumb)] [&::-moz-range-thumb]:border-0"
           style={{
             background: `linear-gradient(to right, ${accent} 0%, ${accent} ${sliderPct}%, color-mix(in oklab, var(--foreground) 12%, transparent) ${sliderPct}%, color-mix(in oklab, var(--foreground) 12%, transparent) 100%)`,
+            ["--thumb" as any]: accent,
           }}
         />
       </div>
