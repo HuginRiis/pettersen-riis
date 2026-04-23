@@ -606,15 +606,21 @@ export function DoorsLocksPanel() {
 
   if (state.status === "loading") {
     return (
-      <div className="text-[11px] tracking-[0.25em] uppercase text-muted-foreground italic">
-        Vakten teller portene…
+      <div className="space-y-5">
+        <HomeAlarmPanel />
+        <div className="text-[11px] tracking-[0.25em] uppercase text-muted-foreground italic">
+          Vakten teller portene…
+        </div>
       </div>
     );
   }
 
   if (state.status === "error") {
     return (
-      <div className="text-[11px] text-destructive italic">{state.message}</div>
+      <div className="space-y-5">
+        <HomeAlarmPanel />
+        <div className="text-[11px] text-destructive italic">{state.message}</div>
+      </div>
     );
   }
 
@@ -631,8 +637,11 @@ export function DoorsLocksPanel() {
     locks.length + doors.length + windows.length + motions.length;
   if (totalKnown === 0) {
     return (
-      <div className="text-[11px] text-muted-foreground italic">
-        Ingen Yale Doorman eller Verisure-enheter funnet i Homey.
+      <div className="space-y-5">
+        <HomeAlarmPanel />
+        <div className="text-[11px] text-muted-foreground italic">
+          Ingen Yale Doorman eller Verisure-enheter funnet i Homey.
+        </div>
       </div>
     );
   }
@@ -641,7 +650,9 @@ export function DoorsLocksPanel() {
 
   return (
     <div className="space-y-5">
+      <HomeAlarmPanel />
       {/* Sammendrag */}
+
       <div
         className={`rounded-md border p-3 ${
           allSecure
