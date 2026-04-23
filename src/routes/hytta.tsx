@@ -111,6 +111,8 @@ export const Route = createFileRoute("/hytta")({
 });
 
 function HyttaPage() {
+  const { authenticated } = useAuthStatus();
+
   return (
     <PageShell>
       <HyttaHero
@@ -120,7 +122,7 @@ function HyttaPage() {
         image={hyttaImg}
       />
 
-      <HyttaChecklist />
+      {authenticated && <HyttaChecklist />}
 
       <section className="container mx-auto px-4 py-12 space-y-5">
         <div className="ornate-divider mb-2">
