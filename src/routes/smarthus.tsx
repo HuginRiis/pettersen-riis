@@ -642,8 +642,8 @@ function SmarthusPage() {
         </div>
       </section>
 
-      {/* Tente Hue-lyspærer — egen prominent boks, alltid synlig når noe brenner */}
-      {litLightsList.length > 0 && (
+      {/* Hue-lyspærer — alltid synlig når det finnes Hue-lys */}
+      {lights.length > 0 && (
         <section className="container mx-auto px-4 pt-8">
           <div
             className="panel rounded-lg p-6"
