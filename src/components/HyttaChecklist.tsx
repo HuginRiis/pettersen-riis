@@ -344,10 +344,33 @@ export function HyttaChecklist() {
   };
 
   const openCount = items.filter((i) => !i.checked).length;
-  const nextScheduled = items
-    .filter((i) => !i.checked && i.notify_at && !i.notified_at && new Date(i.notify_at).getTime() > Date.now())
-    .map((i) => new Date(i.notify_at!).getTime())
-    .sort((a, b) => a - b)[0];
+  const nextScheduledItem = useMemo(() => {
+    return [...items]
+      .filter(
+        (i) =>
+          !i.checked &&
+          i.notify_at &&
+          !i.notified_at &&
+          new Date(i.notify_at).getTime() > Date.now(),
+      )
+      .sort((a, b) => new Date(a.notify_at!).getTime() - new Date(b.notify_at!).getTime())[0];
+  }, [items]);
+
+  const openSchedulePopover = (forEdit: boolean) => {
+    if (forEdit && nextScheduledItem?.notify_at) {
+      const d = new Date(nextScheduledItem.notify_at);
+      setBulkDate(d);
+      setBulkTime(
+        `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`,
+      );
+      setBulkWho(nextScheduledItem.notify_who || "Alle");
+    } else {
+      setBulkDate(undefined);
+      setBulkTime("18:00");
+      setBulkWho("Alle");
+    }
+    setBulkOpen(true);
+  };
 
   return (
     <section className="container mx-auto px-4 pt-8">
