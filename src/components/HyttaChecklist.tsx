@@ -150,12 +150,11 @@ export function HyttaChecklist() {
   const [items, setItems] = useState<ChecklistItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [newLabel, setNewLabel] = useState("");
-  const [newNotifyAt, setNewNotifyAt] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
   const [notifying, setNotifying] = useState(false);
   const [who, setWho] = useState<Who>("Alle");
 
-  // Bulk-varsling tidspunkt
+  // Bulk-varsling tidspunkt (gjelder hele listen)
   const [bulkDate, setBulkDate] = useState<Date | undefined>(undefined);
   const [bulkTime, setBulkTime] = useState<string>("18:00");
   const [bulkOpen, setBulkOpen] = useState(false);
@@ -212,7 +211,6 @@ export function HyttaChecklist() {
       label,
       added_by: who,
       sort_order: maxOrder + 1,
-      notify_at: newNotifyAt,
     });
     setAdding(false);
     if (error) {
@@ -220,10 +218,6 @@ export function HyttaChecklist() {
       return;
     }
     setNewLabel("");
-    setNewNotifyAt(null);
-    if (newNotifyAt) {
-      toast.success(`Påminnelse satt til ${formatNotifyOslo(newNotifyAt)}`);
-    }
   };
 
   const toggleItem = async (item: ChecklistItem) => {
@@ -239,17 +233,23 @@ export function HyttaChecklist() {
     if (error) toast.error("Kunne ikke slette");
   };
 
-  const updateNotifyAt = async (item: ChecklistItem, iso: string | null) => {
-    const { error } = await supabase
-      .from("hytta_checklist")
-      .update({ notify_at: iso, notified_at: null })
-      .eq("id", item.id);
-    if (error) {
-      toast.error("Kunne ikke oppdatere varsling");
+  const clearScheduledReminder = async () => {
+    const scheduledIds = items
+      .filter((i) => i.notify_at && !i.notified_at)
+      .map((i) => i.id);
+    if (scheduledIds.length === 0) {
+      toast.info("Ingen planlagt påminnelse å fjerne.");
       return;
     }
-    if (iso) toast.success(`Påminnelse: ${formatNotifyOslo(iso)}`);
-    else toast.info("Varsling fjernet");
+    const { error } = await supabase
+      .from("hytta_checklist")
+      .update({ notify_at: null, notified_at: null })
+      .in("id", scheduledIds);
+    if (error) {
+      toast.error("Kunne ikke fjerne påminnelsen");
+      return;
+    }
+    toast.info("Planlagt påminnelse fjernet");
   };
 
   const sendListPushNow = async () => {
