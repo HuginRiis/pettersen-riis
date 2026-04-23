@@ -283,6 +283,282 @@ function SealedCollapsible({
   );
 }
 
+// =====================================================
+// Alarm-panel (Verisure "Hjem alarm" via Homey)
+// =====================================================
+
+function alarmStateLabel(state: HomeAlarmState | null): string {
+  if (state === "armed") return "Vakthold satt — alarmen ruver";
+  if (state === "partially_armed") return "Halvt vakthold — natt-modus";
+  if (state === "disarmed") return "Vakten hviler — alarmen er av";
+  return "Ukjent — vakten svarer ikke";
+}
+
+function alarmStateShort(state: HomeAlarmState | null): string {
+  if (state === "armed") return "PÅ";
+  if (state === "partially_armed") return "DELVIS";
+  if (state === "disarmed") return "AV";
+  return "?";
+}
+
+function HomeAlarmPanel() {
+  const fetchAlarm = useServerFn(getHomeAlarmStatus);
+  const setAlarm = useServerFn(setHomeAlarmState);
+  const [alarm, setAlarmStateLocal] = useState<
+    | { status: "loading" }
+    | { status: "ok"; data: Extract<HomeAlarmStatusResult, { ok: true }> }
+    | { status: "error"; message: string; needsConnect?: boolean }
+  >({ status: "loading" });
+  const [busy, setBusy] = useState(false);
+  const [who, setWho] = useState<Who>("Alle");
+  const [log, setLog] = useState<AlarmLogRow[]>([]);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const inFlight = useRef(false);
+
+  // Hent lagret "hvem" på klienten
+  useEffect(() => {
+    setWho(getStoredWho());
+  }, []);
+
+  const loadLog = useCallback(async () => {
+    const { data } = await supabase
+      .from("home_alarm_log")
+      .select("id,state,who,changed_at")
+      .order("changed_at", { ascending: false })
+      .limit(20);
+    if (data) setLog(data as AlarmLogRow[]);
+  }, []);
+
+  const loadStatus = useCallback(async () => {
+    if (inFlight.current) return;
+    inFlight.current = true;
+    try {
+      const res = await fetchAlarm();
+      if (res.ok) {
+        setAlarmStateLocal({ status: "ok", data: res });
+      } else {
+        setAlarmStateLocal((prev) =>
+          prev.status === "ok"
+            ? prev
+            : { status: "error", message: res.error ?? "Ukjent feil", needsConnect: res.needsConnect },
+        );
+      }
+    } catch (e: any) {
+      setAlarmStateLocal((prev) =>
+        prev.status === "ok" ? prev : { status: "error", message: e?.message ?? "Ukjent feil" },
+      );
+    } finally {
+      inFlight.current = false;
+    }
+  }, [fetchAlarm]);
+
+  useEffect(() => {
+    loadStatus();
+    loadLog();
+    const id = window.setInterval(loadStatus, ALARM_REFRESH_MS);
+    return () => window.clearInterval(id);
+  }, [loadStatus, loadLog]);
+
+  const handleSet = async (next: HomeAlarmState) => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const res = await setAlarm({ data: { state: next, who } });
+      if (res.ok) {
+        // Logg lokalt i Supabase (server-funksjonen bekrefter Homey-bytte)
+        await supabase.from("home_alarm_log").insert({
+          state: res.state,
+          who: res.who,
+          source: "borgen-app",
+        });
+        await loadLog();
+        await loadStatus();
+      } else {
+        setAlarmStateLocal({ status: "error", message: res.error });
+      }
+    } catch (e: any) {
+      setAlarmStateLocal({ status: "error", message: e?.message ?? "Ukjent feil" });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (alarm.status === "loading") {
+    return (
+      <div className="rounded-md border border-border bg-background/40 p-3">
+        <div className="text-[10px] tracking-[0.3em] uppercase text-primary mb-1">
+          ⚔ Vakttårnet
+        </div>
+        <div className="text-[11px] tracking-[0.2em] uppercase text-muted-foreground italic">
+          Lytter etter alarmens hjerteslag…
+        </div>
+      </div>
+    );
+  }
+
+  if (alarm.status === "error") {
+    return (
+      <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3">
+        <div className="text-[10px] tracking-[0.3em] uppercase text-destructive mb-1">
+          ⚔ Vakttårnet
+        </div>
+        <div className="text-[11px] text-destructive italic">{alarm.message}</div>
+      </div>
+    );
+  }
+
+  const { state, deviceName, zoneName, lastUpdated, available } = alarm.data;
+  const isArmed = state === "armed" || state === "partially_armed";
+  const lastFromLog = log[0];
+  const lastByLine =
+    lastFromLog
+      ? `Sist endret av ${lastFromLog.who} — ${ago(lastFromLog.changed_at)}`
+      : lastUpdated
+        ? `Sist endret ${ago(lastUpdated)}`
+        : null;
+
+  const cardTone = isArmed
+    ? "border-emerald-400/40 bg-emerald-400/10"
+    : state === "disarmed"
+      ? "border-amber-400/40 bg-amber-400/10"
+      : "border-border bg-background/40";
+  const labelTone = isArmed
+    ? "text-emerald-400"
+    : state === "disarmed"
+      ? "text-amber-300"
+      : "text-muted-foreground";
+  const Icon = isArmed ? ShieldCheck : state === "disarmed" ? ShieldOff : ShieldAlert;
+
+  return (
+    <div className={`rounded-md border p-3 ${cardTone}`}>
+      <div className="flex items-center justify-between mb-2">
+        <div className="text-[10px] tracking-[0.3em] uppercase text-primary">
+          ⚔ Vakttårnet — {deviceName}
+        </div>
+        <span
+          className={`text-[9px] tracking-[0.25em] uppercase px-2 py-0.5 rounded border ${
+            isArmed
+              ? "text-emerald-400 border-emerald-400/40"
+              : state === "disarmed"
+                ? "text-amber-300 border-amber-400/40"
+                : "text-muted-foreground border-border"
+          }`}
+        >
+          {alarmStateShort(state)}
+        </span>
+      </div>
+
+      <div className="flex items-start gap-3">
+        <Icon size={28} className={labelTone} />
+        <div className="flex-1 min-w-0">
+          <div className={`text-sm font-semibold italic ${labelTone}`}>
+            « {alarmStateLabel(state)} »
+          </div>
+          <div className="text-[10px] text-muted-foreground mt-0.5 flex flex-wrap gap-x-3">
+            <span>{zoneName}</span>
+            {!available && <span className="text-destructive">stum</span>}
+            {lastByLine && <span>↻ {lastByLine}</span>}
+          </div>
+        </div>
+      </div>
+
+      {/* Toggle-knapper */}
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        <button
+          type="button"
+          disabled={busy || state === "armed"}
+          onClick={() => handleSet("armed")}
+          className={`rounded-md border px-3 py-2 text-[10px] tracking-[0.25em] uppercase transition-colors ${
+            state === "armed"
+              ? "border-emerald-400/40 bg-emerald-400/20 text-emerald-300 cursor-default"
+              : "border-emerald-400/30 bg-emerald-400/5 text-emerald-300 hover:bg-emerald-400/15"
+          } ${busy ? "opacity-50" : ""} flex items-center justify-center gap-2`}
+        >
+          {busy ? <Loader2 size={12} className="animate-spin" /> : <ShieldCheck size={12} />}
+          Skru på
+        </button>
+        <button
+          type="button"
+          disabled={busy || state === "disarmed"}
+          onClick={() => handleSet("disarmed")}
+          className={`rounded-md border px-3 py-2 text-[10px] tracking-[0.25em] uppercase transition-colors ${
+            state === "disarmed"
+              ? "border-amber-400/40 bg-amber-400/20 text-amber-200 cursor-default"
+              : "border-amber-400/30 bg-amber-400/5 text-amber-200 hover:bg-amber-400/15"
+          } ${busy ? "opacity-50" : ""} flex items-center justify-center gap-2`}
+        >
+          {busy ? <Loader2 size={12} className="animate-spin" /> : <ShieldOff size={12} />}
+          Skru av
+        </button>
+      </div>
+
+      {/* Hvem-velger */}
+      <div className="mt-3 flex items-center gap-2 flex-wrap">
+        <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground">
+          Vakt:
+        </span>
+        <select
+          value={who}
+          onChange={(e) => {
+            const next = e.target.value as Who;
+            setWho(next);
+            setStoredWho(next);
+          }}
+          className="text-[10px] tracking-[0.2em] uppercase bg-background border border-border rounded px-2 py-1 text-foreground"
+        >
+          {WHO_OPTIONS.map((w) => (
+            <option key={w} value={w}>
+              {w}
+            </option>
+          ))}
+        </select>
+        <span className="text-[9px] text-muted-foreground/70 italic">
+          (huskes på denne enheten)
+        </span>
+      </div>
+
+      {/* Logg */}
+      {log.length > 0 && (
+        <Collapsible open={historyOpen} onOpenChange={setHistoryOpen} className="mt-3">
+          <CollapsibleTrigger className="w-full flex items-center justify-between gap-2 rounded-md border border-border bg-background/40 px-3 py-2 text-left hover:bg-background/60 transition-colors">
+            <span className="text-[10px] tracking-[0.25em] uppercase text-muted-foreground italic">
+              « Krøniken om vakten » <span className="text-muted-foreground/70 not-italic">({log.length})</span>
+            </span>
+            {historyOpen ? <Minus size={14} /> : <Plus size={14} />}
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <ul className="space-y-1 mt-2">
+              {log.map((row) => (
+                <li
+                  key={row.id}
+                  className="flex items-center justify-between gap-2 text-[10px] text-muted-foreground border-b border-border/40 pb-1"
+                >
+                  <span className="flex items-center gap-2">
+                    {row.state === "armed" ? (
+                      <ShieldCheck size={11} className="text-emerald-400" />
+                    ) : row.state === "partially_armed" ? (
+                      <ShieldAlert size={11} className="text-amber-300" />
+                    ) : (
+                      <ShieldOff size={11} className="text-amber-300" />
+                    )}
+                    <span className="text-foreground/90">{row.who}</span>
+                    <span className="text-muted-foreground/80">
+                      → {row.state === "armed" ? "PÅ" : row.state === "disarmed" ? "AV" : "DELVIS"}
+                    </span>
+                  </span>
+                  <span className="text-[9px] tracking-[0.15em] uppercase text-muted-foreground/70">
+                    {ago(row.changed_at)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </CollapsibleContent>
+        </Collapsible>
+      )}
+    </div>
+  );
+}
+
 export function DoorsLocksPanel() {
   const fetchData = useServerFn(getDoorsLocksSnapshot);
   const [state, setState] = useState<
