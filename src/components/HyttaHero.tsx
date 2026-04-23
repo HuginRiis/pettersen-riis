@@ -39,11 +39,12 @@ export function HyttaHero({
   eyebrow,
   title,
   subtitle,
+  image,
 }: {
   eyebrow?: string;
   title: string;
   subtitle?: string;
-  /** Beholdes for bakoverkompatibilitet, men ignoreres — bilde velges fra måned */
+  /** Hvis satt, vises dette bildet i stedet for den månedlige syklusen */
   image?: string;
 }) {
   // SSR-trygg: server rendrer alltid januar (index 0); klient bytter etter mount
@@ -58,26 +59,38 @@ export function HyttaHero({
     return () => clearInterval(t);
   }, []);
 
-  const current = MONTH_IMAGES[monthIndex];
   const season = getSeasonForMonth(monthIndex);
+  const useOverride = Boolean(image);
 
   return (
     <section className="relative h-[58vh] min-h-[360px] w-full overflow-hidden border-b border-border">
       <HyttaHeroStyles />
 
-      {/* Crossfade mellom alle 12 bilder — kun det aktive vises */}
-      <div className="absolute inset-0">
-        {MONTH_IMAGES.map((m, i) => (
+      {useOverride ? (
+        // Override-modus: vis kun det innsendte bildet
+        <div className="absolute inset-0">
           <img
-            key={m.src}
-            src={m.src}
+            src={image}
             alt=""
-            loading={i === 0 ? "eager" : "lazy"}
-            className="hytta-kenburns absolute inset-0 w-full h-full object-cover transition-opacity duration-[1500ms] ease-in-out"
-            style={{ opacity: i === monthIndex ? 1 : 0 }}
+            loading="eager"
+            className="hytta-kenburns absolute inset-0 w-full h-full object-cover"
           />
-        ))}
-      </div>
+        </div>
+      ) : (
+        /* Crossfade mellom alle 12 bilder — kun det aktive vises */
+        <div className="absolute inset-0">
+          {MONTH_IMAGES.map((m, i) => (
+            <img
+              key={m.src}
+              src={m.src}
+              alt=""
+              loading={i === 0 ? "eager" : "lazy"}
+              className="hytta-kenburns absolute inset-0 w-full h-full object-cover transition-opacity duration-[1500ms] ease-in-out"
+              style={{ opacity: i === monthIndex ? 1 : 0 }}
+            />
+          ))}
+        </div>
+      )}
 
       {/* Lett mørkt overlay for tekstlesbarhet — ikke tid-på-døgnet (bildet bærer stemningen) */}
       <div
