@@ -121,33 +121,31 @@ function HyttaPage() {
 
       <HyttaChecklist />
 
-      <section className="container mx-auto px-4 py-12 grid md:grid-cols-3 gap-8 items-start">
-        <div className="md:col-span-2 space-y-5">
-          <div className="ornate-divider mb-2">
-            <span className="text-display tracking-[0.3em] text-primary text-sm uppercase">Krøniken om hytta</span>
-          </div>
-          <p className="text-foreground/90 leading-relaxed">
-            Når vintervindene feier over Skien, søker House Pettersen Riis tilflukt i tømmerhytta. Røyken stiger fra
-            pipa, peisen knitrer, og ravnene holder vakt i grantrærne utenfor.
-          </p>
-          <p className="text-muted-foreground leading-relaxed">
-            Her samles familien til turer, brettspill, og lange måltider. Hytta er hjertet av husets ro — et sted hvor
-            tiden går saktere og hvor stjernene står klarere.
-          </p>
-
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-4">
-            <Stat label="Hovedhall — sengeplasser" value="4" />
-            <Stat label="Annekset — sengeplasser" value="4" />
-            <Stat label="Høyde over havet" value="598 moh" />
-            <Stat label="Ildsted" value="1" />
-            <Stat label="Forbrenningsdoer" value="2" />
-            <Stat label="Boblebad" value="1" />
-          </div>
+      <section className="container mx-auto px-4 py-12 space-y-5">
+        <div className="ornate-divider mb-2">
+          <span className="text-display tracking-[0.3em] text-primary text-sm uppercase">Krøniken om hytta</span>
         </div>
+        <p className="text-foreground/90 leading-relaxed">
+          Når vintervindene feier over Skien, søker House Pettersen Riis tilflukt i tømmerhytta. Røyken stiger fra
+          pipa, peisen knitrer, og ravnene holder vakt i grantrærne utenfor.
+        </p>
+        <p className="text-muted-foreground leading-relaxed">
+          Her samles familien til turer, brettspill, og lange måltider. Hytta er hjertet av husets ro — et sted hvor
+          tiden går saktere og hvor stjernene står klarere.
+        </p>
 
-        <div className="md:col-span-1">
-          <HyttaIndreSal stationMatch="hytta" />
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-4">
+          <Stat label="Hovedhall — sengeplasser" value="4" />
+          <Stat label="Annekset — sengeplasser" value="4" />
+          <Stat label="Høyde over havet" value="598 moh" />
+          <Stat label="Ildsted" value="1" />
+          <Stat label="Forbrenningsdoer" value="2" />
+          <Stat label="Boblebad" value="1" />
         </div>
+      </section>
+
+      <section className="container mx-auto px-4 pb-6">
+        <HyttaIndreSal stationMatch="hytta" />
       </section>
 
       <NetatmoWeatherStationSection title="Værstasjonen — Hytta" stationMatch="hytta" />
