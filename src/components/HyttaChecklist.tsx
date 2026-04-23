@@ -331,6 +331,20 @@ export function HyttaChecklist() {
                 ? `${openCount} punkt${openCount === 1 ? "" : "er"} ventes brakt til borgen`
                 : "Alt er besørget — ravnene hviler"}
             </p>
+            {nextScheduled && (
+              <p className="text-xs text-primary mt-1 inline-flex items-center gap-1.5">
+                <BellRing className="h-3 w-3" />
+                Ravn planlagt {formatNotifyOslo(new Date(nextScheduled).toISOString())}
+                <button
+                  onClick={clearScheduledReminder}
+                  className="ml-1 text-muted-foreground/70 hover:text-destructive inline-flex items-center"
+                  aria-label="Fjern planlagt påminnelse"
+                  title="Fjern planlagt påminnelse"
+                >
+                  <BellOff className="h-3 w-3" />
+                </button>
+              </p>
+            )}
           </div>
           <div className="flex gap-2 flex-wrap">
             <Popover open={bulkOpen} onOpenChange={setBulkOpen}>
