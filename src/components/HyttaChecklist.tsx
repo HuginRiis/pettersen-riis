@@ -437,38 +437,51 @@ export function HyttaChecklist() {
                 ? `${openCount} punkt${openCount === 1 ? "" : "er"} ventes brakt til borgen`
                 : "Alt er besørget — ravnene hviler"}
             </p>
-            {nextScheduledItem && (
-              <p className="text-xs text-primary mt-1 inline-flex items-center gap-1.5 flex-wrap">
-                <BellRing className="h-3 w-3" />
-                Ravn planlagt {formatNotifyOslo(nextScheduledItem.notify_at!)} til{" "}
-                <span className="font-medium">
-                  {nextScheduledItem.notify_who === "Alle" ? "alle" : nextScheduledItem.notify_who}
-                </span>
-                <button
-                  onClick={() => openSchedulePopover(true)}
-                  className="ml-1 text-muted-foreground/70 hover:text-primary inline-flex items-center"
-                  aria-label="Rediger planlagt påminnelse"
-                  title="Rediger planlagt påminnelse"
-                >
-                  <Pencil className="h-3 w-3" />
-                </button>
-                <button
-                  onClick={clearScheduledReminder}
-                  className="text-muted-foreground/70 hover:text-destructive inline-flex items-center"
-                  aria-label="Fjern planlagt påminnelse"
-                  title="Fjern planlagt påminnelse"
-                >
-                  <BellOff className="h-3 w-3" />
-                </button>
-              </p>
+            {scheduledReminders.length > 0 && (
+              <div className="mt-2 space-y-1">
+                {scheduledReminders.map((r) => (
+                  <p
+                    key={`${r.notify_at}__${r.notify_who}`}
+                    className="text-xs text-primary inline-flex items-center gap-1.5 flex-wrap mr-3"
+                  >
+                    <BellRing className="h-3 w-3" />
+                    Ravn planlagt {formatNotifyOslo(r.notify_at)} til{" "}
+                    <span className="font-medium">
+                      {r.notify_who === "Alle" ? "alle" : r.notify_who}
+                    </span>
+                    <span className="text-muted-foreground/70">
+                      ({r.itemIds.length} punkt{r.itemIds.length === 1 ? "" : "er"})
+                    </span>
+                    <button
+                      onClick={() => openSchedulePopover(r)}
+                      className="ml-1 text-muted-foreground/70 hover:text-primary inline-flex items-center"
+                      aria-label="Rediger påminnelse"
+                      title="Rediger påminnelse"
+                    >
+                      <Pencil className="h-3 w-3" />
+                    </button>
+                    <button
+                      onClick={() => removeReminder(r.itemIds)}
+                      className="text-muted-foreground/70 hover:text-destructive inline-flex items-center"
+                      aria-label="Fjern påminnelse"
+                      title="Fjern påminnelse"
+                    >
+                      <BellOff className="h-3 w-3" />
+                    </button>
+                  </p>
+                ))}
+              </div>
             )}
           </div>
           <div className="flex gap-2 flex-wrap">
             <Popover
               open={bulkOpen}
               onOpenChange={(o) => {
-                if (o) openSchedulePopover(false);
-                else setBulkOpen(false);
+                if (o) openSchedulePopover(null);
+                else {
+                  setBulkOpen(false);
+                  setEditingReminder(null);
+                }
               }}
             >
               <PopoverTrigger asChild>
