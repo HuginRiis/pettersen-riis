@@ -5,6 +5,7 @@ import { HyttaChecklist } from "@/components/HyttaChecklist";
 import { NetatmoWeatherStationSection } from "@/components/NetatmoWeatherStation";
 import { HeatersPanel } from "@/components/HeatersPanel";
 import { HyttaIndreSal } from "@/components/HyttaIndreSal";
+import { TollnesCameraStrip } from "@/components/TollnesCameraStrip";
 import { useAuthStatus } from "@/hooks/use-auth-status";
 
 import hyttaImg from "@/assets/hytta-aurora-got.jpg";
@@ -149,6 +150,17 @@ function HyttaPage() {
 
       <section className="container mx-auto px-4 pb-6">
         <HyttaIndreSal stationMatch="hytta" />
+      </section>
+
+      <section className="container mx-auto px-4 pb-12">
+        <div className="ornate-divider mb-6">
+          <span className="text-display tracking-[0.3em] text-primary text-sm uppercase">
+            Vakttårnet på Hytta
+          </span>
+        </div>
+        <div className="max-w-3xl mx-auto">
+          <TollnesCameraStrip cameraMatch="hytta" label="Hytta" />
+        </div>
       </section>
 
       <NetatmoWeatherStationSection title="Værstasjonen — Hytta" stationMatch="hytta" />
