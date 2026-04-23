@@ -537,7 +537,7 @@ export function HyttaChecklist() {
                   size="sm"
                 >
                   {scheduling ? <Loader2 className="h-4 w-4 animate-spin" /> : <BellRing className="h-4 w-4" />}
-                  {nextScheduledItem ? "Oppdater varsel" : "Planlegg varsel"}
+                  {editingReminder ? "Oppdater påminnelse" : "Planlegg varsel"}
                 </Button>
               </PopoverContent>
             </Popover>
