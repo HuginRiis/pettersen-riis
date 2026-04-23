@@ -88,30 +88,30 @@ function MetricBlock({
 }) {
   const meta = VERDICT_META[reading.verdict];
   return (
-    <div className={`relative rounded-lg border border-primary/15 bg-background/50 p-4 ring-1 ${meta.ring} bg-gradient-to-br to-transparent`}>
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
-          <span className="text-lg">{icon}</span>
-          <span className="text-[10px] tracking-[0.3em] uppercase text-muted-foreground">
+    <div className={`relative rounded-lg border border-primary/15 bg-background/50 p-2.5 sm:p-4 ring-1 ${meta.ring} bg-gradient-to-br to-transparent`}>
+      <div className="flex items-center justify-between mb-1 sm:mb-2">
+        <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+          <span className="text-sm sm:text-lg">{icon}</span>
+          <span className="text-[9px] sm:text-[10px] tracking-[0.25em] sm:tracking-[0.3em] uppercase text-muted-foreground truncate">
             {label}
           </span>
         </div>
-        <span className={`text-sm ${meta.tone}`} aria-label={reading.verdict}>
+        <span className={`text-xs sm:text-sm ${meta.tone}`} aria-label={reading.verdict}>
           {meta.sigil}
         </span>
       </div>
-      <div className="flex items-baseline gap-1.5">
-        <span className={`text-display text-3xl ${meta.tone}`}>
+      <div className="flex items-baseline gap-1 sm:gap-1.5">
+        <span className={`text-display text-xl sm:text-3xl ${meta.tone}`}>
           {reading.value !== null ? reading.value.toFixed(digits) : "—"}
         </span>
-        <span className="text-xs tracking-[0.2em] uppercase text-muted-foreground">
+        <span className="text-[10px] sm:text-xs tracking-[0.15em] sm:tracking-[0.2em] uppercase text-muted-foreground">
           {unit}
         </span>
       </div>
-      <div className={`text-[10px] tracking-[0.25em] uppercase mt-1 italic ${meta.tone}`}>
+      <div className={`text-[9px] sm:text-[10px] tracking-[0.2em] sm:tracking-[0.25em] uppercase mt-0.5 sm:mt-1 italic ${meta.tone} truncate`}>
         {reading.label}
       </div>
-      <div className="text-[9px] tracking-[0.25em] uppercase text-muted-foreground/60 mt-2">
+      <div className="hidden sm:block text-[9px] tracking-[0.25em] uppercase text-muted-foreground/60 mt-2">
         Norm · {norm}
       </div>
     </div>
