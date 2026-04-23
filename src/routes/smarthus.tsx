@@ -516,11 +516,11 @@ function SmarthusPage() {
                 co2={kontorReadings.co2}
                 sourceName={kontorReadings.sourceName}
                 tempRange={{
-                  goodMin: 13,
-                  goodMax: 20,
-                  okBelow: 11,
-                  okAbove: 22,
-                  normLabel: "13–20 °C",
+                  goodMin: 20,
+                  goodMax: 25,
+                  okBelow: 18,
+                  okAbove: 26,
+                  normLabel: "20–25 °C",
                 }}
               />
             )}
