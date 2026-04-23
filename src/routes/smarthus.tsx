@@ -117,7 +117,7 @@ function SmarthusPage() {
   const [togglingLights, setTogglingLights] = useState(false);
   const [lightsMessage, setLightsMessage] = useState<string | null>(null);
   const [homeyUpdated, setHomeyUpdated] = useState<Date | null>(null);
-  const [showLitLights, setShowLitLights] = useState(false);
+  
 
   // Hver gang loader-data endres (etter router.invalidate) — merk tidspunktet.
   useEffect(() => {
@@ -145,9 +145,15 @@ function SmarthusPage() {
   });
 
   const totalDevices = data.devices.length;
-  const lights = data.devices.filter(
-    (d) => "onoff" in d.capabilities && (d.class === "light" || d.class === "socket"),
-  );
+  // Kun Philips Hue-lyspærer — identifiser via driverUri/navn (kontakter o.l. holdes utenfor)
+  const isHueLight = (d: typeof data.devices[number]) => {
+    if (d.class !== "light") return false;
+    if (!("onoff" in d.capabilities)) return false;
+    const driver = (d.driverUri ?? "").toLowerCase();
+    const name = (d.name ?? "").toLowerCase();
+    return driver.includes("hue") || driver.includes("philips") || name.includes("hue");
+  };
+  const lights = data.devices.filter(isHueLight);
   const litLights = lights.filter((d) => d.capabilities["onoff"]?.value === true).length;
   const litLightsList = lights
     .filter((d) => d.capabilities["onoff"]?.value === true)
@@ -550,12 +556,10 @@ function SmarthusPage() {
           <Stat label="Tjenere" value={String(totalDevices)} />
           <Stat label="Saler" value={String(zoneEntries.length)} />
           <Stat
-            label="Tente ildsteder"
+            label="Tente Hue-lys"
             value={`${litLights} / ${lights.length}`}
-            hint={litLights > 0 ? (showLitLights ? "Skjul listen" : "Trykk for å se hvilke") : "Mørke i salene"}
+            hint={litLights > 0 ? "Se boks under" : "Mørke i salene"}
             tone={litLights > 0 ? "primary" : "muted"}
-            onClick={litLights > 0 ? () => setShowLitLights((v) => !v) : undefined}
-            active={showLitLights}
           />
           <Stat
             label="Effekt · Hjemme"
@@ -632,13 +636,40 @@ function SmarthusPage() {
             </div>
           )}
         </div>
+      </section>
 
-        {showLitLights && litLightsList.length > 0 && (
-          <div className="panel rounded-lg p-5 mt-4 animate-in fade-in slide-in-from-top-2 duration-200">
-            <div className="flex items-center gap-2 mb-4">
-              <Flame size={14} className="text-primary" />
-              <span className="text-[10px] tracking-[0.3em] text-primary uppercase">
-                Tente ildsteder · {litLightsList.length}
+      {/* Tente Hue-lyspærer — egen prominent boks, alltid synlig når noe brenner */}
+      {litLightsList.length > 0 && (
+        <section className="container mx-auto px-4 pt-8">
+          <div
+            className="panel rounded-lg p-6"
+            style={{
+              background:
+                "linear-gradient(180deg, color-mix(in oklab, var(--gold) 8%, transparent), var(--gradient-iron))",
+              borderColor: "color-mix(in oklab, var(--gold) 30%, transparent)",
+            }}
+          >
+            <div className="flex items-center justify-between gap-3 mb-5 flex-wrap">
+              <div className="flex items-center gap-3">
+                <Flame
+                  size={20}
+                  className="text-primary"
+                  style={{
+                    filter:
+                      "drop-shadow(0 0 8px color-mix(in oklab, var(--gold) 70%, transparent))",
+                  }}
+                />
+                <div>
+                  <div className="text-display text-primary text-base sm:text-lg tracking-[0.2em] uppercase">
+                    Tente ildsteder
+                  </div>
+                  <div className="text-[10px] tracking-[0.25em] text-muted-foreground uppercase mt-0.5">
+                    Philips Hue · {litLightsList.length} lys brenner i borgen
+                  </div>
+                </div>
+              </div>
+              <span className="text-[10px] tracking-[0.3em] text-primary/80 uppercase border border-primary/30 rounded px-2 py-1">
+                {litLightsList.length} / {lights.length}
               </span>
             </div>
             {(() => {
@@ -698,8 +729,8 @@ function SmarthusPage() {
               );
             })()}
           </div>
-        )}
-      </section>
+        </section>
+      )}
 
       {/* Ute-temperaturer (Tollnes + Hytta) */}
       <section className="container mx-auto px-4 pt-10">

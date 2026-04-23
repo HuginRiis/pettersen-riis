@@ -159,6 +159,8 @@ export type HomeyDeviceSnapshot = {
   class?: string;
   zone?: string | null;
   available?: boolean;
+  /** Driver/app-identifikator (f.eks. "homey:app:com.philips.hue") — brukes for å skille merker som Philips Hue. */
+  driverUri?: string | null;
   capabilities: Record<string, { value: HomeyCapValue }>;
 };
 
@@ -423,6 +425,7 @@ async function snapshotFromSession(
         class: d.class,
         zone: d.zone ?? null,
         available: d.available !== false,
+        driverUri: d.driverUri ?? d.driverId ?? d.driver?.uri ?? d.driver?.id ?? null,
         capabilities: caps,
       };
     });
@@ -458,6 +461,7 @@ function mapSnapshotFromRaw(raw: HomeyRawSnapshot): HomeySnapshot {
       class: d.class,
       zone: d.zone ?? null,
       available: d.available !== false,
+      driverUri: d.driverUri ?? d.driverId ?? d.driver?.uri ?? d.driver?.id ?? null,
       capabilities: caps,
     };
   });
