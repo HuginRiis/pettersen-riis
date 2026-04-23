@@ -8,13 +8,30 @@ type Reading = {
   label: string;
 };
 
-function rateTemp(t: number | null): Reading {
+export type TempRange = {
+  goodMin: number;
+  goodMax: number;
+  okBelow?: number; // ned til denne = middels
+  okAbove?: number; // opp til denne = middels
+  normLabel: string;
+};
+
+const DEFAULT_TEMP_RANGE: TempRange = {
+  goodMin: 20,
+  goodMax: 24.8,
+  okBelow: 18,
+  okAbove: 26,
+  normLabel: "20–24,8 °C",
+};
+
+function rateTemp(t: number | null, range: TempRange = DEFAULT_TEMP_RANGE): Reading {
   if (t === null) return { value: null, verdict: "ukjent", label: "Ingen avlesning" };
-  // Normen: 20–24,8 ideelt, 18–24,8 akseptabelt
-  if (t >= 20 && t <= 24.8) return { value: t, verdict: "bra", label: "Mestret av maesteren" };
-  if (t >= 18 && t < 20) return { value: t, verdict: "middels", label: "Litt kjølig i salen" };
-  if (t > 24.8 && t <= 26) return { value: t, verdict: "middels", label: "Litt vel lummert" };
-  if (t < 18) return { value: t, verdict: "darlig", label: "Kalde gufs fra Nord" };
+  const { goodMin, goodMax, okBelow, okAbove } = range;
+  if (t >= goodMin && t <= goodMax) return { value: t, verdict: "bra", label: "Mestret av maesteren" };
+  if (okBelow !== undefined && t >= okBelow && t < goodMin) return { value: t, verdict: "middels", label: "Litt kjølig i salen" };
+  if (okAbove !== undefined && t > goodMax && t <= okAbove) return { value: t, verdict: "middels", label: "Litt vel lummert" };
+  if (okBelow !== undefined && t < okBelow) return { value: t, verdict: "darlig", label: "Kalde gufs fra Nord" };
+  if (t < goodMin) return { value: t, verdict: "darlig", label: "Kalde gufs fra Nord" };
   return { value: t, verdict: "darlig", label: "Drage-hete i salen" };
 }
 
