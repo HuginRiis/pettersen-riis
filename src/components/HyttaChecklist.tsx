@@ -182,8 +182,12 @@ export function HyttaChecklist() {
   // Bulk-varsling tidspunkt (gjelder hele listen)
   const [bulkDate, setBulkDate] = useState<Date | undefined>(undefined);
   const [bulkTime, setBulkTime] = useState<string>("18:00");
+  const [bulkWho, setBulkWho] = useState<string>("Alle");
   const [bulkOpen, setBulkOpen] = useState(false);
   const [scheduling, setScheduling] = useState(false);
+
+  // Mottaker for "Send nå"
+  const [sendNowWho, setSendNowWho] = useState<string>("Alle");
 
   useEffect(() => {
     setWho(getStoredWho());
