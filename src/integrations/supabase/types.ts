@@ -104,6 +104,102 @@ export type Database = {
         }
         Relationships: []
       }
+      garbage_address: {
+        Row: {
+          address_text: string
+          created_at: string
+          gatekode: string
+          gatenavn: string
+          husnr: string
+          id: string
+          kommunenr: string
+          label: string
+          updated_at: string
+        }
+        Insert: {
+          address_text: string
+          created_at?: string
+          gatekode: string
+          gatenavn: string
+          husnr: string
+          id?: string
+          kommunenr: string
+          label?: string
+          updated_at?: string
+        }
+        Update: {
+          address_text?: string
+          created_at?: string
+          gatekode?: string
+          gatenavn?: string
+          husnr?: string
+          id?: string
+          kommunenr?: string
+          label?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      garbage_notification_log: {
+        Row: {
+          fraksjon_id: number
+          id: string
+          notified_at: string
+          pickup_date: string
+        }
+        Insert: {
+          fraksjon_id: number
+          id?: string
+          notified_at?: string
+          pickup_date: string
+        }
+        Update: {
+          fraksjon_id?: number
+          id?: string
+          notified_at?: string
+          pickup_date?: string
+        }
+        Relationships: []
+      }
+      garbage_notification_prefs: {
+        Row: {
+          created_at: string
+          days_before: number
+          enabled: boolean
+          fraksjon_id: number
+          fraksjon_navn: string
+          id: string
+          notify_hour: number
+          notify_minute: number
+          updated_at: string
+          who: string
+        }
+        Insert: {
+          created_at?: string
+          days_before?: number
+          enabled?: boolean
+          fraksjon_id: number
+          fraksjon_navn: string
+          id?: string
+          notify_hour?: number
+          notify_minute?: number
+          updated_at?: string
+          who?: string
+        }
+        Update: {
+          created_at?: string
+          days_before?: number
+          enabled?: boolean
+          fraksjon_id?: number
+          fraksjon_navn?: string
+          id?: string
+          notify_hour?: number
+          notify_minute?: number
+          updated_at?: string
+          who?: string
+        }
+        Relationships: []
+      }
       grocery_favorites: {
         Row: {
           brand: string | null
