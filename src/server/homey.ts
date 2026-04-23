@@ -556,6 +556,174 @@ export const disconnectHomey = createServerFn({ method: "POST" }).handler(async 
 });
 
 // ============================================================
+// Verisure "Hjem alarm" — homealarm_state capability
+// ============================================================
+
+export type HomeAlarmState = "armed" | "partially_armed" | "disarmed";
+
+export type HomeAlarmStatusResult =
+  | { ok: false; needsConnect?: boolean; error: string }
+  | {
+      ok: true;
+      deviceId: string;
+      deviceName: string;
+      zoneName: string;
+      state: HomeAlarmState | null;
+      available: boolean;
+      lastUpdated: string | null;
+      fetchedAt: string;
+    };
+
+function findHomeAlarmDevice(
+  devicesRaw: any[],
+): { device: any; caps: any } | null {
+  // 1. Eksakt match på navn "hjem alarm" (Verisure heter typisk dette på norsk)
+  const byName = devicesRaw.find((d) => {
+    const n = (d?.name ?? "").toString().toLowerCase().trim();
+    if (!n) return false;
+    if (n === "hjem alarm" || n === "hjemalarm" || n === "home alarm") return true;
+    return false;
+  });
+  const candidates: any[] = [];
+  if (byName) candidates.push(byName);
+  // 2. Hvilken som helst Verisure-enhet med homealarm_state-capability
+  for (const d of devicesRaw) {
+    if (candidates.includes(d)) continue;
+    const caps = d?.capabilitiesObj ?? d?.capabilities_obj ?? {};
+    if (caps && typeof caps === "object" && "homealarm_state" in caps) {
+      candidates.push(d);
+    }
+  }
+  for (const d of candidates) {
+    const caps = d?.capabilitiesObj ?? d?.capabilities_obj ?? {};
+    if (caps && typeof caps === "object" && "homealarm_state" in caps) {
+      return { device: d, caps };
+    }
+  }
+  return null;
+}
+
+export const getHomeAlarmStatus = createServerFn({ method: "GET" }).handler(
+  async (): Promise<HomeAlarmStatusResult> => {
+    let conn: HomeyConnection | null;
+    try {
+      conn = await getValidConnection();
+    } catch (e: any) {
+      return { ok: false, error: e?.message ?? "Token-feil" };
+    }
+    if (!conn) return { ok: false, needsConnect: true, error: "Ikke tilkoblet Homey" };
+
+    try {
+      const raw = await getHomeyRawSnapshot(conn);
+      if (!raw) return { ok: false, error: "Fant ingen Homey-data" };
+
+      const found = findHomeAlarmDevice(raw.devicesRaw);
+      if (!found) {
+        return {
+          ok: false,
+          error: "Fant ikke «Hjem alarm» i Homey (ingen homealarm_state-enhet).",
+        };
+      }
+      const { device, caps } = found;
+      const zoneById = new Map<string, string>();
+      for (const z of raw.zonesRaw) {
+        zoneById.set(z.id ?? z._id, z.name ?? "Ukjent sal");
+      }
+      const stateCap = caps.homealarm_state;
+      const value = stateCap?.value;
+      const state: HomeAlarmState | null =
+        value === "armed" || value === "partially_armed" || value === "disarmed"
+          ? value
+          : null;
+
+      return {
+        ok: true,
+        deviceId: device.id ?? device._id,
+        deviceName: device.name ?? "Hjem alarm",
+        zoneName: zoneById.get(device.zone) ?? "Borgen",
+        state,
+        available: device.available !== false,
+        lastUpdated: pickCapTimestamp(stateCap),
+        fetchedAt: new Date().toISOString(),
+      };
+    } catch (e: any) {
+      return { ok: false, error: e?.message ?? "Klarte ikke hente alarm-status" };
+    }
+  },
+);
+
+export const setHomeAlarmState = createServerFn({ method: "POST" })
+  .inputValidator((input: { state: HomeAlarmState; who?: string }) => {
+    if (
+      input?.state !== "armed" &&
+      input?.state !== "partially_armed" &&
+      input?.state !== "disarmed"
+    ) {
+      throw new Error("Ugyldig alarm-tilstand");
+    }
+    const who =
+      typeof input.who === "string" && input.who.length > 0 && input.who.length < 50
+        ? input.who
+        : "Alle";
+    return { state: input.state, who };
+  })
+  .handler(
+    async ({
+      data,
+    }): Promise<
+      | { ok: false; error: string }
+      | { ok: true; state: HomeAlarmState; who: string; changedAt: string }
+    > => {
+      let conn: HomeyConnection | null;
+      try {
+        conn = await getValidConnection();
+      } catch (e: any) {
+        return { ok: false, error: e?.message ?? "Token-feil" };
+      }
+      if (!conn) return { ok: false, error: "Ikke tilkoblet Homey" };
+
+      try {
+        const session = await getHomeySessionContext(conn);
+        if (!session) return { ok: false, error: "Klarte ikke åpne Homey-sesjon" };
+        const raw = await getHomeyRawSnapshot(conn);
+        if (!raw) return { ok: false, error: "Fant ingen Homey-data" };
+
+        const found = findHomeAlarmDevice(raw.devicesRaw);
+        if (!found) return { ok: false, error: "Fant ikke «Hjem alarm»" };
+
+        const apiBase = `${session.target.baseUrl}/api`;
+        const deviceId = found.device.id ?? found.device._id;
+        const res = await fetch(
+          `${apiBase}/manager/devices/device/${deviceId}/capability/homealarm_state`,
+          {
+            method: "PUT",
+            headers: {
+              Authorization: `Bearer ${session.sessionToken}`,
+              "Content-Type": "application/json",
+              Accept: "application/json",
+            },
+            body: JSON.stringify({ value: data.state }),
+          },
+        );
+        if (!res.ok) {
+          const text = await res.text().catch(() => "");
+          return {
+            ok: false,
+            error: `Homey avviste kommandoen (${res.status}): ${text.slice(0, 200)}`,
+          };
+        }
+        // Nuller snapshot-cache så neste lesing ser den nye verdien
+        homeySnapshotCache = null;
+
+        const changedAt = new Date().toISOString();
+        return { ok: true, state: data.state, who: data.who, changedAt };
+      } catch (e: any) {
+        return { ok: false, error: e?.message ?? "Klarte ikke endre alarm" };
+      }
+    },
+  );
+
+// ============================================================
 // Doors & Locks snapshot (Verisure / Yale Doorman / contact sensors)
 // ============================================================
 
