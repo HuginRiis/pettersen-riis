@@ -296,9 +296,11 @@ export function HyttaChecklist() {
           title: "📜 Huskeliste til hytta",
           body: `${open.length} punkt${open.length === 1 ? "" : "er"} venter:\n${lines}${more}`,
           url: "/hytta",
+          who: sendNowWho,
         },
       });
-      toast.success(`Ravnen fløy til ${res.sent} av ${res.total} mottakere`);
+      const target = sendNowWho === "Alle" ? "alle" : sendNowWho;
+      toast.success(`Ravnen fløy til ${res.sent} av ${res.total} mottakere (${target})`);
     } catch (e) {
       toast.error(`Kunne ikke sende varsel: ${e instanceof Error ? e.message : String(e)}`);
     } finally {
@@ -322,11 +324,11 @@ export function HyttaChecklist() {
       return;
     }
     setScheduling(true);
-    // Sett samme notify_at på ALLE åpne punkter (overskriver tidligere planlagt tid)
+    // Sett samme notify_at + notify_who på ALLE åpne punkter (overskriver tidligere planlagt verdi)
     const toUpdate = open.map((i) => i.id);
     const { error } = await supabase
       .from("hytta_checklist")
-      .update({ notify_at: iso, notified_at: null })
+      .update({ notify_at: iso, notified_at: null, notify_who: bulkWho })
       .in("id", toUpdate);
     setScheduling(false);
     if (error) {
@@ -335,8 +337,9 @@ export function HyttaChecklist() {
     }
     setBulkOpen(false);
     setBulkDate(undefined);
+    const target = bulkWho === "Alle" ? "alle" : bulkWho;
     toast.success(
-      `Ravn planlagt ${formatNotifyOslo(iso)} med ${toUpdate.length} punkt${toUpdate.length === 1 ? "" : "er"}`,
+      `Ravn planlagt ${formatNotifyOslo(iso)} til ${target} med ${toUpdate.length} punkt${toUpdate.length === 1 ? "" : "er"}`,
     );
   };
 
