@@ -183,27 +183,36 @@ function parseDays(data: any): DaySummary[] {
 }
 
 function pickTomorrow(days: DaySummary[]): DaySummary[] {
-  const tmr = new Date();
-  tmr.setDate(tmr.getDate() + 1);
-  const iso = tmr.toISOString().slice(0, 10);
-  return days.filter((d) => d.date === iso);
+  // Picks tomorrow + day after tomorrow (2 days forward).
+  const targets: string[] = [];
+  for (let i = 1; i <= 2; i++) {
+    const d = new Date();
+    d.setDate(d.getDate() + i);
+    targets.push(d.toISOString().slice(0, 10));
+  }
+  return days.filter((d) => targets.includes(d.date));
 }
 
 function pickWeekend(days: DaySummary[]): DaySummary[] {
-  // Find next Saturday and Sunday from today (if today is Sat/Sun, use this weekend)
+  // Find upcoming Friday, Saturday and Sunday from today.
+  // If today is Fri/Sat/Sun, include the remaining days of this weekend.
   const today = new Date();
-  const dow = today.getDay(); // 0 sun, 6 sat
-  let satOffset: number;
-  if (dow === 6) satOffset = 0;
-  else if (dow === 0) satOffset = -1; // Sunday → Sat was yesterday; use today (sun) and -1? Use upcoming next Sat
-  else satOffset = 6 - dow;
-  // For Sunday, jump to next Saturday (6 days ahead) so we always show upcoming weekend
-  if (dow === 0) satOffset = 6;
-  const sat = new Date(today);
-  sat.setDate(sat.getDate() + satOffset);
-  const sun = new Date(sat);
-  sun.setDate(sun.getDate() + 1);
-  const targets = [sat.toISOString().slice(0, 10), sun.toISOString().slice(0, 10)];
+  const dow = today.getDay(); // 0 sun, 1 mon ... 5 fri, 6 sat
+  let friOffset: number;
+  if (dow === 0) friOffset = 5; // Sunday → next Friday
+  else if (dow <= 5) friOffset = 5 - dow; // Mon-Fri → coming Friday
+  else friOffset = -1; // Saturday → Friday was yesterday
+  const fri = new Date(today);
+  fri.setDate(fri.getDate() + friOffset);
+  const sat = new Date(fri);
+  sat.setDate(sat.getDate() + 1);
+  const sun = new Date(fri);
+  sun.setDate(sun.getDate() + 2);
+  const targets = [
+    fri.toISOString().slice(0, 10),
+    sat.toISOString().slice(0, 10),
+    sun.toISOString().slice(0, 10),
+  ];
   return days.filter((d) => targets.includes(d.date));
 }
 

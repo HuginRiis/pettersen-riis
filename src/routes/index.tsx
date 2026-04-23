@@ -195,14 +195,14 @@ function Home() {
         </div>
         <div className="grid md:grid-cols-2 gap-5">
           <WeatherWidget
-            title="Hytta · Kommende helg"
+            title="Hytta · Helgen (fre–søn)"
             subtitle="Øvre Bjørkesetvegen 123, Flesberg"
             lat={HYTTA.lat}
             lon={HYTTA.lon}
             mode="weekend"
           />
           <WeatherWidget
-            title="Tollnes · I morgen"
+            title="Tollnes · Neste 2 dager"
             subtitle="Tollnes, Skien"
             lat={TOLLNES.lat}
             lon={TOLLNES.lon}
