@@ -135,11 +135,11 @@ export function HyttaHero({
           </p>
         )}
 
-        {/* Måneds-stripe — kun etter mount så SSR ikke får mismatch */}
-        {mounted && (
+        {/* Måneds-stripe — kun etter mount så SSR ikke får mismatch, og kun når vi syklar månedsbilder */}
+        {mounted && !useOverride && (
           <div className="mt-5 flex items-center gap-3 text-[10px] md:text-xs uppercase tracking-[0.35em] text-primary/90">
             <span className="inline-block w-8 h-px bg-primary/60" />
-            <span>{current.label}</span>
+            <span>{MONTH_IMAGES[monthIndex].label}</span>
             <span className="inline-block w-8 h-px bg-primary/60" />
           </div>
         )}
