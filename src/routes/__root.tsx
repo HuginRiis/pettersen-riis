@@ -7,7 +7,7 @@ import { PullToRefresh } from "@/components/PullToRefresh";
 // Routes that are accessible without logging in (visitors entering the castle gates).
 // Locked routes now redirect to "/" (where the login dialog opens automatically) instead
 // of a dedicated /login page.
-const PUBLIC_PATHS = new Set<string>(["/", "/var", "/pollen", "/turer", "/got-saga"]);
+const PUBLIC_PATHS = new Set<string>(["/", "/var", "/pollen", "/turer", "/got-saga", "/hytta"]);
 
 import appCss from "../styles.css?url";
 
