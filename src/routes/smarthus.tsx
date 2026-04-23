@@ -1,6 +1,7 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { Swords, Shield, Flame, DoorOpen, Lightbulb, Zap, Crown, ChevronDown } from "lucide-react";
 import { PageShell, PageHero } from "@/components/PageShell";
 import { LastUpdated } from "@/components/LastUpdated";
 import { getHomeySnapshot, disconnectHomey, setAllOutdoorLights } from "@/server/homey";
@@ -604,30 +605,13 @@ function SmarthusPage() {
         emptyHint="Ingen varmeovner med termostat funnet for Borgen i Homey."
       />
 
-
-      <section className="container mx-auto px-4 py-12 space-y-12">
-        {zoneEntries.map(([zoneKey, devices]) => {
-          const zoneName =
-            zoneKey === "__no_zone__"
-              ? "Ukjent sal"
-              : zoneById.get(zoneKey)?.name ?? "Ukjent sal";
-          return (
-            <div key={zoneKey}>
-              <div className="ornate-divider mb-6">
-                <span className="text-display tracking-[0.3em] text-primary text-sm uppercase">
-                  {zoneName}
-                </span>
-              </div>
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {devices.map((d) => (
-                  <DeviceCard key={d.id} device={d} />
-                ))}
-              </div>
-            </div>
-          );
-        })}
-
-      </section>
+      <AllZonesPanel
+        zoneEntries={zoneEntries}
+        zoneById={zoneById}
+        powerByZone={powerByZone}
+        litLights={litLights}
+        totalLights={lights.length}
+      />
 
       <HomeyApiActivity />
     </PageShell>
@@ -777,6 +761,331 @@ function Co2Card({
           <span className="text-xs tracking-[0.25em] ml-2 align-middle">PPM</span>
         </div>
       </div>
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/*  AllZonesPanel — Samlet oversikt over alle saler i borgen,                  */
+/*  med GoT-stil grafer (effekt per sone) og dekorative ikoner                 */
+/*  (lys, lemmer, spyd, skjold).                                               */
+/* -------------------------------------------------------------------------- */
+
+function deviceIconFor(cls?: string) {
+  switch (cls) {
+    case "light":
+      return Flame; // ildsted
+    case "socket":
+      return Zap; // strømstikk
+    case "lock":
+      return DoorOpen; // portvokter
+    case "sensor":
+      return Shield; // skjold = sensor
+    case "heater":
+    case "thermostat":
+      return Crown; // varmemester
+    default:
+      return Swords; // spyd = ukjent tjener
+  }
+}
+
+function AllZonesPanel({
+  zoneEntries,
+  zoneById,
+  powerByZone,
+  litLights,
+  totalLights,
+}: {
+  zoneEntries: [string, any[]][];
+  zoneById: Map<string, { id: string; name: string }>;
+  powerByZone: Map<string, number>;
+  litLights: number;
+  totalLights: number;
+}) {
+  const [openZone, setOpenZone] = useState<string | null>(null);
+
+  // Bygg sone-statistikk for grafer
+  const zoneStats = useMemo(() => {
+    return zoneEntries.map(([zoneKey, devices]) => {
+      const zoneName =
+        zoneKey === "__no_zone__"
+          ? "Ukjent sal"
+          : zoneById.get(zoneKey)?.name ?? "Ukjent sal";
+      const power = powerByZone.get(zoneKey) ?? 0;
+      const lights = devices.filter(
+        (d) => "onoff" in d.capabilities && (d.class === "light" || d.class === "socket"),
+      );
+      const lit = lights.filter((d) => d.capabilities["onoff"]?.value === true).length;
+      const temps = devices
+        .map((d) => d.capabilities["measure_temperature"]?.value)
+        .filter((v: any): v is number => typeof v === "number");
+      const avgTemp =
+        temps.length > 0 ? temps.reduce((a, b) => a + b, 0) / temps.length : null;
+      return {
+        zoneKey,
+        zoneName,
+        devices,
+        power,
+        lit,
+        lights: lights.length,
+        avgTemp,
+        deviceCount: devices.length,
+      };
+    });
+  }, [zoneEntries, zoneById, powerByZone]);
+
+  const maxPower = Math.max(1, ...zoneStats.map((z) => z.power));
+  const totalDevicesAll = zoneStats.reduce((a, z) => a + z.deviceCount, 0);
+
+  return (
+    <section className="container mx-auto px-4 py-12">
+      <div className="ornate-divider mb-8">
+        <span className="text-display tracking-[0.3em] text-primary text-sm uppercase">
+          ⚔ Borgens Saler ⚔
+        </span>
+      </div>
+
+      <p className="text-center text-xs tracking-[0.25em] text-muted-foreground/80 uppercase mb-8 italic">
+        «Alle borgens saler under ett tak — fra kjeller til tårn»
+      </p>
+
+      {/* Sammendrag — skjold, spyd og lys */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+        <BannerStat
+          icon={Shield}
+          label="Saler"
+          value={String(zoneStats.length)}
+          hint="Voktede haller"
+        />
+        <BannerStat
+          icon={Swords}
+          label="Tjenere"
+          value={String(totalDevicesAll)}
+          hint="Lojale enheter"
+        />
+        <BannerStat
+          icon={Flame}
+          label="Ildsteder"
+          value={`${litLights}/${totalLights}`}
+          hint={litLights > 0 ? "Brenner i natt" : "Mørke saler"}
+          accent={litLights > 0}
+        />
+        <BannerStat
+          icon={Zap}
+          label="Strøm"
+          value={
+            powerByZone.size > 0
+              ? `${Math.round(zoneStats.reduce((a, z) => a + z.power, 0))} W`
+              : "—"
+          }
+          hint="Sanntid"
+        />
+      </div>
+
+      {/* Effekt-graf per sone — som banner-linjer */}
+      <div className="panel rounded-lg p-6 mb-8">
+        <div className="flex items-center gap-2 mb-5">
+          <Crown size={14} className="text-primary" />
+          <span className="text-[10px] tracking-[0.3em] text-primary uppercase">
+            Salens strømforbruk
+          </span>
+        </div>
+        <div className="space-y-3">
+          {zoneStats
+            .filter((z) => z.power > 0)
+            .sort((a, b) => b.power - a.power)
+            .slice(0, 10)
+            .map((z) => {
+              const pct = (z.power / maxPower) * 100;
+              return (
+                <div key={z.zoneKey} className="flex items-center gap-3">
+                  <div className="text-[10px] tracking-[0.2em] text-muted-foreground uppercase truncate w-32 shrink-0">
+                    {z.zoneName}
+                  </div>
+                  <div className="flex-1 h-3 rounded-sm overflow-hidden relative border border-primary/15"
+                       style={{ background: "color-mix(in oklab, var(--foreground) 4%, transparent)" }}>
+                    <div
+                      className="h-full transition-all duration-700"
+                      style={{
+                        width: `${pct}%`,
+                        background:
+                          "linear-gradient(90deg, color-mix(in oklab, var(--gold) 70%, transparent), color-mix(in oklab, var(--gold) 35%, transparent))",
+                        boxShadow: "0 0 8px color-mix(in oklab, var(--gold) 40%, transparent)",
+                      }}
+                    />
+                  </div>
+                  <div className="text-xs tabular-nums text-primary w-20 text-right shrink-0">
+                    {z.power >= 1000
+                      ? `${(z.power / 1000).toFixed(2)} kW`
+                      : `${Math.round(z.power)} W`}
+                  </div>
+                </div>
+              );
+            })}
+          {zoneStats.filter((z) => z.power > 0).length === 0 && (
+            <p className="text-xs text-muted-foreground italic">Ingen aktiv effekt-måling i salene.</p>
+          )}
+        </div>
+      </div>
+
+      {/* Sone-kort — sammenslått, kollapsbar liste */}
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {zoneStats.map((z) => {
+          const isOpen = openZone === z.zoneKey;
+          return (
+            <article
+              key={z.zoneKey}
+              className="panel rounded-lg overflow-hidden glow-on-hover flex flex-col"
+            >
+              <button
+                type="button"
+                onClick={() => setOpenZone(isOpen ? null : z.zoneKey)}
+                className="px-4 py-3 border-b border-primary/15 flex items-center justify-between gap-3 hover:bg-primary/5 transition-colors text-left"
+                style={{
+                  background:
+                    "linear-gradient(180deg, color-mix(in oklab, var(--gold) 8%, transparent), transparent)",
+                }}
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  <Shield
+                    size={14}
+                    className="text-primary shrink-0"
+                    style={{ filter: "drop-shadow(0 0 4px color-mix(in oklab, var(--gold) 50%, transparent))" }}
+                  />
+                  <span
+                    className="text-display tracking-[0.25em] text-primary text-[11px] uppercase truncate"
+                    title={z.zoneName}
+                  >
+                    {z.zoneName}
+                  </span>
+                </div>
+                <ChevronDown
+                  size={14}
+                  className={`text-muted-foreground shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`}
+                />
+              </button>
+
+              <div className="px-4 py-3 grid grid-cols-3 gap-2 text-center">
+                <div>
+                  <div className="text-[9px] tracking-[0.2em] text-muted-foreground uppercase">Tjenere</div>
+                  <div className="text-display text-primary text-base">{z.deviceCount}</div>
+                </div>
+                <div>
+                  <div className="text-[9px] tracking-[0.2em] text-muted-foreground uppercase">Lys</div>
+                  <div className={`text-display text-base ${z.lit > 0 ? "text-primary" : "text-muted-foreground"}`}>
+                    {z.lights > 0 ? `${z.lit}/${z.lights}` : "—"}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-[9px] tracking-[0.2em] text-muted-foreground uppercase">Varme</div>
+                  <div className="text-display text-primary text-base">
+                    {z.avgTemp !== null ? `${z.avgTemp.toFixed(1)}°` : "—"}
+                  </div>
+                </div>
+              </div>
+
+              {z.power > 0 && (
+                <div className="px-4 pb-3 flex items-center gap-2">
+                  <Zap size={11} className="text-primary/70" />
+                  <div className="flex-1 h-1 rounded-full bg-primary/10 overflow-hidden">
+                    <div
+                      className="h-full"
+                      style={{
+                        width: `${Math.min(100, (z.power / maxPower) * 100)}%`,
+                        background: "color-mix(in oklab, var(--gold) 60%, transparent)",
+                      }}
+                    />
+                  </div>
+                  <span className="text-[10px] tabular-nums text-muted-foreground">
+                    {z.power >= 1000 ? `${(z.power / 1000).toFixed(1)}kW` : `${Math.round(z.power)}W`}
+                  </span>
+                </div>
+              )}
+
+              {isOpen && (
+                <div
+                  className="border-t border-primary/15 p-3 space-y-1.5 max-h-72 overflow-auto"
+                  style={{ background: "color-mix(in oklab, var(--foreground) 3%, transparent)" }}
+                >
+                  {z.devices.map((d: any) => {
+                    const Icon = deviceIconFor(d.class);
+                    const onoff = d.capabilities["onoff"]?.value;
+                    const dim = d.capabilities["dim"]?.value;
+                    const temp = d.capabilities["measure_temperature"]?.value;
+                    const power = d.capabilities["measure_power"]?.value;
+                    const battery = d.capabilities["measure_battery"]?.value;
+                    return (
+                      <div
+                        key={d.id}
+                        className="flex items-center gap-2 text-xs py-1 px-2 rounded border border-transparent hover:border-primary/15"
+                      >
+                        <Icon
+                          size={12}
+                          className={onoff === true ? "text-primary shrink-0" : "text-muted-foreground shrink-0"}
+                        />
+                        <span className="truncate flex-1 text-foreground/90" title={d.name}>
+                          {d.name}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground tabular-nums shrink-0">
+                          {typeof onoff === "boolean" && (onoff ? "✦" : "○")}
+                          {typeof dim === "number" && ` ${Math.round(dim * 100)}%`}
+                          {typeof temp === "number" && ` ${temp.toFixed(1)}°`}
+                          {typeof power === "number" && ` ${Math.round(power)}W`}
+                          {typeof battery === "number" && ` 🔋${Math.round(battery)}%`}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </article>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function BannerStat({
+  icon: Icon,
+  label,
+  value,
+  hint,
+  accent = false,
+}: {
+  icon: typeof Shield;
+  label: string;
+  value: string;
+  hint?: string;
+  accent?: boolean;
+}) {
+  return (
+    <div
+      className="panel rounded-lg p-4 text-center relative overflow-hidden"
+      style={{
+        background: accent
+          ? "linear-gradient(180deg, color-mix(in oklab, var(--gold) 12%, transparent), transparent)"
+          : undefined,
+      }}
+    >
+      <div className="flex justify-center mb-2">
+        <Icon
+          size={18}
+          className="text-primary"
+          style={{
+            filter: accent
+              ? "drop-shadow(0 0 6px color-mix(in oklab, var(--gold) 60%, transparent))"
+              : undefined,
+          }}
+        />
+      </div>
+      <div className="text-display text-primary text-xl">{value}</div>
+      <div className="text-[10px] tracking-[0.3em] text-muted-foreground uppercase mt-1">
+        {label}
+      </div>
+      {hint && (
+        <div className="text-[10px] text-muted-foreground/70 mt-1 italic">{hint}</div>
+      )}
     </div>
   );
 }
