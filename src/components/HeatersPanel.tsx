@@ -326,12 +326,13 @@ export function HeatersPanel({
                   <div className="text-[10px] tracking-[0.3em] text-muted-foreground uppercase mb-3">
                     {zone}
                   </div>
-                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className={compact ? "grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4" : "grid sm:grid-cols-2 lg:grid-cols-3 gap-4"}>
                     {list.map((h) => (
                       <HeaterCard
                         key={h.id}
                         heater={h}
                         busy={busy}
+                        compact={compact}
                         onSetTemp={(v) => sendCap(h.id, "target_temperature", v)}
                         onToggle={(v) => sendCap(h.id, "onoff", v)}
                       />
