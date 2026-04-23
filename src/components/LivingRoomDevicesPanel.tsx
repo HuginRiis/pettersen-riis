@@ -472,6 +472,14 @@ function ThermostatBody({
     onSetTemp(next);
   };
 
+  // Lokalt slider-state for jevn dragging — committer ved release
+  const [localTemp, setLocalTemp] = useState<number | null>(null);
+  const sliderValue = localTemp ?? caps.target_temperature ?? min;
+  const sliderPct = Math.max(
+    0,
+    Math.min(100, ((sliderValue - min) / Math.max(0.0001, max - min)) * 100),
+  );
+
   return (
     <div className="w-full flex flex-col items-center gap-3">
       <div className="flex items-center gap-2">
