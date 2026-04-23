@@ -468,7 +468,6 @@ export function HyttaChecklist() {
                     </div>
                   </div>
 
-                  </div>
                   <button
                     onClick={() => deleteItem(item.id)}
                     className="text-muted-foreground/60 hover:text-destructive transition p-1"
