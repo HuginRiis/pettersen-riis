@@ -123,11 +123,13 @@ export function StuaConditionPanel({
   humidity,
   co2,
   sourceName,
+  bare = false,
 }: {
   temperature: number | null;
   humidity: number | null;
   co2: number | null;
   sourceName?: string | null;
+  bare?: boolean;
 }) {
   const tempR = rateTemp(temperature);
   const humR = rateHumidity(humidity);
@@ -135,65 +137,71 @@ export function StuaConditionPanel({
   const overall = overallVerdict([tempR, humR, co2R]);
   const meta = VERDICT_META[overall];
 
-  return (
-    <section className="container mx-auto px-4 pt-6">
-      <div className={`panel rounded-lg p-6 relative overflow-hidden bg-gradient-to-br ${meta.ring} to-transparent`}>
-        <div className="flex items-start justify-between gap-4 mb-5 flex-wrap">
-          <div>
-            <div className="text-[10px] tracking-[0.3em] text-muted-foreground uppercase mb-1">
-              Maesterens lesning
-            </div>
-            <h3 className="text-display text-primary text-lg sm:text-xl tracking-[0.25em] uppercase">
-              Stuens tilstand
-            </h3>
-            {sourceName && (
-              <div className="text-[10px] tracking-[0.25em] uppercase text-muted-foreground/70 mt-1">
-                {sourceName}
-              </div>
-            )}
+  const panel = (
+    <div className={`panel rounded-lg p-6 relative overflow-hidden bg-gradient-to-br ${meta.ring} to-transparent`}>
+      <div className="flex items-start justify-between gap-4 mb-5 flex-wrap">
+        <div>
+          <div className="text-[10px] tracking-[0.3em] text-muted-foreground uppercase mb-1">
+            Maesterens lesning
           </div>
-          <div className={`text-right ${meta.tone}`}>
-            <div className="text-3xl">{meta.sigil}</div>
-            <div className="text-[10px] tracking-[0.3em] uppercase mt-1">
-              {overall === "bra" && "Bra"}
-              {overall === "middels" && "Middels"}
-              {overall === "darlig" && "Dårlig"}
-              {overall === "ukjent" && "Ukjent"}
+          <h3 className="text-display text-primary text-lg sm:text-xl tracking-[0.25em] uppercase">
+            Stuens tilstand
+          </h3>
+          {sourceName && (
+            <div className="text-[10px] tracking-[0.25em] uppercase text-muted-foreground/70 mt-1">
+              {sourceName}
             </div>
-          </div>
+          )}
         </div>
-
-        <p className={`text-xs italic tracking-[0.15em] mb-5 ${meta.tone}`}>
-          « {meta.banner} »
-        </p>
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <MetricBlock
-            icon="🌡"
-            label="Temperatur"
-            reading={tempR}
-            unit="°C"
-            digits={1}
-            norm="20–24,8 °C"
-          />
-          <MetricBlock
-            icon="💧"
-            label="Hygrostat"
-            reading={humR}
-            unit="%"
-            digits={0}
-            norm="30–60 %"
-          />
-          <MetricBlock
-            icon="🜁"
-            label="CO₂"
-            reading={co2R}
-            unit="PPM"
-            digits={0}
-            norm="< 800 ppm"
-          />
+        <div className={`text-right ${meta.tone}`}>
+          <div className="text-3xl">{meta.sigil}</div>
+          <div className="text-[10px] tracking-[0.3em] uppercase mt-1">
+            {overall === "bra" && "Bra"}
+            {overall === "middels" && "Middels"}
+            {overall === "darlig" && "Dårlig"}
+            {overall === "ukjent" && "Ukjent"}
+          </div>
         </div>
       </div>
+
+      <p className={`text-xs italic tracking-[0.15em] mb-5 ${meta.tone}`}>
+        « {meta.banner} »
+      </p>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <MetricBlock
+          icon="🌡"
+          label="Temperatur"
+          reading={tempR}
+          unit="°C"
+          digits={1}
+          norm="20–24,8 °C"
+        />
+        <MetricBlock
+          icon="💧"
+          label="Hygrostat"
+          reading={humR}
+          unit="%"
+          digits={0}
+          norm="30–60 %"
+        />
+        <MetricBlock
+          icon="🜁"
+          label="CO₂"
+          reading={co2R}
+          unit="PPM"
+          digits={0}
+          norm="< 800 ppm"
+        />
+      </div>
+    </div>
+  );
+
+  if (bare) return panel;
+
+  return (
+    <section className="container mx-auto px-4 pt-6">
+      {panel}
     </section>
   );
 }
