@@ -154,20 +154,24 @@ function SmarthusPage() {
     return driver.includes("hue") || driver.includes("philips") || name.includes("hue");
   };
   const lights = data.devices.filter(isHueLight);
+  const mapLight = (d: typeof data.devices[number]) => ({
+    id: d.id,
+    name: d.name,
+    zoneName: d.zone ? zoneById.get(d.zone)?.name ?? "Ukjent sal" : "Ukjent sal",
+    dim: typeof d.capabilities["dim"]?.value === "number"
+      ? (d.capabilities["dim"]?.value as number)
+      : null,
+    power: typeof d.capabilities["measure_power"]?.value === "number"
+      ? (d.capabilities["measure_power"]?.value as number)
+      : null,
+  });
   const litLights = lights.filter((d) => d.capabilities["onoff"]?.value === true).length;
   const litLightsList = lights
     .filter((d) => d.capabilities["onoff"]?.value === true)
-    .map((d) => ({
-      id: d.id,
-      name: d.name,
-      zoneName: d.zone ? zoneById.get(d.zone)?.name ?? "Ukjent sal" : "Ukjent sal",
-      dim: typeof d.capabilities["dim"]?.value === "number"
-        ? (d.capabilities["dim"]?.value as number)
-        : null,
-      power: typeof d.capabilities["measure_power"]?.value === "number"
-        ? (d.capabilities["measure_power"]?.value as number)
-        : null,
-    }));
+    .map(mapLight);
+  const offLightsList = lights
+    .filter((d) => d.capabilities["onoff"]?.value !== true)
+    .map(mapLight);
 
   const totalPower = data.devices
     .map((d) => d.capabilities["measure_power"]?.value)
