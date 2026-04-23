@@ -61,8 +61,8 @@ type Ctx = {
   busy: Record<string, boolean>;
   sendCap: (
     device: LivingRoomDevice,
-    capability: "onoff" | "target_temperature" | "dim",
-    value: boolean | number,
+    capability: "onoff" | "target_temperature" | "dim" | "thermostat_mode",
+    value: boolean | number | string,
   ) => Promise<void>;
   findByKind: (kind: Kind) => LivingRoomDevice | null;
 };
@@ -164,8 +164,8 @@ export function LivingRoomProvider({ children }: { children: ReactNode }) {
   const sendCap = useCallback(
     async (
       device: LivingRoomDevice,
-      capability: "onoff" | "target_temperature" | "dim",
-      value: boolean | number,
+      capability: "onoff" | "target_temperature" | "dim" | "thermostat_mode",
+      value: boolean | number | string,
     ) => {
       const key = `${device.id}:${capability}`;
       if (busy[key]) return;
