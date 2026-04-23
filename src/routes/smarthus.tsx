@@ -377,6 +377,73 @@ function SmarthusPage() {
     ? `${stuaDevice.name}${stuaDevice.zone ? ` · ${zoneById.get(stuaDevice.zone)?.name ?? ""}` : ""}`
     : null;
 
+  // Generisk room finder — søker både i navn og sone, krever measure_temperature,
+  // ekskluderer hytta. Foretrekker enheter med CO₂ + fukt om mulig.
+  const findRoomDevice = (matchers: string[]) => {
+    const matches = (combined: string) => matchers.some((m) => combined.includes(m));
+    // 1) ideell: temp + fukt + co2
+    const ideal = data.devices.find((d) => {
+      const zoneName = d.zone ? zoneById.get(d.zone)?.name ?? "" : "";
+      const combined = `${d.name} ${zoneName}`.toLowerCase();
+      return (
+        matches(combined) &&
+        !combined.includes("hytt") &&
+        typeof d.capabilities["measure_temperature"]?.value === "number" &&
+        typeof d.capabilities["measure_humidity"]?.value === "number" &&
+        typeof d.capabilities["measure_co2"]?.value === "number"
+      );
+    });
+    if (ideal) return ideal;
+    // 2) temp + fukt
+    const tempHum = data.devices.find((d) => {
+      const zoneName = d.zone ? zoneById.get(d.zone)?.name ?? "" : "";
+      const combined = `${d.name} ${zoneName}`.toLowerCase();
+      return (
+        matches(combined) &&
+        !combined.includes("hytt") &&
+        typeof d.capabilities["measure_temperature"]?.value === "number" &&
+        typeof d.capabilities["measure_humidity"]?.value === "number"
+      );
+    });
+    if (tempHum) return tempHum;
+    // 3) bare temp
+    return data.devices.find((d) => {
+      const zoneName = d.zone ? zoneById.get(d.zone)?.name ?? "" : "";
+      const combined = `${d.name} ${zoneName}`.toLowerCase();
+      return (
+        matches(combined) &&
+        !combined.includes("hytt") &&
+        typeof d.capabilities["measure_temperature"]?.value === "number"
+      );
+    });
+  };
+
+  const readRoom = (device: typeof stuaDevice) => {
+    if (!device) return { temperature: null, humidity: null, co2: null, sourceName: null };
+    const t = device.capabilities["measure_temperature"]?.value;
+    const h = device.capabilities["measure_humidity"]?.value;
+    const c = device.capabilities["measure_co2"]?.value;
+    return {
+      temperature: typeof t === "number" ? t : null,
+      humidity: typeof h === "number" ? h : null,
+      co2: typeof c === "number" ? c : null,
+      sourceName: `${device.name}${device.zone ? ` · ${zoneById.get(device.zone)?.name ?? ""}` : ""}`,
+    };
+  };
+
+  const kontorDevice = findRoomDevice(["kontor", "office"]);
+  const soveromDevice = findRoomDevice([
+    "arne og rebekka",
+    "arne & rebekka",
+    "soverom arne",
+    "hovedsoverom",
+    "master",
+    "soverom",
+  ]);
+  const kontorReadings = readRoom(kontorDevice);
+  const soveromReadings = readRoom(soveromDevice);
+
+
   const handleDisconnect = async () => {
     if (!confirm("Bryt båndet til Homey?")) return;
     setDisconnecting(true);
@@ -436,6 +503,47 @@ function SmarthusPage() {
         co2={stuaCo2}
         sourceName={stuaSourceName}
       />
+
+      {(kontorDevice || soveromDevice) && (
+        <section className="container mx-auto px-4 pt-4 sm:pt-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+            {kontorDevice && (
+              <StuaConditionPanel
+                bare
+                title="Kontorets tilstand"
+                temperature={kontorReadings.temperature}
+                humidity={kontorReadings.humidity}
+                co2={kontorReadings.co2}
+                sourceName={kontorReadings.sourceName}
+                tempRange={{
+                  goodMin: 13,
+                  goodMax: 20,
+                  okBelow: 11,
+                  okAbove: 22,
+                  normLabel: "13–20 °C",
+                }}
+              />
+            )}
+            {soveromDevice && (
+              <StuaConditionPanel
+                bare
+                title="Arne & Rebekkas soverom"
+                temperature={soveromReadings.temperature}
+                humidity={soveromReadings.humidity}
+                co2={soveromReadings.co2}
+                sourceName={soveromReadings.sourceName}
+                tempRange={{
+                  goodMin: 13,
+                  goodMax: 20,
+                  okBelow: 11,
+                  okAbove: 22,
+                  normLabel: "13–20 °C",
+                }}
+              />
+            )}
+          </div>
+        </section>
+      )}
 
       <section className="container mx-auto px-4 pt-6 space-y-4">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
