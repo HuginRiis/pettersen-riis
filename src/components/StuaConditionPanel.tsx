@@ -141,14 +141,19 @@ export function StuaConditionPanel({
   co2,
   sourceName,
   bare = false,
+  title = "Stuens tilstand",
+  tempRange,
 }: {
   temperature: number | null;
   humidity: number | null;
   co2: number | null;
   sourceName?: string | null;
   bare?: boolean;
+  title?: string;
+  tempRange?: TempRange;
 }) {
-  const tempR = rateTemp(temperature);
+  const range = tempRange ?? DEFAULT_TEMP_RANGE;
+  const tempR = rateTemp(temperature, range);
   const humR = rateHumidity(humidity);
   const co2R = rateCo2(co2);
   const overall = overallVerdict([tempR, humR, co2R]);
@@ -162,7 +167,7 @@ export function StuaConditionPanel({
             Maesterens lesning
           </div>
           <h3 className="text-display text-primary text-sm sm:text-xl tracking-[0.2em] sm:tracking-[0.25em] uppercase">
-            Stuens tilstand
+            {title}
           </h3>
           {sourceName && (
             <div className="hidden sm:block text-[10px] tracking-[0.25em] uppercase text-muted-foreground/70 mt-1">
@@ -192,7 +197,7 @@ export function StuaConditionPanel({
           reading={tempR}
           unit="°C"
           digits={1}
-          norm="20–24,8 °C"
+          norm={range.normLabel}
         />
         <MetricBlock
           icon="💧"
