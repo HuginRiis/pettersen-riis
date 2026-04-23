@@ -7,7 +7,7 @@ import { HeatersPanel } from "@/components/HeatersPanel";
 import { HyttaIndreSal } from "@/components/HyttaIndreSal";
 import { useAuthStatus } from "@/hooks/use-auth-status";
 
-import hyttaImg from "@/assets/hytta-aurora.jpg";
+import hyttaImg from "@/assets/hytta-aurora-got.jpg";
 import g0314 from "@/assets/hytta-gallery/0314.jpg";
 import g0342 from "@/assets/hytta-gallery/0342.jpg";
 import g0851 from "@/assets/hytta-gallery/0851.jpg";
