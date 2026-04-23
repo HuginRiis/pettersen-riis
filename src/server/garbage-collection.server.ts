@@ -174,7 +174,7 @@ export async function getGarbageOverview(): Promise<{
     const fMap = new Map<number, Fraksjon>();
     for (const f of fraksjoner) fMap.set(f.Id, f);
 
-    const horizonDays = 46; // ca. 1,5 måned frem i tid
+    const horizonDays = 62; // ca. 2 måneder frem i tid
     const pickups: Pickup[] = [];
     for (const entry of kalender) {
       const f = fMap.get(entry.FraksjonId);
