@@ -148,6 +148,19 @@ function SmarthusPage() {
     (d) => "onoff" in d.capabilities && (d.class === "light" || d.class === "socket"),
   );
   const litLights = lights.filter((d) => d.capabilities["onoff"]?.value === true).length;
+  const litLightsList = lights
+    .filter((d) => d.capabilities["onoff"]?.value === true)
+    .map((d) => ({
+      id: d.id,
+      name: d.name,
+      zoneName: d.zone ? zoneById.get(d.zone)?.name ?? "Ukjent sal" : "Ukjent sal",
+      dim: typeof d.capabilities["dim"]?.value === "number"
+        ? (d.capabilities["dim"]?.value as number)
+        : null,
+      power: typeof d.capabilities["measure_power"]?.value === "number"
+        ? (d.capabilities["measure_power"]?.value as number)
+        : null,
+    }));
 
   const totalPower = data.devices
     .map((d) => d.capabilities["measure_power"]?.value)
