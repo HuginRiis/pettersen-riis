@@ -639,11 +639,15 @@ function Stat({
   value,
   hint,
   tone = "default",
+  onClick,
+  active = false,
 }: {
   label: string;
   value: string;
   hint?: string;
   tone?: "default" | "primary" | "muted" | "warning";
+  onClick?: () => void;
+  active?: boolean;
 }) {
   const valueClass =
     tone === "warning"
@@ -651,8 +655,11 @@ function Stat({
       : tone === "muted"
         ? "text-muted-foreground"
         : "text-primary";
-  return (
-    <div className="panel rounded-lg p-4 text-center">
+  const baseClass = `panel rounded-lg p-4 text-center transition-all ${
+    onClick ? "cursor-pointer hover:border-primary/40 hover:bg-primary/5" : ""
+  } ${active ? "ring-1 ring-primary/40" : ""}`;
+  const inner = (
+    <>
       <div className={`text-2xl text-display ${valueClass}`}>{value}</div>
       <div className="text-[10px] tracking-[0.3em] text-muted-foreground uppercase mt-1">
         {label}
@@ -660,8 +667,16 @@ function Stat({
       {hint && (
         <div className="text-[10px] text-muted-foreground/80 mt-1 italic">{hint}</div>
       )}
-    </div>
+    </>
   );
+  if (onClick) {
+    return (
+      <button type="button" onClick={onClick} className={baseClass + " w-full"}>
+        {inner}
+      </button>
+    );
+  }
+  return <div className={baseClass}>{inner}</div>;
 }
 
 function DeviceCard({ device }: { device: any }) {
