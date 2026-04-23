@@ -604,30 +604,13 @@ function SmarthusPage() {
         emptyHint="Ingen varmeovner med termostat funnet for Borgen i Homey."
       />
 
-
-      <section className="container mx-auto px-4 py-12 space-y-12">
-        {zoneEntries.map(([zoneKey, devices]) => {
-          const zoneName =
-            zoneKey === "__no_zone__"
-              ? "Ukjent sal"
-              : zoneById.get(zoneKey)?.name ?? "Ukjent sal";
-          return (
-            <div key={zoneKey}>
-              <div className="ornate-divider mb-6">
-                <span className="text-display tracking-[0.3em] text-primary text-sm uppercase">
-                  {zoneName}
-                </span>
-              </div>
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {devices.map((d) => (
-                  <DeviceCard key={d.id} device={d} />
-                ))}
-              </div>
-            </div>
-          );
-        })}
-
-      </section>
+      <AllZonesPanel
+        zoneEntries={zoneEntries}
+        zoneById={zoneById}
+        powerByZone={powerByZone}
+        litLights={litLights}
+        totalLights={lights.length}
+      />
 
       <HomeyApiActivity />
     </PageShell>
