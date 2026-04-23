@@ -504,6 +504,47 @@ function SmarthusPage() {
         sourceName={stuaSourceName}
       />
 
+      {(kontorDevice || soveromDevice) && (
+        <section className="container mx-auto px-4 pt-4 sm:pt-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+            {kontorDevice && (
+              <StuaConditionPanel
+                bare
+                title="Kontorets tilstand"
+                temperature={kontorReadings.temperature}
+                humidity={kontorReadings.humidity}
+                co2={kontorReadings.co2}
+                sourceName={kontorReadings.sourceName}
+                tempRange={{
+                  goodMin: 13,
+                  goodMax: 20,
+                  okBelow: 11,
+                  okAbove: 22,
+                  normLabel: "13–20 °C",
+                }}
+              />
+            )}
+            {soveromDevice && (
+              <StuaConditionPanel
+                bare
+                title="Arne & Rebekkas soverom"
+                temperature={soveromReadings.temperature}
+                humidity={soveromReadings.humidity}
+                co2={soveromReadings.co2}
+                sourceName={soveromReadings.sourceName}
+                tempRange={{
+                  goodMin: 13,
+                  goodMax: 20,
+                  okBelow: 11,
+                  okAbove: 22,
+                  normLabel: "13–20 °C",
+                }}
+              />
+            )}
+          </div>
+        </section>
+      )}
+
       <section className="container mx-auto px-4 pt-6 space-y-4">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Stat label="Tjenere" value={String(totalDevices)} />
