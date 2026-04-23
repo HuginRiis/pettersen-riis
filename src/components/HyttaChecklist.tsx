@@ -309,11 +309,6 @@ export function HyttaChecklist() {
   };
 
   const scheduleBulkPush = async () => {
-    const open = items.filter((i) => !i.checked);
-    if (open.length === 0) {
-      toast.info("Ingen åpne punkter å planlegge varsel for.");
-      return;
-    }
     const iso = combineDateTimeToIso(bulkDate, bulkTime);
     if (!iso) {
       toast.error("Velg dag og tid først.");
@@ -323,9 +318,22 @@ export function HyttaChecklist() {
       toast.error("Tidspunktet må være i fremtiden.");
       return;
     }
+
+    let toUpdate: string[];
+    if (editingReminder) {
+      // Editing: only update items that belonged to this reminder
+      toUpdate = editingReminder.itemIds;
+    } else {
+      // Creating new: apply to all open items (overwrites any existing)
+      const open = items.filter((i) => !i.checked);
+      if (open.length === 0) {
+        toast.info("Ingen åpne punkter å planlegge varsel for.");
+        return;
+      }
+      toUpdate = open.map((i) => i.id);
+    }
+
     setScheduling(true);
-    // Sett samme notify_at + notify_who på ALLE åpne punkter (overskriver tidligere planlagt verdi)
-    const toUpdate = open.map((i) => i.id);
     const { error } = await supabase
       .from("hytta_checklist")
       .update({ notify_at: iso, notified_at: null, notify_who: bulkWho })
@@ -337,11 +345,13 @@ export function HyttaChecklist() {
     }
     setBulkOpen(false);
     setBulkDate(undefined);
+    setEditingReminder(null);
     const target = bulkWho === "Alle" ? "alle" : bulkWho;
     toast.success(
-      `Ravn planlagt ${formatNotifyOslo(iso)} til ${target} med ${toUpdate.length} punkt${toUpdate.length === 1 ? "" : "er"}`,
+      `${editingReminder ? "Påminnelse oppdatert" : "Ravn planlagt"} ${formatNotifyOslo(iso)} til ${target} med ${toUpdate.length} punkt${toUpdate.length === 1 ? "" : "er"}`,
     );
   };
+
 
   const openCount = items.filter((i) => !i.checked).length;
 
