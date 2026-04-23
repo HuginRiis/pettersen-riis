@@ -556,12 +556,10 @@ function SmarthusPage() {
           <Stat label="Tjenere" value={String(totalDevices)} />
           <Stat label="Saler" value={String(zoneEntries.length)} />
           <Stat
-            label="Tente ildsteder"
+            label="Tente Hue-lys"
             value={`${litLights} / ${lights.length}`}
-            hint={litLights > 0 ? (showLitLights ? "Skjul listen" : "Trykk for å se hvilke") : "Mørke i salene"}
+            hint={litLights > 0 ? "Se boks under" : "Mørke i salene"}
             tone={litLights > 0 ? "primary" : "muted"}
-            onClick={litLights > 0 ? () => setShowLitLights((v) => !v) : undefined}
-            active={showLitLights}
           />
           <Stat
             label="Effekt · Hjemme"
