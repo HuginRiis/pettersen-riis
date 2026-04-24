@@ -132,6 +132,35 @@ export function BirthdaysPanel() {
     setItems((prev) => prev.filter((x) => x.id !== id));
   }
 
+  function startEdit(b: Birthday) {
+    setEditingId(b.id);
+    setEditName(b.name);
+    setEditBirthDate(b.birth_date);
+    setEditTitle(b.title ?? "");
+    setEditWords(b.words ?? "");
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+  }
+
+  async function saveEdit(id: string) {
+    if (!editName.trim() || !editBirthDate) return;
+    setEditSaving(true);
+    const patch = {
+      name: editName.trim(),
+      birth_date: editBirthDate,
+      title: editTitle.trim() || null,
+      words: editWords.trim() || null,
+    };
+    const { error } = await supabase.from("birthdays" as any).update(patch).eq("id", id);
+    setEditSaving(false);
+    if (!error) {
+      setItems((prev) => prev.map((x) => (x.id === id ? { ...x, ...patch } : x)));
+      setEditingId(null);
+    }
+  }
+
   async function sendTestFor(id: string) {
     setMessage(null);
     try {
