@@ -46,7 +46,7 @@ const navLinks: NavLink[] = [
   { to: "/matvarer", label: "Matvarer" },
   { to: "/hundene", label: "Hundene" },
   { to: "/trening", label: "Trening" },
-  { to: "/varsler", label: "Farevarsler" },
+  { to: "/varsler", label: "Farevarsler", public: true },
   { to: "/steintavle", label: "Steintavle" },
 ];
 
