@@ -44,6 +44,7 @@ export function LocationPicker({
   defaultLabel,
   onChange,
   onDefaultSaved,
+  authenticated = false,
 }: Props) {
   const search = useServerFn(searchPlaces);
   const saveDefault = useServerFn(setDefaultLocation);
