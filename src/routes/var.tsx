@@ -8,7 +8,7 @@ import { getHomeySnapshot } from "@/server/homey";
 import { findDeviceFuzzy, type DeviceLike } from "@/lib/homey-match";
 import { getTollnesAlerts, type AlertsResult, type MetAlert } from "@/server/lightning";
 import { useUserLocation, UserLocationBar } from "@/hooks/use-user-location";
-import { DynamicForecastPanel } from "@/components/DynamicForecastPanel";
+
 
 export const Route = createFileRoute("/var")({
   head: () => ({
@@ -334,7 +334,7 @@ function WeatherPage() {
         {/* === VINDROSE === */}
         <Block title="Stormvaktens Rose · Vindretning de neste 24 t">
           <div className="grid sm:grid-cols-2 gap-6">
-            <WindRoseCard name="Tollnes" hours={skienHours} />
+            <WindRoseCard name={userLoc.active.label} hours={skienHours} />
             <WindRoseCard name="Hytta" hours={hyttaHours} />
           </div>
         </Block>
