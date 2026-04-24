@@ -189,7 +189,21 @@ function AlertCard({ a }: { a: TelemarkAlert }) {
             {a.eventAwarenessName ?? a.event}
           </h3>
           {a.area && (
-            <p className="text-xs text-muted-foreground mt-0.5">{a.area}</p>
+            <p className="text-sm text-foreground/80 mt-1 font-medium">
+              📍 {a.area}
+            </p>
+          )}
+          {a.countyNames && a.countyNames.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mt-2">
+              {a.countyNames.map((name) => (
+                <span
+                  key={name}
+                  className="text-[10px] uppercase tracking-[0.18em] px-2 py-0.5 rounded-full border border-primary/30 text-primary/90 bg-primary/5"
+                >
+                  {name}
+                </span>
+              ))}
+            </div>
           )}
         </div>
         {period && (
