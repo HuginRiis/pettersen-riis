@@ -333,7 +333,7 @@ function StravaSection({ owner, displayName }: { owner: Owner; displayName: stri
   );
 }
 
-function DashboardView({ dash }: { dash: DashOk }) {
+function DashboardView({ dash, owner }: { dash: DashOk; owner: Owner }) {
   return (
     <>
       {/* Ukens stats */}
