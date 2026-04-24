@@ -116,6 +116,7 @@ const MONTHS = ["Jan", "Feb", "Mar", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "
 function PollenPage() {
   const month = new Date().getMonth(); // 0..11
   const [loadedAt, setLoadedAt] = useState(() => new Date());
+  const userLoc = useUserLocation("pollen");
 
   // Bump "lastet"-tid hver time slik at pillen reflekterer at vi har refresh-loop
   useEffect(() => {
@@ -141,6 +142,19 @@ function PollenPage() {
             <span className="text-foreground">bjørk, gress, or, burot</span>
           </span>
         </div>
+      </section>
+
+      <section className="container mx-auto px-4 pt-8 space-y-5">
+        <UserLocationBar page="pollen" state={userLoc} />
+        {userLoc.ready && (
+          <LivePollen
+            key={`${userLoc.active.lat}-${userLoc.active.lon}`}
+            lat={userLoc.active.lat}
+            lon={userLoc.active.lon}
+            title={`Mitt sted · ${userLoc.active.label}`}
+            subtitle="Live pollen for valgt sted — oppdateres hver time"
+          />
+        )}
       </section>
 
       <section className="container mx-auto px-4 py-10 space-y-12">
