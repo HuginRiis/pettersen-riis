@@ -235,96 +235,30 @@ export const reverseGeocode = createServerFn({ method: "POST" })
     return { lat, lon };
   })
   .handler(async ({ data }): Promise<{ label: string; lat: number; lon: number }> => {
-    // Hent ut beste skrivemåte fra stedsnavn-arrayen (foretrekk hovednavn på norsk)
-    const extractName = (n: any): string => {
-      const arr: any[] = Array.isArray(n?.stedsnavn) ? n.stedsnavn : [];
-      const hoved = arr.find(
-        (s) =>
-          String(s?.navnestatus ?? "").toLowerCase() === "hovednavn" &&
-          String(s?.språk ?? "").toLowerCase().startsWith("norsk"),
-      );
-      if (hoved?.skrivemåte) return String(hoved.skrivemåte).trim();
-      const anyHoved = arr.find(
-        (s) => String(s?.navnestatus ?? "").toLowerCase() === "hovednavn",
-      );
-      if (anyHoved?.skrivemåte) return String(anyHoved.skrivemåte).trim();
-      const first = arr.find((s) => s?.skrivemåte);
-      return first?.skrivemåte ? String(first.skrivemåte).trim() : "";
+    // Hjelpefunksjon: avstand i km mellom to lat/lon-punkter (haversine).
+    const distKm = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+      const R = 6371;
+      const toRad = (d: number) => (d * Math.PI) / 180;
+      const dLat = toRad(lat2 - lat1);
+      const dLon = toRad(lon2 - lon1);
+      const a =
+        Math.sin(dLat / 2) ** 2 +
+        Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+      return 2 * R * Math.asin(Math.sqrt(a));
     };
 
-    // Bare bebodde steder — disse har god dekning i MET.no og pollenvarsel.
-    // Rangert fra mest til minst foretrukket.
-    const POPULATED = ["tettsted", "by", "tettbebyggelse", "bydel", "grend"];
-    const isPopulated = (n: any) => {
-      const t = String(n?.navneobjekttype ?? "").toLowerCase();
-      return POPULATED.some((x) => t.includes(x));
-    };
-    const populatedRank = (n: any) => {
-      const t = String(n?.navneobjekttype ?? "").toLowerCase();
-      const p = POPULATED.findIndex((x) => t.includes(x));
-      return p === -1 ? 99 : p;
-    };
-
-    // Søk Kartverket med stadig større radius til vi finner et bebodd sted.
-    // Returnerer tettstedets eget koordinat (snapper til sentrum), ikke GPS-punktet.
-    for (const radius of [3000, 8000, 20000]) {
-      try {
-        const url = new URL("https://ws.geonorge.no/stedsnavn/v1/punkt");
-        url.searchParams.set("nord", String(data.lat));
-        url.searchParams.set("ost", String(data.lon));
-        url.searchParams.set("koordsys", "4258");
-        url.searchParams.set("radius", String(radius));
-        url.searchParams.set("treffPerSide", "50");
-        url.searchParams.set("utkoordsys", "4258");
-        const res = await fetch(url.toString(), {
-          headers: { Accept: "application/json" },
-          signal: AbortSignal.timeout(6000),
-        });
-        if (!res.ok) continue;
-        const json = (await res.json()) as any;
-        const navn: any[] = Array.isArray(json?.navn) ? json.navn : [];
-
-        const populated = navn
-          .filter((n) => isPopulated(n) && extractName(n))
-          .sort((a, b) => {
-            // Først: foretrukket type (tettsted før bydel før grend)
-            const ra = populatedRank(a);
-            const rb = populatedRank(b);
-            if (ra !== rb) return ra - rb;
-            // Så: nærmest GPS-punktet
-            const da = Number(a?.meterFraPunkt ?? 1e9);
-            const db = Number(b?.meterFraPunkt ?? 1e9);
-            return da - db;
-          });
-
-        const best = populated[0];
-        if (best) {
-          const skriv = extractName(best);
-          const kommune = String(best?.kommuner?.[0]?.kommunenavn ?? "").trim();
-          // Snap til stedets eget koordinat (sentrum av tettstedet)
-          const snapLat = Number(best?.representasjonspunkt?.nord);
-          const snapLon = Number(best?.representasjonspunkt?.øst);
-          const lat = Number.isFinite(snapLat) ? snapLat : data.lat;
-          const lon = Number.isFinite(snapLon) ? snapLon : data.lon;
-          const label =
-            kommune && kommune.toLowerCase() !== skriv.toLowerCase()
-              ? `${skriv}, ${kommune}`
-              : skriv;
-          return { label, lat, lon };
-        }
-      } catch {
-        // prøv neste radius
-      }
-    }
-
-    // Fallback: OpenStreetMap Nominatim (utenfor Norge eller hvis Kartverket feiler).
-    // zoom=12 = town/city nivå — gir nærmeste by/tettsted, ikke gateadresse.
+    // ── Strategi 1: Open-Meteo geocoding "search" gir ekte byer/tettsteder
+    //    med koordinater. Vi henter en haug rundt punktet og velger nærmeste
+    //    populerte sted. Dette er det samme datasettet (GeoNames) som mange
+    //    værtjenester bruker, så MET.no/pollen-dekningen er god.
+    //    Ingen API-nøkkel kreves.
     try {
+      // Først: be Nominatim om byen vi er i, slik at vi får riktig søkeord.
       const nUrl = new URL("https://nominatim.openstreetmap.org/reverse");
       nUrl.searchParams.set("lat", String(data.lat));
       nUrl.searchParams.set("lon", String(data.lon));
       nUrl.searchParams.set("format", "jsonv2");
-      nUrl.searchParams.set("zoom", "12"); // by/tettsted-nivå
+      nUrl.searchParams.set("zoom", "10"); // by/kommune-nivå
       nUrl.searchParams.set("accept-language", "nb,no,en");
       const nRes = await fetch(nUrl.toString(), {
         headers: {
@@ -336,36 +270,96 @@ export const reverseGeocode = createServerFn({ method: "POST" })
       if (nRes.ok) {
         const nJson = (await nRes.json()) as any;
         const a = nJson?.address ?? {};
-        const place =
-          a.city ||
-          a.town ||
-          a.village ||
-          a.hamlet ||
-          a.suburb ||
-          a.neighbourhood ||
-          a.municipality ||
-          a.county ||
-          "";
-        const region = a.county || a.state || a.municipality || "";
-        // Snap til sentrum hvis Nominatim oppgir det
-        const snapLat = Number(nJson?.lat);
-        const snapLon = Number(nJson?.lon);
-        const lat = Number.isFinite(snapLat) ? snapLat : data.lat;
-        const lon = Number.isFinite(snapLon) ? snapLon : data.lon;
-        let label = "";
-        if (place && region && place.toLowerCase() !== region.toLowerCase()) {
-          label = `${place}, ${region}`;
-        } else if (place) {
-          label = place;
-        } else if (nJson?.display_name) {
-          label = String(nJson.display_name).split(",").slice(0, 2).join(", ").trim();
+        const cityName: string =
+          a.city || a.town || a.municipality || a.village || a.county || "";
+        const region: string = a.county || a.state || "";
+        if (cityName) {
+          // Snap til byens sentrum via Open-Meteo geocoding
+          try {
+            const gUrl = new URL("https://geocoding-api.open-meteo.com/v1/search");
+            gUrl.searchParams.set("name", cityName);
+            gUrl.searchParams.set("count", "10");
+            gUrl.searchParams.set("language", "no");
+            gUrl.searchParams.set("countryCode", a.country_code?.toUpperCase() || "NO");
+            const gRes = await fetch(gUrl.toString(), {
+              headers: { Accept: "application/json" },
+              signal: AbortSignal.timeout(6000),
+            });
+            if (gRes.ok) {
+              const gJson = (await gRes.json()) as any;
+              const results: any[] = Array.isArray(gJson?.results) ? gJson.results : [];
+              // Velg det treffet som er nærmest GPS-punktet
+              const ranked = results
+                .map((r) => ({
+                  r,
+                  d: distKm(data.lat, data.lon, Number(r.latitude), Number(r.longitude)),
+                }))
+                .sort((x, y) => x.d - y.d);
+              const best = ranked[0]?.r;
+              if (best && Number.isFinite(best.latitude) && Number.isFinite(best.longitude)) {
+                const lat = Number(best.latitude);
+                const lon = Number(best.longitude);
+                const admin = best.admin1 || region || "";
+                const name = String(best.name || cityName);
+                const label =
+                  admin && admin.toLowerCase() !== name.toLowerCase()
+                    ? `${name}, ${admin}`
+                    : name;
+                return { label, lat, lon };
+              }
+            }
+          } catch {
+            // fall through
+          }
+
+          // Hvis Open-Meteo ikke fant noe, bruk Nominatim sitt eget koordinat
+          const snapLat = Number(nJson?.lat);
+          const snapLon = Number(nJson?.lon);
+          const lat = Number.isFinite(snapLat) ? snapLat : data.lat;
+          const lon = Number.isFinite(snapLon) ? snapLon : data.lon;
+          const label =
+            region && region.toLowerCase() !== cityName.toLowerCase()
+              ? `${cityName}, ${region}`
+              : cityName;
+          return { label, lat, lon };
         }
-        if (label) return { label, lat, lon };
       }
     } catch {
-      // fall through to coordinates
+      // fall through to BigDataCloud
     }
 
+    // ── Strategi 2: BigDataCloud — gratis, ingen nøkkel, gir city/locality.
+    try {
+      const bUrl = new URL("https://api.bigdatacloud.net/data/reverse-geocode-client");
+      bUrl.searchParams.set("latitude", String(data.lat));
+      bUrl.searchParams.set("longitude", String(data.lon));
+      bUrl.searchParams.set("localityLanguage", "no");
+      const bRes = await fetch(bUrl.toString(), {
+        headers: { Accept: "application/json" },
+        signal: AbortSignal.timeout(6000),
+      });
+      if (bRes.ok) {
+        const bJson = (await bRes.json()) as any;
+        const city: string =
+          bJson?.city ||
+          bJson?.locality ||
+          bJson?.localityInfo?.administrative?.[3]?.name ||
+          bJson?.principalSubdivision ||
+          "";
+        const region: string = bJson?.principalSubdivision || "";
+        if (city) {
+          const label =
+            region && region.toLowerCase() !== city.toLowerCase()
+              ? `${city}, ${region}`
+              : city;
+          return { label, lat: data.lat, lon: data.lon };
+        }
+      }
+    } catch {
+      // fall through
+    }
+
+    // Siste utvei: rå koordinater
     return {
       label: `${data.lat.toFixed(4)}°N ${data.lon.toFixed(4)}°Ø`,
       lat: data.lat,
