@@ -77,6 +77,11 @@ function RootShell({ children }: { children: React.ReactNode }) {
     <html lang="nb" className="dark">
       <head>
         <HeadContent />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var s=localStorage.getItem('ui-scale');if(s==='large'){document.documentElement.style.zoom='1.5';document.documentElement.dataset.uiScale='large';}}catch(e){}})();`,
+          }}
+        />
       </head>
       <body>
         {children}
