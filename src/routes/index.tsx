@@ -15,6 +15,7 @@ import { MaesterCounsel } from "@/components/MaesterCounsel";
 import { BirthdayBanner } from "@/components/BirthdayBanner";
 import { BirthdaysOverview } from "@/components/BirthdaysOverview";
 import { UpcomingHolidays } from "@/components/UpcomingHolidays";
+import { UiScaleToggle } from "@/components/UiScaleToggle";
 import { useFavorites } from "@/hooks/use-favorites";
 import { useAuthStatus } from "@/hooks/use-auth-status";
 import { logoutFn } from "@/server/auth";
@@ -112,6 +113,8 @@ function Home() {
       />
 
       <PortalGate authenticated={isAuthed} onLogout={handleLogout} />
+
+      <UiScaleToggle />
 
       <BirthdayBanner />
 
