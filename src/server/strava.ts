@@ -3,9 +3,17 @@ import {
   deleteStravaConnection,
   getStravaConnection,
   getValidStravaAccessToken,
+  isStravaOwner,
+  STRAVA_OWNERS,
+  type StravaOwner,
 } from "./strava-connection";
 
 const STRAVA_API = "https://www.strava.com/api/v3";
+
+function parseOwner(input: unknown): StravaOwner {
+  if (isStravaOwner(input)) return input;
+  return "arne";
+}
 
 export type StravaActivity = {
   id: number;
@@ -39,21 +47,47 @@ async function stravaFetch<T>(path: string, accessToken: string): Promise<T> {
   return (await res.json()) as T;
 }
 
-export const getStravaStatus = createServerFn({ method: "GET" }).handler(async () => {
-  const conn = await getStravaConnection();
-  if (!conn) return { connected: false as const };
-  return {
-    connected: true as const,
-    athleteName: conn.athlete_name,
-    athleteId: conn.athlete_id,
-    scope: conn.scope,
-  };
+export const getStravaStatus = createServerFn({ method: "GET" })
+  .inputValidator((input: { owner?: StravaOwner } | undefined) => ({
+    owner: parseOwner(input?.owner),
+  }))
+  .handler(async ({ data }) => {
+    const conn = await getStravaConnection(data.owner);
+    if (!conn) return { connected: false as const, owner: data.owner };
+    return {
+      connected: true as const,
+      owner: data.owner,
+      athleteName: conn.athlete_name,
+      athleteId: conn.athlete_id,
+      scope: conn.scope,
+    };
+  });
+
+export const getAllStravaStatuses = createServerFn({ method: "GET" }).handler(async () => {
+  const results = await Promise.all(
+    STRAVA_OWNERS.map(async (owner) => {
+      const conn = await getStravaConnection(owner);
+      if (!conn) return { owner, connected: false as const };
+      return {
+        owner,
+        connected: true as const,
+        athleteName: conn.athlete_name,
+        athleteId: conn.athlete_id,
+        scope: conn.scope,
+      };
+    }),
+  );
+  return { statuses: results };
 });
 
-export const disconnectStrava = createServerFn({ method: "POST" }).handler(async () => {
-  await deleteStravaConnection();
-  return { ok: true };
-});
+export const disconnectStrava = createServerFn({ method: "POST" })
+  .inputValidator((input: { owner?: StravaOwner } | undefined) => ({
+    owner: parseOwner(input?.owner),
+  }))
+  .handler(async ({ data }) => {
+    await deleteStravaConnection(data.owner);
+    return { ok: true };
+  });
 
 type StreamSet = Record<string, { data: number[]; series_type?: string; original_size?: number }>;
 
@@ -68,9 +102,12 @@ function downsample(arr: number[], target: number): number[] {
 }
 
 export const getActivityStreams = createServerFn({ method: "GET" })
-  .inputValidator((input: { activityId: number }) => input)
+  .inputValidator((input: { activityId: number; owner?: StravaOwner }) => ({
+    activityId: input.activityId,
+    owner: parseOwner(input.owner),
+  }))
   .handler(async ({ data }) => {
-    const auth = await getValidStravaAccessToken();
+    const auth = await getValidStravaAccessToken(data.owner);
     if (!auth) {
       return { ok: false as const, error: "Ikke koblet til Strava" };
     }
@@ -128,8 +165,12 @@ function bucketSport(type: string): "run" | "ride" | "swim" | "hike" | "ski" | "
   return "other";
 }
 
-export const getStravaDashboard = createServerFn({ method: "GET" }).handler(async () => {
-  const auth = await getValidStravaAccessToken();
+export const getStravaDashboard = createServerFn({ method: "GET" })
+  .inputValidator((input: { owner?: StravaOwner } | undefined) => ({
+    owner: parseOwner(input?.owner),
+  }))
+  .handler(async ({ data }) => {
+  const auth = await getValidStravaAccessToken(data.owner);
   if (!auth) {
     return { ok: false as const, error: "Ikke koblet til Strava" };
   }
@@ -327,4 +368,4 @@ export const getStravaDashboard = createServerFn({ method: "GET" }).handler(asyn
     const message = error instanceof Error ? error.message : "Ukjent feil";
     return { ok: false as const, error: message };
   }
-});
+  });
