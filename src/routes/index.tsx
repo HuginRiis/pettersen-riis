@@ -180,6 +180,8 @@ function Home() {
             </div>
           </div>
         </div>
+
+        <WeddingAnniversary />
       </section>
 
       <SeasonsOfBorgen />
