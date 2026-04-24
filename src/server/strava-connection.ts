@@ -1,7 +1,16 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
+export type StravaOwner = "arne" | "rebekka";
+
+export const STRAVA_OWNERS: StravaOwner[] = ["arne", "rebekka"];
+
+export function isStravaOwner(value: unknown): value is StravaOwner {
+  return value === "arne" || value === "rebekka";
+}
+
 export type StravaConnection = {
   id: string;
+  owner: StravaOwner;
   access_token: string;
   refresh_token: string;
   expires_at: string;
@@ -10,10 +19,13 @@ export type StravaConnection = {
   athlete_name: string | null;
 };
 
-export async function getStravaConnection(): Promise<StravaConnection | null> {
+export async function getStravaConnection(
+  owner: StravaOwner,
+): Promise<StravaConnection | null> {
   const { data, error } = await supabaseAdmin
     .from("strava_connections" as any)
     .select("*")
+    .eq("owner", owner)
     .order("updated_at", { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -21,21 +33,25 @@ export async function getStravaConnection(): Promise<StravaConnection | null> {
   return (data as StravaConnection | null) ?? null;
 }
 
-export async function saveStravaConnection(input: {
-  access_token: string;
-  refresh_token: string;
-  expires_at: string;
-  scope: string | null;
-  athlete_id: number | null;
-  athlete_name: string | null;
-}) {
+export async function saveStravaConnection(
+  owner: StravaOwner,
+  input: {
+    access_token: string;
+    refresh_token: string;
+    expires_at: string;
+    scope: string | null;
+    athlete_id: number | null;
+    athlete_name: string | null;
+  },
+) {
+  // Erstatt eksisterende tilkobling for denne eieren
   await supabaseAdmin
     .from("strava_connections" as any)
     .delete()
-    .neq("id", "00000000-0000-0000-0000-000000000000");
+    .eq("owner", owner);
   const { error } = await supabaseAdmin
     .from("strava_connections" as any)
-    .insert({ provider: "strava", ...input });
+    .insert({ provider: "strava", owner, ...input });
   if (error) throw new Error(error.message);
 }
 
@@ -50,23 +66,23 @@ export async function updateStravaTokens(
   if (error) throw new Error(error.message);
 }
 
-export async function deleteStravaConnection() {
+export async function deleteStravaConnection(owner: StravaOwner) {
   const { error } = await supabaseAdmin
     .from("strava_connections" as any)
     .delete()
-    .neq("id", "00000000-0000-0000-0000-000000000000");
+    .eq("owner", owner);
   if (error) throw new Error(error.message);
 }
 
 /**
- * Returnerer en gyldig access_token. Refresher hvis utløpt.
+ * Returnerer en gyldig access_token for gitt eier. Refresher hvis utløpt.
  */
-export async function getValidStravaAccessToken(): Promise<{
+export async function getValidStravaAccessToken(owner: StravaOwner): Promise<{
   accessToken: string;
   athleteName: string | null;
   athleteId: number | null;
 } | null> {
-  const conn = await getStravaConnection();
+  const conn = await getStravaConnection(owner);
   if (!conn) return null;
 
   const expiresAt = new Date(conn.expires_at).getTime();
