@@ -723,6 +723,7 @@ export type Database = {
           created_at: string
           expires_at: string
           id: string
+          owner: string
           provider: string
           refresh_token: string
           scope: string | null
@@ -735,6 +736,7 @@ export type Database = {
           created_at?: string
           expires_at: string
           id?: string
+          owner?: string
           provider?: string
           refresh_token: string
           scope?: string | null
@@ -747,6 +749,7 @@ export type Database = {
           created_at?: string
           expires_at?: string
           id?: string
+          owner?: string
           provider?: string
           refresh_token?: string
           scope?: string | null
