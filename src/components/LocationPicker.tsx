@@ -198,26 +198,27 @@ export function LocationPicker({
               </span>
             )}
           </div>
-          <button
-            type="button"
-            disabled={savingDefault || isAtDefault}
-            onClick={handleSetDefault}
-            className={`text-xs uppercase tracking-wider px-3 py-2 rounded-md border transition-colors whitespace-nowrap ${
-              isAtDefault
-                ? "border-border text-muted-foreground cursor-not-allowed opacity-60"
-                : savedFlash
-                  ? "border-primary text-primary bg-primary/10"
-                  : "border-primary/60 text-primary hover:bg-primary/10"
-            }`}
-            title={
-              isAtDefault
-                ? "Dette stedet er allerede default"
-                : `Sett som default for ${who} på denne IP-en`
-            }
-          >
-            {savingDefault ? "Lagrer…" : savedFlash ? "✓ Lagret" : "Sett som default"}
-          </button>
-        </div>
+          {authenticated && (
+            <button
+              type="button"
+              disabled={savingDefault || isAtDefault}
+              onClick={handleSetDefault}
+              className={`text-xs uppercase tracking-wider px-3 py-2 rounded-md border transition-colors whitespace-nowrap ${
+                isAtDefault
+                  ? "border-border text-muted-foreground cursor-not-allowed opacity-60"
+                  : savedFlash
+                    ? "border-primary text-primary bg-primary/10"
+                    : "border-primary/60 text-primary hover:bg-primary/10"
+              }`}
+              title={
+                isAtDefault
+                  ? "Dette stedet er allerede default"
+                  : `Sett som default for ${who} på denne IP-en`
+              }
+            >
+              {savingDefault ? "Lagrer…" : savedFlash ? "✓ Lagret" : "Sett som default"}
+            </button>
+          )}
 
         {open && hits && hits.length > 0 && (
           <div className="absolute left-0 right-0 mt-1 z-30 rounded-md border border-border bg-background shadow-lg max-h-72 overflow-y-auto">
