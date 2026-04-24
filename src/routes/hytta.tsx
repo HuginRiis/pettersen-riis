@@ -6,6 +6,7 @@ import { NetatmoWeatherStationSection } from "@/components/NetatmoWeatherStation
 import { HeatersPanel } from "@/components/HeatersPanel";
 import { HyttaIndreSal } from "@/components/HyttaIndreSal";
 import { TollnesCameraStrip } from "@/components/TollnesCameraStrip";
+import { AuroraPanel } from "@/components/AuroraPanel";
 import { useAuthStatus } from "@/hooks/use-auth-status";
 
 import hyttaImg from "@/assets/hytta-aurora-got.jpg";
