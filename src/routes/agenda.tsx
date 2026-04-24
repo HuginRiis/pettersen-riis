@@ -131,6 +131,12 @@ function AgendaPage() {
 
       <PushSubscribeBar />
 
+      <GarbageCollectionPanel />
+
+      <BirthdaysPanel />
+
+      <TestPushPanel />
+
       <section className="container mx-auto px-4 py-12 grid lg:grid-cols-3 gap-8">
         <form onSubmit={handleSubmit} className="panel rounded-lg p-6 lg:sticky lg:top-24 h-fit">
           <h2 className="text-xl text-primary mb-4 flex items-center gap-2">
@@ -231,12 +237,6 @@ function AgendaPage() {
           {past.length > 0 && <DateSection title="Tidligere" entries={past} onDelete={remove} loading={false} muted />}
         </div>
       </section>
-
-      <GarbageCollectionPanel />
-
-      <BirthdaysPanel />
-
-      <TestPushPanel />
     </PageShell>
   );
 }
