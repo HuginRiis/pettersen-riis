@@ -1,5 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { saveStravaConnection } from "@/server/strava-connection";
+import {
+  isStravaOwner,
+  saveStravaConnection,
+  type StravaOwner,
+} from "@/server/strava-connection";
 
 function htmlResponse(body: string, status = 200) {
   return new Response(body, {
