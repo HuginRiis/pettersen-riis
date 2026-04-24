@@ -244,6 +244,16 @@ export function LocationPicker({
           </div>
           <button
             type="button"
+            disabled={locating}
+            onClick={handleLocate}
+            className="text-xs uppercase tracking-wider px-3 py-2 rounded-md border border-border text-foreground hover:bg-card/60 transition-colors whitespace-nowrap inline-flex items-center gap-1.5 disabled:opacity-60"
+            title="Bruk min plassering (krever tillatelse i nettleseren)"
+          >
+            <span aria-hidden>📍</span>
+            <span>{locating ? "Henter…" : "Min plassering"}</span>
+          </button>
+          <button
+            type="button"
             disabled={savingDefault || isAtDefault}
             onClick={handleSetDefault}
             className={`text-xs uppercase tracking-wider px-3 py-2 rounded-md border transition-colors whitespace-nowrap ${
@@ -264,6 +274,10 @@ export function LocationPicker({
             {savingDefault ? "Lagrer…" : savedFlash ? "✓ Lagret" : "Sett som default"}
           </button>
         </div>
+
+        {locateError && (
+          <div className="mt-2 text-[11px] text-destructive">{locateError}</div>
+        )}
 
         {open && hits && hits.length > 0 && (
           <div className="absolute left-0 right-0 mt-1 z-30 rounded-md border border-border bg-background shadow-lg max-h-72 overflow-y-auto">
