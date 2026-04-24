@@ -134,25 +134,35 @@ async function fetchAuroraData(): Promise<{ now: KpNow; forecast: KpForecast[] }
     { cache: "no-store" },
   );
   if (!fcRes.ok) throw new Error(`Kp-forecast HTTP ${fcRes.status}`);
-  const fcJson = (await fcRes.json()) as Array<Array<string>>;
-  const rows = fcJson.slice(1); // hopp over header
+  const fcJson = (await fcRes.json()) as Array<Array<unknown>>;
+  const rows = Array.isArray(fcJson) ? fcJson.slice(1) : []; // hopp over header
 
   const nowMs = Date.now();
   const horizonMs = nowMs + 1000 * 60 * 60 * 48; // 48 timer fram
 
   const forecast: KpForecast[] = rows
-    .map((r) => {
-      const timeTag = r[0];
-      const kp = Number(r[1]);
-      const obs = (r[2] ?? "predicted").toLowerCase() as KpForecast["obsOrPredicted"];
+    .map((r): KpForecast | null => {
+      if (!Array.isArray(r)) return null;
+      const timeTagRaw = r[0];
+      const kpRaw = r[1];
+      const obsRaw = r[2];
+      if (typeof timeTagRaw !== "string" || timeTagRaw.length === 0) return null;
+      const kp = Number(kpRaw);
+      if (!Number.isFinite(kp)) return null;
+      const obs = (typeof obsRaw === "string" ? obsRaw : "predicted").toLowerCase() as KpForecast["obsOrPredicted"];
       // time_tag fra NOAA er UTC uten "Z" — legg til for å unngå tolkning som lokaltid
-      const iso = timeTag.endsWith("Z") || timeTag.includes("+") ? timeTag : `${timeTag}Z`;
+      const iso =
+        timeTagRaw.endsWith("Z") || timeTagRaw.includes("+")
+          ? timeTagRaw
+          : `${timeTagRaw.replace(" ", "T")}Z`;
       return { timeTag: iso, kp, obsOrPredicted: obs };
     })
-    .filter((r) => {
+    .filter((r): r is KpForecast => {
+      if (!r) return false;
       const t = new Date(r.timeTag).getTime();
       return Number.isFinite(t) && t >= nowMs - 1000 * 60 * 60 && t <= horizonMs;
     });
+
 
   return { now: kpNow, forecast };
 }
