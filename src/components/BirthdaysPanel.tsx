@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
-import { Cake, Bell, BellOff, Trash2, Plus, Send } from "lucide-react";
+import { Cake, Bell, BellOff, Trash2, Plus, Send, Pencil, X, Check } from "lucide-react";
 import { sendBirthdayTestPush } from "@/server/birthdays";
 
 export type Birthday = {
@@ -67,6 +67,14 @@ export function BirthdaysPanel() {
   const [notifyEnabled, setNotifyEnabled] = useState(true);
   const [recipients, setRecipients] = useState<string[]>(["Alle"]);
 
+  // Edit state
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editBirthDate, setEditBirthDate] = useState("");
+  const [editTitle, setEditTitle] = useState("");
+  const [editWords, setEditWords] = useState("");
+  const [editSaving, setEditSaving] = useState(false);
+
   async function load() {
     setLoading(true);
     const { data, error } = await supabase
@@ -122,6 +130,35 @@ export function BirthdaysPanel() {
   async function remove(id: string) {
     await supabase.from("birthdays" as any).delete().eq("id", id);
     setItems((prev) => prev.filter((x) => x.id !== id));
+  }
+
+  function startEdit(b: Birthday) {
+    setEditingId(b.id);
+    setEditName(b.name);
+    setEditBirthDate(b.birth_date);
+    setEditTitle(b.title ?? "");
+    setEditWords(b.words ?? "");
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+  }
+
+  async function saveEdit(id: string) {
+    if (!editName.trim() || !editBirthDate) return;
+    setEditSaving(true);
+    const patch = {
+      name: editName.trim(),
+      birth_date: editBirthDate,
+      title: editTitle.trim() || null,
+      words: editWords.trim() || null,
+    };
+    const { error } = await supabase.from("birthdays" as any).update(patch).eq("id", id);
+    setEditSaving(false);
+    if (!error) {
+      setItems((prev) => prev.map((x) => (x.id === id ? { ...x, ...patch } : x)));
+      setEditingId(null);
+    }
   }
 
   async function sendTestFor(id: string) {
@@ -249,6 +286,7 @@ export function BirthdaysPanel() {
             const dleft = daysUntilBirthday(b.birth_date);
             const age = ageAtNextBirthday(b.birth_date);
             const isToday = dleft === 0;
+            const isEditing = editingId === b.id;
             return (
               <article
                 key={b.id}
@@ -259,68 +297,142 @@ export function BirthdaysPanel() {
                     <Cake size={22} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-baseline gap-2 flex-wrap">
-                      <h4 className="text-foreground font-semibold">{b.name}</h4>
-                      {b.title && <span className="text-xs text-primary/80">{b.title}</span>}
-                    </div>
-                    <p className="text-xs text-muted-foreground tabular-nums mt-0.5">
-                      {formatNorwegianDate(b.birth_date)} • Fyller {age} år •{" "}
-                      {isToday ? (
-                        <span className="text-primary font-semibold">I dag!</span>
-                      ) : (
-                        <>{dleft} {dleft === 1 ? "dag" : "dager"} igjen</>
-                      )}
-                    </p>
-                    {b.words && (
-                      <p className="text-medieval text-primary text-sm mt-1">"{b.words}"</p>
-                    )}
+                    {isEditing ? (
+                      <div className="space-y-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          <div>
+                            <label className="block text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Navn</label>
+                            <input
+                              value={editName}
+                              onChange={(e) => setEditName(e.target.value)}
+                              maxLength={60}
+                              className="w-full bg-input border border-border rounded px-2 py-1.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Fødselsdato</label>
+                            <input
+                              type="date"
+                              value={editBirthDate}
+                              onChange={(e) => setEditBirthDate(e.target.value)}
+                              className="w-full bg-input border border-border rounded px-2 py-1.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Tittel</label>
+                          <input
+                            value={editTitle}
+                            onChange={(e) => setEditTitle(e.target.value)}
+                            maxLength={80}
+                            className="w-full bg-input border border-border rounded px-2 py-1.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Hilsen</label>
+                          <input
+                            value={editWords}
+                            onChange={(e) => setEditWords(e.target.value)}
+                            maxLength={120}
+                            className="w-full bg-input border border-border rounded px-2 py-1.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                          />
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex items-baseline gap-2 flex-wrap">
+                          <h4 className="text-foreground font-semibold">{b.name}</h4>
+                          {b.title && <span className="text-xs text-primary/80">{b.title}</span>}
+                        </div>
+                        <p className="text-xs text-muted-foreground tabular-nums mt-0.5">
+                          {formatNorwegianDate(b.birth_date)} • Fyller {age} år •{" "}
+                          {isToday ? (
+                            <span className="text-primary font-semibold">I dag!</span>
+                          ) : (
+                            <>{dleft} {dleft === 1 ? "dag" : "dager"} igjen</>
+                          )}
+                        </p>
+                        {b.words && (
+                          <p className="text-medieval text-primary text-sm mt-1">"{b.words}"</p>
+                        )}
 
-                    <div className="flex flex-wrap gap-1.5 mt-2">
-                      {RECIPIENTS.map((r) => {
-                        const active = b.notify_recipients?.includes(r);
-                        return (
-                          <button
-                            key={r}
-                            type="button"
-                            onClick={() => toggleRecipientFor(b, r)}
-                            className={`px-2 py-0.5 rounded-full text-[10px] border transition ${
-                              active
-                                ? "bg-primary text-primary-foreground border-primary"
-                                : "border-border text-muted-foreground hover:bg-accent/40"
-                            }`}
-                          >
-                            {r}
-                          </button>
-                        );
-                      })}
-                    </div>
+                        <div className="flex flex-wrap gap-1.5 mt-2">
+                          {RECIPIENTS.map((r) => {
+                            const active = b.notify_recipients?.includes(r);
+                            return (
+                              <button
+                                key={r}
+                                type="button"
+                                onClick={() => toggleRecipientFor(b, r)}
+                                className={`px-2 py-0.5 rounded-full text-[10px] border transition ${
+                                  active
+                                    ? "bg-primary text-primary-foreground border-primary"
+                                    : "border-border text-muted-foreground hover:bg-accent/40"
+                                }`}
+                              >
+                                {r}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </>
+                    )}
                   </div>
                   <div className="flex flex-col items-end gap-1.5 shrink-0">
-                    <button
-                      onClick={() => toggleNotify(b)}
-                      title={b.notify_enabled ? "Slå av push" : "Slå på push"}
-                      className={`p-1.5 rounded border transition ${
-                        b.notify_enabled
-                          ? "border-primary/60 text-primary"
-                          : "border-border text-muted-foreground"
-                      }`}
-                    >
-                      {b.notify_enabled ? <Bell size={14} /> : <BellOff size={14} />}
-                    </button>
-                    <button
-                      onClick={() => sendTestFor(b.id)}
-                      title="Send test-push nå"
-                      className="p-1.5 rounded border border-border text-muted-foreground hover:text-primary transition"
-                    >
-                      <Send size={14} />
-                    </button>
-                    <button
-                      onClick={() => remove(b.id)}
-                      title="Slett"
-                      className="p-1.5 rounded border border-border text-muted-foreground hover:text-destructive transition"
-                    >
-                      <Trash2 size={14} />
-                    </button>
+                    {isEditing ? (
+                      <>
+                        <button
+                          onClick={() => saveEdit(b.id)}
+                          disabled={editSaving || !editName.trim() || !editBirthDate}
+                          title="Lagre"
+                          className="p-1.5 rounded border border-primary/60 text-primary hover:bg-primary/10 transition disabled:opacity-50"
+                        >
+                          <Check size={14} />
+                        </button>
+                        <button
+                          onClick={cancelEdit}
+                          title="Avbryt"
+                          className="p-1.5 rounded border border-border text-muted-foreground hover:text-foreground transition"
+                        >
+                          <X size={14} />
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => startEdit(b)}
+                          title="Rediger"
+                          className="p-1.5 rounded border border-border text-muted-foreground hover:text-primary transition"
+                        >
+                          <Pencil size={14} />
+                        </button>
+                        <button
+                          onClick={() => toggleNotify(b)}
+                          title={b.notify_enabled ? "Slå av push" : "Slå på push"}
+                          className={`p-1.5 rounded border transition ${
+                            b.notify_enabled
+                              ? "border-primary/60 text-primary"
+                              : "border-border text-muted-foreground"
+                          }`}
+                        >
+                          {b.notify_enabled ? <Bell size={14} /> : <BellOff size={14} />}
+                        </button>
+                        <button
+                          onClick={() => sendTestFor(b.id)}
+                          title="Send test-push nå"
+                          className="p-1.5 rounded border border-border text-muted-foreground hover:text-primary transition"
+                        >
+                          <Send size={14} />
+                        </button>
+                        <button
+                          onClick={() => remove(b.id)}
+                          title="Slett"
+                          className="p-1.5 rounded border border-border text-muted-foreground hover:text-destructive transition"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
               </article>
