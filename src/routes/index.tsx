@@ -226,7 +226,7 @@ function Home() {
           <HallCard to="/pollen" title="Pollen" desc="Dagens pollen i lufta." icon="🌾" locked={false} />
           <HallCard to="/turer" title="Ferden" desc="Tips til turer i nærheten." icon="🧭" locked={false} />
           <HallCard to="/agenda" title="Krøniken" desc="Agenda og meldinger med dato og emne." icon="📜" locked={!isAuthed} />
-          <HallCard to="/varsler" title="Farevarsler" desc="Aktive farevarsler og trafikkmeldinger." icon="⚠️" locked={!isAuthed} />
+          <HallCard to="/varsler" title="Farevarsler" desc="Aktive farevarsler og trafikkmeldinger." icon="⚠️" locked={false} />
           <HallCard to="/vakttarnet" title="Vakttårnet" desc="Vaktene rapporterer hvem som nærmer seg porten." icon="👁" locked={!isAuthed} />
           <HallCard to="/hytta" title="Hytta" desc="Husets tilflukt i fjellet." icon="🏔" locked={false} />
           <HallCard to="/hundene" title="Hundene" desc="Husets tro følgesvenner." icon="🐺" locked={!isAuthed} />
