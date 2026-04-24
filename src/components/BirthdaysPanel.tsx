@@ -67,6 +67,14 @@ export function BirthdaysPanel() {
   const [notifyEnabled, setNotifyEnabled] = useState(true);
   const [recipients, setRecipients] = useState<string[]>(["Alle"]);
 
+  // Edit state
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editBirthDate, setEditBirthDate] = useState("");
+  const [editTitle, setEditTitle] = useState("");
+  const [editWords, setEditWords] = useState("");
+  const [editSaving, setEditSaving] = useState(false);
+
   async function load() {
     setLoading(true);
     const { data, error } = await supabase
