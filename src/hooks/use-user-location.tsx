@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { LocationPicker, type ActiveLocation } from "@/components/LocationPicker";
+import { useAuthStatus } from "@/hooks/use-auth-status";
 import {
   getDefaultLocation,
   getNameForCurrentIp,
