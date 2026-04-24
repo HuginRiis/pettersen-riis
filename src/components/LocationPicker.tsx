@@ -219,6 +219,7 @@ export function LocationPicker({
               {savingDefault ? "Lagrer…" : savedFlash ? "✓ Lagret" : "Sett som default"}
             </button>
           )}
+        </div>
 
         {open && hits && hits.length > 0 && (
           <div className="absolute left-0 right-0 mt-1 z-30 rounded-md border border-border bg-background shadow-lg max-h-72 overflow-y-auto">
