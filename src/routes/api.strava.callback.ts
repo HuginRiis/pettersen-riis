@@ -101,7 +101,7 @@ export const Route = createFileRoute("/api/strava/callback")({
         return new Response(null, {
           status: 302,
           headers: {
-            Location: "/trening?connected=1",
+            Location: `/trening?connected=${owner}`,
             "Set-Cookie":
               "strava_oauth_state=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax",
           },
