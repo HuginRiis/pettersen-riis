@@ -222,8 +222,9 @@ export const searchPlaces = createServerFn({ method: "GET" })
   });
 
 /**
- * Reverse-geocoder lat/lon mot Kartverkets stedsregister og returnerer
- * det nærmeste navnet (typisk tettsted/bydel/grend). Brukes til "Min plassering"-knappen.
+ * Reverse-geocoder lat/lon og returnerer nærmeste by/tettsted.
+ * Bruker BigDataCloud (gratis, ingen nøkkel) som primær — mer presis enn Kartverket
+ * for "hvilken by er jeg i". Faller tilbake til Nominatim på by-nivå.
  */
 export const reverseGeocode = createServerFn({ method: "POST" })
   .inputValidator((input: { lat: number; lon: number }) => {
