@@ -7,6 +7,8 @@ import heroImg from "@/assets/got-var.jpg";
 import { getHomeySnapshot } from "@/server/homey";
 import { findDeviceFuzzy, type DeviceLike } from "@/lib/homey-match";
 import { getTollnesAlerts, type AlertsResult, type MetAlert } from "@/server/lightning";
+import { useUserLocation, UserLocationBar } from "@/hooks/use-user-location";
+import { DynamicForecastPanel } from "@/components/DynamicForecastPanel";
 
 export const Route = createFileRoute("/var")({
   head: () => ({
@@ -68,6 +70,7 @@ type LocationState = {
 function WeatherPage() {
   const data = Route.useLoaderData() as Awaited<ReturnType<typeof getHomeySnapshot>>;
   const fetchAlerts = useServerFn(getTollnesAlerts);
+  const userLoc = useUserLocation("var");
   const [alerts, setAlerts] = useState<AlertsResult | null>(null);
   const [now, setNow] = useState<Date | null>(null);
   const [weatherUpdated, setWeatherUpdated] = useState<Date | null>(null);
@@ -199,6 +202,17 @@ function WeatherPage() {
       <section className="container mx-auto px-4 pt-6 flex flex-wrap gap-2 justify-center">
         <LastUpdated label="Vær (MET.no)" timestamp={weatherUpdated} />
         <LastUpdated label="Homey" timestamp={homeyUpdated} />
+      </section>
+
+      <section className="container mx-auto px-4 pt-8 space-y-5">
+        <UserLocationBar page="var" state={userLoc} />
+        {userLoc.ready && (
+          <DynamicForecastPanel
+            label={userLoc.active.label}
+            lat={userLoc.active.lat}
+            lon={userLoc.active.lon}
+          />
+        )}
       </section>
 
       <section className="container mx-auto px-4 py-12 space-y-12">
