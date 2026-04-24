@@ -117,14 +117,24 @@ async function fetchAuroraData(): Promise<{ now: KpNow; forecast: KpForecast[] }
   );
   if (!nowRes.ok) throw new Error(`Kp-now HTTP ${nowRes.status}`);
   const nowJson = (await nowRes.json()) as Array<{
-    time_tag: string;
-    kp_index: number;
+    time_tag?: string;
+    kp_index?: number;
     estimated_kp?: number;
   }>;
-  const last = nowJson[nowJson.length - 1];
+  if (!Array.isArray(nowJson) || nowJson.length === 0) {
+    throw new Error("Tomt Kp-svar");
+  }
+  const last = nowJson[nowJson.length - 1] ?? {};
+  const kpVal =
+    typeof last.estimated_kp === "number"
+      ? last.estimated_kp
+      : typeof last.kp_index === "number"
+        ? last.kp_index
+        : NaN;
+  if (!Number.isFinite(kpVal)) throw new Error("Ugyldig Kp-verdi");
   const kpNow: KpNow = {
-    kp: typeof last.estimated_kp === "number" ? last.estimated_kp : last.kp_index,
-    observedAt: last.time_tag,
+    kp: kpVal,
+    observedAt: typeof last.time_tag === "string" ? last.time_tag : new Date().toISOString(),
   };
 
   // 2) 3-døgns prognose (3-timers blokker). Format: array of arrays.
@@ -134,25 +144,35 @@ async function fetchAuroraData(): Promise<{ now: KpNow; forecast: KpForecast[] }
     { cache: "no-store" },
   );
   if (!fcRes.ok) throw new Error(`Kp-forecast HTTP ${fcRes.status}`);
-  const fcJson = (await fcRes.json()) as Array<Array<string>>;
-  const rows = fcJson.slice(1); // hopp over header
+  const fcJson = (await fcRes.json()) as Array<Array<unknown>>;
+  const rows = Array.isArray(fcJson) ? fcJson.slice(1) : []; // hopp over header
 
   const nowMs = Date.now();
   const horizonMs = nowMs + 1000 * 60 * 60 * 48; // 48 timer fram
 
   const forecast: KpForecast[] = rows
-    .map((r) => {
-      const timeTag = r[0];
-      const kp = Number(r[1]);
-      const obs = (r[2] ?? "predicted").toLowerCase() as KpForecast["obsOrPredicted"];
+    .map((r): KpForecast | null => {
+      if (!Array.isArray(r)) return null;
+      const timeTagRaw = r[0];
+      const kpRaw = r[1];
+      const obsRaw = r[2];
+      if (typeof timeTagRaw !== "string" || timeTagRaw.length === 0) return null;
+      const kp = Number(kpRaw);
+      if (!Number.isFinite(kp)) return null;
+      const obs = (typeof obsRaw === "string" ? obsRaw : "predicted").toLowerCase() as KpForecast["obsOrPredicted"];
       // time_tag fra NOAA er UTC uten "Z" — legg til for å unngå tolkning som lokaltid
-      const iso = timeTag.endsWith("Z") || timeTag.includes("+") ? timeTag : `${timeTag}Z`;
+      const iso =
+        timeTagRaw.endsWith("Z") || timeTagRaw.includes("+")
+          ? timeTagRaw
+          : `${timeTagRaw.replace(" ", "T")}Z`;
       return { timeTag: iso, kp, obsOrPredicted: obs };
     })
-    .filter((r) => {
+    .filter((r): r is KpForecast => {
+      if (!r) return false;
       const t = new Date(r.timeTag).getTime();
       return Number.isFinite(t) && t >= nowMs - 1000 * 60 * 60 && t <= horizonMs;
     });
+
 
   return { now: kpNow, forecast };
 }
