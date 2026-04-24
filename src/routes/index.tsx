@@ -13,8 +13,8 @@ import { HouseHero } from "@/components/HouseHero";
 import { WeatherWidget } from "@/components/WeatherWidget";
 import { MaesterCounsel } from "@/components/MaesterCounsel";
 import { BirthdayBanner } from "@/components/BirthdayBanner";
+import { BirthdaysOverview } from "@/components/BirthdaysOverview";
 import { UpcomingHolidays } from "@/components/UpcomingHolidays";
-import { GarbageCollectionPanel } from "@/components/GarbageCollectionPanel";
 import { useFavorites } from "@/hooks/use-favorites";
 import { useAuthStatus } from "@/hooks/use-auth-status";
 import { logoutFn } from "@/server/auth";
@@ -186,7 +186,7 @@ function Home() {
 
       <UpcomingHolidays />
 
-      {isAuthed && <GarbageCollectionPanel />}
+      <BirthdaysOverview />
 
       <MaesterCounsel />
 

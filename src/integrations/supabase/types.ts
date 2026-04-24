@@ -104,6 +104,45 @@ export type Database = {
         }
         Relationships: []
       }
+      birthdays: {
+        Row: {
+          birth_date: string
+          created_at: string
+          id: string
+          name: string
+          notified_year: number | null
+          notify_enabled: boolean
+          notify_recipients: string[]
+          title: string | null
+          updated_at: string
+          words: string | null
+        }
+        Insert: {
+          birth_date: string
+          created_at?: string
+          id?: string
+          name: string
+          notified_year?: number | null
+          notify_enabled?: boolean
+          notify_recipients?: string[]
+          title?: string | null
+          updated_at?: string
+          words?: string | null
+        }
+        Update: {
+          birth_date?: string
+          created_at?: string
+          id?: string
+          name?: string
+          notified_year?: number | null
+          notify_enabled?: boolean
+          notify_recipients?: string[]
+          title?: string | null
+          updated_at?: string
+          words?: string | null
+        }
+        Relationships: []
+      }
       garbage_address: {
         Row: {
           address_text: string

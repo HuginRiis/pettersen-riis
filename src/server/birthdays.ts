@@ -1,0 +1,27 @@
+import { createServerFn } from "@tanstack/react-start";
+
+export async function processBirthdayNotifications() {
+  const mod = await import("./birthdays.server");
+  return mod.processBirthdayNotifications();
+}
+
+export const sendBirthdayTestPush = createServerFn({ method: "POST" })
+  .inputValidator((input: { id: string }) => {
+    if (typeof input?.id !== "string" || input.id.length < 8 || input.id.length > 64) {
+      throw new Error("Ugyldig bursdag-ID.");
+    }
+    return { id: input.id };
+  })
+  .handler(async ({ data }) => {
+    const mod = await import("./birthdays.server");
+    // Trigger on-demand: bruk samme prosess men send uavhengig av tid.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row, error } = await supabaseAdmin
+      .from("birthdays")
+      .select("name, title, words, birth_date, notify_recipients")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (error) throw error;
+    if (!row) throw new Error("Fant ikke bursdagen.");
+    return mod.sendBirthdayPushNow(data.id, row as any);
+  });
