@@ -130,6 +130,7 @@ export function UserLocationBar({
       defaultLabel={state.defaultLoc.label}
       onChange={state.setActive}
       onDefaultSaved={(loc) => state.setDefaultLoc(loc)}
+      authenticated={state.authenticated}
     />
   );
 }
