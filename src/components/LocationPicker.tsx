@@ -50,6 +50,7 @@ export function LocationPicker({
   const search = useServerFn(searchPlaces);
   const saveDefault = useServerFn(setDefaultLocation);
   const saveName = useServerFn(setNameForCurrentIp);
+  const reverse = useServerFn(reverseGeocode);
 
   const [query, setQuery] = useState("");
   const [hits, setHits] = useState<PlaceHit[] | null>(null);
@@ -57,6 +58,8 @@ export function LocationPicker({
   const [searching, setSearching] = useState(false);
   const [savingDefault, setSavingDefault] = useState(false);
   const [savedFlash, setSavedFlash] = useState(false);
+  const [locating, setLocating] = useState(false);
+  const [locateError, setLocateError] = useState<string | null>(null);
   const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
   const wrap = useRef<HTMLDivElement>(null);
 
