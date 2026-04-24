@@ -168,6 +168,7 @@ function HyttaPage() {
 
       <NetatmoWeatherStationSection title="Værstasjonen — Hytta" stationMatch="hytta" />
 
+      <AuroraPanel />
 
       {authenticated && (
         <HeatersPanel
