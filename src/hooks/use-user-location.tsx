@@ -14,6 +14,7 @@ export type UserLocationState = {
   active: ActiveLocation;
   defaultLoc: ActiveLocation;
   ready: boolean;
+  authenticated: boolean;
 };
 
 /**
@@ -21,11 +22,12 @@ export type UserLocationState = {
  * for en gitt side ('var' | 'pollen').
  *
  * Atferd:
- * - Ved første mount: spør serveren hvilket navn som tilhører IP-en (hvis noen).
- *   Hvis ukjent, bruker "Arne" som start-vakt.
- * - Henter default-sted for (who, IP, page). Faller tilbake til Tollnes hvis ingen.
- * - Aktivt sted starter alltid på default — dvs. "etter navigering vekk og tilbake"
- *   ender man alltid på sin default igjen (siden hooken kjører ved mount).
+ * - Når brukeren IKKE er logget inn: Arne/Rebekka-systemet er skjult.
+ *   Aktivt sted starter på Tollnes (fallback). Brukeren kan fortsatt søke
+ *   og bytte sted lokalt, men kan ikke lagre default.
+ * - Når brukeren ER logget inn: spør serveren hvilket navn som tilhører
+ *   IP-en. Henter (who, IP, page)-default. Aktivt sted starter alltid på
+ *   default — dvs. ved (re)mount havner man tilbake på sin egen default.
  */
 export function useUserLocation(page: LocationPage): UserLocationState & {
   setWho: (who: WhoName) => void;
@@ -34,6 +36,7 @@ export function useUserLocation(page: LocationPage): UserLocationState & {
 } {
   const fetchName = useServerFn(getNameForCurrentIp);
   const fetchDefault = useServerFn(getDefaultLocation);
+  const { authenticated, loading: authLoading } = useAuthStatus();
 
   const [who, setWho] = useState<WhoName>("Arne");
   const [active, setActive] = useState<ActiveLocation>({
@@ -48,8 +51,10 @@ export function useUserLocation(page: LocationPage): UserLocationState & {
   });
   const [ready, setReady] = useState(false);
 
-  // Step 1: figure out who the IP belongs to
+  // Step 1: figure out who the IP belongs to — only when logged in
   useEffect(() => {
+    if (authLoading) return;
+    if (!authenticated) return;
     let cancelled = false;
     (async () => {
       try {
@@ -63,10 +68,17 @@ export function useUserLocation(page: LocationPage): UserLocationState & {
     return () => {
       cancelled = true;
     };
-  }, [fetchName]);
+  }, [fetchName, authenticated, authLoading]);
 
-  // Step 2: whenever 'who' changes, load that user's default for this page+IP
+  // Step 2: load default for this page. When logged in, scoped to (who, IP).
+  // When logged out, no fetch — just use Tollnes fallback so the page is usable.
   useEffect(() => {
+    if (authLoading) return;
+    if (!authenticated) {
+      // Logged-out visitors get Tollnes only — no IP/who lookup.
+      setReady(true);
+      return;
+    }
     let cancelled = false;
     (async () => {
       try {
@@ -84,9 +96,18 @@ export function useUserLocation(page: LocationPage): UserLocationState & {
     return () => {
       cancelled = true;
     };
-  }, [who, page, fetchDefault]);
+  }, [who, page, fetchDefault, authenticated, authLoading]);
 
-  return { who, active, defaultLoc, ready, setWho, setActive, setDefaultLoc };
+  return {
+    who,
+    active,
+    defaultLoc,
+    ready,
+    authenticated: authenticated === true,
+    setWho,
+    setActive,
+    setDefaultLoc,
+  };
 }
 
 /**
