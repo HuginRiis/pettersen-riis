@@ -389,6 +389,24 @@ export type Database = {
         }
         Relationships: []
       }
+      ip_user_mapping: {
+        Row: {
+          ip: string
+          updated_at: string
+          who: string
+        }
+        Insert: {
+          ip: string
+          updated_at?: string
+          who: string
+        }
+        Update: {
+          ip?: string
+          updated_at?: string
+          who?: string
+        }
+        Relationships: []
+      }
       pulse_readings: {
         Row: {
           device_name: string | null
@@ -718,6 +736,42 @@ export type Database = {
           id?: string
           path?: string
           title?: string
+        }
+        Relationships: []
+      }
+      user_location_prefs: {
+        Row: {
+          created_at: string
+          id: string
+          ip: string
+          lat: number
+          lon: number
+          page: string
+          place_label: string
+          updated_at: string
+          who: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ip: string
+          lat: number
+          lon: number
+          page: string
+          place_label: string
+          updated_at?: string
+          who: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ip?: string
+          lat?: number
+          lon?: number
+          page?: string
+          place_label?: string
+          updated_at?: string
+          who?: string
         }
         Relationships: []
       }
