@@ -30,6 +30,7 @@ function VarslerPage() {
   const [alerts, setAlerts] = useState<TelemarkAlert[] | null>(null);
   const [fetchedAt, setFetchedAt] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [selectedCounty, setSelectedCounty] = useState<string>("ALL");
 
   useEffect(() => {
     let cancelled = false;
@@ -51,7 +52,23 @@ function VarslerPage() {
     };
   }, []);
 
-  const counts = countBySeverity(alerts ?? []);
+  // Bygg listen over fylker som faktisk har aktive varsler
+  const availableCounties = (() => {
+    const set = new Set<string>();
+    for (const a of alerts ?? []) {
+      for (const name of a.countyNames ?? []) set.add(name);
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b, "nb"));
+  })();
+
+  const filteredAlerts =
+    selectedCounty === "ALL"
+      ? alerts ?? []
+      : (alerts ?? []).filter((a) =>
+          (a.countyNames ?? []).includes(selectedCounty),
+        );
+
+  const counts = countBySeverity(filteredAlerts);
   const updatedLabel = fetchedAt
     ? new Date(fetchedAt).toLocaleTimeString("nb-NO", {
         hour: "2-digit",
@@ -75,6 +92,34 @@ function VarslerPage() {
           </span>
         </div>
 
+        {availableCounties.length > 0 && (
+          <div className="mb-6">
+            <p className="text-[11px] uppercase tracking-[0.25em] text-muted-foreground mb-2">
+              Velg område
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <CountyChip
+                label={`Alle områder (${alerts?.length ?? 0})`}
+                active={selectedCounty === "ALL"}
+                onClick={() => setSelectedCounty("ALL")}
+              />
+              {availableCounties.map((name) => {
+                const count = (alerts ?? []).filter((a) =>
+                  (a.countyNames ?? []).includes(name),
+                ).length;
+                return (
+                  <CountyChip
+                    key={name}
+                    label={`${name} (${count})`}
+                    active={selectedCounty === name}
+                    onClick={() => setSelectedCounty(name)}
+                  />
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         <div className="grid md:grid-cols-3 gap-3 mb-6">
           <SeverityCard label="Røde" count={counts.red} color="Red" />
           <SeverityCard label="Oransje" count={counts.orange} color="Orange" />
@@ -89,13 +134,15 @@ function VarslerPage() {
 
         <div className="panel rounded-lg overflow-hidden mb-8">
           <div className="h-[55vh] min-h-[380px] w-full">
-            {alerts && alerts.length > 0 ? (
-              <AlertsMap alerts={alerts} />
+            {filteredAlerts.length > 0 ? (
+              <AlertsMap alerts={filteredAlerts} />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-muted-foreground text-sm">
                 {alerts === null
                   ? "Henter varsler …"
-                  : "Ingen aktive varsler — riket er fredelig."}
+                  : selectedCounty === "ALL"
+                    ? "Ingen aktive varsler — riket er fredelig."
+                    : `Ingen aktive varsler i ${selectedCounty}.`}
               </div>
             )}
           </div>
@@ -108,12 +155,14 @@ function VarslerPage() {
         )}
 
         <div className="space-y-4">
-          {(alerts ?? []).map((a) => (
+          {filteredAlerts.map((a) => (
             <AlertCard key={a.id} a={a} />
           ))}
-          {alerts && alerts.length === 0 && !error && (
+          {alerts && filteredAlerts.length === 0 && !error && (
             <p className="text-sm text-muted-foreground italic">
-              Ingen aktive farevarsler i Sør- og Østlandet akkurat nå.
+              {selectedCounty === "ALL"
+                ? "Ingen aktive farevarsler i Sør- og Østlandet akkurat nå."
+                : `Ingen aktive farevarsler i ${selectedCounty} akkurat nå.`}
             </p>
           )}
         </div>
@@ -121,6 +170,30 @@ function VarslerPage() {
         <NrkTrafficSection />
       </section>
     </PageShell>
+  );
+}
+
+function CountyChip({
+  label,
+  active,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`text-xs px-3 py-1.5 rounded-full border transition ${
+        active
+          ? "bg-primary text-primary-foreground border-primary"
+          : "border-border text-foreground/80 hover:border-primary/60 hover:text-primary"
+      }`}
+    >
+      {label}
+    </button>
   );
 }
 
