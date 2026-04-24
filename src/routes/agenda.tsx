@@ -232,9 +232,9 @@ function AgendaPage() {
         </div>
       </section>
 
-      <BirthdaysPanel />
-
       <GarbageCollectionPanel />
+
+      <BirthdaysPanel />
 
       <TestPushPanel />
     </PageShell>
