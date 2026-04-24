@@ -23,6 +23,8 @@ type Props = {
   defaultLabel: string; // label of the saved default for this user (for "Tilbake til"-knapp)
   onChange: (loc: ActiveLocation) => void;
   onDefaultSaved?: (loc: ActiveLocation) => void;
+  /** When false (offentlig/utlogget), hide Arne/Rebekka-velgeren og deaktiver "Sett som default". */
+  authenticated?: boolean;
 };
 
 const NAMES: WhoName[] = ["Arne", "Rebekka"];
