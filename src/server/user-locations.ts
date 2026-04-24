@@ -234,90 +234,96 @@ export const reverseGeocode = createServerFn({ method: "POST" })
     return { lat, lon };
   })
   .handler(async ({ data }): Promise<{ label: string; lat: number; lon: number }> => {
-    try {
-      const url = new URL("https://ws.geonorge.no/stedsnavn/v1/punkt");
-      url.searchParams.set("nord", String(data.lat));
-      url.searchParams.set("ost", String(data.lon));
-      url.searchParams.set("koordsys", "4258");
-      url.searchParams.set("radius", "1500");
-      url.searchParams.set("treffPerSide", "10");
-      url.searchParams.set("utkoordsys", "4258");
-      const res = await fetch(url.toString(), {
-        headers: { Accept: "application/json" },
-        signal: AbortSignal.timeout(6000),
-      });
-      if (res.ok) {
+    // Hent ut beste skrivemåte fra stedsnavn-arrayen (foretrekk hovednavn på norsk)
+    const extractName = (n: any): string => {
+      const arr: any[] = Array.isArray(n?.stedsnavn) ? n.stedsnavn : [];
+      const hoved = arr.find(
+        (s) =>
+          String(s?.navnestatus ?? "").toLowerCase() === "hovednavn" &&
+          String(s?.språk ?? "").toLowerCase().startsWith("norsk"),
+      );
+      if (hoved?.skrivemåte) return String(hoved.skrivemåte).trim();
+      const anyHoved = arr.find(
+        (s) => String(s?.navnestatus ?? "").toLowerCase() === "hovednavn",
+      );
+      if (anyHoved?.skrivemåte) return String(anyHoved.skrivemåte).trim();
+      const first = arr.find((s) => s?.skrivemåte);
+      return first?.skrivemåte ? String(first.skrivemåte).trim() : "";
+    };
+
+    // Bare bebodde steder — disse har god dekning i MET.no og pollenvarsel.
+    // Rangert fra mest til minst foretrukket.
+    const POPULATED = ["tettsted", "by", "tettbebyggelse", "bydel", "grend"];
+    const isPopulated = (n: any) => {
+      const t = String(n?.navneobjekttype ?? "").toLowerCase();
+      return POPULATED.some((x) => t.includes(x));
+    };
+    const populatedRank = (n: any) => {
+      const t = String(n?.navneobjekttype ?? "").toLowerCase();
+      const p = POPULATED.findIndex((x) => t.includes(x));
+      return p === -1 ? 99 : p;
+    };
+
+    // Søk Kartverket med stadig større radius til vi finner et bebodd sted.
+    // Returnerer tettstedets eget koordinat (snapper til sentrum), ikke GPS-punktet.
+    for (const radius of [3000, 8000, 20000]) {
+      try {
+        const url = new URL("https://ws.geonorge.no/stedsnavn/v1/punkt");
+        url.searchParams.set("nord", String(data.lat));
+        url.searchParams.set("ost", String(data.lon));
+        url.searchParams.set("koordsys", "4258");
+        url.searchParams.set("radius", String(radius));
+        url.searchParams.set("treffPerSide", "50");
+        url.searchParams.set("utkoordsys", "4258");
+        const res = await fetch(url.toString(), {
+          headers: { Accept: "application/json" },
+          signal: AbortSignal.timeout(6000),
+        });
+        if (!res.ok) continue;
         const json = (await res.json()) as any;
         const navn: any[] = Array.isArray(json?.navn) ? json.navn : [];
 
-        // Hent ut beste skrivemåte fra stedsnavn-arrayen (foretrekk hovednavn på norsk)
-        const extractName = (n: any): string => {
-          const arr: any[] = Array.isArray(n?.stedsnavn) ? n.stedsnavn : [];
-          // 1. hovednavn på norsk
-          const hoved = arr.find(
-            (s) =>
-              String(s?.navnestatus ?? "").toLowerCase() === "hovednavn" &&
-              String(s?.språk ?? "").toLowerCase().startsWith("norsk"),
-          );
-          if (hoved?.skrivemåte) return String(hoved.skrivemåte).trim();
-          // 2. hvilket som helst hovednavn
-          const anyHoved = arr.find(
-            (s) => String(s?.navnestatus ?? "").toLowerCase() === "hovednavn",
-          );
-          if (anyHoved?.skrivemåte) return String(anyHoved.skrivemåte).trim();
-          // 3. første tilgjengelige skrivemåte
-          const first = arr.find((s) => s?.skrivemåte);
-          return first?.skrivemåte ? String(first.skrivemåte).trim() : "";
-        };
-
-        // Prioriter tettsted/by/bydel/grend foran park, kulturdetalj, fjell osv.
-        const priority = [
-          "tettsted", "by", "tettbebyggelse", "bydel", "grend",
-          "boligfelt", "boligområde", "gard", "gård",
-          "kirke", "skole", "park",
-          "kommune",
-        ];
-        const rank = (n: any) => {
-          const t = String(n?.navneobjekttype ?? "").toLowerCase();
-          const p = priority.findIndex((x) => t.includes(x));
-          return p === -1 ? 99 : p;
-        };
-        const ranked = navn
-          .slice()
-          .filter((n) => extractName(n)) // bare treff vi faktisk kan navngi
+        const populated = navn
+          .filter((n) => isPopulated(n) && extractName(n))
           .sort((a, b) => {
-            const ra = rank(a);
-            const rb = rank(b);
+            // Først: foretrukket type (tettsted før bydel før grend)
+            const ra = populatedRank(a);
+            const rb = populatedRank(b);
             if (ra !== rb) return ra - rb;
-            // Sekundært: nærmest punktet
+            // Så: nærmest GPS-punktet
             const da = Number(a?.meterFraPunkt ?? 1e9);
             const db = Number(b?.meterFraPunkt ?? 1e9);
             return da - db;
           });
-        const best = ranked[0];
+
+        const best = populated[0];
         if (best) {
           const skriv = extractName(best);
           const kommune = String(best?.kommuner?.[0]?.kommunenavn ?? "").trim();
-          if (skriv) {
-            const label =
-              kommune && kommune.toLowerCase() !== skriv.toLowerCase()
-                ? `${skriv}, ${kommune}`
-                : skriv;
-            return { label, lat: data.lat, lon: data.lon };
-          }
+          // Snap til stedets eget koordinat (sentrum av tettstedet)
+          const snapLat = Number(best?.representasjonspunkt?.nord);
+          const snapLon = Number(best?.representasjonspunkt?.øst);
+          const lat = Number.isFinite(snapLat) ? snapLat : data.lat;
+          const lon = Number.isFinite(snapLon) ? snapLon : data.lon;
+          const label =
+            kommune && kommune.toLowerCase() !== skriv.toLowerCase()
+              ? `${skriv}, ${kommune}`
+              : skriv;
+          return { label, lat, lon };
         }
+      } catch {
+        // prøv neste radius
       }
-    } catch {
-      // fall through to Nominatim
     }
 
-    // Fallback 2: OpenStreetMap Nominatim (dekker hele verden, også utenfor Norge)
+    // Fallback: OpenStreetMap Nominatim (utenfor Norge eller hvis Kartverket feiler).
+    // zoom=12 = town/city nivå — gir nærmeste by/tettsted, ikke gateadresse.
     try {
       const nUrl = new URL("https://nominatim.openstreetmap.org/reverse");
       nUrl.searchParams.set("lat", String(data.lat));
       nUrl.searchParams.set("lon", String(data.lon));
       nUrl.searchParams.set("format", "jsonv2");
-      nUrl.searchParams.set("zoom", "14"); // suburb/village nivå
+      nUrl.searchParams.set("zoom", "12"); // by/tettsted-nivå
       nUrl.searchParams.set("accept-language", "nb,no,en");
       const nRes = await fetch(nUrl.toString(), {
         headers: {
@@ -330,27 +336,30 @@ export const reverseGeocode = createServerFn({ method: "POST" })
         const nJson = (await nRes.json()) as any;
         const a = nJson?.address ?? {};
         const place =
-          a.suburb ||
-          a.neighbourhood ||
+          a.city ||
+          a.town ||
           a.village ||
           a.hamlet ||
-          a.town ||
-          a.city ||
+          a.suburb ||
+          a.neighbourhood ||
           a.municipality ||
           a.county ||
           "";
-        const city =
-          a.city || a.town || a.municipality || a.county || "";
+        const region = a.county || a.state || a.municipality || "";
+        // Snap til sentrum hvis Nominatim oppgir det
+        const snapLat = Number(nJson?.lat);
+        const snapLon = Number(nJson?.lon);
+        const lat = Number.isFinite(snapLat) ? snapLat : data.lat;
+        const lon = Number.isFinite(snapLon) ? snapLon : data.lon;
         let label = "";
-        if (place && city && place.toLowerCase() !== city.toLowerCase()) {
-          label = `${place}, ${city}`;
+        if (place && region && place.toLowerCase() !== region.toLowerCase()) {
+          label = `${place}, ${region}`;
         } else if (place) {
           label = place;
         } else if (nJson?.display_name) {
-          // Ta bare de to første komponentene fra display_name
           label = String(nJson.display_name).split(",").slice(0, 2).join(", ").trim();
         }
-        if (label) return { label, lat: data.lat, lon: data.lon };
+        if (label) return { label, lat, lon };
       }
     } catch {
       // fall through to coordinates
