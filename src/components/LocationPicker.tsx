@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import {
+  reverseGeocode,
   searchPlaces,
   setDefaultLocation,
   setNameForCurrentIp,
@@ -49,6 +50,7 @@ export function LocationPicker({
   const search = useServerFn(searchPlaces);
   const saveDefault = useServerFn(setDefaultLocation);
   const saveName = useServerFn(setNameForCurrentIp);
+  const reverse = useServerFn(reverseGeocode);
 
   const [query, setQuery] = useState("");
   const [hits, setHits] = useState<PlaceHit[] | null>(null);
@@ -56,6 +58,8 @@ export function LocationPicker({
   const [searching, setSearching] = useState(false);
   const [savingDefault, setSavingDefault] = useState(false);
   const [savedFlash, setSavedFlash] = useState(false);
+  const [locating, setLocating] = useState(false);
+  const [locateError, setLocateError] = useState<string | null>(null);
   const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
   const wrap = useRef<HTMLDivElement>(null);
 
@@ -129,6 +133,46 @@ export function LocationPicker({
     }
   };
 
+  const handleLocate = () => {
+    setLocateError(null);
+    if (typeof navigator === "undefined" || !navigator.geolocation) {
+      setLocateError("Nettleseren støtter ikke posisjonering.");
+      return;
+    }
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const lat = pos.coords.latitude;
+        const lon = pos.coords.longitude;
+        try {
+          const r = await reverse({ data: { lat, lon } });
+          onChange({ label: r.label, lat: r.lat, lon: r.lon });
+        } catch {
+          onChange({
+            label: `${lat.toFixed(4)}°N ${lon.toFixed(4)}°Ø`,
+            lat,
+            lon,
+          });
+        } finally {
+          setLocating(false);
+        }
+      },
+      (err) => {
+        setLocating(false);
+        if (err.code === err.PERMISSION_DENIED) {
+          setLocateError("Posisjon avslått. Tillat plassering i nettleseren og prøv igjen.");
+        } else if (err.code === err.POSITION_UNAVAILABLE) {
+          setLocateError("Posisjon utilgjengelig akkurat nå.");
+        } else if (err.code === err.TIMEOUT) {
+          setLocateError("Tidsavbrudd ved henting av posisjon.");
+        } else {
+          setLocateError("Kunne ikke hente posisjon.");
+        }
+      },
+      { enableHighAccuracy: true, timeout: 10_000, maximumAge: 60_000 },
+    );
+  };
+
   const isAtDefault =
     active.label.trim().toLowerCase() === defaultLabel.trim().toLowerCase();
 
@@ -200,6 +244,16 @@ export function LocationPicker({
           </div>
           <button
             type="button"
+            disabled={locating}
+            onClick={handleLocate}
+            className="text-xs uppercase tracking-wider px-3 py-2 rounded-md border border-border text-foreground hover:bg-card/60 transition-colors whitespace-nowrap inline-flex items-center gap-1.5 disabled:opacity-60"
+            title="Bruk min plassering (krever tillatelse i nettleseren)"
+          >
+            <span aria-hidden>📍</span>
+            <span>{locating ? "Henter…" : "Min plassering"}</span>
+          </button>
+          <button
+            type="button"
             disabled={savingDefault || isAtDefault}
             onClick={handleSetDefault}
             className={`text-xs uppercase tracking-wider px-3 py-2 rounded-md border transition-colors whitespace-nowrap ${
@@ -220,6 +274,10 @@ export function LocationPicker({
             {savingDefault ? "Lagrer…" : savedFlash ? "✓ Lagret" : "Sett som default"}
           </button>
         </div>
+
+        {locateError && (
+          <div className="mt-2 text-[11px] text-destructive">{locateError}</div>
+        )}
 
         {open && hits && hits.length > 0 && (
           <div className="absolute left-0 right-0 mt-1 z-30 rounded-md border border-border bg-background shadow-lg max-h-72 overflow-y-auto">

@@ -220,3 +220,65 @@ export const searchPlaces = createServerFn({ method: "GET" })
       return { hits: [] };
     }
   });
+
+/**
+ * Reverse-geocoder lat/lon mot Kartverkets stedsregister og returnerer
+ * det nærmeste navnet (typisk tettsted/bydel/grend). Brukes til "Min plassering"-knappen.
+ */
+export const reverseGeocode = createServerFn({ method: "POST" })
+  .inputValidator((input: { lat: number; lon: number }) => {
+    const lat = Number(input?.lat);
+    const lon = Number(input?.lon);
+    if (!Number.isFinite(lat) || lat < -90 || lat > 90) throw new Error("Ugyldig lat");
+    if (!Number.isFinite(lon) || lon < -180 || lon > 180) throw new Error("Ugyldig lon");
+    return { lat, lon };
+  })
+  .handler(async ({ data }): Promise<{ label: string; lat: number; lon: number }> => {
+    try {
+      const url = new URL("https://ws.geonorge.no/stedsnavn/v1/punkt");
+      url.searchParams.set("nord", String(data.lat));
+      url.searchParams.set("ost", String(data.lon));
+      url.searchParams.set("koordsys", "4258");
+      url.searchParams.set("radius", "1500");
+      url.searchParams.set("treffPerSide", "10");
+      url.searchParams.set("utkoordsys", "4258");
+      const res = await fetch(url.toString(), {
+        headers: { Accept: "application/json" },
+        signal: AbortSignal.timeout(6000),
+      });
+      if (res.ok) {
+        const json = (await res.json()) as any;
+        const navn: any[] = Array.isArray(json?.navn) ? json.navn : [];
+        // Prioriter tettsted/by/bydel/grend over fjell/vatn osv.
+        const priority = [
+          "tettsted", "by", "tettbebyggelse", "bydel", "grend",
+          "boligfelt", "kommune",
+        ];
+        const ranked = navn.slice().sort((a, b) => {
+          const ta = String(a?.navneobjekttype ?? "").toLowerCase();
+          const tb = String(b?.navneobjekttype ?? "").toLowerCase();
+          const pa = priority.findIndex((p) => ta.includes(p));
+          const pb = priority.findIndex((p) => tb.includes(p));
+          const ra = pa === -1 ? 99 : pa;
+          const rb = pb === -1 ? 99 : pb;
+          return ra - rb;
+        });
+        const best = ranked[0];
+        if (best) {
+          const skriv = String(best?.skrivemåte ?? "").trim();
+          const kommune = best?.kommuner?.[0]?.kommunenavn ?? "";
+          const label = skriv
+            ? (kommune && kommune !== skriv ? `${skriv}, ${kommune}` : skriv)
+            : `${data.lat.toFixed(4)}°N ${data.lon.toFixed(4)}°Ø`;
+          return { label, lat: data.lat, lon: data.lon };
+        }
+      }
+    } catch {
+      // fall through to coordinate fallback
+    }
+    return {
+      label: `${data.lat.toFixed(4)}°N ${data.lon.toFixed(4)}°Ø`,
+      lat: data.lat,
+      lon: data.lon,
+    };
+  });
