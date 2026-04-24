@@ -172,7 +172,7 @@ export function LocationPicker({
           <span className="text-primary text-display tracking-wider truncate max-w-[16rem]">
             {active.label}
           </span>
-          {authenticated && isAtDefault && (
+          {isAtDefault && (
             <span className="text-[9px] uppercase tracking-[0.2em] text-muted-foreground border border-border rounded px-1.5 py-0.5">
               Default
             </span>
