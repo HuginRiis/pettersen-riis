@@ -525,7 +525,7 @@ function ActivityStreams({ activityId, owner }: { activityId: number; owner: Own
   useEffect(() => {
     let cancelled = false;
     setState({ kind: "loading" });
-    fetchStreams({ data: { activityId } })
+    fetchStreams({ data: { activityId, owner } })
       .then((res) => {
         if (cancelled) return;
         if (res.ok) {
@@ -545,7 +545,7 @@ function ActivityStreams({ activityId, owner }: { activityId: number; owner: Own
     return () => {
       cancelled = true;
     };
-  }, [activityId, fetchStreams]);
+  }, [activityId, owner, fetchStreams]);
 
   if (state.kind === "loading" || state.kind === "idle") {
     return <div className="h-12 rounded bg-muted/30 animate-pulse" />;
