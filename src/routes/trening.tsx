@@ -381,7 +381,7 @@ function DashboardView({ dash, owner }: { dash: DashOk; owner: Owner }) {
   );
 }
 
-function ActivitiesPaginated({ activities }: { activities: DashOk["activities"] }) {
+function ActivitiesPaginated({ activities, owner }: { activities: DashOk["activities"]; owner: Owner }) {
   const PAGE_SIZE = 9;
   const [page, setPage] = useState(0);
   const totalPages = Math.max(1, Math.ceil(activities.length / PAGE_SIZE));
