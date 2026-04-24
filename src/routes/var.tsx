@@ -70,6 +70,7 @@ type LocationState = {
 function WeatherPage() {
   const data = Route.useLoaderData() as Awaited<ReturnType<typeof getHomeySnapshot>>;
   const fetchAlerts = useServerFn(getTollnesAlerts);
+  const userLoc = useUserLocation("var");
   const [alerts, setAlerts] = useState<AlertsResult | null>(null);
   const [now, setNow] = useState<Date | null>(null);
   const [weatherUpdated, setWeatherUpdated] = useState<Date | null>(null);
