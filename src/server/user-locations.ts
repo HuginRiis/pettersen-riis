@@ -249,33 +249,113 @@ export const reverseGeocode = createServerFn({ method: "POST" })
       if (res.ok) {
         const json = (await res.json()) as any;
         const navn: any[] = Array.isArray(json?.navn) ? json.navn : [];
-        // Prioriter tettsted/by/bydel/grend over fjell/vatn osv.
+
+        // Hent ut beste skrivemåte fra stedsnavn-arrayen (foretrekk hovednavn på norsk)
+        const extractName = (n: any): string => {
+          const arr: any[] = Array.isArray(n?.stedsnavn) ? n.stedsnavn : [];
+          // 1. hovednavn på norsk
+          const hoved = arr.find(
+            (s) =>
+              String(s?.navnestatus ?? "").toLowerCase() === "hovednavn" &&
+              String(s?.språk ?? "").toLowerCase().startsWith("norsk"),
+          );
+          if (hoved?.skrivemåte) return String(hoved.skrivemåte).trim();
+          // 2. hvilket som helst hovednavn
+          const anyHoved = arr.find(
+            (s) => String(s?.navnestatus ?? "").toLowerCase() === "hovednavn",
+          );
+          if (anyHoved?.skrivemåte) return String(anyHoved.skrivemåte).trim();
+          // 3. første tilgjengelige skrivemåte
+          const first = arr.find((s) => s?.skrivemåte);
+          return first?.skrivemåte ? String(first.skrivemåte).trim() : "";
+        };
+
+        // Prioriter tettsted/by/bydel/grend foran park, kulturdetalj, fjell osv.
         const priority = [
           "tettsted", "by", "tettbebyggelse", "bydel", "grend",
-          "boligfelt", "kommune",
+          "boligfelt", "boligområde", "gard", "gård",
+          "kirke", "skole", "park",
+          "kommune",
         ];
-        const ranked = navn.slice().sort((a, b) => {
-          const ta = String(a?.navneobjekttype ?? "").toLowerCase();
-          const tb = String(b?.navneobjekttype ?? "").toLowerCase();
-          const pa = priority.findIndex((p) => ta.includes(p));
-          const pb = priority.findIndex((p) => tb.includes(p));
-          const ra = pa === -1 ? 99 : pa;
-          const rb = pb === -1 ? 99 : pb;
-          return ra - rb;
-        });
+        const rank = (n: any) => {
+          const t = String(n?.navneobjekttype ?? "").toLowerCase();
+          const p = priority.findIndex((x) => t.includes(x));
+          return p === -1 ? 99 : p;
+        };
+        const ranked = navn
+          .slice()
+          .filter((n) => extractName(n)) // bare treff vi faktisk kan navngi
+          .sort((a, b) => {
+            const ra = rank(a);
+            const rb = rank(b);
+            if (ra !== rb) return ra - rb;
+            // Sekundært: nærmest punktet
+            const da = Number(a?.meterFraPunkt ?? 1e9);
+            const db = Number(b?.meterFraPunkt ?? 1e9);
+            return da - db;
+          });
         const best = ranked[0];
         if (best) {
-          const skriv = String(best?.skrivemåte ?? "").trim();
-          const kommune = best?.kommuner?.[0]?.kommunenavn ?? "";
-          const label = skriv
-            ? (kommune && kommune !== skriv ? `${skriv}, ${kommune}` : skriv)
-            : `${data.lat.toFixed(4)}°N ${data.lon.toFixed(4)}°Ø`;
-          return { label, lat: data.lat, lon: data.lon };
+          const skriv = extractName(best);
+          const kommune = String(best?.kommuner?.[0]?.kommunenavn ?? "").trim();
+          if (skriv) {
+            const label =
+              kommune && kommune.toLowerCase() !== skriv.toLowerCase()
+                ? `${skriv}, ${kommune}`
+                : skriv;
+            return { label, lat: data.lat, lon: data.lon };
+          }
         }
       }
     } catch {
-      // fall through to coordinate fallback
+      // fall through to Nominatim
     }
+
+    // Fallback 2: OpenStreetMap Nominatim (dekker hele verden, også utenfor Norge)
+    try {
+      const nUrl = new URL("https://nominatim.openstreetmap.org/reverse");
+      nUrl.searchParams.set("lat", String(data.lat));
+      nUrl.searchParams.set("lon", String(data.lon));
+      nUrl.searchParams.set("format", "jsonv2");
+      nUrl.searchParams.set("zoom", "14"); // suburb/village nivå
+      nUrl.searchParams.set("accept-language", "nb,no,en");
+      const nRes = await fetch(nUrl.toString(), {
+        headers: {
+          Accept: "application/json",
+          "User-Agent": "pettersen-riis-vakttaarn/1.0 (https://arne.riis.cc)",
+        },
+        signal: AbortSignal.timeout(6000),
+      });
+      if (nRes.ok) {
+        const nJson = (await nRes.json()) as any;
+        const a = nJson?.address ?? {};
+        const place =
+          a.suburb ||
+          a.neighbourhood ||
+          a.village ||
+          a.hamlet ||
+          a.town ||
+          a.city ||
+          a.municipality ||
+          a.county ||
+          "";
+        const city =
+          a.city || a.town || a.municipality || a.county || "";
+        let label = "";
+        if (place && city && place.toLowerCase() !== city.toLowerCase()) {
+          label = `${place}, ${city}`;
+        } else if (place) {
+          label = place;
+        } else if (nJson?.display_name) {
+          // Ta bare de to første komponentene fra display_name
+          label = String(nJson.display_name).split(",").slice(0, 2).join(", ").trim();
+        }
+        if (label) return { label, lat: data.lat, lon: data.lon };
+      }
+    } catch {
+      // fall through to coordinates
+    }
+
     return {
       label: `${data.lat.toFixed(4)}°N ${data.lon.toFixed(4)}°Ø`,
       lat: data.lat,
