@@ -35,7 +35,14 @@ export const Route = createFileRoute("/api/public/hooks/agenda-push")({
           } catch (err) {
             console.error("[garbage-push] failed", err);
           }
-          return new Response(JSON.stringify({ ok: true, agenda, checklist, garbage }), {
+          let birthdays = { checked: 0, sent: 0, errors: 0 };
+          try {
+            const bmod = await import("@/server/birthdays.server");
+            birthdays = await bmod.processBirthdayNotifications();
+          } catch (err) {
+            console.error("[birthday-push] failed", err);
+          }
+          return new Response(JSON.stringify({ ok: true, agenda, checklist, garbage, birthdays }), {
             headers: { "Content-Type": "application/json" },
           });
         } catch (err) {
