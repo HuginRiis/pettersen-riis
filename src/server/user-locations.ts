@@ -308,8 +308,54 @@ export const reverseGeocode = createServerFn({ method: "POST" })
         }
       }
     } catch {
-      // fall through to coordinate fallback
+      // fall through to Nominatim
     }
+
+    // Fallback 2: OpenStreetMap Nominatim (dekker hele verden, også utenfor Norge)
+    try {
+      const nUrl = new URL("https://nominatim.openstreetmap.org/reverse");
+      nUrl.searchParams.set("lat", String(data.lat));
+      nUrl.searchParams.set("lon", String(data.lon));
+      nUrl.searchParams.set("format", "jsonv2");
+      nUrl.searchParams.set("zoom", "14"); // suburb/village nivå
+      nUrl.searchParams.set("accept-language", "nb,no,en");
+      const nRes = await fetch(nUrl.toString(), {
+        headers: {
+          Accept: "application/json",
+          "User-Agent": "pettersen-riis-vakttaarn/1.0 (https://arne.riis.cc)",
+        },
+        signal: AbortSignal.timeout(6000),
+      });
+      if (nRes.ok) {
+        const nJson = (await nRes.json()) as any;
+        const a = nJson?.address ?? {};
+        const place =
+          a.suburb ||
+          a.neighbourhood ||
+          a.village ||
+          a.hamlet ||
+          a.town ||
+          a.city ||
+          a.municipality ||
+          a.county ||
+          "";
+        const city =
+          a.city || a.town || a.municipality || a.county || "";
+        let label = "";
+        if (place && city && place.toLowerCase() !== city.toLowerCase()) {
+          label = `${place}, ${city}`;
+        } else if (place) {
+          label = place;
+        } else if (nJson?.display_name) {
+          // Ta bare de to første komponentene fra display_name
+          label = String(nJson.display_name).split(",").slice(0, 2).join(", ").trim();
+        }
+        if (label) return { label, lat: data.lat, lon: data.lon };
+      }
+    } catch {
+      // fall through to coordinates
+    }
+
     return {
       label: `${data.lat.toFixed(4)}°N ${data.lon.toFixed(4)}°Ø`,
       lat: data.lat,
