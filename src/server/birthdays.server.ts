@@ -60,6 +60,54 @@ async function sendPush(
   }
 }
 
+export async function sendBirthdayPushNow(
+  id: string,
+  row: {
+    name: string;
+    title: string | null;
+    words: string | null;
+    birth_date: string;
+    notify_recipients: string[] | null;
+  },
+): Promise<{ sent: number; errors: number; total: number }> {
+  ensureConfigured();
+  const today = getOsloParts();
+  const [by] = row.birth_date.split("-").map(Number);
+  const age = today.year - by;
+  const recipients = row.notify_recipients && row.notify_recipients.length > 0 ? row.notify_recipients : ["Alle"];
+
+  let subs: Array<{ endpoint: string; p256dh: string; auth: string }> = [];
+  if (recipients.includes("Alle")) {
+    const { data } = await supabaseAdmin
+      .from("push_subscriptions")
+      .select("endpoint, p256dh, auth");
+    subs = (data ?? []) as typeof subs;
+  } else {
+    const { data } = await supabaseAdmin
+      .from("push_subscriptions")
+      .select("endpoint, p256dh, auth")
+      .in("who", recipients);
+    subs = (data ?? []) as typeof subs;
+  }
+
+  const titleLabel = row.title ? ` (${row.title})` : "";
+  const payload = JSON.stringify({
+    title: `🎂 Test: Gratulerer ${row.name}!`,
+    body: `${row.name}${titleLabel} fyller ${age} år i dag.${row.words ? ` — "${row.words}"` : ""}`,
+    tag: `birthday-test-${id}-${Date.now()}`,
+    url: "/agenda",
+  });
+
+  let sent = 0;
+  let errors = 0;
+  for (const s of subs) {
+    const ok = await sendPush(s, payload);
+    if (ok) sent++;
+    else errors++;
+  }
+  return { sent, errors, total: subs.length };
+}
+
 export async function processBirthdayNotifications(): Promise<{
   checked: number;
   sent: number;
