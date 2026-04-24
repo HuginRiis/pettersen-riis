@@ -27,7 +27,30 @@ export type TelemarkAlert = {
   start: string | null;
   end: string | null;
   counties: string[];
+  countyNames: string[];
   geometry: AlertGeometry;
+};
+
+// Fylkeskoder → navn (både gamle og nye fylker som kan dukke opp i datasettet)
+export const COUNTY_NAMES: Record<string, string> = {
+  "03": "Oslo",
+  "11": "Rogaland",
+  "15": "Møre og Romsdal",
+  "18": "Nordland",
+  "30": "Viken",
+  "31": "Østfold",
+  "32": "Akershus",
+  "33": "Buskerud",
+  "34": "Innlandet",
+  "38": "Vestfold og Telemark",
+  "39": "Vestfold",
+  "40": "Telemark",
+  "42": "Agder",
+  "46": "Vestland",
+  "50": "Trøndelag",
+  "54": "Troms og Finnmark",
+  "55": "Troms",
+  "56": "Finnmark",
 };
 
 // Fylkesnummer som dekker Sør- og Østlandet
@@ -157,6 +180,7 @@ async function fetchAlerts(): Promise<TelemarkAlert[]> {
       start: interval[0] ?? null,
       end: interval[1] ?? null,
       counties,
+      countyNames: counties.map((c) => COUNTY_NAMES[c] ?? c).filter(Boolean),
       geometry: f.geometry ?? null,
     });
   }
