@@ -232,6 +232,10 @@ function AgendaPage() {
         </div>
       </section>
 
+      <BirthdaysPanel />
+
+      <GarbageCollectionPanel />
+
       <TestPushPanel />
     </PageShell>
   );
