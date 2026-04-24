@@ -74,14 +74,29 @@ function WeatherPage() {
   const [now, setNow] = useState<Date | null>(null);
   const [weatherUpdated, setWeatherUpdated] = useState<Date | null>(null);
   const [homeyUpdated, setHomeyUpdated] = useState<Date | null>(() => new Date());
-  const [state, setState] = useState<Record<string, LocationState>>(() =>
-    Object.fromEntries(
-      LOCATIONS.map((l) => [
-        l.key,
-        { days: null, hours: null, meta: null, error: null, loading: true },
-      ]),
-    ),
+
+  // Dynamiske lokasjoner: "skien"-nøkkelen følger valgt sted (fra UserLocationBar),
+  // "hytta" er fast. Vi beholder nøkkelen "skien" for å minimere endringer i resten
+  // av siden, men label/koordinater følger userLoc.
+  const LOCATIONS = useMemo(
+    () =>
+      [
+        {
+          key: "skien" as const,
+          name: userLoc.active.label,
+          subtitle: "Mitt sted · MET.no",
+          lat: userLoc.active.lat,
+          lon: userLoc.active.lon,
+        },
+        HYTTA_LOC,
+      ],
+    [userLoc.active.label, userLoc.active.lat, userLoc.active.lon],
   );
+
+  const [state, setState] = useState<Record<string, LocationState>>(() => ({
+    skien: { days: null, hours: null, meta: null, error: null, loading: true },
+    hytta: { days: null, hours: null, meta: null, error: null, loading: true },
+  }));
 
   // Homey-data oppdateres ved hver router.invalidate — merk tidspunktet.
   useEffect(() => {
@@ -91,6 +106,12 @@ function WeatherPage() {
   useEffect(() => {
     setNow(new Date());
     let pending = LOCATIONS.length;
+    let cancelled = false;
+    // Marker alle som loading når valgt sted endrer seg
+    setState((s) => ({
+      ...s,
+      skien: { ...(s.skien ?? {} as LocationState), loading: true, error: null },
+    }));
     LOCATIONS.forEach(async (loc) => {
       try {
         const res = await fetch(
@@ -99,12 +120,14 @@ function WeatherPage() {
         );
         if (!res.ok) throw new Error("Kunne ikke hente værmelding");
         const data = await res.json();
+        if (cancelled) return;
         const { days, hours } = parseForecast(data);
         setState((s) => ({
           ...s,
           [loc.key]: { days, hours, meta: null, error: null, loading: false },
         }));
       } catch (e) {
+        if (cancelled) return;
         setState((s) => ({
           ...s,
           [loc.key]: {
@@ -117,24 +140,25 @@ function WeatherPage() {
         }));
       } finally {
         pending -= 1;
-        if (pending === 0) setWeatherUpdated(new Date());
+        if (pending === 0 && !cancelled) setWeatherUpdated(new Date());
       }
     });
     // Hent varsler fra MET
     (async () => {
       try {
         const res = await fetchAlerts();
-        setAlerts(res);
+        if (!cancelled) setAlerts(res);
       } catch (e: any) {
-        setAlerts({ ok: false, error: e?.message ?? "Feil" });
+        if (!cancelled) setAlerts({ ok: false, error: e?.message ?? "Feil" });
       }
     })();
 
     const c = setInterval(() => setNow(new Date()), 30_000);
     return () => {
+      cancelled = true;
       clearInterval(c);
     };
-  }, [fetchAlerts]);
+  }, [fetchAlerts, LOCATIONS]);
 
   // ---- Homey-sensorer ----
   const homeyOk = data?.ok === true;
