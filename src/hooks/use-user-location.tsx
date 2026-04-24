@@ -51,10 +51,15 @@ export function useUserLocation(page: LocationPage): UserLocationState & {
   });
   const [ready, setReady] = useState(false);
 
-  // Step 1: figure out who the IP belongs to — only when logged in
+  // Step 1: figure out who the IP belongs to
+  // - Logged in: bruk lagret navn (Arne/Rebekka), eller default 'Arne'
+  // - Logget ut: bruk fast 'Offentlig' slik at default knyttes til (Offentlig, IP, page)
   useEffect(() => {
     if (authLoading) return;
-    if (!authenticated) return;
+    if (!authenticated) {
+      setWho("Offentlig");
+      return;
+    }
     let cancelled = false;
     (async () => {
       try {
@@ -70,15 +75,10 @@ export function useUserLocation(page: LocationPage): UserLocationState & {
     };
   }, [fetchName, authenticated, authLoading]);
 
-  // Step 2: load default for this page. When logged in, scoped to (who, IP).
-  // When logged out, no fetch — just use Tollnes fallback so the page is usable.
+  // Step 2: load default for this page+IP, scoped per (who).
+  // Også offentlige besøkende får sin egen default lagret pr IP.
   useEffect(() => {
     if (authLoading) return;
-    if (!authenticated) {
-      // Logged-out visitors get Tollnes only — no IP/who lookup.
-      setReady(true);
-      return;
-    }
     let cancelled = false;
     (async () => {
       try {
