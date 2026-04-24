@@ -34,10 +34,9 @@ export const Route = createFileRoute("/var")({
   ),
 });
 
-const LOCATIONS = [
-  { key: "skien", name: "Skien · Tollnes", subtitle: "House Pettersen Riis · Sør-Norge", lat: 59.2096, lon: 9.609 },
-  { key: "hytta", name: "Hytta · Numedal", subtitle: "Lyngdal · Øvre Bjørkesethvegen", lat: 59.92, lon: 9.30 },
-] as const;
+// Hytta er en fast lokasjon. "Mitt sted" er dynamisk fra userLoc og erstatter
+// den tidligere Tollnes-prognosen.
+const HYTTA_LOC = { key: "hytta", name: "Hytta · Numedal", subtitle: "Lyngdal · Øvre Bjørkesethvegen", lat: 59.92, lon: 9.30 } as const;
 
 type ForecastDay = {
   date: string;
