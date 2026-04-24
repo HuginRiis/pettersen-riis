@@ -6,6 +6,8 @@ import { supabase } from "@/integrations/supabase/client";
 import heroImg from "@/assets/got-agenda.jpg";
 import { Trash2, Plus, Bell, BellOff, Clock } from "lucide-react";
 import { getPushPublicKey, sendAgendaTestPush } from "@/server/agenda-push";
+import { GarbageCollectionPanel } from "@/components/GarbageCollectionPanel";
+import { BirthdaysPanel } from "@/components/BirthdaysPanel";
 import {
   type Who,
   getCurrentSubscriptionDetails,
