@@ -326,7 +326,7 @@ function WeatherPage() {
         {/* === 24-TIMERS KURVER === */}
         <Block title="Tre dager med MET.no · Time for time">
           <div className="grid lg:grid-cols-2 gap-6">
-            <HourPanel name="Skien · Tollnes" hours={skienHours} accent="primary" />
+            <HourPanel name={userLoc.active.label} hours={skienHours} accent="primary" />
             <HourPanel name="Hytta · Numedal" hours={hyttaHours} accent="ice" />
           </div>
         </Block>
