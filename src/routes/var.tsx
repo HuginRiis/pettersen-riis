@@ -8,7 +8,7 @@ import { getHomeySnapshot } from "@/server/homey";
 import { findDeviceFuzzy, type DeviceLike } from "@/lib/homey-match";
 import { getTollnesAlerts, type AlertsResult, type MetAlert } from "@/server/lightning";
 import { useUserLocation, UserLocationBar } from "@/hooks/use-user-location";
-import { DynamicForecastPanel } from "@/components/DynamicForecastPanel";
+
 
 export const Route = createFileRoute("/var")({
   head: () => ({
@@ -34,10 +34,9 @@ export const Route = createFileRoute("/var")({
   ),
 });
 
-const LOCATIONS = [
-  { key: "skien", name: "Skien · Tollnes", subtitle: "House Pettersen Riis · Sør-Norge", lat: 59.2096, lon: 9.609 },
-  { key: "hytta", name: "Hytta · Numedal", subtitle: "Lyngdal · Øvre Bjørkesethvegen", lat: 59.92, lon: 9.30 },
-] as const;
+// Hytta er en fast lokasjon. "Mitt sted" er dynamisk fra userLoc og erstatter
+// den tidligere Tollnes-prognosen.
+const HYTTA_LOC = { key: "hytta", name: "Hytta · Numedal", subtitle: "Lyngdal · Øvre Bjørkesethvegen", lat: 59.92, lon: 9.30 } as const;
 
 type ForecastDay = {
   date: string;
@@ -75,14 +74,29 @@ function WeatherPage() {
   const [now, setNow] = useState<Date | null>(null);
   const [weatherUpdated, setWeatherUpdated] = useState<Date | null>(null);
   const [homeyUpdated, setHomeyUpdated] = useState<Date | null>(() => new Date());
-  const [state, setState] = useState<Record<string, LocationState>>(() =>
-    Object.fromEntries(
-      LOCATIONS.map((l) => [
-        l.key,
-        { days: null, hours: null, meta: null, error: null, loading: true },
-      ]),
-    ),
+
+  // Dynamiske lokasjoner: "skien"-nøkkelen følger valgt sted (fra UserLocationBar),
+  // "hytta" er fast. Vi beholder nøkkelen "skien" for å minimere endringer i resten
+  // av siden, men label/koordinater følger userLoc.
+  const LOCATIONS = useMemo(
+    () =>
+      [
+        {
+          key: "skien" as const,
+          name: userLoc.active.label,
+          subtitle: "Mitt sted · MET.no",
+          lat: userLoc.active.lat,
+          lon: userLoc.active.lon,
+        },
+        HYTTA_LOC,
+      ],
+    [userLoc.active.label, userLoc.active.lat, userLoc.active.lon],
   );
+
+  const [state, setState] = useState<Record<string, LocationState>>(() => ({
+    skien: { days: null, hours: null, meta: null, error: null, loading: true },
+    hytta: { days: null, hours: null, meta: null, error: null, loading: true },
+  }));
 
   // Homey-data oppdateres ved hver router.invalidate — merk tidspunktet.
   useEffect(() => {
@@ -92,6 +106,12 @@ function WeatherPage() {
   useEffect(() => {
     setNow(new Date());
     let pending = LOCATIONS.length;
+    let cancelled = false;
+    // Marker alle som loading når valgt sted endrer seg
+    setState((s) => ({
+      ...s,
+      skien: { ...(s.skien ?? {} as LocationState), loading: true, error: null },
+    }));
     LOCATIONS.forEach(async (loc) => {
       try {
         const res = await fetch(
@@ -100,12 +120,14 @@ function WeatherPage() {
         );
         if (!res.ok) throw new Error("Kunne ikke hente værmelding");
         const data = await res.json();
+        if (cancelled) return;
         const { days, hours } = parseForecast(data);
         setState((s) => ({
           ...s,
           [loc.key]: { days, hours, meta: null, error: null, loading: false },
         }));
       } catch (e) {
+        if (cancelled) return;
         setState((s) => ({
           ...s,
           [loc.key]: {
@@ -118,24 +140,25 @@ function WeatherPage() {
         }));
       } finally {
         pending -= 1;
-        if (pending === 0) setWeatherUpdated(new Date());
+        if (pending === 0 && !cancelled) setWeatherUpdated(new Date());
       }
     });
     // Hent varsler fra MET
     (async () => {
       try {
         const res = await fetchAlerts();
-        setAlerts(res);
+        if (!cancelled) setAlerts(res);
       } catch (e: any) {
-        setAlerts({ ok: false, error: e?.message ?? "Feil" });
+        if (!cancelled) setAlerts({ ok: false, error: e?.message ?? "Feil" });
       }
     })();
 
     const c = setInterval(() => setNow(new Date()), 30_000);
     return () => {
+      cancelled = true;
       clearInterval(c);
     };
-  }, [fetchAlerts]);
+  }, [fetchAlerts, LOCATIONS]);
 
   // ---- Homey-sensorer ----
   const homeyOk = data?.ok === true;
@@ -206,13 +229,6 @@ function WeatherPage() {
 
       <section className="container mx-auto px-4 pt-8 space-y-5">
         <UserLocationBar page="var" state={userLoc} />
-        {userLoc.ready && (
-          <DynamicForecastPanel
-            label={userLoc.active.label}
-            lat={userLoc.active.lat}
-            lon={userLoc.active.lon}
-          />
-        )}
       </section>
 
       <section className="container mx-auto px-4 py-12 space-y-12">
@@ -310,7 +326,7 @@ function WeatherPage() {
         {/* === 24-TIMERS KURVER === */}
         <Block title="Tre dager med MET.no · Time for time">
           <div className="grid lg:grid-cols-2 gap-6">
-            <HourPanel name="Skien · Tollnes" hours={skienHours} accent="primary" />
+            <HourPanel name={userLoc.active.label} hours={skienHours} accent="primary" />
             <HourPanel name="Hytta · Numedal" hours={hyttaHours} accent="ice" />
           </div>
         </Block>
@@ -318,7 +334,7 @@ function WeatherPage() {
         {/* === VINDROSE === */}
         <Block title="Stormvaktens Rose · Vindretning de neste 24 t">
           <div className="grid sm:grid-cols-2 gap-6">
-            <WindRoseCard name="Tollnes" hours={skienHours} />
+            <WindRoseCard name={userLoc.active.label} hours={skienHours} />
             <WindRoseCard name="Hytta" hours={hyttaHours} />
           </div>
         </Block>

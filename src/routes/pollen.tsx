@@ -146,15 +146,6 @@ function PollenPage() {
 
       <section className="container mx-auto px-4 pt-8 space-y-5">
         <UserLocationBar page="pollen" state={userLoc} />
-        {userLoc.ready && (
-          <LivePollen
-            key={`${userLoc.active.lat}-${userLoc.active.lon}`}
-            lat={userLoc.active.lat}
-            lon={userLoc.active.lon}
-            title={`Mitt sted · ${userLoc.active.label}`}
-            subtitle="Live pollen for valgt sted — oppdateres hver time"
-          />
-        )}
       </section>
 
       <section className="container mx-auto px-4 py-10 space-y-12">
@@ -165,12 +156,15 @@ function PollenPage() {
             title="Hva som flyr akkurat nå"
           />
           <div className="grid lg:grid-cols-2 gap-6 mt-6">
-            <LivePollen
-              lat={59.21}
-              lon={9.61}
-              title="Skien · Tollnes"
-              subtitle="Live pollen for Tollnes — oppdateres hver time"
-            />
+            {userLoc.ready && (
+              <LivePollen
+                key={`${userLoc.active.lat}-${userLoc.active.lon}`}
+                lat={userLoc.active.lat}
+                lon={userLoc.active.lon}
+                title={userLoc.active.label}
+                subtitle="Live pollen for valgt sted — oppdateres hver time"
+              />
+            )}
             <LivePollen
               lat={59.91}
               lon={9.07}
