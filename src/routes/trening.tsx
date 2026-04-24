@@ -191,7 +191,27 @@ function sportColor(s: string) {
   }
 }
 
+type Owner = "arne" | "rebekka";
+
 function TreningPage() {
+  return (
+    <PageShell>
+      <PageHero
+        eyebrow="Husets disiplin"
+        title="Treningssalen"
+        subtitle="Kroppen er rustning. Disiplin er sverd."
+        image={treningImg}
+      />
+
+      <section className="container mx-auto px-4 py-12 space-y-16">
+        <StravaSection owner="arne" displayName="Arne" />
+        <StravaSection owner="rebekka" displayName="Rebekka" />
+      </section>
+    </PageShell>
+  );
+}
+
+function StravaSection({ owner, displayName }: { owner: Owner; displayName: string }) {
   const [status, setStatus] = useState<StatusState>({ kind: "loading" });
   const [dash, setDash] = useState<DashState>({ kind: "idle" });
   const fetchStatus = useServerFn(getStravaStatus);
@@ -199,7 +219,7 @@ function TreningPage() {
 
   const loadStatus = async () => {
     try {
-      const s = await fetchStatus();
+      const s = await fetchStatus({ data: { owner } });
       if (s.connected) {
         setStatus({ kind: "connected", athleteName: s.athleteName });
       } else {
@@ -214,7 +234,7 @@ function TreningPage() {
   const loadDash = async () => {
     setDash({ kind: "loading" });
     try {
-      const res = await fetchDash();
+      const res = await fetchDash({ data: { owner } });
       if (res.ok) {
         setDash({ kind: "ok", ...res });
       } else {
@@ -228,7 +248,7 @@ function TreningPage() {
   useEffect(() => {
     loadStatus();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [owner]);
 
   useEffect(() => {
     if (status.kind === "connected") loadDash();
@@ -236,51 +256,51 @@ function TreningPage() {
   }, [status.kind]);
 
   return (
-    <PageShell>
-      <PageHero
-        eyebrow="Husets disiplin"
-        title="Treningssalen"
-        subtitle="Kroppen er rustning. Disiplin er sverd."
-        image={treningImg}
-      />
+    <div>
+      <div className="ornate-divider mb-8">
+        <span className="text-display tracking-[0.3em] text-primary text-sm uppercase">
+          {displayName}s Krønike · Strava
+        </span>
+      </div>
 
-      <section className="container mx-auto px-4 py-12">
-        <div className="ornate-divider mb-8">
-          <span className="text-display tracking-[0.3em] text-primary text-sm uppercase">
-            Arnes Krønike · Strava
-          </span>
+      {status.kind === "loading" && (
+        <p className="text-center text-sm text-muted-foreground">Sender bud til Strava…</p>
+      )}
+
+      {status.kind === "disconnected" && (
+        <div className="panel rounded-lg p-8 text-center max-w-xl mx-auto">
+          <p className="text-medieval text-lg text-primary mb-2">Krøniken er ikke lenket</p>
+          <p className="text-sm text-muted-foreground mb-6">
+            Koble {displayName}s Strava for å vise ukens innsats, siste turer og kart fra marka.
+          </p>
+          <a
+            href={`/api/strava/start?owner=${owner}`}
+            className="inline-flex items-center gap-2 rounded-md bg-[#FC4C02] px-6 py-3 text-sm font-medium text-white hover:bg-[#e04400] transition-colors"
+          >
+            Koble {displayName} til Strava
+          </a>
         </div>
+      )}
 
-        {status.kind === "loading" && (
-          <p className="text-center text-sm text-muted-foreground">Sender bud til Strava…</p>
-        )}
-
-        {status.kind === "disconnected" && (
-          <div className="panel rounded-lg p-8 text-center max-w-xl mx-auto">
-            <p className="text-medieval text-lg text-primary mb-2">Krøniken er ikke lenket</p>
-            <p className="text-sm text-muted-foreground mb-6">
-              Koble Arnes Strava for å vise ukens innsats, siste turer og kart fra marka.
+      {status.kind === "connected" && (
+        <>
+          <div className="flex items-center justify-between mb-6">
+            <p className="text-sm text-muted-foreground">
+              Lenket til{" "}
+              <span className="text-primary text-medieval">
+                {dash.kind === "ok" && dash.athleteName
+                  ? dash.athleteName
+                  : status.athleteName ?? displayName}
+              </span>
             </p>
-            <a
-              href="/api/strava/start"
-              className="inline-flex items-center gap-2 rounded-md bg-[#FC4C02] px-6 py-3 text-sm font-medium text-white hover:bg-[#e04400] transition-colors"
-            >
-              Koble til Strava
-            </a>
-          </div>
-        )}
-
-        {status.kind === "connected" && (
-          <>
-            <div className="flex items-center justify-between mb-6">
-              <p className="text-sm text-muted-foreground">
-                Lenket til{" "}
-                <span className="text-primary text-medieval">
-                  {dash.kind === "ok" && dash.athleteName
-                    ? dash.athleteName
-                    : status.athleteName ?? "Arne"}
-                </span>
-              </p>
+            <div className="flex items-center gap-3">
+              <a
+                href={`/api/strava/start?owner=${owner}`}
+                className="text-xs uppercase tracking-[0.2em] text-muted-foreground hover:text-primary"
+                title="Bytt Strava-konto"
+              >
+                ↺ Bytt konto
+              </a>
               <button
                 onClick={loadDash}
                 disabled={dash.kind === "loading"}
@@ -289,31 +309,31 @@ function TreningPage() {
                 ↻ Oppfrisk krøniken
               </button>
             </div>
+          </div>
 
-            {dash.kind === "loading" && (
-              <p className="text-center text-sm text-muted-foreground italic">
-                Budbringeren rir gjennom marka…
+          {dash.kind === "loading" && (
+            <p className="text-center text-sm text-muted-foreground italic">
+              Budbringeren rir gjennom marka…
+            </p>
+          )}
+
+          {dash.kind === "error" && (
+            <div className="panel rounded-lg p-6 text-center max-w-xl mx-auto">
+              <p className="text-xs tracking-[0.3em] text-destructive uppercase mb-2">
+                Budet kom ikke fram
               </p>
-            )}
+              <p className="text-xs text-muted-foreground">{dash.message}</p>
+            </div>
+          )}
 
-            {dash.kind === "error" && (
-              <div className="panel rounded-lg p-6 text-center max-w-xl mx-auto">
-                <p className="text-xs tracking-[0.3em] text-destructive uppercase mb-2">
-                  Budet kom ikke fram
-                </p>
-                <p className="text-xs text-muted-foreground">{dash.message}</p>
-              </div>
-            )}
-
-            {dash.kind === "ok" && <DashboardView dash={dash} />}
-          </>
-        )}
-      </section>
-    </PageShell>
+          {dash.kind === "ok" && <DashboardView dash={dash} owner={owner} />}
+        </>
+      )}
+    </div>
   );
 }
 
-function DashboardView({ dash }: { dash: DashOk }) {
+function DashboardView({ dash, owner }: { dash: DashOk; owner: Owner }) {
   return (
     <>
       {/* Ukens stats */}
@@ -356,12 +376,12 @@ function DashboardView({ dash }: { dash: DashOk }) {
 
       {/* Aktiviteter */}
       <SubHeader text="De siste dåder" />
-      <ActivitiesPaginated activities={dash.activities} />
+      <ActivitiesPaginated activities={dash.activities} owner={owner} />
     </>
   );
 }
 
-function ActivitiesPaginated({ activities }: { activities: DashOk["activities"] }) {
+function ActivitiesPaginated({ activities, owner }: { activities: DashOk["activities"]; owner: Owner }) {
   const PAGE_SIZE = 9;
   const [page, setPage] = useState(0);
   const totalPages = Math.max(1, Math.ceil(activities.length / PAGE_SIZE));
@@ -416,7 +436,7 @@ function ActivitiesPaginated({ activities }: { activities: DashOk["activities"] 
                       {formatDate(a.startDate)} · {a.type}
                     </p>
 
-                    <ActivityStreams activityId={a.id} />
+                    <ActivityStreams activityId={a.id} owner={owner} />
 
                     <div className="grid grid-cols-2 gap-1.5 text-xs text-foreground/90 mt-2">
                       <MiniMetric label="Dist" value={formatKm(a.distance)} />
@@ -488,7 +508,7 @@ function MiniMetric({ label, value }: { label: string; value: string }) {
   );
 }
 
-function ActivityStreams({ activityId }: { activityId: number }) {
+function ActivityStreams({ activityId, owner }: { activityId: number; owner: Owner }) {
   const fetchStreams = useServerFn(getActivityStreams);
   const [state, setState] = useState<
     | { kind: "idle" }
@@ -505,7 +525,7 @@ function ActivityStreams({ activityId }: { activityId: number }) {
   useEffect(() => {
     let cancelled = false;
     setState({ kind: "loading" });
-    fetchStreams({ data: { activityId } })
+    fetchStreams({ data: { activityId, owner } })
       .then((res) => {
         if (cancelled) return;
         if (res.ok) {
@@ -525,7 +545,7 @@ function ActivityStreams({ activityId }: { activityId: number }) {
     return () => {
       cancelled = true;
     };
-  }, [activityId, fetchStreams]);
+  }, [activityId, owner, fetchStreams]);
 
   if (state.kind === "loading" || state.kind === "idle") {
     return <div className="h-12 rounded bg-muted/30 animate-pulse" />;

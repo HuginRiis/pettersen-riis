@@ -1,5 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { saveStravaConnection } from "@/server/strava-connection";
+import {
+  isStravaOwner,
+  saveStravaConnection,
+  type StravaOwner,
+} from "@/server/strava-connection";
 
 function htmlResponse(body: string, status = 200) {
   return new Response(body, {
@@ -49,6 +53,10 @@ export const Route = createFileRoute("/api/strava/callback")({
           return errorPage("Ugyldig state — start tilkoblingen på nytt.", 400);
         }
 
+        // State har formen "<owner>.<nonce>" — hent eieren ut
+        const ownerPart = (state ?? "").split(".")[0];
+        const owner: StravaOwner = isStravaOwner(ownerPart) ? ownerPart : "arne";
+
         const tokenRes = await fetch("https://www.strava.com/oauth/token", {
           method: "POST",
           headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -77,7 +85,7 @@ export const Route = createFileRoute("/api/strava/callback")({
           [tok.athlete?.firstname, tok.athlete?.lastname].filter(Boolean).join(" ") || null;
 
         try {
-          await saveStravaConnection({
+          await saveStravaConnection(owner, {
             access_token: tok.access_token,
             refresh_token: tok.refresh_token,
             expires_at: new Date(tok.expires_at * 1000).toISOString(),
@@ -93,7 +101,7 @@ export const Route = createFileRoute("/api/strava/callback")({
         return new Response(null, {
           status: 302,
           headers: {
-            Location: "/trening?connected=1",
+            Location: `/trening?connected=${owner}`,
             "Set-Cookie":
               "strava_oauth_state=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax",
           },
