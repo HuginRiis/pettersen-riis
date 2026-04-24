@@ -180,6 +180,8 @@ function Home() {
             </div>
           </div>
         </div>
+
+        <WeddingAnniversary />
       </section>
 
       <SeasonsOfBorgen />
@@ -291,6 +293,112 @@ function SeasonsOfBorgen() {
         </div>
       </article>
     </section>
+  );
+}
+
+/* ─── Bryllupsdag ───────────────────────────────────────────────────── */
+
+const WEDDING_DATE = new Date(Date.UTC(2018, 5, 2)); // 2. juni 2018
+
+const ANNIVERSARY_NAMES: Record<number, string> = {
+  1: "Papirbryllup",
+  2: "Bomullsbryllup",
+  3: "Lærbryllup",
+  4: "Silkebryllup",
+  5: "Trebryllup",
+  6: "Sukkerbryllup",
+  7: "Ullbryllup",
+  8: "Bronsebryllup",
+  9: "Keramikkbryllup",
+  10: "Tinnbryllup",
+  11: "Stålbryllup",
+  12: "Silkebryllup",
+  13: "Kniplingsbryllup",
+  14: "Elfenbensbryllup",
+  15: "Krystallbryllup",
+  20: "Porselensbryllup",
+  25: "Sølvbryllup",
+  30: "Perlebryllup",
+  35: "Korallbryllup",
+  40: "Rubinbryllup",
+  45: "Safirbryllup",
+  50: "Gullbryllup",
+  55: "Smaragdbryllup",
+  60: "Diamantbryllup",
+  65: "Jernbryllup",
+  70: "Platinabryllup",
+  75: "Kronediamantbryllup",
+};
+
+function getAnniversaryName(year: number): string {
+  if (ANNIVERSARY_NAMES[year]) return ANNIVERSARY_NAMES[year];
+  const known = Object.keys(ANNIVERSARY_NAMES).map(Number).sort((a, b) => a - b);
+  let prev = 0;
+  for (const k of known) {
+    if (k <= year) prev = k;
+    else break;
+  }
+  return prev > 0 ? `Etter ${ANNIVERSARY_NAMES[prev]}` : "—";
+}
+
+function WeddingAnniversary() {
+  const [now, setNow] = useState<Date | null>(null);
+  useEffect(() => {
+    setNow(new Date());
+    const t = setInterval(() => setNow(new Date()), 60_000);
+    return () => clearInterval(t);
+  }, []);
+
+  if (!now) return null;
+
+  const fullYears = (() => {
+    const y = now.getUTCFullYear() - WEDDING_DATE.getUTCFullYear();
+    const beforeAnniversary =
+      now.getUTCMonth() < WEDDING_DATE.getUTCMonth() ||
+      (now.getUTCMonth() === WEDDING_DATE.getUTCMonth() &&
+        now.getUTCDate() < WEDDING_DATE.getUTCDate());
+    return beforeAnniversary ? y - 1 : y;
+  })();
+
+  const nextAnniv = new Date(Date.UTC(now.getUTCFullYear(), 5, 2));
+  if (nextAnniv.getTime() < Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())) {
+    nextAnniv.setUTCFullYear(now.getUTCFullYear() + 1);
+  }
+  const daysUntil = Math.round(
+    (nextAnniv.getTime() -
+      Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())) /
+      86_400_000,
+  );
+  const isToday = daysUntil === 0;
+  const upcomingYears = fullYears + (isToday ? 0 : 1);
+  const currentName = getAnniversaryName(fullYears);
+  const upcomingName = getAnniversaryName(upcomingYears);
+
+  return (
+    <div className="mt-8 max-w-2xl mx-auto">
+      <div className="panel rounded-lg p-5 text-center">
+        <div className="text-[9px] tracking-[0.3em] text-primary/80 uppercase mb-2">
+          Bryllupsdag
+        </div>
+        <div className="text-medieval text-primary text-lg md:text-xl">
+          ❦ Forent 2. juni 2018 ❦
+        </div>
+        <p className="text-foreground/90 text-sm md:text-base mt-2 tabular-nums">
+          {fullYears} år gift —{" "}
+          <span className="text-primary font-semibold">{currentName}</span>
+        </p>
+        <p className="text-xs text-muted-foreground mt-1.5 tabular-nums">
+          {isToday ? (
+            <span className="text-primary font-semibold">I dag feires {upcomingName}!</span>
+          ) : (
+            <>
+              {daysUntil} {daysUntil === 1 ? "dag" : "dager"} til {upcomingYears}-års dagen (
+              {upcomingName})
+            </>
+          )}
+        </p>
+      </div>
+    </div>
   );
 }
 
