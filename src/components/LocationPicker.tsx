@@ -23,6 +23,8 @@ type Props = {
   defaultLabel: string; // label of the saved default for this user (for "Tilbake til"-knapp)
   onChange: (loc: ActiveLocation) => void;
   onDefaultSaved?: (loc: ActiveLocation) => void;
+  /** When false (offentlig/utlogget), hide Arne/Rebekka-velgeren og deaktiver "Sett som default". */
+  authenticated?: boolean;
 };
 
 const NAMES: WhoName[] = ["Arne", "Rebekka"];
@@ -42,6 +44,7 @@ export function LocationPicker({
   defaultLabel,
   onChange,
   onDefaultSaved,
+  authenticated = false,
 }: Props) {
   const search = useServerFn(searchPlaces);
   const saveDefault = useServerFn(setDefaultLocation);
@@ -132,28 +135,34 @@ export function LocationPicker({
   return (
     <div className="panel rounded-lg p-4 md:p-5">
       <div className="flex flex-wrap items-center gap-3 justify-between">
-        {/* WHO selector */}
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] tracking-[0.25em] uppercase text-muted-foreground">
-            Vakt:
-          </span>
-          <div className="flex rounded-md border border-border overflow-hidden">
-            {NAMES.map((n) => (
-              <button
-                key={n}
-                type="button"
-                onClick={() => handleNameChange(n)}
-                className={`px-3 py-1 text-xs uppercase tracking-wider transition-colors ${
-                  who === n
-                    ? "bg-primary/20 text-primary"
-                    : "text-muted-foreground hover:bg-card/60"
-                }`}
-              >
-                {n}
-              </button>
-            ))}
+        {/* WHO selector — only when logged in */}
+        {authenticated ? (
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] tracking-[0.25em] uppercase text-muted-foreground">
+              Vakt:
+            </span>
+            <div className="flex rounded-md border border-border overflow-hidden">
+              {NAMES.map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => handleNameChange(n)}
+                  className={`px-3 py-1 text-xs uppercase tracking-wider transition-colors ${
+                    who === n
+                      ? "bg-primary/20 text-primary"
+                      : "text-muted-foreground hover:bg-card/60"
+                  }`}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="text-[10px] tracking-[0.25em] uppercase text-muted-foreground">
+            Stedssøk
+          </div>
+        )}
 
         {/* Active location chip */}
         <div className="flex items-center gap-2 text-sm">
@@ -163,7 +172,7 @@ export function LocationPicker({
           <span className="text-primary text-display tracking-wider truncate max-w-[16rem]">
             {active.label}
           </span>
-          {isAtDefault && (
+          {authenticated && isAtDefault && (
             <span className="text-[9px] uppercase tracking-[0.2em] text-muted-foreground border border-border rounded px-1.5 py-0.5">
               Default
             </span>
@@ -189,25 +198,27 @@ export function LocationPicker({
               </span>
             )}
           </div>
-          <button
-            type="button"
-            disabled={savingDefault || isAtDefault}
-            onClick={handleSetDefault}
-            className={`text-xs uppercase tracking-wider px-3 py-2 rounded-md border transition-colors whitespace-nowrap ${
-              isAtDefault
-                ? "border-border text-muted-foreground cursor-not-allowed opacity-60"
-                : savedFlash
-                  ? "border-primary text-primary bg-primary/10"
-                  : "border-primary/60 text-primary hover:bg-primary/10"
-            }`}
-            title={
-              isAtDefault
-                ? "Dette stedet er allerede default"
-                : `Sett som default for ${who} på denne IP-en`
-            }
-          >
-            {savingDefault ? "Lagrer…" : savedFlash ? "✓ Lagret" : "Sett som default"}
-          </button>
+          {authenticated && (
+            <button
+              type="button"
+              disabled={savingDefault || isAtDefault}
+              onClick={handleSetDefault}
+              className={`text-xs uppercase tracking-wider px-3 py-2 rounded-md border transition-colors whitespace-nowrap ${
+                isAtDefault
+                  ? "border-border text-muted-foreground cursor-not-allowed opacity-60"
+                  : savedFlash
+                    ? "border-primary text-primary bg-primary/10"
+                    : "border-primary/60 text-primary hover:bg-primary/10"
+              }`}
+              title={
+                isAtDefault
+                  ? "Dette stedet er allerede default"
+                  : `Sett som default for ${who} på denne IP-en`
+              }
+            >
+              {savingDefault ? "Lagrer…" : savedFlash ? "✓ Lagret" : "Sett som default"}
+            </button>
+          )}
         </div>
 
         {open && hits && hits.length > 0 && (
