@@ -53,6 +53,10 @@ export const Route = createFileRoute("/api/strava/callback")({
           return errorPage("Ugyldig state — start tilkoblingen på nytt.", 400);
         }
 
+        // State har formen "<owner>.<nonce>" — hent eieren ut
+        const ownerPart = (state ?? "").split(".")[0];
+        const owner: StravaOwner = isStravaOwner(ownerPart) ? ownerPart : "arne";
+
         const tokenRes = await fetch("https://www.strava.com/oauth/token", {
           method: "POST",
           headers: { "Content-Type": "application/x-www-form-urlencoded" },
