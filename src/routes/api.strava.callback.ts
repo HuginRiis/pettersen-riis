@@ -85,7 +85,7 @@ export const Route = createFileRoute("/api/strava/callback")({
           [tok.athlete?.firstname, tok.athlete?.lastname].filter(Boolean).join(" ") || null;
 
         try {
-          await saveStravaConnection({
+          await saveStravaConnection(owner, {
             access_token: tok.access_token,
             refresh_token: tok.refresh_token,
             expires_at: new Date(tok.expires_at * 1000).toISOString(),
