@@ -117,14 +117,24 @@ async function fetchAuroraData(): Promise<{ now: KpNow; forecast: KpForecast[] }
   );
   if (!nowRes.ok) throw new Error(`Kp-now HTTP ${nowRes.status}`);
   const nowJson = (await nowRes.json()) as Array<{
-    time_tag: string;
-    kp_index: number;
+    time_tag?: string;
+    kp_index?: number;
     estimated_kp?: number;
   }>;
-  const last = nowJson[nowJson.length - 1];
+  if (!Array.isArray(nowJson) || nowJson.length === 0) {
+    throw new Error("Tomt Kp-svar");
+  }
+  const last = nowJson[nowJson.length - 1] ?? {};
+  const kpVal =
+    typeof last.estimated_kp === "number"
+      ? last.estimated_kp
+      : typeof last.kp_index === "number"
+        ? last.kp_index
+        : NaN;
+  if (!Number.isFinite(kpVal)) throw new Error("Ugyldig Kp-verdi");
   const kpNow: KpNow = {
-    kp: typeof last.estimated_kp === "number" ? last.estimated_kp : last.kp_index,
-    observedAt: last.time_tag,
+    kp: kpVal,
+    observedAt: typeof last.time_tag === "string" ? last.time_tag : new Date().toISOString(),
   };
 
   // 2) 3-døgns prognose (3-timers blokker). Format: array of arrays.
