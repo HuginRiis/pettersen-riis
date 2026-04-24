@@ -10,7 +10,7 @@ import { HomeyApiActivity } from "@/components/HomeyApiActivity";
 import { HomeyApiPauseToggle } from "@/components/HomeyApiPauseToggle";
 import { HeatersPanel } from "@/components/HeatersPanel";
 import { StuaConditionPanel } from "@/components/StuaConditionPanel";
-import { GarbageCollectionPanel } from "@/components/GarbageCollectionPanel";
+
 
 import { recordHomeyApiCall } from "@/lib/homey-api-tracker";
 import heroImg from "@/assets/got-smarthus.jpg";
@@ -643,7 +643,6 @@ function SmarthusPage() {
         </div>
       </section>
 
-      <GarbageCollectionPanel />
 
 
       {lights.length > 0 && (
