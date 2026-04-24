@@ -180,6 +180,7 @@ async function fetchAlerts(): Promise<TelemarkAlert[]> {
       start: interval[0] ?? null,
       end: interval[1] ?? null,
       counties,
+      countyNames: counties.map((c) => COUNTY_NAMES[c] ?? c).filter(Boolean),
       geometry: f.geometry ?? null,
     });
   }
