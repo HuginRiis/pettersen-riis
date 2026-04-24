@@ -436,7 +436,7 @@ function ActivitiesPaginated({ activities, owner }: { activities: DashOk["activi
                       {formatDate(a.startDate)} · {a.type}
                     </p>
 
-                    <ActivityStreams activityId={a.id} />
+                    <ActivityStreams activityId={a.id} owner={owner} />
 
                     <div className="grid grid-cols-2 gap-1.5 text-xs text-foreground/90 mt-2">
                       <MiniMetric label="Dist" value={formatKm(a.distance)} />
@@ -508,7 +508,7 @@ function MiniMetric({ label, value }: { label: string; value: string }) {
   );
 }
 
-function ActivityStreams({ activityId }: { activityId: number }) {
+function ActivityStreams({ activityId, owner }: { activityId: number; owner: Owner }) {
   const fetchStreams = useServerFn(getActivityStreams);
   const [state, setState] = useState<
     | { kind: "idle" }
