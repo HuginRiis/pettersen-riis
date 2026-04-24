@@ -135,28 +135,34 @@ export function LocationPicker({
   return (
     <div className="panel rounded-lg p-4 md:p-5">
       <div className="flex flex-wrap items-center gap-3 justify-between">
-        {/* WHO selector */}
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] tracking-[0.25em] uppercase text-muted-foreground">
-            Vakt:
-          </span>
-          <div className="flex rounded-md border border-border overflow-hidden">
-            {NAMES.map((n) => (
-              <button
-                key={n}
-                type="button"
-                onClick={() => handleNameChange(n)}
-                className={`px-3 py-1 text-xs uppercase tracking-wider transition-colors ${
-                  who === n
-                    ? "bg-primary/20 text-primary"
-                    : "text-muted-foreground hover:bg-card/60"
-                }`}
-              >
-                {n}
-              </button>
-            ))}
+        {/* WHO selector — only when logged in */}
+        {authenticated ? (
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] tracking-[0.25em] uppercase text-muted-foreground">
+              Vakt:
+            </span>
+            <div className="flex rounded-md border border-border overflow-hidden">
+              {NAMES.map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => handleNameChange(n)}
+                  className={`px-3 py-1 text-xs uppercase tracking-wider transition-colors ${
+                    who === n
+                      ? "bg-primary/20 text-primary"
+                      : "text-muted-foreground hover:bg-card/60"
+                  }`}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="text-[10px] tracking-[0.25em] uppercase text-muted-foreground">
+            Stedssøk
+          </div>
+        )}
 
         {/* Active location chip */}
         <div className="flex items-center gap-2 text-sm">
@@ -166,7 +172,7 @@ export function LocationPicker({
           <span className="text-primary text-display tracking-wider truncate max-w-[16rem]">
             {active.label}
           </span>
-          {isAtDefault && (
+          {authenticated && isAtDefault && (
             <span className="text-[9px] uppercase tracking-[0.2em] text-muted-foreground border border-border rounded px-1.5 py-0.5">
               Default
             </span>
