@@ -79,7 +79,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
         <HeadContent />
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var s=localStorage.getItem('ui-scale');if(s==='large'){document.documentElement.style.zoom='1.5';document.documentElement.dataset.uiScale='large';}}catch(e){}})();`,
+            __html: `(function(){try{var s=localStorage.getItem('ui-scale');if(s==='large'){document.documentElement.style.fontSize='150%';document.documentElement.dataset.uiScale='large';}}catch(e){}})();`,
           }}
         />
       </head>

@@ -7,10 +7,12 @@ function applyScale(scale: UiScale) {
   if (typeof document === "undefined") return;
   const root = document.documentElement;
   if (scale === "large") {
-    root.style.setProperty("zoom", "1.5");
+    // Tailwind's default base font-size is 16px. 150% = 24px.
+    // Since most type uses rem, this scales fonts across the app.
+    root.style.fontSize = "150%";
     root.dataset.uiScale = "large";
   } else {
-    root.style.removeProperty("zoom");
+    root.style.fontSize = "";
     root.dataset.uiScale = "normal";
   }
 }
