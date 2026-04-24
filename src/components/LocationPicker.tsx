@@ -133,6 +133,46 @@ export function LocationPicker({
     }
   };
 
+  const handleLocate = () => {
+    setLocateError(null);
+    if (typeof navigator === "undefined" || !navigator.geolocation) {
+      setLocateError("Nettleseren støtter ikke posisjonering.");
+      return;
+    }
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const lat = pos.coords.latitude;
+        const lon = pos.coords.longitude;
+        try {
+          const r = await reverse({ data: { lat, lon } });
+          onChange({ label: r.label, lat: r.lat, lon: r.lon });
+        } catch {
+          onChange({
+            label: `${lat.toFixed(4)}°N ${lon.toFixed(4)}°Ø`,
+            lat,
+            lon,
+          });
+        } finally {
+          setLocating(false);
+        }
+      },
+      (err) => {
+        setLocating(false);
+        if (err.code === err.PERMISSION_DENIED) {
+          setLocateError("Posisjon avslått. Tillat plassering i nettleseren og prøv igjen.");
+        } else if (err.code === err.POSITION_UNAVAILABLE) {
+          setLocateError("Posisjon utilgjengelig akkurat nå.");
+        } else if (err.code === err.TIMEOUT) {
+          setLocateError("Tidsavbrudd ved henting av posisjon.");
+        } else {
+          setLocateError("Kunne ikke hente posisjon.");
+        }
+      },
+      { enableHighAccuracy: true, timeout: 10_000, maximumAge: 60_000 },
+    );
+  };
+
   const isAtDefault =
     active.label.trim().toLowerCase() === defaultLabel.trim().toLowerCase();
 
