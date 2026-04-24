@@ -198,27 +198,27 @@ export function LocationPicker({
               </span>
             )}
           </div>
-          {authenticated && (
-            <button
-              type="button"
-              disabled={savingDefault || isAtDefault}
-              onClick={handleSetDefault}
-              className={`text-xs uppercase tracking-wider px-3 py-2 rounded-md border transition-colors whitespace-nowrap ${
-                isAtDefault
-                  ? "border-border text-muted-foreground cursor-not-allowed opacity-60"
-                  : savedFlash
-                    ? "border-primary text-primary bg-primary/10"
-                    : "border-primary/60 text-primary hover:bg-primary/10"
-              }`}
-              title={
-                isAtDefault
-                  ? "Dette stedet er allerede default"
-                  : `Sett som default for ${who} på denne IP-en`
-              }
-            >
-              {savingDefault ? "Lagrer…" : savedFlash ? "✓ Lagret" : "Sett som default"}
-            </button>
-          )}
+          <button
+            type="button"
+            disabled={savingDefault || isAtDefault}
+            onClick={handleSetDefault}
+            className={`text-xs uppercase tracking-wider px-3 py-2 rounded-md border transition-colors whitespace-nowrap ${
+              isAtDefault
+                ? "border-border text-muted-foreground cursor-not-allowed opacity-60"
+                : savedFlash
+                  ? "border-primary text-primary bg-primary/10"
+                  : "border-primary/60 text-primary hover:bg-primary/10"
+            }`}
+            title={
+              isAtDefault
+                ? "Dette stedet er allerede default"
+                : authenticated
+                  ? `Sett som default for ${who} på denne IP-en`
+                  : "Sett som default for denne IP-en"
+            }
+          >
+            {savingDefault ? "Lagrer…" : savedFlash ? "✓ Lagret" : "Sett som default"}
+          </button>
         </div>
 
         {open && hits && hits.length > 0 && (
