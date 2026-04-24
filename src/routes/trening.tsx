@@ -376,7 +376,7 @@ function DashboardView({ dash, owner }: { dash: DashOk; owner: Owner }) {
 
       {/* Aktiviteter */}
       <SubHeader text="De siste dåder" />
-      <ActivitiesPaginated activities={dash.activities} />
+      <ActivitiesPaginated activities={dash.activities} owner={owner} />
     </>
   );
 }
