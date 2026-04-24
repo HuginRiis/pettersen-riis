@@ -2,47 +2,63 @@
  * AuroraPanel — Nordlysvarsling for Hytta (Lyngdal i Numedal, ~60°N).
  *
  * Datakilder (gratis, ingen nøkkel):
- *  - NOAA SWPC: https://services.swpc.noaa.gov/json/planetary_k_index_1m.json
- *      (siste 1-min Kp-estimat, oppdateres kontinuerlig)
- *  - NOAA SWPC: https://services.swpc.noaa.gov/products/noaa-planetary-k-index-forecast.json
- *      (3-døgns Kp-prognose i 3-timers blokker)
- *
- * Synlighetsterskel for sør-Norge (~60°N): Kp ≥ 4 = mulig, Kp ≥ 5 = god, Kp ≥ 6 = sterk.
- *
- * Stilen følger borgens GoT-tema (panel + ornate-divider + medieval typografi).
+ *  - NOAA SWPC Kp (siste 1-min estimat):
+ *      https://services.swpc.noaa.gov/json/planetary_k_index_1m.json
+ *  - NOAA SWPC Kp 3-døgns prognose (3-timers blokker):
+ *      https://services.swpc.noaa.gov/products/noaa-planetary-k-index-forecast.json
+ *  - NOAA SWPC OVATION aurora (sannsynlighet i %, samme kilde Aurora Now bruker):
+ *      https://services.swpc.noaa.gov/json/ovation_aurora_latest.json
+ *  - NOAA SWPC sanntids solvind (DSCOVR/ACE plasma + magnetfelt):
+ *      https://services.swpc.noaa.gov/products/solar-wind/plasma-5-minute.json
+ *      https://services.swpc.noaa.gov/products/solar-wind/mag-5-minute.json
+ *  - MET Norway locationforecast (skydekke + temp, samme API som ellers på siden):
+ *      https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=&lon=
+ *  - Soloppgang/-nedgang via NOAA solformel (lokal beregning, ingen API).
  */
 import { useEffect, useMemo, useState } from "react";
-import { Sparkles, RefreshCw } from "lucide-react";
+import { Sparkles, RefreshCw, Wind, Cloud, Moon } from "lucide-react";
 
-// Hytta: Øvre Bjørkesetvegen 122, Lyngdal i Numedal, ~60°N
-const HYTTA_LAT = 60.0;
+// Hytta: Øvre Bjørkesetvegen 122, Lyngdal i Numedal (~60.05°N, 9.10°E)
+const HYTTA_LAT = 60.05;
+const HYTTA_LON = 9.10;
 
-type KpNow = {
-  kp: number;
-  observedAt: string; // ISO
-};
-
+type KpNow = { kp: number; observedAt: string };
 type KpForecast = {
-  timeTag: string; // ISO
+  timeTag: string;
   kp: number;
   obsOrPredicted: "observed" | "estimated" | "predicted";
+};
+type SolarWind = {
+  bz: number | null; // nT (negative = sør, bra for nordlys)
+  bt: number | null; // nT (total magnetfelt)
+  speed: number | null; // km/s
+  density: number | null; // p/cm³
+  observedAt: string;
+};
+type CloudHour = { time: string; cloudPct: number };
+type Ovation = {
+  // Aggregert sannsynlighet (%) i sør-Norge-båndet rundt Hytta
+  probabilityHere: number;
+  observedAt: string;
 };
 
 type FetchState =
   | { status: "loading" }
-  | { status: "ready"; now: KpNow; forecast: KpForecast[] }
+  | {
+      status: "ready";
+      now: KpNow;
+      forecast: KpForecast[];
+      wind: SolarWind | null;
+      ovation: Ovation | null;
+      clouds: CloudHour[];
+      sun: { sunset: Date | null; sunrise: Date | null };
+    }
   | { status: "error"; message: string };
 
-function classifyKp(kp: number, lat: number): {
-  level: "minimal" | "mulig" | "god" | "sterk" | "ekstrem";
-  label: string;
-  color: string; // CSS color
-  prose: string;
-} {
-  // Tilpasset for sør-Norge (~60°N). Auroral oval krysser ~60°N rundt Kp 4–5.
+function classifyKp(kp: number, lat: number) {
   if (kp < 3) {
     return {
-      level: "minimal",
+      level: "minimal" as const,
       label: "Stille himmel",
       color: "oklch(0.55 0.04 240)",
       prose: `Den nordlige himmel hviler. Liten sjanse for nordlys ved ${lat.toFixed(0)}°N i natt.`,
@@ -50,7 +66,7 @@ function classifyKp(kp: number, lat: number): {
   }
   if (kp < 4) {
     return {
-      level: "mulig",
+      level: "mulig" as const,
       label: "Spirende uro",
       color: "oklch(0.70 0.12 160)",
       prose: "Svake bånd kan vise seg lavt mot nord — om himmelen er klar og mørk.",
@@ -58,7 +74,7 @@ function classifyKp(kp: number, lat: number): {
   }
   if (kp < 5) {
     return {
-      level: "god",
+      level: "god" as const,
       label: "Lysene våkner",
       color: "oklch(0.78 0.18 145)",
       prose: "Gode utsikter til synlig nordlys over Hytta. Mørke himler nordover anbefales.",
@@ -66,14 +82,14 @@ function classifyKp(kp: number, lat: number): {
   }
   if (kp < 6) {
     return {
-      level: "sterk",
+      level: "sterk" as const,
       label: "Storm i himmelen",
       color: "oklch(0.78 0.20 130)",
       prose: "Geomagnetisk storm — nordlyset kan danse rett over hodet. Ut av peisens varme!",
     };
   }
   return {
-    level: "ekstrem",
+    level: "ekstrem" as const,
     label: "Himmelens flammer",
     color: "oklch(0.75 0.22 25)",
     prose: "Ekstrem aktivitet — sjelden og spektakulær. Grip kappen, kall ravnene og se opp.",
@@ -82,13 +98,12 @@ function classifyKp(kp: number, lat: number): {
 
 function formatOsloTime(iso: string): string {
   try {
-    const d = new Date(iso);
     return new Intl.DateTimeFormat("nb-NO", {
       timeZone: "Europe/Oslo",
       weekday: "short",
       hour: "2-digit",
       minute: "2-digit",
-    }).format(d);
+    }).format(new Date(iso));
   } catch {
     return iso;
   }
@@ -96,21 +111,71 @@ function formatOsloTime(iso: string): string {
 
 function formatOsloDateTime(iso: string): string {
   try {
-    const d = new Date(iso);
     return new Intl.DateTimeFormat("nb-NO", {
       timeZone: "Europe/Oslo",
       day: "2-digit",
       month: "short",
       hour: "2-digit",
       minute: "2-digit",
-    }).format(d);
+    }).format(new Date(iso));
   } catch {
     return iso;
   }
 }
 
-async function fetchAuroraData(): Promise<{ now: KpNow; forecast: KpForecast[] }> {
-  // 1) Siste estimerte Kp (1-min)
+function formatOsloHM(iso: string | Date): string {
+  try {
+    const d = iso instanceof Date ? iso : new Date(iso);
+    return new Intl.DateTimeFormat("nb-NO", {
+      timeZone: "Europe/Oslo",
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(d);
+  } catch {
+    return String(iso);
+  }
+}
+
+// --- Soloppgang/-nedgang (NOAA solar position, presisjon ±1 min) ---
+function sunTimes(date: Date, lat: number, lon: number): { sunrise: Date | null; sunset: Date | null } {
+  const rad = Math.PI / 180;
+  const deg = 180 / Math.PI;
+
+  // Dager siden 2000-01-01 12:00 UT
+  const jd = date.getTime() / 86400000 + 2440587.5;
+  const n = jd - 2451545.0 + 0.0008;
+
+  function calc(isSunset: boolean): Date | null {
+    const Jstar = n - lon / 360;
+    const M = (357.5291 + 0.98560028 * Jstar) % 360;
+    const Mrad = M * rad;
+    const C = 1.9148 * Math.sin(Mrad) + 0.02 * Math.sin(2 * Mrad) + 0.0003 * Math.sin(3 * Mrad);
+    const lambda = (M + C + 180 + 102.9372) % 360;
+    const lamRad = lambda * rad;
+    const Jtransit = 2451545.0 + Jstar + 0.0053 * Math.sin(Mrad) - 0.0069 * Math.sin(2 * lamRad);
+    const sinDec = Math.sin(lamRad) * Math.sin(23.44 * rad);
+    const dec = Math.asin(sinDec);
+    const cosH =
+      (Math.sin(-0.833 * rad) - Math.sin(lat * rad) * sinDec) /
+      (Math.cos(lat * rad) * Math.cos(dec));
+    if (cosH > 1 || cosH < -1) return null; // polarnatt/-dag
+    const H = Math.acos(cosH) * deg;
+    const Jevent = isSunset ? Jtransit + H / 360 : Jtransit - H / 360;
+    return new Date((Jevent - 2440587.5) * 86400000);
+  }
+
+  return { sunrise: calc(false), sunset: calc(true) };
+}
+
+async function fetchAuroraData(): Promise<{
+  now: KpNow;
+  forecast: KpForecast[];
+  wind: SolarWind | null;
+  ovation: Ovation | null;
+  clouds: CloudHour[];
+  sun: { sunset: Date | null; sunrise: Date | null };
+}> {
+  // 1) Kp nå
   const nowRes = await fetch(
     "https://services.swpc.noaa.gov/json/planetary_k_index_1m.json",
     { cache: "no-store" },
@@ -121,9 +186,7 @@ async function fetchAuroraData(): Promise<{ now: KpNow; forecast: KpForecast[] }
     kp_index?: number;
     estimated_kp?: number;
   }>;
-  if (!Array.isArray(nowJson) || nowJson.length === 0) {
-    throw new Error("Tomt Kp-svar");
-  }
+  if (!Array.isArray(nowJson) || nowJson.length === 0) throw new Error("Tomt Kp-svar");
   const last = nowJson[nowJson.length - 1] ?? {};
   const kpVal =
     typeof last.estimated_kp === "number"
@@ -137,30 +200,25 @@ async function fetchAuroraData(): Promise<{ now: KpNow; forecast: KpForecast[] }
     observedAt: typeof last.time_tag === "string" ? last.time_tag : new Date().toISOString(),
   };
 
-  // 2) 3-døgns prognose (3-timers blokker). Format: array of arrays.
-  // Header: ["time_tag", "kp", "observed", "noaa_scale"]
+  // 2) Kp prognose
   const fcRes = await fetch(
     "https://services.swpc.noaa.gov/products/noaa-planetary-k-index-forecast.json",
     { cache: "no-store" },
   );
   if (!fcRes.ok) throw new Error(`Kp-forecast HTTP ${fcRes.status}`);
   const fcJson = (await fcRes.json()) as Array<Array<unknown>>;
-  const rows = Array.isArray(fcJson) ? fcJson.slice(1) : []; // hopp over header
-
+  const rows = Array.isArray(fcJson) ? fcJson.slice(1) : [];
   const nowMs = Date.now();
-  const horizonMs = nowMs + 1000 * 60 * 60 * 48; // 48 timer fram
-
+  const horizonMs = nowMs + 1000 * 60 * 60 * 48;
   const forecast: KpForecast[] = rows
     .map((r): KpForecast | null => {
       if (!Array.isArray(r)) return null;
       const timeTagRaw = r[0];
-      const kpRaw = r[1];
+      const kp = Number(r[1]);
       const obsRaw = r[2];
       if (typeof timeTagRaw !== "string" || timeTagRaw.length === 0) return null;
-      const kp = Number(kpRaw);
       if (!Number.isFinite(kp)) return null;
       const obs = (typeof obsRaw === "string" ? obsRaw : "predicted").toLowerCase() as KpForecast["obsOrPredicted"];
-      // time_tag fra NOAA er UTC uten "Z" — legg til for å unngå tolkning som lokaltid
       const iso =
         timeTagRaw.endsWith("Z") || timeTagRaw.includes("+")
           ? timeTagRaw
@@ -173,8 +231,127 @@ async function fetchAuroraData(): Promise<{ now: KpNow; forecast: KpForecast[] }
       return Number.isFinite(t) && t >= nowMs - 1000 * 60 * 60 && t <= horizonMs;
     });
 
+  // 3) OVATION (kan feile uten å rive ned panelet)
+  let ovation: Ovation | null = null;
+  try {
+    const ovRes = await fetch(
+      "https://services.swpc.noaa.gov/json/ovation_aurora_latest.json",
+      { cache: "no-store" },
+    );
+    if (ovRes.ok) {
+      const ov = (await ovRes.json()) as {
+        "Observation Time"?: string;
+        "Forecast Time"?: string;
+        coordinates?: Array<[number, number, number]>; // [lon(0..359), lat(-90..90), aurora%]
+      };
+      const coords = Array.isArray(ov.coordinates) ? ov.coordinates : [];
+      // Hent maks-sannsynlighet i ±2° lat × ±5° lon rundt Hytta
+      const lonTarget = ((HYTTA_LON % 360) + 360) % 360;
+      let maxP = 0;
+      for (const c of coords) {
+        if (!Array.isArray(c) || c.length < 3) continue;
+        const [lon, lat, p] = c;
+        if (typeof lon !== "number" || typeof lat !== "number" || typeof p !== "number") continue;
+        if (Math.abs(lat - HYTTA_LAT) > 2) continue;
+        const dLon = Math.abs(((lon - lonTarget + 540) % 360) - 180);
+        if (dLon > 5) continue;
+        if (p > maxP) maxP = p;
+      }
+      ovation = {
+        probabilityHere: Math.round(maxP),
+        observedAt: ov["Forecast Time"] ?? ov["Observation Time"] ?? new Date().toISOString(),
+      };
+    }
+  } catch {
+    ovation = null;
+  }
 
-  return { now: kpNow, forecast };
+  // 4) Solvind: Bz (mag) + speed/density (plasma)
+  let wind: SolarWind | null = null;
+  try {
+    const [magRes, plasmaRes] = await Promise.all([
+      fetch("https://services.swpc.noaa.gov/products/solar-wind/mag-5-minute.json", { cache: "no-store" }),
+      fetch("https://services.swpc.noaa.gov/products/solar-wind/plasma-5-minute.json", { cache: "no-store" }),
+    ]);
+    let bz: number | null = null;
+    let bt: number | null = null;
+    let observedAt = new Date().toISOString();
+    if (magRes.ok) {
+      const mag = (await magRes.json()) as Array<Array<unknown>>;
+      // Header: ["time_tag","bx_gsm","by_gsm","bz_gsm","lon_gsm","lat_gsm","bt"]
+      for (let i = mag.length - 1; i >= 1; i--) {
+        const r = mag[i];
+        if (!Array.isArray(r)) continue;
+        const t = r[0];
+        const bzV = Number(r[3]);
+        const btV = Number(r[6]);
+        if (typeof t === "string" && Number.isFinite(bzV)) {
+          bz = bzV;
+          bt = Number.isFinite(btV) ? btV : null;
+          observedAt = t.includes("T") ? `${t}Z` : `${t.replace(" ", "T")}Z`;
+          break;
+        }
+      }
+    }
+    let speed: number | null = null;
+    let density: number | null = null;
+    if (plasmaRes.ok) {
+      const plasma = (await plasmaRes.json()) as Array<Array<unknown>>;
+      // Header: ["time_tag","density","speed","temperature"]
+      for (let i = plasma.length - 1; i >= 1; i--) {
+        const r = plasma[i];
+        if (!Array.isArray(r)) continue;
+        const d = Number(r[1]);
+        const s = Number(r[2]);
+        if (Number.isFinite(s)) {
+          speed = s;
+          density = Number.isFinite(d) ? d : null;
+          break;
+        }
+      }
+    }
+    if (bz !== null || speed !== null) {
+      wind = { bz, bt, speed, density, observedAt };
+    }
+  } catch {
+    wind = null;
+  }
+
+  // 5) Skydekke fra MET (samme API som siden bruker ellers)
+  const clouds: CloudHour[] = [];
+  try {
+    const metRes = await fetch(
+      `https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=${HYTTA_LAT}&lon=${HYTTA_LON}`,
+      { headers: { accept: "application/json" } },
+    );
+    if (metRes.ok) {
+      const met = (await metRes.json()) as {
+        properties?: { timeseries?: Array<{ time?: string; data?: { instant?: { details?: { cloud_area_fraction?: number } } } }> };
+      };
+      const ts = met.properties?.timeseries ?? [];
+      for (const t of ts.slice(0, 24)) {
+        const time = t.time;
+        const c = t.data?.instant?.details?.cloud_area_fraction;
+        if (typeof time === "string" && typeof c === "number") {
+          clouds.push({ time, cloudPct: c });
+        }
+      }
+    }
+  } catch {
+    /* ignorer — værdata er ikke kritisk */
+  }
+
+  // 6) Sol opp/ned for i kveld/natt
+  const today = new Date();
+  const tonight = sunTimes(today, HYTTA_LAT, HYTTA_LON);
+  const tomorrow = new Date(today.getTime() + 86400000);
+  const tomorrowTimes = sunTimes(tomorrow, HYTTA_LAT, HYTTA_LON);
+  const sun = {
+    sunset: tonight.sunset,
+    sunrise: tomorrowTimes.sunrise ?? tonight.sunrise,
+  };
+
+  return { now: kpNow, forecast, wind, ovation, clouds, sun };
 }
 
 export function AuroraPanel() {
@@ -201,7 +378,6 @@ export function AuroraPanel() {
     };
   }, [reloadKey]);
 
-  // Auto-oppdater hvert 15. minutt
   useEffect(() => {
     const id = setInterval(() => setReloadKey((k) => k + 1), 15 * 60 * 1000);
     return () => clearInterval(id);
@@ -216,6 +392,36 @@ export function AuroraPanel() {
     return best;
   }, [state]);
 
+  // Vurder visuell sjanse i natt: kombiner Kp/OVATION med skydekke i mørketiden
+  const tonightVerdict = useMemo(() => {
+    if (state.status !== "ready") return null;
+    const { sun, clouds, now, ovation } = state;
+    if (!sun.sunset || !sun.sunrise) return null;
+    const darkClouds = clouds.filter((c) => {
+      const t = new Date(c.time).getTime();
+      return t >= sun.sunset!.getTime() && t <= sun.sunrise!.getTime();
+    });
+    const avgCloud = darkClouds.length
+      ? Math.round(darkClouds.reduce((s, c) => s + c.cloudPct, 0) / darkClouds.length)
+      : null;
+    const auroraPotential = ovation ? Math.max(now.kp * 12, ovation.probabilityHere) : now.kp * 12;
+    const skyClearFactor = avgCloud === null ? 0.6 : Math.max(0, 1 - avgCloud / 100);
+    const score = Math.round(auroraPotential * skyClearFactor);
+    let verdict = "Liten sjanse i natt";
+    let color = "oklch(0.55 0.04 240)";
+    if (score >= 50) {
+      verdict = "Stor sjanse — opp på taket!";
+      color = "oklch(0.78 0.20 130)";
+    } else if (score >= 30) {
+      verdict = "God mulighet — hold utkikk";
+      color = "oklch(0.78 0.18 145)";
+    } else if (score >= 15) {
+      verdict = "Mulig svake bånd";
+      color = "oklch(0.70 0.12 160)";
+    }
+    return { score, verdict, color, avgCloud };
+  }, [state]);
+
   return (
     <section className="container mx-auto px-4 pb-12">
       <div className="ornate-divider mb-6">
@@ -225,7 +431,6 @@ export function AuroraPanel() {
       </div>
 
       <div className="panel rounded-lg p-5 sm:p-7 relative overflow-hidden glow-on-hover">
-        {/* Atmosfærisk bakgrunn */}
         <div
           className="absolute inset-0 pointer-events-none opacity-30"
           style={{
@@ -256,7 +461,7 @@ export function AuroraPanel() {
           </div>
 
           {state.status === "loading" && (
-            <p className="text-muted-foreground italic">Henter ravner fra NOAA…</p>
+            <p className="text-muted-foreground italic">Henter ravner fra NOAA og MET…</p>
           )}
 
           {state.status === "error" && (
@@ -269,15 +474,29 @@ export function AuroraPanel() {
             <div className="space-y-5">
               <NowCard kp={state.now.kp} observedAt={state.now.observedAt} />
 
-              {peak && peak.kp >= 3 && (
-                <PeakCard peak={peak} />
+              {tonightVerdict && (
+                <TonightCard
+                  verdict={tonightVerdict.verdict}
+                  color={tonightVerdict.color}
+                  score={tonightVerdict.score}
+                  avgCloud={tonightVerdict.avgCloud}
+                  sunset={state.sun.sunset}
+                  sunrise={state.sun.sunrise}
+                />
               )}
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {state.ovation && <OvationCard ovation={state.ovation} />}
+                {state.wind && <SolarWindCard wind={state.wind} />}
+              </div>
+
+              {peak && peak.kp >= 3 && <PeakCard peak={peak} />}
 
               <ForecastTimeline forecast={state.forecast} />
 
               <p className="text-[11px] text-muted-foreground/70 italic pt-1 border-t border-border/40">
-                Kilde: NOAA Space Weather Prediction Center · Synlighetsvurdering for ~{HYTTA_LAT.toFixed(0)}°N.
-                Klar himmel og mørke kreves — sjekk skydekket før du går ut i kappen.
+                Kilder: NOAA SWPC (Kp · OVATION · DSCOVR solvind) og MET Norway (skydekke).
+                Nordlys krever klar himmel og mørke — vurderingen kombinerer alle fire.
               </p>
             </div>
           )}
@@ -303,10 +522,7 @@ function NowCard({ kp, observedAt }: { kp: number; observedAt: string }) {
             Nå · siste estimat
           </div>
           <div className="flex items-baseline gap-3">
-            <div
-              className="text-medieval text-5xl leading-none"
-              style={{ color: c.color }}
-            >
+            <div className="text-medieval text-5xl leading-none" style={{ color: c.color }}>
               Kp {kp.toFixed(1)}
             </div>
             <div className="text-medieval text-lg" style={{ color: c.color }}>
@@ -324,10 +540,156 @@ function NowCard({ kp, observedAt }: { kp: number; observedAt: string }) {
   );
 }
 
+function TonightCard({
+  verdict,
+  color,
+  score,
+  avgCloud,
+  sunset,
+  sunrise,
+}: {
+  verdict: string;
+  color: string;
+  score: number;
+  avgCloud: number | null;
+  sunset: Date | null;
+  sunrise: Date | null;
+}) {
+  return (
+    <div
+      className="rounded-lg p-4"
+      style={{
+        background: `linear-gradient(135deg, color-mix(in oklab, ${color} 14%, transparent), transparent)`,
+        border: `1px solid color-mix(in oklab, ${color} 30%, transparent)`,
+      }}
+    >
+      <div className="flex items-center gap-2 mb-1">
+        <Moon className="h-4 w-4" style={{ color }} />
+        <div className="text-[10px] tracking-[0.3em] uppercase text-primary/80">
+          I natt over Hytta
+        </div>
+      </div>
+      <div className="text-medieval text-xl mb-2" style={{ color }}>
+        {verdict}
+      </div>
+      <div className="grid grid-cols-3 gap-2 text-xs">
+        <Stat
+          icon={<Sparkles className="h-3 w-3" />}
+          label="Sjanse-poeng"
+          value={`${score}`}
+        />
+        <Stat
+          icon={<Cloud className="h-3 w-3" />}
+          label="Snittsky natt"
+          value={avgCloud === null ? "—" : `${avgCloud}%`}
+        />
+        <Stat
+          icon={<Moon className="h-3 w-3" />}
+          label="Mørketid"
+          value={sunset && sunrise ? `${formatOsloHM(sunset)}–${formatOsloHM(sunrise)}` : "—"}
+        />
+      </div>
+    </div>
+  );
+}
+
+function Stat({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+  return (
+    <div className="rounded bg-card/40 border border-border/50 p-2">
+      <div className="flex items-center gap-1 text-[9px] uppercase tracking-wider text-muted-foreground">
+        {icon}
+        {label}
+      </div>
+      <div className="text-foreground/95 text-sm tabular-nums mt-0.5">{value}</div>
+    </div>
+  );
+}
+
+function OvationCard({ ovation }: { ovation: Ovation }) {
+  const p = ovation.probabilityHere;
+  const color =
+    p >= 40 ? "oklch(0.78 0.20 130)" : p >= 20 ? "oklch(0.78 0.18 145)" : p >= 8 ? "oklch(0.70 0.12 160)" : "oklch(0.55 0.04 240)";
+  return (
+    <div className="rounded-lg p-4 bg-card/40 border border-border/60">
+      <div className="text-[10px] tracking-[0.3em] uppercase text-primary/80 mb-1">
+        OVATION · sannsynlighet her
+      </div>
+      <div className="flex items-baseline gap-2">
+        <div className="text-medieval text-3xl" style={{ color }}>
+          {p}%
+        </div>
+        <div className="text-xs text-muted-foreground">aurora over Hytta nå</div>
+      </div>
+      <div className="mt-2 h-1.5 rounded bg-border/50 overflow-hidden">
+        <div
+          className="h-full rounded transition-all"
+          style={{ width: `${Math.min(100, p)}%`, background: color }}
+        />
+      </div>
+      <div className="text-[10px] text-muted-foreground/70 mt-2">
+        Modell: {formatOsloDateTime(ovation.observedAt)}
+      </div>
+    </div>
+  );
+}
+
+function SolarWindCard({ wind }: { wind: SolarWind }) {
+  const bzGood = wind.bz !== null && wind.bz <= -5;
+  const bzMaybe = wind.bz !== null && wind.bz <= -2;
+  const bzColor = bzGood
+    ? "oklch(0.78 0.20 130)"
+    : bzMaybe
+      ? "oklch(0.78 0.18 145)"
+      : "oklch(0.55 0.04 240)";
+  return (
+    <div className="rounded-lg p-4 bg-card/40 border border-border/60">
+      <div className="flex items-center gap-2 mb-1">
+        <Wind className="h-3.5 w-3.5 text-primary/80" />
+        <div className="text-[10px] tracking-[0.3em] uppercase text-primary/80">
+          Solvind · DSCOVR
+        </div>
+      </div>
+      <div className="grid grid-cols-3 gap-2 mt-2">
+        <div>
+          <div className="text-[9px] uppercase tracking-wider text-muted-foreground">Bz</div>
+          <div className="text-medieval text-xl tabular-nums" style={{ color: bzColor }}>
+            {wind.bz === null ? "—" : `${wind.bz.toFixed(1)}`}
+          </div>
+          <div className="text-[9px] text-muted-foreground">nT</div>
+        </div>
+        <div>
+          <div className="text-[9px] uppercase tracking-wider text-muted-foreground">Fart</div>
+          <div className="text-medieval text-xl tabular-nums text-foreground/95">
+            {wind.speed === null ? "—" : `${Math.round(wind.speed)}`}
+          </div>
+          <div className="text-[9px] text-muted-foreground">km/s</div>
+        </div>
+        <div>
+          <div className="text-[9px] uppercase tracking-wider text-muted-foreground">Tetthet</div>
+          <div className="text-medieval text-xl tabular-nums text-foreground/95">
+            {wind.density === null ? "—" : wind.density.toFixed(1)}
+          </div>
+          <div className="text-[9px] text-muted-foreground">p/cm³</div>
+        </div>
+      </div>
+      <p className="text-[11px] text-muted-foreground/85 mt-2 leading-snug">
+        {bzGood
+          ? "Bz peker sør — magnetfeltet kobler seg på, nordlys kan blomstre."
+          : bzMaybe
+            ? "Bz svakt sør — koblingen er lunken, hold et øye med utviklingen."
+            : "Bz nord — solvinden glir forbi uten å vekke himmelen."}
+      </p>
+      <div className="text-[10px] text-muted-foreground/70 mt-1">
+        {formatOsloDateTime(wind.observedAt)}
+      </div>
+    </div>
+  );
+}
+
 function PeakCard({ peak }: { peak: KpForecast }) {
   const c = classifyKp(peak.kp, HYTTA_LAT);
   return (
-    <div className="rounded-lg p-4 panel/50 border border-border/60 bg-card/40">
+    <div className="rounded-lg p-4 border border-border/60 bg-card/40">
       <div className="text-[10px] tracking-[0.3em] uppercase text-primary/80 mb-1">
         Neste 48 timer · høyeste prognose
       </div>
@@ -344,11 +706,8 @@ function PeakCard({ peak }: { peak: KpForecast }) {
 
 function ForecastTimeline({ forecast }: { forecast: KpForecast[] }) {
   if (forecast.length === 0) return null;
-
-  // Vis maks ~16 blokker (ca. 48 timer × 3-timers blokker)
   const items = forecast.slice(0, 16);
   const maxKp = Math.max(5, ...items.map((f) => f.kp));
-
   return (
     <div>
       <div className="text-[10px] tracking-[0.3em] uppercase text-primary/80 mb-2">
