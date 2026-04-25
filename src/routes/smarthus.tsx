@@ -4,7 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { Swords, Shield, Flame, DoorOpen, Lightbulb, Zap, Crown, ChevronDown } from "lucide-react";
 import { PageShell, PageHero } from "@/components/PageShell";
 import { LastUpdated } from "@/components/LastUpdated";
-import { getHomeySnapshot, disconnectHomey, setAllOutdoorLights } from "@/server/homey";
+import { getHomeySnapshot, disconnectHomey, setAllOutdoorLights, setLivingRoomDeviceCapability } from "@/server/homey";
+import { Switch } from "@/components/ui/switch";
 import { findDeviceFuzzy, readTemp } from "@/lib/homey-match";
 import { HomeyApiActivity } from "@/components/HomeyApiActivity";
 import { HomeyApiPauseToggle } from "@/components/HomeyApiPauseToggle";
@@ -114,11 +115,48 @@ function SmarthusPage() {
   const router = useRouter();
   const disconnect = useServerFn(disconnectHomey);
   const toggleOutdoorLights = useServerFn(setAllOutdoorLights);
+  const setCap = useServerFn(setLivingRoomDeviceCapability);
   const [disconnecting, setDisconnecting] = useState(false);
   const [togglingLights, setTogglingLights] = useState(false);
   const [lightsMessage, setLightsMessage] = useState<string | null>(null);
   const [homeyUpdated, setHomeyUpdated] = useState<Date | null>(null);
   const [showOffLights, setShowOffLights] = useState(false);
+  // Optimistisk on/off-state for hver Hue-pære + busy-flagg per id
+  const [hueOverrides, setHueOverrides] = useState<Record<string, boolean>>({});
+  const [hueBusy, setHueBusy] = useState<Record<string, boolean>>({});
+
+  const toggleHueLight = async (deviceId: string, next: boolean) => {
+    if (hueBusy[deviceId]) return;
+    setHueBusy((b) => ({ ...b, [deviceId]: true }));
+    setHueOverrides((o) => ({ ...o, [deviceId]: next }));
+    try {
+      const res = await setCap({ data: { deviceId, capability: "onoff", value: next } });
+      if (!res.ok) {
+        // Rull tilbake ved feil
+        setHueOverrides((o) => {
+          const { [deviceId]: _drop, ...rest } = o;
+          return rest;
+        });
+      } else {
+        // Hent fersk state etter kort pause
+        setTimeout(() => router.invalidate(), 1500);
+      }
+    } catch {
+      setHueOverrides((o) => {
+        const { [deviceId]: _drop, ...rest } = o;
+        return rest;
+      });
+    } finally {
+      setHueBusy((b) => {
+        const { [deviceId]: _drop, ...rest } = b;
+        return rest;
+      });
+    }
+  };
+
+  const toggleHueZone = async (ids: string[], next: boolean) => {
+    await Promise.all(ids.map((id) => toggleHueLight(id, next)));
+  };
 
   // Hver gang loader-data endres (etter router.invalidate) — merk tidspunktet.
   useEffect(() => {
@@ -155,10 +193,16 @@ function SmarthusPage() {
     return driver.includes("hue") || driver.includes("philips") || name.includes("hue");
   };
   const lights = data.devices.filter(isHueLight);
+  const effectiveOn = (d: typeof data.devices[number]) => {
+    const o = hueOverrides[d.id];
+    if (typeof o === "boolean") return o;
+    return d.capabilities["onoff"]?.value === true;
+  };
   const mapLight = (d: typeof data.devices[number]) => ({
     id: d.id,
     name: d.name,
     zoneName: d.zone ? zoneById.get(d.zone)?.name ?? "Ukjent sal" : "Ukjent sal",
+    on: effectiveOn(d),
     dim: typeof d.capabilities["dim"]?.value === "number"
       ? (d.capabilities["dim"]?.value as number)
       : null,
@@ -166,13 +210,9 @@ function SmarthusPage() {
       ? (d.capabilities["measure_power"]?.value as number)
       : null,
   });
-  const litLights = lights.filter((d) => d.capabilities["onoff"]?.value === true).length;
-  const litLightsList = lights
-    .filter((d) => d.capabilities["onoff"]?.value === true)
-    .map(mapLight);
-  const offLightsList = lights
-    .filter((d) => d.capabilities["onoff"]?.value !== true)
-    .map(mapLight);
+  const litLights = lights.filter(effectiveOn).length;
+  const litLightsList = lights.filter(effectiveOn).map(mapLight);
+  const offLightsList = lights.filter((d) => !effectiveOn(d)).map(mapLight);
 
   const totalPower = data.devices
     .map((d) => d.capabilities["measure_power"]?.value)
@@ -692,7 +732,11 @@ function SmarthusPage() {
               );
               return (
                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {sortedZones.map(([zoneName, items]) => (
+                  {sortedZones.map(([zoneName, items]) => {
+                    const ids = items.map((i) => i.id);
+                    const allOn = items.every((i) => i.on);
+                    const zoneBusy = ids.some((id) => hueBusy[id]);
+                    return (
                     <div
                       key={zoneName}
                       className="rounded border border-primary/15 p-3"
@@ -703,24 +747,45 @@ function SmarthusPage() {
                     >
                       <div className="flex items-center gap-2 mb-2">
                         <Shield size={11} className="text-primary/80" />
-                        <span className="text-[10px] tracking-[0.25em] text-primary uppercase truncate">
+                        <span className="text-[10px] tracking-[0.25em] text-primary uppercase truncate flex-1">
                           {zoneName}
                         </span>
+                        <Switch
+                          checked={allOn}
+                          disabled={zoneBusy}
+                          onCheckedChange={(v) => toggleHueZone(ids, v)}
+                          aria-label={`Slå ${allOn ? "av" : "på"} alle lys i ${zoneName}`}
+                          className="scale-90"
+                        />
                       </div>
                       <ul className="space-y-1">
-                        {items.map((l) => (
+                        {items.map((l) => {
+                          const busy = !!hueBusy[l.id];
+                          return (
                           <li
                             key={l.id}
                             className="flex items-center gap-2 text-xs"
                           >
-                            <Flame
-                              size={10}
-                              className="text-primary shrink-0"
-                              style={{
-                                filter:
-                                  "drop-shadow(0 0 4px color-mix(in oklab, var(--gold) 60%, transparent))",
-                              }}
-                            />
+                            <button
+                              type="button"
+                              onClick={() => toggleHueLight(l.id, !l.on)}
+                              disabled={busy}
+                              aria-label={`Slå ${l.on ? "av" : "på"} ${l.name}`}
+                              title={l.on ? "Slukk" : "Tenn"}
+                              className={`shrink-0 grid place-content-center h-5 w-5 rounded border transition-colors ${
+                                l.on
+                                  ? "border-primary/60 bg-primary/15 hover:bg-primary/25 text-primary"
+                                  : "border-border/60 hover:border-primary/40 hover:text-primary text-muted-foreground"
+                              } ${busy ? "opacity-50 cursor-wait" : ""}`}
+                            >
+                              <Flame
+                                size={10}
+                                style={l.on ? {
+                                  filter:
+                                    "drop-shadow(0 0 4px color-mix(in oklab, var(--gold) 60%, transparent))",
+                                } : undefined}
+                              />
+                            </button>
                             <span className="truncate flex-1 text-foreground/90" title={l.name}>
                               {l.name}
                             </span>
@@ -729,10 +794,12 @@ function SmarthusPage() {
                               {l.power !== null && ` · ${Math.round(l.power)}W`}
                             </span>
                           </li>
-                        ))}
+                          );
+                        })}
                       </ul>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               );
             })()}
@@ -768,7 +835,11 @@ function SmarthusPage() {
                   );
                   return (
                     <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4 animate-in fade-in slide-in-from-top-2 duration-200">
-                      {sortedZones.map(([zoneName, items]) => (
+                      {sortedZones.map(([zoneName, items]) => {
+                        const ids = items.map((i) => i.id);
+                        const anyOn = items.some((i) => i.on);
+                        const zoneBusy = ids.some((id) => hueBusy[id]);
+                        return (
                         <div
                           key={zoneName}
                           className="rounded border border-border/60 p-3"
@@ -779,25 +850,49 @@ function SmarthusPage() {
                         >
                           <div className="flex items-center gap-2 mb-2">
                             <Shield size={11} className="text-muted-foreground" />
-                            <span className="text-[10px] tracking-[0.25em] text-muted-foreground uppercase truncate">
+                            <span className="text-[10px] tracking-[0.25em] text-muted-foreground uppercase truncate flex-1">
                               {zoneName}
                             </span>
+                            <Switch
+                              checked={anyOn}
+                              disabled={zoneBusy}
+                              onCheckedChange={(v) => toggleHueZone(ids, v)}
+                              aria-label={`Slå ${anyOn ? "av" : "på"} alle lys i ${zoneName}`}
+                              className="scale-90"
+                            />
                           </div>
                           <ul className="space-y-1">
-                            {items.map((l) => (
+                            {items.map((l) => {
+                              const busy = !!hueBusy[l.id];
+                              return (
                               <li
                                 key={l.id}
                                 className="flex items-center gap-2 text-xs"
                               >
-                                <Lightbulb size={10} className="text-muted-foreground/60 shrink-0" />
+                                <button
+                                  type="button"
+                                  onClick={() => toggleHueLight(l.id, !l.on)}
+                                  disabled={busy}
+                                  aria-label={`Slå ${l.on ? "av" : "på"} ${l.name}`}
+                                  title={l.on ? "Slukk" : "Tenn"}
+                                  className={`shrink-0 grid place-content-center h-5 w-5 rounded border transition-colors ${
+                                    l.on
+                                      ? "border-primary/60 bg-primary/15 text-primary hover:bg-primary/25"
+                                      : "border-border/60 text-muted-foreground/70 hover:border-primary/40 hover:text-primary"
+                                  } ${busy ? "opacity-50 cursor-wait" : ""}`}
+                                >
+                                  {l.on ? <Flame size={10} /> : <Lightbulb size={10} />}
+                                </button>
                                 <span className="truncate flex-1 text-muted-foreground" title={l.name}>
                                   {l.name}
                                 </span>
                               </li>
-                            ))}
+                              );
+                            })}
                           </ul>
                         </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   );
                 })()}
