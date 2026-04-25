@@ -732,7 +732,11 @@ function SmarthusPage() {
               );
               return (
                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {sortedZones.map(([zoneName, items]) => (
+                  {sortedZones.map(([zoneName, items]) => {
+                    const ids = items.map((i) => i.id);
+                    const allOn = items.every((i) => i.on);
+                    const zoneBusy = ids.some((id) => hueBusy[id]);
+                    return (
                     <div
                       key={zoneName}
                       className="rounded border border-primary/15 p-3"
@@ -743,24 +747,45 @@ function SmarthusPage() {
                     >
                       <div className="flex items-center gap-2 mb-2">
                         <Shield size={11} className="text-primary/80" />
-                        <span className="text-[10px] tracking-[0.25em] text-primary uppercase truncate">
+                        <span className="text-[10px] tracking-[0.25em] text-primary uppercase truncate flex-1">
                           {zoneName}
                         </span>
+                        <Switch
+                          checked={allOn}
+                          disabled={zoneBusy}
+                          onCheckedChange={(v) => toggleHueZone(ids, v)}
+                          aria-label={`Slå ${allOn ? "av" : "på"} alle lys i ${zoneName}`}
+                          className="scale-90"
+                        />
                       </div>
                       <ul className="space-y-1">
-                        {items.map((l) => (
+                        {items.map((l) => {
+                          const busy = !!hueBusy[l.id];
+                          return (
                           <li
                             key={l.id}
                             className="flex items-center gap-2 text-xs"
                           >
-                            <Flame
-                              size={10}
-                              className="text-primary shrink-0"
-                              style={{
-                                filter:
-                                  "drop-shadow(0 0 4px color-mix(in oklab, var(--gold) 60%, transparent))",
-                              }}
-                            />
+                            <button
+                              type="button"
+                              onClick={() => toggleHueLight(l.id, !l.on)}
+                              disabled={busy}
+                              aria-label={`Slå ${l.on ? "av" : "på"} ${l.name}`}
+                              title={l.on ? "Slukk" : "Tenn"}
+                              className={`shrink-0 grid place-content-center h-5 w-5 rounded border transition-colors ${
+                                l.on
+                                  ? "border-primary/60 bg-primary/15 hover:bg-primary/25 text-primary"
+                                  : "border-border/60 hover:border-primary/40 hover:text-primary text-muted-foreground"
+                              } ${busy ? "opacity-50 cursor-wait" : ""}`}
+                            >
+                              <Flame
+                                size={10}
+                                style={l.on ? {
+                                  filter:
+                                    "drop-shadow(0 0 4px color-mix(in oklab, var(--gold) 60%, transparent))",
+                                } : undefined}
+                              />
+                            </button>
                             <span className="truncate flex-1 text-foreground/90" title={l.name}>
                               {l.name}
                             </span>
@@ -769,10 +794,12 @@ function SmarthusPage() {
                               {l.power !== null && ` · ${Math.round(l.power)}W`}
                             </span>
                           </li>
-                        ))}
+                          );
+                        })}
                       </ul>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               );
             })()}
