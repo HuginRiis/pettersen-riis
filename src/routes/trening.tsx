@@ -65,6 +65,13 @@ type DashOk = {
     mostElevation: SlimAct | null;
     maxHr: SlimAct | null;
     maxSpeed: SlimAct | null;
+    longestWalk: SlimAct | null;
+  };
+  walkRecent: {
+    count: number;
+    distance: number;
+    movingTime: number;
+    elevation: number;
   };
   totals: {
     recentRun: TotalBlock | null;
