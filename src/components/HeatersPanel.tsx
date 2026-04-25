@@ -333,6 +333,7 @@ export function HeatersPanel({
         target: o.target ?? h.target,
         onoff: o.onoff ?? h.onoff,
         thermostatMode: o.thermostatMode ?? h.thermostatMode,
+        fanSpeed: o.fanSpeed ?? h.fanSpeed,
       };
     });
   }, [state, overrides]);
