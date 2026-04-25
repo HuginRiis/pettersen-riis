@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { openLoginDialog } from "@/components/LoginDialog";
-import { Star, KeyRound } from "lucide-react";
+import { KeyRound } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -15,7 +15,7 @@ import { MaesterCounsel } from "@/components/MaesterCounsel";
 import { BirthdayBanner } from "@/components/BirthdayBanner";
 import { BirthdaysOverview } from "@/components/BirthdaysOverview";
 import { UpcomingHolidays } from "@/components/UpcomingHolidays";
-import { useFavorites } from "@/hooks/use-favorites";
+
 import { useAuthStatus } from "@/hooks/use-auth-status";
 import { logoutFn } from "@/server/auth";
 import arnePortrait from "@/assets/arne-portrait.jpg";
@@ -587,8 +587,6 @@ function HallCard({
   locked?: boolean;
 }) {
   const disablePreload = to === "/smarthus" || to === "/var" || to === "/steintavle";
-  const { isFavorite, toggleFavorite } = useFavorites();
-  const fav = isFavorite(to);
 
   // Shared background layer (image + dark overlay so text remains readable)
   const bgLayer = (
@@ -640,22 +638,6 @@ function HallCard({
 
   return (
     <div className="relative">
-      <button
-        type="button"
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          void toggleFavorite(to, title, icon);
-        }}
-        className="absolute top-2 right-2 z-20 p-1.5 rounded-full bg-background/70 backdrop-blur border border-border hover:border-primary hover:bg-primary/10 transition-colors"
-        aria-label={fav ? `Fjern ${title} fra favoritter` : `Legg ${title} til favoritter`}
-        title={fav ? "Fjern fra favoritter" : "Legg til favoritter"}
-      >
-        <Star
-          size={14}
-          className={fav ? "fill-primary text-primary" : "text-muted-foreground"}
-        />
-      </button>
       <Link
         to={to}
         preload={disablePreload ? false : undefined}
