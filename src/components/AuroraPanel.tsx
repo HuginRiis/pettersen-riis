@@ -209,7 +209,7 @@ async function fetchAuroraData(): Promise<{
   const fcJson = (await fcRes.json()) as Array<Array<unknown>>;
   const rows = Array.isArray(fcJson) ? fcJson.slice(1) : [];
   const nowMs = Date.now();
-  const horizonMs = nowMs + 1000 * 60 * 60 * 48;
+  const horizonMs = nowMs + 1000 * 60 * 60 * 72;
   const forecast: KpForecast[] = rows
     .map((r): KpForecast | null => {
       if (!Array.isArray(r)) return null;
