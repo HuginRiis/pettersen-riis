@@ -239,11 +239,16 @@ export const getWelcomeInfo = createServerFn({ method: "POST" })
     /* ignore */
   }
 
-  // Last visit — go back at least 1 hour, then pick the most recent session
-  // before that cutoff. This skips the current/active visit so the user sees
-  // their previous visit instead of "right now".
+  // Last visit — most recent activity that is NOT the live/current session.
+  // We use a small 2-minute cutoff to exclude the heartbeat that just fired,
+  // but still show "earlier today" visits. We look across all sessions tied
+  // to this person (via `who`) AND any sessions on the current IP (which
+  // catches anonymous sessions from the same device that haven't been
+  // identified yet — common on dynamic mobile IPv6).
   try {
-    const cutoff = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const cutoff = new Date(Date.now() - 2 * 60 * 1000).toISOString();
+    const candidates: string[] = [];
+
     if (who) {
       const { data } = await supabaseAdmin
         .from("visitor_sessions" as any)
@@ -253,9 +258,9 @@ export const getWelcomeInfo = createServerFn({ method: "POST" })
         .order("last_seen_at", { ascending: false })
         .limit(1)
         .maybeSingle();
-      if (data) lastSeenAt = (data as any).last_seen_at;
+      if (data) candidates.push((data as any).last_seen_at);
     }
-    if (!lastSeenAt && ip) {
+    if (ip) {
       const { data } = await supabaseAdmin
         .from("visitor_sessions" as any)
         .select("last_seen_at")
@@ -264,7 +269,12 @@ export const getWelcomeInfo = createServerFn({ method: "POST" })
         .order("last_seen_at", { ascending: false })
         .limit(1)
         .maybeSingle();
-      if (data) lastSeenAt = (data as any).last_seen_at;
+      if (data) candidates.push((data as any).last_seen_at);
+    }
+
+    // Pick the most recent of the candidates.
+    if (candidates.length > 0) {
+      lastSeenAt = candidates.sort().reverse()[0] ?? null;
     }
   } catch {
     /* ignore */
