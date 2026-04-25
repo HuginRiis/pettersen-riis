@@ -76,11 +76,15 @@ export const checkAuth = createServerFn({ method: "GET" }).handler(async () => {
 });
 
 export const loginFn = createServerFn({ method: "POST" })
-  .inputValidator((data: { password: string }) => {
+  .inputValidator((data: { password: string; who?: string | null }) => {
     if (typeof data?.password !== "string" || data.password.length === 0 || data.password.length > 200) {
       throw new Error("Ugyldig passord");
     }
-    return { password: data.password };
+    const who =
+      typeof data?.who === "string" && data.who.trim().length > 0 && data.who.trim().length <= 40
+        ? data.who.trim()
+        : null;
+    return { password: data.password, who };
   })
   .handler(async ({ data }) => {
     const expected = process.env.HOUSE_RIIS_PASSWORD;
@@ -94,17 +98,13 @@ export const loginFn = createServerFn({ method: "POST" })
       const failures = await getFailedAttemptTimestampsForIp(ip, ESCALATION_LOOKBACK_HOURS);
       const episodes = detectLockoutEpisodes(failures);
       if (episodes.length > 0) {
-        // The most recent episode determines the active lockout (if still pending)
         const lastEpisode = episodes[episodes.length - 1]!;
-        // The episode count BEFORE this one tells us which escalation tier to use:
-        // 1st episode → tier 0 (1 min), 2nd → tier 1 (15 min), 3rd+ → tier 2 (60 min)
         const tier = Math.min(episodes.length - 1, LOCKOUT_DURATIONS_MIN.length - 1);
         const durationMin = LOCKOUT_DURATIONS_MIN[tier]!;
         const unlockAt = new Date(lastEpisode.getTime() + durationMin * 60 * 1000);
         const remainingMs = unlockAt.getTime() - Date.now();
         if (remainingMs > 0) {
           const minutes = Math.max(1, Math.ceil(remainingMs / 60000));
-          // Slow the response down a bit — adds friction to scripted attempts
           await new Promise((r) => setTimeout(r, 800));
           throw new Error(
             `For mange feil-forsøk. Porten er stengt i ca. ${minutes} minutt${minutes === 1 ? "" : "er"}.`,
@@ -126,13 +126,12 @@ export const loginFn = createServerFn({ method: "POST" })
     ok = ok && diff === 0;
 
     if (!ok) {
-      // Small delay to slow brute force
       await new Promise((r) => setTimeout(r, 400));
-      await logLoginAttempt(false);
+      await logLoginAttempt(false, data.who);
       throw new Error("Feil passord");
     }
 
-    await logLoginAttempt(true);
+    await logLoginAttempt(true, data.who);
     const session = await useSession<SessionData>(getSessionConfig());
     await session.update({ authenticated: true, loggedInAt: Date.now() });
     return { ok: true };
