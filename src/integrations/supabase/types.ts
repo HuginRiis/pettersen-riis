@@ -833,6 +833,7 @@ export type Database = {
           region: string | null
           success: boolean
           user_agent: string | null
+          who: string | null
         }
         Insert: {
           attempted_at?: string
@@ -849,6 +850,7 @@ export type Database = {
           region?: string | null
           success?: boolean
           user_agent?: string | null
+          who?: string | null
         }
         Update: {
           attempted_at?: string
@@ -865,6 +867,7 @@ export type Database = {
           region?: string | null
           success?: boolean
           user_agent?: string | null
+          who?: string | null
         }
         Relationships: []
       }
@@ -927,6 +930,7 @@ export type Database = {
           started_at: string
           timezone: string | null
           user_agent: string | null
+          who: string | null
         }
         Insert: {
           browser?: string | null
@@ -951,6 +955,7 @@ export type Database = {
           started_at?: string
           timezone?: string | null
           user_agent?: string | null
+          who?: string | null
         }
         Update: {
           browser?: string | null
@@ -975,6 +980,7 @@ export type Database = {
           started_at?: string
           timezone?: string | null
           user_agent?: string | null
+          who?: string | null
         }
         Relationships: []
       }
