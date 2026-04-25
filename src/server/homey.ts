@@ -1609,7 +1609,13 @@ export const setLivingRoomDeviceCapability = createServerFn({ method: "POST" })
   .inputValidator(
     (input: {
       deviceId: string;
-      capability: "onoff" | "target_temperature" | "dim" | "thermostat_mode";
+      capability:
+        | "onoff"
+        | "target_temperature"
+        | "dim"
+        | "thermostat_mode"
+        | "fan_speed"
+        | "fan_mode";
       value: boolean | number | string;
     }) => input,
   )
