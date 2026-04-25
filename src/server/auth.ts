@@ -143,3 +143,99 @@ export const logoutFn = createServerFn({ method: "POST" }).handler(async () => {
   await session.clear();
   return { ok: true };
 });
+
+/**
+ * Returns welcome info for the dialog:
+ *  - who: navnet fra push-abonnement på denne IP-en (om noen), ellers null
+ *  - lastLoginAt: forrige vellykkede innlogging fra denne IP-en
+ *  - lastSeenAt: forrige bes\u00f8k (visitor session) fra denne IP-en
+ *  - authenticated: om sesjonen er aktiv
+ */
+export const getWelcomeInfo = createServerFn({ method: "GET" }).handler(async () => {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const ip = getCurrentRequestIp();
+  const session = await useSession<SessionData>(getSessionConfig());
+  const authenticated = session.data?.authenticated === true;
+
+  let who: string | null = null;
+  let lastLoginAt: string | null = null;
+  let lastSeenAt: string | null = null;
+
+  // Try to identify "who" via the most recently used push subscription on this IP's user agents.
+  // We don't have IP on push_subscriptions, so we use ip_user_mapping as a bridge if present,
+  // otherwise we fall back to the most recent push subscription overall on this device's UA.
+  try {
+    if (ip) {
+      const { data: mapping } = await supabaseAdmin
+        .from("ip_user_mapping" as any)
+        .select("who")
+        .eq("ip", ip)
+        .maybeSingle();
+      if (mapping && (mapping as any).who) who = (mapping as any).who as string;
+    }
+  } catch {
+    /* ignore */
+  }
+
+  // If still null, peek at the most recently used push subscription (best-effort)
+  if (!who) {
+    try {
+      const { data: sub } = await supabaseAdmin
+        .from("push_subscriptions" as any)
+        .select("who, last_used_at")
+        .order("last_used_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (sub && (sub as any).who && (sub as any).who !== "Alle") {
+        who = (sub as any).who as string;
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+
+  // Last successful login from this IP (excluding current session)
+  try {
+    if (ip) {
+      const { data } = await supabaseAdmin
+        .from("visitor_login_attempts" as any)
+        .select("attempted_at")
+        .eq("ip", ip)
+        .eq("success", true)
+        .order("attempted_at", { ascending: false })
+        .limit(2);
+      if (data && data.length > 0) {
+        // If currently authenticated, the most recent record might be the current session — pick the second.
+        const arr = data as any[];
+        const pick = authenticated && arr.length > 1 ? arr[1] : arr[0];
+        lastLoginAt = pick.attempted_at;
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+
+  // Last visitor session (last_seen_at)
+  try {
+    if (ip) {
+      const { data } = await supabaseAdmin
+        .from("visitor_sessions" as any)
+        .select("last_seen_at")
+        .eq("ip", ip)
+        .order("last_seen_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (data) lastSeenAt = (data as any).last_seen_at;
+    }
+  } catch {
+    /* ignore */
+  }
+
+  return {
+    authenticated,
+    who,
+    ip: ip ?? null,
+    lastLoginAt,
+    lastSeenAt,
+  };
+});
