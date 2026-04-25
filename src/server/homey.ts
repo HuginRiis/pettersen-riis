@@ -417,18 +417,6 @@ async function snapshotFromSession(
         : [];
 
     const devices: HomeyDeviceSnapshot[] = devicesList.map((d: any, i: number) => {
-      const caps: Record<string, { value: HomeyCapValue }> = {};
-      const obj = d.capabilitiesObj ?? d.capabilities_obj ?? {};
-      if (obj && typeof obj === "object" && !Array.isArray(obj)) {
-        for (const [capId, capVal] of Object.entries(obj)) {
-          const v = (capVal as any)?.value;
-          caps[capId] =
-            typeof v === "string" || typeof v === "number" || typeof v === "boolean"
-              ? { value: v }
-              : { value: null };
-        }
-      }
-
       return {
         id: d.id ?? d._id ?? String(i),
         name: d.name ?? "Ukjent",
@@ -436,7 +424,7 @@ async function snapshotFromSession(
         zone: d.zone ?? null,
         available: d.available !== false,
         driverUri: d.driverUri ?? d.driverId ?? d.driver?.uri ?? d.driver?.id ?? null,
-        capabilities: caps,
+        capabilities: extractCapabilityMeta(d.capabilitiesObj ?? d.capabilities_obj),
       };
     });
 
@@ -453,18 +441,6 @@ function mapSnapshotFromRaw(raw: HomeyRawSnapshot): HomeySnapshot {
   }));
 
   const devices: HomeyDeviceSnapshot[] = raw.devicesRaw.map((d: any, i: number) => {
-    const caps: Record<string, { value: HomeyCapValue }> = {};
-    const obj = d.capabilitiesObj ?? d.capabilities_obj ?? {};
-    if (obj && typeof obj === "object" && !Array.isArray(obj)) {
-      for (const [capId, capVal] of Object.entries(obj)) {
-        const v = (capVal as any)?.value;
-        caps[capId] =
-          typeof v === "string" || typeof v === "number" || typeof v === "boolean"
-            ? { value: v }
-            : { value: null };
-      }
-    }
-
     return {
       id: d.id ?? d._id ?? String(i),
       name: d.name ?? "Ukjent",
@@ -472,7 +448,7 @@ function mapSnapshotFromRaw(raw: HomeyRawSnapshot): HomeySnapshot {
       zone: d.zone ?? null,
       available: d.available !== false,
       driverUri: d.driverUri ?? d.driverId ?? d.driver?.uri ?? d.driver?.id ?? null,
-      capabilities: caps,
+      capabilities: extractCapabilityMeta(d.capabilitiesObj ?? d.capabilities_obj),
     };
   });
 
