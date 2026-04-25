@@ -813,7 +813,7 @@ function buildNightlyOutlook(
 ): NightSummary[] {
   const out: NightSummary[] = [];
   const today = new Date();
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 3; i++) {
     const d = new Date(today.getTime() + i * 86400000);
     const t = sunTimes(d, HYTTA_LAT, HYTTA_LON);
     const next = sunTimes(new Date(d.getTime() + 86400000), HYTTA_LAT, HYTTA_LON);
