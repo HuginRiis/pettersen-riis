@@ -166,13 +166,17 @@ export function getCurrentRequestIp(): string | null {
   }
 }
 
-export async function logLoginAttempt(success: boolean) {
+export async function logLoginAttempt(success: boolean, who?: string | null) {
   try {
     const req = getRequest();
     const ua = req.headers.get("user-agent") ?? "";
     const ip = parseClientIpFromHeaders(req.headers);
     const uaInfo = parseUserAgent(ua);
     const geo = await lookupGeo(ip);
+    const sanitizedWho =
+      typeof who === "string" && who.trim().length > 0 && who.trim().length <= 40 && who.trim() !== "Alle"
+        ? who.trim()
+        : null;
     await supabaseAdmin.from("visitor_login_attempts" as any).insert({
       success,
       ip: geo.ip,
@@ -186,6 +190,7 @@ export async function logLoginAttempt(success: boolean) {
       device_type: uaInfo.deviceType,
       os: uaInfo.os,
       browser: uaInfo.browser,
+      who: sanitizedWho,
     });
   } catch {
     // never fail login flow because of analytics
