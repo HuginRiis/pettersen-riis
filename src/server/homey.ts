@@ -153,6 +153,16 @@ async function fetchTokenLike(url: string, init: RequestInit): Promise<string> {
 
 export type HomeyCapValue = string | number | boolean | null;
 
+export type HomeyCapabilityEnumValue = { id: string; title?: string };
+
+export type HomeyCapabilityMeta = {
+  value: HomeyCapValue;
+  min?: number;
+  max?: number;
+  step?: number;
+  values?: HomeyCapabilityEnumValue[];
+};
+
 export type HomeyDeviceSnapshot = {
   id: string;
   name: string;
@@ -161,7 +171,7 @@ export type HomeyDeviceSnapshot = {
   available?: boolean;
   /** Driver/app-identifikator (f.eks. "homey:app:com.philips.hue") — brukes for å skille merker som Philips Hue. */
   driverUri?: string | null;
-  capabilities: Record<string, { value: HomeyCapValue }>;
+  capabilities: Record<string, HomeyCapabilityMeta>;
 };
 
 export type HomeyZone = { id: string; name: string };
@@ -407,18 +417,6 @@ async function snapshotFromSession(
         : [];
 
     const devices: HomeyDeviceSnapshot[] = devicesList.map((d: any, i: number) => {
-      const caps: Record<string, { value: HomeyCapValue }> = {};
-      const obj = d.capabilitiesObj ?? d.capabilities_obj ?? {};
-      if (obj && typeof obj === "object" && !Array.isArray(obj)) {
-        for (const [capId, capVal] of Object.entries(obj)) {
-          const v = (capVal as any)?.value;
-          caps[capId] =
-            typeof v === "string" || typeof v === "number" || typeof v === "boolean"
-              ? { value: v }
-              : { value: null };
-        }
-      }
-
       return {
         id: d.id ?? d._id ?? String(i),
         name: d.name ?? "Ukjent",
@@ -426,7 +424,7 @@ async function snapshotFromSession(
         zone: d.zone ?? null,
         available: d.available !== false,
         driverUri: d.driverUri ?? d.driverId ?? d.driver?.uri ?? d.driver?.id ?? null,
-        capabilities: caps,
+        capabilities: extractCapabilityMeta(d.capabilitiesObj ?? d.capabilities_obj),
       };
     });
 
@@ -443,18 +441,6 @@ function mapSnapshotFromRaw(raw: HomeyRawSnapshot): HomeySnapshot {
   }));
 
   const devices: HomeyDeviceSnapshot[] = raw.devicesRaw.map((d: any, i: number) => {
-    const caps: Record<string, { value: HomeyCapValue }> = {};
-    const obj = d.capabilitiesObj ?? d.capabilities_obj ?? {};
-    if (obj && typeof obj === "object" && !Array.isArray(obj)) {
-      for (const [capId, capVal] of Object.entries(obj)) {
-        const v = (capVal as any)?.value;
-        caps[capId] =
-          typeof v === "string" || typeof v === "number" || typeof v === "boolean"
-            ? { value: v }
-            : { value: null };
-      }
-    }
-
     return {
       id: d.id ?? d._id ?? String(i),
       name: d.name ?? "Ukjent",
@@ -462,7 +448,7 @@ function mapSnapshotFromRaw(raw: HomeyRawSnapshot): HomeySnapshot {
       zone: d.zone ?? null,
       available: d.available !== false,
       driverUri: d.driverUri ?? d.driverId ?? d.driver?.uri ?? d.driver?.id ?? null,
-      capabilities: caps,
+      capabilities: extractCapabilityMeta(d.capabilitiesObj ?? d.capabilities_obj),
     };
   });
 
@@ -890,6 +876,38 @@ export const getDoorsLocksSnapshot = createServerFn({ method: "GET" }).handler(
   },
 );
 
+function extractCapabilityMeta(
+  obj: any,
+): Record<string, HomeyCapabilityMeta> {
+  const out: Record<string, HomeyCapabilityMeta> = {};
+  if (!obj || typeof obj !== "object" || Array.isArray(obj)) return out;
+  for (const [capId, capVal] of Object.entries(obj as Record<string, any>)) {
+    const v = capVal?.value;
+    const value: HomeyCapValue =
+      typeof v === "string" || typeof v === "number" || typeof v === "boolean" ? v : null;
+    const entry: HomeyCapabilityMeta = { value };
+    if (typeof capVal?.min === "number") entry.min = capVal.min;
+    if (typeof capVal?.max === "number") entry.max = capVal.max;
+    if (typeof capVal?.step === "number") entry.step = capVal.step;
+    const valuesRaw = capVal?.values;
+    if (Array.isArray(valuesRaw)) {
+      const cleaned: HomeyCapabilityEnumValue[] = [];
+      for (const item of valuesRaw) {
+        if (typeof item === "string") cleaned.push({ id: item });
+        else if (item && typeof item === "object" && typeof item.id === "string") {
+          let title: string | undefined;
+          if (typeof item.title === "string") title = item.title;
+          else if (typeof item?.title?.no === "string") title = item.title.no;
+          else if (typeof item?.title?.en === "string") title = item.title.en;
+          cleaned.push(title ? { id: item.id, title } : { id: item.id });
+        }
+      }
+      if (cleaned.length > 0) entry.values = cleaned;
+    }
+    out[capId] = entry;
+  }
+  return out;
+}
 
 // ============================================================
 // Camera snapshot (Netatmo / generic Homey camera devices)
