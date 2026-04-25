@@ -587,8 +587,6 @@ function HallCard({
   locked?: boolean;
 }) {
   const disablePreload = to === "/smarthus" || to === "/var" || to === "/steintavle";
-  const { isFavorite, toggleFavorite } = useFavorites();
-  const fav = isFavorite(to);
 
   // Shared background layer (image + dark overlay so text remains readable)
   const bgLayer = (
