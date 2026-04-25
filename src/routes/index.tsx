@@ -241,21 +241,22 @@ function Home() {
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
-          <HallCard to="/var" title="Værens budskap" desc="Værmelding for Skien og hytta." icon="🌨" locked={false} />
-          <HallCard to="/pollen" title="Pollen" desc="Dagens pollen i lufta." icon="🌾" locked={false} />
-          <HallCard to="/turer" title="Ferden" desc="Tips til turer i nærheten." icon="🧭" locked={false} />
-          <HallCard to="/agenda" title="Krøniken" desc="Agenda og meldinger med dato og emne." icon="📜" locked={!isAuthed} />
-          <HallCard to="/varsler" title="Farevarsler" desc="Aktive farevarsler og trafikkmeldinger." icon="⚠️" locked={false} />
-          <HallCard to="/vakttarnet" title="Vakttårnet" desc="Vaktene rapporterer hvem som nærmer seg porten." icon="👁" locked={!isAuthed} />
-          <HallCard to="/hytta" title="Hytta" desc="Husets tilflukt i fjellet." icon="🏔" locked={false} />
-          <HallCard to="/hundene" title="Hundene" desc="Husets tro følgesvenner." icon="🐺" locked={!isAuthed} />
-          <HallCard to="/trening" title="Treningssalen" desc="Kroppen som rustning." icon="⚔️" locked={!isAuthed} />
-          <HallCard to="/smarthus" title="Smartborg" desc="Lys, varme og varslere fra Homey." icon="🏰" locked={!isAuthed} />
-          <HallCard to="/stromkroniken" title="Strømkrøniken" desc="Husets strømgull — kostnader, forbruk og priser." icon="⚡" locked={!isAuthed} />
-          <HallCard to="/matvarer" title="Matvarekrøniken" desc="Søk og sammenlign priser i norske butikker." icon="🛒" locked={!isAuthed} />
-          <HallCard to="/steintavle" title="Steintavle" desc="Husets innskrifter og notater." icon="🪨" locked={!isAuthed} />
-          <HallCard to="/oppussing-borgen" title="Prosjekter på Borgen" desc="Prosjekter, planer og bilder fra borgen." icon="🔨" locked={!isAuthed} />
-          <HallCard to="/oppussing-hytta" title="Prosjekter på hytta" desc="Prosjekter, planer og bilder fra hytta." icon="🪵" locked={!isAuthed} />
+          <HallCard to="/var" title="Værens budskap" desc="Værmelding for Skien og hytta." icon="🌨" image={hallVar} locked={false} />
+          <HallCard to="/pollen" title="Pollen" desc="Dagens pollen i lufta." icon="🌾" image={hallPollen} locked={false} />
+          <HallCard to="/turer" title="Ferden" desc="Tips til turer i nærheten." icon="🧭" image={hallTurer} locked={false} />
+          <HallCard to="/got-saga" title="Westeros" desc="Sagaen om de syv kongeriker." icon="🐉" image={hallWesteros} locked={false} />
+          <HallCard to="/agenda" title="Krøniken" desc="Agenda og meldinger med dato og emne." icon="📜" image={hallAgenda} locked={!isAuthed} />
+          <HallCard to="/varsler" title="Farevarsler" desc="Aktive farevarsler og trafikkmeldinger." icon="⚠️" image={hallVarsler} locked={false} />
+          <HallCard to="/vakttarnet" title="Vakttårnet" desc="Vaktene rapporterer hvem som nærmer seg porten." icon="👁" image={hallVakttarnet} locked={!isAuthed} />
+          <HallCard to="/hytta" title="Hytta" desc="Husets tilflukt i fjellet." icon="🏔" image={hallHytta} locked={false} />
+          <HallCard to="/hundene" title="Hundene" desc="Husets tro følgesvenner." icon="🐺" image={hallHundene} locked={!isAuthed} />
+          <HallCard to="/trening" title="Treningssalen" desc="Kroppen som rustning." icon="⚔️" image={hallTrening} locked={!isAuthed} />
+          <HallCard to="/smarthus" title="Smartborg" desc="Lys, varme og varslere fra Homey." icon="🏰" image={hallSmarthus} locked={!isAuthed} />
+          <HallCard to="/stromkroniken" title="Strømkrøniken" desc="Husets strømgull — kostnader, forbruk og priser." icon="⚡" image={hallStrom} locked={!isAuthed} />
+          <HallCard to="/matvarer" title="Matvarekrøniken" desc="Søk og sammenlign priser i norske butikker." icon="🛒" image={hallMatvarer} locked={!isAuthed} />
+          <HallCard to="/steintavle" title="Steintavle" desc="Husets innskrifter og notater." icon="🪨" image={hallSteintavle} locked={!isAuthed} />
+          <HallCard to="/oppussing-borgen" title="Prosjekter på Borgen" desc="Prosjekter, planer og bilder fra borgen." icon="🔨" image={hallOppussingBorgen} locked={!isAuthed} />
+          <HallCard to="/oppussing-hytta" title="Prosjekter på hytta" desc="Prosjekter, planer og bilder fra hytta." icon="🪵" image={hallOppussingHytta} locked={!isAuthed} />
         </div>
       </section>
     </PageShell>
