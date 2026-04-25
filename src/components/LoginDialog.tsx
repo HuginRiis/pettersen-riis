@@ -150,8 +150,47 @@ export function LoginDialog() {
             </p>
           </div>
 
-          {/* Last visit info */}
-          <div className="rounded-md border border-primary/20 bg-primary/5 px-4 py-3 mb-5 space-y-2 text-xs">
+          {/* Password / logout — TOP */}
+          {info?.authenticated ? (
+            <div className="space-y-3 mb-5">
+              <Button onClick={onLogout} disabled={loading} variant="outline" className="w-full">
+                <LogOut className="w-4 h-4 mr-2" />
+                {loading ? "Lukker porten…" : "Logg ut"}
+              </Button>
+              <Button onClick={() => setOpen(false)} className="w-full">
+                Fortsett i borgen
+              </Button>
+            </div>
+          ) : (
+            <form onSubmit={onSubmit} className="space-y-4 mb-5">
+              <div>
+                <label className="block text-xs tracking-wider uppercase text-muted-foreground mb-2">
+                  Husets passord
+                </label>
+                <Input
+                  type="password"
+                  autoFocus
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="bg-background/60"
+                />
+              </div>
+              {error && (
+                <div className="text-sm text-destructive border border-destructive/40 rounded-md px-3 py-2 bg-destructive/10">
+                  {error}
+                </div>
+              )}
+              <Button type="submit" disabled={loading || !password} className="w-full">
+                <LogIn className="w-4 h-4 mr-2" />
+                {loading ? "Åpner porten…" : "Logg inn"}
+              </Button>
+            </form>
+          )}
+
+          {/* Last visit info — BOTTOM */}
+          <div className="rounded-md border border-primary/20 bg-primary/5 px-4 py-3 space-y-2 text-xs">
             {infoLoading && !info ? (
               <p className="text-muted-foreground text-center">Henter krønikene…</p>
             ) : (
@@ -188,45 +227,6 @@ export function LoginDialog() {
               </>
             )}
           </div>
-
-          {/* Logged in: show logout. Logged out: show login form. */}
-          {info?.authenticated ? (
-            <div className="space-y-3">
-              <Button onClick={onLogout} disabled={loading} variant="outline" className="w-full">
-                <LogOut className="w-4 h-4 mr-2" />
-                {loading ? "Lukker porten…" : "Logg ut"}
-              </Button>
-              <Button onClick={() => setOpen(false)} className="w-full">
-                Fortsett i borgen
-              </Button>
-            </div>
-          ) : (
-            <form onSubmit={onSubmit} className="space-y-4">
-              <div>
-                <label className="block text-xs tracking-wider uppercase text-muted-foreground mb-2">
-                  Husets passord
-                </label>
-                <Input
-                  type="password"
-                  autoFocus
-                  autoComplete="current-password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="bg-background/60"
-                />
-              </div>
-              {error && (
-                <div className="text-sm text-destructive border border-destructive/40 rounded-md px-3 py-2 bg-destructive/10">
-                  {error}
-                </div>
-              )}
-              <Button type="submit" disabled={loading || !password} className="w-full">
-                <LogIn className="w-4 h-4 mr-2" />
-                {loading ? "Åpner porten…" : "Logg inn"}
-              </Button>
-            </form>
-          )}
 
           <p className="text-center text-xs text-muted-foreground tracking-wider pt-4">
             «Vinteren tilhører oss»
