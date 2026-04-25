@@ -441,9 +441,17 @@ export function HeatersPanel({
                         heater={h}
                         busy={busy}
                         compact={compact}
+                        unit={unit}
                         onSetTemp={(v) => sendCap(h.id, "target_temperature", v)}
                         onToggle={(v) => sendCap(h.id, "onoff", v)}
                         onSetMode={(v) => sendCap(h.id, "thermostat_mode", v)}
+                        onSetFan={(v) =>
+                          sendCap(
+                            h.id,
+                            h.fanSpeedValues || h.fanSpeed !== undefined ? "fan_speed" : "fan_mode",
+                            v,
+                          )
+                        }
                       />
                     ))}
                   </div>
