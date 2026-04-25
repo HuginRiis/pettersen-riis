@@ -41,6 +41,11 @@ type Ovation = {
   probabilityHere: number;
   observedAt: string;
 };
+type LongRangeDay = {
+  date: Date;        // UTC dato (00:00 UTC)
+  largestKp: number; // 0..9
+  aIndex: number;    // planetary A index
+};
 
 type FetchState =
   | { status: "loading" }
@@ -52,6 +57,7 @@ type FetchState =
       ovation: Ovation | null;
       clouds: CloudHour[];
       sun: { sunset: Date | null; sunrise: Date | null };
+      longRange: LongRangeDay[];
     }
   | { status: "error"; message: string };
 
@@ -174,6 +180,7 @@ async function fetchAuroraData(): Promise<{
   ovation: Ovation | null;
   clouds: CloudHour[];
   sun: { sunset: Date | null; sunrise: Date | null };
+  longRange: LongRangeDay[];
 }> {
   // 1) Kp nå
   const nowRes = await fetch(
@@ -329,7 +336,8 @@ async function fetchAuroraData(): Promise<{
         properties?: { timeseries?: Array<{ time?: string; data?: { instant?: { details?: { cloud_area_fraction?: number } } } }> };
       };
       const ts = met.properties?.timeseries ?? [];
-      for (const t of ts.slice(0, 24)) {
+      // Hent ~96 timer for å dekke skydekke for de neste 3-4 nettene
+      for (const t of ts.slice(0, 96)) {
         const time = t.time;
         const c = t.data?.instant?.details?.cloud_area_fraction;
         if (typeof time === "string" && typeof c === "number") {
@@ -351,7 +359,41 @@ async function fetchAuroraData(): Promise<{
     sunrise: tomorrowTimes.sunrise ?? tonight.sunrise,
   };
 
-  return { now: kpNow, forecast, wind, ovation, clouds, sun };
+  // 7) NOAA 27-dagers prognose (daglig "Largest Kp")
+  const longRange: LongRangeDay[] = [];
+  try {
+    const lrRes = await fetch(
+      "https://services.swpc.noaa.gov/text/27-day-outlook.txt",
+      { cache: "no-store" },
+    );
+    if (lrRes.ok) {
+      const text = await lrRes.text();
+      const lines = text.split("\n");
+      const monthMap: Record<string, number> = {
+        Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5,
+        Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11,
+      };
+      for (const raw of lines) {
+        const line = raw.trim();
+        if (!line || line.startsWith("#") || line.startsWith(":")) continue;
+        // Format: "2026 Apr 20     105          18          4"
+        const m = line.match(/^(\d{4})\s+(\w{3})\s+(\d{1,2})\s+(\d+)\s+(\d+)\s+(\d+)\s*$/);
+        if (!m) continue;
+        const year = Number(m[1]);
+        const mon = monthMap[m[2]!];
+        const day = Number(m[3]);
+        const aIndex = Number(m[5]);
+        const largestKp = Number(m[6]);
+        if (mon === undefined || !Number.isFinite(year) || !Number.isFinite(day)) continue;
+        const date = new Date(Date.UTC(year, mon, day));
+        longRange.push({ date, largestKp, aIndex });
+      }
+    }
+  } catch {
+    /* ignorer — langtidsprognose er ikke kritisk */
+  }
+
+  return { now: kpNow, forecast, wind, ovation, clouds, sun, longRange };
 }
 
 export function AuroraPanel() {
@@ -493,6 +535,8 @@ export function AuroraPanel() {
               {peak && peak.kp >= 3 && <PeakCard peak={peak} />}
 
               <NightlyOutlook forecast={state.forecast} clouds={state.clouds} />
+
+              <BestNightCard longRange={state.longRange} />
 
               <MultiDayKpChart forecast={state.forecast} />
 
@@ -769,7 +813,7 @@ function buildNightlyOutlook(
 ): NightSummary[] {
   const out: NightSummary[] = [];
   const today = new Date();
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < 5; i++) {
     const d = new Date(today.getTime() + i * 86400000);
     const t = sunTimes(d, HYTTA_LAT, HYTTA_LON);
     const next = sunTimes(new Date(d.getTime() + 86400000), HYTTA_LAT, HYTTA_LON);
@@ -841,7 +885,7 @@ function NightlyOutlook({
       <div className="text-[10px] tracking-[0.3em] uppercase text-primary/80 mb-2">
         Sjanse de neste nettene · Hytta
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
         {nights.map((n, i) => {
           const c = n.peakKp !== null ? classifyKp(n.peakKp, HYTTA_LAT) : null;
           const scoreColor =
@@ -1050,3 +1094,104 @@ function MultiDayKpChart({ forecast }: { forecast: KpForecast[] }) {
     </div>
   );
 }
+
+// --- Beste nordlysnatt innen 30 dager (NOAA 27-dagers prognose) ---
+function BestNightCard({ longRange }: { longRange: LongRangeDay[] }) {
+  const best = useMemo(() => {
+    if (!longRange || longRange.length === 0) return null;
+    const todayUtc = Date.UTC(
+      new Date().getUTCFullYear(),
+      new Date().getUTCMonth(),
+      new Date().getUTCDate(),
+    );
+    // Filtrer til fremtidige dager (inkluder i dag), maks 30
+    const upcoming = longRange
+      .filter((d) => d.date.getTime() >= todayUtc)
+      .slice(0, 30);
+    if (upcoming.length === 0) return null;
+    let bestDay = upcoming[0]!;
+    for (const d of upcoming) {
+      if (d.largestKp > bestDay.largestKp) bestDay = d;
+    }
+    // Topp 3 (sortert etter Kp)
+    const top = [...upcoming]
+      .sort((a, b) => b.largestKp - a.largestKp || a.date.getTime() - b.date.getTime())
+      .slice(0, 3);
+    return { bestDay, top, total: upcoming.length };
+  }, [longRange]);
+
+  if (!best) return null;
+
+  const c = classifyKp(best.bestDay.largestKp, HYTTA_LAT);
+  const dayFmt = new Intl.DateTimeFormat("nb-NO", {
+    timeZone: "Europe/Oslo",
+    weekday: "long",
+    day: "2-digit",
+    month: "long",
+  });
+  const shortFmt = new Intl.DateTimeFormat("nb-NO", {
+    timeZone: "Europe/Oslo",
+    weekday: "short",
+    day: "2-digit",
+    month: "2-digit",
+  });
+
+  return (
+    <div
+      className="rounded-lg p-4"
+      style={{
+        background: `linear-gradient(135deg, color-mix(in oklab, ${c.color} 16%, transparent), color-mix(in oklab, ${c.color} 4%, transparent))`,
+        border: `1px solid color-mix(in oklab, ${c.color} 32%, transparent)`,
+      }}
+    >
+      <div className="flex items-center gap-2 mb-1">
+        <Sparkles className="h-4 w-4" style={{ color: c.color }} />
+        <div className="text-[10px] tracking-[0.3em] uppercase text-primary/80">
+          Beste nordlysnatt · neste 30 dager
+        </div>
+      </div>
+      <div className="text-medieval text-2xl mb-1" style={{ color: c.color }}>
+        {dayFmt.format(best.bestDay.date)}
+      </div>
+      <div className="flex items-baseline gap-3 flex-wrap mb-3">
+        <div className="text-medieval text-3xl tabular-nums" style={{ color: c.color }}>
+          Kp {best.bestDay.largestKp}
+        </div>
+        <div className="text-sm text-foreground/85">{c.label}</div>
+        <div className="text-[11px] text-muted-foreground">
+          A-indeks {best.bestDay.aIndex}
+        </div>
+      </div>
+
+      <div className="text-[10px] tracking-[0.25em] uppercase text-primary/70 mb-1.5">
+        Topp 3 i perioden
+      </div>
+      <div className="grid grid-cols-3 gap-2">
+        {best.top.map((d, i) => {
+          const cc = classifyKp(d.largestKp, HYTTA_LAT);
+          return (
+            <div
+              key={i}
+              className="rounded bg-card/40 border border-border/60 p-2 text-center"
+            >
+              <div className="text-[9px] uppercase tracking-wider text-muted-foreground">
+                {shortFmt.format(d.date)}
+              </div>
+              <div
+                className="text-medieval text-lg tabular-nums mt-0.5"
+                style={{ color: cc.color }}
+              >
+                Kp {d.largestKp}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <p className="text-[11px] text-muted-foreground/85 mt-2 leading-snug">
+        Henter NOAAs 27-dagers utsikt — daglig høyeste forventet Kp. Husk at langtidsprognoser
+        for solaktivitet er usikre, men gir en pekepinn på når sjansen er størst.
+      </p>
+    </div>
+  );
+}
+
