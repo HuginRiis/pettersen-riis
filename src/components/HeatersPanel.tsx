@@ -496,36 +496,106 @@ const QLIMA_DEFAULT_MODES: HomeyCapabilityEnumValue[] = [
   { id: "fan", title: "Vifte" },
 ];
 
+function cToF(c: number): number {
+  return c * 1.8 + 32;
+}
+function fToC(f: number): number {
+  return (f - 32) / 1.8;
+}
+function formatTempForDisplay(c: number, unit: "C" | "F"): string {
+  const v = unit === "F" ? cToF(c) : c;
+  return v.toFixed(1);
+}
+
+function UnitToggle({
+  unit,
+  onChange,
+}: {
+  unit: "C" | "F";
+  onChange: (u: "C" | "F") => void;
+}) {
+  return (
+    <div
+      role="group"
+      aria-label="Velg temperaturenhet"
+      className="inline-flex rounded-full overflow-hidden text-[10px] tracking-[0.2em] uppercase shrink-0"
+      style={{
+        border: `1px solid color-mix(in oklab, var(--gold) 28%, transparent)`,
+      }}
+    >
+      {(["C", "F"] as const).map((u) => {
+        const active = u === unit;
+        return (
+          <button
+            key={u}
+            type="button"
+            onClick={() => onChange(u)}
+            className="px-2.5 py-1 transition-colors"
+            style={{
+              background: active
+                ? `color-mix(in oklab, var(--gold) 22%, transparent)`
+                : "transparent",
+              color: active ? "var(--gold)" : "var(--muted-foreground)",
+            }}
+          >
+            °{u}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 function HeaterCard({
   heater,
   busy,
   compact = false,
+  unit,
   onSetTemp,
   onToggle,
   onSetMode,
+  onSetFan,
 }: {
   heater: HeaterDevice;
   busy: Record<string, boolean>;
   compact?: boolean;
+  unit: "C" | "F";
   onSetTemp: (v: number) => void;
   onToggle: (v: boolean) => void;
   onSetMode: (v: string) => void;
+  onSetFan: (v: string | number) => void;
 }) {
   const accent = "var(--gold)";
   const tempBusy = busy[`${heater.id}:target_temperature`];
   const onoffBusy = busy[`${heater.id}:onoff`];
   const modeBusy = busy[`${heater.id}:thermostat_mode`];
+  const fanBusy =
+    busy[`${heater.id}:fan_speed`] || busy[`${heater.id}:fan_mode`];
   const isOn = heater.onoff !== false;
 
   const supportsMode =
     heater.thermostatMode !== undefined ||
-    (heater.thermostatModeValues?.length ?? 0) > 0;
+    (heater.thermostatModeValues?.length ?? 0) > 0 ||
+    heater.isQlima;
   const modes =
     heater.thermostatModeValues?.length
       ? heater.thermostatModeValues
       : supportsMode
         ? QLIMA_DEFAULT_MODES
         : [];
+
+  const supportsFan =
+    heater.fanSpeed !== undefined || (heater.fanSpeedValues?.length ?? 0) > 0;
+  const fanValues: HomeyCapabilityEnumValue[] = heater.fanSpeedValues?.length
+    ? heater.fanSpeedValues
+    : supportsFan && heater.isQlima
+      ? [
+          { id: "auto", title: "Auto" },
+          { id: "low", title: "Lav" },
+          { id: "medium", title: "Med" },
+          { id: "high", title: "Høy" },
+        ]
+      : [];
 
   // Lokalt slider-state for jevn dragging — committer ved release
   const [localTemp, setLocalTemp] = useState<number | null>(null);
@@ -562,6 +632,11 @@ function HeaterCard({
   const btnPad = compact ? "py-1.5 sm:py-2.5" : "py-2.5";
   const onoffPad = compact ? "px-3 py-1 sm:px-4 sm:py-1.5 text-[9px] sm:text-[10px]" : "px-4 py-1.5 text-[10px]";
 
+  const stepLabel =
+    unit === "F"
+      ? `${(heater.step * 1.8).toFixed(heater.step >= 1 ? 1 : 1)}°`
+      : `${heater.step}°`;
+
   return (
     <article className="panel rounded-lg overflow-hidden flex flex-col">
       <div className={`${headerPad} border-b border-border flex items-center justify-between`}>
@@ -572,81 +647,96 @@ function HeaterCard({
           {heater.name}
         </span>
         <span className="hidden sm:inline text-[9px] tracking-[0.25em] text-muted-foreground/70 uppercase shrink-0 ml-2">
-          {isQlimaName(heater.name) ? "Qlima" : "Ovn"}
+          {heater.isQlima ? "Qlima" : "Ovn"}
         </span>
       </div>
       <div className={`flex-1 ${bodyPad} flex flex-col items-center justify-center ${bodyGap}`}>
         <Thermometer size={compact ? 14 : 18} className={compact ? "sm:size-[18px]" : ""} style={{ color: accent }} />
 
-        <div
-          className="text-display leading-none tabular-nums"
-          style={{ color: accent, fontSize: tempFontSize }}
-        >
-          {(heater.target ?? 0).toFixed(1)}°
-        </div>
-
-        {heater.measure !== undefined && (
-          <div className={`${measureText} tracking-[0.2em] sm:tracking-[0.25em] text-muted-foreground/80 uppercase text-center`}>
-            {compact ? `Nå ${heater.measure.toFixed(1)}°` : `Måler ${heater.measure.toFixed(1)}° nå`}
+        {heater.hasTarget ? (
+          <div
+            className="text-display leading-none tabular-nums"
+            style={{ color: accent, fontSize: tempFontSize }}
+          >
+            {formatTempForDisplay(heater.target ?? 0, unit)}°{unit}
+          </div>
+        ) : (
+          <div
+            className="text-display leading-none tabular-nums opacity-60"
+            style={{ color: accent, fontSize: tempFontSize }}
+          >
+            —
           </div>
         )}
 
-        <div className="w-full max-w-[260px] mt-0.5 sm:mt-1 px-1">
-          <input
-            type="range"
-            min={heater.min}
-            max={heater.max}
-            step={heater.step}
-            value={sliderValue}
-            onChange={(e) => setLocalTemp(parseFloat(e.target.value))}
-            onPointerUp={commitLocal}
-            onPointerCancel={() => setLocalTemp(null)}
-            onTouchEnd={commitLocal}
-            onMouseUp={commitLocal}
-            onKeyUp={commitLocal}
-            disabled={tempBusy}
-            aria-label="Velg temperatur"
-            className="w-full h-2 rounded-full appearance-none cursor-pointer disabled:opacity-50 touch-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-6 [&::-webkit-slider-thumb]:h-6 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[var(--thumb)] [&::-webkit-slider-thumb]:shadow-md [&::-moz-range-thumb]:w-6 [&::-moz-range-thumb]:h-6 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-[var(--thumb)] [&::-moz-range-thumb]:border-0"
-            style={{
-              background: `linear-gradient(to right, ${accent} 0%, ${accent} ${sliderPct}%, color-mix(in oklab, var(--foreground) 12%, transparent) ${sliderPct}%, color-mix(in oklab, var(--foreground) 12%, transparent) 100%)`,
-              ["--thumb" as any]: accent,
-            }}
-          />
-        </div>
-
-        <div className="grid grid-cols-3 gap-1.5 sm:gap-2 w-full max-w-[260px] mt-0.5 sm:mt-1">
-          <button
-            type="button"
-            onClick={() => adjust(-heater.step)}
-            disabled={tempBusy || (heater.target ?? 0) <= heater.min}
-            aria-label="Senk temperatur"
-            className={`rounded ${btnPad} flex items-center justify-center transition-all disabled:opacity-40 disabled:cursor-not-allowed active:scale-95`}
-            style={{
-              background: "color-mix(in oklab, var(--foreground) 6%, transparent)",
-              border: `1px solid color-mix(in oklab, ${accent} 30%, transparent)`,
-              color: accent,
-            }}
-          >
-            <Minus size={compact ? 14 : 18} />
-          </button>
-          <div className="flex items-center justify-center text-[9px] tracking-[0.2em] sm:tracking-[0.25em] uppercase text-muted-foreground">
-            {tempBusy ? <Loader2 size={12} className="animate-spin" /> : `${heater.step}°`}
+        {heater.measure !== undefined && (
+          <div className={`${measureText} tracking-[0.2em] sm:tracking-[0.25em] text-muted-foreground/80 uppercase text-center`}>
+            {compact
+              ? `Nå ${formatTempForDisplay(heater.measure, unit)}°${unit}`
+              : `Måler ${formatTempForDisplay(heater.measure, unit)}°${unit} nå`}
           </div>
-          <button
-            type="button"
-            onClick={() => adjust(heater.step)}
-            disabled={tempBusy || (heater.target ?? 0) >= heater.max}
-            aria-label="Hev temperatur"
-            className={`rounded ${btnPad} flex items-center justify-center transition-all disabled:opacity-40 disabled:cursor-not-allowed active:scale-95`}
-            style={{
-              background: "color-mix(in oklab, var(--foreground) 6%, transparent)",
-              border: `1px solid color-mix(in oklab, ${accent} 30%, transparent)`,
-              color: accent,
-            }}
-          >
-            <Plus size={compact ? 14 : 18} />
-          </button>
-        </div>
+        )}
+
+        {heater.hasTarget && (
+          <>
+            <div className="w-full max-w-[260px] mt-0.5 sm:mt-1 px-1">
+              <input
+                type="range"
+                min={heater.min}
+                max={heater.max}
+                step={heater.step}
+                value={sliderValue}
+                onChange={(e) => setLocalTemp(parseFloat(e.target.value))}
+                onPointerUp={commitLocal}
+                onPointerCancel={() => setLocalTemp(null)}
+                onTouchEnd={commitLocal}
+                onMouseUp={commitLocal}
+                onKeyUp={commitLocal}
+                disabled={tempBusy}
+                aria-label="Velg temperatur"
+                className="w-full h-2 rounded-full appearance-none cursor-pointer disabled:opacity-50 touch-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-6 [&::-webkit-slider-thumb]:h-6 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[var(--thumb)] [&::-webkit-slider-thumb]:shadow-md [&::-moz-range-thumb]:w-6 [&::-moz-range-thumb]:h-6 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-[var(--thumb)] [&::-moz-range-thumb]:border-0"
+                style={{
+                  background: `linear-gradient(to right, ${accent} 0%, ${accent} ${sliderPct}%, color-mix(in oklab, var(--foreground) 12%, transparent) ${sliderPct}%, color-mix(in oklab, var(--foreground) 12%, transparent) 100%)`,
+                  ["--thumb" as any]: accent,
+                }}
+              />
+            </div>
+
+            <div className="grid grid-cols-3 gap-1.5 sm:gap-2 w-full max-w-[260px] mt-0.5 sm:mt-1">
+              <button
+                type="button"
+                onClick={() => adjust(-heater.step)}
+                disabled={tempBusy || (heater.target ?? 0) <= heater.min}
+                aria-label="Senk temperatur"
+                className={`rounded ${btnPad} flex items-center justify-center transition-all disabled:opacity-40 disabled:cursor-not-allowed active:scale-95`}
+                style={{
+                  background: "color-mix(in oklab, var(--foreground) 6%, transparent)",
+                  border: `1px solid color-mix(in oklab, ${accent} 30%, transparent)`,
+                  color: accent,
+                }}
+              >
+                <Minus size={compact ? 14 : 18} />
+              </button>
+              <div className="flex items-center justify-center text-[9px] tracking-[0.2em] sm:tracking-[0.25em] uppercase text-muted-foreground">
+                {tempBusy ? <Loader2 size={12} className="animate-spin" /> : stepLabel}
+              </div>
+              <button
+                type="button"
+                onClick={() => adjust(heater.step)}
+                disabled={tempBusy || (heater.target ?? 0) >= heater.max}
+                aria-label="Hev temperatur"
+                className={`rounded ${btnPad} flex items-center justify-center transition-all disabled:opacity-40 disabled:cursor-not-allowed active:scale-95`}
+                style={{
+                  background: "color-mix(in oklab, var(--foreground) 6%, transparent)",
+                  border: `1px solid color-mix(in oklab, ${accent} 30%, transparent)`,
+                  color: accent,
+                }}
+              >
+                <Plus size={compact ? 14 : 18} />
+              </button>
+            </div>
+          </>
+        )}
 
         {supportsMode && modes.length > 0 && (
           <div className="w-full max-w-[260px] mt-1">
@@ -698,6 +788,54 @@ function HeaterCard({
           </div>
         )}
 
+        {supportsFan && fanValues.length > 0 && (
+          <div className="w-full max-w-[260px] mt-1">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground">
+                Vifte
+              </span>
+              {fanBusy && (
+                <Loader2 size={12} className="animate-spin text-muted-foreground" />
+              )}
+            </div>
+            <div
+              className="grid gap-1"
+              style={{ gridTemplateColumns: `repeat(${Math.min(fanValues.length, 5)}, minmax(0, 1fr))` }}
+            >
+              {fanValues.map((f) => {
+                const active =
+                  heater.fanSpeed !== undefined &&
+                  String(heater.fanSpeed).toLowerCase() === String(f.id).toLowerCase();
+                return (
+                  <button
+                    key={f.id}
+                    type="button"
+                    onClick={() => {
+                      if (active || fanBusy) return;
+                      onSetFan(f.id);
+                    }}
+                    disabled={fanBusy}
+                    aria-label={`Vifte ${f.title ?? f.id}`}
+                    title={f.title ?? f.id}
+                    className="rounded py-1.5 flex items-center justify-center transition-all disabled:opacity-50 active:scale-95"
+                    style={{
+                      background: active
+                        ? `color-mix(in oklab, ${accent} 22%, transparent)`
+                        : "color-mix(in oklab, var(--foreground) 6%, transparent)",
+                      border: `1px solid color-mix(in oklab, ${accent} ${active ? 55 : 18}%, transparent)`,
+                      color: active ? accent : "var(--muted-foreground)",
+                    }}
+                  >
+                    <span className="text-[8px] tracking-[0.15em] uppercase">
+                      {f.title ?? f.id}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {heater.onoff !== undefined && (
           <button
             type="button"
@@ -720,6 +858,8 @@ function HeaterCard({
   );
 }
 
+// referert i HeaterCard via heater.isQlima — beholder for bakoverkompat hvis brukt andre steder
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function isQlimaName(name: string): boolean {
   return name.toLowerCase().includes("qlima");
 }
