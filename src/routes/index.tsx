@@ -1,7 +1,8 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { openLoginDialog } from "@/components/LoginDialog";
-import { KeyRound } from "lucide-react";
+import { KeyRound, LogIn, Clock, MapPin, User } from "lucide-react";
+import { getWelcomeInfo } from "@/server/auth";
 import {
   Dialog,
   DialogContent,
@@ -656,6 +657,70 @@ function HallCard({
   );
 }
 
+type WelcomeInfo = {
+  authenticated: boolean;
+  who: string | null;
+  ip: string | null;
+  lastLoginAt: string | null;
+  lastSeenAt: string | null;
+};
+
+function formatNo(dt: string | null): string {
+  if (!dt) return "—";
+  try {
+    const d = new Date(dt);
+    return d.toLocaleString("nb-NO", {
+      day: "2-digit",
+      month: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return dt;
+  }
+}
+
+function WelcomeInfoStrip({ info }: { info: WelcomeInfo | null }) {
+  if (!info) return null;
+  const name = info.who && info.who !== "Alle" ? info.who : info.ip ? `gjest (${info.ip})` : null;
+  return (
+    <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px]">
+      {name && (
+        <div className="flex items-start gap-2 rounded-md border border-primary/20 bg-primary/5 px-3 py-2">
+          <User className="w-3.5 h-3.5 mt-0.5 text-primary/70 shrink-0" />
+          <div className="min-w-0">
+            <div className="text-[9px] uppercase tracking-wider text-muted-foreground/80">Kjent som</div>
+            <div className="text-foreground truncate">{name}</div>
+          </div>
+        </div>
+      )}
+      <div className="flex items-start gap-2 rounded-md border border-primary/20 bg-primary/5 px-3 py-2">
+        <LogIn className="w-3.5 h-3.5 mt-0.5 text-primary/70 shrink-0" />
+        <div className="min-w-0">
+          <div className="text-[9px] uppercase tracking-wider text-muted-foreground/80">Sist innlogget</div>
+          <div className="text-foreground truncate">{formatNo(info.lastLoginAt)}</div>
+        </div>
+      </div>
+      <div className="flex items-start gap-2 rounded-md border border-primary/20 bg-primary/5 px-3 py-2">
+        <Clock className="w-3.5 h-3.5 mt-0.5 text-primary/70 shrink-0" />
+        <div className="min-w-0">
+          <div className="text-[9px] uppercase tracking-wider text-muted-foreground/80">Sist besøk</div>
+          <div className="text-foreground truncate">{formatNo(info.lastSeenAt)}</div>
+        </div>
+      </div>
+      {info.ip && !name && (
+        <div className="flex items-start gap-2 rounded-md border border-primary/20 bg-primary/5 px-3 py-2 sm:col-span-3">
+          <MapPin className="w-3.5 h-3.5 mt-0.5 text-primary/70 shrink-0" />
+          <div className="min-w-0">
+            <div className="text-[9px] uppercase tracking-wider text-muted-foreground/80">Din adresse</div>
+            <div className="text-foreground truncate">{info.ip}</div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function PortalGate({
   authenticated,
   onLogout,
@@ -663,29 +728,52 @@ function PortalGate({
   authenticated: boolean;
   onLogout: () => void;
 }) {
+  const [info, setInfo] = useState<WelcomeInfo | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    getWelcomeInfo()
+      .then((d) => {
+        if (!cancelled) setInfo(d as WelcomeInfo);
+      })
+      .catch(() => {
+        if (!cancelled) setInfo(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [authenticated]);
+
+  const greetingName = info?.who && info.who !== "Alle" ? info.who : null;
+
   if (authenticated) {
     return (
       <section className="container mx-auto px-4 pt-10">
-        <div className="max-w-3xl mx-auto panel rounded-lg p-5 sm:p-6 flex items-center justify-between gap-4 border border-primary/30">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full border border-primary/40 flex items-center justify-center text-primary text-lg shrink-0">
-              ❦
-            </div>
-            <div>
-              <div className="text-[10px] tracking-[0.3em] uppercase text-primary/80">
-                Borgen er åpne
+        <div className="max-w-3xl mx-auto panel rounded-lg p-5 sm:p-6 border border-primary/30">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full border border-primary/40 flex items-center justify-center text-primary text-lg shrink-0">
+                ❦
               </div>
-              <div className="text-sm sm:text-base text-foreground">
-                Velkommen, herskere av huset.
+              <div>
+                <div className="text-[10px] tracking-[0.3em] uppercase text-primary/80">
+                  Borgen er åpne
+                </div>
+                <div className="text-sm sm:text-base text-foreground">
+                  {greetingName
+                    ? `Velkommen tilbake, ${greetingName}.`
+                    : "Velkommen, herskere av huset."}
+                </div>
               </div>
             </div>
+            <button
+              onClick={onLogout}
+              className="text-xs tracking-[0.25em] uppercase text-muted-foreground hover:text-primary transition-colors px-3 py-2 border border-border rounded-md hover:border-primary/60 shrink-0"
+            >
+              Steng porten
+            </button>
           </div>
-          <button
-            onClick={onLogout}
-            className="text-xs tracking-[0.25em] uppercase text-muted-foreground hover:text-primary transition-colors px-3 py-2 border border-border rounded-md hover:border-primary/60"
-          >
-            Steng porten
-          </button>
+          <WelcomeInfoStrip info={info} />
         </div>
       </section>
     );
@@ -700,7 +788,7 @@ function PortalGate({
             ❦
           </div>
           <h2 className="text-display text-xl sm:text-2xl text-primary tracking-[0.2em] uppercase">
-            Vandreren er velkommen
+            {greetingName ? `Velkommen tilbake, ${greetingName}` : "Vandreren er velkommen"}
           </h2>
           <p className="mt-3 text-sm text-foreground/80 max-w-xl mx-auto">
             Værets ravner, pollenets bud og ferdens stier står åpne for alle.
@@ -715,6 +803,9 @@ function PortalGate({
               <KeyRound size={14} className="inline mr-1.5 -mt-0.5" />
               Tre inn i borgen
             </button>
+          </div>
+          <div className="max-w-xl mx-auto text-left">
+            <WelcomeInfoStrip info={info} />
           </div>
         </div>
       </div>
