@@ -33,14 +33,21 @@ type HeaterDevice = {
   id: string;
   name: string;
   zoneName: string;
+  isQlima: boolean;
   onoff?: boolean;
   target?: number;
   measure?: number;
   min: number;
   max: number;
   step: number;
+  hasTarget: boolean;
   thermostatMode?: string;
   thermostatModeValues?: HomeyCapabilityEnumValue[];
+  fanSpeed?: string | number;
+  fanSpeedValues?: HomeyCapabilityEnumValue[];
+  fanSpeedMin?: number;
+  fanSpeedMax?: number;
+  fanSpeedStep?: number;
 };
 
 type State =
