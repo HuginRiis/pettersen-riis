@@ -180,6 +180,7 @@ async function fetchAuroraData(): Promise<{
   ovation: Ovation | null;
   clouds: CloudHour[];
   sun: { sunset: Date | null; sunrise: Date | null };
+  longRange: LongRangeDay[];
 }> {
   // 1) Kp nå
   const nowRes = await fetch(
