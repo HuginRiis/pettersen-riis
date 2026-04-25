@@ -536,6 +536,8 @@ export function AuroraPanel() {
 
               <NightlyOutlook forecast={state.forecast} clouds={state.clouds} />
 
+              <BestNightCard longRange={state.longRange} />
+
               <MultiDayKpChart forecast={state.forecast} />
 
               <ForecastTimeline forecast={state.forecast} />
