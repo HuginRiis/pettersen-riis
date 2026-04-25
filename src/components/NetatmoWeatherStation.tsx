@@ -88,39 +88,39 @@ function ModuleCard({ m }: { m: WeatherModule }) {
   return (
     <article className="panel rounded-lg overflow-hidden flex flex-col">
       <div
-        className={`bg-gradient-to-br ${meta.accent} px-4 py-3 border-b border-border flex items-center justify-between`}
+        className={`bg-gradient-to-br ${meta.accent} px-2 py-2 sm:px-4 sm:py-3 border-b border-border flex items-center justify-between gap-1`}
       >
-        <div className="flex items-center gap-2.5">
-          <span className="text-2xl">{meta.sigil}</span>
-          <div>
-            <div className="text-[9px] tracking-[0.3em] uppercase text-primary/80">
+        <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-0">
+          <span className="text-base sm:text-2xl shrink-0">{meta.sigil}</span>
+          <div className="min-w-0">
+            <div className="text-[8px] sm:text-[9px] tracking-[0.25em] sm:tracking-[0.3em] uppercase text-primary/80 truncate">
               {meta.banner}
             </div>
-            <div className="text-sm text-foreground leading-tight">{m.name}</div>
+            <div className="text-[11px] sm:text-sm text-foreground leading-tight truncate">{m.name}</div>
           </div>
         </div>
         {!m.reachable && (
-          <span className="text-[9px] tracking-[0.2em] uppercase text-destructive">
+          <span className="text-[8px] sm:text-[9px] tracking-[0.2em] uppercase text-destructive shrink-0">
             Borte
           </span>
         )}
       </div>
 
-      <div className="p-4 flex-1 flex flex-col gap-3">
+      <div className="p-2 sm:p-4 flex-1 flex flex-col gap-2 sm:gap-3">
         {!isWind && !isRain && m.metrics.temperature !== undefined && (
           <div>
-            <div className="flex items-baseline gap-2">
-              <span className="text-display text-3xl text-foreground">
+            <div className="flex items-baseline gap-1.5 sm:gap-2 flex-wrap">
+              <span className="text-display text-xl sm:text-3xl text-foreground leading-none">
                 {fmt(m.metrics.temperature, 1)}°
               </span>
               {m.metrics.humidity !== undefined && (
-                <span className="text-sm text-muted-foreground">
+                <span className="text-[11px] sm:text-sm text-muted-foreground">
                   {fmt(m.metrics.humidity, 0, "%")} fukt
                 </span>
               )}
             </div>
             {(m.metrics.minTemp !== undefined || m.metrics.maxTemp !== undefined) && (
-              <div className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground mt-1">
+              <div className="text-[9px] sm:text-[10px] tracking-[0.15em] sm:tracking-[0.2em] uppercase text-muted-foreground mt-0.5 sm:mt-1">
                 ▼ {fmt(m.metrics.minTemp, 1)}° &nbsp;·&nbsp; ▲{" "}
                 {fmt(m.metrics.maxTemp, 1)}°
               </div>
@@ -128,7 +128,7 @@ function ModuleCard({ m }: { m: WeatherModule }) {
           </div>
         )}
 
-        <div className="grid grid-cols-2 gap-2 text-[11px]">
+        <div className="grid grid-cols-2 gap-1.5 sm:gap-2 text-[10px] sm:text-[11px]">
           {m.metrics.co2 !== undefined && (
             <Stat
               label="CO₂"
@@ -169,7 +169,7 @@ function ModuleCard({ m }: { m: WeatherModule }) {
         </div>
       </div>
 
-      <div className="px-4 py-2 border-t border-border flex items-center justify-between text-[10px] tracking-[0.2em] uppercase text-muted-foreground">
+      <div className="px-2 py-1.5 sm:px-4 sm:py-2 border-t border-border flex items-center justify-between text-[9px] sm:text-[10px] tracking-[0.15em] sm:tracking-[0.2em] uppercase text-muted-foreground">
         <span>↻ {ago(m.lastSeen)}</span>
         {m.battery !== undefined && (
           <span
