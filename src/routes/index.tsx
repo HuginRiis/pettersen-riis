@@ -638,22 +638,6 @@ function HallCard({
 
   return (
     <div className="relative">
-      <button
-        type="button"
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          void toggleFavorite(to, title, icon);
-        }}
-        className="absolute top-2 right-2 z-20 p-1.5 rounded-full bg-background/70 backdrop-blur border border-border hover:border-primary hover:bg-primary/10 transition-colors"
-        aria-label={fav ? `Fjern ${title} fra favoritter` : `Legg ${title} til favoritter`}
-        title={fav ? "Fjern fra favoritter" : "Legg til favoritter"}
-      >
-        <Star
-          size={14}
-          className={fav ? "fill-primary text-primary" : "text-muted-foreground"}
-        />
-      </button>
       <Link
         to={to}
         preload={disablePreload ? false : undefined}
