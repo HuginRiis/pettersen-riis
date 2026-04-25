@@ -1,14 +1,27 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, Thermometer, Minus, Plus, ChevronDown, Flame } from "lucide-react";
+import {
+  Loader2,
+  Thermometer,
+  Minus,
+  Plus,
+  ChevronDown,
+  Flame,
+  Sun,
+  Snowflake,
+  Wind,
+  Droplets,
+  RefreshCw,
+  Power,
+} from "lucide-react";
 import {
   getHomeySnapshot,
   setLivingRoomDeviceCapability,
   type HomeyDeviceSnapshot,
   type HomeyZone,
+  type HomeyCapabilityEnumValue,
 } from "@/server/homey";
 import { recordHomeyApiCall } from "@/lib/homey-api-tracker";
-import { Slider } from "@/components/ui/slider";
 
 // Skånsom polling — gjenbruker samme cache-vindu som Smarthus (3 min server-side).
 const REFRESH_MS = 3 * 60_000;
@@ -26,6 +39,8 @@ type HeaterDevice = {
   min: number;
   max: number;
   step: number;
+  thermostatMode?: string;
+  thermostatModeValues?: HomeyCapabilityEnumValue[];
 };
 
 type State =
@@ -38,6 +53,12 @@ function isHyttaZone(name: string): boolean {
   return n.includes("hytt");
 }
 
+function isQlimaDevice(d: HomeyDeviceSnapshot): boolean {
+  const driver = (d.driverUri ?? "").toLowerCase();
+  const name = d.name.toLowerCase();
+  return driver.includes("qlima") || name.includes("qlima");
+}
+
 function buildHeaters(
   devices: HomeyDeviceSnapshot[],
   zones: HomeyZone[],
@@ -46,28 +67,31 @@ function buildHeaters(
   const zoneById = new Map(zones.map((z) => [z.id, z.name]));
   const out: HeaterDevice[] = [];
   for (const d of devices) {
-    const tt = d.capabilities["target_temperature"]?.value;
-    if (typeof tt !== "number") continue;
+    const ttCap = d.capabilities["target_temperature"];
+    if (!ttCap || typeof ttCap.value !== "number") continue;
     const zoneName = d.zone ? zoneById.get(d.zone) ?? "" : "";
     const combined = `${d.name} ${zoneName}`.toLowerCase();
-    const belongsToHytta = isHyttaZone(zoneName) || combined.includes("hytt");
+    const belongsToHytta = isHyttaZone(zoneName) || combined.includes("hytt") || isQlimaDevice(d);
     if (location === "hytta" && !belongsToHytta) continue;
     if (location === "borg" && belongsToHytta) continue;
 
-    const onoffVal = d.capabilities["onoff"]?.value;
-    const measureVal = d.capabilities["measure_temperature"]?.value;
+    const onoffCap = d.capabilities["onoff"];
+    const measureCap = d.capabilities["measure_temperature"];
+    const modeCap = d.capabilities["thermostat_mode"];
 
     out.push({
       id: d.id,
       name: d.name,
       zoneName: zoneName || "Ukjent sal",
-      onoff: typeof onoffVal === "boolean" ? onoffVal : undefined,
-      target: tt,
-      measure: typeof measureVal === "number" ? measureVal : undefined,
-      // Snapshot eksponerer ikke min/max/step — bruk fornuftige defaults.
-      min: 5,
-      max: 30,
-      step: 0.5,
+      onoff: typeof onoffCap?.value === "boolean" ? onoffCap.value : undefined,
+      target: ttCap.value,
+      measure: typeof measureCap?.value === "number" ? measureCap.value : undefined,
+      min: typeof ttCap.min === "number" ? ttCap.min : 5,
+      max: typeof ttCap.max === "number" ? ttCap.max : 30,
+      step: typeof ttCap.step === "number" ? ttCap.step : 0.5,
+      thermostatMode:
+        typeof modeCap?.value === "string" ? modeCap.value : undefined,
+      thermostatModeValues: modeCap?.values,
     });
   }
   out.sort((a, b) => {
@@ -99,7 +123,7 @@ export function HeatersPanel({
   const [state, setState] = useState<State>({ status: "loading" });
   const [collapsed, setCollapsed] = useState<boolean>(collapsible && defaultCollapsed);
   const [overrides, setOverrides] = useState<
-    Record<string, { onoff?: boolean; target?: number }>
+    Record<string, { onoff?: boolean; target?: number; thermostatMode?: string }>
   >({});
   const [busy, setBusy] = useState<Record<string, boolean>>({});
 
@@ -135,9 +159,14 @@ export function HeatersPanel({
           for (const h of heaters) {
             const o = next[h.id];
             if (!o) continue;
-            const remaining: { onoff?: boolean; target?: number } = {};
+            const remaining: { onoff?: boolean; target?: number; thermostatMode?: string } = {};
             if (o.onoff !== undefined && o.onoff !== h.onoff) remaining.onoff = o.onoff;
             if (o.target !== undefined && o.target !== h.target) remaining.target = o.target;
+            if (
+              o.thermostatMode !== undefined &&
+              o.thermostatMode !== h.thermostatMode
+            )
+              remaining.thermostatMode = o.thermostatMode;
             if (Object.keys(remaining).length === 0) delete next[h.id];
             else next[h.id] = remaining;
           }
@@ -179,17 +208,23 @@ export function HeatersPanel({
   const sendCap = useCallback(
     async (
       heaterId: string,
-      capability: "onoff" | "target_temperature",
-      value: boolean | number,
+      capability: "onoff" | "target_temperature" | "thermostat_mode",
+      value: boolean | number | string,
     ) => {
       const key = `${heaterId}:${capability}`;
       if (busy[key]) return;
       setBusy((b) => ({ ...b, [key]: true }));
+      const overrideKey =
+        capability === "onoff"
+          ? "onoff"
+          : capability === "target_temperature"
+            ? "target"
+            : "thermostatMode";
       setOverrides((o) => ({
         ...o,
         [heaterId]: {
           ...(o[heaterId] ?? {}),
-          [capability === "onoff" ? "onoff" : "target"]: value,
+          [overrideKey]: value,
         },
       }));
       try {
@@ -203,8 +238,7 @@ export function HeatersPanel({
             const next = { ...o };
             const cur = next[heaterId];
             if (cur) {
-              if (capability === "onoff") delete cur.onoff;
-              else delete cur.target;
+              delete (cur as any)[overrideKey];
               if (Object.keys(cur).length === 0) delete next[heaterId];
             }
             return next;
@@ -226,7 +260,13 @@ export function HeatersPanel({
     if (state.status !== "ok") return [] as HeaterDevice[];
     return state.heaters.map((h) => {
       const o = overrides[h.id];
-      return o ? { ...h, ...o, target: o.target ?? h.target, onoff: o.onoff ?? h.onoff } : h;
+      if (!o) return h;
+      return {
+        ...h,
+        target: o.target ?? h.target,
+        onoff: o.onoff ?? h.onoff,
+        thermostatMode: o.thermostatMode ?? h.thermostatMode,
+      };
     });
   }, [state, overrides]);
 
@@ -335,6 +375,7 @@ export function HeatersPanel({
                         compact={compact}
                         onSetTemp={(v) => sendCap(h.id, "target_temperature", v)}
                         onToggle={(v) => sendCap(h.id, "onoff", v)}
+                        onSetMode={(v) => sendCap(h.id, "thermostat_mode", v)}
                       />
                     ))}
                   </div>
@@ -348,23 +389,79 @@ export function HeatersPanel({
   );
 }
 
+const MODE_META: { match: RegExp; label: string; Icon: typeof Sun }[] = [
+  { match: /auto/i, label: "Auto", Icon: RefreshCw },
+  { match: /heat|varm/i, label: "Varme", Icon: Sun },
+  { match: /cool|kjøl|kjol/i, label: "Kjøl", Icon: Snowflake },
+  { match: /dry|tørk|tork/i, label: "Tørk", Icon: Droplets },
+  { match: /fan|vift/i, label: "Vifte", Icon: Wind },
+  { match: /off|av/i, label: "Av", Icon: Power },
+];
+
+function modeMeta(id: string, fallbackTitle?: string) {
+  const hit = MODE_META.find((m) => m.match.test(id));
+  return {
+    label: hit?.label ?? fallbackTitle ?? id,
+    Icon: hit?.Icon ?? RefreshCw,
+  };
+}
+
+const QLIMA_DEFAULT_MODES: HomeyCapabilityEnumValue[] = [
+  { id: "auto", title: "Auto" },
+  { id: "heat", title: "Varme" },
+  { id: "cool", title: "Kjøl" },
+  { id: "dry", title: "Tørk" },
+  { id: "fan", title: "Vifte" },
+];
+
 function HeaterCard({
   heater,
   busy,
   compact = false,
   onSetTemp,
   onToggle,
+  onSetMode,
 }: {
   heater: HeaterDevice;
   busy: Record<string, boolean>;
   compact?: boolean;
   onSetTemp: (v: number) => void;
   onToggle: (v: boolean) => void;
+  onSetMode: (v: string) => void;
 }) {
   const accent = "var(--gold)";
   const tempBusy = busy[`${heater.id}:target_temperature`];
   const onoffBusy = busy[`${heater.id}:onoff`];
+  const modeBusy = busy[`${heater.id}:thermostat_mode`];
   const isOn = heater.onoff !== false;
+
+  const supportsMode =
+    heater.thermostatMode !== undefined ||
+    (heater.thermostatModeValues?.length ?? 0) > 0;
+  const modes =
+    heater.thermostatModeValues?.length
+      ? heater.thermostatModeValues
+      : supportsMode
+        ? QLIMA_DEFAULT_MODES
+        : [];
+
+  // Lokalt slider-state for jevn dragging — committer ved release
+  const [localTemp, setLocalTemp] = useState<number | null>(null);
+  const sliderValue = localTemp ?? heater.target ?? heater.min;
+  const sliderPct = Math.max(
+    0,
+    Math.min(
+      100,
+      ((sliderValue - heater.min) / Math.max(0.0001, heater.max - heater.min)) * 100,
+    ),
+  );
+
+  const commitLocal = () => {
+    if (localTemp === null) return;
+    const v = +localTemp.toFixed(1);
+    setLocalTemp(null);
+    if (v !== heater.target) onSetTemp(v);
+  };
 
   const adjust = (delta: number) => {
     const cur = heater.target ?? 21;
@@ -393,7 +490,7 @@ function HeaterCard({
           {heater.name}
         </span>
         <span className="hidden sm:inline text-[9px] tracking-[0.25em] text-muted-foreground/70 uppercase shrink-0 ml-2">
-          Ovn
+          {isQlimaName(heater.name) ? "Qlima" : "Ovn"}
         </span>
       </div>
       <div className={`flex-1 ${bodyPad} flex flex-col items-center justify-center ${bodyGap}`}>
@@ -413,17 +510,25 @@ function HeaterCard({
         )}
 
         <div className="w-full max-w-[260px] mt-0.5 sm:mt-1 px-1">
-          <Slider
-            value={[heater.target ?? heater.min]}
+          <input
+            type="range"
             min={heater.min}
             max={heater.max}
             step={heater.step}
+            value={sliderValue}
+            onChange={(e) => setLocalTemp(parseFloat(e.target.value))}
+            onPointerUp={commitLocal}
+            onPointerCancel={() => setLocalTemp(null)}
+            onTouchEnd={commitLocal}
+            onMouseUp={commitLocal}
+            onKeyUp={commitLocal}
             disabled={tempBusy}
-            onValueCommit={(vals) => {
-              const v = vals[0];
-              if (typeof v === "number" && v !== heater.target) onSetTemp(+v.toFixed(1));
-            }}
             aria-label="Velg temperatur"
+            className="w-full h-2 rounded-full appearance-none cursor-pointer disabled:opacity-50 touch-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-6 [&::-webkit-slider-thumb]:h-6 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[var(--thumb)] [&::-webkit-slider-thumb]:shadow-md [&::-moz-range-thumb]:w-6 [&::-moz-range-thumb]:h-6 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-[var(--thumb)] [&::-moz-range-thumb]:border-0"
+            style={{
+              background: `linear-gradient(to right, ${accent} 0%, ${accent} ${sliderPct}%, color-mix(in oklab, var(--foreground) 12%, transparent) ${sliderPct}%, color-mix(in oklab, var(--foreground) 12%, transparent) 100%)`,
+              ["--thumb" as any]: accent,
+            }}
           />
         </div>
 
@@ -461,6 +566,56 @@ function HeaterCard({
           </button>
         </div>
 
+        {supportsMode && modes.length > 0 && (
+          <div className="w-full max-w-[260px] mt-1">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground">
+                Modus
+              </span>
+              {modeBusy && (
+                <Loader2 size={12} className="animate-spin text-muted-foreground" />
+              )}
+            </div>
+            <div
+              className="grid gap-1"
+              style={{ gridTemplateColumns: `repeat(${Math.min(modes.length, 5)}, minmax(0, 1fr))` }}
+            >
+              {modes.map((m) => {
+                const meta = modeMeta(m.id, m.title);
+                const active =
+                  heater.thermostatMode !== undefined &&
+                  heater.thermostatMode.toLowerCase() === m.id.toLowerCase();
+                return (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => {
+                      if (active || modeBusy) return;
+                      onSetMode(m.id);
+                    }}
+                    disabled={modeBusy}
+                    aria-label={`Modus ${meta.label}`}
+                    title={meta.label}
+                    className="rounded py-1.5 flex flex-col items-center justify-center gap-0.5 transition-all disabled:opacity-50 active:scale-95"
+                    style={{
+                      background: active
+                        ? `color-mix(in oklab, ${accent} 22%, transparent)`
+                        : "color-mix(in oklab, var(--foreground) 6%, transparent)",
+                      border: `1px solid color-mix(in oklab, ${accent} ${active ? 55 : 18}%, transparent)`,
+                      color: active ? accent : "var(--muted-foreground)",
+                    }}
+                  >
+                    <meta.Icon size={12} />
+                    <span className="text-[8px] tracking-[0.15em] uppercase">
+                      {meta.label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {heater.onoff !== undefined && (
           <button
             type="button"
@@ -481,4 +636,8 @@ function HeaterCard({
       </div>
     </article>
   );
+}
+
+function isQlimaName(name: string): boolean {
+  return name.toLowerCase().includes("qlima");
 }
