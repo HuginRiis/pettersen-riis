@@ -1,8 +1,18 @@
 import { useEffect, useRef } from "react";
 import { useRouterState } from "@tanstack/react-router";
 import { startVisitorSession, recordPageview, heartbeat } from "@/server/visitors";
+import { getStoredWho } from "@/lib/push-client";
 
 const SESSION_KEY = "vakttarnet_client_session_id";
+
+function readWho(): string | null {
+  try {
+    const w = getStoredWho();
+    return w && w !== "Alle" ? w : null;
+  } catch {
+    return null;
+  }
+}
 
 function getOrCreateClientSessionId(): string {
   try {
