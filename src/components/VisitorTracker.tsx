@@ -84,6 +84,7 @@ export function VisitorTracker() {
           pageviewId: pageviewIdRef.current,
           pageDurationSeconds: prevDuration,
           sessionDurationSeconds: Math.floor((Date.now() - sessionStartRef.current) / 1000),
+          who: readWho(),
         },
       }).catch(() => {});
     }
@@ -96,6 +97,7 @@ export function VisitorTracker() {
         sessionId: sessionIdRef.current,
         path: pathname,
         title: document.title || null,
+        who: readWho(),
       },
     })
       .then((res) => {
