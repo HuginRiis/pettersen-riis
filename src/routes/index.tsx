@@ -560,6 +560,7 @@ function HallCard({
   title,
   desc,
   icon,
+  image,
   locked = false,
 }: {
   to:
@@ -577,15 +578,37 @@ function HallCard({
     | "/steintavle"
     | "/oppussing-borgen"
     | "/oppussing-hytta"
-    | "/matvarer";
+    | "/matvarer"
+    | "/got-saga";
   title: string;
   desc: string;
   icon: string;
+  image: string;
   locked?: boolean;
 }) {
   const disablePreload = to === "/smarthus" || to === "/var" || to === "/steintavle";
   const { isFavorite, toggleFavorite } = useFavorites();
   const fav = isFavorite(to);
+
+  // Shared background layer (image + dark overlay so text remains readable)
+  const bgLayer = (
+    <>
+      <img
+        src={image}
+        alt=""
+        aria-hidden
+        loading="lazy"
+        className={`absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 ${locked ? "opacity-30 grayscale" : "opacity-55 group-hover:opacity-70"}`}
+      />
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background:
+            "linear-gradient(180deg, oklch(0.10 0.01 240 / 0.55) 0%, oklch(0.10 0.01 240 / 0.85) 100%)",
+        }}
+      />
+    </>
+  );
 
   if (locked) {
     return (
@@ -593,20 +616,23 @@ function HallCard({
         <button
           type="button"
           onClick={() => openLoginDialog()}
-          className="panel rounded-lg p-6 block group opacity-60 hover:opacity-100 transition-opacity relative overflow-hidden text-left w-full"
+          className="panel rounded-lg p-6 block group opacity-80 hover:opacity-100 transition-opacity relative overflow-hidden text-left w-full min-h-[160px]"
           title={`${title} — krever passord`}
         >
-          <div className="absolute top-2 right-2 p-1.5 rounded-full bg-background/70 backdrop-blur border border-border">
+          {bgLayer}
+          <div className="absolute top-2 right-2 p-1.5 rounded-full bg-background/70 backdrop-blur border border-border z-10">
             <KeyRound size={12} className="text-primary/80" />
           </div>
-          <div className="text-3xl mb-3 grayscale">{icon}</div>
-          <h3 className="text-xl text-muted-foreground group-hover:text-primary transition-colors">
-            {title}
-          </h3>
-          <p className="mt-2 text-sm text-muted-foreground/70">{desc}</p>
-          <p className="mt-2 text-[10px] tracking-[0.25em] uppercase text-primary/70">
-            Bak portalen
-          </p>
+          <div className="relative z-[1]">
+            <div className="text-3xl mb-3">{icon}</div>
+            <h3 className="text-xl text-foreground group-hover:text-primary transition-colors drop-shadow">
+              {title}
+            </h3>
+            <p className="mt-2 text-sm text-foreground/80">{desc}</p>
+            <p className="mt-2 text-[10px] tracking-[0.25em] uppercase text-primary/90">
+              Bak portalen
+            </p>
+          </div>
         </button>
       </div>
     );
@@ -621,7 +647,7 @@ function HallCard({
           e.stopPropagation();
           void toggleFavorite(to, title, icon);
         }}
-        className="absolute top-2 right-2 z-10 p-1.5 rounded-full bg-background/70 backdrop-blur border border-border hover:border-primary hover:bg-primary/10 transition-colors"
+        className="absolute top-2 right-2 z-20 p-1.5 rounded-full bg-background/70 backdrop-blur border border-border hover:border-primary hover:bg-primary/10 transition-colors"
         aria-label={fav ? `Fjern ${title} fra favoritter` : `Legg ${title} til favoritter`}
         title={fav ? "Fjern fra favoritter" : "Legg til favoritter"}
       >
@@ -633,13 +659,16 @@ function HallCard({
       <Link
         to={to}
         preload={disablePreload ? false : undefined}
-        className="panel rounded-lg p-6 glow-on-hover block group"
+        className="panel rounded-lg p-6 glow-on-hover block group relative overflow-hidden min-h-[160px]"
       >
-        <div className="text-3xl mb-3">{icon}</div>
-        <h3 className="text-xl text-primary group-hover:text-gold transition-colors">
-          {title}
-        </h3>
-        <p className="mt-2 text-sm text-muted-foreground">{desc}</p>
+        {bgLayer}
+        <div className="relative z-[1]">
+          <div className="text-3xl mb-3">{icon}</div>
+          <h3 className="text-xl text-primary group-hover:text-gold transition-colors drop-shadow">
+            {title}
+          </h3>
+          <p className="mt-2 text-sm text-foreground/85">{desc}</p>
+        </div>
       </Link>
     </div>
   );
