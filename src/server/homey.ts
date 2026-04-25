@@ -876,6 +876,38 @@ export const getDoorsLocksSnapshot = createServerFn({ method: "GET" }).handler(
   },
 );
 
+function extractCapabilityMeta(
+  obj: any,
+): Record<string, HomeyCapabilityMeta> {
+  const out: Record<string, HomeyCapabilityMeta> = {};
+  if (!obj || typeof obj !== "object" || Array.isArray(obj)) return out;
+  for (const [capId, capVal] of Object.entries(obj as Record<string, any>)) {
+    const v = capVal?.value;
+    const value: HomeyCapValue =
+      typeof v === "string" || typeof v === "number" || typeof v === "boolean" ? v : null;
+    const entry: HomeyCapabilityMeta = { value };
+    if (typeof capVal?.min === "number") entry.min = capVal.min;
+    if (typeof capVal?.max === "number") entry.max = capVal.max;
+    if (typeof capVal?.step === "number") entry.step = capVal.step;
+    const valuesRaw = capVal?.values;
+    if (Array.isArray(valuesRaw)) {
+      const cleaned: HomeyCapabilityEnumValue[] = [];
+      for (const item of valuesRaw) {
+        if (typeof item === "string") cleaned.push({ id: item });
+        else if (item && typeof item === "object" && typeof item.id === "string") {
+          let title: string | undefined;
+          if (typeof item.title === "string") title = item.title;
+          else if (typeof item?.title?.no === "string") title = item.title.no;
+          else if (typeof item?.title?.en === "string") title = item.title.en;
+          cleaned.push(title ? { id: item.id, title } : { id: item.id });
+        }
+      }
+      if (cleaned.length > 0) entry.values = cleaned;
+    }
+    out[capId] = entry;
+  }
+  return out;
+}
 
 // ============================================================
 // Camera snapshot (Netatmo / generic Homey camera devices)
