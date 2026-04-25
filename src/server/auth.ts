@@ -209,9 +209,9 @@ export const getWelcomeInfo = createServerFn({ method: "POST" })
     }
   }
 
-  // Last successful login — prefer matching by `who` (person), fall back to IP.
-  // We exclude the current session: when authenticated we skip the most recent
-  // entry (likely this login).
+  // Last successful login — most recent for this person (matched by `who`),
+  // falling back to IP. We always show the latest entry, including the
+  // current session, so "I logged in just now" is reflected.
   try {
     if (who) {
       const { data } = await supabaseAdmin
@@ -220,12 +220,9 @@ export const getWelcomeInfo = createServerFn({ method: "POST" })
         .eq("who", who)
         .eq("success", true)
         .order("attempted_at", { ascending: false })
-        .limit(2);
-      const arr = (data ?? []) as any[];
-      if (arr.length > 0) {
-        const pick = authenticated && arr.length > 1 ? arr[1] : arr[0];
-        lastLoginAt = pick.attempted_at;
-      }
+        .limit(1)
+        .maybeSingle();
+      if (data) lastLoginAt = (data as any).attempted_at;
     }
     if (!lastLoginAt && ip) {
       const { data } = await supabaseAdmin
@@ -234,65 +231,37 @@ export const getWelcomeInfo = createServerFn({ method: "POST" })
         .eq("ip", ip)
         .eq("success", true)
         .order("attempted_at", { ascending: false })
-        .limit(2);
-      const arr = (data ?? []) as any[];
-      if (arr.length > 0) {
-        const pick = authenticated && arr.length > 1 ? arr[1] : arr[0];
-        lastLoginAt = pick.attempted_at;
-      }
+        .limit(1)
+        .maybeSingle();
+      if (data) lastLoginAt = (data as any).attempted_at;
     }
   } catch {
     /* ignore */
   }
 
-  // Last visitor session — prefer matching by `who`, skipping the active session
-  // (anything updated in the last 5 min). Fall back to IP if needed.
+  // Last visit — most recently updated session for this person (matched by
+  // `who`), falling back to IP. Always show the latest, including the active
+  // session, so the user sees their current visit time.
   try {
-    const cutoff = new Date(Date.now() - 5 * 60 * 1000).toISOString();
     if (who) {
       const { data } = await supabaseAdmin
         .from("visitor_sessions" as any)
         .select("last_seen_at")
         .eq("who", who)
-        .lt("last_seen_at", cutoff)
         .order("last_seen_at", { ascending: false })
         .limit(1)
         .maybeSingle();
       if (data) lastSeenAt = (data as any).last_seen_at;
-      if (!lastSeenAt) {
-        // No older session yet — pick the most recent regardless
-        const { data: any2 } = await supabaseAdmin
-          .from("visitor_sessions" as any)
-          .select("last_seen_at")
-          .eq("who", who)
-          .order("last_seen_at", { ascending: false })
-          .limit(2);
-        const arr = (any2 ?? []) as any[];
-        if (arr.length > 1) lastSeenAt = arr[1].last_seen_at;
-        else if (arr.length > 0) lastSeenAt = arr[0].last_seen_at;
-      }
     }
     if (!lastSeenAt && ip) {
       const { data } = await supabaseAdmin
         .from("visitor_sessions" as any)
         .select("last_seen_at")
         .eq("ip", ip)
-        .lt("last_seen_at", cutoff)
         .order("last_seen_at", { ascending: false })
         .limit(1)
         .maybeSingle();
       if (data) lastSeenAt = (data as any).last_seen_at;
-      if (!lastSeenAt) {
-        const { data: any2 } = await supabaseAdmin
-          .from("visitor_sessions" as any)
-          .select("last_seen_at")
-          .eq("ip", ip)
-          .order("last_seen_at", { ascending: false })
-          .limit(2);
-        const arr = (any2 ?? []) as any[];
-        if (arr.length > 1) lastSeenAt = arr[1].last_seen_at;
-        else if (arr.length > 0) lastSeenAt = arr[0].last_seen_at;
-      }
     }
   } catch {
     /* ignore */
