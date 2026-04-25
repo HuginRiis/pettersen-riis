@@ -75,30 +75,56 @@ function buildHeaters(
   const out: HeaterDevice[] = [];
   for (const d of devices) {
     const ttCap = d.capabilities["target_temperature"];
-    if (!ttCap || typeof ttCap.value !== "number") continue;
-    const zoneName = d.zone ? zoneById.get(d.zone) ?? "" : "";
-    const combined = `${d.name} ${zoneName}`.toLowerCase();
-    const belongsToHytta = isHyttaZone(zoneName) || combined.includes("hytt") || isQlimaDevice(d);
-    if (location === "hytta" && !belongsToHytta) continue;
-    if (location === "borg" && belongsToHytta) continue;
-
     const onoffCap = d.capabilities["onoff"];
     const measureCap = d.capabilities["measure_temperature"];
     const modeCap = d.capabilities["thermostat_mode"];
+    const fanCap =
+      d.capabilities["fan_speed"] ??
+      d.capabilities["fan_mode"] ??
+      d.capabilities["qlima_fan_speed"];
+
+    const isQlima = isQlimaDevice(d);
+    const hasTarget = !!ttCap && typeof ttCap.value === "number";
+    // Behold enheten dersom den har target_temperature ELLER er Qlima/klima-enhet
+    // med termostatmodus eller on/off (Qlima rapporterer ikke alltid target i alle moduser).
+    const isClimateLike =
+      isQlima ||
+      !!modeCap ||
+      (d.class === "thermostat" || d.class === "heater" || d.class === "airconditioning");
+    if (!hasTarget && !isClimateLike) continue;
+    if (!hasTarget && !modeCap && !onoffCap && !fanCap) continue;
+
+    const zoneName = d.zone ? zoneById.get(d.zone) ?? "" : "";
+    const combined = `${d.name} ${zoneName}`.toLowerCase();
+    const belongsToHytta = isHyttaZone(zoneName) || combined.includes("hytt") || isQlima;
+    if (location === "hytta" && !belongsToHytta) continue;
+    if (location === "borg" && belongsToHytta) continue;
+
+    const targetVal = hasTarget ? (ttCap!.value as number) : undefined;
 
     out.push({
       id: d.id,
       name: d.name,
       zoneName: zoneName || "Ukjent sal",
+      isQlima,
       onoff: typeof onoffCap?.value === "boolean" ? onoffCap.value : undefined,
-      target: ttCap.value,
+      target: targetVal,
       measure: typeof measureCap?.value === "number" ? measureCap.value : undefined,
-      min: typeof ttCap.min === "number" ? ttCap.min : 5,
-      max: typeof ttCap.max === "number" ? ttCap.max : 30,
-      step: typeof ttCap.step === "number" ? ttCap.step : 0.5,
+      min: typeof ttCap?.min === "number" ? ttCap.min : isQlima ? 16 : 5,
+      max: typeof ttCap?.max === "number" ? ttCap.max : isQlima ? 32 : 30,
+      step: typeof ttCap?.step === "number" ? ttCap.step : isQlima ? 1 : 0.5,
+      hasTarget,
       thermostatMode:
         typeof modeCap?.value === "string" ? modeCap.value : undefined,
       thermostatModeValues: modeCap?.values,
+      fanSpeed:
+        typeof fanCap?.value === "string" || typeof fanCap?.value === "number"
+          ? fanCap.value
+          : undefined,
+      fanSpeedValues: fanCap?.values,
+      fanSpeedMin: typeof fanCap?.min === "number" ? fanCap.min : undefined,
+      fanSpeedMax: typeof fanCap?.max === "number" ? fanCap.max : undefined,
+      fanSpeedStep: typeof fanCap?.step === "number" ? fanCap.step : undefined,
     });
   }
   out.sort((a, b) => {
