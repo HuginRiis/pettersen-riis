@@ -274,6 +274,9 @@ export const getStravaDashboard = createServerFn({ method: "GET" })
       .sort((a, b) => b.distance - a.distance);
 
     // Beste prestasjoner (siste 100)
+    const walkActivities = activities.filter(
+      (a) => bucketSport(a.sport_type || a.type) === "walk",
+    );
     const records = {
       longestDistance: activities.reduce<StravaActivity | null>(
         (best, a) => (!best || (a.distance || 0) > (best.distance || 0) ? a : best),
@@ -296,7 +299,24 @@ export const getStravaDashboard = createServerFn({ method: "GET" })
         (best, a) => (!best || (a.max_speed || 0) > (best.max_speed || 0) ? a : best),
         null,
       ),
+      longestWalk: walkActivities.reduce<StravaActivity | null>(
+        (best, a) => (!best || (a.distance || 0) > (best.distance || 0) ? a : best),
+        null,
+      ),
     };
+
+    // Walk-totaler (Strava AthleteStats har ikke gå-totaler — vi regner ut
+    // fra de siste 100 aktivitetene).
+    const walkTotals = walkActivities.reduce(
+      (acc, a) => {
+        acc.count += 1;
+        acc.distance += a.distance || 0;
+        acc.movingTime += a.moving_time || 0;
+        acc.elevation += a.total_elevation_gain || 0;
+        return acc;
+      },
+      { count: 0, distance: 0, movingTime: 0, elevation: 0 },
+    );
 
     const slim = (a: StravaActivity | null) =>
       a
@@ -331,6 +351,13 @@ export const getStravaDashboard = createServerFn({ method: "GET" })
         mostElevation: slim(records.mostElevation),
         maxHr: slim(records.maxHr),
         maxSpeed: slim(records.maxSpeed),
+        longestWalk: slim(records.longestWalk),
+      },
+      walkRecent: {
+        count: walkTotals.count,
+        distance: walkTotals.distance,
+        movingTime: walkTotals.movingTime,
+        elevation: walkTotals.elevation,
       },
       totals: stats
         ? {

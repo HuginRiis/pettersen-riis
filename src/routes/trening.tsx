@@ -65,6 +65,13 @@ type DashOk = {
     mostElevation: SlimAct | null;
     maxHr: SlimAct | null;
     maxSpeed: SlimAct | null;
+    longestWalk: SlimAct | null;
+  };
+  walkRecent: {
+    count: number;
+    distance: number;
+    movingTime: number;
+    elevation: number;
   };
   totals: {
     recentRun: TotalBlock | null;
@@ -373,6 +380,32 @@ function DashboardView({ dash, owner }: { dash: DashOk; owner: Owner }) {
       {/* Rekorder */}
       <SubHeader text="Bragder & rekorder" />
       <RecordsGrid records={dash.records} />
+
+      {/* Gåing — siste 100 dåder (Strava AthleteStats har ikke walk-totaler) */}
+      {dash.walkRecent.count > 0 && (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+          <Stat
+            label="🚶 Gåturer"
+            value={String(dash.walkRecent.count)}
+            hint="siste 100 dåder"
+          />
+          <Stat
+            label="🚶 Distanse gått"
+            value={formatKm(dash.walkRecent.distance)}
+            hint="siste 100 dåder"
+          />
+          <Stat
+            label="🚶 Tid på beina"
+            value={formatDuration(dash.walkRecent.movingTime)}
+            hint="siste 100 dåder"
+          />
+          <Stat
+            label="🚶 Stigning"
+            value={`${Math.round(dash.walkRecent.elevation)} m`}
+            hint="siste 100 dåder"
+          />
+        </div>
+      )}
 
       {/* Aktiviteter */}
       <SubHeader text="De siste dåder" />
@@ -895,7 +928,7 @@ function RecordsGrid({ records }: { records: DashOk["records"] }) {
   );
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-6">
+    <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 mb-6">
       {card(
         "Lengste tur",
         "🛡",
@@ -925,6 +958,12 @@ function RecordsGrid({ records }: { records: DashOk["records"] }) {
         "💨",
         records.maxSpeed,
         records.maxSpeed?.maxSpeed ? formatSpeedKmh(records.maxSpeed.maxSpeed) : "—",
+      )}
+      {card(
+        "Lengste gåtur",
+        "🚶",
+        records.longestWalk,
+        records.longestWalk ? formatKm(records.longestWalk.distance) : "—",
       )}
     </div>
   );
