@@ -883,7 +883,7 @@ function NightlyOutlook({
       <div className="text-[10px] tracking-[0.3em] uppercase text-primary/80 mb-2">
         Sjanse de neste nettene · Hytta
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
         {nights.map((n, i) => {
           const c = n.peakKp !== null ? classifyKp(n.peakKp, HYTTA_LAT) : null;
           const scoreColor =
