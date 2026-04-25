@@ -336,7 +336,8 @@ async function fetchAuroraData(): Promise<{
         properties?: { timeseries?: Array<{ time?: string; data?: { instant?: { details?: { cloud_area_fraction?: number } } } }> };
       };
       const ts = met.properties?.timeseries ?? [];
-      for (const t of ts.slice(0, 24)) {
+      // Hent ~96 timer for å dekke skydekke for de neste 3-4 nettene
+      for (const t of ts.slice(0, 96)) {
         const time = t.time;
         const c = t.data?.instant?.details?.cloud_area_fraction;
         if (typeof time === "string" && typeof c === "number") {
@@ -358,7 +359,41 @@ async function fetchAuroraData(): Promise<{
     sunrise: tomorrowTimes.sunrise ?? tonight.sunrise,
   };
 
-  return { now: kpNow, forecast, wind, ovation, clouds, sun };
+  // 7) NOAA 27-dagers prognose (daglig "Largest Kp")
+  const longRange: LongRangeDay[] = [];
+  try {
+    const lrRes = await fetch(
+      "https://services.swpc.noaa.gov/text/27-day-outlook.txt",
+      { cache: "no-store" },
+    );
+    if (lrRes.ok) {
+      const text = await lrRes.text();
+      const lines = text.split("\n");
+      const monthMap: Record<string, number> = {
+        Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5,
+        Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11,
+      };
+      for (const raw of lines) {
+        const line = raw.trim();
+        if (!line || line.startsWith("#") || line.startsWith(":")) continue;
+        // Format: "2026 Apr 20     105          18          4"
+        const m = line.match(/^(\d{4})\s+(\w{3})\s+(\d{1,2})\s+(\d+)\s+(\d+)\s+(\d+)\s*$/);
+        if (!m) continue;
+        const year = Number(m[1]);
+        const mon = monthMap[m[2]!];
+        const day = Number(m[3]);
+        const aIndex = Number(m[5]);
+        const largestKp = Number(m[6]);
+        if (mon === undefined || !Number.isFinite(year) || !Number.isFinite(day)) continue;
+        const date = new Date(Date.UTC(year, mon, day));
+        longRange.push({ date, largestKp, aIndex });
+      }
+    }
+  } catch {
+    /* ignorer — langtidsprognose er ikke kritisk */
+  }
+
+  return { now: kpNow, forecast, wind, ovation, clouds, sun, longRange };
 }
 
 export function AuroraPanel() {
