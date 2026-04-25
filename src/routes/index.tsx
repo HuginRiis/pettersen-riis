@@ -26,6 +26,23 @@ import noraPortrait from "@/assets/nora-portrait.jpg";
 import miraPortrait from "@/assets/mira-portrait.jpg";
 import heroImg from "@/assets/hero-westeros.jpg";
 import borgenSeasons from "@/assets/borgen-seasons.png";
+// Hall background images (hentet fra hver sals egen hero)
+import hallVar from "@/assets/got-var.jpg";
+import hallPollen from "@/assets/got-pollen.jpg";
+import hallTurer from "@/assets/got-turer.jpg";
+import hallAgenda from "@/assets/got-agenda.jpg";
+import hallVarsler from "@/assets/got-varsler.jpg";
+import hallVakttarnet from "@/assets/got-vakttarnet.jpg";
+import hallHytta from "@/assets/hytta-aurora-got.jpg";
+import hallHundene from "@/assets/hundene-pack.jpg";
+import hallTrening from "@/assets/got-trening.jpg";
+import hallSmarthus from "@/assets/got-smarthus.jpg";
+import hallStrom from "@/assets/stromkroniken.jpg";
+import hallMatvarer from "@/assets/got-matvarer.jpg";
+import hallOppussingBorgen from "@/assets/got-oppussing-borgen.jpg";
+import hallOppussingHytta from "@/assets/got-oppussing-hytta.jpg";
+import hallWesteros from "@/assets/got-westeros-hero.jpg";
+import hallSteintavle from "@/assets/got-brodering.jpg";
 
 // Halls available to anyone who steps into the courtyard (no password required)
 const PUBLIC_HALL_PATHS = new Set<string>(["/var", "/pollen", "/turer"]);
@@ -224,21 +241,22 @@ function Home() {
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
-          <HallCard to="/var" title="Værens budskap" desc="Værmelding for Skien og hytta." icon="🌨" locked={false} />
-          <HallCard to="/pollen" title="Pollen" desc="Dagens pollen i lufta." icon="🌾" locked={false} />
-          <HallCard to="/turer" title="Ferden" desc="Tips til turer i nærheten." icon="🧭" locked={false} />
-          <HallCard to="/agenda" title="Krøniken" desc="Agenda og meldinger med dato og emne." icon="📜" locked={!isAuthed} />
-          <HallCard to="/varsler" title="Farevarsler" desc="Aktive farevarsler og trafikkmeldinger." icon="⚠️" locked={false} />
-          <HallCard to="/vakttarnet" title="Vakttårnet" desc="Vaktene rapporterer hvem som nærmer seg porten." icon="👁" locked={!isAuthed} />
-          <HallCard to="/hytta" title="Hytta" desc="Husets tilflukt i fjellet." icon="🏔" locked={false} />
-          <HallCard to="/hundene" title="Hundene" desc="Husets tro følgesvenner." icon="🐺" locked={!isAuthed} />
-          <HallCard to="/trening" title="Treningssalen" desc="Kroppen som rustning." icon="⚔️" locked={!isAuthed} />
-          <HallCard to="/smarthus" title="Smartborg" desc="Lys, varme og varslere fra Homey." icon="🏰" locked={!isAuthed} />
-          <HallCard to="/stromkroniken" title="Strømkrøniken" desc="Husets strømgull — kostnader, forbruk og priser." icon="⚡" locked={!isAuthed} />
-          <HallCard to="/matvarer" title="Matvarekrøniken" desc="Søk og sammenlign priser i norske butikker." icon="🛒" locked={!isAuthed} />
-          <HallCard to="/steintavle" title="Steintavle" desc="Husets innskrifter og notater." icon="🪨" locked={!isAuthed} />
-          <HallCard to="/oppussing-borgen" title="Prosjekter på Borgen" desc="Prosjekter, planer og bilder fra borgen." icon="🔨" locked={!isAuthed} />
-          <HallCard to="/oppussing-hytta" title="Prosjekter på hytta" desc="Prosjekter, planer og bilder fra hytta." icon="🪵" locked={!isAuthed} />
+          <HallCard to="/var" title="Værens budskap" desc="Værmelding for Skien og hytta." icon="🌨" image={hallVar} locked={false} />
+          <HallCard to="/pollen" title="Pollen" desc="Dagens pollen i lufta." icon="🌾" image={hallPollen} locked={false} />
+          <HallCard to="/turer" title="Ferden" desc="Tips til turer i nærheten." icon="🧭" image={hallTurer} locked={false} />
+          <HallCard to="/got-saga" title="Westeros" desc="Sagaen om de syv kongeriker." icon="🐉" image={hallWesteros} locked={false} />
+          <HallCard to="/agenda" title="Krøniken" desc="Agenda og meldinger med dato og emne." icon="📜" image={hallAgenda} locked={!isAuthed} />
+          <HallCard to="/varsler" title="Farevarsler" desc="Aktive farevarsler og trafikkmeldinger." icon="⚠️" image={hallVarsler} locked={false} />
+          <HallCard to="/vakttarnet" title="Vakttårnet" desc="Vaktene rapporterer hvem som nærmer seg porten." icon="👁" image={hallVakttarnet} locked={!isAuthed} />
+          <HallCard to="/hytta" title="Hytta" desc="Husets tilflukt i fjellet." icon="🏔" image={hallHytta} locked={false} />
+          <HallCard to="/hundene" title="Hundene" desc="Husets tro følgesvenner." icon="🐺" image={hallHundene} locked={!isAuthed} />
+          <HallCard to="/trening" title="Treningssalen" desc="Kroppen som rustning." icon="⚔️" image={hallTrening} locked={!isAuthed} />
+          <HallCard to="/smarthus" title="Smartborg" desc="Lys, varme og varslere fra Homey." icon="🏰" image={hallSmarthus} locked={!isAuthed} />
+          <HallCard to="/stromkroniken" title="Strømkrøniken" desc="Husets strømgull — kostnader, forbruk og priser." icon="⚡" image={hallStrom} locked={!isAuthed} />
+          <HallCard to="/matvarer" title="Matvarekrøniken" desc="Søk og sammenlign priser i norske butikker." icon="🛒" image={hallMatvarer} locked={!isAuthed} />
+          <HallCard to="/steintavle" title="Steintavle" desc="Husets innskrifter og notater." icon="🪨" image={hallSteintavle} locked={!isAuthed} />
+          <HallCard to="/oppussing-borgen" title="Prosjekter på Borgen" desc="Prosjekter, planer og bilder fra borgen." icon="🔨" image={hallOppussingBorgen} locked={!isAuthed} />
+          <HallCard to="/oppussing-hytta" title="Prosjekter på hytta" desc="Prosjekter, planer og bilder fra hytta." icon="🪵" image={hallOppussingHytta} locked={!isAuthed} />
         </div>
       </section>
     </PageShell>
@@ -542,6 +560,7 @@ function HallCard({
   title,
   desc,
   icon,
+  image,
   locked = false,
 }: {
   to:
@@ -559,15 +578,37 @@ function HallCard({
     | "/steintavle"
     | "/oppussing-borgen"
     | "/oppussing-hytta"
-    | "/matvarer";
+    | "/matvarer"
+    | "/got-saga";
   title: string;
   desc: string;
   icon: string;
+  image: string;
   locked?: boolean;
 }) {
   const disablePreload = to === "/smarthus" || to === "/var" || to === "/steintavle";
   const { isFavorite, toggleFavorite } = useFavorites();
   const fav = isFavorite(to);
+
+  // Shared background layer (image + dark overlay so text remains readable)
+  const bgLayer = (
+    <>
+      <img
+        src={image}
+        alt=""
+        aria-hidden
+        loading="lazy"
+        className={`absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 ${locked ? "opacity-30 grayscale" : "opacity-55 group-hover:opacity-70"}`}
+      />
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background:
+            "linear-gradient(180deg, oklch(0.10 0.01 240 / 0.55) 0%, oklch(0.10 0.01 240 / 0.85) 100%)",
+        }}
+      />
+    </>
+  );
 
   if (locked) {
     return (
@@ -575,20 +616,23 @@ function HallCard({
         <button
           type="button"
           onClick={() => openLoginDialog()}
-          className="panel rounded-lg p-6 block group opacity-60 hover:opacity-100 transition-opacity relative overflow-hidden text-left w-full"
+          className="panel rounded-lg p-6 block group opacity-80 hover:opacity-100 transition-opacity relative overflow-hidden text-left w-full min-h-[160px]"
           title={`${title} — krever passord`}
         >
-          <div className="absolute top-2 right-2 p-1.5 rounded-full bg-background/70 backdrop-blur border border-border">
+          {bgLayer}
+          <div className="absolute top-2 right-2 p-1.5 rounded-full bg-background/70 backdrop-blur border border-border z-10">
             <KeyRound size={12} className="text-primary/80" />
           </div>
-          <div className="text-3xl mb-3 grayscale">{icon}</div>
-          <h3 className="text-xl text-muted-foreground group-hover:text-primary transition-colors">
-            {title}
-          </h3>
-          <p className="mt-2 text-sm text-muted-foreground/70">{desc}</p>
-          <p className="mt-2 text-[10px] tracking-[0.25em] uppercase text-primary/70">
-            Bak portalen
-          </p>
+          <div className="relative z-[1]">
+            <div className="text-3xl mb-3">{icon}</div>
+            <h3 className="text-xl text-foreground group-hover:text-primary transition-colors drop-shadow">
+              {title}
+            </h3>
+            <p className="mt-2 text-sm text-foreground/80">{desc}</p>
+            <p className="mt-2 text-[10px] tracking-[0.25em] uppercase text-primary/90">
+              Bak portalen
+            </p>
+          </div>
         </button>
       </div>
     );
@@ -603,7 +647,7 @@ function HallCard({
           e.stopPropagation();
           void toggleFavorite(to, title, icon);
         }}
-        className="absolute top-2 right-2 z-10 p-1.5 rounded-full bg-background/70 backdrop-blur border border-border hover:border-primary hover:bg-primary/10 transition-colors"
+        className="absolute top-2 right-2 z-20 p-1.5 rounded-full bg-background/70 backdrop-blur border border-border hover:border-primary hover:bg-primary/10 transition-colors"
         aria-label={fav ? `Fjern ${title} fra favoritter` : `Legg ${title} til favoritter`}
         title={fav ? "Fjern fra favoritter" : "Legg til favoritter"}
       >
@@ -615,13 +659,16 @@ function HallCard({
       <Link
         to={to}
         preload={disablePreload ? false : undefined}
-        className="panel rounded-lg p-6 glow-on-hover block group"
+        className="panel rounded-lg p-6 glow-on-hover block group relative overflow-hidden min-h-[160px]"
       >
-        <div className="text-3xl mb-3">{icon}</div>
-        <h3 className="text-xl text-primary group-hover:text-gold transition-colors">
-          {title}
-        </h3>
-        <p className="mt-2 text-sm text-muted-foreground">{desc}</p>
+        {bgLayer}
+        <div className="relative z-[1]">
+          <div className="text-3xl mb-3">{icon}</div>
+          <h3 className="text-xl text-primary group-hover:text-gold transition-colors drop-shadow">
+            {title}
+          </h3>
+          <p className="mt-2 text-sm text-foreground/85">{desc}</p>
+        </div>
       </Link>
     </div>
   );
