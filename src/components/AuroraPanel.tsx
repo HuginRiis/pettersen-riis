@@ -41,6 +41,11 @@ type Ovation = {
   probabilityHere: number;
   observedAt: string;
 };
+type LongRangeDay = {
+  date: Date;        // UTC dato (00:00 UTC)
+  largestKp: number; // 0..9
+  aIndex: number;    // planetary A index
+};
 
 type FetchState =
   | { status: "loading" }
@@ -52,6 +57,7 @@ type FetchState =
       ovation: Ovation | null;
       clouds: CloudHour[];
       sun: { sunset: Date | null; sunrise: Date | null };
+      longRange: LongRangeDay[];
     }
   | { status: "error"; message: string };
 
