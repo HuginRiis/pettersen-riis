@@ -282,7 +282,7 @@ export function NetatmoWeatherStationSection({
 
       {state.status === "ok" && (
         <>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-2 sm:gap-4 grid-cols-2 lg:grid-cols-3">
             {state.data.modules.map((m) => (
               <ModuleCard key={m.id} m={m} />
             ))}
