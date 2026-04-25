@@ -3,13 +3,11 @@ import { useRouter } from "@tanstack/react-router";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { loginFn } from "@/server/auth";
+import { loginFn, logoutFn, getWelcomeInfo } from "@/server/auth";
+import { LogIn, LogOut, Clock, MapPin } from "lucide-react";
 
 /**
- * Custom event used to open the login dialog from anywhere in the app
- * without prop-drilling. Any component (header, hall cards, portal gate)
- * can dispatch `house-riis:open-login` and the dialog mounted at the root
- * will pop open over whatever page the visitor is on.
+ * Custom event used to open the welcome / login dialog from anywhere in the app.
  */
 export const OPEN_LOGIN_EVENT = "house-riis:open-login";
 
@@ -19,18 +17,57 @@ export function openLoginDialog() {
   }
 }
 
+type WelcomeInfo = {
+  authenticated: boolean;
+  who: string | null;
+  ip: string | null;
+  lastLoginAt: string | null;
+  lastSeenAt: string | null;
+};
+
+function formatNo(dt: string | null): string {
+  if (!dt) return "—";
+  try {
+    const d = new Date(dt);
+    return d.toLocaleString("nb-NO", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return dt;
+  }
+}
+
 export function LoginDialog() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [info, setInfo] = useState<WelcomeInfo | null>(null);
+  const [infoLoading, setInfoLoading] = useState(false);
+
+  const refreshInfo = async () => {
+    setInfoLoading(true);
+    try {
+      const data = (await getWelcomeInfo()) as WelcomeInfo;
+      setInfo(data);
+    } catch {
+      setInfo(null);
+    } finally {
+      setInfoLoading(false);
+    }
+  };
 
   useEffect(() => {
     const handler = () => {
       setError(null);
       setPassword("");
       setOpen(true);
+      void refreshInfo();
     };
     window.addEventListener(OPEN_LOGIN_EVENT, handler);
     return () => window.removeEventListener(OPEN_LOGIN_EVENT, handler);
@@ -54,6 +91,23 @@ export function LoginDialog() {
     }
   };
 
+  const onLogout = async () => {
+    setLoading(true);
+    try {
+      await logoutFn();
+      setOpen(false);
+      await router.invalidate();
+      if (typeof window !== "undefined") {
+        window.location.reload();
+      }
+    } catch {
+      setLoading(false);
+    }
+  };
+
+  const greetingName =
+    info?.who && info.who !== "Alle" ? info.who : info?.ip ? `gjest (${info.ip})` : "vandrer";
+
   return (
     <Dialog
       open={open}
@@ -66,9 +120,9 @@ export function LoginDialog() {
       }}
     >
       <DialogContent className="max-w-md p-0 border-primary/40 bg-background overflow-hidden">
-        <DialogTitle className="sr-only">Husets passord</DialogTitle>
+        <DialogTitle className="sr-only">Velkommen til House Riis</DialogTitle>
         <DialogDescription className="sr-only">
-          Skriv inn husets passord for å tre inn i borgens saler.
+          Velkomstdialog med innlogging, utlogging og informasjon om siste besøk.
         </DialogDescription>
         <div className="p-6 sm:p-8">
           <div className="text-center mb-6">
@@ -78,33 +132,95 @@ export function LoginDialog() {
             <h2 className="text-display text-xl tracking-[0.3em] text-primary">HOUSE RIIS</h2>
             <p className="text-[10px] text-muted-foreground tracking-widest mt-1">OF SKIEN</p>
           </div>
-          <form onSubmit={onSubmit} className="space-y-4">
-            <div>
-              <label className="block text-xs tracking-wider uppercase text-muted-foreground mb-2">
-                Husets passord
-              </label>
-              <Input
-                type="password"
-                autoFocus
-                autoComplete="current-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="bg-background/60"
-              />
-            </div>
-            {error && (
-              <div className="text-sm text-destructive border border-destructive/40 rounded-md px-3 py-2 bg-destructive/10">
-                {error}
-              </div>
-            )}
-            <Button type="submit" disabled={loading || !password} className="w-full">
-              {loading ? "Åpner porten…" : "Tre inn"}
-            </Button>
-            <p className="text-center text-xs text-muted-foreground tracking-wider pt-1">
-              «Vinteren tilhører oss»
+
+          {/* Greeting */}
+          <div className="text-center mb-5">
+            <p className="text-sm text-foreground">
+              Velkommen tilbake, <span className="text-primary font-medium">{greetingName}</span>
             </p>
-          </form>
+          </div>
+
+          {/* Last visit info */}
+          <div className="rounded-md border border-primary/20 bg-primary/5 px-4 py-3 mb-5 space-y-2 text-xs">
+            {infoLoading && !info ? (
+              <p className="text-muted-foreground text-center">Henter krønikene…</p>
+            ) : (
+              <>
+                <div className="flex items-start gap-2 text-muted-foreground">
+                  <LogIn className="w-3.5 h-3.5 mt-0.5 text-primary/70 shrink-0" />
+                  <div className="flex-1">
+                    <span className="block text-[10px] uppercase tracking-wider text-muted-foreground/70">
+                      Sist innlogget
+                    </span>
+                    <span className="text-foreground">{formatNo(info?.lastLoginAt ?? null)}</span>
+                  </div>
+                </div>
+                <div className="flex items-start gap-2 text-muted-foreground">
+                  <Clock className="w-3.5 h-3.5 mt-0.5 text-primary/70 shrink-0" />
+                  <div className="flex-1">
+                    <span className="block text-[10px] uppercase tracking-wider text-muted-foreground/70">
+                      Sist besøk
+                    </span>
+                    <span className="text-foreground">{formatNo(info?.lastSeenAt ?? null)}</span>
+                  </div>
+                </div>
+                {info?.ip && (
+                  <div className="flex items-start gap-2 text-muted-foreground">
+                    <MapPin className="w-3.5 h-3.5 mt-0.5 text-primary/70 shrink-0" />
+                    <div className="flex-1">
+                      <span className="block text-[10px] uppercase tracking-wider text-muted-foreground/70">
+                        Din adresse
+                      </span>
+                      <span className="text-foreground">{info.ip}</span>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+
+          {/* Logged in: show logout. Logged out: show login form. */}
+          {info?.authenticated ? (
+            <div className="space-y-3">
+              <Button onClick={onLogout} disabled={loading} variant="outline" className="w-full">
+                <LogOut className="w-4 h-4 mr-2" />
+                {loading ? "Lukker porten…" : "Logg ut"}
+              </Button>
+              <Button onClick={() => setOpen(false)} className="w-full">
+                Fortsett i borgen
+              </Button>
+            </div>
+          ) : (
+            <form onSubmit={onSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs tracking-wider uppercase text-muted-foreground mb-2">
+                  Husets passord
+                </label>
+                <Input
+                  type="password"
+                  autoFocus
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="bg-background/60"
+                />
+              </div>
+              {error && (
+                <div className="text-sm text-destructive border border-destructive/40 rounded-md px-3 py-2 bg-destructive/10">
+                  {error}
+                </div>
+              )}
+              <Button type="submit" disabled={loading || !password} className="w-full">
+                <LogIn className="w-4 h-4 mr-2" />
+                {loading ? "Åpner porten…" : "Logg inn"}
+              </Button>
+            </form>
+          )}
+
+          <p className="text-center text-xs text-muted-foreground tracking-wider pt-4">
+            «Vinteren tilhører oss»
+          </p>
         </div>
       </DialogContent>
     </Dialog>
