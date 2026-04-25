@@ -216,7 +216,7 @@ async function fetchAuroraData(): Promise<{
   const fcJson = (await fcRes.json()) as Array<Array<unknown>>;
   const rows = Array.isArray(fcJson) ? fcJson.slice(1) : [];
   const nowMs = Date.now();
-  const horizonMs = nowMs + 1000 * 60 * 60 * 72;
+  const horizonMs = nowMs + 1000 * 60 * 60 * 96;
   const forecast: KpForecast[] = rows
     .map((r): KpForecast | null => {
       if (!Array.isArray(r)) return null;
@@ -813,7 +813,7 @@ function buildNightlyOutlook(
 ): NightSummary[] {
   const out: NightSummary[] = [];
   const today = new Date();
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 3; i++) {
     const d = new Date(today.getTime() + i * 86400000);
     const t = sunTimes(d, HYTTA_LAT, HYTTA_LON);
     const next = sunTimes(new Date(d.getTime() + 86400000), HYTTA_LAT, HYTTA_LON);
@@ -822,15 +822,16 @@ function buildNightlyOutlook(
     if (!sunset || !sunrise) continue;
     if (sunrise.getTime() < Date.now()) continue; // natten er over
 
-    // Høyeste Kp-prognose i dette mørke-vinduet
+    // Høyeste Kp-prognose i dette mørke-vinduet (3-timers blokker — utvid med 1.5t buffer)
+    const bufferMs = 1000 * 60 * 90;
     let peakKp: number | null = null;
     let peakAt: Date | null = null;
     for (const f of forecast) {
       const ft = new Date(f.timeTag).getTime();
-      if (ft < sunset.getTime() || ft > sunrise.getTime()) continue;
+      if (ft < sunset.getTime() - bufferMs || ft > sunrise.getTime() + bufferMs) continue;
       if (peakKp === null || f.kp > peakKp) {
         peakKp = f.kp;
-        peakAt = new Date(ft);
+        peakAt = new Date(Math.max(sunset.getTime(), Math.min(sunrise.getTime(), ft)));
       }
     }
 
@@ -885,7 +886,7 @@ function NightlyOutlook({
       <div className="text-[10px] tracking-[0.3em] uppercase text-primary/80 mb-2">
         Sjanse de neste nettene · Hytta
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+      <div className="grid grid-cols-3 gap-2">
         {nights.map((n, i) => {
           const c = n.peakKp !== null ? classifyKp(n.peakKp, HYTTA_LAT) : null;
           const scoreColor =
