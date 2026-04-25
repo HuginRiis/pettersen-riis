@@ -902,7 +902,7 @@ function RecordsGrid({ records }: { records: DashOk["records"] }) {
   );
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-6">
+    <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 mb-6">
       {card(
         "Lengste tur",
         "🛡",
@@ -932,6 +932,12 @@ function RecordsGrid({ records }: { records: DashOk["records"] }) {
         "💨",
         records.maxSpeed,
         records.maxSpeed?.maxSpeed ? formatSpeedKmh(records.maxSpeed.maxSpeed) : "—",
+      )}
+      {card(
+        "Lengste gåtur",
+        "🚶",
+        records.longestWalk,
+        records.longestWalk ? formatKm(records.longestWalk.distance) : "—",
       )}
     </div>
   );
