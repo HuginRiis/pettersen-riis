@@ -1,7 +1,8 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { openLoginDialog } from "@/components/LoginDialog";
-import { KeyRound } from "lucide-react";
+import { KeyRound, LogIn, Clock, MapPin, User } from "lucide-react";
+import { getWelcomeInfo } from "@/server/auth";
 import {
   Dialog,
   DialogContent,
