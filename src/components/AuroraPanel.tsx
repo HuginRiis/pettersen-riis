@@ -209,7 +209,7 @@ async function fetchAuroraData(): Promise<{
   const fcJson = (await fcRes.json()) as Array<Array<unknown>>;
   const rows = Array.isArray(fcJson) ? fcJson.slice(1) : [];
   const nowMs = Date.now();
-  const horizonMs = nowMs + 1000 * 60 * 60 * 48;
+  const horizonMs = nowMs + 1000 * 60 * 60 * 72;
   const forecast: KpForecast[] = rows
     .map((r): KpForecast | null => {
       if (!Array.isArray(r)) return null;
@@ -492,6 +492,10 @@ export function AuroraPanel() {
 
               {peak && peak.kp >= 3 && <PeakCard peak={peak} />}
 
+              <NightlyOutlook forecast={state.forecast} clouds={state.clouds} />
+
+              <MultiDayKpChart forecast={state.forecast} />
+
               <ForecastTimeline forecast={state.forecast} />
 
               <p className="text-[11px] text-muted-foreground/70 italic pt-1 border-t border-border/40">
@@ -743,6 +747,305 @@ function ForecastTimeline({ forecast }: { forecast: KpForecast[] }) {
             </div>
           );
         })}
+      </div>
+    </div>
+  );
+}
+
+// --- Per-natt-utsikt: høyeste Kp i mørketiden, kombinert med skydekke ---
+type NightSummary = {
+  dateLabel: string;          // "I natt", "Natt til ons" osv.
+  sunset: Date;
+  sunrise: Date;
+  peakKp: number | null;
+  peakAt: Date | null;
+  avgCloud: number | null;    // %
+  score: number;              // 0..100
+};
+
+function buildNightlyOutlook(
+  forecast: KpForecast[],
+  clouds: CloudHour[],
+): NightSummary[] {
+  const out: NightSummary[] = [];
+  const today = new Date();
+  for (let i = 0; i < 3; i++) {
+    const d = new Date(today.getTime() + i * 86400000);
+    const t = sunTimes(d, HYTTA_LAT, HYTTA_LON);
+    const next = sunTimes(new Date(d.getTime() + 86400000), HYTTA_LAT, HYTTA_LON);
+    const sunset = t.sunset;
+    const sunrise = next.sunrise ?? t.sunrise;
+    if (!sunset || !sunrise) continue;
+    if (sunrise.getTime() < Date.now()) continue; // natten er over
+
+    // Høyeste Kp-prognose i dette mørke-vinduet
+    let peakKp: number | null = null;
+    let peakAt: Date | null = null;
+    for (const f of forecast) {
+      const ft = new Date(f.timeTag).getTime();
+      if (ft < sunset.getTime() || ft > sunrise.getTime()) continue;
+      if (peakKp === null || f.kp > peakKp) {
+        peakKp = f.kp;
+        peakAt = new Date(ft);
+      }
+    }
+
+    // Snittsky i samme vindu (MET-data dekker ~24 t — kan mangle for natt 2-3)
+    const cloudPts = clouds.filter((c) => {
+      const ct = new Date(c.time).getTime();
+      return ct >= sunset.getTime() && ct <= sunrise.getTime();
+    });
+    const avgCloud = cloudPts.length
+      ? Math.round(cloudPts.reduce((s, c) => s + c.cloudPct, 0) / cloudPts.length)
+      : null;
+
+    const skyClear = avgCloud === null ? 0.6 : Math.max(0, 1 - avgCloud / 100);
+    const auroraPotential = peakKp !== null ? peakKp * 12 : 0;
+    const score = Math.round(auroraPotential * skyClear);
+
+    let label: string;
+    if (i === 0) label = "I natt";
+    else {
+      const wd = new Intl.DateTimeFormat("nb-NO", {
+        timeZone: "Europe/Oslo",
+        weekday: "short",
+      }).format(sunset);
+      label = `Natt til ${wd}`;
+    }
+
+    out.push({
+      dateLabel: label,
+      sunset,
+      sunrise,
+      peakKp,
+      peakAt,
+      avgCloud,
+      score,
+    });
+  }
+  return out;
+}
+
+function NightlyOutlook({
+  forecast,
+  clouds,
+}: {
+  forecast: KpForecast[];
+  clouds: CloudHour[];
+}) {
+  const nights = useMemo(() => buildNightlyOutlook(forecast, clouds), [forecast, clouds]);
+  if (nights.length === 0) return null;
+
+  return (
+    <div>
+      <div className="text-[10px] tracking-[0.3em] uppercase text-primary/80 mb-2">
+        Sjanse de neste nettene · Hytta
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+        {nights.map((n, i) => {
+          const c = n.peakKp !== null ? classifyKp(n.peakKp, HYTTA_LAT) : null;
+          const scoreColor =
+            n.score >= 50
+              ? "oklch(0.78 0.20 130)"
+              : n.score >= 30
+                ? "oklch(0.78 0.18 145)"
+                : n.score >= 15
+                  ? "oklch(0.70 0.12 160)"
+                  : "oklch(0.55 0.04 240)";
+          return (
+            <div
+              key={i}
+              className="rounded-lg p-3 bg-card/40 border border-border/60"
+            >
+              <div className="flex items-baseline justify-between gap-2 mb-1.5">
+                <div className="text-[10px] tracking-[0.25em] uppercase text-foreground/85">
+                  {n.dateLabel}
+                </div>
+                <div
+                  className="text-medieval text-xs tabular-nums"
+                  style={{ color: scoreColor }}
+                  title="Sjanse-poeng (Kp × klarhet)"
+                >
+                  {n.score}
+                </div>
+              </div>
+
+              <div className="flex items-baseline gap-2 mb-1">
+                <div
+                  className="text-medieval text-2xl tabular-nums"
+                  style={{ color: c?.color ?? "oklch(0.55 0.04 240)" }}
+                >
+                  Kp {n.peakKp !== null ? n.peakKp.toFixed(0) : "—"}
+                </div>
+                <div className="text-[10px] text-muted-foreground">
+                  {n.peakAt ? `kl. ${formatOsloHM(n.peakAt)}` : "—"}
+                </div>
+              </div>
+
+              {/* Sjanse-bar */}
+              <div className="h-1.5 rounded bg-border/50 overflow-hidden mb-2">
+                <div
+                  className="h-full rounded transition-all"
+                  style={{ width: `${Math.min(100, n.score)}%`, background: scoreColor }}
+                />
+              </div>
+
+              <div className="flex items-center justify-between text-[9px] tracking-[0.15em] uppercase text-muted-foreground">
+                <span className="flex items-center gap-1">
+                  <Cloud className="h-2.5 w-2.5" />
+                  {n.avgCloud === null ? "—" : `${n.avgCloud}% sky`}
+                </span>
+                <span className="flex items-center gap-1">
+                  <Moon className="h-2.5 w-2.5" />
+                  {formatOsloHM(n.sunset)}–{formatOsloHM(n.sunrise)}
+                </span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// --- 3-dagers Kp-prognose med dato-skille og natt-skygger ---
+function MultiDayKpChart({ forecast }: { forecast: KpForecast[] }) {
+  if (forecast.length === 0) return null;
+
+  // Bygg natt-vinduer for skygging i bakgrunnen
+  const nights = useMemo(() => {
+    const list: Array<{ start: number; end: number }> = [];
+    const today = new Date();
+    for (let i = -1; i < 4; i++) {
+      const d = new Date(today.getTime() + i * 86400000);
+      const t = sunTimes(d, HYTTA_LAT, HYTTA_LON);
+      const next = sunTimes(new Date(d.getTime() + 86400000), HYTTA_LAT, HYTTA_LON);
+      if (t.sunset && next.sunrise) {
+        list.push({ start: t.sunset.getTime(), end: next.sunrise.getTime() });
+      }
+    }
+    return list;
+  }, []);
+
+  const items = forecast;
+  const maxKp = Math.max(5, ...items.map((f) => f.kp));
+  const startMs = new Date(items[0]!.timeTag).getTime();
+  const endMs = new Date(items[items.length - 1]!.timeTag).getTime() + 3 * 60 * 60 * 1000;
+  const span = Math.max(1, endMs - startMs);
+
+  // Dato-grupper for x-aksen
+  const dateLabels = new Map<string, { left: number; label: string }>();
+  for (const f of items) {
+    const t = new Date(f.timeTag);
+    const key = new Intl.DateTimeFormat("nb-NO", {
+      timeZone: "Europe/Oslo",
+      day: "2-digit",
+      month: "2-digit",
+    }).format(t);
+    if (!dateLabels.has(key)) {
+      const left = ((t.getTime() - startMs) / span) * 100;
+      dateLabels.set(key, { left, label: key });
+    }
+  }
+
+  return (
+    <div>
+      <div className="text-[10px] tracking-[0.3em] uppercase text-primary/80 mb-2">
+        3-dagers Kp-prognose · m/ natt-vinduer
+      </div>
+      <div className="relative rounded-lg border border-border/60 bg-card/30 p-3 pb-7">
+        {/* Y-akse referanselinjer (Kp 5 = G1 storm) */}
+        <div className="relative h-32">
+          {/* Natt-vinduer som skyggebakgrunn */}
+          {nights.map((n, i) => {
+            const left = ((n.start - startMs) / span) * 100;
+            const width = ((n.end - n.start) / span) * 100;
+            if (left + width < 0 || left > 100) return null;
+            return (
+              <div
+                key={i}
+                className="absolute top-0 bottom-0 pointer-events-none"
+                style={{
+                  left: `${Math.max(0, left)}%`,
+                  width: `${Math.min(100, left + width) - Math.max(0, left)}%`,
+                  background:
+                    "linear-gradient(180deg, oklch(0.45 0.10 280 / 0.18), oklch(0.30 0.06 280 / 0.10))",
+                }}
+                title="Mørketid (best for nordlys)"
+              />
+            );
+          })}
+
+          {/* Kp 5 referanselinje */}
+          <div
+            className="absolute left-0 right-0 border-t border-dashed pointer-events-none"
+            style={{
+              bottom: `${(5 / maxKp) * 100}%`,
+              borderColor: "oklch(0.78 0.20 130 / 0.4)",
+            }}
+          >
+            <span className="absolute -top-3 right-0 text-[8px] uppercase tracking-wider text-primary/70 bg-card/70 px-1 rounded-sm">
+              Kp 5 · storm
+            </span>
+          </div>
+
+          {/* Søyler */}
+          <div className="absolute inset-0 flex items-end gap-[2px]">
+            {items.map((f, i) => {
+              const c = classifyKp(f.kp, HYTTA_LAT);
+              const heightPct = Math.max(6, (f.kp / maxKp) * 100);
+              return (
+                <div
+                  key={i}
+                  className="flex-1 rounded-t-sm transition-all relative group"
+                  style={{
+                    height: `${heightPct}%`,
+                    background: c.color,
+                    opacity: f.obsOrPredicted === "observed" ? 1 : 0.7,
+                    minWidth: "4px",
+                  }}
+                  title={`${formatOsloDateTime(f.timeTag)} — Kp ${f.kp.toFixed(0)} (${c.label})`}
+                />
+              );
+            })}
+          </div>
+        </div>
+
+        {/* X-akse: dato-merker */}
+        <div className="relative h-4 mt-1">
+          {Array.from(dateLabels.values()).map((d, i) => (
+            <div
+              key={i}
+              className="absolute top-0 text-[9px] tabular-nums text-muted-foreground"
+              style={{ left: `${d.left}%` }}
+            >
+              <div className="w-px h-1 bg-border/60 mb-0.5" />
+              {d.label}
+            </div>
+          ))}
+        </div>
+
+        {/* Tegnforklaring */}
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-[9px] uppercase tracking-wider text-muted-foreground">
+          <span className="flex items-center gap-1">
+            <span
+              className="inline-block w-2 h-2 rounded-sm"
+              style={{ background: "oklch(0.45 0.10 280 / 0.4)" }}
+            />
+            Mørketid
+          </span>
+          <span className="flex items-center gap-1">
+            <span
+              className="inline-block w-2 h-2 rounded-sm"
+              style={{ background: "oklch(0.78 0.20 130)" }}
+            />
+            Storm (Kp ≥ 5)
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="inline-block w-2 h-0.5 border-t border-dashed border-primary/60" />
+            Observert vs. predikert (mørkere)
+          </span>
+        </div>
       </div>
     </div>
   );
