@@ -367,41 +367,47 @@ export function HeatersPanel({
     <section className="container mx-auto px-4 py-12">
       {collapsible
         ? (
-          <button
-            type="button"
-            onClick={() => setCollapsed((c) => !c)}
-            aria-expanded={!isCollapsed}
-            className="ornate-divider mb-6 w-full flex items-center justify-between gap-3 cursor-pointer group"
-          >
-            <span className="text-display tracking-[0.3em] text-primary text-sm uppercase">
-              {title}
-            </span>
-            <span className="flex items-center gap-3 text-[10px] tracking-[0.25em] text-muted-foreground uppercase shrink-0">
-              {summary && summary.total > 0 && (
-                <>
-                  <span className="hidden sm:inline-flex items-center gap-1">
-                    <Flame size={11} className="text-primary/70" />
-                    {summary.onCount}/{summary.total}
-                  </span>
-                  {summary.avgTarget !== null && (
-                    <span className="tabular-nums">{summary.avgTarget.toFixed(1)}°</span>
-                  )}
-                </>
-              )}
-              <ChevronDown
-                size={16}
-                className={`text-primary/70 transition-transform duration-300 ${
-                  isCollapsed ? "" : "rotate-180"
-                }`}
-              />
-            </span>
-          </button>
+          <div className="ornate-divider mb-6 w-full flex items-center justify-between gap-3">
+            <button
+              type="button"
+              onClick={() => setCollapsed((c) => !c)}
+              aria-expanded={!isCollapsed}
+              className="flex-1 flex items-center justify-between gap-3 cursor-pointer group"
+            >
+              <span className="text-display tracking-[0.3em] text-primary text-sm uppercase">
+                {title}
+              </span>
+              <span className="flex items-center gap-3 text-[10px] tracking-[0.25em] text-muted-foreground uppercase shrink-0">
+                {summary && summary.total > 0 && (
+                  <>
+                    <span className="hidden sm:inline-flex items-center gap-1">
+                      <Flame size={11} className="text-primary/70" />
+                      {summary.onCount}/{summary.total}
+                    </span>
+                    {summary.avgTarget !== null && (
+                      <span className="tabular-nums">
+                        {formatTempForDisplay(summary.avgTarget, unit)}°{unit}
+                      </span>
+                    )}
+                  </>
+                )}
+                <ChevronDown
+                  size={16}
+                  className={`text-primary/70 transition-transform duration-300 ${
+                    isCollapsed ? "" : "rotate-180"
+                  }`}
+                />
+              </span>
+            </button>
+            <UnitToggle unit={unit} onChange={setUnit} />
+          </div>
         )
         : (
-          <div className="ornate-divider mb-6">
+          <div className="ornate-divider mb-6 flex items-center justify-between gap-3">
             <span className="text-display tracking-[0.3em] text-primary text-sm uppercase">
               {title}
             </span>
+            <UnitToggle unit={unit} onChange={setUnit} />
           </div>
         )}
 
