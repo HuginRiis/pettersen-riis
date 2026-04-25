@@ -53,7 +53,17 @@ export function LoginDialog() {
   const refreshInfo = async () => {
     setInfoLoading(true);
     try {
-      const data = (await getWelcomeInfo()) as WelcomeInfo;
+      let endpoint: string | null = null;
+      let storedWho: string | null = null;
+      try {
+        const { getCurrentSubscriptionDetails, getStoredWho } = await import("@/lib/push-client");
+        const sub = await getCurrentSubscriptionDetails();
+        if (sub) endpoint = sub.endpoint;
+        storedWho = getStoredWho();
+      } catch {
+        /* ignore */
+      }
+      const data = (await getWelcomeInfo({ data: { endpoint, storedWho } })) as WelcomeInfo;
       setInfo(data);
     } catch {
       setInfo(null);
