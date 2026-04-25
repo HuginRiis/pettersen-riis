@@ -135,8 +135,9 @@ function HyttaPage() {
           pipa, peisen knitrer, og ravnene holder vakt i grantrærne utenfor.
         </p>
         <p className="text-muted-foreground leading-relaxed">
-          Her samles familien til turer, brettspill, og lange måltider. Hytta er hjertet av husets ro — et sted hvor
-          tiden går saktere og hvor stjernene står klarere.
+          Vi grunner og legger brikker som en mester i et stille spill, mens dampen fra boblebadet stiger som tåke
+          over et glemt rike. Vi vandrer gjennom skogens dype stier, der hvert steg tynger kroppen – men belønningen
+          er større enn slitet. For selv i trettheten finnes styrke, og i reisen finner vi vår ro.
         </p>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-4">
