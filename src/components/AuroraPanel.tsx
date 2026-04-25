@@ -822,15 +822,16 @@ function buildNightlyOutlook(
     if (!sunset || !sunrise) continue;
     if (sunrise.getTime() < Date.now()) continue; // natten er over
 
-    // Høyeste Kp-prognose i dette mørke-vinduet
+    // Høyeste Kp-prognose i dette mørke-vinduet (3-timers blokker — utvid med 1.5t buffer)
+    const bufferMs = 1000 * 60 * 90;
     let peakKp: number | null = null;
     let peakAt: Date | null = null;
     for (const f of forecast) {
       const ft = new Date(f.timeTag).getTime();
-      if (ft < sunset.getTime() || ft > sunrise.getTime()) continue;
+      if (ft < sunset.getTime() - bufferMs || ft > sunrise.getTime() + bufferMs) continue;
       if (peakKp === null || f.kp > peakKp) {
         peakKp = f.kp;
-        peakAt = new Date(ft);
+        peakAt = new Date(Math.max(sunset.getTime(), Math.min(sunrise.getTime(), ft)));
       }
     }
 
