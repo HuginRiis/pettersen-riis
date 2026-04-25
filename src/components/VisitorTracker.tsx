@@ -119,6 +119,7 @@ export function VisitorTracker() {
           pageviewId: pageviewIdRef.current,
           pageDurationSeconds: Math.floor((now - pageStartRef.current) / 1000),
           sessionDurationSeconds: Math.floor((now - sessionStartRef.current) / 1000),
+          who: readWho(),
         },
       }).catch(() => {});
     };
