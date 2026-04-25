@@ -197,13 +197,13 @@ function Stat({
   hintCls?: string;
 }) {
   return (
-    <div className="rounded border border-border/60 bg-background/40 px-2 py-1.5">
-      <div className="text-[9px] tracking-[0.25em] uppercase text-muted-foreground">
+    <div className="rounded border border-border/60 bg-background/40 px-1.5 py-1 sm:px-2 sm:py-1.5">
+      <div className="text-[8px] sm:text-[9px] tracking-[0.2em] sm:tracking-[0.25em] uppercase text-muted-foreground">
         {label}
       </div>
-      <div className="text-foreground font-medium">{value}</div>
+      <div className="text-foreground font-medium text-[11px] sm:text-sm">{value}</div>
       {hint && (
-        <div className={`text-[9px] tracking-[0.2em] uppercase mt-0.5 ${hintCls ?? "text-muted-foreground"}`}>
+        <div className={`text-[8px] sm:text-[9px] tracking-[0.15em] sm:tracking-[0.2em] uppercase mt-0.5 ${hintCls ?? "text-muted-foreground"}`}>
           {hint}
         </div>
       )}
