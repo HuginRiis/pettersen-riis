@@ -212,7 +212,12 @@ export function HeatersPanel({
           for (const h of heaters) {
             const o = next[h.id];
             if (!o) continue;
-            const remaining: { onoff?: boolean; target?: number; thermostatMode?: string } = {};
+            const remaining: {
+              onoff?: boolean;
+              target?: number;
+              thermostatMode?: string;
+              fanSpeed?: string | number;
+            } = {};
             if (o.onoff !== undefined && o.onoff !== h.onoff) remaining.onoff = o.onoff;
             if (o.target !== undefined && o.target !== h.target) remaining.target = o.target;
             if (
@@ -220,6 +225,8 @@ export function HeatersPanel({
               o.thermostatMode !== h.thermostatMode
             )
               remaining.thermostatMode = o.thermostatMode;
+            if (o.fanSpeed !== undefined && o.fanSpeed !== h.fanSpeed)
+              remaining.fanSpeed = o.fanSpeed;
             if (Object.keys(remaining).length === 0) delete next[h.id];
             else next[h.id] = remaining;
           }
