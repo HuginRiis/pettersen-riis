@@ -57,6 +57,7 @@ export function VisitorTracker() {
         screen: `${window.screen.width}x${window.screen.height}`,
         path: pathname,
         title: document.title || null,
+        who: readWho(),
       },
     })
       .then((res) => {
