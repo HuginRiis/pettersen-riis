@@ -115,11 +115,48 @@ function SmarthusPage() {
   const router = useRouter();
   const disconnect = useServerFn(disconnectHomey);
   const toggleOutdoorLights = useServerFn(setAllOutdoorLights);
+  const setCap = useServerFn(setLivingRoomDeviceCapability);
   const [disconnecting, setDisconnecting] = useState(false);
   const [togglingLights, setTogglingLights] = useState(false);
   const [lightsMessage, setLightsMessage] = useState<string | null>(null);
   const [homeyUpdated, setHomeyUpdated] = useState<Date | null>(null);
   const [showOffLights, setShowOffLights] = useState(false);
+  // Optimistisk on/off-state for hver Hue-pære + busy-flagg per id
+  const [hueOverrides, setHueOverrides] = useState<Record<string, boolean>>({});
+  const [hueBusy, setHueBusy] = useState<Record<string, boolean>>({});
+
+  const toggleHueLight = async (deviceId: string, next: boolean) => {
+    if (hueBusy[deviceId]) return;
+    setHueBusy((b) => ({ ...b, [deviceId]: true }));
+    setHueOverrides((o) => ({ ...o, [deviceId]: next }));
+    try {
+      const res = await setCap({ data: { deviceId, capability: "onoff", value: next } });
+      if (!res.ok) {
+        // Rull tilbake ved feil
+        setHueOverrides((o) => {
+          const { [deviceId]: _drop, ...rest } = o;
+          return rest;
+        });
+      } else {
+        // Hent fersk state etter kort pause
+        setTimeout(() => router.invalidate(), 1500);
+      }
+    } catch {
+      setHueOverrides((o) => {
+        const { [deviceId]: _drop, ...rest } = o;
+        return rest;
+      });
+    } finally {
+      setHueBusy((b) => {
+        const { [deviceId]: _drop, ...rest } = b;
+        return rest;
+      });
+    }
+  };
+
+  const toggleHueZone = async (ids: string[], next: boolean) => {
+    await Promise.all(ids.map((id) => toggleHueLight(id, next)));
+  };
 
   // Hver gang loader-data endres (etter router.invalidate) — merk tidspunktet.
   useEffect(() => {
