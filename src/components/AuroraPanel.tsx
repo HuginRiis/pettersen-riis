@@ -492,6 +492,10 @@ export function AuroraPanel() {
 
               {peak && peak.kp >= 3 && <PeakCard peak={peak} />}
 
+              <NightlyOutlook forecast={state.forecast} clouds={state.clouds} />
+
+              <MultiDayKpChart forecast={state.forecast} />
+
               <ForecastTimeline forecast={state.forecast} />
 
               <p className="text-[11px] text-muted-foreground/70 italic pt-1 border-t border-border/40">
