@@ -156,9 +156,29 @@ export function HeatersPanel({
   const [state, setState] = useState<State>({ status: "loading" });
   const [collapsed, setCollapsed] = useState<boolean>(collapsible && defaultCollapsed);
   const [overrides, setOverrides] = useState<
-    Record<string, { onoff?: boolean; target?: number; thermostatMode?: string }>
+    Record<
+      string,
+      {
+        onoff?: boolean;
+        target?: number;
+        thermostatMode?: string;
+        fanSpeed?: string | number;
+      }
+    >
   >({});
   const [busy, setBusy] = useState<Record<string, boolean>>({});
+
+  // Celsius / Fahrenheit toggle (persistert i localStorage)
+  const [unit, setUnit] = useState<"C" | "F">(() => {
+    if (typeof window === "undefined") return "C";
+    const saved = window.localStorage.getItem("hpr.tempUnit");
+    return saved === "F" ? "F" : "C";
+  });
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("hpr.tempUnit", unit);
+    }
+  }, [unit]);
 
   const inFlight = useRef(false);
   const backoffRef = useRef<number>(REFRESH_MS);
