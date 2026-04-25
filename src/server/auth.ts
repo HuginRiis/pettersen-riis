@@ -231,17 +231,33 @@ export const getWelcomeInfo = createServerFn({ method: "POST" })
     /* ignore */
   }
 
-  // Last visitor session (last_seen_at)
+  // Last visitor session (last_seen_at) — skip the CURRENT session so we show
+  // the previous visit. Anything updated within the last 5 minutes is treated
+  // as the active session.
   try {
     if (ip) {
+      const cutoff = new Date(Date.now() - 5 * 60 * 1000).toISOString();
       const { data } = await supabaseAdmin
         .from("visitor_sessions" as any)
         .select("last_seen_at")
         .eq("ip", ip)
+        .lt("last_seen_at", cutoff)
         .order("last_seen_at", { ascending: false })
         .limit(1)
         .maybeSingle();
-      if (data) lastSeenAt = (data as any).last_seen_at;
+      if (data) {
+        lastSeenAt = (data as any).last_seen_at;
+      } else {
+        // Fallback: no older session — show most recent regardless
+        const { data: any2 } = await supabaseAdmin
+          .from("visitor_sessions" as any)
+          .select("last_seen_at")
+          .eq("ip", ip)
+          .order("last_seen_at", { ascending: false })
+          .limit(2);
+        if (any2 && any2.length > 1) lastSeenAt = (any2[1] as any).last_seen_at;
+        else if (any2 && any2.length > 0) lastSeenAt = (any2[0] as any).last_seen_at;
+      }
     }
   } catch {
     /* ignore */
