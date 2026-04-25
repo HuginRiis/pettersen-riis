@@ -151,7 +151,19 @@ export const logoutFn = createServerFn({ method: "POST" }).handler(async () => {
  *  - lastSeenAt: forrige bes\u00f8k (visitor session) fra denne IP-en
  *  - authenticated: om sesjonen er aktiv
  */
-export const getWelcomeInfo = createServerFn({ method: "GET" }).handler(async () => {
+export const getWelcomeInfo = createServerFn({ method: "POST" })
+  .inputValidator((input?: { endpoint?: string | null; storedWho?: string | null } | undefined) => {
+    const endpoint =
+      typeof input?.endpoint === "string" && input.endpoint.length > 10 && input.endpoint.length <= 2000
+        ? input.endpoint
+        : null;
+    const storedWho =
+      typeof input?.storedWho === "string" && input.storedWho.length > 0 && input.storedWho.length <= 40
+        ? input.storedWho
+        : null;
+    return { endpoint, storedWho };
+  })
+  .handler(async ({ data }) => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const ip = getCurrentRequestIp();
   const session = await useSession<SessionData>(getSessionConfig());
@@ -161,33 +173,37 @@ export const getWelcomeInfo = createServerFn({ method: "GET" }).handler(async ()
   let lastLoginAt: string | null = null;
   let lastSeenAt: string | null = null;
 
-  // Try to identify "who" via the most recently used push subscription on this IP's user agents.
-  // We don't have IP on push_subscriptions, so we use ip_user_mapping as a bridge if present,
-  // otherwise we fall back to the most recent push subscription overall on this device's UA.
-  try {
-    if (ip) {
-      const { data: mapping } = await supabaseAdmin
-        .from("ip_user_mapping" as any)
-        .select("who")
-        .eq("ip", ip)
-        .maybeSingle();
-      if (mapping && (mapping as any).who) who = (mapping as any).who as string;
-    }
-  } catch {
-    /* ignore */
-  }
-
-  // If still null, peek at the most recently used push subscription (best-effort)
-  if (!who) {
+  // 1) Most precise: the push subscription registered on THIS device (matched by endpoint).
+  if (data.endpoint) {
     try {
       const { data: sub } = await supabaseAdmin
         .from("push_subscriptions" as any)
-        .select("who, last_used_at")
-        .order("last_used_at", { ascending: false })
-        .limit(1)
+        .select("who")
+        .eq("endpoint", data.endpoint)
         .maybeSingle();
       if (sub && (sub as any).who && (sub as any).who !== "Alle") {
         who = (sub as any).who as string;
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+
+  // 2) Fallback: localStorage value from this browser ("agenda_push_who")
+  if (!who && data.storedWho && data.storedWho !== "Alle") {
+    who = data.storedWho;
+  }
+
+  // 3) Fallback: explicit IP→user mapping
+  if (!who) {
+    try {
+      if (ip) {
+        const { data: mapping } = await supabaseAdmin
+          .from("ip_user_mapping" as any)
+          .select("who")
+          .eq("ip", ip)
+          .maybeSingle();
+        if (mapping && (mapping as any).who) who = (mapping as any).who as string;
       }
     } catch {
       /* ignore */
