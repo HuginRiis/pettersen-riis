@@ -76,11 +76,15 @@ export const checkAuth = createServerFn({ method: "GET" }).handler(async () => {
 });
 
 export const loginFn = createServerFn({ method: "POST" })
-  .inputValidator((data: { password: string }) => {
+  .inputValidator((data: { password: string; who?: string | null }) => {
     if (typeof data?.password !== "string" || data.password.length === 0 || data.password.length > 200) {
       throw new Error("Ugyldig passord");
     }
-    return { password: data.password };
+    const who =
+      typeof data?.who === "string" && data.who.trim().length > 0 && data.who.trim().length <= 40
+        ? data.who.trim()
+        : null;
+    return { password: data.password, who };
   })
   .handler(async ({ data }) => {
     const expected = process.env.HOUSE_RIIS_PASSWORD;
@@ -94,17 +98,13 @@ export const loginFn = createServerFn({ method: "POST" })
       const failures = await getFailedAttemptTimestampsForIp(ip, ESCALATION_LOOKBACK_HOURS);
       const episodes = detectLockoutEpisodes(failures);
       if (episodes.length > 0) {
-        // The most recent episode determines the active lockout (if still pending)
         const lastEpisode = episodes[episodes.length - 1]!;
-        // The episode count BEFORE this one tells us which escalation tier to use:
-        // 1st episode → tier 0 (1 min), 2nd → tier 1 (15 min), 3rd+ → tier 2 (60 min)
         const tier = Math.min(episodes.length - 1, LOCKOUT_DURATIONS_MIN.length - 1);
         const durationMin = LOCKOUT_DURATIONS_MIN[tier]!;
         const unlockAt = new Date(lastEpisode.getTime() + durationMin * 60 * 1000);
         const remainingMs = unlockAt.getTime() - Date.now();
         if (remainingMs > 0) {
           const minutes = Math.max(1, Math.ceil(remainingMs / 60000));
-          // Slow the response down a bit — adds friction to scripted attempts
           await new Promise((r) => setTimeout(r, 800));
           throw new Error(
             `For mange feil-forsøk. Porten er stengt i ca. ${minutes} minutt${minutes === 1 ? "" : "er"}.`,
@@ -126,13 +126,12 @@ export const loginFn = createServerFn({ method: "POST" })
     ok = ok && diff === 0;
 
     if (!ok) {
-      // Small delay to slow brute force
       await new Promise((r) => setTimeout(r, 400));
-      await logLoginAttempt(false);
+      await logLoginAttempt(false, data.who);
       throw new Error("Feil passord");
     }
 
-    await logLoginAttempt(true);
+    await logLoginAttempt(true, data.who);
     const session = await useSession<SessionData>(getSessionConfig());
     await session.update({ authenticated: true, loggedInAt: Date.now() });
     return { ok: true };
@@ -210,9 +209,25 @@ export const getWelcomeInfo = createServerFn({ method: "POST" })
     }
   }
 
-  // Last successful login from this IP (excluding current session)
+  // Last successful login — prefer matching by `who` (person), fall back to IP.
+  // We exclude the current session: when authenticated we skip the most recent
+  // entry (likely this login).
   try {
-    if (ip) {
+    if (who) {
+      const { data } = await supabaseAdmin
+        .from("visitor_login_attempts" as any)
+        .select("attempted_at")
+        .eq("who", who)
+        .eq("success", true)
+        .order("attempted_at", { ascending: false })
+        .limit(2);
+      const arr = (data ?? []) as any[];
+      if (arr.length > 0) {
+        const pick = authenticated && arr.length > 1 ? arr[1] : arr[0];
+        lastLoginAt = pick.attempted_at;
+      }
+    }
+    if (!lastLoginAt && ip) {
       const { data } = await supabaseAdmin
         .from("visitor_login_attempts" as any)
         .select("attempted_at")
@@ -220,9 +235,8 @@ export const getWelcomeInfo = createServerFn({ method: "POST" })
         .eq("success", true)
         .order("attempted_at", { ascending: false })
         .limit(2);
-      if (data && data.length > 0) {
-        // If currently authenticated, the most recent record might be the current session — pick the second.
-        const arr = data as any[];
+      const arr = (data ?? []) as any[];
+      if (arr.length > 0) {
         const pick = authenticated && arr.length > 1 ? arr[1] : arr[0];
         lastLoginAt = pick.attempted_at;
       }
@@ -231,12 +245,34 @@ export const getWelcomeInfo = createServerFn({ method: "POST" })
     /* ignore */
   }
 
-  // Last visitor session (last_seen_at) — skip the CURRENT session so we show
-  // the previous visit. Anything updated within the last 5 minutes is treated
-  // as the active session.
+  // Last visitor session — prefer matching by `who`, skipping the active session
+  // (anything updated in the last 5 min). Fall back to IP if needed.
   try {
-    if (ip) {
-      const cutoff = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+    const cutoff = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+    if (who) {
+      const { data } = await supabaseAdmin
+        .from("visitor_sessions" as any)
+        .select("last_seen_at")
+        .eq("who", who)
+        .lt("last_seen_at", cutoff)
+        .order("last_seen_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (data) lastSeenAt = (data as any).last_seen_at;
+      if (!lastSeenAt) {
+        // No older session yet — pick the most recent regardless
+        const { data: any2 } = await supabaseAdmin
+          .from("visitor_sessions" as any)
+          .select("last_seen_at")
+          .eq("who", who)
+          .order("last_seen_at", { ascending: false })
+          .limit(2);
+        const arr = (any2 ?? []) as any[];
+        if (arr.length > 1) lastSeenAt = arr[1].last_seen_at;
+        else if (arr.length > 0) lastSeenAt = arr[0].last_seen_at;
+      }
+    }
+    if (!lastSeenAt && ip) {
       const { data } = await supabaseAdmin
         .from("visitor_sessions" as any)
         .select("last_seen_at")
@@ -245,18 +281,17 @@ export const getWelcomeInfo = createServerFn({ method: "POST" })
         .order("last_seen_at", { ascending: false })
         .limit(1)
         .maybeSingle();
-      if (data) {
-        lastSeenAt = (data as any).last_seen_at;
-      } else {
-        // Fallback: no older session — show most recent regardless
+      if (data) lastSeenAt = (data as any).last_seen_at;
+      if (!lastSeenAt) {
         const { data: any2 } = await supabaseAdmin
           .from("visitor_sessions" as any)
           .select("last_seen_at")
           .eq("ip", ip)
           .order("last_seen_at", { ascending: false })
           .limit(2);
-        if (any2 && any2.length > 1) lastSeenAt = (any2[1] as any).last_seen_at;
-        else if (any2 && any2.length > 0) lastSeenAt = (any2[0] as any).last_seen_at;
+        const arr = (any2 ?? []) as any[];
+        if (arr.length > 1) lastSeenAt = arr[1].last_seen_at;
+        else if (arr.length > 0) lastSeenAt = arr[0].last_seen_at;
       }
     }
   } catch {

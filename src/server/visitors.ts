@@ -141,6 +141,14 @@ async function lookupGeo(ip: string | null): Promise<GeoInfo> {
   }
 }
 
+function sanitizeWho(w: unknown): string | null {
+  if (typeof w !== "string") return null;
+  const trimmed = w.trim();
+  if (!trimmed || trimmed.length > 40) return null;
+  if (trimmed === "Alle") return null;
+  return trimmed;
+}
+
 export const startVisitorSession = createServerFn({ method: "POST" })
   .inputValidator(
     (input: {
@@ -150,6 +158,7 @@ export const startVisitorSession = createServerFn({ method: "POST" })
       screen: string | null;
       path: string;
       title: string | null;
+      who?: string | null;
     }) => {
       if (!input?.clientSessionId || typeof input.clientSessionId !== "string") {
         throw new Error("Mangler clientSessionId");
@@ -164,6 +173,7 @@ export const startVisitorSession = createServerFn({ method: "POST" })
     const ip = parseClientIp();
     const uaInfo = parseUserAgent(ua);
     const geo = await lookupGeo(ip);
+    const who = sanitizeWho(data.who);
 
     // Upsert by client_session_id
     const { data: existing } = await supabaseAdmin
@@ -175,9 +185,11 @@ export const startVisitorSession = createServerFn({ method: "POST" })
     let sessionId: string;
     if (existing && (existing as any).id) {
       sessionId = (existing as any).id;
+      const update: Record<string, any> = { last_seen_at: new Date().toISOString() };
+      if (who) update.who = who;
       await supabaseAdmin
         .from("visitor_sessions" as any)
-        .update({ last_seen_at: new Date().toISOString() })
+        .update(update)
         .eq("id", sessionId);
     } else {
       const { data: inserted, error } = await supabaseAdmin
@@ -200,6 +212,7 @@ export const startVisitorSession = createServerFn({ method: "POST" })
           referrer: data.referrer ? data.referrer.slice(0, 500) : null,
           language: data.language ? data.language.slice(0, 32) : null,
           screen: data.screen ? data.screen.slice(0, 32) : null,
+          who,
         })
         .select("id")
         .single();
@@ -224,7 +237,7 @@ export const startVisitorSession = createServerFn({ method: "POST" })
 
 export const recordPageview = createServerFn({ method: "POST" })
   .inputValidator(
-    (input: { sessionId: string; path: string; title: string | null }) => {
+    (input: { sessionId: string; path: string; title: string | null; who?: string | null }) => {
       if (!input?.sessionId) throw new Error("Mangler sessionId");
       if (input.sessionId.length > 64) throw new Error("Ugyldig sessionId");
       return input;
@@ -242,16 +255,22 @@ export const recordPageview = createServerFn({ method: "POST" })
       .single();
     if (error) throw new Error(error.message);
 
-    // Bump session counters
+    // Bump session counters + persist who if provided
     const { data: sess } = await supabaseAdmin
       .from("visitor_sessions" as any)
       .select("pageview_count")
       .eq("id", data.sessionId)
       .maybeSingle();
     const next = ((sess as any)?.pageview_count ?? 0) + 1;
+    const update: Record<string, any> = {
+      pageview_count: next,
+      last_seen_at: new Date().toISOString(),
+    };
+    const who = sanitizeWho(data.who);
+    if (who) update.who = who;
     await supabaseAdmin
       .from("visitor_sessions" as any)
-      .update({ pageview_count: next, last_seen_at: new Date().toISOString() })
+      .update(update)
       .eq("id", data.sessionId);
 
     return { pageviewId: (pv as any).id };
@@ -264,6 +283,7 @@ export const heartbeat = createServerFn({ method: "POST" })
       pageviewId: string | null;
       pageDurationSeconds: number;
       sessionDurationSeconds: number;
+      who?: string | null;
     }) => {
       if (!input?.sessionId) throw new Error("Mangler sessionId");
       return input;
@@ -271,12 +291,15 @@ export const heartbeat = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     const now = new Date().toISOString();
+    const update: Record<string, any> = {
+      last_seen_at: now,
+      duration_seconds: Math.max(0, Math.floor(data.sessionDurationSeconds)),
+    };
+    const who = sanitizeWho(data.who);
+    if (who) update.who = who;
     await supabaseAdmin
       .from("visitor_sessions" as any)
-      .update({
-        last_seen_at: now,
-        duration_seconds: Math.max(0, Math.floor(data.sessionDurationSeconds)),
-      })
+      .update(update)
       .eq("id", data.sessionId);
     if (data.pageviewId) {
       await supabaseAdmin

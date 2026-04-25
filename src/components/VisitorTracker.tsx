@@ -1,8 +1,18 @@
 import { useEffect, useRef } from "react";
 import { useRouterState } from "@tanstack/react-router";
 import { startVisitorSession, recordPageview, heartbeat } from "@/server/visitors";
+import { getStoredWho } from "@/lib/push-client";
 
 const SESSION_KEY = "vakttarnet_client_session_id";
+
+function readWho(): string | null {
+  try {
+    const w = getStoredWho();
+    return w && w !== "Alle" ? w : null;
+  } catch {
+    return null;
+  }
+}
 
 function getOrCreateClientSessionId(): string {
   try {
@@ -47,6 +57,7 @@ export function VisitorTracker() {
         screen: `${window.screen.width}x${window.screen.height}`,
         path: pathname,
         title: document.title || null,
+        who: readWho(),
       },
     })
       .then((res) => {
@@ -73,6 +84,7 @@ export function VisitorTracker() {
           pageviewId: pageviewIdRef.current,
           pageDurationSeconds: prevDuration,
           sessionDurationSeconds: Math.floor((Date.now() - sessionStartRef.current) / 1000),
+          who: readWho(),
         },
       }).catch(() => {});
     }
@@ -85,6 +97,7 @@ export function VisitorTracker() {
         sessionId: sessionIdRef.current,
         path: pathname,
         title: document.title || null,
+        who: readWho(),
       },
     })
       .then((res) => {
@@ -106,6 +119,7 @@ export function VisitorTracker() {
           pageviewId: pageviewIdRef.current,
           pageDurationSeconds: Math.floor((now - pageStartRef.current) / 1000),
           sessionDurationSeconds: Math.floor((now - sessionStartRef.current) / 1000),
+          who: readWho(),
         },
       }).catch(() => {});
     };
