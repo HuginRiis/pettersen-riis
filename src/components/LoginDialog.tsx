@@ -88,7 +88,15 @@ export function LoginDialog() {
     setLoading(true);
     setError(null);
     try {
-      await loginFn({ data: { password } });
+      let who: string | null = null;
+      try {
+        const { getStoredWho } = await import("@/lib/push-client");
+        const w = getStoredWho();
+        if (w && w !== "Alle") who = w;
+      } catch {
+        /* ignore */
+      }
+      await loginFn({ data: { password, who } });
       setOpen(false);
       setPassword("");
       await router.invalidate();
