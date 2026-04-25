@@ -835,7 +835,11 @@ function SmarthusPage() {
                   );
                   return (
                     <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4 animate-in fade-in slide-in-from-top-2 duration-200">
-                      {sortedZones.map(([zoneName, items]) => (
+                      {sortedZones.map(([zoneName, items]) => {
+                        const ids = items.map((i) => i.id);
+                        const anyOn = items.some((i) => i.on);
+                        const zoneBusy = ids.some((id) => hueBusy[id]);
+                        return (
                         <div
                           key={zoneName}
                           className="rounded border border-border/60 p-3"
@@ -846,25 +850,49 @@ function SmarthusPage() {
                         >
                           <div className="flex items-center gap-2 mb-2">
                             <Shield size={11} className="text-muted-foreground" />
-                            <span className="text-[10px] tracking-[0.25em] text-muted-foreground uppercase truncate">
+                            <span className="text-[10px] tracking-[0.25em] text-muted-foreground uppercase truncate flex-1">
                               {zoneName}
                             </span>
+                            <Switch
+                              checked={anyOn}
+                              disabled={zoneBusy}
+                              onCheckedChange={(v) => toggleHueZone(ids, v)}
+                              aria-label={`Slå ${anyOn ? "av" : "på"} alle lys i ${zoneName}`}
+                              className="scale-90"
+                            />
                           </div>
                           <ul className="space-y-1">
-                            {items.map((l) => (
+                            {items.map((l) => {
+                              const busy = !!hueBusy[l.id];
+                              return (
                               <li
                                 key={l.id}
                                 className="flex items-center gap-2 text-xs"
                               >
-                                <Lightbulb size={10} className="text-muted-foreground/60 shrink-0" />
+                                <button
+                                  type="button"
+                                  onClick={() => toggleHueLight(l.id, !l.on)}
+                                  disabled={busy}
+                                  aria-label={`Slå ${l.on ? "av" : "på"} ${l.name}`}
+                                  title={l.on ? "Slukk" : "Tenn"}
+                                  className={`shrink-0 grid place-content-center h-5 w-5 rounded border transition-colors ${
+                                    l.on
+                                      ? "border-primary/60 bg-primary/15 text-primary hover:bg-primary/25"
+                                      : "border-border/60 text-muted-foreground/70 hover:border-primary/40 hover:text-primary"
+                                  } ${busy ? "opacity-50 cursor-wait" : ""}`}
+                                >
+                                  {l.on ? <Flame size={10} /> : <Lightbulb size={10} />}
+                                </button>
                                 <span className="truncate flex-1 text-muted-foreground" title={l.name}>
                                   {l.name}
                                 </span>
                               </li>
-                            ))}
+                              );
+                            })}
                           </ul>
                         </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   );
                 })()}
