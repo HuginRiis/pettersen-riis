@@ -732,13 +732,26 @@ function PortalGate({
 
   useEffect(() => {
     let cancelled = false;
-    getWelcomeInfo()
-      .then((d) => {
+    (async () => {
+      // Pull this device's push endpoint + stored "who" so the server can
+      // identify exactly which person is on this device.
+      let endpoint: string | null = null;
+      let storedWho: string | null = null;
+      try {
+        const { getCurrentSubscriptionDetails, getStoredWho } = await import("@/lib/push-client");
+        const sub = await getCurrentSubscriptionDetails();
+        if (sub) endpoint = sub.endpoint;
+        storedWho = getStoredWho();
+      } catch {
+        /* ignore */
+      }
+      try {
+        const d = await getWelcomeInfo({ data: { endpoint, storedWho } });
         if (!cancelled) setInfo(d as WelcomeInfo);
-      })
-      .catch(() => {
+      } catch {
         if (!cancelled) setInfo(null);
-      });
+      }
+    })();
     return () => {
       cancelled = true;
     };
