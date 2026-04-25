@@ -268,7 +268,12 @@ export function HeatersPanel({
   const sendCap = useCallback(
     async (
       heaterId: string,
-      capability: "onoff" | "target_temperature" | "thermostat_mode",
+      capability:
+        | "onoff"
+        | "target_temperature"
+        | "thermostat_mode"
+        | "fan_speed"
+        | "fan_mode",
       value: boolean | number | string,
     ) => {
       const key = `${heaterId}:${capability}`;
@@ -279,7 +284,9 @@ export function HeatersPanel({
           ? "onoff"
           : capability === "target_temperature"
             ? "target"
-            : "thermostatMode";
+            : capability === "thermostat_mode"
+              ? "thermostatMode"
+              : "fanSpeed";
       setOverrides((o) => ({
         ...o,
         [heaterId]: {
