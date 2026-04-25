@@ -153,6 +153,16 @@ async function fetchTokenLike(url: string, init: RequestInit): Promise<string> {
 
 export type HomeyCapValue = string | number | boolean | null;
 
+export type HomeyCapabilityEnumValue = { id: string; title?: string };
+
+export type HomeyCapabilityMeta = {
+  value: HomeyCapValue;
+  min?: number;
+  max?: number;
+  step?: number;
+  values?: HomeyCapabilityEnumValue[];
+};
+
 export type HomeyDeviceSnapshot = {
   id: string;
   name: string;
@@ -161,7 +171,7 @@ export type HomeyDeviceSnapshot = {
   available?: boolean;
   /** Driver/app-identifikator (f.eks. "homey:app:com.philips.hue") — brukes for å skille merker som Philips Hue. */
   driverUri?: string | null;
-  capabilities: Record<string, { value: HomeyCapValue }>;
+  capabilities: Record<string, HomeyCapabilityMeta>;
 };
 
 export type HomeyZone = { id: string; name: string };
