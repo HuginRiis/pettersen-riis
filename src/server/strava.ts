@@ -351,6 +351,13 @@ export const getStravaDashboard = createServerFn({ method: "GET" })
         mostElevation: slim(records.mostElevation),
         maxHr: slim(records.maxHr),
         maxSpeed: slim(records.maxSpeed),
+        longestWalk: slim(records.longestWalk),
+      },
+      walkRecent: {
+        count: walkTotals.count,
+        distance: walkTotals.distance,
+        movingTime: walkTotals.movingTime,
+        elevation: walkTotals.elevation,
       },
       totals: stats
         ? {
