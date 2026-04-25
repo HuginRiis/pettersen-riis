@@ -239,15 +239,17 @@ export const getWelcomeInfo = createServerFn({ method: "POST" })
     /* ignore */
   }
 
-  // Last visit — most recently updated session for this person (matched by
-  // `who`), falling back to IP. Always show the latest, including the active
-  // session, so the user sees their current visit time.
+  // Last visit — go back at least 1 hour, then pick the most recent session
+  // before that cutoff. This skips the current/active visit so the user sees
+  // their previous visit instead of "right now".
   try {
+    const cutoff = new Date(Date.now() - 60 * 60 * 1000).toISOString();
     if (who) {
       const { data } = await supabaseAdmin
         .from("visitor_sessions" as any)
         .select("last_seen_at")
         .eq("who", who)
+        .lt("last_seen_at", cutoff)
         .order("last_seen_at", { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -258,6 +260,7 @@ export const getWelcomeInfo = createServerFn({ method: "POST" })
         .from("visitor_sessions" as any)
         .select("last_seen_at")
         .eq("ip", ip)
+        .lt("last_seen_at", cutoff)
         .order("last_seen_at", { ascending: false })
         .limit(1)
         .maybeSingle();
