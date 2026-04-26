@@ -1137,6 +1137,35 @@ function Stat({
   return <div className={baseClass}>{inner}</div>;
 }
 
+/**
+ * Pyrelys — flammen som markerer hvor mye liv som er igjen i en sjels batteri.
+ * Lave nivåer brenner blod-rødt (House Targaryen i nød), middels glør gull
+ * (House Lannister), fulle kilder gløder rolig amber. Dette er drage-ild på
+ * en gjenstand i borgen, ikke et batteri-emoji.
+ */
+function BatteryFlame({ value, size = 12 }: { value: number; size?: number }) {
+  const v = Math.max(0, Math.min(100, value));
+  const tone =
+    v <= 20
+      ? "text-destructive"
+      : v <= 50
+        ? "text-amber-400"
+        : "text-amber-200/80";
+  return (
+    <span className="inline-flex items-center gap-1 tabular-nums">
+      <Flame
+        size={size}
+        className={`${tone} shrink-0`}
+        strokeWidth={1.75}
+        fill="currentColor"
+        fillOpacity={v <= 20 ? 0.35 : 0.18}
+        aria-hidden
+      />
+      {Math.round(v)}%
+    </span>
+  );
+}
+
 function DeviceCard({ device }: { device: any }) {
   const onoff = device.capabilities["onoff"]?.value;
   const dim = device.capabilities["dim"]?.value;
