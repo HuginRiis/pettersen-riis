@@ -865,10 +865,11 @@ function TotalsGrid({
         <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground mb-3">
           Siste 4 uker
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {block("Løping", totals.recentRun)}
           {block("Sykling", totals.recentRide)}
           {block("Svømming", totals.recentSwim)}
+          {block("Gåing", totals.recentWalk)}
         </div>
       </div>
       <div>
