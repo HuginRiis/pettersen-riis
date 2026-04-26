@@ -11,7 +11,31 @@ import {
 } from "@/server/homey";
 import { supabase } from "@/integrations/supabase/client";
 import { getStoredWho, setStoredWho, type Who } from "@/lib/push-client";
-import { DoorClosed, DoorOpen, Lock, Unlock, Activity, ShieldAlert, BatteryLow, Plus, Minus, ShieldCheck, ShieldOff, Loader2 } from "lucide-react";
+import { DoorClosed, DoorOpen, Lock, Unlock, Activity, ShieldAlert, BatteryLow, Plus, Minus, ShieldCheck, ShieldOff, Loader2, Flame } from "lucide-react";
+
+/**
+ * Pyrelys — drage-ild som markerer batteri-nivå på borgens vakter.
+ * Lavt = blod-rødt (House Targaryen i nød), middels = gull (Lannister),
+ * fullt = rolig amber. Ikke et batteri-emoji, men en flamme på selve gjenstanden.
+ */
+function BatteryFlame({ value, size = 11 }: { value: number; size?: number }) {
+  const v = Math.max(0, Math.min(100, value));
+  const tone =
+    v < 20 ? "text-destructive" : v <= 50 ? "text-amber-400" : "text-amber-200/80";
+  return (
+    <span className="inline-flex items-center gap-1 tabular-nums">
+      <Flame
+        size={size}
+        className={`${tone} shrink-0`}
+        strokeWidth={1.75}
+        fill="currentColor"
+        fillOpacity={v < 20 ? 0.35 : 0.18}
+        aria-hidden
+      />
+      {Math.round(v)}%
+    </span>
+  );
+}
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 const REFRESH_MS = 30_000;
@@ -84,15 +108,7 @@ function LockRow({ entry }: { entry: DoorOrLockEntry }) {
         </div>
         <div className="text-[10px] text-muted-foreground mt-0.5 flex items-center gap-3 flex-wrap">
           <span>↻ {ago(entry.lastUpdated)}</span>
-          {typeof entry.battery === "number" && (
-            <span
-              className={
-                entry.battery < 20 ? "text-destructive" : "text-muted-foreground"
-              }
-            >
-              🔋 {Math.round(entry.battery)}%
-            </span>
-          )}
+          {typeof entry.battery === "number" && <BatteryFlame value={entry.battery} />}
           {entry.tamper && (
             <span className="text-destructive flex items-center gap-1">
               <ShieldAlert size={10} /> Sabotasje!
@@ -145,15 +161,7 @@ function ContactRow({ entry }: { entry: DoorOrLockEntry }) {
         </div>
         <div className="text-[10px] text-muted-foreground mt-0.5 flex items-center gap-3 flex-wrap">
           <span>↻ {ago(entry.lastUpdated)}</span>
-          {typeof entry.battery === "number" && (
-            <span
-              className={
-                entry.battery < 20 ? "text-destructive" : "text-muted-foreground"
-              }
-            >
-              🔋 {Math.round(entry.battery)}%
-            </span>
-          )}
+          {typeof entry.battery === "number" && <BatteryFlame value={entry.battery} />}
           {entry.tamper && (
             <span className="text-destructive flex items-center gap-1">
               <ShieldAlert size={10} /> Sabotasje!
@@ -198,14 +206,8 @@ function MotionRow({ entry }: { entry: DoorOrLockEntry }) {
         <div className="text-[10px] text-muted-foreground mt-0.5">
           Sist rørelse: {ago(entry.lastUpdated)}
           {typeof entry.battery === "number" && (
-            <span
-              className={
-                entry.battery < 20
-                  ? "text-destructive ml-3"
-                  : "text-muted-foreground ml-3"
-              }
-            >
-              🔋 {Math.round(entry.battery)}%
+            <span className="ml-3 inline-flex">
+              <BatteryFlame value={entry.battery} />
             </span>
           )}
         </div>

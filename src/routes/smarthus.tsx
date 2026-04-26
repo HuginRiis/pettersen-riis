@@ -673,7 +673,7 @@ function SmarthusPage() {
                     <li key={d.id} className="flex items-center justify-between gap-3">
                       <span className="truncate text-foreground">{d.name}</span>
                       <span className="text-destructive shrink-0">
-                        🔋 {Math.round(d.capabilities["measure_battery"]?.value as number)}%
+                        <BatteryFlame value={d.capabilities["measure_battery"]?.value as number} size={13} />
                       </span>
                     </li>
                   ))}
@@ -1137,6 +1137,35 @@ function Stat({
   return <div className={baseClass}>{inner}</div>;
 }
 
+/**
+ * Pyrelys — flammen som markerer hvor mye liv som er igjen i en sjels batteri.
+ * Lave nivåer brenner blod-rødt (House Targaryen i nød), middels glør gull
+ * (House Lannister), fulle kilder gløder rolig amber. Dette er drage-ild på
+ * en gjenstand i borgen, ikke et batteri-emoji.
+ */
+function BatteryFlame({ value, size = 12 }: { value: number; size?: number }) {
+  const v = Math.max(0, Math.min(100, value));
+  const tone =
+    v <= 20
+      ? "text-destructive"
+      : v <= 50
+        ? "text-amber-400"
+        : "text-amber-200/80";
+  return (
+    <span className="inline-flex items-center gap-1 tabular-nums">
+      <Flame
+        size={size}
+        className={`${tone} shrink-0`}
+        strokeWidth={1.75}
+        fill="currentColor"
+        fillOpacity={v <= 20 ? 0.35 : 0.18}
+        aria-hidden
+      />
+      {Math.round(v)}%
+    </span>
+  );
+}
+
 function DeviceCard({ device }: { device: any }) {
   const onoff = device.capabilities["onoff"]?.value;
   const dim = device.capabilities["dim"]?.value;
@@ -1169,7 +1198,7 @@ function DeviceCard({ device }: { device: any }) {
         {typeof target === "number" && <span>🎯 {target.toFixed(1)}°C</span>}
         {typeof hum === "number" && <span>💧 {hum.toFixed(0)}%</span>}
         {typeof power === "number" && <span>⚡ {power.toFixed(0)} W</span>}
-        {typeof battery === "number" && <span>🔋 {battery.toFixed(0)}%</span>}
+        {typeof battery === "number" && <BatteryFlame value={battery} />}
       </div>
     </article>
   );
@@ -1515,12 +1544,12 @@ function AllZonesPanel({
                         <span className="truncate flex-1 text-foreground/90" title={d.name}>
                           {d.name}
                         </span>
-                        <span className="text-[10px] text-muted-foreground tabular-nums shrink-0">
+                        <span className="text-[10px] text-muted-foreground tabular-nums shrink-0 inline-flex items-center gap-1">
                           {typeof onoff === "boolean" && (onoff ? "✦" : "○")}
                           {typeof dim === "number" && ` ${Math.round(dim * 100)}%`}
                           {typeof temp === "number" && ` ${temp.toFixed(1)}°`}
                           {typeof power === "number" && ` ${Math.round(power)}W`}
-                          {typeof battery === "number" && ` 🔋${Math.round(battery)}%`}
+                          {typeof battery === "number" && <BatteryFlame value={battery} size={11} />}
                         </span>
                       </div>
                     );

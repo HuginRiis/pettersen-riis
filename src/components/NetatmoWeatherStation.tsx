@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
+import { Flame } from "lucide-react";
 import {
   getNetatmoWeatherStation,
   type WeatherModule,
@@ -7,6 +8,29 @@ import {
 } from "@/server/netatmo-weather";
 
 const REFRESH_MS = 5 * 60_000; // 5 min
+
+/**
+ * Pyrelys — drage-ild som markerer batteri-nivå på borgens sensorer.
+ * Lavt = blod-rødt, middels = gull, fullt = rolig amber. Ikke et batteri-emoji.
+ */
+function BatteryFlame({ value, size = 11 }: { value: number; size?: number }) {
+  const v = Math.max(0, Math.min(100, value));
+  const tone =
+    v < 20 ? "text-destructive" : v <= 50 ? "text-amber-400" : "text-amber-200/80";
+  return (
+    <span className="inline-flex items-center gap-1 tabular-nums">
+      <Flame
+        size={size}
+        className={`${tone} shrink-0`}
+        strokeWidth={1.75}
+        fill="currentColor"
+        fillOpacity={v < 20 ? 0.35 : 0.18}
+        aria-hidden
+      />
+      {Math.round(v)}%
+    </span>
+  );
+}
 
 const TYPE_META: Record<
   string,
@@ -171,15 +195,7 @@ function ModuleCard({ m }: { m: WeatherModule }) {
 
       <div className="px-2 py-1.5 sm:px-4 sm:py-2 border-t border-border flex items-center justify-between text-[9px] sm:text-[10px] tracking-[0.15em] sm:tracking-[0.2em] uppercase text-muted-foreground">
         <span>↻ {ago(m.lastSeen)}</span>
-        {m.battery !== undefined && (
-          <span
-            className={
-              m.battery < 20 ? "text-destructive" : "text-muted-foreground"
-            }
-          >
-            🔋 {m.battery}%
-          </span>
-        )}
+        {m.battery !== undefined && <BatteryFlame value={m.battery} />}
       </div>
     </article>
   );
