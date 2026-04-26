@@ -1544,12 +1544,12 @@ function AllZonesPanel({
                         <span className="truncate flex-1 text-foreground/90" title={d.name}>
                           {d.name}
                         </span>
-                        <span className="text-[10px] text-muted-foreground tabular-nums shrink-0">
+                        <span className="text-[10px] text-muted-foreground tabular-nums shrink-0 inline-flex items-center gap-1">
                           {typeof onoff === "boolean" && (onoff ? "✦" : "○")}
                           {typeof dim === "number" && ` ${Math.round(dim * 100)}%`}
                           {typeof temp === "number" && ` ${temp.toFixed(1)}°`}
                           {typeof power === "number" && ` ${Math.round(power)}W`}
-                          {typeof battery === "number" && ` 🔋${Math.round(battery)}%`}
+                          {typeof battery === "number" && <BatteryFlame value={battery} size={11} />}
                         </span>
                       </div>
                     );
