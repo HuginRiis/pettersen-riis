@@ -673,7 +673,7 @@ function SmarthusPage() {
                     <li key={d.id} className="flex items-center justify-between gap-3">
                       <span className="truncate text-foreground">{d.name}</span>
                       <span className="text-destructive shrink-0">
-                        🔋 {Math.round(d.capabilities["measure_battery"]?.value as number)}%
+                        <BatteryFlame value={d.capabilities["measure_battery"]?.value as number} size={13} />
                       </span>
                     </li>
                   ))}
