@@ -1116,6 +1116,10 @@ function AllVisitors({ sessions }: { sessions: VisitorSessionRow[] }) {
     return [...map.values()].sort((a, b) => {
       // Pålogget alltid øverst
       if (a.online !== b.online) return a.online ? -1 : 1;
+      // Kjente sjeler (med navn) over gjester
+      const aKnown = !!(a.who && a.who.length > 0);
+      const bKnown = !!(b.who && b.who.length > 0);
+      if (aKnown !== bKnown) return aKnown ? -1 : 1;
       return new Date(b.lastSeen).getTime() - new Date(a.lastSeen).getTime();
     });
   }, [sessions, now]);
