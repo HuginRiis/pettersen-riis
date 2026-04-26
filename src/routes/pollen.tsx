@@ -145,7 +145,7 @@ function PollenPage() {
       </section>
 
       <section className="container mx-auto px-4 pt-8 space-y-5">
-        <UserLocationBar page="pollen" state={userLoc} />
+        <UserLocationBar page="pollen" state={userLoc} readOnlyWho />
       </section>
 
       <section className="container mx-auto px-4 py-10 space-y-12">
