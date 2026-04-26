@@ -396,10 +396,10 @@ export const getStravaDashboard = createServerFn({ method: "GET" })
       totals: {
         // Bruker lokale beregninger for "siste 4 uker" — Stravas recent_*_totals
         // henger ofte etter ferske aktiviteter og dekker ikke walk.
-        recentRun: recentRunLocal.count > 0 ? recentRunLocal : null,
-        recentRide: recentRideLocal.count > 0 ? recentRideLocal : null,
-        recentSwim: recentSwimLocal.count > 0 ? recentSwimLocal : null,
-        recentWalk: recentWalkLocal.count > 0 ? recentWalkLocal : null,
+        recentRun: recentRunLocal,
+        recentRide: recentRideLocal,
+        recentSwim: recentSwimLocal,
+        recentWalk: recentWalkLocal,
         ytdRun: stats?.ytd_run_totals ?? null,
         ytdRide: stats?.ytd_ride_totals ?? null,
         ytdSwim: stats?.ytd_swim_totals ?? null,
