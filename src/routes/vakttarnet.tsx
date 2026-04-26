@@ -1105,13 +1105,20 @@ function AllVisitors({ sessions }: { sessions: VisitorSessionRow[] }) {
           durationSeconds: s.duration_seconds || 0,
           lastSeen: s.last_seen_at,
           devices: new Set(s.device_type ? [s.device_type] : []),
+          online: false,
         });
       }
     }
-    return [...map.values()].sort(
-      (a, b) => new Date(b.lastSeen).getTime() - new Date(a.lastSeen).getTime(),
-    );
-  }, [sessions]);
+    // Marker online (aktive innen siste 5 min)
+    for (const g of map.values()) {
+      g.online = now - new Date(g.lastSeen).getTime() < ONLINE_MS;
+    }
+    return [...map.values()].sort((a, b) => {
+      // Pålogget alltid øverst
+      if (a.online !== b.online) return a.online ? -1 : 1;
+      return new Date(b.lastSeen).getTime() - new Date(a.lastSeen).getTime();
+    });
+  }, [sessions, now]);
 
   if (groups.length === 0) {
     return (
