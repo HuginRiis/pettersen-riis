@@ -336,6 +336,7 @@ export type VisitorSessionRow = {
   last_seen_at: string;
   duration_seconds: number;
   pageview_count: number;
+  who: string | null;
 };
 
 export type LoginAttemptRow = {
