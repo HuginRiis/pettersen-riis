@@ -318,6 +318,23 @@ export const getStravaDashboard = createServerFn({ method: "GET" })
       { count: 0, distance: 0, movingTime: 0, elevation: 0 },
     );
 
+    // Walk-totaler for siste 4 uker (28 dager) — beregnet fra aktivitetene
+    // siden Strava AthleteStats ikke har en recent_walk_totals.
+    const fourWeeksAgo = new Date(now);
+    fourWeeksAgo.setDate(fourWeeksAgo.getDate() - 28);
+    const walkLast4Weeks = walkActivities
+      .filter((a) => new Date(a.start_date) >= fourWeeksAgo)
+      .reduce(
+        (acc, a) => {
+          acc.count += 1;
+          acc.distance += a.distance || 0;
+          acc.moving_time += a.moving_time || 0;
+          acc.elevation_gain += a.total_elevation_gain || 0;
+          return acc;
+        },
+        { count: 0, distance: 0, moving_time: 0, elevation_gain: 0 },
+      );
+
     const slim = (a: StravaActivity | null) =>
       a
         ? {
@@ -364,6 +381,7 @@ export const getStravaDashboard = createServerFn({ method: "GET" })
             recentRun: stats.recent_run_totals ?? null,
             recentRide: stats.recent_ride_totals ?? null,
             recentSwim: stats.recent_swim_totals ?? null,
+            recentWalk: walkLast4Weeks.count > 0 ? walkLast4Weeks : null,
             ytdRun: stats.ytd_run_totals ?? null,
             ytdRide: stats.ytd_ride_totals ?? null,
             ytdSwim: stats.ytd_swim_totals ?? null,
@@ -373,7 +391,20 @@ export const getStravaDashboard = createServerFn({ method: "GET" })
             biggestRide: stats.biggest_ride_distance ?? null,
             biggestClimb: stats.biggest_climb_elevation_gain ?? null,
           }
-        : null,
+        : {
+            recentRun: null,
+            recentRide: null,
+            recentSwim: null,
+            recentWalk: walkLast4Weeks.count > 0 ? walkLast4Weeks : null,
+            ytdRun: null,
+            ytdRide: null,
+            ytdSwim: null,
+            allRun: null,
+            allRide: null,
+            allSwim: null,
+            biggestRide: null,
+            biggestClimb: null,
+          },
       activities: activities.slice(0, 30).map((a) => ({
         id: a.id,
         name: a.name,
