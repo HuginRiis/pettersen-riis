@@ -12,7 +12,7 @@ import type {
 import { getAiUsageStats, type AiUsageStats } from "@/server/ai-usage";
 import { useAuthStatus } from "@/hooks/use-auth-status";
 import heroImg from "@/assets/got-vakttarnet.jpg";
-import { Eye, Globe2, Smartphone, Monitor, Tablet, Clock, Crown, ShieldAlert, Map as MapIcon, Lock, Unlock, Sparkles, DoorClosed } from "lucide-react";
+import { Eye, Globe2, Smartphone, Monitor, Tablet, Clock, Crown, ShieldAlert, Map as MapIcon, Lock, Unlock, Sparkles, DoorClosed, Users } from "lucide-react";
 import { DoorsLocksPanel } from "@/components/DoorsLocksPanel";
 
 export const Route = createFileRoute("/vakttarnet")({
@@ -162,6 +162,14 @@ function VakttarnetPage() {
           subtitle="AI-søk, tokens og estimerte credits brukt på huset"
         >
           <AiUsagePanel stats={aiStats} />
+        </Panel>
+
+        <Panel
+          title="Alle som har vært på borgen"
+          icon={<Users size={14} />}
+          subtitle="Husfolk og gjester — hvem, hvor mange besøk og når sist"
+        >
+          <AllVisitors sessions={sessions} />
         </Panel>
       </section>
     </PageShell>
@@ -1037,6 +1045,130 @@ function AiUsagePanel({ stats }: { stats: AiUsageStats | null }) {
         Estimerte kostnader er omtrentlige (basert på Lovable AI Gateway-priser
         per modell). Eksakte credits ser du i workspace-innstillingene.
       </p>
+    </div>
+  );
+}
+
+// ── Alle besøkende — gruppert per sjel ───────────────────────────────
+function AllVisitors({ sessions }: { sessions: VisitorSessionRow[] }) {
+  type Group = {
+    key: string;
+    label: string;
+    who: string | null;
+    place: string;
+    countryCode: string | null;
+    visits: number;
+    pageviews: number;
+    durationSeconds: number;
+    lastSeen: string;
+    devices: Set<string>;
+  };
+
+  const groups = useMemo(() => {
+    const map = new Map<string, Group>();
+    for (const s of sessions) {
+      const key = s.who && s.who.length > 0
+        ? `who:${s.who}`
+        : s.ip && s.ip.length > 0
+          ? `ip:${s.ip}`
+          : `cs:${s.client_session_id}`;
+      const place = [s.city, s.country].filter(Boolean).join(", ") || "Ukjent sted";
+      const existing = map.get(key);
+      if (existing) {
+        existing.visits += 1;
+        existing.pageviews += s.pageview_count || 0;
+        existing.durationSeconds += s.duration_seconds || 0;
+        if (new Date(s.last_seen_at) > new Date(existing.lastSeen)) {
+          existing.lastSeen = s.last_seen_at;
+          existing.place = place;
+          existing.countryCode = s.country_code ?? existing.countryCode;
+        }
+        if (s.device_type) existing.devices.add(s.device_type);
+      } else {
+        map.set(key, {
+          key,
+          label: s.who ?? (s.ip ? `Gjest · ${place}` : "Anonym sjel"),
+          who: s.who,
+          place,
+          countryCode: s.country_code,
+          visits: 1,
+          pageviews: s.pageview_count || 0,
+          durationSeconds: s.duration_seconds || 0,
+          lastSeen: s.last_seen_at,
+          devices: new Set(s.device_type ? [s.device_type] : []),
+        });
+      }
+    }
+    return [...map.values()].sort(
+      (a, b) => new Date(b.lastSeen).getTime() - new Date(a.lastSeen).getTime(),
+    );
+  }, [sessions]);
+
+  if (groups.length === 0) {
+    return (
+      <div className="text-sm text-muted-foreground italic">
+        Ingen besøk å vise ennå.
+      </div>
+    );
+  }
+
+  return (
+    <div className="overflow-x-auto -mx-3 sm:mx-0">
+      <table className="w-full text-xs sm:text-sm">
+        <thead>
+          <tr className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground border-b border-border">
+            <th className="text-left font-normal py-2 px-3">Sjel</th>
+            <th className="text-left font-normal py-2 px-3 hidden sm:table-cell">Sted</th>
+            <th className="text-right font-normal py-2 px-3">Besøk</th>
+            <th className="text-right font-normal py-2 px-3 hidden md:table-cell">Visninger</th>
+            <th className="text-right font-normal py-2 px-3 hidden md:table-cell">Tid</th>
+            <th className="text-right font-normal py-2 px-3">Sist</th>
+          </tr>
+        </thead>
+        <tbody>
+          {groups.map((g) => (
+            <tr
+              key={g.key}
+              className="border-b border-border/40 last:border-0 hover:bg-background/40"
+            >
+              <td className="py-2 px-3">
+                <div className="flex items-center gap-2">
+                  {g.who ? (
+                    <Crown size={12} className="text-primary shrink-0" />
+                  ) : (
+                    <Globe2 size={12} className="text-muted-foreground shrink-0" />
+                  )}
+                  <span className={g.who ? "text-primary font-semibold" : "text-foreground"}>
+                    {g.label}
+                  </span>
+                  {g.countryCode && (
+                    <span className="text-[11px]">{flagEmoji(g.countryCode)}</span>
+                  )}
+                </div>
+                <div className="text-[10px] text-muted-foreground sm:hidden mt-0.5">
+                  {g.place}
+                </div>
+              </td>
+              <td className="py-2 px-3 hidden sm:table-cell text-muted-foreground">
+                {g.place}
+              </td>
+              <td className="py-2 px-3 text-right text-foreground">{g.visits}</td>
+              <td className="py-2 px-3 text-right text-muted-foreground hidden md:table-cell">
+                {g.pageviews}
+              </td>
+              <td className="py-2 px-3 text-right text-muted-foreground hidden md:table-cell">
+                {formatDuration(g.durationSeconds)}
+              </td>
+              <td
+                className="py-2 px-3 text-right text-muted-foreground whitespace-nowrap"
+                title={new Date(g.lastSeen).toLocaleString("nb-NO")}
+              >
+                {relativeTime(g.lastSeen)}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
