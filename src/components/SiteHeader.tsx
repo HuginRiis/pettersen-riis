@@ -1,6 +1,6 @@
 import { Link, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
-import { Menu, X, LogOut, Crown, Swords, Shield, KeyRound } from "lucide-react";
+import { Menu, X, LogOut, Crown, Swords, Shield, KeyRound, Home } from "lucide-react";
 import { logoutFn } from "@/server/auth";
 import { useAuthStatus } from "@/hooks/use-auth-status";
 import { openLoginDialog } from "@/components/LoginDialog";
@@ -80,8 +80,8 @@ export function SiteHeader() {
     <header className="sticky top-0 z-50 backdrop-blur-md bg-background/80 border-b border-border">
       <div className="container mx-auto px-4 py-3 flex items-center justify-between gap-4">
         <Link to="/" className="flex items-center gap-3 group shrink-0">
-          <div className="w-9 h-9 rounded-full border border-primary/40 flex items-center justify-center text-primary font-display text-lg group-hover:shadow-[0_0_20px_var(--color-primary)] transition-shadow">
-            ❦
+          <div className="w-9 h-9 rounded-full border border-primary/40 flex items-center justify-center text-primary group-hover:shadow-[0_0_20px_var(--color-primary)] transition-shadow">
+            <Home size={16} />
           </div>
           <div className="leading-tight">
             <div className="text-display text-sm tracking-[0.25em] text-primary flex items-center gap-1.5">
