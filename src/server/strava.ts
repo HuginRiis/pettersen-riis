@@ -305,6 +305,18 @@ export const getStravaDashboard = createServerFn({ method: "GET" })
       ),
     };
 
+    // Hjelper: summer aktiviteter til en TotalBlock
+    const sumBlock = (acts: StravaActivity[]): TotalBlock => acts.reduce(
+      (acc, a) => {
+        acc.count += 1;
+        acc.distance += a.distance || 0;
+        acc.moving_time += a.moving_time || 0;
+        acc.elevation_gain += a.total_elevation_gain || 0;
+        return acc;
+      },
+      { count: 0, distance: 0, moving_time: 0, elevation_gain: 0 },
+    );
+
     // Walk-totaler (Strava AthleteStats har ikke gå-totaler — vi regner ut
     // fra de siste 100 aktivitetene).
     const walkTotals = walkActivities.reduce(
@@ -318,22 +330,27 @@ export const getStravaDashboard = createServerFn({ method: "GET" })
       { count: 0, distance: 0, movingTime: 0, elevation: 0 },
     );
 
-    // Walk-totaler for siste 4 uker (28 dager) — beregnet fra aktivitetene
-    // siden Strava AthleteStats ikke har en recent_walk_totals.
+    // Lokale beregninger for de siste 4 ukene (28 dager) per sport — vi stoler
+    // ikke fullt på Stravas recent_*_totals fordi de kan henge etter / mangler walk.
     const fourWeeksAgo = new Date(now);
     fourWeeksAgo.setDate(fourWeeksAgo.getDate() - 28);
-    const walkLast4Weeks = walkActivities
-      .filter((a) => new Date(a.start_date) >= fourWeeksAgo)
-      .reduce(
-        (acc, a) => {
-          acc.count += 1;
-          acc.distance += a.distance || 0;
-          acc.moving_time += a.moving_time || 0;
-          acc.elevation_gain += a.total_elevation_gain || 0;
-          return acc;
-        },
-        { count: 0, distance: 0, moving_time: 0, elevation_gain: 0 },
-      );
+    const inLast4Weeks = activities.filter((a) => new Date(a.start_date) >= fourWeeksAgo);
+    const runLast4 = inLast4Weeks.filter((a) => bucketSport(a.sport_type || a.type) === "run");
+    const rideLast4 = inLast4Weeks.filter((a) => bucketSport(a.sport_type || a.type) === "ride");
+    const swimLast4 = inLast4Weeks.filter((a) => bucketSport(a.sport_type || a.type) === "swim");
+    const walkLast4 = inLast4Weeks.filter((a) => bucketSport(a.sport_type || a.type) === "walk");
+    const recentRunLocal = sumBlock(runLast4);
+    const recentRideLocal = sumBlock(rideLast4);
+    const recentSwimLocal = sumBlock(swimLast4);
+    const recentWalkLocal = sumBlock(walkLast4);
+
+    // Walk-totaler for inneværende år og "alltid" — beregnet fra siste 100
+    // aktivitetene, så det er en undergrense (markeres i UI).
+    const yearStart = new Date(now.getFullYear(), 0, 1);
+    const walkThisYear = walkActivities.filter((a) => new Date(a.start_date) >= yearStart);
+    const ytdWalkLocal = sumBlock(walkThisYear);
+    const allWalkLocal = sumBlock(walkActivities);
+
 
     const slim = (a: StravaActivity | null) =>
       a
