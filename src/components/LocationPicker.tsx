@@ -26,6 +26,8 @@ type Props = {
   onDefaultSaved?: (loc: ActiveLocation) => void;
   /** When false (offentlig/utlogget), hide Arne/Rebekka-velgeren og deaktiver "Sett som default". */
   authenticated?: boolean;
+  /** Når true vises navnet kun som lesbar tekst — ingen velger, ingen "Vakt:"-etikett. */
+  readOnlyWho?: boolean;
 };
 
 const NAMES: WhoName[] = ["Arne", "Rebekka"];
