@@ -161,15 +161,7 @@ function ContactRow({ entry }: { entry: DoorOrLockEntry }) {
         </div>
         <div className="text-[10px] text-muted-foreground mt-0.5 flex items-center gap-3 flex-wrap">
           <span>↻ {ago(entry.lastUpdated)}</span>
-          {typeof entry.battery === "number" && (
-            <span
-              className={
-                entry.battery < 20 ? "text-destructive" : "text-muted-foreground"
-              }
-            >
-              🔋 {Math.round(entry.battery)}%
-            </span>
-          )}
+          {typeof entry.battery === "number" && <BatteryFlame value={entry.battery} />}
           {entry.tamper && (
             <span className="text-destructive flex items-center gap-1">
               <ShieldAlert size={10} /> Sabotasje!
