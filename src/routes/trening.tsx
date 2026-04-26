@@ -77,6 +77,7 @@ type DashOk = {
     recentRun: TotalBlock | null;
     recentRide: TotalBlock | null;
     recentSwim: TotalBlock | null;
+    recentWalk: TotalBlock | null;
     ytdRun: TotalBlock | null;
     ytdRide: TotalBlock | null;
     ytdSwim: TotalBlock | null;
