@@ -1128,63 +1128,96 @@ function AllVisitors({ sessions }: { sessions: VisitorSessionRow[] }) {
     );
   }
 
+  // Pålogget er alltid synlig på toppen. Resten begrenses til 10 før utvidelse.
+  const onlineGroups = groups.filter((g) => g.online);
+  const offlineGroups = groups.filter((g) => !g.online);
+  const offlineLimit = 10;
+  const visibleOffline = expanded ? offlineGroups : offlineGroups.slice(0, offlineLimit);
+  const hiddenCount = offlineGroups.length - visibleOffline.length;
+  const visible = [...onlineGroups, ...visibleOffline];
+
   return (
-    <div className="overflow-x-auto -mx-3 sm:mx-0">
-      <table className="w-full text-xs sm:text-sm">
-        <thead>
-          <tr className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground border-b border-border">
-            <th className="text-left font-normal py-2 px-3">Sjel</th>
-            <th className="text-left font-normal py-2 px-3 hidden sm:table-cell">Sted</th>
-            <th className="text-right font-normal py-2 px-3">Besøk</th>
-            <th className="text-right font-normal py-2 px-3 hidden md:table-cell">Visninger</th>
-            <th className="text-right font-normal py-2 px-3 hidden md:table-cell">Tid</th>
-            <th className="text-right font-normal py-2 px-3">Sist</th>
-          </tr>
-        </thead>
-        <tbody>
-          {groups.map((g) => (
-            <tr
-              key={g.key}
-              className="border-b border-border/40 last:border-0 hover:bg-background/40"
-            >
-              <td className="py-2 px-3">
-                <div className="flex items-center gap-2">
-                  {g.who ? (
-                    <Crown size={12} className="text-primary shrink-0" />
-                  ) : (
-                    <Globe2 size={12} className="text-muted-foreground shrink-0" />
-                  )}
-                  <span className={g.who ? "text-primary font-semibold" : "text-foreground"}>
-                    {g.label}
-                  </span>
-                  {g.countryCode && (
-                    <span className="text-[11px]">{flagEmoji(g.countryCode)}</span>
-                  )}
-                </div>
-                <div className="text-[10px] text-muted-foreground sm:hidden mt-0.5">
-                  {g.place}
-                </div>
-              </td>
-              <td className="py-2 px-3 hidden sm:table-cell text-muted-foreground">
-                {g.place}
-              </td>
-              <td className="py-2 px-3 text-right text-foreground">{g.visits}</td>
-              <td className="py-2 px-3 text-right text-muted-foreground hidden md:table-cell">
-                {g.pageviews}
-              </td>
-              <td className="py-2 px-3 text-right text-muted-foreground hidden md:table-cell">
-                {formatDuration(g.durationSeconds)}
-              </td>
-              <td
-                className="py-2 px-3 text-right text-muted-foreground whitespace-nowrap"
-                title={new Date(g.lastSeen).toLocaleString("nb-NO")}
-              >
-                {relativeTime(g.lastSeen)}
-              </td>
+    <div className="space-y-3">
+      <div className="overflow-x-auto -mx-3 sm:mx-0">
+        <table className="w-full text-xs sm:text-sm">
+          <thead>
+            <tr className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground border-b border-border">
+              <th className="text-left font-normal py-2 px-3">Sjel</th>
+              <th className="text-left font-normal py-2 px-3 hidden sm:table-cell">Sted</th>
+              <th className="text-right font-normal py-2 px-3">Besøk</th>
+              <th className="text-right font-normal py-2 px-3 hidden md:table-cell">Visninger</th>
+              <th className="text-right font-normal py-2 px-3 hidden md:table-cell">Tid</th>
+              <th className="text-right font-normal py-2 px-3">Sist</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {visible.map((g) => (
+              <tr
+                key={g.key}
+                className={`border-b border-border/40 last:border-0 hover:bg-background/40 ${
+                  g.online ? "bg-primary/5" : ""
+                }`}
+              >
+                <td className="py-2 px-3">
+                  <div className="flex items-center gap-2">
+                    {g.online && (
+                      <span
+                        className="w-2 h-2 rounded-full bg-emerald-500 shrink-0 animate-pulse"
+                        title="Pålogget nå"
+                      />
+                    )}
+                    {g.who ? (
+                      <Crown size={12} className="text-primary shrink-0" />
+                    ) : (
+                      <Globe2 size={12} className="text-muted-foreground shrink-0" />
+                    )}
+                    <span className={g.who ? "text-primary font-semibold" : "text-foreground"}>
+                      {g.label}
+                    </span>
+                    {g.countryCode && (
+                      <span className="text-[11px]">{flagEmoji(g.countryCode)}</span>
+                    )}
+                  </div>
+                  <div className="text-[10px] text-muted-foreground sm:hidden mt-0.5">
+                    {g.place}
+                  </div>
+                </td>
+                <td className="py-2 px-3 hidden sm:table-cell text-muted-foreground">
+                  {g.place}
+                </td>
+                <td className="py-2 px-3 text-right text-foreground">{g.visits}</td>
+                <td className="py-2 px-3 text-right text-muted-foreground hidden md:table-cell">
+                  {g.pageviews}
+                </td>
+                <td className="py-2 px-3 text-right text-muted-foreground hidden md:table-cell">
+                  {formatDuration(g.durationSeconds)}
+                </td>
+                <td
+                  className="py-2 px-3 text-right text-muted-foreground whitespace-nowrap"
+                  title={new Date(g.lastSeen).toLocaleString("nb-NO")}
+                >
+                  {g.online ? (
+                    <span className="text-emerald-500 font-medium">Pålogget</span>
+                  ) : (
+                    relativeTime(g.lastSeen)
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {offlineGroups.length > offlineLimit && (
+        <div className="flex justify-center">
+          <button
+            type="button"
+            onClick={() => setExpanded((v) => !v)}
+            className="text-[11px] uppercase tracking-[0.2em] text-primary hover:text-primary/80 border border-primary/30 hover:border-primary/60 rounded-full px-4 py-1.5 transition-colors"
+          >
+            {expanded ? "Vis færre" : `Vis alle (${hiddenCount} til)`}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
