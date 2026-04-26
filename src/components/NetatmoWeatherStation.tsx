@@ -195,15 +195,7 @@ function ModuleCard({ m }: { m: WeatherModule }) {
 
       <div className="px-2 py-1.5 sm:px-4 sm:py-2 border-t border-border flex items-center justify-between text-[9px] sm:text-[10px] tracking-[0.15em] sm:tracking-[0.2em] uppercase text-muted-foreground">
         <span>↻ {ago(m.lastSeen)}</span>
-        {m.battery !== undefined && (
-          <span
-            className={
-              m.battery < 20 ? "text-destructive" : "text-muted-foreground"
-            }
-          >
-            🔋 {m.battery}%
-          </span>
-        )}
+        {m.battery !== undefined && <BatteryFlame value={m.battery} />}
       </div>
     </article>
   );
