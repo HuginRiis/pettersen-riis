@@ -163,6 +163,14 @@ function VakttarnetPage() {
         >
           <AiUsagePanel stats={aiStats} />
         </Panel>
+
+        <Panel
+          title="Alle som har vært på borgen"
+          icon={<Users size={14} />}
+          subtitle="Husfolk og gjester — hvem, hvor mange besøk og når sist"
+        >
+          <AllVisitors sessions={sessions} />
+        </Panel>
       </section>
     </PageShell>
   );
