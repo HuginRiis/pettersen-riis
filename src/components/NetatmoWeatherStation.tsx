@@ -16,7 +16,7 @@ const REFRESH_MS = 5 * 60_000; // 5 min
 function BatteryFlame({ value, size = 11 }: { value: number; size?: number }) {
   const v = Math.max(0, Math.min(100, value));
   const tone =
-    v < 20 ? "text-destructive" : v <= 50 ? "text-amber-400" : "text-amber-200/80";
+    v < 20 ? "text-destructive" : v < 40 ? "text-amber-400" : "text-emerald-400";
   return (
     <span className="inline-flex items-center gap-1 tabular-nums">
       <Flame
@@ -24,7 +24,7 @@ function BatteryFlame({ value, size = 11 }: { value: number; size?: number }) {
         className={`${tone} shrink-0`}
         strokeWidth={1.75}
         fill="currentColor"
-        fillOpacity={v < 20 ? 0.35 : 0.18}
+        fillOpacity={v < 20 ? 0.35 : v < 40 ? 0.25 : 0.2}
         aria-hidden
       />
       {Math.round(v)}%
