@@ -678,7 +678,14 @@ export function DoorsLocksPanel() {
           <span>{motions.length} bevegelses-ravner</span>
           {lowBatteries.length > 0 && (
             <span className="text-destructive flex items-center gap-1">
-              <BatteryLow size={11} /> {lowBatteries.length} svake batterier
+              <Flame
+                size={11}
+                strokeWidth={1.75}
+                fill="currentColor"
+                fillOpacity={0.35}
+                aria-hidden
+              />{" "}
+              {lowBatteries.length} svake flammer
             </span>
           )}
         </div>
