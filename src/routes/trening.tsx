@@ -878,20 +878,22 @@ function TotalsGrid({
         <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground mb-3">
           Hittil i år
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {block("Løping", totals.ytdRun)}
           {block("Sykling", totals.ytdRide)}
           {block("Svømming", totals.ytdSwim)}
+          {block("Gåing", totals.ytdWalk)}
         </div>
       </div>
       <div>
         <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground mb-3">
           Siden tidenes morgen
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {block("Løping totalt", totals.allRun)}
           {block("Sykling totalt", totals.allRide)}
           {block("Svømming totalt", totals.allSwim)}
+          {block("Gåing totalt", totals.allWalk)}
         </div>
         {(totals.biggestRide || totals.biggestClimb) && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
