@@ -11,7 +11,7 @@ import {
 } from "@/server/homey";
 import { supabase } from "@/integrations/supabase/client";
 import { getStoredWho, setStoredWho, type Who } from "@/lib/push-client";
-import { DoorClosed, DoorOpen, Lock, Unlock, Activity, ShieldAlert, BatteryLow, Plus, Minus, ShieldCheck, ShieldOff, Loader2, Flame } from "lucide-react";
+import { DoorClosed, DoorOpen, Lock, Unlock, Activity, ShieldAlert, Plus, Minus, ShieldCheck, ShieldOff, Loader2, Flame } from "lucide-react";
 
 /**
  * Pyrelys — drage-ild som markerer batteri-nivå på borgens vakter.
@@ -678,7 +678,14 @@ export function DoorsLocksPanel() {
           <span>{motions.length} bevegelses-ravner</span>
           {lowBatteries.length > 0 && (
             <span className="text-destructive flex items-center gap-1">
-              <BatteryLow size={11} /> {lowBatteries.length} svake batterier
+              <Flame
+                size={11}
+                strokeWidth={1.75}
+                fill="currentColor"
+                fillOpacity={0.35}
+                aria-hidden
+              />{" "}
+              {lowBatteries.length} svake flammer
             </span>
           )}
         </div>
