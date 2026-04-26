@@ -26,6 +26,8 @@ type Props = {
   onDefaultSaved?: (loc: ActiveLocation) => void;
   /** When false (offentlig/utlogget), hide Arne/Rebekka-velgeren og deaktiver "Sett som default". */
   authenticated?: boolean;
+  /** Når true vises navnet kun som lesbar tekst — ingen velger, ingen "Vakt:"-etikett. */
+  readOnlyWho?: boolean;
 };
 
 const NAMES: WhoName[] = ["Arne", "Rebekka"];
@@ -46,6 +48,7 @@ export function LocationPicker({
   onChange,
   onDefaultSaved,
   authenticated = false,
+  readOnlyWho = false,
 }: Props) {
   const search = useServerFn(searchPlaces);
   const saveDefault = useServerFn(setDefaultLocation);
@@ -179,8 +182,12 @@ export function LocationPicker({
   return (
     <div className="panel rounded-lg p-4 md:p-5">
       <div className="flex flex-wrap items-center gap-3 justify-between">
-        {/* WHO selector — only when logged in */}
-        {authenticated ? (
+        {/* WHO — selector when allowed, lesbart navn når readOnlyWho */}
+        {authenticated && readOnlyWho ? (
+          <div className="text-xs uppercase tracking-wider text-primary">
+            {who}
+          </div>
+        ) : authenticated ? (
           <div className="flex items-center gap-2">
             <span className="text-[10px] tracking-[0.25em] uppercase text-muted-foreground">
               Vakt:
