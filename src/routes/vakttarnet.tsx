@@ -1062,9 +1062,18 @@ function AllVisitors({ sessions }: { sessions: VisitorSessionRow[] }) {
     durationSeconds: number;
     lastSeen: string;
     devices: Set<string>;
+    online: boolean;
   };
 
+  const [expanded, setExpanded] = useState(false);
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = window.setInterval(() => setNow(Date.now()), 30_000);
+    return () => window.clearInterval(id);
+  }, []);
+
   const groups = useMemo(() => {
+    const ONLINE_MS = 5 * 60 * 1000;
     const map = new Map<string, Group>();
     for (const s of sessions) {
       const key = s.who && s.who.length > 0
