@@ -376,7 +376,7 @@ function DashboardView({ dash, owner }: { dash: DashOk; owner: Owner }) {
       {dash.totals && (
         <>
           <SubHeader text="Husets store regnskap" />
-          <TotalsGrid totals={dash.totals} />
+          <TotalsGrid totals={dash.totals} mostElevation={dash.records.mostElevation} />
         </>
       )}
 
@@ -841,8 +841,10 @@ function SportBreakdown({
 
 function TotalsGrid({
   totals,
+  mostElevation,
 }: {
   totals: NonNullable<DashOk["totals"]>;
+  mostElevation: SlimAct | null;
 }) {
   const block = (label: string, t: TotalBlock | null) => (
     <div className="panel rounded-lg p-4">
@@ -895,7 +897,7 @@ function TotalsGrid({
           {block("Svømming totalt", totals.allSwim)}
           {block("Gåing totalt", totals.allWalk)}
         </div>
-        {(totals.biggestRide || totals.biggestClimb) && (
+        {(totals.biggestRide || mostElevation) && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
             {totals.biggestRide && (
               <Stat
@@ -904,11 +906,11 @@ function TotalsGrid({
                 hint="rekord"
               />
             )}
-            {totals.biggestClimb && (
+            {mostElevation && (
               <Stat
                 label="Største klatring noensinne"
-                value={`${Math.round(totals.biggestClimb)} m`}
-                hint="rekord"
+                value={`${Math.round(mostElevation.elevation)} m`}
+                hint={mostElevation.name}
               />
             )}
           </div>
