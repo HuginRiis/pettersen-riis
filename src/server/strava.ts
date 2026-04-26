@@ -318,6 +318,23 @@ export const getStravaDashboard = createServerFn({ method: "GET" })
       { count: 0, distance: 0, movingTime: 0, elevation: 0 },
     );
 
+    // Walk-totaler for siste 4 uker (28 dager) — beregnet fra aktivitetene
+    // siden Strava AthleteStats ikke har en recent_walk_totals.
+    const fourWeeksAgo = new Date(now);
+    fourWeeksAgo.setDate(fourWeeksAgo.getDate() - 28);
+    const walkLast4Weeks = walkActivities
+      .filter((a) => new Date(a.start_date) >= fourWeeksAgo)
+      .reduce(
+        (acc, a) => {
+          acc.count += 1;
+          acc.distance += a.distance || 0;
+          acc.moving_time += a.moving_time || 0;
+          acc.elevation_gain += a.total_elevation_gain || 0;
+          return acc;
+        },
+        { count: 0, distance: 0, moving_time: 0, elevation_gain: 0 },
+      );
+
     const slim = (a: StravaActivity | null) =>
       a
         ? {
