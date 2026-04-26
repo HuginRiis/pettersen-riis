@@ -81,9 +81,11 @@ type DashOk = {
     ytdRun: TotalBlock | null;
     ytdRide: TotalBlock | null;
     ytdSwim: TotalBlock | null;
+    ytdWalk: TotalBlock | null;
     allRun: TotalBlock | null;
     allRide: TotalBlock | null;
     allSwim: TotalBlock | null;
+    allWalk: TotalBlock | null;
     biggestRide: number | null;
     biggestClimb: number | null;
   } | null;
