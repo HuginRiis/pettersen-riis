@@ -1198,7 +1198,7 @@ function DeviceCard({ device }: { device: any }) {
         {typeof target === "number" && <span>🎯 {target.toFixed(1)}°C</span>}
         {typeof hum === "number" && <span>💧 {hum.toFixed(0)}%</span>}
         {typeof power === "number" && <span>⚡ {power.toFixed(0)} W</span>}
-        {typeof battery === "number" && <span>🔋 {battery.toFixed(0)}%</span>}
+        {typeof battery === "number" && <BatteryFlame value={battery} />}
       </div>
     </article>
   );
