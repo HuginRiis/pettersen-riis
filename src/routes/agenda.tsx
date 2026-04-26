@@ -313,7 +313,7 @@ function PushSubscribeBar() {
             onChange={(e) => changeWho(e.target.value as Who)}
             className="bg-input border border-border rounded px-2 py-1.5 text-sm text-foreground"
           >
-            {WHO.map((w) => (
+            {WHO.filter((w) => w !== "Alle").map((w) => (
               <option key={w} value={w}>
                 {w}
               </option>
