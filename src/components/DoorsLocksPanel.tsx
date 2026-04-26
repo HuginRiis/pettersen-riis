@@ -206,14 +206,8 @@ function MotionRow({ entry }: { entry: DoorOrLockEntry }) {
         <div className="text-[10px] text-muted-foreground mt-0.5">
           Sist rørelse: {ago(entry.lastUpdated)}
           {typeof entry.battery === "number" && (
-            <span
-              className={
-                entry.battery < 20
-                  ? "text-destructive ml-3"
-                  : "text-muted-foreground ml-3"
-              }
-            >
-              🔋 {Math.round(entry.battery)}%
+            <span className="ml-3 inline-flex">
+              <BatteryFlame value={entry.battery} />
             </span>
           )}
         </div>
