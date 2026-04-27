@@ -858,76 +858,92 @@ function TotalsGrid({
   totals: NonNullable<DashOk["totals"]>;
   mostElevation: SlimAct | null;
 }) {
-  const block = (label: string, t: TotalBlock | null) => (
-    <div className="panel rounded-lg p-4">
-      <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">{label}</div>
-      {t ? (
-        <>
-          <div className="text-2xl text-primary mt-1">{formatKm(t.distance)}</div>
-          <div className="text-[11px] text-muted-foreground mt-1">
-            {t.count} økter · {formatDuration(t.moving_time)} ·{" "}
-            {Math.round(t.elevation_gain)} m
-          </div>
-        </>
-      ) : (
-        <div className="text-sm text-muted-foreground mt-2">—</div>
-      )}
-    </div>
-  );
+  const hasData = (t: TotalBlock | null): t is TotalBlock =>
+    !!t && (t.count > 0 || t.distance > 0 || t.moving_time > 0);
+
+  const block = (label: string, t: TotalBlock | null) => {
+    if (!hasData(t)) return null;
+    return (
+      <div key={label} className="panel rounded-lg p-4">
+        <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">{label}</div>
+        <div className="text-2xl text-primary mt-1">{formatKm(t.distance)}</div>
+        <div className="text-[11px] text-muted-foreground mt-1">
+          {t.count} økter · {formatDuration(t.moving_time)} ·{" "}
+          {Math.round(t.elevation_gain)} m
+        </div>
+      </div>
+    );
+  };
+
+  const recentCards = [
+    block("Løping", totals.recentRun),
+    block("Sykling", totals.recentRide),
+    block("Svømming", totals.recentSwim),
+    block("Gåing", totals.recentWalk),
+  ].filter(Boolean);
+  const ytdCards = [
+    block("Løping", totals.ytdRun),
+    block("Sykling", totals.ytdRide),
+    block("Svømming", totals.ytdSwim),
+    block("Gåing", totals.ytdWalk),
+  ].filter(Boolean);
+  const allCards = [
+    block("Løping totalt", totals.allRun),
+    block("Sykling totalt", totals.allRide),
+    block("Svømming totalt", totals.allSwim),
+    block("Gåing totalt", totals.allWalk),
+  ].filter(Boolean);
 
   return (
     <div className="space-y-6 mb-6">
-      <div>
-        <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground mb-3">
-          Siste 4 uker
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {block("Løping", totals.recentRun)}
-          {block("Sykling", totals.recentRide)}
-          {block("Svømming", totals.recentSwim)}
-          {block("Gåing", totals.recentWalk)}
-        </div>
-      </div>
-      <div>
-        <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground mb-3">
-          Hittil i år
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {block("Løping", totals.ytdRun)}
-          {block("Sykling", totals.ytdRide)}
-          {block("Svømming", totals.ytdSwim)}
-          {block("Gåing", totals.ytdWalk)}
-        </div>
-      </div>
-      <div>
-        <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground mb-3">
-          Siden tidenes morgen
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {block("Løping totalt", totals.allRun)}
-          {block("Sykling totalt", totals.allRide)}
-          {block("Svømming totalt", totals.allSwim)}
-          {block("Gåing totalt", totals.allWalk)}
-        </div>
-        {(totals.biggestRide || mostElevation) && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
-            {totals.biggestRide && (
-              <Stat
-                label="Lengste sykkeltur noensinne"
-                value={formatKm(totals.biggestRide)}
-                hint="rekord"
-              />
-            )}
-            {mostElevation && (
-              <Stat
-                label="Største klatring noensinne"
-                value={`${Math.round(mostElevation.elevation)} m`}
-                hint={mostElevation.name}
-              />
-            )}
+      {recentCards.length > 0 && (
+        <div>
+          <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground mb-3">
+            Siste 4 uker
           </div>
-        )}
-      </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {recentCards}
+          </div>
+        </div>
+      )}
+      {ytdCards.length > 0 && (
+        <div>
+          <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground mb-3">
+            Hittil i år
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {ytdCards}
+          </div>
+        </div>
+      )}
+      {allCards.length > 0 && (
+        <div>
+          <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground mb-3">
+            Siden tidenes morgen
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {allCards}
+          </div>
+          {(totals.biggestRide || mostElevation) && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+              {totals.biggestRide && (
+                <Stat
+                  label="Lengste sykkeltur noensinne"
+                  value={formatKm(totals.biggestRide)}
+                  hint="rekord"
+                />
+              )}
+              {mostElevation && (
+                <Stat
+                  label="Største klatring noensinne"
+                  value={`${Math.round(mostElevation.elevation)} m`}
+                  hint={mostElevation.name}
+                />
+              )}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
