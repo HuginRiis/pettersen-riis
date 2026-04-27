@@ -60,7 +60,7 @@ export function OutdoorWeatherStrip({
       <div className="panel rounded-lg p-3 sm:p-4">
         <div className="flex items-center justify-between mb-2">
           <span className="text-[9px] sm:text-[10px] tracking-[0.3em] text-primary/80 uppercase">
-            Ute nå · Tollnes
+            {label}
           </span>
           {data?.fetchedAt && (
             <span className="text-[9px] text-muted-foreground tabular-nums">
