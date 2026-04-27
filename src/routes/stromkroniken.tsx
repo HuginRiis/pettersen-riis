@@ -72,6 +72,7 @@ function StromkronikenPage() {
   const [state, setState] = useState<TibberFullResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [updated, setUpdated] = useState<Date | null>(null);
+  const live = useTibberLive();
 
   const load = async () => {
     try {
