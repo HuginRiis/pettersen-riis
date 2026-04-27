@@ -153,7 +153,7 @@ export const getTibberMonthly = createServerFn({ method: "GET" }).handler(
     } catch (e: any) {
       return { months: [], error: e?.message ?? "Ukjent feil" };
     }
-  },
+  }),
 );
 
 export type TibberHourlyResult = {
