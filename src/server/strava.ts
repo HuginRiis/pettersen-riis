@@ -167,11 +167,11 @@ function bucketSport(type: string): "run" | "ride" | "swim" | "hike" | "ski" | "
 }
 
 // Selve dashboard-logikken som hentes både fra serverFn og fra refresh-knappen
-// i Vakttårnet. Pakket i withApiLog så hver kjøring logges uansett kallvei.
-export const runStravaDashboard = withApiLog(
-  "strava",
-  "getStravaDashboard",
-  async (owner: StravaOwner) => {
+// i Vakttårnet. withApiLog påføres kun i server-only kallveier (se
+// api-call-log.functions.ts og getStravaDashboard.handler under) — vi importerer
+// ikke api-call-log.server her, fordi denne filen også brukes fra klient-ruter
+// (trening.tsx) via RPC-stubs.
+export const runStravaDashboard = async (owner: StravaOwner) => {
   const auth = await getValidStravaAccessToken(owner);
   if (!auth) {
     return { ok: false as const, error: "Ikke koblet til Strava" };
