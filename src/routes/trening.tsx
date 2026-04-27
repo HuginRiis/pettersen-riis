@@ -64,8 +64,15 @@ type DashOk = {
     longestTime: SlimAct | null;
     mostElevation: SlimAct | null;
     maxHr: SlimAct | null;
+    avgHr: SlimAct | null;
     maxSpeed: SlimAct | null;
+    avgSpeed: SlimAct | null;
+    mostKudos: SlimAct | null;
+    mostAchievements: SlimAct | null;
     longestWalk: SlimAct | null;
+    longestRun: SlimAct | null;
+    longestRide: SlimAct | null;
+    fastestRide: SlimAct | null;
   };
   walkRecent: {
     count: number;
@@ -115,8 +122,12 @@ type SlimAct = {
   movingTime: number;
   elevation: number;
   startDate: string;
+  avgHeartrate: number | null;
   maxHeartrate: number | null;
+  avgSpeed: number | null;
   maxSpeed: number | null;
+  kudos: number;
+  achievements: number;
 };
 
 type DashState =
@@ -962,16 +973,58 @@ function RecordsGrid({ records }: { records: DashOk["records"] }) {
         records.maxHr?.maxHeartrate ? `${Math.round(records.maxHr.maxHeartrate)} bpm` : "—",
       )}
       {card(
+        "Høyeste snittpuls",
+        "♥",
+        records.avgHr,
+        records.avgHr?.avgHeartrate ? `${Math.round(records.avgHr.avgHeartrate)} bpm` : "—",
+      )}
+      {card(
         "Toppfart",
         "💨",
         records.maxSpeed,
         records.maxSpeed?.maxSpeed ? formatSpeedKmh(records.maxSpeed.maxSpeed) : "—",
       )}
       {card(
+        "Høyeste snittfart",
+        "⚡",
+        records.avgSpeed,
+        records.avgSpeed?.avgSpeed ? formatSpeedKmh(records.avgSpeed.avgSpeed) : "—",
+      )}
+      {card(
+        "Lengste løpetur",
+        "🏃",
+        records.longestRun,
+        records.longestRun ? formatKm(records.longestRun.distance) : "—",
+      )}
+      {card(
+        "Lengste sykkeltur",
+        "🚴",
+        records.longestRide,
+        records.longestRide ? formatKm(records.longestRide.distance) : "—",
+      )}
+      {card(
+        "Raskeste sykkeltur",
+        "🚴‍♂️",
+        records.fastestRide,
+        records.fastestRide?.avgSpeed ? formatSpeedKmh(records.fastestRide.avgSpeed) : "—",
+      )}
+      {card(
         "Lengste gåtur",
         "🚶",
         records.longestWalk,
         records.longestWalk ? formatKm(records.longestWalk.distance) : "—",
+      )}
+      {card(
+        "Mest kudos",
+        "👏",
+        records.mostKudos,
+        records.mostKudos ? `${records.mostKudos.kudos} kudos` : "—",
+      )}
+      {card(
+        "Flest bragder",
+        "🏆",
+        records.mostAchievements,
+        records.mostAchievements ? `${records.mostAchievements.achievements} stk` : "—",
       )}
     </div>
   );

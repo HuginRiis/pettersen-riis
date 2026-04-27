@@ -139,41 +139,47 @@ export function ApiCallLogPanel() {
                 key={src.id}
                 className="border border-border rounded overflow-hidden"
               >
-                <div className="flex items-center gap-3 p-3 flex-wrap">
-                  <button
-                    type="button"
-                    onClick={() => toggle(src.id)}
-                    className="flex items-center gap-2 text-left flex-1 min-w-0"
-                  >
-                    <span className="text-muted-foreground text-xs w-3">
-                      {isOpen ? "▾" : "▸"}
-                    </span>
-                    <span className="font-medium tracking-wide">{src.label}</span>
-                    <span className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground">
+                <div className="p-3 space-y-2">
+                  {/* Topprad: navn + oppdater-knapp */}
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => toggle(src.id)}
+                      className="flex items-center gap-2 text-left flex-1 min-w-0"
+                    >
+                      <span className="text-muted-foreground text-xs w-3 shrink-0">
+                        {isOpen ? "▾" : "▸"}
+                      </span>
+                      <span className="font-medium tracking-wide truncate">
+                        {src.label}
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleRefresh(src.id)}
+                      disabled={busySource === src.id}
+                      className="shrink-0 px-3 py-1.5 rounded border border-primary/40 text-primary text-[10px] tracking-[0.2em] uppercase hover:bg-primary/10 disabled:opacity-50"
+                    >
+                      {busySource === src.id ? "Henter…" : "✦ Oppdater"}
+                    </button>
+                  </div>
+                  {/* Statusrad: meta-info, wrapper på mobil */}
+                  <div className="flex items-center gap-x-3 gap-y-1 text-[11px] tabular-nums flex-wrap pl-5">
+                    <span className="text-muted-foreground">
                       {rows.length} endpoint{rows.length === 1 ? "" : "er"}
                     </span>
-                  </button>
-                  <div className="flex items-center gap-3 text-[11px] tabular-nums">
+                    <span className="text-muted-foreground">·</span>
                     <span className="text-muted-foreground">
                       Sist: <span className="text-foreground">{formatAgo(lastCall)}</span>
                     </span>
+                    <span className="text-muted-foreground">·</span>
                     <span className="text-muted-foreground">
                       24t: <span className="text-foreground">{total24}</span>
                     </span>
                     {hasErrors && (
-                      <span className="text-destructive">
-                        ⚠ {errors24} feil
-                      </span>
+                      <span className="text-destructive">⚠ {errors24} feil</span>
                     )}
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => handleRefresh(src.id)}
-                    disabled={busySource === src.id}
-                    className="px-3 py-1.5 rounded border border-primary/40 text-primary text-[10px] tracking-[0.3em] uppercase hover:bg-primary/10 disabled:opacity-50"
-                  >
-                    {busySource === src.id ? "Henter…" : "✦ Oppdater"}
-                  </button>
                 </div>
 
                 {isOpen && (

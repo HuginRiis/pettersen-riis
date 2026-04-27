@@ -279,32 +279,42 @@ export const runStravaDashboard = async (owner: StravaOwner) => {
     const walkActivities = activities.filter(
       (a) => bucketSport(a.sport_type || a.type) === "walk",
     );
-    const records = {
-      longestDistance: activities.reduce<StravaActivity | null>(
-        (best, a) => (!best || (a.distance || 0) > (best.distance || 0) ? a : best),
-        null,
-      ),
-      longestTime: activities.reduce<StravaActivity | null>(
-        (best, a) => (!best || (a.moving_time || 0) > (best.moving_time || 0) ? a : best),
-        null,
-      ),
-      mostElevation: activities.reduce<StravaActivity | null>(
+    const runActivities = activities.filter(
+      (a) => bucketSport(a.sport_type || a.type) === "run",
+    );
+    const rideActivities = activities.filter(
+      (a) => bucketSport(a.sport_type || a.type) === "ride",
+    );
+    const bestBy = <K extends keyof StravaActivity>(
+      list: StravaActivity[],
+      key: K,
+    ): StravaActivity | null =>
+      list.reduce<StravaActivity | null>(
         (best, a) =>
-          !best || (a.total_elevation_gain || 0) > (best.total_elevation_gain || 0) ? a : best,
+          !best || ((a[key] as number) || 0) > ((best[key] as number) || 0) ? a : best,
+        null,
+      );
+    const records = {
+      longestDistance: bestBy(activities, "distance"),
+      longestTime: bestBy(activities, "moving_time"),
+      mostElevation: bestBy(activities, "total_elevation_gain"),
+      maxHr: bestBy(activities, "max_heartrate"),
+      avgHr: activities.reduce<StravaActivity | null>(
+        (best, a) =>
+          a.average_heartrate &&
+          (!best || (a.average_heartrate || 0) > (best.average_heartrate || 0))
+            ? a
+            : best,
         null,
       ),
-      maxHr: activities.reduce<StravaActivity | null>(
-        (best, a) => (!best || (a.max_heartrate || 0) > (best.max_heartrate || 0) ? a : best),
-        null,
-      ),
-      maxSpeed: activities.reduce<StravaActivity | null>(
-        (best, a) => (!best || (a.max_speed || 0) > (best.max_speed || 0) ? a : best),
-        null,
-      ),
-      longestWalk: walkActivities.reduce<StravaActivity | null>(
-        (best, a) => (!best || (a.distance || 0) > (best.distance || 0) ? a : best),
-        null,
-      ),
+      maxSpeed: bestBy(activities, "max_speed"),
+      avgSpeed: bestBy(activities, "average_speed"),
+      mostKudos: bestBy(activities, "kudos_count"),
+      mostAchievements: bestBy(activities, "achievement_count"),
+      longestWalk: bestBy(walkActivities, "distance"),
+      longestRun: bestBy(runActivities, "distance"),
+      longestRide: bestBy(rideActivities, "distance"),
+      fastestRide: bestBy(rideActivities, "average_speed"),
     };
 
     // Hjelper: summer aktiviteter til en TotalBlock
@@ -364,8 +374,12 @@ export const runStravaDashboard = async (owner: StravaOwner) => {
             movingTime: a.moving_time,
             elevation: a.total_elevation_gain,
             startDate: a.start_date_local,
+            avgHeartrate: a.average_heartrate ?? null,
             maxHeartrate: a.max_heartrate ?? null,
+            avgSpeed: a.average_speed ?? null,
             maxSpeed: a.max_speed ?? null,
+            kudos: a.kudos_count ?? 0,
+            achievements: a.achievement_count ?? 0,
           }
         : null;
 
@@ -386,8 +400,15 @@ export const runStravaDashboard = async (owner: StravaOwner) => {
         longestTime: slim(records.longestTime),
         mostElevation: slim(records.mostElevation),
         maxHr: slim(records.maxHr),
+        avgHr: slim(records.avgHr),
         maxSpeed: slim(records.maxSpeed),
+        avgSpeed: slim(records.avgSpeed),
+        mostKudos: slim(records.mostKudos),
+        mostAchievements: slim(records.mostAchievements),
         longestWalk: slim(records.longestWalk),
+        longestRun: slim(records.longestRun),
+        longestRide: slim(records.longestRide),
+        fastestRide: slim(records.fastestRide),
       },
       walkRecent: {
         count: walkTotals.count,
