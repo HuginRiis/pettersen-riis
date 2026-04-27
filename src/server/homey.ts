@@ -532,7 +532,7 @@ export const getHomeySnapshot = createServerFn({ method: "GET" }).handler(
     } catch (e: any) {
       return { ok: false, needsConnect: false, error: e?.message ?? "Klarte ikke hente data" };
     }
-  },
+  }),
 );
 
 export const disconnectHomey = createServerFn({ method: "POST" }).handler(async () => {
