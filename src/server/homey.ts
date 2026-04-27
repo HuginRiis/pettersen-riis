@@ -874,7 +874,7 @@ export const getDoorsLocksSnapshot = createServerFn({ method: "GET" }).handler(
     } catch (e: any) {
       return { ok: false, error: e?.message ?? "Klarte ikke hente dør/lås-data" };
     }
-  },
+  }),
 );
 
 function extractCapabilityMeta(
