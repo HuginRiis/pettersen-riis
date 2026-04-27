@@ -76,7 +76,11 @@ export function withApiLog<T extends (...args: any[]) => Promise<any>>(
         result && typeof result === "object" && "cached" in result
           ? Boolean((result as { cached?: unknown }).cached)
           : false;
-      void recordApiCall({
+      // VIKTIG: vi må AWAIT inserten i stedet for fire-and-forget,
+      // ellers kanselleres den av Cloudflare Worker-runtime når
+      // responsen returneres — spesielt for raske/cached handlere
+      // (Netatmo, Strava, NRK osv. som returnerer på <50ms ved cache).
+      await recordApiCall({
         source,
         endpoint,
         ok: true,
@@ -85,7 +89,7 @@ export function withApiLog<T extends (...args: any[]) => Promise<any>>(
       });
       return result;
     } catch (err) {
-      void recordApiCall({
+      await recordApiCall({
         source,
         endpoint,
         ok: false,
