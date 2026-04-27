@@ -5,15 +5,16 @@ import {
   ResponsiveContainer,
   BarChart,
   Bar,
+  Cell,
   AreaChart,
   Area,
+  LineChart,
+  Line,
   XAxis,
   YAxis,
   Tooltip,
   CartesianGrid,
-  RadialBarChart,
-  RadialBar,
-  PolarAngleAxis,
+  Legend,
 } from "recharts";
 import {
   Crown,
@@ -27,10 +28,18 @@ import {
   Bolt,
   AlertTriangle,
   RefreshCw,
+  Home as HomeIcon,
+  Activity,
+  Sun,
 } from "lucide-react";
 import { PageShell, PageHero } from "@/components/PageShell";
-import { getPowerByTheHour, type PbthHomeData, type PbthResult } from "@/server/power-by-the-hour";
-import { getSpotPrices, type SpotPriceResult } from "@/server/spot-price";
+import {
+  getTibberFullData,
+  type TibberFullResult,
+  type TibberHomeFull,
+  type PricePoint,
+  type ConsumptionPoint,
+} from "@/server/tibber";
 import stromImg from "@/assets/stromkroniken.jpg";
 
 export const Route = createFileRoute("/stromkroniken")({
@@ -40,13 +49,13 @@ export const Route = createFileRoute("/stromkroniken")({
       {
         name: "description",
         content:
-          "Husets krønike om strømgullet — sanntidspris, forbruk og kostnader for borgen og hytta, hentet fra Power by the Hour-app via Homey.",
+          "Husets krønike om strømgullet — sanntidspris, forbruk og kostnader for borgen og hytta, hentet direkte fra Tibber.",
       },
       { property: "og:title", content: "Strømkrøniken — House Pettersen Riis" },
       {
         property: "og:description",
         content:
-          "Sanntidspris, forbruk og strømkostnader for borgen og hytta — kalkulert av Power by the Hour-app i Homey.",
+          "Sanntidspris, forbruk og strømkostnader for borgen og hytta — direkte fra Tibber.",
       },
       { property: "og:image", content: stromImg },
       { property: "twitter:image", content: stromImg },
@@ -56,22 +65,18 @@ export const Route = createFileRoute("/stromkroniken")({
 });
 
 function StromkronikenPage() {
-  const fetchData = useServerFn(getPowerByTheHour);
-  const fetchSpot = useServerFn(getSpotPrices);
-  const [state, setState] = useState<PbthResult | null>(null);
-  const [spot, setSpot] = useState<SpotPriceResult | null>(null);
+  const fetchFull = useServerFn(getTibberFullData);
+  const [state, setState] = useState<TibberFullResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [updated, setUpdated] = useState<Date | null>(null);
 
   const load = async () => {
     try {
-      const [res, spotRes] = await Promise.all([fetchData(), fetchSpot()]);
+      const res = await fetchFull();
       setState(res);
-      setSpot(spotRes);
       setUpdated(new Date());
     } catch (err) {
       console.error("[Stromkroniken] failed", err);
-      setState({ ok: false, error: (err as Error).message });
     } finally {
       setLoading(false);
     }
@@ -84,15 +89,12 @@ function StromkronikenPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const spotBorgen = spot && spot.ok ? spot.zones.NO2?.priceNow ?? null : null;
-  const spotHytta = spot && spot.ok ? spot.zones.NO1?.priceNow ?? null : null;
-
   return (
     <PageShell>
       <PageHero
         eyebrow="Husets strømgull · Anno nå"
         title="Strømkrøniken"
-        subtitle="Krøniken om strømmen som rir gjennom borgens årer — sanntidspris, forbruk og kostnader for begge husene."
+        subtitle="Krøniken om strømmen som rir gjennom borgens årer — sanntidspris, forbruk og kostnader for begge husene, hentet direkte fra Tibber."
         image={stromImg}
       />
 
@@ -100,7 +102,7 @@ function StromkronikenPage() {
         {loading && !state && (
           <div className="text-center text-muted-foreground py-20">
             <div className="inline-flex items-center gap-2 text-sm">
-              <RefreshCw size={14} className="animate-spin" /> Spør ravnen om Power-by-the-Hour…
+              <RefreshCw size={14} className="animate-spin" /> Spør ravnen om Tibber-tall…
             </div>
           </div>
         )}
@@ -110,7 +112,7 @@ function StromkronikenPage() {
             <h2 className="text-xl text-primary mb-2 flex items-center gap-2">
               <AlertTriangle size={18} className="text-destructive" /> Krøniken er taus
             </h2>
-            <p className="text-foreground/85 text-sm">{state.error}</p>
+            <p className="text-foreground/85 text-sm">{state.error ?? "Ukjent feil fra Tibber."}</p>
           </article>
         )}
 
@@ -118,18 +120,10 @@ function StromkronikenPage() {
           <>
             <div className="flex items-center justify-between flex-wrap gap-3">
               <p className="text-sm text-muted-foreground">
-                Maesterens timesvise målinger — oppdatert{" "}
+                Tibber-data — oppdatert{" "}
                 <span className="text-primary">
                   {updated?.toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit" }) ?? "—"}
                 </span>
-                {spot && spot.ok && (
-                  <>
-                    {" · "}
-                    <span className="text-foreground/70">
-                      Spotpris fra Nord Pool · Borgen NO2, Hytta NO1
-                    </span>
-                  </>
-                )}
               </p>
               <button
                 onClick={() => {
@@ -145,19 +139,21 @@ function StromkronikenPage() {
             <HomeBlock
               title="Borgen · Nordre Lensmannsveg 17"
               eyebrow="Husets sete"
-              data={state.borgen}
-              spotNow={spotBorgen}
-              zoneLabel="NO2"
+              data={state.tollnes}
             />
             <HomeBlock
               title="Hytta · Øvre Bjerkesetvegen 222"
               eyebrow="Vinterboligen"
               data={state.hytta}
-              spotNow={spotHytta}
-              zoneLabel="NO1"
             />
 
-            <ComparisonBlock borgen={state.borgen} hytta={state.hytta} />
+            <ComparisonBlock tollnes={state.tollnes} hytta={state.hytta} />
+
+            {state.homesDebug.length > 0 && (
+              <p className="text-[10px] text-muted-foreground/60 italic">
+                Tibber-hjem oppdaget: {state.homesDebug.join(" · ")}
+              </p>
+            )}
           </>
         )}
       </section>
@@ -166,21 +162,17 @@ function StromkronikenPage() {
 }
 
 // ============================================================
-// Home block — full visualization for a single address
+// Home block — alle Tibber-tall for ett hjem
 // ============================================================
 
 function HomeBlock({
   title,
   eyebrow,
   data,
-  spotNow,
-  zoneLabel,
 }: {
   title: string;
   eyebrow: string;
-  data: PbthHomeData;
-  spotNow: number | null;
-  zoneLabel: string;
+  data: TibberHomeFull;
 }) {
   if (!data.found) {
     return (
@@ -192,17 +184,17 @@ function HomeBlock({
           <Crown size={20} /> {title}
         </h2>
         <p className="text-sm text-muted-foreground">
-          Fant ingen Power-by-the-Hour-enhet i Homey som matcher denne adressen.
-          Kontroller at appen er installert og at enheten har adressen i navnet.
+          {data.error ?? "Fant ingen treff hos Tibber for denne adressen."}
         </p>
       </article>
     );
   }
 
-  const h = data.highlights;
+  const watt = data.latestHourKwh != null ? Math.round(data.latestHourKwh * 1000) : null;
+  const priceNow = data.priceNow?.total ?? null;
 
   return (
-    <article className="panel rounded-lg p-5 sm:p-7 space-y-6">
+    <article className="panel rounded-lg p-5 sm:p-7 space-y-7">
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
           <div className="text-[10px] tracking-[0.3em] uppercase text-muted-foreground">
@@ -211,80 +203,147 @@ function HomeBlock({
           <h2 className="text-2xl text-primary mt-1 flex items-center gap-2">
             <Crown size={20} /> {title}
           </h2>
-          <p className="text-xs text-muted-foreground mt-1">
-            Enhet i Homey: <span className="text-foreground/80">{data.matchedDeviceName}</span>
+          <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1.5">
+            <HomeIcon size={11} />
+            {data.address?.address1 ?? data.nickname ?? "—"}
+            {data.address?.postalCode && ` · ${data.address.postalCode} ${data.address.city ?? ""}`}
+            {data.size != null && ` · ${data.size} m²`}
+            {data.numberOfResidents != null && ` · ${data.numberOfResidents} pers.`}
+            {data.mainFuseSize != null && ` · ${data.mainFuseSize}A hovedsikring`}
           </p>
+          {data.hasPulse && (
+            <p className="text-[10px] text-[oklch(0.72_0.16_150)] mt-1 flex items-center gap-1">
+              <Activity size={10} /> Pulse aktiv · sanntidsmåling
+            </p>
+          )}
         </div>
       </div>
 
-      {/* Heltall — store nøkkeltall */}
+      {/* Heltall — nøkkeltall */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <BigStat
           icon={Coins}
           label="Pris nå"
-          value={
-            spotNow != null
-              ? `${spotNow.toFixed(3)} kr`
-              : h.priceNow != null
-                ? `${h.priceNow.toFixed(3)} kr`
-                : "—"
-          }
-          sub={spotNow != null ? `Nord Pool · ${zoneLabel} inkl. mva` : "per kWh inkl. mva"}
+          value={priceNow != null ? `${priceNow.toFixed(3)} kr` : "—"}
+          sub={`per kWh · ${data.priceNow?.level?.toLowerCase().replace("_", " ") ?? "—"}`}
           tone="gold"
         />
         <BigStat
           icon={Bolt}
-          label="Effekt nå"
-          value={h.consumptionNow != null ? `${Math.round(h.consumptionNow)} W` : "—"}
-          sub="øyeblikkelig last"
+          label="Snitt siste time"
+          value={watt != null ? `${watt} W` : "—"}
+          sub={data.latestHourFrom ? `fra ${formatHour(data.latestHourFrom)}` : "—"}
           tone="primary"
         />
         <BigStat
           icon={Zap}
           label="kWh i dag"
-          value={h.energyToday != null ? h.energyToday.toFixed(1) : "—"}
-          sub="forbruk så langt"
+          value={data.todayKwh > 0 ? data.todayKwh.toFixed(1) : "—"}
+          sub={
+            data.todayCost != null
+              ? `≈ ${data.todayCost.toFixed(0)} kr så langt`
+              : "ingen kostnad ennå"
+          }
           tone="primary"
         />
         <BigStat
           icon={Coins}
-          label="Kostnad i dag"
-          value={h.costToday != null ? `${h.costToday.toFixed(0)} kr` : "—"}
-          sub="påløpt så langt"
+          label="Måned hittil"
+          value={data.thisMonthKwh > 0 ? `${data.thisMonthKwh.toFixed(0)} kWh` : "—"}
+          sub={
+            data.thisMonthCost != null
+              ? `≈ ${data.thisMonthCost.toFixed(0)} kr`
+              : "—"
+          }
           tone="gold"
         />
       </div>
 
-      {/* Pris-radialer */}
-      {(h.priceNow != null || h.priceMinToday != null || h.priceMaxToday != null) && (
+      {/* Mer-tall */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <SmallStat
+          label="I går"
+          value={data.yesterdayKwh > 0 ? `${data.yesterdayKwh.toFixed(1)} kWh` : "—"}
+          sub={data.yesterdayCost != null ? `${data.yesterdayCost.toFixed(0)} kr` : ""}
+        />
+        <SmallStat
+          label="Forrige måned"
+          value={data.lastMonthKwh > 0 ? `${data.lastMonthKwh.toFixed(0)} kWh` : "—"}
+          sub={data.lastMonthCost != null ? `${data.lastMonthCost.toFixed(0)} kr` : ""}
+        />
+        <SmallStat
+          label="I år"
+          value={data.thisYearKwh > 0 ? `${data.thisYearKwh.toFixed(0)} kWh` : "—"}
+          sub={data.thisYearCost != null ? `${data.thisYearCost.toFixed(0)} kr` : ""}
+        />
+        <SmallStat
+          label="Snittpris i dag"
+          value={data.priceAvgToday != null ? `${data.priceAvgToday.toFixed(3)} kr` : "—"}
+          sub={
+            data.priceMinToday != null && data.priceMaxToday != null
+              ? `${data.priceMinToday.toFixed(2)}–${data.priceMaxToday.toFixed(2)} kr`
+              : ""
+          }
+        />
+      </div>
+
+      {/* Pris-graf i dag (+ i morgen om publisert) */}
+      {data.pricesToday.length > 0 && (
         <div>
           <h3 className="text-sm tracking-[0.3em] uppercase text-primary mb-3 flex items-center gap-2">
-            <Sparkles size={14} /> Prisens posisjon i dag
+            <Sun size={14} /> Spotpris time-for-time
           </h3>
-          <PriceRadial
-            now={h.priceNow}
-            min={h.priceMinToday}
-            max={h.priceMaxToday}
-            avg={h.priceAvgToday}
-          />
+          <PriceChart today={data.pricesToday} tomorrow={data.pricesTomorrow} priceNow={priceNow} />
         </div>
       )}
 
-      {/* Kumulativ kWh denne måneden */}
-      <div>
-        <h3 className="text-sm tracking-[0.3em] uppercase text-primary mb-3 flex items-center gap-2">
-          <TrendingUp size={14} /> kWh denne måneden
-        </h3>
-        <MonthCumulativeChart highlights={h} />
-      </div>
-
-      {/* Denne måneden vs forrige måned */}
-      {(h.energyThisMonth != null || h.energyLastMonth != null) && (
+      {/* Forbruk siste 48 timer */}
+      {data.hourly.length > 0 && (
         <div>
           <h3 className="text-sm tracking-[0.3em] uppercase text-primary mb-3 flex items-center gap-2">
-            <Calendar size={14} /> Denne måneden mot forrige
+            <Clock size={14} /> Forbruk siste 48 timer
           </h3>
-          <MonthVsLastMonthChart highlights={h} />
+          <HourlyChart hourly={data.hourly} />
+        </div>
+      )}
+
+      {/* Daglig forbruk (60 dager) */}
+      {data.daily.length > 0 && (
+        <div>
+          <h3 className="text-sm tracking-[0.3em] uppercase text-primary mb-3 flex items-center gap-2">
+            <Calendar size={14} /> Daglig forbruk · siste {data.daily.length} dager
+          </h3>
+          <DailyChart daily={data.daily} />
+        </div>
+      )}
+
+      {/* Kumulativ kWh denne måneden vs forrige måned */}
+      {data.daily.length > 0 && (
+        <div>
+          <h3 className="text-sm tracking-[0.3em] uppercase text-primary mb-3 flex items-center gap-2">
+            <TrendingUp size={14} /> Måneden mot forrige
+          </h3>
+          <MonthVsLastChart daily={data.daily} />
+        </div>
+      )}
+
+      {/* Månedlig forbruk siste 13 mnd */}
+      {data.monthly.length > 0 && (
+        <div>
+          <h3 className="text-sm tracking-[0.3em] uppercase text-primary mb-3 flex items-center gap-2">
+            <Calendar size={14} /> Måned for måned · siste 13
+          </h3>
+          <MonthlyChart monthly={data.monthly} />
+        </div>
+      )}
+
+      {/* Årlig forbruk */}
+      {data.yearly.length > 0 && (
+        <div>
+          <h3 className="text-sm tracking-[0.3em] uppercase text-primary mb-3 flex items-center gap-2">
+            <Sparkles size={14} /> Årets krønike
+          </h3>
+          <YearlyTable yearly={data.yearly} />
         </div>
       )}
 
@@ -293,45 +352,15 @@ function HomeBlock({
         <h3 className="text-sm tracking-[0.3em] uppercase text-primary mb-3 flex items-center gap-2">
           <Sparkles size={14} /> Månedens spådom
         </h3>
-        <MonthForecastPanel highlights={h} />
+        <MonthForecast data={data} />
       </div>
-
-      {/* Alle capabilities — tabell */}
-      <details className="group">
-        <summary className="cursor-pointer text-sm tracking-[0.3em] uppercase text-primary flex items-center gap-2 hover:text-gold transition-colors">
-          <Clock size={14} /> Alle målinger fra Maesteren ({data.capabilities.length})
-        </summary>
-        <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
-          {data.capabilities.map((c) => (
-            <div
-              key={c.id}
-              className="rounded-md border border-border/40 bg-background/30 p-2.5"
-            >
-              <div className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground">
-                {c.label}
-              </div>
-              <div className="text-sm text-foreground tabular-nums mt-0.5">
-                {formatValue(c.value)} {c.unit ? <span className="text-xs text-muted-foreground">{c.unit}</span> : null}
-              </div>
-              <div className="text-[9px] text-muted-foreground/60 mt-0.5 truncate">{c.id}</div>
-            </div>
-          ))}
-        </div>
-      </details>
     </article>
   );
 }
 
-function formatValue(v: number | string | boolean | null): string {
-  if (v == null) return "—";
-  if (typeof v === "boolean") return v ? "På" : "Av";
-  if (typeof v === "number") {
-    if (Math.abs(v) >= 1000) return v.toFixed(0);
-    if (Math.abs(v) >= 10) return v.toFixed(1);
-    return v.toFixed(3);
-  }
-  return String(v);
-}
+// ============================================================
+// Små UI-blokker
+// ============================================================
 
 function BigStat({
   icon: Icon,
@@ -356,159 +385,81 @@ function BigStat({
         </div>
       </div>
       <div className={`text-2xl font-semibold tabular-nums ${color}`}>{value}</div>
-      <div className="text-[10px] text-muted-foreground mt-1">{sub}</div>
+      <div className="text-[10px] text-muted-foreground mt-1 capitalize">{sub}</div>
     </div>
   );
 }
 
-function PriceRadial({
-  now,
-  min,
-  max,
-  avg,
-}: {
-  now?: number;
-  min?: number;
-  max?: number;
-  avg?: number;
-}) {
-  // Vis hvor "nå-prisen" ligger mellom min og max i dag.
-  const lo = min ?? 0;
-  const hi = max ?? Math.max((now ?? 0) * 1.5, 1);
-  const pos = now != null && hi > lo ? Math.min(1, Math.max(0, (now - lo) / (hi - lo))) : 0;
-  const pct = Math.round(pos * 100);
-
-  const data = [{ name: "pris", value: pct, fill: pctColor(pct) }];
-
+function SmallStat({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
-    <div className="grid md:grid-cols-[220px,1fr] gap-4 items-center">
-      <div className="h-44 w-full">
-        <ResponsiveContainer width="100%" height="100%">
-          <RadialBarChart
-            innerRadius="70%"
-            outerRadius="100%"
-            data={data}
-            startAngle={210}
-            endAngle={-30}
-          >
-            <PolarAngleAxis type="number" domain={[0, 100]} tick={false} />
-            <RadialBar dataKey="value" cornerRadius={6} background={{ fill: "hsl(var(--muted) / 0.2)" }} />
-          </RadialBarChart>
-        </ResponsiveContainer>
-        <div className="-mt-32 text-center pointer-events-none">
-          <div className="text-2xl font-semibold text-foreground tabular-nums">{pct}%</div>
-          <div className="text-[10px] tracking-[0.25em] uppercase text-muted-foreground">
-            av dagens spenn
-          </div>
-        </div>
-      </div>
-      <div className="grid grid-cols-3 gap-3">
-        <PriceBox icon={TrendingDown} label="Lavest i dag" value={min} tone="emerald" />
-        <PriceBox icon={Sparkles} label="Snitt i dag" value={avg} tone="muted" />
-        <PriceBox icon={TrendingUp} label="Høyest i dag" value={max} tone="rose" />
-      </div>
-    </div>
-  );
-}
-
-function pctColor(pct: number): string {
-  if (pct < 33) return "oklch(0.72 0.16 150)"; // grønn
-  if (pct < 66) return "oklch(0.78 0.13 85)"; // gull
-  return "oklch(0.65 0.22 25)"; // rødglødende
-}
-
-function PriceBox({
-  icon: Icon,
-  label,
-  value,
-  tone,
-}: {
-  icon: typeof Coins;
-  label: string;
-  value?: number;
-  tone: "emerald" | "muted" | "rose";
-}) {
-  const color =
-    tone === "emerald"
-      ? "text-[oklch(0.72_0.16_150)]"
-      : tone === "rose"
-        ? "text-[oklch(0.65_0.22_25)]"
-        : "text-foreground";
-  return (
-    <div className="panel rounded-md p-3 bg-background/30 border border-border/40 text-center">
-      <Icon size={14} className={`${color} mx-auto mb-1`} />
+    <div className="rounded-md p-3 bg-background/30 border border-border/40">
       <div className="text-[9px] tracking-[0.25em] uppercase text-muted-foreground">{label}</div>
-      <div className={`text-base font-semibold tabular-nums mt-0.5 ${color}`}>
-        {value != null ? `${value.toFixed(3)} kr` : "—"}
-      </div>
+      <div className="text-lg font-semibold tabular-nums text-foreground mt-0.5">{value}</div>
+      {sub && <div className="text-[10px] text-muted-foreground/80">{sub}</div>}
     </div>
   );
 }
 
+function formatHour(iso: string): string {
+  return new Date(iso).toLocaleTimeString("nb-NO", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Europe/Oslo",
+  });
+}
+
+function priceLevelColor(total: number, min: number, max: number): string {
+  if (max === min) return "oklch(0.78 0.13 85)";
+  const pct = (total - min) / (max - min);
+  if (pct < 0.33) return "oklch(0.72 0.16 150)";
+  if (pct < 0.66) return "oklch(0.78 0.13 85)";
+  return "oklch(0.65 0.22 25)";
+}
+
 // ============================================================
-// Month cumulative kWh — Homey-style area chart
+// Pris-graf
 // ============================================================
 
-function MonthCumulativeChart({ highlights: h }: { highlights: PbthHomeData["highlights"] }) {
-  const monthTotal = h.energyThisMonth;
-  const today = h.energyToday ?? 0;
+function PriceChart({
+  today,
+  tomorrow,
+  priceNow,
+}: {
+  today: PricePoint[];
+  tomorrow: PricePoint[];
+  priceNow: number | null;
+}) {
+  const all = [...today, ...tomorrow];
+  const min = Math.min(...all.map((p) => p.total));
+  const max = Math.max(...all.map((p) => p.total));
 
-  if (monthTotal == null || monthTotal <= 0) {
-    return <p className="text-xs text-muted-foreground">Ingen månedsdata tilgjengelig.</p>;
-  }
-
-  const now = new Date();
-  const dayOfMonth = now.getDate();
-  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-
-  // Anta jevn fordeling for tidligere dager — siste dag justeres til faktisk total.
-  const earlierDays = Math.max(1, dayOfMonth - 1);
-  const beforeToday = Math.max(0, monthTotal - today);
-  const perEarlierDay = beforeToday / earlierDays;
-
-  // Bygg datapunkter for hele måneden — fremtidige dager = null (ikke tegnet)
-  const data: Array<{ day: number; kwh: number | null }> = [];
-  let cum = 0;
-  for (let d = 1; d <= daysInMonth; d++) {
-    if (d < dayOfMonth) {
-      cum += perEarlierDay;
-      data.push({ day: d, kwh: Math.round(cum * 10) / 10 });
-    } else if (d === dayOfMonth) {
-      cum = monthTotal;
-      data.push({ day: d, kwh: Math.round(cum * 10) / 10 });
-    } else {
-      data.push({ day: d, kwh: null });
-    }
-  }
-
-  const maxKwh = Math.max(...data.map((d) => d.kwh ?? 0));
-  const yMax = Math.ceil(maxKwh / 100) * 100 || 100;
+  const data = all.map((p) => {
+    const d = new Date(p.startsAt);
+    const isTomorrow = tomorrow.includes(p);
+    return {
+      label: `${isTomorrow ? "i.m. " : ""}${d.getHours().toString().padStart(2, "0")}`,
+      total: Math.round(p.total * 1000) / 1000,
+      isTomorrow,
+      raw: p,
+    };
+  });
 
   return (
     <div className="rounded-xl bg-[oklch(0.18_0.02_270)] p-4 border border-border/40">
       <div className="h-56 w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={data} margin={{ top: 8, right: 12, left: -8, bottom: 0 }}>
-            <defs>
-              <linearGradient id="kwhGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="oklch(0.62 0.22 290)" stopOpacity={0.7} />
-                <stop offset="100%" stopColor="oklch(0.62 0.22 290)" stopOpacity={0} />
-              </linearGradient>
-            </defs>
+          <BarChart data={data} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
             <CartesianGrid stroke="oklch(0.3 0.02 270)" strokeDasharray="2 4" vertical={false} />
             <XAxis
-              dataKey="day"
-              tick={{ fill: "oklch(0.65 0.02 270)", fontSize: 11 }}
-              ticks={[1, 5, 9, 13, 17, 21, 25, 29]}
-              axisLine={false}
-              tickLine={false}
+              dataKey="label"
+              tick={{ fill: "oklch(0.65 0.02 270)", fontSize: 10 }}
+              interval="preserveStartEnd"
+              minTickGap={20}
             />
             <YAxis
-              tick={{ fill: "oklch(0.65 0.02 270)", fontSize: 11 }}
-              width={40}
-              axisLine={false}
-              tickLine={false}
-              domain={[0, yMax]}
+              tick={{ fill: "oklch(0.65 0.02 270)", fontSize: 10 }}
+              width={48}
+              unit=" kr"
             />
             <Tooltip
               contentStyle={{
@@ -517,22 +468,89 @@ function MonthCumulativeChart({ highlights: h }: { highlights: PbthHomeData["hig
                 borderRadius: 6,
                 fontSize: 12,
               }}
-              labelStyle={{ color: "oklch(0.85 0.02 270)" }}
               formatter={(v: unknown) =>
-                typeof v === "number" ? [`${v.toFixed(1)} kWh`, "Akkumulert"] : ["—", ""]
+                typeof v === "number" ? [`${v.toFixed(3)} kr/kWh`, "Pris"] : ["—", ""]
               }
-              labelFormatter={(d: number) => `Dag ${d}`}
             />
-            <Area
-              type="monotone"
-              dataKey="kwh"
-              stroke="oklch(0.62 0.22 290)"
-              strokeWidth={2.5}
-              fill="url(#kwhGradient)"
-              connectNulls={false}
-              isAnimationActive={false}
+            <Bar dataKey="total" radius={[3, 3, 0, 0]}>
+              {data.map((d, i) => (
+                <Cell
+                  key={i}
+                  fill={priceLevelColor(d.total, min, max)}
+                  fillOpacity={d.isTomorrow ? 0.55 : 1}
+                />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+      <div className="flex items-center justify-between text-[10px] text-muted-foreground mt-2 flex-wrap gap-2">
+        <span>
+          Min: <span className="text-[oklch(0.72_0.16_150)] tabular-nums">{min.toFixed(3)} kr</span> ·
+          Maks: <span className="text-[oklch(0.65_0.22_25)] tabular-nums ml-1">{max.toFixed(3)} kr</span>
+        </span>
+        {priceNow != null && (
+          <span>
+            Nå: <span className="text-primary tabular-nums">{priceNow.toFixed(3)} kr</span>
+          </span>
+        )}
+        {tomorrow.length > 0 && (
+          <span className="italic">— blassere søyler = i morgen</span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// Time-for-time-graf siste 48t
+// ============================================================
+
+function HourlyChart({ hourly }: { hourly: ConsumptionPoint[] }) {
+  const data = hourly.map((h) => {
+    const d = new Date(h.from);
+    return {
+      label: `${d.getHours().toString().padStart(2, "0")}`,
+      kwh: h.kwh ?? 0,
+      cost: h.cost ?? 0,
+    };
+  });
+
+  return (
+    <div className="rounded-xl bg-[oklch(0.18_0.02_270)] p-4 border border-border/40">
+      <div className="h-56 w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={data} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
+            <CartesianGrid stroke="oklch(0.3 0.02 270)" strokeDasharray="2 4" vertical={false} />
+            <XAxis
+              dataKey="label"
+              tick={{ fill: "oklch(0.65 0.02 270)", fontSize: 10 }}
+              interval="preserveStartEnd"
+              minTickGap={20}
             />
-          </AreaChart>
+            <YAxis
+              tick={{ fill: "oklch(0.65 0.02 270)", fontSize: 10 }}
+              width={42}
+              unit=" kWh"
+            />
+            <Tooltip
+              contentStyle={{
+                background: "oklch(0.22 0.02 270)",
+                border: "1px solid oklch(0.35 0.02 270)",
+                borderRadius: 6,
+                fontSize: 12,
+              }}
+              formatter={(v: unknown, name: unknown) =>
+                typeof v === "number"
+                  ? [
+                      name === "kwh" ? `${v.toFixed(2)} kWh` : `${v.toFixed(2)} kr`,
+                      name === "kwh" ? "Forbruk" : "Kostnad",
+                    ]
+                  : ["—", String(name)]
+              }
+            />
+            <Bar dataKey="kwh" fill="oklch(0.62 0.22 290)" radius={[3, 3, 0, 0]} />
+          </BarChart>
         </ResponsiveContainer>
       </div>
     </div>
@@ -540,59 +558,126 @@ function MonthCumulativeChart({ highlights: h }: { highlights: PbthHomeData["hig
 }
 
 // ============================================================
-// Denne måned vs forrige måned — sammenligning dag-for-dag
+// Daglig forbruk
 // ============================================================
 
-function MonthVsLastMonthChart({ highlights: h }: { highlights: PbthHomeData["highlights"] }) {
-  const thisTotal = h.energyThisMonth;
-  const lastTotal = h.energyLastMonth;
-  const today = h.energyToday ?? 0;
+function DailyChart({ daily }: { daily: ConsumptionPoint[] }) {
+  const data = daily.map((d) => {
+    const date = new Date(d.from);
+    return {
+      label: `${date.getDate()}.${date.getMonth() + 1}`,
+      kwh: d.kwh ?? 0,
+      cost: d.cost ?? 0,
+    };
+  });
 
-  if ((thisTotal == null || thisTotal <= 0) && (lastTotal == null || lastTotal <= 0)) {
-    return <p className="text-xs text-muted-foreground">Ingen månedsdata tilgjengelig.</p>;
-  }
+  return (
+    <div className="rounded-xl bg-[oklch(0.18_0.02_270)] p-4 border border-border/40">
+      <div className="h-56 w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={data} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
+            <CartesianGrid stroke="oklch(0.3 0.02 270)" strokeDasharray="2 4" vertical={false} />
+            <XAxis
+              dataKey="label"
+              tick={{ fill: "oklch(0.65 0.02 270)", fontSize: 10 }}
+              interval="preserveStartEnd"
+              minTickGap={24}
+            />
+            <YAxis
+              tick={{ fill: "oklch(0.65 0.02 270)", fontSize: 10 }}
+              width={42}
+              unit=" kWh"
+            />
+            <Tooltip
+              contentStyle={{
+                background: "oklch(0.22 0.02 270)",
+                border: "1px solid oklch(0.35 0.02 270)",
+                borderRadius: 6,
+                fontSize: 12,
+              }}
+              formatter={(v: unknown, name: unknown) =>
+                typeof v === "number"
+                  ? [
+                      name === "kwh" ? `${v.toFixed(1)} kWh` : `${v.toFixed(0)} kr`,
+                      name === "kwh" ? "Forbruk" : "Kostnad",
+                    ]
+                  : ["—", String(name)]
+              }
+            />
+            <Bar dataKey="kwh" fill="oklch(0.62 0.22 290)" radius={[2, 2, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}
 
+// ============================================================
+// Måned vs forrige måned (kumulativt fra daglig)
+// ============================================================
+
+function MonthVsLastChart({ daily }: { daily: ConsumptionPoint[] }) {
   const now = new Date();
-  const dayOfMonth = now.getDate();
+  const thisMonthKey = now.toLocaleDateString("sv-SE", { timeZone: "Europe/Oslo" }).slice(0, 7);
+  const lastD = new Date();
+  lastD.setMonth(lastD.getMonth() - 1);
+  const lastMonthKey = lastD.toLocaleDateString("sv-SE", { timeZone: "Europe/Oslo" }).slice(0, 7);
+
+  const thisDays = daily.filter(
+    (d) =>
+      new Date(d.from).toLocaleDateString("sv-SE", { timeZone: "Europe/Oslo" }).slice(0, 7) ===
+      thisMonthKey,
+  );
+  const lastDays = daily.filter(
+    (d) =>
+      new Date(d.from).toLocaleDateString("sv-SE", { timeZone: "Europe/Oslo" }).slice(0, 7) ===
+      lastMonthKey,
+  );
+
   const daysInThis = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-  const lastMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-  const daysInLast = new Date(lastMonthDate.getFullYear(), lastMonthDate.getMonth() + 1, 0).getDate();
-
-  const earlier = Math.max(1, dayOfMonth - 1);
-  const beforeToday = Math.max(0, (thisTotal ?? 0) - today);
-  const perEarlier = beforeToday / earlier;
-  const lastPerDay = lastTotal != null ? lastTotal / daysInLast : 0;
-
+  const daysInLast = new Date(lastD.getFullYear(), lastD.getMonth() + 1, 0).getDate();
   const maxDays = Math.max(daysInThis, daysInLast);
-  const data: Array<{ day: number; "Denne måned": number | null; "Forrige måned": number | null }> = [];
+
   let cumThis = 0;
   let cumLast = 0;
-  for (let d = 1; d <= maxDays; d++) {
-    let thisVal: number | null = null;
-    if (thisTotal != null) {
-      if (d < dayOfMonth) {
-        cumThis += perEarlier;
-        thisVal = Math.round(cumThis * 10) / 10;
-      } else if (d === dayOfMonth) {
-        cumThis = thisTotal;
-        thisVal = Math.round(cumThis * 10) / 10;
-      }
-    }
-    let lastVal: number | null = null;
-    if (lastTotal != null && d <= daysInLast) {
-      cumLast += lastPerDay;
-      lastVal = Math.round(cumLast * 10) / 10;
-    }
-    data.push({ day: d, "Denne måned": thisVal, "Forrige måned": lastVal });
+  const thisByDay = new Map<number, number>();
+  const lastByDay = new Map<number, number>();
+  for (const d of thisDays) {
+    const day = new Date(d.from).getDate();
+    thisByDay.set(day, (d.kwh ?? 0));
+  }
+  for (const d of lastDays) {
+    const day = new Date(d.from).getDate();
+    lastByDay.set(day, (d.kwh ?? 0));
   }
 
-  const maxKwh = Math.max(thisTotal ?? 0, lastTotal ?? 0);
-  const yMax = Math.ceil(maxKwh / 100) * 100 || 100;
+  const data: Array<{ day: number; "Denne måned": number | null; "Forrige måned": number | null }> = [];
+  for (let i = 1; i <= maxDays; i++) {
+    let thisVal: number | null = null;
+    let lastVal: number | null = null;
+    if (thisByDay.has(i)) {
+      cumThis += thisByDay.get(i)!;
+      thisVal = Math.round(cumThis * 10) / 10;
+    } else if (i <= now.getDate()) {
+      thisVal = Math.round(cumThis * 10) / 10;
+    }
+    if (lastByDay.has(i)) {
+      cumLast += lastByDay.get(i)!;
+      lastVal = Math.round(cumLast * 10) / 10;
+    } else if (i <= daysInLast) {
+      lastVal = Math.round(cumLast * 10) / 10;
+    }
+    data.push({ day: i, "Denne måned": thisVal, "Forrige måned": lastVal });
+  }
 
-  const lastSameDay = lastTotal != null ? Math.min(dayOfMonth, daysInLast) * lastPerDay : null;
-  const thisSoFar = thisTotal ?? 0;
-  const delta = lastSameDay != null ? thisSoFar - lastSameDay : null;
-  const deltaPct = lastSameDay != null && lastSameDay > 0 ? (delta! / lastSameDay) * 100 : null;
+  const thisTotal = cumThis;
+  const lastSameDay = lastByDay.get(0) ?? 0;
+  let lastUntilToday = 0;
+  for (let i = 1; i <= now.getDate(); i++) lastUntilToday += lastByDay.get(i) ?? 0;
+  const delta = thisTotal - lastUntilToday;
+  const deltaPct = lastUntilToday > 0 ? (delta / lastUntilToday) * 100 : null;
+
+  void lastSameDay;
 
   return (
     <div className="rounded-xl bg-[oklch(0.18_0.02_270)] p-4 border border-border/40 space-y-3">
@@ -600,14 +685,14 @@ function MonthVsLastMonthChart({ highlights: h }: { highlights: PbthHomeData["hi
         <div className="flex items-center gap-4">
           <span className="flex items-center gap-1.5 text-foreground/85">
             <span className="inline-block w-3 h-3 rounded-sm bg-[oklch(0.62_0.22_290)]" />
-            Denne måned: <span className="tabular-nums">{(thisTotal ?? 0).toFixed(0)} kWh</span>
+            Denne måned: <span className="tabular-nums">{thisTotal.toFixed(0)} kWh</span>
           </span>
           <span className="flex items-center gap-1.5 text-foreground/65">
             <span className="inline-block w-3 h-3 rounded-sm bg-[oklch(0.65_0.04_250)]" />
-            Forrige: <span className="tabular-nums">{(lastTotal ?? 0).toFixed(0)} kWh</span>
+            Forrige: <span className="tabular-nums">{cumLast.toFixed(0)} kWh</span>
           </span>
         </div>
-        {delta != null && deltaPct != null && (
+        {deltaPct != null && (
           <span
             className={`tabular-nums font-medium ${
               delta < 0 ? "text-[oklch(0.72_0.16_150)]" : "text-[oklch(0.7_0.18_25)]"
@@ -620,13 +705,13 @@ function MonthVsLastMonthChart({ highlights: h }: { highlights: PbthHomeData["hi
       </div>
       <div className="h-56 w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={data} margin={{ top: 8, right: 12, left: -8, bottom: 0 }}>
+          <AreaChart data={data} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
             <defs>
-              <linearGradient id="kwhThis" x1="0" y1="0" x2="0" y2="1">
+              <linearGradient id="kwhThisM" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="oklch(0.62 0.22 290)" stopOpacity={0.55} />
                 <stop offset="100%" stopColor="oklch(0.62 0.22 290)" stopOpacity={0} />
               </linearGradient>
-              <linearGradient id="kwhLast" x1="0" y1="0" x2="0" y2="1">
+              <linearGradient id="kwhLastM" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="oklch(0.65 0.04 250)" stopOpacity={0.35} />
                 <stop offset="100%" stopColor="oklch(0.65 0.04 250)" stopOpacity={0} />
               </linearGradient>
@@ -644,7 +729,6 @@ function MonthVsLastMonthChart({ highlights: h }: { highlights: PbthHomeData["hi
               width={40}
               axisLine={false}
               tickLine={false}
-              domain={[0, yMax]}
             />
             <Tooltip
               contentStyle={{
@@ -653,7 +737,6 @@ function MonthVsLastMonthChart({ highlights: h }: { highlights: PbthHomeData["hi
                 borderRadius: 6,
                 fontSize: 12,
               }}
-              labelStyle={{ color: "oklch(0.85 0.02 270)" }}
               formatter={(v: unknown, name: unknown) =>
                 typeof v === "number" ? [`${v.toFixed(0)} kWh`, String(name)] : ["—", String(name)]
               }
@@ -665,7 +748,7 @@ function MonthVsLastMonthChart({ highlights: h }: { highlights: PbthHomeData["hi
               stroke="oklch(0.65 0.04 250)"
               strokeWidth={2}
               strokeDasharray="4 4"
-              fill="url(#kwhLast)"
+              fill="url(#kwhLastM)"
               connectNulls={false}
               isAnimationActive={false}
             />
@@ -674,7 +757,7 @@ function MonthVsLastMonthChart({ highlights: h }: { highlights: PbthHomeData["hi
               dataKey="Denne måned"
               stroke="oklch(0.62 0.22 290)"
               strokeWidth={2.5}
-              fill="url(#kwhThis)"
+              fill="url(#kwhThisM)"
               connectNulls={false}
               isAnimationActive={false}
             />
@@ -686,13 +769,144 @@ function MonthVsLastMonthChart({ highlights: h }: { highlights: PbthHomeData["hi
 }
 
 // ============================================================
-// Month forecast — projection based on daily pace
+// Måned for måned · siste 13
 // ============================================================
 
-function MonthForecastPanel({ highlights: h }: { highlights: PbthHomeData["highlights"] }) {
-  const energyMonth = h.energyThisMonth;
-  const costMonth = h.costThisMonth;
-  if (energyMonth == null && costMonth == null) {
+function MonthlyChart({ monthly }: { monthly: ConsumptionPoint[] }) {
+  const data = monthly.map((m) => {
+    const d = new Date(m.from);
+    return {
+      label: d.toLocaleDateString("nb-NO", {
+        month: "short",
+        year: "2-digit",
+        timeZone: "Europe/Oslo",
+      }),
+      kwh: m.kwh ?? 0,
+      cost: m.cost ?? 0,
+    };
+  });
+
+  return (
+    <div className="rounded-xl bg-[oklch(0.18_0.02_270)] p-4 border border-border/40">
+      <div className="h-56 w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={data} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
+            <CartesianGrid stroke="oklch(0.3 0.02 270)" strokeDasharray="2 4" vertical={false} />
+            <XAxis dataKey="label" tick={{ fill: "oklch(0.65 0.02 270)", fontSize: 10 }} />
+            <YAxis
+              yAxisId="kwh"
+              tick={{ fill: "oklch(0.65 0.02 270)", fontSize: 10 }}
+              width={42}
+              unit=" kWh"
+            />
+            <YAxis
+              yAxisId="kr"
+              orientation="right"
+              tick={{ fill: "oklch(0.78 0.13 85)", fontSize: 10 }}
+              width={42}
+              unit=" kr"
+            />
+            <Tooltip
+              contentStyle={{
+                background: "oklch(0.22 0.02 270)",
+                border: "1px solid oklch(0.35 0.02 270)",
+                borderRadius: 6,
+                fontSize: 12,
+              }}
+              formatter={(v: unknown, name: unknown) =>
+                typeof v === "number"
+                  ? [
+                      name === "kwh" ? `${v.toFixed(0)} kWh` : `${v.toFixed(0)} kr`,
+                      name === "kwh" ? "Forbruk" : "Kostnad",
+                    ]
+                  : ["—", String(name)]
+              }
+            />
+            <Legend wrapperStyle={{ fontSize: 11 }} />
+            <Line
+              yAxisId="kwh"
+              type="monotone"
+              dataKey="kwh"
+              name="Forbruk"
+              stroke="oklch(0.62 0.22 290)"
+              strokeWidth={2.5}
+              dot={{ r: 3 }}
+            />
+            <Line
+              yAxisId="kr"
+              type="monotone"
+              dataKey="cost"
+              name="Kostnad"
+              stroke="oklch(0.78 0.13 85)"
+              strokeWidth={2}
+              strokeDasharray="4 4"
+              dot={{ r: 2 }}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// Årsoversikt — tabell
+// ============================================================
+
+function YearlyTable({ yearly }: { yearly: ConsumptionPoint[] }) {
+  return (
+    <div className="overflow-x-auto rounded-xl bg-[oklch(0.18_0.02_270)] border border-border/40">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b border-border/40">
+            <th className="text-left px-3 py-2 text-[10px] tracking-[0.25em] uppercase text-muted-foreground font-normal">
+              År
+            </th>
+            <th className="text-right px-3 py-2 text-[10px] tracking-[0.25em] uppercase text-primary font-normal">
+              Forbruk
+            </th>
+            <th className="text-right px-3 py-2 text-[10px] tracking-[0.25em] uppercase text-[oklch(0.78_0.13_85)] font-normal">
+              Kostnad
+            </th>
+            <th className="text-right px-3 py-2 text-[10px] tracking-[0.25em] uppercase text-muted-foreground font-normal">
+              Snitt
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {yearly.map((y) => {
+            const year = new Date(y.from).toLocaleDateString("sv-SE", { timeZone: "Europe/Oslo" }).slice(0, 4);
+            const avg = y.kwh && y.cost ? y.cost / y.kwh : null;
+            return (
+              <tr key={y.from} className="border-b border-border/20 last:border-0">
+                <td className="px-3 py-2 text-foreground/85">{year}</td>
+                <td className="px-3 py-2 text-right tabular-nums text-foreground">
+                  {y.kwh != null ? `${y.kwh.toFixed(0)} kWh` : "—"}
+                </td>
+                <td className="px-3 py-2 text-right tabular-nums text-foreground">
+                  {y.cost != null ? `${y.cost.toFixed(0)} kr` : "—"}
+                </td>
+                <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">
+                  {avg != null ? `${avg.toFixed(2)} kr/kWh` : "—"}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// ============================================================
+// Måneds-prognose
+// ============================================================
+
+function MonthForecast({ data }: { data: TibberHomeFull }) {
+  const energyMonth = data.thisMonthKwh;
+  const costMonth = data.thisMonthCost;
+
+  if (energyMonth <= 0 && (costMonth == null || costMonth <= 0)) {
     return <p className="text-xs text-muted-foreground">Ingen månedsdata tilgjengelig.</p>;
   }
 
@@ -701,10 +915,10 @@ function MonthForecastPanel({ highlights: h }: { highlights: PbthHomeData["highl
   const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
   const fraction = dayOfMonth / daysInMonth;
 
-  const projectedEnergy = energyMonth != null ? energyMonth / fraction : undefined;
-  const projectedCost = costMonth != null ? costMonth / fraction : undefined;
+  const projectedEnergy = energyMonth > 0 ? energyMonth / fraction : null;
+  const projectedCost = costMonth != null && costMonth > 0 ? costMonth / fraction : null;
   const remainingCost =
-    projectedCost != null && costMonth != null ? projectedCost - costMonth : undefined;
+    projectedCost != null && costMonth != null ? projectedCost - costMonth : null;
 
   const pctOfMonth = Math.round(fraction * 100);
 
@@ -718,7 +932,7 @@ function MonthForecastPanel({ highlights: h }: { highlights: PbthHomeData["highl
           {projectedEnergy != null ? `${projectedEnergy.toFixed(0)} kWh` : "—"}
         </div>
         <div className="text-[10px] text-muted-foreground mt-0.5">
-          Per nå: {energyMonth?.toFixed(0) ?? "—"} kWh · {pctOfMonth}% av måneden gått
+          Per nå: {energyMonth.toFixed(0)} kWh · {pctOfMonth}% av måneden gått
         </div>
       </div>
       <div className="panel rounded-md p-4 bg-background/30 border border-border/40">
@@ -729,44 +943,44 @@ function MonthForecastPanel({ highlights: h }: { highlights: PbthHomeData["highl
           {projectedCost != null ? `${projectedCost.toFixed(0)} kr` : "—"}
         </div>
         <div className="text-[10px] text-muted-foreground mt-0.5">
-          Per nå: {costMonth?.toFixed(0) ?? "—"} kr · gjenstår ~{remainingCost?.toFixed(0) ?? "—"} kr
+          Per nå: {costMonth?.toFixed(0) ?? "—"} kr · gjenstår ~
+          {remainingCost?.toFixed(0) ?? "—"} kr
         </div>
-        {h.derivedRate != null && (
-          <div className="text-[10px] text-muted-foreground mt-2 italic">
-            Kostnad estimert fra forbruk × {h.derivedRate.toFixed(2)} kr/kWh
-          </div>
-        )}
       </div>
     </div>
   );
 }
 
 // ============================================================
-// Comparison block
+// Sammenligning
 // ============================================================
 
 function ComparisonBlock({
-  borgen,
+  tollnes,
   hytta,
 }: {
-  borgen: PbthHomeData;
-  hytta: PbthHomeData;
+  tollnes: TibberHomeFull;
+  hytta: TibberHomeFull;
 }) {
-  if (!borgen.found && !hytta.found) return null;
+  if (!tollnes.found && !hytta.found) return null;
 
-  const rows: Array<{ label: string; b?: number; h?: number; unit: string; precision: number }> = [
-    { label: "Effekt nå", b: borgen.highlights.consumptionNow, h: hytta.highlights.consumptionNow, unit: "W", precision: 0 },
-    { label: "kWh i dag", b: borgen.highlights.energyToday, h: hytta.highlights.energyToday, unit: "kWh", precision: 1 },
-    { label: "Kostnad i dag", b: borgen.highlights.costToday, h: hytta.highlights.costToday, unit: "kr", precision: 0 },
-    { label: "kWh denne måneden", b: borgen.highlights.energyThisMonth, h: hytta.highlights.energyThisMonth, unit: "kWh", precision: 0 },
-    { label: "Kostnad denne måneden", b: borgen.highlights.costThisMonth, h: hytta.highlights.costThisMonth, unit: "kr", precision: 0 },
-    { label: "kWh i år", b: borgen.highlights.energyThisYear, h: hytta.highlights.energyThisYear, unit: "kWh", precision: 0 },
-    { label: "Kostnad i år", b: borgen.highlights.costThisYear, h: hytta.highlights.costThisYear, unit: "kr", precision: 0 },
+  const rows: Array<{ label: string; b?: number | null; h?: number | null; unit: string; precision: number }> = [
+    { label: "Pris nå", b: tollnes.priceNow?.total ?? null, h: hytta.priceNow?.total ?? null, unit: "kr/kWh", precision: 3 },
+    { label: "Snittpris i dag", b: tollnes.priceAvgToday, h: hytta.priceAvgToday, unit: "kr/kWh", precision: 3 },
+    { label: "kWh i dag", b: tollnes.todayKwh, h: hytta.todayKwh, unit: "kWh", precision: 1 },
+    { label: "Kostnad i dag", b: tollnes.todayCost, h: hytta.todayCost, unit: "kr", precision: 0 },
+    { label: "kWh i går", b: tollnes.yesterdayKwh, h: hytta.yesterdayKwh, unit: "kWh", precision: 1 },
+    { label: "Kostnad i går", b: tollnes.yesterdayCost, h: hytta.yesterdayCost, unit: "kr", precision: 0 },
+    { label: "kWh denne måneden", b: tollnes.thisMonthKwh, h: hytta.thisMonthKwh, unit: "kWh", precision: 0 },
+    { label: "Kostnad denne måneden", b: tollnes.thisMonthCost, h: hytta.thisMonthCost, unit: "kr", precision: 0 },
+    { label: "kWh forrige måned", b: tollnes.lastMonthKwh, h: hytta.lastMonthKwh, unit: "kWh", precision: 0 },
+    { label: "Kostnad forrige måned", b: tollnes.lastMonthCost, h: hytta.lastMonthCost, unit: "kr", precision: 0 },
+    { label: "kWh i år", b: tollnes.thisYearKwh, h: hytta.thisYearKwh, unit: "kWh", precision: 0 },
+    { label: "Kostnad i år", b: tollnes.thisYearCost, h: hytta.thisYearCost, unit: "kr", precision: 0 },
   ];
 
   const chartData = rows
-    .filter((r) => (r.b ?? 0) > 0 || (r.h ?? 0) > 0)
-    .filter((r) => r.unit === "kr")
+    .filter((r) => r.unit === "kr" && ((r.b ?? 0) > 0 || (r.h ?? 0) > 0))
     .map((r) => ({
       label: r.label.replace("Kostnad ", ""),
       Borgen: r.b ?? 0,
@@ -795,6 +1009,7 @@ function ComparisonBlock({
                 }}
                 formatter={(v: number) => [`${v.toFixed(0)} kr`, ""]}
               />
+              <Legend wrapperStyle={{ fontSize: 11 }} />
               <Bar dataKey="Borgen" fill="oklch(0.62 0.18 250)" radius={[3, 3, 0, 0]} />
               <Bar dataKey="Hytta" fill="oklch(0.78 0.13 85)" radius={[3, 3, 0, 0]} />
             </BarChart>
@@ -823,6 +1038,7 @@ function ComparisonBlock({
           <tbody>
             {rows.map((r) => {
               const sum = (r.b ?? 0) + (r.h ?? 0);
+              const isPrice = r.unit === "kr/kWh";
               return (
                 <tr key={r.label} className="border-b border-border/30 last:border-0">
                   <td className="py-2 text-foreground/85">{r.label}</td>
@@ -833,7 +1049,7 @@ function ComparisonBlock({
                     {r.h != null ? `${r.h.toFixed(r.precision)} ${r.unit}` : "—"}
                   </td>
                   <td className="py-2 text-right tabular-nums text-primary font-semibold">
-                    {sum > 0 ? `${sum.toFixed(r.precision)} ${r.unit}` : "—"}
+                    {isPrice ? "—" : sum > 0 ? `${sum.toFixed(r.precision)} ${r.unit}` : "—"}
                   </td>
                 </tr>
               );
@@ -843,7 +1059,7 @@ function ComparisonBlock({
       </div>
 
       <p className="text-xs text-muted-foreground mt-4 italic">
-        — Maesterens samlede regnskap, hentet fra Power-by-the-Hour i Homey.
+        — Husets samlede regnskap, hentet direkte fra Tibber.
       </p>
     </article>
   );

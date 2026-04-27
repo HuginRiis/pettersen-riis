@@ -61,6 +61,7 @@ export const refreshApiSource = createServerFn({ method: "POST" })
       );
     } else if (source === "tibber") {
       const m = await import("./tibber");
+      await tryRun("getTibberFullData", () => m.getTibberFullData());
       await tryRun("getTibberMonthly", () => m.getTibberMonthly());
       await tryRun("getTibberHourly[tollnes]", () =>
         m.getTibberHourly({ data: { location: "tollnes" } }),
