@@ -37,7 +37,7 @@ export interface LogEntry {
  */
 export async function recordApiCall(entry: LogEntry): Promise<void> {
   try {
-    await supabaseAdmin.from("api_call_log").insert({
+    await (supabaseAdmin.from("api_call_log") as any).insert({
       source: entry.source,
       endpoint: entry.endpoint,
       ok: entry.ok,
