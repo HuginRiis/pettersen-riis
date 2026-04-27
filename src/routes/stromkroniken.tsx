@@ -103,7 +103,34 @@ function StromkronikenPage() {
       />
 
       <section className="container mx-auto px-4 py-10 max-w-6xl space-y-10">
-        {loading && !state && (
+        {/* Live Pulse-banner — viser uavhengig av om historikk-API svarer */}
+        {!live.loading && live.session?.ok && (
+          <LivePulseBanner live={live} />
+        )}
+
+        {/* Forklaring når det ikke finnes Tibber-abonnement (priser/historikk = null) */}
+        {state && !state.ok && (
+          <article className="panel rounded-lg p-5 border-border/60 bg-background/40">
+            <div className="flex gap-3">
+              <Info size={18} className="text-primary mt-0.5 shrink-0" />
+              <div className="text-sm text-foreground/85 space-y-1.5">
+                <p className="text-primary font-medium">Uten Tibber-strømabonnement</p>
+                <p className="text-foreground/75">
+                  Tibber leverer kun <em>sanntidsmåling fra Pulse</em> til denne kontoen
+                  (effekt nå + akkumulert kWh i dag). Spotpriser, kostnader og historisk
+                  forbruk krever aktivt Tibber-strømabonnement.
+                </p>
+                {state.error && (
+                  <p className="text-[11px] text-muted-foreground/80 italic">
+                    Detalj: {state.error}
+                  </p>
+                )}
+              </div>
+            </div>
+          </article>
+        )}
+
+        {loading && !state && !live.session && (
           <div className="text-center text-muted-foreground py-20">
             <div className="inline-flex items-center gap-2 text-sm">
               <RefreshCw size={14} className="animate-spin" /> Spør ravnen om Tibber-tall…
@@ -111,16 +138,7 @@ function StromkronikenPage() {
           </div>
         )}
 
-        {state && !state.ok && (
-          <article className="panel rounded-lg p-6 border-destructive/40">
-            <h2 className="text-xl text-primary mb-2 flex items-center gap-2">
-              <AlertTriangle size={18} className="text-destructive" /> Krøniken er taus
-            </h2>
-            <p className="text-foreground/85 text-sm">{state.error ?? "Ukjent feil fra Tibber."}</p>
-          </article>
-        )}
-
-        {state && state.ok && (
+        {(state || live.session) && (
           <>
             <div className="flex items-center justify-between flex-wrap gap-3">
               <p className="text-sm text-muted-foreground">
@@ -143,17 +161,19 @@ function StromkronikenPage() {
             <HomeBlock
               title="Borgen · Nordre Lensmannsveg 17"
               eyebrow="Husets sete"
-              data={state.tollnes}
+              data={state?.tollnes ?? null}
+              live={live.homes.tollnes}
             />
             <HomeBlock
               title="Hytta · Øvre Bjerkesetvegen 222"
               eyebrow="Vinterboligen"
-              data={state.hytta}
+              data={state?.hytta ?? null}
+              live={live.homes.hytta}
             />
 
-            <ComparisonBlock tollnes={state.tollnes} hytta={state.hytta} />
+            {state?.ok && <ComparisonBlock tollnes={state.tollnes} hytta={state.hytta} />}
 
-            {state.homesDebug.length > 0 && (
+            {state && state.homesDebug.length > 0 && (
               <p className="text-[10px] text-muted-foreground/60 italic">
                 Tibber-hjem oppdaget: {state.homesDebug.join(" · ")}
               </p>
