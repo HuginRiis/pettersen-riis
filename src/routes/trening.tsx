@@ -52,6 +52,12 @@ type DashOk = {
     elevation: number;
     count: number;
   }>;
+  periodBuckets: {
+    thisWeek: PeriodBucket;
+    lastWeek: PeriodBucket;
+    months: PeriodBucket[];
+    years: PeriodBucket[];
+  };
   sportBreakdown: Array<{
     sport: string;
     count: number;
