@@ -167,7 +167,7 @@ export type TibberHourlyResult = {
 
 export const getTibberHourly = createServerFn({ method: "GET" })
   .inputValidator((data: { location: "hytta" | "tollnes" }) => data)
-  .handler(async ({ data }): Promise<TibberHourlyResult> => {
+  .handler(withApiLog("tibber", "getTibberHourly", async ({ data }: { data: { location: "hytta" | "tollnes" } }): Promise<TibberHourlyResult> => {
     const token = process.env.TIBBER_TOKEN;
     if (!token) {
       return {
