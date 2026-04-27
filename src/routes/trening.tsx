@@ -1031,6 +1031,70 @@ function RecordsGrid({ records }: { records: DashOk["records"] }) {
   );
 }
 
+function PeriodStats({ periodBuckets }: { periodBuckets: DashOk["periodBuckets"] }) {
+  const options = useMemo(() => {
+    const list: Array<{ key: string; label: string; bucket: PeriodBucket }> = [
+      { key: periodBuckets.thisWeek.key, label: periodBuckets.thisWeek.label, bucket: periodBuckets.thisWeek },
+      { key: periodBuckets.lastWeek.key, label: periodBuckets.lastWeek.label, bucket: periodBuckets.lastWeek },
+      ...periodBuckets.months.map((m) => ({ key: m.key, label: m.label, bucket: m })),
+      ...periodBuckets.years.map((y) => ({ key: y.key, label: `År ${y.label}`, bucket: y })),
+    ];
+    return list;
+  }, [periodBuckets]);
+
+  const [selectedKey, setSelectedKey] = useState<string>(periodBuckets.thisWeek.key);
+  const selected = options.find((o) => o.key === selectedKey) ?? options[0];
+  const b = selected.bucket;
+
+  return (
+    <div className="mb-10">
+      <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
+        <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
+          Periodens dåder
+        </div>
+        <select
+          value={selectedKey}
+          onChange={(e) => setSelectedKey(e.target.value)}
+          className="bg-background border border-border rounded px-3 py-1.5 text-xs uppercase tracking-[0.2em] text-foreground hover:border-primary/40 focus:outline-none focus:border-primary"
+        >
+          <optgroup label="Uker">
+            <option value={periodBuckets.thisWeek.key}>Denne uka</option>
+            <option value={periodBuckets.lastWeek.key}>Forrige uke</option>
+          </optgroup>
+          {periodBuckets.months.length > 0 && (
+            <optgroup label="Måneder">
+              {periodBuckets.months.map((m) => (
+                <option key={m.key} value={m.key}>{m.label}</option>
+              ))}
+            </optgroup>
+          )}
+          {periodBuckets.years.length > 0 && (
+            <optgroup label="År">
+              {periodBuckets.years.map((y) => (
+                <option key={y.key} value={y.key}>{y.label}</option>
+              ))}
+            </optgroup>
+          )}
+        </select>
+      </div>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <Stat label="Økter" value={String(b.count)} hint={selected.label} />
+        <Stat label="Distanse" value={formatKm(b.distanceMeters)} hint="totalt" />
+        <Stat
+          label="Tid i bevegelse"
+          value={formatDuration(b.movingSeconds)}
+          hint="nettotid"
+        />
+        <Stat
+          label="Stigning"
+          value={`${Math.round(b.elevationMeters)} m`}
+          hint={b.avgHeartrate ? `Snittpuls ${b.avgHeartrate} bpm` : "høydemeter"}
+        />
+      </div>
+    </div>
+  );
+}
+
 function Stat({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
     <div className="panel rounded-lg p-4">
