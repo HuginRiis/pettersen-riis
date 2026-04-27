@@ -47,6 +47,7 @@ const emptyHome = (location: "hytta" | "tollnes"): TibberLiveHomeState => ({
  */
 export function useTibberLive(): TibberLiveState {
   const fetchSession = useServerFn(getTibberLiveSession);
+  const recordSample = useServerFn(recordPulseSample);
   const [session, setSession] = useState<TibberLiveSession | null>(null);
   const [loading, setLoading] = useState(true);
   const [homes, setHomes] = useState<TibberLiveState["homes"]>({
@@ -56,6 +57,7 @@ export function useTibberLive(): TibberLiveState {
   const socketsRef = useRef<Map<string, WebSocket>>(new Map());
   const retriesRef = useRef<Map<string, number>>(new Map());
   const closedByUsRef = useRef(false);
+  const lastSavedAtRef = useRef<Map<string, number>>(new Map());
 
   // Hent session én gang ved mount
   useEffect(() => {
