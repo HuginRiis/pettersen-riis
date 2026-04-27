@@ -374,8 +374,12 @@ export const runStravaDashboard = async (owner: StravaOwner) => {
             movingTime: a.moving_time,
             elevation: a.total_elevation_gain,
             startDate: a.start_date_local,
+            avgHeartrate: a.average_heartrate ?? null,
             maxHeartrate: a.max_heartrate ?? null,
+            avgSpeed: a.average_speed ?? null,
             maxSpeed: a.max_speed ?? null,
+            kudos: a.kudos_count ?? 0,
+            achievements: a.achievement_count ?? 0,
           }
         : null;
 
@@ -396,8 +400,15 @@ export const runStravaDashboard = async (owner: StravaOwner) => {
         longestTime: slim(records.longestTime),
         mostElevation: slim(records.mostElevation),
         maxHr: slim(records.maxHr),
+        avgHr: slim(records.avgHr),
         maxSpeed: slim(records.maxSpeed),
+        avgSpeed: slim(records.avgSpeed),
+        mostKudos: slim(records.mostKudos),
+        mostAchievements: slim(records.mostAchievements),
         longestWalk: slim(records.longestWalk),
+        longestRun: slim(records.longestRun),
+        longestRide: slim(records.longestRide),
+        fastestRide: slim(records.fastestRide),
       },
       walkRecent: {
         count: walkTotals.count,
