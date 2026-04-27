@@ -614,18 +614,6 @@ function SmarthusPage() {
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Stat
-            label="Effekt · Hytta"
-            value={
-              hyttaPower !== null && hyttaPower > 0
-                ? formatPower(hyttaPower)
-                : hyttaPower === null
-                  ? "—"
-                  : "0 W"
-            }
-            hint={hyttaPower === null ? "Ingen Hytta-sone funnet" : "Fjellet · sanntid"}
-            tone={hyttaPower === null ? "muted" : "default"}
-          />
-          <Stat
             label="Effekt · Totalt"
             value={totalPower > 0 ? formatPower(totalPower) : "—"}
             hint="Alle saler"
