@@ -224,7 +224,7 @@ export const getTibberHourly = createServerFn({ method: "GET" })
         error: e?.message ?? "Ukjent feil",
       };
     }
-  });
+  }));
 
 function computeHourlySummary(hours: HourlyKwh[]): TibberHourlyResult {
   // "I dag" = lokal kalender-dato i Europe/Oslo. Tibber returnerer ISO med tz-offset,
