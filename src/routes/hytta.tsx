@@ -3,6 +3,7 @@ import { PageShell } from "@/components/PageShell";
 import { HyttaHero } from "@/components/HyttaHero";
 import { HyttaChecklist } from "@/components/HyttaChecklist";
 import { NetatmoWeatherStationSection } from "@/components/NetatmoWeatherStation";
+import { OutdoorWeatherStrip } from "@/components/OutdoorWeatherStrip";
 import { HeatersPanel } from "@/components/HeatersPanel";
 import { HyttaIndreSal } from "@/components/HyttaIndreSal";
 import { TollnesCameraStrip } from "@/components/TollnesCameraStrip";
