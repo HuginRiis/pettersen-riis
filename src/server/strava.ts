@@ -7,7 +7,7 @@ import {
   STRAVA_OWNERS,
   type StravaOwner,
 } from "./strava-connection";
-import { withApiLog } from "./api-call-log.server";
+
 
 const STRAVA_API = "https://www.strava.com/api/v3";
 
@@ -167,11 +167,11 @@ function bucketSport(type: string): "run" | "ride" | "swim" | "hike" | "ski" | "
 }
 
 // Selve dashboard-logikken som hentes både fra serverFn og fra refresh-knappen
-// i Vakttårnet. Pakket i withApiLog så hver kjøring logges uansett kallvei.
-export const runStravaDashboard = withApiLog(
-  "strava",
-  "getStravaDashboard",
-  async (owner: StravaOwner) => {
+// i Vakttårnet. withApiLog påføres kun i server-only kallveier (se
+// api-call-log.functions.ts og getStravaDashboard.handler under) — vi importerer
+// ikke api-call-log.server her, fordi denne filen også brukes fra klient-ruter
+// (trening.tsx) via RPC-stubs.
+export const runStravaDashboard = async (owner: StravaOwner) => {
   const auth = await getValidStravaAccessToken(owner);
   if (!auth) {
     return { ok: false as const, error: "Ikke koblet til Strava" };
@@ -434,11 +434,15 @@ export const runStravaDashboard = withApiLog(
     const message = error instanceof Error ? error.message : "Ukjent feil";
     return { ok: false as const, error: message };
   }
-  },
-);
+};
 
 export const getStravaDashboard = createServerFn({ method: "GET" })
   .inputValidator((input: { owner?: StravaOwner } | undefined) => ({
     owner: parseOwner(input?.owner),
   }))
-  .handler(async ({ data }) => runStravaDashboard(data.owner));
+  .handler(async ({ data }) => {
+    const { withApiLog } = await import("./api-call-log.server");
+    return withApiLog("strava", "getStravaDashboard", () =>
+      runStravaDashboard(data.owner),
+    )();
+  });
