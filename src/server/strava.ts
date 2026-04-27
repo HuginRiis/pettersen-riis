@@ -462,6 +462,12 @@ export const runStravaDashboard = async (owner: StravaOwner) => {
         avgHeartrate: weekStats.hrTime > 0 ? Math.round(weekStats.hrSum / weekStats.hrTime) : null,
       },
       weeklyTrend,
+      periodBuckets: {
+        thisWeek: buildBucket("this-week", "Denne uka", weekActs),
+        lastWeek: lastWeekBucket,
+        months: monthBuckets,
+        years: yearBuckets,
+      },
       sportBreakdown,
       records: {
         longestDistance: slim(records.longestDistance),
