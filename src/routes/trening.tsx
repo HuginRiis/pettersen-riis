@@ -373,23 +373,8 @@ function StravaSection({ owner, displayName }: { owner: Owner; displayName: stri
 function DashboardView({ dash, owner }: { dash: DashOk; owner: Owner }) {
   return (
     <>
-      {/* Ukens stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-10">
-        <Stat label="Økter denne uka" value={String(dash.week.count)} hint="siden mandag" />
-        <Stat label="Distanse" value={formatKm(dash.week.distanceMeters)} hint="totalt" />
-        <Stat
-          label="Tid i bevegelse"
-          value={formatDuration(dash.week.movingSeconds)}
-          hint="nettotid"
-        />
-        <Stat
-          label="Stigning"
-          value={`${Math.round(dash.week.elevationMeters)} m`}
-          hint={
-            dash.week.avgHeartrate ? `Snittpuls ${dash.week.avgHeartrate} bpm` : "høydemeter"
-          }
-        />
-      </div>
+      {/* Topp-stats med periodefilter */}
+      <PeriodStats periodBuckets={dash.periodBuckets} />
 
       {/* 4 ukers trend */}
       <SubHeader text="4 ukers trend" />
