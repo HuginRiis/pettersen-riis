@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { withApiLog } from "./api-call-log.server";
 
 const NETATMO_BASE = "https://api.netatmo.com";
 
@@ -148,7 +149,7 @@ const weatherCache = new Map<string, { at: number; data: WeatherStationResult }>
 
 export const getNetatmoWeatherStation = createServerFn({ method: "GET" })
   .inputValidator((data: { stationMatch?: string }) => data ?? {})
-  .handler(async ({ data }): Promise<WeatherStationResult> => {
+  .handler(withApiLog("netatmo", "getNetatmoWeatherStation", async ({ data }: { data: { stationMatch?: string } }): Promise<WeatherStationResult> => {
     const cacheKey = (data?.stationMatch ?? "").toLowerCase().trim() || "__default";
     const cached = weatherCache.get(cacheKey);
     if (cached && Date.now() - cached.at < WEATHER_TTL_MS && cached.data.ok) {
@@ -211,5 +212,5 @@ export const getNetatmoWeatherStation = createServerFn({ method: "GET" })
     } catch (e: any) {
       return { ok: false, error: e?.message ?? "Ukjent feil" };
     }
-  });
+  }));
 

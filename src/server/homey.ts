@@ -5,6 +5,7 @@ import {
   updateHomeyTokens,
   type HomeyConnection,
 } from "./homey-connection";
+import { withApiLog } from "./api-call-log.server";
 
 export const HOMEY_SCOPES = ["homey", "homey.device.readonly"];
 
@@ -508,7 +509,7 @@ async function getHomeyRawSnapshot(conn: HomeyConnection): Promise<HomeyRawSnaps
 }
 
 export const getHomeySnapshot = createServerFn({ method: "GET" }).handler(
-  async (): Promise<HomeySnapshot> => {
+  withApiLog("homey", "getHomeySnapshot", async (): Promise<HomeySnapshot> => {
     let conn: HomeyConnection | null;
     try {
       conn = await getValidConnection();
@@ -531,7 +532,7 @@ export const getHomeySnapshot = createServerFn({ method: "GET" }).handler(
     } catch (e: any) {
       return { ok: false, needsConnect: false, error: e?.message ?? "Klarte ikke hente data" };
     }
-  },
+  }),
 );
 
 export const disconnectHomey = createServerFn({ method: "POST" }).handler(async () => {
@@ -590,7 +591,7 @@ function findHomeAlarmDevice(
 }
 
 export const getHomeAlarmStatus = createServerFn({ method: "GET" }).handler(
-  async (): Promise<HomeAlarmStatusResult> => {
+  withApiLog("homey", "getHomeAlarmStatus", async (): Promise<HomeAlarmStatusResult> => {
     let conn: HomeyConnection | null;
     try {
       conn = await getValidConnection();
@@ -635,7 +636,7 @@ export const getHomeAlarmStatus = createServerFn({ method: "GET" }).handler(
     } catch (e: any) {
       return { ok: false, error: e?.message ?? "Klarte ikke hente alarm-status" };
     }
-  },
+  }),
 );
 
 export const setHomeAlarmState = createServerFn({ method: "POST" })
@@ -779,7 +780,7 @@ function classifyKind(
 }
 
 export const getDoorsLocksSnapshot = createServerFn({ method: "GET" }).handler(
-  async (): Promise<DoorsLocksResult> => {
+  withApiLog("homey", "getDoorsLocksSnapshot", async (): Promise<DoorsLocksResult> => {
     let conn: HomeyConnection | null;
     try {
       conn = await getValidConnection();
@@ -873,7 +874,7 @@ export const getDoorsLocksSnapshot = createServerFn({ method: "GET" }).handler(
     } catch (e: any) {
       return { ok: false, error: e?.message ?? "Klarte ikke hente dør/lås-data" };
     }
-  },
+  }),
 );
 
 function extractCapabilityMeta(
@@ -1207,7 +1208,7 @@ export type OutdoorLightsStatus = {
 };
 
 export const getOutdoorLightsStatus = createServerFn({ method: "GET" }).handler(
-  async (): Promise<OutdoorLightsStatus> => {
+  withApiLog("homey", "getOutdoorLightsStatus", async (): Promise<OutdoorLightsStatus> => {
     let conn: HomeyConnection | null;
     try {
       conn = await getValidConnection();
@@ -1247,7 +1248,7 @@ export const getOutdoorLightsStatus = createServerFn({ method: "GET" }).handler(
     } catch (e: any) {
       return { ok: false, anyOn: false, onCount: 0, totalCount: 0, error: e?.message ?? "Klarte ikke lese lys" };
     }
-  },
+  }),
 );
 
 export const setAllOutdoorLights = createServerFn({ method: "POST" })
@@ -1355,7 +1356,7 @@ function findLivingRoomTargets(devices: any[]): any[] {
 }
 
 export const getLivingRoomLightsState = createServerFn({ method: "GET" }).handler(
-  async (): Promise<{ ok: boolean; anyOn: boolean; total: number; error?: string }> => {
+  withApiLog("homey", "getLivingRoomLightsState", async (): Promise<{ ok: boolean; anyOn: boolean; total: number; error?: string }> => {
     let conn: HomeyConnection | null;
     try {
       conn = await getValidConnection();
@@ -1380,7 +1381,7 @@ export const getLivingRoomLightsState = createServerFn({ method: "GET" }).handle
     } catch (e: any) {
       return { ok: false, anyOn: false, total: 0, error: e?.message ?? "Feil" };
     }
-  },
+  }),
 );
 
 export const setLivingRoomLights = createServerFn({ method: "POST" })
@@ -1468,7 +1469,7 @@ function invalidateLivingRoomCache() {
 }
 
 export const getLivingRoomDevices = createServerFn({ method: "GET" }).handler(
-  async (): Promise<LivingRoomDevicesResult> => {
+  withApiLog("homey", "getLivingRoomDevices", async (): Promise<LivingRoomDevicesResult> => {
     // Server-side cache: returner forrige svar om det er ferskt nok.
     if (livingRoomCache && Date.now() - livingRoomCache.at < LIVING_ROOM_TTL_MS) {
       return livingRoomCache.data;
@@ -1579,7 +1580,7 @@ export const getLivingRoomDevices = createServerFn({ method: "GET" }).handler(
       }
       return { ok: false, error: msg };
     }
-  },
+  }),
 );
 
 async function setDeviceCapabilityRaw(
@@ -1649,7 +1650,7 @@ export const setLivingRoomDeviceCapability = createServerFn({ method: "POST" })
   });
 
 export const getTollnesCameraSnapshot = createServerFn({ method: "GET" }).handler(
-  async (): Promise<CameraSnapshotResult> => {
+  withApiLog("homey", "getTollnesCameraSnapshot", async (): Promise<CameraSnapshotResult> => {
     let conn: HomeyConnection | null;
     try {
       conn = await getValidConnection();
@@ -1684,5 +1685,5 @@ export const getTollnesCameraSnapshot = createServerFn({ method: "GET" }).handle
     } catch (e: any) {
       return { ok: false, error: e?.message ?? "Klarte ikke hente snapshot" };
     }
-  },
+  }),
 );

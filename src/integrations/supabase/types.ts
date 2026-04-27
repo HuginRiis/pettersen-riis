@@ -104,6 +104,45 @@ export type Database = {
         }
         Relationships: []
       }
+      api_call_log: {
+        Row: {
+          cached: boolean
+          called_at: string
+          duration_ms: number | null
+          endpoint: string
+          error_message: string | null
+          id: string
+          metadata: Json | null
+          ok: boolean
+          source: string
+          status_code: number | null
+        }
+        Insert: {
+          cached?: boolean
+          called_at?: string
+          duration_ms?: number | null
+          endpoint: string
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          ok?: boolean
+          source: string
+          status_code?: number | null
+        }
+        Update: {
+          cached?: boolean
+          called_at?: string
+          duration_ms?: number | null
+          endpoint?: string
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          ok?: boolean
+          source?: string
+          status_code?: number | null
+        }
+        Relationships: []
+      }
       birthdays: {
         Row: {
           birth_date: string

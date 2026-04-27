@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { withApiLog } from "./api-call-log.server";
 
 const TIBBER_URL = "https://api.tibber.com/v1-beta/gql";
 
@@ -112,7 +113,7 @@ async function fetchHourlyHomes(token: string, hours = 25): Promise<HomeNode[]> 
 }
 
 export const getTibberMonthly = createServerFn({ method: "GET" }).handler(
-  async (): Promise<{ months: MonthlyKwh[]; error?: string; homes?: string[] }> => {
+  withApiLog("tibber", "getTibberMonthly", async (): Promise<{ months: MonthlyKwh[]; error?: string; homes?: string[] }> => {
     const token = process.env.TIBBER_TOKEN;
     if (!token) return { months: [], error: "TIBBER_TOKEN mangler" };
 
@@ -152,7 +153,7 @@ export const getTibberMonthly = createServerFn({ method: "GET" }).handler(
     } catch (e: any) {
       return { months: [], error: e?.message ?? "Ukjent feil" };
     }
-  },
+  }),
 );
 
 export type TibberHourlyResult = {
@@ -166,7 +167,7 @@ export type TibberHourlyResult = {
 
 export const getTibberHourly = createServerFn({ method: "GET" })
   .inputValidator((data: { location: "hytta" | "tollnes" }) => data)
-  .handler(async ({ data }): Promise<TibberHourlyResult> => {
+  .handler(withApiLog("tibber", "getTibberHourly", async ({ data }: { data: { location: "hytta" | "tollnes" } }): Promise<TibberHourlyResult> => {
     const token = process.env.TIBBER_TOKEN;
     if (!token) {
       return {
@@ -223,7 +224,7 @@ export const getTibberHourly = createServerFn({ method: "GET" })
         error: e?.message ?? "Ukjent feil",
       };
     }
-  });
+  }));
 
 function computeHourlySummary(hours: HourlyKwh[]): TibberHourlyResult {
   // "I dag" = lokal kalender-dato i Europe/Oslo. Tibber returnerer ISO med tz-offset,

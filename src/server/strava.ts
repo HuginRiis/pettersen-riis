@@ -7,6 +7,7 @@ import {
   STRAVA_OWNERS,
   type StravaOwner,
 } from "./strava-connection";
+import { withApiLog } from "./api-call-log.server";
 
 const STRAVA_API = "https://www.strava.com/api/v3";
 
@@ -169,7 +170,7 @@ export const getStravaDashboard = createServerFn({ method: "GET" })
   .inputValidator((input: { owner?: StravaOwner } | undefined) => ({
     owner: parseOwner(input?.owner),
   }))
-  .handler(async ({ data }) => {
+  .handler(withApiLog("strava", "getStravaDashboard", async ({ data }: { data: { owner: StravaOwner } }) => {
   const auth = await getValidStravaAccessToken(data.owner);
   if (!auth) {
     return { ok: false as const, error: "Ikke koblet til Strava" };
@@ -432,4 +433,4 @@ export const getStravaDashboard = createServerFn({ method: "GET" })
     const message = error instanceof Error ? error.message : "Ukjent feil";
     return { ok: false as const, error: message };
   }
-  });
+  }));
