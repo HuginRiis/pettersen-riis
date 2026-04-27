@@ -440,4 +440,9 @@ export const getStravaDashboard = createServerFn({ method: "GET" })
   .inputValidator((input: { owner?: StravaOwner } | undefined) => ({
     owner: parseOwner(input?.owner),
   }))
-  .handler(async ({ data }) => runStravaDashboard(data.owner));
+  .handler(async ({ data }) => {
+    const { withApiLog } = await import("./api-call-log.server");
+    return withApiLog("strava", "getStravaDashboard", () =>
+      runStravaDashboard(data.owner),
+    )();
+  });
