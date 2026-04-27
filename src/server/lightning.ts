@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { withApiLog } from "./api-call-log.server";
 
 const TOLLNES = { lat: 59.1789, lon: 9.5732 };
 
@@ -40,7 +41,7 @@ function parseRadarTimestamp(disposition: string | null): string {
 }
 
 export const getMetRadarSouthernNorway = createServerFn({ method: "GET" }).handler(
-  async (): Promise<RadarResult> => {
+  withApiLog("lightning", "getMetRadarSouthernNorway", async (): Promise<RadarResult> => {
     try {
       const res = await fetch(
         "https://api.met.no/weatherapi/radar/2.0/?type=5level_reflectivity&area=southern_norway&content=image",
@@ -61,7 +62,7 @@ export const getMetRadarSouthernNorway = createServerFn({ method: "GET" }).handl
     } catch (e: any) {
       return { ok: false, error: e?.message ?? "Ukjent feil" };
     }
-  },
+  }),
 );
 
 // ============================================================
@@ -105,7 +106,7 @@ function parseAwareness(raw: string | undefined): {
 }
 
 export const getTollnesAlerts = createServerFn({ method: "GET" }).handler(
-  async (): Promise<AlertsResult> => {
+  withApiLog("lightning", "getTollnesAlerts", async (): Promise<AlertsResult> => {
     try {
       const url = `https://api.met.no/weatherapi/metalerts/2.0/current.json?lat=${TOLLNES.lat}&lon=${TOLLNES.lon}`;
       const res = await fetch(url, {
@@ -150,5 +151,5 @@ export const getTollnesAlerts = createServerFn({ method: "GET" }).handler(
     } catch (e: any) {
       return { ok: false, error: e?.message ?? "Ukjent feil" };
     }
-  },
+  }),
 );
