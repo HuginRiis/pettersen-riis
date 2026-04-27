@@ -1469,7 +1469,7 @@ function invalidateLivingRoomCache() {
 }
 
 export const getLivingRoomDevices = createServerFn({ method: "GET" }).handler(
-  async (): Promise<LivingRoomDevicesResult> => {
+  withApiLog("homey", "getLivingRoomDevices", async (): Promise<LivingRoomDevicesResult> => {
     // Server-side cache: returner forrige svar om det er ferskt nok.
     if (livingRoomCache && Date.now() - livingRoomCache.at < LIVING_ROOM_TTL_MS) {
       return livingRoomCache.data;
