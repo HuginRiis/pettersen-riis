@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { withApiLog } from "./api-call-log.server";
 
 /**
  * Henter ferske trafikkrelaterte nyheter fra NRK distrikts-RSS for Sør-/Østlandet.
@@ -162,20 +163,22 @@ async function fetchAll(): Promise<NrkTrafficItem[]> {
   return all.slice(0, 40);
 }
 
-export const getNrkTraffic = createServerFn({ method: "GET" }).handler(async () => {
-  const now = Date.now();
-  if (cache && now - cache.ts < TTL_MS) {
-    return { items: cache.data, fetchedAt: cache.ts, cached: true };
-  }
-  try {
-    const data = await fetchAll();
-    cache = { ts: now, data };
-    return { items: data, fetchedAt: now, cached: false };
-  } catch (err) {
-    console.error("NRK traffic fetch failed:", err);
-    if (cache) {
-      return { items: cache.data, fetchedAt: cache.ts, cached: true, stale: true };
+export const getNrkTraffic = createServerFn({ method: "GET" }).handler(
+  withApiLog("nrk", "getNrkTraffic", async () => {
+    const now = Date.now();
+    if (cache && now - cache.ts < TTL_MS) {
+      return { items: cache.data, fetchedAt: cache.ts, cached: true };
     }
-    return { items: [], fetchedAt: now, cached: false, error: String(err) };
-  }
-});
+    try {
+      const data = await fetchAll();
+      cache = { ts: now, data };
+      return { items: data, fetchedAt: now, cached: false };
+    } catch (err) {
+      console.error("NRK traffic fetch failed:", err);
+      if (cache) {
+        return { items: cache.data, fetchedAt: cache.ts, cached: true, stale: true };
+      }
+      return { items: [], fetchedAt: now, cached: false, error: String(err) };
+    }
+  }),
+);

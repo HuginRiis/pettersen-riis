@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { withApiLog } from "./api-call-log.server";
 
 /**
  * Henter dagens spotpriser fra hvakosterstrommen.no (data fra Nord Pool).
@@ -94,7 +95,7 @@ async function fetchZone(zone: SpotZone): Promise<SpotPriceZoneData | null> {
 }
 
 export const getSpotPrices = createServerFn({ method: "GET" }).handler(
-  async (): Promise<SpotPriceResult> => {
+  withApiLog("spot", "getSpotPrices", async (): Promise<SpotPriceResult> => {
     try {
       const wanted: SpotZone[] = ["NO1", "NO2"];
       const results = await Promise.all(wanted.map((z) => fetchZone(z)));
@@ -113,5 +114,5 @@ export const getSpotPrices = createServerFn({ method: "GET" }).handler(
     } catch (err) {
       return { ok: false, error: (err as Error).message };
     }
-  },
+  }),
 );
