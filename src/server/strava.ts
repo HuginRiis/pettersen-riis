@@ -433,4 +433,4 @@ export const getStravaDashboard = createServerFn({ method: "GET" })
     const message = error instanceof Error ? error.message : "Ukjent feil";
     return { ok: false as const, error: message };
   }
-  });
+  }));
