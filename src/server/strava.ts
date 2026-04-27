@@ -434,4 +434,11 @@ export const runStravaDashboard = withApiLog(
     const message = error instanceof Error ? error.message : "Ukjent feil";
     return { ok: false as const, error: message };
   }
-  }));
+  },
+);
+
+export const getStravaDashboard = createServerFn({ method: "GET" })
+  .inputValidator((input: { owner?: StravaOwner } | undefined) => ({
+    owner: parseOwner(input?.owner),
+  }))
+  .handler(async ({ data }) => runStravaDashboard(data.owner));
