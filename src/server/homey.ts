@@ -1580,7 +1580,7 @@ export const getLivingRoomDevices = createServerFn({ method: "GET" }).handler(
       }
       return { ok: false, error: msg };
     }
-  },
+  }),
 );
 
 async function setDeviceCapabilityRaw(
