@@ -106,7 +106,7 @@ function parseAwareness(raw: string | undefined): {
 }
 
 export const getTollnesAlerts = createServerFn({ method: "GET" }).handler(
-  async (): Promise<AlertsResult> => {
+  withApiLog("lightning", "getTollnesAlerts", async (): Promise<AlertsResult> => {
     try {
       const url = `https://api.met.no/weatherapi/metalerts/2.0/current.json?lat=${TOLLNES.lat}&lon=${TOLLNES.lon}`;
       const res = await fetch(url, {
@@ -151,5 +151,5 @@ export const getTollnesAlerts = createServerFn({ method: "GET" }).handler(
     } catch (e: any) {
       return { ok: false, error: e?.message ?? "Ukjent feil" };
     }
-  },
+  }),
 );
