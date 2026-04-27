@@ -317,7 +317,11 @@ function HomeBlock({
         />
       </div>
 
-      {/* Mer-tall — vises kun om vi har historikk fra abo */}
+      {/* Pulse-historikk fra DB — bygges opp etter hvert som vi lagrer samples */}
+      {(live.status === "live" || live.status === "stale") && (
+        <PulseHistoryChart location={live.location} reading={live.reading} />
+      )}
+
       {hasSubscription && (
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <SmallStat
