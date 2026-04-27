@@ -1685,5 +1685,5 @@ export const getTollnesCameraSnapshot = createServerFn({ method: "GET" }).handle
     } catch (e: any) {
       return { ok: false, error: e?.message ?? "Klarte ikke hente snapshot" };
     }
-  },
+  }),
 );
