@@ -509,7 +509,7 @@ async function getHomeyRawSnapshot(conn: HomeyConnection): Promise<HomeyRawSnaps
 }
 
 export const getHomeySnapshot = createServerFn({ method: "GET" }).handler(
-  async (): Promise<HomeySnapshot> => {
+  withApiLog("homey", "getHomeySnapshot", async (): Promise<HomeySnapshot> => {
     let conn: HomeyConnection | null;
     try {
       conn = await getValidConnection();
