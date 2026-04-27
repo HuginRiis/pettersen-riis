@@ -5,6 +5,7 @@ import {
   updateHomeyTokens,
   type HomeyConnection,
 } from "./homey-connection";
+import { withApiLog } from "./api-call-log.server";
 
 export const HOMEY_SCOPES = ["homey", "homey.device.readonly"];
 
