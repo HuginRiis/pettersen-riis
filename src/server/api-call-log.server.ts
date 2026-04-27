@@ -129,12 +129,11 @@ export async function computeApiCallSummary(): Promise<ApiCallSummary> {
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
   // Hent alle kall siste 24t (begrens til 5000 for å være trygg).
-  const { data: rows, error } = await supabaseAdmin
-    .from("api_call_log")
+  const { data: rows, error } = await (supabaseAdmin.from("api_call_log") as any)
     .select("id,source,endpoint,ok,duration_ms,error_message,cached,called_at")
     .gte("called_at", since)
     .order("called_at", { ascending: false })
-    .limit(5000);
+    .limit(5000) as { data: Array<{ id: string; source: string; endpoint: string; ok: boolean; duration_ms: number | null; error_message: string | null; cached: boolean; called_at: string }> | null; error: any };
 
   if (error) {
     console.error("[api-call-log] summary query failed", error);
