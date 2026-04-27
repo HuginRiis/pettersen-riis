@@ -140,12 +140,23 @@ export async function computeApiCallSummary(): Promise<ApiCallSummary> {
     return { fetchedAt: Date.now(), rows: [], recent: [] };
   }
 
+  type Row = {
+    id: string;
+    source: string;
+    endpoint: string;
+    ok: boolean;
+    duration_ms: number | null;
+    error_message: string | null;
+    cached: boolean;
+    called_at: string;
+  };
+
   const buckets = new Map<
     string,
     {
       source: string;
       endpoint: string;
-      last: (typeof rows)[number] | null;
+      last: Row | null;
       total: number;
       errors: number;
       durations: number[];
