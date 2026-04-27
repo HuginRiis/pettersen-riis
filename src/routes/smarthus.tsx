@@ -1076,7 +1076,6 @@ function SmarthusPage() {
       />
 
       <HomeyApiActivity />
-      <ApiCallLogPanel />
     </PageShell>
   );
 }
