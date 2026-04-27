@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { withApiLog } from "./api-call-log.server";
 
 /**
  * Henter aktive farevarsler fra Met.no for Sør- og Østlandet.
