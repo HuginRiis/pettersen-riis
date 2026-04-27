@@ -166,12 +166,13 @@ function bucketSport(type: string): "run" | "ride" | "swim" | "hike" | "ski" | "
   return "other";
 }
 
-export const getStravaDashboard = createServerFn({ method: "GET" })
-  .inputValidator((input: { owner?: StravaOwner } | undefined) => ({
-    owner: parseOwner(input?.owner),
-  }))
-  .handler(withApiLog("strava", "getStravaDashboard", async ({ data }: { data: { owner: StravaOwner } }) => {
-  const auth = await getValidStravaAccessToken(data.owner);
+// Selve dashboard-logikken som hentes både fra serverFn og fra refresh-knappen
+// i Vakttårnet. Pakket i withApiLog så hver kjøring logges uansett kallvei.
+export const runStravaDashboard = withApiLog(
+  "strava",
+  "getStravaDashboard",
+  async (owner: StravaOwner) => {
+  const auth = await getValidStravaAccessToken(owner);
   if (!auth) {
     return { ok: false as const, error: "Ikke koblet til Strava" };
   }
@@ -433,4 +434,11 @@ export const getStravaDashboard = createServerFn({ method: "GET" })
     const message = error instanceof Error ? error.message : "Ukjent feil";
     return { ok: false as const, error: message };
   }
-  }));
+  },
+);
+
+export const getStravaDashboard = createServerFn({ method: "GET" })
+  .inputValidator((input: { owner?: StravaOwner } | undefined) => ({
+    owner: parseOwner(input?.owner),
+  }))
+  .handler(async ({ data }) => runStravaDashboard(data.owner));
