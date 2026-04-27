@@ -12,6 +12,7 @@ import {
 import { PageShell } from "@/components/PageShell";
 import { HouseHero } from "@/components/HouseHero";
 import { WeatherWidget } from "@/components/WeatherWidget";
+import { OutdoorWeatherStrip } from "@/components/OutdoorWeatherStrip";
 import { MaesterCounsel } from "@/components/MaesterCounsel";
 import { BirthdayBanner } from "@/components/BirthdayBanner";
 import { BirthdaysOverview } from "@/components/BirthdaysOverview";
@@ -130,6 +131,8 @@ function Home() {
       />
 
       <PortalGate authenticated={isAuthed} onLogout={handleLogout} />
+
+      <OutdoorWeatherStrip stationMatch="tollnes" />
 
       <BirthdayBanner />
 
