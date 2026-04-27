@@ -212,5 +212,5 @@ export const getNetatmoWeatherStation = createServerFn({ method: "GET" })
     } catch (e: any) {
       return { ok: false, error: e?.message ?? "Ukjent feil" };
     }
-  });
+  }));
 
