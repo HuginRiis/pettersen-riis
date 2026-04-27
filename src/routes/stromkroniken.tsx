@@ -327,31 +327,23 @@ function HomeBlock({
         <SmallStat
           label="I går"
           value={(data?.yesterdayKwh ?? 0) > 0 ? `${data!.yesterdayKwh.toFixed(1)} kWh` : "—"}
-          sub={data.yesterdayCost != null ? `${data.yesterdayCost.toFixed(0)} kr` : ""}
+          sub={data?.yesterdayCost != null ? `${data.yesterdayCost.toFixed(0)} kr` : ""}
         />
         <SmallStat
           label="Forrige måned"
-          value={data.lastMonthKwh > 0 ? `${data.lastMonthKwh.toFixed(0)} kWh` : "—"}
-          sub={data.lastMonthCost != null ? `${data.lastMonthCost.toFixed(0)} kr` : ""}
+          value={(data?.lastMonthKwh ?? 0) > 0 ? `${data!.lastMonthKwh.toFixed(0)} kWh` : "—"}
+          sub={data?.lastMonthCost != null ? `${data.lastMonthCost.toFixed(0)} kr` : ""}
         />
         <SmallStat
           label="I år"
-          value={data.thisYearKwh > 0 ? `${data.thisYearKwh.toFixed(0)} kWh` : "—"}
-          sub={data.thisYearCost != null ? `${data.thisYearCost.toFixed(0)} kr` : ""}
-        />
-        <SmallStat
-          label="Snittpris i dag"
-          value={data.priceAvgToday != null ? `${data.priceAvgToday.toFixed(3)} kr` : "—"}
-          sub={
-            data.priceMinToday != null && data.priceMaxToday != null
-              ? `${data.priceMinToday.toFixed(2)}–${data.priceMaxToday.toFixed(2)} kr`
-              : ""
-          }
+          value={(data?.thisYearKwh ?? 0) > 0 ? `${data!.thisYearKwh.toFixed(0)} kWh` : "—"}
+          sub={data?.thisYearCost != null ? `${data.thisYearCost.toFixed(0)} kr` : ""}
         />
       </div>
+      )}
 
       {/* Pris-graf i dag (+ i morgen om publisert) */}
-      {data.pricesToday.length > 0 && (
+      {data && data.pricesToday.length > 0 && (
         <div>
           <h3 className="text-sm tracking-[0.3em] uppercase text-primary mb-3 flex items-center gap-2">
             <Sun size={14} /> Spotpris time-for-time
@@ -361,7 +353,7 @@ function HomeBlock({
       )}
 
       {/* Forbruk siste 48 timer */}
-      {data.hourly.length > 0 && (
+      {data && data.hourly.length > 0 && (
         <div>
           <h3 className="text-sm tracking-[0.3em] uppercase text-primary mb-3 flex items-center gap-2">
             <Clock size={14} /> Forbruk siste 48 timer
@@ -371,7 +363,7 @@ function HomeBlock({
       )}
 
       {/* Daglig forbruk (60 dager) */}
-      {data.daily.length > 0 && (
+      {data && data.daily.length > 0 && (
         <div>
           <h3 className="text-sm tracking-[0.3em] uppercase text-primary mb-3 flex items-center gap-2">
             <Calendar size={14} /> Daglig forbruk · siste {data.daily.length} dager
@@ -381,7 +373,7 @@ function HomeBlock({
       )}
 
       {/* Kumulativ kWh denne måneden vs forrige måned */}
-      {data.daily.length > 0 && (
+      {data && data.daily.length > 0 && (
         <div>
           <h3 className="text-sm tracking-[0.3em] uppercase text-primary mb-3 flex items-center gap-2">
             <TrendingUp size={14} /> Måneden mot forrige
@@ -391,7 +383,7 @@ function HomeBlock({
       )}
 
       {/* Månedlig forbruk siste 13 mnd */}
-      {data.monthly.length > 0 && (
+      {data && data.monthly.length > 0 && (
         <div>
           <h3 className="text-sm tracking-[0.3em] uppercase text-primary mb-3 flex items-center gap-2">
             <Calendar size={14} /> Måned for måned · siste 13
@@ -401,7 +393,7 @@ function HomeBlock({
       )}
 
       {/* Årlig forbruk */}
-      {data.yearly.length > 0 && (
+      {data && data.yearly.length > 0 && (
         <div>
           <h3 className="text-sm tracking-[0.3em] uppercase text-primary mb-3 flex items-center gap-2">
             <Sparkles size={14} /> Årets krønike
@@ -410,13 +402,15 @@ function HomeBlock({
         </div>
       )}
 
-      {/* Måneds-prognose */}
-      <div>
-        <h3 className="text-sm tracking-[0.3em] uppercase text-primary mb-3 flex items-center gap-2">
-          <Sparkles size={14} /> Månedens spådom
-        </h3>
-        <MonthForecast data={data} />
-      </div>
+      {/* Måneds-prognose — kun med abo */}
+      {hasSubscription && data && (
+        <div>
+          <h3 className="text-sm tracking-[0.3em] uppercase text-primary mb-3 flex items-center gap-2">
+            <Sparkles size={14} /> Månedens spådom
+          </h3>
+          <MonthForecast data={data} />
+        </div>
+      )}
     </article>
   );
 }
