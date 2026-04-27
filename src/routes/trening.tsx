@@ -35,6 +35,16 @@ type StatusState =
   | { kind: "disconnected" }
   | { kind: "connected"; athleteName: string | null };
 
+type PeriodBucket = {
+  key: string;
+  label: string;
+  count: number;
+  distanceMeters: number;
+  movingSeconds: number;
+  elevationMeters: number;
+  avgHeartrate: number | null;
+};
+
 type DashOk = {
   athleteName: string | null;
   week: {
