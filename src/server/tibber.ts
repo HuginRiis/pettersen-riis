@@ -113,7 +113,7 @@ async function fetchHourlyHomes(token: string, hours = 25): Promise<HomeNode[]> 
 }
 
 export const getTibberMonthly = createServerFn({ method: "GET" }).handler(
-  async (): Promise<{ months: MonthlyKwh[]; error?: string; homes?: string[] }> => {
+  withApiLog("tibber", "getTibberMonthly", async (): Promise<{ months: MonthlyKwh[]; error?: string; homes?: string[] }> => {
     const token = process.env.TIBBER_TOKEN;
     if (!token) return { months: [], error: "TIBBER_TOKEN mangler" };
 
