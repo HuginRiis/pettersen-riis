@@ -42,6 +42,7 @@ import {
   type PricePoint,
   type ConsumptionPoint,
 } from "@/server/tibber";
+import { getPulseHistory, type PulseHistoryPoint } from "@/server/pulse-readings";
 import { useTibberLive, type TibberLiveHomeState } from "@/hooks/useTibberLive";
 import stromImg from "@/assets/stromkroniken.jpg";
 
