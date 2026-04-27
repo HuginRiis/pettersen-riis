@@ -132,6 +132,8 @@ function Home() {
 
       <PortalGate authenticated={isAuthed} onLogout={handleLogout} />
 
+      <OutdoorWeatherStrip stationMatch="tollnes" />
+
       <BirthdayBanner />
 
       <section className="container mx-auto px-4 py-16">
