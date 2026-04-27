@@ -1248,7 +1248,7 @@ export const getOutdoorLightsStatus = createServerFn({ method: "GET" }).handler(
     } catch (e: any) {
       return { ok: false, anyOn: false, onCount: 0, totalCount: 0, error: e?.message ?? "Klarte ikke lese lys" };
     }
-  },
+  }),
 );
 
 export const setAllOutdoorLights = createServerFn({ method: "POST" })
