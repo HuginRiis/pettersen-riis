@@ -31,6 +31,8 @@ import {
   Home as HomeIcon,
   Activity,
   Sun,
+  Radio,
+  Info,
 } from "lucide-react";
 import { PageShell, PageHero } from "@/components/PageShell";
 import {
@@ -40,6 +42,7 @@ import {
   type PricePoint,
   type ConsumptionPoint,
 } from "@/server/tibber";
+import { useTibberLive, type TibberLiveHomeState } from "@/hooks/useTibberLive";
 import stromImg from "@/assets/stromkroniken.jpg";
 
 export const Route = createFileRoute("/stromkroniken")({
@@ -69,6 +72,7 @@ function StromkronikenPage() {
   const [state, setState] = useState<TibberFullResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [updated, setUpdated] = useState<Date | null>(null);
+  const live = useTibberLive();
 
   const load = async () => {
     try {
@@ -99,7 +103,34 @@ function StromkronikenPage() {
       />
 
       <section className="container mx-auto px-4 py-10 max-w-6xl space-y-10">
-        {loading && !state && (
+        {/* Live Pulse-banner — viser uavhengig av om historikk-API svarer */}
+        {!live.loading && live.session?.ok && (
+          <LivePulseBanner live={live} />
+        )}
+
+        {/* Forklaring når det ikke finnes Tibber-abonnement (priser/historikk = null) */}
+        {state && !state.ok && (
+          <article className="panel rounded-lg p-5 border-border/60 bg-background/40">
+            <div className="flex gap-3">
+              <Info size={18} className="text-primary mt-0.5 shrink-0" />
+              <div className="text-sm text-foreground/85 space-y-1.5">
+                <p className="text-primary font-medium">Uten Tibber-strømabonnement</p>
+                <p className="text-foreground/75">
+                  Tibber leverer kun <em>sanntidsmåling fra Pulse</em> til denne kontoen
+                  (effekt nå + akkumulert kWh i dag). Spotpriser, kostnader og historisk
+                  forbruk krever aktivt Tibber-strømabonnement.
+                </p>
+                {state.error && (
+                  <p className="text-[11px] text-muted-foreground/80 italic">
+                    Detalj: {state.error}
+                  </p>
+                )}
+              </div>
+            </div>
+          </article>
+        )}
+
+        {loading && !state && !live.session && (
           <div className="text-center text-muted-foreground py-20">
             <div className="inline-flex items-center gap-2 text-sm">
               <RefreshCw size={14} className="animate-spin" /> Spør ravnen om Tibber-tall…
@@ -107,16 +138,7 @@ function StromkronikenPage() {
           </div>
         )}
 
-        {state && !state.ok && (
-          <article className="panel rounded-lg p-6 border-destructive/40">
-            <h2 className="text-xl text-primary mb-2 flex items-center gap-2">
-              <AlertTriangle size={18} className="text-destructive" /> Krøniken er taus
-            </h2>
-            <p className="text-foreground/85 text-sm">{state.error ?? "Ukjent feil fra Tibber."}</p>
-          </article>
-        )}
-
-        {state && state.ok && (
+        {(state || live.session) && (
           <>
             <div className="flex items-center justify-between flex-wrap gap-3">
               <p className="text-sm text-muted-foreground">
@@ -139,17 +161,19 @@ function StromkronikenPage() {
             <HomeBlock
               title="Borgen · Nordre Lensmannsveg 17"
               eyebrow="Husets sete"
-              data={state.tollnes}
+              data={state?.tollnes ?? null}
+              live={live.homes.tollnes}
             />
             <HomeBlock
               title="Hytta · Øvre Bjerkesetvegen 222"
               eyebrow="Vinterboligen"
-              data={state.hytta}
+              data={state?.hytta ?? null}
+              live={live.homes.hytta}
             />
 
-            <ComparisonBlock tollnes={state.tollnes} hytta={state.hytta} />
+            {state?.ok && <ComparisonBlock tollnes={state.tollnes} hytta={state.hytta} />}
 
-            {state.homesDebug.length > 0 && (
+            {state && state.homesDebug.length > 0 && (
               <p className="text-[10px] text-muted-foreground/60 italic">
                 Tibber-hjem oppdaget: {state.homesDebug.join(" · ")}
               </p>
@@ -169,12 +193,15 @@ function HomeBlock({
   title,
   eyebrow,
   data,
+  live,
 }: {
   title: string;
   eyebrow: string;
-  data: TibberHomeFull;
+  data: TibberHomeFull | null;
+  live: TibberLiveHomeState;
 }) {
-  if (!data.found) {
+  // Hvis vi verken har historikk-data eller live-data → ingenting å vise
+  if ((!data || !data.found) && live.status === "idle") {
     return (
       <article className="panel rounded-lg p-6">
         <div className="text-[10px] tracking-[0.3em] uppercase text-muted-foreground">
@@ -184,14 +211,35 @@ function HomeBlock({
           <Crown size={20} /> {title}
         </h2>
         <p className="text-sm text-muted-foreground">
-          {data.error ?? "Fant ingen treff hos Tibber for denne adressen."}
+          {data?.error ?? "Fant ingen treff hos Tibber for denne adressen."}
         </p>
       </article>
     );
   }
 
-  const watt = data.latestHourKwh != null ? Math.round(data.latestHourKwh * 1000) : null;
-  const priceNow = data.priceNow?.total ?? null;
+  const reading = live.reading;
+  const livePower = reading?.power ?? null;
+  const liveKwhToday = reading?.accumulatedConsumption ?? null;
+  const liveMin = reading?.minPower ?? null;
+  const liveMax = reading?.maxPower ?? null;
+
+  // Fall-back til historikk-data om live ikke er tilgjengelig ennå
+  const fallbackWatt = data?.latestHourKwh != null ? Math.round(data.latestHourKwh * 1000) : null;
+  const watt = livePower != null ? Math.round(livePower) : fallbackWatt;
+  const wattSub =
+    live.status === "live"
+      ? "live · oppdateres hvert 2. sek"
+      : live.status === "stale"
+        ? "venter på Pulse…"
+        : live.status === "connecting"
+          ? "kobler til…"
+          : data?.latestHourFrom
+            ? `snitt fra ${formatHour(data.latestHourFrom)}`
+            : "—";
+
+  const todayKwh = liveKwhToday != null ? liveKwhToday : data?.todayKwh ?? 0;
+  const priceNow = data?.priceNow?.total ?? null;
+  const hasSubscription = (data?.pricesToday.length ?? 0) > 0;
 
   return (
     <article className="panel rounded-lg p-5 sm:p-7 space-y-7">
@@ -205,15 +253,16 @@ function HomeBlock({
           </h2>
           <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1.5">
             <HomeIcon size={11} />
-            {data.address?.address1 ?? data.nickname ?? "—"}
-            {data.address?.postalCode && ` · ${data.address.postalCode} ${data.address.city ?? ""}`}
-            {data.size != null && ` · ${data.size} m²`}
-            {data.numberOfResidents != null && ` · ${data.numberOfResidents} pers.`}
-            {data.mainFuseSize != null && ` · ${data.mainFuseSize}A hovedsikring`}
+            {data?.address?.address1 ?? data?.nickname ?? "—"}
+            {data?.address?.postalCode && ` · ${data.address.postalCode} ${data.address.city ?? ""}`}
+            {data?.size != null && ` · ${data.size} m²`}
+            {data?.numberOfResidents != null && ` · ${data.numberOfResidents} pers.`}
+            {data?.mainFuseSize != null && ` · ${data.mainFuseSize}A hovedsikring`}
           </p>
-          {data.hasPulse && (
-            <p className="text-[10px] text-[oklch(0.72_0.16_150)] mt-1 flex items-center gap-1">
-              <Activity size={10} /> Pulse aktiv · sanntidsmåling
+          {(live.status === "live" || live.status === "stale") && (
+            <p className={`text-[10px] mt-1 flex items-center gap-1 ${live.status === "live" ? "text-[oklch(0.72_0.16_150)]" : "text-muted-foreground"}`}>
+              <Radio size={10} className={live.status === "live" ? "animate-pulse" : ""} />
+              Pulse {live.status === "live" ? "live · sanntid" : "stille — venter på data"}
             </p>
           )}
         </div>
@@ -222,73 +271,79 @@ function HomeBlock({
       {/* Heltall — nøkkeltall */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <BigStat
-          icon={Coins}
-          label="Pris nå"
-          value={priceNow != null ? `${priceNow.toFixed(3)} kr` : "—"}
-          sub={`per kWh · ${data.priceNow?.level?.toLowerCase().replace("_", " ") ?? "—"}`}
-          tone="gold"
-        />
-        <BigStat
           icon={Bolt}
-          label="Snitt siste time"
-          value={watt != null ? `${watt} W` : "—"}
-          sub={data.latestHourFrom ? `fra ${formatHour(data.latestHourFrom)}` : "—"}
+          label="Effekt nå"
+          value={watt != null ? `${formatWatt(watt)}` : "—"}
+          sub={wattSub}
           tone="primary"
         />
         <BigStat
           icon={Zap}
           label="kWh i dag"
-          value={data.todayKwh > 0 ? data.todayKwh.toFixed(1) : "—"}
+          value={todayKwh > 0 ? todayKwh.toFixed(2) : "—"}
           sub={
-            data.todayCost != null
-              ? `≈ ${data.todayCost.toFixed(0)} kr så langt`
-              : "ingen kostnad ennå"
+            reading?.accumulatedCost != null
+              ? `≈ ${reading.accumulatedCost.toFixed(0)} kr så langt`
+              : data?.todayCost != null
+                ? `≈ ${data.todayCost.toFixed(0)} kr så langt`
+                : live.status === "live"
+                  ? "akkumulert siden midnatt"
+                  : "—"
           }
           tone="primary"
         />
         <BigStat
-          icon={Coins}
-          label="Måned hittil"
-          value={data.thisMonthKwh > 0 ? `${data.thisMonthKwh.toFixed(0)} kWh` : "—"}
-          sub={
-            data.thisMonthCost != null
-              ? `≈ ${data.thisMonthCost.toFixed(0)} kr`
+          icon={TrendingDown}
+          label="Min/maks i dag"
+          value={
+            liveMin != null && liveMax != null
+              ? `${formatWatt(liveMin)} / ${formatWatt(liveMax)}`
               : "—"
+          }
+          sub="laveste / høyeste effekt siden midnatt"
+          tone="gold"
+        />
+        <BigStat
+          icon={Coins}
+          label="Pris nå"
+          value={priceNow != null ? `${priceNow.toFixed(3)} kr` : "—"}
+          sub={
+            hasSubscription
+              ? `per kWh · ${data?.priceNow?.level?.toLowerCase().replace("_", " ") ?? "—"}`
+              : "krever Tibber-abo"
           }
           tone="gold"
         />
       </div>
 
-      {/* Mer-tall */}
+      {/* Mer-tall — vises kun om vi har historikk fra abo */}
+      {hasSubscription && (
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <SmallStat
+          label="Måned hittil"
+          value={(data?.thisMonthKwh ?? 0) > 0 ? `${data!.thisMonthKwh.toFixed(0)} kWh` : "—"}
+          sub={data?.thisMonthCost != null ? `${data.thisMonthCost.toFixed(0)} kr` : ""}
+        />
+        <SmallStat
           label="I går"
-          value={data.yesterdayKwh > 0 ? `${data.yesterdayKwh.toFixed(1)} kWh` : "—"}
-          sub={data.yesterdayCost != null ? `${data.yesterdayCost.toFixed(0)} kr` : ""}
+          value={(data?.yesterdayKwh ?? 0) > 0 ? `${data!.yesterdayKwh.toFixed(1)} kWh` : "—"}
+          sub={data?.yesterdayCost != null ? `${data.yesterdayCost.toFixed(0)} kr` : ""}
         />
         <SmallStat
           label="Forrige måned"
-          value={data.lastMonthKwh > 0 ? `${data.lastMonthKwh.toFixed(0)} kWh` : "—"}
-          sub={data.lastMonthCost != null ? `${data.lastMonthCost.toFixed(0)} kr` : ""}
+          value={(data?.lastMonthKwh ?? 0) > 0 ? `${data!.lastMonthKwh.toFixed(0)} kWh` : "—"}
+          sub={data?.lastMonthCost != null ? `${data.lastMonthCost.toFixed(0)} kr` : ""}
         />
         <SmallStat
           label="I år"
-          value={data.thisYearKwh > 0 ? `${data.thisYearKwh.toFixed(0)} kWh` : "—"}
-          sub={data.thisYearCost != null ? `${data.thisYearCost.toFixed(0)} kr` : ""}
-        />
-        <SmallStat
-          label="Snittpris i dag"
-          value={data.priceAvgToday != null ? `${data.priceAvgToday.toFixed(3)} kr` : "—"}
-          sub={
-            data.priceMinToday != null && data.priceMaxToday != null
-              ? `${data.priceMinToday.toFixed(2)}–${data.priceMaxToday.toFixed(2)} kr`
-              : ""
-          }
+          value={(data?.thisYearKwh ?? 0) > 0 ? `${data!.thisYearKwh.toFixed(0)} kWh` : "—"}
+          sub={data?.thisYearCost != null ? `${data.thisYearCost.toFixed(0)} kr` : ""}
         />
       </div>
+      )}
 
       {/* Pris-graf i dag (+ i morgen om publisert) */}
-      {data.pricesToday.length > 0 && (
+      {data && data.pricesToday.length > 0 && (
         <div>
           <h3 className="text-sm tracking-[0.3em] uppercase text-primary mb-3 flex items-center gap-2">
             <Sun size={14} /> Spotpris time-for-time
@@ -298,7 +353,7 @@ function HomeBlock({
       )}
 
       {/* Forbruk siste 48 timer */}
-      {data.hourly.length > 0 && (
+      {data && data.hourly.length > 0 && (
         <div>
           <h3 className="text-sm tracking-[0.3em] uppercase text-primary mb-3 flex items-center gap-2">
             <Clock size={14} /> Forbruk siste 48 timer
@@ -308,7 +363,7 @@ function HomeBlock({
       )}
 
       {/* Daglig forbruk (60 dager) */}
-      {data.daily.length > 0 && (
+      {data && data.daily.length > 0 && (
         <div>
           <h3 className="text-sm tracking-[0.3em] uppercase text-primary mb-3 flex items-center gap-2">
             <Calendar size={14} /> Daglig forbruk · siste {data.daily.length} dager
@@ -318,7 +373,7 @@ function HomeBlock({
       )}
 
       {/* Kumulativ kWh denne måneden vs forrige måned */}
-      {data.daily.length > 0 && (
+      {data && data.daily.length > 0 && (
         <div>
           <h3 className="text-sm tracking-[0.3em] uppercase text-primary mb-3 flex items-center gap-2">
             <TrendingUp size={14} /> Måneden mot forrige
@@ -328,7 +383,7 @@ function HomeBlock({
       )}
 
       {/* Månedlig forbruk siste 13 mnd */}
-      {data.monthly.length > 0 && (
+      {data && data.monthly.length > 0 && (
         <div>
           <h3 className="text-sm tracking-[0.3em] uppercase text-primary mb-3 flex items-center gap-2">
             <Calendar size={14} /> Måned for måned · siste 13
@@ -338,7 +393,7 @@ function HomeBlock({
       )}
 
       {/* Årlig forbruk */}
-      {data.yearly.length > 0 && (
+      {data && data.yearly.length > 0 && (
         <div>
           <h3 className="text-sm tracking-[0.3em] uppercase text-primary mb-3 flex items-center gap-2">
             <Sparkles size={14} /> Årets krønike
@@ -347,13 +402,15 @@ function HomeBlock({
         </div>
       )}
 
-      {/* Måneds-prognose */}
-      <div>
-        <h3 className="text-sm tracking-[0.3em] uppercase text-primary mb-3 flex items-center gap-2">
-          <Sparkles size={14} /> Månedens spådom
-        </h3>
-        <MonthForecast data={data} />
-      </div>
+      {/* Måneds-prognose — kun med abo */}
+      {hasSubscription && data && (
+        <div>
+          <h3 className="text-sm tracking-[0.3em] uppercase text-primary mb-3 flex items-center gap-2">
+            <Sparkles size={14} /> Månedens spådom
+          </h3>
+          <MonthForecast data={data} />
+        </div>
+      )}
     </article>
   );
 }
@@ -406,6 +463,47 @@ function formatHour(iso: string): string {
     minute: "2-digit",
     timeZone: "Europe/Oslo",
   });
+}
+
+function formatWatt(w: number): string {
+  if (w >= 1000) return `${(w / 1000).toFixed(2)} kW`;
+  return `${Math.round(w)} W`;
+}
+
+function LivePulseBanner({ live }: { live: ReturnType<typeof useTibberLive> }) {
+  const homes = [live.homes.tollnes, live.homes.hytta].filter((h) => h.status !== "idle");
+  if (homes.length === 0) return null;
+  return (
+    <article className="panel rounded-lg p-4 border-[oklch(0.72_0.16_150)]/30 bg-[oklch(0.72_0.16_150)]/5">
+      <div className="flex items-center gap-2 mb-2">
+        <Radio size={14} className="text-[oklch(0.72_0.16_150)] animate-pulse" />
+        <span className="text-[10px] tracking-[0.3em] uppercase text-[oklch(0.72_0.16_150)]">
+          Pulse live · sanntid fra Tibber
+        </span>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        {homes.map((h) => (
+          <div key={h.location} className="text-sm">
+            <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+              {h.location === "tollnes" ? "Borgen" : "Hytta"}
+            </div>
+            <div className="text-2xl font-semibold tabular-nums text-primary">
+              {h.reading?.power != null ? formatWatt(h.reading.power) : "—"}
+            </div>
+            <div className="text-[11px] text-muted-foreground">
+              {h.reading?.accumulatedConsumption != null
+                ? `${h.reading.accumulatedConsumption.toFixed(2)} kWh i dag`
+                : h.status === "connecting"
+                  ? "kobler til…"
+                  : h.status === "error"
+                    ? `feil: ${h.error ?? ""}`
+                    : "venter…"}
+            </div>
+          </div>
+        ))}
+      </div>
+    </article>
+  );
 }
 
 function priceLevelColor(total: number, min: number, max: number): string {

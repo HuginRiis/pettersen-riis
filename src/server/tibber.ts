@@ -607,6 +607,81 @@ export const getTibberFullData = createServerFn({ method: "GET" }).handler(
   }),
 );
 
+// ============================================================
+// Live WebSocket-info: returneres til klient som så åpner WSS direkte
+// mot Tibber. Tokenet sendes til nettleseren — appen er passord-beskyttet,
+// så det er akseptabelt for familiebruk.
+// ============================================================
+
+export type TibberLiveSession = {
+  ok: boolean;
+  wsUrl: string | null;
+  token: string | null;
+  homes: Array<{ location: "hytta" | "tollnes"; homeId: string; nickname: string | null; hasPulse: boolean }>;
+  error?: string;
+};
+
+let liveSessionCache: { at: number; data: TibberLiveSession } | null = null;
+const LIVE_SESSION_TTL_MS = 10 * 60_000; // 10 min
+
+export const getTibberLiveSession = createServerFn({ method: "GET" }).handler(
+  withApiLog("tibber", "getTibberLiveSession", async (): Promise<TibberLiveSession> => {
+    const token = process.env.TIBBER_TOKEN;
+    if (!token) {
+      return { ok: false, wsUrl: null, token: null, homes: [], error: "TIBBER_TOKEN mangler" };
+    }
+    if (liveSessionCache && Date.now() - liveSessionCache.at < LIVE_SESSION_TTL_MS) {
+      return liveSessionCache.data;
+    }
+    try {
+      const query = `{
+        viewer {
+          websocketSubscriptionUrl
+          homes {
+            id
+            appNickname
+            address { address1 }
+            features { realTimeConsumptionEnabled }
+          }
+        }
+      }`;
+      const data = await tibberQuery<{
+        viewer?: {
+          websocketSubscriptionUrl?: string;
+          homes?: Array<{
+            id: string;
+            appNickname: string | null;
+            address: { address1: string | null } | null;
+            features: { realTimeConsumptionEnabled: boolean } | null;
+          }>;
+        };
+      }>(token, query);
+      const wsUrl = data?.viewer?.websocketSubscriptionUrl ?? null;
+      const homes: TibberLiveSession["homes"] = [];
+      for (const h of data?.viewer?.homes ?? []) {
+        const loc = classifyHome(h as any);
+        if (!loc) continue;
+        homes.push({
+          location: loc,
+          homeId: h.id,
+          nickname: h.appNickname,
+          hasPulse: Boolean(h.features?.realTimeConsumptionEnabled),
+        });
+      }
+      const result: TibberLiveSession = {
+        ok: Boolean(wsUrl) && homes.length > 0,
+        wsUrl,
+        token,
+        homes,
+      };
+      liveSessionCache = { at: Date.now(), data: result };
+      return result;
+    } catch (e: any) {
+      return { ok: false, wsUrl: null, token: null, homes: [], error: e?.message ?? "Ukjent feil" };
+    }
+  }),
+);
+
 function computeHourlySummary(hours: HourlyKwh[]): TibberHourlyResult {
   // "I dag" = lokal kalender-dato i Europe/Oslo. Tibber returnerer ISO med tz-offset,
   // så vi sammenligner på dato-streng i Oslo-tid via toLocaleDateString.
