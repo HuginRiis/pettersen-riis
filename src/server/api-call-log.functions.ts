@@ -39,10 +39,13 @@ export const refreshApiSource = createServerFn({ method: "POST" })
 
     if (source === "homey") {
       const m = await import("./homey");
-      await tryRun("getOutdoorLightsStatus", () =>
-        m.getOutdoorLightsStatus(),
-      );
+      await tryRun("getHomeySnapshot", () => m.getHomeySnapshot());
+      await tryRun("getOutdoorLightsStatus", () => m.getOutdoorLightsStatus());
       await tryRun("getHomeAlarmStatus", () => m.getHomeAlarmStatus());
+      await tryRun("getDoorsLocksSnapshot", () => m.getDoorsLocksSnapshot());
+      await tryRun("getLivingRoomLightsState", () => m.getLivingRoomLightsState());
+      await tryRun("getLivingRoomDevices", () => m.getLivingRoomDevices());
+      await tryRun("getTollnesCameraSnapshot", () => m.getTollnesCameraSnapshot());
     } else if (source === "strava") {
       const m = await import("./strava");
       await tryRun("getStravaDashboard", () =>

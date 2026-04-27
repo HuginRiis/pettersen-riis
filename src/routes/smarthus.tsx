@@ -8,7 +8,6 @@ import { getHomeySnapshot, disconnectHomey, setAllOutdoorLights, setLivingRoomDe
 import { Switch } from "@/components/ui/switch";
 import { findDeviceFuzzy, readTemp } from "@/lib/homey-match";
 import { HomeyApiActivity } from "@/components/HomeyApiActivity";
-import { ApiCallLogPanel } from "@/components/ApiCallLogPanel";
 import { HomeyApiPauseToggle } from "@/components/HomeyApiPauseToggle";
 import { HeatersPanel } from "@/components/HeatersPanel";
 import { StuaConditionPanel } from "@/components/StuaConditionPanel";
@@ -1077,7 +1076,6 @@ function SmarthusPage() {
       />
 
       <HomeyApiActivity />
-      <ApiCallLogPanel />
     </PageShell>
   );
 }
