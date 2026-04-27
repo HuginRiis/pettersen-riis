@@ -12,6 +12,62 @@ export type PulseReading = {
   kwh_today: number | null;
 };
 
+/** Lagre én sanntidsavlesning fra Tibber Pulse WebSocket. Kalles fra klienten. */
+export const recordPulseSample = createServerFn({ method: "POST" })
+  .inputValidator(
+    (input: {
+      location: PulseLocation;
+      watt: number | null;
+      kwh_today: number | null;
+    }) => input,
+  )
+  .handler(async ({ data }): Promise<{ ok: boolean }> => {
+    if (data.location !== "hytta" && data.location !== "tollnes") {
+      return { ok: false };
+    }
+    const { error } = await supabaseAdmin.from("pulse_readings").insert({
+      location: data.location,
+      watt: data.watt,
+      kwh_today: data.kwh_today,
+      device_name: "tibber-ws",
+    });
+    if (error) {
+      console.error("[pulse] insert (ws) failed", error);
+      return { ok: false };
+    }
+    return { ok: true };
+  });
+
+export type PulseHistoryPoint = {
+  t: string; // ISO
+  watt: number | null;
+  kwh_today: number | null;
+};
+
+/** Hent watt-historikk siste N timer for ett hjem. */
+export const getPulseHistory = createServerFn({ method: "GET" })
+  .inputValidator((input: { location: PulseLocation; hours: number }) => input)
+  .handler(
+    async ({ data }): Promise<{ points: PulseHistoryPoint[] }> => {
+      const since = new Date(Date.now() - data.hours * 60 * 60 * 1000).toISOString();
+      const { data: rows, error } = await supabaseAdmin
+        .from("pulse_readings")
+        .select("recorded_at, watt, kwh_today")
+        .eq("location", data.location)
+        .gte("recorded_at", since)
+        .order("recorded_at", { ascending: true })
+        .limit(2000);
+      if (error || !rows) return { points: [] };
+      return {
+        points: (rows as any[]).map((r) => ({
+          t: r.recorded_at,
+          watt: r.watt,
+          kwh_today: r.kwh_today,
+        })),
+      };
+    },
+  );
+
 /** Hent watt-avlesninger siste N minutter for én lokasjon. */
 export const getPulseRecent = createServerFn({ method: "GET" })
   .inputValidator((input: { location: PulseLocation; minutes: number }) => input)
