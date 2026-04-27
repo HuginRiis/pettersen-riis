@@ -150,6 +150,18 @@ export function useTibberLive(): TibberLiveState {
               lastReceivedAt: reading.receivedAt,
             },
           }));
+          // Throttled persist: maks 1 sample/min per hjem
+          const lastSaved = lastSavedAtRef.current.get(location) ?? 0;
+          if (reading.receivedAt - lastSaved > 60_000) {
+            lastSavedAtRef.current.set(location, reading.receivedAt);
+            recordSample({
+              data: {
+                location,
+                watt: reading.power,
+                kwh_today: reading.accumulatedConsumption,
+              },
+            }).catch((err) => console.warn("[tibber-live] save failed", err));
+          }
         } else if (m.type === "error" || m.type === "connection_error") {
           const msg = JSON.stringify(m.payload ?? m).slice(0, 200);
           setHomes((prev) => ({
