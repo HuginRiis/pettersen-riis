@@ -465,6 +465,47 @@ function formatHour(iso: string): string {
   });
 }
 
+function formatWatt(w: number): string {
+  if (w >= 1000) return `${(w / 1000).toFixed(2)} kW`;
+  return `${Math.round(w)} W`;
+}
+
+function LivePulseBanner({ live }: { live: ReturnType<typeof useTibberLive> }) {
+  const homes = [live.homes.tollnes, live.homes.hytta].filter((h) => h.status !== "idle");
+  if (homes.length === 0) return null;
+  return (
+    <article className="panel rounded-lg p-4 border-[oklch(0.72_0.16_150)]/30 bg-[oklch(0.72_0.16_150)]/5">
+      <div className="flex items-center gap-2 mb-2">
+        <Radio size={14} className="text-[oklch(0.72_0.16_150)] animate-pulse" />
+        <span className="text-[10px] tracking-[0.3em] uppercase text-[oklch(0.72_0.16_150)]">
+          Pulse live · sanntid fra Tibber
+        </span>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        {homes.map((h) => (
+          <div key={h.location} className="text-sm">
+            <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+              {h.location === "tollnes" ? "Borgen" : "Hytta"}
+            </div>
+            <div className="text-2xl font-semibold tabular-nums text-primary">
+              {h.reading?.power != null ? formatWatt(h.reading.power) : "—"}
+            </div>
+            <div className="text-[11px] text-muted-foreground">
+              {h.reading?.accumulatedConsumption != null
+                ? `${h.reading.accumulatedConsumption.toFixed(2)} kWh i dag`
+                : h.status === "connecting"
+                  ? "kobler til…"
+                  : h.status === "error"
+                    ? `feil: ${h.error ?? ""}`
+                    : "venter…"}
+            </div>
+          </div>
+        ))}
+      </div>
+    </article>
+  );
+}
+
 function priceLevelColor(total: number, min: number, max: number): string {
   if (max === min) return "oklch(0.78 0.13 85)";
   const pct = (total - min) / (max - min);
