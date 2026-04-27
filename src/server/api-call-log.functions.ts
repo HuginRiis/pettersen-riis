@@ -48,9 +48,9 @@ export const refreshApiSource = createServerFn({ method: "POST" })
       await tryRun("getTollnesCameraSnapshot", () => m.getTollnesCameraSnapshot());
     } else if (source === "strava") {
       const m = await import("./strava");
-      await tryRun("getStravaDashboard", () =>
-        m.getStravaDashboard({ data: { owner: "arne" } }),
-      );
+      // Kall den underliggende funksjonen direkte (ikke via createServerFn)
+      // for å sikre at withApiLog faktisk kjører i samme prosess.
+      await tryRun("getStravaDashboard[arne]", () => m.runStravaDashboard("arne"));
     } else if (source === "netatmo") {
       const m = await import("./netatmo-weather");
       await tryRun("getNetatmoWeatherStation", () =>
