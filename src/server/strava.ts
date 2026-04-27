@@ -170,7 +170,7 @@ export const getStravaDashboard = createServerFn({ method: "GET" })
   .inputValidator((input: { owner?: StravaOwner } | undefined) => ({
     owner: parseOwner(input?.owner),
   }))
-  .handler(async ({ data }) => {
+  .handler(withApiLog("strava", "getStravaDashboard", async ({ data }: { data: { owner: StravaOwner } }) => {
   const auth = await getValidStravaAccessToken(data.owner);
   if (!auth) {
     return { ok: false as const, error: "Ikke koblet til Strava" };
