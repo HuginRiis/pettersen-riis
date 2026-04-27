@@ -591,7 +591,7 @@ function findHomeAlarmDevice(
 }
 
 export const getHomeAlarmStatus = createServerFn({ method: "GET" }).handler(
-  async (): Promise<HomeAlarmStatusResult> => {
+  withApiLog("homey", "getHomeAlarmStatus", async (): Promise<HomeAlarmStatusResult> => {
     let conn: HomeyConnection | null;
     try {
       conn = await getValidConnection();
