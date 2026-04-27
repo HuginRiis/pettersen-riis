@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { getTibberLiveSession, type TibberLiveSession } from "@/server/tibber";
+import { recordPulseSample } from "@/server/pulse-readings";
 
 export type TibberLiveReading = {
   timestamp: string; // ISO med tz
@@ -46,6 +47,7 @@ const emptyHome = (location: "hytta" | "tollnes"): TibberLiveHomeState => ({
  */
 export function useTibberLive(): TibberLiveState {
   const fetchSession = useServerFn(getTibberLiveSession);
+  const recordSample = useServerFn(recordPulseSample);
   const [session, setSession] = useState<TibberLiveSession | null>(null);
   const [loading, setLoading] = useState(true);
   const [homes, setHomes] = useState<TibberLiveState["homes"]>({
@@ -55,6 +57,7 @@ export function useTibberLive(): TibberLiveState {
   const socketsRef = useRef<Map<string, WebSocket>>(new Map());
   const retriesRef = useRef<Map<string, number>>(new Map());
   const closedByUsRef = useRef(false);
+  const lastSavedAtRef = useRef<Map<string, number>>(new Map());
 
   // Hent session én gang ved mount
   useEffect(() => {
@@ -147,6 +150,18 @@ export function useTibberLive(): TibberLiveState {
               lastReceivedAt: reading.receivedAt,
             },
           }));
+          // Throttled persist: maks 1 sample/min per hjem
+          const lastSaved = lastSavedAtRef.current.get(location) ?? 0;
+          if (reading.receivedAt - lastSaved > 60_000) {
+            lastSavedAtRef.current.set(location, reading.receivedAt);
+            recordSample({
+              data: {
+                location,
+                watt: reading.power,
+                kwh_today: reading.accumulatedConsumption,
+              },
+            }).catch((err) => console.warn("[tibber-live] save failed", err));
+          }
         } else if (m.type === "error" || m.type === "connection_error") {
           const msg = JSON.stringify(m.payload ?? m).slice(0, 200);
           setHomes((prev) => ({

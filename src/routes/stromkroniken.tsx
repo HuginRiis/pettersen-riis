@@ -42,6 +42,7 @@ import {
   type PricePoint,
   type ConsumptionPoint,
 } from "@/server/tibber";
+import { getPulseHistory, type PulseHistoryPoint } from "@/server/pulse-readings";
 import { useTibberLive, type TibberLiveHomeState } from "@/hooks/useTibberLive";
 import stromImg from "@/assets/stromkroniken.jpg";
 
@@ -316,7 +317,11 @@ function HomeBlock({
         />
       </div>
 
-      {/* Mer-tall — vises kun om vi har historikk fra abo */}
+      {/* Pulse-historikk fra DB — bygges opp etter hvert som vi lagrer samples */}
+      {(live.status === "live" || live.status === "stale") && (
+        <PulseHistoryChart location={live.location} reading={live.reading} />
+      )}
+
       {hasSubscription && (
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <SmallStat
@@ -503,6 +508,139 @@ function LivePulseBanner({ live }: { live: ReturnType<typeof useTibberLive> }) {
         ))}
       </div>
     </article>
+  );
+}
+
+// ============================================================
+// Pulse historikk-graf — bygges opp fra pulse_readings i DB
+// ============================================================
+
+function PulseHistoryChart({
+  location,
+  reading,
+}: {
+  location: "hytta" | "tollnes";
+  reading: { receivedAt: number; power: number } | null;
+}) {
+  const fetchHistory = useServerFn(getPulseHistory);
+  const [points, setPoints] = useState<PulseHistoryPoint[]>([]);
+  const [hours, setHours] = useState<6 | 24 | 72>(24);
+
+  // Re-fetch når reading kommer (max 1 gang per minutt for å ikke spamme)
+  const lastFetchRef = (PulseHistoryChart as any)._lastFetch ??= new Map<string, number>();
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const res = await fetchHistory({ data: { location, hours } });
+        if (!cancelled) setPoints(res.points);
+      } catch (err) {
+        console.warn("[pulse-history] fetch failed", err);
+      }
+    };
+    void load();
+    const id = setInterval(load, 60_000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, [fetchHistory, location, hours]);
+
+  // Når en ny reading kommer (og det er minst 60s siden forrige fetch) → re-fetch
+  useEffect(() => {
+    if (!reading) return;
+    const key = `${location}:${hours}`;
+    const last = lastFetchRef.get(key) ?? 0;
+    if (Date.now() - last < 60_000) return;
+    lastFetchRef.set(key, Date.now());
+    fetchHistory({ data: { location, hours } })
+      .then((res) => setPoints(res.points))
+      .catch(() => {});
+  }, [reading?.receivedAt, location, hours, fetchHistory, lastFetchRef, reading]);
+
+  const chartData = points
+    .filter((p) => p.watt != null)
+    .map((p) => ({
+      t: new Date(p.t).getTime(),
+      label: new Date(p.t).toLocaleTimeString("nb-NO", {
+        hour: "2-digit",
+        minute: "2-digit",
+        timeZone: "Europe/Oslo",
+      }),
+      watt: Math.round(p.watt as number),
+    }));
+
+  return (
+    <div>
+      <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
+        <h3 className="text-sm tracking-[0.3em] uppercase text-primary flex items-center gap-2">
+          <Activity size={14} /> Pulse-historikk · effekt
+        </h3>
+        <div className="flex gap-1">
+          {([6, 24, 72] as const).map((h) => (
+            <button
+              key={h}
+              onClick={() => setHours(h)}
+              className={`text-[10px] tracking-[0.2em] uppercase px-2.5 py-1 rounded border transition-colors ${
+                hours === h
+                  ? "border-primary text-primary bg-primary/10"
+                  : "border-border text-muted-foreground hover:text-primary hover:border-primary/40"
+              }`}
+            >
+              {h === 6 ? "6t" : h === 24 ? "24t" : "3d"}
+            </button>
+          ))}
+        </div>
+      </div>
+      {chartData.length < 2 ? (
+        <div className="h-40 flex items-center justify-center text-xs text-muted-foreground text-center px-4 panel rounded-md bg-background/30">
+          Krøniken samler tall — grafen tegner seg selv etter hvert som Pulse rapporterer (1 punkt/min).
+        </div>
+      ) : (
+        <div className="h-56 w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={chartData} margin={{ top: 5, right: 8, left: -12, bottom: 0 }}>
+              <defs>
+                <linearGradient id={`pulseFill-${location}`} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.5} />
+                  <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0.05} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" vertical={false} />
+              <XAxis
+                dataKey="label"
+                tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }}
+                interval="preserveStartEnd"
+                minTickGap={40}
+              />
+              <YAxis
+                tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }}
+                width={48}
+                unit=" W"
+              />
+              <Tooltip
+                contentStyle={{
+                  background: "hsl(var(--card))",
+                  border: "1px solid hsl(var(--border))",
+                  borderRadius: 6,
+                  fontSize: 12,
+                }}
+                formatter={(v: number) => [`${v} W`, "Effekt"]}
+              />
+              <Area
+                type="monotone"
+                dataKey="watt"
+                stroke="hsl(var(--primary))"
+                strokeWidth={2}
+                fill={`url(#pulseFill-${location})`}
+                isAnimationActive={false}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+    </div>
   );
 }
 
