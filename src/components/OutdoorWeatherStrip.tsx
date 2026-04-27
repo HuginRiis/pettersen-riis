@@ -17,7 +17,8 @@ function fmt(n: number | undefined | null, digits = 1, suffix = ""): string {
 
 export function OutdoorWeatherStrip({
   stationMatch = "tollnes",
-}: { stationMatch?: string } = {}) {
+  label = "Ute nå · Tollnes",
+}: { stationMatch?: string; label?: string } = {}) {
   const fetchData = useServerFn(getNetatmoWeatherStation);
   const [data, setData] = useState<OkData | null>(null);
   const inFlight = useRef(false);
@@ -59,7 +60,7 @@ export function OutdoorWeatherStrip({
       <div className="panel rounded-lg p-3 sm:p-4">
         <div className="flex items-center justify-between mb-2">
           <span className="text-[9px] sm:text-[10px] tracking-[0.3em] text-primary/80 uppercase">
-            Ute nå · Tollnes
+            {label}
           </span>
           {data?.fetchedAt && (
             <span className="text-[9px] text-muted-foreground tabular-nums">
