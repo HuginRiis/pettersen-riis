@@ -17,7 +17,8 @@ function fmt(n: number | undefined | null, digits = 1, suffix = ""): string {
 
 export function OutdoorWeatherStrip({
   stationMatch = "tollnes",
-}: { stationMatch?: string } = {}) {
+  label = "Ute nå · Tollnes",
+}: { stationMatch?: string; label?: string } = {}) {
   const fetchData = useServerFn(getNetatmoWeatherStation);
   const [data, setData] = useState<OkData | null>(null);
   const inFlight = useRef(false);
