@@ -7,6 +7,7 @@ import {
   STRAVA_OWNERS,
   type StravaOwner,
 } from "./strava-connection";
+import { withApiLog } from "./api-call-log.server";
 
 const STRAVA_API = "https://www.strava.com/api/v3";
 
