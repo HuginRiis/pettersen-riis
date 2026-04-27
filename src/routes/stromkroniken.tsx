@@ -644,6 +644,7 @@ function PulseHistoryChart({
   );
 }
 
+function priceLevelColor(total: number, min: number, max: number): string {
   if (max === min) return "oklch(0.78 0.13 85)";
   const pct = (total - min) / (max - min);
   if (pct < 0.33) return "oklch(0.72 0.16 150)";
