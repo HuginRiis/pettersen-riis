@@ -194,20 +194,22 @@ async function fetchAlerts(): Promise<TelemarkAlert[]> {
   return filtered;
 }
 
-export const getTelemarkAlerts = createServerFn({ method: "GET" }).handler(async () => {
-  const now = Date.now();
-  if (cache && now - cache.ts < TTL_MS) {
-    return { alerts: cache.data, fetchedAt: cache.ts, cached: true };
-  }
-  try {
-    const data = await fetchAlerts();
-    cache = { ts: now, data };
-    return { alerts: data, fetchedAt: now, cached: false };
-  } catch (err) {
-    console.error("Sør-/Østlandet alerts fetch failed:", err);
-    if (cache) {
-      return { alerts: cache.data, fetchedAt: cache.ts, cached: true, stale: true };
+export const getTelemarkAlerts = createServerFn({ method: "GET" }).handler(
+  withApiLog("met", "getTelemarkAlerts", async () => {
+    const now = Date.now();
+    if (cache && now - cache.ts < TTL_MS) {
+      return { alerts: cache.data, fetchedAt: cache.ts, cached: true };
     }
-    return { alerts: [], fetchedAt: now, cached: false, error: String(err) };
-  }
-});
+    try {
+      const data = await fetchAlerts();
+      cache = { ts: now, data };
+      return { alerts: data, fetchedAt: now, cached: false };
+    } catch (err) {
+      console.error("Sør-/Østlandet alerts fetch failed:", err);
+      if (cache) {
+        return { alerts: cache.data, fetchedAt: cache.ts, cached: true, stale: true };
+      }
+      return { alerts: [], fetchedAt: now, cached: false, error: String(err) };
+    }
+  }),
+);
