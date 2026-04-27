@@ -1650,7 +1650,7 @@ export const setLivingRoomDeviceCapability = createServerFn({ method: "POST" })
   });
 
 export const getTollnesCameraSnapshot = createServerFn({ method: "GET" }).handler(
-  async (): Promise<CameraSnapshotResult> => {
+  withApiLog("homey", "getTollnesCameraSnapshot", async (): Promise<CameraSnapshotResult> => {
     let conn: HomeyConnection | null;
     try {
       conn = await getValidConnection();
