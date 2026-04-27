@@ -1208,7 +1208,7 @@ export type OutdoorLightsStatus = {
 };
 
 export const getOutdoorLightsStatus = createServerFn({ method: "GET" }).handler(
-  async (): Promise<OutdoorLightsStatus> => {
+  withApiLog("homey", "getOutdoorLightsStatus", async (): Promise<OutdoorLightsStatus> => {
     let conn: HomeyConnection | null;
     try {
       conn = await getValidConnection();
