@@ -780,7 +780,7 @@ function classifyKind(
 }
 
 export const getDoorsLocksSnapshot = createServerFn({ method: "GET" }).handler(
-  async (): Promise<DoorsLocksResult> => {
+  withApiLog("homey", "getDoorsLocksSnapshot", async (): Promise<DoorsLocksResult> => {
     let conn: HomeyConnection | null;
     try {
       conn = await getValidConnection();
