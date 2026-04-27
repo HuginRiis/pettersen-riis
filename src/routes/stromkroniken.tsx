@@ -31,6 +31,8 @@ import {
   Home as HomeIcon,
   Activity,
   Sun,
+  Radio,
+  Info,
 } from "lucide-react";
 import { PageShell, PageHero } from "@/components/PageShell";
 import {
@@ -40,6 +42,7 @@ import {
   type PricePoint,
   type ConsumptionPoint,
 } from "@/server/tibber";
+import { useTibberLive, type TibberLiveHomeState } from "@/hooks/useTibberLive";
 import stromImg from "@/assets/stromkroniken.jpg";
 
 export const Route = createFileRoute("/stromkroniken")({
