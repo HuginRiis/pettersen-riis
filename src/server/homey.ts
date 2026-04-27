@@ -1356,7 +1356,7 @@ function findLivingRoomTargets(devices: any[]): any[] {
 }
 
 export const getLivingRoomLightsState = createServerFn({ method: "GET" }).handler(
-  async (): Promise<{ ok: boolean; anyOn: boolean; total: number; error?: string }> => {
+  withApiLog("homey", "getLivingRoomLightsState", async (): Promise<{ ok: boolean; anyOn: boolean; total: number; error?: string }> => {
     let conn: HomeyConnection | null;
     try {
       conn = await getValidConnection();
