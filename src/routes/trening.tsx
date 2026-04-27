@@ -35,6 +35,16 @@ type StatusState =
   | { kind: "disconnected" }
   | { kind: "connected"; athleteName: string | null };
 
+type PeriodBucket = {
+  key: string;
+  label: string;
+  count: number;
+  distanceMeters: number;
+  movingSeconds: number;
+  elevationMeters: number;
+  avgHeartrate: number | null;
+};
+
 type DashOk = {
   athleteName: string | null;
   week: {
@@ -52,6 +62,12 @@ type DashOk = {
     elevation: number;
     count: number;
   }>;
+  periodBuckets: {
+    thisWeek: PeriodBucket;
+    lastWeek: PeriodBucket;
+    months: PeriodBucket[];
+    years: PeriodBucket[];
+  };
   sportBreakdown: Array<{
     sport: string;
     count: number;
@@ -357,23 +373,8 @@ function StravaSection({ owner, displayName }: { owner: Owner; displayName: stri
 function DashboardView({ dash, owner }: { dash: DashOk; owner: Owner }) {
   return (
     <>
-      {/* Ukens stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-10">
-        <Stat label="Økter denne uka" value={String(dash.week.count)} hint="siden mandag" />
-        <Stat label="Distanse" value={formatKm(dash.week.distanceMeters)} hint="totalt" />
-        <Stat
-          label="Tid i bevegelse"
-          value={formatDuration(dash.week.movingSeconds)}
-          hint="nettotid"
-        />
-        <Stat
-          label="Stigning"
-          value={`${Math.round(dash.week.elevationMeters)} m`}
-          hint={
-            dash.week.avgHeartrate ? `Snittpuls ${dash.week.avgHeartrate} bpm` : "høydemeter"
-          }
-        />
-      </div>
+      {/* Topp-stats med periodefilter */}
+      <PeriodStats periodBuckets={dash.periodBuckets} />
 
       {/* 4 ukers trend */}
       <SubHeader text="4 ukers trend" />
@@ -857,76 +858,92 @@ function TotalsGrid({
   totals: NonNullable<DashOk["totals"]>;
   mostElevation: SlimAct | null;
 }) {
-  const block = (label: string, t: TotalBlock | null) => (
-    <div className="panel rounded-lg p-4">
-      <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">{label}</div>
-      {t ? (
-        <>
-          <div className="text-2xl text-primary mt-1">{formatKm(t.distance)}</div>
-          <div className="text-[11px] text-muted-foreground mt-1">
-            {t.count} økter · {formatDuration(t.moving_time)} ·{" "}
-            {Math.round(t.elevation_gain)} m
-          </div>
-        </>
-      ) : (
-        <div className="text-sm text-muted-foreground mt-2">—</div>
-      )}
-    </div>
-  );
+  const hasData = (t: TotalBlock | null): t is TotalBlock =>
+    !!t && (t.count > 0 || t.distance > 0 || t.moving_time > 0);
+
+  const block = (label: string, t: TotalBlock | null) => {
+    if (!hasData(t)) return null;
+    return (
+      <div key={label} className="panel rounded-lg p-4">
+        <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">{label}</div>
+        <div className="text-2xl text-primary mt-1">{formatKm(t.distance)}</div>
+        <div className="text-[11px] text-muted-foreground mt-1">
+          {t.count} økter · {formatDuration(t.moving_time)} ·{" "}
+          {Math.round(t.elevation_gain)} m
+        </div>
+      </div>
+    );
+  };
+
+  const recentCards = [
+    block("Løping", totals.recentRun),
+    block("Sykling", totals.recentRide),
+    block("Svømming", totals.recentSwim),
+    block("Gåing", totals.recentWalk),
+  ].filter(Boolean);
+  const ytdCards = [
+    block("Løping", totals.ytdRun),
+    block("Sykling", totals.ytdRide),
+    block("Svømming", totals.ytdSwim),
+    block("Gåing", totals.ytdWalk),
+  ].filter(Boolean);
+  const allCards = [
+    block("Løping totalt", totals.allRun),
+    block("Sykling totalt", totals.allRide),
+    block("Svømming totalt", totals.allSwim),
+    block("Gåing totalt", totals.allWalk),
+  ].filter(Boolean);
 
   return (
     <div className="space-y-6 mb-6">
-      <div>
-        <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground mb-3">
-          Siste 4 uker
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {block("Løping", totals.recentRun)}
-          {block("Sykling", totals.recentRide)}
-          {block("Svømming", totals.recentSwim)}
-          {block("Gåing", totals.recentWalk)}
-        </div>
-      </div>
-      <div>
-        <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground mb-3">
-          Hittil i år
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {block("Løping", totals.ytdRun)}
-          {block("Sykling", totals.ytdRide)}
-          {block("Svømming", totals.ytdSwim)}
-          {block("Gåing", totals.ytdWalk)}
-        </div>
-      </div>
-      <div>
-        <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground mb-3">
-          Siden tidenes morgen
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {block("Løping totalt", totals.allRun)}
-          {block("Sykling totalt", totals.allRide)}
-          {block("Svømming totalt", totals.allSwim)}
-          {block("Gåing totalt", totals.allWalk)}
-        </div>
-        {(totals.biggestRide || mostElevation) && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
-            {totals.biggestRide && (
-              <Stat
-                label="Lengste sykkeltur noensinne"
-                value={formatKm(totals.biggestRide)}
-                hint="rekord"
-              />
-            )}
-            {mostElevation && (
-              <Stat
-                label="Største klatring noensinne"
-                value={`${Math.round(mostElevation.elevation)} m`}
-                hint={mostElevation.name}
-              />
-            )}
+      {recentCards.length > 0 && (
+        <div>
+          <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground mb-3">
+            Siste 4 uker
           </div>
-        )}
-      </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {recentCards}
+          </div>
+        </div>
+      )}
+      {ytdCards.length > 0 && (
+        <div>
+          <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground mb-3">
+            Hittil i år
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {ytdCards}
+          </div>
+        </div>
+      )}
+      {allCards.length > 0 && (
+        <div>
+          <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground mb-3">
+            Siden tidenes morgen
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {allCards}
+          </div>
+          {(totals.biggestRide || mostElevation) && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+              {totals.biggestRide && (
+                <Stat
+                  label="Lengste sykkeltur noensinne"
+                  value={formatKm(totals.biggestRide)}
+                  hint="rekord"
+                />
+              )}
+              {mostElevation && (
+                <Stat
+                  label="Største klatring noensinne"
+                  value={`${Math.round(mostElevation.elevation)} m`}
+                  hint={mostElevation.name}
+                />
+              )}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -1026,6 +1043,70 @@ function RecordsGrid({ records }: { records: DashOk["records"] }) {
         records.mostAchievements,
         records.mostAchievements ? `${records.mostAchievements.achievements} stk` : "—",
       )}
+    </div>
+  );
+}
+
+function PeriodStats({ periodBuckets }: { periodBuckets: DashOk["periodBuckets"] }) {
+  const options = useMemo(() => {
+    const list: Array<{ key: string; label: string; bucket: PeriodBucket }> = [
+      { key: periodBuckets.thisWeek.key, label: periodBuckets.thisWeek.label, bucket: periodBuckets.thisWeek },
+      { key: periodBuckets.lastWeek.key, label: periodBuckets.lastWeek.label, bucket: periodBuckets.lastWeek },
+      ...periodBuckets.months.map((m) => ({ key: m.key, label: m.label, bucket: m })),
+      ...periodBuckets.years.map((y) => ({ key: y.key, label: `År ${y.label}`, bucket: y })),
+    ];
+    return list;
+  }, [periodBuckets]);
+
+  const [selectedKey, setSelectedKey] = useState<string>(periodBuckets.thisWeek.key);
+  const selected = options.find((o) => o.key === selectedKey) ?? options[0];
+  const b = selected.bucket;
+
+  return (
+    <div className="mb-10">
+      <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
+        <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
+          Periodens dåder
+        </div>
+        <select
+          value={selectedKey}
+          onChange={(e) => setSelectedKey(e.target.value)}
+          className="bg-background border border-border rounded px-3 py-1.5 text-xs uppercase tracking-[0.2em] text-foreground hover:border-primary/40 focus:outline-none focus:border-primary"
+        >
+          <optgroup label="Uker">
+            <option value={periodBuckets.thisWeek.key}>Denne uka</option>
+            <option value={periodBuckets.lastWeek.key}>Forrige uke</option>
+          </optgroup>
+          {periodBuckets.months.length > 0 && (
+            <optgroup label="Måneder">
+              {periodBuckets.months.map((m) => (
+                <option key={m.key} value={m.key}>{m.label}</option>
+              ))}
+            </optgroup>
+          )}
+          {periodBuckets.years.length > 0 && (
+            <optgroup label="År">
+              {periodBuckets.years.map((y) => (
+                <option key={y.key} value={y.key}>{y.label}</option>
+              ))}
+            </optgroup>
+          )}
+        </select>
+      </div>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <Stat label="Økter" value={String(b.count)} hint={selected.label} />
+        <Stat label="Distanse" value={formatKm(b.distanceMeters)} hint="totalt" />
+        <Stat
+          label="Tid i bevegelse"
+          value={formatDuration(b.movingSeconds)}
+          hint="nettotid"
+        />
+        <Stat
+          label="Stigning"
+          value={`${Math.round(b.elevationMeters)} m`}
+          hint={b.avgHeartrate ? `Snittpuls ${b.avgHeartrate} bpm` : "høydemeter"}
+        />
+      </div>
     </div>
   );
 }

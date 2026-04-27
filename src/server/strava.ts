@@ -220,6 +220,74 @@ export const runStravaDashboard = async (owner: StravaOwner) => {
       { count: 0, distance: 0, movingTime: 0, elevation: 0, hrSum: 0, hrTime: 0 },
     );
 
+    // Periodbøtter for filter i UI: forrige uke + alle måneder + alle år
+    // (basert på siste 100 aktiviteter — det er det vi har fra Strava).
+    type PeriodBucket = {
+      key: string;
+      label: string;
+      count: number;
+      distanceMeters: number;
+      movingSeconds: number;
+      elevationMeters: number;
+      avgHeartrate: number | null;
+    };
+    const buildBucket = (key: string, label: string, list: StravaActivity[]): PeriodBucket => {
+      let dist = 0, time = 0, elev = 0, hrSum = 0, hrTime = 0;
+      for (const a of list) {
+        dist += a.distance || 0;
+        time += a.moving_time || 0;
+        elev += a.total_elevation_gain || 0;
+        if (a.average_heartrate) {
+          hrSum += a.average_heartrate * (a.moving_time || 0);
+          hrTime += a.moving_time || 0;
+        }
+      }
+      return {
+        key,
+        label,
+        count: list.length,
+        distanceMeters: dist,
+        movingSeconds: time,
+        elevationMeters: elev,
+        avgHeartrate: hrTime > 0 ? Math.round(hrSum / hrTime) : null,
+      };
+    };
+
+    // Forrige uke
+    const prevWeekStart = new Date(weekStart);
+    prevWeekStart.setDate(prevWeekStart.getDate() - 7);
+    const prevWeekActs = activities.filter((a) => {
+      const d = new Date(a.start_date);
+      return d >= prevWeekStart && d < weekStart;
+    });
+    const lastWeekBucket = buildBucket("last-week", "Forrige uke", prevWeekActs);
+
+    // Måned-bøtter
+    const monthMap = new Map<string, StravaActivity[]>();
+    const yearMap = new Map<string, StravaActivity[]>();
+    const MONTH_LABELS = [
+      "Januar", "Februar", "Mars", "April", "Mai", "Juni",
+      "Juli", "August", "September", "Oktober", "November", "Desember",
+    ];
+    for (const a of activities) {
+      const d = new Date(a.start_date);
+      const mKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      const yKey = String(d.getFullYear());
+      if (!monthMap.has(mKey)) monthMap.set(mKey, []);
+      monthMap.get(mKey)!.push(a);
+      if (!yearMap.has(yKey)) yearMap.set(yKey, []);
+      yearMap.get(yKey)!.push(a);
+    }
+    const monthBuckets: PeriodBucket[] = Array.from(monthMap.entries())
+      .sort(([a], [b]) => b.localeCompare(a))
+      .map(([key, list]) => {
+        const [y, m] = key.split("-");
+        return buildBucket(`month-${key}`, `${MONTH_LABELS[parseInt(m, 10) - 1]} ${y}`, list);
+      });
+    const yearBuckets: PeriodBucket[] = Array.from(yearMap.entries())
+      .sort(([a], [b]) => b.localeCompare(a))
+      .map(([key, list]) => buildBucket(`year-${key}`, key, list));
+
     // 4 siste ukers trend (mandag-søndag)
     const weeklyTrend: Array<{
       weekStart: string;
@@ -394,6 +462,12 @@ export const runStravaDashboard = async (owner: StravaOwner) => {
         avgHeartrate: weekStats.hrTime > 0 ? Math.round(weekStats.hrSum / weekStats.hrTime) : null,
       },
       weeklyTrend,
+      periodBuckets: {
+        thisWeek: buildBucket("this-week", "Denne uka", weekActs),
+        lastWeek: lastWeekBucket,
+        months: monthBuckets,
+        years: yearBuckets,
+      },
       sportBreakdown,
       records: {
         longestDistance: slim(records.longestDistance),
