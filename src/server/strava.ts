@@ -434,8 +434,7 @@ export const runStravaDashboard = async (owner: StravaOwner) => {
     const message = error instanceof Error ? error.message : "Ukjent feil";
     return { ok: false as const, error: message };
   }
-  },
-);
+};
 
 export const getStravaDashboard = createServerFn({ method: "GET" })
   .inputValidator((input: { owner?: StravaOwner } | undefined) => ({
