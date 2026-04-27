@@ -122,8 +122,12 @@ type SlimAct = {
   movingTime: number;
   elevation: number;
   startDate: string;
+  avgHeartrate: number | null;
   maxHeartrate: number | null;
+  avgSpeed: number | null;
   maxSpeed: number | null;
+  kudos: number;
+  achievements: number;
 };
 
 type DashState =
