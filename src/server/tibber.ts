@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { withApiLog } from "./api-call-log.server";
 
 const TIBBER_URL = "https://api.tibber.com/v1-beta/gql";
 
