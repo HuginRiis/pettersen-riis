@@ -1381,7 +1381,7 @@ export const getLivingRoomLightsState = createServerFn({ method: "GET" }).handle
     } catch (e: any) {
       return { ok: false, anyOn: false, total: 0, error: e?.message ?? "Feil" };
     }
-  },
+  }),
 );
 
 export const setLivingRoomLights = createServerFn({ method: "POST" })
