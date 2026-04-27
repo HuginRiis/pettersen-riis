@@ -636,7 +636,7 @@ export const getHomeAlarmStatus = createServerFn({ method: "GET" }).handler(
     } catch (e: any) {
       return { ok: false, error: e?.message ?? "Klarte ikke hente alarm-status" };
     }
-  },
+  }),
 );
 
 export const setHomeAlarmState = createServerFn({ method: "POST" })
