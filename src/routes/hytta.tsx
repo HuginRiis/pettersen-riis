@@ -125,6 +125,8 @@ function HyttaPage() {
         image={hyttaImg}
       />
 
+      <OutdoorWeatherStrip stationMatch="hytt" label="Ute nå · Hytta" />
+
       {authenticated && <HyttaChecklist />}
 
       <section className="container mx-auto px-4 py-12 space-y-5">
