@@ -62,6 +62,12 @@ export const refreshApiSource = createServerFn({ method: "POST" })
     } else if (source === "tibber") {
       const m = await import("./tibber");
       await tryRun("getTibberMonthly", () => m.getTibberMonthly());
+      await tryRun("getTibberHourly[tollnes]", () =>
+        m.getTibberHourly({ data: { location: "tollnes" } }),
+      );
+      await tryRun("getTibberHourly[hytta]", () =>
+        m.getTibberHourly({ data: { location: "hytta" } }),
+      );
     } else if (source === "met") {
       const m = await import("./met-alerts");
       await tryRun("getTelemarkAlerts", () => m.getTelemarkAlerts());
