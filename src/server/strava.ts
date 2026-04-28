@@ -35,7 +35,29 @@ export type StravaActivity = {
   map?: { summary_polyline?: string | null; polyline?: string | null };
   kudos_count?: number;
   achievement_count?: number;
+  kilojoules?: number;
 };
+
+// Estimerer kalorier (kcal) for en aktivitet. Strava gir kilojoules kun for
+// sykkel (1 kJ ≈ 1 kcal i praksis siden kroppens effektivitet ~24 %). For
+// andre sporter bruker vi MET × tid × antatt vekt (80 kg).
+const ASSUMED_WEIGHT_KG = 80;
+function estimateCalories(a: StravaActivity): number {
+  if (a.kilojoules && a.kilojoules > 0) return Math.round(a.kilojoules);
+  const sport = (a.sport_type || a.type || "").toLowerCase();
+  const hours = (a.moving_time || 0) / 3600;
+  if (hours <= 0) return 0;
+  let met = 5;
+  if (sport.includes("run")) met = 9.8;
+  else if (sport.includes("ride") || sport.includes("cycl") || sport.includes("bike")) met = 7.5;
+  else if (sport.includes("swim")) met = 8.0;
+  else if (sport.includes("hike")) met = 6.0;
+  else if (sport.includes("walk")) met = 3.8;
+  else if (sport.includes("ski") || sport.includes("snow")) met = 7.0;
+  else if (sport.includes("row")) met = 7.0;
+  else if (sport.includes("workout") || sport.includes("weight") || sport.includes("strength")) met = 5.0;
+  return Math.round(met * ASSUMED_WEIGHT_KG * hours);
+}
 
 async function stravaFetch<T>(path: string, accessToken: string): Promise<T> {
   const res = await fetch(`${STRAVA_API}${path}`, {
@@ -296,6 +318,7 @@ export const runStravaDashboard = async (owner: StravaOwner) => {
       movingMin: number;
       elevation: number;
       count: number;
+      calories: number;
     }> = [];
     for (let i = 3; i >= 0; i--) {
       const ws = new Date(weekStart);
@@ -311,9 +334,10 @@ export const runStravaDashboard = async (owner: StravaOwner) => {
           acc.dist += a.distance || 0;
           acc.time += a.moving_time || 0;
           acc.elev += a.total_elevation_gain || 0;
+          acc.kcal += estimateCalories(a);
           return acc;
         },
-        { dist: 0, time: 0, elev: 0 },
+        { dist: 0, time: 0, elev: 0, kcal: 0 },
       );
       weeklyTrend.push({
         weekStart: ws.toISOString(),
@@ -322,6 +346,7 @@ export const runStravaDashboard = async (owner: StravaOwner) => {
         movingMin: sum.time / 60,
         elevation: sum.elev,
         count: inWk.length,
+        calories: sum.kcal,
       });
     }
 
