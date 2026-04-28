@@ -318,6 +318,7 @@ export const runStravaDashboard = async (owner: StravaOwner) => {
       movingMin: number;
       elevation: number;
       count: number;
+      calories: number;
     }> = [];
     for (let i = 3; i >= 0; i--) {
       const ws = new Date(weekStart);
@@ -333,9 +334,10 @@ export const runStravaDashboard = async (owner: StravaOwner) => {
           acc.dist += a.distance || 0;
           acc.time += a.moving_time || 0;
           acc.elev += a.total_elevation_gain || 0;
+          acc.kcal += estimateCalories(a);
           return acc;
         },
-        { dist: 0, time: 0, elev: 0 },
+        { dist: 0, time: 0, elev: 0, kcal: 0 },
       );
       weeklyTrend.push({
         weekStart: ws.toISOString(),
@@ -344,6 +346,7 @@ export const runStravaDashboard = async (owner: StravaOwner) => {
         movingMin: sum.time / 60,
         elevation: sum.elev,
         count: inWk.length,
+        calories: sum.kcal,
       });
     }
 
