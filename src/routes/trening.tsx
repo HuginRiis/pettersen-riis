@@ -61,6 +61,7 @@ type DashOk = {
     movingMin: number;
     elevation: number;
     count: number;
+    calories: number;
   }>;
   periodBuckets: {
     thisWeek: PeriodBucket;
