@@ -31,6 +31,7 @@ import { Route as ApiStravaStartRouteImport } from './routes/api.strava.start'
 import { Route as ApiStravaCallbackRouteImport } from './routes/api.strava.callback'
 import { Route as ApiHomeyStartRouteImport } from './routes/api.homey.start'
 import { Route as ApiHomeyCallbackRouteImport } from './routes/api.homey.callback'
+import { Route as ApiPublicHooksSnapshotPulseRouteImport } from './routes/api.public.hooks.snapshot-pulse'
 import { Route as ApiPublicHooksAgendaPushRouteImport } from './routes/api.public.hooks.agenda-push'
 
 const VarslerRoute = VarslerRouteImport.update({
@@ -143,6 +144,12 @@ const ApiHomeyCallbackRoute = ApiHomeyCallbackRouteImport.update({
   path: '/api/homey/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksSnapshotPulseRoute =
+  ApiPublicHooksSnapshotPulseRouteImport.update({
+    id: '/api/public/hooks/snapshot-pulse',
+    path: '/api/public/hooks/snapshot-pulse',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksAgendaPushRoute =
   ApiPublicHooksAgendaPushRouteImport.update({
     id: '/api/public/hooks/agenda-push',
@@ -174,6 +181,7 @@ export interface FileRoutesByFullPath {
   '/api/strava/callback': typeof ApiStravaCallbackRoute
   '/api/strava/start': typeof ApiStravaStartRoute
   '/api/public/hooks/agenda-push': typeof ApiPublicHooksAgendaPushRoute
+  '/api/public/hooks/snapshot-pulse': typeof ApiPublicHooksSnapshotPulseRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -199,6 +207,7 @@ export interface FileRoutesByTo {
   '/api/strava/callback': typeof ApiStravaCallbackRoute
   '/api/strava/start': typeof ApiStravaStartRoute
   '/api/public/hooks/agenda-push': typeof ApiPublicHooksAgendaPushRoute
+  '/api/public/hooks/snapshot-pulse': typeof ApiPublicHooksSnapshotPulseRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -225,6 +234,7 @@ export interface FileRoutesById {
   '/api/strava/callback': typeof ApiStravaCallbackRoute
   '/api/strava/start': typeof ApiStravaStartRoute
   '/api/public/hooks/agenda-push': typeof ApiPublicHooksAgendaPushRoute
+  '/api/public/hooks/snapshot-pulse': typeof ApiPublicHooksSnapshotPulseRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -252,6 +262,7 @@ export interface FileRouteTypes {
     | '/api/strava/callback'
     | '/api/strava/start'
     | '/api/public/hooks/agenda-push'
+    | '/api/public/hooks/snapshot-pulse'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -277,6 +288,7 @@ export interface FileRouteTypes {
     | '/api/strava/callback'
     | '/api/strava/start'
     | '/api/public/hooks/agenda-push'
+    | '/api/public/hooks/snapshot-pulse'
   id:
     | '__root__'
     | '/'
@@ -302,6 +314,7 @@ export interface FileRouteTypes {
     | '/api/strava/callback'
     | '/api/strava/start'
     | '/api/public/hooks/agenda-push'
+    | '/api/public/hooks/snapshot-pulse'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -328,6 +341,7 @@ export interface RootRouteChildren {
   ApiStravaCallbackRoute: typeof ApiStravaCallbackRoute
   ApiStravaStartRoute: typeof ApiStravaStartRoute
   ApiPublicHooksAgendaPushRoute: typeof ApiPublicHooksAgendaPushRoute
+  ApiPublicHooksSnapshotPulseRoute: typeof ApiPublicHooksSnapshotPulseRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -486,6 +500,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiHomeyCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/snapshot-pulse': {
+      id: '/api/public/hooks/snapshot-pulse'
+      path: '/api/public/hooks/snapshot-pulse'
+      fullPath: '/api/public/hooks/snapshot-pulse'
+      preLoaderRoute: typeof ApiPublicHooksSnapshotPulseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/agenda-push': {
       id: '/api/public/hooks/agenda-push'
       path: '/api/public/hooks/agenda-push'
@@ -520,6 +541,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiStravaCallbackRoute: ApiStravaCallbackRoute,
   ApiStravaStartRoute: ApiStravaStartRoute,
   ApiPublicHooksAgendaPushRoute: ApiPublicHooksAgendaPushRoute,
+  ApiPublicHooksSnapshotPulseRoute: ApiPublicHooksSnapshotPulseRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
