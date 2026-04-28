@@ -603,26 +603,26 @@ function PulseHistoryChart({
             <AreaChart data={chartData} margin={{ top: 5, right: 8, left: -12, bottom: 0 }}>
               <defs>
                 <linearGradient id={`pulseFill-${location}`} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.5} />
-                  <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0.05} />
+                  <stop offset="0%" stopColor="oklch(0.65 0.18 250)" stopOpacity={0.5} />
+                  <stop offset="100%" stopColor="oklch(0.65 0.18 250)" stopOpacity={0.05} />
                 </linearGradient>
               </defs>
-              <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" vertical={false} />
+              <CartesianGrid stroke="oklch(0.3 0.02 270)" strokeDasharray="3 3" vertical={false} />
               <XAxis
                 dataKey="label"
-                tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }}
+                tick={{ fill: "oklch(0.65 0.02 270)", fontSize: 10 }}
                 interval="preserveStartEnd"
                 minTickGap={40}
               />
               <YAxis
-                tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }}
+                tick={{ fill: "oklch(0.65 0.02 270)", fontSize: 10 }}
                 width={48}
                 unit=" W"
               />
               <Tooltip
                 contentStyle={{
-                  background: "hsl(var(--card))",
-                  border: "1px solid hsl(var(--border))",
+                  background: "oklch(0.18 0.02 270)",
+                  border: "1px solid oklch(0.3 0.02 270)",
                   borderRadius: 6,
                   fontSize: 12,
                 }}
@@ -631,7 +631,7 @@ function PulseHistoryChart({
               <Area
                 type="monotone"
                 dataKey="watt"
-                stroke="hsl(var(--primary))"
+                stroke="oklch(0.65 0.18 250)"
                 strokeWidth={2}
                 fill={`url(#pulseFill-${location})`}
                 isAnimationActive={false}
