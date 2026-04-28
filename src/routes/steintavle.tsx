@@ -123,6 +123,27 @@ function SteintavlePage() {
   const lightsFromSnapshot = data.ok ? deriveLivingRoomLightsOn(data) : null;
   const lightsOn = lightsOverride ?? lightsFromSnapshot;
 
+  // Auto-refresh hver 10 minutt mens fanen er synlig (bra for iPad i kiosk-modus)
+  useEffect(() => {
+    const REFRESH_MS = 10 * 60_000;
+    const tick = () => {
+      if (typeof document !== "undefined" && document.hidden) return;
+      router.invalidate();
+      fetchNetatmo({ data: { stationMatch: "tollnes" } })
+        .then((res) => setLiveNetatmo(res))
+        .catch(() => {});
+    };
+    const id = setInterval(tick, REFRESH_MS);
+    const onVisible = () => {
+      if (!document.hidden) tick();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      clearInterval(id);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [router, fetchNetatmo]);
+
   // Når snapshot oppdateres og matcher overstyringen → dropp overstyringen.
   useEffect(() => {
     if (lightsOverride !== null && lightsFromSnapshot === lightsOverride) {
