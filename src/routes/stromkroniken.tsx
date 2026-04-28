@@ -467,6 +467,125 @@ function SmallStat({ label, value, sub }: { label: string; value: string; sub?: 
   );
 }
 
+// ============================================================
+// Akkumulert forbruk + sammenligning mot forrige periode
+// ============================================================
+function AccumulatedBlock({
+  data,
+  liveTodayKwh,
+}: {
+  data: TibberHomeFull;
+  liveTodayKwh: number | null;
+}) {
+  // Bruk live-tall hvis tilgjengelig, ellers historikk
+  const todayKwh = liveTodayKwh != null ? liveTodayKwh : data.todayKwh;
+  const yesterdayKwh = data.yesterdayKwh;
+
+  // I dag vs samme tid i går — sammenlign mot i går proporsjonalt med tid på døgnet
+  const now = new Date();
+  const minutesIntoDay = now.getHours() * 60 + now.getMinutes();
+  const dayFraction = minutesIntoDay / (24 * 60);
+  const yesterdayProrated = yesterdayKwh * dayFraction;
+  const todayVsYesterday = diffPct(todayKwh, yesterdayProrated);
+
+  // Måned hittil vs forrige måned proporsjonalt
+  const dayOfMonth = now.getDate();
+  const daysInLastMonth = new Date(now.getFullYear(), now.getMonth(), 0).getDate();
+  const lastMonthProrated = data.lastMonthKwh * (dayOfMonth / daysInLastMonth);
+  const monthVsLastMonth = diffPct(data.thisMonthKwh, lastMonthProrated);
+
+  // I år — vis bare totalsum (ingen direkte fjorår-tall i datasettet)
+  const totalAccumulated = data.thisYearKwh;
+  const totalCost = data.thisYearCost;
+
+  return (
+    <div className="space-y-3">
+      <h3 className="text-sm tracking-[0.3em] uppercase text-primary flex items-center gap-2">
+        <Activity size={14} /> Akkumulert energiforbruk
+      </h3>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <AccCard
+          label="I dag"
+          kwh={todayKwh}
+          cost={data.todayCost}
+          comparison={todayVsYesterday}
+          compareLabel="vs samme tid i går"
+        />
+        <AccCard
+          label="Måned hittil"
+          kwh={data.thisMonthKwh}
+          cost={data.thisMonthCost}
+          comparison={monthVsLastMonth}
+          compareLabel="vs samme dag forrige måned"
+        />
+        <AccCard
+          label="I år totalt"
+          kwh={totalAccumulated}
+          cost={totalCost}
+          comparison={null}
+          compareLabel="akkumulert hittil i år"
+        />
+      </div>
+    </div>
+  );
+}
+
+function diffPct(current: number, baseline: number): number | null {
+  if (baseline <= 0 || current <= 0) return null;
+  return ((current - baseline) / baseline) * 100;
+}
+
+function AccCard({
+  label,
+  kwh,
+  cost,
+  comparison,
+  compareLabel,
+}: {
+  label: string;
+  kwh: number;
+  cost: number | null;
+  comparison: number | null;
+  compareLabel: string;
+}) {
+  const better = comparison != null && comparison < 0;
+  const worse = comparison != null && comparison > 0;
+  const toneColor = better
+    ? "text-[oklch(0.72_0.16_150)]"
+    : worse
+      ? "text-[oklch(0.65_0.22_25)]"
+      : "text-muted-foreground";
+  const Icon = better ? TrendingDown : worse ? TrendingUp : Activity;
+
+  return (
+    <div className="panel rounded-md p-4 bg-background/40 border border-border/40">
+      <div className="text-[10px] tracking-[0.25em] uppercase text-muted-foreground">
+        {label}
+      </div>
+      <div className="text-2xl font-semibold tabular-nums text-primary mt-1">
+        {kwh > 0 ? `${kwh.toFixed(kwh < 10 ? 2 : kwh < 100 ? 1 : 0)} kWh` : "—"}
+      </div>
+      {cost != null && (
+        <div className="text-xs text-muted-foreground tabular-nums">
+          ≈ {cost.toFixed(0)} kr
+        </div>
+      )}
+      <div className={`mt-2 flex items-center gap-1.5 text-[11px] ${toneColor}`}>
+        <Icon size={12} />
+        {comparison != null ? (
+          <span className="tabular-nums">
+            {comparison > 0 ? "+" : ""}
+            {comparison.toFixed(1)} % {better ? "lavere enn" : worse ? "høyere enn" : ""} {compareLabel.replace("vs ", "")}
+          </span>
+        ) : (
+          <span>{compareLabel}</span>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function formatHour(iso: string): string {
   return new Date(iso).toLocaleTimeString("nb-NO", {
     hour: "2-digit",
