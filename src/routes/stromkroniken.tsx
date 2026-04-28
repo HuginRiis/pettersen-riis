@@ -347,6 +347,11 @@ function HomeBlock({
       </div>
       )}
 
+      {/* Akkumulert forbruk + sammenligning mot forrige periode */}
+      {data && (
+        <AccumulatedBlock data={data} liveTodayKwh={liveKwhToday} />
+      )}
+
       {/* Pris-graf i dag (+ i morgen om publisert) */}
       {data && data.pricesToday.length > 0 && (
         <div>
