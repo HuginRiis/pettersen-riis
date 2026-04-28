@@ -756,10 +756,11 @@ function SubHeader({ text }: { text: string }) {
 function WeeklyTrendChart({
   data,
 }: {
-  data: Array<{ weekStart: string; label: string; distanceKm: number; movingMin: number; elevation: number; count: number }>;
+  data: Array<{ weekStart: string; label: string; distanceKm: number; movingMin: number; elevation: number; count: number; calories: number }>;
 }) {
   const maxKm = useMemo(() => Math.max(1, ...data.map((d) => d.distanceKm)), [data]);
   const maxElev = useMemo(() => Math.max(1, ...data.map((d) => d.elevation)), [data]);
+  const maxKcal = useMemo(() => Math.max(1, ...data.map((d) => d.calories)), [data]);
 
   return (
     <div className="panel rounded-lg p-5 mb-6">
@@ -767,21 +768,29 @@ function WeeklyTrendChart({
         {data.map((w) => {
           const kmPct = (w.distanceKm / maxKm) * 100;
           const elPct = (w.elevation / maxElev) * 100;
+          const kcalPct = (w.calories / maxKcal) * 100;
           return (
             <div key={w.weekStart} className="flex flex-col">
               <div className="flex items-end justify-center gap-2 h-40">
-                <div className="flex flex-col items-center justify-end h-full w-6">
+                <div className="flex flex-col items-center justify-end h-full w-5">
                   <div
                     className="w-full rounded-t bg-primary/70"
                     style={{ height: `${Math.max(2, kmPct)}%` }}
                     title={`${w.distanceKm.toFixed(1)} km`}
                   />
                 </div>
-                <div className="flex flex-col items-center justify-end h-full w-6">
+                <div className="flex flex-col items-center justify-end h-full w-5">
                   <div
                     className="w-full rounded-t bg-primary/30"
                     style={{ height: `${Math.max(2, elPct)}%` }}
                     title={`${Math.round(w.elevation)} m`}
+                  />
+                </div>
+                <div className="flex flex-col items-center justify-end h-full w-5">
+                  <div
+                    className="w-full rounded-t bg-orange-500/70"
+                    style={{ height: `${Math.max(2, kcalPct)}%` }}
+                    title={`${Math.round(w.calories)} kcal`}
                   />
                 </div>
               </div>
@@ -793,17 +802,23 @@ function WeeklyTrendChart({
                 <div className="text-[10px] text-muted-foreground">
                   {Math.round(w.elevation)} m · {w.count} økter
                 </div>
+                <div className="text-[10px] text-orange-500/90 mt-0.5">
+                  {Math.round(w.calories).toLocaleString("nb-NO")} kcal
+                </div>
               </div>
             </div>
           );
         })}
       </div>
-      <div className="mt-4 flex justify-center gap-6 text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+      <div className="mt-4 flex flex-wrap justify-center gap-x-6 gap-y-2 text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
         <span className="flex items-center gap-2">
           <span className="inline-block w-3 h-3 rounded-sm bg-primary/70" /> Distanse
         </span>
         <span className="flex items-center gap-2">
           <span className="inline-block w-3 h-3 rounded-sm bg-primary/30" /> Stigning
+        </span>
+        <span className="flex items-center gap-2">
+          <span className="inline-block w-3 h-3 rounded-sm bg-orange-500/70" /> Kalorier (est.)
         </span>
       </div>
     </div>
