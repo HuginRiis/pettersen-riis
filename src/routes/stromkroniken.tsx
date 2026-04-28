@@ -1220,8 +1220,212 @@ function MonthlyChart({ monthly }: { monthly: ConsumptionPoint[] }) {
 }
 
 // ============================================================
-// Årsoversikt — tabell
+// Akkumulert kWh per valgt måned — grønn graf med estimat
 // ============================================================
+
+function MonthlyAccumulatedChart({
+  daily,
+  monthly,
+}: {
+  daily: ConsumptionPoint[];
+  monthly: ConsumptionPoint[];
+}) {
+  // Bygg liste over tilgjengelige måneder fra `monthly` (siste 13 mnd) — nyeste først
+  const monthOptions = [...monthly]
+    .sort((a, b) => new Date(b.from).getTime() - new Date(a.from).getTime())
+    .map((m) => {
+      const d = new Date(m.from);
+      const key = d.toLocaleDateString("sv-SE", { timeZone: "Europe/Oslo" }).slice(0, 7);
+      const label = d.toLocaleDateString("nb-NO", {
+        month: "long",
+        year: "numeric",
+        timeZone: "Europe/Oslo",
+      });
+      return { key, label, totalKwh: m.kwh ?? 0 };
+    });
+
+  const now = new Date();
+  const currentKey = now.toLocaleDateString("sv-SE", { timeZone: "Europe/Oslo" }).slice(0, 7);
+  const [selected, setSelected] = useState<string>(currentKey);
+
+  const isCurrent = selected === currentKey;
+
+  // Hent dagsdata for valgt måned hvis tilgjengelig (daily har siste ~60 dager)
+  const dailyForMonth = daily.filter(
+    (d) =>
+      new Date(d.from).toLocaleDateString("sv-SE", { timeZone: "Europe/Oslo" }).slice(0, 7) ===
+      selected,
+  );
+
+  const [yy, mm] = selected.split("-").map((s) => parseInt(s, 10));
+  const daysInMonth = new Date(yy, mm, 0).getDate();
+  const today = isCurrent ? now.getDate() : daysInMonth;
+
+  // Lag map dag -> kwh
+  const byDay = new Map<number, number>();
+  for (const d of dailyForMonth) {
+    const day = new Date(d.from).getDate();
+    byDay.set(day, d.kwh ?? 0);
+  }
+
+  // Bygg datasett: akkumulert + estimat (dotted) for resten av mnd
+  let cum = 0;
+  const points: Array<{
+    day: number;
+    actual: number | null;
+    estimate: number | null;
+  }> = [];
+
+  // Fallback: hvis vi ikke har daglig data (eldre mnd) bruk månedstotal som "siste punkt"
+  const monthlyTotal = monthOptions.find((m) => m.key === selected)?.totalKwh ?? 0;
+  const hasDailyData = dailyForMonth.length > 0;
+
+  if (hasDailyData) {
+    for (let i = 1; i <= daysInMonth; i++) {
+      let actual: number | null = null;
+      if (i <= today) {
+        cum += byDay.get(i) ?? 0;
+        actual = Math.round(cum * 10) / 10;
+      }
+      points.push({ day: i, actual, estimate: null });
+    }
+  } else {
+    // Eldre måned uten dagsdata — vis lineær akkumulering opp til total
+    for (let i = 1; i <= daysInMonth; i++) {
+      const v = (monthlyTotal * i) / daysInMonth;
+      points.push({ day: i, actual: Math.round(v * 10) / 10, estimate: null });
+    }
+    cum = monthlyTotal;
+  }
+
+  // Estimat for resten av nåværende måned (basert på snitt per dag hittil)
+  let estimatedTotal: number | null = null;
+  if (isCurrent && hasDailyData && today > 0) {
+    const avgPerDay = cum / today;
+    estimatedTotal = avgPerDay * daysInMonth;
+    let est = cum;
+    for (let i = today + 1; i <= daysInMonth; i++) {
+      est += avgPerDay;
+      // Sett estimate-verdi, og la actual være null fra og med dag etter "today"
+      points[i - 1].estimate = Math.round(est * 10) / 10;
+    }
+    // For å koble linjene må dag = today ha både actual og estimate
+    if (points[today - 1]) {
+      points[today - 1].estimate = points[today - 1].actual;
+    }
+  }
+
+  const monthLabel =
+    monthOptions.find((m) => m.key === selected)?.label ??
+    new Date(yy, mm - 1, 1).toLocaleDateString("nb-NO", { month: "long", year: "numeric" });
+
+  return (
+    <div className="rounded-xl bg-[oklch(0.18_0.02_270)] p-4 border border-border/40 space-y-3">
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div className="flex items-center gap-3 flex-wrap text-xs">
+          <span className="flex items-center gap-1.5 text-foreground/85">
+            <span className="inline-block w-3 h-3 rounded-sm bg-[oklch(0.7_0.18_150)]" />
+            Akkumulert: <span className="tabular-nums">{cum.toFixed(0)} kWh</span>
+          </span>
+          {estimatedTotal != null && (
+            <span className="flex items-center gap-1.5 text-foreground/65">
+              <span className="inline-block w-3 h-0.5 bg-[oklch(0.7_0.18_150)]" style={{ borderTop: "2px dashed" }} />
+              Estimert mnd: <span className="tabular-nums">{estimatedTotal.toFixed(0)} kWh</span>
+            </span>
+          )}
+        </div>
+        <select
+          value={selected}
+          onChange={(e) => setSelected(e.target.value)}
+          className="bg-[oklch(0.22_0.02_270)] border border-border/50 rounded-md px-2 py-1 text-xs text-foreground tabular-nums capitalize"
+        >
+          {monthOptions.map((m) => (
+            <option key={m.key} value={m.key} className="capitalize">
+              {m.label}
+            </option>
+          ))}
+          {!monthOptions.some((m) => m.key === currentKey) && (
+            <option value={currentKey} className="capitalize">
+              {new Date(now.getFullYear(), now.getMonth(), 1).toLocaleDateString("nb-NO", {
+                month: "long",
+                year: "numeric",
+              })}
+            </option>
+          )}
+        </select>
+      </div>
+      <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground capitalize">
+        {monthLabel}
+      </div>
+      <div className="h-56 w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart data={points} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
+            <defs>
+              <linearGradient id="kwhAccGreen" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="oklch(0.7 0.18 150)" stopOpacity={0.55} />
+                <stop offset="100%" stopColor="oklch(0.7 0.18 150)" stopOpacity={0} />
+              </linearGradient>
+              <linearGradient id="kwhAccGreenEst" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="oklch(0.7 0.18 150)" stopOpacity={0.2} />
+                <stop offset="100%" stopColor="oklch(0.7 0.18 150)" stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid stroke="oklch(0.3 0.02 270)" strokeDasharray="2 4" vertical={false} />
+            <XAxis
+              dataKey="day"
+              tick={{ fill: "oklch(0.65 0.02 270)", fontSize: 11 }}
+              ticks={[1, 5, 9, 13, 17, 21, 25, 29]}
+              axisLine={false}
+              tickLine={false}
+            />
+            <YAxis
+              tick={{ fill: "oklch(0.65 0.02 270)", fontSize: 11 }}
+              width={40}
+              axisLine={false}
+              tickLine={false}
+              unit=" kWh"
+            />
+            <Tooltip
+              contentStyle={{
+                background: "oklch(0.22 0.02 270)",
+                border: "1px solid oklch(0.35 0.02 270)",
+                borderRadius: 6,
+                fontSize: 12,
+              }}
+              formatter={(v: unknown, name: unknown) =>
+                typeof v === "number"
+                  ? [`${v.toFixed(0)} kWh`, name === "actual" ? "Akkumulert" : "Estimat"]
+                  : ["—", String(name)]
+              }
+              labelFormatter={(d: number) => `Dag ${d}`}
+            />
+            <Area
+              type="monotone"
+              dataKey="estimate"
+              stroke="oklch(0.7 0.18 150)"
+              strokeWidth={2}
+              strokeDasharray="5 4"
+              fill="url(#kwhAccGreenEst)"
+              connectNulls={false}
+              isAnimationActive={false}
+            />
+            <Area
+              type="monotone"
+              dataKey="actual"
+              stroke="oklch(0.7 0.18 150)"
+              strokeWidth={2.5}
+              fill="url(#kwhAccGreen)"
+              connectNulls={false}
+              isAnimationActive={false}
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}
+
+
 
 function YearlyTable({ yearly }: { yearly: ConsumptionPoint[] }) {
   return (
