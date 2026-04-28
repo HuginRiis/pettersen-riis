@@ -5,6 +5,7 @@ export function NrkTrafficSection() {
   const [items, setItems] = useState<NrkTrafficItem[] | null>(null);
   const [fetchedAt, setFetchedAt] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [selectedDistrict, setSelectedDistrict] = useState<string>("ALL");
 
   useEffect(() => {
     let cancelled = false;
@@ -33,7 +34,21 @@ export function NrkTrafficSection() {
       })
     : null;
 
-  const counts = countByCategory(items ?? []);
+  // Tilgjengelige distrikter fra de aktive meldingene
+  const availableDistricts = (() => {
+    const set = new Set<string>();
+    for (const it of items ?? []) {
+      if (it.district) set.add(it.district);
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b, "nb"));
+  })();
+
+  const filteredItems =
+    selectedDistrict === "ALL"
+      ? items ?? []
+      : (items ?? []).filter((it) => it.district === selectedDistrict);
+
+  const counts = countByCategory(filteredItems);
 
   return (
     <div className="mt-12">
@@ -47,6 +62,34 @@ export function NrkTrafficSection() {
         Trafikk og hendelser fra NRKs distriktsredaksjoner i Vestfold/Telemark, Innlandet,
         Sørlandet, Buskerud, Østfold og Stor-Oslo. Oppdateres hvert 10. min.
       </p>
+
+      {availableDistricts.length > 0 && (
+        <div className="mb-6">
+          <p className="text-[11px] uppercase tracking-[0.25em] text-muted-foreground mb-2">
+            Velg distrikt
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <DistrictChip
+              label={`Alle distrikter (${items?.length ?? 0})`}
+              active={selectedDistrict === "ALL"}
+              onClick={() => setSelectedDistrict("ALL")}
+            />
+            {availableDistricts.map((name) => {
+              const count = (items ?? []).filter(
+                (it) => it.district === name,
+              ).length;
+              return (
+                <DistrictChip
+                  key={name}
+                  label={`${name} (${count})`}
+                  active={selectedDistrict === name}
+                  onClick={() => setSelectedDistrict(name)}
+                />
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         <CategoryCard label="Stengt" count={counts.closure} color="closure" />
@@ -71,16 +114,42 @@ export function NrkTrafficSection() {
         {items === null && (
           <p className="text-sm text-muted-foreground italic">Henter trafikknyheter …</p>
         )}
-        {items && items.length === 0 && !error && (
+        {items && filteredItems.length === 0 && !error && (
           <p className="text-sm text-muted-foreground italic">
-            Ingen ferske trafikkmeldinger fra NRK akkurat nå.
+            {selectedDistrict === "ALL"
+              ? "Ingen ferske trafikkmeldinger fra NRK akkurat nå."
+              : `Ingen ferske trafikkmeldinger fra ${selectedDistrict} akkurat nå.`}
           </p>
         )}
-        {(items ?? []).map((it) => (
+        {filteredItems.map((it) => (
           <TrafficCard key={it.id} item={it} />
         ))}
       </div>
     </div>
+  );
+}
+
+function DistrictChip({
+  label,
+  active,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`text-xs px-3 py-1.5 rounded-full border transition ${
+        active
+          ? "bg-primary text-primary-foreground border-primary"
+          : "border-border text-foreground/80 hover:border-primary/60 hover:text-primary"
+      }`}
+    >
+      {label}
+    </button>
   );
 }
 
