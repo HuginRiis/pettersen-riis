@@ -393,7 +393,7 @@ function HomeBlock({
       )}
 
       {/* Akkumulert kWh per valgt måned (grønn) + estimat */}
-      {data && data.daily.length > 0 && (
+      {data && (data.daily.length > 0 || data.monthly.length > 0) && (
         <div>
           <h3 className="text-sm tracking-[0.3em] uppercase text-primary mb-3 flex items-center gap-2">
             <TrendingUp size={14} /> Akkumulert kWh · valgt måned
