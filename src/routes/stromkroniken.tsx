@@ -1672,14 +1672,14 @@ function ComparisonBlock({
   // Så: overstyr med Tibber-API når data finnes
   for (const m of tollnes.monthly ?? []) {
     const key = (m.from ?? "").slice(0, 7);
-    if (!key || m.kwh == null) continue;
+    if (!key || m.kwh == null || m.kwh <= 0) continue;
     const cur = monthMap.get(key) ?? { month: key, Borgen: 0, Hytta: 0 };
     cur.Borgen = m.kwh;
     monthMap.set(key, cur);
   }
   for (const m of hytta.monthly ?? []) {
     const key = (m.from ?? "").slice(0, 7);
-    if (!key || m.kwh == null) continue;
+    if (!key || m.kwh == null || m.kwh <= 0) continue;
     const cur = monthMap.get(key) ?? { month: key, Borgen: 0, Hytta: 0 };
     cur.Hytta = m.kwh;
     monthMap.set(key, cur);
@@ -1709,14 +1709,14 @@ function ComparisonBlock({
   // Så: live Tibber-data overstyrer for de dagene de finnes (mest oppdatert)
   for (const d of tollnes.daily ?? []) {
     const key = (d.from ?? "").slice(0, 10);
-    if (!key || d.kwh == null) continue;
+    if (!key || d.kwh == null || d.kwh <= 0) continue;
     const cur = dayMap.get(key) ?? { day: key, Borgen: 0, Hytta: 0 };
     cur.Borgen = d.kwh;
     dayMap.set(key, cur);
   }
   for (const d of hytta.daily ?? []) {
     const key = (d.from ?? "").slice(0, 10);
-    if (!key || d.kwh == null) continue;
+    if (!key || d.kwh == null || d.kwh <= 0) continue;
     const cur = dayMap.get(key) ?? { day: key, Borgen: 0, Hytta: 0 };
     cur.Hytta = d.kwh;
     dayMap.set(key, cur);
