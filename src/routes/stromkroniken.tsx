@@ -1641,8 +1641,21 @@ function ComparisonBlock({
   const tollnesThisYear = preferPositive(tollnes.thisYearKwh, storedYearKwh("tollnes"));
   const hyttaThisYear = preferPositive(hytta.thisYearKwh, storedYearKwh("hytta"));
 
+  // Pris for nåværende time fra dagens prisliste (samme verdi som vises i grafen)
+  const currentHourTotal = (list: Array<{ startsAt: string; total: number }>) => {
+    if (!list.length) return null;
+    const now = Date.now();
+    const match = list.find((p) => {
+      const start = new Date(p.startsAt).getTime();
+      return now >= start && now < start + 3_600_000;
+    });
+    return match?.total ?? null;
+  };
+  const tollnesPriceNow = currentHourTotal(tollnes.pricesToday);
+  const hyttaPriceNow = currentHourTotal(hytta.pricesToday);
+
   const rows: Array<{ label: string; b?: number | null; h?: number | null; unit: string; precision: number }> = [
-    { label: "Pris nå", b: tollnes.priceNow?.total != null ? tollnes.priceNow.total * 1.9 : null, h: hytta.priceNow?.total != null ? hytta.priceNow.total * 1.52 : null, unit: "kr/kWh", precision: 3 },
+    { label: "Pris nå", b: tollnesPriceNow != null ? tollnesPriceNow * 1.9 : null, h: hyttaPriceNow != null ? hyttaPriceNow * 1.52 : null, unit: "kr/kWh", precision: 3 },
     { label: "Snittpris i dag", b: tollnes.priceAvgToday != null ? tollnes.priceAvgToday * 1.9 : null, h: hytta.priceAvgToday != null ? hytta.priceAvgToday * 1.52 : null, unit: "kr/kWh", precision: 3 },
     { label: "kWh i dag", b: tollnesToday, h: hyttaToday, unit: "kWh", precision: 1 },
     { label: "Kostnad i dag", b: tollnes.todayCost, h: hytta.todayCost, unit: "kr", precision: 0 },
