@@ -30,6 +30,31 @@ export async function snapshotTibberDailyToDb(): Promise<{
   saved: Array<{ location: Loc; day: string; kwh: number; cost: number | null }>;
   error?: string;
 }> {
+  const since = new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString();
+  const { data: pulseRows, error: pulseError } = await supabaseAdmin
+    .from("pulse_readings")
+    .select("location, recorded_at, kwh_today")
+    .gte("recorded_at", since)
+    .in("location", ["tollnes", "hytta"])
+    .not("kwh_today", "is", null);
+
+  if (!pulseError && pulseRows && pulseRows.length > 0) {
+    const best = new Map<string, { location: Loc; day: string; kwh: number; cost: number | null; source: string }>();
+    for (const r of pulseRows as Array<{ location: Loc; recorded_at: string; kwh_today: number | null }>) {
+      if (r.kwh_today == null || r.kwh_today <= 0) continue;
+      const day = osloDateKey(r.recorded_at);
+      const key = `${r.location}:${day}`;
+      const kwh = Math.round(r.kwh_today * 1000) / 1000;
+      const cur = best.get(key);
+      if (!cur || kwh > cur.kwh) best.set(key, { location: r.location, day, kwh, cost: null, source: "pulse-snapshot" });
+    }
+    const rows = Array.from(best.values());
+    if (rows.length > 0) {
+      const { error } = await supabaseAdmin.from("tibber_daily_kwh").upsert(rows, { onConflict: "location,day" });
+      if (!error) return { saved: rows.map(({ location, day, kwh, cost }) => ({ location, day, kwh, cost })) };
+    }
+  }
+
   const token = process.env.TIBBER_TOKEN;
   if (!token) return { saved: [], error: "TIBBER_TOKEN mangler" };
 
