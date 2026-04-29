@@ -489,12 +489,48 @@ function AccumulatedBlock({
   data: TibberHomeFull;
   liveTodayKwh: number | null;
 }) {
-  // Bruk live-tall hvis tilgjengelig, ellers historikk
-  const todayKwh = liveTodayKwh != null ? liveTodayKwh : data.todayKwh;
+  const fetchStored = useServerFn(getStoredDailyKwh);
+  const [stored, setStored] = useState<StoredDailyKwh[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadStored = () => {
+      fetchStored()
+        .then((res) => {
+          if (!cancelled && res.rows) setStored(res.rows);
+        })
+        .catch(() => {});
+    };
+    loadStored();
+    const timer = window.setInterval(loadStored, 60_000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, [fetchStored]);
+
+  // Bruk vår lagrede dagstabell som sannhet for måned/år når Tibber mangler abonnement.
+  const now = new Date();
+  const todayKey = now.toLocaleDateString("sv-SE", { timeZone: "Europe/Oslo" });
+  const monthKey = todayKey.slice(0, 7);
+  const yearKey = todayKey.slice(0, 4);
+  const ownStored = stored.filter((r) => r.location === data.location);
+  const storedToday = ownStored.find((r) => r.day === todayKey)?.kwh ?? 0;
+  const storedMonth = ownStored
+    .filter((r) => r.day.startsWith(monthKey))
+    .reduce((sum, r) => sum + r.kwh, 0);
+  const storedYear = ownStored
+    .filter((r) => r.day.startsWith(yearKey))
+    .reduce((sum, r) => sum + r.kwh, 0);
+
+  const liveOrApiToday = liveTodayKwh != null ? liveTodayKwh : data.todayKwh;
+  const todayKwh = Math.max(liveOrApiToday ?? 0, storedToday);
+  const todayDelta = Math.max(0, todayKwh - storedToday);
+  const thisMonthKwh = Math.max(data.thisMonthKwh ?? 0, storedMonth + todayDelta);
+  const thisYearKwh = Math.max(data.thisYearKwh ?? 0, storedYear + todayDelta);
   const yesterdayKwh = data.yesterdayKwh;
 
   // I dag vs samme tid i går — sammenlign mot i går proporsjonalt med tid på døgnet
-  const now = new Date();
   const minutesIntoDay = now.getHours() * 60 + now.getMinutes();
   const dayFraction = minutesIntoDay / (24 * 60);
   const yesterdayProrated = yesterdayKwh * dayFraction;
@@ -504,10 +540,10 @@ function AccumulatedBlock({
   const dayOfMonth = now.getDate();
   const daysInLastMonth = new Date(now.getFullYear(), now.getMonth(), 0).getDate();
   const lastMonthProrated = data.lastMonthKwh * (dayOfMonth / daysInLastMonth);
-  const monthVsLastMonth = diffPct(data.thisMonthKwh, lastMonthProrated);
+  const monthVsLastMonth = diffPct(thisMonthKwh, lastMonthProrated);
 
   // I år — vis bare totalsum (ingen direkte fjorår-tall i datasettet)
-  const totalAccumulated = data.thisYearKwh;
+  const totalAccumulated = thisYearKwh;
   const totalCost = data.thisYearCost;
 
   return (
@@ -526,7 +562,7 @@ function AccumulatedBlock({
         />
         <AccCard
           label="Måned hittil"
-          kwh={data.thisMonthKwh}
+          kwh={thisMonthKwh}
           cost={data.thisMonthCost}
           comparison={monthVsLastMonth}
           compareLabel="vs samme dag forrige måned"
