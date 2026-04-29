@@ -1799,6 +1799,25 @@ function ComparisonBlock({
 
         <div>
           <p className="text-[11px] tracking-[0.2em] uppercase text-muted-foreground mb-2">
+            Kumulativ kWh {cumulativeChartData.length > 0 ? `· siste ${cumulativeChartData.length} dager` : <span className="italic normal-case tracking-normal">· venter på data</span>}
+          </p>
+          <div className="h-64 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={cumulativeChartData} margin={{ top: 5, right: 8, left: -8, bottom: 0 }}>
+                <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="label" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 9 }} interval={Math.max(0, Math.floor(cumulativeChartData.length / 10))} />
+                <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} width={56} unit=" kWh" />
+                <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => [`${v.toFixed(0)} kWh`, ""]} />
+                <Legend wrapperStyle={{ fontSize: 11 }} />
+                <Line type="monotone" dataKey="Borgen" stroke={BORGEN_COLOR} dot={false} strokeWidth={2} />
+                <Line type="monotone" dataKey="Hytta" stroke={HYTTA_COLOR} dot={false} strokeWidth={2} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div>
+          <p className="text-[11px] tracking-[0.2em] uppercase text-muted-foreground mb-2">
             År for år {yearlyChartData.length === 0 && <span className="italic normal-case tracking-normal">· venter på data</span>}
           </p>
           <div className="h-56 w-full">
