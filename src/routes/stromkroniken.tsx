@@ -1566,6 +1566,55 @@ function MonthlyAccumulatedChart({
   );
 }
 
+function TrendStat({
+  label,
+  todayKwh,
+  referenceKwh,
+  trend,
+  referenceFullDayKwh,
+  referenceLabel,
+}: {
+  label: string;
+  todayKwh: number;
+  referenceKwh: number | null;
+  trend: { diff: number; pct: number } | null;
+  referenceFullDayKwh: number | null;
+  referenceLabel: string;
+}) {
+  const hasData = trend != null && referenceKwh != null;
+  const isUp = hasData && trend!.diff > 0;
+  const isDown = hasData && trend!.diff < 0;
+  // Mer forbruk = rødt, mindre = grønt
+  const tone = isUp
+    ? "text-[oklch(0.72_0.18_25)]"
+    : isDown
+      ? "text-[oklch(0.72_0.16_150)]"
+      : "text-muted-foreground";
+  const Icon = isUp ? TrendingUp : isDown ? TrendingDown : Activity;
+  const arrow = isUp ? "▲" : isDown ? "▼" : "•";
+  const pctTxt = hasData ? `${trend!.pct > 0 ? "+" : ""}${trend!.pct.toFixed(0)} %` : "—";
+  const diffTxt = hasData
+    ? `${trend!.diff > 0 ? "+" : ""}${trend!.diff.toFixed(2)} kWh`
+    : "—";
+  return (
+    <div className="rounded-md p-4 bg-background/30 border border-border/40">
+      <div className="flex items-center justify-between">
+        <div className="text-[10px] tracking-[0.3em] uppercase text-muted-foreground">{label}</div>
+        <Icon size={14} className={tone} />
+      </div>
+      <div className={`text-2xl font-semibold tabular-nums mt-1 ${tone}`}>
+        {arrow} {pctTxt}
+      </div>
+      <div className="text-xs text-muted-foreground mt-0.5 tabular-nums">{diffTxt}</div>
+      <div className="text-[10px] text-muted-foreground/80 mt-1">
+        {hasData
+          ? `Nå ${todayKwh.toFixed(2)} kWh · ${referenceLabel} ${referenceKwh!.toFixed(2)} kWh same tid${referenceFullDayKwh != null ? ` (hele dagen ${referenceFullDayKwh.toFixed(1)} kWh)` : ""}`
+          : `Mangler data fra ${referenceLabel}`}
+      </div>
+    </div>
+  );
+}
+
 
 
 function YearlyTable({ yearly }: { yearly: ConsumptionPoint[] }) {
