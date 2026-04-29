@@ -289,6 +289,41 @@ function HomeBlock({
   const priceSource: "tibber" | "spot" | null =
     currentHourPrice != null ? "tibber" : spotPriceNow != null ? "spot" : null;
 
+  // ─── Sammenligninger: i går (samme tid) og samme dag forrige måned ───
+  const now = new Date();
+  const dayFraction = Math.max(
+    0.01,
+    (now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds()) / 86400,
+  );
+  const yesterdayProrated =
+    data?.yesterdayKwh != null && data.yesterdayKwh > 0
+      ? data.yesterdayKwh * dayFraction
+      : null;
+  const vsYesterday =
+    yesterdayProrated != null && yesterdayProrated > 0 && todayKwh > 0
+      ? { diff: todayKwh - yesterdayProrated, pct: ((todayKwh - yesterdayProrated) / yesterdayProrated) * 100 }
+      : null;
+
+  // Samme dato forrige måned — hent fra daily-historikk
+  const sameDayLastMonth = (() => {
+    if (!data?.daily?.length) return null;
+    const target = new Date(now);
+    target.setMonth(target.getMonth() - 1);
+    const targetKey = `${target.getFullYear()}-${String(target.getMonth() + 1).padStart(2, "0")}-${String(target.getDate()).padStart(2, "0")}`;
+    const match = data.daily.find((d) => {
+      const dd = new Date(d.from);
+      const k = `${dd.getFullYear()}-${String(dd.getMonth() + 1).padStart(2, "0")}-${String(dd.getDate()).padStart(2, "0")}`;
+      return k === targetKey;
+    });
+    return match?.consumption ?? null;
+  })();
+  const lastMonthProrated =
+    sameDayLastMonth != null && sameDayLastMonth > 0 ? sameDayLastMonth * dayFraction : null;
+  const vsLastMonth =
+    lastMonthProrated != null && lastMonthProrated > 0 && todayKwh > 0
+      ? { diff: todayKwh - lastMonthProrated, pct: ((todayKwh - lastMonthProrated) / lastMonthProrated) * 100 }
+      : null;
+
   return (
     <article className="panel rounded-lg p-5 sm:p-7 space-y-7">
       <div className="flex items-start justify-between flex-wrap gap-3">
