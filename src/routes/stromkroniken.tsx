@@ -221,12 +221,16 @@ function HomeBlock({
   data,
   live,
   priceMultiplier = 1,
+  spotPriceNow = null,
+  spotPriceAvg = null,
 }: {
   title: string;
   eyebrow: string;
   data: TibberHomeFull | null;
   live: TibberLiveHomeState;
   priceMultiplier?: number;
+  spotPriceNow?: number | null;
+  spotPriceAvg?: number | null;
 }) {
   // Hvis vi verken har historikk-data eller live-data → ingenting å vise
   if ((!data || !data.found) && live.status === "idle") {
