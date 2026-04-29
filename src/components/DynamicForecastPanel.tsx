@@ -112,9 +112,9 @@ export function DynamicForecastPanel({ label, lat, lon }: Props) {
             Neste 24 timer
           </div>
           <div className="grid grid-cols-6 sm:grid-cols-8 gap-1">
-            {next24.filter((_, i) => i % 3 === 0).map((h) => (
+            {next24.filter((_, i) => i % 3 === 0).map((h, i) => (
               <div
-                key={h.time}
+                key={`${h.time}-${i}`}
                 className="bg-card/50 rounded p-1.5 text-center"
               >
                 <div className="text-[9px] text-muted-foreground tracking-wider">
