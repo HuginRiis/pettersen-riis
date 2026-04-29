@@ -1691,13 +1691,13 @@ function ComparisonBlock({
     });
     return match?.total ?? null;
   };
-  const tollnesPriceNow = currentHourTotal(tollnes.pricesToday);
-  const hyttaPriceNow = currentHourTotal(hytta.pricesToday);
+  const tollnesPriceNow = currentHourTotal(tollnes.pricesToday) ?? borgenSpotNow;
+  const hyttaPriceNow = currentHourTotal(hytta.pricesToday) ?? hyttaSpotNow;
 
   // Beregn kostnad fra kWh × snittpris × multiplier hvis Tibber ikke har cost.
   // Snittpris brukes som proxy når vi ikke har timesoppdelte priser for perioden.
-  const tollnesAvg = tollnes.priceAvgToday;
-  const hyttaAvg = hytta.priceAvgToday;
+  const tollnesAvg = tollnes.priceAvgToday ?? borgenSpotAvg;
+  const hyttaAvg = hytta.priceAvgToday ?? hyttaSpotAvg;
   const calcCost = (
     tibberCost: number | null | undefined,
     kwh: number | null | undefined,
