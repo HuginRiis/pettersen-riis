@@ -1632,8 +1632,8 @@ function ComparisonBlock({
   const hyttaThisYear = preferPositive(hytta.thisYearKwh, storedYearKwh("hytta"));
 
   const rows: Array<{ label: string; b?: number | null; h?: number | null; unit: string; precision: number }> = [
-    { label: "Pris nå", b: tollnes.priceNow?.total ?? null, h: hytta.priceNow?.total ?? null, unit: "kr/kWh", precision: 3 },
-    { label: "Snittpris i dag", b: tollnes.priceAvgToday, h: hytta.priceAvgToday, unit: "kr/kWh", precision: 3 },
+    { label: "Pris nå", b: tollnes.priceNow?.total != null ? tollnes.priceNow.total * 1.9 : null, h: hytta.priceNow?.total != null ? hytta.priceNow.total * 1.52 : null, unit: "kr/kWh", precision: 3 },
+    { label: "Snittpris i dag", b: tollnes.priceAvgToday != null ? tollnes.priceAvgToday * 1.9 : null, h: hytta.priceAvgToday != null ? hytta.priceAvgToday * 1.52 : null, unit: "kr/kWh", precision: 3 },
     { label: "kWh i dag", b: tollnesToday, h: hyttaToday, unit: "kWh", precision: 1 },
     { label: "Kostnad i dag", b: tollnes.todayCost, h: hytta.todayCost, unit: "kr", precision: 0 },
     { label: "kWh i går", b: tollnesYesterday, h: hyttaYesterday, unit: "kWh", precision: 1 },
