@@ -73,15 +73,18 @@ export const Route = createFileRoute("/stromkroniken")({
 
 function StromkronikenPage() {
   const fetchFull = useServerFn(getTibberFullData);
+  const fetchSpot = useServerFn(getSpotPrices);
   const [state, setState] = useState<TibberFullResult | null>(null);
+  const [spot, setSpot] = useState<SpotPriceResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [updated, setUpdated] = useState<Date | null>(null);
   const live = useTibberLive();
 
   const load = async () => {
     try {
-      const res = await fetchFull();
+      const [res, spotRes] = await Promise.all([fetchFull(), fetchSpot()]);
       setState(res);
+      setSpot(spotRes);
       setUpdated(new Date());
     } catch (err) {
       console.error("[Stromkroniken] failed", err);
@@ -96,6 +99,10 @@ function StromkronikenPage() {
     return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Borgen er i NO2, Hytta er i NO1 (priser inkl. mva fra hvakosterstrommen.no)
+  const borgenSpot = spot?.ok ? spot.zones.NO2 ?? null : null;
+  const hyttaSpot = spot?.ok ? spot.zones.NO1 ?? null : null;
 
   return (
     <PageShell>
