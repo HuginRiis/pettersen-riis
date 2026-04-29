@@ -401,7 +401,26 @@ function HomeBlock({
         />
       </div>
 
-      {/* Pulse-historikk fra DB — bygges opp etter hvert som vi lagrer samples */}
+      {/* Sammenligningsbokser: i går vs samme dag forrige måned */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <TrendStat
+          label="Sammenlignet med i går"
+          todayKwh={todayKwh}
+          referenceKwh={yesterdayProrated}
+          trend={vsYesterday}
+          referenceFullDayKwh={data?.yesterdayKwh ?? null}
+          referenceLabel="i går"
+        />
+        <TrendStat
+          label="Samme dag forrige måned"
+          todayKwh={todayKwh}
+          referenceKwh={lastMonthProrated}
+          trend={vsLastMonth}
+          referenceFullDayKwh={sameDayLastMonth}
+          referenceLabel="forrige måned"
+        />
+      </div>
+
       {(live.status === "live" || live.status === "stale") && (
         <PulseHistoryChart location={live.location} reading={live.reading} />
       )}
