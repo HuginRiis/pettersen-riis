@@ -1654,19 +1654,34 @@ function ComparisonBlock({
   const tollnesPriceNow = currentHourTotal(tollnes.pricesToday);
   const hyttaPriceNow = currentHourTotal(hytta.pricesToday);
 
+  // Beregn kostnad fra kWh × snittpris × multiplier hvis Tibber ikke har cost.
+  // Snittpris brukes som proxy når vi ikke har timesoppdelte priser for perioden.
+  const tollnesAvg = tollnes.priceAvgToday;
+  const hyttaAvg = hytta.priceAvgToday;
+  const calcCost = (
+    tibberCost: number | null | undefined,
+    kwh: number | null | undefined,
+    avg: number | null | undefined,
+    multiplier: number,
+  ): number | null => {
+    if (tibberCost != null && tibberCost > 0) return tibberCost;
+    if (kwh != null && kwh > 0 && avg != null && avg > 0) return kwh * avg * multiplier;
+    return null;
+  };
+
   const rows: Array<{ label: string; b?: number | null; h?: number | null; unit: string; precision: number }> = [
     { label: "Pris nå", b: tollnesPriceNow != null ? tollnesPriceNow * 1.9 : null, h: hyttaPriceNow != null ? hyttaPriceNow * 1.52 : null, unit: "kr/kWh", precision: 3 },
-    { label: "Snittpris i dag", b: tollnes.priceAvgToday != null ? tollnes.priceAvgToday * 1.9 : null, h: hytta.priceAvgToday != null ? hytta.priceAvgToday * 1.52 : null, unit: "kr/kWh", precision: 3 },
+    { label: "Snittpris i dag", b: tollnesAvg != null ? tollnesAvg * 1.9 : null, h: hyttaAvg != null ? hyttaAvg * 1.52 : null, unit: "kr/kWh", precision: 3 },
     { label: "kWh i dag", b: tollnesToday, h: hyttaToday, unit: "kWh", precision: 1 },
-    { label: "Kostnad i dag", b: tollnes.todayCost, h: hytta.todayCost, unit: "kr", precision: 0 },
+    { label: "Kostnad i dag", b: calcCost(tollnes.todayCost, tollnesToday, tollnesAvg, 1.9), h: calcCost(hytta.todayCost, hyttaToday, hyttaAvg, 1.52), unit: "kr", precision: 0 },
     { label: "kWh i går", b: tollnesYesterday, h: hyttaYesterday, unit: "kWh", precision: 1 },
-    { label: "Kostnad i går", b: tollnes.yesterdayCost, h: hytta.yesterdayCost, unit: "kr", precision: 0 },
+    { label: "Kostnad i går", b: calcCost(tollnes.yesterdayCost, tollnesYesterday, tollnesAvg, 1.9), h: calcCost(hytta.yesterdayCost, hyttaYesterday, hyttaAvg, 1.52), unit: "kr", precision: 0 },
     { label: "kWh denne måneden", b: tollnesThisMonth, h: hyttaThisMonth, unit: "kWh", precision: 0 },
-    { label: "Kostnad denne måneden", b: tollnes.thisMonthCost, h: hytta.thisMonthCost, unit: "kr", precision: 0 },
+    { label: "Kostnad denne måneden", b: calcCost(tollnes.thisMonthCost, tollnesThisMonth, tollnesAvg, 1.9), h: calcCost(hytta.thisMonthCost, hyttaThisMonth, hyttaAvg, 1.52), unit: "kr", precision: 0 },
     { label: "kWh forrige måned", b: tollnes.lastMonthKwh, h: hytta.lastMonthKwh, unit: "kWh", precision: 0 },
-    { label: "Kostnad forrige måned", b: tollnes.lastMonthCost, h: hytta.lastMonthCost, unit: "kr", precision: 0 },
+    { label: "Kostnad forrige måned", b: calcCost(tollnes.lastMonthCost, tollnes.lastMonthKwh, tollnesAvg, 1.9), h: calcCost(hytta.lastMonthCost, hytta.lastMonthKwh, hyttaAvg, 1.52), unit: "kr", precision: 0 },
     { label: "kWh i år", b: tollnesThisYear, h: hyttaThisYear, unit: "kWh", precision: 0 },
-    { label: "Kostnad i år", b: tollnes.thisYearCost, h: hytta.thisYearCost, unit: "kr", precision: 0 },
+    { label: "Kostnad i år", b: calcCost(tollnes.thisYearCost, tollnesThisYear, tollnesAvg, 1.9), h: calcCost(hytta.thisYearCost, hyttaThisYear, hyttaAvg, 1.52), unit: "kr", precision: 0 },
   ];
 
   const chartData = rows
