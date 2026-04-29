@@ -837,21 +837,23 @@ function PriceChart({
   today,
   tomorrow,
   priceNow,
+  multiplier = 1,
 }: {
   today: PricePoint[];
   tomorrow: PricePoint[];
   priceNow: number | null;
+  multiplier?: number;
 }) {
   const all = [...today, ...tomorrow];
-  const min = Math.min(...all.map((p) => p.total));
-  const max = Math.max(...all.map((p) => p.total));
+  const min = Math.min(...all.map((p) => p.total * multiplier));
+  const max = Math.max(...all.map((p) => p.total * multiplier));
 
   const data = all.map((p) => {
     const d = new Date(p.startsAt);
     const isTomorrow = tomorrow.includes(p);
     return {
       label: `${isTomorrow ? "i.m. " : ""}${d.getHours().toString().padStart(2, "0")}`,
-      total: Math.round(p.total * 1000) / 1000,
+      total: Math.round(p.total * multiplier * 1000) / 1000,
       isTomorrow,
       raw: p,
     };
