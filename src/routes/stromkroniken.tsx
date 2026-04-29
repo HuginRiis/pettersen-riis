@@ -1610,13 +1610,25 @@ function ComparisonBlock({
     cur.Hytta = d.kwh ?? 0;
     dayMap.set(key, cur);
   }
-  const dailyChartData = Array.from(dayMap.values())
-    .sort((a, b) => a.day.localeCompare(b.day))
-    .map((d) => ({
+  const dailySorted = Array.from(dayMap.values()).sort((a, b) => a.day.localeCompare(b.day));
+  const dailyChartData = dailySorted.map((d) => ({
+    label: d.day.slice(8) + "." + d.day.slice(5, 7),
+    Borgen: Math.round(d.Borgen * 10) / 10,
+    Hytta: Math.round(d.Hytta * 10) / 10,
+  }));
+
+  // Kumulativ kWh per dag — summerer dag for dag, alltid stigende
+  let cumB = 0;
+  let cumH = 0;
+  const cumulativeChartData = dailySorted.map((d) => {
+    cumB += d.Borgen ?? 0;
+    cumH += d.Hytta ?? 0;
+    return {
       label: d.day.slice(8) + "." + d.day.slice(5, 7),
-      Borgen: Math.round(d.Borgen * 10) / 10,
-      Hytta: Math.round(d.Hytta * 10) / 10,
-    }));
+      Borgen: Math.round(cumB * 10) / 10,
+      Hytta: Math.round(cumH * 10) / 10,
+    };
+  });
 
   // Årlig forbruk
   const yearMap = new Map<string, { year: string; Borgen: number; Hytta: number }>();
@@ -1777,6 +1789,25 @@ function ComparisonBlock({
                 <XAxis dataKey="label" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 9 }} interval={Math.max(0, Math.floor(dailyChartData.length / 10))} />
                 <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} width={48} unit=" kWh" />
                 <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => [`${v.toFixed(1)} kWh`, ""]} />
+                <Legend wrapperStyle={{ fontSize: 11 }} />
+                <Line type="monotone" dataKey="Borgen" stroke={BORGEN_COLOR} dot={false} strokeWidth={2} />
+                <Line type="monotone" dataKey="Hytta" stroke={HYTTA_COLOR} dot={false} strokeWidth={2} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div>
+          <p className="text-[11px] tracking-[0.2em] uppercase text-muted-foreground mb-2">
+            Kumulativ kWh {cumulativeChartData.length > 0 ? `· siste ${cumulativeChartData.length} dager` : <span className="italic normal-case tracking-normal">· venter på data</span>}
+          </p>
+          <div className="h-64 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={cumulativeChartData} margin={{ top: 5, right: 8, left: -8, bottom: 0 }}>
+                <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="label" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 9 }} interval={Math.max(0, Math.floor(cumulativeChartData.length / 10))} />
+                <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} width={56} unit=" kWh" />
+                <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => [`${v.toFixed(0)} kWh`, ""]} />
                 <Legend wrapperStyle={{ fontSize: 11 }} />
                 <Line type="monotone" dataKey="Borgen" stroke={BORGEN_COLOR} dot={false} strokeWidth={2} />
                 <Line type="monotone" dataKey="Hytta" stroke={HYTTA_COLOR} dot={false} strokeWidth={2} />
