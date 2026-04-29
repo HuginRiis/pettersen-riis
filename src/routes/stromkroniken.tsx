@@ -1611,20 +1611,33 @@ function ComparisonBlock({
       Hytta: Math.round(d.Hytta * 10) / 10,
     }));
 
-  // Historisk daglig forbruk — siste 60 dager
+  // Historisk daglig forbruk — slå sammen Tibber-API (de få dagene de gir oss)
+  // og lagrede snapshots fra databasen (vår egen historikk siden vi ikke har abo)
   const dayMap = new Map<string, { day: string; Borgen: number; Hytta: number }>();
-  for (const d of tollnes.daily ?? []) {
-    const key = (d.from ?? "").slice(0, 10);
+
+  // Først: lagrede snapshots (basislaget)
+  for (const r of stored) {
+    const key = r.day;
     if (!key) continue;
     const cur = dayMap.get(key) ?? { day: key, Borgen: 0, Hytta: 0 };
-    cur.Borgen = d.kwh ?? 0;
+    if (r.location === "tollnes") cur.Borgen = r.kwh;
+    else if (r.location === "hytta") cur.Hytta = r.kwh;
+    dayMap.set(key, cur);
+  }
+
+  // Så: live Tibber-data overstyrer for de dagene de finnes (mest oppdatert)
+  for (const d of tollnes.daily ?? []) {
+    const key = (d.from ?? "").slice(0, 10);
+    if (!key || d.kwh == null) continue;
+    const cur = dayMap.get(key) ?? { day: key, Borgen: 0, Hytta: 0 };
+    cur.Borgen = d.kwh;
     dayMap.set(key, cur);
   }
   for (const d of hytta.daily ?? []) {
     const key = (d.from ?? "").slice(0, 10);
-    if (!key) continue;
+    if (!key || d.kwh == null) continue;
     const cur = dayMap.get(key) ?? { day: key, Borgen: 0, Hytta: 0 };
-    cur.Hytta = d.kwh ?? 0;
+    cur.Hytta = d.kwh;
     dayMap.set(key, cur);
   }
   const dailySorted = Array.from(dayMap.values()).sort((a, b) => a.day.localeCompare(b.day));
