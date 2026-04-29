@@ -1589,18 +1589,30 @@ function ComparisonBlock({
 
   // Historisk månedlig forbruk — slå sammen begge hjem på samme x-akse
   const monthMap = new Map<string, { month: string; Borgen: number; Hytta: number }>();
-  for (const m of tollnes.monthly ?? []) {
-    const key = (m.from ?? "").slice(0, 7);
+
+  // Først: aggregér fra lagrede daglige snapshots (som dekker manglende abo)
+  for (const r of stored) {
+    const key = r.day.slice(0, 7);
     if (!key) continue;
     const cur = monthMap.get(key) ?? { month: key, Borgen: 0, Hytta: 0 };
-    cur.Borgen = m.kwh ?? 0;
+    if (r.location === "tollnes") cur.Borgen += r.kwh;
+    else if (r.location === "hytta") cur.Hytta += r.kwh;
+    monthMap.set(key, cur);
+  }
+
+  // Så: overstyr med Tibber-API når data finnes
+  for (const m of tollnes.monthly ?? []) {
+    const key = (m.from ?? "").slice(0, 7);
+    if (!key || m.kwh == null) continue;
+    const cur = monthMap.get(key) ?? { month: key, Borgen: 0, Hytta: 0 };
+    cur.Borgen = m.kwh;
     monthMap.set(key, cur);
   }
   for (const m of hytta.monthly ?? []) {
     const key = (m.from ?? "").slice(0, 7);
-    if (!key) continue;
+    if (!key || m.kwh == null) continue;
     const cur = monthMap.get(key) ?? { month: key, Borgen: 0, Hytta: 0 };
-    cur.Hytta = m.kwh ?? 0;
+    cur.Hytta = m.kwh;
     monthMap.set(key, cur);
   }
   const monthlyChartData = Array.from(monthMap.values())
