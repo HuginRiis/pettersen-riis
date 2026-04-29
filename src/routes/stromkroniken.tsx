@@ -169,6 +169,7 @@ function StromkronikenPage() {
               live={live.homes.tollnes}
             />
             <HomeBlock
+              priceMultiplier={1.52}
               title="Hytta · Øvre Bjerkesetvegen 222"
               eyebrow="Vinterboligen"
               data={state?.hytta ?? null}
