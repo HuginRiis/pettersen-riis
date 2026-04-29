@@ -175,6 +175,8 @@ function StromkronikenPage() {
               eyebrow="Husets sete"
               data={state?.tollnes ?? null}
               live={live.homes.tollnes}
+              spotPriceNow={borgenSpot?.priceNow ?? null}
+              spotPriceAvg={borgenSpot?.priceAvg ?? null}
             />
             <HomeBlock
               priceMultiplier={1.52}
@@ -182,9 +184,20 @@ function StromkronikenPage() {
               eyebrow="Vinterboligen"
               data={state?.hytta ?? null}
               live={live.homes.hytta}
+              spotPriceNow={hyttaSpot?.priceNow ?? null}
+              spotPriceAvg={hyttaSpot?.priceAvg ?? null}
             />
 
-            {state?.ok && <ComparisonBlock tollnes={state.tollnes} hytta={state.hytta} />}
+            {state?.ok && (
+              <ComparisonBlock
+                tollnes={state.tollnes}
+                hytta={state.hytta}
+                borgenSpotNow={borgenSpot?.priceNow ?? null}
+                borgenSpotAvg={borgenSpot?.priceAvg ?? null}
+                hyttaSpotNow={hyttaSpot?.priceNow ?? null}
+                hyttaSpotAvg={hyttaSpot?.priceAvg ?? null}
+              />
+            )}
 
             {state && state.homesDebug.length > 0 && (
               <p className="text-[10px] text-muted-foreground/60 italic">
