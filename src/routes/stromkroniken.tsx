@@ -1753,16 +1753,16 @@ function ComparisonBlock({
   }
   for (const y of tollnes.yearly ?? []) {
     const key = (y.from ?? "").slice(0, 4);
-    if (!key) continue;
+    if (!key || y.kwh == null || y.kwh <= 0) continue;
     const cur = yearMap.get(key) ?? { year: key, Borgen: 0, Hytta: 0 };
-    cur.Borgen = y.kwh ?? 0;
+    cur.Borgen = y.kwh;
     yearMap.set(key, cur);
   }
   for (const y of hytta.yearly ?? []) {
     const key = (y.from ?? "").slice(0, 4);
-    if (!key) continue;
+    if (!key || y.kwh == null || y.kwh <= 0) continue;
     const cur = yearMap.get(key) ?? { year: key, Borgen: 0, Hytta: 0 };
-    cur.Hytta = y.kwh ?? 0;
+    cur.Hytta = y.kwh;
     yearMap.set(key, cur);
   }
   const yearlyChartData = Array.from(yearMap.values())
