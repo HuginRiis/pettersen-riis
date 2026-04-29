@@ -245,8 +245,18 @@ function HomeBlock({
             : "—";
 
   const todayKwh = liveKwhToday != null ? liveKwhToday : data?.todayKwh ?? 0;
-  const priceNowRaw = data?.priceNow?.total ?? null;
-  const priceNow = priceNowRaw != null ? priceNowRaw * priceMultiplier : null;
+  // Bruk timesprisen fra dagens prisliste som matcher klokketimen nå (samme som vises i grafen)
+  const currentHourPrice = (() => {
+    const list = data?.pricesToday ?? [];
+    if (!list.length) return null;
+    const now = Date.now();
+    const match = list.find((p) => {
+      const start = new Date(p.startsAt).getTime();
+      return now >= start && now < start + 3_600_000;
+    });
+    return match?.total ?? null;
+  })();
+  const priceNow = currentHourPrice != null ? currentHourPrice * priceMultiplier : null;
   const hasSubscription = (data?.pricesToday.length ?? 0) > 0;
 
   return (
