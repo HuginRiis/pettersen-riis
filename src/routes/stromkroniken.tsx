@@ -1619,9 +1619,17 @@ function MonthForecast({ data }: { data: TibberHomeFull }) {
 function ComparisonBlock({
   tollnes,
   hytta,
+  borgenSpotNow = null,
+  borgenSpotAvg = null,
+  hyttaSpotNow = null,
+  hyttaSpotAvg = null,
 }: {
   tollnes: TibberHomeFull;
   hytta: TibberHomeFull;
+  borgenSpotNow?: number | null;
+  borgenSpotAvg?: number | null;
+  hyttaSpotNow?: number | null;
+  hyttaSpotAvg?: number | null;
 }) {
   const fetchStored = useServerFn(getStoredDailyKwh);
   const [stored, setStored] = useState<StoredDailyKwh[]>([]);
