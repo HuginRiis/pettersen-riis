@@ -782,12 +782,12 @@ function PulseHistoryChart({
               <CartesianGrid stroke="oklch(0.3 0.02 270)" strokeDasharray="3 3" vertical={false} />
               <XAxis
                 dataKey="label"
-                tick={{ fill: "oklch(0.65 0.02 270)", fontSize: 10 }}
+                tick={{ fill: "oklch(0.78 0.13 85)", fontSize: 10 }}
                 interval="preserveStartEnd"
                 minTickGap={40}
               />
               <YAxis
-                tick={{ fill: "oklch(0.65 0.02 270)", fontSize: 10 }}
+                tick={{ fill: "oklch(0.78 0.13 85)", fontSize: 10 }}
                 width={48}
                 unit=" W"
               />
@@ -860,12 +860,12 @@ function PriceChart({
             <CartesianGrid stroke="oklch(0.3 0.02 270)" strokeDasharray="2 4" vertical={false} />
             <XAxis
               dataKey="label"
-              tick={{ fill: "oklch(0.65 0.02 270)", fontSize: 10 }}
+              tick={{ fill: "oklch(0.78 0.13 85)", fontSize: 10 }}
               interval="preserveStartEnd"
               minTickGap={20}
             />
             <YAxis
-              tick={{ fill: "oklch(0.65 0.02 270)", fontSize: 10 }}
+              tick={{ fill: "oklch(0.78 0.13 85)", fontSize: 10 }}
               width={48}
               unit=" kr"
             />
@@ -932,12 +932,12 @@ function HourlyChart({ hourly }: { hourly: ConsumptionPoint[] }) {
             <CartesianGrid stroke="oklch(0.3 0.02 270)" strokeDasharray="2 4" vertical={false} />
             <XAxis
               dataKey="label"
-              tick={{ fill: "oklch(0.65 0.02 270)", fontSize: 10 }}
+              tick={{ fill: "oklch(0.78 0.13 85)", fontSize: 10 }}
               interval="preserveStartEnd"
               minTickGap={20}
             />
             <YAxis
-              tick={{ fill: "oklch(0.65 0.02 270)", fontSize: 10 }}
+              tick={{ fill: "oklch(0.78 0.13 85)", fontSize: 10 }}
               width={42}
               unit=" kWh"
             />
@@ -987,12 +987,12 @@ function DailyChart({ daily }: { daily: ConsumptionPoint[] }) {
             <CartesianGrid stroke="oklch(0.3 0.02 270)" strokeDasharray="2 4" vertical={false} />
             <XAxis
               dataKey="label"
-              tick={{ fill: "oklch(0.65 0.02 270)", fontSize: 10 }}
+              tick={{ fill: "oklch(0.78 0.13 85)", fontSize: 10 }}
               interval="preserveStartEnd"
               minTickGap={24}
             />
             <YAxis
-              tick={{ fill: "oklch(0.65 0.02 270)", fontSize: 10 }}
+              tick={{ fill: "oklch(0.78 0.13 85)", fontSize: 10 }}
               width={42}
               unit=" kWh"
             />
@@ -1127,13 +1127,13 @@ function MonthVsLastChart({ daily }: { daily: ConsumptionPoint[] }) {
             <CartesianGrid stroke="oklch(0.3 0.02 270)" strokeDasharray="2 4" vertical={false} />
             <XAxis
               dataKey="day"
-              tick={{ fill: "oklch(0.65 0.02 270)", fontSize: 11 }}
+              tick={{ fill: "oklch(0.78 0.13 85)", fontSize: 11 }}
               ticks={[1, 5, 9, 13, 17, 21, 25, 29]}
               axisLine={false}
               tickLine={false}
             />
             <YAxis
-              tick={{ fill: "oklch(0.65 0.02 270)", fontSize: 11 }}
+              tick={{ fill: "oklch(0.78 0.13 85)", fontSize: 11 }}
               width={40}
               axisLine={false}
               tickLine={false}
@@ -1200,10 +1200,10 @@ function MonthlyChart({ monthly }: { monthly: ConsumptionPoint[] }) {
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
             <CartesianGrid stroke="oklch(0.3 0.02 270)" strokeDasharray="2 4" vertical={false} />
-            <XAxis dataKey="label" tick={{ fill: "oklch(0.65 0.02 270)", fontSize: 10 }} />
+            <XAxis dataKey="label" tick={{ fill: "oklch(0.78 0.13 85)", fontSize: 10 }} />
             <YAxis
               yAxisId="kwh"
-              tick={{ fill: "oklch(0.65 0.02 270)", fontSize: 10 }}
+              tick={{ fill: "oklch(0.78 0.13 85)", fontSize: 10 }}
               width={42}
               unit=" kWh"
             />
@@ -1411,13 +1411,13 @@ function MonthlyAccumulatedChart({
             <CartesianGrid stroke="oklch(0.3 0.02 270)" strokeDasharray="2 4" vertical={false} />
             <XAxis
               dataKey="day"
-              tick={{ fill: "oklch(0.65 0.02 270)", fontSize: 11 }}
+              tick={{ fill: "oklch(0.78 0.13 85)", fontSize: 11 }}
               ticks={[1, 5, 9, 13, 17, 21, 25, 29]}
               axisLine={false}
               tickLine={false}
             />
             <YAxis
-              tick={{ fill: "oklch(0.65 0.02 270)", fontSize: 11 }}
+              tick={{ fill: "oklch(0.78 0.13 85)", fontSize: 11 }}
               width={40}
               axisLine={false}
               tickLine={false}
