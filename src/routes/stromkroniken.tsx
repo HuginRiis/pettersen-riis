@@ -315,7 +315,7 @@ function HomeBlock({
       const k = `${dd.getFullYear()}-${String(dd.getMonth() + 1).padStart(2, "0")}-${String(dd.getDate()).padStart(2, "0")}`;
       return k === targetKey;
     });
-    return match?.consumption ?? null;
+    return match?.kwh ?? null;
   })();
   const lastMonthProrated =
     sameDayLastMonth != null && sameDayLastMonth > 0 ? sameDayLastMonth * dayFraction : null;
