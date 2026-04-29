@@ -1561,6 +1561,96 @@ function ComparisonBlock({
       Hytta: r.h ?? 0,
     }));
 
+  // kWh-sammenligning per periode (basert på samme tabell-data)
+  const kwhChartData = rows
+    .filter((r) => r.unit === "kWh" && ((r.b ?? 0) > 0 || (r.h ?? 0) > 0))
+    .map((r) => ({
+      label: r.label.replace("kWh ", ""),
+      Borgen: r.b ?? 0,
+      Hytta: r.h ?? 0,
+    }));
+
+  // Historisk månedlig forbruk — slå sammen begge hjem på samme x-akse
+  const monthMap = new Map<string, { month: string; Borgen: number; Hytta: number }>();
+  for (const m of tollnes.monthly ?? []) {
+    const key = (m.from ?? "").slice(0, 7);
+    if (!key) continue;
+    const cur = monthMap.get(key) ?? { month: key, Borgen: 0, Hytta: 0 };
+    cur.Borgen = m.kwh ?? 0;
+    monthMap.set(key, cur);
+  }
+  for (const m of hytta.monthly ?? []) {
+    const key = (m.from ?? "").slice(0, 7);
+    if (!key) continue;
+    const cur = monthMap.get(key) ?? { month: key, Borgen: 0, Hytta: 0 };
+    cur.Hytta = m.kwh ?? 0;
+    monthMap.set(key, cur);
+  }
+  const monthlyChartData = Array.from(monthMap.values())
+    .sort((a, b) => a.month.localeCompare(b.month))
+    .map((d) => ({
+      label: d.month.slice(5) + "/" + d.month.slice(2, 4),
+      Borgen: Math.round(d.Borgen * 10) / 10,
+      Hytta: Math.round(d.Hytta * 10) / 10,
+    }));
+
+  // Historisk daglig forbruk — siste 60 dager
+  const dayMap = new Map<string, { day: string; Borgen: number; Hytta: number }>();
+  for (const d of tollnes.daily ?? []) {
+    const key = (d.from ?? "").slice(0, 10);
+    if (!key) continue;
+    const cur = dayMap.get(key) ?? { day: key, Borgen: 0, Hytta: 0 };
+    cur.Borgen = d.kwh ?? 0;
+    dayMap.set(key, cur);
+  }
+  for (const d of hytta.daily ?? []) {
+    const key = (d.from ?? "").slice(0, 10);
+    if (!key) continue;
+    const cur = dayMap.get(key) ?? { day: key, Borgen: 0, Hytta: 0 };
+    cur.Hytta = d.kwh ?? 0;
+    dayMap.set(key, cur);
+  }
+  const dailyChartData = Array.from(dayMap.values())
+    .sort((a, b) => a.day.localeCompare(b.day))
+    .map((d) => ({
+      label: d.day.slice(8) + "." + d.day.slice(5, 7),
+      Borgen: Math.round(d.Borgen * 10) / 10,
+      Hytta: Math.round(d.Hytta * 10) / 10,
+    }));
+
+  // Årlig forbruk
+  const yearMap = new Map<string, { year: string; Borgen: number; Hytta: number }>();
+  for (const y of tollnes.yearly ?? []) {
+    const key = (y.from ?? "").slice(0, 4);
+    if (!key) continue;
+    const cur = yearMap.get(key) ?? { year: key, Borgen: 0, Hytta: 0 };
+    cur.Borgen = y.kwh ?? 0;
+    yearMap.set(key, cur);
+  }
+  for (const y of hytta.yearly ?? []) {
+    const key = (y.from ?? "").slice(0, 4);
+    if (!key) continue;
+    const cur = yearMap.get(key) ?? { year: key, Borgen: 0, Hytta: 0 };
+    cur.Hytta = y.kwh ?? 0;
+    yearMap.set(key, cur);
+  }
+  const yearlyChartData = Array.from(yearMap.values())
+    .sort((a, b) => a.year.localeCompare(b.year))
+    .map((d) => ({
+      label: d.year,
+      Borgen: Math.round(d.Borgen),
+      Hytta: Math.round(d.Hytta),
+    }));
+
+  const BORGEN_COLOR = "oklch(0.62 0.18 250)";
+  const HYTTA_COLOR = "oklch(0.78 0.13 85)";
+  const tooltipStyle = {
+    background: "hsl(var(--card))",
+    border: "1px solid hsl(var(--border))",
+    borderRadius: 6,
+    fontSize: 12,
+  } as const;
+
   return (
     <article className="panel rounded-lg p-5 sm:p-7 border-primary/30">
       <h2 className="text-2xl text-primary mb-4 flex items-center gap-2">
