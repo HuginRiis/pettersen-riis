@@ -162,6 +162,7 @@ function StromkronikenPage() {
             </div>
 
             <HomeBlock
+              priceMultiplier={1.9}
               title="Borgen · Nordre Lensmannsveg 17"
               eyebrow="Husets sete"
               data={state?.tollnes ?? null}
