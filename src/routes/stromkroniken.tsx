@@ -356,9 +356,11 @@ function HomeBlock({
           label="Pris nå"
           value={priceNow != null ? `${priceNow.toFixed(3)} kr` : "—"}
           sub={
-            hasSubscription
-              ? `per kWh · time nå`
-              : "krever Tibber-abo"
+            priceSource === "tibber"
+              ? "per kWh · time nå (Tibber)"
+              : priceSource === "spot"
+                ? "per kWh · spotpris × påslag"
+                : "venter på pris…"
           }
           tone="gold"
         />
