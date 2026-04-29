@@ -1723,93 +1723,87 @@ function ComparisonBlock({
       </div>
 
       {/* Grafer basert på tabell-tallene over */}
-      {(kwhChartData.length > 0 || monthlyChartData.length > 0 || dailyChartData.length > 0 || yearlyChartData.length > 0) && (
-        <div className="mt-8 space-y-8">
-          <h3 className="text-sm tracking-[0.3em] uppercase text-primary flex items-center gap-2">
-            <TrendingUp size={14} /> Grafer fra tabellen
-          </h3>
+      <div className="mt-8 space-y-8">
+        <h3 className="text-sm tracking-[0.3em] uppercase text-primary flex items-center gap-2">
+          <TrendingUp size={14} /> Grafer fra tabellen
+        </h3>
 
-          {kwhChartData.length > 0 && (
-            <div>
-              <p className="text-[11px] tracking-[0.2em] uppercase text-muted-foreground mb-2">kWh per periode</p>
-              <div className="h-64 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={kwhChartData} margin={{ top: 5, right: 8, left: -8, bottom: 0 }}>
-                    <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" vertical={false} />
-                    <XAxis dataKey="label" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} />
-                    <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} width={48} unit=" kWh" />
-                    <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => [`${v.toFixed(1)} kWh`, ""]} />
-                    <Legend wrapperStyle={{ fontSize: 11 }} />
-                    <Bar dataKey="Borgen" fill={BORGEN_COLOR} radius={[3, 3, 0, 0]} />
-                    <Bar dataKey="Hytta" fill={HYTTA_COLOR} radius={[3, 3, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-          )}
-
-          {monthlyChartData.length > 0 && (
-            <div>
-              <p className="text-[11px] tracking-[0.2em] uppercase text-muted-foreground mb-2">
-                Måned for måned · siste {monthlyChartData.length}
-              </p>
-              <div className="h-64 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={monthlyChartData} margin={{ top: 5, right: 8, left: -8, bottom: 0 }}>
-                    <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" vertical={false} />
-                    <XAxis dataKey="label" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} />
-                    <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} width={48} unit=" kWh" />
-                    <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => [`${v.toFixed(0)} kWh`, ""]} />
-                    <Legend wrapperStyle={{ fontSize: 11 }} />
-                    <Bar dataKey="Borgen" fill={BORGEN_COLOR} radius={[3, 3, 0, 0]} />
-                    <Bar dataKey="Hytta" fill={HYTTA_COLOR} radius={[3, 3, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-          )}
-
-          {dailyChartData.length > 0 && (
-            <div>
-              <p className="text-[11px] tracking-[0.2em] uppercase text-muted-foreground mb-2">
-                Daglig forbruk · siste {dailyChartData.length} dager
-              </p>
-              <div className="h-64 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={dailyChartData} margin={{ top: 5, right: 8, left: -8, bottom: 0 }}>
-                    <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" vertical={false} />
-                    <XAxis dataKey="label" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 9 }} interval={Math.max(0, Math.floor(dailyChartData.length / 10))} />
-                    <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} width={48} unit=" kWh" />
-                    <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => [`${v.toFixed(1)} kWh`, ""]} />
-                    <Legend wrapperStyle={{ fontSize: 11 }} />
-                    <Line type="monotone" dataKey="Borgen" stroke={BORGEN_COLOR} dot={false} strokeWidth={2} />
-                    <Line type="monotone" dataKey="Hytta" stroke={HYTTA_COLOR} dot={false} strokeWidth={2} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-          )}
-
-          {yearlyChartData.length > 0 && (
-            <div>
-              <p className="text-[11px] tracking-[0.2em] uppercase text-muted-foreground mb-2">År for år</p>
-              <div className="h-56 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={yearlyChartData} margin={{ top: 5, right: 8, left: -8, bottom: 0 }}>
-                    <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" vertical={false} />
-                    <XAxis dataKey="label" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} />
-                    <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} width={56} unit=" kWh" />
-                    <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => [`${v.toFixed(0)} kWh`, ""]} />
-                    <Legend wrapperStyle={{ fontSize: 11 }} />
-                    <Bar dataKey="Borgen" fill={BORGEN_COLOR} radius={[3, 3, 0, 0]} />
-                    <Bar dataKey="Hytta" fill={HYTTA_COLOR} radius={[3, 3, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-          )}
+        <div>
+          <p className="text-[11px] tracking-[0.2em] uppercase text-muted-foreground mb-2">
+            kWh per periode {kwhChartData.length === 0 && <span className="italic normal-case tracking-normal">· venter på data</span>}
+          </p>
+          <div className="h-64 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={kwhChartData} margin={{ top: 5, right: 8, left: -8, bottom: 0 }}>
+                <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="label" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} />
+                <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} width={48} unit=" kWh" />
+                <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => [`${v.toFixed(1)} kWh`, ""]} />
+                <Legend wrapperStyle={{ fontSize: 11 }} />
+                <Bar dataKey="Borgen" fill={BORGEN_COLOR} radius={[3, 3, 0, 0]} />
+                <Bar dataKey="Hytta" fill={HYTTA_COLOR} radius={[3, 3, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
-      )}
+
+        <div>
+          <p className="text-[11px] tracking-[0.2em] uppercase text-muted-foreground mb-2">
+            Måned for måned {monthlyChartData.length > 0 ? `· siste ${monthlyChartData.length}` : <span className="italic normal-case tracking-normal">· venter på data</span>}
+          </p>
+          <div className="h-64 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={monthlyChartData} margin={{ top: 5, right: 8, left: -8, bottom: 0 }}>
+                <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="label" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} />
+                <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} width={48} unit=" kWh" />
+                <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => [`${v.toFixed(0)} kWh`, ""]} />
+                <Legend wrapperStyle={{ fontSize: 11 }} />
+                <Bar dataKey="Borgen" fill={BORGEN_COLOR} radius={[3, 3, 0, 0]} />
+                <Bar dataKey="Hytta" fill={HYTTA_COLOR} radius={[3, 3, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div>
+          <p className="text-[11px] tracking-[0.2em] uppercase text-muted-foreground mb-2">
+            Daglig forbruk {dailyChartData.length > 0 ? `· siste ${dailyChartData.length} dager` : <span className="italic normal-case tracking-normal">· venter på data</span>}
+          </p>
+          <div className="h-64 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={dailyChartData} margin={{ top: 5, right: 8, left: -8, bottom: 0 }}>
+                <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="label" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 9 }} interval={Math.max(0, Math.floor(dailyChartData.length / 10))} />
+                <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} width={48} unit=" kWh" />
+                <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => [`${v.toFixed(1)} kWh`, ""]} />
+                <Legend wrapperStyle={{ fontSize: 11 }} />
+                <Line type="monotone" dataKey="Borgen" stroke={BORGEN_COLOR} dot={false} strokeWidth={2} />
+                <Line type="monotone" dataKey="Hytta" stroke={HYTTA_COLOR} dot={false} strokeWidth={2} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div>
+          <p className="text-[11px] tracking-[0.2em] uppercase text-muted-foreground mb-2">
+            År for år {yearlyChartData.length === 0 && <span className="italic normal-case tracking-normal">· venter på data</span>}
+          </p>
+          <div className="h-56 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={yearlyChartData} margin={{ top: 5, right: 8, left: -8, bottom: 0 }}>
+                <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="label" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} />
+                <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} width={56} unit=" kWh" />
+                <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => [`${v.toFixed(0)} kWh`, ""]} />
+                <Legend wrapperStyle={{ fontSize: 11 }} />
+                <Bar dataKey="Borgen" fill={BORGEN_COLOR} radius={[3, 3, 0, 0]} />
+                <Bar dataKey="Hytta" fill={HYTTA_COLOR} radius={[3, 3, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
 
       <p className="text-xs text-muted-foreground mt-6 italic">
         — Husets samlede regnskap, hentet direkte fra Tibber.
