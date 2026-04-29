@@ -1543,26 +1543,53 @@ function ComparisonBlock({
 
   useEffect(() => {
     let cancelled = false;
-    fetchStored()
-      .then((res) => {
-        if (!cancelled && res.rows) setStored(res.rows);
-      })
-      .catch(() => {});
+    const loadStored = () => {
+      fetchStored()
+        .then((res) => {
+          if (!cancelled && res.rows) setStored(res.rows);
+        })
+        .catch(() => {});
+    };
+    loadStored();
+    const timer = window.setInterval(loadStored, 60_000);
     return () => {
       cancelled = true;
+      window.clearInterval(timer);
     };
   }, [fetchStored]);
 
   if (!tollnes.found && !hytta.found) return null;
 
+  const todayKey = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Oslo" });
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayKey = yesterday.toLocaleDateString("sv-SE", { timeZone: "Europe/Oslo" });
+  const monthKey = todayKey.slice(0, 7);
+
+  const storedKwh = (location: "hytta" | "tollnes", day: string) =>
+    stored.find((r) => r.location === location && r.day === day)?.kwh ?? null;
+  const storedMonthKwh = (location: "hytta" | "tollnes") =>
+    stored
+      .filter((r) => r.location === location && r.day.startsWith(monthKey))
+      .reduce((sum, r) => sum + r.kwh, 0);
+  const preferPositive = (primary: number | null | undefined, fallback: number | null | undefined) =>
+    primary != null && primary > 0 ? primary : fallback != null && fallback > 0 ? fallback : primary ?? fallback ?? null;
+
+  const tollnesToday = preferPositive(tollnes.todayKwh, storedKwh("tollnes", todayKey));
+  const hyttaToday = preferPositive(hytta.todayKwh, storedKwh("hytta", todayKey));
+  const tollnesYesterday = preferPositive(tollnes.yesterdayKwh, storedKwh("tollnes", yesterdayKey));
+  const hyttaYesterday = preferPositive(hytta.yesterdayKwh, storedKwh("hytta", yesterdayKey));
+  const tollnesThisMonth = preferPositive(tollnes.thisMonthKwh, storedMonthKwh("tollnes"));
+  const hyttaThisMonth = preferPositive(hytta.thisMonthKwh, storedMonthKwh("hytta"));
+
   const rows: Array<{ label: string; b?: number | null; h?: number | null; unit: string; precision: number }> = [
     { label: "Pris nå", b: tollnes.priceNow?.total ?? null, h: hytta.priceNow?.total ?? null, unit: "kr/kWh", precision: 3 },
     { label: "Snittpris i dag", b: tollnes.priceAvgToday, h: hytta.priceAvgToday, unit: "kr/kWh", precision: 3 },
-    { label: "kWh i dag", b: tollnes.todayKwh, h: hytta.todayKwh, unit: "kWh", precision: 1 },
+    { label: "kWh i dag", b: tollnesToday, h: hyttaToday, unit: "kWh", precision: 1 },
     { label: "Kostnad i dag", b: tollnes.todayCost, h: hytta.todayCost, unit: "kr", precision: 0 },
-    { label: "kWh i går", b: tollnes.yesterdayKwh, h: hytta.yesterdayKwh, unit: "kWh", precision: 1 },
+    { label: "kWh i går", b: tollnesYesterday, h: hyttaYesterday, unit: "kWh", precision: 1 },
     { label: "Kostnad i går", b: tollnes.yesterdayCost, h: hytta.yesterdayCost, unit: "kr", precision: 0 },
-    { label: "kWh denne måneden", b: tollnes.thisMonthKwh, h: hytta.thisMonthKwh, unit: "kWh", precision: 0 },
+    { label: "kWh denne måneden", b: tollnesThisMonth, h: hyttaThisMonth, unit: "kWh", precision: 0 },
     { label: "Kostnad denne måneden", b: tollnes.thisMonthCost, h: hytta.thisMonthCost, unit: "kr", precision: 0 },
     { label: "kWh forrige måned", b: tollnes.lastMonthKwh, h: hytta.lastMonthKwh, unit: "kWh", precision: 0 },
     { label: "Kostnad forrige måned", b: tollnes.lastMonthCost, h: hytta.lastMonthCost, unit: "kr", precision: 0 },
