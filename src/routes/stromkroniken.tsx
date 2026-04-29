@@ -37,10 +37,12 @@ import {
 import { PageShell, PageHero } from "@/components/PageShell";
 import {
   getTibberFullData,
+  getStoredDailyKwh,
   type TibberFullResult,
   type TibberHomeFull,
   type PricePoint,
   type ConsumptionPoint,
+  type StoredDailyKwh,
 } from "@/server/tibber";
 import { getPulseHistory, type PulseHistoryPoint } from "@/server/pulse-readings";
 import { useTibberLive, type TibberLiveHomeState } from "@/hooks/useTibberLive";
@@ -1536,6 +1538,21 @@ function ComparisonBlock({
   tollnes: TibberHomeFull;
   hytta: TibberHomeFull;
 }) {
+  const fetchStored = useServerFn(getStoredDailyKwh);
+  const [stored, setStored] = useState<StoredDailyKwh[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchStored()
+      .then((res) => {
+        if (!cancelled && res.rows) setStored(res.rows);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [fetchStored]);
+
   if (!tollnes.found && !hytta.found) return null;
 
   const rows: Array<{ label: string; b?: number | null; h?: number | null; unit: string; precision: number }> = [
@@ -1572,18 +1589,30 @@ function ComparisonBlock({
 
   // Historisk månedlig forbruk — slå sammen begge hjem på samme x-akse
   const monthMap = new Map<string, { month: string; Borgen: number; Hytta: number }>();
-  for (const m of tollnes.monthly ?? []) {
-    const key = (m.from ?? "").slice(0, 7);
+
+  // Først: aggregér fra lagrede daglige snapshots (som dekker manglende abo)
+  for (const r of stored) {
+    const key = r.day.slice(0, 7);
     if (!key) continue;
     const cur = monthMap.get(key) ?? { month: key, Borgen: 0, Hytta: 0 };
-    cur.Borgen = m.kwh ?? 0;
+    if (r.location === "tollnes") cur.Borgen += r.kwh;
+    else if (r.location === "hytta") cur.Hytta += r.kwh;
+    monthMap.set(key, cur);
+  }
+
+  // Så: overstyr med Tibber-API når data finnes
+  for (const m of tollnes.monthly ?? []) {
+    const key = (m.from ?? "").slice(0, 7);
+    if (!key || m.kwh == null) continue;
+    const cur = monthMap.get(key) ?? { month: key, Borgen: 0, Hytta: 0 };
+    cur.Borgen = m.kwh;
     monthMap.set(key, cur);
   }
   for (const m of hytta.monthly ?? []) {
     const key = (m.from ?? "").slice(0, 7);
-    if (!key) continue;
+    if (!key || m.kwh == null) continue;
     const cur = monthMap.get(key) ?? { month: key, Borgen: 0, Hytta: 0 };
-    cur.Hytta = m.kwh ?? 0;
+    cur.Hytta = m.kwh;
     monthMap.set(key, cur);
   }
   const monthlyChartData = Array.from(monthMap.values())
@@ -1594,20 +1623,33 @@ function ComparisonBlock({
       Hytta: Math.round(d.Hytta * 10) / 10,
     }));
 
-  // Historisk daglig forbruk — siste 60 dager
+  // Historisk daglig forbruk — slå sammen Tibber-API (de få dagene de gir oss)
+  // og lagrede snapshots fra databasen (vår egen historikk siden vi ikke har abo)
   const dayMap = new Map<string, { day: string; Borgen: number; Hytta: number }>();
-  for (const d of tollnes.daily ?? []) {
-    const key = (d.from ?? "").slice(0, 10);
+
+  // Først: lagrede snapshots (basislaget)
+  for (const r of stored) {
+    const key = r.day;
     if (!key) continue;
     const cur = dayMap.get(key) ?? { day: key, Borgen: 0, Hytta: 0 };
-    cur.Borgen = d.kwh ?? 0;
+    if (r.location === "tollnes") cur.Borgen = r.kwh;
+    else if (r.location === "hytta") cur.Hytta = r.kwh;
+    dayMap.set(key, cur);
+  }
+
+  // Så: live Tibber-data overstyrer for de dagene de finnes (mest oppdatert)
+  for (const d of tollnes.daily ?? []) {
+    const key = (d.from ?? "").slice(0, 10);
+    if (!key || d.kwh == null) continue;
+    const cur = dayMap.get(key) ?? { day: key, Borgen: 0, Hytta: 0 };
+    cur.Borgen = d.kwh;
     dayMap.set(key, cur);
   }
   for (const d of hytta.daily ?? []) {
     const key = (d.from ?? "").slice(0, 10);
-    if (!key) continue;
+    if (!key || d.kwh == null) continue;
     const cur = dayMap.get(key) ?? { day: key, Borgen: 0, Hytta: 0 };
-    cur.Hytta = d.kwh ?? 0;
+    cur.Hytta = d.kwh;
     dayMap.set(key, cur);
   }
   const dailySorted = Array.from(dayMap.values()).sort((a, b) => a.day.localeCompare(b.day));

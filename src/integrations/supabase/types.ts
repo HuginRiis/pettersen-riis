@@ -796,6 +796,39 @@ export type Database = {
         }
         Relationships: []
       }
+      tibber_daily_kwh: {
+        Row: {
+          cost: number | null
+          created_at: string
+          day: string
+          id: string
+          kwh: number
+          location: string
+          source: string
+          updated_at: string
+        }
+        Insert: {
+          cost?: number | null
+          created_at?: string
+          day: string
+          id?: string
+          kwh?: number
+          location: string
+          source?: string
+          updated_at?: string
+        }
+        Update: {
+          cost?: number | null
+          created_at?: string
+          day?: string
+          id?: string
+          kwh?: number
+          location?: string
+          source?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_favorites: {
         Row: {
           created_at: string

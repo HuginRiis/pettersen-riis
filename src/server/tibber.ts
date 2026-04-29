@@ -1,5 +1,39 @@
 import { createServerFn } from "@tanstack/react-start";
 import { withApiLog } from "./api-call-log.server";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
+
+export type StoredDailyKwh = {
+  location: "hytta" | "tollnes";
+  day: string; // YYYY-MM-DD
+  kwh: number;
+  cost: number | null;
+};
+
+export const getStoredDailyKwh = createServerFn({ method: "GET" }).handler(
+  withApiLog("tibber", "getStoredDailyKwh", async (): Promise<{ rows: StoredDailyKwh[]; error?: string }> => {
+    try {
+      const since = new Date();
+      since.setDate(since.getDate() - 365);
+      const sinceKey = since.toISOString().slice(0, 10);
+      const { data, error } = await supabaseAdmin
+        .from("tibber_daily_kwh")
+        .select("location, day, kwh, cost")
+        .gte("day", sinceKey)
+        .order("day", { ascending: true });
+      if (error) return { rows: [], error: error.message };
+      const rows: StoredDailyKwh[] = (data ?? []).map((r: any) => ({
+        location: r.location,
+        day: r.day,
+        kwh: Number(r.kwh) || 0,
+        cost: r.cost != null ? Number(r.cost) : null,
+      }));
+      return { rows };
+    } catch (e: any) {
+      return { rows: [], error: e?.message ?? "Ukjent feil" };
+    }
+  }),
+);
+
 
 const TIBBER_URL = "https://api.tibber.com/v1-beta/gql";
 
