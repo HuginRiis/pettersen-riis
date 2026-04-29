@@ -45,6 +45,7 @@ import {
   type StoredDailyKwh,
 } from "@/server/tibber";
 import { getPulseHistory, type PulseHistoryPoint } from "@/server/pulse-readings";
+import { getSpotPrices, type SpotPriceResult } from "@/server/spot-price";
 import { useTibberLive, type TibberLiveHomeState } from "@/hooks/useTibberLive";
 import stromImg from "@/assets/stromkroniken.jpg";
 
@@ -72,15 +73,18 @@ export const Route = createFileRoute("/stromkroniken")({
 
 function StromkronikenPage() {
   const fetchFull = useServerFn(getTibberFullData);
+  const fetchSpot = useServerFn(getSpotPrices);
   const [state, setState] = useState<TibberFullResult | null>(null);
+  const [spot, setSpot] = useState<SpotPriceResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [updated, setUpdated] = useState<Date | null>(null);
   const live = useTibberLive();
 
   const load = async () => {
     try {
-      const res = await fetchFull();
+      const [res, spotRes] = await Promise.all([fetchFull(), fetchSpot()]);
       setState(res);
+      setSpot(spotRes);
       setUpdated(new Date());
     } catch (err) {
       console.error("[Stromkroniken] failed", err);
@@ -95,6 +99,10 @@ function StromkronikenPage() {
     return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Borgen er i NO2, Hytta er i NO1 (priser inkl. mva fra hvakosterstrommen.no)
+  const borgenSpot = spot?.ok ? spot.zones.NO2 ?? null : null;
+  const hyttaSpot = spot?.ok ? spot.zones.NO1 ?? null : null;
 
   return (
     <PageShell>
@@ -167,6 +175,8 @@ function StromkronikenPage() {
               eyebrow="Husets sete"
               data={state?.tollnes ?? null}
               live={live.homes.tollnes}
+              spotPriceNow={borgenSpot?.priceNow ?? null}
+              spotPriceAvg={borgenSpot?.priceAvg ?? null}
             />
             <HomeBlock
               priceMultiplier={1.52}
@@ -174,9 +184,20 @@ function StromkronikenPage() {
               eyebrow="Vinterboligen"
               data={state?.hytta ?? null}
               live={live.homes.hytta}
+              spotPriceNow={hyttaSpot?.priceNow ?? null}
+              spotPriceAvg={hyttaSpot?.priceAvg ?? null}
             />
 
-            {state?.ok && <ComparisonBlock tollnes={state.tollnes} hytta={state.hytta} />}
+            {state?.ok && (
+              <ComparisonBlock
+                tollnes={state.tollnes}
+                hytta={state.hytta}
+                borgenSpotNow={borgenSpot?.priceNow ?? null}
+                borgenSpotAvg={borgenSpot?.priceAvg ?? null}
+                hyttaSpotNow={hyttaSpot?.priceNow ?? null}
+                hyttaSpotAvg={hyttaSpot?.priceAvg ?? null}
+              />
+            )}
 
             {state && state.homesDebug.length > 0 && (
               <p className="text-[10px] text-muted-foreground/60 italic">
@@ -200,12 +221,16 @@ function HomeBlock({
   data,
   live,
   priceMultiplier = 1,
+  spotPriceNow = null,
+  spotPriceAvg = null,
 }: {
   title: string;
   eyebrow: string;
   data: TibberHomeFull | null;
   live: TibberLiveHomeState;
   priceMultiplier?: number;
+  spotPriceNow?: number | null;
+  spotPriceAvg?: number | null;
 }) {
   // Hvis vi verken har historikk-data eller live-data → ingenting å vise
   if ((!data || !data.found) && live.status === "idle") {
@@ -256,8 +281,13 @@ function HomeBlock({
     });
     return match?.total ?? null;
   })();
-  const priceNow = currentHourPrice != null ? currentHourPrice * priceMultiplier : null;
+  // Bruk Tibber-pris hvis tilgjengelig, ellers spot-pris (NO1/NO2 inkl. mva).
+  // Begge ganges med multiplier for å vise total kostnad inkl. nettleie/avgifter.
+  const basePrice = currentHourPrice ?? spotPriceNow;
+  const priceNow = basePrice != null ? basePrice * priceMultiplier : null;
   const hasSubscription = (data?.pricesToday.length ?? 0) > 0;
+  const priceSource: "tibber" | "spot" | null =
+    currentHourPrice != null ? "tibber" : spotPriceNow != null ? "spot" : null;
 
   return (
     <article className="panel rounded-lg p-5 sm:p-7 space-y-7">
@@ -326,9 +356,11 @@ function HomeBlock({
           label="Pris nå"
           value={priceNow != null ? `${priceNow.toFixed(3)} kr` : "—"}
           sub={
-            hasSubscription
-              ? `per kWh · time nå`
-              : "krever Tibber-abo"
+            priceSource === "tibber"
+              ? "per kWh · time nå (Tibber)"
+              : priceSource === "spot"
+                ? "per kWh · spotpris × påslag"
+                : "venter på pris…"
           }
           tone="gold"
         />
@@ -1587,9 +1619,17 @@ function MonthForecast({ data }: { data: TibberHomeFull }) {
 function ComparisonBlock({
   tollnes,
   hytta,
+  borgenSpotNow = null,
+  borgenSpotAvg = null,
+  hyttaSpotNow = null,
+  hyttaSpotAvg = null,
 }: {
   tollnes: TibberHomeFull;
   hytta: TibberHomeFull;
+  borgenSpotNow?: number | null;
+  borgenSpotAvg?: number | null;
+  hyttaSpotNow?: number | null;
+  hyttaSpotAvg?: number | null;
 }) {
   const fetchStored = useServerFn(getStoredDailyKwh);
   const [stored, setStored] = useState<StoredDailyKwh[]>([]);
@@ -1651,13 +1691,13 @@ function ComparisonBlock({
     });
     return match?.total ?? null;
   };
-  const tollnesPriceNow = currentHourTotal(tollnes.pricesToday);
-  const hyttaPriceNow = currentHourTotal(hytta.pricesToday);
+  const tollnesPriceNow = currentHourTotal(tollnes.pricesToday) ?? borgenSpotNow;
+  const hyttaPriceNow = currentHourTotal(hytta.pricesToday) ?? hyttaSpotNow;
 
   // Beregn kostnad fra kWh × snittpris × multiplier hvis Tibber ikke har cost.
   // Snittpris brukes som proxy når vi ikke har timesoppdelte priser for perioden.
-  const tollnesAvg = tollnes.priceAvgToday;
-  const hyttaAvg = hytta.priceAvgToday;
+  const tollnesAvg = tollnes.priceAvgToday ?? borgenSpotAvg;
+  const hyttaAvg = hytta.priceAvgToday ?? hyttaSpotAvg;
   const calcCost = (
     tibberCost: number | null | undefined,
     kwh: number | null | undefined,
