@@ -1741,8 +1741,16 @@ function ComparisonBlock({
     };
   });
 
-  // Årlig forbruk
+  // Årlig forbruk — start med lagrede daglige snapshots, ellers blir den tom uten Tibber-abo.
   const yearMap = new Map<string, { year: string; Borgen: number; Hytta: number }>();
+  for (const r of stored) {
+    const key = r.day.slice(0, 4);
+    if (!key) continue;
+    const cur = yearMap.get(key) ?? { year: key, Borgen: 0, Hytta: 0 };
+    if (r.location === "tollnes") cur.Borgen += r.kwh;
+    else if (r.location === "hytta") cur.Hytta += r.kwh;
+    yearMap.set(key, cur);
+  }
   for (const y of tollnes.yearly ?? []) {
     const key = (y.from ?? "").slice(0, 4);
     if (!key) continue;
