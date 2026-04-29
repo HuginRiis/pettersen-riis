@@ -245,7 +245,8 @@ function HomeBlock({
             : "—";
 
   const todayKwh = liveKwhToday != null ? liveKwhToday : data?.todayKwh ?? 0;
-  const priceNow = data?.priceNow?.total ?? null;
+  const priceNowRaw = data?.priceNow?.total ?? null;
+  const priceNow = priceNowRaw != null ? priceNowRaw * priceMultiplier : null;
   const hasSubscription = (data?.pricesToday.length ?? 0) > 0;
 
   return (
