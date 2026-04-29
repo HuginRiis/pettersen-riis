@@ -1561,6 +1561,96 @@ function ComparisonBlock({
       Hytta: r.h ?? 0,
     }));
 
+  // kWh-sammenligning per periode (basert på samme tabell-data)
+  const kwhChartData = rows
+    .filter((r) => r.unit === "kWh" && ((r.b ?? 0) > 0 || (r.h ?? 0) > 0))
+    .map((r) => ({
+      label: r.label.replace("kWh ", ""),
+      Borgen: r.b ?? 0,
+      Hytta: r.h ?? 0,
+    }));
+
+  // Historisk månedlig forbruk — slå sammen begge hjem på samme x-akse
+  const monthMap = new Map<string, { month: string; Borgen: number; Hytta: number }>();
+  for (const m of tollnes.monthly ?? []) {
+    const key = (m.from ?? "").slice(0, 7);
+    if (!key) continue;
+    const cur = monthMap.get(key) ?? { month: key, Borgen: 0, Hytta: 0 };
+    cur.Borgen = m.kwh ?? 0;
+    monthMap.set(key, cur);
+  }
+  for (const m of hytta.monthly ?? []) {
+    const key = (m.from ?? "").slice(0, 7);
+    if (!key) continue;
+    const cur = monthMap.get(key) ?? { month: key, Borgen: 0, Hytta: 0 };
+    cur.Hytta = m.kwh ?? 0;
+    monthMap.set(key, cur);
+  }
+  const monthlyChartData = Array.from(monthMap.values())
+    .sort((a, b) => a.month.localeCompare(b.month))
+    .map((d) => ({
+      label: d.month.slice(5) + "/" + d.month.slice(2, 4),
+      Borgen: Math.round(d.Borgen * 10) / 10,
+      Hytta: Math.round(d.Hytta * 10) / 10,
+    }));
+
+  // Historisk daglig forbruk — siste 60 dager
+  const dayMap = new Map<string, { day: string; Borgen: number; Hytta: number }>();
+  for (const d of tollnes.daily ?? []) {
+    const key = (d.from ?? "").slice(0, 10);
+    if (!key) continue;
+    const cur = dayMap.get(key) ?? { day: key, Borgen: 0, Hytta: 0 };
+    cur.Borgen = d.kwh ?? 0;
+    dayMap.set(key, cur);
+  }
+  for (const d of hytta.daily ?? []) {
+    const key = (d.from ?? "").slice(0, 10);
+    if (!key) continue;
+    const cur = dayMap.get(key) ?? { day: key, Borgen: 0, Hytta: 0 };
+    cur.Hytta = d.kwh ?? 0;
+    dayMap.set(key, cur);
+  }
+  const dailyChartData = Array.from(dayMap.values())
+    .sort((a, b) => a.day.localeCompare(b.day))
+    .map((d) => ({
+      label: d.day.slice(8) + "." + d.day.slice(5, 7),
+      Borgen: Math.round(d.Borgen * 10) / 10,
+      Hytta: Math.round(d.Hytta * 10) / 10,
+    }));
+
+  // Årlig forbruk
+  const yearMap = new Map<string, { year: string; Borgen: number; Hytta: number }>();
+  for (const y of tollnes.yearly ?? []) {
+    const key = (y.from ?? "").slice(0, 4);
+    if (!key) continue;
+    const cur = yearMap.get(key) ?? { year: key, Borgen: 0, Hytta: 0 };
+    cur.Borgen = y.kwh ?? 0;
+    yearMap.set(key, cur);
+  }
+  for (const y of hytta.yearly ?? []) {
+    const key = (y.from ?? "").slice(0, 4);
+    if (!key) continue;
+    const cur = yearMap.get(key) ?? { year: key, Borgen: 0, Hytta: 0 };
+    cur.Hytta = y.kwh ?? 0;
+    yearMap.set(key, cur);
+  }
+  const yearlyChartData = Array.from(yearMap.values())
+    .sort((a, b) => a.year.localeCompare(b.year))
+    .map((d) => ({
+      label: d.year,
+      Borgen: Math.round(d.Borgen),
+      Hytta: Math.round(d.Hytta),
+    }));
+
+  const BORGEN_COLOR = "oklch(0.62 0.18 250)";
+  const HYTTA_COLOR = "oklch(0.78 0.13 85)";
+  const tooltipStyle = {
+    background: "hsl(var(--card))",
+    border: "1px solid hsl(var(--border))",
+    borderRadius: 6,
+    fontSize: 12,
+  } as const;
+
   return (
     <article className="panel rounded-lg p-5 sm:p-7 border-primary/30">
       <h2 className="text-2xl text-primary mb-4 flex items-center gap-2">
@@ -1632,7 +1722,96 @@ function ComparisonBlock({
         </table>
       </div>
 
-      <p className="text-xs text-muted-foreground mt-4 italic">
+      {/* Grafer basert på tabell-tallene over */}
+      {(kwhChartData.length > 0 || monthlyChartData.length > 0 || dailyChartData.length > 0 || yearlyChartData.length > 0) && (
+        <div className="mt-8 space-y-8">
+          <h3 className="text-sm tracking-[0.3em] uppercase text-primary flex items-center gap-2">
+            <TrendingUp size={14} /> Grafer fra tabellen
+          </h3>
+
+          {kwhChartData.length > 0 && (
+            <div>
+              <p className="text-[11px] tracking-[0.2em] uppercase text-muted-foreground mb-2">kWh per periode</p>
+              <div className="h-64 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={kwhChartData} margin={{ top: 5, right: 8, left: -8, bottom: 0 }}>
+                    <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" vertical={false} />
+                    <XAxis dataKey="label" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} />
+                    <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} width={48} unit=" kWh" />
+                    <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => [`${v.toFixed(1)} kWh`, ""]} />
+                    <Legend wrapperStyle={{ fontSize: 11 }} />
+                    <Bar dataKey="Borgen" fill={BORGEN_COLOR} radius={[3, 3, 0, 0]} />
+                    <Bar dataKey="Hytta" fill={HYTTA_COLOR} radius={[3, 3, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          )}
+
+          {monthlyChartData.length > 0 && (
+            <div>
+              <p className="text-[11px] tracking-[0.2em] uppercase text-muted-foreground mb-2">
+                Måned for måned · siste {monthlyChartData.length}
+              </p>
+              <div className="h-64 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={monthlyChartData} margin={{ top: 5, right: 8, left: -8, bottom: 0 }}>
+                    <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" vertical={false} />
+                    <XAxis dataKey="label" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} />
+                    <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} width={48} unit=" kWh" />
+                    <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => [`${v.toFixed(0)} kWh`, ""]} />
+                    <Legend wrapperStyle={{ fontSize: 11 }} />
+                    <Bar dataKey="Borgen" fill={BORGEN_COLOR} radius={[3, 3, 0, 0]} />
+                    <Bar dataKey="Hytta" fill={HYTTA_COLOR} radius={[3, 3, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          )}
+
+          {dailyChartData.length > 0 && (
+            <div>
+              <p className="text-[11px] tracking-[0.2em] uppercase text-muted-foreground mb-2">
+                Daglig forbruk · siste {dailyChartData.length} dager
+              </p>
+              <div className="h-64 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={dailyChartData} margin={{ top: 5, right: 8, left: -8, bottom: 0 }}>
+                    <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" vertical={false} />
+                    <XAxis dataKey="label" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 9 }} interval={Math.max(0, Math.floor(dailyChartData.length / 10))} />
+                    <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} width={48} unit=" kWh" />
+                    <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => [`${v.toFixed(1)} kWh`, ""]} />
+                    <Legend wrapperStyle={{ fontSize: 11 }} />
+                    <Line type="monotone" dataKey="Borgen" stroke={BORGEN_COLOR} dot={false} strokeWidth={2} />
+                    <Line type="monotone" dataKey="Hytta" stroke={HYTTA_COLOR} dot={false} strokeWidth={2} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          )}
+
+          {yearlyChartData.length > 0 && (
+            <div>
+              <p className="text-[11px] tracking-[0.2em] uppercase text-muted-foreground mb-2">År for år</p>
+              <div className="h-56 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={yearlyChartData} margin={{ top: 5, right: 8, left: -8, bottom: 0 }}>
+                    <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" vertical={false} />
+                    <XAxis dataKey="label" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} />
+                    <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} width={56} unit=" kWh" />
+                    <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => [`${v.toFixed(0)} kWh`, ""]} />
+                    <Legend wrapperStyle={{ fontSize: 11 }} />
+                    <Bar dataKey="Borgen" fill={BORGEN_COLOR} radius={[3, 3, 0, 0]} />
+                    <Bar dataKey="Hytta" fill={HYTTA_COLOR} radius={[3, 3, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      <p className="text-xs text-muted-foreground mt-6 italic">
         — Husets samlede regnskap, hentet direkte fra Tibber.
       </p>
     </article>
