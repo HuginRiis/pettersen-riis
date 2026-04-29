@@ -1793,8 +1793,8 @@ function ComparisonBlock({
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData} margin={{ top: 5, right: 8, left: -8, bottom: 0 }}>
               <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" vertical={false} />
-              <XAxis dataKey="label" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} />
-              <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} width={48} unit=" kr" />
+              <XAxis dataKey="label" tick={{ fill: "oklch(0.78 0.13 85)", fontSize: 10 }} />
+              <YAxis tick={{ fill: "oklch(0.78 0.13 85)", fontSize: 10 }} width={48} unit=" kr" />
               <Tooltip
                 contentStyle={{
                   background: "hsl(var(--card))",
@@ -1867,8 +1867,8 @@ function ComparisonBlock({
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={kwhChartData} margin={{ top: 5, right: 8, left: -8, bottom: 0 }}>
                 <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="label" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} />
-                <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} width={48} unit=" kWh" />
+                <XAxis dataKey="label" tick={{ fill: "oklch(0.78 0.13 85)", fontSize: 10 }} />
+                <YAxis tick={{ fill: "oklch(0.78 0.13 85)", fontSize: 10 }} width={48} unit=" kWh" />
                 <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => [`${v.toFixed(1)} kWh`, ""]} />
                 <Legend wrapperStyle={{ fontSize: 11 }} />
                 <Bar dataKey="Borgen" fill={BORGEN_COLOR} radius={[3, 3, 0, 0]} />
@@ -1886,8 +1886,8 @@ function ComparisonBlock({
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={monthlyChartData} margin={{ top: 5, right: 8, left: -8, bottom: 0 }}>
                 <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="label" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} />
-                <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} width={48} unit=" kWh" />
+                <XAxis dataKey="label" tick={{ fill: "oklch(0.78 0.13 85)", fontSize: 10 }} />
+                <YAxis tick={{ fill: "oklch(0.78 0.13 85)", fontSize: 10 }} width={48} unit=" kWh" />
                 <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => [`${v.toFixed(0)} kWh`, ""]} />
                 <Legend wrapperStyle={{ fontSize: 11 }} />
                 <Bar dataKey="Borgen" fill={BORGEN_COLOR} radius={[3, 3, 0, 0]} />
@@ -1905,8 +1905,8 @@ function ComparisonBlock({
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={dailyChartData} margin={{ top: 5, right: 8, left: -8, bottom: 0 }}>
                 <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="label" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 9 }} interval={Math.max(0, Math.floor(dailyChartData.length / 10))} />
-                <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} width={48} unit=" kWh" />
+                <XAxis dataKey="label" tick={{ fill: "oklch(0.78 0.13 85)", fontSize: 9 }} interval={Math.max(0, Math.floor(dailyChartData.length / 10))} />
+                <YAxis tick={{ fill: "oklch(0.78 0.13 85)", fontSize: 10 }} width={48} unit=" kWh" />
                 <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => [`${v.toFixed(1)} kWh`, ""]} />
                 <Legend wrapperStyle={{ fontSize: 11 }} />
                 <Line type="monotone" dataKey="Borgen" stroke={BORGEN_COLOR} dot={false} strokeWidth={2} />
@@ -1924,8 +1924,8 @@ function ComparisonBlock({
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={cumulativeChartData} margin={{ top: 5, right: 8, left: -8, bottom: 0 }}>
                 <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="label" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 9 }} interval={Math.max(0, Math.floor(cumulativeChartData.length / 10))} />
-                <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} width={56} unit=" kWh" />
+                <XAxis dataKey="label" tick={{ fill: "oklch(0.78 0.13 85)", fontSize: 9 }} interval={Math.max(0, Math.floor(cumulativeChartData.length / 10))} />
+                <YAxis tick={{ fill: "oklch(0.78 0.13 85)", fontSize: 10 }} width={56} unit=" kWh" />
                 <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => [`${v.toFixed(0)} kWh`, ""]} />
                 <Legend wrapperStyle={{ fontSize: 11 }} />
                 <Line type="monotone" dataKey="Borgen" stroke={BORGEN_COLOR} dot={false} strokeWidth={2} />
@@ -1943,8 +1943,8 @@ function ComparisonBlock({
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={yearlyChartData} margin={{ top: 5, right: 8, left: -8, bottom: 0 }}>
                 <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="label" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} />
-                <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} width={56} unit=" kWh" />
+                <XAxis dataKey="label" tick={{ fill: "oklch(0.78 0.13 85)", fontSize: 10 }} />
+                <YAxis tick={{ fill: "oklch(0.78 0.13 85)", fontSize: 10 }} width={56} unit=" kWh" />
                 <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => [`${v.toFixed(0)} kWh`, ""]} />
                 <Legend wrapperStyle={{ fontSize: 11 }} />
                 <Bar dataKey="Borgen" fill={BORGEN_COLOR} radius={[3, 3, 0, 0]} />
