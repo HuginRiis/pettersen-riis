@@ -1538,6 +1538,21 @@ function ComparisonBlock({
   tollnes: TibberHomeFull;
   hytta: TibberHomeFull;
 }) {
+  const fetchStored = useServerFn(getStoredDailyKwh);
+  const [stored, setStored] = useState<StoredDailyKwh[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchStored()
+      .then((res) => {
+        if (!cancelled && res.rows) setStored(res.rows);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [fetchStored]);
+
   if (!tollnes.found && !hytta.found) return null;
 
   const rows: Array<{ label: string; b?: number | null; h?: number | null; unit: string; precision: number }> = [
