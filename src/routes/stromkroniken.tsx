@@ -1610,13 +1610,25 @@ function ComparisonBlock({
     cur.Hytta = d.kwh ?? 0;
     dayMap.set(key, cur);
   }
-  const dailyChartData = Array.from(dayMap.values())
-    .sort((a, b) => a.day.localeCompare(b.day))
-    .map((d) => ({
+  const dailySorted = Array.from(dayMap.values()).sort((a, b) => a.day.localeCompare(b.day));
+  const dailyChartData = dailySorted.map((d) => ({
+    label: d.day.slice(8) + "." + d.day.slice(5, 7),
+    Borgen: Math.round(d.Borgen * 10) / 10,
+    Hytta: Math.round(d.Hytta * 10) / 10,
+  }));
+
+  // Kumulativ kWh per dag — summerer dag for dag, alltid stigende
+  let cumB = 0;
+  let cumH = 0;
+  const cumulativeChartData = dailySorted.map((d) => {
+    cumB += d.Borgen ?? 0;
+    cumH += d.Hytta ?? 0;
+    return {
       label: d.day.slice(8) + "." + d.day.slice(5, 7),
-      Borgen: Math.round(d.Borgen * 10) / 10,
-      Hytta: Math.round(d.Hytta * 10) / 10,
-    }));
+      Borgen: Math.round(cumB * 10) / 10,
+      Hytta: Math.round(cumH * 10) / 10,
+    };
+  });
 
   // Årlig forbruk
   const yearMap = new Map<string, { year: string; Borgen: number; Hytta: number }>();
