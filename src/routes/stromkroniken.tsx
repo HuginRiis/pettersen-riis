@@ -327,7 +327,7 @@ function HomeBlock({
           value={priceNow != null ? `${priceNow.toFixed(3)} kr` : "—"}
           sub={
             hasSubscription
-              ? `per kWh · ${data?.priceNow?.level?.toLowerCase().replace("_", " ") ?? "—"}`
+              ? `per kWh · time nå`
               : "krever Tibber-abo"
           }
           tone="gold"
