@@ -289,6 +289,41 @@ function HomeBlock({
   const priceSource: "tibber" | "spot" | null =
     currentHourPrice != null ? "tibber" : spotPriceNow != null ? "spot" : null;
 
+  // ─── Sammenligninger: i går (samme tid) og samme dag forrige måned ───
+  const now = new Date();
+  const dayFraction = Math.max(
+    0.01,
+    (now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds()) / 86400,
+  );
+  const yesterdayProrated =
+    data?.yesterdayKwh != null && data.yesterdayKwh > 0
+      ? data.yesterdayKwh * dayFraction
+      : null;
+  const vsYesterday =
+    yesterdayProrated != null && yesterdayProrated > 0 && todayKwh > 0
+      ? { diff: todayKwh - yesterdayProrated, pct: ((todayKwh - yesterdayProrated) / yesterdayProrated) * 100 }
+      : null;
+
+  // Samme dato forrige måned — hent fra daily-historikk
+  const sameDayLastMonth = (() => {
+    if (!data?.daily?.length) return null;
+    const target = new Date(now);
+    target.setMonth(target.getMonth() - 1);
+    const targetKey = `${target.getFullYear()}-${String(target.getMonth() + 1).padStart(2, "0")}-${String(target.getDate()).padStart(2, "0")}`;
+    const match = data.daily.find((d) => {
+      const dd = new Date(d.from);
+      const k = `${dd.getFullYear()}-${String(dd.getMonth() + 1).padStart(2, "0")}-${String(dd.getDate()).padStart(2, "0")}`;
+      return k === targetKey;
+    });
+    return match?.kwh ?? null;
+  })();
+  const lastMonthProrated =
+    sameDayLastMonth != null && sameDayLastMonth > 0 ? sameDayLastMonth * dayFraction : null;
+  const vsLastMonth =
+    lastMonthProrated != null && lastMonthProrated > 0 && todayKwh > 0
+      ? { diff: todayKwh - lastMonthProrated, pct: ((todayKwh - lastMonthProrated) / lastMonthProrated) * 100 }
+      : null;
+
   return (
     <article className="panel rounded-lg p-5 sm:p-7 space-y-7">
       <div className="flex items-start justify-between flex-wrap gap-3">
@@ -366,7 +401,26 @@ function HomeBlock({
         />
       </div>
 
-      {/* Pulse-historikk fra DB — bygges opp etter hvert som vi lagrer samples */}
+      {/* Sammenligningsbokser: i går vs samme dag forrige måned */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <TrendStat
+          label="Sammenlignet med i går"
+          todayKwh={todayKwh}
+          referenceKwh={yesterdayProrated}
+          trend={vsYesterday}
+          referenceFullDayKwh={data?.yesterdayKwh ?? null}
+          referenceLabel="i går"
+        />
+        <TrendStat
+          label="Samme dag forrige måned"
+          todayKwh={todayKwh}
+          referenceKwh={lastMonthProrated}
+          trend={vsLastMonth}
+          referenceFullDayKwh={sameDayLastMonth}
+          referenceLabel="forrige måned"
+        />
+      </div>
+
       {(live.status === "live" || live.status === "stale") && (
         <PulseHistoryChart location={live.location} reading={live.reading} />
       )}
@@ -1507,6 +1561,55 @@ function MonthlyAccumulatedChart({
             />
           </AreaChart>
         </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}
+
+function TrendStat({
+  label,
+  todayKwh,
+  referenceKwh,
+  trend,
+  referenceFullDayKwh,
+  referenceLabel,
+}: {
+  label: string;
+  todayKwh: number;
+  referenceKwh: number | null;
+  trend: { diff: number; pct: number } | null;
+  referenceFullDayKwh: number | null;
+  referenceLabel: string;
+}) {
+  const hasData = trend != null && referenceKwh != null;
+  const isUp = hasData && trend!.diff > 0;
+  const isDown = hasData && trend!.diff < 0;
+  // Mer forbruk = rødt, mindre = grønt
+  const tone = isUp
+    ? "text-[oklch(0.72_0.18_25)]"
+    : isDown
+      ? "text-[oklch(0.72_0.16_150)]"
+      : "text-muted-foreground";
+  const Icon = isUp ? TrendingUp : isDown ? TrendingDown : Activity;
+  const arrow = isUp ? "▲" : isDown ? "▼" : "•";
+  const pctTxt = hasData ? `${trend!.pct > 0 ? "+" : ""}${trend!.pct.toFixed(0)} %` : "—";
+  const diffTxt = hasData
+    ? `${trend!.diff > 0 ? "+" : ""}${trend!.diff.toFixed(2)} kWh`
+    : "—";
+  return (
+    <div className="rounded-md p-4 bg-background/30 border border-border/40">
+      <div className="flex items-center justify-between">
+        <div className="text-[10px] tracking-[0.3em] uppercase text-muted-foreground">{label}</div>
+        <Icon size={14} className={tone} />
+      </div>
+      <div className={`text-2xl font-semibold tabular-nums mt-1 ${tone}`}>
+        {arrow} {pctTxt}
+      </div>
+      <div className="text-xs text-muted-foreground mt-0.5 tabular-nums">{diffTxt}</div>
+      <div className="text-[10px] text-muted-foreground/80 mt-1">
+        {hasData
+          ? `Nå ${todayKwh.toFixed(2)} kWh · ${referenceLabel} ${referenceKwh!.toFixed(2)} kWh same tid${referenceFullDayKwh != null ? ` (hele dagen ${referenceFullDayKwh.toFixed(1)} kWh)` : ""}`
+          : `Mangler data fra ${referenceLabel}`}
       </div>
     </div>
   );
