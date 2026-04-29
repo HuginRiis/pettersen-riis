@@ -37,10 +37,12 @@ import {
 import { PageShell, PageHero } from "@/components/PageShell";
 import {
   getTibberFullData,
+  getStoredDailyKwh,
   type TibberFullResult,
   type TibberHomeFull,
   type PricePoint,
   type ConsumptionPoint,
+  type StoredDailyKwh,
 } from "@/server/tibber";
 import { getPulseHistory, type PulseHistoryPoint } from "@/server/pulse-readings";
 import { useTibberLive, type TibberLiveHomeState } from "@/hooks/useTibberLive";
