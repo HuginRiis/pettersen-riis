@@ -45,6 +45,7 @@ import {
   type StoredDailyKwh,
 } from "@/server/tibber";
 import { getPulseHistory, type PulseHistoryPoint } from "@/server/pulse-readings";
+import { getSpotPrices, type SpotPriceResult } from "@/server/spot-price";
 import { useTibberLive, type TibberLiveHomeState } from "@/hooks/useTibberLive";
 import stromImg from "@/assets/stromkroniken.jpg";
 
