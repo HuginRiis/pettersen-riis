@@ -56,7 +56,6 @@ export async function snapshotTibberDailyToDb(): Promise<{
     );
 
     const homes = data?.viewer?.homes ?? [];
-    const todayKey = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Oslo" });
 
     const rows: Array<{ location: Loc; day: string; kwh: number; cost: number | null; source: string }> = [];
 
@@ -66,8 +65,7 @@ export async function snapshotTibberDailyToDb(): Promise<{
       for (const n of h.daily?.nodes ?? []) {
         if (n.consumption == null) continue;
         const day = osloDateKey(n.from);
-        // Hopp over inneværende dag — den er ikke ferdig
-        if (day === todayKey) continue;
+        // Lagrer alt — inkl. dagens (oppdateres hvert 2. min)
         rows.push({
           location: loc,
           day,
