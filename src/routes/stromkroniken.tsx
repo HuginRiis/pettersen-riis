@@ -162,12 +162,14 @@ function StromkronikenPage() {
             </div>
 
             <HomeBlock
+              priceMultiplier={1.9}
               title="Borgen · Nordre Lensmannsveg 17"
               eyebrow="Husets sete"
               data={state?.tollnes ?? null}
               live={live.homes.tollnes}
             />
             <HomeBlock
+              priceMultiplier={1.52}
               title="Hytta · Øvre Bjerkesetvegen 222"
               eyebrow="Vinterboligen"
               data={state?.hytta ?? null}
@@ -197,11 +199,13 @@ function HomeBlock({
   eyebrow,
   data,
   live,
+  priceMultiplier = 1,
 }: {
   title: string;
   eyebrow: string;
   data: TibberHomeFull | null;
   live: TibberLiveHomeState;
+  priceMultiplier?: number;
 }) {
   // Hvis vi verken har historikk-data eller live-data → ingenting å vise
   if ((!data || !data.found) && live.status === "idle") {
@@ -241,7 +245,8 @@ function HomeBlock({
             : "—";
 
   const todayKwh = liveKwhToday != null ? liveKwhToday : data?.todayKwh ?? 0;
-  const priceNow = data?.priceNow?.total ?? null;
+  const priceNowRaw = data?.priceNow?.total ?? null;
+  const priceNow = priceNowRaw != null ? priceNowRaw * priceMultiplier : null;
   const hasSubscription = (data?.pricesToday.length ?? 0) > 0;
 
   return (
@@ -360,7 +365,7 @@ function HomeBlock({
           <h3 className="text-sm tracking-[0.3em] uppercase text-primary mb-3 flex items-center gap-2">
             <Sun size={14} /> Spotpris time-for-time
           </h3>
-          <PriceChart today={data.pricesToday} tomorrow={data.pricesTomorrow} priceNow={priceNow} />
+          <PriceChart today={data.pricesToday} tomorrow={data.pricesTomorrow} priceNow={priceNow} multiplier={priceMultiplier} />
         </div>
       )}
 
@@ -832,21 +837,23 @@ function PriceChart({
   today,
   tomorrow,
   priceNow,
+  multiplier = 1,
 }: {
   today: PricePoint[];
   tomorrow: PricePoint[];
   priceNow: number | null;
+  multiplier?: number;
 }) {
   const all = [...today, ...tomorrow];
-  const min = Math.min(...all.map((p) => p.total));
-  const max = Math.max(...all.map((p) => p.total));
+  const min = Math.min(...all.map((p) => p.total * multiplier));
+  const max = Math.max(...all.map((p) => p.total * multiplier));
 
   const data = all.map((p) => {
     const d = new Date(p.startsAt);
     const isTomorrow = tomorrow.includes(p);
     return {
       label: `${isTomorrow ? "i.m. " : ""}${d.getHours().toString().padStart(2, "0")}`,
-      total: Math.round(p.total * 1000) / 1000,
+      total: Math.round(p.total * multiplier * 1000) / 1000,
       isTomorrow,
       raw: p,
     };
@@ -1625,8 +1632,8 @@ function ComparisonBlock({
   const hyttaThisYear = preferPositive(hytta.thisYearKwh, storedYearKwh("hytta"));
 
   const rows: Array<{ label: string; b?: number | null; h?: number | null; unit: string; precision: number }> = [
-    { label: "Pris nå", b: tollnes.priceNow?.total ?? null, h: hytta.priceNow?.total ?? null, unit: "kr/kWh", precision: 3 },
-    { label: "Snittpris i dag", b: tollnes.priceAvgToday, h: hytta.priceAvgToday, unit: "kr/kWh", precision: 3 },
+    { label: "Pris nå", b: tollnes.priceNow?.total != null ? tollnes.priceNow.total * 1.9 : null, h: hytta.priceNow?.total != null ? hytta.priceNow.total * 1.52 : null, unit: "kr/kWh", precision: 3 },
+    { label: "Snittpris i dag", b: tollnes.priceAvgToday != null ? tollnes.priceAvgToday * 1.9 : null, h: hytta.priceAvgToday != null ? hytta.priceAvgToday * 1.52 : null, unit: "kr/kWh", precision: 3 },
     { label: "kWh i dag", b: tollnesToday, h: hyttaToday, unit: "kWh", precision: 1 },
     { label: "Kostnad i dag", b: tollnes.todayCost, h: hytta.todayCost, unit: "kr", precision: 0 },
     { label: "kWh i går", b: tollnesYesterday, h: hyttaYesterday, unit: "kWh", precision: 1 },
