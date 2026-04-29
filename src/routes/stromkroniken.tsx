@@ -489,12 +489,48 @@ function AccumulatedBlock({
   data: TibberHomeFull;
   liveTodayKwh: number | null;
 }) {
-  // Bruk live-tall hvis tilgjengelig, ellers historikk
-  const todayKwh = liveTodayKwh != null ? liveTodayKwh : data.todayKwh;
+  const fetchStored = useServerFn(getStoredDailyKwh);
+  const [stored, setStored] = useState<StoredDailyKwh[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadStored = () => {
+      fetchStored()
+        .then((res) => {
+          if (!cancelled && res.rows) setStored(res.rows);
+        })
+        .catch(() => {});
+    };
+    loadStored();
+    const timer = window.setInterval(loadStored, 60_000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, [fetchStored]);
+
+  // Bruk vår lagrede dagstabell som sannhet for måned/år når Tibber mangler abonnement.
+  const now = new Date();
+  const todayKey = now.toLocaleDateString("sv-SE", { timeZone: "Europe/Oslo" });
+  const monthKey = todayKey.slice(0, 7);
+  const yearKey = todayKey.slice(0, 4);
+  const ownStored = stored.filter((r) => r.location === data.location);
+  const storedToday = ownStored.find((r) => r.day === todayKey)?.kwh ?? 0;
+  const storedMonth = ownStored
+    .filter((r) => r.day.startsWith(monthKey))
+    .reduce((sum, r) => sum + r.kwh, 0);
+  const storedYear = ownStored
+    .filter((r) => r.day.startsWith(yearKey))
+    .reduce((sum, r) => sum + r.kwh, 0);
+
+  const liveOrApiToday = liveTodayKwh != null ? liveTodayKwh : data.todayKwh;
+  const todayKwh = Math.max(liveOrApiToday ?? 0, storedToday);
+  const todayDelta = Math.max(0, todayKwh - storedToday);
+  const thisMonthKwh = Math.max(data.thisMonthKwh ?? 0, storedMonth + todayDelta);
+  const thisYearKwh = Math.max(data.thisYearKwh ?? 0, storedYear + todayDelta);
   const yesterdayKwh = data.yesterdayKwh;
 
   // I dag vs samme tid i går — sammenlign mot i går proporsjonalt med tid på døgnet
-  const now = new Date();
   const minutesIntoDay = now.getHours() * 60 + now.getMinutes();
   const dayFraction = minutesIntoDay / (24 * 60);
   const yesterdayProrated = yesterdayKwh * dayFraction;
@@ -504,10 +540,10 @@ function AccumulatedBlock({
   const dayOfMonth = now.getDate();
   const daysInLastMonth = new Date(now.getFullYear(), now.getMonth(), 0).getDate();
   const lastMonthProrated = data.lastMonthKwh * (dayOfMonth / daysInLastMonth);
-  const monthVsLastMonth = diffPct(data.thisMonthKwh, lastMonthProrated);
+  const monthVsLastMonth = diffPct(thisMonthKwh, lastMonthProrated);
 
   // I år — vis bare totalsum (ingen direkte fjorår-tall i datasettet)
-  const totalAccumulated = data.thisYearKwh;
+  const totalAccumulated = thisYearKwh;
   const totalCost = data.thisYearCost;
 
   return (
@@ -526,7 +562,7 @@ function AccumulatedBlock({
         />
         <AccCard
           label="Måned hittil"
-          kwh={data.thisMonthKwh}
+          kwh={thisMonthKwh}
           cost={data.thisMonthCost}
           comparison={monthVsLastMonth}
           compareLabel="vs samme dag forrige måned"
@@ -1572,6 +1608,10 @@ function ComparisonBlock({
     stored
       .filter((r) => r.location === location && r.day.startsWith(monthKey))
       .reduce((sum, r) => sum + r.kwh, 0);
+  const storedYearKwh = (location: "hytta" | "tollnes") =>
+    stored
+      .filter((r) => r.location === location && r.day.startsWith(todayKey.slice(0, 4)))
+      .reduce((sum, r) => sum + r.kwh, 0);
   const preferPositive = (primary: number | null | undefined, fallback: number | null | undefined) =>
     primary != null && primary > 0 ? primary : fallback != null && fallback > 0 ? fallback : primary ?? fallback ?? null;
 
@@ -1581,6 +1621,8 @@ function ComparisonBlock({
   const hyttaYesterday = preferPositive(hytta.yesterdayKwh, storedKwh("hytta", yesterdayKey));
   const tollnesThisMonth = preferPositive(tollnes.thisMonthKwh, storedMonthKwh("tollnes"));
   const hyttaThisMonth = preferPositive(hytta.thisMonthKwh, storedMonthKwh("hytta"));
+  const tollnesThisYear = preferPositive(tollnes.thisYearKwh, storedYearKwh("tollnes"));
+  const hyttaThisYear = preferPositive(hytta.thisYearKwh, storedYearKwh("hytta"));
 
   const rows: Array<{ label: string; b?: number | null; h?: number | null; unit: string; precision: number }> = [
     { label: "Pris nå", b: tollnes.priceNow?.total ?? null, h: hytta.priceNow?.total ?? null, unit: "kr/kWh", precision: 3 },
@@ -1593,7 +1635,7 @@ function ComparisonBlock({
     { label: "Kostnad denne måneden", b: tollnes.thisMonthCost, h: hytta.thisMonthCost, unit: "kr", precision: 0 },
     { label: "kWh forrige måned", b: tollnes.lastMonthKwh, h: hytta.lastMonthKwh, unit: "kWh", precision: 0 },
     { label: "Kostnad forrige måned", b: tollnes.lastMonthCost, h: hytta.lastMonthCost, unit: "kr", precision: 0 },
-    { label: "kWh i år", b: tollnes.thisYearKwh, h: hytta.thisYearKwh, unit: "kWh", precision: 0 },
+    { label: "kWh i år", b: tollnesThisYear, h: hyttaThisYear, unit: "kWh", precision: 0 },
     { label: "Kostnad i år", b: tollnes.thisYearCost, h: hytta.thisYearCost, unit: "kr", precision: 0 },
   ];
 
@@ -1630,14 +1672,14 @@ function ComparisonBlock({
   // Så: overstyr med Tibber-API når data finnes
   for (const m of tollnes.monthly ?? []) {
     const key = (m.from ?? "").slice(0, 7);
-    if (!key || m.kwh == null) continue;
+    if (!key || m.kwh == null || m.kwh <= 0) continue;
     const cur = monthMap.get(key) ?? { month: key, Borgen: 0, Hytta: 0 };
     cur.Borgen = m.kwh;
     monthMap.set(key, cur);
   }
   for (const m of hytta.monthly ?? []) {
     const key = (m.from ?? "").slice(0, 7);
-    if (!key || m.kwh == null) continue;
+    if (!key || m.kwh == null || m.kwh <= 0) continue;
     const cur = monthMap.get(key) ?? { month: key, Borgen: 0, Hytta: 0 };
     cur.Hytta = m.kwh;
     monthMap.set(key, cur);
@@ -1667,14 +1709,14 @@ function ComparisonBlock({
   // Så: live Tibber-data overstyrer for de dagene de finnes (mest oppdatert)
   for (const d of tollnes.daily ?? []) {
     const key = (d.from ?? "").slice(0, 10);
-    if (!key || d.kwh == null) continue;
+    if (!key || d.kwh == null || d.kwh <= 0) continue;
     const cur = dayMap.get(key) ?? { day: key, Borgen: 0, Hytta: 0 };
     cur.Borgen = d.kwh;
     dayMap.set(key, cur);
   }
   for (const d of hytta.daily ?? []) {
     const key = (d.from ?? "").slice(0, 10);
-    if (!key || d.kwh == null) continue;
+    if (!key || d.kwh == null || d.kwh <= 0) continue;
     const cur = dayMap.get(key) ?? { day: key, Borgen: 0, Hytta: 0 };
     cur.Hytta = d.kwh;
     dayMap.set(key, cur);
@@ -1699,20 +1741,28 @@ function ComparisonBlock({
     };
   });
 
-  // Årlig forbruk
+  // Årlig forbruk — start med lagrede daglige snapshots, ellers blir den tom uten Tibber-abo.
   const yearMap = new Map<string, { year: string; Borgen: number; Hytta: number }>();
-  for (const y of tollnes.yearly ?? []) {
-    const key = (y.from ?? "").slice(0, 4);
+  for (const r of stored) {
+    const key = r.day.slice(0, 4);
     if (!key) continue;
     const cur = yearMap.get(key) ?? { year: key, Borgen: 0, Hytta: 0 };
-    cur.Borgen = y.kwh ?? 0;
+    if (r.location === "tollnes") cur.Borgen += r.kwh;
+    else if (r.location === "hytta") cur.Hytta += r.kwh;
+    yearMap.set(key, cur);
+  }
+  for (const y of tollnes.yearly ?? []) {
+    const key = (y.from ?? "").slice(0, 4);
+    if (!key || y.kwh == null || y.kwh <= 0) continue;
+    const cur = yearMap.get(key) ?? { year: key, Borgen: 0, Hytta: 0 };
+    cur.Borgen = y.kwh;
     yearMap.set(key, cur);
   }
   for (const y of hytta.yearly ?? []) {
     const key = (y.from ?? "").slice(0, 4);
-    if (!key) continue;
+    if (!key || y.kwh == null || y.kwh <= 0) continue;
     const cur = yearMap.get(key) ?? { year: key, Borgen: 0, Hytta: 0 };
-    cur.Hytta = y.kwh ?? 0;
+    cur.Hytta = y.kwh;
     yearMap.set(key, cur);
   }
   const yearlyChartData = Array.from(yearMap.values())
