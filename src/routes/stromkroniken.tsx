@@ -1608,6 +1608,10 @@ function ComparisonBlock({
     stored
       .filter((r) => r.location === location && r.day.startsWith(monthKey))
       .reduce((sum, r) => sum + r.kwh, 0);
+  const storedYearKwh = (location: "hytta" | "tollnes") =>
+    stored
+      .filter((r) => r.location === location && r.day.startsWith(todayKey.slice(0, 4)))
+      .reduce((sum, r) => sum + r.kwh, 0);
   const preferPositive = (primary: number | null | undefined, fallback: number | null | undefined) =>
     primary != null && primary > 0 ? primary : fallback != null && fallback > 0 ? fallback : primary ?? fallback ?? null;
 
@@ -1617,6 +1621,8 @@ function ComparisonBlock({
   const hyttaYesterday = preferPositive(hytta.yesterdayKwh, storedKwh("hytta", yesterdayKey));
   const tollnesThisMonth = preferPositive(tollnes.thisMonthKwh, storedMonthKwh("tollnes"));
   const hyttaThisMonth = preferPositive(hytta.thisMonthKwh, storedMonthKwh("hytta"));
+  const tollnesThisYear = preferPositive(tollnes.thisYearKwh, storedYearKwh("tollnes"));
+  const hyttaThisYear = preferPositive(hytta.thisYearKwh, storedYearKwh("hytta"));
 
   const rows: Array<{ label: string; b?: number | null; h?: number | null; unit: string; precision: number }> = [
     { label: "Pris nå", b: tollnes.priceNow?.total ?? null, h: hytta.priceNow?.total ?? null, unit: "kr/kWh", precision: 3 },
@@ -1629,7 +1635,7 @@ function ComparisonBlock({
     { label: "Kostnad denne måneden", b: tollnes.thisMonthCost, h: hytta.thisMonthCost, unit: "kr", precision: 0 },
     { label: "kWh forrige måned", b: tollnes.lastMonthKwh, h: hytta.lastMonthKwh, unit: "kWh", precision: 0 },
     { label: "Kostnad forrige måned", b: tollnes.lastMonthCost, h: hytta.lastMonthCost, unit: "kr", precision: 0 },
-    { label: "kWh i år", b: tollnes.thisYearKwh, h: hytta.thisYearKwh, unit: "kWh", precision: 0 },
+    { label: "kWh i år", b: tollnesThisYear, h: hyttaThisYear, unit: "kWh", precision: 0 },
     { label: "Kostnad i år", b: tollnes.thisYearCost, h: hytta.thisYearCost, unit: "kr", precision: 0 },
   ];
 
