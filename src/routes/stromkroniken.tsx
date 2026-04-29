@@ -199,11 +199,13 @@ function HomeBlock({
   eyebrow,
   data,
   live,
+  priceMultiplier = 1,
 }: {
   title: string;
   eyebrow: string;
   data: TibberHomeFull | null;
   live: TibberLiveHomeState;
+  priceMultiplier?: number;
 }) {
   // Hvis vi verken har historikk-data eller live-data → ingenting å vise
   if ((!data || !data.found) && live.status === "idle") {
