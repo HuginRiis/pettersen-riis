@@ -281,8 +281,13 @@ function HomeBlock({
     });
     return match?.total ?? null;
   })();
-  const priceNow = currentHourPrice != null ? currentHourPrice * priceMultiplier : null;
+  // Bruk Tibber-pris hvis tilgjengelig, ellers spot-pris (NO1/NO2 inkl. mva).
+  // Begge ganges med multiplier for å vise total kostnad inkl. nettleie/avgifter.
+  const basePrice = currentHourPrice ?? spotPriceNow;
+  const priceNow = basePrice != null ? basePrice * priceMultiplier : null;
   const hasSubscription = (data?.pricesToday.length ?? 0) > 0;
+  const priceSource: "tibber" | "spot" | null =
+    currentHourPrice != null ? "tibber" : spotPriceNow != null ? "spot" : null;
 
   return (
     <article className="panel rounded-lg p-5 sm:p-7 space-y-7">
