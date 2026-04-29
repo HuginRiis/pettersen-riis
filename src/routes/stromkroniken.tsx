@@ -365,7 +365,7 @@ function HomeBlock({
           <h3 className="text-sm tracking-[0.3em] uppercase text-primary mb-3 flex items-center gap-2">
             <Sun size={14} /> Spotpris time-for-time
           </h3>
-          <PriceChart today={data.pricesToday} tomorrow={data.pricesTomorrow} priceNow={priceNow} />
+          <PriceChart today={data.pricesToday} tomorrow={data.pricesTomorrow} priceNow={priceNow} multiplier={priceMultiplier} />
         </div>
       )}
 
