@@ -43,6 +43,7 @@ export function ApiCallLogPanel() {
   const [open, setOpen] = useState<Set<string>>(new Set());
   const [busySource, setBusySource] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState(false);
 
   const load = async () => {
     setLoading(true);
