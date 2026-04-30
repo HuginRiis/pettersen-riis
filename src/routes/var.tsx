@@ -541,10 +541,12 @@ function HourPanel({
   name,
   hours,
   accent,
+  rangeHours = 24,
 }: {
   name: string;
   hours: Hour[] | null;
   accent: "primary" | "ice";
+  rangeHours?: number;
 }) {
   if (!hours) {
     return (
@@ -554,22 +556,27 @@ function HourPanel({
       </article>
     );
   }
-  const next = hours.slice(0, 24);
+  const next = hours.slice(0, rangeHours);
   const color = accent === "ice" ? "var(--ice)" : "var(--primary)";
+  const longRange = rangeHours > 24;
+  // For tabellrad: vis ca 8 kolonner uavhengig av lengde
+  const stride = Math.max(1, Math.round(next.length / 8));
   return (
     <article className="panel rounded-lg p-5 glow-on-hover">
       <div className="flex items-baseline justify-between mb-3">
         <h3 className="text-display text-primary text-lg">{name}</h3>
         <span className="text-[10px] tracking-[0.25em] text-muted-foreground uppercase">
-          24 timer
+          {rangeLabel(rangeHours)}
         </span>
       </div>
-      <TempPrecipChart hours={next} color={color} />
+      <TempPrecipChart hours={next} color={color} showNow={rangeHours <= 24} longRange={longRange} />
       <div className="grid grid-cols-6 sm:grid-cols-8 gap-1 mt-4">
-        {next.filter((_, i) => i % 3 === 0).map((h) => (
+        {next.filter((_, i) => i % stride === 0).slice(0, 8).map((h) => (
           <div key={h.time} className="text-center">
             <div className="text-[9px] text-muted-foreground tracking-wider">
-              {h.time.slice(11, 13)}
+              {longRange
+                ? new Date(h.time).toLocaleDateString("nb-NO", { day: "2-digit", month: "2-digit" })
+                : h.time.slice(11, 13)}
             </div>
             <div className="text-base">{symbolEmoji(h.symbol)}</div>
             <div className="text-xs text-foreground">{Math.round(h.temp)}°</div>
