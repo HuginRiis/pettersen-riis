@@ -465,7 +465,7 @@ function HomeAlarmPanel() {
       </div>
 
       {/* Toggle-knapper */}
-      <div className="mt-3 grid grid-cols-2 gap-2">
+      <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-2">
         <button
           type="button"
           disabled={busy || state === "armed"}
@@ -478,6 +478,20 @@ function HomeAlarmPanel() {
         >
           {busy ? <Loader2 size={12} className="animate-spin" /> : <ShieldCheck size={12} />}
           Skru på
+        </button>
+        <button
+          type="button"
+          disabled={busy || state === "partially_armed"}
+          onClick={() => handleSet("partially_armed")}
+          title="Delvis — skallbeskyttet (natt-modus)"
+          className={`rounded-md border px-3 py-2 text-[10px] tracking-[0.25em] uppercase transition-colors ${
+            state === "partially_armed"
+              ? "border-sky-400/40 bg-sky-400/20 text-sky-200 cursor-default"
+              : "border-sky-400/30 bg-sky-400/5 text-sky-200 hover:bg-sky-400/15"
+          } ${busy ? "opacity-50" : ""} flex items-center justify-center gap-2`}
+        >
+          {busy ? <Loader2 size={12} className="animate-spin" /> : <ShieldAlert size={12} />}
+          Delvis
         </button>
         <button
           type="button"
