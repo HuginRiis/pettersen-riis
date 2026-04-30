@@ -750,7 +750,7 @@ function WindRoseCard({
       <div className="flex items-baseline justify-between mb-3">
         <h3 className="text-display text-primary text-lg">{name}</h3>
         <span className="text-[10px] tracking-[0.25em] text-muted-foreground uppercase">
-          24 t · vindrose
+          {rangeLabel(rangeHours)} · vindrose
         </span>
       </div>
       <div className="grid grid-cols-[1fr_auto] gap-4 items-center">
