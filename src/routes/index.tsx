@@ -137,9 +137,6 @@ function Home() {
       <OutdoorWeatherStrip stationMatch="tollnes" />
       <IndoorWeatherStrip stationMatch="tollnes" label="Inne nå · Tollnes" />
 
-      <OutdoorWeatherStrip stationMatch="hytt" label="Ute nå · Hytta" />
-      <IndoorWeatherStrip stationMatch="hytta" label="Inne nå · Hytta" />
-
       <BirthdayBanner />
 
       <section className="container mx-auto px-4 py-16">
