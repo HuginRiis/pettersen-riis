@@ -6,16 +6,21 @@ import {
   type ApiCallSummary,
 } from "@/server/api-call-log";
 
-const SOURCES: Array<{ id: string; label: string }> = [
-  { id: "homey", label: "Homey" },
-  { id: "strava", label: "Strava" },
-  { id: "netatmo", label: "Netatmo" },
-  { id: "tibber", label: "Tibber" },
-  { id: "met", label: "Met.no" },
-  { id: "nrk", label: "NRK trafikk" },
-  { id: "spot", label: "Spotpris" },
-  { id: "lightning", label: "Lyn / radar" },
-];
+const SOURCE_LABELS: Record<string, string> = {
+  homey: "Homey",
+  strava: "Strava",
+  netatmo: "Netatmo",
+  tibber: "Tibber",
+  met: "Met.no",
+  nrk: "NRK trafikk",
+  spot: "Spotpris",
+  lightning: "Lyn / radar",
+  garbage: "Renovasjon",
+  kassal: "Kassalapp",
+  other: "Andre",
+};
+
+const INITIAL_VISIBLE = 5;
 
 function formatAgo(iso: string | null): string {
   if (!iso) return "—";
@@ -38,6 +43,7 @@ export function ApiCallLogPanel() {
   const [open, setOpen] = useState<Set<string>>(new Set());
   const [busySource, setBusySource] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -68,6 +74,32 @@ export function ApiCallLogPanel() {
     }
     return map;
   }, [data]);
+
+  // Bygg sortert liste over alle kilder vi har sett siste 24t (mest brukt først),
+  // og inkluder også kjente kilder som mangler data så de fortsatt kan oppdateres manuelt.
+  const sortedSources = useMemo(() => {
+    const totals = new Map<string, number>();
+    for (const [src, rows] of grouped.entries()) {
+      const total = rows.reduce((s, r) => s + r.total_24h, 0);
+      totals.set(src, total);
+    }
+    // Inkluder kjente kilder selv om de mangler data
+    for (const id of Object.keys(SOURCE_LABELS)) {
+      if (!totals.has(id)) totals.set(id, 0);
+    }
+    return Array.from(totals.entries())
+      .map(([id, total]) => ({
+        id,
+        label: SOURCE_LABELS[id] ?? id.charAt(0).toUpperCase() + id.slice(1),
+        total,
+      }))
+      .sort((a, b) => b.total - a.total);
+  }, [grouped]);
+
+  const visibleSources = expanded
+    ? sortedSources
+    : sortedSources.slice(0, INITIAL_VISIBLE);
+  const hiddenCount = sortedSources.length - visibleSources.length;
 
   const toggle = (id: string) => {
     setOpen((prev) => {
@@ -122,7 +154,7 @@ export function ApiCallLogPanel() {
         )}
 
         <div className="space-y-2">
-          {SOURCES.map((src) => {
+          {visibleSources.map((src) => {
             const rows = grouped.get(src.id) ?? [];
             const lastCall = rows.reduce<string | null>((acc, r) => {
               if (!r.last_called_at) return acc;
@@ -241,6 +273,18 @@ export function ApiCallLogPanel() {
             );
           })}
         </div>
+
+        {(hiddenCount > 0 || expanded) && sortedSources.length > INITIAL_VISIBLE && (
+          <button
+            type="button"
+            onClick={() => setExpanded((v) => !v)}
+            className="mt-3 w-full px-4 py-2 rounded border border-border text-[11px] tracking-[0.3em] uppercase hover:bg-primary/10 text-muted-foreground"
+          >
+            {expanded
+              ? "▴ Vis færre"
+              : `▾ Vis ${hiddenCount} til`}
+          </button>
+        )}
 
         {data && (
           <p className="text-[10px] text-muted-foreground mt-4 text-right">
