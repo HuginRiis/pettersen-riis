@@ -8,6 +8,7 @@
  */
 import webpush from "web-push";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { recordApiCall } from "@/server/api-call-log.server";
 
 const PROXY = "https://norkartrenovasjon.azurewebsites.net/proxyserver.ashx";
 const KOMTEK = "https://komteksky.norkart.no/MinRenovasjon.Api";
