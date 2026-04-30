@@ -6,16 +6,21 @@ import {
   type ApiCallSummary,
 } from "@/server/api-call-log";
 
-const SOURCES: Array<{ id: string; label: string }> = [
-  { id: "homey", label: "Homey" },
-  { id: "strava", label: "Strava" },
-  { id: "netatmo", label: "Netatmo" },
-  { id: "tibber", label: "Tibber" },
-  { id: "met", label: "Met.no" },
-  { id: "nrk", label: "NRK trafikk" },
-  { id: "spot", label: "Spotpris" },
-  { id: "lightning", label: "Lyn / radar" },
-];
+const SOURCE_LABELS: Record<string, string> = {
+  homey: "Homey",
+  strava: "Strava",
+  netatmo: "Netatmo",
+  tibber: "Tibber",
+  met: "Met.no",
+  nrk: "NRK trafikk",
+  spot: "Spotpris",
+  lightning: "Lyn / radar",
+  garbage: "Renovasjon",
+  kassal: "Kassalapp",
+  other: "Andre",
+};
+
+const INITIAL_VISIBLE = 5;
 
 function formatAgo(iso: string | null): string {
   if (!iso) return "—";
