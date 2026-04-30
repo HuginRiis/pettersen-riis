@@ -231,6 +231,7 @@ function WeatherPage() {
 
       <section className="container mx-auto px-4 pt-8 space-y-5">
         <UserLocationBar page="var" state={userLoc} />
+        <RangeSelector value={rangeHours} onChange={setRangeHours} />
       </section>
 
       <section className="container mx-auto px-4 py-12 space-y-12">
