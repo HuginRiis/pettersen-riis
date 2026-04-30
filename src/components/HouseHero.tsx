@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Eye, Users, TrendingUp, TrendingDown, Minus, MousePointerClick, Sunrise, Sunset } from "lucide-react";
+import { Eye, Users, TrendingUp, TrendingDown, Minus, MousePointerClick, Sunrise, Sunset, Sun } from "lucide-react";
 import { getVisitorCounts, type VisitorCounts } from "@/server/visitors";
 import { getOutdoorLightsStatus, type OutdoorLightsStatus } from "@/server/homey";
-import { useUvSun } from "@/hooks/use-uv-sun";
+import { useUvSun, uvLevel } from "@/hooks/use-uv-sun";
 
 const BORGEN_COORD = { lat: 59.1789, lon: 9.5732 };
 
@@ -218,6 +218,7 @@ export function HouseHero({
             <span className="text-primary/40">❦</span>
             <span>{DAYPART_LABEL[dayPart]}</span>
             <SunEvent />
+            <UvHeroBadge lat={BORGEN_COORD.lat} lon={BORGEN_COORD.lon} />
             {lights?.ok && lights.totalCount > 0 && (
               <>
                 <span className="text-primary/40">❦</span>
