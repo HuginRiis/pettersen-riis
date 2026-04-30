@@ -189,3 +189,60 @@ export function SiteHeader() {
     </header>
   );
 }
+
+function UvBadge({ lat, lon }: { lat: number; lon: number }) {
+  const { uvNow } = useUvSun(lat, lon);
+  if (uvNow == null) return null;
+  const lvl = uvLevel(uvNow);
+  return (
+    <span
+      className="inline-flex items-center justify-center rounded-full text-[9px] font-semibold leading-none px-1.5 py-0.5 min-w-[18px]"
+      style={{
+        background: `color-mix(in oklab, ${lvl.color} 22%, transparent)`,
+        color: lvl.color,
+        border: `1px solid color-mix(in oklab, ${lvl.color} 50%, transparent)`,
+      }}
+      title={`UV nå: ${uvNow.toFixed(1)} (${lvl.label})`}
+    >
+      UV {Math.round(uvNow)}
+    </span>
+  );
+}
+
+function SunEventIndicator() {
+  // Bruker Borgen-koordinater til toppmenyens sol-indikator.
+  const { sunrise, sunset } = useUvSun(BORGEN_COORD.lat, BORGEN_COORD.lon);
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 60_000);
+    return () => clearInterval(id);
+  }, []);
+  if (!sunrise || !sunset) return null;
+  const sr = new Date(sunrise).getTime();
+  const ss = new Date(sunset).getTime();
+  // Hvis sola har stått opp men ikke gått ned → vis "går ned om …"
+  // Ellers (natt) → vis "står opp om …"
+  const isDay = now >= sr && now < ss;
+  const target = isDay ? ss : sr > now ? sr : sr + 24 * 3600 * 1000;
+  const ms = Math.max(0, target - now);
+  const h = Math.floor(ms / 3_600_000);
+  const m = Math.floor((ms % 3_600_000) / 60_000);
+  const label =
+    h > 0 ? `${h}t ${m.toString().padStart(2, "0")}m` : `${m}m`;
+  const clock = new Date(target).toLocaleTimeString("nb-NO", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  const Icon = isDay ? Sunset : Sunrise;
+  const color = isDay ? "oklch(0.72 0.18 45)" : "oklch(0.78 0.16 95)";
+  return (
+    <div
+      className="hidden sm:flex items-center gap-1.5 text-[10px] tracking-[0.2em] uppercase text-muted-foreground shrink-0"
+      title={isDay ? "Tid til solnedgang" : "Tid til soloppgang"}
+    >
+      <Icon size={14} style={{ color }} />
+      <span style={{ color }}>{clock}</span>
+      <span className="text-muted-foreground/70">· {label}</span>
+    </div>
+  );
+}
