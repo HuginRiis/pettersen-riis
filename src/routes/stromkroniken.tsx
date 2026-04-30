@@ -270,6 +270,26 @@ function HomeBlock({
             : "—";
 
   const todayKwh = liveKwhToday != null ? liveKwhToday : data?.todayKwh ?? 0;
+
+  // Hent lagret daglig kWh fra DB som fallback når Tibber-abo mangler historikk
+  const fetchStored = useServerFn(getStoredDailyKwh);
+  const [storedRows, setStoredRows] = useState<StoredDailyKwh[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    const load = () => {
+      fetchStored()
+        .then((res) => {
+          if (!cancelled && res.rows) setStoredRows(res.rows);
+        })
+        .catch(() => {});
+    };
+    load();
+    const t = window.setInterval(load, 60_000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(t);
+    };
+  }, [fetchStored]);
   // Bruk timesprisen fra dagens prisliste som matcher klokketimen nå (samme som vises i grafen)
   const currentHourPrice = (() => {
     const list = data?.pricesToday ?? [];
@@ -295,27 +315,41 @@ function HomeBlock({
     0.01,
     (now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds()) / 86400,
   );
-  const yesterdayProrated =
+
+  // Bruk Tibber-data hvis tilgjengelig, ellers fall tilbake til lagrede dagsverdier
+  const ownStored = data?.location
+    ? storedRows.filter((r) => r.location === data.location)
+    : [];
+  const dayKey = (d: Date) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  const storedFor = (d: Date) => ownStored.find((r) => r.day === dayKey(d))?.kwh ?? null;
+
+  const yesterdayDate = new Date(now);
+  yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+  const yesterdayFull =
     data?.yesterdayKwh != null && data.yesterdayKwh > 0
-      ? data.yesterdayKwh * dayFraction
-      : null;
+      ? data.yesterdayKwh
+      : storedFor(yesterdayDate);
+  const yesterdayProrated =
+    yesterdayFull != null && yesterdayFull > 0 ? yesterdayFull * dayFraction : null;
   const vsYesterday =
     yesterdayProrated != null && yesterdayProrated > 0 && todayKwh > 0
       ? { diff: todayKwh - yesterdayProrated, pct: ((todayKwh - yesterdayProrated) / yesterdayProrated) * 100 }
       : null;
 
-  // Samme dato forrige måned — hent fra daily-historikk
+  // Samme dato forrige måned — Tibber daily først, så lagret dagsverdi
+  const lastMonthDate = new Date(now);
+  lastMonthDate.setMonth(lastMonthDate.getMonth() - 1);
+  const targetKey = dayKey(lastMonthDate);
   const sameDayLastMonth = (() => {
-    if (!data?.daily?.length) return null;
-    const target = new Date(now);
-    target.setMonth(target.getMonth() - 1);
-    const targetKey = `${target.getFullYear()}-${String(target.getMonth() + 1).padStart(2, "0")}-${String(target.getDate()).padStart(2, "0")}`;
-    const match = data.daily.find((d) => {
-      const dd = new Date(d.from);
-      const k = `${dd.getFullYear()}-${String(dd.getMonth() + 1).padStart(2, "0")}-${String(dd.getDate()).padStart(2, "0")}`;
-      return k === targetKey;
-    });
-    return match?.kwh ?? null;
+    if (data?.daily?.length) {
+      const match = data.daily.find((d) => {
+        const dd = new Date(d.from);
+        return dayKey(dd) === targetKey;
+      });
+      if (match?.kwh != null && match.kwh > 0) return match.kwh;
+    }
+    return storedFor(lastMonthDate);
   })();
   const lastMonthProrated =
     sameDayLastMonth != null && sameDayLastMonth > 0 ? sameDayLastMonth * dayFraction : null;
