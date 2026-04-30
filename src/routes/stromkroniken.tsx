@@ -866,17 +866,19 @@ function PulseHistoryChart({
       .catch(() => {});
   }, [reading?.receivedAt, location, hours, fetchHistory, lastFetchRef, reading]);
 
+  const longRange = hours > 72;
   const chartData = points
     .filter((p) => p.watt != null)
-    .map((p) => ({
-      t: new Date(p.t).getTime(),
-      label: new Date(p.t).toLocaleTimeString("nb-NO", {
-        hour: "2-digit",
-        minute: "2-digit",
-        timeZone: "Europe/Oslo",
-      }),
-      watt: Math.round(p.watt as number),
-    }));
+    .map((p) => {
+      const d = new Date(p.t);
+      return {
+        t: d.getTime(),
+        label: longRange
+          ? d.toLocaleDateString("nb-NO", { day: "2-digit", month: "2-digit", timeZone: "Europe/Oslo" })
+          : d.toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Oslo" }),
+        watt: Math.round(p.watt as number),
+      };
+    });
 
   return (
     <div>
