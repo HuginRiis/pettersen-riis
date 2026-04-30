@@ -75,6 +75,32 @@ export function ApiCallLogPanel() {
     return map;
   }, [data]);
 
+  // Bygg sortert liste over alle kilder vi har sett siste 24t (mest brukt først),
+  // og inkluder også kjente kilder som mangler data så de fortsatt kan oppdateres manuelt.
+  const sortedSources = useMemo(() => {
+    const totals = new Map<string, number>();
+    for (const [src, rows] of grouped.entries()) {
+      const total = rows.reduce((s, r) => s + r.total_24h, 0);
+      totals.set(src, total);
+    }
+    // Inkluder kjente kilder selv om de mangler data
+    for (const id of Object.keys(SOURCE_LABELS)) {
+      if (!totals.has(id)) totals.set(id, 0);
+    }
+    return Array.from(totals.entries())
+      .map(([id, total]) => ({
+        id,
+        label: SOURCE_LABELS[id] ?? id.charAt(0).toUpperCase() + id.slice(1),
+        total,
+      }))
+      .sort((a, b) => b.total - a.total);
+  }, [grouped]);
+
+  const visibleSources = expanded
+    ? sortedSources
+    : sortedSources.slice(0, INITIAL_VISIBLE);
+  const hiddenCount = sortedSources.length - visibleSources.length;
+
   const toggle = (id: string) => {
     setOpen((prev) => {
       const next = new Set(prev);
