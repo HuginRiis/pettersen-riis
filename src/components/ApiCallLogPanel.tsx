@@ -241,6 +241,18 @@ export function ApiCallLogPanel() {
                     </span>
                     <span className="text-muted-foreground">·</span>
                     <span className="text-muted-foreground">
+                      Intervall:{" "}
+                      <span className="text-foreground">
+                        {sched?.description ?? "ukjent"}
+                      </span>
+                      {sched?.trigger && (
+                        <span className="ml-1 text-[9px] tracking-[0.15em] uppercase text-muted-foreground/70">
+                          [{sched.trigger}]
+                        </span>
+                      )}
+                    </span>
+                    <span className="text-muted-foreground">·</span>
+                    <span className="text-muted-foreground">
                       Sist:{" "}
                       <span className="text-foreground" title={lastCall ?? undefined}>
                         {formatAgo(lastCall)}
@@ -254,8 +266,10 @@ export function ApiCallLogPanel() {
                         title={nextRun ? new Date(nextRun).toLocaleString("nb-NO") : undefined}
                       >
                         {nextRun
-                          ? `${formatIn(nextRun)} (${formatClock(nextRun)})`
-                          : sched?.description ?? "ved bruk"}
+                          ? `${formatIn(nextRun)} kl ${formatClock(nextRun)}`
+                          : sched?.trigger === "on-demand"
+                            ? "ved sidelasting"
+                            : "—"}
                       </span>
                     </span>
                     <span className="text-muted-foreground">·</span>
