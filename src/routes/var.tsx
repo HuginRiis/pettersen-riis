@@ -8,6 +8,7 @@ import { getHomeySnapshot } from "@/server/homey";
 import { findDeviceFuzzy, type DeviceLike } from "@/lib/homey-match";
 import { getTollnesAlerts, type AlertsResult, type MetAlert } from "@/server/lightning";
 import { useUserLocation, UserLocationBar } from "@/hooks/use-user-location";
+import { UvPanel } from "@/components/UvPanel";
 
 
 export const Route = createFileRoute("/var")({
@@ -291,6 +292,24 @@ function WeatherPage() {
               <LiveMetric label="Fuktighet · Hytta" value={hyttaHumidity} unit="%" icon="💧" digits={0} />
             </div>
           )}
+        </Block>
+
+        {/* === UV-INDEKS === */}
+        <Block title="Solens stråler · UV-indeks">
+          <div className="grid lg:grid-cols-2 gap-6">
+            <UvPanel
+              title="Borgen · Tollnes"
+              subtitle="Skien · MET.no"
+              lat={59.1789}
+              lon={9.5732}
+            />
+            <UvPanel
+              title="Hytta · Flesberg"
+              subtitle="Numedal · MET.no"
+              lat={59.8733}
+              lon={9.4297}
+            />
+          </div>
         </Block>
 
         {/* === SOL OG MÅNE OVER WESTEROS === */}

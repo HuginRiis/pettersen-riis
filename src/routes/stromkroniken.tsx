@@ -831,7 +831,7 @@ function PulseHistoryChart({
 }) {
   const fetchHistory = useServerFn(getPulseHistory);
   const [points, setPoints] = useState<PulseHistoryPoint[]>([]);
-  const [hours, setHours] = useState<6 | 24 | 72>(24);
+  const [hours, setHours] = useState<6 | 24 | 72 | 576>(24);
 
   // Re-fetch når reading kommer (max 1 gang per minutt for å ikke spamme)
   const lastFetchRef = (PulseHistoryChart as any)._lastFetch ??= new Map<string, number>();
@@ -866,17 +866,19 @@ function PulseHistoryChart({
       .catch(() => {});
   }, [reading?.receivedAt, location, hours, fetchHistory, lastFetchRef, reading]);
 
+  const longRange = hours > 72;
   const chartData = points
     .filter((p) => p.watt != null)
-    .map((p) => ({
-      t: new Date(p.t).getTime(),
-      label: new Date(p.t).toLocaleTimeString("nb-NO", {
-        hour: "2-digit",
-        minute: "2-digit",
-        timeZone: "Europe/Oslo",
-      }),
-      watt: Math.round(p.watt as number),
-    }));
+    .map((p) => {
+      const d = new Date(p.t);
+      return {
+        t: d.getTime(),
+        label: longRange
+          ? d.toLocaleDateString("nb-NO", { day: "2-digit", month: "2-digit", timeZone: "Europe/Oslo" })
+          : d.toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Oslo" }),
+        watt: Math.round(p.watt as number),
+      };
+    });
 
   return (
     <div>
@@ -885,7 +887,7 @@ function PulseHistoryChart({
           <Activity size={14} /> Pulse-historikk · effekt
         </h3>
         <div className="flex gap-1">
-          {([6, 24, 72] as const).map((h) => (
+          {([6, 24, 72, 576] as const).map((h) => (
             <button
               key={h}
               onClick={() => setHours(h)}
@@ -895,7 +897,7 @@ function PulseHistoryChart({
                   : "border-border text-muted-foreground hover:text-primary hover:border-primary/40"
               }`}
             >
-              {h === 6 ? "6t" : h === 24 ? "24t" : "3d"}
+              {h === 6 ? "6t" : h === 24 ? "24t" : h === 72 ? "3d" : "24d"}
             </button>
           ))}
         </div>
@@ -1950,18 +1952,24 @@ function ComparisonBlock({
     Hytta: Math.round(d.Hytta * 10) / 10,
   }));
 
-  // Kumulativ kWh per dag — summerer dag for dag, alltid stigende
+  // Kumulativ kWh for inneværende måned — fra dag 1 til siste dag i måneden.
+  // Tomme dager fram i tid vises ikke (kurven stopper på "i dag").
+  const _now = new Date();
+  const _yyyymm = `${_now.getFullYear()}-${String(_now.getMonth() + 1).padStart(2, "0")}`;
+  const _todayKey = `${_yyyymm}-${String(_now.getDate()).padStart(2, "0")}`;
+  const monthDays = dailySorted.filter((d) => d.day.startsWith(_yyyymm) && d.day <= _todayKey);
   let cumB = 0;
   let cumH = 0;
-  const cumulativeChartData = dailySorted.map((d) => {
+  const cumulativeChartData = monthDays.map((d) => {
     cumB += d.Borgen ?? 0;
     cumH += d.Hytta ?? 0;
     return {
-      label: d.day.slice(8) + "." + d.day.slice(5, 7),
+      label: d.day.slice(8), // dag i måneden
       Borgen: Math.round(cumB * 10) / 10,
       Hytta: Math.round(cumH * 10) / 10,
     };
   });
+  const _monthLabel = _now.toLocaleDateString("nb-NO", { month: "long", year: "numeric" });
 
   // Årlig forbruk — start med lagrede daglige snapshots, ellers blir den tom uten Tibber-abo.
   const yearMap = new Map<string, { year: string; Borgen: number; Hytta: number }>();
@@ -2140,7 +2148,7 @@ function ComparisonBlock({
 
         <div>
           <p className="text-[11px] tracking-[0.2em] uppercase text-muted-foreground mb-2">
-            Kumulativ kWh {cumulativeChartData.length > 0 ? `· siste ${cumulativeChartData.length} dager` : <span className="italic normal-case tracking-normal">· venter på data</span>}
+            Kumulativ kWh · {_monthLabel} {cumulativeChartData.length === 0 && <span className="italic normal-case tracking-normal">· venter på data</span>}
           </p>
           <div className="h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
