@@ -100,7 +100,7 @@ export function SiteHeader() {
           </div>
         </Link>
 
-        <nav className="hidden md:flex flex-1 flex-wrap items-center justify-start gap-x-2 gap-y-2">
+        <nav className="hidden xl:flex flex-1 flex-wrap items-center justify-start gap-x-2 gap-y-2">
           {visibleLinks.map((l) => (
             <Link
               key={l.to}
@@ -137,7 +137,7 @@ export function SiteHeader() {
         </nav>
 
         <button
-          className="md:hidden text-primary p-2"
+          className="xl:hidden text-primary p-2"
           onClick={() => setOpen((v) => !v)}
           aria-label="Meny"
         >
@@ -146,7 +146,7 @@ export function SiteHeader() {
       </div>
 
       {open && (
-        <nav className="md:hidden border-t border-border bg-card/95 backdrop-blur">
+        <nav className="xl:hidden border-t border-border bg-card/95 backdrop-blur">
           <div className="container mx-auto px-4 py-2 flex flex-col">
             {visibleLinks.map((l) => (
               <Link
