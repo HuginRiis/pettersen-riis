@@ -347,18 +347,18 @@ function WeatherPage() {
         </Block>
 
         {/* === 24-TIMERS KURVER === */}
-        <Block title="Tre dager med MET.no · Time for time">
+        <Block title={`MET.no · ${rangeLabel(rangeHours)} · time for time`}>
           <div className="grid lg:grid-cols-2 gap-6">
-            <HourPanel name={userLoc.active.label} hours={skienHours} accent="primary" />
-            <HourPanel name="Hytta · Numedal" hours={hyttaHours} accent="ice" />
+            <HourPanel name={userLoc.active.label} hours={skienHours} accent="primary" rangeHours={rangeHours} />
+            <HourPanel name="Hytta · Numedal" hours={hyttaHours} accent="ice" rangeHours={rangeHours} />
           </div>
         </Block>
 
         {/* === VINDROSE === */}
-        <Block title="Stormvaktens Rose · Vindretning de neste 24 t">
+        <Block title={`Stormvaktens Rose · Vindretning ${rangeLabel(rangeHours)}`}>
           <div className="grid sm:grid-cols-2 gap-6">
-            <WindRoseCard name={userLoc.active.label} hours={skienHours} />
-            <WindRoseCard name="Hytta" hours={hyttaHours} />
+            <WindRoseCard name={userLoc.active.label} hours={skienHours} rangeHours={rangeHours} />
+            <WindRoseCard name="Hytta" hours={hyttaHours} rangeHours={rangeHours} />
           </div>
         </Block>
 
