@@ -133,7 +133,15 @@ function MiniStat({
   );
 }
 
-function UvChart({ hours, max }: { hours: { time: string; uv: number }[]; max: number }) {
+function UvChart({
+  hours,
+  max,
+  showNow = false,
+}: {
+  hours: { time: string; uv: number }[];
+  max: number;
+  showNow?: boolean;
+}) {
   const w = 100;
   const h = 36;
   const step = w / Math.max(1, hours.length - 1);
@@ -142,6 +150,18 @@ function UvChart({ hours, max }: { hours: { time: string; uv: number }[]; max: n
     .join(" ");
   const areaPath = `M0,${h} L${points} L${w},${h} Z`;
   const linePath = `M${points}`;
+
+  // Find x-position for "now"
+  let nowX: number | null = null;
+  if (showNow && hours.length > 1) {
+    const now = Date.now();
+    const t0 = new Date(hours[0].time).getTime();
+    const tN = new Date(hours[hours.length - 1].time).getTime();
+    if (now >= t0 && now <= tN) {
+      nowX = ((now - t0) / (tN - t0)) * w;
+    }
+  }
+  const longRange = hours.length > 36;
   return (
     <div>
       <svg
@@ -155,7 +175,6 @@ function UvChart({ hours, max }: { hours: { time: string; uv: number }[]; max: n
             <stop offset="100%" stopColor="oklch(0.72 0.16 150)" stopOpacity="0.05" />
           </linearGradient>
         </defs>
-        {/* threshold line at UV 3 (moderat) and 6 (høy) */}
         {[3, 6].map((t) =>
           t < max ? (
             <line
@@ -179,10 +198,25 @@ function UvChart({ hours, max }: { hours: { time: string; uv: number }[]; max: n
           strokeLinejoin="round"
           strokeLinecap="round"
         />
+        {nowX != null && (
+          <line
+            x1={nowX}
+            x2={nowX}
+            y1={0}
+            y2={h}
+            stroke="var(--primary)"
+            strokeWidth="0.5"
+            strokeDasharray="1 1"
+          />
+        )}
       </svg>
       <div className="flex justify-between text-[9px] text-muted-foreground/70 mt-1">
         {pickTicks(hours).map((t) => (
-          <span key={t.time}>{t.time.slice(11, 13)}</span>
+          <span key={t.time}>
+            {longRange
+              ? new Date(t.time).toLocaleDateString("nb-NO", { day: "2-digit", month: "2-digit" })
+              : t.time.slice(11, 13)}
+          </span>
         ))}
       </div>
     </div>
