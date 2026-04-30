@@ -75,6 +75,7 @@ function WeatherPage() {
   const [now, setNow] = useState<Date | null>(null);
   const [weatherUpdated, setWeatherUpdated] = useState<Date | null>(null);
   const [homeyUpdated, setHomeyUpdated] = useState<Date | null>(() => new Date());
+  const [rangeHours, setRangeHours] = useState<24 | 72 | 168>(24);
 
   // Dynamiske lokasjoner: "skien"-nøkkelen følger valgt sted (fra UserLocationBar),
   // "hytta" er fast. Vi beholder nøkkelen "skien" for å minimere endringer i resten
@@ -230,6 +231,7 @@ function WeatherPage() {
 
       <section className="container mx-auto px-4 pt-8 space-y-5">
         <UserLocationBar page="var" state={userLoc} />
+        <RangeSelector value={rangeHours} onChange={setRangeHours} />
       </section>
 
       <section className="container mx-auto px-4 py-12 space-y-12">
@@ -302,12 +304,14 @@ function WeatherPage() {
               subtitle="Skien · MET.no"
               lat={59.1789}
               lon={9.5732}
+              rangeHours={rangeHours}
             />
             <UvPanel
               title="Hytta · Flesberg"
               subtitle="Numedal · MET.no"
               lat={59.8733}
               lon={9.4297}
+              rangeHours={rangeHours}
             />
           </div>
         </Block>
@@ -343,18 +347,18 @@ function WeatherPage() {
         </Block>
 
         {/* === 24-TIMERS KURVER === */}
-        <Block title="Tre dager med MET.no · Time for time">
+        <Block title={`MET.no · ${rangeLabel(rangeHours)} · time for time`}>
           <div className="grid lg:grid-cols-2 gap-6">
-            <HourPanel name={userLoc.active.label} hours={skienHours} accent="primary" />
-            <HourPanel name="Hytta · Numedal" hours={hyttaHours} accent="ice" />
+            <HourPanel name={userLoc.active.label} hours={skienHours} accent="primary" rangeHours={rangeHours} />
+            <HourPanel name="Hytta · Numedal" hours={hyttaHours} accent="ice" rangeHours={rangeHours} />
           </div>
         </Block>
 
         {/* === VINDROSE === */}
-        <Block title="Stormvaktens Rose · Vindretning de neste 24 t">
+        <Block title={`Stormvaktens Rose · Vindretning ${rangeLabel(rangeHours)}`}>
           <div className="grid sm:grid-cols-2 gap-6">
-            <WindRoseCard name={userLoc.active.label} hours={skienHours} />
-            <WindRoseCard name="Hytta" hours={hyttaHours} />
+            <WindRoseCard name={userLoc.active.label} hours={skienHours} rangeHours={rangeHours} />
+            <WindRoseCard name="Hytta" hours={hyttaHours} rangeHours={rangeHours} />
           </div>
         </Block>
 
@@ -537,10 +541,12 @@ function HourPanel({
   name,
   hours,
   accent,
+  rangeHours = 24,
 }: {
   name: string;
   hours: Hour[] | null;
   accent: "primary" | "ice";
+  rangeHours?: number;
 }) {
   if (!hours) {
     return (
@@ -550,22 +556,27 @@ function HourPanel({
       </article>
     );
   }
-  const next = hours.slice(0, 24);
+  const next = hours.slice(0, rangeHours);
   const color = accent === "ice" ? "var(--ice)" : "var(--primary)";
+  const longRange = rangeHours > 24;
+  // For tabellrad: vis ca 8 kolonner uavhengig av lengde
+  const stride = Math.max(1, Math.round(next.length / 8));
   return (
     <article className="panel rounded-lg p-5 glow-on-hover">
       <div className="flex items-baseline justify-between mb-3">
         <h3 className="text-display text-primary text-lg">{name}</h3>
         <span className="text-[10px] tracking-[0.25em] text-muted-foreground uppercase">
-          24 timer
+          {rangeLabel(rangeHours)}
         </span>
       </div>
-      <TempPrecipChart hours={next} color={color} />
+      <TempPrecipChart hours={next} color={color} showNow={rangeHours <= 24} longRange={longRange} />
       <div className="grid grid-cols-6 sm:grid-cols-8 gap-1 mt-4">
-        {next.filter((_, i) => i % 3 === 0).map((h) => (
+        {next.filter((_, i) => i % stride === 0).slice(0, 8).map((h) => (
           <div key={h.time} className="text-center">
             <div className="text-[9px] text-muted-foreground tracking-wider">
-              {h.time.slice(11, 13)}
+              {longRange
+                ? new Date(h.time).toLocaleDateString("nb-NO", { day: "2-digit", month: "2-digit" })
+                : h.time.slice(11, 13)}
             </div>
             <div className="text-base">{symbolEmoji(h.symbol)}</div>
             <div className="text-xs text-foreground">{Math.round(h.temp)}°</div>
@@ -576,7 +587,17 @@ function HourPanel({
   );
 }
 
-function TempPrecipChart({ hours, color }: { hours: Hour[]; color: string }) {
+function TempPrecipChart({
+  hours,
+  color,
+  showNow = false,
+  longRange = false,
+}: {
+  hours: Hour[];
+  color: string;
+  showNow?: boolean;
+  longRange?: boolean;
+}) {
   const W = 600;
   const H = 140;
   const pad = { l: 28, r: 16, t: 12, b: 22 };
@@ -602,9 +623,22 @@ function TempPrecipChart({ hours, color }: { hours: Hour[]; color: string }) {
 
   const barW = innerW / hours.length;
 
+  // X-tick stride så vi får ca 8 etiketter
+  const stride = Math.max(1, Math.round(hours.length / 8));
+
+  // Now-linje basert på faktisk tid
+  let nowX: number | null = null;
+  if (showNow && hours.length > 1) {
+    const now = Date.now();
+    const t0 = new Date(hours[0].time).getTime();
+    const tN = new Date(hours[hours.length - 1].time).getTime();
+    if (now >= t0 && now <= tN) {
+      nowX = pad.l + ((now - t0) / (tN - t0)) * innerW;
+    }
+  }
+
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto" preserveAspectRatio="none">
-      {/* Y-aksen temp */}
       {[tMin, Math.round((tMin + tMax) / 2), tMax].map((v) => (
         <g key={v}>
           <line
@@ -621,7 +655,6 @@ function TempPrecipChart({ hours, color }: { hours: Hour[]; color: string }) {
           </text>
         </g>
       ))}
-      {/* Regn-stolper */}
       {hours.map((h, i) => {
         if (h.precip <= 0) return null;
         const x = xFor(i) - barW / 2;
@@ -639,11 +672,26 @@ function TempPrecipChart({ hours, color }: { hours: Hour[]; color: string }) {
           />
         );
       })}
-      {/* Temp-linje */}
       <path d={path} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" />
-      {/* X-aksen labels */}
-      {hours.filter((_, i) => i % 6 === 0).map((h, idx) => {
-        const i = idx * 6;
+      {nowX != null && (
+        <g>
+          <line
+            x1={nowX}
+            x2={nowX}
+            y1={pad.t}
+            y2={pad.t + innerH}
+            stroke="var(--primary)"
+            strokeWidth="1.5"
+            strokeDasharray="3 3"
+            opacity="0.85"
+          />
+          <text x={nowX} y={pad.t - 2} fontSize="9" fill="var(--primary)" textAnchor="middle">
+            nå
+          </text>
+        </g>
+      )}
+      {hours.filter((_, i) => i % stride === 0).map((h, idx) => {
+        const i = idx * stride;
         return (
           <text
             key={h.time}
@@ -653,7 +701,9 @@ function TempPrecipChart({ hours, color }: { hours: Hour[]; color: string }) {
             fill="var(--muted-foreground)"
             textAnchor="middle"
           >
-            {h.time.slice(11, 13)}
+            {longRange
+              ? new Date(h.time).toLocaleDateString("nb-NO", { day: "2-digit", month: "2-digit" })
+              : h.time.slice(11, 13)}
           </text>
         );
       })}
@@ -661,7 +711,15 @@ function TempPrecipChart({ hours, color }: { hours: Hour[]; color: string }) {
   );
 }
 
-function WindRoseCard({ name, hours }: { name: string; hours: Hour[] | null }) {
+function WindRoseCard({
+  name,
+  hours,
+  rangeHours = 24,
+}: {
+  name: string;
+  hours: Hour[] | null;
+  rangeHours?: number;
+}) {
   if (!hours) {
     return (
       <article className="panel rounded-lg p-6">
@@ -670,7 +728,7 @@ function WindRoseCard({ name, hours }: { name: string; hours: Hour[] | null }) {
       </article>
     );
   }
-  const next = hours.slice(0, 24);
+  const next = hours.slice(0, rangeHours);
   // 8 hovedretninger
   const dirs = ["N", "NØ", "Ø", "SØ", "S", "SV", "V", "NV"];
   const buckets = new Array(8).fill(0).map(() => ({ count: 0, sumWind: 0 }));
@@ -692,7 +750,7 @@ function WindRoseCard({ name, hours }: { name: string; hours: Hour[] | null }) {
       <div className="flex items-baseline justify-between mb-3">
         <h3 className="text-display text-primary text-lg">{name}</h3>
         <span className="text-[10px] tracking-[0.25em] text-muted-foreground uppercase">
-          24 t · vindrose
+          {rangeLabel(rangeHours)} · vindrose
         </span>
       </div>
       <div className="grid grid-cols-[1fr_auto] gap-4 items-center">
@@ -789,6 +847,55 @@ function WindRoseCard({ name, hours }: { name: string; hours: Hour[] | null }) {
 // ============================================================
 // Helpers
 // ============================================================
+
+function rangeLabel(h: number): string {
+  if (h <= 24) return "24 timer";
+  if (h <= 72) return "3 dager";
+  return "7 dager";
+}
+
+function RangeSelector({
+  value,
+  onChange,
+}: {
+  value: 24 | 72 | 168;
+  onChange: (v: 24 | 72 | 168) => void;
+}) {
+  const options: { v: 24 | 72 | 168; label: string }[] = [
+    { v: 24, label: "24 timer" },
+    { v: 72, label: "3 dager" },
+    { v: 168, label: "7 dager" },
+  ];
+  return (
+    <div className="flex justify-center">
+      <div
+        role="tablist"
+        aria-label="Tidsrom for værvarsel"
+        className="inline-flex rounded-md border border-border/60 bg-background/40 p-1 gap-1"
+      >
+        {options.map((o) => {
+          const active = value === o.v;
+          return (
+            <button
+              key={o.v}
+              role="tab"
+              aria-selected={active}
+              onClick={() => onChange(o.v)}
+              className={
+                "px-4 py-1.5 text-[11px] tracking-[0.25em] uppercase rounded transition-colors " +
+                (active
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground")
+              }
+            >
+              {o.label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 function alertColor(c: string): string {
   switch (c) {

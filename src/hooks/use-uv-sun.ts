@@ -61,7 +61,7 @@ export function useUvSun(lat: number, lon: number): UvSunData {
         const todayKey = new Date().toISOString().slice(0, 10);
         let uvMaxToday = 0;
         let uvMaxTimeToday: string | null = null;
-        for (const e of series.slice(0, 48)) {
+        for (const e of series.slice(0, 192)) {
           const uv = e?.data?.instant?.details?.ultraviolet_index_clear_sky;
           if (typeof uv !== "number") continue;
           hours.push({ time: e.time, uv });
@@ -70,12 +70,11 @@ export function useUvSun(lat: number, lon: number): UvSunData {
             uvMaxTimeToday = e.time;
           }
         }
-        const next24 = hours.slice(0, 24);
         // Closest hour to "now" for current UV
         const now = Date.now();
         let uvNow: number | null = null;
         let bestDiff = Infinity;
-        for (const h of next24) {
+        for (const h of hours.slice(0, 24)) {
           const diff = Math.abs(new Date(h.time).getTime() - now);
           if (diff < bestDiff) {
             bestDiff = diff;
@@ -95,7 +94,7 @@ export function useUvSun(lat: number, lon: number): UvSunData {
           uvNow,
           uvMaxToday: uvMaxToday > 0 ? uvMaxToday : null,
           uvMaxTimeToday,
-          hours: next24,
+          hours,
           sunrise,
           sunset,
         };
