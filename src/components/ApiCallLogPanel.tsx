@@ -34,6 +34,27 @@ function formatAgo(iso: string | null): string {
   return `${Math.round(h / 24)}d siden`;
 }
 
+function formatIn(iso: string | null): string {
+  if (!iso) return "—";
+  const ms = new Date(iso).getTime() - Date.now();
+  if (ms <= 0) return "snart";
+  const s = Math.round(ms / 1000);
+  if (s < 60) return `om ${s}s`;
+  const m = Math.round(s / 60);
+  if (m < 60) return `om ${m}m`;
+  const h = Math.round(m / 60);
+  if (h < 24) return `om ${h}t`;
+  return `om ${Math.round(h / 24)}d`;
+}
+
+function formatClock(iso: string | null): string {
+  if (!iso) return "";
+  return new Date(iso).toLocaleTimeString("nb-NO", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 export function ApiCallLogPanel() {
   const fetchLog = useServerFn(getApiCallLog);
   const refresh = useServerFn(refreshApiSource);
@@ -165,6 +186,12 @@ export function ApiCallLogPanel() {
             const total24 = rows.reduce((s, r) => s + r.total_24h, 0);
             const isOpen = open.has(src.id);
             const hasErrors = errors24 > 0;
+            // Siste status: om noen endpoint sist svarte med feil → feil
+            const anyLastFail = rows.some((r) => r.last_ok === false);
+            const status: "ok" | "fail" | "idle" =
+              rows.length === 0 ? "idle" : anyLastFail ? "fail" : "ok";
+            const nextRun = data?.nextRunBySource?.[src.id] ?? null;
+            const sched = data?.schedules?.[src.id];
 
             return (
               <div
@@ -172,7 +199,7 @@ export function ApiCallLogPanel() {
                 className="border border-border rounded overflow-hidden"
               >
                 <div className="p-3 space-y-2">
-                  {/* Topprad: navn + oppdater-knapp */}
+                  {/* Topprad: navn + status + oppdater-knapp */}
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
@@ -184,6 +211,18 @@ export function ApiCallLogPanel() {
                       </span>
                       <span className="font-medium tracking-wide truncate">
                         {src.label}
+                      </span>
+                      <span
+                        className={
+                          "shrink-0 text-[9px] tracking-[0.2em] uppercase px-2 py-0.5 rounded-sm border " +
+                          (status === "fail"
+                            ? "border-destructive/60 text-destructive bg-destructive/10"
+                            : status === "ok"
+                              ? "border-primary/40 text-primary bg-primary/10"
+                              : "border-border text-muted-foreground bg-muted/20")
+                        }
+                      >
+                        {status === "fail" ? "⚠ feil" : status === "ok" ? "✓ OK" : "○ inaktiv"}
                       </span>
                     </button>
                     <button
@@ -202,7 +241,22 @@ export function ApiCallLogPanel() {
                     </span>
                     <span className="text-muted-foreground">·</span>
                     <span className="text-muted-foreground">
-                      Sist: <span className="text-foreground">{formatAgo(lastCall)}</span>
+                      Sist:{" "}
+                      <span className="text-foreground" title={lastCall ?? undefined}>
+                        {formatAgo(lastCall)}
+                      </span>
+                    </span>
+                    <span className="text-muted-foreground">·</span>
+                    <span className="text-muted-foreground">
+                      Neste:{" "}
+                      <span
+                        className="text-foreground"
+                        title={nextRun ? new Date(nextRun).toLocaleString("nb-NO") : undefined}
+                      >
+                        {nextRun
+                          ? `${formatIn(nextRun)} (${formatClock(nextRun)})`
+                          : sched?.description ?? "ved bruk"}
+                      </span>
                     </span>
                     <span className="text-muted-foreground">·</span>
                     <span className="text-muted-foreground">

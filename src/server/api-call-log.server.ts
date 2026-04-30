@@ -114,9 +114,42 @@ export type ApiCallSummaryRow = {
   avg_duration_ms_24h: number | null;
 };
 
+export type SourceSchedule = {
+  /** Lesbar beskrivelse, f.eks. "hvert minutt", "hver 5 min", "ved bruk" */
+  description: string;
+  /** Forventet intervall i ms mellom synkroniseringer; null = on-demand */
+  intervalMs: number | null;
+  /** Hvordan kilden trigges */
+  trigger: "cron" | "cache" | "on-demand" | "webhook";
+};
+
+/**
+ * Kjente sync-tidsplaner per kilde. Brukes til å estimere "neste sync".
+ * - cron: jobber satt opp via pg_cron mot serverhooks
+ * - cache: server-cache med TTL — neste server-kall vil refetche etter TTL
+ * - on-demand: trigges når en side lastes; ikke noe fast intervall
+ */
+export const SOURCE_SCHEDULES: Record<string, SourceSchedule> = {
+  homey: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
+  strava: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
+  netatmo: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
+  tibber: { description: "hvert minutt (snapshot)", intervalMs: 60_000, trigger: "cron" },
+  met: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
+  nrk: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
+  spot: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
+  lightning: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
+  garbage: { description: "cache 6t", intervalMs: 6 * 60 * 60 * 1000, trigger: "cache" },
+  kassal: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
+  other: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
+};
+
 export type ApiCallSummary = {
   fetchedAt: number;
   rows: ApiCallSummaryRow[];
+  /** Per kilde: ISO-tidspunkt for neste forventede sync, eller null. */
+  nextRunBySource: Record<string, string | null>;
+  /** Per kilde: sync-plan (lesbar beskrivelse + trigger). */
+  schedules: Record<string, SourceSchedule>;
   recent: Array<{
     id: string;
     source: string;
@@ -141,7 +174,13 @@ export async function computeApiCallSummary(): Promise<ApiCallSummary> {
 
   if (error) {
     console.error("[api-call-log] summary query failed", error);
-    return { fetchedAt: Date.now(), rows: [], recent: [] };
+    return {
+      fetchedAt: Date.now(),
+      rows: [],
+      nextRunBySource: {},
+      schedules: SOURCE_SCHEDULES,
+      recent: [],
+    };
   }
 
   type Row = {
@@ -227,5 +266,38 @@ export async function computeApiCallSummary(): Promise<ApiCallSummary> {
     called_at: r.called_at,
   }));
 
-  return { fetchedAt: Date.now(), rows: summary, recent };
+  // Beregn neste forventede sync per kilde basert på siste kall + kjent intervall.
+  const lastBySource = new Map<string, number>();
+  for (const row of summary) {
+    if (!row.last_called_at) continue;
+    const ts = Date.parse(row.last_called_at);
+    const prev = lastBySource.get(row.source) ?? 0;
+    if (ts > prev) lastBySource.set(row.source, ts);
+  }
+  const nextRunBySource: Record<string, string | null> = {};
+  for (const [src, sched] of Object.entries(SOURCE_SCHEDULES)) {
+    if (sched.intervalMs == null) {
+      nextRunBySource[src] = null;
+      continue;
+    }
+    const last = lastBySource.get(src);
+    if (!last) {
+      // Aldri kjørt — neste sync er "snart" (vi gir 'now' for cron, ellers null)
+      nextRunBySource[src] = sched.trigger === "cron" ? new Date().toISOString() : null;
+      continue;
+    }
+    nextRunBySource[src] = new Date(last + sched.intervalMs).toISOString();
+  }
+  // Inkluder også kilder vi har sett i loggen, men ikke har eksplisitt schedule for
+  for (const src of lastBySource.keys()) {
+    if (!(src in nextRunBySource)) nextRunBySource[src] = null;
+  }
+
+  return {
+    fetchedAt: Date.now(),
+    rows: summary,
+    nextRunBySource,
+    schedules: SOURCE_SCHEDULES,
+    recent,
+  };
 }
