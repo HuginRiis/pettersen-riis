@@ -14,13 +14,16 @@ type Props = {
  * for valgt antall timer (24 / 72 / 168). Henter fra MET.no.
  */
 export function UvPanel({ title, subtitle, lat, lon, rangeHours = 24 }: Props) {
-  const { uvNow, uvMaxToday, uvMaxTimeToday, hours, sunrise, sunset, loading, error } =
+  const { uvNow, uvMaxToday, uvMaxTimeToday, hours: allHours, sunrise, sunset, loading, error } =
     useUvSun(lat, lon);
+  const hours = allHours.slice(0, rangeHours);
 
   const level = uvNow != null ? uvLevel(uvNow) : null;
   const maxLevel = uvMaxToday != null ? uvLevel(uvMaxToday) : null;
   const peakHours = hours.length ? Math.max(...hours.map((h) => h.uv)) : 0;
   const chartMax = Math.max(3, Math.ceil(peakHours + 0.5));
+  const rangeLabel =
+    rangeHours <= 24 ? "Neste 24 timer" : rangeHours <= 72 ? "Neste 3 dager" : "Neste 7 dager";
 
   return (
     <article className="panel rounded-lg p-6 glow-on-hover">
