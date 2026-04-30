@@ -304,12 +304,14 @@ function WeatherPage() {
               subtitle="Skien · MET.no"
               lat={59.1789}
               lon={9.5732}
+              rangeHours={rangeHours}
             />
             <UvPanel
               title="Hytta · Flesberg"
               subtitle="Numedal · MET.no"
               lat={59.8733}
               lon={9.4297}
+              rangeHours={rangeHours}
             />
           </div>
         </Block>
