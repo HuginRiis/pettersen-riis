@@ -34,6 +34,27 @@ function formatAgo(iso: string | null): string {
   return `${Math.round(h / 24)}d siden`;
 }
 
+function formatIn(iso: string | null): string {
+  if (!iso) return "—";
+  const ms = new Date(iso).getTime() - Date.now();
+  if (ms <= 0) return "snart";
+  const s = Math.round(ms / 1000);
+  if (s < 60) return `om ${s}s`;
+  const m = Math.round(s / 60);
+  if (m < 60) return `om ${m}m`;
+  const h = Math.round(m / 60);
+  if (h < 24) return `om ${h}t`;
+  return `om ${Math.round(h / 24)}d`;
+}
+
+function formatClock(iso: string | null): string {
+  if (!iso) return "";
+  return new Date(iso).toLocaleTimeString("nb-NO", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 export function ApiCallLogPanel() {
   const fetchLog = useServerFn(getApiCallLog);
   const refresh = useServerFn(refreshApiSource);
