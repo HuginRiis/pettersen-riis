@@ -174,7 +174,13 @@ export async function computeApiCallSummary(): Promise<ApiCallSummary> {
 
   if (error) {
     console.error("[api-call-log] summary query failed", error);
-    return { fetchedAt: Date.now(), rows: [], recent: [] };
+    return {
+      fetchedAt: Date.now(),
+      rows: [],
+      nextRunBySource: {},
+      schedules: SOURCE_SCHEDULES,
+      recent: [],
+    };
   }
 
   type Row = {
