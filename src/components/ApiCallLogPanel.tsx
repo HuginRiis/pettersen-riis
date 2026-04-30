@@ -274,6 +274,18 @@ export function ApiCallLogPanel() {
           })}
         </div>
 
+        {(hiddenCount > 0 || expanded) && sortedSources.length > INITIAL_VISIBLE && (
+          <button
+            type="button"
+            onClick={() => setExpanded((v) => !v)}
+            className="mt-3 w-full px-4 py-2 rounded border border-border text-[11px] tracking-[0.3em] uppercase hover:bg-primary/10 text-muted-foreground"
+          >
+            {expanded
+              ? "▴ Vis færre"
+              : `▾ Vis ${hiddenCount} til`}
+          </button>
+        )}
+
         {data && (
           <p className="text-[10px] text-muted-foreground mt-4 text-right">
             Oppdatert {new Date(data.fetchedAt).toLocaleTimeString("nb-NO")}
