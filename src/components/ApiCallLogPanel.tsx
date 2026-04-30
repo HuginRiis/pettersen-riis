@@ -154,7 +154,7 @@ export function ApiCallLogPanel() {
         )}
 
         <div className="space-y-2">
-          {SOURCES.map((src) => {
+          {visibleSources.map((src) => {
             const rows = grouped.get(src.id) ?? [];
             const lastCall = rows.reduce<string | null>((acc, r) => {
               if (!r.last_called_at) return acc;
