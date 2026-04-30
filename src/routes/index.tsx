@@ -12,6 +12,7 @@ import {
 import { PageShell } from "@/components/PageShell";
 import { HouseHero } from "@/components/HouseHero";
 import { WeatherWidget } from "@/components/WeatherWidget";
+import { UvPanel } from "@/components/UvPanel";
 import { OutdoorWeatherStrip } from "@/components/OutdoorWeatherStrip";
 import { IndoorWeatherStrip } from "@/components/IndoorWeatherStrip";
 import { MaesterCounsel } from "@/components/MaesterCounsel";
@@ -238,6 +239,21 @@ function Home() {
             lat={TOLLNES.lat}
             lon={TOLLNES.lon}
             mode="tomorrow"
+          />
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-5 mt-5">
+          <UvPanel
+            title="Solens kraft · Borgen"
+            subtitle="UV-indeks og soltider · Tollnes, Skien"
+            lat={TOLLNES.lat}
+            lon={TOLLNES.lon}
+          />
+          <UvPanel
+            title="Solens kraft · Hytta"
+            subtitle="UV-indeks og soltider · Flesberg"
+            lat={HYTTA.lat}
+            lon={HYTTA.lon}
           />
         </div>
       </section>
