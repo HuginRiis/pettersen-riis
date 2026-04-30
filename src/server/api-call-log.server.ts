@@ -114,9 +114,42 @@ export type ApiCallSummaryRow = {
   avg_duration_ms_24h: number | null;
 };
 
+export type SourceSchedule = {
+  /** Lesbar beskrivelse, f.eks. "hvert minutt", "hver 5 min", "ved bruk" */
+  description: string;
+  /** Forventet intervall i ms mellom synkroniseringer; null = on-demand */
+  intervalMs: number | null;
+  /** Hvordan kilden trigges */
+  trigger: "cron" | "cache" | "on-demand" | "webhook";
+};
+
+/**
+ * Kjente sync-tidsplaner per kilde. Brukes til å estimere "neste sync".
+ * - cron: jobber satt opp via pg_cron mot serverhooks
+ * - cache: server-cache med TTL — neste server-kall vil refetche etter TTL
+ * - on-demand: trigges når en side lastes; ikke noe fast intervall
+ */
+export const SOURCE_SCHEDULES: Record<string, SourceSchedule> = {
+  homey: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
+  strava: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
+  netatmo: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
+  tibber: { description: "hvert minutt (snapshot)", intervalMs: 60_000, trigger: "cron" },
+  met: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
+  nrk: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
+  spot: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
+  lightning: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
+  garbage: { description: "cache 6t", intervalMs: 6 * 60 * 60 * 1000, trigger: "cache" },
+  kassal: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
+  other: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
+};
+
 export type ApiCallSummary = {
   fetchedAt: number;
   rows: ApiCallSummaryRow[];
+  /** Per kilde: ISO-tidspunkt for neste forventede sync, eller null. */
+  nextRunBySource: Record<string, string | null>;
+  /** Per kilde: sync-plan (lesbar beskrivelse + trigger). */
+  schedules: Record<string, SourceSchedule>;
   recent: Array<{
     id: string;
     source: string;
