@@ -831,7 +831,7 @@ function PulseHistoryChart({
 }) {
   const fetchHistory = useServerFn(getPulseHistory);
   const [points, setPoints] = useState<PulseHistoryPoint[]>([]);
-  const [hours, setHours] = useState<6 | 24 | 72>(24);
+  const [hours, setHours] = useState<6 | 24 | 72 | 576>(24);
 
   // Re-fetch når reading kommer (max 1 gang per minutt for å ikke spamme)
   const lastFetchRef = (PulseHistoryChart as any)._lastFetch ??= new Map<string, number>();
@@ -885,7 +885,7 @@ function PulseHistoryChart({
           <Activity size={14} /> Pulse-historikk · effekt
         </h3>
         <div className="flex gap-1">
-          {([6, 24, 72] as const).map((h) => (
+          {([6, 24, 72, 576] as const).map((h) => (
             <button
               key={h}
               onClick={() => setHours(h)}
@@ -895,7 +895,7 @@ function PulseHistoryChart({
                   : "border-border text-muted-foreground hover:text-primary hover:border-primary/40"
               }`}
             >
-              {h === 6 ? "6t" : h === 24 ? "24t" : "3d"}
+              {h === 6 ? "6t" : h === 24 ? "24t" : h === 72 ? "3d" : "24d"}
             </button>
           ))}
         </div>
