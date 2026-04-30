@@ -242,6 +242,25 @@ export function HouseHero({
   );
 }
 
+function UvHeroBadge({ lat, lon }: { lat: number; lon: number }) {
+  const { uvNow } = useUvSun(lat, lon);
+  if (uvNow == null) return null;
+  const lvl = uvLevel(uvNow);
+  return (
+    <>
+      <span className="text-primary/40">❦</span>
+      <span
+        className="inline-flex items-center gap-1.5 normal-case tracking-normal"
+        title={`UV nå: ${uvNow.toFixed(1)} (${lvl.label})`}
+      >
+        <Sun size={12} style={{ color: lvl.color }} />
+        <span className="text-foreground font-semibold text-[11px] md:text-xs">UV {uvNow.toFixed(1)}</span>
+        <span className="text-muted-foreground text-[10px] md:text-[11px]">{lvl.label}</span>
+      </span>
+    </>
+  );
+}
+
 function SunEvent() {
   const { sunrise, sunset } = useUvSun(BORGEN_COORD.lat, BORGEN_COORD.lon);
   const [now, setNow] = useState(() => Date.now());
