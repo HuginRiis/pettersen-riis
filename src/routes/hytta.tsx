@@ -8,7 +8,10 @@ import { HeatersPanel } from "@/components/HeatersPanel";
 import { HyttaIndreSal } from "@/components/HyttaIndreSal";
 import { TollnesCameraStrip } from "@/components/TollnesCameraStrip";
 import { AuroraPanel } from "@/components/AuroraPanel";
+import { UvPanel } from "@/components/UvPanel";
 import { useAuthStatus } from "@/hooks/use-auth-status";
+
+const HYTTA_COORD = { lat: 59.8733, lon: 9.4297 };
 
 import hyttaImg from "@/assets/hytta-aurora-got.jpg";
 import g0314 from "@/assets/hytta-gallery/0314.jpg";
@@ -171,6 +174,15 @@ function HyttaPage() {
       )}
 
       <NetatmoWeatherStationSection title="Værstasjonen — Hytta" stationMatch="hytta" />
+
+      <section className="container mx-auto px-4 pb-6">
+        <UvPanel
+          title="Solens kraft · Hytta"
+          subtitle="UV-indeks og soltider · Øvre Bjørkesetvegen 123, Flesberg"
+          lat={HYTTA_COORD.lat}
+          lon={HYTTA_COORD.lon}
+        />
+      </section>
 
       <AuroraPanel />
 
