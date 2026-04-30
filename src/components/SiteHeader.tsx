@@ -1,6 +1,6 @@
 import { Link, useRouter } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { Menu, X, LogOut, Crown, Swords, Shield, KeyRound, Home, Sunrise, Sunset } from "lucide-react";
+import { useState } from "react";
+import { Menu, X, LogOut, Crown, Swords, Shield, KeyRound, Home } from "lucide-react";
 import { logoutFn } from "@/server/auth";
 import { useAuthStatus } from "@/hooks/use-auth-status";
 import { openLoginDialog } from "@/components/LoginDialog";
@@ -99,8 +99,6 @@ export function SiteHeader() {
             </div>
           </div>
         </Link>
-
-        <SunEventIndicator />
 
         <nav className="hidden md:flex flex-1 flex-wrap items-center justify-start gap-x-2 gap-y-2">
           {visibleLinks.map((l) => (
