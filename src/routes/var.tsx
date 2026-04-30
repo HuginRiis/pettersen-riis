@@ -848,6 +848,55 @@ function WindRoseCard({
 // Helpers
 // ============================================================
 
+function rangeLabel(h: number): string {
+  if (h <= 24) return "24 timer";
+  if (h <= 72) return "3 dager";
+  return "7 dager";
+}
+
+function RangeSelector({
+  value,
+  onChange,
+}: {
+  value: 24 | 72 | 168;
+  onChange: (v: 24 | 72 | 168) => void;
+}) {
+  const options: { v: 24 | 72 | 168; label: string }[] = [
+    { v: 24, label: "24 timer" },
+    { v: 72, label: "3 dager" },
+    { v: 168, label: "7 dager" },
+  ];
+  return (
+    <div className="flex justify-center">
+      <div
+        role="tablist"
+        aria-label="Tidsrom for værvarsel"
+        className="inline-flex rounded-md border border-border/60 bg-background/40 p-1 gap-1"
+      >
+        {options.map((o) => {
+          const active = value === o.v;
+          return (
+            <button
+              key={o.v}
+              role="tab"
+              aria-selected={active}
+              onClick={() => onChange(o.v)}
+              className={
+                "px-4 py-1.5 text-[11px] tracking-[0.25em] uppercase rounded transition-colors " +
+                (active
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground")
+              }
+            >
+              {o.label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function alertColor(c: string): string {
   switch (c) {
     case "red": return "oklch(0.55 0.22 25)";
