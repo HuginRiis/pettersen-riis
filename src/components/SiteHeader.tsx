@@ -100,6 +100,8 @@ export function SiteHeader() {
           </div>
         </Link>
 
+        <SunEventIndicator />
+
         <nav className="hidden md:flex flex-1 flex-wrap items-center justify-start gap-x-2 gap-y-2">
           {visibleLinks.map((l) => (
             <Link
@@ -107,9 +109,11 @@ export function SiteHeader() {
               to={l.to}
               preload={HOMEY_BACKED_ROUTES.includes(l.to) ? false : undefined}
               activeOptions={l.to === "/" ? { exact: true } : undefined}
-              className="got-nav-btn"
+              className="got-nav-btn inline-flex items-center gap-1.5"
             >
-              {l.label}
+              <span>{l.label}</span>
+              {l.to === "/" && <UvBadge lat={BORGEN_COORD.lat} lon={BORGEN_COORD.lon} />}
+              {l.to === "/hytta" && <UvBadge lat={HYTTA_COORD.lat} lon={HYTTA_COORD.lon} />}
             </Link>
           ))}
           {isAuthed ? (
