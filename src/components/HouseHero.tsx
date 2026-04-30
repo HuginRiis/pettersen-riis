@@ -1,8 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Eye, Users, TrendingUp, TrendingDown, Minus, MousePointerClick } from "lucide-react";
+import { Eye, Users, TrendingUp, TrendingDown, Minus, MousePointerClick, Sunrise, Sunset } from "lucide-react";
 import { getVisitorCounts, type VisitorCounts } from "@/server/visitors";
 import { getOutdoorLightsStatus, type OutdoorLightsStatus } from "@/server/homey";
+import { useUvSun } from "@/hooks/use-uv-sun";
+
+const BORGEN_COORD = { lat: 59.1789, lon: 9.5732 };
 
 /**
  * HouseHero — animert helteseksjon for forsiden.
@@ -214,6 +217,7 @@ export function HouseHero({
             <span>{SEASON_LABEL[season]}</span>
             <span className="text-primary/40">❦</span>
             <span>{DAYPART_LABEL[dayPart]}</span>
+            <SunEvent />
             {lights?.ok && lights.totalCount > 0 && (
               <>
                 <span className="text-primary/40">❦</span>
@@ -234,6 +238,39 @@ export function HouseHero({
 
       <HouseHeroStyles />
     </section>
+  );
+}
+
+function SunEvent() {
+  const { sunrise, sunset } = useUvSun(BORGEN_COORD.lat, BORGEN_COORD.lon);
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 60_000);
+    return () => clearInterval(id);
+  }, []);
+  if (!sunrise || !sunset) return null;
+  const sr = new Date(sunrise).getTime();
+  const ss = new Date(sunset).getTime();
+  const isDay = now >= sr && now < ss;
+  const target = isDay ? ss : sr > now ? sr : sr + 24 * 3600 * 1000;
+  const ms = Math.max(0, target - now);
+  const h = Math.floor(ms / 3_600_000);
+  const m = Math.floor((ms % 3_600_000) / 60_000);
+  const label = h > 0 ? `${h}t ${m.toString().padStart(2, "0")}m` : `${m}m`;
+  const clock = new Date(target).toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit" });
+  const Icon = isDay ? Sunset : Sunrise;
+  return (
+    <>
+      <span className="text-primary/40">❦</span>
+      <span
+        className="inline-flex items-center gap-1.5 normal-case tracking-normal text-primary/90"
+        title={isDay ? "Tid til solnedgang" : "Tid til soloppgang"}
+      >
+        <Icon size={12} className="text-amber-300" />
+        <span className="text-foreground font-semibold text-[11px] md:text-xs">{clock}</span>
+        <span className="text-muted-foreground text-[10px] md:text-[11px]">om {label}</span>
+      </span>
+    </>
   );
 }
 

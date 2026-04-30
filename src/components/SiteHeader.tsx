@@ -1,6 +1,6 @@
 import { Link, useRouter } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { Menu, X, LogOut, Crown, Swords, Shield, KeyRound, Home, Sunrise, Sunset } from "lucide-react";
+import { useState } from "react";
+import { Menu, X, LogOut, Crown, Swords, Shield, KeyRound, Home } from "lucide-react";
 import { logoutFn } from "@/server/auth";
 import { useAuthStatus } from "@/hooks/use-auth-status";
 import { openLoginDialog } from "@/components/LoginDialog";
@@ -99,8 +99,6 @@ export function SiteHeader() {
             </div>
           </div>
         </Link>
-
-        <SunEventIndicator />
 
         <nav className="hidden md:flex flex-1 flex-wrap items-center justify-start gap-x-2 gap-y-2">
           {visibleLinks.map((l) => (
@@ -206,43 +204,5 @@ function UvBadge({ lat, lon }: { lat: number; lon: number }) {
     >
       UV {Math.round(uvNow)}
     </span>
-  );
-}
-
-function SunEventIndicator() {
-  // Bruker Borgen-koordinater til toppmenyens sol-indikator.
-  const { sunrise, sunset } = useUvSun(BORGEN_COORD.lat, BORGEN_COORD.lon);
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), 60_000);
-    return () => clearInterval(id);
-  }, []);
-  if (!sunrise || !sunset) return null;
-  const sr = new Date(sunrise).getTime();
-  const ss = new Date(sunset).getTime();
-  // Hvis sola har stått opp men ikke gått ned → vis "går ned om …"
-  // Ellers (natt) → vis "står opp om …"
-  const isDay = now >= sr && now < ss;
-  const target = isDay ? ss : sr > now ? sr : sr + 24 * 3600 * 1000;
-  const ms = Math.max(0, target - now);
-  const h = Math.floor(ms / 3_600_000);
-  const m = Math.floor((ms % 3_600_000) / 60_000);
-  const label =
-    h > 0 ? `${h}t ${m.toString().padStart(2, "0")}m` : `${m}m`;
-  const clock = new Date(target).toLocaleTimeString("nb-NO", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-  const Icon = isDay ? Sunset : Sunrise;
-  const color = isDay ? "oklch(0.72 0.18 45)" : "oklch(0.78 0.16 95)";
-  return (
-    <div
-      className="hidden sm:flex items-center gap-1.5 text-[10px] tracking-[0.2em] uppercase text-muted-foreground shrink-0"
-      title={isDay ? "Tid til solnedgang" : "Tid til soloppgang"}
-    >
-      <Icon size={14} style={{ color }} />
-      <span style={{ color }}>{clock}</span>
-      <span className="text-muted-foreground/70">· {label}</span>
-    </div>
   );
 }
