@@ -1,9 +1,13 @@
 import { Link, useRouter } from "@tanstack/react-router";
-import { useState } from "react";
-import { Menu, X, LogOut, Crown, Swords, Shield, KeyRound, Home } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Menu, X, LogOut, Crown, Swords, Shield, KeyRound, Home, Sunrise, Sunset } from "lucide-react";
 import { logoutFn } from "@/server/auth";
 import { useAuthStatus } from "@/hooks/use-auth-status";
 import { openLoginDialog } from "@/components/LoginDialog";
+import { useUvSun, uvLevel } from "@/hooks/use-uv-sun";
+
+const BORGEN_COORD = { lat: 59.1789, lon: 9.5732 };
+const HYTTA_COORD = { lat: 59.8733, lon: 9.4297 };
 
 type RoutePath =
   | "/"
