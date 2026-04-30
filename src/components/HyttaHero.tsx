@@ -1,4 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
+import { Sun } from "lucide-react";
+import { useUvSun, uvLevel } from "@/hooks/use-uv-sun";
+
+const HYTTA_COORD = { lat: 59.8733, lon: 9.4297 }; // Flesberg, Numedal
 
 // 12 månedsbilder for hytta — bytter automatisk basert på dagens måned
 import jan from "@/assets/hytta-months/01-januar.jpg";
@@ -137,14 +141,41 @@ export function HyttaHero({
 
         {/* Måneds-stripe — kun etter mount så SSR ikke får mismatch, og kun når vi syklar månedsbilder */}
         {mounted && !useOverride && (
-          <div className="mt-5 flex items-center gap-3 text-[10px] md:text-xs uppercase tracking-[0.35em] text-primary/90">
+          <div className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-2 text-[10px] md:text-xs uppercase tracking-[0.35em] text-primary/90">
             <span className="inline-block w-8 h-px bg-primary/60" />
             <span>{MONTH_IMAGES[monthIndex].label}</span>
+            <UvHeroBadge lat={HYTTA_COORD.lat} lon={HYTTA_COORD.lon} />
+            <span className="inline-block w-8 h-px bg-primary/60" />
+          </div>
+        )}
+        {mounted && useOverride && (
+          <div className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-2 text-[10px] md:text-xs uppercase tracking-[0.35em] text-primary/90">
+            <span className="inline-block w-8 h-px bg-primary/60" />
+            <UvHeroBadge lat={HYTTA_COORD.lat} lon={HYTTA_COORD.lon} />
             <span className="inline-block w-8 h-px bg-primary/60" />
           </div>
         )}
       </div>
     </section>
+  );
+}
+
+function UvHeroBadge({ lat, lon }: { lat: number; lon: number }) {
+  const { uvNow } = useUvSun(lat, lon);
+  if (uvNow == null) return null;
+  const lvl = uvLevel(uvNow);
+  return (
+    <>
+      <span className="text-primary/40">❦</span>
+      <span
+        className="inline-flex items-center gap-1.5 normal-case tracking-normal"
+        title={`UV nå: ${uvNow.toFixed(1)} (${lvl.label})`}
+      >
+        <Sun size={12} style={{ color: lvl.color }} />
+        <span className="text-foreground font-semibold text-[11px] md:text-xs">UV {uvNow.toFixed(1)}</span>
+        <span className="text-muted-foreground text-[10px] md:text-[11px]">{lvl.label}</span>
+      </span>
+    </>
   );
 }
 
