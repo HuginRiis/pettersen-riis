@@ -270,6 +270,26 @@ function HomeBlock({
             : "—";
 
   const todayKwh = liveKwhToday != null ? liveKwhToday : data?.todayKwh ?? 0;
+
+  // Hent lagret daglig kWh fra DB som fallback når Tibber-abo mangler historikk
+  const fetchStored = useServerFn(getStoredDailyKwh);
+  const [storedRows, setStoredRows] = useState<StoredDailyKwh[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    const load = () => {
+      fetchStored()
+        .then((res) => {
+          if (!cancelled && res.rows) setStoredRows(res.rows);
+        })
+        .catch(() => {});
+    };
+    load();
+    const t = window.setInterval(load, 60_000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(t);
+    };
+  }, [fetchStored]);
   // Bruk timesprisen fra dagens prisliste som matcher klokketimen nå (samme som vises i grafen)
   const currentHourPrice = (() => {
     const list = data?.pricesToday ?? [];
