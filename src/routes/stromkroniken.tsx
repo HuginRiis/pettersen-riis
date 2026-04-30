@@ -2146,7 +2146,7 @@ function ComparisonBlock({
 
         <div>
           <p className="text-[11px] tracking-[0.2em] uppercase text-muted-foreground mb-2">
-            Kumulativ kWh {cumulativeChartData.length > 0 ? `· siste ${cumulativeChartData.length} dager` : <span className="italic normal-case tracking-normal">· venter på data</span>}
+            Kumulativ kWh · {_monthLabel} {cumulativeChartData.length === 0 && <span className="italic normal-case tracking-normal">· venter på data</span>}
           </p>
           <div className="h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
