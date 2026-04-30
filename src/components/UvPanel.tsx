@@ -5,13 +5,15 @@ type Props = {
   subtitle?: string;
   lat: number;
   lon: number;
+  /** Antall timer å vise i grafen. Default 24. */
+  rangeHours?: number;
 };
 
 /**
  * Viser UV-indeks for et sted: nå-verdi, dagens makspunkt, og en sparkline
- * for de neste 24 timene. Henter fra MET.no.
+ * for valgt antall timer (24 / 72 / 168). Henter fra MET.no.
  */
-export function UvPanel({ title, subtitle, lat, lon }: Props) {
+export function UvPanel({ title, subtitle, lat, lon, rangeHours = 24 }: Props) {
   const { uvNow, uvMaxToday, uvMaxTimeToday, hours, sunrise, sunset, loading, error } =
     useUvSun(lat, lon);
 
