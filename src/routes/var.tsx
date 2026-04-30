@@ -75,6 +75,7 @@ function WeatherPage() {
   const [now, setNow] = useState<Date | null>(null);
   const [weatherUpdated, setWeatherUpdated] = useState<Date | null>(null);
   const [homeyUpdated, setHomeyUpdated] = useState<Date | null>(() => new Date());
+  const [rangeHours, setRangeHours] = useState<24 | 72 | 168>(24);
 
   // Dynamiske lokasjoner: "skien"-nøkkelen følger valgt sted (fra UserLocationBar),
   // "hytta" er fast. Vi beholder nøkkelen "skien" for å minimere endringer i resten
