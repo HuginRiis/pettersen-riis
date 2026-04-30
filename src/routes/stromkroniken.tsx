@@ -357,6 +357,9 @@ function HomeBlock({
     lastMonthProrated != null && lastMonthProrated > 0 && todayKwh > 0
       ? { diff: todayKwh - lastMonthProrated, pct: ((todayKwh - lastMonthProrated) / lastMonthProrated) * 100 }
       : null;
+
+  return (
+    <article className="panel rounded-lg p-5 sm:p-7 space-y-7">
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
           <div className="text-[10px] tracking-[0.3em] uppercase text-muted-foreground">
