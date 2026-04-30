@@ -117,10 +117,19 @@ export function useUvSun(lat: number, lon: number): UvSunData {
   return state;
 }
 
+/**
+ * WHO/WMO offisielle UV-fargekoder:
+ *  0–2  Lav        Grønn   #299501
+ *  3–5  Moderat    Gul     #F7E401
+ *  6–7  Høy        Oransje #F95901
+ *  8–10 Veldig høy Rød     #D90011
+ *  11+  Ekstrem    Fiolett #6846A2
+ */
 export function uvLevel(uv: number): { label: string; color: string } {
-  if (uv < 3) return { label: "Lav", color: "oklch(0.72 0.16 150)" };
-  if (uv < 6) return { label: "Moderat", color: "oklch(0.78 0.16 95)" };
-  if (uv < 8) return { label: "Høy", color: "oklch(0.72 0.18 55)" };
-  if (uv < 11) return { label: "Veldig høy", color: "oklch(0.65 0.22 25)" };
-  return { label: "Ekstrem", color: "oklch(0.55 0.25 320)" };
+  if (uv < 3) return { label: "Lav", color: "#299501" };
+  if (uv < 6) return { label: "Moderat", color: "#F7E401" };
+  if (uv < 8) return { label: "Høy", color: "#F95901" };
+  if (uv < 11) return { label: "Veldig høy", color: "#D90011" };
+  return { label: "Ekstrem", color: "#6846A2" };
 }
+
