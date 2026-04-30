@@ -587,7 +587,17 @@ function HourPanel({
   );
 }
 
-function TempPrecipChart({ hours, color }: { hours: Hour[]; color: string }) {
+function TempPrecipChart({
+  hours,
+  color,
+  showNow = false,
+  longRange = false,
+}: {
+  hours: Hour[];
+  color: string;
+  showNow?: boolean;
+  longRange?: boolean;
+}) {
   const W = 600;
   const H = 140;
   const pad = { l: 28, r: 16, t: 12, b: 22 };
@@ -613,9 +623,22 @@ function TempPrecipChart({ hours, color }: { hours: Hour[]; color: string }) {
 
   const barW = innerW / hours.length;
 
+  // X-tick stride så vi får ca 8 etiketter
+  const stride = Math.max(1, Math.round(hours.length / 8));
+
+  // Now-linje basert på faktisk tid
+  let nowX: number | null = null;
+  if (showNow && hours.length > 1) {
+    const now = Date.now();
+    const t0 = new Date(hours[0].time).getTime();
+    const tN = new Date(hours[hours.length - 1].time).getTime();
+    if (now >= t0 && now <= tN) {
+      nowX = pad.l + ((now - t0) / (tN - t0)) * innerW;
+    }
+  }
+
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto" preserveAspectRatio="none">
-      {/* Y-aksen temp */}
       {[tMin, Math.round((tMin + tMax) / 2), tMax].map((v) => (
         <g key={v}>
           <line
@@ -632,7 +655,6 @@ function TempPrecipChart({ hours, color }: { hours: Hour[]; color: string }) {
           </text>
         </g>
       ))}
-      {/* Regn-stolper */}
       {hours.map((h, i) => {
         if (h.precip <= 0) return null;
         const x = xFor(i) - barW / 2;
@@ -650,11 +672,26 @@ function TempPrecipChart({ hours, color }: { hours: Hour[]; color: string }) {
           />
         );
       })}
-      {/* Temp-linje */}
       <path d={path} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" />
-      {/* X-aksen labels */}
-      {hours.filter((_, i) => i % 6 === 0).map((h, idx) => {
-        const i = idx * 6;
+      {nowX != null && (
+        <g>
+          <line
+            x1={nowX}
+            x2={nowX}
+            y1={pad.t}
+            y2={pad.t + innerH}
+            stroke="var(--primary)"
+            strokeWidth="1.5"
+            strokeDasharray="3 3"
+            opacity="0.85"
+          />
+          <text x={nowX} y={pad.t - 2} fontSize="9" fill="var(--primary)" textAnchor="middle">
+            nå
+          </text>
+        </g>
+      )}
+      {hours.filter((_, i) => i % stride === 0).map((h, idx) => {
+        const i = idx * stride;
         return (
           <text
             key={h.time}
@@ -664,7 +701,9 @@ function TempPrecipChart({ hours, color }: { hours: Hour[]; color: string }) {
             fill="var(--muted-foreground)"
             textAnchor="middle"
           >
-            {h.time.slice(11, 13)}
+            {longRange
+              ? new Date(h.time).toLocaleDateString("nb-NO", { day: "2-digit", month: "2-digit" })
+              : h.time.slice(11, 13)}
           </text>
         );
       })}
@@ -672,7 +711,15 @@ function TempPrecipChart({ hours, color }: { hours: Hour[]; color: string }) {
   );
 }
 
-function WindRoseCard({ name, hours }: { name: string; hours: Hour[] | null }) {
+function WindRoseCard({
+  name,
+  hours,
+  rangeHours = 24,
+}: {
+  name: string;
+  hours: Hour[] | null;
+  rangeHours?: number;
+}) {
   if (!hours) {
     return (
       <article className="panel rounded-lg p-6">
@@ -681,7 +728,7 @@ function WindRoseCard({ name, hours }: { name: string; hours: Hour[] | null }) {
       </article>
     );
   }
-  const next = hours.slice(0, 24);
+  const next = hours.slice(0, rangeHours);
   // 8 hovedretninger
   const dirs = ["N", "NØ", "Ø", "SØ", "S", "SV", "V", "NV"];
   const buckets = new Array(8).fill(0).map(() => ({ count: 0, sumWind: 0 }));
