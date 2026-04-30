@@ -1950,18 +1950,24 @@ function ComparisonBlock({
     Hytta: Math.round(d.Hytta * 10) / 10,
   }));
 
-  // Kumulativ kWh per dag — summerer dag for dag, alltid stigende
+  // Kumulativ kWh for inneværende måned — fra dag 1 til siste dag i måneden.
+  // Tomme dager fram i tid vises ikke (kurven stopper på "i dag").
+  const _now = new Date();
+  const _yyyymm = `${_now.getFullYear()}-${String(_now.getMonth() + 1).padStart(2, "0")}`;
+  const _todayKey = `${_yyyymm}-${String(_now.getDate()).padStart(2, "0")}`;
+  const monthDays = dailySorted.filter((d) => d.day.startsWith(_yyyymm) && d.day <= _todayKey);
   let cumB = 0;
   let cumH = 0;
-  const cumulativeChartData = dailySorted.map((d) => {
+  const cumulativeChartData = monthDays.map((d) => {
     cumB += d.Borgen ?? 0;
     cumH += d.Hytta ?? 0;
     return {
-      label: d.day.slice(8) + "." + d.day.slice(5, 7),
+      label: d.day.slice(8), // dag i måneden
       Borgen: Math.round(cumB * 10) / 10,
       Hytta: Math.round(cumH * 10) / 10,
     };
   });
+  const _monthLabel = _now.toLocaleDateString("nb-NO", { month: "long", year: "numeric" });
 
   // Årlig forbruk — start med lagrede daglige snapshots, ellers blir den tom uten Tibber-abo.
   const yearMap = new Map<string, { year: string; Borgen: number; Hytta: number }>();
