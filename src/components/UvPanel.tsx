@@ -96,9 +96,9 @@ export function UvPanel({ title, subtitle, lat, lon, rangeHours = 24 }: Props) {
 
           <div className="mt-4">
             <div className="text-[10px] tracking-[0.25em] uppercase text-muted-foreground mb-2">
-              Neste 24 timer
+              {rangeLabel}
             </div>
-            <UvChart hours={hours} max={chartMax} />
+            <UvChart hours={hours} max={chartMax} showNow={rangeHours <= 24} />
           </div>
         </>
       )}
