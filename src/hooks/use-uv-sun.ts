@@ -94,7 +94,7 @@ export function useUvSun(lat: number, lon: number): UvSunData {
           uvNow,
           uvMaxToday: uvMaxToday > 0 ? uvMaxToday : null,
           uvMaxTimeToday,
-          hours: next24,
+          hours,
           sunrise,
           sunset,
         };
