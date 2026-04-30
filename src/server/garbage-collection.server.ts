@@ -8,6 +8,7 @@
  */
 import webpush from "web-push";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { recordApiCall } from "@/server/api-call-log.server";
 
 const PROXY = "https://norkartrenovasjon.azurewebsites.net/proxyserver.ashx";
 const KOMTEK = "https://komteksky.norkart.no/MinRenovasjon.Api";
@@ -73,6 +74,15 @@ async function fetchFromNorkart(addr: GarbageAddress): Promise<{ fraksjoner: Fra
   const key = `${addr.kommunenr}|${addr.gatekode}|${addr.husnr}`;
   const hit = cache.get(key);
   if (hit && Date.now() - hit.ts < CACHE_MS) {
+    // Logg cache-hit slik at panelet i Vakttårnet ser at API-en er aktiv
+    await recordApiCall({
+      source: "garbage",
+      endpoint: "norkart/cache",
+      ok: true,
+      cached: true,
+      duration_ms: 0,
+      metadata: { kommunenr: addr.kommunenr },
+    });
     return { fraksjoner: hit.fraksjoner, kalender: hit.kalender };
   }
 
@@ -83,9 +93,29 @@ async function fetchFromNorkart(addr: GarbageAddress): Promise<{ fraksjoner: Fra
 
   // Fraksjoner
   const fUrl = `${PROXY}?server=${KOMTEK}/api/fraksjoner/`;
+  const fStarted = Date.now();
   const fRes = await fetch(fUrl, { headers });
-  if (!fRes.ok) throw new Error(`Fraksjoner-API svarte ${fRes.status}`);
+  if (!fRes.ok) {
+    await recordApiCall({
+      source: "garbage",
+      endpoint: "norkart/fraksjoner",
+      ok: false,
+      status_code: fRes.status,
+      duration_ms: Date.now() - fStarted,
+      error_message: `HTTP ${fRes.status}`,
+      metadata: { kommunenr: addr.kommunenr },
+    });
+    throw new Error(`Fraksjoner-API svarte ${fRes.status}`);
+  }
   const fraksjoner = (await fRes.json()) as Fraksjon[];
+  await recordApiCall({
+    source: "garbage",
+    endpoint: "norkart/fraksjoner",
+    ok: true,
+    status_code: fRes.status,
+    duration_ms: Date.now() - fStarted,
+    metadata: { kommunenr: addr.kommunenr, count: fraksjoner.length },
+  });
 
   // Tommekalender — gatenavn må sendes med trailing space (Norkarts klient gjør det).
   const gn = `${addr.gatenavn} `;
@@ -95,9 +125,29 @@ async function fetchFromNorkart(addr: GarbageAddress): Promise<{ fraksjoner: Fra
     `&gatenavn=${encodeURIComponent(gn)}` +
     `&gatekode=${encodeURIComponent(addr.gatekode)}` +
     `&husnr=${encodeURIComponent(addr.husnr)}`;
+  const tStarted = Date.now();
   const tRes = await fetch(tUrl, { headers });
-  if (!tRes.ok) throw new Error(`Tommekalender-API svarte ${tRes.status}`);
+  if (!tRes.ok) {
+    await recordApiCall({
+      source: "garbage",
+      endpoint: "norkart/tommekalender",
+      ok: false,
+      status_code: tRes.status,
+      duration_ms: Date.now() - tStarted,
+      error_message: `HTTP ${tRes.status}`,
+      metadata: { kommunenr: addr.kommunenr, gatekode: addr.gatekode, husnr: addr.husnr },
+    });
+    throw new Error(`Tommekalender-API svarte ${tRes.status}`);
+  }
   const kalender = (await tRes.json()) as TommeEntry[];
+  await recordApiCall({
+    source: "garbage",
+    endpoint: "norkart/tommekalender",
+    ok: true,
+    status_code: tRes.status,
+    duration_ms: Date.now() - tStarted,
+    metadata: { kommunenr: addr.kommunenr, entries: kalender.length },
+  });
 
   cache.set(key, { fraksjoner, kalender, ts: Date.now() });
   return { fraksjoner, kalender };
