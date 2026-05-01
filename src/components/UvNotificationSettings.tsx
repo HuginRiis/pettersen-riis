@@ -139,6 +139,25 @@ export function UvNotificationSettings() {
                 </SelectContent>
               </Select>
             </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground shrink-0">Varsle</span>
+              <Select
+                value={String(p.lead_minutes ?? 30)}
+                disabled={!p.enabled || saving === p.id}
+                onValueChange={(v) => update(p.id, { lead_minutes: Number(v) })}
+              >
+                <SelectTrigger className="h-8 text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {LEAD_OPTIONS.map((o) => (
+                    <SelectItem key={o.value} value={String(o.value)}>
+                      {o.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <div className="flex flex-wrap gap-1.5 pt-1">
               <span className="text-xs text-muted-foreground self-center mr-1">Test:</span>
               {([3, 6, 8] as const).map((lvl) => (
