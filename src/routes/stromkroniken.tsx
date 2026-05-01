@@ -1051,6 +1051,7 @@ function PulseHistoryChart({
                 strokeWidth={2}
                 fill={`url(#pulseFill-${location})`}
                 isAnimationActive={false}
+                connectNulls
               />
             </AreaChart>
           </ResponsiveContainer>
