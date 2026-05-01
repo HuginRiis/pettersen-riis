@@ -273,7 +273,7 @@ function WeatherPage() {
               <a href="/smarthus" className="text-primary underline">Smarthus</a> for å koble til Homey.
             </p>
           ) : (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
               <LiveMetric
                 label="Regn i dag · Tollnes"
                 value={tollnesRainToday}
@@ -327,7 +327,7 @@ function WeatherPage() {
 
         {/* === SOL OG MÅNE OVER WESTEROS === */}
         <Block title="Himmelens Vandrere · Sol & Måne">
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             <SkyCard
               label="Soloppgang"
               value={sun ? formatTime(sun.sunrise) : "—"}
@@ -416,7 +416,7 @@ function WeatherPage() {
 
         {/* === LIVE VÆRKART === */}
         <Block title="Stormvaktens Kart · Live vær over Telemark & Buskerud">
-          <WindyMap />
+          <CollapsibleMap />
         </Block>
 
         {/* === VÆR-VARSLER (push) === */}
@@ -465,19 +465,19 @@ function LiveMetric({
   digits?: number;
 }) {
   return (
-    <article className="panel rounded-lg p-5 text-center glow-on-hover">
-      <div className="text-2xl mb-1">{icon}</div>
-      <div className="text-[10px] tracking-[0.3em] text-muted-foreground uppercase">
+    <article className="panel rounded-lg p-3 sm:p-5 text-center glow-on-hover">
+      <div className="text-xl sm:text-2xl mb-1">{icon}</div>
+      <div className="text-[9px] sm:text-[10px] tracking-[0.25em] sm:tracking-[0.3em] text-muted-foreground uppercase leading-tight">
         {label}
       </div>
-      <div className="text-display text-primary text-3xl mt-2">
+      <div className="text-display text-primary text-2xl sm:text-3xl mt-1 sm:mt-2">
         {value !== null ? value.toFixed(digits) : "—"}
       </div>
-      <div className="text-[10px] tracking-[0.2em] text-muted-foreground/70 uppercase mt-1">
+      <div className="text-[9px] sm:text-[10px] tracking-[0.2em] text-muted-foreground/70 uppercase mt-1">
         {unit}
       </div>
       {source && (
-        <div className="text-[9px] tracking-[0.15em] text-muted-foreground/60 uppercase mt-2 truncate">
+        <div className="text-[9px] tracking-[0.15em] text-muted-foreground/60 uppercase mt-1 sm:mt-2 truncate">
           {source}
         </div>
       )}
@@ -497,14 +497,14 @@ function SkyCard({
   hint?: string;
 }) {
   return (
-    <article className="panel rounded-lg p-5 text-center glow-on-hover">
-      <div className="text-3xl mb-2">{icon}</div>
-      <div className="text-[10px] tracking-[0.3em] text-muted-foreground uppercase">
+    <article className="panel rounded-lg p-3 sm:p-5 text-center glow-on-hover">
+      <div className="text-2xl sm:text-3xl mb-1 sm:mb-2">{icon}</div>
+      <div className="text-[9px] sm:text-[10px] tracking-[0.25em] sm:tracking-[0.3em] text-muted-foreground uppercase">
         {label}
       </div>
-      <div className="text-display text-primary text-2xl mt-2">{value}</div>
+      <div className="text-display text-primary text-lg sm:text-2xl mt-1 sm:mt-2">{value}</div>
       {hint && (
-        <div className="text-[10px] tracking-[0.15em] text-muted-foreground/70 uppercase mt-2">
+        <div className="text-[9px] sm:text-[10px] tracking-[0.1em] sm:tracking-[0.15em] text-muted-foreground/70 uppercase mt-1 sm:mt-2">
           {hint}
         </div>
       )}
@@ -1127,6 +1127,26 @@ const WINDY_OVERLAYS: { key: string; label: string; icon: string }[] = [
   { key: "satellite", label: "Satellitt", icon: "🛰" },
   { key: "radar", label: "Radar", icon: "📡" },
 ];
+
+function CollapsibleMap() {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="space-y-3">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="w-full panel rounded-lg p-4 flex items-center justify-between hover:bg-card/70 transition-colors"
+      >
+        <span className="text-display tracking-[0.2em] text-primary text-sm uppercase flex items-center gap-2">
+          <span>🗺</span>
+          {open ? "Lukk kartet" : "Åpne live værkart"}
+        </span>
+        <span className="text-muted-foreground text-xs">{open ? "▲" : "▼"}</span>
+      </button>
+      {open && <WindyMap />}
+    </div>
+  );
+}
 
 function WindyMap() {
   const [overlay, setOverlay] = useState<string>("wind");
