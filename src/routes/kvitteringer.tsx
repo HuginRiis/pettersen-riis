@@ -18,6 +18,7 @@ import {
   Bell,
   ShieldCheck,
   Apple,
+  Package,
 } from "lucide-react";
 import { PageShell, PageHero } from "@/components/PageShell";
 import { Button } from "@/components/ui/button";
@@ -115,6 +116,7 @@ function KvitteringerPage() {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [filterWarrantyActive, setFilterWarrantyActive] = useState(false);
   const [filterWarrantyExpiring, setFilterWarrantyExpiring] = useState(false);
+  const [filterDurable, setFilterDurable] = useState(false);
   const [hideFood, setHideFood] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -277,6 +279,12 @@ function KvitteringerPage() {
     const q = query.trim().toLowerCase();
     return receipts.filter((r) => {
       if (hideFood && r.is_food) return false;
+      if (filterDurable) {
+        // Varige forbruksgoder: ikke matvarer, har dato, fortsatt innenfor 5-års reklamasjon
+        if (r.is_food) return false;
+        const w = warrantyStatus(r.purchased_at);
+        if (!w || w.expired) return false;
+      }
       if (filterWarrantyActive || filterWarrantyExpiring) {
         const w = warrantyStatus(r.purchased_at);
         if (!w || w.expired) return false;
@@ -291,7 +299,7 @@ function KvitteringerPage() {
       if (r.items?.some((it) => it.name?.toLowerCase().includes(q))) return true;
       return false;
     });
-  }, [receipts, query, filterWarrantyActive, filterWarrantyExpiring, hideFood]);
+  }, [receipts, query, filterWarrantyActive, filterWarrantyExpiring, filterDurable, hideFood]);
 
   return (
     <PageShell>
@@ -404,6 +412,14 @@ function KvitteringerPage() {
               icon={<Bell className="h-3.5 w-3.5" />}
             >
               Snart utløp (≤365 dager)
+            </FilterChip>
+            <FilterChip
+              active={filterDurable}
+              onClick={() => setFilterDurable((v) => !v)}
+              icon={<Package className="h-3.5 w-3.5" />}
+              
+            >
+              Varige forbruksgoder
             </FilterChip>
             <FilterChip
               active={hideFood}
