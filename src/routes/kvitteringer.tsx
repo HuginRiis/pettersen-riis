@@ -248,10 +248,41 @@ function KvitteringerPage() {
     toast.success("Kvittering slettet");
   };
 
+  const removeAllFood = async () => {
+    const foodReceipts = receipts.filter((r) => r.is_food);
+    if (foodReceipts.length === 0) {
+      toast.info("Ingen matvarekvitteringer å fjerne");
+      return;
+    }
+    if (
+      !confirm(
+        `Slette ALLE ${foodReceipts.length} matvarekvittering${foodReceipts.length === 1 ? "" : "er"}? Dette kan ikke angres.`,
+      )
+    )
+      return;
+    const ids = foodReceipts.map((r) => r.id);
+    const paths = foodReceipts.map((r) => r.image_path);
+    setReceipts((prev) => prev.filter((r) => !r.is_food));
+    const { error } = await supabase.from("receipts").delete().in("id", ids);
+    if (error) {
+      toast.error("Kunne ikke slette");
+      load();
+      return;
+    }
+    await supabase.storage.from("receipts").remove(paths);
+    toast.success(`${ids.length} matvarekvittering${ids.length === 1 ? "" : "er"} slettet`);
+  };
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return receipts;
     return receipts.filter((r) => {
+      if (hideFood && r.is_food) return false;
+      if (filterWarrantyActive || filterWarrantyExpiring) {
+        const w = warrantyStatus(r.purchased_at);
+        if (!w || w.expired) return false;
+        if (filterWarrantyExpiring && w.daysLeft > 365) return false;
+      }
+      if (!q) return true;
       if (r.store?.toLowerCase().includes(q)) return true;
       if (r.purchased_at?.includes(q)) return true;
       if (r.purchased_at && fmtDate(r.purchased_at).toLowerCase().includes(q)) return true;
@@ -260,7 +291,7 @@ function KvitteringerPage() {
       if (r.items?.some((it) => it.name?.toLowerCase().includes(q))) return true;
       return false;
     });
-  }, [receipts, query]);
+  }, [receipts, query, filterWarrantyActive, filterWarrantyExpiring, hideFood]);
 
   return (
     <PageShell>
