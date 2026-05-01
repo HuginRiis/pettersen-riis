@@ -200,3 +200,60 @@ export async function processUvNotifications(): Promise<{
 
   return { checked, sent, errors, skipped };
 }
+
+/**
+ * Sender et test-push for UV-varsel for én lokasjon, uavhengig av faktisk UV
+ * eller om det er sendt varsel i dag. Brukes fra innstillingspanelet.
+ */
+export async function sendUvTestNotification(
+  prefId: string,
+  level: 3 | 6 | 8 = 3,
+): Promise<{ sent: number; errors: number; recipient: string; label: string }> {
+  ensureConfigured();
+
+  const { data: pref, error } = await supabaseAdmin
+    .from("uv_notification_prefs" as never)
+    .select("*")
+    .eq("id", prefId)
+    .maybeSingle();
+  if (error) throw error;
+  if (!pref) throw new Error("Fant ikke UV-innstilling");
+
+  const p = pref as unknown as { label: string; recipient: string };
+  const lvl = LEVELS.find((l) => l.threshold === level) ?? LEVELS[LEVELS.length - 1];
+  const fakeUv = level === 8 ? 8.2 : level === 6 ? 6.3 : 3.5;
+
+  const targetWho = p.recipient || "Alle";
+  let subQuery = supabaseAdmin
+    .from("push_subscriptions")
+    .select("endpoint, p256dh, auth, who");
+  if (targetWho !== "Alle") {
+    subQuery = subQuery.or(`who.eq.${targetWho},who.eq.Alle`);
+  }
+  const { data: subs, error: subErr } = await subQuery;
+  if (subErr) throw subErr;
+
+  const payload = JSON.stringify({
+    title: `🧪 TEST: ${lvl.title}`,
+    body: lvl.body(p.label, fakeUv) + " (test)",
+    tag: `uv-test-${prefId}-${Date.now()}`,
+    url: "/var",
+  });
+
+  let sent = 0;
+  let errors = 0;
+  for (const sub of subs ?? []) {
+    const ok = await sendOne(
+      {
+        endpoint: sub.endpoint as string,
+        p256dh: sub.p256dh as string,
+        auth: sub.auth as string,
+      },
+      payload,
+    );
+    if (ok) sent++;
+    else errors++;
+  }
+
+  return { sent, errors, recipient: targetWho, label: p.label };
+}
