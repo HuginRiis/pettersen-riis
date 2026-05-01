@@ -26,6 +26,7 @@ type RoutePath =
   | "/oppussing-borgen"
   | "/oppussing-hytta"
   | "/matvarer"
+  | "/kvitteringer"
   | "/got-saga";
 
 type NavLink = { to: RoutePath; label: string; public?: boolean };
@@ -47,7 +48,8 @@ const navLinks: NavLink[] = [
   { to: "/stromkroniken", label: "Strømkrøniken" },
   { to: "/oppussing-borgen", label: "Prosjekter på Borgen" },
   { to: "/oppussing-hytta", label: "Prosjekter på hytta" },
-  { to: "/matvarer", label: "Matvarer" },
+  { to: "/matvarer", label: "Varer" },
+  { to: "/kvitteringer", label: "Kvitteringer" },
   { to: "/hundene", label: "Hundene" },
   { to: "/trening", label: "Trening" },
   { to: "/varsler", label: "Farevarsler", public: true },

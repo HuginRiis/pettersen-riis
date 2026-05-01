@@ -21,6 +21,7 @@ import { Route as PollenRouteImport } from './routes/pollen'
 import { Route as OppussingHyttaRouteImport } from './routes/oppussing-hytta'
 import { Route as OppussingBorgenRouteImport } from './routes/oppussing-borgen'
 import { Route as MatvarerRouteImport } from './routes/matvarer'
+import { Route as KvitteringerRouteImport } from './routes/kvitteringer'
 import { Route as HyttaRouteImport } from './routes/hytta'
 import { Route as HundeneRouteImport } from './routes/hundene'
 import { Route as GotSagaRouteImport } from './routes/got-saga'
@@ -93,6 +94,11 @@ const OppussingBorgenRoute = OppussingBorgenRouteImport.update({
 const MatvarerRoute = MatvarerRouteImport.update({
   id: '/matvarer',
   path: '/matvarer',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const KvitteringerRoute = KvitteringerRouteImport.update({
+  id: '/kvitteringer',
+  path: '/kvitteringer',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HyttaRoute = HyttaRouteImport.update({
@@ -170,6 +176,7 @@ export interface FileRoutesByFullPath {
   '/got-saga': typeof GotSagaRoute
   '/hundene': typeof HundeneRoute
   '/hytta': typeof HyttaRoute
+  '/kvitteringer': typeof KvitteringerRoute
   '/matvarer': typeof MatvarerRoute
   '/oppussing-borgen': typeof OppussingBorgenRoute
   '/oppussing-hytta': typeof OppussingHyttaRoute
@@ -197,6 +204,7 @@ export interface FileRoutesByTo {
   '/got-saga': typeof GotSagaRoute
   '/hundene': typeof HundeneRoute
   '/hytta': typeof HyttaRoute
+  '/kvitteringer': typeof KvitteringerRoute
   '/matvarer': typeof MatvarerRoute
   '/oppussing-borgen': typeof OppussingBorgenRoute
   '/oppussing-hytta': typeof OppussingHyttaRoute
@@ -225,6 +233,7 @@ export interface FileRoutesById {
   '/got-saga': typeof GotSagaRoute
   '/hundene': typeof HundeneRoute
   '/hytta': typeof HyttaRoute
+  '/kvitteringer': typeof KvitteringerRoute
   '/matvarer': typeof MatvarerRoute
   '/oppussing-borgen': typeof OppussingBorgenRoute
   '/oppussing-hytta': typeof OppussingHyttaRoute
@@ -254,6 +263,7 @@ export interface FileRouteTypes {
     | '/got-saga'
     | '/hundene'
     | '/hytta'
+    | '/kvitteringer'
     | '/matvarer'
     | '/oppussing-borgen'
     | '/oppussing-hytta'
@@ -281,6 +291,7 @@ export interface FileRouteTypes {
     | '/got-saga'
     | '/hundene'
     | '/hytta'
+    | '/kvitteringer'
     | '/matvarer'
     | '/oppussing-borgen'
     | '/oppussing-hytta'
@@ -308,6 +319,7 @@ export interface FileRouteTypes {
     | '/got-saga'
     | '/hundene'
     | '/hytta'
+    | '/kvitteringer'
     | '/matvarer'
     | '/oppussing-borgen'
     | '/oppussing-hytta'
@@ -336,6 +348,7 @@ export interface RootRouteChildren {
   GotSagaRoute: typeof GotSagaRoute
   HundeneRoute: typeof HundeneRoute
   HyttaRoute: typeof HyttaRoute
+  KvitteringerRoute: typeof KvitteringerRoute
   MatvarerRoute: typeof MatvarerRoute
   OppussingBorgenRoute: typeof OppussingBorgenRoute
   OppussingHyttaRoute: typeof OppussingHyttaRoute
@@ -444,6 +457,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MatvarerRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/kvitteringer': {
+      id: '/kvitteringer'
+      path: '/kvitteringer'
+      fullPath: '/kvitteringer'
+      preLoaderRoute: typeof KvitteringerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/hytta': {
       id: '/hytta'
       path: '/hytta'
@@ -544,6 +564,7 @@ const rootRouteChildren: RootRouteChildren = {
   GotSagaRoute: GotSagaRoute,
   HundeneRoute: HundeneRoute,
   HyttaRoute: HyttaRoute,
+  KvitteringerRoute: KvitteringerRoute,
   MatvarerRoute: MatvarerRoute,
   OppussingBorgenRoute: OppussingBorgenRoute,
   OppussingHyttaRoute: OppussingHyttaRoute,
