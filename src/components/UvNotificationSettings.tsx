@@ -154,7 +154,6 @@ export function UvNotificationSettings() {
       <div className="grid sm:grid-cols-2 gap-3">
         {prefs.map((p) => {
           const f = forecasts.find((x) => x.id === p.id);
-          const testOpen = !!openTest[p.id];
           return (
             <div
               key={p.id}
