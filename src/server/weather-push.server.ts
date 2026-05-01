@@ -406,8 +406,9 @@ export async function sendWeatherTestNotification(prefId: string): Promise<{
   let errors = 0;
   for (const sub of subs ?? []) {
     const ok = await sendOne(
-      { endpoint: sub.endpoint as string, p256dh: sub.p256dh as string, auth: sub.auth as string },
+      { endpoint: sub.endpoint as string, p256dh: sub.p256dh as string, auth: sub.auth as string, who: (sub as any).who ?? null },
       payload,
+      { feature: "weather-test", recipient: targetWho, title: p.label },
     );
     if (ok) sent++;
     else errors++;
