@@ -23,31 +23,42 @@ function ensureConfigured() {
   configured = true;
 }
 
+// Vi varsler 30 min FØR terskelen faktisk nås, slik at man rekker å smøre seg.
+const LEAD_MINUTES = 30;
+
 const LEVELS = [
   {
     threshold: 8,
     column: "notified_date_8" as const,
-    title: "☀️ Ekstrem UV — unngå sol",
+    title: "☀️ Ekstrem UV om 30 min — forbered deg",
     body: (loc: string, uv: number) =>
-      `${loc}: UV ${uv.toFixed(1)}. Unngå sol kl 12-15. Bruk SPF 50, dekk til med klær og søk skygge.`,
+      `${loc}: UV når ${uv.toFixed(1)} om ca 30 min. Unngå sol kl 12-15. Smør med SPF 50 nå, finn klær og skygge.`,
   },
   {
     threshold: 6,
     column: "notified_date_6" as const,
-    title: "🧴 Styrk solbeskyttelsen",
+    title: "🧴 Sterk UV om 30 min — styrk beskyttelsen",
     body: (loc: string, uv: number) =>
-      `${loc}: UV ${uv.toFixed(1)}. Smør med SPF 30+, bruk solhatt og lette klær. Søk skygge midt på dagen.`,
+      `${loc}: UV når ${uv.toFixed(1)} om ca 30 min. Smør med SPF 30+ nå, ta på solhatt og lette klær. Søk skygge midt på dagen.`,
   },
   {
     threshold: 3,
     column: "notified_date_3" as const,
-    title: "🧴 På tide med solkrem",
+    title: "🧴 Solkrem om 30 min",
     body: (loc: string, uv: number) =>
-      `${loc}: UV ${uv.toFixed(1)}. Bruk solkrem SPF 30 på utsatt hud (DSA-anbefaling).`,
+      `${loc}: UV når ${uv.toFixed(1)} om ca 30 min. Smør med SPF 30 på utsatt hud nå (DSA-anbefaling).`,
   },
 ] as const;
 
-async function fetchUvNow(lat: number, lon: number): Promise<number | null> {
+/**
+ * Henter forventet UV ~`leadMinutes` frem i tid fra MET.no, slik at vi
+ * kan varsle FØR terskelen faktisk nås.
+ */
+async function fetchUvAhead(
+  lat: number,
+  lon: number,
+  leadMinutes = LEAD_MINUTES,
+): Promise<number | null> {
   try {
     const url = `https://api.met.no/weatherapi/locationforecast/2.0/complete?lat=${lat}&lon=${lon}`;
     const res = await fetch(url, {
@@ -59,15 +70,15 @@ async function fetchUvNow(lat: number, lon: number): Promise<number | null> {
     };
     const series = json.properties?.timeseries ?? [];
     if (!series.length) return null;
-    const now = Date.now();
+    const target = Date.now() + leadMinutes * 60 * 1000;
     let best: { uv: number; diff: number } | null = null;
     for (const e of series) {
       const uv = e?.data?.instant?.details?.ultraviolet_index_clear_sky;
       if (typeof uv !== "number") continue;
       const t = new Date(e.time).getTime();
-      const diff = Math.abs(t - now);
+      const diff = Math.abs(t - target);
       if (!best || diff < best.diff) best = { uv, diff };
-      if (diff > 4 * 3600 * 1000 && best) break;
+      if (t - target > 4 * 3600 * 1000 && best) break;
     }
     return best?.uv ?? null;
   } catch (err) {
