@@ -170,7 +170,7 @@ function describeNextAlert(
     return { text: "Varsel: venter på data", imminent: false, cooldown: false };
   }
   if (best.waitMs <= 0) {
-    return { text: "Varsel: klar (sendes ved neste sjekk)", imminent: true, cooldown: false };
+    return { text: "Varsel: klar", imminent: true, cooldown: false };
   }
   const inCooldown = best.cooldownLeftMs > 0 && best.cooldownLeftMs >= best.waitMs;
   const min = Math.ceil(best.waitMs / 60_000);
