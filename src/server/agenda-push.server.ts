@@ -300,8 +300,10 @@ export async function processHyttaChecklistNotifications(): Promise<{
         endpoint: sub.endpoint as string,
         p256dh: sub.p256dh as string,
         auth: sub.auth as string,
+        who: (sub as any).who ?? null,
       },
       payload,
+      { feature: "hytta-checklist-reminder" },
     );
     if (result.ok) sent++;
     else errors++;
