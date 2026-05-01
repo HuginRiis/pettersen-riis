@@ -273,7 +273,7 @@ function WeatherPage() {
               <a href="/smarthus" className="text-primary underline">Smarthus</a> for å koble til Homey.
             </p>
           ) : (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
               <LiveMetric
                 label="Regn i dag · Tollnes"
                 value={tollnesRainToday}
