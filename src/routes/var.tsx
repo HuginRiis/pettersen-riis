@@ -1128,6 +1128,26 @@ const WINDY_OVERLAYS: { key: string; label: string; icon: string }[] = [
   { key: "radar", label: "Radar", icon: "📡" },
 ];
 
+function CollapsibleMap() {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="space-y-3">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="w-full panel rounded-lg p-4 flex items-center justify-between hover:bg-card/70 transition-colors"
+      >
+        <span className="text-display tracking-[0.2em] text-primary text-sm uppercase flex items-center gap-2">
+          <span>🗺</span>
+          {open ? "Lukk kartet" : "Åpne live værkart"}
+        </span>
+        <span className="text-muted-foreground text-xs">{open ? "▲" : "▼"}</span>
+      </button>
+      {open && <WindyMap />}
+    </div>
+  );
+}
+
 function WindyMap() {
   const [overlay, setOverlay] = useState<string>("wind");
 
