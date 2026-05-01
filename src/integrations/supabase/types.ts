@@ -952,6 +952,51 @@ export type Database = {
         }
         Relationships: []
       }
+      uv_notification_prefs: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          id: string
+          label: string
+          lat: number
+          location: string
+          lon: number
+          notified_date_3: string | null
+          notified_date_6: string | null
+          notified_date_8: string | null
+          recipient: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          label: string
+          lat: number
+          location: string
+          lon: number
+          notified_date_3?: string | null
+          notified_date_6?: string | null
+          notified_date_8?: string | null
+          recipient?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          label?: string
+          lat?: number
+          location?: string
+          lon?: number
+          notified_date_3?: string | null
+          notified_date_6?: string | null
+          notified_date_8?: string | null
+          recipient?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       visitor_login_attempts: {
         Row: {
           attempted_at: string
