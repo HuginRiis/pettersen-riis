@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ScrollText, Plus, Loader2, Trash2, ChevronDown, ChevronUp } from "lucide-react";
+import { ScrollText, Plus, Loader2, Trash2, ChevronDown, ChevronUp, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
