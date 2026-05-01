@@ -149,8 +149,10 @@ export async function sendAgendaTestPushByEndpoint(data: { endpoint: string; who
       endpoint: sub.endpoint as string,
       p256dh: sub.p256dh as string,
       auth: sub.auth as string,
+      who: (sub as any).who ?? data.who,
     },
     payload,
+    { feature: "agenda-test", recipient: data.who, title: "🧪 Test av agenda-push" },
   );
 
   if (!result.ok) {
