@@ -749,6 +749,8 @@ function EditDialog({
   const [items, setItems] = useState<ReceiptItem[]>(receipt.items ?? []);
   const [notes, setNotes] = useState(receipt.notes ?? "");
   const [rawText, setRawText] = useState(receipt.ai_raw_text ?? "");
+  const [isFood, setIsFood] = useState<boolean>(receipt.is_food ?? false);
+  const [warrantyRecipient, setWarrantyRecipient] = useState<string>(receipt.warranty_recipient ?? "Alle");
   const [saving, setSaving] = useState(false);
 
   const updateItem = (idx: number, patch: Partial<ReceiptItem>) => {
