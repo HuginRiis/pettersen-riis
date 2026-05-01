@@ -490,40 +490,43 @@ export type Database = {
           cooldown_minutes: number
           created_at: string
           enabled: boolean
-          homey_zone_id: string
+          homey_zone_id: string | null
           id: string
           last_notified_at: string | null
-          lights_on_minutes: number
+          lights_on_minutes: number | null
           no_motion_minutes: number
           recipient: string
+          scope: string
           updated_at: string
-          zone_name: string
+          zone_name: string | null
         }
         Insert: {
           cooldown_minutes?: number
           created_at?: string
           enabled?: boolean
-          homey_zone_id: string
+          homey_zone_id?: string | null
           id?: string
           last_notified_at?: string | null
-          lights_on_minutes?: number
+          lights_on_minutes?: number | null
           no_motion_minutes?: number
           recipient?: string
+          scope?: string
           updated_at?: string
-          zone_name: string
+          zone_name?: string | null
         }
         Update: {
           cooldown_minutes?: number
           created_at?: string
           enabled?: boolean
-          homey_zone_id?: string
+          homey_zone_id?: string | null
           id?: string
           last_notified_at?: string | null
-          lights_on_minutes?: number
+          lights_on_minutes?: number | null
           no_motion_minutes?: number
           recipient?: string
+          scope?: string
           updated_at?: string
-          zone_name?: string
+          zone_name?: string | null
         }
         Relationships: []
       }
