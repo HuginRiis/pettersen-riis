@@ -291,8 +291,10 @@ export async function sendUvTestNotification(
         endpoint: sub.endpoint as string,
         p256dh: sub.p256dh as string,
         auth: sub.auth as string,
+        who: (sub as any).who ?? null,
       },
       payload,
+      { feature: "uv-test", recipient: targetWho, title: p.label },
     );
     if (ok) sent++;
     else errors++;
