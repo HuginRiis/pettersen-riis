@@ -166,7 +166,7 @@ export function UvNotificationSettings() {
       </div>
 
       <p className="text-[11px] text-muted-foreground">
-        Test varslene ved å gå til Innstillinger → Push og abonnere som personen som er valgt over.
+        Test-knappene over sender et ekte push-varsel nå til mottakeren for lokasjonen. Krever at personen er abonnert (Innstillinger → Push).
       </p>
       <Button
         size="sm"
