@@ -127,6 +127,8 @@ function VakttarnetPage() {
             title="Vaktens kart"
             icon={<MapIcon size={14} />}
             subtitle="Hvor sjelene befinner seg"
+            collapsible
+            defaultOpen={false}
           >
             <VisitorMap sessions={sessions} attempts={attempts} />
           </Panel>
@@ -193,24 +195,39 @@ function Panel({
   subtitle,
   icon,
   children,
+  collapsible = false,
+  defaultOpen = true,
 }: {
   title: string;
   subtitle?: string;
   icon?: React.ReactNode;
   children: React.ReactNode;
+  collapsible?: boolean;
+  defaultOpen?: boolean;
 }) {
+  const [open, setOpen] = useState(defaultOpen);
   return (
     <div className="panel rounded-lg border border-border bg-card/60 backdrop-blur p-3 sm:p-5 min-w-0">
       <div className="flex items-center gap-2 mb-1">
         {icon && <span className="text-primary">{icon}</span>}
-        <h2 className="text-display tracking-[0.25em] text-primary uppercase text-xs">
+        <h2 className="text-display tracking-[0.25em] text-primary uppercase text-xs flex-1">
           {title}
         </h2>
+        {collapsible && (
+          <button
+            type="button"
+            onClick={() => setOpen((v) => !v)}
+            className="text-[10px] tracking-widest uppercase text-muted-foreground hover:text-primary transition-colors px-2 py-1 rounded border border-border/60"
+            aria-expanded={open}
+          >
+            {open ? "Lukk" : "Åpne"}
+          </button>
+        )}
       </div>
       {subtitle && (
         <p className="text-[11px] text-muted-foreground italic mb-3 sm:mb-4">{subtitle}</p>
       )}
-      {children}
+      {(!collapsible || open) && children}
     </div>
   );
 }
