@@ -88,7 +88,7 @@ export function UvNotificationSettings() {
           <li>• <span className="text-foreground">UV ≥ 8</span> — unngå sol kl 12-15</li>
         </ul>
         <p className="mt-2 text-[11px]">
-          Sjekkes hver time mellom 09-17. Maks ett varsel per nivå per dag per lokasjon.
+          Varsel sendes ca <span className="text-foreground">30 min før</span> hver terskel nås, så du rekker å smøre deg. Sjekkes hver time 08:30-17. Maks ett varsel per nivå per dag per lokasjon.
         </p>
       </div>
 
