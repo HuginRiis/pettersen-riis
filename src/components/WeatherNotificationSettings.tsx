@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Bell, BellOff, ChevronDown, ChevronUp, Loader2, Plus, Send, Trash2, CloudRain } from "lucide-react";
+import { Bell, BellOff, Loader2, Plus, Send, Trash2, CloudRain } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -79,7 +79,6 @@ export function WeatherNotificationSettings() {
   const [forecasts, setForecasts] = useState<Forecast[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
-  const [testOpen, setTestOpen] = useState<Record<string, boolean>>({});
   const [showNew, setShowNew] = useState(false);
 
   // Skjema for ny regel
@@ -209,7 +208,6 @@ export function WeatherNotificationSettings() {
         {prefs.map((p) => {
           const meta = KIND_META[p.kind];
           const f = forecasts.find((x) => x.id === p.id);
-          const open = !!testOpen[p.id];
           return (
             <div key={p.id} className="rounded-lg border border-border/60 bg-card/40 p-3 space-y-3">
               <div className="flex items-center justify-between gap-2">
