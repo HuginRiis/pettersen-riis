@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Eye, Users, TrendingUp, TrendingDown, Minus, MousePointerClick, Sunrise, Sunset, Sun } from "lucide-react";
-import { getVisitorCounts, type VisitorCounts } from "@/server/visitors";
-import { getOutdoorLightsStatus, type OutdoorLightsStatus } from "@/server/homey";
+import { Lightbulb, Sunrise, Sunset, Sun } from "lucide-react";
+import { getBorgenLightsStatus, type BorgenLightsStatus } from "@/server/homey";
 import { useUvSun, uvLevel } from "@/hooks/use-uv-sun";
 
 const BORGEN_COORD = { lat: 59.1789, lon: 9.5732 };
