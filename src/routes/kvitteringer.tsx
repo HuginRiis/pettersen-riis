@@ -83,17 +83,17 @@ const fmtDate = (iso: string | null) => {
   return d.toLocaleDateString("nb-NO", { day: "2-digit", month: "short", year: "numeric" });
 };
 
-const warrantyDate = (iso: string | null): { date: Date; iso: string } | null => {
+const addYears = (iso: string | null, years: number): { date: Date; iso: string } | null => {
   if (!iso) return null;
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return null;
   const w = new Date(d);
-  w.setFullYear(w.getFullYear() + 5);
+  w.setFullYear(w.getFullYear() + years);
   return { date: w, iso: w.toISOString().slice(0, 10) };
 };
 
-const warrantyStatus = (iso: string | null) => {
-  const w = warrantyDate(iso);
+const periodStatus = (iso: string | null, years: number) => {
+  const w = addYears(iso, years);
   if (!w) return null;
   const now = new Date();
   const daysLeft = Math.floor((w.date.getTime() - now.getTime()) / 86400000);
@@ -102,6 +102,22 @@ const warrantyStatus = (iso: string | null) => {
     expired: daysLeft < 0,
     daysLeft,
   };
+};
+
+// 5-års reklamasjon (forbrukerkjøpsloven) — beholdt navn for bakoverkompatibilitet
+const warrantyDate = (iso: string | null) => addYears(iso, 5);
+const warrantyStatus = (iso: string | null) => periodStatus(iso, 5);
+// 2-års garanti (produsent/selger sin standardgaranti)
+const guaranteeStatus = (iso: string | null) => periodStatus(iso, 2);
+
+const fmtDaysLeft = (d: number) => {
+  if (d < 0) return `${Math.abs(d)} d siden`;
+  if (d === 0) return "i dag";
+  if (d < 60) return `${d} d igjen`;
+  if (d < 365) return `${Math.round(d / 30)} mnd igjen`;
+  const years = Math.floor(d / 365);
+  const months = Math.round((d % 365) / 30);
+  return months > 0 ? `${years} år ${months} mnd igjen` : `${years} år igjen`;
 };
 
 function KvitteringerPage() {
