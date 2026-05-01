@@ -816,16 +816,48 @@ function EditDialog({
               />
             </div>
           </div>
-          <div>
-            <Label htmlFor="total">Totalsum (kr)</Label>
-            <Input
-              id="total"
-              inputMode="decimal"
-              value={total}
-              onChange={(e) => setTotal(e.target.value)}
-              className="max-w-[200px]"
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <Label htmlFor="total">Totalsum (kr)</Label>
+              <Input
+                id="total"
+                inputMode="decimal"
+                value={total}
+                onChange={(e) => setTotal(e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="recipient" className="inline-flex items-center gap-1.5">
+                <Bell className="h-3.5 w-3.5 text-primary" />
+                Garanti-varsel til
+              </Label>
+              <select
+                id="recipient"
+                value={warrantyRecipient}
+                onChange={(e) => setWarrantyRecipient(e.target.value)}
+                className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
+              >
+                {WHO_OPTIONS.map((w) => (
+                  <option key={w} value={w}>
+                    {w}
+                  </option>
+                ))}
+              </select>
+              <p className="text-[10px] text-muted-foreground mt-1">
+                Push 90, 60 og 30 dager før utløp.
+              </p>
+            </div>
           </div>
+          <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={isFood}
+              onChange={(e) => setIsFood(e.target.checked)}
+              className="rounded border-input"
+            />
+            <Apple className="h-3.5 w-3.5 text-muted-foreground" />
+            Matvarekvittering (telles med i «Fjern alle matvarer»)
+          </label>
 
           <div>
             <div className="flex items-center justify-between mb-2">
