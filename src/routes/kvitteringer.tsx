@@ -115,6 +115,7 @@ function KvitteringerPage() {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [filterWarrantyActive, setFilterWarrantyActive] = useState(false);
   const [filterWarrantyExpiring, setFilterWarrantyExpiring] = useState(false);
+  const [filterDurable, setFilterDurable] = useState(false);
   const [hideFood, setHideFood] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
