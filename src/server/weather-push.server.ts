@@ -9,6 +9,7 @@
  */
 import webpush from "web-push";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { logPushSend } from "./push-log.server";
 
 const VAPID_PUBLIC = process.env.VAPID_PUBLIC_KEY!;
 const VAPID_PRIVATE = process.env.VAPID_PRIVATE_KEY!;
@@ -219,14 +220,22 @@ function buildMessage(pref: Pref, hit: WeatherEvalHit): { title: string; body: s
 }
 
 async function sendOne(
-  sub: { endpoint: string; p256dh: string; auth: string },
+  sub: { endpoint: string; p256dh: string; auth: string; who?: string | null },
   payload: string,
+  ctx: { feature: string; recipient?: string; title?: string } = { feature: "weather" },
 ): Promise<boolean> {
   try {
     await webpush.sendNotification(
       { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
       payload,
     );
+    void logPushSend({
+      feature: ctx.feature,
+      recipient: ctx.recipient || sub.who || "Alle",
+      ok: true,
+      endpoint: sub.endpoint,
+      title: ctx.title,
+    });
     return true;
   } catch (err) {
     const e = err as { statusCode?: number; message?: string };
@@ -234,6 +243,15 @@ async function sendOne(
       await supabaseAdmin.from("push_subscriptions").delete().eq("endpoint", sub.endpoint);
     }
     console.error("[weather-push] send error", e.statusCode, e.message);
+    void logPushSend({
+      feature: ctx.feature,
+      recipient: ctx.recipient || sub.who || "Alle",
+      ok: false,
+      endpoint: sub.endpoint,
+      status_code: e.statusCode ?? null,
+      error_message: e.message ?? null,
+      title: ctx.title,
+    });
     return false;
   }
 }
@@ -325,8 +343,9 @@ export async function processWeatherNotifications(): Promise<{
 
     for (const sub of subs ?? []) {
       const ok = await sendOne(
-        { endpoint: sub.endpoint as string, p256dh: sub.p256dh as string, auth: sub.auth as string },
+        { endpoint: sub.endpoint as string, p256dh: sub.p256dh as string, auth: sub.auth as string, who: (sub as any).who ?? null },
         payload,
+        { feature: "weather", recipient: p.recipient ?? "Alle", title },
       );
       if (ok) sent++;
       else errors++;
@@ -387,8 +406,9 @@ export async function sendWeatherTestNotification(prefId: string): Promise<{
   let errors = 0;
   for (const sub of subs ?? []) {
     const ok = await sendOne(
-      { endpoint: sub.endpoint as string, p256dh: sub.p256dh as string, auth: sub.auth as string },
+      { endpoint: sub.endpoint as string, p256dh: sub.p256dh as string, auth: sub.auth as string, who: (sub as any).who ?? null },
       payload,
+      { feature: "weather-test", recipient: targetWho, title: p.label },
     );
     if (ok) sent++;
     else errors++;

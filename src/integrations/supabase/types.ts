@@ -512,6 +512,45 @@ export type Database = {
         }
         Relationships: []
       }
+      push_send_log: {
+        Row: {
+          body: string | null
+          endpoint: string | null
+          error_message: string | null
+          feature: string
+          id: string
+          ok: boolean
+          recipient: string
+          sent_at: string
+          status_code: number | null
+          title: string | null
+        }
+        Insert: {
+          body?: string | null
+          endpoint?: string | null
+          error_message?: string | null
+          feature: string
+          id?: string
+          ok?: boolean
+          recipient?: string
+          sent_at?: string
+          status_code?: number | null
+          title?: string | null
+        }
+        Update: {
+          body?: string | null
+          endpoint?: string | null
+          error_message?: string | null
+          feature?: string
+          id?: string
+          ok?: boolean
+          recipient?: string
+          sent_at?: string
+          status_code?: number | null
+          title?: string | null
+        }
+        Relationships: []
+      }
       push_subscriptions: {
         Row: {
           auth: string

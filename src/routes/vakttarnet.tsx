@@ -12,10 +12,11 @@ import type {
 import { getAiUsageStats, type AiUsageStats } from "@/server/ai-usage";
 import { useAuthStatus } from "@/hooks/use-auth-status";
 import heroImg from "@/assets/got-vakttarnet.jpg";
-import { Eye, Globe2, Smartphone, Monitor, Tablet, Clock, Crown, ShieldAlert, Map as MapIcon, Lock, Unlock, Sparkles, DoorClosed, Users } from "lucide-react";
+import { Eye, Globe2, Smartphone, Monitor, Tablet, Clock, Crown, ShieldAlert, Map as MapIcon, Lock, Unlock, Sparkles, DoorClosed, Users, Bell } from "lucide-react";
 import { DoorsLocksPanel } from "@/components/DoorsLocksPanel";
 import { ApiCallLogPanel } from "@/components/ApiCallLogPanel";
 import { MaesterAiBudget } from "@/components/MaesterAiBudget";
+import { PushSendCountsPanel } from "@/components/PushSendCountsPanel";
 
 export const Route = createFileRoute("/vakttarnet")({
   head: () => ({
@@ -112,6 +113,14 @@ function VakttarnetPage() {
           subtitle="Yale Doorman og Verisure rapporterer hva som er åpent og lukket"
         >
           <DoorsLocksPanel />
+        </Panel>
+
+        <Panel
+          title="Sendte varslinger"
+          icon={<Bell size={14} />}
+          subtitle="Hvor mange push-varslinger hver sjel har mottatt — i dag, siste uke, siste måned og totalt"
+        >
+          <PushSendCountsPanel />
         </Panel>
 
         <Panel

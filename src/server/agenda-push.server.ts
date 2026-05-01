@@ -6,6 +6,7 @@
  */
 import webpush from "web-push";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { logPushSend } from "./push-log.server";
 
 const VAPID_PUBLIC = process.env.VAPID_PUBLIC_KEY!;
 const VAPID_PRIVATE = process.env.VAPID_PRIVATE_KEY!;
@@ -43,8 +44,9 @@ function formatPushError(error: unknown): { message: string; statusCode?: number
 }
 
 async function sendPushToSubscription(
-  sub: { endpoint: string; p256dh: string; auth: string },
+  sub: { endpoint: string; p256dh: string; auth: string; who?: string | null },
   payload: string,
+  ctx: { feature: string; recipient?: string; title?: string; body?: string } = { feature: "agenda" },
 ): Promise<{ ok: true } | { ok: false; statusCode?: number; error: string }> {
   try {
     ensureConfigured();
@@ -55,6 +57,14 @@ async function sendPushToSubscription(
       },
       payload,
     );
+    void logPushSend({
+      feature: ctx.feature,
+      recipient: ctx.recipient || sub.who || "Alle",
+      ok: true,
+      endpoint: sub.endpoint,
+      title: ctx.title,
+      body: ctx.body,
+    });
     return { ok: true };
   } catch (error) {
     const formatted = formatPushError(error);
@@ -65,6 +75,16 @@ async function sendPushToSubscription(
       endpoint: sub.endpoint,
       statusCode: formatted.statusCode,
       error: formatted.message,
+    });
+    void logPushSend({
+      feature: ctx.feature,
+      recipient: ctx.recipient || sub.who || "Alle",
+      ok: false,
+      endpoint: sub.endpoint,
+      status_code: formatted.statusCode ?? null,
+      error_message: formatted.message,
+      title: ctx.title,
+      body: ctx.body,
     });
     return { ok: false, statusCode: formatted.statusCode, error: formatted.message };
   }
@@ -129,8 +149,10 @@ export async function sendAgendaTestPushByEndpoint(data: { endpoint: string; who
       endpoint: sub.endpoint as string,
       p256dh: sub.p256dh as string,
       auth: sub.auth as string,
+      who: (sub as any).who ?? data.who,
     },
     payload,
+    { feature: "agenda-test", recipient: data.who, title: "🧪 Test av agenda-push" },
   );
 
   if (!result.ok) {
@@ -183,8 +205,10 @@ export async function sendHyttaChecklistPush(data: {
         endpoint: sub.endpoint as string,
         p256dh: sub.p256dh as string,
         auth: sub.auth as string,
+        who: (sub as any).who ?? null,
       },
       payload,
+      { feature: "hytta-checklist", title: data.title, body: data.body },
     );
     if (result.ok) sent++;
     else errors++;
@@ -276,8 +300,10 @@ export async function processHyttaChecklistNotifications(): Promise<{
         endpoint: sub.endpoint as string,
         p256dh: sub.p256dh as string,
         auth: sub.auth as string,
+        who: (sub as any).who ?? null,
       },
       payload,
+      { feature: "hytta-checklist-reminder" },
     );
     if (result.ok) sent++;
     else errors++;
@@ -357,8 +383,10 @@ export async function processAgendaNotifications(): Promise<{ checked: number; s
           endpoint: sub.endpoint as string,
           p256dh: sub.p256dh as string,
           auth: sub.auth as string,
+          who: (sub as any).who ?? targetWho,
         },
         payload,
+        { feature: "agenda", recipient: targetWho, title: item.subject },
       );
       if (result.ok) {
         sent++;
