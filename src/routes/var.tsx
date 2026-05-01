@@ -327,7 +327,7 @@ function WeatherPage() {
 
         {/* === SOL OG MÅNE OVER WESTEROS === */}
         <Block title="Himmelens Vandrere · Sol & Måne">
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             <SkyCard
               label="Soloppgang"
               value={sun ? formatTime(sun.sunrise) : "—"}
