@@ -416,7 +416,7 @@ function WeatherPage() {
 
         {/* === LIVE VÆRKART === */}
         <Block title="Stormvaktens Kart · Live vær over Telemark & Buskerud">
-          <WindyMap />
+          <CollapsibleMap />
         </Block>
 
         {/* === VÆR-VARSLER (push) === */}
