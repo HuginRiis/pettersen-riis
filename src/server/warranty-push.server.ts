@@ -222,8 +222,10 @@ export async function sendWarrantyTestNotification(receiptId: string): Promise<{
         endpoint: sub.endpoint as string,
         p256dh: sub.p256dh as string,
         auth: sub.auth as string,
+        who: (sub as any).who ?? null,
       },
       payload,
+      { feature: "warranty-test", recipient: targetWho, title: r.store ?? "garanti" },
     );
     if (ok) sent++;
     else errors++;
