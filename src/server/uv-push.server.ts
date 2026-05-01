@@ -280,3 +280,156 @@ export async function sendUvTestNotification(
 
   return { sent, errors, recipient: targetWho, label: p.label };
 }
+
+/**
+ * Henter MET.no-prognose for hver aktiv lokasjon og finner det første
+ * tidspunktet i dag (08:30-17 norsk tid) der UV passerer en terskel som ikke
+ * allerede er varslet i dag. Returnerer ETA for når push faktisk vil sendes
+ * (terskeltidspunkt minus lead_minutes), pluss forventet UV.
+ */
+export async function computeUvForecast(): Promise<
+  Array<{
+    id: string;
+    location: string;
+    label: string;
+    enabled: boolean;
+    leadMinutes: number;
+    nextSendAt: string | null; // ISO — når push sendes
+    nextThresholdAt: string | null; // ISO — når UV faktisk passerer terskel
+    threshold: 3 | 6 | 8 | null;
+    uv: number | null;
+    reason: string;
+  }>
+> {
+  const { data: prefs, error } = await supabaseAdmin
+    .from("uv_notification_prefs" as never)
+    .select("*")
+    .order("location");
+  if (error) throw error;
+
+  const nowOslo = new Date(new Date().toLocaleString("en-US", { timeZone: "Europe/Oslo" }));
+  const today = nowOslo.toISOString().slice(0, 10);
+
+  const out: Awaited<ReturnType<typeof computeUvForecast>> = [];
+
+  for (const raw of (prefs ?? []) as Array<{
+    id: string;
+    location: string;
+    label: string;
+    lat: number;
+    lon: number;
+    enabled: boolean;
+    lead_minutes: number | null;
+    notified_date_3: string | null;
+    notified_date_6: string | null;
+    notified_date_8: string | null;
+  }>) {
+    const lead = typeof raw.lead_minutes === "number" ? raw.lead_minutes : LEAD_MINUTES;
+
+    if (!raw.enabled) {
+      out.push({
+        id: raw.id,
+        location: raw.location,
+        label: raw.label,
+        enabled: false,
+        leadMinutes: lead,
+        nextSendAt: null,
+        nextThresholdAt: null,
+        threshold: null,
+        uv: null,
+        reason: "Varsler er av",
+      });
+      continue;
+    }
+
+    const notified: Record<3 | 6 | 8, boolean> = {
+      3: raw.notified_date_3 === today,
+      6: raw.notified_date_6 === today,
+      8: raw.notified_date_8 === today,
+    };
+
+    let series: Array<{ time: string; uv: number }> = [];
+    try {
+      const url = `https://api.met.no/weatherapi/locationforecast/2.0/complete?lat=${raw.lat}&lon=${raw.lon}`;
+      const res = await fetch(url, {
+        headers: { "User-Agent": "riis.cc agenda push (agenda@riis.cc)" },
+      });
+      if (res.ok) {
+        const json = (await res.json()) as {
+          properties?: {
+            timeseries?: Array<{
+              time: string;
+              data?: { instant?: { details?: { ultraviolet_index_clear_sky?: number } } };
+            }>;
+          };
+        };
+        for (const e of json.properties?.timeseries ?? []) {
+          const uv = e?.data?.instant?.details?.ultraviolet_index_clear_sky;
+          if (typeof uv === "number") series.push({ time: e.time, uv });
+        }
+      }
+    } catch (err) {
+      console.error("[uv-forecast] met.no fetch failed", err);
+    }
+
+    if (!series.length) {
+      out.push({
+        id: raw.id,
+        location: raw.location,
+        label: raw.label,
+        enabled: true,
+        leadMinutes: lead,
+        nextSendAt: null,
+        nextThresholdAt: null,
+        threshold: null,
+        uv: null,
+        reason: "Mangler prognose",
+      });
+      continue;
+    }
+
+    // Vurder kun tidspunkter resten av dagen, innenfor 08:30-17 Oslo-tid
+    const todayStart = new Date(nowOslo);
+    todayStart.setHours(0, 0, 0, 0);
+    const dayKey = todayStart.toISOString().slice(0, 10);
+
+    let best: { sendAt: Date; thresholdAt: Date; threshold: 3 | 6 | 8; uv: number } | null = null;
+
+    for (const e of series) {
+      const t = new Date(e.time);
+      const tOslo = new Date(t.toLocaleString("en-US", { timeZone: "Europe/Oslo" }));
+      if (tOslo.toISOString().slice(0, 10) !== dayKey) continue;
+      const h = tOslo.getHours();
+      const m = tOslo.getMinutes();
+      const inWindow = (h > 8 || (h === 8 && m >= 30)) && h <= 17;
+      if (!inWindow) continue;
+
+      for (const lvl of [8, 6, 3] as const) {
+        if (notified[lvl]) continue;
+        if (e.uv >= lvl) {
+          const sendAt = new Date(t.getTime() - lead * 60 * 1000);
+          if (sendAt.getTime() < Date.now() - 60 * 1000) continue; // allerede passert
+          if (!best || sendAt < best.sendAt) {
+            best = { sendAt, thresholdAt: t, threshold: lvl, uv: e.uv };
+          }
+          break; // ta høyeste terskel for dette tidspunktet
+        }
+      }
+    }
+
+    out.push({
+      id: raw.id,
+      location: raw.location,
+      label: raw.label,
+      enabled: true,
+      leadMinutes: lead,
+      nextSendAt: best ? best.sendAt.toISOString() : null,
+      nextThresholdAt: best ? best.thresholdAt.toISOString() : null,
+      threshold: best ? best.threshold : null,
+      uv: best ? best.uv : null,
+      reason: best ? "" : "Ingen terskel forventes nådd i dag",
+    });
+  }
+
+  return out;
+}
