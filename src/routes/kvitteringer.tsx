@@ -594,6 +594,21 @@ function ReceiptRowItem({
                   </span>
                 </>
               )}
+              {guarantee && !guarantee.expired && (
+                <>
+                  <span>·</span>
+                  <span
+                    className={
+                      guarantee.daysLeft < 60
+                        ? "text-amber-500"
+                        : "text-emerald-600 dark:text-emerald-400"
+                    }
+                    title={`2-års garanti utløper ${guarantee.label}`}
+                  >
+                    Garanti 2år: {fmtDaysLeft(guarantee.daysLeft)}
+                  </span>
+                </>
+              )}
               {warranty && (
                 <>
                   <span>·</span>
@@ -605,10 +620,9 @@ function ReceiptRowItem({
                           ? "text-amber-500"
                           : "text-muted-foreground"
                     }
-                    title={`5-års garanti utløper ${warranty.label}`}
+                    title={`5-års reklamasjon utløper ${warranty.label}`}
                   >
-                    Garanti til {warranty.label}
-                    {warranty.expired ? " (utløpt)" : ""}
+                    Reklamasjon 5år: {warranty.expired ? "utløpt" : fmtDaysLeft(warranty.daysLeft)}
                   </span>
                 </>
               )}
