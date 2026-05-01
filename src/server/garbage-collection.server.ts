@@ -488,8 +488,9 @@ export async function processGarbageNotifications(): Promise<{
     let anyOk = false;
     for (const sub of subs) {
       const r = await sendPush(
-        { endpoint: sub.endpoint as string, p256dh: sub.p256dh as string, auth: sub.auth as string },
+        { endpoint: sub.endpoint as string, p256dh: sub.p256dh as string, auth: sub.auth as string, who: (sub as any).who ?? null },
         payload,
+        { feature: "garbage", recipient: targetWho ?? "Alle", title: pickup.fraksjonNavn },
       );
       if (r.ok) {
         sent++;
