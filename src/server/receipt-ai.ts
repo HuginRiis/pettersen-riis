@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { logAiSearch, isHouseAuthenticated } from "@/server/ai-usage.server";
 
 export type ReceiptItem = {
   name: string;
