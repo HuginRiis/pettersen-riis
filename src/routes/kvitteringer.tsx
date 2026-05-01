@@ -18,6 +18,7 @@ import {
   Bell,
   ShieldCheck,
   Apple,
+  Package,
 } from "lucide-react";
 import { PageShell, PageHero } from "@/components/PageShell";
 import { Button } from "@/components/ui/button";
