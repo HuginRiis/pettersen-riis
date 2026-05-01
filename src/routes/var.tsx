@@ -10,6 +10,7 @@ import { getTollnesAlerts, type AlertsResult, type MetAlert } from "@/server/lig
 import { useUserLocation, UserLocationBar } from "@/hooks/use-user-location";
 import { UvPanel } from "@/components/UvPanel";
 import { UvNotificationSettings } from "@/components/UvNotificationSettings";
+import { WeatherNotificationSettings } from "@/components/WeatherNotificationSettings";
 
 
 export const Route = createFileRoute("/var")({
