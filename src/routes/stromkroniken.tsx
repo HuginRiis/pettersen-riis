@@ -915,40 +915,36 @@ function PulseHistoryChart({
       ? d.toLocaleDateString("nb-NO", { day: "2-digit", month: "2-digit", timeZone: "Europe/Oslo" })
       : d.toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Oslo" });
 
-  // Bygg kart over forrige periode forskjøvet `hours` timer fremover, slik at
-  // punktene treffer samme x-posisjon som nåperioden.
+  // Bygg ett samlet datasett der både nå- og forrige-punkter får egne x-verdier
+  // basert på tid (numerisk). Forrige periode forskyves `hours` timer fremover
+  // slik at den ligger oppå nåperioden i x-aksen. Sparsomme data trenger ikke
+  // matche eksakt — Recharts kobler punkter via connectNulls.
   const offsetMs = hours * 60 * 60 * 1000;
-  const prevByMinute = new Map<number, number>();
-  for (const p of prevPoints) {
-    if (p.watt == null) continue;
-    const t = new Date(p.t).getTime() + offsetMs;
-    // Snap til nærmeste minutt for å matche nåperioden (1 punkt/min)
-    const minuteBucket = Math.round(t / 60_000) * 60_000;
-    prevByMinute.set(minuteBucket, Math.round(p.watt));
-  }
+  type Row = { t: number; watt: number | null; prevWatt: number | null };
+  const rows: Row[] = [];
 
-  const chartData = points
-    .filter((p) => p.watt != null)
-    .map((p) => {
-      const d = new Date(p.t);
-      const bucket = Math.round(d.getTime() / 60_000) * 60_000;
-      // Finn nærmeste forrige-punkt innenfor ±2 min
-      let prevWatt: number | null = prevByMinute.get(bucket) ?? null;
-      if (prevWatt == null) {
-        for (let off = 1; off <= 2 && prevWatt == null; off++) {
-          prevWatt =
-            prevByMinute.get(bucket + off * 60_000) ??
-            prevByMinute.get(bucket - off * 60_000) ??
-            null;
-        }
-      }
-      return {
-        t: d.getTime(),
-        label: fmtLabel(d),
-        watt: Math.round(p.watt as number),
-        prevWatt: showCompare ? prevWatt : null,
-      };
-    });
+  for (const p of points) {
+    if (p.watt == null) continue;
+    rows.push({ t: new Date(p.t).getTime(), watt: Math.round(p.watt), prevWatt: null });
+  }
+  if (showCompare) {
+    for (const p of prevPoints) {
+      if (p.watt == null) continue;
+      rows.push({
+        t: new Date(p.t).getTime() + offsetMs,
+        watt: null,
+        prevWatt: Math.round(p.watt),
+      });
+    }
+  }
+  rows.sort((a, b) => a.t - b.t);
+
+  const chartData = rows.map((r) => ({
+    t: r.t,
+    label: fmtLabel(new Date(r.t)),
+    watt: r.watt,
+    prevWatt: r.prevWatt,
+  }));
 
   const compareLabel =
     hours === 2 ? "2t før"
