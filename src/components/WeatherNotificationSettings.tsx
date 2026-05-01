@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Bell, BellOff, ChevronDown, ChevronUp, Loader2, Plus, Send, Trash2, CloudRain } from "lucide-react";
+import { Bell, BellOff, Loader2, Plus, Send, Trash2, CloudRain } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -79,7 +79,6 @@ export function WeatherNotificationSettings() {
   const [forecasts, setForecasts] = useState<Forecast[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
-  const [testOpen, setTestOpen] = useState<Record<string, boolean>>({});
   const [showNew, setShowNew] = useState(false);
 
   // Skjema for ny regel
@@ -209,7 +208,6 @@ export function WeatherNotificationSettings() {
         {prefs.map((p) => {
           const meta = KIND_META[p.kind];
           const f = forecasts.find((x) => x.id === p.id);
-          const open = !!testOpen[p.id];
           return (
             <div key={p.id} className="rounded-lg border border-border/60 bg-card/40 p-3 space-y-3">
               <div className="flex items-center justify-between gap-2">
@@ -326,38 +324,26 @@ export function WeatherNotificationSettings() {
               </div>
 
               <div className="pt-1">
-                <button
-                  type="button"
-                  onClick={() => setTestOpen((s) => ({ ...s, [p.id]: !s[p.id] }))}
-                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 px-2 text-xs"
+                  disabled={saving === p.id}
+                  onClick={async () => {
+                    setSaving(p.id);
+                    try {
+                      const res = await sendWeatherTestPush({ data: { prefId: p.id } });
+                      if (res.sent > 0) toast.success(`Test sendt → ${res.recipient}`);
+                      else toast.error(`Ingen abonnenter for ${res.recipient}. Abonner i Innstillinger → Push.`);
+                    } catch (e) {
+                      toast.error("Test feilet: " + (e as Error).message);
+                    } finally {
+                      setSaving(null);
+                    }
+                  }}
                 >
-                  {open ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-                  Test push-varsel
-                </button>
-                {open && (
-                  <div className="mt-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-7 px-2 text-xs"
-                      disabled={saving === p.id}
-                      onClick={async () => {
-                        setSaving(p.id);
-                        try {
-                          const res = await sendWeatherTestPush({ data: { prefId: p.id } });
-                          if (res.sent > 0) toast.success(`Test sendt → ${res.recipient}`);
-                          else toast.error(`Ingen abonnenter for ${res.recipient}.`);
-                        } catch (e) {
-                          toast.error("Test feilet: " + (e as Error).message);
-                        } finally {
-                          setSaving(null);
-                        }
-                      }}
-                    >
-                      <Send className="h-3 w-3 mr-1" /> Send test
-                    </Button>
-                  </div>
-                )}
+                  <Send className="h-3 w-3 mr-1" /> Send test-push nå
+                </Button>
               </div>
             </div>
           );

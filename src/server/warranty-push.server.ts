@@ -154,3 +154,59 @@ export async function processWarrantyNotifications(): Promise<{
 
   return { checked, sent, errors };
 }
+
+/**
+ * Sender et test-push for én kvittering uavhengig av dato/milepæl.
+ */
+export async function sendWarrantyTestNotification(receiptId: string): Promise<{
+  sent: number;
+  errors: number;
+  recipient: string;
+  store: string | null;
+}> {
+  ensureConfigured();
+
+  const { data: r, error } = await supabaseAdmin
+    .from("receipts")
+    .select("id, store, purchased_at, warranty_recipient")
+    .eq("id", receiptId)
+    .maybeSingle();
+  if (error) throw error;
+  if (!r) throw new Error("Fant ikke kvitteringen");
+
+  const targetWho = (r.warranty_recipient as string) || "Alle";
+  let subQuery = supabaseAdmin
+    .from("push_subscriptions")
+    .select("endpoint, p256dh, auth, who");
+  if (targetWho !== "Alle") {
+    subQuery = subQuery.or(`who.eq.${targetWho},who.eq.Alle`);
+  }
+  const { data: subs, error: subErr } = await subQuery;
+  if (subErr) throw subErr;
+
+  const daysLeft = r.purchased_at ? daysUntilWarrantyExpiry(r.purchased_at as string) : null;
+  const daysStr = daysLeft != null && daysLeft >= 0 ? `${daysLeft} dager igjen` : "test";
+
+  const payload = JSON.stringify({
+    title: `🧪 TEST: 🛡️ Garanti — ${r.store ?? "kvittering"}`,
+    body: `Test-varsel for 5-års garanti (${daysStr}).`,
+    tag: `warranty-test-${r.id}-${Date.now()}`,
+    url: "/kvitteringer",
+  });
+
+  let sent = 0;
+  let errors = 0;
+  for (const sub of subs ?? []) {
+    const ok = await sendOne(
+      {
+        endpoint: sub.endpoint as string,
+        p256dh: sub.p256dh as string,
+        auth: sub.auth as string,
+      },
+      payload,
+    );
+    if (ok) sent++;
+    else errors++;
+  }
+  return { sent, errors, recipient: targetWho, store: (r.store as string) ?? null };
+}
