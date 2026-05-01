@@ -116,24 +116,34 @@ export type WeatherEvalHit = {
 };
 
 /**
- * Sjekker om en serie inneholder en hendelse som tilfredsstiller regelen,
- * innenfor `daysAhead` dager fra nå. Returnerer første treff eller null.
+ * Sjekker om en serie inneholder en hendelse som tilfredsstiller regelen.
+ * `leadDays` = hvor mange dager FØR hendelsen vi vil ha varselet.
+ *   - 0 = samme dag (sjekker resten av i dag)
+ *   - 1 = varsle dagen før (sjekker hendelser på morgendagen, Oslo-tid)
+ *   - N = varsle N dager før (sjekker hendelser på dagen N dager frem)
+ * Returnerer første treff på den aktuelle dagen eller null.
  */
 export function evaluateSeries(
   series: Series,
   kind: WeatherKind,
   threshold: number | null,
-  daysAhead: number,
+  leadDays: number,
 ): WeatherEvalHit | null {
   const meta = WEATHER_KIND_META[kind];
   const now = Date.now();
-  const horizon = now + Math.max(0, daysAhead) * 24 * 3600 * 1000 + 24 * 3600 * 1000; // inkluderer hele siste dag
+  const lead = Math.max(0, leadDays);
   const t = threshold ?? meta.defaultThreshold;
+
+  // Beregn start/slutt av målgruppedagen i Oslo-tid
+  const targetDateStr = osloDateString(new Date(now + lead * 24 * 3600 * 1000));
+  // Konverter Oslo-dato til UTC-vindu (Oslo er UTC+1/+2). Bruk et sjenerøst vindu.
+  const dayStart = new Date(`${targetDateStr}T00:00:00+01:00`).getTime() - 3600 * 1000;
+  const dayEnd = new Date(`${targetDateStr}T23:59:59+01:00`).getTime() + 3600 * 1000;
 
   for (const e of series) {
     const ts = new Date(e.time).getTime();
-    if (ts < now) continue;
-    if (ts > horizon) break;
+    if (ts < Math.max(now, dayStart)) continue;
+    if (ts > dayEnd) break;
     const sym = (e.symbol1h ?? "").toLowerCase();
 
     let hit = false;
