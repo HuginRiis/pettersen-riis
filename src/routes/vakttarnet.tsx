@@ -114,6 +114,14 @@ function VakttarnetPage() {
           <DoorsLocksPanel />
         </Panel>
 
+        <Panel
+          title="AI-skattkammeret"
+          icon={<Sparkles size={14} />}
+          subtitle="Hærmesterens forbruk av AI-credits — denne måned, totalt og per funksjon"
+        >
+          <MaesterAiBudget />
+        </Panel>
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
           <Panel
             title="Vaktens kart"
