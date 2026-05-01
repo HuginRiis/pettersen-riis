@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Bell, Loader2, Plus, Send, Trash2, Lightbulb } from "lucide-react";
+import { Bell, Loader2, Plus, Send, Trash2, Lightbulb, Globe2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -24,6 +24,70 @@ const RECIPIENTS = ["Alle", "Arne", "Rebekka", "Marita", "Nora", "Celine", "Mira
 
 type Zone = { zoneId: string; zoneName: string; lights: number; motionSensors: number };
 
+/**
+ * Tall-input som tillater å slette alt og skrive nytt.
+ * Holder en lokal string-state slik at "" er gyldig under redigering.
+ */
+function NumberField({
+  value,
+  onCommit,
+  min = 1,
+  max = 1440,
+  className,
+  disabled,
+}: {
+  value: number | null | undefined;
+  onCommit: (n: number) => void;
+  min?: number;
+  max?: number;
+  className?: string;
+  disabled?: boolean;
+}) {
+  const [local, setLocal] = useState<string>(value == null ? "" : String(value));
+
+  // Sync inn dersom prop endrer seg utenfra
+  useEffect(() => {
+    setLocal(value == null ? "" : String(value));
+  }, [value]);
+
+  function commit() {
+    if (local === "") {
+      // Behold som tom — men ikke send oppdatering. Tilbakestill til siste gyldige.
+      setLocal(value == null ? "" : String(value));
+      return;
+    }
+    let n = Number(local);
+    if (!Number.isFinite(n)) {
+      setLocal(value == null ? "" : String(value));
+      return;
+    }
+    n = Math.min(max, Math.max(min, Math.round(n)));
+    setLocal(String(n));
+    if (n !== value) onCommit(n);
+  }
+
+  return (
+    <Input
+      type="text"
+      inputMode="numeric"
+      pattern="[0-9]*"
+      value={local}
+      onChange={(e) => {
+        const v = e.target.value.replace(/[^\d]/g, "");
+        setLocal(v);
+      }}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") {
+          (e.target as HTMLInputElement).blur();
+        }
+      }}
+      className={className}
+      disabled={disabled}
+    />
+  );
+}
+
 export function LightIdleNotificationSettings() {
   const [prefs, setPrefs] = useState<LightIdlePref[]>([]);
   const [zones, setZones] = useState<Zone[]>([]);
@@ -33,11 +97,12 @@ export function LightIdleNotificationSettings() {
   const [adding, setAdding] = useState(false);
 
   // Ny-regel-skjema
+  const [newScope, setNewScope] = useState<"zone" | "global">("zone");
   const [newZone, setNewZone] = useState<string>("");
   const [newRecipient, setNewRecipient] = useState<string>("Alle");
-  const [newLightsOn, setNewLightsOn] = useState(30);
-  const [newNoMotion, setNewNoMotion] = useState(15);
-  const [newCooldown, setNewCooldown] = useState(60);
+  const [newLightsOn, setNewLightsOn] = useState<number>(30);
+  const [newNoMotion, setNewNoMotion] = useState<number>(15);
+  const [newCooldown, setNewCooldown] = useState<number>(60);
 
   async function refresh() {
     try {
@@ -57,37 +122,59 @@ export function LightIdleNotificationSettings() {
   }, []);
 
   async function handleAdd() {
-    const zone = zones.find((z) => z.zoneId === newZone);
-    if (!zone) {
-      toast.error("Velg et rom");
-      return;
+    if (newScope === "zone") {
+      const zone = zones.find((z) => z.zoneId === newZone);
+      if (!zone) {
+        toast.error("Velg et rom");
+        return;
+      }
+      setAdding(true);
+      try {
+        await upsertLightIdlePref({
+          data: {
+            scope: "zone",
+            homey_zone_id: zone.zoneId,
+            zone_name: zone.zoneName,
+            recipient: newRecipient,
+            lights_on_minutes: newLightsOn,
+            no_motion_minutes: newNoMotion,
+            enabled: true,
+            cooldown_minutes: newCooldown,
+          },
+        });
+        toast.success(`Regel lagret for ${zone.zoneName}`);
+        setNewZone("");
+      } catch (err) {
+        console.error(err);
+        toast.error("Kunne ikke lagre regel");
+      } finally {
+        setAdding(false);
+      }
+    } else {
+      setAdding(true);
+      try {
+        await upsertLightIdlePref({
+          data: {
+            scope: "global",
+            recipient: newRecipient,
+            no_motion_minutes: newNoMotion,
+            enabled: true,
+            cooldown_minutes: newCooldown,
+          },
+        });
+        toast.success("Global regel lagret");
+      } catch (err) {
+        console.error(err);
+        toast.error("Kunne ikke lagre regel");
+      } finally {
+        setAdding(false);
+      }
     }
-    setAdding(true);
-    try {
-      await upsertLightIdlePref({
-        data: {
-          homey_zone_id: zone.zoneId,
-          zone_name: zone.zoneName,
-          recipient: newRecipient,
-          lights_on_minutes: newLightsOn,
-          no_motion_minutes: newNoMotion,
-          enabled: true,
-          cooldown_minutes: newCooldown,
-        },
-      });
-      toast.success(`Regel lagret for ${zone.zoneName}`);
-      setNewZone("");
-      setNewRecipient("Alle");
-      setNewLightsOn(30);
-      setNewNoMotion(15);
-      setNewCooldown(60);
-      await refresh();
-    } catch (err) {
-      console.error(err);
-      toast.error("Kunne ikke lagre regel");
-    } finally {
-      setAdding(false);
-    }
+    setNewRecipient("Alle");
+    setNewLightsOn(30);
+    setNewNoMotion(15);
+    setNewCooldown(60);
+    await refresh();
   }
 
   async function handleUpdate(p: LightIdlePref, patch: Partial<LightIdlePref>) {
@@ -97,6 +184,7 @@ export function LightIdleNotificationSettings() {
       await upsertLightIdlePref({
         data: {
           id: merged.id,
+          scope: merged.scope,
           homey_zone_id: merged.homey_zone_id,
           zone_name: merged.zone_name,
           recipient: merged.recipient,
@@ -155,8 +243,9 @@ export function LightIdleNotificationSettings() {
         </div>
       </div>
       <p className="text-xs text-muted-foreground mb-4">
-        Få push når lysene i et rom har stått på en stund og det ikke er noe folk der.
-        Kun rom med både lys og bevegelsessensor i Homey kan velges.
+        Få push når lys står på uten at noen er der. Velg <strong>Per rom</strong> for et
+        spesifikt rom, eller <strong>Alle rom</strong> for å få varsel om alle innendørs
+        rom samlet (uterom utelates).
       </p>
 
       {loading ? (
@@ -175,9 +264,13 @@ export function LightIdleNotificationSettings() {
                 >
                   <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
                     <div className="flex items-center gap-2">
-                      <Lightbulb size={14} className="text-primary" />
+                      {p.scope === "global" ? (
+                        <Globe2 size={14} className="text-primary" />
+                      ) : (
+                        <Lightbulb size={14} className="text-primary" />
+                      )}
                       <span className="text-xs tracking-[0.2em] uppercase text-primary">
-                        {p.zone_name}
+                        {p.scope === "global" ? "Alle rom (innendørs)" : p.zone_name}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
@@ -233,55 +326,45 @@ export function LightIdleNotificationSettings() {
                         </SelectContent>
                       </Select>
                     </label>
-                    <label className="flex flex-col gap-1">
-                      <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                        Lys på (min)
-                      </span>
-                      <Input
-                        type="number"
-                        min={1}
-                        max={1440}
-                        value={p.lights_on_minutes}
-                        onChange={(e) =>
-                          handleUpdate(p, {
-                            lights_on_minutes: Math.max(1, Number(e.target.value) || 1),
-                          })
-                        }
-                        className="h-8 text-xs"
-                      />
-                    </label>
+                    {p.scope === "zone" && (
+                      <label className="flex flex-col gap-1">
+                        <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                          Lys på (min)
+                        </span>
+                        <NumberField
+                          value={p.lights_on_minutes ?? 30}
+                          min={1}
+                          max={1440}
+                          className="h-8 text-xs"
+                          onCommit={(n) => handleUpdate(p, { lights_on_minutes: n })}
+                          disabled={savingId === p.id}
+                        />
+                      </label>
+                    )}
                     <label className="flex flex-col gap-1">
                       <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
                         Ingen bevegelse (min)
                       </span>
-                      <Input
-                        type="number"
+                      <NumberField
+                        value={p.no_motion_minutes}
                         min={1}
                         max={1440}
-                        value={p.no_motion_minutes}
-                        onChange={(e) =>
-                          handleUpdate(p, {
-                            no_motion_minutes: Math.max(1, Number(e.target.value) || 1),
-                          })
-                        }
                         className="h-8 text-xs"
+                        onCommit={(n) => handleUpdate(p, { no_motion_minutes: n })}
+                        disabled={savingId === p.id}
                       />
                     </label>
                     <label className="flex flex-col gap-1">
                       <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
                         Cooldown (min)
                       </span>
-                      <Input
-                        type="number"
+                      <NumberField
+                        value={p.cooldown_minutes}
                         min={5}
                         max={1440}
-                        value={p.cooldown_minutes}
-                        onChange={(e) =>
-                          handleUpdate(p, {
-                            cooldown_minutes: Math.max(5, Number(e.target.value) || 5),
-                          })
-                        }
                         className="h-8 text-xs"
+                        onCommit={(n) => handleUpdate(p, { cooldown_minutes: n })}
+                        disabled={savingId === p.id}
                       />
                     </label>
                   </div>
@@ -295,29 +378,58 @@ export function LightIdleNotificationSettings() {
             <div className="text-[10px] tracking-[0.25em] uppercase text-muted-foreground mb-2">
               Legg til regel
             </div>
-            {zones.length === 0 ? (
+
+            {/* Scope-velger */}
+            <div className="flex gap-2 mb-3">
+              <button
+                type="button"
+                onClick={() => setNewScope("zone")}
+                className={`text-xs px-3 py-1.5 rounded border transition ${
+                  newScope === "zone"
+                    ? "bg-primary/15 border-primary/50 text-primary"
+                    : "border-border text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Lightbulb size={12} className="inline mr-1" /> Per rom
+              </button>
+              <button
+                type="button"
+                onClick={() => setNewScope("global")}
+                className={`text-xs px-3 py-1.5 rounded border transition ${
+                  newScope === "global"
+                    ? "bg-primary/15 border-primary/50 text-primary"
+                    : "border-border text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Globe2 size={12} className="inline mr-1" /> Alle rom (innendørs)
+              </button>
+            </div>
+
+            {newScope === "zone" && zones.length === 0 ? (
               <div className="text-xs text-muted-foreground">
                 Fant ingen rom med både lys og bevegelsessensor.
               </div>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-                <label className="flex flex-col gap-1 col-span-2">
-                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                    Rom
-                  </span>
-                  <Select value={newZone} onValueChange={setNewZone}>
-                    <SelectTrigger className="h-8 text-xs">
-                      <SelectValue placeholder="Velg rom" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {zones.map((z) => (
-                        <SelectItem key={z.zoneId} value={z.zoneId}>
-                          {z.zoneName} · {z.lights} lys · {z.motionSensors} sensor
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </label>
+                {newScope === "zone" && (
+                  <label className="flex flex-col gap-1 col-span-2">
+                    <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                      Rom
+                    </span>
+                    <Select value={newZone} onValueChange={setNewZone}>
+                      <SelectTrigger className="h-8 text-xs">
+                        <SelectValue placeholder="Velg rom" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {zones.map((z) => (
+                          <SelectItem key={z.zoneId} value={z.zoneId}>
+                            {z.zoneName} · {z.lights} lys · {z.motionSensors} sensor
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </label>
+                )}
                 <label className="flex flex-col gap-1">
                   <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
                     Mottaker
@@ -335,43 +447,42 @@ export function LightIdleNotificationSettings() {
                     </SelectContent>
                   </Select>
                 </label>
-                <label className="flex flex-col gap-1">
-                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                    Lys på (min)
-                  </span>
-                  <Input
-                    type="number"
-                    min={1}
-                    max={1440}
-                    value={newLightsOn}
-                    onChange={(e) => setNewLightsOn(Math.max(1, Number(e.target.value) || 1))}
-                    className="h-8 text-xs"
-                  />
-                </label>
+                {newScope === "zone" && (
+                  <label className="flex flex-col gap-1">
+                    <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                      Lys på (min)
+                    </span>
+                    <NumberField
+                      value={newLightsOn}
+                      min={1}
+                      max={1440}
+                      className="h-8 text-xs"
+                      onCommit={setNewLightsOn}
+                    />
+                  </label>
+                )}
                 <label className="flex flex-col gap-1">
                   <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
                     Uten bevegelse (min)
                   </span>
-                  <Input
-                    type="number"
+                  <NumberField
+                    value={newNoMotion}
                     min={1}
                     max={1440}
-                    value={newNoMotion}
-                    onChange={(e) => setNewNoMotion(Math.max(1, Number(e.target.value) || 1))}
                     className="h-8 text-xs"
+                    onCommit={setNewNoMotion}
                   />
                 </label>
                 <label className="flex flex-col gap-1">
                   <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
                     Cooldown (min)
                   </span>
-                  <Input
-                    type="number"
+                  <NumberField
+                    value={newCooldown}
                     min={5}
                     max={1440}
-                    value={newCooldown}
-                    onChange={(e) => setNewCooldown(Math.max(5, Number(e.target.value) || 5))}
                     className="h-8 text-xs"
+                    onCommit={setNewCooldown}
                   />
                 </label>
                 <div className="col-span-2 sm:col-span-5 flex justify-end">
@@ -379,7 +490,7 @@ export function LightIdleNotificationSettings() {
                     type="button"
                     size="sm"
                     onClick={handleAdd}
-                    disabled={adding || !newZone}
+                    disabled={adding || (newScope === "zone" && !newZone)}
                   >
                     {adding ? (
                       <Loader2 size={14} className="animate-spin mr-1" />

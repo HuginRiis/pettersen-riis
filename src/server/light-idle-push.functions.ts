@@ -8,10 +8,11 @@ import {
 
 export type LightIdlePref = {
   id: string;
-  homey_zone_id: string;
-  zone_name: string;
+  scope: "zone" | "global";
+  homey_zone_id: string | null;
+  zone_name: string | null;
   recipient: string;
-  lights_on_minutes: number;
+  lights_on_minutes: number | null;
   no_motion_minutes: number;
   enabled: boolean;
   cooldown_minutes: number;
@@ -23,6 +24,7 @@ export const listLightIdlePrefs = createServerFn({ method: "GET" }).handler(
     const { data, error } = await supabaseAdmin
       .from("light_idle_notification_prefs" as never)
       .select("*")
+      .order("scope")
       .order("zone_name");
     if (error) throw error;
     return (data ?? []) as unknown as LightIdlePref[];
@@ -33,51 +35,51 @@ export const listLightIdleZones = createServerFn({ method: "GET" }).handler(
   async () => listLightAndMotionZones(),
 );
 
-const upsertSchema = z.object({
-  id: z.string().uuid().optional(),
-  homey_zone_id: z.string().min(1),
-  zone_name: z.string().min(1).max(120),
-  recipient: z.string().min(1).max(40),
-  lights_on_minutes: z.number().int().min(1).max(1440),
-  no_motion_minutes: z.number().int().min(1).max(1440),
-  enabled: z.boolean(),
-  cooldown_minutes: z.number().int().min(5).max(1440),
-});
+const upsertSchema = z
+  .object({
+    id: z.string().uuid().optional(),
+    scope: z.enum(["zone", "global"]).default("zone"),
+    homey_zone_id: z.string().min(1).nullable().optional(),
+    zone_name: z.string().min(1).max(120).nullable().optional(),
+    recipient: z.string().min(1).max(40),
+    lights_on_minutes: z.number().int().min(1).max(1440).nullable().optional(),
+    no_motion_minutes: z.number().int().min(1).max(1440),
+    enabled: z.boolean(),
+    cooldown_minutes: z.number().int().min(5).max(1440),
+  })
+  .refine(
+    (d) => d.scope !== "zone" || (!!d.homey_zone_id && !!d.zone_name && !!d.lights_on_minutes),
+    { message: "Per-rom-regel krever rom og 'lys på'-minutter" },
+  );
 
 export const upsertLightIdlePref = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => upsertSchema.parse(data))
   .handler(async ({ data }) => {
+    const row = {
+      scope: data.scope,
+      homey_zone_id: data.scope === "global" ? null : data.homey_zone_id ?? null,
+      zone_name: data.scope === "global" ? "Alle rom (innendørs)" : data.zone_name ?? null,
+      recipient: data.recipient,
+      lights_on_minutes: data.scope === "global" ? null : data.lights_on_minutes ?? null,
+      no_motion_minutes: data.no_motion_minutes,
+      enabled: data.enabled,
+      cooldown_minutes: data.cooldown_minutes,
+    };
     if (data.id) {
       const { error } = await supabaseAdmin
         .from("light_idle_notification_prefs" as never)
-        .update({
-          homey_zone_id: data.homey_zone_id,
-          zone_name: data.zone_name,
-          recipient: data.recipient,
-          lights_on_minutes: data.lights_on_minutes,
-          no_motion_minutes: data.no_motion_minutes,
-          enabled: data.enabled,
-          cooldown_minutes: data.cooldown_minutes,
-        } as never)
+        .update(row as never)
         .eq("id", data.id);
       if (error) throw error;
       return { ok: true, id: data.id };
     }
-    const { data: row, error } = await supabaseAdmin
+    const { data: ins, error } = await supabaseAdmin
       .from("light_idle_notification_prefs" as never)
-      .insert({
-        homey_zone_id: data.homey_zone_id,
-        zone_name: data.zone_name,
-        recipient: data.recipient,
-        lights_on_minutes: data.lights_on_minutes,
-        no_motion_minutes: data.no_motion_minutes,
-        enabled: data.enabled,
-        cooldown_minutes: data.cooldown_minutes,
-      } as never)
+      .insert(row as never)
       .select("id")
       .single();
     if (error) throw error;
-    return { ok: true, id: (row as { id: string }).id };
+    return { ok: true, id: (ins as { id: string }).id };
   });
 
 export const deleteLightIdlePref = createServerFn({ method: "POST" })

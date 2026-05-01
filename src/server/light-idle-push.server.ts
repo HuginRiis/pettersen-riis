@@ -1,12 +1,11 @@
 /**
  * "Lys på uten bevegelse"-varsler.
  *
- * For hvert rom (Homey-zone) der det finnes både lys og bevegelsessensor,
- * kan en regel sette to terskler:
- *  - lights_on_minutes: lysene må ha vært på lenger enn dette
- *  - no_motion_minutes: bevegelsessensor må ikke ha trigget på dette
- *
- * Når begge oppfylles, sendes push (med cooldown_minutes mellom hver gang).
+ * To typer regler:
+ *  - scope='zone' : Per rom. Krever lights_on_minutes + no_motion_minutes.
+ *  - scope='global': Alle innendørs rom. Bruker bare no_motion_minutes — varsler
+ *    summen av tente lys i rom (ikke ute) der bevegelsessensor ikke har trigget
+ *    på X minutter.
  */
 import webpush from "web-push";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
@@ -27,10 +26,11 @@ function ensureConfigured() {
 
 type Pref = {
   id: string;
-  homey_zone_id: string;
-  zone_name: string;
+  scope: "zone" | "global";
+  homey_zone_id: string | null;
+  zone_name: string | null;
   recipient: string;
-  lights_on_minutes: number;
+  lights_on_minutes: number | null;
   no_motion_minutes: number;
   enabled: boolean;
   cooldown_minutes: number;
@@ -44,21 +44,37 @@ function pickTs(cap: any): number | null {
   return Number.isFinite(ms) ? ms : null;
 }
 
-/**
- * For hver zone, finn:
- *  - tente lys (onoff=true) og når sist en av dem ble slått PÅ
- *  - bevegelsessensorer og siste alarm_motion-trigger
- */
+/** Heuristikk: et rom som er "ute" (terrasse, hage, garasje, fasade osv). */
+function isOutdoorZoneName(name: string | undefined | null): boolean {
+  if (!name) return false;
+  const n = name.toLowerCase();
+  return (
+    n.includes("ute") ||
+    n.includes("uteplass") ||
+    n.includes("hage") ||
+    n.includes("terrasse") ||
+    n.includes("balkong") ||
+    n.includes("veranda") ||
+    n.includes("garasje") ||
+    n.includes("carport") ||
+    n.includes("fasade") ||
+    n.includes("inngang") ||
+    n.includes("oppkjørsel") ||
+    n.includes("oppkjorsel") ||
+    n.includes("uthus") ||
+    n.includes("plen")
+  );
+}
+
 export type ZoneStatus = {
   zoneId: string;
   zoneName: string;
   litLights: number;
   totalLights: number;
   motionSensors: number;
-  /** Eldste tidspunkt en lampe i sonen ble slått på (gir lengste "på"-tid). */
   lightsOnSinceMs: number | null;
-  /** Siste gang bevegelsessensor i sonen rapporterte aktivitet. */
   lastMotionMs: number | null;
+  isOutdoor: boolean;
 };
 
 async function buildZoneStatuses(): Promise<Map<string, ZoneStatus>> {
@@ -84,14 +100,16 @@ async function buildZoneStatuses(): Promise<Map<string, ZoneStatus>> {
 
     let zs = out.get(zoneId);
     if (!zs) {
+      const name = zoneById.get(zoneId) ?? "Ukjent rom";
       zs = {
         zoneId,
-        zoneName: zoneById.get(zoneId) ?? "Ukjent rom",
+        zoneName: name,
         litLights: 0,
         totalLights: 0,
         motionSensors: 0,
         lightsOnSinceMs: null,
         lastMotionMs: null,
+        isOutdoor: isOutdoorZoneName(name),
       };
       out.set(zoneId, zs);
     }
@@ -103,7 +121,6 @@ async function buildZoneStatuses(): Promise<Map<string, ZoneStatus>> {
         zs.litLights++;
         const ts = pickTs(onoff);
         if (ts !== null) {
-          // Den ELDSTE påslag-tiden vinner — det gir hvor lenge minst én lampe har vært på.
           if (zs.lightsOnSinceMs === null || ts < zs.lightsOnSinceMs) {
             zs.lightsOnSinceMs = ts;
           }
@@ -114,7 +131,6 @@ async function buildZoneStatuses(): Promise<Map<string, ZoneStatus>> {
       zs.motionSensors++;
       const motion = caps.alarm_motion;
       const ts = pickTs(motion);
-      // Hvis sensoren AKKURAT NÅ rapporterer bevegelse, regn det som "nå"
       if (motion?.value === true) {
         zs.lastMotionMs = Date.now();
       } else if (ts !== null) {
@@ -127,10 +143,7 @@ async function buildZoneStatuses(): Promise<Map<string, ZoneStatus>> {
   return out;
 }
 
-/**
- * Liste over rom i Homey som har BÅDE lys og bevegelsessensor.
- * Brukes av UI-en for å fylle dropdown av valgbare rom.
- */
+/** Liste rom med BÅDE lys og bevegelsessensor (per-rom-regler). */
 export async function listLightAndMotionZones(): Promise<
   Array<{ zoneId: string; zoneName: string; lights: number; motionSensors: number }>
 > {
@@ -254,6 +267,66 @@ export async function processLightIdleNotifications(): Promise<{
 
   for (const p of prefs as Pref[]) {
     checked++;
+
+    // Cooldown gjelder begge typer
+    if (p.last_notified_at) {
+      const lastMs = new Date(p.last_notified_at).getTime();
+      if (now - lastMs < p.cooldown_minutes * 60_000) {
+        skipped++;
+        continue;
+      }
+    }
+
+    if (p.scope === "global") {
+      // Tell tente lys i alle innendørs rom der bevegelsessensoren har vært stille i X min
+      const idleRooms: Array<{ name: string; lit: number }> = [];
+      let totalLit = 0;
+      for (const z of statuses.values()) {
+        if (z.isOutdoor) continue;
+        if (z.litLights === 0) continue;
+        // Krev at rommet HAR bevegelsessensor — ellers vet vi ikke om noen er der
+        if (z.motionSensors === 0) continue;
+        if (z.lastMotionMs !== null) {
+          const sinceMotionMs = now - z.lastMotionMs;
+          if (sinceMotionMs < p.no_motion_minutes * 60_000) continue;
+        }
+        idleRooms.push({ name: z.zoneName, lit: z.litLights });
+        totalLit += z.litLights;
+      }
+
+      if (totalLit === 0) {
+        skipped++;
+        continue;
+      }
+
+      const recipient = p.recipient || "Alle";
+      const title = `💡 ${totalLit} ${totalLit === 1 ? "lampe står" : "lamper står"} på uten folk`;
+      const roomsTxt = idleRooms
+        .sort((a, b) => b.lit - a.lit)
+        .map((r) => `${r.name} (${r.lit})`)
+        .join(", ");
+      const body = `Ingen bevegelse på minst ${fmtMin(p.no_motion_minutes)}: ${roomsTxt}`;
+      const payload = JSON.stringify({
+        title,
+        body,
+        tag: `light-idle-global-${p.id}`,
+        url: "/smarthus",
+      });
+      const r = await pushToRecipient(recipient, payload, title, "light-idle-global");
+      sent += r.sent;
+      errors += r.errors;
+      await supabaseAdmin
+        .from("light_idle_notification_prefs" as never)
+        .update({ last_notified_at: new Date(now).toISOString() } as never)
+        .eq("id", p.id);
+      continue;
+    }
+
+    // scope === 'zone'
+    if (!p.homey_zone_id) {
+      skipped++;
+      continue;
+    }
     const zone = statuses.get(p.homey_zone_id);
     if (!zone) {
       skipped++;
@@ -264,13 +337,13 @@ export async function processLightIdleNotifications(): Promise<{
       continue;
     }
 
+    const lightsOnMin = p.lights_on_minutes ?? 30;
     const lightsOnMs = now - zone.lightsOnSinceMs;
-    if (lightsOnMs < p.lights_on_minutes * 60_000) {
+    if (lightsOnMs < lightsOnMin * 60_000) {
       skipped++;
       continue;
     }
 
-    // Ingen bevegelse på minst no_motion_minutes
     if (zone.lastMotionMs !== null) {
       const sinceMotionMs = now - zone.lastMotionMs;
       if (sinceMotionMs < p.no_motion_minutes * 60_000) {
@@ -279,24 +352,13 @@ export async function processLightIdleNotifications(): Promise<{
       }
     }
 
-    // Cooldown
-    if (p.last_notified_at) {
-      const lastMs = new Date(p.last_notified_at).getTime();
-      if (now - lastMs < p.cooldown_minutes * 60_000) {
-        skipped++;
-        continue;
-      }
-    }
-
     const recipient = p.recipient || "Alle";
     const title = `💡 Lys på i ${zone.zoneName}`;
-    const lightsOnMin = Math.round(lightsOnMs / 60_000);
+    const lightsOnMinReal = Math.round(lightsOnMs / 60_000);
     const motionTxt = zone.lastMotionMs
       ? `ingen bevegelse på ${fmtMin(Math.round((now - zone.lastMotionMs) / 60_000))}`
       : `ingen bevegelse registrert`;
-    const body =
-      `${zone.litLights} ${zone.litLights === 1 ? "lampe har" : "lamper har"} stått på i ${fmtMin(lightsOnMin)} — ${motionTxt}. Vurder å slukke.`;
-
+    const body = `${zone.litLights} ${zone.litLights === 1 ? "lampe har" : "lamper har"} stått på i ${fmtMin(lightsOnMinReal)} — ${motionTxt}. Vurder å slukke.`;
     const payload = JSON.stringify({
       title,
       body,
@@ -317,7 +379,7 @@ export async function processLightIdleNotifications(): Promise<{
   return { checked, sent, errors, skipped };
 }
 
-/** Test-push uavhengig av faktiske forhold — sender alltid hvis pref finnes. */
+/** Test-push uavhengig av faktiske forhold. */
 export async function sendLightIdleTest(prefId: string): Promise<{ sent: number; errors: number }> {
   ensureConfigured();
   const { data: pref, error } = await supabaseAdmin
@@ -329,8 +391,13 @@ export async function sendLightIdleTest(prefId: string): Promise<{ sent: number;
   if (!pref) throw new Error("Fant ikke regel");
   const p = pref as unknown as Pref;
   const recipient = p.recipient || "Alle";
-  const title = `🧪 TEST · 💡 Lys på i ${p.zone_name}`;
-  const body = `Test: dette er hva du ville fått hvis lysene hadde vært på i ${fmtMin(p.lights_on_minutes)} uten bevegelse på ${fmtMin(p.no_motion_minutes)}.`;
+  const isGlobal = p.scope === "global";
+  const title = isGlobal
+    ? `🧪 TEST · 💡 Lys på uten folk (alle rom)`
+    : `🧪 TEST · 💡 Lys på i ${p.zone_name ?? "rom"}`;
+  const body = isGlobal
+    ? `Test: dette er hva du ville fått hvis det hadde vært tente lys i innendørs rom uten bevegelse på ${fmtMin(p.no_motion_minutes)}.`
+    : `Test: dette er hva du ville fått hvis lysene hadde vært på i ${fmtMin(p.lights_on_minutes ?? 30)} uten bevegelse på ${fmtMin(p.no_motion_minutes)}.`;
   const payload = JSON.stringify({
     title,
     body,
