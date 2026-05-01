@@ -36,7 +36,8 @@ type NavLink = { to: RoutePath; label: string; public?: boolean };
 
 const HOMEY_BACKED_ROUTES: RoutePath[] = ["/smarthus", "/var", "/steintavle"];
 
-// Steintavle skal alltid stå sist i menyen, uavhengig av bruksstatistikk.
+// Hjem skal alltid stå først, og Steintavle alltid sist — uavhengig av bruksstatistikk.
+const ALWAYS_FIRST: RoutePath = "/";
 const ALWAYS_LAST: RoutePath = "/steintavle";
 
 // Public halls — open to any visitor entering the courtyard.
@@ -92,16 +93,17 @@ export function SiteHeader() {
   // Visitors outside the gate only see public halls; authed users see everything.
   const baseLinks = isAuthed ? navLinks : navLinks.filter((l) => l.public);
 
-  // Sorter: mest brukt først, deretter opprinnelig rekkefølge — men /steintavle alltid sist.
+  // Sorter: Hjem alltid først, Steintavle alltid sist, resten etter bruksfrekvens.
   const sortedLinks = (() => {
+    const first = baseLinks.filter((l) => l.to === ALWAYS_FIRST);
     const last = baseLinks.filter((l) => l.to === ALWAYS_LAST);
-    const rest = baseLinks.filter((l) => l.to !== ALWAYS_LAST);
+    const rest = baseLinks.filter((l) => l.to !== ALWAYS_LAST && l.to !== ALWAYS_FIRST);
     const indexed = rest.map((l, i) => ({ link: l, i, count: usage[l.to] ?? 0 }));
     indexed.sort((a, b) => {
       if (b.count !== a.count) return b.count - a.count;
       return a.i - b.i;
     });
-    return [...indexed.map((x) => x.link), ...last];
+    return [...first, ...indexed.map((x) => x.link), ...last];
   })();
 
   const handleLogout = async () => {
