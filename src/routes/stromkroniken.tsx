@@ -337,6 +337,27 @@ function HomeBlock({
       ? { diff: todayKwh - yesterdayProrated, pct: ((todayKwh - yesterdayProrated) / yesterdayProrated) * 100 }
       : null;
 
+  // Samme ukedag forrige uke (7 dager tilbake)
+  const lastWeekDate = new Date(now);
+  lastWeekDate.setDate(lastWeekDate.getDate() - 7);
+  const lastWeekKey = dayKey(lastWeekDate);
+  const sameDayLastWeek = (() => {
+    if (data?.daily?.length) {
+      const match = data.daily.find((d) => {
+        const dd = new Date(d.from);
+        return dayKey(dd) === lastWeekKey;
+      });
+      if (match?.kwh != null && match.kwh > 0) return match.kwh;
+    }
+    return storedFor(lastWeekDate);
+  })();
+  const lastWeekProrated =
+    sameDayLastWeek != null && sameDayLastWeek > 0 ? sameDayLastWeek * dayFraction : null;
+  const vsLastWeek =
+    lastWeekProrated != null && lastWeekProrated > 0 && todayKwh > 0
+      ? { diff: todayKwh - lastWeekProrated, pct: ((todayKwh - lastWeekProrated) / lastWeekProrated) * 100 }
+      : null;
+
   // Samme dato forrige måned — Tibber daily først, så lagret dagsverdi
   const lastMonthDate = new Date(now);
   lastMonthDate.setMonth(lastMonthDate.getMonth() - 1);
