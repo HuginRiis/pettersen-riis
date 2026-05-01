@@ -10,6 +10,7 @@ import { getTollnesAlerts, type AlertsResult, type MetAlert } from "@/server/lig
 import { useUserLocation, UserLocationBar } from "@/hooks/use-user-location";
 import { UvPanel } from "@/components/UvPanel";
 import { UvNotificationSettings } from "@/components/UvNotificationSettings";
+import { WeatherNotificationSettings } from "@/components/WeatherNotificationSettings";
 
 
 export const Route = createFileRoute("/var")({
@@ -416,6 +417,11 @@ function WeatherPage() {
         {/* === LIVE VÆRKART === */}
         <Block title="Stormvaktens Kart · Live vær over Telemark & Buskerud">
           <WindyMap />
+        </Block>
+
+        {/* === VÆR-VARSLER (push) === */}
+        <Block title="Værvaktens Ravner · Push-varsler">
+          <WeatherNotificationSettings />
         </Block>
 
         <p className="text-xs text-muted-foreground italic">

@@ -1167,6 +1167,63 @@ export type Database = {
         }
         Relationships: []
       }
+      weather_notification_prefs: {
+        Row: {
+          created_at: string
+          days_ahead: number
+          enabled: boolean
+          id: string
+          kind: string
+          label: string
+          last_notified_date: string | null
+          last_notified_signature: string | null
+          lat: number
+          location: string
+          lon: number
+          notify_hour: number
+          notify_minute: number
+          recipient: string
+          threshold: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          days_ahead?: number
+          enabled?: boolean
+          id?: string
+          kind: string
+          label: string
+          last_notified_date?: string | null
+          last_notified_signature?: string | null
+          lat: number
+          location: string
+          lon: number
+          notify_hour?: number
+          notify_minute?: number
+          recipient?: string
+          threshold?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          days_ahead?: number
+          enabled?: boolean
+          id?: string
+          kind?: string
+          label?: string
+          last_notified_date?: string | null
+          last_notified_signature?: string | null
+          lat?: number
+          location?: string
+          lon?: number
+          notify_hour?: number
+          notify_minute?: number
+          recipient?: string
+          threshold?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

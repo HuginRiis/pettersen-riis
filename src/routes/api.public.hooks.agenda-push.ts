@@ -56,7 +56,14 @@ export const Route = createFileRoute("/api/public/hooks/agenda-push")({
           } catch (err) {
             console.error("[uv-push] failed", err);
           }
-          return new Response(JSON.stringify({ ok: true, agenda, checklist, garbage, birthdays, warranty, uv }), {
+          let weather = { checked: 0, sent: 0, errors: 0, skipped: 0 };
+          try {
+            const wmod = await import("@/server/weather-push.server");
+            weather = await wmod.processWeatherNotifications();
+          } catch (err) {
+            console.error("[weather-push] failed", err);
+          }
+          return new Response(JSON.stringify({ ok: true, agenda, checklist, garbage, birthdays, warranty, uv, weather }), {
             headers: { "Content-Type": "application/json" },
           });
         } catch (err) {
