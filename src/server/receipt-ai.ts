@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { logAiSearch, isHouseAuthenticated } from "@/server/ai-usage.server";
 
 export type ReceiptItem = {
   name: string;
@@ -95,6 +96,14 @@ Hvis du er usikker på et felt, sett det til null. Ikke finn på data.`;
     });
 
     if (!res.ok) {
+      const authed = await isHouseAuthenticated();
+      await logAiSearch({
+        feature: "kvittering",
+        query: null,
+        model: MODEL,
+        authenticated: authed,
+        status: res.status === 429 ? "rate_limited" : "error",
+      });
       if (res.status === 429) throw new Error("AI er midlertidig overbelastet — prøv igjen om litt.");
       if (res.status === 402) throw new Error("AI-kreditt tom — fyll på i Lovable-arbeidsområdet.");
       const t = await res.text();
@@ -102,6 +111,18 @@ Hvis du er usikker på et felt, sett det til null. Ikke finn på data.`;
     }
 
     const json = await res.json();
+    const usage = json.usage ?? {};
+    const authed = await isHouseAuthenticated();
+    await logAiSearch({
+      feature: "kvittering",
+      query: null,
+      model: MODEL,
+      authenticated: authed,
+      status: "ok",
+      promptTokens: usage.prompt_tokens ?? null,
+      completionTokens: usage.completion_tokens ?? null,
+      totalTokens: usage.total_tokens ?? null,
+    });
     const toolCall = json.choices?.[0]?.message?.tool_calls?.[0];
     if (!toolCall?.function?.arguments) {
       throw new Error("AI ga ingen strukturert kvitterings-data");

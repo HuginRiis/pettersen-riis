@@ -15,6 +15,7 @@ import heroImg from "@/assets/got-vakttarnet.jpg";
 import { Eye, Globe2, Smartphone, Monitor, Tablet, Clock, Crown, ShieldAlert, Map as MapIcon, Lock, Unlock, Sparkles, DoorClosed, Users } from "lucide-react";
 import { DoorsLocksPanel } from "@/components/DoorsLocksPanel";
 import { ApiCallLogPanel } from "@/components/ApiCallLogPanel";
+import { MaesterAiBudget } from "@/components/MaesterAiBudget";
 
 export const Route = createFileRoute("/vakttarnet")({
   head: () => ({
@@ -111,6 +112,14 @@ function VakttarnetPage() {
           subtitle="Yale Doorman og Verisure rapporterer hva som er åpent og lukket"
         >
           <DoorsLocksPanel />
+        </Panel>
+
+        <Panel
+          title="AI-skattkammeret"
+          icon={<Sparkles size={14} />}
+          subtitle="Hærmesterens forbruk av AI-credits — denne måned, totalt og per funksjon"
+        >
+          <MaesterAiBudget />
         </Panel>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">

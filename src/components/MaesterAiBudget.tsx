@@ -17,6 +17,7 @@ type Stats = Awaited<ReturnType<typeof getAiUsageStats>>;
 
 const FEATURE_LABELS: Record<string, string> = {
   turer: "Tur-rådgiver",
+  kvittering: "Kvittering-tolkning",
   receipt: "Kvittering-tolkning",
   receipts: "Kvittering-tolkning",
   pollen: "Pollen-orakel",
@@ -60,14 +61,14 @@ export function MaesterAiBudget() {
 
   if (loading) {
     return (
-      <div className="mt-6 rounded-md border border-border/70 bg-card/40 p-4 flex items-center gap-2 text-sm text-muted-foreground">
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <Loader2 className="h-4 w-4 animate-spin" /> Hærmesteren teller sine glasskuler …
       </div>
     );
   }
   if (error || !stats) {
     return (
-      <div className="mt-6 rounded-md border border-border/70 bg-card/40 p-4 text-sm text-destructive">
+      <div className="text-sm text-destructive">
         Kunne ikke lese AI-skattkammeret: {error ?? "ukjent"}
       </div>
     );
@@ -82,7 +83,7 @@ export function MaesterAiBudget() {
     stats.byFeature.reduce((s, f) => s + (f.costUsd ?? 0), 0) || 1;
 
   return (
-    <div className="mt-6 rounded-md border border-border/70 bg-card/40 p-4">
+    <div>
       <div className="flex items-center gap-2 mb-3">
         <Sparkles className="w-4 h-4 text-primary" />
         <h4 className="text-[11px] tracking-[0.3em] uppercase text-primary">

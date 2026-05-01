@@ -11,7 +11,7 @@ import {
 } from "@/server/homey";
 import { supabase } from "@/integrations/supabase/client";
 import { getStoredWho, setStoredWho, type Who } from "@/lib/push-client";
-import { DoorClosed, DoorOpen, Lock, Unlock, Activity, ShieldAlert, Plus, Minus, ShieldCheck, ShieldOff, Loader2, Flame } from "lucide-react";
+import { DoorClosed, DoorOpen, Lock, Unlock, Activity, ShieldAlert, Plus, Minus, ShieldCheck, ShieldOff, Loader2, Flame, ChevronDown } from "lucide-react";
 
 /**
  * Pyrelys — drage-ild som markerer batteri-nivå på borgens vakter.
@@ -315,6 +315,7 @@ function HomeAlarmPanel() {
   const [who, setWho] = useState<Who>("Alle");
   const [log, setLog] = useState<AlarmLogRow[]>([]);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [controlsOpen, setControlsOpen] = useState(false);
   const inFlight = useRef(false);
 
   // Hent lagret "hvem" på klienten
@@ -464,74 +465,88 @@ function HomeAlarmPanel() {
         </div>
       </div>
 
-      {/* Toggle-knapper */}
-      <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-2">
-        <button
-          type="button"
-          disabled={busy || state === "armed"}
-          onClick={() => handleSet("armed")}
-          className={`rounded-md border px-3 py-2 text-[10px] tracking-[0.25em] uppercase transition-colors ${
-            state === "armed"
-              ? "border-emerald-400/40 bg-emerald-400/20 text-emerald-300 cursor-default"
-              : "border-emerald-400/30 bg-emerald-400/5 text-emerald-300 hover:bg-emerald-400/15"
-          } ${busy ? "opacity-50" : ""} flex items-center justify-center gap-2`}
-        >
-          {busy ? <Loader2 size={12} className="animate-spin" /> : <ShieldCheck size={12} />}
-          Skru på
-        </button>
-        <button
-          type="button"
-          disabled={busy || state === "partially_armed"}
-          onClick={() => handleSet("partially_armed")}
-          title="Delvis — skallbeskyttet (natt-modus)"
-          className={`rounded-md border px-3 py-2 text-[10px] tracking-[0.25em] uppercase transition-colors ${
-            state === "partially_armed"
-              ? "border-sky-400/40 bg-sky-400/20 text-sky-200 cursor-default"
-              : "border-sky-400/30 bg-sky-400/5 text-sky-200 hover:bg-sky-400/15"
-          } ${busy ? "opacity-50" : ""} flex items-center justify-center gap-2`}
-        >
-          {busy ? <Loader2 size={12} className="animate-spin" /> : <ShieldAlert size={12} />}
-          Delvis
-        </button>
-        <button
-          type="button"
-          disabled={busy || state === "disarmed"}
-          onClick={() => handleSet("disarmed")}
-          className={`rounded-md border px-3 py-2 text-[10px] tracking-[0.25em] uppercase transition-colors ${
-            state === "disarmed"
-              ? "border-amber-400/40 bg-amber-400/20 text-amber-200 cursor-default"
-              : "border-amber-400/30 bg-amber-400/5 text-amber-200 hover:bg-amber-400/15"
-          } ${busy ? "opacity-50" : ""} flex items-center justify-center gap-2`}
-        >
-          {busy ? <Loader2 size={12} className="animate-spin" /> : <ShieldOff size={12} />}
-          Skru av
-        </button>
-      </div>
+      {/* Kollapsbar kontrollseksjon — må åpnes for å skru av/på */}
+      <Collapsible open={controlsOpen} onOpenChange={setControlsOpen} className="mt-3">
+        <CollapsibleTrigger className="w-full flex items-center justify-between gap-2 rounded-md border border-border bg-background/40 px-3 py-2 text-left hover:bg-background/60 transition-colors">
+          <span className="text-[10px] tracking-[0.25em] uppercase text-muted-foreground italic">
+            {controlsOpen ? "« Lukk kontrollene »" : "« Åpne for å styre alarmen »"}
+          </span>
+          <ChevronDown
+            size={14}
+            className={`text-muted-foreground transition-transform ${controlsOpen ? "rotate-180" : ""}`}
+          />
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          {/* Toggle-knapper */}
+          <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <button
+              type="button"
+              disabled={busy || state === "armed"}
+              onClick={() => handleSet("armed")}
+              className={`rounded-md border px-3 py-2 text-[10px] tracking-[0.25em] uppercase transition-colors ${
+                state === "armed"
+                  ? "border-emerald-400/40 bg-emerald-400/20 text-emerald-300 cursor-default"
+                  : "border-emerald-400/30 bg-emerald-400/5 text-emerald-300 hover:bg-emerald-400/15"
+              } ${busy ? "opacity-50" : ""} flex items-center justify-center gap-2`}
+            >
+              {busy ? <Loader2 size={12} className="animate-spin" /> : <ShieldCheck size={12} />}
+              Skru på
+            </button>
+            <button
+              type="button"
+              disabled={busy || state === "partially_armed"}
+              onClick={() => handleSet("partially_armed")}
+              title="Delvis — skallbeskyttet (natt-modus)"
+              className={`rounded-md border px-3 py-2 text-[10px] tracking-[0.25em] uppercase transition-colors ${
+                state === "partially_armed"
+                  ? "border-sky-400/40 bg-sky-400/20 text-sky-200 cursor-default"
+                  : "border-sky-400/30 bg-sky-400/5 text-sky-200 hover:bg-sky-400/15"
+              } ${busy ? "opacity-50" : ""} flex items-center justify-center gap-2`}
+            >
+              {busy ? <Loader2 size={12} className="animate-spin" /> : <ShieldAlert size={12} />}
+              Delvis
+            </button>
+            <button
+              type="button"
+              disabled={busy || state === "disarmed"}
+              onClick={() => handleSet("disarmed")}
+              className={`rounded-md border px-3 py-2 text-[10px] tracking-[0.25em] uppercase transition-colors ${
+                state === "disarmed"
+                  ? "border-amber-400/40 bg-amber-400/20 text-amber-200 cursor-default"
+                  : "border-amber-400/30 bg-amber-400/5 text-amber-200 hover:bg-amber-400/15"
+              } ${busy ? "opacity-50" : ""} flex items-center justify-center gap-2`}
+            >
+              {busy ? <Loader2 size={12} className="animate-spin" /> : <ShieldOff size={12} />}
+              Skru av
+            </button>
+          </div>
 
-      {/* Hvem-velger */}
-      <div className="mt-3 flex items-center gap-2 flex-wrap">
-        <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground">
-          Vakt:
-        </span>
-        <select
-          value={who}
-          onChange={(e) => {
-            const next = e.target.value as Who;
-            setWho(next);
-            setStoredWho(next);
-          }}
-          className="text-[10px] tracking-[0.2em] uppercase bg-background border border-border rounded px-2 py-1 text-foreground"
-        >
-          {WHO_OPTIONS.map((w) => (
-            <option key={w} value={w}>
-              {w}
-            </option>
-          ))}
-        </select>
-        <span className="text-[9px] text-muted-foreground/70 italic">
-          (huskes på denne enheten)
-        </span>
-      </div>
+          {/* Hvem-velger */}
+          <div className="mt-3 flex items-center gap-2 flex-wrap">
+            <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground">
+              Vakt:
+            </span>
+            <select
+              value={who}
+              onChange={(e) => {
+                const next = e.target.value as Who;
+                setWho(next);
+                setStoredWho(next);
+              }}
+              className="text-[10px] tracking-[0.2em] uppercase bg-background border border-border rounded px-2 py-1 text-foreground"
+            >
+              {WHO_OPTIONS.map((w) => (
+                <option key={w} value={w}>
+                  {w}
+                </option>
+              ))}
+            </select>
+            <span className="text-[9px] text-muted-foreground/70 italic">
+              (huskes på denne enheten)
+            </span>
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
 
       {/* Logg */}
       {log.length > 0 && (
@@ -797,15 +812,34 @@ export function DoorsLocksPanel() {
           </Section>
         );
       })()}
-      {motions.length > 0 && (
-        <Section title="Siste bevegelser" count={motions.length}>
-          <ul className="space-y-2">
-            {motions.slice(0, 8).map((m) => (
-              <MotionRow key={m.id} entry={m} />
-            ))}
-          </ul>
-        </Section>
-      )}
+      {motions.length > 0 && (() => {
+        const active = motions.filter((m) => m.motion === true);
+        const inactive = motions.filter((m) => m.motion !== true);
+        return (
+          <Section title="Siste bevegelser" count={active.length}>
+            {active.length === 0 ? (
+              <p className="text-[11px] tracking-[0.2em] uppercase text-muted-foreground italic">
+                « Stille i alle saler »
+              </p>
+            ) : (
+              <ul className="space-y-2">
+                {active.slice(0, 8).map((m) => (
+                  <MotionRow key={m.id} entry={m} />
+                ))}
+              </ul>
+            )}
+            {inactive.length > 0 && (
+              <SealedCollapsible label="Stille sensorer" count={inactive.length}>
+                <ul className="space-y-2 mt-2">
+                  {inactive.slice(0, 12).map((m) => (
+                    <MotionRow key={m.id} entry={m} />
+                  ))}
+                </ul>
+              </SealedCollapsible>
+            )}
+          </Section>
+        );
+      })()}
 
       <div className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground/60 text-right">
         ↻ Sist meldt {ago(state.data.fetchedAt)}
