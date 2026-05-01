@@ -78,12 +78,22 @@ function KvitteringerPage() {
   const [receipts, setReceipts] = useState<ReceiptRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [lightbox, setLightbox] = useState<string | null>(null);
   const [editing, setEditing] = useState<ReceiptRow | null>(null);
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
+
+  const toggleExpand = (id: string) =>
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
 
   const load = async () => {
     setLoading(true);
@@ -101,7 +111,24 @@ function KvitteringerPage() {
     load();
     const ch = supabase
       .channel("receipts_changes")
-      .on("postgres_changes", { event: "*", schema: "public", table: "receipts" }, () => load())
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "receipts" },
+        (payload) => {
+          if (payload.eventType === "INSERT") {
+            const row = { ...(payload.new as any), items: (payload.new as any).items ?? [] };
+            setReceipts((prev) =>
+              prev.some((r) => r.id === row.id) ? prev : [row, ...prev],
+            );
+          } else if (payload.eventType === "UPDATE") {
+            const row = { ...(payload.new as any), items: (payload.new as any).items ?? [] };
+            setReceipts((prev) => prev.map((r) => (r.id === row.id ? row : r)));
+          } else if (payload.eventType === "DELETE") {
+            const id = (payload.old as any).id;
+            setReceipts((prev) => prev.filter((r) => r.id !== id));
+          }
+        },
+      )
       .subscribe();
     return () => {
       supabase.removeChannel(ch);
@@ -113,9 +140,13 @@ function KvitteringerPage() {
     if (!files || files.length === 0) return;
     setUploading(true);
     let okCount = 0;
+    const total = files.length;
+    let idx = 0;
     for (const file of Array.from(files)) {
+      idx += 1;
+      const tag = total > 1 ? ` (${idx}/${total})` : "";
       try {
-        // 1. Upload to storage
+        setUploadStatus(`Laster opp bilde${tag}…`);
         const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
         const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
         const { error: upErr } = await supabase.storage
@@ -125,38 +156,58 @@ function KvitteringerPage() {
         const { data: pub } = supabase.storage.from("receipts").getPublicUrl(path);
         const imageUrl = pub.publicUrl;
 
-        // 2. AI parse
-        toast.info("AI leser kvitteringen…");
+        setUploadStatus(`AI leser kvitteringen${tag}…`);
         const parsed = await parseFn({ data: { imageUrl } });
 
-        // 3. Insert
-        const { error: insErr } = await supabase.from("receipts").insert({
-          store: parsed.store,
-          purchased_at: parsed.purchased_at,
-          total_nok: parsed.total_nok,
-          currency: parsed.currency || "NOK",
-          items: parsed.items as any,
-          ai_raw_text: parsed.raw_text,
-          ai_model: parsed.model,
-          image_url: imageUrl,
-          image_path: path,
-        });
+        setUploadStatus(`Lagrer i arkivet${tag}…`);
+        const { data: inserted, error: insErr } = await supabase
+          .from("receipts")
+          .insert({
+            store: parsed.store,
+            purchased_at: parsed.purchased_at,
+            total_nok: parsed.total_nok,
+            currency: parsed.currency || "NOK",
+            items: parsed.items as any,
+            ai_raw_text: parsed.raw_text,
+            ai_model: parsed.model,
+            image_url: imageUrl,
+            image_path: path,
+          })
+          .select()
+          .single();
         if (insErr) throw insErr;
+        // Optimistic update — i tilfelle realtime henger
+        if (inserted) {
+          const row = { ...(inserted as any), items: (inserted as any).items ?? [] };
+          setReceipts((prev) =>
+            prev.some((r) => r.id === row.id) ? prev : [row, ...prev],
+          );
+        }
         okCount += 1;
+        toast.success(
+          `✓ ${parsed.store ?? "Kvittering"}${parsed.total_nok ? ` — kr ${parsed.total_nok.toFixed(2).replace(".", ",")}` : ""} lagt til`,
+        );
       } catch (e) {
         console.error(e);
         toast.error(`Kvittering feilet: ${e instanceof Error ? e.message : String(e)}`);
       }
     }
     setUploading(false);
-    if (okCount > 0) toast.success(`Lagret ${okCount} kvittering${okCount === 1 ? "" : "er"}`);
+    setUploadStatus(null);
+    if (okCount > 1) toast.success(`Ferdig — ${okCount} kvitteringer lagt til`);
   };
 
   const removeReceipt = async (r: ReceiptRow) => {
     if (!confirm(`Slette kvittering fra ${r.store ?? "ukjent butikk"}?`)) return;
+    // Optimistic remove
+    setReceipts((prev) => prev.filter((x) => x.id !== r.id));
     const { error: delErr } = await supabase.from("receipts").delete().eq("id", r.id);
     if (delErr) {
       toast.error("Kunne ikke slette");
+      // Restore on failure
+      setReceipts((prev) => [r, ...prev].sort((a, b) =>
+        (b.purchased_at ?? b.created_at).localeCompare(a.purchased_at ?? a.created_at),
+      ));
       return;
     }
     await supabase.storage.from("receipts").remove([r.image_path]);
