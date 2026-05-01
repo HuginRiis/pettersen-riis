@@ -538,8 +538,14 @@ function ReceiptRowItem({
           />
           <div className="min-w-0 flex-1">
             <div className="flex items-baseline justify-between gap-2">
-              <h3 className="font-semibold text-sm sm:text-base truncate">
-                {r.store ?? "Ukjent butikk"}
+              <h3 className="font-semibold text-sm sm:text-base truncate flex items-center gap-1.5">
+                {r.is_food && (
+                  <Apple
+                    className="h-3.5 w-3.5 text-emerald-500 shrink-0"
+                    aria-label="Matvare"
+                  />
+                )}
+                <span className="truncate">{r.store ?? "Ukjent butikk"}</span>
               </h3>
               <span className="text-xs text-muted-foreground shrink-0">
                 Kjøpt {fmtDate(r.purchased_at)}
