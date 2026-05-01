@@ -205,8 +205,10 @@ export async function sendHyttaChecklistPush(data: {
         endpoint: sub.endpoint as string,
         p256dh: sub.p256dh as string,
         auth: sub.auth as string,
+        who: (sub as any).who ?? null,
       },
       payload,
+      { feature: "hytta-checklist", title: data.title, body: data.body },
     );
     if (result.ok) sent++;
     else errors++;
