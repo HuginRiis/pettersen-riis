@@ -139,10 +139,16 @@ export async function processWarrantyNotifications(): Promise<{
     }
 
     // Marker som varslet uansett — unngå spam ved feil.
-    await supabaseAdmin
-      .from("receipts")
-      .update({ [colName(trigger)]: new Date().toISOString() })
-      .eq("id", r.id);
+    const nowIso = new Date().toISOString();
+    const update: {
+      warranty_notified_90?: string;
+      warranty_notified_60?: string;
+      warranty_notified_30?: string;
+    } = {};
+    if (trigger === 90) update.warranty_notified_90 = nowIso;
+    if (trigger === 60) update.warranty_notified_60 = nowIso;
+    if (trigger === 30) update.warranty_notified_30 = nowIso;
+    await supabaseAdmin.from("receipts").update(update).eq("id", r.id);
     void okForThis;
   }
 
