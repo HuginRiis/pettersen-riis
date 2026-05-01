@@ -503,7 +503,25 @@ function ReceiptRowItem({
           </button>
 
           <div className="space-y-3 min-w-0">
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div className="bg-muted/30 rounded px-2 py-1.5">
+                <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Kjøpt</div>
+                <div className="font-medium">{fmtDate(r.purchased_at)}</div>
+              </div>
+              <div className="bg-muted/30 rounded px-2 py-1.5">
+                <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                  Garanti utløper (5 år)
+                </div>
+                <div
+                  className={`font-medium ${warranty?.expired ? "text-destructive" : warranty && warranty.daysLeft < 90 ? "text-amber-500" : ""}`}
+                >
+                  {warranty?.label ?? "—"}
+                  {warranty?.expired ? " (utløpt)" : ""}
+                </div>
+              </div>
+            </div>
             {r.items.length > 0 ? (
+
               <div>
                 <h4 className="text-xs uppercase tracking-wider text-muted-foreground mb-1.5">
                   Varer
