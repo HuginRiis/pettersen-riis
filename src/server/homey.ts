@@ -456,7 +456,7 @@ function mapSnapshotFromRaw(raw: HomeyRawSnapshot): HomeySnapshot {
   return { ok: true, homeName: raw.homeName, zones, devices };
 }
 
-async function getHomeyRawSnapshot(conn: HomeyConnection): Promise<HomeyRawSnapshot | null> {
+export async function getHomeyRawSnapshot(conn: HomeyConnection): Promise<HomeyRawSnapshot | null> {
   const key = getHomeyCacheKey(conn);
   const cached = getCacheEntry(homeySnapshotCache, key);
   if (cached) return cached.value;
