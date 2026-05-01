@@ -13,6 +13,8 @@ import {
   Save,
   Plus,
   Receipt as ReceiptIcon,
+  ChevronDown,
+  ChevronRight,
 } from "lucide-react";
 import { PageShell, PageHero } from "@/components/PageShell";
 import { Button } from "@/components/ui/button";
@@ -75,12 +77,22 @@ function KvitteringerPage() {
   const [receipts, setReceipts] = useState<ReceiptRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [lightbox, setLightbox] = useState<string | null>(null);
   const [editing, setEditing] = useState<ReceiptRow | null>(null);
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
+
+  const toggleExpand = (id: string) =>
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
 
   const load = async () => {
     setLoading(true);
@@ -98,7 +110,24 @@ function KvitteringerPage() {
     load();
     const ch = supabase
       .channel("receipts_changes")
-      .on("postgres_changes", { event: "*", schema: "public", table: "receipts" }, () => load())
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "receipts" },
+        (payload) => {
+          if (payload.eventType === "INSERT") {
+            const row = { ...(payload.new as any), items: (payload.new as any).items ?? [] };
+            setReceipts((prev) =>
+              prev.some((r) => r.id === row.id) ? prev : [row, ...prev],
+            );
+          } else if (payload.eventType === "UPDATE") {
+            const row = { ...(payload.new as any), items: (payload.new as any).items ?? [] };
+            setReceipts((prev) => prev.map((r) => (r.id === row.id ? row : r)));
+          } else if (payload.eventType === "DELETE") {
+            const id = (payload.old as any).id;
+            setReceipts((prev) => prev.filter((r) => r.id !== id));
+          }
+        },
+      )
       .subscribe();
     return () => {
       supabase.removeChannel(ch);
@@ -110,9 +139,13 @@ function KvitteringerPage() {
     if (!files || files.length === 0) return;
     setUploading(true);
     let okCount = 0;
+    const total = files.length;
+    let idx = 0;
     for (const file of Array.from(files)) {
+      idx += 1;
+      const tag = total > 1 ? ` (${idx}/${total})` : "";
       try {
-        // 1. Upload to storage
+        setUploadStatus(`Laster opp bilde${tag}…`);
         const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
         const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
         const { error: upErr } = await supabase.storage
@@ -122,38 +155,58 @@ function KvitteringerPage() {
         const { data: pub } = supabase.storage.from("receipts").getPublicUrl(path);
         const imageUrl = pub.publicUrl;
 
-        // 2. AI parse
-        toast.info("AI leser kvitteringen…");
+        setUploadStatus(`AI leser kvitteringen${tag}…`);
         const parsed = await parseFn({ data: { imageUrl } });
 
-        // 3. Insert
-        const { error: insErr } = await supabase.from("receipts").insert({
-          store: parsed.store,
-          purchased_at: parsed.purchased_at,
-          total_nok: parsed.total_nok,
-          currency: parsed.currency || "NOK",
-          items: parsed.items as any,
-          ai_raw_text: parsed.raw_text,
-          ai_model: parsed.model,
-          image_url: imageUrl,
-          image_path: path,
-        });
+        setUploadStatus(`Lagrer i arkivet${tag}…`);
+        const { data: inserted, error: insErr } = await supabase
+          .from("receipts")
+          .insert({
+            store: parsed.store,
+            purchased_at: parsed.purchased_at,
+            total_nok: parsed.total_nok,
+            currency: parsed.currency || "NOK",
+            items: parsed.items as any,
+            ai_raw_text: parsed.raw_text,
+            ai_model: parsed.model,
+            image_url: imageUrl,
+            image_path: path,
+          })
+          .select()
+          .single();
         if (insErr) throw insErr;
+        // Optimistic update — i tilfelle realtime henger
+        if (inserted) {
+          const row = { ...(inserted as any), items: (inserted as any).items ?? [] };
+          setReceipts((prev) =>
+            prev.some((r) => r.id === row.id) ? prev : [row, ...prev],
+          );
+        }
         okCount += 1;
+        toast.success(
+          `✓ ${parsed.store ?? "Kvittering"}${parsed.total_nok ? ` — kr ${parsed.total_nok.toFixed(2).replace(".", ",")}` : ""} lagt til`,
+        );
       } catch (e) {
         console.error(e);
         toast.error(`Kvittering feilet: ${e instanceof Error ? e.message : String(e)}`);
       }
     }
     setUploading(false);
-    if (okCount > 0) toast.success(`Lagret ${okCount} kvittering${okCount === 1 ? "" : "er"}`);
+    setUploadStatus(null);
+    if (okCount > 1) toast.success(`Ferdig — ${okCount} kvitteringer lagt til`);
   };
 
   const removeReceipt = async (r: ReceiptRow) => {
     if (!confirm(`Slette kvittering fra ${r.store ?? "ukjent butikk"}?`)) return;
+    // Optimistic remove
+    setReceipts((prev) => prev.filter((x) => x.id !== r.id));
     const { error: delErr } = await supabase.from("receipts").delete().eq("id", r.id);
     if (delErr) {
       toast.error("Kunne ikke slette");
+      // Restore on failure
+      setReceipts((prev) => [r, ...prev].sort((a, b) =>
+        (b.purchased_at ?? b.created_at).localeCompare(a.purchased_at ?? a.created_at),
+      ));
       return;
     }
     await supabase.storage.from("receipts").remove([r.image_path]);
@@ -239,6 +292,13 @@ function KvitteringerPage() {
               }}
             />
           </div>
+
+          {uploadStatus && (
+            <div className="mt-4 flex items-center gap-2 text-sm text-primary bg-primary/10 border border-primary/20 rounded-md px-3 py-2">
+              <Loader2 className="h-4 w-4 animate-spin shrink-0" />
+              <span>{uploadStatus}</span>
+            </div>
+          )}
         </div>
 
         {/* Søk */}
@@ -277,11 +337,13 @@ function KvitteringerPage() {
               : "Ingen treff på søket."}
           </p>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="panel rounded-lg divide-y divide-border overflow-hidden">
             {filtered.map((r) => (
-              <ReceiptCard
+              <ReceiptRowItem
                 key={r.id}
                 receipt={r}
+                expanded={expanded.has(r.id)}
+                onToggle={() => toggleExpand(r.id)}
                 onView={() => setLightbox(r.image_url)}
                 onEdit={() => setEditing(r)}
                 onDelete={() => removeReceipt(r)}
@@ -306,63 +368,159 @@ function KvitteringerPage() {
   );
 }
 
-function ReceiptCard({
+function ReceiptRowItem({
   receipt: r,
+  expanded,
+  onToggle,
   onView,
   onEdit,
   onDelete,
 }: {
   receipt: ReceiptRow;
+  expanded: boolean;
+  onToggle: () => void;
   onView: () => void;
   onEdit: () => void;
   onDelete: () => void;
 }) {
+  const itemsTotal = r.items.reduce(
+    (sum, it) => sum + (typeof it.total_price === "number" ? it.total_price : 0),
+    0,
+  );
   return (
-    <div className="panel rounded-lg p-4 flex flex-col gap-3">
+    <div className="bg-card">
+      {/* Sammendragsrad — klikkbar for å utvide */}
       <button
         type="button"
-        onClick={onView}
-        className="relative aspect-[3/4] w-full overflow-hidden rounded-md bg-muted/30 group"
+        onClick={onToggle}
+        className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-muted/40 transition-colors"
+        aria-expanded={expanded}
       >
+        <div className="shrink-0 text-muted-foreground">
+          {expanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+        </div>
         <img
           src={r.image_url}
-          alt={`Kvittering ${r.store ?? ""}`}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+          alt=""
+          className="h-10 w-10 rounded object-cover bg-muted/30 shrink-0"
           loading="lazy"
         />
-      </button>
-      <div className="space-y-1">
-        <div className="flex items-baseline justify-between gap-2">
-          <h3 className="font-semibold text-base truncate">{r.store ?? "Ukjent butikk"}</h3>
-          <span className="text-xs text-muted-foreground shrink-0">{fmtDate(r.purchased_at)}</span>
-        </div>
-        <div className="text-sm text-primary font-medium">{fmtPrice(r.total_nok)}</div>
-        {r.items.length > 0 && (
-          <p className="text-xs text-muted-foreground">
-            {r.items.length} vare{r.items.length === 1 ? "" : "r"}
-            {r.items.slice(0, 3).length > 0 && (
-              <>: {r.items.slice(0, 3).map((i) => i.name).join(", ")}
-                {r.items.length > 3 && "…"}
+        <div className="min-w-0 flex-1">
+          <div className="flex items-baseline justify-between gap-2">
+            <h3 className="font-semibold text-sm sm:text-base truncate">
+              {r.store ?? "Ukjent butikk"}
+            </h3>
+            <span className="text-xs text-muted-foreground shrink-0">
+              {fmtDate(r.purchased_at)}
+            </span>
+          </div>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <span className="text-primary font-medium">{fmtPrice(r.total_nok)}</span>
+            {r.items.length > 0 && (
+              <>
+                <span>·</span>
+                <span>
+                  {r.items.length} vare{r.items.length === 1 ? "" : "r"}
+                </span>
               </>
             )}
-          </p>
-        )}
-      </div>
-      <div className="flex gap-2 pt-1">
-        <Button size="sm" variant="outline" onClick={onEdit} className="gap-1.5 flex-1">
-          <Pencil className="h-3.5 w-3.5" />
-          Rediger
-        </Button>
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={onDelete}
-          className="text-muted-foreground hover:text-destructive"
-          aria-label="Slett"
-        >
-          <Trash2 className="h-4 w-4" />
-        </Button>
-      </div>
+          </div>
+        </div>
+      </button>
+
+      {/* Detaljer — vises ved utvidelse */}
+      {expanded && (
+        <div className="px-4 pb-4 pt-1 grid gap-4 sm:grid-cols-[140px_1fr] border-t border-border/50">
+          <button
+            type="button"
+            onClick={onView}
+            className="relative aspect-[3/4] w-full sm:w-[140px] overflow-hidden rounded-md bg-muted/30 group"
+            aria-label="Vis kvittering i full størrelse"
+          >
+            <img
+              src={r.image_url}
+              alt={`Kvittering ${r.store ?? ""}`}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+              loading="lazy"
+            />
+            <span className="absolute inset-x-0 bottom-0 bg-background/80 text-[10px] text-center py-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              Klikk for full størrelse
+            </span>
+          </button>
+
+          <div className="space-y-3 min-w-0">
+            {r.items.length > 0 ? (
+              <div>
+                <h4 className="text-xs uppercase tracking-wider text-muted-foreground mb-1.5">
+                  Varer
+                </h4>
+                <ul className="text-sm divide-y divide-border/40">
+                  {r.items.map((it, i) => (
+                    <li key={i} className="flex items-baseline justify-between gap-3 py-1">
+                      <span className="truncate">
+                        {it.name || <em className="text-muted-foreground">uten navn</em>}
+                        {typeof it.quantity === "number" && it.quantity !== 1 && (
+                          <span className="text-muted-foreground text-xs ml-1.5">
+                            × {it.quantity}
+                          </span>
+                        )}
+                      </span>
+                      <span className="text-muted-foreground tabular-nums shrink-0">
+                        {fmtPrice(it.total_price)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+                {itemsTotal > 0 && (
+                  <p className="text-[11px] text-muted-foreground mt-1.5 text-right">
+                    Sum varer: {fmtPrice(itemsTotal)}
+                  </p>
+                )}
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground italic">
+                Ingen varer registrert. Bruk «Rediger» for å legge til.
+              </p>
+            )}
+
+            {r.notes && (
+              <div>
+                <h4 className="text-xs uppercase tracking-wider text-muted-foreground mb-1">
+                  Notat
+                </h4>
+                <p className="text-sm whitespace-pre-wrap">{r.notes}</p>
+              </div>
+            )}
+
+            {r.ai_model && (
+              <p className="text-[10px] text-muted-foreground inline-flex items-center gap-1">
+                <Sparkles className="h-3 w-3 text-primary" />
+                Lest av {r.ai_model}
+              </p>
+            )}
+
+            <div className="flex gap-2 pt-1">
+              <Button size="sm" variant="outline" onClick={onEdit} className="gap-1.5">
+                <Pencil className="h-3.5 w-3.5" />
+                Rediger
+              </Button>
+              <Button size="sm" variant="outline" onClick={onView} className="gap-1.5">
+                <ReceiptIcon className="h-3.5 w-3.5" />
+                Vis bilde
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={onDelete}
+                className="text-muted-foreground hover:text-destructive ml-auto"
+                aria-label="Slett"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
