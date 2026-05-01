@@ -203,18 +203,20 @@ export function HouseHero({
               <>
                 <span className="text-primary/40">❦</span>
                 <span
-                  className={lights.anyOn ? "text-amber-300" : "text-muted-foreground"}
-                  title={`${lights.onCount} av ${lights.totalCount} utelys på`}
+                  className={`inline-flex items-center gap-1.5 normal-case tracking-normal ${lights.onCount > 0 ? "text-amber-300" : "text-muted-foreground"}`}
+                  title={`${lights.onCount} av ${lights.totalCount} lys på i borgen`}
                 >
-                  {lights.anyOn ? "✦ Utelys tent" : "○ Utelys slokt"}
+                  <Lightbulb size={12} className={lights.onCount > 0 ? "text-amber-300" : "text-muted-foreground"} />
+                  <span className="text-foreground font-semibold text-[11px] md:text-xs">
+                    {lights.onCount} av {lights.totalCount}
+                  </span>
+                  <span className="text-muted-foreground text-[10px] md:text-[11px]">lys på i borgen</span>
                 </span>
               </>
             )}
             <span className="inline-block w-8 h-px bg-primary/60" />
           </div>
         )}
-
-        {mounted && counts && <VisitorTrendsBar counts={counts} />}
       </div>
 
       <HouseHeroStyles />
