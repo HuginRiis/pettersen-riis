@@ -49,7 +49,14 @@ export const Route = createFileRoute("/api/public/hooks/agenda-push")({
           } catch (err) {
             console.error("[warranty-push] failed", err);
           }
-          return new Response(JSON.stringify({ ok: true, agenda, checklist, garbage, birthdays, warranty }), {
+          let uv = { checked: 0, sent: 0, errors: 0, skipped: 0 };
+          try {
+            const umod = await import("@/server/uv-push.server");
+            uv = await umod.processUvNotifications();
+          } catch (err) {
+            console.error("[uv-push] failed", err);
+          }
+          return new Response(JSON.stringify({ ok: true, agenda, checklist, garbage, birthdays, warranty, uv }), {
             headers: { "Content-Type": "application/json" },
           });
         } catch (err) {
