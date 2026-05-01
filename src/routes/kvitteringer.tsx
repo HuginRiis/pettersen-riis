@@ -771,6 +771,8 @@ function EditDialog({
         items: items as any,
         notes: notes.trim() || null,
         ai_raw_text: rawText,
+        is_food: isFood,
+        warranty_recipient: warrantyRecipient,
       })
       .eq("id", receipt.id);
     setSaving(false);
