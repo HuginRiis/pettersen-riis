@@ -116,6 +116,14 @@ function VakttarnetPage() {
         </Panel>
 
         <Panel
+          title="Sendte varslinger"
+          icon={<Bell size={14} />}
+          subtitle="Hvor mange push-varslinger hver sjel har mottatt — i dag, siste uke, siste måned og totalt"
+        >
+          <PushSendCountsPanel />
+        </Panel>
+
+        <Panel
           title="AI-skattkammeret"
           icon={<Sparkles size={14} />}
           subtitle="Hærmesterens forbruk av AI-credits — denne måned, totalt og per funksjon"
