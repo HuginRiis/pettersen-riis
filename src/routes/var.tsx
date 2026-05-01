@@ -497,14 +497,14 @@ function SkyCard({
   hint?: string;
 }) {
   return (
-    <article className="panel rounded-lg p-5 text-center glow-on-hover">
-      <div className="text-3xl mb-2">{icon}</div>
-      <div className="text-[10px] tracking-[0.3em] text-muted-foreground uppercase">
+    <article className="panel rounded-lg p-3 sm:p-5 text-center glow-on-hover">
+      <div className="text-2xl sm:text-3xl mb-1 sm:mb-2">{icon}</div>
+      <div className="text-[9px] sm:text-[10px] tracking-[0.25em] sm:tracking-[0.3em] text-muted-foreground uppercase">
         {label}
       </div>
-      <div className="text-display text-primary text-2xl mt-2">{value}</div>
+      <div className="text-display text-primary text-lg sm:text-2xl mt-1 sm:mt-2">{value}</div>
       {hint && (
-        <div className="text-[10px] tracking-[0.15em] text-muted-foreground/70 uppercase mt-2">
+        <div className="text-[9px] sm:text-[10px] tracking-[0.1em] sm:tracking-[0.15em] text-muted-foreground/70 uppercase mt-1 sm:mt-2">
           {hint}
         </div>
       )}
