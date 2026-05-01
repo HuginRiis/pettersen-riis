@@ -545,6 +545,54 @@ export type Database = {
         }
         Relationships: []
       }
+      receipts: {
+        Row: {
+          ai_model: string | null
+          ai_raw_text: string | null
+          created_at: string
+          currency: string
+          id: string
+          image_path: string
+          image_url: string
+          items: Json
+          notes: string | null
+          purchased_at: string | null
+          store: string | null
+          total_nok: number | null
+          updated_at: string
+        }
+        Insert: {
+          ai_model?: string | null
+          ai_raw_text?: string | null
+          created_at?: string
+          currency?: string
+          id?: string
+          image_path: string
+          image_url: string
+          items?: Json
+          notes?: string | null
+          purchased_at?: string | null
+          store?: string | null
+          total_nok?: number | null
+          updated_at?: string
+        }
+        Update: {
+          ai_model?: string | null
+          ai_raw_text?: string | null
+          created_at?: string
+          currency?: string
+          id?: string
+          image_path?: string
+          image_url?: string
+          items?: Json
+          notes?: string | null
+          purchased_at?: string | null
+          store?: string | null
+          total_nok?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       renovation_contractors: {
         Row: {
           created_at: string
