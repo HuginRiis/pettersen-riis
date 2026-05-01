@@ -664,21 +664,40 @@ function ReceiptRowItem({
           </button>
 
           <div className="space-y-3 min-w-0">
-            <div className="grid grid-cols-2 gap-2 text-xs">
+            <div className="grid grid-cols-3 gap-2 text-xs">
               <div className="bg-muted/30 rounded px-2 py-1.5">
                 <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Kjøpt</div>
                 <div className="font-medium">{fmtDate(r.purchased_at)}</div>
               </div>
               <div className="bg-muted/30 rounded px-2 py-1.5">
                 <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                  Garanti utløper (5 år)
+                  Garanti (2 år)
+                </div>
+                <div
+                  className={`font-medium ${guarantee?.expired ? "text-muted-foreground line-through" : guarantee && guarantee.daysLeft < 60 ? "text-amber-500" : "text-emerald-600 dark:text-emerald-400"}`}
+                >
+                  {guarantee?.label ?? "—"}
+                </div>
+                {guarantee && (
+                  <div className="text-[10px] text-muted-foreground mt-0.5">
+                    {guarantee.expired ? "utløpt" : fmtDaysLeft(guarantee.daysLeft)}
+                  </div>
+                )}
+              </div>
+              <div className="bg-muted/30 rounded px-2 py-1.5">
+                <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                  Reklamasjon (5 år)
                 </div>
                 <div
                   className={`font-medium ${warranty?.expired ? "text-destructive" : warranty && warranty.daysLeft < 90 ? "text-amber-500" : ""}`}
                 >
                   {warranty?.label ?? "—"}
-                  {warranty?.expired ? " (utløpt)" : ""}
                 </div>
+                {warranty && (
+                  <div className="text-[10px] text-muted-foreground mt-0.5">
+                    {warranty.expired ? "utløpt" : fmtDaysLeft(warranty.daysLeft)}
+                  </div>
+                )}
               </div>
             </div>
             <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
