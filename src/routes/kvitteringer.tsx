@@ -548,6 +548,7 @@ function ReceiptRowItem({
     (sum, it) => sum + (typeof it.total_price === "number" ? it.total_price : 0),
     0,
   );
+  const guarantee = guaranteeStatus(r.purchased_at);
   const warranty = warrantyStatus(r.purchased_at);
   return (
     <div className="bg-card">
