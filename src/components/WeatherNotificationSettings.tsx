@@ -273,7 +273,7 @@ export function WeatherNotificationSettings() {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground shrink-0 w-20">Dager frem</span>
+                  <span className="text-xs text-muted-foreground shrink-0 w-20">Dager før</span>
                   <Select
                     value={String(p.days_ahead)}
                     disabled={!p.enabled || saving === p.id}
@@ -283,7 +283,7 @@ export function WeatherNotificationSettings() {
                     <SelectContent>
                       {[0, 1, 2, 3, 4, 5, 6, 7].map((d) => (
                         <SelectItem key={d} value={String(d)}>
-                          {d === 0 ? "I dag" : d === 1 ? "I morgen" : `${d} dager`}
+                          {d === 0 ? "Samme dag" : d === 1 ? "1 dag før" : `${d} dager før`}
                         </SelectItem>
                       ))}
                     </SelectContent>
