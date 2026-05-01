@@ -15,7 +15,6 @@ import {
   Receipt as ReceiptIcon,
   ChevronDown,
   ChevronRight,
-  CheckCircle2,
 } from "lucide-react";
 import { PageShell, PageHero } from "@/components/PageShell";
 import { Button } from "@/components/ui/button";
