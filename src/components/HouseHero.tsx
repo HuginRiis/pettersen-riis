@@ -110,11 +110,8 @@ export function HouseHero({
   const [mounted, setMounted] = useState(false);
   const [now, setNow] = useState<Date | null>(null);
 
-  const [counts, setCounts] = useState<VisitorCounts | null>(null);
-  const fetchCounts = useServerFn(getVisitorCounts);
-
-  const [lights, setLights] = useState<OutdoorLightsStatus | null>(null);
-  const fetchLights = useServerFn(getOutdoorLightsStatus);
+  const [lights, setLights] = useState<BorgenLightsStatus | null>(null);
+  const fetchLights = useServerFn(getBorgenLightsStatus);
 
   useEffect(() => {
     setMounted(true);
@@ -126,24 +123,8 @@ export function HouseHero({
   useEffect(() => {
     let cancelled = false;
     const load = () =>
-      fetchCounts()
-        .then((c) => {
-          if (!cancelled) setCounts(c);
-        })
-        .catch(() => {});
-    load();
-    const t = setInterval(load, 60_000);
-    return () => {
-      cancelled = true;
-      clearInterval(t);
-    };
-  }, [fetchCounts]);
-
-  useEffect(() => {
-    let cancelled = false;
-    const load = () =>
       fetchLights()
-        .then((s) => {
+        .then((s: BorgenLightsStatus) => {
           if (!cancelled) setLights(s);
         })
         .catch(() => {});
