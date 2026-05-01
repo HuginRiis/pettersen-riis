@@ -147,7 +147,7 @@ export async function processUvNotifications(): Promise<{
     notified_date_8: string | null;
   }>) {
     checked++;
-    const uv = await fetchUvNow(p.lat, p.lon);
+    const uv = await fetchUvAhead(p.lat, p.lon);
     if (uv == null) {
       skipped++;
       continue;
