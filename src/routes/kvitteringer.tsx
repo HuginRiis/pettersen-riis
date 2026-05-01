@@ -63,7 +63,14 @@ type ReceiptRow = {
   image_path: string;
   created_at: string;
   updated_at: string;
+  is_food: boolean;
+  warranty_recipient: string;
+  warranty_notified_90: string | null;
+  warranty_notified_60: string | null;
+  warranty_notified_30: string | null;
 };
+
+const WHO_OPTIONS = ["Alle", "Arne", "Rebekka", "Marita", "Nora", "Celine", "Mira"] as const;
 
 const fmtPrice = (n: number | null | undefined) =>
   typeof n === "number" ? `kr ${n.toFixed(2).replace(".", ",")}` : "—";
