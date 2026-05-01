@@ -17,6 +17,7 @@ import { DoorsLocksPanel } from "@/components/DoorsLocksPanel";
 import { ApiCallLogPanel } from "@/components/ApiCallLogPanel";
 import { MaesterAiBudget } from "@/components/MaesterAiBudget";
 import { PushSendCountsPanel } from "@/components/PushSendCountsPanel";
+import { ChangelogPanel } from "@/components/ChangelogPanel";
 
 export const Route = createFileRoute("/vakttarnet")({
   head: () => ({
@@ -194,6 +195,8 @@ function VakttarnetPage() {
         </Panel>
 
         <ApiCallLogPanel />
+
+        <ChangelogPanel />
       </section>
     </PageShell>
   );
