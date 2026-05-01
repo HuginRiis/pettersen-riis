@@ -831,6 +831,14 @@ function SmarthusPage() {
                     const ids = items.map((i) => i.id);
                     const allOn = items.every((i) => i.on);
                     const zoneBusy = ids.some((id) => hueBusy[id]);
+                    const zoneId = items[0]?.zoneId ?? null;
+                    const idleStatus = zoneId ? idleByZoneId.get(zoneId) ?? null : null;
+                    const nowMs = Date.now();
+                    const motionAgoMin =
+                      idleStatus?.lastMotionMs != null
+                        ? Math.max(0, Math.floor((nowMs - idleStatus.lastMotionMs) / 60_000))
+                        : null;
+                    const nextAlert = idleStatus ? describeNextAlert(idleStatus, nowMs) : null;
                     return (
                     <div
                       key={zoneName}
@@ -853,6 +861,40 @@ function SmarthusPage() {
                           className="scale-90"
                         />
                       </div>
+                      {idleStatus && (idleStatus.hasMotionSensor || nextAlert) && (
+                        <div className="flex items-center justify-between gap-2 mb-2 text-[10px] tracking-wider uppercase">
+                          <span
+                            className="text-muted-foreground truncate"
+                            title={
+                              idleStatus.hasMotionSensor
+                                ? motionAgoMin != null
+                                  ? `Siste bevegelse for ${motionAgoMin} min siden`
+                                  : "Ingen bevegelse registrert"
+                                : "Ingen bevegelsessensor i dette rommet"
+                            }
+                          >
+                            {idleStatus.hasMotionSensor
+                              ? motionAgoMin != null
+                                ? `Bevegelse · ${fmtMinShort(motionAgoMin)} siden`
+                                : "Bevegelse · ukjent"
+                              : "Ingen sensor"}
+                          </span>
+                          {nextAlert && (
+                            <span
+                              className={`shrink-0 px-1.5 py-0.5 rounded border ${
+                                nextAlert.imminent
+                                  ? "border-destructive/50 text-destructive bg-destructive/10"
+                                  : nextAlert.cooldown
+                                    ? "border-muted-foreground/30 text-muted-foreground"
+                                    : "border-primary/30 text-primary/80"
+                              }`}
+                              title="Når neste push-varsel kan utløses"
+                            >
+                              {nextAlert.text}
+                            </span>
+                          )}
+                        </div>
+                      )}
                       <ul className="space-y-1">
                         {items.map((l) => {
                           const busy = !!hueBusy[l.id];
