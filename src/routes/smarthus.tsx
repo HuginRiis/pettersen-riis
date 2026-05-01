@@ -898,7 +898,52 @@ function SmarthusPage() {
               const sortedZones = Array.from(byZone.entries()).sort((a, b) =>
                 a[0].localeCompare(b[0], "nb"),
               );
+              const nowMsGlobal = Date.now();
+              const indoorIdle = idleStatuses.filter(
+                (z) => !z.isOutdoor && z.hasMotionSensor && z.litLights > 0,
+              );
+              const totalLitIndoor = indoorIdle.reduce((n, z) => n + z.litLights, 0);
+              const lastMotionMsGlobal = indoorIdle.reduce<number | null>((latest, z) => {
+                if (z.lastMotionMs == null) return latest;
+                return latest == null || z.lastMotionMs > latest ? z.lastMotionMs : latest;
+              }, null);
+              const lastMotionAgoMin =
+                lastMotionMsGlobal != null
+                  ? Math.max(0, Math.floor((nowMsGlobal - lastMotionMsGlobal) / 60_000))
+                  : null;
+              const globalAlert = describeGlobalAlert(idleStatuses, nowMsGlobal);
               return (
+                <>
+                  {globalAlert && (
+                    <div
+                      className="rounded border border-primary/25 px-3 py-2 mb-4 flex items-center justify-between gap-3 flex-wrap text-[10px] tracking-[0.2em] uppercase"
+                      style={{
+                        background:
+                          "linear-gradient(180deg, color-mix(in oklab, var(--gold) 10%, transparent), transparent)",
+                      }}
+                    >
+                      <span className="text-primary/90">
+                        Globalt · {totalLitIndoor} {totalLitIndoor === 1 ? "lampe" : "lamper"} på i {indoorIdle.length} {indoorIdle.length === 1 ? "rom" : "rom"}
+                      </span>
+                      <span className="text-muted-foreground">
+                        {lastMotionAgoMin != null
+                          ? `Siste bevegelse · ${fmtMinShort(lastMotionAgoMin)} siden`
+                          : "Ingen bevegelsesdata"}
+                      </span>
+                      <span
+                        className={
+                          "rounded border px-2 py-0.5 " +
+                          (globalAlert.imminent
+                            ? "border-destructive text-destructive"
+                            : globalAlert.cooldown
+                              ? "border-muted-foreground/40 text-muted-foreground"
+                              : "border-primary/40 text-primary")
+                        }
+                      >
+                        {globalAlert.text}
+                      </span>
+                    </div>
+                  )}
                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {sortedZones.map(([zoneName, items]) => {
                     const ids = items.map((i) => i.id);
