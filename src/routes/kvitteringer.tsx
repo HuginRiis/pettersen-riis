@@ -15,6 +15,9 @@ import {
   Receipt as ReceiptIcon,
   ChevronDown,
   ChevronRight,
+  Bell,
+  ShieldCheck,
+  Apple,
 } from "lucide-react";
 import { PageShell, PageHero } from "@/components/PageShell";
 import { Button } from "@/components/ui/button";
