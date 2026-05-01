@@ -485,6 +485,48 @@ export type Database = {
         }
         Relationships: []
       }
+      light_idle_notification_prefs: {
+        Row: {
+          cooldown_minutes: number
+          created_at: string
+          enabled: boolean
+          homey_zone_id: string
+          id: string
+          last_notified_at: string | null
+          lights_on_minutes: number
+          no_motion_minutes: number
+          recipient: string
+          updated_at: string
+          zone_name: string
+        }
+        Insert: {
+          cooldown_minutes?: number
+          created_at?: string
+          enabled?: boolean
+          homey_zone_id: string
+          id?: string
+          last_notified_at?: string | null
+          lights_on_minutes?: number
+          no_motion_minutes?: number
+          recipient?: string
+          updated_at?: string
+          zone_name: string
+        }
+        Update: {
+          cooldown_minutes?: number
+          created_at?: string
+          enabled?: boolean
+          homey_zone_id?: string
+          id?: string
+          last_notified_at?: string | null
+          lights_on_minutes?: number
+          no_motion_minutes?: number
+          recipient?: string
+          updated_at?: string
+          zone_name?: string
+        }
+        Relationships: []
+      }
       pulse_readings: {
         Row: {
           device_name: string | null
