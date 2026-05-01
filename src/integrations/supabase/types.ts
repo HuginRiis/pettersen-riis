@@ -959,6 +959,7 @@ export type Database = {
           id: string
           label: string
           lat: number
+          lead_minutes: number
           location: string
           lon: number
           notified_date_3: string | null
@@ -973,6 +974,7 @@ export type Database = {
           id?: string
           label: string
           lat: number
+          lead_minutes?: number
           location: string
           lon: number
           notified_date_3?: string | null
@@ -987,6 +989,7 @@ export type Database = {
           id?: string
           label?: string
           lat?: number
+          lead_minutes?: number
           location?: string
           lon?: number
           notified_date_3?: string | null

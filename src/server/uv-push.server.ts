@@ -23,30 +23,37 @@ function ensureConfigured() {
   configured = true;
 }
 
-// Vi varsler 30 min FØR terskelen faktisk nås, slik at man rekker å smøre seg.
+// Standard lead-tid hvis ikke annet er satt på lokasjonen.
 const LEAD_MINUTES = 30;
+
+function leadLabel(min: number): string {
+  if (min <= 0) return "nå";
+  return `om ca ${min} min`;
+}
 
 const LEVELS = [
   {
     threshold: 8,
     column: "notified_date_8" as const,
-    title: "☀️ Ekstrem UV om 30 min — forbered deg",
-    body: (loc: string, uv: number) =>
-      `${loc}: UV når ${uv.toFixed(1)} om ca 30 min. Unngå sol kl 12-15. Smør med SPF 50 nå, finn klær og skygge.`,
+    title: (lead: number) =>
+      lead <= 0 ? "☀️ Ekstrem UV nå" : `☀️ Ekstrem UV om ${lead} min — forbered deg`,
+    body: (loc: string, uv: number, lead: number) =>
+      `${loc}: UV når ${uv.toFixed(1)} ${leadLabel(lead)}. Unngå sol kl 12-15. Smør med SPF 50, finn klær og skygge.`,
   },
   {
     threshold: 6,
     column: "notified_date_6" as const,
-    title: "🧴 Sterk UV om 30 min — styrk beskyttelsen",
-    body: (loc: string, uv: number) =>
-      `${loc}: UV når ${uv.toFixed(1)} om ca 30 min. Smør med SPF 30+ nå, ta på solhatt og lette klær. Søk skygge midt på dagen.`,
+    title: (lead: number) =>
+      lead <= 0 ? "🧴 Sterk UV nå — styrk beskyttelsen" : `🧴 Sterk UV om ${lead} min — styrk beskyttelsen`,
+    body: (loc: string, uv: number, lead: number) =>
+      `${loc}: UV når ${uv.toFixed(1)} ${leadLabel(lead)}. Smør med SPF 30+, ta på solhatt og lette klær. Søk skygge midt på dagen.`,
   },
   {
     threshold: 3,
     column: "notified_date_3" as const,
-    title: "🧴 Solkrem om 30 min",
-    body: (loc: string, uv: number) =>
-      `${loc}: UV når ${uv.toFixed(1)} om ca 30 min. Smør med SPF 30 på utsatt hud nå (DSA-anbefaling).`,
+    title: (lead: number) => (lead <= 0 ? "🧴 På tide med solkrem" : `🧴 Solkrem om ${lead} min`),
+    body: (loc: string, uv: number, lead: number) =>
+      `${loc}: UV når ${uv.toFixed(1)} ${leadLabel(lead)}. Smør med SPF 30 på utsatt hud (DSA-anbefaling).`,
   },
 ] as const;
 
@@ -144,12 +151,14 @@ export async function processUvNotifications(): Promise<{
     lat: number;
     lon: number;
     recipient: string;
+    lead_minutes: number | null;
     notified_date_3: string | null;
     notified_date_6: string | null;
     notified_date_8: string | null;
   }>) {
     checked++;
-    const uv = await fetchUvAhead(p.lat, p.lon);
+    const lead = typeof p.lead_minutes === "number" ? p.lead_minutes : LEAD_MINUTES;
+    const uv = await fetchUvAhead(p.lat, p.lon, lead);
     if (uv == null) {
       skipped++;
       continue;
@@ -185,8 +194,8 @@ export async function processUvNotifications(): Promise<{
     }
 
     const payload = JSON.stringify({
-      title: trigger.title,
-      body: trigger.body(p.label, uv),
+      title: trigger.title(lead),
+      body: trigger.body(p.label, uv, lead),
       tag: `uv-${p.location}-${trigger.threshold}-${today}`,
       url: "/var",
     });
@@ -232,9 +241,10 @@ export async function sendUvTestNotification(
   if (error) throw error;
   if (!pref) throw new Error("Fant ikke UV-innstilling");
 
-  const p = pref as unknown as { label: string; recipient: string };
+  const p = pref as unknown as { label: string; recipient: string; lead_minutes?: number | null };
   const lvl = LEVELS.find((l) => l.threshold === level) ?? LEVELS[LEVELS.length - 1];
   const fakeUv = level === 8 ? 8.2 : level === 6 ? 6.3 : 3.5;
+  const lead = typeof p.lead_minutes === "number" ? p.lead_minutes : LEAD_MINUTES;
 
   const targetWho = p.recipient || "Alle";
   let subQuery = supabaseAdmin
@@ -247,8 +257,8 @@ export async function sendUvTestNotification(
   if (subErr) throw subErr;
 
   const payload = JSON.stringify({
-    title: `🧪 TEST: ${lvl.title}`,
-    body: lvl.body(p.label, fakeUv) + " (test)",
+    title: `🧪 TEST: ${lvl.title(lead)}`,
+    body: lvl.body(p.label, fakeUv, lead) + " (test)",
     tag: `uv-test-${prefId}-${Date.now()}`,
     url: "/var",
   });

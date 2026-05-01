@@ -19,7 +19,14 @@ type UvPref = {
   label: string;
   enabled: boolean;
   recipient: string;
+  lead_minutes: number;
 };
+
+const LEAD_OPTIONS = [
+  { value: 0, label: "Nå" },
+  { value: 30, label: "30 min før" },
+  { value: 60, label: "60 min før" },
+] as const;
 
 const WHO_OPTIONS = ["Alle", "Arne", "Rebekka", "Marita", "Nora", "Celine", "Mira"] as const;
 
@@ -37,7 +44,7 @@ export function UvNotificationSettings() {
     (async () => {
       const { data, error } = await supabase
         .from("uv_notification_prefs" as never)
-        .select("id, location, label, enabled, recipient")
+        .select("id, location, label, enabled, recipient, lead_minutes")
         .order("location");
       if (cancelled) return;
       if (error) {
@@ -127,6 +134,25 @@ export function UvNotificationSettings() {
                   {WHO_OPTIONS.map((w) => (
                     <SelectItem key={w} value={w}>
                       {w}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground shrink-0">Varsle</span>
+              <Select
+                value={String(p.lead_minutes ?? 30)}
+                disabled={!p.enabled || saving === p.id}
+                onValueChange={(v) => update(p.id, { lead_minutes: Number(v) })}
+              >
+                <SelectTrigger className="h-8 text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {LEAD_OPTIONS.map((o) => (
+                    <SelectItem key={o.value} value={String(o.value)}>
+                      {o.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
