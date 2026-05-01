@@ -465,19 +465,19 @@ function LiveMetric({
   digits?: number;
 }) {
   return (
-    <article className="panel rounded-lg p-5 text-center glow-on-hover">
-      <div className="text-2xl mb-1">{icon}</div>
-      <div className="text-[10px] tracking-[0.3em] text-muted-foreground uppercase">
+    <article className="panel rounded-lg p-3 sm:p-5 text-center glow-on-hover">
+      <div className="text-xl sm:text-2xl mb-1">{icon}</div>
+      <div className="text-[9px] sm:text-[10px] tracking-[0.25em] sm:tracking-[0.3em] text-muted-foreground uppercase leading-tight">
         {label}
       </div>
-      <div className="text-display text-primary text-3xl mt-2">
+      <div className="text-display text-primary text-2xl sm:text-3xl mt-1 sm:mt-2">
         {value !== null ? value.toFixed(digits) : "—"}
       </div>
-      <div className="text-[10px] tracking-[0.2em] text-muted-foreground/70 uppercase mt-1">
+      <div className="text-[9px] sm:text-[10px] tracking-[0.2em] text-muted-foreground/70 uppercase mt-1">
         {unit}
       </div>
       {source && (
-        <div className="text-[9px] tracking-[0.15em] text-muted-foreground/60 uppercase mt-2 truncate">
+        <div className="text-[9px] tracking-[0.15em] text-muted-foreground/60 uppercase mt-1 sm:mt-2 truncate">
           {source}
         </div>
       )}
