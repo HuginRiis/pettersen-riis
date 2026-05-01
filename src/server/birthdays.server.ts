@@ -119,7 +119,7 @@ export async function sendBirthdayPushNow(
   let sent = 0;
   let errors = 0;
   for (const s of subs) {
-    const ok = await sendPush(s, payload);
+    const ok = await sendPush(s, payload, { feature: "birthday-test", title: row.name });
     if (ok) sent++;
     else errors++;
   }
