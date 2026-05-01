@@ -419,13 +419,13 @@ export function WeatherNotificationSettings() {
               </Select>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground shrink-0 w-20">Dager frem</span>
+              <span className="text-xs text-muted-foreground shrink-0 w-20">Dager før</span>
               <Select value={String(newDays)} onValueChange={(v) => setNewDays(Number(v))}>
                 <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {[0, 1, 2, 3, 4, 5, 6, 7].map((d) => (
                     <SelectItem key={d} value={String(d)}>
-                      {d === 0 ? "I dag" : d === 1 ? "I morgen" : `${d} dager`}
+                      {d === 0 ? "Samme dag" : d === 1 ? "1 dag før" : `${d} dager før`}
                     </SelectItem>
                   ))}
                 </SelectContent>
