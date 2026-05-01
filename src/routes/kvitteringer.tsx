@@ -634,6 +634,12 @@ function ReceiptRowItem({
                 </div>
               </div>
             </div>
+            <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+              <Bell className="h-3 w-3 text-primary" />
+              <span>
+                Garanti-varsel til <span className="text-foreground font-medium">{r.warranty_recipient || "Alle"}</span> 90/60/30 dager før utløp
+              </span>
+            </div>
             {r.items.length > 0 ? (
 
               <div>
