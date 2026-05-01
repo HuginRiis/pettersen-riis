@@ -113,6 +113,9 @@ function KvitteringerPage() {
   const [lightbox, setLightbox] = useState<string | null>(null);
   const [editing, setEditing] = useState<ReceiptRow | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [filterWarrantyActive, setFilterWarrantyActive] = useState(false);
+  const [filterWarrantyExpiring, setFilterWarrantyExpiring] = useState(false);
+  const [hideFood, setHideFood] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
