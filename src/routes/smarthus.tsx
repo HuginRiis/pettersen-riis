@@ -113,6 +113,76 @@ function ConnectPanel({ message }: { message?: string }) {
   );
 }
 
+function fmtMinShort(min: number): string {
+  if (min < 1) return "<1 min";
+  if (min < 60) return `${min} min`;
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  return m === 0 ? `${h} t` : `${h}t ${m}m`;
+}
+
+/**
+ * For en zone, beregn hvor lenge til neste varsel kan utløses.
+ * Returnerer beste/snareste regel: tekst + om den allerede ville trigget.
+ */
+function describeNextAlert(
+  status: import("@/server/light-idle-push.functions").LightIdleZoneStatusRow,
+  nowMs: number,
+): { text: string; imminent: boolean; cooldown: boolean } | null {
+  const enabledRules = status.rules.filter((r) => r.enabled);
+  if (enabledRules.length === 0) return null;
+
+  let best: { waitMs: number; cooldownLeftMs: number; rule: (typeof enabledRules)[number] } | null = null;
+  for (const r of enabledRules) {
+    // Cooldown gjenstår?
+    let cooldownLeftMs = 0;
+    if (r.last_notified_at) {
+      const since = nowMs - new Date(r.last_notified_at).getTime();
+      const left = r.cooldown_minutes * 60_000 - since;
+      if (left > 0) cooldownLeftMs = left;
+    }
+
+    // Hvor lenge til varsel kan trigges (uten cooldown)?
+    let triggerWaitMs = 0;
+    const motionGapMs =
+      status.lastMotionMs === null ? Number.POSITIVE_INFINITY : nowMs - status.lastMotionMs;
+    const motionWait = r.no_motion_minutes * 60_000 - motionGapMs;
+    if (motionWait > 0) triggerWaitMs = Math.max(triggerWaitMs, motionWait);
+
+    if (r.scope === "zone" && r.lights_on_minutes != null) {
+      const onSince = status.lightsOnSinceMs;
+      if (onSince === null) {
+        triggerWaitMs = Number.POSITIVE_INFINITY;
+      } else {
+        const onWait = r.lights_on_minutes * 60_000 - (nowMs - onSince);
+        if (onWait > 0) triggerWaitMs = Math.max(triggerWaitMs, onWait);
+      }
+    }
+
+    const totalWaitMs = Math.max(triggerWaitMs, cooldownLeftMs);
+    if (best === null || totalWaitMs < best.waitMs) {
+      best = { waitMs: totalWaitMs, cooldownLeftMs, rule: r };
+    }
+  }
+  if (!best) return null;
+
+  if (best.waitMs === Number.POSITIVE_INFINITY) {
+    return { text: "Varsel: venter på data", imminent: false, cooldown: false };
+  }
+  if (best.waitMs <= 0) {
+    return { text: "Varsel: klar (sendes ved neste sjekk)", imminent: true, cooldown: false };
+  }
+  const inCooldown = best.cooldownLeftMs > 0 && best.cooldownLeftMs >= best.waitMs;
+  const min = Math.ceil(best.waitMs / 60_000);
+  return {
+    text: inCooldown
+      ? `Cooldown: ${fmtMinShort(min)} igjen`
+      : `Varsel om ${fmtMinShort(min)}`,
+    imminent: false,
+    cooldown: inCooldown,
+  };
+}
+
 function SmarthusPage() {
   const data = Route.useLoaderData() as Awaited<ReturnType<typeof getHomeySnapshot>>;
   const router = useRouter();
