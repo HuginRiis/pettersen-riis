@@ -343,8 +343,9 @@ export async function processWeatherNotifications(): Promise<{
 
     for (const sub of subs ?? []) {
       const ok = await sendOne(
-        { endpoint: sub.endpoint as string, p256dh: sub.p256dh as string, auth: sub.auth as string },
+        { endpoint: sub.endpoint as string, p256dh: sub.p256dh as string, auth: sub.auth as string, who: (sub as any).who ?? null },
         payload,
+        { feature: "weather", recipient: p.recipient ?? "Alle", title },
       );
       if (ok) sent++;
       else errors++;
