@@ -203,6 +203,7 @@ function SmarthusPage() {
   const mapLight = (d: typeof data.devices[number]) => ({
     id: d.id,
     name: d.name,
+    zoneId: d.zone ?? null,
     zoneName: d.zone ? zoneById.get(d.zone)?.name ?? "Ukjent sal" : "Ukjent sal",
     on: effectiveOn(d),
     dim: typeof d.capabilities["dim"]?.value === "number"
