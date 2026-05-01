@@ -241,9 +241,10 @@ export async function sendUvTestNotification(
   if (error) throw error;
   if (!pref) throw new Error("Fant ikke UV-innstilling");
 
-  const p = pref as unknown as { label: string; recipient: string };
+  const p = pref as unknown as { label: string; recipient: string; lead_minutes?: number | null };
   const lvl = LEVELS.find((l) => l.threshold === level) ?? LEVELS[LEVELS.length - 1];
   const fakeUv = level === 8 ? 8.2 : level === 6 ? 6.3 : 3.5;
+  const lead = typeof p.lead_minutes === "number" ? p.lead_minutes : LEAD_MINUTES;
 
   const targetWho = p.recipient || "Alle";
   let subQuery = supabaseAdmin
@@ -256,8 +257,8 @@ export async function sendUvTestNotification(
   if (subErr) throw subErr;
 
   const payload = JSON.stringify({
-    title: `🧪 TEST: ${lvl.title}`,
-    body: lvl.body(p.label, fakeUv) + " (test)",
+    title: `🧪 TEST: ${lvl.title(lead)}`,
+    body: lvl.body(p.label, fakeUv, lead) + " (test)",
     tag: `uv-test-${prefId}-${Date.now()}`,
     url: "/var",
   });
