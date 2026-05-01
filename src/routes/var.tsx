@@ -9,6 +9,7 @@ import { findDeviceFuzzy, type DeviceLike } from "@/lib/homey-match";
 import { getTollnesAlerts, type AlertsResult, type MetAlert } from "@/server/lightning";
 import { useUserLocation, UserLocationBar } from "@/hooks/use-user-location";
 import { UvPanel } from "@/components/UvPanel";
+import { UvNotificationSettings } from "@/components/UvNotificationSettings";
 
 
 export const Route = createFileRoute("/var")({
@@ -313,6 +314,13 @@ function WeatherPage() {
               lon={9.4297}
               rangeHours={rangeHours}
             />
+          </div>
+          <div className="mt-6 pt-5 border-t border-border/40">
+            <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+              <span>🧴 Solkrem-varsler</span>
+              <span className="text-xs font-normal text-muted-foreground">push-varsel når UV stiger</span>
+            </h3>
+            <UvNotificationSettings />
           </div>
         </Block>
 
