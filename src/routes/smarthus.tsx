@@ -184,10 +184,12 @@ function describeNextAlert(
 }
 
 /**
- * Beregn neste globale varsel basert på alle innendørs zoner.
- * Globale regler trer i kraft når ALLE innendørs rom med bevegelsessensor
- * har vært stille i no_motion_minutes. Returnerer den regelen som er nærmest
- * å trigge (lengste motion-gap teller).
+ * Beregn neste globale varsel.
+ *
+ * Logikk: Finn siste bevegelse på tvers av ALLE innendørs bevegelsessensorer
+ * (ett globalt tidsstempel). Når det har gått `no_motion_minutes` siden den
+ * siste bevegelsen, trigges varselet — så lenge minst ett innendørs lys står
+ * på (uavhengig av om rommet har sensor).
  */
 function describeGlobalAlert(
   statuses: import("@/server/light-idle-push.functions").LightIdleZoneStatusRow[],
@@ -211,17 +213,24 @@ function describeGlobalAlert(
   }
   if (globalRules.size === 0) return null;
 
-  // Innendørs zoner med bevegelsessensor + tente lys (kandidater for global alert)
-  const indoor = statuses.filter((z) => !z.isOutdoor && z.hasMotionSensor && z.litLights > 0);
-  if (indoor.length === 0) return { text: "Globalt: ingen lys", imminent: false, cooldown: false };
+  // Tente lys i innendørs rom (uavhengig av sensor)
+  const indoorLit = statuses.filter((z) => !z.isOutdoor && z.litLights > 0);
+  if (indoorLit.length === 0) return { text: "Globalt: ingen lys", imminent: false, cooldown: false };
 
-  // Korteste tid siden bevegelse på tvers (det rommet det "skjer mest" i)
-  // For at global skal trigge må ALLE relevante rom være stille — så finn MINSTE motion-gap.
-  let minMotionGapMs = Number.POSITIVE_INFINITY;
-  for (const z of indoor) {
-    const gap = z.lastMotionMs == null ? Number.POSITIVE_INFINITY : nowMs - z.lastMotionMs;
-    if (gap < minMotionGapMs) minMotionGapMs = gap;
+  // Siste bevegelse på tvers av ALLE innendørs sensorer (det nyeste tidspunktet)
+  let latestMotionMs: number | null = null;
+  for (const z of statuses) {
+    if (z.isOutdoor) continue;
+    if (!z.hasMotionSensor) continue;
+    if (z.lastMotionMs == null) continue;
+    if (latestMotionMs == null || z.lastMotionMs > latestMotionMs) {
+      latestMotionMs = z.lastMotionMs;
+    }
   }
+  if (latestMotionMs == null) {
+    return { text: "Globalt: venter på bevegelsesdata", imminent: false, cooldown: false };
+  }
+  const motionGapMs = nowMs - latestMotionMs;
 
   let best: { waitMs: number; cooldownLeftMs: number } | null = null;
   for (const r of globalRules.values()) {
@@ -231,7 +240,7 @@ function describeGlobalAlert(
       const left = r.cooldown_minutes * 60_000 - since;
       if (left > 0) cooldownLeftMs = left;
     }
-    const motionWait = r.no_motion_minutes * 60_000 - minMotionGapMs;
+    const motionWait = r.no_motion_minutes * 60_000 - motionGapMs;
     const triggerWaitMs = motionWait > 0 ? motionWait : 0;
     const totalWaitMs = Math.max(triggerWaitMs, cooldownLeftMs);
     if (best === null || totalWaitMs < best.waitMs) {
@@ -239,9 +248,6 @@ function describeGlobalAlert(
     }
   }
   if (!best) return null;
-  if (best.waitMs === Number.POSITIVE_INFINITY) {
-    return { text: "Globalt: venter på data", imminent: false, cooldown: false };
-  }
   if (best.waitMs <= 0) {
     return { text: "Globalt varsel: klar", imminent: true, cooldown: false };
   }
