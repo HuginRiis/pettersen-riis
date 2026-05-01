@@ -369,63 +369,159 @@ function KvitteringerPage() {
   );
 }
 
-function ReceiptCard({
+function ReceiptRowItem({
   receipt: r,
+  expanded,
+  onToggle,
   onView,
   onEdit,
   onDelete,
 }: {
   receipt: ReceiptRow;
+  expanded: boolean;
+  onToggle: () => void;
   onView: () => void;
   onEdit: () => void;
   onDelete: () => void;
 }) {
+  const itemsTotal = r.items.reduce(
+    (sum, it) => sum + (typeof it.total_price === "number" ? it.total_price : 0),
+    0,
+  );
   return (
-    <div className="panel rounded-lg p-4 flex flex-col gap-3">
+    <div className="bg-card">
+      {/* Sammendragsrad — klikkbar for å utvide */}
       <button
         type="button"
-        onClick={onView}
-        className="relative aspect-[3/4] w-full overflow-hidden rounded-md bg-muted/30 group"
+        onClick={onToggle}
+        className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-muted/40 transition-colors"
+        aria-expanded={expanded}
       >
+        <div className="shrink-0 text-muted-foreground">
+          {expanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+        </div>
         <img
           src={r.image_url}
-          alt={`Kvittering ${r.store ?? ""}`}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+          alt=""
+          className="h-10 w-10 rounded object-cover bg-muted/30 shrink-0"
           loading="lazy"
         />
-      </button>
-      <div className="space-y-1">
-        <div className="flex items-baseline justify-between gap-2">
-          <h3 className="font-semibold text-base truncate">{r.store ?? "Ukjent butikk"}</h3>
-          <span className="text-xs text-muted-foreground shrink-0">{fmtDate(r.purchased_at)}</span>
-        </div>
-        <div className="text-sm text-primary font-medium">{fmtPrice(r.total_nok)}</div>
-        {r.items.length > 0 && (
-          <p className="text-xs text-muted-foreground">
-            {r.items.length} vare{r.items.length === 1 ? "" : "r"}
-            {r.items.slice(0, 3).length > 0 && (
-              <>: {r.items.slice(0, 3).map((i) => i.name).join(", ")}
-                {r.items.length > 3 && "…"}
+        <div className="min-w-0 flex-1">
+          <div className="flex items-baseline justify-between gap-2">
+            <h3 className="font-semibold text-sm sm:text-base truncate">
+              {r.store ?? "Ukjent butikk"}
+            </h3>
+            <span className="text-xs text-muted-foreground shrink-0">
+              {fmtDate(r.purchased_at)}
+            </span>
+          </div>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <span className="text-primary font-medium">{fmtPrice(r.total_nok)}</span>
+            {r.items.length > 0 && (
+              <>
+                <span>·</span>
+                <span>
+                  {r.items.length} vare{r.items.length === 1 ? "" : "r"}
+                </span>
               </>
             )}
-          </p>
-        )}
-      </div>
-      <div className="flex gap-2 pt-1">
-        <Button size="sm" variant="outline" onClick={onEdit} className="gap-1.5 flex-1">
-          <Pencil className="h-3.5 w-3.5" />
-          Rediger
-        </Button>
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={onDelete}
-          className="text-muted-foreground hover:text-destructive"
-          aria-label="Slett"
-        >
-          <Trash2 className="h-4 w-4" />
-        </Button>
-      </div>
+          </div>
+        </div>
+      </button>
+
+      {/* Detaljer — vises ved utvidelse */}
+      {expanded && (
+        <div className="px-4 pb-4 pt-1 grid gap-4 sm:grid-cols-[140px_1fr] border-t border-border/50">
+          <button
+            type="button"
+            onClick={onView}
+            className="relative aspect-[3/4] w-full sm:w-[140px] overflow-hidden rounded-md bg-muted/30 group"
+            aria-label="Vis kvittering i full størrelse"
+          >
+            <img
+              src={r.image_url}
+              alt={`Kvittering ${r.store ?? ""}`}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+              loading="lazy"
+            />
+            <span className="absolute inset-x-0 bottom-0 bg-background/80 text-[10px] text-center py-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              Klikk for full størrelse
+            </span>
+          </button>
+
+          <div className="space-y-3 min-w-0">
+            {r.items.length > 0 ? (
+              <div>
+                <h4 className="text-xs uppercase tracking-wider text-muted-foreground mb-1.5">
+                  Varer
+                </h4>
+                <ul className="text-sm divide-y divide-border/40">
+                  {r.items.map((it, i) => (
+                    <li key={i} className="flex items-baseline justify-between gap-3 py-1">
+                      <span className="truncate">
+                        {it.name || <em className="text-muted-foreground">uten navn</em>}
+                        {typeof it.quantity === "number" && it.quantity !== 1 && (
+                          <span className="text-muted-foreground text-xs ml-1.5">
+                            × {it.quantity}
+                          </span>
+                        )}
+                      </span>
+                      <span className="text-muted-foreground tabular-nums shrink-0">
+                        {fmtPrice(it.total_price)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+                {itemsTotal > 0 && (
+                  <p className="text-[11px] text-muted-foreground mt-1.5 text-right">
+                    Sum varer: {fmtPrice(itemsTotal)}
+                  </p>
+                )}
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground italic">
+                Ingen varer registrert. Bruk «Rediger» for å legge til.
+              </p>
+            )}
+
+            {r.notes && (
+              <div>
+                <h4 className="text-xs uppercase tracking-wider text-muted-foreground mb-1">
+                  Notat
+                </h4>
+                <p className="text-sm whitespace-pre-wrap">{r.notes}</p>
+              </div>
+            )}
+
+            {r.ai_model && (
+              <p className="text-[10px] text-muted-foreground inline-flex items-center gap-1">
+                <Sparkles className="h-3 w-3 text-primary" />
+                Lest av {r.ai_model}
+              </p>
+            )}
+
+            <div className="flex gap-2 pt-1">
+              <Button size="sm" variant="outline" onClick={onEdit} className="gap-1.5">
+                <Pencil className="h-3.5 w-3.5" />
+                Rediger
+              </Button>
+              <Button size="sm" variant="outline" onClick={onView} className="gap-1.5">
+                <ReceiptIcon className="h-3.5 w-3.5" />
+                Vis bilde
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={onDelete}
+                className="text-muted-foreground hover:text-destructive ml-auto"
+                aria-label="Slett"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
