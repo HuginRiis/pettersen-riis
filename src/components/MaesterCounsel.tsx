@@ -198,6 +198,8 @@ export function MaesterCounsel() {
             </p>
           </footer>
         )}
+
+        <MaesterAiBudget />
       </article>
     </section>
   );
