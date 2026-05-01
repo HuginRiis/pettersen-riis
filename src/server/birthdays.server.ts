@@ -41,8 +41,9 @@ function getOsloParts(): { year: number; month: number; day: number; hour: numbe
 }
 
 async function sendPush(
-  sub: { endpoint: string; p256dh: string; auth: string },
+  sub: { endpoint: string; p256dh: string; auth: string; who?: string | null },
   payload: string,
+  ctx: { feature: string; recipient?: string; title?: string } = { feature: "birthday" },
 ): Promise<boolean> {
   try {
     ensureConfigured();
@@ -50,6 +51,13 @@ async function sendPush(
       { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
       payload,
     );
+    void logPushSend({
+      feature: ctx.feature,
+      recipient: ctx.recipient || sub.who || "Alle",
+      ok: true,
+      endpoint: sub.endpoint,
+      title: ctx.title,
+    });
     return true;
   } catch (err) {
     const e = err as { statusCode?: number; message?: string };
@@ -57,6 +65,15 @@ async function sendPush(
       await supabaseAdmin.from("push_subscriptions").delete().eq("endpoint", sub.endpoint);
     }
     console.error("[birthday-push] send error", e?.statusCode, e?.message);
+    void logPushSend({
+      feature: ctx.feature,
+      recipient: ctx.recipient || sub.who || "Alle",
+      ok: false,
+      endpoint: sub.endpoint,
+      status_code: e?.statusCode ?? null,
+      error_message: e?.message ?? null,
+      title: ctx.title,
+    });
     return false;
   }
 }
