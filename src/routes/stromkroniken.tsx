@@ -456,8 +456,8 @@ function HomeBlock({
         />
       </div>
 
-      {/* Sammenligningsbokser: i går vs samme dag forrige måned */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      {/* Sammenligningsbokser: i går · forrige uke · forrige måned */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         <TrendStat
           label="Sammenlignet med i går"
           todayKwh={todayKwh}
@@ -465,6 +465,14 @@ function HomeBlock({
           trend={vsYesterday}
           referenceFullDayKwh={data?.yesterdayKwh ?? null}
           referenceLabel="i går"
+        />
+        <TrendStat
+          label="Samme dag forrige uke"
+          todayKwh={todayKwh}
+          referenceKwh={lastWeekProrated}
+          trend={vsLastWeek}
+          referenceFullDayKwh={sameDayLastWeek}
+          referenceLabel="forrige uke"
         />
         <TrendStat
           label="Samme dag forrige måned"
