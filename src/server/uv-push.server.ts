@@ -144,12 +144,14 @@ export async function processUvNotifications(): Promise<{
     lat: number;
     lon: number;
     recipient: string;
+    lead_minutes: number | null;
     notified_date_3: string | null;
     notified_date_6: string | null;
     notified_date_8: string | null;
   }>) {
     checked++;
-    const uv = await fetchUvAhead(p.lat, p.lon);
+    const lead = typeof p.lead_minutes === "number" ? p.lead_minutes : LEAD_MINUTES;
+    const uv = await fetchUvAhead(p.lat, p.lon, lead);
     if (uv == null) {
       skipped++;
       continue;
