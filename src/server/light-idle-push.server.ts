@@ -354,18 +354,35 @@ export async function processLightIdleNotifications(): Promise<{
     }
 
     if (p.scope === "global") {
-      // Tell tente lys i alle innendørs rom der bevegelsessensoren har vært stille i X min
+      // Globalt: finn siste bevegelse på tvers av ALLE innendørs sensorer (ett tidsstempel).
+      // Når det har gått minst no_motion_minutes siden DEN siste bevegelsen, varsle om
+      // ALLE tente lys i innendørs rom — også rom uten sensor. Ute er ekskludert.
+      let latestMotionMs: number | null = null;
+      for (const z of statuses.values()) {
+        if (z.isOutdoor) continue;
+        if (z.motionSensors === 0) continue;
+        if (z.lastMotionMs == null) continue;
+        if (latestMotionMs == null || z.lastMotionMs > latestMotionMs) {
+          latestMotionMs = z.lastMotionMs;
+        }
+      }
+      // Hvis vi ikke har noen bevegelsesdata i det hele tatt, hopp over (tryggere enn å spamme).
+      if (latestMotionMs == null) {
+        skipped++;
+        continue;
+      }
+      const sinceMotionMs = now - latestMotionMs;
+      if (sinceMotionMs < p.no_motion_minutes * 60_000) {
+        skipped++;
+        continue;
+      }
+
+      // Samle tente lys i alle innendørs rom (uavhengig av om rommet har sensor)
       const idleRooms: Array<{ name: string; lit: number }> = [];
       let totalLit = 0;
       for (const z of statuses.values()) {
         if (z.isOutdoor) continue;
         if (z.litLights === 0) continue;
-        // Krev at rommet HAR bevegelsessensor — ellers vet vi ikke om noen er der
-        if (z.motionSensors === 0) continue;
-        if (z.lastMotionMs !== null) {
-          const sinceMotionMs = now - z.lastMotionMs;
-          if (sinceMotionMs < p.no_motion_minutes * 60_000) continue;
-        }
         idleRooms.push({ name: z.zoneName, lit: z.litLights });
         totalLit += z.litLights;
       }
