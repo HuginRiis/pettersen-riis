@@ -60,7 +60,7 @@ export function UvNotificationSettings() {
   const [forecasts, setForecasts] = useState<Forecast[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
-  const [openTest, setOpenTest] = useState<Record<string, boolean>>({});
+  
 
   const loadForecast = async () => {
     try {
