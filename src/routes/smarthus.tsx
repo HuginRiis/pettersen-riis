@@ -887,6 +887,8 @@ function SmarthusPage() {
                 })()}
               </div>
             )}
+
+            <LightIdleNotificationSettings />
           </div>
         </section>
       )}
