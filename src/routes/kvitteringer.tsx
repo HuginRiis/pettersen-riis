@@ -205,6 +205,7 @@ function KvitteringerPage() {
             ai_model: parsed.model,
             image_url: imageUrl,
             image_path: path,
+            is_food: parsed.is_food ?? false,
           })
           .select()
           .single();
