@@ -224,8 +224,10 @@ export async function processUvNotifications(): Promise<{
           endpoint: sub.endpoint as string,
           p256dh: sub.p256dh as string,
           auth: sub.auth as string,
+          who: (sub as any).who ?? null,
         },
         payload,
+        { feature: "uv", recipient: targetWho, title: trigger.title(lead) },
       );
       if (ok) sent++;
       else errors++;
