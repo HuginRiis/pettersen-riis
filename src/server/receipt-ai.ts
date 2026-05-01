@@ -115,6 +115,7 @@ Hvis du er usikker på et felt, sett det til null. Ikke finn på data.`;
       currency: parsed.currency ?? "NOK",
       items: Array.isArray(parsed.items) ? parsed.items : [],
       raw_text: parsed.raw_text ?? "",
+      is_food: typeof parsed.is_food === "boolean" ? parsed.is_food : false,
       model: MODEL,
     };
   });
