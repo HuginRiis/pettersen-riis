@@ -209,11 +209,18 @@ export async function getLightIdleZoneStatuses(): Promise<LightIdleZoneStatusRow
 
   const out: LightIdleZoneStatusRow[] = [];
   for (const z of statuses.values()) {
-    if (z.litLights === 0) continue;
+    // Inkluder alle rom der det enten brenner lys, eller (innendørs) finnes en
+    // bevegelsessensor — sånn at klienten kan beregne både per-rom-status og
+    // globalt "siste bevegelse"-tidspunkt på tvers av alle innendørs sensorer.
+    const include =
+      z.litLights > 0 || (!z.isOutdoor && z.motionSensors > 0);
+    if (!include) continue;
     const rules = allPrefs.filter((p) => {
       if (p.scope === "zone") return p.homey_zone_id === z.zoneId;
-      // global gjelder alle innendørs rom
-      if (p.scope === "global") return !z.isOutdoor && z.motionSensors > 0;
+      // Global regel kobles til alle innendørs rom med tente lys (de som telles
+      // når varsel går av). Bevegelsesvinduet beregnes på tvers av ALLE
+      // innendørs sensorer separat på klienten/serveren.
+      if (p.scope === "global") return !z.isOutdoor && z.litLights > 0;
       return false;
     });
     out.push({
