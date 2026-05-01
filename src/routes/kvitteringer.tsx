@@ -83,17 +83,17 @@ const fmtDate = (iso: string | null) => {
   return d.toLocaleDateString("nb-NO", { day: "2-digit", month: "short", year: "numeric" });
 };
 
-const warrantyDate = (iso: string | null): { date: Date; iso: string } | null => {
+const addYears = (iso: string | null, years: number): { date: Date; iso: string } | null => {
   if (!iso) return null;
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return null;
   const w = new Date(d);
-  w.setFullYear(w.getFullYear() + 5);
+  w.setFullYear(w.getFullYear() + years);
   return { date: w, iso: w.toISOString().slice(0, 10) };
 };
 
-const warrantyStatus = (iso: string | null) => {
-  const w = warrantyDate(iso);
+const periodStatus = (iso: string | null, years: number) => {
+  const w = addYears(iso, years);
   if (!w) return null;
   const now = new Date();
   const daysLeft = Math.floor((w.date.getTime() - now.getTime()) / 86400000);
@@ -102,6 +102,22 @@ const warrantyStatus = (iso: string | null) => {
     expired: daysLeft < 0,
     daysLeft,
   };
+};
+
+// 5-års reklamasjon (forbrukerkjøpsloven) — beholdt navn for bakoverkompatibilitet
+const warrantyDate = (iso: string | null) => addYears(iso, 5);
+const warrantyStatus = (iso: string | null) => periodStatus(iso, 5);
+// 2-års garanti (produsent/selger sin standardgaranti)
+const guaranteeStatus = (iso: string | null) => periodStatus(iso, 2);
+
+const fmtDaysLeft = (d: number) => {
+  if (d < 0) return `${Math.abs(d)} d siden`;
+  if (d === 0) return "i dag";
+  if (d < 60) return `${d} d igjen`;
+  if (d < 365) return `${Math.round(d / 30)} mnd igjen`;
+  const years = Math.floor(d / 365);
+  const months = Math.round((d % 365) / 30);
+  return months > 0 ? `${years} år ${months} mnd igjen` : `${years} år igjen`;
 };
 
 function KvitteringerPage() {
@@ -532,6 +548,7 @@ function ReceiptRowItem({
     (sum, it) => sum + (typeof it.total_price === "number" ? it.total_price : 0),
     0,
   );
+  const guarantee = guaranteeStatus(r.purchased_at);
   const warranty = warrantyStatus(r.purchased_at);
   return (
     <div className="bg-card">
@@ -577,6 +594,21 @@ function ReceiptRowItem({
                   </span>
                 </>
               )}
+              {guarantee && !guarantee.expired && (
+                <>
+                  <span>·</span>
+                  <span
+                    className={
+                      guarantee.daysLeft < 60
+                        ? "text-amber-500"
+                        : "text-emerald-600 dark:text-emerald-400"
+                    }
+                    title={`2-års garanti utløper ${guarantee.label}`}
+                  >
+                    Garanti 2år: {fmtDaysLeft(guarantee.daysLeft)}
+                  </span>
+                </>
+              )}
               {warranty && (
                 <>
                   <span>·</span>
@@ -588,10 +620,9 @@ function ReceiptRowItem({
                           ? "text-amber-500"
                           : "text-muted-foreground"
                     }
-                    title={`5-års garanti utløper ${warranty.label}`}
+                    title={`5-års reklamasjon utløper ${warranty.label}`}
                   >
-                    Garanti til {warranty.label}
-                    {warranty.expired ? " (utløpt)" : ""}
+                    Reklamasjon 5år: {warranty.expired ? "utløpt" : fmtDaysLeft(warranty.daysLeft)}
                   </span>
                 </>
               )}
@@ -633,21 +664,40 @@ function ReceiptRowItem({
           </button>
 
           <div className="space-y-3 min-w-0">
-            <div className="grid grid-cols-2 gap-2 text-xs">
+            <div className="grid grid-cols-3 gap-2 text-xs">
               <div className="bg-muted/30 rounded px-2 py-1.5">
                 <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Kjøpt</div>
                 <div className="font-medium">{fmtDate(r.purchased_at)}</div>
               </div>
               <div className="bg-muted/30 rounded px-2 py-1.5">
                 <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                  Garanti utløper (5 år)
+                  Garanti (2 år)
+                </div>
+                <div
+                  className={`font-medium ${guarantee?.expired ? "text-muted-foreground line-through" : guarantee && guarantee.daysLeft < 60 ? "text-amber-500" : "text-emerald-600 dark:text-emerald-400"}`}
+                >
+                  {guarantee?.label ?? "—"}
+                </div>
+                {guarantee && (
+                  <div className="text-[10px] text-muted-foreground mt-0.5">
+                    {guarantee.expired ? "utløpt" : fmtDaysLeft(guarantee.daysLeft)}
+                  </div>
+                )}
+              </div>
+              <div className="bg-muted/30 rounded px-2 py-1.5">
+                <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                  Reklamasjon (5 år)
                 </div>
                 <div
                   className={`font-medium ${warranty?.expired ? "text-destructive" : warranty && warranty.daysLeft < 90 ? "text-amber-500" : ""}`}
                 >
                   {warranty?.label ?? "—"}
-                  {warranty?.expired ? " (utløpt)" : ""}
                 </div>
+                {warranty && (
+                  <div className="text-[10px] text-muted-foreground mt-0.5">
+                    {warranty.expired ? "utløpt" : fmtDaysLeft(warranty.daysLeft)}
+                  </div>
+                )}
               </div>
             </div>
             <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
