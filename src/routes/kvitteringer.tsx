@@ -293,6 +293,13 @@ function KvitteringerPage() {
               }}
             />
           </div>
+
+          {uploadStatus && (
+            <div className="mt-4 flex items-center gap-2 text-sm text-primary bg-primary/10 border border-primary/20 rounded-md px-3 py-2">
+              <Loader2 className="h-4 w-4 animate-spin shrink-0" />
+              <span>{uploadStatus}</span>
+            </div>
+          )}
         </div>
 
         {/* Søk */}
@@ -331,11 +338,13 @@ function KvitteringerPage() {
               : "Ingen treff på søket."}
           </p>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="panel rounded-lg divide-y divide-border overflow-hidden">
             {filtered.map((r) => (
-              <ReceiptCard
+              <ReceiptRowItem
                 key={r.id}
                 receipt={r}
+                expanded={expanded.has(r.id)}
+                onToggle={() => toggleExpand(r.id)}
                 onView={() => setLightbox(r.image_url)}
                 onEdit={() => setEditing(r)}
                 onDelete={() => removeReceipt(r)}
