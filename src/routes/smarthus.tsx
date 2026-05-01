@@ -905,12 +905,13 @@ function SmarthusPage() {
                 a[0].localeCompare(b[0], "nb"),
               );
               const nowMsGlobal = Date.now();
-              const indoorIdle = idleStatuses.filter(
-                (z) => !z.isOutdoor && z.hasMotionSensor && z.litLights > 0,
+              const indoorLit = idleStatuses.filter(
+                (z) => !z.isOutdoor && z.litLights > 0,
               );
-              const totalLitIndoor = indoorIdle.reduce((n, z) => n + z.litLights, 0);
-              const lastMotionMsGlobal = indoorIdle.reduce<number | null>((latest, z) => {
-                if (z.lastMotionMs == null) return latest;
+              const totalLitIndoor = indoorLit.reduce((n, z) => n + z.litLights, 0);
+              // Siste bevegelse på tvers av ALLE innendørs sensorer (uavhengig av lys)
+              const lastMotionMsGlobal = idleStatuses.reduce<number | null>((latest, z) => {
+                if (z.isOutdoor || !z.hasMotionSensor || z.lastMotionMs == null) return latest;
                 return latest == null || z.lastMotionMs > latest ? z.lastMotionMs : latest;
               }, null);
               const lastMotionAgoMin =
@@ -929,7 +930,7 @@ function SmarthusPage() {
                       }}
                     >
                       <span className="text-primary/90">
-                        Globalt · {totalLitIndoor} {totalLitIndoor === 1 ? "lampe" : "lamper"} på i {indoorIdle.length} {indoorIdle.length === 1 ? "rom" : "rom"}
+                        Globalt · {totalLitIndoor} {totalLitIndoor === 1 ? "lampe" : "lamper"} på i {indoorLit.length} {indoorLit.length === 1 ? "rom" : "rom"}
                       </span>
                       <span className="text-muted-foreground">
                         {lastMotionAgoMin != null
