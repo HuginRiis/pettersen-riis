@@ -337,6 +337,27 @@ function HomeBlock({
       ? { diff: todayKwh - yesterdayProrated, pct: ((todayKwh - yesterdayProrated) / yesterdayProrated) * 100 }
       : null;
 
+  // Samme ukedag forrige uke (7 dager tilbake)
+  const lastWeekDate = new Date(now);
+  lastWeekDate.setDate(lastWeekDate.getDate() - 7);
+  const lastWeekKey = dayKey(lastWeekDate);
+  const sameDayLastWeek = (() => {
+    if (data?.daily?.length) {
+      const match = data.daily.find((d) => {
+        const dd = new Date(d.from);
+        return dayKey(dd) === lastWeekKey;
+      });
+      if (match?.kwh != null && match.kwh > 0) return match.kwh;
+    }
+    return storedFor(lastWeekDate);
+  })();
+  const lastWeekProrated =
+    sameDayLastWeek != null && sameDayLastWeek > 0 ? sameDayLastWeek * dayFraction : null;
+  const vsLastWeek =
+    lastWeekProrated != null && lastWeekProrated > 0 && todayKwh > 0
+      ? { diff: todayKwh - lastWeekProrated, pct: ((todayKwh - lastWeekProrated) / lastWeekProrated) * 100 }
+      : null;
+
   // Samme dato forrige måned — Tibber daily først, så lagret dagsverdi
   const lastMonthDate = new Date(now);
   lastMonthDate.setMonth(lastMonthDate.getMonth() - 1);
@@ -435,8 +456,8 @@ function HomeBlock({
         />
       </div>
 
-      {/* Sammenligningsbokser: i går vs samme dag forrige måned */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      {/* Sammenligningsbokser: i går · forrige uke · forrige måned */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         <TrendStat
           label="Sammenlignet med i går"
           todayKwh={todayKwh}
@@ -444,6 +465,14 @@ function HomeBlock({
           trend={vsYesterday}
           referenceFullDayKwh={data?.yesterdayKwh ?? null}
           referenceLabel="i går"
+        />
+        <TrendStat
+          label="Samme dag forrige uke"
+          todayKwh={todayKwh}
+          referenceKwh={lastWeekProrated}
+          trend={vsLastWeek}
+          referenceFullDayKwh={sameDayLastWeek}
+          referenceLabel="forrige uke"
         />
         <TrendStat
           label="Samme dag forrige måned"
@@ -831,7 +860,10 @@ function PulseHistoryChart({
 }) {
   const fetchHistory = useServerFn(getPulseHistory);
   const [points, setPoints] = useState<PulseHistoryPoint[]>([]);
-  const [hours, setHours] = useState<6 | 24 | 72 | 576>(24);
+  const [prevPoints, setPrevPoints] = useState<PulseHistoryPoint[]>([]);
+  // 2 = 2t, 6 = 6t, 24 = 24t, 72 = 3d, 168 = 7d, 744 = 31d
+  const [hours, setHours] = useState<2 | 6 | 24 | 72 | 168 | 744>(24);
+  const [showCompare, setShowCompare] = useState(true);
 
   // Re-fetch når reading kommer (max 1 gang per minutt for å ikke spamme)
   const lastFetchRef = (PulseHistoryChart as any)._lastFetch ??= new Map<string, number>();
@@ -840,8 +872,13 @@ function PulseHistoryChart({
     let cancelled = false;
     const load = async () => {
       try {
-        const res = await fetchHistory({ data: { location, hours } });
-        if (!cancelled) setPoints(res.points);
+        const [cur, prev] = await Promise.all([
+          fetchHistory({ data: { location, hours } }),
+          fetchHistory({ data: { location, hours, offsetHours: hours } }),
+        ]);
+        if (cancelled) return;
+        setPoints(cur.points);
+        setPrevPoints(prev.points);
       } catch (err) {
         console.warn("[pulse-history] fetch failed", err);
       }
@@ -861,24 +898,65 @@ function PulseHistoryChart({
     const last = lastFetchRef.get(key) ?? 0;
     if (Date.now() - last < 60_000) return;
     lastFetchRef.set(key, Date.now());
-    fetchHistory({ data: { location, hours } })
-      .then((res) => setPoints(res.points))
+    Promise.all([
+      fetchHistory({ data: { location, hours } }),
+      fetchHistory({ data: { location, hours, offsetHours: hours } }),
+    ])
+      .then(([cur, prev]) => {
+        setPoints(cur.points);
+        setPrevPoints(prev.points);
+      })
       .catch(() => {});
   }, [reading?.receivedAt, location, hours, fetchHistory, lastFetchRef, reading]);
 
   const longRange = hours > 72;
+  const fmtLabel = (d: Date) =>
+    longRange
+      ? d.toLocaleDateString("nb-NO", { day: "2-digit", month: "2-digit", timeZone: "Europe/Oslo" })
+      : d.toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Oslo" });
+
+  // Bygg kart over forrige periode forskjøvet `hours` timer fremover, slik at
+  // punktene treffer samme x-posisjon som nåperioden.
+  const offsetMs = hours * 60 * 60 * 1000;
+  const prevByMinute = new Map<number, number>();
+  for (const p of prevPoints) {
+    if (p.watt == null) continue;
+    const t = new Date(p.t).getTime() + offsetMs;
+    // Snap til nærmeste minutt for å matche nåperioden (1 punkt/min)
+    const minuteBucket = Math.round(t / 60_000) * 60_000;
+    prevByMinute.set(minuteBucket, Math.round(p.watt));
+  }
+
   const chartData = points
     .filter((p) => p.watt != null)
     .map((p) => {
       const d = new Date(p.t);
+      const bucket = Math.round(d.getTime() / 60_000) * 60_000;
+      // Finn nærmeste forrige-punkt innenfor ±2 min
+      let prevWatt: number | null = prevByMinute.get(bucket) ?? null;
+      if (prevWatt == null) {
+        for (let off = 1; off <= 2 && prevWatt == null; off++) {
+          prevWatt =
+            prevByMinute.get(bucket + off * 60_000) ??
+            prevByMinute.get(bucket - off * 60_000) ??
+            null;
+        }
+      }
       return {
         t: d.getTime(),
-        label: longRange
-          ? d.toLocaleDateString("nb-NO", { day: "2-digit", month: "2-digit", timeZone: "Europe/Oslo" })
-          : d.toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Oslo" }),
+        label: fmtLabel(d),
         watt: Math.round(p.watt as number),
+        prevWatt: showCompare ? prevWatt : null,
       };
     });
+
+  const compareLabel =
+    hours === 2 ? "2t før"
+    : hours === 6 ? "6t før"
+    : hours === 24 ? "i går"
+    : hours === 72 ? "3d før"
+    : hours === 168 ? "forrige uke"
+    : "forrige 31d";
 
   return (
     <div>
@@ -886,20 +964,33 @@ function PulseHistoryChart({
         <h3 className="text-sm tracking-[0.3em] uppercase text-primary flex items-center gap-2">
           <Activity size={14} /> Pulse-historikk · effekt
         </h3>
-        <div className="flex gap-1">
-          {([6, 24, 72, 576] as const).map((h) => (
-            <button
-              key={h}
-              onClick={() => setHours(h)}
-              className={`text-[10px] tracking-[0.2em] uppercase px-2.5 py-1 rounded border transition-colors ${
-                hours === h
-                  ? "border-primary text-primary bg-primary/10"
-                  : "border-border text-muted-foreground hover:text-primary hover:border-primary/40"
-              }`}
-            >
-              {h === 6 ? "6t" : h === 24 ? "24t" : h === 72 ? "3d" : "24d"}
-            </button>
-          ))}
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex gap-1">
+            {([2, 6, 24, 72, 168, 744] as const).map((h) => (
+              <button
+                key={h}
+                onClick={() => setHours(h)}
+                className={`text-[10px] tracking-[0.2em] uppercase px-2.5 py-1 rounded border transition-colors ${
+                  hours === h
+                    ? "border-primary text-primary bg-primary/10"
+                    : "border-border text-muted-foreground hover:text-primary hover:border-primary/40"
+                }`}
+              >
+                {h === 2 ? "2t" : h === 6 ? "6t" : h === 24 ? "24t" : h === 72 ? "3d" : h === 168 ? "7d" : "31d"}
+              </button>
+            ))}
+          </div>
+          <button
+            onClick={() => setShowCompare((v) => !v)}
+            className={`text-[10px] tracking-[0.2em] uppercase px-2.5 py-1 rounded border transition-colors ${
+              showCompare
+                ? "border-[oklch(0.78_0.13_85)] text-[oklch(0.78_0.13_85)] bg-[oklch(0.78_0.13_85)]/10"
+                : "border-border text-muted-foreground hover:text-[oklch(0.78_0.13_85)] hover:border-[oklch(0.78_0.13_85)]/40"
+            }`}
+            title="Vis/skjul sammenligning med forrige periode"
+          >
+            vs {compareLabel}
+          </button>
         </div>
       </div>
       {chartData.length < 2 ? (
@@ -914,6 +1005,10 @@ function PulseHistoryChart({
                 <linearGradient id={`pulseFill-${location}`} x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="oklch(0.65 0.18 250)" stopOpacity={0.5} />
                   <stop offset="100%" stopColor="oklch(0.65 0.18 250)" stopOpacity={0.05} />
+                </linearGradient>
+                <linearGradient id={`pulseFillPrev-${location}`} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="oklch(0.78 0.13 85)" stopOpacity={0.18} />
+                  <stop offset="100%" stopColor="oklch(0.78 0.13 85)" stopOpacity={0.02} />
                 </linearGradient>
               </defs>
               <CartesianGrid stroke="oklch(0.3 0.02 270)" strokeDasharray="3 3" vertical={false} />
@@ -935,8 +1030,24 @@ function PulseHistoryChart({
                   borderRadius: 6,
                   fontSize: 12,
                 }}
-                formatter={(v: number) => [`${v} W`, "Effekt"]}
+                formatter={(v: number, name: string) => {
+                  if (v == null) return ["—", name];
+                  if (name === "prevWatt") return [`${v} W`, compareLabel];
+                  return [`${v} W`, "Nå"];
+                }}
               />
+              {showCompare && (
+                <Area
+                  type="monotone"
+                  dataKey="prevWatt"
+                  stroke="oklch(0.78 0.13 85)"
+                  strokeWidth={1.5}
+                  strokeDasharray="4 3"
+                  fill={`url(#pulseFillPrev-${location})`}
+                  isAnimationActive={false}
+                  connectNulls
+                />
+              )}
               <Area
                 type="monotone"
                 dataKey="watt"

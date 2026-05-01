@@ -44,19 +44,28 @@ export type PulseHistoryPoint = {
   kwh_today: number | null;
 };
 
-/** Hent watt-historikk siste N timer for ett hjem. */
+/** Hent watt-historikk siste N timer for ett hjem.
+ *  offsetHours skifter vinduet bakover (f.eks. 24 = forrige døgn,
+ *  168 = samme periode forrige uke). Brukes for sammenligningsgraf.
+ */
 export const getPulseHistory = createServerFn({ method: "GET" })
-  .inputValidator((input: { location: PulseLocation; hours: number }) => input)
+  .inputValidator(
+    (input: { location: PulseLocation; hours: number; offsetHours?: number }) => input,
+  )
   .handler(
     async ({ data }): Promise<{ points: PulseHistoryPoint[] }> => {
-      const since = new Date(Date.now() - data.hours * 60 * 60 * 1000).toISOString();
+      const offset = data.offsetHours ?? 0;
+      const now = Date.now();
+      const until = new Date(now - offset * 60 * 60 * 1000);
+      const since = new Date(until.getTime() - data.hours * 60 * 60 * 1000);
       const { data: rows, error } = await supabaseAdmin
         .from("pulse_readings")
         .select("recorded_at, watt, kwh_today")
         .eq("location", data.location)
-        .gte("recorded_at", since)
+        .gte("recorded_at", since.toISOString())
+        .lt("recorded_at", until.toISOString())
         .order("recorded_at", { ascending: true })
-        .limit(2000);
+        .limit(5000);
       if (error || !rows) return { points: [] };
       return {
         points: (rows as any[]).map((r) => ({
