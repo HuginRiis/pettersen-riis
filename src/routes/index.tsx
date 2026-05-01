@@ -98,6 +98,24 @@ function Home() {
   const { authenticated } = useAuthStatus();
   const isAuthed = authenticated === true;
 
+  // Kiosk-minne: hvis denne enheten (typisk iPad) sist var på Steintavlen,
+  // åpne den igjen automatisk. Overstyres med ?home=1 i URL.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("home") === "1") {
+        window.localStorage.removeItem("pr.kiosk.lastRoute");
+        return;
+      }
+      const last = window.localStorage.getItem("pr.kiosk.lastRoute");
+      if (last === "/steintavle") {
+        router.navigate({ to: "/steintavle", replace: true });
+      }
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // If the wanderer was sent here from a locked hall (root redirect adds ?login=1),
   // open the login dialog automatically so they can step through the gate.
   useEffect(() => {
