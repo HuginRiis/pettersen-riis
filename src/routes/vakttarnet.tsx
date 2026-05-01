@@ -127,6 +127,8 @@ function VakttarnetPage() {
             title="Vaktens kart"
             icon={<MapIcon size={14} />}
             subtitle="Hvor sjelene befinner seg"
+            collapsible
+            defaultOpen={false}
           >
             <VisitorMap sessions={sessions} attempts={attempts} />
           </Panel>
