@@ -4,6 +4,8 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import {
   listLightAndMotionZones,
   sendLightIdleTest,
+  getLightIdleZoneStatuses,
+  type LightIdleZoneStatusRow,
 } from "./light-idle-push.server";
 
 export type LightIdlePref = {
@@ -19,6 +21,8 @@ export type LightIdlePref = {
   last_notified_at: string | null;
 };
 
+export type { LightIdleZoneStatusRow };
+
 export const listLightIdlePrefs = createServerFn({ method: "GET" }).handler(
   async (): Promise<LightIdlePref[]> => {
     const { data, error } = await supabaseAdmin
@@ -33,6 +37,10 @@ export const listLightIdlePrefs = createServerFn({ method: "GET" }).handler(
 
 export const listLightIdleZones = createServerFn({ method: "GET" }).handler(
   async () => listLightAndMotionZones(),
+);
+
+export const getLightIdleStatuses = createServerFn({ method: "GET" }).handler(
+  async (): Promise<LightIdleZoneStatusRow[]> => getLightIdleZoneStatuses(),
 );
 
 const upsertSchema = z
