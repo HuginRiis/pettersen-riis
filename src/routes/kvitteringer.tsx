@@ -469,6 +469,34 @@ function KvitteringerPage() {
   );
 }
 
+function FilterChip({
+  active,
+  onClick,
+  icon,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition-colors ${
+        active
+          ? "bg-primary/15 border-primary/50 text-primary"
+          : "bg-card border-border text-muted-foreground hover:text-foreground hover:border-foreground/30"
+      }`}
+      aria-pressed={active}
+    >
+      {icon}
+      <span>{children}</span>
+    </button>
+  );
+}
+
 function ReceiptRowItem({
   receipt: r,
   expanded,
