@@ -1056,6 +1056,7 @@ function SmarthusPage() {
                     );
                   })}
                 </div>
+                </>
               );
             })()}
 
