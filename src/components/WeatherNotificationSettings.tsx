@@ -194,8 +194,9 @@ export function WeatherNotificationSettings() {
         </p>
         <p>
           Bygg dine egne regler: regn, vind, snø, frost, torden, hete eller tåke for Borgen
-          eller Hytta. Velg mottaker, hvor mange dager frem prognosen sjekkes, og når på
-          dagen varselet sendes (Oslo-tid). Maks ett varsel per regel per dag.
+          eller Hytta. «Dager før» bestemmer hvor lenge før hendelsen varselet sendes –
+          f.eks. regn i morgen kl 13:00 + «1 dag før» = varsel i dag på valgt klokkeslett.
+          Maks ett varsel per regel per dag.
         </p>
       </div>
 
