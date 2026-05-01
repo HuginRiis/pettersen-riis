@@ -224,6 +224,7 @@ function KvitteringerPage() {
             image_url: imageUrl,
             image_path: path,
             is_food: parsed.is_food ?? false,
+            warranty_recipient: "Arne",
           })
           .select()
           .single();
@@ -707,7 +708,7 @@ function ReceiptRowItem({
             <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
               <Bell className="h-3 w-3 text-primary" />
               <span>
-                Garanti-varsel til <span className="text-foreground font-medium">{r.warranty_recipient || "Alle"}</span> 90/60/30 dager før utløp
+                Garanti-varsel til <span className="text-foreground font-medium">{r.warranty_recipient || "Arne"}</span> 90/60/30 dager før utløp
               </span>
             </div>
             {r.items.length > 0 ? (
@@ -832,7 +833,7 @@ function EditDialog({
   const [notes, setNotes] = useState(receipt.notes ?? "");
   const [rawText, setRawText] = useState(receipt.ai_raw_text ?? "");
   const [isFood, setIsFood] = useState<boolean>(receipt.is_food ?? false);
-  const [warrantyRecipient, setWarrantyRecipient] = useState<string>(receipt.warranty_recipient ?? "Alle");
+  const [warrantyRecipient, setWarrantyRecipient] = useState<string>(receipt.warranty_recipient ?? "Arne");
   const [saving, setSaving] = useState(false);
 
   const updateItem = (idx: number, patch: Partial<ReceiptItem>) => {
