@@ -1,10 +1,13 @@
 import { Link, useRouter } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { Menu, X, LogOut, Crown, Swords, Shield, KeyRound, Home } from "lucide-react";
 import { logoutFn } from "@/server/auth";
 import { useAuthStatus } from "@/hooks/use-auth-status";
 import { openLoginDialog } from "@/components/LoginDialog";
 import { useUvSun, uvLevel } from "@/hooks/use-uv-sun";
+import { getNameForCurrentIp } from "@/server/user-locations";
+import { useNavUsage } from "@/hooks/use-nav-usage";
 
 const BORGEN_COORD = { lat: 59.1789, lon: 9.5732 };
 const HYTTA_COORD = { lat: 59.8733, lon: 9.4297 };
@@ -32,6 +35,9 @@ type RoutePath =
 type NavLink = { to: RoutePath; label: string; public?: boolean };
 
 const HOMEY_BACKED_ROUTES: RoutePath[] = ["/smarthus", "/var", "/steintavle"];
+
+// Steintavle skal alltid stå sist i menyen, uavhengig av bruksstatistikk.
+const ALWAYS_LAST: RoutePath = "/steintavle";
 
 // Public halls — open to any visitor entering the courtyard.
 // Other halls only appear after the portal is opened (login).
@@ -62,8 +68,41 @@ export function SiteHeader() {
   const { authenticated } = useAuthStatus();
   const isAuthed = authenticated === true;
 
+  // Hent hvilken bruker IP-en tilhører (Arne / Rebekka / …) for å scope tellinger.
+  const fetchName = useServerFn(getNameForCurrentIp);
+  const [who, setWho] = useState<string>("anon");
+  useEffect(() => {
+    if (!isAuthed) {
+      setWho("anon");
+      return;
+    }
+    let cancelled = false;
+    fetchName()
+      .then((r) => {
+        if (!cancelled && r?.who) setWho(r.who);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthed, fetchName]);
+
+  const { usage, bump } = useNavUsage(who);
+
   // Visitors outside the gate only see public halls; authed users see everything.
-  const visibleLinks = isAuthed ? navLinks : navLinks.filter((l) => l.public);
+  const baseLinks = isAuthed ? navLinks : navLinks.filter((l) => l.public);
+
+  // Sorter: mest brukt først, deretter opprinnelig rekkefølge — men /steintavle alltid sist.
+  const sortedLinks = (() => {
+    const last = baseLinks.filter((l) => l.to === ALWAYS_LAST);
+    const rest = baseLinks.filter((l) => l.to !== ALWAYS_LAST);
+    const indexed = rest.map((l, i) => ({ link: l, i, count: usage[l.to] ?? 0 }));
+    indexed.sort((a, b) => {
+      if (b.count !== a.count) return b.count - a.count;
+      return a.i - b.i;
+    });
+    return [...indexed.map((x) => x.link), ...last];
+  })();
 
   const handleLogout = async () => {
     try {
@@ -103,19 +142,24 @@ export function SiteHeader() {
         </Link>
 
         <nav className="hidden xl:flex flex-1 flex-wrap items-center justify-start gap-x-2 gap-y-2">
-          {visibleLinks.map((l) => (
-            <Link
-              key={l.to}
-              to={l.to}
-              preload={HOMEY_BACKED_ROUTES.includes(l.to) ? false : undefined}
-              activeOptions={l.to === "/" ? { exact: true } : undefined}
-              className="got-nav-btn inline-flex items-center gap-1.5"
-            >
-              <span>{l.label}</span>
-              {l.to === "/" && <UvBadge lat={BORGEN_COORD.lat} lon={BORGEN_COORD.lon} />}
-              {l.to === "/hytta" && <UvBadge lat={HYTTA_COORD.lat} lon={HYTTA_COORD.lon} />}
-            </Link>
-          ))}
+          {sortedLinks.map((l) => {
+            const count = usage[l.to] ?? 0;
+            return (
+              <Link
+                key={l.to}
+                to={l.to}
+                preload={HOMEY_BACKED_ROUTES.includes(l.to) ? false : undefined}
+                activeOptions={l.to === "/" ? { exact: true } : undefined}
+                onClick={() => bump(l.to)}
+                className="got-nav-btn inline-flex items-center gap-1.5"
+              >
+                <span>{l.label}</span>
+                {count > 0 && <UsageBadge count={count} />}
+                {l.to === "/" && <UvBadge lat={BORGEN_COORD.lat} lon={BORGEN_COORD.lon} />}
+                {l.to === "/hytta" && <UvBadge lat={HYTTA_COORD.lat} lon={HYTTA_COORD.lon} />}
+              </Link>
+            );
+          })}
           {isAuthed ? (
             <button
               onClick={handleLogout}
@@ -150,18 +194,27 @@ export function SiteHeader() {
       {open && (
         <nav className="xl:hidden border-t border-border bg-card/95 backdrop-blur">
           <div className="container mx-auto px-4 py-2 flex flex-col">
-            {visibleLinks.map((l) => (
-              <Link
-                key={l.to}
-                to={l.to}
-                preload={HOMEY_BACKED_ROUTES.includes(l.to) ? false : undefined}
-                activeOptions={l.to === "/" ? { exact: true } : undefined}
-                onClick={() => setOpen(false)}
-                className="px-2 py-2.5 text-xs tracking-wider uppercase text-muted-foreground hover:text-primary border-b border-border last:border-0 data-[status=active]:text-primary data-[status=active]:font-semibold"
-              >
-                {l.label}
-              </Link>
-            ))}
+            {sortedLinks.map((l) => {
+              const count = usage[l.to] ?? 0;
+              return (
+                <Link
+                  key={l.to}
+                  to={l.to}
+                  preload={HOMEY_BACKED_ROUTES.includes(l.to) ? false : undefined}
+                  activeOptions={l.to === "/" ? { exact: true } : undefined}
+                  onClick={() => {
+                    bump(l.to);
+                    setOpen(false);
+                  }}
+                  className="px-2 py-2.5 text-xs tracking-wider uppercase text-muted-foreground hover:text-primary border-b border-border last:border-0 data-[status=active]:text-primary data-[status=active]:font-semibold flex items-center gap-2"
+                >
+                  <span className="flex-1">{l.label}</span>
+                  {count > 0 && <UsageBadge count={count} />}
+                  {l.to === "/" && <UvBadge lat={BORGEN_COORD.lat} lon={BORGEN_COORD.lon} />}
+                  {l.to === "/hytta" && <UvBadge lat={HYTTA_COORD.lat} lon={HYTTA_COORD.lon} />}
+                </Link>
+              );
+            })}
             {isAuthed ? (
               <button
                 onClick={() => {
@@ -187,6 +240,17 @@ export function SiteHeader() {
         </nav>
       )}
     </header>
+  );
+}
+
+function UsageBadge({ count }: { count: number }) {
+  return (
+    <span
+      className="inline-flex items-center justify-center rounded-full text-[9px] font-semibold leading-none px-1.5 py-0.5 min-w-[18px] bg-muted/40 text-muted-foreground border border-border"
+      title={`Brukt ${count} ganger`}
+    >
+      {count}
+    </span>
   );
 }
 
