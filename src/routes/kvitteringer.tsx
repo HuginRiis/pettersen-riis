@@ -414,6 +414,14 @@ function KvitteringerPage() {
               Snart utløp (≤365 dager)
             </FilterChip>
             <FilterChip
+              active={filterDurable}
+              onClick={() => setFilterDurable((v) => !v)}
+              icon={<Package className="h-3.5 w-3.5" />}
+              title="Varer ment å vare mer enn 2 år, med 5 års reklamasjonsrett igjen"
+            >
+              Varige forbruksgoder
+            </FilterChip>
+            <FilterChip
               active={hideFood}
               onClick={() => setHideFood((v) => !v)}
               icon={<Apple className="h-3.5 w-3.5" />}
