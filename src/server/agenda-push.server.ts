@@ -44,8 +44,9 @@ function formatPushError(error: unknown): { message: string; statusCode?: number
 }
 
 async function sendPushToSubscription(
-  sub: { endpoint: string; p256dh: string; auth: string },
+  sub: { endpoint: string; p256dh: string; auth: string; who?: string | null },
   payload: string,
+  ctx: { feature: string; recipient?: string; title?: string; body?: string } = { feature: "agenda" },
 ): Promise<{ ok: true } | { ok: false; statusCode?: number; error: string }> {
   try {
     ensureConfigured();
@@ -56,6 +57,14 @@ async function sendPushToSubscription(
       },
       payload,
     );
+    void logPushSend({
+      feature: ctx.feature,
+      recipient: ctx.recipient || sub.who || "Alle",
+      ok: true,
+      endpoint: sub.endpoint,
+      title: ctx.title,
+      body: ctx.body,
+    });
     return { ok: true };
   } catch (error) {
     const formatted = formatPushError(error);
@@ -66,6 +75,16 @@ async function sendPushToSubscription(
       endpoint: sub.endpoint,
       statusCode: formatted.statusCode,
       error: formatted.message,
+    });
+    void logPushSend({
+      feature: ctx.feature,
+      recipient: ctx.recipient || sub.who || "Alle",
+      ok: false,
+      endpoint: sub.endpoint,
+      status_code: formatted.statusCode ?? null,
+      error_message: formatted.message,
+      title: ctx.title,
+      body: ctx.body,
     });
     return { ok: false, statusCode: formatted.statusCode, error: formatted.message };
   }
