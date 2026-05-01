@@ -19,3 +19,12 @@ export const sendUvTestPush = createServerFn({ method: "POST" })
     const { sendUvTestNotification } = await import("./uv-push.server");
     return sendUvTestNotification(data.prefId, data.level ?? 3);
   });
+
+/**
+ * Returnerer prognose for når neste UV-varsel forventes sendt for hver
+ * aktiverte lokasjon (basert på MET.no-prognose og lead_minutes).
+ */
+export const getUvForecast = createServerFn({ method: "GET" }).handler(async () => {
+  const { computeUvForecast } = await import("./uv-push.server");
+  return computeUvForecast();
+});
