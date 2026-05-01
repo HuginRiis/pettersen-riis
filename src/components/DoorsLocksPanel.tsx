@@ -315,6 +315,7 @@ function HomeAlarmPanel() {
   const [who, setWho] = useState<Who>("Alle");
   const [log, setLog] = useState<AlarmLogRow[]>([]);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [controlsOpen, setControlsOpen] = useState(false);
   const inFlight = useRef(false);
 
   // Hent lagret "hvem" på klienten
