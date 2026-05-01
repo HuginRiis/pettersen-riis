@@ -194,8 +194,8 @@ export async function processUvNotifications(): Promise<{
     }
 
     const payload = JSON.stringify({
-      title: trigger.title,
-      body: trigger.body(p.label, uv),
+      title: trigger.title(lead),
+      body: trigger.body(p.label, uv, lead),
       tag: `uv-${p.location}-${trigger.threshold}-${today}`,
       url: "/var",
     });
