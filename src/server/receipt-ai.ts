@@ -14,6 +14,7 @@ export type ReceiptParseResult = {
   currency: string;
   items: ReceiptItem[];
   raw_text: string;
+  is_food: boolean;
   model: string;
 };
 
