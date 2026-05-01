@@ -383,8 +383,10 @@ export async function processAgendaNotifications(): Promise<{ checked: number; s
           endpoint: sub.endpoint as string,
           p256dh: sub.p256dh as string,
           auth: sub.auth as string,
+          who: (sub as any).who ?? targetWho,
         },
         payload,
+        { feature: "agenda", recipient: targetWho, title: item.subject },
       );
       if (result.ok) {
         sent++;
