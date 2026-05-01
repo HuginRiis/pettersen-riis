@@ -12,6 +12,7 @@ import { HomeyApiPauseToggle } from "@/components/HomeyApiPauseToggle";
 import { HeatersPanel } from "@/components/HeatersPanel";
 import { StuaConditionPanel } from "@/components/StuaConditionPanel";
 import { MowerPanel } from "@/components/MowerPanel";
+import { LightIdleNotificationSettings } from "@/components/LightIdleNotificationSettings";
 
 
 import { recordHomeyApiCall } from "@/lib/homey-api-tracker";
