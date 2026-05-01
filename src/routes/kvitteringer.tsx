@@ -72,6 +72,27 @@ const fmtDate = (iso: string | null) => {
   return d.toLocaleDateString("nb-NO", { day: "2-digit", month: "short", year: "numeric" });
 };
 
+const warrantyDate = (iso: string | null): { date: Date; iso: string } | null => {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  const w = new Date(d);
+  w.setFullYear(w.getFullYear() + 5);
+  return { date: w, iso: w.toISOString().slice(0, 10) };
+};
+
+const warrantyStatus = (iso: string | null) => {
+  const w = warrantyDate(iso);
+  if (!w) return null;
+  const now = new Date();
+  const daysLeft = Math.floor((w.date.getTime() - now.getTime()) / 86400000);
+  return {
+    label: w.date.toLocaleDateString("nb-NO", { day: "2-digit", month: "short", year: "numeric" }),
+    expired: daysLeft < 0,
+    daysLeft,
+  };
+};
+
 function KvitteringerPage() {
   const parseFn = useServerFn(parseReceiptImage);
   const [receipts, setReceipts] = useState<ReceiptRow[]>([]);
