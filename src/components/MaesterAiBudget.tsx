@@ -17,6 +17,7 @@ type Stats = Awaited<ReturnType<typeof getAiUsageStats>>;
 
 const FEATURE_LABELS: Record<string, string> = {
   turer: "Tur-rådgiver",
+  kvittering: "Kvittering-tolkning",
   receipt: "Kvittering-tolkning",
   receipts: "Kvittering-tolkning",
   pollen: "Pollen-orakel",
