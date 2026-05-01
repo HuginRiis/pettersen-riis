@@ -408,46 +408,79 @@ function ReceiptRowItem({
     (sum, it) => sum + (typeof it.total_price === "number" ? it.total_price : 0),
     0,
   );
+  const warranty = warrantyStatus(r.purchased_at);
   return (
     <div className="bg-card">
       {/* Sammendragsrad — klikkbar for å utvide */}
-      <button
-        type="button"
-        onClick={onToggle}
-        className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-muted/40 transition-colors"
-        aria-expanded={expanded}
-      >
-        <div className="shrink-0 text-muted-foreground">
-          {expanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-        </div>
-        <img
-          src={r.image_url}
-          alt=""
-          className="h-10 w-10 rounded object-cover bg-muted/30 shrink-0"
-          loading="lazy"
-        />
-        <div className="min-w-0 flex-1">
-          <div className="flex items-baseline justify-between gap-2">
-            <h3 className="font-semibold text-sm sm:text-base truncate">
-              {r.store ?? "Ukjent butikk"}
-            </h3>
-            <span className="text-xs text-muted-foreground shrink-0">
-              {fmtDate(r.purchased_at)}
-            </span>
+      <div className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/40 transition-colors">
+        <button
+          type="button"
+          onClick={onToggle}
+          className="flex items-center gap-3 text-left flex-1 min-w-0"
+          aria-expanded={expanded}
+        >
+          <div className="shrink-0 text-muted-foreground">
+            {expanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
           </div>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span className="text-primary font-medium">{fmtPrice(r.total_nok)}</span>
-            {r.items.length > 0 && (
-              <>
-                <span>·</span>
-                <span>
-                  {r.items.length} vare{r.items.length === 1 ? "" : "r"}
-                </span>
-              </>
-            )}
+          <img
+            src={r.image_url}
+            alt=""
+            className="h-10 w-10 rounded object-cover bg-muted/30 shrink-0"
+            loading="lazy"
+          />
+          <div className="min-w-0 flex-1">
+            <div className="flex items-baseline justify-between gap-2">
+              <h3 className="font-semibold text-sm sm:text-base truncate">
+                {r.store ?? "Ukjent butikk"}
+              </h3>
+              <span className="text-xs text-muted-foreground shrink-0">
+                Kjøpt {fmtDate(r.purchased_at)}
+              </span>
+            </div>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
+              <span className="text-primary font-medium">{fmtPrice(r.total_nok)}</span>
+              {r.items.length > 0 && (
+                <>
+                  <span>·</span>
+                  <span>
+                    {r.items.length} vare{r.items.length === 1 ? "" : "r"}
+                  </span>
+                </>
+              )}
+              {warranty && (
+                <>
+                  <span>·</span>
+                  <span
+                    className={
+                      warranty.expired
+                        ? "text-destructive"
+                        : warranty.daysLeft < 90
+                          ? "text-amber-500"
+                          : "text-muted-foreground"
+                    }
+                    title={`5-års garanti utløper ${warranty.label}`}
+                  >
+                    Garanti til {warranty.label}
+                    {warranty.expired ? " (utløpt)" : ""}
+                  </span>
+                </>
+              )}
+            </div>
           </div>
-        </div>
-      </button>
+        </button>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete();
+          }}
+          className="shrink-0 p-2 text-muted-foreground hover:text-destructive rounded-md hover:bg-destructive/10 transition-colors"
+          aria-label="Slett kvittering"
+          title="Slett kvittering"
+        >
+          <Trash2 className="h-4 w-4" />
+        </button>
+      </div>
 
       {/* Detaljer — vises ved utvidelse */}
       {expanded && (
