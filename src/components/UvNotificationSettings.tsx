@@ -237,46 +237,37 @@ export function UvNotificationSettings() {
               </div>
 
               <div className="pt-1">
-                <button
-                  type="button"
-                  onClick={() => setOpenTest((s) => ({ ...s, [p.id]: !s[p.id] }))}
-                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  {testOpen ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-                  Test push-varsel
-                </button>
-                {testOpen && (
-                  <div className="flex flex-wrap gap-1.5 mt-2">
-                    {([3, 6, 8] as const).map((lvl) => (
-                      <Button
-                        key={lvl}
-                        size="sm"
-                        variant="outline"
-                        className="h-7 px-2 text-xs"
-                        disabled={saving === p.id}
-                        onClick={async () => {
-                          setSaving(p.id);
-                          try {
-                            const res = await sendUvTestPush({ data: { prefId: p.id, level: lvl } });
-                            if (res.sent > 0) {
-                              toast.success(`Test sendt (UV ${lvl}) → ${res.recipient}`);
-                            } else {
-                              toast.error(
-                                `Ingen abonnenter for ${res.recipient}. Abonner i Innstillinger → Push.`,
-                              );
-                            }
-                          } catch (e) {
-                            toast.error("Test feilet: " + (e as Error).message);
-                          } finally {
-                            setSaving(null);
+                <div className="text-[11px] text-muted-foreground mb-1">Send test-push:</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {([3, 6, 8] as const).map((lvl) => (
+                    <Button
+                      key={lvl}
+                      size="sm"
+                      variant="outline"
+                      className="h-7 px-2 text-xs"
+                      disabled={saving === p.id}
+                      onClick={async () => {
+                        setSaving(p.id);
+                        try {
+                          const res = await sendUvTestPush({ data: { prefId: p.id, level: lvl } });
+                          if (res.sent > 0) {
+                            toast.success(`Test sendt (UV ${lvl}) → ${res.recipient}`);
+                          } else {
+                            toast.error(
+                              `Ingen abonnenter for ${res.recipient}. Abonner i Innstillinger → Push.`,
+                            );
                           }
-                        }}
-                      >
-                        <Send className="h-3 w-3 mr-1" />UV {lvl}
-                      </Button>
-                    ))}
-                  </div>
-                )}
+                        } catch (e) {
+                          toast.error("Test feilet: " + (e as Error).message);
+                        } finally {
+                          setSaving(null);
+                        }
+                      }}
+                    >
+                      <Send className="h-3 w-3 mr-1" />UV {lvl}
+                    </Button>
+                  ))}
+                </div>
               </div>
             </div>
           );
