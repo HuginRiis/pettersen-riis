@@ -99,7 +99,7 @@ async function refreshAccessToken(conn: HomeyConnection): Promise<HomeyConnectio
   };
 }
 
-async function getValidConnection(): Promise<HomeyConnection | null> {
+export async function getValidConnection(): Promise<HomeyConnection | null> {
   const conn = await getHomeyConnection();
   if (!conn) return null;
 
