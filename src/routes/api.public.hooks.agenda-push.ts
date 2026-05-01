@@ -63,7 +63,14 @@ export const Route = createFileRoute("/api/public/hooks/agenda-push")({
           } catch (err) {
             console.error("[weather-push] failed", err);
           }
-          return new Response(JSON.stringify({ ok: true, agenda, checklist, garbage, birthdays, warranty, uv, weather }), {
+          let lightIdle = { checked: 0, sent: 0, errors: 0, skipped: 0 };
+          try {
+            const lmod = await import("@/server/light-idle-push.server");
+            lightIdle = await lmod.processLightIdleNotifications();
+          } catch (err) {
+            console.error("[light-idle-push] failed", err);
+          }
+          return new Response(JSON.stringify({ ok: true, agenda, checklist, garbage, birthdays, warranty, uv, weather, lightIdle }), {
             headers: { "Content-Type": "application/json" },
           });
         } catch (err) {

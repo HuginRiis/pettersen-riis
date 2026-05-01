@@ -99,7 +99,7 @@ async function refreshAccessToken(conn: HomeyConnection): Promise<HomeyConnectio
   };
 }
 
-async function getValidConnection(): Promise<HomeyConnection | null> {
+export async function getValidConnection(): Promise<HomeyConnection | null> {
   const conn = await getHomeyConnection();
   if (!conn) return null;
 
@@ -456,7 +456,7 @@ function mapSnapshotFromRaw(raw: HomeyRawSnapshot): HomeySnapshot {
   return { ok: true, homeName: raw.homeName, zones, devices };
 }
 
-async function getHomeyRawSnapshot(conn: HomeyConnection): Promise<HomeyRawSnapshot | null> {
+export async function getHomeyRawSnapshot(conn: HomeyConnection): Promise<HomeyRawSnapshot | null> {
   const key = getHomeyCacheKey(conn);
   const cached = getCacheEntry(homeySnapshotCache, key);
   if (cached) return cached.value;
