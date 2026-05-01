@@ -4,7 +4,7 @@
 
 @custom-variant dark (&:is(.dark *));
 
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700;900&family=Uncial+Antiqua&family=Inter:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700;900&family=IM+Fell+English:ital@0;1&family=Inter:wght@300;400;500;600&display=swap');
 
 /*
  * GAME OF THRONES inspired design system.
@@ -39,7 +39,7 @@
   --color-blood: var(--blood);
   --color-ice: var(--ice);
   --font-display: "Cinzel", serif;
-  --font-medieval: "Uncial Antiqua", "MedievalSharp", cursive;
+  --font-medieval: "IM Fell English", "Cormorant Garamond", Georgia, serif;
   --font-body: "Inter", system-ui, sans-serif;
 }
 
