@@ -29,7 +29,12 @@ const upsertSchema = z.object({
 export const upsertChangelog = createServerFn({ method: "POST" })
   .inputValidator((d) => upsertSchema.parse(d))
   .handler(async ({ data }) => {
-    const row: Record<string, unknown> = {
+    const row: {
+      id?: string;
+      title: string;
+      description: string | null;
+      changed_at?: string;
+    } = {
       title: data.title,
       description: data.description ?? null,
     };
