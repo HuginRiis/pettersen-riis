@@ -1251,6 +1251,48 @@ export const getOutdoorLightsStatus = createServerFn({ method: "GET" }).handler(
   }),
 );
 
+export type BorgenLightsStatus = {
+  ok: boolean;
+  onCount: number;
+  totalCount: number;
+  error?: string;
+};
+
+export const getBorgenLightsStatus = createServerFn({ method: "GET" }).handler(
+  withApiLog("homey", "getBorgenLightsStatus", async (): Promise<BorgenLightsStatus> => {
+    let conn: HomeyConnection | null;
+    try {
+      conn = await getValidConnection();
+    } catch (e: any) {
+      return { ok: false, onCount: 0, totalCount: 0, error: e?.message ?? "Token-feil" };
+    }
+    if (!conn) {
+      return { ok: false, onCount: 0, totalCount: 0, error: "Ingen Homey-tilkobling" };
+    }
+    try {
+      const session = await getHomeySessionContext(conn);
+      if (!session) {
+        return { ok: false, onCount: 0, totalCount: 0, error: "Fant ingen Homey" };
+      }
+      const devices = await listAllDevicesRaw(session.sessionToken, session.target.baseUrl);
+      let onCount = 0;
+      let totalCount = 0;
+      for (const d of devices) {
+        const cls = d?.class;
+        const virt = d?.virtualClass;
+        if (cls !== "light" && virt !== "light") continue;
+        const caps = d?.capabilitiesObj ?? d?.capabilities_obj ?? {};
+        if (!caps || typeof caps !== "object" || !("onoff" in caps)) continue;
+        totalCount += 1;
+        if (caps?.onoff?.value === true) onCount += 1;
+      }
+      return { ok: true, onCount, totalCount };
+    } catch (e: any) {
+      return { ok: false, onCount: 0, totalCount: 0, error: e?.message ?? "Klarte ikke lese lys" };
+    }
+  }),
+);
+
 export const setAllOutdoorLights = createServerFn({ method: "POST" })
   .inputValidator((input: { on: boolean }) => input)
   .handler(async ({ data }): Promise<{ ok: boolean; toggled: number; error?: string }> => {
