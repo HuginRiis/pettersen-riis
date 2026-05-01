@@ -278,6 +278,12 @@ function KvitteringerPage() {
     const q = query.trim().toLowerCase();
     return receipts.filter((r) => {
       if (hideFood && r.is_food) return false;
+      if (filterDurable) {
+        // Varige forbruksgoder: ikke matvarer, har dato, fortsatt innenfor 5-års reklamasjon
+        if (r.is_food) return false;
+        const w = warrantyStatus(r.purchased_at);
+        if (!w || w.expired) return false;
+      }
       if (filterWarrantyActive || filterWarrantyExpiring) {
         const w = warrantyStatus(r.purchased_at);
         if (!w || w.expired) return false;
@@ -292,7 +298,7 @@ function KvitteringerPage() {
       if (r.items?.some((it) => it.name?.toLowerCase().includes(q))) return true;
       return false;
     });
-  }, [receipts, query, filterWarrantyActive, filterWarrantyExpiring, hideFood]);
+  }, [receipts, query, filterWarrantyActive, filterWarrantyExpiring, filterDurable, hideFood]);
 
   return (
     <PageShell>
