@@ -812,15 +812,37 @@ export function DoorsLocksPanel() {
           </Section>
         );
       })()}
-      {motions.length > 0 && (
-        <Section title="Siste bevegelser" count={motions.length}>
-          <ul className="space-y-2">
-            {motions.slice(0, 8).map((m) => (
-              <MotionRow key={m.id} entry={m} />
-            ))}
-          </ul>
-        </Section>
-      )}
+      {motions.length > 0 && (() => {
+        const active = motions.filter((m) => m.motion === true);
+        const inactive = motions.filter((m) => m.motion !== true);
+        return (
+          <Section title="Siste bevegelser" count={active.length}>
+            {active.length === 0 ? (
+              <p className="text-[11px] tracking-[0.2em] uppercase text-muted-foreground italic">
+                « Stille i alle saler »
+              </p>
+            ) : (
+              <ul className="space-y-2">
+                {active.slice(0, 8).map((m) => (
+                  <MotionRow key={m.id} entry={m} />
+                ))}
+              </ul>
+            )}
+            {inactive.length > 0 && (
+              <SealedCollapsible
+                label={`Vis ${inactive.length} stille sensorer`}
+                closedLabel="Skjul stille sensorer"
+              >
+                <ul className="space-y-2 mt-2">
+                  {inactive.slice(0, 12).map((m) => (
+                    <MotionRow key={m.id} entry={m} />
+                  ))}
+                </ul>
+              </SealedCollapsible>
+            )}
+          </Section>
+        );
+      })()}
 
       <div className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground/60 text-right">
         ↻ Sist meldt {ago(state.data.fetchedAt)}
