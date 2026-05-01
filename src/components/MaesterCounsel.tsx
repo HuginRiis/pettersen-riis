@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { getTelemarkAlerts, type TelemarkAlert } from "@/server/met-alerts";
 import { alertsToCounselLines, severityBadge } from "@/lib/telemark-alerts-got";
 import { CloakIcon, HorseCartIcon, PollenIcon } from "@/components/MaesterIcons";
-import { MaesterAiBudget } from "@/components/MaesterAiBudget";
 
 /**
  * MaesterCounsel — "Hærmesterens råd"
