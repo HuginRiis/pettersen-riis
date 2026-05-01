@@ -388,7 +388,42 @@ function KvitteringerPage() {
               className="pl-9"
             />
           </div>
-          <p className="mt-2 text-xs text-muted-foreground">
+
+          {/* Filter */}
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            <FilterChip
+              active={filterWarrantyActive}
+              onClick={() => setFilterWarrantyActive((v) => !v)}
+              icon={<ShieldCheck className="h-3.5 w-3.5" />}
+            >
+              Med garanti igjen
+            </FilterChip>
+            <FilterChip
+              active={filterWarrantyExpiring}
+              onClick={() => setFilterWarrantyExpiring((v) => !v)}
+              icon={<Bell className="h-3.5 w-3.5" />}
+            >
+              Snart utløp (≤365 dager)
+            </FilterChip>
+            <FilterChip
+              active={hideFood}
+              onClick={() => setHideFood((v) => !v)}
+              icon={<Apple className="h-3.5 w-3.5" />}
+            >
+              Skjul matvarer
+            </FilterChip>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={removeAllFood}
+              className="gap-1.5 text-destructive hover:text-destructive ml-auto"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              Fjern alle matvarer
+            </Button>
+          </div>
+
+          <p className="mt-3 text-xs text-muted-foreground">
             {filtered.length} av {receipts.length} kvittering{receipts.length === 1 ? "" : "er"}
           </p>
         </div>
