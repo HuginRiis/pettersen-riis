@@ -16,6 +16,7 @@ import { Eye, Globe2, Smartphone, Monitor, Tablet, Clock, Crown, ShieldAlert, Ma
 import { DoorsLocksPanel } from "@/components/DoorsLocksPanel";
 import { ApiCallLogPanel } from "@/components/ApiCallLogPanel";
 import { MaesterAiBudget } from "@/components/MaesterAiBudget";
+import { PushSendCountsPanel } from "@/components/PushSendCountsPanel";
 
 export const Route = createFileRoute("/vakttarnet")({
   head: () => ({
