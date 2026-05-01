@@ -42,7 +42,14 @@ export const Route = createFileRoute("/api/public/hooks/agenda-push")({
           } catch (err) {
             console.error("[birthday-push] failed", err);
           }
-          return new Response(JSON.stringify({ ok: true, agenda, checklist, garbage, birthdays }), {
+          let warranty = { checked: 0, sent: 0, errors: 0 };
+          try {
+            const wmod = await import("@/server/warranty-push.server");
+            warranty = await wmod.processWarrantyNotifications();
+          } catch (err) {
+            console.error("[warranty-push] failed", err);
+          }
+          return new Response(JSON.stringify({ ok: true, agenda, checklist, garbage, birthdays, warranty }), {
             headers: { "Content-Type": "application/json" },
           });
         } catch (err) {

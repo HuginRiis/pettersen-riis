@@ -14,6 +14,7 @@ export type ReceiptParseResult = {
   currency: string;
   items: ReceiptItem[];
   raw_text: string;
+  is_food: boolean;
   model: string;
 };
 
@@ -25,12 +26,13 @@ export const parseReceiptImage = createServerFn({ method: "POST" })
     const apiKey = process.env.LOVABLE_API_KEY;
     if (!apiKey) throw new Error("LOVABLE_API_KEY mangler");
 
-    const systemPrompt = `Du er en assistent som leser norske dagligvarekvitteringer fra bilder.
+    const systemPrompt = `Du er en assistent som leser norske kvitteringer fra bilder (dagligvare, elektronikk, byggevare, klær, alt mulig).
 Returner KUN strukturert data via verktøyet 'extract_receipt'.
-- store: butikknavn (Rema 1000, Kiwi, Coop Extra, Meny, Bunnpris, Spar osv.)
+- store: butikknavn (Rema 1000, Kiwi, Coop Extra, Meny, Bunnpris, Spar, Elkjøp, XXL, Jula, Biltema, Power osv.)
 - purchased_at: kjøpsdato i ISO-format YYYY-MM-DD. Bruk dato + klokkeslett fra kvitteringen.
 - total_nok: totalsum i kroner (tall, ikke streng)
 - items: liste med varer slik de står på kvitteringen, med navn, antall og pris
+- is_food: true HVIS kvitteringen i hovedsak er matvarer/dagligvarer (Rema 1000, Kiwi, Coop, Meny, Bunnpris, Spar etc.). false for elektronikk, byggevare, klær, verktøy etc.
 - raw_text: full tekst slik den står på kvitteringen
 Hvis du er usikker på et felt, sett det til null. Ikke finn på data.`;
 
@@ -73,8 +75,9 @@ Hvis du er usikker på et felt, sett det til null. Ikke finn på data.`;
                   },
                 },
                 raw_text: { type: "string" },
+                is_food: { type: "boolean", description: "true hvis matvare/dagligvare-kvittering" },
               },
-              required: ["items", "raw_text"],
+              required: ["items", "raw_text", "is_food"],
             },
           },
         },
@@ -112,6 +115,7 @@ Hvis du er usikker på et felt, sett det til null. Ikke finn på data.`;
       currency: parsed.currency ?? "NOK",
       items: Array.isArray(parsed.items) ? parsed.items : [],
       raw_text: parsed.raw_text ?? "",
+      is_food: typeof parsed.is_food === "boolean" ? parsed.is_food : false,
       model: MODEL,
     };
   });

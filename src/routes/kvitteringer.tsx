@@ -15,6 +15,9 @@ import {
   Receipt as ReceiptIcon,
   ChevronDown,
   ChevronRight,
+  Bell,
+  ShieldCheck,
+  Apple,
 } from "lucide-react";
 import { PageShell, PageHero } from "@/components/PageShell";
 import { Button } from "@/components/ui/button";
@@ -60,7 +63,14 @@ type ReceiptRow = {
   image_path: string;
   created_at: string;
   updated_at: string;
+  is_food: boolean;
+  warranty_recipient: string;
+  warranty_notified_90: string | null;
+  warranty_notified_60: string | null;
+  warranty_notified_30: string | null;
 };
+
+const WHO_OPTIONS = ["Alle", "Arne", "Rebekka", "Marita", "Nora", "Celine", "Mira"] as const;
 
 const fmtPrice = (n: number | null | undefined) =>
   typeof n === "number" ? `kr ${n.toFixed(2).replace(".", ",")}` : "—";
@@ -103,6 +113,9 @@ function KvitteringerPage() {
   const [lightbox, setLightbox] = useState<string | null>(null);
   const [editing, setEditing] = useState<ReceiptRow | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [filterWarrantyActive, setFilterWarrantyActive] = useState(false);
+  const [filterWarrantyExpiring, setFilterWarrantyExpiring] = useState(false);
+  const [hideFood, setHideFood] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -192,6 +205,7 @@ function KvitteringerPage() {
             ai_model: parsed.model,
             image_url: imageUrl,
             image_path: path,
+            is_food: parsed.is_food ?? false,
           })
           .select()
           .single();
@@ -234,10 +248,41 @@ function KvitteringerPage() {
     toast.success("Kvittering slettet");
   };
 
+  const removeAllFood = async () => {
+    const foodReceipts = receipts.filter((r) => r.is_food);
+    if (foodReceipts.length === 0) {
+      toast.info("Ingen matvarekvitteringer å fjerne");
+      return;
+    }
+    if (
+      !confirm(
+        `Slette ALLE ${foodReceipts.length} matvarekvittering${foodReceipts.length === 1 ? "" : "er"}? Dette kan ikke angres.`,
+      )
+    )
+      return;
+    const ids = foodReceipts.map((r) => r.id);
+    const paths = foodReceipts.map((r) => r.image_path);
+    setReceipts((prev) => prev.filter((r) => !r.is_food));
+    const { error } = await supabase.from("receipts").delete().in("id", ids);
+    if (error) {
+      toast.error("Kunne ikke slette");
+      load();
+      return;
+    }
+    await supabase.storage.from("receipts").remove(paths);
+    toast.success(`${ids.length} matvarekvittering${ids.length === 1 ? "" : "er"} slettet`);
+  };
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return receipts;
     return receipts.filter((r) => {
+      if (hideFood && r.is_food) return false;
+      if (filterWarrantyActive || filterWarrantyExpiring) {
+        const w = warrantyStatus(r.purchased_at);
+        if (!w || w.expired) return false;
+        if (filterWarrantyExpiring && w.daysLeft > 365) return false;
+      }
+      if (!q) return true;
       if (r.store?.toLowerCase().includes(q)) return true;
       if (r.purchased_at?.includes(q)) return true;
       if (r.purchased_at && fmtDate(r.purchased_at).toLowerCase().includes(q)) return true;
@@ -246,7 +291,7 @@ function KvitteringerPage() {
       if (r.items?.some((it) => it.name?.toLowerCase().includes(q))) return true;
       return false;
     });
-  }, [receipts, query]);
+  }, [receipts, query, filterWarrantyActive, filterWarrantyExpiring, hideFood]);
 
   return (
     <PageShell>
@@ -343,7 +388,42 @@ function KvitteringerPage() {
               className="pl-9"
             />
           </div>
-          <p className="mt-2 text-xs text-muted-foreground">
+
+          {/* Filter */}
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            <FilterChip
+              active={filterWarrantyActive}
+              onClick={() => setFilterWarrantyActive((v) => !v)}
+              icon={<ShieldCheck className="h-3.5 w-3.5" />}
+            >
+              Med garanti igjen
+            </FilterChip>
+            <FilterChip
+              active={filterWarrantyExpiring}
+              onClick={() => setFilterWarrantyExpiring((v) => !v)}
+              icon={<Bell className="h-3.5 w-3.5" />}
+            >
+              Snart utløp (≤365 dager)
+            </FilterChip>
+            <FilterChip
+              active={hideFood}
+              onClick={() => setHideFood((v) => !v)}
+              icon={<Apple className="h-3.5 w-3.5" />}
+            >
+              Skjul matvarer
+            </FilterChip>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={removeAllFood}
+              className="gap-1.5 text-destructive hover:text-destructive ml-auto"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              Fjern alle matvarer
+            </Button>
+          </div>
+
+          <p className="mt-3 text-xs text-muted-foreground">
             {filtered.length} av {receipts.length} kvittering{receipts.length === 1 ? "" : "er"}
           </p>
         </div>
@@ -389,6 +469,34 @@ function KvitteringerPage() {
   );
 }
 
+function FilterChip({
+  active,
+  onClick,
+  icon,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition-colors ${
+        active
+          ? "bg-primary/15 border-primary/50 text-primary"
+          : "bg-card border-border text-muted-foreground hover:text-foreground hover:border-foreground/30"
+      }`}
+      aria-pressed={active}
+    >
+      {icon}
+      <span>{children}</span>
+    </button>
+  );
+}
+
 function ReceiptRowItem({
   receipt: r,
   expanded,
@@ -430,8 +538,14 @@ function ReceiptRowItem({
           />
           <div className="min-w-0 flex-1">
             <div className="flex items-baseline justify-between gap-2">
-              <h3 className="font-semibold text-sm sm:text-base truncate">
-                {r.store ?? "Ukjent butikk"}
+              <h3 className="font-semibold text-sm sm:text-base truncate flex items-center gap-1.5">
+                {r.is_food && (
+                  <Apple
+                    className="h-3.5 w-3.5 text-emerald-500 shrink-0"
+                    aria-label="Matvare"
+                  />
+                )}
+                <span className="truncate">{r.store ?? "Ukjent butikk"}</span>
               </h3>
               <span className="text-xs text-muted-foreground shrink-0">
                 Kjøpt {fmtDate(r.purchased_at)}
@@ -519,6 +633,12 @@ function ReceiptRowItem({
                   {warranty?.expired ? " (utløpt)" : ""}
                 </div>
               </div>
+            </div>
+            <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+              <Bell className="h-3 w-3 text-primary" />
+              <span>
+                Garanti-varsel til <span className="text-foreground font-medium">{r.warranty_recipient || "Alle"}</span> 90/60/30 dager før utløp
+              </span>
             </div>
             {r.items.length > 0 ? (
 
@@ -641,6 +761,8 @@ function EditDialog({
   const [items, setItems] = useState<ReceiptItem[]>(receipt.items ?? []);
   const [notes, setNotes] = useState(receipt.notes ?? "");
   const [rawText, setRawText] = useState(receipt.ai_raw_text ?? "");
+  const [isFood, setIsFood] = useState<boolean>(receipt.is_food ?? false);
+  const [warrantyRecipient, setWarrantyRecipient] = useState<string>(receipt.warranty_recipient ?? "Alle");
   const [saving, setSaving] = useState(false);
 
   const updateItem = (idx: number, patch: Partial<ReceiptItem>) => {
@@ -661,6 +783,8 @@ function EditDialog({
         items: items as any,
         notes: notes.trim() || null,
         ai_raw_text: rawText,
+        is_food: isFood,
+        warranty_recipient: warrantyRecipient,
       })
       .eq("id", receipt.id);
     setSaving(false);
@@ -704,16 +828,48 @@ function EditDialog({
               />
             </div>
           </div>
-          <div>
-            <Label htmlFor="total">Totalsum (kr)</Label>
-            <Input
-              id="total"
-              inputMode="decimal"
-              value={total}
-              onChange={(e) => setTotal(e.target.value)}
-              className="max-w-[200px]"
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <Label htmlFor="total">Totalsum (kr)</Label>
+              <Input
+                id="total"
+                inputMode="decimal"
+                value={total}
+                onChange={(e) => setTotal(e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="recipient" className="inline-flex items-center gap-1.5">
+                <Bell className="h-3.5 w-3.5 text-primary" />
+                Garanti-varsel til
+              </Label>
+              <select
+                id="recipient"
+                value={warrantyRecipient}
+                onChange={(e) => setWarrantyRecipient(e.target.value)}
+                className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
+              >
+                {WHO_OPTIONS.map((w) => (
+                  <option key={w} value={w}>
+                    {w}
+                  </option>
+                ))}
+              </select>
+              <p className="text-[10px] text-muted-foreground mt-1">
+                Push 90, 60 og 30 dager før utløp.
+              </p>
+            </div>
           </div>
+          <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={isFood}
+              onChange={(e) => setIsFood(e.target.checked)}
+              className="rounded border-input"
+            />
+            <Apple className="h-3.5 w-3.5 text-muted-foreground" />
+            Matvarekvittering (telles med i «Fjern alle matvarer»)
+          </label>
 
           <div>
             <div className="flex items-center justify-between mb-2">

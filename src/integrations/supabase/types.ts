@@ -554,12 +554,17 @@ export type Database = {
           id: string
           image_path: string
           image_url: string
+          is_food: boolean
           items: Json
           notes: string | null
           purchased_at: string | null
           store: string | null
           total_nok: number | null
           updated_at: string
+          warranty_notified_30: string | null
+          warranty_notified_60: string | null
+          warranty_notified_90: string | null
+          warranty_recipient: string
         }
         Insert: {
           ai_model?: string | null
@@ -569,12 +574,17 @@ export type Database = {
           id?: string
           image_path: string
           image_url: string
+          is_food?: boolean
           items?: Json
           notes?: string | null
           purchased_at?: string | null
           store?: string | null
           total_nok?: number | null
           updated_at?: string
+          warranty_notified_30?: string | null
+          warranty_notified_60?: string | null
+          warranty_notified_90?: string | null
+          warranty_recipient?: string
         }
         Update: {
           ai_model?: string | null
@@ -584,12 +594,17 @@ export type Database = {
           id?: string
           image_path?: string
           image_url?: string
+          is_food?: boolean
           items?: Json
           notes?: string | null
           purchased_at?: string | null
           store?: string | null
           total_nok?: number | null
           updated_at?: string
+          warranty_notified_30?: string | null
+          warranty_notified_60?: string | null
+          warranty_notified_90?: string | null
+          warranty_recipient?: string
         }
         Relationships: []
       }
