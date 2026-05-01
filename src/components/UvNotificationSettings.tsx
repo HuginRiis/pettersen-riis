@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Bell, BellOff, Loader2, Sun } from "lucide-react";
+import { Bell, BellOff, Loader2, Send, Sun } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { sendUvTestPush } from "@/server/uv-push.functions";
 
 type UvPref = {
   id: string;
@@ -131,12 +132,41 @@ export function UvNotificationSettings() {
                 </SelectContent>
               </Select>
             </div>
+            <div className="flex flex-wrap gap-1.5 pt-1">
+              <span className="text-xs text-muted-foreground self-center mr-1">Test:</span>
+              {([3, 6, 8] as const).map((lvl) => (
+                <Button
+                  key={lvl}
+                  size="sm"
+                  variant="outline"
+                  className="h-7 px-2 text-xs"
+                  disabled={saving === p.id}
+                  onClick={async () => {
+                    setSaving(p.id);
+                    try {
+                      const res = await sendUvTestPush({ data: { prefId: p.id, level: lvl } });
+                      if (res.sent > 0) {
+                        toast.success(`Test sendt (UV ${lvl}) → ${res.recipient}`);
+                      } else {
+                        toast.error(`Ingen abonnenter for ${res.recipient}. Abonner i Innstillinger → Push.`);
+                      }
+                    } catch (e) {
+                      toast.error("Test feilet: " + (e as Error).message);
+                    } finally {
+                      setSaving(null);
+                    }
+                  }}
+                >
+                  <Send className="h-3 w-3 mr-1" />UV {lvl}
+                </Button>
+              ))}
+            </div>
           </div>
         ))}
       </div>
 
       <p className="text-[11px] text-muted-foreground">
-        Test varslene ved å gå til Innstillinger → Push og abonnere som personen som er valgt over.
+        Test-knappene over sender et ekte push-varsel nå til mottakeren for lokasjonen. Krever at personen er abonnert (Innstillinger → Push).
       </p>
       <Button
         size="sm"
