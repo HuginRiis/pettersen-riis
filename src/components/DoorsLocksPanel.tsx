@@ -829,10 +829,7 @@ export function DoorsLocksPanel() {
               </ul>
             )}
             {inactive.length > 0 && (
-              <SealedCollapsible
-                label={`Vis ${inactive.length} stille sensorer`}
-                closedLabel="Skjul stille sensorer"
-              >
+              <SealedCollapsible label="Stille sensorer" count={inactive.length}>
                 <ul className="space-y-2 mt-2">
                   {inactive.slice(0, 12).map((m) => (
                     <MotionRow key={m.id} entry={m} />
