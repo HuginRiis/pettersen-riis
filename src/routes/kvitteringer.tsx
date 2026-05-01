@@ -19,7 +19,9 @@ import {
   ShieldCheck,
   Apple,
   Package,
+  Send,
 } from "lucide-react";
+import { sendWarrantyTestPush } from "@/server/warranty-push.functions";
 import { PageShell, PageHero } from "@/components/PageShell";
 import { getStoredWho } from "@/lib/push-client";
 import { Button } from "@/components/ui/button";
@@ -706,11 +708,30 @@ function ReceiptRowItem({
                 )}
               </div>
             </div>
-            <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
-              <Bell className="h-3 w-3 text-primary" />
-              <span>
-                Garanti-varsel til <span className="text-foreground font-medium">{r.warranty_recipient || "Arne"}</span> 90/60/30 dager før utløp
-              </span>
+            <div className="flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
+              <div className="flex items-center gap-2 min-w-0">
+                <Bell className="h-3 w-3 text-primary shrink-0" />
+                <span className="truncate">
+                  Garanti-varsel til <span className="text-foreground font-medium">{r.warranty_recipient || "Arne"}</span> 90/60/30 dager før utløp
+                </span>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 px-2 text-xs shrink-0"
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  try {
+                    const res = await sendWarrantyTestPush({ data: { receiptId: r.id } });
+                    if (res.sent > 0) toast.success(`Test sendt → ${res.recipient}`);
+                    else toast.error(`Ingen abonnenter for ${res.recipient}. Abonner i Innstillinger → Push.`);
+                  } catch (err) {
+                    toast.error("Test feilet: " + (err as Error).message);
+                  }
+                }}
+              >
+                <Send className="h-3 w-3 mr-1" /> Test
+              </Button>
             </div>
             {r.items.length > 0 ? (
 
