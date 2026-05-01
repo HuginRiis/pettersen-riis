@@ -39,7 +39,7 @@
   --color-blood: var(--blood);
   --color-ice: var(--ice);
   --font-display: "Cinzel", serif;
-  --font-medieval: "Uncial Antiqua", "MedievalSharp", cursive;
+  --font-medieval: "IM Fell English", "Cormorant Garamond", Georgia, serif;
   --font-body: "Inter", system-ui, sans-serif;
 }
 
