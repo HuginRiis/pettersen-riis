@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ScrollText, Plus, Loader2, Trash2, ChevronDown, ChevronUp } from "lucide-react";
+import { ScrollText, Plus, Loader2, Trash2, ChevronDown, ChevronUp, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -92,6 +92,39 @@ export function ChangelogPanel() {
     }
   }
 
+  function handleExport() {
+    if (entries.length === 0) {
+      toast.error("Ingen endringer å eksportere");
+      return;
+    }
+    try {
+      const payload = {
+        exported_at: new Date().toISOString(),
+        count: entries.length,
+        entries: entries.map((e) => ({
+          changed_at: e.changed_at,
+          title: e.title,
+          description: e.description,
+        })),
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], {
+        type: "application/json",
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      const stamp = new Date().toISOString().slice(0, 10);
+      a.href = url;
+      a.download = `endringslogg-${stamp}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success("Endringslogg eksportert");
+    } catch {
+      toast.error("Kunne ikke eksportere");
+    }
+  }
+
   const visible = expanded ? entries.slice(0, 20) : entries.slice(0, 5);
   const hasMore = entries.length > 5;
 
@@ -104,16 +137,30 @@ export function ChangelogPanel() {
             Endringslogg
           </div>
         </div>
-        <Button
-          type="button"
-          size="sm"
-          variant="ghost"
-          onClick={() => setShowForm((v) => !v)}
-          className="h-7 px-2 text-xs"
-        >
-          <Plus size={12} className="mr-1" />
-          {showForm ? "Avbryt" : "Legg til"}
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            onClick={handleExport}
+            disabled={entries.length === 0}
+            className="h-7 px-2 text-xs"
+            title="Eksporter som JSON"
+          >
+            <Download size={12} className="mr-1" />
+            Eksporter
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            onClick={() => setShowForm((v) => !v)}
+            className="h-7 px-2 text-xs"
+          >
+            <Plus size={12} className="mr-1" />
+            {showForm ? "Avbryt" : "Legg til"}
+          </Button>
+        </div>
       </div>
 
       {showForm && (
