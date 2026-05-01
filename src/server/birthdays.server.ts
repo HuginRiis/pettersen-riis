@@ -211,8 +211,9 @@ export async function processBirthdayNotifications(): Promise<{
     let any = false;
     for (const s of subs) {
       const ok = await sendPush(
-        { endpoint: s.endpoint, p256dh: s.p256dh, auth: s.auth },
+        { endpoint: s.endpoint, p256dh: s.p256dh, auth: s.auth, who: s.who },
         payload,
+        { feature: "birthday", title: r.name },
       );
       if (ok) {
         sent++;
