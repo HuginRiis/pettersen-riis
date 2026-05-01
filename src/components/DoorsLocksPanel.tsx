@@ -11,7 +11,7 @@ import {
 } from "@/server/homey";
 import { supabase } from "@/integrations/supabase/client";
 import { getStoredWho, setStoredWho, type Who } from "@/lib/push-client";
-import { DoorClosed, DoorOpen, Lock, Unlock, Activity, ShieldAlert, Plus, Minus, ShieldCheck, ShieldOff, Loader2, Flame } from "lucide-react";
+import { DoorClosed, DoorOpen, Lock, Unlock, Activity, ShieldAlert, Plus, Minus, ShieldCheck, ShieldOff, Loader2, Flame, ChevronDown } from "lucide-react";
 
 /**
  * Pyrelys — drage-ild som markerer batteri-nivå på borgens vakter.
