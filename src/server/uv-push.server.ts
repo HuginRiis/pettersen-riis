@@ -115,10 +115,12 @@ export async function processUvNotifications(): Promise<{
 }> {
   ensureConfigured();
 
-  // Kun kjør i dagslys-vinduet (09-17 norsk tid). Bruk Europe/Oslo offset enkelt.
+  // Kjør 08:30-17 norsk tid så vi rekker 30-min lead før første UV-terskel.
   const nowOslo = new Date(new Date().toLocaleString("en-US", { timeZone: "Europe/Oslo" }));
   const hour = nowOslo.getHours();
-  if (hour < 9 || hour > 17) return { checked: 0, sent: 0, errors: 0, skipped: 0 };
+  const minute = nowOslo.getMinutes();
+  const inWindow = (hour > 8 || (hour === 8 && minute >= 30)) && hour <= 17;
+  if (!inWindow) return { checked: 0, sent: 0, errors: 0, skipped: 0 };
 
   const today = nowOslo.toISOString().slice(0, 10);
 
