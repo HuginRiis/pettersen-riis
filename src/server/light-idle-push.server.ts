@@ -163,6 +163,82 @@ export async function listLightAndMotionZones(): Promise<
   return arr;
 }
 
+export type LightIdleZoneStatusRow = {
+  zoneId: string;
+  zoneName: string;
+  hasMotionSensor: boolean;
+  motionSensors: number;
+  litLights: number;
+  /** Tidspunkt (ms epoch) for siste bevegelse i sonen. null hvis aldri/ukjent. */
+  lastMotionMs: number | null;
+  /** Tidspunkt (ms epoch) eldste tente lampe slo seg på. null hvis ingen tent. */
+  lightsOnSinceMs: number | null;
+  isOutdoor: boolean;
+  /** Regler som gjelder denne zonen, både zone-spesifikke og global. */
+  rules: Array<{
+    id: string;
+    scope: "zone" | "global";
+    enabled: boolean;
+    no_motion_minutes: number;
+    lights_on_minutes: number | null;
+    cooldown_minutes: number;
+    last_notified_at: string | null;
+  }>;
+};
+
+/**
+ * Bygger per-rom status for "lys uten bevegelse"-varsler.
+ * Returnerer KUN rom som har minst én tent lampe (der varsel er relevant).
+ */
+export async function getLightIdleZoneStatuses(): Promise<LightIdleZoneStatusRow[]> {
+  const statuses = await buildZoneStatuses();
+
+  const { data: prefs } = await supabaseAdmin
+    .from("light_idle_notification_prefs" as never)
+    .select("*");
+  const allPrefs = (prefs ?? []) as Array<{
+    id: string;
+    scope: "zone" | "global";
+    homey_zone_id: string | null;
+    enabled: boolean;
+    no_motion_minutes: number;
+    lights_on_minutes: number | null;
+    cooldown_minutes: number;
+    last_notified_at: string | null;
+  }>;
+
+  const out: LightIdleZoneStatusRow[] = [];
+  for (const z of statuses.values()) {
+    if (z.litLights === 0) continue;
+    const rules = allPrefs.filter((p) => {
+      if (p.scope === "zone") return p.homey_zone_id === z.zoneId;
+      // global gjelder alle innendørs rom
+      if (p.scope === "global") return !z.isOutdoor && z.motionSensors > 0;
+      return false;
+    });
+    out.push({
+      zoneId: z.zoneId,
+      zoneName: z.zoneName,
+      hasMotionSensor: z.motionSensors > 0,
+      motionSensors: z.motionSensors,
+      litLights: z.litLights,
+      lastMotionMs: z.lastMotionMs,
+      lightsOnSinceMs: z.lightsOnSinceMs,
+      isOutdoor: z.isOutdoor,
+      rules: rules.map((r) => ({
+        id: r.id,
+        scope: r.scope,
+        enabled: r.enabled,
+        no_motion_minutes: r.no_motion_minutes,
+        lights_on_minutes: r.lights_on_minutes,
+        cooldown_minutes: r.cooldown_minutes,
+        last_notified_at: r.last_notified_at,
+      })),
+    });
+  }
+  return out;
+}
+
 async function sendOne(
   sub: { endpoint: string; p256dh: string; auth: string; who?: string | null },
   payload: string,

@@ -13,6 +13,7 @@ import { HeatersPanel } from "@/components/HeatersPanel";
 import { StuaConditionPanel } from "@/components/StuaConditionPanel";
 import { MowerPanel } from "@/components/MowerPanel";
 import { LightIdleNotificationSettings } from "@/components/LightIdleNotificationSettings";
+import { getLightIdleStatuses, type LightIdleZoneStatusRow } from "@/server/light-idle-push.functions";
 
 
 import { recordHomeyApiCall } from "@/lib/homey-api-tracker";
@@ -112,6 +113,76 @@ function ConnectPanel({ message }: { message?: string }) {
   );
 }
 
+function fmtMinShort(min: number): string {
+  if (min < 1) return "<1 min";
+  if (min < 60) return `${min} min`;
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  return m === 0 ? `${h} t` : `${h}t ${m}m`;
+}
+
+/**
+ * For en zone, beregn hvor lenge til neste varsel kan utløses.
+ * Returnerer beste/snareste regel: tekst + om den allerede ville trigget.
+ */
+function describeNextAlert(
+  status: import("@/server/light-idle-push.functions").LightIdleZoneStatusRow,
+  nowMs: number,
+): { text: string; imminent: boolean; cooldown: boolean } | null {
+  const enabledRules = status.rules.filter((r) => r.enabled);
+  if (enabledRules.length === 0) return null;
+
+  let best: { waitMs: number; cooldownLeftMs: number; rule: (typeof enabledRules)[number] } | null = null;
+  for (const r of enabledRules) {
+    // Cooldown gjenstår?
+    let cooldownLeftMs = 0;
+    if (r.last_notified_at) {
+      const since = nowMs - new Date(r.last_notified_at).getTime();
+      const left = r.cooldown_minutes * 60_000 - since;
+      if (left > 0) cooldownLeftMs = left;
+    }
+
+    // Hvor lenge til varsel kan trigges (uten cooldown)?
+    let triggerWaitMs = 0;
+    const motionGapMs =
+      status.lastMotionMs === null ? Number.POSITIVE_INFINITY : nowMs - status.lastMotionMs;
+    const motionWait = r.no_motion_minutes * 60_000 - motionGapMs;
+    if (motionWait > 0) triggerWaitMs = Math.max(triggerWaitMs, motionWait);
+
+    if (r.scope === "zone" && r.lights_on_minutes != null) {
+      const onSince = status.lightsOnSinceMs;
+      if (onSince === null) {
+        triggerWaitMs = Number.POSITIVE_INFINITY;
+      } else {
+        const onWait = r.lights_on_minutes * 60_000 - (nowMs - onSince);
+        if (onWait > 0) triggerWaitMs = Math.max(triggerWaitMs, onWait);
+      }
+    }
+
+    const totalWaitMs = Math.max(triggerWaitMs, cooldownLeftMs);
+    if (best === null || totalWaitMs < best.waitMs) {
+      best = { waitMs: totalWaitMs, cooldownLeftMs, rule: r };
+    }
+  }
+  if (!best) return null;
+
+  if (best.waitMs === Number.POSITIVE_INFINITY) {
+    return { text: "Varsel: venter på data", imminent: false, cooldown: false };
+  }
+  if (best.waitMs <= 0) {
+    return { text: "Varsel: klar (sendes ved neste sjekk)", imminent: true, cooldown: false };
+  }
+  const inCooldown = best.cooldownLeftMs > 0 && best.cooldownLeftMs >= best.waitMs;
+  const min = Math.ceil(best.waitMs / 60_000);
+  return {
+    text: inCooldown
+      ? `Cooldown: ${fmtMinShort(min)} igjen`
+      : `Varsel om ${fmtMinShort(min)}`,
+    imminent: false,
+    cooldown: inCooldown,
+  };
+}
+
 function SmarthusPage() {
   const data = Route.useLoaderData() as Awaited<ReturnType<typeof getHomeySnapshot>>;
   const router = useRouter();
@@ -126,6 +197,39 @@ function SmarthusPage() {
   // Optimistisk on/off-state for hver Hue-pære + busy-flagg per id
   const [hueOverrides, setHueOverrides] = useState<Record<string, boolean>>({});
   const [hueBusy, setHueBusy] = useState<Record<string, boolean>>({});
+  // Bevegelsesstatus + varslingsregler per zone (refreshes hvert minutt)
+  const [idleStatuses, setIdleStatuses] = useState<LightIdleZoneStatusRow[]>([]);
+  const [, setNowTick] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      try {
+        const rows = await getLightIdleStatuses();
+        if (!cancelled) setIdleStatuses(rows);
+      } catch (err) {
+        console.error("[smarthus] kunne ikke hente idle-statuser", err);
+      }
+    }
+    load();
+    const id = setInterval(load, 60_000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, []);
+
+  // Re-render hvert 30. sek så "X min siden bevegelse" oppdateres
+  useEffect(() => {
+    const id = setInterval(() => setNowTick((n) => n + 1), 30_000);
+    return () => clearInterval(id);
+  }, []);
+
+  const idleByZoneId = useMemo(() => {
+    const m = new Map<string, LightIdleZoneStatusRow>();
+    for (const r of idleStatuses) m.set(r.zoneId, r);
+    return m;
+  }, [idleStatuses]);
 
   const toggleHueLight = async (deviceId: string, next: boolean) => {
     if (hueBusy[deviceId]) return;
@@ -203,6 +307,7 @@ function SmarthusPage() {
   const mapLight = (d: typeof data.devices[number]) => ({
     id: d.id,
     name: d.name,
+    zoneId: d.zone ?? null,
     zoneName: d.zone ? zoneById.get(d.zone)?.name ?? "Ukjent sal" : "Ukjent sal",
     on: effectiveOn(d),
     dim: typeof d.capabilities["dim"]?.value === "number"
@@ -726,6 +831,14 @@ function SmarthusPage() {
                     const ids = items.map((i) => i.id);
                     const allOn = items.every((i) => i.on);
                     const zoneBusy = ids.some((id) => hueBusy[id]);
+                    const zoneId = items[0]?.zoneId ?? null;
+                    const idleStatus = zoneId ? idleByZoneId.get(zoneId) ?? null : null;
+                    const nowMs = Date.now();
+                    const motionAgoMin =
+                      idleStatus?.lastMotionMs != null
+                        ? Math.max(0, Math.floor((nowMs - idleStatus.lastMotionMs) / 60_000))
+                        : null;
+                    const nextAlert = idleStatus ? describeNextAlert(idleStatus, nowMs) : null;
                     return (
                     <div
                       key={zoneName}
@@ -748,6 +861,40 @@ function SmarthusPage() {
                           className="scale-90"
                         />
                       </div>
+                      {idleStatus && (idleStatus.hasMotionSensor || nextAlert) && (
+                        <div className="flex items-center justify-between gap-2 mb-2 text-[10px] tracking-wider uppercase">
+                          <span
+                            className="text-muted-foreground truncate"
+                            title={
+                              idleStatus.hasMotionSensor
+                                ? motionAgoMin != null
+                                  ? `Siste bevegelse for ${motionAgoMin} min siden`
+                                  : "Ingen bevegelse registrert"
+                                : "Ingen bevegelsessensor i dette rommet"
+                            }
+                          >
+                            {idleStatus.hasMotionSensor
+                              ? motionAgoMin != null
+                                ? `Bevegelse · ${fmtMinShort(motionAgoMin)} siden`
+                                : "Bevegelse · ukjent"
+                              : "Ingen sensor"}
+                          </span>
+                          {nextAlert && (
+                            <span
+                              className={`shrink-0 px-1.5 py-0.5 rounded border ${
+                                nextAlert.imminent
+                                  ? "border-destructive/50 text-destructive bg-destructive/10"
+                                  : nextAlert.cooldown
+                                    ? "border-muted-foreground/30 text-muted-foreground"
+                                    : "border-primary/30 text-primary/80"
+                              }`}
+                              title="Når neste push-varsel kan utløses"
+                            >
+                              {nextAlert.text}
+                            </span>
+                          )}
+                        </div>
+                      )}
                       <ul className="space-y-1">
                         {items.map((l) => {
                           const busy = !!hueBusy[l.id];
