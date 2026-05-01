@@ -589,8 +589,12 @@ function ReceiptRowItem({
               {r.items.length > 0 && (
                 <>
                   <span>·</span>
-                  <span>
-                    {r.items.length} vare{r.items.length === 1 ? "" : "r"}
+                  <span className="truncate max-w-[60%]">
+                    <span className="text-foreground">{r.items[0].name || "uten navn"}</span>
+                    {r.items.length > 1 && (
+                      <span> +{r.items.length - 1} til ({r.items.length} varer)</span>
+                    )}
+                    {r.items.length === 1 && <span> (1 vare)</span>}
                   </span>
                 </>
               )}
