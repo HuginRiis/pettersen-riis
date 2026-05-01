@@ -21,6 +21,7 @@ import {
   Package,
 } from "lucide-react";
 import { PageShell, PageHero } from "@/components/PageShell";
+import { getStoredWho } from "@/lib/push-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -224,7 +225,7 @@ function KvitteringerPage() {
             image_url: imageUrl,
             image_path: path,
             is_food: parsed.is_food ?? false,
-            warranty_recipient: "Arne",
+            warranty_recipient: (() => { const w = getStoredWho(); return w && w !== "Alle" ? w : "Arne"; })(),
           })
           .select()
           .single();
