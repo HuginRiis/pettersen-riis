@@ -127,6 +127,39 @@ function SmarthusPage() {
   // Optimistisk on/off-state for hver Hue-pære + busy-flagg per id
   const [hueOverrides, setHueOverrides] = useState<Record<string, boolean>>({});
   const [hueBusy, setHueBusy] = useState<Record<string, boolean>>({});
+  // Bevegelsesstatus + varslingsregler per zone (refreshes hvert minutt)
+  const [idleStatuses, setIdleStatuses] = useState<LightIdleZoneStatusRow[]>([]);
+  const [, setNowTick] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      try {
+        const rows = await getLightIdleStatuses();
+        if (!cancelled) setIdleStatuses(rows);
+      } catch (err) {
+        console.error("[smarthus] kunne ikke hente idle-statuser", err);
+      }
+    }
+    load();
+    const id = setInterval(load, 60_000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, []);
+
+  // Re-render hvert 30. sek så "X min siden bevegelse" oppdateres
+  useEffect(() => {
+    const id = setInterval(() => setNowTick((n) => n + 1), 30_000);
+    return () => clearInterval(id);
+  }, []);
+
+  const idleByZoneId = useMemo(() => {
+    const m = new Map<string, LightIdleZoneStatusRow>();
+    for (const r of idleStatuses) m.set(r.zoneId, r);
+    return m;
+  }, [idleStatuses]);
 
   const toggleHueLight = async (deviceId: string, next: boolean) => {
     if (hueBusy[deviceId]) return;
