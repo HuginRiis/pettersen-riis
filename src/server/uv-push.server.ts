@@ -194,7 +194,7 @@ export async function processUvNotifications(): Promise<{
     // Marker som varslet for dette nivået i dag (uansett — unngå spam).
     await supabaseAdmin
       .from("uv_notification_prefs" as never)
-      .update({ [trigger.column]: today })
+      .update({ [trigger.column]: today } as never)
       .eq("id", p.id);
   }
 
