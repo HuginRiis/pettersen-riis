@@ -19,6 +19,7 @@ import { MaesterAiBudget } from "@/components/MaesterAiBudget";
 import { PushSendCountsPanel } from "@/components/PushSendCountsPanel";
 import { ChangelogPanel } from "@/components/ChangelogPanel";
 import { VakttarnEventsPanel } from "@/components/VakttarnEventsPanel";
+import { EufyInspector } from "@/components/EufyInspector";
 
 export const Route = createFileRoute("/vakttarnet")({
   head: () => ({
