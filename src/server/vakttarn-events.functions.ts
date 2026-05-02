@@ -88,11 +88,12 @@ export const fetchVakttarnEvents = createServerFn({ method: "GET" })
     if (error) {
       console.error("[vakttarn] fetch failed:", error.message);
       return {
-        totals: { person: 0, dyr: 0, bil: 0, pakke: 0, annet: 0 },
+        totals: { person: 0, dyr: 0, bil: 0, pakke: 0, ringt_pa: 0, annet: 0 },
         buckets: [],
         recent: [],
         rangeStart: start.toISOString(),
         rangeEnd: end.toISOString(),
+        doorbell: { todayCount: 0, totalCount: 0, lastRingAt: null },
       };
     }
 
@@ -108,18 +109,17 @@ export const fetchVakttarnEvents = createServerFn({ method: "GET" })
     }));
 
     const totals: Record<VakttarnCategory, number> = {
-      person: 0, dyr: 0, bil: 0, pakke: 0, annet: 0,
+      person: 0, dyr: 0, bil: 0, pakke: 0, ringt_pa: 0, annet: 0,
     };
     for (const ev of events) totals[ev.category] = (totals[ev.category] ?? 0) + 1;
 
     // Build buckets
     const buckets: VakttarnStats["buckets"] = [];
     const makeEmpty = (label: string, iso: string) => ({
-      label, iso, person: 0, dyr: 0, bil: 0, pakke: 0, annet: 0,
+      label, iso, person: 0, dyr: 0, bil: 0, pakke: 0, ringt_pa: 0, annet: 0,
     });
 
     if (data.range === "day") {
-      // 24 hour buckets
       for (let h = 0; h < 24; h++) {
         const d = new Date(start);
         d.setUTCHours(h, 0, 0, 0);
@@ -158,11 +158,37 @@ export const fetchVakttarnEvents = createServerFn({ method: "GET" })
       }
     }
 
+    // Doorbell counters: query independently of selected range
+    const todayStart = new Date();
+    todayStart.setUTCHours(0, 0, 0, 0);
+    const [{ count: todayCount }, { count: totalCount }, { data: lastRing }] = await Promise.all([
+      supabase
+        .from("vakttarn_events")
+        .select("id", { count: "exact", head: true })
+        .eq("category", "ringt_pa")
+        .gte("detected_at", todayStart.toISOString()),
+      supabase
+        .from("vakttarn_events")
+        .select("id", { count: "exact", head: true })
+        .eq("category", "ringt_pa"),
+      supabase
+        .from("vakttarn_events")
+        .select("detected_at")
+        .eq("category", "ringt_pa")
+        .order("detected_at", { ascending: false })
+        .limit(1),
+    ]);
+
     return {
       totals,
       buckets,
       recent: events.slice(0, 50),
       rangeStart: start.toISOString(),
       rangeEnd: end.toISOString(),
+      doorbell: {
+        todayCount: todayCount ?? 0,
+        totalCount: totalCount ?? 0,
+        lastRingAt: lastRing && lastRing[0] ? lastRing[0].detected_at : null,
+      },
     };
   });
