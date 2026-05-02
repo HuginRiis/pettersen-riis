@@ -30,7 +30,11 @@ const CATEGORY_PRIORITY: Record<string, number> = {
   bevegelse: 1,
 };
 
-type LastSeen = { camera: string; capability: string; value: boolean };
+type LastSeen = { camera: string; capability: string; value: boolean; lastUpdated: number | null };
+
+// Only consider a capability "freshly triggered" if its lastUpdated timestamp
+// is within this window (ms). Cron runs every 5 min → 6 min gives small slack.
+const FRESH_WINDOW_MS = 6 * 60 * 1000;
 
 export const Route = createFileRoute("/api/public/hooks/eufy-poll")({
   server: {
