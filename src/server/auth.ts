@@ -80,6 +80,7 @@ function getSessionConfig() {
   const base = process.env.HOUSE_RIIS_PASSWORD ?? "";
   // Derive a stable 64-char encryption key from the password so we don't need a separate secret
   const derived = (base + "::house-riis-session-v1::winter-is-ours").repeat(4).slice(0, 64);
+  const inIframe = isIframeRequest();
   return {
     password: derived,
     name: "house_riis_session",
@@ -87,7 +88,10 @@ function getSessionConfig() {
     cookie: {
       httpOnly: true,
       secure: true,
-      sameSite: "none" as const,
+      // iOS Safari (iPad/iPhone) avviser SameSite=None i top-level kontekst
+      // → bruk Lax når vi ikke er i en iframe. SameSite=None brukes kun for
+      // Lovable editor-preview som vises i iframe.
+      sameSite: (inIframe ? "none" : "lax") as "none" | "lax",
       path: "/",
     },
   };
