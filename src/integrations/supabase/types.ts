@@ -1111,6 +1111,42 @@ export type Database = {
         }
         Relationships: []
       }
+      vakttarn_events: {
+        Row: {
+          camera: string | null
+          category: string
+          confidence: number | null
+          created_at: string
+          detected_at: string
+          id: string
+          metadata: Json | null
+          snapshot_url: string | null
+          source: string
+        }
+        Insert: {
+          camera?: string | null
+          category: string
+          confidence?: number | null
+          created_at?: string
+          detected_at?: string
+          id?: string
+          metadata?: Json | null
+          snapshot_url?: string | null
+          source?: string
+        }
+        Update: {
+          camera?: string | null
+          category?: string
+          confidence?: number | null
+          created_at?: string
+          detected_at?: string
+          id?: string
+          metadata?: Json | null
+          snapshot_url?: string | null
+          source?: string
+        }
+        Relationships: []
+      }
       visitor_login_attempts: {
         Row: {
           attempted_at: string
