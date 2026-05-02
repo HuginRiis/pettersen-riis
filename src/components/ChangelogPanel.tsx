@@ -268,7 +268,7 @@ export function ChangelogPanel() {
                   </>
                 ) : (
                   <>
-                    <ChevronDown size={12} /> Vis flere ({Math.min(15, entries.length - 5)} til)
+                    <ChevronDown size={12} /> Vis flere ({moreCount} til)
                   </>
                 )}
               </button>
