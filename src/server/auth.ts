@@ -1,10 +1,33 @@
 import { createServerFn } from "@tanstack/react-start";
-import { useSession } from "@tanstack/react-start/server";
+import { useSession, getRequestHeader } from "@tanstack/react-start/server";
 import {
   logLoginAttempt,
   getFailedAttemptTimestampsForIp,
   getCurrentRequestIp,
 } from "./visitors-log.server";
+
+/**
+ * Detect whether the current request is coming from an iframe (e.g. the
+ * Lovable editor preview). When true, the session cookie must be SameSite=None
+ * so the browser will store it as a third-party cookie.
+ *
+ * iOS Safari (iPad / iPhone) blokkerer SameSite=None-cookies hardt utenfor
+ * iframe-kontekst, så på vanlig (top-level) navigasjon — inkl. publisert side
+ * og preview åpnet i egen fane — bruker vi SameSite=Lax. Det er det som faktisk
+ * fungerer på iPad/iPhone.
+ */
+function isIframeRequest(): boolean {
+  try {
+    const dest = getRequestHeader("sec-fetch-dest");
+    const site = getRequestHeader("sec-fetch-site");
+    if (dest === "iframe") return true;
+    // Cross-site fetch from inside an iframe — fall back to None too.
+    if (site === "cross-site") return true;
+    return false;
+  } catch {
+    return false;
+  }
+}
 
 // Rate-limit configuration — keep brute-forcers out of the gate.
 const LOCKOUT_THRESHOLD = 5; // failed attempts inside the rolling window before a lockout episode triggers
@@ -57,6 +80,7 @@ function getSessionConfig() {
   const base = process.env.HOUSE_RIIS_PASSWORD ?? "";
   // Derive a stable 64-char encryption key from the password so we don't need a separate secret
   const derived = (base + "::house-riis-session-v1::winter-is-ours").repeat(4).slice(0, 64);
+  const inIframe = isIframeRequest();
   return {
     password: derived,
     name: "house_riis_session",
@@ -64,7 +88,10 @@ function getSessionConfig() {
     cookie: {
       httpOnly: true,
       secure: true,
-      sameSite: "none" as const,
+      // iOS Safari (iPad/iPhone) avviser SameSite=None i top-level kontekst
+      // → bruk Lax når vi ikke er i en iframe. SameSite=None brukes kun for
+      // Lovable editor-preview som vises i iframe.
+      sameSite: (inIframe ? "none" : "lax") as "none" | "lax",
       path: "/",
     },
   };
