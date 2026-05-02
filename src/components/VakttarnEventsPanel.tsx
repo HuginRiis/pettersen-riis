@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { fetchVakttarnEvents, type VakttarnStats } from "@/server/vakttarn-events.functions";
-import { Users, PawPrint, Car, Package, Eye, Calendar } from "lucide-react";
+import { Users, PawPrint, Car, Bell, Eye, Calendar } from "lucide-react";
 import {
   ResponsiveContainer,
   BarChart,
@@ -27,7 +27,7 @@ const CATS = [
   { key: "person", label: "Sjeler", icon: Users, color: "#d4af37", desc: "Mennesker observert ved porten" },
   { key: "dyr", label: "Dyr", icon: PawPrint, color: "#7fb069", desc: "Ulver, hunder og andre skapninger" },
   { key: "bil", label: "Vogner", icon: Car, color: "#6a8caf", desc: "Hester av jern som ankommer" },
-  { key: "pakke", label: "Sendinger", icon: Package, color: "#c97b4a", desc: "Bud fra fjerne riker" },
+  { key: "ringt_pa", label: "Ringt på", icon: Bell, color: "#c97b4a", desc: "Trykk på ringeklokken" },
 ] as const;
 
 export function VakttarnEventsPanel() {
