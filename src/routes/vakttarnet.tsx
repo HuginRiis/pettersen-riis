@@ -1190,10 +1190,10 @@ function AllVisitors({ sessions }: { sessions: VisitorSessionRow[] }) {
     );
   }
 
-  // Pålogget er alltid synlig på toppen. Resten begrenses til 10 før utvidelse.
+  // Pålogget er alltid synlig på toppen. Resten begrenses til 5 før utvidelse.
   const onlineGroups = groups.filter((g) => g.online);
   const offlineGroups = groups.filter((g) => !g.online);
-  const offlineLimit = 10;
+  const offlineLimit = 5;
   const visibleOffline = expanded ? offlineGroups : offlineGroups.slice(0, offlineLimit);
   const hiddenCount = offlineGroups.length - visibleOffline.length;
   const visible = [...onlineGroups, ...visibleOffline];
