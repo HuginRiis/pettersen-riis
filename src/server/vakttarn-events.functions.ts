@@ -5,7 +5,7 @@ import { createClient } from "@supabase/supabase-js";
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL!;
 const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_PUBLISHABLE_KEY!;
 
-export type VakttarnCategory = "person" | "dyr" | "bil" | "pakke" | "annet";
+export type VakttarnCategory = "person" | "dyr" | "bil" | "pakke" | "ringt_pa" | "annet";
 
 export interface VakttarnEventRow {
   id: string;
@@ -27,11 +27,17 @@ export interface VakttarnStats {
     dyr: number;
     bil: number;
     pakke: number;
+    ringt_pa: number;
     annet: number;
   }>;
   recent: VakttarnEventRow[];
   rangeStart: string;
   rangeEnd: string;
+  doorbell: {
+    todayCount: number;
+    totalCount: number;
+    lastRingAt: string | null;
+  };
 }
 
 const RANGE = z.enum(["day", "week", "month"]);
