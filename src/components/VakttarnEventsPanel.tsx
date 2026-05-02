@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { fetchVakttarnEvents, type VakttarnStats } from "@/server/vakttarn-events.functions";
-import { Users, PawPrint, Car, Bell, Eye, Calendar } from "lucide-react";
+import { Users, PawPrint, Car, Bell, Eye, Calendar, Camera } from "lucide-react";
 import {
   ResponsiveContainer,
   BarChart,
