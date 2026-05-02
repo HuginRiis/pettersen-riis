@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { ScrollText, Plus, Loader2, Trash2, ChevronDown, ChevronUp, Download } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { ScrollText, Plus, Loader2, Trash2, ChevronDown, ChevronUp, Download, Code2, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -9,6 +9,7 @@ import {
   upsertChangelog,
   deleteChangelog,
   type ChangelogEntry,
+  type ChangelogCategory,
 } from "@/server/changelog.functions";
 
 function fmtDate(iso: string) {
@@ -27,16 +28,20 @@ function toLocalInputValue(d: Date) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
+type Filter = "all" | ChangelogCategory;
+
 export function ChangelogPanel() {
   const [entries, setEntries] = useState<ChangelogEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState(false);
   const [adding, setAdding] = useState(false);
   const [showForm, setShowForm] = useState(false);
+  const [filter, setFilter] = useState<Filter>("all");
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [when, setWhen] = useState<string>(toLocalInputValue(new Date()));
+  const [category, setCategory] = useState<ChangelogCategory>("app");
 
   async function refresh() {
     try {
@@ -66,6 +71,7 @@ export function ChangelogPanel() {
           title: title.trim(),
           description: description.trim() || null,
           changed_at: when ? new Date(when).toISOString() : new Date().toISOString(),
+          category,
         },
       });
       setTitle("");
@@ -92,17 +98,24 @@ export function ChangelogPanel() {
     }
   }
 
+  const filtered = useMemo(
+    () => (filter === "all" ? entries : entries.filter((e) => e.category === filter)),
+    [entries, filter],
+  );
+
   function handleExport() {
-    if (entries.length === 0) {
+    if (filtered.length === 0) {
       toast.error("Ingen endringer å eksportere");
       return;
     }
     try {
       const payload = {
         exported_at: new Date().toISOString(),
-        count: entries.length,
-        entries: entries.map((e) => ({
+        filter,
+        count: filtered.length,
+        entries: filtered.map((e) => ({
           changed_at: e.changed_at,
+          category: e.category,
           title: e.title,
           description: e.description,
         })),
@@ -114,7 +127,7 @@ export function ChangelogPanel() {
       const a = document.createElement("a");
       const stamp = new Date().toISOString().slice(0, 10);
       a.href = url;
-      a.download = `endringslogg-${stamp}.json`;
+      a.download = `endringslogg-${filter}-${stamp}.json`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -125,13 +138,37 @@ export function ChangelogPanel() {
     }
   }
 
-  const visible = expanded ? entries.slice(0, 300) : entries.slice(0, 5);
-  const hasMore = entries.length > 5;
-  const moreCount = Math.min(300, entries.length) - 5;
+  const visible = expanded ? filtered.slice(0, 300) : filtered.slice(0, 5);
+  const hasMore = filtered.length > 5;
+  const moreCount = Math.min(300, filtered.length) - 5;
+
+  const counts = useMemo(
+    () => ({
+      all: entries.length,
+      code: entries.filter((e) => e.category === "code").length,
+      app: entries.filter((e) => e.category === "app").length,
+    }),
+    [entries],
+  );
+
+  const filterBtn = (key: Filter, label: string, Icon?: typeof Code2) => (
+    <button
+      type="button"
+      onClick={() => setFilter(key)}
+      className={`text-[10px] uppercase tracking-wider px-2 py-1 rounded border inline-flex items-center gap-1 transition-colors ${
+        filter === key
+          ? "bg-primary/15 border-primary/60 text-primary"
+          : "border-primary/20 text-muted-foreground hover:text-foreground hover:border-primary/40"
+      }`}
+    >
+      {Icon ? <Icon size={10} /> : null}
+      {label} ({counts[key]})
+    </button>
+  );
 
   return (
     <div className="panel rounded-lg p-5">
-      <div className="flex items-center justify-between gap-2 mb-4 flex-wrap">
+      <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
         <div className="flex items-center gap-2">
           <ScrollText size={16} className="text-primary" />
           <div className="text-display text-primary text-sm tracking-[0.2em] uppercase">
@@ -144,7 +181,7 @@ export function ChangelogPanel() {
             size="sm"
             variant="ghost"
             onClick={handleExport}
-            disabled={entries.length === 0}
+            disabled={filtered.length === 0}
             className="h-7 px-2 text-xs"
             title="Eksporter som JSON"
           >
@@ -162,6 +199,12 @@ export function ChangelogPanel() {
             {showForm ? "Avbryt" : "Legg til"}
           </Button>
         </div>
+      </div>
+
+      <div className="flex items-center gap-1 mb-4 flex-wrap">
+        {filterBtn("all", "Alle")}
+        {filterBtn("code", "Kode", Code2)}
+        {filterBtn("app", "App", Smartphone)}
       </div>
 
       {showForm && (
@@ -189,6 +232,35 @@ export function ChangelogPanel() {
                 className="h-8 text-xs"
               />
             </label>
+          </div>
+          <div className="flex flex-col gap-1">
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+              Type
+            </span>
+            <div className="flex gap-1">
+              <button
+                type="button"
+                onClick={() => setCategory("app")}
+                className={`text-[11px] px-3 py-1.5 rounded border inline-flex items-center gap-1 transition-colors ${
+                  category === "app"
+                    ? "bg-primary/15 border-primary/60 text-primary"
+                    : "border-primary/20 text-muted-foreground hover:border-primary/40"
+                }`}
+              >
+                <Smartphone size={11} /> App-handling
+              </button>
+              <button
+                type="button"
+                onClick={() => setCategory("code")}
+                className={`text-[11px] px-3 py-1.5 rounded border inline-flex items-center gap-1 transition-colors ${
+                  category === "code"
+                    ? "bg-primary/15 border-primary/60 text-primary"
+                    : "border-primary/20 text-muted-foreground hover:border-primary/40"
+                }`}
+              >
+                <Code2 size={11} /> Kode-endring
+              </button>
+            </div>
           </div>
           <label className="flex flex-col gap-1">
             <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
@@ -219,41 +291,56 @@ export function ChangelogPanel() {
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Loader2 size={14} className="animate-spin" /> Laster …
         </div>
-      ) : entries.length === 0 ? (
+      ) : filtered.length === 0 ? (
         <div className="text-xs text-muted-foreground">
-          Ingen endringer logget enda. Klikk «Legg til» for å starte.
+          Ingen endringer i dette filteret enda.
         </div>
       ) : (
         <>
           <ul className="space-y-2">
-            {visible.map((e) => (
-              <li
-                key={e.id}
-                className="rounded border border-primary/15 p-3 bg-background/40"
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <div className="text-[10px] tracking-wider uppercase text-muted-foreground">
-                      {fmtDate(e.changed_at)}
-                    </div>
-                    <div className="text-sm text-foreground font-medium">{e.title}</div>
-                    {e.description && (
-                      <div className="text-xs text-muted-foreground mt-1 whitespace-pre-wrap">
-                        {e.description}
+            {visible.map((e) => {
+              const isCode = e.category === "code";
+              return (
+                <li
+                  key={e.id}
+                  className="rounded border border-primary/15 p-3 bg-background/40"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <div className="text-[10px] tracking-wider uppercase text-muted-foreground">
+                          {fmtDate(e.changed_at)}
+                        </div>
+                        <span
+                          className={`text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded border inline-flex items-center gap-1 ${
+                            isCode
+                              ? "border-primary/40 text-primary bg-primary/10"
+                              : "border-emerald-500/40 text-emerald-400 bg-emerald-500/10"
+                          }`}
+                        >
+                          {isCode ? <Code2 size={9} /> : <Smartphone size={9} />}
+                          {isCode ? "Kode" : "App"}
+                        </span>
                       </div>
-                    )}
+                      <div className="text-sm text-foreground font-medium">{e.title}</div>
+                      {e.description && (
+                        <div className="text-xs text-muted-foreground mt-1 whitespace-pre-wrap">
+                          {e.description}
+                        </div>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(e.id)}
+                      className="text-destructive/70 hover:text-destructive shrink-0"
+                      aria-label="Slett"
+                    >
+                      <Trash2 size={14} />
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => handleDelete(e.id)}
-                    className="text-destructive/70 hover:text-destructive shrink-0"
-                    aria-label="Slett"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-              </li>
-            ))}
+                </li>
+              );
+            })}
           </ul>
           {hasMore && (
             <div className="flex justify-center mt-3">
