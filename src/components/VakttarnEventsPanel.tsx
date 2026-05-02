@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { fetchVakttarnEvents, type VakttarnStats } from "@/server/vakttarn-events.functions";
-import { Users, PawPrint, Car, Package, Eye, Calendar } from "lucide-react";
+import { Users, PawPrint, Car, Bell, Eye, Calendar } from "lucide-react";
 import {
   ResponsiveContainer,
   BarChart,
@@ -27,7 +27,7 @@ const CATS = [
   { key: "person", label: "Sjeler", icon: Users, color: "#d4af37", desc: "Mennesker observert ved porten" },
   { key: "dyr", label: "Dyr", icon: PawPrint, color: "#7fb069", desc: "Ulver, hunder og andre skapninger" },
   { key: "bil", label: "Vogner", icon: Car, color: "#6a8caf", desc: "Hester av jern som ankommer" },
-  { key: "pakke", label: "Sendinger", icon: Package, color: "#c97b4a", desc: "Bud fra fjerne riker" },
+  { key: "ringt_pa", label: "Ringt på", icon: Bell, color: "#c97b4a", desc: "Trykk på ringeklokken" },
 ] as const;
 
 export function VakttarnEventsPanel() {
@@ -165,6 +165,28 @@ export function VakttarnEventsPanel() {
           );
         })}
       </div>
+
+      {/* Doorbell stats */}
+      {stats?.doorbell && (
+        <div className="rounded-lg border border-border/40 bg-gradient-to-r from-[#c97b4a]/10 via-background/40 to-background/40 p-3 flex items-center gap-3">
+          <Bell size={22} className="text-[#c97b4a] shrink-0" style={{ filter: "drop-shadow(0 0 6px #c97b4a99)" }} />
+          <div className="flex-1 min-w-0">
+            <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Ringeklokken</div>
+            <div className="text-xs text-foreground/90">
+              <span className="font-serif text-lg text-[#c97b4a] tabular-nums">{stats.doorbell.todayCount}</span>
+              <span className="text-muted-foreground"> i dag</span>
+              <span className="text-muted-foreground/60"> · </span>
+              <span className="font-serif text-lg text-[#c97b4a]/80 tabular-nums">{stats.doorbell.totalCount}</span>
+              <span className="text-muted-foreground"> totalt</span>
+            </div>
+            {stats.doorbell.lastRingAt && (
+              <div className="text-[10px] text-muted-foreground/80 italic mt-0.5">
+                Sist: {new Date(stats.doorbell.lastRingAt).toLocaleString("no-NO", { dateStyle: "short", timeStyle: "short" })}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Chart */}
       <div className="rounded-lg border border-border/40 bg-background/40 p-3">
