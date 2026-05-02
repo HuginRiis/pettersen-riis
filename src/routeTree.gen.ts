@@ -34,6 +34,7 @@ import { Route as ApiHomeyStartRouteImport } from './routes/api.homey.start'
 import { Route as ApiHomeyCallbackRouteImport } from './routes/api.homey.callback'
 import { Route as ApiPublicHooksSnapshotTibberDailyRouteImport } from './routes/api.public.hooks.snapshot-tibber-daily'
 import { Route as ApiPublicHooksSnapshotPulseRouteImport } from './routes/api.public.hooks.snapshot-pulse'
+import { Route as ApiPublicHooksEufyRouteImport } from './routes/api/public/hooks/eufy'
 import { Route as ApiPublicHooksAgendaPushRouteImport } from './routes/api.public.hooks.agenda-push'
 
 const VarslerRoute = VarslerRouteImport.update({
@@ -163,6 +164,11 @@ const ApiPublicHooksSnapshotPulseRoute =
     path: '/api/public/hooks/snapshot-pulse',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksEufyRoute = ApiPublicHooksEufyRouteImport.update({
+  id: '/api/public/hooks/eufy',
+  path: '/api/public/hooks/eufy',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicHooksAgendaPushRoute =
   ApiPublicHooksAgendaPushRouteImport.update({
     id: '/api/public/hooks/agenda-push',
@@ -195,6 +201,7 @@ export interface FileRoutesByFullPath {
   '/api/strava/callback': typeof ApiStravaCallbackRoute
   '/api/strava/start': typeof ApiStravaStartRoute
   '/api/public/hooks/agenda-push': typeof ApiPublicHooksAgendaPushRoute
+  '/api/public/hooks/eufy': typeof ApiPublicHooksEufyRoute
   '/api/public/hooks/snapshot-pulse': typeof ApiPublicHooksSnapshotPulseRoute
   '/api/public/hooks/snapshot-tibber-daily': typeof ApiPublicHooksSnapshotTibberDailyRoute
 }
@@ -223,6 +230,7 @@ export interface FileRoutesByTo {
   '/api/strava/callback': typeof ApiStravaCallbackRoute
   '/api/strava/start': typeof ApiStravaStartRoute
   '/api/public/hooks/agenda-push': typeof ApiPublicHooksAgendaPushRoute
+  '/api/public/hooks/eufy': typeof ApiPublicHooksEufyRoute
   '/api/public/hooks/snapshot-pulse': typeof ApiPublicHooksSnapshotPulseRoute
   '/api/public/hooks/snapshot-tibber-daily': typeof ApiPublicHooksSnapshotTibberDailyRoute
 }
@@ -252,6 +260,7 @@ export interface FileRoutesById {
   '/api/strava/callback': typeof ApiStravaCallbackRoute
   '/api/strava/start': typeof ApiStravaStartRoute
   '/api/public/hooks/agenda-push': typeof ApiPublicHooksAgendaPushRoute
+  '/api/public/hooks/eufy': typeof ApiPublicHooksEufyRoute
   '/api/public/hooks/snapshot-pulse': typeof ApiPublicHooksSnapshotPulseRoute
   '/api/public/hooks/snapshot-tibber-daily': typeof ApiPublicHooksSnapshotTibberDailyRoute
 }
@@ -282,6 +291,7 @@ export interface FileRouteTypes {
     | '/api/strava/callback'
     | '/api/strava/start'
     | '/api/public/hooks/agenda-push'
+    | '/api/public/hooks/eufy'
     | '/api/public/hooks/snapshot-pulse'
     | '/api/public/hooks/snapshot-tibber-daily'
   fileRoutesByTo: FileRoutesByTo
@@ -310,6 +320,7 @@ export interface FileRouteTypes {
     | '/api/strava/callback'
     | '/api/strava/start'
     | '/api/public/hooks/agenda-push'
+    | '/api/public/hooks/eufy'
     | '/api/public/hooks/snapshot-pulse'
     | '/api/public/hooks/snapshot-tibber-daily'
   id:
@@ -338,6 +349,7 @@ export interface FileRouteTypes {
     | '/api/strava/callback'
     | '/api/strava/start'
     | '/api/public/hooks/agenda-push'
+    | '/api/public/hooks/eufy'
     | '/api/public/hooks/snapshot-pulse'
     | '/api/public/hooks/snapshot-tibber-daily'
   fileRoutesById: FileRoutesById
@@ -367,6 +379,7 @@ export interface RootRouteChildren {
   ApiStravaCallbackRoute: typeof ApiStravaCallbackRoute
   ApiStravaStartRoute: typeof ApiStravaStartRoute
   ApiPublicHooksAgendaPushRoute: typeof ApiPublicHooksAgendaPushRoute
+  ApiPublicHooksEufyRoute: typeof ApiPublicHooksEufyRoute
   ApiPublicHooksSnapshotPulseRoute: typeof ApiPublicHooksSnapshotPulseRoute
   ApiPublicHooksSnapshotTibberDailyRoute: typeof ApiPublicHooksSnapshotTibberDailyRoute
 }
@@ -548,6 +561,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksSnapshotPulseRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/eufy': {
+      id: '/api/public/hooks/eufy'
+      path: '/api/public/hooks/eufy'
+      fullPath: '/api/public/hooks/eufy'
+      preLoaderRoute: typeof ApiPublicHooksEufyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/agenda-push': {
       id: '/api/public/hooks/agenda-push'
       path: '/api/public/hooks/agenda-push'
@@ -583,6 +603,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiStravaCallbackRoute: ApiStravaCallbackRoute,
   ApiStravaStartRoute: ApiStravaStartRoute,
   ApiPublicHooksAgendaPushRoute: ApiPublicHooksAgendaPushRoute,
+  ApiPublicHooksEufyRoute: ApiPublicHooksEufyRoute,
   ApiPublicHooksSnapshotPulseRoute: ApiPublicHooksSnapshotPulseRoute,
   ApiPublicHooksSnapshotTibberDailyRoute:
     ApiPublicHooksSnapshotTibberDailyRoute,
