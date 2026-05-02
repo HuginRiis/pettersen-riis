@@ -68,37 +68,46 @@ async function handlePoll(): Promise<Response> {
       const camera = String((d as any).name ?? "Ukjent");
       const capObj = (d as any).capabilitiesObj ?? (d as any).capabilities_obj ?? {};
       for (const cap of Object.keys(MOTION_TO_CATEGORY)) {
-        const val = capObj?.[cap]?.value;
-        if (val === undefined) continue;
-        current.push({ camera, capability: cap, value: Boolean(val) });
+        const entry = capObj?.[cap];
+        if (!entry || entry.value === undefined) continue;
+        const lu = entry.lastUpdated ?? entry.last_updated ?? null;
+        const luMs = lu ? new Date(lu).getTime() : null;
+        current.push({
+          camera,
+          capability: cap,
+          value: Boolean(entry.value),
+          lastUpdated: luMs,
+        });
       }
     }
 
-    // 2) Get last-known state from a small kv table (we'll use changelog_entries? no — use a dedicated approach via vakttarn_events latest)
-    // Strategy: for each camera+capability, look up the latest event in the last 10 min and check if value just transitioned to true.
-    // Simpler: only insert when value === true AND there is no event with same camera+category in the last 90s (debounce).
-    const inserted: Array<{ camera: string; category: string }> = [];
-    const seenThisRun = new Set<string>(); // camera|category
+    const now = Date.now();
+    const inserted: Array<{ camera: string; category: string; lastUpdated: string | null }> = [];
+    const seenThisRun = new Set<string>();
 
-    // Group: pick highest-priority active category per camera
-    const perCamera = new Map<string, string>();
+    // Group: pick highest-priority FRESHLY-TRIGGERED category per camera.
+    // A capability counts as a real event only if value === true AND its
+    // lastUpdated timestamp is within FRESH_WINDOW_MS (otherwise it's just a
+    // stale "last detected face" flag that stays true forever).
+    const perCamera = new Map<string, { category: string; lastUpdated: number }>();
     for (const c of current) {
       if (!c.value) continue;
+      if (!c.lastUpdated || now - c.lastUpdated > FRESH_WINDOW_MS) continue;
       const cat = MOTION_TO_CATEGORY[c.capability];
       if (!cat) continue;
       const prev = perCamera.get(c.camera);
-      if (!prev || (CATEGORY_PRIORITY[cat] ?? 0) > (CATEGORY_PRIORITY[prev] ?? 0)) {
-        perCamera.set(c.camera, cat);
+      if (!prev || (CATEGORY_PRIORITY[cat] ?? 0) > (CATEGORY_PRIORITY[prev.category] ?? 0)) {
+        perCamera.set(c.camera, { category: cat, lastUpdated: c.lastUpdated });
       }
     }
 
-    for (const [camera, category] of perCamera.entries()) {
+    for (const [camera, { category, lastUpdated }] of perCamera.entries()) {
       const key = `${camera}|${category}`;
       if (seenThisRun.has(key)) continue;
       seenThisRun.add(key);
 
-      // Debounce: skip if same camera+category logged within last 90s
-      const since = new Date(Date.now() - 90_000).toISOString();
+      // Debounce: skip if same camera+category logged within last 4 min
+      const since = new Date(Date.now() - 4 * 60_000).toISOString();
       const { data: recent } = await sb
         .from("vakttarn_events")
         .select("id")
@@ -108,13 +117,15 @@ async function handlePoll(): Promise<Response> {
         .limit(1);
       if (recent && recent.length > 0) continue;
 
+      const detectedAt = new Date(lastUpdated).toISOString();
       const { error } = await sb.from("vakttarn_events").insert({
         category,
         camera,
         source: "eufy-poll",
-        metadata: { via: "homey-polling" },
+        detected_at: detectedAt,
+        metadata: { via: "homey-polling", lastUpdated: detectedAt },
       });
-      if (!error) inserted.push({ camera, category });
+      if (!error) inserted.push({ camera, category, lastUpdated: detectedAt });
     }
 
     return Response.json({
