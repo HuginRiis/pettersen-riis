@@ -18,6 +18,7 @@ import { ApiCallLogPanel } from "@/components/ApiCallLogPanel";
 import { MaesterAiBudget } from "@/components/MaesterAiBudget";
 import { PushSendCountsPanel } from "@/components/PushSendCountsPanel";
 import { ChangelogPanel } from "@/components/ChangelogPanel";
+import { VakttarnEventsPanel } from "@/components/VakttarnEventsPanel";
 
 export const Route = createFileRoute("/vakttarnet")({
   head: () => ({
@@ -176,6 +177,14 @@ function VakttarnetPage() {
           subtitle="Hvem og hva troner øverst"
         >
           <TopLists sessions={sessions} pageviews={pageviews} />
+        </Panel>
+
+        <Panel
+          title="Hvem nærmer seg porten"
+          icon={<Eye size={14} />}
+          subtitle="Vaktene rapporterer alle som beveger seg utenfor murene — hentet fra kameraloggen"
+        >
+          <VakttarnEventsPanel />
         </Panel>
 
         <Panel
