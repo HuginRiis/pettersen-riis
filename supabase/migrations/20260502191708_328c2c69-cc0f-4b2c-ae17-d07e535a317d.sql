@@ -1,0 +1,1 @@
+DELETE FROM public.vakttarn_events WHERE source = 'eufy-poll' AND detected_at >= '2026-05-02';
