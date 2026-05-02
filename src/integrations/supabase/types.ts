@@ -184,6 +184,7 @@ export type Database = {
       }
       changelog_entries: {
         Row: {
+          category: string
           changed_at: string
           created_at: string
           description: string | null
@@ -191,6 +192,7 @@ export type Database = {
           title: string
         }
         Insert: {
+          category?: string
           changed_at?: string
           created_at?: string
           description?: string | null
@@ -198,6 +200,7 @@ export type Database = {
           title: string
         }
         Update: {
+          category?: string
           changed_at?: string
           created_at?: string
           description?: string | null
