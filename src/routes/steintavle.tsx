@@ -282,6 +282,39 @@ function SteintavlePage() {
   const uteMM = useDailyMinMax("st.mm.ute", tempUte);
   const noiseMM = useDailyMinMax("st.mm.noise", noiseDb);
 
+  // Auto-recovery: hvis temperatur mangler (—) men vi har min/maks lagret fra
+  // tidligere i dag, betyr det at Netatmo-pollen returnerte tom modul. Prøv å
+  // hente på nytt med kort backoff i stedet for å vente i 5 minutter.
+  const tempMissing =
+    (tempInne === null && innerMM !== null) ||
+    (tempUte === null && uteMM !== null) ||
+    (tempSov === null && sovMM !== null);
+  useEffect(() => {
+    if (!tempMissing) return;
+    let cancelled = false;
+    let attempt = 0;
+    const tryRefetch = async () => {
+      if (cancelled || attempt >= 3) return;
+      attempt++;
+      try {
+        const res = await fetchNetatmo({ data: { stationMatch: "tollnes" } });
+        if (!cancelled) setLiveNetatmo(res);
+      } catch {
+        /* ignore */
+      }
+    };
+    // Forsøk: 5s, 20s, 60s
+    const t1 = setTimeout(tryRefetch, 5_000);
+    const t2 = setTimeout(tryRefetch, 20_000);
+    const t3 = setTimeout(tryRefetch, 60_000);
+    return () => {
+      cancelled = true;
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+    };
+  }, [tempMissing, fetchNetatmo]);
+
   // ---- Varsler ----
   const thunderAlerts =
     alerts?.ok === true ? alerts.alerts.filter((a) => a.isThunder) : [];
