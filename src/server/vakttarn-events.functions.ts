@@ -170,6 +170,21 @@ export const fetchVakttarnEvents = createServerFn({ method: "GET" })
       }
     }
 
+    // Per-camera aggregation within selected range
+    const byCameraMap = new Map<string, VakttarnStats["byCamera"][number]>();
+    for (const ev of events) {
+      const cam = ev.camera ?? "Ukjent";
+      let row = byCameraMap.get(cam);
+      if (!row) {
+        row = { camera: cam, person: 0, dyr: 0, bil: 0, pakke: 0, ringt_pa: 0, annet: 0, total: 0, lastAt: null };
+        byCameraMap.set(cam, row);
+      }
+      row[ev.category]++;
+      row.total++;
+      if (!row.lastAt || ev.detected_at > row.lastAt) row.lastAt = ev.detected_at;
+    }
+    const byCamera = Array.from(byCameraMap.values()).sort((a, b) => b.total - a.total);
+
     // Doorbell counters: query independently of selected range
     const todayStart = new Date();
     todayStart.setUTCHours(0, 0, 0, 0);
@@ -197,6 +212,7 @@ export const fetchVakttarnEvents = createServerFn({ method: "GET" })
       recent: events.slice(0, 50),
       rangeStart: start.toISOString(),
       rangeEnd: end.toISOString(),
+      byCamera,
       doorbell: {
         todayCount: todayCount ?? 0,
         totalCount: totalCount ?? 0,
