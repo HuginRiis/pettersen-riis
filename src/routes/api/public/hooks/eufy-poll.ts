@@ -6,6 +6,7 @@ const SUPABASE_URL = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL!;
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
 const MOTION_TO_CATEGORY: Record<string, string> = {
+  NTFY_PRESS_DOORBELL: "ringt_pa",
   NTFY_FACE_DETECTION: "person",
   NTFY_KNOWN_FACE_DETECTION: "person",
   NTFY_PET_DETECTED: "dyr",
@@ -22,6 +23,7 @@ const MOTION_TO_CATEGORY: Record<string, string> = {
 
 // Priority — if multiple subtypes fire at once, prefer the most specific
 const CATEGORY_PRIORITY: Record<string, number> = {
+  ringt_pa: 5,
   person: 4,
   dyr: 3,
   bil: 2,
