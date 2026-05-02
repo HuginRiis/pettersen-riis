@@ -185,6 +185,9 @@ function VakttarnetPage() {
           subtitle="Vaktene rapporterer alle som beveger seg utenfor murene — hentet fra kameraloggen"
         >
           <VakttarnEventsPanel />
+          <div className="mt-4">
+            <EufyInspector />
+          </div>
         </Panel>
 
         <Panel
