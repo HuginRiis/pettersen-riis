@@ -307,13 +307,36 @@ async function getResolvedHomeyTarget(conn: HomeyConnection): Promise<HomeyTarge
   if (cached) return cached.value;
   if (homeyTargetInflight?.key === key) return await homeyTargetInflight.promise;
 
+  // DB-cachet target — overlever cold starts og deles på tvers av Worker-instanser
+  if (conn.homey_id && conn.homey_base_url) {
+    const target: HomeyTarget = {
+      id: conn.homey_id,
+      name: conn.homey_name ?? null,
+      baseUrl: normalizeBaseUrl(conn.homey_base_url),
+    };
+    homeyTargetCache = { key, value: target, expiresAt: Date.now() + HOMEY_TARGET_TTL_MS };
+    return target;
+  }
+
   const promise = resolveHomeyTargetRaw(conn.access_token)
-    .then((target) => {
+    .then(async (target) => {
       homeyTargetCache = {
         key,
         value: target,
         expiresAt: Date.now() + HOMEY_TARGET_TTL_MS,
       };
+      if (target) {
+        try {
+          const { saveHomeyTargetCache } = await import("./homey-connection");
+          await saveHomeyTargetCache(conn.id, {
+            homey_id: target.id,
+            homey_name: target.name,
+            homey_base_url: target.baseUrl,
+          });
+        } catch (e) {
+          console.warn("[homey] kunne ikke lagre target-cache:", e);
+        }
+      }
       return target;
     })
     .catch((error) => {

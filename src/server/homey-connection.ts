@@ -8,7 +8,27 @@ export type HomeyConnection = {
   scope: string | null;
   athom_user_id: string | null;
   athom_user_name: string | null;
+  homey_id?: string | null;
+  homey_name?: string | null;
+  homey_base_url?: string | null;
+  homey_target_cached_at?: string | null;
 };
+
+export async function saveHomeyTargetCache(
+  id: string,
+  target: { homey_id: string; homey_name: string | null; homey_base_url: string },
+) {
+  const { error } = await supabaseAdmin
+    .from("homey_connections")
+    .update({
+      homey_id: target.homey_id,
+      homey_name: target.homey_name,
+      homey_base_url: target.homey_base_url,
+      homey_target_cached_at: new Date().toISOString(),
+    })
+    .eq("id", id);
+  if (error) throw new Error(error.message);
+}
 
 export async function getHomeyConnection(): Promise<HomeyConnection | null> {
   const { data, error } = await supabaseAdmin

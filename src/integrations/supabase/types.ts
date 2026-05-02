@@ -393,6 +393,10 @@ export type Database = {
           athom_user_name: string | null
           created_at: string
           expires_at: string
+          homey_base_url: string | null
+          homey_id: string | null
+          homey_name: string | null
+          homey_target_cached_at: string | null
           id: string
           provider: string
           refresh_token: string
@@ -405,6 +409,10 @@ export type Database = {
           athom_user_name?: string | null
           created_at?: string
           expires_at: string
+          homey_base_url?: string | null
+          homey_id?: string | null
+          homey_name?: string | null
+          homey_target_cached_at?: string | null
           id?: string
           provider?: string
           refresh_token: string
@@ -417,6 +425,10 @@ export type Database = {
           athom_user_name?: string | null
           created_at?: string
           expires_at?: string
+          homey_base_url?: string | null
+          homey_id?: string | null
+          homey_name?: string | null
+          homey_target_cached_at?: string | null
           id?: string
           provider?: string
           refresh_token?: string
