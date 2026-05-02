@@ -125,8 +125,9 @@ export function ChangelogPanel() {
     }
   }
 
-  const visible = expanded ? entries.slice(0, 20) : entries.slice(0, 5);
+  const visible = expanded ? entries.slice(0, 300) : entries.slice(0, 5);
   const hasMore = entries.length > 5;
+  const moreCount = Math.min(300, entries.length) - 5;
 
   return (
     <div className="panel rounded-lg p-5">
@@ -267,7 +268,7 @@ export function ChangelogPanel() {
                   </>
                 ) : (
                   <>
-                    <ChevronDown size={12} /> Vis flere ({Math.min(15, entries.length - 5)} til)
+                    <ChevronDown size={12} /> Vis flere ({moreCount} til)
                   </>
                 )}
               </button>
