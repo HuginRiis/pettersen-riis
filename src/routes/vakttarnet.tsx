@@ -149,6 +149,8 @@ function VakttarnetPage() {
             title="Live-feed"
             icon={<Eye size={14} />}
             subtitle="Siste øyne i tårnet"
+            collapsible
+            defaultOpen={false}
           >
             <LiveFeed sessions={sessions} loading={loading} />
           </Panel>
