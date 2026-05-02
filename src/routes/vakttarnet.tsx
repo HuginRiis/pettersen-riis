@@ -161,6 +161,8 @@ function VakttarnetPage() {
             title="Banker på porten"
             icon={<ShieldAlert size={14} />}
             subtitle="Login-forsøk fra fremmede og venner"
+            collapsible
+            defaultOpen={false}
           >
             <LoginAttempts attempts={attempts} />
           </Panel>
