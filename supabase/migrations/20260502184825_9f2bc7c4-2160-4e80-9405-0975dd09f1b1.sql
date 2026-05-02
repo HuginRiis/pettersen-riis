@@ -1,0 +1,1 @@
+select cron.unschedule('eufy-poll-every-2min');
