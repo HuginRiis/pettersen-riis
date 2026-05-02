@@ -1,9 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { createClient } from "@supabase/supabase-js";
-
-const SUPABASE_URL = process.env.VITE_SUPABASE_URL!;
-const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_PUBLISHABLE_KEY!;
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 export type VakttarnCategory = "person" | "dyr" | "bil" | "pakke" | "ringt_pa" | "annet";
 
@@ -62,8 +59,6 @@ export const fetchVakttarnEvents = createServerFn({ method: "GET" })
     }).parse
   )
   .handler(async ({ data }): Promise<VakttarnStats> => {
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
     const anchor = data.date ? new Date(data.date + "T12:00:00Z") : new Date();
     const start = new Date(anchor);
     const end = new Date(anchor);
@@ -88,7 +83,7 @@ export const fetchVakttarnEvents = createServerFn({ method: "GET" })
       end.setUTCHours(23, 59, 59, 999);
     }
 
-    const { data: rows, error } = await supabase
+    const { data: rows, error } = await supabaseAdmin
       .from("vakttarn_events")
       .select("*")
       .gte("detected_at", start.toISOString())
@@ -189,16 +184,16 @@ export const fetchVakttarnEvents = createServerFn({ method: "GET" })
     const todayStart = new Date();
     todayStart.setUTCHours(0, 0, 0, 0);
     const [{ count: todayCount }, { count: totalCount }, { data: lastRing }] = await Promise.all([
-      supabase
+      supabaseAdmin
         .from("vakttarn_events")
         .select("id", { count: "exact", head: true })
         .eq("category", "ringt_pa")
         .gte("detected_at", todayStart.toISOString()),
-      supabase
+      supabaseAdmin
         .from("vakttarn_events")
         .select("id", { count: "exact", head: true })
         .eq("category", "ringt_pa"),
-      supabase
+      supabaseAdmin
         .from("vakttarn_events")
         .select("detected_at")
         .eq("category", "ringt_pa")
