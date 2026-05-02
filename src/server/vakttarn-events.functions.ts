@@ -15,7 +15,7 @@ export interface VakttarnEventRow {
   detected_at: string;
   confidence: number | null;
   snapshot_url: string | null;
-  metadata: Record<string, unknown> | null;
+  metadata: string | null;
 }
 
 export interface VakttarnStats {
