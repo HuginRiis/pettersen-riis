@@ -1,6 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { getValidConnection } from "./homey-connection";
-import { getHomeyRawSnapshot } from "./homey";
+import { getValidConnection, getHomeyRawSnapshot } from "./homey";
 
 export type EufyCameraInfo = {
   id: string;
@@ -9,20 +8,28 @@ export type EufyCameraInfo = {
   driverUri: string;
   driverId: string;
   capabilities: string[];
-  capabilityValues: Record<string, unknown>;
+  capabilityValues: Record<string, string | number | boolean | null>;
 };
+
+export type InspectResult = {
+  ok: boolean;
+  error?: string;
+  cameras: EufyCameraInfo[];
+  candidates: EufyCameraInfo[];
+};
+
+function toScalar(v: unknown): string | number | boolean | null {
+  if (v === null || v === undefined) return null;
+  if (typeof v === "string" || typeof v === "number" || typeof v === "boolean") return v;
+  try { return JSON.stringify(v); } catch { return String(v); }
+}
 
 /**
  * One-shot inspector: list all Eufy cameras (or anything that looks like a camera)
  * with their capabilities, so we can decide whether polling is feasible.
  */
 export const inspectEufyCameras = createServerFn({ method: "GET" }).handler(
-  async (): Promise<{
-    ok: boolean;
-    error?: string;
-    cameras: EufyCameraInfo[];
-    candidates: EufyCameraInfo[];
-  }> => {
+  async (): Promise<InspectResult> => {
     const conn = await getValidConnection();
     if (!conn) return { ok: false, error: "No Homey connection", cameras: [], candidates: [] };
 
@@ -30,19 +37,22 @@ export const inspectEufyCameras = createServerFn({ method: "GET" }).handler(
     if (!snap) return { ok: false, error: "Snapshot failed", cameras: [], candidates: [] };
 
     const zonesById: Record<string, string> = {};
-    for (const z of snap.zones ?? []) zonesById[z.id] = z.name ?? "";
+    for (const z of snap.zonesRaw ?? []) {
+      const id = String((z as any)?.id ?? "");
+      zonesById[id] = String((z as any)?.name ?? "");
+    }
 
-    const all: EufyCameraInfo[] = (snap.devices ?? []).map((d: any) => {
+    const all: EufyCameraInfo[] = (snap.devicesRaw ?? []).map((d: any) => {
       const caps: string[] = Array.isArray(d.capabilities)
-        ? d.capabilities
+        ? d.capabilities.map((c: any) => String(c))
         : d.capabilities && typeof d.capabilities === "object"
         ? Object.keys(d.capabilities)
         : [];
       const capObj = d.capabilitiesObj ?? d.capabilities_obj ?? {};
-      const values: Record<string, unknown> = {};
+      const values: Record<string, string | number | boolean | null> = {};
       for (const c of caps) {
-        const v = capObj?.[c]?.value;
-        if (v !== undefined) values[c] = v;
+        const raw = capObj?.[c]?.value;
+        if (raw !== undefined) values[c] = toScalar(raw);
       }
       return {
         id: String(d.id ?? ""),
@@ -60,7 +70,9 @@ export const inspectEufyCameras = createServerFn({ method: "GET" }).handler(
       return blob.includes("eufy") || blob.includes("anker");
     };
     const looksLikeCamera = (d: EufyCameraInfo) =>
-      d.capabilities.some((c) => c.startsWith("alarm_motion") || c === "camera_refresh" || c === "button.snapshot");
+      d.capabilities.some(
+        (c) => c.startsWith("alarm_motion") || c === "camera_refresh" || c === "button.snapshot"
+      );
 
     const cameras = all.filter(isEufy);
     const candidates = cameras.length > 0 ? cameras : all.filter(looksLikeCamera);
