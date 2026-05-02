@@ -90,7 +90,16 @@ export const fetchVakttarnEvents = createServerFn({ method: "GET" })
       };
     }
 
-    const events = (rows ?? []) as VakttarnEventRow[];
+    const events: VakttarnEventRow[] = (rows ?? []).map((r: any) => ({
+      id: r.id,
+      category: r.category,
+      camera: r.camera,
+      source: r.source,
+      detected_at: r.detected_at,
+      confidence: r.confidence,
+      snapshot_url: r.snapshot_url,
+      metadata: r.metadata == null ? null : JSON.stringify(r.metadata),
+    }));
 
     const totals: Record<VakttarnCategory, number> = {
       person: 0, dyr: 0, bil: 0, pakke: 0, annet: 0,
