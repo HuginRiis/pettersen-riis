@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { fetchVakttarnEvents, type VakttarnStats } from "@/server/vakttarn-events.functions";
-import { Users, PawPrint, Car, Bell, Eye, Calendar } from "lucide-react";
+import { Users, PawPrint, Car, Bell, Eye, Calendar, Camera } from "lucide-react";
 import {
   ResponsiveContainer,
   BarChart,
@@ -185,6 +185,42 @@ export function VakttarnEventsPanel() {
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {/* Per camera */}
+      {stats && stats.byCamera.length > 0 && (
+        <div className="rounded-lg border border-border/40 bg-background/40 p-3">
+          <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.2em] text-muted-foreground mb-2">
+            <Camera size={12} />
+            <span>Per kamera</span>
+          </div>
+          <ul className="space-y-1.5">
+            {stats.byCamera.map((row) => {
+              const max = stats.byCamera[0]?.total || 1;
+              const pct = Math.max(4, Math.round((row.total / max) * 100));
+              return (
+                <li key={row.camera} className="flex items-center gap-2 text-xs">
+                  <span className="w-32 sm:w-40 truncate text-foreground/90">{row.camera}</span>
+                  <div className="flex-1 h-2 bg-background/60 rounded-full overflow-hidden border border-border/30">
+                    <div
+                      className="h-full bg-gradient-to-r from-[#d4af37]/80 to-[#d4af37]"
+                      style={{ width: `${pct}%`, boxShadow: "0 0 8px #d4af3766" }}
+                    />
+                  </div>
+                  <span className="font-serif text-base text-[#d4af37] tabular-nums w-8 text-right">
+                    {row.total}
+                  </span>
+                  <span className="hidden sm:inline text-[10px] text-muted-foreground w-24 text-right tabular-nums">
+                    {row.person > 0 && <>👤{row.person} </>}
+                    {row.bil > 0 && <>🚗{row.bil} </>}
+                    {row.dyr > 0 && <>🐾{row.dyr} </>}
+                    {row.ringt_pa > 0 && <>🔔{row.ringt_pa}</>}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
         </div>
       )}
 
