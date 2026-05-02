@@ -104,6 +104,7 @@ export const fetchVakttarnEvents = createServerFn({ method: "GET" })
         recent: [],
         rangeStart: start.toISOString(),
         rangeEnd: end.toISOString(),
+        byCamera: [],
         doorbell: { todayCount: 0, totalCount: 0, lastRingAt: null },
       };
     }
