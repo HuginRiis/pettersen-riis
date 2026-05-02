@@ -149,6 +149,8 @@ function VakttarnetPage() {
             title="Live-feed"
             icon={<Eye size={14} />}
             subtitle="Siste øyne i tårnet"
+            collapsible
+            defaultOpen={false}
           >
             <LiveFeed sessions={sessions} loading={loading} />
           </Panel>
@@ -159,6 +161,8 @@ function VakttarnetPage() {
             title="Banker på porten"
             icon={<ShieldAlert size={14} />}
             subtitle="Login-forsøk fra fremmede og venner"
+            collapsible
+            defaultOpen={false}
           >
             <LoginAttempts attempts={attempts} />
           </Panel>
@@ -833,13 +837,22 @@ function TopLists({
   }, [sessions, pageviews]);
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-      <RankList title="Enheter" entries={lists.byDevice.slice(0, 5)} />
-      <RankList title="Nettlesere" entries={lists.byBrowser.slice(0, 5)} />
-      <RankList title="Operativsystem" entries={lists.byOs.slice(0, 5)} />
-      <RankList title="Byer" entries={lists.byCity.slice(0, 5)} />
-      <RankList title="Mest besøkte sider" entries={lists.byPath.slice(0, 5)} />
+    <div className="space-y-4 text-xs">
       <HourChart hours={lists.byHour} />
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <RankList title="Mest besøkte sider" entries={lists.byPath.slice(0, 5)} />
+      </div>
+      <details className="rounded border border-border/40 bg-background/30">
+        <summary className="cursor-pointer px-3 py-2 text-[10px] uppercase tracking-[0.25em] text-primary hover:text-foreground">
+          Flere topplister (enheter, nettlesere, OS, byer)
+        </summary>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-3 pt-1">
+          <RankList title="Enheter" entries={lists.byDevice.slice(0, 5)} />
+          <RankList title="Nettlesere" entries={lists.byBrowser.slice(0, 5)} />
+          <RankList title="Operativsystem" entries={lists.byOs.slice(0, 5)} />
+          <RankList title="Byer" entries={lists.byCity.slice(0, 5)} />
+        </div>
+      </details>
     </div>
   );
 }
@@ -1186,10 +1199,10 @@ function AllVisitors({ sessions }: { sessions: VisitorSessionRow[] }) {
     );
   }
 
-  // Pålogget er alltid synlig på toppen. Resten begrenses til 10 før utvidelse.
+  // Pålogget er alltid synlig på toppen. Resten begrenses til 5 før utvidelse.
   const onlineGroups = groups.filter((g) => g.online);
   const offlineGroups = groups.filter((g) => !g.online);
-  const offlineLimit = 10;
+  const offlineLimit = 5;
   const visibleOffline = expanded ? offlineGroups : offlineGroups.slice(0, offlineLimit);
   const hiddenCount = offlineGroups.length - visibleOffline.length;
   const visible = [...onlineGroups, ...visibleOffline];
