@@ -151,12 +151,11 @@ function SteintavlePage() {
     }
   }, [lightsFromSnapshot, lightsOverride]);
 
-  // Husk at denne enheten sist var på Steintavlen — brukes av "/" for å
-  // åpne Steintavlen igjen automatisk (kiosk-modus på iPad).
+  // Tidligere kiosk-modus: husk siste rute. Deaktivert — vi vil alltid starte på Hjem.
   useEffect(() => {
     if (typeof window === "undefined") return;
     try {
-      window.localStorage.setItem("pr.kiosk.lastRoute", "/steintavle");
+      window.localStorage.removeItem("pr.kiosk.lastRoute");
     } catch {}
   }, []);
 
