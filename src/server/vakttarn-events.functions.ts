@@ -33,6 +33,17 @@ export interface VakttarnStats {
   recent: VakttarnEventRow[];
   rangeStart: string;
   rangeEnd: string;
+  byCamera: Array<{
+    camera: string;
+    person: number;
+    dyr: number;
+    bil: number;
+    pakke: number;
+    ringt_pa: number;
+    annet: number;
+    total: number;
+    lastAt: string | null;
+  }>;
   doorbell: {
     todayCount: number;
     totalCount: number;
