@@ -12,7 +12,7 @@ type Item = {
   detail?: string;
 };
 
-const HORIZON_DAYS = 14;
+const HORIZON_DAYS = 31;
 
 function osloLocalToUtc(dateStr: string, timeStr: string): Date {
   const [y, m, d] = dateStr.split("-").map(Number);
