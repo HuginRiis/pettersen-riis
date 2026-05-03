@@ -282,10 +282,19 @@ export function BirthdaysPanel() {
           {!loading && sorted.length === 0 && (
             <p className="text-muted-foreground italic">Ingen bursdager registrert ennå.</p>
           )}
-          <div
-            className="space-y-3 overflow-y-auto pr-1"
-            style={{ maxHeight: "calc(2 * 9.5rem)" }}
-          >
+          <div className="relative">
+            <div
+              className="space-y-3 overflow-y-auto pr-2 birthdays-scroll"
+              style={{
+                maxHeight: "23rem",
+                scrollbarWidth: "thin",
+                maskImage: "linear-gradient(to bottom, black calc(100% - 3rem), transparent 100%)",
+                WebkitMaskImage: "linear-gradient(to bottom, black calc(100% - 3rem), transparent 100%)",
+              }}
+            >
+            <p className="text-[11px] uppercase tracking-wider text-muted-foreground flex items-center gap-1 pb-1">
+              ↓ Scroll for å se flere bursdager
+            </p>
           {sorted.map((b) => {
             const dleft = daysUntilBirthday(b.birth_date);
             const age = ageAtNextBirthday(b.birth_date);
