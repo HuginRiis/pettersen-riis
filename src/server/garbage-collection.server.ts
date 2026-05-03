@@ -455,9 +455,12 @@ export async function processGarbageNotifications(): Promise<{
     }
 
     // Hent abonnenter
-    const targetWho = pref.who && pref.who !== "Alle" ? pref.who : null;
+    const targetWho = pref.who || "Alle";
     let subQuery = supabaseAdmin.from("push_subscriptions").select("endpoint, p256dh, auth, who");
-    if (targetWho) subQuery = subQuery.eq("who", targetWho);
+    {
+      const orFilter = buildSubscriptionWhoOr(targetWho);
+      if (orFilter) subQuery = subQuery.or(orFilter);
+    }
     const { data: subs } = await subQuery;
     if (!subs || subs.length === 0) {
       // Marker som logget likevel for å unngå evig retry
