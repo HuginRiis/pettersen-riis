@@ -141,7 +141,7 @@ export function GarbageCollectionPanel() {
   const updatePref = async (
     fraksjon_id: number,
     fraksjon_navn: string,
-    patch: Partial<Pick<Pref, "enabled" | "days_before" | "notify_hour" | "notify_minute">>,
+    patch: Partial<Pick<Pref, "enabled" | "days_before" | "notify_hour" | "notify_minute" | "who">>,
   ) => {
     try {
       await updateGarbagePref({ data: { fraksjon_id, fraksjon_navn, ...patch } });
