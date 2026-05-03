@@ -43,7 +43,8 @@ type Msg = {
   created_at: string;
 };
 
-const WHO: Who[] = ["Alle", "Arne", "Rebekka", "Marita", "Nora", "Celine", "Mira"];
+const WHO: Who[] = ["Alle", "Arne & Rebekka", "Arne", "Rebekka", "Marita", "Nora", "Celine", "Mira"];
+const DEVICE_WHO: Who[] = ["Arne", "Rebekka", "Marita", "Nora", "Celine", "Mira"];
 const NOTIFY_OPTIONS: { value: number | null; label: string }[] = [
   { value: null, label: "Ingen varsling" },
   { value: 5, label: "5 min før" },
