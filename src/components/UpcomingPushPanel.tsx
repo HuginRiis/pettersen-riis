@@ -174,30 +174,38 @@ export function UpcomingPushPanel() {
       console.error("[UpcomingPushPanel] weather eval failed", err);
     }
 
-    // 5. UV prefs — daglig morgen-sjekk (08:00 Oslo som tilnærming)
-    const { data: uv } = await supabase
-      .from("uv_notification_prefs")
-      .select("id, label, recipient, enabled")
-      .eq("enabled", true);
-    for (const u of uv ?? []) {
-      for (let dayOffset = 0; dayOffset <= HORIZON_DAYS; dayOffset++) {
-        const d = new Date(now.getTime() + dayOffset * 86400000);
-        const iso = new Intl.DateTimeFormat("en-CA", {
-          timeZone: "Europe/Oslo", year: "numeric", month: "2-digit", day: "2-digit",
-        }).format(d);
-        const at = osloLocalToUtc(iso, "08:00");
-        if (at < now) continue;
+    // 5. UV prefs — server evaluerer prognose for de neste 3 dagene
+    try {
+      const uvEvals = await getUpcomingUvEvaluations();
+      for (const u of uvEvals) {
+        const at = new Date(u.notifyAt);
+        if (at < now || at > horizon) continue;
+        if (u.status === "no-hit") continue;
+        const targetLabel = new Date(u.targetDate).toLocaleDateString("nb-NO", { weekday: "short", day: "2-digit", month: "short" });
+        let detail = `Gjelder ${targetLabel}`;
+        if (u.status === "will-fire" && u.uvMax != null) {
+          detail += ` • maks UV ${u.uvMax.toFixed(1)}`;
+          if (u.uvMaxAt) {
+            const maxTime = new Date(u.uvMaxAt).toLocaleTimeString("nb-NO", { timeZone: "Europe/Oslo", hour: "2-digit", minute: "2-digit" });
+            detail += ` kl ${maxTime}`;
+          }
+        } else if (u.status === "uncertain") {
+          detail += " • usikker (prognose ikke tilgjengelig ennå)";
+        }
         result.push({
-          key: `uv-${u.id}-${iso}`,
+          key: `uv-${u.id}`,
           when: at,
           source: "UV",
           icon: Sun,
-          title: `UV-sjekk: ${u.label}`,
-          recipients: recipientsLabel(u.recipient as string),
-          detail: "ved høy UV",
+          title: `${u.label} — UV-varsel`,
+          recipients: recipientsLabel(u.recipient),
+          detail,
+          rule: u.ruleText,
+          status: u.status,
         });
-        break;
       }
+    } catch (err) {
+      console.error("[UpcomingPushPanel] uv eval failed", err);
     }
 
     result.sort((a, b) => a.when.getTime() - b.when.getTime());
