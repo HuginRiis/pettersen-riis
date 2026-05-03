@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
+import { Link } from "@tanstack/react-router";
+import { getStoredWho } from "@/lib/push-client";
 import {
   reverseGeocode,
   searchPlaces,
@@ -65,6 +67,15 @@ export function LocationPicker({
   const [locateError, setLocateError] = useState<string | null>(null);
   const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
   const wrap = useRef<HTMLDivElement>(null);
+  const [pushWho, setPushWho] = useState<string>("Alle");
+
+  // Hent valgt person fra varsling-systemet (samme som push-mottaker).
+  useEffect(() => {
+    setPushWho(getStoredWho());
+    const onStorage = () => setPushWho(getStoredWho());
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
 
   // Debounced search
   useEffect(() => {
@@ -182,38 +193,29 @@ export function LocationPicker({
   return (
     <div className="panel rounded-lg p-4 md:p-5">
       <div className="flex flex-wrap items-center gap-3 justify-between">
-        {/* WHO — selector when allowed, lesbart navn når readOnlyWho */}
-        {authenticated && readOnlyWho ? (
-          <div className="text-xs uppercase tracking-wider text-primary">
-            {who}
-          </div>
-        ) : authenticated ? (
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] tracking-[0.25em] uppercase text-muted-foreground">
-              Vakt:
-            </span>
-            <div className="flex rounded-md border border-border overflow-hidden">
-              {NAMES.map((n) => (
-                <button
-                  key={n}
-                  type="button"
-                  onClick={() => handleNameChange(n)}
-                  className={`px-3 py-1 text-xs uppercase tracking-wider transition-colors ${
-                    who === n
-                      ? "bg-primary/20 text-primary"
-                      : "text-muted-foreground hover:bg-card/60"
-                  }`}
-                >
-                  {n}
-                </button>
-              ))}
-            </div>
-          </div>
-        ) : (
-          <div className="text-[10px] tracking-[0.25em] uppercase text-muted-foreground">
-            Stedssøk
-          </div>
-        )}
+        {/* Bruker-link — henter person fra varsling-systemet, lenker til /agenda for å endre */}
+        {(() => {
+          let label: string;
+          if (!authenticated) {
+            label = "Gjest";
+          } else if (!pushWho || pushWho === "Alle") {
+            label = "Velg bruker";
+          } else {
+            label = pushWho;
+          }
+          return (
+            <Link
+              to="/agenda"
+              className="inline-flex items-center gap-2 text-xs uppercase tracking-wider text-primary hover:text-primary/80 transition-colors"
+              title="Endre bruker på Agenda"
+            >
+              <span className="text-[10px] tracking-[0.25em] uppercase text-muted-foreground">
+                Bruker:
+              </span>
+              <span>{label}</span>
+            </Link>
+          );
+        })()}
 
         {/* Active location chip */}
         <div className="flex items-center gap-2 text-sm">
