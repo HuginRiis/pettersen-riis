@@ -50,6 +50,36 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_budget_actual: {
+        Row: {
+          actual_cost_usd: number
+          created_at: string
+          id: string
+          month: string
+          monthly_budget_usd: number
+          note: string | null
+          updated_at: string
+        }
+        Insert: {
+          actual_cost_usd?: number
+          created_at?: string
+          id?: string
+          month: string
+          monthly_budget_usd?: number
+          note?: string | null
+          updated_at?: string
+        }
+        Update: {
+          actual_cost_usd?: number
+          created_at?: string
+          id?: string
+          month?: string
+          monthly_budget_usd?: number
+          note?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       ai_search_log: {
         Row: {
           authenticated: boolean
