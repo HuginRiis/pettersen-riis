@@ -36,17 +36,7 @@ export function VakttarnEventsPanel() {
   const [date, setDate] = useState<string>(todayIso());
   const [stats, setStats] = useState<VakttarnStats | null>(null);
   const [loading, setLoading] = useState(false);
-  const [dedupeSec, setDedupeSec] = useState<number>(() => {
-    if (typeof window === "undefined") return 120;
-    const v = Number(window.localStorage.getItem("vakttarn:dedupeSec"));
-    return Number.isFinite(v) && v >= 0 ? v : 120;
-  });
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem("vakttarn:dedupeSec", String(dedupeSec));
-    }
-  }, [dedupeSec]);
+  const dedupeSec = 180;
 
   useEffect(() => {
     let cancelled = false;
