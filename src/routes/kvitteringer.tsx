@@ -68,6 +68,7 @@ type ReceiptRow = {
   created_at: string;
   updated_at: string;
   is_food: boolean;
+  added_by: string;
   warranty_recipient: string;
   warranty_notified_90: string | null;
   warranty_notified_60: string | null;
@@ -227,6 +228,7 @@ function KvitteringerPage() {
             image_url: imageUrl,
             image_path: path,
             is_food: parsed.is_food ?? false,
+            added_by: (() => { const w = getStoredWho(); return w && w !== "Alle" ? w : "Alle"; })(),
             warranty_recipient: (() => { const w = getStoredWho(); return w && w !== "Alle" ? w : "Arne"; })(),
           })
           .select()
@@ -712,7 +714,7 @@ function ReceiptRowItem({
               <div className="flex items-center gap-2 min-w-0">
                 <Bell className="h-3 w-3 text-primary shrink-0" />
                 <span className="truncate">
-                  Garanti-varsel til <span className="text-foreground font-medium">{r.warranty_recipient || "Arne"}</span> 90/60/30 dager før utløp
+                  Lagt inn av <span className="text-foreground font-medium">{r.added_by || "Ukjent"}</span> · Garanti-varsel til <span className="text-foreground font-medium">{r.warranty_recipient || "Arne"}</span> 90/60/30 dager før utløp
                 </span>
               </div>
               <Button

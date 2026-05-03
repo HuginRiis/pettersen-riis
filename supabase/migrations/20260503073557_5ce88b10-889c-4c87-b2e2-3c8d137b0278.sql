@@ -1,0 +1,1 @@
+ALTER TABLE public.receipts ADD COLUMN added_by text NOT NULL DEFAULT 'Alle';
