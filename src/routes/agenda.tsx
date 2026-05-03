@@ -11,7 +11,6 @@ import { BirthdaysPanel } from "@/components/BirthdaysPanel";
 import { UpcomingPushPanel } from "@/components/UpcomingPushPanel";
 import {
   type Who,
-  getCurrentSubscriptionDetails,
   getStoredWho,
   isPushSupported,
   isCurrentlySubscribed,
