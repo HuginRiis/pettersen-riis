@@ -652,8 +652,34 @@ function TempPrecipChart({
     }
   }
 
+  const handlePointer = (e: React.PointerEvent<SVGSVGElement>) => {
+    const svg = e.currentTarget;
+    const rect = svg.getBoundingClientRect();
+    const xPx = e.clientX - rect.left;
+    const xVB = (xPx / rect.width) * W;
+    const rel = (xVB - pad.l) / innerW;
+    const i = Math.round(rel * (hours.length - 1));
+    setActiveIdx(Math.max(0, Math.min(hours.length - 1, i)));
+    try {
+      svg.setPointerCapture(e.pointerId);
+    } catch {}
+  };
+
+  const active = activeIdx != null ? hours[activeIdx] : null;
+  const activeX = activeIdx != null ? xFor(activeIdx) : null;
+  const activeY = active != null ? yForT(active.temp) : null;
+
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto" preserveAspectRatio="none">
+    <svg
+      viewBox={`0 0 ${W} ${H}`}
+      className="w-full h-auto touch-none select-none"
+      preserveAspectRatio="none"
+      onPointerDown={handlePointer}
+      onPointerMove={(e) => {
+        if (e.buttons === 0 && e.pointerType === "mouse") return;
+        handlePointer(e);
+      }}
+    >
       {[tMin, Math.round((tMin + tMax) / 2), tMax].map((v) => (
         <g key={v}>
           <line
@@ -722,6 +748,41 @@ function TempPrecipChart({
           </text>
         );
       })}
+      {active && activeX != null && activeY != null && (
+        <g pointerEvents="none">
+          <line
+            x1={activeX}
+            x2={activeX}
+            y1={pad.t}
+            y2={pad.t + innerH}
+            stroke={color}
+            strokeWidth="1"
+            opacity="0.7"
+          />
+          <circle cx={activeX} cy={activeY} r="3.5" fill={color} stroke="var(--background)" strokeWidth="1" />
+          {(() => {
+            const label = `${Math.round(active.temp)}°${active.precip > 0 ? ` · ${active.precip.toFixed(1)}mm` : ""} · ${
+              longRange
+                ? new Date(active.time).toLocaleDateString("nb-NO", { day: "2-digit", month: "2-digit", hour: "2-digit" })
+                : active.time.slice(11, 16)
+            }`;
+            const boxW = Math.max(70, label.length * 5.2);
+            const boxH = 18;
+            let bx = activeX - boxW / 2;
+            if (bx < pad.l) bx = pad.l;
+            if (bx + boxW > W - pad.r) bx = W - pad.r - boxW;
+            const by = Math.max(pad.t, activeY - boxH - 6);
+            return (
+              <g>
+                <rect x={bx} y={by} width={boxW} height={boxH} rx="3" fill="var(--card)" stroke={color} strokeOpacity="0.6" />
+                <text x={bx + boxW / 2} y={by + 12} fontSize="10" fill="var(--foreground)" textAnchor="middle">
+                  {label}
+                </text>
+              </g>
+            );
+          })()}
+        </g>
+      )}
     </svg>
   );
 }
