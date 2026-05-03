@@ -255,7 +255,20 @@ export function UpcomingPushPanel() {
                         <div className="flex items-baseline gap-2 flex-wrap">
                           <span className="text-sm font-medium text-foreground">{it.title}</span>
                           <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{it.source}</span>
+                          {it.status === "uncertain" && (
+                            <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded border border-amber-500/50 text-amber-500 flex items-center gap-1">
+                              <HelpCircle size={10} /> Usikker
+                            </span>
+                          )}
+                          {it.status === "will-fire" && (
+                            <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded border border-primary/50 text-primary">
+                              Vil utløse
+                            </span>
+                          )}
                         </div>
+                        {it.rule && (
+                          <p className="text-[11px] text-primary/80 mt-0.5">Regel: {it.rule}</p>
+                        )}
                         <p className="text-xs text-muted-foreground tabular-nums mt-0.5">
                           {fmtWhen(it.when)} • Til {it.recipients}
                           {it.detail ? ` • ${it.detail}` : ""}
