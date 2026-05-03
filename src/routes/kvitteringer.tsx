@@ -68,6 +68,7 @@ type ReceiptRow = {
   created_at: string;
   updated_at: string;
   is_food: boolean;
+  added_by: string;
   warranty_recipient: string;
   warranty_notified_90: string | null;
   warranty_notified_60: string | null;
