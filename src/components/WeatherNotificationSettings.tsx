@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Bell, BellOff, Loader2, Plus, Send, Trash2, CloudRain } from "lucide-react";
+import { Bell, BellOff, Loader2, Plus, Send, Trash2, CloudRain, Pencil, Check, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
