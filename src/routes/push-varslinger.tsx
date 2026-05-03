@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { PageShell, PageHero } from "@/components/PageShell";
 import { supabase } from "@/integrations/supabase/client";
 import { UpcomingPushPanel } from "@/components/UpcomingPushPanel";
+import { TibberCronStatusPanel } from "@/components/TibberCronStatusPanel";
 import {
   Bell, BellOff, Calendar, Cake, Trash2, CloudSun, Sun, Lightbulb, ScrollText, ShieldCheck, Lock, ExternalLink, Smartphone, X,
 } from "lucide-react";
@@ -54,6 +55,7 @@ function PushSettingsPage() {
       />
 
       <UpcomingPushPanel />
+      <TibberCronStatusPanel />
 
       <section className="container mx-auto px-4 pb-12 grid md:grid-cols-2 gap-4">
         <CategoryCard
