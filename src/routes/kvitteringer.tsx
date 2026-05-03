@@ -714,7 +714,7 @@ function ReceiptRowItem({
               <div className="flex items-center gap-2 min-w-0">
                 <Bell className="h-3 w-3 text-primary shrink-0" />
                 <span className="truncate">
-                  Garanti-varsel til <span className="text-foreground font-medium">{r.warranty_recipient || "Arne"}</span> 90/60/30 dager før utløp
+                  Lagt inn av <span className="text-foreground font-medium">{r.added_by || "Ukjent"}</span> · Garanti-varsel til <span className="text-foreground font-medium">{r.warranty_recipient || "Arne"}</span> 90/60/30 dager før utløp
                 </span>
               </div>
               <Button
