@@ -198,7 +198,7 @@ export function HomeyApiActivity() {
                     tickLine={false}
                     width={28}
                   />
-                  <Tooltip
+                  <Tooltip trigger="click"
                     cursor={{ stroke: ACCENT, strokeOpacity: 0.4 }}
                     contentStyle={{
                       background: "hsl(var(--card))",
@@ -251,7 +251,7 @@ export function HomeyApiActivity() {
                     tickLine={false}
                     width={28}
                   />
-                  <Tooltip
+                  <Tooltip trigger="click"
                     cursor={{ fill: ACCENT_SOFT }}
                     contentStyle={{
                       background: "hsl(var(--card))",

@@ -109,7 +109,7 @@ export function PulseHourlyPanel({
                   width={48}
                   unit=" kWh"
                 />
-                <Tooltip
+                <Tooltip trigger="click"
                   contentStyle={{
                     background: "hsl(var(--card))",
                     border: "1px solid hsl(var(--border))",

@@ -532,7 +532,7 @@ function GotSagaPage() {
                 stroke="var(--color-border)"
                 domain={[0, 10]}
               />
-              <Tooltip
+              <Tooltip trigger="click"
                 contentStyle={{
                   background: "var(--color-card)",
                   border: "1px solid var(--color-border)",

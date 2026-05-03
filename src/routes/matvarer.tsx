@@ -961,7 +961,7 @@ function ProductDetailDialog({
                     <CartesianGrid stroke="oklch(0.30 0.014 240 / 50%)" strokeDasharray="3 3" />
                     <XAxis dataKey="date" stroke="oklch(0.68 0.02 80)" fontSize={11} />
                     <YAxis stroke="oklch(0.68 0.02 80)" fontSize={11} width={40} />
-                    <Tooltip
+                    <Tooltip trigger="click"
                       contentStyle={{
                         background: "oklch(0.18 0.014 240)",
                         border: "1px solid oklch(0.30 0.014 240 / 60%)",
@@ -1189,7 +1189,7 @@ function FavoritesGraph({
                 <CartesianGrid stroke="oklch(0.30 0.014 240 / 50%)" strokeDasharray="3 3" />
                 <XAxis dataKey="date" stroke="oklch(0.68 0.02 80)" fontSize={11} />
                 <YAxis stroke="oklch(0.68 0.02 80)" fontSize={11} width={40} />
-                <Tooltip
+                <Tooltip trigger="click"
                   contentStyle={{
                     background: "oklch(0.18 0.014 240)",
                     border: "1px solid oklch(0.30 0.014 240 / 60%)",
