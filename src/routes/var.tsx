@@ -617,6 +617,7 @@ function TempPrecipChart({
   const pad = { l: 28, r: 16, t: 12, b: 22 };
   const innerW = W - pad.l - pad.r;
   const innerH = H - pad.t - pad.b;
+  const [activeIdx, setActiveIdx] = useState<number | null>(null);
   if (hours.length < 2) return null;
 
   const temps = hours.map((h) => h.temp);
