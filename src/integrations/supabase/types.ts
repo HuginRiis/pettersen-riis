@@ -700,6 +700,7 @@ export type Database = {
       }
       receipts: {
         Row: {
+          added_by: string
           ai_model: string | null
           ai_raw_text: string | null
           created_at: string
@@ -720,6 +721,7 @@ export type Database = {
           warranty_recipient: string
         }
         Insert: {
+          added_by?: string
           ai_model?: string | null
           ai_raw_text?: string | null
           created_at?: string
@@ -740,6 +742,7 @@ export type Database = {
           warranty_recipient?: string
         }
         Update: {
+          added_by?: string
           ai_model?: string | null
           ai_raw_text?: string | null
           created_at?: string
