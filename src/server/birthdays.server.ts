@@ -92,7 +92,8 @@ export async function sendBirthdayPushNow(
   const today = getOsloParts();
   const [by] = row.birth_date.split("-").map(Number);
   const age = today.year - by;
-  const recipients = row.notify_recipients && row.notify_recipients.length > 0 ? row.notify_recipients : ["Alle"];
+  const rawRecipients = row.notify_recipients && row.notify_recipients.length > 0 ? row.notify_recipients : ["Alle"];
+  const recipients = Array.from(new Set(rawRecipients.flatMap(expandRecipient)));
 
   let subs: Array<{ endpoint: string; p256dh: string; auth: string }> = [];
   if (recipients.includes("Alle")) {
