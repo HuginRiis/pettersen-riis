@@ -142,30 +142,35 @@ export function UpcomingPushPanel() {
       });
     }
 
-    // 4. Weather prefs — neste planlagte morgen-varsel
-    const { data: weather } = await supabase
-      .from("weather_notification_prefs")
-      .select("id, label, kind, notify_hour, notify_minute, recipient, enabled, last_notified_date")
-      .eq("enabled", true);
-    for (const w of weather ?? []) {
-      for (let dayOffset = 0; dayOffset <= HORIZON_DAYS; dayOffset++) {
-        const d = new Date(now.getTime() + dayOffset * 86400000);
-        const iso = new Intl.DateTimeFormat("en-CA", {
-          timeZone: "Europe/Oslo", year: "numeric", month: "2-digit", day: "2-digit",
-        }).format(d);
-        const at = osloLocalToUtc(iso, `${String(w.notify_hour).padStart(2, "0")}:${String(w.notify_minute).padStart(2, "0")}`);
-        if (at < now) continue;
-        if (w.last_notified_date === iso) continue;
+    // 4. Weather prefs — bruk server-evaluering for å sjekke prognosen
+    try {
+      const weatherEvals = await getUpcomingWeatherEvaluations();
+      for (const w of weatherEvals) {
+        const at = new Date(w.notifyAt);
+        if (at < now || at > horizon) continue;
+        // Filtrer bort 'no-hit' (kun vis det som faktisk vil utløse eller er usikkert)
+        if (w.status === "no-hit") continue;
+        const targetLabel = new Date(w.targetDate).toLocaleDateString("nb-NO", { weekday: "short", day: "2-digit", month: "short" });
+        let detail = `Gjelder ${targetLabel}`;
+        if (w.status === "will-fire" && w.value != null) {
+          detail += ` • prognose ${w.value.toFixed(1)} ${w.unit}`;
+        } else if (w.status === "uncertain") {
+          detail += " • usikker (prognose ikke tilgjengelig ennå)";
+        }
         result.push({
-          key: `weather-${w.id}-${iso}`,
+          key: w.id,
           when: at,
           source: "Vær",
           icon: CloudSun,
-          title: `${w.label} (${w.kind})`,
-          recipients: recipientsLabel(w.recipient as string),
+          title: w.label,
+          recipients: recipientsLabel(w.recipient),
+          detail,
+          rule: w.ruleText,
+          status: w.status,
         });
-        break;
       }
+    } catch (err) {
+      console.error("[UpcomingPushPanel] weather eval failed", err);
     }
 
     // 5. UV prefs — daglig morgen-sjekk (08:00 Oslo som tilnærming)
