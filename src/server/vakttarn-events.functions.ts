@@ -50,24 +50,22 @@ export interface VakttarnStats {
 
 const RANGE = z.enum(["day", "week", "month"]);
 
-// Collapse near-duplicate events within `windowSec` for the same category
-// across all cameras. Counts collapse to a single event (so one person walking
-// past 3 cameras within the window = 1). Multiple events from the SAME camera
-// within the window are also collapsed (assumed same subject).
+// Collapse near-duplicate events within `windowSec` per (camera, category).
+// Different cameras count separately (so 2 personer på samme kamera = 2 om de
+// kommer mer enn `windowSec` fra hverandre, ellers 1). Different kategorier
+// (f.eks. ringt_pa vs person) telles alltid hver for seg.
 function dedupeEvents(events: VakttarnEventRow[], windowSec: number): VakttarnEventRow[] {
   if (windowSec <= 0 || events.length === 0) return events;
-  // events is sorted desc by detected_at; sort asc for grouping
   const asc = [...events].sort((a, b) => a.detected_at.localeCompare(b.detected_at));
   const kept: VakttarnEventRow[] = [];
-  const lastByCat = new Map<string, number>(); // category -> ms of last kept
+  const lastByKey = new Map<string, number>();
   for (const ev of asc) {
+    const key = `${ev.camera ?? "?"}|${ev.category}`;
     const t = new Date(ev.detected_at).getTime();
-    const last = lastByCat.get(ev.category);
-    if (last !== undefined && t - last < windowSec * 1000) {
-      continue; // collapse
-    }
+    const last = lastByKey.get(key);
+    if (last !== undefined && t - last < windowSec * 1000) continue;
     kept.push(ev);
-    lastByCat.set(ev.category, t);
+    lastByKey.set(key, t);
   }
   return kept.sort((a, b) => b.detected_at.localeCompare(a.detected_at));
 }
