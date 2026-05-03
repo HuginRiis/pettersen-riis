@@ -152,6 +152,8 @@ function PushSettingsPage() {
           description="Enheter som er registrert for å motta push fra huset."
           editable
         />
+
+        <SubscribersListPanel />
       </section>
     </PageShell>
   );
