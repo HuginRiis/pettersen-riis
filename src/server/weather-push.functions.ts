@@ -12,3 +12,8 @@ export const getWeatherForecast = createServerFn({ method: "GET" }).handler(asyn
   const { computeWeatherForecast } = await import("./weather-push.server");
   return computeWeatherForecast();
 });
+
+export const getUpcomingWeatherEvaluations = createServerFn({ method: "GET" }).handler(async () => {
+  const { computeUpcomingWeatherEvaluations } = await import("./weather-push.server");
+  return computeUpcomingWeatherEvaluations(31);
+});
