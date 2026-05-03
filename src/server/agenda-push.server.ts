@@ -375,7 +375,7 @@ export async function processAgendaNotifications(): Promise<{ checked: number; s
     const whenLabel = minsBefore === 0 ? `nå (${timeLabel})` : `om ${minsBefore} min (${timeLabel})`;
 
     const payload = JSON.stringify({
-      title: `📜 ${item.subject}`,
+      title: `Fra Tollnes 🏠 · 📜 ${item.subject}`,
       body: `For ${targetWho} • ${whenLabel}${item.body ? ` — ${item.body}` : ""}`,
       tag: `agenda-${item.id}`,
       url: "/agenda",
