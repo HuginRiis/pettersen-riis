@@ -228,6 +228,7 @@ function KvitteringerPage() {
             image_url: imageUrl,
             image_path: path,
             is_food: parsed.is_food ?? false,
+            added_by: (() => { const w = getStoredWho(); return w && w !== "Alle" ? w : "Alle"; })(),
             warranty_recipient: (() => { const w = getStoredWho(); return w && w !== "Alle" ? w : "Arne"; })(),
           })
           .select()
