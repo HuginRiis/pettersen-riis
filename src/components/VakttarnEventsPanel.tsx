@@ -36,16 +36,27 @@ export function VakttarnEventsPanel() {
   const [date, setDate] = useState<string>(todayIso());
   const [stats, setStats] = useState<VakttarnStats | null>(null);
   const [loading, setLoading] = useState(false);
+  const [dedupeSec, setDedupeSec] = useState<number>(() => {
+    if (typeof window === "undefined") return 120;
+    const v = Number(window.localStorage.getItem("vakttarn:dedupeSec"));
+    return Number.isFinite(v) && v >= 0 ? v : 120;
+  });
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("vakttarn:dedupeSec", String(dedupeSec));
+    }
+  }, [dedupeSec]);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    fetchFn({ data: { range, date } })
+    fetchFn({ data: { range, date, dedupeWindowSec: dedupeSec } })
       .then((s) => { if (!cancelled) setStats(s); })
       .catch((e) => console.error("[vakttarn-events]", e))
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [range, date, fetchFn]);
+  }, [range, date, dedupeSec, fetchFn]);
 
   const total = useMemo(() => {
     if (!stats) return 0;
@@ -127,6 +138,23 @@ export function VakttarnEventsPanel() {
           <Eye size={14} />
           <span>{loading ? "Speider…" : `${total} hendelser`}</span>
         </div>
+      </div>
+
+      {/* Dedupe window slider */}
+      <div className="flex items-center gap-3 text-xs text-muted-foreground rounded-lg border border-border/40 bg-background/40 px-3 py-2">
+        <span className="uppercase tracking-[0.2em] text-[10px] shrink-0">Slå sammen innenfor</span>
+        <input
+          type="range"
+          min={0}
+          max={600}
+          step={10}
+          value={dedupeSec}
+          onChange={(e) => setDedupeSec(Number(e.target.value))}
+          className="flex-1 accent-[#d4af37]"
+        />
+        <span className="font-serif text-sm text-[#d4af37] tabular-nums w-16 text-right">
+          {dedupeSec === 0 ? "Av" : dedupeSec < 60 ? `${dedupeSec}s` : `${Math.round(dedupeSec / 60)}m ${dedupeSec % 60 ? (dedupeSec % 60) + "s" : ""}`.trim()}
+        </span>
       </div>
 
       {/* Counter cards */}

@@ -50,12 +50,34 @@ export interface VakttarnStats {
 
 const RANGE = z.enum(["day", "week", "month"]);
 
+// Collapse near-duplicate events within `windowSec` per (camera, category).
+// Different cameras count separately (so 2 personer på samme kamera = 2 om de
+// kommer mer enn `windowSec` fra hverandre, ellers 1). Different kategorier
+// (f.eks. ringt_pa vs person) telles alltid hver for seg.
+function dedupeEvents(events: VakttarnEventRow[], windowSec: number): VakttarnEventRow[] {
+  if (windowSec <= 0 || events.length === 0) return events;
+  const asc = [...events].sort((a, b) => a.detected_at.localeCompare(b.detected_at));
+  const kept: VakttarnEventRow[] = [];
+  const lastByKey = new Map<string, number>();
+  for (const ev of asc) {
+    const key = `${ev.camera ?? "?"}|${ev.category}`;
+    const t = new Date(ev.detected_at).getTime();
+    const last = lastByKey.get(key);
+    if (last !== undefined && t - last < windowSec * 1000) continue;
+    kept.push(ev);
+    lastByKey.set(key, t);
+  }
+  return kept.sort((a, b) => b.detected_at.localeCompare(a.detected_at));
+}
+
 export const fetchVakttarnEvents = createServerFn({ method: "GET" })
   .inputValidator(
     z.object({
       range: RANGE.default("day"),
       // ISO date (yyyy-mm-dd) representing the anchor date inside the range
       date: z.string().optional(),
+      // Dedupe window in seconds (collapse same-category events across cameras)
+      dedupeWindowSec: z.number().int().min(0).max(3600).default(120),
     }).parse
   )
   .handler(async ({ data }): Promise<VakttarnStats> => {
@@ -104,7 +126,7 @@ export const fetchVakttarnEvents = createServerFn({ method: "GET" })
       };
     }
 
-    const events: VakttarnEventRow[] = (rows ?? []).map((r: any) => ({
+    const rawEvents: VakttarnEventRow[] = (rows ?? []).map((r: any) => ({
       id: r.id,
       category: r.category,
       camera: r.camera,
@@ -114,6 +136,7 @@ export const fetchVakttarnEvents = createServerFn({ method: "GET" })
       snapshot_url: r.snapshot_url,
       metadata: r.metadata == null ? null : JSON.stringify(r.metadata),
     }));
+    const events = dedupeEvents(rawEvents, data.dedupeWindowSec);
 
     const totals: Record<VakttarnCategory, number> = {
       person: 0, dyr: 0, bil: 0, pakke: 0, ringt_pa: 0, annet: 0,
