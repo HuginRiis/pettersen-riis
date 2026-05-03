@@ -208,6 +208,10 @@ function formatOsloDateTime(iso: string): string {
   });
 }
 
+function locationPrefix(location: string | null | undefined): string {
+  return (location ?? "").toLowerCase() === "hytta" ? "Fra hytta 🛖 · " : "Fra Tollnes 🏠 · ";
+}
+
 function buildMessage(pref: Pref, hit: WeatherEvalHit): { title: string; body: string } {
   const meta = WEATHER_KIND_META[pref.kind];
   const when = formatOsloDateTime(hit.time);
@@ -215,7 +219,7 @@ function buildMessage(pref: Pref, hit: WeatherEvalHit): { title: string; body: s
   const t = pref.threshold ?? meta.defaultThreshold;
   const thresholdStr = meta.symbolBased ? "" : ` ≥ ${t}${meta.unit ? " " + meta.unit : ""}`;
   return {
-    title: `${meta.emoji} ${pref.label}: ${meta.label} venter${thresholdStr}`,
+    title: `${locationPrefix(pref.location)}${meta.emoji} ${pref.label}: ${meta.label} venter${thresholdStr}`,
     body: `${meta.label} ${when}${valueStr}.`,
   };
 }
