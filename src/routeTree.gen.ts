@@ -17,6 +17,7 @@ import { Route as TreningRouteImport } from './routes/trening'
 import { Route as StromkronikenRouteImport } from './routes/stromkroniken'
 import { Route as SteintavleRouteImport } from './routes/steintavle'
 import { Route as SmarthusRouteImport } from './routes/smarthus'
+import { Route as PushVarslingerRouteImport } from './routes/push-varslinger'
 import { Route as PollenRouteImport } from './routes/pollen'
 import { Route as OppussingHyttaRouteImport } from './routes/oppussing-hytta'
 import { Route as OppussingBorgenRouteImport } from './routes/oppussing-borgen'
@@ -76,6 +77,11 @@ const SteintavleRoute = SteintavleRouteImport.update({
 const SmarthusRoute = SmarthusRouteImport.update({
   id: '/smarthus',
   path: '/smarthus',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PushVarslingerRoute = PushVarslingerRouteImport.update({
+  id: '/push-varslinger',
+  path: '/push-varslinger',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PollenRoute = PollenRouteImport.update({
@@ -193,6 +199,7 @@ export interface FileRoutesByFullPath {
   '/oppussing-borgen': typeof OppussingBorgenRoute
   '/oppussing-hytta': typeof OppussingHyttaRoute
   '/pollen': typeof PollenRoute
+  '/push-varslinger': typeof PushVarslingerRoute
   '/smarthus': typeof SmarthusRoute
   '/steintavle': typeof SteintavleRoute
   '/stromkroniken': typeof StromkronikenRoute
@@ -223,6 +230,7 @@ export interface FileRoutesByTo {
   '/oppussing-borgen': typeof OppussingBorgenRoute
   '/oppussing-hytta': typeof OppussingHyttaRoute
   '/pollen': typeof PollenRoute
+  '/push-varslinger': typeof PushVarslingerRoute
   '/smarthus': typeof SmarthusRoute
   '/steintavle': typeof SteintavleRoute
   '/stromkroniken': typeof StromkronikenRoute
@@ -254,6 +262,7 @@ export interface FileRoutesById {
   '/oppussing-borgen': typeof OppussingBorgenRoute
   '/oppussing-hytta': typeof OppussingHyttaRoute
   '/pollen': typeof PollenRoute
+  '/push-varslinger': typeof PushVarslingerRoute
   '/smarthus': typeof SmarthusRoute
   '/steintavle': typeof SteintavleRoute
   '/stromkroniken': typeof StromkronikenRoute
@@ -286,6 +295,7 @@ export interface FileRouteTypes {
     | '/oppussing-borgen'
     | '/oppussing-hytta'
     | '/pollen'
+    | '/push-varslinger'
     | '/smarthus'
     | '/steintavle'
     | '/stromkroniken'
@@ -316,6 +326,7 @@ export interface FileRouteTypes {
     | '/oppussing-borgen'
     | '/oppussing-hytta'
     | '/pollen'
+    | '/push-varslinger'
     | '/smarthus'
     | '/steintavle'
     | '/stromkroniken'
@@ -346,6 +357,7 @@ export interface FileRouteTypes {
     | '/oppussing-borgen'
     | '/oppussing-hytta'
     | '/pollen'
+    | '/push-varslinger'
     | '/smarthus'
     | '/steintavle'
     | '/stromkroniken'
@@ -377,6 +389,7 @@ export interface RootRouteChildren {
   OppussingBorgenRoute: typeof OppussingBorgenRoute
   OppussingHyttaRoute: typeof OppussingHyttaRoute
   PollenRoute: typeof PollenRoute
+  PushVarslingerRoute: typeof PushVarslingerRoute
   SmarthusRoute: typeof SmarthusRoute
   SteintavleRoute: typeof SteintavleRoute
   StromkronikenRoute: typeof StromkronikenRoute
@@ -453,6 +466,13 @@ declare module '@tanstack/react-router' {
       path: '/smarthus'
       fullPath: '/smarthus'
       preLoaderRoute: typeof SmarthusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/push-varslinger': {
+      id: '/push-varslinger'
+      path: '/push-varslinger'
+      fullPath: '/push-varslinger'
+      preLoaderRoute: typeof PushVarslingerRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/pollen': {
@@ -609,6 +629,7 @@ const rootRouteChildren: RootRouteChildren = {
   OppussingBorgenRoute: OppussingBorgenRoute,
   OppussingHyttaRoute: OppussingHyttaRoute,
   PollenRoute: PollenRoute,
+  PushVarslingerRoute: PushVarslingerRoute,
   SmarthusRoute: SmarthusRoute,
   SteintavleRoute: SteintavleRoute,
   StromkronikenRoute: StromkronikenRoute,
