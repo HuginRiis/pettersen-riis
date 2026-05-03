@@ -163,12 +163,30 @@ function UvChart({
     }
   }
   const longRange = hours.length > 36;
+  const [activeIdx, setActiveIdx] = useState<number | null>(null);
+  const handlePointer = (e: React.PointerEvent<SVGSVGElement>) => {
+    const svg = e.currentTarget;
+    const rect = svg.getBoundingClientRect();
+    const xPx = e.clientX - rect.left;
+    const xVB = (xPx / rect.width) * w;
+    const i = Math.round((xVB / w) * (hours.length - 1));
+    setActiveIdx(Math.max(0, Math.min(hours.length - 1, i)));
+    try { svg.setPointerCapture(e.pointerId); } catch {}
+  };
+  const active = activeIdx != null ? hours[activeIdx] : null;
+  const activeX = activeIdx != null ? activeIdx * step : null;
+  const activeY = active != null ? h - (active.uv / max) * h : null;
   return (
     <div>
       <svg
         viewBox={`0 0 ${w} ${h}`}
         preserveAspectRatio="none"
-        className="w-full h-20"
+        className="w-full h-20 touch-none select-none"
+        onPointerDown={handlePointer}
+        onPointerMove={(e) => {
+          if (e.buttons === 0 && e.pointerType === "mouse") return;
+          handlePointer(e);
+        }}
       >
         <defs>
           <linearGradient id="uvFill" x1="0" x2="0" y1="0" y2="1">
@@ -210,7 +228,21 @@ function UvChart({
             strokeDasharray="1 1"
           />
         )}
+        {active && activeX != null && activeY != null && (
+          <g pointerEvents="none">
+            <line x1={activeX} x2={activeX} y1={0} y2={h} stroke="oklch(0.78 0.16 55)" strokeWidth="0.4" opacity="0.8" />
+            <circle cx={activeX} cy={activeY} r="1.2" fill="oklch(0.78 0.16 55)" />
+          </g>
+        )}
       </svg>
+      {active && (
+        <div className="text-[10px] text-foreground mt-1 tabular-nums">
+          UV {active.uv.toFixed(1)} ·{" "}
+          {longRange
+            ? new Date(active.time).toLocaleString("nb-NO", { day: "2-digit", month: "2-digit", hour: "2-digit" })
+            : `kl. ${active.time.slice(11, 16)}`}
+        </div>
+      )}
       <div className="flex justify-between text-[9px] text-muted-foreground/70 mt-1">
         {pickTicks(hours).map((t) => (
           <span key={t.time}>
