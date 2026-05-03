@@ -135,7 +135,6 @@ export async function processWarrantyNotifications(): Promise<{
     if (!trigger) continue;
     checked++;
 
-    const targetWho = r.warranty_recipient || "Alle";
     let subQuery = supabaseAdmin
       .from("push_subscriptions")
       .select("endpoint, p256dh, auth, who");
