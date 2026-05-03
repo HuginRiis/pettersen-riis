@@ -74,7 +74,7 @@ type ReceiptRow = {
   warranty_notified_30: string | null;
 };
 
-const WHO_OPTIONS = ["Alle", "Arne", "Rebekka", "Marita", "Nora", "Celine", "Mira"] as const;
+const WHO_OPTIONS = ["Alle", "Arne & Rebekka", "Arne", "Rebekka", "Marita", "Nora", "Celine", "Mira"] as const;
 
 const fmtPrice = (n: number | null | undefined) =>
   typeof n === "number" ? `kr ${n.toFixed(2).replace(".", ",")}` : "—";

@@ -48,7 +48,7 @@ type AlarmLogRow = {
   changed_at: string;
 };
 
-const WHO_OPTIONS: Who[] = ["Alle", "Arne", "Rebekka", "Marita", "Nora", "Celine", "Mira"];
+const WHO_OPTIONS: Who[] = ["Alle", "Arne & Rebekka", "Arne", "Rebekka", "Marita", "Nora", "Celine", "Mira"];
 
 function ago(iso: string | null): string {
   if (!iso) return "ukjent";
