@@ -126,7 +126,7 @@ export const fetchVakttarnEvents = createServerFn({ method: "GET" })
       };
     }
 
-    const events: VakttarnEventRow[] = (rows ?? []).map((r: any) => ({
+    const rawEvents: VakttarnEventRow[] = (rows ?? []).map((r: any) => ({
       id: r.id,
       category: r.category,
       camera: r.camera,
@@ -136,6 +136,7 @@ export const fetchVakttarnEvents = createServerFn({ method: "GET" })
       snapshot_url: r.snapshot_url,
       metadata: r.metadata == null ? null : JSON.stringify(r.metadata),
     }));
+    const events = dedupeEvents(rawEvents, data.dedupeWindowSec);
 
     const totals: Record<VakttarnCategory, number> = {
       person: 0, dyr: 0, bil: 0, pakke: 0, ringt_pa: 0, annet: 0,
