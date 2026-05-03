@@ -15,6 +15,7 @@ const HYTTA_COORD = { lat: 59.8733, lon: 9.4297 };
 type RoutePath =
   | "/"
   | "/agenda"
+  | "/push-varslinger"
   | "/var"
   | "/pollen"
   | "/vakttarnet"
