@@ -67,6 +67,15 @@ export function LocationPicker({
   const [locateError, setLocateError] = useState<string | null>(null);
   const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
   const wrap = useRef<HTMLDivElement>(null);
+  const [pushWho, setPushWho] = useState<string>("Alle");
+
+  // Hent valgt person fra varsling-systemet (samme som push-mottaker).
+  useEffect(() => {
+    setPushWho(getStoredWho());
+    const onStorage = () => setPushWho(getStoredWho());
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
 
   // Debounced search
   useEffect(() => {
