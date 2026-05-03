@@ -192,8 +192,9 @@ export async function sendHyttaChecklistPush(data: {
     return { sent: 0, errors: 0, total: 0 };
   }
 
+  const prefixedTitle = data.title.startsWith("Fra hytta") ? data.title : `Fra hytta 🛖 · ${data.title}`;
   const payload = JSON.stringify({
-    title: data.title,
+    title: prefixedTitle,
     body: data.body,
     tag: `hytta-checklist-${Date.now()}`,
     url: data.url || "/hytta",
