@@ -7,6 +7,7 @@
 import webpush from "web-push";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { logPushSend } from "./push-log.server";
+import { buildSubscriptionWhoOr } from "./push-recipients";
 
 const VAPID_PUBLIC = process.env.VAPID_PUBLIC_KEY!;
 const VAPID_PRIVATE = process.env.VAPID_PRIVATE_KEY!;
@@ -357,7 +358,7 @@ export async function processAgendaNotifications(): Promise<{ checked: number; s
     const { data: subs, error: subErr } = await supabaseAdmin
       .from("push_subscriptions")
       .select("endpoint, p256dh, auth")
-      .or(targetWho === "Alle" ? `who.neq.__none__` : `who.eq.${targetWho},who.eq.Alle`);
+      .or(buildSubscriptionWhoOr(targetWho) ?? `who.neq.__none__`);
 
     if (subErr) {
       errors++;
