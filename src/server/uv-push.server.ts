@@ -213,8 +213,9 @@ export async function processUvNotifications(): Promise<{
       continue;
     }
 
+    const locPrefix = (p.location ?? "").toLowerCase() === "hytta" ? "Fra hytta 🛖 · " : "Fra Tollnes 🏠 · ";
     const payload = JSON.stringify({
-      title: trigger.title(lead),
+      title: `${locPrefix}${trigger.title(lead)}`,
       body: trigger.body(p.label, uv, lead),
       tag: `uv-${p.location}-${trigger.threshold}-${today}`,
       url: "/var",
