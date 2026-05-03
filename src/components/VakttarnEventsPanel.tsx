@@ -140,6 +140,23 @@ export function VakttarnEventsPanel() {
         </div>
       </div>
 
+      {/* Dedupe window slider */}
+      <div className="flex items-center gap-3 text-xs text-muted-foreground rounded-lg border border-border/40 bg-background/40 px-3 py-2">
+        <span className="uppercase tracking-[0.2em] text-[10px] shrink-0">Slå sammen innenfor</span>
+        <input
+          type="range"
+          min={0}
+          max={600}
+          step={10}
+          value={dedupeSec}
+          onChange={(e) => setDedupeSec(Number(e.target.value))}
+          className="flex-1 accent-[#d4af37]"
+        />
+        <span className="font-serif text-sm text-[#d4af37] tabular-nums w-16 text-right">
+          {dedupeSec === 0 ? "Av" : dedupeSec < 60 ? `${dedupeSec}s` : `${Math.round(dedupeSec / 60)}m ${dedupeSec % 60 ? (dedupeSec % 60) + "s" : ""}`.trim()}
+        </span>
+      </div>
+
       {/* Counter cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {CATS.map((c) => {
