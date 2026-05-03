@@ -1359,6 +1359,36 @@ export type Database = {
         }
         Relationships: []
       }
+      warranty_global_prefs: {
+        Row: {
+          created_at: string
+          id: string
+          notify_30: boolean
+          notify_60: boolean
+          notify_90: boolean
+          recipient: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notify_30?: boolean
+          notify_60?: boolean
+          notify_90?: boolean
+          recipient: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notify_30?: boolean
+          notify_60?: boolean
+          notify_90?: boolean
+          recipient?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       weather_notification_prefs: {
         Row: {
           created_at: string
