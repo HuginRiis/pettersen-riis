@@ -192,8 +192,9 @@ export async function sendHyttaChecklistPush(data: {
     return { sent: 0, errors: 0, total: 0 };
   }
 
+  const prefixedTitle = data.title.startsWith("Fra hytta") ? data.title : `Fra hytta 🛖 · ${data.title}`;
   const payload = JSON.stringify({
-    title: data.title,
+    title: prefixedTitle,
     body: data.body,
     tag: `hytta-checklist-${Date.now()}`,
     url: data.url || "/hytta",
@@ -289,7 +290,7 @@ export async function processHyttaChecklistNotifications(): Promise<{
   const lines = openItems.slice(0, 10).map((i) => `• ${i.label}`).join("\n");
   const more = openItems.length > 10 ? `\n…og ${openItems.length - 10} til` : "";
   const payload = JSON.stringify({
-    title: "📜 Påminnelse: Huskeliste til hytta",
+    title: "Fra hytta 🛖 · 📜 Påminnelse: Huskeliste til hytta",
     body: `${openItems.length} punkt${openItems.length === 1 ? "" : "er"} venter:\n${lines}${more}`,
     tag: "hytta-checklist-reminder",
     url: "/hytta",
@@ -374,7 +375,7 @@ export async function processAgendaNotifications(): Promise<{ checked: number; s
     const whenLabel = minsBefore === 0 ? `nå (${timeLabel})` : `om ${minsBefore} min (${timeLabel})`;
 
     const payload = JSON.stringify({
-      title: `📜 ${item.subject}`,
+      title: `Fra Tollnes 🏠 · 📜 ${item.subject}`,
       body: `For ${targetWho} • ${whenLabel}${item.body ? ` — ${item.body}` : ""}`,
       tag: `agenda-${item.id}`,
       url: "/agenda",
