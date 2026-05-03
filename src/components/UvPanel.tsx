@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useUvSun, uvLevel } from "@/hooks/use-uv-sun";
 
 type Props = {
