@@ -458,3 +458,200 @@ export async function computeUvForecast(): Promise<
 
   return out;
 }
+
+/**
+ * Evaluerer UV-prognosen for de neste N dagene per aktive lokasjon.
+ * For hver dag returneres maks UV (08:30-17 Oslo), første tidspunkt et
+ * varsel-nivå (3/6/8) krysses, og forventet send-tid (krysningstid - lead).
+ *
+ * Statuser:
+ *   - will-fire  : prognose viser at en terskel passeres
+ *   - no-hit     : prognose finnes, men ingen terskel nås
+ *   - uncertain  : ingen prognosedata for dagen ennå
+ */
+export async function computeUpcomingUvEvaluations(daysAhead = 3): Promise<
+  Array<{
+    id: string;
+    location: string;
+    label: string;
+    recipient: string;
+    leadMinutes: number;
+    targetDate: string; // YYYY-MM-DD i Oslo
+    notifyAt: string;   // ISO — når push planlegges sendt (eller fallback 08:00 Oslo)
+    status: "will-fire" | "no-hit" | "uncertain";
+    threshold: 3 | 6 | 8 | null;
+    uvMax: number | null;
+    uvMaxAt: string | null; // ISO
+    ruleText: string;
+  }>
+> {
+  const { data: prefs, error } = await supabaseAdmin
+    .from("uv_notification_prefs" as never)
+    .select("*")
+    .eq("enabled", true)
+    .order("location");
+  if (error) throw error;
+
+  const out: Awaited<ReturnType<typeof computeUpcomingUvEvaluations>> = [];
+
+  // Cache prognose per lokasjon (lat,lon).
+  const seriesCache = new Map<string, Array<{ time: string; uv: number }>>();
+
+  function osloDateIso(d: Date): string {
+    return new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Europe/Oslo", year: "numeric", month: "2-digit", day: "2-digit",
+    }).format(d);
+  }
+  function osloLocalToUtc(dateIso: string, hour: number, minute = 0): Date {
+    const [y, m, d] = dateIso.split("-").map(Number);
+    const naive = Date.UTC(y, m - 1, d, hour, minute, 0);
+    const fmt = new Intl.DateTimeFormat("en-US", {
+      timeZone: "Europe/Oslo",
+      year: "numeric", month: "2-digit", day: "2-digit",
+      hour: "2-digit", minute: "2-digit", hour12: false,
+    });
+    const parts = fmt.formatToParts(new Date(naive));
+    const get = (t: string) => Number(parts.find((p) => p.type === t)!.value);
+    const osloAsUtc = Date.UTC(get("year"), get("month") - 1, get("day"), get("hour") % 24, get("minute"), 0);
+    const offset = osloAsUtc - naive;
+    return new Date(naive - offset);
+  }
+
+  const now = new Date();
+  const todayOsloIso = osloDateIso(now);
+
+  for (const raw of (prefs ?? []) as Array<{
+    id: string;
+    location: string;
+    label: string;
+    lat: number;
+    lon: number;
+    recipient: string;
+    lead_minutes: number | null;
+  }>) {
+    const lead = typeof raw.lead_minutes === "number" ? raw.lead_minutes : LEAD_MINUTES;
+    const cacheKey = `${raw.lat},${raw.lon}`;
+    let series = seriesCache.get(cacheKey);
+    if (!series) {
+      series = [];
+      try {
+        const url = `https://api.met.no/weatherapi/locationforecast/2.0/complete?lat=${raw.lat}&lon=${raw.lon}`;
+        const res = await fetch(url, {
+          headers: { "User-Agent": "riis.cc agenda push (agenda@riis.cc)" },
+        });
+        if (res.ok) {
+          const json = (await res.json()) as {
+            properties?: {
+              timeseries?: Array<{
+                time: string;
+                data?: { instant?: { details?: { ultraviolet_index_clear_sky?: number } } };
+              }>;
+            };
+          };
+          for (const e of json.properties?.timeseries ?? []) {
+            const uv = e?.data?.instant?.details?.ultraviolet_index_clear_sky;
+            if (typeof uv === "number") series.push({ time: e.time, uv });
+          }
+        }
+      } catch (err) {
+        console.error("[uv-upcoming] met.no fetch failed", err);
+      }
+      seriesCache.set(cacheKey, series);
+    }
+
+    for (let dayOffset = 0; dayOffset < daysAhead; dayOffset++) {
+      const target = new Date(now.getTime() + dayOffset * 86400000);
+      const targetIso = osloDateIso(target);
+
+      // Filtrer punkter på denne dagen i Oslo-tid, vindu 08:30-17.
+      const dayPoints = series.filter((e) => {
+        const t = new Date(e.time);
+        const iso = osloDateIso(t);
+        if (iso !== targetIso) return false;
+        const oslo = new Date(t.toLocaleString("en-US", { timeZone: "Europe/Oslo" }));
+        const h = oslo.getHours();
+        const m = oslo.getMinutes();
+        return (h > 8 || (h === 8 && m >= 30)) && h <= 17;
+      });
+
+      if (dayPoints.length === 0) {
+        // Ingen prognose ennå (typisk dag 7+ for met.no)
+        const fallback = osloLocalToUtc(targetIso, 8, 0);
+        out.push({
+          id: `${raw.id}-${targetIso}`,
+          location: raw.location,
+          label: raw.label,
+          recipient: raw.recipient,
+          leadMinutes: lead,
+          targetDate: targetIso,
+          notifyAt: fallback.toISOString(),
+          status: "uncertain",
+          threshold: null,
+          uvMax: null,
+          uvMaxAt: null,
+          ruleText: "Sender hvis UV ≥ 3 (sjekk kl 08-17)",
+        });
+        continue;
+      }
+
+      // Maks UV i vinduet
+      let maxPoint = dayPoints[0];
+      for (const p of dayPoints) if (p.uv > maxPoint.uv) maxPoint = p;
+
+      // Første tidspunkt der nivå krysses (høyeste først)
+      let crossing: { lvl: 3 | 6 | 8; at: Date; uv: number } | null = null;
+      for (const lvl of [8, 6, 3] as const) {
+        const hit = dayPoints.find((p) => p.uv >= lvl);
+        if (hit) {
+          const at = new Date(hit.time);
+          if (!crossing || at < crossing.at) {
+            crossing = { lvl, at, uv: hit.uv };
+          }
+          break;
+        }
+      }
+
+      if (!crossing) {
+        // Ingen terskel nådd — drop "i dag" (allerede sjekket), vis ellers no-hit
+        if (targetIso === todayOsloIso) continue;
+        const fallback = osloLocalToUtc(targetIso, 8, 0);
+        out.push({
+          id: `${raw.id}-${targetIso}`,
+          location: raw.location,
+          label: raw.label,
+          recipient: raw.recipient,
+          leadMinutes: lead,
+          targetDate: targetIso,
+          notifyAt: fallback.toISOString(),
+          status: "no-hit",
+          threshold: null,
+          uvMax: maxPoint.uv,
+          uvMaxAt: maxPoint.time,
+          ruleText: `Maks UV ${maxPoint.uv.toFixed(1)} — under terskel 3`,
+        });
+        continue;
+      }
+
+      const sendAt = new Date(crossing.at.getTime() - lead * 60 * 1000);
+      // For "i dag": ikke vis hvis sending allerede er passert
+      if (targetIso === todayOsloIso && sendAt.getTime() < now.getTime() - 60 * 1000) continue;
+
+      out.push({
+        id: `${raw.id}-${targetIso}`,
+        location: raw.location,
+        label: raw.label,
+        recipient: raw.recipient,
+        leadMinutes: lead,
+        targetDate: targetIso,
+        notifyAt: sendAt.toISOString(),
+        status: "will-fire",
+        threshold: crossing.lvl,
+        uvMax: maxPoint.uv,
+        uvMaxAt: maxPoint.time,
+        ruleText: `UV ≥ ${crossing.lvl} (maks ${maxPoint.uv.toFixed(1)})`,
+      });
+    }
+  }
+
+  return out;
+}
