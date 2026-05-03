@@ -247,8 +247,7 @@ export async function processHyttaChecklistNotifications(): Promise<{
   if (!triggers || triggers.length === 0) return { checked: 0, sent: 0, errors: 0 };
 
   // Bruk mottaker fra første trigger (alle åpne punkter har samme verdi etter bulk-planlegging).
-  const targetWhoRaw = (triggers[0] as { notify_who?: string }).notify_who || "Alle";
-  const targetWho = targetWhoRaw !== "Alle" ? targetWhoRaw : null;
+  const targetWho = (triggers[0] as { notify_who?: string }).notify_who || "Alle";
 
   // Hent alle ÅPNE (ikke-avhakede) punkter — det er disse som skal med i varselet.
   const { data: openItems, error: openErr } = await supabaseAdmin
@@ -272,7 +271,10 @@ export async function processHyttaChecklistNotifications(): Promise<{
   }
 
   let subQuery = supabaseAdmin.from("push_subscriptions").select("endpoint, p256dh, auth, who");
-  if (targetWho) subQuery = subQuery.eq("who", targetWho);
+  {
+    const orFilter = buildSubscriptionWhoOr(targetWho);
+    if (orFilter) subQuery = subQuery.or(orFilter);
+  }
   const { data: subs, error: subErr } = await subQuery;
 
   if (subErr) throw subErr;
