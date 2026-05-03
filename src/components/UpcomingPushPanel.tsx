@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Bell, Calendar, Cake, ScrollText, CloudSun, Sun } from "lucide-react";
+import { Bell, Calendar, Cake, ScrollText, CloudSun, Sun, HelpCircle } from "lucide-react";
+import { getUpcomingWeatherEvaluations } from "@/server/weather-push.functions";
+
+type WeatherStatus = "will-fire" | "no-hit" | "uncertain";
 
 type Item = {
   key: string;
