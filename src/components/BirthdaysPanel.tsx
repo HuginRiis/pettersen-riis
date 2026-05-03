@@ -282,6 +282,10 @@ export function BirthdaysPanel() {
           {!loading && sorted.length === 0 && (
             <p className="text-muted-foreground italic">Ingen bursdager registrert ennå.</p>
           )}
+          <div
+            className="space-y-3 overflow-y-auto pr-1"
+            style={{ maxHeight: "calc(2 * 9.5rem)" }}
+          >
           {sorted.map((b) => {
             const dleft = daysUntilBirthday(b.birth_date);
             const age = ageAtNextBirthday(b.birth_date);
@@ -438,6 +442,7 @@ export function BirthdaysPanel() {
               </article>
             );
           })}
+          </div>
         </div>
       </div>
     </section>

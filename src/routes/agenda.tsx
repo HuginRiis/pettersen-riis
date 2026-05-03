@@ -5,12 +5,12 @@ import { PageShell, PageHero } from "@/components/PageShell";
 import { supabase } from "@/integrations/supabase/client";
 import heroImg from "@/assets/got-agenda.jpg";
 import { Trash2, Plus, Bell, BellOff, Clock } from "lucide-react";
-import { getPushPublicKey, sendAgendaTestPush } from "@/server/agenda-push";
+import { getPushPublicKey } from "@/server/agenda-push";
 import { GarbageCollectionPanel } from "@/components/GarbageCollectionPanel";
 import { BirthdaysPanel } from "@/components/BirthdaysPanel";
+import { UpcomingPushPanel } from "@/components/UpcomingPushPanel";
 import {
   type Who,
-  getCurrentSubscriptionDetails,
   getStoredWho,
   isPushSupported,
   isCurrentlySubscribed,
@@ -135,7 +135,7 @@ function AgendaPage() {
 
       <BirthdaysPanel />
 
-      <TestPushPanel />
+      <UpcomingPushPanel />
 
       <section className="container mx-auto px-4 py-12 grid lg:grid-cols-3 gap-8">
         <form onSubmit={handleSubmit} className="panel rounded-lg p-6 lg:sticky lg:top-24 h-fit">
@@ -338,58 +338,6 @@ function PushSubscribeBar() {
   );
 }
 
-function TestPushPanel() {
-  const sendTestPush = useServerFn(sendAgendaTestPush);
-  const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
-
-  async function handleSendTestPush() {
-    setBusy(true);
-    setMessage(null);
-    try {
-      const subscription = await getCurrentSubscriptionDetails();
-      if (!subscription) {
-        setMessage('Fant ikke aktiv push på denne enheten. Slå push av/på først.');
-        return;
-      }
-
-      const result = await sendTestPush({
-        data: { endpoint: subscription.endpoint, who: subscription.who },
-      });
-      setMessage(`Test-push sendt ${formatDateTimeNorwegian(result.sentAt)}.`);
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Kunne ikke sende test-push.');
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  return (
-    <section className="container mx-auto px-4 pb-12">
-      <div className="panel rounded-lg p-6 flex flex-col gap-4">
-        <div className="space-y-1">
-          <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Test push</p>
-          <h2 className="text-xl text-primary">Sjekk denne mobilen</h2>
-          <p className="text-sm text-muted-foreground">
-            Trykk her for å sende en test direkte til enheten som er aktivert på denne siden.
-          </p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-3">
-          <button
-            type="button"
-            onClick={handleSendTestPush}
-            disabled={busy}
-            className="bg-primary text-primary-foreground font-semibold tracking-wider uppercase py-2.5 px-4 rounded hover:opacity-90 disabled:opacity-50 transition"
-          >
-            {busy ? 'Sender test…' : 'Send test-push'}
-          </button>
-          {message && <p className="text-sm text-muted-foreground">{message}</p>}
-        </div>
-      </div>
-    </section>
-  );
-}
 
 function DateSection({
   title,
