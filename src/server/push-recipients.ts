@@ -22,3 +22,19 @@ export function isGroupRecipient(recipient: string): boolean {
 export function expandRecipient(recipient: string): string[] {
   return GROUP_RECIPIENTS[recipient] ?? [recipient];
 }
+
+/**
+ * Bygger en PostgREST .or()-filterstreng som matcher push_subscriptions.who
+ * for en gitt mottaker. Returnerer null hvis ingen filter trengs (Alle → alle).
+ *
+ * Eksempler:
+ *   "Alle"            → null
+ *   "Arne"            → "who.eq.Arne,who.eq.Alle"
+ *   "Arne & Rebekka"  → "who.eq.Arne,who.eq.Rebekka,who.eq.Alle"
+ */
+export function buildSubscriptionWhoOr(recipient: string): string | null {
+  const names = expandRecipient(recipient);
+  if (names.length === 1 && names[0] === "Alle") return null;
+  const set = new Set<string>([...names, "Alle"]);
+  return Array.from(set).map((n) => `who.eq.${n}`).join(",");
+}
