@@ -50,12 +50,36 @@ export interface VakttarnStats {
 
 const RANGE = z.enum(["day", "week", "month"]);
 
+// Collapse near-duplicate events within `windowSec` for the same category
+// across all cameras. Counts collapse to a single event (so one person walking
+// past 3 cameras within the window = 1). Multiple events from the SAME camera
+// within the window are also collapsed (assumed same subject).
+function dedupeEvents(events: VakttarnEventRow[], windowSec: number): VakttarnEventRow[] {
+  if (windowSec <= 0 || events.length === 0) return events;
+  // events is sorted desc by detected_at; sort asc for grouping
+  const asc = [...events].sort((a, b) => a.detected_at.localeCompare(b.detected_at));
+  const kept: VakttarnEventRow[] = [];
+  const lastByCat = new Map<string, number>(); // category -> ms of last kept
+  for (const ev of asc) {
+    const t = new Date(ev.detected_at).getTime();
+    const last = lastByCat.get(ev.category);
+    if (last !== undefined && t - last < windowSec * 1000) {
+      continue; // collapse
+    }
+    kept.push(ev);
+    lastByCat.set(ev.category, t);
+  }
+  return kept.sort((a, b) => b.detected_at.localeCompare(a.detected_at));
+}
+
 export const fetchVakttarnEvents = createServerFn({ method: "GET" })
   .inputValidator(
     z.object({
       range: RANGE.default("day"),
       // ISO date (yyyy-mm-dd) representing the anchor date inside the range
       date: z.string().optional(),
+      // Dedupe window in seconds (collapse same-category events across cameras)
+      dedupeWindowSec: z.number().int().min(0).max(3600).default(120),
     }).parse
   )
   .handler(async ({ data }): Promise<VakttarnStats> => {
