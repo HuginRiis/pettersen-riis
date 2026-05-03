@@ -142,6 +142,8 @@ function PushSettingsPage() {
           editable={false}
         />
 
+        <WarrantyGlobalPrefsPanel />
+
         <CategoryCard
           icon={Bell}
           title="Push-abonnementer"
@@ -333,3 +335,72 @@ const GarbagePrefsList = () => (
     getLabel={(p) => `${p.fraksjon_navn ?? "Fraksjon"} → ${p.who ?? "Alle"}`}
   />
 );
+
+const WHO_OPTIONS = ["Alle", "Arne", "Rebekka", "Arne & Rebekka"] as const;
+type WarrantyPref = { id?: string; recipient: string; notify_30: boolean; notify_60: boolean; notify_90: boolean };
+
+function WarrantyGlobalPrefsPanel() {
+  const [prefs, setPrefs] = useState<Record<string, WarrantyPref>>({});
+
+  useEffect(() => {
+    void load();
+  }, []);
+
+  async function load() {
+    const { data } = await supabase.from("warranty_global_prefs").select("*");
+    const map: Record<string, WarrantyPref> = {};
+    for (const w of WHO_OPTIONS) {
+      map[w] = { recipient: w, notify_30: true, notify_60: true, notify_90: true };
+    }
+    for (const row of (data ?? []) as WarrantyPref[]) {
+      map[row.recipient] = row;
+    }
+    setPrefs(map);
+  }
+
+  async function toggle(who: string, field: "notify_30" | "notify_60" | "notify_90") {
+    const current = prefs[who] ?? { recipient: who, notify_30: true, notify_60: true, notify_90: true };
+    const next = { ...current, [field]: !current[field] };
+    setPrefs(p => ({ ...p, [who]: next }));
+    await supabase.from("warranty_global_prefs").upsert(
+      { recipient: who, notify_30: next.notify_30, notify_60: next.notify_60, notify_90: next.notify_90 },
+      { onConflict: "recipient" }
+    );
+  }
+
+  return (
+    <article className="panel rounded-lg p-4 md:col-span-2">
+      <h3 className="text-sm uppercase tracking-wider text-muted-foreground mb-1">Garanti — globalt av/på per bruker</h3>
+      <p className="text-xs text-muted-foreground mb-3">
+        Skru av enkelt-milepæler (30/60/90 dager) for valgt mottaker. Gjelder alle kvitteringer.
+      </p>
+      <div className="space-y-2">
+        {WHO_OPTIONS.map(who => {
+          const p = prefs[who] ?? { recipient: who, notify_30: true, notify_60: true, notify_90: true };
+          return (
+            <div key={who} className="flex items-center justify-between gap-2 text-sm border-t border-border pt-2 first:border-t-0 first:pt-0">
+              <span className="text-foreground font-medium">{who}</span>
+              <div className="flex gap-1.5">
+                {([30, 60, 90] as const).map(m => {
+                  const field = `notify_${m}` as "notify_30" | "notify_60" | "notify_90";
+                  const on = p[field];
+                  return (
+                    <button
+                      key={m}
+                      onClick={() => toggle(who, field)}
+                      className={`px-2 py-1 rounded border text-xs transition flex items-center gap-1 ${
+                        on ? "border-primary/60 text-primary" : "border-border text-muted-foreground line-through"
+                      }`}
+                    >
+                      {on ? <Bell size={11} /> : <BellOff size={11} />} {m}d
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </article>
+  );
+}

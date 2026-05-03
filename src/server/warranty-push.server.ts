@@ -95,6 +95,20 @@ export async function processWarrantyNotifications(): Promise<{
   let errors = 0;
   let checked = 0;
 
+  // Hent globale varslingspreferanser per mottaker (av/på for 30/60/90)
+  const { data: globalPrefs } = await supabaseAdmin
+    .from("warranty_global_prefs")
+    .select("recipient, notify_30, notify_60, notify_90");
+  const prefsByWho = new Map<string, { notify_30: boolean; notify_60: boolean; notify_90: boolean }>();
+  for (const p of (globalPrefs ?? []) as Array<{ recipient: string; notify_30: boolean; notify_60: boolean; notify_90: boolean }>) {
+    prefsByWho.set(p.recipient, { notify_30: p.notify_30, notify_60: p.notify_60, notify_90: p.notify_90 });
+  }
+  function isMilestoneEnabledFor(who: string | null | undefined, m: Milestone): boolean {
+    const p = prefsByWho.get(who ?? "Alle");
+    if (!p) return true;
+    return m === 30 ? p.notify_30 : m === 60 ? p.notify_60 : p.notify_90;
+  }
+
   for (const r of receipts as Array<{
     id: string;
     store: string | null;
@@ -108,18 +122,19 @@ export async function processWarrantyNotifications(): Promise<{
     if (daysLeft == null || daysLeft < 0) continue;
 
     // Finn første milepæl som er passert/aktuell og som ikke er varslet ennå.
+    const targetWho = r.warranty_recipient || "Alle";
     let trigger: Milestone | null = null;
     for (const m of MILESTONES) {
       const already = r[colName(m) as keyof typeof r];
-      if (!already && daysLeft <= m) {
-        trigger = m;
-        break; // start med høyeste milepæl (90), kun ett varsel per kjøring per kvittering
-      }
+      if (already) continue;
+      if (daysLeft > m) continue;
+      if (!isMilestoneEnabledFor(targetWho, m)) continue;
+      trigger = m;
+      break;
     }
     if (!trigger) continue;
     checked++;
 
-    const targetWho = r.warranty_recipient || "Alle";
     let subQuery = supabaseAdmin
       .from("push_subscriptions")
       .select("endpoint, p256dh, auth, who");
