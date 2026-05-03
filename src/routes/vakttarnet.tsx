@@ -199,6 +199,8 @@ function VakttarnetPage() {
           title="Mesterens orakel"
           icon={<Sparkles size={14} />}
           subtitle="AI-søk, tokens og estimerte credits brukt på huset"
+          collapsible
+          defaultOpen={false}
         >
           <AiUsagePanel stats={aiStats} />
         </Panel>
