@@ -13,6 +13,8 @@ type Item = {
   title: string;
   recipients: string;
   detail?: string;
+  rule?: string;
+  status?: WeatherStatus;
 };
 
 const HORIZON_DAYS = 31;
