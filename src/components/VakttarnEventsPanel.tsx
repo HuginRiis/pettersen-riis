@@ -241,7 +241,7 @@ export function VakttarnEventsPanel() {
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border) / 0.3)" />
               <XAxis dataKey="label" stroke="hsl(var(--muted-foreground))" fontSize={11} />
               <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} allowDecimals={false} />
-              <Tooltip
+              <Tooltip trigger="click"
                 contentStyle={{
                   background: "hsl(var(--background))",
                   border: "1px solid hsl(var(--border))",

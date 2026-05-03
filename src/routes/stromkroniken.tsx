@@ -1019,7 +1019,7 @@ function PulseHistoryChart({
                 width={48}
                 unit=" W"
               />
-              <Tooltip
+              <Tooltip trigger="click"
                 contentStyle={{
                   background: "oklch(0.18 0.02 270)",
                   border: "1px solid oklch(0.3 0.02 270)",
@@ -1116,7 +1116,7 @@ function PriceChart({
               width={48}
               unit=" kr"
             />
-            <Tooltip
+            <Tooltip trigger="click"
               contentStyle={{
                 background: "oklch(0.22 0.02 270)",
                 border: "1px solid oklch(0.35 0.02 270)",
@@ -1188,7 +1188,7 @@ function HourlyChart({ hourly }: { hourly: ConsumptionPoint[] }) {
               width={42}
               unit=" kWh"
             />
-            <Tooltip
+            <Tooltip trigger="click"
               contentStyle={{
                 background: "oklch(0.22 0.02 270)",
                 border: "1px solid oklch(0.35 0.02 270)",
@@ -1243,7 +1243,7 @@ function DailyChart({ daily }: { daily: ConsumptionPoint[] }) {
               width={42}
               unit=" kWh"
             />
-            <Tooltip
+            <Tooltip trigger="click"
               contentStyle={{
                 background: "oklch(0.22 0.02 270)",
                 border: "1px solid oklch(0.35 0.02 270)",
@@ -1385,7 +1385,7 @@ function MonthVsLastChart({ daily }: { daily: ConsumptionPoint[] }) {
               axisLine={false}
               tickLine={false}
             />
-            <Tooltip
+            <Tooltip trigger="click"
               contentStyle={{
                 background: "oklch(0.22 0.02 270)",
                 border: "1px solid oklch(0.35 0.02 270)",
@@ -1461,7 +1461,7 @@ function MonthlyChart({ monthly }: { monthly: ConsumptionPoint[] }) {
               width={42}
               unit=" kr"
             />
-            <Tooltip
+            <Tooltip trigger="click"
               contentStyle={{
                 background: "oklch(0.22 0.02 270)",
                 border: "1px solid oklch(0.35 0.02 270)",
@@ -1670,7 +1670,7 @@ function MonthlyAccumulatedChart({
               tickLine={false}
               unit=" kWh"
             />
-            <Tooltip
+            <Tooltip trigger="click"
               contentStyle={{
                 background: "oklch(0.22 0.02 270)",
                 border: "1px solid oklch(0.35 0.02 270)",
@@ -2133,7 +2133,7 @@ function ComparisonBlock({
               <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" vertical={false} />
               <XAxis dataKey="label" tick={{ fill: "oklch(0.78 0.13 85)", fontSize: 10 }} />
               <YAxis tick={{ fill: "oklch(0.78 0.13 85)", fontSize: 10 }} width={48} unit=" kr" />
-              <Tooltip
+              <Tooltip trigger="click"
                 contentStyle={{
                   background: "hsl(var(--card))",
                   border: "1px solid hsl(var(--border))",
@@ -2207,7 +2207,7 @@ function ComparisonBlock({
                 <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" vertical={false} />
                 <XAxis dataKey="label" tick={{ fill: "oklch(0.78 0.13 85)", fontSize: 10 }} />
                 <YAxis tick={{ fill: "oklch(0.78 0.13 85)", fontSize: 10 }} width={48} unit=" kWh" />
-                <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => [`${v.toFixed(1)} kWh`, ""]} />
+                <Tooltip trigger="click" contentStyle={tooltipStyle} formatter={(v: number) => [`${v.toFixed(1)} kWh`, ""]} />
                 <Legend wrapperStyle={{ fontSize: 11 }} />
                 <Bar dataKey="Borgen" fill={BORGEN_COLOR} radius={[3, 3, 0, 0]} />
                 <Bar dataKey="Hytta" fill={HYTTA_COLOR} radius={[3, 3, 0, 0]} />
@@ -2226,7 +2226,7 @@ function ComparisonBlock({
                 <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" vertical={false} />
                 <XAxis dataKey="label" tick={{ fill: "oklch(0.78 0.13 85)", fontSize: 10 }} />
                 <YAxis tick={{ fill: "oklch(0.78 0.13 85)", fontSize: 10 }} width={48} unit=" kWh" />
-                <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => [`${v.toFixed(0)} kWh`, ""]} />
+                <Tooltip trigger="click" contentStyle={tooltipStyle} formatter={(v: number) => [`${v.toFixed(0)} kWh`, ""]} />
                 <Legend wrapperStyle={{ fontSize: 11 }} />
                 <Bar dataKey="Borgen" fill={BORGEN_COLOR} radius={[3, 3, 0, 0]} />
                 <Bar dataKey="Hytta" fill={HYTTA_COLOR} radius={[3, 3, 0, 0]} />
@@ -2245,7 +2245,7 @@ function ComparisonBlock({
                 <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" vertical={false} />
                 <XAxis dataKey="label" tick={{ fill: "oklch(0.78 0.13 85)", fontSize: 9 }} interval={Math.max(0, Math.floor(dailyChartData.length / 10))} />
                 <YAxis tick={{ fill: "oklch(0.78 0.13 85)", fontSize: 10 }} width={48} unit=" kWh" />
-                <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => [`${v.toFixed(1)} kWh`, ""]} />
+                <Tooltip trigger="click" contentStyle={tooltipStyle} formatter={(v: number) => [`${v.toFixed(1)} kWh`, ""]} />
                 <Legend wrapperStyle={{ fontSize: 11 }} />
                 <Line type="monotone" dataKey="Borgen" stroke={BORGEN_COLOR} dot={false} strokeWidth={2} />
                 <Line type="monotone" dataKey="Hytta" stroke={HYTTA_COLOR} dot={false} strokeWidth={2} />
@@ -2264,7 +2264,7 @@ function ComparisonBlock({
                 <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" vertical={false} />
                 <XAxis dataKey="label" tick={{ fill: "oklch(0.78 0.13 85)", fontSize: 9 }} interval={Math.max(0, Math.floor(cumulativeChartData.length / 10))} />
                 <YAxis tick={{ fill: "oklch(0.78 0.13 85)", fontSize: 10 }} width={56} unit=" kWh" />
-                <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => [`${v.toFixed(0)} kWh`, ""]} />
+                <Tooltip trigger="click" contentStyle={tooltipStyle} formatter={(v: number) => [`${v.toFixed(0)} kWh`, ""]} />
                 <Legend wrapperStyle={{ fontSize: 11 }} />
                 <Line type="monotone" dataKey="Borgen" stroke={BORGEN_COLOR} dot={false} strokeWidth={2} />
                 <Line type="monotone" dataKey="Hytta" stroke={HYTTA_COLOR} dot={false} strokeWidth={2} />
@@ -2283,7 +2283,7 @@ function ComparisonBlock({
                 <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" vertical={false} />
                 <XAxis dataKey="label" tick={{ fill: "oklch(0.78 0.13 85)", fontSize: 10 }} />
                 <YAxis tick={{ fill: "oklch(0.78 0.13 85)", fontSize: 10 }} width={56} unit=" kWh" />
-                <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => [`${v.toFixed(0)} kWh`, ""]} />
+                <Tooltip trigger="click" contentStyle={tooltipStyle} formatter={(v: number) => [`${v.toFixed(0)} kWh`, ""]} />
                 <Legend wrapperStyle={{ fontSize: 11 }} />
                 <Bar dataKey="Borgen" fill={BORGEN_COLOR} radius={[3, 3, 0, 0]} />
                 <Bar dataKey="Hytta" fill={HYTTA_COLOR} radius={[3, 3, 0, 0]} />
