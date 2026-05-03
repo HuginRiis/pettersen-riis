@@ -35,6 +35,7 @@ import {
 
 const RECIPIENT_OPTIONS: { value: string; label: string }[] = [
   { value: "Alle", label: "Alle" },
+  { value: "Arne & Rebekka", label: "Arne & Rebekka" },
   { value: "Arne", label: "Arne" },
   { value: "Rebekka", label: "Rebekka" },
 ];
