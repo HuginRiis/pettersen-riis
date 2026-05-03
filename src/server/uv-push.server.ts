@@ -604,7 +604,7 @@ export async function computeUpcomingUvEvaluations(daysAhead = 3): Promise<
         const hit = dayPoints.find((p) => p.uv >= lvl);
         if (hit) {
           const at = new Date(hit.time);
-          if (!crossing || at < crossing.at) {
+          if (!crossing || at.getTime() < (crossing as { at: Date }).at.getTime()) {
             crossing = { lvl, at, uv: hit.uv };
           }
           break;
