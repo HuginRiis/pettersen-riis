@@ -142,6 +142,8 @@ function PushSettingsPage() {
           editable={false}
         />
 
+        <WarrantyGlobalPrefsPanel />
+
         <CategoryCard
           icon={Bell}
           title="Push-abonnementer"
