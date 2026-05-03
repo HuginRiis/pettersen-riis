@@ -130,29 +130,6 @@ export function VakttarnEventsPanel() {
         </div>
       </div>
 
-      {/* Dedupe window slider (skjult bak details) */}
-      <details className="rounded-lg border border-border/40 bg-background/40">
-        <summary className="cursor-pointer px-3 py-2 text-[10px] uppercase tracking-[0.2em] text-muted-foreground hover:text-foreground flex items-center justify-between">
-          <span>Slå sammen innenfor</span>
-          <span className="font-serif text-xs text-[#d4af37] tabular-nums normal-case tracking-normal">
-            {dedupeSec === 0 ? "Av" : dedupeSec < 60 ? `${dedupeSec}s` : `${Math.round(dedupeSec / 60)}m ${dedupeSec % 60 ? (dedupeSec % 60) + "s" : ""}`.trim()}
-          </span>
-        </summary>
-        <div className="flex items-center gap-3 px-3 pb-3 pt-1 text-xs text-muted-foreground">
-          <input
-            type="range"
-            min={0}
-            max={600}
-            step={10}
-            value={dedupeSec}
-            onChange={(e) => setDedupeSec(Number(e.target.value))}
-            className="flex-1 accent-[#d4af37]"
-          />
-          <span className="font-serif text-sm text-[#d4af37] tabular-nums w-16 text-right">
-            {dedupeSec === 0 ? "Av" : dedupeSec < 60 ? `${dedupeSec}s` : `${Math.round(dedupeSec / 60)}m ${dedupeSec % 60 ? (dedupeSec % 60) + "s" : ""}`.trim()}
-          </span>
-        </div>
-      </details>
 
       {/* Counter cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
