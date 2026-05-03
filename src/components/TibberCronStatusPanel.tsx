@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Activity, RefreshCw, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Activity, RefreshCw, AlertTriangle, CheckCircle2, Plus, Check, X } from "lucide-react";
 
 type Row = {
   location: string;
@@ -8,6 +8,9 @@ type Row = {
   kwh: number;
   updated_at: string;
 };
+
+const LOCATIONS = ["tollnes", "hytta"] as const;
+type Loc = (typeof LOCATIONS)[number];
 
 type Status = {
   rows: Row[];
@@ -33,11 +36,15 @@ function osloDay(offset = 0): string {
   return d.toLocaleDateString("sv-SE", { timeZone: "Europe/Oslo" });
 }
 
+function lastNDays(n: number): string[] {
+  return Array.from({ length: n }, (_, i) => osloDay(-i));
+}
+
 async function loadStatus(): Promise<Status> {
   const { data } = await supabase
     .from("tibber_daily_kwh")
     .select("location, day, kwh, updated_at")
-    .gte("day", osloDay(-3))
+    .gte("day", osloDay(-7))
     .order("day", { ascending: false });
   const rows = (data as Row[]) ?? [];
   const lastUpdate = rows.length
@@ -48,9 +55,10 @@ async function loadStatus(): Promise<Status> {
     : null;
   const today = osloDay(0);
   const yesterday = osloDay(-1);
-  const locs = ["hytta", "tollnes"];
-  const missingToday = locs.some((l) => !rows.some((r) => r.location === l && r.day === today));
-  const missingYesterday = locs.some(
+  const missingToday = LOCATIONS.some(
+    (l) => !rows.some((r) => r.location === l && r.day === today),
+  );
+  const missingYesterday = LOCATIONS.some(
     (l) => !rows.some((r) => r.location === l && r.day === yesterday),
   );
   return { rows, lastUpdate, staleMinutes, missingYesterday, missingToday };
@@ -60,6 +68,9 @@ export function TibberCronStatusPanel() {
   const [status, setStatus] = useState<Status | null>(null);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+  const [editing, setEditing] = useState<{ day: string; loc: Loc } | null>(null);
+  const [editValue, setEditValue] = useState("");
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     void loadStatus().then(setStatus);
@@ -96,8 +107,50 @@ export function TibberCronStatusPanel() {
     }
   }
 
+  function startEdit(day: string, loc: Loc, currentKwh?: number) {
+    setEditing({ day, loc });
+    setEditValue(currentKwh != null ? String(currentKwh) : "");
+    setMsg(null);
+  }
+
+  async function saveEdit() {
+    if (!editing) return;
+    const num = Number(editValue.replace(",", "."));
+    if (!Number.isFinite(num) || num < 0) {
+      setMsg("Ugyldig kWh-verdi");
+      return;
+    }
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from("tibber_daily_kwh")
+        .upsert(
+          {
+            location: editing.loc,
+            day: editing.day,
+            kwh: num,
+            source: "manuell",
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "location,day" },
+        );
+      if (error) {
+        setMsg(`Feil: ${error.message}`);
+      } else {
+        setMsg(`Lagret ${num} kWh for ${editing.loc} ${editing.day}`);
+        setEditing(null);
+        await loadStatus().then(setStatus);
+      }
+    } catch (e: any) {
+      setMsg(`Feil: ${e?.message ?? e}`);
+    } finally {
+      setSaving(false);
+    }
+  }
+
   const stale = status?.staleMinutes != null && status.staleMinutes > 10;
   const warn = stale || status?.missingYesterday || status?.missingToday;
+  const days = lastNDays(7);
 
   return (
     <section className="container mx-auto px-4 pt-4">
@@ -119,8 +172,8 @@ export function TibberCronStatusPanel() {
             </div>
             <p className="text-sm text-muted-foreground mt-1">
               Cron kjører hvert 2. minutt og lagrer dagens kWh per hus i{" "}
-              <code className="text-foreground/80">tibber_daily_kwh</code>. Dersom Pulse hadde
-              utfall fyller Tibber GraphQL inn de manglende dagene.
+              <code className="text-foreground/80">tibber_daily_kwh</code>. Mangler en dag (Pulse
+              utfall) kan du legge inn verdien manuelt nedenfor.
             </p>
 
             <div className="grid sm:grid-cols-3 gap-2 mt-3 text-xs">
@@ -146,15 +199,92 @@ export function TibberCronStatusPanel() {
               />
             </div>
 
-            {status && status.rows.length > 0 && (
-              <ul className="mt-3 text-[11px] text-muted-foreground grid grid-cols-2 gap-x-4 gap-y-0.5">
-                {status.rows.slice(0, 8).map((r, i) => (
-                  <li key={i} className="tabular-nums">
-                    {r.day} · {r.location} → {Number(r.kwh).toFixed(2)} kWh
-                  </li>
-                ))}
-              </ul>
-            )}
+            {/* 7-day grid per location */}
+            <div className="mt-4 overflow-x-auto">
+              <table className="w-full text-[11px] tabular-nums">
+                <thead>
+                  <tr className="text-muted-foreground text-[10px] uppercase tracking-wider">
+                    <th className="text-left py-1 pr-2">Dag</th>
+                    {LOCATIONS.map((l) => (
+                      <th key={l} className="text-left py-1 pr-2">
+                        {l}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {days.map((day) => (
+                    <tr key={day} className="border-t border-border/30">
+                      <td className="py-1.5 pr-2 text-muted-foreground">{day}</td>
+                      {LOCATIONS.map((loc) => {
+                        const row = status?.rows.find(
+                          (r) => r.day === day && r.location === loc,
+                        );
+                        const isEditing =
+                          editing?.day === day && editing?.loc === loc;
+                        if (isEditing) {
+                          return (
+                            <td key={loc} className="py-1.5 pr-2">
+                              <div className="flex items-center gap-1">
+                                <input
+                                  type="number"
+                                  step="0.01"
+                                  inputMode="decimal"
+                                  autoFocus
+                                  value={editValue}
+                                  onChange={(e) => setEditValue(e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") void saveEdit();
+                                    if (e.key === "Escape") setEditing(null);
+                                  }}
+                                  className="w-20 bg-background border border-border/60 rounded px-1.5 py-0.5 text-xs"
+                                  placeholder="kWh"
+                                />
+                                <button
+                                  onClick={() => void saveEdit()}
+                                  disabled={saving}
+                                  className="text-primary hover:bg-primary/10 rounded p-0.5"
+                                  title="Lagre"
+                                >
+                                  <Check size={12} />
+                                </button>
+                                <button
+                                  onClick={() => setEditing(null)}
+                                  className="text-muted-foreground hover:bg-muted/30 rounded p-0.5"
+                                  title="Avbryt"
+                                >
+                                  <X size={12} />
+                                </button>
+                              </div>
+                            </td>
+                          );
+                        }
+                        return (
+                          <td key={loc} className="py-1.5 pr-2">
+                            {row ? (
+                              <button
+                                onClick={() => startEdit(day, loc, row.kwh)}
+                                className="text-foreground hover:text-primary text-left"
+                                title="Klikk for å redigere"
+                              >
+                                {Number(row.kwh).toFixed(2)} kWh
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => startEdit(day, loc)}
+                                className="inline-flex items-center gap-1 text-destructive hover:text-primary text-[10px] uppercase tracking-wider"
+                              >
+                                <Plus size={10} /> legg til
+                              </button>
+                            )}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
             <div className="mt-3 flex items-center gap-2 flex-wrap">
               <button
