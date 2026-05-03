@@ -165,9 +165,10 @@ export async function processBirthdayNotifications(): Promise<{
     if (r.notified_year === today.year) continue;
     checked++;
 
-    const recipients = (r.notify_recipients && r.notify_recipients.length > 0)
+    const rawRecipients = (r.notify_recipients && r.notify_recipients.length > 0)
       ? r.notify_recipients
       : ["Alle"];
+    const recipients = Array.from(new Set(rawRecipients.flatMap((x) => expandRecipient(x))));
 
     // Hent abonnementer som matcher (Alle = alle, ellers union av valgte personer + Alle)
     let subs: Array<{ endpoint: string; p256dh: string; auth: string; who: string }> = [];
