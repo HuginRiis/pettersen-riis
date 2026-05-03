@@ -290,7 +290,7 @@ export async function processHyttaChecklistNotifications(): Promise<{
   const lines = openItems.slice(0, 10).map((i) => `• ${i.label}`).join("\n");
   const more = openItems.length > 10 ? `\n…og ${openItems.length - 10} til` : "";
   const payload = JSON.stringify({
-    title: "📜 Påminnelse: Huskeliste til hytta",
+    title: "Fra hytta 🛖 · 📜 Påminnelse: Huskeliste til hytta",
     body: `${openItems.length} punkt${openItems.length === 1 ? "" : "er"} venter:\n${lines}${more}`,
     tag: "hytta-checklist-reminder",
     url: "/hytta",
