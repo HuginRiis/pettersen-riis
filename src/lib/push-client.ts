@@ -9,7 +9,15 @@ const VAPID_PUBLIC_KEY =
   "BPSODBOF2DyMKZWvltonHi0Bh3-3de70h6CxTYvZb71-wYTmUdoMZJ_xU2AZI9LjyA3hUaP_gyFUR-m7mnvTj0E";
 const WHO_KEY = "agenda_push_who";
 
-export type Who = "Alle" | "Arne" | "Rebekka" | "Marita" | "Nora" | "Celine" | "Mira";
+export type Who =
+  | "Alle"
+  | "Arne & Rebekka"
+  | "Arne"
+  | "Rebekka"
+  | "Marita"
+  | "Nora"
+  | "Celine"
+  | "Mira";
 
 export function getStoredWho(): Who {
   if (typeof window === "undefined") return "Alle";
