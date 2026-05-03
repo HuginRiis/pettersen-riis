@@ -28,3 +28,12 @@ export const getUvForecast = createServerFn({ method: "GET" }).handler(async () 
   const { computeUvForecast } = await import("./uv-push.server");
   return computeUvForecast();
 });
+
+/**
+ * Returnerer UV-evalueringer per aktiv lokasjon for de neste N dagene.
+ * Brukt i "Kommende push-varslinger".
+ */
+export const getUpcomingUvEvaluations = createServerFn({ method: "GET" }).handler(async () => {
+  const { computeUpcomingUvEvaluations } = await import("./uv-push.server");
+  return computeUpcomingUvEvaluations(3);
+});
