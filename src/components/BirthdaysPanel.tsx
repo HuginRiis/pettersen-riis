@@ -442,6 +442,7 @@ export function BirthdaysPanel() {
               </article>
             );
           })}
+          </div>
         </div>
       </div>
     </section>
