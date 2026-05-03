@@ -179,10 +179,11 @@ export async function sendHyttaChecklistPush(data: {
 }) {
   ensureConfigured();
 
-  const targetWho = data.who && data.who !== "Alle" ? data.who : null;
+  const targetWho = data.who || "Alle";
   let query = supabaseAdmin.from("push_subscriptions").select("endpoint, p256dh, auth, who");
-  if (targetWho) {
-    query = query.eq("who", targetWho);
+  {
+    const orFilter = buildSubscriptionWhoOr(targetWho);
+    if (orFilter) query = query.or(orFilter);
   }
   const { data: subs, error } = await query;
 
