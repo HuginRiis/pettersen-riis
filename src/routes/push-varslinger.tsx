@@ -4,7 +4,7 @@ import { PageShell, PageHero } from "@/components/PageShell";
 import { supabase } from "@/integrations/supabase/client";
 import { UpcomingPushPanel } from "@/components/UpcomingPushPanel";
 import {
-  Bell, BellOff, Calendar, Cake, Trash2, CloudSun, Sun, Lightbulb, ScrollText, ShieldCheck, Lock, ExternalLink,
+  Bell, BellOff, Calendar, Cake, Trash2, CloudSun, Sun, Lightbulb, ScrollText, ShieldCheck, Lock, ExternalLink, Smartphone, X,
 } from "lucide-react";
 import heroImg from "@/assets/got-agenda.jpg";
 
@@ -152,6 +152,8 @@ function PushSettingsPage() {
           description="Enheter som er registrert for å motta push fra huset."
           editable
         />
+
+        <SubscribersListPanel />
       </section>
     </PageShell>
   );
@@ -401,6 +403,134 @@ function WarrantyGlobalPrefsPanel() {
           );
         })}
       </div>
+    </article>
+  );
+}
+
+type Subscription = {
+  id: string;
+  endpoint: string;
+  who: string;
+  user_agent: string | null;
+  created_at: string;
+  last_used_at: string;
+};
+
+function deviceLabel(ua: string | null): string {
+  if (!ua) return "Ukjent enhet";
+  if (/iPad/i.test(ua)) return "iPad";
+  if (/iPhone/i.test(ua)) return "iPhone";
+  if (/Android/i.test(ua)) return /Mobile/i.test(ua) ? "Android-mobil" : "Android-nettbrett";
+  if (/Macintosh|Mac OS X/i.test(ua)) return "Mac";
+  if (/Windows/i.test(ua)) return "Windows-PC";
+  if (/Linux/i.test(ua)) return "Linux-PC";
+  return "Nettleser";
+}
+
+function browserLabel(ua: string | null): string {
+  if (!ua) return "";
+  if (/Edg\//i.test(ua)) return "Edge";
+  if (/Chrome\//i.test(ua) && !/Chromium/i.test(ua)) return "Chrome";
+  if (/Firefox\//i.test(ua)) return "Firefox";
+  if (/Safari\//i.test(ua) && !/Chrome/i.test(ua)) return "Safari";
+  return "";
+}
+
+function endpointHost(endpoint: string): string {
+  try { return new URL(endpoint).host; } catch { return "ukjent"; }
+}
+
+function SubscribersListPanel() {
+  const [items, setItems] = useState<Subscription[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => { void load(); }, []);
+
+  async function load() {
+    setLoading(true);
+    const { data } = await supabase
+      .from("push_subscriptions")
+      .select("id, endpoint, who, user_agent, created_at, last_used_at")
+      .order("last_used_at", { ascending: false });
+    setItems((data as Subscription[]) ?? []);
+    setLoading(false);
+  }
+
+  async function remove(id: string) {
+    if (!confirm("Fjerne dette abonnementet?")) return;
+    await supabase.from("push_subscriptions").delete().eq("id", id);
+    setItems(p => p.filter(x => x.id !== id));
+  }
+
+  // Group by who
+  const byWho = items.reduce<Record<string, Subscription[]>>((acc, s) => {
+    const k = s.who || "Alle";
+    (acc[k] ??= []).push(s);
+    return acc;
+  }, {});
+
+  return (
+    <article className="panel rounded-lg p-4 md:col-span-2">
+      <div className="flex items-baseline justify-between gap-2 mb-3">
+        <h3 className="text-sm uppercase tracking-wider text-muted-foreground">
+          Abonnenter — enheter som mottar push
+        </h3>
+        <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+          {items.length} totalt
+        </span>
+      </div>
+
+      {loading ? (
+        <p className="text-sm text-muted-foreground">Laster …</p>
+      ) : items.length === 0 ? (
+        <p className="text-sm text-muted-foreground">Ingen enheter er abonnert ennå.</p>
+      ) : (
+        <div className="space-y-4">
+          {Object.entries(byWho).map(([who, subs]) => (
+            <div key={who}>
+              <div className="flex items-center gap-2 mb-1.5">
+                <span className="text-xs font-semibold text-foreground">{who}</span>
+                <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                  {subs.length} {subs.length === 1 ? "enhet" : "enheter"}
+                </span>
+              </div>
+              <ul className="space-y-1.5">
+                {subs.map(s => {
+                  const dev = deviceLabel(s.user_agent);
+                  const br = browserLabel(s.user_agent);
+                  const last = new Date(s.last_used_at).toLocaleString("no-NO", {
+                    day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit",
+                  });
+                  return (
+                    <li
+                      key={s.id}
+                      className="flex items-start justify-between gap-2 text-sm border border-border rounded px-2.5 py-1.5"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5 text-foreground">
+                          <Smartphone size={13} className="text-primary shrink-0" />
+                          <span className="font-medium truncate">{dev}</span>
+                          {br && <span className="text-xs text-muted-foreground">· {br}</span>}
+                        </div>
+                        <div className="text-[11px] text-muted-foreground mt-0.5 truncate">
+                          {endpointHost(s.endpoint)} · sist brukt {last}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => remove(s.id)}
+                        className="text-muted-foreground hover:text-destructive shrink-0 p-1"
+                        title="Fjern abonnement"
+                      >
+                        <X size={14} />
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ))}
+        </div>
+      )}
     </article>
   );
 }
