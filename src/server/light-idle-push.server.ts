@@ -11,6 +11,7 @@ import webpush from "web-push";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { logPushSend } from "./push-log.server";
 import { getValidConnection, getHomeyRawSnapshot } from "./homey";
+import { buildSubscriptionWhoOr } from "./push-recipients";
 
 const VAPID_PUBLIC = process.env.VAPID_PUBLIC_KEY!;
 const VAPID_PRIVATE = process.env.VAPID_PRIVATE_KEY!;
@@ -290,7 +291,7 @@ async function pushToRecipient(
   feature: string,
 ): Promise<{ sent: number; errors: number }> {
   let q = supabaseAdmin.from("push_subscriptions").select("endpoint, p256dh, auth, who");
-  if (recipient !== "Alle") q = q.or(`who.eq.${recipient},who.eq.Alle`);
+  { const orFilter = buildSubscriptionWhoOr(recipient); if (orFilter) q = q.or(orFilter); }
   const { data: subs, error } = await q;
   if (error) return { sent: 0, errors: 1 };
   let sent = 0;

@@ -20,7 +20,7 @@ import {
   type LightIdlePref,
 } from "@/server/light-idle-push.functions";
 
-const RECIPIENTS = ["Alle", "Arne", "Rebekka", "Marita", "Nora", "Celine", "Mira"] as const;
+const RECIPIENTS = ["Alle", "Arne & Rebekka", "Arne", "Rebekka", "Marita", "Nora", "Celine", "Mira"] as const;
 
 type Zone = { zoneId: string; zoneName: string; lights: number; motionSensors: number };
 

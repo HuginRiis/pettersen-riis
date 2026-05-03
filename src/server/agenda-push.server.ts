@@ -7,6 +7,7 @@
 import webpush from "web-push";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { logPushSend } from "./push-log.server";
+import { buildSubscriptionWhoOr } from "./push-recipients";
 
 const VAPID_PUBLIC = process.env.VAPID_PUBLIC_KEY!;
 const VAPID_PRIVATE = process.env.VAPID_PRIVATE_KEY!;
@@ -178,10 +179,11 @@ export async function sendHyttaChecklistPush(data: {
 }) {
   ensureConfigured();
 
-  const targetWho = data.who && data.who !== "Alle" ? data.who : null;
+  const targetWho = data.who || "Alle";
   let query = supabaseAdmin.from("push_subscriptions").select("endpoint, p256dh, auth, who");
-  if (targetWho) {
-    query = query.eq("who", targetWho);
+  {
+    const orFilter = buildSubscriptionWhoOr(targetWho);
+    if (orFilter) query = query.or(orFilter);
   }
   const { data: subs, error } = await query;
 
@@ -245,8 +247,7 @@ export async function processHyttaChecklistNotifications(): Promise<{
   if (!triggers || triggers.length === 0) return { checked: 0, sent: 0, errors: 0 };
 
   // Bruk mottaker fra første trigger (alle åpne punkter har samme verdi etter bulk-planlegging).
-  const targetWhoRaw = (triggers[0] as { notify_who?: string }).notify_who || "Alle";
-  const targetWho = targetWhoRaw !== "Alle" ? targetWhoRaw : null;
+  const targetWho = (triggers[0] as { notify_who?: string }).notify_who || "Alle";
 
   // Hent alle ÅPNE (ikke-avhakede) punkter — det er disse som skal med i varselet.
   const { data: openItems, error: openErr } = await supabaseAdmin
@@ -270,7 +271,10 @@ export async function processHyttaChecklistNotifications(): Promise<{
   }
 
   let subQuery = supabaseAdmin.from("push_subscriptions").select("endpoint, p256dh, auth, who");
-  if (targetWho) subQuery = subQuery.eq("who", targetWho);
+  {
+    const orFilter = buildSubscriptionWhoOr(targetWho);
+    if (orFilter) subQuery = subQuery.or(orFilter);
+  }
   const { data: subs, error: subErr } = await subQuery;
 
   if (subErr) throw subErr;
@@ -357,7 +361,7 @@ export async function processAgendaNotifications(): Promise<{ checked: number; s
     const { data: subs, error: subErr } = await supabaseAdmin
       .from("push_subscriptions")
       .select("endpoint, p256dh, auth")
-      .or(targetWho === "Alle" ? `who.neq.__none__` : `who.eq.${targetWho},who.eq.Alle`);
+      .or(buildSubscriptionWhoOr(targetWho) ?? `who.neq.__none__`);
 
     if (subErr) {
       errors++;

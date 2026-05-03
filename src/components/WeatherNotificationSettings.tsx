@@ -26,7 +26,7 @@ const KIND_META: Record<Kind, { label: string; emoji: string; unit: string; defa
   fog:     { label: "Tåke",    emoji: "🌫", unit: "",     defaultThreshold: 0,  symbolBased: true  },
 };
 
-const WHO_OPTIONS = ["Alle", "Arne", "Rebekka", "Marita", "Nora", "Celine", "Mira"] as const;
+const WHO_OPTIONS = ["Alle", "Arne & Rebekka", "Arne", "Rebekka", "Marita", "Nora", "Celine", "Mira"] as const;
 
 const PRESET_LOCATIONS = [
   { location: "borgen", label: "Borgen · Tollnes", lat: 59.1789, lon: 9.5732 },

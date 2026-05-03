@@ -6,6 +6,7 @@
 import webpush from "web-push";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { logPushSend } from "./push-log.server";
+import { buildSubscriptionWhoOr } from "./push-recipients";
 
 const VAPID_PUBLIC = process.env.VAPID_PUBLIC_KEY!;
 const VAPID_PRIVATE = process.env.VAPID_PRIVATE_KEY!;
@@ -123,7 +124,7 @@ export async function processWarrantyNotifications(): Promise<{
       .from("push_subscriptions")
       .select("endpoint, p256dh, auth, who");
     if (targetWho !== "Alle") {
-      subQuery = subQuery.or(`who.eq.${targetWho},who.eq.Alle`);
+      { const orFilter = buildSubscriptionWhoOr(targetWho); if (orFilter) subQuery = subQuery.or(orFilter); }
     }
     const { data: subs, error: subErr } = await subQuery;
     if (subErr) {
@@ -199,7 +200,7 @@ export async function sendWarrantyTestNotification(receiptId: string): Promise<{
     .from("push_subscriptions")
     .select("endpoint, p256dh, auth, who");
   if (targetWho !== "Alle") {
-    subQuery = subQuery.or(`who.eq.${targetWho},who.eq.Alle`);
+    { const orFilter = buildSubscriptionWhoOr(targetWho); if (orFilter) subQuery = subQuery.or(orFilter); }
   }
   const { data: subs, error: subErr } = await subQuery;
   if (subErr) throw subErr;

@@ -8,6 +8,7 @@
  */
 import webpush from "web-push";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { buildSubscriptionWhoOr } from "./push-recipients";
 import { recordApiCall } from "@/server/api-call-log.server";
 import { logPushSend } from "./push-log.server";
 
@@ -308,6 +309,7 @@ export async function updateGarbagePref(input: {
   days_before?: number;
   notify_hour?: number;
   notify_minute?: number;
+  who?: string;
 }) {
   const { data: existing } = await supabaseAdmin
     .from("garbage_notification_prefs")
@@ -322,12 +324,14 @@ export async function updateGarbagePref(input: {
     notify_hour?: number;
     notify_minute?: number;
     fraksjon_navn?: string;
+    who?: string;
   } = { updated_at: new Date().toISOString() };
   if (typeof input.enabled === "boolean") patch.enabled = input.enabled;
   if (typeof input.days_before === "number") patch.days_before = Math.max(0, Math.min(7, input.days_before));
   if (typeof input.notify_hour === "number") patch.notify_hour = Math.max(0, Math.min(23, input.notify_hour));
   if (typeof input.notify_minute === "number") patch.notify_minute = Math.max(0, Math.min(59, input.notify_minute));
   if (typeof input.fraksjon_navn === "string") patch.fraksjon_navn = input.fraksjon_navn;
+  if (typeof input.who === "string") patch.who = input.who;
 
   if (existing?.id) {
     const { error } = await supabaseAdmin
@@ -347,6 +351,7 @@ export async function updateGarbagePref(input: {
       days_before: input.days_before ?? 1,
       notify_hour: input.notify_hour ?? 20,
       notify_minute: input.notify_minute ?? 0,
+      who: input.who ?? "Alle",
     })
     .select("id")
     .single();
@@ -451,9 +456,12 @@ export async function processGarbageNotifications(): Promise<{
     }
 
     // Hent abonnenter
-    const targetWho = pref.who && pref.who !== "Alle" ? pref.who : null;
+    const targetWho = pref.who || "Alle";
     let subQuery = supabaseAdmin.from("push_subscriptions").select("endpoint, p256dh, auth, who");
-    if (targetWho) subQuery = subQuery.eq("who", targetWho);
+    {
+      const orFilter = buildSubscriptionWhoOr(targetWho);
+      if (orFilter) subQuery = subQuery.or(orFilter);
+    }
     const { data: subs } = await subQuery;
     if (!subs || subs.length === 0) {
       // Marker som logget likevel for å unngå evig retry

@@ -141,7 +141,7 @@ export function GarbageCollectionPanel() {
   const updatePref = async (
     fraksjon_id: number,
     fraksjon_navn: string,
-    patch: Partial<Pick<Pref, "enabled" | "days_before" | "notify_hour" | "notify_minute">>,
+    patch: Partial<Pick<Pref, "enabled" | "days_before" | "notify_hour" | "notify_minute" | "who">>,
   ) => {
     try {
       await updateGarbagePref({ data: { fraksjon_id, fraksjon_navn, ...patch } });
@@ -332,6 +332,28 @@ export function GarbageCollectionPanel() {
                               {HOURS.map((h) => (
                                 <SelectItem key={h} value={String(h)}>
                                   kl {String(h).padStart(2, "0")}:00
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="col-span-2">
+                          <Label className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground">
+                            Mottaker
+                          </Label>
+                          <Select
+                            value={pref.who || "Alle"}
+                            onValueChange={(v) =>
+                              updatePref(pref.fraksjon_id, f.Navn, { who: v })
+                            }
+                          >
+                            <SelectTrigger className="h-8 text-xs mt-1">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {["Alle", "Arne & Rebekka", "Arne", "Rebekka", "Marita", "Nora", "Celine", "Mira"].map((w) => (
+                                <SelectItem key={w} value={w}>
+                                  {w}
                                 </SelectItem>
                               ))}
                             </SelectContent>

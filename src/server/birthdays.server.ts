@@ -6,6 +6,7 @@
 import webpush from "web-push";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { logPushSend } from "./push-log.server";
+import { expandRecipient } from "./push-recipients";
 
 const VAPID_PUBLIC = process.env.VAPID_PUBLIC_KEY!;
 const VAPID_PRIVATE = process.env.VAPID_PRIVATE_KEY!;
@@ -92,7 +93,8 @@ export async function sendBirthdayPushNow(
   const today = getOsloParts();
   const [by] = row.birth_date.split("-").map(Number);
   const age = today.year - by;
-  const recipients = row.notify_recipients && row.notify_recipients.length > 0 ? row.notify_recipients : ["Alle"];
+  const rawRecipients = row.notify_recipients && row.notify_recipients.length > 0 ? row.notify_recipients : ["Alle"];
+  const recipients = Array.from(new Set((rawRecipients as string[]).flatMap((r) => expandRecipient(r))));
 
   let subs: Array<{ endpoint: string; p256dh: string; auth: string }> = [];
   if (recipients.includes("Alle")) {
@@ -163,9 +165,10 @@ export async function processBirthdayNotifications(): Promise<{
     if (r.notified_year === today.year) continue;
     checked++;
 
-    const recipients = (r.notify_recipients && r.notify_recipients.length > 0)
+    const rawRecipients = (r.notify_recipients && r.notify_recipients.length > 0)
       ? r.notify_recipients
       : ["Alle"];
+    const recipients = Array.from(new Set(rawRecipients.flatMap((x) => expandRecipient(x))));
 
     // Hent abonnementer som matcher (Alle = alle, ellers union av valgte personer + Alle)
     let subs: Array<{ endpoint: string; p256dh: string; auth: string; who: string }> = [];

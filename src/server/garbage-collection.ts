@@ -47,6 +47,7 @@ export const updateGarbagePref = createServerFn({ method: "POST" })
     days_before?: number;
     notify_hour?: number;
     notify_minute?: number;
+    who?: string;
   }) => {
     if (typeof input?.fraksjon_id !== "number") throw new Error("Mangler fraksjon_id");
     return {
@@ -56,6 +57,7 @@ export const updateGarbagePref = createServerFn({ method: "POST" })
       days_before: typeof input.days_before === "number" ? input.days_before : undefined,
       notify_hour: typeof input.notify_hour === "number" ? input.notify_hour : undefined,
       notify_minute: typeof input.notify_minute === "number" ? input.notify_minute : undefined,
+      who: typeof input.who === "string" ? input.who.slice(0, 40) : undefined,
     };
   })
   .handler(async ({ data }) => {

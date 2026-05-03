@@ -43,7 +43,8 @@ type Msg = {
   created_at: string;
 };
 
-const WHO: Who[] = ["Alle", "Arne", "Rebekka", "Marita", "Nora", "Celine", "Mira"];
+const WHO: Who[] = ["Alle", "Arne & Rebekka", "Arne", "Rebekka", "Marita", "Nora", "Celine", "Mira"];
+const DEVICE_WHO: Who[] = ["Arne", "Rebekka", "Marita", "Nora", "Celine", "Mira"];
 const NOTIFY_OPTIONS: { value: number | null; label: string }[] = [
   { value: null, label: "Ingen varsling" },
   { value: 5, label: "5 min før" },
@@ -313,7 +314,7 @@ function PushSubscribeBar() {
             onChange={(e) => changeWho(e.target.value as Who)}
             className="bg-input border border-border rounded px-2 py-1.5 text-sm text-foreground"
           >
-            {WHO.filter((w) => w !== "Alle").map((w) => (
+            {DEVICE_WHO.map((w) => (
               <option key={w} value={w}>
                 {w}
               </option>

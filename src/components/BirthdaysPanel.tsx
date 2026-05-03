@@ -14,7 +14,7 @@ export type Birthday = {
   notify_recipients: string[];
 };
 
-const RECIPIENTS = ["Alle", "Arne", "Rebekka", "Marita", "Nora", "Celine", "Mira"] as const;
+const RECIPIENTS = ["Alle", "Arne & Rebekka", "Arne", "Rebekka", "Marita", "Nora", "Celine", "Mira"] as const;
 
 function getOsloToday(): { y: number; m: number; d: number } {
   const fmt = new Intl.DateTimeFormat("en-CA", {
