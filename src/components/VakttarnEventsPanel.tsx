@@ -36,16 +36,27 @@ export function VakttarnEventsPanel() {
   const [date, setDate] = useState<string>(todayIso());
   const [stats, setStats] = useState<VakttarnStats | null>(null);
   const [loading, setLoading] = useState(false);
+  const [dedupeSec, setDedupeSec] = useState<number>(() => {
+    if (typeof window === "undefined") return 120;
+    const v = Number(window.localStorage.getItem("vakttarn:dedupeSec"));
+    return Number.isFinite(v) && v >= 0 ? v : 120;
+  });
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("vakttarn:dedupeSec", String(dedupeSec));
+    }
+  }, [dedupeSec]);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    fetchFn({ data: { range, date } })
+    fetchFn({ data: { range, date, dedupeWindowSec: dedupeSec } })
       .then((s) => { if (!cancelled) setStats(s); })
       .catch((e) => console.error("[vakttarn-events]", e))
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [range, date, fetchFn]);
+  }, [range, date, dedupeSec, fetchFn]);
 
   const total = useMemo(() => {
     if (!stats) return 0;
