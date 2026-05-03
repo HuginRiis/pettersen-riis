@@ -487,3 +487,135 @@ export async function computeWeatherForecast(): Promise<
   }
   return out;
 }
+
+export type UpcomingWeatherEval = {
+  id: string;
+  prefId: string;
+  label: string;
+  kind: WeatherKind;
+  recipient: string;
+  notifyAt: string; // ISO UTC — når varselet ville sendes
+  scheduledDate: string; // Oslo dato YYYY-MM-DD da varslet sendes
+  targetDate: string; // Oslo dato hendelsen gjelder
+  ruleText: string;  // f.eks. "Regn ≥ 1 mm/t"
+  threshold: number;
+  unit: string;
+  status: "will-fire" | "no-hit" | "uncertain";
+  hitTime: string | null;
+  value: number | null;
+};
+
+/**
+ * For hver aktiv vær-regel, gå gjennom kommende dager (horizonDays) og evaluer
+ * om varslet ville utløst basert på dagens prognose. Hvis prognosen ikke
+ * dekker måldagen ennå, marker som "uncertain".
+ */
+export async function computeUpcomingWeatherEvaluations(
+  horizonDays: number = 31,
+): Promise<UpcomingWeatherEval[]> {
+  const { data, error } = await supabaseAdmin
+    .from("weather_notification_prefs" as never)
+    .select("*")
+    .eq("enabled", true);
+  if (error) throw error;
+  const prefs = (data ?? []) as unknown as Pref[];
+
+  const cache = new Map<string, Series | null>();
+  const out: UpcomingWeatherEval[] = [];
+  const now = new Date();
+  const horizonMs = now.getTime() + horizonDays * 86400000;
+
+  for (const p of prefs) {
+    const meta = WEATHER_KIND_META[p.kind];
+    const t = p.threshold ?? meta.defaultThreshold;
+    const ruleText = meta.symbolBased
+      ? `${meta.label} (symbol)`
+      : `${meta.label} ≥ ${t}${meta.unit ? " " + meta.unit : ""}`;
+
+    const key = `${p.lat.toFixed(3)},${p.lon.toFixed(3)}`;
+    if (!cache.has(key)) cache.set(key, await fetchForecast(p.lat, p.lon));
+    const series = cache.get(key) ?? null;
+    const lastForecastTs = series && series.length > 0
+      ? new Date(series[series.length - 1].time).getTime()
+      : 0;
+
+    for (let dayOffset = 0; dayOffset <= horizonDays; dayOffset++) {
+      // Scheduled notify dato (Oslo)
+      const schedDate = new Date(now.getTime() + dayOffset * 86400000);
+      const schedDateStr = osloDateString(schedDate);
+      // Beregn UTC for scheduled time HH:MM Oslo
+      const notifyAtMs = osloLocalToUtcMs(schedDateStr, p.notify_hour, p.notify_minute);
+      if (notifyAtMs < now.getTime() || notifyAtMs > horizonMs) continue;
+
+      // Mål-dato = sched + days_ahead
+      const targetDate = new Date(schedDate.getTime() + p.days_ahead * 86400000);
+      const targetDateStr = osloDateString(targetDate);
+      const targetDayEnd = new Date(`${targetDateStr}T23:59:59+01:00`).getTime() + 3600 * 1000;
+
+      let status: UpcomingWeatherEval["status"] = "no-hit";
+      let hitTime: string | null = null;
+      let value: number | null = null;
+
+      if (!series) {
+        status = "uncertain";
+      } else if (lastForecastTs < targetDayEnd) {
+        status = "uncertain";
+      } else {
+        // Evaluer serien for målgruppedagen — bruk samme logikk men relativ til scheduled tid
+        const targetDayStart = new Date(`${targetDateStr}T00:00:00+01:00`).getTime() - 3600 * 1000;
+        for (const e of series) {
+          const ts = new Date(e.time).getTime();
+          if (ts < targetDayStart) continue;
+          if (ts > targetDayEnd) break;
+          const sym = (e.symbol1h ?? "").toLowerCase();
+          let hit = false;
+          let v: number | null = null;
+          switch (p.kind) {
+            case "rain": v = e.precip1h; hit = v != null && v >= t; break;
+            case "snow": v = e.precip1h; hit = v != null && v >= t && (sym.includes("snow") || sym.includes("sleet") || (e.temp != null && e.temp <= 1)); break;
+            case "wind": v = e.windSpeed; hit = v != null && v >= t; break;
+            case "frost": v = e.temp; hit = v != null && v <= t; break;
+            case "heat": v = e.temp; hit = v != null && v >= t; break;
+            case "thunder": hit = sym.includes("thunder"); break;
+            case "fog": hit = sym.includes("fog"); break;
+          }
+          if (hit) { status = "will-fire"; hitTime = e.time; value = v; break; }
+        }
+      }
+
+      out.push({
+        id: `weather-${p.id}-${schedDateStr}`,
+        prefId: p.id,
+        label: p.label,
+        kind: p.kind,
+        recipient: p.recipient || "Alle",
+        notifyAt: new Date(notifyAtMs).toISOString(),
+        scheduledDate: schedDateStr,
+        targetDate: targetDateStr,
+        ruleText,
+        threshold: t,
+        unit: meta.unit,
+        status,
+        hitTime,
+        value,
+      });
+    }
+  }
+  out.sort((a, b) => a.notifyAt.localeCompare(b.notifyAt));
+  return out;
+}
+
+function osloLocalToUtcMs(dateStr: string, hour: number, minute: number): number {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const naive = Date.UTC(y, m - 1, d, hour, minute, 0);
+  const fmt = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Europe/Oslo",
+    year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", hour12: false,
+  });
+  const parts = fmt.formatToParts(new Date(naive));
+  const get = (t: string) => Number(parts.find((p) => p.type === t)!.value);
+  const osloAsUtc = Date.UTC(get("year"), get("month") - 1, get("day"), get("hour") % 24, get("minute"), 0);
+  const offset = osloAsUtc - naive;
+  return naive - offset;
+}
