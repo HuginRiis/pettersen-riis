@@ -122,13 +122,15 @@ export async function processWarrantyNotifications(): Promise<{
     if (daysLeft == null || daysLeft < 0) continue;
 
     // Finn første milepæl som er passert/aktuell og som ikke er varslet ennå.
+    const targetWho = r.warranty_recipient || "Alle";
     let trigger: Milestone | null = null;
     for (const m of MILESTONES) {
       const already = r[colName(m) as keyof typeof r];
-      if (!already && daysLeft <= m) {
-        trigger = m;
-        break; // start med høyeste milepæl (90), kun ett varsel per kjøring per kvittering
-      }
+      if (already) continue;
+      if (daysLeft > m) continue;
+      if (!isMilestoneEnabledFor(targetWho, m)) continue;
+      trigger = m;
+      break;
     }
     if (!trigger) continue;
     checked++;
