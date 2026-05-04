@@ -269,13 +269,21 @@ function SteintavlePage() {
     modules.find((m) => m.type === "NAModule4") ??
     null;
 
-  const tempInne = mainModule?.metrics.temperature ?? null;
-  const tempSov = bedroomModule?.metrics.temperature ?? null;
-  const tempUte = outdoorModule?.metrics.temperature ?? null;
+  const tempInneLive = mainModule?.metrics.temperature ?? null;
+  const tempSovLive = bedroomModule?.metrics.temperature ?? null;
+  const tempUteLive = outdoorModule?.metrics.temperature ?? null;
   const noiseDb = mainModule?.metrics.noise ?? null;
   const co2Inne = mainModule?.metrics.co2 ?? null;
   const humInne = mainModule?.metrics.humidity ?? null;
   const humUte = outdoorModule?.metrics.humidity ?? null;
+
+  // Stabiliser tallene: vis siste kjente gode verdi når en poll feiler / returnerer tom
+  const inneLG = useLastGood("st.lg.inne", tempInneLive);
+  const sovLG = useLastGood("st.lg.sov", tempSovLive);
+  const uteLG = useLastGood("st.lg.ute", tempUteLive);
+  const tempInne = inneLG.value;
+  const tempSov = sovLG.value;
+  const tempUte = uteLG.value;
 
   // ---- Daglig min/maks (lagres i localStorage, resettes ved døgnskifte) ----
   const innerMM = useDailyMinMax("st.mm.inne", tempInne);
