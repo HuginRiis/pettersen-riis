@@ -12,7 +12,8 @@ import type {
 import { getAiUsageStats, type AiUsageStats } from "@/server/ai-usage";
 import { useAuthStatus } from "@/hooks/use-auth-status";
 import heroImg from "@/assets/got-vakttarnet.jpg";
-import { Eye, Globe2, Smartphone, Monitor, Tablet, Clock, Crown, ShieldAlert, Map as MapIcon, Lock, Unlock, Sparkles, DoorClosed, Users, Bell } from "lucide-react";
+import { Eye, Globe2, Smartphone, Monitor, Tablet, Clock, Crown, ShieldAlert, Map as MapIcon, Lock, Unlock, Sparkles, DoorClosed, Users, Bell, Database } from "lucide-react";
+import { DbUsagePanel } from "@/components/DbUsagePanel";
 import { DoorsLocksPanel } from "@/components/DoorsLocksPanel";
 import { ApiCallLogPanel } from "@/components/ApiCallLogPanel";
 import { MaesterAiBudget } from "@/components/MaesterAiBudget";
@@ -211,6 +212,16 @@ function VakttarnetPage() {
           subtitle="Husfolk og gjester — hvem, hvor mange besøk og når sist"
         >
           <AllVisitors sessions={sessions} />
+        </Panel>
+
+        <Panel
+          title="Database og cron-jobber"
+          icon={<Database size={14} />}
+          subtitle="Forbruk av Lovable Cloud, største tabeller og når neste planlagte data kommer inn"
+          collapsible
+          defaultOpen={false}
+        >
+          <DbUsagePanel />
         </Panel>
 
         <ApiCallLogPanel />
