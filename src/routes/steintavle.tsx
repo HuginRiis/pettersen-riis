@@ -295,9 +295,9 @@ function SteintavlePage() {
   // tidligere i dag, betyr det at Netatmo-pollen returnerte tom modul. Prøv å
   // hente på nytt med kort backoff i stedet for å vente i 5 minutter.
   const tempMissing =
-    (tempInne === null && innerMM !== null) ||
-    (tempUte === null && uteMM !== null) ||
-    (tempSov === null && sovMM !== null);
+    (tempInneLive === null && innerMM !== null) ||
+    (tempUteLive === null && uteMM !== null) ||
+    (tempSovLive === null && sovMM !== null);
   useEffect(() => {
     if (!tempMissing) return;
     let cancelled = false;
