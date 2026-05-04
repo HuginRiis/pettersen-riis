@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
-type Category = "person" | "dyr" | "bil" | "pakke" | "annet";
+type Category = "person" | "dyr" | "bil" | "pakke" | "ringt_pa" | "annet";
 
 function normalizeCategory(input: unknown): Category {
   const s = String(input ?? "").toLowerCase().trim();
@@ -9,6 +9,12 @@ function normalizeCategory(input: unknown): Category {
   if (["pet", "dog", "cat", "animal", "dyr", "hund", "katt"].includes(s)) return "dyr";
   if (["car", "vehicle", "bil", "kjøretøy", "kjoretoy"].includes(s)) return "bil";
   if (["package", "parcel", "pakke"].includes(s)) return "pakke";
+  if (
+    [
+      "ringt_pa", "ringt", "ring", "doorbell", "ringeklokke", "dorklokke",
+      "dørklokke", "press_doorbell", "ntfy_press_doorbell",
+    ].includes(s)
+  ) return "ringt_pa";
   return "annet";
 }
 
