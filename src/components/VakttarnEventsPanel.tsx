@@ -239,17 +239,20 @@ export function VakttarnEventsPanel() {
           <ResponsiveContainer>
             <BarChart data={stats?.buckets ?? []}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border) / 0.3)" />
-              <XAxis dataKey="label" stroke="hsl(var(--muted-foreground))" fontSize={11} />
-              <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} allowDecimals={false} />
+              <XAxis dataKey="label" stroke="#ffffff" tick={{ fill: "#ffffff" }} fontSize={11} />
+              <YAxis stroke="#ffffff" tick={{ fill: "#ffffff" }} fontSize={11} allowDecimals={false} />
               <Tooltip trigger="click"
                 contentStyle={{
-                  background: "hsl(var(--background))",
+                  background: "#0a0a0a",
                   border: "1px solid hsl(var(--border))",
                   borderRadius: 6,
                   fontSize: 12,
+                  color: "#ffffff",
                 }}
+                labelStyle={{ color: "#ffffff" }}
+                itemStyle={{ color: "#ffffff" }}
               />
-              <Legend wrapperStyle={{ fontSize: 11 }} />
+              <Legend wrapperStyle={{ fontSize: 11, color: "#ffffff" }} />
               {CATS.map((c) => (
                 <Bar key={c.key} dataKey={c.key} stackId="a" fill={c.color} name={c.label} />
               ))}
