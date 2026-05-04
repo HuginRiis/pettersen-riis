@@ -214,6 +214,16 @@ function VakttarnetPage() {
           <AllVisitors sessions={sessions} />
         </Panel>
 
+        <Panel
+          title="Database og cron-jobber"
+          icon={<Database size={14} />}
+          subtitle="Forbruk av Lovable Cloud, største tabeller og når neste planlagte data kommer inn"
+          collapsible
+          defaultOpen={false}
+        >
+          <DbUsagePanel />
+        </Panel>
+
         <ApiCallLogPanel />
 
         <ChangelogPanel />
