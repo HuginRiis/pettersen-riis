@@ -14,6 +14,7 @@ import {
   setLivingRoomLights,
 } from "@/server/homey";
 import { useDailyMinMax, type MinMax } from "@/hooks/use-daily-minmax";
+import { useLastGood } from "@/hooks/use-last-good";
 import {
   getNetatmoWeatherStation,
   type WeatherModule,
@@ -268,13 +269,21 @@ function SteintavlePage() {
     modules.find((m) => m.type === "NAModule4") ??
     null;
 
-  const tempInne = mainModule?.metrics.temperature ?? null;
-  const tempSov = bedroomModule?.metrics.temperature ?? null;
-  const tempUte = outdoorModule?.metrics.temperature ?? null;
+  const tempInneLive = mainModule?.metrics.temperature ?? null;
+  const tempSovLive = bedroomModule?.metrics.temperature ?? null;
+  const tempUteLive = outdoorModule?.metrics.temperature ?? null;
   const noiseDb = mainModule?.metrics.noise ?? null;
   const co2Inne = mainModule?.metrics.co2 ?? null;
   const humInne = mainModule?.metrics.humidity ?? null;
   const humUte = outdoorModule?.metrics.humidity ?? null;
+
+  // Stabiliser tallene: vis siste kjente gode verdi når en poll feiler / returnerer tom
+  const inneLG = useLastGood("st.lg.inne", tempInneLive);
+  const sovLG = useLastGood("st.lg.sov", tempSovLive);
+  const uteLG = useLastGood("st.lg.ute", tempUteLive);
+  const tempInne = inneLG.value;
+  const tempSov = sovLG.value;
+  const tempUte = uteLG.value;
 
   // ---- Daglig min/maks (lagres i localStorage, resettes ved døgnskifte) ----
   const innerMM = useDailyMinMax("st.mm.inne", tempInne);
@@ -286,9 +295,9 @@ function SteintavlePage() {
   // tidligere i dag, betyr det at Netatmo-pollen returnerte tom modul. Prøv å
   // hente på nytt med kort backoff i stedet for å vente i 5 minutter.
   const tempMissing =
-    (tempInne === null && innerMM !== null) ||
-    (tempUte === null && uteMM !== null) ||
-    (tempSov === null && sovMM !== null);
+    (tempInneLive === null && innerMM !== null) ||
+    (tempUteLive === null && uteMM !== null) ||
+    (tempSovLive === null && sovMM !== null);
   useEffect(() => {
     if (!tempMissing) return;
     let cancelled = false;
