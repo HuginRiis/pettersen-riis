@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Menu, X, LogOut, Crown, Swords, Shield, KeyRound, Home, Star, Flower2 } from "lucide-react";
 import { logoutFn } from "@/server/auth";
+import birchImg from "@/assets/pollen-birch.png";
 import { useAuthStatus } from "@/hooks/use-auth-status";
 import { openLoginDialog } from "@/components/LoginDialog";
 import { useUvSun, uvLevel } from "@/hooks/use-uv-sun";
@@ -505,9 +506,30 @@ function useWorstPollen(lat: number, lon: number) {
   return worst;
 }
 
+function AllergenGlyph({ allergen, size = 12, color }: { allergen: Allergen; size?: number; color?: string }) {
+  if (allergen === "birch") {
+    return (
+      <img
+        src={birchImg}
+        alt=""
+        aria-hidden="true"
+        style={{ width: size, height: size, objectFit: "contain" }}
+      />
+    );
+  }
+  return (
+    <span aria-hidden style={{ fontSize: size, lineHeight: 1, color }}>
+      {ALLERGEN_EMOJI[allergen]}
+    </span>
+  );
+}
+
 function PollenIcon({ lat, lon }: { lat: number; lon: number }) {
   const worst = useWorstPollen(lat, lon);
   if (!worst) return null;
+  if (worst.allergen === "birch") {
+    return <AllergenGlyph allergen="birch" size={14} />;
+  }
   return (
     <Flower2
       size={12}
@@ -531,7 +553,7 @@ function PollenBadge({ lat, lon }: { lat: number; lon: number }) {
       title={`Pollen i dag: ${worst.label} (${ALLERGEN_NAME[worst.allergen]})`}
     >
       {worst.label}
-      <span aria-hidden className="text-[10px] leading-none">{ALLERGEN_EMOJI[worst.allergen]}</span>
+      <AllergenGlyph allergen={worst.allergen} size={12} color={worst.color} />
     </span>
   );
 }
