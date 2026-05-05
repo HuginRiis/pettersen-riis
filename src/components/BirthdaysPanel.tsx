@@ -407,6 +407,28 @@ export function BirthdaysPanel() {
                             className="w-full bg-input border border-border rounded px-2 py-1.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                           />
                         </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="block text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Dager før</label>
+                            <input
+                              type="number"
+                              min={0}
+                              max={60}
+                              value={editDaysBefore}
+                              onChange={(e) => setEditDaysBefore(Math.max(0, Math.min(60, Number(e.target.value) || 0)))}
+                              className="w-full bg-input border border-border rounded px-2 py-1.5 text-sm text-foreground tabular-nums"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Klokkeslett (tomt = globalt)</label>
+                            <input
+                              type="time"
+                              value={editNotifyTime}
+                              onChange={(e) => setEditNotifyTime(e.target.value)}
+                              className="w-full bg-input border border-border rounded px-2 py-1.5 text-sm text-foreground tabular-nums"
+                            />
+                          </div>
+                        </div>
                       </div>
                     ) : (
                       <>
