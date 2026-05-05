@@ -1,7 +1,9 @@
 import { Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Menu, X, LogOut, Crown, Swords, Shield, KeyRound, Home, Star, Flower2 } from "lucide-react";
+import { Menu, X, LogOut, Crown, Swords, Shield, KeyRound, Home, Star, Flower2,
+  Cloud, Map, Castle, CalendarDays, Bell, Eye, Trees, Lightbulb, Zap, Hammer,
+  ShoppingCart, Receipt, Dog, Dumbbell, AlertTriangle, ScrollText } from "lucide-react";
 import { logoutFn } from "@/server/auth";
 import birchImg from "@/assets/pollen-birch.png";
 import { useAuthStatus } from "@/hooks/use-auth-status";
@@ -44,6 +46,28 @@ const HOMEY_BACKED_ROUTES: RoutePath[] = ["/smarthus", "/var", "/steintavle"];
 // Hjem skal alltid stå først, og Steintavle alltid sist — uavhengig av bruksstatistikk.
 const ALWAYS_FIRST: RoutePath = "/";
 const ALWAYS_LAST: RoutePath = "/steintavle";
+
+// Ikon for hver menyside (pollen håndteres separat med PollenIcon)
+const ROUTE_ICON: Partial<Record<RoutePath, React.ComponentType<{ size?: number; className?: string }>>> = {
+  "/": Home,
+  "/var": Cloud,
+  "/turer": Map,
+  "/got-saga": Castle,
+  "/agenda": CalendarDays,
+  "/push-varslinger": Bell,
+  "/vakttarnet": Eye,
+  "/hytta": Trees,
+  "/smarthus": Lightbulb,
+  "/stromkroniken": Zap,
+  "/oppussing-borgen": Hammer,
+  "/oppussing-hytta": Hammer,
+  "/matvarer": ShoppingCart,
+  "/kvitteringer": Receipt,
+  "/hundene": Dog,
+  "/trening": Dumbbell,
+  "/varsler": AlertTriangle,
+  "/steintavle": ScrollText,
+};
 
 // Public halls — open to any visitor entering the courtyard.
 // Other halls only appear after the portal is opened (login).
@@ -206,7 +230,9 @@ export function SiteHeader() {
                   onClick={() => bump(l.to)}
                   className="got-nav-btn inline-flex items-center gap-1.5"
                 >
-                  {l.to === "/pollen" && <PollenIcon lat={pollenCoord.lat} lon={pollenCoord.lon} />}
+                  {l.to === "/pollen"
+                    ? <PollenIcon lat={pollenCoord.lat} lon={pollenCoord.lon} />
+                    : ROUTE_ICON[l.to] ? (() => { const I = ROUTE_ICON[l.to]!; return <I size={12} className="opacity-80" />; })() : null}
                   <span>{l.label}</span>
                   {count > 0 && menuPrefs.sortByUsage && <UsageBadge count={count} />}
                   {l.to === "/" && <UvBadge lat={BORGEN_COORD.lat} lon={BORGEN_COORD.lon} />}
@@ -278,7 +304,9 @@ export function SiteHeader() {
                     }}
                     className="flex-1 px-2 py-2.5 text-xs tracking-wider uppercase text-muted-foreground hover:text-primary data-[status=active]:text-primary data-[status=active]:font-semibold flex items-center gap-2"
                   >
-                    {l.to === "/pollen" && <PollenIcon lat={pollenCoord.lat} lon={pollenCoord.lon} />}
+                    {l.to === "/pollen"
+                      ? <PollenIcon lat={pollenCoord.lat} lon={pollenCoord.lon} />
+                      : ROUTE_ICON[l.to] ? (() => { const I = ROUTE_ICON[l.to]!; return <I size={14} className="opacity-80" />; })() : null}
                     <span className="flex-1">{l.label}</span>
                     {count > 0 && menuPrefs.sortByUsage && <UsageBadge count={count} />}
                     {l.to === "/" && <UvBadge lat={BORGEN_COORD.lat} lon={BORGEN_COORD.lon} />}
