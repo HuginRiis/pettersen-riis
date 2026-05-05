@@ -304,7 +304,9 @@ export function SiteHeader() {
                     }}
                     className="flex-1 px-2 py-2.5 text-xs tracking-wider uppercase text-muted-foreground hover:text-primary data-[status=active]:text-primary data-[status=active]:font-semibold flex items-center gap-2"
                   >
-                    {l.to === "/pollen" && <PollenIcon lat={pollenCoord.lat} lon={pollenCoord.lon} />}
+                    {l.to === "/pollen"
+                      ? <PollenIcon lat={pollenCoord.lat} lon={pollenCoord.lon} />
+                      : ROUTE_ICON[l.to] ? (() => { const I = ROUTE_ICON[l.to]!; return <I size={14} className="opacity-80" />; })() : null}
                     <span className="flex-1">{l.label}</span>
                     {count > 0 && menuPrefs.sortByUsage && <UsageBadge count={count} />}
                     {l.to === "/" && <UvBadge lat={BORGEN_COORD.lat} lon={BORGEN_COORD.lon} />}
