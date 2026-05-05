@@ -1,13 +1,14 @@
 import { Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Menu, X, LogOut, Crown, Swords, Shield, KeyRound, Home } from "lucide-react";
+import { Menu, X, LogOut, Crown, Swords, Shield, KeyRound, Home, Star, Flower2 } from "lucide-react";
 import { logoutFn } from "@/server/auth";
 import { useAuthStatus } from "@/hooks/use-auth-status";
 import { openLoginDialog } from "@/components/LoginDialog";
 import { useUvSun, uvLevel } from "@/hooks/use-uv-sun";
-import { getNameForCurrentIp } from "@/server/user-locations";
+import { getNameForCurrentIp, getDefaultLocation } from "@/server/user-locations";
 import { useNavUsage } from "@/hooks/use-nav-usage";
+import { useMenuPrefs } from "@/hooks/use-menu-prefs";
 import { getNetatmoWeatherStation } from "@/server/netatmo-weather";
 import { useLastGood } from "@/hooks/use-last-good";
 
@@ -93,21 +94,53 @@ export function SiteHeader() {
   }, [isAuthed, fetchName]);
 
   const { usage, bump } = useNavUsage(who);
+  const { prefs: menuPrefs, toggleFavorite } = useMenuPrefs();
+
+  // Pollen-koordinater fra brukerens valgte default for /pollen (eller fallback Borgen)
+  const fetchDefaultLoc = useServerFn(getDefaultLocation);
+  const [pollenCoord, setPollenCoord] = useState<{ lat: number; lon: number }>(BORGEN_COORD);
+  useEffect(() => {
+    let cancelled = false;
+    fetchDefaultLoc({ data: { who: who || "Offentlig", page: "pollen" } })
+      .then((r) => {
+        if (cancelled) return;
+        if (typeof r?.lat === "number" && typeof r?.lon === "number") {
+          setPollenCoord({ lat: r.lat, lon: r.lon });
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [who, fetchDefaultLoc]);
 
   // Visitors outside the gate only see public halls; authed users see everything.
   const baseLinks = isAuthed ? navLinks : navLinks.filter((l) => l.public);
 
-  // Sorter: Hjem alltid først, Steintavle alltid sist, resten etter bruksfrekvens.
+  // Sorter: Hjem alltid først, Steintavle alltid sist, deretter favoritter (hvis på),
+  // så bruksfrekvens (hvis på), ellers original rekkefølge.
   const sortedLinks = (() => {
     const first = baseLinks.filter((l) => l.to === ALWAYS_FIRST);
     const last = baseLinks.filter((l) => l.to === ALWAYS_LAST);
     const rest = baseLinks.filter((l) => l.to !== ALWAYS_LAST && l.to !== ALWAYS_FIRST);
-    const indexed = rest.map((l, i) => ({ link: l, i, count: usage[l.to] ?? 0 }));
-    indexed.sort((a, b) => {
-      if (b.count !== a.count) return b.count - a.count;
-      return a.i - b.i;
-    });
-    return [...first, ...indexed.map((x) => x.link), ...last];
+
+    const favSet = menuPrefs.favoritesEnabled ? new Set(menuPrefs.favorites) : new Set<string>();
+    const favs = menuPrefs.favoritesEnabled
+      ? menuPrefs.favorites
+          .map((p) => rest.find((l) => l.to === p))
+          .filter((x): x is NavLink => !!x)
+      : [];
+
+    const others = rest.filter((l) => !favSet.has(l.to));
+    if (menuPrefs.sortByUsage) {
+      const indexed = others.map((l, i) => ({ link: l, i, count: usage[l.to] ?? 0 }));
+      indexed.sort((a, b) => {
+        if (b.count !== a.count) return b.count - a.count;
+        return a.i - b.i;
+      });
+      return [...first, ...favs, ...indexed.map((x) => x.link), ...last];
+    }
+    return [...first, ...favs, ...others, ...last];
   })();
 
   const handleLogout = async () => {
@@ -150,23 +183,38 @@ export function SiteHeader() {
         <nav className="hidden xl:flex flex-1 flex-wrap items-center justify-start gap-x-2 gap-y-2">
           {sortedLinks.map((l) => {
             const count = usage[l.to] ?? 0;
+            const isFav = menuPrefs.favorites.includes(l.to);
+            const canFav = menuPrefs.favoritesEnabled && l.to !== ALWAYS_FIRST && l.to !== ALWAYS_LAST;
             return (
-              <Link
-                key={l.to}
-                to={l.to}
-                preload={HOMEY_BACKED_ROUTES.includes(l.to) ? false : undefined}
-                activeOptions={l.to === "/" ? { exact: true } : undefined}
-                onClick={() => bump(l.to)}
-                className="got-nav-btn inline-flex items-center gap-1.5"
-              >
-                <span>{l.label}</span>
-                {count > 0 && <UsageBadge count={count} />}
-                {l.to === "/" && <UvBadge lat={BORGEN_COORD.lat} lon={BORGEN_COORD.lon} />}
-                {l.to === "/" && <TempBadge stationMatch="tollnes" storageKey="hdr.temp.tollnes" />}
-                {l.to === "/hytta" && <UvBadge lat={HYTTA_COORD.lat} lon={HYTTA_COORD.lon} />}
-                {l.to === "/hytta" && <TempBadge stationMatch="hytta" storageKey="hdr.temp.hytta" />}
-                {l.to === "/pollen" && <PollenBadge lat={BORGEN_COORD.lat} lon={BORGEN_COORD.lon} />}
-              </Link>
+              <span key={l.to} className="inline-flex items-center gap-0.5">
+                {canFav && (
+                  <button
+                    type="button"
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleFavorite(l.to); }}
+                    aria-label={isFav ? "Fjern favoritt" : "Legg til favoritt"}
+                    title={isFav ? "Fjern favoritt" : "Legg til favoritt"}
+                    className={`p-0.5 transition ${isFav ? "text-primary" : "text-muted-foreground/40 hover:text-primary"}`}
+                  >
+                    <Star size={11} fill={isFav ? "currentColor" : "none"} />
+                  </button>
+                )}
+                <Link
+                  to={l.to}
+                  preload={HOMEY_BACKED_ROUTES.includes(l.to) ? false : undefined}
+                  activeOptions={l.to === "/" ? { exact: true } : undefined}
+                  onClick={() => bump(l.to)}
+                  className="got-nav-btn inline-flex items-center gap-1.5"
+                >
+                  {l.to === "/pollen" && <PollenIcon lat={pollenCoord.lat} lon={pollenCoord.lon} />}
+                  <span>{l.label}</span>
+                  {count > 0 && menuPrefs.sortByUsage && <UsageBadge count={count} />}
+                  {l.to === "/" && <UvBadge lat={BORGEN_COORD.lat} lon={BORGEN_COORD.lon} />}
+                  {l.to === "/" && <TempBadge stationMatch="tollnes" storageKey="hdr.temp.tollnes" />}
+                  {l.to === "/hytta" && <UvBadge lat={HYTTA_COORD.lat} lon={HYTTA_COORD.lon} />}
+                  {l.to === "/hytta" && <TempBadge stationMatch="hytta" storageKey="hdr.temp.hytta" />}
+                  {l.to === "/pollen" && <PollenBadge lat={pollenCoord.lat} lon={pollenCoord.lon} />}
+                </Link>
+              </span>
             );
           })}
           {isAuthed ? (
@@ -205,26 +253,40 @@ export function SiteHeader() {
           <div className="container mx-auto px-4 py-2 flex flex-col">
             {sortedLinks.map((l) => {
               const count = usage[l.to] ?? 0;
+              const isFav = menuPrefs.favorites.includes(l.to);
+              const canFav = menuPrefs.favoritesEnabled && l.to !== ALWAYS_FIRST && l.to !== ALWAYS_LAST;
               return (
-                <Link
-                  key={l.to}
-                  to={l.to}
-                  preload={HOMEY_BACKED_ROUTES.includes(l.to) ? false : undefined}
-                  activeOptions={l.to === "/" ? { exact: true } : undefined}
-                  onClick={() => {
-                    bump(l.to);
-                    setOpen(false);
-                  }}
-                  className="px-2 py-2.5 text-xs tracking-wider uppercase text-muted-foreground hover:text-primary border-b border-border last:border-0 data-[status=active]:text-primary data-[status=active]:font-semibold flex items-center gap-2"
-                >
-                  <span className="flex-1">{l.label}</span>
-                  {count > 0 && <UsageBadge count={count} />}
-                  {l.to === "/" && <UvBadge lat={BORGEN_COORD.lat} lon={BORGEN_COORD.lon} />}
-                  {l.to === "/" && <TempBadge stationMatch="tollnes" storageKey="hdr.temp.tollnes" />}
-                  {l.to === "/hytta" && <UvBadge lat={HYTTA_COORD.lat} lon={HYTTA_COORD.lon} />}
-                  {l.to === "/hytta" && <TempBadge stationMatch="hytta" storageKey="hdr.temp.hytta" />}
-                  {l.to === "/pollen" && <PollenBadge lat={BORGEN_COORD.lat} lon={BORGEN_COORD.lon} />}
-                </Link>
+                <div key={l.to} className="flex items-center gap-1 border-b border-border last:border-0">
+                  {canFav && (
+                    <button
+                      type="button"
+                      onClick={() => toggleFavorite(l.to)}
+                      aria-label={isFav ? "Fjern favoritt" : "Legg til favoritt"}
+                      className={`p-1.5 ${isFav ? "text-primary" : "text-muted-foreground/40"}`}
+                    >
+                      <Star size={13} fill={isFav ? "currentColor" : "none"} />
+                    </button>
+                  )}
+                  <Link
+                    to={l.to}
+                    preload={HOMEY_BACKED_ROUTES.includes(l.to) ? false : undefined}
+                    activeOptions={l.to === "/" ? { exact: true } : undefined}
+                    onClick={() => {
+                      bump(l.to);
+                      setOpen(false);
+                    }}
+                    className="flex-1 px-2 py-2.5 text-xs tracking-wider uppercase text-muted-foreground hover:text-primary data-[status=active]:text-primary data-[status=active]:font-semibold flex items-center gap-2"
+                  >
+                    {l.to === "/pollen" && <PollenIcon lat={pollenCoord.lat} lon={pollenCoord.lon} />}
+                    <span className="flex-1">{l.label}</span>
+                    {count > 0 && menuPrefs.sortByUsage && <UsageBadge count={count} />}
+                    {l.to === "/" && <UvBadge lat={BORGEN_COORD.lat} lon={BORGEN_COORD.lon} />}
+                    {l.to === "/" && <TempBadge stationMatch="tollnes" storageKey="hdr.temp.tollnes" />}
+                    {l.to === "/hytta" && <UvBadge lat={HYTTA_COORD.lat} lon={HYTTA_COORD.lon} />}
+                    {l.to === "/hytta" && <TempBadge stationMatch="hytta" storageKey="hdr.temp.hytta" />}
+                    {l.to === "/pollen" && <PollenBadge lat={pollenCoord.lat} lon={pollenCoord.lon} />}
+                  </Link>
+                </div>
               );
             })}
             {isAuthed ? (
@@ -398,7 +460,7 @@ function pollenLevel(allergen: "alder" | "birch" | "grass" | "mugwort", v: numbe
   return { rank: 0, label: "OK", color: "oklch(0.70 0.18 145)" };
 }
 
-function PollenBadge({ lat, lon }: { lat: number; lon: number }) {
+function useWorstPollen(lat: number, lon: number) {
   const [worst, setWorst] = useState<{ label: string; color: string; rank: number } | null>(null);
   useEffect(() => {
     let cancelled = false;
@@ -425,6 +487,23 @@ function PollenBadge({ lat, lon }: { lat: number; lon: number }) {
     const id = setInterval(load, 60 * 60_000);
     return () => { cancelled = true; clearInterval(id); };
   }, [lat, lon]);
+  return worst;
+}
+
+function PollenIcon({ lat, lon }: { lat: number; lon: number }) {
+  const worst = useWorstPollen(lat, lon);
+  if (!worst) return null;
+  return (
+    <Flower2
+      size={12}
+      style={{ color: worst.color }}
+      aria-hidden="true"
+    />
+  );
+}
+
+function PollenBadge({ lat, lon }: { lat: number; lon: number }) {
+  const worst = useWorstPollen(lat, lon);
   if (!worst) return null;
   return (
     <span

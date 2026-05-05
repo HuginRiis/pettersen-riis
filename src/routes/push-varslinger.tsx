@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { UpcomingPushPanel } from "@/components/UpcomingPushPanel";
 import { TibberCronStatusPanel } from "@/components/TibberCronStatusPanel";
 import { PushSchedulingSettings } from "@/components/PushSchedulingSettings";
+import { MenuPreferencesPanel } from "@/components/MenuPreferencesPanel";
 import {
   Bell, BellOff, Calendar, Cake, Trash2, CloudSun, Sun, Lightbulb, ScrollText, ShieldCheck, Lock, ExternalLink, Smartphone, X,
 } from "lucide-react";
@@ -56,6 +57,7 @@ function PushSettingsPage() {
       />
 
       <UpcomingPushPanel />
+      <MenuPreferencesPanel />
       <PushSchedulingSettings />
       <TibberCronStatusPanel />
 
