@@ -444,6 +444,15 @@ export function BirthdaysPanel() {
                             <>{dleft} {dleft === 1 ? "dag" : "dager"} igjen</>
                           )}
                         </p>
+                        {b.notify_enabled && (
+                          <p className="text-[10px] text-muted-foreground/80 mt-0.5">
+                            🔔 {(b.notify_days_before ?? 0) === 0 ? "På dagen" : `${b.notify_days_before} dag${b.notify_days_before === 1 ? "" : "er"} før`}
+                            {" • "}
+                            {typeof b.notify_hour === "number" && typeof b.notify_minute === "number"
+                              ? `${String(b.notify_hour).padStart(2, "0")}:${String(b.notify_minute).padStart(2, "0")}`
+                              : "globalt klokkeslett"}
+                          </p>
+                        )}
                         {b.words && (
                           <p className="text-medieval text-primary text-sm mt-1">"{b.words}"</p>
                         )}
