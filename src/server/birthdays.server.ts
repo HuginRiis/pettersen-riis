@@ -141,23 +141,18 @@ export async function processBirthdayNotifications(): Promise<{
     .eq("key", "birthday_time")
     .maybeSingle();
   const cfg = (setting?.value ?? {}) as { hour?: number; minute?: number };
-  const targetHour = typeof cfg.hour === "number" ? cfg.hour : 8;
-  const targetMinute = typeof cfg.minute === "number" ? cfg.minute : 0;
+  const globalHour = typeof cfg.hour === "number" ? cfg.hour : 8;
+  const globalMinute = typeof cfg.minute === "number" ? cfg.minute : 0;
   const nowMin = today.hour * 60 + today.minute;
-  const targetMin = targetHour * 60 + targetMinute;
-  // Vindu: opp til 65 min etter ønsket tid (cron kan kjøre med litt jitter)
-  if (nowMin < targetMin || nowMin > targetMin + 65) {
-    return { checked: 0, sent: 0, errors: 0 };
-  }
 
   const { data: rows, error } = await supabaseAdmin
     .from("birthdays")
-    .select("id, name, birth_date, title, words, notify_enabled, notify_recipients, notified_year");
+    .select("id, name, birth_date, title, words, notify_enabled, notify_recipients, notify_days_before, notify_hour, notify_minute, notified_date");
   if (error) throw error;
   if (!rows || rows.length === 0) return { checked: 0, sent: 0, errors: 0 };
 
-  const todayMM = today.month;
-  const todayDD = today.day;
+  // Today (Oslo) as date number for comparisons
+  const todayUtc = Date.UTC(today.year, today.month - 1, today.day);
   let sent = 0;
   let errors = 0;
   let checked = 0;
@@ -170,12 +165,31 @@ export async function processBirthdayNotifications(): Promise<{
     words: string | null;
     notify_enabled: boolean;
     notify_recipients: string[] | null;
-    notified_year: number | null;
+    notify_days_before: number | null;
+    notify_hour: number | null;
+    notify_minute: number | null;
+    notified_date: string | null;
   }>) {
     if (!r.notify_enabled) continue;
     const [by, bm, bd] = r.birth_date.split("-").map(Number);
-    if (bm !== todayMM || bd !== todayDD) continue;
-    if (r.notified_year === today.year) continue;
+    // Beregn neste trigger-dato (denne årets bursdag, evt. neste år hvis passert)
+    const daysBefore = Math.max(0, r.notify_days_before ?? 0);
+    let bdayThisYearUtc = Date.UTC(today.year, bm - 1, bd);
+    let triggerUtc = bdayThisYearUtc - daysBefore * 86400000;
+    if (triggerUtc < todayUtc) {
+      // Allerede passert i år – sjekk neste år
+      bdayThisYearUtc = Date.UTC(today.year + 1, bm - 1, bd);
+      triggerUtc = bdayThisYearUtc - daysBefore * 86400000;
+    }
+    if (triggerUtc !== todayUtc) continue;
+
+    const targetHour = typeof r.notify_hour === "number" ? r.notify_hour : globalHour;
+    const targetMinute = typeof r.notify_minute === "number" ? r.notify_minute : globalMinute;
+    const targetMin = targetHour * 60 + targetMinute;
+    if (nowMin < targetMin || nowMin > targetMin + 65) continue;
+
+    const todayIso = `${today.year}-${String(today.month).padStart(2, "0")}-${String(today.day).padStart(2, "0")}`;
+    if (r.notified_date === todayIso) continue;
     checked++;
 
     const rawRecipients = (r.notify_recipients && r.notify_recipients.length > 0)
