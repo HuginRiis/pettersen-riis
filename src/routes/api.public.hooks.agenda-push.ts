@@ -70,7 +70,14 @@ export const Route = createFileRoute("/api/public/hooks/agenda-push")({
           } catch (err) {
             console.error("[light-idle-push] failed", err);
           }
-          return new Response(JSON.stringify({ ok: true, agenda, checklist, garbage, birthdays, warranty, uv, weather, lightIdle }), {
+          let tibber = { checked: 0, sent: 0, errors: 0, skipped: 0 };
+          try {
+            const tmod = await import("@/server/tibber-push.server");
+            tibber = await tmod.processTibberNotifications();
+          } catch (err) {
+            console.error("[tibber-push] failed", err);
+          }
+          return new Response(JSON.stringify({ ok: true, agenda, checklist, garbage, birthdays, warranty, uv, weather, lightIdle, tibber }), {
             headers: { "Content-Type": "application/json" },
           });
         } catch (err) {

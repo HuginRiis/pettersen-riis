@@ -134,8 +134,21 @@ export async function processBirthdayNotifications(): Promise<{
   errors: number;
 }> {
   const today = getOsloParts();
-  // Send i tidsvinduet 08:00–09:00 Oslo. Cron kjører hver time.
-  if (today.hour !== 8) return { checked: 0, sent: 0, errors: 0 };
+  // Hent globalt klokkeslett for bursdager (default 08:00)
+  const { data: setting } = await supabaseAdmin
+    .from("notification_settings")
+    .select("value")
+    .eq("key", "birthday_time")
+    .maybeSingle();
+  const cfg = (setting?.value ?? {}) as { hour?: number; minute?: number };
+  const targetHour = typeof cfg.hour === "number" ? cfg.hour : 8;
+  const targetMinute = typeof cfg.minute === "number" ? cfg.minute : 0;
+  const nowMin = today.hour * 60 + today.minute;
+  const targetMin = targetHour * 60 + targetMinute;
+  // Vindu: opp til 65 min etter ønsket tid (cron kan kjøre med litt jitter)
+  if (nowMin < targetMin || nowMin > targetMin + 65) {
+    return { checked: 0, sent: 0, errors: 0 };
+  }
 
   const { data: rows, error } = await supabaseAdmin
     .from("birthdays")
