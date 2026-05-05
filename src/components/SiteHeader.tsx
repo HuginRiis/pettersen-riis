@@ -183,23 +183,38 @@ export function SiteHeader() {
         <nav className="hidden xl:flex flex-1 flex-wrap items-center justify-start gap-x-2 gap-y-2">
           {sortedLinks.map((l) => {
             const count = usage[l.to] ?? 0;
+            const isFav = menuPrefs.favorites.includes(l.to);
+            const canFav = menuPrefs.favoritesEnabled && l.to !== ALWAYS_FIRST && l.to !== ALWAYS_LAST;
             return (
-              <Link
-                key={l.to}
-                to={l.to}
-                preload={HOMEY_BACKED_ROUTES.includes(l.to) ? false : undefined}
-                activeOptions={l.to === "/" ? { exact: true } : undefined}
-                onClick={() => bump(l.to)}
-                className="got-nav-btn inline-flex items-center gap-1.5"
-              >
-                <span>{l.label}</span>
-                {count > 0 && <UsageBadge count={count} />}
-                {l.to === "/" && <UvBadge lat={BORGEN_COORD.lat} lon={BORGEN_COORD.lon} />}
-                {l.to === "/" && <TempBadge stationMatch="tollnes" storageKey="hdr.temp.tollnes" />}
-                {l.to === "/hytta" && <UvBadge lat={HYTTA_COORD.lat} lon={HYTTA_COORD.lon} />}
-                {l.to === "/hytta" && <TempBadge stationMatch="hytta" storageKey="hdr.temp.hytta" />}
-                {l.to === "/pollen" && <PollenBadge lat={BORGEN_COORD.lat} lon={BORGEN_COORD.lon} />}
-              </Link>
+              <span key={l.to} className="inline-flex items-center gap-0.5">
+                {canFav && (
+                  <button
+                    type="button"
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleFavorite(l.to); }}
+                    aria-label={isFav ? "Fjern favoritt" : "Legg til favoritt"}
+                    title={isFav ? "Fjern favoritt" : "Legg til favoritt"}
+                    className={`p-0.5 transition ${isFav ? "text-primary" : "text-muted-foreground/40 hover:text-primary"}`}
+                  >
+                    <Star size={11} fill={isFav ? "currentColor" : "none"} />
+                  </button>
+                )}
+                <Link
+                  to={l.to}
+                  preload={HOMEY_BACKED_ROUTES.includes(l.to) ? false : undefined}
+                  activeOptions={l.to === "/" ? { exact: true } : undefined}
+                  onClick={() => bump(l.to)}
+                  className="got-nav-btn inline-flex items-center gap-1.5"
+                >
+                  {l.to === "/pollen" && <PollenIcon lat={pollenCoord.lat} lon={pollenCoord.lon} />}
+                  <span>{l.label}</span>
+                  {count > 0 && menuPrefs.sortByUsage && <UsageBadge count={count} />}
+                  {l.to === "/" && <UvBadge lat={BORGEN_COORD.lat} lon={BORGEN_COORD.lon} />}
+                  {l.to === "/" && <TempBadge stationMatch="tollnes" storageKey="hdr.temp.tollnes" />}
+                  {l.to === "/hytta" && <UvBadge lat={HYTTA_COORD.lat} lon={HYTTA_COORD.lon} />}
+                  {l.to === "/hytta" && <TempBadge stationMatch="hytta" storageKey="hdr.temp.hytta" />}
+                  {l.to === "/pollen" && <PollenBadge lat={pollenCoord.lat} lon={pollenCoord.lon} />}
+                </Link>
+              </span>
             );
           })}
           {isAuthed ? (
