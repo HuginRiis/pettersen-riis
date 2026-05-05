@@ -165,6 +165,7 @@ export function SiteHeader() {
                 {l.to === "/" && <TempBadge stationMatch="tollnes" storageKey="hdr.temp.tollnes" />}
                 {l.to === "/hytta" && <UvBadge lat={HYTTA_COORD.lat} lon={HYTTA_COORD.lon} />}
                 {l.to === "/hytta" && <TempBadge stationMatch="hytta" storageKey="hdr.temp.hytta" />}
+                {l.to === "/pollen" && <PollenBadge lat={BORGEN_COORD.lat} lon={BORGEN_COORD.lon} />}
               </Link>
             );
           })}
@@ -222,6 +223,7 @@ export function SiteHeader() {
                   {l.to === "/" && <TempBadge stationMatch="tollnes" storageKey="hdr.temp.tollnes" />}
                   {l.to === "/hytta" && <UvBadge lat={HYTTA_COORD.lat} lon={HYTTA_COORD.lon} />}
                   {l.to === "/hytta" && <TempBadge stationMatch="hytta" storageKey="hdr.temp.hytta" />}
+                  {l.to === "/pollen" && <PollenBadge lat={BORGEN_COORD.lat} lon={BORGEN_COORD.lon} />}
                 </Link>
               );
             })}
@@ -283,14 +285,60 @@ function UvBadge({ lat, lon }: { lat: number; lon: number }) {
   );
 }
 
-// Maps temperatur (°C) til en farge fra blått (kaldt) → rødt (varmt).
+// Lineær interpolasjon mellom to fargeankre i HSL-rom.
+function lerp(a: number, b: number, t: number) {
+  return a + (b - a) * t;
+}
+function mixHsl(
+  c1: { h: number; s: number; l: number },
+  c2: { h: number; s: number; l: number },
+  t: number,
+) {
+  return {
+    h: lerp(c1.h, c2.h, t),
+    s: lerp(c1.s, c2.s, t),
+    l: lerp(c1.l, c2.l, t),
+  };
+}
+
+// Temperaturfarge: mørk blå (kaldt) → lys blå → grønn (komfort) → rød (varmt).
+// Myke gradientoverganger med god lesbarhet på mørk bakgrunn.
 function tempColor(t: number): string {
-  // Klipp inn til [-20, 35]
-  const min = -20, max = 35;
-  const x = Math.max(0, Math.min(1, (t - min) / (max - min)));
-  // Hue: 220 (blå) → 0 (rød)
-  const hue = 220 * (1 - x);
-  return `hsl(${hue.toFixed(0)} 80% 55%)`;
+  // Ankre: temp → HSL
+  // < 0°C: mørk blå
+  // 0°C: tydelig blå
+  // 15°C: nøytral / lys grønn-blå
+  // 19°C: klar grønn (komfort)
+  // 25°C: lys rød
+  // 35°C+: dyp rød
+  const stops: { t: number; c: { h: number; s: number; l: number } }[] = [
+    { t: -20, c: { h: 230, s: 75, l: 40 } }, // mørk blå
+    { t: 0,   c: { h: 215, s: 80, l: 55 } }, // tydelig blå
+    { t: 10,  c: { h: 200, s: 70, l: 62 } }, // lys blå
+    { t: 15,  c: { h: 165, s: 55, l: 60 } }, // teal mot grønn
+    { t: 19,  c: { h: 140, s: 60, l: 55 } }, // klar grønn (komfort)
+    { t: 22,  c: { h: 120, s: 55, l: 58 } }, // grønn
+    { t: 25,  c: { h:  20, s: 80, l: 65 } }, // lys rød
+    { t: 30,  c: { h:  10, s: 80, l: 58 } },
+    { t: 40,  c: { h:   0, s: 80, l: 50 } }, // dyp rød
+  ];
+  if (t <= stops[0].t) {
+    const c = stops[0].c;
+    return `hsl(${c.h.toFixed(0)} ${c.s}% ${c.l}%)`;
+  }
+  if (t >= stops[stops.length - 1].t) {
+    const c = stops[stops.length - 1].c;
+    return `hsl(${c.h.toFixed(0)} ${c.s}% ${c.l}%)`;
+  }
+  for (let i = 0; i < stops.length - 1; i++) {
+    const a = stops[i], b = stops[i + 1];
+    if (t >= a.t && t <= b.t) {
+      const x = (t - a.t) / (b.t - a.t);
+      const c = mixHsl(a.c, b.c, x);
+      return `hsl(${c.h.toFixed(0)} ${c.s.toFixed(0)}% ${c.l.toFixed(0)}%)`;
+    }
+  }
+  return `hsl(140 60% 55%)`;
 }
 
 function TempBadge({ stationMatch, storageKey }: { stationMatch: string; storageKey: string }) {
@@ -330,6 +378,65 @@ function TempBadge({ stationMatch, storageKey }: { stationMatch: string; storage
       title={`Ute nå: ${value.toFixed(1)}°`}
     >
       {value.toFixed(0)}°
+    </span>
+  );
+}
+
+// Pollen-terskler matcher LivePollen (NAAF-skalert).
+function pollenLevel(allergen: "alder" | "birch" | "grass" | "mugwort", v: number) {
+  let t: { low: number; mod: number; high: number; veryHigh: number };
+  switch (allergen) {
+    case "birch": t = { low: 1, mod: 5, high: 30, veryHigh: 80 }; break;
+    case "alder": t = { low: 1, mod: 5, high: 25, veryHigh: 70 }; break;
+    case "grass": t = { low: 1, mod: 5, high: 20, veryHigh: 50 }; break;
+    case "mugwort": t = { low: 1, mod: 5, high: 20, veryHigh: 50 }; break;
+  }
+  if (v >= t.veryHigh) return { rank: 4, label: "Svært høy", color: "oklch(0.55 0.25 15)" };
+  if (v >= t.high) return { rank: 3, label: "Høy", color: "oklch(0.65 0.20 25)" };
+  if (v >= t.mod) return { rank: 2, label: "Moderat", color: "oklch(0.78 0.15 70)" };
+  if (v >= t.low) return { rank: 1, label: "Lav", color: "oklch(0.72 0.15 140)" };
+  return { rank: 0, label: "OK", color: "oklch(0.70 0.18 145)" };
+}
+
+function PollenBadge({ lat, lon }: { lat: number; lon: number }) {
+  const [worst, setWorst] = useState<{ label: string; color: string; rank: number } | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      try {
+        const url = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&hourly=alder_pollen,birch_pollen,grass_pollen,mugwort_pollen&timezone=Europe%2FOslo&forecast_days=1`;
+        const res = await fetch(url);
+        if (!res.ok) return;
+        const data = await res.json();
+        const h = data?.hourly;
+        if (!h?.time) return;
+        const allergens: ("alder" | "birch" | "grass" | "mugwort")[] = ["alder", "birch", "grass", "mugwort"];
+        let best = pollenLevel("birch", 0);
+        for (const a of allergens) {
+          const arr: number[] = h[`${a}_pollen`] ?? [];
+          const max = arr.reduce((m, v) => (typeof v === "number" && v > m ? v : m), 0);
+          const lvl = pollenLevel(a, max);
+          if (lvl.rank > best.rank) best = lvl;
+        }
+        if (!cancelled) setWorst(best);
+      } catch { /* ignore */ }
+    }
+    load();
+    const id = setInterval(load, 60 * 60_000);
+    return () => { cancelled = true; clearInterval(id); };
+  }, [lat, lon]);
+  if (!worst) return null;
+  return (
+    <span
+      className="inline-flex items-center justify-center rounded-full text-[9px] font-semibold leading-none px-1.5 py-0.5"
+      style={{
+        background: `color-mix(in oklab, ${worst.color} 22%, transparent)`,
+        color: worst.color,
+        border: `1px solid color-mix(in oklab, ${worst.color} 50%, transparent)`,
+      }}
+      title={`Pollen i dag: ${worst.label}`}
+    >
+      {worst.label}
     </span>
   );
 }
