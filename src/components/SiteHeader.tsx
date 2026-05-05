@@ -460,8 +460,23 @@ function pollenLevel(allergen: "alder" | "birch" | "grass" | "mugwort", v: numbe
   return { rank: 0, label: "OK", color: "oklch(0.70 0.18 145)" };
 }
 
+type Allergen = "alder" | "birch" | "grass" | "mugwort";
+
+const ALLERGEN_EMOJI: Record<Allergen, string> = {
+  alder: "🌳",   // Or
+  birch: "🌲",   // Bjørk
+  grass: "🌾",   // Gress
+  mugwort: "🌿", // Burot
+};
+const ALLERGEN_NAME: Record<Allergen, string> = {
+  alder: "Or",
+  birch: "Bjørk",
+  grass: "Gress",
+  mugwort: "Burot",
+};
+
 function useWorstPollen(lat: number, lon: number) {
-  const [worst, setWorst] = useState<{ label: string; color: string; rank: number } | null>(null);
+  const [worst, setWorst] = useState<{ label: string; color: string; rank: number; allergen: Allergen } | null>(null);
   useEffect(() => {
     let cancelled = false;
     async function load() {
@@ -472,13 +487,13 @@ function useWorstPollen(lat: number, lon: number) {
         const data = await res.json();
         const h = data?.hourly;
         if (!h?.time) return;
-        const allergens: ("alder" | "birch" | "grass" | "mugwort")[] = ["alder", "birch", "grass", "mugwort"];
-        let best = pollenLevel("birch", 0);
+        const allergens: Allergen[] = ["alder", "birch", "grass", "mugwort"];
+        let best: { label: string; color: string; rank: number; allergen: Allergen } = { ...pollenLevel("birch", 0), allergen: "birch" };
         for (const a of allergens) {
           const arr: number[] = h[`${a}_pollen`] ?? [];
           const max = arr.reduce((m, v) => (typeof v === "number" && v > m ? v : m), 0);
           const lvl = pollenLevel(a, max);
-          if (lvl.rank > best.rank) best = lvl;
+          if (lvl.rank > best.rank) best = { ...lvl, allergen: a };
         }
         if (!cancelled) setWorst(best);
       } catch { /* ignore */ }
@@ -507,15 +522,16 @@ function PollenBadge({ lat, lon }: { lat: number; lon: number }) {
   if (!worst) return null;
   return (
     <span
-      className="inline-flex items-center justify-center rounded-full text-[9px] font-semibold leading-none px-1.5 py-0.5"
+      className="inline-flex items-center gap-1 justify-center rounded-full text-[9px] font-semibold leading-none px-1.5 py-0.5"
       style={{
         background: `color-mix(in oklab, ${worst.color} 22%, transparent)`,
         color: worst.color,
         border: `1px solid color-mix(in oklab, ${worst.color} 50%, transparent)`,
       }}
-      title={`Pollen i dag: ${worst.label}`}
+      title={`Pollen i dag: ${worst.label} (${ALLERGEN_NAME[worst.allergen]})`}
     >
       {worst.label}
+      <span aria-hidden className="text-[10px] leading-none">{ALLERGEN_EMOJI[worst.allergen]}</span>
     </span>
   );
 }

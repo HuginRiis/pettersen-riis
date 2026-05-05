@@ -10,7 +10,7 @@ export type MenuPrefs = {
 };
 
 const DEFAULTS: MenuPrefs = {
-  sortByUsage: true,
+  sortByUsage: false,
   favoritesEnabled: true,
   favorites: [],
 };
