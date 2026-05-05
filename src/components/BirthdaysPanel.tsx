@@ -69,6 +69,8 @@ export function BirthdaysPanel() {
   const [words, setWords] = useState("");
   const [notifyEnabled, setNotifyEnabled] = useState(true);
   const [recipients, setRecipients] = useState<string[]>(["Alle"]);
+  const [daysBefore, setDaysBefore] = useState<number>(0);
+  const [notifyTime, setNotifyTime] = useState<string>("");
 
   // Edit state
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -76,13 +78,15 @@ export function BirthdaysPanel() {
   const [editBirthDate, setEditBirthDate] = useState("");
   const [editTitle, setEditTitle] = useState("");
   const [editWords, setEditWords] = useState("");
+  const [editDaysBefore, setEditDaysBefore] = useState<number>(0);
+  const [editNotifyTime, setEditNotifyTime] = useState<string>("");
   const [editSaving, setEditSaving] = useState(false);
 
   async function load() {
     setLoading(true);
     const { data, error } = await supabase
       .from("birthdays" as any)
-      .select("id, name, birth_date, title, words, notify_enabled, notify_recipients")
+      .select("id, name, birth_date, title, words, notify_enabled, notify_recipients, notify_days_before, notify_hour, notify_minute")
       .order("name", { ascending: true });
     if (!error && data) setItems(data as unknown as Birthday[]);
     setLoading(false);
