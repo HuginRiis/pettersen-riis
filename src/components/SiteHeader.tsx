@@ -1,13 +1,14 @@
 import { Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Menu, X, LogOut, Crown, Swords, Shield, KeyRound, Home } from "lucide-react";
+import { Menu, X, LogOut, Crown, Swords, Shield, KeyRound, Home, Star, Flower2 } from "lucide-react";
 import { logoutFn } from "@/server/auth";
 import { useAuthStatus } from "@/hooks/use-auth-status";
 import { openLoginDialog } from "@/components/LoginDialog";
 import { useUvSun, uvLevel } from "@/hooks/use-uv-sun";
-import { getNameForCurrentIp } from "@/server/user-locations";
+import { getNameForCurrentIp, getDefaultLocation } from "@/server/user-locations";
 import { useNavUsage } from "@/hooks/use-nav-usage";
+import { useMenuPrefs } from "@/hooks/use-menu-prefs";
 import { getNetatmoWeatherStation } from "@/server/netatmo-weather";
 import { useLastGood } from "@/hooks/use-last-good";
 
