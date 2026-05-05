@@ -57,6 +57,7 @@ function PushSettingsPage() {
       />
 
       <UpcomingPushPanel />
+      <MenuPreferencesPanel />
       <PushSchedulingSettings />
       <TibberCronStatusPanel />
 
