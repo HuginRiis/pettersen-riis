@@ -519,4 +519,3 @@ function PollenBadge({ lat, lon }: { lat: number; lon: number }) {
     </span>
   );
 }
-}
