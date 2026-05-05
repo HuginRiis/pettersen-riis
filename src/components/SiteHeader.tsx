@@ -8,6 +8,8 @@ import { openLoginDialog } from "@/components/LoginDialog";
 import { useUvSun, uvLevel } from "@/hooks/use-uv-sun";
 import { getNameForCurrentIp } from "@/server/user-locations";
 import { useNavUsage } from "@/hooks/use-nav-usage";
+import { getNetatmoWeatherStation } from "@/server/netatmo-weather";
+import { useLastGood } from "@/hooks/use-last-good";
 
 const BORGEN_COORD = { lat: 59.1789, lon: 9.5732 };
 const HYTTA_COORD = { lat: 59.8733, lon: 9.4297 };
