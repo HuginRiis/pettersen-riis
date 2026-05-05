@@ -219,6 +219,78 @@ export function UpcomingPushPanel() {
       console.error("[UpcomingPushPanel] uv eval failed", err);
     }
 
+    // 6. Søppel/renovasjon — beregn varselstidspunkt fra prefs + neste tømminger
+    try {
+      const overview = await getGarbageOverview();
+      const prefMap = new Map<number, typeof overview.prefs[number]>();
+      for (const p of overview.prefs) prefMap.set(p.fraksjon_id, p);
+      const seen = new Set<string>();
+      for (const pickup of overview.pickups) {
+        const pref = prefMap.get(pickup.fraksjonId);
+        if (!pref || !pref.enabled) continue;
+        const [py, pm, pd] = pickup.date.split("-").map(Number);
+        const notifyDateMs = Date.UTC(py, pm - 1, pd) - pref.days_before * 86400000;
+        const ndUtc = new Date(notifyDateMs);
+        const dateIso = `${ndUtc.getUTCFullYear()}-${String(ndUtc.getUTCMonth() + 1).padStart(2, "0")}-${String(ndUtc.getUTCDate()).padStart(2, "0")}`;
+        const time = `${String(pref.notify_hour).padStart(2, "0")}:${String(pref.notify_minute).padStart(2, "0")}`;
+        const at = osloLocalToUtc(dateIso, time);
+        if (at < now || at > horizon) continue;
+        const key = `garbage-${pickup.fraksjonId}-${pickup.date}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        const dayLabel = pref.days_before === 0 ? "i dag" : pref.days_before === 1 ? "i morgen" : `om ${pref.days_before} dager`;
+        result.push({
+          key,
+          when: at,
+          source: "Renovasjon",
+          icon: Trash2,
+          title: `${pickup.fraksjonNavn} hentes ${dayLabel}`,
+          recipients: recipientsLabel(pref.who),
+          detail: `Tømming ${pickup.date}`,
+        });
+      }
+    } catch (err) {
+      console.error("[UpcomingPushPanel] garbage eval failed", err);
+    }
+
+    // 7. Garanti (kvitteringer) — 30/60/90 dager før 1-års garantiutløp
+    try {
+      const { data: receipts } = await supabase
+        .from("receipts")
+        .select("id, store, purchased_at, warranty_recipient, warranty_notified_30, warranty_notified_60, warranty_notified_90")
+        .not("purchased_at", "is", null);
+      const { data: gPrefs } = await supabase.from("warranty_global_prefs").select("*");
+      const gMap = new Map<string, any>();
+      for (const g of gPrefs ?? []) gMap.set((g as any).recipient, g);
+
+      for (const r of receipts ?? []) {
+        const recipient = (r.warranty_recipient as string) || "Arne";
+        const gp = gMap.get(recipient) ?? { notify_30: true, notify_60: true, notify_90: true };
+        const [py, pm, pd] = (r.purchased_at as string).split("-").map(Number);
+        const expiryUtc = Date.UTC(py + 1, pm - 1, pd);
+        const stages = [
+          { d: 90, sent: r.warranty_notified_90, on: gp.notify_90 },
+          { d: 60, sent: r.warranty_notified_60, on: gp.notify_60 },
+          { d: 30, sent: r.warranty_notified_30, on: gp.notify_30 },
+        ];
+        for (const s of stages) {
+          if (!s.on || s.sent) continue;
+          const at = new Date(expiryUtc - s.d * 86400000);
+          if (at < now || at > horizon) continue;
+          result.push({
+            key: `warranty-${r.id}-${s.d}`,
+            when: at,
+            source: "Garanti",
+            icon: ShieldCheck,
+            title: `${(r.store as string) || "Kvittering"} — ${s.d} dager til garantislutt`,
+            recipients: recipient,
+          });
+        }
+      }
+    } catch (err) {
+      console.error("[UpcomingPushPanel] warranty eval failed", err);
+    }
+
     result.sort((a, b) => a.when.getTime() - b.when.getTime());
     setItems(result);
     setLoading(false);
