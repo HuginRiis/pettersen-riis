@@ -283,14 +283,60 @@ function UvBadge({ lat, lon }: { lat: number; lon: number }) {
   );
 }
 
-// Maps temperatur (°C) til en farge fra blått (kaldt) → rødt (varmt).
+// Lineær interpolasjon mellom to fargeankre i HSL-rom.
+function lerp(a: number, b: number, t: number) {
+  return a + (b - a) * t;
+}
+function mixHsl(
+  c1: { h: number; s: number; l: number },
+  c2: { h: number; s: number; l: number },
+  t: number,
+) {
+  return {
+    h: lerp(c1.h, c2.h, t),
+    s: lerp(c1.s, c2.s, t),
+    l: lerp(c1.l, c2.l, t),
+  };
+}
+
+// Temperaturfarge: mørk blå (kaldt) → lys blå → grønn (komfort) → rød (varmt).
+// Myke gradientoverganger med god lesbarhet på mørk bakgrunn.
 function tempColor(t: number): string {
-  // Klipp inn til [-20, 35]
-  const min = -20, max = 35;
-  const x = Math.max(0, Math.min(1, (t - min) / (max - min)));
-  // Hue: 220 (blå) → 0 (rød)
-  const hue = 220 * (1 - x);
-  return `hsl(${hue.toFixed(0)} 80% 55%)`;
+  // Ankre: temp → HSL
+  // < 0°C: mørk blå
+  // 0°C: tydelig blå
+  // 15°C: nøytral / lys grønn-blå
+  // 19°C: klar grønn (komfort)
+  // 25°C: lys rød
+  // 35°C+: dyp rød
+  const stops: { t: number; c: { h: number; s: number; l: number } }[] = [
+    { t: -20, c: { h: 230, s: 75, l: 40 } }, // mørk blå
+    { t: 0,   c: { h: 215, s: 80, l: 55 } }, // tydelig blå
+    { t: 10,  c: { h: 200, s: 70, l: 62 } }, // lys blå
+    { t: 15,  c: { h: 165, s: 55, l: 60 } }, // teal mot grønn
+    { t: 19,  c: { h: 140, s: 60, l: 55 } }, // klar grønn (komfort)
+    { t: 22,  c: { h: 120, s: 55, l: 58 } }, // grønn
+    { t: 25,  c: { h:  20, s: 80, l: 65 } }, // lys rød
+    { t: 30,  c: { h:  10, s: 80, l: 58 } },
+    { t: 40,  c: { h:   0, s: 80, l: 50 } }, // dyp rød
+  ];
+  if (t <= stops[0].t) {
+    const c = stops[0].c;
+    return `hsl(${c.h.toFixed(0)} ${c.s}% ${c.l}%)`;
+  }
+  if (t >= stops[stops.length - 1].t) {
+    const c = stops[stops.length - 1].c;
+    return `hsl(${c.h.toFixed(0)} ${c.s}% ${c.l}%)`;
+  }
+  for (let i = 0; i < stops.length - 1; i++) {
+    const a = stops[i], b = stops[i + 1];
+    if (t >= a.t && t <= b.t) {
+      const x = (t - a.t) / (b.t - a.t);
+      const c = mixHsl(a.c, b.c, x);
+      return `hsl(${c.h.toFixed(0)} ${c.s.toFixed(0)}% ${c.l.toFixed(0)}%)`;
+    }
+  }
+  return `hsl(140 60% 55%)`;
 }
 
 function TempBadge({ stationMatch, storageKey }: { stationMatch: string; storageKey: string }) {
