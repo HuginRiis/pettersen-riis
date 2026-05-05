@@ -12,6 +12,9 @@ export type Birthday = {
   words: string | null;
   notify_enabled: boolean;
   notify_recipients: string[];
+  notify_days_before: number;
+  notify_hour: number | null;
+  notify_minute: number | null;
 };
 
 const RECIPIENTS = ["Alle", "Arne & Rebekka", "Arne", "Rebekka", "Marita", "Nora", "Celine", "Mira"] as const;
@@ -66,6 +69,8 @@ export function BirthdaysPanel() {
   const [words, setWords] = useState("");
   const [notifyEnabled, setNotifyEnabled] = useState(true);
   const [recipients, setRecipients] = useState<string[]>(["Alle"]);
+  const [daysBefore, setDaysBefore] = useState<number>(0);
+  const [notifyTime, setNotifyTime] = useState<string>("");
 
   // Edit state
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -73,13 +78,15 @@ export function BirthdaysPanel() {
   const [editBirthDate, setEditBirthDate] = useState("");
   const [editTitle, setEditTitle] = useState("");
   const [editWords, setEditWords] = useState("");
+  const [editDaysBefore, setEditDaysBefore] = useState<number>(0);
+  const [editNotifyTime, setEditNotifyTime] = useState<string>("");
   const [editSaving, setEditSaving] = useState(false);
 
   async function load() {
     setLoading(true);
     const { data, error } = await supabase
       .from("birthdays" as any)
-      .select("id, name, birth_date, title, words, notify_enabled, notify_recipients")
+      .select("id, name, birth_date, title, words, notify_enabled, notify_recipients, notify_days_before, notify_hour, notify_minute")
       .order("name", { ascending: true });
     if (!error && data) setItems(data as unknown as Birthday[]);
     setLoading(false);
@@ -89,10 +96,17 @@ export function BirthdaysPanel() {
     load();
   }, []);
 
+  function parseTime(t: string): { hour: number | null; minute: number | null } {
+    if (!t || !/^\d{1,2}:\d{2}$/.test(t)) return { hour: null, minute: null };
+    const [h, m] = t.split(":").map(Number);
+    return { hour: h, minute: m };
+  }
+
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim() || !birthDate) return;
     setSubmitting(true);
+    const { hour, minute } = parseTime(notifyTime);
     const { error } = await supabase.from("birthdays" as any).insert({
       name: name.trim(),
       birth_date: birthDate,
@@ -100,6 +114,9 @@ export function BirthdaysPanel() {
       words: words.trim() || null,
       notify_enabled: notifyEnabled,
       notify_recipients: recipients.length > 0 ? recipients : ["Alle"],
+      notify_days_before: Math.max(0, Math.min(60, daysBefore)),
+      notify_hour: hour,
+      notify_minute: minute,
     });
     setSubmitting(false);
     if (!error) {
@@ -109,6 +126,8 @@ export function BirthdaysPanel() {
       setWords("");
       setNotifyEnabled(true);
       setRecipients(["Alle"]);
+      setDaysBefore(0);
+      setNotifyTime("");
       load();
     }
   }
@@ -138,6 +157,12 @@ export function BirthdaysPanel() {
     setEditBirthDate(b.birth_date);
     setEditTitle(b.title ?? "");
     setEditWords(b.words ?? "");
+    setEditDaysBefore(b.notify_days_before ?? 0);
+    setEditNotifyTime(
+      typeof b.notify_hour === "number" && typeof b.notify_minute === "number"
+        ? `${String(b.notify_hour).padStart(2, "0")}:${String(b.notify_minute).padStart(2, "0")}`
+        : "",
+    );
   }
 
   function cancelEdit() {
@@ -147,11 +172,15 @@ export function BirthdaysPanel() {
   async function saveEdit(id: string) {
     if (!editName.trim() || !editBirthDate) return;
     setEditSaving(true);
+    const { hour, minute } = parseTime(editNotifyTime);
     const patch = {
       name: editName.trim(),
       birth_date: editBirthDate,
       title: editTitle.trim() || null,
       words: editWords.trim() || null,
+      notify_days_before: Math.max(0, Math.min(60, editDaysBefore)),
+      notify_hour: hour,
+      notify_minute: minute,
     };
     const { error } = await supabase.from("birthdays" as any).update(patch).eq("id", id);
     setEditSaving(false);
@@ -160,6 +189,7 @@ export function BirthdaysPanel() {
       setEditingId(null);
     }
   }
+
 
   async function sendTestFor(id: string) {
     setMessage(null);
@@ -242,8 +272,35 @@ export function BirthdaysPanel() {
               onChange={(e) => setNotifyEnabled(e.target.checked)}
               className="accent-primary"
             />
-            Send push kl 08:00 på dagen
+            Send push-varsel
           </label>
+
+          <div className="grid grid-cols-2 gap-2 mb-3">
+            <div>
+              <label className="block text-xs uppercase tracking-wider text-muted-foreground mb-1">Dager før</label>
+              <input
+                type="number"
+                min={0}
+                max={60}
+                value={daysBefore}
+                onChange={(e) => setDaysBefore(Math.max(0, Math.min(60, Number(e.target.value) || 0)))}
+                className="w-full bg-input border border-border rounded px-3 py-2 text-foreground tabular-nums"
+              />
+            </div>
+            <div>
+              <label className="block text-xs uppercase tracking-wider text-muted-foreground mb-1">Klokkeslett</label>
+              <input
+                type="time"
+                value={notifyTime}
+                onChange={(e) => setNotifyTime(e.target.value)}
+                placeholder="globalt"
+                className="w-full bg-input border border-border rounded px-3 py-2 text-foreground tabular-nums"
+              />
+            </div>
+          </div>
+          <p className="text-[10px] text-muted-foreground -mt-2 mb-3">
+            0 dager = på selve bursdagen. Tomt klokkeslett = bruk globalt (08:00).
+          </p>
 
           <label className="block text-xs uppercase tracking-wider text-muted-foreground mb-2">
             Mottakere (push)
@@ -350,6 +407,28 @@ export function BirthdaysPanel() {
                             className="w-full bg-input border border-border rounded px-2 py-1.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                           />
                         </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="block text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Dager før</label>
+                            <input
+                              type="number"
+                              min={0}
+                              max={60}
+                              value={editDaysBefore}
+                              onChange={(e) => setEditDaysBefore(Math.max(0, Math.min(60, Number(e.target.value) || 0)))}
+                              className="w-full bg-input border border-border rounded px-2 py-1.5 text-sm text-foreground tabular-nums"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Klokkeslett (tomt = globalt)</label>
+                            <input
+                              type="time"
+                              value={editNotifyTime}
+                              onChange={(e) => setEditNotifyTime(e.target.value)}
+                              className="w-full bg-input border border-border rounded px-2 py-1.5 text-sm text-foreground tabular-nums"
+                            />
+                          </div>
+                        </div>
                       </div>
                     ) : (
                       <>
@@ -365,6 +444,15 @@ export function BirthdaysPanel() {
                             <>{dleft} {dleft === 1 ? "dag" : "dager"} igjen</>
                           )}
                         </p>
+                        {b.notify_enabled && (
+                          <p className="text-[10px] text-muted-foreground/80 mt-0.5">
+                            🔔 {(b.notify_days_before ?? 0) === 0 ? "På dagen" : `${b.notify_days_before} dag${b.notify_days_before === 1 ? "" : "er"} før`}
+                            {" • "}
+                            {typeof b.notify_hour === "number" && typeof b.notify_minute === "number"
+                              ? `${String(b.notify_hour).padStart(2, "0")}:${String(b.notify_minute).padStart(2, "0")}`
+                              : "globalt klokkeslett"}
+                          </p>
+                        )}
                         {b.words && (
                           <p className="text-medieval text-primary text-sm mt-1">"{b.words}"</p>
                         )}

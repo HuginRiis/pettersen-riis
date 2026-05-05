@@ -179,8 +179,12 @@ export type Database = {
           created_at: string
           id: string
           name: string
+          notified_date: string | null
           notified_year: number | null
+          notify_days_before: number
           notify_enabled: boolean
+          notify_hour: number | null
+          notify_minute: number | null
           notify_recipients: string[]
           title: string | null
           updated_at: string
@@ -191,8 +195,12 @@ export type Database = {
           created_at?: string
           id?: string
           name: string
+          notified_date?: string | null
           notified_year?: number | null
+          notify_days_before?: number
           notify_enabled?: boolean
+          notify_hour?: number | null
+          notify_minute?: number | null
           notify_recipients?: string[]
           title?: string | null
           updated_at?: string
@@ -203,8 +211,12 @@ export type Database = {
           created_at?: string
           id?: string
           name?: string
+          notified_date?: string | null
           notified_year?: number | null
+          notify_days_before?: number
           notify_enabled?: boolean
+          notify_hour?: number | null
+          notify_minute?: number | null
           notify_recipients?: string[]
           title?: string | null
           updated_at?: string
