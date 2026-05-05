@@ -47,6 +47,28 @@ const HOMEY_BACKED_ROUTES: RoutePath[] = ["/smarthus", "/var", "/steintavle"];
 const ALWAYS_FIRST: RoutePath = "/";
 const ALWAYS_LAST: RoutePath = "/steintavle";
 
+// Ikon for hver menyside (pollen håndteres separat med PollenIcon)
+const ROUTE_ICON: Partial<Record<RoutePath, React.ComponentType<{ size?: number; className?: string }>>> = {
+  "/": Home,
+  "/var": Cloud,
+  "/turer": Map,
+  "/got-saga": Castle,
+  "/agenda": CalendarDays,
+  "/push-varslinger": Bell,
+  "/vakttarnet": Eye,
+  "/hytta": Trees,
+  "/smarthus": Lightbulb,
+  "/stromkroniken": Zap,
+  "/oppussing-borgen": Hammer,
+  "/oppussing-hytta": Hammer,
+  "/matvarer": ShoppingCart,
+  "/kvitteringer": Receipt,
+  "/hundene": Dog,
+  "/trening": Dumbbell,
+  "/varsler": AlertTriangle,
+  "/steintavle": ScrollText,
+};
+
 // Public halls — open to any visitor entering the courtyard.
 // Other halls only appear after the portal is opened (login).
 const navLinks: NavLink[] = [
