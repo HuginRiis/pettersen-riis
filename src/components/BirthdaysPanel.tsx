@@ -12,6 +12,9 @@ export type Birthday = {
   words: string | null;
   notify_enabled: boolean;
   notify_recipients: string[];
+  notify_days_before: number;
+  notify_hour: number | null;
+  notify_minute: number | null;
 };
 
 const RECIPIENTS = ["Alle", "Arne & Rebekka", "Arne", "Rebekka", "Marita", "Nora", "Celine", "Mira"] as const;
