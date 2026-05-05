@@ -230,7 +230,9 @@ export function SiteHeader() {
                   onClick={() => bump(l.to)}
                   className="got-nav-btn inline-flex items-center gap-1.5"
                 >
-                  {l.to === "/pollen" && <PollenIcon lat={pollenCoord.lat} lon={pollenCoord.lon} />}
+                  {l.to === "/pollen"
+                    ? <PollenIcon lat={pollenCoord.lat} lon={pollenCoord.lon} />
+                    : ROUTE_ICON[l.to] ? (() => { const I = ROUTE_ICON[l.to]!; return <I size={12} className="opacity-80" />; })() : null}
                   <span>{l.label}</span>
                   {count > 0 && menuPrefs.sortByUsage && <UsageBadge count={count} />}
                   {l.to === "/" && <UvBadge lat={BORGEN_COORD.lat} lon={BORGEN_COORD.lon} />}
