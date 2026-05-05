@@ -162,7 +162,9 @@ export function SiteHeader() {
                 <span>{l.label}</span>
                 {count > 0 && <UsageBadge count={count} />}
                 {l.to === "/" && <UvBadge lat={BORGEN_COORD.lat} lon={BORGEN_COORD.lon} />}
+                {l.to === "/" && <TempBadge stationMatch="tollnes" storageKey="hdr.temp.tollnes" />}
                 {l.to === "/hytta" && <UvBadge lat={HYTTA_COORD.lat} lon={HYTTA_COORD.lon} />}
+                {l.to === "/hytta" && <TempBadge stationMatch="hytta" storageKey="hdr.temp.hytta" />}
               </Link>
             );
           })}
