@@ -95,7 +95,17 @@ export function UpcomingPushPanel() {
       }
     }
 
-    // 2. Birthdays — kl 08:00 Oslo på selve dagen
+    // 2. Birthdays — globalt klokkeslett (default 08:00 Oslo)
+    const { data: bSetting } = await supabase
+      .from("notification_settings")
+      .select("value")
+      .eq("key", "birthday_time")
+      .maybeSingle();
+    const bcfg = ((bSetting?.value as any) ?? {}) as { hour?: number; minute?: number };
+    const bHour = typeof bcfg.hour === "number" ? bcfg.hour : 8;
+    const bMin = typeof bcfg.minute === "number" ? bcfg.minute : 0;
+    const bTime = `${String(bHour).padStart(2, "0")}:${String(bMin).padStart(2, "0")}`;
+
     const { data: birthdays } = await supabase
       .from("birthdays")
       .select("id, name, birth_date, notify_enabled, notify_recipients, notified_year")
@@ -105,7 +115,7 @@ export function UpcomingPushPanel() {
       const [, bm, bd] = (b.birth_date as string).split("-").map(Number);
       for (const yr of [thisYear, thisYear + 1]) {
         const dateIso = `${yr}-${String(bm).padStart(2, "0")}-${String(bd).padStart(2, "0")}`;
-        const notifyAt = osloLocalToUtc(dateIso, "08:00");
+        const notifyAt = osloLocalToUtc(dateIso, bTime);
         if (notifyAt < now || notifyAt > horizon) continue;
         if (b.notified_year === yr) continue;
         result.push({
