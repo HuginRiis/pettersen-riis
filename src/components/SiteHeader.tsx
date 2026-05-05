@@ -381,3 +381,62 @@ function TempBadge({ stationMatch, storageKey }: { stationMatch: string; storage
     </span>
   );
 }
+
+// Pollen-terskler matcher LivePollen (NAAF-skalert).
+function pollenLevel(allergen: "alder" | "birch" | "grass" | "mugwort", v: number) {
+  let t: { low: number; mod: number; high: number; veryHigh: number };
+  switch (allergen) {
+    case "birch": t = { low: 1, mod: 5, high: 30, veryHigh: 80 }; break;
+    case "alder": t = { low: 1, mod: 5, high: 25, veryHigh: 70 }; break;
+    case "grass": t = { low: 1, mod: 5, high: 20, veryHigh: 50 }; break;
+    case "mugwort": t = { low: 1, mod: 5, high: 20, veryHigh: 50 }; break;
+  }
+  if (v >= t.veryHigh) return { rank: 4, label: "Svært høy", color: "oklch(0.55 0.25 15)" };
+  if (v >= t.high) return { rank: 3, label: "Høy", color: "oklch(0.65 0.20 25)" };
+  if (v >= t.mod) return { rank: 2, label: "Moderat", color: "oklch(0.78 0.15 70)" };
+  if (v >= t.low) return { rank: 1, label: "Lav", color: "oklch(0.72 0.15 140)" };
+  return { rank: 0, label: "OK", color: "oklch(0.70 0.18 145)" };
+}
+
+function PollenBadge({ lat, lon }: { lat: number; lon: number }) {
+  const [worst, setWorst] = useState<{ label: string; color: string; rank: number } | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      try {
+        const url = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&hourly=alder_pollen,birch_pollen,grass_pollen,mugwort_pollen&timezone=Europe%2FOslo&forecast_days=1`;
+        const res = await fetch(url);
+        if (!res.ok) return;
+        const data = await res.json();
+        const h = data?.hourly;
+        if (!h?.time) return;
+        const allergens: ("alder" | "birch" | "grass" | "mugwort")[] = ["alder", "birch", "grass", "mugwort"];
+        let best = pollenLevel("birch", 0);
+        for (const a of allergens) {
+          const arr: number[] = h[`${a}_pollen`] ?? [];
+          const max = arr.reduce((m, v) => (typeof v === "number" && v > m ? v : m), 0);
+          const lvl = pollenLevel(a, max);
+          if (lvl.rank > best.rank) best = lvl;
+        }
+        if (!cancelled) setWorst(best);
+      } catch { /* ignore */ }
+    }
+    load();
+    const id = setInterval(load, 60 * 60_000);
+    return () => { cancelled = true; clearInterval(id); };
+  }, [lat, lon]);
+  if (!worst) return null;
+  return (
+    <span
+      className="inline-flex items-center justify-center rounded-full text-[9px] font-semibold leading-none px-1.5 py-0.5"
+      style={{
+        background: `color-mix(in oklab, ${worst.color} 22%, transparent)`,
+        color: worst.color,
+        border: `1px solid color-mix(in oklab, ${worst.color} 50%, transparent)`,
+      }}
+      title={`Pollen i dag: ${worst.label}`}
+    >
+      {worst.label}
+    </span>
+  );
+}
