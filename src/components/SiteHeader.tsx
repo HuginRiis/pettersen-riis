@@ -165,6 +165,7 @@ export function SiteHeader() {
                 {l.to === "/" && <TempBadge stationMatch="tollnes" storageKey="hdr.temp.tollnes" />}
                 {l.to === "/hytta" && <UvBadge lat={HYTTA_COORD.lat} lon={HYTTA_COORD.lon} />}
                 {l.to === "/hytta" && <TempBadge stationMatch="hytta" storageKey="hdr.temp.hytta" />}
+                {l.to === "/pollen" && <PollenBadge lat={BORGEN_COORD.lat} lon={BORGEN_COORD.lon} />}
               </Link>
             );
           })}
