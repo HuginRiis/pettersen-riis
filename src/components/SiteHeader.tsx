@@ -460,7 +460,7 @@ function pollenLevel(allergen: "alder" | "birch" | "grass" | "mugwort", v: numbe
   return { rank: 0, label: "OK", color: "oklch(0.70 0.18 145)" };
 }
 
-function PollenBadge({ lat, lon }: { lat: number; lon: number }) {
+function useWorstPollen(lat: number, lon: number) {
   const [worst, setWorst] = useState<{ label: string; color: string; rank: number } | null>(null);
   useEffect(() => {
     let cancelled = false;
@@ -487,6 +487,23 @@ function PollenBadge({ lat, lon }: { lat: number; lon: number }) {
     const id = setInterval(load, 60 * 60_000);
     return () => { cancelled = true; clearInterval(id); };
   }, [lat, lon]);
+  return worst;
+}
+
+function PollenIcon({ lat, lon }: { lat: number; lon: number }) {
+  const worst = useWorstPollen(lat, lon);
+  if (!worst) return null;
+  return (
+    <Flower2
+      size={12}
+      style={{ color: worst.color }}
+      aria-hidden="true"
+    />
+  );
+}
+
+function PollenBadge({ lat, lon }: { lat: number; lon: number }) {
+  const worst = useWorstPollen(lat, lon);
   if (!worst) return null;
   return (
     <span
@@ -501,4 +518,5 @@ function PollenBadge({ lat, lon }: { lat: number; lon: number }) {
       {worst.label}
     </span>
   );
+}
 }
