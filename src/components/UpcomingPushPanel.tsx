@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Bell, Calendar, Cake, ScrollText, CloudSun, Sun, HelpCircle } from "lucide-react";
+import { Bell, Calendar, Cake, ScrollText, CloudSun, Sun, HelpCircle, Trash2, ShieldCheck } from "lucide-react";
 import { getUpcomingWeatherEvaluations } from "@/server/weather-push.functions";
 import { getUpcomingUvEvaluations } from "@/server/uv-push.functions";
+import { getGarbageOverview } from "@/server/garbage-collection";
 
 type WeatherStatus = "will-fire" | "no-hit" | "uncertain";
 
