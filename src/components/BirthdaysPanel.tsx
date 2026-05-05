@@ -272,8 +272,35 @@ export function BirthdaysPanel() {
               onChange={(e) => setNotifyEnabled(e.target.checked)}
               className="accent-primary"
             />
-            Send push kl 08:00 på dagen
+            Send push-varsel
           </label>
+
+          <div className="grid grid-cols-2 gap-2 mb-3">
+            <div>
+              <label className="block text-xs uppercase tracking-wider text-muted-foreground mb-1">Dager før</label>
+              <input
+                type="number"
+                min={0}
+                max={60}
+                value={daysBefore}
+                onChange={(e) => setDaysBefore(Math.max(0, Math.min(60, Number(e.target.value) || 0)))}
+                className="w-full bg-input border border-border rounded px-3 py-2 text-foreground tabular-nums"
+              />
+            </div>
+            <div>
+              <label className="block text-xs uppercase tracking-wider text-muted-foreground mb-1">Klokkeslett</label>
+              <input
+                type="time"
+                value={notifyTime}
+                onChange={(e) => setNotifyTime(e.target.value)}
+                placeholder="globalt"
+                className="w-full bg-input border border-border rounded px-3 py-2 text-foreground tabular-nums"
+              />
+            </div>
+          </div>
+          <p className="text-[10px] text-muted-foreground -mt-2 mb-3">
+            0 dager = på selve bursdagen. Tomt klokkeslett = bruk globalt (08:00).
+          </p>
 
           <label className="block text-xs uppercase tracking-wider text-muted-foreground mb-2">
             Mottakere (push)
