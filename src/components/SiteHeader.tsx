@@ -8,6 +8,8 @@ import { openLoginDialog } from "@/components/LoginDialog";
 import { useUvSun, uvLevel } from "@/hooks/use-uv-sun";
 import { getNameForCurrentIp } from "@/server/user-locations";
 import { useNavUsage } from "@/hooks/use-nav-usage";
+import { getNetatmoWeatherStation } from "@/server/netatmo-weather";
+import { useLastGood } from "@/hooks/use-last-good";
 
 const BORGEN_COORD = { lat: 59.1789, lon: 9.5732 };
 const HYTTA_COORD = { lat: 59.8733, lon: 9.4297 };
@@ -160,7 +162,9 @@ export function SiteHeader() {
                 <span>{l.label}</span>
                 {count > 0 && <UsageBadge count={count} />}
                 {l.to === "/" && <UvBadge lat={BORGEN_COORD.lat} lon={BORGEN_COORD.lon} />}
+                {l.to === "/" && <TempBadge stationMatch="tollnes" storageKey="hdr.temp.tollnes" />}
                 {l.to === "/hytta" && <UvBadge lat={HYTTA_COORD.lat} lon={HYTTA_COORD.lon} />}
+                {l.to === "/hytta" && <TempBadge stationMatch="hytta" storageKey="hdr.temp.hytta" />}
               </Link>
             );
           })}
@@ -215,7 +219,9 @@ export function SiteHeader() {
                   <span className="flex-1">{l.label}</span>
                   {count > 0 && <UsageBadge count={count} />}
                   {l.to === "/" && <UvBadge lat={BORGEN_COORD.lat} lon={BORGEN_COORD.lon} />}
+                  {l.to === "/" && <TempBadge stationMatch="tollnes" storageKey="hdr.temp.tollnes" />}
                   {l.to === "/hytta" && <UvBadge lat={HYTTA_COORD.lat} lon={HYTTA_COORD.lon} />}
+                  {l.to === "/hytta" && <TempBadge stationMatch="hytta" storageKey="hdr.temp.hytta" />}
                 </Link>
               );
             })}
@@ -273,6 +279,57 @@ function UvBadge({ lat, lon }: { lat: number; lon: number }) {
       title={`UV nå: ${uvNow.toFixed(1)} (${lvl.label})`}
     >
       UV {Math.round(uvNow)}
+    </span>
+  );
+}
+
+// Maps temperatur (°C) til en farge fra blått (kaldt) → rødt (varmt).
+function tempColor(t: number): string {
+  // Klipp inn til [-20, 35]
+  const min = -20, max = 35;
+  const x = Math.max(0, Math.min(1, (t - min) / (max - min)));
+  // Hue: 220 (blå) → 0 (rød)
+  const hue = 220 * (1 - x);
+  return `hsl(${hue.toFixed(0)} 80% 55%)`;
+}
+
+function TempBadge({ stationMatch, storageKey }: { stationMatch: string; storageKey: string }) {
+  const fetchData = useServerFn(getNetatmoWeatherStation);
+  const [live, setLive] = useState<number | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    const load = () => {
+      if (typeof document !== "undefined" && document.hidden) return;
+      fetchData({ data: { stationMatch } })
+        .then((r) => {
+          if (cancelled || !r.ok) return;
+          const out = r.modules.find((m) => m.type === "NAModule1");
+          const t = out?.metrics.temperature;
+          if (typeof t === "number" && Number.isFinite(t)) setLive(t);
+        })
+        .catch(() => {});
+    };
+    load();
+    const id = setInterval(load, 5 * 60_000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, [stationMatch, fetchData]);
+  const { value } = useLastGood(storageKey, live);
+  if (value == null) return null;
+  const color = tempColor(value);
+  return (
+    <span
+      className="inline-flex items-center justify-center rounded-full text-[9px] font-semibold leading-none px-1.5 py-0.5 min-w-[18px] tabular-nums"
+      style={{
+        background: `color-mix(in oklab, ${color} 22%, transparent)`,
+        color,
+        border: `1px solid color-mix(in oklab, ${color} 50%, transparent)`,
+      }}
+      title={`Ute nå: ${value.toFixed(1)}°`}
+    >
+      {value.toFixed(0)}°
     </span>
   );
 }
