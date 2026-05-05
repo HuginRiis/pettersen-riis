@@ -599,6 +599,27 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_settings: {
+        Row: {
+          id: string
+          key: string
+          updated_at: string
+          value: Json
+        }
+        Insert: {
+          id?: string
+          key: string
+          updated_at?: string
+          value?: Json
+        }
+        Update: {
+          id?: string
+          key?: string
+          updated_at?: string
+          value?: Json
+        }
+        Relationships: []
+      }
       pulse_readings: {
         Row: {
           device_name: string | null
@@ -1045,6 +1066,27 @@ export type Database = {
           location?: string
           source?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      tibber_notification_log: {
+        Row: {
+          id: string
+          location: string
+          notified_at: string
+          notified_for_date: string
+        }
+        Insert: {
+          id?: string
+          location: string
+          notified_at?: string
+          notified_for_date: string
+        }
+        Update: {
+          id?: string
+          location?: string
+          notified_at?: string
+          notified_for_date?: string
         }
         Relationships: []
       }
