@@ -1,6 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Bell, Calendar, Cake, ScrollText, CloudSun, Sun, HelpCircle, Trash2, ShieldCheck } from "lucide-react";
+import { Bell, Calendar, Cake, ScrollText, CloudSun, Sun, HelpCircle, Trash2, ShieldCheck, Newspaper, Apple, Wine, Milk, AlertTriangle, Recycle } from "lucide-react";
+
+const GARBAGE_ICON: Record<number, typeof Bell> = {
+  1: Trash2,        // Restavfall
+  2: Newspaper,     // Papir
+  3: Apple,         // Matavfall
+  4: Wine,          // Glass/metall
+  5: Milk,          // Plast
+  6: AlertTriangle, // Farlig avfall
+  7: Recycle,       // Annet/plast
+};
 import { getUpcomingWeatherEvaluations } from "@/server/weather-push.functions";
 import { getUpcomingUvEvaluations } from "@/server/uv-push.functions";
 import { getGarbageOverview } from "@/server/garbage-collection";
@@ -243,7 +253,7 @@ export function UpcomingPushPanel() {
           key,
           when: at,
           source: "Renovasjon",
-          icon: Trash2,
+          icon: GARBAGE_ICON[pickup.fraksjonId] ?? Trash2,
           title: `${pickup.fraksjonNavn} hentes ${dayLabel}`,
           recipients: recipientsLabel(pref.who),
           detail: `Tømming ${pickup.date}`,
