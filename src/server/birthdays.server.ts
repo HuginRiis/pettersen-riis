@@ -224,17 +224,31 @@ export async function processBirthdayNotifications(): Promise<{
       // Marker likevel som behandlet for å unngå retries
       await supabaseAdmin
         .from("birthdays")
-        .update({ notified_year: today.year })
+        .update({ notified_date: todayIso })
         .eq("id", r.id);
       continue;
     }
 
-    const age = today.year - by;
+    // Beregn alder på selve bursdagen (kan være neste år hvis dagsBefore > daysToBday)
+    const bdayYear = bdayThisYearUtc === Date.UTC(today.year, bm - 1, bd) ? today.year : today.year + 1;
+    const age = bdayYear - by;
     const titleLabel = r.title ? ` (${r.title})` : "";
+    const isToday = daysBefore === 0;
+    const whenText = isToday
+      ? "i dag"
+      : daysBefore === 1
+        ? "i morgen"
+        : `om ${daysBefore} dager`;
+    const titleText = isToday
+      ? `🎂 Gratulerer med dagen, ${r.name}!`
+      : `🎂 Påminnelse: ${r.name} fyller ${age} år ${whenText}`;
+    const bodyText = isToday
+      ? `${r.name}${titleLabel} fyller ${age} år i dag.${r.words ? ` — "${r.words}"` : ""}`
+      : `${r.name}${titleLabel} fyller ${age} år ${whenText}.${r.words ? ` — "${r.words}"` : ""}`;
     const payload = JSON.stringify({
-      title: `🎂 Gratulerer med dagen, ${r.name}!`,
-      body: `${r.name}${titleLabel} fyller ${age} år i dag.${r.words ? ` — "${r.words}"` : ""}`,
-      tag: `birthday-${r.id}-${today.year}`,
+      title: titleText,
+      body: bodyText,
+      tag: `birthday-${r.id}-${bdayYear}-${daysBefore}`,
       url: "/agenda",
     });
 
@@ -254,7 +268,7 @@ export async function processBirthdayNotifications(): Promise<{
     if (any) {
       await supabaseAdmin
         .from("birthdays")
-        .update({ notified_year: today.year })
+        .update({ notified_date: todayIso })
         .eq("id", r.id);
     }
   }
