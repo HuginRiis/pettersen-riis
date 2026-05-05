@@ -253,7 +253,7 @@ export function UpcomingPushPanel() {
           key,
           when: at,
           source: "Renovasjon",
-          icon: Trash2,
+          icon: GARBAGE_ICON[pickup.fraksjonId] ?? Trash2,
           title: `${pickup.fraksjonNavn} hentes ${dayLabel}`,
           recipients: recipientsLabel(pref.who),
           detail: `Tømming ${pickup.date}`,
