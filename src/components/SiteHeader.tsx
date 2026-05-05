@@ -94,21 +94,53 @@ export function SiteHeader() {
   }, [isAuthed, fetchName]);
 
   const { usage, bump } = useNavUsage(who);
+  const { prefs: menuPrefs, toggleFavorite } = useMenuPrefs();
+
+  // Pollen-koordinater fra brukerens valgte default for /pollen (eller fallback Borgen)
+  const fetchDefaultLoc = useServerFn(getDefaultLocation);
+  const [pollenCoord, setPollenCoord] = useState<{ lat: number; lon: number }>(BORGEN_COORD);
+  useEffect(() => {
+    let cancelled = false;
+    fetchDefaultLoc({ data: { who: who || "Offentlig", page: "pollen" } })
+      .then((r) => {
+        if (cancelled) return;
+        if (typeof r?.lat === "number" && typeof r?.lon === "number") {
+          setPollenCoord({ lat: r.lat, lon: r.lon });
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [who, fetchDefaultLoc]);
 
   // Visitors outside the gate only see public halls; authed users see everything.
   const baseLinks = isAuthed ? navLinks : navLinks.filter((l) => l.public);
 
-  // Sorter: Hjem alltid først, Steintavle alltid sist, resten etter bruksfrekvens.
+  // Sorter: Hjem alltid først, Steintavle alltid sist, deretter favoritter (hvis på),
+  // så bruksfrekvens (hvis på), ellers original rekkefølge.
   const sortedLinks = (() => {
     const first = baseLinks.filter((l) => l.to === ALWAYS_FIRST);
     const last = baseLinks.filter((l) => l.to === ALWAYS_LAST);
     const rest = baseLinks.filter((l) => l.to !== ALWAYS_LAST && l.to !== ALWAYS_FIRST);
-    const indexed = rest.map((l, i) => ({ link: l, i, count: usage[l.to] ?? 0 }));
-    indexed.sort((a, b) => {
-      if (b.count !== a.count) return b.count - a.count;
-      return a.i - b.i;
-    });
-    return [...first, ...indexed.map((x) => x.link), ...last];
+
+    const favSet = menuPrefs.favoritesEnabled ? new Set(menuPrefs.favorites) : new Set<string>();
+    const favs = menuPrefs.favoritesEnabled
+      ? menuPrefs.favorites
+          .map((p) => rest.find((l) => l.to === p))
+          .filter((x): x is NavLink => !!x)
+      : [];
+
+    const others = rest.filter((l) => !favSet.has(l.to));
+    if (menuPrefs.sortByUsage) {
+      const indexed = others.map((l, i) => ({ link: l, i, count: usage[l.to] ?? 0 }));
+      indexed.sort((a, b) => {
+        if (b.count !== a.count) return b.count - a.count;
+        return a.i - b.i;
+      });
+      return [...first, ...favs, ...indexed.map((x) => x.link), ...last];
+    }
+    return [...first, ...favs, ...others, ...last];
   })();
 
   const handleLogout = async () => {
