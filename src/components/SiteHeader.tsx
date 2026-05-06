@@ -226,44 +226,36 @@ export function SiteHeader() {
 
         <nav className="hidden xl:flex flex-1 flex-wrap items-center justify-start gap-x-2 gap-y-2">
           <span className="inline-flex items-center gap-0.5 relative">
-            <Link
-              to="/favoritter"
+            <button
+              type="button"
+              onClick={() => setFavOpen((v) => !v)}
               className="got-nav-btn inline-flex items-center gap-1.5"
-              onClick={() => bump("/favoritter" as any)}
-              title="Administrer favoritter"
+              title="Vis favoritter"
+              aria-expanded={favOpen}
             >
               <Globe size={12} className="opacity-80" />
               <span>Favoritter</span>
-            </Link>
-            {myWebFavs.length > 0 && (
-              <button
-                type="button"
-                onClick={() => setFavOpen((v) => !v)}
-                className="text-muted-foreground hover:text-primary p-0.5"
-                aria-label="Vis favoritter"
-              >
-                {favOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-              </button>
-            )}
-            {favOpen && myWebFavs.length > 0 && (
+              {favOpen ? <ChevronDown size={11} /> : <ChevronRight size={11} />}
+            </button>
+            {favOpen && (
               <div className="absolute top-full left-0 mt-1 z-50 min-w-[200px] rounded-md border border-border bg-card/95 backdrop-blur shadow-lg p-1 flex flex-col">
-                {myWebFavs.map((f) => {
-                  const I = getWebFavIcon(f.icon);
-                  return (
-                    <a
-                      key={f.id}
-                      href={f.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      onClick={() => setFavOpen(false)}
-                      className="flex items-center gap-2 px-2 py-1.5 text-xs text-muted-foreground hover:text-primary hover:bg-muted/40 rounded"
-                    >
-                      <I size={12} />
-                      <span className="truncate">{f.label}</span>
-                      {f.who === "Alle" && <span className="ml-auto text-[9px] opacity-60">felles</span>}
-                    </a>
-                  );
-                })}
+                {myWebFavs.length === 0 && (
+                  <div className="px-2 py-1.5 text-[11px] text-muted-foreground">Ingen snarveier ennå.</div>
+                )}
+                {myWebFavs.map((f) => (
+                  <a
+                    key={f.id}
+                    href={f.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={() => setFavOpen(false)}
+                    className="flex items-center gap-2 px-2 py-1.5 text-xs text-muted-foreground hover:text-primary hover:bg-muted/40 rounded"
+                  >
+                    <FavGlyph icon={f.icon} url={f.url} size={12} />
+                    <span className="truncate">{f.label}</span>
+                    {f.who === "Alle" && <span className="ml-auto text-[9px] opacity-60">felles</span>}
+                  </a>
+                ))}
               </div>
             )}
           </span>
@@ -340,45 +332,35 @@ export function SiteHeader() {
         <nav className="xl:hidden border-t border-border bg-card/95 backdrop-blur">
           <div className="container mx-auto px-4 py-2 flex flex-col">
             <div className="border-b border-border">
-              <div className="flex items-center">
-                <Link
-                  to="/favoritter"
-                  onClick={() => { bump("/favoritter" as any); setOpen(false); setFavOpenMobile(false); }}
-                  className="flex-1 px-2 py-2.5 text-xs tracking-wider uppercase text-muted-foreground hover:text-primary flex items-center gap-2"
-                >
-                  <Globe size={14} className="opacity-80" />
-                  <span className="flex-1">Favoritter</span>
-                </Link>
-                {myWebFavs.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => setFavOpenMobile((v) => !v)}
-                    className="p-2 text-muted-foreground hover:text-primary"
-                    aria-label="Vis favoritter"
-                  >
-                    {favOpenMobile ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                  </button>
-                )}
-              </div>
-              {favOpenMobile && myWebFavs.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setFavOpenMobile((v) => !v)}
+                className="w-full px-2 py-2.5 text-xs tracking-wider uppercase text-muted-foreground hover:text-primary flex items-center gap-2"
+                aria-expanded={favOpenMobile}
+              >
+                <Globe size={14} className="opacity-80" />
+                <span className="flex-1 text-left">Favoritter</span>
+                {favOpenMobile ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+              </button>
+              {favOpenMobile && (
                 <div className="pl-6 pb-2 flex flex-col">
-                  {myWebFavs.map((f) => {
-                    const I = getWebFavIcon(f.icon);
-                    return (
-                      <a
-                        key={f.id}
-                        href={f.url}
-                        target="_blank"
-                        rel="noreferrer"
-                        onClick={() => { setFavOpenMobile(false); setOpen(false); }}
-                        className="flex items-center gap-2 px-2 py-2 text-xs text-muted-foreground hover:text-primary"
-                      >
-                        <I size={12} />
-                        <span className="truncate flex-1">{f.label}</span>
-                        {f.who === "Alle" && <span className="text-[9px] opacity-60">felles</span>}
-                      </a>
-                    );
-                  })}
+                  {myWebFavs.length === 0 && (
+                    <div className="px-2 py-2 text-[11px] text-muted-foreground">Ingen snarveier ennå.</div>
+                  )}
+                  {myWebFavs.map((f) => (
+                    <a
+                      key={f.id}
+                      href={f.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      onClick={() => { setFavOpenMobile(false); setOpen(false); }}
+                      className="flex items-center gap-2 px-2 py-2 text-xs text-muted-foreground hover:text-primary"
+                    >
+                      <FavGlyph icon={f.icon} url={f.url} size={12} />
+                      <span className="truncate flex-1">{f.label}</span>
+                      {f.who === "Alle" && <span className="text-[9px] opacity-60">felles</span>}
+                    </a>
+                  ))}
                 </div>
               )}
             </div>
