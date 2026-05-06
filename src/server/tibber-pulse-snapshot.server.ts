@@ -86,7 +86,16 @@ export async function snapshotPulseToDb(): Promise<{ inserted: number; samples: 
       samples.push({ location: loc, watt, kwh_today });
     }
 
-    if (samples.length === 0) return { inserted: 0, samples: [], error: "ingen hjem matchet" };
+    if (samples.length === 0) {
+      await recordApiCall({
+        source: "tibber",
+        endpoint: "graphql.consumption.HOURLY[cron]",
+        ok: false,
+        duration_ms: Date.now() - started,
+        error_message: "ingen hjem matchet",
+      });
+      return { inserted: 0, samples: [], error: "ingen hjem matchet" };
+    }
 
     const rows = samples.map((s) => ({
       location: s.location,
@@ -95,9 +104,33 @@ export async function snapshotPulseToDb(): Promise<{ inserted: number; samples: 
       device_name: "tibber-gql-cron",
     }));
     const { error } = await supabaseAdmin.from("pulse_readings").insert(rows);
-    if (error) return { inserted: 0, samples, error: error.message };
+    if (error) {
+      await recordApiCall({
+        source: "tibber",
+        endpoint: "graphql.consumption.HOURLY[cron]",
+        ok: false,
+        duration_ms: Date.now() - started,
+        error_message: `db: ${error.message}`,
+        metadata: { samples: samples.length },
+      });
+      return { inserted: 0, samples, error: error.message };
+    }
+    await recordApiCall({
+      source: "tibber",
+      endpoint: "graphql.consumption.HOURLY[cron]",
+      ok: true,
+      duration_ms: Date.now() - started,
+      metadata: { inserted: rows.length, locations: samples.map((s) => s.location) },
+    });
     return { inserted: rows.length, samples };
   } catch (e: any) {
+    await recordApiCall({
+      source: "tibber",
+      endpoint: "graphql.consumption.HOURLY[cron]",
+      ok: false,
+      duration_ms: Date.now() - started,
+      error_message: e?.message ?? String(e),
+    });
     return { inserted: 0, samples: [], error: e?.message ?? String(e) };
   }
 }
