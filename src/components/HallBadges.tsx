@@ -244,3 +244,46 @@ export function TomorrowWeatherBadge({ lat, lon, inline }: { lat: number; lon: n
     </span>
   );
 }
+
+/** Alarm-status (AV / DELVIS / PÅ). */
+export function AlarmStateBadge({ inline }: { inline?: boolean } = {}) {
+  const [state, setState] = useState<"armed" | "partially_armed" | "disarmed" | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await getHomeAlarmStatus();
+        if (cancelled) return;
+        if (res.ok && res.state) setState(res.state);
+      } catch {}
+    })();
+    return () => { cancelled = true; };
+  }, []);
+  if (!state) return null;
+  const label = state === "armed" ? "PÅ" : state === "partially_armed" ? "DELVIS" : "AV";
+  const emoji = state === "armed" ? "🛡" : state === "partially_armed" ? "🛡" : "🔓";
+  const tone =
+    state === "armed"
+      ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40"
+      : state === "partially_armed"
+        ? "bg-amber-500/20 text-amber-300 border-amber-500/40"
+        : "bg-rose-500/20 text-rose-300 border-rose-500/40";
+  if (inline) {
+    return (
+      <span
+        title={`Alarm: ${label}`}
+        className={`ml-1 px-1.5 h-[18px] rounded-full text-[10px] font-semibold inline-flex items-center justify-center border ${tone}`}
+      >
+        {emoji}{label}
+      </span>
+    );
+  }
+  return (
+    <span
+      title={`Alarm: ${label}`}
+      className={`absolute top-2 right-2 z-10 h-[22px] px-2 rounded-full text-[11px] font-semibold flex items-center justify-center border backdrop-blur shadow ${tone}`}
+    >
+      {emoji}{label}
+    </span>
+  );
+}
