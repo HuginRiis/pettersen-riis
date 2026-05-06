@@ -297,6 +297,7 @@ export function SiteHeader() {
                   {l.to === "/push-varslinger" && <PushTodayBadge inline />}
                   {l.to === "/smarthus" && <LightsOnBadge inline />}
                   {l.to === "/var" && <TomorrowWeatherBadge inline lat={BORGEN_COORD.lat} lon={BORGEN_COORD.lon} />}
+                  {l.to === "/vakttarnet" && <AlarmStateBadge inline />}
                 </Link>
               </span>
             );
