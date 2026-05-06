@@ -1,4 +1,5 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { recordApiCall } from "./api-call-log.server";
 
 const TIBBER_URL = "https://api.tibber.com/v1-beta/gql";
 
