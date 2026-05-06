@@ -1,16 +1,11 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
-type Home = { homeId: string; location: "hytta" | "tollnes" };
-
-type Snapshot = {
-  location: "hytta" | "tollnes";
-  watt: number | null;
-  kwh_today: number | null;
-};
+type Loc = "hytta" | "tollnes";
+type Snapshot = { location: Loc; watt: number | null; kwh_today: number | null };
 
 const TIBBER_URL = "https://api.tibber.com/v1-beta/gql";
 
-function classify(nick: string | null, addr: string | null): "hytta" | "tollnes" | null {
+function classify(nick: string | null, addr: string | null): Loc | null {
   const hay = `${nick ?? ""} ${addr ?? ""}`.toLowerCase();
   if (hay.includes("bjørkeset") || hay.includes("bjorkeset") || hay.includes("hytt")) return "hytta";
   if (hay.includes("tollnes") || hay.includes("lensmann")) return "tollnes";
@@ -28,97 +23,69 @@ async function tibberGql<T>(token: string, query: string): Promise<T> {
   return json.data as T;
 }
 
-async function discoverHomes(token: string): Promise<{ wsUrl: string; homes: Home[] }> {
-  const data = await tibberGql<{
-    viewer?: {
-      websocketSubscriptionUrl?: string;
-      homes?: Array<{
-        id: string;
-        appNickname: string | null;
-        address: { address1: string | null } | null;
-        features: { realTimeConsumptionEnabled: boolean } | null;
-      }>;
-    };
-  }>(
-    token,
-    `{ viewer { websocketSubscriptionUrl homes { id appNickname address { address1 } features { realTimeConsumptionEnabled } } } }`,
-  );
-  const wsUrl = data?.viewer?.websocketSubscriptionUrl ?? "";
-  const homes: Home[] = [];
-  for (const h of data?.viewer?.homes ?? []) {
-    if (!h.features?.realTimeConsumptionEnabled) continue;
-    const loc = classify(h.appNickname, h.address?.address1 ?? null);
-    if (!loc) continue;
-    homes.push({ homeId: h.id, location: loc });
-  }
-  if (!wsUrl) throw new Error("ingen websocketSubscriptionUrl");
-  return { wsUrl, homes };
+function osloDateKey(iso: string): string {
+  return new Date(iso).toLocaleDateString("sv-SE", { timeZone: "Europe/Oslo" });
 }
 
-/** Åpne WS, abonner på liveMeasurement for ett hjem, vent på første verdi, lukk. */
-function fetchOneSample(wsUrl: string, token: string, home: Home, timeoutMs = 8000): Promise<Snapshot | null> {
-  return new Promise((resolve) => {
-    let settled = false;
-    const finish = (v: Snapshot | null) => {
-      if (settled) return;
-      settled = true;
-      try { ws.close(); } catch {}
-      resolve(v);
-    };
-    const ws = new WebSocket(wsUrl, "graphql-transport-ws");
-    const timer = setTimeout(() => finish(null), timeoutMs);
-
-    ws.addEventListener("open", () => {
-      ws.send(JSON.stringify({ type: "connection_init", payload: { token } }));
-    });
-    ws.addEventListener("message", (ev: MessageEvent) => {
-      let m: any;
-      try { m = JSON.parse(typeof ev.data === "string" ? ev.data : ""); } catch { return; }
-      if (m.type === "connection_ack") {
-        ws.send(JSON.stringify({
-          id: "1",
-          type: "subscribe",
-          payload: {
-            query: `subscription { liveMeasurement(homeId: "${home.homeId}") { power accumulatedConsumption } }`,
-          },
-        }));
-      } else if (m.type === "next" && m.payload?.data?.liveMeasurement) {
-        const lm = m.payload.data.liveMeasurement;
-        clearTimeout(timer);
-        finish({
-          location: home.location,
-          watt: typeof lm.power === "number" ? lm.power : null,
-          kwh_today: typeof lm.accumulatedConsumption === "number" ? lm.accumulatedConsumption : null,
-        });
-      } else if (m.type === "error" || m.type === "connection_error") {
-        clearTimeout(timer);
-        finish(null);
-      }
-    });
-    ws.addEventListener("error", () => { clearTimeout(timer); finish(null); });
-    ws.addEventListener("close", () => { clearTimeout(timer); finish(null); });
-  });
-}
-
-/** Server-side cron: åpne Tibber WS, snap én måling per hjem, lagre i pulse_readings. */
+/**
+ * Cron: spør Tibber GraphQL etter siste timesforbruk per hjem og lagre i pulse_readings.
+ * Bruker HTTP (ikke WebSocket) — fungerer pålitelig i Worker-runtime.
+ * Oppløsning: 1 punkt/time.
+ */
 export async function snapshotPulseToDb(): Promise<{ inserted: number; samples: Snapshot[]; error?: string }> {
   const token = process.env.TIBBER_TOKEN;
   if (!token) return { inserted: 0, samples: [], error: "TIBBER_TOKEN mangler" };
+
   try {
-    const { wsUrl, homes } = await discoverHomes(token);
-    if (homes.length === 0) return { inserted: 0, samples: [], error: "ingen Pulse-hjem" };
-    const samples = await Promise.all(homes.map((h) => fetchOneSample(wsUrl, token, h)));
-    const valid = samples.filter((s): s is Snapshot => s !== null);
-    if (valid.length === 0) return { inserted: 0, samples: [] };
-    const rows = valid.map((s) => ({
+    const data = await tibberGql<{
+      viewer?: {
+        homes?: Array<{
+          id: string;
+          appNickname: string | null;
+          address: { address1: string | null } | null;
+          hourly?: { nodes: Array<{ from: string; consumption: number | null }> };
+          daily?: { nodes: Array<{ from: string; consumption: number | null }> };
+        }>;
+      };
+    }>(
+      token,
+      `{ viewer { homes {
+        id appNickname address { address1 }
+        hourly: consumption(resolution: HOURLY, last: 2) { nodes { from consumption } }
+        daily: consumption(resolution: DAILY, last: 1) { nodes { from consumption } }
+      } } }`,
+    );
+
+    const todayKey = osloDateKey(new Date().toISOString());
+    const samples: Snapshot[] = [];
+
+    for (const h of data?.viewer?.homes ?? []) {
+      const loc = classify(h.appNickname, h.address?.address1 ?? null);
+      if (!loc) continue;
+
+      const hourly = h.hourly?.nodes ?? [];
+      const last = [...hourly].reverse().find((n) => n.consumption != null);
+      // Estimer "watt nå" fra siste fullførte time (kWh -> W gjennomsnitt)
+      const watt = last?.consumption != null ? Math.round(last.consumption * 1000) : null;
+
+      const dailyNode = h.daily?.nodes?.find((n) => osloDateKey(n.from) === todayKey);
+      const kwh_today =
+        dailyNode?.consumption != null ? Math.round(dailyNode.consumption * 1000) / 1000 : null;
+
+      samples.push({ location: loc, watt, kwh_today });
+    }
+
+    if (samples.length === 0) return { inserted: 0, samples: [], error: "ingen hjem matchet" };
+
+    const rows = samples.map((s) => ({
       location: s.location,
       watt: s.watt,
       kwh_today: s.kwh_today,
-      device_name: "tibber-ws-cron",
+      device_name: "tibber-gql-cron",
     }));
     const { error } = await supabaseAdmin.from("pulse_readings").insert(rows);
-    if (error) return { inserted: 0, samples: valid, error: error.message };
-    return { inserted: rows.length, samples: valid };
+    if (error) return { inserted: 0, samples, error: error.message };
+    return { inserted: rows.length, samples };
   } catch (e: any) {
     return { inserted: 0, samples: [], error: e?.message ?? String(e) };
   }
