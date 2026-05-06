@@ -34,8 +34,18 @@ function osloDateKey(iso: string): string {
  * Oppløsning: 1 punkt/time.
  */
 export async function snapshotPulseToDb(): Promise<{ inserted: number; samples: Snapshot[]; error?: string }> {
+  const started = Date.now();
   const token = process.env.TIBBER_TOKEN;
-  if (!token) return { inserted: 0, samples: [], error: "TIBBER_TOKEN mangler" };
+  if (!token) {
+    await recordApiCall({
+      source: "tibber",
+      endpoint: "graphql.consumption.HOURLY[cron]",
+      ok: false,
+      duration_ms: Date.now() - started,
+      error_message: "TIBBER_TOKEN mangler",
+    });
+    return { inserted: 0, samples: [], error: "TIBBER_TOKEN mangler" };
+  }
 
   try {
     const data = await tibberGql<{
