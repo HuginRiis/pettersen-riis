@@ -260,12 +260,18 @@ function FavList(p: FavListProps) {
                   </label>
                 </div>
                 <IconPicker open={p.editIconOpen} setOpen={p.setEditIconOpen} icon={p.editIcon} setIcon={p.setEditIcon} url={p.editUrl} />
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                   <button onClick={p.onSave} className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded bg-primary text-primary-foreground">
                     <Save size={12} /> Lagre
                   </button>
                   <button onClick={p.onCancel} className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded border border-border">
                     <X size={12} /> Avbryt
+                  </button>
+                  <button
+                    onClick={() => { if (confirm("Slette snarvei?")) { p.onRemove(r.id); p.onCancel(); } }}
+                    className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded border border-destructive text-destructive ml-auto"
+                  >
+                    <Trash2 size={12} /> Slett
                   </button>
                 </div>
               </li>
@@ -279,9 +285,6 @@ function FavList(p: FavListProps) {
               </a>
               <button onClick={() => p.onEdit(r)} className="text-muted-foreground hover:text-primary p-1" title="Rediger">
                 <Pencil size={12} />
-              </button>
-              <button onClick={() => p.onRemove(r.id)} className="text-muted-foreground hover:text-destructive p-1" title="Slett">
-                <Trash2 size={12} />
               </button>
             </li>
           );
