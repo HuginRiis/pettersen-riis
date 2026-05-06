@@ -252,7 +252,7 @@ export function SiteHeader() {
             {favOpen && myWebFavs.length > 0 && (
               <div className="absolute top-full left-0 mt-1 z-50 min-w-[200px] rounded-md border border-border bg-card/95 backdrop-blur shadow-lg p-1 flex flex-col">
                 {myWebFavs.map((f) => {
-                  const I = (require("@/lib/web-favorite-icons") as typeof import("@/lib/web-favorite-icons")).getIcon(f.icon);
+                  const I = getWebFavIcon(f.icon);
                   return (
                     <a
                       key={f.id}
