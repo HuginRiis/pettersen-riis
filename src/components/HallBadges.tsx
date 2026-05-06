@@ -147,7 +147,7 @@ export function LightsOnBadge() {
     (async () => {
       try {
         const snap = await getHomeySnapshot();
-        if (snap.status !== "ok") return;
+        if (!snap.ok) return;
         const lights = snap.devices.filter((d: any) => {
           if (d.class !== "light") return false;
           if (!("onoff" in d.capabilities)) return false;
