@@ -73,6 +73,7 @@ const ROUTE_ICON: Partial<Record<RoutePath, React.ComponentType<{ size?: number;
 // Public halls — open to any visitor entering the courtyard.
 // Other halls only appear after the portal is opened (login).
 const navLinks: NavLink[] = [
+  { to: "/favoritter", label: "Favoritter", public: true },
   { to: "/", label: "Hjem", public: true },
   { to: "/var", label: "Vær", public: true },
   { to: "/pollen", label: "Pollen", public: true },
