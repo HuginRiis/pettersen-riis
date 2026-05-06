@@ -26,7 +26,17 @@ function osloDateIso(d: Date): string {
   }).format(d);
 }
 
-function Badge({ children, title }: { children: React.ReactNode; title?: string }) {
+function Badge({ children, title, inline }: { children: React.ReactNode; title?: string; inline?: boolean }) {
+  if (inline) {
+    return (
+      <span
+        title={title}
+        className="ml-1 min-w-[20px] h-[18px] px-1.5 rounded-full bg-primary/20 text-primary text-[10px] font-semibold inline-flex items-center justify-center border border-primary/40"
+      >
+        {children}
+      </span>
+    );
+  }
   return (
     <span
       title={title}
