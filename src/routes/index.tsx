@@ -598,6 +598,7 @@ function HallCard({
   icon,
   image,
   locked = false,
+  badge,
 }: {
   to:
     | "/agenda"
@@ -623,6 +624,7 @@ function HallCard({
   icon: string;
   image: string;
   locked?: boolean;
+  badge?: React.ReactNode;
 }) {
   const disablePreload = to === "/smarthus" || to === "/var" || to === "/steintavle";
 
