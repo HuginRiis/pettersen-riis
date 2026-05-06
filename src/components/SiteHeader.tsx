@@ -51,6 +51,7 @@ const ALWAYS_LAST: RoutePath = "/steintavle";
 // Ikon for hver menyside (pollen håndteres separat med PollenIcon)
 const ROUTE_ICON: Partial<Record<RoutePath, React.ComponentType<{ size?: number; className?: string }>>> = {
   "/": Home,
+  "/favoritter": Globe,
   "/var": Cloud,
   "/turer": Map,
   "/got-saga": Castle,
