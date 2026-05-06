@@ -19,6 +19,7 @@ import { MaesterCounsel } from "@/components/MaesterCounsel";
 import { BirthdayBanner } from "@/components/BirthdayBanner";
 import { BirthdaysOverview } from "@/components/BirthdaysOverview";
 import { UpcomingHolidays } from "@/components/UpcomingHolidays";
+import { PushTodayBadge, LightsOnBadge, TomorrowWeatherBadge } from "@/components/HallBadges";
 
 import { useAuthStatus } from "@/hooks/use-auth-status";
 import { logoutFn } from "@/server/auth";
@@ -274,7 +275,7 @@ function Home() {
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
-          <HallCard to="/var" title="Værens budskap" desc="Værmelding for Skien og hytta." icon="🌨" image={hallVar} locked={false} />
+          <HallCard to="/var" title="Værens budskap" desc="Værmelding for Skien og hytta." icon="🌨" image={hallVar} locked={false} badge={<TomorrowWeatherBadge lat={TOLLNES.lat} lon={TOLLNES.lon} />} />
           <HallCard to="/pollen" title="Pollen" desc="Dagens pollen i lufta." icon="🌾" image={hallPollen} locked={false} />
           <HallCard to="/turer" title="Ferden" desc="Tips til turer i nærheten." icon="🧭" image={hallTurer} locked={false} />
           <HallCard to="/got-saga" title="Westeros" desc="Sagaen om de syv kongeriker." icon="🐉" image={hallWesteros} locked={false} />
@@ -284,14 +285,14 @@ function Home() {
           <HallCard to="/hytta" title="Hytta" desc="Husets tilflukt i fjellet." icon="🏔" image={hallHytta} locked={false} />
           <HallCard to="/hundene" title="Hundene" desc="Husets tro følgesvenner." icon="🐺" image={hallHundene} locked={!isAuthed} />
           <HallCard to="/trening" title="Treningssalen" desc="Kroppen som rustning." icon="⚔️" image={hallTrening} locked={!isAuthed} />
-          <HallCard to="/smarthus" title="Smartborg" desc="Lys, varme og varslere fra Homey." icon="🏰" image={hallSmarthus} locked={!isAuthed} />
+          <HallCard to="/smarthus" title="Smartborg" desc="Lys, varme og varslere fra Homey." icon="🏰" image={hallSmarthus} locked={!isAuthed} badge={isAuthed ? <LightsOnBadge /> : undefined} />
           <HallCard to="/stromkroniken" title="Strømkrøniken" desc="Husets strømgull — kostnader, forbruk og priser." icon="⚡" image={hallStrom} locked={!isAuthed} />
           <HallCard to="/matvarer" title="Matvarekrøniken" desc="Søk og sammenlign priser i norske butikker." icon="🛒" image={hallMatvarer} locked={!isAuthed} />
           <HallCard to="/steintavle" title="Steintavle" desc="Husets innskrifter og notater." icon="🪨" image={hallSteintavle} locked={!isAuthed} />
           <HallCard to="/oppussing-borgen" title="Prosjekter på Borgen" desc="Prosjekter, planer og bilder fra borgen." icon="🔨" image={hallOppussingBorgen} locked={!isAuthed} />
           <HallCard to="/oppussing-hytta" title="Prosjekter på hytta" desc="Prosjekter, planer og bilder fra hytta." icon="🪵" image={hallOppussingHytta} locked={!isAuthed} />
           <HallCard to="/kvitteringer" title="Kvitteringer" desc="Husets kvitteringer, garanti og utgifter." icon="🧾" image={hallKvitteringer} locked={!isAuthed} />
-          <HallCard to="/push-varslinger" title="Varslinger" desc="Push-varsler og innstillinger for husets ravner." icon="🔔" image={hallVarslinger} locked={!isAuthed} />
+          <HallCard to="/push-varslinger" title="Varslinger" desc="Push-varsler og innstillinger for husets ravner." icon="🔔" image={hallVarslinger} locked={!isAuthed} badge={isAuthed ? <PushTodayBadge /> : undefined} />
         </div>
       </section>
     </PageShell>
@@ -597,6 +598,7 @@ function HallCard({
   icon,
   image,
   locked = false,
+  badge,
 }: {
   to:
     | "/agenda"
@@ -622,6 +624,7 @@ function HallCard({
   icon: string;
   image: string;
   locked?: boolean;
+  badge?: React.ReactNode;
 }) {
   const disablePreload = to === "/smarthus" || to === "/var" || to === "/steintavle";
 
@@ -658,6 +661,7 @@ function HallCard({
           <div className="absolute top-2 right-2 p-1.5 rounded-full bg-background/70 backdrop-blur border border-border z-10">
             <KeyRound size={12} className="text-primary/80" />
           </div>
+          {badge && <div className="absolute top-2 left-2 z-10">{badge}</div>}
           <div className="relative z-[1]">
             <div className="text-3xl mb-3">{icon}</div>
             <h3 className="text-xl text-foreground group-hover:text-primary transition-colors drop-shadow">
@@ -681,6 +685,7 @@ function HallCard({
         className="panel rounded-lg p-6 glow-on-hover block group relative overflow-hidden min-h-[160px]"
       >
         {bgLayer}
+        {badge}
         <div className="relative z-[1]">
           <div className="text-3xl mb-3">{icon}</div>
           <h3 className="text-xl text-primary group-hover:text-gold transition-colors drop-shadow">
