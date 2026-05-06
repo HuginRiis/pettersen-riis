@@ -47,6 +47,8 @@ import hallOppussingBorgen from "@/assets/got-oppussing-borgen.jpg";
 import hallOppussingHytta from "@/assets/got-oppussing-hytta.jpg";
 import hallWesteros from "@/assets/got-westeros-hero.jpg";
 import hallSteintavle from "@/assets/got-brodering.jpg";
+import hallVarslinger from "@/assets/got-varslinger.jpg";
+import hallKvitteringer from "@/assets/got-kvitteringer.jpg";
 
 // Halls available to anyone who steps into the courtyard (no password required)
 const PUBLIC_HALL_PATHS = new Set<string>(["/var", "/pollen", "/turer"]);
