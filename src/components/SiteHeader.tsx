@@ -109,6 +109,16 @@ export function SiteHeader() {
       setWho("anon");
       return;
     }
+    // Primær: navnet på push-mottakeren lagret på denne enheten.
+    try {
+      const stored = (typeof window !== "undefined")
+        ? (localStorage.getItem("agenda_push_who") || "")
+        : "";
+      if (stored && stored !== "Alle") {
+        setWho(stored);
+        return;
+      }
+    } catch { /* ignore */ }
     let cancelled = false;
     fetchName()
       .then((r) => {
