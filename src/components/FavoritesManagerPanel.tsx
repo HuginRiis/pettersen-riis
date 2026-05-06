@@ -16,7 +16,7 @@ type Row = {
 
 export function FavoritesManagerPanel() {
   const fetchName = useServerFn(getNameForCurrentIp);
-  const [who, setWho] = useState<string>("Alle");
+  const [who, setWho] = useState<string>("");
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -51,7 +51,11 @@ export function FavoritesManagerPanel() {
 
   const add = async () => {
     if (!label.trim() || !url.trim()) return;
-    const target = scope === "all" ? "Alle" : (who || "Alle");
+    if (scope === "me" && !who) {
+      alert("Kunne ikke finne navnet ditt på denne IP-en. Velg 'Felles' eller logg inn først.");
+      return;
+    }
+    const target = scope === "all" ? "Alle" : who;
     let normUrl = url.trim();
     if (!/^https?:\/\//i.test(normUrl)) normUrl = "https://" + normUrl;
     await supabase.from("web_favorites").insert({
@@ -78,7 +82,11 @@ export function FavoritesManagerPanel() {
     if (!editingId) return;
     let normUrl = editUrl.trim();
     if (!/^https?:\/\//i.test(normUrl)) normUrl = "https://" + normUrl;
-    const target = editScope === "all" ? "Alle" : (who || "Alle");
+    if (editScope === "me" && !who) {
+      alert("Kunne ikke finne navnet ditt på denne IP-en.");
+      return;
+    }
+    const target = editScope === "all" ? "Alle" : who;
     await supabase.from("web_favorites").update({
       label: editLabel.trim(), url: normUrl, icon: editIcon, who: target,
     }).eq("id", editingId);
@@ -96,8 +104,13 @@ export function FavoritesManagerPanel() {
           <Globe size={18} className="text-primary" /> Favoritter — nettsidesnarveier
         </h3>
         <p className="text-sm text-muted-foreground mt-1">
-          Snarveier som vises i menyen øverst. For deg ({who}) eller felles for alle.
+          Snarveier som vises i menyen øverst. For deg ({who || "ukjent — logg inn"}) eller felles for alle.
         </p>
+        {!who && (
+          <p className="text-xs text-amber-500 mt-1">
+            Vi finner ikke navnet ditt på denne IP-en, så «Bare meg» er deaktivert. Logg inn / sett navn først.
+          </p>
+        )}
 
         <div className="mt-3 grid gap-2 md:grid-cols-2">
           <input
