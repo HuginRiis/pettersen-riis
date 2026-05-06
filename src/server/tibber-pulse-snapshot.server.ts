@@ -1,4 +1,5 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { recordApiCall } from "./api-call-log.server";
 
 type Loc = "hytta" | "tollnes";
 type Snapshot = { location: Loc; watt: number | null; kwh_today: number | null };
@@ -33,8 +34,18 @@ function osloDateKey(iso: string): string {
  * Oppløsning: 1 punkt/time.
  */
 export async function snapshotPulseToDb(): Promise<{ inserted: number; samples: Snapshot[]; error?: string }> {
+  const started = Date.now();
   const token = process.env.TIBBER_TOKEN;
-  if (!token) return { inserted: 0, samples: [], error: "TIBBER_TOKEN mangler" };
+  if (!token) {
+    await recordApiCall({
+      source: "tibber",
+      endpoint: "graphql.consumption.HOURLY[cron]",
+      ok: false,
+      duration_ms: Date.now() - started,
+      error_message: "TIBBER_TOKEN mangler",
+    });
+    return { inserted: 0, samples: [], error: "TIBBER_TOKEN mangler" };
+  }
 
   try {
     const data = await tibberGql<{
@@ -75,7 +86,16 @@ export async function snapshotPulseToDb(): Promise<{ inserted: number; samples: 
       samples.push({ location: loc, watt, kwh_today });
     }
 
-    if (samples.length === 0) return { inserted: 0, samples: [], error: "ingen hjem matchet" };
+    if (samples.length === 0) {
+      await recordApiCall({
+        source: "tibber",
+        endpoint: "graphql.consumption.HOURLY[cron]",
+        ok: false,
+        duration_ms: Date.now() - started,
+        error_message: "ingen hjem matchet",
+      });
+      return { inserted: 0, samples: [], error: "ingen hjem matchet" };
+    }
 
     const rows = samples.map((s) => ({
       location: s.location,
@@ -84,9 +104,33 @@ export async function snapshotPulseToDb(): Promise<{ inserted: number; samples: 
       device_name: "tibber-gql-cron",
     }));
     const { error } = await supabaseAdmin.from("pulse_readings").insert(rows);
-    if (error) return { inserted: 0, samples, error: error.message };
+    if (error) {
+      await recordApiCall({
+        source: "tibber",
+        endpoint: "graphql.consumption.HOURLY[cron]",
+        ok: false,
+        duration_ms: Date.now() - started,
+        error_message: `db: ${error.message}`,
+        metadata: { samples: samples.length },
+      });
+      return { inserted: 0, samples, error: error.message };
+    }
+    await recordApiCall({
+      source: "tibber",
+      endpoint: "graphql.consumption.HOURLY[cron]",
+      ok: true,
+      duration_ms: Date.now() - started,
+      metadata: { inserted: rows.length, locations: samples.map((s) => s.location) },
+    });
     return { inserted: rows.length, samples };
   } catch (e: any) {
+    await recordApiCall({
+      source: "tibber",
+      endpoint: "graphql.consumption.HOURLY[cron]",
+      ok: false,
+      duration_ms: Date.now() - started,
+      error_message: e?.message ?? String(e),
+    });
     return { inserted: 0, samples: [], error: e?.message ?? String(e) };
   }
 }

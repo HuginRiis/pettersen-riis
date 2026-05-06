@@ -47,6 +47,8 @@ import hallOppussingBorgen from "@/assets/got-oppussing-borgen.jpg";
 import hallOppussingHytta from "@/assets/got-oppussing-hytta.jpg";
 import hallWesteros from "@/assets/got-westeros-hero.jpg";
 import hallSteintavle from "@/assets/got-brodering.jpg";
+import hallVarslinger from "@/assets/got-varslinger.jpg";
+import hallKvitteringer from "@/assets/got-kvitteringer.jpg";
 
 // Halls available to anyone who steps into the courtyard (no password required)
 const PUBLIC_HALL_PATHS = new Set<string>(["/var", "/pollen", "/turer"]);
@@ -288,6 +290,8 @@ function Home() {
           <HallCard to="/steintavle" title="Steintavle" desc="Husets innskrifter og notater." icon="🪨" image={hallSteintavle} locked={!isAuthed} />
           <HallCard to="/oppussing-borgen" title="Prosjekter på Borgen" desc="Prosjekter, planer og bilder fra borgen." icon="🔨" image={hallOppussingBorgen} locked={!isAuthed} />
           <HallCard to="/oppussing-hytta" title="Prosjekter på hytta" desc="Prosjekter, planer og bilder fra hytta." icon="🪵" image={hallOppussingHytta} locked={!isAuthed} />
+          <HallCard to="/kvitteringer" title="Kvitteringer" desc="Husets kvitteringer, garanti og utgifter." icon="🧾" image={hallKvitteringer} locked={!isAuthed} />
+          <HallCard to="/push-varslinger" title="Varslinger" desc="Push-varsler og innstillinger for husets ravner." icon="🔔" image={hallVarslinger} locked={!isAuthed} />
         </div>
       </section>
     </PageShell>
@@ -610,6 +614,8 @@ function HallCard({
     | "/oppussing-borgen"
     | "/oppussing-hytta"
     | "/matvarer"
+    | "/kvitteringer"
+    | "/push-varslinger"
     | "/got-saga";
   title: string;
   desc: string;

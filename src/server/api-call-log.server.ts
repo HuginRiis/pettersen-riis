@@ -133,7 +133,7 @@ export const SOURCE_SCHEDULES: Record<string, SourceSchedule> = {
   homey: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
   strava: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
   netatmo: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
-  tibber: { description: "hvert minutt (snapshot)", intervalMs: 60_000, trigger: "cron" },
+  tibber: { description: "hver 15. min (GraphQL HOURLY)", intervalMs: 15 * 60_000, trigger: "cron" },
   met: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
   nrk: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
   spot: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
