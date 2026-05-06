@@ -404,6 +404,9 @@ export function SiteHeader() {
                     {l.to === "/hytta" && <UvBadge lat={HYTTA_COORD.lat} lon={HYTTA_COORD.lon} />}
                     {l.to === "/hytta" && <TempBadge stationMatch="hytta" storageKey="hdr.temp.hytta" />}
                     {l.to === "/pollen" && <PollenBadge lat={pollenCoord.lat} lon={pollenCoord.lon} />}
+                    {l.to === "/push-varslinger" && <PushTodayBadge />}
+                    {l.to === "/smarthus" && <LightsOnBadge />}
+                    {l.to === "/var" && <TomorrowWeatherBadge lat={BORGEN_COORD.lat} lon={BORGEN_COORD.lon} />}
                   </Link>
                 </div>
               );
