@@ -104,8 +104,13 @@ export function FavoritesManagerPanel() {
           <Globe size={18} className="text-primary" /> Favoritter — nettsidesnarveier
         </h3>
         <p className="text-sm text-muted-foreground mt-1">
-          Snarveier som vises i menyen øverst. For deg ({who}) eller felles for alle.
+          Snarveier som vises i menyen øverst. For deg ({who || "ukjent — logg inn"}) eller felles for alle.
         </p>
+        {!who && (
+          <p className="text-xs text-amber-500 mt-1">
+            Vi finner ikke navnet ditt på denne IP-en, så «Bare meg» er deaktivert. Logg inn / sett navn først.
+          </p>
+        )}
 
         <div className="mt-3 grid gap-2 md:grid-cols-2">
           <input
