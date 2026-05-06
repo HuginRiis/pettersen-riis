@@ -443,6 +443,17 @@ function UsageBadge({ count }: { count: number }) {
   );
 }
 
+function FavGlyph({ icon, url, size = 12 }: { icon: string; url?: string; size?: number }) {
+  if (icon === FAVICON_ICON) {
+    const f = url ? faviconUrl(url, 32) : null;
+    if (f) return <img src={f} alt="" style={{ width: size, height: size }} />;
+    return <Globe size={size} />;
+  }
+  const I = getWebFavIcon(icon);
+  const c = getWebFavIconColor(icon);
+  return <I size={size} color={c} />;
+}
+
 function UvBadge({ lat, lon }: { lat: number; lon: number }) {
   const { uvNow } = useUvSun(lat, lon);
   if (uvNow == null) return null;
