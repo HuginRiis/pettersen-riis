@@ -82,7 +82,11 @@ export function FavoritesManagerPanel() {
     if (!editingId) return;
     let normUrl = editUrl.trim();
     if (!/^https?:\/\//i.test(normUrl)) normUrl = "https://" + normUrl;
-    const target = editScope === "all" ? "Alle" : (who || "Alle");
+    if (editScope === "me" && !who) {
+      alert("Kunne ikke finne navnet ditt på denne IP-en.");
+      return;
+    }
+    const target = editScope === "all" ? "Alle" : who;
     await supabase.from("web_favorites").update({
       label: editLabel.trim(), url: normUrl, icon: editIcon, who: target,
     }).eq("id", editingId);
