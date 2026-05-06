@@ -26,7 +26,17 @@ function osloDateIso(d: Date): string {
   }).format(d);
 }
 
-function Badge({ children, title }: { children: React.ReactNode; title?: string }) {
+function Badge({ children, title, inline }: { children: React.ReactNode; title?: string; inline?: boolean }) {
+  if (inline) {
+    return (
+      <span
+        title={title}
+        className="ml-1 min-w-[20px] h-[18px] px-1.5 rounded-full bg-primary/20 text-primary text-[10px] font-semibold inline-flex items-center justify-center border border-primary/40"
+      >
+        {children}
+      </span>
+    );
+  }
   return (
     <span
       title={title}
@@ -38,7 +48,7 @@ function Badge({ children, title }: { children: React.ReactNode; title?: string 
 }
 
 /** Antall planlagte push-varsler i dag (Oslo-tid). */
-export function PushTodayBadge() {
+export function PushTodayBadge({ inline }: { inline?: boolean } = {}) {
   const [count, setCount] = useState<number | null>(null);
 
   useEffect(() => {
@@ -51,49 +61,51 @@ export function PushTodayBadge() {
         let n = 0;
         const inToday = (d: Date) => osloDateIso(d) === today && d >= now;
 
-        // Agenda
-        const { data: agenda } = await supabase
-          .from("agenda_messages")
-          .select("event_date, event_time, notify_minutes_before, notified_at")
-          .is("notified_at", null)
-          .not("event_time", "is", null)
-          .not("notify_minutes_before", "is", null)
-          .gte("event_date", today);
-        for (const a of agenda ?? []) {
-          if (!a.event_time || a.notify_minutes_before == null) continue;
-          const ev = osloLocalToUtc(a.event_date as string, (a.event_time as string).slice(0, 5));
-          const at = new Date(ev.getTime() - (a.notify_minutes_before as number) * 60000);
-          if (inToday(at)) n++;
-        }
+        try {
+          const { data: agenda } = await supabase
+            .from("agenda_messages")
+            .select("event_date, event_time, notify_minutes_before, notified_at")
+            .is("notified_at", null)
+            .not("event_time", "is", null)
+            .not("notify_minutes_before", "is", null)
+            .gte("event_date", today);
+          for (const a of agenda ?? []) {
+            if (!a.event_time || a.notify_minutes_before == null) continue;
+            const ev = osloLocalToUtc(a.event_date as string, (a.event_time as string).slice(0, 5));
+            const at = new Date(ev.getTime() - (a.notify_minutes_before as number) * 60000);
+            if (inToday(at)) n++;
+          }
+        } catch {}
 
-        // Bursdager
-        const { data: bSetting } = await supabase
-          .from("notification_settings").select("value").eq("key", "birthday_time").maybeSingle();
-        const bcfg = ((bSetting?.value as any) ?? {}) as { hour?: number; minute?: number };
-        const bTime = `${String(bcfg.hour ?? 8).padStart(2, "0")}:${String(bcfg.minute ?? 0).padStart(2, "0")}`;
-        const { data: birthdays } = await supabase
-          .from("birthdays")
-          .select("birth_date, notify_enabled, notified_year")
-          .eq("notify_enabled", true);
-        const yr = Number(new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Oslo", year: "numeric" }).format(now));
-        for (const b of birthdays ?? []) {
-          const [, bm, bd] = (b.birth_date as string).split("-").map(Number);
-          if (b.notified_year === yr) continue;
-          const at = osloLocalToUtc(`${yr}-${String(bm).padStart(2, "0")}-${String(bd).padStart(2, "0")}`, bTime);
-          if (inToday(at)) n++;
-        }
+        try {
+          const { data: bSetting } = await supabase
+            .from("notification_settings").select("value").eq("key", "birthday_time").maybeSingle();
+          const bcfg = ((bSetting?.value as any) ?? {}) as { hour?: number; minute?: number };
+          const bTime = `${String(bcfg.hour ?? 8).padStart(2, "0")}:${String(bcfg.minute ?? 0).padStart(2, "0")}`;
+          const { data: birthdays } = await supabase
+            .from("birthdays")
+            .select("birth_date, notify_enabled, notified_year")
+            .eq("notify_enabled", true);
+          const yr = Number(new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Oslo", year: "numeric" }).format(now));
+          for (const b of birthdays ?? []) {
+            const [, bm, bd] = (b.birth_date as string).split("-").map(Number);
+            if (b.notified_year === yr) continue;
+            const at = osloLocalToUtc(`${yr}-${String(bm).padStart(2, "0")}-${String(bd).padStart(2, "0")}`, bTime);
+            if (inToday(at)) n++;
+          }
+        } catch {}
 
-        // Hytta huskeliste
-        const { data: hytta } = await supabase
-          .from("hytta_checklist")
-          .select("notify_at, notified_at, checked")
-          .is("notified_at", null).eq("checked", false).not("notify_at", "is", null);
-        for (const h of hytta ?? []) {
-          const at = new Date(h.notify_at as string);
-          if (inToday(at)) n++;
-        }
+        try {
+          const { data: hytta } = await supabase
+            .from("hytta_checklist")
+            .select("notify_at, notified_at, checked")
+            .is("notified_at", null).eq("checked", false).not("notify_at", "is", null);
+          for (const h of hytta ?? []) {
+            const at = new Date(h.notify_at as string);
+            if (inToday(at)) n++;
+          }
+        } catch {}
 
-        // Vær / UV
         try {
           const w = await getUpcomingWeatherEvaluations();
           for (const x of w) {
@@ -109,7 +121,6 @@ export function PushTodayBadge() {
           }
         } catch {}
 
-        // Renovasjon
         try {
           const overview = await getGarbageOverview();
           const prefMap = new Map<number, typeof overview.prefs[number]>();
@@ -136,11 +147,11 @@ export function PushTodayBadge() {
   }, []);
 
   if (count == null || count === 0) return null;
-  return <Badge title={`${count} planlagte varsler i dag`}>{count}</Badge>;
+  return <Badge inline={inline} title={`${count} planlagte varsler i dag`}>{count}</Badge>;
 }
 
 /** Antall lys (Hue) som er tent nå. */
-export function LightsOnBadge() {
+export function LightsOnBadge({ inline }: { inline?: boolean } = {}) {
   const [text, setText] = useState<string | null>(null);
   useEffect(() => {
     let cancelled = false;
@@ -162,7 +173,7 @@ export function LightsOnBadge() {
     return () => { cancelled = true; };
   }, []);
   if (!text) return null;
-  return <Badge title={`${text} lys tent`}>💡{text}</Badge>;
+  return <Badge inline={inline} title={`${text} lys tent`}>💡{text}</Badge>;
 }
 
 function symbolEmoji(symbol: string | null): string {
@@ -180,7 +191,7 @@ function symbolEmoji(symbol: string | null): string {
 }
 
 /** Værsymbol for i morgen (Tollnes). */
-export function TomorrowWeatherBadge({ lat, lon }: { lat: number; lon: number }) {
+export function TomorrowWeatherBadge({ lat, lon, inline }: { lat: number; lon: number; inline?: boolean }) {
   const [emoji, setEmoji] = useState<string | null>(null);
   useEffect(() => {
     let cancelled = false;
@@ -196,7 +207,6 @@ export function TomorrowWeatherBadge({ lat, lon }: { lat: number; lon: number })
         const tomorrow = new Date();
         tomorrow.setDate(tomorrow.getDate() + 1);
         const tIso = tomorrow.toISOString().slice(0, 10);
-        // Pick the entry closest to 12:00 on tomorrow
         let best: any = null;
         let bestDiff = Infinity;
         for (const e of series) {
@@ -218,6 +228,13 @@ export function TomorrowWeatherBadge({ lat, lon }: { lat: number; lon: number })
     })();
   }, [lat, lon]);
   if (!emoji) return null;
+  if (inline) {
+    return (
+      <span title="Værmelding i morgen" className="ml-1 text-base inline-flex items-center">
+        {emoji}
+      </span>
+    );
+  }
   return (
     <span
       title="Værmelding i morgen"
