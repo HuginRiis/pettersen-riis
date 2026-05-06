@@ -228,6 +228,48 @@ export function SiteHeader() {
         </Link>
 
         <nav className="hidden xl:flex flex-1 flex-wrap items-center justify-start gap-x-2 gap-y-2">
+          <span className="inline-flex items-center gap-0.5 relative">
+            <Link
+              to="/favoritter"
+              className="got-nav-btn inline-flex items-center gap-1.5"
+              onClick={() => bump("/favoritter" as any)}
+              title="Administrer favoritter"
+            >
+              <Globe size={12} className="opacity-80" />
+              <span>Favoritter</span>
+            </Link>
+            {myWebFavs.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setFavOpen((v) => !v)}
+                className="text-muted-foreground hover:text-primary p-0.5"
+                aria-label="Vis favoritter"
+              >
+                {favOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+              </button>
+            )}
+            {favOpen && myWebFavs.length > 0 && (
+              <div className="absolute top-full left-0 mt-1 z-50 min-w-[200px] rounded-md border border-border bg-card/95 backdrop-blur shadow-lg p-1 flex flex-col">
+                {myWebFavs.map((f) => {
+                  const I = (require("@/lib/web-favorite-icons") as typeof import("@/lib/web-favorite-icons")).getIcon(f.icon);
+                  return (
+                    <a
+                      key={f.id}
+                      href={f.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      onClick={() => setFavOpen(false)}
+                      className="flex items-center gap-2 px-2 py-1.5 text-xs text-muted-foreground hover:text-primary hover:bg-muted/40 rounded"
+                    >
+                      <I size={12} />
+                      <span className="truncate">{f.label}</span>
+                      {f.who === "Alle" && <span className="ml-auto text-[9px] opacity-60">felles</span>}
+                    </a>
+                  );
+                })}
+              </div>
+            )}
+          </span>
           {sortedLinks.map((l) => {
             const count = usage[l.to] ?? 0;
             const isFav = menuPrefs.favorites.includes(l.to);
