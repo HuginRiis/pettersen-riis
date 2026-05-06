@@ -686,6 +686,7 @@ function HallCard({
       >
         {bgLayer}
         {badge}
+        <div className="relative z-[1]">
           <div className="text-3xl mb-3">{icon}</div>
           <h3 className="text-xl text-primary group-hover:text-gold transition-colors drop-shadow">
             {title}
