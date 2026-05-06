@@ -51,7 +51,11 @@ export function FavoritesManagerPanel() {
 
   const add = async () => {
     if (!label.trim() || !url.trim()) return;
-    const target = scope === "all" ? "Alle" : (who || "Alle");
+    if (scope === "me" && !who) {
+      alert("Kunne ikke finne navnet ditt på denne IP-en. Velg 'Felles' eller logg inn først.");
+      return;
+    }
+    const target = scope === "all" ? "Alle" : who;
     let normUrl = url.trim();
     if (!/^https?:\/\//i.test(normUrl)) normUrl = "https://" + normUrl;
     await supabase.from("web_favorites").insert({
