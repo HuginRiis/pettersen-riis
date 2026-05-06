@@ -333,7 +333,7 @@ export function SiteHeader() {
 
         <button
           className="xl:hidden text-primary p-2"
-          onClick={() => setOpen((v) => !v)}
+          onClick={() => setOpen((v) => { if (!v) setFavOpenMobile(false); return !v; })}
           aria-label="Meny"
         >
           {open ? <X size={22} /> : <Menu size={22} />}
