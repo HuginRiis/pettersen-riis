@@ -16,12 +16,12 @@ import {
   PartyPopper, Sparkles, Crown, Gem, Award, Medal, Flag, Palette, Brush, Pencil,
   Smile, Ghost, Bug, Bird, Rabbit, Squirrel, Turtle, Snail, Worm, Egg,
   Smartphone, Laptop, Monitor, Headphones, Speaker, Mic, Printer, Save, Folder, Inbox,
-  // 50 nye "emoji-aktige" farge-ikoner
-  Pizza as PizzaSlice, Croissant, Donut, Sandwich, Soup, Salad, Beef, Ham, Drumstick, EggFried,
-  Candy, Lollipop, Popcorn, Popsicle, Milk, CupSoda, GlassWater, Citrus, Grape as GrapeIcon, Cherry as CherryIcon,
-  Sun as SunIcon, Moon as MoonIcon, Star as StarIcon, CloudSun, CloudMoon, CloudSnow, CloudFog, Wind, Tornado, Waves,
-  Heart as HeartIcon, HeartHandshake, Smile as SmileIcon, Laugh, Angry, Frown, Meh, ThumbsUp, ThumbsDown, HandHeart,
-  Bone, PawPrint, Shell, Sprout, TreePalm, TreePine, Flower, Cake, PartyPopper as Party2, Trophy as TrophyIcon,
+  // 50 nye "emoji-aktige" farge-ikoner (uten duplikater)
+  Croissant, Donut, Sandwich, Soup, Salad, Beef, Ham, Drumstick, EggFried, Candy,
+  Lollipop, Popcorn, Popsicle, Milk, CupSoda, GlassWater, Citrus, Cake, Bone, PawPrint,
+  Shell, Sprout, TreePalm, TreePine, Flower, Waves, Wind, Tornado, CloudSun, CloudMoon,
+  CloudSnow, CloudFog, HeartHandshake, Laugh, Angry, Frown, Meh, ThumbsUp, ThumbsDown, HandHeart,
+  Diamond, Clover, Skull, Footprints, Feather, Tag, Music2, Music3, Music4, Hand,
 } from "lucide-react";
 import type { ComponentType } from "react";
 
