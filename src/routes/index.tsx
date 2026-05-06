@@ -19,6 +19,7 @@ import { MaesterCounsel } from "@/components/MaesterCounsel";
 import { BirthdayBanner } from "@/components/BirthdayBanner";
 import { BirthdaysOverview } from "@/components/BirthdaysOverview";
 import { UpcomingHolidays } from "@/components/UpcomingHolidays";
+import { PushTodayBadge, LightsOnBadge, TomorrowWeatherBadge } from "@/components/HallBadges";
 
 import { useAuthStatus } from "@/hooks/use-auth-status";
 import { logoutFn } from "@/server/auth";
