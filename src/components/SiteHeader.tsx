@@ -124,6 +124,24 @@ export function SiteHeader() {
   const { usage, bump } = useNavUsage(who);
   const { prefs: menuPrefs, toggleFavorite } = useMenuPrefs();
 
+  // Web-favoritter (egne snarveier til nettsider) — felles + per bruker
+  const [webFavs, setWebFavs] = useState<{ id: string; who: string; label: string; url: string; icon: string }[]>([]);
+  const [favOpen, setFavOpen] = useState(false);
+  const [favOpenMobile, setFavOpenMobile] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    import("@/integrations/supabase/client").then(({ supabase }) => {
+      supabase
+        .from("web_favorites")
+        .select("id,who,label,url,icon,sort_order,created_at")
+        .order("sort_order", { ascending: true })
+        .order("created_at", { ascending: true })
+        .then(({ data }) => { if (!cancelled && data) setWebFavs(data as any); });
+    });
+    return () => { cancelled = true; };
+  }, [who]);
+  const myWebFavs = webFavs.filter((f) => f.who === "Alle" || f.who === who);
+
   // Pollen-koordinater fra brukerens valgte default for /pollen (eller fallback Borgen)
   const fetchDefaultLoc = useServerFn(getDefaultLocation);
   const [pollenCoord, setPollenCoord] = useState<{ lat: number; lon: number }>(BORGEN_COORD);
