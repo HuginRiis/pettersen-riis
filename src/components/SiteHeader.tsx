@@ -5,7 +5,7 @@ import { Menu, X, LogOut, Crown, Swords, Shield, KeyRound, Home, Star, Flower2,
   Cloud, Map, Castle, CalendarDays, Bell, Eye, Trees, Lightbulb, Zap, Hammer,
   ShoppingCart, Receipt, Dog, Dumbbell, AlertTriangle, ScrollText, Globe, ChevronDown, ChevronRight } from "lucide-react";
 import { logoutFn } from "@/server/auth";
-import { getIcon as getWebFavIcon } from "@/lib/web-favorite-icons";
+import { getIcon as getWebFavIcon, getIconColor as getWebFavIconColor, faviconUrl, FAVICON_ICON } from "@/lib/web-favorite-icons";
 import birchImg from "@/assets/pollen-birch.png";
 import { useAuthStatus } from "@/hooks/use-auth-status";
 import { openLoginDialog } from "@/components/LoginDialog";
@@ -21,7 +21,6 @@ const HYTTA_COORD = { lat: 59.8733, lon: 9.4297 };
 
 type RoutePath =
   | "/"
-  | "/favoritter"
   | "/agenda"
   | "/push-varslinger"
   | "/var"
@@ -52,7 +51,6 @@ const ALWAYS_LAST: RoutePath = "/steintavle";
 // Ikon for hver menyside (pollen håndteres separat med PollenIcon)
 const ROUTE_ICON: Partial<Record<RoutePath, React.ComponentType<{ size?: number; className?: string }>>> = {
   "/": Home,
-  "/favoritter": Globe,
   "/var": Cloud,
   "/turer": Map,
   "/got-saga": Castle,
@@ -75,7 +73,6 @@ const ROUTE_ICON: Partial<Record<RoutePath, React.ComponentType<{ size?: number;
 // Public halls — open to any visitor entering the courtyard.
 // Other halls only appear after the portal is opened (login).
 const navLinks: NavLink[] = [
-  { to: "/favoritter", label: "Favoritter", public: true },
   { to: "/", label: "Hjem", public: true },
   { to: "/var", label: "Vær", public: true },
   { to: "/pollen", label: "Pollen", public: true },
@@ -162,8 +159,7 @@ export function SiteHeader() {
   }, [who, fetchDefaultLoc]);
 
   // Visitors outside the gate only see public halls; authed users see everything.
-  const baseLinks = (isAuthed ? navLinks : navLinks.filter((l) => l.public))
-    .filter((l) => l.to !== "/favoritter");
+  const baseLinks = isAuthed ? navLinks : navLinks.filter((l) => l.public);
 
   // Sorter: Hjem alltid først, Steintavle alltid sist, deretter favoritter (hvis på),
   // så bruksfrekvens (hvis på), ellers original rekkefølge.
