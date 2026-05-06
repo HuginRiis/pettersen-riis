@@ -1,4 +1,5 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { recordApiCall } from "./api-call-log.server";
 
 type Loc = "hytta" | "tollnes";
 type Snapshot = { location: Loc; watt: number | null; kwh_today: number | null };
