@@ -614,6 +614,8 @@ function HallCard({
     | "/oppussing-borgen"
     | "/oppussing-hytta"
     | "/matvarer"
+    | "/kvitteringer"
+    | "/push-varslinger"
     | "/got-saga";
   title: string;
   desc: string;
