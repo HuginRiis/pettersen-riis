@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
-import { PageShell, PageHero } from "@/components/PageShell";
+import { PageShell } from "@/components/PageShell";
 import { Plus, Trash2, ChevronDown, ChevronUp, Globe, Pencil, Save, X } from "lucide-react";
 import { ICON_NAMES, getIcon } from "@/lib/web-favorite-icons";
 import { getNameForCurrentIp } from "@/server/user-locations";
