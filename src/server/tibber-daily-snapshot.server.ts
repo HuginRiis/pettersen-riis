@@ -32,6 +32,7 @@ export async function snapshotTibberDailyToDb(): Promise<{
   error?: string;
   sources?: { pulseDays: number; tibberDays: number };
 }> {
+  const started = Date.now();
   // 1) Pulse-snapshot (mer ferskt, men kan ha hull hvis Pulse var nede)
   const since = new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString();
   const { data: pulseRows } = await supabaseAdmin
