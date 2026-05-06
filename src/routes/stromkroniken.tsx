@@ -2293,9 +2293,386 @@ function ComparisonBlock({
         </div>
       </div>
 
+      <DeepInsightsBlock
+        dailySorted={dailySorted}
+        yearlyChartData={yearlyChartData}
+        monthlyChartData={monthlyChartData}
+        tollnesAvg={tollnesAvg}
+        hyttaAvg={hyttaAvg}
+        borgenColor={BORGEN_COLOR}
+        hyttaColor={HYTTA_COLOR}
+        tooltipStyle={tooltipStyle}
+      />
+
       <p className="text-xs text-muted-foreground mt-6 italic">
         — Husets samlede regnskap, hentet direkte fra Tibber.
       </p>
     </article>
+  );
+}
+
+// ============================================================
+// Dypere innsikt — estimater, ukedagsprofil, kostnader, topp-dager
+// ============================================================
+
+function DeepInsightsBlock({
+  dailySorted,
+  yearlyChartData,
+  monthlyChartData,
+  tollnesAvg,
+  hyttaAvg,
+  borgenColor,
+  hyttaColor,
+  tooltipStyle,
+}: {
+  dailySorted: Array<{ day: string; Borgen: number; Hytta: number }>;
+  yearlyChartData: Array<{ label: string; Borgen: number; Hytta: number }>;
+  monthlyChartData: Array<{ label: string; Borgen: number; Hytta: number }>;
+  tollnesAvg: number | null;
+  hyttaAvg: number | null;
+  borgenColor: string;
+  hyttaColor: string;
+  tooltipStyle: React.CSSProperties;
+}) {
+  const BORGEN_MULT = 1.9;
+  const HYTTA_MULT = 1.52;
+
+  // ─── Snitt siste 30 dager (kun dager med data > 0) ───
+  const last30 = dailySorted.slice(-30);
+  const avg = (key: "Borgen" | "Hytta") => {
+    const vals = last30.map((d) => d[key]).filter((v) => v > 0);
+    if (vals.length === 0) return 0;
+    return vals.reduce((s, v) => s + v, 0) / vals.length;
+  };
+  const avgDayB = avg("Borgen");
+  const avgDayH = avg("Hytta");
+
+  const now = new Date();
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+
+  const priceB = tollnesAvg != null ? tollnesAvg * BORGEN_MULT : null;
+  const priceH = hyttaAvg != null ? hyttaAvg * HYTTA_MULT : null;
+
+  const estMonthB = avgDayB * daysInMonth;
+  const estMonthH = avgDayH * daysInMonth;
+  const estYearB = avgDayB * 365;
+  const estYearH = avgDayH * 365;
+  const estMonthCostB = priceB != null ? estMonthB * priceB : null;
+  const estMonthCostH = priceH != null ? estMonthH * priceH : null;
+  const estYearCostB = priceB != null ? estYearB * priceB : null;
+  const estYearCostH = priceH != null ? estYearH * priceH : null;
+
+  // ─── Ukedagsprofil siste 90 dager ───
+  const last90 = dailySorted.slice(-90);
+  const wdLabels = ["Søn", "Man", "Tir", "Ons", "Tor", "Fre", "Lør"];
+  const wdAgg: Array<{ b: number[]; h: number[] }> = Array.from(
+    { length: 7 },
+    () => ({ b: [], h: [] }),
+  );
+  for (const d of last90) {
+    const wd = new Date(d.day + "T12:00:00Z").getUTCDay();
+    if (d.Borgen > 0) wdAgg[wd].b.push(d.Borgen);
+    if (d.Hytta > 0) wdAgg[wd].h.push(d.Hytta);
+  }
+  const weekdayChart = [1, 2, 3, 4, 5, 6, 0].map((idx) => ({
+    label: wdLabels[idx],
+    Borgen:
+      wdAgg[idx].b.length > 0
+        ? Math.round(
+            (wdAgg[idx].b.reduce((s, v) => s + v, 0) / wdAgg[idx].b.length) * 10,
+          ) / 10
+        : 0,
+    Hytta:
+      wdAgg[idx].h.length > 0
+        ? Math.round(
+            (wdAgg[idx].h.reduce((s, v) => s + v, 0) / wdAgg[idx].h.length) * 10,
+          ) / 10
+        : 0,
+  }));
+
+  // ─── Månedskostnad (kr) basert på snittpris × kWh ───
+  const monthlyCostChart = monthlyChartData.map((m) => ({
+    label: m.label,
+    Borgen: priceB != null ? Math.round(m.Borgen * priceB) : 0,
+    Hytta: priceH != null ? Math.round(m.Hytta * priceH) : 0,
+  }));
+
+  // ─── År-over-år endring ───
+  const yoy = yearlyChartData.map((y, i) => {
+    const prev = i > 0 ? yearlyChartData[i - 1] : null;
+    const dB = prev && prev.Borgen > 0 ? ((y.Borgen - prev.Borgen) / prev.Borgen) * 100 : null;
+    const dH = prev && prev.Hytta > 0 ? ((y.Hytta - prev.Hytta) / prev.Hytta) * 100 : null;
+    return { ...y, dB, dH };
+  });
+
+  // ─── Topp 5 dyreste dager (sum begge hus) ───
+  const topDays = [...dailySorted]
+    .map((d) => ({ ...d, sum: d.Borgen + d.Hytta }))
+    .filter((d) => d.sum > 0)
+    .sort((a, b) => b.sum - a.sum)
+    .slice(0, 5);
+
+  // ─── Billigste 5 dager ───
+  const cheapestDays = [...dailySorted]
+    .map((d) => ({ ...d, sum: d.Borgen + d.Hytta }))
+    .filter((d) => d.sum > 0)
+    .sort((a, b) => a.sum - b.sum)
+    .slice(0, 5);
+
+  const fmtNok = (v: number | null) => (v != null ? `${Math.round(v).toLocaleString("nb-NO")} kr` : "—");
+  const fmtKwh = (v: number | null) => (v != null ? `${Math.round(v).toLocaleString("nb-NO")} kWh` : "—");
+  const fmtDate = (iso: string) => {
+    const [y, m, d] = iso.split("-");
+    return `${d}.${m}.${y.slice(2)}`;
+  };
+
+  return (
+    <div className="mt-10 space-y-8">
+      <h3 className="text-sm tracking-[0.3em] uppercase text-primary flex items-center gap-2">
+        <Sparkles size={14} /> Krønikens dypere innsikt — estimater og mønstre
+      </h3>
+
+      {/* Estimat-kort */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="panel rounded-md p-4 bg-background/40 border border-border/40 space-y-3">
+          <div className="text-[10px] tracking-[0.3em] uppercase text-muted-foreground flex items-center gap-2">
+            <Crown size={12} /> Borgen · antatt forbruk og pris
+          </div>
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <div>
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Snitt/dag</div>
+              <div className="text-xl font-semibold tabular-nums text-primary">{avgDayB > 0 ? avgDayB.toFixed(1) : "—"} kWh</div>
+              <div className="text-[10px] text-muted-foreground">siste 30 dager</div>
+            </div>
+            <div>
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Antatt mnd</div>
+              <div className="text-xl font-semibold tabular-nums text-primary">{estMonthB > 0 ? fmtKwh(estMonthB) : "—"}</div>
+              <div className="text-[10px] text-muted-foreground">≈ {fmtNok(estMonthCostB)}</div>
+            </div>
+            <div>
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Antatt år</div>
+              <div className="text-xl font-semibold tabular-nums text-primary">{estYearB > 0 ? fmtKwh(estYearB) : "—"}</div>
+              <div className="text-[10px] text-muted-foreground">≈ {fmtNok(estYearCostB)}</div>
+            </div>
+            <div>
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Snittpris nå</div>
+              <div className="text-xl font-semibold tabular-nums text-[oklch(0.78_0.13_85)]">{priceB != null ? `${priceB.toFixed(2)} kr` : "—"}</div>
+              <div className="text-[10px] text-muted-foreground">per kWh inkl. påslag</div>
+            </div>
+          </div>
+        </div>
+        <div className="panel rounded-md p-4 bg-background/40 border border-border/40 space-y-3">
+          <div className="text-[10px] tracking-[0.3em] uppercase text-muted-foreground flex items-center gap-2">
+            <Crown size={12} /> Hytta · antatt forbruk og pris
+          </div>
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <div>
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Snitt/dag</div>
+              <div className="text-xl font-semibold tabular-nums text-primary">{avgDayH > 0 ? avgDayH.toFixed(1) : "—"} kWh</div>
+              <div className="text-[10px] text-muted-foreground">siste 30 dager</div>
+            </div>
+            <div>
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Antatt mnd</div>
+              <div className="text-xl font-semibold tabular-nums text-primary">{estMonthH > 0 ? fmtKwh(estMonthH) : "—"}</div>
+              <div className="text-[10px] text-muted-foreground">≈ {fmtNok(estMonthCostH)}</div>
+            </div>
+            <div>
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Antatt år</div>
+              <div className="text-xl font-semibold tabular-nums text-primary">{estYearH > 0 ? fmtKwh(estYearH) : "—"}</div>
+              <div className="text-[10px] text-muted-foreground">≈ {fmtNok(estYearCostH)}</div>
+            </div>
+            <div>
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Snittpris nå</div>
+              <div className="text-xl font-semibold tabular-nums text-[oklch(0.78_0.13_85)]">{priceH != null ? `${priceH.toFixed(2)} kr` : "—"}</div>
+              <div className="text-[10px] text-muted-foreground">per kWh inkl. påslag</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Antatt sum begge hus */}
+      <div className="panel rounded-md p-4 bg-background/30 border border-border/40 grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div>
+          <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Antatt forbruk i mnd · sum</div>
+          <div className="text-xl font-semibold tabular-nums text-primary">{fmtKwh(estMonthB + estMonthH)}</div>
+        </div>
+        <div>
+          <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Antatt kostnad i mnd · sum</div>
+          <div className="text-xl font-semibold tabular-nums text-[oklch(0.78_0.13_85)]">{fmtNok((estMonthCostB ?? 0) + (estMonthCostH ?? 0))}</div>
+        </div>
+        <div>
+          <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Antatt forbruk i år · sum</div>
+          <div className="text-xl font-semibold tabular-nums text-primary">{fmtKwh(estYearB + estYearH)}</div>
+        </div>
+        <div>
+          <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Antatt kostnad i år · sum</div>
+          <div className="text-xl font-semibold tabular-nums text-[oklch(0.78_0.13_85)]">{fmtNok((estYearCostB ?? 0) + (estYearCostH ?? 0))}</div>
+        </div>
+      </div>
+
+      {/* Ukedagsprofil */}
+      <div>
+        <p className="text-[11px] tracking-[0.2em] uppercase text-muted-foreground mb-2">
+          Ukedagsprofil · snitt kWh per ukedag (siste 90 dager)
+        </p>
+        <div className="h-56 w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={weekdayChart} margin={{ top: 5, right: 8, left: -8, bottom: 0 }}>
+              <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" vertical={false} />
+              <XAxis dataKey="label" tick={{ fill: "oklch(0.78 0.13 85)", fontSize: 10 }} />
+              <YAxis tick={{ fill: "oklch(0.78 0.13 85)", fontSize: 10 }} width={48} unit=" kWh" />
+              <Tooltip trigger="click" contentStyle={tooltipStyle} formatter={(v: number) => [`${v.toFixed(1)} kWh`, ""]} />
+              <Legend wrapperStyle={{ fontSize: 11 }} />
+              <Bar dataKey="Borgen" fill={borgenColor} radius={[3, 3, 0, 0]} />
+              <Bar dataKey="Hytta" fill={hyttaColor} radius={[3, 3, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* Månedskostnad i kr */}
+      <div>
+        <p className="text-[11px] tracking-[0.2em] uppercase text-muted-foreground mb-2">
+          Antatt månedskostnad · kr (kWh × dagens snittpris inkl. påslag)
+        </p>
+        <div className="h-64 w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={monthlyCostChart} margin={{ top: 5, right: 8, left: -8, bottom: 0 }}>
+              <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" vertical={false} />
+              <XAxis dataKey="label" tick={{ fill: "oklch(0.78 0.13 85)", fontSize: 10 }} />
+              <YAxis tick={{ fill: "oklch(0.78 0.13 85)", fontSize: 10 }} width={56} unit=" kr" />
+              <Tooltip trigger="click" contentStyle={tooltipStyle} formatter={(v: number) => [`${Math.round(v).toLocaleString("nb-NO")} kr`, ""]} />
+              <Legend wrapperStyle={{ fontSize: 11 }} />
+              <Bar dataKey="Borgen" stackId="kr" fill={borgenColor} radius={[0, 0, 0, 0]} />
+              <Bar dataKey="Hytta" stackId="kr" fill={hyttaColor} radius={[3, 3, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+        <p className="text-[10px] text-muted-foreground/70 mt-2 italic">
+          NB: estimat — historiske spotpriser per måned er ikke lagret, så vi bruker dagens snittpris × historisk kWh.
+        </p>
+      </div>
+
+      {/* År for år endringstabell */}
+      {yoy.length > 0 && (
+        <div>
+          <p className="text-[11px] tracking-[0.2em] uppercase text-muted-foreground mb-2">
+            År for år · endring
+          </p>
+          <div className="overflow-x-auto rounded-xl bg-[oklch(0.18_0.02_270)] border border-border/40">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border/40">
+                  <th className="text-left px-3 py-2 text-[10px] tracking-[0.25em] uppercase text-muted-foreground font-normal">År</th>
+                  <th className="text-right px-3 py-2 text-[10px] tracking-[0.25em] uppercase text-primary font-normal">Borgen</th>
+                  <th className="text-right px-3 py-2 text-[10px] tracking-[0.25em] uppercase text-muted-foreground font-normal">Δ</th>
+                  <th className="text-right px-3 py-2 text-[10px] tracking-[0.25em] uppercase text-[oklch(0.78_0.13_85)] font-normal">Hytta</th>
+                  <th className="text-right px-3 py-2 text-[10px] tracking-[0.25em] uppercase text-muted-foreground font-normal">Δ</th>
+                  <th className="text-right px-3 py-2 text-[10px] tracking-[0.25em] uppercase text-muted-foreground font-normal">Sum</th>
+                </tr>
+              </thead>
+              <tbody>
+                {yoy.map((y) => {
+                  const tone = (d: number | null) =>
+                    d == null ? "text-muted-foreground" : d > 0 ? "text-[oklch(0.7_0.18_25)]" : "text-[oklch(0.72_0.16_150)]";
+                  return (
+                    <tr key={y.label} className="border-b border-border/20 last:border-0">
+                      <td className="px-3 py-2 text-foreground/85">{y.label}</td>
+                      <td className="px-3 py-2 text-right tabular-nums text-foreground">{fmtKwh(y.Borgen)}</td>
+                      <td className={`px-3 py-2 text-right tabular-nums ${tone(y.dB)}`}>
+                        {y.dB != null ? `${y.dB > 0 ? "+" : ""}${y.dB.toFixed(1)} %` : "—"}
+                      </td>
+                      <td className="px-3 py-2 text-right tabular-nums text-foreground">{fmtKwh(y.Hytta)}</td>
+                      <td className={`px-3 py-2 text-right tabular-nums ${tone(y.dH)}`}>
+                        {y.dH != null ? `${y.dH > 0 ? "+" : ""}${y.dH.toFixed(1)} %` : "—"}
+                      </td>
+                      <td className="px-3 py-2 text-right tabular-nums text-primary font-semibold">{fmtKwh(y.Borgen + y.Hytta)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Topp dyreste/billigste dager */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <p className="text-[11px] tracking-[0.2em] uppercase text-muted-foreground mb-2 flex items-center gap-1.5">
+            <AlertTriangle size={11} className="text-[oklch(0.7_0.18_25)]" /> Topp 5 dyreste dager
+          </p>
+          <div className="overflow-x-auto rounded-xl bg-[oklch(0.18_0.02_270)] border border-border/40">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border/40">
+                  <th className="text-left px-3 py-2 text-[10px] tracking-[0.25em] uppercase text-muted-foreground font-normal">Dato</th>
+                  <th className="text-right px-3 py-2 text-[10px] tracking-[0.25em] uppercase text-primary font-normal">Borgen</th>
+                  <th className="text-right px-3 py-2 text-[10px] tracking-[0.25em] uppercase text-[oklch(0.78_0.13_85)] font-normal">Hytta</th>
+                  <th className="text-right px-3 py-2 text-[10px] tracking-[0.25em] uppercase text-[oklch(0.7_0.18_25)] font-normal">Sum</th>
+                  <th className="text-right px-3 py-2 text-[10px] tracking-[0.25em] uppercase text-muted-foreground font-normal">≈ kr</th>
+                </tr>
+              </thead>
+              <tbody>
+                {topDays.map((d) => {
+                  const cost =
+                    (priceB != null ? d.Borgen * priceB : 0) +
+                    (priceH != null ? d.Hytta * priceH : 0);
+                  return (
+                    <tr key={d.day} className="border-b border-border/20 last:border-0">
+                      <td className="px-3 py-2 text-foreground/85">{fmtDate(d.day)}</td>
+                      <td className="px-3 py-2 text-right tabular-nums">{d.Borgen > 0 ? `${d.Borgen.toFixed(1)}` : "—"}</td>
+                      <td className="px-3 py-2 text-right tabular-nums">{d.Hytta > 0 ? `${d.Hytta.toFixed(1)}` : "—"}</td>
+                      <td className="px-3 py-2 text-right tabular-nums text-[oklch(0.7_0.18_25)] font-semibold">{d.sum.toFixed(1)}</td>
+                      <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">{cost > 0 ? fmtNok(cost) : "—"}</td>
+                    </tr>
+                  );
+                })}
+                {topDays.length === 0 && (
+                  <tr><td colSpan={5} className="px-3 py-3 text-center text-xs text-muted-foreground italic">venter på data</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div>
+          <p className="text-[11px] tracking-[0.2em] uppercase text-muted-foreground mb-2 flex items-center gap-1.5">
+            <TrendingDown size={11} className="text-[oklch(0.72_0.16_150)]" /> Topp 5 billigste dager
+          </p>
+          <div className="overflow-x-auto rounded-xl bg-[oklch(0.18_0.02_270)] border border-border/40">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border/40">
+                  <th className="text-left px-3 py-2 text-[10px] tracking-[0.25em] uppercase text-muted-foreground font-normal">Dato</th>
+                  <th className="text-right px-3 py-2 text-[10px] tracking-[0.25em] uppercase text-primary font-normal">Borgen</th>
+                  <th className="text-right px-3 py-2 text-[10px] tracking-[0.25em] uppercase text-[oklch(0.78_0.13_85)] font-normal">Hytta</th>
+                  <th className="text-right px-3 py-2 text-[10px] tracking-[0.25em] uppercase text-[oklch(0.72_0.16_150)] font-normal">Sum</th>
+                  <th className="text-right px-3 py-2 text-[10px] tracking-[0.25em] uppercase text-muted-foreground font-normal">≈ kr</th>
+                </tr>
+              </thead>
+              <tbody>
+                {cheapestDays.map((d) => {
+                  const cost =
+                    (priceB != null ? d.Borgen * priceB : 0) +
+                    (priceH != null ? d.Hytta * priceH : 0);
+                  return (
+                    <tr key={d.day} className="border-b border-border/20 last:border-0">
+                      <td className="px-3 py-2 text-foreground/85">{fmtDate(d.day)}</td>
+                      <td className="px-3 py-2 text-right tabular-nums">{d.Borgen > 0 ? `${d.Borgen.toFixed(1)}` : "—"}</td>
+                      <td className="px-3 py-2 text-right tabular-nums">{d.Hytta > 0 ? `${d.Hytta.toFixed(1)}` : "—"}</td>
+                      <td className="px-3 py-2 text-right tabular-nums text-[oklch(0.72_0.16_150)] font-semibold">{d.sum.toFixed(1)}</td>
+                      <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">{cost > 0 ? fmtNok(cost) : "—"}</td>
+                    </tr>
+                  );
+                })}
+                {cheapestDays.length === 0 && (
+                  <tr><td colSpan={5} className="px-3 py-3 text-center text-xs text-muted-foreground italic">venter på data</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
