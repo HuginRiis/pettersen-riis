@@ -42,6 +42,11 @@ export const ICON_MAP: Record<string, ComponentType<{ size?: number; className?:
   PartyPopper, Sparkles, Crown, Gem, Award, Medal, Flag, Palette, Brush, Pencil,
   Smile, Ghost, Bug, Bird, Rabbit, Squirrel, Turtle, Snail, Worm, Egg,
   Smartphone, Laptop, Monitor, Headphones, Speaker, Mic, Printer, Save, Folder, Inbox,
+  Croissant, Donut, Sandwich, Soup, Salad, Beef, Ham, Drumstick, EggFried, Candy,
+  Lollipop, Popcorn, Popsicle, Milk, CupSoda, GlassWater, Citrus, Cake, Bone, PawPrint,
+  Shell, Sprout, TreePalm, TreePine, Flower, Waves, Wind, Tornado, CloudSun, CloudMoon,
+  CloudSnow, CloudFog, HeartHandshake, Laugh, Angry, Frown, Meh, ThumbsUp, ThumbsDown, HandHeart,
+  Diamond, Clover, Skull, Footprints, Feather, Tag, Music2, Music3, Music4, Hand,
 };
 
 // Forhåndsdefinerte farger for de 50 nye ikonene (resten arver currentColor).
