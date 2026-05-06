@@ -343,6 +343,49 @@ export function SiteHeader() {
       {open && (
         <nav className="xl:hidden border-t border-border bg-card/95 backdrop-blur">
           <div className="container mx-auto px-4 py-2 flex flex-col">
+            <div className="border-b border-border">
+              <div className="flex items-center">
+                <Link
+                  to="/favoritter"
+                  onClick={() => { bump("/favoritter" as any); setOpen(false); setFavOpenMobile(false); }}
+                  className="flex-1 px-2 py-2.5 text-xs tracking-wider uppercase text-muted-foreground hover:text-primary flex items-center gap-2"
+                >
+                  <Globe size={14} className="opacity-80" />
+                  <span className="flex-1">Favoritter</span>
+                </Link>
+                {myWebFavs.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setFavOpenMobile((v) => !v)}
+                    className="p-2 text-muted-foreground hover:text-primary"
+                    aria-label="Vis favoritter"
+                  >
+                    {favOpenMobile ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                  </button>
+                )}
+              </div>
+              {favOpenMobile && myWebFavs.length > 0 && (
+                <div className="pl-6 pb-2 flex flex-col">
+                  {myWebFavs.map((f) => {
+                    const I = getWebFavIcon(f.icon);
+                    return (
+                      <a
+                        key={f.id}
+                        href={f.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        onClick={() => { setFavOpenMobile(false); setOpen(false); }}
+                        className="flex items-center gap-2 px-2 py-2 text-xs text-muted-foreground hover:text-primary"
+                      >
+                        <I size={12} />
+                        <span className="truncate flex-1">{f.label}</span>
+                        {f.who === "Alle" && <span className="text-[9px] opacity-60">felles</span>}
+                      </a>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
             {sortedLinks.map((l) => {
               const count = usage[l.to] ?? 0;
               const isFav = menuPrefs.favorites.includes(l.to);
