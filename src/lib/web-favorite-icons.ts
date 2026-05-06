@@ -61,6 +61,16 @@ export const ICON_COLOR: Record<string, string> = {
   Squirrel: "#a1887f", Turtle: "#66bb6a", Snail: "#9e9d24", Worm: "#ff8a65", Egg: "#fff59d",
   Smartphone: "#42a5f5", Laptop: "#90a4ae", Monitor: "#7986cb", Headphones: "#ec407a", Speaker: "#26a69a",
   Mic: "#ef5350", Printer: "#78909c", Save: "#5c6bc0", Folder: "#ffa726", Inbox: "#26c6da",
+  Croissant: "#d4a373", Donut: "#f48fb1", Sandwich: "#c98a4b", Soup: "#ff7043", Salad: "#66bb6a",
+  Beef: "#a52a2a", Ham: "#ef9a9a", Drumstick: "#bf6b3a", EggFried: "#ffeb3b", Candy: "#ec407a",
+  Lollipop: "#ab47bc", Popcorn: "#fff176", Popsicle: "#26c6da", Milk: "#eceff1", CupSoda: "#ef5350",
+  GlassWater: "#4fc3f7", Citrus: "#ffb300", Cake: "#f06292", Bone: "#eceff1", PawPrint: "#8d6e63",
+  Shell: "#f8bbd0", Sprout: "#7cb342", TreePalm: "#43a047", TreePine: "#2e7d32", Flower: "#ec407a",
+  Waves: "#29b6f6", Wind: "#90a4ae", Tornado: "#607d8b", CloudSun: "#ffca28", CloudMoon: "#7986cb",
+  CloudSnow: "#b3e5fc", CloudFog: "#cfd8dc", HeartHandshake: "#e91e63", Laugh: "#fdd835", Angry: "#e53935",
+  Frown: "#90a4ae", Meh: "#bdbdbd", ThumbsUp: "#43a047", ThumbsDown: "#e53935", HandHeart: "#ec407a",
+  Diamond: "#26c6da", Clover: "#43a047", Skull: "#cfd8dc", Footprints: "#8d6e63", Feather: "#42a5f5",
+  Tag: "#fb8c00", Music2: "#ab47bc", Music3: "#7e57c2", Music4: "#5c6bc0", Hand: "#ffb74d",
 };
 
 export const ICON_NAMES = Object.keys(ICON_MAP);
