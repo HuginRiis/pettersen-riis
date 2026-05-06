@@ -661,6 +661,7 @@ function HallCard({
           <div className="absolute top-2 right-2 p-1.5 rounded-full bg-background/70 backdrop-blur border border-border z-10">
             <KeyRound size={12} className="text-primary/80" />
           </div>
+          {badge && <div className="absolute top-2 left-2 z-10">{badge}</div>}
           <div className="relative z-[1]">
             <div className="text-3xl mb-3">{icon}</div>
             <h3 className="text-xl text-foreground group-hover:text-primary transition-colors drop-shadow">
