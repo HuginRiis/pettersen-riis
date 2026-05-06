@@ -105,11 +105,11 @@ function FavoritterPage() {
 
   return (
     <PageShell>
-      <PageHero
-        eyebrow="Snarveier"
-        title="Favoritter"
-        subtitle={`Lagre nettsidesnarveier for deg (${who}) eller felles for alle.`}
-      />
+      <div className="container mx-auto px-4 py-6">
+        <div className="text-display text-xs tracking-[0.4em] text-primary uppercase mb-2">Snarveier</div>
+        <h1 className="heading-hero text-2xl md:text-4xl">Favoritter</h1>
+        <p className="mt-2 text-muted-foreground text-sm">Lagre nettsidesnarveier for deg ({who}) eller felles for alle.</p>
+      </div>
 
       <section className="rounded-lg border border-border bg-card/50 p-4 mb-6">
         <h2 className="text-sm tracking-widest uppercase text-primary mb-3">Legg til snarvei</h2>
