@@ -1500,6 +1500,39 @@ export type Database = {
         }
         Relationships: []
       }
+      web_favorites: {
+        Row: {
+          created_at: string
+          icon: string
+          id: string
+          label: string
+          sort_order: number
+          updated_at: string
+          url: string
+          who: string
+        }
+        Insert: {
+          created_at?: string
+          icon?: string
+          id?: string
+          label: string
+          sort_order?: number
+          updated_at?: string
+          url: string
+          who?: string
+        }
+        Update: {
+          created_at?: string
+          icon?: string
+          id?: string
+          label?: string
+          sort_order?: number
+          updated_at?: string
+          url?: string
+          who?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
