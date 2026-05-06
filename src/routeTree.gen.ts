@@ -26,7 +26,6 @@ import { Route as KvitteringerRouteImport } from './routes/kvitteringer'
 import { Route as HyttaRouteImport } from './routes/hytta'
 import { Route as HundeneRouteImport } from './routes/hundene'
 import { Route as GotSagaRouteImport } from './routes/got-saga'
-import { Route as FavoritterRouteImport } from './routes/favoritter'
 import { Route as AgendaRouteImport } from './routes/agenda'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as HooksLogPulseRouteImport } from './routes/hooks.log-pulse'
@@ -125,11 +124,6 @@ const GotSagaRoute = GotSagaRouteImport.update({
   path: '/got-saga',
   getParentRoute: () => rootRouteImport,
 } as any)
-const FavoritterRoute = FavoritterRouteImport.update({
-  id: '/favoritter',
-  path: '/favoritter',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AgendaRoute = AgendaRouteImport.update({
   id: '/agenda',
   path: '/agenda',
@@ -197,7 +191,6 @@ const ApiPublicHooksAgendaPushRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/agenda': typeof AgendaRoute
-  '/favoritter': typeof FavoritterRoute
   '/got-saga': typeof GotSagaRoute
   '/hundene': typeof HundeneRoute
   '/hytta': typeof HyttaRoute
@@ -229,7 +222,6 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/agenda': typeof AgendaRoute
-  '/favoritter': typeof FavoritterRoute
   '/got-saga': typeof GotSagaRoute
   '/hundene': typeof HundeneRoute
   '/hytta': typeof HyttaRoute
@@ -262,7 +254,6 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/agenda': typeof AgendaRoute
-  '/favoritter': typeof FavoritterRoute
   '/got-saga': typeof GotSagaRoute
   '/hundene': typeof HundeneRoute
   '/hytta': typeof HyttaRoute
@@ -296,7 +287,6 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/agenda'
-    | '/favoritter'
     | '/got-saga'
     | '/hundene'
     | '/hytta'
@@ -328,7 +318,6 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/agenda'
-    | '/favoritter'
     | '/got-saga'
     | '/hundene'
     | '/hytta'
@@ -360,7 +349,6 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/agenda'
-    | '/favoritter'
     | '/got-saga'
     | '/hundene'
     | '/hytta'
@@ -393,7 +381,6 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AgendaRoute: typeof AgendaRoute
-  FavoritterRoute: typeof FavoritterRoute
   GotSagaRoute: typeof GotSagaRoute
   HundeneRoute: typeof HundeneRoute
   HyttaRoute: typeof HyttaRoute
@@ -544,13 +531,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GotSagaRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/favoritter': {
-      id: '/favoritter'
-      path: '/favoritter'
-      fullPath: '/favoritter'
-      preLoaderRoute: typeof FavoritterRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/agenda': {
       id: '/agenda'
       path: '/agenda'
@@ -641,7 +621,6 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AgendaRoute: AgendaRoute,
-  FavoritterRoute: FavoritterRoute,
   GotSagaRoute: GotSagaRoute,
   HundeneRoute: HundeneRoute,
   HyttaRoute: HyttaRoute,

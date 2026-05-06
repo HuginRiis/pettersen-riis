@@ -5,7 +5,7 @@ import { Menu, X, LogOut, Crown, Swords, Shield, KeyRound, Home, Star, Flower2,
   Cloud, Map, Castle, CalendarDays, Bell, Eye, Trees, Lightbulb, Zap, Hammer,
   ShoppingCart, Receipt, Dog, Dumbbell, AlertTriangle, ScrollText, Globe, ChevronDown, ChevronRight } from "lucide-react";
 import { logoutFn } from "@/server/auth";
-import { getIcon as getWebFavIcon } from "@/lib/web-favorite-icons";
+import { getIcon as getWebFavIcon, getIconColor as getWebFavIconColor, faviconUrl, FAVICON_ICON } from "@/lib/web-favorite-icons";
 import birchImg from "@/assets/pollen-birch.png";
 import { useAuthStatus } from "@/hooks/use-auth-status";
 import { openLoginDialog } from "@/components/LoginDialog";
@@ -21,7 +21,6 @@ const HYTTA_COORD = { lat: 59.8733, lon: 9.4297 };
 
 type RoutePath =
   | "/"
-  | "/favoritter"
   | "/agenda"
   | "/push-varslinger"
   | "/var"
@@ -52,7 +51,6 @@ const ALWAYS_LAST: RoutePath = "/steintavle";
 // Ikon for hver menyside (pollen håndteres separat med PollenIcon)
 const ROUTE_ICON: Partial<Record<RoutePath, React.ComponentType<{ size?: number; className?: string }>>> = {
   "/": Home,
-  "/favoritter": Globe,
   "/var": Cloud,
   "/turer": Map,
   "/got-saga": Castle,
@@ -75,7 +73,6 @@ const ROUTE_ICON: Partial<Record<RoutePath, React.ComponentType<{ size?: number;
 // Public halls — open to any visitor entering the courtyard.
 // Other halls only appear after the portal is opened (login).
 const navLinks: NavLink[] = [
-  { to: "/favoritter", label: "Favoritter", public: true },
   { to: "/", label: "Hjem", public: true },
   { to: "/var", label: "Vær", public: true },
   { to: "/pollen", label: "Pollen", public: true },
@@ -162,8 +159,7 @@ export function SiteHeader() {
   }, [who, fetchDefaultLoc]);
 
   // Visitors outside the gate only see public halls; authed users see everything.
-  const baseLinks = (isAuthed ? navLinks : navLinks.filter((l) => l.public))
-    .filter((l) => l.to !== "/favoritter");
+  const baseLinks = isAuthed ? navLinks : navLinks.filter((l) => l.public);
 
   // Sorter: Hjem alltid først, Steintavle alltid sist, deretter favoritter (hvis på),
   // så bruksfrekvens (hvis på), ellers original rekkefølge.
@@ -230,44 +226,36 @@ export function SiteHeader() {
 
         <nav className="hidden xl:flex flex-1 flex-wrap items-center justify-start gap-x-2 gap-y-2">
           <span className="inline-flex items-center gap-0.5 relative">
-            <Link
-              to="/favoritter"
+            <button
+              type="button"
+              onClick={() => setFavOpen((v) => !v)}
               className="got-nav-btn inline-flex items-center gap-1.5"
-              onClick={() => bump("/favoritter" as any)}
-              title="Administrer favoritter"
+              title="Vis favoritter"
+              aria-expanded={favOpen}
             >
               <Globe size={12} className="opacity-80" />
               <span>Favoritter</span>
-            </Link>
-            {myWebFavs.length > 0 && (
-              <button
-                type="button"
-                onClick={() => setFavOpen((v) => !v)}
-                className="text-muted-foreground hover:text-primary p-0.5"
-                aria-label="Vis favoritter"
-              >
-                {favOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-              </button>
-            )}
-            {favOpen && myWebFavs.length > 0 && (
+              {favOpen ? <ChevronDown size={11} /> : <ChevronRight size={11} />}
+            </button>
+            {favOpen && (
               <div className="absolute top-full left-0 mt-1 z-50 min-w-[200px] rounded-md border border-border bg-card/95 backdrop-blur shadow-lg p-1 flex flex-col">
-                {myWebFavs.map((f) => {
-                  const I = getWebFavIcon(f.icon);
-                  return (
-                    <a
-                      key={f.id}
-                      href={f.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      onClick={() => setFavOpen(false)}
-                      className="flex items-center gap-2 px-2 py-1.5 text-xs text-muted-foreground hover:text-primary hover:bg-muted/40 rounded"
-                    >
-                      <I size={12} />
-                      <span className="truncate">{f.label}</span>
-                      {f.who === "Alle" && <span className="ml-auto text-[9px] opacity-60">felles</span>}
-                    </a>
-                  );
-                })}
+                {myWebFavs.length === 0 && (
+                  <div className="px-2 py-1.5 text-[11px] text-muted-foreground">Ingen snarveier ennå.</div>
+                )}
+                {myWebFavs.map((f) => (
+                  <a
+                    key={f.id}
+                    href={f.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={() => setFavOpen(false)}
+                    className="flex items-center gap-2 px-2 py-1.5 text-xs text-muted-foreground hover:text-primary hover:bg-muted/40 rounded"
+                  >
+                    <FavGlyph icon={f.icon} url={f.url} size={12} />
+                    <span className="truncate">{f.label}</span>
+                    {f.who === "Alle" && <span className="ml-auto text-[9px] opacity-60">felles</span>}
+                  </a>
+                ))}
               </div>
             )}
           </span>
@@ -344,45 +332,35 @@ export function SiteHeader() {
         <nav className="xl:hidden border-t border-border bg-card/95 backdrop-blur">
           <div className="container mx-auto px-4 py-2 flex flex-col">
             <div className="border-b border-border">
-              <div className="flex items-center">
-                <Link
-                  to="/favoritter"
-                  onClick={() => { bump("/favoritter" as any); setOpen(false); setFavOpenMobile(false); }}
-                  className="flex-1 px-2 py-2.5 text-xs tracking-wider uppercase text-muted-foreground hover:text-primary flex items-center gap-2"
-                >
-                  <Globe size={14} className="opacity-80" />
-                  <span className="flex-1">Favoritter</span>
-                </Link>
-                {myWebFavs.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => setFavOpenMobile((v) => !v)}
-                    className="p-2 text-muted-foreground hover:text-primary"
-                    aria-label="Vis favoritter"
-                  >
-                    {favOpenMobile ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                  </button>
-                )}
-              </div>
-              {favOpenMobile && myWebFavs.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setFavOpenMobile((v) => !v)}
+                className="w-full px-2 py-2.5 text-xs tracking-wider uppercase text-muted-foreground hover:text-primary flex items-center gap-2"
+                aria-expanded={favOpenMobile}
+              >
+                <Globe size={14} className="opacity-80" />
+                <span className="flex-1 text-left">Favoritter</span>
+                {favOpenMobile ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+              </button>
+              {favOpenMobile && (
                 <div className="pl-6 pb-2 flex flex-col">
-                  {myWebFavs.map((f) => {
-                    const I = getWebFavIcon(f.icon);
-                    return (
-                      <a
-                        key={f.id}
-                        href={f.url}
-                        target="_blank"
-                        rel="noreferrer"
-                        onClick={() => { setFavOpenMobile(false); setOpen(false); }}
-                        className="flex items-center gap-2 px-2 py-2 text-xs text-muted-foreground hover:text-primary"
-                      >
-                        <I size={12} />
-                        <span className="truncate flex-1">{f.label}</span>
-                        {f.who === "Alle" && <span className="text-[9px] opacity-60">felles</span>}
-                      </a>
-                    );
-                  })}
+                  {myWebFavs.length === 0 && (
+                    <div className="px-2 py-2 text-[11px] text-muted-foreground">Ingen snarveier ennå.</div>
+                  )}
+                  {myWebFavs.map((f) => (
+                    <a
+                      key={f.id}
+                      href={f.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      onClick={() => { setFavOpenMobile(false); setOpen(false); }}
+                      className="flex items-center gap-2 px-2 py-2 text-xs text-muted-foreground hover:text-primary"
+                    >
+                      <FavGlyph icon={f.icon} url={f.url} size={12} />
+                      <span className="truncate flex-1">{f.label}</span>
+                      {f.who === "Alle" && <span className="text-[9px] opacity-60">felles</span>}
+                    </a>
+                  ))}
                 </div>
               )}
             </div>
@@ -463,6 +441,17 @@ function UsageBadge({ count }: { count: number }) {
       {count}
     </span>
   );
+}
+
+function FavGlyph({ icon, url, size = 12 }: { icon: string; url?: string; size?: number }) {
+  if (icon === FAVICON_ICON) {
+    const f = url ? faviconUrl(url, 32) : null;
+    if (f) return <img src={f} alt="" style={{ width: size, height: size }} />;
+    return <Globe size={size} />;
+  }
+  const I = getWebFavIcon(icon);
+  const c = getWebFavIconColor(icon);
+  return <I size={size} color={c} />;
 }
 
 function UvBadge({ lat, lon }: { lat: number; lon: number }) {
