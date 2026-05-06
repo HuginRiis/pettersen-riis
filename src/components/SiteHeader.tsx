@@ -5,6 +5,7 @@ import { Menu, X, LogOut, Crown, Swords, Shield, KeyRound, Home, Star, Flower2,
   Cloud, Map, Castle, CalendarDays, Bell, Eye, Trees, Lightbulb, Zap, Hammer,
   ShoppingCart, Receipt, Dog, Dumbbell, AlertTriangle, ScrollText, Globe, ChevronDown, ChevronRight } from "lucide-react";
 import { logoutFn } from "@/server/auth";
+import { getIcon as getWebFavIcon } from "@/lib/web-favorite-icons";
 import birchImg from "@/assets/pollen-birch.png";
 import { useAuthStatus } from "@/hooks/use-auth-status";
 import { openLoginDialog } from "@/components/LoginDialog";
