@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Plus, Trash2, ChevronDown, ChevronUp, Pencil, Save, X, Globe } from "lucide-react";
 import { ICON_NAMES, getIcon, getIconColor, faviconUrl, FAVICON_ICON } from "@/lib/web-favorite-icons";
 import { getNameForCurrentIp } from "@/server/user-locations";
+import { getStoredWho } from "@/lib/push-client";
 
 type Row = {
   id: string;
@@ -34,6 +35,13 @@ export function FavoritesManagerPanel() {
   const [editIconOpen, setEditIconOpen] = useState(false);
 
   useEffect(() => {
+    // Primær: bruk navnet på push-mottakeren lagret på denne enheten.
+    const stored = getStoredWho();
+    if (stored && stored !== "Alle") {
+      setWho(stored);
+      return;
+    }
+    // Fallback: IP-oppslag
     fetchName().then((r) => { if (r?.who) setWho(r.who); }).catch(() => {});
   }, [fetchName]);
 
