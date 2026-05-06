@@ -685,7 +685,7 @@ function HallCard({
         className="panel rounded-lg p-6 glow-on-hover block group relative overflow-hidden min-h-[160px]"
       >
         {bgLayer}
-        <div className="relative z-[1]">
+        {badge}
           <div className="text-3xl mb-3">{icon}</div>
           <h3 className="text-xl text-primary group-hover:text-gold transition-colors drop-shadow">
             {title}
