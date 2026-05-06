@@ -286,9 +286,6 @@ function FavList(p: FavListProps) {
               <button onClick={() => p.onEdit(r)} className="text-muted-foreground hover:text-primary p-1" title="Rediger">
                 <Pencil size={12} />
               </button>
-              <button onClick={() => p.onRemove(r.id)} className="text-muted-foreground hover:text-destructive p-1" title="Slett">
-                <Trash2 size={12} />
-              </button>
             </li>
           );
         })}
