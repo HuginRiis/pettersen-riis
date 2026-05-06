@@ -109,13 +109,39 @@ export async function snapshotTibberDailyToDb(): Promise<{
 
   const rows = Array.from(merged.values());
   if (rows.length === 0) {
+    await recordApiCall({
+      source: "tibber",
+      endpoint: "graphql.consumption.DAILY[cron]",
+      ok: false,
+      duration_ms: Date.now() - started,
+      error_message: tibberError ?? "Ingen daglige tall å lagre",
+      metadata: { pulseDays, tibberDays },
+    });
     return { saved: [], error: tibberError ?? "Ingen daglige tall å lagre", sources: { pulseDays, tibberDays } };
   }
   const { error } = await supabaseAdmin
     .from("tibber_daily_kwh")
     .upsert(rows, { onConflict: "location,day" });
-  if (error) return { saved: [], error: `DB-feil: ${error.message}`, sources: { pulseDays, tibberDays } };
+  if (error) {
+    await recordApiCall({
+      source: "tibber",
+      endpoint: "graphql.consumption.DAILY[cron]",
+      ok: false,
+      duration_ms: Date.now() - started,
+      error_message: `DB-feil: ${error.message}`,
+      metadata: { pulseDays, tibberDays },
+    });
+    return { saved: [], error: `DB-feil: ${error.message}`, sources: { pulseDays, tibberDays } };
+  }
 
+  await recordApiCall({
+    source: "tibber",
+    endpoint: "graphql.consumption.DAILY[cron]",
+    ok: !tibberError,
+    duration_ms: Date.now() - started,
+    error_message: tibberError ?? null,
+    metadata: { saved: rows.length, pulseDays, tibberDays },
+  });
   return { saved: rows, sources: { pulseDays, tibberDays }, ...(tibberError ? { error: tibberError } : {}) };
 }
 
