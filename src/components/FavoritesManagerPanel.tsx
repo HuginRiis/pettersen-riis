@@ -16,7 +16,7 @@ type Row = {
 
 export function FavoritesManagerPanel() {
   const fetchName = useServerFn(getNameForCurrentIp);
-  const [who, setWho] = useState<string>("Alle");
+  const [who, setWho] = useState<string>("");
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
 
