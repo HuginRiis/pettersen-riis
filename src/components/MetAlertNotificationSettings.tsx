@@ -7,7 +7,19 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { sendMetAlertTestPush, getMetAlertEventTypes } from "@/server/met-alert-push.functions";
+import { sendMetAlertTestPush, getMetAlertEventTypes, getActiveMetAlerts } from "@/server/met-alert-push.functions";
+
+type ActiveAlert = {
+  id: string;
+  event: string;
+  label: string;
+  color: string | null;
+  area: string | null;
+  countyNames: string[];
+  description: string | null;
+  start: string | null;
+  end: string | null;
+};
 
 const WHO_OPTIONS = ["Alle", "Arne & Rebekka", "Arne", "Rebekka", "Marita", "Nora", "Celine", "Mira"] as const;
 
@@ -32,6 +44,7 @@ type Pref = {
   counties: string[];
   event_types: string[];
   min_color: string;
+  colors: string[];
   enabled: boolean;
 };
 
@@ -48,6 +61,7 @@ export function MetAlertNotificationSettings() {
   const [saving, setSaving] = useState<string | null>(null);
   const [showNew, setShowNew] = useState(false);
   const [eventTypes, setEventTypes] = useState<{ event: string; label: string }[]>([]);
+  const [activeAlerts, setActiveAlerts] = useState<ActiveAlert[]>([]);
 
   const load = async () => {
     const { data, error } = await supabase
@@ -58,8 +72,9 @@ export function MetAlertNotificationSettings() {
     else setPrefs((data ?? []) as unknown as Pref[]);
     setLoading(false);
     try {
-      const ev = await getMetAlertEventTypes();
+      const [ev, active] = await Promise.all([getMetAlertEventTypes(), getActiveMetAlerts()]);
       setEventTypes(ev);
+      setActiveAlerts(active as ActiveAlert[]);
     } catch {
       // stille
     }
@@ -87,9 +102,10 @@ export function MetAlertNotificationSettings() {
     else { toast.success("Slettet"); void load(); }
   };
 
-  const create = async (data: { recipient: string; counties: string[]; event_types: string[]; min_color: string }) => {
+  const create = async (data: { recipient: string; counties: string[]; event_types: string[]; colors: string[] }) => {
+    const min_color = data.colors.includes("Yellow") ? "Yellow" : data.colors.includes("Orange") ? "Orange" : "Red";
     const { error } = await supabase.from("met_alert_notification_prefs" as never).insert({
-      ...data, enabled: true,
+      ...data, min_color, enabled: true,
     } as never);
     if (error) { toast.error("Kunne ikke opprette: " + error.message); return; }
     toast.success("Regel opprettet");
@@ -103,6 +119,7 @@ export function MetAlertNotificationSettings() {
 
   return (
     <div className="space-y-3">
+      <ActiveAlertsList alerts={activeAlerts} />
       {prefs.map((p) => (
         <PrefCard
           key={p.id}
@@ -160,13 +177,13 @@ function CircleCheck({ on, color = "primary" }: { on: boolean; color?: "primary"
 function RuleEditor({
   recipient, setRecipient,
   counties, setCounties,
-  minColor, setMinColor,
+  colors, setColors,
   eventTypeSel, setEventTypeSel,
   eventTypes,
 }: {
   recipient: string; setRecipient: (v: string) => void;
   counties: string[]; setCounties: (v: string[]) => void;
-  minColor: string; setMinColor: (v: string) => void;
+  colors: string[]; setColors: (v: string[]) => void;
   eventTypeSel: string[]; setEventTypeSel: (v: string[]) => void;
   eventTypes: { event: string; label: string }[];
 }) {
@@ -194,7 +211,6 @@ function RuleEditor({
     { event: "drivingConditions", label: "Kjøreforhold" },
     { event: "fog", label: "Tåke" },
   ];
-  // Slå sammen API-typer (med korrekte labels) + alle faste, uten duplikater
   const merged = new Map<string, string>();
   for (const t of ALL_MET_TYPES) merged.set(t.event, t.label);
   for (const t of eventTypes) merged.set(t.event, t.label || merged.get(t.event) || t.event);
@@ -231,18 +247,16 @@ function RuleEditor({
       </div>
 
       <div>
-        <p className="text-xs text-muted-foreground mb-2">Farenivå</p>
+        <p className="text-xs text-muted-foreground mb-2">Farenivå (skru av/på hver farge)</p>
         <div className="flex flex-wrap gap-x-5 gap-y-2">
           {COLOR_OPTIONS.map((c) => {
-            const rank = ["Yellow", "Orange", "Red"].indexOf(c.value);
-            const minRank = ["Yellow", "Orange", "Red"].indexOf(minColor);
-            const on = rank >= minRank;
+            const on = colors.includes(c.value);
             const colorKey = c.value.toLowerCase() as "yellow" | "orange" | "red";
             return (
               <button
                 key={c.value}
                 type="button"
-                onClick={() => setMinColor(c.value)}
+                onClick={() => setColors(toggle(colors, c.value))}
                 className="flex items-center gap-2 text-sm"
               >
                 <CircleCheck on={on} color={colorKey} />
@@ -291,12 +305,12 @@ function NewRuleForm({
 }: {
   eventTypes: { event: string; label: string }[];
   onCancel: () => void;
-  onCreate: (data: { recipient: string; counties: string[]; event_types: string[]; min_color: string }) => void;
+  onCreate: (data: { recipient: string; counties: string[]; event_types: string[]; colors: string[] }) => void;
 }) {
   const [recipient, setRecipient] = useState<string>("Alle");
   const [counties, setCounties] = useState<string[]>(SECTOR_OPTIONS[0].counties);
   const [eventTypeSel, setEventTypeSel] = useState<string[]>([]);
-  const [minColor, setMinColor] = useState<string>("Orange");
+  const [colors, setColors] = useState<string[]>(["Orange", "Red"]);
 
   return (
     <div className="rounded-2xl border border-orange-500/40 bg-card/60 p-4 space-y-4">
@@ -306,12 +320,12 @@ function NewRuleForm({
       <RuleEditor
         recipient={recipient} setRecipient={setRecipient}
         counties={counties} setCounties={setCounties}
-        minColor={minColor} setMinColor={setMinColor}
+        colors={colors} setColors={setColors}
         eventTypeSel={eventTypeSel} setEventTypeSel={setEventTypeSel}
         eventTypes={eventTypes}
       />
       <div className="flex gap-2 pt-1">
-        <Button size="sm" onClick={() => onCreate({ recipient, counties, event_types: eventTypeSel, min_color: minColor })}>Lagre</Button>
+        <Button size="sm" disabled={colors.length === 0} onClick={() => onCreate({ recipient, counties, event_types: eventTypeSel, colors })}>Lagre</Button>
         <Button size="sm" variant="ghost" onClick={onCancel}>Avbryt</Button>
       </div>
     </div>
@@ -333,16 +347,26 @@ function PrefCard({
   const [recipient, setRecipient] = useState(p.recipient);
   const [counties, setCounties] = useState<string[]>(p.counties ?? []);
   const [eventTypeSel, setEventTypeSel] = useState<string[]>(p.event_types ?? []);
-  const [minColor, setMinColor] = useState(p.min_color);
+  const initialColors = p.colors && p.colors.length > 0
+    ? p.colors
+    : (p.min_color === "Yellow" ? ["Yellow","Orange","Red"] : p.min_color === "Orange" ? ["Orange","Red"] : ["Red"]);
+  const [colors, setColors] = useState<string[]>(initialColors);
 
   useEffect(() => {
     if (!editing) {
       setRecipient(p.recipient);
       setCounties(p.counties ?? []);
       setEventTypeSel(p.event_types ?? []);
-      setMinColor(p.min_color);
+      const next = p.colors && p.colors.length > 0
+        ? p.colors
+        : (p.min_color === "Yellow" ? ["Yellow","Orange","Red"] : p.min_color === "Orange" ? ["Orange","Red"] : ["Red"]);
+      setColors(next);
     }
   }, [p, editing]);
+
+  const colorLabels = colors.length === 0
+    ? "ingen"
+    : COLOR_OPTIONS.filter(c => colors.includes(c.value)).map(c => c.label).join(", ");
 
   return (
     <div className="rounded-2xl border border-orange-500/30 bg-card/40 p-4 space-y-3">
@@ -356,7 +380,7 @@ function PrefCard({
       <div>
         <p className="text-sm font-medium">Push-varsel ved farevarsel fra MET</p>
         <p className="text-xs text-muted-foreground">
-          Gjelder <span className="text-foreground font-semibold">{p.recipient}</span>. Velg sektor, farenivå og typer under.
+          Gjelder <span className="text-foreground font-semibold">{p.recipient}</span>. Velg sektor, farger og typer under.
         </p>
       </div>
 
@@ -364,14 +388,14 @@ function PrefCard({
         <RuleEditor
           recipient={recipient} setRecipient={setRecipient}
           counties={counties} setCounties={setCounties}
-          minColor={minColor} setMinColor={setMinColor}
+          colors={colors} setColors={setColors}
           eventTypeSel={eventTypeSel} setEventTypeSel={setEventTypeSel}
           eventTypes={eventTypes}
         />
       ) : (
         <div className="text-xs text-muted-foreground space-y-1">
           <div>Sektor: <span className="text-foreground">{sectorLabelFromCounties(p.counties ?? [])}</span></div>
-          <div>Min nivå: <span className="text-foreground">{COLOR_OPTIONS.find(c => c.value === p.min_color)?.label ?? p.min_color}</span></div>
+          <div>Farger: <span className="text-foreground">{colorLabels}</span></div>
           <div>Typer: <span className="text-foreground">{p.event_types?.length ? p.event_types.map((e) => eventTypes.find((x) => x.event === e)?.label ?? e).join(", ") : "alle"}</span></div>
         </div>
       )}
@@ -391,8 +415,12 @@ function PrefCard({
           </>
         ) : (
           <>
-            <Button size="sm" className="h-7 px-2 text-xs" disabled={saving}
-              onClick={() => { onSave({ recipient, counties, event_types: eventTypeSel, min_color: minColor }); setEditing(false); }}>
+            <Button size="sm" className="h-7 px-2 text-xs" disabled={saving || colors.length === 0}
+              onClick={() => {
+                const min_color = colors.includes("Yellow") ? "Yellow" : colors.includes("Orange") ? "Orange" : "Red";
+                onSave({ recipient, counties, event_types: eventTypeSel, colors, min_color });
+                setEditing(false);
+              }}>
               <Check className="h-3 w-3 mr-1" /> Lagre
             </Button>
             <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => setEditing(false)}>
@@ -401,6 +429,51 @@ function PrefCard({
           </>
         )}
       </div>
+    </div>
+  );
+}
+
+function ActiveAlertsList({ alerts }: { alerts: ActiveAlert[] }) {
+  const [open, setOpen] = useState(true);
+  if (!alerts || alerts.length === 0) {
+    return (
+      <div className="rounded-2xl border border-border/50 bg-card/40 p-3 text-xs text-muted-foreground flex items-center gap-2">
+        <AlertTriangle className="h-3.5 w-3.5" /> Ingen aktive farevarsler akkurat nå.
+      </div>
+    );
+  }
+  return (
+    <div className="rounded-2xl border border-orange-500/40 bg-card/50 p-3 space-y-2">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="w-full flex items-center justify-between gap-2 text-sm font-bold uppercase tracking-wider text-orange-400"
+      >
+        <span className="flex items-center gap-2"><AlertTriangle className="h-4 w-4" /> Aktive farevarsler ({alerts.length})</span>
+        <ChevronDown className={`h-4 w-4 transition ${open ? "rotate-180" : ""}`} />
+      </button>
+      {open && (
+        <ul className="space-y-1.5">
+          {alerts.map((a) => {
+            const dot =
+              a.color === "Red" ? "bg-red-500"
+              : a.color === "Orange" ? "bg-orange-500"
+              : a.color === "Yellow" ? "bg-yellow-400"
+              : "bg-muted";
+            return (
+              <li key={a.id} className="flex items-start gap-2 text-xs">
+                <span className={`mt-1 inline-block w-2.5 h-2.5 rounded-full shrink-0 ${dot}`} />
+                <div className="flex-1 min-w-0">
+                  <div className="text-foreground font-medium truncate">{a.label}</div>
+                  <div className="text-muted-foreground truncate">
+                    {a.area || a.countyNames.join(", ") || "—"}
+                  </div>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </div>
   );
 }

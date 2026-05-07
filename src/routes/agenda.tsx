@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { PageShell, PageHero } from "@/components/PageShell";
 import { supabase } from "@/integrations/supabase/client";
 import heroImg from "@/assets/got-agenda.jpg";
-import { Trash2, Plus, Bell, BellOff, Clock } from "lucide-react";
+import { Trash2, Plus, Bell, BellOff, Clock, ChevronDown } from "lucide-react";
 import { getPushPublicKey } from "@/server/agenda-push";
 import { GarbageCollectionPanel } from "@/components/GarbageCollectionPanel";
 import { BirthdaysPanel } from "@/components/BirthdaysPanel";
@@ -235,7 +235,7 @@ function AgendaPage() {
             loading={loading}
             empty="Ingen kommende oppføringer."
           />
-          {past.length > 0 && <DateSection title="Tidligere" entries={past} onDelete={remove} loading={false} muted />}
+          {past.length > 0 && <CollapsiblePast entries={past} onDelete={remove} />}
         </div>
       </section>
     </PageShell>
@@ -438,4 +438,28 @@ function formatDateTimeNorwegian(iso: string) {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+function CollapsiblePast({ entries, onDelete }: { entries: [string, Msg[]][]; onDelete: (id: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const total = entries.reduce((sum, [, m]) => sum + m.length, 0);
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="w-full flex items-center justify-between gap-2 panel rounded p-3 text-sm hover:bg-accent/30 transition"
+      >
+        <span className="text-display tracking-[0.3em] text-primary text-xs uppercase">
+          Tidligere ({total})
+        </span>
+        <ChevronDown size={16} className={`text-primary transition ${open ? "rotate-180" : ""}`} />
+      </button>
+      {open && (
+        <div className="mt-4">
+          <DateSection title="Tidligere" entries={entries} onDelete={onDelete} loading={false} muted />
+        </div>
+      )}
+    </div>
+  );
 }

@@ -613,6 +613,7 @@ export type Database = {
       }
       met_alert_notification_prefs: {
         Row: {
+          colors: string[]
           counties: string[]
           created_at: string
           enabled: boolean
@@ -624,6 +625,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          colors?: string[]
           counties?: string[]
           created_at?: string
           enabled?: boolean
@@ -635,6 +637,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          colors?: string[]
           counties?: string[]
           created_at?: string
           enabled?: boolean

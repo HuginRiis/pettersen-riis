@@ -228,8 +228,8 @@ export function BirthdaysPanel() {
         </span>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-6">
-        <form onSubmit={handleAdd} className="panel rounded-lg p-6 lg:sticky lg:top-24 h-fit">
+      <div className="flex flex-col-reverse gap-6">
+        <form onSubmit={handleAdd} className="panel rounded-lg p-6">
           <h3 className="text-lg text-primary mb-4 flex items-center gap-2">
             <Plus size={18} /> Ny bursdag
           </h3>
@@ -331,7 +331,7 @@ export function BirthdaysPanel() {
           </button>
         </form>
 
-        <div className="lg:col-span-2 space-y-3">
+        <div className="space-y-3">
           {message && (
             <div className="panel rounded p-3 text-sm text-muted-foreground">{message}</div>
           )}

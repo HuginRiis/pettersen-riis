@@ -30,6 +30,7 @@ type Pref = {
   counties: string[];
   event_types: string[];
   min_color: string;
+  colors: string[] | null;
   enabled: boolean;
   notified_alert_ids: string[];
 };
@@ -103,11 +104,16 @@ export async function processMetAlertNotifications(): Promise<{
   let skipped = 0;
 
   for (const pref of prefs) {
-    const minRank = COLOR_RANK[pref.min_color] ?? 1;
+    const allowedColors = (pref.colors && pref.colors.length > 0)
+      ? new Set(pref.colors)
+      : (() => {
+          const minRank = COLOR_RANK[pref.min_color] ?? 1;
+          return new Set(Object.entries(COLOR_RANK).filter(([, r]) => r >= minRank).map(([k]) => k));
+        })();
     const already = new Set(pref.notified_alert_ids ?? []);
     const matching = alerts.filter((a) => {
-      const rank = COLOR_RANK[a.riskMatrixColor ?? ""] ?? 0;
-      if (rank < minRank) return false;
+      const c = a.riskMatrixColor ?? "";
+      if (!allowedColors.has(c)) return false;
       if (pref.counties.length > 0) {
         const overlap = (a.countyNames ?? []).some((n) => pref.counties.includes(n));
         if (!overlap) return false;
@@ -197,7 +203,7 @@ export async function sendMetAlertTestNotification(prefId: string): Promise<{
   const { data: subs } = await subQuery;
   const payload = JSON.stringify({
     title: "🧪 TEST: Farevarsel-regel aktiv",
-    body: `Mottaker ${targetWho}. Min nivå ${pref.min_color}. Fylker: ${pref.counties.join(", ") || "alle"}. Typer: ${pref.event_types.join(", ") || "alle"}.`,
+    body: `Mottaker ${targetWho}. Farger: ${(pref.colors && pref.colors.length ? pref.colors : [pref.min_color]).join(", ")}. Fylker: ${pref.counties.join(", ") || "alle"}. Typer: ${pref.event_types.join(", ") || "alle"}.`,
     tag: `met-alert-test-${prefId}-${Date.now()}`,
     url: "/varsler",
   });
