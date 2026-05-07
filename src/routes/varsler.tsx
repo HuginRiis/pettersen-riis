@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { PageShell, PageHero } from "@/components/PageShell";
 import { AlertsMap } from "@/components/AlertsMap";
 import { NrkTrafficSection } from "@/components/NrkTrafficSection";
+import { MetAlertNotificationSettings } from "@/components/MetAlertNotificationSettings";
 import { getTelemarkAlerts, type TelemarkAlert } from "@/server/met-alerts";
 import heroImg from "@/assets/got-varsler.jpg";
 
