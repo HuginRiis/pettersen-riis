@@ -422,6 +422,9 @@ export function SiteHeader() {
                     {l.to === "/smarthus" && <LightsOnBadge inline />}
                     {l.to === "/var" && <TomorrowWeatherBadge inline lat={BORGEN_COORD.lat} lon={BORGEN_COORD.lon} />}
                     {l.to === "/vakttarnet" && <AlarmStateBadge inline />}
+                    {l.to === "/varsler" && <AlertsSeverityBadge inline />}
+                    {l.to === "/stromkroniken" && <PowerVsYesterdayBadge inline />}
+                    {l.to === "/trening" && <TrainingLast4WeeksBadge inline />}
                   </Link>
                 </div>
               );
