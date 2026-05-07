@@ -203,7 +203,7 @@ export async function sendMetAlertTestNotification(prefId: string): Promise<{
   const { data: subs } = await subQuery;
   const payload = JSON.stringify({
     title: "🧪 TEST: Farevarsel-regel aktiv",
-    body: `Mottaker ${targetWho}. Min nivå ${pref.min_color}. Fylker: ${pref.counties.join(", ") || "alle"}. Typer: ${pref.event_types.join(", ") || "alle"}.`,
+    body: `Mottaker ${targetWho}. Farger: ${(pref.colors && pref.colors.length ? pref.colors : [pref.min_color]).join(", ")}. Fylker: ${pref.counties.join(", ") || "alle"}. Typer: ${pref.event_types.join(", ") || "alle"}.`,
     tag: `met-alert-test-${prefId}-${Date.now()}`,
     url: "/varsler",
   });
