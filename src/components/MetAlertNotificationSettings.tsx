@@ -162,13 +162,13 @@ function CircleCheck({ on, color = "primary" }: { on: boolean; color?: "primary"
 function RuleEditor({
   recipient, setRecipient,
   counties, setCounties,
-  minColor, setMinColor,
+  colors, setColors,
   eventTypeSel, setEventTypeSel,
   eventTypes,
 }: {
   recipient: string; setRecipient: (v: string) => void;
   counties: string[]; setCounties: (v: string[]) => void;
-  minColor: string; setMinColor: (v: string) => void;
+  colors: string[]; setColors: (v: string[]) => void;
   eventTypeSel: string[]; setEventTypeSel: (v: string[]) => void;
   eventTypes: { event: string; label: string }[];
 }) {
@@ -196,7 +196,6 @@ function RuleEditor({
     { event: "drivingConditions", label: "Kjøreforhold" },
     { event: "fog", label: "Tåke" },
   ];
-  // Slå sammen API-typer (med korrekte labels) + alle faste, uten duplikater
   const merged = new Map<string, string>();
   for (const t of ALL_MET_TYPES) merged.set(t.event, t.label);
   for (const t of eventTypes) merged.set(t.event, t.label || merged.get(t.event) || t.event);
@@ -233,18 +232,16 @@ function RuleEditor({
       </div>
 
       <div>
-        <p className="text-xs text-muted-foreground mb-2">Farenivå</p>
+        <p className="text-xs text-muted-foreground mb-2">Farenivå (skru av/på hver farge)</p>
         <div className="flex flex-wrap gap-x-5 gap-y-2">
           {COLOR_OPTIONS.map((c) => {
-            const rank = ["Yellow", "Orange", "Red"].indexOf(c.value);
-            const minRank = ["Yellow", "Orange", "Red"].indexOf(minColor);
-            const on = rank >= minRank;
+            const on = colors.includes(c.value);
             const colorKey = c.value.toLowerCase() as "yellow" | "orange" | "red";
             return (
               <button
                 key={c.value}
                 type="button"
-                onClick={() => setMinColor(c.value)}
+                onClick={() => setColors(toggle(colors, c.value))}
                 className="flex items-center gap-2 text-sm"
               >
                 <CircleCheck on={on} color={colorKey} />
