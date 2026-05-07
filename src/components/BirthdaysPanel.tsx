@@ -228,8 +228,9 @@ export function BirthdaysPanel() {
         </span>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-6">
-        <form onSubmit={handleAdd} className="panel rounded-lg p-6 lg:sticky lg:top-24 h-fit">
+      <div className="space-y-6">
+        <div className="space-y-3">
+          {/* List section moved above the form */}
           <h3 className="text-lg text-primary mb-4 flex items-center gap-2">
             <Plus size={18} /> Ny bursdag
           </h3>
