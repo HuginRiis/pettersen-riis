@@ -4,6 +4,8 @@ import { getUpcomingWeatherEvaluations } from "@/server/weather-push.functions";
 import { getUpcomingUvEvaluations } from "@/server/uv-push.functions";
 import { getGarbageOverview } from "@/server/garbage-collection";
 import { getHomeySnapshot, getHomeAlarmStatus } from "@/server/homey";
+import { getTelemarkAlerts } from "@/server/met-alerts";
+import { getStravaDashboard } from "@/server/strava";
 
 function osloLocalToUtc(dateStr: string, timeStr: string): Date {
   const [y, m, d] = dateStr.split("-").map(Number);
