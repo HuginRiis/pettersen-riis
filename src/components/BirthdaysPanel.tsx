@@ -229,8 +229,7 @@ export function BirthdaysPanel() {
       </div>
 
       <div className="space-y-6">
-        <div className="space-y-3">
-          {/* List section moved above the form */}
+        <form onSubmit={handleAdd} className="panel rounded-lg p-6">
           <h3 className="text-lg text-primary mb-4 flex items-center gap-2">
             <Plus size={18} /> Ny bursdag
           </h3>
