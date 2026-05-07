@@ -432,3 +432,48 @@ function PrefCard({
     </div>
   );
 }
+
+function ActiveAlertsList({ alerts }: { alerts: ActiveAlert[] }) {
+  const [open, setOpen] = useState(true);
+  if (!alerts || alerts.length === 0) {
+    return (
+      <div className="rounded-2xl border border-border/50 bg-card/40 p-3 text-xs text-muted-foreground flex items-center gap-2">
+        <AlertTriangle className="h-3.5 w-3.5" /> Ingen aktive farevarsler akkurat nå.
+      </div>
+    );
+  }
+  return (
+    <div className="rounded-2xl border border-orange-500/40 bg-card/50 p-3 space-y-2">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="w-full flex items-center justify-between gap-2 text-sm font-bold uppercase tracking-wider text-orange-400"
+      >
+        <span className="flex items-center gap-2"><AlertTriangle className="h-4 w-4" /> Aktive farevarsler ({alerts.length})</span>
+        <ChevronDown className={`h-4 w-4 transition ${open ? "rotate-180" : ""}`} />
+      </button>
+      {open && (
+        <ul className="space-y-1.5">
+          {alerts.map((a) => {
+            const dot =
+              a.color === "Red" ? "bg-red-500"
+              : a.color === "Orange" ? "bg-orange-500"
+              : a.color === "Yellow" ? "bg-yellow-400"
+              : "bg-muted";
+            return (
+              <li key={a.id} className="flex items-start gap-2 text-xs">
+                <span className={`mt-1 inline-block w-2.5 h-2.5 rounded-full shrink-0 ${dot}`} />
+                <div className="flex-1 min-w-0">
+                  <div className="text-foreground font-medium truncate">{a.label}</div>
+                  <div className="text-muted-foreground truncate">
+                    {a.area || a.countyNames.join(", ") || "—"}
+                  </div>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
