@@ -335,6 +335,7 @@ export function UpcomingPushPanel() {
         <p className="text-xs text-muted-foreground mb-4">
           Planlagte varsler de neste {HORIZON_DAYS} dagene på tvers av agenda, bursdager, hytta, vær, UV, renovasjon og garanti.
         </p>
+        <EventBasedRules />
 
         {loading && <p className="text-sm text-muted-foreground">Henter planlagte varsler…</p>}
         {!loading && items.length === 0 && (
