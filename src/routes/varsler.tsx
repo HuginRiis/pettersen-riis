@@ -169,6 +169,15 @@ function VarslerPage() {
         </div>
 
         <NrkTrafficSection />
+
+        <div className="mt-10">
+          <div className="ornate-divider mb-4">
+            <span className="text-display tracking-[0.3em] text-primary text-sm uppercase">
+              Push-varsler for farevarsler
+            </span>
+          </div>
+          <MetAlertNotificationSettings />
+        </div>
       </section>
     </PageShell>
   );
