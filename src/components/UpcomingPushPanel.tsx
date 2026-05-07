@@ -388,3 +388,142 @@ export function UpcomingPushPanel() {
     </section>
   );
 }
+
+type RuleRow = {
+  key: string;
+  icon: typeof Bell;
+  source: string;
+  title: string;
+  detail?: string;
+  recipients: string;
+  enabled: boolean;
+};
+
+function EventBasedRules() {
+  const [rows, setRows] = useState<RuleRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [open, setOpen] = useState(true);
+
+  useEffect(() => { void load(); }, []);
+
+  async function load() {
+    setLoading(true);
+    const out: RuleRow[] = [];
+
+    // MET farevarsel-regler
+    try {
+      const { data } = await supabase
+        .from("met_alert_notification_prefs" as never)
+        .select("id, recipient, counties, colors, min_color, event_types, enabled");
+      for (const r of (data ?? []) as Array<{
+        id: string; recipient: string; counties: string[]; colors: string[] | null;
+        min_color: string; event_types: string[]; enabled: boolean;
+      }>) {
+        const colors = (r.colors && r.colors.length > 0) ? r.colors : [r.min_color];
+        const sector = r.counties.length === 0 ? "Hele landet" : r.counties.join(", ");
+        const types = r.event_types.length === 0 ? "alle typer" : `${r.event_types.length} typer`;
+        out.push({
+          key: `met-${r.id}`,
+          icon: AlertTriangle,
+          source: "Vær farevarsel",
+          title: `MET — ${colors.join("/")}`,
+          detail: `${sector} • ${types}`,
+          recipients: r.recipient || "Alle",
+          enabled: r.enabled,
+        });
+      }
+    } catch (e) { console.error("[EventBasedRules] met alert prefs failed", e); }
+
+    // Lys står på lenge
+    try {
+      const { data } = await supabase
+        .from("light_idle_notification_prefs" as never)
+        .select("id, recipient, scope, zone_name, no_motion_minutes, lights_on_minutes, enabled");
+      for (const r of (data ?? []) as Array<{
+        id: string; recipient: string; scope: string; zone_name: string | null;
+        no_motion_minutes: number; lights_on_minutes: number | null; enabled: boolean;
+      }>) {
+        const where = r.scope === "global" ? "Alle innendørs rom" : (r.zone_name ?? "Sone");
+        const detail = `${r.no_motion_minutes} min uten bevegelse${r.lights_on_minutes ? ` • lys på ${r.lights_on_minutes} min` : ""}`;
+        out.push({
+          key: `light-${r.id}`,
+          icon: Lightbulb,
+          source: "Lys står på",
+          title: where,
+          detail,
+          recipients: r.recipient || "Alle",
+          enabled: r.enabled,
+        });
+      }
+    } catch (e) { console.error("[EventBasedRules] light prefs failed", e); }
+
+    // Tibber daglig snapshot mangler
+    try {
+      const { data } = await supabase
+        .from("notification_settings")
+        .select("value")
+        .eq("key", "tibber_missing")
+        .maybeSingle();
+      const v = ((data?.value as any) ?? {}) as { enabled?: boolean; hour?: number; minute?: number; recipient?: string };
+      if (v && Object.keys(v).length > 0) {
+        const h = typeof v.hour === "number" ? v.hour : 9;
+        const m = typeof v.minute === "number" ? v.minute : 0;
+        out.push({
+          key: "tibber-missing",
+          icon: Zap,
+          source: "Tibber",
+          title: "Daglig snapshot mangler",
+          detail: `Sjekkes daglig kl ${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}`,
+          recipients: v.recipient || "Alle",
+          enabled: !!v.enabled,
+        });
+      }
+    } catch (e) { console.error("[EventBasedRules] tibber pref failed", e); }
+
+    setRows(out);
+    setLoading(false);
+  }
+
+  if (!loading && rows.length === 0) return null;
+
+  return (
+    <div className="mb-4 panel rounded-lg p-3">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="w-full flex items-center justify-between gap-2 text-sm"
+      >
+        <span className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
+          Hendelsesbaserte varsler ({rows.length}) — sendes når hendelse inntreffer
+        </span>
+        <span className="text-xs text-primary">{open ? "Skjul" : "Vis"}</span>
+      </button>
+      {open && (
+        <ul className="space-y-1.5 mt-2">
+          {rows.map((r) => {
+            const Icon = r.icon;
+            return (
+              <li key={r.key} className={`flex items-start gap-3 panel rounded p-3 ${r.enabled ? "" : "opacity-50"}`}>
+                <Icon size={16} className="text-primary mt-0.5 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-baseline gap-2 flex-wrap">
+                    <span className="text-sm font-medium text-foreground">{r.title}</span>
+                    <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{r.source}</span>
+                    {!r.enabled && (
+                      <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded border border-border text-muted-foreground">
+                        Av
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Til {r.recipients}{r.detail ? ` • ${r.detail}` : ""}
+                  </p>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
