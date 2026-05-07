@@ -289,3 +289,115 @@ export function AlarmStateBadge({ inline }: { inline?: boolean } = {}) {
     </span>
   );
 }
+
+/** Antall aktive farevarsler etter alvorlighet (rød/oransje/gul). 0 vises ikke. */
+export function AlertsSeverityBadge({ inline }: { inline?: boolean } = {}) {
+  const [counts, setCounts] = useState<{ red: number; orange: number; yellow: number } | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await getTelemarkAlerts();
+        if (cancelled) return;
+        let red = 0, orange = 0, yellow = 0;
+        for (const a of r.alerts ?? []) {
+          if (a.riskMatrixColor === "Red") red++;
+          else if (a.riskMatrixColor === "Orange") orange++;
+          else if (a.riskMatrixColor === "Yellow") yellow++;
+        }
+        setCounts({ red, orange, yellow });
+      } catch {}
+    })();
+    return () => { cancelled = true; };
+  }, []);
+  if (!counts) return null;
+  const items: Array<{ n: number; cls: string; title: string }> = [];
+  if (counts.red > 0) items.push({ n: counts.red, cls: "bg-destructive/30 text-destructive border-destructive/50", title: "Røde varsler" });
+  if (counts.orange > 0) items.push({ n: counts.orange, cls: "bg-orange-500/25 text-orange-300 border-orange-500/50", title: "Oransje varsler" });
+  if (counts.yellow > 0) items.push({ n: counts.yellow, cls: "bg-yellow-500/25 text-yellow-300 border-yellow-500/50", title: "Gule varsler" });
+  if (items.length === 0) return null;
+  return (
+    <span className={inline ? "ml-1 inline-flex items-center gap-0.5" : "absolute top-2 right-2 z-10 inline-flex items-center gap-0.5"}>
+      {items.map((it, i) => (
+        <span
+          key={i}
+          title={`${it.n} ${it.title}`}
+          className={`min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-semibold inline-flex items-center justify-center border ${it.cls}`}
+        >
+          {it.n}
+        </span>
+      ))}
+    </span>
+  );
+}
+
+/** Strømforbruk i dag vs i går (Borgen + Hytta), prosent endring. */
+export function PowerVsYesterdayBadge({ inline }: { inline?: boolean } = {}) {
+  const [pct, setPct] = useState<number | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const fmt = (d: Date) => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Oslo", year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
+        const today = fmt(new Date());
+        const y = new Date(); y.setDate(y.getDate() - 1);
+        const yest = fmt(y);
+        const { data } = await supabase
+          .from("tibber_daily_kwh")
+          .select("day, location, kwh")
+          .in("day", [today, yest]);
+        let t = 0, ye = 0;
+        for (const r of (data ?? []) as Array<{ day: string; kwh: number | string }>) {
+          const v = Number(r.kwh) || 0;
+          if (r.day === today) t += v;
+          else if (r.day === yest) ye += v;
+        }
+        if (cancelled) return;
+        if (ye <= 0) { setPct(null); return; }
+        setPct(((t - ye) / ye) * 100);
+      } catch {}
+    })();
+    return () => { cancelled = true; };
+  }, []);
+  if (pct == null || !isFinite(pct)) return null;
+  const up = pct >= 0;
+  const tone = up
+    ? "bg-rose-500/20 text-rose-300 border-rose-500/40"
+    : "bg-emerald-500/20 text-emerald-300 border-emerald-500/40";
+  const txt = `${up ? "▲" : "▼"}${Math.abs(pct).toFixed(0)}%`;
+  if (inline) {
+    return (
+      <span title={`Strøm i dag vs i går (Borgen+hytta): ${up ? "+" : ""}${pct.toFixed(1)}%`}
+        className={`ml-1 px-1.5 h-[18px] rounded-full text-[10px] font-semibold inline-flex items-center justify-center border ${tone}`}>
+        {txt}
+      </span>
+    );
+  }
+  return (
+    <span title={`Strøm i dag vs i går: ${up ? "+" : ""}${pct.toFixed(1)}%`}
+      className={`absolute top-2 right-2 z-10 h-[22px] px-2 rounded-full text-[11px] font-semibold flex items-center justify-center border backdrop-blur shadow ${tone}`}>
+      {txt}
+    </span>
+  );
+}
+
+/** Antall treningsøkter siste 4 uker (Strava — Arne). */
+export function TrainingLast4WeeksBadge({ inline }: { inline?: boolean } = {}) {
+  const [count, setCount] = useState<number | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const r: any = await getStravaDashboard({ data: { owner: "arne" } });
+        if (cancelled) return;
+        if (!r?.ok) return;
+        const t = r.totals ?? {};
+        const n = (t.recentRun?.count ?? 0) + (t.recentRide?.count ?? 0) + (t.recentSwim?.count ?? 0) + (t.recentWalk?.count ?? 0);
+        setCount(n);
+      } catch {}
+    })();
+    return () => { cancelled = true; };
+  }, []);
+  if (count == null || count === 0) return null;
+  return <Badge inline={inline} title={`${count} treningsøkter siste 4 uker`}>🏃{count}</Badge>;
+}
