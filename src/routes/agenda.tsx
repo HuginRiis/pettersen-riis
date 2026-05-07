@@ -235,7 +235,7 @@ function AgendaPage() {
             loading={loading}
             empty="Ingen kommende oppføringer."
           />
-          {past.length > 0 && <DateSection title="Tidligere" entries={past} onDelete={remove} loading={false} muted />}
+          {past.length > 0 && <CollapsiblePast entries={past} onDelete={remove} />}
         </div>
       </section>
     </PageShell>
