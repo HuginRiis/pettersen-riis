@@ -119,6 +119,7 @@ export function MetAlertNotificationSettings() {
 
   return (
     <div className="space-y-3">
+      <ActiveAlertsList alerts={activeAlerts} />
       {prefs.map((p) => (
         <PrefCard
           key={p.id}
