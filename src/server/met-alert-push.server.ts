@@ -30,6 +30,7 @@ type Pref = {
   counties: string[];
   event_types: string[];
   min_color: string;
+  colors: string[] | null;
   enabled: boolean;
   notified_alert_ids: string[];
 };
