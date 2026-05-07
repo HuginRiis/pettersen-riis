@@ -611,6 +611,42 @@ export type Database = {
         }
         Relationships: []
       }
+      met_alert_notification_prefs: {
+        Row: {
+          counties: string[]
+          created_at: string
+          enabled: boolean
+          event_types: string[]
+          id: string
+          min_color: string
+          notified_alert_ids: string[]
+          recipient: string
+          updated_at: string
+        }
+        Insert: {
+          counties?: string[]
+          created_at?: string
+          enabled?: boolean
+          event_types?: string[]
+          id?: string
+          min_color?: string
+          notified_alert_ids?: string[]
+          recipient?: string
+          updated_at?: string
+        }
+        Update: {
+          counties?: string[]
+          created_at?: string
+          enabled?: boolean
+          event_types?: string[]
+          id?: string
+          min_color?: string
+          notified_alert_ids?: string[]
+          recipient?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       notification_settings: {
         Row: {
           id: string
