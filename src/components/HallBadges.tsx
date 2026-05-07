@@ -381,9 +381,9 @@ export function PowerVsYesterdayBadge({ inline }: { inline?: boolean } = {}) {
   );
 }
 
-/** Antall treningsøkter siste 4 uker (Strava — Arne). */
+/** Antall treningsøkter siste 4 uker (Strava — Arne), delt opp per sport. */
 export function TrainingLast4WeeksBadge({ inline }: { inline?: boolean } = {}) {
-  const [count, setCount] = useState<number | null>(null);
+  const [counts, setCounts] = useState<{ run: number; ride: number; swim: number; walk: number } | null>(null);
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -392,12 +392,34 @@ export function TrainingLast4WeeksBadge({ inline }: { inline?: boolean } = {}) {
         if (cancelled) return;
         if (!r?.ok) return;
         const t = r.totals ?? {};
-        const n = (t.recentRun?.count ?? 0) + (t.recentRide?.count ?? 0) + (t.recentSwim?.count ?? 0) + (t.recentWalk?.count ?? 0);
-        setCount(n);
+        setCounts({
+          run: t.recentRun?.count ?? 0,
+          ride: t.recentRide?.count ?? 0,
+          swim: t.recentSwim?.count ?? 0,
+          walk: t.recentWalk?.count ?? 0,
+        });
       } catch {}
     })();
     return () => { cancelled = true; };
   }, []);
-  if (count == null || count === 0) return null;
-  return <Badge inline={inline} title={`${count} treningsøkter siste 4 uker`}>🏃{count}</Badge>;
+  if (!counts) return null;
+  const items: Array<{ n: number; emoji: string; label: string; cls: string }> = [];
+  if (counts.run > 0) items.push({ n: counts.run, emoji: "🏃", label: "løpeturer", cls: "bg-orange-500/20 text-orange-300 border-orange-500/40" });
+  if (counts.ride > 0) items.push({ n: counts.ride, emoji: "🚴", label: "sykkelturer", cls: "bg-sky-500/20 text-sky-300 border-sky-500/40" });
+  if (counts.swim > 0) items.push({ n: counts.swim, emoji: "🏊", label: "svømmeøkter", cls: "bg-cyan-500/20 text-cyan-300 border-cyan-500/40" });
+  if (counts.walk > 0) items.push({ n: counts.walk, emoji: "🚶", label: "gåturer", cls: "bg-emerald-500/20 text-emerald-300 border-emerald-500/40" });
+  if (items.length === 0) return null;
+  return (
+    <span className={inline ? "ml-1 inline-flex items-center gap-0.5" : "absolute top-2 right-2 z-10 inline-flex items-center gap-0.5"}>
+      {items.map((it, i) => (
+        <span
+          key={i}
+          title={`${it.n} ${it.label} siste 4 uker`}
+          className={`min-w-[20px] h-[18px] px-1 rounded-full text-[10px] font-semibold inline-flex items-center justify-center border ${it.cls}`}
+        >
+          {it.emoji}{it.n}
+        </span>
+      ))}
+    </span>
+  );
 }
