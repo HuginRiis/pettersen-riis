@@ -7,7 +7,19 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { sendMetAlertTestPush, getMetAlertEventTypes } from "@/server/met-alert-push.functions";
+import { sendMetAlertTestPush, getMetAlertEventTypes, getActiveMetAlerts } from "@/server/met-alert-push.functions";
+
+type ActiveAlert = {
+  id: string;
+  event: string;
+  label: string;
+  color: string | null;
+  area: string | null;
+  countyNames: string[];
+  description: string | null;
+  start: string | null;
+  end: string | null;
+};
 
 const WHO_OPTIONS = ["Alle", "Arne & Rebekka", "Arne", "Rebekka", "Marita", "Nora", "Celine", "Mira"] as const;
 
