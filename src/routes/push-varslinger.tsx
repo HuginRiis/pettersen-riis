@@ -7,6 +7,7 @@ import { TibberCronStatusPanel } from "@/components/TibberCronStatusPanel";
 import { PushSchedulingSettings } from "@/components/PushSchedulingSettings";
 import { MenuPreferencesPanel } from "@/components/MenuPreferencesPanel";
 import { FavoritesManagerPanel } from "@/components/FavoritesManagerPanel";
+import { MetAlertNotificationSettings } from "@/components/MetAlertNotificationSettings";
 import {
   Bell, BellOff, Calendar, Cake, Trash2, CloudSun, Sun, Lightbulb, ScrollText, ShieldCheck, Lock, ExternalLink, Smartphone, X,
 } from "lucide-react";
@@ -62,6 +63,15 @@ function PushSettingsPage() {
       <FavoritesManagerPanel />
       <PushSchedulingSettings />
       <TibberCronStatusPanel />
+
+      <section className="container mx-auto px-4 pb-4">
+        <div className="panel rounded-lg p-4 border border-orange-500/40">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-orange-400 mb-3 flex items-center gap-2">
+            ⚠️ Vær farevarsel — av/på
+          </h2>
+          <MetAlertNotificationSettings />
+        </div>
+      </section>
 
       <section className="container mx-auto px-4 pb-12 grid md:grid-cols-2 gap-4">
         <CategoryCard

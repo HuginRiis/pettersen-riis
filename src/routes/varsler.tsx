@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import { PageShell, PageHero } from "@/components/PageShell";
 import { AlertsMap } from "@/components/AlertsMap";
 import { NrkTrafficSection } from "@/components/NrkTrafficSection";
-import { MetAlertNotificationSettings } from "@/components/MetAlertNotificationSettings";
 import { getTelemarkAlerts, type TelemarkAlert } from "@/server/met-alerts";
 import heroImg from "@/assets/got-varsler.jpg";
 
@@ -169,15 +168,6 @@ function VarslerPage() {
         </div>
 
         <NrkTrafficSection />
-
-        <div className="mt-10">
-          <div className="ornate-divider mb-4">
-            <span className="text-display tracking-[0.3em] text-primary text-sm uppercase">
-              Push-varsler for farevarsler
-            </span>
-          </div>
-          <MetAlertNotificationSettings />
-        </div>
       </section>
     </PageShell>
   );
