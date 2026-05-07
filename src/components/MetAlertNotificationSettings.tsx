@@ -173,16 +173,32 @@ function RuleEditor({
   const currentSector = sectorLabelFromCounties(counties);
   const knownSector = SECTOR_OPTIONS.find((s) => s.label === currentSector);
 
-  // Hvis ingen aktive event-typer i API, fall tilbake til faste norske kategorier
-  const fallbackTypes = [
-    { event: "wind", label: "Vind / storm" },
-    { event: "rain", label: "Regn / flom" },
-    { event: "snow", label: "Snø / is" },
-    { event: "thunder", label: "Torden / lyn" },
-    { event: "forestFire", label: "Skogbrann / tørke" },
-    { event: "polarLow", label: "Bølger / hav" },
+  // Komplett liste over MET sine farevarsel-typer (CAP awareness types)
+  const ALL_MET_TYPES = [
+    { event: "wind", label: "Vind" },
+    { event: "gale", label: "Kuling / storm til havs" },
+    { event: "polarLow", label: "Polart lavtrykk" },
+    { event: "rain", label: "Regn" },
+    { event: "rainFlood", label: "Regnflom" },
+    { event: "flood", label: "Flom" },
+    { event: "stormSurge", label: "Stormflo" },
+    { event: "snow", label: "Snø" },
+    { event: "blowingSnow", label: "Snøfokk" },
+    { event: "ice", label: "Is / glatte veier" },
+    { event: "icing", label: "Ising på fartøy" },
+    { event: "lightning", label: "Lyn / torden" },
+    { event: "forestFire", label: "Skogbrann" },
+    { event: "drought", label: "Tørke" },
+    { event: "avalanches", label: "Snøskred" },
+    { event: "landslide", label: "Jord- og flomskred" },
+    { event: "drivingConditions", label: "Kjøreforhold" },
+    { event: "fog", label: "Tåke" },
   ];
-  const types = eventTypes.length ? eventTypes : fallbackTypes;
+  // Slå sammen API-typer (med korrekte labels) + alle faste, uten duplikater
+  const merged = new Map<string, string>();
+  for (const t of ALL_MET_TYPES) merged.set(t.event, t.label);
+  for (const t of eventTypes) merged.set(t.event, t.label || merged.get(t.event) || t.event);
+  const types = Array.from(merged.entries()).map(([event, label]) => ({ event, label }));
 
   const toggle = <T,>(arr: T[], v: T): T[] => arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v];
 
