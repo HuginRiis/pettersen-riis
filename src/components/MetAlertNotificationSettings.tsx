@@ -88,9 +88,10 @@ export function MetAlertNotificationSettings() {
     else { toast.success("Slettet"); void load(); }
   };
 
-  const create = async (data: { recipient: string; counties: string[]; event_types: string[]; min_color: string }) => {
+  const create = async (data: { recipient: string; counties: string[]; event_types: string[]; colors: string[] }) => {
+    const min_color = data.colors.includes("Yellow") ? "Yellow" : data.colors.includes("Orange") ? "Orange" : "Red";
     const { error } = await supabase.from("met_alert_notification_prefs" as never).insert({
-      ...data, enabled: true,
+      ...data, min_color, enabled: true,
     } as never);
     if (error) { toast.error("Kunne ikke opprette: " + error.message); return; }
     toast.success("Regel opprettet");
