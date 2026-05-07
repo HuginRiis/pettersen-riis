@@ -61,6 +61,7 @@ export function MetAlertNotificationSettings() {
   const [saving, setSaving] = useState<string | null>(null);
   const [showNew, setShowNew] = useState(false);
   const [eventTypes, setEventTypes] = useState<{ event: string; label: string }[]>([]);
+  const [activeAlerts, setActiveAlerts] = useState<ActiveAlert[]>([]);
 
   const load = async () => {
     const { data, error } = await supabase
@@ -71,8 +72,9 @@ export function MetAlertNotificationSettings() {
     else setPrefs((data ?? []) as unknown as Pref[]);
     setLoading(false);
     try {
-      const ev = await getMetAlertEventTypes();
+      const [ev, active] = await Promise.all([getMetAlertEventTypes(), getActiveMetAlerts()]);
       setEventTypes(ev);
+      setActiveAlerts(active as ActiveAlert[]);
     } catch {
       // stille
     }
