@@ -104,11 +104,16 @@ export async function processMetAlertNotifications(): Promise<{
   let skipped = 0;
 
   for (const pref of prefs) {
-    const minRank = COLOR_RANK[pref.min_color] ?? 1;
+    const allowedColors = (pref.colors && pref.colors.length > 0)
+      ? new Set(pref.colors)
+      : (() => {
+          const minRank = COLOR_RANK[pref.min_color] ?? 1;
+          return new Set(Object.entries(COLOR_RANK).filter(([, r]) => r >= minRank).map(([k]) => k));
+        })();
     const already = new Set(pref.notified_alert_ids ?? []);
     const matching = alerts.filter((a) => {
-      const rank = COLOR_RANK[a.riskMatrixColor ?? ""] ?? 0;
-      if (rank < minRank) return false;
+      const c = a.riskMatrixColor ?? "";
+      if (!allowedColors.has(c)) return false;
       if (pref.counties.length > 0) {
         const overlap = (a.countyNames ?? []).some((n) => pref.counties.includes(n));
         if (!overlap) return false;
