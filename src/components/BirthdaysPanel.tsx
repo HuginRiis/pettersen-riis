@@ -331,7 +331,7 @@ export function BirthdaysPanel() {
           </button>
         </form>
 
-        <div className="lg:col-span-2 space-y-3">
+        <div className="space-y-3">
           {message && (
             <div className="panel rounded p-3 text-sm text-muted-foreground">{message}</div>
           )}
