@@ -21,3 +21,20 @@ export const getMetAlertEventTypes = createServerFn({ method: "GET" }).handler(a
     .map(([event, label]) => ({ event, label }))
     .sort((a, b) => a.label.localeCompare(b.label, "nb"));
 });
+
+/** Aktive farevarsler (forenklet) for visning på push-siden. */
+export const getActiveMetAlerts = createServerFn({ method: "GET" }).handler(async () => {
+  const { getTelemarkAlerts } = await import("./met-alerts");
+  const r = await getTelemarkAlerts();
+  return (r.alerts ?? []).map((a) => ({
+    id: a.id,
+    event: a.event,
+    label: a.eventAwarenessName ?? a.event,
+    color: a.riskMatrixColor,
+    area: a.area,
+    countyNames: a.countyNames ?? [],
+    description: a.description,
+    start: a.start,
+    end: a.end,
+  }));
+});
