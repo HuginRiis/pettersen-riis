@@ -77,7 +77,14 @@ export const Route = createFileRoute("/api/public/hooks/agenda-push")({
           } catch (err) {
             console.error("[tibber-push] failed", err);
           }
-          return new Response(JSON.stringify({ ok: true, agenda, checklist, garbage, birthdays, warranty, uv, weather, lightIdle, tibber }), {
+          let metAlerts = { checked: 0, sent: 0, errors: 0, skipped: 0 };
+          try {
+            const mmod = await import("@/server/met-alert-push.server");
+            metAlerts = await mmod.processMetAlertNotifications();
+          } catch (err) {
+            console.error("[met-alert-push] failed", err);
+          }
+          return new Response(JSON.stringify({ ok: true, agenda, checklist, garbage, birthdays, warranty, uv, weather, lightIdle, tibber, metAlerts }), {
             headers: { "Content-Type": "application/json" },
           });
         } catch (err) {
