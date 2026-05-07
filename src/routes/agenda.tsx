@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { PageShell, PageHero } from "@/components/PageShell";
 import { supabase } from "@/integrations/supabase/client";
 import heroImg from "@/assets/got-agenda.jpg";
-import { Trash2, Plus, Bell, BellOff, Clock } from "lucide-react";
+import { Trash2, Plus, Bell, BellOff, Clock, ChevronDown } from "lucide-react";
 import { getPushPublicKey } from "@/server/agenda-push";
 import { GarbageCollectionPanel } from "@/components/GarbageCollectionPanel";
 import { BirthdaysPanel } from "@/components/BirthdaysPanel";
