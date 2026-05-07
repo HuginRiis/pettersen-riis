@@ -290,12 +290,12 @@ function NewRuleForm({
 }: {
   eventTypes: { event: string; label: string }[];
   onCancel: () => void;
-  onCreate: (data: { recipient: string; counties: string[]; event_types: string[]; min_color: string }) => void;
+  onCreate: (data: { recipient: string; counties: string[]; event_types: string[]; colors: string[] }) => void;
 }) {
   const [recipient, setRecipient] = useState<string>("Alle");
   const [counties, setCounties] = useState<string[]>(SECTOR_OPTIONS[0].counties);
   const [eventTypeSel, setEventTypeSel] = useState<string[]>([]);
-  const [minColor, setMinColor] = useState<string>("Orange");
+  const [colors, setColors] = useState<string[]>(["Orange", "Red"]);
 
   return (
     <div className="rounded-2xl border border-orange-500/40 bg-card/60 p-4 space-y-4">
@@ -305,12 +305,12 @@ function NewRuleForm({
       <RuleEditor
         recipient={recipient} setRecipient={setRecipient}
         counties={counties} setCounties={setCounties}
-        minColor={minColor} setMinColor={setMinColor}
+        colors={colors} setColors={setColors}
         eventTypeSel={eventTypeSel} setEventTypeSel={setEventTypeSel}
         eventTypes={eventTypes}
       />
       <div className="flex gap-2 pt-1">
-        <Button size="sm" onClick={() => onCreate({ recipient, counties, event_types: eventTypeSel, min_color: minColor })}>Lagre</Button>
+        <Button size="sm" disabled={colors.length === 0} onClick={() => onCreate({ recipient, counties, event_types: eventTypeSel, colors })}>Lagre</Button>
         <Button size="sm" variant="ghost" onClick={onCancel}>Avbryt</Button>
       </div>
     </div>
@@ -332,16 +332,26 @@ function PrefCard({
   const [recipient, setRecipient] = useState(p.recipient);
   const [counties, setCounties] = useState<string[]>(p.counties ?? []);
   const [eventTypeSel, setEventTypeSel] = useState<string[]>(p.event_types ?? []);
-  const [minColor, setMinColor] = useState(p.min_color);
+  const initialColors = p.colors && p.colors.length > 0
+    ? p.colors
+    : (p.min_color === "Yellow" ? ["Yellow","Orange","Red"] : p.min_color === "Orange" ? ["Orange","Red"] : ["Red"]);
+  const [colors, setColors] = useState<string[]>(initialColors);
 
   useEffect(() => {
     if (!editing) {
       setRecipient(p.recipient);
       setCounties(p.counties ?? []);
       setEventTypeSel(p.event_types ?? []);
-      setMinColor(p.min_color);
+      const next = p.colors && p.colors.length > 0
+        ? p.colors
+        : (p.min_color === "Yellow" ? ["Yellow","Orange","Red"] : p.min_color === "Orange" ? ["Orange","Red"] : ["Red"]);
+      setColors(next);
     }
   }, [p, editing]);
+
+  const colorLabels = colors.length === 0
+    ? "ingen"
+    : COLOR_OPTIONS.filter(c => colors.includes(c.value)).map(c => c.label).join(", ");
 
   return (
     <div className="rounded-2xl border border-orange-500/30 bg-card/40 p-4 space-y-3">
@@ -355,7 +365,7 @@ function PrefCard({
       <div>
         <p className="text-sm font-medium">Push-varsel ved farevarsel fra MET</p>
         <p className="text-xs text-muted-foreground">
-          Gjelder <span className="text-foreground font-semibold">{p.recipient}</span>. Velg sektor, farenivå og typer under.
+          Gjelder <span className="text-foreground font-semibold">{p.recipient}</span>. Velg sektor, farger og typer under.
         </p>
       </div>
 
@@ -363,14 +373,14 @@ function PrefCard({
         <RuleEditor
           recipient={recipient} setRecipient={setRecipient}
           counties={counties} setCounties={setCounties}
-          minColor={minColor} setMinColor={setMinColor}
+          colors={colors} setColors={setColors}
           eventTypeSel={eventTypeSel} setEventTypeSel={setEventTypeSel}
           eventTypes={eventTypes}
         />
       ) : (
         <div className="text-xs text-muted-foreground space-y-1">
           <div>Sektor: <span className="text-foreground">{sectorLabelFromCounties(p.counties ?? [])}</span></div>
-          <div>Min nivå: <span className="text-foreground">{COLOR_OPTIONS.find(c => c.value === p.min_color)?.label ?? p.min_color}</span></div>
+          <div>Farger: <span className="text-foreground">{colorLabels}</span></div>
           <div>Typer: <span className="text-foreground">{p.event_types?.length ? p.event_types.map((e) => eventTypes.find((x) => x.event === e)?.label ?? e).join(", ") : "alle"}</span></div>
         </div>
       )}
@@ -390,8 +400,12 @@ function PrefCard({
           </>
         ) : (
           <>
-            <Button size="sm" className="h-7 px-2 text-xs" disabled={saving}
-              onClick={() => { onSave({ recipient, counties, event_types: eventTypeSel, min_color: minColor }); setEditing(false); }}>
+            <Button size="sm" className="h-7 px-2 text-xs" disabled={saving || colors.length === 0}
+              onClick={() => {
+                const min_color = colors.includes("Yellow") ? "Yellow" : colors.includes("Orange") ? "Orange" : "Red";
+                onSave({ recipient, counties, event_types: eventTypeSel, colors, min_color });
+                setEditing(false);
+              }}>
               <Check className="h-3 w-3 mr-1" /> Lagre
             </Button>
             <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => setEditing(false)}>
