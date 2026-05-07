@@ -486,8 +486,12 @@ export async function processGarbageNotifications(): Promise<{
       month: "long",
     });
 
+    const FRAKSJON_EMOJI: Record<number, string> = {
+      1: "🗑", 2: "📦", 3: "🥬", 4: "🍷", 5: "🥛", 6: "☣️", 7: "♻️",
+    };
+    const emoji = FRAKSJON_EMOJI[pickup.fraksjonId] ?? "🗑";
     const payload = JSON.stringify({
-      title: `🗑 ${pickup.fraksjonNavn} hentes ${dayLabel}`,
+      title: `${emoji} ${pickup.fraksjonNavn} hentes ${dayLabel}`,
       body: `${dateLabel} — sett ut dunken kvelden før.`,
       tag: `garbage-${pickup.fraksjonId}-${pickup.date}`,
       url: "/smarthus",
