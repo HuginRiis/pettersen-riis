@@ -94,7 +94,7 @@ function LysPage() {
     setUpdated(new Date());
   }, [data]);
 
-  const { prefs: menuPrefsEarly } = useMenuPrefs();
+  const { prefs: menuPrefsEarly, toggleFavoriteZone } = useMenuPrefs();
   const useGlobalScenes = menuPrefsEarly.useGlobalLightScenes;
   useEffect(() => {
     let cancelled = false;
