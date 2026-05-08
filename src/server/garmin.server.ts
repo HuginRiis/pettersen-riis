@@ -53,18 +53,26 @@ function ingest(jar: Jar, res: Response) {
   }
 }
 
-async function jfetch(jar: Jar, url: string, init: RequestInit = {}): Promise<Response> {
+async function jfetch(jar: Jar, url: string, init: RequestInit = {}, hops = 0): Promise<Response> {
+  if (hops > 8) throw new Error(`For mange redirects fra ${url}`);
   const headers = new Headers(init.headers);
   headers.set("User-Agent", USER_AGENT);
   const cookie = jarHeader(jar);
   if (cookie) headers.set("Cookie", cookie);
-  const res = await fetch(url, { ...init, headers, redirect: "manual" });
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 20_000);
+  let res: Response;
+  try {
+    res = await fetch(url, { ...init, headers, redirect: "manual", signal: ctrl.signal });
+  } finally {
+    clearTimeout(timer);
+  }
   ingest(jar, res);
   if (res.status >= 300 && res.status < 400) {
     const loc = res.headers.get("location");
     if (loc) {
       const next = new URL(loc, url).toString();
-      return jfetch(jar, next, { method: "GET" });
+      return jfetch(jar, next, { method: "GET" }, hops + 1);
     }
   }
   return res;
