@@ -12,7 +12,7 @@ import type {
 import { getAiUsageStats, type AiUsageStats } from "@/server/ai-usage";
 import { useAuthStatus } from "@/hooks/use-auth-status";
 import heroImg from "@/assets/got-vakttarnet.jpg";
-import { Eye, Globe2, Smartphone, Monitor, Tablet, Clock, Crown, ShieldAlert, Map as MapIcon, Lock, Unlock, Sparkles, DoorClosed, Users, Bell, Database } from "lucide-react";
+import { Eye, Globe2, Smartphone, Monitor, Tablet, Clock, Crown, ShieldAlert, Map as MapIcon, Lock, Unlock, Sparkles, DoorClosed, Users, Bell, Database, Activity } from "lucide-react";
 import { DbUsagePanel } from "@/components/DbUsagePanel";
 import { DoorsLocksPanel } from "@/components/DoorsLocksPanel";
 import { ApiCallLogPanel } from "@/components/ApiCallLogPanel";
@@ -22,6 +22,7 @@ import { ChangelogPanel } from "@/components/ChangelogPanel";
 import { VakttarnEventsPanel } from "@/components/VakttarnEventsPanel";
 import { EufyInspector } from "@/components/EufyInspector";
 import { UtgangsdorenPanel } from "@/components/UtgangsdorenPanel";
+import { GarminStatusPanel } from "@/components/GarminStatusPanel";
 
 export const Route = createFileRoute("/vakttarnet")({
   head: () => ({
