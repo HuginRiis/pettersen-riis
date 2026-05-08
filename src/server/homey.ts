@@ -479,11 +479,21 @@ function mapSnapshotFromRaw(raw: HomeyRawSnapshot): HomeySnapshot {
   return { ok: true, homeName: raw.homeName, zones, devices };
 }
 
-export async function getHomeyRawSnapshot(conn: HomeyConnection): Promise<HomeyRawSnapshot | null> {
+export async function getHomeyRawSnapshot(
+  conn: HomeyConnection,
+  options: { forceRefresh?: boolean } = {},
+): Promise<HomeyRawSnapshot | null> {
   const key = getHomeyCacheKey(conn);
-  const cached = getCacheEntry(homeySnapshotCache, key);
+  const cached = options.forceRefresh ? null : getCacheEntry(homeySnapshotCache, key);
   if (cached) return cached.value;
-  if (homeySnapshotInflight?.key === key) return await homeySnapshotInflight.promise;
+  if (!options.forceRefresh && homeySnapshotInflight?.key === key) {
+    return await homeySnapshotInflight.promise;
+  }
+
+  if (options.forceRefresh) {
+    homeySnapshotCache = null;
+    if (homeySnapshotInflight?.key === key) homeySnapshotInflight = null;
+  }
 
   const promise = (async () => {
     const session = await getHomeySessionContext(conn);
@@ -544,6 +554,34 @@ export const getHomeySnapshot = createServerFn({ method: "GET" }).handler(
 
     try {
       const raw = await getHomeyRawSnapshot(conn);
+      if (!raw) {
+        return {
+          ok: false,
+          needsConnect: false,
+          error: "Fant ingen Homey knyttet til kontoen.",
+        };
+      }
+      return mapSnapshotFromRaw(raw);
+    } catch (e: any) {
+      return { ok: false, needsConnect: false, error: e?.message ?? "Klarte ikke hente data" };
+    }
+  }),
+);
+
+export const getFreshHomeySnapshot = createServerFn({ method: "GET" }).handler(
+  withApiLog("homey", "getFreshHomeySnapshot", async (): Promise<HomeySnapshot> => {
+    let conn: HomeyConnection | null;
+    try {
+      conn = await getValidConnection();
+    } catch (e: any) {
+      return { ok: false, needsConnect: false, error: e?.message ?? "Token-feil" };
+    }
+
+    if (!conn) return { ok: false, needsConnect: true };
+
+    try {
+      clearHomeyDataCaches();
+      const raw = await getHomeyRawSnapshot(conn, { forceRefresh: true });
       if (!raw) {
         return {
           ok: false,
