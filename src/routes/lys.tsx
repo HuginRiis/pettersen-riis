@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import { Flame, Power, ChevronDown, Loader2, Palette, Thermometer, Settings2 } from "lucide-react";
 import { PageShell, PageHero } from "@/components/PageShell";
-import { LastUpdated } from "@/components/LastUpdated";
+
 import {
   getHomeySnapshot,
   setLivingRoomDeviceCapability,
@@ -79,7 +79,7 @@ function LysPage() {
     Record<string, { on?: boolean; dim?: number; hue?: number; saturation?: number; temperature?: number }>
   >({});
   const [busy, setBusy] = useState<Record<string, boolean>>({});
-  const [updated, setUpdated] = useState<Date | null>(null);
+  const [, setUpdated] = useState<Date | null>(null);
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const [colorOpen, setColorOpen] = useState<Record<string, boolean>>({});
   const [scenes, setScenes] = useState<Array<{ slot: number; name: string; device_ids: string[] }>>([
