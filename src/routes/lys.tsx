@@ -115,14 +115,23 @@ function LysPage() {
 
   const zoneById = new Map(data.zones.map((z) => [z.id, z]));
 
+  const EXTRA_LIGHT_NAME_TOKENS: Array<string[]> = [
+    ["garsej", "lys"], // Garsej lys ute (kontakt → utelys langs garasjen)
+    ["stålampe"],       // Stålampe i stue (kontakt)
+  ];
+
   const lights: LightDevice[] = useMemo(() => {
     const arr: LightDevice[] = [];
     for (const d of data.devices as HomeyDeviceSnapshot[]) {
       const isLight = d.class === "light";
       const hasOnOff = "onoff" in d.capabilities;
       const hasDim = "dim" in d.capabilities;
-      // Inkluder alt som er lys, OG alt annet som har dimmer
-      if (!isLight && !hasDim) continue;
+      const nameLc = (d.name ?? "").toLowerCase();
+      const isExtraLight =
+        hasOnOff &&
+        EXTRA_LIGHT_NAME_TOKENS.some((tokens) => tokens.every((t) => nameLc.includes(t)));
+      // Inkluder alt som er lys, alt med dimmer, og spesifikke navngitte kontakter
+      if (!isLight && !hasDim && !isExtraLight) continue;
       const ov = overrides[d.id] ?? {};
       const on =
         typeof ov.on === "boolean"
