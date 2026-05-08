@@ -153,8 +153,31 @@ export function LightScenesPanel() {
         </h3>
         <p className="text-sm text-muted-foreground mt-1">
           Tre knapper på toppen av Lys-siden. Tilpass navn og hvilke lys hver knapp styrer.
-          Lagres for <span className="text-primary">{who}</span>.
+          {useGlobal ? (
+            <> Lagres <span className="text-primary">globalt for alle</span>.</>
+          ) : (
+            <> Lagres for <span className="text-primary">{who}</span>.</>
+          )}
         </p>
+
+        <div className="mt-3 inline-flex rounded-lg border border-border overflow-hidden text-xs">
+          <button
+            onClick={() => setUseGlobalLightScenes(false)}
+            className={`px-3 py-1.5 inline-flex items-center gap-1.5 transition-colors ${
+              !useGlobal ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <User size={12} /> Personlig ({who})
+          </button>
+          <button
+            onClick={() => setUseGlobalLightScenes(true)}
+            className={`px-3 py-1.5 inline-flex items-center gap-1.5 transition-colors border-l border-border ${
+              useGlobal ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Globe2 size={12} /> Global (alle)
+          </button>
+        </div>
 
         {loading && <div className="text-xs text-muted-foreground mt-3">Laster…</div>}
 
