@@ -63,3 +63,48 @@ export const garminSyncNow = createServerFn({ method: "POST" }).handler(async ()
   const mod = await import("./garmin-sync.server");
   return mod.syncAll("manual");
 });
+
+export type GarminSyncSchedule = {
+  interval_minutes: number;
+  first_local_hour: number;
+  last_local_hour: number;
+};
+
+const DEFAULT_SCHEDULE: GarminSyncSchedule = {
+  interval_minutes: 1440,
+  first_local_hour: 6,
+  last_local_hour: 23,
+};
+
+export const getGarminSyncSchedule = createServerFn({ method: "GET" }).handler(async () => {
+  const { data } = await supabaseAdmin
+    .from("notification_settings")
+    .select("value")
+    .eq("key", "garmin_sync_schedule")
+    .maybeSingle();
+  const v = (data?.value as Partial<GarminSyncSchedule> | null) ?? null;
+  return {
+    interval_minutes: v?.interval_minutes ?? DEFAULT_SCHEDULE.interval_minutes,
+    first_local_hour: v?.first_local_hour ?? DEFAULT_SCHEDULE.first_local_hour,
+    last_local_hour: v?.last_local_hour ?? DEFAULT_SCHEDULE.last_local_hour,
+  } as GarminSyncSchedule;
+});
+
+export const saveGarminSyncSchedule = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => {
+    const x = d as Partial<GarminSyncSchedule>;
+    const interval = Math.max(15, Math.min(1440, Number(x?.interval_minutes ?? 1440)));
+    const first = Math.max(0, Math.min(23, Number(x?.first_local_hour ?? 6)));
+    const last = Math.max(0, Math.min(23, Number(x?.last_local_hour ?? 23)));
+    return { interval_minutes: interval, first_local_hour: first, last_local_hour: last };
+  })
+  .handler(async ({ data }) => {
+    const { error } = await supabaseAdmin
+      .from("notification_settings")
+      .upsert(
+        [{ key: "garmin_sync_schedule", value: data, updated_at: new Date().toISOString() }],
+        { onConflict: "key" },
+      );
+    if (error) throw new Error(error.message);
+    return data;
+  });
