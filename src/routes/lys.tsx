@@ -7,7 +7,6 @@ import { useMenuPrefs } from "@/hooks/use-menu-prefs";
 
 import {
   getFreshHomeySnapshot,
-  getHomeySnapshot,
   setLivingRoomDeviceCapability,
   type HomeyDeviceSnapshot,
 } from "@/server/homey";
