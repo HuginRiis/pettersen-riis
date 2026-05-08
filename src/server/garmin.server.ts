@@ -193,10 +193,17 @@ function extractTicket(body: string): string | null {
 
 function extractMfaForm(body: string): { actionPath: string; csrf: string } | null {
   // Garmin MFA-skjema poster til /sso/verifyMFA/loginEnterMfaCode/...
-  const action = body.match(/<form[^>]+action="([^"]*verifyMFA[^"]*)"/i);
+  // form-attributter kan komme i ulik rekkefølge → match på action uavhengig av posisjon.
+  const action =
+    body.match(/<form[^>]*\baction\s*=\s*"([^"]*(?:verifyMFA|verify_mfa|mfa-code|mfaCode|loginEnterMfaCode)[^"]*)"/i) ??
+    body.match(/<form[^>]*\baction\s*=\s*"([^"]*verify[^"]*)"/i);
   const csrf = body.match(/name="_csrf"\s+value="([^"]+)"/);
   if (!action || !csrf) return null;
   return { actionPath: action[1].replace(/&amp;/g, "&"), csrf: csrf[1] };
+}
+
+function looksLikeMfa(body: string): boolean {
+  return /verifyMFA|loginEnterMfaCode|mfa-code|mfaCode|two[-\s]?factor|sikkerhetskode|security code/i.test(body);
 }
 
 async function exchangeTicketForTokens(ticket: string, email: string): Promise<GarminTokens> {
