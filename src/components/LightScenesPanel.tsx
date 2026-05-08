@@ -131,7 +131,7 @@ export function LightScenesPanel() {
     setSavingSlot(slot);
     await supabase.from("user_light_scenes").upsert(
       {
-        who,
+        who: targetWho,
         slot,
         name: scene.name,
         device_ids: scene.device_ids,
