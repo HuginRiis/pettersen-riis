@@ -161,12 +161,15 @@ export function LightsOnBadge({ inline }: { inline?: boolean } = {}) {
       try {
         const snap = await getHomeySnapshot();
         if (!snap.ok) return;
+        const EXTRA: string[][] = [["garsej", "lys"], ["stålampe"]];
         const lights = snap.devices.filter((d: any) => {
-          if (d.class !== "light") return false;
-          if (!("onoff" in d.capabilities)) return false;
-          const driver = (d.driverUri ?? "").toLowerCase();
-          const name = (d.name ?? "").toLowerCase();
-          return driver.includes("hue") || driver.includes("philips") || name.includes("hue");
+          const hasOn = "onoff" in d.capabilities;
+          const hasDim = "dim" in d.capabilities;
+          if (d.class === "light") return true;
+          if (hasDim) return true;
+          const nm = (d.name ?? "").toLowerCase();
+          if (hasOn && EXTRA.some((toks) => toks.every((t) => nm.includes(t)))) return true;
+          return false;
         });
         const lit = lights.filter((d: any) => d.capabilities["onoff"]?.value === true).length;
         if (!cancelled) setText(`${lit}/${lights.length}`);
