@@ -493,6 +493,15 @@ function LysPage() {
                 </button>
                 <div className="flex items-center gap-2 shrink-0">
                   <button
+                    type="button"
+                    onClick={() => toggleFavoriteZone(zoneName)}
+                    aria-label={isFavZone ? "Fjern favoritt-rom" : "Marker som favoritt-rom"}
+                    title={isFavZone ? "Fjern favoritt" : "Legg til favoritt"}
+                    className={`p-1.5 transition-colors ${isFavZone ? "text-primary" : "text-muted-foreground/50 hover:text-primary"}`}
+                  >
+                    <Star size={14} fill={isFavZone ? "currentColor" : "none"} />
+                  </button>
+                  <button
                     onClick={() => toggleZone(zoneLights, true)}
                     className="px-3 py-1.5 rounded border border-primary/30 text-primary text-[10px] tracking-[0.25em] uppercase hover:bg-primary/10 transition-colors"
                   >
