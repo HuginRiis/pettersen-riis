@@ -238,6 +238,33 @@ export function GarminPanel() {
           </>
         )}
       </div>
+
+      <Dialog open={mfaOpen} onOpenChange={(o) => { if (!working) setMfaOpen(o); }}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><ShieldCheck size={16} /> Garmin sikkerhetskode</DialogTitle>
+            <DialogDescription>
+              Garmin har sendt en kode på e-post. Skriv inn koden her for å fullføre innloggingen.
+            </DialogDescription>
+          </DialogHeader>
+          <Input
+            inputMode="numeric"
+            autoFocus
+            placeholder="123456"
+            value={mfaCode}
+            onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, "").slice(0, 8))}
+            onKeyDown={(e) => { if (e.key === "Enter" && mfaCode.length >= 4) void handleSubmitMfa(); }}
+            className="text-center text-lg tracking-widest tabular-nums"
+          />
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setMfaOpen(false)} disabled={working === "mfa"}>Avbryt</Button>
+            <Button onClick={handleSubmitMfa} disabled={mfaCode.length < 4 || working === "mfa"}>
+              {working === "mfa" ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
+              Bekreft
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }
