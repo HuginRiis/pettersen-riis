@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
-import { Flame, Power, ChevronDown, Loader2 } from "lucide-react";
+import { Flame, Power, ChevronDown, Loader2, Palette, Thermometer, Settings2 } from "lucide-react";
 import { PageShell, PageHero } from "@/components/PageShell";
 import { LastUpdated } from "@/components/LastUpdated";
 import {
@@ -62,6 +62,13 @@ type LightDevice = {
   dim: number | null;
   hasDim: boolean;
   isLightClass: boolean;
+  hasHue: boolean;
+  hue: number | null;
+  saturation: number | null;
+  hasTemperature: boolean;
+  temperature: number | null;
+  hasLightMode: boolean;
+  lightMode: string | null;
 };
 
 function LysPage() {
@@ -69,11 +76,12 @@ function LysPage() {
   const router = useRouter();
   const setCap = useServerFn(setLivingRoomDeviceCapability);
   const [overrides, setOverrides] = useState<
-    Record<string, { on?: boolean; dim?: number }>
+    Record<string, { on?: boolean; dim?: number; hue?: number; saturation?: number; temperature?: number }>
   >({});
   const [busy, setBusy] = useState<Record<string, boolean>>({});
-  const [updated, setUpdated] = useState<Date | null>(new Date());
+  const [updated, setUpdated] = useState<Date | null>(null);
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  const [colorOpen, setColorOpen] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     setUpdated(new Date());
@@ -126,6 +134,32 @@ function LysPage() {
           : typeof d.capabilities["dim"]?.value === "number"
             ? (d.capabilities["dim"]?.value as number)
             : null;
+      const hasHue = "light_hue" in d.capabilities;
+      const hasSat = "light_saturation" in d.capabilities;
+      const hasTemp = "light_temperature" in d.capabilities;
+      const hasMode = "light_mode" in d.capabilities;
+      const hueVal =
+        typeof ov.hue === "number"
+          ? ov.hue
+          : typeof d.capabilities["light_hue"]?.value === "number"
+            ? (d.capabilities["light_hue"]?.value as number)
+            : null;
+      const satVal =
+        typeof ov.saturation === "number"
+          ? ov.saturation
+          : typeof d.capabilities["light_saturation"]?.value === "number"
+            ? (d.capabilities["light_saturation"]?.value as number)
+            : null;
+      const tempVal =
+        typeof ov.temperature === "number"
+          ? ov.temperature
+          : typeof d.capabilities["light_temperature"]?.value === "number"
+            ? (d.capabilities["light_temperature"]?.value as number)
+            : null;
+      const modeVal =
+        typeof d.capabilities["light_mode"]?.value === "string"
+          ? (d.capabilities["light_mode"]?.value as string)
+          : null;
       arr.push({
         id: d.id,
         name: d.name,
@@ -136,6 +170,13 @@ function LysPage() {
         dim: dimVal,
         hasDim,
         isLightClass: isLight,
+        hasHue: hasHue && hasSat,
+        hue: hueVal,
+        saturation: satVal,
+        hasTemperature: hasTemp,
+        temperature: tempVal,
+        hasLightMode: hasMode,
+        lightMode: modeVal,
       });
     }
     arr.sort((a, b) => a.name.localeCompare(b.name, "nb"));
@@ -191,6 +232,32 @@ function LysPage() {
     setOverrides((o) => ({ ...o, [id]: { ...o[id], dim, on: dim > 0 } }));
     try {
       await setCap({ data: { deviceId: id, capability: "dim", value: dim } });
+      setTimeout(() => router.invalidate(), 1500);
+    } finally {
+      setBusy((b) => {
+        const { [id]: _, ...rest } = b;
+        return rest;
+      });
+    }
+  };
+
+  const sendColorCap = async (
+    id: string,
+    capability: "light_hue" | "light_saturation" | "light_temperature",
+    value: number,
+  ) => {
+    setBusy((b) => ({ ...b, [id]: true }));
+    setOverrides((o) => ({
+      ...o,
+      [id]: {
+        ...o[id],
+        ...(capability === "light_hue" ? { hue: value } : {}),
+        ...(capability === "light_saturation" ? { saturation: value } : {}),
+        ...(capability === "light_temperature" ? { temperature: value } : {}),
+      },
+    }));
+    try {
+      await setCap({ data: { deviceId: id, capability, value } });
       setTimeout(() => router.invalidate(), 1500);
     } finally {
       setBusy((b) => {
@@ -325,28 +392,59 @@ function LysPage() {
 
               {!isCollapsed && (
                 <ul className="divide-y divide-border/40">
-                  {zoneLights.map((l) => (
+                  {zoneLights.map((l) => {
+                    // Brightness 0..1 — uses dim if present, else fully on
+                    const brightness = l.on
+                      ? l.hasDim && typeof l.dim === "number"
+                        ? Math.max(0.08, l.dim)
+                        : 1
+                      : 0;
+                    // Color of the flame: use hue if color bulb is in color mode, else gold
+                    const flameColor =
+                      l.on && l.hasHue && l.lightMode === "color" && typeof l.hue === "number"
+                        ? `hsl(${Math.round(l.hue * 360)} ${Math.round((l.saturation ?? 1) * 100)}% 60%)`
+                        : "color-mix(in oklab, var(--gold) 90%, transparent)";
+                    const flameSize = 14 + Math.round(brightness * 8);
+                    const isColorOpen = colorOpen[l.id] ?? false;
+                    return (
                     <li key={l.id} className="p-4 sm:p-5">
                       <div className="flex items-center gap-3">
                         <Flame
-                          size={14}
-                          className={
-                            l.on
-                              ? "text-primary shrink-0"
-                              : "text-muted-foreground/40 shrink-0"
-                          }
+                          size={flameSize}
+                          className={l.on ? "shrink-0" : "text-muted-foreground/40 shrink-0"}
                           style={
                             l.on
                               ? {
-                                  filter:
-                                    "drop-shadow(0 0 6px color-mix(in oklab, var(--gold) 60%, transparent))",
+                                  color: flameColor,
+                                  filter: `drop-shadow(0 0 ${4 + brightness * 14}px ${flameColor}) drop-shadow(0 0 ${brightness * 6}px ${flameColor})`,
+                                  opacity: 0.4 + brightness * 0.6,
                                 }
                               : undefined
                           }
                         />
                         <div className="flex-1 min-w-0">
-                          <div className="text-sm text-foreground truncate">
-                            {l.name}
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {l.hasHue && (
+                              <span
+                                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded border text-[9px] tracking-[0.2em] uppercase shrink-0"
+                                style={{
+                                  borderColor: "color-mix(in oklab, var(--gold) 40%, transparent)",
+                                  color: "color-mix(in oklab, var(--gold) 90%, var(--foreground))",
+                                }}
+                                title="Fargepære"
+                              >
+                                <Palette size={9} /> Farge
+                              </span>
+                            )}
+                            {!l.hasHue && l.hasTemperature && (
+                              <span
+                                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded border border-border text-[9px] tracking-[0.2em] uppercase text-muted-foreground shrink-0"
+                                title="Varm/kald-pære"
+                              >
+                                <Thermometer size={9} /> Varm/Kald
+                              </span>
+                            )}
+                            <span className="text-sm text-foreground truncate">{l.name}</span>
                           </div>
                           {l.hasDim && l.dim !== null && (
                             <div className="text-[10px] tracking-[0.2em] text-muted-foreground uppercase mt-0.5">
@@ -392,8 +490,117 @@ function LysPage() {
                           />
                         </div>
                       )}
+
+                      {(l.hasHue || l.hasTemperature) && (
+                        <div className="mt-3 pl-7">
+                          <button
+                            onClick={() =>
+                              setColorOpen((c) => ({ ...c, [l.id]: !c[l.id] }))
+                            }
+                            className="inline-flex items-center gap-2 text-[10px] tracking-[0.25em] uppercase text-muted-foreground hover:text-primary transition-colors"
+                          >
+                            <Settings2 size={11} />
+                            {isColorOpen ? "Skjul farge" : "Endre farge"}
+                            <ChevronDown
+                              size={11}
+                              className={`transition-transform ${isColorOpen ? "rotate-180" : ""}`}
+                            />
+                          </button>
+                          {isColorOpen && (
+                            <div className="mt-3 space-y-3 p-3 rounded border border-border/60 bg-muted/20">
+                              {l.hasHue && (
+                                <>
+                                  <div>
+                                    <div className="flex items-center justify-between text-[10px] tracking-[0.25em] uppercase text-muted-foreground mb-1.5">
+                                      <span>Fargetone</span>
+                                      <span>{Math.round((l.hue ?? 0) * 360)}°</span>
+                                    </div>
+                                    <div
+                                      className="h-2 w-full rounded mb-2"
+                                      style={{
+                                        background:
+                                          "linear-gradient(to right, hsl(0 90% 55%), hsl(60 90% 55%), hsl(120 90% 55%), hsl(180 90% 55%), hsl(240 90% 55%), hsl(300 90% 55%), hsl(360 90% 55%))",
+                                      }}
+                                    />
+                                    <Slider
+                                      value={[Math.round((l.hue ?? 0) * 360)]}
+                                      min={0}
+                                      max={360}
+                                      step={1}
+                                      onValueChange={(v) =>
+                                        setOverrides((o) => ({
+                                          ...o,
+                                          [l.id]: { ...o[l.id], hue: v[0] / 360 },
+                                        }))
+                                      }
+                                      onValueCommit={(v) =>
+                                        sendColorCap(l.id, "light_hue", v[0] / 360)
+                                      }
+                                      disabled={busy[l.id]}
+                                    />
+                                  </div>
+                                  <div>
+                                    <div className="flex items-center justify-between text-[10px] tracking-[0.25em] uppercase text-muted-foreground mb-1.5">
+                                      <span>Metning</span>
+                                      <span>{Math.round((l.saturation ?? 0) * 100)}%</span>
+                                    </div>
+                                    <Slider
+                                      value={[Math.round((l.saturation ?? 1) * 100)]}
+                                      min={0}
+                                      max={100}
+                                      step={1}
+                                      onValueChange={(v) =>
+                                        setOverrides((o) => ({
+                                          ...o,
+                                          [l.id]: { ...o[l.id], saturation: v[0] / 100 },
+                                        }))
+                                      }
+                                      onValueCommit={(v) =>
+                                        sendColorCap(l.id, "light_saturation", v[0] / 100)
+                                      }
+                                      disabled={busy[l.id]}
+                                    />
+                                  </div>
+                                </>
+                              )}
+                              {l.hasTemperature && (
+                                <div>
+                                  <div className="flex items-center justify-between text-[10px] tracking-[0.25em] uppercase text-muted-foreground mb-1.5">
+                                    <span>Varm ↔ Kald</span>
+                                    <span>{Math.round((l.temperature ?? 0) * 100)}%</span>
+                                  </div>
+                                  <div
+                                    className="h-2 w-full rounded mb-2"
+                                    style={{
+                                      background:
+                                        "linear-gradient(to right, #ffb86b, #fff1d6, #cfe4ff)",
+                                    }}
+                                  />
+                                  <Slider
+                                    value={[Math.round((l.temperature ?? 0.5) * 100)]}
+                                    min={0}
+                                    max={100}
+                                    step={1}
+                                    onValueChange={(v) =>
+                                      setOverrides((o) => ({
+                                        ...o,
+                                        [l.id]: { ...o[l.id], temperature: v[0] / 100 },
+                                      }))
+                                    }
+                                    onValueCommit={(v) =>
+                                      sendColorCap(l.id, "light_temperature", v[0] / 100)
+                                    }
+                                    disabled={busy[l.id]}
+                                  />
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </li>
-                  ))}
+                    );
+                  })}
                 </ul>
               )}
             </article>

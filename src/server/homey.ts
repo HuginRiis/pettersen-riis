@@ -1681,7 +1681,11 @@ export const setLivingRoomDeviceCapability = createServerFn({ method: "POST" })
         | "dim"
         | "thermostat_mode"
         | "fan_speed"
-        | "fan_mode";
+        | "fan_mode"
+        | "light_hue"
+        | "light_saturation"
+        | "light_temperature"
+        | "light_mode";
       value: boolean | number | string;
     }) => input,
   )
