@@ -321,6 +321,18 @@ function LysPage() {
       },
     }));
     try {
+      // Sett riktig modus først så fargen/temperaturen faktisk tar effekt
+      const targetMode =
+        capability === "light_temperature" ? "temperature" : "color";
+      const dev = lights.find((l) => l.id === id);
+      if (dev?.hasLightMode && dev.lightMode !== targetMode) {
+        await setCap({ data: { deviceId: id, capability: "light_mode", value: targetMode } });
+      }
+      // Sørg for at lyset er på, ellers ignorerer Homey ofte fargekommandoer
+      if (dev?.hasOnOff && !dev.on) {
+        await setCap({ data: { deviceId: id, capability: "onoff", value: true } });
+        setOverrides((o) => ({ ...o, [id]: { ...o[id], on: true } }));
+      }
       await setCap({ data: { deviceId: id, capability, value } });
       setTimeout(() => router.invalidate(), 1500);
     } finally {
