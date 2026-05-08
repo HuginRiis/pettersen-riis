@@ -13,6 +13,7 @@ import { MetAlertNotificationSettings } from "@/components/MetAlertNotificationS
 import { LightIdleNotificationSettings } from "@/components/LightIdleNotificationSettings";
 import { UvNotificationSettings } from "@/components/UvNotificationSettings";
 import { WeatherNotificationSettings } from "@/components/WeatherNotificationSettings";
+import { MailDeliveryNotificationSettings } from "@/components/MailDeliveryNotificationSettings";
 import {
   Bell, BellOff, Calendar, Cake, Trash2, CloudSun, Sun, Lightbulb, ScrollText, ShieldCheck, Lock, ExternalLink, Smartphone, X,
 } from "lucide-react";
@@ -113,6 +114,15 @@ function PushSettingsPage() {
             💡 Lys på uten bevegelse
           </h2>
           <LightIdleNotificationSettings />
+        </div>
+      </section>
+
+      <section className="container mx-auto px-4 pb-4">
+        <div className="panel rounded-lg p-4">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-primary mb-3 flex items-center gap-2">
+            📬 Postlevering — Posten
+          </h2>
+          <MailDeliveryNotificationSettings />
         </div>
       </section>
 
