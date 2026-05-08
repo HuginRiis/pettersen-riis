@@ -226,6 +226,40 @@ function LysPage() {
     return arr;
   }, [data, overrides, zoneById]);
 
+  const [favoriteZones, setFavoriteZones] = useState<string[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { getStoredWho } = await import("@/lib/push-client");
+      const { supabase } = await import("@/integrations/supabase/client");
+      const w = getStoredWho() || "Alle";
+      const { data: row } = await supabase
+        .from("user_menu_prefs")
+        .select("favorite_zones")
+        .eq("who", w)
+        .maybeSingle();
+      if (cancelled) return;
+      const fz = Array.isArray((row as any)?.favorite_zones) ? ((row as any).favorite_zones as string[]) : [];
+      setFavoriteZones(fz);
+    })();
+    const onUpd = () => {
+      (async () => {
+        const { getStoredWho } = await import("@/lib/push-client");
+        const { supabase } = await import("@/integrations/supabase/client");
+        const w = getStoredWho() || "Alle";
+        const { data: row } = await supabase
+          .from("user_menu_prefs")
+          .select("favorite_zones")
+          .eq("who", w)
+          .maybeSingle();
+        const fz = Array.isArray((row as any)?.favorite_zones) ? ((row as any).favorite_zones as string[]) : [];
+        setFavoriteZones(fz);
+      })();
+    };
+    window.addEventListener("menu-prefs-updated", onUpd);
+    return () => { cancelled = true; window.removeEventListener("menu-prefs-updated", onUpd); };
+  }, []);
+
   const grouped = useMemo(() => {
     const m = new Map<string, LightDevice[]>();
     for (const l of lights) {
@@ -234,14 +268,21 @@ function LysPage() {
       arr.push(l);
       m.set(key, arr);
     }
-    return Array.from(m.entries()).sort((a, b) => {
+    const entries = Array.from(m.entries());
+    const favOrder = new Map(favoriteZones.map((z, i) => [z, i] as const));
+    return entries.sort((a, b) => {
+      const fa = favOrder.has(a[0]);
+      const fb = favOrder.has(b[0]);
+      if (fa && !fb) return -1;
+      if (fb && !fa) return 1;
+      if (fa && fb) return (favOrder.get(a[0]) ?? 0) - (favOrder.get(b[0]) ?? 0);
       // Sort by lit count desc, then name
       const litA = a[1].filter((l) => l.on).length;
       const litB = b[1].filter((l) => l.on).length;
       if (litA !== litB) return litB - litA;
       return a[0].localeCompare(b[0], "nb");
     });
-  }, [lights]);
+  }, [lights, favoriteZones]);
 
   const totalLit = lights.filter((l) => l.on).length;
   const totalLights = lights.length;
