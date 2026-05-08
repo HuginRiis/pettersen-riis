@@ -382,12 +382,47 @@ export function GarminPanel() {
   );
 }
 
-function Tile({ icon, label, value, sub }: { icon: React.ReactNode; label: string; value: string; sub?: string }) {
+function Tile({
+  icon, label, value, prev, unit = "", digits = 0, fmt, lowerIsBetter = false, fallbackSub,
+}: {
+  icon: React.ReactNode; label: string;
+  value: number | null; prev?: number | null;
+  unit?: string; digits?: number;
+  fmt?: (n: number | null | undefined) => string;
+  lowerIsBetter?: boolean; fallbackSub?: string;
+}) {
+  const formatVal = (n: number | null | undefined): string => {
+    if (n == null) return "—";
+    if (fmt) return fmt(n);
+    return n.toLocaleString("nb-NO", { maximumFractionDigits: digits, minimumFractionDigits: digits > 0 ? digits : 0 }) + unit;
+  };
+
+  let trend: React.ReactNode = null;
+  if (value != null && prev != null) {
+    const diff = value - prev;
+    const eps = digits > 0 ? Math.pow(10, -digits) / 2 : 0.5;
+    if (Math.abs(diff) < eps) {
+      trend = <span className="inline-flex items-center gap-0.5 text-muted-foreground"><Minus size={10} /> i går: {formatVal(prev)}</span>;
+    } else {
+      const isUp = diff > 0;
+      const isGood = lowerIsBetter ? !isUp : isUp;
+      const cls = isGood ? "text-emerald-500" : "text-rose-400";
+      trend = (
+        <span className={`inline-flex items-center gap-0.5 ${cls}`}>
+          {isUp ? <ArrowUp size={10} /> : <ArrowDown size={10} />}
+          i går: {formatVal(prev)}
+        </span>
+      );
+    }
+  }
+
   return (
     <div className="rounded border border-border/60 bg-background/40 p-3">
       <div className="text-[10px] uppercase tracking-wider text-muted-foreground flex items-center gap-1">{icon}{label}</div>
-      <div className="text-xl font-semibold tabular-nums mt-1">{value}</div>
-      {sub && <div className="text-[10px] text-muted-foreground mt-0.5">{sub}</div>}
+      <div className="text-xl font-semibold tabular-nums mt-1">{formatVal(value)}</div>
+      <div className="text-[10px] mt-0.5">
+        {trend ?? (value == null && fallbackSub ? <span className="text-muted-foreground">{fallbackSub}</span> : null)}
+      </div>
     </div>
   );
 }
