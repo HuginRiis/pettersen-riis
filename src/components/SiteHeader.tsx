@@ -309,7 +309,7 @@ export function SiteHeader() {
                   {l.to === "/pollen" && <PollenBadge lat={pollenCoord.lat} lon={pollenCoord.lon} />}
                   {l.to === "/push-varslinger" && <PushTodayBadge inline />}
                   {l.to === "/lys" && <LightsOnBadge inline />}
-                  {l.to === "/var" && <TomorrowWeatherBadge inline lat={BORGEN_COORD.lat} lon={BORGEN_COORD.lon} />}
+                  {l.to === "/var" && <TomorrowWeatherBadge inline useGps lat={BORGEN_COORD.lat} lon={BORGEN_COORD.lon} />}
                   {l.to === "/vakttarnet" && <><AlarmStateBadge inline /><UtgangsdorenLockBadge inline /></>}
                   {l.to === "/varsler" && <AlertsSeverityBadge inline />}
                   {l.to === "/stromkroniken" && <PowerVsYesterdayBadge inline />}
