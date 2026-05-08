@@ -36,7 +36,7 @@ const cache = new Map<string, MenuPrefs>();
 async function loadFromDb(who: string): Promise<MenuPrefs> {
   const { data } = await supabase
     .from("user_menu_prefs")
-    .select("favorites, sort_by_usage, favorites_enabled, favorite_zones")
+    .select("favorites, sort_by_usage, favorites_enabled, favorite_zones, use_global_light_scenes")
     .eq("who", who)
     .maybeSingle();
   if (data) {
@@ -45,6 +45,7 @@ async function loadFromDb(who: string): Promise<MenuPrefs> {
       sortByUsage: !!data.sort_by_usage,
       favoritesEnabled: data.favorites_enabled !== false,
       favoriteZones: Array.isArray((data as any).favorite_zones) ? ((data as any).favorite_zones as string[]) : [],
+      useGlobalLightScenes: !!(data as any).use_global_light_scenes,
     };
   }
   // Migrate from legacy localStorage on first load (only for "me").
@@ -58,6 +59,7 @@ async function loadFromDb(who: string): Promise<MenuPrefs> {
           sortByUsage: parsed.sortByUsage ?? false,
           favoritesEnabled: parsed.favoritesEnabled ?? true,
           favoriteZones: Array.isArray(parsed.favoriteZones) ? parsed.favoriteZones : [],
+          useGlobalLightScenes: parsed.useGlobalLightScenes ?? false,
         };
         await save(who, seeded);
         return seeded;
@@ -79,6 +81,7 @@ async function save(who: string, next: MenuPrefs) {
       sort_by_usage: next.sortByUsage,
       favorites_enabled: next.favoritesEnabled,
       favorite_zones: next.favoriteZones,
+      use_global_light_scenes: next.useGlobalLightScenes,
       updated_at: new Date().toISOString(),
     } as any,
     { onConflict: "who" },
