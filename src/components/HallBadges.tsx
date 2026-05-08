@@ -247,7 +247,8 @@ export function TomorrowWeatherBadge({ lat, lon, inline, useGps }: { lat: number
         if (!cancelled) setEmoji(symbolEmoji(sym));
       } catch {}
     })();
-  }, [lat, lon]);
+    return () => { cancelled = true; };
+  }, [coord.lat, coord.lon]);
   if (!emoji) return null;
   if (inline) {
     return (
