@@ -445,7 +445,51 @@ export function TrainingLast4WeeksBadge({ inline }: { inline?: boolean } = {}) {
   );
 }
 
-/** Lås-status for Utgangsdøren (LÅST / ÅPEN). */
+/** Skritt i dag fra Garmin (for menyen). */
+export function StepsTodayBadge({ inline }: { inline?: boolean } = {}) {
+  const [steps, setSteps] = useState<number | null>(null);
+  const [goal, setGoal] = useState<number | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const o: any = await getGarminOverview();
+        if (cancelled) return;
+        const today = o?.daily?.[o.daily.length - 1];
+        if (today) {
+          setSteps(today.steps ?? null);
+          setGoal(today.step_goal ?? null);
+        }
+      } catch {}
+    })();
+    return () => { cancelled = true; };
+  }, []);
+  if (steps == null) return null;
+  const reached = goal ? steps >= goal : false;
+  const tone = reached
+    ? "bg-amber-400/25 text-amber-200 border-amber-400/50"
+    : "bg-amber-300/15 text-amber-200 border-amber-300/40";
+  const title = goal
+    ? `${steps.toLocaleString("nb-NO")} skritt i dag · mål ${goal.toLocaleString("nb-NO")}`
+    : `${steps.toLocaleString("nb-NO")} skritt i dag`;
+  const text = steps >= 1000 ? `${(steps / 1000).toFixed(1)}k` : String(steps);
+  if (inline) {
+    return (
+      <span title={title}
+        className={`ml-1 px-1.5 h-[18px] rounded-full text-[10px] font-semibold inline-flex items-center justify-center border ${tone}`}>
+        👣{text}
+      </span>
+    );
+  }
+  return (
+    <span title={title}
+      className={`absolute top-2 right-2 z-10 h-[22px] px-2 rounded-full text-[11px] font-semibold flex items-center justify-center border backdrop-blur shadow ${tone}`}>
+      👣{text}
+    </span>
+  );
+}
+
+
 export function UtgangsdorenLockBadge({ inline }: { inline?: boolean } = {}) {
   const [locked, setLocked] = useState<boolean | null>(null);
   useEffect(() => {
