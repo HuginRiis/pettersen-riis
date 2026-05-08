@@ -228,6 +228,14 @@ function VakttarnetPage() {
           <DbUsagePanel />
         </Panel>
 
+        <Panel
+          title="Garmin Connect"
+          icon={<Activity size={14} />}
+          subtitle="Status for tilkoblingen og siste synkronisering av helsedata"
+        >
+          <GarminStatusPanel />
+        </Panel>
+
         <ApiCallLogPanel />
 
         <ChangelogPanel />
