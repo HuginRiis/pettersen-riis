@@ -6,6 +6,7 @@ import { PageShell, PageHero } from "@/components/PageShell";
 import { useMenuPrefs } from "@/hooks/use-menu-prefs";
 
 import {
+  getFreshHomeySnapshot,
   getHomeySnapshot,
   setLivingRoomDeviceCapability,
   type HomeyDeviceSnapshot,
@@ -32,7 +33,7 @@ export const Route = createFileRoute("/lys")({
   staleTime: 0,
   shouldReload: true,
   loader: async () => {
-    const res = await getHomeySnapshot();
+    const res = await getFreshHomeySnapshot();
     recordHomeyApiCall();
     return res;
   },
@@ -74,7 +75,7 @@ type LightDevice = {
 };
 
 function LysPage() {
-  const data = Route.useLoaderData() as Awaited<ReturnType<typeof getHomeySnapshot>>;
+  const data = Route.useLoaderData() as Awaited<ReturnType<typeof getFreshHomeySnapshot>>;
   const router = useRouter();
   const setCap = useServerFn(setLivingRoomDeviceCapability);
   const [overrides, setOverrides] = useState<
