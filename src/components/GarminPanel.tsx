@@ -23,7 +23,7 @@ type Activity = {
 };
 type Sleep = { day: string; total_seconds: number | null; deep_seconds: number | null; light_seconds: number | null; rem_seconds: number | null; awake_seconds: number | null; sleep_score: number | null };
 type Overview = {
-  status: { connected: boolean; username: string | null; expires_at: string | null; last_login_at: string | null };
+  status: { connected: boolean; username: string | null; expires_at: string | null; last_login_at: string | null; mfa_pending?: boolean };
   daily: Daily[]; activities: Activity[]; sleep: Sleep[];
   lastSync: { ran_at: string; ok: boolean; daily_count: number; activities_count: number; sleep_count: number; error: string | null } | null;
 };
