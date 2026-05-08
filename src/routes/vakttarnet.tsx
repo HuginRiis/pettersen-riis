@@ -104,6 +104,14 @@ function VakttarnetPage() {
       />
 
       <section className="container mx-auto px-3 sm:px-4 py-6 sm:py-10 space-y-6 sm:space-y-10">
+        <Panel
+          title="Utgangsdøren"
+          icon={<DoorClosed size={14} />}
+          subtitle="Lås, lås opp og se status og batteri på husets utgangsdør"
+        >
+          <FrontDoorPanel />
+        </Panel>
+
         <StatsCards
           sessions={sessions}
           pageviews={pageviews}
