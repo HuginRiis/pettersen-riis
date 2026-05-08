@@ -738,32 +738,64 @@ function LysPage() {
                                   </div>
                                 </>
                               )}
+                              {l.hasHue && l.hasTemperature && l.hasLightMode && (
+                                <div className="inline-flex rounded-lg border border-border overflow-hidden text-[10px] tracking-[0.2em] uppercase">
+                                  <button
+                                    onClick={() =>
+                                      setCap({ data: { deviceId: l.id, capability: "light_mode", value: "color" } })
+                                        .then(() => setTimeout(() => router.invalidate(), 1000))
+                                    }
+                                    className={`px-2.5 py-1 inline-flex items-center gap-1 transition-colors ${
+                                      l.lightMode === "color"
+                                        ? "bg-primary text-primary-foreground"
+                                        : "text-muted-foreground hover:text-foreground"
+                                    }`}
+                                    disabled={busy[l.id]}
+                                  >
+                                    <Palette size={10} /> Farge
+                                  </button>
+                                  <button
+                                    onClick={() =>
+                                      setCap({ data: { deviceId: l.id, capability: "light_mode", value: "temperature" } })
+                                        .then(() => setTimeout(() => router.invalidate(), 1000))
+                                    }
+                                    className={`px-2.5 py-1 inline-flex items-center gap-1 border-l border-border transition-colors ${
+                                      l.lightMode === "temperature"
+                                        ? "bg-primary text-primary-foreground"
+                                        : "text-muted-foreground hover:text-foreground"
+                                    }`}
+                                    disabled={busy[l.id]}
+                                  >
+                                    <Thermometer size={10} /> Varm/Kald
+                                  </button>
+                                </div>
+                              )}
                               {l.hasTemperature && (
                                 <div>
                                   <div className="flex items-center justify-between text-[10px] tracking-[0.25em] uppercase text-muted-foreground mb-1.5">
-                                    <span>Kald ↔ Varm</span>
-                                    <span>{Math.round((1 - (l.temperature ?? 0.5)) * 100)}%</span>
+                                    <span>Varm ↔ Kald</span>
+                                    <span>{Math.round((l.temperature ?? 0.5) * 100)}%</span>
                                   </div>
                                   <div
                                     className="h-2 w-full rounded mb-2"
                                     style={{
                                       background:
-                                        "linear-gradient(to right, #cfe4ff, #fff1d6, #ffb86b)",
+                                        "linear-gradient(to right, #ffb86b, #fff1d6, #cfe4ff)",
                                     }}
                                   />
                                   <Slider
-                                    value={[Math.round((1 - (l.temperature ?? 0.5)) * 100)]}
+                                    value={[Math.round((l.temperature ?? 0.5) * 100)]}
                                     min={0}
                                     max={100}
                                     step={1}
                                     onValueChange={(v) =>
                                       setOverrides((o) => ({
                                         ...o,
-                                        [l.id]: { ...o[l.id], temperature: 1 - v[0] / 100 },
+                                        [l.id]: { ...o[l.id], temperature: v[0] / 100 },
                                       }))
                                     }
                                     onValueCommit={(v) =>
-                                      sendColorCap(l.id, "light_temperature", 1 - v[0] / 100)
+                                      sendColorCap(l.id, "light_temperature", v[0] / 100)
                                     }
                                     disabled={busy[l.id]}
                                   />
