@@ -371,37 +371,69 @@ function LysPage() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-3 gap-2 sm:gap-3">
           {scenes.map((s) => {
-            const targetCount = s.device_ids.length > 0
-              ? s.device_ids.filter((id) => lights.some((l) => l.id === id)).length
-              : lights.filter((l) => l.hasOnOff).length;
+            const sceneLights = s.device_ids.length > 0
+              ? lights.filter((l) => l.hasOnOff && s.device_ids.includes(l.id))
+              : lights.filter((l) => l.hasOnOff);
+            const targetCount = sceneLights.length;
+            const litCount = sceneLights.filter((l) => l.on).length;
+            const anyOn = litCount > 0;
+            const allOn = targetCount > 0 && litCount === targetCount;
             return (
               <div
                 key={s.slot}
-                className="panel rounded-lg p-3 flex flex-col gap-2"
+                className="panel rounded-lg p-2 sm:p-3 flex flex-col gap-1.5 sm:gap-2"
                 style={{
-                  borderColor: "color-mix(in oklab, var(--gold) 25%, var(--color-border))",
+                  borderColor: anyOn
+                    ? "color-mix(in oklab, var(--gold) 55%, var(--color-border))"
+                    : "color-mix(in oklab, var(--gold) 25%, var(--color-border))",
+                  background: anyOn
+                    ? "linear-gradient(180deg, color-mix(in oklab, var(--gold) 10%, transparent), transparent)"
+                    : undefined,
                 }}
               >
-                <div className="flex items-baseline justify-between gap-2">
-                  <div className="text-display text-sm tracking-[0.2em] uppercase text-foreground truncate">
+                <div className="flex items-center gap-1 min-w-0">
+                  <Flame
+                    size={12}
+                    className={anyOn ? "text-primary shrink-0" : "text-muted-foreground/40 shrink-0"}
+                    style={anyOn ? {
+                      filter: `drop-shadow(0 0 ${4 + (litCount / Math.max(targetCount,1)) * 8}px color-mix(in oklab, var(--gold) ${50 + (litCount / Math.max(targetCount,1)) * 40}%, transparent))`,
+                    } : undefined}
+                  />
+                  <div className="text-display text-[11px] sm:text-sm tracking-[0.15em] uppercase text-foreground truncate">
                     {s.name || `Scene ${s.slot + 1}`}
                   </div>
-                  <span className="text-[9px] tracking-[0.25em] uppercase text-muted-foreground shrink-0">
-                    {targetCount} lys
-                  </span>
                 </div>
-                <div className="flex gap-1.5">
+                <div className="text-[9px] tracking-[0.2em] uppercase text-muted-foreground">
+                  {litCount}/{targetCount}
+                </div>
+                <div className="flex flex-col gap-1">
                   <button
                     onClick={() => runScene(s, true)}
-                    className="flex-1 px-3 py-2 rounded border border-primary/40 text-primary text-[11px] tracking-[0.25em] uppercase hover:bg-primary/10 transition-colors"
+                    className="px-2 py-1.5 rounded text-[10px] sm:text-[11px] tracking-[0.2em] uppercase transition-colors"
+                    style={{
+                      borderWidth: 1,
+                      borderStyle: "solid",
+                      borderColor: anyOn
+                        ? "color-mix(in oklab, var(--gold) 70%, transparent)"
+                        : "color-mix(in oklab, var(--color-primary) 35%, transparent)",
+                      color: anyOn ? "var(--gold)" : "var(--color-primary)",
+                      background: anyOn
+                        ? "color-mix(in oklab, var(--gold) 18%, transparent)"
+                        : "transparent",
+                      boxShadow: allOn
+                        ? "0 0 14px color-mix(in oklab, var(--gold) 55%, transparent)"
+                        : anyOn
+                          ? "0 0 8px color-mix(in oklab, var(--gold) 35%, transparent)"
+                          : undefined,
+                    }}
                   >
                     ✦ Tenn
                   </button>
                   <button
                     onClick={() => runScene(s, false)}
-                    className="flex-1 px-3 py-2 rounded border border-border text-muted-foreground text-[11px] tracking-[0.25em] uppercase hover:text-foreground transition-colors"
+                    className="px-2 py-1.5 rounded border border-border text-muted-foreground text-[10px] sm:text-[11px] tracking-[0.2em] uppercase hover:text-foreground transition-colors"
                   >
                     ○ Slokk
                   </button>
