@@ -40,9 +40,12 @@ export function GarminPanel() {
   const fetchOverview = useServerFn(getGarminOverview);
   const loginFn = useServerFn(garminLoginNow);
   const syncFn = useServerFn(garminSyncNow);
+  const mfaFn = useServerFn(garminSubmitMfaCode);
   const [data, setData] = useState<Overview | null>(null);
   const [loading, setLoading] = useState(true);
-  const [working, setWorking] = useState<"login" | "sync" | null>(null);
+  const [working, setWorking] = useState<"login" | "sync" | "mfa" | null>(null);
+  const [mfaOpen, setMfaOpen] = useState(false);
+  const [mfaCode, setMfaCode] = useState("");
 
   const load = async () => {
     setLoading(true);
@@ -51,6 +54,34 @@ export function GarminPanel() {
     finally { setLoading(false); }
   };
   useEffect(() => { void load(); }, []);
+
+  const handleLogin = async () => {
+    setWorking("login");
+    try {
+      const r = await loginFn();
+      if ("mfa" in r && r.mfa) {
+        setMfaCode("");
+        setMfaOpen(true);
+        toast.info("Garmin sendte deg en sikkerhetskode på e-post.");
+      } else {
+        toast.success("Logget inn på Garmin");
+      }
+      await load();
+    } catch (e) { toast.error((e as Error).message); }
+    finally { setWorking(null); }
+  };
+
+  const handleSubmitMfa = async () => {
+    setWorking("mfa");
+    try {
+      await mfaFn({ data: { code: mfaCode } });
+      toast.success("Garmin innlogging fullført");
+      setMfaOpen(false);
+      setMfaCode("");
+      await load();
+    } catch (e) { toast.error((e as Error).message); }
+    finally { setWorking(null); }
+  };
 
   const today = data?.daily?.[data.daily.length - 1];
 
