@@ -456,6 +456,7 @@ function LysPage() {
         {grouped.map(([zoneName, zoneLights]) => {
           const lit = zoneLights.filter((l) => l.on).length;
           const isCollapsed = collapsed[zoneName] ?? false;
+          const isFavZone = favoriteZones.includes(zoneName);
           return (
             <article
               key={zoneName}
