@@ -242,7 +242,9 @@ function TreningPage() {
         title="Treningssalen"
         subtitle="Kroppen er rustning. Disiplin er sverd."
         image={treningImg}
-      />
+      >
+        <StepsChip />
+      </PageHero>
 
       <section className="container mx-auto px-4 py-12 space-y-16">
         <GarminPanel />
@@ -250,6 +252,45 @@ function TreningPage() {
         <StravaSection owner="rebekka" displayName="Rebekka" />
       </section>
     </PageShell>
+  );
+}
+
+function StepsChip() {
+  const fetchOverview = useServerFn(getGarminOverview);
+  const [steps, setSteps] = useState<number | null>(null);
+  const [goal, setGoal] = useState<number | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const o: any = await fetchOverview();
+        const today = o?.daily?.[o.daily.length - 1];
+        if (!cancelled) {
+          setSteps(today?.steps ?? null);
+          setGoal(today?.step_goal ?? null);
+        }
+      } catch {
+        /* stille */
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  if (steps == null) return null;
+  const pct = goal ? Math.min(100, Math.round((steps / goal) * 100)) : null;
+  return (
+    <div className="inline-flex items-center gap-2 rounded-full border border-primary/40 bg-card/70 backdrop-blur px-4 py-2 text-sm">
+      <Footprints size={16} className="text-primary" />
+      <span className="text-medieval text-primary">
+        {steps.toLocaleString("nb-NO")} skritt i dag
+      </span>
+      {goal && (
+        <span className="text-xs text-muted-foreground">
+          · mål {goal.toLocaleString("nb-NO")} ({pct}%)
+        </span>
+      )}
+    </div>
   );
 }
 
