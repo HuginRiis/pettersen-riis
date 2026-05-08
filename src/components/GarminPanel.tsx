@@ -93,8 +93,16 @@ export function GarminPanel() {
             <Activity size={16} /> Garmin — daglig helse
           </h2>
           <div className="flex items-center gap-2">
+            {data?.status.mfa_pending && (
+              <button
+                onClick={() => { setMfaCode(""); setMfaOpen(true); }}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded border border-amber-500/60 text-amber-600 dark:text-amber-400 text-xs hover:bg-amber-500/10"
+              >
+                <ShieldCheck size={12} /> Skriv inn kode
+              </button>
+            )}
             <button
-              onClick={async () => { setWorking("login"); try { await loginFn(); toast.success("Logget inn på Garmin"); await load(); } catch (e) { toast.error((e as Error).message); } finally { setWorking(null); } }}
+              onClick={handleLogin}
               disabled={!!working}
               className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded border border-border/60 text-xs hover:bg-muted/40 disabled:opacity-50"
             >
@@ -115,7 +123,9 @@ export function GarminPanel() {
         <p className="text-[11px] text-muted-foreground">
           {data?.status.connected
             ? <>Tilkoblet som <span className="text-foreground">{data.status.username}</span>{data.lastSync && <> · sist synket {new Date(data.lastSync.ran_at).toLocaleString("nb-NO")}</>}</>
-            : "Ikke tilkoblet — trykk 'Logg inn' for å hente data."}
+            : data?.status.mfa_pending
+              ? "Garmin venter på sikkerhetskode fra e-posten din — trykk 'Skriv inn kode'."
+              : "Ikke tilkoblet — trykk 'Logg inn' for å hente data."}
         </p>
 
         {loading && <div className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Laster…</div>}
