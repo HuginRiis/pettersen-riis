@@ -27,6 +27,10 @@ type Overview = {
   daily: Daily[]; activities: Activity[]; sleep: Sleep[];
   lastSync: { ran_at: string; ok: boolean; daily_count: number; activities_count: number; sleep_count: number; error: string | null } | null;
 };
+type GarminLoginResult =
+  | { ok: true; mfa: true }
+  | { ok: true; mfa: false; expires_at: string }
+  | { ok: false; mfa: false; rateLimited: true; retryAfterSeconds: number; message: string };
 
 function fmtDuration(sec?: number | null) {
   if (!sec) return "—";
@@ -46,6 +50,7 @@ export function GarminPanel() {
   const [working, setWorking] = useState<"login" | "sync" | "mfa" | null>(null);
   const [mfaOpen, setMfaOpen] = useState(false);
   const [mfaCode, setMfaCode] = useState("");
+  const [loginNotice, setLoginNotice] = useState<string | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -58,16 +63,21 @@ export function GarminPanel() {
   const handleLogin = async () => {
     setWorking("login");
     try {
-      const r = await loginFn();
-      if ("mfa" in r && r.mfa) {
+      const r = await loginFn() as GarminLoginResult;
+      if (!r.ok && "rateLimited" in r && r.rateLimited) {
+        setLoginNotice(r.message);
+        toast.error(r.message);
+      } else if (r.mfa) {
         setMfaCode("");
         setMfaOpen(true);
+        setLoginNotice("Garmin har sendt en sikkerhetskode på e-post. Skriv den inn i dialogboksen.");
         toast.info("Garmin sendte deg en sikkerhetskode på e-post.");
       } else {
+        setLoginNotice(null);
         toast.success("Logget inn på Garmin");
       }
       await load();
-    } catch (e) { toast.error((e as Error).message); }
+    } catch (e) { const message = (e as Error).message; setLoginNotice(message); toast.error(message); }
     finally { setWorking(null); }
   };
 
@@ -127,6 +137,12 @@ export function GarminPanel() {
               ? "Garmin venter på sikkerhetskode fra e-posten din — trykk 'Skriv inn kode'."
               : "Ikke tilkoblet — trykk 'Logg inn' for å hente data."}
         </p>
+
+        {loginNotice && (
+          <div className="rounded border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+            {loginNotice}
+          </div>
+        )}
 
         {loading && <div className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Laster…</div>}
 
