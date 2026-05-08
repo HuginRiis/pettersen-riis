@@ -328,8 +328,11 @@ async function startLoginFlow(): Promise<
         csrf: csrfBody[1],
       };
     } else if (csrfBody) {
-      // Siste utvei: bruk samme signin URL — Garmin aksepterer mfa-code dit i noen flyter
-      mfa = { actionPath: signinUrl, csrf: csrfBody[1] };
+      // Siste utvei: Garmin sin MFA-side poster normalt hit, selv når action ikke er lett å lese ut.
+      mfa = {
+        actionPath: `/sso/verifyMFA/loginEnterMfaCode?${new URLSearchParams(SIGNIN_PARAMS)}`,
+        csrf: csrfBody[1],
+      };
     }
   }
   if (mfa) {
@@ -364,7 +367,11 @@ async function finishLoginWithMfa(code: string): Promise<GarminTokens> {
     throw new Error("MFA-koden gikk ut. Trykk 'Logg inn' på nytt for å få ny kode.");
   }
 
-  console.log(`[garmin] MFA submit kode-lengde=${code.trim().length} url=${pending.mfa_url}`);
+  const mfaUrl = pending.mfa_url.includes("/sso/signin")
+    ? `${SSO}/verifyMFA/loginEnterMfaCode?${new URLSearchParams(SIGNIN_PARAMS)}`
+    : pending.mfa_url;
+
+  console.log(`[garmin] MFA submit kode-lengde=${code.trim().length} url=${mfaUrl}`);
 
   const jar: Jar = new Map(pending.jar);
   const form = new URLSearchParams({
@@ -376,7 +383,7 @@ async function finishLoginWithMfa(code: string): Promise<GarminTokens> {
 
   let res: Response;
   try {
-    res = await jfetch(jar, pending.mfa_url, {
+    res = await jfetch(jar, mfaUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
@@ -414,7 +421,7 @@ async function finishLoginWithMfa(code: string): Promise<GarminTokens> {
     console.error("[garmin] MFA: ingen ticket. snippet=", body.replace(/\s+/g, " ").slice(0, 400));
   }
 
-  if (/incorrect|invalid|feil|not.?valid/i.test(body)) {
+  if (res.status === 401 || /incorrect|invalid|feil|not.?valid/i.test(body)) {
     throw new Error("Ugyldig sikkerhetskode. Prøv på nytt.");
   }
   throw new Error(`Fant ikke ticket etter MFA. HTTP ${res.status}. Sjekk server-logg.`);
