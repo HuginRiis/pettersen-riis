@@ -332,10 +332,6 @@ function LysPage() {
         image={heroImg}
       />
 
-      <section className="container mx-auto px-4 pt-6 flex justify-center">
-        <LastUpdated label="Homey" timestamp={updated} />
-      </section>
-
       {/* Status + 3 scene-bokser */}
       <section className="container mx-auto px-4 pt-6 space-y-3">
         <div
