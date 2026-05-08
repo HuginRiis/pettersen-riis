@@ -1,0 +1,1 @@
+ALTER TABLE public.garmin_tokens ADD COLUMN IF NOT EXISTS pending_mfa jsonb;
