@@ -422,7 +422,7 @@ export function SiteHeader() {
                     {l.to === "/hytta" && <TempBadge stationMatch="hytta" storageKey="hdr.temp.hytta" />}
                     {l.to === "/pollen" && <PollenBadge lat={pollenCoord.lat} lon={pollenCoord.lon} />}
                     {l.to === "/push-varslinger" && <PushTodayBadge inline />}
-                    {l.to === "/smarthus" && <LightsOnBadge inline />}
+                    {l.to === "/lys" && <LightsOnBadge inline />}
                     {l.to === "/var" && <TomorrowWeatherBadge inline lat={BORGEN_COORD.lat} lon={BORGEN_COORD.lon} />}
                     {l.to === "/vakttarnet" && <AlarmStateBadge inline />}
                     {l.to === "/varsler" && <AlertsSeverityBadge inline />}
