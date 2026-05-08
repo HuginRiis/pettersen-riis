@@ -227,39 +227,8 @@ function LysPage() {
     return arr;
   }, [data, overrides, zoneById]);
 
-  const [favoriteZones, setFavoriteZones] = useState<string[]>([]);
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      const { getStoredWho } = await import("@/lib/push-client");
-      const { supabase } = await import("@/integrations/supabase/client");
-      const w = getStoredWho() || "Alle";
-      const { data: row } = await supabase
-        .from("user_menu_prefs")
-        .select("favorite_zones")
-        .eq("who", w)
-        .maybeSingle();
-      if (cancelled) return;
-      const fz = Array.isArray((row as any)?.favorite_zones) ? ((row as any).favorite_zones as string[]) : [];
-      setFavoriteZones(fz);
-    })();
-    const onUpd = () => {
-      (async () => {
-        const { getStoredWho } = await import("@/lib/push-client");
-        const { supabase } = await import("@/integrations/supabase/client");
-        const w = getStoredWho() || "Alle";
-        const { data: row } = await supabase
-          .from("user_menu_prefs")
-          .select("favorite_zones")
-          .eq("who", w)
-          .maybeSingle();
-        const fz = Array.isArray((row as any)?.favorite_zones) ? ((row as any).favorite_zones as string[]) : [];
-        setFavoriteZones(fz);
-      })();
-    };
-    window.addEventListener("menu-prefs-updated", onUpd);
-    return () => { cancelled = true; window.removeEventListener("menu-prefs-updated", onUpd); };
-  }, []);
+  const { prefs: menuPrefs, toggleFavoriteZone } = useMenuPrefs();
+  const favoriteZones = menuPrefs.favoriteZones;
 
   const grouped = useMemo(() => {
     const m = new Map<string, LightDevice[]>();
