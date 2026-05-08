@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Activity, Footprints, Heart, Flame, Moon, RefreshCw, LogIn, Loader2, TrendingUp, ShieldCheck, Battery, Brain, Timer, Scale, ChevronDown, ChevronRight } from "lucide-react";
+import { Activity, Footprints, Heart, HeartPulse, Flame, Moon, RefreshCw, LogIn, Loader2, TrendingUp, ShieldCheck, Battery, Brain, Timer, Scale, ChevronDown, ChevronRight, ArrowUp, ArrowDown, Minus, Building2 } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, CartesianGrid } from "recharts";
 import { toast } from "sonner";
 import { getGarminOverview, garminLoginNow, garminSyncNow, garminSubmitMfaCode } from "@/server/garmin.functions";
@@ -99,9 +99,20 @@ export function GarminPanel() {
   };
 
   const today = data?.daily?.[data.daily.length - 1];
+  const yesterday = data?.daily && data.daily.length >= 2 ? data.daily[data.daily.length - 2] : undefined;
   const lastSleep = data?.sleep?.[data.sleep.length - 1];
+  const prevSleep = data?.sleep && data.sleep.length >= 2 ? data.sleep[data.sleep.length - 2] : undefined;
   const intensityToday = (today?.moderate_intensity_minutes ?? 0) + (today?.vigorous_intensity_minutes ?? 0);
-  const sleepHoursToday = lastSleep?.total_seconds ? (lastSleep.total_seconds / 3600).toFixed(1) : null;
+  const intensityYesterday = (yesterday?.moderate_intensity_minutes ?? 0) + (yesterday?.vigorous_intensity_minutes ?? 0);
+  const sleepHoursToday = lastSleep?.total_seconds ? lastSleep.total_seconds / 3600 : null;
+  const sleepHoursYesterday = prevSleep?.total_seconds ? prevSleep.total_seconds / 3600 : null;
+
+  const todayDay = today?.day;
+  const todaysActs = data?.activities?.filter((a) => a.start_time_local.slice(0, 10) === todayDay) ?? [];
+  const yesterdayDay = yesterday?.day;
+  const yesterdaysActs = data?.activities?.filter((a) => a.start_time_local.slice(0, 10) === yesterdayDay) ?? [];
+  const maxHrToday = todaysActs.reduce((m, a) => Math.max(m, a.max_hr ?? 0), 0) || null;
+  const maxHrYesterday = yesterdaysActs.reduce((m, a) => Math.max(m, a.max_hr ?? 0), 0) || null;
 
   return (
     <section className="container mx-auto px-4 pb-6">
@@ -158,14 +169,43 @@ export function GarminPanel() {
           <>
             {/* Tellere */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <Tile icon={<Footprints size={14} />} label="Skritt i dag" value={fmtNum(today?.steps)} sub={today?.step_goal ? `mål ${fmtNum(today.step_goal)}` : undefined} />
-              <Tile icon={<Heart size={14} />} label="Snitt puls" value={today?.average_heart_rate ? `${today.average_heart_rate} bpm` : "—"} sub={today?.resting_heart_rate ? `hvile ${today.resting_heart_rate}` : undefined} />
-              <Tile icon={<Battery size={14} />} label="Body battery" value={today?.body_battery_high != null ? `${today.body_battery_high}` : "—"} sub={today?.body_battery_low != null ? `lav ${today.body_battery_low}` : undefined} />
-              <Tile icon={<Brain size={14} />} label="Stress (snitt)" value={today?.stress_average != null ? `${today.stress_average}` : "—"} />
-              <Tile icon={<Timer size={14} />} label="Intensitetsmin." value={intensityToday > 0 ? `${intensityToday}` : "—"} sub={today?.intensity_minutes_goal ? `mål ${today.intensity_minutes_goal}` : undefined} />
-              <Tile icon={<Moon size={14} />} label="Søvn" value={sleepHoursToday ? `${sleepHoursToday} t` : "—"} sub={lastSleep?.sleep_score != null ? `score ${lastSleep.sleep_score}` : undefined} />
-              <Tile icon={<Scale size={14} />} label="Vekt" value={today?.weight_kg != null ? `${today.weight_kg.toFixed(1)} kg` : "—"} />
-              <Tile icon={<Flame size={14} />} label="Kalorier" value={fmtNum(today?.total_kilocalories)} sub={today?.active_kilocalories ? `aktive ${fmtNum(today.active_kilocalories)}` : undefined} />
+              <Tile icon={<Footprints size={14} />} label="Skritt i dag"
+                value={today?.steps ?? null} prev={yesterday?.steps ?? null}
+                fmt={fmtNum} fallbackSub={today?.step_goal ? `mål ${fmtNum(today.step_goal)}` : "ingen data"} />
+              <Tile icon={<HeartPulse size={14} />} label="Hvilepuls"
+                value={today?.resting_heart_rate ?? null} prev={yesterday?.resting_heart_rate ?? null}
+                unit=" bpm" lowerIsBetter fallbackSub="ingen måling i dag" />
+              <Tile icon={<Heart size={14} />} label="Snitt puls"
+                value={today?.average_heart_rate ?? null} prev={yesterday?.average_heart_rate ?? null}
+                unit=" bpm" fallbackSub="ingen måling i dag" />
+              <Tile icon={<TrendingUp size={14} />} label="Maks puls"
+                value={maxHrToday} prev={maxHrYesterday}
+                unit=" bpm" fallbackSub="ingen aktivitet i dag" />
+              <Tile icon={<Building2 size={14} />} label="Trapper"
+                value={today?.floors_climbed ?? null} prev={yesterday?.floors_climbed ?? null}
+                fmt={fmtNum}
+                fallbackSub="ingen data" />
+              <Tile icon={<Battery size={14} />} label="Body battery"
+                value={today?.body_battery_high ?? null} prev={yesterday?.body_battery_high ?? null}
+                fallbackSub={today?.body_battery_low != null ? `lav ${today.body_battery_low}` : "ingen data"} />
+              <Tile icon={<Brain size={14} />} label="Stress (snitt)"
+                value={today?.stress_average ?? null} prev={yesterday?.stress_average ?? null}
+                lowerIsBetter fallbackSub="ingen måling" />
+              <Tile icon={<Timer size={14} />} label="Intensitetsmin."
+                value={intensityToday > 0 ? intensityToday : null} prev={intensityYesterday > 0 ? intensityYesterday : null}
+                fallbackSub={today?.intensity_minutes_goal ? `mål ${today.intensity_minutes_goal}` : "ingen mål"} />
+              <Tile icon={<Moon size={14} />} label="Søvn"
+                value={sleepHoursToday} prev={sleepHoursYesterday}
+                unit=" t" digits={1}
+                fallbackSub={lastSleep?.sleep_score != null ? `score ${lastSleep.sleep_score}` : "ingen søvndata"} />
+              <Tile icon={<Scale size={14} />} label="Vekt"
+                value={today?.weight_kg ?? null} prev={yesterday?.weight_kg ?? null}
+                unit=" kg" digits={1} lowerIsBetter
+                fallbackSub="ingen veiing i dag" />
+              <Tile icon={<Flame size={14} />} label="Kalorier"
+                value={today?.total_kilocalories ?? null} prev={yesterday?.total_kilocalories ?? null}
+                fmt={fmtNum}
+                fallbackSub={today?.active_kilocalories ? `aktive ${fmtNum(today.active_kilocalories)}` : "ingen data"} />
             </div>
 
             {/* Grafer (skjult som default) */}
@@ -342,12 +382,47 @@ export function GarminPanel() {
   );
 }
 
-function Tile({ icon, label, value, sub }: { icon: React.ReactNode; label: string; value: string; sub?: string }) {
+function Tile({
+  icon, label, value, prev, unit = "", digits = 0, fmt, lowerIsBetter = false, fallbackSub,
+}: {
+  icon: React.ReactNode; label: string;
+  value: number | null; prev?: number | null;
+  unit?: string; digits?: number;
+  fmt?: (n: number | null | undefined) => string;
+  lowerIsBetter?: boolean; fallbackSub?: string;
+}) {
+  const formatVal = (n: number | null | undefined): string => {
+    if (n == null) return "—";
+    if (fmt) return fmt(n);
+    return n.toLocaleString("nb-NO", { maximumFractionDigits: digits, minimumFractionDigits: digits > 0 ? digits : 0 }) + unit;
+  };
+
+  let trend: React.ReactNode = null;
+  if (value != null && prev != null) {
+    const diff = value - prev;
+    const eps = digits > 0 ? Math.pow(10, -digits) / 2 : 0.5;
+    if (Math.abs(diff) < eps) {
+      trend = <span className="inline-flex items-center gap-0.5 text-muted-foreground"><Minus size={10} /> i går: {formatVal(prev)}</span>;
+    } else {
+      const isUp = diff > 0;
+      const isGood = lowerIsBetter ? !isUp : isUp;
+      const cls = isGood ? "text-emerald-500" : "text-rose-400";
+      trend = (
+        <span className={`inline-flex items-center gap-0.5 ${cls}`}>
+          {isUp ? <ArrowUp size={10} /> : <ArrowDown size={10} />}
+          i går: {formatVal(prev)}
+        </span>
+      );
+    }
+  }
+
   return (
     <div className="rounded border border-border/60 bg-background/40 p-3">
       <div className="text-[10px] uppercase tracking-wider text-muted-foreground flex items-center gap-1">{icon}{label}</div>
-      <div className="text-xl font-semibold tabular-nums mt-1">{value}</div>
-      {sub && <div className="text-[10px] text-muted-foreground mt-0.5">{sub}</div>}
+      <div className="text-xl font-semibold tabular-nums mt-1">{formatVal(value)}</div>
+      <div className="text-[10px] mt-0.5">
+        {trend ?? (value == null && fallbackSub ? <span className="text-muted-foreground">{fallbackSub}</span> : null)}
+      </div>
     </div>
   );
 }
