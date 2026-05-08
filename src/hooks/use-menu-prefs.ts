@@ -174,5 +174,10 @@ export function useMenuPrefs() {
     [who, prefs, update],
   );
 
-  return { prefs, setSortByUsage, setFavoritesEnabled, toggleFavorite, toggleFavoriteZone, setFavoriteZones, moveFavoriteZone };
+  const setUseGlobalLightScenes = useCallback(
+    (v: boolean) => update({ useGlobalLightScenes: v }),
+    [update],
+  );
+
+  return { prefs, setSortByUsage, setFavoritesEnabled, toggleFavorite, toggleFavoriteZone, setFavoriteZones, moveFavoriteZone, setUseGlobalLightScenes };
 }
