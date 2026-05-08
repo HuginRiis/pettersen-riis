@@ -192,7 +192,7 @@ export async function processMailDeliveryNotifications(): Promise<{
     if (anyOk || (subs?.length ?? 0) === 0) {
       await supabaseAdmin
         .from("mail_delivery_prefs" as never)
-        .update({ last_notified_for_date: target, updated_at: new Date().toISOString() })
+        .update({ last_notified_for_date: target, updated_at: new Date().toISOString() } as never)
         .eq("id", pref.id);
     }
   }
