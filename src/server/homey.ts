@@ -1211,6 +1211,7 @@ const OUTDOOR_LIGHT_NAMES = new Set<string>([
   "utelampe høyre",
   "ute venstre veranda",
   "utelampe venstre",
+  "garsej lys ute",
 ]);
 
 function normalizeDeviceName(name: unknown): string {
