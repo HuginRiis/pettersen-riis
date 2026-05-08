@@ -69,7 +69,7 @@ export function LightScenesPanel() {
     return () => { cancelled = true; };
   }, [fetchSnap]);
 
-  // Load scenes for current user
+  // Load scenes for current target (user or global)
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -77,7 +77,7 @@ export function LightScenesPanel() {
       const { data } = await supabase
         .from("user_light_scenes")
         .select("slot, name, device_ids")
-        .eq("who", who)
+        .eq("who", targetWho)
         .order("slot");
       if (cancelled) return;
       const map = new Map<number, Scene>();
@@ -93,7 +93,7 @@ export function LightScenesPanel() {
       setLoading(false);
     })();
     return () => { cancelled = true; };
-  }, [who]);
+  }, [targetWho]);
 
   const grouped = useMemo(() => {
     const q = search.trim().toLowerCase();
