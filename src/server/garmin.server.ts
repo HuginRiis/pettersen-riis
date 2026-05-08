@@ -53,18 +53,26 @@ function ingest(jar: Jar, res: Response) {
   }
 }
 
-async function jfetch(jar: Jar, url: string, init: RequestInit = {}): Promise<Response> {
+async function jfetch(jar: Jar, url: string, init: RequestInit = {}, hops = 0): Promise<Response> {
+  if (hops > 8) throw new Error(`For mange redirects fra ${url}`);
   const headers = new Headers(init.headers);
   headers.set("User-Agent", USER_AGENT);
   const cookie = jarHeader(jar);
   if (cookie) headers.set("Cookie", cookie);
-  const res = await fetch(url, { ...init, headers, redirect: "manual" });
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 20_000);
+  let res: Response;
+  try {
+    res = await fetch(url, { ...init, headers, redirect: "manual", signal: ctrl.signal });
+  } finally {
+    clearTimeout(timer);
+  }
   ingest(jar, res);
   if (res.status >= 300 && res.status < 400) {
     const loc = res.headers.get("location");
     if (loc) {
       const next = new URL(loc, url).toString();
-      return jfetch(jar, next, { method: "GET" });
+      return jfetch(jar, next, { method: "GET" }, hops + 1);
     }
   }
   return res;
@@ -356,6 +364,8 @@ async function finishLoginWithMfa(code: string): Promise<GarminTokens> {
     throw new Error("MFA-koden gikk ut. Trykk 'Logg inn' på nytt for å få ny kode.");
   }
 
+  console.log(`[garmin] MFA submit kode-lengde=${code.trim().length} url=${pending.mfa_url}`);
+
   const jar: Jar = new Map(pending.jar);
   const form = new URLSearchParams({
     "mfa-code": code.trim(),
@@ -364,24 +374,50 @@ async function finishLoginWithMfa(code: string): Promise<GarminTokens> {
     fromPage: "setupEnterMfaCode",
   });
 
-  const res = await jfetch(jar, pending.mfa_url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-      Referer: pending.signin_url,
-      Accept: "text/html",
-    },
-    body: form.toString(),
-  });
-  const body = await res.text();
-  const ticket = extractTicket(body);
-  if (!ticket) {
-    if (/incorrect|invalid|feil/i.test(body)) {
-      throw new Error("Ugyldig sikkerhetskode. Prøv på nytt.");
-    }
-    throw new Error(`Fant ikke ticket etter MFA. HTTP ${res.status}.`);
+  let res: Response;
+  try {
+    res = await jfetch(jar, pending.mfa_url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        Referer: pending.signin_url,
+        Origin: "https://sso.garmin.com",
+        Accept: "text/html,application/xhtml+xml",
+        "Accept-Language": "en-US,en;q=0.9",
+      },
+      body: form.toString(),
+    });
+  } catch (e) {
+    console.error("[garmin] MFA POST feilet", (e as Error).message);
+    throw new Error(`MFA-innsending feilet: ${(e as Error).message}`);
   }
-  return exchangeTicketForTokens(ticket, email);
+
+  const body = await res.text();
+  console.log(`[garmin] MFA respons status=${res.status} bodyLen=${body.length}`);
+  const ticket = extractTicket(body);
+  if (ticket) {
+    console.log(`[garmin] MFA OK — fant ticket, bytter mot OAuth-tokens`);
+    return exchangeTicketForTokens(ticket, email);
+  }
+
+  // Hvis vi havnet på SSO-siden uten ticket, prøv å hente embed-siden som setter ticket
+  if (res.status === 200 || res.status === 302) {
+    const embedRes = await jfetch(jar, `${SSO_EMBED}?${new URLSearchParams(SIGNIN_PARAMS)}`, {
+      headers: { Referer: pending.signin_url, Accept: "text/html" },
+    });
+    const embedBody = await embedRes.text();
+    const t2 = extractTicket(embedBody);
+    if (t2) {
+      console.log(`[garmin] MFA OK — fant ticket via embed-fallback`);
+      return exchangeTicketForTokens(t2, email);
+    }
+    console.error("[garmin] MFA: ingen ticket. snippet=", body.replace(/\s+/g, " ").slice(0, 400));
+  }
+
+  if (/incorrect|invalid|feil|not.?valid/i.test(body)) {
+    throw new Error("Ugyldig sikkerhetskode. Prøv på nytt.");
+  }
+  throw new Error(`Fant ikke ticket etter MFA. HTTP ${res.status}. Sjekk server-logg.`);
 }
 
 async function refreshOauth2(t: GarminTokens): Promise<GarminTokens> {
