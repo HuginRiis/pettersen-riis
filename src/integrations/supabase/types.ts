@@ -404,6 +404,7 @@ export type Database = {
       garmin_daily_stats: {
         Row: {
           active_kilocalories: number | null
+          average_heart_rate: number | null
           body_battery_high: number | null
           body_battery_low: number | null
           created_at: string
@@ -422,9 +423,11 @@ export type Database = {
           total_kilocalories: number | null
           updated_at: string
           vigorous_intensity_minutes: number | null
+          weight_kg: number | null
         }
         Insert: {
           active_kilocalories?: number | null
+          average_heart_rate?: number | null
           body_battery_high?: number | null
           body_battery_low?: number | null
           created_at?: string
@@ -443,9 +446,11 @@ export type Database = {
           total_kilocalories?: number | null
           updated_at?: string
           vigorous_intensity_minutes?: number | null
+          weight_kg?: number | null
         }
         Update: {
           active_kilocalories?: number | null
+          average_heart_rate?: number | null
           body_battery_high?: number | null
           body_battery_low?: number | null
           created_at?: string
@@ -464,6 +469,7 @@ export type Database = {
           total_kilocalories?: number | null
           updated_at?: string
           vigorous_intensity_minutes?: number | null
+          weight_kg?: number | null
         }
         Relationships: []
       }
