@@ -11,6 +11,7 @@ const ALL_LINKS: { to: string; label: string }[] = [
   { to: "/vakttarnet", label: "Vakttårnet" },
   { to: "/hytta", label: "Hytta" },
   { to: "/smarthus", label: "Smartborg" },
+  { to: "/lys", label: "Lys" },
   { to: "/stromkroniken", label: "Strømkrøniken" },
   { to: "/oppussing-borgen", label: "Prosjekter på Borgen" },
   { to: "/oppussing-hytta", label: "Prosjekter på hytta" },

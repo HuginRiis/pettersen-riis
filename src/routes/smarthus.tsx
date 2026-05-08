@@ -1,4 +1,4 @@
-import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import { Swords, Shield, Flame, DoorOpen, Lightbulb, Zap, Crown, ChevronDown } from "lucide-react";
@@ -729,8 +729,17 @@ function SmarthusPage() {
         image={heroImg}
       />
 
-      <section className="container mx-auto px-4 pt-6 flex justify-center">
+      <section className="container mx-auto px-4 pt-6 flex flex-wrap items-center justify-center gap-3">
         <LastUpdated label="Homey" timestamp={homeyUpdated} />
+        <Link
+          to="/lys"
+          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-primary/40 text-primary text-[11px] tracking-[0.2em] uppercase hover:bg-primary/10 transition-colors"
+          title="Til Lys-siden"
+        >
+          <Flame size={13} />
+          <span>{litLights} lys tent</span>
+          <span className="text-muted-foreground">→</span>
+        </Link>
       </section>
       <HomeyApiPauseToggle />
 
