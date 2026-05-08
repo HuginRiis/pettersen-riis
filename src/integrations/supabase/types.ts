@@ -467,6 +467,57 @@ export type Database = {
         }
         Relationships: []
       }
+      garmin_notification_prefs: {
+        Row: {
+          created_at: string
+          daily_time: string
+          enabled: boolean
+          high_rhr_bpm: number
+          id: string
+          low_sleep_hours: number
+          notified_keys: string[]
+          notify_daily: boolean
+          notify_high_resting_hr: boolean
+          notify_low_sleep: boolean
+          notify_step_goal: boolean
+          recipient: string
+          sender_label: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          daily_time?: string
+          enabled?: boolean
+          high_rhr_bpm?: number
+          id?: string
+          low_sleep_hours?: number
+          notified_keys?: string[]
+          notify_daily?: boolean
+          notify_high_resting_hr?: boolean
+          notify_low_sleep?: boolean
+          notify_step_goal?: boolean
+          recipient?: string
+          sender_label?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          daily_time?: string
+          enabled?: boolean
+          high_rhr_bpm?: number
+          id?: string
+          low_sleep_hours?: number
+          notified_keys?: string[]
+          notify_daily?: boolean
+          notify_high_resting_hr?: boolean
+          notify_low_sleep?: boolean
+          notify_step_goal?: boolean
+          recipient?: string
+          sender_label?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       garmin_sleep: {
         Row: {
           average_respiration: number | null
