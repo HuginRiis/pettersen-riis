@@ -180,28 +180,28 @@ export function HomeyApiActivity() {
                   margin={{ top: 8, right: 8, bottom: 0, left: -16 }}
                 >
                   <CartesianGrid
-                    stroke="hsl(var(--border))"
+                    stroke="var(--border)"
                     strokeDasharray="2 4"
                     vertical={false}
                   />
                   <XAxis
                     dataKey="label"
                     interval={9}
-                    tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }}
-                    axisLine={{ stroke: "hsl(var(--border))" }}
+                    tick={{ fill: "var(--muted-foreground)", fontSize: 10 }}
+                    axisLine={{ stroke: "var(--border)" }}
                     tickLine={false}
                   />
                   <YAxis
                     allowDecimals={false}
-                    tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }}
-                    axisLine={{ stroke: "hsl(var(--border))" }}
+                    tick={{ fill: "var(--muted-foreground)", fontSize: 10 }}
+                    axisLine={{ stroke: "var(--border)" }}
                     tickLine={false}
                     width={28}
                   />
                   <Tooltip trigger="click"
                     cursor={{ stroke: ACCENT, strokeOpacity: 0.4 }}
                     contentStyle={{
-                      background: "hsl(var(--card))",
+                      background: "var(--card)",
                       border: `1px solid ${ACCENT}`,
                       borderRadius: 6,
                       fontSize: 12,
@@ -233,28 +233,28 @@ export function HomeyApiActivity() {
                   margin={{ top: 8, right: 8, bottom: 0, left: -16 }}
                 >
                   <CartesianGrid
-                    stroke="hsl(var(--border))"
+                    stroke="var(--border)"
                     strokeDasharray="2 4"
                     vertical={false}
                   />
                   <XAxis
                     dataKey="label"
                     interval={9}
-                    tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }}
-                    axisLine={{ stroke: "hsl(var(--border))" }}
+                    tick={{ fill: "var(--muted-foreground)", fontSize: 10 }}
+                    axisLine={{ stroke: "var(--border)" }}
                     tickLine={false}
                   />
                   <YAxis
                     allowDecimals={false}
-                    tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }}
-                    axisLine={{ stroke: "hsl(var(--border))" }}
+                    tick={{ fill: "var(--muted-foreground)", fontSize: 10 }}
+                    axisLine={{ stroke: "var(--border)" }}
                     tickLine={false}
                     width={28}
                   />
                   <Tooltip trigger="click"
                     cursor={{ fill: ACCENT_SOFT }}
                     contentStyle={{
-                      background: "hsl(var(--card))",
+                      background: "var(--card)",
                       border: `1px solid ${ACCENT}`,
                       borderRadius: 6,
                       fontSize: 12,
@@ -264,7 +264,7 @@ export function HomeyApiActivity() {
                   />
                   <ReferenceLine
                     y={RPM_WARNING}
-                    stroke="hsl(var(--destructive))"
+                    stroke="var(--destructive)"
                     strokeDasharray="3 3"
                   />
                   <Bar

@@ -2114,8 +2114,8 @@ function ComparisonBlock({
   const BORGEN_COLOR = "oklch(0.62 0.18 250)";
   const HYTTA_COLOR = "oklch(0.78 0.13 85)";
   const tooltipStyle = {
-    background: "hsl(var(--card))",
-    border: "1px solid hsl(var(--border))",
+    background: "var(--card)",
+    border: "1px solid var(--border)",
     borderRadius: 6,
     fontSize: 12,
   } as const;
@@ -2130,13 +2130,13 @@ function ComparisonBlock({
         <div className="h-64 w-full mb-6">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData} margin={{ top: 5, right: 8, left: -8, bottom: 0 }}>
-              <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" vertical={false} />
+              <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
               <XAxis dataKey="label" tick={{ fill: "oklch(0.78 0.13 85)", fontSize: 10 }} />
               <YAxis tick={{ fill: "oklch(0.78 0.13 85)", fontSize: 10 }} width={48} unit=" kr" />
               <Tooltip trigger="click"
                 contentStyle={{
-                  background: "hsl(var(--card))",
-                  border: "1px solid hsl(var(--border))",
+                  background: "var(--card)",
+                  border: "1px solid var(--border)",
                   borderRadius: 6,
                   fontSize: 12,
                 }}
@@ -2204,7 +2204,7 @@ function ComparisonBlock({
           <div className="h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={kwhChartData} margin={{ top: 5, right: 8, left: -8, bottom: 0 }}>
-                <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" vertical={false} />
+                <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
                 <XAxis dataKey="label" tick={{ fill: "oklch(0.78 0.13 85)", fontSize: 10 }} />
                 <YAxis tick={{ fill: "oklch(0.78 0.13 85)", fontSize: 10 }} width={48} unit=" kWh" />
                 <Tooltip trigger="click" contentStyle={tooltipStyle} formatter={(v: number) => [`${v.toFixed(1)} kWh`, ""]} />
@@ -2223,7 +2223,7 @@ function ComparisonBlock({
           <div className="h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={monthlyChartData} margin={{ top: 5, right: 8, left: -8, bottom: 0 }}>
-                <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" vertical={false} />
+                <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
                 <XAxis dataKey="label" tick={{ fill: "oklch(0.78 0.13 85)", fontSize: 10 }} />
                 <YAxis tick={{ fill: "oklch(0.78 0.13 85)", fontSize: 10 }} width={48} unit=" kWh" />
                 <Tooltip trigger="click" contentStyle={tooltipStyle} formatter={(v: number) => [`${v.toFixed(0)} kWh`, ""]} />
@@ -2242,7 +2242,7 @@ function ComparisonBlock({
           <div className="h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={dailyChartData} margin={{ top: 5, right: 8, left: -8, bottom: 0 }}>
-                <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" vertical={false} />
+                <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
                 <XAxis dataKey="label" tick={{ fill: "oklch(0.78 0.13 85)", fontSize: 9 }} interval={Math.max(0, Math.floor(dailyChartData.length / 10))} />
                 <YAxis tick={{ fill: "oklch(0.78 0.13 85)", fontSize: 10 }} width={48} unit=" kWh" />
                 <Tooltip trigger="click" contentStyle={tooltipStyle} formatter={(v: number) => [`${v.toFixed(1)} kWh`, ""]} />
@@ -2261,7 +2261,7 @@ function ComparisonBlock({
           <div className="h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={cumulativeChartData} margin={{ top: 5, right: 8, left: -8, bottom: 0 }}>
-                <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" vertical={false} />
+                <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
                 <XAxis dataKey="label" tick={{ fill: "oklch(0.78 0.13 85)", fontSize: 9 }} interval={Math.max(0, Math.floor(cumulativeChartData.length / 10))} />
                 <YAxis tick={{ fill: "oklch(0.78 0.13 85)", fontSize: 10 }} width={56} unit=" kWh" />
                 <Tooltip trigger="click" contentStyle={tooltipStyle} formatter={(v: number) => [`${v.toFixed(0)} kWh`, ""]} />
@@ -2280,7 +2280,7 @@ function ComparisonBlock({
           <div className="h-56 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={yearlyChartData} margin={{ top: 5, right: 8, left: -8, bottom: 0 }}>
-                <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" vertical={false} />
+                <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
                 <XAxis dataKey="label" tick={{ fill: "oklch(0.78 0.13 85)", fontSize: 10 }} />
                 <YAxis tick={{ fill: "oklch(0.78 0.13 85)", fontSize: 10 }} width={56} unit=" kWh" />
                 <Tooltip trigger="click" contentStyle={tooltipStyle} formatter={(v: number) => [`${v.toFixed(0)} kWh`, ""]} />
@@ -2518,7 +2518,7 @@ function DeepInsightsBlock({
         <div className="h-56 w-full">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={weekdayChart} margin={{ top: 5, right: 8, left: -8, bottom: 0 }}>
-              <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" vertical={false} />
+              <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
               <XAxis dataKey="label" tick={{ fill: "oklch(0.78 0.13 85)", fontSize: 10 }} />
               <YAxis tick={{ fill: "oklch(0.78 0.13 85)", fontSize: 10 }} width={48} unit=" kWh" />
               <Tooltip trigger="click" contentStyle={tooltipStyle} formatter={(v: number) => [`${v.toFixed(1)} kWh`, ""]} />
@@ -2538,7 +2538,7 @@ function DeepInsightsBlock({
         <div className="h-64 w-full">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={monthlyCostChart} margin={{ top: 5, right: 8, left: -8, bottom: 0 }}>
-              <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" vertical={false} />
+              <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
               <XAxis dataKey="label" tick={{ fill: "oklch(0.78 0.13 85)", fontSize: 10 }} />
               <YAxis tick={{ fill: "oklch(0.78 0.13 85)", fontSize: 10 }} width={56} unit=" kr" />
               <Tooltip trigger="click" contentStyle={tooltipStyle} formatter={(v: number) => [`${Math.round(v).toLocaleString("nb-NO")} kr`, ""]} />

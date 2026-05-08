@@ -97,22 +97,22 @@ export function PulseHourlyPanel({
           ) : (
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData} margin={{ top: 5, right: 8, left: -16, bottom: 0 }}>
-                <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" vertical={false} />
+                <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
                 <XAxis
                   dataKey="hour"
-                  tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }}
+                  tick={{ fill: "var(--muted-foreground)", fontSize: 10 }}
                   interval="preserveStartEnd"
                   minTickGap={20}
                 />
                 <YAxis
-                  tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }}
+                  tick={{ fill: "var(--muted-foreground)", fontSize: 10 }}
                   width={48}
                   unit=" kWh"
                 />
                 <Tooltip trigger="click"
                   contentStyle={{
-                    background: "hsl(var(--card))",
-                    border: "1px solid hsl(var(--border))",
+                    background: "var(--card)",
+                    border: "1px solid var(--border)",
                     borderRadius: 6,
                     fontSize: 12,
                   }}
@@ -122,7 +122,7 @@ export function PulseHourlyPanel({
                   {chartData.map((d, i) => (
                     <Cell
                       key={i}
-                      fill={d.isToday ? "hsl(var(--primary))" : "hsl(var(--muted-foreground) / 0.5)"}
+                      fill={d.isToday ? "var(--chart-yellow)" : "color-mix(in oklab, var(--muted-foreground) 50%, transparent)"}
                     />
                   ))}
                 </Bar>

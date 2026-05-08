@@ -214,7 +214,7 @@ function sportLabel(s: string) {
 function sportColor(s: string) {
   switch (s) {
     case "run":
-      return "hsl(var(--primary))";
+      return "var(--chart-yellow)";
     case "ride":
       return "#5b9dd9";
     case "swim":

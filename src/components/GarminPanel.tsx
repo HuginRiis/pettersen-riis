@@ -166,8 +166,8 @@ export function GarminPanel() {
                     <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
                     <XAxis dataKey="day" tick={{ fontSize: 10 }} tickFormatter={(v: string) => v.slice(5)} />
                     <YAxis tick={{ fontSize: 10 }} />
-                    <Tooltip contentStyle={{ background: "hsl(var(--background))", border: "1px solid hsl(var(--border))", fontSize: 12 }} />
-                    <Bar dataKey="steps" fill="hsl(var(--primary))" radius={[2,2,0,0]} />
+                    <Tooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", fontSize: 12 }} />
+                    <Bar dataKey="steps" fill="var(--chart-yellow)" radius={[2,2,0,0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -183,8 +183,8 @@ export function GarminPanel() {
                       <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
                       <XAxis dataKey="day" tick={{ fontSize: 10 }} tickFormatter={(v: string) => v.slice(5)} />
                       <YAxis tick={{ fontSize: 10 }} domain={["auto", "auto"]} />
-                      <Tooltip contentStyle={{ background: "hsl(var(--background))", border: "1px solid hsl(var(--border))", fontSize: 12 }} />
-                      <Line type="monotone" dataKey="resting_heart_rate" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
+                      <Tooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", fontSize: 12 }} />
+                      <Line type="monotone" dataKey="resting_heart_rate" stroke="var(--chart-yellow)" strokeWidth={2} dot={false} />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
@@ -195,8 +195,8 @@ export function GarminPanel() {
                       <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
                       <XAxis dataKey="day" tick={{ fontSize: 10 }} tickFormatter={(v: string) => v.slice(5)} />
                       <YAxis tick={{ fontSize: 10 }} />
-                      <Tooltip contentStyle={{ background: "hsl(var(--background))", border: "1px solid hsl(var(--border))", fontSize: 12 }} />
-                      <Line type="monotone" dataKey="active_kilocalories" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
+                      <Tooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", fontSize: 12 }} />
+                      <Line type="monotone" dataKey="active_kilocalories" stroke="var(--chart-yellow)" strokeWidth={2} dot={false} />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
@@ -218,11 +218,11 @@ export function GarminPanel() {
                     <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
                     <XAxis dataKey="day" tick={{ fontSize: 10 }} tickFormatter={(v: string) => v.slice(5)} />
                     <YAxis tick={{ fontSize: 10 }} />
-                    <Tooltip contentStyle={{ background: "hsl(var(--background))", border: "1px solid hsl(var(--border))", fontSize: 12 }} />
-                    <Bar dataKey="deep" stackId="a" fill="hsl(var(--primary))" />
-                    <Bar dataKey="light" stackId="a" fill="hsl(var(--primary) / 0.6)" />
-                    <Bar dataKey="rem" stackId="a" fill="hsl(var(--primary) / 0.4)" />
-                    <Bar dataKey="awake" stackId="a" fill="hsl(var(--muted-foreground) / 0.4)" />
+                    <Tooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", fontSize: 12 }} />
+                    <Bar dataKey="deep" stackId="a" fill="var(--chart-yellow)" />
+                    <Bar dataKey="light" stackId="a" fill="var(--chart-yellow-soft)" />
+                    <Bar dataKey="rem" stackId="a" fill="var(--chart-yellow-faint)" />
+                    <Bar dataKey="awake" stackId="a" fill="color-mix(in oklab, var(--muted-foreground) 40%, transparent)" />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
