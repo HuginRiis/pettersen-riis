@@ -87,7 +87,7 @@ function LysPage() {
     { slot: 1, name: "Stua", device_ids: [] },
     { slot: 2, name: "Utelys", device_ids: [] },
   ]);
-  const [who, setWho] = useState<string>("Alle");
+  const [, setWho] = useState<string>("Alle");
 
   useEffect(() => {
     setUpdated(new Date());
