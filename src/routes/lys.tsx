@@ -62,6 +62,13 @@ type LightDevice = {
   dim: number | null;
   hasDim: boolean;
   isLightClass: boolean;
+  hasHue: boolean;
+  hue: number | null;
+  saturation: number | null;
+  hasTemperature: boolean;
+  temperature: number | null;
+  hasLightMode: boolean;
+  lightMode: string | null;
 };
 
 function LysPage() {
