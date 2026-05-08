@@ -1165,6 +1165,36 @@ export type Database = {
         }
         Relationships: []
       }
+      user_light_scenes: {
+        Row: {
+          created_at: string
+          device_ids: string[]
+          id: string
+          name: string
+          slot: number
+          updated_at: string
+          who: string
+        }
+        Insert: {
+          created_at?: string
+          device_ids?: string[]
+          id?: string
+          name?: string
+          slot: number
+          updated_at?: string
+          who: string
+        }
+        Update: {
+          created_at?: string
+          device_ids?: string[]
+          id?: string
+          name?: string
+          slot?: number
+          updated_at?: string
+          who?: string
+        }
+        Relationships: []
+      }
       user_location_prefs: {
         Row: {
           created_at: string
@@ -1196,6 +1226,36 @@ export type Database = {
           lon?: number
           page?: string
           place_label?: string
+          updated_at?: string
+          who?: string
+        }
+        Relationships: []
+      }
+      user_menu_prefs: {
+        Row: {
+          created_at: string
+          favorites: string[]
+          favorites_enabled: boolean
+          id: string
+          sort_by_usage: boolean
+          updated_at: string
+          who: string
+        }
+        Insert: {
+          created_at?: string
+          favorites?: string[]
+          favorites_enabled?: boolean
+          id?: string
+          sort_by_usage?: boolean
+          updated_at?: string
+          who: string
+        }
+        Update: {
+          created_at?: string
+          favorites?: string[]
+          favorites_enabled?: boolean
+          id?: string
+          sort_by_usage?: boolean
           updated_at?: string
           who?: string
         }
