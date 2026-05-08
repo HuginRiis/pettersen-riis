@@ -27,6 +27,10 @@ type Overview = {
   daily: Daily[]; activities: Activity[]; sleep: Sleep[];
   lastSync: { ran_at: string; ok: boolean; daily_count: number; activities_count: number; sleep_count: number; error: string | null } | null;
 };
+type GarminLoginResult =
+  | { ok: true; mfa: true }
+  | { ok: true; mfa: false; expires_at: string }
+  | { ok: false; mfa: false; rateLimited: true; retryAfterSeconds: number; message: string };
 
 function fmtDuration(sec?: number | null) {
   if (!sec) return "—";
@@ -58,8 +62,10 @@ export function GarminPanel() {
   const handleLogin = async () => {
     setWorking("login");
     try {
-      const r = await loginFn();
-      if ("mfa" in r && r.mfa) {
+      const r = await loginFn() as GarminLoginResult;
+      if (!r.ok && "rateLimited" in r && r.rateLimited) {
+        toast.error(r.message);
+      } else if (r.mfa) {
         setMfaCode("");
         setMfaOpen(true);
         toast.info("Garmin sendte deg en sikkerhetskode på e-post.");
