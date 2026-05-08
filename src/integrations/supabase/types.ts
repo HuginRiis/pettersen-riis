@@ -1240,6 +1240,7 @@ export type Database = {
           id: string
           sort_by_usage: boolean
           updated_at: string
+          use_global_light_scenes: boolean
           who: string
         }
         Insert: {
@@ -1250,6 +1251,7 @@ export type Database = {
           id?: string
           sort_by_usage?: boolean
           updated_at?: string
+          use_global_light_scenes?: boolean
           who: string
         }
         Update: {
@@ -1260,6 +1262,7 @@ export type Database = {
           id?: string
           sort_by_usage?: boolean
           updated_at?: string
+          use_global_light_scenes?: boolean
           who?: string
         }
         Relationships: []
