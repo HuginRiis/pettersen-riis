@@ -29,7 +29,8 @@ export const Route = createFileRoute("/lys")({
       },
     ],
   }),
-  staleTime: 60_000,
+  staleTime: 0,
+  shouldReload: true,
   loader: async () => {
     const res = await getHomeySnapshot();
     recordHomeyApiCall();
