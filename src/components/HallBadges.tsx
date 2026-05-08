@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getUpcomingWeatherEvaluations } from "@/server/weather-push.functions";
 import { getUpcomingUvEvaluations } from "@/server/uv-push.functions";
 import { getGarbageOverview } from "@/server/garbage-collection";
-import { getHomeySnapshot, getHomeAlarmStatus } from "@/server/homey";
+import { getHomeySnapshot, getHomeAlarmStatus, getDoorsLocksSnapshot } from "@/server/homey";
 import { getTelemarkAlerts } from "@/server/met-alerts";
 import { getStravaDashboard } from "@/server/strava";
 
