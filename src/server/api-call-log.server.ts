@@ -163,6 +163,7 @@ export type ApiCallSummary = {
 
 export async function computeApiCallSummary(): Promise<ApiCallSummary> {
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
   // Hent alle kall siste 24t (begrens til 5000 for å være trygg).
   const { data: rows, error } = await (supabaseAdmin.from("api_call_log") as any)
