@@ -347,6 +347,258 @@ export type Database = {
         }
         Relationships: []
       }
+      garmin_activities: {
+        Row: {
+          activity_name: string | null
+          activity_type: string | null
+          average_hr: number | null
+          average_speed: number | null
+          calories: number | null
+          created_at: string
+          distance_meters: number | null
+          duration_seconds: number | null
+          elevation_gain: number | null
+          garmin_activity_id: number
+          id: string
+          max_hr: number | null
+          raw: Json | null
+          start_time_local: string
+          updated_at: string
+        }
+        Insert: {
+          activity_name?: string | null
+          activity_type?: string | null
+          average_hr?: number | null
+          average_speed?: number | null
+          calories?: number | null
+          created_at?: string
+          distance_meters?: number | null
+          duration_seconds?: number | null
+          elevation_gain?: number | null
+          garmin_activity_id: number
+          id?: string
+          max_hr?: number | null
+          raw?: Json | null
+          start_time_local: string
+          updated_at?: string
+        }
+        Update: {
+          activity_name?: string | null
+          activity_type?: string | null
+          average_hr?: number | null
+          average_speed?: number | null
+          calories?: number | null
+          created_at?: string
+          distance_meters?: number | null
+          duration_seconds?: number | null
+          elevation_gain?: number | null
+          garmin_activity_id?: number
+          id?: string
+          max_hr?: number | null
+          raw?: Json | null
+          start_time_local?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      garmin_daily_stats: {
+        Row: {
+          active_kilocalories: number | null
+          body_battery_high: number | null
+          body_battery_low: number | null
+          created_at: string
+          day: string
+          distance_meters: number | null
+          floors_climbed: number | null
+          floors_goal: number | null
+          id: string
+          intensity_minutes_goal: number | null
+          moderate_intensity_minutes: number | null
+          raw: Json | null
+          resting_heart_rate: number | null
+          step_goal: number | null
+          steps: number | null
+          stress_average: number | null
+          total_kilocalories: number | null
+          updated_at: string
+          vigorous_intensity_minutes: number | null
+        }
+        Insert: {
+          active_kilocalories?: number | null
+          body_battery_high?: number | null
+          body_battery_low?: number | null
+          created_at?: string
+          day: string
+          distance_meters?: number | null
+          floors_climbed?: number | null
+          floors_goal?: number | null
+          id?: string
+          intensity_minutes_goal?: number | null
+          moderate_intensity_minutes?: number | null
+          raw?: Json | null
+          resting_heart_rate?: number | null
+          step_goal?: number | null
+          steps?: number | null
+          stress_average?: number | null
+          total_kilocalories?: number | null
+          updated_at?: string
+          vigorous_intensity_minutes?: number | null
+        }
+        Update: {
+          active_kilocalories?: number | null
+          body_battery_high?: number | null
+          body_battery_low?: number | null
+          created_at?: string
+          day?: string
+          distance_meters?: number | null
+          floors_climbed?: number | null
+          floors_goal?: number | null
+          id?: string
+          intensity_minutes_goal?: number | null
+          moderate_intensity_minutes?: number | null
+          raw?: Json | null
+          resting_heart_rate?: number | null
+          step_goal?: number | null
+          steps?: number | null
+          stress_average?: number | null
+          total_kilocalories?: number | null
+          updated_at?: string
+          vigorous_intensity_minutes?: number | null
+        }
+        Relationships: []
+      }
+      garmin_sleep: {
+        Row: {
+          average_respiration: number | null
+          average_spo2: number | null
+          awake_seconds: number | null
+          created_at: string
+          day: string
+          deep_seconds: number | null
+          id: string
+          light_seconds: number | null
+          raw: Json | null
+          rem_seconds: number | null
+          sleep_end: string | null
+          sleep_score: number | null
+          sleep_start: string | null
+          total_seconds: number | null
+          updated_at: string
+        }
+        Insert: {
+          average_respiration?: number | null
+          average_spo2?: number | null
+          awake_seconds?: number | null
+          created_at?: string
+          day: string
+          deep_seconds?: number | null
+          id?: string
+          light_seconds?: number | null
+          raw?: Json | null
+          rem_seconds?: number | null
+          sleep_end?: string | null
+          sleep_score?: number | null
+          sleep_start?: string | null
+          total_seconds?: number | null
+          updated_at?: string
+        }
+        Update: {
+          average_respiration?: number | null
+          average_spo2?: number | null
+          awake_seconds?: number | null
+          created_at?: string
+          day?: string
+          deep_seconds?: number | null
+          id?: string
+          light_seconds?: number | null
+          raw?: Json | null
+          rem_seconds?: number | null
+          sleep_end?: string | null
+          sleep_score?: number | null
+          sleep_start?: string | null
+          total_seconds?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      garmin_sync_log: {
+        Row: {
+          activities_count: number | null
+          daily_count: number | null
+          duration_ms: number | null
+          error: string | null
+          id: string
+          ok: boolean
+          ran_at: string
+          sleep_count: number | null
+          trigger: string
+        }
+        Insert: {
+          activities_count?: number | null
+          daily_count?: number | null
+          duration_ms?: number | null
+          error?: string | null
+          id?: string
+          ok: boolean
+          ran_at?: string
+          sleep_count?: number | null
+          trigger: string
+        }
+        Update: {
+          activities_count?: number | null
+          daily_count?: number | null
+          duration_ms?: number | null
+          error?: string | null
+          id?: string
+          ok?: boolean
+          ran_at?: string
+          sleep_count?: number | null
+          trigger?: string
+        }
+        Relationships: []
+      }
+      garmin_tokens: {
+        Row: {
+          created_at: string
+          domain: string
+          id: string
+          last_login_at: string | null
+          oauth1_secret: string | null
+          oauth1_token: string | null
+          oauth2_expires_at: string | null
+          oauth2_refresh_token: string | null
+          oauth2_token: string | null
+          updated_at: string
+          username: string | null
+        }
+        Insert: {
+          created_at?: string
+          domain?: string
+          id?: string
+          last_login_at?: string | null
+          oauth1_secret?: string | null
+          oauth1_token?: string | null
+          oauth2_expires_at?: string | null
+          oauth2_refresh_token?: string | null
+          oauth2_token?: string | null
+          updated_at?: string
+          username?: string | null
+        }
+        Update: {
+          created_at?: string
+          domain?: string
+          id?: string
+          last_login_at?: string | null
+          oauth1_secret?: string | null
+          oauth1_token?: string | null
+          oauth2_expires_at?: string | null
+          oauth2_refresh_token?: string | null
+          oauth2_token?: string | null
+          updated_at?: string
+          username?: string | null
+        }
+        Relationships: []
+      }
       grocery_favorites: {
         Row: {
           brand: string | null
