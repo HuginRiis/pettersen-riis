@@ -611,6 +611,45 @@ export type Database = {
         }
         Relationships: []
       }
+      mail_delivery_prefs: {
+        Row: {
+          created_at: string
+          days_before: number
+          enabled: boolean
+          id: string
+          last_notified_for_date: string | null
+          notify_hour: number
+          notify_minute: number
+          postal_code: string
+          recipient: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          days_before?: number
+          enabled?: boolean
+          id?: string
+          last_notified_for_date?: string | null
+          notify_hour?: number
+          notify_minute?: number
+          postal_code?: string
+          recipient?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          days_before?: number
+          enabled?: boolean
+          id?: string
+          last_notified_for_date?: string | null
+          notify_hour?: number
+          notify_minute?: number
+          postal_code?: string
+          recipient?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       met_alert_notification_prefs: {
         Row: {
           colors: string[]
