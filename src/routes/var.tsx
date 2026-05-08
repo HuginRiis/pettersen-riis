@@ -412,11 +412,6 @@ function WeatherPage() {
           <CollapsibleMap />
         </Block>
 
-        {/* === VÆR-VARSLER (push) === */}
-        <Block title="Værvaktens Ravner · Push-varsler">
-          <WeatherNotificationSettings />
-        </Block>
-
         <p className="text-xs text-muted-foreground italic">
           Værdata fra MET.no. Live målinger fra Netatmo via Homey. Astronomi beregnet lokalt. Kart fra Windy.com.
         </p>
