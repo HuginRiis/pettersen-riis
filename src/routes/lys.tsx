@@ -320,6 +320,12 @@ function LysPage() {
     await Promise.all(lights.filter((l) => l.hasOnOff).map((l) => sendOnOff(l.id, on)));
   };
 
+  const runScene = async (scene: { device_ids: string[] }, on: boolean) => {
+    const ids = scene.device_ids.length > 0 ? new Set(scene.device_ids) : null;
+    const targets = lights.filter((l) => l.hasOnOff && (ids === null || ids.has(l.id)));
+    await Promise.all(targets.map((l) => sendOnOff(l.id, on)));
+  };
+
   return (
     <PageShell>
       <PageHero
@@ -333,48 +339,79 @@ function LysPage() {
         <LastUpdated label="Homey" timestamp={updated} />
       </section>
 
-      {/* Globale handlinger */}
-      <section className="container mx-auto px-4 pt-6">
+      {/* Status + 3 scene-bokser */}
+      <section className="container mx-auto px-4 pt-6 space-y-3">
         <div
-          className="panel rounded-lg p-5 flex flex-wrap items-center justify-between gap-4"
+          className="panel rounded-lg p-4 flex items-center gap-3"
           style={{
             background:
               "linear-gradient(180deg, color-mix(in oklab, var(--gold) 8%, transparent), var(--gradient-iron))",
             borderColor: "color-mix(in oklab, var(--gold) 30%, transparent)",
           }}
         >
-          <div className="flex items-center gap-3">
-            <Flame
-              size={24}
-              className="text-primary"
-              style={{
-                filter:
-                  "drop-shadow(0 0 8px color-mix(in oklab, var(--gold) 70%, transparent))",
-              }}
-            />
-            <div>
-              <div className="text-display text-primary text-base sm:text-lg tracking-[0.2em] uppercase">
-                {totalLit > 0 ? `${totalLit} ildsteder brenner` : "Mørke i alle saler"}
-              </div>
-              <div className="text-[10px] tracking-[0.25em] text-muted-foreground uppercase mt-0.5">
-                {totalLit} av {totalLights} tent · {grouped.length} saler
-              </div>
+          <Flame
+            size={22}
+            className="text-primary"
+            style={{
+              filter: "drop-shadow(0 0 8px color-mix(in oklab, var(--gold) 70%, transparent))",
+            }}
+          />
+          <div className="flex-1 min-w-0">
+            <div className="text-display text-primary text-sm sm:text-base tracking-[0.2em] uppercase">
+              {totalLit > 0 ? `${totalLit} ildsteder brenner` : "Mørke i alle saler"}
+            </div>
+            <div className="text-[10px] tracking-[0.25em] text-muted-foreground uppercase mt-0.5">
+              {totalLit} av {totalLights} tent · {grouped.length} saler
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => toggleAll(true)}
-              className="px-4 py-2 rounded border border-primary/40 text-primary text-xs tracking-[0.25em] uppercase hover:bg-primary/10 transition-colors"
-            >
-              ✦ Tenn alle
-            </button>
-            <button
-              onClick={() => toggleAll(false)}
-              className="px-4 py-2 rounded border border-border text-muted-foreground text-xs tracking-[0.25em] uppercase hover:text-foreground hover:border-foreground/40 transition-colors"
-            >
-              ○ Slokk alle
-            </button>
-          </div>
+          <Link
+            to="/push-varslinger"
+            hash="scener"
+            className="text-[10px] tracking-[0.25em] uppercase text-muted-foreground hover:text-primary transition-colors shrink-0"
+            title="Tilpass scene-knappene"
+          >
+            ⚙ Endre
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {scenes.map((s) => {
+            const targetCount = s.device_ids.length > 0
+              ? s.device_ids.filter((id) => lights.some((l) => l.id === id)).length
+              : lights.filter((l) => l.hasOnOff).length;
+            return (
+              <div
+                key={s.slot}
+                className="panel rounded-lg p-3 flex flex-col gap-2"
+                style={{
+                  borderColor: "color-mix(in oklab, var(--gold) 25%, var(--color-border))",
+                }}
+              >
+                <div className="flex items-baseline justify-between gap-2">
+                  <div className="text-display text-sm tracking-[0.2em] uppercase text-foreground truncate">
+                    {s.name || `Scene ${s.slot + 1}`}
+                  </div>
+                  <span className="text-[9px] tracking-[0.25em] uppercase text-muted-foreground shrink-0">
+                    {targetCount} lys
+                  </span>
+                </div>
+                <div className="flex gap-1.5">
+                  <button
+                    onClick={() => runScene(s, true)}
+                    className="flex-1 px-3 py-2 rounded border border-primary/40 text-primary text-[11px] tracking-[0.25em] uppercase hover:bg-primary/10 transition-colors"
+                  >
+                    ✦ Tenn
+                  </button>
+                  <button
+                    onClick={() => runScene(s, false)}
+                    className="flex-1 px-3 py-2 rounded border border-border text-muted-foreground text-[11px] tracking-[0.25em] uppercase hover:text-foreground transition-colors"
+                  >
+                    ○ Slokk
+                  </button>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </section>
 
