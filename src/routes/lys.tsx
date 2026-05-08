@@ -79,8 +79,9 @@ function LysPage() {
     Record<string, { on?: boolean; dim?: number }>
   >({});
   const [busy, setBusy] = useState<Record<string, boolean>>({});
-  const [updated, setUpdated] = useState<Date | null>(new Date());
+  const [updated, setUpdated] = useState<Date | null>(null);
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  const [colorOpen, setColorOpen] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     setUpdated(new Date());
