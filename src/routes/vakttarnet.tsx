@@ -15,6 +15,7 @@ import heroImg from "@/assets/got-vakttarnet.jpg";
 import { Eye, Globe2, Smartphone, Monitor, Tablet, Clock, Crown, ShieldAlert, Map as MapIcon, Lock, Unlock, Sparkles, DoorClosed, Users, Bell, Database } from "lucide-react";
 import { DbUsagePanel } from "@/components/DbUsagePanel";
 import { DoorsLocksPanel } from "@/components/DoorsLocksPanel";
+import { FrontDoorPanel } from "@/components/FrontDoorPanel";
 import { ApiCallLogPanel } from "@/components/ApiCallLogPanel";
 import { MaesterAiBudget } from "@/components/MaesterAiBudget";
 import { PushSendCountsPanel } from "@/components/PushSendCountsPanel";
@@ -103,6 +104,14 @@ function VakttarnetPage() {
       />
 
       <section className="container mx-auto px-3 sm:px-4 py-6 sm:py-10 space-y-6 sm:space-y-10">
+        <Panel
+          title="Utgangsdøren"
+          icon={<DoorClosed size={14} />}
+          subtitle="Lås, lås opp og se status og batteri på husets utgangsdør"
+        >
+          <FrontDoorPanel />
+        </Panel>
+
         <StatsCards
           sessions={sessions}
           pageviews={pageviews}
@@ -335,23 +344,45 @@ function StatsCards({
     };
   }, [sessions, pageviews, attempts]);
 
+  const [open, setOpen] = useState(false);
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3">
-      <StatCard label="Unike sjeler" value={totalSouls.toLocaleString("nb-NO")} />
-      <StatCard label="Sjeler siste døgn" value={stats.todayCount.toString()} />
-      <StatCard label="Sidevisninger" value={totalPageviews.toLocaleString("nb-NO")} />
-      <StatCard label="Snitt-økt" value={formatDuration(stats.avgDuration)} />
-      <StatCard
-        label="Mest besøkte"
-        value={stats.topPath}
-        sub={`${stats.topPathHits} treff`}
-        wide
-      />
-      <StatCard
-        label="Feilforsøk siste døgn"
-        value={stats.failedToday.toString()}
-        tone={stats.failedToday > 0 ? "warn" : "ok"}
-      />
+    <div className="panel rounded-md border border-border bg-card/40 backdrop-blur p-2 sm:p-3">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center justify-between gap-2 px-1 py-1 text-[10px] tracking-[0.25em] uppercase text-muted-foreground hover:text-primary transition-colors"
+        aria-expanded={open}
+      >
+        <span className="flex items-center gap-3 flex-wrap">
+          <span className="text-primary">📊 Vaktens nøkkeltall</span>
+          <span className="normal-case tracking-normal text-[10px] text-muted-foreground/80">
+            {totalSouls.toLocaleString("nb-NO")} sjeler · {stats.todayCount} siste døgn · {totalPageviews.toLocaleString("nb-NO")} sidevisninger
+            {stats.failedToday > 0 && (
+              <span className="text-destructive"> · {stats.failedToday} feilforsøk</span>
+            )}
+          </span>
+        </span>
+        <span className="text-[10px]">{open ? "Lukk" : "Vis"}</span>
+      </button>
+      {open && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3 mt-3">
+          <StatCard label="Unike sjeler" value={totalSouls.toLocaleString("nb-NO")} />
+          <StatCard label="Sjeler siste døgn" value={stats.todayCount.toString()} />
+          <StatCard label="Sidevisninger" value={totalPageviews.toLocaleString("nb-NO")} />
+          <StatCard label="Snitt-økt" value={formatDuration(stats.avgDuration)} />
+          <StatCard
+            label="Mest besøkte"
+            value={stats.topPath}
+            sub={`${stats.topPathHits} treff`}
+            wide
+          />
+          <StatCard
+            label="Feilforsøk siste døgn"
+            value={stats.failedToday.toString()}
+            tone={stats.failedToday > 0 ? "warn" : "ok"}
+          />
+        </div>
+      )}
     </div>
   );
 }

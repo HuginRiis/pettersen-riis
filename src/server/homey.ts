@@ -1795,3 +1795,119 @@ export const getTollnesCameraSnapshot = createServerFn({ method: "GET" }).handle
     }
   }),
 );
+
+// ============================================================
+// Front door (utgangsdør) — quick status + lock/unlock
+// ============================================================
+
+export type FrontDoorStatus =
+  | { ok: false; error: string; needsConnect?: boolean }
+  | {
+      ok: true;
+      lock: DoorOrLockEntry | null;
+      door: DoorOrLockEntry | null;
+      fetchedAt: string;
+    };
+
+const FRONT_DOOR_RX = /utgang|ytter|hoved|inngang|front\s*d|front\s*entr/i;
+
+function pickFrontDoor(entries: DoorOrLockEntry[]): DoorOrLockEntry | null {
+  if (entries.length === 0) return null;
+  const named = entries.find((e) => FRONT_DOOR_RX.test(`${e.name} ${e.zoneName}`));
+  if (named) return named;
+  // Fallback: foretrekk Yale Doorman som hoveddør
+  const yale = entries.find((e) => e.brand === "yale");
+  return yale ?? entries[0];
+}
+
+async function loadFrontDoorEntries(): Promise<
+  { ok: true; lock: DoorOrLockEntry | null; door: DoorOrLockEntry | null }
+  | { ok: false; error: string; needsConnect?: boolean }
+> {
+  let conn: HomeyConnection | null;
+  try {
+    conn = await getValidConnection();
+  } catch (e: any) {
+    return { ok: false, error: e?.message ?? "Token-feil" };
+  }
+  if (!conn) return { ok: false, needsConnect: true, error: "Ikke tilkoblet Homey" };
+  try {
+    const raw = await getHomeyRawSnapshot(conn);
+    if (!raw) return { ok: false, error: "Fant ingen Homey-data" };
+    const zoneById = new Map<string, string>();
+    for (const z of raw.zonesRaw) zoneById.set(z.id ?? z._id, z.name ?? "Ukjent sal");
+    const locks: DoorOrLockEntry[] = [];
+    const doors: DoorOrLockEntry[] = [];
+    for (const d of raw.devicesRaw) {
+      const caps = d.capabilitiesObj ?? d.capabilities_obj ?? {};
+      if (!caps || typeof caps !== "object") continue;
+      const hasLock = "locked" in caps;
+      const hasContact = "alarm_contact" in caps;
+      if (!hasLock && !hasContact) continue;
+      const name = d.name ?? "Ukjent";
+      const kind = classifyKind(d.class, caps, name);
+      const lockedCap = caps.locked;
+      const contactCap = caps.alarm_contact;
+      const batteryCap = caps.measure_battery;
+      const tamperCap = caps.alarm_tamper;
+      const ts = pickCapTimestamp(lockedCap) ?? pickCapTimestamp(contactCap);
+      const entry: DoorOrLockEntry = {
+        id: d.id ?? d._id,
+        name,
+        zoneName: zoneById.get(d.zone) ?? "Ukjent sal",
+        available: d.available !== false,
+        locked: hasLock ? (lockedCap?.value ?? null) : undefined,
+        contactOpen: hasContact ? (contactCap?.value ?? null) : undefined,
+        battery: typeof batteryCap?.value === "number" ? batteryCap.value : null,
+        tamper: typeof tamperCap?.value === "boolean" ? tamperCap.value : null,
+        brand: detectBrand(d),
+        kind,
+        lastUpdated: ts,
+      };
+      if (kind === "lock") locks.push(entry);
+      else if (kind === "door") doors.push(entry);
+    }
+    return { ok: true, lock: pickFrontDoor(locks), door: pickFrontDoor(doors) };
+  } catch (e: any) {
+    return { ok: false, error: e?.message ?? "Klarte ikke hente dør-data" };
+  }
+}
+
+export const getFrontDoorStatus = createServerFn({ method: "GET" }).handler(
+  withApiLog("homey", "getFrontDoorStatus", async (): Promise<FrontDoorStatus> => {
+    const res = await loadFrontDoorEntries();
+    if (!res.ok) return res;
+    return { ok: true, lock: res.lock, door: res.door, fetchedAt: new Date().toISOString() };
+  }),
+);
+
+export const setFrontDoorLock = createServerFn({ method: "POST" })
+  .inputValidator((input: { locked: boolean }) => ({ locked: input.locked === true }))
+  .handler(async ({ data }): Promise<{ ok: boolean; error?: string }> => {
+    let conn: HomeyConnection | null;
+    try {
+      conn = await getValidConnection();
+    } catch (e: any) {
+      return { ok: false, error: e?.message ?? "Token-feil" };
+    }
+    if (!conn) return { ok: false, error: "Ikke tilkoblet Homey" };
+    try {
+      const session = await getHomeySessionContext(conn);
+      if (!session) return { ok: false, error: "Klarte ikke åpne Homey-sesjon" };
+      const entries = await loadFrontDoorEntries();
+      if (!entries.ok) return { ok: false, error: entries.error };
+      if (!entries.lock) return { ok: false, error: "Fant ingen utgangsdør-lås" };
+      const ok = await setDeviceCapabilityRaw(
+        session.sessionToken,
+        session.target.baseUrl,
+        entries.lock.id,
+        "locked",
+        data.locked,
+      );
+      if (!ok) return { ok: false, error: "Homey avviste kommandoen" };
+      homeySnapshotCache = null;
+      return { ok: true };
+    } catch (e: any) {
+      return { ok: false, error: e?.message ?? "Kommando feilet" };
+    }
+  });
