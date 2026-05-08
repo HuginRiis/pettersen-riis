@@ -10,6 +10,9 @@ import { FavoritesManagerPanel } from "@/components/FavoritesManagerPanel";
 import { LightScenesPanel } from "@/components/LightScenesPanel";
 import { FavoriteZonesPanel } from "@/components/FavoriteZonesPanel";
 import { MetAlertNotificationSettings } from "@/components/MetAlertNotificationSettings";
+import { LightIdleNotificationSettings } from "@/components/LightIdleNotificationSettings";
+import { UvNotificationSettings } from "@/components/UvNotificationSettings";
+import { WeatherNotificationSettings } from "@/components/WeatherNotificationSettings";
 import {
   Bell, BellOff, Calendar, Cake, Trash2, CloudSun, Sun, Lightbulb, ScrollText, ShieldCheck, Lock, ExternalLink, Smartphone, X,
 } from "lucide-react";
