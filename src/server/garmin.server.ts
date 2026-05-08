@@ -246,7 +246,7 @@ async function exchangeTicketForTokens(ticket: string, email: string): Promise<G
 }
 
 async function startLoginFlow(): Promise<
-  { status: "ok"; tokens: GarminTokens } | { status: "mfa" }
+  { status: "ok"; tokens: GarminTokens } | { status: "mfa" } | { status: "rate_limited"; retryAfterSeconds: number }
 > {
   const email = process.env.GARMIN_EMAIL;
   const password = process.env.GARMIN_PASSWORD;
@@ -280,6 +280,14 @@ async function startLoginFlow(): Promise<
     body: form.toString(),
   });
   const body = await postRes.text();
+
+  if (postRes.status === 429) {
+    const retryAfter = Number(postRes.headers.get("retry-after"));
+    const retryAfterSeconds = Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter : 15 * 60;
+    await saveTokens({ pending_mfa: null });
+    console.error("[garmin] login rate limited", body.replace(/\s+/g, " ").slice(0, 300));
+    return { status: "rate_limited", retryAfterSeconds };
+  }
 
   const ticket = extractTicket(body);
   if (ticket) {
@@ -430,9 +438,21 @@ export async function garminGet<T = unknown>(path: string): Promise<T> {
 }
 
 export async function garminLogin(): Promise<
-  { ok: true; mfa: false; expires_at: string } | { ok: true; mfa: true }
+  | { ok: true; mfa: false; expires_at: string }
+  | { ok: true; mfa: true }
+  | { ok: false; mfa: false; rateLimited: true; retryAfterSeconds: number; message: string }
 > {
   const r = await startLoginFlow();
+  if (r.status === "rate_limited") {
+    const minutes = Math.max(1, Math.ceil(r.retryAfterSeconds / 60));
+    return {
+      ok: false,
+      mfa: false,
+      rateLimited: true,
+      retryAfterSeconds: r.retryAfterSeconds,
+      message: `Garmin stopper innlogging midlertidig etter flere forsøk. Vent ca. ${minutes} min før du prøver igjen.`,
+    };
+  }
   if (r.status === "mfa") return { ok: true, mfa: true };
   return { ok: true, mfa: false, expires_at: r.tokens.oauth2_expires_at };
 }
