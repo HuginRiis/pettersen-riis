@@ -313,7 +313,7 @@ export function SiteHeader() {
                   {l.to === "/vakttarnet" && <><AlarmStateBadge inline /><UtgangsdorenLockBadge inline /></>}
                   {l.to === "/varsler" && <AlertsSeverityBadge inline />}
                   {l.to === "/stromkroniken" && <PowerVsYesterdayBadge inline />}
-                  {l.to === "/trening" && <TrainingLast4WeeksBadge inline />}
+                  {l.to === "/trening" && <><StepsTodayBadge inline /><TrainingLast4WeeksBadge inline /></>}
                 </Link>
               </span>
             );
