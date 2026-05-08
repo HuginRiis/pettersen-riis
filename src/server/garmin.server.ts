@@ -253,14 +253,24 @@ async function startLoginFlow(): Promise<
   if (!email || !password) throw new Error("GARMIN_EMAIL / GARMIN_PASSWORD ikke satt.");
 
   const jar: Jar = new Map();
+  // Garmin SSO krever NK=NT-cookien (settes normalt av JS-widgeten).
+  // Uten denne svarer SSO 429 selv på første forsøk fra serverside-klienter.
+  jar.set("NK", "NT");
 
-  await jfetch(jar, `${SSO_EMBED}?${new URLSearchParams({
-    id: "gauth-widget", embedWidget: "true", gauthHost: SSO_EMBED,
-  })}`);
+  await jfetch(jar, `${SSO_EMBED}?${new URLSearchParams(SIGNIN_PARAMS)}`, {
+    headers: {
+      Accept: "text/html,application/xhtml+xml",
+      "Accept-Language": "en-US,en;q=0.9",
+    },
+  });
 
   const signinUrl = `${LOGIN_URL}?${new URLSearchParams(SIGNIN_PARAMS)}`;
   const csrfRes = await jfetch(jar, signinUrl, {
-    headers: { Referer: SSO_EMBED, Accept: "text/html" },
+    headers: {
+      Referer: SSO_EMBED,
+      Accept: "text/html,application/xhtml+xml",
+      "Accept-Language": "en-US,en;q=0.9",
+    },
   });
   const csrfHtml = await csrfRes.text();
   const csrfMatch = csrfHtml.match(/name="_csrf"\s+value="([^"]+)"/);
