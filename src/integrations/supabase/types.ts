@@ -568,6 +568,7 @@ export type Database = {
           oauth2_expires_at: string | null
           oauth2_refresh_token: string | null
           oauth2_token: string | null
+          pending_mfa: Json | null
           updated_at: string
           username: string | null
         }
@@ -581,6 +582,7 @@ export type Database = {
           oauth2_expires_at?: string | null
           oauth2_refresh_token?: string | null
           oauth2_token?: string | null
+          pending_mfa?: Json | null
           updated_at?: string
           username?: string | null
         }
@@ -594,6 +596,7 @@ export type Database = {
           oauth2_expires_at?: string | null
           oauth2_refresh_token?: string | null
           oauth2_token?: string | null
+          pending_mfa?: Json | null
           updated_at?: string
           username?: string | null
         }

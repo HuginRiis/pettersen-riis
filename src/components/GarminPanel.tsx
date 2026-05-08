@@ -1,9 +1,12 @@
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Activity, Footprints, Heart, Flame, Moon, RefreshCw, LogIn, Loader2, TrendingUp } from "lucide-react";
+import { Activity, Footprints, Heart, Flame, Moon, RefreshCw, LogIn, Loader2, TrendingUp, ShieldCheck } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, CartesianGrid } from "recharts";
 import { toast } from "sonner";
-import { getGarminOverview, garminLoginNow, garminSyncNow } from "@/server/garmin.functions";
+import { getGarminOverview, garminLoginNow, garminSyncNow, garminSubmitMfaCode } from "@/server/garmin.functions";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 type Daily = {
   day: string; steps: number | null; step_goal: number | null;
@@ -20,7 +23,7 @@ type Activity = {
 };
 type Sleep = { day: string; total_seconds: number | null; deep_seconds: number | null; light_seconds: number | null; rem_seconds: number | null; awake_seconds: number | null; sleep_score: number | null };
 type Overview = {
-  status: { connected: boolean; username: string | null; expires_at: string | null; last_login_at: string | null };
+  status: { connected: boolean; username: string | null; expires_at: string | null; last_login_at: string | null; mfa_pending?: boolean };
   daily: Daily[]; activities: Activity[]; sleep: Sleep[];
   lastSync: { ran_at: string; ok: boolean; daily_count: number; activities_count: number; sleep_count: number; error: string | null } | null;
 };
@@ -37,9 +40,12 @@ export function GarminPanel() {
   const fetchOverview = useServerFn(getGarminOverview);
   const loginFn = useServerFn(garminLoginNow);
   const syncFn = useServerFn(garminSyncNow);
+  const mfaFn = useServerFn(garminSubmitMfaCode);
   const [data, setData] = useState<Overview | null>(null);
   const [loading, setLoading] = useState(true);
-  const [working, setWorking] = useState<"login" | "sync" | null>(null);
+  const [working, setWorking] = useState<"login" | "sync" | "mfa" | null>(null);
+  const [mfaOpen, setMfaOpen] = useState(false);
+  const [mfaCode, setMfaCode] = useState("");
 
   const load = async () => {
     setLoading(true);
@@ -48,6 +54,34 @@ export function GarminPanel() {
     finally { setLoading(false); }
   };
   useEffect(() => { void load(); }, []);
+
+  const handleLogin = async () => {
+    setWorking("login");
+    try {
+      const r = await loginFn();
+      if ("mfa" in r && r.mfa) {
+        setMfaCode("");
+        setMfaOpen(true);
+        toast.info("Garmin sendte deg en sikkerhetskode på e-post.");
+      } else {
+        toast.success("Logget inn på Garmin");
+      }
+      await load();
+    } catch (e) { toast.error((e as Error).message); }
+    finally { setWorking(null); }
+  };
+
+  const handleSubmitMfa = async () => {
+    setWorking("mfa");
+    try {
+      await mfaFn({ data: { code: mfaCode } });
+      toast.success("Garmin innlogging fullført");
+      setMfaOpen(false);
+      setMfaCode("");
+      await load();
+    } catch (e) { toast.error((e as Error).message); }
+    finally { setWorking(null); }
+  };
 
   const today = data?.daily?.[data.daily.length - 1];
 
@@ -59,8 +93,16 @@ export function GarminPanel() {
             <Activity size={16} /> Garmin — daglig helse
           </h2>
           <div className="flex items-center gap-2">
+            {data?.status.mfa_pending && (
+              <button
+                onClick={() => { setMfaCode(""); setMfaOpen(true); }}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded border border-amber-500/60 text-amber-600 dark:text-amber-400 text-xs hover:bg-amber-500/10"
+              >
+                <ShieldCheck size={12} /> Skriv inn kode
+              </button>
+            )}
             <button
-              onClick={async () => { setWorking("login"); try { await loginFn(); toast.success("Logget inn på Garmin"); await load(); } catch (e) { toast.error((e as Error).message); } finally { setWorking(null); } }}
+              onClick={handleLogin}
               disabled={!!working}
               className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded border border-border/60 text-xs hover:bg-muted/40 disabled:opacity-50"
             >
@@ -81,7 +123,9 @@ export function GarminPanel() {
         <p className="text-[11px] text-muted-foreground">
           {data?.status.connected
             ? <>Tilkoblet som <span className="text-foreground">{data.status.username}</span>{data.lastSync && <> · sist synket {new Date(data.lastSync.ran_at).toLocaleString("nb-NO")}</>}</>
-            : "Ikke tilkoblet — trykk 'Logg inn' for å hente data."}
+            : data?.status.mfa_pending
+              ? "Garmin venter på sikkerhetskode fra e-posten din — trykk 'Skriv inn kode'."
+              : "Ikke tilkoblet — trykk 'Logg inn' for å hente data."}
         </p>
 
         {loading && <div className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Laster…</div>}
@@ -194,6 +238,33 @@ export function GarminPanel() {
           </>
         )}
       </div>
+
+      <Dialog open={mfaOpen} onOpenChange={(o) => { if (!working) setMfaOpen(o); }}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><ShieldCheck size={16} /> Garmin sikkerhetskode</DialogTitle>
+            <DialogDescription>
+              Garmin har sendt en kode på e-post. Skriv inn koden her for å fullføre innloggingen.
+            </DialogDescription>
+          </DialogHeader>
+          <Input
+            inputMode="numeric"
+            autoFocus
+            placeholder="123456"
+            value={mfaCode}
+            onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, "").slice(0, 8))}
+            onKeyDown={(e) => { if (e.key === "Enter" && mfaCode.length >= 4) void handleSubmitMfa(); }}
+            className="text-center text-lg tracking-widest tabular-nums"
+          />
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setMfaOpen(false)} disabled={working === "mfa"}>Avbryt</Button>
+            <Button onClick={handleSubmitMfa} disabled={mfaCode.length < 4 || working === "mfa"}>
+              {working === "mfa" ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
+              Bekreft
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }

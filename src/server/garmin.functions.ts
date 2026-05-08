@@ -48,6 +48,17 @@ export const garminLoginNow = createServerFn({ method: "POST" }).handler(async (
   return mod.garminLogin();
 });
 
+export const garminSubmitMfaCode = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => {
+    const code = String((d as { code?: string })?.code ?? "").trim();
+    if (!/^\d{4,8}$/.test(code)) throw new Error("Sikkerhetskoden må være 4–8 siffer.");
+    return { code };
+  })
+  .handler(async ({ data }) => {
+    const mod = await import("./garmin.server");
+    return mod.garminSubmitMfa(data.code);
+  });
+
 export const garminSyncNow = createServerFn({ method: "POST" }).handler(async () => {
   const mod = await import("./garmin-sync.server");
   return mod.syncAll("manual");
