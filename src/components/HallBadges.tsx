@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getUpcomingWeatherEvaluations } from "@/server/weather-push.functions";
 import { getUpcomingUvEvaluations } from "@/server/uv-push.functions";
 import { getGarbageOverview } from "@/server/garbage-collection";
-import { getHomeySnapshot, getHomeAlarmStatus } from "@/server/homey";
+import { getHomeySnapshot, getHomeAlarmStatus, getDoorsLocksSnapshot } from "@/server/homey";
 import { getTelemarkAlerts } from "@/server/met-alerts";
 import { getStravaDashboard } from "@/server/strava";
 
@@ -423,6 +423,46 @@ export function TrainingLast4WeeksBadge({ inline }: { inline?: boolean } = {}) {
           {it.emoji}{it.n}
         </span>
       ))}
+    </span>
+  );
+}
+
+/** Lås-status for Utgangsdøren (LÅST / ÅPEN). */
+export function UtgangsdorenLockBadge({ inline }: { inline?: boolean } = {}) {
+  const [locked, setLocked] = useState<boolean | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await getDoorsLocksSnapshot();
+        if (cancelled || !r.ok) return;
+        const found =
+          r.locks.find((l) => l.name.toLowerCase().includes("utgangsdør")) ??
+          r.locks.find((l) => l.name.toLowerCase().includes("utgang")) ??
+          null;
+        if (found && typeof found.locked === "boolean") setLocked(found.locked);
+      } catch {}
+    })();
+    return () => { cancelled = true; };
+  }, []);
+  if (locked == null) return null;
+  const label = locked ? "LÅST" : "ÅPEN";
+  const emoji = locked ? "🔒" : "🔓";
+  const tone = locked
+    ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40"
+    : "bg-rose-500/20 text-rose-300 border-rose-500/40";
+  if (inline) {
+    return (
+      <span title={`Utgangsdøren: ${label}`}
+        className={`ml-1 px-1.5 h-[18px] rounded-full text-[10px] font-semibold inline-flex items-center justify-center border ${tone}`}>
+        {emoji}{label}
+      </span>
+    );
+  }
+  return (
+    <span title={`Utgangsdøren: ${label}`}
+      className={`absolute top-2 right-2 z-10 h-[22px] px-2 rounded-full text-[11px] font-semibold flex items-center justify-center border backdrop-blur shadow ${tone}`}>
+      {emoji}{label}
     </span>
   );
 }
