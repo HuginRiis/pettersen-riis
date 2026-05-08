@@ -54,9 +54,9 @@ function PushSettingsPage() {
   return (
     <PageShell>
       <PageHero
-        eyebrow="Husets ravner"
-        title="Push-varslinger"
-        subtitle="Alle varsler huset kan sende — samlet på ett sted. Rediger her eller på sin opprinnelige side."
+        eyebrow="Borgens innstillinger"
+        title="Innstillinger"
+        subtitle="Personlige innstillinger og alle push-varsler — samlet på ett sted."
         image={heroImg}
       />
 
@@ -67,11 +67,12 @@ function PushSettingsPage() {
           ✦ Innstillinger fremover
         </h2>
         <p className="text-xs text-muted-foreground mb-3">
-          Personlige innstillinger for menyen, snarveier og lys-scener — knyttet til deg som push-mottaker.
+          Personlige innstillinger for menyen, snarveier, favoritt-rom og lys-scener — knyttet til deg som push-mottaker.
         </p>
       </section>
       <MenuPreferencesPanel />
       <FavoritesManagerPanel />
+      <FavoriteZonesPanel />
       <LightScenesPanel />
       <PushSchedulingSettings />
       <TibberCronStatusPanel />
