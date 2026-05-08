@@ -76,7 +76,7 @@ function LysPage() {
   const router = useRouter();
   const setCap = useServerFn(setLivingRoomDeviceCapability);
   const [overrides, setOverrides] = useState<
-    Record<string, { on?: boolean; dim?: number }>
+    Record<string, { on?: boolean; dim?: number; hue?: number; saturation?: number; temperature?: number }>
   >({});
   const [busy, setBusy] = useState<Record<string, boolean>>({});
   const [updated, setUpdated] = useState<Date | null>(null);
