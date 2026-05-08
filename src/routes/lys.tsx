@@ -134,6 +134,32 @@ function LysPage() {
           : typeof d.capabilities["dim"]?.value === "number"
             ? (d.capabilities["dim"]?.value as number)
             : null;
+      const hasHue = "light_hue" in d.capabilities;
+      const hasSat = "light_saturation" in d.capabilities;
+      const hasTemp = "light_temperature" in d.capabilities;
+      const hasMode = "light_mode" in d.capabilities;
+      const hueVal =
+        typeof ov.hue === "number"
+          ? ov.hue
+          : typeof d.capabilities["light_hue"]?.value === "number"
+            ? (d.capabilities["light_hue"]?.value as number)
+            : null;
+      const satVal =
+        typeof ov.saturation === "number"
+          ? ov.saturation
+          : typeof d.capabilities["light_saturation"]?.value === "number"
+            ? (d.capabilities["light_saturation"]?.value as number)
+            : null;
+      const tempVal =
+        typeof ov.temperature === "number"
+          ? ov.temperature
+          : typeof d.capabilities["light_temperature"]?.value === "number"
+            ? (d.capabilities["light_temperature"]?.value as number)
+            : null;
+      const modeVal =
+        typeof d.capabilities["light_mode"]?.value === "string"
+          ? (d.capabilities["light_mode"]?.value as string)
+          : null;
       arr.push({
         id: d.id,
         name: d.name,
@@ -144,6 +170,13 @@ function LysPage() {
         dim: dimVal,
         hasDim,
         isLightClass: isLight,
+        hasHue: hasHue && hasSat,
+        hue: hueVal,
+        saturation: satVal,
+        hasTemperature: hasTemp,
+        temperature: tempVal,
+        hasLightMode: hasMode,
+        lightMode: modeVal,
       });
     }
     arr.sort((a, b) => a.name.localeCompare(b.name, "nb"));
