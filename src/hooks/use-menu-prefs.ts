@@ -6,12 +6,14 @@ export type MenuPrefs = {
   sortByUsage: boolean;
   favoritesEnabled: boolean;
   favorites: string[];
+  favoriteZones: string[];
 };
 
 const DEFAULTS: MenuPrefs = {
   sortByUsage: false,
   favoritesEnabled: true,
   favorites: [],
+  favoriteZones: [],
 };
 
 const EVT = "menu-prefs-updated";
