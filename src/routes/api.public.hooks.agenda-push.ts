@@ -94,10 +94,29 @@ export const Route = createFileRoute("/api/public/hooks/agenda-push")({
           let garmin: any = { skipped: true };
           try {
             const gmod = await import("@/server/garmin-sync.server");
-            const nowH = new Date().getUTCHours();
-            // Run once per day around 04:00 UTC (~06:00 local)
-            if (nowH === 4) {
-              garmin = await gmod.syncAll("cron");
+            const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+            const { data: schedRow } = await supabaseAdmin
+              .from("notification_settings").select("value").eq("key", "garmin_sync_schedule").maybeSingle();
+            const sched = (schedRow?.value as { interval_minutes?: number; first_local_hour?: number; last_local_hour?: number } | null) ?? null;
+            const intervalMin = sched?.interval_minutes ?? 1440;
+            const firstH = sched?.first_local_hour ?? 6;
+            const lastH = sched?.last_local_hour ?? 23;
+            const localHourStr = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Oslo", hour: "2-digit", hour12: false }).format(new Date());
+            const localHour = parseInt(localHourStr, 10);
+            const inWindow = firstH <= lastH ? (localHour >= firstH && localHour <= lastH) : (localHour >= firstH || localHour <= lastH);
+            if (!inWindow) {
+              garmin = { skipped: true, reason: `outside window (${firstH}-${lastH}, now ${localHour})` };
+            } else {
+              const { data: lastOk } = await supabaseAdmin
+                .from("garmin_sync_log").select("ran_at").eq("ok", true)
+                .order("ran_at", { ascending: false }).limit(1).maybeSingle();
+              const lastMs = lastOk?.ran_at ? new Date(lastOk.ran_at).getTime() : 0;
+              const dueMs = lastMs + intervalMin * 60_000;
+              if (Date.now() >= dueMs) {
+                garmin = await gmod.syncAll("cron");
+              } else {
+                garmin = { skipped: true, reason: `interval ${intervalMin}m not elapsed`, next_at: new Date(dueMs).toISOString() };
+              }
             }
           } catch (err) {
             console.error("[garmin-sync] failed", err);
