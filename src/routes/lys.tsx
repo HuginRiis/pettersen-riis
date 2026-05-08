@@ -100,14 +100,24 @@ function LysPage() {
     (async () => {
       const { getStoredWho } = await import("@/lib/push-client");
       const { supabase } = await import("@/integrations/supabase/client");
-      const w = getStoredWho() || "Alle";
+      const stored = getStoredWho();
+      const w = stored || "Alle";
       if (cancelled) return;
       setWho(w);
-      const { data: rows } = await supabase
+      // Prøv først for valgt bruker (eller "Alle"). Hvis ingen rader: fallback til Arne.
+      let { data: rows } = await supabase
         .from("user_light_scenes")
         .select("slot, name, device_ids")
         .eq("who", w)
         .order("slot");
+      if (!cancelled && (!rows || rows.length === 0) && w !== "Arne") {
+        const { data: arneRows } = await supabase
+          .from("user_light_scenes")
+          .select("slot, name, device_ids")
+          .eq("who", "Arne")
+          .order("slot");
+        rows = arneRows;
+      }
       if (cancelled || !rows || rows.length === 0) return;
       const map = new Map<number, { slot: number; name: string; device_ids: string[] }>();
       for (const r of rows as any[]) {

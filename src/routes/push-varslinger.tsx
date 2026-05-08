@@ -64,7 +64,7 @@ function PushSettingsPage() {
 
       <section className="container mx-auto px-4 pt-4">
         <h2 className="text-display text-primary text-sm tracking-[0.3em] uppercase mb-2">
-          ✦ Innstillinger fremover
+          ✦ Innstillinger
         </h2>
         <p className="text-xs text-muted-foreground mb-3">
           Personlige innstillinger for menyen, snarveier, favoritt-rom og lys-scener — knyttet til deg som push-mottaker.
