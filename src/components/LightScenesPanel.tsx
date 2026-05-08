@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Lightbulb, Save, Search, Loader2, Settings2 } from "lucide-react";
+import { Lightbulb, Save, Search, Loader2, Settings2, Globe2, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getStoredWho } from "@/lib/push-client";
 import { getHomeySnapshot, type HomeyDeviceSnapshot } from "@/server/homey";
+import { useMenuPrefs } from "@/hooks/use-menu-prefs";
 
 type Scene = {
   slot: number;
