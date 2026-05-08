@@ -21,6 +21,7 @@ import { PushSendCountsPanel } from "@/components/PushSendCountsPanel";
 import { ChangelogPanel } from "@/components/ChangelogPanel";
 import { VakttarnEventsPanel } from "@/components/VakttarnEventsPanel";
 import { EufyInspector } from "@/components/EufyInspector";
+import { UtgangsdorenPanel } from "@/components/UtgangsdorenPanel";
 
 export const Route = createFileRoute("/vakttarnet")({
   head: () => ({
@@ -103,6 +104,8 @@ function VakttarnetPage() {
       />
 
       <section className="container mx-auto px-3 sm:px-4 py-6 sm:py-10 space-y-6 sm:space-y-10">
+        <UtgangsdorenPanel />
+
         <StatsCards
           sessions={sessions}
           pageviews={pageviews}

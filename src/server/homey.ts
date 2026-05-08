@@ -1757,3 +1757,38 @@ export const getTollnesCameraSnapshot = createServerFn({ method: "GET" }).handle
     }
   }),
 );
+
+// ============================================================
+// Lock control (Yale Doorman / Verisure smart lock)
+// ============================================================
+export const setLockState = createServerFn({ method: "POST" })
+  .inputValidator((input: { deviceId: string; locked: boolean }) => {
+    if (!input?.deviceId) throw new Error("deviceId mangler");
+    if (typeof input.locked !== "boolean") throw new Error("locked må være boolean");
+    return input;
+  })
+  .handler(async ({ data }): Promise<{ ok: boolean; error?: string }> => {
+    let conn: HomeyConnection | null;
+    try {
+      conn = await getValidConnection();
+    } catch (e: any) {
+      return { ok: false, error: e?.message ?? "Token-feil" };
+    }
+    if (!conn) return { ok: false, error: "Ingen Homey-tilkobling" };
+    try {
+      const session = await getHomeySessionContext(conn);
+      if (!session) return { ok: false, error: "Fant ingen Homey" };
+      const ok = await setDeviceCapabilityRaw(
+        session.sessionToken,
+        session.target.baseUrl,
+        data.deviceId,
+        "locked",
+        data.locked,
+      );
+      if (!ok) return { ok: false, error: "Homey avviste kommandoen" };
+      homeySnapshotCache = null;
+      return { ok: true };
+    } catch (e: any) {
+      return { ok: false, error: e?.message ?? "Kommando feilet" };
+    }
+  });
