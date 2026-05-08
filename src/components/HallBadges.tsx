@@ -6,6 +6,7 @@ import { getGarbageOverview } from "@/server/garbage-collection";
 import { getHomeySnapshot, getHomeAlarmStatus, getDoorsLocksSnapshot } from "@/server/homey";
 import { getTelemarkAlerts } from "@/server/met-alerts";
 import { getStravaDashboard } from "@/server/strava";
+import { getGarminOverview } from "@/server/garmin.functions";
 
 function osloLocalToUtc(dateStr: string, timeStr: string): Date {
   const [y, m, d] = dateStr.split("-").map(Number);
