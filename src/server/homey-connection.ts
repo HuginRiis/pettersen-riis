@@ -1,3 +1,5 @@
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
+
 export type HomeyConnection = {
   id: string;
   access_token: string;
@@ -12,17 +14,10 @@ export type HomeyConnection = {
   homey_target_cached_at?: string | null;
 };
 
-async function getSupabaseAdmin() {
-  const seg = ["@/integrations/supabase/client", "server"].join(".");
-  const m = await import(/* @vite-ignore */ seg);
-  return m.supabaseAdmin;
-}
-
 export async function saveHomeyTargetCache(
   id: string,
   target: { homey_id: string; homey_name: string | null; homey_base_url: string },
 ) {
-  const supabaseAdmin = await getSupabaseAdmin();
   const { error } = await supabaseAdmin
     .from("homey_connections")
     .update({
@@ -36,7 +31,6 @@ export async function saveHomeyTargetCache(
 }
 
 export async function getHomeyConnection(): Promise<HomeyConnection | null> {
-  const supabaseAdmin = await getSupabaseAdmin();
   const { data, error } = await supabaseAdmin
     .from("homey_connections")
     .select("*")
@@ -55,7 +49,6 @@ export async function saveHomeyConnection(input: {
   athom_user_id: string | null;
   athom_user_name: string | null;
 }) {
-  const supabaseAdmin = await getSupabaseAdmin();
   // Replace any existing row — single household connection
   await supabaseAdmin.from("homey_connections").delete().neq("id", "00000000-0000-0000-0000-000000000000");
   const { error } = await supabaseAdmin.from("homey_connections").insert({
@@ -69,7 +62,6 @@ export async function updateHomeyTokens(
   id: string,
   patch: { access_token: string; refresh_token: string; expires_at: string; scope?: string | null },
 ) {
-  const supabaseAdmin = await getSupabaseAdmin();
   const { error } = await supabaseAdmin
     .from("homey_connections")
     .update(patch)
@@ -78,7 +70,6 @@ export async function updateHomeyTokens(
 }
 
 export async function deleteHomeyConnection() {
-  const supabaseAdmin = await getSupabaseAdmin();
   const { error } = await supabaseAdmin
     .from("homey_connections")
     .delete()

@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { saveHomeyConnection } from "@/server/homey-connection-db";
+import { saveHomeyConnection } from "@/server/homey-connection";
 
 const ATHOM_API_BASE = "https://api.athom.com";
 const REDIRECT_URI = "https://pettersen-riis.lovable.app/api/homey/callback";

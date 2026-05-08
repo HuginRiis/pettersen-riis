@@ -15,7 +15,7 @@ import { useNavUsage } from "@/hooks/use-nav-usage";
 import { useMenuPrefs } from "@/hooks/use-menu-prefs";
 import { getNetatmoWeatherStation } from "@/server/netatmo-weather";
 import { useLastGood } from "@/hooks/use-last-good";
-import { PushTodayBadge, LightsOnBadge, TomorrowWeatherBadge, AlarmStateBadge, AlertsSeverityBadge, PowerVsYesterdayBadge, TrainingLast4WeeksBadge, FrontDoorBadge } from "@/components/HallBadges";
+import { PushTodayBadge, LightsOnBadge, TomorrowWeatherBadge, AlarmStateBadge, AlertsSeverityBadge, PowerVsYesterdayBadge, TrainingLast4WeeksBadge } from "@/components/HallBadges";
 
 const BORGEN_COORD = { lat: 59.1789, lon: 9.5732 };
 const HYTTA_COORD = { lat: 59.8733, lon: 9.4297 };
@@ -311,7 +311,6 @@ export function SiteHeader() {
                   {l.to === "/lys" && <LightsOnBadge inline />}
                   {l.to === "/var" && <TomorrowWeatherBadge inline lat={BORGEN_COORD.lat} lon={BORGEN_COORD.lon} />}
                   {l.to === "/vakttarnet" && <AlarmStateBadge inline />}
-                  {l.to === "/vakttarnet" && <FrontDoorBadge inline />}
                   {l.to === "/varsler" && <AlertsSeverityBadge inline />}
                   {l.to === "/stromkroniken" && <PowerVsYesterdayBadge inline />}
                   {l.to === "/trening" && <TrainingLast4WeeksBadge inline />}
@@ -426,7 +425,6 @@ export function SiteHeader() {
                     {l.to === "/lys" && <LightsOnBadge inline />}
                     {l.to === "/var" && <TomorrowWeatherBadge inline lat={BORGEN_COORD.lat} lon={BORGEN_COORD.lon} />}
                     {l.to === "/vakttarnet" && <AlarmStateBadge inline />}
-                    {l.to === "/vakttarnet" && <FrontDoorBadge inline />}
                     {l.to === "/varsler" && <AlertsSeverityBadge inline />}
                     {l.to === "/stromkroniken" && <PowerVsYesterdayBadge inline />}
                     {l.to === "/trening" && <TrainingLast4WeeksBadge inline />}
