@@ -64,7 +64,7 @@ export async function syncDaily(daysBack = 30): Promise<number> {
         raw: ds as unknown as Record<string, unknown>,
         updated_at: new Date().toISOString(),
       };
-      await supabaseAdmin.from("garmin_daily_stats").upsert(row, { onConflict: "day" });
+      await supabaseAdmin.from("garmin_daily_stats").upsert([row], { onConflict: "day" });
       count++;
     } catch (e) {
       console.error("[garmin-sync] daily failed", day, e);
@@ -96,7 +96,7 @@ export async function syncActivities(limit = 50): Promise<number> {
     if (!a.activityId || !a.startTimeLocal) continue;
     await supabaseAdmin
       .from("garmin_activities")
-      .upsert({
+      .upsert([{
         garmin_activity_id: a.activityId,
         activity_type: a.activityType?.typeKey ?? null,
         activity_name: a.activityName ?? null,
@@ -110,7 +110,7 @@ export async function syncActivities(limit = 50): Promise<number> {
         average_speed: a.averageSpeed ?? null,
         raw: a as unknown as Record<string, unknown>,
         updated_at: new Date().toISOString(),
-      }, { onConflict: "garmin_activity_id" });
+      }], { onConflict: "garmin_activity_id" });
     count++;
   }
   return count;
@@ -140,7 +140,7 @@ export async function syncSleep(daysBack = 14): Promise<number> {
       const s = await garminGet<SleepDto>(`/wellness-service/wellness/dailySleepData?date=${day}`);
       const d = s?.dailySleepDTO;
       if (!d || !d.calendarDate) continue;
-      await supabaseAdmin.from("garmin_sleep").upsert({
+      await supabaseAdmin.from("garmin_sleep").upsert([{
         day: d.calendarDate,
         sleep_start: d.sleepStartTimestampLocal ? new Date(d.sleepStartTimestampLocal).toISOString() : null,
         sleep_end: d.sleepEndTimestampLocal ? new Date(d.sleepEndTimestampLocal).toISOString() : null,
@@ -154,7 +154,7 @@ export async function syncSleep(daysBack = 14): Promise<number> {
         sleep_score: d.sleepScores?.overall?.value ?? null,
         raw: s as unknown as Record<string, unknown>,
         updated_at: new Date().toISOString(),
-      }, { onConflict: "day" });
+      }], { onConflict: "day" });
       count++;
     } catch (e) {
       console.error("[garmin-sync] sleep failed", day, e);
