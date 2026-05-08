@@ -82,10 +82,44 @@ function LysPage() {
   const [updated, setUpdated] = useState<Date | null>(null);
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const [colorOpen, setColorOpen] = useState<Record<string, boolean>>({});
+  const [scenes, setScenes] = useState<Array<{ slot: number; name: string; device_ids: string[] }>>([
+    { slot: 0, name: "Tenn alle", device_ids: [] },
+    { slot: 1, name: "Stua", device_ids: [] },
+    { slot: 2, name: "Utelys", device_ids: [] },
+  ]);
+  const [who, setWho] = useState<string>("Alle");
 
   useEffect(() => {
     setUpdated(new Date());
   }, [data]);
+
+  // Last scener for innlogget push-bruker
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { getStoredWho } = await import("@/lib/push-client");
+      const { supabase } = await import("@/integrations/supabase/client");
+      const w = getStoredWho() || "Alle";
+      if (cancelled) return;
+      setWho(w);
+      const { data: rows } = await supabase
+        .from("user_light_scenes")
+        .select("slot, name, device_ids")
+        .eq("who", w)
+        .order("slot");
+      if (cancelled || !rows || rows.length === 0) return;
+      const map = new Map<number, { slot: number; name: string; device_ids: string[] }>();
+      for (const r of rows as any[]) {
+        map.set(r.slot, {
+          slot: r.slot,
+          name: r.name ?? `Scene ${r.slot + 1}`,
+          device_ids: Array.isArray(r.device_ids) ? r.device_ids : [],
+        });
+      }
+      setScenes((prev) => prev.map((s) => map.get(s.slot) ?? s));
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   if (!data.ok) {
     return (
