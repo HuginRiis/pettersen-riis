@@ -95,6 +95,12 @@ function LysPage() {
     setUpdated(new Date());
   }, [data]);
 
+  // Hent fersk Homey-snapshot hver gang siden vises
+  useEffect(() => {
+    void router.invalidate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const { prefs: menuPrefsEarly, toggleFavoriteZone } = useMenuPrefs();
   const useGlobalScenes = menuPrefsEarly.useGlobalLightScenes;
   useEffect(() => {
