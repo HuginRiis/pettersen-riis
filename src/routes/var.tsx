@@ -316,13 +316,6 @@ function WeatherPage() {
               rangeHours={rangeHours}
             />
           </div>
-          <div className="mt-6 pt-5 border-t border-border/40">
-            <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
-              <span>🧴 Solkrem-varsler</span>
-              <span className="text-xs font-normal text-muted-foreground">push-varsel når UV stiger</span>
-            </h3>
-            <UvNotificationSettings />
-          </div>
         </Block>
 
         {/* === SOL OG MÅNE OVER WESTEROS === */}
