@@ -260,10 +260,6 @@ function LysPage() {
       if (fa && !fb) return -1;
       if (fb && !fa) return 1;
       if (fa && fb) return (favOrder.get(a[0]) ?? 0) - (favOrder.get(b[0]) ?? 0);
-      // Sort by lit count desc, then name
-      const litA = a[1].filter((l) => l.on).length;
-      const litB = b[1].filter((l) => l.on).length;
-      if (litA !== litB) return litB - litA;
       return a[0].localeCompare(b[0], "nb");
     });
   }, [lights, favoriteZones]);
