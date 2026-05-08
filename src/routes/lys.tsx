@@ -316,8 +316,6 @@ function LysPage() {
     );
   };
 
-  void toggleAllPlaceholder;
-  const toggleAllPlaceholder = null;
 
   const runScene = async (scene: { device_ids: string[] }, on: boolean) => {
     const ids = scene.device_ids.length > 0 ? new Set(scene.device_ids) : null;
