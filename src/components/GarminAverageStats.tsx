@@ -1,0 +1,130 @@
+import { useEffect, useMemo, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { Footprints, Heart, Flame, Moon, BedDouble, Loader2 } from "lucide-react";
+import { getGarminOverview } from "@/server/garmin.functions";
+
+type Daily = {
+  day: string;
+  steps: number | null;
+  resting_heart_rate: number | null;
+  total_kilocalories: number | null;
+};
+type Sleep = {
+  day: string;
+  total_seconds: number | null;
+  deep_seconds: number | null;
+  light_seconds: number | null;
+  rem_seconds: number | null;
+  awake_seconds: number | null;
+};
+
+type Period = "week" | "month";
+
+function avg(nums: Array<number | null | undefined>): number | null {
+  const v = nums.filter((n): n is number => typeof n === "number" && n > 0);
+  if (v.length === 0) return null;
+  return v.reduce((a, b) => a + b, 0) / v.length;
+}
+
+function fmt(n: number | null, digits = 0): string {
+  if (n == null) return "—";
+  return n.toLocaleString("nb-NO", { maximumFractionDigits: digits });
+}
+
+export function GarminAverageStats() {
+  const fetchOverview = useServerFn(getGarminOverview);
+  const [daily, setDaily] = useState<Daily[]>([]);
+  const [sleep, setSleep] = useState<Sleep[]>([]);
+  const [period, setPeriod] = useState<Period>("week");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const r = (await fetchOverview()) as { daily: Daily[]; sleep: Sleep[] };
+        if (!alive) return;
+        setDaily(r.daily ?? []);
+        setSleep(r.sleep ?? []);
+      } finally {
+        if (alive) setLoading(false);
+      }
+    })();
+    return () => { alive = false; };
+  }, [fetchOverview]);
+
+  const stats = useMemo(() => {
+    const days = period === "week" ? 7 : 30;
+    const d = daily.slice(-days);
+    const s = sleep.slice(-days);
+    const avgRhr = avg(d.map((x) => x.resting_heart_rate));
+    const avgSteps = avg(d.map((x) => x.steps));
+    const avgKcal = avg(d.map((x) => x.total_kilocalories));
+    const avgSleepSec = avg(s.map((x) => x.total_seconds));
+    const avgDeep = avg(s.map((x) => x.deep_seconds));
+    const avgLight = avg(s.map((x) => x.light_seconds));
+    const avgRem = avg(s.map((x) => x.rem_seconds));
+    return { avgRhr, avgSteps, avgKcal, avgSleepSec, avgDeep, avgLight, avgRem };
+  }, [daily, sleep, period]);
+
+  const sleepHours = stats.avgSleepSec ? stats.avgSleepSec / 3600 : null;
+  const total = (stats.avgDeep ?? 0) + (stats.avgLight ?? 0) + (stats.avgRem ?? 0);
+  const pct = (n: number | null) => (n && total > 0 ? Math.round((n / total) * 100) : 0);
+
+  return (
+    <div className="panel rounded-lg p-4 space-y-4">
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <h3 className="text-sm font-semibold uppercase tracking-wider text-primary">
+          Snitt fra Garmin
+        </h3>
+        <div className="inline-flex rounded-md border border-border/60 overflow-hidden text-xs">
+          <button
+            onClick={() => setPeriod("week")}
+            className={`px-3 py-1 ${period === "week" ? "bg-primary/20 text-primary" : "hover:bg-muted/40"}`}
+          >
+            Siste uke
+          </button>
+          <button
+            onClick={() => setPeriod("month")}
+            className={`px-3 py-1 border-l border-border/60 ${period === "month" ? "bg-primary/20 text-primary" : "hover:bg-muted/40"}`}
+          >
+            Siste måned
+          </button>
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Loader2 className="h-3.5 w-3.5 animate-spin" /> Laster…
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          <Box icon={<Heart size={14} />} label="Hvilepuls" value={stats.avgRhr ? `${fmt(stats.avgRhr, 0)} bpm` : "—"} />
+          <Box icon={<Footprints size={14} />} label="Skritt" value={fmt(stats.avgSteps)} />
+          <Box
+            icon={<Moon size={14} />}
+            label="Søvn"
+            value={sleepHours ? `${sleepHours.toFixed(1)} t` : "—"}
+          />
+          <Box
+            icon={<BedDouble size={14} />}
+            label="Søvntype"
+            value={total > 0 ? `D ${pct(stats.avgDeep)}%` : "—"}
+            sub={total > 0 ? `Lett ${pct(stats.avgLight)}% · REM ${pct(stats.avgRem)}%` : undefined}
+          />
+          <Box icon={<Flame size={14} />} label="Kalorier" value={fmt(stats.avgKcal)} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Box({ icon, label, value, sub }: { icon: React.ReactNode; label: string; value: string; sub?: string }) {
+  return (
+    <div className="rounded border border-border/60 bg-background/40 p-3">
+      <div className="text-[10px] uppercase tracking-wider text-muted-foreground flex items-center gap-1">{icon}{label}</div>
+      <div className="text-lg font-semibold tabular-nums mt-1">{value}</div>
+      {sub && <div className="text-[10px] text-muted-foreground mt-0.5">{sub}</div>}
+    </div>
+  );
+}
