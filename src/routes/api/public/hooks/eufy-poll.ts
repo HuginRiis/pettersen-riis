@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
-import { getValidConnection, getHomeyRawSnapshot } from "@/server/homey";
+
 
 const SUPABASE_URL = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL!;
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -54,6 +54,7 @@ async function handlePoll(): Promise<Response> {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
+    const { getValidConnection, getHomeyRawSnapshot } = await import("@/server/homey.functions");
     const conn = await getValidConnection();
     if (!conn) return Response.json({ ok: false, error: "no homey connection" }, { status: 500 });
 
