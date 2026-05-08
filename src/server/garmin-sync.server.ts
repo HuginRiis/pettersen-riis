@@ -61,7 +61,7 @@ export async function syncDaily(daysBack = 30): Promise<number> {
         body_battery_high: ds.bodyBatteryHighestValue ?? null,
         body_battery_low: ds.bodyBatteryLowestValue ?? null,
         stress_average: ds.averageStressLevel ?? null,
-        raw: ds as unknown as Record<string, unknown>,
+        raw: ds as any,
         updated_at: new Date().toISOString(),
       };
       await supabaseAdmin.from("garmin_daily_stats").upsert([row], { onConflict: "day" });
@@ -108,7 +108,7 @@ export async function syncActivities(limit = 50): Promise<number> {
         max_hr: a.maxHR ? Math.round(a.maxHR) : null,
         elevation_gain: a.elevationGain ?? null,
         average_speed: a.averageSpeed ?? null,
-        raw: a as unknown as Record<string, unknown>,
+        raw: a as any,
         updated_at: new Date().toISOString(),
       }], { onConflict: "garmin_activity_id" });
     count++;
@@ -152,7 +152,7 @@ export async function syncSleep(daysBack = 14): Promise<number> {
         average_spo2: d.averageSpO2Value ?? null,
         average_respiration: d.averageRespirationValue ?? null,
         sleep_score: d.sleepScores?.overall?.value ?? null,
-        raw: s as unknown as Record<string, unknown>,
+        raw: s as any,
         updated_at: new Date().toISOString(),
       }], { onConflict: "day" });
       count++;
