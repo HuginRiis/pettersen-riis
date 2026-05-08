@@ -12,7 +12,7 @@ import { HomeyApiPauseToggle } from "@/components/HomeyApiPauseToggle";
 import { HeatersPanel } from "@/components/HeatersPanel";
 import { StuaConditionPanel } from "@/components/StuaConditionPanel";
 import { MowerPanel } from "@/components/MowerPanel";
-import { LightIdleNotificationSettings } from "@/components/LightIdleNotificationSettings";
+
 import { getLightIdleStatuses, type LightIdleZoneStatusRow } from "@/server/light-idle-push.functions";
 
 
@@ -1161,8 +1161,6 @@ function SmarthusPage() {
                 })()}
               </div>
             )}
-
-            <LightIdleNotificationSettings />
           </div>
         </section>
       )}

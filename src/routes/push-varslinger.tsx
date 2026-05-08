@@ -10,6 +10,9 @@ import { FavoritesManagerPanel } from "@/components/FavoritesManagerPanel";
 import { LightScenesPanel } from "@/components/LightScenesPanel";
 import { FavoriteZonesPanel } from "@/components/FavoriteZonesPanel";
 import { MetAlertNotificationSettings } from "@/components/MetAlertNotificationSettings";
+import { LightIdleNotificationSettings } from "@/components/LightIdleNotificationSettings";
+import { UvNotificationSettings } from "@/components/UvNotificationSettings";
+import { WeatherNotificationSettings } from "@/components/WeatherNotificationSettings";
 import {
   Bell, BellOff, Calendar, Cake, Trash2, CloudSun, Sun, Lightbulb, ScrollText, ShieldCheck, Lock, ExternalLink, Smartphone, X,
 } from "lucide-react";
@@ -85,6 +88,34 @@ function PushSettingsPage() {
           <MetAlertNotificationSettings />
         </div>
       </section>
+
+      <section className="container mx-auto px-4 pb-4">
+        <div className="panel rounded-lg p-4">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-primary mb-3 flex items-center gap-2">
+            🧴 Solkrem-varsler — UV
+          </h2>
+          <UvNotificationSettings />
+        </div>
+      </section>
+
+      <section className="container mx-auto px-4 pb-4">
+        <div className="panel rounded-lg p-4">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-primary mb-3 flex items-center gap-2">
+            🪶 Værvaktens Ravner — Push-varsler
+          </h2>
+          <WeatherNotificationSettings />
+        </div>
+      </section>
+
+      <section className="container mx-auto px-4 pb-4">
+        <div className="panel rounded-lg p-4">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-primary mb-3 flex items-center gap-2">
+            💡 Lys på uten bevegelse
+          </h2>
+          <LightIdleNotificationSettings />
+        </div>
+      </section>
+
 
       <section className="container mx-auto px-4 pb-12 grid md:grid-cols-2 gap-4">
         <CategoryCard
