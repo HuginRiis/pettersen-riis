@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Activity, Footprints, Heart, Flame, Moon, RefreshCw, LogIn, Loader2, TrendingUp, ShieldCheck } from "lucide-react";
+import { Activity, Footprints, Heart, Flame, Moon, RefreshCw, LogIn, Loader2, TrendingUp, ShieldCheck, Battery, Brain, Timer, Scale, ChevronDown, ChevronRight } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, CartesianGrid } from "recharts";
 import { toast } from "sonner";
 import { getGarminOverview, garminLoginNow, garminSyncNow, garminSubmitMfaCode } from "@/server/garmin.functions";
@@ -11,10 +11,12 @@ import { Button } from "@/components/ui/button";
 type Daily = {
   day: string; steps: number | null; step_goal: number | null;
   floors_climbed: number | null; resting_heart_rate: number | null;
+  average_heart_rate: number | null; weight_kg: number | null;
   total_kilocalories: number | null; active_kilocalories: number | null;
   distance_meters: number | null; moderate_intensity_minutes: number | null;
-  vigorous_intensity_minutes: number | null; body_battery_high: number | null;
-  body_battery_low: number | null; stress_average: number | null;
+  vigorous_intensity_minutes: number | null; intensity_minutes_goal: number | null;
+  body_battery_high: number | null; body_battery_low: number | null;
+  stress_average: number | null;
 };
 type Activity = {
   garmin_activity_id: number; activity_type: string | null; activity_name: string | null;
@@ -51,6 +53,8 @@ export function GarminPanel() {
   const [mfaOpen, setMfaOpen] = useState(false);
   const [mfaCode, setMfaCode] = useState("");
   const [loginNotice, setLoginNotice] = useState<string | null>(null);
+  const [showCharts, setShowCharts] = useState(false);
+  const [showActivities, setShowActivities] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -95,6 +99,9 @@ export function GarminPanel() {
   };
 
   const today = data?.daily?.[data.daily.length - 1];
+  const lastSleep = data?.sleep?.[data.sleep.length - 1];
+  const intensityToday = (today?.moderate_intensity_minutes ?? 0) + (today?.vigorous_intensity_minutes ?? 0);
+  const sleepHoursToday = lastSleep?.total_seconds ? (lastSleep.total_seconds / 3600).toFixed(1) : null;
 
   return (
     <section className="container mx-auto px-4 pb-6">
@@ -152,16 +159,27 @@ export function GarminPanel() {
             {/* Tellere */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <Tile icon={<Footprints size={14} />} label="Skritt i dag" value={fmtNum(today?.steps)} sub={today?.step_goal ? `mål ${fmtNum(today.step_goal)}` : undefined} />
-              <Tile icon={<TrendingUp size={14} />} label="Trapper" value={fmtNum(today?.floors_climbed ? Math.round(today.floors_climbed) : null)} />
-              <Tile icon={<Heart size={14} />} label="Hvilepuls" value={today?.resting_heart_rate ? `${today.resting_heart_rate} bpm` : "—"} />
+              <Tile icon={<Heart size={14} />} label="Snitt puls" value={today?.average_heart_rate ? `${today.average_heart_rate} bpm` : "—"} sub={today?.resting_heart_rate ? `hvile ${today.resting_heart_rate}` : undefined} />
+              <Tile icon={<Battery size={14} />} label="Body battery" value={today?.body_battery_high != null ? `${today.body_battery_high}` : "—"} sub={today?.body_battery_low != null ? `lav ${today.body_battery_low}` : undefined} />
+              <Tile icon={<Brain size={14} />} label="Stress (snitt)" value={today?.stress_average != null ? `${today.stress_average}` : "—"} />
+              <Tile icon={<Timer size={14} />} label="Intensitetsmin." value={intensityToday > 0 ? `${intensityToday}` : "—"} sub={today?.intensity_minutes_goal ? `mål ${today.intensity_minutes_goal}` : undefined} />
+              <Tile icon={<Moon size={14} />} label="Søvn" value={sleepHoursToday ? `${sleepHoursToday} t` : "—"} sub={lastSleep?.sleep_score != null ? `score ${lastSleep.sleep_score}` : undefined} />
+              <Tile icon={<Scale size={14} />} label="Vekt" value={today?.weight_kg != null ? `${today.weight_kg.toFixed(1)} kg` : "—"} />
               <Tile icon={<Flame size={14} />} label="Kalorier" value={fmtNum(today?.total_kilocalories)} sub={today?.active_kilocalories ? `aktive ${fmtNum(today.active_kilocalories)}` : undefined} />
             </div>
 
-            {/* Skritt-graf */}
-            {data && data.daily.length > 0 && (
-              <div className="rounded border border-border/60 bg-background/40 p-3">
-                <div className="text-xs text-muted-foreground mb-2">Skritt siste 30 dager</div>
-                <ResponsiveContainer width="100%" height={160}>
+            {/* Grafer (skjult som default) */}
+            <button
+              onClick={() => setShowCharts((v) => !v)}
+              className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+            >
+              {showCharts ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+              {showCharts ? "Skjul grafer" : "Vis grafer"}
+            </button>
+
+            {showCharts && data && data.daily.length > 0 && (
+              <div className="space-y-3">
+                <ChartCard title="Skritt siste 30 dager">
                   <BarChart data={data.daily}>
                     <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
                     <XAxis dataKey="day" tick={{ fontSize: 10 }} tickFormatter={(v: string) => v.slice(5)} />
@@ -169,28 +187,57 @@ export function GarminPanel() {
                     <Tooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", fontSize: 12 }} />
                     <Bar dataKey="steps" fill="var(--chart-yellow)" radius={[2,2,0,0]} />
                   </BarChart>
-                </ResponsiveContainer>
-              </div>
-            )}
+                </ChartCard>
 
-            {/* Hvilepuls + Kalorier */}
-            {data && data.daily.length > 0 && (
-              <div className="grid md:grid-cols-2 gap-3">
-                <div className="rounded border border-border/60 bg-background/40 p-3">
-                  <div className="text-xs text-muted-foreground mb-2">Hvilepuls (bpm)</div>
-                  <ResponsiveContainer width="100%" height={140}>
+                <div className="grid md:grid-cols-2 gap-3">
+                  <ChartCard title="Snitt puls (bpm)" height={140}>
                     <LineChart data={data.daily}>
                       <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
                       <XAxis dataKey="day" tick={{ fontSize: 10 }} tickFormatter={(v: string) => v.slice(5)} />
                       <YAxis tick={{ fontSize: 10 }} domain={["auto", "auto"]} />
                       <Tooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", fontSize: 12 }} />
-                      <Line type="monotone" dataKey="resting_heart_rate" stroke="var(--chart-yellow)" strokeWidth={2} dot={false} />
+                      <Line type="monotone" dataKey="average_heart_rate" stroke="var(--chart-yellow)" strokeWidth={2} dot={false} />
+                      <Line type="monotone" dataKey="resting_heart_rate" stroke="var(--chart-yellow-soft)" strokeWidth={2} dot={false} />
                     </LineChart>
-                  </ResponsiveContainer>
-                </div>
-                <div className="rounded border border-border/60 bg-background/40 p-3">
-                  <div className="text-xs text-muted-foreground mb-2">Aktive kalorier</div>
-                  <ResponsiveContainer width="100%" height={140}>
+                  </ChartCard>
+                  <ChartCard title="Body battery (høy/lav)" height={140}>
+                    <LineChart data={data.daily}>
+                      <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                      <XAxis dataKey="day" tick={{ fontSize: 10 }} tickFormatter={(v: string) => v.slice(5)} />
+                      <YAxis tick={{ fontSize: 10 }} domain={[0, 100]} />
+                      <Tooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", fontSize: 12 }} />
+                      <Line type="monotone" dataKey="body_battery_high" stroke="var(--chart-yellow)" strokeWidth={2} dot={false} />
+                      <Line type="monotone" dataKey="body_battery_low" stroke="var(--chart-yellow-soft)" strokeWidth={2} dot={false} />
+                    </LineChart>
+                  </ChartCard>
+                  <ChartCard title="Stress (snitt)" height={140}>
+                    <LineChart data={data.daily}>
+                      <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                      <XAxis dataKey="day" tick={{ fontSize: 10 }} tickFormatter={(v: string) => v.slice(5)} />
+                      <YAxis tick={{ fontSize: 10 }} domain={[0, 100]} />
+                      <Tooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", fontSize: 12 }} />
+                      <Line type="monotone" dataKey="stress_average" stroke="var(--chart-yellow)" strokeWidth={2} dot={false} />
+                    </LineChart>
+                  </ChartCard>
+                  <ChartCard title="Intensitetsminutter" height={140}>
+                    <BarChart data={data.daily.map((d) => ({ ...d, total_intensity: (d.moderate_intensity_minutes ?? 0) + (d.vigorous_intensity_minutes ?? 0) }))}>
+                      <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                      <XAxis dataKey="day" tick={{ fontSize: 10 }} tickFormatter={(v: string) => v.slice(5)} />
+                      <YAxis tick={{ fontSize: 10 }} />
+                      <Tooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", fontSize: 12 }} />
+                      <Bar dataKey="total_intensity" fill="var(--chart-yellow)" radius={[2,2,0,0]} />
+                    </BarChart>
+                  </ChartCard>
+                  <ChartCard title="Vekt (kg)" height={140}>
+                    <LineChart data={data.daily}>
+                      <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                      <XAxis dataKey="day" tick={{ fontSize: 10 }} tickFormatter={(v: string) => v.slice(5)} />
+                      <YAxis tick={{ fontSize: 10 }} domain={["auto", "auto"]} />
+                      <Tooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", fontSize: 12 }} />
+                      <Line type="monotone" dataKey="weight_kg" stroke="var(--chart-yellow)" strokeWidth={2} dot={{ r: 2 }} connectNulls />
+                    </LineChart>
+                  </ChartCard>
+                  <ChartCard title="Kalorier (aktive)" height={140}>
                     <LineChart data={data.daily}>
                       <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
                       <XAxis dataKey="day" tick={{ fontSize: 10 }} tickFormatter={(v: string) => v.slice(5)} />
@@ -198,59 +245,68 @@ export function GarminPanel() {
                       <Tooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", fontSize: 12 }} />
                       <Line type="monotone" dataKey="active_kilocalories" stroke="var(--chart-yellow)" strokeWidth={2} dot={false} />
                     </LineChart>
-                  </ResponsiveContainer>
+                  </ChartCard>
                 </div>
+
+                {data.sleep.length > 0 && (
+                  <ChartCard title={<span className="flex items-center gap-1"><Moon size={12} /> Søvn (timer per natt — siste 14) + score</span>}>
+                    <BarChart data={data.sleep.slice(-14).map((s) => ({
+                      day: s.day,
+                      deep: (s.deep_seconds ?? 0) / 3600,
+                      light: (s.light_seconds ?? 0) / 3600,
+                      rem: (s.rem_seconds ?? 0) / 3600,
+                      awake: (s.awake_seconds ?? 0) / 3600,
+                      score: s.sleep_score,
+                    }))}>
+                      <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                      <XAxis dataKey="day" tick={{ fontSize: 10 }} tickFormatter={(v: string) => v.slice(5)} />
+                      <YAxis yAxisId="left" tick={{ fontSize: 10 }} />
+                      <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 10 }} domain={[0, 100]} />
+                      <Tooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", fontSize: 12 }} />
+                      <Bar yAxisId="left" dataKey="deep" stackId="a" fill="var(--chart-yellow)" />
+                      <Bar yAxisId="left" dataKey="light" stackId="a" fill="var(--chart-yellow-soft)" />
+                      <Bar yAxisId="left" dataKey="rem" stackId="a" fill="var(--chart-yellow-faint)" />
+                      <Bar yAxisId="left" dataKey="awake" stackId="a" fill="color-mix(in oklab, var(--muted-foreground) 40%, transparent)" />
+                      <Line yAxisId="right" type="monotone" dataKey="score" stroke="var(--chart-yellow)" strokeWidth={2} dot={{ r: 3 }} />
+                    </BarChart>
+                  </ChartCard>
+                )}
               </div>
             )}
 
-            {/* Søvn */}
-            {data && data.sleep.length > 0 && (
-              <div className="rounded border border-border/60 bg-background/40 p-3">
-                <div className="text-xs text-muted-foreground mb-2 flex items-center gap-1"><Moon size={12} /> Søvn (timer per natt — siste 14)</div>
-                <ResponsiveContainer width="100%" height={160}>
-                  <BarChart data={data.sleep.slice(-14).map((s) => ({
-                    day: s.day,
-                    deep: (s.deep_seconds ?? 0) / 3600,
-                    light: (s.light_seconds ?? 0) / 3600,
-                    rem: (s.rem_seconds ?? 0) / 3600,
-                    awake: (s.awake_seconds ?? 0) / 3600,
-                  }))}>
-                    <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                    <XAxis dataKey="day" tick={{ fontSize: 10 }} tickFormatter={(v: string) => v.slice(5)} />
-                    <YAxis tick={{ fontSize: 10 }} />
-                    <Tooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", fontSize: 12 }} />
-                    <Bar dataKey="deep" stackId="a" fill="var(--chart-yellow)" />
-                    <Bar dataKey="light" stackId="a" fill="var(--chart-yellow-soft)" />
-                    <Bar dataKey="rem" stackId="a" fill="var(--chart-yellow-faint)" />
-                    <Bar dataKey="awake" stackId="a" fill="color-mix(in oklab, var(--muted-foreground) 40%, transparent)" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            )}
-
-            {/* Aktiviteter */}
+            {/* Aktiviteter (skjult som default) */}
             {data && data.activities.length > 0 && (
-              <div className="rounded border border-border/60 bg-background/40 p-3">
-                <div className="text-xs text-muted-foreground mb-2">Siste aktiviteter</div>
-                <div className="space-y-1.5 max-h-72 overflow-y-auto">
-                  {data.activities.map((a) => (
-                    <div key={a.garmin_activity_id} className="flex items-center justify-between gap-2 text-xs border-b border-border/30 pb-1.5 last:border-0">
-                      <div className="min-w-0 flex-1">
-                        <div className="font-medium truncate">{a.activity_name || a.activity_type || "Aktivitet"}</div>
-                        <div className="text-muted-foreground text-[10px]">
-                          {new Date(a.start_time_local).toLocaleString("nb-NO", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+              <>
+                <button
+                  onClick={() => setShowActivities((v) => !v)}
+                  className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+                >
+                  {showActivities ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                  {showActivities ? "Skjul siste aktiviteter" : `Vis siste aktiviteter (${data.activities.length})`}
+                </button>
+                {showActivities && (
+                  <div className="rounded border border-border/60 bg-background/40 p-3">
+                    <div className="space-y-1.5 max-h-72 overflow-y-auto">
+                      {data.activities.map((a) => (
+                        <div key={a.garmin_activity_id} className="flex items-center justify-between gap-2 text-xs border-b border-border/30 pb-1.5 last:border-0">
+                          <div className="min-w-0 flex-1">
+                            <div className="font-medium truncate">{a.activity_name || a.activity_type || "Aktivitet"}</div>
+                            <div className="text-muted-foreground text-[10px]">
+                              {new Date(a.start_time_local).toLocaleString("nb-NO", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                            </div>
+                          </div>
+                          <div className="flex gap-3 text-[10px] tabular-nums text-muted-foreground">
+                            <span>{fmtKm(a.distance_meters)}</span>
+                            <span>{fmtDuration(a.duration_seconds)}</span>
+                            <span>{a.average_hr ? `♥ ${a.average_hr}` : "—"}</span>
+                            <span>{a.calories ? `${a.calories} kcal` : "—"}</span>
+                          </div>
                         </div>
-                      </div>
-                      <div className="flex gap-3 text-[10px] tabular-nums text-muted-foreground">
-                        <span>{fmtKm(a.distance_meters)}</span>
-                        <span>{fmtDuration(a.duration_seconds)}</span>
-                        <span>{a.average_hr ? `♥ ${a.average_hr}` : "—"}</span>
-                        <span>{a.calories ? `${a.calories} kcal` : "—"}</span>
-                      </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              </div>
+                  </div>
+                )}
+              </>
             )}
           </>
         )}
@@ -292,6 +348,17 @@ function Tile({ icon, label, value, sub }: { icon: React.ReactNode; label: strin
       <div className="text-[10px] uppercase tracking-wider text-muted-foreground flex items-center gap-1">{icon}{label}</div>
       <div className="text-xl font-semibold tabular-nums mt-1">{value}</div>
       {sub && <div className="text-[10px] text-muted-foreground mt-0.5">{sub}</div>}
+    </div>
+  );
+}
+
+function ChartCard({ title, children, height = 160 }: { title: React.ReactNode; children: React.ReactElement; height?: number }) {
+  return (
+    <div className="rounded border border-border/60 bg-background/40 p-3">
+      <div className="text-xs text-muted-foreground mb-2">{title}</div>
+      <ResponsiveContainer width="100%" height={height}>
+        {children}
+      </ResponsiveContainer>
     </div>
   );
 }
