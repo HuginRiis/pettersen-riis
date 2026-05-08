@@ -285,7 +285,9 @@ async function startLoginFlow(): Promise<
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
       Referer: signinUrl,
-      Accept: "text/html",
+      Origin: "https://sso.garmin.com",
+      Accept: "text/html,application/xhtml+xml",
+      "Accept-Language": "en-US,en;q=0.9",
     },
     body: form.toString(),
   });
