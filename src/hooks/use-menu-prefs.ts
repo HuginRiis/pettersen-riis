@@ -1,12 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
-
-const KEY = "menu-prefs:v1";
-const EVT = "menu-prefs-updated";
+import { supabase } from "@/integrations/supabase/client";
+import { getStoredWho } from "@/lib/push-client";
 
 export type MenuPrefs = {
   sortByUsage: boolean;
   favoritesEnabled: boolean;
-  favorites: string[]; // route paths, in display order
+  favorites: string[];
 };
 
 const DEFAULTS: MenuPrefs = {
@@ -15,69 +14,126 @@ const DEFAULTS: MenuPrefs = {
   favorites: [],
 };
 
-function read(): MenuPrefs {
-  if (typeof window === "undefined") return DEFAULTS;
+const EVT = "menu-prefs-updated";
+const LEGACY_KEY = "menu-prefs:v1";
+
+function whoKey(): string {
   try {
-    const raw = window.localStorage.getItem(KEY);
-    if (!raw) return DEFAULTS;
-    const parsed = JSON.parse(raw) as Partial<MenuPrefs>;
-    return {
-      sortByUsage: parsed.sortByUsage ?? DEFAULTS.sortByUsage,
-      favoritesEnabled: parsed.favoritesEnabled ?? DEFAULTS.favoritesEnabled,
-      favorites: Array.isArray(parsed.favorites) ? parsed.favorites : [],
-    };
+    const w = getStoredWho();
+    return w || "Alle";
   } catch {
-    return DEFAULTS;
+    return "Alle";
   }
 }
 
-function write(next: MenuPrefs) {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(KEY, JSON.stringify(next));
-    window.dispatchEvent(new Event(EVT));
-  } catch {
-    /* ignore */
+// In-memory cache per who so navigations don't re-fetch on every mount.
+const cache = new Map<string, MenuPrefs>();
+
+async function loadFromDb(who: string): Promise<MenuPrefs> {
+  const { data } = await supabase
+    .from("user_menu_prefs")
+    .select("favorites, sort_by_usage, favorites_enabled")
+    .eq("who", who)
+    .maybeSingle();
+  if (data) {
+    return {
+      favorites: Array.isArray(data.favorites) ? (data.favorites as string[]) : [],
+      sortByUsage: !!data.sort_by_usage,
+      favoritesEnabled: data.favorites_enabled !== false,
+    };
   }
+  // Migrate from legacy localStorage on first load (only for "me").
+  if (typeof window !== "undefined") {
+    try {
+      const raw = window.localStorage.getItem(LEGACY_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw) as Partial<MenuPrefs>;
+        const seeded: MenuPrefs = {
+          favorites: Array.isArray(parsed.favorites) ? parsed.favorites : [],
+          sortByUsage: parsed.sortByUsage ?? false,
+          favoritesEnabled: parsed.favoritesEnabled ?? true,
+        };
+        await save(who, seeded);
+        return seeded;
+      }
+    } catch { /* ignore */ }
+  }
+  return DEFAULTS;
+}
+
+async function save(who: string, next: MenuPrefs) {
+  cache.set(who, next);
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent(EVT, { detail: { who } }));
+  }
+  await supabase.from("user_menu_prefs").upsert(
+    {
+      who,
+      favorites: next.favorites,
+      sort_by_usage: next.sortByUsage,
+      favorites_enabled: next.favoritesEnabled,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "who" },
+  );
 }
 
 export function useMenuPrefs() {
-  const [prefs, setPrefs] = useState<MenuPrefs>(DEFAULTS);
+  const [who, setWho] = useState<string>(whoKey());
+  const [prefs, setPrefs] = useState<MenuPrefs>(() => cache.get(whoKey()) ?? DEFAULTS);
+
+  // React if push-receiver changes on this device.
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === "agenda_push_who") setWho(whoKey());
+    };
+    const onUpd = () => {
+      const cached = cache.get(whoKey());
+      if (cached) setPrefs(cached);
+    };
+    window.addEventListener("storage", onStorage);
+    window.addEventListener(EVT, onUpd);
+    // Re-check current who in case it was set after mount
+    setWho(whoKey());
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener(EVT, onUpd);
+    };
+  }, []);
 
   useEffect(() => {
-    setPrefs(read());
-    const onUpd = () => setPrefs(read());
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === KEY) setPrefs(read());
-    };
-    window.addEventListener(EVT, onUpd);
-    window.addEventListener("storage", onStorage);
-    return () => {
-      window.removeEventListener(EVT, onUpd);
-      window.removeEventListener("storage", onStorage);
-    };
-  }, []);
+    let cancelled = false;
+    (async () => {
+      const next = await loadFromDb(who);
+      if (cancelled) return;
+      cache.set(who, next);
+      setPrefs(next);
+    })();
+    return () => { cancelled = true; };
+  }, [who]);
 
-  const setSortByUsage = useCallback((v: boolean) => {
-    const next = { ...read(), sortByUsage: v };
-    write(next);
-    setPrefs(next);
-  }, []);
+  const update = useCallback(
+    (patch: Partial<MenuPrefs>) => {
+      const cur = cache.get(who) ?? prefs;
+      const next = { ...cur, ...patch };
+      cache.set(who, next);
+      setPrefs(next);
+      void save(who, next);
+    },
+    [who, prefs],
+  );
 
-  const setFavoritesEnabled = useCallback((v: boolean) => {
-    const next = { ...read(), favoritesEnabled: v };
-    write(next);
-    setPrefs(next);
-  }, []);
-
-  const toggleFavorite = useCallback((path: string) => {
-    const cur = read();
-    const has = cur.favorites.includes(path);
-    const favorites = has ? cur.favorites.filter((p) => p !== path) : [...cur.favorites, path];
-    const next = { ...cur, favorites };
-    write(next);
-    setPrefs(next);
-  }, []);
+  const setSortByUsage = useCallback((v: boolean) => update({ sortByUsage: v }), [update]);
+  const setFavoritesEnabled = useCallback((v: boolean) => update({ favoritesEnabled: v }), [update]);
+  const toggleFavorite = useCallback(
+    (path: string) => {
+      const cur = cache.get(who) ?? prefs;
+      const has = cur.favorites.includes(path);
+      const favorites = has ? cur.favorites.filter((p) => p !== path) : [...cur.favorites, path];
+      update({ favorites });
+    },
+    [who, prefs, update],
+  );
 
   return { prefs, setSortByUsage, setFavoritesEnabled, toggleFavorite };
 }

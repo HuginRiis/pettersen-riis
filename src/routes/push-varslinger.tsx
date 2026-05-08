@@ -7,6 +7,7 @@ import { TibberCronStatusPanel } from "@/components/TibberCronStatusPanel";
 import { PushSchedulingSettings } from "@/components/PushSchedulingSettings";
 import { MenuPreferencesPanel } from "@/components/MenuPreferencesPanel";
 import { FavoritesManagerPanel } from "@/components/FavoritesManagerPanel";
+import { LightScenesPanel } from "@/components/LightScenesPanel";
 import { MetAlertNotificationSettings } from "@/components/MetAlertNotificationSettings";
 import {
   Bell, BellOff, Calendar, Cake, Trash2, CloudSun, Sun, Lightbulb, ScrollText, ShieldCheck, Lock, ExternalLink, Smartphone, X,
@@ -59,8 +60,18 @@ function PushSettingsPage() {
       />
 
       <UpcomingPushPanel />
+
+      <section className="container mx-auto px-4 pt-4">
+        <h2 className="text-display text-primary text-sm tracking-[0.3em] uppercase mb-2">
+          ✦ Innstillinger fremover
+        </h2>
+        <p className="text-xs text-muted-foreground mb-3">
+          Personlige innstillinger for menyen, snarveier og lys-scener — knyttet til deg som push-mottaker.
+        </p>
+      </section>
       <MenuPreferencesPanel />
       <FavoritesManagerPanel />
+      <LightScenesPanel />
       <PushSchedulingSettings />
       <TibberCronStatusPanel />
 
