@@ -97,7 +97,7 @@ export const Route = createFileRoute("/api/public/hooks/agenda-push")({
             const nowH = new Date().getUTCHours();
             // Run once per day around 04:00 UTC (~06:00 local)
             if (nowH === 4) {
-              garmin = await gmod.runGarminSync("cron");
+              garmin = await gmod.syncAll("cron");
             }
           } catch (err) {
             console.error("[garmin-sync] failed", err);
