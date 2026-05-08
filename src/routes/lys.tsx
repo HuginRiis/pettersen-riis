@@ -316,9 +316,8 @@ function LysPage() {
     );
   };
 
-  const toggleAll = async (on: boolean) => {
-    await Promise.all(lights.filter((l) => l.hasOnOff).map((l) => sendOnOff(l.id, on)));
-  };
+  void toggleAllPlaceholder;
+  const toggleAllPlaceholder = null;
 
   const runScene = async (scene: { device_ids: string[] }, on: boolean) => {
     const ids = scene.device_ids.length > 0 ? new Set(scene.device_ids) : null;
