@@ -196,14 +196,30 @@ function symbolEmoji(symbol: string | null): string {
 }
 
 /** Værsymbol for i morgen (Tollnes). */
-export function TomorrowWeatherBadge({ lat, lon, inline }: { lat: number; lon: number; inline?: boolean }) {
+export function TomorrowWeatherBadge({ lat, lon, inline, useGps }: { lat: number; lon: number; inline?: boolean; useGps?: boolean }) {
   const [emoji, setEmoji] = useState<string | null>(null);
+  const [coord, setCoord] = useState<{ lat: number; lon: number }>({ lat, lon });
+  useEffect(() => {
+    if (!useGps || typeof navigator === "undefined" || !navigator.geolocation) {
+      setCoord({ lat, lon });
+      return;
+    }
+    let cancelled = false;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        if (!cancelled) setCoord({ lat: pos.coords.latitude, lon: pos.coords.longitude });
+      },
+      () => { if (!cancelled) setCoord({ lat, lon }); },
+      { enableHighAccuracy: false, timeout: 8000, maximumAge: 5 * 60 * 1000 },
+    );
+    return () => { cancelled = true; };
+  }, [useGps, lat, lon]);
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
         const res = await fetch(
-          `https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=${lat}&lon=${lon}`,
+          `https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=${coord.lat}&lon=${coord.lon}`,
           { headers: { Accept: "application/json" } },
         );
         if (!res.ok) return;
@@ -231,7 +247,8 @@ export function TomorrowWeatherBadge({ lat, lon, inline }: { lat: number; lon: n
         if (!cancelled) setEmoji(symbolEmoji(sym));
       } catch {}
     })();
-  }, [lat, lon]);
+    return () => { cancelled = true; };
+  }, [coord.lat, coord.lon]);
   if (!emoji) return null;
   if (inline) {
     return (

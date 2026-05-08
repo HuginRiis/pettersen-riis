@@ -255,17 +255,17 @@ export function LocationPicker({
             type="button"
             disabled={locating}
             onClick={handleLocate}
-            className="text-xs uppercase tracking-wider px-3 py-2 rounded-md border border-border text-foreground hover:bg-card/60 transition-colors whitespace-nowrap inline-flex items-center gap-1.5 disabled:opacity-60"
+            aria-label="Bruk min plassering"
+            className="px-2.5 py-2 rounded-md border border-border text-foreground hover:bg-card/60 transition-colors inline-flex items-center justify-center disabled:opacity-60"
             title="Bruk min plassering (krever tillatelse i nettleseren)"
           >
-            <span aria-hidden>📍</span>
-            <span>{locating ? "Henter…" : "Min plassering"}</span>
+            <span aria-hidden className="text-base leading-none">{locating ? "⏳" : "📍"}</span>
           </button>
           <button
             type="button"
             disabled={savingDefault || isAtDefault}
             onClick={handleSetDefault}
-            className={`text-xs uppercase tracking-wider px-3 py-2 rounded-md border transition-colors whitespace-nowrap ${
+            className={`text-[10px] uppercase tracking-wider leading-tight px-2 py-1 rounded-md border transition-colors whitespace-normal text-center ${
               isAtDefault
                 ? "border-border text-muted-foreground cursor-not-allowed opacity-60"
                 : savedFlash
@@ -274,13 +274,13 @@ export function LocationPicker({
             }`}
             title={
               isAtDefault
-                ? "Dette stedet er allerede default"
+                ? "Dette stedet er allerede standard"
                 : authenticated
-                  ? `Sett som default for ${who} på denne IP-en`
-                  : "Sett som default for denne IP-en"
+                  ? `Sett som standard for ${who} på denne IP-en`
+                  : "Sett som standard for denne IP-en"
             }
           >
-            {savingDefault ? "Lagrer…" : savedFlash ? "✓ Lagret" : "Sett som default"}
+            {savingDefault ? "Lagrer…" : savedFlash ? "✓ Lagret" : (<><span className="block">Sett som</span><span className="block">standard</span></>)}
           </button>
         </div>
 
