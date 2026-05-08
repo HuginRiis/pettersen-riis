@@ -82,7 +82,7 @@ const navLinks: NavLink[] = [
   { to: "/turer", label: "Ferden", public: true },
   { to: "/got-saga", label: "Westeros", public: true },
   { to: "/agenda", label: "Agenda" },
-  { to: "/push-varslinger", label: "Varslinger" },
+  { to: "/push-varslinger", label: "Innstillinger" },
   { to: "/vakttarnet", label: "Vakttårnet" },
   { to: "/hytta", label: "Hytta", public: true },
   { to: "/smarthus", label: "Smartborg" },

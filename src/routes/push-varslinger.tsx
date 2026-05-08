@@ -8,6 +8,7 @@ import { PushSchedulingSettings } from "@/components/PushSchedulingSettings";
 import { MenuPreferencesPanel } from "@/components/MenuPreferencesPanel";
 import { FavoritesManagerPanel } from "@/components/FavoritesManagerPanel";
 import { LightScenesPanel } from "@/components/LightScenesPanel";
+import { FavoriteZonesPanel } from "@/components/FavoriteZonesPanel";
 import { MetAlertNotificationSettings } from "@/components/MetAlertNotificationSettings";
 import {
   Bell, BellOff, Calendar, Cake, Trash2, CloudSun, Sun, Lightbulb, ScrollText, ShieldCheck, Lock, ExternalLink, Smartphone, X,
@@ -17,10 +18,10 @@ import heroImg from "@/assets/got-agenda.jpg";
 export const Route = createFileRoute("/push-varslinger")({
   head: () => ({
     meta: [
-      { title: "Push-varslinger | House Pettersen Riis" },
-      { name: "description", content: "Samlet oversikt og redigering av alle push-varsler i huset." },
-      { property: "og:title", content: "Push-varslinger | House Pettersen Riis" },
-      { property: "og:description", content: "Alle push-varsler — agenda, bursdager, vær, UV, søppel, lys, hytta og garanti — på ett sted." },
+      { title: "Innstillinger | House Pettersen Riis" },
+      { name: "description", content: "Samlet oversikt og redigering av alle innstillinger og push-varsler i huset." },
+      { property: "og:title", content: "Innstillinger | House Pettersen Riis" },
+      { property: "og:description", content: "Personlige innstillinger og alle push-varsler — agenda, bursdager, vær, UV, søppel, lys, hytta og garanti — på ett sted." },
     ],
   }),
   component: PushSettingsPage,
@@ -53,9 +54,9 @@ function PushSettingsPage() {
   return (
     <PageShell>
       <PageHero
-        eyebrow="Husets ravner"
-        title="Push-varslinger"
-        subtitle="Alle varsler huset kan sende — samlet på ett sted. Rediger her eller på sin opprinnelige side."
+        eyebrow="Borgens innstillinger"
+        title="Innstillinger"
+        subtitle="Personlige innstillinger og alle push-varsler — samlet på ett sted."
         image={heroImg}
       />
 
@@ -66,11 +67,12 @@ function PushSettingsPage() {
           ✦ Innstillinger fremover
         </h2>
         <p className="text-xs text-muted-foreground mb-3">
-          Personlige innstillinger for menyen, snarveier og lys-scener — knyttet til deg som push-mottaker.
+          Personlige innstillinger for menyen, snarveier, favoritt-rom og lys-scener — knyttet til deg som push-mottaker.
         </p>
       </section>
       <MenuPreferencesPanel />
       <FavoritesManagerPanel />
+      <FavoriteZonesPanel />
       <LightScenesPanel />
       <PushSchedulingSettings />
       <TibberCronStatusPanel />

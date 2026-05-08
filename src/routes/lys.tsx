@@ -1,8 +1,9 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
-import { Flame, Power, ChevronDown, Loader2, Palette, Thermometer, Settings2 } from "lucide-react";
+import { Flame, Power, ChevronDown, Loader2, Palette, Thermometer, Settings2, Star } from "lucide-react";
 import { PageShell, PageHero } from "@/components/PageShell";
+import { useMenuPrefs } from "@/hooks/use-menu-prefs";
 
 import {
   getHomeySnapshot,
@@ -226,6 +227,9 @@ function LysPage() {
     return arr;
   }, [data, overrides, zoneById]);
 
+  const { prefs: menuPrefs, toggleFavoriteZone } = useMenuPrefs();
+  const favoriteZones = menuPrefs.favoriteZones;
+
   const grouped = useMemo(() => {
     const m = new Map<string, LightDevice[]>();
     for (const l of lights) {
@@ -234,14 +238,21 @@ function LysPage() {
       arr.push(l);
       m.set(key, arr);
     }
-    return Array.from(m.entries()).sort((a, b) => {
+    const entries = Array.from(m.entries());
+    const favOrder = new Map(favoriteZones.map((z, i) => [z, i] as const));
+    return entries.sort((a, b) => {
+      const fa = favOrder.has(a[0]);
+      const fb = favOrder.has(b[0]);
+      if (fa && !fb) return -1;
+      if (fb && !fa) return 1;
+      if (fa && fb) return (favOrder.get(a[0]) ?? 0) - (favOrder.get(b[0]) ?? 0);
       // Sort by lit count desc, then name
       const litA = a[1].filter((l) => l.on).length;
       const litB = b[1].filter((l) => l.on).length;
       if (litA !== litB) return litB - litA;
       return a[0].localeCompare(b[0], "nb");
     });
-  }, [lights]);
+  }, [lights, favoriteZones]);
 
   const totalLit = lights.filter((l) => l.on).length;
   const totalLights = lights.length;
@@ -445,6 +456,7 @@ function LysPage() {
         {grouped.map(([zoneName, zoneLights]) => {
           const lit = zoneLights.filter((l) => l.on).length;
           const isCollapsed = collapsed[zoneName] ?? false;
+          const isFavZone = favoriteZones.includes(zoneName);
           return (
             <article
               key={zoneName}
@@ -480,6 +492,15 @@ function LysPage() {
                   </div>
                 </button>
                 <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => toggleFavoriteZone(zoneName)}
+                    aria-label={isFavZone ? "Fjern favoritt-rom" : "Marker som favoritt-rom"}
+                    title={isFavZone ? "Fjern favoritt" : "Legg til favoritt"}
+                    className={`p-1.5 transition-colors ${isFavZone ? "text-primary" : "text-muted-foreground/50 hover:text-primary"}`}
+                  >
+                    <Star size={14} fill={isFavZone ? "currentColor" : "none"} />
+                  </button>
                   <button
                     onClick={() => toggleZone(zoneLights, true)}
                     className="px-3 py-1.5 rounded border border-primary/30 text-primary text-[10px] tracking-[0.25em] uppercase hover:bg-primary/10 transition-colors"

@@ -1234,6 +1234,7 @@ export type Database = {
       user_menu_prefs: {
         Row: {
           created_at: string
+          favorite_zones: string[]
           favorites: string[]
           favorites_enabled: boolean
           id: string
@@ -1243,6 +1244,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          favorite_zones?: string[]
           favorites?: string[]
           favorites_enabled?: boolean
           id?: string
@@ -1252,6 +1254,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          favorite_zones?: string[]
           favorites?: string[]
           favorites_enabled?: boolean
           id?: string
