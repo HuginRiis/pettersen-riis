@@ -5,8 +5,6 @@
 // CRITICAL: importeres BARE fra .server.ts / .ts som ikke ender opp i
 // klient-bundlet. Bruker service role.
 
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
-
 export type ApiSource =
   | "homey"
   | "strava"
@@ -37,6 +35,7 @@ export interface LogEntry {
  */
 export async function recordApiCall(entry: LogEntry): Promise<void> {
   try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     await (supabaseAdmin.from("api_call_log") as any).insert({
       source: entry.source,
       endpoint: entry.endpoint,
