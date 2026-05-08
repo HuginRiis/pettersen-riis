@@ -18,10 +18,10 @@ import heroImg from "@/assets/got-agenda.jpg";
 export const Route = createFileRoute("/push-varslinger")({
   head: () => ({
     meta: [
-      { title: "Push-varslinger | House Pettersen Riis" },
-      { name: "description", content: "Samlet oversikt og redigering av alle push-varsler i huset." },
-      { property: "og:title", content: "Push-varslinger | House Pettersen Riis" },
-      { property: "og:description", content: "Alle push-varsler — agenda, bursdager, vær, UV, søppel, lys, hytta og garanti — på ett sted." },
+      { title: "Innstillinger | House Pettersen Riis" },
+      { name: "description", content: "Samlet oversikt og redigering av alle innstillinger og push-varsler i huset." },
+      { property: "og:title", content: "Innstillinger | House Pettersen Riis" },
+      { property: "og:description", content: "Personlige innstillinger og alle push-varsler — agenda, bursdager, vær, UV, søppel, lys, hytta og garanti — på ett sted." },
     ],
   }),
   component: PushSettingsPage,
