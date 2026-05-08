@@ -29,7 +29,8 @@ export const Route = createFileRoute("/lys")({
       },
     ],
   }),
-  staleTime: 60_000,
+  staleTime: 0,
+  shouldReload: true,
   loader: async () => {
     const res = await getHomeySnapshot();
     recordHomeyApiCall();
@@ -93,6 +94,12 @@ function LysPage() {
   useEffect(() => {
     setUpdated(new Date());
   }, [data]);
+
+  // Hent fersk Homey-snapshot hver gang siden vises
+  useEffect(() => {
+    void router.invalidate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const { prefs: menuPrefsEarly, toggleFavoriteZone } = useMenuPrefs();
   const useGlobalScenes = menuPrefsEarly.useGlobalLightScenes;
