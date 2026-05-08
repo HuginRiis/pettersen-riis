@@ -426,3 +426,49 @@ export function TrainingLast4WeeksBadge({ inline }: { inline?: boolean } = {}) {
     </span>
   );
 }
+
+/** Utgangsdør — låst/åpen status i toppmenyen. */
+export function FrontDoorBadge({ inline }: { inline?: boolean } = {}) {
+  const [s, setS] = useState<{ locked: boolean | null | undefined; contactOpen: boolean | null | undefined } | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const { getFrontDoorStatus } = await import("@/server/homey");
+        const res = await getFrontDoorStatus();
+        if (cancelled) return;
+        if (res.ok && (res.lock || res.door)) {
+          setS({
+            locked: res.lock?.locked,
+            contactOpen: res.door?.contactOpen ?? res.lock?.contactOpen,
+          });
+        }
+      } catch {}
+    };
+    load();
+    const i = window.setInterval(load, 60_000);
+    return () => { cancelled = true; window.clearInterval(i); };
+  }, []);
+  if (!s) return null;
+  const open = s.contactOpen === true;
+  const locked = s.locked === true;
+  const label = open ? "ÅPEN" : locked ? "LÅST" : "ULÅST";
+  const emoji = open ? "🚪" : locked ? "🔒" : "🔓";
+  const tone = open
+    ? "bg-amber-500/20 text-amber-300 border-amber-500/40"
+    : locked
+      ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40"
+      : "bg-rose-500/20 text-rose-300 border-rose-500/40";
+  if (inline) {
+    return (
+      <span title={`Utgangsdør: ${label}`} className={`ml-1 px-1.5 h-[18px] rounded-full text-[10px] font-semibold inline-flex items-center justify-center border ${tone}`}>
+        {emoji}{label}
+      </span>
+    );
+  }
+  return (
+    <span title={`Utgangsdør: ${label}`} className={`absolute top-2 right-2 z-10 h-[22px] px-2 rounded-full text-[11px] font-semibold flex items-center justify-center border backdrop-blur shadow ${tone}`}>
+      {emoji}{label}
+    </span>
+  );
+}
