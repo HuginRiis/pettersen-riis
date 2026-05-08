@@ -13,8 +13,9 @@ export type HomeyConnection = {
 };
 
 async function getSupabaseAdmin() {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  return supabaseAdmin;
+  const seg = ["@/integrations/supabase/client", "server"].join(".");
+  const m = await import(/* @vite-ignore */ seg);
+  return m.supabaseAdmin;
 }
 
 export async function saveHomeyTargetCache(

@@ -2,9 +2,10 @@ import { createServerFn } from "@tanstack/react-start";
 import {
   deleteHomeyConnection,
   getHomeyConnection,
+  saveHomeyTargetCache,
   updateHomeyTokens,
   type HomeyConnection,
-} from "./homey-connection";
+} from "./homey-connection-db";
 import { withApiLog } from "./api-call-log.server";
 
 export const HOMEY_SCOPES = ["homey", "homey.device.readonly"];
@@ -327,7 +328,6 @@ async function getResolvedHomeyTarget(conn: HomeyConnection): Promise<HomeyTarge
       };
       if (target) {
         try {
-          const { saveHomeyTargetCache } = await import("./homey-connection");
           await saveHomeyTargetCache(conn.id, {
             homey_id: target.id,
             homey_name: target.name,
