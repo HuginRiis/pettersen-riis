@@ -5,6 +5,7 @@ import { Footprints } from "lucide-react";
 import { PageShell, PageHero } from "@/components/PageShell";
 import { ActivityMap } from "@/components/ActivityMap";
 import { GarminPanel } from "@/components/GarminPanel";
+import { GarminAverageStats } from "@/components/GarminAverageStats";
 import { getActivityStreams, getStravaDashboard, getStravaStatus } from "@/server/strava";
 import { getGarminOverview } from "@/server/garmin.functions";
 import treningImg from "@/assets/got-trening.jpg";
