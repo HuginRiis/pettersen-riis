@@ -41,11 +41,13 @@ export function PageHero({
   title,
   subtitle,
   image,
+  children,
 }: {
   eyebrow?: string;
   title: string;
   subtitle?: string;
   image: string;
+  children?: React.ReactNode;
 }) {
   return (
     <section className="relative h-[42vh] min-h-[280px] w-full overflow-hidden border-b border-border">
@@ -71,6 +73,7 @@ export function PageHero({
             {subtitle}
           </p>
         )}
+        {children && <div className="mt-4">{children}</div>}
       </div>
     </section>
   );

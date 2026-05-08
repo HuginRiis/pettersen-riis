@@ -238,13 +238,13 @@ export function VakttarnEventsPanel() {
         <div style={{ width: "100%", height: 220 }}>
           <ResponsiveContainer>
             <BarChart data={stats?.buckets ?? []}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border) / 0.3)" />
+              <CartesianGrid strokeDasharray="3 3" stroke="color-mix(in oklab, var(--border) 30%, transparent)" />
               <XAxis dataKey="label" stroke="#ffffff" tick={{ fill: "#ffffff" }} fontSize={11} />
               <YAxis stroke="#ffffff" tick={{ fill: "#ffffff" }} fontSize={11} allowDecimals={false} />
               <Tooltip trigger="click"
                 contentStyle={{
                   background: "#0a0a0a",
-                  border: "1px solid hsl(var(--border))",
+                  border: "1px solid var(--border)",
                   borderRadius: 6,
                   fontSize: 12,
                   color: "#ffffff",
