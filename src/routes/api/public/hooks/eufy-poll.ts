@@ -54,7 +54,7 @@ async function handlePoll(): Promise<Response> {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    const { getValidConnection, getHomeyRawSnapshot } = await import("@/server/homey.functions");
+    const { getValidConnection, getHomeyRawSnapshot } = await import("@/server/homey");
     const conn = await getValidConnection();
     if (!conn) return Response.json({ ok: false, error: "no homey connection" }, { status: 500 });
 
