@@ -25,6 +25,8 @@ type DailySummary = {
   floorsAscended?: number;
   userFloorsAscendedGoal?: number;
   restingHeartRate?: number;
+  averageHeartRate?: number;
+  averageHeartRateInBeatsPerMinute?: number;
   totalKilocalories?: number;
   activeKilocalories?: number;
   totalDistanceMeters?: number;
