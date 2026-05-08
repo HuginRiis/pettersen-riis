@@ -193,10 +193,17 @@ function extractTicket(body: string): string | null {
 
 function extractMfaForm(body: string): { actionPath: string; csrf: string } | null {
   // Garmin MFA-skjema poster til /sso/verifyMFA/loginEnterMfaCode/...
-  const action = body.match(/<form[^>]+action="([^"]*verifyMFA[^"]*)"/i);
+  // form-attributter kan komme i ulik rekkefølge → match på action uavhengig av posisjon.
+  const action =
+    body.match(/<form[^>]*\baction\s*=\s*"([^"]*(?:verifyMFA|verify_mfa|mfa-code|mfaCode|loginEnterMfaCode)[^"]*)"/i) ??
+    body.match(/<form[^>]*\baction\s*=\s*"([^"]*verify[^"]*)"/i);
   const csrf = body.match(/name="_csrf"\s+value="([^"]+)"/);
   if (!action || !csrf) return null;
   return { actionPath: action[1].replace(/&amp;/g, "&"), csrf: csrf[1] };
+}
+
+function looksLikeMfa(body: string): boolean {
+  return /verifyMFA|loginEnterMfaCode|mfa-code|mfaCode|two[-\s]?factor|sikkerhetskode|security code/i.test(body);
 }
 
 async function exchangeTicketForTokens(ticket: string, email: string): Promise<GarminTokens> {
@@ -280,7 +287,21 @@ async function startLoginFlow(): Promise<
     return { status: "ok", tokens };
   }
 
-  const mfa = extractMfaForm(body);
+  let mfa = extractMfaForm(body);
+  if (!mfa && looksLikeMfa(body)) {
+    // Fallback: prøv å plukke flow-key fra body og bruk eksisterende csrf
+    const keyMatch = body.match(/loginEnterMfaCode\/([A-Za-z0-9_-]+)/);
+    const csrfBody = body.match(/name="_csrf"\s+value="([^"]+)"/);
+    if (keyMatch && csrfBody) {
+      mfa = {
+        actionPath: `/sso/verifyMFA/loginEnterMfaCode/${keyMatch[1]}?${new URLSearchParams(SIGNIN_PARAMS)}`,
+        csrf: csrfBody[1],
+      };
+    } else if (csrfBody) {
+      // Siste utvei: bruk samme signin URL — Garmin aksepterer mfa-code dit i noen flyter
+      mfa = { actionPath: signinUrl, csrf: csrfBody[1] };
+    }
+  }
   if (mfa) {
     const mfaUrl = mfa.actionPath.startsWith("http")
       ? mfa.actionPath
@@ -296,7 +317,9 @@ async function startLoginFlow(): Promise<
     return { status: "mfa" };
   }
 
-  throw new Error(`Innlogging feilet (ingen ticket / MFA-form). Sjekk e-post/passord. HTTP ${postRes.status}.`);
+  // Diagnostikk — skriv ut snippet så vi kan se hva Garmin faktisk returnerte
+  console.error("[garmin] login: ingen ticket/MFA. status=", postRes.status, "snippet=", body.replace(/\s+/g, " ").slice(0, 600));
+  throw new Error(`Innlogging feilet (ingen ticket / MFA-form). HTTP ${postRes.status}. Sjekk e-post/passord eller server-logg.`);
 }
 
 async function finishLoginWithMfa(code: string): Promise<GarminTokens> {
