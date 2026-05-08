@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
-import { Flame, Power, ChevronDown, Loader2 } from "lucide-react";
+import { Flame, Power, ChevronDown, Loader2, Palette, Thermometer, Settings2 } from "lucide-react";
 import { PageShell, PageHero } from "@/components/PageShell";
 import { LastUpdated } from "@/components/LastUpdated";
 import {
