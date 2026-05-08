@@ -241,7 +241,7 @@ function LysPage() {
     return arr;
   }, [data, overrides, zoneById]);
 
-  const { prefs: menuPrefs, toggleFavoriteZone } = { prefs: menuPrefsEarly, toggleFavoriteZone: useMenuPrefs().toggleFavoriteZone };
+  const menuPrefs = menuPrefsEarly;
   const favoriteZones = menuPrefs.favoriteZones;
 
   const grouped = useMemo(() => {
