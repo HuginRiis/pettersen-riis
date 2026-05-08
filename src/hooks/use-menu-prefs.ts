@@ -7,6 +7,7 @@ export type MenuPrefs = {
   favoritesEnabled: boolean;
   favorites: string[];
   favoriteZones: string[];
+  useGlobalLightScenes: boolean;
 };
 
 const DEFAULTS: MenuPrefs = {
@@ -14,6 +15,7 @@ const DEFAULTS: MenuPrefs = {
   favoritesEnabled: true,
   favorites: [],
   favoriteZones: [],
+  useGlobalLightScenes: false,
 };
 
 const EVT = "menu-prefs-updated";
