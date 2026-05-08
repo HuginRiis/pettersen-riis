@@ -463,6 +463,33 @@ function LysPage() {
             );
           })}
         </div>
+
+        {(() => {
+          const allCollapsed = grouped.length > 0 && grouped.every(([z]) => collapsed[z]);
+          return (
+            <div className="flex justify-end">
+              <button
+                onClick={() => {
+                  if (allCollapsed) {
+                    setCollapsed({});
+                  } else {
+                    const next: Record<string, boolean> = {};
+                    for (const [z] of grouped) next[z] = true;
+                    setCollapsed(next);
+                  }
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded border border-border text-[10px] tracking-[0.25em] uppercase text-muted-foreground hover:text-primary hover:border-primary/60 transition-colors"
+              >
+                <ChevronDown
+                  size={12}
+                  className="transition-transform"
+                  style={{ transform: allCollapsed ? "rotate(0deg)" : "rotate(-180deg)" }}
+                />
+                {allCollapsed ? "Åpne alle saler" : "Lukk alle saler"}
+              </button>
+            </div>
+          );
+        })()}
       </section>
 
       {/* Saler */}
