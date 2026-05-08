@@ -251,6 +251,8 @@ async function startLoginFlow(): Promise<
   const email = process.env.GARMIN_EMAIL;
   const password = process.env.GARMIN_PASSWORD;
   if (!email || !password) throw new Error("GARMIN_EMAIL / GARMIN_PASSWORD ikke satt.");
+  const masked = email.replace(/(.).+(@.+)/, "$1***$2");
+  console.log(`[garmin] login forsøk for ${masked} (passord-lengde=${password.length})`);
 
   const jar: Jar = new Map();
   // Garmin SSO krever NK=NT-cookien (settes normalt av JS-widgeten).
