@@ -53,6 +53,8 @@ export function GarminPanel() {
   const [mfaOpen, setMfaOpen] = useState(false);
   const [mfaCode, setMfaCode] = useState("");
   const [loginNotice, setLoginNotice] = useState<string | null>(null);
+  const [showCharts, setShowCharts] = useState(false);
+  const [showActivities, setShowActivities] = useState(false);
 
   const load = async () => {
     setLoading(true);
