@@ -91,7 +91,19 @@ export const Route = createFileRoute("/api/public/hooks/agenda-push")({
           } catch (err) {
             console.error("[mail-delivery-push] failed", err);
           }
-          return new Response(JSON.stringify({ ok: true, agenda, checklist, garbage, birthdays, warranty, uv, weather, lightIdle, tibber, metAlerts, mailDelivery }), {
+          let garmin: any = { skipped: true };
+          try {
+            const gmod = await import("@/server/garmin-sync.server");
+            const nowH = new Date().getUTCHours();
+            // Run once per day around 04:00 UTC (~06:00 local)
+            if (nowH === 4) {
+              garmin = await gmod.syncAll("cron");
+            }
+          } catch (err) {
+            console.error("[garmin-sync] failed", err);
+            garmin = { ok: false, error: String(err) };
+          }
+          return new Response(JSON.stringify({ ok: true, agenda, checklist, garbage, birthdays, warranty, uv, weather, lightIdle, tibber, metAlerts, mailDelivery, garmin }), {
             headers: { "Content-Type": "application/json" },
           });
         } catch (err) {
