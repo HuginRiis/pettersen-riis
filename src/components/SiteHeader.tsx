@@ -311,6 +311,7 @@ export function SiteHeader() {
                   {l.to === "/lys" && <LightsOnBadge inline />}
                   {l.to === "/var" && <TomorrowWeatherBadge inline lat={BORGEN_COORD.lat} lon={BORGEN_COORD.lon} />}
                   {l.to === "/vakttarnet" && <AlarmStateBadge inline />}
+                  {l.to === "/vakttarnet" && <FrontDoorBadge inline />}
                   {l.to === "/varsler" && <AlertsSeverityBadge inline />}
                   {l.to === "/stromkroniken" && <PowerVsYesterdayBadge inline />}
                   {l.to === "/trening" && <TrainingLast4WeeksBadge inline />}
