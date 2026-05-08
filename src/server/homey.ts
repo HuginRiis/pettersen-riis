@@ -5,7 +5,7 @@ import {
   saveHomeyTargetCache,
   updateHomeyTokens,
   type HomeyConnection,
-} from "./homey-connection.server";
+} from "./homey-connection-db";
 import { withApiLog } from "./api-call-log.server";
 
 export const HOMEY_SCOPES = ["homey", "homey.device.readonly"];
