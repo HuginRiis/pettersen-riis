@@ -1,13 +1,11 @@
 /**
- * Garmin Connect klient.
+ * Garmin Connect klient med MFA-støtte.
  *
- * Implementerer SSO + OAuth1 → OAuth2 flyten Garmin Mobile bruker
- * (samme som python-biblioteket "garth"), kun med native fetch og
- * Web Crypto. Tokens lagres i `garmin_tokens`-tabellen og fornyes
- * automatisk når access-token har <60s igjen.
- *
- * VIKTIG: Dette er uoffisiell skraping — bryter Garmins TOS.
- * MFA støttes ikke (krever interaktiv kode). Slå MFA av på kontoen.
+ * Implementerer SSO + OAuth1 → OAuth2 flyten Garmin Mobile bruker.
+ * Hvis kontoen krever MFA (sikkerhetskode på e-post / authenticator),
+ * returnerer login `{ status: "mfa" }` og lagrer mellomtilstand i
+ * `garmin_tokens.pending_mfa`. Brukeren skriver inn koden i UI og
+ * `submitGarminMfa(code)` fullfører flyten.
  */
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
@@ -17,7 +15,6 @@ const LOGIN_URL = `${SSO}/signin`;
 const API = "https://connectapi.garmin.com";
 const USER_AGENT = "com.garmin.android.apps.connectmobile";
 
-// Public OAuth1 consumer credentials (samme som Garmin sin Android-app).
 const CONSUMER_KEY = "fc3e99d2-118c-44b8-8ae3-03370dde24c0";
 const CONSUMER_SECRET = "E08WAR897WEy2knn7aFBrvegVAf0AFdWBBF";
 
@@ -41,7 +38,6 @@ function jarHeader(jar: Jar): string | undefined {
 }
 
 function ingest(jar: Jar, res: Response) {
-  // Workers Fetch returnerer setCookie via getSetCookie()
   const arr = (res.headers as unknown as { getSetCookie?: () => string[] }).getSetCookie?.()
     ?? [...res.headers.entries()].filter(([k]) => k.toLowerCase() === "set-cookie").map(([, v]) => v);
   for (const raw of arr) {
@@ -64,7 +60,6 @@ async function jfetch(jar: Jar, url: string, init: RequestInit = {}): Promise<Re
   if (cookie) headers.set("Cookie", cookie);
   const res = await fetch(url, { ...init, headers, redirect: "manual" });
   ingest(jar, res);
-  // Manuell follow for 3xx
   if (res.status >= 300 && res.status < 400) {
     const loc = res.headers.get("location");
     if (loc) {
@@ -138,7 +133,15 @@ export type GarminTokens = {
   oauth1_secret: string;
   oauth2_token: string;
   oauth2_refresh_token: string | null;
-  oauth2_expires_at: string; // ISO
+  oauth2_expires_at: string;
+};
+
+type PendingMfa = {
+  jar: [string, string][];
+  csrf: string;
+  mfa_url: string;
+  signin_url: string;
+  created_at: string;
 };
 
 async function loadTokens(): Promise<GarminTokens | null> {
@@ -152,7 +155,7 @@ async function loadTokens(): Promise<GarminTokens | null> {
   return data as unknown as GarminTokens;
 }
 
-async function saveTokens(t: Partial<GarminTokens> & { username?: string }) {
+async function saveTokens(t: Partial<GarminTokens> & { username?: string; pending_mfa?: PendingMfa | null }) {
   const { data: existing } = await supabaseAdmin
     .from("garmin_tokens")
     .select("id")
@@ -171,21 +174,83 @@ async function saveTokens(t: Partial<GarminTokens> & { username?: string }) {
   }
 }
 
+async function loadPendingMfa(): Promise<PendingMfa | null> {
+  const { data } = await supabaseAdmin
+    .from("garmin_tokens")
+    .select("pending_mfa")
+    .order("updated_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return ((data as { pending_mfa?: PendingMfa | null } | null)?.pending_mfa) ?? null;
+}
+
 // ----- SSO + OAuth1/2 flyten ------------------------------------------------
 
-async function fullLogin(): Promise<GarminTokens> {
+function extractTicket(body: string): string | null {
+  const m = body.match(/embed\?ticket=([^"&]+)/) ?? body.match(/ticket=([^"&]+)/);
+  return m ? m[1] : null;
+}
+
+function extractMfaForm(body: string): { actionPath: string; csrf: string } | null {
+  // Garmin MFA-skjema poster til /sso/verifyMFA/loginEnterMfaCode/...
+  const action = body.match(/<form[^>]+action="([^"]*verifyMFA[^"]*)"/i);
+  const csrf = body.match(/name="_csrf"\s+value="([^"]+)"/);
+  if (!action || !csrf) return null;
+  return { actionPath: action[1].replace(/&amp;/g, "&"), csrf: csrf[1] };
+}
+
+async function exchangeTicketForTokens(ticket: string, email: string): Promise<GarminTokens> {
+  const preauthUrl = `${API}/oauth-service/oauth/preauthorized?${new URLSearchParams({
+    ticket, "login-url": SSO_EMBED, "accepts-mfa-tokens": "true",
+  })}`;
+  const auth1 = await oauth1Header("GET", preauthUrl, {}, CONSUMER_KEY, CONSUMER_SECRET);
+  const oauth1Res = await fetch(preauthUrl, {
+    headers: { Authorization: auth1, "User-Agent": USER_AGENT },
+  });
+  if (!oauth1Res.ok) {
+    throw new Error(`OAuth1 preauthorized feilet: ${oauth1Res.status} ${await oauth1Res.text()}`);
+  }
+  const o1 = new URLSearchParams(await oauth1Res.text());
+  const oauth1_token = o1.get("oauth_token");
+  const oauth1_secret = o1.get("oauth_token_secret");
+  if (!oauth1_token || !oauth1_secret) throw new Error("Mottok ikke OAuth1-token fra Garmin.");
+
+  const exchUrl = `${API}/oauth-service/oauth/exchange/user/2.0`;
+  const exchAuth = await oauth1Header("POST", exchUrl, {}, CONSUMER_KEY, CONSUMER_SECRET, oauth1_token, oauth1_secret);
+  const exchRes = await fetch(exchUrl, {
+    method: "POST",
+    headers: {
+      Authorization: exchAuth,
+      "Content-Type": "application/x-www-form-urlencoded",
+      "User-Agent": USER_AGENT,
+    },
+  });
+  if (!exchRes.ok) throw new Error(`OAuth2 exchange feilet: ${exchRes.status} ${await exchRes.text()}`);
+  const oauth2 = (await exchRes.json()) as { access_token: string; refresh_token?: string; expires_in: number };
+
+  const tokens: GarminTokens = {
+    oauth1_token, oauth1_secret,
+    oauth2_token: oauth2.access_token,
+    oauth2_refresh_token: oauth2.refresh_token ?? null,
+    oauth2_expires_at: new Date(Date.now() + (oauth2.expires_in - 30) * 1000).toISOString(),
+  };
+  await saveTokens({ ...tokens, username: email, pending_mfa: null });
+  return tokens;
+}
+
+async function startLoginFlow(): Promise<
+  { status: "ok"; tokens: GarminTokens } | { status: "mfa" }
+> {
   const email = process.env.GARMIN_EMAIL;
   const password = process.env.GARMIN_PASSWORD;
   if (!email || !password) throw new Error("GARMIN_EMAIL / GARMIN_PASSWORD ikke satt.");
 
   const jar: Jar = new Map();
 
-  // 1. Etablér session på embed
   await jfetch(jar, `${SSO_EMBED}?${new URLSearchParams({
     id: "gauth-widget", embedWidget: "true", gauthHost: SSO_EMBED,
   })}`);
 
-  // 2. Hent CSRF
   const signinUrl = `${LOGIN_URL}?${new URLSearchParams(SIGNIN_PARAMS)}`;
   const csrfRes = await jfetch(jar, signinUrl, {
     headers: { Referer: SSO_EMBED, Accept: "text/html" },
@@ -195,7 +260,6 @@ async function fullLogin(): Promise<GarminTokens> {
   if (!csrfMatch) throw new Error("Fant ikke _csrf på Garmin signin-side.");
   const csrf = csrfMatch[1];
 
-  // 3. POST credentials
   const form = new URLSearchParams({
     username: email, password, embed: "true", _csrf: csrf,
   });
@@ -209,61 +273,70 @@ async function fullLogin(): Promise<GarminTokens> {
     body: form.toString(),
   });
   const body = await postRes.text();
-  const ticketMatch = body.match(/embed\?ticket=([^"&]+)/) ?? body.match(/ticket=([^"&]+)/);
-  if (!ticketMatch) {
-    if (/MFA/i.test(body) || /two-factor/i.test(body)) {
-      throw new Error("Garmin krever MFA — slå av to-trinns-bekreftelse for å bruke denne integrasjonen.");
-    }
-    throw new Error(`Innlogging feilet (ingen ticket). Sjekk e-post/passord. HTTP ${postRes.status}.`);
-  }
-  const ticket = ticketMatch[1];
 
-  // 4. Hent OAuth1-token via preauthorized
-  const preauthUrl = `${API}/oauth-service/oauth/preauthorized?${new URLSearchParams({
-    ticket, "login-url": SSO_EMBED, "accepts-mfa-tokens": "true",
-  })}`;
-  const auth1 = await oauth1Header("GET", preauthUrl, {}, CONSUMER_KEY, CONSUMER_SECRET);
-  const oauth1Res = await fetch(preauthUrl, {
-    headers: { Authorization: auth1, "User-Agent": USER_AGENT },
+  const ticket = extractTicket(body);
+  if (ticket) {
+    const tokens = await exchangeTicketForTokens(ticket, email);
+    return { status: "ok", tokens };
+  }
+
+  const mfa = extractMfaForm(body);
+  if (mfa) {
+    const mfaUrl = mfa.actionPath.startsWith("http")
+      ? mfa.actionPath
+      : new URL(mfa.actionPath, SSO + "/").toString();
+    const pending: PendingMfa = {
+      jar: Array.from(jar.entries()),
+      csrf: mfa.csrf,
+      mfa_url: mfaUrl,
+      signin_url: signinUrl,
+      created_at: new Date().toISOString(),
+    };
+    await saveTokens({ pending_mfa: pending });
+    return { status: "mfa" };
+  }
+
+  throw new Error(`Innlogging feilet (ingen ticket / MFA-form). Sjekk e-post/passord. HTTP ${postRes.status}.`);
+}
+
+async function finishLoginWithMfa(code: string): Promise<GarminTokens> {
+  const email = process.env.GARMIN_EMAIL;
+  if (!email) throw new Error("GARMIN_EMAIL ikke satt.");
+  const pending = await loadPendingMfa();
+  if (!pending) throw new Error("Ingen aktiv MFA-prosess. Trykk 'Logg inn' på nytt.");
+
+  const ageMs = Date.now() - new Date(pending.created_at).getTime();
+  if (ageMs > 10 * 60 * 1000) {
+    await saveTokens({ pending_mfa: null });
+    throw new Error("MFA-koden gikk ut. Trykk 'Logg inn' på nytt for å få ny kode.");
+  }
+
+  const jar: Jar = new Map(pending.jar);
+  const form = new URLSearchParams({
+    "mfa-code": code.trim(),
+    embed: "true",
+    _csrf: pending.csrf,
+    fromPage: "setupEnterMfaCode",
   });
-  if (!oauth1Res.ok) {
-    throw new Error(`OAuth1 preauthorized feilet: ${oauth1Res.status} ${await oauth1Res.text()}`);
-  }
-  const oauth1Body = await oauth1Res.text();
-  const o1 = new URLSearchParams(oauth1Body);
-  const oauth1_token = o1.get("oauth_token");
-  const oauth1_secret = o1.get("oauth_token_secret");
-  if (!oauth1_token || !oauth1_secret) throw new Error("Mottok ikke OAuth1-token fra Garmin.");
 
-  // 5. Bytt OAuth1 → OAuth2
-  const exchUrl = `${API}/oauth-service/oauth/exchange/user/2.0`;
-  const exchAuth = await oauth1Header("POST", exchUrl, {}, CONSUMER_KEY, CONSUMER_SECRET, oauth1_token, oauth1_secret);
-  const exchRes = await fetch(exchUrl, {
+  const res = await jfetch(jar, pending.mfa_url, {
     method: "POST",
     headers: {
-      Authorization: exchAuth,
       "Content-Type": "application/x-www-form-urlencoded",
-      "User-Agent": USER_AGENT,
+      Referer: pending.signin_url,
+      Accept: "text/html",
     },
+    body: form.toString(),
   });
-  if (!exchRes.ok) {
-    throw new Error(`OAuth2 exchange feilet: ${exchRes.status} ${await exchRes.text()}`);
+  const body = await res.text();
+  const ticket = extractTicket(body);
+  if (!ticket) {
+    if (/incorrect|invalid|feil/i.test(body)) {
+      throw new Error("Ugyldig sikkerhetskode. Prøv på nytt.");
+    }
+    throw new Error(`Fant ikke ticket etter MFA. HTTP ${res.status}.`);
   }
-  const oauth2 = (await exchRes.json()) as {
-    access_token: string;
-    refresh_token?: string;
-    expires_in: number;
-  };
-
-  const tokens: GarminTokens = {
-    oauth1_token,
-    oauth1_secret,
-    oauth2_token: oauth2.access_token,
-    oauth2_refresh_token: oauth2.refresh_token ?? null,
-    oauth2_expires_at: new Date(Date.now() + (oauth2.expires_in - 30) * 1000).toISOString(),
-  };
-  await saveTokens({ ...tokens, username: email });
-  return tokens;
+  return exchangeTicketForTokens(ticket, email);
 }
 
 async function refreshOauth2(t: GarminTokens): Promise<GarminTokens> {
@@ -281,8 +354,8 @@ async function refreshOauth2(t: GarminTokens): Promise<GarminTokens> {
     },
   });
   if (!res.ok) {
-    // OAuth1-token kan være utløpt — full re-login
-    return fullLogin();
+    // OAuth1 utløpt — vi kan ikke gjøre full re-login her hvis MFA kreves.
+    throw new Error("Garmin-token utløpt. Gå til Trening og trykk 'Logg inn' på nytt.");
   }
   const j = (await res.json()) as { access_token: string; refresh_token?: string; expires_in: number };
   const next: GarminTokens = {
@@ -296,10 +369,10 @@ async function refreshOauth2(t: GarminTokens): Promise<GarminTokens> {
 }
 
 async function ensureValid(): Promise<GarminTokens> {
-  let t = await loadTokens();
-  if (!t) return fullLogin();
+  const t = await loadTokens();
+  if (!t) throw new Error("Ikke logget inn på Garmin. Gå til Trening og trykk 'Logg inn'.");
   if (new Date(t.oauth2_expires_at).getTime() < Date.now() + 60_000) {
-    t = await refreshOauth2(t);
+    return refreshOauth2(t);
   }
   return t;
 }
@@ -333,8 +406,16 @@ export async function garminGet<T = unknown>(path: string): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-export async function garminLogin(): Promise<{ ok: true; expires_at: string }> {
-  const t = await fullLogin();
+export async function garminLogin(): Promise<
+  { ok: true; mfa: false; expires_at: string } | { ok: true; mfa: true }
+> {
+  const r = await startLoginFlow();
+  if (r.status === "mfa") return { ok: true, mfa: true };
+  return { ok: true, mfa: false, expires_at: r.tokens.oauth2_expires_at };
+}
+
+export async function garminSubmitMfa(code: string): Promise<{ ok: true; expires_at: string }> {
+  const t = await finishLoginWithMfa(code);
   return { ok: true, expires_at: t.oauth2_expires_at };
 }
 
@@ -343,10 +424,11 @@ export async function getGarminStatus(): Promise<{
   username: string | null;
   expires_at: string | null;
   last_login_at: string | null;
+  mfa_pending: boolean;
 }> {
   const { data } = await supabaseAdmin
     .from("garmin_tokens")
-    .select("username, oauth2_expires_at, last_login_at, oauth1_token")
+    .select("username, oauth2_expires_at, last_login_at, oauth1_token, pending_mfa")
     .order("updated_at", { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -355,5 +437,6 @@ export async function getGarminStatus(): Promise<{
     username: data?.username ?? null,
     expires_at: data?.oauth2_expires_at ?? null,
     last_login_at: data?.last_login_at ?? null,
+    mfa_pending: !!(data as { pending_mfa?: unknown } | null)?.pending_mfa,
   };
 }
