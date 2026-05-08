@@ -344,23 +344,45 @@ function StatsCards({
     };
   }, [sessions, pageviews, attempts]);
 
+  const [open, setOpen] = useState(false);
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3">
-      <StatCard label="Unike sjeler" value={totalSouls.toLocaleString("nb-NO")} />
-      <StatCard label="Sjeler siste døgn" value={stats.todayCount.toString()} />
-      <StatCard label="Sidevisninger" value={totalPageviews.toLocaleString("nb-NO")} />
-      <StatCard label="Snitt-økt" value={formatDuration(stats.avgDuration)} />
-      <StatCard
-        label="Mest besøkte"
-        value={stats.topPath}
-        sub={`${stats.topPathHits} treff`}
-        wide
-      />
-      <StatCard
-        label="Feilforsøk siste døgn"
-        value={stats.failedToday.toString()}
-        tone={stats.failedToday > 0 ? "warn" : "ok"}
-      />
+    <div className="panel rounded-md border border-border bg-card/40 backdrop-blur p-2 sm:p-3">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center justify-between gap-2 px-1 py-1 text-[10px] tracking-[0.25em] uppercase text-muted-foreground hover:text-primary transition-colors"
+        aria-expanded={open}
+      >
+        <span className="flex items-center gap-3 flex-wrap">
+          <span className="text-primary">📊 Vaktens nøkkeltall</span>
+          <span className="normal-case tracking-normal text-[10px] text-muted-foreground/80">
+            {totalSouls.toLocaleString("nb-NO")} sjeler · {stats.todayCount} siste døgn · {totalPageviews.toLocaleString("nb-NO")} sidevisninger
+            {stats.failedToday > 0 && (
+              <span className="text-destructive"> · {stats.failedToday} feilforsøk</span>
+            )}
+          </span>
+        </span>
+        <span className="text-[10px]">{open ? "Lukk" : "Vis"}</span>
+      </button>
+      {open && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3 mt-3">
+          <StatCard label="Unike sjeler" value={totalSouls.toLocaleString("nb-NO")} />
+          <StatCard label="Sjeler siste døgn" value={stats.todayCount.toString()} />
+          <StatCard label="Sidevisninger" value={totalPageviews.toLocaleString("nb-NO")} />
+          <StatCard label="Snitt-økt" value={formatDuration(stats.avgDuration)} />
+          <StatCard
+            label="Mest besøkte"
+            value={stats.topPath}
+            sub={`${stats.topPathHits} treff`}
+            wide
+          />
+          <StatCard
+            label="Feilforsøk siste døgn"
+            value={stats.failedToday.toString()}
+            tone={stats.failedToday > 0 ? "warn" : "ok"}
+          />
+        </div>
+      )}
     </div>
   );
 }
