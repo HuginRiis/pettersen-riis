@@ -47,6 +47,16 @@ export async function syncDaily(daysBack = 30): Promise<number> {
         `/usersummary-service/usersummary/daily/?calendarDate=${day}`,
       );
       if (!ds) continue;
+      // Vekt — best-effort. Garmin endpoint returns daily weight summary if registered.
+      let weightKg: number | null = null;
+      try {
+        const w = await garminGet<{ dateWeightList?: Array<{ weight?: number }>; totalAverage?: { weight?: number } }>(
+          `/weight-service/weight/dayview/${day}?includeAll=true`,
+        );
+        const grams = w?.totalAverage?.weight ?? w?.dateWeightList?.[0]?.weight ?? null;
+        if (typeof grams === "number" && grams > 0) weightKg = Math.round((grams / 1000) * 100) / 100;
+      } catch {}
+      const avgHr = ds.averageHeartRateInBeatsPerMinute ?? ds.averageHeartRate ?? null;
       const row = {
         day,
         steps: ds.totalSteps ?? null,
@@ -54,6 +64,8 @@ export async function syncDaily(daysBack = 30): Promise<number> {
         floors_climbed: ds.floorsAscended ?? null,
         floors_goal: ds.userFloorsAscendedGoal ?? null,
         resting_heart_rate: ds.restingHeartRate ?? null,
+        average_heart_rate: avgHr ? Math.round(avgHr) : null,
+        weight_kg: weightKg,
         total_kilocalories: ds.totalKilocalories ? Math.round(ds.totalKilocalories) : null,
         active_kilocalories: ds.activeKilocalories ? Math.round(ds.activeKilocalories) : null,
         distance_meters: ds.totalDistanceMeters ? Math.round(ds.totalDistanceMeters) : null,
