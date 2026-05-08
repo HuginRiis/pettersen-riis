@@ -1,10 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
+import { Footprints } from "lucide-react";
 import { PageShell, PageHero } from "@/components/PageShell";
 import { ActivityMap } from "@/components/ActivityMap";
 import { GarminPanel } from "@/components/GarminPanel";
 import { getActivityStreams, getStravaDashboard, getStravaStatus } from "@/server/strava";
+import { getGarminOverview } from "@/server/garmin.functions";
 import treningImg from "@/assets/got-trening.jpg";
 
 export const Route = createFileRoute("/trening")({
