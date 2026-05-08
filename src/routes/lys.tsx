@@ -241,6 +241,32 @@ function LysPage() {
     }
   };
 
+  const sendColorCap = async (
+    id: string,
+    capability: "light_hue" | "light_saturation" | "light_temperature",
+    value: number,
+  ) => {
+    setBusy((b) => ({ ...b, [id]: true }));
+    setOverrides((o) => ({
+      ...o,
+      [id]: {
+        ...o[id],
+        ...(capability === "light_hue" ? { hue: value } : {}),
+        ...(capability === "light_saturation" ? { saturation: value } : {}),
+        ...(capability === "light_temperature" ? { temperature: value } : {}),
+      },
+    }));
+    try {
+      await setCap({ data: { deviceId: id, capability, value } });
+      setTimeout(() => router.invalidate(), 1500);
+    } finally {
+      setBusy((b) => {
+        const { [id]: _, ...rest } = b;
+        return rest;
+      });
+    }
+  };
+
   const toggleZone = async (zoneLights: LightDevice[], on: boolean) => {
     await Promise.all(
       zoneLights.filter((l) => l.hasOnOff).map((l) => sendOnOff(l.id, on)),
