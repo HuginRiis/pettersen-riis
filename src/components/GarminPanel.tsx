@@ -11,10 +11,12 @@ import { Button } from "@/components/ui/button";
 type Daily = {
   day: string; steps: number | null; step_goal: number | null;
   floors_climbed: number | null; resting_heart_rate: number | null;
+  average_heart_rate: number | null; weight_kg: number | null;
   total_kilocalories: number | null; active_kilocalories: number | null;
   distance_meters: number | null; moderate_intensity_minutes: number | null;
-  vigorous_intensity_minutes: number | null; body_battery_high: number | null;
-  body_battery_low: number | null; stress_average: number | null;
+  vigorous_intensity_minutes: number | null; intensity_minutes_goal: number | null;
+  body_battery_high: number | null; body_battery_low: number | null;
+  stress_average: number | null;
 };
 type Activity = {
   garmin_activity_id: number; activity_type: string | null; activity_name: string | null;
