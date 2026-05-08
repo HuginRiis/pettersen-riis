@@ -84,7 +84,14 @@ export const Route = createFileRoute("/api/public/hooks/agenda-push")({
           } catch (err) {
             console.error("[met-alert-push] failed", err);
           }
-          return new Response(JSON.stringify({ ok: true, agenda, checklist, garbage, birthdays, warranty, uv, weather, lightIdle, tibber, metAlerts }), {
+          let mailDelivery = { checked: 0, sent: 0, errors: 0, skipped: 0 };
+          try {
+            const mdmod = await import("@/server/mail-delivery-push.server");
+            mailDelivery = await mdmod.processMailDeliveryNotifications();
+          } catch (err) {
+            console.error("[mail-delivery-push] failed", err);
+          }
+          return new Response(JSON.stringify({ ok: true, agenda, checklist, garbage, birthdays, warranty, uv, weather, lightIdle, tibber, metAlerts, mailDelivery }), {
             headers: { "Content-Type": "application/json" },
           });
         } catch (err) {
