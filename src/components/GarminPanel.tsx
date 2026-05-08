@@ -99,6 +99,9 @@ export function GarminPanel() {
   };
 
   const today = data?.daily?.[data.daily.length - 1];
+  const lastSleep = data?.sleep?.[data.sleep.length - 1];
+  const intensityToday = (today?.moderate_intensity_minutes ?? 0) + (today?.vigorous_intensity_minutes ?? 0);
+  const sleepHoursToday = lastSleep?.total_seconds ? (lastSleep.total_seconds / 3600).toFixed(1) : null;
 
   return (
     <section className="container mx-auto px-4 pb-6">
