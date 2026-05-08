@@ -321,6 +321,18 @@ function LysPage() {
       },
     }));
     try {
+      // Sett riktig modus først så fargen/temperaturen faktisk tar effekt
+      const targetMode =
+        capability === "light_temperature" ? "temperature" : "color";
+      const dev = lights.find((l) => l.id === id);
+      if (dev?.hasLightMode && dev.lightMode !== targetMode) {
+        await setCap({ data: { deviceId: id, capability: "light_mode", value: targetMode } });
+      }
+      // Sørg for at lyset er på, ellers ignorerer Homey ofte fargekommandoer
+      if (dev?.hasOnOff && !dev.on) {
+        await setCap({ data: { deviceId: id, capability: "onoff", value: true } });
+        setOverrides((o) => ({ ...o, [id]: { ...o[id], on: true } }));
+      }
       await setCap({ data: { deviceId: id, capability, value } });
       setTimeout(() => router.invalidate(), 1500);
     } finally {
@@ -729,29 +741,29 @@ function LysPage() {
                               {l.hasTemperature && (
                                 <div>
                                   <div className="flex items-center justify-between text-[10px] tracking-[0.25em] uppercase text-muted-foreground mb-1.5">
-                                    <span>Varm ↔ Kald</span>
-                                    <span>{Math.round((l.temperature ?? 0) * 100)}%</span>
+                                    <span>Kald ↔ Varm</span>
+                                    <span>{Math.round((1 - (l.temperature ?? 0.5)) * 100)}%</span>
                                   </div>
                                   <div
                                     className="h-2 w-full rounded mb-2"
                                     style={{
                                       background:
-                                        "linear-gradient(to right, #ffb86b, #fff1d6, #cfe4ff)",
+                                        "linear-gradient(to right, #cfe4ff, #fff1d6, #ffb86b)",
                                     }}
                                   />
                                   <Slider
-                                    value={[Math.round((l.temperature ?? 0.5) * 100)]}
+                                    value={[Math.round((1 - (l.temperature ?? 0.5)) * 100)]}
                                     min={0}
                                     max={100}
                                     step={1}
                                     onValueChange={(v) =>
                                       setOverrides((o) => ({
                                         ...o,
-                                        [l.id]: { ...o[l.id], temperature: v[0] / 100 },
+                                        [l.id]: { ...o[l.id], temperature: 1 - v[0] / 100 },
                                       }))
                                     }
                                     onValueCommit={(v) =>
-                                      sendColorCap(l.id, "light_temperature", v[0] / 100)
+                                      sendColorCap(l.id, "light_temperature", 1 - v[0] / 100)
                                     }
                                     disabled={busy[l.id]}
                                   />
