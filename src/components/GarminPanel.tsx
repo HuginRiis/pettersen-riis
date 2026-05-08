@@ -1,9 +1,12 @@
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Activity, Footprints, Heart, Flame, Moon, RefreshCw, LogIn, Loader2, TrendingUp } from "lucide-react";
+import { Activity, Footprints, Heart, Flame, Moon, RefreshCw, LogIn, Loader2, TrendingUp, ShieldCheck } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, CartesianGrid } from "recharts";
 import { toast } from "sonner";
-import { getGarminOverview, garminLoginNow, garminSyncNow } from "@/server/garmin.functions";
+import { getGarminOverview, garminLoginNow, garminSyncNow, garminSubmitMfaCode } from "@/server/garmin.functions";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 type Daily = {
   day: string; steps: number | null; step_goal: number | null;
