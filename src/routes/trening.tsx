@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { PageShell, PageHero } from "@/components/PageShell";
 import { ActivityMap } from "@/components/ActivityMap";
+import { GarminPanel } from "@/components/GarminPanel";
 import { getActivityStreams, getStravaDashboard, getStravaStatus } from "@/server/strava";
 import treningImg from "@/assets/got-trening.jpg";
 
@@ -242,6 +243,7 @@ function TreningPage() {
       />
 
       <section className="container mx-auto px-4 py-12 space-y-16">
+        <GarminPanel />
         <StravaSection owner="arne" displayName="Arne" />
         <StravaSection owner="rebekka" displayName="Rebekka" />
       </section>
