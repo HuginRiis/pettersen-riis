@@ -61,6 +61,7 @@ const ROUTE_ICON: Partial<Record<RoutePath, React.ComponentType<{ size?: number;
   "/vakttarnet": Eye,
   "/hytta": Trees,
   "/smarthus": Lightbulb,
+  "/lys": Flame,
   "/stromkroniken": Zap,
   "/oppussing-borgen": Hammer,
   "/oppussing-hytta": Hammer,
