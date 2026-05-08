@@ -14,6 +14,7 @@ import { LightIdleNotificationSettings } from "@/components/LightIdleNotificatio
 import { UvNotificationSettings } from "@/components/UvNotificationSettings";
 import { WeatherNotificationSettings } from "@/components/WeatherNotificationSettings";
 import { MailDeliveryNotificationSettings } from "@/components/MailDeliveryNotificationSettings";
+import { GarminNotificationSettings } from "@/components/GarminNotificationSettings";
 import {
   Bell, BellOff, Calendar, Cake, Trash2, CloudSun, Sun, Lightbulb, ScrollText, ShieldCheck, Lock, ExternalLink, Smartphone, X,
 } from "lucide-react";
