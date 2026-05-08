@@ -94,7 +94,8 @@ function LysPage() {
     setUpdated(new Date());
   }, [data]);
 
-  // Last scener for innlogget push-bruker
+  const { prefs: menuPrefsEarly, toggleFavoriteZone } = useMenuPrefs();
+  const useGlobalScenes = menuPrefsEarly.useGlobalLightScenes;
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -104,17 +105,20 @@ function LysPage() {
       const w = stored || "Alle";
       if (cancelled) return;
       setWho(w);
-      // Prøv først for valgt bruker (eller "Alle"). Hvis ingen rader: fallback til Arne.
+      // Hvis bruker har valgt globale scener: bruk "__GLOBAL__".
+      // Ellers: prøv valgt bruker, fallback til Arne.
+      const primaryWho = useGlobalScenes ? "__GLOBAL__" : w;
       let { data: rows } = await supabase
         .from("user_light_scenes")
         .select("slot, name, device_ids")
-        .eq("who", w)
+        .eq("who", primaryWho)
         .order("slot");
-      if (!cancelled && (!rows || rows.length === 0) && w !== "Arne") {
+      if (!cancelled && (!rows || rows.length === 0) && primaryWho !== "Arne") {
+        const fallback = useGlobalScenes ? "Arne" : (w !== "Arne" ? "Arne" : "Arne");
         const { data: arneRows } = await supabase
           .from("user_light_scenes")
           .select("slot, name, device_ids")
-          .eq("who", "Arne")
+          .eq("who", fallback)
           .order("slot");
         rows = arneRows;
       }
@@ -130,7 +134,7 @@ function LysPage() {
       setScenes((prev) => prev.map((s) => map.get(s.slot) ?? s));
     })();
     return () => { cancelled = true; };
-  }, []);
+  }, [useGlobalScenes]);
 
   if (!data.ok) {
     return (
@@ -237,7 +241,7 @@ function LysPage() {
     return arr;
   }, [data, overrides, zoneById]);
 
-  const { prefs: menuPrefs, toggleFavoriteZone } = useMenuPrefs();
+  const menuPrefs = menuPrefsEarly;
   const favoriteZones = menuPrefs.favoriteZones;
 
   const grouped = useMemo(() => {

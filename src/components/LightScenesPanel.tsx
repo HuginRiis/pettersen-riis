@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Lightbulb, Save, Search, Loader2, Settings2 } from "lucide-react";
+import { Lightbulb, Save, Search, Loader2, Settings2, Globe2, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getStoredWho } from "@/lib/push-client";
 import { getHomeySnapshot, type HomeyDeviceSnapshot } from "@/server/homey";
+import { useMenuPrefs } from "@/hooks/use-menu-prefs";
 
 type Scene = {
   slot: number;
@@ -30,6 +31,7 @@ function isLightLike(d: HomeyDeviceSnapshot): boolean {
 
 export function LightScenesPanel() {
   const fetchSnap = useServerFn(getHomeySnapshot);
+  const { prefs, setUseGlobalLightScenes } = useMenuPrefs();
   const [who, setWho] = useState<string>("Alle");
   const [scenes, setScenes] = useState<Scene[]>(DEFAULTS);
   const [devices, setDevices] = useState<{ id: string; name: string; zoneName: string }[]>([]);
@@ -37,6 +39,9 @@ export function LightScenesPanel() {
   const [savingSlot, setSavingSlot] = useState<number | null>(null);
   const [search, setSearch] = useState("");
   const [openSlot, setOpenSlot] = useState<number | null>(null);
+
+  const useGlobal = prefs.useGlobalLightScenes;
+  const targetWho = useGlobal ? "__GLOBAL__" : who;
 
   useEffect(() => {
     setWho(getStoredWho() || "Alle");
@@ -64,7 +69,7 @@ export function LightScenesPanel() {
     return () => { cancelled = true; };
   }, [fetchSnap]);
 
-  // Load scenes for current user
+  // Load scenes for current target (user or global)
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -72,7 +77,7 @@ export function LightScenesPanel() {
       const { data } = await supabase
         .from("user_light_scenes")
         .select("slot, name, device_ids")
-        .eq("who", who)
+        .eq("who", targetWho)
         .order("slot");
       if (cancelled) return;
       const map = new Map<number, Scene>();
@@ -88,7 +93,7 @@ export function LightScenesPanel() {
       setLoading(false);
     })();
     return () => { cancelled = true; };
-  }, [who]);
+  }, [targetWho]);
 
   const grouped = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -126,7 +131,7 @@ export function LightScenesPanel() {
     setSavingSlot(slot);
     await supabase.from("user_light_scenes").upsert(
       {
-        who,
+        who: targetWho,
         slot,
         name: scene.name,
         device_ids: scene.device_ids,
@@ -148,8 +153,31 @@ export function LightScenesPanel() {
         </h3>
         <p className="text-sm text-muted-foreground mt-1">
           Tre knapper på toppen av Lys-siden. Tilpass navn og hvilke lys hver knapp styrer.
-          Lagres for <span className="text-primary">{who}</span>.
+          {useGlobal ? (
+            <> Lagres <span className="text-primary">globalt for alle</span>.</>
+          ) : (
+            <> Lagres for <span className="text-primary">{who}</span>.</>
+          )}
         </p>
+
+        <div className="mt-3 inline-flex rounded-lg border border-border overflow-hidden text-xs">
+          <button
+            onClick={() => setUseGlobalLightScenes(false)}
+            className={`px-3 py-1.5 inline-flex items-center gap-1.5 transition-colors ${
+              !useGlobal ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <User size={12} /> Personlig ({who})
+          </button>
+          <button
+            onClick={() => setUseGlobalLightScenes(true)}
+            className={`px-3 py-1.5 inline-flex items-center gap-1.5 transition-colors border-l border-border ${
+              useGlobal ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Globe2 size={12} /> Global (alle)
+          </button>
+        </div>
 
         {loading && <div className="text-xs text-muted-foreground mt-3">Laster…</div>}
 
