@@ -351,3 +351,14 @@ function Tile({ icon, label, value, sub }: { icon: React.ReactNode; label: strin
     </div>
   );
 }
+
+function ChartCard({ title, children, height = 160 }: { title: React.ReactNode; children: React.ReactElement; height?: number }) {
+  return (
+    <div className="rounded border border-border/60 bg-background/40 p-3">
+      <div className="text-xs text-muted-foreground mb-2">{title}</div>
+      <ResponsiveContainer width="100%" height={height}>
+        {children}
+      </ResponsiveContainer>
+    </div>
+  );
+}
