@@ -83,13 +83,14 @@ export function GarminPanel() {
 
   const handleSubmitMfa = async () => {
     setWorking("mfa");
+    setLoginNotice(null);
     try {
       await mfaFn({ data: { code: mfaCode } });
       toast.success("Garmin innlogging fullført");
       setMfaOpen(false);
       setMfaCode("");
       await load();
-    } catch (e) { toast.error((e as Error).message); }
+    } catch (e) { const message = (e as Error).message; setLoginNotice(message); toast.error(message); }
     finally { setWorking(null); }
   };
 
