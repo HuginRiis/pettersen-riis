@@ -137,6 +137,15 @@ function PushSettingsPage() {
         </div>
       </section>
 
+      <section className="container mx-auto px-4 pb-4">
+        <div className="panel rounded-lg p-4">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-primary mb-3 flex items-center gap-2">
+            🔐 Innlogging — vellykket og feilet
+          </h2>
+          <LoginNotificationSettings />
+        </div>
+      </section>
+
 
       <section className="container mx-auto px-4 pb-12 grid md:grid-cols-2 gap-4">
         <CategoryCard
