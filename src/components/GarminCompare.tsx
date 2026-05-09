@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowUp, ArrowDown, Minus, Swords, Loader2 } from "lucide-react";
+import { ArrowUp, ArrowDown, Minus, Swords, Loader2, Crown, Flame } from "lucide-react";
 import { getGarminOverview } from "@/server/garmin.functions";
 
 type Owner = "arne" | "rebekka";
@@ -11,7 +11,13 @@ type Daily = {
   moderate_intensity_minutes: number | null; vigorous_intensity_minutes: number | null;
   body_battery_high: number | null; stress_average: number | null;
 };
-type Sleep = { day: string; total_seconds: number | null; sleep_score: number | null; hrv_avg: number | null };
+type Sleep = {
+  day: string;
+  total_seconds: number | null;
+  deep_seconds: number | null;
+  sleep_score: number | null;
+  hrv_avg: number | null;
+};
 type Overview = { daily: Daily[]; sleep: Sleep[] };
 
 function fmtNum(n: number | null | undefined, digits = 0, suffix = "") {
@@ -19,20 +25,10 @@ function fmtNum(n: number | null | undefined, digits = 0, suffix = "") {
   return n.toLocaleString("nb-NO", { maximumFractionDigits: digits, minimumFractionDigits: digits }) + suffix;
 }
 function hoursMin(sec: number | null | undefined) {
-  if (!sec) return "—";
+  if (sec == null || sec === 0) return "—";
   const h = Math.floor(sec / 3600); const m = Math.floor((sec % 3600) / 60);
   return h > 0 ? `${h}t ${m}m` : `${m}m`;
 }
-
-type Row = {
-  label: string;
-  arne: number | null;
-  rebekka: number | null;
-  fmt: (n: number | null) => string;
-  // higherIsBetter: true=høyere bedre, false=lavere bedre, null=nøytral
-  higherIsBetter: boolean | null;
-};
-
 function pickLatest<T extends { day: string }>(arr: T[] | undefined): T | undefined {
   if (!arr?.length) return undefined;
   return arr[arr.length - 1];
@@ -40,6 +36,15 @@ function pickLatest<T extends { day: string }>(arr: T[] | undefined): T | undefi
 function intensity(d?: Daily) {
   return ((d?.moderate_intensity_minutes ?? 0) + (d?.vigorous_intensity_minutes ?? 0)) || null;
 }
+
+type Row = {
+  label: string;
+  arne: number | null;
+  rebekka: number | null;
+  fmt: (n: number | null) => string;
+  fmtDiff?: (n: number) => string;
+  higherIsBetter: boolean | null;
+};
 
 export function GarminCompare() {
   const fetchOverview = useServerFn(getGarminOverview);
@@ -68,17 +73,15 @@ export function GarminCompare() {
 
   const rows: Row[] = [
     { label: "Skritt", arne: a?.steps ?? null, rebekka: r?.steps ?? null, fmt: (n) => fmtNum(n), higherIsBetter: true },
-    { label: "Distanse (km)", arne: a?.distance_meters ? a.distance_meters / 1000 : null, rebekka: r?.distance_meters ? r.distance_meters / 1000 : null, fmt: (n) => fmtNum(n, 1), higherIsBetter: true },
-    { label: "Etasjer", arne: a?.floors_climbed ?? null, rebekka: r?.floors_climbed ?? null, fmt: (n) => fmtNum(n), higherIsBetter: true },
-    { label: "Aktive kcal", arne: a?.active_kilocalories ?? null, rebekka: r?.active_kilocalories ?? null, fmt: (n) => fmtNum(n), higherIsBetter: true },
-    { label: "Total kcal", arne: a?.total_kilocalories ?? null, rebekka: r?.total_kilocalories ?? null, fmt: (n) => fmtNum(n), higherIsBetter: null },
-    { label: "Intensitet (min)", arne: intensity(a), rebekka: intensity(r), fmt: (n) => fmtNum(n), higherIsBetter: true },
-    { label: "Hvilepuls", arne: a?.resting_heart_rate ?? null, rebekka: r?.resting_heart_rate ?? null, fmt: (n) => fmtNum(n), higherIsBetter: false },
-    { label: "Stress (snitt)", arne: a?.stress_average ?? null, rebekka: r?.stress_average ?? null, fmt: (n) => fmtNum(n), higherIsBetter: false },
-    { label: "Body Battery (topp)", arne: a?.body_battery_high ?? null, rebekka: r?.body_battery_high ?? null, fmt: (n) => fmtNum(n), higherIsBetter: true },
-    { label: "Søvn", arne: aSleep?.total_seconds ?? null, rebekka: rSleep?.total_seconds ?? null, fmt: (n) => hoursMin(n), higherIsBetter: true },
+    { label: "Søvn (totalt)", arne: aSleep?.total_seconds ?? null, rebekka: rSleep?.total_seconds ?? null, fmt: (n) => hoursMin(n), fmtDiff: (n) => hoursMin(Math.abs(n)), higherIsBetter: true },
+    { label: "Dyp søvn", arne: aSleep?.deep_seconds ?? null, rebekka: rSleep?.deep_seconds ?? null, fmt: (n) => hoursMin(n), fmtDiff: (n) => hoursMin(Math.abs(n)), higherIsBetter: true },
     { label: "Søvnscore", arne: aSleep?.sleep_score ?? null, rebekka: rSleep?.sleep_score ?? null, fmt: (n) => fmtNum(n), higherIsBetter: true },
-    { label: "HRV (snitt)", arne: aSleep?.hrv_avg ?? null, rebekka: rSleep?.hrv_avg ?? null, fmt: (n) => fmtNum(n), higherIsBetter: true },
+    { label: "Hvilepuls", arne: a?.resting_heart_rate ?? null, rebekka: r?.resting_heart_rate ?? null, fmt: (n) => fmtNum(n, 0, " bpm"), higherIsBetter: false },
+    { label: "Body Battery (topp)", arne: a?.body_battery_high ?? null, rebekka: r?.body_battery_high ?? null, fmt: (n) => fmtNum(n), higherIsBetter: true },
+    { label: "Stress (snitt)", arne: a?.stress_average ?? null, rebekka: r?.stress_average ?? null, fmt: (n) => fmtNum(n), higherIsBetter: false },
+    { label: "Intensitetsminutter", arne: intensity(a), rebekka: intensity(r), fmt: (n) => fmtNum(n, 0, " min"), higherIsBetter: true },
+    { label: "Aktive kcal", arne: a?.active_kilocalories ?? null, rebekka: r?.active_kilocalories ?? null, fmt: (n) => fmtNum(n, 0, " kcal"), higherIsBetter: true },
+    { label: "Trapper", arne: a?.floors_climbed ?? null, rebekka: r?.floors_climbed ?? null, fmt: (n) => fmtNum(n), higherIsBetter: true },
   ];
 
   const winner = (row: Row): "arne" | "rebekka" | "tie" | "na" => {
@@ -96,15 +99,41 @@ export function GarminCompare() {
     return acc;
   }, { arne: 0, rebekka: 0 });
 
+  const display = "var(--font-display)";
+
   return (
-    <section className="container mx-auto px-2 sm:px-4 pb-6">
-      <div className="rounded-lg border border-border/60 bg-card/50 p-4 space-y-3">
-        <div className="flex items-center justify-between flex-wrap gap-2">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-primary flex items-center gap-2">
-            <Swords size={16} /> Sammenligning — siste dag
-          </h2>
-          <div className="text-xs text-muted-foreground">
-            Stillingen: <span className="text-foreground font-medium">Arne {wins.arne}</span> · <span className="text-foreground font-medium">Rebekka {wins.rebekka}</span>
+    <section>
+      <div className="rounded-lg border border-amber-500/30 bg-gradient-to-b from-amber-950/20 to-card/60 p-4 space-y-4">
+        {/* Header */}
+        <div className="flex items-center justify-between flex-wrap gap-2 border-b border-amber-500/20 pb-3">
+          <div className="flex items-center gap-2">
+            <Swords size={18} className="text-amber-400" />
+            <h2 className="text-amber-100" style={{ fontFamily: display, letterSpacing: "0.2em", fontWeight: 700 }}>
+              SAMMENLIGNING
+            </h2>
+          </div>
+          <div className="text-xs text-muted-foreground italic" style={{ fontFamily: "var(--font-medieval)" }}>
+            « Siste registrerte dag »
+          </div>
+        </div>
+
+        {/* Score / banners */}
+        <div className="grid grid-cols-2 gap-2">
+          <div className={`rounded border ${wins.arne >= wins.rebekka ? "border-slate-300/60" : "border-slate-500/30"} bg-gradient-to-r from-slate-700/60 to-slate-900/70 px-3 py-2 flex items-center gap-2`}>
+            <Crown className="h-4 w-4 text-slate-200" />
+            <div className="flex-1 min-w-0">
+              <div className="text-[10px] uppercase tracking-[0.2em] text-slate-300" style={{ fontFamily: display }}>House Stark</div>
+              <div className="text-slate-100 font-semibold">Arne</div>
+            </div>
+            <div className="text-2xl text-slate-100 tabular-nums" style={{ fontFamily: display, fontWeight: 700 }}>{wins.arne}</div>
+          </div>
+          <div className={`rounded border ${wins.rebekka >= wins.arne ? "border-rose-300/60" : "border-rose-500/30"} bg-gradient-to-r from-rose-900/60 to-black/80 px-3 py-2 flex items-center gap-2`}>
+            <Flame className="h-4 w-4 text-rose-200" />
+            <div className="flex-1 min-w-0">
+              <div className="text-[10px] uppercase tracking-[0.2em] text-rose-200" style={{ fontFamily: display }}>House Targaryen</div>
+              <div className="text-rose-100 font-semibold">Rebekka</div>
+            </div>
+            <div className="text-2xl text-rose-100 tabular-nums" style={{ fontFamily: display, fontWeight: 700 }}>{wins.rebekka}</div>
           </div>
         </div>
 
@@ -113,15 +142,15 @@ export function GarminCompare() {
             <Loader2 className="h-4 w-4 animate-spin" /> Laster sammenligning…
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto -mx-1">
             <table className="w-full text-xs">
               <thead>
-                <tr className="text-left text-muted-foreground border-b border-border/40">
-                  <th className="py-1.5 pr-2 font-medium">Måling</th>
-                  <th className="py-1.5 px-2 font-medium text-right">Arne</th>
-                  <th className="py-1.5 px-2 text-center font-medium">vs</th>
-                  <th className="py-1.5 px-2 font-medium text-right">Rebekka</th>
-                  <th className="py-1.5 pl-2 text-center font-medium">Vinner</th>
+                <tr className="text-left text-muted-foreground border-b border-amber-500/20">
+                  <th className="py-2 pr-2 font-medium" style={{ fontFamily: display, letterSpacing: "0.1em" }}>MÅLING</th>
+                  <th className="py-2 px-2 font-medium text-right text-slate-300" style={{ fontFamily: display, letterSpacing: "0.1em" }}>ARNE</th>
+                  <th className="py-2 px-2 text-center font-medium">Δ</th>
+                  <th className="py-2 px-2 font-medium text-right text-rose-200" style={{ fontFamily: display, letterSpacing: "0.1em" }}>REBEKKA</th>
+                  <th className="py-2 pl-2 text-center font-medium">Vinner</th>
                 </tr>
               </thead>
               <tbody>
@@ -130,14 +159,28 @@ export function GarminCompare() {
                   const arneWin = w === "arne";
                   const rebWin = w === "rebekka";
                   const Icon = w === "arne" ? ArrowUp : w === "rebekka" ? ArrowDown : Minus;
-                  const iconColor = w === "arne" ? "text-emerald-500" : w === "rebekka" ? "text-rose-500" : "text-muted-foreground";
+                  const iconColor = w === "arne" ? "text-slate-200" : w === "rebekka" ? "text-rose-300" : "text-muted-foreground";
+                  let diffStr = "—";
+                  if (row.arne != null && row.rebekka != null) {
+                    const d = row.arne - row.rebekka;
+                    diffStr = (d > 0 ? "+" : d < 0 ? "−" : "") + (row.fmtDiff ? row.fmtDiff(d) : fmtNum(Math.abs(d), Number.isInteger(d) ? 0 : 1));
+                  }
                   return (
-                    <tr key={row.label} className="border-b border-border/20 last:border-0">
-                      <td className="py-1.5 pr-2 text-foreground">{row.label}</td>
-                      <td className={`py-1.5 px-2 text-right tabular-nums ${arneWin ? "text-emerald-500 font-semibold" : "text-foreground"}`}>{row.fmt(row.arne)}</td>
-                      <td className={`py-1.5 px-2 text-center ${iconColor}`}><Icon size={12} className="inline" /></td>
-                      <td className={`py-1.5 px-2 text-right tabular-nums ${rebWin ? "text-emerald-500 font-semibold" : "text-foreground"}`}>{row.fmt(row.rebekka)}</td>
-                      <td className="py-1.5 pl-2 text-center text-muted-foreground">{w === "arne" ? "Arne" : w === "rebekka" ? "Rebekka" : w === "tie" ? "—" : "n/a"}</td>
+                    <tr key={row.label} className="border-b border-border/15 last:border-0">
+                      <td className="py-2 pr-2 text-foreground">{row.label}</td>
+                      <td className={`py-2 px-2 text-right tabular-nums ${arneWin ? "text-slate-100 font-semibold" : "text-foreground/80"}`}>{row.fmt(row.arne)}</td>
+                      <td className={`py-2 px-2 text-center tabular-nums ${iconColor}`}>
+                        <span className="inline-flex items-center gap-0.5">
+                          <Icon size={11} />
+                          <span className="text-[10px]">{diffStr}</span>
+                        </span>
+                      </td>
+                      <td className={`py-2 px-2 text-right tabular-nums ${rebWin ? "text-rose-100 font-semibold" : "text-foreground/80"}`}>{row.fmt(row.rebekka)}</td>
+                      <td className="py-2 pl-2 text-center">
+                        {w === "arne" && <Crown className="inline h-3.5 w-3.5 text-slate-200" />}
+                        {w === "rebekka" && <Flame className="inline h-3.5 w-3.5 text-rose-300" />}
+                        {(w === "tie" || w === "na") && <span className="text-muted-foreground">—</span>}
+                      </td>
                     </tr>
                   );
                 })}
@@ -146,8 +189,8 @@ export function GarminCompare() {
           </div>
         )}
 
-        <p className="text-[10px] text-muted-foreground">
-          Pekepinn: grønn pil = bedre verdi for retningen som teller (f.eks. lavere hvilepuls, høyere søvn). Rader uten data fra én av brukerne teller ikke i stillingen.
+        <p className="text-[10px] text-muted-foreground italic" style={{ fontFamily: "var(--font-medieval)" }}>
+          Pekepinn: Krone (Stark) eller flamme (Targaryen) viser hvem som leder per måling. Δ = Arne minus Rebekka. Hvilepuls/stress: lavere er bedre. Rader uten data fra én av husene teller ikke i totalen.
         </p>
       </div>
     </section>
