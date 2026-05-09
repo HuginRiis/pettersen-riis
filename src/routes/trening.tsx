@@ -262,7 +262,7 @@ function TreningPage() {
   );
 }
 
-function StepsChip() {
+function StepsChip({ owner = "arne", displayName }: { owner?: Owner; displayName?: string } = {}) {
   const fetchOverview = useServerFn(getGarminOverview);
   const [steps, setSteps] = useState<number | null>(null);
   const [goal, setGoal] = useState<number | null>(null);
@@ -271,7 +271,7 @@ function StepsChip() {
     let cancelled = false;
     (async () => {
       try {
-        const o: any = await fetchOverview();
+        const o: any = await fetchOverview({ data: { owner } });
         const today = o?.daily?.[o.daily.length - 1];
         if (!cancelled) {
           setSteps(today?.steps ?? null);
@@ -282,7 +282,7 @@ function StepsChip() {
       }
     })();
     return () => { cancelled = true; };
-  }, []);
+  }, [owner]);
 
   if (steps == null) return null;
   const pct = goal ? Math.min(100, Math.round((steps / goal) * 100)) : null;
