@@ -179,41 +179,128 @@ export function GarminPanel() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <Tile icon={<Footprints size={14} />} label="Skritt i dag"
                 value={today?.steps ?? null} prev={yesterday?.steps ?? null}
-                fmt={fmtNum} fallbackSub={today?.step_goal ? `mål ${fmtNum(today.step_goal)}` : "ingen data"} />
+                fmt={fmtNum} fallbackSub={today?.step_goal ? `mål ${fmtNum(today.step_goal)}` : "ingen data"}
+                showDetails={showDetails}
+                details={[
+                  { k: "Mål", v: today?.step_goal ? fmtNum(today.step_goal) : "—" },
+                  { k: "Igjen", v: today?.steps != null && today?.step_goal ? fmtNum(Math.max(0, today.step_goal - today.steps)) : "—" },
+                  { k: "Distanse", v: fmtKm(today?.distance_meters) },
+                  { k: "% av mål", v: today?.steps != null && today?.step_goal ? `${Math.round((today.steps / today.step_goal) * 100)}%` : "—" },
+                ]} />
               <Tile icon={<HeartPulse size={14} />} label="Hvilepuls"
                 value={today?.resting_heart_rate ?? null} prev={yesterday?.resting_heart_rate ?? null}
-                unit=" bpm" lowerIsBetter fallbackSub="ingen måling i dag" />
+                unit=" bpm" lowerIsBetter fallbackSub="ingen måling i dag"
+                showDetails={showDetails}
+                details={[
+                  { k: "I dag", v: today?.resting_heart_rate != null ? `${today.resting_heart_rate} bpm` : "—" },
+                  { k: "I går", v: yesterday?.resting_heart_rate != null ? `${yesterday.resting_heart_rate} bpm` : "—" },
+                  { k: "Snitt 7d", v: avgFmt(data?.daily?.slice(-7).map((d) => d.resting_heart_rate), 0, " bpm") },
+                  { k: "Snitt 30d", v: avgFmt(data?.daily?.map((d) => d.resting_heart_rate), 0, " bpm") },
+                ]} />
               <Tile icon={<Heart size={14} />} label="Snitt puls"
                 value={today?.average_heart_rate ?? null} prev={yesterday?.average_heart_rate ?? null}
-                unit=" bpm" fallbackSub="ingen måling i dag" />
+                unit=" bpm" fallbackSub="ingen måling i dag"
+                showDetails={showDetails}
+                details={[
+                  { k: "I dag", v: today?.average_heart_rate != null ? `${today.average_heart_rate} bpm` : "—" },
+                  { k: "I går", v: yesterday?.average_heart_rate != null ? `${yesterday.average_heart_rate} bpm` : "—" },
+                  { k: "Snitt 7d", v: avgFmt(data?.daily?.slice(-7).map((d) => d.average_heart_rate), 0, " bpm") },
+                  { k: "Snitt 30d", v: avgFmt(data?.daily?.map((d) => d.average_heart_rate), 0, " bpm") },
+                ]} />
               <Tile icon={<TrendingUp size={14} />} label="Maks puls"
                 value={maxHrToday} prev={maxHrYesterday}
-                unit=" bpm" fallbackSub="ingen aktivitet i dag" />
+                unit=" bpm" fallbackSub="ingen aktivitet i dag"
+                showDetails={showDetails}
+                details={[
+                  { k: "I dag", v: maxHrToday ? `${maxHrToday} bpm` : "—" },
+                  { k: "I går", v: maxHrYesterday ? `${maxHrYesterday} bpm` : "—" },
+                  { k: "Aktiviteter i dag", v: String(todaysActs.length) },
+                  { k: "Topp 30d", v: (() => { const top = data?.activities?.reduce((m, a) => Math.max(m, a.max_hr ?? 0), 0) ?? 0; return top ? `${top} bpm` : "—"; })() },
+                ]} />
               <Tile icon={<Building2 size={14} />} label="Trapper"
                 value={today?.floors_climbed ?? null} prev={yesterday?.floors_climbed ?? null}
                 fmt={fmtNum}
-                fallbackSub="ingen data" />
+                fallbackSub="ingen data"
+                showDetails={showDetails}
+                details={[
+                  { k: "I dag", v: today?.floors_climbed != null ? fmtNum(today.floors_climbed) : "—" },
+                  { k: "I går", v: yesterday?.floors_climbed != null ? fmtNum(yesterday.floors_climbed) : "—" },
+                  { k: "Snitt 7d", v: avgFmt(data?.daily?.slice(-7).map((d) => d.floors_climbed), 0) },
+                  { k: "Snitt 30d", v: avgFmt(data?.daily?.map((d) => d.floors_climbed), 0) },
+                ]} />
               <Tile icon={<Battery size={14} />} label="Body battery"
                 value={today?.body_battery_high ?? null} prev={yesterday?.body_battery_high ?? null}
-                fallbackSub={today?.body_battery_low != null ? `lav ${today.body_battery_low}` : "ingen data"} />
+                fallbackSub={today?.body_battery_low != null ? `lav ${today.body_battery_low}` : "ingen data"}
+                showDetails={showDetails}
+                details={[
+                  { k: "Høy", v: today?.body_battery_high != null ? String(today.body_battery_high) : "—" },
+                  { k: "Lav", v: today?.body_battery_low != null ? String(today.body_battery_low) : "—" },
+                  { k: "Differanse", v: today?.body_battery_high != null && today?.body_battery_low != null ? String(today.body_battery_high - today.body_battery_low) : "—" },
+                  { k: "I går (høy)", v: yesterday?.body_battery_high != null ? String(yesterday.body_battery_high) : "—" },
+                ]} />
               <Tile icon={<Brain size={14} />} label="Stress (snitt)"
                 value={today?.stress_average ?? null} prev={yesterday?.stress_average ?? null}
-                lowerIsBetter fallbackSub="ingen måling" />
+                lowerIsBetter fallbackSub="ingen måling"
+                showDetails={showDetails}
+                details={[
+                  { k: "Snitt i dag", v: today?.stress_average != null ? String(today.stress_average) : "—" },
+                  { k: "I går", v: yesterday?.stress_average != null ? String(yesterday.stress_average) : "—" },
+                  { k: "Nivå", v: stressLevel(today?.stress_average) },
+                  { k: "Snitt 7d", v: avgFmt(data?.daily?.slice(-7).map((d) => d.stress_average), 0) },
+                ]} />
               <Tile icon={<Timer size={14} />} label="Intensitetsmin."
                 value={intensityToday > 0 ? intensityToday : null} prev={intensityYesterday > 0 ? intensityYesterday : null}
-                fallbackSub={today?.intensity_minutes_goal ? `mål ${today.intensity_minutes_goal}` : "ingen mål"} />
+                fallbackSub={today?.intensity_minutes_goal ? `mål ${today.intensity_minutes_goal}` : "ingen mål"}
+                showDetails={showDetails}
+                details={[
+                  { k: "Moderat", v: today?.moderate_intensity_minutes != null ? `${today.moderate_intensity_minutes} min` : "—" },
+                  { k: "Hard", v: today?.vigorous_intensity_minutes != null ? `${today.vigorous_intensity_minutes} min` : "—" },
+                  { k: "Mål", v: today?.intensity_minutes_goal ? `${today.intensity_minutes_goal} min` : "—" },
+                  { k: "Sum 7d", v: (() => { const s = (data?.daily?.slice(-7) ?? []).reduce((a, d) => a + (d.moderate_intensity_minutes ?? 0) + (d.vigorous_intensity_minutes ?? 0), 0); return `${s} min`; })() },
+                ]} />
               <Tile icon={<Moon size={14} />} label="Søvn"
                 value={sleepHoursToday} prev={sleepHoursYesterday}
                 unit=" t" digits={1}
-                fallbackSub={lastSleep?.sleep_score != null ? `score ${lastSleep.sleep_score}` : "ingen søvndata"} />
+                fallbackSub={lastSleep?.sleep_score != null ? `score ${lastSleep.sleep_score}` : "ingen søvndata"}
+                showDetails={showDetails}
+                details={[
+                  { k: "Score", v: lastSleep?.sleep_score != null ? String(lastSleep.sleep_score) : "—" },
+                  { k: "Dyp", v: lastSleep?.deep_seconds ? hoursMin(lastSleep.deep_seconds) : "—" },
+                  { k: "Lett", v: lastSleep?.light_seconds ? hoursMin(lastSleep.light_seconds) : "—" },
+                  { k: "REM", v: lastSleep?.rem_seconds ? hoursMin(lastSleep.rem_seconds) : "—" },
+                  { k: "Våken", v: lastSleep?.awake_seconds ? hoursMin(lastSleep.awake_seconds) : "—" },
+                  { k: "Snitt 7d", v: (() => { const s = (data?.sleep?.slice(-7) ?? []).map((x) => x.total_seconds).filter((x): x is number => !!x); return s.length ? `${(s.reduce((a, b) => a + b, 0) / s.length / 3600).toFixed(1)} t` : "—"; })() },
+                ]} />
               <Tile icon={<Scale size={14} />} label="Vekt"
                 value={today?.weight_kg ?? null} prev={yesterday?.weight_kg ?? null}
                 unit=" kg" digits={1} lowerIsBetter
-                fallbackSub="ingen veiing i dag" />
+                fallbackSub="ingen veiing i dag"
+                showDetails={showDetails}
+                details={(() => {
+                  const ws = (data?.daily ?? []).map((d) => d.weight_kg).filter((x): x is number => x != null);
+                  const first = ws[0];
+                  const last = ws[ws.length - 1];
+                  const min = ws.length ? Math.min(...ws) : null;
+                  const max = ws.length ? Math.max(...ws) : null;
+                  const trend = first != null && last != null ? last - first : null;
+                  return [
+                    { k: "Snitt 30d", v: avgFmt(ws, 1, " kg") },
+                    { k: "Min 30d", v: min != null ? `${min.toFixed(1)} kg` : "—" },
+                    { k: "Max 30d", v: max != null ? `${max.toFixed(1)} kg` : "—" },
+                    { k: "Trend 30d", v: trend != null ? `${trend > 0 ? "+" : ""}${trend.toFixed(1)} kg` : "—" },
+                  ];
+                })()} />
               <Tile icon={<Flame size={14} />} label="Kalorier"
                 value={today?.total_kilocalories ?? null} prev={yesterday?.total_kilocalories ?? null}
                 fmt={fmtNum}
-                fallbackSub={today?.active_kilocalories ? `aktive ${fmtNum(today.active_kilocalories)}` : "ingen data"} />
+                fallbackSub={today?.active_kilocalories ? `aktive ${fmtNum(today.active_kilocalories)}` : "ingen data"}
+                showDetails={showDetails}
+                details={[
+                  { k: "Total", v: today?.total_kilocalories != null ? `${fmtNum(today.total_kilocalories)} kcal` : "—" },
+                  { k: "Aktive", v: today?.active_kilocalories != null ? `${fmtNum(today.active_kilocalories)} kcal` : "—" },
+                  { k: "BMR", v: today?.total_kilocalories != null && today?.active_kilocalories != null ? `${fmtNum(today.total_kilocalories - today.active_kilocalories)} kcal` : "—" },
+                  { k: "Snitt 7d", v: avgFmt(data?.daily?.slice(-7).map((d) => d.total_kilocalories), 0, " kcal") },
+                ]} />
             </div>
 
             {/* Grafer (skjult som default) */}
