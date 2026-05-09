@@ -478,10 +478,12 @@ function DashboardView({ dash, owner }: { dash: DashOk; owner: Owner }) {
 
 function ActivitiesPaginated({ activities, owner }: { activities: DashOk["activities"]; owner: Owner }) {
   const PAGE_SIZE = 9;
+  const INITIAL = 3;
+  const [expanded, setExpanded] = useState(false);
   const [page, setPage] = useState(0);
-  const totalPages = Math.max(1, Math.ceil(activities.length / PAGE_SIZE));
-  const start = page * PAGE_SIZE;
-  const slice = activities.slice(start, start + PAGE_SIZE);
+  const totalPages = expanded ? Math.max(1, Math.ceil(activities.length / PAGE_SIZE)) : 1;
+  const start = expanded ? page * PAGE_SIZE : 0;
+  const slice = expanded ? activities.slice(start, start + PAGE_SIZE) : activities.slice(0, INITIAL);
 
   return (
     <>
