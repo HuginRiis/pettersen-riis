@@ -96,11 +96,11 @@ async function sendToRecipient(pref: Pref, title: string, body: string) {
   return { sent, errors };
 }
 
-async function getTodayDaily(owner: "arne" | "rebekka"): Promise<{ steps: number | null; step_goal: number | null; resting_heart_rate: number | null; total_kilocalories: number | null } | null> {
+async function getTodayDaily(owner: "arne" | "rebekka"): Promise<{ steps: number | null; step_goal: number | null; resting_heart_rate: number | null; total_kilocalories: number | null; stress_average: number | null; body_battery_high: number | null } | null> {
   const today = osloDateKey();
   const { data } = await supabaseAdmin
     .from("garmin_daily_stats")
-    .select("steps, step_goal, resting_heart_rate, total_kilocalories")
+    .select("steps, step_goal, resting_heart_rate, total_kilocalories, stress_average, body_battery_high")
     .eq("owner", owner)
     .eq("day", today)
     .maybeSingle();
@@ -116,6 +116,37 @@ async function getLastSleep(owner: "arne" | "rebekka"): Promise<{ total_seconds:
     .maybeSingle();
   return data ?? null;
 }
+
+const OWNER_LABEL = { arne: "Arne", rebekka: "Rebekka" } as const;
+
+function formatDailyParts(
+  fields: string[],
+  daily: Awaited<ReturnType<typeof getTodayDaily>>,
+  sleep: Awaited<ReturnType<typeof getLastSleep>>,
+): string {
+  const f = new Set(fields?.length ? fields : ["steps", "sleep", "rhr", "calories"]);
+  const parts: string[] = [];
+  if (f.has("steps") && daily?.steps != null) parts.push(`${daily.steps.toLocaleString("nb-NO")} skritt`);
+  if (f.has("sleep") && sleep?.total_seconds) parts.push(`${(sleep.total_seconds / 3600).toFixed(1)}t søvn`);
+  if (f.has("rhr") && daily?.resting_heart_rate) parts.push(`hvilepuls ${daily.resting_heart_rate}`);
+  if (f.has("calories") && daily?.total_kilocalories) parts.push(`${daily.total_kilocalories.toLocaleString("nb-NO")} kcal`);
+  if (f.has("helse")) {
+    const helse: string[] = [];
+    if (daily?.stress_average != null) helse.push(`stress ${daily.stress_average}`);
+    if (daily?.body_battery_high != null) helse.push(`BB ${daily.body_battery_high}`);
+    if (helse.length) parts.push(helse.join("/"));
+  }
+  return parts.join(" · ");
+}
+
+type CompareCmp = "higher" | "lower";
+const COMPARE_FIELDS: Array<{ key: string; label: string; cmp: CompareCmp; get: (d: Awaited<ReturnType<typeof getTodayDaily>>, s: Awaited<ReturnType<typeof getLastSleep>>) => number | null }> = [
+  { key: "steps", label: "skritt", cmp: "higher", get: (d) => d?.steps ?? null },
+  { key: "sleep", label: "søvn", cmp: "higher", get: (_d, s) => (s?.total_seconds ? s.total_seconds / 3600 : null) },
+  { key: "rhr", label: "hvilepuls", cmp: "lower", get: (d) => d?.resting_heart_rate ?? null },
+  { key: "calories", label: "kalorier", cmp: "higher", get: (d) => d?.total_kilocalories ?? null },
+  { key: "helse", label: "body battery", cmp: "higher", get: (d) => d?.body_battery_high ?? null },
+];
 
 async function markNotified(pref: Pref, key: string) {
   const updated = Array.from(new Set([...(pref.notified_keys ?? []), key])).slice(-200);
