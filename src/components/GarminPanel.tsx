@@ -250,8 +250,8 @@ export function GarminPanel() {
   const maxHrYesterday = yesterdaysActs.reduce((m, a) => Math.max(m, a.max_hr ?? 0), 0) || null;
 
   return (
-    <section className="container mx-auto px-4 pb-6">
-      <div className="panel rounded-lg p-4 space-y-4">
+    <section className="container mx-auto px-2 sm:px-4 pb-6">
+      <div className="space-y-4">
         <div className="flex items-center justify-between flex-wrap gap-2">
           <h2 className="text-sm font-semibold uppercase tracking-wider text-primary flex items-center gap-2">
             <Activity size={16} /> Garmin — daglig helse
