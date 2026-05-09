@@ -517,6 +517,7 @@ export type Database = {
           created_at: string
           daily_time: string
           enabled: boolean
+          garmin_owner: string
           high_rhr_bpm: number
           id: string
           low_sleep_hours: number
@@ -533,6 +534,7 @@ export type Database = {
           created_at?: string
           daily_time?: string
           enabled?: boolean
+          garmin_owner?: string
           high_rhr_bpm?: number
           id?: string
           low_sleep_hours?: number
@@ -549,6 +551,7 @@ export type Database = {
           created_at?: string
           daily_time?: string
           enabled?: boolean
+          garmin_owner?: string
           high_rhr_bpm?: number
           id?: string
           low_sleep_hours?: number

@@ -36,6 +36,7 @@ type Pref = {
   notify_high_resting_hr: boolean;
   high_rhr_bpm: number;
   notified_keys: string[];
+  garmin_owner: "arne" | "rebekka";
 };
 
 function osloDateKey(d = new Date()): string {
@@ -91,19 +92,21 @@ async function sendToRecipient(pref: Pref, title: string, body: string) {
   return { sent, errors };
 }
 
-async function getTodayDaily(): Promise<{ steps: number | null; step_goal: number | null; resting_heart_rate: number | null; total_kilocalories: number | null } | null> {
+async function getTodayDaily(owner: "arne" | "rebekka"): Promise<{ steps: number | null; step_goal: number | null; resting_heart_rate: number | null; total_kilocalories: number | null } | null> {
   const today = osloDateKey();
   const { data } = await supabaseAdmin
     .from("garmin_daily_stats")
     .select("steps, step_goal, resting_heart_rate, total_kilocalories")
+    .eq("owner", owner)
     .eq("day", today)
     .maybeSingle();
   return data ?? null;
 }
-async function getLastSleep(): Promise<{ total_seconds: number | null } | null> {
+async function getLastSleep(owner: "arne" | "rebekka"): Promise<{ total_seconds: number | null } | null> {
   const { data } = await supabaseAdmin
     .from("garmin_sleep")
     .select("total_seconds, day")
+    .eq("owner", owner)
     .order("day", { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -130,13 +133,19 @@ export async function processGarminNotifications(): Promise<{ checked: number; s
 
   const today = osloDateKey();
   const nowHm = osloHm();
-  const daily = await getTodayDaily();
-  const sleep = await getLastSleep();
+  // Cache per owner for å unngå dobbel-spørring
+  const dailyCache = new Map<string, Awaited<ReturnType<typeof getTodayDaily>>>();
+  const sleepCache = new Map<string, Awaited<ReturnType<typeof getLastSleep>>>();
 
   let checked = 0, sent = 0, errors = 0, skipped = 0;
 
   for (const p of prefs) {
     checked++;
+    const owner = (p.garmin_owner === "rebekka" ? "rebekka" : "arne") as "arne" | "rebekka";
+    if (!dailyCache.has(owner)) dailyCache.set(owner, await getTodayDaily(owner));
+    if (!sleepCache.has(owner)) sleepCache.set(owner, await getLastSleep(owner));
+    const daily = dailyCache.get(owner) ?? null;
+    const sleep = sleepCache.get(owner) ?? null;
     const already = new Set(p.notified_keys ?? []);
 
     // Daglig sammendrag
@@ -201,5 +210,6 @@ export async function sendGarminTestNotification(prefId: string): Promise<{ sent
   if (error) throw error;
   if (!data) throw new Error("Regel finnes ikke");
   const pref = data as unknown as Pref;
-  return sendToRecipient(pref, "Test fra Garmin", "Slik ser et Garmin-varsel ut. ✓");
+  const ownerLabel = pref.garmin_owner === "rebekka" ? "Rebekka" : "Arne";
+  return sendToRecipient(pref, `Test fra Garmin (${ownerLabel})`, "Slik ser et Garmin-varsel ut. ✓");
 }

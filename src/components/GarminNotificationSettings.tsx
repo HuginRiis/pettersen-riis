@@ -25,7 +25,13 @@ type Pref = {
   low_sleep_hours: number;
   notify_high_resting_hr: boolean;
   high_rhr_bpm: number;
+  garmin_owner: "arne" | "rebekka";
 };
+
+const OWNER_OPTIONS = [
+  { value: "arne", label: "Arne" },
+  { value: "rebekka", label: "Rebekka" },
+] as const;
 
 export function GarminNotificationSettings() {
   const [prefs, setPrefs] = useState<Pref[]>([]);
@@ -36,7 +42,7 @@ export function GarminNotificationSettings() {
   const load = async () => {
     const { data, error } = await supabase
       .from("garmin_notification_prefs" as never)
-      .select("id, recipient, sender_label, enabled, notify_daily, daily_time, notify_step_goal, notify_low_sleep, low_sleep_hours, notify_high_resting_hr, high_rhr_bpm")
+      .select("id, recipient, sender_label, enabled, notify_daily, daily_time, notify_step_goal, notify_low_sleep, low_sleep_hours, notify_high_resting_hr, high_rhr_bpm, garmin_owner")
       .order("created_at", { ascending: true });
     if (error) toast.error("Kunne ikke laste regler");
     else setPrefs((data ?? []) as unknown as Pref[]);
@@ -66,7 +72,7 @@ export function GarminNotificationSettings() {
   const add = async () => {
     const { error } = await supabase
       .from("garmin_notification_prefs" as never)
-      .insert({ recipient: "Arne", sender_label: "Garmin", enabled: true, notify_daily: true, daily_time: "07:30" } as never);
+      .insert({ recipient: "Arne", sender_label: "Garmin", enabled: true, notify_daily: true, daily_time: "07:30", garmin_owner: "arne" } as never);
     if (error) toast.error("Kunne ikke opprette");
     else { toast.success("Ny regel opprettet"); void load(); }
   };
@@ -107,6 +113,9 @@ export function GarminNotificationSettings() {
               <div className="flex items-center gap-2 min-w-0">
                 {p.enabled ? <Bell className="h-4 w-4 text-primary" /> : <BellOff className="h-4 w-4 text-muted-foreground" />}
                 <span className="font-medium">{p.sender_label} → {p.recipient}</span>
+                <span className="text-[10px] uppercase tracking-wider text-muted-foreground border border-border/60 rounded px-1.5 py-0.5">
+                  Garmin: {p.garmin_owner === "rebekka" ? "Rebekka" : "Arne"}
+                </span>
               </div>
               <div className="flex items-center gap-2">
                 <Button size="sm" variant="ghost" onClick={() => test(p.id)} disabled={testing === p.id}>
@@ -120,7 +129,16 @@ export function GarminNotificationSettings() {
               </div>
             </div>
 
-            <div className="grid sm:grid-cols-2 gap-2 text-xs">
+            <div className="grid sm:grid-cols-3 gap-2 text-xs">
+              <label className="space-y-1">
+                <span className="text-muted-foreground">Hvem sin Garmin (data)</span>
+                <Select value={p.garmin_owner ?? "arne"} onValueChange={(v) => update(p.id, { garmin_owner: v as "arne" | "rebekka" })}>
+                  <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {OWNER_OPTIONS.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </label>
               <label className="space-y-1">
                 <span className="text-muted-foreground">Til (mottaker)</span>
                 <Select value={p.recipient} onValueChange={(v) => update(p.id, { recipient: v })}>
@@ -131,7 +149,7 @@ export function GarminNotificationSettings() {
                 </Select>
               </label>
               <label className="space-y-1">
-                <span className="text-muted-foreground">Fra (avsender-etikett i tittel)</span>
+                <span className="text-muted-foreground">Fra (avsender-etikett)</span>
                 <Select value={p.sender_label} onValueChange={(v) => update(p.id, { sender_label: v })}>
                   <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
                   <SelectContent>
