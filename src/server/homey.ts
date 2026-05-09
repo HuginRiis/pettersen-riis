@@ -804,8 +804,10 @@ function classifyKind(
   return "other";
 }
 
-export const getDoorsLocksSnapshot = createServerFn({ method: "GET" }).handler(
-  withApiLog("homey", "getDoorsLocksSnapshot", async (): Promise<DoorsLocksResult> => {
+export const getDoorsLocksSnapshot = createServerFn({ method: "GET" })
+  .inputValidator((data: { force?: boolean } | undefined) => ({ force: Boolean(data?.force) }))
+  .handler(
+  withApiLog("homey", "getDoorsLocksSnapshot", async ({ data }: { data: { force: boolean } }): Promise<DoorsLocksResult> => {
     let conn: HomeyConnection | null;
     try {
       conn = await getValidConnection();
@@ -815,7 +817,7 @@ export const getDoorsLocksSnapshot = createServerFn({ method: "GET" }).handler(
     if (!conn) return { ok: false, needsConnect: true, error: "Ikke tilkoblet Homey" };
 
     try {
-      const raw = await getHomeyRawSnapshot(conn);
+      const raw = await getHomeyRawSnapshot(conn, { force: data.force });
       if (!raw) return { ok: false, error: "Fant ingen Homey-data" };
 
       const zoneById = new Map<string, string>();
