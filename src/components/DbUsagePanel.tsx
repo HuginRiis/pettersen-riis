@@ -148,7 +148,7 @@ export function DbUsagePanel() {
                         : "—"}
                     </td>
                     <td className="py-1.5 pr-2 text-primary">
-                      {nextRun(j.schedule, j.last_run)}
+                      {nextRun(j.schedule, j.last_run, j.next_run)}
                     </td>
                     <td className="py-1.5 pr-2 text-right font-mono">
                       {j.runs_24h}
