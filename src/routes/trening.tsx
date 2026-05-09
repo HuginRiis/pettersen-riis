@@ -301,7 +301,7 @@ function StepsChip({ owner = "arne", displayName }: { owner?: Owner; displayName
   );
 }
 
-function HealthStatusChip() {
+function HealthStatusChip({ owner = "arne", displayName }: { owner?: Owner; displayName?: string } = {}) {
   const fetchOverview = useServerFn(getGarminOverview);
   const [data, setData] = useState<any>(null);
   const [open, setOpen] = useState(false);
@@ -310,12 +310,12 @@ function HealthStatusChip() {
     let cancelled = false;
     (async () => {
       try {
-        const o: any = await fetchOverview();
+        const o: any = await fetchOverview({ data: { owner } });
         if (!cancelled) setData(o);
       } catch { /* stille */ }
     })();
     return () => { cancelled = true; };
-  }, []);
+  }, [owner]);
 
   if (!data) return null;
 
