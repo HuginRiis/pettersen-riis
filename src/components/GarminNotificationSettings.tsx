@@ -26,7 +26,19 @@ type Pref = {
   notify_high_resting_hr: boolean;
   high_rhr_bpm: number;
   garmin_owner: "arne" | "rebekka";
+  notify_compare: boolean;
+  compare_time: string;
+  daily_show_both: boolean;
+  daily_fields: string[];
 };
+
+const DAILY_FIELD_OPTIONS = [
+  { key: "steps", label: "Skritt" },
+  { key: "sleep", label: "Søvn" },
+  { key: "rhr", label: "Hvilepuls" },
+  { key: "calories", label: "Kalorier" },
+  { key: "helse", label: "Helse (stress / body battery)" },
+] as const;
 
 const OWNER_OPTIONS = [
   { value: "arne", label: "Arne" },
