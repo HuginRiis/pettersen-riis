@@ -66,9 +66,11 @@ function PushSettingsPage() {
         image={heroImg}
       />
 
+      <SettingsTOC />
+
       <UpcomingPushPanel />
 
-      <section className="container mx-auto px-4 pt-4">
+      <section id="sec-personlig" className="container mx-auto px-4 pt-4 scroll-mt-24">
         <h2 className="text-display text-primary text-sm tracking-[0.3em] uppercase mb-2">
           ✦ Innstillinger
         </h2>
@@ -83,7 +85,7 @@ function PushSettingsPage() {
       <PushSchedulingSettings />
       <TibberCronStatusPanel />
 
-      <section className="container mx-auto px-4 pb-4">
+      <section id="sec-farevarsel" className="container mx-auto px-4 pb-4 scroll-mt-24">
         <div className="panel rounded-lg p-4 border border-orange-500/40">
           <h2 className="text-sm font-semibold uppercase tracking-wider text-orange-400 mb-3 flex items-center gap-2">
             ⚠️ Vær farevarsel — av/på
@@ -92,7 +94,7 @@ function PushSettingsPage() {
         </div>
       </section>
 
-      <section className="container mx-auto px-4 pb-4">
+      <section id="sec-uv" className="container mx-auto px-4 pb-4 scroll-mt-24">
         <div className="panel rounded-lg p-4">
           <h2 className="text-sm font-semibold uppercase tracking-wider text-primary mb-3 flex items-center gap-2">
             🧴 Solkrem-varsler — UV
@@ -101,7 +103,7 @@ function PushSettingsPage() {
         </div>
       </section>
 
-      <section className="container mx-auto px-4 pb-4">
+      <section id="sec-vaer" className="container mx-auto px-4 pb-4 scroll-mt-24">
         <div className="panel rounded-lg p-4">
           <h2 className="text-sm font-semibold uppercase tracking-wider text-primary mb-3 flex items-center gap-2">
             🪶 Værvaktens Ravner — Push-varsler
@@ -110,7 +112,7 @@ function PushSettingsPage() {
         </div>
       </section>
 
-      <section className="container mx-auto px-4 pb-4">
+      <section id="sec-lys" className="container mx-auto px-4 pb-4 scroll-mt-24">
         <div className="panel rounded-lg p-4">
           <h2 className="text-sm font-semibold uppercase tracking-wider text-primary mb-3 flex items-center gap-2">
             💡 Lys på uten bevegelse
@@ -119,7 +121,7 @@ function PushSettingsPage() {
         </div>
       </section>
 
-      <section className="container mx-auto px-4 pb-4">
+      <section id="sec-post" className="container mx-auto px-4 pb-4 scroll-mt-24">
         <div className="panel rounded-lg p-4">
           <h2 className="text-sm font-semibold uppercase tracking-wider text-primary mb-3 flex items-center gap-2">
             📬 Postlevering — Posten
@@ -128,7 +130,7 @@ function PushSettingsPage() {
         </div>
       </section>
 
-      <section className="container mx-auto px-4 pb-4">
+      <section id="sec-garmin" className="container mx-auto px-4 pb-4 scroll-mt-24">
         <div className="panel rounded-lg p-4">
           <h2 className="text-sm font-semibold uppercase tracking-wider text-primary mb-3 flex items-center gap-2">
             ⌚ Garmin — helse og trening
@@ -137,7 +139,7 @@ function PushSettingsPage() {
         </div>
       </section>
 
-      <section className="container mx-auto px-4 pb-4">
+      <section id="sec-innlogging" className="container mx-auto px-4 pb-4 scroll-mt-24">
         <div className="panel rounded-lg p-4">
           <h2 className="text-sm font-semibold uppercase tracking-wider text-primary mb-3 flex items-center gap-2">
             🔐 Innlogging — vellykket og feilet
