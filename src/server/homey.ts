@@ -479,11 +479,13 @@ function mapSnapshotFromRaw(raw: HomeyRawSnapshot): HomeySnapshot {
   return { ok: true, homeName: raw.homeName, zones, devices };
 }
 
-export async function getHomeyRawSnapshot(conn: HomeyConnection): Promise<HomeyRawSnapshot | null> {
+export async function getHomeyRawSnapshot(conn: HomeyConnection, opts?: { force?: boolean }): Promise<HomeyRawSnapshot | null> {
   const key = getHomeyCacheKey(conn);
-  const cached = getCacheEntry(homeySnapshotCache, key);
-  if (cached) return cached.value;
-  if (homeySnapshotInflight?.key === key) return await homeySnapshotInflight.promise;
+  if (!opts?.force) {
+    const cached = getCacheEntry(homeySnapshotCache, key);
+    if (cached) return cached.value;
+    if (homeySnapshotInflight?.key === key) return await homeySnapshotInflight.promise;
+  }
 
   const promise = (async () => {
     const session = await getHomeySessionContext(conn);
