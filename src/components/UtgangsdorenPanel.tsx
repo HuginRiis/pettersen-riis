@@ -76,7 +76,7 @@ export function UtgangsdorenPanel() {
         setError(res.error ?? "Kommando feilet");
       } else {
         setEntry({ ...entry, locked: next, lastUpdated: new Date().toISOString() });
-        setTimeout(load, 1500);
+        setTimeout(() => load(true), 1500);
       }
     } finally {
       setBusy(false);
