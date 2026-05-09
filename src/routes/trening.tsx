@@ -478,10 +478,12 @@ function DashboardView({ dash, owner }: { dash: DashOk; owner: Owner }) {
 
 function ActivitiesPaginated({ activities, owner }: { activities: DashOk["activities"]; owner: Owner }) {
   const PAGE_SIZE = 9;
+  const INITIAL = 3;
+  const [expanded, setExpanded] = useState(false);
   const [page, setPage] = useState(0);
-  const totalPages = Math.max(1, Math.ceil(activities.length / PAGE_SIZE));
-  const start = page * PAGE_SIZE;
-  const slice = activities.slice(start, start + PAGE_SIZE);
+  const totalPages = expanded ? Math.max(1, Math.ceil(activities.length / PAGE_SIZE)) : 1;
+  const start = expanded ? page * PAGE_SIZE : 0;
+  const slice = expanded ? activities.slice(start, start + PAGE_SIZE) : activities.slice(0, INITIAL);
 
   return (
     <>
@@ -557,35 +559,56 @@ function ActivitiesPaginated({ activities, owner }: { activities: DashOk["activi
         })}
       </ol>
 
-      {totalPages > 1 && (
+      {!expanded && activities.length > INITIAL && (
+        <div className="mt-6 flex justify-center">
+          <button
+            onClick={() => setExpanded(true)}
+            className="px-4 py-1.5 rounded border border-primary/30 text-xs uppercase tracking-[0.2em] text-muted-foreground hover:text-primary hover:border-primary"
+          >
+            Vis resterende ({activities.length - INITIAL})
+          </button>
+        </div>
+      )}
+
+      {expanded && (
         <div className="mt-6 flex items-center justify-center gap-2 flex-wrap">
           <button
-            onClick={() => setPage((p) => Math.max(0, p - 1))}
-            disabled={page === 0}
-            className="px-3 py-1.5 rounded border border-primary/30 text-xs uppercase tracking-[0.2em] text-muted-foreground hover:text-primary hover:border-primary disabled:opacity-30 disabled:cursor-not-allowed"
+            onClick={() => { setExpanded(false); setPage(0); }}
+            className="px-3 py-1.5 rounded border border-primary/30 text-xs uppercase tracking-[0.2em] text-muted-foreground hover:text-primary hover:border-primary"
           >
-            ← Forrige
+            Skjul
           </button>
-          {Array.from({ length: totalPages }).map((_, i) => (
-            <button
-              key={i}
-              onClick={() => setPage(i)}
-              className={`w-8 h-8 rounded border text-xs text-medieval transition-colors ${
-                i === page
-                  ? "border-primary bg-primary/10 text-primary"
-                  : "border-primary/20 text-muted-foreground hover:text-primary hover:border-primary/50"
-              }`}
-            >
-              {i + 1}
-            </button>
-          ))}
-          <button
-            onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-            disabled={page === totalPages - 1}
-            className="px-3 py-1.5 rounded border border-primary/30 text-xs uppercase tracking-[0.2em] text-muted-foreground hover:text-primary hover:border-primary disabled:opacity-30 disabled:cursor-not-allowed"
-          >
-            Neste →
-          </button>
+          {totalPages > 1 && (
+            <>
+              <button
+                onClick={() => setPage((p) => Math.max(0, p - 1))}
+                disabled={page === 0}
+                className="px-3 py-1.5 rounded border border-primary/30 text-xs uppercase tracking-[0.2em] text-muted-foreground hover:text-primary hover:border-primary disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                ← Forrige
+              </button>
+              {Array.from({ length: totalPages }).map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setPage(i)}
+                  className={`w-8 h-8 rounded border text-xs text-medieval transition-colors ${
+                    i === page
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-primary/20 text-muted-foreground hover:text-primary hover:border-primary/50"
+                  }`}
+                >
+                  {i + 1}
+                </button>
+              ))}
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                disabled={page === totalPages - 1}
+                className="px-3 py-1.5 rounded border border-primary/30 text-xs uppercase tracking-[0.2em] text-muted-foreground hover:text-primary hover:border-primary disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                Neste →
+              </button>
+            </>
+          )}
         </div>
       )}
     </>
