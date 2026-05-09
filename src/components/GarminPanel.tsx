@@ -74,6 +74,8 @@ export function GarminPanel() {
   const [showCharts, setShowCharts] = useState(false);
   const [showActivities, setShowActivities] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
+  const [chartPeriod, setChartPeriod] = useState<ChartPeriod>("last30");
+  const [showTrend, setShowTrend] = useState(false);
 
   const load = async () => {
     setLoading(true);
