@@ -233,7 +233,10 @@ function VakttarnetPage() {
           icon={<Activity size={14} />}
           subtitle="Status for tilkoblingen og siste synkronisering av helsedata"
         >
-          <GarminStatusPanel />
+          <div className="space-y-3">
+            <GarminStatusPanel owner="arne" displayName="Arne" />
+            <GarminStatusPanel owner="rebekka" displayName="Rebekka" />
+          </div>
         </Panel>
 
         <ApiCallLogPanel />

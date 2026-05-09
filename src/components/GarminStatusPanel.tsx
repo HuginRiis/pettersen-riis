@@ -82,42 +82,48 @@ function fmtNext(d: Date | null): string {
   return `om ${Math.round(hr / 24)}d`;
 }
 
-export function GarminStatusPanel() {
+type Owner = "arne" | "rebekka";
+
+export function GarminStatusPanel({ owner = "arne", displayName }: { owner?: Owner; displayName?: string } = {}) {
   const fetchOverview = useServerFn(getGarminOverview);
   const fetchSchedule = useServerFn(getGarminSyncSchedule);
   const saveSchedule = useServerFn(saveGarminSyncSchedule);
   const [status, setStatus] = useState<Status | null>(null);
   const [lastSync, setLastSync] = useState<LastSync>(null);
+  const [intraday, setIntraday] = useState<Array<{ day: string; hour: number; heart_rate_avg: number | null; heart_rate_max: number | null; stress_avg: number | null; body_battery: number | null }>>([]);
   const [loading, setLoading] = useState(true);
   const [showSettings, setShowSettings] = useState(false);
+  const [showIntraday, setShowIntraday] = useState(false);
   const [schedule, setSchedule] = useState<Schedule | null>(null);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     let alive = true;
+    setLoading(true);
     (async () => {
       try {
         const [r, s] = await Promise.all([
-          fetchOverview() as Promise<{ status: Status; lastSync: LastSync }>,
-          fetchSchedule() as Promise<Schedule>,
+          fetchOverview({ data: { owner } }) as Promise<{ status: Status; lastSync: LastSync; intraday?: typeof intraday }>,
+          fetchSchedule({ data: { owner } }) as Promise<Schedule>,
         ]);
         if (!alive) return;
         setStatus(r.status);
         setLastSync(r.lastSync);
+        setIntraday(r.intraday ?? []);
         setSchedule(s);
       } finally {
         if (alive) setLoading(false);
       }
     })();
     return () => { alive = false; };
-  }, [fetchOverview, fetchSchedule]);
+  }, [fetchOverview, fetchSchedule, owner]);
 
   const handleSave = async () => {
     if (!schedule) return;
     setSaving(true);
     try {
-      await saveSchedule({ data: schedule });
-      toast.success("Garmin-tidsplan lagret");
+      await saveSchedule({ data: { ...schedule, owner } });
+      toast.success(`Garmin-tidsplan lagret${displayName ? ` for ${displayName}` : ""}`);
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
@@ -143,7 +149,7 @@ export function GarminStatusPanel() {
         <Icon className="h-4 w-4 mt-0.5 shrink-0" />
         <div className="flex-1 text-xs space-y-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-semibold flex items-center gap-1"><Activity className="h-3.5 w-3.5" /> Garmin Connect</span>
+            <span className="font-semibold flex items-center gap-1"><Activity className="h-3.5 w-3.5" /> Garmin Connect{displayName ? ` · ${displayName}` : ""}</span>
             {status?.connected ? (
               <span className="text-foreground">{status.username ?? "tilkoblet"}</span>
             ) : status?.mfa_pending ? (
@@ -185,13 +191,22 @@ export function GarminStatusPanel() {
             </div>
           )}
         </div>
-        <button
-          onClick={() => setShowSettings((v) => !v)}
-          className="inline-flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground border border-border/60 rounded px-1.5 py-0.5"
-          aria-label="Tidsplan"
-        >
-          <Settings2 className="h-3 w-3" /> Tidsplan
-        </button>
+        <div className="flex flex-col gap-1 shrink-0">
+          <button
+            onClick={() => setShowSettings((v) => !v)}
+            className="inline-flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground border border-border/60 rounded px-1.5 py-0.5"
+            aria-label="Tidsplan"
+          >
+            <Settings2 className="h-3 w-3" /> Tidsplan
+          </button>
+          <button
+            onClick={() => setShowIntraday((v) => !v)}
+            className="inline-flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground border border-border/60 rounded px-1.5 py-0.5"
+            aria-label="Intraday"
+          >
+            <Activity className="h-3 w-3" /> Intraday
+          </button>
+        </div>
       </div>
 
       {showSettings && schedule && (
@@ -244,6 +259,78 @@ export function GarminStatusPanel() {
           </button>
         </div>
       )}
+
+      {showIntraday && (() => {
+        const today = new Date().toISOString().slice(0, 10);
+        const todays = intraday.filter((p) => p.day === today);
+        const last = todays[todays.length - 1] ?? null;
+        const hrs = todays.map((p) => p.heart_rate_avg).filter((n): n is number => typeof n === "number" && n > 0);
+        const stress = todays.map((p) => p.stress_avg).filter((n): n is number => typeof n === "number" && n >= 0);
+        const bb = todays.map((p) => p.body_battery).filter((n): n is number => typeof n === "number" && n >= 0);
+        const avg = (xs: number[]) => xs.length ? Math.round(xs.reduce((s, n) => s + n, 0) / xs.length) : null;
+        const max = (xs: number[]) => xs.length ? Math.max(...xs) : null;
+        const min = (xs: number[]) => xs.length ? Math.min(...xs) : null;
+        const fmtH = (h: number) => `${String(h).padStart(2, "0")}:00`;
+        return (
+          <div className="border-t border-border/40 pt-2 space-y-2 text-xs">
+            <div className="flex items-center justify-between">
+              <span className="font-semibold text-foreground">Intraday i dag</span>
+              <span className="text-[10px] text-muted-foreground">{todays.length} timepunkter</span>
+            </div>
+            {todays.length === 0 ? (
+              <div className="text-muted-foreground text-[11px]">Ingen intraday-data registrert i dag enda.</div>
+            ) : (
+              <>
+                <div className="grid grid-cols-3 gap-2 text-[11px]">
+                  <div className="rounded border border-border/40 p-2">
+                    <div className="text-[9px] uppercase tracking-wider text-muted-foreground">Puls (snitt/maks)</div>
+                    <div className="text-foreground tabular-nums">{avg(hrs) ?? "—"} / {max(hrs) ?? "—"} bpm</div>
+                  </div>
+                  <div className="rounded border border-border/40 p-2">
+                    <div className="text-[9px] uppercase tracking-wider text-muted-foreground">Stress (snitt/maks)</div>
+                    <div className="text-foreground tabular-nums">{avg(stress) ?? "—"} / {max(stress) ?? "—"}</div>
+                  </div>
+                  <div className="rounded border border-border/40 p-2">
+                    <div className="text-[9px] uppercase tracking-wider text-muted-foreground">Body Battery (lav/høy)</div>
+                    <div className="text-foreground tabular-nums">{min(bb) ?? "—"} / {max(bb) ?? "—"}</div>
+                  </div>
+                </div>
+                {last && (
+                  <div className="text-[10px] text-muted-foreground">
+                    Siste punkt {fmtH(last.hour)}: puls {last.heart_rate_avg ?? "—"} bpm
+                    {last.stress_avg != null && ` · stress ${last.stress_avg}`}
+                    {last.body_battery != null && ` · battery ${last.body_battery}`}
+                  </div>
+                )}
+                <div className="rounded border border-border/40 max-h-48 overflow-y-auto">
+                  <table className="w-full text-[10px] tabular-nums">
+                    <thead className="sticky top-0 bg-background/90 text-muted-foreground">
+                      <tr>
+                        <th className="text-left px-2 py-1">Time</th>
+                        <th className="text-right px-2 py-1">Puls</th>
+                        <th className="text-right px-2 py-1">Maks</th>
+                        <th className="text-right px-2 py-1">Stress</th>
+                        <th className="text-right px-2 py-1">Battery</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {todays.slice().reverse().map((p) => (
+                        <tr key={`${p.day}-${p.hour}`} className="border-t border-border/30">
+                          <td className="px-2 py-0.5">{fmtH(p.hour)}</td>
+                          <td className="px-2 py-0.5 text-right">{p.heart_rate_avg ?? "—"}</td>
+                          <td className="px-2 py-0.5 text-right">{p.heart_rate_max ?? "—"}</td>
+                          <td className="px-2 py-0.5 text-right">{p.stress_avg ?? "—"}</td>
+                          <td className="px-2 py-0.5 text-right">{p.body_battery ?? "—"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
+          </div>
+        );
+      })()}
     </div>
   );
 }
