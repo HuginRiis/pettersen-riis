@@ -497,7 +497,7 @@ export function GarminPanel() {
 
 function Tile({
   icon, label, value, prev, unit = "", digits = 0, fmt, lowerIsBetter = false, fallbackSub,
-  showDetails = false, details,
+  showDetails = false, details, chart,
 }: {
   icon: React.ReactNode; label: string;
   value: number | null; prev?: number | null;
@@ -505,6 +505,7 @@ function Tile({
   fmt?: (n: number | null | undefined) => string;
   lowerIsBetter?: boolean; fallbackSub?: string;
   showDetails?: boolean; details?: Array<{ k: string; v: string }>;
+  chart?: React.ReactNode;
 }) {
   const formatVal = (n: number | null | undefined): string => {
     if (n == null) return "—";
@@ -546,6 +547,13 @@ function Tile({
               <span className="tabular-nums font-medium">{d.v}</span>
             </div>
           ))}
+        </div>
+      )}
+      {showDetails && chart && (
+        <div className="mt-2 pt-2 border-t border-border/40">
+          <ResponsiveContainer width="100%" height={70}>
+            {chart as React.ReactElement}
+          </ResponsiveContainer>
         </div>
       )}
     </div>
