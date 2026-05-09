@@ -5,6 +5,7 @@ import { Footprints, Heart, Moon, Battery, Brain, Activity as ActivityIcon } fro
 import { PageShell, PageHero } from "@/components/PageShell";
 import { ActivityMap } from "@/components/ActivityMap";
 import { GarminPanel } from "@/components/GarminPanel";
+import { GarminCompare } from "@/components/GarminCompare";
 import { getActivityStreams, getStravaDashboard, getStravaStatus } from "@/server/strava";
 import { getGarminOverview } from "@/server/garmin.functions";
 import treningImg from "@/assets/got-trening.jpg";
