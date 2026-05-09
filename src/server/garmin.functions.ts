@@ -129,9 +129,9 @@ export const getGarminSyncSchedule = createServerFn({ method: "GET" })
 export const saveGarminSyncSchedule = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => {
     const x = d as Partial<GarminSyncSchedule> & { owner?: string };
-    const interval = Math.max(15, Math.min(1440, Number(x?.interval_minutes ?? 1440)));
-    const first = Math.max(0, Math.min(23, Number(x?.first_local_hour ?? 6)));
-    const last = Math.max(0, Math.min(23, Number(x?.last_local_hour ?? 23)));
+    const interval = Math.max(15, Math.min(1440, Number(x?.interval_minutes ?? 60)));
+    const first = Math.max(6, Math.min(20, Number(x?.first_local_hour ?? 6)));
+    const last = Math.max(6, Math.min(20, Number(x?.last_local_hour ?? 20)));
     const owner = (x?.owner === "rebekka" ? "rebekka" : "arne") as GarminOwner;
     return { owner, interval_minutes: interval, first_local_hour: first, last_local_hour: last };
   })
