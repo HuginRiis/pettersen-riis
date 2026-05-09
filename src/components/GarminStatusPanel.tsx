@@ -48,6 +48,40 @@ function ago(iso: string | null): string {
   return `${Math.round(h / 24)}d siden`;
 }
 
+function computeNextRun(lastRunIso: string | null, sched: Schedule | null): Date | null {
+  if (!sched) return null;
+  const base = lastRunIso ? new Date(lastRunIso).getTime() : Date.now();
+  let candidate = new Date(base + sched.interval_minutes * 60_000);
+  if (candidate.getTime() < Date.now()) candidate = new Date(Date.now() + 30_000);
+  for (let i = 0; i < 8; i++) {
+    const localHour = parseInt(
+      new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Oslo", hour: "2-digit", hour12: false }).format(candidate),
+      10,
+    );
+    if (localHour >= sched.first_local_hour && localHour <= sched.last_local_hour) break;
+    if (localHour < sched.first_local_hour) {
+      candidate = new Date(candidate.getTime() + (sched.first_local_hour - localHour) * 3600_000);
+    } else {
+      const hoursToMidnight = 24 - localHour;
+      candidate = new Date(candidate.getTime() + (hoursToMidnight + sched.first_local_hour) * 3600_000);
+    }
+  }
+  return candidate;
+}
+
+function fmtNext(d: Date | null): string {
+  if (!d) return "—";
+  const diff = d.getTime() - Date.now();
+  if (diff <= 0) return "snart";
+  const sec = Math.round(diff / 1000);
+  if (sec < 60) return `om ${sec}s`;
+  const min = Math.round(sec / 60);
+  if (min < 60) return `om ${min} min`;
+  const hr = Math.round(min / 60);
+  if (hr < 24) return `om ${hr}t`;
+  return `om ${Math.round(hr / 24)}d`;
+}
+
 export function GarminStatusPanel() {
   const fetchOverview = useServerFn(getGarminOverview);
   const fetchSchedule = useServerFn(getGarminSyncSchedule);
