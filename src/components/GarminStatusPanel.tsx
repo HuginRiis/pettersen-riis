@@ -259,6 +259,78 @@ export function GarminStatusPanel({ owner = "arne", displayName }: { owner?: Own
           </button>
         </div>
       )}
+
+      {showIntraday && (() => {
+        const today = new Date().toISOString().slice(0, 10);
+        const todays = intraday.filter((p) => p.day === today);
+        const last = todays[todays.length - 1] ?? null;
+        const hrs = todays.map((p) => p.heart_rate_avg).filter((n): n is number => typeof n === "number" && n > 0);
+        const stress = todays.map((p) => p.stress_avg).filter((n): n is number => typeof n === "number" && n >= 0);
+        const bb = todays.map((p) => p.body_battery).filter((n): n is number => typeof n === "number" && n >= 0);
+        const avg = (xs: number[]) => xs.length ? Math.round(xs.reduce((s, n) => s + n, 0) / xs.length) : null;
+        const max = (xs: number[]) => xs.length ? Math.max(...xs) : null;
+        const min = (xs: number[]) => xs.length ? Math.min(...xs) : null;
+        const fmtH = (h: number) => `${String(h).padStart(2, "0")}:00`;
+        return (
+          <div className="border-t border-border/40 pt-2 space-y-2 text-xs">
+            <div className="flex items-center justify-between">
+              <span className="font-semibold text-foreground">Intraday i dag</span>
+              <span className="text-[10px] text-muted-foreground">{todays.length} timepunkter</span>
+            </div>
+            {todays.length === 0 ? (
+              <div className="text-muted-foreground text-[11px]">Ingen intraday-data registrert i dag enda.</div>
+            ) : (
+              <>
+                <div className="grid grid-cols-3 gap-2 text-[11px]">
+                  <div className="rounded border border-border/40 p-2">
+                    <div className="text-[9px] uppercase tracking-wider text-muted-foreground">Puls (snitt/maks)</div>
+                    <div className="text-foreground tabular-nums">{avg(hrs) ?? "—"} / {max(hrs) ?? "—"} bpm</div>
+                  </div>
+                  <div className="rounded border border-border/40 p-2">
+                    <div className="text-[9px] uppercase tracking-wider text-muted-foreground">Stress (snitt/maks)</div>
+                    <div className="text-foreground tabular-nums">{avg(stress) ?? "—"} / {max(stress) ?? "—"}</div>
+                  </div>
+                  <div className="rounded border border-border/40 p-2">
+                    <div className="text-[9px] uppercase tracking-wider text-muted-foreground">Body Battery (lav/høy)</div>
+                    <div className="text-foreground tabular-nums">{min(bb) ?? "—"} / {max(bb) ?? "—"}</div>
+                  </div>
+                </div>
+                {last && (
+                  <div className="text-[10px] text-muted-foreground">
+                    Siste punkt {fmtH(last.hour)}: puls {last.heart_rate_avg ?? "—"} bpm
+                    {last.stress_avg != null && ` · stress ${last.stress_avg}`}
+                    {last.body_battery != null && ` · battery ${last.body_battery}`}
+                  </div>
+                )}
+                <div className="rounded border border-border/40 max-h-48 overflow-y-auto">
+                  <table className="w-full text-[10px] tabular-nums">
+                    <thead className="sticky top-0 bg-background/90 text-muted-foreground">
+                      <tr>
+                        <th className="text-left px-2 py-1">Time</th>
+                        <th className="text-right px-2 py-1">Puls</th>
+                        <th className="text-right px-2 py-1">Maks</th>
+                        <th className="text-right px-2 py-1">Stress</th>
+                        <th className="text-right px-2 py-1">Battery</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {todays.slice().reverse().map((p) => (
+                        <tr key={`${p.day}-${p.hour}`} className="border-t border-border/30">
+                          <td className="px-2 py-0.5">{fmtH(p.hour)}</td>
+                          <td className="px-2 py-0.5 text-right">{p.heart_rate_avg ?? "—"}</td>
+                          <td className="px-2 py-0.5 text-right">{p.heart_rate_max ?? "—"}</td>
+                          <td className="px-2 py-0.5 text-right">{p.stress_avg ?? "—"}</td>
+                          <td className="px-2 py-0.5 text-right">{p.body_battery ?? "—"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
+          </div>
+        );
+      })()}
     </div>
   );
 }
