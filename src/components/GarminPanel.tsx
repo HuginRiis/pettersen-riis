@@ -607,3 +607,40 @@ function ChartCard({ title, children, height = 160 }: { title: React.ReactNode; 
     </div>
   );
 }
+
+function sparkBar<T extends Record<string, unknown>>(data: T[] | undefined, key: keyof T): React.ReactElement | null {
+  if (!data || !data.some((d) => typeof d[key] === "number" && (d[key] as number) > 0)) return null;
+  return (
+    <BarChart data={data as Array<Record<string, unknown>>}>
+      <Tooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", fontSize: 11 }} labelFormatter={(v) => String(v).slice(5)} />
+      <XAxis dataKey="day" hide />
+      <YAxis hide />
+      <Bar dataKey={key as string} fill="var(--chart-yellow)" radius={[2,2,0,0]} />
+    </BarChart>
+  );
+}
+
+function sparkLine<T extends Record<string, unknown>>(data: T[] | undefined, key: keyof T, connectNulls = false): React.ReactElement | null {
+  if (!data || !data.some((d) => typeof d[key] === "number" && (d[key] as number) > 0)) return null;
+  return (
+    <LineChart data={data as Array<Record<string, unknown>>}>
+      <Tooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", fontSize: 11 }} labelFormatter={(v) => String(v).slice(5)} />
+      <XAxis dataKey="day" hide />
+      <YAxis hide domain={["auto", "auto"]} />
+      <Line type="monotone" dataKey={key as string} stroke="var(--chart-yellow)" strokeWidth={1.5} dot={false} connectNulls={connectNulls} />
+    </LineChart>
+  );
+}
+
+function sparkLine2<T extends Record<string, unknown>>(data: T[] | undefined, k1: keyof T, k2: keyof T): React.ReactElement | null {
+  if (!data || !data.some((d) => typeof d[k1] === "number" || typeof d[k2] === "number")) return null;
+  return (
+    <LineChart data={data as Array<Record<string, unknown>>}>
+      <Tooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", fontSize: 11 }} labelFormatter={(v) => String(v).slice(5)} />
+      <XAxis dataKey="day" hide />
+      <YAxis hide domain={["auto", "auto"]} />
+      <Line type="monotone" dataKey={k1 as string} stroke="var(--chart-yellow)" strokeWidth={1.5} dot={false} />
+      <Line type="monotone" dataKey={k2 as string} stroke="var(--chart-yellow-soft)" strokeWidth={1.5} dot={false} />
+    </LineChart>
+  );
+}
