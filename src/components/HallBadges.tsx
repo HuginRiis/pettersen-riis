@@ -446,14 +446,14 @@ export function TrainingLast4WeeksBadge({ inline }: { inline?: boolean } = {}) {
 }
 
 /** Skritt i dag fra Garmin (for menyen). */
-export function StepsTodayBadge({ inline }: { inline?: boolean } = {}) {
+export function StepsTodayBadge({ inline, owner = "arne" }: { inline?: boolean; owner?: "arne" | "rebekka" } = {}) {
   const [steps, setSteps] = useState<number | null>(null);
   const [goal, setGoal] = useState<number | null>(null);
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const o: any = await getGarminOverview();
+        const o: any = await getGarminOverview({ data: { owner } });
         if (cancelled) return;
         const today = o?.daily?.[o.daily.length - 1];
         if (today) {
@@ -463,28 +463,29 @@ export function StepsTodayBadge({ inline }: { inline?: boolean } = {}) {
       } catch {}
     })();
     return () => { cancelled = true; };
-  }, []);
+  }, [owner]);
   if (steps == null) return null;
-  const reached = goal ? steps >= goal : false;
-  const tone = reached
-    ? "bg-amber-400/25 text-amber-200 border-amber-400/50"
-    : "bg-amber-300/15 text-amber-200 border-amber-300/40";
+  // House Stark (Arne) = slate, House Targaryen (Rebekka) = rose
+  const tone = owner === "rebekka"
+    ? "bg-rose-500/20 text-rose-100 border-rose-400/50"
+    : "bg-slate-500/25 text-slate-100 border-slate-300/50";
+  const initial = owner === "rebekka" ? "R" : "A";
   const title = goal
-    ? `${steps.toLocaleString("nb-NO")} skritt i dag · mål ${goal.toLocaleString("nb-NO")}`
-    : `${steps.toLocaleString("nb-NO")} skritt i dag`;
+    ? `${initial}: ${steps.toLocaleString("nb-NO")} skritt i dag · mål ${goal.toLocaleString("nb-NO")}`
+    : `${initial}: ${steps.toLocaleString("nb-NO")} skritt i dag`;
   const text = steps >= 1000 ? `${(steps / 1000).toFixed(1)}k` : String(steps);
   if (inline) {
     return (
       <span title={title}
         className={`ml-1 px-1.5 h-[18px] rounded-full text-[10px] font-semibold inline-flex items-center justify-center border ${tone}`}>
-        👣{text}
+        👣{initial} {text}
       </span>
     );
   }
   return (
     <span title={title}
       className={`absolute top-2 right-2 z-10 h-[22px] px-2 rounded-full text-[11px] font-semibold flex items-center justify-center border backdrop-blur shadow ${tone}`}>
-      👣{text}
+      👣{initial} {text}
     </span>
   );
 }
