@@ -361,6 +361,7 @@ export type Database = {
           garmin_activity_id: number
           id: string
           max_hr: number | null
+          owner: string
           raw: Json | null
           start_time_local: string
           updated_at: string
@@ -378,6 +379,7 @@ export type Database = {
           garmin_activity_id: number
           id?: string
           max_hr?: number | null
+          owner?: string
           raw?: Json | null
           start_time_local: string
           updated_at?: string
@@ -395,6 +397,7 @@ export type Database = {
           garmin_activity_id?: number
           id?: string
           max_hr?: number | null
+          owner?: string
           raw?: Json | null
           start_time_local?: string
           updated_at?: string
@@ -415,6 +418,7 @@ export type Database = {
           id: string
           intensity_minutes_goal: number | null
           moderate_intensity_minutes: number | null
+          owner: string
           raw: Json | null
           resting_heart_rate: number | null
           step_goal: number | null
@@ -438,6 +442,7 @@ export type Database = {
           id?: string
           intensity_minutes_goal?: number | null
           moderate_intensity_minutes?: number | null
+          owner?: string
           raw?: Json | null
           resting_heart_rate?: number | null
           step_goal?: number | null
@@ -461,6 +466,7 @@ export type Database = {
           id?: string
           intensity_minutes_goal?: number | null
           moderate_intensity_minutes?: number | null
+          owner?: string
           raw?: Json | null
           resting_heart_rate?: number | null
           step_goal?: number | null
@@ -480,6 +486,7 @@ export type Database = {
           heart_rate_avg: number | null
           heart_rate_max: number | null
           hour: number
+          owner: string
           stress_avg: number | null
           updated_at: string
         }
@@ -489,6 +496,7 @@ export type Database = {
           heart_rate_avg?: number | null
           heart_rate_max?: number | null
           hour: number
+          owner?: string
           stress_avg?: number | null
           updated_at?: string
         }
@@ -498,6 +506,7 @@ export type Database = {
           heart_rate_avg?: number | null
           heart_rate_max?: number | null
           hour?: number
+          owner?: string
           stress_avg?: number | null
           updated_at?: string
         }
@@ -565,6 +574,7 @@ export type Database = {
           hrv_avg: number | null
           id: string
           light_seconds: number | null
+          owner: string
           raw: Json | null
           rem_seconds: number | null
           sleep_end: string | null
@@ -583,6 +593,7 @@ export type Database = {
           hrv_avg?: number | null
           id?: string
           light_seconds?: number | null
+          owner?: string
           raw?: Json | null
           rem_seconds?: number | null
           sleep_end?: string | null
@@ -601,6 +612,7 @@ export type Database = {
           hrv_avg?: number | null
           id?: string
           light_seconds?: number | null
+          owner?: string
           raw?: Json | null
           rem_seconds?: number | null
           sleep_end?: string | null
@@ -619,6 +631,7 @@ export type Database = {
           error: string | null
           id: string
           ok: boolean
+          owner: string
           ran_at: string
           sleep_count: number | null
           trigger: string
@@ -630,6 +643,7 @@ export type Database = {
           error?: string | null
           id?: string
           ok: boolean
+          owner?: string
           ran_at?: string
           sleep_count?: number | null
           trigger: string
@@ -641,6 +655,7 @@ export type Database = {
           error?: string | null
           id?: string
           ok?: boolean
+          owner?: string
           ran_at?: string
           sleep_count?: number | null
           trigger?: string
@@ -658,6 +673,7 @@ export type Database = {
           oauth2_expires_at: string | null
           oauth2_refresh_token: string | null
           oauth2_token: string | null
+          owner: string
           pending_mfa: Json | null
           updated_at: string
           username: string | null
@@ -672,6 +688,7 @@ export type Database = {
           oauth2_expires_at?: string | null
           oauth2_refresh_token?: string | null
           oauth2_token?: string | null
+          owner?: string
           pending_mfa?: Json | null
           updated_at?: string
           username?: string | null
@@ -686,6 +703,7 @@ export type Database = {
           oauth2_expires_at?: string | null
           oauth2_refresh_token?: string | null
           oauth2_token?: string | null
+          owner?: string
           pending_mfa?: Json | null
           updated_at?: string
           username?: string | null
