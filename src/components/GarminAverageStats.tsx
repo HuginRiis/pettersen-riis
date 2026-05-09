@@ -65,7 +65,20 @@ export function GarminAverageStats() {
     const avgDeep = avg(s.map((x) => x.deep_seconds));
     const avgLight = avg(s.map((x) => x.light_seconds));
     const avgRem = avg(s.map((x) => x.rem_seconds));
-    return { avgRhr, avgSteps, avgKcal, avgSleepSec, avgDeep, avgLight, avgRem };
+    const ws = d.map((x) => x.weight_kg).filter((n): n is number => typeof n === "number" && n > 0);
+    const avgWeight = ws.length ? ws.reduce((a, b) => a + b, 0) / ws.length : null;
+    const wTrend = ws.length >= 2 ? ws[ws.length - 1] - ws[0] : null;
+    const wMin = ws.length ? Math.min(...ws) : null;
+    const wMax = ws.length ? Math.max(...ws) : null;
+    // Score: stability rewards low variance; trend penalizes big swings.
+    let weightScore: number | null = null;
+    if (avgWeight && ws.length >= 2 && wMin != null && wMax != null) {
+      const range = wMax - wMin;
+      const stability = Math.max(0, 100 - (range / avgWeight) * 1000); // ~1% spread → -10
+      const trendPenalty = Math.min(40, Math.abs((wTrend ?? 0) / avgWeight) * 1000);
+      weightScore = Math.round(Math.max(0, Math.min(100, stability - trendPenalty / 2)));
+    }
+    return { avgRhr, avgSteps, avgKcal, avgSleepSec, avgDeep, avgLight, avgRem, avgWeight, wTrend, weightScore };
   }, [daily, sleep, period]);
 
   const sleepHours = stats.avgSleepSec ? stats.avgSleepSec / 3600 : null;
