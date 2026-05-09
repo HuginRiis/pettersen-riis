@@ -216,6 +216,32 @@ export function GarminPanel() {
   const sleepHoursToday = lastSleep?.total_seconds ? lastSleep.total_seconds / 3600 : null;
   const sleepHoursYesterday = prevSleep?.total_seconds ? prevSleep.total_seconds / 3600 : null;
 
+  // Siste kjente vekt (uansett dag) — vises alltid
+  const latestWeightEntry = (() => {
+    const arr = (data?.daily ?? []).filter((d) => d.weight_kg != null);
+    return arr.length ? arr[arr.length - 1] : undefined;
+  })();
+  const prevWeightEntry = (() => {
+    const arr = (data?.daily ?? []).filter((d) => d.weight_kg != null);
+    return arr.length >= 2 ? arr[arr.length - 2] : undefined;
+  })();
+  // Siste kjente sleep-baserte målinger
+  const lastSpo2Entry = (data?.sleep ?? []).slice().reverse().find((s) => s.average_spo2 != null);
+  const prevSpo2Entry = (() => {
+    const arr = (data?.sleep ?? []).filter((s) => s.average_spo2 != null);
+    return arr.length >= 2 ? arr[arr.length - 2] : undefined;
+  })();
+  const lastRespEntry = (data?.sleep ?? []).slice().reverse().find((s) => s.average_respiration != null);
+  const prevRespEntry = (() => {
+    const arr = (data?.sleep ?? []).filter((s) => s.average_respiration != null);
+    return arr.length >= 2 ? arr[arr.length - 2] : undefined;
+  })();
+  const lastHrvEntry = (data?.sleep ?? []).slice().reverse().find((s) => s.hrv_avg != null);
+  const prevHrvEntry = (() => {
+    const arr = (data?.sleep ?? []).filter((s) => s.hrv_avg != null);
+    return arr.length >= 2 ? arr[arr.length - 2] : undefined;
+  })();
+
   const todayDay = today?.day;
   const todaysActs = data?.activities?.filter((a) => a.start_time_local.slice(0, 10) === todayDay) ?? [];
   const yesterdayDay = yesterday?.day;
