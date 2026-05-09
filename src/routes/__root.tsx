@@ -3,6 +3,7 @@ import { checkAuth } from "@/server/auth";
 import { VisitorTracker } from "@/components/VisitorTracker";
 import { LoginDialog } from "@/components/LoginDialog";
 import { PullToRefresh } from "@/components/PullToRefresh";
+import { LastRouteMemory } from "@/components/LastRouteMemory";
 
 // Routes that are accessible without logging in (visitors entering the castle gates).
 // Locked routes now redirect to "/" (where the login dialog opens automatically) instead
