@@ -27,6 +27,17 @@ export const getGarminOverview = createServerFn({ method: "GET" }).handler(async
     .gte("day", sinceIso)
     .order("day", { ascending: true });
 
+  // Intraday (timesoppløsning) — kun siste 7 dager for å holde payload liten
+  const intradaySince = new Date();
+  intradaySince.setDate(intradaySince.getDate() - 7);
+  const intradaySinceIso = intradaySince.toISOString().slice(0, 10);
+  const { data: intraday } = await supabaseAdmin
+    .from("garmin_intraday")
+    .select("day, hour, heart_rate_avg, heart_rate_max, stress_avg, body_battery")
+    .gte("day", intradaySinceIso)
+    .order("day", { ascending: true })
+    .order("hour", { ascending: true });
+
   const { data: lastSync } = await supabaseAdmin
     .from("garmin_sync_log")
     .select("ran_at, ok, daily_count, activities_count, sleep_count, error")
@@ -39,6 +50,7 @@ export const getGarminOverview = createServerFn({ method: "GET" }).handler(async
     daily: daily ?? [],
     activities: activities ?? [],
     sleep: sleep ?? [],
+    intraday: intraday ?? [],
     lastSync,
   };
 });
