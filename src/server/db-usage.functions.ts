@@ -37,6 +37,7 @@ export type DbUsageStats = {
   limitLabel: string;
   tables: TableSizeRow[];
   cronJobs: CronJobRow[];
+  dataSyncs: DataSyncRow[];
 };
 
 export const getDbUsage = createServerFn({ method: "GET" }).handler(
