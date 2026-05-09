@@ -639,56 +639,109 @@ export function GarminPanel() {
                 return <p className="text-xs text-muted-foreground italic">Ingen data for valgt periode.</p>;
               }
 
+              const single = isSingleDay(chartPeriod) && (dailyF.length <= 1);
+              const dayKey = chartPeriod === "today"
+                ? (() => { const d = new Date(); d.setHours(0,0,0,0); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; })()
+                : (() => { const d = new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate()-1); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; })();
+
+              // Aktiviteter for valgt enkeltdag — brukes til time-for-time puls
+              const dayActs = single ? (data.activities ?? []).filter((a) => a.start_time_local.slice(0, 10) === dayKey) : [];
+              const hourly = (pickHr: (a: Activity) => number | null) => {
+                const buckets: Array<{ hour: number; value: number | null }> = Array.from({ length: 24 }, (_, h) => ({ hour: h, value: null }));
+                for (const a of dayActs) {
+                  const h = new Date(a.start_time_local).getHours();
+                  const v = pickHr(a);
+                  if (v != null) {
+                    const cur = buckets[h].value;
+                    buckets[h].value = cur == null ? v : Math.max(cur, v);
+                  }
+                }
+                return buckets;
+              };
+              const SingleDayNote = ({ value, unit = "" }: { value: number | null | undefined; unit?: string }) => (
+                <div className="h-full flex items-center justify-center text-[11px] text-muted-foreground italic px-2 text-center">
+                  {value != null ? <>Dagsverdi: <span className="text-foreground tabular-nums not-italic font-medium">{value}{unit}</span> · timesoppløsning krever utvidet Garmin-synk</> : "Ingen data for valgt dag"}
+                </div>
+              );
+
               return (
                 <div className="space-y-3">
-                  <ChartCard title="Skritt">
-                    {renderBar(dailyF, "steps", showTrend)}
+                  <ChartCard title={single ? "Skritt (time-for-time)" : "Skritt"}>
+                    {single
+                      ? <SingleDayNote value={dailyF[0]?.steps ?? null} />
+                      : renderBar(dailyF, "steps", showTrend, C.steps)}
                   </ChartCard>
 
                   <div className="grid md:grid-cols-2 gap-3">
                     <ChartCard title="Hvilepuls (bpm)" height={160}>
-                      {renderLine(dailyF, "resting_heart_rate", showTrend)}
+                      {single
+                        ? <SingleDayNote value={dailyF[0]?.resting_heart_rate ?? null} unit=" bpm" />
+                        : renderLine(dailyF, "resting_heart_rate", showTrend, false, C.hr)}
                     </ChartCard>
-                    <ChartCard title="Snitt puls (bpm)" height={160}>
-                      {renderLine(dailyF, "average_heart_rate", showTrend)}
+                    <ChartCard title={single ? "Snitt puls per aktivitet (bpm)" : "Snitt puls (bpm)"} height={160}>
+                      {single
+                        ? renderHourBar(hourly((a) => a.average_hr ?? null), C.hrAvg, " bpm")
+                        : renderLine(dailyF, "average_heart_rate", showTrend, false, C.hrAvg)}
                     </ChartCard>
-                    <ChartCard title="Maks puls (bpm)" height={160}>
-                      {renderLine(maxHrData, "max_hr", showTrend)}
+                    <ChartCard title={single ? "Maks puls per aktivitet (bpm)" : "Maks puls (bpm)"} height={160}>
+                      {single
+                        ? renderHourBar(hourly((a) => a.max_hr ?? null), C.hrMax, " bpm")
+                        : renderLine(maxHrData, "max_hr", showTrend, false, C.hrMax)}
                     </ChartCard>
                     <ChartCard title="Trapper" height={160}>
-                      {renderBar(dailyF, "floors_climbed", showTrend)}
+                      {single
+                        ? <SingleDayNote value={dailyF[0]?.floors_climbed ?? null} />
+                        : renderBar(dailyF, "floors_climbed", showTrend, C.floors)}
                     </ChartCard>
                     <ChartCard title="Body battery (høy/lav)" height={160}>
-                      {renderLine2(dailyF, "body_battery_high", "body_battery_low", showTrend)}
+                      {single
+                        ? <SingleDayNote value={dailyF[0]?.body_battery_high ?? null} />
+                        : renderLine2(dailyF, "body_battery_high", "body_battery_low", showTrend, C.batteryHigh, C.batteryLow)}
                     </ChartCard>
                     <ChartCard title="Stress (snitt)" height={160}>
-                      {renderLine(dailyF, "stress_average", showTrend)}
+                      {single
+                        ? <SingleDayNote value={dailyF[0]?.stress_average ?? null} />
+                        : renderLine(dailyF, "stress_average", showTrend, false, C.stress)}
                     </ChartCard>
                     <ChartCard title="Intensitetsminutter" height={160}>
-                      {renderBar(intensityData, "total_intensity", showTrend)}
+                      {single
+                        ? <SingleDayNote value={(dailyF[0] ? (dailyF[0].moderate_intensity_minutes ?? 0) + (dailyF[0].vigorous_intensity_minutes ?? 0) : null)} unit=" min" />
+                        : renderBar(intensityData, "total_intensity", showTrend, C.intensity)}
                     </ChartCard>
                     <ChartCard title="Vekt (kg)" height={160}>
-                      {renderLine(dailyF, "weight_kg", showTrend, true)}
+                      {single
+                        ? <SingleDayNote value={dailyF[0]?.weight_kg ?? null} unit=" kg" />
+                        : renderLine(dailyF, "weight_kg", showTrend, true, C.weight)}
                     </ChartCard>
                     <ChartCard title="Kalorier (total/aktive)" height={160}>
-                      {renderLine2(dailyF, "total_kilocalories", "active_kilocalories", showTrend)}
+                      {single
+                        ? <SingleDayNote value={dailyF[0]?.total_kilocalories ?? null} unit=" kcal" />
+                        : renderLine2(dailyF, "total_kilocalories", "active_kilocalories", showTrend, C.caloriesTotal, C.caloriesActive)}
                     </ChartCard>
                     <ChartCard title="Søvn (timer)" height={160}>
-                      {renderBar(sleepData, "total", showTrend)}
+                      {single
+                        ? <SingleDayNote value={sleepF[0]?.total_seconds ? Number(((sleepF[0].total_seconds) / 3600).toFixed(1)) : null} unit=" t" />
+                        : renderBar(sleepData, "total", showTrend, C.sleep)}
                     </ChartCard>
                     {hasSpo2 && (
                       <ChartCard title="Pulsoksygen SpO₂ (%)" height={160}>
-                        {renderLine(spo2Data, "spo2", showTrend, true)}
+                        {single
+                          ? <SingleDayNote value={sleepF[0]?.average_spo2 ?? null} unit=" %" />
+                          : renderLine(spo2Data, "spo2", showTrend, true, C.spo2)}
                       </ChartCard>
                     )}
                     {hasHrv && (
                       <ChartCard title="Pulsvariasjon HRV (ms)" height={160}>
-                        {renderLine(hrvData, "hrv", showTrend, true)}
+                        {single
+                          ? <SingleDayNote value={sleepF[0]?.hrv_avg ?? null} unit=" ms" />
+                          : renderLine(hrvData, "hrv", showTrend, true, C.hrv)}
                       </ChartCard>
                     )}
                     {hasResp && (
                       <ChartCard title="Pusting (pust/min)" height={160}>
-                        {renderLine(respData, "resp", showTrend, true)}
+                        {single
+                          ? <SingleDayNote value={sleepF[0]?.average_respiration ?? null} unit=" /min" />
+                          : renderLine(respData, "resp", showTrend, true, C.respiration)}
                       </ChartCard>
                     )}
                   </div>
@@ -701,11 +754,11 @@ export function GarminPanel() {
                         <YAxis yAxisId="left" tick={{ fontSize: 10 }} />
                         <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 10 }} domain={[0, 100]} />
                         <Tooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", fontSize: 12 }} />
-                        <Bar yAxisId="left" dataKey="deep" stackId="a" fill="var(--chart-yellow)" />
-                        <Bar yAxisId="left" dataKey="light" stackId="a" fill="var(--chart-yellow-soft)" />
-                        <Bar yAxisId="left" dataKey="rem" stackId="a" fill="var(--chart-yellow-faint)" />
-                        <Bar yAxisId="left" dataKey="awake" stackId="a" fill="color-mix(in oklab, var(--muted-foreground) 40%, transparent)" />
-                        <Line yAxisId="right" type="monotone" dataKey="score" stroke="var(--chart-yellow)" strokeWidth={2} dot={{ r: 3 }} />
+                        <Bar yAxisId="left" dataKey="deep" stackId="a" fill={C.sleepDeep} name="Dyp" />
+                        <Bar yAxisId="left" dataKey="light" stackId="a" fill={C.sleepLight} name="Lett" />
+                        <Bar yAxisId="left" dataKey="rem" stackId="a" fill={C.sleepRem} name="REM" />
+                        <Bar yAxisId="left" dataKey="awake" stackId="a" fill={C.sleepAwake} name="Våken" />
+                        <Line yAxisId="right" type="monotone" dataKey="score" stroke={C.sleep} strokeWidth={2} dot={{ r: 3 }} name="Score" />
                       </BarChart>
                     </ChartCard>
                   )}
