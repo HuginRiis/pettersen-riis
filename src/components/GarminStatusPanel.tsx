@@ -149,7 +149,7 @@ export function GarminStatusPanel({ owner = "arne", displayName }: { owner?: Own
         <Icon className="h-4 w-4 mt-0.5 shrink-0" />
         <div className="flex-1 text-xs space-y-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-semibold flex items-center gap-1"><Activity className="h-3.5 w-3.5" /> Garmin Connect</span>
+            <span className="font-semibold flex items-center gap-1"><Activity className="h-3.5 w-3.5" /> Garmin Connect{displayName ? ` · ${displayName}` : ""}</span>
             {status?.connected ? (
               <span className="text-foreground">{status.username ?? "tilkoblet"}</span>
             ) : status?.mfa_pending ? (
