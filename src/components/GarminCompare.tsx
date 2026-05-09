@@ -179,6 +179,26 @@ export function GarminCompare() {
           </div>
         </div>
 
+        {/* Top 5 Krønike-pekepinner */}
+        {!loading && top5.length > 0 && (
+          <div className="rounded border border-amber-500/30 bg-black/30 p-3">
+            <div className="text-[10px] uppercase tracking-[0.2em] text-amber-300 mb-2 flex items-center gap-1.5" style={{ fontFamily: display }}>
+              <Swords size={12} /> KRØNIKEN — TOPP 5
+            </div>
+            <ol className="space-y-1.5">
+              {top5.map((h, i) => (
+                <li key={i} className="text-xs flex items-start gap-2">
+                  <span className="text-amber-400/80 tabular-nums w-4 shrink-0" style={{ fontFamily: display }}>{i + 1}.</span>
+                  {h.winner === "arne"
+                    ? <Crown className="h-3 w-3 text-slate-200 mt-0.5 shrink-0" />
+                    : <Flame className="h-3 w-3 text-rose-300 mt-0.5 shrink-0" />}
+                  <span className={h.winner === "arne" ? "text-slate-100" : "text-rose-100"}>{h.text}</span>
+                </li>
+              ))}
+            </ol>
+          </div>
+        )}
+
         {loading ? (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" /> Laster sammenligning…
