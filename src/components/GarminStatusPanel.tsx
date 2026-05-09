@@ -191,13 +191,22 @@ export function GarminStatusPanel({ owner = "arne", displayName }: { owner?: Own
             </div>
           )}
         </div>
-        <button
-          onClick={() => setShowSettings((v) => !v)}
-          className="inline-flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground border border-border/60 rounded px-1.5 py-0.5"
-          aria-label="Tidsplan"
-        >
-          <Settings2 className="h-3 w-3" /> Tidsplan
-        </button>
+        <div className="flex flex-col gap-1 shrink-0">
+          <button
+            onClick={() => setShowSettings((v) => !v)}
+            className="inline-flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground border border-border/60 rounded px-1.5 py-0.5"
+            aria-label="Tidsplan"
+          >
+            <Settings2 className="h-3 w-3" /> Tidsplan
+          </button>
+          <button
+            onClick={() => setShowIntraday((v) => !v)}
+            className="inline-flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground border border-border/60 rounded px-1.5 py-0.5"
+            aria-label="Intraday"
+          >
+            <Activity className="h-3 w-3" /> Intraday
+          </button>
+        </div>
       </div>
 
       {showSettings && schedule && (
