@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Footprints, Heart, Flame, Moon, BedDouble, Loader2 } from "lucide-react";
+import { Footprints, Heart, Flame, Moon, BedDouble, Loader2, Scale } from "lucide-react";
 import { getGarminOverview } from "@/server/garmin.functions";
 
 type Daily = {
@@ -8,6 +8,7 @@ type Daily = {
   steps: number | null;
   resting_heart_rate: number | null;
   total_kilocalories: number | null;
+  weight_kg: number | null;
 };
 type Sleep = {
   day: string;
@@ -64,7 +65,20 @@ export function GarminAverageStats() {
     const avgDeep = avg(s.map((x) => x.deep_seconds));
     const avgLight = avg(s.map((x) => x.light_seconds));
     const avgRem = avg(s.map((x) => x.rem_seconds));
-    return { avgRhr, avgSteps, avgKcal, avgSleepSec, avgDeep, avgLight, avgRem };
+    const ws = d.map((x) => x.weight_kg).filter((n): n is number => typeof n === "number" && n > 0);
+    const avgWeight = ws.length ? ws.reduce((a, b) => a + b, 0) / ws.length : null;
+    const wTrend = ws.length >= 2 ? ws[ws.length - 1] - ws[0] : null;
+    const wMin = ws.length ? Math.min(...ws) : null;
+    const wMax = ws.length ? Math.max(...ws) : null;
+    // Score: stability rewards low variance; trend penalizes big swings.
+    let weightScore: number | null = null;
+    if (avgWeight && ws.length >= 2 && wMin != null && wMax != null) {
+      const range = wMax - wMin;
+      const stability = Math.max(0, 100 - (range / avgWeight) * 1000); // ~1% spread → -10
+      const trendPenalty = Math.min(40, Math.abs((wTrend ?? 0) / avgWeight) * 1000);
+      weightScore = Math.round(Math.max(0, Math.min(100, stability - trendPenalty / 2)));
+    }
+    return { avgRhr, avgSteps, avgKcal, avgSleepSec, avgDeep, avgLight, avgRem, avgWeight, wTrend, weightScore };
   }, [daily, sleep, period]);
 
   const sleepHours = stats.avgSleepSec ? stats.avgSleepSec / 3600 : null;
@@ -75,7 +89,7 @@ export function GarminAverageStats() {
     <div className="panel rounded-lg p-4 space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <h3 className="text-sm font-semibold uppercase tracking-wider text-primary">
-          Snitt fra Garmin
+          Gjennomsnittlig data for Arne
         </h3>
         <div className="inline-flex rounded-md border border-border/60 overflow-hidden text-xs">
           <button
@@ -98,7 +112,7 @@ export function GarminAverageStats() {
           <Loader2 className="h-3.5 w-3.5 animate-spin" /> Laster…
         </div>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
           <Box icon={<Heart size={14} />} label="Hvilepuls" value={stats.avgRhr ? `${fmt(stats.avgRhr, 0)} bpm` : "—"} />
           <Box icon={<Footprints size={14} />} label="Skritt" value={fmt(stats.avgSteps)} />
           <Box
@@ -113,6 +127,16 @@ export function GarminAverageStats() {
             sub={total > 0 ? `Lett ${pct(stats.avgLight)}% · REM ${pct(stats.avgRem)}%` : undefined}
           />
           <Box icon={<Flame size={14} />} label="Kalorier" value={fmt(stats.avgKcal)} />
+          <Box
+            icon={<Scale size={14} />}
+            label="Vekt"
+            value={stats.avgWeight ? `${stats.avgWeight.toFixed(1)} kg` : "—"}
+            sub={
+              stats.weightScore != null
+                ? `Score ${stats.weightScore}${stats.wTrend != null ? ` · ${stats.wTrend > 0 ? "+" : ""}${stats.wTrend.toFixed(1)} kg` : ""}`
+                : "ingen veiing"
+            }
+          />
         </div>
       )}
     </div>
