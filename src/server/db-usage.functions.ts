@@ -8,6 +8,18 @@ export type CronJobRow = {
   last_run: string | null;
   runs_24h: number;
   failed_24h: number;
+  next_run?: string | null;
+};
+
+export type DataSyncRow = {
+  name: string;
+  schedule_label: string;
+  last_run: string | null;
+  next_run: string | null;
+  ok: boolean;
+  runs_24h: number;
+  failed_24h: number;
+  note?: string;
 };
 
 export type TableSizeRow = {
