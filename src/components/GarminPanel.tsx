@@ -497,12 +497,14 @@ export function GarminPanel() {
 
 function Tile({
   icon, label, value, prev, unit = "", digits = 0, fmt, lowerIsBetter = false, fallbackSub,
+  showDetails = false, details,
 }: {
   icon: React.ReactNode; label: string;
   value: number | null; prev?: number | null;
   unit?: string; digits?: number;
   fmt?: (n: number | null | undefined) => string;
   lowerIsBetter?: boolean; fallbackSub?: string;
+  showDetails?: boolean; details?: Array<{ k: string; v: string }>;
 }) {
   const formatVal = (n: number | null | undefined): string => {
     if (n == null) return "—";
@@ -536,6 +538,16 @@ function Tile({
       <div className="text-[10px] mt-0.5">
         {trend ?? (value == null && fallbackSub ? <span className="text-muted-foreground">{fallbackSub}</span> : null)}
       </div>
+      {showDetails && details && details.length > 0 && (
+        <div className="mt-2 pt-2 border-t border-border/40 grid grid-cols-2 gap-x-2 gap-y-0.5 text-[10px]">
+          {details.map((d) => (
+            <div key={d.k} className="flex justify-between gap-1">
+              <span className="text-muted-foreground truncate">{d.k}</span>
+              <span className="tabular-nums font-medium">{d.v}</span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
