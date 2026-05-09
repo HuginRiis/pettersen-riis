@@ -41,6 +41,24 @@ function fmtDuration(sec?: number | null) {
 }
 function fmtKm(m?: number | null) { return m ? `${(m / 1000).toFixed(1)} km` : "—"; }
 function fmtNum(n?: number | null) { return n != null ? n.toLocaleString("nb-NO") : "—"; }
+function hoursMin(sec?: number | null) {
+  if (!sec) return "—";
+  const h = Math.floor(sec / 3600); const m = Math.floor((sec % 3600) / 60);
+  return h > 0 ? `${h}t ${m}m` : `${m}m`;
+}
+function avgFmt(arr: Array<number | null | undefined> | undefined, digits = 0, unit = ""): string {
+  const v = (arr ?? []).filter((n): n is number => typeof n === "number" && n > 0);
+  if (!v.length) return "—";
+  const a = v.reduce((x, y) => x + y, 0) / v.length;
+  return a.toLocaleString("nb-NO", { maximumFractionDigits: digits, minimumFractionDigits: digits > 0 ? digits : 0 }) + unit;
+}
+function stressLevel(n?: number | null): string {
+  if (n == null) return "—";
+  if (n < 25) return "Hvile";
+  if (n < 50) return "Lavt";
+  if (n < 75) return "Medium";
+  return "Høyt";
+}
 
 export function GarminPanel() {
   const fetchOverview = useServerFn(getGarminOverview);
