@@ -97,34 +97,50 @@ export type GarminSyncSchedule = {
 
 const DEFAULT_SCHEDULE: GarminSyncSchedule = { interval_minutes: 1440, first_local_hour: 6, last_local_hour: 23 };
 
-export const getGarminSyncSchedule = createServerFn({ method: "GET" }).handler(async () => {
-  const { data } = await supabaseAdmin
-    .from("notification_settings")
-    .select("value")
-    .eq("key", "garmin_sync_schedule")
-    .maybeSingle();
-  const v = (data?.value as Partial<GarminSyncSchedule> | null) ?? null;
-  return {
-    interval_minutes: v?.interval_minutes ?? DEFAULT_SCHEDULE.interval_minutes,
-    first_local_hour: v?.first_local_hour ?? DEFAULT_SCHEDULE.first_local_hour,
-    last_local_hour: v?.last_local_hour ?? DEFAULT_SCHEDULE.last_local_hour,
-  } as GarminSyncSchedule;
-});
+function scheduleKey(owner: GarminOwner): string {
+  return `garmin_sync_schedule_${owner}`;
+}
+
+export const getGarminSyncSchedule = createServerFn({ method: "GET" })
+  .inputValidator((d: unknown) => ownerSchema.parse(d ?? {}))
+  .handler(async ({ data }) => {
+    const owner = data.owner as GarminOwner;
+    // Try owner-specific key first, then legacy "garmin_sync_schedule" for arne fallback
+    const keys = owner === "arne"
+      ? [scheduleKey(owner), "garmin_sync_schedule"]
+      : [scheduleKey(owner)];
+    const { data: rows } = await supabaseAdmin
+      .from("notification_settings")
+      .select("key, value")
+      .in("key", keys);
+    const byKey = new Map<string, Partial<GarminSyncSchedule>>();
+    for (const r of (rows ?? []) as Array<{ key: string; value: Partial<GarminSyncSchedule> | null }>) {
+      if (r.value) byKey.set(r.key, r.value);
+    }
+    const v = byKey.get(scheduleKey(owner)) ?? byKey.get("garmin_sync_schedule") ?? null;
+    return {
+      interval_minutes: v?.interval_minutes ?? DEFAULT_SCHEDULE.interval_minutes,
+      first_local_hour: v?.first_local_hour ?? DEFAULT_SCHEDULE.first_local_hour,
+      last_local_hour: v?.last_local_hour ?? DEFAULT_SCHEDULE.last_local_hour,
+    } as GarminSyncSchedule;
+  });
 
 export const saveGarminSyncSchedule = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => {
-    const x = d as Partial<GarminSyncSchedule>;
+    const x = d as Partial<GarminSyncSchedule> & { owner?: string };
     const interval = Math.max(15, Math.min(1440, Number(x?.interval_minutes ?? 1440)));
     const first = Math.max(0, Math.min(23, Number(x?.first_local_hour ?? 6)));
     const last = Math.max(0, Math.min(23, Number(x?.last_local_hour ?? 23)));
-    return { interval_minutes: interval, first_local_hour: first, last_local_hour: last };
+    const owner = (x?.owner === "rebekka" ? "rebekka" : "arne") as GarminOwner;
+    return { owner, interval_minutes: interval, first_local_hour: first, last_local_hour: last };
   })
   .handler(async ({ data }) => {
+    const { owner, ...sched } = data;
     const { error } = await supabaseAdmin
       .from("notification_settings")
-      .upsert([{ key: "garmin_sync_schedule", value: data, updated_at: new Date().toISOString() }], { onConflict: "key" });
+      .upsert([{ key: scheduleKey(owner), value: sched, updated_at: new Date().toISOString() }], { onConflict: "key" });
     if (error) throw new Error(error.message);
-    return data;
+    return sched;
   });
 
 export { GARMIN_OWNERS };
