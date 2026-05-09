@@ -43,6 +43,48 @@ export const Route = createFileRoute("/vakttarnet")({
   component: VakttarnetPage,
 });
 
+const VAKTTARN_TOC: { id: string; label: string }[] = [
+  { id: "vt-utgangsdoren", label: "Utgangsdøren" },
+  { id: "vt-stats", label: "Statistikk" },
+  { id: "vt-doors", label: "Porter & låser" },
+  { id: "vt-push", label: "Sendte varsel" },
+  { id: "vt-ai-budget", label: "AI-skattkammer" },
+  { id: "vt-map", label: "Vaktens kart" },
+  { id: "vt-livefeed", label: "Live-feed" },
+  { id: "vt-attempts", label: "Login-forsøk" },
+  { id: "vt-lockouts", label: "Stengte porter" },
+  { id: "vt-toplist", label: "Topplister" },
+  { id: "vt-events", label: "Kameralogg" },
+  { id: "vt-ai-usage", label: "Mesterens orakel" },
+  { id: "vt-allvisitors", label: "Alle besøk" },
+  { id: "vt-db", label: "Database & cron" },
+  { id: "vt-garmin", label: "Garmin Connect" },
+  { id: "vt-apilog", label: "API-logg" },
+  { id: "vt-changelog", label: "Changelog" },
+];
+
+function VakttarnetTOC() {
+  return (
+    <nav aria-label="Innholdsfortegnelse" className="panel rounded-lg border border-border bg-card/60 backdrop-blur p-3">
+      <h2 className="text-[10px] font-semibold uppercase tracking-[0.25em] text-muted-foreground mb-2">
+        Innholdsfortegnelse
+      </h2>
+      <ul className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+        {VAKTTARN_TOC.map((it) => (
+          <li key={it.id}>
+            <a
+              href={`#${it.id}`}
+              className="block px-2.5 py-2 rounded border border-border/60 text-xs text-foreground hover:border-primary/60 hover:text-primary transition truncate"
+            >
+              {it.label}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  );
+}
+
 function VakttarnetPage() {
   const fetch = useServerFn(fetchVakttarnetData);
   const fetchAi = useServerFn(getAiUsageStats);
@@ -105,143 +147,173 @@ function VakttarnetPage() {
       />
 
       <section className="container mx-auto px-3 sm:px-4 py-6 sm:py-10 space-y-6 sm:space-y-10">
-        <UtgangsdorenPanel />
+        <VakttarnetTOC />
 
-        <StatsCards
-          sessions={sessions}
-          pageviews={pageviews}
-          attempts={attempts}
-          totalPageviews={totalPageviews}
-          totalSouls={totalSouls}
-        />
+        <section id="vt-utgangsdoren" className="scroll-mt-24"><UtgangsdorenPanel /></section>
 
-        <Panel
-          title="Borgens porter og låser"
-          icon={<DoorClosed size={14} />}
-          subtitle="Yale Doorman og Verisure rapporterer hva som er åpent og lukket"
-        >
-          <DoorsLocksPanel />
-        </Panel>
+        <section id="vt-stats" className="scroll-mt-24">
+          <StatsCards
+            sessions={sessions}
+            pageviews={pageviews}
+            attempts={attempts}
+            totalPageviews={totalPageviews}
+            totalSouls={totalSouls}
+          />
+        </section>
 
-        <Panel
-          title="Sendte varslinger"
-          icon={<Bell size={14} />}
-          subtitle="Hvor mange push-varslinger hver sjel har mottatt — i dag, siste uke, siste måned og totalt"
-        >
-          <PushSendCountsPanel />
-        </Panel>
+        <section id="vt-doors" className="scroll-mt-24">
+          <Panel
+            title="Borgens porter og låser"
+            icon={<DoorClosed size={14} />}
+            subtitle="Yale Doorman og Verisure rapporterer hva som er åpent og lukket"
+          >
+            <DoorsLocksPanel />
+          </Panel>
+        </section>
 
-        <Panel
-          title="AI-skattkammeret"
-          icon={<Sparkles size={14} />}
-          subtitle="Hærmesterens forbruk av AI-credits — denne måned, totalt og per funksjon"
-        >
-          <MaesterAiBudget />
-        </Panel>
+        <section id="vt-push" className="scroll-mt-24">
+          <Panel
+            title="Sendte varslinger"
+            icon={<Bell size={14} />}
+            subtitle="Hvor mange push-varslinger hver sjel har mottatt — i dag, siste uke, siste måned og totalt"
+          >
+            <PushSendCountsPanel />
+          </Panel>
+        </section>
+
+        <section id="vt-ai-budget" className="scroll-mt-24">
+          <Panel
+            title="AI-skattkammeret"
+            icon={<Sparkles size={14} />}
+            subtitle="Hærmesterens forbruk av AI-credits — denne måned, totalt og per funksjon"
+          >
+            <MaesterAiBudget />
+          </Panel>
+        </section>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-          <Panel
-            title="Vaktens kart"
-            icon={<MapIcon size={14} />}
-            subtitle="Hvor sjelene befinner seg"
-            collapsible
-            defaultOpen={false}
-          >
-            <VisitorMap sessions={sessions} attempts={attempts} />
-          </Panel>
+          <section id="vt-map" className="scroll-mt-24 contents">
+            <Panel
+              title="Vaktens kart"
+              icon={<MapIcon size={14} />}
+              subtitle="Hvor sjelene befinner seg"
+              collapsible
+              defaultOpen={false}
+            >
+              <VisitorMap sessions={sessions} attempts={attempts} />
+            </Panel>
+          </section>
 
+          <section id="vt-livefeed" className="scroll-mt-24 contents">
+            <Panel
+              title="Live-feed"
+              icon={<Eye size={14} />}
+              subtitle="Siste øyne i tårnet"
+              collapsible
+              defaultOpen={false}
+            >
+              <LiveFeed sessions={sessions} loading={loading} />
+            </Panel>
+          </section>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+          <section id="vt-attempts" className="scroll-mt-24 contents">
+            <Panel
+              title="Banker på porten"
+              icon={<ShieldAlert size={14} />}
+              subtitle="Login-forsøk fra fremmede og venner"
+              collapsible
+              defaultOpen={false}
+            >
+              <LoginAttempts attempts={attempts} />
+            </Panel>
+          </section>
+
+          <section id="vt-lockouts" className="scroll-mt-24 contents">
+            <Panel
+              title="Stengte porter"
+              icon={<Lock size={14} />}
+              subtitle="IP-er som ble låst ute — slipp løs hestene for å frigi dem"
+            >
+              <Lockouts attempts={attempts} onReleased={reload} />
+            </Panel>
+          </section>
+        </div>
+
+        <section id="vt-toplist" className="scroll-mt-24">
           <Panel
-            title="Live-feed"
+            title="Topplister"
+            icon={<Crown size={14} />}
+            subtitle="Hvem og hva troner øverst"
+          >
+            <TopLists sessions={sessions} pageviews={pageviews} />
+          </Panel>
+        </section>
+
+        <section id="vt-events" className="scroll-mt-24">
+          <Panel
+            title="Hvem nærmer seg porten"
             icon={<Eye size={14} />}
-            subtitle="Siste øyne i tårnet"
+            subtitle="Vaktene rapporterer alle som beveger seg utenfor murene — hentet fra kameraloggen"
+          >
+            <VakttarnEventsPanel />
+            <div className="mt-4">
+              <EufyInspector />
+            </div>
+          </Panel>
+        </section>
+
+        <section id="vt-ai-usage" className="scroll-mt-24">
+          <Panel
+            title="Mesterens orakel"
+            icon={<Sparkles size={14} />}
+            subtitle="AI-søk, tokens og estimerte credits brukt på huset"
             collapsible
             defaultOpen={false}
           >
-            <LiveFeed sessions={sessions} loading={loading} />
+            <AiUsagePanel stats={aiStats} />
           </Panel>
-        </div>
+        </section>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+        <section id="vt-allvisitors" className="scroll-mt-24">
           <Panel
-            title="Banker på porten"
-            icon={<ShieldAlert size={14} />}
-            subtitle="Login-forsøk fra fremmede og venner"
+            title="Alle som har vært på borgen"
+            icon={<Users size={14} />}
+            subtitle="Husfolk og gjester — hvem, hvor mange besøk og når sist"
+          >
+            <AllVisitors sessions={sessions} />
+          </Panel>
+        </section>
+
+        <section id="vt-db" className="scroll-mt-24">
+          <Panel
+            title="Database og cron-jobber"
+            icon={<Database size={14} />}
+            subtitle="Forbruk av Lovable Cloud, største tabeller og når neste planlagte data kommer inn"
             collapsible
             defaultOpen={false}
           >
-            <LoginAttempts attempts={attempts} />
+            <DbUsagePanel />
           </Panel>
+        </section>
 
+        <section id="vt-garmin" className="scroll-mt-24">
           <Panel
-            title="Stengte porter"
-            icon={<Lock size={14} />}
-            subtitle="IP-er som ble låst ute — slipp løs hestene for å frigi dem"
+            title="Garmin Connect"
+            icon={<Activity size={14} />}
+            subtitle="Status for tilkoblingen og siste synkronisering av helsedata"
           >
-            <Lockouts attempts={attempts} onReleased={reload} />
+            <div className="space-y-3">
+              <GarminStatusPanel owner="arne" displayName="Arne" />
+              <GarminStatusPanel owner="rebekka" displayName="Rebekka" />
+            </div>
           </Panel>
-        </div>
+        </section>
 
-        <Panel
-          title="Topplister"
-          icon={<Crown size={14} />}
-          subtitle="Hvem og hva troner øverst"
-        >
-          <TopLists sessions={sessions} pageviews={pageviews} />
-        </Panel>
+        <section id="vt-apilog" className="scroll-mt-24"><ApiCallLogPanel /></section>
 
-        <Panel
-          title="Hvem nærmer seg porten"
-          icon={<Eye size={14} />}
-          subtitle="Vaktene rapporterer alle som beveger seg utenfor murene — hentet fra kameraloggen"
-        >
-          <VakttarnEventsPanel />
-          <div className="mt-4">
-            <EufyInspector />
-          </div>
-        </Panel>
-
-        <Panel
-          title="Mesterens orakel"
-          icon={<Sparkles size={14} />}
-          subtitle="AI-søk, tokens og estimerte credits brukt på huset"
-          collapsible
-          defaultOpen={false}
-        >
-          <AiUsagePanel stats={aiStats} />
-        </Panel>
-
-        <Panel
-          title="Alle som har vært på borgen"
-          icon={<Users size={14} />}
-          subtitle="Husfolk og gjester — hvem, hvor mange besøk og når sist"
-        >
-          <AllVisitors sessions={sessions} />
-        </Panel>
-
-        <Panel
-          title="Database og cron-jobber"
-          icon={<Database size={14} />}
-          subtitle="Forbruk av Lovable Cloud, største tabeller og når neste planlagte data kommer inn"
-          collapsible
-          defaultOpen={false}
-        >
-          <DbUsagePanel />
-        </Panel>
-
-        <Panel
-          title="Garmin Connect"
-          icon={<Activity size={14} />}
-          subtitle="Status for tilkoblingen og siste synkronisering av helsedata"
-        >
-          <div className="space-y-3">
-            <GarminStatusPanel owner="arne" displayName="Arne" />
-            <GarminStatusPanel owner="rebekka" displayName="Rebekka" />
-          </div>
-        </Panel>
-
-        <ApiCallLogPanel />
-
-        <ChangelogPanel />
+        <section id="vt-changelog" className="scroll-mt-24"><ChangelogPanel /></section>
       </section>
     </PageShell>
   );

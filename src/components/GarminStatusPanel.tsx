@@ -26,15 +26,10 @@ type Schedule = {
   last_local_hour: number;
 };
 
-const INTERVAL_OPTIONS: Array<{ value: number; label: string }> = [
-  { value: 30, label: "Hver 30. min" },
-  { value: 60, label: "Hver time" },
-  { value: 120, label: "Hver 2. time" },
-  { value: 240, label: "Hver 4. time" },
-  { value: 360, label: "Hver 6. time" },
-  { value: 720, label: "Hver 12. time" },
-  { value: 1440, label: "Én gang per dag" },
-];
+const INTERVAL_OPTIONS: Array<{ value: number; label: string }> = Array.from({ length: 16 }, (_, i) => {
+  const h = i + 1;
+  return { value: h * 60, label: h === 1 ? "Hver time" : `Hver ${h}. time` };
+});
 
 function ago(iso: string | null): string {
   if (!iso) return "—";
