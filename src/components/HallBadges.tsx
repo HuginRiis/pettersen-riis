@@ -497,7 +497,7 @@ export function UtgangsdorenLockBadge({ inline }: { inline?: boolean } = {}) {
     let cancelled = false;
     (async () => {
       try {
-        const r = await getDoorsLocksSnapshot();
+        const r = await getDoorsLocksSnapshot({ data: {} });
         if (cancelled || !r.ok) return;
         const found =
           r.locks.find((l) => l.name.toLowerCase().includes("utgangsdør")) ??
