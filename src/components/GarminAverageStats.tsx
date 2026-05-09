@@ -89,7 +89,7 @@ export function GarminAverageStats() {
     <div className="panel rounded-lg p-4 space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <h3 className="text-sm font-semibold uppercase tracking-wider text-primary">
-          Snitt fra Garmin
+          Gjennomsnittlig data for Arne
         </h3>
         <div className="inline-flex rounded-md border border-border/60 overflow-hidden text-xs">
           <button
@@ -112,7 +112,7 @@ export function GarminAverageStats() {
           <Loader2 className="h-3.5 w-3.5 animate-spin" /> Laster…
         </div>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
           <Box icon={<Heart size={14} />} label="Hvilepuls" value={stats.avgRhr ? `${fmt(stats.avgRhr, 0)} bpm` : "—"} />
           <Box icon={<Footprints size={14} />} label="Skritt" value={fmt(stats.avgSteps)} />
           <Box
@@ -127,6 +127,16 @@ export function GarminAverageStats() {
             sub={total > 0 ? `Lett ${pct(stats.avgLight)}% · REM ${pct(stats.avgRem)}%` : undefined}
           />
           <Box icon={<Flame size={14} />} label="Kalorier" value={fmt(stats.avgKcal)} />
+          <Box
+            icon={<Scale size={14} />}
+            label="Vekt"
+            value={stats.avgWeight ? `${stats.avgWeight.toFixed(1)} kg` : "—"}
+            sub={
+              stats.weightScore != null
+                ? `Score ${stats.weightScore}${stats.wTrend != null ? ` · ${stats.wTrend > 0 ? "+" : ""}${stats.wTrend.toFixed(1)} kg` : ""}`
+                : "ingen veiing"
+            }
+          />
         </div>
       )}
     </div>
