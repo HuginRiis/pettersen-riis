@@ -2,8 +2,9 @@ import { Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Menu, X, LogOut, Crown, Swords, Shield, KeyRound, Home, Star, Flower2,
-  Cloud, Map, Castle, CalendarDays, Bell, Eye, Trees, Lightbulb, Flame, Zap, Hammer,
-  ShoppingCart, Receipt, Dog, Dumbbell, AlertTriangle, ScrollText, Globe, ChevronDown, ChevronRight } from "lucide-react";
+  Sun, Compass, Castle, CalendarDays, BellRing, Eye, Mountain, Lightbulb, Lamp, Zap, Hammer,
+  ShoppingCart, Receipt, Dog, Dumbbell, AlertTriangle, ScrollText, Globe, ChevronDown, ChevronRight,
+  TreePine } from "lucide-react";
 import { logoutFn } from "@/server/auth";
 import { getIcon as getWebFavIcon, getIconColor as getWebFavIconColor, faviconUrl, FAVICON_ICON } from "@/lib/web-favorite-icons";
 import birchImg from "@/assets/pollen-birch.png";
@@ -51,17 +52,17 @@ const ALWAYS_FIRST: RoutePath = "/";
 const ALWAYS_LAST: RoutePath = "/steintavle";
 
 // Ikon for hver menyside (pollen håndteres separat med PollenIcon)
-const ROUTE_ICON: Partial<Record<RoutePath, React.ComponentType<{ size?: number; className?: string }>>> = {
+const ROUTE_ICON: Partial<Record<RoutePath, React.ComponentType<{ size?: number; className?: string; color?: string; fill?: string; strokeWidth?: number }>>> = {
   "/": Home,
-  "/var": Cloud,
-  "/turer": Map,
+  "/var": Sun,
+  "/turer": Compass,
   "/got-saga": Castle,
   "/agenda": CalendarDays,
-  "/push-varslinger": Bell,
+  "/push-varslinger": BellRing,
   "/vakttarnet": Eye,
-  "/hytta": Trees,
+  "/hytta": Mountain,
   "/smarthus": Lightbulb,
-  "/lys": Flame,
+  "/lys": Lamp,
   "/stromkroniken": Zap,
   "/oppussing-borgen": Hammer,
   "/oppussing-hytta": Hammer,
@@ -71,6 +72,29 @@ const ROUTE_ICON: Partial<Record<RoutePath, React.ComponentType<{ size?: number;
   "/trening": Dumbbell,
   "/varsler": AlertTriangle,
   "/steintavle": ScrollText,
+};
+
+// Fargerike ikoner i GoT-stil — én distinkt farge per sal, matcher salens tema.
+const ROUTE_ICON_COLOR: Partial<Record<RoutePath, string>> = {
+  "/": "#d4af37",                    // gull — husets sal
+  "/var": "#fbbf24",                 // sol — gyllen
+  "/turer": "#34d399",               // ferden — smaragd
+  "/got-saga": "#a855f7",            // Westeros — drage-lilla
+  "/agenda": "#f472b6",              // krøniken — rosa pergament
+  "/push-varslinger": "#fb923c",     // ravnens varsel — oransje
+  "/vakttarnet": "#22d3ee",          // vaktens øye — cyan
+  "/hytta": "#60a5fa",               // fjellet — vinterblå
+  "/smarthus": "#facc15",            // smartborg — glødende gul
+  "/lys": "#fde047",                 // lys — lampegult
+  "/stromkroniken": "#eab308",       // strøm — lyngull
+  "/oppussing-borgen": "#f97316",    // hammer — gloende
+  "/oppussing-hytta": "#a16207",     // tre — rustbrun
+  "/matvarer": "#84cc16",            // varer — markens grønt
+  "/kvitteringer": "#94a3b8",        // pergament — sølv
+  "/hundene": "#f59e0b",             // ulv/hund — ravgull
+  "/trening": "#ef4444",             // sverd — blod
+  "/varsler": "#dc2626",             // farevarsel — rødt skilt
+  "/steintavle": "#cbd5e1",          // stein — lys grå
 };
 
 // Public halls — open to any visitor entering the courtyard.
