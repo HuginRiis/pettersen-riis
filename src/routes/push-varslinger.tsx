@@ -92,7 +92,7 @@ function SettingsTOC() {
           Innholdsfortegnelse — alle innstillinger og bokser
         </h2>
         <ul className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-          {TOC_ITEMS.map((it) => (
+          {[...TOC_ITEMS].sort((a, b) => a.label.localeCompare(b.label, "nb")).map((it) => (
             <li key={it.id}>
               <a
                 href={`#${it.id}`}
