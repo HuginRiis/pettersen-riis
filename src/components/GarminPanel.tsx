@@ -60,12 +60,41 @@ function stressLevel(n?: number | null): string {
   return "Høyt";
 }
 
-type ChartPeriod = "yesterday" | "thisWeek" | "lastWeek" | "last30" | "thisMonth";
+type ChartPeriod = "today" | "yesterday" | "thisWeek" | "lastWeek" | "last30" | "thisMonth";
+
+// Garmin-aktige farger per metrikk (matcher Connect-grafene)
+const C = {
+  steps: "#4FB3F0",
+  hr: "#E84855",
+  hrAvg: "#FF6F61",
+  hrMax: "#C81D25",
+  floors: "#F08C2E",
+  batteryHigh: "#2EBF6F",
+  batteryLow: "#F4B61A",
+  stress: "#F4B61A",
+  intensity: "#7DCB3D",
+  weight: "#9CA3AF",
+  sleepDeep: "#1F3A93",
+  sleepLight: "#5B6CE0",
+  sleepRem: "#9C5BD9",
+  sleepAwake: "#F08C2E",
+  sleep: "#5B6CE0",
+  spo2: "#3E8FE0",
+  hrv: "#9C5BD9",
+  respiration: "#3DB7C9",
+  caloriesTotal: "#E8743C",
+  caloriesActive: "#F4B61A",
+} as const;
+
+function isSingleDay(p: ChartPeriod) { return p === "today" || p === "yesterday"; }
 
 function filterPeriod<T extends { day: string }>(arr: T[] | undefined, period: ChartPeriod): T[] {
   if (!arr || !arr.length) return [];
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const fmt = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  if (period === "today") {
+    return arr.filter((x) => x.day === fmt(today));
+  }
   if (period === "yesterday") {
     const y = new Date(today); y.setDate(y.getDate() - 1);
     return arr.filter((x) => x.day === fmt(y));
@@ -105,7 +134,7 @@ function withTrend<T extends Record<string, unknown>>(data: T[], key: string): A
   return data.map((d, i) => ({ ...d, _trend: slope * i + intercept }));
 }
 
-function renderBar<T extends Record<string, unknown> & { day?: string }>(data: T[], key: string, showTrend: boolean): React.ReactElement {
+function renderBar<T extends Record<string, unknown> & { day?: string }>(data: T[], key: string, showTrend: boolean, color: string = C.steps): React.ReactElement {
   const d = showTrend ? withTrend(data, key) : data;
   return (
     <BarChart data={d as Array<Record<string, unknown>>}>
@@ -113,13 +142,13 @@ function renderBar<T extends Record<string, unknown> & { day?: string }>(data: T
       <XAxis dataKey="day" tick={{ fontSize: 10 }} tickFormatter={(v: string) => String(v).slice(5)} />
       <YAxis tick={{ fontSize: 10 }} />
       <Tooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", fontSize: 12 }} />
-      <Bar dataKey={key} fill="var(--chart-yellow)" radius={[2, 2, 0, 0]} />
-      {showTrend && <Line type="monotone" dataKey="_trend" stroke="var(--chart-yellow-soft)" strokeWidth={2} strokeDasharray="4 3" dot={false} />}
+      <Bar dataKey={key} fill={color} radius={[2, 2, 0, 0]} />
+      {showTrend && <Line type="monotone" dataKey="_trend" stroke={color} strokeOpacity={0.45} strokeWidth={2} strokeDasharray="4 3" dot={false} />}
     </BarChart>
   );
 }
 
-function renderLine<T extends Record<string, unknown> & { day?: string }>(data: T[], key: string, showTrend: boolean, connectNulls = false): React.ReactElement {
+function renderLine<T extends Record<string, unknown> & { day?: string }>(data: T[], key: string, showTrend: boolean, connectNulls = false, color: string = C.hr): React.ReactElement {
   const d = showTrend ? withTrend(data, key) : data;
   return (
     <LineChart data={d as Array<Record<string, unknown>>}>
@@ -127,13 +156,13 @@ function renderLine<T extends Record<string, unknown> & { day?: string }>(data: 
       <XAxis dataKey="day" tick={{ fontSize: 10 }} tickFormatter={(v: string) => String(v).slice(5)} />
       <YAxis tick={{ fontSize: 10 }} domain={["auto", "auto"]} />
       <Tooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", fontSize: 12 }} />
-      <Line type="monotone" dataKey={key} stroke="var(--chart-yellow)" strokeWidth={2} dot={{ r: 2 }} connectNulls={connectNulls} />
-      {showTrend && <Line type="monotone" dataKey="_trend" stroke="var(--chart-yellow-soft)" strokeWidth={2} strokeDasharray="4 3" dot={false} />}
+      <Line type="monotone" dataKey={key} stroke={color} strokeWidth={2} dot={{ r: 2 }} connectNulls={connectNulls} />
+      {showTrend && <Line type="monotone" dataKey="_trend" stroke={color} strokeOpacity={0.45} strokeWidth={2} strokeDasharray="4 3" dot={false} />}
     </LineChart>
   );
 }
 
-function renderLine2<T extends Record<string, unknown> & { day?: string }>(data: T[], k1: string, k2: string, showTrend: boolean): React.ReactElement {
+function renderLine2<T extends Record<string, unknown> & { day?: string }>(data: T[], k1: string, k2: string, showTrend: boolean, color1: string = C.batteryHigh, color2: string = C.batteryLow): React.ReactElement {
   const d = showTrend ? withTrend(data, k1) : data;
   return (
     <LineChart data={d as Array<Record<string, unknown>>}>
@@ -141,10 +170,27 @@ function renderLine2<T extends Record<string, unknown> & { day?: string }>(data:
       <XAxis dataKey="day" tick={{ fontSize: 10 }} tickFormatter={(v: string) => String(v).slice(5)} />
       <YAxis tick={{ fontSize: 10 }} domain={["auto", "auto"]} />
       <Tooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", fontSize: 12 }} />
-      <Line type="monotone" dataKey={k1} stroke="var(--chart-yellow)" strokeWidth={2} dot={false} />
-      <Line type="monotone" dataKey={k2} stroke="var(--chart-yellow-soft)" strokeWidth={2} dot={false} />
-      {showTrend && <Line type="monotone" dataKey="_trend" stroke="var(--chart-yellow-faint)" strokeWidth={2} strokeDasharray="4 3" dot={false} />}
+      <Line type="monotone" dataKey={k1} stroke={color1} strokeWidth={2} dot={false} />
+      <Line type="monotone" dataKey={k2} stroke={color2} strokeWidth={2} dot={false} />
+      {showTrend && <Line type="monotone" dataKey="_trend" stroke={color1} strokeOpacity={0.4} strokeWidth={2} strokeDasharray="4 3" dot={false} />}
     </LineChart>
+  );
+}
+
+// Time-for-time bars for én dag (basert på aktiviteter eller datapoint pr. time)
+function renderHourBar(items: Array<{ hour: number; value: number | null }>, color: string, unit = ""): React.ReactElement {
+  return (
+    <BarChart data={items}>
+      <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+      <XAxis dataKey="hour" tick={{ fontSize: 10 }} tickFormatter={(h: number) => `${String(h).padStart(2, "0")}`} interval={1} />
+      <YAxis tick={{ fontSize: 10 }} />
+      <Tooltip
+        contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", fontSize: 12 }}
+        labelFormatter={(h) => `kl ${String(h).padStart(2, "0")}:00`}
+        formatter={(v: number) => [`${v}${unit}`, ""]}
+      />
+      <Bar dataKey="value" fill={color} radius={[2, 2, 0, 0]} />
+    </BarChart>
   );
 }
 
@@ -311,7 +357,7 @@ export function GarminPanel() {
           <>
             {/* Tellere */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <Tile icon={<Footprints size={14} className="text-orange-500" />} label="Skritt i dag"
+              <Tile icon={<Footprints size={14} style={{color: C.steps}} />} label="Skritt i dag"
                 value={today?.steps ?? null} prev={yesterday?.steps ?? null}
                 fmt={fmtNum} fallbackSub={today?.step_goal ? `mål ${fmtNum(today.step_goal)}` : "ingen data"}
                 showDetails={showDetails}
@@ -323,8 +369,8 @@ export function GarminPanel() {
                   { k: "Snitt 7d", v: avgFmt(data?.daily?.slice(-7).map((d) => d.steps), 0) },
                   { k: "Snitt 30d", v: avgFmt(data?.daily?.map((d) => d.steps), 0) },
                 ]}
-                chart={sparkBar(data?.daily, "steps")} />
-              <Tile icon={<HeartPulse size={14} className="text-red-500" />} label="Hvilepuls"
+                chart={sparkBar(data?.daily, "steps", C.steps)} />
+              <Tile icon={<HeartPulse size={14} style={{color: C.hr}} />} label="Hvilepuls"
                 value={today?.resting_heart_rate ?? null} prev={yesterday?.resting_heart_rate ?? null}
                 unit=" bpm" lowerIsBetter fallbackSub="ingen måling i dag"
                 showDetails={showDetails}
@@ -334,8 +380,8 @@ export function GarminPanel() {
                   { k: "Snitt 7d", v: avgFmt(data?.daily?.slice(-7).map((d) => d.resting_heart_rate), 0, " bpm") },
                   { k: "Snitt 30d", v: avgFmt(data?.daily?.map((d) => d.resting_heart_rate), 0, " bpm") },
                 ]}
-                chart={sparkLine(data?.daily, "resting_heart_rate")} />
-              <Tile icon={<Heart size={14} className="text-rose-500" />} label="Snitt puls"
+                chart={sparkLine(data?.daily, "resting_heart_rate", false, C.hr)} />
+              <Tile icon={<Heart size={14} style={{color: C.hrAvg}} />} label="Snitt puls"
                 value={today?.average_heart_rate ?? null} prev={yesterday?.average_heart_rate ?? null}
                 unit=" bpm" fallbackSub="ingen måling i dag"
                 showDetails={showDetails}
@@ -345,8 +391,8 @@ export function GarminPanel() {
                   { k: "Snitt 7d", v: avgFmt(data?.daily?.slice(-7).map((d) => d.average_heart_rate), 0, " bpm") },
                   { k: "Snitt 30d", v: avgFmt(data?.daily?.map((d) => d.average_heart_rate), 0, " bpm") },
                 ]}
-                chart={sparkLine(data?.daily, "average_heart_rate")} />
-              <Tile icon={<TrendingUp size={14} className="text-red-600" />} label="Maks puls"
+                chart={sparkLine(data?.daily, "average_heart_rate", false, C.hrAvg)} />
+              <Tile icon={<TrendingUp size={14} style={{color: C.hrMax}} />} label="Maks puls"
                 value={maxHrToday} prev={maxHrYesterday}
                 unit=" bpm" fallbackSub="ingen aktivitet i dag"
                 showDetails={showDetails}
@@ -367,8 +413,9 @@ export function GarminPanel() {
                     return (data?.daily ?? []).map((d) => ({ day: d.day, max_hr: map.get(d.day) ?? null }));
                   })(),
                   "max_hr",
+                  false, C.hrMax,
                 )} />
-              <Tile icon={<Building2 size={14} className="text-sky-500" />} label="Trapper"
+              <Tile icon={<Building2 size={14} style={{color: C.floors}} />} label="Trapper"
                 value={today?.floors_climbed ?? null} prev={yesterday?.floors_climbed ?? null}
                 fmt={fmtNum}
                 fallbackSub="ingen data"
@@ -379,8 +426,8 @@ export function GarminPanel() {
                   { k: "Snitt 7d", v: avgFmt(data?.daily?.slice(-7).map((d) => d.floors_climbed), 0) },
                   { k: "Snitt 30d", v: avgFmt(data?.daily?.map((d) => d.floors_climbed), 0) },
                 ]}
-                chart={sparkBar(data?.daily, "floors_climbed")} />
-              <Tile icon={<Battery size={14} className="text-pink-500" />} label="Body battery"
+                chart={sparkBar(data?.daily, "floors_climbed", C.floors)} />
+              <Tile icon={<Battery size={14} style={{color: C.batteryHigh}} />} label="Body battery"
                 value={today?.body_battery_high ?? null} prev={yesterday?.body_battery_high ?? null}
                 fallbackSub={today?.body_battery_low != null ? `lav ${today.body_battery_low}` : "ingen data"}
                 showDetails={showDetails}
@@ -392,8 +439,8 @@ export function GarminPanel() {
                   { k: "Snitt høy 7d", v: avgFmt(data?.daily?.slice(-7).map((d) => d.body_battery_high), 0) },
                   { k: "Snitt lav 7d", v: avgFmt(data?.daily?.slice(-7).map((d) => d.body_battery_low), 0) },
                 ]}
-                chart={sparkLine2(data?.daily, "body_battery_high", "body_battery_low")} />
-              <Tile icon={<Brain size={14} className="text-amber-500" />} label="Stress (snitt)"
+                chart={sparkLine2(data?.daily, "body_battery_high", "body_battery_low", C.batteryHigh, C.batteryLow)} />
+              <Tile icon={<Brain size={14} style={{color: C.stress}} />} label="Stress (snitt)"
                 value={today?.stress_average ?? null} prev={yesterday?.stress_average ?? null}
                 lowerIsBetter fallbackSub="ingen måling"
                 showDetails={showDetails}
@@ -404,8 +451,8 @@ export function GarminPanel() {
                   { k: "Snitt 7d", v: avgFmt(data?.daily?.slice(-7).map((d) => d.stress_average), 0) },
                   { k: "Snitt 30d", v: avgFmt(data?.daily?.map((d) => d.stress_average), 0) },
                 ]}
-                chart={sparkLine(data?.daily, "stress_average")} />
-              <Tile icon={<Timer size={14} className="text-lime-500" />} label="Intensitetsmin."
+                chart={sparkLine(data?.daily, "stress_average", false, C.stress)} />
+              <Tile icon={<Timer size={14} style={{color: C.intensity}} />} label="Intensitetsmin."
                 value={intensityToday > 0 ? intensityToday : null} prev={intensityYesterday > 0 ? intensityYesterday : null}
                 fallbackSub={today?.intensity_minutes_goal ? `mål ${today.intensity_minutes_goal}` : "ingen mål"}
                 showDetails={showDetails}
@@ -418,9 +465,9 @@ export function GarminPanel() {
                 ]}
                 chart={sparkBar(
                   (data?.daily ?? []).map((d) => ({ ...d, total_intensity: (d.moderate_intensity_minutes ?? 0) + (d.vigorous_intensity_minutes ?? 0) })),
-                  "total_intensity",
+                  "total_intensity", C.intensity,
                 )} />
-              <Tile icon={<Moon size={14} className="text-indigo-400" />} label="Søvn"
+              <Tile icon={<Moon size={14} style={{color: C.sleep}} />} label="Søvn"
                 value={sleepHoursToday} prev={sleepHoursYesterday}
                 unit=" t" digits={1}
                 fallbackSub={lastSleep?.sleep_score != null ? `score ${lastSleep.sleep_score}` : "ingen søvndata"}
@@ -436,9 +483,9 @@ export function GarminPanel() {
                 ]}
                 chart={sparkBar(
                   (data?.sleep ?? []).map((s) => ({ day: s.day, hours: s.total_seconds ? s.total_seconds / 3600 : null })),
-                  "hours",
+                  "hours", C.sleep,
                 )} />
-              <Tile icon={<Scale size={14} className="text-slate-400" />} label="Vekt"
+              <Tile icon={<Scale size={14} style={{color: C.weight}} />} label="Vekt"
                 value={latestWeightEntry?.weight_kg ?? null} prev={prevWeightEntry?.weight_kg ?? null}
                 unit=" kg" digits={1} lowerIsBetter
                 fallbackSub={latestWeightEntry?.day ? `siste veiing ${latestWeightEntry.day.slice(5)}` : "ingen veiing"}
@@ -458,8 +505,8 @@ export function GarminPanel() {
                     { k: "Trend 30d", v: trend != null ? `${trend > 0 ? "+" : ""}${trend.toFixed(1)} kg` : "—" },
                   ];
                 })()}
-                chart={sparkLine(data?.daily, "weight_kg", true)} />
-              <Tile icon={<Droplets size={14} className="text-blue-400" />} label="Pulsoksygen (SpO₂)"
+                chart={sparkLine(data?.daily, "weight_kg", true, C.weight)} />
+              <Tile icon={<Droplets size={14} style={{color: C.spo2}} />} label="Pulsoksygen (SpO₂)"
                 value={lastSpo2Entry?.average_spo2 ?? null} prev={prevSpo2Entry?.average_spo2 ?? null}
                 unit=" %" digits={0}
                 fallbackSub="ingen måling"
@@ -473,9 +520,9 @@ export function GarminPanel() {
                 ]}
                 chart={sparkLine(
                   (data?.sleep ?? []).map((s) => ({ day: s.day, spo2: s.average_spo2 })),
-                  "spo2",
+                  "spo2", false, C.spo2,
                 )} />
-              <Tile icon={<Waves size={14} className="text-fuchsia-500" />} label="Pulsvariasjon (HRV)"
+              <Tile icon={<Waves size={14} style={{color: C.hrv}} />} label="Pulsvariasjon (HRV)"
                 value={lastHrvEntry?.hrv_avg ?? null} prev={prevHrvEntry?.hrv_avg ?? null}
                 unit=" ms" digits={0}
                 fallbackSub="ingen data"
@@ -489,9 +536,9 @@ export function GarminPanel() {
                 ]}
                 chart={sparkLine(
                   (data?.sleep ?? []).map((s) => ({ day: s.day, hrv: s.hrv_avg })),
-                  "hrv",
+                  "hrv", false, C.hrv,
                 )} />
-              <Tile icon={<Wind size={14} className="text-cyan-500" />} label="Pusting (snitt)"
+              <Tile icon={<Wind size={14} style={{color: C.respiration}} />} label="Pusting (snitt)"
                 value={lastRespEntry?.average_respiration ?? null} prev={prevRespEntry?.average_respiration ?? null}
                 unit=" /min" digits={0}
                 fallbackSub="ingen måling"
@@ -505,9 +552,9 @@ export function GarminPanel() {
                 ]}
                 chart={sparkLine(
                   (data?.sleep ?? []).map((s) => ({ day: s.day, resp: s.average_respiration })),
-                  "resp",
+                  "resp", false, C.respiration,
                 )} />
-              <Tile icon={<Flame size={14} className="text-orange-600" />} label="Kalorier"
+              <Tile icon={<Flame size={14} style={{color: C.caloriesTotal}} />} label="Kalorier"
                 value={today?.total_kilocalories ?? null} prev={yesterday?.total_kilocalories ?? null}
                 fmt={fmtNum}
                 fallbackSub={today?.active_kilocalories ? `aktive ${fmtNum(today.active_kilocalories)}` : "ingen data"}
@@ -519,7 +566,7 @@ export function GarminPanel() {
                   { k: "Snitt 7d", v: avgFmt(data?.daily?.slice(-7).map((d) => d.total_kilocalories), 0, " kcal") },
                   { k: "Snitt 30d", v: avgFmt(data?.daily?.map((d) => d.total_kilocalories), 0, " kcal") },
                 ]}
-                chart={sparkLine2(data?.daily, "total_kilocalories", "active_kilocalories")} />
+                chart={sparkLine2(data?.daily, "total_kilocalories", "active_kilocalories", C.caloriesTotal, C.caloriesActive)} />
             </div>
 
 
@@ -534,8 +581,9 @@ export function GarminPanel() {
               </button>
               {showCharts && (
                 <>
-                  <div className="inline-flex rounded-md border border-border/60 overflow-hidden text-[11px] ml-2">
+                  <div className="inline-flex rounded-md border border-border/60 overflow-hidden text-[11px] ml-2 flex-wrap">
                     {([
+                      ["today", "I dag"],
                       ["yesterday", "I går"],
                       ["thisWeek", "Denne uken"],
                       ["lastWeek", "Forrige uke"],
@@ -592,56 +640,109 @@ export function GarminPanel() {
                 return <p className="text-xs text-muted-foreground italic">Ingen data for valgt periode.</p>;
               }
 
+              const single = isSingleDay(chartPeriod) && (dailyF.length <= 1);
+              const dayKey = chartPeriod === "today"
+                ? (() => { const d = new Date(); d.setHours(0,0,0,0); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; })()
+                : (() => { const d = new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate()-1); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; })();
+
+              // Aktiviteter for valgt enkeltdag — brukes til time-for-time puls
+              const dayActs = single ? (data.activities ?? []).filter((a) => a.start_time_local.slice(0, 10) === dayKey) : [];
+              const hourly = (pickHr: (a: Activity) => number | null) => {
+                const buckets: Array<{ hour: number; value: number | null }> = Array.from({ length: 24 }, (_, h) => ({ hour: h, value: null }));
+                for (const a of dayActs) {
+                  const h = new Date(a.start_time_local).getHours();
+                  const v = pickHr(a);
+                  if (v != null) {
+                    const cur = buckets[h].value;
+                    buckets[h].value = cur == null ? v : Math.max(cur, v);
+                  }
+                }
+                return buckets;
+              };
+              const SingleDayNote = ({ value, unit = "" }: { value: number | null | undefined; unit?: string }) => (
+                <div className="h-full flex items-center justify-center text-[11px] text-muted-foreground italic px-2 text-center">
+                  {value != null ? <>Dagsverdi: <span className="text-foreground tabular-nums not-italic font-medium">{value}{unit}</span> · timesoppløsning krever utvidet Garmin-synk</> : "Ingen data for valgt dag"}
+                </div>
+              );
+
               return (
                 <div className="space-y-3">
-                  <ChartCard title="Skritt">
-                    {renderBar(dailyF, "steps", showTrend)}
+                  <ChartCard title={single ? "Skritt (time-for-time)" : "Skritt"}>
+                    {single
+                      ? <SingleDayNote value={dailyF[0]?.steps ?? null} />
+                      : renderBar(dailyF, "steps", showTrend, C.steps)}
                   </ChartCard>
 
                   <div className="grid md:grid-cols-2 gap-3">
                     <ChartCard title="Hvilepuls (bpm)" height={160}>
-                      {renderLine(dailyF, "resting_heart_rate", showTrend)}
+                      {single
+                        ? <SingleDayNote value={dailyF[0]?.resting_heart_rate ?? null} unit=" bpm" />
+                        : renderLine(dailyF, "resting_heart_rate", showTrend, false, C.hr)}
                     </ChartCard>
-                    <ChartCard title="Snitt puls (bpm)" height={160}>
-                      {renderLine(dailyF, "average_heart_rate", showTrend)}
+                    <ChartCard title={single ? "Snitt puls per aktivitet (bpm)" : "Snitt puls (bpm)"} height={160}>
+                      {single
+                        ? renderHourBar(hourly((a) => a.average_hr ?? null), C.hrAvg, " bpm")
+                        : renderLine(dailyF, "average_heart_rate", showTrend, false, C.hrAvg)}
                     </ChartCard>
-                    <ChartCard title="Maks puls (bpm)" height={160}>
-                      {renderLine(maxHrData, "max_hr", showTrend)}
+                    <ChartCard title={single ? "Maks puls per aktivitet (bpm)" : "Maks puls (bpm)"} height={160}>
+                      {single
+                        ? renderHourBar(hourly((a) => a.max_hr ?? null), C.hrMax, " bpm")
+                        : renderLine(maxHrData, "max_hr", showTrend, false, C.hrMax)}
                     </ChartCard>
                     <ChartCard title="Trapper" height={160}>
-                      {renderBar(dailyF, "floors_climbed", showTrend)}
+                      {single
+                        ? <SingleDayNote value={dailyF[0]?.floors_climbed ?? null} />
+                        : renderBar(dailyF, "floors_climbed", showTrend, C.floors)}
                     </ChartCard>
                     <ChartCard title="Body battery (høy/lav)" height={160}>
-                      {renderLine2(dailyF, "body_battery_high", "body_battery_low", showTrend)}
+                      {single
+                        ? <SingleDayNote value={dailyF[0]?.body_battery_high ?? null} />
+                        : renderLine2(dailyF, "body_battery_high", "body_battery_low", showTrend, C.batteryHigh, C.batteryLow)}
                     </ChartCard>
                     <ChartCard title="Stress (snitt)" height={160}>
-                      {renderLine(dailyF, "stress_average", showTrend)}
+                      {single
+                        ? <SingleDayNote value={dailyF[0]?.stress_average ?? null} />
+                        : renderLine(dailyF, "stress_average", showTrend, false, C.stress)}
                     </ChartCard>
                     <ChartCard title="Intensitetsminutter" height={160}>
-                      {renderBar(intensityData, "total_intensity", showTrend)}
+                      {single
+                        ? <SingleDayNote value={(dailyF[0] ? (dailyF[0].moderate_intensity_minutes ?? 0) + (dailyF[0].vigorous_intensity_minutes ?? 0) : null)} unit=" min" />
+                        : renderBar(intensityData, "total_intensity", showTrend, C.intensity)}
                     </ChartCard>
                     <ChartCard title="Vekt (kg)" height={160}>
-                      {renderLine(dailyF, "weight_kg", showTrend, true)}
+                      {single
+                        ? <SingleDayNote value={dailyF[0]?.weight_kg ?? null} unit=" kg" />
+                        : renderLine(dailyF, "weight_kg", showTrend, true, C.weight)}
                     </ChartCard>
                     <ChartCard title="Kalorier (total/aktive)" height={160}>
-                      {renderLine2(dailyF, "total_kilocalories", "active_kilocalories", showTrend)}
+                      {single
+                        ? <SingleDayNote value={dailyF[0]?.total_kilocalories ?? null} unit=" kcal" />
+                        : renderLine2(dailyF, "total_kilocalories", "active_kilocalories", showTrend, C.caloriesTotal, C.caloriesActive)}
                     </ChartCard>
                     <ChartCard title="Søvn (timer)" height={160}>
-                      {renderBar(sleepData, "total", showTrend)}
+                      {single
+                        ? <SingleDayNote value={sleepF[0]?.total_seconds ? Number(((sleepF[0].total_seconds) / 3600).toFixed(1)) : null} unit=" t" />
+                        : renderBar(sleepData, "total", showTrend, C.sleep)}
                     </ChartCard>
                     {hasSpo2 && (
                       <ChartCard title="Pulsoksygen SpO₂ (%)" height={160}>
-                        {renderLine(spo2Data, "spo2", showTrend, true)}
+                        {single
+                          ? <SingleDayNote value={sleepF[0]?.average_spo2 ?? null} unit=" %" />
+                          : renderLine(spo2Data, "spo2", showTrend, true, C.spo2)}
                       </ChartCard>
                     )}
                     {hasHrv && (
                       <ChartCard title="Pulsvariasjon HRV (ms)" height={160}>
-                        {renderLine(hrvData, "hrv", showTrend, true)}
+                        {single
+                          ? <SingleDayNote value={sleepF[0]?.hrv_avg ?? null} unit=" ms" />
+                          : renderLine(hrvData, "hrv", showTrend, true, C.hrv)}
                       </ChartCard>
                     )}
                     {hasResp && (
                       <ChartCard title="Pusting (pust/min)" height={160}>
-                        {renderLine(respData, "resp", showTrend, true)}
+                        {single
+                          ? <SingleDayNote value={sleepF[0]?.average_respiration ?? null} unit=" /min" />
+                          : renderLine(respData, "resp", showTrend, true, C.respiration)}
                       </ChartCard>
                     )}
                   </div>
@@ -654,11 +755,11 @@ export function GarminPanel() {
                         <YAxis yAxisId="left" tick={{ fontSize: 10 }} />
                         <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 10 }} domain={[0, 100]} />
                         <Tooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", fontSize: 12 }} />
-                        <Bar yAxisId="left" dataKey="deep" stackId="a" fill="var(--chart-yellow)" />
-                        <Bar yAxisId="left" dataKey="light" stackId="a" fill="var(--chart-yellow-soft)" />
-                        <Bar yAxisId="left" dataKey="rem" stackId="a" fill="var(--chart-yellow-faint)" />
-                        <Bar yAxisId="left" dataKey="awake" stackId="a" fill="color-mix(in oklab, var(--muted-foreground) 40%, transparent)" />
-                        <Line yAxisId="right" type="monotone" dataKey="score" stroke="var(--chart-yellow)" strokeWidth={2} dot={{ r: 3 }} />
+                        <Bar yAxisId="left" dataKey="deep" stackId="a" fill={C.sleepDeep} name="Dyp" />
+                        <Bar yAxisId="left" dataKey="light" stackId="a" fill={C.sleepLight} name="Lett" />
+                        <Bar yAxisId="left" dataKey="rem" stackId="a" fill={C.sleepRem} name="REM" />
+                        <Bar yAxisId="left" dataKey="awake" stackId="a" fill={C.sleepAwake} name="Våken" />
+                        <Line yAxisId="right" type="monotone" dataKey="score" stroke={C.sleep} strokeWidth={2} dot={{ r: 3 }} name="Score" />
                       </BarChart>
                     </ChartCard>
                   )}
@@ -804,39 +905,39 @@ function ChartCard({ title, children, height = 160 }: { title: React.ReactNode; 
   );
 }
 
-function sparkBar<T extends Record<string, unknown>>(data: T[] | undefined, key: keyof T): React.ReactElement | null {
+function sparkBar<T extends Record<string, unknown>>(data: T[] | undefined, key: keyof T, color: string = C.steps): React.ReactElement | null {
   if (!data || !data.some((d) => typeof d[key] === "number" && (d[key] as number) > 0)) return null;
   return (
     <BarChart data={data as Array<Record<string, unknown>>}>
       <Tooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", fontSize: 11 }} labelFormatter={(v) => String(v).slice(5)} />
       <XAxis dataKey="day" hide />
       <YAxis hide />
-      <Bar dataKey={key as string} fill="var(--chart-yellow)" radius={[2,2,0,0]} />
+      <Bar dataKey={key as string} fill={color} radius={[2,2,0,0]} />
     </BarChart>
   );
 }
 
-function sparkLine<T extends Record<string, unknown>>(data: T[] | undefined, key: keyof T, connectNulls = false): React.ReactElement | null {
+function sparkLine<T extends Record<string, unknown>>(data: T[] | undefined, key: keyof T, connectNulls = false, color: string = C.hr): React.ReactElement | null {
   if (!data || !data.some((d) => typeof d[key] === "number" && (d[key] as number) > 0)) return null;
   return (
     <LineChart data={data as Array<Record<string, unknown>>}>
       <Tooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", fontSize: 11 }} labelFormatter={(v) => String(v).slice(5)} />
       <XAxis dataKey="day" hide />
       <YAxis hide domain={["auto", "auto"]} />
-      <Line type="monotone" dataKey={key as string} stroke="var(--chart-yellow)" strokeWidth={1.5} dot={false} connectNulls={connectNulls} />
+      <Line type="monotone" dataKey={key as string} stroke={color} strokeWidth={1.5} dot={false} connectNulls={connectNulls} />
     </LineChart>
   );
 }
 
-function sparkLine2<T extends Record<string, unknown>>(data: T[] | undefined, k1: keyof T, k2: keyof T): React.ReactElement | null {
+function sparkLine2<T extends Record<string, unknown>>(data: T[] | undefined, k1: keyof T, k2: keyof T, color1: string = C.batteryHigh, color2: string = C.batteryLow): React.ReactElement | null {
   if (!data || !data.some((d) => typeof d[k1] === "number" || typeof d[k2] === "number")) return null;
   return (
     <LineChart data={data as Array<Record<string, unknown>>}>
       <Tooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", fontSize: 11 }} labelFormatter={(v) => String(v).slice(5)} />
       <XAxis dataKey="day" hide />
       <YAxis hide domain={["auto", "auto"]} />
-      <Line type="monotone" dataKey={k1 as string} stroke="var(--chart-yellow)" strokeWidth={1.5} dot={false} />
-      <Line type="monotone" dataKey={k2 as string} stroke="var(--chart-yellow-soft)" strokeWidth={1.5} dot={false} />
+      <Line type="monotone" dataKey={k1 as string} stroke={color1} strokeWidth={1.5} dot={false} />
+      <Line type="monotone" dataKey={k2 as string} stroke={color2} strokeWidth={1.5} dot={false} />
     </LineChart>
   );
 }
