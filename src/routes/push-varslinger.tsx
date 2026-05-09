@@ -51,15 +51,37 @@ type Counts = {
 };
 
 const TOC_ITEMS: { id: string; label: string; emoji: string }[] = [
+  { id: "sec-kommende", label: "Kommende push", emoji: "📨" },
   { id: "sec-personlig", label: "Personlig", emoji: "✦" },
+  { id: "sec-meny", label: "Meny", emoji: "🧭" },
+  { id: "sec-snarveier", label: "Snarveier", emoji: "⭐" },
+  { id: "sec-rom", label: "Favoritt-rom", emoji: "🏠" },
+  { id: "sec-scener", label: "Lys-scener", emoji: "🎬" },
+  { id: "sec-scheduling", label: "Push-tidsplan", emoji: "⏰" },
+  { id: "sec-tibber", label: "Tibber-cron", emoji: "⚡" },
   { id: "sec-farevarsel", label: "Farevarsel", emoji: "⚠️" },
   { id: "sec-uv", label: "UV / Solkrem", emoji: "🧴" },
-  { id: "sec-vaer", label: "Vær", emoji: "🪶" },
+  { id: "sec-vaer", label: "Vær push", emoji: "🪶" },
   { id: "sec-lys", label: "Lys på", emoji: "💡" },
   { id: "sec-post", label: "Posten", emoji: "📬" },
   { id: "sec-garmin", label: "Garmin", emoji: "⌚" },
   { id: "sec-innlogging", label: "Innlogging", emoji: "🔐" },
-  { id: "sec-kategorier", label: "Oversikt", emoji: "📋" },
+  { id: "sec-agenda", label: "Agenda", emoji: "📅" },
+  { id: "sec-bursdager", label: "Bursdager", emoji: "🎂" },
+  { id: "sec-bursdager-toggle", label: "Bursd. av/på", emoji: "🔔" },
+  { id: "sec-vaervarsler", label: "Værvarsler", emoji: "🌦️" },
+  { id: "sec-vaerprefs", label: "Vær av/på", emoji: "🔔" },
+  { id: "sec-uvvarsler", label: "UV-varsler", emoji: "☀️" },
+  { id: "sec-uvprefs", label: "UV av/på", emoji: "🔔" },
+  { id: "sec-soppel", label: "Søppel", emoji: "🗑️" },
+  { id: "sec-soppelprefs", label: "Søppel av/på", emoji: "🔔" },
+  { id: "sec-lyspaa", label: "Lys står på", emoji: "💡" },
+  { id: "sec-lyspaaprefs", label: "Lys av/på", emoji: "🔔" },
+  { id: "sec-hytta", label: "Hytta huskeliste", emoji: "📜" },
+  { id: "sec-garanti", label: "Garanti", emoji: "🛡️" },
+  { id: "sec-garantiprefs", label: "Garanti pr bruker", emoji: "👥" },
+  { id: "sec-abonnementer", label: "Abonnement", emoji: "🔔" },
+  { id: "sec-abonnenter", label: "Enheter", emoji: "📱" },
 ];
 
 function SettingsTOC() {
@@ -67,9 +89,9 @@ function SettingsTOC() {
     <section className="container mx-auto px-4 pt-4">
       <nav aria-label="Innholdsfortegnelse" className="panel rounded-lg p-3">
         <h2 className="text-[10px] font-semibold uppercase tracking-[0.25em] text-muted-foreground mb-2">
-          Innholdsfortegnelse
+          Innholdsfortegnelse — alle innstillinger og bokser
         </h2>
-        <ul className="grid grid-cols-3 gap-2">
+        <ul className="grid grid-cols-2 sm:grid-cols-3 gap-2">
           {TOC_ITEMS.map((it) => (
             <li key={it.id}>
               <a
@@ -105,7 +127,9 @@ function PushSettingsPage() {
 
       <SettingsTOC />
 
-      <UpcomingPushPanel />
+      <section id="sec-kommende" className="scroll-mt-24">
+        <UpcomingPushPanel />
+      </section>
 
       <section id="sec-personlig" className="container mx-auto px-4 pt-4 scroll-mt-24">
         <h2 className="text-display text-primary text-sm tracking-[0.3em] uppercase mb-2">
@@ -115,12 +139,12 @@ function PushSettingsPage() {
           Personlige innstillinger for menyen, snarveier, favoritt-rom og lys-scener — knyttet til deg som push-mottaker.
         </p>
       </section>
-      <MenuPreferencesPanel />
-      <FavoritesManagerPanel />
-      <FavoriteZonesPanel />
-      <LightScenesPanel />
-      <PushSchedulingSettings />
-      <TibberCronStatusPanel />
+      <section id="sec-meny" className="scroll-mt-24"><MenuPreferencesPanel /></section>
+      <section id="sec-snarveier" className="scroll-mt-24"><FavoritesManagerPanel /></section>
+      <section id="sec-rom" className="scroll-mt-24"><FavoriteZonesPanel /></section>
+      <section id="sec-scener" className="scroll-mt-24"><LightScenesPanel /></section>
+      <section id="sec-scheduling" className="scroll-mt-24"><PushSchedulingSettings /></section>
+      <section id="sec-tibber" className="scroll-mt-24"><TibberCronStatusPanel /></section>
 
       <section id="sec-farevarsel" className="container mx-auto px-4 pb-4 scroll-mt-24">
         <div className="panel rounded-lg p-4 border border-orange-500/40">
@@ -186,106 +210,138 @@ function PushSettingsPage() {
       </section>
 
 
-      <section id="sec-kategorier" className="container mx-auto px-4 pb-12 grid md:grid-cols-2 gap-4 scroll-mt-24">
-        <CategoryCard
-          icon={Calendar}
-          title="Agenda-meldinger"
-          editPath="/agenda"
-          count={counts ? `${counts.agendaPending} planlagte` : null}
-          description="Korte meldinger med dato, tid og varsling før hendelsen."
-          editable
-        >
-          <p className="text-xs text-muted-foreground">
-            Hver melding har egen mottaker og varsel-tid (5 min – 1 time før). Rediger på agenda-siden.
-          </p>
-        </CategoryCard>
+      <div className="container mx-auto px-4 pb-12 grid md:grid-cols-2 gap-4">
+        <section id="sec-agenda" className="contents scroll-mt-24">
+          <CategoryCard
+            icon={Calendar}
+            title="Agenda-meldinger"
+            editPath="/agenda"
+            count={counts ? `${counts.agendaPending} planlagte` : null}
+            description="Korte meldinger med dato, tid og varsling før hendelsen."
+            editable
+          >
+            <p className="text-xs text-muted-foreground">
+              Hver melding har egen mottaker og varsel-tid (5 min – 1 time før). Rediger på agenda-siden.
+            </p>
+          </CategoryCard>
+        </section>
 
-        <CategoryCard
-          icon={Cake}
-          title="Bursdager"
-          editPath="/agenda"
-          count={counts ? `${counts.birthdaysOn} av ${counts.birthdaysTotal} aktive` : null}
-          description="Sender push kl 08:00 Oslo-tid på selve bursdagen."
-          editable
-        />
+        <section id="sec-bursdager" className="contents scroll-mt-24">
+          <CategoryCard
+            icon={Cake}
+            title="Bursdager"
+            editPath="/agenda"
+            count={counts ? `${counts.birthdaysOn} av ${counts.birthdaysTotal} aktive` : null}
+            description="Sender push kl 08:00 Oslo-tid på selve bursdagen."
+            editable
+          />
+        </section>
 
-        <BirthdaysQuickPanel />
+        <section id="sec-bursdager-toggle" className="contents scroll-mt-24">
+          <BirthdaysQuickPanel />
+        </section>
 
-        <CategoryCard
-          icon={CloudSun}
-          title="Værvarsler"
-          editPath="/var"
-          count={counts ? `${counts.weatherOn} av ${counts.weatherTotal} aktive` : null}
-          description="Påminnelser om regn, snø, vind, kulde m.m. til valgt tid om morgenen."
-          editable
-        />
+        <section id="sec-vaervarsler" className="contents scroll-mt-24">
+          <CategoryCard
+            icon={CloudSun}
+            title="Værvarsler"
+            editPath="/var"
+            count={counts ? `${counts.weatherOn} av ${counts.weatherTotal} aktive` : null}
+            description="Påminnelser om regn, snø, vind, kulde m.m. til valgt tid om morgenen."
+            editable
+          />
+        </section>
 
-        <WeatherPrefsList />
+        <section id="sec-vaerprefs" className="contents scroll-mt-24">
+          <WeatherPrefsList />
+        </section>
 
-        <CategoryCard
-          icon={Sun}
-          title="UV-varsler"
-          editPath="/var"
-          count={counts ? `${counts.uvOn} av ${counts.uvTotal} aktive` : null}
-          description="Varsler når UV-indeks når 3, 6 og 8 — én gang per nivå per dag."
-          editable
-        />
+        <section id="sec-uvvarsler" className="contents scroll-mt-24">
+          <CategoryCard
+            icon={Sun}
+            title="UV-varsler"
+            editPath="/var"
+            count={counts ? `${counts.uvOn} av ${counts.uvTotal} aktive` : null}
+            description="Varsler når UV-indeks når 3, 6 og 8 — én gang per nivå per dag."
+            editable
+          />
+        </section>
 
-        <UvPrefsList />
+        <section id="sec-uvprefs" className="contents scroll-mt-24">
+          <UvPrefsList />
+        </section>
 
-        <CategoryCard
-          icon={Trash2}
-          title="Søppeltømming"
-          editPath="/agenda"
-          count={counts ? `${counts.garbageOn} av ${counts.garbageTotal} fraksjoner` : null}
-          description="Varsler dagen før (eller flere dager før) tømming, til valgt klokkeslett."
-          editable
-        />
+        <section id="sec-soppel" className="contents scroll-mt-24">
+          <CategoryCard
+            icon={Trash2}
+            title="Søppeltømming"
+            editPath="/agenda"
+            count={counts ? `${counts.garbageOn} av ${counts.garbageTotal} fraksjoner` : null}
+            description="Varsler dagen før (eller flere dager før) tømming, til valgt klokkeslett."
+            editable
+          />
+        </section>
 
-        <GarbagePrefsList />
+        <section id="sec-soppelprefs" className="contents scroll-mt-24">
+          <GarbagePrefsList />
+        </section>
 
-        <CategoryCard
-          icon={Lightbulb}
-          title="Lys står på lenge"
-          editPath="/smarthus"
-          count={counts ? `${counts.lightOn} av ${counts.lightTotal} aktive` : null}
-          description="Varsler når lys i en sone har stått på uten bevegelse en stund."
-          editable
-        />
+        <section id="sec-lyspaa" className="contents scroll-mt-24">
+          <CategoryCard
+            icon={Lightbulb}
+            title="Lys står på lenge"
+            editPath="/smarthus"
+            count={counts ? `${counts.lightOn} av ${counts.lightTotal} aktive` : null}
+            description="Varsler når lys i en sone har stått på uten bevegelse en stund."
+            editable
+          />
+        </section>
 
-        <LightIdlePrefsList />
+        <section id="sec-lyspaaprefs" className="contents scroll-mt-24">
+          <LightIdlePrefsList />
+        </section>
 
-        <CategoryCard
-          icon={ScrollText}
-          title="Hytta — huskeliste"
-          editPath="/hytta"
-          count={counts ? `${counts.hyttaScheduled} planlagte påminnelser` : null}
-          description="Påminnelse om åpne punkter på hyttas huskeliste til valgt tidspunkt."
-          editable
-        />
+        <section id="sec-hytta" className="contents scroll-mt-24">
+          <CategoryCard
+            icon={ScrollText}
+            title="Hytta — huskeliste"
+            editPath="/hytta"
+            count={counts ? `${counts.hyttaScheduled} planlagte påminnelser` : null}
+            description="Påminnelse om åpne punkter på hyttas huskeliste til valgt tidspunkt."
+            editable
+          />
+        </section>
 
-        <CategoryCard
-          icon={ShieldCheck}
-          title="Garanti — kvitteringer"
-          editPath="/kvitteringer"
-          count={counts ? `${counts.warrantyPending} kvitteringer venter` : null}
-          description="Hardkodet: sender push 30, 60 og 90 dager før garantien (1 år) går ut."
-          editable={false}
-        />
+        <section id="sec-garanti" className="contents scroll-mt-24">
+          <CategoryCard
+            icon={ShieldCheck}
+            title="Garanti — kvitteringer"
+            editPath="/kvitteringer"
+            count={counts ? `${counts.warrantyPending} kvitteringer venter` : null}
+            description="Hardkodet: sender push 30, 60 og 90 dager før garantien (1 år) går ut."
+            editable={false}
+          />
+        </section>
 
-        <WarrantyGlobalPrefsPanel />
+        <section id="sec-garantiprefs" className="contents scroll-mt-24">
+          <WarrantyGlobalPrefsPanel />
+        </section>
 
-        <CategoryCard
-          icon={Bell}
-          title="Push-abonnementer"
-          editPath="/agenda"
-          count={counts ? `${counts.subscribers} enheter` : null}
-          description="Enheter som er registrert for å motta push fra huset."
-          editable
-        />
+        <section id="sec-abonnementer" className="contents scroll-mt-24">
+          <CategoryCard
+            icon={Bell}
+            title="Push-abonnementer"
+            editPath="/agenda"
+            count={counts ? `${counts.subscribers} enheter` : null}
+            description="Enheter som er registrert for å motta push fra huset."
+            editable
+          />
+        </section>
 
-        <SubscribersListPanel />
-      </section>
+        <section id="sec-abonnenter" className="contents scroll-mt-24">
+          <SubscribersListPanel />
+        </section>
+      </div>
     </PageShell>
   );
 }
