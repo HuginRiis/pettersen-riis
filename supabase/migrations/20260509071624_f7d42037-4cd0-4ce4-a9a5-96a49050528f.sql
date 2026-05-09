@@ -1,0 +1,1 @@
+ALTER TABLE public.garmin_sleep ADD COLUMN IF NOT EXISTS hrv_avg numeric;

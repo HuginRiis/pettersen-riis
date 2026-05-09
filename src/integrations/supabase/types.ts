@@ -532,6 +532,7 @@ export type Database = {
           created_at: string
           day: string
           deep_seconds: number | null
+          hrv_avg: number | null
           id: string
           light_seconds: number | null
           raw: Json | null
@@ -549,6 +550,7 @@ export type Database = {
           created_at?: string
           day: string
           deep_seconds?: number | null
+          hrv_avg?: number | null
           id?: string
           light_seconds?: number | null
           raw?: Json | null
@@ -566,6 +568,7 @@ export type Database = {
           created_at?: string
           day?: string
           deep_seconds?: number | null
+          hrv_avg?: number | null
           id?: string
           light_seconds?: number | null
           raw?: Json | null
