@@ -192,11 +192,11 @@ export async function logLoginAttempt(success: boolean, who?: string | null) {
       browser: uaInfo.browser,
       who: sanitizedWho,
     });
-    // Fire-and-forget push notifications to subscribers who want
-    // login alerts. Never let this break the login flow.
+    // AWAIT push delivery — workers terminate background promises after
+    // the response is returned, so fire-and-forget silently drops pushes.
     try {
       const { notifyLoginAttempt } = await import("./login-push.server");
-      void notifyLoginAttempt({
+      await notifyLoginAttempt({
         success,
         who: sanitizedWho,
         ip: geo.ip,
@@ -206,8 +206,8 @@ export async function logLoginAttempt(success: boolean, who?: string | null) {
         browser: uaInfo.browser,
         deviceType: uaInfo.deviceType,
       });
-    } catch {
-      /* ignore */
+    } catch (err) {
+      console.warn("[login-push] notify wrapper failed", err);
     }
   } catch {
     // never fail login flow because of analytics
