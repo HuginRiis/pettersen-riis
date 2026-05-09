@@ -645,7 +645,6 @@ export function GarminPanel() {
                       </ChartCard>
                     )}
                   </div>
-                  </div>
 
                   {sleepData.length > 0 && (
                     <ChartCard title={<span className="flex items-center gap-1"><Moon size={12} /> Søvnfaser + score</span>}>
