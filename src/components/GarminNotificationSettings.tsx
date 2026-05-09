@@ -25,7 +25,13 @@ type Pref = {
   low_sleep_hours: number;
   notify_high_resting_hr: boolean;
   high_rhr_bpm: number;
+  garmin_owner: "arne" | "rebekka";
 };
+
+const OWNER_OPTIONS = [
+  { value: "arne", label: "Arne" },
+  { value: "rebekka", label: "Rebekka" },
+] as const;
 
 export function GarminNotificationSettings() {
   const [prefs, setPrefs] = useState<Pref[]>([]);
@@ -36,7 +42,7 @@ export function GarminNotificationSettings() {
   const load = async () => {
     const { data, error } = await supabase
       .from("garmin_notification_prefs" as never)
-      .select("id, recipient, sender_label, enabled, notify_daily, daily_time, notify_step_goal, notify_low_sleep, low_sleep_hours, notify_high_resting_hr, high_rhr_bpm")
+      .select("id, recipient, sender_label, enabled, notify_daily, daily_time, notify_step_goal, notify_low_sleep, low_sleep_hours, notify_high_resting_hr, high_rhr_bpm, garmin_owner")
       .order("created_at", { ascending: true });
     if (error) toast.error("Kunne ikke laste regler");
     else setPrefs((data ?? []) as unknown as Pref[]);
@@ -66,7 +72,7 @@ export function GarminNotificationSettings() {
   const add = async () => {
     const { error } = await supabase
       .from("garmin_notification_prefs" as never)
-      .insert({ recipient: "Arne", sender_label: "Garmin", enabled: true, notify_daily: true, daily_time: "07:30" } as never);
+      .insert({ recipient: "Arne", sender_label: "Garmin", enabled: true, notify_daily: true, daily_time: "07:30", garmin_owner: "arne" } as never);
     if (error) toast.error("Kunne ikke opprette");
     else { toast.success("Ny regel opprettet"); void load(); }
   };
