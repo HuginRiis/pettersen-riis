@@ -60,6 +60,94 @@ function stressLevel(n?: number | null): string {
   return "Høyt";
 }
 
+type ChartPeriod = "yesterday" | "thisWeek" | "lastWeek" | "last30" | "thisMonth";
+
+function filterPeriod<T extends { day: string }>(arr: T[] | undefined, period: ChartPeriod): T[] {
+  if (!arr || !arr.length) return [];
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const fmt = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  if (period === "yesterday") {
+    const y = new Date(today); y.setDate(y.getDate() - 1);
+    return arr.filter((x) => x.day === fmt(y));
+  }
+  if (period === "thisWeek") {
+    const dow = (today.getDay() + 6) % 7;
+    const start = new Date(today); start.setDate(start.getDate() - dow);
+    return arr.filter((x) => x.day >= fmt(start));
+  }
+  if (period === "lastWeek") {
+    const dow = (today.getDay() + 6) % 7;
+    const start = new Date(today); start.setDate(start.getDate() - dow - 7);
+    const end = new Date(start); end.setDate(end.getDate() + 6);
+    return arr.filter((x) => x.day >= fmt(start) && x.day <= fmt(end));
+  }
+  if (period === "thisMonth") {
+    const start = new Date(today.getFullYear(), today.getMonth(), 1);
+    return arr.filter((x) => x.day >= fmt(start));
+  }
+  const start = new Date(today); start.setDate(start.getDate() - 29);
+  return arr.filter((x) => x.day >= fmt(start));
+}
+
+function withTrend<T extends Record<string, unknown>>(data: T[], key: string): Array<T & { _trend: number | null }> {
+  const pts: Array<{ i: number; v: number }> = [];
+  data.forEach((d, i) => { const v = d[key]; if (typeof v === "number") pts.push({ i, v }); });
+  if (pts.length < 2) return data.map((d) => ({ ...d, _trend: null }));
+  const n = pts.length;
+  const sx = pts.reduce((a, p) => a + p.i, 0);
+  const sy = pts.reduce((a, p) => a + p.v, 0);
+  const sxy = pts.reduce((a, p) => a + p.i * p.v, 0);
+  const sxx = pts.reduce((a, p) => a + p.i * p.i, 0);
+  const denom = n * sxx - sx * sx;
+  if (denom === 0) return data.map((d) => ({ ...d, _trend: null }));
+  const slope = (n * sxy - sx * sy) / denom;
+  const intercept = (sy - slope * sx) / n;
+  return data.map((d, i) => ({ ...d, _trend: slope * i + intercept }));
+}
+
+function renderBar<T extends Record<string, unknown> & { day?: string }>(data: T[], key: string, showTrend: boolean): React.ReactElement {
+  const d = showTrend ? withTrend(data, key) : data;
+  return (
+    <BarChart data={d as Array<Record<string, unknown>>}>
+      <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+      <XAxis dataKey="day" tick={{ fontSize: 10 }} tickFormatter={(v: string) => String(v).slice(5)} />
+      <YAxis tick={{ fontSize: 10 }} />
+      <Tooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", fontSize: 12 }} />
+      <Bar dataKey={key} fill="var(--chart-yellow)" radius={[2, 2, 0, 0]} />
+      {showTrend && <Line type="monotone" dataKey="_trend" stroke="var(--chart-yellow-soft)" strokeWidth={2} strokeDasharray="4 3" dot={false} />}
+    </BarChart>
+  );
+}
+
+function renderLine<T extends Record<string, unknown> & { day?: string }>(data: T[], key: string, showTrend: boolean, connectNulls = false): React.ReactElement {
+  const d = showTrend ? withTrend(data, key) : data;
+  return (
+    <LineChart data={d as Array<Record<string, unknown>>}>
+      <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+      <XAxis dataKey="day" tick={{ fontSize: 10 }} tickFormatter={(v: string) => String(v).slice(5)} />
+      <YAxis tick={{ fontSize: 10 }} domain={["auto", "auto"]} />
+      <Tooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", fontSize: 12 }} />
+      <Line type="monotone" dataKey={key} stroke="var(--chart-yellow)" strokeWidth={2} dot={{ r: 2 }} connectNulls={connectNulls} />
+      {showTrend && <Line type="monotone" dataKey="_trend" stroke="var(--chart-yellow-soft)" strokeWidth={2} strokeDasharray="4 3" dot={false} />}
+    </LineChart>
+  );
+}
+
+function renderLine2<T extends Record<string, unknown> & { day?: string }>(data: T[], k1: string, k2: string, showTrend: boolean): React.ReactElement {
+  const d = showTrend ? withTrend(data, k1) : data;
+  return (
+    <LineChart data={d as Array<Record<string, unknown>>}>
+      <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+      <XAxis dataKey="day" tick={{ fontSize: 10 }} tickFormatter={(v: string) => String(v).slice(5)} />
+      <YAxis tick={{ fontSize: 10 }} domain={["auto", "auto"]} />
+      <Tooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", fontSize: 12 }} />
+      <Line type="monotone" dataKey={k1} stroke="var(--chart-yellow)" strokeWidth={2} dot={false} />
+      <Line type="monotone" dataKey={k2} stroke="var(--chart-yellow-soft)" strokeWidth={2} dot={false} />
+      {showTrend && <Line type="monotone" dataKey="_trend" stroke="var(--chart-yellow-faint)" strokeWidth={2} strokeDasharray="4 3" dot={false} />}
+    </LineChart>
+  );
+}
+
 export function GarminPanel() {
   const fetchOverview = useServerFn(getGarminOverview);
   const loginFn = useServerFn(garminLoginNow);
