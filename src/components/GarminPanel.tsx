@@ -24,9 +24,10 @@ type Activity = {
   calories: number | null; average_hr: number | null; max_hr: number | null;
 };
 type Sleep = { day: string; total_seconds: number | null; deep_seconds: number | null; light_seconds: number | null; rem_seconds: number | null; awake_seconds: number | null; sleep_score: number | null; average_spo2: number | null; average_respiration: number | null; hrv_avg: number | null };
+type Intraday = { day: string; hour: number; heart_rate_avg: number | null; heart_rate_max: number | null; stress_avg: number | null; body_battery: number | null };
 type Overview = {
   status: { connected: boolean; username: string | null; expires_at: string | null; last_login_at: string | null; mfa_pending?: boolean };
-  daily: Daily[]; activities: Activity[]; sleep: Sleep[];
+  daily: Daily[]; activities: Activity[]; sleep: Sleep[]; intraday?: Intraday[];
   lastSync: { ran_at: string; ok: boolean; daily_count: number; activities_count: number; sleep_count: number; error: string | null } | null;
 };
 type GarminLoginResult =
@@ -645,8 +646,20 @@ export function GarminPanel() {
                 ? (() => { const d = new Date(); d.setHours(0,0,0,0); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; })()
                 : (() => { const d = new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate()-1); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; })();
 
-              // Aktiviteter for valgt enkeltdag — brukes til time-for-time puls
+              // Aktiviteter for valgt enkeltdag — brukes til time-for-time puls (snitt under aktivitet)
               const dayActs = single ? (data.activities ?? []).filter((a) => a.start_time_local.slice(0, 10) === dayKey) : [];
+              const dayIntraday = single ? (data.intraday ?? []).filter((x) => x.day === dayKey) : [];
+              const intradayBuckets = (pick: (x: Intraday) => number | null) => {
+                const out: Array<{ hour: number; value: number | null }> = Array.from({ length: 24 }, (_, h) => ({ hour: h, value: null }));
+                for (const x of dayIntraday) {
+                  const v = pick(x);
+                  if (v != null) out[x.hour].value = v;
+                }
+                return out;
+              };
+              const hasIntradayHr = dayIntraday.some((x) => x.heart_rate_avg != null);
+              const hasIntradayStress = dayIntraday.some((x) => x.stress_avg != null);
+              const hasIntradayBb = dayIntraday.some((x) => x.body_battery != null);
               const hourly = (pickHr: (a: Activity) => number | null) => {
                 const buckets: Array<{ hour: number; value: number | null }> = Array.from({ length: 24 }, (_, h) => ({ hour: h, value: null }));
                 for (const a of dayActs) {
@@ -661,7 +674,7 @@ export function GarminPanel() {
               };
               const SingleDayNote = ({ value, unit = "" }: { value: number | null | undefined; unit?: string }) => (
                 <div className="h-full flex items-center justify-center text-[11px] text-muted-foreground italic px-2 text-center">
-                  {value != null ? <>Dagsverdi: <span className="text-foreground tabular-nums not-italic font-medium">{value}{unit}</span> · timesoppløsning krever utvidet Garmin-synk</> : "Ingen data for valgt dag"}
+                  {value != null ? <>Dagsverdi: <span className="text-foreground tabular-nums not-italic font-medium">{value}{unit}</span></> : "Ingen data for valgt dag"}
                 </div>
               );
 
@@ -679,14 +692,18 @@ export function GarminPanel() {
                         ? <SingleDayNote value={dailyF[0]?.resting_heart_rate ?? null} unit=" bpm" />
                         : renderLine(dailyF, "resting_heart_rate", showTrend, false, C.hr)}
                     </ChartCard>
-                    <ChartCard title={single ? "Snitt puls per aktivitet (bpm)" : "Snitt puls (bpm)"} height={160}>
+                    <ChartCard title={single ? "Puls (snitt per time)" : "Snitt puls (bpm)"} height={160}>
                       {single
-                        ? renderHourBar(hourly((a) => a.average_hr ?? null), C.hrAvg, " bpm")
+                        ? (hasIntradayHr
+                            ? renderHourBar(intradayBuckets((x) => x.heart_rate_avg), C.hrAvg, " bpm")
+                            : renderHourBar(hourly((a) => a.average_hr ?? null), C.hrAvg, " bpm"))
                         : renderLine(dailyF, "average_heart_rate", showTrend, false, C.hrAvg)}
                     </ChartCard>
-                    <ChartCard title={single ? "Maks puls per aktivitet (bpm)" : "Maks puls (bpm)"} height={160}>
+                    <ChartCard title={single ? "Maks puls (per time)" : "Maks puls (bpm)"} height={160}>
                       {single
-                        ? renderHourBar(hourly((a) => a.max_hr ?? null), C.hrMax, " bpm")
+                        ? (hasIntradayHr
+                            ? renderHourBar(intradayBuckets((x) => x.heart_rate_max), C.hrMax, " bpm")
+                            : renderHourBar(hourly((a) => a.max_hr ?? null), C.hrMax, " bpm"))
                         : renderLine(maxHrData, "max_hr", showTrend, false, C.hrMax)}
                     </ChartCard>
                     <ChartCard title="Trapper" height={160}>
@@ -694,14 +711,18 @@ export function GarminPanel() {
                         ? <SingleDayNote value={dailyF[0]?.floors_climbed ?? null} />
                         : renderBar(dailyF, "floors_climbed", showTrend, C.floors)}
                     </ChartCard>
-                    <ChartCard title="Body battery (høy/lav)" height={160}>
+                    <ChartCard title={single ? "Body battery (per time)" : "Body battery (høy/lav)"} height={160}>
                       {single
-                        ? <SingleDayNote value={dailyF[0]?.body_battery_high ?? null} />
+                        ? (hasIntradayBb
+                            ? renderHourBar(intradayBuckets((x) => x.body_battery), C.batteryHigh, "")
+                            : <SingleDayNote value={dailyF[0]?.body_battery_high ?? null} />)
                         : renderLine2(dailyF, "body_battery_high", "body_battery_low", showTrend, C.batteryHigh, C.batteryLow)}
                     </ChartCard>
-                    <ChartCard title="Stress (snitt)" height={160}>
+                    <ChartCard title={single ? "Stress (per time)" : "Stress (snitt)"} height={160}>
                       {single
-                        ? <SingleDayNote value={dailyF[0]?.stress_average ?? null} />
+                        ? (hasIntradayStress
+                            ? renderHourBar(intradayBuckets((x) => x.stress_avg), C.stress, "")
+                            : <SingleDayNote value={dailyF[0]?.stress_average ?? null} />)
                         : renderLine(dailyF, "stress_average", showTrend, false, C.stress)}
                     </ChartCard>
                     <ChartCard title="Intensitetsminutter" height={160}>

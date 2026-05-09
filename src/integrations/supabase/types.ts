@@ -473,6 +473,36 @@ export type Database = {
         }
         Relationships: []
       }
+      garmin_intraday: {
+        Row: {
+          body_battery: number | null
+          day: string
+          heart_rate_avg: number | null
+          heart_rate_max: number | null
+          hour: number
+          stress_avg: number | null
+          updated_at: string
+        }
+        Insert: {
+          body_battery?: number | null
+          day: string
+          heart_rate_avg?: number | null
+          heart_rate_max?: number | null
+          hour: number
+          stress_avg?: number | null
+          updated_at?: string
+        }
+        Update: {
+          body_battery?: number | null
+          day?: string
+          heart_rate_avg?: number | null
+          heart_rate_max?: number | null
+          hour?: number
+          stress_avg?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       garmin_notification_prefs: {
         Row: {
           created_at: string
