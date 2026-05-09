@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { GARMIN_OWNERS, type GarminOwner } from "./garmin.server";
+import { GARMIN_OWNERS, type GarminOwner } from "./garmin.shared";
 
 const ownerSchema = z.object({ owner: z.enum(["arne", "rebekka"]).default("arne") });
 

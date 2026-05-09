@@ -26,8 +26,8 @@ const SIGNIN_PARAMS: Record<string, string> = {
   redirectAfterAccountCreationUrl: SSO_EMBED,
 };
 
-export type GarminOwner = "arne" | "rebekka";
-export const GARMIN_OWNERS: GarminOwner[] = ["arne", "rebekka"];
+export { GARMIN_OWNERS, type GarminOwner } from "./garmin.shared";
+import type { GarminOwner } from "./garmin.shared";
 
 function envCreds(owner: GarminOwner): { email: string; password: string } {
   const upper = owner.toUpperCase(); // ARNE / REBEKKA
