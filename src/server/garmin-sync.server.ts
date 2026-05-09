@@ -251,16 +251,18 @@ export async function syncAll(trigger: string): Promise<{
   daily: number;
   activities: number;
   sleep: number;
+  intraday: number;
   duration_ms: number;
   error?: string;
 }> {
   const t0 = Date.now();
-  let daily = 0, activities = 0, sleep = 0;
+  let daily = 0, activities = 0, sleep = 0, intraday = 0;
   let error: string | undefined;
   try {
     daily = await syncDaily(30);
     activities = await syncActivities(50);
     sleep = await syncSleep(14);
+    intraday = await syncIntraday(1); // i dag + i går (timesoppløsning)
   } catch (e) {
     error = (e as Error).message;
   }
@@ -269,5 +271,5 @@ export async function syncAll(trigger: string): Promise<{
     trigger, ok: !error, daily_count: daily, activities_count: activities,
     sleep_count: sleep, duration_ms, error: error ?? null,
   });
-  return { ok: !error, daily, activities, sleep, duration_ms, error };
+  return { ok: !error, daily, activities, sleep, intraday, duration_ms, error };
 }
