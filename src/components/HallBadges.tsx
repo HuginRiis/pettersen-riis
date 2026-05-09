@@ -500,6 +500,7 @@ export function UtgangsdorenLockBadge({ inline }: { inline?: boolean } = {}) {
         const r = await getDoorsLocksSnapshot({ data: {} });
         if (cancelled || !r.ok) return;
         const found =
+          r.locks.find((l) => l.brand === "verisure") ??
           r.locks.find((l) => l.name.toLowerCase().includes("utgangsdør")) ??
           r.locks.find((l) => l.name.toLowerCase().includes("utgang")) ??
           null;
