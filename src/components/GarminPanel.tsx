@@ -60,12 +60,41 @@ function stressLevel(n?: number | null): string {
   return "Høyt";
 }
 
-type ChartPeriod = "yesterday" | "thisWeek" | "lastWeek" | "last30" | "thisMonth";
+type ChartPeriod = "today" | "yesterday" | "thisWeek" | "lastWeek" | "last30" | "thisMonth";
+
+// Garmin-aktige farger per metrikk (matcher Connect-grafene)
+const C = {
+  steps: "#4FB3F0",
+  hr: "#E84855",
+  hrAvg: "#FF6F61",
+  hrMax: "#C81D25",
+  floors: "#F08C2E",
+  batteryHigh: "#2EBF6F",
+  batteryLow: "#F4B61A",
+  stress: "#F4B61A",
+  intensity: "#7DCB3D",
+  weight: "#9CA3AF",
+  sleepDeep: "#1F3A93",
+  sleepLight: "#5B6CE0",
+  sleepRem: "#9C5BD9",
+  sleepAwake: "#F08C2E",
+  sleep: "#5B6CE0",
+  spo2: "#3E8FE0",
+  hrv: "#9C5BD9",
+  respiration: "#3DB7C9",
+  caloriesTotal: "#E8743C",
+  caloriesActive: "#F4B61A",
+} as const;
+
+function isSingleDay(p: ChartPeriod) { return p === "today" || p === "yesterday"; }
 
 function filterPeriod<T extends { day: string }>(arr: T[] | undefined, period: ChartPeriod): T[] {
   if (!arr || !arr.length) return [];
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const fmt = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  if (period === "today") {
+    return arr.filter((x) => x.day === fmt(today));
+  }
   if (period === "yesterday") {
     const y = new Date(today); y.setDate(y.getDate() - 1);
     return arr.filter((x) => x.day === fmt(y));
