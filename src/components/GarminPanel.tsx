@@ -23,7 +23,7 @@ type Activity = {
   start_time_local: string; duration_seconds: number | null; distance_meters: number | null;
   calories: number | null; average_hr: number | null; max_hr: number | null;
 };
-type Sleep = { day: string; total_seconds: number | null; deep_seconds: number | null; light_seconds: number | null; rem_seconds: number | null; awake_seconds: number | null; sleep_score: number | null };
+type Sleep = { day: string; total_seconds: number | null; deep_seconds: number | null; light_seconds: number | null; rem_seconds: number | null; awake_seconds: number | null; sleep_score: number | null; average_spo2: number | null; average_respiration: number | null; hrv_avg: number | null };
 type Overview = {
   status: { connected: boolean; username: string | null; expires_at: string | null; last_login_at: string | null; mfa_pending?: boolean };
   daily: Daily[]; activities: Activity[]; sleep: Sleep[];
