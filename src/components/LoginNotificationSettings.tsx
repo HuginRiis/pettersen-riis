@@ -138,6 +138,10 @@ export function LoginNotificationSettings() {
       <Button size="sm" variant="outline" onClick={add}>
         <Plus className="h-3.5 w-3.5 mr-1" /> Ny innloggings-regel
       </Button>
+
+      <div className="pt-2 border-t border-border/40">
+        <LoginAttemptsLog />
+      </div>
     </div>
   );
 }
