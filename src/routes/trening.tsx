@@ -243,7 +243,10 @@ function TreningPage() {
         subtitle="Kroppen er rustning. Disiplin er sverd."
         image={treningImg}
       >
-        <StepsChip />
+        <div className="flex flex-wrap items-center gap-2">
+          <StepsChip />
+          <HealthStatusChip />
+        </div>
       </PageHero>
 
       <section className="container mx-auto px-4 py-12 space-y-16">
