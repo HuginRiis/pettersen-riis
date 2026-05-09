@@ -8,6 +8,7 @@ type Daily = {
   steps: number | null;
   resting_heart_rate: number | null;
   total_kilocalories: number | null;
+  weight_kg: number | null;
 };
 type Sleep = {
   day: string;
