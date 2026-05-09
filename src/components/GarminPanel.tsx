@@ -357,7 +357,7 @@ export function GarminPanel() {
           <>
             {/* Tellere */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <Tile icon={<Footprints size={14} className="text-orange-500" />} label="Skritt i dag"
+              <Tile icon={<Footprints size={14} style={{color: C.steps}} />} label="Skritt i dag"
                 value={today?.steps ?? null} prev={yesterday?.steps ?? null}
                 fmt={fmtNum} fallbackSub={today?.step_goal ? `mål ${fmtNum(today.step_goal)}` : "ingen data"}
                 showDetails={showDetails}
@@ -369,8 +369,8 @@ export function GarminPanel() {
                   { k: "Snitt 7d", v: avgFmt(data?.daily?.slice(-7).map((d) => d.steps), 0) },
                   { k: "Snitt 30d", v: avgFmt(data?.daily?.map((d) => d.steps), 0) },
                 ]}
-                chart={sparkBar(data?.daily, "steps")} />
-              <Tile icon={<HeartPulse size={14} className="text-red-500" />} label="Hvilepuls"
+                chart={sparkBar(data?.daily, "steps", C.steps)} />
+              <Tile icon={<HeartPulse size={14} style={{color: C.hr}} />} label="Hvilepuls"
                 value={today?.resting_heart_rate ?? null} prev={yesterday?.resting_heart_rate ?? null}
                 unit=" bpm" lowerIsBetter fallbackSub="ingen måling i dag"
                 showDetails={showDetails}
@@ -380,8 +380,8 @@ export function GarminPanel() {
                   { k: "Snitt 7d", v: avgFmt(data?.daily?.slice(-7).map((d) => d.resting_heart_rate), 0, " bpm") },
                   { k: "Snitt 30d", v: avgFmt(data?.daily?.map((d) => d.resting_heart_rate), 0, " bpm") },
                 ]}
-                chart={sparkLine(data?.daily, "resting_heart_rate")} />
-              <Tile icon={<Heart size={14} className="text-rose-500" />} label="Snitt puls"
+                chart={sparkLine(data?.daily, "resting_heart_rate", false, C.hr)} />
+              <Tile icon={<Heart size={14} style={{color: C.hrAvg}} />} label="Snitt puls"
                 value={today?.average_heart_rate ?? null} prev={yesterday?.average_heart_rate ?? null}
                 unit=" bpm" fallbackSub="ingen måling i dag"
                 showDetails={showDetails}
@@ -391,8 +391,8 @@ export function GarminPanel() {
                   { k: "Snitt 7d", v: avgFmt(data?.daily?.slice(-7).map((d) => d.average_heart_rate), 0, " bpm") },
                   { k: "Snitt 30d", v: avgFmt(data?.daily?.map((d) => d.average_heart_rate), 0, " bpm") },
                 ]}
-                chart={sparkLine(data?.daily, "average_heart_rate")} />
-              <Tile icon={<TrendingUp size={14} className="text-red-600" />} label="Maks puls"
+                chart={sparkLine(data?.daily, "average_heart_rate", false, C.hrAvg)} />
+              <Tile icon={<TrendingUp size={14} style={{color: C.hrMax}} />} label="Maks puls"
                 value={maxHrToday} prev={maxHrYesterday}
                 unit=" bpm" fallbackSub="ingen aktivitet i dag"
                 showDetails={showDetails}
@@ -413,8 +413,9 @@ export function GarminPanel() {
                     return (data?.daily ?? []).map((d) => ({ day: d.day, max_hr: map.get(d.day) ?? null }));
                   })(),
                   "max_hr",
+                  false, C.hrMax,
                 )} />
-              <Tile icon={<Building2 size={14} className="text-sky-500" />} label="Trapper"
+              <Tile icon={<Building2 size={14} style={{color: C.floors}} />} label="Trapper"
                 value={today?.floors_climbed ?? null} prev={yesterday?.floors_climbed ?? null}
                 fmt={fmtNum}
                 fallbackSub="ingen data"
@@ -425,8 +426,8 @@ export function GarminPanel() {
                   { k: "Snitt 7d", v: avgFmt(data?.daily?.slice(-7).map((d) => d.floors_climbed), 0) },
                   { k: "Snitt 30d", v: avgFmt(data?.daily?.map((d) => d.floors_climbed), 0) },
                 ]}
-                chart={sparkBar(data?.daily, "floors_climbed")} />
-              <Tile icon={<Battery size={14} className="text-pink-500" />} label="Body battery"
+                chart={sparkBar(data?.daily, "floors_climbed", C.floors)} />
+              <Tile icon={<Battery size={14} style={{color: C.batteryHigh}} />} label="Body battery"
                 value={today?.body_battery_high ?? null} prev={yesterday?.body_battery_high ?? null}
                 fallbackSub={today?.body_battery_low != null ? `lav ${today.body_battery_low}` : "ingen data"}
                 showDetails={showDetails}
@@ -438,8 +439,8 @@ export function GarminPanel() {
                   { k: "Snitt høy 7d", v: avgFmt(data?.daily?.slice(-7).map((d) => d.body_battery_high), 0) },
                   { k: "Snitt lav 7d", v: avgFmt(data?.daily?.slice(-7).map((d) => d.body_battery_low), 0) },
                 ]}
-                chart={sparkLine2(data?.daily, "body_battery_high", "body_battery_low")} />
-              <Tile icon={<Brain size={14} className="text-amber-500" />} label="Stress (snitt)"
+                chart={sparkLine2(data?.daily, "body_battery_high", "body_battery_low", C.batteryHigh, C.batteryLow)} />
+              <Tile icon={<Brain size={14} style={{color: C.stress}} />} label="Stress (snitt)"
                 value={today?.stress_average ?? null} prev={yesterday?.stress_average ?? null}
                 lowerIsBetter fallbackSub="ingen måling"
                 showDetails={showDetails}
@@ -450,8 +451,8 @@ export function GarminPanel() {
                   { k: "Snitt 7d", v: avgFmt(data?.daily?.slice(-7).map((d) => d.stress_average), 0) },
                   { k: "Snitt 30d", v: avgFmt(data?.daily?.map((d) => d.stress_average), 0) },
                 ]}
-                chart={sparkLine(data?.daily, "stress_average")} />
-              <Tile icon={<Timer size={14} className="text-lime-500" />} label="Intensitetsmin."
+                chart={sparkLine(data?.daily, "stress_average", false, C.stress)} />
+              <Tile icon={<Timer size={14} style={{color: C.intensity}} />} label="Intensitetsmin."
                 value={intensityToday > 0 ? intensityToday : null} prev={intensityYesterday > 0 ? intensityYesterday : null}
                 fallbackSub={today?.intensity_minutes_goal ? `mål ${today.intensity_minutes_goal}` : "ingen mål"}
                 showDetails={showDetails}
@@ -464,9 +465,9 @@ export function GarminPanel() {
                 ]}
                 chart={sparkBar(
                   (data?.daily ?? []).map((d) => ({ ...d, total_intensity: (d.moderate_intensity_minutes ?? 0) + (d.vigorous_intensity_minutes ?? 0) })),
-                  "total_intensity",
+                  "total_intensity", C.intensity,
                 )} />
-              <Tile icon={<Moon size={14} className="text-indigo-400" />} label="Søvn"
+              <Tile icon={<Moon size={14} style={{color: C.sleep}} />} label="Søvn"
                 value={sleepHoursToday} prev={sleepHoursYesterday}
                 unit=" t" digits={1}
                 fallbackSub={lastSleep?.sleep_score != null ? `score ${lastSleep.sleep_score}` : "ingen søvndata"}
@@ -482,9 +483,9 @@ export function GarminPanel() {
                 ]}
                 chart={sparkBar(
                   (data?.sleep ?? []).map((s) => ({ day: s.day, hours: s.total_seconds ? s.total_seconds / 3600 : null })),
-                  "hours",
+                  "hours", C.sleep,
                 )} />
-              <Tile icon={<Scale size={14} className="text-slate-400" />} label="Vekt"
+              <Tile icon={<Scale size={14} style={{color: C.weight}} />} label="Vekt"
                 value={latestWeightEntry?.weight_kg ?? null} prev={prevWeightEntry?.weight_kg ?? null}
                 unit=" kg" digits={1} lowerIsBetter
                 fallbackSub={latestWeightEntry?.day ? `siste veiing ${latestWeightEntry.day.slice(5)}` : "ingen veiing"}
@@ -504,8 +505,8 @@ export function GarminPanel() {
                     { k: "Trend 30d", v: trend != null ? `${trend > 0 ? "+" : ""}${trend.toFixed(1)} kg` : "—" },
                   ];
                 })()}
-                chart={sparkLine(data?.daily, "weight_kg", true)} />
-              <Tile icon={<Droplets size={14} className="text-blue-400" />} label="Pulsoksygen (SpO₂)"
+                chart={sparkLine(data?.daily, "weight_kg", true, C.weight)} />
+              <Tile icon={<Droplets size={14} style={{color: C.spo2}} />} label="Pulsoksygen (SpO₂)"
                 value={lastSpo2Entry?.average_spo2 ?? null} prev={prevSpo2Entry?.average_spo2 ?? null}
                 unit=" %" digits={0}
                 fallbackSub="ingen måling"
@@ -519,9 +520,9 @@ export function GarminPanel() {
                 ]}
                 chart={sparkLine(
                   (data?.sleep ?? []).map((s) => ({ day: s.day, spo2: s.average_spo2 })),
-                  "spo2",
+                  "spo2", false, C.spo2,
                 )} />
-              <Tile icon={<Waves size={14} className="text-fuchsia-500" />} label="Pulsvariasjon (HRV)"
+              <Tile icon={<Waves size={14} style={{color: C.hrv}} />} label="Pulsvariasjon (HRV)"
                 value={lastHrvEntry?.hrv_avg ?? null} prev={prevHrvEntry?.hrv_avg ?? null}
                 unit=" ms" digits={0}
                 fallbackSub="ingen data"
@@ -535,9 +536,9 @@ export function GarminPanel() {
                 ]}
                 chart={sparkLine(
                   (data?.sleep ?? []).map((s) => ({ day: s.day, hrv: s.hrv_avg })),
-                  "hrv",
+                  "hrv", false, C.hrv,
                 )} />
-              <Tile icon={<Wind size={14} className="text-cyan-500" />} label="Pusting (snitt)"
+              <Tile icon={<Wind size={14} style={{color: C.respiration}} />} label="Pusting (snitt)"
                 value={lastRespEntry?.average_respiration ?? null} prev={prevRespEntry?.average_respiration ?? null}
                 unit=" /min" digits={0}
                 fallbackSub="ingen måling"
@@ -551,9 +552,9 @@ export function GarminPanel() {
                 ]}
                 chart={sparkLine(
                   (data?.sleep ?? []).map((s) => ({ day: s.day, resp: s.average_respiration })),
-                  "resp",
+                  "resp", false, C.respiration,
                 )} />
-              <Tile icon={<Flame size={14} className="text-orange-600" />} label="Kalorier"
+              <Tile icon={<Flame size={14} style={{color: C.caloriesTotal}} />} label="Kalorier"
                 value={today?.total_kilocalories ?? null} prev={yesterday?.total_kilocalories ?? null}
                 fmt={fmtNum}
                 fallbackSub={today?.active_kilocalories ? `aktive ${fmtNum(today.active_kilocalories)}` : "ingen data"}
@@ -565,7 +566,7 @@ export function GarminPanel() {
                   { k: "Snitt 7d", v: avgFmt(data?.daily?.slice(-7).map((d) => d.total_kilocalories), 0, " kcal") },
                   { k: "Snitt 30d", v: avgFmt(data?.daily?.map((d) => d.total_kilocalories), 0, " kcal") },
                 ]}
-                chart={sparkLine2(data?.daily, "total_kilocalories", "active_kilocalories")} />
+                chart={sparkLine2(data?.daily, "total_kilocalories", "active_kilocalories", C.caloriesTotal, C.caloriesActive)} />
             </div>
 
 
