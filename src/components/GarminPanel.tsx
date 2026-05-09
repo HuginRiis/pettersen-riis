@@ -750,10 +750,11 @@ function Tile({
     }
   }
 
+  const hasData = value != null;
   return (
-    <div className="rounded border border-border/60 bg-background/40 p-3">
+    <div className={`rounded border p-3 transition-colors ${hasData ? "border-border/60 bg-background/40" : "border-border/30 bg-muted/20 opacity-60"}`}>
       <div className="text-[10px] uppercase tracking-wider text-muted-foreground flex items-center gap-1">{icon}{label}</div>
-      <div className="text-xl font-semibold tabular-nums mt-1">{formatVal(value)}</div>
+      <div className={`text-xl font-semibold tabular-nums mt-1 ${hasData ? "" : "text-muted-foreground/70"}`}>{formatVal(value)}</div>
       <div className="text-[10px] mt-0.5">
         {trend ?? (value == null && fallbackSub ? <span className="text-muted-foreground">{fallbackSub}</span> : null)}
       </div>
