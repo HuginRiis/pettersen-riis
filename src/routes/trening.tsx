@@ -394,7 +394,7 @@ function HealthStatusChip({ owner = "arne", displayName }: { owner?: Owner; disp
         aria-label="Vis helsedetaljer"
       >
         <ActivityIcon size={16} className={color} />
-        <span className={`text-medieval ${color}`}>Helse: {status}{overall != null && ` · ${overall}`}</span>
+        <span className={`text-medieval ${color}`}>{displayName ? `${displayName} · ` : ""}Helse: {status}{overall != null && ` · ${overall}`}</span>
         <span className="hidden md:inline-flex items-center gap-2 text-xs text-muted-foreground">
           {rhr != null && (<span className="inline-flex items-center gap-1"><Heart size={11} /> {rhr}</span>)}
           {sleepHrs != null && (<span className="inline-flex items-center gap-1"><Moon size={11} /> {sleepHrs.toFixed(1)}t</span>)}
