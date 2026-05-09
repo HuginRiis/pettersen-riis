@@ -171,6 +171,48 @@ export function DbUsagePanel() {
         )}
       </div>
 
+      {/* Datasynk (utenfor pg_cron, trigget fra agenda-push) */}
+      {data.dataSyncs && data.dataSyncs.length > 0 && (
+        <div>
+          <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground mb-2">
+            <Clock size={12} /> Datasynk
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead className="text-muted-foreground">
+                <tr className="text-left border-b border-border">
+                  <th className="py-1.5 pr-2">Kilde</th>
+                  <th className="py-1.5 pr-2">Tidsplan</th>
+                  <th className="py-1.5 pr-2">Sist kjørt</th>
+                  <th className="py-1.5 pr-2">Neste</th>
+                  <th className="py-1.5 pr-2 text-right">Kjør 24t</th>
+                  <th className="py-1.5 pr-2 text-right">Feil 24t</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.dataSyncs.map((s) => (
+                  <tr key={s.name} className="border-b border-border/40">
+                    <td className="py-1.5 pr-2 font-mono">{s.name}</td>
+                    <td className="py-1.5 pr-2">{s.schedule_label}</td>
+                    <td className="py-1.5 pr-2 text-muted-foreground">
+                      {s.last_run ? new Date(s.last_run).toLocaleString("nb-NO", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit" }) : "—"}
+                    </td>
+                    <td className="py-1.5 pr-2 text-primary">
+                      {s.next_run ? relTime(s.next_run) : "—"}
+                    </td>
+                    <td className="py-1.5 pr-2 text-right font-mono">{s.runs_24h}</td>
+                    <td className={`py-1.5 pr-2 text-right font-mono ${s.failed_24h > 0 ? "text-destructive" : ""}`}>
+                      {s.failed_24h > 0 && <AlertTriangle size={10} className="inline mr-1" />}
+                      {s.failed_24h}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       {/* Tabeller */}
       <div>
         <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground mb-2">
