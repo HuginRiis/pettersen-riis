@@ -23,7 +23,7 @@ export const getGarminOverview = createServerFn({ method: "GET" }).handler(async
 
   const { data: sleep } = await supabaseAdmin
     .from("garmin_sleep")
-    .select("day, total_seconds, deep_seconds, light_seconds, rem_seconds, awake_seconds, sleep_score, average_spo2")
+    .select("day, total_seconds, deep_seconds, light_seconds, rem_seconds, awake_seconds, sleep_score, average_spo2, average_respiration, hrv_avg")
     .gte("day", sinceIso)
     .order("day", { ascending: true });
 

@@ -142,8 +142,11 @@ type SleepDto = {
     awakeSleepSeconds?: number;
     averageSpO2Value?: number;
     averageRespirationValue?: number;
+    avgOvernightHrv?: number;
     sleepScores?: { overall?: { value?: number } };
   };
+  avgOvernightHrv?: number;
+  hrvData?: { value?: number };
 };
 
 export async function syncSleep(daysBack = 14): Promise<number> {
@@ -166,6 +169,7 @@ export async function syncSleep(daysBack = 14): Promise<number> {
         average_spo2: d.averageSpO2Value ?? null,
         average_respiration: d.averageRespirationValue ?? null,
         sleep_score: d.sleepScores?.overall?.value ?? null,
+        hrv_avg: d.avgOvernightHrv ?? s?.avgOvernightHrv ?? s?.hrvData?.value ?? null,
         raw: s as any,
         updated_at: new Date().toISOString(),
       }], { onConflict: "day" });
