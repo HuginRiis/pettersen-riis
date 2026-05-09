@@ -188,13 +188,60 @@ export async function processGarminNotifications(): Promise<{ checked: number; s
       const wantHm = (p.daily_time || "07:30").slice(0, 5);
       const key = `daily:${today}`;
       if (nowHm >= wantHm && !already.has(key)) {
-        const parts: string[] = [];
-        if (daily?.steps != null) parts.push(`${daily.steps.toLocaleString("nb-NO")} skritt`);
-        if (sleep?.total_seconds) parts.push(`${(sleep.total_seconds / 3600).toFixed(1)}t søvn`);
-        if (daily?.resting_heart_rate) parts.push(`hvilepuls ${daily.resting_heart_rate}`);
-        if (daily?.total_kilocalories) parts.push(`${daily.total_kilocalories.toLocaleString("nb-NO")} kcal`);
-        const body = parts.length ? parts.join(" · ") : "Ingen Garmin-data registrert ennå.";
+        const fields = p.daily_fields ?? ["steps", "sleep", "rhr", "calories"];
+        let body: string;
+        if (p.daily_show_both) {
+          const lines: string[] = [];
+          for (const o of ["arne", "rebekka"] as const) {
+            if (!dailyCache.has(o)) dailyCache.set(o, await getTodayDaily(o));
+            if (!sleepCache.has(o)) sleepCache.set(o, await getLastSleep(o));
+            const part = formatDailyParts(fields, dailyCache.get(o) ?? null, sleepCache.get(o) ?? null);
+            if (part) lines.push(`${OWNER_LABEL[o]}: ${part}`);
+          }
+          body = lines.length ? lines.join("\n") : "Ingen Garmin-data registrert ennå.";
+        } else {
+          const part = formatDailyParts(fields, daily, sleep);
+          body = part || "Ingen Garmin-data registrert ennå.";
+        }
         const r = await sendToRecipient(p, "Daglig oppsummering", body);
+        sent += r.sent; errors += r.errors;
+        await markNotified(p, key);
+      } else if (already.has(key)) skipped++;
+    }
+
+    // Sammenligning Arne vs Rebekka
+    if (p.notify_compare) {
+      const wantHm = (p.compare_time || "20:00").slice(0, 5);
+      const key = `compare:${today}`;
+      if (nowHm >= wantHm && !already.has(key)) {
+        for (const o of ["arne", "rebekka"] as const) {
+          if (!dailyCache.has(o)) dailyCache.set(o, await getTodayDaily(o));
+          if (!sleepCache.has(o)) sleepCache.set(o, await getLastSleep(o));
+        }
+        const aD = dailyCache.get("arne") ?? null;
+        const aS = sleepCache.get("arne") ?? null;
+        const rD = dailyCache.get("rebekka") ?? null;
+        const rS = sleepCache.get("rebekka") ?? null;
+        const wins = { arne: 0, rebekka: 0, tie: 0 };
+        const lines: string[] = [];
+        for (const f of COMPARE_FIELDS) {
+          const a = f.get(aD, aS);
+          const b = f.get(rD, rS);
+          if (a == null || b == null) continue;
+          let winner: "arne" | "rebekka" | "tie";
+          if (a === b) winner = "tie";
+          else if (f.cmp === "higher") winner = a > b ? "arne" : "rebekka";
+          else winner = a < b ? "arne" : "rebekka";
+          wins[winner]++;
+          const fmt = (v: number) => f.key === "sleep" ? `${v.toFixed(1)}t` : v.toLocaleString("nb-NO");
+          const flag = winner === "tie" ? "⚖️" : winner === "arne" ? "🐺 Arne" : "🐉 Rebekka";
+          lines.push(`${f.label}: ${fmt(a)} vs ${fmt(b)} → ${flag}`);
+        }
+        let header = "Uavgjort i dag ⚖️";
+        if (wins.arne > wins.rebekka) header = `🐺 Arne vant ${wins.arne}–${wins.rebekka}`;
+        else if (wins.rebekka > wins.arne) header = `🐉 Rebekka vant ${wins.rebekka}–${wins.arne}`;
+        const body = lines.length ? `${header}\n${lines.join("\n")}` : "Ingen sammenlignbare data ennå.";
+        const r = await sendToRecipient(p, "Dagens duell", body);
         sent += r.sent; errors += r.errors;
         await markNotified(p, key);
       } else if (already.has(key)) skipped++;
@@ -230,7 +277,6 @@ export async function processGarminNotifications(): Promise<{ checked: number; s
         await markNotified(p, key);
       }
     }
-  }
 
   return { checked, sent, errors, skipped };
 }
