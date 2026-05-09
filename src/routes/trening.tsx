@@ -245,8 +245,10 @@ function TreningPage() {
         image={treningImg}
       >
         <div className="flex flex-wrap items-center gap-2">
-          <StepsChip />
-          <HealthStatusChip />
+          <StepsChip owner="arne" displayName="Arne" />
+          <HealthStatusChip owner="arne" displayName="Arne" />
+          <StepsChip owner="rebekka" displayName="Rebekka" />
+          <HealthStatusChip owner="rebekka" displayName="Rebekka" />
         </div>
       </PageHero>
 
@@ -260,7 +262,7 @@ function TreningPage() {
   );
 }
 
-function StepsChip() {
+function StepsChip({ owner = "arne", displayName }: { owner?: Owner; displayName?: string } = {}) {
   const fetchOverview = useServerFn(getGarminOverview);
   const [steps, setSteps] = useState<number | null>(null);
   const [goal, setGoal] = useState<number | null>(null);
@@ -269,7 +271,7 @@ function StepsChip() {
     let cancelled = false;
     (async () => {
       try {
-        const o: any = await fetchOverview();
+        const o: any = await fetchOverview({ data: { owner } });
         const today = o?.daily?.[o.daily.length - 1];
         if (!cancelled) {
           setSteps(today?.steps ?? null);
@@ -280,7 +282,7 @@ function StepsChip() {
       }
     })();
     return () => { cancelled = true; };
-  }, []);
+  }, [owner]);
 
   if (steps == null) return null;
   const pct = goal ? Math.min(100, Math.round((steps / goal) * 100)) : null;
@@ -288,7 +290,7 @@ function StepsChip() {
     <div className="inline-flex items-center gap-2 rounded-full border border-primary/40 bg-card/70 backdrop-blur px-4 py-2 text-sm">
       <Footprints size={16} className="text-primary" />
       <span className="text-medieval text-primary">
-        {steps.toLocaleString("nb-NO")} skritt i dag
+        {displayName ? `${displayName}: ` : ""}{steps.toLocaleString("nb-NO")} skritt i dag
       </span>
       {goal && (
         <span className="text-xs text-muted-foreground">
@@ -299,7 +301,7 @@ function StepsChip() {
   );
 }
 
-function HealthStatusChip() {
+function HealthStatusChip({ owner = "arne", displayName }: { owner?: Owner; displayName?: string } = {}) {
   const fetchOverview = useServerFn(getGarminOverview);
   const [data, setData] = useState<any>(null);
   const [open, setOpen] = useState(false);
@@ -308,12 +310,12 @@ function HealthStatusChip() {
     let cancelled = false;
     (async () => {
       try {
-        const o: any = await fetchOverview();
+        const o: any = await fetchOverview({ data: { owner } });
         if (!cancelled) setData(o);
       } catch { /* stille */ }
     })();
     return () => { cancelled = true; };
-  }, []);
+  }, [owner]);
 
   if (!data) return null;
 
@@ -392,7 +394,7 @@ function HealthStatusChip() {
         aria-label="Vis helsedetaljer"
       >
         <ActivityIcon size={16} className={color} />
-        <span className={`text-medieval ${color}`}>Helse: {status}{overall != null && ` · ${overall}`}</span>
+        <span className={`text-medieval ${color}`}>{displayName ? `${displayName} · ` : ""}Helse: {status}{overall != null && ` · ${overall}`}</span>
         <span className="hidden md:inline-flex items-center gap-2 text-xs text-muted-foreground">
           {rhr != null && (<span className="inline-flex items-center gap-1"><Heart size={11} /> {rhr}</span>)}
           {sleepHrs != null && (<span className="inline-flex items-center gap-1"><Moon size={11} /> {sleepHrs.toFixed(1)}t</span>)}

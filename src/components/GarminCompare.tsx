@@ -15,8 +15,11 @@ type Sleep = {
   day: string;
   total_seconds: number | null;
   deep_seconds: number | null;
+  rem_seconds: number | null;
   sleep_score: number | null;
   hrv_avg: number | null;
+  average_spo2: number | null;
+  average_respiration: number | null;
 };
 type Overview = { daily: Daily[]; sleep: Sleep[] };
 
@@ -75,8 +78,12 @@ export function GarminCompare() {
     { label: "Skritt", arne: a?.steps ?? null, rebekka: r?.steps ?? null, fmt: (n) => fmtNum(n), higherIsBetter: true },
     { label: "Søvn (totalt)", arne: aSleep?.total_seconds ?? null, rebekka: rSleep?.total_seconds ?? null, fmt: (n) => hoursMin(n), fmtDiff: (n) => hoursMin(Math.abs(n)), higherIsBetter: true },
     { label: "Dyp søvn", arne: aSleep?.deep_seconds ?? null, rebekka: rSleep?.deep_seconds ?? null, fmt: (n) => hoursMin(n), fmtDiff: (n) => hoursMin(Math.abs(n)), higherIsBetter: true },
+    { label: "REM-søvn", arne: aSleep?.rem_seconds ?? null, rebekka: rSleep?.rem_seconds ?? null, fmt: (n) => hoursMin(n), fmtDiff: (n) => hoursMin(Math.abs(n)), higherIsBetter: true },
     { label: "Søvnscore", arne: aSleep?.sleep_score ?? null, rebekka: rSleep?.sleep_score ?? null, fmt: (n) => fmtNum(n), higherIsBetter: true },
     { label: "Hvilepuls", arne: a?.resting_heart_rate ?? null, rebekka: r?.resting_heart_rate ?? null, fmt: (n) => fmtNum(n, 0, " bpm"), higherIsBetter: false },
+    { label: "Pulsvariasjon (HRV)", arne: aSleep?.hrv_avg ?? null, rebekka: rSleep?.hrv_avg ?? null, fmt: (n) => fmtNum(n, 0, " ms"), higherIsBetter: true },
+    { label: "Pulsoksygen (SpO₂)", arne: aSleep?.average_spo2 ?? null, rebekka: rSleep?.average_spo2 ?? null, fmt: (n) => fmtNum(n, 0, " %"), higherIsBetter: true },
+    { label: "Respirasjon", arne: aSleep?.average_respiration ?? null, rebekka: rSleep?.average_respiration ?? null, fmt: (n) => fmtNum(n, 1, " /min"), higherIsBetter: null },
     { label: "Body Battery (topp)", arne: a?.body_battery_high ?? null, rebekka: r?.body_battery_high ?? null, fmt: (n) => fmtNum(n), higherIsBetter: true },
     { label: "Stress (snitt)", arne: a?.stress_average ?? null, rebekka: r?.stress_average ?? null, fmt: (n) => fmtNum(n), higherIsBetter: false },
     { label: "Intensitetsminutter", arne: intensity(a), rebekka: intensity(r), fmt: (n) => fmtNum(n, 0, " min"), higherIsBetter: true },
@@ -98,6 +105,41 @@ export function GarminCompare() {
     else if (w === "rebekka") acc.rebekka++;
     return acc;
   }, { arne: 0, rebekka: 0 });
+
+  // Top 5 highlights — shuffled "she slept X more than him"-style insights
+  type Highlight = { text: string; winner: "arne" | "rebekka" };
+  const highlights: Highlight[] = [];
+  for (const row of rows) {
+    const w = winner(row);
+    if (w !== "arne" && w !== "rebekka") continue;
+    const leader = w === "arne" ? "Arne" : "Rebekka";
+    const trailer = w === "arne" ? "Rebekka" : "Arne";
+    const diff = Math.abs((row.arne ?? 0) - (row.rebekka ?? 0));
+    const diffStr = row.fmtDiff ? row.fmtDiff(diff) : row.fmt(diff);
+    let verb = "ledet på";
+    const lbl = row.label.toLowerCase();
+    if (lbl.includes("søvn (totalt)")) verb = "sov mer enn";
+    else if (lbl.includes("dyp søvn")) verb = "fikk mer dyp søvn enn";
+    else if (lbl.includes("rem")) verb = "fikk mer REM-søvn enn";
+    else if (lbl.includes("søvnscore")) verb = "hadde høyere søvnscore enn";
+    else if (lbl.includes("skritt")) verb = "gikk flere skritt enn";
+    else if (lbl.includes("hvilepuls")) verb = "hadde lavere hvilepuls enn";
+    else if (lbl.includes("hrv")) verb = "hadde bedre pulsvariasjon enn";
+    else if (lbl.includes("spo")) verb = "hadde høyere oksygenmetning enn";
+    else if (lbl.includes("body battery")) verb = "ladet bedre enn";
+    else if (lbl.includes("stress")) verb = "var mindre stresset enn";
+    else if (lbl.includes("intensitet")) verb = "tok flere intensitetsminutter enn";
+    else if (lbl.includes("kcal")) verb = "brente mer enn";
+    else if (lbl.includes("trapper")) verb = "tok flere trapper enn";
+    highlights.push({ text: `${leader} ${verb} ${trailer} med ${diffStr} (${row.label.toLowerCase()})`, winner: w });
+  }
+  // Shuffle (Fisher–Yates) and take 5
+  const shuffled = [...highlights];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  const top5 = shuffled.slice(0, 5);
 
   const display = "var(--font-display)";
 
@@ -136,6 +178,26 @@ export function GarminCompare() {
             <div className="text-2xl text-rose-100 tabular-nums" style={{ fontFamily: display, fontWeight: 700 }}>{wins.rebekka}</div>
           </div>
         </div>
+
+        {/* Top 5 Krønike-pekepinner */}
+        {!loading && top5.length > 0 && (
+          <div className="rounded border border-amber-500/30 bg-black/30 p-3">
+            <div className="text-[10px] uppercase tracking-[0.2em] text-amber-300 mb-2 flex items-center gap-1.5" style={{ fontFamily: display }}>
+              <Swords size={12} /> KRØNIKEN — TOPP 5
+            </div>
+            <ol className="space-y-1.5">
+              {top5.map((h, i) => (
+                <li key={i} className="text-xs flex items-start gap-2">
+                  <span className="text-amber-400/80 tabular-nums w-4 shrink-0" style={{ fontFamily: display }}>{i + 1}.</span>
+                  {h.winner === "arne"
+                    ? <Crown className="h-3 w-3 text-slate-200 mt-0.5 shrink-0" />
+                    : <Flame className="h-3 w-3 text-rose-300 mt-0.5 shrink-0" />}
+                  <span className={h.winner === "arne" ? "text-slate-100" : "text-rose-100"}>{h.text}</span>
+                </li>
+              ))}
+            </ol>
+          </div>
+        )}
 
         {loading ? (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
