@@ -359,110 +359,126 @@ export function GarminPanel() {
 
 
             {/* Grafer (skjult som default) */}
-            <button
-              onClick={() => setShowCharts((v) => !v)}
-              className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
-            >
-              {showCharts ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-              {showCharts ? "Skjul grafer" : "Vis grafer"}
-            </button>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                onClick={() => setShowCharts((v) => !v)}
+                className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+              >
+                {showCharts ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                {showCharts ? "Skjul grafer" : "Vis grafer"}
+              </button>
+              {showCharts && (
+                <>
+                  <div className="inline-flex rounded-md border border-border/60 overflow-hidden text-[11px] ml-2">
+                    {([
+                      ["yesterday", "I går"],
+                      ["thisWeek", "Denne uken"],
+                      ["lastWeek", "Forrige uke"],
+                      ["last30", "Siste 30 dager"],
+                      ["thisMonth", "Denne måneden"],
+                    ] as const).map(([k, lbl], i) => (
+                      <button
+                        key={k}
+                        onClick={() => setChartPeriod(k)}
+                        className={`px-2 py-1 ${i > 0 ? "border-l border-border/60" : ""} ${chartPeriod === k ? "bg-primary/20 text-primary" : "hover:bg-muted/40"}`}
+                      >
+                        {lbl}
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    onClick={() => setShowTrend((v) => !v)}
+                    className={`inline-flex items-center gap-1 px-2 py-1 rounded border text-[11px] ${showTrend ? "border-primary/60 text-primary bg-primary/10" : "border-border/60 hover:bg-muted/40"}`}
+                  >
+                    <TrendingUp size={12} /> Trendlinje {showTrend ? "på" : "av"}
+                  </button>
+                </>
+              )}
+            </div>
 
-            {showCharts && data && data.daily.length > 0 && (
-              <div className="space-y-3">
-                <ChartCard title="Skritt siste 30 dager">
-                  <BarChart data={data.daily}>
-                    <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                    <XAxis dataKey="day" tick={{ fontSize: 10 }} tickFormatter={(v: string) => v.slice(5)} />
-                    <YAxis tick={{ fontSize: 10 }} />
-                    <Tooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", fontSize: 12 }} />
-                    <Bar dataKey="steps" fill="var(--chart-yellow)" radius={[2,2,0,0]} />
-                  </BarChart>
-                </ChartCard>
+            {showCharts && data && (() => {
+              const dailyF = filterPeriod(data.daily, chartPeriod);
+              const sleepF = filterPeriod(data.sleep, chartPeriod);
+              const intensityData = dailyF.map((d) => ({ ...d, total_intensity: (d.moderate_intensity_minutes ?? 0) + (d.vigorous_intensity_minutes ?? 0) }));
+              const maxHrMap = new Map<string, number>();
+              for (const a of data.activities ?? []) {
+                const dd = a.start_time_local.slice(0, 10);
+                const v = a.max_hr ?? 0;
+                if (v > (maxHrMap.get(dd) ?? 0)) maxHrMap.set(dd, v);
+              }
+              const maxHrData = dailyF.map((d) => ({ day: d.day, max_hr: maxHrMap.get(d.day) ?? null }));
+              const sleepData = sleepF.map((s) => ({
+                day: s.day,
+                deep: (s.deep_seconds ?? 0) / 3600,
+                light: (s.light_seconds ?? 0) / 3600,
+                rem: (s.rem_seconds ?? 0) / 3600,
+                awake: (s.awake_seconds ?? 0) / 3600,
+                total: (s.total_seconds ?? 0) / 3600,
+                score: s.sleep_score,
+              }));
 
-                <div className="grid md:grid-cols-2 gap-3">
-                  <ChartCard title="Snitt puls (bpm)" height={140}>
-                    <LineChart data={data.daily}>
-                      <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                      <XAxis dataKey="day" tick={{ fontSize: 10 }} tickFormatter={(v: string) => v.slice(5)} />
-                      <YAxis tick={{ fontSize: 10 }} domain={["auto", "auto"]} />
-                      <Tooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", fontSize: 12 }} />
-                      <Line type="monotone" dataKey="average_heart_rate" stroke="var(--chart-yellow)" strokeWidth={2} dot={false} />
-                      <Line type="monotone" dataKey="resting_heart_rate" stroke="var(--chart-yellow-soft)" strokeWidth={2} dot={false} />
-                    </LineChart>
+              if (dailyF.length === 0 && sleepF.length === 0) {
+                return <p className="text-xs text-muted-foreground italic">Ingen data for valgt periode.</p>;
+              }
+
+              return (
+                <div className="space-y-3">
+                  <ChartCard title="Skritt">
+                    {renderBar(dailyF, "steps", showTrend)}
                   </ChartCard>
-                  <ChartCard title="Body battery (høy/lav)" height={140}>
-                    <LineChart data={data.daily}>
-                      <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                      <XAxis dataKey="day" tick={{ fontSize: 10 }} tickFormatter={(v: string) => v.slice(5)} />
-                      <YAxis tick={{ fontSize: 10 }} domain={[0, 100]} />
-                      <Tooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", fontSize: 12 }} />
-                      <Line type="monotone" dataKey="body_battery_high" stroke="var(--chart-yellow)" strokeWidth={2} dot={false} />
-                      <Line type="monotone" dataKey="body_battery_low" stroke="var(--chart-yellow-soft)" strokeWidth={2} dot={false} />
-                    </LineChart>
-                  </ChartCard>
-                  <ChartCard title="Stress (snitt)" height={140}>
-                    <LineChart data={data.daily}>
-                      <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                      <XAxis dataKey="day" tick={{ fontSize: 10 }} tickFormatter={(v: string) => v.slice(5)} />
-                      <YAxis tick={{ fontSize: 10 }} domain={[0, 100]} />
-                      <Tooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", fontSize: 12 }} />
-                      <Line type="monotone" dataKey="stress_average" stroke="var(--chart-yellow)" strokeWidth={2} dot={false} />
-                    </LineChart>
-                  </ChartCard>
-                  <ChartCard title="Intensitetsminutter" height={140}>
-                    <BarChart data={data.daily.map((d) => ({ ...d, total_intensity: (d.moderate_intensity_minutes ?? 0) + (d.vigorous_intensity_minutes ?? 0) }))}>
-                      <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                      <XAxis dataKey="day" tick={{ fontSize: 10 }} tickFormatter={(v: string) => v.slice(5)} />
-                      <YAxis tick={{ fontSize: 10 }} />
-                      <Tooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", fontSize: 12 }} />
-                      <Bar dataKey="total_intensity" fill="var(--chart-yellow)" radius={[2,2,0,0]} />
-                    </BarChart>
-                  </ChartCard>
-                  <ChartCard title="Vekt (kg)" height={140}>
-                    <LineChart data={data.daily}>
-                      <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                      <XAxis dataKey="day" tick={{ fontSize: 10 }} tickFormatter={(v: string) => v.slice(5)} />
-                      <YAxis tick={{ fontSize: 10 }} domain={["auto", "auto"]} />
-                      <Tooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", fontSize: 12 }} />
-                      <Line type="monotone" dataKey="weight_kg" stroke="var(--chart-yellow)" strokeWidth={2} dot={{ r: 2 }} connectNulls />
-                    </LineChart>
-                  </ChartCard>
-                  <ChartCard title="Kalorier (aktive)" height={140}>
-                    <LineChart data={data.daily}>
-                      <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                      <XAxis dataKey="day" tick={{ fontSize: 10 }} tickFormatter={(v: string) => v.slice(5)} />
-                      <YAxis tick={{ fontSize: 10 }} />
-                      <Tooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", fontSize: 12 }} />
-                      <Line type="monotone" dataKey="active_kilocalories" stroke="var(--chart-yellow)" strokeWidth={2} dot={false} />
-                    </LineChart>
-                  </ChartCard>
+
+                  <div className="grid md:grid-cols-2 gap-3">
+                    <ChartCard title="Hvilepuls (bpm)" height={160}>
+                      {renderLine(dailyF, "resting_heart_rate", showTrend)}
+                    </ChartCard>
+                    <ChartCard title="Snitt puls (bpm)" height={160}>
+                      {renderLine(dailyF, "average_heart_rate", showTrend)}
+                    </ChartCard>
+                    <ChartCard title="Maks puls (bpm)" height={160}>
+                      {renderLine(maxHrData, "max_hr", showTrend)}
+                    </ChartCard>
+                    <ChartCard title="Trapper" height={160}>
+                      {renderBar(dailyF, "floors_climbed", showTrend)}
+                    </ChartCard>
+                    <ChartCard title="Body battery (høy/lav)" height={160}>
+                      {renderLine2(dailyF, "body_battery_high", "body_battery_low", showTrend)}
+                    </ChartCard>
+                    <ChartCard title="Stress (snitt)" height={160}>
+                      {renderLine(dailyF, "stress_average", showTrend)}
+                    </ChartCard>
+                    <ChartCard title="Intensitetsminutter" height={160}>
+                      {renderBar(intensityData, "total_intensity", showTrend)}
+                    </ChartCard>
+                    <ChartCard title="Vekt (kg)" height={160}>
+                      {renderLine(dailyF, "weight_kg", showTrend, true)}
+                    </ChartCard>
+                    <ChartCard title="Kalorier (total/aktive)" height={160}>
+                      {renderLine2(dailyF, "total_kilocalories", "active_kilocalories", showTrend)}
+                    </ChartCard>
+                    <ChartCard title="Søvn (timer)" height={160}>
+                      {renderBar(sleepData, "total", showTrend)}
+                    </ChartCard>
+                  </div>
+
+                  {sleepData.length > 0 && (
+                    <ChartCard title={<span className="flex items-center gap-1"><Moon size={12} /> Søvnfaser + score</span>}>
+                      <BarChart data={sleepData}>
+                        <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                        <XAxis dataKey="day" tick={{ fontSize: 10 }} tickFormatter={(v: string) => v.slice(5)} />
+                        <YAxis yAxisId="left" tick={{ fontSize: 10 }} />
+                        <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 10 }} domain={[0, 100]} />
+                        <Tooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", fontSize: 12 }} />
+                        <Bar yAxisId="left" dataKey="deep" stackId="a" fill="var(--chart-yellow)" />
+                        <Bar yAxisId="left" dataKey="light" stackId="a" fill="var(--chart-yellow-soft)" />
+                        <Bar yAxisId="left" dataKey="rem" stackId="a" fill="var(--chart-yellow-faint)" />
+                        <Bar yAxisId="left" dataKey="awake" stackId="a" fill="color-mix(in oklab, var(--muted-foreground) 40%, transparent)" />
+                        <Line yAxisId="right" type="monotone" dataKey="score" stroke="var(--chart-yellow)" strokeWidth={2} dot={{ r: 3 }} />
+                      </BarChart>
+                    </ChartCard>
+                  )}
                 </div>
-
-                {data.sleep.length > 0 && (
-                  <ChartCard title={<span className="flex items-center gap-1"><Moon size={12} /> Søvn (timer per natt — siste 14) + score</span>}>
-                    <BarChart data={data.sleep.slice(-14).map((s) => ({
-                      day: s.day,
-                      deep: (s.deep_seconds ?? 0) / 3600,
-                      light: (s.light_seconds ?? 0) / 3600,
-                      rem: (s.rem_seconds ?? 0) / 3600,
-                      awake: (s.awake_seconds ?? 0) / 3600,
-                      score: s.sleep_score,
-                    }))}>
-                      <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                      <XAxis dataKey="day" tick={{ fontSize: 10 }} tickFormatter={(v: string) => v.slice(5)} />
-                      <YAxis yAxisId="left" tick={{ fontSize: 10 }} />
-                      <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 10 }} domain={[0, 100]} />
-                      <Tooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", fontSize: 12 }} />
-                      <Bar yAxisId="left" dataKey="deep" stackId="a" fill="var(--chart-yellow)" />
-                      <Bar yAxisId="left" dataKey="light" stackId="a" fill="var(--chart-yellow-soft)" />
-                      <Bar yAxisId="left" dataKey="rem" stackId="a" fill="var(--chart-yellow-faint)" />
-                      <Bar yAxisId="left" dataKey="awake" stackId="a" fill="color-mix(in oklab, var(--muted-foreground) 40%, transparent)" />
-                      <Line yAxisId="right" type="monotone" dataKey="score" stroke="var(--chart-yellow)" strokeWidth={2} dot={{ r: 3 }} />
-                    </BarChart>
-                  </ChartCard>
-                )}
-              </div>
-            )}
+              );
+            })()}
 
             {/* Aktiviteter (skjult som default) */}
             {data && data.activities.length > 0 && (
