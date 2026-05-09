@@ -8,6 +8,7 @@ import { GarminPanel } from "@/components/GarminPanel";
 import { getActivityStreams, getStravaDashboard, getStravaStatus } from "@/server/strava";
 import { getGarminOverview } from "@/server/garmin.functions";
 import treningImg from "@/assets/got-trening.jpg";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/trening")({
   head: () => ({
@@ -301,6 +302,7 @@ function StepsChip() {
 function HealthStatusChip() {
   const fetchOverview = useServerFn(getGarminOverview);
   const [data, setData] = useState<any>(null);
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -323,27 +325,137 @@ function HealthStatusChip() {
   const battery = today?.body_battery_high ?? null;
   const stress = today?.stress_average ?? null;
 
-  // Enkel score (0–100)
-  let score = 0; let count = 0;
-  if (rhr != null) { score += Math.max(0, Math.min(100, 100 - (rhr - 50) * 2)); count++; }
-  if (sleepHrs != null) { score += Math.max(0, Math.min(100, (sleepHrs / 8) * 100)); count++; }
-  if (battery != null) { score += battery; count++; }
-  if (stress != null) { score += Math.max(0, 100 - stress); count++; }
-  const overall = count ? Math.round(score / count) : null;
+  // Enkel score (0–100) — del-skår per faktor for visning i detaljvinduet
+  const rhrScore = rhr != null ? Math.max(0, Math.min(100, 100 - (rhr - 50) * 2)) : null;
+  const sleepScore = sleepHrs != null ? Math.max(0, Math.min(100, (sleepHrs / 8) * 100)) : null;
+  const batteryScore = battery != null ? battery : null;
+  const stressScore = stress != null ? Math.max(0, 100 - stress) : null;
+
+  const parts: Array<{
+    key: string;
+    label: string;
+    icon: any;
+    raw: string;
+    score: number | null;
+    formula: string;
+    explain: string;
+  }> = [
+    {
+      key: "rhr",
+      label: "Hvilepuls",
+      icon: Heart,
+      raw: rhr != null ? `${rhr} slag/min` : "—",
+      score: rhrScore,
+      formula: "100 − (hvilepuls − 50) × 2",
+      explain: "Lavere hvilepuls gir høyere skår. 50 bpm = 100, 100 bpm = 0.",
+    },
+    {
+      key: "sleep",
+      label: "Søvn",
+      icon: Moon,
+      raw: sleepHrs != null ? `${sleepHrs.toFixed(1)} t` : "—",
+      score: sleepScore,
+      formula: "(timer / 8) × 100",
+      explain: "8 timer søvn gir 100. Skalerer lineært ned mot 0.",
+    },
+    {
+      key: "battery",
+      label: "Body Battery (høyeste)",
+      icon: Battery,
+      raw: battery != null ? `${battery}` : "—",
+      score: batteryScore,
+      formula: "verdi som er (0–100)",
+      explain: "Brukes direkte som skår.",
+    },
+    {
+      key: "stress",
+      label: "Stressnivå (snitt)",
+      icon: Brain,
+      raw: stress != null ? `${stress}` : "—",
+      score: stressScore,
+      formula: "100 − stressnivå",
+      explain: "Lavere stress gir høyere skår.",
+    },
+  ];
+
+  const used = parts.filter((p) => p.score != null);
+  const overall = used.length ? Math.round(used.reduce((s, p) => s + (p.score ?? 0), 0) / used.length) : null;
   const status = overall == null ? "ukjent" : overall >= 75 ? "Sterk" : overall >= 55 ? "God" : overall >= 35 ? "Trett" : "Svak";
   const color = overall == null ? "text-muted-foreground" : overall >= 75 ? "text-emerald-400" : overall >= 55 ? "text-primary" : overall >= 35 ? "text-amber-400" : "text-rose-400";
 
   return (
-    <div className="inline-flex items-center gap-2 rounded-full border border-primary/40 bg-card/70 backdrop-blur px-4 py-2 text-sm">
-      <ActivityIcon size={16} className={color} />
-      <span className={`text-medieval ${color}`}>Helse: {status}{overall != null && ` · ${overall}`}</span>
-      <span className="hidden md:inline-flex items-center gap-2 text-xs text-muted-foreground">
-        {rhr != null && (<span className="inline-flex items-center gap-1"><Heart size={11} /> {rhr}</span>)}
-        {sleepHrs != null && (<span className="inline-flex items-center gap-1"><Moon size={11} /> {sleepHrs.toFixed(1)}t</span>)}
-        {battery != null && (<span className="inline-flex items-center gap-1"><Battery size={11} /> {battery}</span>)}
-        {stress != null && (<span className="inline-flex items-center gap-1"><Brain size={11} /> {stress}</span>)}
-      </span>
-    </div>
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="inline-flex items-center gap-2 rounded-full border border-primary/40 bg-card/70 backdrop-blur px-4 py-2 text-sm transition hover:bg-card hover:border-primary cursor-pointer"
+        aria-label="Vis helsedetaljer"
+      >
+        <ActivityIcon size={16} className={color} />
+        <span className={`text-medieval ${color}`}>Helse: {status}{overall != null && ` · ${overall}`}</span>
+        <span className="hidden md:inline-flex items-center gap-2 text-xs text-muted-foreground">
+          {rhr != null && (<span className="inline-flex items-center gap-1"><Heart size={11} /> {rhr}</span>)}
+          {sleepHrs != null && (<span className="inline-flex items-center gap-1"><Moon size={11} /> {sleepHrs.toFixed(1)}t</span>)}
+          {battery != null && (<span className="inline-flex items-center gap-1"><Battery size={11} /> {battery}</span>)}
+          {stress != null && (<span className="inline-flex items-center gap-1"><Brain size={11} /> {stress}</span>)}
+        </span>
+      </button>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className={`text-medieval ${color}`}>
+              Helse: {status}{overall != null && ` · ${overall} / 100`}
+            </DialogTitle>
+            <DialogDescription>
+              Skåren er et snitt av delskårene under. Manglende data utelates fra snittet.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3">
+            {parts.map((p) => {
+              const Icon = p.icon;
+              const has = p.score != null;
+              return (
+                <div
+                  key={p.key}
+                  className={`rounded-lg border p-3 ${has ? "border-primary/30 bg-card/60" : "border-muted/40 bg-muted/10 opacity-70"}`}
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2">
+                      <Icon size={16} className="text-primary" />
+                      <span className="text-sm font-medium">{p.label}</span>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm">{p.raw}</div>
+                      <div className="text-xs text-muted-foreground">
+                        Skår: {p.score != null ? Math.round(p.score) : "—"} / 100
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-2 text-xs text-muted-foreground">
+                    <div><span className="font-mono">{p.formula}</span></div>
+                    <div>{p.explain}</div>
+                  </div>
+                </div>
+              );
+            })}
+
+            <div className="rounded-lg border border-primary/40 bg-card/70 p-3">
+              <div className="text-sm font-medium mb-1">Samlet skår</div>
+              <div className="text-xs text-muted-foreground">
+                Snitt av {used.length} av {parts.length} delskår:{" "}
+                {used.map((p) => Math.round(p.score ?? 0)).join(" + ")}
+                {used.length > 0 && ` = ${used.reduce((s, p) => s + Math.round(p.score ?? 0), 0)} / ${used.length} ≈ ${overall}`}
+              </div>
+              <div className="mt-2 text-xs text-muted-foreground">
+                Status: ≥75 Sterk · ≥55 God · ≥35 Trett · &lt;35 Svak
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
