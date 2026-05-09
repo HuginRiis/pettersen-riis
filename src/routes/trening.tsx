@@ -247,8 +247,10 @@ function TreningPage() {
         <div className="flex flex-wrap items-center gap-2">
           <StepsChip owner="arne" displayName="Arne" />
           <HealthStatusChip owner="arne" displayName="Arne" />
+          <RestingHrChip owner="arne" displayName="Arne" />
           <StepsChip owner="rebekka" displayName="Rebekka" />
           <HealthStatusChip owner="rebekka" displayName="Rebekka" />
+          <RestingHrChip owner="rebekka" displayName="Rebekka" />
         </div>
       </PageHero>
 
