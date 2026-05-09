@@ -15,6 +15,7 @@ import { UvNotificationSettings } from "@/components/UvNotificationSettings";
 import { WeatherNotificationSettings } from "@/components/WeatherNotificationSettings";
 import { MailDeliveryNotificationSettings } from "@/components/MailDeliveryNotificationSettings";
 import { GarminNotificationSettings } from "@/components/GarminNotificationSettings";
+import { LoginNotificationSettings } from "@/components/LoginNotificationSettings";
 import {
   Bell, BellOff, Calendar, Cake, Trash2, CloudSun, Sun, Lightbulb, ScrollText, ShieldCheck, Lock, ExternalLink, Smartphone, X,
 } from "lucide-react";
@@ -133,6 +134,15 @@ function PushSettingsPage() {
             ⌚ Garmin — helse og trening
           </h2>
           <GarminNotificationSettings />
+        </div>
+      </section>
+
+      <section className="container mx-auto px-4 pb-4">
+        <div className="panel rounded-lg p-4">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-primary mb-3 flex items-center gap-2">
+            🔐 Innlogging — vellykket og feilet
+          </h2>
+          <LoginNotificationSettings />
         </div>
       </section>
 
