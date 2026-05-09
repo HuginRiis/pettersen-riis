@@ -5,6 +5,7 @@ import { Footprints, Heart, Moon, Battery, Brain, Activity as ActivityIcon } fro
 import { PageShell, PageHero } from "@/components/PageShell";
 import { ActivityMap } from "@/components/ActivityMap";
 import { GarminPanel } from "@/components/GarminPanel";
+import { GarminCompare } from "@/components/GarminCompare";
 import { getActivityStreams, getStravaDashboard, getStravaStatus } from "@/server/strava";
 import { getGarminOverview } from "@/server/garmin.functions";
 import treningImg from "@/assets/got-trening.jpg";
@@ -252,7 +253,9 @@ function TreningPage() {
 
       <section className="container mx-auto px-4 py-12 space-y-16">
         
-        <GarminPanel />
+        <GarminPanel owner="arne" displayName="Arne" />
+        <GarminPanel owner="rebekka" displayName="Rebekka" />
+        <GarminCompare />
         <StravaSection owner="arne" displayName="Arne" />
         <StravaSection owner="rebekka" displayName="Rebekka" />
       </section>
