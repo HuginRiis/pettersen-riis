@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Footprints, Heart, Flame, Moon, BedDouble, Loader2 } from "lucide-react";
+import { Footprints, Heart, Flame, Moon, BedDouble, Loader2, Scale } from "lucide-react";
 import { getGarminOverview } from "@/server/garmin.functions";
 
 type Daily = {
