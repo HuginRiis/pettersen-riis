@@ -134,7 +134,7 @@ function withTrend<T extends Record<string, unknown>>(data: T[], key: string): A
   return data.map((d, i) => ({ ...d, _trend: slope * i + intercept }));
 }
 
-function renderBar<T extends Record<string, unknown> & { day?: string }>(data: T[], key: string, showTrend: boolean): React.ReactElement {
+function renderBar<T extends Record<string, unknown> & { day?: string }>(data: T[], key: string, showTrend: boolean, color: string = C.steps): React.ReactElement {
   const d = showTrend ? withTrend(data, key) : data;
   return (
     <BarChart data={d as Array<Record<string, unknown>>}>
@@ -142,13 +142,13 @@ function renderBar<T extends Record<string, unknown> & { day?: string }>(data: T
       <XAxis dataKey="day" tick={{ fontSize: 10 }} tickFormatter={(v: string) => String(v).slice(5)} />
       <YAxis tick={{ fontSize: 10 }} />
       <Tooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", fontSize: 12 }} />
-      <Bar dataKey={key} fill="var(--chart-yellow)" radius={[2, 2, 0, 0]} />
-      {showTrend && <Line type="monotone" dataKey="_trend" stroke="var(--chart-yellow-soft)" strokeWidth={2} strokeDasharray="4 3" dot={false} />}
+      <Bar dataKey={key} fill={color} radius={[2, 2, 0, 0]} />
+      {showTrend && <Line type="monotone" dataKey="_trend" stroke={color} strokeOpacity={0.45} strokeWidth={2} strokeDasharray="4 3" dot={false} />}
     </BarChart>
   );
 }
 
-function renderLine<T extends Record<string, unknown> & { day?: string }>(data: T[], key: string, showTrend: boolean, connectNulls = false): React.ReactElement {
+function renderLine<T extends Record<string, unknown> & { day?: string }>(data: T[], key: string, showTrend: boolean, connectNulls = false, color: string = C.hr): React.ReactElement {
   const d = showTrend ? withTrend(data, key) : data;
   return (
     <LineChart data={d as Array<Record<string, unknown>>}>
@@ -156,13 +156,13 @@ function renderLine<T extends Record<string, unknown> & { day?: string }>(data: 
       <XAxis dataKey="day" tick={{ fontSize: 10 }} tickFormatter={(v: string) => String(v).slice(5)} />
       <YAxis tick={{ fontSize: 10 }} domain={["auto", "auto"]} />
       <Tooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", fontSize: 12 }} />
-      <Line type="monotone" dataKey={key} stroke="var(--chart-yellow)" strokeWidth={2} dot={{ r: 2 }} connectNulls={connectNulls} />
-      {showTrend && <Line type="monotone" dataKey="_trend" stroke="var(--chart-yellow-soft)" strokeWidth={2} strokeDasharray="4 3" dot={false} />}
+      <Line type="monotone" dataKey={key} stroke={color} strokeWidth={2} dot={{ r: 2 }} connectNulls={connectNulls} />
+      {showTrend && <Line type="monotone" dataKey="_trend" stroke={color} strokeOpacity={0.45} strokeWidth={2} strokeDasharray="4 3" dot={false} />}
     </LineChart>
   );
 }
 
-function renderLine2<T extends Record<string, unknown> & { day?: string }>(data: T[], k1: string, k2: string, showTrend: boolean): React.ReactElement {
+function renderLine2<T extends Record<string, unknown> & { day?: string }>(data: T[], k1: string, k2: string, showTrend: boolean, color1: string = C.batteryHigh, color2: string = C.batteryLow): React.ReactElement {
   const d = showTrend ? withTrend(data, k1) : data;
   return (
     <LineChart data={d as Array<Record<string, unknown>>}>
@@ -170,10 +170,27 @@ function renderLine2<T extends Record<string, unknown> & { day?: string }>(data:
       <XAxis dataKey="day" tick={{ fontSize: 10 }} tickFormatter={(v: string) => String(v).slice(5)} />
       <YAxis tick={{ fontSize: 10 }} domain={["auto", "auto"]} />
       <Tooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", fontSize: 12 }} />
-      <Line type="monotone" dataKey={k1} stroke="var(--chart-yellow)" strokeWidth={2} dot={false} />
-      <Line type="monotone" dataKey={k2} stroke="var(--chart-yellow-soft)" strokeWidth={2} dot={false} />
-      {showTrend && <Line type="monotone" dataKey="_trend" stroke="var(--chart-yellow-faint)" strokeWidth={2} strokeDasharray="4 3" dot={false} />}
+      <Line type="monotone" dataKey={k1} stroke={color1} strokeWidth={2} dot={false} />
+      <Line type="monotone" dataKey={k2} stroke={color2} strokeWidth={2} dot={false} />
+      {showTrend && <Line type="monotone" dataKey="_trend" stroke={color1} strokeOpacity={0.4} strokeWidth={2} strokeDasharray="4 3" dot={false} />}
     </LineChart>
+  );
+}
+
+// Time-for-time bars for én dag (basert på aktiviteter eller datapoint pr. time)
+function renderHourBar(items: Array<{ hour: number; value: number | null }>, color: string, unit = ""): React.ReactElement {
+  return (
+    <BarChart data={items}>
+      <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+      <XAxis dataKey="hour" tick={{ fontSize: 10 }} tickFormatter={(h: number) => `${String(h).padStart(2, "0")}`} interval={1} />
+      <YAxis tick={{ fontSize: 10 }} />
+      <Tooltip
+        contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", fontSize: 12 }}
+        labelFormatter={(h) => `kl ${String(h).padStart(2, "0")}:00`}
+        formatter={(v: number) => [`${v}${unit}`, ""]}
+      />
+      <Bar dataKey="value" fill={color} radius={[2, 2, 0, 0]} />
+    </BarChart>
   );
 }
 
