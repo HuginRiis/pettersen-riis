@@ -15,8 +15,11 @@ type Sleep = {
   day: string;
   total_seconds: number | null;
   deep_seconds: number | null;
+  rem_seconds: number | null;
   sleep_score: number | null;
   hrv_avg: number | null;
+  average_spo2: number | null;
+  average_respiration: number | null;
 };
 type Overview = { daily: Daily[]; sleep: Sleep[] };
 
