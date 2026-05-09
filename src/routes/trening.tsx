@@ -8,6 +8,7 @@ import { GarminPanel } from "@/components/GarminPanel";
 import { getActivityStreams, getStravaDashboard, getStravaStatus } from "@/server/strava";
 import { getGarminOverview } from "@/server/garmin.functions";
 import treningImg from "@/assets/got-trening.jpg";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/trening")({
   head: () => ({
