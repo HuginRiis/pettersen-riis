@@ -290,7 +290,7 @@ function StepsChip({ owner = "arne", displayName }: { owner?: Owner; displayName
     <div className="inline-flex items-center gap-2 rounded-full border border-primary/40 bg-card/70 backdrop-blur px-4 py-2 text-sm">
       <Footprints size={16} className="text-primary" />
       <span className="text-medieval text-primary">
-        {steps.toLocaleString("nb-NO")} skritt i dag
+        {displayName ? `${displayName}: ` : ""}{steps.toLocaleString("nb-NO")} skritt i dag
       </span>
       {goal && (
         <span className="text-xs text-muted-foreground">
