@@ -439,9 +439,9 @@ export function GarminPanel() {
                   "hours",
                 )} />
               <Tile icon={<Scale size={14} />} label="Vekt"
-                value={today?.weight_kg ?? null} prev={yesterday?.weight_kg ?? null}
+                value={latestWeightEntry?.weight_kg ?? null} prev={prevWeightEntry?.weight_kg ?? null}
                 unit=" kg" digits={1} lowerIsBetter
-                fallbackSub="ingen veiing i dag"
+                fallbackSub={latestWeightEntry?.day ? `siste veiing ${latestWeightEntry.day.slice(5)}` : "ingen veiing"}
                 showDetails={showDetails}
                 details={(() => {
                   const ws = (data?.daily ?? []).map((d) => d.weight_kg).filter((x): x is number => x != null);
@@ -451,6 +451,7 @@ export function GarminPanel() {
                   const max = ws.length ? Math.max(...ws) : null;
                   const trend = first != null && last != null ? last - first : null;
                   return [
+                    { k: "Siste veiing", v: latestWeightEntry?.day ?? "—" },
                     { k: "Snitt 30d", v: avgFmt(ws, 1, " kg") },
                     { k: "Min 30d", v: min != null ? `${min.toFixed(1)} kg` : "—" },
                     { k: "Max 30d", v: max != null ? `${max.toFixed(1)} kg` : "—" },
@@ -458,6 +459,54 @@ export function GarminPanel() {
                   ];
                 })()}
                 chart={sparkLine(data?.daily, "weight_kg", true)} />
+              <Tile icon={<Droplets size={14} />} label="Pulsoksygen (SpO₂)"
+                value={lastSpo2Entry?.average_spo2 ?? null} prev={prevSpo2Entry?.average_spo2 ?? null}
+                unit=" %" digits={0}
+                fallbackSub="ingen måling"
+                showDetails={showDetails}
+                details={[
+                  { k: "Siste natt", v: lastSpo2Entry?.average_spo2 != null ? `${Math.round(lastSpo2Entry.average_spo2)} %` : "—" },
+                  { k: "Dato", v: lastSpo2Entry?.day ?? "—" },
+                  { k: "Forrige", v: prevSpo2Entry?.average_spo2 != null ? `${Math.round(prevSpo2Entry.average_spo2)} %` : "—" },
+                  { k: "Snitt 7d", v: avgFmt(data?.sleep?.slice(-7).map((s) => s.average_spo2), 0, " %") },
+                  { k: "Snitt 30d", v: avgFmt(data?.sleep?.map((s) => s.average_spo2), 0, " %") },
+                ]}
+                chart={sparkLine(
+                  (data?.sleep ?? []).map((s) => ({ day: s.day, spo2: s.average_spo2 })),
+                  "spo2",
+                )} />
+              <Tile icon={<Waves size={14} />} label="Pulsvariasjon (HRV)"
+                value={lastHrvEntry?.hrv_avg ?? null} prev={prevHrvEntry?.hrv_avg ?? null}
+                unit=" ms" digits={0}
+                fallbackSub="ingen data"
+                showDetails={showDetails}
+                details={[
+                  { k: "Siste natt", v: lastHrvEntry?.hrv_avg != null ? `${Math.round(lastHrvEntry.hrv_avg)} ms` : "—" },
+                  { k: "Dato", v: lastHrvEntry?.day ?? "—" },
+                  { k: "Forrige", v: prevHrvEntry?.hrv_avg != null ? `${Math.round(prevHrvEntry.hrv_avg)} ms` : "—" },
+                  { k: "Snitt 7d", v: avgFmt(data?.sleep?.slice(-7).map((s) => s.hrv_avg), 0, " ms") },
+                  { k: "Snitt 30d", v: avgFmt(data?.sleep?.map((s) => s.hrv_avg), 0, " ms") },
+                ]}
+                chart={sparkLine(
+                  (data?.sleep ?? []).map((s) => ({ day: s.day, hrv: s.hrv_avg })),
+                  "hrv",
+                )} />
+              <Tile icon={<Wind size={14} />} label="Pusting (snitt)"
+                value={lastRespEntry?.average_respiration ?? null} prev={prevRespEntry?.average_respiration ?? null}
+                unit=" /min" digits={0}
+                fallbackSub="ingen måling"
+                showDetails={showDetails}
+                details={[
+                  { k: "Siste natt", v: lastRespEntry?.average_respiration != null ? `${Math.round(lastRespEntry.average_respiration)} /min` : "—" },
+                  { k: "Dato", v: lastRespEntry?.day ?? "—" },
+                  { k: "Forrige", v: prevRespEntry?.average_respiration != null ? `${Math.round(prevRespEntry.average_respiration)} /min` : "—" },
+                  { k: "Snitt 7d", v: avgFmt(data?.sleep?.slice(-7).map((s) => s.average_respiration), 0, " /min") },
+                  { k: "Snitt 30d", v: avgFmt(data?.sleep?.map((s) => s.average_respiration), 0, " /min") },
+                ]}
+                chart={sparkLine(
+                  (data?.sleep ?? []).map((s) => ({ day: s.day, resp: s.average_respiration })),
+                  "resp",
+                )} />
               <Tile icon={<Flame size={14} />} label="Kalorier"
                 value={today?.total_kilocalories ?? null} prev={yesterday?.total_kilocalories ?? null}
                 fmt={fmtNum}
