@@ -43,6 +43,48 @@ export const Route = createFileRoute("/vakttarnet")({
   component: VakttarnetPage,
 });
 
+const VAKTTARN_TOC: { id: string; label: string }[] = [
+  { id: "vt-utgangsdoren", label: "Utgangsdøren" },
+  { id: "vt-stats", label: "Statistikk" },
+  { id: "vt-doors", label: "Porter & låser" },
+  { id: "vt-push", label: "Sendte varsel" },
+  { id: "vt-ai-budget", label: "AI-skattkammer" },
+  { id: "vt-map", label: "Vaktens kart" },
+  { id: "vt-livefeed", label: "Live-feed" },
+  { id: "vt-attempts", label: "Login-forsøk" },
+  { id: "vt-lockouts", label: "Stengte porter" },
+  { id: "vt-toplist", label: "Topplister" },
+  { id: "vt-events", label: "Kameralogg" },
+  { id: "vt-ai-usage", label: "Mesterens orakel" },
+  { id: "vt-allvisitors", label: "Alle besøk" },
+  { id: "vt-db", label: "Database & cron" },
+  { id: "vt-garmin", label: "Garmin Connect" },
+  { id: "vt-apilog", label: "API-logg" },
+  { id: "vt-changelog", label: "Changelog" },
+];
+
+function VakttarnetTOC() {
+  return (
+    <nav aria-label="Innholdsfortegnelse" className="panel rounded-lg border border-border bg-card/60 backdrop-blur p-3">
+      <h2 className="text-[10px] font-semibold uppercase tracking-[0.25em] text-muted-foreground mb-2">
+        Innholdsfortegnelse
+      </h2>
+      <ul className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+        {VAKTTARN_TOC.map((it) => (
+          <li key={it.id}>
+            <a
+              href={`#${it.id}`}
+              className="block px-2.5 py-2 rounded border border-border/60 text-xs text-foreground hover:border-primary/60 hover:text-primary transition truncate"
+            >
+              {it.label}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  );
+}
+
 function VakttarnetPage() {
   const fetch = useServerFn(fetchVakttarnetData);
   const fetchAi = useServerFn(getAiUsageStats);
