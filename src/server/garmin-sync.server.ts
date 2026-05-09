@@ -1,9 +1,9 @@
 /**
- * Synker daglige stats, aktiviteter og søvn fra Garmin → Supabase.
+ * Synker daglige stats, aktiviteter og søvn fra Garmin → Supabase per person (owner).
  * Idempotent — kan kjøres flere ganger om dagen.
  */
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { garminGet } from "./garmin.server";
+import { garminGet, GARMIN_OWNERS, type GarminOwner } from "./garmin.server";
 
 function isoDay(d: Date): string {
   const y = d.getFullYear();
@@ -38,27 +38,24 @@ type DailySummary = {
   averageStressLevel?: number;
 };
 
-export async function syncDaily(daysBack = 30): Promise<number> {
+export async function syncDaily(owner: GarminOwner, daysBack = 30): Promise<number> {
   let count = 0;
   for (let i = 0; i <= daysBack; i++) {
     const day = daysAgo(i);
     try {
-      const ds = await garminGet<DailySummary>(
-        `/usersummary-service/usersummary/daily/?calendarDate=${day}`,
-      );
+      const ds = await garminGet<DailySummary>(owner, `/usersummary-service/usersummary/daily/?calendarDate=${day}`);
       if (!ds) continue;
-      // Vekt — best-effort. Garmin endpoint returns daily weight summary if registered.
       let weightKg: number | null = null;
       try {
         const w = await garminGet<{ dateWeightList?: Array<{ weight?: number }>; totalAverage?: { weight?: number } }>(
-          `/weight-service/weight/dayview/${day}?includeAll=true`,
+          owner, `/weight-service/weight/dayview/${day}?includeAll=true`,
         );
         const grams = w?.totalAverage?.weight ?? w?.dateWeightList?.[0]?.weight ?? null;
         if (typeof grams === "number" && grams > 0) weightKg = Math.round((grams / 1000) * 100) / 100;
       } catch {}
       const avgHr = ds.averageHeartRateInBeatsPerMinute ?? ds.averageHeartRate ?? null;
       const row = {
-        day,
+        owner, day,
         steps: ds.totalSteps ?? null,
         step_goal: ds.dailyStepGoal ?? null,
         floors_climbed: ds.floorsAscended ?? null,
@@ -78,10 +75,10 @@ export async function syncDaily(daysBack = 30): Promise<number> {
         raw: ds as any,
         updated_at: new Date().toISOString(),
       };
-      await supabaseAdmin.from("garmin_daily_stats").upsert([row], { onConflict: "day" });
+      await supabaseAdmin.from("garmin_daily_stats").upsert([row], { onConflict: "owner,day" });
       count++;
     } catch (e) {
-      console.error("[garmin-sync] daily failed", day, e);
+      console.error(`[garmin-sync:${owner}] daily failed`, day, e);
     }
   }
   return count;
@@ -101,16 +98,15 @@ type ActivityRow = {
   averageSpeed?: number;
 };
 
-export async function syncActivities(limit = 50): Promise<number> {
-  const list = await garminGet<ActivityRow[]>(
-    `/activitylist-service/activities/search/activities?limit=${limit}&start=0`,
-  );
+export async function syncActivities(owner: GarminOwner, limit = 50): Promise<number> {
+  const list = await garminGet<ActivityRow[]>(owner, `/activitylist-service/activities/search/activities?limit=${limit}&start=0`);
   let count = 0;
   for (const a of list ?? []) {
     if (!a.activityId || !a.startTimeLocal) continue;
     await supabaseAdmin
       .from("garmin_activities")
       .upsert([{
+        owner,
         garmin_activity_id: a.activityId,
         activity_type: a.activityType?.typeKey ?? null,
         activity_name: a.activityName ?? null,
@@ -124,7 +120,7 @@ export async function syncActivities(limit = 50): Promise<number> {
         average_speed: a.averageSpeed ?? null,
         raw: a as any,
         updated_at: new Date().toISOString(),
-      }], { onConflict: "garmin_activity_id" });
+      }], { onConflict: "owner,garmin_activity_id" });
     count++;
   }
   return count;
@@ -149,15 +145,16 @@ type SleepDto = {
   hrvData?: { value?: number };
 };
 
-export async function syncSleep(daysBack = 14): Promise<number> {
+export async function syncSleep(owner: GarminOwner, daysBack = 14): Promise<number> {
   let count = 0;
   for (let i = 0; i <= daysBack; i++) {
     const day = daysAgo(i);
     try {
-      const s = await garminGet<SleepDto>(`/wellness-service/wellness/dailySleepData?date=${day}`);
+      const s = await garminGet<SleepDto>(owner, `/wellness-service/wellness/dailySleepData?date=${day}`);
       const d = s?.dailySleepDTO;
       if (!d || !d.calendarDate) continue;
       await supabaseAdmin.from("garmin_sleep").upsert([{
+        owner,
         day: d.calendarDate,
         sleep_start: d.sleepStartTimestampLocal ? new Date(d.sleepStartTimestampLocal).toISOString() : null,
         sleep_end: d.sleepEndTimestampLocal ? new Date(d.sleepEndTimestampLocal).toISOString() : null,
@@ -172,10 +169,10 @@ export async function syncSleep(daysBack = 14): Promise<number> {
         hrv_avg: d.avgOvernightHrv ?? s?.avgOvernightHrv ?? s?.hrvData?.value ?? null,
         raw: s as any,
         updated_at: new Date().toISOString(),
-      }], { onConflict: "day" });
+      }], { onConflict: "owner,day" });
       count++;
     } catch (e) {
-      console.error("[garmin-sync] sleep failed", day, e);
+      console.error(`[garmin-sync:${owner}] sleep failed`, day, e);
     }
   }
   return count;
@@ -193,13 +190,13 @@ function bucketAvg(buckets: Map<number, { sum: number; n: number; max: number }>
   buckets.set(hour, cur);
 }
 
-export async function syncIntraday(daysBack = 1): Promise<number> {
+export async function syncIntraday(owner: GarminOwner, daysBack = 1): Promise<number> {
   let count = 0;
   for (let i = 0; i <= daysBack; i++) {
     const day = daysAgo(i);
     try {
-      const hr = await garminGet<IntradayDto>(`/wellness-service/wellness/dailyHeartRate?date=${day}`);
-      const stress = await garminGet<IntradayDto>(`/wellness-service/wellness/dailyStress/${day}`);
+      const hr = await garminGet<IntradayDto>(owner, `/wellness-service/wellness/dailyHeartRate?date=${day}`);
+      const stress = await garminGet<IntradayDto>(owner, `/wellness-service/wellness/dailyStress/${day}`);
 
       const hrBuckets = new Map<number, { sum: number; n: number; max: number }>();
       for (const [ts, v] of hr?.heartRateValues ?? []) {
@@ -214,20 +211,19 @@ export async function syncIntraday(daysBack = 1): Promise<number> {
       const bbBuckets = new Map<number, { sum: number; n: number; max: number }>();
       for (const row of stress?.bodyBatteryValuesArray ?? []) {
         const ts = row[0] as number;
-        // Garmin format: [ts, status, value, version] — value is at index 2
         const v = (row[2] ?? row[1]) as number | null;
         if (typeof v !== "number" || v <= 0) continue;
         bucketAvg(bbBuckets, new Date(ts).getHours(), v);
       }
 
-      const rows: Array<{ day: string; hour: number; heart_rate_avg: number | null; heart_rate_max: number | null; stress_avg: number | null; body_battery: number | null; updated_at: string }> = [];
+      const rows: Array<{ owner: GarminOwner; day: string; hour: number; heart_rate_avg: number | null; heart_rate_max: number | null; stress_avg: number | null; body_battery: number | null; updated_at: string }> = [];
       for (let h = 0; h < 24; h++) {
         const hb = hrBuckets.get(h);
         const sb = stressBuckets.get(h);
         const bb = bbBuckets.get(h);
         if (!hb && !sb && !bb) continue;
         rows.push({
-          day, hour: h,
+          owner, day, hour: h,
           heart_rate_avg: hb ? Math.round(hb.sum / hb.n) : null,
           heart_rate_max: hb ? Math.round(hb.max) : null,
           stress_avg: sb ? Math.round(sb.sum / sb.n) : null,
@@ -236,40 +232,49 @@ export async function syncIntraday(daysBack = 1): Promise<number> {
         });
       }
       if (rows.length > 0) {
-        await supabaseAdmin.from("garmin_intraday").upsert(rows, { onConflict: "day,hour" });
+        await supabaseAdmin.from("garmin_intraday").upsert(rows, { onConflict: "owner,day,hour" });
         count += rows.length;
       }
     } catch (e) {
-      console.error("[garmin-sync] intraday failed", day, e);
+      console.error(`[garmin-sync:${owner}] intraday failed`, day, e);
     }
   }
   return count;
 }
 
-export async function syncAll(trigger: string): Promise<{
-  ok: boolean;
-  daily: number;
-  activities: number;
-  sleep: number;
-  intraday: number;
-  duration_ms: number;
-  error?: string;
+export async function syncOne(owner: GarminOwner, trigger: string): Promise<{
+  ok: boolean; owner: GarminOwner; daily: number; activities: number; sleep: number; intraday: number; duration_ms: number; error?: string;
 }> {
   const t0 = Date.now();
   let daily = 0, activities = 0, sleep = 0, intraday = 0;
   let error: string | undefined;
   try {
-    daily = await syncDaily(30);
-    activities = await syncActivities(50);
-    sleep = await syncSleep(14);
-    intraday = await syncIntraday(1); // i dag + i går (timesoppløsning)
+    daily = await syncDaily(owner, 30);
+    activities = await syncActivities(owner, 50);
+    sleep = await syncSleep(owner, 14);
+    intraday = await syncIntraday(owner, 1);
   } catch (e) {
     error = (e as Error).message;
   }
   const duration_ms = Date.now() - t0;
   await supabaseAdmin.from("garmin_sync_log").insert({
-    trigger, ok: !error, daily_count: daily, activities_count: activities,
+    owner, trigger, ok: !error, daily_count: daily, activities_count: activities,
     sleep_count: sleep, duration_ms, error: error ?? null,
   });
-  return { ok: !error, daily, activities, sleep, intraday, duration_ms, error };
+  return { ok: !error, owner, daily, activities, sleep, intraday, duration_ms, error };
+}
+
+export async function syncAll(trigger: string): Promise<{
+  ok: boolean;
+  results: Array<{ ok: boolean; owner: GarminOwner; daily: number; activities: number; sleep: number; intraday: number; duration_ms: number; error?: string }>;
+}> {
+  const results = [] as Array<Awaited<ReturnType<typeof syncOne>>>;
+  for (const owner of GARMIN_OWNERS) {
+    try {
+      results.push(await syncOne(owner, trigger));
+    } catch (e) {
+      results.push({ ok: false, owner, daily: 0, activities: 0, sleep: 0, intraday: 0, duration_ms: 0, error: (e as Error).message });
+    }
+  }
+  return { ok: results.every((r) => r.ok), results };
 }
