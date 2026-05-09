@@ -245,8 +245,10 @@ function TreningPage() {
         image={treningImg}
       >
         <div className="flex flex-wrap items-center gap-2">
-          <StepsChip />
-          <HealthStatusChip />
+          <StepsChip owner="arne" displayName="Arne" />
+          <HealthStatusChip owner="arne" displayName="Arne" />
+          <StepsChip owner="rebekka" displayName="Rebekka" />
+          <HealthStatusChip owner="rebekka" displayName="Rebekka" />
         </div>
       </PageHero>
 
