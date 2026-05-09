@@ -298,6 +298,55 @@ function StepsChip() {
   );
 }
 
+function HealthStatusChip() {
+  const fetchOverview = useServerFn(getGarminOverview);
+  const [data, setData] = useState<any>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const o: any = await fetchOverview();
+        if (!cancelled) setData(o);
+      } catch { /* stille */ }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  if (!data) return null;
+
+  const today = data?.daily?.[data.daily.length - 1];
+  const yesterday = data?.daily && data.daily.length >= 2 ? data.daily[data.daily.length - 2] : null;
+  const lastSleep = data?.sleep?.[data.sleep.length - 1];
+  const rhr = today?.resting_heart_rate ?? yesterday?.resting_heart_rate ?? null;
+  const sleepHrs = lastSleep?.total_seconds ? lastSleep.total_seconds / 3600 : null;
+  const battery = today?.body_battery_high ?? null;
+  const stress = today?.stress_average ?? null;
+
+  // Enkel score (0–100)
+  let score = 0; let count = 0;
+  if (rhr != null) { score += Math.max(0, Math.min(100, 100 - (rhr - 50) * 2)); count++; }
+  if (sleepHrs != null) { score += Math.max(0, Math.min(100, (sleepHrs / 8) * 100)); count++; }
+  if (battery != null) { score += battery; count++; }
+  if (stress != null) { score += Math.max(0, 100 - stress); count++; }
+  const overall = count ? Math.round(score / count) : null;
+  const status = overall == null ? "ukjent" : overall >= 75 ? "Sterk" : overall >= 55 ? "God" : overall >= 35 ? "Trett" : "Svak";
+  const color = overall == null ? "text-muted-foreground" : overall >= 75 ? "text-emerald-400" : overall >= 55 ? "text-primary" : overall >= 35 ? "text-amber-400" : "text-rose-400";
+
+  return (
+    <div className="inline-flex items-center gap-2 rounded-full border border-primary/40 bg-card/70 backdrop-blur px-4 py-2 text-sm">
+      <ActivityIcon size={16} className={color} />
+      <span className={`text-medieval ${color}`}>Helse: {status}{overall != null && ` · ${overall}`}</span>
+      <span className="hidden md:inline-flex items-center gap-2 text-xs text-muted-foreground">
+        {rhr != null && (<span className="inline-flex items-center gap-1"><Heart size={11} /> {rhr}</span>)}
+        {sleepHrs != null && (<span className="inline-flex items-center gap-1"><Moon size={11} /> {sleepHrs.toFixed(1)}t</span>)}
+        {battery != null && (<span className="inline-flex items-center gap-1"><Battery size={11} /> {battery}</span>)}
+        {stress != null && (<span className="inline-flex items-center gap-1"><Brain size={11} /> {stress}</span>)}
+      </span>
+    </div>
+  );
+}
+
 function StravaSection({ owner, displayName }: { owner: Owner; displayName: string }) {
   const [status, setStatus] = useState<StatusState>({ kind: "loading" });
   const [dash, setDash] = useState<DashState>({ kind: "idle" });
