@@ -12,7 +12,7 @@ import type {
 import { getAiUsageStats, type AiUsageStats } from "@/server/ai-usage";
 import { useAuthStatus } from "@/hooks/use-auth-status";
 import heroImg from "@/assets/got-vakttarnet.jpg";
-import { Eye, Globe2, Smartphone, Monitor, Tablet, Clock, Crown, ShieldAlert, Map as MapIcon, Lock, Unlock, Sparkles, DoorClosed, Users, Bell, Database, Activity } from "lucide-react";
+import { Eye, Globe2, Smartphone, Monitor, Tablet, Clock, Crown, ShieldAlert, Map as MapIcon, Lock, Unlock, Sparkles, DoorClosed, Users, Bell, Database, Activity, ChevronDown, DoorOpen, BarChart3, Wallet, Radio, KeyRound, ShieldOff, Trophy, Camera, Brain, UserSearch, Watch, Network, History, List as ListIcon } from "lucide-react";
 import { DbUsagePanel } from "@/components/DbUsagePanel";
 import { DoorsLocksPanel } from "@/components/DoorsLocksPanel";
 import { ApiCallLogPanel } from "@/components/ApiCallLogPanel";
@@ -43,44 +43,72 @@ export const Route = createFileRoute("/vakttarnet")({
   component: VakttarnetPage,
 });
 
-const VAKTTARN_TOC: { id: string; label: string }[] = [
-  { id: "vt-utgangsdoren", label: "Utgangsdøren" },
-  { id: "vt-stats", label: "Statistikk" },
-  { id: "vt-doors", label: "Porter & låser" },
-  { id: "vt-push", label: "Sendte varsel" },
-  { id: "vt-ai-budget", label: "AI-skattkammer" },
-  { id: "vt-map", label: "Vaktens kart" },
-  { id: "vt-livefeed", label: "Live-feed" },
-  { id: "vt-attempts", label: "Login-forsøk" },
-  { id: "vt-lockouts", label: "Stengte porter" },
-  { id: "vt-toplist", label: "Topplister" },
-  { id: "vt-events", label: "Kameralogg" },
-  { id: "vt-ai-usage", label: "Mesterens orakel" },
-  { id: "vt-allvisitors", label: "Alle besøk" },
-  { id: "vt-db", label: "Database & cron" },
-  { id: "vt-garmin", label: "Garmin Connect" },
-  { id: "vt-apilog", label: "API-logg" },
-  { id: "vt-changelog", label: "Changelog" },
+const VAKTTARN_TOC: { id: string; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+  { id: "vt-utgangsdoren", label: "Utgangsdøren", icon: DoorOpen },
+  { id: "vt-stats", label: "Statistikk", icon: BarChart3 },
+  { id: "vt-doors", label: "Porter & låser", icon: DoorClosed },
+  { id: "vt-push", label: "Sendte varsel", icon: Bell },
+  { id: "vt-ai-budget", label: "AI-skattkammer", icon: Wallet },
+  { id: "vt-map", label: "Vaktens kart", icon: MapIcon },
+  { id: "vt-livefeed", label: "Live-feed", icon: Radio },
+  { id: "vt-attempts", label: "Login-forsøk", icon: KeyRound },
+  { id: "vt-lockouts", label: "Stengte porter", icon: ShieldOff },
+  { id: "vt-toplist", label: "Topplister", icon: Trophy },
+  { id: "vt-events", label: "Kameralogg", icon: Camera },
+  { id: "vt-ai-usage", label: "Mesterens orakel", icon: Brain },
+  { id: "vt-allvisitors", label: "Alle besøk", icon: UserSearch },
+  { id: "vt-db", label: "Database & cron", icon: Database },
+  { id: "vt-garmin", label: "Garmin Connect", icon: Watch },
+  { id: "vt-apilog", label: "API-logg", icon: Network },
+  { id: "vt-changelog", label: "Changelog", icon: History },
 ];
 
 function VakttarnetTOC() {
+  const [open, setOpen] = useState(false);
+
+  const handleClick = (e: React.MouseEvent<HTMLAnchorElement>, id: string) => {
+    e.preventDefault();
+    const el = document.getElementById(id);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+      history.replaceState(null, "", `#${id}`);
+    }
+  };
+
   return (
     <nav aria-label="Innholdsfortegnelse" className="panel rounded-lg border border-border bg-card/60 backdrop-blur p-3">
-      <h2 className="text-[10px] font-semibold uppercase tracking-[0.25em] text-muted-foreground mb-2">
-        Innholdsfortegnelse
-      </h2>
-      <ul className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-        {VAKTTARN_TOC.map((it) => (
-          <li key={it.id}>
-            <a
-              href={`#${it.id}`}
-              className="block px-2.5 py-2 rounded border border-border/60 text-xs text-foreground hover:border-primary/60 hover:text-primary transition truncate"
-            >
-              {it.label}
-            </a>
-          </li>
-        ))}
-      </ul>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        className="w-full flex items-center justify-between gap-2 text-left"
+      >
+        <span className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.25em] text-muted-foreground">
+          <ListIcon className="h-3.5 w-3.5" />
+          Innholdsfortegnelse
+          <span className="normal-case tracking-normal text-muted-foreground/70">({VAKTTARN_TOC.length})</span>
+        </span>
+        <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+      {open && (
+        <ul className="grid grid-cols-3 gap-2 mt-3">
+          {VAKTTARN_TOC.map((it) => {
+            const Icon = it.icon;
+            return (
+              <li key={it.id}>
+                <a
+                  href={`#${it.id}`}
+                  onClick={(e) => handleClick(e, it.id)}
+                  className="flex flex-col items-center justify-center gap-1.5 px-2 py-3 rounded-md border border-border/60 bg-background/40 text-[11px] text-foreground hover:border-primary/60 hover:text-primary hover:bg-primary/5 transition text-center min-h-[68px] cursor-pointer"
+                >
+                  <Icon className="h-4 w-4 shrink-0" />
+                  <span className="leading-tight line-clamp-2">{it.label}</span>
+                </a>
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </nav>
   );
 }
