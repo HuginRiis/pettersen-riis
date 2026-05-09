@@ -231,7 +231,7 @@ export function GarminStatusPanel({ owner = "arne", displayName }: { owner?: Own
                 value={schedule.first_local_hour}
                 onChange={(e) => setSchedule({ ...schedule, first_local_hour: parseInt(e.target.value, 10) })}
               >
-                {Array.from({ length: 24 }, (_, h) => (
+                {Array.from({ length: 15 }, (_, i) => 6 + i).map((h) => (
                   <option key={h} value={h}>{String(h).padStart(2, "0")}:00</option>
                 ))}
               </select>
@@ -243,7 +243,7 @@ export function GarminStatusPanel({ owner = "arne", displayName }: { owner?: Own
                 value={schedule.last_local_hour}
                 onChange={(e) => setSchedule({ ...schedule, last_local_hour: parseInt(e.target.value, 10) })}
               >
-                {Array.from({ length: 24 }, (_, h) => (
+                {Array.from({ length: 15 }, (_, i) => 6 + i).map((h) => (
                   <option key={h} value={h}>{String(h).padStart(2, "0")}:59</option>
                 ))}
               </select>
