@@ -277,6 +277,7 @@ export async function processGarminNotifications(): Promise<{ checked: number; s
         await markNotified(p, key);
       }
     }
+  }
 
   return { checked, sent, errors, skipped };
 }
