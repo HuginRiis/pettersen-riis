@@ -106,6 +106,41 @@ export function GarminCompare() {
     return acc;
   }, { arne: 0, rebekka: 0 });
 
+  // Top 5 highlights — shuffled "she slept X more than him"-style insights
+  type Highlight = { text: string; winner: "arne" | "rebekka" };
+  const highlights: Highlight[] = [];
+  for (const row of rows) {
+    const w = winner(row);
+    if (w !== "arne" && w !== "rebekka") continue;
+    const leader = w === "arne" ? "Arne" : "Rebekka";
+    const trailer = w === "arne" ? "Rebekka" : "Arne";
+    const diff = Math.abs((row.arne ?? 0) - (row.rebekka ?? 0));
+    const diffStr = row.fmtDiff ? row.fmtDiff(diff) : row.fmt(diff);
+    let verb = "ledet på";
+    const lbl = row.label.toLowerCase();
+    if (lbl.includes("søvn (totalt)")) verb = "sov mer enn";
+    else if (lbl.includes("dyp søvn")) verb = "fikk mer dyp søvn enn";
+    else if (lbl.includes("rem")) verb = "fikk mer REM-søvn enn";
+    else if (lbl.includes("søvnscore")) verb = "hadde høyere søvnscore enn";
+    else if (lbl.includes("skritt")) verb = "gikk flere skritt enn";
+    else if (lbl.includes("hvilepuls")) verb = "hadde lavere hvilepuls enn";
+    else if (lbl.includes("hrv")) verb = "hadde bedre pulsvariasjon enn";
+    else if (lbl.includes("spo")) verb = "hadde høyere oksygenmetning enn";
+    else if (lbl.includes("body battery")) verb = "ladet bedre enn";
+    else if (lbl.includes("stress")) verb = "var mindre stresset enn";
+    else if (lbl.includes("intensitet")) verb = "tok flere intensitetsminutter enn";
+    else if (lbl.includes("kcal")) verb = "brente mer enn";
+    else if (lbl.includes("trapper")) verb = "tok flere trapper enn";
+    highlights.push({ text: `${leader} ${verb} ${trailer} med ${diffStr} (${row.label.toLowerCase()})`, winner: w });
+  }
+  // Shuffle (Fisher–Yates) and take 5
+  const shuffled = [...highlights];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  const top5 = shuffled.slice(0, 5);
+
   const display = "var(--font-display)";
 
   return (
