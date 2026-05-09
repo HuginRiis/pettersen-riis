@@ -92,6 +92,7 @@ function RootComponent() {
     <>
       <PullToRefresh />
       <VisitorTracker />
+      <LastRouteMemory />
       <Outlet />
       <LoginDialog />
     </>
