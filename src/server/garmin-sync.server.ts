@@ -142,8 +142,11 @@ type SleepDto = {
     awakeSleepSeconds?: number;
     averageSpO2Value?: number;
     averageRespirationValue?: number;
+    avgOvernightHrv?: number;
     sleepScores?: { overall?: { value?: number } };
   };
+  avgOvernightHrv?: number;
+  hrvData?: { value?: number };
 };
 
 export async function syncSleep(daysBack = 14): Promise<number> {
