@@ -47,11 +47,12 @@ export function UtgangsdorenPanel() {
         return;
       }
       const found =
+        res.locks.find((l) => l.brand === "verisure") ??
         res.locks.find((l) => l.name.toLowerCase().includes(MATCH)) ??
         res.locks.find((l) => l.name.toLowerCase().includes("utgang")) ??
         null;
       setEntry(found);
-      setError(found ? null : "Fant ikke «Utgangsdøren»");
+      setError(found ? null : "Fant ingen Verisure-lås");
     } catch (e: any) {
       setError(e?.message ?? "Ukjent feil");
     } finally {
