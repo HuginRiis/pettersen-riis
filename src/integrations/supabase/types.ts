@@ -514,7 +514,10 @@ export type Database = {
       }
       garmin_notification_prefs: {
         Row: {
+          compare_time: string
           created_at: string
+          daily_fields: string[]
+          daily_show_both: boolean
           daily_time: string
           enabled: boolean
           garmin_owner: string
@@ -522,6 +525,7 @@ export type Database = {
           id: string
           low_sleep_hours: number
           notified_keys: string[]
+          notify_compare: boolean
           notify_daily: boolean
           notify_high_resting_hr: boolean
           notify_low_sleep: boolean
@@ -531,7 +535,10 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          compare_time?: string
           created_at?: string
+          daily_fields?: string[]
+          daily_show_both?: boolean
           daily_time?: string
           enabled?: boolean
           garmin_owner?: string
@@ -539,6 +546,7 @@ export type Database = {
           id?: string
           low_sleep_hours?: number
           notified_keys?: string[]
+          notify_compare?: boolean
           notify_daily?: boolean
           notify_high_resting_hr?: boolean
           notify_low_sleep?: boolean
@@ -548,7 +556,10 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          compare_time?: string
           created_at?: string
+          daily_fields?: string[]
+          daily_show_both?: boolean
           daily_time?: string
           enabled?: boolean
           garmin_owner?: string
@@ -556,6 +567,7 @@ export type Database = {
           id?: string
           low_sleep_hours?: number
           notified_keys?: string[]
+          notify_compare?: boolean
           notify_daily?: boolean
           notify_high_resting_hr?: boolean
           notify_low_sleep?: boolean
