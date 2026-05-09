@@ -247,7 +247,7 @@ function TreningPage() {
       </PageHero>
 
       <section className="container mx-auto px-4 py-12 space-y-16">
-        <GarminAverageStats />
+        
         <GarminPanel />
         <StravaSection owner="arne" displayName="Arne" />
         <StravaSection owner="rebekka" displayName="Rebekka" />
