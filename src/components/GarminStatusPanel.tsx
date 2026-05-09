@@ -82,42 +82,48 @@ function fmtNext(d: Date | null): string {
   return `om ${Math.round(hr / 24)}d`;
 }
 
-export function GarminStatusPanel() {
+type Owner = "arne" | "rebekka";
+
+export function GarminStatusPanel({ owner = "arne", displayName }: { owner?: Owner; displayName?: string } = {}) {
   const fetchOverview = useServerFn(getGarminOverview);
   const fetchSchedule = useServerFn(getGarminSyncSchedule);
   const saveSchedule = useServerFn(saveGarminSyncSchedule);
   const [status, setStatus] = useState<Status | null>(null);
   const [lastSync, setLastSync] = useState<LastSync>(null);
+  const [intraday, setIntraday] = useState<Array<{ day: string; hour: number; heart_rate_avg: number | null; heart_rate_max: number | null; stress_avg: number | null; body_battery: number | null }>>([]);
   const [loading, setLoading] = useState(true);
   const [showSettings, setShowSettings] = useState(false);
+  const [showIntraday, setShowIntraday] = useState(false);
   const [schedule, setSchedule] = useState<Schedule | null>(null);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     let alive = true;
+    setLoading(true);
     (async () => {
       try {
         const [r, s] = await Promise.all([
-          fetchOverview() as Promise<{ status: Status; lastSync: LastSync }>,
-          fetchSchedule() as Promise<Schedule>,
+          fetchOverview({ data: { owner } }) as Promise<{ status: Status; lastSync: LastSync; intraday?: typeof intraday }>,
+          fetchSchedule({ data: { owner } }) as Promise<Schedule>,
         ]);
         if (!alive) return;
         setStatus(r.status);
         setLastSync(r.lastSync);
+        setIntraday(r.intraday ?? []);
         setSchedule(s);
       } finally {
         if (alive) setLoading(false);
       }
     })();
     return () => { alive = false; };
-  }, [fetchOverview, fetchSchedule]);
+  }, [fetchOverview, fetchSchedule, owner]);
 
   const handleSave = async () => {
     if (!schedule) return;
     setSaving(true);
     try {
-      await saveSchedule({ data: schedule });
-      toast.success("Garmin-tidsplan lagret");
+      await saveSchedule({ data: { ...schedule, owner } });
+      toast.success(`Garmin-tidsplan lagret${displayName ? ` for ${displayName}` : ""}`);
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
