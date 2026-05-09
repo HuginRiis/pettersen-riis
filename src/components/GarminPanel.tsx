@@ -580,8 +580,9 @@ export function GarminPanel() {
               </button>
               {showCharts && (
                 <>
-                  <div className="inline-flex rounded-md border border-border/60 overflow-hidden text-[11px] ml-2">
+                  <div className="inline-flex rounded-md border border-border/60 overflow-hidden text-[11px] ml-2 flex-wrap">
                     {([
+                      ["today", "I dag"],
                       ["yesterday", "I går"],
                       ["thisWeek", "Denne uken"],
                       ["lastWeek", "Forrige uke"],
