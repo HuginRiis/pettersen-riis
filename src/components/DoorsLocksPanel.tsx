@@ -605,7 +605,7 @@ export function DoorsLocksPanel() {
       if (inFlight.current) return;
       inFlight.current = true;
       try {
-        const res = await fetchData();
+        const res = await fetchData({ data: {} });
         if (!alive) return;
         if (res.ok) {
           setState({ status: "ok", data: res });
