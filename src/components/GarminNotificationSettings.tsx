@@ -177,14 +177,65 @@ export function GarminNotificationSettings() {
                 <Switch checked={p.notify_daily} onCheckedChange={(v) => update(p.id, { notify_daily: v })} />
               </div>
               {p.notify_daily && (
+                <div className="space-y-2 text-xs">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-muted-foreground">Klokkeslett:</span>
+                    <Input
+                      type="time"
+                      value={(p.daily_time || "07:30").slice(0, 5)}
+                      onChange={(e) => update(p.id, { daily_time: `${e.target.value}:00` })}
+                      className="h-8 w-28"
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Vis begge brukere (Arne + Rebekka)</span>
+                    <Switch checked={!!p.daily_show_both} onCheckedChange={(v) => update(p.id, { daily_show_both: v })} />
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-muted-foreground">Felt som skal være med:</span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {DAILY_FIELD_OPTIONS.map((f) => {
+                        const active = (p.daily_fields ?? []).includes(f.key);
+                        return (
+                          <button
+                            key={f.key}
+                            type="button"
+                            onClick={() => {
+                              const cur = new Set(p.daily_fields ?? []);
+                              if (active) cur.delete(f.key); else cur.add(f.key);
+                              update(p.id, { daily_fields: Array.from(cur) });
+                            }}
+                            className={`px-2 py-0.5 rounded border text-[11px] transition-colors ${
+                              active
+                                ? "bg-primary/20 border-primary/40 text-primary"
+                                : "border-border/60 text-muted-foreground hover:bg-muted/40"
+                            }`}
+                          >
+                            {f.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="rounded-md border border-border/40 p-2 space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-medium">Sammenligning Arne vs Rebekka</span>
+                <Switch checked={!!p.notify_compare} onCheckedChange={(v) => update(p.id, { notify_compare: v })} />
+              </div>
+              {p.notify_compare && (
                 <div className="flex items-center gap-2 text-xs">
                   <span className="text-muted-foreground">Klokkeslett:</span>
                   <Input
                     type="time"
-                    value={(p.daily_time || "07:30").slice(0, 5)}
-                    onChange={(e) => update(p.id, { daily_time: `${e.target.value}:00` })}
+                    value={(p.compare_time || "20:00").slice(0, 5)}
+                    onChange={(e) => update(p.id, { compare_time: `${e.target.value}:00` })}
                     className="h-8 w-28"
                   />
+                  <span className="text-muted-foreground italic">viser hvem som vant på skritt, søvn, hvilepuls, kalorier og body battery</span>
                 </div>
               )}
             </div>
