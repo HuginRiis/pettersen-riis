@@ -37,11 +37,11 @@ export function UtgangsdorenPanel() {
   const [busy, setBusy] = useState(false);
   const inFlight = useRef(false);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (force = false) => {
     if (inFlight.current) return;
     inFlight.current = true;
     try {
-      const res = await fetchSnap();
+      const res = await fetchSnap(force ? { data: { force: true } } : undefined);
       if (!res.ok) {
         setError(res.error);
         return;
@@ -60,8 +60,9 @@ export function UtgangsdorenPanel() {
   }, [fetchSnap]);
 
   useEffect(() => {
-    load();
-    const id = window.setInterval(load, REFRESH_MS);
+    // Force fresh data on mount / page refresh — bypass server-side 3 min cache
+    load(true);
+    const id = window.setInterval(() => load(false), REFRESH_MS);
     return () => window.clearInterval(id);
   }, [load]);
 
