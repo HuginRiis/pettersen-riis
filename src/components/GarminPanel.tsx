@@ -586,13 +586,6 @@ function Tile({
           ))}
         </div>
       )}
-      {showDetails && chart && (
-        <div className="mt-2 pt-2 border-t border-border/40">
-          <ResponsiveContainer width="100%" height={70}>
-            {chart as React.ReactElement}
-          </ResponsiveContainer>
-        </div>
-      )}
     </div>
   );
 }
