@@ -192,6 +192,23 @@ export async function logLoginAttempt(success: boolean, who?: string | null) {
       browser: uaInfo.browser,
       who: sanitizedWho,
     });
+    // Fire-and-forget push notifications to subscribers who want
+    // login alerts. Never let this break the login flow.
+    try {
+      const { notifyLoginAttempt } = await import("./login-push.server");
+      void notifyLoginAttempt({
+        success,
+        who: sanitizedWho,
+        ip: geo.ip,
+        city: geo.city,
+        country: geo.country,
+        os: uaInfo.os,
+        browser: uaInfo.browser,
+        deviceType: uaInfo.deviceType,
+      });
+    } catch {
+      /* ignore */
+    }
   } catch {
     // never fail login flow because of analytics
   }
