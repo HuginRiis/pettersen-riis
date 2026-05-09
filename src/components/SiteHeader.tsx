@@ -323,7 +323,7 @@ export function SiteHeader() {
                 >
                   {l.to === "/pollen"
                     ? <PollenIcon lat={pollenCoord.lat} lon={pollenCoord.lon} />
-                    : ROUTE_ICON[l.to] ? (() => { const I = ROUTE_ICON[l.to]!; return <I size={13} strokeWidth={2.25} style={{ color: ROUTE_ICON_COLOR[l.to] }} />; })() : null}
+                    : ROUTE_ICON[l.to] ? (() => { const I = ROUTE_ICON[l.to]!; return <I size={13} strokeWidth={2.25} color={ROUTE_ICON_COLOR[l.to]} />; })() : null}
                   <span>{l.label}</span>
                   {count > 0 && menuPrefs.sortByUsage && <UsageBadge count={count} />}
                   {l.to === "/" && <UvBadge lat={BORGEN_COORD.lat} lon={BORGEN_COORD.lon} />}
@@ -437,7 +437,7 @@ export function SiteHeader() {
                   >
                     {l.to === "/pollen"
                       ? <PollenIcon lat={pollenCoord.lat} lon={pollenCoord.lon} />
-                      : ROUTE_ICON[l.to] ? (() => { const I = ROUTE_ICON[l.to]!; return <I size={15} strokeWidth={2.25} style={{ color: ROUTE_ICON_COLOR[l.to] }} />; })() : null}
+                      : ROUTE_ICON[l.to] ? (() => { const I = ROUTE_ICON[l.to]!; return <I size={15} strokeWidth={2.25} color={ROUTE_ICON_COLOR[l.to]} />; })() : null}
                     <span className="flex-1">{l.label}</span>
                     {count > 0 && menuPrefs.sortByUsage && <UsageBadge count={count} />}
                     {l.to === "/" && <UvBadge lat={BORGEN_COORD.lat} lon={BORGEN_COORD.lon} />}
