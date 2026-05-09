@@ -50,6 +50,43 @@ type Counts = {
   subscribers: number;
 };
 
+const TOC_ITEMS: { id: string; label: string; emoji: string }[] = [
+  { id: "sec-personlig", label: "Personlig", emoji: "✦" },
+  { id: "sec-farevarsel", label: "Farevarsel", emoji: "⚠️" },
+  { id: "sec-uv", label: "UV / Solkrem", emoji: "🧴" },
+  { id: "sec-vaer", label: "Vær", emoji: "🪶" },
+  { id: "sec-lys", label: "Lys på", emoji: "💡" },
+  { id: "sec-post", label: "Posten", emoji: "📬" },
+  { id: "sec-garmin", label: "Garmin", emoji: "⌚" },
+  { id: "sec-innlogging", label: "Innlogging", emoji: "🔐" },
+  { id: "sec-kategorier", label: "Oversikt", emoji: "📋" },
+];
+
+function SettingsTOC() {
+  return (
+    <section className="container mx-auto px-4 pt-4">
+      <nav aria-label="Innholdsfortegnelse" className="panel rounded-lg p-3">
+        <h2 className="text-[10px] font-semibold uppercase tracking-[0.25em] text-muted-foreground mb-2">
+          Innholdsfortegnelse
+        </h2>
+        <ul className="grid grid-cols-3 gap-2">
+          {TOC_ITEMS.map((it) => (
+            <li key={it.id}>
+              <a
+                href={`#${it.id}`}
+                className="flex items-center gap-1.5 px-2.5 py-2 rounded border border-border/60 text-xs text-foreground hover:border-primary/60 hover:text-primary transition truncate"
+              >
+                <span>{it.emoji}</span>
+                <span className="truncate">{it.label}</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+    </section>
+  );
+}
+
 function PushSettingsPage() {
   const [counts, setCounts] = useState<Counts | null>(null);
 
