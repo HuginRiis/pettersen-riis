@@ -181,6 +181,71 @@ export async function syncSleep(daysBack = 14): Promise<number> {
   return count;
 }
 
+type IntradayDto = {
+  heartRateValues?: Array<[number, number | null]>;
+  stressValuesArray?: Array<[number, number | null]>;
+  bodyBatteryValuesArray?: Array<[number, ...unknown[]]>;
+};
+
+function bucketAvg(buckets: Map<number, { sum: number; n: number; max: number }>, hour: number, val: number) {
+  const cur = buckets.get(hour) ?? { sum: 0, n: 0, max: 0 };
+  cur.sum += val; cur.n += 1; if (val > cur.max) cur.max = val;
+  buckets.set(hour, cur);
+}
+
+export async function syncIntraday(daysBack = 1): Promise<number> {
+  let count = 0;
+  for (let i = 0; i <= daysBack; i++) {
+    const day = daysAgo(i);
+    try {
+      const hr = await garminGet<IntradayDto>(`/wellness-service/wellness/dailyHeartRate?date=${day}`);
+      const stress = await garminGet<IntradayDto>(`/wellness-service/wellness/dailyStress/${day}`);
+
+      const hrBuckets = new Map<number, { sum: number; n: number; max: number }>();
+      for (const [ts, v] of hr?.heartRateValues ?? []) {
+        if (typeof v !== "number" || v <= 0) continue;
+        bucketAvg(hrBuckets, new Date(ts).getHours(), v);
+      }
+      const stressBuckets = new Map<number, { sum: number; n: number; max: number }>();
+      for (const [ts, v] of stress?.stressValuesArray ?? []) {
+        if (typeof v !== "number" || v < 0) continue;
+        bucketAvg(stressBuckets, new Date(ts).getHours(), v);
+      }
+      const bbBuckets = new Map<number, { sum: number; n: number; max: number }>();
+      for (const row of stress?.bodyBatteryValuesArray ?? []) {
+        const ts = row[0] as number;
+        // Garmin format: [ts, status, value, version] — value is at index 2
+        const v = (row[2] ?? row[1]) as number | null;
+        if (typeof v !== "number" || v <= 0) continue;
+        bucketAvg(bbBuckets, new Date(ts).getHours(), v);
+      }
+
+      const rows: Array<Record<string, unknown>> = [];
+      for (let h = 0; h < 24; h++) {
+        const hb = hrBuckets.get(h);
+        const sb = stressBuckets.get(h);
+        const bb = bbBuckets.get(h);
+        if (!hb && !sb && !bb) continue;
+        rows.push({
+          day, hour: h,
+          heart_rate_avg: hb ? Math.round(hb.sum / hb.n) : null,
+          heart_rate_max: hb ? Math.round(hb.max) : null,
+          stress_avg: sb ? Math.round(sb.sum / sb.n) : null,
+          body_battery: bb ? Math.round(bb.sum / bb.n) : null,
+          updated_at: new Date().toISOString(),
+        });
+      }
+      if (rows.length > 0) {
+        await supabaseAdmin.from("garmin_intraday").upsert(rows, { onConflict: "day,hour" });
+        count += rows.length;
+      }
+    } catch (e) {
+      console.error("[garmin-sync] intraday failed", day, e);
+    }
+  }
+  return count;
+}
+
 export async function syncAll(trigger: string): Promise<{
   ok: boolean;
   daily: number;
