@@ -313,7 +313,7 @@ export function SiteHeader() {
                   {l.to === "/vakttarnet" && <><AlarmStateBadge inline /><UtgangsdorenLockBadge inline /></>}
                   {l.to === "/varsler" && <AlertsSeverityBadge inline />}
                   {l.to === "/stromkroniken" && <PowerVsYesterdayBadge inline />}
-                  {l.to === "/trening" && <><StepsTodayBadge inline /><TrainingLast4WeeksBadge inline /></>}
+                  {l.to === "/trening" && <><StepsTodayBadge inline owner="arne" /><StepsTodayBadge inline owner="rebekka" /><TrainingLast4WeeksBadge inline /></>}
                 </Link>
               </span>
             );
@@ -427,7 +427,7 @@ export function SiteHeader() {
                     {l.to === "/vakttarnet" && <><AlarmStateBadge inline /><UtgangsdorenLockBadge inline /></>}
                     {l.to === "/varsler" && <AlertsSeverityBadge inline />}
                     {l.to === "/stromkroniken" && <PowerVsYesterdayBadge inline />}
-                    {l.to === "/trening" && <><StepsTodayBadge inline /><TrainingLast4WeeksBadge inline /></>}
+                    {l.to === "/trening" && <><StepsTodayBadge inline owner="arne" /><StepsTodayBadge inline owner="rebekka" /><TrainingLast4WeeksBadge inline /></>}
                   </Link>
                 </div>
               );
