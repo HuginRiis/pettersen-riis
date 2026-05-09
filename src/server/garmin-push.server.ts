@@ -37,6 +37,10 @@ type Pref = {
   high_rhr_bpm: number;
   notified_keys: string[];
   garmin_owner: "arne" | "rebekka";
+  notify_compare: boolean;
+  compare_time: string;
+  daily_show_both: boolean;
+  daily_fields: string[];
 };
 
 function osloDateKey(d = new Date()): string {
