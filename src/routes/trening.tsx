@@ -247,8 +247,10 @@ function TreningPage() {
         <div className="flex flex-wrap items-center gap-2">
           <StepsChip owner="arne" displayName="Arne" />
           <HealthStatusChip owner="arne" displayName="Arne" />
+          <RestingHrChip owner="arne" displayName="Arne" />
           <StepsChip owner="rebekka" displayName="Rebekka" />
           <HealthStatusChip owner="rebekka" displayName="Rebekka" />
+          <RestingHrChip owner="rebekka" displayName="Rebekka" />
         </div>
       </PageHero>
 
@@ -296,6 +298,43 @@ function StepsChip({ owner = "arne", displayName }: { owner?: Owner; displayName
         <span className="text-xs text-muted-foreground">
           · mål {goal.toLocaleString("nb-NO")} ({pct}%)
         </span>
+      )}
+    </div>
+  );
+}
+
+function RestingHrChip({ owner = "arne", displayName }: { owner?: Owner; displayName?: string } = {}) {
+  const fetchOverview = useServerFn(getGarminOverview);
+  const [today, setToday] = useState<number | null>(null);
+  const [avg7, setAvg7] = useState<number | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const o: any = await fetchOverview({ data: { owner } });
+        if (cancelled) return;
+        const last = o?.daily?.[o.daily.length - 1];
+        setToday(last?.resting_heart_rate ?? null);
+        const last7: number[] = (o?.daily ?? [])
+          .slice(-7)
+          .map((d: any) => d?.resting_heart_rate)
+          .filter((n: any): n is number => typeof n === "number" && n > 0);
+        setAvg7(last7.length ? Math.round(last7.reduce((s, n) => s + n, 0) / last7.length) : null);
+      } catch { /* stille */ }
+    })();
+    return () => { cancelled = true; };
+  }, [owner]);
+
+  if (today == null && avg7 == null) return null;
+  return (
+    <div className="inline-flex items-center gap-2 rounded-full border border-primary/40 bg-card/70 backdrop-blur px-4 py-2 text-sm">
+      <Heart size={16} className="text-primary" />
+      <span className="text-medieval text-primary">
+        {displayName ? `${displayName}: ` : ""}Hvilepuls {today != null ? `${today} bpm` : "—"}
+      </span>
+      {avg7 != null && (
+        <span className="text-xs text-muted-foreground">· snitt 7d {avg7} bpm</span>
       )}
     </div>
   );
