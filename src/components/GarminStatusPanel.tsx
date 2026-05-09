@@ -179,6 +179,7 @@ export function GarminStatusPanel() {
               })()}
             </div>
           )}
+          {status?.expires_at && (
             <div className="text-[10px] text-muted-foreground/80">
               Token utløper {new Date(status.expires_at).toLocaleString("nb-NO")}
             </div>
