@@ -581,6 +581,12 @@ export function GarminPanel() {
                 total: (s.total_seconds ?? 0) / 3600,
                 score: s.sleep_score,
               }));
+              const spo2Data = sleepF.map((s) => ({ day: s.day, spo2: s.average_spo2 }));
+              const respData = sleepF.map((s) => ({ day: s.day, resp: s.average_respiration }));
+              const hrvData = sleepF.map((s) => ({ day: s.day, hrv: s.hrv_avg }));
+              const hasSpo2 = spo2Data.some((d) => typeof d.spo2 === "number");
+              const hasResp = respData.some((d) => typeof d.resp === "number");
+              const hasHrv = hrvData.some((d) => typeof d.hrv === "number");
 
               if (dailyF.length === 0 && sleepF.length === 0) {
                 return <p className="text-xs text-muted-foreground italic">Ingen data for valgt periode.</p>;
@@ -623,6 +629,22 @@ export function GarminPanel() {
                     <ChartCard title="Søvn (timer)" height={160}>
                       {renderBar(sleepData, "total", showTrend)}
                     </ChartCard>
+                    {hasSpo2 && (
+                      <ChartCard title="Pulsoksygen SpO₂ (%)" height={160}>
+                        {renderLine(spo2Data, "spo2", showTrend, true)}
+                      </ChartCard>
+                    )}
+                    {hasHrv && (
+                      <ChartCard title="Pulsvariasjon HRV (ms)" height={160}>
+                        {renderLine(hrvData, "hrv", showTrend, true)}
+                      </ChartCard>
+                    )}
+                    {hasResp && (
+                      <ChartCard title="Pusting (pust/min)" height={160}>
+                        {renderLine(respData, "resp", showTrend, true)}
+                      </ChartCard>
+                    )}
+                  </div>
                   </div>
 
                   {sleepData.length > 0 && (
