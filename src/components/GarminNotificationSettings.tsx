@@ -113,6 +113,9 @@ export function GarminNotificationSettings() {
               <div className="flex items-center gap-2 min-w-0">
                 {p.enabled ? <Bell className="h-4 w-4 text-primary" /> : <BellOff className="h-4 w-4 text-muted-foreground" />}
                 <span className="font-medium">{p.sender_label} → {p.recipient}</span>
+                <span className="text-[10px] uppercase tracking-wider text-muted-foreground border border-border/60 rounded px-1.5 py-0.5">
+                  Garmin: {p.garmin_owner === "rebekka" ? "Rebekka" : "Arne"}
+                </span>
               </div>
               <div className="flex items-center gap-2">
                 <Button size="sm" variant="ghost" onClick={() => test(p.id)} disabled={testing === p.id}>
@@ -126,7 +129,16 @@ export function GarminNotificationSettings() {
               </div>
             </div>
 
-            <div className="grid sm:grid-cols-2 gap-2 text-xs">
+            <div className="grid sm:grid-cols-3 gap-2 text-xs">
+              <label className="space-y-1">
+                <span className="text-muted-foreground">Hvem sin Garmin (data)</span>
+                <Select value={p.garmin_owner ?? "arne"} onValueChange={(v) => update(p.id, { garmin_owner: v as "arne" | "rebekka" })}>
+                  <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {OWNER_OPTIONS.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </label>
               <label className="space-y-1">
                 <span className="text-muted-foreground">Til (mottaker)</span>
                 <Select value={p.recipient} onValueChange={(v) => update(p.id, { recipient: v })}>
@@ -137,7 +149,7 @@ export function GarminNotificationSettings() {
                 </Select>
               </label>
               <label className="space-y-1">
-                <span className="text-muted-foreground">Fra (avsender-etikett i tittel)</span>
+                <span className="text-muted-foreground">Fra (avsender-etikett)</span>
                 <Select value={p.sender_label} onValueChange={(v) => update(p.id, { sender_label: v })}>
                   <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
                   <SelectContent>
