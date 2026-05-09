@@ -186,7 +186,7 @@ function PushSettingsPage() {
       </section>
 
 
-      <section className="container mx-auto px-4 pb-12 grid md:grid-cols-2 gap-4">
+      <section id="sec-kategorier" className="container mx-auto px-4 pb-12 grid md:grid-cols-2 gap-4 scroll-mt-24">
         <CategoryCard
           icon={Calendar}
           title="Agenda-meldinger"
