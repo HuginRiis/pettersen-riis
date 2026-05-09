@@ -29,7 +29,21 @@ function describeSchedule(cron: string): string {
   return map[cron] ?? cron;
 }
 
-function nextRun(cron: string, lastRun: string | null): string {
+function relTime(iso: string | null): string {
+  if (!iso) return "—";
+  const diff = new Date(iso).getTime() - Date.now();
+  const abs = Math.abs(diff);
+  const sec = Math.round(abs / 1000);
+  const fmt =
+    sec < 60 ? `${sec}s` :
+    sec < 3600 ? `${Math.round(sec / 60)} min` :
+    sec < 86400 ? `${Math.round(sec / 3600)}t` :
+    `${Math.round(sec / 86400)}d`;
+  return diff <= 0 ? `for ${fmt} siden` : `om ${fmt}`;
+}
+
+function nextRun(cron: string, lastRun: string | null, explicit?: string | null): string {
+  if (explicit) return relTime(explicit);
   if (!lastRun) return "—";
   const last = new Date(lastRun).getTime();
   const interval = (() => {
