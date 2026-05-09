@@ -170,7 +170,15 @@ export function GarminStatusPanel() {
               {" · "}vindu {String(schedule.first_local_hour).padStart(2, "0")}–{String(schedule.last_local_hour).padStart(2, "0")}
             </div>
           )}
-          {status?.expires_at && (
+          {schedule && (
+            <div className="text-[10px] text-primary/80">
+              Neste henting {fmtNext(computeNextRun(lastSync?.ran_at ?? null, schedule))}
+              {(() => {
+                const n = computeNextRun(lastSync?.ran_at ?? null, schedule);
+                return n ? ` (${n.toLocaleString("nb-NO", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit" })})` : "";
+              })()}
+            </div>
+          )}
             <div className="text-[10px] text-muted-foreground/80">
               Token utløper {new Date(status.expires_at).toLocaleString("nb-NO")}
             </div>
