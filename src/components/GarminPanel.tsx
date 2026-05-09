@@ -195,7 +195,8 @@ function renderHourBar(items: Array<{ hour: number; value: number | null }>, col
   );
 }
 
-export function GarminPanel() {
+type GarminOwner = "arne" | "rebekka";
+export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: GarminOwner; displayName?: string } = {}) {
   const fetchOverview = useServerFn(getGarminOverview);
   const loginFn = useServerFn(garminLoginNow);
   const syncFn = useServerFn(garminSyncNow);
@@ -214,16 +215,16 @@ export function GarminPanel() {
 
   const load = async () => {
     setLoading(true);
-    try { setData(await fetchOverview() as Overview); }
+    try { setData(await fetchOverview({ data: { owner } }) as Overview); }
     catch (e) { toast.error((e as Error).message); }
     finally { setLoading(false); }
   };
-  useEffect(() => { void load(); }, []);
+  useEffect(() => { void load(); }, [owner]);
 
   const handleLogin = async () => {
     setWorking("login");
     try {
-      const r = await loginFn() as GarminLoginResult;
+      const r = await loginFn({ data: { owner } }) as GarminLoginResult;
       if (!r.ok && "rateLimited" in r && r.rateLimited) {
         setLoginNotice(r.message);
         toast.error(r.message);
@@ -245,7 +246,7 @@ export function GarminPanel() {
     setWorking("mfa");
     setLoginNotice(null);
     try {
-      await mfaFn({ data: { code: mfaCode } });
+      await mfaFn({ data: { code: mfaCode, owner } });
       toast.success("Garmin innlogging fullført");
       setMfaOpen(false);
       setMfaCode("");
@@ -301,7 +302,7 @@ export function GarminPanel() {
       <div className="space-y-4">
         <div className="flex items-center justify-between flex-wrap gap-2">
           <h2 className="text-sm font-semibold uppercase tracking-wider text-primary flex items-center gap-2">
-            <Activity size={16} /> Garmin — daglig helse
+            <Activity size={16} /> Garmin — {displayName}
           </h2>
           <div className="flex items-center gap-2">
             <button
@@ -328,7 +329,7 @@ export function GarminPanel() {
               {data?.status.connected ? "Re-login" : "Logg inn"}
             </button>
             <button
-              onClick={async () => { setWorking("sync"); try { const r = await syncFn(); if ("results" in r) { const tot = r.results.reduce((a, x) => ({ d: a.d + x.daily, a: a.a + x.activities, s: a.s + x.sleep }), { d: 0, a: 0, s: 0 }); r.ok ? toast.success(`Synket: ${tot.d} dager, ${tot.a} aktiviteter, ${tot.s} søvn`) : toast.error("Sync feilet for én eller flere brukere"); } else { r.ok ? toast.success(`Synket: ${r.daily} dager, ${r.activities} aktiviteter, ${r.sleep} søvn`) : toast.error(r.error || "Sync feilet"); } await load(); } catch (e) { toast.error((e as Error).message); } finally { setWorking(null); } }}
+              onClick={async () => { setWorking("sync"); try { const r = await syncFn({ data: { owner } }); if ("results" in r) { const tot = r.results.reduce((a, x) => ({ d: a.d + x.daily, a: a.a + x.activities, s: a.s + x.sleep }), { d: 0, a: 0, s: 0 }); r.ok ? toast.success(`Synket: ${tot.d} dager, ${tot.a} aktiviteter, ${tot.s} søvn`) : toast.error("Sync feilet for én eller flere brukere"); } else { r.ok ? toast.success(`Synket: ${r.daily} dager, ${r.activities} aktiviteter, ${r.sleep} søvn`) : toast.error(r.error || "Sync feilet"); } await load(); } catch (e) { toast.error((e as Error).message); } finally { setWorking(null); } }}
               disabled={!!working}
               className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded border border-primary/60 text-primary text-xs hover:bg-primary/10 disabled:opacity-50"
             >
