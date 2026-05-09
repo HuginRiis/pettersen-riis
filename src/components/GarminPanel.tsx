@@ -328,7 +328,7 @@ export function GarminPanel() {
               {data?.status.connected ? "Re-login" : "Logg inn"}
             </button>
             <button
-              onClick={async () => { setWorking("sync"); try { const r = await syncFn(); if (r.ok) toast.success(`Synket: ${r.daily} dager, ${r.activities} aktiviteter, ${r.sleep} søvn`); else toast.error(r.error || "Sync feilet"); await load(); } catch (e) { toast.error((e as Error).message); } finally { setWorking(null); } }}
+              onClick={async () => { setWorking("sync"); try { const r = await syncFn(); if ("results" in r) { const tot = r.results.reduce((a, x) => ({ d: a.d + x.daily, a: a.a + x.activities, s: a.s + x.sleep }), { d: 0, a: 0, s: 0 }); r.ok ? toast.success(`Synket: ${tot.d} dager, ${tot.a} aktiviteter, ${tot.s} søvn`) : toast.error("Sync feilet for én eller flere brukere"); } else { r.ok ? toast.success(`Synket: ${r.daily} dager, ${r.activities} aktiviteter, ${r.sleep} søvn`) : toast.error(r.error || "Sync feilet"); } await load(); } catch (e) { toast.error((e as Error).message); } finally { setWorking(null); } }}
               disabled={!!working}
               className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded border border-primary/60 text-primary text-xs hover:bg-primary/10 disabled:opacity-50"
             >
