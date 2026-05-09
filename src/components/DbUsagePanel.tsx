@@ -29,7 +29,21 @@ function describeSchedule(cron: string): string {
   return map[cron] ?? cron;
 }
 
-function nextRun(cron: string, lastRun: string | null): string {
+function relTime(iso: string | null): string {
+  if (!iso) return "—";
+  const diff = new Date(iso).getTime() - Date.now();
+  const abs = Math.abs(diff);
+  const sec = Math.round(abs / 1000);
+  const fmt =
+    sec < 60 ? `${sec}s` :
+    sec < 3600 ? `${Math.round(sec / 60)} min` :
+    sec < 86400 ? `${Math.round(sec / 3600)}t` :
+    `${Math.round(sec / 86400)}d`;
+  return diff <= 0 ? `for ${fmt} siden` : `om ${fmt}`;
+}
+
+function nextRun(cron: string, lastRun: string | null, explicit?: string | null): string {
+  if (explicit) return relTime(explicit);
   if (!lastRun) return "—";
   const last = new Date(lastRun).getTime();
   const interval = (() => {
@@ -134,7 +148,7 @@ export function DbUsagePanel() {
                         : "—"}
                     </td>
                     <td className="py-1.5 pr-2 text-primary">
-                      {nextRun(j.schedule, j.last_run)}
+                      {nextRun(j.schedule, j.last_run, j.next_run)}
                     </td>
                     <td className="py-1.5 pr-2 text-right font-mono">
                       {j.runs_24h}
@@ -156,6 +170,48 @@ export function DbUsagePanel() {
           </div>
         )}
       </div>
+
+      {/* Datasynk (utenfor pg_cron, trigget fra agenda-push) */}
+      {data.dataSyncs && data.dataSyncs.length > 0 && (
+        <div>
+          <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground mb-2">
+            <Clock size={12} /> Datasynk
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead className="text-muted-foreground">
+                <tr className="text-left border-b border-border">
+                  <th className="py-1.5 pr-2">Kilde</th>
+                  <th className="py-1.5 pr-2">Tidsplan</th>
+                  <th className="py-1.5 pr-2">Sist kjørt</th>
+                  <th className="py-1.5 pr-2">Neste</th>
+                  <th className="py-1.5 pr-2 text-right">Kjør 24t</th>
+                  <th className="py-1.5 pr-2 text-right">Feil 24t</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.dataSyncs.map((s) => (
+                  <tr key={s.name} className="border-b border-border/40">
+                    <td className="py-1.5 pr-2 font-mono">{s.name}</td>
+                    <td className="py-1.5 pr-2">{s.schedule_label}</td>
+                    <td className="py-1.5 pr-2 text-muted-foreground">
+                      {s.last_run ? new Date(s.last_run).toLocaleString("nb-NO", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit" }) : "—"}
+                    </td>
+                    <td className="py-1.5 pr-2 text-primary">
+                      {s.next_run ? relTime(s.next_run) : "—"}
+                    </td>
+                    <td className="py-1.5 pr-2 text-right font-mono">{s.runs_24h}</td>
+                    <td className={`py-1.5 pr-2 text-right font-mono ${s.failed_24h > 0 ? "text-destructive" : ""}`}>
+                      {s.failed_24h > 0 && <AlertTriangle size={10} className="inline mr-1" />}
+                      {s.failed_24h}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Tabeller */}
       <div>
