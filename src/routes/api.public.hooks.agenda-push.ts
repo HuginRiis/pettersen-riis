@@ -91,32 +91,45 @@ export const Route = createFileRoute("/api/public/hooks/agenda-push")({
           } catch (err) {
             console.error("[mail-delivery-push] failed", err);
           }
-          let garmin: any = { skipped: true };
+          let garmin: any = { per_owner: [] as any[] };
           try {
             const gmod = await import("@/server/garmin-sync.server");
+            const { GARMIN_OWNERS } = await import("@/server/garmin.shared");
             const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-            const { data: schedRow } = await supabaseAdmin
-              .from("notification_settings").select("value").eq("key", "garmin_sync_schedule").maybeSingle();
-            const sched = (schedRow?.value as { interval_minutes?: number; first_local_hour?: number; last_local_hour?: number } | null) ?? null;
-            const intervalMin = sched?.interval_minutes ?? 1440;
-            const firstH = sched?.first_local_hour ?? 6;
-            const lastH = sched?.last_local_hour ?? 23;
             const localHourStr = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Oslo", hour: "2-digit", hour12: false }).format(new Date());
             const localHour = parseInt(localHourStr, 10);
-            const inWindow = firstH <= lastH ? (localHour >= firstH && localHour <= lastH) : (localHour >= firstH || localHour <= lastH);
-            if (!inWindow) {
-              garmin = { skipped: true, reason: `outside window (${firstH}-${lastH}, now ${localHour})` };
+            // Hard nighttime block 21:00-05:59 — never run for any owner
+            if (localHour >= 21 || localHour < 6) {
+              garmin = { skipped: true, reason: `nighttime block (now ${localHour}:00, only 06–20)` };
             } else {
-              const { data: lastOk } = await supabaseAdmin
-                .from("garmin_sync_log").select("ran_at").eq("ok", true)
-                .order("ran_at", { ascending: false }).limit(1).maybeSingle();
-              const lastMs = lastOk?.ran_at ? new Date(lastOk.ran_at).getTime() : 0;
-              const dueMs = lastMs + intervalMin * 60_000;
-              if (Date.now() >= dueMs) {
-                garmin = await gmod.syncAll("cron");
-              } else {
-                garmin = { skipped: true, reason: `interval ${intervalMin}m not elapsed`, next_at: new Date(dueMs).toISOString() };
+              const keys = GARMIN_OWNERS.flatMap((o) => [`garmin_sync_schedule_${o}`, "garmin_sync_schedule"]);
+              const { data: rows } = await supabaseAdmin
+                .from("notification_settings").select("key, value").in("key", keys);
+              const byKey = new Map<string, any>();
+              for (const r of (rows ?? []) as Array<{ key: string; value: any }>) byKey.set(r.key, r.value);
+              const out: any[] = [];
+              for (const owner of GARMIN_OWNERS) {
+                const sched = byKey.get(`garmin_sync_schedule_${owner}`) ?? byKey.get("garmin_sync_schedule") ?? null;
+                const intervalMin = Math.max(15, Math.min(1440, sched?.interval_minutes ?? 60));
+                const firstH = Math.max(6, sched?.first_local_hour ?? 6);
+                const lastH = Math.min(20, sched?.last_local_hour ?? 20);
+                const inWindow = localHour >= firstH && localHour <= lastH;
+                if (!inWindow) {
+                  out.push({ owner, skipped: true, reason: `outside window (${firstH}-${lastH}, now ${localHour})` });
+                  continue;
+                }
+                const { data: lastOk } = await supabaseAdmin
+                  .from("garmin_sync_log").select("ran_at").eq("owner", owner).eq("ok", true)
+                  .order("ran_at", { ascending: false }).limit(1).maybeSingle();
+                const lastMs = lastOk?.ran_at ? new Date(lastOk.ran_at).getTime() : 0;
+                const dueMs = lastMs + intervalMin * 60_000;
+                if (Date.now() >= dueMs) {
+                  out.push(await gmod.syncOne(owner, "cron"));
+                } else {
+                  out.push({ owner, skipped: true, reason: `interval ${intervalMin}m not elapsed`, next_at: new Date(dueMs).toISOString() });
+                }
               }
+              garmin = { per_owner: out };
             }
           } catch (err) {
             console.error("[garmin-sync] failed", err);
