@@ -923,6 +923,36 @@ export type Database = {
         }
         Relationships: []
       }
+      login_notification_prefs: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          id: string
+          notify_on_failure: boolean
+          notify_on_success: boolean
+          recipient: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          notify_on_failure?: boolean
+          notify_on_success?: boolean
+          recipient?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          notify_on_failure?: boolean
+          notify_on_success?: boolean
+          recipient?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       mail_delivery_prefs: {
         Row: {
           created_at: string
