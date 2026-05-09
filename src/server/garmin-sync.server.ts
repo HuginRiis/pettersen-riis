@@ -220,7 +220,7 @@ export async function syncIntraday(daysBack = 1): Promise<number> {
         bucketAvg(bbBuckets, new Date(ts).getHours(), v);
       }
 
-      const rows: Array<Record<string, unknown>> = [];
+      const rows: Array<{ day: string; hour: number; heart_rate_avg: number | null; heart_rate_max: number | null; stress_avg: number | null; body_battery: number | null; updated_at: string }> = [];
       for (let h = 0; h < 24; h++) {
         const hb = hrBuckets.get(h);
         const sb = stressBuckets.get(h);
