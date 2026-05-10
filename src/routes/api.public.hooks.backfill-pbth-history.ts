@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { fetchHomeyInsightsLog, getHomeySnapshot } from "@/server/homey";
+import { fetchHomeyInsightsLog, getHomeySnapshot, listHomeyInsightsLogs } from "@/server/homey";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 const ADDRESS_BORGEN = "Pbth Nordre Lensmannsveg 17";
@@ -93,13 +93,13 @@ async function upsertDays(location: Loc, points: DailyPoint[]) {
 export const Route = createFileRoute("/api/public/hooks/backfill-pbth-history")({
   server: {
     handlers: {
-      GET: async () => handle(),
-      POST: async () => handle(),
+      GET: async ({ request }) => handle(new URL(request.url).searchParams.get("debug") === "1"),
+      POST: async ({ request }) => handle(new URL(request.url).searchParams.get("debug") === "1"),
     },
   },
 });
 
-async function handle() {
+async function handle(debug = false) {
   try {
     const snap = await getHomeySnapshot();
     if (!snap.ok) {
@@ -117,8 +117,9 @@ async function handle() {
       { loc: "hytta", device: hytta },
     ];
 
-    // Capabilities som kan inneholde dagsverdier
+    // Capabilities som kan inneholde dagsverdier (PBTH-app bruker last_day)
     const CAP_CANDIDATES = [
+      "meter_kwh_last_day",
       "meter_kwh_yesterday",
       "meter_consumption_yesterday",
     ];
@@ -130,6 +131,11 @@ async function handle() {
     for (const { loc, device } of targets) {
       if (!device) {
         report.push({ location: loc, error: "Fant ikke PBTH-enhet" });
+        continue;
+      }
+      if (debug) {
+        const logs = await listHomeyInsightsLogs(device.id);
+        report.push({ location: loc, deviceId: device.id, name: device.name, debug_logs: logs });
         continue;
       }
       const capsAvailable = Object.keys(device.capabilities ?? {});
@@ -148,6 +154,13 @@ async function handle() {
           const entries: { t: string; v: number | null }[] = Array.isArray(log.values)
             ? log.values
             : [];
+          report.push({
+            location: loc,
+            cap,
+            res,
+            entryCount: entries.length,
+            logKeys: Object.keys(log).slice(0, 10),
+          });
           if (entries.length === 0) continue;
           const pts = pointsFromYesterdayLog(entries);
           if (pts.length > allPoints.length) {
