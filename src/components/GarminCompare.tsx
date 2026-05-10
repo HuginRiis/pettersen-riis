@@ -32,9 +32,6 @@ function hoursMin(sec: number | null | undefined) {
   const h = Math.floor(sec / 3600); const m = Math.floor((sec % 3600) / 60);
   return h > 0 ? `${h}t ${m}m` : `${m}m`;
 }
-function intensity(d?: Daily | null) {
-  return ((d?.moderate_intensity_minutes ?? 0) + (d?.vigorous_intensity_minutes ?? 0)) || null;
-}
 
 type Period = "today" | "yesterday" | "this_week" | "last_week" | "last_14";
 const PERIOD_OPTIONS: { key: Period; label: string }[] = [
