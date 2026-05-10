@@ -184,7 +184,7 @@ function StromkronikenPage() {
               priceMultiplier={1.9}
               title="Borgen · Nordre Lensmannsveg 17"
               eyebrow="Husets sete"
-              data={state?.tollnes ?? null}
+              data={tollnesData}
               live={live.homes.tollnes}
               spotPriceNow={borgenSpot?.priceNow ?? null}
               spotPriceAvg={borgenSpot?.priceAvg ?? null}
@@ -193,16 +193,16 @@ function StromkronikenPage() {
               priceMultiplier={1.52}
               title="Hytta · Øvre Bjerkesetvegen 222"
               eyebrow="Vinterboligen"
-              data={state?.hytta ?? null}
+              data={hyttaData}
               live={live.homes.hytta}
               spotPriceNow={hyttaSpot?.priceNow ?? null}
               spotPriceAvg={hyttaSpot?.priceAvg ?? null}
             />
 
-            {state?.ok && (
+            {tollnesData && hyttaData && (
               <ComparisonBlock
-                tollnes={state.tollnes}
-                hytta={state.hytta}
+                tollnes={tollnesData}
+                hytta={hyttaData}
                 borgenSpotNow={borgenSpot?.priceNow ?? null}
                 borgenSpotAvg={borgenSpot?.priceAvg ?? null}
                 hyttaSpotNow={hyttaSpot?.priceNow ?? null}
