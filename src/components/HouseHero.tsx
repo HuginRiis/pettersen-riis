@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Lightbulb, Sunrise, Sunset, Sun } from "lucide-react";
 import { getBorgenLightsStatus, type BorgenLightsStatus } from "@/server/homey";
 import { useUvSun, uvLevel } from "@/hooks/use-uv-sun";
+import { DoubleTapToTop } from "@/components/PageShell";
 
 const BORGEN_COORD = { lat: 59.1789, lon: 9.5732 };
 
