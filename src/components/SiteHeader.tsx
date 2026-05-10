@@ -16,7 +16,8 @@ import { useNavUsage } from "@/hooks/use-nav-usage";
 import { useMenuPrefs } from "@/hooks/use-menu-prefs";
 import { getNetatmoWeatherStation } from "@/server/netatmo-weather";
 import { useLastGood } from "@/hooks/use-last-good";
-import { PushTodayBadge, LightsOnBadge, TomorrowWeatherBadge, AlarmStateBadge, AlertsSeverityBadge, PowerVsYesterdayBadge, TrainingLast4WeeksBadge, UtgangsdorenLockBadge, StepsTodayBadge } from "@/components/HallBadges";
+import { PushTodayBadge, LightsOnBadge, WeatherDaysBadge, AlarmStateBadge, AlertsSeverityBadge, PowerVsYesterdayBadge, TrainingLast4WeeksBadge, UtgangsdorenLockBadge, StepsTodayBadge } from "@/components/HallBadges";
+import { useHeaderBadgeSettings, isBadgeVisible } from "@/hooks/use-header-badge-settings";
 
 const BORGEN_COORD = { lat: 59.1789, lon: 9.5732 };
 const HYTTA_COORD = { lat: 59.8733, lon: 9.4297 };
@@ -159,6 +160,8 @@ export function SiteHeader() {
 
   const { usage, bump } = useNavUsage(who);
   const { prefs: menuPrefs, toggleFavorite } = useMenuPrefs();
+  const badgeSettings = useHeaderBadgeSettings();
+  const showB = (id: string) => isBadgeVisible(badgeSettings, id, who);
 
   // Web-favoritter (egne snarveier til nettsider) — felles + per bruker
   const [webFavs, setWebFavs] = useState<{ id: string; who: string; label: string; url: string; icon: string }[]>([]);
@@ -325,19 +328,19 @@ export function SiteHeader() {
                     ? <PollenIcon lat={pollenCoord.lat} lon={pollenCoord.lon} />
                     : ROUTE_ICON[l.to] ? (() => { const I = ROUTE_ICON[l.to]!; return <span style={{ color: ROUTE_ICON_COLOR[l.to], display: "inline-flex" }}><I size={13} strokeWidth={2.25} /></span>; })() : null}
                   <span>{l.label}</span>
-                  {count > 0 && menuPrefs.sortByUsage && <UsageBadge count={count} />}
-                  {l.to === "/" && <UvBadge lat={BORGEN_COORD.lat} lon={BORGEN_COORD.lon} />}
-                  {l.to === "/" && <TempBadge stationMatch="tollnes" storageKey="hdr.temp.tollnes" />}
-                  {l.to === "/hytta" && <UvBadge lat={HYTTA_COORD.lat} lon={HYTTA_COORD.lon} />}
-                  {l.to === "/hytta" && <TempBadge stationMatch="hytta" storageKey="hdr.temp.hytta" />}
-                  {l.to === "/pollen" && <PollenBadge lat={pollenCoord.lat} lon={pollenCoord.lon} />}
-                  {l.to === "/push-varslinger" && <PushTodayBadge inline />}
-                  {l.to === "/lys" && <LightsOnBadge inline />}
-                  {l.to === "/var" && <TomorrowWeatherBadge inline useGps lat={BORGEN_COORD.lat} lon={BORGEN_COORD.lon} />}
-                  {l.to === "/vakttarnet" && <><AlarmStateBadge inline /><UtgangsdorenLockBadge inline /></>}
-                  {l.to === "/varsler" && <AlertsSeverityBadge inline />}
-                  {l.to === "/stromkroniken" && <PowerVsYesterdayBadge inline />}
-                  {l.to === "/trening" && <><StepsTodayBadge inline owner="arne" /><StepsTodayBadge inline owner="rebekka" /><TrainingLast4WeeksBadge inline /></>}
+                  {count > 0 && menuPrefs.sortByUsage && showB("usage_count") && <UsageBadge count={count} />}
+                  {l.to === "/" && showB("uv_hjem") && <UvBadge lat={BORGEN_COORD.lat} lon={BORGEN_COORD.lon} />}
+                  {l.to === "/" && showB("temp_tollnes") && <TempBadge stationMatch="tollnes" storageKey="hdr.temp.tollnes" />}
+                  {l.to === "/hytta" && showB("uv_hytta") && <UvBadge lat={HYTTA_COORD.lat} lon={HYTTA_COORD.lon} />}
+                  {l.to === "/hytta" && showB("temp_hytta") && <TempBadge stationMatch="hytta" storageKey="hdr.temp.hytta" />}
+                  {l.to === "/pollen" && showB("pollen") && <PollenBadge lat={pollenCoord.lat} lon={pollenCoord.lon} />}
+                  {l.to === "/push-varslinger" && showB("push_today") && <PushTodayBadge inline />}
+                  {l.to === "/lys" && showB("lights_on") && <LightsOnBadge inline />}
+                  {l.to === "/var" && showB("weather_days") && <WeatherDaysBadge inline useGps lat={BORGEN_COORD.lat} lon={BORGEN_COORD.lon} startOffset={badgeSettings.weather.startOffset} days={badgeSettings.weather.days} />}
+                  {l.to === "/vakttarnet" && <>{showB("alarm_state") && <AlarmStateBadge inline />}{showB("utgangsdoren_lock") && <UtgangsdorenLockBadge inline />}</>}
+                  {l.to === "/varsler" && showB("alerts_severity") && <AlertsSeverityBadge inline />}
+                  {l.to === "/stromkroniken" && showB("power_vs_yesterday") && <PowerVsYesterdayBadge inline />}
+                  {l.to === "/trening" && <>{showB("steps_arne") && <StepsTodayBadge inline owner="arne" />}{showB("steps_rebekka") && <StepsTodayBadge inline owner="rebekka" />}{showB("training_4w") && <TrainingLast4WeeksBadge inline />}</>}
                 </Link>
               </span>
             );
@@ -439,19 +442,19 @@ export function SiteHeader() {
                       ? <PollenIcon lat={pollenCoord.lat} lon={pollenCoord.lon} />
                       : ROUTE_ICON[l.to] ? (() => { const I = ROUTE_ICON[l.to]!; return <span style={{ color: ROUTE_ICON_COLOR[l.to], display: "inline-flex" }}><I size={15} strokeWidth={2.25} /></span>; })() : null}
                     <span className="flex-1">{l.label}</span>
-                    {count > 0 && menuPrefs.sortByUsage && <UsageBadge count={count} />}
-                    {l.to === "/" && <UvBadge lat={BORGEN_COORD.lat} lon={BORGEN_COORD.lon} />}
-                    {l.to === "/" && <TempBadge stationMatch="tollnes" storageKey="hdr.temp.tollnes" />}
-                    {l.to === "/hytta" && <UvBadge lat={HYTTA_COORD.lat} lon={HYTTA_COORD.lon} />}
-                    {l.to === "/hytta" && <TempBadge stationMatch="hytta" storageKey="hdr.temp.hytta" />}
-                    {l.to === "/pollen" && <PollenBadge lat={pollenCoord.lat} lon={pollenCoord.lon} />}
-                    {l.to === "/push-varslinger" && <PushTodayBadge inline />}
-                    {l.to === "/lys" && <LightsOnBadge inline />}
-                    {l.to === "/var" && <TomorrowWeatherBadge inline useGps lat={BORGEN_COORD.lat} lon={BORGEN_COORD.lon} />}
-                    {l.to === "/vakttarnet" && <><AlarmStateBadge inline /><UtgangsdorenLockBadge inline /></>}
-                    {l.to === "/varsler" && <AlertsSeverityBadge inline />}
-                    {l.to === "/stromkroniken" && <PowerVsYesterdayBadge inline />}
-                    {l.to === "/trening" && <><StepsTodayBadge inline owner="arne" /><StepsTodayBadge inline owner="rebekka" /><TrainingLast4WeeksBadge inline /></>}
+                    {count > 0 && menuPrefs.sortByUsage && showB("usage_count") && <UsageBadge count={count} />}
+                    {l.to === "/" && showB("uv_hjem") && <UvBadge lat={BORGEN_COORD.lat} lon={BORGEN_COORD.lon} />}
+                    {l.to === "/" && showB("temp_tollnes") && <TempBadge stationMatch="tollnes" storageKey="hdr.temp.tollnes" />}
+                    {l.to === "/hytta" && showB("uv_hytta") && <UvBadge lat={HYTTA_COORD.lat} lon={HYTTA_COORD.lon} />}
+                    {l.to === "/hytta" && showB("temp_hytta") && <TempBadge stationMatch="hytta" storageKey="hdr.temp.hytta" />}
+                    {l.to === "/pollen" && showB("pollen") && <PollenBadge lat={pollenCoord.lat} lon={pollenCoord.lon} />}
+                    {l.to === "/push-varslinger" && showB("push_today") && <PushTodayBadge inline />}
+                    {l.to === "/lys" && showB("lights_on") && <LightsOnBadge inline />}
+                    {l.to === "/var" && showB("weather_days") && <WeatherDaysBadge inline useGps lat={BORGEN_COORD.lat} lon={BORGEN_COORD.lon} startOffset={badgeSettings.weather.startOffset} days={badgeSettings.weather.days} />}
+                    {l.to === "/vakttarnet" && <>{showB("alarm_state") && <AlarmStateBadge inline />}{showB("utgangsdoren_lock") && <UtgangsdorenLockBadge inline />}</>}
+                    {l.to === "/varsler" && showB("alerts_severity") && <AlertsSeverityBadge inline />}
+                    {l.to === "/stromkroniken" && showB("power_vs_yesterday") && <PowerVsYesterdayBadge inline />}
+                    {l.to === "/trening" && <>{showB("steps_arne") && <StepsTodayBadge inline owner="arne" />}{showB("steps_rebekka") && <StepsTodayBadge inline owner="rebekka" />}{showB("training_4w") && <TrainingLast4WeeksBadge inline />}</>}
                   </Link>
                 </div>
               );
