@@ -86,6 +86,15 @@ export function HeaderBadgeSettingsPanel() {
                 className="w-16 bg-background border border-border rounded px-2 py-1"
               />
             </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={draft.weather.showTemp}
+                onChange={(e) => setDraft((d) => ({ ...d, weather: { ...d.weather, showTemp: e.target.checked } }))}
+                className="accent-primary"
+              />
+              <span>Vis temperatur</span>
+            </label>
             <span className="text-xs text-muted-foreground">
               Eks: «I dag» + 3 dager → vises i dag, i morgen og i overmorgen.
             </span>
