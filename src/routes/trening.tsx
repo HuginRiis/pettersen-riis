@@ -468,7 +468,7 @@ function HealthStatusChip({ owner = "arne", displayName }: { owner?: Owner; disp
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-lg">
-          <div className="flex justify-end -mt-2 -mr-2 mb-1">
+          <div className="flex justify-end mt-8 mb-2">
             <button
               type="button"
               onClick={() => setOpen(false)}
