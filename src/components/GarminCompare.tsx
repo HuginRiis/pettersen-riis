@@ -32,12 +32,80 @@ function hoursMin(sec: number | null | undefined) {
   const h = Math.floor(sec / 3600); const m = Math.floor((sec % 3600) / 60);
   return h > 0 ? `${h}t ${m}m` : `${m}m`;
 }
-function pickLatest<T extends { day: string }>(arr: T[] | undefined): T | undefined {
-  if (!arr?.length) return undefined;
-  return arr[arr.length - 1];
+
+type Period = "today" | "yesterday" | "this_week" | "last_week" | "last_14";
+const PERIOD_OPTIONS: { key: Period; label: string }[] = [
+  { key: "today", label: "I dag" },
+  { key: "yesterday", label: "I går" },
+  { key: "this_week", label: "Denne uken" },
+  { key: "last_week", label: "Siste 7 dager" },
+  { key: "last_14", label: "Siste 14 dager" },
+];
+
+function osloDateKey(d = new Date()): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Oslo", year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
 }
-function intensity(d?: Daily) {
-  return ((d?.moderate_intensity_minutes ?? 0) + (d?.vigorous_intensity_minutes ?? 0)) || null;
+function addDaysKey(key: string, delta: number): string {
+  const [y, m, d] = key.split("-").map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  dt.setUTCDate(dt.getUTCDate() + delta);
+  return dt.toISOString().slice(0, 10);
+}
+function periodRange(period: Period): { from: string; to: string } {
+  const today = osloDateKey();
+  if (period === "today") return { from: today, to: today };
+  if (period === "yesterday") {
+    const y = addDaysKey(today, -1);
+    return { from: y, to: y };
+  }
+  if (period === "last_week") return { from: addDaysKey(today, -6), to: today };
+  if (period === "last_14") return { from: addDaysKey(today, -13), to: today };
+  // this_week (mandag–i dag)
+  const [y, m, d] = today.split("-").map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  const dow = dt.getUTCDay(); // 0=sun
+  const back = (dow + 6) % 7;
+  return { from: addDaysKey(today, -back), to: today };
+}
+function inRange<T extends { day: string }>(arr: T[] | undefined, from: string, to: string): T[] {
+  if (!arr?.length) return [];
+  return arr.filter((x) => x.day >= from && x.day <= to);
+}
+function sum(values: (number | null | undefined)[]): number | null {
+  const v = values.filter((x): x is number => x != null);
+  if (!v.length) return null;
+  return v.reduce((a, b) => a + b, 0);
+}
+function avg(values: (number | null | undefined)[]): number | null {
+  const v = values.filter((x): x is number => x != null);
+  if (!v.length) return null;
+  return v.reduce((a, b) => a + b, 0) / v.length;
+}
+function aggDaily(rows: Daily[]): Partial<Daily> & { _intensity: number | null } {
+  return {
+    steps: sum(rows.map((r) => r.steps)),
+    resting_heart_rate: avg(rows.map((r) => r.resting_heart_rate)),
+    total_kilocalories: sum(rows.map((r) => r.total_kilocalories)),
+    active_kilocalories: sum(rows.map((r) => r.active_kilocalories)),
+    distance_meters: sum(rows.map((r) => r.distance_meters)),
+    floors_climbed: sum(rows.map((r) => r.floors_climbed)),
+    moderate_intensity_minutes: sum(rows.map((r) => r.moderate_intensity_minutes)),
+    vigorous_intensity_minutes: sum(rows.map((r) => r.vigorous_intensity_minutes)),
+    body_battery_high: avg(rows.map((r) => r.body_battery_high)),
+    stress_average: avg(rows.map((r) => r.stress_average)),
+    _intensity: sum(rows.map((r) => (r.moderate_intensity_minutes ?? 0) + (r.vigorous_intensity_minutes ?? 0))),
+  };
+}
+function aggSleep(rows: Sleep[]): Partial<Sleep> {
+  return {
+    total_seconds: sum(rows.map((r) => r.total_seconds)),
+    deep_seconds: sum(rows.map((r) => r.deep_seconds)),
+    rem_seconds: sum(rows.map((r) => r.rem_seconds)),
+    sleep_score: avg(rows.map((r) => r.sleep_score)),
+    hrv_avg: avg(rows.map((r) => r.hrv_avg)),
+    average_spo2: avg(rows.map((r) => r.average_spo2)),
+    average_respiration: avg(rows.map((r) => r.average_respiration)),
+  };
 }
 
 type Row = {
@@ -54,6 +122,7 @@ export function GarminCompare() {
   const [arne, setArne] = useState<Overview | null>(null);
   const [rebekka, setRebekka] = useState<Overview | null>(null);
   const [loading, setLoading] = useState(true);
+  const [period, setPeriod] = useState<Period>("today");
 
   useEffect(() => {
     (async () => {
@@ -69,26 +138,28 @@ export function GarminCompare() {
     })();
   }, []);
 
-  const a = pickLatest(arne?.daily);
-  const r = pickLatest(rebekka?.daily);
-  const aSleep = pickLatest(arne?.sleep);
-  const rSleep = pickLatest(rebekka?.sleep);
+  const { from, to } = periodRange(period);
+  const periodLabel = PERIOD_OPTIONS.find((p) => p.key === period)?.label ?? "";
+  const a = aggDaily(inRange(arne?.daily, from, to));
+  const r = aggDaily(inRange(rebekka?.daily, from, to));
+  const aSleep = aggSleep(inRange(arne?.sleep, from, to));
+  const rSleep = aggSleep(inRange(rebekka?.sleep, from, to));
 
   const rows: Row[] = [
-    { label: "Skritt", arne: a?.steps ?? null, rebekka: r?.steps ?? null, fmt: (n) => fmtNum(n), higherIsBetter: true },
-    { label: "Søvn (totalt)", arne: aSleep?.total_seconds ?? null, rebekka: rSleep?.total_seconds ?? null, fmt: (n) => hoursMin(n), fmtDiff: (n) => hoursMin(Math.abs(n)), higherIsBetter: true },
-    { label: "Dyp søvn", arne: aSleep?.deep_seconds ?? null, rebekka: rSleep?.deep_seconds ?? null, fmt: (n) => hoursMin(n), fmtDiff: (n) => hoursMin(Math.abs(n)), higherIsBetter: true },
-    { label: "REM-søvn", arne: aSleep?.rem_seconds ?? null, rebekka: rSleep?.rem_seconds ?? null, fmt: (n) => hoursMin(n), fmtDiff: (n) => hoursMin(Math.abs(n)), higherIsBetter: true },
-    { label: "Søvnscore", arne: aSleep?.sleep_score ?? null, rebekka: rSleep?.sleep_score ?? null, fmt: (n) => fmtNum(n), higherIsBetter: true },
-    { label: "Hvilepuls", arne: a?.resting_heart_rate ?? null, rebekka: r?.resting_heart_rate ?? null, fmt: (n) => fmtNum(n, 0, " bpm"), higherIsBetter: false },
-    { label: "Pulsvariasjon (HRV)", arne: aSleep?.hrv_avg ?? null, rebekka: rSleep?.hrv_avg ?? null, fmt: (n) => fmtNum(n, 0, " ms"), higherIsBetter: true },
-    { label: "Pulsoksygen (SpO₂)", arne: aSleep?.average_spo2 ?? null, rebekka: rSleep?.average_spo2 ?? null, fmt: (n) => fmtNum(n, 0, " %"), higherIsBetter: true },
-    { label: "Respirasjon", arne: aSleep?.average_respiration ?? null, rebekka: rSleep?.average_respiration ?? null, fmt: (n) => fmtNum(n, 1, " /min"), higherIsBetter: null },
-    { label: "Body Battery (topp)", arne: a?.body_battery_high ?? null, rebekka: r?.body_battery_high ?? null, fmt: (n) => fmtNum(n), higherIsBetter: true },
-    { label: "Stress (snitt)", arne: a?.stress_average ?? null, rebekka: r?.stress_average ?? null, fmt: (n) => fmtNum(n), higherIsBetter: false },
-    { label: "Intensitetsminutter", arne: intensity(a), rebekka: intensity(r), fmt: (n) => fmtNum(n, 0, " min"), higherIsBetter: true },
-    { label: "Aktive kcal", arne: a?.active_kilocalories ?? null, rebekka: r?.active_kilocalories ?? null, fmt: (n) => fmtNum(n, 0, " kcal"), higherIsBetter: true },
-    { label: "Trapper", arne: a?.floors_climbed ?? null, rebekka: r?.floors_climbed ?? null, fmt: (n) => fmtNum(n), higherIsBetter: true },
+    { label: "Skritt", arne: a.steps ?? null, rebekka: r.steps ?? null, fmt: (n) => fmtNum(n), higherIsBetter: true },
+    { label: "Søvn (totalt)", arne: aSleep.total_seconds ?? null, rebekka: rSleep.total_seconds ?? null, fmt: (n) => hoursMin(n), fmtDiff: (n) => hoursMin(Math.abs(n)), higherIsBetter: true },
+    { label: "Dyp søvn", arne: aSleep.deep_seconds ?? null, rebekka: rSleep.deep_seconds ?? null, fmt: (n) => hoursMin(n), fmtDiff: (n) => hoursMin(Math.abs(n)), higherIsBetter: true },
+    { label: "REM-søvn", arne: aSleep.rem_seconds ?? null, rebekka: rSleep.rem_seconds ?? null, fmt: (n) => hoursMin(n), fmtDiff: (n) => hoursMin(Math.abs(n)), higherIsBetter: true },
+    { label: "Søvnscore", arne: aSleep.sleep_score ?? null, rebekka: rSleep.sleep_score ?? null, fmt: (n) => fmtNum(n), higherIsBetter: true },
+    { label: "Hvilepuls", arne: a.resting_heart_rate ?? null, rebekka: r.resting_heart_rate ?? null, fmt: (n) => fmtNum(n, 0, " bpm"), higherIsBetter: false },
+    { label: "Pulsvariasjon (HRV)", arne: aSleep.hrv_avg ?? null, rebekka: rSleep.hrv_avg ?? null, fmt: (n) => fmtNum(n, 0, " ms"), higherIsBetter: true },
+    { label: "Pulsoksygen (SpO₂)", arne: aSleep.average_spo2 ?? null, rebekka: rSleep.average_spo2 ?? null, fmt: (n) => fmtNum(n, 0, " %"), higherIsBetter: true },
+    { label: "Respirasjon", arne: aSleep.average_respiration ?? null, rebekka: rSleep.average_respiration ?? null, fmt: (n) => fmtNum(n, 1, " /min"), higherIsBetter: null },
+    { label: "Body Battery (topp)", arne: a.body_battery_high ?? null, rebekka: r.body_battery_high ?? null, fmt: (n) => fmtNum(n), higherIsBetter: true },
+    { label: "Stress (snitt)", arne: a.stress_average ?? null, rebekka: r.stress_average ?? null, fmt: (n) => fmtNum(n), higherIsBetter: false },
+    { label: "Intensitetsminutter", arne: a._intensity, rebekka: r._intensity, fmt: (n) => fmtNum(n, 0, " min"), higherIsBetter: true },
+    { label: "Aktive kcal", arne: a.active_kilocalories ?? null, rebekka: r.active_kilocalories ?? null, fmt: (n) => fmtNum(n, 0, " kcal"), higherIsBetter: true },
+    { label: "Trapper", arne: a.floors_climbed ?? null, rebekka: r.floors_climbed ?? null, fmt: (n) => fmtNum(n), higherIsBetter: true },
   ];
 
   const winner = (row: Row): "arne" | "rebekka" | "tie" | "na" => {
@@ -155,8 +226,30 @@ export function GarminCompare() {
             </h2>
           </div>
           <div className="text-xs text-muted-foreground italic" style={{ fontFamily: "var(--font-medieval)" }}>
-            « Siste registrerte dag »
+            « {periodLabel} »
           </div>
+        </div>
+
+        {/* Periode-velger */}
+        <div className="flex flex-wrap gap-1.5">
+          {PERIOD_OPTIONS.map((opt) => {
+            const active = period === opt.key;
+            return (
+              <button
+                key={opt.key}
+                type="button"
+                onClick={() => setPeriod(opt.key)}
+                className={`px-2.5 py-1 rounded-full border text-[11px] uppercase tracking-[0.15em] transition ${
+                  active
+                    ? "border-amber-400/70 bg-amber-500/15 text-amber-100"
+                    : "border-border/60 bg-card/40 text-muted-foreground hover:text-foreground hover:border-amber-400/40"
+                }`}
+                style={{ fontFamily: display }}
+              >
+                {opt.label}
+              </button>
+            );
+          })}
         </div>
 
         {/* Score / banners */}
