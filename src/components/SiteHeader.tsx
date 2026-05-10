@@ -367,6 +367,7 @@ export function SiteHeader() {
                   {l.to === "/varsler" && showB("alerts_severity") && <AlertsSeverityBadge inline />}
                   {l.to === "/stromkroniken" && showB("power_vs_yesterday") && <PowerVsYesterdayBadge inline />}
                   {l.to === "/trening" && <>{showB("steps_arne") && <StepsTodayBadge inline owner="arne" />}{showB("steps_rebekka") && <StepsTodayBadge inline owner="rebekka" />}{showB("training_4w") && <TrainingLast4WeeksBadge inline />}</>}
+                  {l.to === "/agenda" && showB("garbage_next") && <GarbageNextPickupBadge inline />}
                 </Link>
               </span>
             );
