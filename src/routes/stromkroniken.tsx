@@ -72,6 +72,32 @@ export const Route = createFileRoute("/stromkroniken")({
   component: StromkronikenPage,
 });
 
+/**
+ * Slå sammen aggregater fra Power-by-the-Hour (Homey) inn i TibberHomeFull.
+ * Beholder live/today fra Tibber, men overstyrer i går / måned / forrige måned / år
+ * med Pbth-tall, fordi Tibber-historikken på disse kontoene ikke stemmer.
+ */
+function mergePbthIntoTibber(
+  base: TibberHomeFull,
+  pbth: PbthHomeData | null,
+): TibberHomeFull {
+  if (!pbth || !pbth.found) return base;
+  const h = pbth.highlights;
+  const pick = <T,>(p: T | undefined, fallback: T): T =>
+    p !== undefined && p !== null ? p : fallback;
+  return {
+    ...base,
+    yesterdayKwh: pick(h.energyYesterday, base.yesterdayKwh),
+    yesterdayCost: pick(h.costYesterday ?? null, base.yesterdayCost),
+    thisMonthKwh: pick(h.energyThisMonth, base.thisMonthKwh),
+    thisMonthCost: pick(h.costThisMonth ?? null, base.thisMonthCost),
+    lastMonthKwh: pick(h.energyLastMonth, base.lastMonthKwh),
+    lastMonthCost: pick(h.costLastMonth ?? null, base.lastMonthCost),
+    thisYearKwh: pick(h.energyThisYear, base.thisYearKwh),
+    thisYearCost: pick(h.costThisYear ?? null, base.thisYearCost),
+  };
+}
+
 function StromkronikenPage() {
   const fetchFull = useServerFn(getTibberFullData);
   const fetchSpot = useServerFn(getSpotPrices);
