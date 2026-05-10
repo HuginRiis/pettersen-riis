@@ -486,28 +486,28 @@ function HealthStatusChip({ owner = "arne", displayName }: { owner?: Owner; disp
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-3">
+          <div className="space-y-2">
             {parts.map((p) => {
               const Icon = p.icon;
               const has = p.score != null;
               return (
                 <div
                   key={p.key}
-                  className={`rounded-lg border p-3 ${has ? "border-primary/30 bg-card/60" : "border-muted/40 bg-muted/10 opacity-70"}`}
+                  className={`rounded-lg border px-2.5 py-1.5 ${has ? "border-primary/30 bg-card/60" : "border-muted/40 bg-muted/10 opacity-70"}`}
                 >
-                  <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
-                      <Icon size={16} className="text-primary" />
-                      <span className="text-sm font-medium">{p.label}</span>
+                      <Icon size={14} className="text-primary" />
+                      <span className="text-xs font-medium">{p.label}</span>
                     </div>
                     <div className="text-right">
-                      <div className="text-sm">{p.raw}</div>
-                      <div className="text-xs text-muted-foreground">
+                      <div className="text-xs">{p.raw}</div>
+                      <div className="text-[10px] text-muted-foreground">
                         Skår: {p.score != null ? Math.round(p.score) : "—"} / 100
                       </div>
                     </div>
                   </div>
-                  <div className="mt-2 text-xs text-muted-foreground">
+                  <div className="mt-1 text-[10px] text-muted-foreground leading-snug">
                     <div><span className="font-mono">{p.formula}</span></div>
                     <div>{p.explain}</div>
                   </div>
@@ -515,14 +515,14 @@ function HealthStatusChip({ owner = "arne", displayName }: { owner?: Owner; disp
               );
             })}
 
-            <div className="rounded-lg border border-primary/40 bg-card/70 p-3">
-              <div className="text-sm font-medium mb-1">Samlet skår</div>
-              <div className="text-xs text-muted-foreground">
+            <div className="rounded-lg border border-primary/40 bg-card/70 px-2.5 py-1.5">
+              <div className="text-xs font-medium mb-0.5">Samlet skår</div>
+              <div className="text-[10px] text-muted-foreground leading-snug">
                 Snitt av {used.length} av {parts.length} delskår:{" "}
                 {used.map((p) => Math.round(p.score ?? 0)).join(" + ")}
                 {used.length > 0 && ` = ${used.reduce((s, p) => s + Math.round(p.score ?? 0), 0)} / ${used.length} ≈ ${overall}`}
               </div>
-              <div className="mt-2 text-xs text-muted-foreground">
+              <div className="mt-1 text-[10px] text-muted-foreground">
                 Status: ≥75 Sterk · ≥55 God · ≥35 Trett · &lt;35 Svak
               </div>
             </div>
