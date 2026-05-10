@@ -28,6 +28,7 @@ export const HEADER_BADGE_DEFS: { id: string; label: string }[] = [
   { id: "steps_rebekka", label: "Skritt Rebekka (Trening)" },
   { id: "training_4w", label: "Trening siste 4 uker" },
   { id: "usage_count", label: "Bruks-teller på meny" },
+  { id: "garbage_next", label: "Neste søppeltømming (Agenda)" },
 ];
 
 export const DEFAULT_HEADER_BADGE_SETTINGS: HeaderBadgeSettings = {
