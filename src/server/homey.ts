@@ -560,6 +560,32 @@ export const getHomeySnapshot = createServerFn({ method: "GET" }).handler(
   }),
 );
 
+/**
+ * Hent Insights-loggdata fra Homey for en gitt enhet/capability.
+ * resolution: f.eks. "lastHour", "last24Hours", "last7Days", "last31Days",
+ * "last3Months", "last6Months", "lastYear", "last2Years".
+ * Returnerer { values: [{t: ISO, v: number}], ... } slik Homey returnerer.
+ */
+export async function fetchHomeyInsightsLog(
+  deviceId: string,
+  capabilityId: string,
+  resolution: string,
+): Promise<any | null> {
+  const conn = await getValidConnection();
+  if (!conn) return null;
+  const session = await getHomeySessionContext(conn);
+  if (!session) return null;
+  const ownerUri = `homey:device:${deviceId}`;
+  const url = `${session.target.baseUrl}/api/manager/insights/log/${encodeURIComponent(
+    ownerUri,
+  )}/${encodeURIComponent(capabilityId)}/entry?resolution=${encodeURIComponent(resolution)}`;
+  try {
+    return await fetchJson<any>(url, session.sessionToken);
+  } catch (e) {
+    return { __error: e instanceof Error ? e.message : String(e) };
+  }
+}
+
 export const disconnectHomey = createServerFn({ method: "POST" }).handler(async () => {
   await deleteHomeyConnection();
   homeyTargetCache = null;

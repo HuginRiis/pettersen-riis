@@ -38,6 +38,7 @@ import { Route as ApiPublicHooksSnapshotTibberDailyRouteImport } from './routes/
 import { Route as ApiPublicHooksSnapshotPulseRouteImport } from './routes/api.public.hooks.snapshot-pulse'
 import { Route as ApiPublicHooksEufyPollRouteImport } from './routes/api/public/hooks/eufy-poll'
 import { Route as ApiPublicHooksEufyRouteImport } from './routes/api/public/hooks/eufy'
+import { Route as ApiPublicHooksBackfillPbthHistoryRouteImport } from './routes/api.public.hooks.backfill-pbth-history'
 import { Route as ApiPublicHooksAgendaPushRouteImport } from './routes/api.public.hooks.agenda-push'
 
 const VarslerRoute = VarslerRouteImport.update({
@@ -187,6 +188,12 @@ const ApiPublicHooksEufyRoute = ApiPublicHooksEufyRouteImport.update({
   path: '/api/public/hooks/eufy',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksBackfillPbthHistoryRoute =
+  ApiPublicHooksBackfillPbthHistoryRouteImport.update({
+    id: '/api/public/hooks/backfill-pbth-history',
+    path: '/api/public/hooks/backfill-pbth-history',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksAgendaPushRoute =
   ApiPublicHooksAgendaPushRouteImport.update({
     id: '/api/public/hooks/agenda-push',
@@ -221,6 +228,7 @@ export interface FileRoutesByFullPath {
   '/api/strava/callback': typeof ApiStravaCallbackRoute
   '/api/strava/start': typeof ApiStravaStartRoute
   '/api/public/hooks/agenda-push': typeof ApiPublicHooksAgendaPushRoute
+  '/api/public/hooks/backfill-pbth-history': typeof ApiPublicHooksBackfillPbthHistoryRoute
   '/api/public/hooks/eufy': typeof ApiPublicHooksEufyRoute
   '/api/public/hooks/eufy-poll': typeof ApiPublicHooksEufyPollRoute
   '/api/public/hooks/snapshot-pulse': typeof ApiPublicHooksSnapshotPulseRoute
@@ -253,6 +261,7 @@ export interface FileRoutesByTo {
   '/api/strava/callback': typeof ApiStravaCallbackRoute
   '/api/strava/start': typeof ApiStravaStartRoute
   '/api/public/hooks/agenda-push': typeof ApiPublicHooksAgendaPushRoute
+  '/api/public/hooks/backfill-pbth-history': typeof ApiPublicHooksBackfillPbthHistoryRoute
   '/api/public/hooks/eufy': typeof ApiPublicHooksEufyRoute
   '/api/public/hooks/eufy-poll': typeof ApiPublicHooksEufyPollRoute
   '/api/public/hooks/snapshot-pulse': typeof ApiPublicHooksSnapshotPulseRoute
@@ -286,6 +295,7 @@ export interface FileRoutesById {
   '/api/strava/callback': typeof ApiStravaCallbackRoute
   '/api/strava/start': typeof ApiStravaStartRoute
   '/api/public/hooks/agenda-push': typeof ApiPublicHooksAgendaPushRoute
+  '/api/public/hooks/backfill-pbth-history': typeof ApiPublicHooksBackfillPbthHistoryRoute
   '/api/public/hooks/eufy': typeof ApiPublicHooksEufyRoute
   '/api/public/hooks/eufy-poll': typeof ApiPublicHooksEufyPollRoute
   '/api/public/hooks/snapshot-pulse': typeof ApiPublicHooksSnapshotPulseRoute
@@ -320,6 +330,7 @@ export interface FileRouteTypes {
     | '/api/strava/callback'
     | '/api/strava/start'
     | '/api/public/hooks/agenda-push'
+    | '/api/public/hooks/backfill-pbth-history'
     | '/api/public/hooks/eufy'
     | '/api/public/hooks/eufy-poll'
     | '/api/public/hooks/snapshot-pulse'
@@ -352,6 +363,7 @@ export interface FileRouteTypes {
     | '/api/strava/callback'
     | '/api/strava/start'
     | '/api/public/hooks/agenda-push'
+    | '/api/public/hooks/backfill-pbth-history'
     | '/api/public/hooks/eufy'
     | '/api/public/hooks/eufy-poll'
     | '/api/public/hooks/snapshot-pulse'
@@ -384,6 +396,7 @@ export interface FileRouteTypes {
     | '/api/strava/callback'
     | '/api/strava/start'
     | '/api/public/hooks/agenda-push'
+    | '/api/public/hooks/backfill-pbth-history'
     | '/api/public/hooks/eufy'
     | '/api/public/hooks/eufy-poll'
     | '/api/public/hooks/snapshot-pulse'
@@ -417,6 +430,7 @@ export interface RootRouteChildren {
   ApiStravaCallbackRoute: typeof ApiStravaCallbackRoute
   ApiStravaStartRoute: typeof ApiStravaStartRoute
   ApiPublicHooksAgendaPushRoute: typeof ApiPublicHooksAgendaPushRoute
+  ApiPublicHooksBackfillPbthHistoryRoute: typeof ApiPublicHooksBackfillPbthHistoryRoute
   ApiPublicHooksEufyRoute: typeof ApiPublicHooksEufyRoute
   ApiPublicHooksEufyPollRoute: typeof ApiPublicHooksEufyPollRoute
   ApiPublicHooksSnapshotPulseRoute: typeof ApiPublicHooksSnapshotPulseRoute
@@ -628,6 +642,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksEufyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/backfill-pbth-history': {
+      id: '/api/public/hooks/backfill-pbth-history'
+      path: '/api/public/hooks/backfill-pbth-history'
+      fullPath: '/api/public/hooks/backfill-pbth-history'
+      preLoaderRoute: typeof ApiPublicHooksBackfillPbthHistoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/agenda-push': {
       id: '/api/public/hooks/agenda-push'
       path: '/api/public/hooks/agenda-push'
@@ -665,6 +686,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiStravaCallbackRoute: ApiStravaCallbackRoute,
   ApiStravaStartRoute: ApiStravaStartRoute,
   ApiPublicHooksAgendaPushRoute: ApiPublicHooksAgendaPushRoute,
+  ApiPublicHooksBackfillPbthHistoryRoute:
+    ApiPublicHooksBackfillPbthHistoryRoute,
   ApiPublicHooksEufyRoute: ApiPublicHooksEufyRoute,
   ApiPublicHooksEufyPollRoute: ApiPublicHooksEufyPollRoute,
   ApiPublicHooksSnapshotPulseRoute: ApiPublicHooksSnapshotPulseRoute,
