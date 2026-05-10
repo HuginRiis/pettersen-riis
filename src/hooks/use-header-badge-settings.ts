@@ -48,7 +48,7 @@ function merge(value: unknown): HeaderBadgeSettings {
   }
   const weather = {
     startOffset: (v.weather?.startOffset === 0 ? 0 : 1) as 0 | 1,
-    days: Math.min(7, Math.max(1, Number(v.weather?.days ?? 1))),
+    days: Math.min(14, Math.max(1, Number(v.weather?.days ?? 1))),
   };
   return { badges, weather };
 }
