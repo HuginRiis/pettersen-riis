@@ -154,6 +154,13 @@ async function handle(debug = false) {
           const entries: { t: string; v: number | null }[] = Array.isArray(log.values)
             ? log.values
             : [];
+          report.push({
+            location: loc,
+            cap,
+            res,
+            entryCount: entries.length,
+            logKeys: Object.keys(log).slice(0, 10),
+          });
           if (entries.length === 0) continue;
           const pts = pointsFromYesterdayLog(entries);
           if (pts.length > allPoints.length) {
