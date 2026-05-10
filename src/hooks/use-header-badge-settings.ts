@@ -18,6 +18,8 @@ export const HEADER_BADGE_DEFS: { id: string; label: string }[] = [
   { id: "push_today", label: "Antall push i dag (Innstillinger)" },
   { id: "lights_on", label: "Lys tent (Lys)" },
   { id: "weather_days", label: "Værmelding (dager fremover)" },
+  { id: "weather_temp", label: "Temperatur nå (Vær)" },
+  { id: "mower_status", label: "Gressklipper-status (Smartborg)" },
   { id: "alarm_state", label: "Alarm-status (Vakttårnet)" },
   { id: "utgangsdoren_lock", label: "Utgangsdøren låst/åpen (Vakttårnet)" },
   { id: "alerts_severity", label: "Farevarsler" },
