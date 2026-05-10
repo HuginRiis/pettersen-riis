@@ -323,11 +323,11 @@ export function WeatherDaysBadge({ lat, lon, inline, useGps, startOffset = 1, da
   const fmt = (t: number | null) => (t == null ? "" : `${Math.round(t)}°`);
   if (inline) {
     return (
-      <span title={title} className="ml-1 text-base inline-flex items-center gap-1">
+      <span title={title} className="ml-1 inline-flex items-center gap-1 align-middle">
         {items.map((it, i) => (
-          <span key={i} className="inline-flex items-center gap-0.5">
-            <span>{it.emoji}</span>
-            {showTemp && it.temp != null && <span className="text-[10px] text-muted-foreground">{fmt(it.temp)}</span>}
+          <span key={i} className="inline-flex flex-col items-center leading-none">
+            <span className="text-[12px]">{it.emoji}</span>
+            {showTemp && it.temp != null && <span className="text-[8px] text-muted-foreground mt-[1px]">{fmt(it.temp)}</span>}
           </span>
         ))}
       </span>
@@ -335,11 +335,11 @@ export function WeatherDaysBadge({ lat, lon, inline, useGps, startOffset = 1, da
   }
   return (
     <span title={title}
-      className="absolute top-2 right-2 z-10 h-[26px] px-2 rounded-full bg-background/80 text-foreground text-base flex items-center justify-center border border-border backdrop-blur shadow gap-1">
+      className="absolute top-2 right-2 z-10 px-1.5 py-0.5 rounded-full bg-background/80 text-foreground flex items-center justify-center border border-border backdrop-blur shadow gap-1">
       {items.map((it, i) => (
-        <span key={i} className="inline-flex items-center gap-0.5">
-          <span>{it.emoji}</span>
-          {showTemp && it.temp != null && <span className="text-[10px] text-muted-foreground">{fmt(it.temp)}</span>}
+        <span key={i} className="inline-flex flex-col items-center leading-none">
+          <span className="text-[12px]">{it.emoji}</span>
+          {showTemp && it.temp != null && <span className="text-[8px] text-muted-foreground mt-[1px]">{fmt(it.temp)}</span>}
         </span>
       ))}
     </span>
