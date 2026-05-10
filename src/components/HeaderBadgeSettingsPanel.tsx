@@ -1,0 +1,141 @@
+import { useEffect, useState } from "react";
+import {
+  HEADER_BADGE_DEFS,
+  type HeaderBadgeSettings,
+  saveHeaderBadgeSettings,
+  useHeaderBadgeSettings,
+} from "@/hooks/use-header-badge-settings";
+import { LayoutGrid, Save } from "lucide-react";
+
+const KNOWN_USERS = ["Arne", "Rebekka", "Ada", "Noah", "Petter", "Mor", "Far"];
+
+export function HeaderBadgeSettingsPanel() {
+  const remote = useHeaderBadgeSettings();
+  const [draft, setDraft] = useState<HeaderBadgeSettings>(remote);
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+
+  useEffect(() => { setDraft(remote); }, [remote]);
+
+  const setBadge = (id: string, patch: Partial<{ enabled: boolean; users: string[] }>) => {
+    setDraft((d) => ({
+      ...d,
+      badges: { ...d.badges, [id]: { ...d.badges[id], ...patch } },
+    }));
+  };
+  const toggleUser = (id: string, user: string) => {
+    const cur = draft.badges[id]?.users ?? [];
+    setBadge(id, { users: cur.includes(user) ? cur.filter((u) => u !== user) : [...cur, user] });
+  };
+
+  const onSave = async () => {
+    setSaving(true);
+    try {
+      await saveHeaderBadgeSettings(draft);
+      setMsg("Lagret ✓");
+      setTimeout(() => setMsg(null), 2500);
+    } finally { setSaving(false); }
+  };
+
+  return (
+    <section className="container mx-auto px-4 pt-4">
+      <article className="panel rounded-lg p-4">
+        <h3 className="text-foreground font-semibold flex items-center gap-2">
+          <LayoutGrid size={18} className="text-primary" /> Topp-meny badges
+        </h3>
+        <p className="text-sm text-muted-foreground mt-1">
+          Skru av/på de små merkene i topp-menyen, og velg hvilke brukere som skal se hver enkelt.
+          Tom liste = vises for alle.
+        </p>
+
+        <div className="mt-4 panel rounded p-3 border border-border/50">
+          <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Værmerke — periode</p>
+          <div className="flex flex-wrap gap-3 items-center text-sm">
+            <label className="flex items-center gap-2">
+              <span>Start:</span>
+              <select
+                value={draft.weather.startOffset}
+                onChange={(e) => setDraft((d) => ({ ...d, weather: { ...d.weather, startOffset: Number(e.target.value) === 0 ? 0 : 1 } }))}
+                className="bg-background border border-border rounded px-2 py-1"
+              >
+                <option value={0}>I dag</option>
+                <option value={1}>I morgen</option>
+              </select>
+            </label>
+            <label className="flex items-center gap-2">
+              <span>Antall dager:</span>
+              <input
+                type="number"
+                min={1}
+                max={7}
+                value={draft.weather.days}
+                onChange={(e) => setDraft((d) => ({ ...d, weather: { ...d.weather, days: Math.min(7, Math.max(1, Number(e.target.value) || 1)) } }))}
+                className="w-16 bg-background border border-border rounded px-2 py-1"
+              />
+            </label>
+            <span className="text-xs text-muted-foreground">
+              Eks: «I dag» + 3 dager → vises i dag, i morgen og i overmorgen.
+            </span>
+          </div>
+        </div>
+
+        <div className="mt-4 grid gap-2">
+          {HEADER_BADGE_DEFS.map((b) => {
+            const cfg = draft.badges[b.id] ?? { enabled: true, users: [] };
+            return (
+              <div key={b.id} className="panel rounded p-3 border border-border/50">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <label className="flex items-center gap-2 text-sm cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={cfg.enabled}
+                      onChange={(e) => setBadge(b.id, { enabled: e.target.checked })}
+                      className="accent-primary"
+                    />
+                    <span className="font-medium">{b.label}</span>
+                  </label>
+                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                    {cfg.users.length === 0 ? "alle brukere" : `${cfg.users.length} valgt`}
+                  </span>
+                </div>
+                {cfg.enabled && (
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {KNOWN_USERS.map((u) => {
+                      const on = cfg.users.includes(u);
+                      return (
+                        <button
+                          key={u}
+                          type="button"
+                          onClick={() => toggleUser(b.id, u)}
+                          className={`px-2 py-0.5 rounded-full text-[11px] border transition ${
+                            on
+                              ? "bg-primary text-primary-foreground border-primary"
+                              : "border-border text-muted-foreground hover:bg-accent/40"
+                          }`}
+                        >
+                          {u}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="mt-4 flex items-center gap-3">
+          <button
+            type="button"
+            onClick={onSave}
+            disabled={saving}
+            className="inline-flex items-center gap-2 px-3 py-2 rounded bg-primary text-primary-foreground text-sm hover:opacity-90 disabled:opacity-50"
+          >
+            <Save size={14} /> {saving ? "Lagrer…" : "Lagre"}
+          </button>
+          {msg && <span className="text-xs text-emerald-400">{msg}</span>}
+        </div>
+      </article>
+    </section>
+  );
+}
