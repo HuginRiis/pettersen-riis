@@ -32,12 +32,83 @@ function hoursMin(sec: number | null | undefined) {
   const h = Math.floor(sec / 3600); const m = Math.floor((sec % 3600) / 60);
   return h > 0 ? `${h}t ${m}m` : `${m}m`;
 }
-function pickLatest<T extends { day: string }>(arr: T[] | undefined): T | undefined {
-  if (!arr?.length) return undefined;
-  return arr[arr.length - 1];
-}
-function intensity(d?: Daily) {
+function intensity(d?: Daily | null) {
   return ((d?.moderate_intensity_minutes ?? 0) + (d?.vigorous_intensity_minutes ?? 0)) || null;
+}
+
+type Period = "today" | "yesterday" | "this_week" | "last_week" | "last_14";
+const PERIOD_OPTIONS: { key: Period; label: string }[] = [
+  { key: "today", label: "I dag" },
+  { key: "yesterday", label: "I går" },
+  { key: "this_week", label: "Denne uken" },
+  { key: "last_week", label: "Siste 7 dager" },
+  { key: "last_14", label: "Siste 14 dager" },
+];
+
+function osloDateKey(d = new Date()): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Oslo", year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
+}
+function addDaysKey(key: string, delta: number): string {
+  const [y, m, d] = key.split("-").map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  dt.setUTCDate(dt.getUTCDate() + delta);
+  return dt.toISOString().slice(0, 10);
+}
+function periodRange(period: Period): { from: string; to: string } {
+  const today = osloDateKey();
+  if (period === "today") return { from: today, to: today };
+  if (period === "yesterday") {
+    const y = addDaysKey(today, -1);
+    return { from: y, to: y };
+  }
+  if (period === "last_week") return { from: addDaysKey(today, -6), to: today };
+  if (period === "last_14") return { from: addDaysKey(today, -13), to: today };
+  // this_week (mandag–i dag)
+  const [y, m, d] = today.split("-").map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  const dow = dt.getUTCDay(); // 0=sun
+  const back = (dow + 6) % 7;
+  return { from: addDaysKey(today, -back), to: today };
+}
+function inRange<T extends { day: string }>(arr: T[] | undefined, from: string, to: string): T[] {
+  if (!arr?.length) return [];
+  return arr.filter((x) => x.day >= from && x.day <= to);
+}
+function sum(values: (number | null | undefined)[]): number | null {
+  const v = values.filter((x): x is number => x != null);
+  if (!v.length) return null;
+  return v.reduce((a, b) => a + b, 0);
+}
+function avg(values: (number | null | undefined)[]): number | null {
+  const v = values.filter((x): x is number => x != null);
+  if (!v.length) return null;
+  return v.reduce((a, b) => a + b, 0) / v.length;
+}
+function aggDaily(rows: Daily[]): Partial<Daily> & { _intensity: number | null } {
+  return {
+    steps: sum(rows.map((r) => r.steps)),
+    resting_heart_rate: avg(rows.map((r) => r.resting_heart_rate)),
+    total_kilocalories: sum(rows.map((r) => r.total_kilocalories)),
+    active_kilocalories: sum(rows.map((r) => r.active_kilocalories)),
+    distance_meters: sum(rows.map((r) => r.distance_meters)),
+    floors_climbed: sum(rows.map((r) => r.floors_climbed)),
+    moderate_intensity_minutes: sum(rows.map((r) => r.moderate_intensity_minutes)),
+    vigorous_intensity_minutes: sum(rows.map((r) => r.vigorous_intensity_minutes)),
+    body_battery_high: avg(rows.map((r) => r.body_battery_high)),
+    stress_average: avg(rows.map((r) => r.stress_average)),
+    _intensity: sum(rows.map((r) => (r.moderate_intensity_minutes ?? 0) + (r.vigorous_intensity_minutes ?? 0))),
+  };
+}
+function aggSleep(rows: Sleep[]): Partial<Sleep> {
+  return {
+    total_seconds: sum(rows.map((r) => r.total_seconds)),
+    deep_seconds: sum(rows.map((r) => r.deep_seconds)),
+    rem_seconds: sum(rows.map((r) => r.rem_seconds)),
+    sleep_score: avg(rows.map((r) => r.sleep_score)),
+    hrv_avg: avg(rows.map((r) => r.hrv_avg)),
+    average_spo2: avg(rows.map((r) => r.average_spo2)),
+    average_respiration: avg(rows.map((r) => r.average_respiration)),
+  };
 }
 
 type Row = {
