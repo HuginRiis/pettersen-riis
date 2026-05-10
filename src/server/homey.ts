@@ -579,8 +579,8 @@ export async function fetchHomeyInsightsLog(
   const logId = `${ownerUri}:${capabilityId}`;
   const urls = [
     `${session.target.baseUrl}/api/manager/insights/log/${encodeURIComponent(
-      logId,
-    )}/entry?resolution=${encodeURIComponent(resolution)}`,
+      ownerUri,
+    )}/${encodeURIComponent(logId)}/entry?resolution=${encodeURIComponent(resolution)}`,
     `${session.target.baseUrl}/api/manager/insights/log/${encodeURIComponent(
       ownerUri,
     )}/${encodeURIComponent(capabilityId)}/entry?resolution=${encodeURIComponent(resolution)}`,
