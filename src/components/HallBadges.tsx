@@ -269,8 +269,8 @@ export function TomorrowWeatherBadge({ lat, lon, inline, useGps }: { lat: number
 }
 
 /** Værsymbol for N dager fremover, fra valgt start (i dag eller i morgen). */
-export function WeatherDaysBadge({ lat, lon, inline, useGps, startOffset = 1, days = 1 }: { lat: number; lon: number; inline?: boolean; useGps?: boolean; startOffset?: 0 | 1; days?: number }) {
-  const [emojis, setEmojis] = useState<string[] | null>(null);
+export function WeatherDaysBadge({ lat, lon, inline, useGps, startOffset = 1, days = 1, showTemp = true }: { lat: number; lon: number; inline?: boolean; useGps?: boolean; startOffset?: 0 | 1; days?: number; showTemp?: boolean }) {
+  const [items, setItems] = useState<{ emoji: string; temp: number | null }[] | null>(null);
   const [coord, setCoord] = useState<{ lat: number; lon: number }>({ lat, lon });
   useEffect(() => {
     if (!useGps || typeof navigator === "undefined" || !navigator.geolocation) {
