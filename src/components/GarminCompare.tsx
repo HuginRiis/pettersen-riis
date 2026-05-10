@@ -253,6 +253,7 @@ export function GarminCompare() {
               </button>
             );
           })}
+        </div>
 
         {/* Score / banners */}
         <div className="grid grid-cols-2 gap-2">
