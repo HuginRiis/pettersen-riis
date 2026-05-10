@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Sun } from "lucide-react";
 import { useUvSun, uvLevel } from "@/hooks/use-uv-sun";
+import { DoubleTapToTop } from "@/components/PageShell";
 
 const HYTTA_COORD = { lat: 59.8733, lon: 9.4297 }; // Flesberg, Numedal
 
