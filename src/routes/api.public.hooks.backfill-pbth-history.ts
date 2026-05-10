@@ -93,13 +93,13 @@ async function upsertDays(location: Loc, points: DailyPoint[]) {
 export const Route = createFileRoute("/api/public/hooks/backfill-pbth-history")({
   server: {
     handlers: {
-      GET: async () => handle(),
-      POST: async () => handle(),
+      GET: async ({ request }) => handle(new URL(request.url).searchParams.get("debug") === "1"),
+      POST: async ({ request }) => handle(new URL(request.url).searchParams.get("debug") === "1"),
     },
   },
 });
 
-async function handle() {
+async function handle(debug = false) {
   try {
     const snap = await getHomeySnapshot();
     if (!snap.ok) {
