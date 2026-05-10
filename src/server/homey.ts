@@ -581,6 +581,8 @@ export async function fetchHomeyInsightsLog(
   )}/${encodeURIComponent(capabilityId)}/entry?resolution=${encodeURIComponent(resolution)}`;
   try {
     return await fetchJson<any>(url, session.sessionToken);
+  } catch (e) {
+    return { __error: e instanceof Error ? e.message : String(e) };
   }
 }
 
