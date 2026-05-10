@@ -66,8 +66,35 @@ function nextRun(cron: string, lastRun: string | null, explicit?: string | null)
 
 export function DbUsagePanel() {
   const fetchFn = useServerFn(getDbUsage);
+  const toggleFn = useServerFn(setCronJobActive);
   const [data, setData] = useState<DbUsageStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [pending, setPending] = useState<string | null>(null);
+
+  async function handleToggle(jobname: string, next: boolean) {
+    setPending(jobname);
+    // Optimistisk oppdatering
+    setData((d) =>
+      d
+        ? { ...d, cronJobs: d.cronJobs.map((c) => (c.jobname === jobname ? { ...c, active: next } : c)) }
+        : d,
+    );
+    try {
+      const res = await toggleFn({ data: { jobname, active: next } });
+      if (!res.ok) throw new Error(res.error ?? "Feilet");
+      toast.success(`${jobname}: ${next ? "skrudd på" : "skrudd av"}`);
+    } catch (e: any) {
+      toast.error(`Kunne ikke oppdatere ${jobname}: ${e?.message ?? e}`);
+      // Reverter
+      setData((d) =>
+        d
+          ? { ...d, cronJobs: d.cronJobs.map((c) => (c.jobname === jobname ? { ...c, active: !next } : c)) }
+          : d,
+      );
+    } finally {
+      setPending(null);
+    }
+  }
 
   useEffect(() => {
     let alive = true;
