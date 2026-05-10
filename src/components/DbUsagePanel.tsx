@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { getDbUsage, type DbUsageStats } from "@/server/db-usage.functions";
+import { getDbUsage, setCronJobActive, type DbUsageStats } from "@/server/db-usage.functions";
 import { Database, Clock, AlertTriangle } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { toast } from "sonner";
 
 function prettyBytes(b: number): string {
   if (!b) return "0 B";
@@ -64,8 +66,35 @@ function nextRun(cron: string, lastRun: string | null, explicit?: string | null)
 
 export function DbUsagePanel() {
   const fetchFn = useServerFn(getDbUsage);
+  const toggleFn = useServerFn(setCronJobActive);
   const [data, setData] = useState<DbUsageStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [pending, setPending] = useState<string | null>(null);
+
+  async function handleToggle(jobname: string, next: boolean) {
+    setPending(jobname);
+    // Optimistisk oppdatering
+    setData((d) =>
+      d
+        ? { ...d, cronJobs: d.cronJobs.map((c) => (c.jobname === jobname ? { ...c, active: next } : c)) }
+        : d,
+    );
+    try {
+      const res = await toggleFn({ data: { jobname, active: next } });
+      if (!res.ok) throw new Error(res.error ?? "Feilet");
+      toast.success(`${jobname}: ${next ? "skrudd på" : "skrudd av"}`);
+    } catch (e: any) {
+      toast.error(`Kunne ikke oppdatere ${jobname}: ${e?.message ?? e}`);
+      // Reverter
+      setData((d) =>
+        d
+          ? { ...d, cronJobs: d.cronJobs.map((c) => (c.jobname === jobname ? { ...c, active: !next } : c)) }
+          : d,
+      );
+    } finally {
+      setPending(null);
+    }
+  }
 
   useEffect(() => {
     let alive = true;
@@ -129,6 +158,7 @@ export function DbUsagePanel() {
             <table className="w-full text-xs">
               <thead className="text-muted-foreground">
                 <tr className="text-left border-b border-border">
+                  <th className="py-1.5 pr-2">På</th>
                   <th className="py-1.5 pr-2">Jobb</th>
                   <th className="py-1.5 pr-2">Intervall</th>
                   <th className="py-1.5 pr-2">Sist kjørt</th>
@@ -139,7 +169,15 @@ export function DbUsagePanel() {
               </thead>
               <tbody>
                 {data.cronJobs.map((j) => (
-                  <tr key={j.jobname} className="border-b border-border/40">
+                  <tr key={j.jobname} className={`border-b border-border/40 ${!j.active ? "opacity-50" : ""}`}>
+                    <td className="py-1.5 pr-2">
+                      <Switch
+                        checked={j.active}
+                        disabled={pending === j.jobname}
+                        onCheckedChange={(v) => handleToggle(j.jobname, v)}
+                        aria-label={`Skru ${j.active ? "av" : "på"} ${j.jobname}`}
+                      />
+                    </td>
                     <td className="py-1.5 pr-2 font-mono">{j.jobname}</td>
                     <td className="py-1.5 pr-2">{describeSchedule(j.schedule)}</td>
                     <td className="py-1.5 pr-2 text-muted-foreground">
@@ -148,7 +186,7 @@ export function DbUsagePanel() {
                         : "—"}
                     </td>
                     <td className="py-1.5 pr-2 text-primary">
-                      {nextRun(j.schedule, j.last_run, j.next_run)}
+                      {j.active ? nextRun(j.schedule, j.last_run, j.next_run) : "—"}
                     </td>
                     <td className="py-1.5 pr-2 text-right font-mono">
                       {j.runs_24h}
