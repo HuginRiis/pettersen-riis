@@ -64,7 +64,8 @@ async function upsertDays(location: Loc, points: DailyPoint[]) {
   const existingMap = new Map<string, string>();
   (existing ?? []).forEach((r: any) => existingMap.set(r.day, r.source));
 
-  const PREFERRED = new Set(["tibber-snapshot", "pulse-max-cron", "manuell"]);
+  // PBTH skal vinne over Pulse-tallene; bevar kun manuelle og tibber-snapshot.
+  const PREFERRED = new Set(["tibber-snapshot", "manuell"]);
   const rows = points
     .filter((p) => p.kwh > 0)
     .filter((p) => {
