@@ -213,6 +213,22 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
   const [showDetails, setShowDetails] = useState(false);
   const [chartPeriod, setChartPeriod] = useState<ChartPeriod>("last30");
   const [showTrend, setShowTrend] = useState(false);
+  const [weightAllowed, setWeightAllowed] = useState<boolean>(owner !== "rebekka");
+
+  useEffect(() => {
+    if (owner !== "rebekka") { setWeightAllowed(true); return; }
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase
+        .from("garmin_notification_prefs" as never)
+        .select("recipient, enabled")
+        .eq("enabled", true)
+        .in("recipient", ["Arne", "Rebekka", "Arne & Rebekka"]);
+      if (cancelled) return;
+      setWeightAllowed(!error && Array.isArray(data) && data.length > 0);
+    })();
+    return () => { cancelled = true; };
+  }, [owner]);
 
   const load = async () => {
     setLoading(true);
