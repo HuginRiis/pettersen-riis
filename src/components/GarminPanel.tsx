@@ -504,6 +504,7 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
                   (data?.sleep ?? []).map((s) => ({ day: s.day, hours: s.total_seconds ? s.total_seconds / 3600 : null })),
                   "hours", C.sleep,
                 )} />
+              {weightAllowed && (
               <Tile icon={<Scale size={14} style={{color: C.weight}} />} label="Vekt"
                 value={latestWeightEntry?.weight_kg ?? null} prev={prevWeightEntry?.weight_kg ?? null}
                 unit=" kg" digits={1} lowerIsBetter
@@ -525,6 +526,7 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
                   ];
                 })()}
                 chart={sparkLine(data?.daily, "weight_kg", true, C.weight)} />
+              )}
               <Tile icon={<Droplets size={14} style={{color: C.spo2}} />} label="Pulsoksygen (SpO₂)"
                 value={lastSpo2Entry?.average_spo2 ?? null} prev={prevSpo2Entry?.average_spo2 ?? null}
                 unit=" %" digits={0}
