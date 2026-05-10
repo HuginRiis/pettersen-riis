@@ -1,6 +1,20 @@
 import { createServerFn } from "@tanstack/react-start";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
+export const setCronJobActive = createServerFn({ method: "POST" })
+  .inputValidator((input: { jobname: string; active: boolean }) => input)
+  .handler(async ({ data }): Promise<{ ok: boolean; error?: string }> => {
+    const { error } = await (supabaseAdmin as any).rpc("set_cron_job_active", {
+      _jobname: data.jobname,
+      _active: data.active,
+    });
+    if (error) {
+      console.error("[db-usage] set_cron_job_active failed", error);
+      return { ok: false, error: error.message };
+    }
+    return { ok: true };
+  });
+
 export type CronJobRow = {
   jobname: string;
   schedule: string;
