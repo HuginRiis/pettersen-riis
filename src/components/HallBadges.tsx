@@ -268,6 +268,72 @@ export function TomorrowWeatherBadge({ lat, lon, inline, useGps }: { lat: number
   );
 }
 
+/** Værsymbol for N dager fremover, fra valgt start (i dag eller i morgen). */
+export function WeatherDaysBadge({ lat, lon, inline, useGps, startOffset = 1, days = 1 }: { lat: number; lon: number; inline?: boolean; useGps?: boolean; startOffset?: 0 | 1; days?: number }) {
+  const [emojis, setEmojis] = useState<string[] | null>(null);
+  const [coord, setCoord] = useState<{ lat: number; lon: number }>({ lat, lon });
+  useEffect(() => {
+    if (!useGps || typeof navigator === "undefined" || !navigator.geolocation) {
+      setCoord({ lat, lon });
+      return;
+    }
+    let cancelled = false;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => { if (!cancelled) setCoord({ lat: pos.coords.latitude, lon: pos.coords.longitude }); },
+      () => { if (!cancelled) setCoord({ lat, lon }); },
+      { enableHighAccuracy: false, timeout: 8000, maximumAge: 5 * 60 * 1000 },
+    );
+    return () => { cancelled = true; };
+  }, [useGps, lat, lon]);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(
+          `https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=${coord.lat}&lon=${coord.lon}`,
+          { headers: { Accept: "application/json" } },
+        );
+        if (!res.ok) return;
+        const data = await res.json();
+        const series = data?.properties?.timeseries ?? [];
+        const out: string[] = [];
+        for (let i = 0; i < days; i++) {
+          const day = new Date();
+          day.setDate(day.getDate() + startOffset + i);
+          const tIso = day.toISOString().slice(0, 10);
+          let best: any = null;
+          let bestDiff = Infinity;
+          for (const e of series) {
+            const t: string = e.time;
+            if (!t.startsWith(tIso)) continue;
+            const hour = parseInt(t.slice(11, 13));
+            const diff = Math.abs(hour - 12);
+            if (diff < bestDiff) { bestDiff = diff; best = e; }
+          }
+          const sym = best?.data?.next_6_hours?.summary?.symbol_code ?? best?.data?.next_1_hours?.summary?.symbol_code ?? null;
+          out.push(symbolEmoji(sym));
+        }
+        if (!cancelled) setEmojis(out);
+      } catch {}
+    })();
+  }, [coord.lat, coord.lon, startOffset, days]);
+  if (!emojis || emojis.length === 0) return null;
+  const title = days === 1 ? (startOffset === 0 ? "Vær i dag" : "Vær i morgen") : `Vær neste ${days} dager`;
+  if (inline) {
+    return (
+      <span title={title} className="ml-1 text-base inline-flex items-center gap-0.5">
+        {emojis.map((e, i) => <span key={i}>{e}</span>)}
+      </span>
+    );
+  }
+  return (
+    <span title={title}
+      className="absolute top-2 right-2 z-10 h-[26px] px-2 rounded-full bg-background/80 text-foreground text-base flex items-center justify-center border border-border backdrop-blur shadow gap-0.5">
+      {emojis.map((e, i) => <span key={i}>{e}</span>)}
+    </span>
+  );
+}
+
 /** Alarm-status (AV / DELVIS / PÅ). */
 export function AlarmStateBadge({ inline }: { inline?: boolean } = {}) {
   const [state, setState] = useState<"armed" | "partially_armed" | "disarmed" | null>(null);
