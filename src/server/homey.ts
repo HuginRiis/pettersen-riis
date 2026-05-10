@@ -576,14 +576,24 @@ export async function fetchHomeyInsightsLog(
   const session = await getHomeySessionContext(conn);
   if (!session) return null;
   const ownerUri = `homey:device:${deviceId}`;
-  const url = `${session.target.baseUrl}/api/manager/insights/log/${encodeURIComponent(
-    ownerUri,
-  )}/${encodeURIComponent(capabilityId)}/entry?resolution=${encodeURIComponent(resolution)}`;
-  try {
-    return await fetchJson<any>(url, session.sessionToken);
-  } catch (e) {
-    return { __error: e instanceof Error ? e.message : String(e) };
+  const logId = `${ownerUri}:${capabilityId}`;
+  const urls = [
+    `${session.target.baseUrl}/api/manager/insights/log/${encodeURIComponent(
+      ownerUri,
+    )}/${encodeURIComponent(logId)}/entry?resolution=${encodeURIComponent(resolution)}`,
+    `${session.target.baseUrl}/api/manager/insights/log/${encodeURIComponent(
+      ownerUri,
+    )}/${encodeURIComponent(capabilityId)}/entry?resolution=${encodeURIComponent(resolution)}`,
+  ];
+  let lastError = "";
+  for (const url of urls) {
+    try {
+      return await fetchJson<any>(url, session.sessionToken);
+    } catch (e) {
+      lastError = e instanceof Error ? e.message : String(e);
+    }
   }
+  return { __error: lastError };
 }
 
 /** List alle Insights-logger for en enhet. */

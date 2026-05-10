@@ -33,6 +33,13 @@ function shiftDay(dayKey: string, days: number): string {
   return dt.toISOString().slice(0, 10);
 }
 
+function shiftMonth(dayKey: string, months: number): string {
+  const [y, m, d] = dayKey.split("-").map((x) => Number(x));
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  dt.setUTCMonth(dt.getUTCMonth() + months);
+  return dt.toISOString().slice(0, 10);
+}
+
 type DailyPoint = { day: string; kwh: number };
 
 /**
@@ -140,8 +147,11 @@ async function handle(debug = false) {
       }
       const capsAvailable = Object.keys(device.capabilities ?? {});
       let usedCap: string | null = null;
-      let usedRes: string | null = null;
-      let allPoints: DailyPoint[] = [];
+      const usedRes = new Set<string>();
+      const fallbackPointsByDay = new Map<string, number>();
+      const detailedPointsByDay = new Map<string, number>();
+      const today = osloDateKey(new Date().toISOString());
+      const sinceDay = shiftMonth(today, -12);
 
       for (const cap of CAP_CANDIDATES) {
         // Insights-logger finnes uavhengig av om cap er eksponert som device.capability
@@ -163,14 +173,24 @@ async function handle(debug = false) {
           });
           if (entries.length === 0) continue;
           const pts = pointsFromYesterdayLog(entries);
-          if (pts.length > allPoints.length) {
-            allPoints = pts;
+          const isDetailedDaily = typeof log.step !== "number" || log.step <= 6 * 60 * 60 * 1000;
+          for (const p of pts) {
+            if (p.day < sinceDay || p.day > today) continue;
+            fallbackPointsByDay.set(p.day, p.kwh);
+            if (isDetailedDaily) detailedPointsByDay.set(p.day, p.kwh);
+          }
+          if (pts.length > 0) {
             usedCap = cap;
-            usedRes = res;
+            usedRes.add(res);
           }
         }
-        if (allPoints.length > 0) break;
+        if (detailedPointsByDay.size > 0 || fallbackPointsByDay.size > 0) break;
       }
+
+      const sourceMap = detailedPointsByDay.size > 0 ? detailedPointsByDay : fallbackPointsByDay;
+      const allPoints = [...sourceMap.entries()]
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([day, kwh]) => ({ day, kwh }));
 
       if (allPoints.length === 0) {
         report.push({
@@ -188,7 +208,7 @@ async function handle(debug = false) {
         location: loc,
         deviceId: device.id,
         usedCap,
-        usedRes,
+        usedRes: [...usedRes],
         points: allPoints.length,
         written,
         skipped,
