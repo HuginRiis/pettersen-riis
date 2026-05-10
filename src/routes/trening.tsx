@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Footprints, Heart, Moon, Battery, Brain, Activity as ActivityIcon } from "lucide-react";
+import { Footprints, Heart, Moon, Battery, Brain, Dumbbell, Activity as ActivityIcon } from "lucide-react";
 import { PageShell, PageHero } from "@/components/PageShell";
 import { ActivityMap } from "@/components/ActivityMap";
 import { GarminHouses } from "@/components/GarminHouses";
@@ -363,12 +363,18 @@ function HealthStatusChip({ owner = "arne", displayName }: { owner?: Owner; disp
   const sleepHrs = lastSleep?.total_seconds ? lastSleep.total_seconds / 3600 : null;
   const battery = today?.body_battery_high ?? null;
   const stress = today?.stress_average ?? null;
+  const steps = typeof today?.steps === "number" ? today.steps : null;
+  const stepGoal = typeof today?.step_goal === "number" && today.step_goal > 0 ? today.step_goal : 10000;
 
   // Enkel score (0–100) — del-skår per faktor for visning i detaljvinduet
   const rhrScore = rhr != null ? Math.max(0, Math.min(100, 100 - (rhr - 50) * 2)) : null;
   const sleepScore = sleepHrs != null ? Math.max(0, Math.min(100, (sleepHrs / 8) * 100)) : null;
   const batteryScore = battery != null ? battery : null;
   const stressScore = stress != null ? Math.max(0, 100 - stress) : null;
+  const stepsScore = steps != null ? Math.max(0, Math.min(100, (steps / stepGoal) * 100)) : null;
+  // Treningsklar: kombinasjon av søvn, body battery og lav stress
+  const readyParts = [sleepScore, batteryScore, stressScore].filter((n): n is number => n != null);
+  const readyScore = readyParts.length ? readyParts.reduce((a, b) => a + b, 0) / readyParts.length : null;
 
   const parts: Array<{
     key: string;
@@ -415,6 +421,24 @@ function HealthStatusChip({ owner = "arne", displayName }: { owner?: Owner; disp
       formula: "100 − stressnivå",
       explain: "Lavere stress gir høyere skår.",
     },
+    {
+      key: "ready",
+      label: "Treningsklar",
+      icon: Dumbbell,
+      raw: readyScore != null ? `${Math.round(readyScore)} / 100` : "—",
+      score: readyScore,
+      formula: "snitt(søvn, body battery, 100 − stress)",
+      explain: "Proxy for treningsberedskap basert på restitusjon.",
+    },
+    {
+      key: "steps",
+      label: "Skritt",
+      icon: Footprints,
+      raw: steps != null ? `${steps.toLocaleString("nb-NO")} / ${stepGoal.toLocaleString("nb-NO")}` : "—",
+      score: stepsScore,
+      formula: "(skritt / mål) × 100",
+      explain: "Dagens skritt mot dagens mål. 100 ved nådd mål.",
+    },
   ];
 
   const used = parts.filter((p) => p.score != null);
@@ -437,6 +461,8 @@ function HealthStatusChip({ owner = "arne", displayName }: { owner?: Owner; disp
           {sleepHrs != null && (<span className="inline-flex items-center gap-1"><Moon size={11} /> {sleepHrs.toFixed(1)}t</span>)}
           {battery != null && (<span className="inline-flex items-center gap-1"><Battery size={11} /> {battery}</span>)}
           {stress != null && (<span className="inline-flex items-center gap-1"><Brain size={11} /> {stress}</span>)}
+          {readyScore != null && (<span className="inline-flex items-center gap-1"><Dumbbell size={11} /> {Math.round(readyScore)}</span>)}
+          {steps != null && (<span className="inline-flex items-center gap-1"><Footprints size={11} /> {steps.toLocaleString("nb-NO")}</span>)}
         </span>
       </button>
 
