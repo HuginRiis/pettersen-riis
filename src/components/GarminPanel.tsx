@@ -4,6 +4,7 @@ import { Activity, Footprints, Heart, HeartPulse, Flame, Moon, RefreshCw, LogIn,
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, CartesianGrid } from "recharts";
 import { toast } from "sonner";
 import { getGarminOverview, garminLoginNow, garminSyncNow, garminSubmitMfaCode } from "@/server/garmin.functions";
+import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -212,6 +213,22 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
   const [showDetails, setShowDetails] = useState(false);
   const [chartPeriod, setChartPeriod] = useState<ChartPeriod>("last30");
   const [showTrend, setShowTrend] = useState(false);
+  const [weightAllowed, setWeightAllowed] = useState<boolean>(owner !== "rebekka");
+
+  useEffect(() => {
+    if (owner !== "rebekka") { setWeightAllowed(true); return; }
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase
+        .from("garmin_notification_prefs" as never)
+        .select("recipient, enabled")
+        .eq("enabled", true)
+        .in("recipient", ["Arne", "Rebekka", "Arne & Rebekka"]);
+      if (cancelled) return;
+      setWeightAllowed(!error && Array.isArray(data) && data.length > 0);
+    })();
+    return () => { cancelled = true; };
+  }, [owner]);
 
   const load = async () => {
     setLoading(true);
@@ -487,6 +504,7 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
                   (data?.sleep ?? []).map((s) => ({ day: s.day, hours: s.total_seconds ? s.total_seconds / 3600 : null })),
                   "hours", C.sleep,
                 )} />
+              {weightAllowed && (
               <Tile icon={<Scale size={14} style={{color: C.weight}} />} label="Vekt"
                 value={latestWeightEntry?.weight_kg ?? null} prev={prevWeightEntry?.weight_kg ?? null}
                 unit=" kg" digits={1} lowerIsBetter
@@ -508,6 +526,7 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
                   ];
                 })()}
                 chart={sparkLine(data?.daily, "weight_kg", true, C.weight)} />
+              )}
               <Tile icon={<Droplets size={14} style={{color: C.spo2}} />} label="Pulsoksygen (SpO₂)"
                 value={lastSpo2Entry?.average_spo2 ?? null} prev={prevSpo2Entry?.average_spo2 ?? null}
                 unit=" %" digits={0}
@@ -731,11 +750,13 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
                         ? <SingleDayNote value={(dailyF[0] ? (dailyF[0].moderate_intensity_minutes ?? 0) + (dailyF[0].vigorous_intensity_minutes ?? 0) : null)} unit=" min" />
                         : renderBar(intensityData, "total_intensity", showTrend, C.intensity)}
                     </ChartCard>
+                    {weightAllowed && (
                     <ChartCard title="Vekt (kg)" height={160}>
                       {single
                         ? <SingleDayNote value={dailyF[0]?.weight_kg ?? null} unit=" kg" />
                         : renderLine(dailyF, "weight_kg", showTrend, true, C.weight)}
                     </ChartCard>
+                    )}
                     <ChartCard title="Kalorier (total/aktive)" height={160}>
                       {single
                         ? <SingleDayNote value={dailyF[0]?.total_kilocalories ?? null} unit=" kcal" />
