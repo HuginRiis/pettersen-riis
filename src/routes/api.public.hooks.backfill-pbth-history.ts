@@ -144,7 +144,7 @@ async function handle(debug = false) {
       let allPoints: DailyPoint[] = [];
 
       for (const cap of CAP_CANDIDATES) {
-        if (!capsAvailable.includes(cap)) continue;
+        // Insights-logger finnes uavhengig av om cap er eksponert som device.capability
         for (const res of RESOLUTIONS) {
           const log = await fetchHomeyInsightsLog(device.id, cap, res);
           if (!log || log.__error) {
