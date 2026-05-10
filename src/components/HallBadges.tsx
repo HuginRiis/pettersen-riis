@@ -557,6 +557,137 @@ export function StepsTodayBadge({ inline, owner = "arne" }: { inline?: boolean; 
 }
 
 
+/** Status på gressklipper(e) (Gardena Sileno via Homey). */
+export function MowerStatusBadge({ inline }: { inline?: boolean } = {}) {
+  const [info, setInfo] = useState<{ label: string; emoji: string; tone: "ok" | "warn" | "error" | "info" } | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const snap = await getHomeySnapshot();
+        if (!snap.ok || cancelled) return;
+        const isMower = (d: any) => {
+          const n = (d.name ?? "").toLowerCase();
+          const drv = (d.driverUri ?? "").toLowerCase();
+          return n.includes("sileno") || n.includes("gardena") || n.includes("klipper") || n.includes("mower") ||
+            drv.includes("gardena") || drv.includes("husqvarna") || drv.includes("automower");
+        };
+        const mowers = snap.devices.filter(isMower);
+        if (mowers.length === 0) return;
+        // Pick "worst" / most informative state across mowers
+        const states = mowers.map((d: any) => {
+          const cap = (id: string) => d.capabilities[id]?.value;
+          const findStr = (test: (id: string) => boolean) => {
+            for (const [id, c] of Object.entries<any>(d.capabilities)) {
+              if (test(id.toLowerCase()) && typeof c.value === "string") return c.value as string;
+            }
+            return null;
+          };
+          const err = (typeof cap("mower_error") === "string" ? cap("mower_error") as string : null) ||
+            findStr((id) => id.includes("error") && !id.includes("last"));
+          const state = (typeof cap("mower_state") === "string" ? cap("mower_state") as string : null) ||
+            (typeof cap("state") === "string" ? cap("state") as string : null) ||
+            findStr((id) => id.includes("state"));
+          const charging = typeof cap("charging") === "boolean" ? cap("charging") as boolean : null;
+          return { err, state, charging };
+        });
+        const hasErr = states.find((s) => s.err && s.err.toLowerCase() !== "no_message");
+        if (hasErr) { setInfo({ label: "Feil", emoji: "⚠️", tone: "error" }); return; }
+        const stUp = (states[0].state ?? "").toUpperCase();
+        const anyMowing = states.some((s) => (s.state ?? "").toUpperCase().includes("MOW") || (s.state ?? "").toUpperCase().includes("CUTTING") || (s.state ?? "").toUpperCase().includes("LEAVING"));
+        const anyCharging = states.some((s) => s.charging === true || (s.state ?? "").toUpperCase().includes("CHARGING"));
+        const anyParked = states.some((s) => (s.state ?? "").toUpperCase().includes("PARK") || (s.state ?? "").toUpperCase().includes("HOME"));
+        if (anyMowing) setInfo({ label: "Klipper", emoji: "🤖", tone: "ok" });
+        else if (anyCharging) setInfo({ label: "Lader", emoji: "🔌", tone: "info" });
+        else if (anyParked) setInfo({ label: "Parkert", emoji: "🅿️", tone: "info" });
+        else if (stUp) setInfo({ label: stUp.replaceAll("_", " ").toLowerCase(), emoji: "🤖", tone: "info" });
+      } catch { /* ignore */ }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+  if (!info) return null;
+  const tone =
+    info.tone === "ok" ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40" :
+    info.tone === "warn" ? "bg-amber-500/20 text-amber-300 border-amber-500/40" :
+    info.tone === "error" ? "bg-rose-500/20 text-rose-300 border-rose-500/40" :
+    "bg-sky-500/20 text-sky-300 border-sky-500/40";
+  if (inline) {
+    return (
+      <span title={`Gressklipper: ${info.label}`}
+        className={`ml-1 px-1.5 h-[18px] rounded-full text-[10px] font-semibold inline-flex items-center justify-center border ${tone}`}>
+        {info.emoji}{info.label}
+      </span>
+    );
+  }
+  return (
+    <span title={`Gressklipper: ${info.label}`}
+      className={`absolute top-2 right-2 z-10 h-[22px] px-2 rounded-full text-[11px] font-semibold flex items-center justify-center border backdrop-blur shadow ${tone}`}>
+      {info.emoji}{info.label}
+    </span>
+  );
+}
+
+/** Nåværende temperatur fra MET locationforecast for gitte koordinater. */
+export function CurrentTempBadge({ lat, lon, inline }: { lat: number; lon: number; inline?: boolean }) {
+  const [t, setT] = useState<number | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(
+          `https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=${lat}&lon=${lon}`,
+          { headers: { Accept: "application/json" } },
+        );
+        if (!res.ok) return;
+        const data = await res.json();
+        const v = data?.properties?.timeseries?.[0]?.data?.instant?.details?.air_temperature;
+        if (!cancelled && typeof v === "number") setT(v);
+      } catch {}
+    })();
+    return () => { cancelled = true; };
+  }, [lat, lon]);
+  if (t == null) return null;
+  // Reuse same color scale as TempBadge
+  const color = (() => {
+    const stops: { t: number; c: { h: number; s: number; l: number } }[] = [
+      { t: -20, c: { h: 230, s: 75, l: 40 } },
+      { t: 0, c: { h: 215, s: 80, l: 55 } },
+      { t: 10, c: { h: 200, s: 70, l: 62 } },
+      { t: 15, c: { h: 165, s: 55, l: 60 } },
+      { t: 19, c: { h: 140, s: 60, l: 55 } },
+      { t: 22, c: { h: 120, s: 55, l: 58 } },
+      { t: 25, c: { h: 20, s: 80, l: 65 } },
+      { t: 30, c: { h: 10, s: 80, l: 58 } },
+      { t: 40, c: { h: 0, s: 80, l: 50 } },
+    ];
+    if (t <= stops[0].t) { const c = stops[0].c; return `hsl(${c.h} ${c.s}% ${c.l}%)`; }
+    if (t >= stops[stops.length - 1].t) { const c = stops[stops.length - 1].c; return `hsl(${c.h} ${c.s}% ${c.l}%)`; }
+    for (let i = 0; i < stops.length - 1; i++) {
+      const a = stops[i], b = stops[i + 1];
+      if (t >= a.t && t <= b.t) {
+        const x = (t - a.t) / (b.t - a.t);
+        const lerp = (p: number, q: number) => p + (q - p) * x;
+        return `hsl(${lerp(a.c.h, b.c.h).toFixed(0)} ${lerp(a.c.s, b.c.s).toFixed(0)}% ${lerp(a.c.l, b.c.l).toFixed(0)}%)`;
+      }
+    }
+    return `hsl(140 60% 55%)`;
+  })();
+  const cls = "inline-flex items-center justify-center rounded-full text-[9px] font-semibold leading-none px-1.5 py-0.5 min-w-[18px] tabular-nums";
+  return (
+    <span
+      className={inline ? `ml-1 ${cls}` : `absolute top-2 right-2 z-10 ${cls}`}
+      style={{
+        background: `color-mix(in oklab, ${color} 22%, transparent)`,
+        color,
+        border: `1px solid color-mix(in oklab, ${color} 50%, transparent)`,
+      }}
+      title={`Ute nå: ${t.toFixed(1)}°`}
+    >
+      {t.toFixed(0)}°
+    </span>
+  );
+}
+
 export function UtgangsdorenLockBadge({ inline }: { inline?: boolean } = {}) {
   const [locked, setLocked] = useState<boolean | null>(null);
   useEffect(() => {
