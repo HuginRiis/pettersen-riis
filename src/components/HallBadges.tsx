@@ -269,8 +269,8 @@ export function TomorrowWeatherBadge({ lat, lon, inline, useGps }: { lat: number
 }
 
 /** Værsymbol for N dager fremover, fra valgt start (i dag eller i morgen). */
-export function WeatherDaysBadge({ lat, lon, inline, useGps, startOffset = 1, days = 1 }: { lat: number; lon: number; inline?: boolean; useGps?: boolean; startOffset?: 0 | 1; days?: number }) {
-  const [emojis, setEmojis] = useState<string[] | null>(null);
+export function WeatherDaysBadge({ lat, lon, inline, useGps, startOffset = 1, days = 1, showTemp = true }: { lat: number; lon: number; inline?: boolean; useGps?: boolean; startOffset?: 0 | 1; days?: number; showTemp?: boolean }) {
+  const [items, setItems] = useState<{ emoji: string; temp: number | null }[] | null>(null);
   const [coord, setCoord] = useState<{ lat: number; lon: number }>({ lat, lon });
   useEffect(() => {
     if (!useGps || typeof navigator === "undefined" || !navigator.geolocation) {
@@ -296,7 +296,7 @@ export function WeatherDaysBadge({ lat, lon, inline, useGps, startOffset = 1, da
         if (!res.ok) return;
         const data = await res.json();
         const series = data?.properties?.timeseries ?? [];
-        const out: string[] = [];
+        const out: { emoji: string; temp: number | null }[] = [];
         for (let i = 0; i < days; i++) {
           const day = new Date();
           day.setDate(day.getDate() + startOffset + i);
@@ -311,25 +311,37 @@ export function WeatherDaysBadge({ lat, lon, inline, useGps, startOffset = 1, da
             if (diff < bestDiff) { bestDiff = diff; best = e; }
           }
           const sym = best?.data?.next_6_hours?.summary?.symbol_code ?? best?.data?.next_1_hours?.summary?.symbol_code ?? null;
-          out.push(symbolEmoji(sym));
+          const temp = typeof best?.data?.instant?.details?.air_temperature === "number" ? best.data.instant.details.air_temperature : null;
+          out.push({ emoji: symbolEmoji(sym), temp });
         }
-        if (!cancelled) setEmojis(out);
+        if (!cancelled) setItems(out);
       } catch {}
     })();
   }, [coord.lat, coord.lon, startOffset, days]);
-  if (!emojis || emojis.length === 0) return null;
+  if (!items || items.length === 0) return null;
   const title = days === 1 ? (startOffset === 0 ? "Vær i dag" : "Vær i morgen") : `Vær neste ${days} dager`;
+  const fmt = (t: number | null) => (t == null ? "" : `${Math.round(t)}°`);
   if (inline) {
     return (
-      <span title={title} className="ml-1 text-base inline-flex items-center gap-0.5">
-        {emojis.map((e, i) => <span key={i}>{e}</span>)}
+      <span title={title} className="ml-1 text-base inline-flex items-center gap-1">
+        {items.map((it, i) => (
+          <span key={i} className="inline-flex items-center gap-0.5">
+            <span>{it.emoji}</span>
+            {showTemp && it.temp != null && <span className="text-[10px] text-muted-foreground">{fmt(it.temp)}</span>}
+          </span>
+        ))}
       </span>
     );
   }
   return (
     <span title={title}
-      className="absolute top-2 right-2 z-10 h-[26px] px-2 rounded-full bg-background/80 text-foreground text-base flex items-center justify-center border border-border backdrop-blur shadow gap-0.5">
-      {emojis.map((e, i) => <span key={i}>{e}</span>)}
+      className="absolute top-2 right-2 z-10 h-[26px] px-2 rounded-full bg-background/80 text-foreground text-base flex items-center justify-center border border-border backdrop-blur shadow gap-1">
+      {items.map((it, i) => (
+        <span key={i} className="inline-flex items-center gap-0.5">
+          <span>{it.emoji}</span>
+          {showTemp && it.temp != null && <span className="text-[10px] text-muted-foreground">{fmt(it.temp)}</span>}
+        </span>
+      ))}
     </span>
   );
 }

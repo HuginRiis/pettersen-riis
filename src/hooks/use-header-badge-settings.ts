@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 export type BadgeSetting = { enabled: boolean; users: string[] };
 export type HeaderBadgeSettings = {
   badges: Record<string, BadgeSetting>;
-  weather: { startOffset: 0 | 1; days: number };
+  weather: { startOffset: 0 | 1; days: number; showTemp: boolean };
 };
 
 export const HEADER_BADGE_KEY = "header_badges";
@@ -34,7 +34,7 @@ export const DEFAULT_HEADER_BADGE_SETTINGS: HeaderBadgeSettings = {
   badges: Object.fromEntries(
     HEADER_BADGE_DEFS.map((b) => [b.id, { enabled: true, users: [] as string[] }]),
   ),
-  weather: { startOffset: 1, days: 1 },
+  weather: { startOffset: 1, days: 1, showTemp: true },
 };
 
 let cache: HeaderBadgeSettings | null = null;
@@ -51,6 +51,7 @@ function merge(value: unknown): HeaderBadgeSettings {
   const weather = {
     startOffset: (v.weather?.startOffset === 0 ? 0 : 1) as 0 | 1,
     days: Math.min(14, Math.max(1, Number(v.weather?.days ?? 1))),
+    showTemp: v.weather?.showTemp !== false,
   };
   return { badges, weather };
 }
