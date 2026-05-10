@@ -117,8 +117,9 @@ async function handle() {
       { loc: "hytta", device: hytta },
     ];
 
-    // Capabilities som kan inneholde dagsverdier
+    // Capabilities som kan inneholde dagsverdier (PBTH-app bruker last_day)
     const CAP_CANDIDATES = [
+      "meter_kwh_last_day",
       "meter_kwh_yesterday",
       "meter_consumption_yesterday",
     ];
