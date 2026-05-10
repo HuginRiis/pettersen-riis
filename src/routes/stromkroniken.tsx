@@ -46,6 +46,7 @@ import {
 } from "@/server/tibber";
 import { getPulseHistory, type PulseHistoryPoint } from "@/server/pulse-readings";
 import { getSpotPrices, type SpotPriceResult } from "@/server/spot-price";
+import { getPowerByTheHour, type PbthResult, type PbthHomeData } from "@/server/power-by-the-hour";
 import { useTibberLive, type TibberLiveHomeState } from "@/hooks/useTibberLive";
 import stromImg from "@/assets/stromkroniken.jpg";
 
@@ -71,20 +72,49 @@ export const Route = createFileRoute("/stromkroniken")({
   component: StromkronikenPage,
 });
 
+/**
+ * Slå sammen aggregater fra Power-by-the-Hour (Homey) inn i TibberHomeFull.
+ * Beholder live/today fra Tibber, men overstyrer i går / måned / forrige måned / år
+ * med Pbth-tall, fordi Tibber-historikken på disse kontoene ikke stemmer.
+ */
+function mergePbthIntoTibber(
+  base: TibberHomeFull,
+  pbth: PbthHomeData | null,
+): TibberHomeFull {
+  if (!pbth || !pbth.found) return base;
+  const h = pbth.highlights;
+  const pick = <T,>(p: T | undefined, fallback: T): T =>
+    p !== undefined && p !== null ? p : fallback;
+  return {
+    ...base,
+    yesterdayKwh: pick(h.energyYesterday, base.yesterdayKwh),
+    yesterdayCost: pick(h.costYesterday ?? null, base.yesterdayCost),
+    thisMonthKwh: pick(h.energyThisMonth, base.thisMonthKwh),
+    thisMonthCost: pick(h.costThisMonth ?? null, base.thisMonthCost),
+    lastMonthKwh: pick(h.energyLastMonth, base.lastMonthKwh),
+    lastMonthCost: pick(h.costLastMonth ?? null, base.lastMonthCost),
+    thisYearKwh: pick(h.energyThisYear, base.thisYearKwh),
+    thisYearCost: pick(h.costThisYear ?? null, base.thisYearCost),
+  };
+}
+
 function StromkronikenPage() {
   const fetchFull = useServerFn(getTibberFullData);
   const fetchSpot = useServerFn(getSpotPrices);
+  const fetchPbth = useServerFn(getPowerByTheHour);
   const [state, setState] = useState<TibberFullResult | null>(null);
   const [spot, setSpot] = useState<SpotPriceResult | null>(null);
+  const [pbth, setPbth] = useState<PbthResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [updated, setUpdated] = useState<Date | null>(null);
   const live = useTibberLive();
 
   const load = async () => {
     try {
-      const [res, spotRes] = await Promise.all([fetchFull(), fetchSpot()]);
+      const [res, spotRes, pbthRes] = await Promise.all([fetchFull(), fetchSpot(), fetchPbth()]);
       setState(res);
       setSpot(spotRes);
+      setPbth(pbthRes);
       setUpdated(new Date());
     } catch (err) {
       console.error("[Stromkroniken] failed", err);
@@ -103,6 +133,13 @@ function StromkronikenPage() {
   // Borgen er i NO2, Hytta er i NO1 (priser inkl. mva fra hvakosterstrommen.no)
   const borgenSpot = spot?.ok ? spot.zones.NO2 ?? null : null;
   const hyttaSpot = spot?.ok ? spot.zones.NO1 ?? null : null;
+
+  // Slå sammen Pbth-aggregater (i går / måned / år) inn over Tibber-data,
+  // siden Tibber-historikken ikke er korrekt for disse kontoene.
+  const pbthBorgen = pbth?.ok ? pbth.borgen : null;
+  const pbthHytta = pbth?.ok ? pbth.hytta : null;
+  const tollnesData = state?.tollnes ? mergePbthIntoTibber(state.tollnes, pbthBorgen) : null;
+  const hyttaData = state?.hytta ? mergePbthIntoTibber(state.hytta, pbthHytta) : null;
 
   return (
     <PageShell>
@@ -173,7 +210,7 @@ function StromkronikenPage() {
               priceMultiplier={1.9}
               title="Borgen · Nordre Lensmannsveg 17"
               eyebrow="Husets sete"
-              data={state?.tollnes ?? null}
+              data={tollnesData}
               live={live.homes.tollnes}
               spotPriceNow={borgenSpot?.priceNow ?? null}
               spotPriceAvg={borgenSpot?.priceAvg ?? null}
@@ -182,16 +219,16 @@ function StromkronikenPage() {
               priceMultiplier={1.52}
               title="Hytta · Øvre Bjerkesetvegen 222"
               eyebrow="Vinterboligen"
-              data={state?.hytta ?? null}
+              data={hyttaData}
               live={live.homes.hytta}
               spotPriceNow={hyttaSpot?.priceNow ?? null}
               spotPriceAvg={hyttaSpot?.priceAvg ?? null}
             />
 
-            {state?.ok && (
+            {tollnesData && hyttaData && (
               <ComparisonBlock
-                tollnes={state.tollnes}
-                hytta={state.hytta}
+                tollnes={tollnesData}
+                hytta={hyttaData}
                 borgenSpotNow={borgenSpot?.priceNow ?? null}
                 borgenSpotAvg={borgenSpot?.priceAvg ?? null}
                 hyttaSpotNow={hyttaSpot?.priceNow ?? null}
