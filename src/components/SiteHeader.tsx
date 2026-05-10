@@ -160,6 +160,8 @@ export function SiteHeader() {
 
   const { usage, bump } = useNavUsage(who);
   const { prefs: menuPrefs, toggleFavorite } = useMenuPrefs();
+  const badgeSettings = useHeaderBadgeSettings();
+  const showB = (id: string) => isBadgeVisible(badgeSettings, id, who);
 
   // Web-favoritter (egne snarveier til nettsider) — felles + per bruker
   const [webFavs, setWebFavs] = useState<{ id: string; who: string; label: string; url: string; icon: string }[]>([]);
