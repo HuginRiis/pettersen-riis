@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { fetchHomeyInsightsLog, getHomeySnapshot } from "@/server/homey";
+import { fetchHomeyInsightsLog, getHomeySnapshot, listHomeyInsightsLogs } from "@/server/homey";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 const ADDRESS_BORGEN = "Pbth Nordre Lensmannsveg 17";
