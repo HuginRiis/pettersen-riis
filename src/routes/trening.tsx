@@ -489,7 +489,10 @@ function HealthStatusChip({ owner = "arne", displayName }: { owner?: Owner; disp
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-2">
+          <div
+            className="space-y-2"
+            onClick={(e) => { if (e.target === e.currentTarget) setOpen(false); }}
+          >
             {parts.map((p) => {
               const Icon = p.icon;
               const has = p.score != null;
