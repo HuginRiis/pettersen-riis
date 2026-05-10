@@ -1094,6 +1094,11 @@ function PulseHistoryChart({
           </ResponsiveContainer>
         </div>
       )}
+      {hours >= 168 && showCompare && (
+        <p className="text-[10px] text-muted-foreground/70 mt-2 italic">
+          Sammenligning lenger tilbake enn ~13d er beregnet som daglig snitt-watt fra Pbth-historikken (kWh/dag ÷ 24t × 1000).
+        </p>
+      )}
     </div>
   );
 }
