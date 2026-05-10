@@ -219,13 +219,22 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
     if (owner !== "rebekka") { setWeightAllowed(true); return; }
     let cancelled = false;
     (async () => {
-      const { data, error } = await supabase
-        .from("garmin_notification_prefs" as never)
-        .select("recipient, enabled")
-        .eq("enabled", true)
-        .in("recipient", ["Arne", "Rebekka", "Arne & Rebekka"]);
+      const names = ["Arne", "Rebekka", "Arne & Rebekka"];
+      const [prefsRes, subsRes] = await Promise.all([
+        supabase
+          .from("garmin_notification_prefs" as never)
+          .select("recipient, enabled")
+          .eq("enabled", true)
+          .in("recipient", names),
+        supabase
+          .from("push_subscriptions")
+          .select("who")
+          .in("who", names),
+      ]);
       if (cancelled) return;
-      setWeightAllowed(!error && Array.isArray(data) && data.length > 0);
+      const hasPref = !prefsRes.error && Array.isArray(prefsRes.data) && prefsRes.data.length > 0;
+      const hasSub = !subsRes.error && Array.isArray(subsRes.data) && subsRes.data.length > 0;
+      setWeightAllowed(hasPref && hasSub);
     })();
     return () => { cancelled = true; };
   }, [owner]);
