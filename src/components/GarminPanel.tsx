@@ -4,7 +4,7 @@ import { Activity, Footprints, Heart, HeartPulse, Flame, Moon, RefreshCw, LogIn,
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, CartesianGrid } from "recharts";
 import { toast } from "sonner";
 import { getGarminOverview, garminLoginNow, garminSyncNow, garminSubmitMfaCode } from "@/server/garmin.functions";
-import { supabase } from "@/integrations/supabase/client";
+import { getStoredWho, isCurrentlySubscribed } from "@/lib/push-client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -213,31 +213,25 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
   const [showDetails, setShowDetails] = useState(false);
   const [chartPeriod, setChartPeriod] = useState<ChartPeriod>("last30");
   const [showTrend, setShowTrend] = useState(false);
-  const [weightAllowed, setWeightAllowed] = useState<boolean>(owner !== "rebekka");
+  const [weightAllowed, setWeightAllowed] = useState(false);
 
   useEffect(() => {
-    if (owner !== "rebekka") { setWeightAllowed(true); return; }
     let cancelled = false;
-    (async () => {
-      const names = ["Arne", "Rebekka", "Arne & Rebekka"];
-      const [prefsRes, subsRes] = await Promise.all([
-        supabase
-          .from("garmin_notification_prefs" as never)
-          .select("recipient, enabled")
-          .eq("enabled", true)
-          .in("recipient", names),
-        supabase
-          .from("push_subscriptions")
-          .select("who")
-          .in("who", names),
-      ]);
+    async function updateWeightAccess() {
+      const selectedWho = getStoredWho();
+      const subscribed = await isCurrentlySubscribed();
       if (cancelled) return;
-      const hasPref = !prefsRes.error && Array.isArray(prefsRes.data) && prefsRes.data.length > 0;
-      const hasSub = !subsRes.error && Array.isArray(subsRes.data) && subsRes.data.length > 0;
-      setWeightAllowed(hasPref && hasSub);
-    })();
-    return () => { cancelled = true; };
-  }, [owner]);
+      setWeightAllowed(subscribed && (selectedWho === "Arne" || selectedWho === "Rebekka"));
+    }
+    void updateWeightAccess();
+    window.addEventListener("focus", updateWeightAccess);
+    window.addEventListener("storage", updateWeightAccess);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("focus", updateWeightAccess);
+      window.removeEventListener("storage", updateWeightAccess);
+    };
+  }, []);
 
   const load = async () => {
     setLoading(true);
