@@ -467,7 +467,10 @@ function HealthStatusChip({ owner = "arne", displayName }: { owner?: Owner; disp
       </button>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent
+          className="max-w-lg"
+          onClick={(e) => { if (e.target === e.currentTarget) setOpen(false); }}
+        >
           <div className="flex justify-end mt-8 mb-2">
             <button
               type="button"
@@ -486,7 +489,10 @@ function HealthStatusChip({ owner = "arne", displayName }: { owner?: Owner; disp
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-2">
+          <div
+            className="space-y-2"
+            onClick={(e) => { if (e.target === e.currentTarget) setOpen(false); }}
+          >
             {parts.map((p) => {
               const Icon = p.icon;
               const has = p.score != null;
