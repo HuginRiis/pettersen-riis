@@ -61,6 +61,8 @@ export function PageHero({
         className="absolute inset-0"
         style={{ background: "var(--gradient-overlay)" }}
       />
+      {/* Dobbel-tapp øverst på bildet → scroll til topp */}
+      <DoubleTapToTop />
       <div className="relative h-full container mx-auto px-4 flex flex-col justify-end pb-10">
         {eyebrow && (
           <div className="text-display text-xs md:text-sm tracking-[0.4em] text-primary uppercase mb-3">
@@ -76,5 +78,33 @@ export function PageHero({
         {children && <div className="mt-4">{children}</div>}
       </div>
     </section>
+  );
+}
+
+/**
+ * Usynlig "hot zone" øverst i hero — dobbel-tapp/dobbel-klikk scroller helt til topp.
+ * Plasseres absolutt slik at den ikke stjeler vanlig scroll/tap fra resten.
+ */
+export function DoubleTapToTop({ className }: { className?: string }) {
+  const lastTap = (typeof window !== "undefined" ? (window as any) : ({} as any));
+  const handle = () => {
+    const now = Date.now();
+    const prev = lastTap.__heroLastTap ?? 0;
+    if (now - prev < 350) {
+      try { window.scrollTo({ top: 0, behavior: "smooth" }); } catch { window.scrollTo(0, 0); }
+      lastTap.__heroLastTap = 0;
+      return;
+    }
+    lastTap.__heroLastTap = now;
+  };
+  return (
+    <button
+      type="button"
+      aria-label="Dobbel-tapp for å scrolle til topp"
+      onClick={handle}
+      onDoubleClick={() => { try { window.scrollTo({ top: 0, behavior: "smooth" }); } catch { window.scrollTo(0, 0); } }}
+      className={`absolute top-0 left-0 right-0 h-16 z-20 bg-transparent ${className ?? ""}`}
+      style={{ WebkitTapHighlightColor: "transparent" }}
+    />
   );
 }
