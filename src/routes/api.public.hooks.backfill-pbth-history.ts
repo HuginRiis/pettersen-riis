@@ -133,6 +133,11 @@ async function handle(debug = false) {
         report.push({ location: loc, error: "Fant ikke PBTH-enhet" });
         continue;
       }
+      if (debug) {
+        const logs = await listHomeyInsightsLogs(device.id);
+        report.push({ location: loc, deviceId: device.id, name: device.name, debug_logs: logs });
+        continue;
+      }
       const capsAvailable = Object.keys(device.capabilities ?? {});
       let usedCap: string | null = null;
       let usedRes: string | null = null;
