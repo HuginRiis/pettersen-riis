@@ -66,14 +66,47 @@ export const getPulseHistory = createServerFn({ method: "GET" })
         .lt("recorded_at", until.toISOString())
         .order("recorded_at", { ascending: true })
         .limit(5000);
-      if (error || !rows) return { points: [] };
-      return {
-        points: (rows as any[]).map((r) => ({
-          t: r.recorded_at,
-          watt: r.watt,
-          kwh_today: r.kwh_today,
-        })),
-      };
+      const points: PulseHistoryPoint[] = (rows ?? []).map((r: any) => ({
+        t: r.recorded_at,
+        watt: r.watt,
+        kwh_today: r.kwh_today,
+      }));
+
+      // Fyll inn dager uten Pulse-readings med daglig snitt-watt fra
+      // tibber_daily_kwh (Pbth-historikk). Bare nyttig for vinduer ≥ 24t —
+      // på korte vinduer (2t/6t) gir ikke daglig snitt mening.
+      if (data.hours >= 24) {
+        const sinceDay = since.toISOString().slice(0, 10);
+        const untilDay = until.toISOString().slice(0, 10);
+        const { data: dailyRows } = await supabaseAdmin
+          .from("tibber_daily_kwh")
+          .select("day, kwh")
+          .eq("location", data.location)
+          .in("source", ["homey-pbth", "tibber-snapshot", "manuell"])
+          .gte("day", sinceDay)
+          .lte("day", untilDay)
+          .order("day", { ascending: true });
+
+        const daysWithPulse = new Set(
+          points
+            .filter((p) => p.watt != null)
+            .map((p) => p.t.slice(0, 10)),
+        );
+
+        for (const r of (dailyRows ?? []) as Array<{ day: string; kwh: number }>) {
+          if (daysWithPulse.has(r.day)) continue;
+          const kwh = Number(r.kwh);
+          if (!Number.isFinite(kwh) || kwh <= 0) continue;
+          const avgWatt = (kwh * 1000) / 24;
+          // Plasser punktet kl 12:00 lokal tid (≈ midt på dagen)
+          const t = `${r.day}T12:00:00.000Z`;
+          points.push({ t, watt: Math.round(avgWatt), kwh_today: null });
+        }
+        points.sort((a, b) => a.t.localeCompare(b.t));
+      }
+
+      if (error && points.length === 0) return { points: [] };
+      return { points };
     },
   );
 
