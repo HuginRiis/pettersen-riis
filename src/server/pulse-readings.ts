@@ -73,37 +73,41 @@ export const getPulseHistory = createServerFn({ method: "GET" })
       }));
 
       // Fyll inn dager uten Pulse-readings med daglig snitt-watt fra
-      // tibber_daily_kwh (Pbth-historikk). Bare nyttig for vinduer ≥ 24t —
-      // på korte vinduer (2t/6t) gir ikke daglig snitt mening.
-      if (data.hours >= 24) {
-        const sinceDay = since.toISOString().slice(0, 10);
-        const untilDay = until.toISOString().slice(0, 10);
-        const { data: dailyRows } = await supabaseAdmin
-          .from("tibber_daily_kwh")
-          .select("day, kwh")
-          .eq("location", data.location)
-          .in("source", ["homey-pbth", "tibber-snapshot", "manuell"])
-          .gte("day", sinceDay)
-          .lte("day", untilDay)
-          .order("day", { ascending: true });
+      // tibber_daily_kwh (Pbth-historikk). Brukes for ALLE vinduer
+      // (2t/6t/24t/...) — for korte vinduer plottes en flat linje innenfor
+      // vinduet med dagens snitt-watt (kWh/24).
+      const sinceDay = since.toISOString().slice(0, 10);
+      const untilDay = until.toISOString().slice(0, 10);
+      const { data: dailyRows } = await supabaseAdmin
+        .from("tibber_daily_kwh")
+        .select("day, kwh")
+        .eq("location", data.location)
+        .in("source", ["homey-pbth", "tibber-snapshot", "manuell"])
+        .gte("day", sinceDay)
+        .lte("day", untilDay)
+        .order("day", { ascending: true });
 
-        const daysWithPulse = new Set(
-          points
-            .filter((p) => p.watt != null)
-            .map((p) => p.t.slice(0, 10)),
-        );
+      const daysWithPulse = new Set(
+        points
+          .filter((p) => p.watt != null)
+          .map((p) => p.t.slice(0, 10)),
+      );
 
-        for (const r of (dailyRows ?? []) as Array<{ day: string; kwh: number }>) {
-          if (daysWithPulse.has(r.day)) continue;
-          const kwh = Number(r.kwh);
-          if (!Number.isFinite(kwh) || kwh <= 0) continue;
-          const avgWatt = (kwh * 1000) / 24;
-          // Plasser punktet kl 12:00 lokal tid (≈ midt på dagen)
-          const t = `${r.day}T12:00:00.000Z`;
-          points.push({ t, watt: Math.round(avgWatt), kwh_today: null });
-        }
-        points.sort((a, b) => a.t.localeCompare(b.t));
+      for (const r of (dailyRows ?? []) as Array<{ day: string; kwh: number }>) {
+        if (daysWithPulse.has(r.day)) continue;
+        const kwh = Number(r.kwh);
+        if (!Number.isFinite(kwh) || kwh <= 0) continue;
+        const avgWatt = Math.round((kwh * 1000) / 24);
+        // Klipp dagen mot [since, until) — gir flat linje innenfor vinduet
+        const dayStart = new Date(`${r.day}T00:00:00.000Z`).getTime();
+        const dayEnd = dayStart + 24 * 60 * 60 * 1000;
+        const segStart = Math.max(dayStart, since.getTime());
+        const segEnd = Math.min(dayEnd, until.getTime());
+        if (segEnd <= segStart) continue;
+        points.push({ t: new Date(segStart).toISOString(), watt: avgWatt, kwh_today: null });
+        points.push({ t: new Date(segEnd - 1).toISOString(), watt: avgWatt, kwh_today: null });
       }
+      points.sort((a, b) => a.t.localeCompare(b.t));
 
       if (error && points.length === 0) return { points: [] };
       return { points };
