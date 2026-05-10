@@ -700,6 +700,58 @@ export function CurrentTempBadge({ lat, lon, inline }: { lat: number; lon: numbe
   );
 }
 
+/** Neste søppeltømming: dager til + emoji dagen før. Per-fraksjon farge. */
+const FRAKSJON_COLOR: Record<number, string> = {
+  1: "hsl(220 10% 65%)",  // Restavfall — grå
+  2: "hsl(28 65% 55%)",   // Papp — brun/oransje
+  3: "hsl(140 55% 50%)",  // Matavfall — grønn
+  4: "hsl(195 70% 55%)",  // Glass — blå
+  5: "hsl(45 90% 55%)",   // Plast — gul
+  6: "hsl(0 75% 58%)",    // Farlig — rød
+  7: "hsl(165 60% 50%)",  // Papir/retur — teal
+};
+const FRAKSJON_EMOJI_HDR: Record<number, string> = {
+  1: "🗑", 2: "📦", 3: "🥬", 4: "🍷", 5: "🥛", 6: "☣️", 7: "♻️",
+};
+
+export function GarbageNextPickupBadge({ inline }: { inline?: boolean } = {}) {
+  const [next, setNext] = useState<{ fraksjonId: number; fraksjonNavn: string; daysUntil: number } | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const o = await getGarbageOverview();
+        if (cancelled) return;
+        const sorted = [...(o.pickups ?? [])].sort((a, b) => a.daysUntil - b.daysUntil);
+        const n = sorted.find((p) => p.daysUntil >= 0) ?? null;
+        if (n) setNext({ fraksjonId: n.fraksjonId, fraksjonNavn: n.fraksjonNavn, daysUntil: n.daysUntil });
+      } catch {}
+    })();
+    return () => { cancelled = true; };
+  }, []);
+  if (!next) return null;
+  const color = FRAKSJON_COLOR[next.fraksjonId] ?? "hsl(220 10% 65%)";
+  const emoji = FRAKSJON_EMOJI_HDR[next.fraksjonId] ?? "🗑";
+  const showEmoji = next.daysUntil <= 1;
+  const txt = next.daysUntil === 0 ? "i dag" : next.daysUntil === 1 ? "i morgen" : `${next.daysUntil}d`;
+  const title = `Neste tømming: ${next.fraksjonNavn} ${next.daysUntil === 0 ? "i dag" : next.daysUntil === 1 ? "i morgen" : `om ${next.daysUntil} dager`}`;
+  const cls = "inline-flex items-center justify-center rounded-full text-[10px] font-semibold leading-none px-1.5 h-[18px] gap-0.5 tabular-nums";
+  return (
+    <span
+      className={inline ? `ml-1 ${cls}` : `absolute top-2 right-2 z-10 ${cls}`}
+      style={{
+        background: `color-mix(in oklab, ${color} 22%, transparent)`,
+        color,
+        border: `1px solid color-mix(in oklab, ${color} 50%, transparent)`,
+      }}
+      title={title}
+    >
+      {showEmoji && <span>{emoji}</span>}
+      <span>{txt}</span>
+    </span>
+  );
+}
+
 export function UtgangsdorenLockBadge({ inline }: { inline?: boolean } = {}) {
   const [locked, setLocked] = useState<boolean | null>(null);
   useEffect(() => {
