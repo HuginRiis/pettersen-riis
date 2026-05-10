@@ -34,7 +34,7 @@ export const DEFAULT_HEADER_BADGE_SETTINGS: HeaderBadgeSettings = {
   badges: Object.fromEntries(
     HEADER_BADGE_DEFS.map((b) => [b.id, { enabled: true, users: [] as string[] }]),
   ),
-  weather: { startOffset: 1, days: 1 },
+  weather: { startOffset: 1, days: 1, showTemp: true },
 };
 
 let cache: HeaderBadgeSettings | null = null;
