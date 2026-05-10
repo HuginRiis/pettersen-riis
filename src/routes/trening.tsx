@@ -468,6 +468,15 @@ function HealthStatusChip({ owner = "arne", displayName }: { owner?: Owner; disp
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-lg">
+          <div className="flex justify-end -mt-2 -mr-2 mb-1">
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="px-3 py-1 rounded border border-primary/40 text-primary text-[10px] tracking-[0.3em] uppercase hover:bg-primary/10"
+            >
+              Lukk
+            </button>
+          </div>
           <DialogHeader>
             <DialogTitle className={`text-medieval ${color}`}>
               Helse: {status}{overall != null && ` · ${overall} / 100`}
