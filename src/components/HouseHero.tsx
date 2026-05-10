@@ -175,6 +175,9 @@ export function HouseHero({
         }}
       />
 
+      {/* Dobbel-tapp øverst → scroll til topp */}
+      <DoubleTapToTop />
+
       {/* Tekstinnhold */}
       <div className="relative h-full container mx-auto px-4 flex flex-col justify-end pb-10">
         {eyebrow && (
