@@ -598,15 +598,25 @@ export async function listHomeyInsightsLogs(deviceId: string): Promise<any> {
     `${session.target.baseUrl}/api/manager/insights/log/${encodeURIComponent(ownerUri)}`,
     `${session.target.baseUrl}/api/manager/insights/log`,
   ];
-  const out: any = {};
+  const out: any = { ownerUri, matches: [] };
   for (const url of candidates) {
     try {
       const res = await fetchJson<any>(url, session.sessionToken);
       if (Array.isArray(res)) {
-        out[url] = { count: res.length, first: res.slice(0, 5) };
+        const matches = res.filter((e: any) => e?.ownerUri === ownerUri);
+        out[url] = { count: res.length, matchCount: matches.length };
+        if (matches.length > 0) {
+          out.matches = matches.map((m: any) => ({
+            id: m.id,
+            ownerId: m.ownerId,
+            ownerName: m.ownerName,
+            type: m.type,
+            units: m.units,
+            lastValue: m.lastValue,
+          }));
+        }
       } else if (res && typeof res === "object") {
-        const keys = Object.keys(res);
-        out[url] = { keys: keys.slice(0, 30), sample: keys.slice(0, 5).map((k) => [k, (res as any)[k]]) };
+        out[url] = { keys: Object.keys(res).slice(0, 30) };
       } else {
         out[url] = { value: res };
       }
