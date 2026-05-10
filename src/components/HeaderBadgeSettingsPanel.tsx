@@ -65,11 +65,24 @@ export function HeaderBadgeSettingsPanel() {
             <label className="flex items-center gap-2">
               <span>Antall dager:</span>
               <input
-                type="number"
-                min={1}
-                max={7}
-                value={draft.weather.days}
-                onChange={(e) => setDraft((d) => ({ ...d, weather: { ...d.weather, days: Math.min(7, Math.max(1, Number(e.target.value) || 1)) } }))}
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                value={draft.weather.days === 0 ? "" : String(draft.weather.days)}
+                onChange={(e) => {
+                  const raw = e.target.value.replace(/[^0-9]/g, "");
+                  if (raw === "") {
+                    setDraft((d) => ({ ...d, weather: { ...d.weather, days: 0 } }));
+                    return;
+                  }
+                  const n = Math.min(14, Math.max(1, parseInt(raw, 10)));
+                  setDraft((d) => ({ ...d, weather: { ...d.weather, days: n } }));
+                }}
+                onBlur={() => {
+                  if (!draft.weather.days || draft.weather.days < 1) {
+                    setDraft((d) => ({ ...d, weather: { ...d.weather, days: 1 } }));
+                  }
+                }}
                 className="w-16 bg-background border border-border rounded px-2 py-1"
               />
             </label>
