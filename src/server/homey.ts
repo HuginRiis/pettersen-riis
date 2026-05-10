@@ -581,9 +581,38 @@ export async function fetchHomeyInsightsLog(
   )}/${encodeURIComponent(capabilityId)}/entry?resolution=${encodeURIComponent(resolution)}`;
   try {
     return await fetchJson<any>(url, session.sessionToken);
-  } catch (e) {
-    return { __error: e instanceof Error ? e.message : String(e) };
   }
+}
+
+/** List alle Insights-logger for en enhet. */
+export async function listHomeyInsightsLogs(deviceId: string): Promise<any> {
+  const conn = await getValidConnection();
+  if (!conn) return null;
+  const session = await getHomeySessionContext(conn);
+  if (!session) return null;
+  const ownerUri = `homey:device:${deviceId}`;
+  const candidates = [
+    `${session.target.baseUrl}/api/manager/insights/log?uri=${encodeURIComponent(ownerUri)}`,
+    `${session.target.baseUrl}/api/manager/insights/log/${encodeURIComponent(ownerUri)}`,
+    `${session.target.baseUrl}/api/manager/insights/log`,
+  ];
+  const out: any = {};
+  for (const url of candidates) {
+    try {
+      const res = await fetchJson<any>(url, session.sessionToken);
+      if (Array.isArray(res)) {
+        out[url] = { count: res.length, first: res.slice(0, 5) };
+      } else if (res && typeof res === "object") {
+        const keys = Object.keys(res);
+        out[url] = { keys: keys.slice(0, 30), sample: keys.slice(0, 5).map((k) => [k, (res as any)[k]]) };
+      } else {
+        out[url] = { value: res };
+      }
+    } catch (e) {
+      out[url] = { __error: e instanceof Error ? e.message : String(e) };
+    }
+  }
+  return out;
 }
 
 export const disconnectHomey = createServerFn({ method: "POST" }).handler(async () => {
