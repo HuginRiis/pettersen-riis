@@ -158,6 +158,7 @@ export function DbUsagePanel() {
             <table className="w-full text-xs">
               <thead className="text-muted-foreground">
                 <tr className="text-left border-b border-border">
+                  <th className="py-1.5 pr-2">På</th>
                   <th className="py-1.5 pr-2">Jobb</th>
                   <th className="py-1.5 pr-2">Intervall</th>
                   <th className="py-1.5 pr-2">Sist kjørt</th>
@@ -168,7 +169,15 @@ export function DbUsagePanel() {
               </thead>
               <tbody>
                 {data.cronJobs.map((j) => (
-                  <tr key={j.jobname} className="border-b border-border/40">
+                  <tr key={j.jobname} className={`border-b border-border/40 ${!j.active ? "opacity-50" : ""}`}>
+                    <td className="py-1.5 pr-2">
+                      <Switch
+                        checked={j.active}
+                        disabled={pending === j.jobname}
+                        onCheckedChange={(v) => handleToggle(j.jobname, v)}
+                        aria-label={`Skru ${j.active ? "av" : "på"} ${j.jobname}`}
+                      />
+                    </td>
                     <td className="py-1.5 pr-2 font-mono">{j.jobname}</td>
                     <td className="py-1.5 pr-2">{describeSchedule(j.schedule)}</td>
                     <td className="py-1.5 pr-2 text-muted-foreground">
@@ -177,7 +186,7 @@ export function DbUsagePanel() {
                         : "—"}
                     </td>
                     <td className="py-1.5 pr-2 text-primary">
-                      {nextRun(j.schedule, j.last_run, j.next_run)}
+                      {j.active ? nextRun(j.schedule, j.last_run, j.next_run) : "—"}
                     </td>
                     <td className="py-1.5 pr-2 text-right font-mono">
                       {j.runs_24h}
