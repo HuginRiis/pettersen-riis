@@ -248,11 +248,35 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-50 backdrop-blur-md bg-background/80 border-b border-border">
       <div className="container mx-auto px-4 py-3 flex items-center justify-between gap-4">
-        <Link to="/" className="flex items-center gap-3 group shrink-0">
-          <div className="w-9 h-9 rounded-full border border-primary/40 flex items-center justify-center text-primary group-hover:shadow-[0_0_20px_var(--color-primary)] transition-shadow">
+        <div className="flex items-center gap-3 shrink-0">
+          <Link
+            to="/"
+            aria-label="Hjem"
+            title="Hjem"
+            className="group w-9 h-9 rounded-full border border-primary/40 flex items-center justify-center text-primary hover:shadow-[0_0_20px_var(--color-primary)] transition-shadow shrink-0"
+          >
             <Home size={16} />
-          </div>
-          <div className="leading-tight">
+          </Link>
+          <button
+            type="button"
+            aria-label="Dobbel-tapp for å scrolle til topp"
+            onClick={() => {
+              const w = window as any;
+              const now = Date.now();
+              const prev = w.__headerTitleLastTap ?? 0;
+              if (now - prev < 350) {
+                try { window.scrollTo({ top: 0, behavior: "smooth" }); } catch { window.scrollTo(0, 0); }
+                w.__headerTitleLastTap = 0;
+                return;
+              }
+              w.__headerTitleLastTap = now;
+            }}
+            onDoubleClick={() => {
+              try { window.scrollTo({ top: 0, behavior: "smooth" }); } catch { window.scrollTo(0, 0); }
+            }}
+            className="leading-tight text-left bg-transparent border-0 p-0 cursor-pointer"
+            style={{ WebkitTapHighlightColor: "transparent" }}
+          >
             <div className="text-display text-sm tracking-[0.25em] text-primary flex items-center gap-1.5">
               <Crown size={12} className="text-primary/80" />
               <span>HOUSE PETTERSEN RIIS</span>
@@ -262,8 +286,8 @@ export function SiteHeader() {
               <Shield size={9} className="text-muted-foreground/70" />
               <span>OF SKIEN</span>
             </div>
-          </div>
-        </Link>
+          </button>
+        </div>
 
         <nav className="hidden xl:flex flex-1 flex-wrap items-center justify-start gap-x-2 gap-y-2">
           <span className="inline-flex items-center gap-0.5 relative">
