@@ -75,17 +75,20 @@ export const Route = createFileRoute("/stromkroniken")({
 function StromkronikenPage() {
   const fetchFull = useServerFn(getTibberFullData);
   const fetchSpot = useServerFn(getSpotPrices);
+  const fetchPbth = useServerFn(getPowerByTheHour);
   const [state, setState] = useState<TibberFullResult | null>(null);
   const [spot, setSpot] = useState<SpotPriceResult | null>(null);
+  const [pbth, setPbth] = useState<PbthResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [updated, setUpdated] = useState<Date | null>(null);
   const live = useTibberLive();
 
   const load = async () => {
     try {
-      const [res, spotRes] = await Promise.all([fetchFull(), fetchSpot()]);
+      const [res, spotRes, pbthRes] = await Promise.all([fetchFull(), fetchSpot(), fetchPbth()]);
       setState(res);
       setSpot(spotRes);
+      setPbth(pbthRes);
       setUpdated(new Date());
     } catch (err) {
       console.error("[Stromkroniken] failed", err);
@@ -104,6 +107,13 @@ function StromkronikenPage() {
   // Borgen er i NO2, Hytta er i NO1 (priser inkl. mva fra hvakosterstrommen.no)
   const borgenSpot = spot?.ok ? spot.zones.NO2 ?? null : null;
   const hyttaSpot = spot?.ok ? spot.zones.NO1 ?? null : null;
+
+  // Slå sammen Pbth-aggregater (i går / måned / år) inn over Tibber-data,
+  // siden Tibber-historikken ikke er korrekt for disse kontoene.
+  const pbthBorgen = pbth?.ok ? pbth.borgen : null;
+  const pbthHytta = pbth?.ok ? pbth.hytta : null;
+  const tollnesData = state?.tollnes ? mergePbthIntoTibber(state.tollnes, pbthBorgen) : null;
+  const hyttaData = state?.hytta ? mergePbthIntoTibber(state.hytta, pbthHytta) : null;
 
   return (
     <PageShell>
