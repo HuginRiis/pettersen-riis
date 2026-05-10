@@ -229,9 +229,30 @@ export function GarminCompare() {
             </h2>
           </div>
           <div className="text-xs text-muted-foreground italic" style={{ fontFamily: "var(--font-medieval)" }}>
-            « Siste registrerte dag »
+            « {periodLabel} »
           </div>
         </div>
+
+        {/* Periode-velger */}
+        <div className="flex flex-wrap gap-1.5">
+          {PERIOD_OPTIONS.map((opt) => {
+            const active = period === opt.key;
+            return (
+              <button
+                key={opt.key}
+                type="button"
+                onClick={() => setPeriod(opt.key)}
+                className={`px-2.5 py-1 rounded-full border text-[11px] uppercase tracking-[0.15em] transition ${
+                  active
+                    ? "border-amber-400/70 bg-amber-500/15 text-amber-100"
+                    : "border-border/60 bg-card/40 text-muted-foreground hover:text-foreground hover:border-amber-400/40"
+                }`}
+                style={{ fontFamily: display }}
+              >
+                {opt.label}
+              </button>
+            );
+          })}
 
         {/* Score / banners */}
         <div className="grid grid-cols-2 gap-2">
