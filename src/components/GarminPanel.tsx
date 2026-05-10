@@ -750,11 +750,13 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
                         ? <SingleDayNote value={(dailyF[0] ? (dailyF[0].moderate_intensity_minutes ?? 0) + (dailyF[0].vigorous_intensity_minutes ?? 0) : null)} unit=" min" />
                         : renderBar(intensityData, "total_intensity", showTrend, C.intensity)}
                     </ChartCard>
+                    {weightAllowed && (
                     <ChartCard title="Vekt (kg)" height={160}>
                       {single
                         ? <SingleDayNote value={dailyF[0]?.weight_kg ?? null} unit=" kg" />
                         : renderLine(dailyF, "weight_kg", showTrend, true, C.weight)}
                     </ChartCard>
+                    )}
                     <ChartCard title="Kalorier (total/aktive)" height={160}>
                       {single
                         ? <SingleDayNote value={dailyF[0]?.total_kilocalories ?? null} unit=" kcal" />
