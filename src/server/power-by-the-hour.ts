@@ -45,7 +45,7 @@ export type PbthResult =
     };
 
 const ADDRESS_BORGEN = "Pbth Nordre Lensmannsveg 17";
-const ADDRESS_HYTTA = "Øvre Bjørkesetvegen 222";
+const ADDRESS_HYTTA = "Pbth Øvre Bjørkesetvegen 222";
 
 // Power-by-the-Hour-app brukernavn på enheter inneholder typisk adressen.
 // Vi matcher fuzzy: alle tokens (lowercase) må være med i enhetsnavnet.
