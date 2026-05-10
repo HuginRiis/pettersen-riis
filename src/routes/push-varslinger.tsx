@@ -6,6 +6,7 @@ import { UpcomingPushPanel } from "@/components/UpcomingPushPanel";
 import { TibberCronStatusPanel } from "@/components/TibberCronStatusPanel";
 import { PushSchedulingSettings } from "@/components/PushSchedulingSettings";
 import { MenuPreferencesPanel } from "@/components/MenuPreferencesPanel";
+import { HeaderBadgeSettingsPanel } from "@/components/HeaderBadgeSettingsPanel";
 import { FavoritesManagerPanel } from "@/components/FavoritesManagerPanel";
 import { LightScenesPanel } from "@/components/LightScenesPanel";
 import { FavoriteZonesPanel } from "@/components/FavoriteZonesPanel";
@@ -54,6 +55,7 @@ const TOC_ITEMS: { id: string; label: string; emoji: string }[] = [
   { id: "sec-kommende", label: "Kommende push", emoji: "📨" },
   { id: "sec-personlig", label: "Personlig", emoji: "✦" },
   { id: "sec-meny", label: "Meny", emoji: "🧭" },
+  { id: "sec-badges", label: "Topp-badges", emoji: "🏷️" },
   { id: "sec-snarveier", label: "Snarveier", emoji: "⭐" },
   { id: "sec-rom", label: "Favoritt-rom", emoji: "🏠" },
   { id: "sec-scener", label: "Lys-scener", emoji: "🎬" },
@@ -140,6 +142,7 @@ function PushSettingsPage() {
         </p>
       </section>
       <section id="sec-meny" className="scroll-mt-24"><MenuPreferencesPanel /></section>
+      <section id="sec-badges" className="scroll-mt-24"><HeaderBadgeSettingsPanel /></section>
       <section id="sec-snarveier" className="scroll-mt-24"><FavoritesManagerPanel /></section>
       <section id="sec-rom" className="scroll-mt-24"><FavoriteZonesPanel /></section>
       <section id="sec-scener" className="scroll-mt-24"><LightScenesPanel /></section>
