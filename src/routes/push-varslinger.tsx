@@ -214,7 +214,7 @@ function PushSettingsPage() {
 
 
       <div className="container mx-auto px-4 pb-12 grid md:grid-cols-2 gap-4">
-        <section id="sec-agenda" className="contents scroll-mt-24">
+        <section id="sec-agenda" className="block scroll-mt-24">
           <CategoryCard
             icon={Calendar}
             title="Agenda-meldinger"
@@ -229,7 +229,7 @@ function PushSettingsPage() {
           </CategoryCard>
         </section>
 
-        <section id="sec-bursdager" className="contents scroll-mt-24">
+        <section id="sec-bursdager" className="block scroll-mt-24">
           <CategoryCard
             icon={Cake}
             title="Bursdager"
@@ -240,11 +240,11 @@ function PushSettingsPage() {
           />
         </section>
 
-        <section id="sec-bursdager-toggle" className="contents scroll-mt-24">
+        <section id="sec-bursdager-toggle" className="block scroll-mt-24">
           <BirthdaysQuickPanel />
         </section>
 
-        <section id="sec-vaervarsler" className="contents scroll-mt-24">
+        <section id="sec-vaervarsler" className="block scroll-mt-24">
           <CategoryCard
             icon={CloudSun}
             title="Værvarsler"
@@ -255,11 +255,11 @@ function PushSettingsPage() {
           />
         </section>
 
-        <section id="sec-vaerprefs" className="contents scroll-mt-24">
+        <section id="sec-vaerprefs" className="block scroll-mt-24">
           <WeatherPrefsList />
         </section>
 
-        <section id="sec-uvvarsler" className="contents scroll-mt-24">
+        <section id="sec-uvvarsler" className="block scroll-mt-24">
           <CategoryCard
             icon={Sun}
             title="UV-varsler"
@@ -270,11 +270,11 @@ function PushSettingsPage() {
           />
         </section>
 
-        <section id="sec-uvprefs" className="contents scroll-mt-24">
+        <section id="sec-uvprefs" className="block scroll-mt-24">
           <UvPrefsList />
         </section>
 
-        <section id="sec-soppel" className="contents scroll-mt-24">
+        <section id="sec-soppel" className="block scroll-mt-24">
           <CategoryCard
             icon={Trash2}
             title="Søppeltømming"
@@ -285,11 +285,11 @@ function PushSettingsPage() {
           />
         </section>
 
-        <section id="sec-soppelprefs" className="contents scroll-mt-24">
+        <section id="sec-soppelprefs" className="block scroll-mt-24">
           <GarbagePrefsList />
         </section>
 
-        <section id="sec-lyspaa" className="contents scroll-mt-24">
+        <section id="sec-lyspaa" className="block scroll-mt-24">
           <CategoryCard
             icon={Lightbulb}
             title="Lys står på lenge"
@@ -300,11 +300,11 @@ function PushSettingsPage() {
           />
         </section>
 
-        <section id="sec-lyspaaprefs" className="contents scroll-mt-24">
+        <section id="sec-lyspaaprefs" className="block scroll-mt-24">
           <LightIdlePrefsList />
         </section>
 
-        <section id="sec-hytta" className="contents scroll-mt-24">
+        <section id="sec-hytta" className="block scroll-mt-24">
           <CategoryCard
             icon={ScrollText}
             title="Hytta — huskeliste"
@@ -315,7 +315,7 @@ function PushSettingsPage() {
           />
         </section>
 
-        <section id="sec-garanti" className="contents scroll-mt-24">
+        <section id="sec-garanti" className="block scroll-mt-24">
           <CategoryCard
             icon={ShieldCheck}
             title="Garanti — kvitteringer"
@@ -326,11 +326,11 @@ function PushSettingsPage() {
           />
         </section>
 
-        <section id="sec-garantiprefs" className="contents scroll-mt-24">
+        <section id="sec-garantiprefs" className="block scroll-mt-24">
           <WarrantyGlobalPrefsPanel />
         </section>
 
-        <section id="sec-abonnementer" className="contents scroll-mt-24">
+        <section id="sec-abonnementer" className="block scroll-mt-24">
           <CategoryCard
             icon={Bell}
             title="Push-abonnementer"
@@ -341,7 +341,7 @@ function PushSettingsPage() {
           />
         </section>
 
-        <section id="sec-abonnenter" className="contents scroll-mt-24">
+        <section id="sec-abonnenter" className="block scroll-mt-24">
           <SubscribersListPanel />
         </section>
       </div>
