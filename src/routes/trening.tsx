@@ -461,6 +461,8 @@ function HealthStatusChip({ owner = "arne", displayName }: { owner?: Owner; disp
           {sleepHrs != null && (<span className="inline-flex items-center gap-1"><Moon size={11} /> {sleepHrs.toFixed(1)}t</span>)}
           {battery != null && (<span className="inline-flex items-center gap-1"><Battery size={11} /> {battery}</span>)}
           {stress != null && (<span className="inline-flex items-center gap-1"><Brain size={11} /> {stress}</span>)}
+          {readyScore != null && (<span className="inline-flex items-center gap-1"><Dumbbell size={11} /> {Math.round(readyScore)}</span>)}
+          {steps != null && (<span className="inline-flex items-center gap-1"><Footprints size={11} /> {steps.toLocaleString("nb-NO")}</span>)}
         </span>
       </button>
 
