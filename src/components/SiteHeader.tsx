@@ -16,7 +16,7 @@ import { useNavUsage } from "@/hooks/use-nav-usage";
 import { useMenuPrefs } from "@/hooks/use-menu-prefs";
 import { getNetatmoWeatherStation } from "@/server/netatmo-weather";
 import { useLastGood } from "@/hooks/use-last-good";
-import { PushTodayBadge, LightsOnBadge, WeatherDaysBadge, AlarmStateBadge, AlertsSeverityBadge, PowerVsYesterdayBadge, TrainingLast4WeeksBadge, UtgangsdorenLockBadge, StepsTodayBadge } from "@/components/HallBadges";
+import { PushTodayBadge, LightsOnBadge, WeatherDaysBadge, AlarmStateBadge, AlertsSeverityBadge, PowerVsYesterdayBadge, TrainingLast4WeeksBadge, UtgangsdorenLockBadge, StepsTodayBadge, MowerStatusBadge, CurrentTempBadge } from "@/components/HallBadges";
 import { useHeaderBadgeSettings, isBadgeVisible } from "@/hooks/use-header-badge-settings";
 
 const BORGEN_COORD = { lat: 59.1789, lon: 9.5732 };
@@ -337,6 +337,8 @@ export function SiteHeader() {
                   {l.to === "/push-varslinger" && showB("push_today") && <PushTodayBadge inline />}
                   {l.to === "/lys" && showB("lights_on") && <LightsOnBadge inline />}
                   {l.to === "/var" && showB("weather_days") && <WeatherDaysBadge inline useGps lat={BORGEN_COORD.lat} lon={BORGEN_COORD.lon} startOffset={badgeSettings.weather.startOffset} days={badgeSettings.weather.days} />}
+                  {l.to === "/var" && showB("weather_temp") && <CurrentTempBadge inline lat={BORGEN_COORD.lat} lon={BORGEN_COORD.lon} />}
+                  {l.to === "/smarthus" && showB("mower_status") && <MowerStatusBadge inline />}
                   {l.to === "/vakttarnet" && <>{showB("alarm_state") && <AlarmStateBadge inline />}{showB("utgangsdoren_lock") && <UtgangsdorenLockBadge inline />}</>}
                   {l.to === "/varsler" && showB("alerts_severity") && <AlertsSeverityBadge inline />}
                   {l.to === "/stromkroniken" && showB("power_vs_yesterday") && <PowerVsYesterdayBadge inline />}
@@ -451,6 +453,8 @@ export function SiteHeader() {
                     {l.to === "/push-varslinger" && showB("push_today") && <PushTodayBadge inline />}
                     {l.to === "/lys" && showB("lights_on") && <LightsOnBadge inline />}
                     {l.to === "/var" && showB("weather_days") && <WeatherDaysBadge inline useGps lat={BORGEN_COORD.lat} lon={BORGEN_COORD.lon} startOffset={badgeSettings.weather.startOffset} days={badgeSettings.weather.days} />}
+                    {l.to === "/var" && showB("weather_temp") && <CurrentTempBadge inline lat={BORGEN_COORD.lat} lon={BORGEN_COORD.lon} />}
+                    {l.to === "/smarthus" && showB("mower_status") && <MowerStatusBadge inline />}
                     {l.to === "/vakttarnet" && <>{showB("alarm_state") && <AlarmStateBadge inline />}{showB("utgangsdoren_lock") && <UtgangsdorenLockBadge inline />}</>}
                     {l.to === "/varsler" && showB("alerts_severity") && <AlertsSeverityBadge inline />}
                     {l.to === "/stromkroniken" && showB("power_vs_yesterday") && <PowerVsYesterdayBadge inline />}

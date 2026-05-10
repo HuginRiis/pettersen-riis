@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Lightbulb, Sunrise, Sunset, Sun } from "lucide-react";
 import { getBorgenLightsStatus, type BorgenLightsStatus } from "@/server/homey";
 import { useUvSun, uvLevel } from "@/hooks/use-uv-sun";
+import { DoubleTapToTop } from "@/components/PageShell";
 
 const BORGEN_COORD = { lat: 59.1789, lon: 9.5732 };
 
@@ -174,6 +175,9 @@ export function HouseHero({
             "radial-gradient(ellipse at center, transparent 50%, oklch(0.06 0.005 240 / 0.7) 100%)",
         }}
       />
+
+      {/* Dobbel-tapp øverst → scroll til topp */}
+      <DoubleTapToTop />
 
       {/* Tekstinnhold */}
       <div className="relative h-full container mx-auto px-4 flex flex-col justify-end pb-10">

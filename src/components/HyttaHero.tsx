@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Sun } from "lucide-react";
 import { useUvSun, uvLevel } from "@/hooks/use-uv-sun";
+import { DoubleTapToTop } from "@/components/PageShell";
 
 const HYTTA_COORD = { lat: 59.8733, lon: 9.4297 }; // Flesberg, Numedal
 
@@ -122,6 +123,8 @@ export function HyttaHero({
             "radial-gradient(ellipse at center, transparent 50%, oklch(0.06 0.005 240 / 0.7) 100%)",
         }}
       />
+
+      <DoubleTapToTop />
 
       {/* Tekstinnhold */}
       <div className="relative h-full container mx-auto px-4 flex flex-col justify-end pb-10">
