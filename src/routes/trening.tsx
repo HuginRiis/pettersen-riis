@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Footprints, Heart, Moon, Battery, Brain, Activity as ActivityIcon } from "lucide-react";
+import { Footprints, Heart, Moon, Battery, Brain, Dumbbell, Activity as ActivityIcon } from "lucide-react";
 import { PageShell, PageHero } from "@/components/PageShell";
 import { ActivityMap } from "@/components/ActivityMap";
 import { GarminHouses } from "@/components/GarminHouses";
