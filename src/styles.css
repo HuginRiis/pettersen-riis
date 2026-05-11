@@ -353,6 +353,7 @@
   --app-font-scale: 1;
   --app-content-zoom: 1;
   --app-content-width: 100%;
+  --app-content-edge-expand: 0;
   --app-header-left-inset: 0px;
   --app-container-base: 100%;
 }
@@ -365,10 +366,12 @@ html {
   font-size: calc(16px * var(--app-font-scale));
 }
 /* Endrer KUN innholdsbredden (boksenes bredde) — ikke høyde, ikke skrift.
-   100% = standard container-bredde. 50% = halve, 150% = 1,5x.
+   100% = standard container-bredde. 50% = halve, 150% = helt ut til kanten.
    Header er bevisst utenfor. */
 main .container {
-  max-width: calc(var(--app-container-base) * var(--app-content-zoom)) !important;
+  max-width: min(calc(var(--app-container-base) * var(--app-content-zoom)), 100vw) !important;
+  padding-left: max(0px, calc(1rem * (1 - var(--app-content-edge-expand)))) !important;
+  padding-right: max(0px, calc(1rem * (1 - var(--app-content-edge-expand)))) !important;
 }
 /* Skrumper mobil-popup-menyen (hamburger) fra venstre — høyre kant står fast */
 .mobile-menu-popup {
