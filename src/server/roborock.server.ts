@@ -189,12 +189,6 @@ export async function verifyLoginCode(code: string): Promise<{ ok: boolean; erro
     const { device_id: deviceId, base_url: base, country, country_code: countryCode } = auth;
     const cid = headerClientId(email, deviceId);
 
-    const ALPHA = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-    const xBytes = randomBytes(16);
-    let xKs = "";
-    for (let i = 0; i < 16; i++) xKs += ALPHA[xBytes[i] % ALPHA.length];
-    const xK = await signKeyV3(base, email, deviceId, xKs);
-
     const form = new URLSearchParams({
       country: country ?? "",
       countryCode: countryCode ?? "",
@@ -203,23 +197,30 @@ export async function verifyLoginCode(code: string): Promise<{ ok: boolean; erro
       majorVersion: "14",
       minorVersion: "0",
     });
-    const r = await fetch(`${base}/api/v4/auth/email/login/code`, {
-      method: "POST",
-      headers: {
+    let j: any = null;
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const ALPHA = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+      const xBytes = randomBytes(16);
+      let xKs = "";
+      for (let i = 0; i < 16; i++) xKs += ALPHA[xBytes[i] % ALPHA.length];
+      const xK = await signKeyV3(base, email, deviceId, xKs);
+      const result = await postForm(base, "/api/v4/auth/email/login/code", {
         header_clientid: cid,
         "x-mercy-ks": xKs,
         "x-mercy-k": xK,
-        "Content-Type": "application/x-www-form-urlencoded",
         header_clientlang: "en",
         header_appversion: "4.54.02",
         header_phonesystem: "iOS",
         header_phonemodel: "iPhone16,1",
-      },
-      body: form.toString(),
-    });
-    const j: any = await r.json();
+      }, form);
+      j = result.json;
+      if (!isSignatureError(j)) break;
+    }
+    if (isSignatureError(j)) {
+      j = await legacyCodeLogin(base, email, deviceId, String(code).trim());
+    }
     if (j?.code !== 200 || !j?.data?.token || !j?.data?.rriot) {
-      return { ok: false, error: `Login feilet: ${j?.msg ?? r.status} (kode ${j?.code})` };
+      return { ok: false, error: `Login feilet: ${j?.msg ?? "ukjent feil"} (kode ${j?.code})` };
     }
     await saveAuth({
       email,
