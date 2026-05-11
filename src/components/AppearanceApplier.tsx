@@ -10,7 +10,8 @@ import {
 /**
  * Applies appearance CSS variables to the document root:
  *   --app-font-scale       : 1 + delta/100  (skipped on /steintavle)
- *   --app-content-width    : <pct>%         (100..150, default 100)
+ *   --app-content-width    : <pct>%         (50..150, default 100)
+ *   --app-content-edge-expand: 0..1         (removes side padding from 100→150)
  *   --app-header-left-inset: <pct>vw        (0..50, default 0)
  */
 export function AppearanceApplier() {
@@ -29,6 +30,7 @@ export function AppearanceApplier() {
       root.style.setProperty("--app-content-zoom", String(widthPct / 100));
       // Behold prosent-versjonen for evt. legacy bruk
       root.style.setProperty("--app-content-width", `${widthPct}%`);
+      root.style.setProperty("--app-content-edge-expand", String(Math.max(0, Math.min(1, (widthPct - 100) / 50))));
       root.style.setProperty("--app-header-left-inset", `${headerInset}vw`);
     };
     apply();
