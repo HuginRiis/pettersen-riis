@@ -12,11 +12,18 @@ type Scene = {
   device_ids: string[];
 };
 
-const DEFAULTS: Scene[] = [
-  { slot: 0, name: "Tenn alle", device_ids: [] },
-  { slot: 1, name: "Stua", device_ids: [] },
-  { slot: 2, name: "Utelys", device_ids: [] },
-];
+const DEFAULT_NAMES: Record<number, string> = {
+  0: "Tenn alle",
+  1: "Stua",
+  2: "Utelys",
+};
+const SCENE_COUNT = 12;
+const DEFAULTS: Scene[] = Array.from({ length: SCENE_COUNT }, (_, i) => ({
+  slot: i,
+  name: DEFAULT_NAMES[i] ?? `Scene ${i + 1}`,
+  device_ids: [],
+}));
+const SCENE_SLOTS = Array.from({ length: SCENE_COUNT }, (_, i) => i);
 
 const EXTRA_TOKENS: string[][] = [["garsej", "lys"], ["stålampe"]];
 
