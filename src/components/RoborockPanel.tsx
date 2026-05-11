@@ -354,16 +354,21 @@ export function RoborockPanel() {
           </div>
         )}
 
-        {/* Sky-snapshot (lese-kanal — fallback hvis Homey ikke har enhetene) */}
+        {/* Sky-snapshot (lese-kanal) — vis alltid når Homey ikke styrer disse enhetene */}
         {snap?.ok && snap.devices.length > 0 && homeyDevices.length === 0 && (
           <div className="space-y-2">
             <div className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground">
               Status fra Roborock-skyen
             </div>
             {snap.devices.map((d) => {
-              const status = (d.attribute ?? {}) as any;
-              const state = typeof status?.state === "number" ? status.state : null;
-              const battery = typeof status?.battery === "number" ? status.battery : null;
+              const status = (d.attribute ?? {}) as Record<string, unknown>;
+              const state = num(status.state);
+              const battery = num(status.battery);
+              const fan = num(status.fan_power);
+              const water = num(status.water_box_mode);
+              const main = num(status.main_brush_life);
+              const side = num(status.side_brush_life);
+              const filter = num(status.filter_life);
               return (
                 <div key={d.duid} className="rounded-lg border border-border bg-card/30 p-3">
                   <div className="flex items-center gap-2">
@@ -381,7 +386,7 @@ export function RoborockPanel() {
                   <div className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground mt-1">
                     {d.productName ?? "Roborock"}{d.fv ? ` · v${d.fv}` : ""}
                   </div>
-                  <div className="flex gap-3 mt-2 text-xs">
+                  <div className="grid grid-cols-2 gap-x-3 gap-y-1 mt-2 text-xs">
                     {battery != null && (
                       <span className="inline-flex items-center gap-1 text-foreground">
                         <Battery size={12} className="text-primary" /> {battery}%
@@ -391,6 +396,31 @@ export function RoborockPanel() {
                       <span className="text-muted-foreground">
                         Tilstand:{" "}
                         <span className="text-foreground">{STATE_LABEL[state] ?? `kode ${state}`}</span>
+                      </span>
+                    )}
+                    {fan != null && (
+                      <span className="text-muted-foreground">
+                        Sug: <span className="text-foreground">{FAN_POWER_LABEL[fan] ?? `kode ${fan}`}</span>
+                      </span>
+                    )}
+                    {water != null && (
+                      <span className="text-muted-foreground">
+                        Mopp: <span className="text-foreground">{WATER_BOX_LABEL[water] ?? `kode ${water}`}</span>
+                      </span>
+                    )}
+                    {main != null && (
+                      <span className="text-muted-foreground">
+                        Hovedbørste: <span className="text-foreground">{main}%</span>
+                      </span>
+                    )}
+                    {side != null && (
+                      <span className="text-muted-foreground">
+                        Sidebørste: <span className="text-foreground">{side}%</span>
+                      </span>
+                    )}
+                    {filter != null && (
+                      <span className="text-muted-foreground">
+                        Filter: <span className="text-foreground">{filter}%</span>
                       </span>
                     )}
                   </div>
