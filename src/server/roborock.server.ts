@@ -98,7 +98,13 @@ async function signKeyV3(base: string, email: string, deviceId: string, s: strin
   const cid = headerClientId(email, deviceId);
   const r = await fetch(`${base}/api/v3/key/sign?s=${encodeURIComponent(s)}`, {
     method: "POST",
-    headers: { header_clientid: cid },
+    headers: {
+      header_clientid: cid,
+      header_clientlang: "en",
+      header_appversion: "4.54.02",
+      header_phonesystem: "iOS",
+      header_phonemodel: "iPhone16,1",
+    },
   });
   const j: any = await r.json();
   if (j?.code !== 200 || !j?.data?.k) {
@@ -153,7 +159,10 @@ export async function verifyLoginCode(code: string): Promise<{ ok: boolean; erro
     const { device_id: deviceId, base_url: base, country, country_code: countryCode } = auth;
     const cid = headerClientId(email, deviceId);
 
-    const xKs = randomBytes(8).toString("hex").slice(0, 16);
+    const ALPHA = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    const xBytes = randomBytes(16);
+    let xKs = "";
+    for (let i = 0; i < 16; i++) xKs += ALPHA[xBytes[i] % ALPHA.length];
     const xK = await signKeyV3(base, email, deviceId, xKs);
 
     const form = new URLSearchParams({
