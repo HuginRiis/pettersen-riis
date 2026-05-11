@@ -3,15 +3,19 @@ import { Button } from "@/components/ui/button";
 import {
   useFontDeltaPct,
   useContentWidthPct,
+  useHeaderLeftInsetPct,
   FONT_MIN,
   FONT_MAX,
   WIDTH_MIN,
   WIDTH_MAX,
+  HEADER_INSET_MIN,
+  HEADER_INSET_MAX,
 } from "@/hooks/use-appearance";
 
 export function AppearanceSettingsPanel() {
   const [fontDelta, setFontDelta] = useFontDeltaPct();
   const [width, setWidth] = useContentWidthPct();
+  const [headerInset, setHeaderInset] = useHeaderLeftInsetPct();
 
   return (
     <div className="container mx-auto px-4 pt-4">
@@ -21,7 +25,7 @@ export function AppearanceSettingsPanel() {
             🅰️ Utseende — skrift og bredde
           </h2>
           <p className="text-xs text-muted-foreground">
-            Juster skriftstørrelse og innholdsbredde for hele appen. Steintavle-siden er
+            Juster skriftstørrelse, innholdsbredde og topp-meny. Steintavle-siden er
             uberørt av skriftstørrelse.
           </p>
         </header>
@@ -99,12 +103,48 @@ export function AppearanceSettingsPanel() {
             step={1}
           />
           <div className="flex justify-between text-[10px] text-muted-foreground">
-            <span>40% (smal)</span>
-            <span>100% (kant til kant)</span>
+            <span>100% (kant)</span>
+            <span>150% (utvidet)</span>
           </div>
           <p className="text-[10px] text-muted-foreground">
-            Bokser som er mindre enn maksbredden følger sin egen størrelse — denne
-            innstillingen setter kun maksimumsbredden.
+            100% = nåværende bredde. Dra opp for å la innholdet strekke seg
+            forbi kanten.
+          </p>
+        </section>
+
+        {/* Header left inset */}
+        <section className="space-y-2">
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-medium text-foreground">
+              Topp-meny — skrumping fra venstre
+            </label>
+            <div className="flex items-center gap-2">
+              <span className="text-xs tabular-nums text-primary">{headerInset}%</span>
+              {headerInset !== 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 px-2 text-[10px]"
+                  onClick={() => setHeaderInset(0)}
+                >
+                  Nullstill
+                </Button>
+              )}
+            </div>
+          </div>
+          <Slider
+            value={[headerInset]}
+            onValueChange={(v) => setHeaderInset(v[0] ?? 0)}
+            min={HEADER_INSET_MIN}
+            max={HEADER_INSET_MAX}
+            step={1}
+          />
+          <div className="flex justify-between text-[10px] text-muted-foreground">
+            <span>0% (full bredde)</span>
+            <span>50% (smal)</span>
+          </div>
+          <p className="text-[10px] text-muted-foreground">
+            Skyver topp-menyen innover fra venstre side. Høyre kant står fast.
           </p>
         </section>
       </div>
