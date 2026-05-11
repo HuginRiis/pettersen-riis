@@ -4,6 +4,7 @@ import { VisitorTracker } from "@/components/VisitorTracker";
 import { LoginDialog } from "@/components/LoginDialog";
 import { PullToRefresh } from "@/components/PullToRefresh";
 import { LastRouteMemory } from "@/components/LastRouteMemory";
+import { AppearanceApplier } from "@/components/AppearanceApplier";
 
 // Routes that are accessible without logging in (visitors entering the castle gates).
 // Locked routes now redirect to "/" (where the login dialog opens automatically) instead
@@ -90,6 +91,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
 function RootComponent() {
   return (
     <>
+      <AppearanceApplier />
       <PullToRefresh />
       <VisitorTracker />
       <LastRouteMemory />
