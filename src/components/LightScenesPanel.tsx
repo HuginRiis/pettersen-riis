@@ -135,16 +135,34 @@ export function LightScenesPanel() {
     );
   };
 
+  const setLevel = (slot: number, id: string, pct: number) => {
+    setScenes((prev) =>
+      prev.map((s) => {
+        if (s.slot !== slot) return s;
+        const next = { ...s.device_levels };
+        const clamped = Math.max(1, Math.min(100, Math.round(pct)));
+        next[id] = clamped;
+        return { ...s, device_levels: next };
+      }),
+    );
+  };
+
   const saveScene = async (slot: number) => {
     const scene = scenes.find((s) => s.slot === slot);
     if (!scene) return;
     setSavingSlot(slot);
+    // Behold kun nivåer for valgte enheter
+    const cleanedLevels: Record<string, number> = {};
+    for (const id of scene.device_ids) {
+      if (scene.device_levels[id] != null) cleanedLevels[id] = scene.device_levels[id];
+    }
     await supabase.from("user_light_scenes").upsert(
       {
         who: targetWho,
         slot,
         name: scene.name,
         device_ids: scene.device_ids,
+        device_levels: cleanedLevels,
         updated_at: new Date().toISOString(),
       },
       { onConflict: "who,slot" },
