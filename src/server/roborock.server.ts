@@ -54,6 +54,13 @@ function randToken(bytes = 16) {
   return randomBytes(bytes).toString("base64url");
 }
 
+const MERCY_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+function randMercyKey() {
+  const bytes = randomBytes(16);
+  return Array.from(bytes, (byte) => MERCY_ALPHABET[byte % MERCY_ALPHABET.length]).join("");
+}
+
 function isSignatureError(response: any) {
   return response?.code === 1003 || String(response?.msg ?? "").toLowerCase().includes("signature");
 }
@@ -129,18 +136,42 @@ async function signKeyV3(base: string, email: string, deviceId: string, s: strin
   return j.data.k as string;
 }
 
-async function legacyCodeLogin(base: string, email: string, deviceId: string, code: string) {
+async function codeLoginV4(base: string, email: string, deviceId: string, code: string, country: string | null, countryCode: string | null) {
   const cid = headerClientId(email, deviceId);
-  const params = new URLSearchParams({
-    username: email,
-    verifycode: code,
-    verifycodetype: "AUTH_EMAIL_CODE",
+  const xMercyKs = randMercyKey();
+  const xMercyK = await signKeyV3(base, email, deviceId, xMercyKs);
+  const form = new URLSearchParams({
+    country: country ?? "",
+    countryCode: countryCode ?? "",
+    email,
+    code,
+    majorVersion: "14",
+    minorVersion: "0",
   });
-  const r = await fetch(`${base}/api/v1/loginWithCode?${params.toString()}`, {
-    method: "POST",
-    headers: { header_clientid: cid },
+  const { json } = await postForm(base, "/api/v4/auth/email/login/code", {
+    header_clientid: cid,
+    "x-mercy-ks": xMercyKs,
+    "x-mercy-k": xMercyK,
+    header_clientlang: "en",
+    header_appversion: "4.54.02",
+    header_phonesystem: "iOS",
+    header_phonemodel: "iPhone16,1",
+  }, form);
+  return json;
+}
+
+async function sendCodeV4(base: string, email: string, deviceId: string) {
+  const cid = headerClientId(email, deviceId);
+  const form = new URLSearchParams({
+    email,
+    type: "login",
+    platform: "",
   });
-  return await r.json() as any;
+  const { json } = await postForm(base, "/api/v4/email/code/send", {
+    header_clientid: cid,
+    header_clientlang: "en",
+  }, form);
+  return json;
 }
 
 export async function requestLoginCode(): Promise<{ ok: boolean; error?: string }> {
@@ -157,15 +188,9 @@ export async function requestLoginCode(): Promise<{ ok: boolean; error?: string 
       await saveAuth({ email, device_id: deviceId, base_url: base, country, country_code: countryCode });
     }
 
-    const cid = headerClientId(email, deviceId);
-    const url = `${base}/api/v1/sendEmailCode?username=${encodeURIComponent(email)}&type=auth`;
-    const r = await fetch(url, {
-      method: "POST",
-      headers: { header_clientid: cid },
-    });
-    const j: any = await r.json();
+    const j: any = await sendCodeV4(base, email, deviceId);
     if (j?.code !== 200) {
-      return { ok: false, error: `Kunne ikke sende kode: ${j?.msg ?? r.status} (kode ${j?.code})` };
+      return { ok: false, error: `Kunne ikke sende kode: ${j?.msg ?? "ukjent feil"} (kode ${j?.code})` };
     }
     return { ok: true };
   } catch (e: any) {
@@ -182,9 +207,8 @@ export async function verifyLoginCode(code: string): Promise<{ ok: boolean; erro
       return { ok: false, error: "Mangler økt — be om kode først." };
     }
     const { device_id: deviceId, base_url: base, country, country_code: countryCode } = auth;
-    const cid = headerClientId(email, deviceId);
 
-    const j: any = await legacyCodeLogin(base, email, deviceId, String(code).trim());
+    const j: any = await codeLoginV4(base, email, deviceId, String(code).trim(), country, countryCode);
     if (j?.code !== 200 || !j?.data?.token || !j?.data?.rriot) {
       return { ok: false, error: `Login feilet: ${j?.msg ?? "ukjent feil"} (kode ${j?.code})` };
     }
