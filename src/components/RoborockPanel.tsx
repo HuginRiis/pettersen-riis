@@ -354,8 +354,8 @@ export function RoborockPanel() {
           </div>
         )}
 
-        {/* Sky-snapshot (lese-kanal) — vis alltid når Homey ikke styrer disse enhetene */}
-        {snap?.ok && snap.devices.length > 0 && homeyDevices.length === 0 && (
+        {/* Sky-snapshot (lese-kanal) — vis alltid for enheter Homey ikke har */}
+        {snap?.ok && snap.devices.length > 0 && (
           <div className="space-y-2">
             <div className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground">
               Status fra Roborock-skyen
