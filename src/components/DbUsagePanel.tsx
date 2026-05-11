@@ -162,6 +162,7 @@ export function DbUsagePanel() {
                   <th className="py-1.5 pr-2">Jobb</th>
                   <th className="py-1.5 pr-2">Intervall</th>
                   <th className="py-1.5 pr-2">Sist kjørt</th>
+                  <th className="py-1.5 pr-2">Sist OK</th>
                   <th className="py-1.5 pr-2">Neste</th>
                   <th className="py-1.5 pr-2 text-right">Kjøringer 24t</th>
                   <th className="py-1.5 pr-2 text-right">Feil 24t</th>
@@ -183,6 +184,21 @@ export function DbUsagePanel() {
                     <td className="py-1.5 pr-2 text-muted-foreground">
                       {j.last_run
                         ? new Date(j.last_run).toLocaleTimeString("nb-NO")
+                        : "—"}
+                    </td>
+                    <td
+                      className={`py-1.5 pr-2 font-mono ${
+                        j.last_success ? "text-[oklch(0.72_0.16_150)]" : "text-muted-foreground"
+                      }`}
+                      title={j.last_success ?? undefined}
+                    >
+                      {j.last_success
+                        ? new Date(j.last_success).toLocaleString("nb-NO", {
+                            day: "2-digit",
+                            month: "2-digit",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })
                         : "—"}
                     </td>
                     <td className="py-1.5 pr-2 text-primary">

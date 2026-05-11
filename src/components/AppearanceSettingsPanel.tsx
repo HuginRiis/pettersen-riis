@@ -103,20 +103,21 @@ export function AppearanceSettingsPanel() {
             step={1}
           />
           <div className="flex justify-between text-[10px] text-muted-foreground">
-            <span>100% (kant)</span>
-            <span>150% (utvidet)</span>
+            <span>50% (smalt)</span>
+            <span>100% (standard)</span>
+            <span>150% (stort)</span>
           </div>
           <p className="text-[10px] text-muted-foreground">
-            100% = nåværende bredde. Dra opp for å la innholdet strekke seg
-            forbi kanten.
+            100% = nåværende størrelse. Skalerer hele innholdet (boksene og
+            teksten) jevnt — også på mobil.
           </p>
         </section>
 
-        {/* Header left inset */}
+        {/* Header left inset (mobil-popup-meny) */}
         <section className="space-y-2">
           <div className="flex items-center justify-between">
             <label className="text-xs font-medium text-foreground">
-              Topp-meny — skrumping fra venstre
+              Mobil-meny (hamburger) — skrumping fra venstre
             </label>
             <div className="flex items-center gap-2">
               <span className="text-xs tabular-nums text-primary">{headerInset}%</span>
@@ -144,7 +145,8 @@ export function AppearanceSettingsPanel() {
             <span>50% (smal)</span>
           </div>
           <p className="text-[10px] text-muted-foreground">
-            Skyver topp-menyen innover fra venstre side. Høyre kant står fast.
+            Skyver popup-menyen som åpnes med hamburger-knappen innover fra
+            venstre. Høyre kant står fast.
           </p>
         </section>
       </div>

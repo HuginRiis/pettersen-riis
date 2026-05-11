@@ -348,19 +348,25 @@
   }
 }
 
-/* ===== Appearance settings (font scale + content width) ===== */
+/* ===== Appearance settings (font scale + content zoom + header inset) ===== */
 :root {
   --app-font-scale: 1;
+  --app-content-zoom: 1;
   --app-content-width: 100%;
   --app-header-left-inset: 0px;
 }
 html {
   font-size: calc(16px * var(--app-font-scale));
 }
-.container {
-  max-width: var(--app-content-width) !important;
+/* Skalér hele hovedinnholdet (boksene + teksten) jevnt — fungerer både på
+   desktop (gjør innholdet bredere og større) og på mobil (gjør boksene større
+   selv om viewport er smalt). Header er bevisst utenfor for å unngå skalering
+   av topp-menyen. */
+main {
+  zoom: var(--app-content-zoom);
 }
-/* Skrumper topp-menyen fra venstre — høyre kant står fast */
-header.sticky > .container {
-  padding-left: calc(1rem + var(--app-header-left-inset)) !important;
+/* Skrumper mobil-popup-menyen (hamburger) fra venstre — høyre kant står fast */
+.mobile-menu-popup {
+  margin-left: var(--app-header-left-inset);
+  width: calc(100% - var(--app-header-left-inset));
 }
