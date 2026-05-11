@@ -87,6 +87,7 @@ export const getDbUsage = createServerFn({ method: "GET" }).handler(
           schedule: c.schedule,
           active: !!c.active,
           last_run: c.last_run ?? null,
+          last_success: c.last_success ?? null,
           runs_24h: Number(c.runs_24h ?? 0),
           failed_24h: Number(c.failed_24h ?? 0),
         }));
