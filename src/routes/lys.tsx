@@ -455,9 +455,12 @@ function LysPage() {
                       filter: `drop-shadow(0 0 ${4 + (litCount / Math.max(targetCount,1)) * 8}px color-mix(in oklab, var(--gold) ${50 + (litCount / Math.max(targetCount,1)) * 40}%, transparent))`,
                     } : undefined}
                   />
-                  <div className="text-display text-[9px] sm:text-[11px] tracking-[0.05em] uppercase text-foreground truncate min-w-0 flex-1">
-                    {s.name || `Scene ${s.slot + 1}`}
-                  </div>
+                  <AutoFitText
+                    text={s.name || `Scene ${s.slot + 1}`}
+                    className="text-display tracking-[0.05em] uppercase text-foreground"
+                    max={14}
+                    min={7}
+                  />
                 </div>
                 <div className="text-[9px] tracking-[0.2em] uppercase text-muted-foreground">
                   {litCount}/{targetCount}
