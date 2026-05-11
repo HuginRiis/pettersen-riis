@@ -920,6 +920,35 @@ function PbthBackfillButton({ days, label }: { days: number; label: string }) {
   );
 }
 
+function NextPbthUpdate() {
+  const [now, setNow] = useState<Date | null>(null);
+  useEffect(() => {
+    setNow(new Date());
+    const id = setInterval(() => setNow(new Date()), 30_000);
+    return () => clearInterval(id);
+  }, []);
+  if (!now) return null;
+  const next = new Date(now);
+  next.setSeconds(0, 0);
+  if (now.getMinutes() >= 7) next.setHours(next.getHours() + 1);
+  next.setMinutes(7);
+  const diffMin = Math.max(0, Math.round((next.getTime() - now.getTime()) / 60000));
+  const clock = next.toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit" });
+  return (
+    <span
+      className="text-[10px] tracking-[0.25em] uppercase text-muted-foreground flex items-center gap-1.5 px-3 py-1.5 border border-border/60 rounded-md"
+      title="PBTH hentes automatisk hver time (minutt 07)"
+    >
+      <Clock size={11} className="text-primary" />
+      Neste PBTH-oppd. {clock}
+      <span className="text-muted-foreground/70 normal-case tracking-normal">
+        (om {diffMin} min)
+      </span>
+    </span>
+  );
+}
+
+
 function priceLevelColor(total: number, min: number, max: number): string {
   if (max === min) return "oklch(0.78 0.13 85)";
   const pct = (total - min) / (max - min);
