@@ -1616,6 +1616,7 @@ export type Database = {
         Row: {
           created_at: string
           device_ids: string[]
+          device_levels: Json
           id: string
           name: string
           slot: number
@@ -1625,6 +1626,7 @@ export type Database = {
         Insert: {
           created_at?: string
           device_ids?: string[]
+          device_levels?: Json
           id?: string
           name?: string
           slot: number
@@ -1634,6 +1636,7 @@ export type Database = {
         Update: {
           created_at?: string
           device_ids?: string[]
+          device_levels?: Json
           id?: string
           name?: string
           slot?: number

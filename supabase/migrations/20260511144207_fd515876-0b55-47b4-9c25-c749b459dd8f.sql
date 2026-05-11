@@ -1,0 +1,1 @@
+ALTER TABLE public.user_light_scenes ADD COLUMN IF NOT EXISTS device_levels jsonb NOT NULL DEFAULT '{}'::jsonb;
