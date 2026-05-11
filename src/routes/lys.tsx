@@ -84,11 +84,12 @@ function LysPage() {
   const [, setUpdated] = useState<Date | null>(null);
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const [colorOpen, setColorOpen] = useState<Record<string, boolean>>({});
-  const [scenes, setScenes] = useState<Array<{ slot: number; name: string; device_ids: string[] }>>(
+  const [scenes, setScenes] = useState<Array<{ slot: number; name: string; device_ids: string[]; device_levels: Record<string, number> }>>(
     Array.from({ length: 12 }, (_, i) => ({
       slot: i,
       name: i === 0 ? "Tenn alle" : i === 1 ? "Stua" : i === 2 ? "Utelys" : `Scene ${i + 1}`,
       device_ids: [],
+      device_levels: {},
     })),
   );
   const [, setWho] = useState<string>("Alle");
