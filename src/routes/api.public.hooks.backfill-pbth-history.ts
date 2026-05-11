@@ -162,8 +162,36 @@ async function handle(debug = false, daysWindow: number | null = null) {
       const usedRes = new Set<string>();
       const fallbackPointsByDay = new Map<string, number>();
       const detailedPointsByDay = new Map<string, number>();
+    // Velg resolusjoner basert på vindu — kortere vindu trenger finere granularitet
+    const days = daysWindow && daysWindow > 0 ? daysWindow : 365;
+    const RESOLUTIONS =
+      days <= 31
+        ? ["last31Days", "last3Months"]
+        : days <= 90
+          ? ["last3Months", "last6Months", "lastYear"]
+          : days <= 200
+            ? ["last6Months", "lastYear"]
+            : ["lastYear", "last6Months", "last3Months", "last31Days"];
+
+    const report: any[] = [];
+
+    for (const { loc, device } of targets) {
+      if (!device) {
+        report.push({ location: loc, error: "Fant ikke PBTH-enhet" });
+        continue;
+      }
+      if (debug) {
+        const logs = await listHomeyInsightsLogs(device.id);
+        report.push({ location: loc, deviceId: device.id, name: device.name, debug_logs: logs });
+        continue;
+      }
+      const capsAvailable = Object.keys(device.capabilities ?? {});
+      let usedCap: string | null = null;
+      const usedRes = new Set<string>();
+      const fallbackPointsByDay = new Map<string, number>();
+      const detailedPointsByDay = new Map<string, number>();
       const today = osloDateKey(new Date().toISOString());
-      const sinceDay = shiftMonth(today, -12);
+      const sinceDay = shiftDay(today, -days);
 
       for (const cap of CAP_CANDIDATES) {
         // Insights-logger finnes uavhengig av om cap er eksponert som device.capability
