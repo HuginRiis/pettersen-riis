@@ -188,15 +188,9 @@ export async function requestLoginCode(): Promise<{ ok: boolean; error?: string 
       await saveAuth({ email, device_id: deviceId, base_url: base, country, country_code: countryCode });
     }
 
-    const cid = headerClientId(email, deviceId);
-    const url = `${base}/api/v1/sendEmailCode?username=${encodeURIComponent(email)}&type=auth`;
-    const r = await fetch(url, {
-      method: "POST",
-      headers: { header_clientid: cid },
-    });
-    const j: any = await r.json();
+    const j: any = await sendCodeV4(base, email, deviceId);
     if (j?.code !== 200) {
-      return { ok: false, error: `Kunne ikke sende kode: ${j?.msg ?? r.status} (kode ${j?.code})` };
+      return { ok: false, error: `Kunne ikke sende kode: ${j?.msg ?? "ukjent feil"} (kode ${j?.code})` };
     }
     return { ok: true };
   } catch (e: any) {
@@ -213,9 +207,8 @@ export async function verifyLoginCode(code: string): Promise<{ ok: boolean; erro
       return { ok: false, error: "Mangler økt — be om kode først." };
     }
     const { device_id: deviceId, base_url: base, country, country_code: countryCode } = auth;
-    const cid = headerClientId(email, deviceId);
 
-    const j: any = await legacyCodeLogin(base, email, deviceId, String(code).trim());
+    const j: any = await codeLoginV4(base, email, deviceId, String(code).trim(), country, countryCode);
     if (j?.code !== 200 || !j?.data?.token || !j?.data?.rriot) {
       return { ok: false, error: `Login feilet: ${j?.msg ?? "ukjent feil"} (kode ${j?.code})` };
     }
