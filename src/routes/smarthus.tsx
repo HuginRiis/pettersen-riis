@@ -1347,6 +1347,8 @@ function SmarthusPage() {
 
       <MowerPanel devices={data.devices} zones={data.zones} />
 
+      <RoborockPanel />
+
       <AllZonesPanel
         zoneEntries={zoneEntries}
         zoneById={zoneById}
