@@ -96,7 +96,7 @@ export function LightScenesPanel() {
           device_ids: Array.isArray(r.device_ids) ? r.device_ids : [],
         });
       }
-      setScenes([0, 1, 2].map((s) => map.get(s)!));
+      setScenes(SCENE_SLOTS.map((s) => map.get(s)!));
       setLoading(false);
     })();
     return () => { cancelled = true; };
