@@ -103,16 +103,17 @@ export function AppearanceSettingsPanel() {
             step={1}
           />
           <div className="flex justify-between text-[10px] text-muted-foreground">
-            <span>100% (kant)</span>
-            <span>150% (utvidet)</span>
+            <span>50% (smalt)</span>
+            <span>100% (standard)</span>
+            <span>150% (stort)</span>
           </div>
           <p className="text-[10px] text-muted-foreground">
-            100% = nåværende bredde. Dra opp for å la innholdet strekke seg
-            forbi kanten.
+            100% = nåværende størrelse. Skalerer hele innholdet (boksene og
+            teksten) jevnt — også på mobil.
           </p>
         </section>
 
-        {/* Header left inset */}
+        {/* Header left inset (mobil-popup-meny) */}
         <section className="space-y-2">
           <div className="flex items-center justify-between">
             <label className="text-xs font-medium text-foreground">
