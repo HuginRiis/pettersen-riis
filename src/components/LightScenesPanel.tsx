@@ -10,6 +10,7 @@ type Scene = {
   slot: number;
   name: string;
   device_ids: string[];
+  device_levels: Record<string, number>; // device id -> dim percent (0-100)
 };
 
 const DEFAULT_NAMES: Record<number, string> = {
@@ -22,6 +23,7 @@ const DEFAULTS: Scene[] = Array.from({ length: SCENE_COUNT }, (_, i) => ({
   slot: i,
   name: DEFAULT_NAMES[i] ?? `Scene ${i + 1}`,
   device_ids: [],
+  device_levels: {},
 }));
 const SCENE_SLOTS = Array.from({ length: SCENE_COUNT }, (_, i) => i);
 
