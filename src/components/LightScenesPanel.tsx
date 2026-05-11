@@ -43,7 +43,7 @@ export function LightScenesPanel() {
   const { prefs, setUseGlobalLightScenes } = useMenuPrefs();
   const [who, setWho] = useState<string>("Alle");
   const [scenes, setScenes] = useState<Scene[]>(DEFAULTS);
-  const [devices, setDevices] = useState<{ id: string; name: string; zoneName: string }[]>([]);
+  const [devices, setDevices] = useState<{ id: string; name: string; zoneName: string; hasDim: boolean }[]>([]);
   const [loading, setLoading] = useState(true);
   const [savingSlot, setSavingSlot] = useState<number | null>(null);
   const [search, setSearch] = useState("");
