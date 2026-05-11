@@ -24,6 +24,23 @@ const STATE_LABEL: Record<number, string> = {
   22: "Tømmer støvbeholder", 23: "Vasker mopp", 26: "Returnerer for å vaske mopp",
 };
 
+// S7 sugekraft-koder
+const FAN_POWER_LABEL: Record<number, string> = {
+  101: "Stille", 102: "Balansert", 103: "Turbo", 104: "Maks", 105: "Av",
+  106: "Skånsom",
+};
+
+// S7 mopp-vannmengde
+const WATER_BOX_LABEL: Record<number, string> = {
+  200: "Av", 201: "Lite", 202: "Middels", 203: "Mye",
+};
+
+function num(v: unknown): number | null {
+  if (typeof v === "number") return v;
+  if (typeof v === "string" && v !== "" && !Number.isNaN(Number(v))) return Number(v);
+  return null;
+}
+
 function prettyCap(id: string, title?: string | null): string {
   if (title && title.length > 0) return title;
   return id
