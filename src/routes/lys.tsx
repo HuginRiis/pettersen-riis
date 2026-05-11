@@ -178,6 +178,7 @@ function LysPage() {
   const EXTRA_LIGHT_NAME_TOKENS: Array<string[]> = [
     ["garsej", "lys"], // Garsej lys ute (kontakt → utelys langs garasjen)
     ["stålampe"],       // Stålampe i stue (kontakt)
+    ["taklys"],         // Taklys i stue (kontakt)
   ];
 
   const lights: LightDevice[] = useMemo(() => {
