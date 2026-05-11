@@ -12,11 +12,18 @@ type Scene = {
   device_ids: string[];
 };
 
-const DEFAULTS: Scene[] = [
-  { slot: 0, name: "Tenn alle", device_ids: [] },
-  { slot: 1, name: "Stua", device_ids: [] },
-  { slot: 2, name: "Utelys", device_ids: [] },
-];
+const DEFAULT_NAMES: Record<number, string> = {
+  0: "Tenn alle",
+  1: "Stua",
+  2: "Utelys",
+};
+const SCENE_COUNT = 12;
+const DEFAULTS: Scene[] = Array.from({ length: SCENE_COUNT }, (_, i) => ({
+  slot: i,
+  name: DEFAULT_NAMES[i] ?? `Scene ${i + 1}`,
+  device_ids: [],
+}));
+const SCENE_SLOTS = Array.from({ length: SCENE_COUNT }, (_, i) => i);
 
 const EXTRA_TOKENS: string[][] = [["garsej", "lys"], ["stålampe"]];
 
@@ -89,7 +96,7 @@ export function LightScenesPanel() {
           device_ids: Array.isArray(r.device_ids) ? r.device_ids : [],
         });
       }
-      setScenes([0, 1, 2].map((s) => map.get(s)!));
+      setScenes(SCENE_SLOTS.map((s) => map.get(s)!));
       setLoading(false);
     })();
     return () => { cancelled = true; };
@@ -149,10 +156,10 @@ export function LightScenesPanel() {
     <section id="scener" className="container mx-auto px-4 pt-4">
       <article className="panel rounded-lg p-4">
         <h3 className="text-foreground font-semibold flex items-center gap-2">
-          <Lightbulb size={18} className="text-primary" /> Lys-scener — 3 hurtigknapper
+          <Lightbulb size={18} className="text-primary" /> Lys-scener — 12 hurtigknapper
         </h3>
         <p className="text-sm text-muted-foreground mt-1">
-          Tre knapper på toppen av Lys-siden. Tilpass navn og hvilke lys hver knapp styrer.
+          Tolv knapper på Lys-siden (4 rader á 3). Tilpass navn og hvilke lys hver knapp styrer.
           {useGlobal ? (
             <> Lagres <span className="text-primary">globalt for alle</span>.</>
           ) : (
