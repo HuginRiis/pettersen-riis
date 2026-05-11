@@ -70,6 +70,7 @@ export function LightScenesPanel() {
             id: d.id,
             name: d.name,
             zoneName: d.zone ? zoneById.get(d.zone) ?? "Ukjent sal" : "Ukjent sal",
+            hasDim: "dim" in d.capabilities,
           }))
           .sort((a, b) => a.zoneName.localeCompare(b.zoneName, "nb") || a.name.localeCompare(b.name, "nb"));
         setDevices(list);
