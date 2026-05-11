@@ -98,7 +98,13 @@ async function signKeyV3(base: string, email: string, deviceId: string, s: strin
   const cid = headerClientId(email, deviceId);
   const r = await fetch(`${base}/api/v3/key/sign?s=${encodeURIComponent(s)}`, {
     method: "POST",
-    headers: { header_clientid: cid },
+    headers: {
+      header_clientid: cid,
+      header_clientlang: "en",
+      header_appversion: "4.54.02",
+      header_phonesystem: "iOS",
+      header_phonemodel: "iPhone16,1",
+    },
   });
   const j: any = await r.json();
   if (j?.code !== 200 || !j?.data?.k) {
