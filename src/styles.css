@@ -378,3 +378,14 @@ main .container {
   margin-left: var(--app-header-left-inset);
   width: calc(100% - var(--app-header-left-inset));
 }
+
+/* Marquee-animasjoner for scenenavn på lys-siden */
+@keyframes scene-marquee-loop {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+@keyframes scene-marquee-ping {
+  0%, 10%   { transform: translateX(0); }
+  50%, 60%  { transform: translateX(var(--marquee-dist, 0)); }
+  100%      { transform: translateX(0); }
+}
