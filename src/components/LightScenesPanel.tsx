@@ -85,17 +85,18 @@ export function LightScenesPanel() {
       setLoading(true);
       const { data } = await supabase
         .from("user_light_scenes")
-        .select("slot, name, device_ids")
+        .select("slot, name, device_ids, device_levels")
         .eq("who", targetWho)
         .order("slot");
       if (cancelled) return;
       const map = new Map<number, Scene>();
-      for (const d of DEFAULTS) map.set(d.slot, { ...d });
-      for (const r of (data ?? []) as Scene[]) {
+      for (const d of DEFAULTS) map.set(d.slot, { ...d, device_levels: { ...d.device_levels } });
+      for (const r of (data ?? []) as any[]) {
         map.set(r.slot, {
           slot: r.slot,
           name: r.name ?? `Scene ${r.slot + 1}`,
           device_ids: Array.isArray(r.device_ids) ? r.device_ids : [],
+          device_levels: (r.device_levels && typeof r.device_levels === "object") ? r.device_levels : {},
         });
       }
       setScenes(SCENE_SLOTS.map((s) => map.get(s)!));
