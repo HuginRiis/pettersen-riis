@@ -158,15 +158,10 @@ export async function requestLoginCode(): Promise<{ ok: boolean; error?: string 
     }
 
     const cid = headerClientId(email, deviceId);
-    const form = new URLSearchParams({ email, type: "login", platform: "" });
-    const r = await fetch(`${base}/api/v4/email/code/send`, {
+    const url = `${base}/api/v1/sendEmailCode?username=${encodeURIComponent(email)}&type=auth`;
+    const r = await fetch(url, {
       method: "POST",
-      headers: {
-        header_clientid: cid,
-        "Content-Type": "application/x-www-form-urlencoded",
-        header_clientlang: "en",
-      },
-      body: form.toString(),
+      headers: { header_clientid: cid },
     });
     const j: any = await r.json();
     if (j?.code !== 200) {
