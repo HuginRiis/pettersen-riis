@@ -347,3 +347,15 @@
       0 0 0 4px oklch(0.72 0.13 75 / 0);
   }
 }
+
+/* ===== Appearance settings (font scale + content width) ===== */
+:root {
+  --app-font-scale: 1;
+  --app-content-width: 100%;
+}
+html {
+  font-size: calc(16px * var(--app-font-scale));
+}
+.container {
+  max-width: var(--app-content-width) !important;
+}
