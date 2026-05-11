@@ -521,9 +521,6 @@ function HomeBlock({
         />
       </div>
 
-      {(live.status === "live" || live.status === "stale") && (
-        <PulseHistoryChart location={live.location} reading={live.reading} />
-      )}
 
       {hasSubscription && (
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
