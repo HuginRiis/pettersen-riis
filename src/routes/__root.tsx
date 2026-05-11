@@ -91,6 +91,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
 function RootComponent() {
   return (
     <>
+      <AppearanceApplier />
       <PullToRefresh />
       <VisitorTracker />
       <LastRouteMemory />
