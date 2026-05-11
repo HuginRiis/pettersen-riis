@@ -120,25 +120,26 @@ function LysPage() {
       const primaryWho = useGlobalScenes ? "__GLOBAL__" : w;
       let { data: rows } = await supabase
         .from("user_light_scenes")
-        .select("slot, name, device_ids")
+        .select("slot, name, device_ids, device_levels")
         .eq("who", primaryWho)
         .order("slot");
       if (!cancelled && (!rows || rows.length === 0) && primaryWho !== "Arne") {
         const fallback = useGlobalScenes ? "Arne" : (w !== "Arne" ? "Arne" : "Arne");
         const { data: arneRows } = await supabase
           .from("user_light_scenes")
-          .select("slot, name, device_ids")
+          .select("slot, name, device_ids, device_levels")
           .eq("who", fallback)
           .order("slot");
         rows = arneRows;
       }
       if (cancelled || !rows || rows.length === 0) return;
-      const map = new Map<number, { slot: number; name: string; device_ids: string[] }>();
+      const map = new Map<number, { slot: number; name: string; device_ids: string[]; device_levels: Record<string, number> }>();
       for (const r of rows as any[]) {
         map.set(r.slot, {
           slot: r.slot,
           name: r.name ?? `Scene ${r.slot + 1}`,
           device_ids: Array.isArray(r.device_ids) ? r.device_ids : [],
+          device_levels: (r.device_levels && typeof r.device_levels === "object") ? r.device_levels : {},
         });
       }
       setScenes((prev) => prev.map((s) => map.get(s.slot) ?? s));
