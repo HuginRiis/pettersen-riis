@@ -162,7 +162,7 @@ export function LightsOnBadge({ inline }: { inline?: boolean } = {}) {
       try {
         const snap = await getHomeySnapshot();
         if (!snap.ok) return;
-        const EXTRA: string[][] = [["garsej", "lys"], ["stålampe"]];
+        const EXTRA: string[][] = [["garsej", "lys"], ["stålampe"], ["taklys"]];
         const lights = snap.devices.filter((d: any) => {
           const hasOn = "onoff" in d.capabilities;
           const hasDim = "dim" in d.capabilities;
