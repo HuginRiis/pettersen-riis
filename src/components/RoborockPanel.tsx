@@ -364,14 +364,24 @@ export function RoborockPanel() {
               .filter((d) => !homeyDevices.some((h) => h.name.toLowerCase().trim() === (d.name ?? "").toLowerCase().trim()))
               .map((d) => {
               const status = (d.attribute ?? {}) as Record<string, unknown>;
-              const state = num(status.state);
-              const battery = num(status.battery);
-              const fan = num(status.fan_power);
-              const water = num(status.water_box_mode);
-              const main = num(status.main_brush_life);
-              const side = num(status.side_brush_life);
-              const filter = num(status.filter_life);
-              const allKeys = Object.keys(status).sort();
+              // Roborock S7 DPS-koder (numeriske) er ofte mer fersk enn de navngitte
+              // 120=error, 121=state, 122=battery, 123=fan_power, 124=water_box_mode,
+              // 125=main_brush_life, 126=side_brush_life, 127=filter_life
+              const state = num(status[121]) ?? num(status.state);
+              const battery = num(status[122]) ?? num(status.battery);
+              const fan = num(status[123]) ?? num(status.fan_power);
+              const water = num(status[124]) ?? num(status.water_box_mode);
+              const main = num(status[125]) ?? num(status.main_brush_life);
+              const side = num(status[126]) ?? num(status.side_brush_life);
+              const filter = num(status[127]) ?? num(status.filter_life);
+              const errorCode = num(status[120]) ?? num(status.error_code);
+              const allKeys = Object.keys(status).sort((a, b) => {
+                const an = Number(a), bn = Number(b);
+                if (!Number.isNaN(an) && !Number.isNaN(bn)) return an - bn;
+                if (!Number.isNaN(an)) return -1;
+                if (!Number.isNaN(bn)) return 1;
+                return a.localeCompare(b);
+              });
               return (
                 <div key={d.duid} className="rounded-lg border border-border bg-card/30 p-3">
                   <div className="flex items-center gap-2">
@@ -427,6 +437,11 @@ export function RoborockPanel() {
                     {filter != null && (
                       <span className="text-muted-foreground">
                         Filter: <span className="text-foreground">{filter}%</span>
+                      </span>
+                    )}
+                    {errorCode != null && errorCode !== 0 && (
+                      <span className="text-muted-foreground">
+                        Feilkode: <span className="text-destructive">{errorCode}</span>
                       </span>
                     )}
                   </div>
