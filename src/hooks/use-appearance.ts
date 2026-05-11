@@ -1,15 +1,19 @@
 import { useEffect, useState, useCallback } from "react";
 
 const FONT_KEY = "appearance.fontDeltaPct"; // -20..+20
-const WIDTH_KEY = "appearance.contentWidthPct"; // 40..100
+const WIDTH_KEY = "appearance.contentWidthPct"; // 100..150 (default 100)
+const HEADER_INSET_KEY = "appearance.headerLeftInsetPct"; // 0..50 (% of viewport)
 
 const FONT_EVENT = "appearance:font";
 const WIDTH_EVENT = "appearance:width";
+const HEADER_INSET_EVENT = "appearance:headerInset";
 
 export const FONT_MIN = -20;
 export const FONT_MAX = 20;
-export const WIDTH_MIN = 40;
-export const WIDTH_MAX = 100;
+export const WIDTH_MIN = 100;
+export const WIDTH_MAX = 150;
+export const HEADER_INSET_MIN = 0;
+export const HEADER_INSET_MAX = 50;
 
 function read(key: string, fallback: number): number {
   if (typeof window === "undefined") return fallback;
@@ -25,35 +29,35 @@ export function getFontDeltaPct(): number {
 export function getContentWidthPct(): number {
   return read(WIDTH_KEY, 100);
 }
-
-export function useFontDeltaPct(): [number, (v: number) => void] {
-  const [v, setV] = useState<number>(() => getFontDeltaPct());
-  useEffect(() => {
-    const h = () => setV(getFontDeltaPct());
-    window.addEventListener(FONT_EVENT, h);
-    return () => window.removeEventListener(FONT_EVENT, h);
-  }, []);
-  const set = useCallback((next: number) => {
-    const clamped = Math.max(FONT_MIN, Math.min(FONT_MAX, Math.round(next)));
-    window.localStorage.setItem(FONT_KEY, String(clamped));
-    window.dispatchEvent(new Event(FONT_EVENT));
-  }, []);
-  return [v, set];
+export function getHeaderLeftInsetPct(): number {
+  return read(HEADER_INSET_KEY, 0);
 }
 
-export function useContentWidthPct(): [number, (v: number) => void] {
-  const [v, setV] = useState<number>(() => getContentWidthPct());
-  useEffect(() => {
-    const h = () => setV(getContentWidthPct());
-    window.addEventListener(WIDTH_EVENT, h);
-    return () => window.removeEventListener(WIDTH_EVENT, h);
-  }, []);
-  const set = useCallback((next: number) => {
-    const clamped = Math.max(WIDTH_MIN, Math.min(WIDTH_MAX, Math.round(next)));
-    window.localStorage.setItem(WIDTH_KEY, String(clamped));
-    window.dispatchEvent(new Event(WIDTH_EVENT));
-  }, []);
-  return [v, set];
+function makeHook(
+  key: string,
+  evt: string,
+  min: number,
+  max: number,
+  getter: () => number,
+): () => [number, (v: number) => void] {
+  return function useV(): [number, (v: number) => void] {
+    const [v, setV] = useState<number>(() => getter());
+    useEffect(() => {
+      const h = () => setV(getter());
+      window.addEventListener(evt, h);
+      return () => window.removeEventListener(evt, h);
+    }, []);
+    const set = useCallback((next: number) => {
+      const clamped = Math.max(min, Math.min(max, Math.round(next)));
+      window.localStorage.setItem(key, String(clamped));
+      window.dispatchEvent(new Event(evt));
+    }, []);
+    return [v, set];
+  };
 }
 
-export const APPEARANCE_EVENTS = { FONT_EVENT, WIDTH_EVENT };
+export const useFontDeltaPct = makeHook(FONT_KEY, FONT_EVENT, FONT_MIN, FONT_MAX, getFontDeltaPct);
+export const useContentWidthPct = makeHook(WIDTH_KEY, WIDTH_EVENT, WIDTH_MIN, WIDTH_MAX, getContentWidthPct);
+export const useHeaderLeftInsetPct = makeHook(HEADER_INSET_KEY, HEADER_INSET_EVENT, HEADER_INSET_MIN, HEADER_INSET_MAX, getHeaderLeftInsetPct);
+
+export const APPEARANCE_EVENTS = { FONT_EVENT, WIDTH_EVENT, HEADER_INSET_EVENT };
