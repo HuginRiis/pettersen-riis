@@ -57,7 +57,7 @@ export function AutoFitText({ text, className, max = 14, min = 5 }: Props) {
       <span
         ref={measureRef}
         className="block whitespace-nowrap"
-        style={{ fontSize: `${size}px`, lineHeight: 1.1, letterSpacing: "0.02em" }}
+        style={{ fontSize: `${size}px`, lineHeight: 1.1 }}
       >
         {text}
       </span>
