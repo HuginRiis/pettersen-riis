@@ -1,42 +1,266 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Bot, Loader2, Wifi, WifiOff, Battery, RefreshCw, Mail, KeyRound } from "lucide-react";
+import { Bot, Loader2, Wifi, WifiOff, Battery, RefreshCw, Mail, KeyRound, Play } from "lucide-react";
 import {
   getRoborockSnapshot,
   sendRoborockCode,
   submitRoborockCode,
 } from "@/server/roborock.functions";
+import {
+  getRoborockHomeySnapshot,
+  setRoborockHomeyCapability,
+  type RoborockHomeyCap,
+  type RoborockHomeyDevice,
+} from "@/server/homey";
 
 type Snap = Awaited<ReturnType<typeof getRoborockSnapshot>>;
+type HomeySnap = Awaited<ReturnType<typeof getRoborockHomeySnapshot>>;
 
 const STATE_LABEL: Record<number, string> = {
   1: "Starter", 2: "Lader (avbrutt)", 3: "Inaktiv", 4: "Fjernstyrt", 5: "Renser",
   6: "Returnerer til dokk", 7: "Manuell modus", 8: "Lader", 9: "Lade-feil",
   10: "Pause", 11: "Sone-rens", 12: "Feil", 13: "Skrur av", 14: "Oppdaterer",
   15: "Dokker", 16: "Går til punkt", 17: "Sone-rens", 18: "Rom-rens",
-  22: "Tømmer støv", 23: "Vasker mopp", 26: "Returnerer for å vaske mopp",
+  22: "Tømmer støvbeholder", 23: "Vasker mopp", 26: "Returnerer for å vaske mopp",
 };
+
+function prettyCap(id: string, title?: string | null): string {
+  if (title && title.length > 0) return title;
+  return id
+    .replace(/^button\./, "")
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function CapControl({
+  cap,
+  busy,
+  onSet,
+}: {
+  cap: RoborockHomeyCap;
+  busy: boolean;
+  onSet: (value: boolean | number | string) => void;
+}) {
+  // Knapp-kapabiliteter (button.*) — sender alltid true
+  if (cap.id.startsWith("button.")) {
+    if (!cap.setable) return null;
+    return (
+      <button
+        onClick={() => onSet(true)}
+        disabled={busy}
+        className="text-xs inline-flex items-center gap-1 px-3 py-2 rounded border border-border hover:border-primary/60 disabled:opacity-50"
+      >
+        <Play size={11} /> {prettyCap(cap.id, cap.title)}
+      </button>
+    );
+  }
+
+  // Enum med predefinerte verdier — knapperad
+  if (cap.type === "enum" && Array.isArray(cap.values) && cap.values.length > 0) {
+    return (
+      <div className="space-y-1">
+        <div className="text-[10px] tracking-[0.15em] uppercase text-muted-foreground">
+          {prettyCap(cap.id, cap.title)}
+        </div>
+        <div className="flex flex-wrap gap-1">
+          {cap.values.map((v) => {
+            const active = String(cap.value) === String(v.id);
+            return (
+              <button
+                key={v.id}
+                onClick={() => cap.setable && onSet(v.id)}
+                disabled={busy || !cap.setable}
+                className={`text-[11px] px-2 py-1 rounded border ${
+                  active
+                    ? "border-primary text-primary bg-primary/10"
+                    : "border-border hover:border-primary/60"
+                } disabled:opacity-50`}
+              >
+                {v.title ?? v.id}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  // Boolean — toggle
+  if (cap.type === "boolean") {
+    const on = cap.value === true;
+    if (!cap.setable) {
+      return (
+        <div className="text-xs text-muted-foreground">
+          {prettyCap(cap.id, cap.title)}: <span className="text-foreground">{on ? "På" : "Av"}</span>
+        </div>
+      );
+    }
+    return (
+      <button
+        onClick={() => onSet(!on)}
+        disabled={busy}
+        className={`text-xs inline-flex items-center gap-2 px-3 py-2 rounded border ${
+          on ? "border-primary text-primary bg-primary/10" : "border-border hover:border-primary/60"
+        } disabled:opacity-50`}
+      >
+        {prettyCap(cap.id, cap.title)}: {on ? "På" : "Av"}
+      </button>
+    );
+  }
+
+  // Tall med min/max — slider
+  if (cap.type === "number" && typeof cap.min === "number" && typeof cap.max === "number") {
+    const value = typeof cap.value === "number" ? cap.value : cap.min;
+    if (!cap.setable) {
+      return (
+        <div className="text-xs text-muted-foreground">
+          {prettyCap(cap.id, cap.title)}:{" "}
+          <span className="text-foreground">
+            {value}
+            {cap.units ?? ""}
+          </span>
+        </div>
+      );
+    }
+    return (
+      <label className="block text-xs space-y-1">
+        <span className="text-[10px] tracking-[0.15em] uppercase text-muted-foreground">
+          {prettyCap(cap.id, cap.title)}: <span className="text-foreground">{value}{cap.units ?? ""}</span>
+        </span>
+        <input
+          type="range"
+          min={cap.min}
+          max={cap.max}
+          step={cap.step ?? 1}
+          defaultValue={value}
+          disabled={busy}
+          onMouseUp={(e) => onSet(Number((e.target as HTMLInputElement).value))}
+          onTouchEnd={(e) => onSet(Number((e.target as HTMLInputElement).value))}
+          className="w-full"
+        />
+      </label>
+    );
+  }
+
+  // Fallback: bare vis verdien
+  return (
+    <div className="text-xs text-muted-foreground">
+      {prettyCap(cap.id, cap.title)}:{" "}
+      <span className="text-foreground">{String(cap.value ?? "—")}{cap.units ?? ""}</span>
+    </div>
+  );
+}
+
+function HomeyDeviceCard({
+  device,
+  onSet,
+  busyCap,
+}: {
+  device: RoborockHomeyDevice;
+  onSet: (capId: string, value: boolean | number | string) => void;
+  busyCap: string | null;
+}) {
+  const buttons = device.capabilities.filter((c) => c.id.startsWith("button.") && c.setable);
+  const enums = device.capabilities.filter((c) => !c.id.startsWith("button.") && c.type === "enum");
+  const numbers = device.capabilities.filter((c) => !c.id.startsWith("button.") && c.type === "number");
+  const booleans = device.capabilities.filter((c) => !c.id.startsWith("button.") && c.type === "boolean");
+  const battery = numbers.find((c) => c.id === "measure_battery");
+
+  return (
+    <div className="rounded-lg border border-border bg-card/30 p-3 space-y-3">
+      <div className="flex items-center gap-2">
+        <span className="text-sm font-semibold text-foreground flex-1 truncate">{device.name}</span>
+        {device.available ? (
+          <span className="inline-flex items-center gap-1 text-[10px] text-primary">
+            <Wifi size={10} /> ONLINE
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
+            <WifiOff size={10} /> OFFLINE
+          </span>
+        )}
+        {battery && typeof battery.value === "number" && (
+          <span className="inline-flex items-center gap-1 text-[10px] text-foreground">
+            <Battery size={11} className="text-primary" /> {battery.value}%
+          </span>
+        )}
+      </div>
+      {device.zoneName && (
+        <div className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground -mt-2">
+          {device.zoneName}
+        </div>
+      )}
+
+      {buttons.length > 0 && (
+        <div className="flex flex-wrap gap-1">
+          {buttons.map((c) => (
+            <CapControl key={c.id} cap={c} busy={busyCap === c.id} onSet={(v) => onSet(c.id, v)} />
+          ))}
+        </div>
+      )}
+
+      {enums.length > 0 && (
+        <div className="space-y-2">
+          {enums.map((c) => (
+            <CapControl key={c.id} cap={c} busy={busyCap === c.id} onSet={(v) => onSet(c.id, v)} />
+          ))}
+        </div>
+      )}
+
+      {numbers.filter((c) => c.id !== "measure_battery").length > 0 && (
+        <div className="space-y-2">
+          {numbers
+            .filter((c) => c.id !== "measure_battery")
+            .map((c) => (
+              <CapControl key={c.id} cap={c} busy={busyCap === c.id} onSet={(v) => onSet(c.id, v)} />
+            ))}
+        </div>
+      )}
+
+      {booleans.length > 0 && (
+        <div className="flex flex-wrap gap-1">
+          {booleans.map((c) => (
+            <CapControl key={c.id} cap={c} busy={busyCap === c.id} onSet={(v) => onSet(c.id, v)} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function RoborockPanel() {
   const fetchSnap = useServerFn(getRoborockSnapshot);
   const sendCode = useServerFn(sendRoborockCode);
   const submitCode = useServerFn(submitRoborockCode);
+  const fetchHomey = useServerFn(getRoborockHomeySnapshot);
+  const setCap = useServerFn(setRoborockHomeyCapability);
 
   const [snap, setSnap] = useState<Snap | null>(null);
+  const [homey, setHomey] = useState<HomeySnap | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<"send" | "verify" | null>(null);
+  const [busyCap, setBusyCap] = useState<string | null>(null);
   const [code, setCode] = useState("");
   const [info, setInfo] = useState<string | null>(null);
 
   const load = async () => {
     setLoading(true);
-    try { setSnap(await fetchSnap()); } finally { setLoading(false); }
+    try {
+      const [s, h] = await Promise.all([fetchSnap(), fetchHomey()]);
+      setSnap(s);
+      setHomey(h);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+  }, []);
 
   const onSend = async () => {
-    setBusy("send"); setInfo(null);
+    setBusy("send");
+    setInfo(null);
     const r = await sendCode();
     setBusy(null);
     setInfo(r.ok ? "Kode sendt på e-post. Sjekk innboksen." : `Feil: ${r.error}`);
@@ -44,7 +268,8 @@ export function RoborockPanel() {
 
   const onVerify = async () => {
     if (!code.trim()) return;
-    setBusy("verify"); setInfo(null);
+    setBusy("verify");
+    setInfo(null);
     const r = await submitCode({ data: { code } });
     setBusy(null);
     if (r.ok) {
@@ -56,9 +281,23 @@ export function RoborockPanel() {
     }
   };
 
+  const onSetCap = async (deviceId: string, capability: string, value: boolean | number | string) => {
+    setBusyCap(`${deviceId}:${capability}`);
+    setInfo(null);
+    const r = await setCap({ data: { deviceId, capability, value } });
+    setBusyCap(null);
+    if (!r.ok) setInfo(`Kommandoen feilet: ${r.error}`);
+    else setTimeout(() => fetchHomey().then(setHomey), 1500);
+  };
+
+  const homeyDevices = useMemo(
+    () => (homey?.ok ? homey.devices : []),
+    [homey],
+  );
+
   return (
     <section className="container mx-auto px-4 pt-4">
-      <article className="panel rounded-lg p-4">
+      <article className="panel rounded-lg p-4 space-y-3">
         <div className="flex items-center gap-2">
           <Bot size={18} className="text-primary" />
           <h3 className="text-foreground font-semibold flex-1">Roborock</h3>
@@ -72,56 +311,38 @@ export function RoborockPanel() {
           </button>
         </div>
 
-        {loading && !snap && (
-          <div className="text-xs text-muted-foreground mt-3">Henter status…</div>
+        {loading && !snap && !homey && (
+          <div className="text-xs text-muted-foreground">Henter status…</div>
         )}
 
-        {snap && !snap.ok && snap.needsLogin && (
-          <div className="mt-3 space-y-2">
-            <p className="text-xs text-muted-foreground">
-              Roborock krever engangs-kode på e-post for å logge inn.
-            </p>
-            <button
-              onClick={onSend}
-              disabled={busy !== null}
-              className="text-xs inline-flex items-center gap-2 px-3 py-2 rounded border border-border hover:border-primary/60 disabled:opacity-50"
-            >
-              {busy === "send" ? <Loader2 size={12} className="animate-spin" /> : <Mail size={12} />}
-              Send kode på e-post
-            </button>
-            <div className="flex items-center gap-2">
-              <input
-                inputMode="numeric"
-                value={code}
-                onChange={(e) => setCode(e.target.value)}
-                placeholder="Kode fra e-post"
-                className="flex-1 bg-card/30 border border-border rounded px-2 py-2 text-sm"
+        {/* Homey-styrte enheter (full kontroll) */}
+        {homeyDevices.length > 0 && (
+          <div className="space-y-2">
+            {homeyDevices.map((d) => (
+              <HomeyDeviceCard
+                key={d.id}
+                device={d}
+                busyCap={busyCap?.startsWith(`${d.id}:`) ? busyCap.slice(d.id.length + 1) : null}
+                onSet={(capId, value) => onSetCap(d.id, capId, value)}
               />
-              <button
-                onClick={onVerify}
-                disabled={busy !== null || !code.trim()}
-                className="text-xs inline-flex items-center gap-2 px-3 py-2 rounded border border-border hover:border-primary/60 disabled:opacity-50"
-              >
-                {busy === "verify" ? <Loader2 size={12} className="animate-spin" /> : <KeyRound size={12} />}
-                Logg inn
-              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Hint hvis Homey-snapshot er ok men ingen vakuum-enheter funnet */}
+        {homey?.ok && homeyDevices.length === 0 && (
+          <div className="text-[11px] text-muted-foreground bg-card/30 border border-border rounded p-2">
+            Fant ingen støvsuger-enheter i Homey. Installer Roborock-appen i Homey og legg til begge S7-ene
+            der, så dukker de opp her med fulle kontroller (start/stopp/dokk/sugehastighet/mopp).
+          </div>
+        )}
+
+        {/* Sky-snapshot (lese-kanal — fallback hvis Homey ikke har enhetene) */}
+        {snap?.ok && snap.devices.length > 0 && homeyDevices.length === 0 && (
+          <div className="space-y-2">
+            <div className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground">
+              Status fra Roborock-skyen
             </div>
-            {info && <p className="text-[11px] text-muted-foreground">{info}</p>}
-          </div>
-        )}
-
-        {snap && !snap.ok && !snap.needsLogin && (
-          <div className="mt-3 text-xs text-destructive bg-destructive/10 border border-destructive/30 rounded p-2">
-            {snap.error}
-          </div>
-        )}
-
-        {snap?.ok && snap.devices.length === 0 && (
-          <div className="text-xs text-muted-foreground mt-3">Ingen enheter funnet på kontoen.</div>
-        )}
-
-        {snap?.ok && snap.devices.length > 0 && (
-          <div className="mt-3 space-y-2">
             {snap.devices.map((d) => {
               const status = (d.attribute ?? {}) as any;
               const state = typeof status?.state === "number" ? status.state : null;
@@ -151,7 +372,8 @@ export function RoborockPanel() {
                     )}
                     {state != null && (
                       <span className="text-muted-foreground">
-                        Tilstand: <span className="text-foreground">{STATE_LABEL[state] ?? `kode ${state}`}</span>
+                        Tilstand:{" "}
+                        <span className="text-foreground">{STATE_LABEL[state] ?? `kode ${state}`}</span>
                       </span>
                     )}
                   </div>
@@ -160,6 +382,48 @@ export function RoborockPanel() {
             })}
           </div>
         )}
+
+        {/* Innloggings-flyt for Roborock-skyen — kun hvis vi mangler den OG ingen Homey-enheter */}
+        {snap && !snap.ok && snap.needsLogin && homeyDevices.length === 0 && (
+          <div className="space-y-2 pt-1 border-t border-border">
+            <p className="text-[11px] text-muted-foreground">
+              Eller logg inn på Roborock-skyen for å se status (uten kontroll-knapper):
+            </p>
+            <button
+              onClick={onSend}
+              disabled={busy !== null}
+              className="text-xs inline-flex items-center gap-2 px-3 py-2 rounded border border-border hover:border-primary/60 disabled:opacity-50"
+            >
+              {busy === "send" ? <Loader2 size={12} className="animate-spin" /> : <Mail size={12} />}
+              Send kode på e-post
+            </button>
+            <div className="flex items-center gap-2">
+              <input
+                inputMode="numeric"
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                placeholder="Kode fra e-post"
+                className="flex-1 bg-card/30 border border-border rounded px-2 py-2 text-sm"
+              />
+              <button
+                onClick={onVerify}
+                disabled={busy !== null || !code.trim()}
+                className="text-xs inline-flex items-center gap-2 px-3 py-2 rounded border border-border hover:border-primary/60 disabled:opacity-50"
+              >
+                {busy === "verify" ? <Loader2 size={12} className="animate-spin" /> : <KeyRound size={12} />}
+                Logg inn
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Feilmeldinger */}
+        {homey && !homey.ok && homey.error && homeyDevices.length === 0 && (
+          <div className="text-[11px] text-muted-foreground">
+            Homey: {homey.error}
+          </div>
+        )}
+        {info && <p className="text-[11px] text-muted-foreground">{info}</p>}
       </article>
     </section>
   );
