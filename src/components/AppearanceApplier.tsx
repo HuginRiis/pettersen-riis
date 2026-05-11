@@ -25,6 +25,9 @@ export function AppearanceApplier() {
       const widthPct = getContentWidthPct();
       const headerInset = getHeaderLeftInsetPct();
       root.style.setProperty("--app-font-scale", String(1 + fontDelta / 100));
+      // Tall (1.0 = 100%) — brukes til CSS zoom på hovedinnhold
+      root.style.setProperty("--app-content-zoom", String(widthPct / 100));
+      // Behold prosent-versjonen for evt. legacy bruk
       root.style.setProperty("--app-content-width", `${widthPct}%`);
       root.style.setProperty("--app-header-left-inset", `${headerInset}vw`);
     };
