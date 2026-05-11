@@ -888,6 +888,46 @@ function LivePulseBanner({ live }: { live: ReturnType<typeof useTibberLive> }) {
 // (Pulse historikk-graf fjernet — strømkroniken bruker kun PBTH for historikk
 // og Tibber WebSocket for live-tall.)
 
+function PbthBackfillButton({ days, label }: { days: number; label: string }) {
+  const [busy, setBusy] = useState(false);
+  const [result, setResult] = useState<string | null>(null);
+  async function run() {
+    setBusy(true);
+    setResult(null);
+    try {
+      const res = await fetch(
+        `/api/public/hooks/backfill-pbth-history?days=${days}`,
+        { method: "POST" },
+      );
+      const j: any = await res.json().catch(() => ({}));
+      if (!res.ok || !j.ok) {
+        setResult(`Feil: ${j.error ?? res.statusText}`);
+      } else {
+        const written = (j.report ?? [])
+          .map((r: any) => r.written ?? 0)
+          .reduce((a: number, b: number) => a + b, 0);
+        setResult(`✓ Lagret ${written} dager`);
+      }
+    } catch (e: any) {
+      setResult(`Feil: ${e?.message ?? String(e)}`);
+    } finally {
+      setBusy(false);
+      setTimeout(() => setResult(null), 6000);
+    }
+  }
+  return (
+    <button
+      onClick={run}
+      disabled={busy}
+      className="text-xs tracking-[0.25em] uppercase text-muted-foreground hover:text-primary transition-colors flex items-center gap-1.5 px-3 py-1.5 border border-border rounded-md hover:border-primary/60 disabled:opacity-50"
+      title={`Backfill PBTH-historikk for siste ${days} dager`}
+    >
+      <RefreshCw size={12} className={busy ? "animate-spin" : ""} />
+      {result ?? label}
+    </button>
+  );
+}
+
 function priceLevelColor(total: number, min: number, max: number): string {
   if (max === min) return "oklch(0.78 0.13 85)";
   const pct = (total - min) / (max - min);
