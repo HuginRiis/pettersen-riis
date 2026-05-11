@@ -108,8 +108,8 @@ export function AppearanceSettingsPanel() {
             <span>150% (stort)</span>
           </div>
           <p className="text-[10px] text-muted-foreground">
-            100% = nåværende størrelse. Skalerer hele innholdet (boksene og
-            teksten) jevnt — også på mobil.
+            100% = standard. Endrer kun bredden på innholds-boksene (gir mer
+            eller mindre plass innvendig). Påvirker ikke høyde eller skrift.
           </p>
         </section>
 
