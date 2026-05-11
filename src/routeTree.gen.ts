@@ -36,6 +36,7 @@ import { Route as ApiHomeyStartRouteImport } from './routes/api.homey.start'
 import { Route as ApiHomeyCallbackRouteImport } from './routes/api.homey.callback'
 import { Route as ApiPublicHooksSnapshotTibberDailyRouteImport } from './routes/api.public.hooks.snapshot-tibber-daily'
 import { Route as ApiPublicHooksSnapshotPulseRouteImport } from './routes/api.public.hooks.snapshot-pulse'
+import { Route as ApiPublicHooksGarminIntradayDebugRouteImport } from './routes/api.public.hooks.garmin-intraday-debug'
 import { Route as ApiPublicHooksEufyPollRouteImport } from './routes/api/public/hooks/eufy-poll'
 import { Route as ApiPublicHooksEufyRouteImport } from './routes/api/public/hooks/eufy'
 import { Route as ApiPublicHooksBackfillPbthHistoryRouteImport } from './routes/api.public.hooks.backfill-pbth-history'
@@ -178,6 +179,12 @@ const ApiPublicHooksSnapshotPulseRoute =
     path: '/api/public/hooks/snapshot-pulse',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksGarminIntradayDebugRoute =
+  ApiPublicHooksGarminIntradayDebugRouteImport.update({
+    id: '/api/public/hooks/garmin-intraday-debug',
+    path: '/api/public/hooks/garmin-intraday-debug',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksEufyPollRoute = ApiPublicHooksEufyPollRouteImport.update({
   id: '/api/public/hooks/eufy-poll',
   path: '/api/public/hooks/eufy-poll',
@@ -231,6 +238,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/backfill-pbth-history': typeof ApiPublicHooksBackfillPbthHistoryRoute
   '/api/public/hooks/eufy': typeof ApiPublicHooksEufyRoute
   '/api/public/hooks/eufy-poll': typeof ApiPublicHooksEufyPollRoute
+  '/api/public/hooks/garmin-intraday-debug': typeof ApiPublicHooksGarminIntradayDebugRoute
   '/api/public/hooks/snapshot-pulse': typeof ApiPublicHooksSnapshotPulseRoute
   '/api/public/hooks/snapshot-tibber-daily': typeof ApiPublicHooksSnapshotTibberDailyRoute
 }
@@ -264,6 +272,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/backfill-pbth-history': typeof ApiPublicHooksBackfillPbthHistoryRoute
   '/api/public/hooks/eufy': typeof ApiPublicHooksEufyRoute
   '/api/public/hooks/eufy-poll': typeof ApiPublicHooksEufyPollRoute
+  '/api/public/hooks/garmin-intraday-debug': typeof ApiPublicHooksGarminIntradayDebugRoute
   '/api/public/hooks/snapshot-pulse': typeof ApiPublicHooksSnapshotPulseRoute
   '/api/public/hooks/snapshot-tibber-daily': typeof ApiPublicHooksSnapshotTibberDailyRoute
 }
@@ -298,6 +307,7 @@ export interface FileRoutesById {
   '/api/public/hooks/backfill-pbth-history': typeof ApiPublicHooksBackfillPbthHistoryRoute
   '/api/public/hooks/eufy': typeof ApiPublicHooksEufyRoute
   '/api/public/hooks/eufy-poll': typeof ApiPublicHooksEufyPollRoute
+  '/api/public/hooks/garmin-intraday-debug': typeof ApiPublicHooksGarminIntradayDebugRoute
   '/api/public/hooks/snapshot-pulse': typeof ApiPublicHooksSnapshotPulseRoute
   '/api/public/hooks/snapshot-tibber-daily': typeof ApiPublicHooksSnapshotTibberDailyRoute
 }
@@ -333,6 +343,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/backfill-pbth-history'
     | '/api/public/hooks/eufy'
     | '/api/public/hooks/eufy-poll'
+    | '/api/public/hooks/garmin-intraday-debug'
     | '/api/public/hooks/snapshot-pulse'
     | '/api/public/hooks/snapshot-tibber-daily'
   fileRoutesByTo: FileRoutesByTo
@@ -366,6 +377,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/backfill-pbth-history'
     | '/api/public/hooks/eufy'
     | '/api/public/hooks/eufy-poll'
+    | '/api/public/hooks/garmin-intraday-debug'
     | '/api/public/hooks/snapshot-pulse'
     | '/api/public/hooks/snapshot-tibber-daily'
   id:
@@ -399,6 +411,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/backfill-pbth-history'
     | '/api/public/hooks/eufy'
     | '/api/public/hooks/eufy-poll'
+    | '/api/public/hooks/garmin-intraday-debug'
     | '/api/public/hooks/snapshot-pulse'
     | '/api/public/hooks/snapshot-tibber-daily'
   fileRoutesById: FileRoutesById
@@ -433,6 +446,7 @@ export interface RootRouteChildren {
   ApiPublicHooksBackfillPbthHistoryRoute: typeof ApiPublicHooksBackfillPbthHistoryRoute
   ApiPublicHooksEufyRoute: typeof ApiPublicHooksEufyRoute
   ApiPublicHooksEufyPollRoute: typeof ApiPublicHooksEufyPollRoute
+  ApiPublicHooksGarminIntradayDebugRoute: typeof ApiPublicHooksGarminIntradayDebugRoute
   ApiPublicHooksSnapshotPulseRoute: typeof ApiPublicHooksSnapshotPulseRoute
   ApiPublicHooksSnapshotTibberDailyRoute: typeof ApiPublicHooksSnapshotTibberDailyRoute
 }
@@ -628,6 +642,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksSnapshotPulseRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/garmin-intraday-debug': {
+      id: '/api/public/hooks/garmin-intraday-debug'
+      path: '/api/public/hooks/garmin-intraday-debug'
+      fullPath: '/api/public/hooks/garmin-intraday-debug'
+      preLoaderRoute: typeof ApiPublicHooksGarminIntradayDebugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/eufy-poll': {
       id: '/api/public/hooks/eufy-poll'
       path: '/api/public/hooks/eufy-poll'
@@ -690,6 +711,8 @@ const rootRouteChildren: RootRouteChildren = {
     ApiPublicHooksBackfillPbthHistoryRoute,
   ApiPublicHooksEufyRoute: ApiPublicHooksEufyRoute,
   ApiPublicHooksEufyPollRoute: ApiPublicHooksEufyPollRoute,
+  ApiPublicHooksGarminIntradayDebugRoute:
+    ApiPublicHooksGarminIntradayDebugRoute,
   ApiPublicHooksSnapshotPulseRoute: ApiPublicHooksSnapshotPulseRoute,
   ApiPublicHooksSnapshotTibberDailyRoute:
     ApiPublicHooksSnapshotTibberDailyRoute,
