@@ -1873,3 +1873,149 @@ export const setLockState = createServerFn({ method: "POST" })
       return { ok: false, error: e?.message ?? "Kommando feilet" };
     }
   });
+
+// ============================================================
+// Roborock-via-Homey
+// Filtrerer alle støvsuger-enheter i Homey og lar oss styre alle
+// kapabiliteter de eksponerer (start/stopp/dock/sugehastighet/mopp osv).
+// ============================================================
+export type RoborockHomeyCap = {
+  id: string;
+  title?: string | null;
+  type: "boolean" | "number" | "enum" | "string";
+  value: HomeyCapValue;
+  units?: string | null;
+  min?: number;
+  max?: number;
+  step?: number;
+  values?: HomeyCapabilityEnumValue[];
+  setable?: boolean;
+  getable?: boolean;
+  iconObj?: string | null;
+};
+
+export type RoborockHomeyDevice = {
+  id: string;
+  name: string;
+  zoneName: string | null;
+  available: boolean;
+  driverUri: string | null;
+  capabilities: RoborockHomeyCap[];
+};
+
+export type RoborockHomeySnapshot =
+  | { ok: false; needsConnect: true; error?: string }
+  | { ok: false; needsConnect?: false; error: string }
+  | { ok: true; devices: RoborockHomeyDevice[] };
+
+function isVacuumDevice(d: any): boolean {
+  if (!d) return false;
+  const cls = (d.class ?? "").toLowerCase();
+  if (cls === "vacuumcleaner") return true;
+  const driver = String(
+    d.driverUri ?? d.driverId ?? d.driver?.uri ?? d.driver?.id ?? "",
+  ).toLowerCase();
+  return /roborock|xiaomi.*mi.?robot|valetudo/.test(driver);
+}
+
+function classifyCapType(cap: any): RoborockHomeyCap["type"] {
+  const t = String(cap?.type ?? "").toLowerCase();
+  if (t === "boolean") return "boolean";
+  if (t === "number") return "number";
+  if (t === "enum" || Array.isArray(cap?.values)) return "enum";
+  if (typeof cap?.value === "boolean") return "boolean";
+  if (typeof cap?.value === "number") return "number";
+  if (Array.isArray(cap?.values)) return "enum";
+  return "string";
+}
+
+function mapRoborockDevice(d: any, zoneById: Map<string, string>): RoborockHomeyDevice {
+  const capsObj = d.capabilitiesObj ?? d.capabilities_obj ?? {};
+  const caps: RoborockHomeyCap[] = Object.entries(capsObj).map(([id, raw]) => {
+    const cap = raw as any;
+    const values = Array.isArray(cap?.values)
+      ? cap.values.map((v: any) => ({ id: String(v.id ?? v.value ?? v), title: v.title ?? v.name }))
+      : undefined;
+    return {
+      id,
+      title: cap?.title ?? null,
+      type: classifyCapType(cap),
+      value: cap?.value ?? null,
+      units: cap?.units ?? null,
+      min: typeof cap?.min === "number" ? cap.min : undefined,
+      max: typeof cap?.max === "number" ? cap.max : undefined,
+      step: typeof cap?.step === "number" ? cap.step : undefined,
+      values,
+      setable: cap?.setable !== false,
+      getable: cap?.getable !== false,
+      iconObj: cap?.iconObj?.url ?? null,
+    };
+  });
+  return {
+    id: d.id ?? d._id,
+    name: d.name ?? "Roborock",
+    zoneName: zoneById.get(d.zone) ?? null,
+    available: d.available !== false,
+    driverUri: d.driverUri ?? d.driverId ?? d.driver?.uri ?? d.driver?.id ?? null,
+    capabilities: caps,
+  };
+}
+
+export const getRoborockHomeySnapshot = createServerFn({ method: "GET" }).handler(
+  withApiLog(
+    "homey",
+    "getRoborockHomeySnapshot",
+    async (): Promise<RoborockHomeySnapshot> => {
+      let conn: HomeyConnection | null;
+      try {
+        conn = await getValidConnection();
+      } catch (e: any) {
+        return { ok: false, needsConnect: false, error: e?.message ?? "Token-feil" };
+      }
+      if (!conn) return { ok: false, needsConnect: true };
+      try {
+        const raw = await getHomeyRawSnapshot(conn);
+        if (!raw) return { ok: false, error: "Fant ingen Homey-data" };
+        const zoneById = new Map<string, string>();
+        for (const z of raw.zonesRaw) zoneById.set(z.id ?? z._id, z.name ?? "Ukjent sal");
+        const devices = raw.devicesRaw.filter(isVacuumDevice).map((d) => mapRoborockDevice(d, zoneById));
+        return { ok: true, devices };
+      } catch (e: any) {
+        return { ok: false, error: e?.message ?? "Klarte ikke hente Roborock-data" };
+      }
+    },
+  ),
+);
+
+export const setRoborockHomeyCapability = createServerFn({ method: "POST" })
+  .inputValidator((input: { deviceId: string; capability: string; value: boolean | number | string }) => {
+    if (!input?.deviceId) throw new Error("deviceId mangler");
+    if (!input?.capability) throw new Error("capability mangler");
+    return input;
+  })
+  .handler(async ({ data }): Promise<{ ok: boolean; error?: string }> => {
+    let conn: HomeyConnection | null;
+    try {
+      conn = await getValidConnection();
+    } catch (e: any) {
+      return { ok: false, error: e?.message ?? "Token-feil" };
+    }
+    if (!conn) return { ok: false, error: "Ingen Homey-tilkobling" };
+    try {
+      const session = await getHomeySessionContext(conn);
+      if (!session) return { ok: false, error: "Fant ingen Homey" };
+      const ok = await setDeviceCapabilityRaw(
+        session.sessionToken,
+        session.target.baseUrl,
+        data.deviceId,
+        data.capability,
+        data.value,
+      );
+      if (!ok) return { ok: false, error: "Homey avviste kommandoen" };
+      // Drop snapshot-cache så neste poll henter fersk state
+      homeySnapshotCache = null;
+      return { ok: true };
+    } catch (e: any) {
+      return { ok: false, error: e?.message ?? "Kommando feilet" };
+    }
+  });
