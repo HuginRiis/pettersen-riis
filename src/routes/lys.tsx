@@ -12,6 +12,7 @@ import {
 } from "@/server/homey";
 import { recordHomeyApiCall } from "@/lib/homey-api-tracker";
 import { Slider } from "@/components/ui/slider";
+import { AutoFitText } from "@/components/AutoFitText";
 import heroImg from "@/assets/got-lys.jpg";
 
 export const Route = createFileRoute("/lys")({
