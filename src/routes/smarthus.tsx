@@ -369,13 +369,15 @@ function SmarthusPage() {
   });
 
   const totalDevices = data.devices.length;
-  // Kun Philips Hue-lyspærer — identifiser via driverUri/navn (kontakter o.l. holdes utenfor)
+  // Kun Philips Hue-lyspærer + spesifikt navngitte kontakter som faktisk er lys
   const isHueLight = (d: typeof data.devices[number]) => {
-    if (d.class !== "light") return false;
     if (!("onoff" in d.capabilities)) return false;
     const driver = (d.driverUri ?? "").toLowerCase();
     const name = (d.name ?? "").toLowerCase();
-    return driver.includes("hue") || driver.includes("philips") || name.includes("hue");
+    const isHue = d.class === "light" && (driver.includes("hue") || driver.includes("philips") || name.includes("hue"));
+    const EXTRA: string[][] = [["garsej", "lys"], ["stålampe"], ["taklys"]];
+    const isExtra = EXTRA.some((toks) => toks.every((t) => name.includes(t)));
+    return isHue || isExtra;
   };
   const lights = data.devices.filter(isHueLight);
   const effectiveOn = (d: typeof data.devices[number]) => {
