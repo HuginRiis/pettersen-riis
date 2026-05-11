@@ -145,7 +145,8 @@ export function AppearanceSettingsPanel() {
             <span>50% (smal)</span>
           </div>
           <p className="text-[10px] text-muted-foreground">
-            Skyver topp-menyen innover fra venstre side. Høyre kant står fast.
+            Skyver popup-menyen som åpnes med hamburger-knappen innover fra
+            venstre. Høyre kant står fast.
           </p>
         </section>
       </div>
