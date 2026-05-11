@@ -275,16 +275,31 @@ export function LightScenesPanel() {
                           <ul className="space-y-0.5">
                             {list.map((d) => {
                               const checked = s.device_ids.includes(d.id);
+                              const lvl = s.device_levels[d.id] ?? 100;
                               return (
-                                <li key={d.id}>
+                                <li key={d.id} className="space-y-1">
                                   <label className="flex items-center gap-1.5 text-xs cursor-pointer hover:text-primary">
                                     <input
                                       type="checkbox"
                                       checked={checked}
                                       onChange={() => toggleDevice(s.slot, d.id)}
                                     />
-                                    <span className="truncate">{d.name}</span>
+                                    <span className="truncate flex-1">{d.name}</span>
+                                    {checked && d.hasDim && (
+                                      <span className="text-[10px] text-primary tabular-nums shrink-0">{lvl}%</span>
+                                    )}
                                   </label>
+                                  {checked && d.hasDim && (
+                                    <input
+                                      type="range"
+                                      min={1}
+                                      max={100}
+                                      value={lvl}
+                                      onChange={(e) => setLevel(s.slot, d.id, Number(e.target.value))}
+                                      className="w-full h-1 accent-primary cursor-pointer ml-5"
+                                      title={`Dim ${d.name} til ${lvl}%`}
+                                    />
+                                  )}
                                 </li>
                               );
                             })}
