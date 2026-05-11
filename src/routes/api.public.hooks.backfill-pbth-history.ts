@@ -142,26 +142,6 @@ async function handle(debug = false, daysWindow: number | null = null) {
       "meter_kwh_yesterday",
       "meter_consumption_yesterday",
     ];
-    // Resolusjoner — start grovest for 12 mnd, fallbacks for kortere historikk
-    const RESOLUTIONS = ["lastYear", "last6Months", "last3Months", "last31Days"];
-
-    const report: any[] = [];
-
-    for (const { loc, device } of targets) {
-      if (!device) {
-        report.push({ location: loc, error: "Fant ikke PBTH-enhet" });
-        continue;
-      }
-      if (debug) {
-        const logs = await listHomeyInsightsLogs(device.id);
-        report.push({ location: loc, deviceId: device.id, name: device.name, debug_logs: logs });
-        continue;
-      }
-      const capsAvailable = Object.keys(device.capabilities ?? {});
-      let usedCap: string | null = null;
-      const usedRes = new Set<string>();
-      const fallbackPointsByDay = new Map<string, number>();
-      const detailedPointsByDay = new Map<string, number>();
     // Velg resolusjoner basert på vindu — kortere vindu trenger finere granularitet
     const days = daysWindow && daysWindow > 0 ? daysWindow : 365;
     const RESOLUTIONS =
