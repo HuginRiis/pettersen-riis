@@ -198,15 +198,7 @@ function StromkronikenPage() {
               <div className="flex items-center gap-2 flex-wrap">
                 <PbthBackfillButton days={7} label="Hent siste uke" />
                 <PbthBackfillButton days={365} label="Hent siste år" />
-                <button
-                  onClick={() => {
-                    setLoading(true);
-                    void load();
-                  }}
-                  className="text-xs tracking-[0.25em] uppercase text-muted-foreground hover:text-primary transition-colors flex items-center gap-1.5 px-3 py-1.5 border border-border rounded-md hover:border-primary/60"
-                >
-                  <RefreshCw size={12} /> Oppdater
-                </button>
+                <NextPbthUpdate />
               </div>
             </div>
 
