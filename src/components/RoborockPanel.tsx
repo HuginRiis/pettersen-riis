@@ -354,13 +354,15 @@ export function RoborockPanel() {
           </div>
         )}
 
-        {/* Sky-snapshot (lese-kanal) — vis alltid når Homey ikke styrer disse enhetene */}
-        {snap?.ok && snap.devices.length > 0 && homeyDevices.length === 0 && (
+        {/* Sky-snapshot (lese-kanal) — vis alltid for enheter Homey ikke har */}
+        {snap?.ok && snap.devices.length > 0 && (
           <div className="space-y-2">
             <div className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground">
               Status fra Roborock-skyen
             </div>
-            {snap.devices.map((d) => {
+            {snap.devices
+              .filter((d) => !homeyDevices.some((h) => h.name.toLowerCase().trim() === (d.name ?? "").toLowerCase().trim()))
+              .map((d) => {
               const status = (d.attribute ?? {}) as Record<string, unknown>;
               const state = num(status.state);
               const battery = num(status.battery);
@@ -369,6 +371,7 @@ export function RoborockPanel() {
               const main = num(status.main_brush_life);
               const side = num(status.side_brush_life);
               const filter = num(status.filter_life);
+              const allKeys = Object.keys(status).sort();
               return (
                 <div key={d.duid} className="rounded-lg border border-border bg-card/30 p-3">
                   <div className="flex items-center gap-2">
@@ -385,6 +388,9 @@ export function RoborockPanel() {
                   </div>
                   <div className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground mt-1">
                     {d.productName ?? "Roborock"}{d.fv ? ` · v${d.fv}` : ""}
+                  </div>
+                  <div className="text-[10px] text-muted-foreground/70 mt-0.5 break-all">
+                    DUID: {d.duid}
                   </div>
                   <div className="grid grid-cols-2 gap-x-3 gap-y-1 mt-2 text-xs">
                     {battery != null && (
@@ -424,6 +430,21 @@ export function RoborockPanel() {
                       </span>
                     )}
                   </div>
+                  {allKeys.length > 0 && (
+                    <details className="mt-2">
+                      <summary className="text-[10px] tracking-[0.15em] uppercase text-muted-foreground cursor-pointer hover:text-foreground">
+                        Alle felter ({allKeys.length})
+                      </summary>
+                      <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 mt-1.5 text-[11px]">
+                        {allKeys.map((k) => (
+                          <div key={k} className="truncate">
+                            <span className="text-muted-foreground">{k}:</span>{" "}
+                            <span className="text-foreground">{String(status[k] ?? "—")}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </details>
+                  )}
                 </div>
               );
             })}
