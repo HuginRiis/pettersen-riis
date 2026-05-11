@@ -20,6 +20,7 @@ export type CronJobRow = {
   schedule: string;
   active: boolean;
   last_run: string | null;
+  last_success: string | null;
   runs_24h: number;
   failed_24h: number;
   next_run?: string | null;
