@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 
 const FONT_KEY = "appearance.fontDeltaPct"; // -20..+20
-const WIDTH_KEY = "appearance.contentWidthPct"; // 100..150 (default 100)
+const WIDTH_KEY = "appearance.contentWidthPct"; // 50..150 (default 100)
 const HEADER_INSET_KEY = "appearance.headerLeftInsetPct"; // 0..50 (% of viewport)
 
 const FONT_EVENT = "appearance:font";
@@ -10,7 +10,7 @@ const HEADER_INSET_EVENT = "appearance:headerInset";
 
 export const FONT_MIN = -20;
 export const FONT_MAX = 20;
-export const WIDTH_MIN = 100;
+export const WIDTH_MIN = 50;
 export const WIDTH_MAX = 150;
 export const HEADER_INSET_MIN = 0;
 export const HEADER_INSET_MAX = 50;
