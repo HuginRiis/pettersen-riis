@@ -12,7 +12,7 @@ import {
 } from "@/server/homey";
 import { recordHomeyApiCall } from "@/lib/homey-api-tracker";
 import { Slider } from "@/components/ui/slider";
-import { AutoFitText } from "@/components/AutoFitText";
+import { MarqueeText } from "@/components/MarqueeText";
 import heroImg from "@/assets/got-lys.jpg";
 
 export const Route = createFileRoute("/lys")({
@@ -455,11 +455,9 @@ function LysPage() {
                       filter: `drop-shadow(0 0 ${4 + (litCount / Math.max(targetCount,1)) * 8}px color-mix(in oklab, var(--gold) ${50 + (litCount / Math.max(targetCount,1)) * 40}%, transparent))`,
                     } : undefined}
                   />
-                  <AutoFitText
+                  <MarqueeText
                     text={s.name || `Scene ${s.slot + 1}`}
                     className="text-display tracking-[0.05em] uppercase text-foreground"
-                    max={14}
-                    min={7}
                   />
                 </div>
                 <div className="text-[9px] tracking-[0.2em] uppercase text-muted-foreground">
