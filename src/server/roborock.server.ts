@@ -54,6 +54,13 @@ function randToken(bytes = 16) {
   return randomBytes(bytes).toString("base64url");
 }
 
+const MERCY_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+function randMercyKey() {
+  const bytes = randomBytes(16);
+  return Array.from(bytes, (byte) => MERCY_ALPHABET[byte % MERCY_ALPHABET.length]).join("");
+}
+
 function isSignatureError(response: any) {
   return response?.code === 1003 || String(response?.msg ?? "").toLowerCase().includes("signature");
 }
@@ -129,18 +136,42 @@ async function signKeyV3(base: string, email: string, deviceId: string, s: strin
   return j.data.k as string;
 }
 
-async function legacyCodeLogin(base: string, email: string, deviceId: string, code: string) {
+async function codeLoginV4(base: string, email: string, deviceId: string, code: string, country: string | null, countryCode: string | null) {
   const cid = headerClientId(email, deviceId);
-  const params = new URLSearchParams({
-    username: email,
-    verifycode: code,
-    verifycodetype: "AUTH_EMAIL_CODE",
+  const xMercyKs = randMercyKey();
+  const xMercyK = await signKeyV3(base, email, deviceId, xMercyKs);
+  const form = new URLSearchParams({
+    country: country ?? "",
+    countryCode: countryCode ?? "",
+    email,
+    code,
+    majorVersion: "14",
+    minorVersion: "0",
   });
-  const r = await fetch(`${base}/api/v1/loginWithCode?${params.toString()}`, {
-    method: "POST",
-    headers: { header_clientid: cid },
+  const { json } = await postForm(base, "/api/v4/auth/email/login/code", {
+    header_clientid: cid,
+    "x-mercy-ks": xMercyKs,
+    "x-mercy-k": xMercyK,
+    header_clientlang: "en",
+    header_appversion: "4.54.02",
+    header_phonesystem: "iOS",
+    header_phonemodel: "iPhone16,1",
+  }, form);
+  return json;
+}
+
+async function sendCodeV4(base: string, email: string, deviceId: string) {
+  const cid = headerClientId(email, deviceId);
+  const form = new URLSearchParams({
+    email,
+    type: "login",
+    platform: "",
   });
-  return await r.json() as any;
+  const { json } = await postForm(base, "/api/v4/email/code/send", {
+    header_clientid: cid,
+    header_clientlang: "en",
+  }, form);
+  return json;
 }
 
 export async function requestLoginCode(): Promise<{ ok: boolean; error?: string }> {
