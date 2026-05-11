@@ -382,7 +382,7 @@ main .container {
 /* Marquee-animasjoner for scenenavn på lys-siden */
 @keyframes scene-marquee-loop {
   0%   { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
+  100% { transform: translateX(calc(-1 * var(--marquee-loop, 50%))); }
 }
 @keyframes scene-marquee-ping {
   0%, 10%   { transform: translateX(0); }
