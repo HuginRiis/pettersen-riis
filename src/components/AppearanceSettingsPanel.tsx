@@ -11,11 +11,20 @@ import {
   HEADER_INSET_MIN,
   HEADER_INSET_MAX,
 } from "@/hooks/use-appearance";
+import {
+  useSceneMarquee,
+  SCENE_FONT_MIN,
+  SCENE_FONT_MAX,
+  SCENE_SPEED_MIN,
+  SCENE_SPEED_MAX,
+} from "@/hooks/use-scene-marquee";
+import { MarqueeText } from "@/components/MarqueeText";
 
 export function AppearanceSettingsPanel() {
   const [fontDelta, setFontDelta] = useFontDeltaPct();
   const [width, setWidth] = useContentWidthPct();
   const [headerInset, setHeaderInset] = useHeaderLeftInsetPct();
+  const scene = useSceneMarquee();
 
   return (
     <div className="container mx-auto px-4 pt-4">
