@@ -27,7 +27,7 @@ const DEFAULTS: Scene[] = Array.from({ length: SCENE_COUNT }, (_, i) => ({
 }));
 const SCENE_SLOTS = Array.from({ length: SCENE_COUNT }, (_, i) => i);
 
-const EXTRA_TOKENS: string[][] = [["garsej", "lys"], ["stålampe"]];
+const EXTRA_TOKENS: string[][] = [["garsej", "lys"], ["stålampe"], ["taklys"]];
 
 function isLightLike(d: HomeyDeviceSnapshot): boolean {
   if (d.class === "light") return true;
