@@ -1492,6 +1492,42 @@ export type Database = {
           },
         ]
       }
+      roborock_auth: {
+        Row: {
+          base_url: string | null
+          country: string | null
+          country_code: string | null
+          device_id: string
+          email: string
+          id: number
+          rriot: Json | null
+          token: string | null
+          updated_at: string
+        }
+        Insert: {
+          base_url?: string | null
+          country?: string | null
+          country_code?: string | null
+          device_id: string
+          email: string
+          id?: number
+          rriot?: Json | null
+          token?: string | null
+          updated_at?: string
+        }
+        Update: {
+          base_url?: string | null
+          country?: string | null
+          country_code?: string | null
+          device_id?: string
+          email?: string
+          id?: number
+          rriot?: Json | null
+          token?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       strava_connections: {
         Row: {
           access_token: string
