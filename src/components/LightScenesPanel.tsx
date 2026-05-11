@@ -10,6 +10,7 @@ type Scene = {
   slot: number;
   name: string;
   device_ids: string[];
+  device_levels: Record<string, number>; // device id -> dim percent (0-100)
 };
 
 const DEFAULT_NAMES: Record<number, string> = {
@@ -22,6 +23,7 @@ const DEFAULTS: Scene[] = Array.from({ length: SCENE_COUNT }, (_, i) => ({
   slot: i,
   name: DEFAULT_NAMES[i] ?? `Scene ${i + 1}`,
   device_ids: [],
+  device_levels: {},
 }));
 const SCENE_SLOTS = Array.from({ length: SCENE_COUNT }, (_, i) => i);
 
@@ -41,7 +43,7 @@ export function LightScenesPanel() {
   const { prefs, setUseGlobalLightScenes } = useMenuPrefs();
   const [who, setWho] = useState<string>("Alle");
   const [scenes, setScenes] = useState<Scene[]>(DEFAULTS);
-  const [devices, setDevices] = useState<{ id: string; name: string; zoneName: string }[]>([]);
+  const [devices, setDevices] = useState<{ id: string; name: string; zoneName: string; hasDim: boolean }[]>([]);
   const [loading, setLoading] = useState(true);
   const [savingSlot, setSavingSlot] = useState<number | null>(null);
   const [search, setSearch] = useState("");
@@ -68,6 +70,7 @@ export function LightScenesPanel() {
             id: d.id,
             name: d.name,
             zoneName: d.zone ? zoneById.get(d.zone) ?? "Ukjent sal" : "Ukjent sal",
+            hasDim: "dim" in d.capabilities,
           }))
           .sort((a, b) => a.zoneName.localeCompare(b.zoneName, "nb") || a.name.localeCompare(b.name, "nb"));
         setDevices(list);
@@ -83,17 +86,18 @@ export function LightScenesPanel() {
       setLoading(true);
       const { data } = await supabase
         .from("user_light_scenes")
-        .select("slot, name, device_ids")
+        .select("slot, name, device_ids, device_levels")
         .eq("who", targetWho)
         .order("slot");
       if (cancelled) return;
       const map = new Map<number, Scene>();
-      for (const d of DEFAULTS) map.set(d.slot, { ...d });
-      for (const r of (data ?? []) as Scene[]) {
+      for (const d of DEFAULTS) map.set(d.slot, { ...d, device_levels: { ...d.device_levels } });
+      for (const r of (data ?? []) as any[]) {
         map.set(r.slot, {
           slot: r.slot,
           name: r.name ?? `Scene ${r.slot + 1}`,
           device_ids: Array.isArray(r.device_ids) ? r.device_ids : [],
+          device_levels: (r.device_levels && typeof r.device_levels === "object") ? r.device_levels : {},
         });
       }
       setScenes(SCENE_SLOTS.map((s) => map.get(s)!));
@@ -132,16 +136,34 @@ export function LightScenesPanel() {
     );
   };
 
+  const setLevel = (slot: number, id: string, pct: number) => {
+    setScenes((prev) =>
+      prev.map((s) => {
+        if (s.slot !== slot) return s;
+        const next = { ...s.device_levels };
+        const clamped = Math.max(1, Math.min(100, Math.round(pct)));
+        next[id] = clamped;
+        return { ...s, device_levels: next };
+      }),
+    );
+  };
+
   const saveScene = async (slot: number) => {
     const scene = scenes.find((s) => s.slot === slot);
     if (!scene) return;
     setSavingSlot(slot);
+    // Behold kun nivåer for valgte enheter
+    const cleanedLevels: Record<string, number> = {};
+    for (const id of scene.device_ids) {
+      if (scene.device_levels[id] != null) cleanedLevels[id] = scene.device_levels[id];
+    }
     await supabase.from("user_light_scenes").upsert(
       {
         who: targetWho,
         slot,
         name: scene.name,
         device_ids: scene.device_ids,
+        device_levels: cleanedLevels,
         updated_at: new Date().toISOString(),
       },
       { onConflict: "who,slot" },
@@ -253,16 +275,31 @@ export function LightScenesPanel() {
                           <ul className="space-y-0.5">
                             {list.map((d) => {
                               const checked = s.device_ids.includes(d.id);
+                              const lvl = s.device_levels[d.id] ?? 100;
                               return (
-                                <li key={d.id}>
+                                <li key={d.id} className="space-y-1">
                                   <label className="flex items-center gap-1.5 text-xs cursor-pointer hover:text-primary">
                                     <input
                                       type="checkbox"
                                       checked={checked}
                                       onChange={() => toggleDevice(s.slot, d.id)}
                                     />
-                                    <span className="truncate">{d.name}</span>
+                                    <span className="truncate flex-1">{d.name}</span>
+                                    {checked && d.hasDim && (
+                                      <span className="text-[10px] text-primary tabular-nums shrink-0">{lvl}%</span>
+                                    )}
                                   </label>
+                                  {checked && d.hasDim && (
+                                    <input
+                                      type="range"
+                                      min={1}
+                                      max={100}
+                                      value={lvl}
+                                      onChange={(e) => setLevel(s.slot, d.id, Number(e.target.value))}
+                                      className="w-full h-1 accent-primary cursor-pointer ml-5"
+                                      title={`Dim ${d.name} til ${lvl}%`}
+                                    />
+                                  )}
                                 </li>
                               );
                             })}
