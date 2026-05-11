@@ -439,7 +439,11 @@ export function RoborockPanel() {
                         Filter: <span className="text-foreground">{filter}%</span>
                       </span>
                     )}
-                  </div>
+                    {errorCode != null && errorCode !== 0 && (
+                      <span className="text-muted-foreground">
+                        Feilkode: <span className="text-destructive">{errorCode}</span>
+                      </span>
+                    )}
                   {allKeys.length > 0 && (
                     <details className="mt-2">
                       <summary className="text-[10px] tracking-[0.15em] uppercase text-muted-foreground cursor-pointer hover:text-foreground">
