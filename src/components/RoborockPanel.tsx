@@ -443,6 +443,7 @@ export function RoborockPanel() {
                       <span className="text-muted-foreground">
                         Feilkode: <span className="text-destructive">{errorCode}</span>
                       </span>
+                    )}
                   </div>
                   {allKeys.length > 0 && (
                     <details className="mt-2">
