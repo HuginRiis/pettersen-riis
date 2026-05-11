@@ -117,7 +117,7 @@ export function AppearanceSettingsPanel() {
         <section className="space-y-2">
           <div className="flex items-center justify-between">
             <label className="text-xs font-medium text-foreground">
-              Topp-meny — skrumping fra venstre
+              Mobil-meny (hamburger) — skrumping fra venstre
             </label>
             <div className="flex items-center gap-2">
               <span className="text-xs tabular-nums text-primary">{headerInset}%</span>
