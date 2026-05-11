@@ -361,10 +361,22 @@ function LysPage() {
   };
 
 
-  const runScene = async (scene: { device_ids: string[] }, on: boolean) => {
+  const runScene = async (
+    scene: { device_ids: string[]; device_levels?: Record<string, number> },
+    on: boolean,
+  ) => {
     const ids = scene.device_ids.length > 0 ? new Set(scene.device_ids) : null;
     const targets = lights.filter((l) => l.hasOnOff && (ids === null || ids.has(l.id)));
-    await Promise.all(targets.map((l) => sendOnOff(l.id, on)));
+    const levels = scene.device_levels ?? {};
+    await Promise.all(
+      targets.map((l) => {
+        if (on && l.hasDim && levels[l.id] != null) {
+          // Sett dim (dette tenner også lyset i Homey)
+          return sendDim(l.id, Math.max(0.01, Math.min(1, levels[l.id] / 100)));
+        }
+        return sendOnOff(l.id, on);
+      }),
+    );
   };
 
   return (
