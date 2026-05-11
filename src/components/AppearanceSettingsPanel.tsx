@@ -158,6 +158,89 @@ export function AppearanceSettingsPanel() {
             venstre. Høyre kant står fast.
           </p>
         </section>
+
+        {/* Lys-scene marquee */}
+        <section className="space-y-3 pt-2 border-t border-border/40">
+          <header>
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-primary">
+              💡 Lys-scener — rullende navn
+            </h3>
+            <p className="text-[10px] text-muted-foreground mt-1">
+              Fast fontstørrelse på scenenavn. Hvis teksten er for lang, ruller
+              den i boksen.
+            </p>
+          </header>
+
+          {/* Forhåndsvisning */}
+          <div className="rounded-md border border-border/60 bg-background/40 p-2">
+            <div className="text-[9px] uppercase tracking-[0.2em] text-muted-foreground mb-1">
+              Forhåndsvisning
+            </div>
+            <div className="w-[180px] panel rounded p-2">
+              <MarqueeText
+                text="Tenn alle stuelys og taklys i hele huset"
+                className="text-display tracking-[0.05em] uppercase text-foreground"
+              />
+            </div>
+          </div>
+
+          {/* Fontstørrelse */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-medium text-foreground">Fontstørrelse</label>
+              <span className="text-xs tabular-nums text-primary">{scene.fontPx}px</span>
+            </div>
+            <Slider
+              value={[scene.fontPx]}
+              onValueChange={(v) => scene.setFontPx(v[0] ?? 12)}
+              min={SCENE_FONT_MIN}
+              max={SCENE_FONT_MAX}
+              step={1}
+            />
+          </div>
+
+          {/* Hastighet */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-medium text-foreground">Rullehastighet</label>
+              <span className="text-xs tabular-nums text-primary">{scene.speedPxPerSec} px/s</span>
+            </div>
+            <Slider
+              value={[scene.speedPxPerSec]}
+              onValueChange={(v) => scene.setSpeed(v[0] ?? 40)}
+              min={SCENE_SPEED_MIN}
+              max={SCENE_SPEED_MAX}
+              step={5}
+            />
+            <div className="flex justify-between text-[10px] text-muted-foreground">
+              <span>Sakte</span>
+              <span>Rask</span>
+            </div>
+          </div>
+
+          {/* Modus */}
+          <div className="space-y-2">
+            <label className="text-xs font-medium text-foreground">Rullemodus</label>
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                size="sm"
+                variant={scene.mode === "loop" ? "default" : "outline"}
+                onClick={() => scene.setMode("loop")}
+                className="h-8 text-[11px]"
+              >
+                Rundt og rundt
+              </Button>
+              <Button
+                size="sm"
+                variant={scene.mode === "pingpong" ? "default" : "outline"}
+                onClick={() => scene.setMode("pingpong")}
+                className="h-8 text-[11px]"
+              >
+                Frem og tilbake
+              </Button>
+            </div>
+          </div>
+        </section>
       </div>
     </div>
   );
