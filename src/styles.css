@@ -348,22 +348,27 @@
   }
 }
 
-/* ===== Appearance settings (font scale + content zoom + header inset) ===== */
+/* ===== Appearance settings (font scale + content width + header inset) ===== */
 :root {
   --app-font-scale: 1;
   --app-content-zoom: 1;
   --app-content-width: 100%;
   --app-header-left-inset: 0px;
+  --app-container-base: 100%;
 }
+@media (min-width: 640px)  { :root { --app-container-base: 640px;  } }
+@media (min-width: 768px)  { :root { --app-container-base: 768px;  } }
+@media (min-width: 1024px) { :root { --app-container-base: 1024px; } }
+@media (min-width: 1280px) { :root { --app-container-base: 1280px; } }
+@media (min-width: 1536px) { :root { --app-container-base: 1536px; } }
 html {
   font-size: calc(16px * var(--app-font-scale));
 }
-/* Skalér hele hovedinnholdet (boksene + teksten) jevnt — fungerer både på
-   desktop (gjør innholdet bredere og større) og på mobil (gjør boksene større
-   selv om viewport er smalt). Header er bevisst utenfor for å unngå skalering
-   av topp-menyen. */
-main {
-  zoom: var(--app-content-zoom);
+/* Endrer KUN innholdsbredden (boksenes bredde) — ikke høyde, ikke skrift.
+   100% = standard container-bredde. 50% = halve, 150% = 1,5x.
+   Header er bevisst utenfor. */
+main .container {
+  max-width: calc(var(--app-container-base) * var(--app-content-zoom)) !important;
 }
 /* Skrumper mobil-popup-menyen (hamburger) fra venstre — høyre kant står fast */
 .mobile-menu-popup {
