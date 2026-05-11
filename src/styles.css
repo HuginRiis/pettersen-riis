@@ -352,10 +352,15 @@
 :root {
   --app-font-scale: 1;
   --app-content-width: 100%;
+  --app-header-left-inset: 0px;
 }
 html {
   font-size: calc(16px * var(--app-font-scale));
 }
 .container {
   max-width: var(--app-content-width) !important;
+}
+/* Skrumper topp-menyen fra venstre — høyre kant står fast */
+header.sticky > .container {
+  padding-left: calc(1rem + var(--app-header-left-inset)) !important;
 }
