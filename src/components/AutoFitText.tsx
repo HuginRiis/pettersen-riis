@@ -8,10 +8,9 @@ type Props = {
 };
 
 /**
- * Krymper teksten til den får plass på én linje i tilgjengelig bredde.
- * Lite tekst = stor font (opp til `max`), mye tekst = mindre font (ned til `min`).
+ * Krymper teksten så den får plass på én linje. Mye tekst = bittelitt font.
  */
-export function AutoFitText({ text, className, max = 14, min = 7 }: Props) {
+export function AutoFitText({ text, className, max = 14, min = 5 }: Props) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const measureRef = useRef<HTMLSpanElement>(null);
   const [size, setSize] = useState(max);
@@ -24,18 +23,30 @@ export function AutoFitText({ text, className, max = 14, min = 7 }: Props) {
     const fit = () => {
       const available = wrap.clientWidth;
       if (!available) return;
-      // Mål bredden ved max-fontstørrelse, deretter skaler ned
+      // Mål ved max og skaler ned proporsjonalt, deretter finjuster.
       measure.style.fontSize = `${max}px`;
       const naturalWidth = measure.scrollWidth;
       if (naturalWidth <= available) {
         setSize(max);
         return;
       }
-      const scaled = Math.max(min, Math.floor((available / naturalWidth) * max));
-      setSize(scaled);
+      // Litt margin (0.96) for å unngå sub-pixel overflow.
+      let next = Math.max(min, Math.floor((available / naturalWidth) * max * 0.96));
+      // Sikkerhetsnett: krymp videre hvis det fortsatt overflower.
+      measure.style.fontSize = `${next}px`;
+      let guard = 12;
+      while (measure.scrollWidth > available && next > min && guard-- > 0) {
+        next -= 1;
+        measure.style.fontSize = `${next}px`;
+      }
+      setSize(next);
     };
 
     fit();
+    // Re-fit etter at fonter har lastet
+    if ((document as any).fonts?.ready) {
+      (document as any).fonts.ready.then(fit).catch(() => {});
+    }
     const ro = new ResizeObserver(fit);
     ro.observe(wrap);
     return () => ro.disconnect();
