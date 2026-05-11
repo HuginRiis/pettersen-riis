@@ -55,6 +55,7 @@ type Counts = {
 const TOC_ITEMS: { id: string; label: string; emoji: string }[] = [
   { id: "sec-kommende", label: "Kommende push", emoji: "📨" },
   { id: "sec-personlig", label: "Personlig", emoji: "✦" },
+  { id: "sec-utseende", label: "Utseende (skrift/bredde)", emoji: "🅰️" },
   { id: "sec-meny", label: "Meny", emoji: "🧭" },
   { id: "sec-badges", label: "Topp-badges", emoji: "🏷️" },
   { id: "sec-snarveier", label: "Snarveier", emoji: "⭐" },
