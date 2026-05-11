@@ -54,6 +54,22 @@ function randToken(bytes = 16) {
   return randomBytes(bytes).toString("base64url");
 }
 
+function isSignatureError(response: any) {
+  return response?.code === 1003 || String(response?.msg ?? "").toLowerCase().includes("signature");
+}
+
+async function postForm(base: string, path: string, headers: Record<string, string>, form: URLSearchParams) {
+  const r = await fetch(`${base}${path}`, {
+    method: "POST",
+    headers: {
+      ...headers,
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: form.toString(),
+  });
+  return { response: r, json: await r.json() as any };
+}
+
 async function loadAuth(): Promise<AuthRow | null> {
   const { data } = await supabaseAdmin
     .from("roborock_auth" as any)
@@ -111,6 +127,20 @@ async function signKeyV3(base: string, email: string, deviceId: string, s: strin
     throw new Error(`sign key feilet: ${j?.msg ?? r.status}`);
   }
   return j.data.k as string;
+}
+
+async function legacyCodeLogin(base: string, email: string, deviceId: string, code: string) {
+  const cid = headerClientId(email, deviceId);
+  const params = new URLSearchParams({
+    username: email,
+    verifycode: code,
+    verifycodetype: "AUTH_EMAIL_CODE",
+  });
+  const r = await fetch(`${base}/api/v1/loginWithCode?${params.toString()}`, {
+    method: "POST",
+    headers: { header_clientid: cid },
+  });
+  return await r.json() as any;
 }
 
 export async function requestLoginCode(): Promise<{ ok: boolean; error?: string }> {
