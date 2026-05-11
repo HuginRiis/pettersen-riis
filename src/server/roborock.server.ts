@@ -159,7 +159,10 @@ export async function verifyLoginCode(code: string): Promise<{ ok: boolean; erro
     const { device_id: deviceId, base_url: base, country, country_code: countryCode } = auth;
     const cid = headerClientId(email, deviceId);
 
-    const xKs = randomBytes(8).toString("hex").slice(0, 16);
+    const ALPHA = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    const xBytes = randomBytes(16);
+    let xKs = "";
+    for (let i = 0; i < 16; i++) xKs += ALPHA[xBytes[i] % ALPHA.length];
     const xK = await signKeyV3(base, email, deviceId, xKs);
 
     const form = new URLSearchParams({
