@@ -65,6 +65,7 @@ export function MarqueeText({ text, className }: Props) {
           style={{
             animation: `scene-marquee-loop ${loopDuration}s linear infinite`,
             gap: `${gap}px`,
+            ["--marquee-loop" as any]: `${textW + gap}px`,
           }}
         >
           <span className="shrink-0">{text}</span>
