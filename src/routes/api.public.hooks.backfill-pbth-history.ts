@@ -100,13 +100,25 @@ async function upsertDays(location: Loc, points: DailyPoint[]) {
 export const Route = createFileRoute("/api/public/hooks/backfill-pbth-history")({
   server: {
     handlers: {
-      GET: async ({ request }) => handle(new URL(request.url).searchParams.get("debug") === "1"),
-      POST: async ({ request }) => handle(new URL(request.url).searchParams.get("debug") === "1"),
+      GET: async ({ request }) => {
+        const url = new URL(request.url);
+        return handle(
+          url.searchParams.get("debug") === "1",
+          Number(url.searchParams.get("days") ?? "0") || null,
+        );
+      },
+      POST: async ({ request }) => {
+        const url = new URL(request.url);
+        return handle(
+          url.searchParams.get("debug") === "1",
+          Number(url.searchParams.get("days") ?? "0") || null,
+        );
+      },
     },
   },
 });
 
-async function handle(debug = false) {
+async function handle(debug = false, daysWindow: number | null = null) {
   try {
     const snap = await getHomeySnapshot();
     if (!snap.ok) {
@@ -130,8 +142,16 @@ async function handle(debug = false) {
       "meter_kwh_yesterday",
       "meter_consumption_yesterday",
     ];
-    // Resolusjoner — start grovest for 12 mnd, fallbacks for kortere historikk
-    const RESOLUTIONS = ["lastYear", "last6Months", "last3Months", "last31Days"];
+    // Velg resolusjoner basert på vindu — kortere vindu trenger finere granularitet
+    const days = daysWindow && daysWindow > 0 ? daysWindow : 365;
+    const RESOLUTIONS =
+      days <= 31
+        ? ["last31Days", "last3Months"]
+        : days <= 90
+          ? ["last3Months", "last6Months", "lastYear"]
+          : days <= 200
+            ? ["last6Months", "lastYear"]
+            : ["lastYear", "last6Months", "last3Months", "last31Days"];
 
     const report: any[] = [];
 
@@ -151,7 +171,7 @@ async function handle(debug = false) {
       const fallbackPointsByDay = new Map<string, number>();
       const detailedPointsByDay = new Map<string, number>();
       const today = osloDateKey(new Date().toISOString());
-      const sinceDay = shiftMonth(today, -12);
+      const sinceDay = shiftDay(today, -days);
 
       for (const cap of CAP_CANDIDATES) {
         // Insights-logger finnes uavhengig av om cap er eksponert som device.capability

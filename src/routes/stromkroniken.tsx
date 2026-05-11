@@ -44,7 +44,7 @@ import {
   type ConsumptionPoint,
   type StoredDailyKwh,
 } from "@/server/tibber";
-import { getPulseHistory, type PulseHistoryPoint } from "@/server/pulse-readings";
+
 import { getSpotPrices, type SpotPriceResult } from "@/server/spot-price";
 import { getPowerByTheHour, type PbthResult, type PbthHomeData } from "@/server/power-by-the-hour";
 import { useTibberLive, type TibberLiveHomeState } from "@/hooks/useTibberLive";
@@ -195,15 +195,19 @@ function StromkronikenPage() {
                   {updated?.toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit" }) ?? "—"}
                 </span>
               </p>
-              <button
-                onClick={() => {
-                  setLoading(true);
-                  void load();
-                }}
-                className="text-xs tracking-[0.25em] uppercase text-muted-foreground hover:text-primary transition-colors flex items-center gap-1.5 px-3 py-1.5 border border-border rounded-md hover:border-primary/60"
-              >
-                <RefreshCw size={12} /> Oppdater
-              </button>
+              <div className="flex items-center gap-2 flex-wrap">
+                <PbthBackfillButton days={7} label="Hent siste uke" />
+                <PbthBackfillButton days={365} label="Hent siste år" />
+                <button
+                  onClick={() => {
+                    setLoading(true);
+                    void load();
+                  }}
+                  className="text-xs tracking-[0.25em] uppercase text-muted-foreground hover:text-primary transition-colors flex items-center gap-1.5 px-3 py-1.5 border border-border rounded-md hover:border-primary/60"
+                >
+                  <RefreshCw size={12} /> Oppdater
+                </button>
+              </div>
             </div>
 
             <HomeBlock
@@ -521,9 +525,6 @@ function HomeBlock({
         />
       </div>
 
-      {(live.status === "live" || live.status === "stale") && (
-        <PulseHistoryChart location={live.location} reading={live.reading} />
-      )}
 
       {hasSubscription && (
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -884,222 +885,46 @@ function LivePulseBanner({ live }: { live: ReturnType<typeof useTibberLive> }) {
   );
 }
 
-// ============================================================
-// Pulse historikk-graf — bygges opp fra pulse_readings i DB
-// ============================================================
+// (Pulse historikk-graf fjernet — strømkroniken bruker kun PBTH for historikk
+// og Tibber WebSocket for live-tall.)
 
-function PulseHistoryChart({
-  location,
-  reading,
-}: {
-  location: "hytta" | "tollnes";
-  reading: { receivedAt: number; power: number } | null;
-}) {
-  const fetchHistory = useServerFn(getPulseHistory);
-  const [points, setPoints] = useState<PulseHistoryPoint[]>([]);
-  const [prevPoints, setPrevPoints] = useState<PulseHistoryPoint[]>([]);
-  // 2 = 2t, 6 = 6t, 24 = 24t, 72 = 3d, 168 = 7d, 744 = 31d
-  const [hours, setHours] = useState<2 | 6 | 24 | 72 | 168 | 744>(24);
-  const [showCompare, setShowCompare] = useState(true);
-
-  // Re-fetch når reading kommer (max 1 gang per minutt for å ikke spamme)
-  const lastFetchRef = (PulseHistoryChart as any)._lastFetch ??= new Map<string, number>();
-
-  useEffect(() => {
-    let cancelled = false;
-    const load = async () => {
-      try {
-        const [cur, prev] = await Promise.all([
-          fetchHistory({ data: { location, hours } }),
-          fetchHistory({ data: { location, hours, offsetHours: hours } }),
-        ]);
-        if (cancelled) return;
-        setPoints(cur.points);
-        setPrevPoints(prev.points);
-      } catch (err) {
-        console.warn("[pulse-history] fetch failed", err);
+function PbthBackfillButton({ days, label }: { days: number; label: string }) {
+  const [busy, setBusy] = useState(false);
+  const [result, setResult] = useState<string | null>(null);
+  async function run() {
+    setBusy(true);
+    setResult(null);
+    try {
+      const res = await fetch(
+        `/api/public/hooks/backfill-pbth-history?days=${days}`,
+        { method: "POST" },
+      );
+      const j: any = await res.json().catch(() => ({}));
+      if (!res.ok || !j.ok) {
+        setResult(`Feil: ${j.error ?? res.statusText}`);
+      } else {
+        const written = (j.report ?? [])
+          .map((r: any) => r.written ?? 0)
+          .reduce((a: number, b: number) => a + b, 0);
+        setResult(`✓ Lagret ${written} dager`);
       }
-    };
-    void load();
-    const id = setInterval(load, 60_000);
-    return () => {
-      cancelled = true;
-      clearInterval(id);
-    };
-  }, [fetchHistory, location, hours]);
-
-  // Når en ny reading kommer (og det er minst 60s siden forrige fetch) → re-fetch
-  useEffect(() => {
-    if (!reading) return;
-    const key = `${location}:${hours}`;
-    const last = lastFetchRef.get(key) ?? 0;
-    if (Date.now() - last < 60_000) return;
-    lastFetchRef.set(key, Date.now());
-    Promise.all([
-      fetchHistory({ data: { location, hours } }),
-      fetchHistory({ data: { location, hours, offsetHours: hours } }),
-    ])
-      .then(([cur, prev]) => {
-        setPoints(cur.points);
-        setPrevPoints(prev.points);
-      })
-      .catch(() => {});
-  }, [reading?.receivedAt, location, hours, fetchHistory, lastFetchRef, reading]);
-
-  const longRange = hours > 72;
-  const fmtLabel = (d: Date) =>
-    longRange
-      ? d.toLocaleDateString("nb-NO", { day: "2-digit", month: "2-digit", timeZone: "Europe/Oslo" })
-      : d.toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Oslo" });
-
-  // Bygg ett samlet datasett der både nå- og forrige-punkter får egne x-verdier
-  // basert på tid (numerisk). Forrige periode forskyves `hours` timer fremover
-  // slik at den ligger oppå nåperioden i x-aksen. Sparsomme data trenger ikke
-  // matche eksakt — Recharts kobler punkter via connectNulls.
-  const offsetMs = hours * 60 * 60 * 1000;
-  type Row = { t: number; watt: number | null; prevWatt: number | null };
-  const rows: Row[] = [];
-
-  for (const p of points) {
-    if (p.watt == null) continue;
-    rows.push({ t: new Date(p.t).getTime(), watt: Math.round(p.watt), prevWatt: null });
-  }
-  if (showCompare) {
-    for (const p of prevPoints) {
-      if (p.watt == null) continue;
-      rows.push({
-        t: new Date(p.t).getTime() + offsetMs,
-        watt: null,
-        prevWatt: Math.round(p.watt),
-      });
+    } catch (e: any) {
+      setResult(`Feil: ${e?.message ?? String(e)}`);
+    } finally {
+      setBusy(false);
+      setTimeout(() => setResult(null), 6000);
     }
   }
-  rows.sort((a, b) => a.t - b.t);
-
-  const chartData = rows.map((r) => ({
-    t: r.t,
-    label: fmtLabel(new Date(r.t)),
-    watt: r.watt,
-    prevWatt: r.prevWatt,
-  }));
-
-  const compareLabel =
-    hours === 2 ? "2t før"
-    : hours === 6 ? "6t før"
-    : hours === 24 ? "i går"
-    : hours === 72 ? "3d før"
-    : hours === 168 ? "forrige uke"
-    : "forrige 31d";
-
   return (
-    <div>
-      <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
-        <h3 className="text-sm tracking-[0.3em] uppercase text-primary flex items-center gap-2">
-          <Activity size={14} /> Pulse-historikk · effekt
-        </h3>
-        <div className="flex items-center gap-2 flex-wrap">
-          <div className="flex gap-1">
-            {([2, 6, 24, 72, 168, 744] as const).map((h) => (
-              <button
-                key={h}
-                onClick={() => setHours(h)}
-                className={`text-[10px] tracking-[0.2em] uppercase px-2.5 py-1 rounded border transition-colors ${
-                  hours === h
-                    ? "border-primary text-primary bg-primary/10"
-                    : "border-border text-muted-foreground hover:text-primary hover:border-primary/40"
-                }`}
-              >
-                {h === 2 ? "2t" : h === 6 ? "6t" : h === 24 ? "24t" : h === 72 ? "3d" : h === 168 ? "7d" : "31d"}
-              </button>
-            ))}
-          </div>
-          <button
-            onClick={() => setShowCompare((v) => !v)}
-            className={`text-[10px] tracking-[0.2em] uppercase px-2.5 py-1 rounded border transition-colors ${
-              showCompare
-                ? "border-[oklch(0.78_0.13_85)] text-[oklch(0.78_0.13_85)] bg-[oklch(0.78_0.13_85)]/10"
-                : "border-border text-muted-foreground hover:text-[oklch(0.78_0.13_85)] hover:border-[oklch(0.78_0.13_85)]/40"
-            }`}
-            title="Vis/skjul sammenligning med forrige periode"
-          >
-            vs {compareLabel}
-          </button>
-        </div>
-      </div>
-      {chartData.length < 2 ? (
-        <div className="h-40 flex items-center justify-center text-xs text-muted-foreground text-center px-4 panel rounded-md bg-background/30">
-          Krøniken samler tall — grafen tegner seg selv etter hvert som Pulse rapporterer (1 punkt/min).
-        </div>
-      ) : (
-        <div className="h-56 w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={chartData} margin={{ top: 5, right: 8, left: -12, bottom: 0 }}>
-              <defs>
-                <linearGradient id={`pulseFill-${location}`} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="oklch(0.65 0.18 250)" stopOpacity={0.5} />
-                  <stop offset="100%" stopColor="oklch(0.65 0.18 250)" stopOpacity={0.05} />
-                </linearGradient>
-                <linearGradient id={`pulseFillPrev-${location}`} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="oklch(0.78 0.13 85)" stopOpacity={0.18} />
-                  <stop offset="100%" stopColor="oklch(0.78 0.13 85)" stopOpacity={0.02} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid stroke="oklch(0.3 0.02 270)" strokeDasharray="3 3" vertical={false} />
-              <XAxis
-                dataKey="label"
-                tick={{ fill: "oklch(0.78 0.13 85)", fontSize: 10 }}
-                interval="preserveStartEnd"
-                minTickGap={40}
-              />
-              <YAxis
-                tick={{ fill: "oklch(0.78 0.13 85)", fontSize: 10 }}
-                width={48}
-                unit=" W"
-              />
-              <Tooltip trigger="click"
-                contentStyle={{
-                  background: "oklch(0.18 0.02 270)",
-                  border: "1px solid oklch(0.3 0.02 270)",
-                  borderRadius: 6,
-                  fontSize: 12,
-                }}
-                formatter={(v: number, name: string) => {
-                  if (v == null) return ["—", name];
-                  if (name === "prevWatt") return [`${v} W`, compareLabel];
-                  return [`${v} W`, "Nå"];
-                }}
-              />
-              {showCompare && (
-                <Area
-                  type="monotone"
-                  dataKey="prevWatt"
-                  stroke="oklch(0.78 0.13 85)"
-                  strokeWidth={1.5}
-                  strokeDasharray="4 3"
-                  fill={`url(#pulseFillPrev-${location})`}
-                  isAnimationActive={false}
-                  connectNulls
-                />
-              )}
-              <Area
-                type="monotone"
-                dataKey="watt"
-                stroke="oklch(0.65 0.18 250)"
-                strokeWidth={2}
-                fill={`url(#pulseFill-${location})`}
-                isAnimationActive={false}
-                connectNulls
-              />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-      )}
-      {showCompare && (
-        <p className="text-[10px] text-muted-foreground/70 mt-2 italic">
-          Dager uten Pulse-avlesninger fylles inn med daglig snitt-watt fra Pbth-historikken (kWh/dag ÷ 24t × 1000) — flat linje innenfor vinduet.
-        </p>
-      )}
-    </div>
+    <button
+      onClick={run}
+      disabled={busy}
+      className="text-xs tracking-[0.25em] uppercase text-muted-foreground hover:text-primary transition-colors flex items-center gap-1.5 px-3 py-1.5 border border-border rounded-md hover:border-primary/60 disabled:opacity-50"
+      title={`Backfill PBTH-historikk for siste ${days} dager`}
+    >
+      <RefreshCw size={12} className={busy ? "animate-spin" : ""} />
+      {result ?? label}
+    </button>
   );
 }
 
