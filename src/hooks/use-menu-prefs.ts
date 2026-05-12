@@ -59,7 +59,7 @@ async function loadFromDb(who: string): Promise<MenuPrefs> {
           sortByUsage: parsed.sortByUsage ?? false,
           favoritesEnabled: parsed.favoritesEnabled ?? true,
           favoriteZones: Array.isArray(parsed.favoriteZones) ? parsed.favoriteZones : [],
-          useGlobalLightScenes: parsed.useGlobalLightScenes ?? false,
+          useGlobalLightScenes: parsed.useGlobalLightScenes ?? true,
         };
         await save(who, seeded);
         return seeded;
