@@ -15,7 +15,7 @@ const DEFAULTS: MenuPrefs = {
   favoritesEnabled: true,
   favorites: [],
   favoriteZones: [],
-  useGlobalLightScenes: false,
+  useGlobalLightScenes: true,
 };
 
 const EVT = "menu-prefs-updated";
