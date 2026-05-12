@@ -22,6 +22,7 @@ import {
   type PayslipFile,
 } from "@/server/skatt.functions";
 import heroImg from "@/assets/got-skatt.jpg";
+import { PayslipArchive } from "@/components/PayslipArchive";
 
 export const Route = createFileRoute("/skatte-utregningen")({
   head: () => ({
