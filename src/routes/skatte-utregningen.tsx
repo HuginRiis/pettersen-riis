@@ -365,6 +365,14 @@ function SkattePage() {
       />
 
       <section className="container mx-auto px-4 py-8 space-y-6">
+        {/* Profil-tabs (Arne / Rebekka) — alt under deles per profil */}
+        <Tabs value={profile} onValueChange={(v) => setProfile(v as Profile)}>
+          <TabsList className="grid grid-cols-2 w-full max-w-sm">
+            <TabsTrigger value="arne">Arne</TabsTrigger>
+            <TabsTrigger value="rebekka">Rebekka</TabsTrigger>
+          </TabsList>
+        </Tabs>
+
         {/* År-velger + import */}
         <Card className="p-5 space-y-4">
           <div className="flex flex-wrap items-center gap-2">
