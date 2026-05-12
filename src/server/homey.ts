@@ -101,7 +101,7 @@ async function refreshAccessToken(conn: HomeyConnection): Promise<HomeyConnectio
 }
 
 export async function getValidConnection(): Promise<HomeyConnection | null> {
-  const conn = await getHomeyConnection();
+  const conn = await (await loadConnModule()).getHomeyConnection();
   if (!conn) return null;
 
   const expiresMs = new Date(conn.expires_at).getTime();
