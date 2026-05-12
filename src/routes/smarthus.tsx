@@ -12,7 +12,6 @@ import { HomeyApiPauseToggle } from "@/components/HomeyApiPauseToggle";
 import { HeatersPanel } from "@/components/HeatersPanel";
 import { StuaConditionPanel } from "@/components/StuaConditionPanel";
 import { MowerPanel } from "@/components/MowerPanel";
-import { GardenaPanel } from "@/components/GardenaPanel";
 import { RoborockPanel } from "@/components/RoborockPanel";
 
 import { getLightIdleStatuses, type LightIdleZoneStatusRow } from "@/server/light-idle-push.functions";
@@ -1347,8 +1346,6 @@ function SmarthusPage() {
       />
 
       <MowerPanel devices={data.devices} zones={data.zones} />
-
-      <GardenaPanel />
 
       <RoborockPanel />
 
