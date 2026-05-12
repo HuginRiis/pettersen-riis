@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Upload, Save, Loader2, Check, Plus, Trash2 } from "lucide-react";
+import { Upload, Save, Loader2, Check, Plus, Trash2, ChevronDown, FileText, ExternalLink } from "lucide-react";
 import {
   listTaxYear,
   listTaxYears,
@@ -14,8 +14,12 @@ import {
   deleteTaxMonth,
   upsertTaxSettings,
   parsePayslip,
+  listPayslipFiles,
+  savePayslipFile,
+  deletePayslipFile,
   type TaxMonth,
   type TaxYearSettings,
+  type PayslipFile,
 } from "@/server/skatt.functions";
 import heroImg from "@/assets/got-skatt.jpg";
 
@@ -103,6 +107,9 @@ function SkattePage() {
   const fnDeleteMonth = useServerFn(deleteTaxMonth);
   const fnUpsertSettings = useServerFn(upsertTaxSettings);
   const fnParsePayslip = useServerFn(parsePayslip);
+  const fnListFiles = useServerFn(listPayslipFiles);
+  const fnSaveFile = useServerFn(savePayslipFile);
+  const fnDeleteFile = useServerFn(deletePayslipFile);
 
   const [years, setYears] = useState<number[]>([2024, 2025, 2026]);
   const [year, setYear] = useState<number>(2026);
@@ -115,7 +122,14 @@ function SkattePage() {
   const [importMsg, setImportMsg] = useState<string | null>(null);
   const [importErr, setImportErr] = useState<string | null>(null);
   const [importEmployer, setImportEmployer] = useState<string>("");
+  const [files, setFiles] = useState<PayslipFile[]>([]);
+  const [openYears, setOpenYears] = useState<Record<number, boolean>>({});
   const fileRef = useRef<HTMLInputElement | null>(null);
+
+  const reloadFiles = () => {
+    fnListFiles().then(setFiles).catch(() => { /* ignore */ });
+  };
+  useEffect(() => { reloadFiles(); }, []);
 
   useEffect(() => {
     fnListYears().then((ys) => {
@@ -261,6 +275,24 @@ function SkattePage() {
           source: file.name,
         },
       });
+      // Lagre selve filen i storage så den kan åpnes seinere
+      try {
+        await fnSaveFile({
+          data: {
+            year: result.year,
+            month: result.month,
+            employer,
+            fileName: file.name,
+            mimeType: mime,
+            base64,
+            sizeBytes: file.size,
+          },
+        });
+        reloadFiles();
+        setOpenYears((p) => ({ ...p, [result.year]: true }));
+      } catch (fileErr) {
+        console.warn("Kunne ikke lagre selve filen", fileErr);
+      }
       if (!years.includes(result.year)) {
         setYears((prev) => Array.from(new Set([...prev, result.year])).sort());
       }
@@ -528,7 +560,23 @@ function SkattePage() {
           )}
         </Card>
 
-        {/* Justeringer — i bunn */}
+        {/* Lønnsslipp-arkiv */}
+        <PayslipArchive
+          files={files}
+          openYears={openYears}
+          setOpenYears={setOpenYears}
+          onDelete={async (id) => {
+            if (!confirm("Slette filen?")) return;
+            try {
+              await fnDeleteFile({ data: { id } });
+              reloadFiles();
+            } catch (e) {
+              alert("Kunne ikke slette: " + (e instanceof Error ? e.message : "ukjent"));
+            }
+          }}
+        />
+
+
         <Card className="p-5 space-y-5">
           <div>
             <h2 className="text-lg font-semibold">Justeringer for {year}</h2>
@@ -604,6 +652,104 @@ function Stat({ label, value, sub }: { label: string; value: string; sub?: strin
       <div className="text-xs uppercase tracking-wider text-muted-foreground">{label}</div>
       <div className="text-xl md:text-2xl font-semibold mt-1 tabular-nums">{value}</div>
       {sub && <div className="text-xs text-muted-foreground mt-1">{sub}</div>}
+    </Card>
+  );
+}
+
+function PayslipArchive({
+  files,
+  openYears,
+  setOpenYears,
+  onDelete,
+}: {
+  files: PayslipFile[];
+  openYears: Record<number, boolean>;
+  setOpenYears: React.Dispatch<React.SetStateAction<Record<number, boolean>>>;
+  onDelete: (id: string) => void;
+}) {
+  const byYear = useMemo(() => {
+    const m = new Map<number, PayslipFile[]>();
+    for (const f of files) {
+      if (!m.has(f.year)) m.set(f.year, []);
+      m.get(f.year)!.push(f);
+    }
+    return Array.from(m.entries()).sort((a, b) => b[0] - a[0]);
+  }, [files]);
+
+  return (
+    <Card className="p-5 space-y-3">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-semibold">Lønnsslipp-arkiv</h2>
+          <p className="text-xs text-muted-foreground">
+            Alle opplastede slipper — sortert per år. Klikk for å åpne.
+          </p>
+        </div>
+        <div className="text-xs text-muted-foreground">{files.length} filer</div>
+      </div>
+
+      {byYear.length === 0 && (
+        <div className="text-sm text-muted-foreground py-4 text-center">
+          Ingen filer lastet opp ennå.
+        </div>
+      )}
+
+      <div className="space-y-2">
+        {byYear.map(([y, list]) => {
+          const open = !!openYears[y];
+          return (
+            <div key={y} className="rounded-md border border-border overflow-hidden">
+              <button
+                onClick={() => setOpenYears((p) => ({ ...p, [y]: !open }))}
+                className="w-full flex items-center justify-between px-3 py-2 bg-muted/30 hover:bg-muted/60 transition-colors"
+              >
+                <div className="flex items-center gap-2">
+                  <ChevronDown
+                    className={`size-4 transition-transform ${open ? "" : "-rotate-90"}`}
+                  />
+                  <span className="font-semibold">{y}</span>
+                </div>
+                <span className="text-xs text-muted-foreground">
+                  {list.length} {list.length === 1 ? "fil" : "filer"}
+                </span>
+              </button>
+              {open && (
+                <ul className="divide-y divide-border">
+                  {list.map((f) => (
+                    <li key={f.id} className="flex items-center gap-2 px-3 py-2 text-sm">
+                      <FileText className="size-4 text-muted-foreground shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <a
+                          href={f.file_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-medium hover:underline truncate inline-flex items-center gap-1"
+                        >
+                          {f.original_name || f.file_path.split("/").pop()}
+                          <ExternalLink className="size-3 opacity-60" />
+                        </a>
+                        <div className="text-xs text-muted-foreground">
+                          {f.month ? MONTH_NAMES[f.month - 1] : "—"}
+                          {f.employer ? ` · ${f.employer}` : ""}
+                          {" · "}
+                          {new Date(f.uploaded_at).toLocaleDateString("nb-NO")}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => onDelete(f.id)}
+                        className="text-muted-foreground hover:text-red-500 p-1"
+                        title="Slett"
+                      >
+                        <Trash2 className="size-4" />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          );
+        })}
+      </div>
     </Card>
   );
 }

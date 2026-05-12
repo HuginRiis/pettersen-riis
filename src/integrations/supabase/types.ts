@@ -1148,6 +1148,45 @@ export type Database = {
         }
         Relationships: []
       }
+      payslip_files: {
+        Row: {
+          employer: string | null
+          file_path: string
+          file_url: string
+          id: string
+          mime_type: string | null
+          month: number | null
+          original_name: string | null
+          size_bytes: number | null
+          uploaded_at: string
+          year: number
+        }
+        Insert: {
+          employer?: string | null
+          file_path: string
+          file_url: string
+          id?: string
+          mime_type?: string | null
+          month?: number | null
+          original_name?: string | null
+          size_bytes?: number | null
+          uploaded_at?: string
+          year: number
+        }
+        Update: {
+          employer?: string | null
+          file_path?: string
+          file_url?: string
+          id?: string
+          mime_type?: string | null
+          month?: number | null
+          original_name?: string | null
+          size_bytes?: number | null
+          uploaded_at?: string
+          year?: number
+        }
+        Relationships: []
+      }
       pulse_readings: {
         Row: {
           device_name: string | null
