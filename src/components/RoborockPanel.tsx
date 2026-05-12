@@ -5,6 +5,7 @@ import {
   getRoborockSnapshot,
   sendRoborockCode,
   submitRoborockCode,
+  loginRoborockWithPassword,
 } from "@/server/roborock.functions";
 import {
   getRoborockHomeySnapshot,
