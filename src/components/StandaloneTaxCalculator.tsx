@@ -47,6 +47,11 @@ export function StandaloneTaxCalculator({ defaultYear, profile }: { defaultYear:
       <div>
         <h2 className="text-lg font-semibold flex items-center gap-2">
           <Calculator className="size-5" /> Skatteberegning (frittstående)
+          {profile && (
+            <span className="text-xs font-normal text-muted-foreground capitalize ml-2 px-2 py-0.5 rounded-full border border-border">
+              {profile}
+            </span>
+          )}
         </h2>
         <p className="text-xs text-muted-foreground">
           Estimat basert på norske skatteregler for valgt år. Påvirker ikke tabellen over.
