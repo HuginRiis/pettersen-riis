@@ -107,6 +107,9 @@ function SkattePage() {
   const fnDeleteMonth = useServerFn(deleteTaxMonth);
   const fnUpsertSettings = useServerFn(upsertTaxSettings);
   const fnParsePayslip = useServerFn(parsePayslip);
+  const fnListFiles = useServerFn(listPayslipFiles);
+  const fnSaveFile = useServerFn(savePayslipFile);
+  const fnDeleteFile = useServerFn(deletePayslipFile);
 
   const [years, setYears] = useState<number[]>([2024, 2025, 2026]);
   const [year, setYear] = useState<number>(2026);
@@ -119,7 +122,14 @@ function SkattePage() {
   const [importMsg, setImportMsg] = useState<string | null>(null);
   const [importErr, setImportErr] = useState<string | null>(null);
   const [importEmployer, setImportEmployer] = useState<string>("");
+  const [files, setFiles] = useState<PayslipFile[]>([]);
+  const [openYears, setOpenYears] = useState<Record<number, boolean>>({});
   const fileRef = useRef<HTMLInputElement | null>(null);
+
+  const reloadFiles = () => {
+    fnListFiles().then(setFiles).catch(() => { /* ignore */ });
+  };
+  useEffect(() => { reloadFiles(); }, []);
 
   useEffect(() => {
     fnListYears().then((ys) => {
