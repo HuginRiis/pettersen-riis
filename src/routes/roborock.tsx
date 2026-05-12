@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { PageShell, PageHero } from "@/components/PageShell";
 import { RoborockPanel } from "@/components/RoborockPanel";
+import heroImg from "@/assets/got-smarthus.jpg";
 
 export const Route = createFileRoute("/roborock")({
   head: () => ({
