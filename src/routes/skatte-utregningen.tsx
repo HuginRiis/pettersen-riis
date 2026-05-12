@@ -275,6 +275,24 @@ function SkattePage() {
           source: file.name,
         },
       });
+      // Lagre selve filen i storage så den kan åpnes seinere
+      try {
+        await fnSaveFile({
+          data: {
+            year: result.year,
+            month: result.month,
+            employer,
+            fileName: file.name,
+            mimeType: mime,
+            base64,
+            sizeBytes: file.size,
+          },
+        });
+        reloadFiles();
+        setOpenYears((p) => ({ ...p, [result.year]: true }));
+      } catch (fileErr) {
+        console.warn("Kunne ikke lagre selve filen", fileErr);
+      }
       if (!years.includes(result.year)) {
         setYears((prev) => Array.from(new Set([...prev, result.year])).sort());
       }
