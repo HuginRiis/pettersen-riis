@@ -247,6 +247,7 @@ function SkattePage() {
         data: {
           year, month: r.month, employer: r.employer,
           lonn: r.lonn, skatt: r.skatt, ekstra: r.ekstra,
+          profile,
         },
       });
     }
