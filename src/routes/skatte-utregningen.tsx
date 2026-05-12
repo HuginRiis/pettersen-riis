@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Upload, Save, Loader2, Check, Plus, Trash2, ChevronDown, FileText, ExternalLink } from "lucide-react";
 import {
   listTaxYear,
@@ -118,6 +119,8 @@ function SkattePage() {
   const fnSaveFile = useServerFn(savePayslipFile);
   const fnDeleteFile = useServerFn(deletePayslipFile);
 
+  type Profile = "arne" | "rebekka";
+  const [profile, setProfile] = useState<Profile>("arne");
   const [years, setYears] = useState<number[]>([2024, 2025, 2026]);
   const [year, setYear] = useState<number>(2026);
   const [rows, setRows] = useState<Row[]>([]);
@@ -134,23 +137,21 @@ function SkattePage() {
   const fileRef = useRef<HTMLInputElement | null>(null);
 
   const reloadFiles = () => {
-    fnListFiles().then(setFiles).catch(() => { /* ignore */ });
+    fnListFiles({ data: { profile } }).then(setFiles).catch(() => { /* ignore */ });
   };
-  useEffect(() => { reloadFiles(); }, []);
+  useEffect(() => { reloadFiles(); }, [profile]);
 
   useEffect(() => {
-    fnListYears().then((ys) => {
-      if (ys.length > 0) {
-        const merged = Array.from(new Set([...ys, 2024, 2025, 2026])).sort();
-        setYears(merged);
-      }
+    fnListYears({ data: { profile } }).then((ys) => {
+      const merged = Array.from(new Set([...(ys ?? []), 2024, 2025, 2026])).sort();
+      setYears(merged);
     }).catch(() => { /* keep defaults */ });
-  }, [fnListYears]);
+  }, [fnListYears, profile]);
 
   const reload = async (y: number) => {
     setLoading(true);
     try {
-      const res = await fnListYear({ data: { year: y } });
+      const res = await fnListYear({ data: { year: y, profile } });
       setRows(buildRows(res.months));
       setSettings({
         year: res.settings.year,
@@ -166,7 +167,7 @@ function SkattePage() {
   useEffect(() => {
     let alive = true;
     setLoading(true);
-    fnListYear({ data: { year } })
+    fnListYear({ data: { year, profile } })
       .then((res) => {
         if (!alive) return;
         setRows(buildRows(res.months));
@@ -179,7 +180,7 @@ function SkattePage() {
       })
       .finally(() => alive && setLoading(false));
     return () => { alive = false; };
-  }, [year, fnListYear]);
+  }, [year, fnListYear, profile]);
 
   const updateRow = (key: string, patch: Partial<Row>) => {
     setRows((prev) => prev.map((r) => r.key === key ? { ...r, ...patch, dirty: true, saved: false } : r));
@@ -208,7 +209,7 @@ function SkattePage() {
     if (!confirm(`Slette "${row.employer}" for ${MONTH_NAMES[row.month - 1]}?`)) return;
     if (!row.isNew) {
       try {
-        await fnDeleteMonth({ data: { year, month: row.month, employer: row.employer } });
+        await fnDeleteMonth({ data: { year, month: row.month, employer: row.employer, profile } });
       } catch (e) {
         alert("Kunne ikke slette: " + (e instanceof Error ? e.message : "ukjent"));
         return;
@@ -224,6 +225,7 @@ function SkattePage() {
         data: {
           year, month: row.month, employer: row.employer,
           lonn: row.lonn, skatt: row.skatt, ekstra: row.ekstra,
+          profile,
         },
       });
       setRows((prev) => prev.map((r) => r.key === row.key
@@ -245,6 +247,7 @@ function SkattePage() {
         data: {
           year, month: r.month, employer: r.employer,
           lonn: r.lonn, skatt: r.skatt, ekstra: r.ekstra,
+          profile,
         },
       });
     }
@@ -254,7 +257,7 @@ function SkattePage() {
   const saveSettings = async () => {
     setSettingsSaving(true);
     try {
-      await fnUpsertSettings({ data: { year, skal_betale: settings.skal_betale, ekstra_pr_mnd: settings.ekstra_pr_mnd } });
+      await fnUpsertSettings({ data: { year, skal_betale: settings.skal_betale, ekstra_pr_mnd: settings.ekstra_pr_mnd, profile } });
       setSettingsDirty(false);
     } catch (e) {
       alert("Kunne ikke lagre: " + (e instanceof Error ? e.message : "ukjent feil"));
@@ -280,6 +283,7 @@ function SkattePage() {
           skatt: result.skatt,
           ekstra: result.ekstra,
           source: file.name,
+          profile,
         },
       });
       // Lagre selve filen i storage så den kan åpnes seinere
@@ -293,6 +297,7 @@ function SkattePage() {
             mimeType: mime,
             base64,
             sizeBytes: file.size,
+            profile,
           },
         });
         reloadFiles();
@@ -360,6 +365,14 @@ function SkattePage() {
       />
 
       <section className="container mx-auto px-4 py-8 space-y-6">
+        {/* Profil-tabs (Arne / Rebekka) — alt under deles per profil */}
+        <Tabs value={profile} onValueChange={(v) => setProfile(v as Profile)}>
+          <TabsList className="grid grid-cols-2 w-full max-w-sm">
+            <TabsTrigger value="arne">Arne</TabsTrigger>
+            <TabsTrigger value="rebekka">Rebekka</TabsTrigger>
+          </TabsList>
+        </Tabs>
+
         {/* År-velger + import */}
         <Card className="p-5 space-y-4">
           <div className="flex flex-wrap items-center gap-2">
@@ -430,7 +443,7 @@ function SkattePage() {
         </div>
 
         {/* Kurver siste 3 år */}
-        <SkattCharts currentYear={year} refreshKey={rows.length} />
+        <SkattCharts currentYear={year} refreshKey={rows.length} profile={profile} />
 
         {/* Forslag til ekstra skatt pr mnd (frittstående) */}
         <BreakEvenSuggestion rows={rows} skalBetale={settings.skal_betale} />
@@ -638,7 +651,7 @@ function SkattePage() {
         </Card>
 
         {/* Frittstående skatteberegning */}
-        <StandaloneTaxCalculator defaultYear={year} />
+        <StandaloneTaxCalculator defaultYear={year} profile={profile} />
       </section>
     </PageShell>
   );

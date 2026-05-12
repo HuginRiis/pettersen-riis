@@ -19,20 +19,26 @@ export type TaxYearSettings = {
   ekstra_pr_mnd: number;
 };
 
+export const PROFILES = ["arne", "rebekka"] as const;
+export type Profile = (typeof PROFILES)[number];
+const profileSchema = z.enum(PROFILES).default("arne");
+
 export const listTaxYear = createServerFn({ method: "GET" })
-  .inputValidator((d) => z.object({ year: z.number().int() }).parse(d))
+  .inputValidator((d) => z.object({ year: z.number().int(), profile: profileSchema }).parse(d))
   .handler(async ({ data }) => {
     const [months, settings] = await Promise.all([
       supabaseAdmin
         .from("tax_monthly")
         .select("id,year,month,employer,lonn,skatt,ekstra,source")
         .eq("year", data.year)
+        .eq("profile", data.profile)
         .order("month", { ascending: true })
         .order("employer", { ascending: true }),
       supabaseAdmin
         .from("tax_year_settings")
         .select("year,skal_betale,ekstra_pr_mnd")
         .eq("year", data.year)
+        .eq("profile", data.profile)
         .maybeSingle(),
     ]);
     if (months.error) throw new Error(months.error.message);
@@ -46,11 +52,12 @@ export const listTaxYear = createServerFn({ method: "GET" })
 export type MonthlyAgg = { year: number; month: number; lonn: number; skatt: number; ekstra: number };
 
 export const listMonthlyRange = createServerFn({ method: "GET" })
-  .inputValidator((d) => z.object({ years: z.array(z.number().int()).min(1).max(10) }).parse(d))
+  .inputValidator((d) => z.object({ years: z.array(z.number().int()).min(1).max(10), profile: profileSchema }).parse(d))
   .handler(async ({ data }) => {
     const { data: rows, error } = await supabaseAdmin
       .from("tax_monthly")
       .select("year,month,lonn,skatt,ekstra")
+      .eq("profile", data.profile)
       .in("year", data.years);
     if (error) throw new Error(error.message);
     const map = new Map<string, MonthlyAgg>();
@@ -148,14 +155,17 @@ Alle tall i NOK (heltall). Marginalskatt og gjennomsnittsprosent som tall (f.eks
     };
   });
 
-export const listTaxYears = createServerFn({ method: "GET" }).handler(async () => {
-  const { data, error } = await supabaseAdmin
-    .from("tax_year_settings")
-    .select("year")
-    .order("year", { ascending: true });
-  if (error) throw new Error(error.message);
-  return (data ?? []).map((r) => r.year as number);
-});
+export const listTaxYears = createServerFn({ method: "GET" })
+  .inputValidator((d) => z.object({ profile: profileSchema }).parse(d ?? { profile: "arne" }))
+  .handler(async ({ data }) => {
+    const { data: rows, error } = await supabaseAdmin
+      .from("tax_year_settings")
+      .select("year")
+      .eq("profile", data.profile)
+      .order("year", { ascending: true });
+    if (error) throw new Error(error.message);
+    return (rows ?? []).map((r) => r.year as number);
+  });
 
 export type PayslipFile = {
   id: string;
@@ -170,16 +180,19 @@ export type PayslipFile = {
   uploaded_at: string;
 };
 
-export const listPayslipFiles = createServerFn({ method: "GET" }).handler(async () => {
-  const { data, error } = await supabaseAdmin
-    .from("payslip_files")
-    .select("id,year,month,employer,file_path,file_url,original_name,mime_type,size_bytes,uploaded_at")
-    .order("year", { ascending: false })
-    .order("month", { ascending: false })
-    .order("uploaded_at", { ascending: false });
-  if (error) throw new Error(error.message);
-  return (data ?? []) as PayslipFile[];
-});
+export const listPayslipFiles = createServerFn({ method: "GET" })
+  .inputValidator((d) => z.object({ profile: profileSchema }).parse(d ?? { profile: "arne" }))
+  .handler(async ({ data }) => {
+    const { data: rows, error } = await supabaseAdmin
+      .from("payslip_files")
+      .select("id,year,month,employer,file_path,file_url,original_name,mime_type,size_bytes,uploaded_at")
+      .eq("profile", data.profile)
+      .order("year", { ascending: false })
+      .order("month", { ascending: false })
+      .order("uploaded_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    return (rows ?? []) as PayslipFile[];
+  });
 
 const savePayslipFileSchema = z.object({
   year: z.number().int(),
@@ -189,13 +202,14 @@ const savePayslipFileSchema = z.object({
   mimeType: z.string(),
   base64: z.string().min(20),
   sizeBytes: z.number().nonnegative().nullable().optional(),
+  profile: profileSchema,
 });
 
 export const savePayslipFile = createServerFn({ method: "POST" })
   .inputValidator((d) => savePayslipFileSchema.parse(d))
   .handler(async ({ data }) => {
     const safeName = data.fileName.replace(/[^a-zA-Z0-9._-]+/g, "_");
-    const path = `${data.year}/${Date.now()}-${safeName}`;
+    const path = `${data.profile}/${data.year}/${Date.now()}-${safeName}`;
     const buf = Uint8Array.from(atob(data.base64), (c) => c.charCodeAt(0));
     const { error: upErr } = await supabaseAdmin.storage
       .from("payslips")
@@ -211,6 +225,7 @@ export const savePayslipFile = createServerFn({ method: "POST" })
       original_name: data.fileName,
       mime_type: data.mimeType,
       size_bytes: data.sizeBytes ?? buf.length,
+      profile: data.profile,
     });
     if (insErr) throw new Error(insErr.message);
     return { ok: true, url: pub.publicUrl, path };
@@ -239,6 +254,7 @@ const upsertMonthSchema = z.object({
   skatt: z.number().nonnegative(),
   ekstra: z.number().nonnegative(),
   source: z.string().max(200).nullable().optional(),
+  profile: profileSchema,
 });
 
 export const upsertTaxMonth = createServerFn({ method: "POST" })
@@ -255,9 +271,10 @@ export const upsertTaxMonth = createServerFn({ method: "POST" })
           skatt: data.skatt,
           ekstra: data.ekstra,
           source: data.source ?? null,
+          profile: data.profile,
           updated_at: new Date().toISOString(),
         },
-        { onConflict: "year,month,employer" },
+        { onConflict: "profile,year,month,employer" },
       );
     if (error) throw new Error(error.message);
     return { ok: true };
@@ -267,6 +284,7 @@ const deleteMonthSchema = z.object({
   year: z.number().int(),
   month: z.number().int().min(1).max(12),
   employer: z.string().min(1).max(100),
+  profile: profileSchema,
 });
 
 export const deleteTaxMonth = createServerFn({ method: "POST" })
@@ -277,7 +295,8 @@ export const deleteTaxMonth = createServerFn({ method: "POST" })
       .delete()
       .eq("year", data.year)
       .eq("month", data.month)
-      .eq("employer", data.employer);
+      .eq("employer", data.employer)
+      .eq("profile", data.profile);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -286,6 +305,7 @@ const upsertSettingsSchema = z.object({
   year: z.number().int(),
   skal_betale: z.number().nonnegative(),
   ekstra_pr_mnd: z.number().nonnegative(),
+  profile: profileSchema,
 });
 
 export const upsertTaxSettings = createServerFn({ method: "POST" })
@@ -298,9 +318,10 @@ export const upsertTaxSettings = createServerFn({ method: "POST" })
           year: data.year,
           skal_betale: data.skal_betale,
           ekstra_pr_mnd: data.ekstra_pr_mnd,
+          profile: data.profile,
           updated_at: new Date().toISOString(),
         },
-        { onConflict: "year" },
+        { onConflict: "profile,year" },
       );
     if (error) throw new Error(error.message);
     return { ok: true };

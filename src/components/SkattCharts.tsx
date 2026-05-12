@@ -11,14 +11,14 @@ const fmt = (n: number) => new Intl.NumberFormat("nb-NO", { maximumFractionDigit
 
 const COLORS = ["hsl(var(--primary))", "#22c55e", "#f59e0b", "#ef4444", "#3b82f6"];
 
-export function SkattCharts({ currentYear, refreshKey }: { currentYear: number; refreshKey?: number }) {
+export function SkattCharts({ currentYear, refreshKey, profile }: { currentYear: number; refreshKey?: number; profile: "arne" | "rebekka" }) {
   const fnRange = useServerFn(listMonthlyRange);
   const years = useMemo(() => [currentYear - 2, currentYear - 1, currentYear], [currentYear]);
   const [data, setData] = useState<MonthlyAgg[]>([]);
 
   useEffect(() => {
-    fnRange({ data: { years } }).then(setData).catch(() => setData([]));
-  }, [fnRange, years.join(","), refreshKey]);
+    fnRange({ data: { years, profile } }).then(setData).catch(() => setData([]));
+  }, [fnRange, years.join(","), refreshKey, profile]);
 
   const series = useMemo(() => {
     const rows = MONTHS.map((name, i) => {
