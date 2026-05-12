@@ -16,7 +16,7 @@ import { useNavUsage } from "@/hooks/use-nav-usage";
 import { useMenuPrefs } from "@/hooks/use-menu-prefs";
 import { getNetatmoWeatherStation } from "@/server/netatmo-weather";
 import { useLastGood } from "@/hooks/use-last-good";
-import { PushTodayBadge, LightsOnBadge, WeatherDaysBadge, AlarmStateBadge, AlertsSeverityBadge, PowerVsYesterdayBadge, TrainingLast4WeeksBadge, UtgangsdorenLockBadge, StepsTodayBadge, MowerStatusBadge, CurrentTempBadge, GarbageNextPickupBadge, GardenaStatusBadge, GardenaBatteryBadge, GardenaSignalBadge } from "@/components/HallBadges";
+import { PushTodayBadge, LightsOnBadge, WeatherDaysBadge, AlarmStateBadge, AlertsSeverityBadge, PowerVsYesterdayBadge, TrainingLast4WeeksBadge, UtgangsdorenLockBadge, StepsTodayBadge, MowerStatusBadge, CurrentTempBadge, GarbageNextPickupBadge, GardenaStatusBadge, GardenaBatteryBadge, GardenaSignalBadge, RoborockStatusBadge } from "@/components/HallBadges";
 import { useHeaderBadgeSettings, isBadgeVisible } from "@/hooks/use-header-badge-settings";
 
 const BORGEN_COORD = { lat: 59.1789, lon: 9.5732 };
@@ -44,6 +44,7 @@ type RoutePath =
   | "/kvitteringer"
   | "/skatte-utregningen"
   | "/gressklipper"
+  | "/stovsugeren"
   | "/got-saga";
 
 type NavLink = { to: RoutePath; label: string; public?: boolean };
@@ -77,6 +78,7 @@ const ROUTE_ICON: Partial<Record<RoutePath, React.ComponentType<{ size?: number;
   "/steintavle": ScrollText,
   "/skatte-utregningen": Coins,
   "/gressklipper": Bot,
+  "/stovsugeren": Bot,
 };
 
 // Fargerike ikoner i GoT-stil — én distinkt farge per sal, matcher salens tema.
@@ -102,6 +104,7 @@ const ROUTE_ICON_COLOR: Partial<Record<RoutePath, string>> = {
   "/steintavle": "#cbd5e1",          // stein — lys grå
   "/skatte-utregningen": "#d4af37",  // gull-mynt
   "/gressklipper": "#10b981",        // gressklipper — gressgrønn
+  "/stovsugeren": "#38bdf8",         // støvsuger — sky-cyan
 };
 
 // Public halls — open to any visitor entering the courtyard.
@@ -119,6 +122,7 @@ const navLinks: NavLink[] = [
   { to: "/smarthus", label: "Smartborg" },
   { to: "/lys", label: "Lys" },
   { to: "/gressklipper", label: "Gressklipper" },
+  { to: "/stovsugeren", label: "Støvsugeren" },
   { to: "/stromkroniken", label: "Strømkrøniken" },
   { to: "/oppussing-borgen", label: "Prosjekter på Borgen" },
   { to: "/oppussing-hytta", label: "Prosjekter på hytta" },
@@ -372,6 +376,7 @@ export function SiteHeader() {
                   {l.to === "/var" && showB("weather_temp") && <CurrentTempBadge inline lat={BORGEN_COORD.lat} lon={BORGEN_COORD.lon} />}
                   {l.to === "/smarthus" && showB("mower_status") && <MowerStatusBadge inline />}
                   {l.to === "/gressklipper" && <>{showB("gardena_status") && <GardenaStatusBadge inline />}{showB("gardena_battery") && <GardenaBatteryBadge inline />}{showB("gardena_signal") && <GardenaSignalBadge inline />}</>}
+                  {l.to === "/stovsugeren" && <>{showB("roborock_hjemme_status") && <RoborockStatusBadge inline match="hjem" name="Hjemme" />}{showB("roborock_hytta_status") && <RoborockStatusBadge inline match="hytt" name="Hytta" />}</>}
                   {l.to === "/vakttarnet" && <>{showB("alarm_state") && <AlarmStateBadge inline />}{showB("utgangsdoren_lock") && <UtgangsdorenLockBadge inline />}</>}
                   {l.to === "/varsler" && showB("alerts_severity") && <AlertsSeverityBadge inline />}
                   {l.to === "/stromkroniken" && showB("power_vs_yesterday") && <PowerVsYesterdayBadge inline />}
@@ -490,6 +495,7 @@ export function SiteHeader() {
                     {l.to === "/var" && showB("weather_temp") && <CurrentTempBadge inline lat={BORGEN_COORD.lat} lon={BORGEN_COORD.lon} />}
                     {l.to === "/smarthus" && showB("mower_status") && <MowerStatusBadge inline />}
                     {l.to === "/gressklipper" && <>{showB("gardena_status") && <GardenaStatusBadge inline />}{showB("gardena_battery") && <GardenaBatteryBadge inline />}{showB("gardena_signal") && <GardenaSignalBadge inline />}</>}
+                    {l.to === "/stovsugeren" && <>{showB("roborock_hjemme_status") && <RoborockStatusBadge inline match="hjem" name="Hjemme" />}{showB("roborock_hytta_status") && <RoborockStatusBadge inline match="hytt" name="Hytta" />}</>}
                     {l.to === "/vakttarnet" && <>{showB("alarm_state") && <AlarmStateBadge inline />}{showB("utgangsdoren_lock") && <UtgangsdorenLockBadge inline />}</>}
                     {l.to === "/varsler" && showB("alerts_severity") && <AlertsSeverityBadge inline />}
                     {l.to === "/stromkroniken" && showB("power_vs_yesterday") && <PowerVsYesterdayBadge inline />}

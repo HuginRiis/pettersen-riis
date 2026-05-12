@@ -15,6 +15,7 @@ import { Route as VakttarnetRouteImport } from './routes/vakttarnet'
 import { Route as TurerRouteImport } from './routes/turer'
 import { Route as TreningRouteImport } from './routes/trening'
 import { Route as StromkronikenRouteImport } from './routes/stromkroniken'
+import { Route as StovsugerenRouteImport } from './routes/stovsugeren'
 import { Route as SteintavleRouteImport } from './routes/steintavle'
 import { Route as SmarthusRouteImport } from './routes/smarthus'
 import { Route as SkatteUtregningenRouteImport } from './routes/skatte-utregningen'
@@ -72,6 +73,11 @@ const TreningRoute = TreningRouteImport.update({
 const StromkronikenRoute = StromkronikenRouteImport.update({
   id: '/stromkroniken',
   path: '/stromkroniken',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StovsugerenRoute = StovsugerenRouteImport.update({
+  id: '/stovsugeren',
+  path: '/stovsugeren',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SteintavleRoute = SteintavleRouteImport.update({
@@ -237,6 +243,7 @@ export interface FileRoutesByFullPath {
   '/skatte-utregningen': typeof SkatteUtregningenRoute
   '/smarthus': typeof SmarthusRoute
   '/steintavle': typeof SteintavleRoute
+  '/stovsugeren': typeof StovsugerenRoute
   '/stromkroniken': typeof StromkronikenRoute
   '/trening': typeof TreningRoute
   '/turer': typeof TurerRoute
@@ -273,6 +280,7 @@ export interface FileRoutesByTo {
   '/skatte-utregningen': typeof SkatteUtregningenRoute
   '/smarthus': typeof SmarthusRoute
   '/steintavle': typeof SteintavleRoute
+  '/stovsugeren': typeof StovsugerenRoute
   '/stromkroniken': typeof StromkronikenRoute
   '/trening': typeof TreningRoute
   '/turer': typeof TurerRoute
@@ -310,6 +318,7 @@ export interface FileRoutesById {
   '/skatte-utregningen': typeof SkatteUtregningenRoute
   '/smarthus': typeof SmarthusRoute
   '/steintavle': typeof SteintavleRoute
+  '/stovsugeren': typeof StovsugerenRoute
   '/stromkroniken': typeof StromkronikenRoute
   '/trening': typeof TreningRoute
   '/turer': typeof TurerRoute
@@ -348,6 +357,7 @@ export interface FileRouteTypes {
     | '/skatte-utregningen'
     | '/smarthus'
     | '/steintavle'
+    | '/stovsugeren'
     | '/stromkroniken'
     | '/trening'
     | '/turer'
@@ -384,6 +394,7 @@ export interface FileRouteTypes {
     | '/skatte-utregningen'
     | '/smarthus'
     | '/steintavle'
+    | '/stovsugeren'
     | '/stromkroniken'
     | '/trening'
     | '/turer'
@@ -420,6 +431,7 @@ export interface FileRouteTypes {
     | '/skatte-utregningen'
     | '/smarthus'
     | '/steintavle'
+    | '/stovsugeren'
     | '/stromkroniken'
     | '/trening'
     | '/turer'
@@ -457,6 +469,7 @@ export interface RootRouteChildren {
   SkatteUtregningenRoute: typeof SkatteUtregningenRoute
   SmarthusRoute: typeof SmarthusRoute
   SteintavleRoute: typeof SteintavleRoute
+  StovsugerenRoute: typeof StovsugerenRoute
   StromkronikenRoute: typeof StromkronikenRoute
   TreningRoute: typeof TreningRoute
   TurerRoute: typeof TurerRoute
@@ -518,6 +531,13 @@ declare module '@tanstack/react-router' {
       path: '/stromkroniken'
       fullPath: '/stromkroniken'
       preLoaderRoute: typeof StromkronikenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/stovsugeren': {
+      id: '/stovsugeren'
+      path: '/stovsugeren'
+      fullPath: '/stovsugeren'
+      preLoaderRoute: typeof StovsugerenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/steintavle': {
@@ -737,6 +757,7 @@ const rootRouteChildren: RootRouteChildren = {
   SkatteUtregningenRoute: SkatteUtregningenRoute,
   SmarthusRoute: SmarthusRoute,
   SteintavleRoute: SteintavleRoute,
+  StovsugerenRoute: StovsugerenRoute,
   StromkronikenRoute: StromkronikenRoute,
   TreningRoute: TreningRoute,
   TurerRoute: TurerRoute,
@@ -760,12 +781,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}

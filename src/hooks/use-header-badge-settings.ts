@@ -20,6 +20,8 @@ export const HEADER_BADGE_DEFS: { id: string; label: string }[] = [
   { id: "weather_days", label: "Værmelding (dager fremover)" },
   { id: "weather_temp", label: "Temperatur nå (Vær)" },
   { id: "mower_status", label: "Gressklipper-status (Smartborg)" },
+  { id: "roborock_hjemme_status", label: "Støvsuger Hjemme – status (Støvsugeren)" },
+  { id: "roborock_hytta_status", label: "Støvsuger Hytta – status (Støvsugeren)" },
   { id: "gardena_status", label: "Gardena status (Gressklipper)" },
   { id: "gardena_battery", label: "Gardena batteri % (Gressklipper)" },
   { id: "gardena_signal", label: "Gardena signalstyrke (Gressklipper)" },
