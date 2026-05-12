@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Bot, Loader2, Wifi, WifiOff, Battery, RefreshCw, Mail, KeyRound, Play } from "lucide-react";
+import { Bot, Loader2, Wifi, WifiOff, Battery, RefreshCw, Mail, KeyRound, Play, Pause, Square, Home, Bell } from "lucide-react";
 import {
   getRoborockSnapshot,
   sendRoborockCode,
   submitRoborockCode,
   loginRoborockWithPassword,
+  sendRoborockCommand,
 } from "@/server/roborock.functions";
 import {
   getRoborockHomeySnapshot,
@@ -169,6 +170,54 @@ function CapControl({
   );
 }
 
+const CLOUD_COMMANDS: Array<{ method: string; label: string; icon: typeof Play; params?: any[] }> = [
+  { method: "app_start", label: "Start", icon: Play },
+  { method: "app_pause", label: "Pause", icon: Pause },
+  { method: "app_stop", label: "Stopp", icon: Square },
+  { method: "app_charge", label: "Til dokk", icon: Home },
+  { method: "find_me", label: "Finn", icon: Bell, params: [{}] },
+];
+
+function CloudControls({ duid, onResult }: { duid: string; onResult: (msg: string) => void }) {
+  const sendCmd = useServerFn(sendRoborockCommand);
+  const [busy, setBusy] = useState<string | null>(null);
+
+  const run = async (method: string, params?: any[]) => {
+    setBusy(method);
+    try {
+      const r = await sendCmd({ data: { duid, method, params: params ?? [] } });
+      if (r.ok) {
+        onResult(`✓ ${method} sendt${r.acked ? " (bekreftet)" : ""}`);
+      } else {
+        onResult(`✗ ${method}: ${r.error ?? "ukjent feil"}`);
+      }
+    } catch (e: any) {
+      onResult(`✗ ${method}: ${e?.message ?? String(e)}`);
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  return (
+    <div className="mt-3 flex flex-wrap gap-1">
+      {CLOUD_COMMANDS.map((c) => {
+        const Icon = c.icon;
+        return (
+          <button
+            key={c.method}
+            onClick={() => run(c.method, c.params)}
+            disabled={busy !== null}
+            className="text-xs inline-flex items-center gap-1 px-3 py-2 rounded border border-border hover:border-primary/60 disabled:opacity-50"
+          >
+            {busy === c.method ? <Loader2 size={11} className="animate-spin" /> : <Icon size={11} />}
+            {c.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 function HomeyDeviceCard({
   device,
   onSet,
@@ -261,6 +310,7 @@ export function RoborockPanel() {
   const [busyCap, setBusyCap] = useState<string | null>(null);
   const [code, setCode] = useState("");
   const [info, setInfo] = useState<string | null>(null);
+  const [cloudMsg, setCloudMsg] = useState<string | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -365,15 +415,19 @@ export function RoborockPanel() {
           </div>
         )}
 
+        {cloudMsg && (
+          <div className="text-[11px] px-3 py-2 rounded border border-border bg-card/40 text-foreground">
+            {cloudMsg}
+          </div>
+        )}
+
         {/* Sky-snapshot (lese-kanal) — vis alltid for enheter Homey ikke har */}
         {snap?.ok && snap.devices.length > 0 && (
           <div className="space-y-2">
             <div className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground">
               Status fra Roborock-skyen
             </div>
-            {snap.devices
-              .filter((d) => !homeyDevices.some((h) => h.name.toLowerCase().trim() === (d.name ?? "").toLowerCase().trim()))
-              .map((d) => {
+            {snap.devices.map((d) => {
               const status = (d.attribute ?? {}) as Record<string, unknown>;
               // Roborock S7 DPS-koder (numeriske) er ofte mer fersk enn de navngitte
               // 120=error, 121=state, 122=battery, 123=fan_power, 124=water_box_mode,
@@ -471,6 +525,7 @@ export function RoborockPanel() {
                       </div>
                     </details>
                   )}
+                  <CloudControls duid={d.duid} onResult={(m) => setCloudMsg(m)} />
                 </div>
               );
             })}
