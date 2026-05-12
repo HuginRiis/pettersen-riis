@@ -106,7 +106,6 @@ function LysPage() {
   }, []);
 
   const { prefs: menuPrefsEarly, toggleFavoriteZone } = useMenuPrefs();
-  const useGlobalScenes = menuPrefsEarly.useGlobalLightScenes;
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -116,20 +115,18 @@ function LysPage() {
       const w = stored || "Alle";
       if (cancelled) return;
       setWho(w);
-      // Hvis bruker har valgt globale scener: bruk "__GLOBAL__".
-      // Ellers: prøv valgt bruker, fallback til Arne.
-      const primaryWho = useGlobalScenes ? "__GLOBAL__" : w;
+      // Lys-scener er alltid globale for alle brukere.
+      const primaryWho = "__GLOBAL__";
       let { data: rows } = await supabase
         .from("user_light_scenes")
         .select("slot, name, device_ids, device_levels")
         .eq("who", primaryWho)
         .order("slot");
-      if (!cancelled && (!rows || rows.length === 0) && primaryWho !== "Arne") {
-        const fallback = useGlobalScenes ? "Arne" : (w !== "Arne" ? "Arne" : "Arne");
+      if (!cancelled && (!rows || rows.length === 0)) {
         const { data: arneRows } = await supabase
           .from("user_light_scenes")
           .select("slot, name, device_ids, device_levels")
-          .eq("who", fallback)
+          .eq("who", "Arne")
           .order("slot");
         rows = arneRows;
       }
@@ -146,7 +143,7 @@ function LysPage() {
       setScenes((prev) => prev.map((s) => map.get(s.slot) ?? s));
     })();
     return () => { cancelled = true; };
-  }, [useGlobalScenes]);
+  }, []);
 
   if (!data.ok) {
     return (
