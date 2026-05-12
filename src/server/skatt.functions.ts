@@ -89,7 +89,6 @@ const savePayslipFileSchema = z.object({
 export const savePayslipFile = createServerFn({ method: "POST" })
   .inputValidator((d) => savePayslipFileSchema.parse(d))
   .handler(async ({ data }) => {
-    const ext = data.fileName.split(".").pop()?.toLowerCase() || "bin";
     const safeName = data.fileName.replace(/[^a-zA-Z0-9._-]+/g, "_");
     const path = `${data.year}/${Date.now()}-${safeName}`;
     const buf = Uint8Array.from(atob(data.base64), (c) => c.charCodeAt(0));
@@ -110,8 +109,6 @@ export const savePayslipFile = createServerFn({ method: "POST" })
     });
     if (insErr) throw new Error(insErr.message);
     return { ok: true, url: pub.publicUrl, path };
-    // eslint-disable-next-line no-unreachable
-    void ext;
   });
 
 export const deletePayslipFile = createServerFn({ method: "POST" })
