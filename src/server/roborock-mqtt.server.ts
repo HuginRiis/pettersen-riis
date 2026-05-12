@@ -234,7 +234,7 @@ export async function sendRoborockMqttCommand(opts: SendCommandOpts): Promise<Se
 
       buf = Buffer.concat([buf, Buffer.from(r.value)]);
       const { packets, rest } = parsePackets(buf);
-      buf = rest;
+      buf = rest as Buffer;
       for (const p of packets) {
         if (p.type === 2) {
           // CONNACK
