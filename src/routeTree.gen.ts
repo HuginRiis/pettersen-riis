@@ -28,6 +28,7 @@ import { Route as LysRouteImport } from './routes/lys'
 import { Route as KvitteringerRouteImport } from './routes/kvitteringer'
 import { Route as HyttaRouteImport } from './routes/hytta'
 import { Route as HundeneRouteImport } from './routes/hundene'
+import { Route as GressklipperRouteImport } from './routes/gressklipper'
 import { Route as GotSagaRouteImport } from './routes/got-saga'
 import { Route as AgendaRouteImport } from './routes/agenda'
 import { Route as IndexRouteImport } from './routes/index'
@@ -138,6 +139,11 @@ const HundeneRoute = HundeneRouteImport.update({
   path: '/hundene',
   getParentRoute: () => rootRouteImport,
 } as any)
+const GressklipperRoute = GressklipperRouteImport.update({
+  id: '/gressklipper',
+  path: '/gressklipper',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const GotSagaRoute = GotSagaRouteImport.update({
   id: '/got-saga',
   path: '/got-saga',
@@ -217,6 +223,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/agenda': typeof AgendaRoute
   '/got-saga': typeof GotSagaRoute
+  '/gressklipper': typeof GressklipperRoute
   '/hundene': typeof HundeneRoute
   '/hytta': typeof HyttaRoute
   '/kvitteringer': typeof KvitteringerRoute
@@ -252,6 +259,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/agenda': typeof AgendaRoute
   '/got-saga': typeof GotSagaRoute
+  '/gressklipper': typeof GressklipperRoute
   '/hundene': typeof HundeneRoute
   '/hytta': typeof HyttaRoute
   '/kvitteringer': typeof KvitteringerRoute
@@ -288,6 +296,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/agenda': typeof AgendaRoute
   '/got-saga': typeof GotSagaRoute
+  '/gressklipper': typeof GressklipperRoute
   '/hundene': typeof HundeneRoute
   '/hytta': typeof HyttaRoute
   '/kvitteringer': typeof KvitteringerRoute
@@ -325,6 +334,7 @@ export interface FileRouteTypes {
     | '/'
     | '/agenda'
     | '/got-saga'
+    | '/gressklipper'
     | '/hundene'
     | '/hytta'
     | '/kvitteringer'
@@ -360,6 +370,7 @@ export interface FileRouteTypes {
     | '/'
     | '/agenda'
     | '/got-saga'
+    | '/gressklipper'
     | '/hundene'
     | '/hytta'
     | '/kvitteringer'
@@ -395,6 +406,7 @@ export interface FileRouteTypes {
     | '/'
     | '/agenda'
     | '/got-saga'
+    | '/gressklipper'
     | '/hundene'
     | '/hytta'
     | '/kvitteringer'
@@ -431,6 +443,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AgendaRoute: typeof AgendaRoute
   GotSagaRoute: typeof GotSagaRoute
+  GressklipperRoute: typeof GressklipperRoute
   HundeneRoute: typeof HundeneRoute
   HyttaRoute: typeof HyttaRoute
   KvitteringerRoute: typeof KvitteringerRoute
@@ -598,6 +611,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HundeneRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/gressklipper': {
+      id: '/gressklipper'
+      path: '/gressklipper'
+      fullPath: '/gressklipper'
+      preLoaderRoute: typeof GressklipperRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/got-saga': {
       id: '/got-saga'
       path: '/got-saga'
@@ -703,6 +723,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AgendaRoute: AgendaRoute,
   GotSagaRoute: GotSagaRoute,
+  GressklipperRoute: GressklipperRoute,
   HundeneRoute: HundeneRoute,
   HyttaRoute: HyttaRoute,
   KvitteringerRoute: KvitteringerRoute,
