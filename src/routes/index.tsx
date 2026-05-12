@@ -689,15 +689,7 @@ function HallCard({
     );
 }
 
-function HallBadgeStack({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="absolute top-2 right-2 z-10 flex flex-wrap justify-end gap-1 max-w-[80%]">
-      {children}
-    </div>
-  );
-}
 
-  return (
     <div className="relative">
       <Link
         to={to}
