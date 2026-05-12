@@ -3,8 +3,69 @@
 // Optionally subscribes and waits briefly for the response on rr/m/o/...
 
 import { createCipheriv, createDecipheriv, createHash } from "crypto";
-// @ts-ignore - cloudflare:sockets is provided by the Worker runtime
-import { connect } from "cloudflare:sockets";
+
+// Runtime-agnostic TLS socket: tries cloudflare:sockets (Workers), falls back
+// to node:tls (dev sandbox / Node SSR). Avoids module-level import that would
+// crash outside Workers.
+type Sock = {
+  write: (b: Buffer) => Promise<void>;
+  read: () => Promise<{ value?: Uint8Array; done?: boolean }>;
+  close: () => Promise<void>;
+};
+
+async function openSocket(hostname: string, port: number): Promise<Sock> {
+  try {
+    // @ts-ignore - cloudflare:sockets is only present in the Worker runtime
+    const mod: any = await import(/* @vite-ignore */ "cloudflare:sockets");
+    const s: any = mod.connect({ hostname, port }, { secureTransport: "on", allowHalfOpen: false });
+    const writer = s.writable.getWriter();
+    const reader = s.readable.getReader();
+    return {
+      write: async (b) => { await writer.write(b); },
+      read: () => reader.read(),
+      close: async () => {
+        try { await writer.close(); } catch {}
+        try { await s.close(); } catch {}
+      },
+    };
+  } catch {
+    const tls: any = await import("node:tls");
+    const sock: any = tls.connect({ host: hostname, port, servername: hostname });
+    await new Promise<void>((res, rej) => {
+      sock.once("secureConnect", () => res());
+      sock.once("error", (e: any) => rej(e));
+    });
+    const queue: Uint8Array[] = [];
+    const waiters: Array<(v: { value?: Uint8Array; done?: boolean }) => void> = [];
+    let ended = false;
+    sock.on("data", (chunk: Buffer) => {
+      const w = waiters.shift();
+      if (w) w({ value: new Uint8Array(chunk) });
+      else queue.push(new Uint8Array(chunk));
+    });
+    const finish = () => {
+      ended = true;
+      while (waiters.length) waiters.shift()!({ done: true });
+    };
+    sock.on("end", finish);
+    sock.on("close", finish);
+    sock.on("error", finish);
+    return {
+      write: (b) => new Promise((res, rej) =>
+        sock.write(b, (err: any) => (err ? rej(err) : res())),
+      ),
+      read: () => {
+        if (queue.length) return Promise.resolve({ value: queue.shift()! });
+        if (ended) return Promise.resolve({ done: true });
+        return new Promise((res) => { waiters.push(res); });
+      },
+      close: async () => {
+        try { sock.end(); } catch {}
+        try { sock.destroy(); } catch {}
+      },
+    };
+  }
+}
 
 const SALT = "TXdfu$jyZ#TZHsg4";
 
