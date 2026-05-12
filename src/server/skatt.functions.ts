@@ -206,10 +206,11 @@ Hvis du ikke finner et felt, sett 0 (eller "Ukjent" for employer). Hvis måned e
     const skatt = Number(parsed.skatt) || 0;
     const ekstra = Number(parsed.ekstra) || 0;
     const note = String(parsed.note ?? "");
+    const employer = String(parsed.employer ?? "").trim() || "Hovedjobb";
 
     if (!year || !month || month < 1 || month > 12) {
       throw new Error("AI fant ikke gyldig år/måned. Velg manuelt.");
     }
 
-    return { year, month, lonn, skatt, ekstra, note, fileName: data.fileName };
+    return { year, month, employer, lonn, skatt, ekstra, note, fileName: data.fileName };
   });
