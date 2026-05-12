@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { fetchGardenaSnapshot, sendMowerCommand } from "./gardena.server";
+import { fetchGardenaSnapshot, sendMowerCommand } from "@/server/gardena.server";
 
 export const getGardenaSnapshot = createServerFn({ method: "GET" }).handler(async () => {
   return await fetchGardenaSnapshot();
