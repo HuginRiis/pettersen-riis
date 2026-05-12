@@ -257,7 +257,7 @@ function SkattePage() {
   const saveSettings = async () => {
     setSettingsSaving(true);
     try {
-      await fnUpsertSettings({ data: { year, skal_betale: settings.skal_betale, ekstra_pr_mnd: settings.ekstra_pr_mnd } });
+      await fnUpsertSettings({ data: { year, skal_betale: settings.skal_betale, ekstra_pr_mnd: settings.ekstra_pr_mnd, profile } });
       setSettingsDirty(false);
     } catch (e) {
       alert("Kunne ikke lagre: " + (e instanceof Error ? e.message : "ukjent feil"));
