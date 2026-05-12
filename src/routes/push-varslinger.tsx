@@ -18,6 +18,7 @@ import { MailDeliveryNotificationSettings } from "@/components/MailDeliveryNotif
 import { GarminNotificationSettings } from "@/components/GarminNotificationSettings";
 import { LoginNotificationSettings } from "@/components/LoginNotificationSettings";
 import { AppearanceSettingsPanel } from "@/components/AppearanceSettingsPanel";
+import { ChartAppearanceSettingsPanel } from "@/components/ChartAppearanceSettingsPanel";
 import {
   Bell, BellOff, Calendar, Cake, Trash2, CloudSun, Sun, Lightbulb, ScrollText, ShieldCheck, Lock, ExternalLink, Smartphone, X,
 } from "lucide-react";
@@ -56,6 +57,7 @@ const TOC_ITEMS: { id: string; label: string; emoji: string }[] = [
   { id: "sec-kommende", label: "Kommende push", emoji: "📨" },
   { id: "sec-personlig", label: "Personlig", emoji: "✦" },
   { id: "sec-utseende", label: "Utseende (skrift/bredde)", emoji: "🅰️" },
+  { id: "sec-graf-utseende", label: "Graf-utseende", emoji: "📈" },
   { id: "sec-meny", label: "Meny", emoji: "🧭" },
   { id: "sec-badges", label: "Topp-badges", emoji: "🏷️" },
   { id: "sec-snarveier", label: "Snarveier", emoji: "⭐" },
@@ -144,6 +146,7 @@ function PushSettingsPage() {
         </p>
       </section>
       <section id="sec-utseende" className="scroll-mt-24"><AppearanceSettingsPanel /></section>
+      <section id="sec-graf-utseende" className="scroll-mt-24"><ChartAppearanceSettingsPanel /></section>
       <section id="sec-meny" className="scroll-mt-24"><MenuPreferencesPanel /></section>
       <section id="sec-badges" className="scroll-mt-24"><HeaderBadgeSettingsPanel /></section>
       <section id="sec-snarveier" className="scroll-mt-24"><FavoritesManagerPanel /></section>

@@ -389,3 +389,61 @@ main .container {
   50%, 60%  { transform: translateX(var(--marquee-dist, 0)); }
   100%      { transform: translateX(0); }
 }
+
+/* === Graf-utseende (recharts) — styres fra Innstillinger → Graf-utseende === */
+:root {
+  --chart-axis-text: #fef08a;
+  --chart-axis-line: #7dd3fc;
+  --chart-grid-h: #7dd3fc;
+  --chart-grid-v: #7dd3fc;
+  --chart-tooltip-text: #7dd3fc;
+  --chart-tooltip-bg: #0b1220;
+  --chart-tooltip-border: #7dd3fc;
+  --chart-series-1: #22c55e;
+  --chart-series-2: #f59e0b;
+  --chart-series-3: #ef4444;
+  --chart-series-4: #3b82f6;
+  --chart-series-5: #a855f7;
+}
+.recharts-cartesian-axis-tick-value,
+.recharts-text.recharts-label,
+.recharts-label-list text,
+.recharts-pie-label-text {
+  fill: var(--chart-axis-text) !important;
+}
+.recharts-cartesian-axis-line,
+.recharts-cartesian-axis-tick-line {
+  stroke: var(--chart-axis-line) !important;
+}
+.recharts-cartesian-grid-horizontal line { stroke: var(--chart-grid-h) !important; }
+.recharts-cartesian-grid-vertical line   { stroke: var(--chart-grid-v) !important; }
+.recharts-default-tooltip {
+  background-color: var(--chart-tooltip-bg) !important;
+  border-color: var(--chart-tooltip-border) !important;
+  color: var(--chart-tooltip-text) !important;
+}
+.recharts-default-tooltip * { color: var(--chart-tooltip-text) !important; }
+.recharts-tooltip-label, .recharts-tooltip-item { color: var(--chart-tooltip-text) !important; }
+.recharts-default-legend .recharts-legend-item-text { color: var(--chart-tooltip-text) !important; }
+
+/* 5 farger pr serie (linjer, areal, søyler, dot/scatter) */
+.recharts-layer.recharts-line:nth-of-type(5n+1) .recharts-curve { stroke: var(--chart-series-1) !important; }
+.recharts-layer.recharts-line:nth-of-type(5n+2) .recharts-curve { stroke: var(--chart-series-2) !important; }
+.recharts-layer.recharts-line:nth-of-type(5n+3) .recharts-curve { stroke: var(--chart-series-3) !important; }
+.recharts-layer.recharts-line:nth-of-type(5n+4) .recharts-curve { stroke: var(--chart-series-4) !important; }
+.recharts-layer.recharts-line:nth-of-type(5n+5) .recharts-curve { stroke: var(--chart-series-5) !important; }
+.recharts-layer.recharts-line:nth-of-type(5n+1) .recharts-line-dot { stroke: var(--chart-series-1) !important; fill: var(--chart-series-1) !important; }
+.recharts-layer.recharts-line:nth-of-type(5n+2) .recharts-line-dot { stroke: var(--chart-series-2) !important; fill: var(--chart-series-2) !important; }
+.recharts-layer.recharts-line:nth-of-type(5n+3) .recharts-line-dot { stroke: var(--chart-series-3) !important; fill: var(--chart-series-3) !important; }
+.recharts-layer.recharts-line:nth-of-type(5n+4) .recharts-line-dot { stroke: var(--chart-series-4) !important; fill: var(--chart-series-4) !important; }
+.recharts-layer.recharts-line:nth-of-type(5n+5) .recharts-line-dot { stroke: var(--chart-series-5) !important; fill: var(--chart-series-5) !important; }
+.recharts-layer.recharts-bar:nth-of-type(5n+1) .recharts-rectangle { fill: var(--chart-series-1) !important; }
+.recharts-layer.recharts-bar:nth-of-type(5n+2) .recharts-rectangle { fill: var(--chart-series-2) !important; }
+.recharts-layer.recharts-bar:nth-of-type(5n+3) .recharts-rectangle { fill: var(--chart-series-3) !important; }
+.recharts-layer.recharts-bar:nth-of-type(5n+4) .recharts-rectangle { fill: var(--chart-series-4) !important; }
+.recharts-layer.recharts-bar:nth-of-type(5n+5) .recharts-rectangle { fill: var(--chart-series-5) !important; }
+.recharts-layer.recharts-area:nth-of-type(5n+1) .recharts-curve.recharts-area-area { fill: var(--chart-series-1) !important; }
+.recharts-layer.recharts-area:nth-of-type(5n+2) .recharts-curve.recharts-area-area { fill: var(--chart-series-2) !important; }
+.recharts-layer.recharts-area:nth-of-type(5n+3) .recharts-curve.recharts-area-area { fill: var(--chart-series-3) !important; }
+.recharts-layer.recharts-area:nth-of-type(5n+4) .recharts-curve.recharts-area-area { fill: var(--chart-series-4) !important; }
+.recharts-layer.recharts-area:nth-of-type(5n+5) .recharts-curve.recharts-area-area { fill: var(--chart-series-5) !important; }

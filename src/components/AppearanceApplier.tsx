@@ -6,6 +6,11 @@ import {
   getHeaderLeftInsetPct,
   APPEARANCE_EVENTS,
 } from "@/hooks/use-appearance";
+import {
+  applyChartAppearanceToDocument,
+  loadChartAppearance,
+  CHART_APPEARANCE_EVENT,
+} from "@/hooks/use-chart-appearance";
 
 /**
  * Applies appearance CSS variables to the document root:
@@ -34,13 +39,17 @@ export function AppearanceApplier() {
       root.style.setProperty("--app-header-left-inset", `${headerInset}vw`);
     };
     apply();
+    const applyCharts = () => applyChartAppearanceToDocument(loadChartAppearance());
+    applyCharts();
     window.addEventListener(APPEARANCE_EVENTS.FONT_EVENT, apply);
     window.addEventListener(APPEARANCE_EVENTS.WIDTH_EVENT, apply);
     window.addEventListener(APPEARANCE_EVENTS.HEADER_INSET_EVENT, apply);
+    window.addEventListener(CHART_APPEARANCE_EVENT, applyCharts);
     return () => {
       window.removeEventListener(APPEARANCE_EVENTS.FONT_EVENT, apply);
       window.removeEventListener(APPEARANCE_EVENTS.WIDTH_EVENT, apply);
       window.removeEventListener(APPEARANCE_EVENTS.HEADER_INSET_EVENT, apply);
+      window.removeEventListener(CHART_APPEARANCE_EVENT, applyCharts);
     };
   }, [pathname]);
 
