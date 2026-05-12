@@ -1157,6 +1157,7 @@ export type Database = {
           mime_type: string | null
           month: number | null
           original_name: string | null
+          profile: string
           size_bytes: number | null
           uploaded_at: string
           year: number
@@ -1169,6 +1170,7 @@ export type Database = {
           mime_type?: string | null
           month?: number | null
           original_name?: string | null
+          profile?: string
           size_bytes?: number | null
           uploaded_at?: string
           year: number
@@ -1181,6 +1183,7 @@ export type Database = {
           mime_type?: string | null
           month?: number | null
           original_name?: string | null
+          profile?: string
           size_bytes?: number | null
           uploaded_at?: string
           year?: number
@@ -1646,6 +1649,7 @@ export type Database = {
           id: string
           lonn: number
           month: number
+          profile: string
           skatt: number
           source: string | null
           updated_at: string
@@ -1657,6 +1661,7 @@ export type Database = {
           id?: string
           lonn?: number
           month: number
+          profile?: string
           skatt?: number
           source?: string | null
           updated_at?: string
@@ -1668,6 +1673,7 @@ export type Database = {
           id?: string
           lonn?: number
           month?: number
+          profile?: string
           skatt?: number
           source?: string | null
           updated_at?: string
@@ -1678,18 +1684,21 @@ export type Database = {
       tax_year_settings: {
         Row: {
           ekstra_pr_mnd: number
+          profile: string
           skal_betale: number
           updated_at: string
           year: number
         }
         Insert: {
           ekstra_pr_mnd?: number
+          profile?: string
           skal_betale?: number
           updated_at?: string
           year: number
         }
         Update: {
           ekstra_pr_mnd?: number
+          profile?: string
           skal_betale?: number
           updated_at?: string
           year?: number
