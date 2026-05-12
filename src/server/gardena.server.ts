@@ -59,6 +59,21 @@ async function gardenaGet(path: string): Promise<any> {
 
 export type GardenaAttr<T = any> = { value: T; timestamp?: string } | undefined;
 
+export type GardenaSensor = {
+  id: string;
+  name: string;
+  serial: string | null;
+  modelType: string | null;
+  battery: number | null;
+  batteryState: string | null;
+  rfLinkLevel: number | null;
+  soilHumidity: { value: number | null; timestamp: string | null };
+  soilTemperature: { value: number | null; timestamp: string | null };
+  ambientTemperature: { value: number | null; timestamp: string | null };
+  lightIntensity: { value: number | null; timestamp: string | null };
+  raw: Array<{ type: string; id: string; attributes: Record<string, any> }>;
+};
+
 export type GardenaMower = {
   id: string;
   name: string;
@@ -81,12 +96,23 @@ export type GardenaMower = {
   raw: Array<{ type: string; id: string; attributes: Record<string, any> }>;
 };
 
+export type GardenaLocation = {
+  id: string;
+  name: string;
+  lat: number | null;
+  lon: number | null;
+};
+
 export type GardenaSnapshot = {
   ok: boolean;
   error?: string;
   fetchedAt: string;
-  locations: Array<{ id: string; name: string }>;
+  locations: GardenaLocation[];
   mowers: GardenaMower[];
+  sensors: GardenaSensor[];
+  /** Fallback hjem-koordinater for kart (fra env GARDENA_HOME_LAT/LON eller default Tollnes). */
+  homeLat: number;
+  homeLon: number;
 };
 
 function attrVal<T = any>(a: GardenaAttr<T>): T | null {
@@ -98,19 +124,23 @@ function attrTs(a: GardenaAttr): string | null {
 
 export async function fetchGardenaSnapshot(): Promise<GardenaSnapshot> {
   const fetchedAt = new Date().toISOString();
+  const homeLat = Number(process.env.GARDENA_HOME_LAT ?? 59.2096);
+  const homeLon = Number(process.env.GARDENA_HOME_LON ?? 9.609);
   try {
     const locs = await gardenaGet("/locations");
-    const locations: Array<{ id: string; name: string }> = (locs?.data ?? []).map((d: any) => ({
+    const locations: GardenaLocation[] = (locs?.data ?? []).map((d: any) => ({
       id: String(d.id),
       name: String(d.attributes?.name ?? "Ukjent"),
+      lat: typeof d.attributes?.latitude === "number" ? d.attributes.latitude : null,
+      lon: typeof d.attributes?.longitude === "number" ? d.attributes.longitude : null,
     }));
 
     const mowers: GardenaMower[] = [];
+    const sensors: GardenaSensor[] = [];
 
     for (const loc of locations) {
       const detail = await gardenaGet(`/locations/${loc.id}`);
       const included: any[] = detail?.included ?? [];
-      // Group services by parent device id (relationships.device.data.id)
       const devices = included.filter((x) => x.type === "DEVICE");
       const byDevice = new Map<string, any[]>();
       for (const svc of included) {
@@ -123,43 +153,74 @@ export async function fetchGardenaSnapshot(): Promise<GardenaSnapshot> {
 
       for (const dev of devices) {
         const services = byDevice.get(dev.id) ?? [];
-        const mowerSvc = services.find((s) => s.type === "MOWER");
-        if (!mowerSvc) continue; // bare gressklippere
-
         const common = services.find((s) => s.type === "COMMON");
         const cAttr = common?.attributes ?? {};
-        const mAttr = mowerSvc.attributes ?? {};
-
         const raw = services.map((s) => ({
           type: String(s.type),
           id: String(s.id),
           attributes: s.attributes ?? {},
         }));
 
-        mowers.push({
-          id: String(dev.id),
-          name: String(cAttr?.name?.value ?? "Gressklipper"),
-          serial: cAttr?.serial?.value ?? null,
-          modelType: cAttr?.modelType?.value ?? null,
-          locationId: loc.id,
-          locationName: loc.name,
-          battery: attrVal<number>(cAttr?.batteryLevel),
-          batteryState: attrVal<string>(cAttr?.batteryState),
-          rfLinkLevel: attrVal<number>(cAttr?.rfLinkLevel),
-          rfLinkState: attrVal<string>(cAttr?.rfLinkState),
-          state: attrVal<string>(mAttr?.state),
-          stateTimestamp: attrTs(mAttr?.state),
-          activity: attrVal<string>(mAttr?.activity),
-          activityTimestamp: attrTs(mAttr?.activity),
-          operatingHours: attrVal<number>(mAttr?.operatingHours),
-          lastErrorCode: attrVal<string>(mAttr?.lastErrorCode),
-          lastErrorTimestamp: attrTs(mAttr?.lastErrorCode),
-          raw,
-        });
+        const mowerSvc = services.find((s) => s.type === "MOWER");
+        const sensorSvc = services.find((s) => s.type === "SENSOR");
+
+        if (mowerSvc) {
+          const mAttr = mowerSvc.attributes ?? {};
+          mowers.push({
+            id: String(dev.id),
+            name: String(cAttr?.name?.value ?? "Gressklipper"),
+            serial: cAttr?.serial?.value ?? null,
+            modelType: cAttr?.modelType?.value ?? null,
+            locationId: loc.id,
+            locationName: loc.name,
+            battery: attrVal<number>(cAttr?.batteryLevel),
+            batteryState: attrVal<string>(cAttr?.batteryState),
+            rfLinkLevel: attrVal<number>(cAttr?.rfLinkLevel),
+            rfLinkState: attrVal<string>(cAttr?.rfLinkState),
+            state: attrVal<string>(mAttr?.state),
+            stateTimestamp: attrTs(mAttr?.state),
+            activity: attrVal<string>(mAttr?.activity),
+            activityTimestamp: attrTs(mAttr?.activity),
+            operatingHours: attrVal<number>(mAttr?.operatingHours),
+            lastErrorCode: attrVal<string>(mAttr?.lastErrorCode),
+            lastErrorTimestamp: attrTs(mAttr?.lastErrorCode),
+            raw,
+          });
+        }
+
+        if (sensorSvc) {
+          const sAttr = sensorSvc.attributes ?? {};
+          sensors.push({
+            id: String(dev.id),
+            name: String(cAttr?.name?.value ?? "Sensor"),
+            serial: cAttr?.serial?.value ?? null,
+            modelType: cAttr?.modelType?.value ?? null,
+            battery: attrVal<number>(cAttr?.batteryLevel),
+            batteryState: attrVal<string>(cAttr?.batteryState),
+            rfLinkLevel: attrVal<number>(cAttr?.rfLinkLevel),
+            soilHumidity: {
+              value: attrVal<number>(sAttr?.soilHumidity),
+              timestamp: attrTs(sAttr?.soilHumidity),
+            },
+            soilTemperature: {
+              value: attrVal<number>(sAttr?.soilTemperature),
+              timestamp: attrTs(sAttr?.soilTemperature),
+            },
+            ambientTemperature: {
+              value: attrVal<number>(sAttr?.ambientTemperature),
+              timestamp: attrTs(sAttr?.ambientTemperature),
+            },
+            lightIntensity: {
+              value: attrVal<number>(sAttr?.lightIntensity),
+              timestamp: attrTs(sAttr?.lightIntensity),
+            },
+            raw,
+          });
+        }
       }
     }
 
-    return { ok: true, fetchedAt, locations, mowers };
+    return { ok: true, fetchedAt, locations, mowers, sensors, homeLat, homeLon };
   } catch (e: any) {
     return {
       ok: false,
@@ -167,6 +228,9 @@ export async function fetchGardenaSnapshot(): Promise<GardenaSnapshot> {
       fetchedAt,
       locations: [],
       mowers: [],
+      sensors: [],
+      homeLat,
+      homeLon,
     };
   }
 }
