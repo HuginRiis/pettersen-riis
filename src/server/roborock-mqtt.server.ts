@@ -3,8 +3,69 @@
 // Optionally subscribes and waits briefly for the response on rr/m/o/...
 
 import { createCipheriv, createDecipheriv, createHash } from "crypto";
-// @ts-ignore - cloudflare:sockets is provided by the Worker runtime
-import { connect } from "cloudflare:sockets";
+
+// Runtime-agnostic TLS socket: tries cloudflare:sockets (Workers), falls back
+// to node:tls (dev sandbox / Node SSR). Avoids module-level import that would
+// crash outside Workers.
+type Sock = {
+  write: (b: Buffer) => Promise<void>;
+  read: () => Promise<{ value?: Uint8Array; done?: boolean }>;
+  close: () => Promise<void>;
+};
+
+async function openSocket(hostname: string, port: number): Promise<Sock> {
+  try {
+    // @ts-ignore - cloudflare:sockets is only present in the Worker runtime
+    const mod: any = await import(/* @vite-ignore */ "cloudflare:sockets");
+    const s: any = mod.connect({ hostname, port }, { secureTransport: "on", allowHalfOpen: false });
+    const writer = s.writable.getWriter();
+    const reader = s.readable.getReader();
+    return {
+      write: async (b) => { await writer.write(b); },
+      read: () => reader.read(),
+      close: async () => {
+        try { await writer.close(); } catch {}
+        try { await s.close(); } catch {}
+      },
+    };
+  } catch {
+    const tls: any = await import("node:tls");
+    const sock: any = tls.connect({ host: hostname, port, servername: hostname });
+    await new Promise<void>((res, rej) => {
+      sock.once("secureConnect", () => res());
+      sock.once("error", (e: any) => rej(e));
+    });
+    const queue: Uint8Array[] = [];
+    const waiters: Array<(v: { value?: Uint8Array; done?: boolean }) => void> = [];
+    let ended = false;
+    sock.on("data", (chunk: Buffer) => {
+      const w = waiters.shift();
+      if (w) w({ value: new Uint8Array(chunk) });
+      else queue.push(new Uint8Array(chunk));
+    });
+    const finish = () => {
+      ended = true;
+      while (waiters.length) waiters.shift()!({ done: true });
+    };
+    sock.on("end", finish);
+    sock.on("close", finish);
+    sock.on("error", finish);
+    return {
+      write: (b) => new Promise((res, rej) =>
+        sock.write(b, (err: any) => (err ? rej(err) : res())),
+      ),
+      read: () => {
+        if (queue.length) return Promise.resolve({ value: queue.shift()! });
+        if (ended) return Promise.resolve({ done: true });
+        return new Promise((res) => { waiters.push(res); });
+      },
+      close: async () => {
+        try { sock.end(); } catch {}
+        try { sock.destroy(); } catch {}
+      },
+    };
+  }
+}
 
 const SALT = "TXdfu$jyZ#TZHsg4";
 
@@ -202,14 +263,12 @@ export async function sendRoborockMqttCommand(opts: SendCommandOpts): Promise<Se
   const topicIn = `rr/m/i/${rriot.u}/${mqttUser}/${duid}`;
   const topicOut = `rr/m/o/${rriot.u}/${mqttUser}/${duid}`;
 
-  let socket: ReturnType<typeof connect> | null = null;
+  let sock: Sock | null = null;
   try {
-    socket = connect({ hostname, port }, { secureTransport: "on", allowHalfOpen: false });
-    const writer = socket.writable.getWriter();
-    const reader = socket.readable.getReader();
+    sock = await openSocket(hostname, port);
 
-    // Send CONNECT + SUBSCRIBE
-    await writer.write(buildConnect(clientId, mqttUser, mqttPassword));
+    // Send CONNECT
+    await sock.write(buildConnect(clientId, mqttUser, mqttPassword));
 
     let acked = false;
     let subbed = false;
@@ -218,16 +277,16 @@ export async function sendRoborockMqttCommand(opts: SendCommandOpts): Promise<Se
     const deadline = Date.now() + waitMs + 2000;
 
     const subscribeAndPublish = async () => {
-      await writer.write(buildSubscribe(1, topicOut));
+      await sock!.write(buildSubscribe(1, topicOut));
       const { msg } = buildRoborockPayload(localKey, method, params, requestId);
-      await writer.write(buildPublish(topicIn, msg));
+      await sock!.write(buildPublish(topicIn, msg));
     };
 
     while (Date.now() < deadline) {
       const remaining = deadline - Date.now();
-      const readPromise = reader.read();
-      const timeout = new Promise<{ done: true; value: undefined }>((resolve) =>
-        setTimeout(() => resolve({ done: true, value: undefined }), remaining)
+      const readPromise = sock.read();
+      const timeout = new Promise<{ done: true }>((resolve) =>
+        setTimeout(() => resolve({ done: true }), remaining),
       );
       const r: any = await Promise.race([readPromise, timeout]);
       if (r?.done || !r?.value) break;
@@ -237,43 +296,39 @@ export async function sendRoborockMqttCommand(opts: SendCommandOpts): Promise<Se
       buf = rest as Buffer;
       for (const p of packets) {
         if (p.type === 2) {
-          // CONNACK
           if (p.payload.length >= 2 && p.payload[1] !== 0) {
             return { ok: false, error: `MQTT CONNACK feilet: rc=${p.payload[1]}` };
           }
           acked = true;
           await subscribeAndPublish();
         } else if (p.type === 9) {
-          // SUBACK
           subbed = true;
         } else if (p.type === 3) {
-          // PUBLISH from broker
           if (p.payload.length < 2) continue;
           const tlen = (p.payload[0] << 8) | p.payload[1];
           const body = p.payload.subarray(2 + tlen);
           const parsed = tryParseRoborockResponse(Buffer.from(body), localKey);
           if (parsed && (parsed.id === requestId || parsed.result !== undefined)) {
             result = parsed.result ?? parsed.raw;
-            // graceful close
-            try { await writer.write(buildDisconnect()); } catch {}
-            try { await writer.close(); } catch {}
+            try { await sock.write(buildDisconnect()); } catch {}
+            try { await sock.close(); } catch {}
             return { ok: true, acked: true, result };
           }
         }
       }
       if (acked && subbed && result === undefined && Date.now() > deadline - waitMs / 2) {
-        // command sent, no response — return success without waiting for full deadline
+        // command sent, no response — keep waiting until deadline
       }
     }
 
-    try { await writer.write(buildDisconnect()); } catch {}
-    try { await writer.close(); } catch {}
+    try { await sock.write(buildDisconnect()); } catch {}
+    try { await sock.close(); } catch {}
     if (acked) {
       return { ok: true, acked: true, result: undefined };
     }
     return { ok: false, error: "Timeout: ingen CONNACK fra Roborock-broker" };
   } catch (e: any) {
-    try { await socket?.close(); } catch {}
+    try { await sock?.close(); } catch {}
     return { ok: false, error: e?.message ?? String(e) };
   }
 }
