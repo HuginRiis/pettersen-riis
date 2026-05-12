@@ -1,11 +1,12 @@
 import { createServerFn } from "@tanstack/react-start";
-import {
-  deleteHomeyConnection,
-  getHomeyConnection,
-  updateHomeyTokens,
-  type HomeyConnection,
-} from "./homey-connection";
+import type { HomeyConnection } from "./homey-connection";
 import { withApiLog } from "./api-call-log.server";
+
+// Server-only runtime imports — lazily loaded so the client bundle never pulls
+// in `homey-connection` (which depends on `client.server`).
+async function loadConnModule() {
+  return await import("./homey-connection");
+}
 
 export const HOMEY_SCOPES = ["homey", "homey.device.readonly"];
 
