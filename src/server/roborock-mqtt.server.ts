@@ -99,7 +99,7 @@ function crc32(buf: Uint8Array, length: number): number {
 
 // ---------- Roborock packet ----------
 function aesEcbEncrypt(key: Buffer, data: Buffer): Buffer {
-  const c = createCipheriv("aes-128-ecb", key, null);
+  const c = createCipheriv("aes-128-ecb", key, Buffer.alloc(0));
   c.setAutoPadding(true);
   return Buffer.concat([c.update(data), c.final()]);
 }
