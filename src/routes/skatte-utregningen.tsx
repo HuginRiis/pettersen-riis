@@ -225,6 +225,7 @@ function SkattePage() {
         data: {
           year, month: row.month, employer: row.employer,
           lonn: row.lonn, skatt: row.skatt, ekstra: row.ekstra,
+          profile,
         },
       });
       setRows((prev) => prev.map((r) => r.key === row.key
