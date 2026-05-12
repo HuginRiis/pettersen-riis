@@ -1,11 +1,16 @@
-import { createServerFn } from "@tanstack/react-start";
+import { createServerFn, createIsomorphicFn } from "@tanstack/react-start";
 import type { HomeyConnection } from "./homey-connection.server";
-import * as connModule from "./homey-connection.server";
 import { withApiLog } from "./api-call-log.server";
 
-async function loadConnModule(): Promise<typeof import("./homey-connection.server")> {
-  return connModule;
-}
+// Server-only loader — createIsomorphicFn strips the .server() body from the
+// client bundle, so the static import below never leaks into client code.
+const loadConnModule = createIsomorphicFn()
+  .server((): Promise<typeof import("./homey-connection.server")> =>
+    import("./homey-connection.server"),
+  )
+  .client((): Promise<typeof import("./homey-connection.server")> => {
+    throw new Error("homey-connection is server-only");
+  });
 
 export const HOMEY_SCOPES = ["homey", "homey.device.readonly"];
 
