@@ -641,8 +641,55 @@ function SkattePage() {
   );
 }
 
-function FragmentRows({ children }: { children: React.ReactNode }) {
-  return <>{children}</>;
+        {/* Frittstående skatteberegning */}
+        <StandaloneTaxCalculator defaultYear={year} />
+      </section>
+    </PageShell>
+  );
+}
+
+function BreakEvenSuggestion({ rows, skalBetale }: { rows: Row[]; skalBetale: number }) {
+  const filledMonths = new Set(rows.filter((r) => r.lonn > 0 || r.skatt > 0).map((r) => r.month));
+  const monthsDone = filledMonths.size;
+  const monthsLeft = Math.max(0, 12 - monthsDone);
+  const sumLonnSoFar = rows.reduce((a, r) => a + r.lonn, 0);
+  const sumSkattSoFar = rows.reduce((a, r) => a + r.skatt, 0); // ordinær, uten ekstra
+  const sumEkstraSoFar = rows.reduce((a, r) => a + r.ekstra, 0);
+  const avgLonn = monthsDone > 0 ? sumLonnSoFar / monthsDone : 0;
+  const avgSkattOrd = monthsDone > 0 ? sumSkattSoFar / monthsDone : 0;
+  const projOrdSkattRest = avgSkattOrd * monthsLeft;
+  const projTotalOrdSkatt = sumSkattSoFar + projOrdSkattRest;
+  const mangler = skalBetale - projTotalOrdSkatt - sumEkstraSoFar;
+  const ekstraPrMnd = monthsLeft > 0 ? Math.max(0, mangler / monthsLeft) : 0;
+  const overskudd = mangler < 0 ? Math.abs(mangler) : 0;
+
+  if (skalBetale <= 0) return null;
+
+  return (
+    <Card className="p-5 border-2 border-dashed border-primary/40 space-y-2">
+      <div className="text-xs uppercase tracking-widest text-muted-foreground">
+        Forslag — ekstra skatt pr mnd for å gå i null
+      </div>
+      <div className="text-3xl md:text-4xl font-semibold tabular-nums text-primary">
+        {fmt(ekstraPrMnd)} kr / mnd
+      </div>
+      <div className="text-sm text-muted-foreground space-y-1">
+        <div>
+          Basert på snitt fra {monthsDone} fylte måneder (lønn ~{fmt(avgLonn)} kr/mnd, ordinær skatt ~{fmt(avgSkattOrd)} kr/mnd) og {monthsLeft} måneder igjen.
+        </div>
+        <div>
+          Antatt skatt for året: {fmt(skalBetale)} kr — projisert ordinær skatt: {fmt(projTotalOrdSkatt)} kr — allerede ekstra trukket: {fmt(sumEkstraSoFar)} kr.
+        </div>
+        {overskudd > 0 && (
+          <div className="text-green-500">Du ligger an til {fmt(overskudd)} kr til gode — ingen ekstra trekk nødvendig.</div>
+        )}
+      </div>
+      <div className="text-xs text-muted-foreground italic">
+        Frittstående forslag — påvirker ikke tabellen eller justeringene over.
+      </div>
+    </Card>
+  );
+}
 }
 
 function NumCell({ value, onChange }: { value: number; onChange: (v: number) => void }) {
