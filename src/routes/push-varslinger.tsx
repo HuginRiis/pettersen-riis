@@ -6,6 +6,7 @@ import { UpcomingPushPanel } from "@/components/UpcomingPushPanel";
 import { TibberCronStatusPanel } from "@/components/TibberCronStatusPanel";
 import { PushSchedulingSettings } from "@/components/PushSchedulingSettings";
 import { MenuPreferencesPanel } from "@/components/MenuPreferencesPanel";
+import { MenuVisibilityPanel } from "@/components/MenuVisibilityPanel";
 import { HeaderBadgeSettingsPanel } from "@/components/HeaderBadgeSettingsPanel";
 import { FavoritesManagerPanel } from "@/components/FavoritesManagerPanel";
 import { LightScenesPanel } from "@/components/LightScenesPanel";
