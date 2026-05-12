@@ -483,14 +483,24 @@ export function RoborockPanel() {
             <p className="text-[11px] text-muted-foreground">
               Eller logg inn på Roborock-skyen for å se status (uten kontroll-knapper):
             </p>
-            <button
-              onClick={onSend}
-              disabled={busy !== null}
-              className="text-xs inline-flex items-center gap-2 px-3 py-2 rounded border border-border hover:border-primary/60 disabled:opacity-50"
-            >
-              {busy === "send" ? <Loader2 size={12} className="animate-spin" /> : <Mail size={12} />}
-              Send kode på e-post
-            </button>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={onPasswordLogin}
+                disabled={busy !== null}
+                className="text-xs inline-flex items-center gap-2 px-3 py-2 rounded border border-primary/60 text-primary hover:bg-primary/10 disabled:opacity-50"
+              >
+                {busy === "password" ? <Loader2 size={12} className="animate-spin" /> : <KeyRound size={12} />}
+                Logg inn med passord
+              </button>
+              <button
+                onClick={onSend}
+                disabled={busy !== null}
+                className="text-xs inline-flex items-center gap-2 px-3 py-2 rounded border border-border hover:border-primary/60 disabled:opacity-50"
+              >
+                {busy === "send" ? <Loader2 size={12} className="animate-spin" /> : <Mail size={12} />}
+                Send kode på e-post
+              </button>
+            </div>
             <div className="flex items-center gap-2">
               <input
                 inputMode="numeric"
