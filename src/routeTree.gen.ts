@@ -17,6 +17,7 @@ import { Route as TreningRouteImport } from './routes/trening'
 import { Route as StromkronikenRouteImport } from './routes/stromkroniken'
 import { Route as SteintavleRouteImport } from './routes/steintavle'
 import { Route as SmarthusRouteImport } from './routes/smarthus'
+import { Route as SkatteUtregningenRouteImport } from './routes/skatte-utregningen'
 import { Route as RoborockRouteImport } from './routes/roborock'
 import { Route as PushVarslingerRouteImport } from './routes/push-varslinger'
 import { Route as PollenRouteImport } from './routes/pollen'
@@ -80,6 +81,11 @@ const SteintavleRoute = SteintavleRouteImport.update({
 const SmarthusRoute = SmarthusRouteImport.update({
   id: '/smarthus',
   path: '/smarthus',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SkatteUtregningenRoute = SkatteUtregningenRouteImport.update({
+  id: '/skatte-utregningen',
+  path: '/skatte-utregningen',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RoborockRoute = RoborockRouteImport.update({
@@ -221,6 +227,7 @@ export interface FileRoutesByFullPath {
   '/pollen': typeof PollenRoute
   '/push-varslinger': typeof PushVarslingerRoute
   '/roborock': typeof RoborockRoute
+  '/skatte-utregningen': typeof SkatteUtregningenRoute
   '/smarthus': typeof SmarthusRoute
   '/steintavle': typeof SteintavleRoute
   '/stromkroniken': typeof StromkronikenRoute
@@ -255,6 +262,7 @@ export interface FileRoutesByTo {
   '/pollen': typeof PollenRoute
   '/push-varslinger': typeof PushVarslingerRoute
   '/roborock': typeof RoborockRoute
+  '/skatte-utregningen': typeof SkatteUtregningenRoute
   '/smarthus': typeof SmarthusRoute
   '/steintavle': typeof SteintavleRoute
   '/stromkroniken': typeof StromkronikenRoute
@@ -290,6 +298,7 @@ export interface FileRoutesById {
   '/pollen': typeof PollenRoute
   '/push-varslinger': typeof PushVarslingerRoute
   '/roborock': typeof RoborockRoute
+  '/skatte-utregningen': typeof SkatteUtregningenRoute
   '/smarthus': typeof SmarthusRoute
   '/steintavle': typeof SteintavleRoute
   '/stromkroniken': typeof StromkronikenRoute
@@ -326,6 +335,7 @@ export interface FileRouteTypes {
     | '/pollen'
     | '/push-varslinger'
     | '/roborock'
+    | '/skatte-utregningen'
     | '/smarthus'
     | '/steintavle'
     | '/stromkroniken'
@@ -360,6 +370,7 @@ export interface FileRouteTypes {
     | '/pollen'
     | '/push-varslinger'
     | '/roborock'
+    | '/skatte-utregningen'
     | '/smarthus'
     | '/steintavle'
     | '/stromkroniken'
@@ -394,6 +405,7 @@ export interface FileRouteTypes {
     | '/pollen'
     | '/push-varslinger'
     | '/roborock'
+    | '/skatte-utregningen'
     | '/smarthus'
     | '/steintavle'
     | '/stromkroniken'
@@ -429,6 +441,7 @@ export interface RootRouteChildren {
   PollenRoute: typeof PollenRoute
   PushVarslingerRoute: typeof PushVarslingerRoute
   RoborockRoute: typeof RoborockRoute
+  SkatteUtregningenRoute: typeof SkatteUtregningenRoute
   SmarthusRoute: typeof SmarthusRoute
   SteintavleRoute: typeof SteintavleRoute
   StromkronikenRoute: typeof StromkronikenRoute
@@ -506,6 +519,13 @@ declare module '@tanstack/react-router' {
       path: '/smarthus'
       fullPath: '/smarthus'
       preLoaderRoute: typeof SmarthusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/skatte-utregningen': {
+      id: '/skatte-utregningen'
+      path: '/skatte-utregningen'
+      fullPath: '/skatte-utregningen'
+      preLoaderRoute: typeof SkatteUtregningenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/roborock': {
@@ -693,6 +713,7 @@ const rootRouteChildren: RootRouteChildren = {
   PollenRoute: PollenRoute,
   PushVarslingerRoute: PushVarslingerRoute,
   RoborockRoute: RoborockRoute,
+  SkatteUtregningenRoute: SkatteUtregningenRoute,
   SmarthusRoute: SmarthusRoute,
   SteintavleRoute: SteintavleRoute,
   StromkronikenRoute: StromkronikenRoute,
