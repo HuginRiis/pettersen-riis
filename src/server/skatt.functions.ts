@@ -178,6 +178,8 @@ export type PayslipFile = {
   mime_type: string | null;
   size_bytes: number | null;
   uploaded_at: string;
+  extracted_text: string | null;
+  extracted_at: string | null;
 };
 
 export const listPayslipFiles = createServerFn({ method: "GET" })
@@ -185,13 +187,86 @@ export const listPayslipFiles = createServerFn({ method: "GET" })
   .handler(async ({ data }) => {
     const { data: rows, error } = await supabaseAdmin
       .from("payslip_files")
-      .select("id,year,month,employer,file_path,file_url,original_name,mime_type,size_bytes,uploaded_at")
+      .select("id,year,month,employer,file_path,file_url,original_name,mime_type,size_bytes,uploaded_at,extracted_text,extracted_at")
       .eq("profile", data.profile)
       .order("year", { ascending: false })
       .order("month", { ascending: false })
       .order("uploaded_at", { ascending: false });
     if (error) throw new Error(error.message);
     return (rows ?? []) as PayslipFile[];
+  });
+
+export const extractPayslipText = createServerFn({ method: "POST" })
+  .inputValidator((d) => z.object({ id: z.string().uuid(), force: z.boolean().optional() }).parse(d))
+  .handler(async ({ data }) => {
+    const { data: row, error: selErr } = await supabaseAdmin
+      .from("payslip_files")
+      .select("id,file_path,file_url,mime_type,extracted_text")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (selErr) throw new Error(selErr.message);
+    if (!row) throw new Error("Fant ikke lønnslippen");
+    if (row.extracted_text && !data.force) {
+      return { text: row.extracted_text as string, cached: true };
+    }
+
+    const apiKey = process.env.LOVABLE_API_KEY;
+    if (!apiKey) throw new Error("LOVABLE_API_KEY mangler");
+
+    // Last ned filen som base64 — bruk signed URL fra storage så vi ikke er avhengig av public bucket
+    const { data: signed, error: sErr } = await supabaseAdmin.storage
+      .from("payslips")
+      .createSignedUrl(row.file_path as string, 60);
+    if (sErr || !signed?.signedUrl) throw new Error(sErr?.message ?? "Klarte ikke lage signert URL");
+    const fileRes = await fetch(signed.signedUrl);
+    if (!fileRes.ok) throw new Error(`Klarte ikke laste filen (${fileRes.status})`);
+    const buf = new Uint8Array(await fileRes.arrayBuffer());
+    let bin = "";
+    for (let i = 0; i < buf.length; i++) bin += String.fromCharCode(buf[i]);
+    const b64 = btoa(bin);
+    const mime = (row.mime_type as string) || "image/jpeg";
+    const dataUrl = `data:${mime};base64,${b64}`;
+
+    const prompt = `Du er en norsk lønns-ekspert. Les lønnsslippen i bildet og hent ut ALLE detaljer som tekst. Strukturer ryddig med overskrifter:
+- Arbeidsgiver, arbeidstaker, periode, utbetalingsdato
+- Brutto lønn (med timer/sats hvis oppgitt)
+- Tillegg, bonuser, naturalytelser
+- Trekk: skatt, fagforening, pensjon, andre trekk
+- Netto utbetalt
+- Feriepenger / opptjent
+- Eventuelle kommentarer eller kontonummer
+Returner ren tekst på norsk — ingen markdown-kodeblokker.`;
+
+    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-pro",
+        messages: [
+          {
+            role: "user",
+            content: [
+              { type: "text", text: prompt },
+              { type: "image_url", image_url: { url: dataUrl } },
+            ],
+          },
+        ],
+      }),
+    });
+    if (!res.ok) {
+      const txt = await res.text();
+      throw new Error(`AI-feil ${res.status}: ${txt.slice(0, 300)}`);
+    }
+    const json: any = await res.json();
+    const text: string = (json?.choices?.[0]?.message?.content ?? "").trim();
+    if (!text) throw new Error("AI returnerte tom tekst");
+
+    await supabaseAdmin
+      .from("payslip_files")
+      .update({ extracted_text: text, extracted_at: new Date().toISOString() })
+      .eq("id", data.id);
+
+    return { text, cached: false };
   });
 
 const savePayslipFileSchema = z.object({

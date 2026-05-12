@@ -1151,6 +1151,8 @@ export type Database = {
       payslip_files: {
         Row: {
           employer: string | null
+          extracted_at: string | null
+          extracted_text: string | null
           file_path: string
           file_url: string
           id: string
@@ -1164,6 +1166,8 @@ export type Database = {
         }
         Insert: {
           employer?: string | null
+          extracted_at?: string | null
+          extracted_text?: string | null
           file_path: string
           file_url: string
           id?: string
@@ -1177,6 +1181,8 @@ export type Database = {
         }
         Update: {
           employer?: string | null
+          extracted_at?: string | null
+          extracted_text?: string | null
           file_path?: string
           file_url?: string
           id?: string

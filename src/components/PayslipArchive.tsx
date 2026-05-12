@@ -1,7 +1,8 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Card } from "@/components/ui/card";
-import { ChevronDown, FileText, ExternalLink, Trash2 } from "lucide-react";
+import { ChevronDown, FileText, ExternalLink, Trash2, Eye, Sparkles } from "lucide-react";
 import type { PayslipFile } from "@/server/skatt.functions";
+import { PayslipDetailDialog } from "@/components/PayslipDetailDialog";
 
 const MONTH_NAMES = [
   "Januar", "Februar", "Mars", "April", "Mai", "Juni",
@@ -19,14 +20,30 @@ export function PayslipArchive({
   setOpenYears: React.Dispatch<React.SetStateAction<Record<number, boolean>>>;
   onDelete: (id: string) => void;
 }) {
+  const [localFiles, setLocalFiles] = useState<PayslipFile[]>(files);
+  const [activeId, setActiveId] = useState<string | null>(null);
+
+  // Hold lokale filer i sync med props
+  if (files !== undefined && files.length !== localFiles.length) {
+    // enkel sync: oppdater bare hvis lengden endres (ny opplasting / sletting)
+    // Detaljert tekst-sync gjøres via onTextUpdated.
+  }
+
+  const merged = useMemo<PayslipFile[]>(() => {
+    const map = new Map(localFiles.map((f) => [f.id, f]));
+    return files.map((f) => ({ ...f, ...(map.get(f.id) ?? {}) }));
+  }, [files, localFiles]);
+
   const byYear = useMemo(() => {
     const m = new Map<number, PayslipFile[]>();
-    for (const f of files) {
+    for (const f of merged) {
       if (!m.has(f.year)) m.set(f.year, []);
       m.get(f.year)!.push(f);
     }
     return Array.from(m.entries()).sort((a, b) => b[0] - a[0]);
-  }, [files]);
+  }, [merged]);
+
+  const active = activeId ? merged.find((f) => f.id === activeId) ?? null : null;
 
   return (
     <Card className="p-5 space-y-3">
@@ -34,10 +51,10 @@ export function PayslipArchive({
         <div>
           <h2 className="text-lg font-semibold">Lønnsslipp-arkiv</h2>
           <p className="text-xs text-muted-foreground">
-            Alle opplastede slipper — sortert per år. Klikk for å åpne.
+            Alle opplastede slipper — sortert per år. Klikk «Detaljer» for bilde med zoom og full tekst.
           </p>
         </div>
-        <div className="text-xs text-muted-foreground">{files.length} filer</div>
+        <div className="text-xs text-muted-foreground">{merged.length} filer</div>
       </div>
 
       {byYear.length === 0 && (
@@ -71,15 +88,13 @@ export function PayslipArchive({
                     <li key={f.id} className="flex items-center gap-2 px-3 py-2 text-sm">
                       <FileText className="size-4 text-muted-foreground shrink-0" />
                       <div className="flex-1 min-w-0">
-                        <a
-                          href={f.file_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="font-medium hover:underline truncate inline-flex items-center gap-1"
+                        <button
+                          onClick={() => setActiveId(f.id)}
+                          className="font-medium hover:underline truncate inline-flex items-center gap-1 text-left"
                         >
                           {f.original_name || f.file_path.split("/").pop()}
-                          <ExternalLink className="size-3 opacity-60" />
-                        </a>
+                          {f.extracted_text && <Sparkles className="size-3 text-primary" />}
+                        </button>
                         <div className="text-xs text-muted-foreground">
                           {f.month ? MONTH_NAMES[f.month - 1] : "—"}
                           {f.employer ? ` · ${f.employer}` : ""}
@@ -87,6 +102,22 @@ export function PayslipArchive({
                           {new Date(f.uploaded_at).toLocaleDateString("nb-NO")}
                         </div>
                       </div>
+                      <button
+                        onClick={() => setActiveId(f.id)}
+                        className="text-muted-foreground hover:text-primary p-1"
+                        title="Vis detaljer"
+                      >
+                        <Eye className="size-4" />
+                      </button>
+                      <a
+                        href={f.file_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-muted-foreground hover:text-primary p-1"
+                        title="Åpne original"
+                      >
+                        <ExternalLink className="size-4" />
+                      </a>
                       <button
                         onClick={() => onDelete(f.id)}
                         className="text-muted-foreground hover:text-red-500 p-1"
@@ -102,6 +133,22 @@ export function PayslipArchive({
           );
         })}
       </div>
+
+      <PayslipDetailDialog
+        file={active}
+        open={!!active}
+        onOpenChange={(v) => { if (!v) setActiveId(null); }}
+        onTextUpdated={(id, text) => {
+          setLocalFiles((prev) => {
+            const exists = prev.find((p) => p.id === id);
+            const base = files.find((f) => f.id === id);
+            if (!base) return prev;
+            const next: PayslipFile = { ...base, ...exists, extracted_text: text, extracted_at: new Date().toISOString() };
+            const filtered = prev.filter((p) => p.id !== id);
+            return [...filtered, next];
+          });
+        }}
+      />
     </Card>
   );
 }
