@@ -16,7 +16,7 @@ export const Route = createFileRoute("/roborock")({
 function RoborockRoute() {
   return (
     <PageShell>
-      <PageHero title="Roborock" subtitle="Innlogging og status fra skyen" />
+      <PageHero title="Roborock" subtitle="Innlogging og status fra skyen" image={heroImg} />
       <RoborockPanel />
     </PageShell>
   );
