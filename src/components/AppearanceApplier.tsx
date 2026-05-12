@@ -6,6 +6,11 @@ import {
   getHeaderLeftInsetPct,
   APPEARANCE_EVENTS,
 } from "@/hooks/use-appearance";
+import {
+  applyChartAppearanceToDocument,
+  loadChartAppearance,
+  CHART_APPEARANCE_EVENT,
+} from "@/hooks/use-chart-appearance";
 
 /**
  * Applies appearance CSS variables to the document root:
