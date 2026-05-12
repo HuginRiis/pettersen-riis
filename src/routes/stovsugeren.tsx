@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { PageShell, PageHero } from "@/components/PageShell";
-import { RoborockPanel } from "@/components/RoborockPanel";
-import heroImg from "@/assets/got-smarthus.jpg";
+import { StovsugerenPanel } from "@/components/StovsugerenPanel";
+import heroImg from "@/assets/got-stovsuger-hero.jpg";
 
 export const Route = createFileRoute("/stovsugeren")({
   head: () => ({
@@ -10,6 +10,7 @@ export const Route = createFileRoute("/stovsugeren")({
       { name: "description", content: "Roborock-støvsugerne på Borgen og hytta — status, sugekraft, mopp og kommandoer." },
       { property: "og:title", content: "Støvsugeren" },
       { property: "og:description", content: "Begge Roborock-støvsugere samlet på ett sted." },
+      { property: "og:image", content: heroImg },
     ],
   }),
   component: StovsugerenPage,
@@ -21,10 +22,10 @@ function StovsugerenPage() {
       <PageHero
         eyebrow="Borgens tjenere"
         title="Støvsugeren"
-        subtitle="Roborock på Borgen og på hytta."
+        subtitle="Roborock-knektene på Borgen og på hytta — alle detaljer, alle befalinger."
         image={heroImg}
       />
-      <RoborockPanel />
+      <StovsugerenPanel />
     </PageShell>
   );
 }
