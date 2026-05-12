@@ -250,13 +250,14 @@ export function RoborockPanel() {
   const fetchSnap = useServerFn(getRoborockSnapshot);
   const sendCode = useServerFn(sendRoborockCode);
   const submitCode = useServerFn(submitRoborockCode);
+  const passwordLogin = useServerFn(loginRoborockWithPassword);
   const fetchHomey = useServerFn(getRoborockHomeySnapshot);
   const setCap = useServerFn(setRoborockHomeyCapability);
 
   const [snap, setSnap] = useState<Snap | null>(null);
   const [homey, setHomey] = useState<HomeySnap | null>(null);
   const [loading, setLoading] = useState(true);
-  const [busy, setBusy] = useState<"send" | "verify" | null>(null);
+  const [busy, setBusy] = useState<"send" | "verify" | "password" | null>(null);
   const [busyCap, setBusyCap] = useState<string | null>(null);
   const [code, setCode] = useState("");
   const [info, setInfo] = useState<string | null>(null);
