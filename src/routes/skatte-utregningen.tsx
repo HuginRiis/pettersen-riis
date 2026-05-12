@@ -23,6 +23,8 @@ import {
 } from "@/server/skatt.functions";
 import heroImg from "@/assets/got-skatt.jpg";
 import { PayslipArchive } from "@/components/PayslipArchive";
+import { SkattCharts } from "@/components/SkattCharts";
+import { StandaloneTaxCalculator } from "@/components/StandaloneTaxCalculator";
 
 export const Route = createFileRoute("/skatte-utregningen")({
   head: () => ({
