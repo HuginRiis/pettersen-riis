@@ -429,7 +429,11 @@ function SkattePage() {
           <Stat label="Snitt skatte%" value={fmtPct(calc.skattProsent)} />
         </div>
 
-        {/* Resultat */}
+        {/* Kurver siste 3 år */}
+        <SkattCharts currentYear={year} refreshKey={rows.length} />
+
+        {/* Forslag til ekstra skatt pr mnd (frittstående) */}
+        <BreakEvenSuggestion rows={rows} skalBetale={settings.skal_betale} />
         <Card className={`p-5 border-2 ${tilGode ? "border-green-600/40" : "border-red-600/40"}`}>
           <div className="text-xs uppercase tracking-widest text-muted-foreground">
             {tilGode ? "Skatt til gode" : "Restskatt"}
