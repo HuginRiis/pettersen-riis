@@ -43,6 +43,111 @@ export const listTaxYear = createServerFn({ method: "GET" })
     };
   });
 
+export type MonthlyAgg = { year: number; month: number; lonn: number; skatt: number; ekstra: number };
+
+export const listMonthlyRange = createServerFn({ method: "GET" })
+  .inputValidator((d) => z.object({ years: z.array(z.number().int()).min(1).max(10) }).parse(d))
+  .handler(async ({ data }) => {
+    const { data: rows, error } = await supabaseAdmin
+      .from("tax_monthly")
+      .select("year,month,lonn,skatt,ekstra")
+      .in("year", data.years);
+    if (error) throw new Error(error.message);
+    const map = new Map<string, MonthlyAgg>();
+    for (const r of rows ?? []) {
+      const k = `${r.year}-${r.month}`;
+      const cur = map.get(k) ?? { year: r.year as number, month: r.month as number, lonn: 0, skatt: 0, ekstra: 0 };
+      cur.lonn += Number(r.lonn);
+      cur.skatt += Number(r.skatt);
+      cur.ekstra += Number(r.ekstra);
+      map.set(k, cur);
+    }
+    return Array.from(map.values());
+  });
+
+const taxCalcSchema = z.object({
+  year: z.number().int(),
+  brutto: z.number().nonnegative(),
+  pensjon: z.number().nonnegative().default(0),
+  fagforening: z.number().nonnegative().default(0),
+  renter: z.number().nonnegative().default(0),
+  andreFradrag: z.number().nonnegative().default(0),
+  sivilstand: z.enum(["enslig", "gift"]).default("enslig"),
+  skatteklasse: z.union([z.literal(1), z.literal(2)]).default(1),
+  notes: z.string().max(500).optional(),
+});
+
+export const calculateNorwegianTax = createServerFn({ method: "POST" })
+  .inputValidator((d) => taxCalcSchema.parse(d))
+  .handler(async ({ data }) => {
+    const apiKey = process.env.LOVABLE_API_KEY;
+    if (!apiKey) throw new Error("LOVABLE_API_KEY mangler");
+
+    const prompt = `Du er norsk skatteekspert. Beregn estimert skatt for inntektsåret ${data.year} basert på offisielle norske skatteregler (Skatteetaten) for det året: trinnskatt, alminnelig inntekt 22%, trygdeavgift 7,7% (lønn), minstefradrag, personfradrag, evt. fradrag for fagforening, renter, pensjonsinnbetaling og andre fradrag.
+
+Inndata:
+- Bruttolønn: ${data.brutto} kr
+- Pensjonsinnbetaling (egen): ${data.pensjon} kr
+- Fagforeningskontingent: ${data.fagforening} kr
+- Rentefradrag (gjeldsrenter): ${data.renter} kr
+- Andre fradrag: ${data.andreFradrag} kr
+- Sivilstand: ${data.sivilstand}
+- Skatteklasse: ${data.skatteklasse}
+${data.notes ? `- Tilleggsinfo: ${data.notes}` : ""}
+
+Returner KUN JSON i dette formatet:
+{
+  "year": ${data.year},
+  "minstefradrag": 0,
+  "personfradrag": 0,
+  "alminneligInntekt": 0,
+  "skattAlminnelig": 0,
+  "trinnskatt": 0,
+  "trygdeavgift": 0,
+  "fradragSum": 0,
+  "totalSkatt": 0,
+  "marginalSkatt": 0,
+  "gjennomsnittSkattProsent": 0,
+  "nettoUtbetalt": 0,
+  "forklaring": "kort forklaring av trinnene"
+}
+Alle tall i NOK (heltall). Marginalskatt og gjennomsnittsprosent som tall (f.eks. 35.2).`;
+
+    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-pro",
+        messages: [{ role: "user", content: prompt }],
+      }),
+    });
+    if (!res.ok) {
+      const txt = await res.text();
+      throw new Error(`AI-feil ${res.status}: ${txt.slice(0, 300)}`);
+    }
+    const json: any = await res.json();
+    const content: string = json?.choices?.[0]?.message?.content ?? "";
+    const cleaned = content.replace(/```json|```/g, "").trim();
+    const match = cleaned.match(/\{[\s\S]*\}/);
+    if (!match) throw new Error("Klarte ikke tolke svar fra AI");
+    const parsed = JSON.parse(match[0]);
+    return parsed as {
+      year: number;
+      minstefradrag: number;
+      personfradrag: number;
+      alminneligInntekt: number;
+      skattAlminnelig: number;
+      trinnskatt: number;
+      trygdeavgift: number;
+      fradragSum: number;
+      totalSkatt: number;
+      marginalSkatt: number;
+      gjennomsnittSkattProsent: number;
+      nettoUtbetalt: number;
+      forklaring: string;
+    };
+  });
+
 export const listTaxYears = createServerFn({ method: "GET" }).handler(async () => {
   const { data, error } = await supabaseAdmin
     .from("tax_year_settings")
