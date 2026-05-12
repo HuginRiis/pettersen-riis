@@ -636,10 +636,6 @@ function SkattePage() {
             </Button>
           </div>
         </Card>
-      </section>
-    </PageShell>
-  );
-}
 
         {/* Frittstående skatteberegning */}
         <StandaloneTaxCalculator defaultYear={year} />
