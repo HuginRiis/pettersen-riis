@@ -40,7 +40,6 @@ function isLightLike(d: HomeyDeviceSnapshot): boolean {
 
 export function LightScenesPanel() {
   const fetchSnap = useServerFn(getHomeySnapshot);
-  const { prefs, setUseGlobalLightScenes } = useMenuPrefs();
   const [who, setWho] = useState<string>("Alle");
   const [scenes, setScenes] = useState<Scene[]>(DEFAULTS);
   const [devices, setDevices] = useState<{ id: string; name: string; zoneName: string; hasDim: boolean }[]>([]);
@@ -49,8 +48,7 @@ export function LightScenesPanel() {
   const [search, setSearch] = useState("");
   const [openSlot, setOpenSlot] = useState<number | null>(null);
 
-  const useGlobal = prefs.useGlobalLightScenes;
-  const targetWho = useGlobal ? "__GLOBAL__" : who;
+  const targetWho = "__GLOBAL__";
 
   useEffect(() => {
     setWho(getStoredWho() || "Alle");
