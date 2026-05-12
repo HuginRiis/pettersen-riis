@@ -201,12 +201,12 @@ export function PayslipDetailDialog({
             </Button>
           </div>
           {text ? (
-            <pre className="whitespace-pre-wrap text-xs leading-relaxed font-sans text-foreground/90">
+            <pre className="whitespace-pre-wrap text-xs leading-relaxed font-serif text-amber-950 dark:text-amber-100 bg-amber-50/90 dark:bg-amber-950/30 border border-amber-700/40 rounded-md p-4 shadow-inner">
               {text}
             </pre>
           ) : (
-            <p className="text-xs text-muted-foreground">
-              Ingen tekst hentet ut ennå. Klikk «Hent detaljer» for å la AI lese lønnslippen og vise alt innholdet som tekst her.
+            <p className="text-xs text-muted-foreground italic">
+              Ingen pergamentrull åpnet ennå. Klikk «Hent detaljer» for å la maesteren ved Citadellet lese slippen og skrive ut hele krønnika.
             </p>
           )}
         </div>
