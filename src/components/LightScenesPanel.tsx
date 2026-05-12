@@ -1,10 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Lightbulb, Save, Search, Loader2, Settings2, Globe2, User } from "lucide-react";
+import { Lightbulb, Save, Search, Loader2, Settings2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getStoredWho } from "@/lib/push-client";
 import { getHomeySnapshot, type HomeyDeviceSnapshot } from "@/server/homey";
-import { useMenuPrefs } from "@/hooks/use-menu-prefs";
 
 type Scene = {
   slot: number;
@@ -40,7 +39,6 @@ function isLightLike(d: HomeyDeviceSnapshot): boolean {
 
 export function LightScenesPanel() {
   const fetchSnap = useServerFn(getHomeySnapshot);
-  const { prefs, setUseGlobalLightScenes } = useMenuPrefs();
   const [who, setWho] = useState<string>("Alle");
   const [scenes, setScenes] = useState<Scene[]>(DEFAULTS);
   const [devices, setDevices] = useState<{ id: string; name: string; zoneName: string; hasDim: boolean }[]>([]);
@@ -49,8 +47,7 @@ export function LightScenesPanel() {
   const [search, setSearch] = useState("");
   const [openSlot, setOpenSlot] = useState<number | null>(null);
 
-  const useGlobal = prefs.useGlobalLightScenes;
-  const targetWho = useGlobal ? "__GLOBAL__" : who;
+  const targetWho = "__GLOBAL__";
 
   useEffect(() => {
     setWho(getStoredWho() || "Alle");
@@ -182,31 +179,8 @@ export function LightScenesPanel() {
         </h3>
         <p className="text-sm text-muted-foreground mt-1">
           Tolv knapper på Lys-siden (4 rader á 3). Tilpass navn og hvilke lys hver knapp styrer.
-          {useGlobal ? (
-            <> Lagres <span className="text-primary">globalt for alle</span>.</>
-          ) : (
-            <> Lagres for <span className="text-primary">{who}</span>.</>
-          )}
+          Lagres <span className="text-primary">globalt for alle</span>.
         </p>
-
-        <div className="mt-3 inline-flex rounded-lg border border-border overflow-hidden text-xs">
-          <button
-            onClick={() => setUseGlobalLightScenes(false)}
-            className={`px-3 py-1.5 inline-flex items-center gap-1.5 transition-colors ${
-              !useGlobal ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <User size={12} /> Personlig ({who})
-          </button>
-          <button
-            onClick={() => setUseGlobalLightScenes(true)}
-            className={`px-3 py-1.5 inline-flex items-center gap-1.5 transition-colors border-l border-border ${
-              useGlobal ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <Globe2 size={12} /> Global (alle)
-          </button>
-        </div>
 
         {loading && <div className="text-xs text-muted-foreground mt-3">Laster…</div>}
 
