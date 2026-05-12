@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Upload, Save, Loader2, Check, Plus, Trash2, ChevronDown, FileText, ExternalLink } from "lucide-react";
 import {
   listTaxYear,
