@@ -263,14 +263,12 @@ export async function sendRoborockMqttCommand(opts: SendCommandOpts): Promise<Se
   const topicIn = `rr/m/i/${rriot.u}/${mqttUser}/${duid}`;
   const topicOut = `rr/m/o/${rriot.u}/${mqttUser}/${duid}`;
 
-  let socket: ReturnType<typeof connect> | null = null;
+  let sock: Sock | null = null;
   try {
-    socket = connect({ hostname, port }, { secureTransport: "on", allowHalfOpen: false });
-    const writer = socket.writable.getWriter();
-    const reader = socket.readable.getReader();
+    sock = await openSocket(hostname, port);
 
-    // Send CONNECT + SUBSCRIBE
-    await writer.write(buildConnect(clientId, mqttUser, mqttPassword));
+    // Send CONNECT
+    await sock.write(buildConnect(clientId, mqttUser, mqttPassword));
 
     let acked = false;
     let subbed = false;
@@ -279,16 +277,16 @@ export async function sendRoborockMqttCommand(opts: SendCommandOpts): Promise<Se
     const deadline = Date.now() + waitMs + 2000;
 
     const subscribeAndPublish = async () => {
-      await writer.write(buildSubscribe(1, topicOut));
+      await sock!.write(buildSubscribe(1, topicOut));
       const { msg } = buildRoborockPayload(localKey, method, params, requestId);
-      await writer.write(buildPublish(topicIn, msg));
+      await sock!.write(buildPublish(topicIn, msg));
     };
 
     while (Date.now() < deadline) {
       const remaining = deadline - Date.now();
-      const readPromise = reader.read();
-      const timeout = new Promise<{ done: true; value: undefined }>((resolve) =>
-        setTimeout(() => resolve({ done: true, value: undefined }), remaining)
+      const readPromise = sock.read();
+      const timeout = new Promise<{ done: true }>((resolve) =>
+        setTimeout(() => resolve({ done: true }), remaining),
       );
       const r: any = await Promise.race([readPromise, timeout]);
       if (r?.done || !r?.value) break;
@@ -298,43 +296,39 @@ export async function sendRoborockMqttCommand(opts: SendCommandOpts): Promise<Se
       buf = rest as Buffer;
       for (const p of packets) {
         if (p.type === 2) {
-          // CONNACK
           if (p.payload.length >= 2 && p.payload[1] !== 0) {
             return { ok: false, error: `MQTT CONNACK feilet: rc=${p.payload[1]}` };
           }
           acked = true;
           await subscribeAndPublish();
         } else if (p.type === 9) {
-          // SUBACK
           subbed = true;
         } else if (p.type === 3) {
-          // PUBLISH from broker
           if (p.payload.length < 2) continue;
           const tlen = (p.payload[0] << 8) | p.payload[1];
           const body = p.payload.subarray(2 + tlen);
           const parsed = tryParseRoborockResponse(Buffer.from(body), localKey);
           if (parsed && (parsed.id === requestId || parsed.result !== undefined)) {
             result = parsed.result ?? parsed.raw;
-            // graceful close
-            try { await writer.write(buildDisconnect()); } catch {}
-            try { await writer.close(); } catch {}
+            try { await sock.write(buildDisconnect()); } catch {}
+            try { await sock.close(); } catch {}
             return { ok: true, acked: true, result };
           }
         }
       }
       if (acked && subbed && result === undefined && Date.now() > deadline - waitMs / 2) {
-        // command sent, no response — return success without waiting for full deadline
+        // command sent, no response — keep waiting until deadline
       }
     }
 
-    try { await writer.write(buildDisconnect()); } catch {}
-    try { await writer.close(); } catch {}
+    try { await sock.write(buildDisconnect()); } catch {}
+    try { await sock.close(); } catch {}
     if (acked) {
       return { ok: true, acked: true, result: undefined };
     }
     return { ok: false, error: "Timeout: ingen CONNACK fra Roborock-broker" };
   } catch (e: any) {
-    try { await socket?.close(); } catch {}
+    try { await sock?.close(); } catch {}
     return { ok: false, error: e?.message ?? String(e) };
   }
 }
