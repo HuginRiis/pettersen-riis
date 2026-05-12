@@ -533,8 +533,10 @@ export async function getHomeyRawSnapshot(conn: HomeyConnection, opts?: { force?
   return await promise;
 }
 
-export const getHomeySnapshot = createServerFn({ method: "GET" }).handler(
-  withApiLog("homey", "getHomeySnapshot", async (): Promise<HomeySnapshot> => {
+export const getHomeySnapshot = createServerFn({ method: "GET" })
+  .inputValidator((data?: { force?: boolean }) => data ?? {})
+  .handler(
+  withApiLog("homey", "getHomeySnapshot", async ({ data }): Promise<HomeySnapshot> => {
     let conn: HomeyConnection | null;
     try {
       conn = await getValidConnection();
@@ -545,7 +547,7 @@ export const getHomeySnapshot = createServerFn({ method: "GET" }).handler(
     if (!conn) return { ok: false, needsConnect: true };
 
     try {
-      const raw = await getHomeyRawSnapshot(conn);
+      const raw = await getHomeyRawSnapshot(conn, { force: data?.force === true });
       if (!raw) {
         return {
           ok: false,
