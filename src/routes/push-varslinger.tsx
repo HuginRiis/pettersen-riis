@@ -6,6 +6,7 @@ import { UpcomingPushPanel } from "@/components/UpcomingPushPanel";
 import { TibberCronStatusPanel } from "@/components/TibberCronStatusPanel";
 import { PushSchedulingSettings } from "@/components/PushSchedulingSettings";
 import { MenuPreferencesPanel } from "@/components/MenuPreferencesPanel";
+import { MenuVisibilityPanel } from "@/components/MenuVisibilityPanel";
 import { HeaderBadgeSettingsPanel } from "@/components/HeaderBadgeSettingsPanel";
 import { FavoritesManagerPanel } from "@/components/FavoritesManagerPanel";
 import { LightScenesPanel } from "@/components/LightScenesPanel";
@@ -59,6 +60,7 @@ const TOC_ITEMS: { id: string; label: string; emoji: string }[] = [
   { id: "sec-utseende", label: "Utseende (skrift/bredde)", emoji: "🅰️" },
   { id: "sec-graf-utseende", label: "Graf-utseende", emoji: "📈" },
   { id: "sec-meny", label: "Meny", emoji: "🧭" },
+  { id: "sec-meny-synlig", label: "Meny — synlige sider", emoji: "👁" },
   { id: "sec-badges", label: "Topp-badges", emoji: "🏷️" },
   { id: "sec-snarveier", label: "Snarveier", emoji: "⭐" },
   { id: "sec-rom", label: "Favoritt-rom", emoji: "🏠" },
@@ -148,6 +150,7 @@ function PushSettingsPage() {
       <section id="sec-utseende" className="scroll-mt-24"><AppearanceSettingsPanel /></section>
       <section id="sec-graf-utseende" className="scroll-mt-24"><ChartAppearanceSettingsPanel /></section>
       <section id="sec-meny" className="scroll-mt-24"><MenuPreferencesPanel /></section>
+      <section id="sec-meny-synlig" className="scroll-mt-24"><MenuVisibilityPanel /></section>
       <section id="sec-badges" className="scroll-mt-24"><HeaderBadgeSettingsPanel /></section>
       <section id="sec-snarveier" className="scroll-mt-24"><FavoritesManagerPanel /></section>
       <section id="sec-rom" className="scroll-mt-24"><FavoriteZonesPanel /></section>

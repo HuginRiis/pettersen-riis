@@ -19,7 +19,8 @@ import { MaesterCounsel } from "@/components/MaesterCounsel";
 import { BirthdayBanner } from "@/components/BirthdayBanner";
 import { BirthdaysOverview } from "@/components/BirthdaysOverview";
 import { UpcomingHolidays } from "@/components/UpcomingHolidays";
-import { PushTodayBadge, LightsOnBadge, TomorrowWeatherBadge } from "@/components/HallBadges";
+import { PushTodayBadge, LightsOnBadge, TomorrowWeatherBadge, MowerStatusBadge, GardenaStatusBadge, GardenaBatteryBadge, GardenaSignalBadge, RoborockStatusBadge, AlarmStateBadge, UtgangsdorenLockBadge, AlertsSeverityBadge, PowerVsYesterdayBadge, StepsTodayBadge, TrainingLast4WeeksBadge, GarbageNextPickupBadge, CurrentTempBadge, WeatherDaysBadge } from "@/components/HallBadges";
+import { useMenuVisibility, isMenuLinkVisible } from "@/hooks/use-menu-visibility";
 
 import { useAuthStatus } from "@/hooks/use-auth-status";
 import { logoutFn } from "@/server/auth";
@@ -50,6 +51,10 @@ import hallWesteros from "@/assets/got-westeros-hero.jpg";
 import hallSteintavle from "@/assets/got-brodering.jpg";
 import hallVarslinger from "@/assets/got-varslinger.jpg";
 import hallKvitteringer from "@/assets/got-kvitteringer.jpg";
+import hallLys from "@/assets/got-lys.jpg";
+import hallGressklipper from "@/assets/got-gressklipper.jpg";
+import hallStovsuger from "@/assets/got-stovsuger.jpg";
+import hallSkatt from "@/assets/got-skatt.jpg";
 
 // Halls available to anyone who steps into the courtyard (no password required)
 const PUBLIC_HALL_PATHS = new Set<string>(["/var", "/pollen", "/turer"]);
@@ -100,6 +105,8 @@ function Home() {
   const router = useRouter();
   const { authenticated } = useAuthStatus();
   const isAuthed = authenticated === true;
+  const menuVisibility = useMenuVisibility();
+  const showHall = (to: string) => isMenuLinkVisible(menuVisibility, to);
 
   // Tidligere kiosk-minne sendte enheten automatisk til Steintavlen.
   // Det er nå deaktivert — Hjem skal alltid være startsiden. Rydder opp gammel verdi.
@@ -275,24 +282,28 @@ function Home() {
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
-          <HallCard to="/var" title="Værens budskap" desc="Værmelding for Skien og hytta." icon="🌨" image={hallVar} locked={false} badge={<TomorrowWeatherBadge lat={TOLLNES.lat} lon={TOLLNES.lon} />} />
-          <HallCard to="/pollen" title="Pollen" desc="Dagens pollen i lufta." icon="🌾" image={hallPollen} locked={false} />
-          <HallCard to="/turer" title="Ferden" desc="Tips til turer i nærheten." icon="🧭" image={hallTurer} locked={false} />
-          <HallCard to="/got-saga" title="Westeros" desc="Sagaen om de syv kongeriker." icon="🐉" image={hallWesteros} locked={false} />
-          <HallCard to="/agenda" title="Krøniken" desc="Agenda og meldinger med dato og emne." icon="📜" image={hallAgenda} locked={!isAuthed} />
-          <HallCard to="/varsler" title="Farevarsler" desc="Aktive farevarsler og trafikkmeldinger." icon="⚠️" image={hallVarsler} locked={false} />
-          <HallCard to="/vakttarnet" title="Vakttårnet" desc="Vaktene rapporterer hvem som nærmer seg porten." icon="👁" image={hallVakttarnet} locked={!isAuthed} />
-          <HallCard to="/hytta" title="Hytta" desc="Husets tilflukt i fjellet." icon="🏔" image={hallHytta} locked={false} />
-          <HallCard to="/hundene" title="Hundene" desc="Husets tro følgesvenner." icon="🐺" image={hallHundene} locked={!isAuthed} />
-          <HallCard to="/trening" title="Treningssalen" desc="Kroppen som rustning." icon="⚔️" image={hallTrening} locked={!isAuthed} />
-          <HallCard to="/smarthus" title="Smartborg" desc="Lys, varme og varslere fra Homey." icon="🏰" image={hallSmarthus} locked={!isAuthed} badge={<LightsOnBadge />} />
-          <HallCard to="/stromkroniken" title="Strømkrøniken" desc="Husets strømgull — kostnader, forbruk og priser." icon="⚡" image={hallStrom} locked={!isAuthed} />
-          <HallCard to="/matvarer" title="Matvarekrøniken" desc="Søk og sammenlign priser i norske butikker." icon="🛒" image={hallMatvarer} locked={!isAuthed} />
-          <HallCard to="/steintavle" title="Steintavle" desc="Husets innskrifter og notater." icon="🪨" image={hallSteintavle} locked={!isAuthed} />
-          <HallCard to="/oppussing-borgen" title="Prosjekter på Borgen" desc="Prosjekter, planer og bilder fra borgen." icon="🔨" image={hallOppussingBorgen} locked={!isAuthed} />
-          <HallCard to="/oppussing-hytta" title="Prosjekter på hytta" desc="Prosjekter, planer og bilder fra hytta." icon="🪵" image={hallOppussingHytta} locked={!isAuthed} />
-          <HallCard to="/kvitteringer" title="Kvitteringer" desc="Husets kvitteringer, garanti og utgifter." icon="🧾" image={hallKvitteringer} locked={!isAuthed} />
-          <HallCard to="/push-varslinger" title="Varslinger" desc="Push-varsler og innstillinger for husets ravner." icon="🔔" image={hallVarslinger} locked={!isAuthed} badge={<PushTodayBadge />} />
+          {showHall("/var") && <HallCard to="/var" title="Værens budskap" desc="Værmelding for Skien og hytta." icon="🌨" image={hallVar} locked={false} badge={<HallBadgeStack><WeatherDaysBadge inline lat={TOLLNES.lat} lon={TOLLNES.lon} /><CurrentTempBadge inline lat={TOLLNES.lat} lon={TOLLNES.lon} /></HallBadgeStack>} />}
+          {showHall("/pollen") && <HallCard to="/pollen" title="Pollen" desc="Dagens pollen i lufta." icon="🌾" image={hallPollen} locked={false} />}
+          {showHall("/turer") && <HallCard to="/turer" title="Ferden" desc="Tips til turer i nærheten." icon="🧭" image={hallTurer} locked={false} />}
+          {showHall("/got-saga") && <HallCard to="/got-saga" title="Westeros" desc="Sagaen om de syv kongeriker." icon="🐉" image={hallWesteros} locked={false} />}
+          {showHall("/agenda") && <HallCard to="/agenda" title="Krøniken" desc="Agenda og meldinger med dato og emne." icon="📜" image={hallAgenda} locked={!isAuthed} badge={<HallBadgeStack><GarbageNextPickupBadge inline /></HallBadgeStack>} />}
+          {showHall("/varsler") && <HallCard to="/varsler" title="Farevarsler" desc="Aktive farevarsler og trafikkmeldinger." icon="⚠️" image={hallVarsler} locked={false} badge={<HallBadgeStack><AlertsSeverityBadge inline /></HallBadgeStack>} />}
+          {showHall("/vakttarnet") && <HallCard to="/vakttarnet" title="Vakttårnet" desc="Vaktene rapporterer hvem som nærmer seg porten." icon="👁" image={hallVakttarnet} locked={!isAuthed} badge={<HallBadgeStack><AlarmStateBadge inline /><UtgangsdorenLockBadge inline /></HallBadgeStack>} />}
+          {showHall("/hytta") && <HallCard to="/hytta" title="Hytta" desc="Husets tilflukt i fjellet." icon="🏔" image={hallHytta} locked={false} />}
+          {showHall("/hundene") && <HallCard to="/hundene" title="Hundene" desc="Husets tro følgesvenner." icon="🐺" image={hallHundene} locked={!isAuthed} />}
+          {showHall("/trening") && <HallCard to="/trening" title="Treningssalen" desc="Kroppen som rustning." icon="⚔️" image={hallTrening} locked={!isAuthed} badge={<HallBadgeStack><StepsTodayBadge inline owner="arne" /><StepsTodayBadge inline owner="rebekka" /><TrainingLast4WeeksBadge inline /></HallBadgeStack>} />}
+          {showHall("/smarthus") && <HallCard to="/smarthus" title="Smartborg" desc="Lys, varme og varslere fra Homey." icon="🏰" image={hallSmarthus} locked={!isAuthed} badge={<HallBadgeStack><MowerStatusBadge inline /></HallBadgeStack>} />}
+          {showHall("/lys") && <HallCard to="/lys" title="Lys" desc="Husets ild — tente lys og scener." icon="💡" image={hallLys} locked={!isAuthed} badge={<HallBadgeStack><LightsOnBadge inline /></HallBadgeStack>} />}
+          {showHall("/gressklipper") && <HallCard to="/gressklipper" title="Gressklipper" desc="Sileno-vokteren av plenen." icon="🌱" image={hallGressklipper} locked={!isAuthed} badge={<HallBadgeStack><GardenaStatusBadge inline /><GardenaBatteryBadge inline /><GardenaSignalBadge inline /></HallBadgeStack>} />}
+          {showHall("/stovsugeren") && <HallCard to="/stovsugeren" title="Støvsugeren" desc="Roborock — Hjemme og Hytta." icon="🤖" image={hallStovsuger} locked={!isAuthed} badge={<HallBadgeStack><RoborockStatusBadge inline match="hjem" name="Hjemme" /><RoborockStatusBadge inline match="hytt" name="Hytta" /></HallBadgeStack>} />}
+          {showHall("/stromkroniken") && <HallCard to="/stromkroniken" title="Strømkrøniken" desc="Husets strømgull — kostnader, forbruk og priser." icon="⚡" image={hallStrom} locked={!isAuthed} badge={<HallBadgeStack><PowerVsYesterdayBadge inline /></HallBadgeStack>} />}
+          {showHall("/matvarer") && <HallCard to="/matvarer" title="Matvarekrøniken" desc="Søk og sammenlign priser i norske butikker." icon="🛒" image={hallMatvarer} locked={!isAuthed} />}
+          {showHall("/skatte-utregningen") && <HallCard to="/skatte-utregningen" title="Skatte­utregningen" desc="Skatt og lønn — beregninger." icon="🪙" image={hallSkatt} locked={!isAuthed} />}
+          {showHall("/steintavle") && <HallCard to="/steintavle" title="Steintavle" desc="Husets innskrifter og notater." icon="🪨" image={hallSteintavle} locked={!isAuthed} />}
+          {showHall("/oppussing-borgen") && <HallCard to="/oppussing-borgen" title="Prosjekter på Borgen" desc="Prosjekter, planer og bilder fra borgen." icon="🔨" image={hallOppussingBorgen} locked={!isAuthed} />}
+          {showHall("/oppussing-hytta") && <HallCard to="/oppussing-hytta" title="Prosjekter på hytta" desc="Prosjekter, planer og bilder fra hytta." icon="🪵" image={hallOppussingHytta} locked={!isAuthed} />}
+          {showHall("/kvitteringer") && <HallCard to="/kvitteringer" title="Kvitteringer" desc="Husets kvitteringer, garanti og utgifter." icon="🧾" image={hallKvitteringer} locked={!isAuthed} />}
+          {showHall("/push-varslinger") && <HallCard to="/push-varslinger" title="Innstillinger" desc="Push-varsler og innstillinger for husets ravner." icon="🔔" image={hallVarslinger} locked={!isAuthed} badge={<HallBadgeStack><PushTodayBadge inline /></HallBadgeStack>} />}
         </div>
       </section>
     </PageShell>
@@ -612,6 +623,10 @@ function HallCard({
     | "/turer"
     | "/stromkroniken"
     | "/smarthus"
+    | "/lys"
+    | "/gressklipper"
+    | "/stovsugeren"
+    | "/skatte-utregningen"
     | "/steintavle"
     | "/oppussing-borgen"
     | "/oppussing-hytta"
@@ -694,6 +709,14 @@ function HallCard({
           <p className="mt-2 text-sm text-foreground/85">{desc}</p>
         </div>
       </Link>
+    </div>
+  );
+}
+
+function HallBadgeStack({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="absolute top-2 right-2 z-10 flex flex-wrap justify-end gap-1 max-w-[80%]">
+      {children}
     </div>
   );
 }

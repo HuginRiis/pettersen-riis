@@ -18,6 +18,7 @@ import { getNetatmoWeatherStation } from "@/server/netatmo-weather";
 import { useLastGood } from "@/hooks/use-last-good";
 import { PushTodayBadge, LightsOnBadge, WeatherDaysBadge, AlarmStateBadge, AlertsSeverityBadge, PowerVsYesterdayBadge, TrainingLast4WeeksBadge, UtgangsdorenLockBadge, StepsTodayBadge, MowerStatusBadge, CurrentTempBadge, GarbageNextPickupBadge, GardenaStatusBadge, GardenaBatteryBadge, GardenaSignalBadge, RoborockStatusBadge } from "@/components/HallBadges";
 import { useHeaderBadgeSettings, isBadgeVisible } from "@/hooks/use-header-badge-settings";
+import { useMenuVisibility, isMenuLinkVisible } from "@/hooks/use-menu-visibility";
 
 const BORGEN_COORD = { lat: 59.1789, lon: 9.5732 };
 const HYTTA_COORD = { lat: 59.8733, lon: 9.4297 };
@@ -212,7 +213,9 @@ export function SiteHeader() {
   }, [who, fetchDefaultLoc]);
 
   // Visitors outside the gate only see public halls; authed users see everything.
-  const baseLinks = isAuthed ? navLinks : navLinks.filter((l) => l.public);
+  const menuVisibility = useMenuVisibility();
+  const baseLinks = (isAuthed ? navLinks : navLinks.filter((l) => l.public))
+    .filter((l) => isMenuLinkVisible(menuVisibility, l.to));
 
   // Sorter: Hjem alltid først, Steintavle alltid sist, deretter favoritter (hvis på),
   // så bruksfrekvens (hvis på), ellers original rekkefølge.
