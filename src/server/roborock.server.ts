@@ -119,15 +119,10 @@ async function discoverBase(email: string, deviceId: string): Promise<{ base: st
 
 async function signKeyV3(base: string, email: string, deviceId: string, s: string): Promise<string> {
   const cid = headerClientId(email, deviceId);
+  // Match python-roborock: only header_clientid, no extra headers, POST with s as query param.
   const r = await fetch(`${base}/api/v3/key/sign?s=${encodeURIComponent(s)}`, {
     method: "POST",
-    headers: {
-      header_clientid: cid,
-      header_clientlang: "en",
-      header_appversion: "4.54.02",
-      header_phonesystem: "iOS",
-      header_phonemodel: "iPhone16,1",
-    },
+    headers: { header_clientid: cid },
   });
   const j: any = await r.json();
   if (j?.code !== 200 || !j?.data?.k) {
