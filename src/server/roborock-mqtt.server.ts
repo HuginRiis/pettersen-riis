@@ -214,7 +214,7 @@ export async function sendRoborockMqttCommand(opts: SendCommandOpts): Promise<Se
     let acked = false;
     let subbed = false;
     let result: any = undefined;
-    let buf = Buffer.alloc(0);
+    let buf: Buffer = Buffer.alloc(0);
     const deadline = Date.now() + waitMs + 2000;
 
     const subscribeAndPublish = async () => {
@@ -232,7 +232,7 @@ export async function sendRoborockMqttCommand(opts: SendCommandOpts): Promise<Se
       const r: any = await Promise.race([readPromise, timeout]);
       if (r?.done || !r?.value) break;
 
-      buf = Buffer.concat([buf, Buffer.from(r.value)]);
+      buf = Buffer.concat([buf, Buffer.from(r.value)]) as Buffer;
       const { packets, rest } = parsePackets(buf);
       buf = rest as Buffer;
       for (const p of packets) {
