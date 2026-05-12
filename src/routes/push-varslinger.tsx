@@ -60,6 +60,7 @@ const TOC_ITEMS: { id: string; label: string; emoji: string }[] = [
   { id: "sec-utseende", label: "Utseende (skrift/bredde)", emoji: "🅰️" },
   { id: "sec-graf-utseende", label: "Graf-utseende", emoji: "📈" },
   { id: "sec-meny", label: "Meny", emoji: "🧭" },
+  { id: "sec-meny-synlig", label: "Meny — synlige sider", emoji: "👁" },
   { id: "sec-badges", label: "Topp-badges", emoji: "🏷️" },
   { id: "sec-snarveier", label: "Snarveier", emoji: "⭐" },
   { id: "sec-rom", label: "Favoritt-rom", emoji: "🏠" },
