@@ -1600,6 +1600,60 @@ export type Database = {
         }
         Relationships: []
       }
+      tax_monthly: {
+        Row: {
+          ekstra: number
+          id: string
+          lonn: number
+          month: number
+          skatt: number
+          source: string | null
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          ekstra?: number
+          id?: string
+          lonn?: number
+          month: number
+          skatt?: number
+          source?: string | null
+          updated_at?: string
+          year: number
+        }
+        Update: {
+          ekstra?: number
+          id?: string
+          lonn?: number
+          month?: number
+          skatt?: number
+          source?: string | null
+          updated_at?: string
+          year?: number
+        }
+        Relationships: []
+      }
+      tax_year_settings: {
+        Row: {
+          ekstra_pr_mnd: number
+          skal_betale: number
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          ekstra_pr_mnd?: number
+          skal_betale?: number
+          updated_at?: string
+          year: number
+        }
+        Update: {
+          ekstra_pr_mnd?: number
+          skal_betale?: number
+          updated_at?: string
+          year?: number
+        }
+        Relationships: []
+      }
       tibber_daily_kwh: {
         Row: {
           cost: number | null
