@@ -350,3 +350,45 @@ export async function fetchRoborockSnapshot(): Promise<RoborockSnapshot> {
     return { ok: false, devices: [], error: e?.message ?? String(e) };
   }
 }
+
+import { sendRoborockMqttCommand } from "@/server/roborock-mqtt.server";
+
+export type RoborockCommandResult = {
+  ok: boolean;
+  acked?: boolean;
+  result?: any;
+  error?: string;
+};
+
+export async function sendDeviceCommand(input: {
+  duid: string;
+  method: string;
+  params?: any[];
+  waitMs?: number;
+}): Promise<RoborockCommandResult> {
+  const email = process.env.ROBOROCK_EMAIL;
+  if (!email) return { ok: false, error: "Mangler ROBOROCK_EMAIL" };
+  try {
+    const auth = await loadAuth();
+    if (!auth?.rriot || !auth?.token || !auth?.base_url || !auth?.device_id) {
+      return { ok: false, error: "Ikke innlogget mot Roborock" };
+    }
+    // Refetch devices to get a fresh localKey for the requested duid
+    const homeId = await getHomeId(auth.base_url, email, auth.device_id, auth.token);
+    const devices = await getDevices(auth.rriot, homeId);
+    const dev = devices.find((d) => d.duid === input.duid);
+    if (!dev) return { ok: false, error: `Fant ikke enhet ${input.duid}` };
+    if (!dev.localKey) return { ok: false, error: "Mangler localKey for enheten" };
+
+    return await sendRoborockMqttCommand({
+      rriot: auth.rriot,
+      duid: input.duid,
+      localKey: dev.localKey,
+      method: input.method,
+      params: input.params ?? [],
+      waitMs: input.waitMs ?? 4000,
+    });
+  } catch (e: any) {
+    return { ok: false, error: e?.message ?? String(e) };
+  }
+}
