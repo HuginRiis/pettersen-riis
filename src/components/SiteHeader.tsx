@@ -213,7 +213,9 @@ export function SiteHeader() {
   }, [who, fetchDefaultLoc]);
 
   // Visitors outside the gate only see public halls; authed users see everything.
-  const baseLinks = isAuthed ? navLinks : navLinks.filter((l) => l.public);
+  const menuVisibility = useMenuVisibility();
+  const baseLinks = (isAuthed ? navLinks : navLinks.filter((l) => l.public))
+    .filter((l) => isMenuLinkVisible(menuVisibility, l.to));
 
   // Sorter: Hjem alltid først, Steintavle alltid sist, deretter favoritter (hvis på),
   // så bruksfrekvens (hvis på), ellers original rekkefølge.
