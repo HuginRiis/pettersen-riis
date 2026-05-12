@@ -104,7 +104,7 @@ function aesEcbEncrypt(key: Buffer, data: Buffer): Buffer {
   return Buffer.concat([c.update(data), c.final()]);
 }
 function aesEcbDecrypt(key: Buffer, data: Buffer): Buffer {
-  const c = createDecipheriv("aes-128-ecb", key, null);
+  const c = createDecipheriv("aes-128-ecb", key, Buffer.alloc(0));
   c.setAutoPadding(true);
   return Buffer.concat([c.update(data), c.final()]);
 }
