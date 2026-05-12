@@ -227,15 +227,19 @@ export const extractPayslipText = createServerFn({ method: "POST" })
     const mime = (row.mime_type as string) || "image/jpeg";
     const dataUrl = `data:${mime};base64,${b64}`;
 
-    const prompt = `Du er en norsk lønns-ekspert. Les lønnsslippen i bildet og hent ut ALLE detaljer som tekst. Strukturer ryddig med overskrifter:
-- Arbeidsgiver, arbeidstaker, periode, utbetalingsdato
-- Brutto lønn (med timer/sats hvis oppgitt)
-- Tillegg, bonuser, naturalytelser
-- Trekk: skatt, fagforening, pensjon, andre trekk
-- Netto utbetalt
-- Feriepenger / opptjent
-- Eventuelle kommentarer eller kontonummer
-Returner ren tekst på norsk — ingen markdown-kodeblokker.`;
+    const prompt = `Du er en maester ved Citadellet i Oldtown som leser en lønnslipp som om den var en kongelig skattruller fra Jerntronen. Hent ut ALLE detaljer fra bildet, men skriv det i Game of Thrones-stil — høytidelig, middelaldersk norsk, med referanser til myntene som "gulldrager" (kr) der det passer, og kall arbeidsgiveren for "huset", lønnsperioden for "månens omdreining", skatten for "kronens tiende" osv.
+
+Strukturer som en pergamentrull med tydelige overskrifter (bruk · eller — som skilletegn, IKKE markdown):
+
+⚔ HUSET (arbeidsgiver) og dets tjener (arbeidstaker, ansattnr)
+🌙 MÅNENS OMDREINING (periode + utbetalingsdato)
+👑 GULLET FRA HUSET (brutto lønn, timer/sats, tillegg, bonuser, naturalytelser)
+🗡 KRONENS TIENDE OG ANDRE TREKK (skatt, ekstra skatt, fagforening, pensjon, andre trekk)
+💰 NETTO I PUNGEN (netto utbetalt)
+🏰 SKATTKAMMERET HITTIL I ÅRET (hittil-tall: lønn, skatt, feriepenger)
+📜 ANDRE PERGAMENTNOTATER (kontonummer, kommentarer, alt annet)
+
+Hold det kort, faktabasert og nøyaktig — alle tall som står på slippen MÅ med. Ikke finn på data. Ren tekst, ingen markdown-kodeblokker, ingen ** eller ##.`;
 
     const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",

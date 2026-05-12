@@ -87,13 +87,17 @@ export function PayslipArchive({
                   {list.map((f) => (
                     <li key={f.id} className="flex items-center gap-2 px-3 py-2 text-sm">
                       <FileText className="size-4 text-muted-foreground shrink-0" />
-                      <div className="flex-1 min-w-0">
+                      <div className="flex-1 min-w-0 max-w-[120px]">
                         <button
                           onClick={() => setActiveId(f.id)}
-                          className="font-medium hover:underline truncate inline-flex items-center gap-1 text-left"
+                          className="font-medium hover:underline inline-flex items-center gap-1 text-left whitespace-nowrap"
+                          title={f.original_name || f.file_path.split("/").pop()}
                         >
-                          {f.original_name || f.file_path.split("/").pop()}
-                          {f.extracted_text && <Sparkles className="size-3 text-primary" />}
+                          <span className="truncate inline-block max-w-[80px] align-bottom">
+                            {(f.original_name || f.file_path.split("/").pop() || "").slice(0, 10)}
+                            {((f.original_name || f.file_path.split("/").pop() || "").length > 10) ? "…" : ""}
+                          </span>
+                          {f.extracted_text && <Sparkles className="size-3 text-primary shrink-0" />}
                         </button>
                         <div className="text-xs text-muted-foreground">
                           {f.month ? MONTH_NAMES[f.month - 1] : "—"}
