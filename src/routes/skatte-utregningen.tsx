@@ -443,7 +443,7 @@ function SkattePage() {
         </div>
 
         {/* Kurver siste 3 år */}
-        <SkattCharts currentYear={year} refreshKey={rows.length} />
+        <SkattCharts currentYear={year} refreshKey={rows.length} profile={profile} />
 
         {/* Forslag til ekstra skatt pr mnd (frittstående) */}
         <BreakEvenSuggestion rows={rows} skalBetale={settings.skal_betale} />
