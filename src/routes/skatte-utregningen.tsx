@@ -137,23 +137,21 @@ function SkattePage() {
   const fileRef = useRef<HTMLInputElement | null>(null);
 
   const reloadFiles = () => {
-    fnListFiles().then(setFiles).catch(() => { /* ignore */ });
+    fnListFiles({ data: { profile } }).then(setFiles).catch(() => { /* ignore */ });
   };
-  useEffect(() => { reloadFiles(); }, []);
+  useEffect(() => { reloadFiles(); }, [profile]);
 
   useEffect(() => {
-    fnListYears().then((ys) => {
-      if (ys.length > 0) {
-        const merged = Array.from(new Set([...ys, 2024, 2025, 2026])).sort();
-        setYears(merged);
-      }
+    fnListYears({ data: { profile } }).then((ys) => {
+      const merged = Array.from(new Set([...(ys ?? []), 2024, 2025, 2026])).sort();
+      setYears(merged);
     }).catch(() => { /* keep defaults */ });
-  }, [fnListYears]);
+  }, [fnListYears, profile]);
 
   const reload = async (y: number) => {
     setLoading(true);
     try {
-      const res = await fnListYear({ data: { year: y } });
+      const res = await fnListYear({ data: { year: y, profile } });
       setRows(buildRows(res.months));
       setSettings({
         year: res.settings.year,
@@ -169,7 +167,7 @@ function SkattePage() {
   useEffect(() => {
     let alive = true;
     setLoading(true);
-    fnListYear({ data: { year } })
+    fnListYear({ data: { year, profile } })
       .then((res) => {
         if (!alive) return;
         setRows(buildRows(res.months));
@@ -182,7 +180,7 @@ function SkattePage() {
       })
       .finally(() => alive && setLoading(false));
     return () => { alive = false; };
-  }, [year, fnListYear]);
+  }, [year, fnListYear, profile]);
 
   const updateRow = (key: string, patch: Partial<Row>) => {
     setRows((prev) => prev.map((r) => r.key === key ? { ...r, ...patch, dirty: true, saved: false } : r));
