@@ -6,6 +6,7 @@ export type TaxMonth = {
   id: string;
   year: number;
   month: number;
+  employer: string;
   lonn: number;
   skatt: number;
   ekstra: number;
@@ -24,9 +25,10 @@ export const listTaxYear = createServerFn({ method: "GET" })
     const [months, settings] = await Promise.all([
       supabaseAdmin
         .from("tax_monthly")
-        .select("id,year,month,lonn,skatt,ekstra,source")
+        .select("id,year,month,employer,lonn,skatt,ekstra,source")
         .eq("year", data.year)
-        .order("month", { ascending: true }),
+        .order("month", { ascending: true })
+        .order("employer", { ascending: true }),
       supabaseAdmin
         .from("tax_year_settings")
         .select("year,skal_betale,ekstra_pr_mnd")
@@ -53,6 +55,7 @@ export const listTaxYears = createServerFn({ method: "GET" }).handler(async () =
 const upsertMonthSchema = z.object({
   year: z.number().int(),
   month: z.number().int().min(1).max(12),
+  employer: z.string().min(1).max(100).default("Hovedjobb"),
   lonn: z.number().nonnegative(),
   skatt: z.number().nonnegative(),
   ekstra: z.number().nonnegative(),
@@ -68,14 +71,34 @@ export const upsertTaxMonth = createServerFn({ method: "POST" })
         {
           year: data.year,
           month: data.month,
+          employer: data.employer,
           lonn: data.lonn,
           skatt: data.skatt,
           ekstra: data.ekstra,
           source: data.source ?? null,
           updated_at: new Date().toISOString(),
         },
-        { onConflict: "year,month" },
+        { onConflict: "year,month,employer" },
       );
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+const deleteMonthSchema = z.object({
+  year: z.number().int(),
+  month: z.number().int().min(1).max(12),
+  employer: z.string().min(1).max(100),
+});
+
+export const deleteTaxMonth = createServerFn({ method: "POST" })
+  .inputValidator((d) => deleteMonthSchema.parse(d))
+  .handler(async ({ data }) => {
+    const { error } = await supabaseAdmin
+      .from("tax_monthly")
+      .delete()
+      .eq("year", data.year)
+      .eq("month", data.month)
+      .eq("employer", data.employer);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -125,12 +148,13 @@ export const parsePayslip = createServerFn({ method: "POST" })
     const prompt = `Du analyserer en norsk lønnsslipp. Hent ut:
 - år (year, 4-sifret)
 - måned (month, 1-12) — bruk lønnsperioden, ikke utbetalingsdato
+- arbeidsgiver (employer) — firmanavnet som utbetaler lønnen (kort navn, f.eks. "Acme AS")
 - bruttolønn for perioden i NOK (lonn)
 - forskuddsskatt/ordinært skattetrekk for perioden i NOK (skatt) — kun ordinær skatt, IKKE inkluder ekstra/frivillig trekk
 - frivillig/ekstra skattetrekk for perioden i NOK (ekstra), 0 hvis ikke spesifisert
 
-Svar KUN med JSON: {"year":2026,"month":3,"lonn":74281,"skatt":24367,"ekstra":1000,"note":"kort begrunnelse"}.
-Hvis du ikke finner et felt, sett 0. Hvis måned er angitt som tekst (f.eks. "mars 2026"), oversett til tall.`;
+Svar KUN med JSON: {"year":2026,"month":3,"employer":"Acme AS","lonn":74281,"skatt":24367,"ekstra":1000,"note":"kort begrunnelse"}.
+Hvis du ikke finner et felt, sett 0 (eller "Ukjent" for employer). Hvis måned er angitt som tekst (f.eks. "mars 2026"), oversett til tall.`;
 
     const body = {
       model: "google/gemini-2.5-flash",
@@ -182,10 +206,11 @@ Hvis du ikke finner et felt, sett 0. Hvis måned er angitt som tekst (f.eks. "ma
     const skatt = Number(parsed.skatt) || 0;
     const ekstra = Number(parsed.ekstra) || 0;
     const note = String(parsed.note ?? "");
+    const employer = String(parsed.employer ?? "").trim() || "Hovedjobb";
 
     if (!year || !month || month < 1 || month > 12) {
       throw new Error("AI fant ikke gyldig år/måned. Velg manuelt.");
     }
 
-    return { year, month, lonn, skatt, ekstra, note, fileName: data.fileName };
+    return { year, month, employer, lonn, skatt, ekstra, note, fileName: data.fileName };
   });

@@ -1603,6 +1603,7 @@ export type Database = {
       tax_monthly: {
         Row: {
           ekstra: number
+          employer: string
           id: string
           lonn: number
           month: number
@@ -1613,6 +1614,7 @@ export type Database = {
         }
         Insert: {
           ekstra?: number
+          employer?: string
           id?: string
           lonn?: number
           month: number
@@ -1623,6 +1625,7 @@ export type Database = {
         }
         Update: {
           ekstra?: number
+          employer?: string
           id?: string
           lonn?: number
           month?: number
