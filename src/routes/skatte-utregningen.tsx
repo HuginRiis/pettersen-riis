@@ -80,9 +80,13 @@ function fileToBase64(file: File): Promise<{ mime: string; base64: string }> {
 
 function buildRows(months: TaxMonth[]): Row[] {
   const map = new Map<string, Row>();
-  for (let m = 1; m <= 12; m++) {
-    const k = rowKey(m, DEFAULT_EMPLOYER);
-    map.set(k, { key: k, month: m, employer: DEFAULT_EMPLOYER, lonn: 0, skatt: 0, ekstra: 0, dirty: false });
+  // Bare seed tomme "Hovedjobb"-rader hvis året er helt tomt (første gangs bruk).
+  // Da unngår vi at slettede rader dukker opp igjen.
+  if (months.length === 0) {
+    for (let m = 1; m <= 12; m++) {
+      const k = rowKey(m, DEFAULT_EMPLOYER);
+      map.set(k, { key: k, month: m, employer: DEFAULT_EMPLOYER, lonn: 0, skatt: 0, ekstra: 0, dirty: false });
+    }
   }
   for (const m of months) {
     const k = rowKey(m.month, m.employer);
