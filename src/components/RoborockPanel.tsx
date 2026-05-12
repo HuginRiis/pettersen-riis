@@ -310,6 +310,7 @@ export function RoborockPanel() {
   const [busyCap, setBusyCap] = useState<string | null>(null);
   const [code, setCode] = useState("");
   const [info, setInfo] = useState<string | null>(null);
+  const [cloudMsg, setCloudMsg] = useState<string | null>(null);
 
   const load = async () => {
     setLoading(true);
