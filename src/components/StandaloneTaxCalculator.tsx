@@ -12,7 +12,7 @@ const fmt = (n: number) =>
 
 type Result = Awaited<ReturnType<typeof calculateNorwegianTax>>;
 
-export function StandaloneTaxCalculator({ defaultYear }: { defaultYear: number }) {
+export function StandaloneTaxCalculator({ defaultYear, profile }: { defaultYear: number; profile?: "arne" | "rebekka" }) {
   const fn = useServerFn(calculateNorwegianTax);
   const [year, setYear] = useState(defaultYear);
   const [brutto, setBrutto] = useState(700000);
