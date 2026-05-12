@@ -5,11 +5,10 @@ import { listMonthlyRange, type MonthlyAgg } from "@/server/skatt.functions";
 import {
   ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, Legend, CartesianGrid,
 } from "recharts";
+import { useChartAppearance } from "@/hooks/use-chart-appearance";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Des"];
 const fmt = (n: number) => new Intl.NumberFormat("nb-NO", { maximumFractionDigits: 0 }).format(Math.round(n));
-
-const COLORS = ["hsl(var(--primary))", "#22c55e", "#f59e0b", "#ef4444", "#3b82f6"];
 
 export function SkattCharts({ currentYear, refreshKey, profile }: { currentYear: number; refreshKey?: number; profile: "arne" | "rebekka" }) {
   const fnRange = useServerFn(listMonthlyRange);
