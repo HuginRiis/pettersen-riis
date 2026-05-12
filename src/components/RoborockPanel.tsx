@@ -300,6 +300,15 @@ export function RoborockPanel() {
     }
   };
 
+  const onPasswordLogin = async () => {
+    setBusy("password");
+    setInfo(null);
+    const r = await passwordLogin();
+    setBusy(null);
+    if (r.ok) { setInfo("Logget inn med passord ✓"); await load(); }
+    else setInfo(`Feil: ${r.error}`);
+  };
+
   const onSetCap = async (deviceId: string, capability: string, value: boolean | number | string) => {
     setBusyCap(`${deviceId}:${capability}`);
     setInfo(null);
