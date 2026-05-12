@@ -560,7 +560,23 @@ function SkattePage() {
           )}
         </Card>
 
-        {/* Justeringer — i bunn */}
+        {/* Lønnsslipp-arkiv */}
+        <PayslipArchive
+          files={files}
+          openYears={openYears}
+          setOpenYears={setOpenYears}
+          onDelete={async (id) => {
+            if (!confirm("Slette filen?")) return;
+            try {
+              await fnDeleteFile({ data: { id } });
+              reloadFiles();
+            } catch (e) {
+              alert("Kunne ikke slette: " + (e instanceof Error ? e.message : "ukjent"));
+            }
+          }}
+        />
+
+
         <Card className="p-5 space-y-5">
           <div>
             <h2 className="text-lg font-semibold">Justeringer for {year}</h2>
