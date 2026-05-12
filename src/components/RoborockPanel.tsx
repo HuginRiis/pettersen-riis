@@ -415,6 +415,12 @@ export function RoborockPanel() {
           </div>
         )}
 
+        {cloudMsg && (
+          <div className="text-[11px] px-3 py-2 rounded border border-border bg-card/40 text-foreground">
+            {cloudMsg}
+          </div>
+        )}
+
         {/* Sky-snapshot (lese-kanal) — vis alltid for enheter Homey ikke har */}
         {snap?.ok && snap.devices.length > 0 && (
           <div className="space-y-2">
