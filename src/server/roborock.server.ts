@@ -119,15 +119,10 @@ async function discoverBase(email: string, deviceId: string): Promise<{ base: st
 
 async function signKeyV3(base: string, email: string, deviceId: string, s: string): Promise<string> {
   const cid = headerClientId(email, deviceId);
+  // Match python-roborock: only header_clientid, no extra headers, POST with s as query param.
   const r = await fetch(`${base}/api/v3/key/sign?s=${encodeURIComponent(s)}`, {
     method: "POST",
-    headers: {
-      header_clientid: cid,
-      header_clientlang: "en",
-      header_appversion: "4.54.02",
-      header_phonesystem: "iOS",
-      header_phonemodel: "iPhone16,1",
-    },
+    headers: { header_clientid: cid },
   });
   const j: any = await r.json();
   if (j?.code !== 200 || !j?.data?.k) {
@@ -172,6 +167,47 @@ async function sendCodeV4(base: string, email: string, deviceId: string) {
     header_clientlang: "en",
   }, form);
   return json;
+}
+
+async function passwordLoginV1(base: string, email: string, deviceId: string, password: string) {
+  const cid = headerClientId(email, deviceId);
+  const url = `${base}/api/v1/login?username=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}&needtwostepauth=false`;
+  const r = await fetch(url, { method: "POST", headers: { header_clientid: cid } });
+  return (await r.json()) as any;
+}
+
+export async function loginWithPassword(): Promise<{ ok: boolean; error?: string }> {
+  const email = process.env.ROBOROCK_EMAIL;
+  const password = process.env.ROBOROCK_PASSWORD;
+  if (!email) return { ok: false, error: "Mangler ROBOROCK_EMAIL" };
+  if (!password) return { ok: false, error: "Mangler ROBOROCK_PASSWORD" };
+  try {
+    const auth = await loadAuth();
+    const deviceId = auth?.device_id ?? randToken(16);
+    let base = auth?.base_url ?? "";
+    let country = auth?.country ?? null;
+    let countryCode = auth?.country_code ?? null;
+    if (!base) {
+      const d = await discoverBase(email, deviceId);
+      base = d.base; country = d.country; countryCode = d.countryCode;
+    }
+    const j = await passwordLoginV1(base, email, deviceId, password);
+    if (j?.code !== 200 || !j?.data?.token || !j?.data?.rriot) {
+      return { ok: false, error: `Login feilet: ${j?.msg ?? "ukjent feil"} (kode ${j?.code})` };
+    }
+    await saveAuth({
+      email,
+      device_id: deviceId,
+      base_url: base,
+      country,
+      country_code: countryCode,
+      token: j.data.token,
+      rriot: j.data.rriot,
+    });
+    return { ok: true };
+  } catch (e: any) {
+    return { ok: false, error: e?.message ?? String(e) };
+  }
 }
 
 export async function requestLoginCode(): Promise<{ ok: boolean; error?: string }> {
