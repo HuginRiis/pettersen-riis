@@ -50,6 +50,10 @@ import hallWesteros from "@/assets/got-westeros-hero.jpg";
 import hallSteintavle from "@/assets/got-brodering.jpg";
 import hallVarslinger from "@/assets/got-varslinger.jpg";
 import hallKvitteringer from "@/assets/got-kvitteringer.jpg";
+import hallLys from "@/assets/got-lys.jpg";
+import hallGressklipper from "@/assets/got-gressklipper.jpg";
+import hallStovsuger from "@/assets/got-stovsuger.jpg";
+import hallSkatt from "@/assets/got-skatt.jpg";
 
 // Halls available to anyone who steps into the courtyard (no password required)
 const PUBLIC_HALL_PATHS = new Set<string>(["/var", "/pollen", "/turer"]);
