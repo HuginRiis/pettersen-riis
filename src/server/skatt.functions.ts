@@ -148,12 +148,13 @@ export const parsePayslip = createServerFn({ method: "POST" })
     const prompt = `Du analyserer en norsk lønnsslipp. Hent ut:
 - år (year, 4-sifret)
 - måned (month, 1-12) — bruk lønnsperioden, ikke utbetalingsdato
+- arbeidsgiver (employer) — firmanavnet som utbetaler lønnen (kort navn, f.eks. "Acme AS")
 - bruttolønn for perioden i NOK (lonn)
 - forskuddsskatt/ordinært skattetrekk for perioden i NOK (skatt) — kun ordinær skatt, IKKE inkluder ekstra/frivillig trekk
 - frivillig/ekstra skattetrekk for perioden i NOK (ekstra), 0 hvis ikke spesifisert
 
-Svar KUN med JSON: {"year":2026,"month":3,"lonn":74281,"skatt":24367,"ekstra":1000,"note":"kort begrunnelse"}.
-Hvis du ikke finner et felt, sett 0. Hvis måned er angitt som tekst (f.eks. "mars 2026"), oversett til tall.`;
+Svar KUN med JSON: {"year":2026,"month":3,"employer":"Acme AS","lonn":74281,"skatt":24367,"ekstra":1000,"note":"kort begrunnelse"}.
+Hvis du ikke finner et felt, sett 0 (eller "Ukjent" for employer). Hvis måned er angitt som tekst (f.eks. "mars 2026"), oversett til tall.`;
 
     const body = {
       model: "google/gemini-2.5-flash",
