@@ -387,22 +387,89 @@ export function StovsugerenPanel() {
                 </div>
 
                 {/* Commands */}
-                <div className="px-4 sm:px-5 pb-4">
-                  <div className="text-[10px] tracking-[0.3em] uppercase text-muted-foreground mb-2">
-                    ⚔ Befalinger
+                <div className="px-4 sm:px-5 pb-4 space-y-4">
+                  <div>
+                    <div className="text-[10px] tracking-[0.3em] uppercase text-muted-foreground mb-2">
+                      ⚔ Befalinger
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {CLOUD_COMMANDS.map((c) => (
+                        <FancyButton
+                          key={c.method}
+                          Icon={c.icon}
+                          label={c.label}
+                          tone={c.tone}
+                          busy={busyCmd === `${d.duid}:${c.method}`}
+                          disabled={busyCmd !== null || !d.online}
+                          onClick={() => runCmd(d.duid, c.method, c.params)}
+                        />
+                      ))}
+                    </div>
                   </div>
-                  <div className="flex flex-wrap gap-2">
-                    {CLOUD_COMMANDS.map((c) => (
-                      <FancyButton
-                        key={c.method}
-                        Icon={c.icon}
-                        label={c.label}
-                        tone={c.tone}
-                        busy={busyCmd === `${d.duid}:${c.method}`}
-                        disabled={busyCmd !== null || !d.online}
-                        onClick={() => runCmd(d.duid, c.method, c.params)}
-                      />
-                    ))}
+
+                  <div>
+                    <div className="text-[10px] tracking-[0.3em] uppercase text-muted-foreground mb-2 flex items-center gap-1.5">
+                      <Wind size={11} className="text-primary" /> Sugekraft
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {[
+                        { v: 105, label: "Stille" },
+                        { v: 101, label: "Hvisken" },
+                        { v: 102, label: "Balansert" },
+                        { v: 103, label: "Storm" },
+                        { v: 104, label: "Drage-pust" },
+                      ].map((opt) => {
+                        const active = fan === opt.v;
+                        const key = `${d.duid}:set_custom_mode:${opt.v}`;
+                        return (
+                          <button
+                            key={opt.v}
+                            disabled={busyCmd !== null || !d.online}
+                            onClick={() => runCmd(d.duid, "set_custom_mode", [opt.v])}
+                            className={`px-2.5 py-1.5 rounded border text-[10px] tracking-[0.2em] uppercase transition-all disabled:opacity-50 disabled:pointer-events-none ${
+                              active
+                                ? "border-primary text-primary bg-primary/15 shadow-[0_0_14px_-6px_hsl(var(--primary)/0.7)]"
+                                : "border-border text-foreground/70 bg-card/30 hover:border-primary/40 hover:text-foreground"
+                            }`}
+                          >
+                            {busyCmd === key && <Loader2 size={10} className="inline animate-spin mr-1" />}
+                            {opt.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="text-[10px] tracking-[0.3em] uppercase text-muted-foreground mb-2 flex items-center gap-1.5">
+                      <Droplets size={11} className="text-primary" /> Moppvann
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {[
+                        { v: 200, label: "Tørr" },
+                        { v: 201, label: "Lett dugg" },
+                        { v: 202, label: "Middels" },
+                        { v: 203, label: "Flomvann" },
+                      ].map((opt) => {
+                        const active = water === opt.v;
+                        const key = `${d.duid}:set_water_box_custom_mode:${opt.v}`;
+                        return (
+                          <button
+                            key={opt.v}
+                            disabled={busyCmd !== null || !d.online}
+                            onClick={() => runCmd(d.duid, "set_water_box_custom_mode", [opt.v])}
+                            className={`px-2.5 py-1.5 rounded border text-[10px] tracking-[0.2em] uppercase transition-all disabled:opacity-50 disabled:pointer-events-none ${
+                              active
+                                ? "border-primary text-primary bg-primary/15 shadow-[0_0_14px_-6px_hsl(var(--primary)/0.7)]"
+                                : "border-border text-foreground/70 bg-card/30 hover:border-primary/40 hover:text-foreground"
+                            }`}
+                          >
+                            {busyCmd === key && <Loader2 size={10} className="inline animate-spin mr-1" />}
+                            {opt.label}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
 
