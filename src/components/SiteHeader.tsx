@@ -43,6 +43,7 @@ type RoutePath =
   | "/matvarer"
   | "/kvitteringer"
   | "/skatte-utregningen"
+  | "/gressklipper"
   | "/got-saga";
 
 type NavLink = { to: RoutePath; label: string; public?: boolean };
