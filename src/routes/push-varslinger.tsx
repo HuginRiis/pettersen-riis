@@ -146,6 +146,7 @@ function PushSettingsPage() {
         </p>
       </section>
       <section id="sec-utseende" className="scroll-mt-24"><AppearanceSettingsPanel /></section>
+      <section id="sec-graf-utseende" className="scroll-mt-24"><ChartAppearanceSettingsPanel /></section>
       <section id="sec-meny" className="scroll-mt-24"><MenuPreferencesPanel /></section>
       <section id="sec-badges" className="scroll-mt-24"><HeaderBadgeSettingsPanel /></section>
       <section id="sec-snarveier" className="scroll-mt-24"><FavoritesManagerPanel /></section>
