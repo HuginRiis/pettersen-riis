@@ -18,6 +18,7 @@ import { MailDeliveryNotificationSettings } from "@/components/MailDeliveryNotif
 import { GarminNotificationSettings } from "@/components/GarminNotificationSettings";
 import { LoginNotificationSettings } from "@/components/LoginNotificationSettings";
 import { AppearanceSettingsPanel } from "@/components/AppearanceSettingsPanel";
+import { ChartAppearanceSettingsPanel } from "@/components/ChartAppearanceSettingsPanel";
 import {
   Bell, BellOff, Calendar, Cake, Trash2, CloudSun, Sun, Lightbulb, ScrollText, ShieldCheck, Lock, ExternalLink, Smartphone, X,
 } from "lucide-react";
