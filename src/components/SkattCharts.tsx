@@ -5,11 +5,10 @@ import { listMonthlyRange, type MonthlyAgg } from "@/server/skatt.functions";
 import {
   ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, Legend, CartesianGrid,
 } from "recharts";
+import { useChartAppearance } from "@/hooks/use-chart-appearance";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Des"];
 const fmt = (n: number) => new Intl.NumberFormat("nb-NO", { maximumFractionDigits: 0 }).format(Math.round(n));
-
-const COLORS = ["hsl(var(--primary))", "#22c55e", "#f59e0b", "#ef4444", "#3b82f6"];
 
 export function SkattCharts({ currentYear, refreshKey, profile }: { currentYear: number; refreshKey?: number; profile: "arne" | "rebekka" }) {
   const fnRange = useServerFn(listMonthlyRange);
@@ -50,27 +49,30 @@ export function SkattCharts({ currentYear, refreshKey, profile }: { currentYear:
 }
 
 function ChartBlock({ title, data, years, prefix }: { title: string; data: any[]; years: number[]; prefix: string }) {
+  const appearance = useChartAppearance();
   return (
     <div className="space-y-2">
       <div className="text-sm font-medium">{title}</div>
       <div className="h-56">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#7dd3fc" />
-            <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#fef08a" }} stroke="#7dd3fc" />
-            <YAxis tick={{ fontSize: 11, fill: "#fef08a" }} stroke="#7dd3fc" tickFormatter={(v) => fmt(v / 1000) + "k"} />
+            <CartesianGrid strokeDasharray="3 3" stroke={appearance.gridHorizontal} />
+            <XAxis dataKey="month" tick={{ fontSize: 11, fill: appearance.axisText }} stroke={appearance.axisLine} />
+            <YAxis tick={{ fontSize: 11, fill: appearance.axisText }} stroke={appearance.axisLine} tickFormatter={(v) => fmt(v / 1000) + "k"} />
             <Tooltip
-              contentStyle={{ background: "hsl(var(--background))", border: "1px solid #7dd3fc", fontSize: 12, color: "#7dd3fc" }}
+              contentStyle={{ background: appearance.tooltipBg, border: `1px solid ${appearance.tooltipBorder}`, fontSize: 12, color: appearance.tooltipText }}
+              itemStyle={{ color: appearance.tooltipText }}
+              labelStyle={{ color: appearance.tooltipText }}
               formatter={(v: any) => fmt(Number(v)) + " kr"}
             />
-            <Legend wrapperStyle={{ fontSize: 11, color: "#7dd3fc" }} />
+            <Legend wrapperStyle={{ fontSize: 11 }} />
             {years.map((y, i) => (
               <Line
                 key={y}
                 type="monotone"
                 dataKey={`${prefix}_${y}`}
                 name={String(y)}
-                stroke={COLORS[i % COLORS.length]}
+                stroke={appearance.series[i % appearance.series.length]}
                 strokeWidth={2}
                 dot={{ r: 2 }}
                 connectNulls
