@@ -233,6 +233,37 @@ function HomeyDeviceCard({
   const booleans = device.capabilities.filter((c) => !c.id.startsWith("button.") && c.type === "boolean");
   const battery = numbers.find((c) => c.id === "measure_battery");
 
+  // Vennlig oppsummering: battery, state, fan_power, water_box, hovedbørste, sidebørste, filter
+  const findCap = (pred: (id: string) => boolean) =>
+    device.capabilities.find((c) => pred(c.id.toLowerCase()));
+  const stateCap = findCap((id) => id.includes("vacuumcleaner_state") || id === "state");
+  const fanCap = findCap((id) => id.includes("fan_power") || id.includes("fan_speed"));
+  const waterCap = findCap((id) => id.includes("water_box") || id.includes("mop"));
+  const mainCap = findCap((id) => id.includes("main_brush"));
+  const sideCap = findCap((id) => id.includes("side_brush"));
+  const filterCap = findCap((id) => id.includes("filter") && (id.includes("life") || id.includes("consumable") || id.includes("work")));
+
+  const labelOf = (cap: typeof stateCap) => {
+    if (!cap) return null;
+    if (cap.type === "enum" && Array.isArray(cap.values)) {
+      const match = cap.values.find((v) => String(v.id) === String(cap.value));
+      return match?.title ?? String(cap.value ?? "—");
+    }
+    if (typeof cap.value === "number") return `${cap.value}${cap.units ?? ""}`;
+    if (cap.value == null || cap.value === "") return "—";
+    return String(cap.value);
+  };
+
+  const summary: Array<{ k: string; v: string | null }> = [
+    { k: "Batteri", v: typeof battery?.value === "number" ? `${battery.value}%` : null },
+    { k: "Tilstand", v: labelOf(stateCap) },
+    { k: "Sug", v: labelOf(fanCap) },
+    { k: "Mopp", v: labelOf(waterCap) },
+    { k: "Hovedbørste", v: labelOf(mainCap) },
+    { k: "Sidebørste", v: labelOf(sideCap) },
+    { k: "Filter", v: labelOf(filterCap) },
+  ].filter((x) => x.v != null && x.v !== "—");
+
   return (
     <div className="rounded-lg border border-border bg-card/30 p-3 space-y-3">
       <div className="flex items-center gap-2">
@@ -255,6 +286,16 @@ function HomeyDeviceCard({
       {device.zoneName && (
         <div className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground -mt-2">
           {device.zoneName}
+        </div>
+      )}
+
+      {summary.length > 0 && (
+        <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+          {summary.map((s) => (
+            <span key={s.k} className="text-muted-foreground truncate">
+              {s.k}: <span className="text-foreground">{s.v}</span>
+            </span>
+          ))}
         </div>
       )}
 
