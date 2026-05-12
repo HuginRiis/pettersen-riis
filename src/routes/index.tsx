@@ -104,6 +104,8 @@ function Home() {
   const router = useRouter();
   const { authenticated } = useAuthStatus();
   const isAuthed = authenticated === true;
+  const menuVisibility = useMenuVisibility();
+  const showHall = (to: string) => isMenuLinkVisible(menuVisibility, to);
 
   // Tidligere kiosk-minne sendte enheten automatisk til Steintavlen.
   // Det er nå deaktivert — Hjem skal alltid være startsiden. Rydder opp gammel verdi.
