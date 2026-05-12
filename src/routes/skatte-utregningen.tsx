@@ -209,7 +209,7 @@ function SkattePage() {
     if (!confirm(`Slette "${row.employer}" for ${MONTH_NAMES[row.month - 1]}?`)) return;
     if (!row.isNew) {
       try {
-        await fnDeleteMonth({ data: { year, month: row.month, employer: row.employer } });
+        await fnDeleteMonth({ data: { year, month: row.month, employer: row.employer, profile } });
       } catch (e) {
         alert("Kunne ikke slette: " + (e instanceof Error ? e.message : "ukjent"));
         return;
