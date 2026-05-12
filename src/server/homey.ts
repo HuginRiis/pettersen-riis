@@ -641,7 +641,7 @@ export async function listHomeyInsightsLogs(deviceId: string): Promise<any> {
 }
 
 export const disconnectHomey = createServerFn({ method: "POST" }).handler(async () => {
-  await deleteHomeyConnection();
+  await (await loadConnModule()).deleteHomeyConnection();
   homeyTargetCache = null;
   clearHomeySessionCaches();
   return { ok: true };
