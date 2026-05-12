@@ -686,7 +686,6 @@ function BreakEvenSuggestion({ rows, skalBetale }: { rows: Row[]; skalBetale: nu
     </Card>
   );
 }
-}
 
 function NumCell({ value, onChange }: { value: number; onChange: (v: number) => void }) {
   return (
