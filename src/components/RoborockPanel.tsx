@@ -170,6 +170,54 @@ function CapControl({
   );
 }
 
+const CLOUD_COMMANDS: Array<{ method: string; label: string; icon: typeof Play; params?: any[] }> = [
+  { method: "app_start", label: "Start", icon: Play },
+  { method: "app_pause", label: "Pause", icon: Pause },
+  { method: "app_stop", label: "Stopp", icon: Square },
+  { method: "app_charge", label: "Til dokk", icon: Home },
+  { method: "find_me", label: "Finn", icon: Bell, params: [{}] },
+];
+
+function CloudControls({ duid, onResult }: { duid: string; onResult: (msg: string) => void }) {
+  const sendCmd = useServerFn(sendRoborockCommand);
+  const [busy, setBusy] = useState<string | null>(null);
+
+  const run = async (method: string, params?: any[]) => {
+    setBusy(method);
+    try {
+      const r = await sendCmd({ data: { duid, method, params: params ?? [] } });
+      if (r.ok) {
+        onResult(`✓ ${method} sendt${r.acked ? " (bekreftet)" : ""}`);
+      } else {
+        onResult(`✗ ${method}: ${r.error ?? "ukjent feil"}`);
+      }
+    } catch (e: any) {
+      onResult(`✗ ${method}: ${e?.message ?? String(e)}`);
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  return (
+    <div className="mt-3 flex flex-wrap gap-1">
+      {CLOUD_COMMANDS.map((c) => {
+        const Icon = c.icon;
+        return (
+          <button
+            key={c.method}
+            onClick={() => run(c.method, c.params)}
+            disabled={busy !== null}
+            className="text-xs inline-flex items-center gap-1 px-3 py-2 rounded border border-border hover:border-primary/60 disabled:opacity-50"
+          >
+            {busy === c.method ? <Loader2 size={11} className="animate-spin" /> : <Icon size={11} />}
+            {c.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 function HomeyDeviceCard({
   device,
   onSet,
