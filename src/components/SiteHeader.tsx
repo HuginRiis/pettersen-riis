@@ -118,6 +118,7 @@ const navLinks: NavLink[] = [
   { to: "/hytta", label: "Hytta", public: true },
   { to: "/smarthus", label: "Smartborg" },
   { to: "/lys", label: "Lys" },
+  { to: "/gressklipper", label: "Gressklipper" },
   { to: "/stromkroniken", label: "Strømkrøniken" },
   { to: "/oppussing-borgen", label: "Prosjekter på Borgen" },
   { to: "/oppussing-hytta", label: "Prosjekter på hytta" },
