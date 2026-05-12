@@ -98,6 +98,7 @@ const ROUTE_ICON_COLOR: Partial<Record<RoutePath, string>> = {
   "/trening": "#ef4444",             // sverd — blod
   "/varsler": "#dc2626",             // farevarsel — rødt skilt
   "/steintavle": "#cbd5e1",          // stein — lys grå
+  "/skatte-utregningen": "#d4af37",  // gull-mynt
 };
 
 // Public halls — open to any visitor entering the courtyard.
