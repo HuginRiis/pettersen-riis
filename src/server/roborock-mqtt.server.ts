@@ -3,6 +3,7 @@
 // Optionally subscribes and waits briefly for the response on rr/m/o/...
 
 import { createCipheriv, createDecipheriv, createHash } from "crypto";
+// @ts-ignore - cloudflare:sockets is provided by the Worker runtime
 import { connect } from "cloudflare:sockets";
 
 const SALT = "TXdfu$jyZ#TZHsg4";
