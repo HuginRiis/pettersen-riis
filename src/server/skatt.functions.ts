@@ -19,20 +19,26 @@ export type TaxYearSettings = {
   ekstra_pr_mnd: number;
 };
 
+export const PROFILES = ["arne", "rebekka"] as const;
+export type Profile = (typeof PROFILES)[number];
+const profileSchema = z.enum(PROFILES).default("arne");
+
 export const listTaxYear = createServerFn({ method: "GET" })
-  .inputValidator((d) => z.object({ year: z.number().int() }).parse(d))
+  .inputValidator((d) => z.object({ year: z.number().int(), profile: profileSchema }).parse(d))
   .handler(async ({ data }) => {
     const [months, settings] = await Promise.all([
       supabaseAdmin
         .from("tax_monthly")
         .select("id,year,month,employer,lonn,skatt,ekstra,source")
         .eq("year", data.year)
+        .eq("profile", data.profile)
         .order("month", { ascending: true })
         .order("employer", { ascending: true }),
       supabaseAdmin
         .from("tax_year_settings")
         .select("year,skal_betale,ekstra_pr_mnd")
         .eq("year", data.year)
+        .eq("profile", data.profile)
         .maybeSingle(),
     ]);
     if (months.error) throw new Error(months.error.message);
@@ -46,11 +52,12 @@ export const listTaxYear = createServerFn({ method: "GET" })
 export type MonthlyAgg = { year: number; month: number; lonn: number; skatt: number; ekstra: number };
 
 export const listMonthlyRange = createServerFn({ method: "GET" })
-  .inputValidator((d) => z.object({ years: z.array(z.number().int()).min(1).max(10) }).parse(d))
+  .inputValidator((d) => z.object({ years: z.array(z.number().int()).min(1).max(10), profile: profileSchema }).parse(d))
   .handler(async ({ data }) => {
     const { data: rows, error } = await supabaseAdmin
       .from("tax_monthly")
       .select("year,month,lonn,skatt,ekstra")
+      .eq("profile", data.profile)
       .in("year", data.years);
     if (error) throw new Error(error.message);
     const map = new Map<string, MonthlyAgg>();
