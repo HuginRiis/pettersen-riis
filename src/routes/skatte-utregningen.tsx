@@ -6,11 +6,12 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Upload, Save, Loader2, Check } from "lucide-react";
+import { Upload, Save, Loader2, Check, Plus, Trash2 } from "lucide-react";
 import {
   listTaxYear,
   listTaxYears,
   upsertTaxMonth,
+  deleteTaxMonth,
   upsertTaxSettings,
   parsePayslip,
   type TaxMonth,
@@ -35,18 +36,28 @@ const MONTH_NAMES = [
   "Januar", "Februar", "Mars", "April", "Mai", "Juni",
   "Juli", "August", "September", "Oktober", "November", "Desember",
 ];
+const DEFAULT_EMPLOYER = "Hovedjobb";
 
 const fmt = (n: number) =>
   new Intl.NumberFormat("nb-NO", { maximumFractionDigits: 0 }).format(Math.round(n));
 const fmtPct = (n: number) =>
   new Intl.NumberFormat("nb-NO", { maximumFractionDigits: 2 }).format(n) + " %";
 
-type Row = { month: number; lonn: number; skatt: number; ekstra: number; dirty: boolean; saving?: boolean; saved?: boolean };
+type Row = {
+  key: string;
+  month: number;
+  employer: string;
+  lonn: number;
+  skatt: number;
+  ekstra: number;
+  dirty: boolean;
+  saving?: boolean;
+  saved?: boolean;
+  isNew?: boolean;
+};
 
-function emptyMonths(): Row[] {
-  return Array.from({ length: 12 }, (_, i) => ({
-    month: i + 1, lonn: 0, skatt: 0, ekstra: 0, dirty: false,
-  }));
+function rowKey(month: number, employer: string) {
+  return `${month}::${employer}`;
 }
 
 function fileToBase64(file: File): Promise<{ mime: string; base64: string }> {
@@ -62,16 +73,40 @@ function fileToBase64(file: File): Promise<{ mime: string; base64: string }> {
   });
 }
 
+function buildRows(months: TaxMonth[]): Row[] {
+  const map = new Map<string, Row>();
+  for (let m = 1; m <= 12; m++) {
+    const k = rowKey(m, DEFAULT_EMPLOYER);
+    map.set(k, { key: k, month: m, employer: DEFAULT_EMPLOYER, lonn: 0, skatt: 0, ekstra: 0, dirty: false });
+  }
+  for (const m of months) {
+    const k = rowKey(m.month, m.employer);
+    map.set(k, {
+      key: k,
+      month: m.month,
+      employer: m.employer,
+      lonn: Number(m.lonn),
+      skatt: Number(m.skatt),
+      ekstra: Number(m.ekstra),
+      dirty: false,
+    });
+  }
+  return Array.from(map.values()).sort((a, b) =>
+    a.month - b.month || a.employer.localeCompare(b.employer, "nb"),
+  );
+}
+
 function SkattePage() {
   const fnListYear = useServerFn(listTaxYear);
   const fnListYears = useServerFn(listTaxYears);
   const fnUpsertMonth = useServerFn(upsertTaxMonth);
+  const fnDeleteMonth = useServerFn(deleteTaxMonth);
   const fnUpsertSettings = useServerFn(upsertTaxSettings);
   const fnParsePayslip = useServerFn(parsePayslip);
 
   const [years, setYears] = useState<number[]>([2024, 2025, 2026]);
   const [year, setYear] = useState<number>(2026);
-  const [rows, setRows] = useState<Row[]>(emptyMonths());
+  const [rows, setRows] = useState<Row[]>([]);
   const [settings, setSettings] = useState<TaxYearSettings>({ year: 2026, skal_betale: 0, ekstra_pr_mnd: 0 });
   const [settingsDirty, setSettingsDirty] = useState(false);
   const [settingsSaving, setSettingsSaving] = useState(false);
@@ -79,9 +114,9 @@ function SkattePage() {
   const [importBusy, setImportBusy] = useState(false);
   const [importMsg, setImportMsg] = useState<string | null>(null);
   const [importErr, setImportErr] = useState<string | null>(null);
+  const [importEmployer, setImportEmployer] = useState<string>("");
   const fileRef = useRef<HTMLInputElement | null>(null);
 
-  // Load years once
   useEffect(() => {
     fnListYears().then((ys) => {
       if (ys.length > 0) {
@@ -91,27 +126,29 @@ function SkattePage() {
     }).catch(() => { /* keep defaults */ });
   }, [fnListYears]);
 
-  // Load year data
+  const reload = async (y: number) => {
+    setLoading(true);
+    try {
+      const res = await fnListYear({ data: { year: y } });
+      setRows(buildRows(res.months));
+      setSettings({
+        year: res.settings.year,
+        skal_betale: Number(res.settings.skal_betale),
+        ekstra_pr_mnd: Number(res.settings.ekstra_pr_mnd),
+      });
+      setSettingsDirty(false);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     let alive = true;
     setLoading(true);
     fnListYear({ data: { year } })
       .then((res) => {
         if (!alive) return;
-        const map = new Map<number, TaxMonth>();
-        res.months.forEach((m) => map.set(m.month, m));
-        setRows(
-          Array.from({ length: 12 }, (_, i) => {
-            const m = map.get(i + 1);
-            return {
-              month: i + 1,
-              lonn: m ? Number(m.lonn) : 0,
-              skatt: m ? Number(m.skatt) : 0,
-              ekstra: m ? Number(m.ekstra) : 0,
-              dirty: false,
-            };
-          }),
-        );
+        setRows(buildRows(res.months));
         setSettings({
           year: res.settings.year,
           skal_betale: Number(res.settings.skal_betale),
@@ -123,21 +160,59 @@ function SkattePage() {
     return () => { alive = false; };
   }, [year, fnListYear]);
 
-  const updateRow = (idx: number, key: "lonn" | "skatt" | "ekstra", value: number) => {
-    setRows((prev) => prev.map((r, i) => i === idx ? { ...r, [key]: value, dirty: true, saved: false } : r));
+  const updateRow = (key: string, patch: Partial<Row>) => {
+    setRows((prev) => prev.map((r) => r.key === key ? { ...r, ...patch, dirty: true, saved: false } : r));
   };
 
-  const saveRow = async (idx: number) => {
-    const r = rows[idx];
-    setRows((prev) => prev.map((row, i) => i === idx ? { ...row, saving: true } : row));
+  const renameEmployer = (key: string, newName: string) => {
+    setRows((prev) => prev.map((r) => {
+      if (r.key !== key) return r;
+      const employer = newName.trim() || "Ukjent";
+      return { ...r, employer, key: rowKey(r.month, employer), dirty: true, saved: false };
+    }));
+  };
+
+  const addEmployerRow = (month: number) => {
+    const existing = rows.filter((r) => r.month === month).map((r) => r.employer);
+    let name = "Ny arbeidsgiver";
+    let i = 2;
+    while (existing.includes(name)) name = `Ny arbeidsgiver ${i++}`;
+    const k = rowKey(month, name);
+    setRows((prev) => [...prev, {
+      key: k, month, employer: name, lonn: 0, skatt: 0, ekstra: 0, dirty: true, isNew: true,
+    }].sort((a, b) => a.month - b.month || a.employer.localeCompare(b.employer, "nb")));
+  };
+
+  const removeRow = async (row: Row) => {
+    if (!confirm(`Slette "${row.employer}" for ${MONTH_NAMES[row.month - 1]}?`)) return;
+    if (!row.isNew) {
+      try {
+        await fnDeleteMonth({ data: { year, month: row.month, employer: row.employer } });
+      } catch (e) {
+        alert("Kunne ikke slette: " + (e instanceof Error ? e.message : "ukjent"));
+        return;
+      }
+    }
+    setRows((prev) => prev.filter((r) => r.key !== row.key));
+  };
+
+  const saveRow = async (row: Row) => {
+    setRows((prev) => prev.map((r) => r.key === row.key ? { ...r, saving: true } : r));
     try {
-      await fnUpsertMonth({ data: { year, month: r.month, lonn: r.lonn, skatt: r.skatt, ekstra: r.ekstra } });
-      setRows((prev) => prev.map((row, i) => i === idx ? { ...row, saving: false, dirty: false, saved: true } : row));
+      await fnUpsertMonth({
+        data: {
+          year, month: row.month, employer: row.employer,
+          lonn: row.lonn, skatt: row.skatt, ekstra: row.ekstra,
+        },
+      });
+      setRows((prev) => prev.map((r) => r.key === row.key
+        ? { ...r, saving: false, dirty: false, saved: true, isNew: false }
+        : r));
       setTimeout(() => {
-        setRows((prev) => prev.map((row, i) => i === idx ? { ...row, saved: false } : row));
+        setRows((prev) => prev.map((r) => r.key === row.key ? { ...r, saved: false } : r));
       }, 1500);
     } catch (e) {
-      setRows((prev) => prev.map((row, i) => i === idx ? { ...row, saving: false } : row));
+      setRows((prev) => prev.map((r) => r.key === row.key ? { ...r, saving: false } : r));
       alert("Kunne ikke lagre: " + (e instanceof Error ? e.message : "ukjent feil"));
     }
   };
@@ -145,9 +220,14 @@ function SkattePage() {
   const saveAllDirty = async () => {
     const dirty = rows.filter((r) => r.dirty);
     for (const r of dirty) {
-      await fnUpsertMonth({ data: { year, month: r.month, lonn: r.lonn, skatt: r.skatt, ekstra: r.ekstra } });
+      await fnUpsertMonth({
+        data: {
+          year, month: r.month, employer: r.employer,
+          lonn: r.lonn, skatt: r.skatt, ekstra: r.ekstra,
+        },
+      });
     }
-    setRows((prev) => prev.map((r) => ({ ...r, dirty: false })));
+    setRows((prev) => prev.map((r) => ({ ...r, dirty: false, isNew: false })));
   };
 
   const saveSettings = async () => {
@@ -169,34 +249,32 @@ function SkattePage() {
     try {
       const { mime, base64 } = await fileToBase64(file);
       const result = await fnParsePayslip({ data: { fileName: file.name, mimeType: mime, base64 } });
-      // Save to DB
+      const employer = (importEmployer.trim() || result.employer || "Hovedjobb").trim();
       await fnUpsertMonth({
         data: {
           year: result.year,
           month: result.month,
+          employer,
           lonn: result.lonn,
           skatt: result.skatt,
           ekstra: result.ekstra,
           source: file.name,
         },
       });
-      // Add year to selector if missing
       if (!years.includes(result.year)) {
         setYears((prev) => Array.from(new Set([...prev, result.year])).sort());
       }
-      // Switch to that year & refresh
       if (result.year === year) {
-        setRows((prev) => prev.map((r) => r.month === result.month
-          ? { ...r, lonn: result.lonn, skatt: result.skatt, ekstra: result.ekstra, dirty: false, saved: true }
-          : r));
+        await reload(year);
       } else {
         setYear(result.year);
       }
       setImportMsg(
-        `Importert til ${MONTH_NAMES[result.month - 1]} ${result.year}: ` +
+        `Importert til ${MONTH_NAMES[result.month - 1]} ${result.year} (${employer}): ` +
         `Lønn ${fmt(result.lonn)} kr, Skatt ${fmt(result.skatt)} kr, Ekstra ${fmt(result.ekstra)} kr.` +
         (result.note ? ` (${result.note})` : ""),
       );
+      setImportEmployer("");
     } catch (e) {
       setImportErr(e instanceof Error ? e.message : "Klarte ikke importere");
     } finally {
@@ -205,22 +283,25 @@ function SkattePage() {
     }
   };
 
+  // Group rows per month for UI
+  const grouped = useMemo(() => {
+    const byMonth = new Map<number, Row[]>();
+    for (let m = 1; m <= 12; m++) byMonth.set(m, []);
+    for (const r of rows) byMonth.get(r.month)!.push(r);
+    return byMonth;
+  }, [rows]);
+
   const calc = useMemo(() => {
-    const enriched = rows.map((r) => {
-      const utbetalt = r.lonn - r.skatt - r.ekstra;
-      const prosent = r.lonn > 0 ? ((r.skatt + r.ekstra) / r.lonn) * 100 : 0;
-      return { ...r, utbetalt, prosent };
-    });
-    const sumLonn = enriched.reduce((a, r) => a + r.lonn, 0);
-    const sumSkatt = enriched.reduce((a, r) => a + r.skatt, 0);
-    const sumEkstra = enriched.reduce((a, r) => a + r.ekstra, 0);
+    const sumLonn = rows.reduce((a, r) => a + r.lonn, 0);
+    const sumSkatt = rows.reduce((a, r) => a + r.skatt, 0);
+    const sumEkstra = rows.reduce((a, r) => a + r.ekstra, 0);
     const sumTrukket = sumSkatt + sumEkstra;
     const sumUtbetalt = sumLonn - sumTrukket;
     const skattProsent = sumLonn > 0 ? (sumTrukket / sumLonn) * 100 : 0;
     const tilGodeEllerRest = sumTrukket - settings.skal_betale;
     const utenEkstra = sumSkatt - settings.skal_betale;
     return {
-      enriched, sumLonn, sumSkatt, sumEkstra, sumTrukket, sumUtbetalt,
+      sumLonn, sumSkatt, sumEkstra, sumTrukket, sumUtbetalt,
       skattProsent, tilGodeEllerRest, utenEkstra,
       prMndUtbetalt: sumUtbetalt / 12,
     };
@@ -253,7 +334,13 @@ function SkattePage() {
                 {y}
               </Button>
             ))}
-            <div className="ml-auto flex flex-wrap gap-2">
+            <div className="ml-auto flex flex-wrap gap-2 items-center">
+              <Input
+                placeholder="Arbeidsgiver (valgfritt)"
+                className="h-9 w-48"
+                value={importEmployer}
+                onChange={(e) => setImportEmployer(e.target.value)}
+              />
               <input
                 ref={fileRef}
                 type="file"
@@ -275,11 +362,14 @@ function SkattePage() {
               </Button>
               {anyDirty && (
                 <Button size="sm" onClick={saveAllDirty}>
-                  <Save /> Lagre endringer
+                  <Save /> Lagre alle
                 </Button>
               )}
             </div>
           </div>
+          <p className="text-xs text-muted-foreground">
+            Tips: La feltet stå tomt så bruker AI navnet på arbeidsgiveren fra slippen. Skriv inn et navn for å overstyre.
+          </p>
           {importMsg && (
             <div className="text-sm rounded-md border border-green-600/40 bg-green-600/10 px-3 py-2 text-green-500">
               {importMsg}
@@ -320,52 +410,109 @@ function SkattePage() {
           </div>
         </Card>
 
-        {/* Måned-tabell — redigerbar */}
+        {/* Måned-tabell — redigerbar med flere arbeidsgivere */}
         <Card className="p-0 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-muted/50 text-xs uppercase tracking-wider text-muted-foreground">
                 <tr>
                   <th className="text-left p-3">Måned</th>
+                  <th className="text-left p-3">Arbeidsgiver</th>
                   <th className="text-right p-3">Lønn</th>
                   <th className="text-right p-3">Skatt</th>
                   <th className="text-right p-3">Ekstra</th>
                   <th className="text-right p-3">Utbetalt</th>
                   <th className="text-right p-3">Skatt %</th>
-                  <th className="p-3 w-10"></th>
+                  <th className="p-3 w-20"></th>
                 </tr>
               </thead>
               <tbody>
-                {calc.enriched.map((r, idx) => (
-                  <tr key={r.month} className="border-t border-border">
-                    <td className="p-2 font-medium whitespace-nowrap">{MONTH_NAMES[r.month - 1]}</td>
-                    <td className="p-1 text-right">
-                      <NumCell value={r.lonn} onChange={(v) => updateRow(idx, "lonn", v)} />
-                    </td>
-                    <td className="p-1 text-right">
-                      <NumCell value={r.skatt} onChange={(v) => updateRow(idx, "skatt", v)} />
-                    </td>
-                    <td className="p-1 text-right">
-                      <NumCell value={r.ekstra} onChange={(v) => updateRow(idx, "ekstra", v)} />
-                    </td>
-                    <td className="p-2 text-right tabular-nums font-semibold">{fmt(r.utbetalt)}</td>
-                    <td className="p-2 text-right tabular-nums">{fmtPct(r.prosent)}</td>
-                    <td className="p-2 text-center">
-                      {r.saving ? <Loader2 className="size-4 animate-spin text-muted-foreground inline" />
-                        : r.saved ? <Check className="size-4 text-green-500 inline" />
-                        : r.dirty ? (
+                {Array.from(grouped.entries()).map(([month, monthRows]) => {
+                  const sumL = monthRows.reduce((a, r) => a + r.lonn, 0);
+                  const sumS = monthRows.reduce((a, r) => a + r.skatt, 0);
+                  const sumE = monthRows.reduce((a, r) => a + r.ekstra, 0);
+                  const utb = sumL - sumS - sumE;
+                  const pct = sumL > 0 ? ((sumS + sumE) / sumL) * 100 : 0;
+                  const showSubtotal = monthRows.length > 1;
+                  return (
+                    <FragmentRows key={month}>
+                      {monthRows.map((r, idx) => {
+                        const utbR = r.lonn - r.skatt - r.ekstra;
+                        const pctR = r.lonn > 0 ? ((r.skatt + r.ekstra) / r.lonn) * 100 : 0;
+                        return (
+                          <tr key={r.key} className="border-t border-border">
+                            <td className="p-2 font-medium whitespace-nowrap">
+                              {idx === 0 ? MONTH_NAMES[month - 1] : ""}
+                            </td>
+                            <td className="p-1">
+                              <Input
+                                className="h-8 w-40"
+                                value={r.employer}
+                                onChange={(e) => renameEmployer(r.key, e.target.value)}
+                              />
+                            </td>
+                            <td className="p-1 text-right">
+                              <NumCell value={r.lonn} onChange={(v) => updateRow(r.key, { lonn: v })} />
+                            </td>
+                            <td className="p-1 text-right">
+                              <NumCell value={r.skatt} onChange={(v) => updateRow(r.key, { skatt: v })} />
+                            </td>
+                            <td className="p-1 text-right">
+                              <NumCell value={r.ekstra} onChange={(v) => updateRow(r.key, { ekstra: v })} />
+                            </td>
+                            <td className="p-2 text-right tabular-nums font-semibold">{fmt(utbR)}</td>
+                            <td className="p-2 text-right tabular-nums">{fmtPct(pctR)}</td>
+                            <td className="p-2">
+                              <div className="flex items-center justify-end gap-1">
+                                {r.saving ? <Loader2 className="size-4 animate-spin text-muted-foreground" />
+                                  : r.saved ? <Check className="size-4 text-green-500" />
+                                  : r.dirty ? (
+                                    <button
+                                      onClick={() => saveRow(r)}
+                                      className="text-xs px-2 py-1 rounded bg-primary text-primary-foreground"
+                                    >
+                                      Lagre
+                                    </button>
+                                  ) : null}
+                                <button
+                                  onClick={() => removeRow(r)}
+                                  className="text-muted-foreground hover:text-red-500 p-1"
+                                  title="Slett"
+                                >
+                                  <Trash2 className="size-4" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                      {showSubtotal && (
+                        <tr className="border-t border-border bg-muted/20 text-xs italic">
+                          <td className="p-2"></td>
+                          <td className="p-2 text-muted-foreground">Sum {MONTH_NAMES[month - 1]}</td>
+                          <td className="p-2 text-right tabular-nums">{fmt(sumL)}</td>
+                          <td className="p-2 text-right tabular-nums">{fmt(sumS)}</td>
+                          <td className="p-2 text-right tabular-nums">{fmt(sumE)}</td>
+                          <td className="p-2 text-right tabular-nums">{fmt(utb)}</td>
+                          <td className="p-2 text-right tabular-nums">{fmtPct(pct)}</td>
+                          <td></td>
+                        </tr>
+                      )}
+                      <tr className="border-t border-dashed border-border/60">
+                        <td colSpan={8} className="p-1 pl-3">
                           <button
-                            onClick={() => saveRow(idx)}
-                            className="text-xs px-2 py-1 rounded bg-primary text-primary-foreground"
+                            onClick={() => addEmployerRow(month)}
+                            className="text-xs text-muted-foreground hover:text-primary inline-flex items-center gap-1"
                           >
-                            Lagre
+                            <Plus className="size-3" /> Legg til arbeidsgiver i {MONTH_NAMES[month - 1]}
                           </button>
-                        ) : null}
-                    </td>
-                  </tr>
-                ))}
+                        </td>
+                      </tr>
+                    </FragmentRows>
+                  );
+                })}
                 <tr className="border-t-2 border-primary/40 bg-muted/30 font-semibold">
-                  <td className="p-3">Sum</td>
+                  <td className="p-3" colSpan={2}>Sum året</td>
                   <td className="p-3 text-right tabular-nums">{fmt(calc.sumLonn)}</td>
                   <td className="p-3 text-right tabular-nums">{fmt(calc.sumSkatt)}</td>
                   <td className="p-3 text-right tabular-nums">{fmt(calc.sumEkstra)}</td>
@@ -433,6 +580,10 @@ function SkattePage() {
       </section>
     </PageShell>
   );
+}
+
+function FragmentRows({ children }: { children: React.ReactNode }) {
+  return <>{children}</>;
 }
 
 function NumCell({ value, onChange }: { value: number; onChange: (v: number) => void }) {
