@@ -119,6 +119,8 @@ function SkattePage() {
   const fnSaveFile = useServerFn(savePayslipFile);
   const fnDeleteFile = useServerFn(deletePayslipFile);
 
+  type Profile = "arne" | "rebekka";
+  const [profile, setProfile] = useState<Profile>("arne");
   const [years, setYears] = useState<number[]>([2024, 2025, 2026]);
   const [year, setYear] = useState<number>(2026);
   const [rows, setRows] = useState<Row[]>([]);
