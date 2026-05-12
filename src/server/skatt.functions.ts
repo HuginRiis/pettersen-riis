@@ -25,9 +25,10 @@ export const listTaxYear = createServerFn({ method: "GET" })
     const [months, settings] = await Promise.all([
       supabaseAdmin
         .from("tax_monthly")
-        .select("id,year,month,lonn,skatt,ekstra,source")
+        .select("id,year,month,employer,lonn,skatt,ekstra,source")
         .eq("year", data.year)
-        .order("month", { ascending: true }),
+        .order("month", { ascending: true })
+        .order("employer", { ascending: true }),
       supabaseAdmin
         .from("tax_year_settings")
         .select("year,skal_betale,ekstra_pr_mnd")
