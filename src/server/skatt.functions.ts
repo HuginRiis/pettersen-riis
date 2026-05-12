@@ -52,6 +52,83 @@ export const listTaxYears = createServerFn({ method: "GET" }).handler(async () =
   return (data ?? []).map((r) => r.year as number);
 });
 
+export type PayslipFile = {
+  id: string;
+  year: number;
+  month: number | null;
+  employer: string | null;
+  file_path: string;
+  file_url: string;
+  original_name: string | null;
+  mime_type: string | null;
+  size_bytes: number | null;
+  uploaded_at: string;
+};
+
+export const listPayslipFiles = createServerFn({ method: "GET" }).handler(async () => {
+  const { data, error } = await supabaseAdmin
+    .from("payslip_files")
+    .select("id,year,month,employer,file_path,file_url,original_name,mime_type,size_bytes,uploaded_at")
+    .order("year", { ascending: false })
+    .order("month", { ascending: false })
+    .order("uploaded_at", { ascending: false });
+  if (error) throw new Error(error.message);
+  return (data ?? []) as PayslipFile[];
+});
+
+const savePayslipFileSchema = z.object({
+  year: z.number().int(),
+  month: z.number().int().min(1).max(12).nullable(),
+  employer: z.string().max(100).nullable(),
+  fileName: z.string(),
+  mimeType: z.string(),
+  base64: z.string().min(20),
+  sizeBytes: z.number().nonnegative().nullable().optional(),
+});
+
+export const savePayslipFile = createServerFn({ method: "POST" })
+  .inputValidator((d) => savePayslipFileSchema.parse(d))
+  .handler(async ({ data }) => {
+    const ext = data.fileName.split(".").pop()?.toLowerCase() || "bin";
+    const safeName = data.fileName.replace(/[^a-zA-Z0-9._-]+/g, "_");
+    const path = `${data.year}/${Date.now()}-${safeName}`;
+    const buf = Uint8Array.from(atob(data.base64), (c) => c.charCodeAt(0));
+    const { error: upErr } = await supabaseAdmin.storage
+      .from("payslips")
+      .upload(path, buf, { contentType: data.mimeType, upsert: false });
+    if (upErr) throw new Error(`Opplasting feilet: ${upErr.message}`);
+    const { data: pub } = supabaseAdmin.storage.from("payslips").getPublicUrl(path);
+    const { error: insErr } = await supabaseAdmin.from("payslip_files").insert({
+      year: data.year,
+      month: data.month,
+      employer: data.employer,
+      file_path: path,
+      file_url: pub.publicUrl,
+      original_name: data.fileName,
+      mime_type: data.mimeType,
+      size_bytes: data.sizeBytes ?? buf.length,
+    });
+    if (insErr) throw new Error(insErr.message);
+    return { ok: true, url: pub.publicUrl, path };
+    // eslint-disable-next-line no-unreachable
+    void ext;
+  });
+
+export const deletePayslipFile = createServerFn({ method: "POST" })
+  .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data }) => {
+    const { data: row, error: selErr } = await supabaseAdmin
+      .from("payslip_files").select("file_path").eq("id", data.id).maybeSingle();
+    if (selErr) throw new Error(selErr.message);
+    if (row?.file_path) {
+      await supabaseAdmin.storage.from("payslips").remove([row.file_path]);
+    }
+    const { error } = await supabaseAdmin.from("payslip_files").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+
 const upsertMonthSchema = z.object({
   year: z.number().int(),
   month: z.number().int().min(1).max(12),
