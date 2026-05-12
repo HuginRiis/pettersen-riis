@@ -1,11 +1,16 @@
 import { createServerFn } from "@tanstack/react-start";
-import {
-  deleteHomeyConnection,
-  getHomeyConnection,
-  updateHomeyTokens,
-  type HomeyConnection,
-} from "./homey-connection";
+import type { HomeyConnection } from "./homey-connection";
 import { withApiLog } from "./api-call-log.server";
+
+// Server-only runtime imports — lazily loaded so the client bundle never pulls
+// in `homey-connection` (which depends on `client.server`).
+async function loadConnModule(): Promise<typeof import("./homey-connection")> {
+  // String indirection + @vite-ignore so Vite does not statically resolve
+  // this dynamic import into the client bundle. At runtime (server only)
+  // this resolves to the real module.
+  const modPath = "./homey-connection";
+  return await import(/* @vite-ignore */ modPath);
+}
 
 export const HOMEY_SCOPES = ["homey", "homey.device.readonly"];
 
@@ -83,7 +88,7 @@ async function refreshAccessToken(conn: HomeyConnection): Promise<HomeyConnectio
 
   const expiresAt = new Date(Date.now() + (tok.expires_in - 60) * 1000).toISOString();
 
-  await updateHomeyTokens(conn.id, {
+  await (await loadConnModule()).updateHomeyTokens(conn.id, {
     access_token: tok.access_token,
     refresh_token: tok.refresh_token,
     expires_at: expiresAt,
@@ -100,7 +105,7 @@ async function refreshAccessToken(conn: HomeyConnection): Promise<HomeyConnectio
 }
 
 export async function getValidConnection(): Promise<HomeyConnection | null> {
-  const conn = await getHomeyConnection();
+  const conn = await (await loadConnModule()).getHomeyConnection();
   if (!conn) return null;
 
   const expiresMs = new Date(conn.expires_at).getTime();
@@ -327,7 +332,7 @@ async function getResolvedHomeyTarget(conn: HomeyConnection): Promise<HomeyTarge
       };
       if (target) {
         try {
-          const { saveHomeyTargetCache } = await import("./homey-connection");
+          const { saveHomeyTargetCache } = await loadConnModule();
           await saveHomeyTargetCache(conn.id, {
             homey_id: target.id,
             homey_name: target.name,
@@ -640,7 +645,7 @@ export async function listHomeyInsightsLogs(deviceId: string): Promise<any> {
 }
 
 export const disconnectHomey = createServerFn({ method: "POST" }).handler(async () => {
-  await deleteHomeyConnection();
+  await (await loadConnModule()).deleteHomeyConnection();
   homeyTargetCache = null;
   clearHomeySessionCaches();
   return { ok: true };
