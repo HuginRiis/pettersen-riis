@@ -84,7 +84,7 @@ async function refreshAccessToken(conn: HomeyConnection): Promise<HomeyConnectio
 
   const expiresAt = new Date(Date.now() + (tok.expires_in - 60) * 1000).toISOString();
 
-  await updateHomeyTokens(conn.id, {
+  await (await loadConnModule()).updateHomeyTokens(conn.id, {
     access_token: tok.access_token,
     refresh_token: tok.refresh_token,
     expires_at: expiresAt,
