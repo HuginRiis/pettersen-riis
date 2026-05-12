@@ -687,6 +687,10 @@ function BreakEvenSuggestion({ rows, skalBetale }: { rows: Row[]; skalBetale: nu
   );
 }
 
+function FragmentRows({ children }: { children: React.ReactNode }) {
+  return <>{children}</>;
+}
+
 function NumCell({ value, onChange }: { value: number; onChange: (v: number) => void }) {
   return (
     <Input
