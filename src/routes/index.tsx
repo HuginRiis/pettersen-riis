@@ -19,7 +19,7 @@ import { MaesterCounsel } from "@/components/MaesterCounsel";
 import { BirthdayBanner } from "@/components/BirthdayBanner";
 import { BirthdaysOverview } from "@/components/BirthdaysOverview";
 import { UpcomingHolidays } from "@/components/UpcomingHolidays";
-import { PushTodayBadge, LightsOnBadge, TomorrowWeatherBadge } from "@/components/HallBadges";
+import { PushTodayBadge, LightsOnBadge, TomorrowWeatherBadge, MowerStatusBadge, GardenaStatusBadge, GardenaBatteryBadge, GardenaSignalBadge, RoborockStatusBadge, AlarmStateBadge, UtgangsdorenLockBadge, AlertsSeverityBadge, PowerVsYesterdayBadge, StepsTodayBadge, TrainingLast4WeeksBadge, GarbageNextPickupBadge, CurrentTempBadge, WeatherDaysBadge } from "@/components/HallBadges";
 
 import { useAuthStatus } from "@/hooks/use-auth-status";
 import { logoutFn } from "@/server/auth";
