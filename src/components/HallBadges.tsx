@@ -900,3 +900,105 @@ export function GardenaSignalBadge({ inline }: { inline?: boolean } = {}) {
     </span>
   );
 }
+
+/* ----------------------------- Roborock støvsuger-badges ----------------------------- */
+
+let __roborockPromise: Promise<any> | null = null;
+let __roborockHomeyPromise: Promise<any> | null = null;
+let __roborockCachedAt = 0;
+function loadRoborock(): Promise<{ cloud: any; homey: any }> {
+  const now = Date.now();
+  if (__roborockPromise && __roborockHomeyPromise && now - __roborockCachedAt < 60_000) {
+    return Promise.all([__roborockPromise, __roborockHomeyPromise]).then(([cloud, homey]) => ({ cloud, homey }));
+  }
+  __roborockCachedAt = now;
+  __roborockPromise = import("@/server/roborock.functions").then((m) => m.getRoborockSnapshot()).catch(() => null);
+  __roborockHomeyPromise = import("@/server/homey").then((m) => m.getRoborockHomeySnapshot()).catch(() => null);
+  return Promise.all([__roborockPromise, __roborockHomeyPromise]).then(([cloud, homey]) => ({ cloud, homey }));
+}
+
+const ROBOROCK_STATE_LABEL: Record<number, string> = {
+  1: "Starter", 2: "Lader", 3: "Inaktiv", 4: "Fjernstyrt", 5: "Renser",
+  6: "Til dokk", 7: "Manuell", 8: "Lader", 9: "Lade-feil",
+  10: "Pause", 11: "Sone-rens", 12: "Feil", 13: "Skrur av", 14: "Oppdaterer",
+  15: "Dokker", 16: "Til punkt", 17: "Sone-rens", 18: "Rom-rens",
+  22: "Tømmer", 23: "Vasker mopp", 26: "Vasker mopp",
+};
+
+function num(v: unknown): number | null {
+  if (typeof v === "number") return v;
+  if (typeof v === "string" && v !== "" && !Number.isNaN(Number(v))) return Number(v);
+  return null;
+}
+
+function pickRoborockStatus(snap: { cloud: any; homey: any }, match: "hjem" | "hytt"): { label: string; emoji: string; tone: "ok" | "warn" | "error" | "info"; battery: number | null } | null {
+  const matches = (name: string) => {
+    const n = (name ?? "").toLowerCase();
+    if (match === "hytt") return n.includes("hytt") || n.includes("bjørkeset") || n.includes("bjorkeset");
+    return !(n.includes("hytt") || n.includes("bjørkeset") || n.includes("bjorkeset"));
+  };
+
+  // Cloud snapshot first (har DPS-felter)
+  const cloudDev = snap.cloud?.ok ? (snap.cloud.devices ?? []).find((d: any) => matches(d.name)) : null;
+  if (cloudDev) {
+    const a = (cloudDev.attribute ?? {}) as Record<string, unknown>;
+    const state = num(a[121]) ?? num(a.state);
+    const battery = num(a[122]) ?? num(a.battery);
+    const error = num(a[120]) ?? num(a.error_code);
+    let tone: "ok" | "warn" | "error" | "info" = "info";
+    let label = state != null ? (ROBOROCK_STATE_LABEL[state] ?? `kode ${state}`) : (cloudDev.online ? "Online" : "Offline");
+    let emoji = "🤖";
+    if (error && error !== 0) { tone = "error"; label = "Feil"; emoji = "⚠️"; }
+    else if (state === 5 || state === 11 || state === 17 || state === 18) { tone = "ok"; emoji = "🤖"; }
+    else if (state === 8 || state === 2) { tone = "info"; emoji = "🔌"; }
+    else if (state === 6 || state === 15) { tone = "info"; emoji = "↩️"; }
+    else if (state === 22 || state === 23 || state === 26) { tone = "info"; emoji = "🚿"; }
+    else if (state === 10) { tone = "warn"; emoji = "⏸"; }
+    else if (state === 12 || state === 9) { tone = "error"; emoji = "⚠️"; }
+    else if (state === 3) { tone = "info"; emoji = "💤"; }
+    return { label, emoji, tone, battery };
+  }
+
+  // Homey fallback
+  const homeyDev = snap.homey?.ok ? (snap.homey.devices ?? []).find((d: any) => matches(d.name)) : null;
+  if (homeyDev) {
+    const caps: any[] = homeyDev.capabilities ?? [];
+    const findCap = (pred: (id: string) => boolean) => caps.find((c) => pred(String(c.id).toLowerCase()));
+    const battery = (findCap((id) => id === "measure_battery")?.value ?? null) as number | null;
+    const stateCap = findCap((id) => id.includes("vacuumcleaner_state") || id === "state");
+    const sv = String(stateCap?.value ?? "").toLowerCase();
+    let tone: "ok" | "warn" | "error" | "info" = "info";
+    let label = sv ? sv.replace(/_/g, " ") : (homeyDev.available ? "Online" : "Offline");
+    let emoji = "🤖";
+    if (sv.includes("clean") || sv.includes("mop")) { tone = "ok"; emoji = "🤖"; label = "Renser"; }
+    else if (sv.includes("charg")) { tone = "info"; emoji = "🔌"; label = "Lader"; }
+    else if (sv.includes("dock") || sv.includes("return") || sv.includes("home")) { tone = "info"; emoji = "↩️"; label = "Til dokk"; }
+    else if (sv.includes("pause")) { tone = "warn"; emoji = "⏸"; label = "Pause"; }
+    else if (sv.includes("error") || sv.includes("fail")) { tone = "error"; emoji = "⚠️"; label = "Feil"; }
+    else if (sv.includes("idle") || sv.includes("stop")) { tone = "info"; emoji = "💤"; label = "Inaktiv"; }
+    return { label, emoji, tone, battery: typeof battery === "number" ? battery : null };
+  }
+  return null;
+}
+
+export function RoborockStatusBadge({ inline, match, name }: { inline?: boolean; match: "hjem" | "hytt"; name: string }) {
+  const [info, setInfo] = useState<{ label: string; emoji: string; tone: "ok" | "warn" | "error" | "info"; battery: number | null } | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    loadRoborock().then((snap) => { if (!cancelled) setInfo(pickRoborockStatus(snap, match)); });
+    return () => { cancelled = true; };
+  }, [match]);
+  if (!info) return null;
+  const tone =
+    info.tone === "ok" ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40" :
+    info.tone === "warn" ? "bg-amber-500/20 text-amber-300 border-amber-500/40" :
+    info.tone === "error" ? "bg-rose-500/20 text-rose-300 border-rose-500/40" :
+    "bg-sky-500/20 text-sky-300 border-sky-500/40";
+  const cls = `px-1.5 h-[18px] rounded-full text-[10px] font-semibold inline-flex items-center justify-center border ${tone}`;
+  const battTxt = info.battery != null ? ` ${info.battery}%` : "";
+  return (
+    <span title={`${name}: ${info.label}${battTxt}`} className={inline ? `ml-1 ${cls}` : `absolute top-2 right-2 z-10 ${cls}`}>
+      {info.emoji}{name === "Hytta" ? "H" : "B"}{battTxt}
+    </span>
+  );
+}
