@@ -3,6 +3,7 @@ import { LineChart as LineChartIcon, RotateCcw, Save } from "lucide-react";
 import {
   CHART_APPEARANCE_DEFAULT,
   loadChartAppearance,
+  normalizeChartAppearance,
   saveChartAppearance,
   type ChartAppearance,
 } from "@/hooks/use-chart-appearance";
@@ -47,14 +48,14 @@ export function ChartAppearanceSettingsPanel() {
     saveChartAppearance(draft);
   }, [draft]);
 
-  const setField = <K extends keyof ChartAppearance>(k: K, v: ChartAppearance[K]) =>
-    setDraft((d) => ({ ...d, [k]: v }));
+  const setField = <K extends keyof Omit<ChartAppearance, "series">>(k: K, v: ChartAppearance[K]) =>
+    setDraft((d) => normalizeChartAppearance({ ...d, [k]: v }));
 
   const setSeries = (i: number, c: string) =>
     setDraft((d) => {
       const next = [...d.series] as ChartAppearance["series"];
       next[i] = c;
-      return { ...d, series: next };
+      return normalizeChartAppearance({ ...d, series: next });
     });
 
   const onSave = async () => {
