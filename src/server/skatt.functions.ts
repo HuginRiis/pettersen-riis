@@ -6,6 +6,7 @@ export type TaxMonth = {
   id: string;
   year: number;
   month: number;
+  employer: string;
   lonn: number;
   skatt: number;
   ekstra: number;
