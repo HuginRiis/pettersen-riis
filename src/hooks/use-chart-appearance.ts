@@ -25,20 +25,46 @@ export const CHART_APPEARANCE_DEFAULT: ChartAppearance = {
 const KEY = "chart-appearance-v1";
 export const CHART_APPEARANCE_EVENT = "chart-appearance:changed";
 
+const isHexColor = (value: unknown): value is string =>
+  typeof value === "string" && /^#[0-9a-fA-F]{6}$/.test(value);
+
+function colorOrDefault(value: unknown, fallback: string) {
+  return isHexColor(value) ? value : fallback;
+}
+
+export function normalizeChartAppearance(value: unknown): ChartAppearance {
+  const parsed = value && typeof value === "object" ? (value as Partial<ChartAppearance>) : {};
+  const parsedSeries = Array.isArray(parsed.series) ? parsed.series : [];
+
+  return {
+    axisText: colorOrDefault(parsed.axisText, CHART_APPEARANCE_DEFAULT.axisText),
+    axisLine: colorOrDefault(parsed.axisLine, CHART_APPEARANCE_DEFAULT.axisLine),
+    gridHorizontal: colorOrDefault(parsed.gridHorizontal, CHART_APPEARANCE_DEFAULT.gridHorizontal),
+    gridVertical: colorOrDefault(parsed.gridVertical, CHART_APPEARANCE_DEFAULT.gridVertical),
+    tooltipText: colorOrDefault(parsed.tooltipText, CHART_APPEARANCE_DEFAULT.tooltipText),
+    tooltipBg: colorOrDefault(parsed.tooltipBg, CHART_APPEARANCE_DEFAULT.tooltipBg),
+    tooltipBorder: colorOrDefault(parsed.tooltipBorder, CHART_APPEARANCE_DEFAULT.tooltipBorder),
+    series: CHART_APPEARANCE_DEFAULT.series.map((fallback, index) =>
+      colorOrDefault(parsedSeries[index], fallback),
+    ) as ChartAppearance["series"],
+  };
+}
+
 export function loadChartAppearance(): ChartAppearance {
   if (typeof window === "undefined") return CHART_APPEARANCE_DEFAULT;
   try {
     const raw = localStorage.getItem(KEY);
     if (!raw) return CHART_APPEARANCE_DEFAULT;
-    const parsed = JSON.parse(raw);
-    return { ...CHART_APPEARANCE_DEFAULT, ...parsed, series: { ...CHART_APPEARANCE_DEFAULT.series, ...(parsed.series ?? {}) } as any };
+    return normalizeChartAppearance(JSON.parse(raw));
   } catch {
     return CHART_APPEARANCE_DEFAULT;
   }
 }
 
 export function saveChartAppearance(s: ChartAppearance) {
-  localStorage.setItem(KEY, JSON.stringify(s));
+  if (typeof window === "undefined") return;
+  const normalized = normalizeChartAppearance(s);
+  localStorage.setItem(KEY, JSON.stringify(normalized));
   window.dispatchEvent(new Event(CHART_APPEARANCE_EVENT));
 }
 
@@ -57,13 +83,14 @@ export function useChartAppearance(): ChartAppearance {
 }
 
 export function applyChartAppearanceToDocument(s: ChartAppearance) {
+  const normalized = normalizeChartAppearance(s);
   const r = document.documentElement;
-  r.style.setProperty("--chart-axis-text", s.axisText);
-  r.style.setProperty("--chart-axis-line", s.axisLine);
-  r.style.setProperty("--chart-grid-h", s.gridHorizontal);
-  r.style.setProperty("--chart-grid-v", s.gridVertical);
-  r.style.setProperty("--chart-tooltip-text", s.tooltipText);
-  r.style.setProperty("--chart-tooltip-bg", s.tooltipBg);
-  r.style.setProperty("--chart-tooltip-border", s.tooltipBorder);
-  s.series.forEach((c, i) => r.style.setProperty(`--chart-series-${i + 1}`, c));
+  r.style.setProperty("--chart-axis-text", normalized.axisText);
+  r.style.setProperty("--chart-axis-line", normalized.axisLine);
+  r.style.setProperty("--chart-grid-h", normalized.gridHorizontal);
+  r.style.setProperty("--chart-grid-v", normalized.gridVertical);
+  r.style.setProperty("--chart-tooltip-text", normalized.tooltipText);
+  r.style.setProperty("--chart-tooltip-bg", normalized.tooltipBg);
+  r.style.setProperty("--chart-tooltip-border", normalized.tooltipBorder);
+  normalized.series.forEach((c, i) => r.style.setProperty(`--chart-series-${i + 1}`, c));
 }
