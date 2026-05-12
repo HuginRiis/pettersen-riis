@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Bot, Loader2, Wifi, WifiOff, Battery, RefreshCw, Mail, KeyRound, Play } from "lucide-react";
+import { Bot, Loader2, Wifi, WifiOff, Battery, RefreshCw, Mail, KeyRound, Play, Pause, Square, Home, Bell } from "lucide-react";
 import {
   getRoborockSnapshot,
   sendRoborockCode,
   submitRoborockCode,
   loginRoborockWithPassword,
+  sendRoborockCommand,
 } from "@/server/roborock.functions";
 import {
   getRoborockHomeySnapshot,
@@ -371,9 +372,7 @@ export function RoborockPanel() {
             <div className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground">
               Status fra Roborock-skyen
             </div>
-            {snap.devices
-              .filter((d) => !homeyDevices.some((h) => h.name.toLowerCase().trim() === (d.name ?? "").toLowerCase().trim()))
-              .map((d) => {
+            {snap.devices.map((d) => {
               const status = (d.attribute ?? {}) as Record<string, unknown>;
               // Roborock S7 DPS-koder (numeriske) er ofte mer fersk enn de navngitte
               // 120=error, 121=state, 122=battery, 123=fan_power, 124=water_box_mode,
