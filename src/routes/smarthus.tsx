@@ -1348,6 +1348,8 @@ function SmarthusPage() {
 
       <MowerPanel devices={data.devices} zones={data.zones} />
 
+      <GardenaPanel />
+
       <RoborockPanel />
 
       <AllZonesPanel
