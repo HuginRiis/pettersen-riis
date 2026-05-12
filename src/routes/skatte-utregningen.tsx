@@ -283,6 +283,7 @@ function SkattePage() {
           skatt: result.skatt,
           ekstra: result.ekstra,
           source: file.name,
+          profile,
         },
       });
       // Lagre selve filen i storage så den kan åpnes seinere
@@ -296,6 +297,7 @@ function SkattePage() {
             mimeType: mime,
             base64,
             sizeBytes: file.size,
+            profile,
           },
         });
         reloadFiles();
