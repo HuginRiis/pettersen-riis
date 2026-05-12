@@ -76,6 +76,7 @@ const ROUTE_ICON: Partial<Record<RoutePath, React.ComponentType<{ size?: number;
   "/varsler": AlertTriangle,
   "/steintavle": ScrollText,
   "/skatte-utregningen": Coins,
+  "/gressklipper": Bot,
 };
 
 // Fargerike ikoner i GoT-stil — én distinkt farge per sal, matcher salens tema.
