@@ -1,5 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
-import { fetchRoborockSnapshot, requestLoginCode, verifyLoginCode } from "@/server/roborock.server";
+import { fetchRoborockSnapshot, requestLoginCode, verifyLoginCode, loginWithPassword } from "@/server/roborock.server";
+
+export const loginRoborockWithPassword = createServerFn({ method: "POST" }).handler(async () => {
+  return await loginWithPassword();
+});
 
 export const getRoborockSnapshot = createServerFn({ method: "GET" }).handler(async () => {
   return await fetchRoborockSnapshot();
