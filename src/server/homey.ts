@@ -332,7 +332,7 @@ async function getResolvedHomeyTarget(conn: HomeyConnection): Promise<HomeyTarge
       };
       if (target) {
         try {
-          const { saveHomeyTargetCache } = await import("./homey-connection");
+          const { saveHomeyTargetCache } = await loadConnModule();
           await saveHomeyTargetCache(conn.id, {
             homey_id: target.id,
             homey_name: target.name,
