@@ -1,13 +1,16 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { getGardenaSnapshot, controlGardenaMower } from "@/lib/gardena.functions";
+import { GardenaMap } from "@/components/GardenaMap";
 import {
   Bot, Battery, BatteryLow, BatteryFull, AlertTriangle, CheckCircle2,
   Activity, RefreshCw, Loader2, Play, ParkingSquare, Pause, Signal, Clock,
+  Thermometer, Droplets, Sun, MapPin, CalendarClock, Settings2, Hash,
 } from "lucide-react";
 
 type Snap = Awaited<ReturnType<typeof getGardenaSnapshot>>;
 type Mower = Snap["mowers"][number];
+type Sensor = Snap["sensors"][number];
 
 function ago(iso: string | null): string {
   if (!iso) return "—";
@@ -61,11 +64,33 @@ function fmtVal(v: any): string {
   if (typeof v === "boolean") return v ? "ja" : "nei";
   if (typeof v === "number") return Number.isInteger(v) ? String(v) : v.toFixed(2);
   if (typeof v === "object") {
-    if ("value" in v) return fmtVal(v.value);
+    if ("value" in v) {
+      const inner = fmtVal((v as any).value);
+      const ts = (v as any).timestamp;
+      return ts ? `${inner}  ·  ${ago(ts)}` : inner;
+    }
     try { return JSON.stringify(v); } catch { return String(v); }
   }
   return String(v);
 }
+
+const ATTR_LABELS: Record<string, string> = {
+  state: "Tilstand",
+  activity: "Aktivitet",
+  lastErrorCode: "Sist feil",
+  operatingHours: "Driftstimer",
+  batteryLevel: "Batteri %",
+  batteryState: "Batteristatus",
+  rfLinkLevel: "Signalstyrke",
+  rfLinkState: "Signal-status",
+  serial: "Serienr",
+  modelType: "Modell",
+  name: "Navn",
+  soilHumidity: "Jord-fukt %",
+  soilTemperature: "Jord-temp °C",
+  ambientTemperature: "Luft-temp °C",
+  lightIntensity: "Lys lx",
+};
 
 function MowerCard({
   mower,
@@ -86,7 +111,7 @@ function MowerCard({
   const isBusy = (cmd: string) => busy === `${svcId}:${cmd}`;
 
   return (
-    <div className="panel rounded-lg p-5 flex flex-col gap-3">
+    <div className="panel rounded-lg p-5 flex flex-col gap-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
@@ -96,6 +121,7 @@ function MowerCard({
           <p className="text-[10px] tracking-[0.25em] text-muted-foreground uppercase mt-1">
             {mower.locationName}
             {mower.modelType ? ` · ${mower.modelType}` : ""}
+            {mower.serial ? ` · #${mower.serial}` : ""}
           </p>
         </div>
         {stateInfo && (
@@ -181,7 +207,7 @@ function MowerCard({
 
       {/* Kommandoer */}
       {svcId && (
-        <div className="grid grid-cols-3 gap-2 pt-1">
+        <div className="grid grid-cols-3 gap-2">
           <button
             type="button"
             disabled={!!busy}
@@ -212,20 +238,46 @@ function MowerCard({
         </div>
       )}
 
-      {/* Alle tjenester / råverdier */}
-      <details className="text-xs text-muted-foreground">
-        <summary className="cursor-pointer text-[10px] tracking-[0.25em] uppercase hover:text-primary">
-          Alle tjenester ({mower.raw.length})
+      {/* Override-kjøring (timer) */}
+      {svcId && (
+        <div className="grid grid-cols-3 gap-2">
+          {[60, 180, 360].map((mins) => (
+            <button
+              key={mins}
+              type="button"
+              disabled={!!busy}
+              onClick={() => onCommand(svcId, "START_SECONDS_TO_OVERRIDE", mins * 60)}
+              className="text-[10px] tracking-[0.2em] uppercase border border-border hover:border-primary/40 hover:text-primary disabled:opacity-50 rounded px-2 py-2 flex items-center justify-center gap-1"
+            >
+              {isBusy("START_SECONDS_TO_OVERRIDE") ? <Loader2 size={12} className="animate-spin" /> : <Play size={10} />}
+              {mins < 60 ? `${mins}m` : `${mins / 60}t`}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Alle innstillinger / sensorer / råverdier */}
+      <details className="text-xs text-muted-foreground" open>
+        <summary className="cursor-pointer text-[10px] tracking-[0.25em] uppercase hover:text-primary flex items-center gap-2">
+          <Settings2 size={12} />
+          Alle innstillinger og sensorer ({mower.raw.length} tjenester)
         </summary>
-        <div className="mt-2 space-y-3">
+        <div className="mt-3 space-y-3">
           {mower.raw.map((s) => (
-            <div key={s.id} className="border border-border/40 rounded p-2">
-              <div className="text-[10px] tracking-[0.2em] uppercase text-primary mb-1">{s.type}</div>
-              <div className="grid grid-cols-1 gap-1 max-h-48 overflow-auto pr-1">
+            <div key={s.id} className="border border-border/40 rounded p-2.5 bg-background/30">
+              <div className="text-[10px] tracking-[0.2em] uppercase text-primary mb-1.5 flex items-center gap-2">
+                {s.type}
+                <span className="text-muted-foreground/50 font-mono normal-case tracking-normal text-[9px]">
+                  {s.id.slice(0, 8)}…
+                </span>
+              </div>
+              <div className="grid grid-cols-1 gap-1 max-h-72 overflow-auto pr-1">
                 {Object.entries(s.attributes).map(([k, v]) => (
                   <div key={k} className="flex items-baseline justify-between gap-3 border-b border-border/20 py-1">
-                    <span className="font-mono text-[10px] truncate">{k}</span>
-                    <span className="tabular-nums text-foreground text-right truncate max-w-[55%]">
+                    <span className="text-[11px] truncate text-muted-foreground">
+                      {ATTR_LABELS[k] ?? k}
+                    </span>
+                    <span className="tabular-nums text-foreground text-right truncate max-w-[60%] text-[11px]">
                       {fmtVal(v)}
                     </span>
                   </div>
@@ -236,9 +288,76 @@ function MowerCard({
         </div>
       </details>
 
+      <div className="flex items-start gap-2 text-[10px] text-muted-foreground border-t border-border/30 pt-3">
+        <CalendarClock size={11} className="mt-0.5 shrink-0" />
+        <span>
+          Tidsplan og grense (boundary) konfigureres i Gardena-appen — Smart System v2 API
+          eksponerer ikke disse direkte. Status og overstyring vises her i sanntid.
+        </span>
+      </div>
+
       {svcId && (
-        <div className="text-[9px] text-muted-foreground/70 font-mono truncate">id: {svcId}</div>
+        <div className="text-[9px] text-muted-foreground/70 font-mono truncate flex items-center gap-1">
+          <Hash size={9} /> {svcId}
+        </div>
       )}
+    </div>
+  );
+}
+
+function SensorCard({ sensor }: { sensor: Sensor }) {
+  return (
+    <div className="panel rounded-lg p-4 flex flex-col gap-3">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h3 className="text-sm font-medium truncate">{sensor.name}</h3>
+          <p className="text-[10px] tracking-[0.25em] text-muted-foreground uppercase mt-1">
+            Sensor{sensor.modelType ? ` · ${sensor.modelType}` : ""}
+          </p>
+        </div>
+        <div className="flex items-center gap-1 text-xs tabular-nums">
+          <Battery size={14} className="text-primary/70" />
+          {sensor.battery !== null ? `${Math.round(sensor.battery)}%` : "—"}
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-3 text-xs">
+        <div className="flex items-center gap-2">
+          <Thermometer size={14} className="text-amber-400" />
+          <div>
+            <div className="tabular-nums">
+              {sensor.ambientTemperature.value !== null ? `${sensor.ambientTemperature.value}°` : "—"}
+            </div>
+            <div className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground">Luft</div>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Thermometer size={14} className="text-emerald-400" />
+          <div>
+            <div className="tabular-nums">
+              {sensor.soilTemperature.value !== null ? `${sensor.soilTemperature.value}°` : "—"}
+            </div>
+            <div className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground">Jord</div>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Droplets size={14} className="text-sky-400" />
+          <div>
+            <div className="tabular-nums">
+              {sensor.soilHumidity.value !== null ? `${sensor.soilHumidity.value}%` : "—"}
+            </div>
+            <div className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground">Jord-fukt</div>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Sun size={14} className="text-yellow-300" />
+          <div>
+            <div className="tabular-nums">
+              {sensor.lightIntensity.value !== null ? `${sensor.lightIntensity.value} lx` : "—"}
+            </div>
+            <div className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground">Lys</div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -266,6 +385,9 @@ export function GardenaPanel() {
         fetchedAt: new Date().toISOString(),
         locations: [],
         mowers: [],
+        sensors: [],
+        homeLat: 59.2096,
+        homeLon: 9.609,
       });
     } finally {
       setLoading(false);
@@ -296,53 +418,107 @@ export function GardenaPanel() {
     }
   };
 
+  const mapTarget = useMemo(() => {
+    if (!snap) return null;
+    const loc = snap.locations.find((l) => l.lat !== null && l.lon !== null);
+    if (loc && loc.lat !== null && loc.lon !== null) {
+      return { lat: loc.lat, lon: loc.lon, label: loc.name };
+    }
+    return { lat: snap.homeLat, lon: snap.homeLon, label: snap.locations[0]?.name ?? "Hjem" };
+  }, [snap]);
+
   return (
-    <section className="container mx-auto px-4 py-12">
-      <div className="ornate-divider mb-6 flex items-center justify-between gap-3">
-        <span className="text-display tracking-[0.3em] text-primary text-sm uppercase">
-          Gardena · Gressklippere
-        </span>
-        <button
-          type="button"
-          onClick={load}
-          disabled={loading}
-          className="flex items-center gap-2 text-[10px] tracking-[0.25em] uppercase text-primary/80 hover:text-primary disabled:opacity-50"
-        >
-          {loading ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
-          Oppdater
-        </button>
+    <section className="container mx-auto px-4 py-12 space-y-8">
+      <div>
+        <div className="ornate-divider mb-6 flex items-center justify-between gap-3">
+          <span className="text-display tracking-[0.3em] text-primary text-sm uppercase">
+            Gardena · Gressklippere
+          </span>
+          <button
+            type="button"
+            onClick={load}
+            disabled={loading}
+            className="flex items-center gap-2 text-[10px] tracking-[0.25em] uppercase text-primary/80 hover:text-primary disabled:opacity-50"
+          >
+            {loading ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
+            Oppdater
+          </button>
+        </div>
+
+        {snap?.fetchedAt && (
+          <p className="text-[10px] text-muted-foreground mb-4">
+            Hentet {ago(snap.fetchedAt)} · {snap.mowers.length} {snap.mowers.length === 1 ? "klipper" : "klippere"}
+            {snap.sensors.length > 0 ? ` · ${snap.sensors.length} sensor(er)` : ""}
+            {snap.locations.length > 0 ? ` · ${snap.locations.length} lokasjon(er)` : ""}
+          </p>
+        )}
+
+        {snap && !snap.ok && (
+          <div className="rounded border border-destructive/30 bg-destructive/10 text-destructive text-xs p-3 mb-4">
+            Kunne ikke hente fra Gardena: {snap.error}
+          </div>
+        )}
+
+        {msg && (
+          <div className="rounded border border-primary/30 bg-primary/10 text-primary text-xs p-3 mb-4">
+            {msg}
+          </div>
+        )}
+
+        {snap?.ok && snap.mowers.length === 0 && (
+          <div className="rounded border border-border bg-card/60 text-muted-foreground text-xs p-4 italic">
+            Ingen gressklippere funnet på din Gardena-konto.
+          </div>
+        )}
+
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {snap?.mowers.map((m) => (
+            <MowerCard key={m.id} mower={m} onCommand={onCommand} busy={busy} />
+          ))}
+        </div>
       </div>
 
-      {snap?.fetchedAt && (
-        <p className="text-[10px] text-muted-foreground mb-4">
-          Hentet {ago(snap.fetchedAt)} · {snap.mowers.length} {snap.mowers.length === 1 ? "klipper" : "klippere"}
-          {snap.locations.length > 0 ? ` · ${snap.locations.length} lokasjon(er)` : ""}
-        </p>
-      )}
-
-      {snap && !snap.ok && (
-        <div className="rounded border border-destructive/30 bg-destructive/10 text-destructive text-xs p-3 mb-4">
-          Kunne ikke hente fra Gardena: {snap.error}
+      {/* Kart */}
+      {mapTarget && (
+        <div>
+          <div className="ornate-divider mb-4 flex items-center gap-2">
+            <MapPin size={14} className="text-primary" />
+            <span className="text-display tracking-[0.3em] text-primary text-sm uppercase">
+              Hvor er klipperen
+            </span>
+          </div>
+          <div className="panel rounded-lg overflow-hidden">
+            <div className="h-[320px]">
+              <GardenaMap lat={mapTarget.lat} lon={mapTarget.lon} label={mapTarget.label} />
+            </div>
+            <div className="px-4 py-2 text-[10px] text-muted-foreground tracking-[0.2em] uppercase border-t border-border/40">
+              {mapTarget.label} · {mapTarget.lat.toFixed(5)}, {mapTarget.lon.toFixed(5)}
+              {snap?.locations[0]?.lat === null && (
+                <span className="ml-2 normal-case tracking-normal opacity-70">
+                  (Gardena returnerer ikke GPS — viser hjem-koordinater)
+                </span>
+              )}
+            </div>
+          </div>
         </div>
       )}
 
-      {msg && (
-        <div className="rounded border border-primary/30 bg-primary/10 text-primary text-xs p-3 mb-4">
-          {msg}
+      {/* Sensorer */}
+      {snap?.sensors && snap.sensors.length > 0 && (
+        <div>
+          <div className="ornate-divider mb-4 flex items-center gap-2">
+            <Thermometer size={14} className="text-primary" />
+            <span className="text-display tracking-[0.3em] text-primary text-sm uppercase">
+              Hagesensorer
+            </span>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {snap.sensors.map((s) => (
+              <SensorCard key={s.id} sensor={s} />
+            ))}
+          </div>
         </div>
       )}
-
-      {snap?.ok && snap.mowers.length === 0 && (
-        <div className="rounded border border-border bg-card/60 text-muted-foreground text-xs p-4 italic">
-          Ingen gressklippere funnet på din Gardena-konto.
-        </div>
-      )}
-
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {snap?.mowers.map((m) => (
-          <MowerCard key={m.id} mower={m} onCommand={onCommand} busy={busy} />
-        ))}
-      </div>
     </section>
   );
 }
