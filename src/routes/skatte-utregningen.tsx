@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Upload, Save, Loader2, Check, Plus, Trash2 } from "lucide-react";
+import { Upload, Save, Loader2, Check, Plus, Trash2, ChevronDown, FileText, ExternalLink } from "lucide-react";
 import {
   listTaxYear,
   listTaxYears,
@@ -14,8 +14,12 @@ import {
   deleteTaxMonth,
   upsertTaxSettings,
   parsePayslip,
+  listPayslipFiles,
+  savePayslipFile,
+  deletePayslipFile,
   type TaxMonth,
   type TaxYearSettings,
+  type PayslipFile,
 } from "@/server/skatt.functions";
 import heroImg from "@/assets/got-skatt.jpg";
 
