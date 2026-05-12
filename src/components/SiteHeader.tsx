@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Menu, X, LogOut, Crown, Swords, Shield, KeyRound, Home, Star, Flower2,
   Sun, Compass, Castle, CalendarDays, BellRing, Eye, Mountain, Lightbulb, Lamp, Zap, Hammer,
   ShoppingCart, Receipt, Dog, Dumbbell, AlertTriangle, ScrollText, Globe, ChevronDown, ChevronRight,
-  TreePine, Coins } from "lucide-react";
+  TreePine, Coins, Bot } from "lucide-react";
 import { logoutFn } from "@/server/auth";
 import { getIcon as getWebFavIcon, getIconColor as getWebFavIconColor, faviconUrl, FAVICON_ICON } from "@/lib/web-favorite-icons";
 import birchImg from "@/assets/pollen-birch.png";
@@ -43,6 +43,7 @@ type RoutePath =
   | "/matvarer"
   | "/kvitteringer"
   | "/skatte-utregningen"
+  | "/gressklipper"
   | "/got-saga";
 
 type NavLink = { to: RoutePath; label: string; public?: boolean };
@@ -75,6 +76,7 @@ const ROUTE_ICON: Partial<Record<RoutePath, React.ComponentType<{ size?: number;
   "/varsler": AlertTriangle,
   "/steintavle": ScrollText,
   "/skatte-utregningen": Coins,
+  "/gressklipper": Bot,
 };
 
 // Fargerike ikoner i GoT-stil — én distinkt farge per sal, matcher salens tema.
@@ -99,6 +101,7 @@ const ROUTE_ICON_COLOR: Partial<Record<RoutePath, string>> = {
   "/varsler": "#dc2626",             // farevarsel — rødt skilt
   "/steintavle": "#cbd5e1",          // stein — lys grå
   "/skatte-utregningen": "#d4af37",  // gull-mynt
+  "/gressklipper": "#10b981",        // gressklipper — gressgrønn
 };
 
 // Public halls — open to any visitor entering the courtyard.
@@ -115,6 +118,7 @@ const navLinks: NavLink[] = [
   { to: "/hytta", label: "Hytta", public: true },
   { to: "/smarthus", label: "Smartborg" },
   { to: "/lys", label: "Lys" },
+  { to: "/gressklipper", label: "Gressklipper" },
   { to: "/stromkroniken", label: "Strømkrøniken" },
   { to: "/oppussing-borgen", label: "Prosjekter på Borgen" },
   { to: "/oppussing-hytta", label: "Prosjekter på hytta" },
