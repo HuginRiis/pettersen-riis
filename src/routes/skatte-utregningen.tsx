@@ -651,7 +651,7 @@ function SkattePage() {
         </Card>
 
         {/* Frittstående skatteberegning */}
-        <StandaloneTaxCalculator defaultYear={year} />
+        <StandaloneTaxCalculator defaultYear={year} profile={profile} />
       </section>
     </PageShell>
   );
