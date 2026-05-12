@@ -28,6 +28,7 @@ export type RoborockDevice = {
   productName?: string;
   fv?: string;
   attribute?: any;
+  localKey?: string;
 };
 
 export type RoborockSnapshot = {
@@ -329,6 +330,7 @@ function mapDevices(result: any): RoborockDevice[] {
       productName: p.name,
       fv: d.fv,
       attribute: d.deviceStatus ?? null,
+      localKey: d.localKey ?? d.localkey ?? undefined,
     };
   });
 }
