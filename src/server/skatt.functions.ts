@@ -55,6 +55,7 @@ export const listTaxYears = createServerFn({ method: "GET" }).handler(async () =
 const upsertMonthSchema = z.object({
   year: z.number().int(),
   month: z.number().int().min(1).max(12),
+  employer: z.string().min(1).max(100).default("Hovedjobb"),
   lonn: z.number().nonnegative(),
   skatt: z.number().nonnegative(),
   ekstra: z.number().nonnegative(),
@@ -70,14 +71,34 @@ export const upsertTaxMonth = createServerFn({ method: "POST" })
         {
           year: data.year,
           month: data.month,
+          employer: data.employer,
           lonn: data.lonn,
           skatt: data.skatt,
           ekstra: data.ekstra,
           source: data.source ?? null,
           updated_at: new Date().toISOString(),
         },
-        { onConflict: "year,month" },
+        { onConflict: "year,month,employer" },
       );
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+const deleteMonthSchema = z.object({
+  year: z.number().int(),
+  month: z.number().int().min(1).max(12),
+  employer: z.string().min(1).max(100),
+});
+
+export const deleteTaxMonth = createServerFn({ method: "POST" })
+  .inputValidator((d) => deleteMonthSchema.parse(d))
+  .handler(async ({ data }) => {
+    const { error } = await supabaseAdmin
+      .from("tax_monthly")
+      .delete()
+      .eq("year", data.year)
+      .eq("month", data.month)
+      .eq("employer", data.employer);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
