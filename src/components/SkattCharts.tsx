@@ -56,14 +56,14 @@ function ChartBlock({ title, data, years, prefix }: { title: string; data: any[]
       <div className="h-56">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-            <XAxis dataKey="month" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
-            <YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} tickFormatter={(v) => fmt(v / 1000) + "k"} />
+            <CartesianGrid strokeDasharray="3 3" stroke="#7dd3fc" />
+            <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#fef08a" }} stroke="#7dd3fc" />
+            <YAxis tick={{ fontSize: 11, fill: "#fef08a" }} stroke="#7dd3fc" tickFormatter={(v) => fmt(v / 1000) + "k"} />
             <Tooltip
-              contentStyle={{ background: "hsl(var(--background))", border: "1px solid hsl(var(--border))", fontSize: 12 }}
+              contentStyle={{ background: "hsl(var(--background))", border: "1px solid #7dd3fc", fontSize: 12, color: "#7dd3fc" }}
               formatter={(v: any) => fmt(Number(v)) + " kr"}
             />
-            <Legend wrapperStyle={{ fontSize: 11 }} />
+            <Legend wrapperStyle={{ fontSize: 11, color: "#7dd3fc" }} />
             {years.map((y, i) => (
               <Line
                 key={y}
