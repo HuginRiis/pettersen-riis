@@ -4,8 +4,12 @@ import { withApiLog } from "./api-call-log.server";
 
 // Server-only runtime imports — lazily loaded so the client bundle never pulls
 // in `homey-connection` (which depends on `client.server`).
-async function loadConnModule() {
-  return await import("./homey-connection");
+async function loadConnModule(): Promise<typeof import("./homey-connection")> {
+  // String indirection + @vite-ignore so Vite does not statically resolve
+  // this dynamic import into the client bundle. At runtime (server only)
+  // this resolves to the real module.
+  const modPath = "./homey-connection";
+  return await import(/* @vite-ignore */ modPath);
 }
 
 export const HOMEY_SCOPES = ["homey", "homey.device.readonly"];
