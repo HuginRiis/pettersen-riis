@@ -518,6 +518,7 @@ export function RoborockPanel() {
                       </div>
                     </details>
                   )}
+                  <CloudControls duid={d.duid} onResult={(m) => setCloudMsg(m)} />
                 </div>
               );
             })}
