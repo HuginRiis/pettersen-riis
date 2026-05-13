@@ -35,8 +35,10 @@ import {
   importOkonomiTransactions,
   parseStatementWithAI,
   categorizeTransactionsWithAI,
+  getOkonomiSettings,
   type OkonomiCategory,
   type OkonomiTransaction,
+  type OkonomiSettings,
   type ParsedTxn,
 } from "@/server/okonomi.functions";
 
