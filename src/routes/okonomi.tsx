@@ -435,9 +435,32 @@ function Oversikt({
       </Card>
 
       <Card className="p-4 border-amber-500/30">
-        <h3 className="text-sm tracking-[0.25em] uppercase text-amber-400 mb-3">
-          Inntekt vs utgift — siste 6 mnd
-        </h3>
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+          <h3 className="text-sm tracking-[0.25em] uppercase text-amber-400">
+            Inntekt vs utgift — 12 mnd
+          </h3>
+          <div className="flex items-center gap-1.5">
+            <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">
+              Slutt
+            </Label>
+            <Select value={String(chartEndM)} onValueChange={(v) => setChartEndM(Number(v))}>
+              <SelectTrigger className="h-7 w-[88px] text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {monthNames.map((n, i) => (
+                  <SelectItem key={i} value={String(i + 1)}>{n}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={String(chartEndY)} onValueChange={(v) => setChartEndY(Number(v))}>
+              <SelectTrigger className="h-7 w-[72px] text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {yearsAvailable.map((y) => (
+                  <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
         <div className="h-56">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={trend} margin={{ top: 4, right: 4, left: -16, bottom: 0 }}>
