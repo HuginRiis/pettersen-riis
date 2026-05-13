@@ -116,7 +116,7 @@ const navLinks: NavLink[] = [
   { to: "/pollen", label: "Pollen", public: true },
   { to: "/turer", label: "Ferden", public: true },
   { to: "/got-saga", label: "Westeros", public: true },
-  { to: "/agenda", label: "Agenda" },
+  { to: "/agenda", label: "Søppel, bursdager og meldinger" },
   { to: "/push-varslinger", label: "Innstillinger" },
   { to: "/vakttarnet", label: "Vakttårnet" },
   { to: "/hytta", label: "Hytta", public: true },
