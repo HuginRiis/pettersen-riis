@@ -263,21 +263,28 @@ function Oversikt({
 
   const top5 = catData.slice(0, 5);
 
-  // 6 mnd trend (tilbake fra valgt mnd, eller siste 6 mnd hvis "alle")
-  const anchor =
-    month === "all"
-      ? new Date(year, 11, 1)
-      : new Date(year, month - 1, 1);
-  const months: { key: string; label: string }[] = [];
-  for (let i = 5; i >= 0; i--) {
-    const d = new Date(anchor.getFullYear(), anchor.getMonth() - i, 1);
+  // 12 mnd trend som slutter i valgt periode-slutt (chartEndY/chartEndM)
+  const chartAnchor = new Date(chartEndY, chartEndM - 1, 1);
+  const months: { key: string; label: string; isLast: boolean }[] = [];
+  for (let i = 11; i >= 0; i--) {
+    const d = new Date(chartAnchor.getFullYear(), chartAnchor.getMonth() - i, 1);
     months.push({
       key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`,
-      label: d.toLocaleDateString("nb-NO", { month: "short" }),
+      label: d.toLocaleDateString("nb-NO", { month: "short", year: "2-digit" }),
+      isLast: i === 0,
     });
   }
   const trend = months.map((m) => {
-    const rows = txns.filter((t) => t.txn_date.startsWith(m.key));
+    let rows = txns.filter((t) => t.txn_date.startsWith(m.key));
+    if (m.isLast) {
+      // Finn første lønnsutbetaling (inntekt > 30000) i sluttmåneden, og kutt der
+      const salary = rows
+        .filter((t) => isIncome(t) && Number(t.amount) > 30000)
+        .sort((a, b) => a.txn_date.localeCompare(b.txn_date))[0];
+      if (salary) {
+        rows = rows.filter((t) => t.txn_date < salary.txn_date);
+      }
+    }
     return {
       label: m.label,
       Inntekt: rows.filter(isIncome).reduce((s, t) => s + Number(t.amount), 0),
