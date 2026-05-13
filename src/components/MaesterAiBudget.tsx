@@ -102,6 +102,7 @@ export function MaesterAiBudget() {
   const [saving, setSaving] = useState(false);
   const [costInput, setCostInput] = useState("");
   const [budgetInput, setBudgetInput] = useState("");
+  const [purchasedInput, setPurchasedInput] = useState("");
   const [openFeatures, setOpenFeatures] = useState<Set<string>>(new Set());
 
   function toggleFeature(key: string) {
@@ -123,6 +124,7 @@ export function MaesterAiBudget() {
         setActual(a);
         setCostInput(String(a.actualCostUsd));
         setBudgetInput(String(a.monthlyBudgetUsd));
+        setPurchasedInput(String(a.purchasedCreditsUsd));
       } catch (e) {
         if (!cancelled) setError(e instanceof Error ? e.message : "Ukjent feil");
       } finally {
@@ -139,6 +141,7 @@ export function MaesterAiBudget() {
         data: {
           actualCostUsd: Number(costInput) || 0,
           monthlyBudgetUsd: Number(budgetInput) || 1,
+          purchasedCreditsUsd: Number(purchasedInput) || 0,
         },
       });
       setActual(a);
