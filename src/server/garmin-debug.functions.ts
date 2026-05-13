@@ -20,5 +20,5 @@ export const debugGarminFitness = createServerFn({ method: "POST" })
         out[k] = { error: e instanceof Error ? e.message : String(e) };
       }
     }
-    return out;
+    return JSON.parse(JSON.stringify(out)) as Record<string, any>;
   });
