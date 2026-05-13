@@ -414,12 +414,15 @@ export async function syncIntraday(owner: GarminOwner, daysBack = 1): Promise<nu
   return count;
 }
 
-async function generateWatchImageDataUrl(deviceName: string): Promise<string | null> {
+async function generateWatchImageDataUrl(deviceName: string, transparent = false): Promise<string | null> {
   const apiKey = process.env.LOVABLE_API_KEY;
   if (!apiKey) {
     console.warn("[garmin-sync] LOVABLE_API_KEY mangler — hopper over klokkebilde");
     return null;
   }
+  const prompt = transparent
+    ? `Photorealistic product render of a Garmin ${deviceName} smartwatch, isolated on a fully transparent background (alpha channel, no backdrop, no shadow plate), 3/4 angled view showing the watch face and strap, sharp focus, soft studio lighting, no text overlays, no watermark. Output PNG with transparency.`
+    : `Photorealistic product shot of a Garmin ${deviceName} smartwatch on a clean white background, top-down view, sharp focus, soft studio lighting, no text overlays, square 1:1.`;
   try {
     const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -427,10 +430,7 @@ async function generateWatchImageDataUrl(deviceName: string): Promise<string | n
       body: JSON.stringify({
         model: "google/gemini-2.5-flash-image",
         modalities: ["image", "text"],
-        messages: [{
-          role: "user",
-          content: `Photorealistic product shot of a Garmin ${deviceName} smartwatch on a clean white background, top-down view, sharp focus, soft studio lighting, no text overlays, square 1:1.`,
-        }],
+        messages: [{ role: "user", content: prompt }],
       }),
     });
     if (!res.ok) {
