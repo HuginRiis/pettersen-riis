@@ -763,7 +763,7 @@ function WelcomeInfoStrip({ info }: { info: WelcomeInfo | null }) {
   );
 }
 
-function PortalGate({
+function HeroAuthPill({
   authenticated,
   onLogout,
 }: {
@@ -775,8 +775,6 @@ function PortalGate({
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      // Pull this device's push endpoint + stored "who" so the server can
-      // identify exactly which person is on this device.
       let endpoint: string | null = null;
       let storedWho: string | null = null;
       try {
@@ -801,69 +799,55 @@ function PortalGate({
 
   const greetingName = info?.who && info.who !== "Alle" ? info.who : null;
 
-  if (authenticated) {
-    return (
-      <section className="container mx-auto px-4 pt-10">
-        <div className="max-w-3xl mx-auto panel rounded-lg p-5 sm:p-6 border border-primary/30">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full border border-primary/40 flex items-center justify-center text-primary text-lg shrink-0">
-                ❦
-              </div>
-              <div>
-                <div className="text-[10px] tracking-[0.3em] uppercase text-primary/80">
-                  Borgen er åpne
-                </div>
-                <div className="text-sm sm:text-base text-foreground">
-                  {greetingName
-                    ? `Velkommen tilbake, ${greetingName}.`
-                    : "Velkommen, herskere av huset."}
-                </div>
-              </div>
+  return (
+    <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-20 pointer-events-none">
+      <div className="pointer-events-auto flex items-center gap-2 rounded-full border border-primary/40 bg-background/70 backdrop-blur-md px-2.5 py-1.5 shadow-[0_4px_20px_rgba(0,0,0,0.45)]">
+        <div className="w-7 h-7 rounded-full border border-primary/50 flex items-center justify-center text-primary text-sm shrink-0">
+          ❦
+        </div>
+        {authenticated ? (
+          <>
+            <div className="hidden sm:flex flex-col leading-tight pr-1">
+              <span className="text-[8px] tracking-[0.25em] uppercase text-primary/80">
+                Borgen er åpne
+              </span>
+              <span className="text-[11px] text-foreground truncate max-w-[140px]">
+                {greetingName ?? "Velkommen"}
+              </span>
             </div>
             <button
               onClick={onLogout}
-              className="text-xs tracking-[0.25em] uppercase text-muted-foreground hover:text-primary transition-colors px-3 py-2 border border-border rounded-md hover:border-primary/60 shrink-0"
+              type="button"
+              title="Logg ut"
+              className="inline-flex items-center gap-1 text-[10px] tracking-[0.2em] uppercase text-muted-foreground hover:text-primary transition-colors px-2.5 py-1.5 border border-border rounded-full hover:border-primary/60"
             >
-              Steng porten
+              <KeyRound size={12} />
+              <span className="hidden sm:inline">Logg ut</span>
             </button>
-          </div>
-          <WelcomeInfoStrip info={info} />
-        </div>
-      </section>
-    );
-  }
-
-  return (
-    <section className="container mx-auto px-4 pt-10">
-      <div className="max-w-3xl mx-auto panel rounded-lg p-6 sm:p-8 text-center border border-primary/30 relative overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none opacity-30 bg-gradient-to-b from-primary/10 via-transparent to-primary/10" />
-        <div className="relative">
-          <div className="mx-auto w-14 h-14 rounded-full border border-primary/50 flex items-center justify-center text-primary text-2xl mb-4">
-            ❦
-          </div>
-          <h2 className="text-display text-xl sm:text-2xl text-primary tracking-[0.2em] uppercase">
-            {greetingName ? `Velkommen tilbake, ${greetingName}` : "Vandreren er velkommen"}
-          </h2>
-          <p className="mt-3 text-sm text-foreground/80 max-w-xl mx-auto">
-            Værets ravner, pollenets bud og ferdens stier står åpne for alle.
-            For å tre dypere inn i borgens saler — krønike, vakttårn, hytta og smartborgen — må du åpne portalen med husets nøkkel.
-          </p>
-          <div className="mt-5 flex items-center justify-center gap-3">
+          </>
+        ) : (
+          <>
+            <div className="hidden sm:flex flex-col leading-tight pr-1">
+              <span className="text-[8px] tracking-[0.25em] uppercase text-primary/80">
+                Husets port
+              </span>
+              <span className="text-[11px] text-foreground">
+                {greetingName ? `Hei ${greetingName}` : "Vandrer"}
+              </span>
+            </div>
             <button
               type="button"
               onClick={() => openLoginDialog()}
-              className="got-nav-btn"
+              title="Logg inn"
+              className="inline-flex items-center gap-1 text-[10px] tracking-[0.2em] uppercase text-primary hover:text-primary px-2.5 py-1.5 border border-primary/50 rounded-full bg-primary/10 hover:bg-primary/20 transition-colors"
             >
-              <KeyRound size={14} className="inline mr-1.5 -mt-0.5" />
-              Tre inn i borgen
+              <LogIn size={12} />
+              <span className="hidden sm:inline">Logg inn</span>
             </button>
-          </div>
-          <div className="max-w-xl mx-auto text-left">
-            <WelcomeInfoStrip info={info} />
-          </div>
-        </div>
+          </>
+        )}
       </div>
-    </section>
+    </div>
   );
 }
+
