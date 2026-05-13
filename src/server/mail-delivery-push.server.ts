@@ -6,6 +6,7 @@ import webpush from "web-push";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { buildSubscriptionWhoOr } from "./push-recipients";
 import { logPushSend } from "./push-log.server";
+import { loggedFetch } from "./api-call-log.server";
 
 const VAPID_PUBLIC = process.env.VAPID_PUBLIC_KEY!;
 const VAPID_PRIVATE = process.env.VAPID_PRIVATE_KEY!;
