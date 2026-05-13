@@ -414,15 +414,12 @@ export async function syncIntraday(owner: GarminOwner, daysBack = 1): Promise<nu
   return count;
 }
 
-async function generateWatchImageDataUrl(deviceName: string, transparent = false): Promise<string | null> {
+async function generateWatchImageDataUrl(deviceName: string): Promise<string | null> {
   const apiKey = process.env.LOVABLE_API_KEY;
   if (!apiKey) {
     console.warn("[garmin-sync] LOVABLE_API_KEY mangler — hopper over klokkebilde");
     return null;
   }
-  const prompt = transparent
-    ? `Photorealistic product render of a Garmin ${deviceName} smartwatch, isolated on a fully transparent background (alpha channel, no backdrop, no shadow plate), 3/4 angled view showing the watch face and strap, sharp focus, soft studio lighting, no text overlays, no watermark. Output PNG with transparency.`
-    : `Photorealistic product shot of a Garmin ${deviceName} smartwatch on a clean white background, top-down view, sharp focus, soft studio lighting, no text overlays, square 1:1.`;
   try {
     const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -430,7 +427,10 @@ async function generateWatchImageDataUrl(deviceName: string, transparent = false
       body: JSON.stringify({
         model: "google/gemini-2.5-flash-image",
         modalities: ["image", "text"],
-        messages: [{ role: "user", content: prompt }],
+        messages: [{
+          role: "user",
+          content: `Photorealistic product shot of a Garmin ${deviceName} smartwatch on a clean white background, top-down view, sharp focus, soft studio lighting, no text overlays, square 1:1.`,
+        }],
       }),
     });
     if (!res.ok) {
@@ -479,7 +479,7 @@ export async function syncDevice(owner: GarminOwner): Promise<{ name: string | n
     // Hent eksisterende rader
     const { data: existingRows } = await supabaseAdmin
       .from("garmin_devices")
-      .select("id, product_id, name, image_url, image_transparent_url, is_default")
+      .select("id, product_id, name, image_url, is_default")
       .eq("owner", owner);
     const byPid = new Map<string, any>((existingRows ?? []).map((r: any) => [r.product_id, r]));
 
@@ -487,20 +487,15 @@ export async function syncDevice(owner: GarminOwner): Promise<{ name: string | n
     for (const d of devices) {
       const existing = byPid.get(d.productId);
       let imageUrl: string | null = existing?.image_url ?? null;
-      let imageTransparentUrl: string | null = existing?.image_transparent_url ?? null;
       const nameChanged = !existing || existing.name !== d.name;
       if (!imageUrl) {
-        imageUrl = await generateWatchImageDataUrl(d.name, false);
-      }
-      if (!imageTransparentUrl) {
-        imageTransparentUrl = await generateWatchImageDataUrl(d.name, true);
+        imageUrl = await generateWatchImageDataUrl(d.name);
       }
       const row = {
         owner,
         product_id: d.productId,
         name: d.name,
         image_url: imageUrl,
-        image_transparent_url: imageTransparentUrl,
         last_used_at: d.lastUsedAt,
         register_date: d.registerDate,
         raw: d.raw,
@@ -513,7 +508,7 @@ export async function syncDevice(owner: GarminOwner): Promise<{ name: string | n
     // Sørg for at minst én er default — velg nyest brukte
     const { data: refreshed } = await supabaseAdmin
       .from("garmin_devices")
-      .select("id, product_id, name, image_url, image_transparent_url, is_default, last_used_at, register_date")
+      .select("id, product_id, name, image_url, is_default, last_used_at, register_date")
       .eq("owner", owner);
     const all = refreshed ?? [];
     const hasDefault = all.some((r: any) => r.is_default);
@@ -540,7 +535,6 @@ export async function syncDevice(owner: GarminOwner): Promise<{ name: string | n
           device_name: defaultRow.name,
           device_product_id: defaultRow.product_id,
           device_image_url: defaultRow.image_url,
-          device_image_transparent_url: defaultRow.image_transparent_url,
           device_updated_at: new Date().toISOString(),
         } as never).eq("id", (tok as any).id);
       }
