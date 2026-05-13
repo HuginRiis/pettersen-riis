@@ -135,32 +135,54 @@ function Oversikt({ cats, txns }: { cats: OkonomiCategory[]; txns: OkonomiTransa
   const ym = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   const inMonth = txns.filter((t) => t.txn_date.startsWith(ym));
 
-  const catMap = new Map(cats.map((c) => [c.id, c]));
+  const catMap = useMemo(() => new Map(cats.map((c) => [c.id, c])), [cats]);
   const isExpense = (t: OkonomiTransaction) => {
     const c = t.category_id ? catMap.get(t.category_id) : undefined;
     if (c?.is_transfer || c?.is_income) return false;
-    return t.amount < 0;
+    return Number(t.amount) < 0;
   };
   const isIncome = (t: OkonomiTransaction) => {
     const c = t.category_id ? catMap.get(t.category_id) : undefined;
     if (c?.is_income) return true;
-    return t.amount > 0 && !c?.is_transfer;
+    return Number(t.amount) > 0 && !c?.is_transfer;
   };
 
   const brukt = inMonth.filter(isExpense).reduce((s, t) => s + Math.abs(Number(t.amount)), 0);
   const inntekt = inMonth.filter(isIncome).reduce((s, t) => s + Number(t.amount), 0);
   const budsjett = cats.reduce((s, c) => s + (Number(c.monthly_budget) || 0), 0);
   const igjen = Math.max(0, budsjett - brukt);
+  const netto = inntekt - brukt;
 
+  // Per kategori i denne måneden
   const perCat = new Map<string, number>();
   for (const t of inMonth.filter(isExpense)) {
     const k = t.category_id ?? "uten";
     perCat.set(k, (perCat.get(k) || 0) + Math.abs(Number(t.amount)));
   }
-  const top = Array.from(perCat.entries())
-    .map(([id, sum]) => ({ cat: cats.find((c) => c.id === id), sum }))
-    .sort((a, b) => b.sum - a.sum)
-    .slice(0, 8);
+  const catData = Array.from(perCat.entries())
+    .map(([id, sum]) => {
+      const c = cats.find((x) => x.id === id);
+      return { id, name: c?.name ?? "Uten kategori", color: c?.color ?? "#94a3b8", sum, budget: Number(c?.monthly_budget) || 0 };
+    })
+    .sort((a, b) => b.sum - a.sum);
+
+  // 6 mnd trend
+  const months: { key: string; label: string }[] = [];
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    months.push({
+      key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`,
+      label: d.toLocaleDateString("nb-NO", { month: "short" }),
+    });
+  }
+  const trend = months.map((m) => {
+    const rows = txns.filter((t) => t.txn_date.startsWith(m.key));
+    return {
+      label: m.label,
+      Inntekt: rows.filter(isIncome).reduce((s, t) => s + Number(t.amount), 0),
+      Utgift: rows.filter(isExpense).reduce((s, t) => s + Math.abs(Number(t.amount)), 0),
+    };
+  });
 
   return (
     <div className="space-y-4">
@@ -168,45 +190,93 @@ function Oversikt({ cats, txns }: { cats: OkonomiCategory[]; txns: OkonomiTransa
         <Stat label="Brukt" value={fmt(brukt)} tone="warn" />
         <Stat label="Inntekt" value={fmt(inntekt)} tone="ok" />
         <Stat label="Budsjett" value={fmt(budsjett)} />
-        <Stat label="Igjen" value={fmt(igjen)} tone="ok" />
+        <Stat label={netto >= 0 ? "Overskudd" : "Underskudd"} value={fmt(Math.abs(netto))} tone={netto >= 0 ? "ok" : "warn"} />
       </div>
 
       <Card className="p-4 border-amber-500/30">
         <h3 className="text-sm tracking-[0.25em] uppercase text-amber-400 mb-3">
-          Største poster denne måned
+          Inntekt vs utgift — siste 6 mnd
         </h3>
-        {top.length === 0 ? (
+        <div className="h-56">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={trend} margin={{ top: 4, right: 4, left: -16, bottom: 0 }}>
+              <CartesianGrid stroke="#3f2d10" strokeDasharray="2 4" vertical={false} />
+              <XAxis dataKey="label" stroke="#a78b4a" fontSize={11} />
+              <YAxis stroke="#a78b4a" fontSize={11} tickFormatter={(v) => `${Math.round(v / 1000)}k`} />
+              <Tooltip
+                contentStyle={{ background: "#1a1208", border: "1px solid #92651a" }}
+                formatter={(v: any) => fmt(Number(v))}
+              />
+              <Legend wrapperStyle={{ fontSize: 11 }} />
+              <Bar dataKey="Inntekt" fill="#10b981" radius={[3, 3, 0, 0]} />
+              <Bar dataKey="Utgift" fill="#ef4444" radius={[3, 3, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </Card>
+
+      {catData.length > 0 && (
+        <Card className="p-4 border-amber-500/30">
+          <h3 className="text-sm tracking-[0.25em] uppercase text-amber-400 mb-3">
+            Fordeling denne måned
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
+            <div className="h-56">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={catData} dataKey="sum" nameKey="name" innerRadius={45} outerRadius={80} paddingAngle={2}>
+                    {catData.map((d) => (
+                      <Cell key={d.id} fill={d.color} stroke="#1a1208" />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{ background: "#1a1208", border: "1px solid #92651a" }}
+                    formatter={(v: any) => fmt(Number(v))}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <ul className="space-y-1.5 text-xs">
+              {catData.slice(0, 8).map((d) => (
+                <li key={d.id} className="flex items-center gap-2">
+                  <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ background: d.color }} />
+                  <span className="flex-1 truncate">{d.name}</span>
+                  <span className="tabular-nums text-amber-100">{fmt(d.sum)}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </Card>
+      )}
+
+      <Card className="p-4 border-amber-500/30">
+        <h3 className="text-sm tracking-[0.25em] uppercase text-amber-400 mb-3">
+          Budsjett-status per kategori
+        </h3>
+        {catData.length === 0 ? (
           <p className="text-sm text-muted-foreground">Ingen posteringer i {ym} ennå.</p>
         ) : (
           <ul className="space-y-2">
-            {top.map((r, i) => {
-              const budget = Number(r.cat?.monthly_budget) || 0;
-              const pct = budget > 0 ? Math.min(100, (r.sum / budget) * 100) : 0;
+            {catData.map((r) => {
+              const pct = r.budget > 0 ? Math.min(100, (r.sum / r.budget) * 100) : 0;
+              const over = r.budget > 0 && r.sum > r.budget;
               return (
-                <li key={i} className="text-sm">
+                <li key={r.id} className="text-sm">
                   <div className="flex justify-between mb-1">
                     <span className="flex items-center gap-2">
-                      <span
-                        className="inline-block w-2.5 h-2.5 rounded-full"
-                        style={{ background: r.cat?.color ?? "#94a3b8" }}
-                      />
-                      {r.cat?.name ?? "Uten kategori"}
+                      <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ background: r.color }} />
+                      {r.name}
                     </span>
                     <span className="tabular-nums">
                       {fmt(r.sum)}
-                      {budget > 0 && (
-                        <span className="text-muted-foreground"> / {fmt(budget)}</span>
-                      )}
+                      {r.budget > 0 && <span className="text-muted-foreground"> / {fmt(r.budget)}</span>}
                     </span>
                   </div>
-                  {budget > 0 && (
+                  {r.budget > 0 && (
                     <div className="h-1.5 rounded-full bg-muted/40 overflow-hidden">
                       <div
-                        className="h-full"
-                        style={{
-                          width: `${pct}%`,
-                          background: pct > 100 ? "#ef4444" : r.cat?.color ?? "#94a3b8",
-                        }}
+                        className="h-full transition-all"
+                        style={{ width: `${pct}%`, background: over ? "#ef4444" : r.color }}
                       />
                     </div>
                   )}
@@ -216,17 +286,27 @@ function Oversikt({ cats, txns }: { cats: OkonomiCategory[]; txns: OkonomiTransa
           </ul>
         )}
       </Card>
-    </div>
-  );
-}
 
-function Stat({ label, value, tone }: { label: string; value: string; tone?: "ok" | "warn" }) {
-  const c = tone === "warn" ? "text-red-400" : tone === "ok" ? "text-emerald-400" : "text-amber-200";
-  return (
-    <Card className="p-3 border-amber-500/20 bg-gradient-to-br from-amber-950/20 to-transparent">
-      <p className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">{label}</p>
-      <p className={`text-xl font-semibold tabular-nums ${c}`}>{value}</p>
-    </Card>
+      <Card className="p-4 border-amber-500/30">
+        <h3 className="text-sm tracking-[0.25em] uppercase text-amber-400 mb-3">
+          Netto pr måned
+        </h3>
+        <div className="h-48">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={trend.map((t) => ({ label: t.label, Netto: t.Inntekt - t.Utgift }))} margin={{ top: 4, right: 4, left: -16, bottom: 0 }}>
+              <CartesianGrid stroke="#3f2d10" strokeDasharray="2 4" vertical={false} />
+              <XAxis dataKey="label" stroke="#a78b4a" fontSize={11} />
+              <YAxis stroke="#a78b4a" fontSize={11} tickFormatter={(v) => `${Math.round(v / 1000)}k`} />
+              <Tooltip
+                contentStyle={{ background: "#1a1208", border: "1px solid #92651a" }}
+                formatter={(v: any) => fmt(Number(v))}
+              />
+              <Line type="monotone" dataKey="Netto" stroke="#f59e0b" strokeWidth={2} dot={{ fill: "#f59e0b", r: 3 }} />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      </Card>
+    </div>
   );
 }
 
