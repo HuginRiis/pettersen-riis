@@ -553,7 +553,6 @@ function Stat({ label, value, tone }: { label: string; value: string; tone?: "ok
 
 // ---------------- Posteringer ----------------
 
-
 function Posteringer({
   cats,
   txns,
@@ -565,7 +564,9 @@ function Posteringer({
 }) {
   const upsert = useServerFn(upsertOkonomiTransaction);
   const del = useServerFn(deleteOkonomiTransaction);
+  const learn = useServerFn(learnMerchantRule);
   const [adding, setAdding] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({
     txn_date: new Date().toISOString().slice(0, 10),
     description: "",
@@ -586,6 +587,11 @@ function Posteringer({
           approved: true,
         },
       });
+      if (form.category_id) {
+        try {
+          await learn({ data: { description: form.description, category_id: form.category_id } });
+        } catch {}
+      }
       toast.success("Lagt til");
       setForm({ ...form, description: "", amount: "" });
       setAdding(false);
@@ -638,10 +644,28 @@ function Posteringer({
         </Card>
       )}
       <div className="space-y-1.5">
-        {txns.slice(0, 100).map((t) => {
+        {txns.slice(0, 200).map((t) => {
           const cat = cats.find((c) => c.id === t.category_id);
+          if (editingId === t.id) {
+            return (
+              <PosteringEditor
+                key={t.id}
+                txn={t}
+                cats={cats}
+                onCancel={() => setEditingId(null)}
+                onSaved={() => {
+                  setEditingId(null);
+                  reload();
+                }}
+              />
+            );
+          }
           return (
-            <Card key={t.id} className="p-3 flex items-center gap-2">
+            <Card
+              key={t.id}
+              className="p-3 flex items-center gap-2 cursor-pointer hover:border-amber-500/40"
+              onClick={() => setEditingId(t.id)}
+            >
               <span
                 className="inline-block w-2.5 h-2.5 rounded-full shrink-0"
                 style={{ background: cat?.color ?? "#94a3b8" }}
@@ -664,7 +688,8 @@ function Posteringer({
                 variant="ghost"
                 size="icon"
                 className="h-7 w-7"
-                onClick={async () => {
+                onClick={async (e) => {
+                  e.stopPropagation();
                   if (!confirm("Slette?")) return;
                   await del({ data: { id: t.id } });
                   reload();
@@ -685,12 +710,151 @@ function Posteringer({
   );
 }
 
+function PosteringEditor({
+  txn,
+  cats,
+  onCancel,
+  onSaved,
+}: {
+  txn: OkonomiTransaction;
+  cats: OkonomiCategory[];
+  onCancel: () => void;
+  onSaved: () => void;
+}) {
+  const upsert = useServerFn(upsertOkonomiTransaction);
+  const learn = useServerFn(learnMerchantRule);
+  const [date, setDate] = useState(txn.txn_date);
+  const [desc, setDesc] = useState(txn.description);
+  const [amount, setAmount] = useState(String(txn.amount));
+  const [catId, setCatId] = useState<string>(txn.category_id ?? "");
+  const [note, setNote] = useState(txn.note ?? "");
+  const [busy, setBusy] = useState(false);
+
+  function flipSign() {
+    const n = Number(amount);
+    if (isFinite(n)) setAmount(String(-n));
+  }
+
+  async function save() {
+    setBusy(true);
+    try {
+      await upsert({
+        data: {
+          id: txn.id,
+          txn_date: date,
+          description: desc,
+          amount: Number(amount),
+          category_id: catId || null,
+          note: note || null,
+          source: txn.source,
+          approved: txn.approved,
+        },
+      });
+      // Husk kategori-valget for fremtidige importer
+      if (catId && (catId !== txn.category_id || desc !== txn.description)) {
+        try {
+          await learn({ data: { description: desc, category_id: catId } });
+        } catch {}
+      }
+      toast.success("Lagret");
+      onSaved();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Feil");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const isExpense = Number(amount) < 0;
+  return (
+    <Card className="p-3 space-y-2 border-amber-500/40 bg-amber-950/10">
+      <div className="grid grid-cols-2 gap-2">
+        <div>
+          <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Dato</Label>
+          <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="h-8" />
+        </div>
+        <div>
+          <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Beløp</Label>
+          <div className="flex gap-1">
+            <Input
+              type="number"
+              step="0.01"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              className="h-8"
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-8 px-2 text-[10px] shrink-0"
+              onClick={flipSign}
+              title="Bytt mellom inntekt/utgift"
+            >
+              {isExpense ? "→ Inntekt" : "→ Utgift"}
+            </Button>
+          </div>
+        </div>
+      </div>
+      <div>
+        <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">
+          Beskrivelse
+        </Label>
+        <Input value={desc} onChange={(e) => setDesc(e.target.value)} className="h-8" />
+      </div>
+      <div>
+        <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Kategori</Label>
+        <Select value={catId} onValueChange={setCatId}>
+          <SelectTrigger className="h-8">
+            <SelectValue placeholder="Velg kategori" />
+          </SelectTrigger>
+          <SelectContent>
+            {cats.map((c) => (
+              <SelectItem key={c.id} value={c.id}>
+                {c.name}
+                {c.is_income ? " (inntekt)" : ""}
+                {c.is_transfer ? " (overføring)" : ""}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <div>
+        <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Notat</Label>
+        <Input value={note} onChange={(e) => setNote(e.target.value)} className="h-8" placeholder="Valgfritt" />
+      </div>
+      <div className="flex gap-2 pt-1">
+        <Button variant="ghost" size="sm" onClick={onCancel} disabled={busy} className="flex-1">
+          Avbryt
+        </Button>
+        <Button size="sm" onClick={save} disabled={busy} className="flex-1">
+          {busy ? <Loader2 className="w-3 h-3 animate-spin" /> : "Lagre"}
+        </Button>
+      </div>
+    </Card>
+  );
+}
+
 // ---------------- Budsjett ----------------
+
+const CAT_COLORS = [
+  "#ef4444", "#f97316", "#f59e0b", "#eab308", "#84cc16", "#22c55e",
+  "#10b981", "#14b8a6", "#06b6d4", "#0ea5e9", "#3b82f6", "#6366f1",
+  "#8b5cf6", "#a855f7", "#d946ef", "#ec4899", "#f43f5e", "#94a3b8",
+];
 
 function Budsjett({ cats, reload }: { cats: OkonomiCategory[]; reload: () => void }) {
   const upsert = useServerFn(upsertOkonomiCategory);
   const del = useServerFn(deleteOkonomiCategory);
   const [draft, setDraft] = useState<Record<string, string>>({});
+  const [adding, setAdding] = useState(false);
+  const [newCat, setNewCat] = useState({
+    name: "",
+    color: CAT_COLORS[0],
+    monthly_budget: "",
+    is_income: false,
+    is_transfer: false,
+  });
 
   async function save(c: OkonomiCategory) {
     const v = draft[c.id];
@@ -717,10 +881,100 @@ function Budsjett({ cats, reload }: { cats: OkonomiCategory[]; reload: () => voi
     }
   }
 
+  async function createCat() {
+    if (!newCat.name.trim()) {
+      toast.error("Navn må fylles inn");
+      return;
+    }
+    const monthly = newCat.monthly_budget ? Number(newCat.monthly_budget) : null;
+    try {
+      await upsert({
+        data: {
+          name: newCat.name.trim(),
+          color: newCat.color,
+          monthly_budget: monthly,
+          yearly_budget: monthly !== null ? monthly * 12 : null,
+          sort_order: 500,
+          hidden: false,
+          is_income: newCat.is_income,
+          is_transfer: newCat.is_transfer,
+        },
+      });
+      toast.success(`«${newCat.name}» opprettet`);
+      setNewCat({ name: "", color: CAT_COLORS[0], monthly_budget: "", is_income: false, is_transfer: false });
+      setAdding(false);
+      reload();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Feil");
+    }
+  }
+
   return (
     <div className="space-y-2">
+      <Button onClick={() => setAdding((v) => !v)} variant="secondary" className="w-full">
+        <Plus className="w-4 h-4 mr-1" /> Ny kategori
+      </Button>
+      {adding && (
+        <Card className="p-3 space-y-2 border-amber-500/40">
+          <Input
+            placeholder="Navn (f.eks. Hobby, Strøm…)"
+            value={newCat.name}
+            onChange={(e) => setNewCat({ ...newCat, name: e.target.value })}
+          />
+          <div className="grid grid-cols-2 gap-2">
+            <Input
+              type="number"
+              placeholder="kr / mnd (valgfri)"
+              value={newCat.monthly_budget}
+              onChange={(e) => setNewCat({ ...newCat, monthly_budget: e.target.value })}
+            />
+            <Select
+              value={newCat.is_income ? "income" : newCat.is_transfer ? "transfer" : "expense"}
+              onValueChange={(v) =>
+                setNewCat({
+                  ...newCat,
+                  is_income: v === "income",
+                  is_transfer: v === "transfer",
+                })
+              }
+            >
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="expense">Utgift</SelectItem>
+                <SelectItem value="income">Inntekt</SelectItem>
+                <SelectItem value="transfer">Overføring</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Farge</Label>
+            <div className="flex flex-wrap gap-1.5 mt-1">
+              {CAT_COLORS.map((col) => (
+                <button
+                  key={col}
+                  type="button"
+                  onClick={() => setNewCat({ ...newCat, color: col })}
+                  className={`w-6 h-6 rounded-full border-2 ${
+                    newCat.color === col ? "border-amber-300 scale-110" : "border-transparent"
+                  } transition-transform`}
+                  style={{ background: col }}
+                />
+              ))}
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="ghost" size="sm" className="flex-1" onClick={() => setAdding(false)}>
+              Avbryt
+            </Button>
+            <Button size="sm" className="flex-1" onClick={createCat}>
+              Opprett
+            </Button>
+          </div>
+        </Card>
+      )}
       <p className="text-sm text-muted-foreground mb-2">
-        Sett månedsbudsjett per kategori. Tomt = ingen grense.
+        Sett månedsbudsjett per kategori. Tomt = ingen grense. AI bruker disse navnene når den
+        kategoriserer importerte rader.
       </p>
       {cats.map((c) => (
         <Card key={c.id} className="p-3 flex items-center gap-2">
@@ -729,7 +983,11 @@ function Budsjett({ cats, reload }: { cats: OkonomiCategory[]; reload: () => voi
             style={{ background: c.color }}
           />
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">{c.name}</p>
+            <p className="text-sm font-medium truncate">
+              {c.name}
+              {c.is_income && <span className="text-[10px] text-emerald-400 ml-1">(inntekt)</span>}
+              {c.is_transfer && <span className="text-[10px] text-sky-400 ml-1">(overføring)</span>}
+            </p>
             <p className="text-[11px] text-muted-foreground">
               {c.monthly_budget ? `${fmt(Number(c.monthly_budget))} /mnd` : "— /mnd"}
             </p>
