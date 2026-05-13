@@ -101,6 +101,7 @@ const ROUTE_ICON_COLOR: Partial<Record<RoutePath, string>> = {
   "/oppussing-hytta": "#a16207",     // tre — rustbrun
   "/matvarer": "#84cc16",            // varer — markens grønt
   "/kvitteringer": "#94a3b8",        // pergament — sølv
+  "/okonomi": "#d4af37",             // Iron Bank — gull
   "/hundene": "#f59e0b",             // ulv/hund — ravgull
   "/trening": "#ef4444",             // sverd — blod
   "/varsler": "#dc2626",             // farevarsel — rødt skilt
