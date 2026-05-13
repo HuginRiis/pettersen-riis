@@ -16,7 +16,7 @@ import { useNavUsage } from "@/hooks/use-nav-usage";
 import { useMenuPrefs } from "@/hooks/use-menu-prefs";
 import { getNetatmoWeatherStation } from "@/server/netatmo-weather";
 import { useLastGood } from "@/hooks/use-last-good";
-import { PushTodayBadge, LightsOnBadge, WeatherDaysBadge, AlarmStateBadge, AlertsSeverityBadge, PowerVsYesterdayBadge, TrainingLast4WeeksBadge, UtgangsdorenLockBadge, StepsTodayBadge, MowerStatusBadge, CurrentTempBadge, GarbageNextPickupBadge, GardenaStatusBadge, GardenaBatteryBadge, GardenaSignalBadge, RoborockStatusBadge } from "@/components/HallBadges";
+import { PushTodayBadge, LightsOnBadge, WeatherDaysBadge, AlarmStateBadge, AlertsSeverityBadge, PowerVsYesterdayBadge, TrainingLast4WeeksBadge, UtgangsdorenLockBadge, StepsTodayBadge, MowerStatusBadge, CurrentTempBadge, GarbageNextPickupBadge, GardenaStatusBadge, GardenaBatteryBadge, GardenaSignalBadge, RoborockStatusBadge, BudgetRemainingBadge } from "@/components/HallBadges";
 import { useHeaderBadgeSettings, isBadgeVisible } from "@/hooks/use-header-badge-settings";
 import { useMenuVisibility, isMenuLinkVisible } from "@/hooks/use-menu-visibility";
 
@@ -132,7 +132,7 @@ const navLinks: NavLink[] = [
   { to: "/oppussing-hytta", label: "Prosjekter på hytta" },
   { to: "/matvarer", label: "Varer" },
   { to: "/kvitteringer", label: "Kvitteringer" },
-  { to: "/okonomi", label: "Budsjett" },
+  { to: "/okonomi", label: "Husholdningens hvelv" },
   { to: "/skatte-utregningen", label: "Skatte utregningen" },
   { to: "/hundene", label: "Hundene" },
   { to: "/trening", label: "Trening" },
@@ -389,6 +389,7 @@ export function SiteHeader() {
                   {l.to === "/stromkroniken" && showB("power_vs_yesterday") && <PowerVsYesterdayBadge inline />}
                   {l.to === "/trening" && <>{showB("steps_arne") && <StepsTodayBadge inline owner="arne" />}{showB("steps_rebekka") && <StepsTodayBadge inline owner="rebekka" />}{showB("training_4w") && <TrainingLast4WeeksBadge inline />}</>}
                   {l.to === "/agenda" && showB("garbage_next") && <GarbageNextPickupBadge inline />}
+                  {l.to === "/okonomi" && showB("budget_remaining") && <BudgetRemainingBadge inline />}
                 </Link>
               </span>
             );
@@ -510,6 +511,7 @@ export function SiteHeader() {
                     {l.to === "/stromkroniken" && showB("power_vs_yesterday") && <PowerVsYesterdayBadge inline />}
                     {l.to === "/trening" && <>{showB("steps_arne") && <StepsTodayBadge inline owner="arne" />}{showB("steps_rebekka") && <StepsTodayBadge inline owner="rebekka" />}{showB("training_4w") && <TrainingLast4WeeksBadge inline />}</>}
                     {l.to === "/agenda" && showB("garbage_next") && <GarbageNextPickupBadge inline />}
+                    {l.to === "/okonomi" && showB("budget_remaining") && <BudgetRemainingBadge inline />}
                   </Link>
                 </div>
               );

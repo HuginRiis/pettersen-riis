@@ -25,7 +25,7 @@ export const MENU_LINK_DEFS: { to: string; label: string }[] = [
   { to: "/oppussing-hytta", label: "Prosjekter på hytta" },
   { to: "/matvarer", label: "Varer" },
   { to: "/kvitteringer", label: "Kvitteringer" },
-  { to: "/okonomi", label: "Budsjett" },
+  { to: "/okonomi", label: "Husholdningens hvelv" },
   { to: "/skatte-utregningen", label: "Skatte utregningen" },
   { to: "/hundene", label: "Hundene" },
   { to: "/trening", label: "Trening" },
