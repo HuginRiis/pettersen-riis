@@ -412,10 +412,17 @@ export function SiteHeader() {
         </nav>
 
         <button
-          className="text-primary p-2"
+          className={`relative text-primary p-2 rounded-md transition ${
+            open
+              ? ""
+              : "ring-2 ring-primary/60 shadow-[0_0_12px_hsl(var(--primary)/0.6)] animate-pulse hover:animate-none hover:ring-primary"
+          }`}
           onClick={() => setOpen((v) => { if (!v) setFavOpenMobile(false); return !v; })}
           aria-label="Meny"
         >
+          {!open && (
+            <span className="pointer-events-none absolute inset-0 rounded-md ring-2 ring-primary/40 animate-ping" />
+          )}
           {open ? <X size={22} /> : <Menu size={22} />}
         </button>
       </div>
