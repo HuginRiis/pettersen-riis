@@ -108,6 +108,39 @@ export function withApiLog<T extends (...args: any[]) => Promise<any>>(
   }) as T;
 }
 
+/**
+ * Wrap fetch() med automatisk API-call-logging. Returnerer Response og logger
+ * ok = res.ok, status_code og varighet.
+ */
+export async function loggedFetch(
+  source: ApiSource | string,
+  endpoint: string,
+  url: string,
+  init?: RequestInit,
+): Promise<Response> {
+  const started = Date.now();
+  try {
+    const res = await fetch(url, init);
+    await recordApiCall({
+      source,
+      endpoint,
+      ok: res.ok,
+      duration_ms: Date.now() - started,
+      status_code: res.status,
+    });
+    return res;
+  } catch (err) {
+    await recordApiCall({
+      source,
+      endpoint,
+      ok: false,
+      duration_ms: Date.now() - started,
+      error_message: err instanceof Error ? err.message : String(err),
+    });
+    throw err;
+  }
+}
+
 export type ApiCallSummaryRow = {
   source: string;
   endpoint: string;
