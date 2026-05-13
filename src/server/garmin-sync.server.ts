@@ -133,10 +133,14 @@ async function fetchFitnessExtras(owner: GarminOwner, day: string): Promise<{
     const rawContribs: any[] | undefined = Array.isArray(e?.contributors) ? e.contributors : Array.isArray(e?.contributorList) ? e.contributorList : undefined;
     if (rawContribs && rawContribs.length) {
       const mapped = rawContribs
-        .map((c: any) => ({
-          group: String(c?.group ?? c?.activityType ?? c?.name ?? "OTHER"),
-          contribution: asNumber(c?.contribution ?? c?.value ?? c?.percent ?? c?.percentage) ?? 0,
-        }))
+        .map((c: any) => {
+          // Foretrekk lesbar etikett over numerisk groupId
+          const label = c?.groupName ?? c?.activityType ?? c?.activityTypeName ?? c?.name ?? c?.group ?? c?.groupId ?? "OTHER";
+          return {
+            group: String(label),
+            contribution: asNumber(c?.contribution ?? c?.value ?? c?.percent ?? c?.percentage) ?? 0,
+          };
+        })
         .filter((c) => c.contribution > 0)
         .sort((a, b) => b.contribution - a.contribution);
       if (mapped.length) out.endurance_contributors = mapped;
