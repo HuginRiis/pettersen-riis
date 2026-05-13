@@ -8,8 +8,23 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Upload, Plus, Trash2, Coins, FileText, Sparkles } from "lucide-react";
+import { Loader2, Upload, Plus, Trash2, Coins, FileText, Sparkles, Check, X } from "lucide-react";
 import { toast } from "sonner";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  LineChart,
+  Line,
+  Legend,
+  CartesianGrid,
+} from "recharts";
 import {
   listOkonomiCategories,
   upsertOkonomiCategory,
@@ -19,6 +34,7 @@ import {
   deleteOkonomiTransaction,
   importOkonomiTransactions,
   parseStatementWithAI,
+  categorizeTransactionsWithAI,
   type OkonomiCategory,
   type OkonomiTransaction,
   type ParsedTxn,
@@ -119,32 +135,54 @@ function Oversikt({ cats, txns }: { cats: OkonomiCategory[]; txns: OkonomiTransa
   const ym = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   const inMonth = txns.filter((t) => t.txn_date.startsWith(ym));
 
-  const catMap = new Map(cats.map((c) => [c.id, c]));
+  const catMap = useMemo(() => new Map(cats.map((c) => [c.id, c])), [cats]);
   const isExpense = (t: OkonomiTransaction) => {
     const c = t.category_id ? catMap.get(t.category_id) : undefined;
     if (c?.is_transfer || c?.is_income) return false;
-    return t.amount < 0;
+    return Number(t.amount) < 0;
   };
   const isIncome = (t: OkonomiTransaction) => {
     const c = t.category_id ? catMap.get(t.category_id) : undefined;
     if (c?.is_income) return true;
-    return t.amount > 0 && !c?.is_transfer;
+    return Number(t.amount) > 0 && !c?.is_transfer;
   };
 
   const brukt = inMonth.filter(isExpense).reduce((s, t) => s + Math.abs(Number(t.amount)), 0);
   const inntekt = inMonth.filter(isIncome).reduce((s, t) => s + Number(t.amount), 0);
   const budsjett = cats.reduce((s, c) => s + (Number(c.monthly_budget) || 0), 0);
   const igjen = Math.max(0, budsjett - brukt);
+  const netto = inntekt - brukt;
 
+  // Per kategori i denne måneden
   const perCat = new Map<string, number>();
   for (const t of inMonth.filter(isExpense)) {
     const k = t.category_id ?? "uten";
     perCat.set(k, (perCat.get(k) || 0) + Math.abs(Number(t.amount)));
   }
-  const top = Array.from(perCat.entries())
-    .map(([id, sum]) => ({ cat: cats.find((c) => c.id === id), sum }))
-    .sort((a, b) => b.sum - a.sum)
-    .slice(0, 8);
+  const catData = Array.from(perCat.entries())
+    .map(([id, sum]) => {
+      const c = cats.find((x) => x.id === id);
+      return { id, name: c?.name ?? "Uten kategori", color: c?.color ?? "#94a3b8", sum, budget: Number(c?.monthly_budget) || 0 };
+    })
+    .sort((a, b) => b.sum - a.sum);
+
+  // 6 mnd trend
+  const months: { key: string; label: string }[] = [];
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    months.push({
+      key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`,
+      label: d.toLocaleDateString("nb-NO", { month: "short" }),
+    });
+  }
+  const trend = months.map((m) => {
+    const rows = txns.filter((t) => t.txn_date.startsWith(m.key));
+    return {
+      label: m.label,
+      Inntekt: rows.filter(isIncome).reduce((s, t) => s + Number(t.amount), 0),
+      Utgift: rows.filter(isExpense).reduce((s, t) => s + Math.abs(Number(t.amount)), 0),
+    };
+  });
 
   return (
     <div className="space-y-4">
@@ -152,45 +190,93 @@ function Oversikt({ cats, txns }: { cats: OkonomiCategory[]; txns: OkonomiTransa
         <Stat label="Brukt" value={fmt(brukt)} tone="warn" />
         <Stat label="Inntekt" value={fmt(inntekt)} tone="ok" />
         <Stat label="Budsjett" value={fmt(budsjett)} />
-        <Stat label="Igjen" value={fmt(igjen)} tone="ok" />
+        <Stat label={netto >= 0 ? "Overskudd" : "Underskudd"} value={fmt(Math.abs(netto))} tone={netto >= 0 ? "ok" : "warn"} />
       </div>
 
       <Card className="p-4 border-amber-500/30">
         <h3 className="text-sm tracking-[0.25em] uppercase text-amber-400 mb-3">
-          Største poster denne måned
+          Inntekt vs utgift — siste 6 mnd
         </h3>
-        {top.length === 0 ? (
+        <div className="h-56">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={trend} margin={{ top: 4, right: 4, left: -16, bottom: 0 }}>
+              <CartesianGrid stroke="#3f2d10" strokeDasharray="2 4" vertical={false} />
+              <XAxis dataKey="label" stroke="#a78b4a" fontSize={11} />
+              <YAxis stroke="#a78b4a" fontSize={11} tickFormatter={(v) => `${Math.round(v / 1000)}k`} />
+              <Tooltip
+                contentStyle={{ background: "#1a1208", border: "1px solid #92651a" }}
+                formatter={(v: any) => fmt(Number(v))}
+              />
+              <Legend wrapperStyle={{ fontSize: 11 }} />
+              <Bar dataKey="Inntekt" fill="#10b981" radius={[3, 3, 0, 0]} />
+              <Bar dataKey="Utgift" fill="#ef4444" radius={[3, 3, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </Card>
+
+      {catData.length > 0 && (
+        <Card className="p-4 border-amber-500/30">
+          <h3 className="text-sm tracking-[0.25em] uppercase text-amber-400 mb-3">
+            Fordeling denne måned
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
+            <div className="h-56">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={catData} dataKey="sum" nameKey="name" innerRadius={45} outerRadius={80} paddingAngle={2}>
+                    {catData.map((d) => (
+                      <Cell key={d.id} fill={d.color} stroke="#1a1208" />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{ background: "#1a1208", border: "1px solid #92651a" }}
+                    formatter={(v: any) => fmt(Number(v))}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <ul className="space-y-1.5 text-xs">
+              {catData.slice(0, 8).map((d) => (
+                <li key={d.id} className="flex items-center gap-2">
+                  <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ background: d.color }} />
+                  <span className="flex-1 truncate">{d.name}</span>
+                  <span className="tabular-nums text-amber-100">{fmt(d.sum)}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </Card>
+      )}
+
+      <Card className="p-4 border-amber-500/30">
+        <h3 className="text-sm tracking-[0.25em] uppercase text-amber-400 mb-3">
+          Budsjett-status per kategori
+        </h3>
+        {catData.length === 0 ? (
           <p className="text-sm text-muted-foreground">Ingen posteringer i {ym} ennå.</p>
         ) : (
           <ul className="space-y-2">
-            {top.map((r, i) => {
-              const budget = Number(r.cat?.monthly_budget) || 0;
-              const pct = budget > 0 ? Math.min(100, (r.sum / budget) * 100) : 0;
+            {catData.map((r) => {
+              const pct = r.budget > 0 ? Math.min(100, (r.sum / r.budget) * 100) : 0;
+              const over = r.budget > 0 && r.sum > r.budget;
               return (
-                <li key={i} className="text-sm">
+                <li key={r.id} className="text-sm">
                   <div className="flex justify-between mb-1">
                     <span className="flex items-center gap-2">
-                      <span
-                        className="inline-block w-2.5 h-2.5 rounded-full"
-                        style={{ background: r.cat?.color ?? "#94a3b8" }}
-                      />
-                      {r.cat?.name ?? "Uten kategori"}
+                      <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ background: r.color }} />
+                      {r.name}
                     </span>
                     <span className="tabular-nums">
                       {fmt(r.sum)}
-                      {budget > 0 && (
-                        <span className="text-muted-foreground"> / {fmt(budget)}</span>
-                      )}
+                      {r.budget > 0 && <span className="text-muted-foreground"> / {fmt(r.budget)}</span>}
                     </span>
                   </div>
-                  {budget > 0 && (
+                  {r.budget > 0 && (
                     <div className="h-1.5 rounded-full bg-muted/40 overflow-hidden">
                       <div
-                        className="h-full"
-                        style={{
-                          width: `${pct}%`,
-                          background: pct > 100 ? "#ef4444" : r.cat?.color ?? "#94a3b8",
-                        }}
+                        className="h-full transition-all"
+                        style={{ width: `${pct}%`, background: over ? "#ef4444" : r.color }}
                       />
                     </div>
                   )}
@@ -199,6 +285,26 @@ function Oversikt({ cats, txns }: { cats: OkonomiCategory[]; txns: OkonomiTransa
             })}
           </ul>
         )}
+      </Card>
+
+      <Card className="p-4 border-amber-500/30">
+        <h3 className="text-sm tracking-[0.25em] uppercase text-amber-400 mb-3">
+          Netto pr måned
+        </h3>
+        <div className="h-48">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={trend.map((t) => ({ label: t.label, Netto: t.Inntekt - t.Utgift }))} margin={{ top: 4, right: 4, left: -16, bottom: 0 }}>
+              <CartesianGrid stroke="#3f2d10" strokeDasharray="2 4" vertical={false} />
+              <XAxis dataKey="label" stroke="#a78b4a" fontSize={11} />
+              <YAxis stroke="#a78b4a" fontSize={11} tickFormatter={(v) => `${Math.round(v / 1000)}k`} />
+              <Tooltip
+                contentStyle={{ background: "#1a1208", border: "1px solid #92651a" }}
+                formatter={(v: any) => fmt(Number(v))}
+              />
+              <Line type="monotone" dataKey="Netto" stroke="#f59e0b" strokeWidth={2} dot={{ fill: "#f59e0b", r: 3 }} />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
       </Card>
     </div>
   );
@@ -215,6 +321,7 @@ function Stat({ label, value, tone }: { label: string; value: string; tone?: "ok
 }
 
 // ---------------- Posteringer ----------------
+
 
 function Posteringer({
   cats,
@@ -425,16 +532,48 @@ function Budsjett({ cats, reload }: { cats: OkonomiCategory[]; reload: () => voi
 // ---------------- Import ----------------
 
 function ImportTab({ cats, reload }: { cats: OkonomiCategory[]; reload: () => void }) {
-  void cats;
   const importFn = useServerFn(importOkonomiTransactions);
   const parseAi = useServerFn(parseStatementWithAI);
+  const categorizeAi = useServerFn(categorizeTransactionsWithAI);
   const [busy, setBusy] = useState(false);
+  const [busyMsg, setBusyMsg] = useState("");
   const [preview, setPreview] = useState<ParsedTxn[]>([]);
+  const [source, setSource] = useState<"csv" | "pdf">("csv");
   const csvRef = useRef<HTMLInputElement>(null);
   const pdfRef = useRef<HTMLInputElement>(null);
 
+  async function autoCategorize(rows: ParsedTxn[]): Promise<ParsedTxn[]> {
+    const needIdx: number[] = [];
+    rows.forEach((r, i) => {
+      if (!r.category_id) needIdx.push(i);
+    });
+    if (needIdx.length === 0) return rows;
+    setBusyMsg(`AI kategoriserer ${needIdx.length} rader…`);
+    try {
+      const res = await categorizeAi({
+        data: {
+          rows: needIdx.map((i) => ({
+            description: rows[i].description,
+            amount: rows[i].amount,
+          })),
+        },
+      });
+      const out = [...rows];
+      needIdx.forEach((rowIdx, i) => {
+        const cid = res.category_ids[i];
+        if (cid) out[rowIdx] = { ...out[rowIdx], category_id: cid };
+      });
+      return out;
+    } catch (e) {
+      toast.error(`AI-kategorisering feilet: ${e instanceof Error ? e.message : ""}`);
+      return rows;
+    }
+  }
+
   async function handleCsv(file: File) {
     setBusy(true);
+    setSource("csv");
+    setBusyMsg("Leser CSV…");
     try {
       const text = await file.text();
       const lines = text.split(/\r?\n/).filter(Boolean);
@@ -449,8 +588,7 @@ function ImportTab({ cats, reload }: { cats: OkonomiCategory[]; reload: () => vo
       const rows: ParsedTxn[] = [];
       for (let i = 1; i < lines.length; i++) {
         const cells = lines[i].split(sep).map((c) => c.trim().replace(/^"|"$/g, ""));
-        const dateRaw = cells[idxDate];
-        const date = parseNorDate(dateRaw);
+        const date = parseNorDate(cells[idxDate]);
         const desc = cells[idxDesc];
         const amt = parseNorNum(cells[idxAmt]);
         if (!date || !desc || !isFinite(amt)) continue;
@@ -461,37 +599,89 @@ function ImportTab({ cats, reload }: { cats: OkonomiCategory[]; reload: () => vo
           external_ref: `csv:${date}:${desc}:${amt}`,
         });
       }
-      setPreview(rows);
-      toast.success(`${rows.length} rader klare`);
+      const enriched = await autoCategorize(rows);
+      setPreview(enriched);
+      const cat = enriched.filter((r) => r.category_id).length;
+      toast.success(`${enriched.length} rader klare — ${cat} kategorisert`);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "CSV-feil");
     } finally {
       setBusy(false);
+      setBusyMsg("");
     }
   }
 
   async function handlePdfImage(file: File) {
     setBusy(true);
+    setSource("pdf");
+    setBusyMsg("AI leser kontoutskrift…");
     try {
       const buf = await file.arrayBuffer();
       const b64 = btoa(String.fromCharCode(...new Uint8Array(buf)));
-      const res = await parseAi({ data: { fileBase64: b64, mimeType: file.type || "application/pdf" } });
+      const res = await parseAi({
+        data: { fileBase64: b64, mimeType: file.type || "application/pdf" },
+      });
       const rows = res.rows.map((r) => ({
         ...r,
         external_ref: `ai:${r.txn_date}:${r.description}:${r.amount}`,
       }));
-      setPreview(rows);
-      toast.success(`AI fant ${rows.length} posteringer`);
+      const enriched = await autoCategorize(rows);
+      setPreview(enriched);
+      const cat = enriched.filter((r) => r.category_id).length;
+      toast.success(`AI fant ${enriched.length} posteringer — ${cat} kategorisert`);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "AI-feil");
+    } finally {
+      setBusy(false);
+      setBusyMsg("");
+    }
+  }
+
+  function updateRow(i: number, patch: Partial<ParsedTxn>) {
+    setPreview((p) => p.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
+  }
+  function removeRow(i: number) {
+    setPreview((p) => p.filter((_, idx) => idx !== i));
+  }
+
+  async function commitOne(i: number) {
+    const r = preview[i];
+    setBusy(true);
+    try {
+      const res = await importFn({
+        data: {
+          rows: [
+            {
+              txn_date: r.txn_date,
+              description: r.description,
+              amount: r.amount,
+              account: r.account ?? null,
+              external_ref: r.external_ref ?? null,
+              category_id: r.category_id ?? null,
+            },
+          ],
+          source,
+        },
+      });
+      if (res.inserted > 0) {
+        toast.success("Postert");
+        removeRow(i);
+        reload();
+      } else {
+        toast.message("Allerede registrert");
+        removeRow(i);
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Feil");
     } finally {
       setBusy(false);
     }
   }
 
-  async function commit() {
+  async function commitAll() {
     if (preview.length === 0) return;
     setBusy(true);
+    setBusyMsg(`Importerer ${preview.length}…`);
     try {
       const res = await importFn({
         data: {
@@ -501,8 +691,9 @@ function ImportTab({ cats, reload }: { cats: OkonomiCategory[]; reload: () => vo
             amount: r.amount,
             account: r.account ?? null,
             external_ref: r.external_ref ?? null,
+            category_id: r.category_id ?? null,
           })),
-          source: "csv",
+          source,
         },
       });
       toast.success(`Importert ${res.inserted} (${res.skipped} duplikater)`);
@@ -512,8 +703,24 @@ function ImportTab({ cats, reload }: { cats: OkonomiCategory[]; reload: () => vo
       toast.error(e instanceof Error ? e.message : "Feil");
     } finally {
       setBusy(false);
+      setBusyMsg("");
     }
   }
+
+  async function recategorize() {
+    setBusy(true);
+    try {
+      const cleared = preview.map((r) => ({ ...r, category_id: null as string | null }));
+      const enriched = await autoCategorize(cleared);
+      setPreview(enriched);
+      toast.success("Kategorisert på nytt");
+    } finally {
+      setBusy(false);
+      setBusyMsg("");
+    }
+  }
+
+  const uncategorized = preview.filter((r) => !r.category_id).length;
 
   return (
     <div className="space-y-3">
@@ -539,7 +746,7 @@ function ImportTab({ cats, reload }: { cats: OkonomiCategory[]; reload: () => vo
             <Sparkles className="w-3 h-3 text-amber-400" /> PDF / bilde av kontoutskrift
           </Label>
           <p className="text-[11px] text-muted-foreground mb-2">
-            AI leser ut posteringene (Lovable AI Gateway).
+            AI leser ut posteringene og kategoriserer automatisk.
           </p>
           <input
             ref={pdfRef}
@@ -556,42 +763,100 @@ function ImportTab({ cats, reload }: { cats: OkonomiCategory[]; reload: () => vo
 
       {busy && (
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Loader2 className="w-4 h-4 animate-spin" /> Jobber…
+          <Loader2 className="w-4 h-4 animate-spin" /> {busyMsg || "Jobber…"}
         </div>
       )}
 
       {preview.length > 0 && (
         <Card className="p-3 border-amber-500/30">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-semibold">Forhåndsvisning ({preview.length})</h3>
-            <Button size="sm" onClick={commit} disabled={busy}>
-              Importer alle
-            </Button>
-          </div>
-          <div className="max-h-96 overflow-auto space-y-1">
-            {preview.slice(0, 50).map((r, i) => (
-              <div key={i} className="text-xs flex justify-between border-b border-border/30 py-1">
-                <span className="truncate flex-1">
-                  {r.txn_date} · {r.description}
-                </span>
-                <span
-                  className={`tabular-nums ${r.amount < 0 ? "text-red-400" : "text-emerald-400"}`}
-                >
-                  {fmt(r.amount)}
-                </span>
-              </div>
-            ))}
-            {preview.length > 50 && (
-              <p className="text-[11px] text-muted-foreground italic">
-                +{preview.length - 50} flere…
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+            <div>
+              <h3 className="text-sm font-semibold text-amber-100">
+                Forhåndsvisning ({preview.length})
+              </h3>
+              <p className="text-[11px] text-muted-foreground">
+                {uncategorized > 0 ? `${uncategorized} mangler kategori` : "Alle kategorisert ✓"}
               </p>
-            )}
+            </div>
+            <div className="flex gap-1.5">
+              <Button size="sm" variant="ghost" onClick={recategorize} disabled={busy}>
+                <Sparkles className="w-3 h-3 mr-1" /> AI på nytt
+              </Button>
+              <Button size="sm" onClick={commitAll} disabled={busy}>
+                Importer alle
+              </Button>
+            </div>
+          </div>
+          <div className="max-h-[60vh] overflow-auto space-y-1.5">
+            {preview.map((r, i) => {
+              const cat = cats.find((c) => c.id === r.category_id);
+              return (
+                <div
+                  key={i}
+                  className="text-xs border border-border/40 rounded p-2 space-y-1.5 bg-background/40"
+                >
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="inline-block w-2 h-2 rounded-full shrink-0"
+                      style={{ background: cat?.color ?? "#64748b" }}
+                    />
+                    <span className="flex-1 truncate font-medium">{r.description}</span>
+                    <span
+                      className={`tabular-nums font-semibold ${r.amount < 0 ? "text-red-400" : "text-emerald-400"}`}
+                    >
+                      {r.amount > 0 ? "+" : ""}
+                      {fmt(r.amount)}
+                    </span>
+                  </div>
+                  <div className="flex gap-1.5 items-center">
+                    <span className="text-[10px] text-muted-foreground w-16 shrink-0">
+                      {r.txn_date}
+                    </span>
+                    <Select
+                      value={r.category_id ?? ""}
+                      onValueChange={(v) => updateRow(i, { category_id: v || null })}
+                    >
+                      <SelectTrigger className="h-7 text-xs flex-1">
+                        <SelectValue placeholder="Velg kategori" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {cats.map((c) => (
+                          <SelectItem key={c.id} value={c.id}>
+                            {c.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-7 w-7 text-emerald-400 hover:text-emerald-300"
+                      onClick={() => commitOne(i)}
+                      disabled={busy}
+                      title="Poster denne"
+                    >
+                      <Check className="w-3.5 h-3.5" />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-7 w-7 text-red-400 hover:text-red-300"
+                      onClick={() => removeRow(i)}
+                      title="Fjern"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </Card>
       )}
     </div>
   );
 }
+
 
 function parseNorDate(s: string): string | null {
   if (!s) return null;

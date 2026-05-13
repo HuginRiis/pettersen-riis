@@ -193,11 +193,12 @@ const importSchema = z.object({
         amount: z.number(),
         account: z.string().nullable().optional(),
         external_ref: z.string().nullable().optional(),
+        category_id: z.string().uuid().nullable().optional(),
       }),
     )
     .min(1)
     .max(2000),
-  source: z.enum(["csv", "pdf"]).default("csv"),
+  source: z.enum(["csv", "pdf", "manual"]).default("csv"),
   default_account: z.string().optional(),
 });
 
@@ -211,7 +212,7 @@ export const importOkonomiTransactions = createServerFn({ method: "POST" })
       amount: r.amount,
       account: r.account ?? data.default_account ?? null,
       external_ref: r.external_ref ?? null,
-      category_id: applyRules(r.description, rules),
+      category_id: r.category_id ?? applyRules(r.description, rules),
       source: data.source,
       approved: true,
     }));
@@ -325,4 +326,115 @@ export const parseStatementWithAI = createServerFn({ method: "POST" })
       category_id: applyRules(r.description, rules),
     }));
     return { rows };
+  });
+
+// =================================================================
+// AI-kategorisering av importerte rader
+// =================================================================
+
+export const categorizeTransactionsWithAI = createServerFn({ method: "POST" })
+  .inputValidator((d) =>
+    z
+      .object({
+        rows: z
+          .array(
+            z.object({
+              description: z.string().min(1),
+              amount: z.number(),
+            }),
+          )
+          .min(1)
+          .max(500),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data }): Promise<{ category_ids: (string | null)[] }> => {
+    const apiKey = process.env.LOVABLE_API_KEY;
+    if (!apiKey) throw new Error("LOVABLE_API_KEY mangler");
+
+    const { data: catRows } = await supabaseAdmin
+      .from("okonomi_categories")
+      .select("id,name,is_income,is_transfer")
+      .eq("hidden", false);
+    const cats = (catRows ?? []) as any[];
+    if (cats.length === 0) return { category_ids: data.rows.map(() => null) };
+
+    const catList = cats
+      .map(
+        (c, i) =>
+          `${i + 1}. ${c.name}${c.is_income ? " (inntekt)" : ""}${c.is_transfer ? " (overføring)" : ""}`,
+      )
+      .join("\n");
+
+    const txnList = data.rows
+      .map((r, i) => `${i + 1}. ${r.description} | ${r.amount} kr`)
+      .join("\n");
+
+    const tool = {
+      type: "function",
+      function: {
+        name: "assign_categories",
+        description: "Tilordne kategori-nummer til hver postering.",
+        parameters: {
+          type: "object",
+          properties: {
+            assignments: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  txn_index: { type: "number" },
+                  category_index: {
+                    type: "number",
+                    description: "1-basert kategori-nummer, eller 0 hvis ukjent.",
+                  },
+                },
+                required: ["txn_index", "category_index"],
+              },
+            },
+          },
+          required: ["assignments"],
+        },
+      },
+    };
+
+    const prompt = `Du er en norsk husholdnings-bokfører. Tilordne riktig kategori til hver postering.
+Negativt beløp = utgift, positivt = inntekt.
+
+KATEGORIER:
+${catList}
+
+POSTERINGER:
+${txnList}
+
+Returner én tilordning per postering. Bruk 0 hvis ingen kategori passer.`;
+
+    const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages: [{ role: "user", content: prompt }],
+        tools: [tool],
+        tool_choice: { type: "function", function: { name: "assign_categories" } },
+      }),
+    });
+
+    if (resp.status === 429) throw new Error("AI er i kø, prøv igjen om litt.");
+    if (resp.status === 402) throw new Error("AI-kreditten er brukt opp.");
+    if (!resp.ok) throw new Error(`AI-feil ${resp.status}: ${await resp.text()}`);
+
+    const json = await resp.json();
+    const call = json.choices?.[0]?.message?.tool_calls?.[0];
+    const result: (string | null)[] = data.rows.map(() => null);
+    if (!call) return { category_ids: result };
+    const args = JSON.parse(call.function.arguments);
+    for (const a of args.assignments ?? []) {
+      const ti = Number(a.txn_index) - 1;
+      const ci = Number(a.category_index) - 1;
+      if (ti >= 0 && ti < result.length && ci >= 0 && ci < cats.length) {
+        result[ti] = cats[ci].id;
+      }
+    }
+    return { category_ids: result };
   });
