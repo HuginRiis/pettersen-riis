@@ -135,6 +135,17 @@ Alle tall i NOK (heltall). Marginalskatt og gjennomsnittsprosent som tall (f.eks
       throw new Error(`AI-feil ${res.status}: ${txt.slice(0, 300)}`);
     }
     const json: any = await res.json();
+    const u = json?.usage ?? {};
+    await logAiSearch({
+      feature: "skatt",
+      query: `skatt ${data.year}`,
+      model: "google/gemini-2.5-pro",
+      authenticated: await isHouseAuthenticated(),
+      status: "ok",
+      promptTokens: u.prompt_tokens ?? null,
+      completionTokens: u.completion_tokens ?? null,
+      totalTokens: u.total_tokens ?? null,
+    });
     const content: string = json?.choices?.[0]?.message?.content ?? "";
     const cleaned = content.replace(/```json|```/g, "").trim();
     const match = cleaned.match(/\{[\s\S]*\}/);
