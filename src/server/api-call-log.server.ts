@@ -147,6 +147,13 @@ export const SOURCE_SCHEDULES: Record<string, SourceSchedule> = {
   lightning: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
   garbage: { description: "cache 6t", intervalMs: 6 * 60 * 60 * 1000, trigger: "cache" },
   kassal: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
+  gardena: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
+  garmin: { description: "hver time 06–20", intervalMs: 60 * 60_000, trigger: "cron" },
+  roborock: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
+  ai: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
+  posten: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
+  geoip: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
+  uv: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
   other: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
 };
 
