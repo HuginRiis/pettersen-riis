@@ -58,6 +58,7 @@ export type Database = {
           month: string
           monthly_budget_usd: number
           note: string | null
+          purchased_credits_usd: number
           updated_at: string
         }
         Insert: {
@@ -67,6 +68,7 @@ export type Database = {
           month: string
           monthly_budget_usd?: number
           note?: string | null
+          purchased_credits_usd?: number
           updated_at?: string
         }
         Update: {
@@ -76,6 +78,7 @@ export type Database = {
           month?: string
           monthly_budget_usd?: number
           note?: string | null
+          purchased_credits_usd?: number
           updated_at?: string
         }
         Relationships: []

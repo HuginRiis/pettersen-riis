@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { loggedFetch } from "@/server/api-call-log.server";
+import { logAiSearch, isHouseAuthenticated } from "@/server/ai-usage.server";
 
 export type TaxMonth = {
   id: string;
@@ -134,6 +135,17 @@ Alle tall i NOK (heltall). Marginalskatt og gjennomsnittsprosent som tall (f.eks
       throw new Error(`AI-feil ${res.status}: ${txt.slice(0, 300)}`);
     }
     const json: any = await res.json();
+    const u = json?.usage ?? {};
+    await logAiSearch({
+      feature: "skatt",
+      query: `skatt ${data.year}`,
+      model: "google/gemini-2.5-pro",
+      authenticated: await isHouseAuthenticated(),
+      status: "ok",
+      promptTokens: u.prompt_tokens ?? null,
+      completionTokens: u.completion_tokens ?? null,
+      totalTokens: u.total_tokens ?? null,
+    });
     const content: string = json?.choices?.[0]?.message?.content ?? "";
     const cleaned = content.replace(/```json|```/g, "").trim();
     const match = cleaned.match(/\{[\s\S]*\}/);
@@ -263,6 +275,17 @@ Hold det kort, faktabasert og nøyaktig — alle tall som står på slippen MÅ 
       throw new Error(`AI-feil ${res.status}: ${txt.slice(0, 300)}`);
     }
     const json: any = await res.json();
+    const u = json?.usage ?? {};
+    await logAiSearch({
+      feature: "lonnslipp",
+      query: `lønnslipp-saga ${data.id}`,
+      model: "google/gemini-2.5-pro",
+      authenticated: await isHouseAuthenticated(),
+      status: "ok",
+      promptTokens: u.prompt_tokens ?? null,
+      completionTokens: u.completion_tokens ?? null,
+      totalTokens: u.total_tokens ?? null,
+    });
     const text: string = (json?.choices?.[0]?.message?.content ?? "").trim();
     if (!text) throw new Error("AI returnerte tom tekst");
 
@@ -465,6 +488,17 @@ Hvis du ikke finner et felt, sett 0 (eller "Ukjent" for employer). Hvis måned e
       throw new Error(`AI-feil ${res.status}: ${txt.slice(0, 300)}`);
     }
     const json: any = await res.json();
+    const u = json?.usage ?? {};
+    await logAiSearch({
+      feature: "lonnslipp",
+      query: `lønnslipp-parse ${data.fileName}`,
+      model: "google/gemini-2.5-flash",
+      authenticated: await isHouseAuthenticated(),
+      status: "ok",
+      promptTokens: u.prompt_tokens ?? null,
+      completionTokens: u.completion_tokens ?? null,
+      totalTokens: u.total_tokens ?? null,
+    });
     const content: string = json?.choices?.[0]?.message?.content ?? "";
 
     const cleaned = content.replace(/```json|```/g, "").trim();

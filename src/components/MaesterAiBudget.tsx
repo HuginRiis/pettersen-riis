@@ -102,6 +102,7 @@ export function MaesterAiBudget() {
   const [saving, setSaving] = useState(false);
   const [costInput, setCostInput] = useState("");
   const [budgetInput, setBudgetInput] = useState("");
+  const [purchasedInput, setPurchasedInput] = useState("");
   const [openFeatures, setOpenFeatures] = useState<Set<string>>(new Set());
 
   function toggleFeature(key: string) {
@@ -123,6 +124,7 @@ export function MaesterAiBudget() {
         setActual(a);
         setCostInput(String(a.actualCostUsd));
         setBudgetInput(String(a.monthlyBudgetUsd));
+        setPurchasedInput(String(a.purchasedCreditsUsd));
       } catch (e) {
         if (!cancelled) setError(e instanceof Error ? e.message : "Ukjent feil");
       } finally {
@@ -139,6 +141,7 @@ export function MaesterAiBudget() {
         data: {
           actualCostUsd: Number(costInput) || 0,
           monthlyBudgetUsd: Number(budgetInput) || 1,
+          purchasedCreditsUsd: Number(purchasedInput) || 0,
         },
       });
       setActual(a);
@@ -166,10 +169,13 @@ export function MaesterAiBudget() {
   }
 
   const monthlyBudget = actual.monthlyBudgetUsd || 1;
-  const usedMonth = actual.actualCostUsd; // FAKTISK fra Lovable
-  const estimatedMonth = stats.costMonth; // estimat fra tokens
-  const remaining = Math.max(0, monthlyBudget - usedMonth);
-  const pct = Math.min(100, (usedMonth / monthlyBudget) * 100);
+  const purchased = actual.purchasedCreditsUsd || 0;
+  const estimatedMonth = stats.costMonth; // automatisk fra loggede tokens
+  // Bruk manuell verdi hvis registrert, ellers automatisk estimat
+  const usedMonth = actual.actualCostUsd > 0 ? actual.actualCostUsd : estimatedMonth;
+  const totalAvailable = monthlyBudget + purchased;
+  const remaining = Math.max(0, totalAvailable - usedMonth);
+  const pct = Math.min(100, (usedMonth / Math.max(totalAvailable, 0.01)) * 100);
 
   const totalFeatureCost =
     stats.byFeature.reduce((s, f) => s + (f.costUsd ?? 0), 0) || 1;
@@ -197,11 +203,13 @@ export function MaesterAiBudget() {
       {editing && (
         <div className="rounded border border-border/60 bg-background/30 p-3 mb-4 space-y-2">
           <p className="text-[11px] text-muted-foreground">
-            Lim inn faktisk forbruk fra Lovable Cloud → Settings → Cloud & AI balance.
+            Lovable har dessverre ingen offentlig API for AI-saldo, så «Brukt» og «Kjøpte
+            credits» fylles inn manuelt fra Lovable Cloud → Settings → Workspace → Usage.
+            La «Brukt» stå på 0 om du vil bruke det automatiske estimatet fra loggene.
           </p>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-3 gap-2">
             <label className="text-xs">
-              Brukt denne måned (USD)
+              Brukt mnd (USD)
               <Input
                 type="number"
                 step="0.01"
@@ -211,12 +219,22 @@ export function MaesterAiBudget() {
               />
             </label>
             <label className="text-xs">
-              Månedlig budsjett (USD)
+              Mnd-budsjett (USD)
               <Input
                 type="number"
                 step="0.01"
                 value={budgetInput}
                 onChange={(e) => setBudgetInput(e.target.value)}
+                className="h-8 mt-1"
+              />
+            </label>
+            <label className="text-xs">
+              Kjøpte credits (USD)
+              <Input
+                type="number"
+                step="0.01"
+                value={purchasedInput}
+                onChange={(e) => setPurchasedInput(e.target.value)}
                 className="h-8 mt-1"
               />
             </label>
@@ -228,13 +246,18 @@ export function MaesterAiBudget() {
         </div>
       )}
 
-      <div className="grid sm:grid-cols-3 gap-3 mb-4">
-        <Stat label="Brukt denne måned" value={fmtUsd(usedMonth)} accent />
+      <div className="grid sm:grid-cols-4 gap-3 mb-4">
         <Stat
-          label={`Igjen av ${fmtUsd(monthlyBudget)}`}
-          value={fmtUsd(remaining)}
-          tone={remaining <= monthlyBudget * 0.1 ? "warn" : "ok"}
+          label={actual.actualCostUsd > 0 ? "Brukt denne måned" : "Brukt (estimat)"}
+          value={fmtUsd(usedMonth)}
+          accent
         />
+        <Stat
+          label={`Igjen av ${fmtUsd(totalAvailable)}`}
+          value={fmtUsd(remaining)}
+          tone={remaining <= totalAvailable * 0.1 ? "warn" : "ok"}
+        />
+        <Stat label="Kjøpte credits" value={fmtUsd(purchased)} />
         <Stat label="Estimert (tokens)" value={fmtUsd(estimatedMonth)} />
       </div>
 
@@ -249,7 +272,7 @@ export function MaesterAiBudget() {
         </div>
         <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
           <span>{pct.toFixed(1)}% brukt</span>
-          <span>$0 — {fmtUsd(monthlyBudget)} / mnd</span>
+          <span>$0 — {fmtUsd(totalAvailable)} tilgjengelig</span>
         </div>
       </div>
 

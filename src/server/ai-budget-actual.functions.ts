@@ -12,6 +12,7 @@ export type AiBudgetActual = {
   month: string;
   actualCostUsd: number;
   monthlyBudgetUsd: number;
+  purchasedCreditsUsd: number;
   note: string | null;
   updatedAt: string | null;
 };
@@ -21,7 +22,7 @@ export const getAiBudgetActual = createServerFn({ method: "GET" }).handler(
     const started = Date.now();
     const month = currentMonth();
     const { data, error } = await (supabaseAdmin.from("ai_budget_actual") as any)
-      .select("month, actual_cost_usd, monthly_budget_usd, note, updated_at")
+      .select("month, actual_cost_usd, monthly_budget_usd, purchased_credits_usd, note, updated_at")
       .eq("month", month)
       .maybeSingle();
     await recordApiCall({
@@ -33,12 +34,13 @@ export const getAiBudgetActual = createServerFn({ method: "GET" }).handler(
       metadata: { month },
     });
     if (!data) {
-      return { month, actualCostUsd: 0, monthlyBudgetUsd: 1, note: null, updatedAt: null };
+      return { month, actualCostUsd: 0, monthlyBudgetUsd: 1, purchasedCreditsUsd: 0, note: null, updatedAt: null };
     }
     return {
       month: data.month,
       actualCostUsd: Number(data.actual_cost_usd ?? 0),
       monthlyBudgetUsd: Number(data.monthly_budget_usd ?? 1),
+      purchasedCreditsUsd: Number(data.purchased_credits_usd ?? 0),
       note: data.note ?? null,
       updatedAt: data.updated_at ?? null,
     };
@@ -50,6 +52,7 @@ export const setAiBudgetActual = createServerFn({ method: "POST" })
     z.object({
       actualCostUsd: z.number().min(0).max(10000),
       monthlyBudgetUsd: z.number().min(0).max(10000).optional(),
+      purchasedCreditsUsd: z.number().min(0).max(10000).optional(),
       note: z.string().max(500).optional(),
     }).parse,
   )
@@ -60,6 +63,7 @@ export const setAiBudgetActual = createServerFn({ method: "POST" })
       month,
       actual_cost_usd: data.actualCostUsd,
       monthly_budget_usd: data.monthlyBudgetUsd ?? 1,
+      purchased_credits_usd: data.purchasedCreditsUsd ?? 0,
       note: data.note ?? null,
       updated_at: new Date().toISOString(),
     };
@@ -78,6 +82,7 @@ export const setAiBudgetActual = createServerFn({ method: "POST" })
       month,
       actualCostUsd: data.actualCostUsd,
       monthlyBudgetUsd: data.monthlyBudgetUsd ?? 1,
+      purchasedCreditsUsd: data.purchasedCreditsUsd ?? 0,
       note: data.note ?? null,
       updatedAt: payload.updated_at,
     };
