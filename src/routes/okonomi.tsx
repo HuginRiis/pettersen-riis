@@ -173,6 +173,10 @@ function Oversikt({
   const [periodEndM, setPeriodEndM] = useState<number>(currentM);
   const [periodEndPayCut, setPeriodEndPayCut] = useState<boolean>(true);
 
+  // Filter for "Mot typisk norsk familie": år + tom-måned (jan..valgt mnd)
+  const [benchY, setBenchY] = useState<number>(currentY);
+  const [benchM, setBenchM] = useState<number>(currentM);
+
   const yearsAvailable = useMemo(() => {
     const set = new Set<number>([currentY]);
     for (const t of txns) {
