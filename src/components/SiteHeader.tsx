@@ -304,7 +304,7 @@ export function SiteHeader() {
           </button>
         </div>
 
-        <nav className="hidden xl:flex flex-1 flex-wrap items-center justify-start gap-x-2 gap-y-2">
+        <nav className="hidden flex-1 flex-wrap items-center justify-start gap-x-2 gap-y-2">
           <span className="inline-flex items-center gap-0.5 relative">
             <button
               type="button"
