@@ -304,7 +304,7 @@ export function SiteHeader() {
           </button>
         </div>
 
-        <nav className="hidden xl:flex flex-1 flex-wrap items-center justify-start gap-x-2 gap-y-2">
+        <nav className="hidden flex-1 flex-wrap items-center justify-start gap-x-2 gap-y-2">
           <span className="inline-flex items-center gap-0.5 relative">
             <button
               type="button"
@@ -412,7 +412,7 @@ export function SiteHeader() {
         </nav>
 
         <button
-          className="xl:hidden text-primary p-2"
+          className="text-primary p-2"
           onClick={() => setOpen((v) => { if (!v) setFavOpenMobile(false); return !v; })}
           aria-label="Meny"
         >
@@ -421,7 +421,7 @@ export function SiteHeader() {
       </div>
 
       {open && (
-        <nav className="mobile-menu-popup xl:hidden border-t border-border bg-card/95 backdrop-blur">
+        <nav className="mobile-menu-popup border-t border-border bg-card/95 backdrop-blur">
           <div className="container mx-auto px-4 py-2 flex flex-col max-h-[calc(100vh-64px)] overflow-y-auto overscroll-contain">
             <div className="border-b border-border">
               <button
