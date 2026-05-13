@@ -765,12 +765,54 @@ function ImportTab({ cats, reload }: { cats: OkonomiCategory[]; reload: () => vo
   const importFn = useServerFn(importOkonomiTransactions);
   const parseAi = useServerFn(parseStatementWithAI);
   const categorizeAi = useServerFn(categorizeTransactionsWithAI);
+  const STORAGE_KEY = "okonomi:import:preview:v1";
   const [busy, setBusy] = useState(false);
   const [busyMsg, setBusyMsg] = useState("");
-  const [preview, setPreview] = useState<ParsedTxn[]>([]);
-  const [source, setSource] = useState<"csv" | "pdf">("csv");
+  const [aiLog, setAiLog] = useState<string[]>([]);
+  const [preview, setPreview] = useState<ParsedTxn[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const raw = window.localStorage.getItem(STORAGE_KEY);
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed?.preview) ? parsed.preview : [];
+    } catch {
+      return [];
+    }
+  });
+  const [source, setSource] = useState<"csv" | "pdf">(() => {
+    if (typeof window === "undefined") return "csv";
+    try {
+      const raw = window.localStorage.getItem(STORAGE_KEY);
+      const parsed = raw ? JSON.parse(raw) : null;
+      return parsed?.source === "pdf" ? "pdf" : "csv";
+    } catch {
+      return "csv";
+    }
+  });
   const csvRef = useRef<HTMLInputElement>(null);
   const pdfRef = useRef<HTMLInputElement>(null);
+
+  // Persistér preview lokalt slik at den ligger igjen ved navigasjon
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      if (preview.length === 0) {
+        window.localStorage.removeItem(STORAGE_KEY);
+      } else {
+        window.localStorage.setItem(
+          STORAGE_KEY,
+          JSON.stringify({ preview, source }),
+        );
+      }
+    } catch {
+      /* ignore quota */
+    }
+  }, [preview, source]);
+
+  function pushLog(msg: string) {
+    setAiLog((l) => [...l, `${new Date().toLocaleTimeString("nb-NO")} · ${msg}`]);
+  }
 
   async function autoCategorize(rows: ParsedTxn[]): Promise<ParsedTxn[]> {
     const needIdx: number[] = [];
@@ -778,7 +820,8 @@ function ImportTab({ cats, reload }: { cats: OkonomiCategory[]; reload: () => vo
       if (!r.category_id) needIdx.push(i);
     });
     if (needIdx.length === 0) return rows;
-    setBusyMsg(`AI kategoriserer ${needIdx.length} rader…`);
+    setBusyMsg(`AI kategoriserer ${needIdx.length} rader mot ${cats.length} kategorier…`);
+    pushLog(`AI kategoriserer ${needIdx.length} rader mot ${cats.length} kategorier`);
     try {
       const res = await categorizeAi({
         data: {
@@ -793,8 +836,10 @@ function ImportTab({ cats, reload }: { cats: OkonomiCategory[]; reload: () => vo
         const cid = res.category_ids[i];
         if (cid) out[rowIdx] = { ...out[rowIdx], category_id: cid };
       });
+      pushLog(`AI svarte — ${out.filter((r, i) => needIdx.includes(i)).length} forsøkt kategorisert`);
       return out;
     } catch (e) {
+      pushLog(`AI feilet: ${e instanceof Error ? e.message : "ukjent"}`);
       toast.error(`AI-kategorisering feilet: ${e instanceof Error ? e.message : ""}`);
       return rows;
     }
@@ -803,10 +848,13 @@ function ImportTab({ cats, reload }: { cats: OkonomiCategory[]; reload: () => vo
   async function handleCsv(file: File) {
     setBusy(true);
     setSource("csv");
+    setAiLog([]);
+    pushLog(`Leser CSV-fil «${file.name}» (${Math.round(file.size / 1024)} kB)`);
     setBusyMsg("Leser CSV…");
     try {
       const text = await file.text();
       const lines = text.split(/\r?\n/).filter(Boolean);
+      pushLog(`Fant ${lines.length} linjer i filen`);
       if (lines.length < 2) throw new Error("Tomt CSV");
       const sep = lines[0].includes(";") ? ";" : ",";
       const header = lines[0].split(sep).map((h) => h.trim().toLowerCase().replace(/"/g, ""));
@@ -816,12 +864,16 @@ function ImportTab({ cats, reload }: { cats: OkonomiCategory[]; reload: () => vo
       if (idxDate < 0 || idxDesc < 0 || idxAmt < 0)
         throw new Error("Fant ikke dato/tekst/beløp-kolonner");
       const rows: ParsedTxn[] = [];
+      let skipped = 0;
       for (let i = 1; i < lines.length; i++) {
         const cells = lines[i].split(sep).map((c) => c.trim().replace(/^"|"$/g, ""));
         const date = parseNorDate(cells[idxDate]);
         const desc = cells[idxDesc];
         const amt = parseNorNum(cells[idxAmt]);
-        if (!date || !desc || !isFinite(amt)) continue;
+        if (!date || !desc || !isFinite(amt)) {
+          skipped++;
+          continue;
+        }
         rows.push({
           txn_date: date,
           description: desc,
@@ -829,11 +881,14 @@ function ImportTab({ cats, reload }: { cats: OkonomiCategory[]; reload: () => vo
           external_ref: `csv:${date}:${desc}:${amt}`,
         });
       }
+      pushLog(`Tolket ${rows.length} gyldige posteringer (${skipped} hoppet over)`);
       const enriched = await autoCategorize(rows);
       setPreview(enriched);
       const cat = enriched.filter((r) => r.category_id).length;
+      pushLog(`Klar — ${cat}/${enriched.length} har fått kategori`);
       toast.success(`${enriched.length} rader klare — ${cat} kategorisert`);
     } catch (e) {
+      pushLog(`Feil: ${e instanceof Error ? e.message : "ukjent"}`);
       toast.error(e instanceof Error ? e.message : "CSV-feil");
     } finally {
       setBusy(false);
@@ -844,13 +899,17 @@ function ImportTab({ cats, reload }: { cats: OkonomiCategory[]; reload: () => vo
   async function handlePdfImage(file: File) {
     setBusy(true);
     setSource("pdf");
+    setAiLog([]);
+    pushLog(`Sender «${file.name}» (${Math.round(file.size / 1024)} kB) til AI`);
     setBusyMsg("AI leser kontoutskrift…");
     try {
       const buf = await file.arrayBuffer();
       const b64 = btoa(String.fromCharCode(...new Uint8Array(buf)));
+      pushLog("AI analyserer dokumentet — dette tar gjerne 10–40 sek");
       const res = await parseAi({
         data: { fileBase64: b64, mimeType: file.type || "application/pdf" },
       });
+      pushLog(`AI fant ${res.rows.length} posteringer i utskriften`);
       const rows = res.rows.map((r) => ({
         ...r,
         external_ref: `ai:${r.txn_date}:${r.description}:${r.amount}`,
@@ -858,8 +917,10 @@ function ImportTab({ cats, reload }: { cats: OkonomiCategory[]; reload: () => vo
       const enriched = await autoCategorize(rows);
       setPreview(enriched);
       const cat = enriched.filter((r) => r.category_id).length;
+      pushLog(`Klar — ${cat}/${enriched.length} har fått kategori`);
       toast.success(`AI fant ${enriched.length} posteringer — ${cat} kategorisert`);
     } catch (e) {
+      pushLog(`Feil: ${e instanceof Error ? e.message : "ukjent"}`);
       toast.error(e instanceof Error ? e.message : "AI-feil");
     } finally {
       setBusy(false);
@@ -997,6 +1058,22 @@ function ImportTab({ cats, reload }: { cats: OkonomiCategory[]; reload: () => vo
         </div>
       )}
 
+      {aiLog.length > 0 && (
+        <Card className="p-3 border-amber-500/20 bg-background/40">
+          <div className="flex items-center justify-between mb-1.5">
+            <h4 className="text-[11px] uppercase tracking-wider text-amber-400/80">AI-logg</h4>
+            <Button size="sm" variant="ghost" className="h-6 px-2 text-[11px]" onClick={() => setAiLog([])}>
+              Skjul
+            </Button>
+          </div>
+          <ul className="space-y-0.5 text-[11px] font-mono text-muted-foreground max-h-40 overflow-auto">
+            {aiLog.map((l, i) => (
+              <li key={i}>{l}</li>
+            ))}
+          </ul>
+        </Card>
+      )}
+
       {preview.length > 0 && (
         <Card className="p-3 border-amber-500/30">
           <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
@@ -1006,11 +1083,23 @@ function ImportTab({ cats, reload }: { cats: OkonomiCategory[]; reload: () => vo
               </h3>
               <p className="text-[11px] text-muted-foreground">
                 {uncategorized > 0 ? `${uncategorized} mangler kategori` : "Alle kategorisert ✓"}
+                {" · "}ligger her til du importerer eller sletter
               </p>
             </div>
             <div className="flex gap-1.5">
               <Button size="sm" variant="ghost" onClick={recategorize} disabled={busy}>
                 <Sparkles className="w-3 h-3 mr-1" /> AI på nytt
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="text-red-400 hover:text-red-300"
+                onClick={() => {
+                  if (confirm(`Forkaste alle ${preview.length} radene?`)) setPreview([]);
+                }}
+                disabled={busy}
+              >
+                <Trash2 className="w-3 h-3 mr-1" /> Forkast alle
               </Button>
               <Button size="sm" onClick={commitAll} disabled={busy}>
                 Importer alle
