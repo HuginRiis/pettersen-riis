@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Loader2, Pencil, Sparkles } from "lucide-react";
+import { ChevronDown, Loader2, Pencil, Sparkles } from "lucide-react";
 import { getAiUsageStats } from "@/server/ai-usage.functions";
 import {
   getAiBudgetActual,
@@ -11,20 +11,80 @@ import { Input } from "@/components/ui/input";
 
 type Stats = Awaited<ReturnType<typeof getAiUsageStats>>;
 
-const FEATURE_LABELS: Record<string, string> = {
-  turer: "Tur-rådgiver",
-  kvittering: "Kvittering-tolkning",
-  receipt: "Kvittering-tolkning",
-  receipts: "Kvittering-tolkning",
-  pollen: "Pollen-orakel",
-  saga: "Sagaskriver",
-  "got-saga": "Sagaskriver",
-  agenda: "Agenda-magiker",
-  matvarer: "Handlelistens skribent",
+type FeatureMeta = { label: string; description: string };
+
+const FEATURE_META: Record<string, FeatureMeta> = {
+  kvittering: {
+    label: "Kvittering-tolkning",
+    description:
+      "Når du importerer en kvittering (fra Kassalapp eller bilde) leser AI-en ut dato, butikk, varelinjer, mva og totalsum slik at den kan lagres strukturert.",
+  },
+  receipt: {
+    label: "Kvittering-tolkning",
+    description: "Samme som «Kvittering» — AI tolker innholdet i en importert kvittering.",
+  },
+  receipts: {
+    label: "Kvittering-tolkning (batch)",
+    description: "Tolking av flere kvitteringer i samme runde.",
+  },
+  lonnslipp: {
+    label: "Lønnslipp-tolkning",
+    description:
+      "AI leser PDF-en av lønnslippen og henter ut brutto, netto, skattetrekk, feriepenger og pensjon — brukes til Skattekammeret og lønnshistorikken.",
+  },
+  payslip: {
+    label: "Lønnslipp-tolkning",
+    description: "Samme som «Lønnslipp» — AI henter beløp og poster fra PDF-lønnslipp.",
+  },
+  skatt: {
+    label: "Skatte-utregning",
+    description:
+      "AI hjelper med skatteberegningen: forklarer poster, sammenligner år og foreslår justeringer i Skatte-utregningen.",
+  },
+  turer: {
+    label: "Tur-rådgiver",
+    description:
+      "Når du ber om turtips i Ferden bruker AI værdata, sesong og posisjon til å foreslå en konkret tur med rute og pakkeliste.",
+  },
+  pollen: {
+    label: "Pollen-orakel",
+    description: "Tolker pollen-målinger og forklarer hva de betyr for dagen.",
+  },
+  saga: {
+    label: "Sagaskriver",
+    description: "Genererer Game of Thrones-stilet tekst for Westeros-sagaen.",
+  },
+  "got-saga": {
+    label: "Sagaskriver",
+    description: "Genererer Game of Thrones-stilet tekst for Westeros-sagaen.",
+  },
+  agenda: {
+    label: "Agenda-magiker",
+    description:
+      "Tolker meldinger og kalenderoppføringer (søppel, bursdager, meldinger) og foreslår dato/emne.",
+  },
+  matvarer: {
+    label: "Handlelistens skribent",
+    description: "Foreslår handleliste-elementer basert på kvitteringer og forbruk.",
+  },
+  briefing: {
+    label: "Daglig briefing",
+    description:
+      "Sammenfatning av dagens vær, varsler, kalender og hendelser — generert av AI hver morgen.",
+  },
+  "daily-briefing": {
+    label: "Daglig briefing",
+    description: "Daglig AI-sammendrag av vær, varsler og kalender.",
+  },
 };
 
-function labelFor(feature: string): string {
-  return FEATURE_LABELS[feature] ?? feature.charAt(0).toUpperCase() + feature.slice(1);
+function metaFor(feature: string): FeatureMeta {
+  return (
+    FEATURE_META[feature] ?? {
+      label: feature.charAt(0).toUpperCase() + feature.slice(1),
+      description: "Annet AI-kall — ingen beskrivelse er registrert ennå.",
+    }
+  );
 }
 
 function fmtUsd(v: number): string {
