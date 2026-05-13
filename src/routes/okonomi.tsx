@@ -553,7 +553,7 @@ function Oversikt({
 
       <Card className="p-4 border-amber-500/30">
         <h3 className="text-sm tracking-[0.25em] uppercase text-amber-400 mb-3">
-          Netto pr måned
+          Netto pr måned — 12 mnd
         </h3>
         <div className="h-48">
           <ResponsiveContainer width="100%" height="100%">
