@@ -98,6 +98,7 @@ async function fetchFitnessExtras(owner: GarminOwner, day: string): Promise<{
   fitness_age: number | null;
   training_status: string | null;
   training_load_focus: Record<string, unknown> | null;
+  endurance_contributors: Array<{ group: string; contribution: number }> | null;
 }> {
   const out = {
     vo2max_running: null as number | null,
@@ -106,6 +107,7 @@ async function fetchFitnessExtras(owner: GarminOwner, day: string): Promise<{
     fitness_age: null as number | null,
     training_status: null as string | null,
     training_load_focus: null as Record<string, unknown> | null,
+    endurance_contributors: null as Array<{ group: string; contribution: number }> | null,
   };
   try {
     // maxmet returnerer enten et objekt eller en liste (latest vs daily-range)
