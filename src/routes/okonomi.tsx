@@ -156,6 +156,8 @@ function Oversikt({
 
   const [year, setYear] = useState<number>(currentY);
   const [month, setMonth] = useState<number | "all">(currentM);
+  const [chartEndY, setChartEndY] = useState<number>(currentY);
+  const [chartEndM, setChartEndM] = useState<number>(currentM);
 
   const yearsAvailable = useMemo(() => {
     const set = new Set<number>([currentY]);
@@ -261,21 +263,28 @@ function Oversikt({
 
   const top5 = catData.slice(0, 5);
 
-  // 6 mnd trend (tilbake fra valgt mnd, eller siste 6 mnd hvis "alle")
-  const anchor =
-    month === "all"
-      ? new Date(year, 11, 1)
-      : new Date(year, month - 1, 1);
-  const months: { key: string; label: string }[] = [];
-  for (let i = 5; i >= 0; i--) {
-    const d = new Date(anchor.getFullYear(), anchor.getMonth() - i, 1);
+  // 12 mnd trend som slutter i valgt periode-slutt (chartEndY/chartEndM)
+  const chartAnchor = new Date(chartEndY, chartEndM - 1, 1);
+  const months: { key: string; label: string; isLast: boolean }[] = [];
+  for (let i = 11; i >= 0; i--) {
+    const d = new Date(chartAnchor.getFullYear(), chartAnchor.getMonth() - i, 1);
     months.push({
       key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`,
-      label: d.toLocaleDateString("nb-NO", { month: "short" }),
+      label: d.toLocaleDateString("nb-NO", { month: "short", year: "2-digit" }),
+      isLast: i === 0,
     });
   }
   const trend = months.map((m) => {
-    const rows = txns.filter((t) => t.txn_date.startsWith(m.key));
+    let rows = txns.filter((t) => t.txn_date.startsWith(m.key));
+    if (m.isLast) {
+      // Finn første lønnsutbetaling (inntekt > 30000) i sluttmåneden, og kutt der
+      const salary = rows
+        .filter((t) => isIncome(t) && Number(t.amount) > 30000)
+        .sort((a, b) => a.txn_date.localeCompare(b.txn_date))[0];
+      if (salary) {
+        rows = rows.filter((t) => t.txn_date < salary.txn_date);
+      }
+    }
     return {
       label: m.label,
       Inntekt: rows.filter(isIncome).reduce((s, t) => s + Number(t.amount), 0),
@@ -426,9 +435,32 @@ function Oversikt({
       </Card>
 
       <Card className="p-4 border-amber-500/30">
-        <h3 className="text-sm tracking-[0.25em] uppercase text-amber-400 mb-3">
-          Inntekt vs utgift — siste 6 mnd
-        </h3>
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+          <h3 className="text-sm tracking-[0.25em] uppercase text-amber-400">
+            Inntekt vs utgift — 12 mnd
+          </h3>
+          <div className="flex items-center gap-1.5">
+            <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">
+              Slutt
+            </Label>
+            <Select value={String(chartEndM)} onValueChange={(v) => setChartEndM(Number(v))}>
+              <SelectTrigger className="h-7 w-[88px] text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {monthNames.map((n, i) => (
+                  <SelectItem key={i} value={String(i + 1)}>{n}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={String(chartEndY)} onValueChange={(v) => setChartEndY(Number(v))}>
+              <SelectTrigger className="h-7 w-[72px] text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {yearsAvailable.map((y) => (
+                  <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
         <div className="h-56">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={trend} margin={{ top: 4, right: 4, left: -16, bottom: 0 }}>
@@ -521,7 +553,7 @@ function Oversikt({
 
       <Card className="p-4 border-amber-500/30">
         <h3 className="text-sm tracking-[0.25em] uppercase text-amber-400 mb-3">
-          Netto pr måned
+          Netto pr måned — 12 mnd
         </h3>
         <div className="h-48">
           <ResponsiveContainer width="100%" height="100%">
