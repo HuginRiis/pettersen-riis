@@ -252,6 +252,61 @@ function Oversikt({
   const overskudd = inntekt - brukt;
   const igjenPrDag = daysUntilPayday > 0 ? overskudd / daysUntilPayday : overskudd;
 
+  // ---- Periodefilter-stats (uavhengig sett med bokser) ----
+  const periodStartAnchor = new Date(periodStartY, periodStartM - 1, 1);
+  const periodEndAnchorLast = new Date(periodEndY, periodEndM, 0);
+  const startKey = `${periodStartY}-${String(periodStartM).padStart(2, "0")}`;
+  const endKey = `${periodEndY}-${String(periodEndM).padStart(2, "0")}`;
+  let periodTxns: OkonomiTransaction[] = [];
+  let effectiveStartDate = periodStartAnchor;
+  let effectiveEndDate = periodEndAnchorLast;
+  if (periodEndAnchorLast >= periodStartAnchor) {
+    periodTxns = txns.filter((t) => {
+      const k = t.txn_date.slice(0, 7);
+      return k >= startKey && k <= endKey;
+    });
+    if (periodStartPayCut) {
+      const salary = periodTxns
+        .filter((t) => t.txn_date.slice(0, 7) === startKey && isIncome(t) && Number(t.amount) > 30000)
+        .sort((a, b) => a.txn_date.localeCompare(b.txn_date))[0];
+      if (salary) {
+        periodTxns = periodTxns.filter(
+          (t) => t.txn_date.slice(0, 7) !== startKey || t.txn_date >= salary.txn_date,
+        );
+        effectiveStartDate = new Date(salary.txn_date);
+      }
+    }
+    if (periodEndPayCut) {
+      const salary = periodTxns
+        .filter((t) => t.txn_date.slice(0, 7) === endKey && isIncome(t) && Number(t.amount) > 30000)
+        .sort((a, b) => a.txn_date.localeCompare(b.txn_date))[0];
+      if (salary) {
+        periodTxns = periodTxns.filter(
+          (t) => t.txn_date.slice(0, 7) !== endKey || t.txn_date < salary.txn_date,
+        );
+        const d = new Date(salary.txn_date);
+        d.setDate(d.getDate() - 1);
+        effectiveEndDate = d;
+      }
+    }
+  }
+  const periodBrukt = periodTxns.filter(isExpense).reduce((s, t) => s + Math.abs(Number(t.amount)), 0);
+  const periodInntekt = periodTxns.filter(isIncome).reduce((s, t) => s + Number(t.amount), 0);
+  const periodMonths = Math.max(
+    1,
+    (periodEndY - periodStartY) * 12 + (periodEndM - periodStartM) + 1,
+  );
+  const periodBudsjett = cats.reduce((s, c) => s + (Number(c.monthly_budget) || 0), 0) * periodMonths;
+  const periodOverskudd = periodInntekt - periodBrukt;
+  const periodIgjen = Math.max(0, periodBudsjett - periodBrukt);
+  const cappedEnd = effectiveEndDate > today ? today : effectiveEndDate;
+  const periodDays = Math.max(
+    1,
+    Math.floor((cappedEnd.getTime() - effectiveStartDate.getTime()) / 86400000) + 1,
+  );
+  const periodSnittPrDag = periodBrukt / periodDays;
+
+
   // Per kategori i valgt periode
   const perCat = new Map<string, number>();
   for (const t of filtered.filter(isExpense)) {
