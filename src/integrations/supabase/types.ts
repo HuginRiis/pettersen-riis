@@ -533,6 +533,48 @@ export type Database = {
         }
         Relationships: []
       }
+      garmin_devices: {
+        Row: {
+          created_at: string
+          id: string
+          image_url: string | null
+          is_default: boolean
+          last_used_at: string | null
+          name: string
+          owner: string
+          product_id: string
+          raw: Json | null
+          register_date: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          is_default?: boolean
+          last_used_at?: string | null
+          name: string
+          owner?: string
+          product_id: string
+          raw?: Json | null
+          register_date?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          is_default?: boolean
+          last_used_at?: string | null
+          name?: string
+          owner?: string
+          product_id?: string
+          raw?: Json | null
+          register_date?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       garmin_intraday: {
         Row: {
           body_battery: number | null

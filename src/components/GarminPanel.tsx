@@ -3,7 +3,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { Activity, Footprints, Heart, HeartPulse, Flame, Moon, RefreshCw, LogIn, Loader2, TrendingUp, ShieldCheck, Battery, Brain, Timer, Scale, ChevronDown, ChevronRight, ArrowUp, ArrowDown, Minus, Building2, Wind, Droplets, Waves, Award, Gauge, Target } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, CartesianGrid } from "recharts";
 import { toast } from "sonner";
-import { getGarminOverview, garminLoginNow, garminSyncNow, garminSubmitMfaCode } from "@/server/garmin.functions";
+import { getGarminOverview, garminLoginNow, garminSyncNow, garminSubmitMfaCode, listGarminDevices, setDefaultGarminDevice } from "@/server/garmin.functions";
+import { Check } from "lucide-react";
 import { getStoredWho, isCurrentlySubscribed } from "@/lib/push-client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -213,6 +214,8 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
   const loginFn = useServerFn(garminLoginNow);
   const syncFn = useServerFn(garminSyncNow);
   const mfaFn = useServerFn(garminSubmitMfaCode);
+  const listDevicesFn = useServerFn(listGarminDevices);
+  const setDefaultDeviceFn = useServerFn(setDefaultGarminDevice);
   const [data, setData] = useState<Overview | null>(null);
   const [loading, setLoading] = useState(true);
   const [working, setWorking] = useState<"login" | "sync" | "mfa" | null>(null);
@@ -225,6 +228,10 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
   const [chartPeriod, setChartPeriod] = useState<ChartPeriod>("last30");
   const [showTrend, setShowTrend] = useState(false);
   const [weightAllowed, setWeightAllowed] = useState(false);
+  const [devicesOpen, setDevicesOpen] = useState(false);
+  const [devices, setDevices] = useState<Array<{ id: string; product_id: string; name: string; image_url: string | null; is_default: boolean; last_used_at: string | null; register_date: string | null }>>([]);
+  const [devicesLoading, setDevicesLoading] = useState(false);
+  const [settingDefault, setSettingDefault] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -251,6 +258,34 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
     finally { setLoading(false); }
   };
   useEffect(() => { void load(); }, [owner]);
+
+  const openDevices = async () => {
+    setDevicesOpen(true);
+    setDevicesLoading(true);
+    try {
+      const r = await listDevicesFn({ data: { owner } }) as { devices: typeof devices };
+      setDevices(r.devices ?? []);
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setDevicesLoading(false);
+    }
+  };
+
+  const chooseDefault = async (deviceId: string) => {
+    setSettingDefault(deviceId);
+    try {
+      await setDefaultDeviceFn({ data: { owner, deviceId } });
+      toast.success("Standardklokke oppdatert");
+      const r = await listDevicesFn({ data: { owner } }) as { devices: typeof devices };
+      setDevices(r.devices ?? []);
+      await load();
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setSettingDefault(null);
+    }
+  };
 
   const handleLogin = async () => {
     if (data?.status.connected) {
@@ -339,22 +374,32 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
       <div className="space-y-4">
         <div className="flex items-center justify-between flex-wrap gap-2">
           <h2 className="text-sm font-semibold uppercase tracking-wider text-primary flex items-center gap-2">
-            {data?.status.device_image_url ? (
-              <img
-                src={data.status.device_image_url}
-                alt={data.status.device_name ?? "Garmin"}
-                className="h-7 w-7 rounded-md object-cover border border-border/60 bg-background"
-                loading="lazy"
-              />
-            ) : (
-              <Activity size={16} />
-            )}
-            <span className="flex flex-col leading-tight">
-              <span>{data?.status.device_name ?? `Garmin — ${displayName}`}</span>
-              {data?.status.device_name && (
-                <span className="text-[10px] font-normal normal-case tracking-normal text-muted-foreground">{displayName}</span>
+            <button
+              type="button"
+              onClick={openDevices}
+              title="Velg klokke"
+              className="flex items-center gap-2 hover:opacity-80 focus:outline-none focus:ring-1 focus:ring-primary rounded px-1 -mx-1"
+            >
+              {data?.status.device_image_url ? (
+                <img
+                  src={data.status.device_image_url}
+                  alt={data.status.device_name ?? "Garmin"}
+                  className="h-7 w-7 rounded-md object-cover border border-border/60 bg-background"
+                  loading="lazy"
+                />
+              ) : (
+                <Activity size={16} />
               )}
-            </span>
+              <span className="flex flex-col leading-tight text-left">
+                <span className="flex items-center gap-1">
+                  {data?.status.device_name ?? `Garmin — ${displayName}`}
+                  <ChevronDown size={12} className="opacity-60" />
+                </span>
+                {data?.status.device_name && (
+                  <span className="text-[10px] font-normal normal-case tracking-normal text-muted-foreground">{displayName}</span>
+                )}
+              </span>
+            </button>
             <span
               className={`hidden sm:inline-flex items-center gap-1.5 ml-2 rounded border px-2 py-0.5 text-[10px] tracking-[0.2em] ${
                 owner === "arne"
@@ -1053,6 +1098,55 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
               {working === "mfa" ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
               Bekreft
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={devicesOpen} onOpenChange={setDevicesOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Velg klokke for {displayName}</DialogTitle>
+            <DialogDescription>
+              Klikk på en klokke for å velge den som standard. Den vises i headeren og brukes til å generere bilder.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 max-h-[60vh] overflow-y-auto">
+            {devicesLoading ? (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Henter klokker…</div>
+            ) : devices.length === 0 ? (
+              <div className="text-sm text-muted-foreground">Ingen klokker funnet enda. Trykk «Synk nå» for å hente fra Garmin.</div>
+            ) : (
+              devices.map((d) => (
+                <button
+                  key={d.id}
+                  type="button"
+                  disabled={settingDefault === d.id}
+                  onClick={() => chooseDefault(d.id)}
+                  className={`w-full flex items-center gap-3 rounded-lg border p-2 text-left transition-colors ${
+                    d.is_default ? "border-primary/60 bg-primary/10" : "border-border/60 hover:bg-muted/40"
+                  }`}
+                >
+                  {d.image_url ? (
+                    <img src={d.image_url} alt={d.name} className="h-12 w-12 rounded-md object-cover border border-border/60 bg-background" loading="lazy" />
+                  ) : (
+                    <div className="h-12 w-12 rounded-md border border-border/60 bg-muted/40 flex items-center justify-center"><Activity className="h-5 w-5 opacity-50" /></div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium truncate flex items-center gap-1.5">
+                      {d.name}
+                      {d.is_default && <Check className="h-3.5 w-3.5 text-primary" />}
+                    </div>
+                    <div className="text-[10px] text-muted-foreground">
+                      {d.last_used_at ? `Sist brukt ${new Date(d.last_used_at).toLocaleDateString("nb-NO")}` : d.register_date ? `Registrert ${new Date(d.register_date).toLocaleDateString("nb-NO")}` : "Ukjent dato"}
+                    </div>
+                  </div>
+                  {settingDefault === d.id && <Loader2 className="h-4 w-4 animate-spin" />}
+                </button>
+              ))
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setDevicesOpen(false)}>Lukk</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

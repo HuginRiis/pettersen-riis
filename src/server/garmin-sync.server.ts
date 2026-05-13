@@ -446,44 +446,104 @@ async function generateWatchImageDataUrl(deviceName: string): Promise<string | n
   }
 }
 
-export async function syncDevice(owner: GarminOwner): Promise<{ name: string | null; changed: boolean }> {
+function toIso(ms: unknown): string | null {
+  const n = Number(ms);
+  if (!Number.isFinite(n) || n <= 0) return null;
+  try { return new Date(n).toISOString(); } catch { return null; }
+}
+
+export async function syncDevice(owner: GarminOwner): Promise<{ name: string | null; changed: boolean; count: number }> {
   try {
     const list = await garminGet<any[]>(owner, "/device-service/deviceregistration/devices");
     const arr = Array.isArray(list) ? list : [];
-    // Velg nyeste etter lastUsedDate / registerDate
-    const sorted = arr
+    const devices = arr
       .filter((d) => d && (d.productDisplayName || d.displayName))
-      .sort((a, b) => (Number(b?.lastUsedDate ?? b?.registerDate ?? 0)) - (Number(a?.lastUsedDate ?? a?.registerDate ?? 0)));
-    const top = sorted[0];
-    if (!top) return { name: null, changed: false };
-    const name: string = String(top.productDisplayName ?? top.displayName ?? "").trim();
-    const productId: string | null = top.productNumber ? String(top.productNumber) : top.partNumber ? String(top.partNumber) : null;
-    if (!name) return { name: null, changed: false };
+      .map((d) => {
+        const name = String(d.productDisplayName ?? d.displayName ?? "").trim();
+        const productId = d.productNumber ? String(d.productNumber)
+          : d.partNumber ? String(d.partNumber)
+          : d.unitId ? String(d.unitId)
+          : name;
+        return {
+          name,
+          productId,
+          lastUsedAt: toIso(d.lastUsedDate),
+          registerDate: toIso(d.registerDate),
+          raw: d,
+        };
+      })
+      .filter((d) => d.name && d.productId);
 
-    const { data: existing } = await supabaseAdmin
-      .from("garmin_tokens")
-      .select("id, device_name, device_image_url")
-      .eq("owner", owner)
-      .order("updated_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    if (!existing) return { name, changed: false };
+    if (devices.length === 0) return { name: null, changed: false, count: 0 };
 
-    const changed = (existing as any).device_name !== name;
-    let imageUrl: string | null = (existing as any).device_image_url ?? null;
-    if (changed || !imageUrl) {
-      imageUrl = await generateWatchImageDataUrl(name);
+    // Hent eksisterende rader
+    const { data: existingRows } = await supabaseAdmin
+      .from("garmin_devices")
+      .select("id, product_id, name, image_url, is_default")
+      .eq("owner", owner);
+    const byPid = new Map<string, any>((existingRows ?? []).map((r: any) => [r.product_id, r]));
+
+    let topChanged = false;
+    for (const d of devices) {
+      const existing = byPid.get(d.productId);
+      let imageUrl: string | null = existing?.image_url ?? null;
+      const nameChanged = !existing || existing.name !== d.name;
+      if (!imageUrl) {
+        imageUrl = await generateWatchImageDataUrl(d.name);
+      }
+      const row = {
+        owner,
+        product_id: d.productId,
+        name: d.name,
+        image_url: imageUrl,
+        last_used_at: d.lastUsedAt,
+        register_date: d.registerDate,
+        raw: d.raw,
+        updated_at: new Date().toISOString(),
+      };
+      await supabaseAdmin.from("garmin_devices").upsert([row] as never, { onConflict: "owner,product_id" });
+      if (nameChanged) topChanged = true;
     }
-    await supabaseAdmin.from("garmin_tokens").update({
-      device_name: name,
-      device_product_id: productId,
-      device_image_url: imageUrl,
-      device_updated_at: new Date().toISOString(),
-    } as never).eq("id", (existing as any).id);
-    return { name, changed };
+
+    // Sørg for at minst én er default — velg nyest brukte
+    const { data: refreshed } = await supabaseAdmin
+      .from("garmin_devices")
+      .select("id, product_id, name, image_url, is_default, last_used_at, register_date")
+      .eq("owner", owner);
+    const all = refreshed ?? [];
+    const hasDefault = all.some((r: any) => r.is_default);
+    let defaultRow: any = all.find((r: any) => r.is_default) ?? null;
+    if (!hasDefault && all.length > 0) {
+      const sorted = [...all].sort((a: any, b: any) =>
+        (Date.parse(b.last_used_at ?? b.register_date ?? "0") || 0) - (Date.parse(a.last_used_at ?? a.register_date ?? "0") || 0),
+      );
+      defaultRow = sorted[0];
+      await supabaseAdmin.from("garmin_devices").update({ is_default: true } as never).eq("id", defaultRow.id);
+    }
+
+    // Mirror default til garmin_tokens for bakoverkompatibilitet
+    if (defaultRow) {
+      const { data: tok } = await supabaseAdmin
+        .from("garmin_tokens")
+        .select("id")
+        .eq("owner", owner)
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (tok) {
+        await supabaseAdmin.from("garmin_tokens").update({
+          device_name: defaultRow.name,
+          device_product_id: defaultRow.product_id,
+          device_image_url: defaultRow.image_url,
+          device_updated_at: new Date().toISOString(),
+        } as never).eq("id", (tok as any).id);
+      }
+    }
+
+    return { name: defaultRow?.name ?? null, changed: topChanged, count: devices.length };
   } catch (e) {
     console.warn(`[garmin-sync:${owner}] device sync failed`, (e as Error).message);
-    return { name: null, changed: false };
+    return { name: null, changed: false, count: 0 };
   }
 }
 
