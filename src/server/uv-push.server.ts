@@ -71,7 +71,7 @@ async function fetchUvAhead(
 ): Promise<number | null> {
   try {
     const url = `https://api.met.no/weatherapi/locationforecast/2.0/complete?lat=${lat}&lon=${lon}`;
-    const res = await fetch(url, {
+    const res = await loggedFetch("uv", "met:locationforecast", url, {
       headers: { "User-Agent": "riis.cc agenda push (agenda@riis.cc)" },
     });
     if (!res.ok) return null;
@@ -378,7 +378,7 @@ export async function computeUvForecast(): Promise<
     let series: Array<{ time: string; uv: number }> = [];
     try {
       const url = `https://api.met.no/weatherapi/locationforecast/2.0/complete?lat=${raw.lat}&lon=${raw.lon}`;
-      const res = await fetch(url, {
+      const res = await loggedFetch("uv", "met:locationforecast", url, {
         headers: { "User-Agent": "riis.cc agenda push (agenda@riis.cc)" },
       });
       if (res.ok) {
@@ -538,7 +538,7 @@ export async function computeUpcomingUvEvaluations(daysAhead = 3): Promise<
       series = [];
       try {
         const url = `https://api.met.no/weatherapi/locationforecast/2.0/complete?lat=${raw.lat}&lon=${raw.lon}`;
-        const res = await fetch(url, {
+        const res = await loggedFetch("uv", "met:locationforecast", url, {
           headers: { "User-Agent": "riis.cc agenda push (agenda@riis.cc)" },
         });
         if (res.ok) {
