@@ -9,6 +9,8 @@ import { getActivityStreams, getStravaDashboard, getStravaStatus } from "@/serve
 import { getGarminOverview } from "@/server/garmin.functions";
 import treningImg from "@/assets/got-trening.jpg";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Crown, Flame, Swords } from "lucide-react";
 
 export const Route = createFileRoute("/trening")({
   head: () => ({
