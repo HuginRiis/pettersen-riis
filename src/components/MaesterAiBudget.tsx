@@ -257,35 +257,88 @@ export function MaesterAiBudget() {
         <p className="text-[11px] tracking-[0.25em] uppercase text-muted-foreground mb-2">
           Per funksjon (alle tider, estimat)
         </p>
-        {stats.byFeature.length === 0 ? (
-          <p className="text-sm text-muted-foreground italic">
-            Ingen AI-kall loggført ennå.
-          </p>
-        ) : (
-          <ul className="space-y-2">
-            {stats.byFeature.map((f) => {
-              const share = ((f.costUsd ?? 0) / totalFeatureCost) * 100;
-              return (
-                <li key={f.feature} className="text-sm">
-                  <div className="flex items-baseline justify-between gap-2">
-                    <span className="text-foreground/90 truncate">
-                      {labelFor(f.feature)}
-                    </span>
-                    <span className="text-muted-foreground tabular-nums text-xs">
-                      {fmtUsd(f.costUsd ?? 0)} · {f.count} kall
-                    </span>
-                  </div>
-                  <div className="h-1 rounded-full bg-muted/30 mt-1 overflow-hidden">
-                    <div
-                      className="h-full bg-primary/60"
-                      style={{ width: `${Math.min(100, share)}%` }}
-                    />
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        )}
+        {(() => {
+          // Slå sammen kjente features med faktisk loggførte features
+          const usageMap = new Map(
+            stats.byFeature.map((f) => [f.feature, f]),
+          );
+          const knownKeys = Object.keys(FEATURE_META);
+          const allKeys = Array.from(
+            new Set([...knownKeys, ...stats.byFeature.map((f) => f.feature)]),
+          );
+          const rows = allKeys.map((key) => {
+            const u = usageMap.get(key);
+            return {
+              key,
+              meta: metaFor(key),
+              count: u?.count ?? 0,
+              costUsd: u?.costUsd ?? 0,
+            };
+          });
+          // Sortér: brukt først (etter kostnad), deretter ubrukte alfabetisk
+          rows.sort((a, b) => {
+            if (a.count > 0 && b.count === 0) return -1;
+            if (b.count > 0 && a.count === 0) return 1;
+            if (a.count > 0 && b.count > 0) return b.costUsd - a.costUsd;
+            return a.meta.label.localeCompare(b.meta.label, "nb");
+          });
+          return (
+            <ul className="space-y-1.5">
+              {rows.map((r) => {
+                const isOpen = openFeatures.has(r.key);
+                const share = (r.costUsd / totalFeatureCost) * 100;
+                const used = r.count > 0;
+                return (
+                  <li
+                    key={r.key}
+                    className="rounded border border-border/50 bg-background/30 overflow-hidden"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => toggleFeature(r.key)}
+                      className="w-full flex items-center gap-2 text-left px-3 py-2 hover:bg-muted/30 transition-colors"
+                    >
+                      <ChevronDown
+                        className={`w-3.5 h-3.5 text-muted-foreground shrink-0 transition-transform ${
+                          isOpen ? "rotate-0" : "-rotate-90"
+                        }`}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-baseline justify-between gap-2">
+                          <span
+                            className={`text-sm truncate ${
+                              used ? "text-foreground/90" : "text-muted-foreground"
+                            }`}
+                          >
+                            {r.meta.label}
+                          </span>
+                          <span className="text-muted-foreground tabular-nums text-xs shrink-0">
+                            {used
+                              ? `${fmtUsd(r.costUsd)} · ${r.count} kall`
+                              : "ikke brukt"}
+                          </span>
+                        </div>
+                        {used && (
+                          <div className="h-1 rounded-full bg-muted/30 mt-1 overflow-hidden">
+                            <div
+                              className="h-full bg-primary/60"
+                              style={{ width: `${Math.min(100, share)}%` }}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </button>
+                    {isOpen && (
+                      <div className="px-3 pb-3 pt-0 text-xs text-muted-foreground leading-relaxed border-t border-border/40">
+                        <p className="mt-2">{r.meta.description}</p>
+                      </div>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          );
+        })()}
       </div>
 
       <p className="text-[10px] text-muted-foreground/70 italic mt-4">
