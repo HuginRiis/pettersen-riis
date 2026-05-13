@@ -836,8 +836,10 @@ function ImportTab({ cats, reload }: { cats: OkonomiCategory[]; reload: () => vo
         const cid = res.category_ids[i];
         if (cid) out[rowIdx] = { ...out[rowIdx], category_id: cid };
       });
+      pushLog(`AI svarte — ${out.filter((r, i) => needIdx.includes(i)).length} forsøkt kategorisert`);
       return out;
     } catch (e) {
+      pushLog(`AI feilet: ${e instanceof Error ? e.message : "ukjent"}`);
       toast.error(`AI-kategorisering feilet: ${e instanceof Error ? e.message : ""}`);
       return rows;
     }
