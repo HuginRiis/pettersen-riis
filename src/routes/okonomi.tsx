@@ -268,27 +268,42 @@ function Oversikt({
 
   const top5 = catData.slice(0, 5);
 
-  // 12 mnd trend som slutter i valgt periode-slutt (chartEndY/chartEndM)
-  const chartAnchor = new Date(chartEndY, chartEndM - 1, 1);
-  const months: { key: string; label: string; isLast: boolean }[] = [];
-  for (let i = 11; i >= 0; i--) {
-    const d = new Date(chartAnchor.getFullYear(), chartAnchor.getMonth() - i, 1);
-    months.push({
-      key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`,
-      label: d.toLocaleDateString("nb-NO", { month: "short", year: "2-digit" }),
-      isLast: i === 0,
-    });
+  // Trend fra valgt startmåned til valgt sluttmåned (inkl). Lønnsperiode-kutt valgfritt på hver side.
+  const startAnchor = new Date(chartStartY, chartStartM - 1, 1);
+  const endAnchor = new Date(chartEndY, chartEndM - 1, 1);
+  const months: { key: string; label: string; isFirst: boolean; isLast: boolean }[] = [];
+  if (endAnchor >= startAnchor) {
+    const cursor = new Date(startAnchor);
+    while (cursor <= endAnchor) {
+      const key = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, "0")}`;
+      months.push({
+        key,
+        label: cursor.toLocaleDateString("nb-NO", { month: "short", year: "2-digit" }),
+        isFirst: false,
+        isLast: false,
+      });
+      cursor.setMonth(cursor.getMonth() + 1);
+    }
+    if (months.length > 0) {
+      months[0].isFirst = true;
+      months[months.length - 1].isLast = true;
+    }
   }
   const trend = months.map((m) => {
     let rows = txns.filter((t) => t.txn_date.startsWith(m.key));
-    if (m.isLast) {
-      // Finn første lønnsutbetaling (inntekt > 30000) i sluttmåneden, og kutt der
+    if (m.isLast && chartEndPayCut) {
+      // Kutt alt fra og med første lønnsutbetaling i sluttmåneden (lønnen tas IKKE med)
       const salary = rows
         .filter((t) => isIncome(t) && Number(t.amount) > 30000)
         .sort((a, b) => a.txn_date.localeCompare(b.txn_date))[0];
-      if (salary) {
-        rows = rows.filter((t) => t.txn_date < salary.txn_date);
-      }
+      if (salary) rows = rows.filter((t) => t.txn_date < salary.txn_date);
+    }
+    if (m.isFirst && chartStartPayCut) {
+      // Kutt alt før første lønn i startmåneden (lønnen tas MED)
+      const salary = rows
+        .filter((t) => isIncome(t) && Number(t.amount) > 30000)
+        .sort((a, b) => a.txn_date.localeCompare(b.txn_date))[0];
+      if (salary) rows = rows.filter((t) => t.txn_date >= salary.txn_date);
     }
     return {
       label: m.label,
