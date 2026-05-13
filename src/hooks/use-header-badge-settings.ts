@@ -35,6 +35,12 @@ export const HEADER_BADGE_DEFS: { id: string; label: string }[] = [
   { id: "usage_count", label: "Bruks-teller på meny" },
   { id: "garbage_next", label: "Neste søppeltømming (Agenda)" },
   { id: "budget_remaining", label: "Budsjett igjen (Husholdningens hvelv)" },
+  { id: "okonomi_brukt", label: "Brukt denne måned (Hvelv)" },
+  { id: "okonomi_inntekt", label: "Inntekt denne måned (Hvelv)" },
+  { id: "okonomi_budsjett", label: "Budsjett totalt (Hvelv)" },
+  { id: "okonomi_overskudd", label: "Overskudd (Hvelv)" },
+  { id: "okonomi_snitt_dag", label: "Snitt brukt pr dag (Hvelv)" },
+  { id: "okonomi_igjen_dag", label: "Igjen pr dag til lønn (Hvelv)" },
 ];
 
 export const DEFAULT_HEADER_BADGE_SETTINGS: HeaderBadgeSettings = {
