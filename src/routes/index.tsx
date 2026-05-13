@@ -841,6 +841,12 @@ function HeroAuthPill({
   }, [authenticated]);
 
   async function togglePush() {
+    if (pushSubscribed) {
+      const ok = typeof window !== "undefined"
+        ? window.confirm("Er du sikker på at du vil slå av Ravnenes bud?")
+        : true;
+      if (!ok) return;
+    }
     setPushBusy(true);
     setPushMsg(null);
     if (pushSubscribed) {
@@ -861,7 +867,21 @@ function HeroAuthPill({
   }
 
   async function changePushWho(next: Who) {
+    if (next === pushWho) return;
+    // Bekreft kun når vi bytter fra én ekte bruker til en annen
+    // (ikke fra "Alle"/gjest til en bruker).
+    const isRealUser = (w: Who) => w !== "Alle";
+    if (isRealUser(pushWho) && isRealUser(next)) {
+      const ok = typeof window !== "undefined"
+        ? window.confirm(`Vil du bytte bruker fra "${pushWho}" til "${next}"?`)
+        : true;
+      if (!ok) {
+        setEditingWho(false);
+        return;
+      }
+    }
     setPushWho(next);
+    setEditingWho(false);
     if (pushSubscribed) {
       setPushBusy(true);
       const r = await updateSubscriptionWho(next);
