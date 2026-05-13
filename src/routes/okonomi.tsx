@@ -140,10 +140,30 @@ function OkonomiPage() {
 
 // ---------------- Oversikt ----------------
 
-function Oversikt({ cats, txns }: { cats: OkonomiCategory[]; txns: OkonomiTransaction[] }) {
-  const now = new Date();
-  const ym = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-  const inMonth = txns.filter((t) => t.txn_date.startsWith(ym));
+function Oversikt({
+  cats,
+  txns,
+  settings,
+}: {
+  cats: OkonomiCategory[];
+  txns: OkonomiTransaction[];
+  settings: OkonomiSettings | null;
+}) {
+  const today = new Date();
+  const currentY = today.getFullYear();
+  const currentM = today.getMonth() + 1;
+
+  const [year, setYear] = useState<number>(currentY);
+  const [month, setMonth] = useState<number | "all">(currentM);
+
+  const yearsAvailable = useMemo(() => {
+    const set = new Set<number>([currentY]);
+    for (const t of txns) {
+      const y = Number(t.txn_date.slice(0, 4));
+      if (isFinite(y)) set.add(y);
+    }
+    return Array.from(set).sort((a, b) => b - a);
+  }, [txns, currentY]);
 
   const catMap = useMemo(() => new Map(cats.map((c) => [c.id, c])), [cats]);
   const isExpense = (t: OkonomiTransaction) => {
@@ -157,29 +177,96 @@ function Oversikt({ cats, txns }: { cats: OkonomiCategory[]; txns: OkonomiTransa
     return Number(t.amount) > 0 && !c?.is_transfer;
   };
 
-  const brukt = inMonth.filter(isExpense).reduce((s, t) => s + Math.abs(Number(t.amount)), 0);
-  const inntekt = inMonth.filter(isIncome).reduce((s, t) => s + Number(t.amount), 0);
-  const budsjett = cats.reduce((s, c) => s + (Number(c.monthly_budget) || 0), 0);
+  // Filtrer på valgt år/mnd
+  const ymPrefix = month === "all" ? `${year}-` : `${year}-${String(month).padStart(2, "0")}`;
+  const filtered = txns.filter((t) => t.txn_date.startsWith(ymPrefix));
+  const isCurrentPeriod =
+    year === currentY && (month === "all" || month === currentM);
+
+  const brukt = filtered.filter(isExpense).reduce((s, t) => s + Math.abs(Number(t.amount)), 0);
+  const inntekt = filtered.filter(isIncome).reduce((s, t) => s + Number(t.amount), 0);
+  const monthsCount = month === "all" ? 12 : 1;
+  const budsjett = cats.reduce((s, c) => s + (Number(c.monthly_budget) || 0), 0) * monthsCount;
   const igjen = Math.max(0, budsjett - brukt);
   const netto = inntekt - brukt;
 
-  // Per kategori i denne måneden
+  // Snitt brukt pr dag + igjen pr dag
+  const daysInMonth = (y: number, m: number) => new Date(y, m, 0).getDate();
+  let elapsedDays: number;
+  let daysUntilPayday: number;
+  if (month === "all") {
+    // hele året
+    if (year === currentY) {
+      const startOfYear = new Date(year, 0, 1);
+      elapsedDays = Math.max(
+        1,
+        Math.floor((today.getTime() - startOfYear.getTime()) / 86400000) + 1,
+      );
+    } else {
+      elapsedDays = year < currentY ? 365 : 1;
+    }
+    daysUntilPayday = 0;
+  } else {
+    const dim = daysInMonth(year, month);
+    if (year === currentY && month === currentM) {
+      elapsedDays = today.getDate();
+    } else if (year < currentY || (year === currentY && month < currentM)) {
+      elapsedDays = dim;
+    } else {
+      elapsedDays = 1;
+    }
+    // Dager til neste lønning (kun nyttig for inneværende måned)
+    const payday = settings?.payday_day ?? 15;
+    if (year === currentY && month === currentM) {
+      const day = today.getDate();
+      if (day < payday) daysUntilPayday = payday - day;
+      else {
+        const nextPayday = new Date(year, month, payday); // neste mnd
+        daysUntilPayday = Math.max(
+          1,
+          Math.ceil((nextPayday.getTime() - today.getTime()) / 86400000),
+        );
+      }
+    } else {
+      daysUntilPayday = 0;
+    }
+  }
+  const snittPrDag = elapsedDays > 0 ? brukt / elapsedDays : 0;
+  const igjenPrDag = daysUntilPayday > 0 ? igjen / daysUntilPayday : 0;
+
+  // Per kategori i valgt periode
   const perCat = new Map<string, number>();
-  for (const t of inMonth.filter(isExpense)) {
+  for (const t of filtered.filter(isExpense)) {
     const k = t.category_id ?? "uten";
     perCat.set(k, (perCat.get(k) || 0) + Math.abs(Number(t.amount)));
   }
+  const benchmarks = settings?.benchmarks ?? {};
   const catData = Array.from(perCat.entries())
     .map(([id, sum]) => {
       const c = cats.find((x) => x.id === id);
-      return { id, name: c?.name ?? "Uten kategori", color: c?.color ?? "#94a3b8", sum, budget: Number(c?.monthly_budget) || 0 };
+      const benchPerMonth = Number(benchmarks[id] || 0);
+      const bench = benchPerMonth * monthsCount;
+      return {
+        id,
+        name: c?.name ?? "Uten kategori",
+        color: c?.color ?? "#94a3b8",
+        sum,
+        budget: (Number(c?.monthly_budget) || 0) * monthsCount,
+        bench,
+      };
     })
     .sort((a, b) => b.sum - a.sum);
 
-  // 6 mnd trend
+  const top5 = catData.slice(0, 5);
+
+  // 6 mnd trend (tilbake fra valgt mnd, eller siste 6 mnd hvis "alle")
+  const anchor =
+    month === "all"
+      ? new Date(year, 11, 1)
+      : new Date(year, month - 1, 1);
   const months: { key: string; label: string }[] = [];
   for (let i = 5; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const d = new Date(anchor.getFullYear(), anchor.getMonth() - i, 1);
     months.push({
       key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`,
       label: d.toLocaleDateString("nb-NO", { month: "short" }),
@@ -194,14 +281,147 @@ function Oversikt({ cats, txns }: { cats: OkonomiCategory[]; txns: OkonomiTransa
     };
   });
 
+  const monthNames = [
+    "Januar", "Februar", "Mars", "April", "Mai", "Juni",
+    "Juli", "August", "September", "Oktober", "November", "Desember",
+  ];
+
   return (
     <div className="space-y-4">
+      {/* Filter */}
+      <Card className="p-3 border-amber-500/30">
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">År</Label>
+            <Select value={String(year)} onValueChange={(v) => setYear(Number(v))}>
+              <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {yearsAvailable.map((y) => (
+                  <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Måned</Label>
+            <Select
+              value={month === "all" ? "all" : String(month)}
+              onValueChange={(v) => setMonth(v === "all" ? "all" : Number(v))}
+            >
+              <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Hele året</SelectItem>
+                {monthNames.map((n, i) => (
+                  <SelectItem key={i} value={String(i + 1)}>{n}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </Card>
+
       <div className="grid grid-cols-2 gap-3">
         <Stat label="Brukt" value={fmt(brukt)} tone="warn" />
         <Stat label="Inntekt" value={fmt(inntekt)} tone="ok" />
         <Stat label="Budsjett" value={fmt(budsjett)} />
-        <Stat label={netto >= 0 ? "Overskudd" : "Underskudd"} value={fmt(Math.abs(netto))} tone={netto >= 0 ? "ok" : "warn"} />
+        <Stat
+          label={netto >= 0 ? "Overskudd" : "Underskudd"}
+          value={fmt(Math.abs(netto))}
+          tone={netto >= 0 ? "ok" : "warn"}
+        />
+        <Stat label={`Snitt pr dag (${elapsedDays} d)`} value={fmt(snittPrDag)} />
+        {daysUntilPayday > 0 ? (
+          <Stat
+            label={`Igjen pr dag (${daysUntilPayday} d til lønn)`}
+            value={fmt(igjenPrDag)}
+            tone={igjenPrDag <= 0 ? "warn" : "ok"}
+          />
+        ) : (
+          <Stat label="Igjen" value={fmt(igjen)} />
+        )}
       </div>
+
+      {!isCurrentPeriod && (
+        <p className="text-[11px] text-muted-foreground italic">
+          Viser historisk periode — «igjen pr dag» og lønn vises kun for inneværende måned.
+        </p>
+      )}
+
+      {/* Top 5 */}
+      {top5.length > 0 && (
+        <Card className="p-4 border-amber-500/30">
+          <h3 className="text-sm tracking-[0.25em] uppercase text-amber-400 mb-3">
+            Topp 5 kategorier
+          </h3>
+          <ul className="space-y-1.5 text-sm">
+            {top5.map((d, i) => (
+              <li key={d.id} className="flex items-center gap-2">
+                <span className="w-5 text-amber-400/70 tabular-nums text-xs">#{i + 1}</span>
+                <span
+                  className="inline-block w-2.5 h-2.5 rounded-full"
+                  style={{ background: d.color }}
+                />
+                <span className="flex-1 truncate">{d.name}</span>
+                <span className="tabular-nums text-amber-100">{fmt(d.sum)}</span>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
+
+      {/* Sammenligning mot snittfamilie */}
+      <Card className="p-4 border-amber-500/30">
+        <h3 className="text-sm tracking-[0.25em] uppercase text-amber-400 mb-1">
+          Mot typisk norsk familie
+        </h3>
+        <p className="text-[11px] text-muted-foreground mb-3">
+          {settings
+            ? `${settings.household_adults} voksne, ${settings.household_children_under18} barn < 18, ${settings.household_children_over18} barn ≥ 18`
+            : "—"}
+          {Object.keys(benchmarks).length === 0 && (
+            <> · Generer snitt-tall i Innstillinger.</>
+          )}
+        </p>
+        {catData.filter((d) => d.bench > 0).length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            Ingen snitt-tall ennå. Gå til Innstillinger → Husholdningens hvelv og trykk «Generer
+            nye snitt-tall».
+          </p>
+        ) : (
+          <ul className="space-y-2">
+            {catData
+              .filter((d) => d.bench > 0)
+              .map((d) => {
+                const diff = d.sum - d.bench;
+                const pct = d.bench > 0 ? (diff / d.bench) * 100 : 0;
+                const over = diff > 0;
+                return (
+                  <li key={d.id} className="text-sm">
+                    <div className="flex justify-between mb-1">
+                      <span className="flex items-center gap-2 min-w-0">
+                        <span
+                          className="inline-block w-2.5 h-2.5 rounded-full shrink-0"
+                          style={{ background: d.color }}
+                        />
+                        <span className="truncate">{d.name}</span>
+                      </span>
+                      <span className="tabular-nums text-xs flex items-center gap-2">
+                        <span className="text-amber-100">{fmt(d.sum)}</span>
+                        <span className="text-muted-foreground">/ snitt {fmt(d.bench)}</span>
+                        <span
+                          className={`font-semibold ${over ? "text-red-400" : "text-emerald-400"}`}
+                        >
+                          {over ? "+" : ""}
+                          {pct.toFixed(0)}%
+                        </span>
+                      </span>
+                    </div>
+                  </li>
+                );
+              })}
+          </ul>
+        )}
+      </Card>
 
       <Card className="p-4 border-amber-500/30">
         <h3 className="text-sm tracking-[0.25em] uppercase text-amber-400 mb-3">
@@ -228,7 +448,7 @@ function Oversikt({ cats, txns }: { cats: OkonomiCategory[]; txns: OkonomiTransa
       {catData.length > 0 && (
         <Card className="p-4 border-amber-500/30">
           <h3 className="text-sm tracking-[0.25em] uppercase text-amber-400 mb-3">
-            Fordeling denne måned
+            Fordeling — {month === "all" ? `hele ${year}` : `${monthNames[month - 1]} ${year}`}
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
             <div className="h-56">
@@ -264,7 +484,7 @@ function Oversikt({ cats, txns }: { cats: OkonomiCategory[]; txns: OkonomiTransa
           Budsjett-status per kategori
         </h3>
         {catData.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Ingen posteringer i {ym} ennå.</p>
+          <p className="text-sm text-muted-foreground">Ingen posteringer ennå.</p>
         ) : (
           <ul className="space-y-2">
             {catData.map((r) => {
