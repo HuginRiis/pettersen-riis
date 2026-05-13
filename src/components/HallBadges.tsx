@@ -1164,32 +1164,36 @@ function KpiPill({
 export function OkonomiBruktBadge({ inline }: { inline?: boolean } = {}) {
   const k = useOkonomiKpis();
   if (!k) return null;
-  return <KpiPill inline={inline} icon="💸" value={fmtKpi(k.brukt)} tone="warn" title={`Brukt denne måneden: ${Math.round(k.brukt).toLocaleString("nb-NO")} kr`} />;
+  const y = new Date().getFullYear();
+  return <KpiPill inline={inline} icon="💸" value={fmtKpi(k.brukt)} tone="warn" title={`Brukt i ${y}: ${Math.round(k.brukt).toLocaleString("nb-NO")} kr`} />;
 }
 export function OkonomiInntektBadge({ inline }: { inline?: boolean } = {}) {
   const k = useOkonomiKpis();
   if (!k) return null;
-  return <KpiPill inline={inline} icon="💰" value={fmtKpi(k.inntekt)} tone="ok" title={`Inntekt denne måneden: ${Math.round(k.inntekt).toLocaleString("nb-NO")} kr`} />;
+  const y = new Date().getFullYear();
+  return <KpiPill inline={inline} icon="💰" value={fmtKpi(k.inntekt)} tone="ok" title={`Inntekt i ${y}: ${Math.round(k.inntekt).toLocaleString("nb-NO")} kr`} />;
 }
 export function OkonomiBudsjettBadge({ inline }: { inline?: boolean } = {}) {
   const k = useOkonomiKpis();
   if (!k) return null;
-  return <KpiPill inline={inline} icon="🎯" value={fmtKpi(k.budsjett)} tone="neutral" title={`Budsjett: ${Math.round(k.budsjett).toLocaleString("nb-NO")} kr`} />;
+  const y = new Date().getFullYear();
+  return <KpiPill inline={inline} icon="🎯" value={fmtKpi(k.budsjett)} tone="neutral" title={`Budsjett ${y} (12 mnd): ${Math.round(k.budsjett).toLocaleString("nb-NO")} kr`} />;
 }
 export function OkonomiOverskuddBadge({ inline }: { inline?: boolean } = {}) {
   const k = useOkonomiKpis();
   if (!k) return null;
   const tone = k.overskudd >= 0 ? "ok" : "danger";
-  return <KpiPill inline={inline} icon={k.overskudd >= 0 ? "📈" : "📉"} value={fmtKpi(k.overskudd)} tone={tone} title={`Overskudd: ${Math.round(k.overskudd).toLocaleString("nb-NO")} kr`} />;
+  const y = new Date().getFullYear();
+  return <KpiPill inline={inline} icon={k.overskudd >= 0 ? "📈" : "📉"} value={fmtKpi(k.overskudd)} tone={tone} title={`Overskudd ${y}: ${Math.round(k.overskudd).toLocaleString("nb-NO")} kr`} />;
 }
 export function OkonomiSnittPrDagBadge({ inline }: { inline?: boolean } = {}) {
   const k = useOkonomiKpis();
   if (!k) return null;
-  return <KpiPill inline={inline} icon="∅" value={fmtKpi(k.snittPrDag)} tone="neutral" title={`Snitt brukt pr dag (${k.elapsedDays} d): ${Math.round(k.snittPrDag).toLocaleString("nb-NO")} kr`} />;
+  return <KpiPill inline={inline} icon="∅" value={fmtKpi(k.snittPrDag)} tone="neutral" title={`Snitt brukt pr dag i år (${k.elapsedDays} d): ${Math.round(k.snittPrDag).toLocaleString("nb-NO")} kr`} />;
 }
 export function OkonomiIgjenPrDagBadge({ inline }: { inline?: boolean } = {}) {
   const k = useOkonomiKpis();
   if (!k) return null;
   const tone = k.igjenPrDag <= 0 ? "danger" : k.igjenPrDag < 100 ? "warn" : "ok";
-  return <KpiPill inline={inline} icon="📅" value={fmtKpi(k.igjenPrDag)} tone={tone} title={`Igjen pr dag (${k.daysUntilPayday} d til lønn): ${Math.round(k.igjenPrDag).toLocaleString("nb-NO")} kr`} />;
+  return <KpiPill inline={inline} icon="📅" value={fmtKpi(k.igjenPrDag)} tone={tone} title={`Igjen pr dag (${k.daysUntilPayday} d til årsslutt): ${Math.round(k.igjenPrDag).toLocaleString("nb-NO")} kr`} />;
 }
