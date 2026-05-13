@@ -128,6 +128,7 @@ async function fetchFitnessExtras(owner: GarminOwner, day: string): Promise<{
   }
   try {
     const e = await garminGet<any>(owner, `/metrics-service/metrics/endurancescore?calendarDate=${day}`);
+    console.log(`[garmin-sync:${owner}] endurancescore RAW`, JSON.stringify(e).slice(0, 2000));
     out.endurance_score = asNumber(e?.overallScore) ?? asNumber(e?.enduranceScore) ?? asNumber(e?.score) ?? out.endurance_score;
     const rawContribs: any[] | undefined = Array.isArray(e?.contributors) ? e.contributors : Array.isArray(e?.contributorList) ? e.contributorList : undefined;
     if (rawContribs && rawContribs.length) {
