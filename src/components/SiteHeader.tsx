@@ -43,6 +43,7 @@ type RoutePath =
   | "/oppussing-hytta"
   | "/matvarer"
   | "/kvitteringer"
+  | "/okonomi"
   | "/skatte-utregningen"
   | "/gressklipper"
   | "/stovsugeren"
