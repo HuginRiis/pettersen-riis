@@ -663,6 +663,7 @@ function HallCard({
     | "/oppussing-hytta"
     | "/matvarer"
     | "/kvitteringer"
+    | "/okonomi"
     | "/push-varslinger"
     | "/got-saga";
   title: string;
