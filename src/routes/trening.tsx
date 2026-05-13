@@ -9,6 +9,8 @@ import { getActivityStreams, getStravaDashboard, getStravaStatus } from "@/serve
 import { getGarminOverview } from "@/server/garmin.functions";
 import treningImg from "@/assets/got-trening.jpg";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Crown, Flame, Swords } from "lucide-react";
 
 export const Route = createFileRoute("/trening")({
   head: () => ({
@@ -255,8 +257,7 @@ function TreningPage() {
       <section className="container mx-auto px-4 py-12 space-y-16">
         
         <GarminHouses />
-        <StravaSection owner="arne" displayName="Arne" />
-        <StravaSection owner="rebekka" displayName="Rebekka" />
+        <StravaHouses />
       </section>
     </PageShell>
   );
@@ -536,6 +537,290 @@ function HealthStatusChip({ owner = "arne", displayName }: { owner?: Owner; disp
         </DialogContent>
       </Dialog>
     </>
+  );
+}
+
+const STRAVA_HOUSES: Record<Owner, {
+  name: string;
+  house: string;
+  words: string;
+  Icon: typeof Crown;
+  accent: string;
+  border: string;
+  bg: string;
+  bannerFrom: string;
+  bannerTo: string;
+}> = {
+  arne: {
+    name: "Arne",
+    house: "House Stark",
+    words: "Winter is Coming",
+    Icon: Crown,
+    accent: "text-slate-200",
+    border: "border-slate-400/40",
+    bg: "bg-slate-900/40",
+    bannerFrom: "from-slate-700/60",
+    bannerTo: "to-slate-900/80",
+  },
+  rebekka: {
+    name: "Rebekka",
+    house: "House Targaryen",
+    words: "Fire and Blood",
+    Icon: Flame,
+    accent: "text-rose-200",
+    border: "border-rose-500/40",
+    bg: "bg-rose-950/30",
+    bannerFrom: "from-rose-900/60",
+    bannerTo: "to-black/80",
+  },
+};
+
+function StravaHouseBanner({ owner }: { owner: Owner }) {
+  const h = STRAVA_HOUSES[owner];
+  const Icon = h.Icon;
+  return (
+    <div className={`rounded-lg border ${h.border} bg-gradient-to-r ${h.bannerFrom} ${h.bannerTo} px-4 py-3 mb-3 flex items-center gap-3`}>
+      <div className={`h-10 w-10 rounded-full border ${h.border} ${h.bg} flex items-center justify-center`}>
+        <Icon className={`h-5 w-5 ${h.accent}`} />
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground" style={{ fontFamily: "var(--font-display)" }}>
+          {h.house} · Strava
+        </div>
+        <div className={`text-lg leading-tight ${h.accent}`} style={{ fontFamily: "var(--font-display)", fontWeight: 700, letterSpacing: "0.05em" }}>
+          {h.name}s krønike
+        </div>
+        <div className="text-[10px] italic text-muted-foreground" style={{ fontFamily: "var(--font-medieval)" }}>
+          « {h.words} »
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function StravaHouses() {
+  const [tab, setTab] = useState<"arne" | "rebekka" | "compare">("arne");
+  return (
+    <div className="space-y-3">
+      <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)} className="w-full">
+        <TabsList className="grid grid-cols-3 w-full bg-card/40 border border-border/60 h-auto p-1">
+          <TabsTrigger
+            value="arne"
+            className="data-[state=active]:bg-slate-800/60 data-[state=active]:text-slate-100 data-[state=active]:border-slate-400/50 border border-transparent flex items-center gap-1.5"
+            style={{ fontFamily: "var(--font-display)", letterSpacing: "0.1em" }}
+          >
+            <Crown className="h-3.5 w-3.5" /> Arne
+          </TabsTrigger>
+          <TabsTrigger
+            value="rebekka"
+            className="data-[state=active]:bg-rose-950/60 data-[state=active]:text-rose-100 data-[state=active]:border-rose-500/50 border border-transparent flex items-center gap-1.5"
+            style={{ fontFamily: "var(--font-display)", letterSpacing: "0.1em" }}
+          >
+            <Flame className="h-3.5 w-3.5" /> Rebekka
+          </TabsTrigger>
+          <TabsTrigger
+            value="compare"
+            className="data-[state=active]:bg-amber-950/60 data-[state=active]:text-amber-100 data-[state=active]:border-amber-500/50 border border-transparent flex items-center gap-1.5"
+            style={{ fontFamily: "var(--font-display)", letterSpacing: "0.1em" }}
+          >
+            <Swords className="h-3.5 w-3.5" /> Sammenlign
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="arne" className="mt-3">
+          <StravaHouseBanner owner="arne" />
+          <StravaSection owner="arne" displayName="Arne" />
+        </TabsContent>
+        <TabsContent value="rebekka" className="mt-3">
+          <StravaHouseBanner owner="rebekka" />
+          <StravaSection owner="rebekka" displayName="Rebekka" />
+        </TabsContent>
+        <TabsContent value="compare" className="mt-3">
+          <StravaCompare />
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}
+
+function StravaCompare() {
+  const fetchStatus = useServerFn(getStravaStatus);
+  const fetchDash = useServerFn(getStravaDashboard);
+  const [arne, setArne] = useState<DashOk | null>(null);
+  const [rebekka, setRebekka] = useState<DashOk | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const load = async (owner: Owner) => {
+          const s = await fetchStatus({ data: { owner } });
+          if (!s.connected) return null;
+          const r = await fetchDash({ data: { owner } });
+          return r.ok ? (r as DashOk) : null;
+        };
+        const [a, r] = await Promise.all([load("arne"), load("rebekka")]);
+        if (!cancelled) {
+          setArne(a);
+          setRebekka(r);
+        }
+      } catch (e: any) {
+        if (!cancelled) setError(e?.message ?? "Ukjent feil");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  if (loading) {
+    return <p className="text-center text-sm text-muted-foreground italic">Veier de to husene mot hverandre…</p>;
+  }
+  if (error) {
+    return <p className="text-center text-xs text-destructive">{error}</p>;
+  }
+  if (!arne && !rebekka) {
+    return <p className="text-center text-sm text-muted-foreground">Ingen av husene er lenket til Strava ennå.</p>;
+  }
+
+  const fmtKm = (m: number | null | undefined) => m == null ? "—" : `${(m / 1000).toFixed(1)} km`;
+  const fmtDur = (s: number | null | undefined) => s == null ? "—" : formatDuration(s);
+  const fmtNum = (n: number | null | undefined, suf = "") => n == null ? "—" : `${Math.round(n)}${suf}`;
+  const fmtSpeed = (mps: number | null | undefined) => mps == null ? "—" : `${(mps * 3.6).toFixed(1)} km/t`;
+
+  type Row = {
+    label: string;
+    arne: { display: string; value: number | null };
+    rebekka: { display: string; value: number | null };
+    higherIsBetter: boolean;
+  };
+
+  const w = (d: DashOk | null) => d?.periodBuckets.thisWeek;
+  const lw = (d: DashOk | null) => d?.periodBuckets.lastWeek;
+  const yr = (d: DashOk | null) => d?.periodBuckets.years?.[0];
+
+  const rows: Row[] = [
+    {
+      label: "🏃 Aktiviteter denne uka",
+      arne: { display: String(w(arne)?.count ?? 0), value: w(arne)?.count ?? 0 },
+      rebekka: { display: String(w(rebekka)?.count ?? 0), value: w(rebekka)?.count ?? 0 },
+      higherIsBetter: true,
+    },
+    {
+      label: "📏 Distanse denne uka",
+      arne: { display: fmtKm(w(arne)?.distanceMeters), value: w(arne)?.distanceMeters ?? null },
+      rebekka: { display: fmtKm(w(rebekka)?.distanceMeters), value: w(rebekka)?.distanceMeters ?? null },
+      higherIsBetter: true,
+    },
+    {
+      label: "⏱ Tid denne uka",
+      arne: { display: fmtDur(w(arne)?.movingSeconds), value: w(arne)?.movingSeconds ?? null },
+      rebekka: { display: fmtDur(w(rebekka)?.movingSeconds), value: w(rebekka)?.movingSeconds ?? null },
+      higherIsBetter: true,
+    },
+    {
+      label: "⛰ Høydemeter denne uka",
+      arne: { display: fmtNum(w(arne)?.elevationMeters, " m"), value: w(arne)?.elevationMeters ?? null },
+      rebekka: { display: fmtNum(w(rebekka)?.elevationMeters, " m"), value: w(rebekka)?.elevationMeters ?? null },
+      higherIsBetter: true,
+    },
+    {
+      label: "❤ Snittpuls denne uka",
+      arne: { display: fmtNum(w(arne)?.avgHeartrate, " bpm"), value: w(arne)?.avgHeartrate ?? null },
+      rebekka: { display: fmtNum(w(rebekka)?.avgHeartrate, " bpm"), value: w(rebekka)?.avgHeartrate ?? null },
+      higherIsBetter: false,
+    },
+    {
+      label: "📅 Distanse forrige uke",
+      arne: { display: fmtKm(lw(arne)?.distanceMeters), value: lw(arne)?.distanceMeters ?? null },
+      rebekka: { display: fmtKm(lw(rebekka)?.distanceMeters), value: lw(rebekka)?.distanceMeters ?? null },
+      higherIsBetter: true,
+    },
+    {
+      label: "🗓 Distanse i år",
+      arne: { display: fmtKm(yr(arne)?.distanceMeters), value: yr(arne)?.distanceMeters ?? null },
+      rebekka: { display: fmtKm(yr(rebekka)?.distanceMeters), value: yr(rebekka)?.distanceMeters ?? null },
+      higherIsBetter: true,
+    },
+    {
+      label: "🏆 Lengste tur (rekord)",
+      arne: { display: fmtKm(arne?.records.longestDistance?.distance), value: arne?.records.longestDistance?.distance ?? null },
+      rebekka: { display: fmtKm(rebekka?.records.longestDistance?.distance), value: rebekka?.records.longestDistance?.distance ?? null },
+      higherIsBetter: true,
+    },
+    {
+      label: "💥 Maks puls",
+      arne: { display: fmtNum(arne?.records.maxHr?.maxHeartrate, " bpm"), value: arne?.records.maxHr?.maxHeartrate ?? null },
+      rebekka: { display: fmtNum(rebekka?.records.maxHr?.maxHeartrate, " bpm"), value: rebekka?.records.maxHr?.maxHeartrate ?? null },
+      higherIsBetter: true,
+    },
+    {
+      label: "⚡ Maks fart",
+      arne: { display: fmtSpeed(arne?.records.maxSpeed?.maxSpeed), value: arne?.records.maxSpeed?.maxSpeed ?? null },
+      rebekka: { display: fmtSpeed(rebekka?.records.maxSpeed?.maxSpeed), value: rebekka?.records.maxSpeed?.maxSpeed ?? null },
+      higherIsBetter: true,
+    },
+  ];
+
+  let arneWins = 0;
+  let rebekkaWins = 0;
+  for (const r of rows) {
+    const a = r.arne.value;
+    const b = r.rebekka.value;
+    if (a == null && b == null) continue;
+    if (a == null) { rebekkaWins++; continue; }
+    if (b == null) { arneWins++; continue; }
+    if (a === b) continue;
+    if (r.higherIsBetter ? a > b : a < b) arneWins++; else rebekkaWins++;
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-3">
+        <div className="rounded-lg border border-slate-400/40 bg-slate-900/40 px-4 py-3 text-center">
+          <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground" style={{ fontFamily: "var(--font-display)" }}>House Stark</div>
+          <div className="text-2xl text-slate-200" style={{ fontFamily: "var(--font-display)", fontWeight: 700 }}>{arneWins}</div>
+          <div className="text-[10px] text-muted-foreground">seire</div>
+        </div>
+        <div className="rounded-lg border border-rose-500/40 bg-rose-950/30 px-4 py-3 text-center">
+          <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground" style={{ fontFamily: "var(--font-display)" }}>House Targaryen</div>
+          <div className="text-2xl text-rose-200" style={{ fontFamily: "var(--font-display)", fontWeight: 700 }}>{rebekkaWins}</div>
+          <div className="text-[10px] text-muted-foreground">seire</div>
+        </div>
+      </div>
+
+      <div className="rounded-lg border border-border/60 bg-card/40 overflow-hidden">
+        <div className="grid grid-cols-[1.4fr_1fr_1fr] text-[10px] uppercase tracking-[0.2em] text-muted-foreground px-3 py-2 border-b border-border/60" style={{ fontFamily: "var(--font-display)" }}>
+          <div>Måling</div>
+          <div className="text-right">Arne</div>
+          <div className="text-right">Rebekka</div>
+        </div>
+        {rows.map((r, i) => {
+          const a = r.arne.value;
+          const b = r.rebekka.value;
+          let aWin = false, bWin = false;
+          if (a != null && b != null && a !== b) {
+            if (r.higherIsBetter ? a > b : a < b) aWin = true; else bWin = true;
+          } else if (a != null && b == null) aWin = true;
+          else if (b != null && a == null) bWin = true;
+          return (
+            <div key={i} className={`grid grid-cols-[1.4fr_1fr_1fr] items-center px-3 py-2 text-sm ${i % 2 ? "bg-card/20" : ""}`}>
+              <div className="text-muted-foreground">{r.label}</div>
+              <div className={`text-right ${aWin ? "text-slate-100 font-semibold" : "text-foreground/70"}`}>
+                {r.arne.display}{aWin && " 👑"}
+              </div>
+              <div className={`text-right ${bWin ? "text-rose-200 font-semibold" : "text-foreground/70"}`}>
+                {r.rebekka.display}{bWin && " 🔥"}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
