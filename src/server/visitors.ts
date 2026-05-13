@@ -109,7 +109,9 @@ async function lookupGeo(ip: string | null): Promise<GeoInfo> {
   }
 
   try {
-    const res = await fetch(
+    const res = await loggedFetch(
+      "geoip",
+      "ip-api",
       `http://ip-api.com/json/${ip}?fields=status,country,countryCode,region,regionName,city,lat,lon,timezone,isp,query`,
       { signal: AbortSignal.timeout(3000) },
     );
