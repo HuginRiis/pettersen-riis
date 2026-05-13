@@ -121,7 +121,7 @@ Returner KUN JSON i dette formatet:
 }
 Alle tall i NOK (heltall). Marginalskatt og gjennomsnittsprosent som tall (f.eks. 35.2).`;
 
-    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const res = await loggedFetch("ai", "skatt", "https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
       body: JSON.stringify({
@@ -242,7 +242,7 @@ Strukturer som en pergamentrull med tydelige overskrifter (bruk · eller — som
 
 Hold det kort, faktabasert og nøyaktig — alle tall som står på slippen MÅ med. Ikke finn på data. Ren tekst, ingen markdown-kodeblokker, ingen ** eller ##.`;
 
-    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const res = await loggedFetch("ai", "skatt", "https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
       body: JSON.stringify({
@@ -452,7 +452,7 @@ Hvis du ikke finner et felt, sett 0 (eller "Ukjent" for employer). Hvis måned e
       ],
     };
 
-    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const res = await loggedFetch("ai", "skatt", "https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
