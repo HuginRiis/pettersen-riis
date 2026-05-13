@@ -272,7 +272,7 @@ export function MaesterAiBudget() {
         </div>
         <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
           <span>{pct.toFixed(1)}% brukt</span>
-          <span>$0 — {fmtUsd(monthlyBudget)} / mnd</span>
+          <span>$0 — {fmtUsd(totalAvailable)} tilgjengelig</span>
         </div>
       </div>
 
