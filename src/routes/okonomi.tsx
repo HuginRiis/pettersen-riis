@@ -193,6 +193,7 @@ function Oversikt({
       localStorage.setItem(EXCL_KEY, JSON.stringify(Array.from(excludedCats)));
     } catch {}
   }, [excludedCats]);
+  const [catsOpen, setCatsOpen] = useState(false);
   const toggleCatExcluded = (id: string) =>
     setExcludedCats((s) => {
       const n = new Set(s);
