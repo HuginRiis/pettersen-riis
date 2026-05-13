@@ -446,6 +446,8 @@ export type Database = {
           created_at: string
           day: string
           distance_meters: number | null
+          endurance_score: number | null
+          fitness_age: number | null
           floors_climbed: number | null
           floors_goal: number | null
           id: string
@@ -458,8 +460,12 @@ export type Database = {
           steps: number | null
           stress_average: number | null
           total_kilocalories: number | null
+          training_load_focus: Json | null
+          training_status: string | null
           updated_at: string
           vigorous_intensity_minutes: number | null
+          vo2max_cycling: number | null
+          vo2max_running: number | null
           weight_kg: number | null
         }
         Insert: {
@@ -470,6 +476,8 @@ export type Database = {
           created_at?: string
           day: string
           distance_meters?: number | null
+          endurance_score?: number | null
+          fitness_age?: number | null
           floors_climbed?: number | null
           floors_goal?: number | null
           id?: string
@@ -482,8 +490,12 @@ export type Database = {
           steps?: number | null
           stress_average?: number | null
           total_kilocalories?: number | null
+          training_load_focus?: Json | null
+          training_status?: string | null
           updated_at?: string
           vigorous_intensity_minutes?: number | null
+          vo2max_cycling?: number | null
+          vo2max_running?: number | null
           weight_kg?: number | null
         }
         Update: {
@@ -494,6 +506,8 @@ export type Database = {
           created_at?: string
           day?: string
           distance_meters?: number | null
+          endurance_score?: number | null
+          fitness_age?: number | null
           floors_climbed?: number | null
           floors_goal?: number | null
           id?: string
@@ -506,8 +520,12 @@ export type Database = {
           steps?: number | null
           stress_average?: number | null
           total_kilocalories?: number | null
+          training_load_focus?: Json | null
+          training_status?: string | null
           updated_at?: string
           vigorous_intensity_minutes?: number | null
+          vo2max_cycling?: number | null
+          vo2max_running?: number | null
           weight_kg?: number | null
         }
         Relationships: []
