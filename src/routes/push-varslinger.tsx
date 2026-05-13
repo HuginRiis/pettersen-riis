@@ -20,6 +20,7 @@ import { GarminNotificationSettings } from "@/components/GarminNotificationSetti
 import { LoginNotificationSettings } from "@/components/LoginNotificationSettings";
 import { AppearanceSettingsPanel } from "@/components/AppearanceSettingsPanel";
 import { ChartAppearanceSettingsPanel } from "@/components/ChartAppearanceSettingsPanel";
+import { OkonomiSettingsPanel } from "@/components/OkonomiSettingsPanel";
 import {
   Bell, BellOff, Calendar, Cake, Trash2, CloudSun, Sun, Lightbulb, ScrollText, ShieldCheck, Lock, ExternalLink, Smartphone, X,
 } from "lucide-react";
@@ -90,6 +91,7 @@ const TOC_ITEMS: { id: string; label: string; emoji: string }[] = [
   { id: "sec-garantiprefs", label: "Garanti pr bruker", emoji: "👥" },
   { id: "sec-abonnementer", label: "Abonnement", emoji: "🔔" },
   { id: "sec-abonnenter", label: "Enheter", emoji: "📱" },
+  { id: "sec-okonomi", label: "Husholdningens hvelv", emoji: "🪙" },
 ];
 
 function SettingsTOC() {
@@ -157,6 +159,7 @@ function PushSettingsPage() {
       <section id="sec-scener" className="scroll-mt-24"><LightScenesPanel /></section>
       <section id="sec-scheduling" className="scroll-mt-24"><PushSchedulingSettings /></section>
       <section id="sec-tibber" className="scroll-mt-24"><TibberCronStatusPanel /></section>
+      <OkonomiSettingsPanel />
 
       <section id="sec-farevarsel" className="container mx-auto px-4 pb-4 scroll-mt-24">
         <div className="panel rounded-lg p-4 border border-orange-500/40">
