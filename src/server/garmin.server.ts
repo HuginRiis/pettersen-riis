@@ -507,10 +507,12 @@ export async function getGarminStatus(owner: GarminOwner): Promise<{
   expires_at: string | null;
   last_login_at: string | null;
   mfa_pending: boolean;
+  device_name: string | null;
+  device_image_url: string | null;
 }> {
   const { data } = await supabaseAdmin
     .from("garmin_tokens")
-    .select("username, oauth2_expires_at, last_login_at, oauth1_token, pending_mfa")
+    .select("username, oauth2_expires_at, last_login_at, oauth1_token, pending_mfa, device_name, device_image_url")
     .eq("owner", owner)
     .order("updated_at", { ascending: false })
     .limit(1)
@@ -521,5 +523,7 @@ export async function getGarminStatus(owner: GarminOwner): Promise<{
     expires_at: data?.oauth2_expires_at ?? null,
     last_login_at: data?.last_login_at ?? null,
     mfa_pending: !!(data as { pending_mfa?: unknown } | null)?.pending_mfa,
+    device_name: (data as any)?.device_name ?? null,
+    device_image_url: (data as any)?.device_image_url ?? null,
   };
 }
