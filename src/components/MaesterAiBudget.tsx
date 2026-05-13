@@ -102,6 +102,16 @@ export function MaesterAiBudget() {
   const [saving, setSaving] = useState(false);
   const [costInput, setCostInput] = useState("");
   const [budgetInput, setBudgetInput] = useState("");
+  const [openFeatures, setOpenFeatures] = useState<Set<string>>(new Set());
+
+  function toggleFeature(key: string) {
+    setOpenFeatures((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
 
   useEffect(() => {
     let cancelled = false;
