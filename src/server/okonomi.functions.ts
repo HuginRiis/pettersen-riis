@@ -450,3 +450,187 @@ Returner én tilordning per postering. Bruk 0 hvis ingen kategori passer.`;
     }
     return { category_ids: result };
   });
+
+// =================================================================
+// Settings (payday, household composition, benchmarks)
+// =================================================================
+
+export type OkonomiSettings = {
+  payday_day: number;
+  household_adults: number;
+  household_children_under18: number;
+  household_children_over18: number;
+  savings_target_pct: number;
+  primary_account: string | null;
+  benchmarks: Record<string, number>; // category_id -> monthly NOK
+  benchmarks_generated_at: string | null;
+};
+
+const DEFAULT_SETTINGS: OkonomiSettings = {
+  payday_day: 15,
+  household_adults: 2,
+  household_children_under18: 3,
+  household_children_over18: 0,
+  savings_target_pct: 20,
+  primary_account: null,
+  benchmarks: {},
+  benchmarks_generated_at: null,
+};
+
+export const getOkonomiSettings = createServerFn({ method: "GET" }).handler(
+  async (): Promise<OkonomiSettings> => {
+    const { data } = await supabaseAdmin
+      .from("okonomi_budget_settings")
+      .select("*")
+      .eq("id", 1)
+      .maybeSingle();
+    if (!data) return DEFAULT_SETTINGS;
+    return {
+      payday_day: Number((data as any).payday_day ?? 15),
+      household_adults: Number((data as any).household_adults ?? 2),
+      household_children_under18: Number((data as any).household_children_under18 ?? 3),
+      household_children_over18: Number((data as any).household_children_over18 ?? 0),
+      savings_target_pct: Number((data as any).savings_target_pct ?? 20),
+      primary_account: (data as any).primary_account ?? null,
+      benchmarks: ((data as any).benchmarks ?? {}) as Record<string, number>,
+      benchmarks_generated_at: (data as any).benchmarks_generated_at ?? null,
+    };
+  },
+);
+
+export const updateOkonomiSettings = createServerFn({ method: "POST" })
+  .inputValidator((d) =>
+    z
+      .object({
+        payday_day: z.number().int().min(1).max(31).optional(),
+        household_adults: z.number().int().min(0).max(10).optional(),
+        household_children_under18: z.number().int().min(0).max(15).optional(),
+        household_children_over18: z.number().int().min(0).max(15).optional(),
+        savings_target_pct: z.number().min(0).max(100).optional(),
+        primary_account: z.string().max(200).nullable().optional(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data }) => {
+    const patch: any = { ...data, updated_at: new Date().toISOString() };
+    const { data: existing } = await supabaseAdmin
+      .from("okonomi_budget_settings")
+      .select("id")
+      .eq("id", 1)
+      .maybeSingle();
+    if (existing) {
+      const { error } = await supabaseAdmin
+        .from("okonomi_budget_settings")
+        .update(patch)
+        .eq("id", 1);
+      if (error) throw new Error(error.message);
+    } else {
+      const { error } = await supabaseAdmin
+        .from("okonomi_budget_settings")
+        .insert({ id: 1, ...patch });
+      if (error) throw new Error(error.message);
+    }
+    return { ok: true };
+  });
+
+export const generateOkonomiBenchmarks = createServerFn({ method: "POST" }).handler(
+  async (): Promise<{ benchmarks: Record<string, number>; updated: number }> => {
+    const apiKey = process.env.LOVABLE_API_KEY;
+    if (!apiKey) throw new Error("LOVABLE_API_KEY mangler");
+
+    const { data: settingsRow } = await supabaseAdmin
+      .from("okonomi_budget_settings")
+      .select("*")
+      .eq("id", 1)
+      .maybeSingle();
+    const s = {
+      household_adults: Number((settingsRow as any)?.household_adults ?? 2),
+      household_children_under18: Number((settingsRow as any)?.household_children_under18 ?? 3),
+      household_children_over18: Number((settingsRow as any)?.household_children_over18 ?? 0),
+    };
+
+    const { data: catRows } = await supabaseAdmin
+      .from("okonomi_categories")
+      .select("id,name,is_income,is_transfer,hidden")
+      .eq("hidden", false);
+    const cats = (catRows ?? []).filter((c: any) => !c.is_income && !c.is_transfer) as any[];
+    if (cats.length === 0) return { benchmarks: {}, updated: 0 };
+
+    const catList = cats.map((c, i) => `${i + 1}. ${c.name}`).join("\n");
+
+    const tool = {
+      type: "function",
+      function: {
+        name: "set_benchmarks",
+        description: "Sett gjennomsnittlig månedlig forbruk i NOK per kategori for en typisk norsk familie.",
+        parameters: {
+          type: "object",
+          properties: {
+            benchmarks: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  category_index: { type: "number", description: "1-basert nummer" },
+                  monthly_nok: { type: "number", description: "Snitt månedlig forbruk i NOK" },
+                },
+                required: ["category_index", "monthly_nok"],
+              },
+            },
+          },
+          required: ["benchmarks"],
+        },
+      },
+    };
+
+    const prompt = `Du er en norsk forbruksøkonom. Estimer realistisk gjennomsnittlig MÅNEDLIG forbruk i NOK for en norsk husholdning bestående av:
+- ${s.household_adults} voksne
+- ${s.household_children_under18} barn under 18 år
+- ${s.household_children_over18} barn over 18 år
+
+Bruk SIFOs referansebudsjett og SSB forbruksundersøkelser som utgangspunkt. Gi ett tall per kategori under. Hvis kategorien ikke gir mening for snittfamilien, sett 0.
+
+KATEGORIER:
+${catList}
+
+Returner alle ${cats.length} kategoriene.`;
+
+    const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages: [{ role: "user", content: prompt }],
+        tools: [tool],
+        tool_choice: { type: "function", function: { name: "set_benchmarks" } },
+      }),
+    });
+    if (resp.status === 429) throw new Error("AI er i kø, prøv igjen om litt.");
+    if (resp.status === 402) throw new Error("AI-kreditten er brukt opp.");
+    if (!resp.ok) throw new Error(`AI-feil ${resp.status}: ${await resp.text()}`);
+
+    const json = await resp.json();
+    const call = json.choices?.[0]?.message?.tool_calls?.[0];
+    if (!call) throw new Error("AI returnerte ingen data");
+    const args = JSON.parse(call.function.arguments);
+    const benchmarks: Record<string, number> = {};
+    for (const b of args.benchmarks ?? []) {
+      const ci = Number(b.category_index) - 1;
+      const v = Number(b.monthly_nok);
+      if (ci >= 0 && ci < cats.length && isFinite(v) && v >= 0) {
+        benchmarks[cats[ci].id] = Math.round(v);
+      }
+    }
+
+    await supabaseAdmin
+      .from("okonomi_budget_settings")
+      .update({
+        benchmarks: benchmarks as any,
+        benchmarks_generated_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", 1);
+
+    return { benchmarks, updated: Object.keys(benchmarks).length };
+  },
+);
