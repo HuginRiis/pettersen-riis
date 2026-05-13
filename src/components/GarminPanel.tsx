@@ -28,6 +28,7 @@ type Daily = {
     aerobic_high_target?: [number, number] | null;
     anaerobic_target?: [number, number] | null;
   } | null;
+  endurance_contributors?: Array<{ group: string; contribution: number }> | null;
 };
 type Activity = {
   garmin_activity_id: number; activity_type: string | null; activity_name: string | null;
