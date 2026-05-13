@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Activity, Footprints, Heart, HeartPulse, Flame, Moon, RefreshCw, LogIn, Loader2, TrendingUp, ShieldCheck, Battery, Brain, Timer, Scale, ChevronDown, ChevronRight, ArrowUp, ArrowDown, Minus, Building2, Wind, Droplets, Waves } from "lucide-react";
+import { Activity, Footprints, Heart, HeartPulse, Flame, Moon, RefreshCw, LogIn, Loader2, TrendingUp, ShieldCheck, Battery, Brain, Timer, Scale, ChevronDown, ChevronRight, ArrowUp, ArrowDown, Minus, Building2, Wind, Droplets, Waves, Award, Gauge, Target } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, CartesianGrid } from "recharts";
 import { toast } from "sonner";
 import { getGarminOverview, garminLoginNow, garminSyncNow, garminSubmitMfaCode } from "@/server/garmin.functions";
@@ -18,6 +18,16 @@ type Daily = {
   vigorous_intensity_minutes: number | null; intensity_minutes_goal: number | null;
   body_battery_high: number | null; body_battery_low: number | null;
   stress_average: number | null;
+  vo2max_running?: number | null; vo2max_cycling?: number | null;
+  endurance_score?: number | null; fitness_age?: number | null;
+  training_status?: string | null;
+  training_load_focus?: {
+    aerobic_low?: number | null; aerobic_high?: number | null; anaerobic?: number | null;
+    feedback?: string | null;
+    aerobic_low_target?: [number, number] | null;
+    aerobic_high_target?: [number, number] | null;
+    anaerobic_target?: [number, number] | null;
+  } | null;
 };
 type Activity = {
   garmin_activity_id: number; activity_type: string | null; activity_name: string | null;
@@ -513,6 +523,45 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
                   (data?.sleep ?? []).map((s) => ({ day: s.day, hours: s.total_seconds ? s.total_seconds / 3600 : null })),
                   "hours", C.sleep,
                 )} />
+              <Tile icon={<Award size={14} style={{color: C.sleepRem}} />} label="Søvnscore"
+                value={lastSleep?.sleep_score ?? null}
+                prev={prevSleep?.sleep_score ?? null}
+                fallbackSub="ingen score i natt"
+                showDetails={showDetails}
+                details={[
+                  { k: "I natt", v: lastSleep?.sleep_score != null ? String(lastSleep.sleep_score) : "—" },
+                  { k: "Forrige natt", v: prevSleep?.sleep_score != null ? String(prevSleep.sleep_score) : "—" },
+                  { k: "Snitt 7d", v: avgFmt(data?.sleep?.slice(-7).map((s) => s.sleep_score), 0) },
+                  { k: "Snitt 30d", v: avgFmt(data?.sleep?.map((s) => s.sleep_score), 0) },
+                  { k: "Beste 30d", v: (() => { const ss = (data?.sleep ?? []).map((s) => s.sleep_score).filter((x): x is number => x != null); return ss.length ? String(Math.max(...ss)) : "—"; })() },
+                ]}
+                chart={sparkLine(
+                  (data?.sleep ?? []).map((s) => ({ day: s.day, score: s.sleep_score })),
+                  "score", false, C.sleepRem,
+                )} />
+              {(() => {
+                const latestFit = (data?.daily ?? []).slice().reverse().find((d) => d.vo2max_running != null || d.vo2max_cycling != null || d.endurance_score != null);
+                const prevFit = (() => {
+                  const arr = (data?.daily ?? []).filter((d) => d.vo2max_running != null);
+                  return arr.length >= 2 ? arr[arr.length - 2] : undefined;
+                })();
+                return (
+                  <Tile icon={<Gauge size={14} style={{color: C.intensity}} />} label="Kondisjon (VO₂max)"
+                    value={latestFit?.vo2max_running ?? null}
+                    prev={prevFit?.vo2max_running ?? null}
+                    digits={1}
+                    fallbackSub={latestFit?.endurance_score != null ? `utholdenhet ${Math.round(latestFit.endurance_score)}` : "ingen måling"}
+                    showDetails={showDetails}
+                    details={[
+                      { k: "Løping", v: latestFit?.vo2max_running != null ? `${latestFit.vo2max_running.toFixed(1)} ml/kg/min` : "—" },
+                      { k: "Sykling", v: latestFit?.vo2max_cycling != null ? `${latestFit.vo2max_cycling.toFixed(1)} ml/kg/min` : "—" },
+                      { k: "Utholdenhetspoeng", v: latestFit?.endurance_score != null ? String(Math.round(latestFit.endurance_score)) : "—" },
+                      { k: "Kondisjonsalder", v: latestFit?.fitness_age != null ? `${Math.round(latestFit.fitness_age)} år` : "—" },
+                      { k: "Sist oppdatert", v: latestFit?.day ?? "—" },
+                    ]}
+                    chart={sparkLine(data?.daily, "vo2max_running", true, C.intensity)} />
+                );
+              })()}
               {weightAllowed && (
               <Tile icon={<Scale size={14} style={{color: C.weight}} />} label="Vekt"
                 value={latestWeightEntry?.weight_kg ?? null} prev={prevWeightEntry?.weight_kg ?? null}
@@ -598,6 +647,75 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
                 ]}
                 chart={sparkLine2(data?.daily, "total_kilocalories", "active_kilocalories", C.caloriesTotal, C.caloriesActive)} />
             </div>
+
+            {/* Treningsstatus, kondisjonsalder og belastningsfokus */}
+            {(() => {
+              const latestFit = (data?.daily ?? []).slice().reverse().find(
+                (d) => d.training_status != null || d.training_load_focus != null || d.fitness_age != null,
+              );
+              if (!latestFit) return null;
+              const focus = latestFit.training_load_focus ?? null;
+              const fmtRange = (r?: [number, number] | null) => r ? `${Math.round(r[0])}–${Math.round(r[1])}` : "—";
+              const Bar = ({ value, target, label, color }: { value: number | null | undefined; target: [number, number] | null | undefined; label: string; color: string }) => {
+                const v = value ?? 0;
+                const max = Math.max(v, target?.[1] ?? 0, 1);
+                const pct = (n: number) => `${Math.min(100, (n / max) * 100)}%`;
+                return (
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="text-muted-foreground">{label}</span>
+                      <span className="tabular-nums text-foreground">{value != null ? Math.round(value) : "—"}{target ? ` / ${fmtRange(target)}` : ""}</span>
+                    </div>
+                    <div className="relative h-2 rounded bg-muted/40 overflow-hidden">
+                      {target && (
+                        <div
+                          className="absolute top-0 h-full bg-foreground/10"
+                          style={{ left: pct(target[0]), width: `calc(${pct(target[1])} - ${pct(target[0])})` }}
+                        />
+                      )}
+                      <div className="absolute top-0 left-0 h-full rounded" style={{ width: pct(v), background: color }} />
+                    </div>
+                  </div>
+                );
+              };
+              return (
+                <div className="rounded-lg border border-border/60 bg-background/40 p-4 space-y-3">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <h3 className="text-sm font-semibold uppercase tracking-wider text-primary flex items-center gap-2">
+                      <Target size={14} /> Treningsstatus & belastningsfokus
+                    </h3>
+                    <span className="text-[10px] text-muted-foreground">oppdatert {latestFit.day}</span>
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    <div className="rounded border border-border/60 bg-background/40 p-3">
+                      <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Treningsstatus</div>
+                      <div className="text-lg font-semibold mt-1">{latestFit.training_status ?? "—"}</div>
+                    </div>
+                    <div className="rounded border border-border/60 bg-background/40 p-3">
+                      <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Kondisjonsalder</div>
+                      <div className="text-lg font-semibold tabular-nums mt-1">{latestFit.fitness_age != null ? `${Math.round(latestFit.fitness_age)} år` : "—"}</div>
+                    </div>
+                    <div className="rounded border border-border/60 bg-background/40 p-3">
+                      <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Utholdenhetspoeng</div>
+                      <div className="text-lg font-semibold tabular-nums mt-1">{latestFit.endurance_score != null ? Math.round(latestFit.endurance_score) : "—"}</div>
+                    </div>
+                  </div>
+                  {focus ? (
+                    <div className="space-y-2 pt-1">
+                      <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Belastningsfokus (siste 4 uker)</div>
+                      <Bar label="Lav aerob" value={focus.aerobic_low} target={focus.aerobic_low_target ?? null} color={C.intensity} />
+                      <Bar label="Høy aerob" value={focus.aerobic_high} target={focus.aerobic_high_target ?? null} color={C.hrAvg} />
+                      <Bar label="Anaerob" value={focus.anaerobic} target={focus.anaerobic_target ?? null} color={C.hrMax} />
+                      {focus.feedback && (
+                        <p className="text-[11px] italic text-muted-foreground pt-1">« {focus.feedback} »</p>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-[11px] text-muted-foreground italic">Ingen belastningsdata enda — synk Garmin for å oppdatere.</p>
+                  )}
+                </div>
+              );
+            })()}
 
 
             {/* Grafer (skjult som default) */}

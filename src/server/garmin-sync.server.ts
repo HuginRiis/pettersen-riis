@@ -38,8 +38,117 @@ type DailySummary = {
   averageStressLevel?: number;
 };
 
+type Vo2Resp = {
+  generic?: { vo2MaxValue?: number; fitnessAge?: number };
+  cycling?: { vo2MaxValue?: number };
+  heatAltitudeAcclimation?: unknown;
+};
+type EnduranceResp = {
+  enduranceScore?: number;
+  overallScore?: number;
+  classificationValue?: number;
+};
+type TrainingStatusResp = {
+  mostRecentTrainingStatus?: {
+    latestTrainingStatusData?: Record<string, { trainingStatusFeedbackPhrase?: string; trainingStatus?: number }>;
+  };
+  mostRecentTrainingLoadBalance?: {
+    metricsTrainingLoadBalanceDTOMap?: Record<string, {
+      monthlyLoadAerobicLow?: number;
+      monthlyLoadAerobicHigh?: number;
+      monthlyLoadAnaerobic?: number;
+      trainingBalanceFeedbackPhrase?: string;
+      monthlyLoadAerobicLowTargetMin?: number;
+      monthlyLoadAerobicLowTargetMax?: number;
+      monthlyLoadAerobicHighTargetMin?: number;
+      monthlyLoadAerobicHighTargetMax?: number;
+      monthlyLoadAnaerobicTargetMin?: number;
+      monthlyLoadAnaerobicTargetMax?: number;
+    }>;
+  };
+};
+
+const TRAINING_STATUS_LABELS: Record<number, string> = {
+  0: "Ingen status",
+  1: "Detrenert",
+  2: "Restitusjon",
+  3: "Vedlikehold",
+  4: "Produktiv",
+  5: "Topp",
+  6: "Overreaching",
+  7: "Ubalansert",
+  8: "Ingen status",
+  9: "Anstrengende",
+};
+
+async function fetchFitnessExtras(owner: GarminOwner, day: string): Promise<{
+  vo2max_running: number | null;
+  vo2max_cycling: number | null;
+  endurance_score: number | null;
+  fitness_age: number | null;
+  training_status: string | null;
+  training_load_focus: Record<string, unknown> | null;
+}> {
+  const out = {
+    vo2max_running: null as number | null,
+    vo2max_cycling: null as number | null,
+    endurance_score: null as number | null,
+    fitness_age: null as number | null,
+    training_status: null as string | null,
+    training_load_focus: null as Record<string, unknown> | null,
+  };
+  try {
+    const v = await garminGet<Vo2Resp>(owner, `/metrics-service/metrics/maxmet/latest/${day}`);
+    if (typeof v?.generic?.vo2MaxValue === "number") out.vo2max_running = v.generic.vo2MaxValue;
+    if (typeof v?.cycling?.vo2MaxValue === "number") out.vo2max_cycling = v.cycling.vo2MaxValue;
+    if (typeof v?.generic?.fitnessAge === "number") out.fitness_age = v.generic.fitnessAge;
+  } catch {}
+  try {
+    const e = await garminGet<EnduranceResp>(owner, `/metrics-service/metrics/endurancescore/${day}`);
+    const score = e?.overallScore ?? e?.enduranceScore;
+    if (typeof score === "number") out.endurance_score = score;
+  } catch {}
+  try {
+    const t = await garminGet<TrainingStatusResp>(owner, `/metrics-service/metrics/trainingstatus/aggregated/${day}`);
+    const stat = t?.mostRecentTrainingStatus?.latestTrainingStatusData;
+    if (stat) {
+      const first = Object.values(stat)[0];
+      if (first?.trainingStatusFeedbackPhrase) {
+        out.training_status = first.trainingStatusFeedbackPhrase
+          .replace(/_/g, " ")
+          .toLowerCase()
+          .replace(/\b\w/g, (c) => c.toUpperCase());
+      } else if (typeof first?.trainingStatus === "number") {
+        out.training_status = TRAINING_STATUS_LABELS[first.trainingStatus] ?? `Status ${first.trainingStatus}`;
+      }
+    }
+    const bal = t?.mostRecentTrainingLoadBalance?.metricsTrainingLoadBalanceDTOMap;
+    if (bal) {
+      const first = Object.values(bal)[0];
+      if (first) {
+        out.training_load_focus = {
+          aerobic_low: first.monthlyLoadAerobicLow ?? null,
+          aerobic_high: first.monthlyLoadAerobicHigh ?? null,
+          anaerobic: first.monthlyLoadAnaerobic ?? null,
+          feedback: first.trainingBalanceFeedbackPhrase ?? null,
+          aerobic_low_target: first.monthlyLoadAerobicLowTargetMin != null && first.monthlyLoadAerobicLowTargetMax != null
+            ? [first.monthlyLoadAerobicLowTargetMin, first.monthlyLoadAerobicLowTargetMax] : null,
+          aerobic_high_target: first.monthlyLoadAerobicHighTargetMin != null && first.monthlyLoadAerobicHighTargetMax != null
+            ? [first.monthlyLoadAerobicHighTargetMin, first.monthlyLoadAerobicHighTargetMax] : null,
+          anaerobic_target: first.monthlyLoadAnaerobicTargetMin != null && first.monthlyLoadAnaerobicTargetMax != null
+            ? [first.monthlyLoadAnaerobicTargetMin, first.monthlyLoadAnaerobicTargetMax] : null,
+        };
+      }
+    }
+  } catch {}
+  return out;
+}
+
 export async function syncDaily(owner: GarminOwner, daysBack = 30): Promise<number> {
   let count = 0;
+  // Hent kondisjon/treningsstatus kun for nyeste dag — verdiene endrer seg sjelden og er tunge å hente.
+  const todayKey = daysAgo(0);
+  const fitnessExtras = await fetchFitnessExtras(owner, todayKey);
   for (let i = 0; i <= daysBack; i++) {
     const day = daysAgo(i);
     try {
@@ -54,6 +163,7 @@ export async function syncDaily(owner: GarminOwner, daysBack = 30): Promise<numb
         if (typeof grams === "number" && grams > 0) weightKg = Math.round((grams / 1000) * 100) / 100;
       } catch {}
       const avgHr = ds.averageHeartRateInBeatsPerMinute ?? ds.averageHeartRate ?? null;
+      const isLatest = day === todayKey;
       const row = {
         owner, day,
         steps: ds.totalSteps ?? null,
@@ -74,8 +184,9 @@ export async function syncDaily(owner: GarminOwner, daysBack = 30): Promise<numb
         stress_average: ds.averageStressLevel ?? null,
         raw: ds as any,
         updated_at: new Date().toISOString(),
+        ...(isLatest ? fitnessExtras : {}),
       };
-      await supabaseAdmin.from("garmin_daily_stats").upsert([row], { onConflict: "owner,day" });
+      await supabaseAdmin.from("garmin_daily_stats").upsert([row as never], { onConflict: "owner,day" });
       count++;
     } catch (e) {
       console.error(`[garmin-sync:${owner}] daily failed`, day, e);
