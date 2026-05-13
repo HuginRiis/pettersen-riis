@@ -164,8 +164,9 @@ function Home() {
               window.scrollTo({ top: y, behavior: "smooth" });
             }
           }}
-          className="text-display tracking-[0.35em] text-sm sm:text-base uppercase px-6 sm:px-8 py-3 border-2 border-primary/70 bg-background/80 backdrop-blur text-primary hover:bg-primary hover:text-primary-foreground transition-colors shadow-elegant"
+          className="relative text-display tracking-[0.35em] text-sm sm:text-base uppercase px-6 sm:px-8 py-3 border-2 border-primary/70 bg-background/80 backdrop-blur text-primary hover:bg-primary hover:text-primary-foreground transition-colors shadow-[0_0_18px_hsl(var(--primary)/0.55)] animate-pulse hover:animate-none"
         >
+          <span className="pointer-events-none absolute inset-0 -z-10 border-2 border-primary/60 animate-ping" />
           ⚔ Menyen ⚔
         </button>
       </div>
