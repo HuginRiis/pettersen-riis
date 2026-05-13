@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getRequest, getRequestHeader, useSession } from "@tanstack/react-start/server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { loggedFetch } from "./api-call-log.server";
 
 // Mirror of the session config in src/server/auth.ts — kept inline to avoid a
 // circular import. Used by `releaseIpFn` to ensure only authenticated users
