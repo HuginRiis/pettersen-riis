@@ -98,6 +98,7 @@ async function fetchFitnessExtras(owner: GarminOwner, day: string): Promise<{
   fitness_age: number | null;
   training_status: string | null;
   training_load_focus: Record<string, unknown> | null;
+  endurance_contributors: Array<{ group: string; contribution: number }> | null;
 }> {
   const out = {
     vo2max_running: null as number | null,
@@ -106,6 +107,7 @@ async function fetchFitnessExtras(owner: GarminOwner, day: string): Promise<{
     fitness_age: null as number | null,
     training_status: null as string | null,
     training_load_focus: null as Record<string, unknown> | null,
+    endurance_contributors: null as Array<{ group: string; contribution: number }> | null,
   };
   try {
     // maxmet returnerer enten et objekt eller en liste (latest vs daily-range)
@@ -127,6 +129,17 @@ async function fetchFitnessExtras(owner: GarminOwner, day: string): Promise<{
   try {
     const e = await garminGet<any>(owner, `/metrics-service/metrics/endurancescore?calendarDate=${day}`);
     out.endurance_score = asNumber(e?.overallScore) ?? asNumber(e?.enduranceScore) ?? asNumber(e?.score) ?? out.endurance_score;
+    const rawContribs: any[] | undefined = Array.isArray(e?.contributors) ? e.contributors : Array.isArray(e?.contributorList) ? e.contributorList : undefined;
+    if (rawContribs && rawContribs.length) {
+      const mapped = rawContribs
+        .map((c: any) => ({
+          group: String(c?.group ?? c?.activityType ?? c?.name ?? "OTHER"),
+          contribution: asNumber(c?.contribution ?? c?.value ?? c?.percent ?? c?.percentage) ?? 0,
+        }))
+        .filter((c) => c.contribution > 0)
+        .sort((a, b) => b.contribution - a.contribution);
+      if (mapped.length) out.endurance_contributors = mapped;
+    }
   } catch (e) { console.warn(`[garmin-sync:${owner}] endurance failed`, (e as Error).message); }
   try {
     const t = await garminGet<TrainingStatusResp>(owner, `/metrics-service/metrics/trainingstatus/aggregated/${day}`);

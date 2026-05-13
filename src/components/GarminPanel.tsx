@@ -28,6 +28,7 @@ type Daily = {
     aerobic_high_target?: [number, number] | null;
     anaerobic_target?: [number, number] | null;
   } | null;
+  endurance_contributors?: Array<{ group: string; contribution: number }> | null;
 };
 type Activity = {
   garmin_activity_id: number; activity_type: string | null; activity_name: string | null;
@@ -698,6 +699,27 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
                     <div className="rounded border border-border/60 bg-background/40 p-3">
                       <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Utholdenhetspoeng</div>
                       <div className="text-lg font-semibold tabular-nums mt-1">{latestFit.endurance_score != null ? Math.round(latestFit.endurance_score) : "—"}</div>
+                      {(() => {
+                        const contribsSrc = (data?.daily ?? []).slice().reverse().find((d) => d.endurance_contributors && d.endurance_contributors.length)?.endurance_contributors;
+                        if (!contribsSrc?.length) return null;
+                        const top = contribsSrc.slice(0, 3);
+                        const labelMap: Record<string, string> = {
+                          RUNNING: "Løping", CYCLING: "Sykling", SWIMMING: "Svømming",
+                          HIKING: "Tur", WALKING: "Gåing", STRENGTH: "Styrke",
+                          STRENGTH_TRAINING: "Styrke", CARDIO: "Kondisjon", OTHER: "Annet",
+                        };
+                        return (
+                          <div className="mt-2 pt-2 border-t border-border/40 space-y-1">
+                            <div className="text-[9px] uppercase tracking-wider text-muted-foreground">Største bidragsytere</div>
+                            {top.map((c) => (
+                              <div key={c.group} className="flex items-center justify-between text-[11px]">
+                                <span className="text-muted-foreground">{labelMap[c.group.toUpperCase()] ?? c.group}</span>
+                                <span className="tabular-nums text-foreground">{Math.round(c.contribution)}%</span>
+                              </div>
+                            ))}
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
                   {focus ? (
