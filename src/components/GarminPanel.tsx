@@ -523,6 +523,45 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
                   (data?.sleep ?? []).map((s) => ({ day: s.day, hours: s.total_seconds ? s.total_seconds / 3600 : null })),
                   "hours", C.sleep,
                 )} />
+              <Tile icon={<Award size={14} style={{color: C.sleepRem}} />} label="Søvnscore"
+                value={lastSleep?.sleep_score ?? null}
+                prev={prevSleep?.sleep_score ?? null}
+                fallbackSub="ingen score i natt"
+                showDetails={showDetails}
+                details={[
+                  { k: "I natt", v: lastSleep?.sleep_score != null ? String(lastSleep.sleep_score) : "—" },
+                  { k: "Forrige natt", v: prevSleep?.sleep_score != null ? String(prevSleep.sleep_score) : "—" },
+                  { k: "Snitt 7d", v: avgFmt(data?.sleep?.slice(-7).map((s) => s.sleep_score), 0) },
+                  { k: "Snitt 30d", v: avgFmt(data?.sleep?.map((s) => s.sleep_score), 0) },
+                  { k: "Beste 30d", v: (() => { const ss = (data?.sleep ?? []).map((s) => s.sleep_score).filter((x): x is number => x != null); return ss.length ? String(Math.max(...ss)) : "—"; })() },
+                ]}
+                chart={sparkLine(
+                  (data?.sleep ?? []).map((s) => ({ day: s.day, score: s.sleep_score })),
+                  "score", false, C.sleepRem,
+                )} />
+              {(() => {
+                const latestFit = (data?.daily ?? []).slice().reverse().find((d) => d.vo2max_running != null || d.vo2max_cycling != null || d.endurance_score != null);
+                const prevFit = (() => {
+                  const arr = (data?.daily ?? []).filter((d) => d.vo2max_running != null);
+                  return arr.length >= 2 ? arr[arr.length - 2] : undefined;
+                })();
+                return (
+                  <Tile icon={<Gauge size={14} style={{color: C.intensity}} />} label="Kondisjon (VO₂max)"
+                    value={latestFit?.vo2max_running ?? null}
+                    prev={prevFit?.vo2max_running ?? null}
+                    digits={1}
+                    fallbackSub={latestFit?.endurance_score != null ? `utholdenhet ${Math.round(latestFit.endurance_score)}` : "ingen måling"}
+                    showDetails={showDetails}
+                    details={[
+                      { k: "Løping", v: latestFit?.vo2max_running != null ? `${latestFit.vo2max_running.toFixed(1)} ml/kg/min` : "—" },
+                      { k: "Sykling", v: latestFit?.vo2max_cycling != null ? `${latestFit.vo2max_cycling.toFixed(1)} ml/kg/min` : "—" },
+                      { k: "Utholdenhetspoeng", v: latestFit?.endurance_score != null ? String(Math.round(latestFit.endurance_score)) : "—" },
+                      { k: "Kondisjonsalder", v: latestFit?.fitness_age != null ? `${Math.round(latestFit.fitness_age)} år` : "—" },
+                      { k: "Sist oppdatert", v: latestFit?.day ?? "—" },
+                    ]}
+                    chart={sparkLine(data?.daily, "vo2max_running", true, C.intensity)} />
+                );
+              })()}
               {weightAllowed && (
               <Tile icon={<Scale size={14} style={{color: C.weight}} />} label="Vekt"
                 value={latestWeightEntry?.weight_kg ?? null} prev={prevWeightEntry?.weight_kg ?? null}
