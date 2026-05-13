@@ -62,7 +62,9 @@ async function lookupGeo(ip: string | null) {
     return empty;
   }
   try {
-    const res = await fetch(
+    const res = await loggedFetch(
+      "geoip",
+      "ip-api",
       `http://ip-api.com/json/${ip}?fields=status,country,countryCode,regionName,city,lat,lon,query`,
       { signal: AbortSignal.timeout(3000) },
     );
