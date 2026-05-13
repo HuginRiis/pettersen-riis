@@ -1232,6 +1232,169 @@ export type Database = {
         }
         Relationships: []
       }
+      okonomi_budget_settings: {
+        Row: {
+          created_at: string
+          id: number
+          primary_account: string | null
+          savings_target_pct: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          primary_account?: string | null
+          savings_target_pct?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          primary_account?: string | null
+          savings_target_pct?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      okonomi_categories: {
+        Row: {
+          color: string
+          created_at: string
+          hidden: boolean
+          icon: string | null
+          id: string
+          is_income: boolean
+          is_transfer: boolean
+          monthly_budget: number | null
+          name: string
+          sort_order: number
+          updated_at: string
+          yearly_budget: number | null
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          hidden?: boolean
+          icon?: string | null
+          id?: string
+          is_income?: boolean
+          is_transfer?: boolean
+          monthly_budget?: number | null
+          name: string
+          sort_order?: number
+          updated_at?: string
+          yearly_budget?: number | null
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          hidden?: boolean
+          icon?: string | null
+          id?: string
+          is_income?: boolean
+          is_transfer?: boolean
+          monthly_budget?: number | null
+          name?: string
+          sort_order?: number
+          updated_at?: string
+          yearly_budget?: number | null
+        }
+        Relationships: []
+      }
+      okonomi_merchant_rules: {
+        Row: {
+          category_id: string
+          created_at: string
+          id: string
+          pattern: string
+          priority: number
+          updated_at: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          id?: string
+          pattern: string
+          priority?: number
+          updated_at?: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          id?: string
+          pattern?: string
+          priority?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "okonomi_merchant_rules_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "okonomi_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      okonomi_transactions: {
+        Row: {
+          account: string | null
+          amount: number
+          approved: boolean
+          category_id: string | null
+          created_at: string
+          description: string
+          external_ref: string | null
+          id: string
+          merchant: string | null
+          note: string | null
+          raw: Json | null
+          source: string
+          txn_date: string
+          updated_at: string
+        }
+        Insert: {
+          account?: string | null
+          amount: number
+          approved?: boolean
+          category_id?: string | null
+          created_at?: string
+          description: string
+          external_ref?: string | null
+          id?: string
+          merchant?: string | null
+          note?: string | null
+          raw?: Json | null
+          source?: string
+          txn_date: string
+          updated_at?: string
+        }
+        Update: {
+          account?: string | null
+          amount?: number
+          approved?: boolean
+          category_id?: string | null
+          created_at?: string
+          description?: string
+          external_ref?: string | null
+          id?: string
+          merchant?: string | null
+          note?: string | null
+          raw?: Json | null
+          source?: string
+          txn_date?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "okonomi_transactions_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "okonomi_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payslip_files: {
         Row: {
           employer: string | null
