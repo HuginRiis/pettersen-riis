@@ -40,7 +40,9 @@ async function getAccessToken(): Promise<string> {
   return cachedToken.token;
 }
 
-async function gardenaGet(path: string): Promise<any> {
+import { withApiLog } from "./api-call-log.server";
+
+const gardenaGet = withApiLog("gardena", "GET", async (path: string): Promise<any> => {
   const token = await getAccessToken();
   const key = process.env.GARDENA_APP_KEY!;
   const res = await fetch(`${API_BASE}${path}`, {
@@ -55,7 +57,7 @@ async function gardenaGet(path: string): Promise<any> {
     throw new Error(`Gardena API ${res.status}: ${text.slice(0, 200)}`);
   }
   return res.json();
-}
+});
 
 export type GardenaAttr<T = any> = { value: T; timestamp?: string } | undefined;
 
