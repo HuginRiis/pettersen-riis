@@ -694,7 +694,7 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
                     </div>
                     <div className="rounded border border-border/60 bg-background/40 p-3">
                       <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Kondisjonsalder</div>
-                      <div className="text-lg font-semibold tabular-nums mt-1">{latestFit.fitness_age != null ? `${Math.round(latestFit.fitness_age)} år` : "—"}</div>
+                      <div className="text-lg font-semibold tabular-nums mt-1">{latestFit.fitness_age != null ? `${latestFit.fitness_age.toFixed(2)} år` : "—"}</div>
                     </div>
                     <div className="rounded border border-border/60 bg-background/40 p-3">
                       <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Utholdenhetspoeng</div>
@@ -704,9 +704,13 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
                         if (!contribsSrc?.length) return null;
                         const top = contribsSrc.slice(0, 3);
                         const labelMap: Record<string, string> = {
-                          RUNNING: "Løping", CYCLING: "Sykling", SWIMMING: "Svømming",
-                          HIKING: "Tur", WALKING: "Gåing", STRENGTH: "Styrke",
-                          STRENGTH_TRAINING: "Styrke", CARDIO: "Kondisjon", OTHER: "Annet",
+                          RUNNING: "Løping", RUN: "Løping", TRAIL_RUNNING: "Terrengløping",
+                          CYCLING: "Sykling", BIKING: "Sykling", BIKE: "Sykling", ROAD_BIKING: "Sykling", MOUNTAIN_BIKING: "Terrengsykling", INDOOR_CYCLING: "Sykling",
+                          SWIMMING: "Svømming", LAP_SWIMMING: "Svømming", OPEN_WATER_SWIMMING: "Svømming",
+                          HIKING: "Fjelltur", HIKE: "Fjelltur", MOUNTAINEERING: "Fjelltur",
+                          WALKING: "Gåing", WALK: "Gåing", CASUAL_WALKING: "Gåing", SPEED_WALKING: "Rask gange",
+                          STRENGTH: "Styrke", STRENGTH_TRAINING: "Styrke",
+                          CARDIO: "Kondisjon", OTHER: "Annet",
                         };
                         return (
                           <div className="mt-2 pt-2 border-t border-border/40 space-y-1">
