@@ -479,7 +479,7 @@ export async function syncDevice(owner: GarminOwner): Promise<{ name: string | n
     // Hent eksisterende rader
     const { data: existingRows } = await supabaseAdmin
       .from("garmin_devices")
-      .select("id, product_id, name, image_url, is_default")
+      .select("id, product_id, name, image_url, image_transparent_url, is_default")
       .eq("owner", owner);
     const byPid = new Map<string, any>((existingRows ?? []).map((r: any) => [r.product_id, r]));
 
@@ -487,15 +487,20 @@ export async function syncDevice(owner: GarminOwner): Promise<{ name: string | n
     for (const d of devices) {
       const existing = byPid.get(d.productId);
       let imageUrl: string | null = existing?.image_url ?? null;
+      let imageTransparentUrl: string | null = existing?.image_transparent_url ?? null;
       const nameChanged = !existing || existing.name !== d.name;
       if (!imageUrl) {
-        imageUrl = await generateWatchImageDataUrl(d.name);
+        imageUrl = await generateWatchImageDataUrl(d.name, false);
+      }
+      if (!imageTransparentUrl) {
+        imageTransparentUrl = await generateWatchImageDataUrl(d.name, true);
       }
       const row = {
         owner,
         product_id: d.productId,
         name: d.name,
         image_url: imageUrl,
+        image_transparent_url: imageTransparentUrl,
         last_used_at: d.lastUsedAt,
         register_date: d.registerDate,
         raw: d.raw,
@@ -508,7 +513,7 @@ export async function syncDevice(owner: GarminOwner): Promise<{ name: string | n
     // Sørg for at minst én er default — velg nyest brukte
     const { data: refreshed } = await supabaseAdmin
       .from("garmin_devices")
-      .select("id, product_id, name, image_url, is_default, last_used_at, register_date")
+      .select("id, product_id, name, image_url, image_transparent_url, is_default, last_used_at, register_date")
       .eq("owner", owner);
     const all = refreshed ?? [];
     const hasDefault = all.some((r: any) => r.is_default);
@@ -535,6 +540,7 @@ export async function syncDevice(owner: GarminOwner): Promise<{ name: string | n
           device_name: defaultRow.name,
           device_product_id: defaultRow.product_id,
           device_image_url: defaultRow.image_url,
+          device_image_transparent_url: defaultRow.image_transparent_url,
           device_updated_at: new Date().toISOString(),
         } as never).eq("id", (tok as any).id);
       }
