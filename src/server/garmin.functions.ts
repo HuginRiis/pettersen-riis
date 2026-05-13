@@ -144,5 +144,61 @@ export const saveGarminSyncSchedule = createServerFn({ method: "POST" })
     return sched;
   });
 
+export const listGarminDevices = createServerFn({ method: "GET" })
+  .inputValidator((d: unknown) => ownerSchema.parse(d ?? {}))
+  .handler(async ({ data }) => {
+    const owner = data.owner as GarminOwner;
+    const { data: rows, error } = await supabaseAdmin
+      .from("garmin_devices")
+      .select("id, product_id, name, image_url, is_default, last_used_at, register_date")
+      .eq("owner", owner)
+      .order("last_used_at", { ascending: false, nullsFirst: false });
+    if (error) throw new Error(error.message);
+    return { devices: rows ?? [] };
+  });
+
+export const setDefaultGarminDevice = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => {
+    const x = d as { owner?: string; deviceId?: string };
+    const owner = (x?.owner === "rebekka" ? "rebekka" : "arne") as GarminOwner;
+    const deviceId = String(x?.deviceId ?? "").trim();
+    if (!deviceId) throw new Error("deviceId mangler");
+    return { owner, deviceId };
+  })
+  .handler(async ({ data }) => {
+    const { owner, deviceId } = data;
+    const { error: e1 } = await supabaseAdmin
+      .from("garmin_devices")
+      .update({ is_default: false } as never)
+      .eq("owner", owner);
+    if (e1) throw new Error(e1.message);
+    const { data: row, error: e2 } = await supabaseAdmin
+      .from("garmin_devices")
+      .update({ is_default: true } as never)
+      .eq("id", deviceId)
+      .eq("owner", owner)
+      .select("name, product_id, image_url")
+      .maybeSingle();
+    if (e2) throw new Error(e2.message);
+    if (!row) throw new Error("Klokken finnes ikke");
+
+    const { data: tok } = await supabaseAdmin
+      .from("garmin_tokens")
+      .select("id")
+      .eq("owner", owner)
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (tok) {
+      await supabaseAdmin.from("garmin_tokens").update({
+        device_name: (row as any).name,
+        device_product_id: (row as any).product_id,
+        device_image_url: (row as any).image_url,
+        device_updated_at: new Date().toISOString(),
+      } as never).eq("id", (tok as any).id);
+    }
+    return { ok: true };
+  });
+
 export { GARMIN_OWNERS };
 export type { GarminOwner };
