@@ -711,6 +711,7 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
                           WALKING: "Gåing", WALK: "Gåing", CASUAL_WALKING: "Gåing", SPEED_WALKING: "Rask gange",
                           STRENGTH: "Styrke", STRENGTH_TRAINING: "Styrke",
                           CARDIO: "Kondisjon", OTHER: "Annet",
+                          RUNNING_GROUP: "Løping", CYCLING_GROUP: "Sykling", OTHER_GROUP: "Annet",
                         };
                         return (
                           <div className="mt-2 pt-2 border-t border-border/40 space-y-1">
