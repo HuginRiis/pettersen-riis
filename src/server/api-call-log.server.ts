@@ -18,6 +18,13 @@ export type ApiSource =
   | "garbage"
   | "spot"
   | "kassal"
+  | "gardena"
+  | "garmin"
+  | "roborock"
+  | "ai"
+  | "posten"
+  | "geoip"
+  | "uv"
   | "other";
 
 export interface LogEntry {
@@ -101,6 +108,39 @@ export function withApiLog<T extends (...args: any[]) => Promise<any>>(
   }) as T;
 }
 
+/**
+ * Wrap fetch() med automatisk API-call-logging. Returnerer Response og logger
+ * ok = res.ok, status_code og varighet.
+ */
+export async function loggedFetch(
+  source: ApiSource | string,
+  endpoint: string,
+  url: string,
+  init?: RequestInit,
+): Promise<Response> {
+  const started = Date.now();
+  try {
+    const res = await fetch(url, init);
+    await recordApiCall({
+      source,
+      endpoint,
+      ok: res.ok,
+      duration_ms: Date.now() - started,
+      status_code: res.status,
+    });
+    return res;
+  } catch (err) {
+    await recordApiCall({
+      source,
+      endpoint,
+      ok: false,
+      duration_ms: Date.now() - started,
+      error_message: err instanceof Error ? err.message : String(err),
+    });
+    throw err;
+  }
+}
+
 export type ApiCallSummaryRow = {
   source: string;
   endpoint: string;
@@ -140,6 +180,13 @@ export const SOURCE_SCHEDULES: Record<string, SourceSchedule> = {
   lightning: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
   garbage: { description: "cache 6t", intervalMs: 6 * 60 * 60 * 1000, trigger: "cache" },
   kassal: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
+  gardena: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
+  garmin: { description: "hver time 06–20", intervalMs: 60 * 60_000, trigger: "cron" },
+  roborock: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
+  ai: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
+  posten: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
+  geoip: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
+  uv: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
   other: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
 };
 

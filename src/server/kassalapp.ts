@@ -23,24 +23,30 @@ async function requireHouseAuth() {
 
 const KASSAL_BASE = "https://kassal.app/api/v1";
 
-async function kassalFetch(path: string, init?: RequestInit) {
-  const token = process.env.KASSAL_APP_TOKEN;
-  if (!token) throw new Error("KASSAL_APP_TOKEN mangler i serverkonfigurasjon");
-  const res = await fetch(`${KASSAL_BASE}${path}`, {
-    ...init,
-    headers: {
-      Authorization: `Bearer ${token}`,
-      Accept: "application/json",
-      ...(init?.body ? { "Content-Type": "application/json" } : {}),
-      ...(init?.headers ?? {}),
-    },
-  });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Kassalapp ${res.status}: ${text.slice(0, 200)}`);
-  }
-  return res.json();
-}
+import { withApiLog } from "./api-call-log.server";
+
+const kassalFetch = withApiLog(
+  "kassal",
+  "GET",
+  async (path: string, init?: RequestInit) => {
+    const token = process.env.KASSAL_APP_TOKEN;
+    if (!token) throw new Error("KASSAL_APP_TOKEN mangler i serverkonfigurasjon");
+    const res = await fetch(`${KASSAL_BASE}${path}`, {
+      ...init,
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: "application/json",
+        ...(init?.body ? { "Content-Type": "application/json" } : {}),
+        ...(init?.headers ?? {}),
+      },
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`Kassalapp ${res.status}: ${text.slice(0, 200)}`);
+    }
+    return res.json();
+  },
+);
 
 // ── Typer som bobler opp til frontend ──────────────────────────────────
 export type KassalProduct = {

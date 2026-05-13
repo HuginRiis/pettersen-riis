@@ -446,32 +446,38 @@ async function ensureValid(owner: GarminOwner): Promise<GarminTokens> {
 
 // ----- API-helper -----------------------------------------------------------
 
-export async function garminGet<T = unknown>(owner: GarminOwner, path: string): Promise<T> {
-  let t = await ensureValid(owner);
-  const url = path.startsWith("http") ? path : `${API}${path}`;
-  let res = await fetch(url, {
-    headers: {
-      Authorization: `Bearer ${t.oauth2_token}`,
-      "User-Agent": USER_AGENT,
-      "Di-Backend": "connectapi.garmin.com",
-      Accept: "application/json",
-    },
-  });
-  if (res.status === 401) {
-    t = await refreshOauth2(owner, t);
-    res = await fetch(url, {
+import { withApiLog } from "./api-call-log.server";
+
+export const garminGet = withApiLog(
+  "garmin",
+  "GET",
+  async <T = unknown>(owner: GarminOwner, path: string): Promise<T> => {
+    let t = await ensureValid(owner);
+    const url = path.startsWith("http") ? path : `${API}${path}`;
+    let res = await fetch(url, {
       headers: {
         Authorization: `Bearer ${t.oauth2_token}`,
         "User-Agent": USER_AGENT,
+        "Di-Backend": "connectapi.garmin.com",
         Accept: "application/json",
       },
     });
-  }
-  if (!res.ok) {
-    throw new Error(`Garmin API ${res.status} for ${path}: ${(await res.text()).slice(0, 240)}`);
-  }
-  return res.json() as Promise<T>;
-}
+    if (res.status === 401) {
+      t = await refreshOauth2(owner, t);
+      res = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${t.oauth2_token}`,
+          "User-Agent": USER_AGENT,
+          Accept: "application/json",
+        },
+      });
+    }
+    if (!res.ok) {
+      throw new Error(`Garmin API ${res.status} for ${path}: ${(await res.text()).slice(0, 240)}`);
+    }
+    return res.json() as Promise<T>;
+  },
+);
 
 export async function garminLogin(owner: GarminOwner): Promise<
   | { ok: true; mfa: false; expires_at: string }

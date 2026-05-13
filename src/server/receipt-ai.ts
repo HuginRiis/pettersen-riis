@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { logAiSearch, isHouseAuthenticated } from "@/server/ai-usage.server";
+import { loggedFetch } from "@/server/api-call-log.server";
 
 export type ReceiptItem = {
   name: string;
@@ -86,7 +87,7 @@ Hvis du er usikker på et felt, sett det til null. Ikke finn på data.`;
       tool_choice: { type: "function", function: { name: "extract_receipt" } },
     };
 
-    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const res = await loggedFetch("ai", "receipt:extract", "https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,

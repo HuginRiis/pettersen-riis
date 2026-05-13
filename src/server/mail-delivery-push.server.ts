@@ -6,6 +6,7 @@ import webpush from "web-push";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { buildSubscriptionWhoOr } from "./push-recipients";
 import { logPushSend } from "./push-log.server";
+import { loggedFetch } from "./api-call-log.server";
 
 const VAPID_PUBLIC = process.env.VAPID_PUBLIC_KEY!;
 const VAPID_PRIVATE = process.env.VAPID_PRIVATE_KEY!;
@@ -32,7 +33,7 @@ export type MailPref = {
 
 export async function fetchDeliveryDays(postalCode: string): Promise<string[]> {
   const url = `https://www.posten.no/levering-av-post_/_/service/no.posten.website/delivery-days?postalCode=${encodeURIComponent(postalCode)}`;
-  const res = await fetch(url, { headers: { "User-Agent": "borgen-app/1.0", Accept: "application/json" } });
+  const res = await loggedFetch("posten", "delivery-days", url, { headers: { "User-Agent": "borgen-app/1.0", Accept: "application/json" } });
   if (!res.ok) throw new Error(`Posten API ${res.status}`);
   const json = (await res.json()) as { delivery_dates?: string[] };
   return Array.isArray(json.delivery_dates) ? json.delivery_dates : [];

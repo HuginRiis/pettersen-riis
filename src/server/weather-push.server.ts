@@ -11,6 +11,7 @@ import webpush from "web-push";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { logPushSend } from "./push-log.server";
 import { buildSubscriptionWhoOr } from "./push-recipients";
+import { loggedFetch } from "./api-call-log.server";
 
 const VAPID_PUBLIC = process.env.VAPID_PUBLIC_KEY!;
 const VAPID_PRIVATE = process.env.VAPID_PRIVATE_KEY!;
@@ -57,7 +58,7 @@ type Series = Array<{
 async function fetchForecast(lat: number, lon: number): Promise<Series | null> {
   try {
     const url = `https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=${lat}&lon=${lon}`;
-    const res = await fetch(url, {
+    const res = await loggedFetch("met", "locationforecast", url, {
       headers: { "User-Agent": "riis.cc agenda push (agenda@riis.cc)" },
     });
     if (!res.ok) return null;

@@ -40,7 +40,9 @@ async function getAccessToken(): Promise<string> {
   return cachedToken.token;
 }
 
-async function gardenaGet(path: string): Promise<any> {
+import { withApiLog } from "./api-call-log.server";
+
+const gardenaGet = withApiLog("gardena", "GET", async (path: string): Promise<any> => {
   const token = await getAccessToken();
   const key = process.env.GARDENA_APP_KEY!;
   const res = await fetch(`${API_BASE}${path}`, {
@@ -55,7 +57,7 @@ async function gardenaGet(path: string): Promise<any> {
     throw new Error(`Gardena API ${res.status}: ${text.slice(0, 200)}`);
   }
   return res.json();
-}
+});
 
 export type GardenaAttr<T = any> = { value: T; timestamp?: string } | undefined;
 
@@ -240,39 +242,43 @@ export async function fetchGardenaSnapshot(): Promise<GardenaSnapshot> {
  * Eksempler: START_SECONDS_TO_OVERRIDE (sec), START_DONT_OVERRIDE, PARK_UNTIL_NEXT_TASK,
  * PARK_UNTIL_FURTHER_NOTICE, RESUME_SCHEDULE.
  */
-export async function sendMowerCommand(
-  serviceId: string,
-  command: string,
-  seconds?: number,
-): Promise<{ ok: boolean; error?: string }> {
-  try {
-    const token = await getAccessToken();
-    const key = process.env.GARDENA_APP_KEY!;
-    const body = {
-      data: {
-        type: "MOWER_CONTROL",
-        id: `cmd-${Date.now()}`,
-        attributes: {
-          command,
-          ...(seconds ? { seconds } : {}),
+export const sendMowerCommand = withApiLog(
+  "gardena",
+  "sendMowerCommand",
+  async (
+    serviceId: string,
+    command: string,
+    seconds?: number,
+  ): Promise<{ ok: boolean; error?: string }> => {
+    try {
+      const token = await getAccessToken();
+      const key = process.env.GARDENA_APP_KEY!;
+      const body = {
+        data: {
+          type: "MOWER_CONTROL",
+          id: `cmd-${Date.now()}`,
+          attributes: {
+            command,
+            ...(seconds ? { seconds } : {}),
+          },
         },
-      },
-    };
-    const res = await fetch(`${API_BASE}/command/${serviceId}`, {
-      method: "PUT",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "X-Api-Key": key,
-        "Content-Type": "application/vnd.api+json",
-      },
-      body: JSON.stringify(body),
-    });
-    if (!res.ok && res.status !== 202) {
-      const text = await res.text().catch(() => "");
-      return { ok: false, error: `${res.status}: ${text.slice(0, 200)}` };
+      };
+      const res = await fetch(`${API_BASE}/command/${serviceId}`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "X-Api-Key": key,
+          "Content-Type": "application/vnd.api+json",
+        },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok && res.status !== 202) {
+        const text = await res.text().catch(() => "");
+        return { ok: false, error: `${res.status}: ${text.slice(0, 200)}` };
+      }
+      return { ok: true };
+    } catch (e: any) {
+      return { ok: false, error: e?.message ?? "Ukjent feil" };
     }
-    return { ok: true };
-  } catch (e: any) {
-    return { ok: false, error: e?.message ?? "Ukjent feil" };
-  }
-}
+  },
+);

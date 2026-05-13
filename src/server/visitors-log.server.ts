@@ -1,5 +1,6 @@
 import { getRequest } from "@tanstack/react-start/server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { loggedFetch } from "./api-call-log.server";
 
 function parseClientIpFromHeaders(headers: Headers): string | null {
   const xff = headers.get("x-forwarded-for");
@@ -61,7 +62,9 @@ async function lookupGeo(ip: string | null) {
     return empty;
   }
   try {
-    const res = await fetch(
+    const res = await loggedFetch(
+      "geoip",
+      "ip-api",
       `http://ip-api.com/json/${ip}?fields=status,country,countryCode,regionName,city,lat,lon,query`,
       { signal: AbortSignal.timeout(3000) },
     );
