@@ -18,6 +18,16 @@ type Daily = {
   vigorous_intensity_minutes: number | null; intensity_minutes_goal: number | null;
   body_battery_high: number | null; body_battery_low: number | null;
   stress_average: number | null;
+  vo2max_running?: number | null; vo2max_cycling?: number | null;
+  endurance_score?: number | null; fitness_age?: number | null;
+  training_status?: string | null;
+  training_load_focus?: {
+    aerobic_low?: number | null; aerobic_high?: number | null; anaerobic?: number | null;
+    feedback?: string | null;
+    aerobic_low_target?: [number, number] | null;
+    aerobic_high_target?: [number, number] | null;
+    anaerobic_target?: [number, number] | null;
+  } | null;
 };
 type Activity = {
   garmin_activity_id: number; activity_type: string | null; activity_name: string | null;
