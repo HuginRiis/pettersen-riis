@@ -765,12 +765,54 @@ function ImportTab({ cats, reload }: { cats: OkonomiCategory[]; reload: () => vo
   const importFn = useServerFn(importOkonomiTransactions);
   const parseAi = useServerFn(parseStatementWithAI);
   const categorizeAi = useServerFn(categorizeTransactionsWithAI);
+  const STORAGE_KEY = "okonomi:import:preview:v1";
   const [busy, setBusy] = useState(false);
   const [busyMsg, setBusyMsg] = useState("");
-  const [preview, setPreview] = useState<ParsedTxn[]>([]);
-  const [source, setSource] = useState<"csv" | "pdf">("csv");
+  const [aiLog, setAiLog] = useState<string[]>([]);
+  const [preview, setPreview] = useState<ParsedTxn[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const raw = window.localStorage.getItem(STORAGE_KEY);
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed?.preview) ? parsed.preview : [];
+    } catch {
+      return [];
+    }
+  });
+  const [source, setSource] = useState<"csv" | "pdf">(() => {
+    if (typeof window === "undefined") return "csv";
+    try {
+      const raw = window.localStorage.getItem(STORAGE_KEY);
+      const parsed = raw ? JSON.parse(raw) : null;
+      return parsed?.source === "pdf" ? "pdf" : "csv";
+    } catch {
+      return "csv";
+    }
+  });
   const csvRef = useRef<HTMLInputElement>(null);
   const pdfRef = useRef<HTMLInputElement>(null);
+
+  // Persistér preview lokalt slik at den ligger igjen ved navigasjon
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      if (preview.length === 0) {
+        window.localStorage.removeItem(STORAGE_KEY);
+      } else {
+        window.localStorage.setItem(
+          STORAGE_KEY,
+          JSON.stringify({ preview, source }),
+        );
+      }
+    } catch {
+      /* ignore quota */
+    }
+  }, [preview, source]);
+
+  function pushLog(msg: string) {
+    setAiLog((l) => [...l, `${new Date().toLocaleTimeString("nb-NO")} · ${msg}`]);
+  }
 
   async function autoCategorize(rows: ParsedTxn[]): Promise<ParsedTxn[]> {
     const needIdx: number[] = [];
@@ -778,7 +820,8 @@ function ImportTab({ cats, reload }: { cats: OkonomiCategory[]; reload: () => vo
       if (!r.category_id) needIdx.push(i);
     });
     if (needIdx.length === 0) return rows;
-    setBusyMsg(`AI kategoriserer ${needIdx.length} rader…`);
+    setBusyMsg(`AI kategoriserer ${needIdx.length} rader mot ${cats.length} kategorier…`);
+    pushLog(`AI kategoriserer ${needIdx.length} rader mot ${cats.length} kategorier`);
     try {
       const res = await categorizeAi({
         data: {
