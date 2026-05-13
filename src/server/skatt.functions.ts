@@ -488,6 +488,17 @@ Hvis du ikke finner et felt, sett 0 (eller "Ukjent" for employer). Hvis måned e
       throw new Error(`AI-feil ${res.status}: ${txt.slice(0, 300)}`);
     }
     const json: any = await res.json();
+    const u = json?.usage ?? {};
+    await logAiSearch({
+      feature: "lonnslipp",
+      query: `lønnslipp-parse ${data.fileName}`,
+      model: "google/gemini-2.5-flash",
+      authenticated: await isHouseAuthenticated(),
+      status: "ok",
+      promptTokens: u.prompt_tokens ?? null,
+      completionTokens: u.completion_tokens ?? null,
+      totalTokens: u.total_tokens ?? null,
+    });
     const content: string = json?.choices?.[0]?.message?.content ?? "";
 
     const cleaned = content.replace(/```json|```/g, "").trim();
