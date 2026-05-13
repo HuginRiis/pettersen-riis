@@ -694,7 +694,7 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
                     </div>
                     <div className="rounded border border-border/60 bg-background/40 p-3">
                       <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Kondisjonsalder</div>
-                      <div className="text-lg font-semibold tabular-nums mt-1">{latestFit.fitness_age != null ? `${Math.round(latestFit.fitness_age)} år` : "—"}</div>
+                      <div className="text-lg font-semibold tabular-nums mt-1">{latestFit.fitness_age != null ? `${latestFit.fitness_age.toFixed(2)} år` : "—"}</div>
                     </div>
                     <div className="rounded border border-border/60 bg-background/40 p-3">
                       <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Utholdenhetspoeng</div>
