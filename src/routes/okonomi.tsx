@@ -310,7 +310,18 @@ function Oversikt({ cats, txns }: { cats: OkonomiCategory[]; txns: OkonomiTransa
   );
 }
 
+function Stat({ label, value, tone }: { label: string; value: string; tone?: "ok" | "warn" }) {
+  const c = tone === "warn" ? "text-red-400" : tone === "ok" ? "text-emerald-400" : "text-amber-200";
+  return (
+    <Card className="p-3 border-amber-500/20 bg-gradient-to-br from-amber-950/20 to-transparent">
+      <p className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">{label}</p>
+      <p className={`text-xl font-semibold tabular-nums ${c}`}>{value}</p>
+    </Card>
+  );
+}
+
 // ---------------- Posteringer ----------------
+
 
 function Posteringer({
   cats,
