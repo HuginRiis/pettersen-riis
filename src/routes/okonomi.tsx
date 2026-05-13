@@ -158,6 +158,11 @@ function Oversikt({
   const [month, setMonth] = useState<number | "all">(currentM);
   const [chartEndY, setChartEndY] = useState<number>(currentY);
   const [chartEndM, setChartEndM] = useState<number>(currentM);
+  const [chartEndPayCut, setChartEndPayCut] = useState<boolean>(true);
+  const startDefault = new Date(currentY, currentM - 1 - 11, 1);
+  const [chartStartY, setChartStartY] = useState<number>(startDefault.getFullYear());
+  const [chartStartM, setChartStartM] = useState<number>(startDefault.getMonth() + 1);
+  const [chartStartPayCut, setChartStartPayCut] = useState<boolean>(false);
 
   const yearsAvailable = useMemo(() => {
     const set = new Set<number>([currentY]);
