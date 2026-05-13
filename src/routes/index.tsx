@@ -286,7 +286,7 @@ function Home() {
           {showHall("/pollen") && <HallCard to="/pollen" title="Pollen" desc="Dagens pollen i lufta." icon="🌾" image={hallPollen} locked={false} />}
           {showHall("/turer") && <HallCard to="/turer" title="Ferden" desc="Tips til turer i nærheten." icon="🧭" image={hallTurer} locked={false} />}
           {showHall("/got-saga") && <HallCard to="/got-saga" title="Westeros" desc="Sagaen om de syv kongeriker." icon="🐉" image={hallWesteros} locked={false} />}
-          {showHall("/agenda") && <HallCard to="/agenda" title="Krøniken" desc="Agenda og meldinger med dato og emne." icon="📜" image={hallAgenda} locked={!isAuthed} badge={<HallBadgeStack><GarbageNextPickupBadge inline /></HallBadgeStack>} />}
+          {showHall("/agenda") && <HallCard to="/agenda" title="Søppel, bursdager og meldinger" desc="Søppeltømming, bursdager og meldinger med dato og emne." icon="📜" image={hallAgenda} locked={!isAuthed} badge={<HallBadgeStack><GarbageNextPickupBadge inline /></HallBadgeStack>} />}
           {showHall("/varsler") && <HallCard to="/varsler" title="Farevarsler" desc="Aktive farevarsler og trafikkmeldinger." icon="⚠️" image={hallVarsler} locked={false} badge={<HallBadgeStack><AlertsSeverityBadge inline /></HallBadgeStack>} />}
           {showHall("/vakttarnet") && <HallCard to="/vakttarnet" title="Vakttårnet" desc="Vaktene rapporterer hvem som nærmer seg porten." icon="👁" image={hallVakttarnet} locked={!isAuthed} badge={<HallBadgeStack><AlarmStateBadge inline /><UtgangsdorenLockBadge inline /></HallBadgeStack>} />}
           {showHall("/hytta") && <HallCard to="/hytta" title="Hytta" desc="Husets tilflukt i fjellet." icon="🏔" image={hallHytta} locked={false} />}

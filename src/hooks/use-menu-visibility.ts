@@ -12,7 +12,7 @@ export const MENU_LINK_DEFS: { to: string; label: string }[] = [
   { to: "/pollen", label: "Pollen" },
   { to: "/turer", label: "Ferden" },
   { to: "/got-saga", label: "Westeros" },
-  { to: "/agenda", label: "Agenda" },
+  { to: "/agenda", label: "Søppel, bursdager og meldinger" },
   { to: "/push-varslinger", label: "Innstillinger" },
   { to: "/vakttarnet", label: "Vakttårnet" },
   { to: "/hytta", label: "Hytta" },
