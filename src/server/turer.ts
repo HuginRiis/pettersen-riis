@@ -450,7 +450,7 @@ export const reverseGeocode = createServerFn({ method: "POST" })
     await requireHouseAuth();
     try {
       const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${data.lat}&lon=${data.lon}&zoom=12&accept-language=no`;
-      const res = await fetch(url, {
+      const res = await loggedFetch("geoip", "nominatim:reverse", url, {
         headers: {
           "User-Agent": "house-pettersen-riis/1.0 (contact: arne@riis.cc)",
           Accept: "application/json",
