@@ -132,6 +132,7 @@ const navLinks: NavLink[] = [
   { to: "/oppussing-hytta", label: "Prosjekter på hytta" },
   { to: "/matvarer", label: "Varer" },
   { to: "/kvitteringer", label: "Kvitteringer" },
+  { to: "/okonomi", label: "Budsjett" },
   { to: "/skatte-utregningen", label: "Skatte utregningen" },
   { to: "/hundene", label: "Hundene" },
   { to: "/trening", label: "Trening" },
