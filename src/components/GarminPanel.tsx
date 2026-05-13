@@ -648,6 +648,75 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
                 chart={sparkLine2(data?.daily, "total_kilocalories", "active_kilocalories", C.caloriesTotal, C.caloriesActive)} />
             </div>
 
+            {/* Treningsstatus, kondisjonsalder og belastningsfokus */}
+            {(() => {
+              const latestFit = (data?.daily ?? []).slice().reverse().find(
+                (d) => d.training_status != null || d.training_load_focus != null || d.fitness_age != null,
+              );
+              if (!latestFit) return null;
+              const focus = latestFit.training_load_focus ?? null;
+              const fmtRange = (r?: [number, number] | null) => r ? `${Math.round(r[0])}–${Math.round(r[1])}` : "—";
+              const Bar = ({ value, target, label, color }: { value: number | null | undefined; target: [number, number] | null | undefined; label: string; color: string }) => {
+                const v = value ?? 0;
+                const max = Math.max(v, target?.[1] ?? 0, 1);
+                const pct = (n: number) => `${Math.min(100, (n / max) * 100)}%`;
+                return (
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="text-muted-foreground">{label}</span>
+                      <span className="tabular-nums text-foreground">{value != null ? Math.round(value) : "—"}{target ? ` / ${fmtRange(target)}` : ""}</span>
+                    </div>
+                    <div className="relative h-2 rounded bg-muted/40 overflow-hidden">
+                      {target && (
+                        <div
+                          className="absolute top-0 h-full bg-foreground/10"
+                          style={{ left: pct(target[0]), width: `calc(${pct(target[1])} - ${pct(target[0])})` }}
+                        />
+                      )}
+                      <div className="absolute top-0 left-0 h-full rounded" style={{ width: pct(v), background: color }} />
+                    </div>
+                  </div>
+                );
+              };
+              return (
+                <div className="rounded-lg border border-border/60 bg-background/40 p-4 space-y-3">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <h3 className="text-sm font-semibold uppercase tracking-wider text-primary flex items-center gap-2">
+                      <Target size={14} /> Treningsstatus & belastningsfokus
+                    </h3>
+                    <span className="text-[10px] text-muted-foreground">oppdatert {latestFit.day}</span>
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    <div className="rounded border border-border/60 bg-background/40 p-3">
+                      <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Treningsstatus</div>
+                      <div className="text-lg font-semibold mt-1">{latestFit.training_status ?? "—"}</div>
+                    </div>
+                    <div className="rounded border border-border/60 bg-background/40 p-3">
+                      <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Kondisjonsalder</div>
+                      <div className="text-lg font-semibold tabular-nums mt-1">{latestFit.fitness_age != null ? `${Math.round(latestFit.fitness_age)} år` : "—"}</div>
+                    </div>
+                    <div className="rounded border border-border/60 bg-background/40 p-3">
+                      <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Utholdenhetspoeng</div>
+                      <div className="text-lg font-semibold tabular-nums mt-1">{latestFit.endurance_score != null ? Math.round(latestFit.endurance_score) : "—"}</div>
+                    </div>
+                  </div>
+                  {focus ? (
+                    <div className="space-y-2 pt-1">
+                      <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Belastningsfokus (siste 4 uker)</div>
+                      <Bar label="Lav aerob" value={focus.aerobic_low} target={focus.aerobic_low_target ?? null} color={C.intensity} />
+                      <Bar label="Høy aerob" value={focus.aerobic_high} target={focus.aerobic_high_target ?? null} color={C.hrAvg} />
+                      <Bar label="Anaerob" value={focus.anaerobic} target={focus.anaerobic_target ?? null} color={C.hrMax} />
+                      {focus.feedback && (
+                        <p className="text-[11px] italic text-muted-foreground pt-1">« {focus.feedback} »</p>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-[11px] text-muted-foreground italic">Ingen belastningsdata enda — synk Garmin for å oppdatere.</p>
+                  )}
+                </div>
+              );
+            })()}
+
 
             {/* Grafer (skjult som default) */}
             <div className="flex flex-wrap items-center gap-2">
