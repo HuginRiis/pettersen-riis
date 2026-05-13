@@ -236,7 +236,7 @@ function Oversikt({
   const brukt = filtered.filter(isExpense).reduce((s, t) => s + Math.abs(Number(t.amount)), 0);
   const inntekt = filtered.filter(isIncome).reduce((s, t) => s + Number(t.amount), 0);
   const monthsCount = month === "all" ? 12 : 1;
-  const budsjett = cats.reduce((s, c) => s + (Number(c.monthly_budget) || 0), 0) * monthsCount;
+  const budsjett = cats.filter((c) => !excludedCats.has(c.id)).reduce((s, c) => s + (Number(c.monthly_budget) || 0), 0) * monthsCount;
   const igjen = Math.max(0, budsjett - brukt);
   const netto = inntekt - brukt;
 
