@@ -58,7 +58,7 @@ type Series = Array<{
 async function fetchForecast(lat: number, lon: number): Promise<Series | null> {
   try {
     const url = `https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=${lat}&lon=${lon}`;
-    const res = await fetch(url, {
+    const res = await loggedFetch("met", "locationforecast", url, {
       headers: { "User-Agent": "riis.cc agenda push (agenda@riis.cc)" },
     });
     if (!res.ok) return null;
