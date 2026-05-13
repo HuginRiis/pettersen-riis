@@ -24,6 +24,7 @@ import { Route as PushVarslingerRouteImport } from './routes/push-varslinger'
 import { Route as PollenRouteImport } from './routes/pollen'
 import { Route as OppussingHyttaRouteImport } from './routes/oppussing-hytta'
 import { Route as OppussingBorgenRouteImport } from './routes/oppussing-borgen'
+import { Route as OkonomiRouteImport } from './routes/okonomi'
 import { Route as MatvarerRouteImport } from './routes/matvarer'
 import { Route as LysRouteImport } from './routes/lys'
 import { Route as KvitteringerRouteImport } from './routes/kvitteringer'
@@ -118,6 +119,11 @@ const OppussingHyttaRoute = OppussingHyttaRouteImport.update({
 const OppussingBorgenRoute = OppussingBorgenRouteImport.update({
   id: '/oppussing-borgen',
   path: '/oppussing-borgen',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OkonomiRoute = OkonomiRouteImport.update({
+  id: '/okonomi',
+  path: '/okonomi',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MatvarerRoute = MatvarerRouteImport.update({
@@ -235,6 +241,7 @@ export interface FileRoutesByFullPath {
   '/kvitteringer': typeof KvitteringerRoute
   '/lys': typeof LysRoute
   '/matvarer': typeof MatvarerRoute
+  '/okonomi': typeof OkonomiRoute
   '/oppussing-borgen': typeof OppussingBorgenRoute
   '/oppussing-hytta': typeof OppussingHyttaRoute
   '/pollen': typeof PollenRoute
@@ -272,6 +279,7 @@ export interface FileRoutesByTo {
   '/kvitteringer': typeof KvitteringerRoute
   '/lys': typeof LysRoute
   '/matvarer': typeof MatvarerRoute
+  '/okonomi': typeof OkonomiRoute
   '/oppussing-borgen': typeof OppussingBorgenRoute
   '/oppussing-hytta': typeof OppussingHyttaRoute
   '/pollen': typeof PollenRoute
@@ -310,6 +318,7 @@ export interface FileRoutesById {
   '/kvitteringer': typeof KvitteringerRoute
   '/lys': typeof LysRoute
   '/matvarer': typeof MatvarerRoute
+  '/okonomi': typeof OkonomiRoute
   '/oppussing-borgen': typeof OppussingBorgenRoute
   '/oppussing-hytta': typeof OppussingHyttaRoute
   '/pollen': typeof PollenRoute
@@ -349,6 +358,7 @@ export interface FileRouteTypes {
     | '/kvitteringer'
     | '/lys'
     | '/matvarer'
+    | '/okonomi'
     | '/oppussing-borgen'
     | '/oppussing-hytta'
     | '/pollen'
@@ -386,6 +396,7 @@ export interface FileRouteTypes {
     | '/kvitteringer'
     | '/lys'
     | '/matvarer'
+    | '/okonomi'
     | '/oppussing-borgen'
     | '/oppussing-hytta'
     | '/pollen'
@@ -423,6 +434,7 @@ export interface FileRouteTypes {
     | '/kvitteringer'
     | '/lys'
     | '/matvarer'
+    | '/okonomi'
     | '/oppussing-borgen'
     | '/oppussing-hytta'
     | '/pollen'
@@ -461,6 +473,7 @@ export interface RootRouteChildren {
   KvitteringerRoute: typeof KvitteringerRoute
   LysRoute: typeof LysRoute
   MatvarerRoute: typeof MatvarerRoute
+  OkonomiRoute: typeof OkonomiRoute
   OppussingBorgenRoute: typeof OppussingBorgenRoute
   OppussingHyttaRoute: typeof OppussingHyttaRoute
   PollenRoute: typeof PollenRoute
@@ -594,6 +607,13 @@ declare module '@tanstack/react-router' {
       path: '/oppussing-borgen'
       fullPath: '/oppussing-borgen'
       preLoaderRoute: typeof OppussingBorgenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/okonomi': {
+      id: '/okonomi'
+      path: '/okonomi'
+      fullPath: '/okonomi'
+      preLoaderRoute: typeof OkonomiRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/matvarer': {
@@ -749,6 +769,7 @@ const rootRouteChildren: RootRouteChildren = {
   KvitteringerRoute: KvitteringerRoute,
   LysRoute: LysRoute,
   MatvarerRoute: MatvarerRoute,
+  OkonomiRoute: OkonomiRoute,
   OppussingBorgenRoute: OppussingBorgenRoute,
   OppussingHyttaRoute: OppussingHyttaRoute,
   PollenRoute: PollenRoute,
