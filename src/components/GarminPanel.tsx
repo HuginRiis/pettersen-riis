@@ -242,6 +242,12 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
   useEffect(() => { void load(); }, [owner]);
 
   const handleLogin = async () => {
+    if (data?.status.connected) {
+      const ok = window.confirm(
+        `Er du sikker på at du vil re-logge inn på Garmin for ${displayName}? Bør kun gjøres hvis brukeren ikke synker mer.`,
+      );
+      if (!ok) return;
+    }
     setWorking("login");
     try {
       const r = await loginFn({ data: { owner } }) as GarminLoginResult;
