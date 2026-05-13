@@ -259,6 +259,34 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
   };
   useEffect(() => { void load(); }, [owner]);
 
+  const openDevices = async () => {
+    setDevicesOpen(true);
+    setDevicesLoading(true);
+    try {
+      const r = await listDevicesFn({ data: { owner } }) as { devices: typeof devices };
+      setDevices(r.devices ?? []);
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setDevicesLoading(false);
+    }
+  };
+
+  const chooseDefault = async (deviceId: string) => {
+    setSettingDefault(deviceId);
+    try {
+      await setDefaultDeviceFn({ data: { owner, deviceId } });
+      toast.success("Standardklokke oppdatert");
+      const r = await listDevicesFn({ data: { owner } }) as { devices: typeof devices };
+      setDevices(r.devices ?? []);
+      await load();
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setSettingDefault(null);
+    }
+  };
+
   const handleLogin = async () => {
     if (data?.status.connected) {
       const ok = window.confirm(
