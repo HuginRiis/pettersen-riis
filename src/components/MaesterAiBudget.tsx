@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Loader2, Pencil, Sparkles } from "lucide-react";
+import { ChevronDown, Loader2, Pencil, Sparkles } from "lucide-react";
 import { getAiUsageStats } from "@/server/ai-usage.functions";
 import {
   getAiBudgetActual,
@@ -11,20 +11,80 @@ import { Input } from "@/components/ui/input";
 
 type Stats = Awaited<ReturnType<typeof getAiUsageStats>>;
 
-const FEATURE_LABELS: Record<string, string> = {
-  turer: "Tur-rådgiver",
-  kvittering: "Kvittering-tolkning",
-  receipt: "Kvittering-tolkning",
-  receipts: "Kvittering-tolkning",
-  pollen: "Pollen-orakel",
-  saga: "Sagaskriver",
-  "got-saga": "Sagaskriver",
-  agenda: "Agenda-magiker",
-  matvarer: "Handlelistens skribent",
+type FeatureMeta = { label: string; description: string };
+
+const FEATURE_META: Record<string, FeatureMeta> = {
+  kvittering: {
+    label: "Kvittering-tolkning",
+    description:
+      "Når du importerer en kvittering (fra Kassalapp eller bilde) leser AI-en ut dato, butikk, varelinjer, mva og totalsum slik at den kan lagres strukturert.",
+  },
+  receipt: {
+    label: "Kvittering-tolkning",
+    description: "Samme som «Kvittering» — AI tolker innholdet i en importert kvittering.",
+  },
+  receipts: {
+    label: "Kvittering-tolkning (batch)",
+    description: "Tolking av flere kvitteringer i samme runde.",
+  },
+  lonnslipp: {
+    label: "Lønnslipp-tolkning",
+    description:
+      "AI leser PDF-en av lønnslippen og henter ut brutto, netto, skattetrekk, feriepenger og pensjon — brukes til Skattekammeret og lønnshistorikken.",
+  },
+  payslip: {
+    label: "Lønnslipp-tolkning",
+    description: "Samme som «Lønnslipp» — AI henter beløp og poster fra PDF-lønnslipp.",
+  },
+  skatt: {
+    label: "Skatte-utregning",
+    description:
+      "AI hjelper med skatteberegningen: forklarer poster, sammenligner år og foreslår justeringer i Skatte-utregningen.",
+  },
+  turer: {
+    label: "Tur-rådgiver",
+    description:
+      "Når du ber om turtips i Ferden bruker AI værdata, sesong og posisjon til å foreslå en konkret tur med rute og pakkeliste.",
+  },
+  pollen: {
+    label: "Pollen-orakel",
+    description: "Tolker pollen-målinger og forklarer hva de betyr for dagen.",
+  },
+  saga: {
+    label: "Sagaskriver",
+    description: "Genererer Game of Thrones-stilet tekst for Westeros-sagaen.",
+  },
+  "got-saga": {
+    label: "Sagaskriver",
+    description: "Genererer Game of Thrones-stilet tekst for Westeros-sagaen.",
+  },
+  agenda: {
+    label: "Agenda-magiker",
+    description:
+      "Tolker meldinger og kalenderoppføringer (søppel, bursdager, meldinger) og foreslår dato/emne.",
+  },
+  matvarer: {
+    label: "Handlelistens skribent",
+    description: "Foreslår handleliste-elementer basert på kvitteringer og forbruk.",
+  },
+  briefing: {
+    label: "Daglig briefing",
+    description:
+      "Sammenfatning av dagens vær, varsler, kalender og hendelser — generert av AI hver morgen.",
+  },
+  "daily-briefing": {
+    label: "Daglig briefing",
+    description: "Daglig AI-sammendrag av vær, varsler og kalender.",
+  },
 };
 
-function labelFor(feature: string): string {
-  return FEATURE_LABELS[feature] ?? feature.charAt(0).toUpperCase() + feature.slice(1);
+function metaFor(feature: string): FeatureMeta {
+  return (
+    FEATURE_META[feature] ?? {
+      label: feature.charAt(0).toUpperCase() + feature.slice(1),
+      description: "Annet AI-kall — ingen beskrivelse er registrert ennå.",
+    }
+  );
 }
 
 function fmtUsd(v: number): string {
@@ -42,6 +102,16 @@ export function MaesterAiBudget() {
   const [saving, setSaving] = useState(false);
   const [costInput, setCostInput] = useState("");
   const [budgetInput, setBudgetInput] = useState("");
+  const [openFeatures, setOpenFeatures] = useState<Set<string>>(new Set());
+
+  function toggleFeature(key: string) {
+    setOpenFeatures((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -187,35 +257,88 @@ export function MaesterAiBudget() {
         <p className="text-[11px] tracking-[0.25em] uppercase text-muted-foreground mb-2">
           Per funksjon (alle tider, estimat)
         </p>
-        {stats.byFeature.length === 0 ? (
-          <p className="text-sm text-muted-foreground italic">
-            Ingen AI-kall loggført ennå.
-          </p>
-        ) : (
-          <ul className="space-y-2">
-            {stats.byFeature.map((f) => {
-              const share = ((f.costUsd ?? 0) / totalFeatureCost) * 100;
-              return (
-                <li key={f.feature} className="text-sm">
-                  <div className="flex items-baseline justify-between gap-2">
-                    <span className="text-foreground/90 truncate">
-                      {labelFor(f.feature)}
-                    </span>
-                    <span className="text-muted-foreground tabular-nums text-xs">
-                      {fmtUsd(f.costUsd ?? 0)} · {f.count} kall
-                    </span>
-                  </div>
-                  <div className="h-1 rounded-full bg-muted/30 mt-1 overflow-hidden">
-                    <div
-                      className="h-full bg-primary/60"
-                      style={{ width: `${Math.min(100, share)}%` }}
-                    />
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        )}
+        {(() => {
+          // Slå sammen kjente features med faktisk loggførte features
+          const usageMap = new Map(
+            stats.byFeature.map((f) => [f.feature, f]),
+          );
+          const knownKeys = Object.keys(FEATURE_META);
+          const allKeys = Array.from(
+            new Set([...knownKeys, ...stats.byFeature.map((f) => f.feature)]),
+          );
+          const rows = allKeys.map((key) => {
+            const u = usageMap.get(key);
+            return {
+              key,
+              meta: metaFor(key),
+              count: u?.count ?? 0,
+              costUsd: u?.costUsd ?? 0,
+            };
+          });
+          // Sortér: brukt først (etter kostnad), deretter ubrukte alfabetisk
+          rows.sort((a, b) => {
+            if (a.count > 0 && b.count === 0) return -1;
+            if (b.count > 0 && a.count === 0) return 1;
+            if (a.count > 0 && b.count > 0) return b.costUsd - a.costUsd;
+            return a.meta.label.localeCompare(b.meta.label, "nb");
+          });
+          return (
+            <ul className="space-y-1.5">
+              {rows.map((r) => {
+                const isOpen = openFeatures.has(r.key);
+                const share = (r.costUsd / totalFeatureCost) * 100;
+                const used = r.count > 0;
+                return (
+                  <li
+                    key={r.key}
+                    className="rounded border border-border/50 bg-background/30 overflow-hidden"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => toggleFeature(r.key)}
+                      className="w-full flex items-center gap-2 text-left px-3 py-2 hover:bg-muted/30 transition-colors"
+                    >
+                      <ChevronDown
+                        className={`w-3.5 h-3.5 text-muted-foreground shrink-0 transition-transform ${
+                          isOpen ? "rotate-0" : "-rotate-90"
+                        }`}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-baseline justify-between gap-2">
+                          <span
+                            className={`text-sm truncate ${
+                              used ? "text-foreground/90" : "text-muted-foreground"
+                            }`}
+                          >
+                            {r.meta.label}
+                          </span>
+                          <span className="text-muted-foreground tabular-nums text-xs shrink-0">
+                            {used
+                              ? `${fmtUsd(r.costUsd)} · ${r.count} kall`
+                              : "ikke brukt"}
+                          </span>
+                        </div>
+                        {used && (
+                          <div className="h-1 rounded-full bg-muted/30 mt-1 overflow-hidden">
+                            <div
+                              className="h-full bg-primary/60"
+                              style={{ width: `${Math.min(100, share)}%` }}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </button>
+                    {isOpen && (
+                      <div className="px-3 pb-3 pt-0 text-xs text-muted-foreground leading-relaxed border-t border-border/40">
+                        <p className="mt-2">{r.meta.description}</p>
+                      </div>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          );
+        })()}
       </div>
 
       <p className="text-[10px] text-muted-foreground/70 italic mt-4">
