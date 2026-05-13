@@ -1058,6 +1058,22 @@ function ImportTab({ cats, reload }: { cats: OkonomiCategory[]; reload: () => vo
         </div>
       )}
 
+      {aiLog.length > 0 && (
+        <Card className="p-3 border-amber-500/20 bg-background/40">
+          <div className="flex items-center justify-between mb-1.5">
+            <h4 className="text-[11px] uppercase tracking-wider text-amber-400/80">AI-logg</h4>
+            <Button size="sm" variant="ghost" className="h-6 px-2 text-[11px]" onClick={() => setAiLog([])}>
+              Skjul
+            </Button>
+          </div>
+          <ul className="space-y-0.5 text-[11px] font-mono text-muted-foreground max-h-40 overflow-auto">
+            {aiLog.map((l, i) => (
+              <li key={i}>{l}</li>
+            ))}
+          </ul>
+        </Card>
+      )}
+
       {preview.length > 0 && (
         <Card className="p-3 border-amber-500/30">
           <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
@@ -1067,11 +1083,23 @@ function ImportTab({ cats, reload }: { cats: OkonomiCategory[]; reload: () => vo
               </h3>
               <p className="text-[11px] text-muted-foreground">
                 {uncategorized > 0 ? `${uncategorized} mangler kategori` : "Alle kategorisert ✓"}
+                {" · "}ligger her til du importerer eller sletter
               </p>
             </div>
             <div className="flex gap-1.5">
               <Button size="sm" variant="ghost" onClick={recategorize} disabled={busy}>
                 <Sparkles className="w-3 h-3 mr-1" /> AI på nytt
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="text-red-400 hover:text-red-300"
+                onClick={() => {
+                  if (confirm(`Forkaste alle ${preview.length} radene?`)) setPreview([]);
+                }}
+                disabled={busy}
+              >
+                <Trash2 className="w-3 h-3 mr-1" /> Forkast alle
               </Button>
               <Button size="sm" onClick={commitAll} disabled={busy}>
                 Importer alle
