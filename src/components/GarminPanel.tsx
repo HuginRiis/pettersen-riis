@@ -214,6 +214,8 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
   const loginFn = useServerFn(garminLoginNow);
   const syncFn = useServerFn(garminSyncNow);
   const mfaFn = useServerFn(garminSubmitMfaCode);
+  const listDevicesFn = useServerFn(listGarminDevices);
+  const setDefaultDeviceFn = useServerFn(setDefaultGarminDevice);
   const [data, setData] = useState<Overview | null>(null);
   const [loading, setLoading] = useState(true);
   const [working, setWorking] = useState<"login" | "sync" | "mfa" | null>(null);
@@ -226,6 +228,10 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
   const [chartPeriod, setChartPeriod] = useState<ChartPeriod>("last30");
   const [showTrend, setShowTrend] = useState(false);
   const [weightAllowed, setWeightAllowed] = useState(false);
+  const [devicesOpen, setDevicesOpen] = useState(false);
+  const [devices, setDevices] = useState<Array<{ id: string; product_id: string; name: string; image_url: string | null; is_default: boolean; last_used_at: string | null; register_date: string | null }>>([]);
+  const [devicesLoading, setDevicesLoading] = useState(false);
+  const [settingDefault, setSettingDefault] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
