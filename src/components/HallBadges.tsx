@@ -1002,3 +1002,50 @@ export function RoborockStatusBadge({ inline, match, name }: { inline?: boolean;
     </span>
   );
 }
+
+/** Husholdningens hvelv — gjenstår av månedsbudsjett. */
+export function BudgetRemainingBadge({ inline }: { inline?: boolean } = {}) {
+  const [info, setInfo] = useState<{ remaining: number; budget: number } | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const now = new Date();
+        const ymStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
+        const [{ data: cats }, { data: txns }] = await Promise.all([
+          supabase.from("okonomi_categories").select("id,monthly_budget,is_income,is_transfer"),
+          supabase.from("okonomi_transactions").select("amount,category_id,txn_date").gte("txn_date", ymStart),
+        ]);
+        const catMap = new Map((cats ?? []).map((c: any) => [c.id, c]));
+        const budget = (cats ?? []).reduce((s: number, c: any) => s + (Number(c.monthly_budget) || 0), 0);
+        let brukt = 0;
+        for (const t of txns ?? []) {
+          const c: any = t.category_id ? catMap.get(t.category_id) : null;
+          if (c?.is_transfer || c?.is_income) continue;
+          const a = Number((t as any).amount);
+          if (a < 0) brukt += Math.abs(a);
+        }
+        if (!cancelled) setInfo({ remaining: Math.max(0, budget - brukt), budget });
+      } catch {}
+    })();
+    return () => { cancelled = true; };
+  }, []);
+  if (!info || info.budget === 0) return null;
+  const pct = info.remaining / info.budget;
+  const tone = pct > 0.33
+    ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40"
+    : pct > 0.1
+      ? "bg-amber-500/20 text-amber-300 border-amber-500/40"
+      : "bg-rose-500/20 text-rose-300 border-rose-500/40";
+  const cls = `px-1.5 h-[18px] rounded-full text-[10px] font-semibold inline-flex items-center justify-center border ${tone}`;
+  const fmt = (n: number) =>
+    n >= 1000 ? `${Math.round(n / 1000)}k` : `${Math.round(n)}`;
+  return (
+    <span
+      title={`${Math.round(info.remaining).toLocaleString("nb-NO")} kr igjen av ${Math.round(info.budget).toLocaleString("nb-NO")} kr`}
+      className={inline ? `ml-1 ${cls}` : `absolute top-2 right-2 z-10 ${cls}`}
+    >
+      💰{fmt(info.remaining)}
+    </span>
+  );
+}
