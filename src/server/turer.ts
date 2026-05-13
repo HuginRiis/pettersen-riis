@@ -126,7 +126,7 @@ export const getTripSuggestions = createServerFn({ method: "POST" })
     const userPrompt = `Foreslå 5 konkrete ${categoryLabel[data.category]} i nærheten av "${data.location}", Norge. Velg ekte, kjente turer i området (innen rimelig kjøreavstand for bil/sykkel, eller gangavstand for fotturer). Returner detaljert, strukturert data via verktøyet "return_trip_suggestions". Sørg for variasjon i vanskelighet og lengde. Inkluder ALLE feltene i skjemaet — særlig rute-steg (3-7 konkrete trinn), GPS-koordinater for startpunkt (Norge: lat ~58-71, lon ~4-31), anbefalt utstyr, beste sesong, transport og parkering. Vær så nøyaktig som mulig.`;
 
     try {
-      const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      const res = await loggedFetch("ai", "turer", "https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${apiKey}`,
