@@ -1,7 +1,18 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { openLoginDialog } from "@/components/LoginDialog";
-import { KeyRound, LogIn, Clock, MapPin, User } from "lucide-react";
+import { KeyRound, LogIn, Clock, MapPin, User, Bell, BellOff } from "lucide-react";
+import { getPushPublicKey } from "@/server/agenda-push";
+import {
+  type Who,
+  getStoredWho,
+  isPushSupported,
+  isCurrentlySubscribed,
+  subscribePush,
+  unsubscribePush,
+  updateSubscriptionWho,
+} from "@/lib/push-client";
 import { getWelcomeInfo } from "@/server/auth";
 import {
   Dialog,
