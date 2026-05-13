@@ -734,6 +734,10 @@ export type Database = {
       garmin_tokens: {
         Row: {
           created_at: string
+          device_image_url: string | null
+          device_name: string | null
+          device_product_id: string | null
+          device_updated_at: string | null
           domain: string
           id: string
           last_login_at: string | null
@@ -749,6 +753,10 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          device_image_url?: string | null
+          device_name?: string | null
+          device_product_id?: string | null
+          device_updated_at?: string | null
           domain?: string
           id?: string
           last_login_at?: string | null
@@ -764,6 +772,10 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          device_image_url?: string | null
+          device_name?: string | null
+          device_product_id?: string | null
+          device_updated_at?: string | null
           domain?: string
           id?: string
           last_login_at?: string | null
