@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -12,6 +11,48 @@ import {
   generateOkonomiBenchmarks,
   type OkonomiSettings,
 } from "@/server/okonomi.functions";
+
+type NumKey = "payday_day" | "household_adults" | "household_children_under18" | "household_children_over18";
+
+function NumField({
+  value,
+  min,
+  max,
+  disabled,
+  onCommit,
+}: {
+  value: number;
+  min: number;
+  max: number;
+  disabled?: boolean;
+  onCommit: (n: number) => void;
+}) {
+  const [txt, setTxt] = useState(String(value));
+  useEffect(() => {
+    setTxt(String(value));
+  }, [value]);
+  return (
+    <Input
+      type="text"
+      inputMode="numeric"
+      pattern="[0-9]*"
+      value={txt}
+      onChange={(e) => setTxt(e.target.value.replace(/[^0-9]/g, ""))}
+      onFocus={(e) => e.currentTarget.select()}
+      onBlur={() => {
+        if (txt === "") {
+          setTxt(String(value));
+          return;
+        }
+        const n = Math.max(min, Math.min(max, Number(txt) || min));
+        setTxt(String(n));
+        if (n !== value) onCommit(n);
+      }}
+      className="h-8"
+      disabled={disabled}
+    />
+  );
+}
 
 export function OkonomiSettingsPanel() {
   const get = useServerFn(getOkonomiSettings);
@@ -35,7 +76,7 @@ export function OkonomiSettingsPanel() {
     );
   }
 
-  async function save(patch: Partial<OkonomiSettings>) {
+  async function save(patch: Partial<Record<NumKey, number>>) {
     if (!s) return;
     const next = { ...s, ...patch };
     setS(next);
@@ -76,15 +117,15 @@ export function OkonomiSettingsPanel() {
             <p className="text-[11px] text-muted-foreground mb-1">
               Dagen i måneden lønn kommer inn (1–31). Brukes til «igjen pr dag».
             </p>
-            <Input
-              type="number"
-              min={1}
-              max={31}
-              value={s.payday_day}
-              onChange={(e) => save({ payday_day: Math.max(1, Math.min(31, Number(e.target.value) || 15)) })}
-              className="h-8 w-24"
-              disabled={busy}
-            />
+            <div className="w-24">
+              <NumField
+                value={s.payday_day}
+                min={1}
+                max={31}
+                disabled={busy}
+                onCommit={(n) => save({ payday_day: n })}
+              />
+            </div>
           </div>
 
           <div>
@@ -95,38 +136,32 @@ export function OkonomiSettingsPanel() {
             <div className="grid grid-cols-3 gap-2">
               <div>
                 <Label className="text-[10px] text-muted-foreground">Voksne</Label>
-                <Input
-                  type="number"
+                <NumField
+                  value={s.household_adults}
                   min={0}
                   max={10}
-                  value={s.household_adults}
-                  onChange={(e) => save({ household_adults: Math.max(0, Number(e.target.value) || 0) })}
-                  className="h-8"
                   disabled={busy}
+                  onCommit={(n) => save({ household_adults: n })}
                 />
               </div>
               <div>
                 <Label className="text-[10px] text-muted-foreground">Barn &lt; 18</Label>
-                <Input
-                  type="number"
+                <NumField
+                  value={s.household_children_under18}
                   min={0}
                   max={15}
-                  value={s.household_children_under18}
-                  onChange={(e) => save({ household_children_under18: Math.max(0, Number(e.target.value) || 0) })}
-                  className="h-8"
                   disabled={busy}
+                  onCommit={(n) => save({ household_children_under18: n })}
                 />
               </div>
               <div>
                 <Label className="text-[10px] text-muted-foreground">Barn ≥ 18</Label>
-                <Input
-                  type="number"
+                <NumField
+                  value={s.household_children_over18}
                   min={0}
                   max={15}
-                  value={s.household_children_over18}
-                  onChange={(e) => save({ household_children_over18: Math.max(0, Number(e.target.value) || 0) })}
-                  className="h-8"
                   disabled={busy}
+                  onCommit={(n) => save({ household_children_over18: n })}
                 />
               </div>
             </div>
