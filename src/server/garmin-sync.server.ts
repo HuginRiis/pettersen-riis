@@ -186,7 +186,7 @@ export async function syncDaily(owner: GarminOwner, daysBack = 30): Promise<numb
         updated_at: new Date().toISOString(),
         ...(isLatest ? fitnessExtras : {}),
       };
-      await supabaseAdmin.from("garmin_daily_stats").upsert([row], { onConflict: "owner,day" });
+      await supabaseAdmin.from("garmin_daily_stats").upsert([row as never], { onConflict: "owner,day" });
       count++;
     } catch (e) {
       console.error(`[garmin-sync:${owner}] daily failed`, day, e);
