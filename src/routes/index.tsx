@@ -144,14 +144,15 @@ function Home() {
 
   return (
     <PageShell>
-      <HouseHero
-        eyebrow="Krøniken om"
-        title="House Pettersen-Riis av Skien"
-        subtitle="Arne Pettersen Riis og Rebekka Riis Pettersen — vinterens voktere ved fjorden."
-        image={heroImg}
-      />
-
-      <PortalGate authenticated={isAuthed} onLogout={handleLogout} />
+      <div className="relative">
+        <HouseHero
+          eyebrow="Krøniken om"
+          title="House Pettersen-Riis av Skien"
+          subtitle="Arne Pettersen Riis og Rebekka Riis Pettersen — vinterens voktere ved fjorden."
+          image={heroImg}
+        />
+        <HeroAuthPill authenticated={isAuthed} onLogout={handleLogout} />
+      </div>
 
       <OutdoorWeatherStrip stationMatch="tollnes" />
       <IndoorWeatherStrip stationMatch="tollnes" label="Inne nå · Tollnes" />
