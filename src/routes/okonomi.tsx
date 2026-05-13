@@ -177,6 +177,29 @@ function Oversikt({
   const [benchY, setBenchY] = useState<number>(currentY);
   const [benchM, setBenchM] = useState<number>(currentM);
 
+  // Hvilke kategorier som er EKSKLUDERT fra beregning. "uten" = uten kategori.
+  // Default: alle inkludert. Lagres i localStorage.
+  const EXCL_KEY = "okonomi_excluded_cats";
+  const [excludedCats, setExcludedCats] = useState<Set<string>>(() => {
+    if (typeof window === "undefined") return new Set();
+    try {
+      const raw = localStorage.getItem(EXCL_KEY);
+      if (raw) return new Set(JSON.parse(raw));
+    } catch {}
+    return new Set();
+  });
+  useEffect(() => {
+    try {
+      localStorage.setItem(EXCL_KEY, JSON.stringify(Array.from(excludedCats)));
+    } catch {}
+  }, [excludedCats]);
+  const toggleCatExcluded = (id: string) =>
+    setExcludedCats((s) => {
+      const n = new Set(s);
+      if (n.has(id)) n.delete(id); else n.add(id);
+      return n;
+    });
+
   const yearsAvailable = useMemo(() => {
     const set = new Set<number>([currentY]);
     for (const t of txns) {
@@ -187,15 +210,21 @@ function Oversikt({
   }, [txns, currentY]);
 
   const catMap = useMemo(() => new Map(cats.map((c) => [c.id, c])), [cats]);
+  const isIncluded = (t: OkonomiTransaction) => {
+    const key = t.category_id ?? "uten";
+    return !excludedCats.has(key);
+  };
   const isExpense = (t: OkonomiTransaction) => {
+    if (!isIncluded(t)) return false;
     const c = t.category_id ? catMap.get(t.category_id) : undefined;
-    if (c?.is_transfer || c?.is_income) return false;
+    if (c?.is_income) return false;
     return Number(t.amount) < 0;
   };
   const isIncome = (t: OkonomiTransaction) => {
+    if (!isIncluded(t)) return false;
     const c = t.category_id ? catMap.get(t.category_id) : undefined;
     if (c?.is_income) return true;
-    return Number(t.amount) > 0 && !c?.is_transfer;
+    return Number(t.amount) > 0;
   };
 
   // Filtrer på valgt år/mnd
@@ -207,7 +236,7 @@ function Oversikt({
   const brukt = filtered.filter(isExpense).reduce((s, t) => s + Math.abs(Number(t.amount)), 0);
   const inntekt = filtered.filter(isIncome).reduce((s, t) => s + Number(t.amount), 0);
   const monthsCount = month === "all" ? 12 : 1;
-  const budsjett = cats.reduce((s, c) => s + (Number(c.monthly_budget) || 0), 0) * monthsCount;
+  const budsjett = cats.filter((c) => !excludedCats.has(c.id)).reduce((s, c) => s + (Number(c.monthly_budget) || 0), 0) * monthsCount;
   const igjen = Math.max(0, budsjett - brukt);
   const netto = inntekt - brukt;
 
@@ -300,7 +329,7 @@ function Oversikt({
     1,
     (periodEndY - periodStartY) * 12 + (periodEndM - periodStartM) + 1,
   );
-  const periodBudsjett = cats.reduce((s, c) => s + (Number(c.monthly_budget) || 0), 0) * periodMonths;
+  const periodBudsjett = cats.filter((c) => !excludedCats.has(c.id)).reduce((s, c) => s + (Number(c.monthly_budget) || 0), 0) * periodMonths;
   const periodOverskudd = periodInntekt - periodBrukt;
   const periodIgjen = Math.max(0, periodBudsjett - periodBrukt);
   const cappedEnd = effectiveEndDate > today ? today : effectiveEndDate;
@@ -442,6 +471,62 @@ function Oversikt({
             </Select>
           </div>
         </div>
+      </Card>
+
+      {/* Kategorier inkludert i beregningen */}
+      <Card className="p-3 border-amber-500/30">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-[11px] tracking-[0.2em] uppercase text-amber-400">
+            Kategorier i beregning
+          </h3>
+          <div className="flex gap-1">
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-6 px-2 text-[10px]"
+              onClick={() => setExcludedCats(new Set())}
+            >
+              Alle på
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-6 px-2 text-[10px]"
+              onClick={() =>
+                setExcludedCats(new Set([...cats.map((c) => c.id), "uten"]))
+              }
+            >
+              Alle av
+            </Button>
+          </div>
+        </div>
+        <ul className="space-y-1.5">
+          {cats.map((c) => {
+            const on = !excludedCats.has(c.id);
+            return (
+              <li key={c.id} className="flex items-center gap-2">
+                <span
+                  className="inline-block w-2.5 h-2.5 rounded-full shrink-0"
+                  style={{ background: c.color }}
+                />
+                <span className="flex-1 text-xs truncate">
+                  {c.name}
+                  {c.is_income && <span className="text-emerald-400/70 ml-1">(inntekt)</span>}
+                  {c.is_transfer && <span className="text-sky-400/70 ml-1">(overføring)</span>}
+                </span>
+                <Switch checked={on} onCheckedChange={() => toggleCatExcluded(c.id)} />
+              </li>
+            );
+          })}
+          <li className="flex items-center gap-2 pt-1 border-t border-amber-500/10">
+            <span className="inline-block w-2.5 h-2.5 rounded-full shrink-0 bg-slate-500" />
+            <span className="flex-1 text-xs italic text-muted-foreground">Uten kategori</span>
+            <Switch
+              checked={!excludedCats.has("uten")}
+              onCheckedChange={() => toggleCatExcluded("uten")}
+            />
+          </li>
+        </ul>
       </Card>
 
       <div className="grid grid-cols-2 gap-3">
@@ -847,6 +932,7 @@ function Posteringer({
   const learn = useServerFn(learnMerchantRule);
   const [adding, setAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [onlyUncat, setOnlyUncat] = useState(false);
   const [form, setForm] = useState({
     txn_date: new Date().toISOString().slice(0, 10),
     description: "",
@@ -923,8 +1009,17 @@ function Posteringer({
           </Button>
         </Card>
       )}
+      <Card className="p-2 px-3 border-amber-500/20 flex items-center justify-between">
+        <Label className="text-xs text-muted-foreground">Kun ukategoriserte</Label>
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] text-muted-foreground tabular-nums">
+            {txns.filter((t) => !t.category_id).length} stk
+          </span>
+          <Switch checked={onlyUncat} onCheckedChange={setOnlyUncat} />
+        </div>
+      </Card>
       <div className="space-y-1.5">
-        {txns.slice(0, 200).map((t) => {
+        {(onlyUncat ? txns.filter((t) => !t.category_id) : txns).slice(0, 200).map((t) => {
           const cat = cats.find((c) => c.id === t.category_id);
           if (editingId === t.id) {
             return (
