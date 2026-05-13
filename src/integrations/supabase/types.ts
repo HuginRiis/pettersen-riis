@@ -1234,22 +1234,40 @@ export type Database = {
       }
       okonomi_budget_settings: {
         Row: {
+          benchmarks: Json
+          benchmarks_generated_at: string | null
           created_at: string
+          household_adults: number
+          household_children_over18: number
+          household_children_under18: number
           id: number
+          payday_day: number
           primary_account: string | null
           savings_target_pct: number
           updated_at: string
         }
         Insert: {
+          benchmarks?: Json
+          benchmarks_generated_at?: string | null
           created_at?: string
+          household_adults?: number
+          household_children_over18?: number
+          household_children_under18?: number
           id?: number
+          payday_day?: number
           primary_account?: string | null
           savings_target_pct?: number
           updated_at?: string
         }
         Update: {
+          benchmarks?: Json
+          benchmarks_generated_at?: string | null
           created_at?: string
+          household_adults?: number
+          household_children_over18?: number
+          household_children_under18?: number
           id?: number
+          payday_day?: number
           primary_account?: string | null
           savings_target_pct?: number
           updated_at?: string
