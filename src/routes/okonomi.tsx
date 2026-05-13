@@ -8,8 +8,23 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Upload, Plus, Trash2, Coins, FileText, Sparkles } from "lucide-react";
+import { Loader2, Upload, Plus, Trash2, Coins, FileText, Sparkles, Check, X } from "lucide-react";
 import { toast } from "sonner";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  LineChart,
+  Line,
+  Legend,
+  CartesianGrid,
+} from "recharts";
 import {
   listOkonomiCategories,
   upsertOkonomiCategory,
@@ -19,6 +34,7 @@ import {
   deleteOkonomiTransaction,
   importOkonomiTransactions,
   parseStatementWithAI,
+  categorizeTransactionsWithAI,
   type OkonomiCategory,
   type OkonomiTransaction,
   type ParsedTxn,
