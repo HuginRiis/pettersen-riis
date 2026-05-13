@@ -1101,6 +1101,55 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={devicesOpen} onOpenChange={setDevicesOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Velg klokke for {displayName}</DialogTitle>
+            <DialogDescription>
+              Klikk på en klokke for å velge den som standard. Den vises i headeren og brukes til å generere bilder.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 max-h-[60vh] overflow-y-auto">
+            {devicesLoading ? (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Henter klokker…</div>
+            ) : devices.length === 0 ? (
+              <div className="text-sm text-muted-foreground">Ingen klokker funnet enda. Trykk «Synk nå» for å hente fra Garmin.</div>
+            ) : (
+              devices.map((d) => (
+                <button
+                  key={d.id}
+                  type="button"
+                  disabled={settingDefault === d.id}
+                  onClick={() => chooseDefault(d.id)}
+                  className={`w-full flex items-center gap-3 rounded-lg border p-2 text-left transition-colors ${
+                    d.is_default ? "border-primary/60 bg-primary/10" : "border-border/60 hover:bg-muted/40"
+                  }`}
+                >
+                  {d.image_url ? (
+                    <img src={d.image_url} alt={d.name} className="h-12 w-12 rounded-md object-cover border border-border/60 bg-background" loading="lazy" />
+                  ) : (
+                    <div className="h-12 w-12 rounded-md border border-border/60 bg-muted/40 flex items-center justify-center"><Activity className="h-5 w-5 opacity-50" /></div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium truncate flex items-center gap-1.5">
+                      {d.name}
+                      {d.is_default && <Check className="h-3.5 w-3.5 text-primary" />}
+                    </div>
+                    <div className="text-[10px] text-muted-foreground">
+                      {d.last_used_at ? `Sist brukt ${new Date(d.last_used_at).toLocaleDateString("nb-NO")}` : d.register_date ? `Registrert ${new Date(d.register_date).toLocaleDateString("nb-NO")}` : "Ukjent dato"}
+                    </div>
+                  </div>
+                  {settingDefault === d.id && <Loader2 className="h-4 w-4 animate-spin" />}
+                </button>
+              ))
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setDevicesOpen(false)}>Lukk</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }
