@@ -508,7 +508,9 @@ function Oversikt({
               Alle av
             </Button>
           </div>
+          )}
         </div>
+        {catsOpen && (
         <ul className="space-y-1.5">
           {cats.map((c) => {
             const on = !excludedCats.has(c.id);
@@ -536,6 +538,7 @@ function Oversikt({
             />
           </li>
         </ul>
+        )}
       </Card>
 
       <div className="grid grid-cols-2 gap-3">
