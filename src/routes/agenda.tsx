@@ -22,10 +22,10 @@ import {
 export const Route = createFileRoute("/agenda")({
   head: () => ({
     meta: [
-      { title: "Krøniken — Agenda | House Pettersen Riis" },
-      { name: "description", content: "Husets kalender & meldinger med dato, tid og push-varsler." },
-      { property: "og:title", content: "Krøniken — Agenda | House Pettersen Riis" },
-      { property: "og:description", content: "Send korte meldinger med dato, tid og varsler til familiens agenda." },
+      { title: "Søppel, bursdager og meldinger | House Pettersen Riis" },
+      { name: "description", content: "Husets kalender med søppeldager, fødselsdager og meldinger med varsler." },
+      { property: "og:title", content: "Søppel, bursdager og meldinger | House Pettersen Riis" },
+      { property: "og:description", content: "Ravnene bærer bud om søppeldager, fødselsfester og påminnelser fra borgen." },
     ],
   }),
   component: AgendaPage,
