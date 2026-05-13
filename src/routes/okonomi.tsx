@@ -173,6 +173,10 @@ function Oversikt({
   const [periodEndM, setPeriodEndM] = useState<number>(currentM);
   const [periodEndPayCut, setPeriodEndPayCut] = useState<boolean>(true);
 
+  // Filter for "Mot typisk norsk familie": år + tom-måned (jan..valgt mnd)
+  const [benchY, setBenchY] = useState<number>(currentY);
+  const [benchM, setBenchM] = useState<number>(currentM);
+
   const yearsAvailable = useMemo(() => {
     const set = new Set<number>([currentY]);
     for (const t of txns) {
@@ -331,6 +335,31 @@ function Oversikt({
     .sort((a, b) => b.sum - a.sum);
 
   const top5 = catData.slice(0, 5);
+
+  // Per kategori for benchmark-perioden (jan..benchM i benchY)
+  const benchMonths = Math.max(1, benchM);
+  const benchPerCat = new Map<string, number>();
+  for (const t of txns) {
+    if (!isExpense(t)) continue;
+    const y = Number(t.txn_date.slice(0, 4));
+    const m = Number(t.txn_date.slice(5, 7));
+    if (y !== benchY || m < 1 || m > benchMonths) continue;
+    const k = t.category_id ?? "uten";
+    benchPerCat.set(k, (benchPerCat.get(k) || 0) + Math.abs(Number(t.amount)));
+  }
+  const benchCatData = Array.from(benchPerCat.entries())
+    .map(([id, sum]) => {
+      const c = cats.find((x) => x.id === id);
+      const benchPerMonth = Number(benchmarks[id] || 0);
+      return {
+        id,
+        name: c?.name ?? "Uten kategori",
+        color: c?.color ?? "#94a3b8",
+        sum,
+        bench: benchPerMonth * benchMonths,
+      };
+    })
+    .sort((a, b) => b.sum - a.sum);
 
   // Trend fra valgt startmåned til valgt sluttmåned (inkl). Lønnsperiode-kutt valgfritt på hver side.
   const startAnchor = new Date(chartStartY, chartStartM - 1, 1);
@@ -551,14 +580,37 @@ function Oversikt({
             <> · Generer snitt-tall i Innstillinger.</>
           )}
         </p>
-        {catData.filter((d) => d.bench > 0).length === 0 ? (
+        <div className="flex items-center gap-1.5 mb-3 p-2 rounded border border-amber-500/20">
+          <Label className="text-[10px] uppercase tracking-wider text-muted-foreground mr-1">
+            Periode
+          </Label>
+          <span className="text-[10px] text-muted-foreground">Jan –</span>
+          <Select value={String(benchM)} onValueChange={(v) => setBenchM(Number(v))}>
+            <SelectTrigger className="h-7 w-full text-xs"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {monthNames.map((n, i) => (
+                <SelectItem key={i} value={String(i + 1)}>{n}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={String(benchY)} onValueChange={(v) => setBenchY(Number(v))}>
+            <SelectTrigger className="h-7 w-[80px] text-xs"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {yearsAvailable.map((y) => (
+                <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <span className="text-[10px] text-muted-foreground whitespace-nowrap">× {benchMonths} mnd</span>
+        </div>
+        {benchCatData.filter((d) => d.bench > 0).length === 0 ? (
           <p className="text-sm text-muted-foreground">
             Ingen snitt-tall ennå. Gå til Innstillinger → Husholdningens hvelv og trykk «Generer
             nye snitt-tall».
           </p>
         ) : (
           <ul className="space-y-2">
-            {catData
+            {benchCatData
               .filter((d) => d.bench > 0)
               .map((d) => {
                 const diff = d.sum - d.bench;
