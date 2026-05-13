@@ -1,0 +1,1 @@
+ALTER TABLE public.ai_budget_actual ADD COLUMN IF NOT EXISTS purchased_credits_usd numeric NOT NULL DEFAULT 0;
