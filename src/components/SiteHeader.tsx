@@ -412,7 +412,7 @@ export function SiteHeader() {
         </nav>
 
         <button
-          className="xl:hidden text-primary p-2"
+          className="text-primary p-2"
           onClick={() => setOpen((v) => { if (!v) setFavOpenMobile(false); return !v; })}
           aria-label="Meny"
         >
