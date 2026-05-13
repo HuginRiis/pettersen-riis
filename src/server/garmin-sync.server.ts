@@ -98,13 +98,24 @@ async function fetchFitnessExtras(owner: GarminOwner, day: string): Promise<{
     training_load_focus: null as Record<string, unknown> | null,
   };
   try {
-    const v = await garminGet<Vo2Resp>(owner, `/metrics-service/metrics/maxmet/latest/${day}`);
+    // maxmet returnerer enten et objekt eller en liste (latest vs daily-range)
+    const vRaw = await garminGet<Vo2Resp | Vo2Resp[]>(owner, `/metrics-service/metrics/maxmet/${day}/${day}`);
+    const v: Vo2Resp | undefined = Array.isArray(vRaw) ? vRaw[vRaw.length - 1] : vRaw ?? undefined;
     if (typeof v?.generic?.vo2MaxValue === "number") out.vo2max_running = v.generic.vo2MaxValue;
     if (typeof v?.cycling?.vo2MaxValue === "number") out.vo2max_cycling = v.cycling.vo2MaxValue;
     if (typeof v?.generic?.fitnessAge === "number") out.fitness_age = v.generic.fitnessAge;
   } catch {}
+  if (out.fitness_age == null) {
+    try {
+      const fa = await garminGet<{ fitnessAge?: number; chronologicalAge?: number }>(
+        owner,
+        `/fitnessage-service/fitnessage/${day}`,
+      );
+      if (typeof fa?.fitnessAge === "number") out.fitness_age = fa.fitnessAge;
+    } catch {}
+  }
   try {
-    const e = await garminGet<EnduranceResp>(owner, `/metrics-service/metrics/endurancescore/${day}`);
+    const e = await garminGet<EnduranceResp>(owner, `/metrics-service/metrics/endurancescore?calendarDate=${day}`);
     const score = e?.overallScore ?? e?.enduranceScore;
     if (typeof score === "number") out.endurance_score = score;
   } catch {}
