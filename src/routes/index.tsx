@@ -823,12 +823,12 @@ function HeroAuthPill({
         </div>
         {authenticated ? (
           <>
-            <div className="hidden sm:flex flex-col leading-tight pr-1">
+            <div className="flex flex-col leading-tight pr-1">
               <span className="text-[8px] tracking-[0.25em] uppercase text-primary/80">
                 Borgen er åpne
               </span>
               <span className="text-[11px] text-foreground truncate max-w-[140px]">
-                {greetingName ?? "Velkommen"}
+                {greetingName ? `Velkommen ${greetingName}` : "Velkommen Gjest"}
               </span>
             </div>
             <button
@@ -843,12 +843,12 @@ function HeroAuthPill({
           </>
         ) : (
           <>
-            <div className="hidden sm:flex flex-col leading-tight pr-1">
+            <div className="flex flex-col leading-tight pr-1">
               <span className="text-[8px] tracking-[0.25em] uppercase text-primary/80">
                 Husets port
               </span>
-              <span className="text-[11px] text-foreground">
-                {greetingName ? `Hei ${greetingName}` : "Vandrer"}
+              <span className="text-[11px] text-foreground truncate max-w-[140px]">
+                {greetingName ? `Velkommen ${greetingName}` : "Velkommen Gjest"}
               </span>
             </div>
             <button
