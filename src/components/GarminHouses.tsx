@@ -1,8 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { GarminPanel } from "@/components/GarminPanel";
 import { GarminCompare } from "@/components/GarminCompare";
 import { Crown, Flame, Swords } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import { listGarminDevices } from "@/server/garmin.functions";
 
 type Owner = "arne" | "rebekka";
 
@@ -11,7 +13,6 @@ const HOUSES: Record<Owner, {
   house: string;
   words: string;
   Icon: typeof Crown;
-  // tailwind color classes for accent
   accent: string;
   border: string;
   bg: string;
@@ -45,12 +46,26 @@ const HOUSES: Record<Owner, {
 function HouseBanner({ owner }: { owner: Owner }) {
   const h = HOUSES[owner];
   const Icon = h.Icon;
+  const fetchDevices = useServerFn(listGarminDevices);
+  const [watchUrl, setWatchUrl] = useState<string | null>(null);
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const r = await fetchDevices({ data: { owner } }) as { devices: Array<{ is_default: boolean; image_transparent_url: string | null; image_url: string | null }> };
+        if (!alive) return;
+        const def = r.devices.find((d) => d.is_default) ?? r.devices[0] ?? null;
+        setWatchUrl(def?.image_transparent_url ?? def?.image_url ?? null);
+      } catch { /* ignore */ }
+    })();
+    return () => { alive = false; };
+  }, [fetchDevices, owner]);
   return (
-    <div className={`rounded-lg border ${h.border} bg-gradient-to-r ${h.bannerFrom} ${h.bannerTo} px-4 py-3 mb-3 flex items-center gap-3`}>
-      <div className={`h-10 w-10 rounded-full border ${h.border} ${h.bg} flex items-center justify-center`}>
+    <div className={`relative overflow-hidden rounded-lg border ${h.border} bg-gradient-to-r ${h.bannerFrom} ${h.bannerTo} px-4 py-3 mb-3 flex items-center gap-3`}>
+      <div className={`h-10 w-10 rounded-full border ${h.border} ${h.bg} flex items-center justify-center shrink-0`}>
         <Icon className={`h-5 w-5 ${h.accent}`} />
       </div>
-      <div className="flex-1 min-w-0">
+      <div className="flex-1 min-w-0 pr-20 sm:pr-24">
         <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground" style={{ fontFamily: "var(--font-display)" }}>
           {h.house}
         </div>
@@ -61,6 +76,15 @@ function HouseBanner({ owner }: { owner: Owner }) {
           « {h.words} »
         </div>
       </div>
+      {watchUrl && (
+        <img
+          src={watchUrl}
+          alt=""
+          aria-hidden
+          className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 h-20 sm:h-24 w-auto object-contain drop-shadow-[0_4px_12px_rgba(0,0,0,0.45)]"
+          loading="lazy"
+        />
+      )}
     </div>
   );
 }
