@@ -165,6 +165,14 @@ function Oversikt({
   const [chartStartM, setChartStartM] = useState<number>(startDefault.getMonth() + 1);
   const [chartStartPayCut, setChartStartPayCut] = useState<boolean>(false);
 
+  // Periodefilter for "stats-boksene" (uavhengig av år/mnd-filteret over)
+  const [periodStartY, setPeriodStartY] = useState<number>(startDefault.getFullYear());
+  const [periodStartM, setPeriodStartM] = useState<number>(startDefault.getMonth() + 1);
+  const [periodStartPayCut, setPeriodStartPayCut] = useState<boolean>(false);
+  const [periodEndY, setPeriodEndY] = useState<number>(currentY);
+  const [periodEndM, setPeriodEndM] = useState<number>(currentM);
+  const [periodEndPayCut, setPeriodEndPayCut] = useState<boolean>(true);
+
   const yearsAvailable = useMemo(() => {
     const set = new Set<number>([currentY]);
     for (const t of txns) {
