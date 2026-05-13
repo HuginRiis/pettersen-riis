@@ -62,6 +62,7 @@ import hallWesteros from "@/assets/got-westeros-hero.jpg";
 import hallSteintavle from "@/assets/got-brodering.jpg";
 import hallVarslinger from "@/assets/got-varslinger.jpg";
 import hallKvitteringer from "@/assets/got-kvitteringer.jpg";
+import hallOkonomi from "@/assets/got-okonomi.jpg";
 import hallLys from "@/assets/got-lys.jpg";
 import hallGressklipper from "@/assets/got-gressklipper.jpg";
 import hallStovsuger from "@/assets/got-stovsuger.jpg";
