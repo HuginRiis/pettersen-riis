@@ -233,7 +233,8 @@ function Oversikt({
     }
   }
   const snittPrDag = elapsedDays > 0 ? brukt / elapsedDays : 0;
-  const igjenPrDag = daysUntilPayday > 0 ? igjen / daysUntilPayday : 0;
+  const overskudd = inntekt - brukt;
+  const igjenPrDag = daysUntilPayday > 0 ? overskudd / daysUntilPayday : overskudd;
 
   // Per kategori i valgt periode
   const perCat = new Map<string, number>();
