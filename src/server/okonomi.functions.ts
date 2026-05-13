@@ -219,18 +219,30 @@ export const importOkonomiTransactions = createServerFn({ method: "POST" })
 
     let inserted = 0;
     let skipped = 0;
+    const errors: string[] = [];
     for (const row of rows) {
-      const { error } = await supabaseAdmin
-        .from("okonomi_transactions")
-        .upsert(row as any, { onConflict: "external_ref", ignoreDuplicates: true });
+      // Sjekk duplikat manuelt (partial unique index på external_ref støttes ikke av PostgREST upsert)
+      if (row.external_ref) {
+        const { data: existing } = await supabaseAdmin
+          .from("okonomi_transactions")
+          .select("id")
+          .eq("external_ref", row.external_ref)
+          .maybeSingle();
+        if (existing) {
+          skipped++;
+          continue;
+        }
+      }
+      const { error } = await supabaseAdmin.from("okonomi_transactions").insert(row as any);
       if (error) {
         skipped++;
-        console.warn("[okonomi] insert failed:", error.message);
+        errors.push(error.message);
+        console.warn("[okonomi] insert failed:", error.message, row);
       } else {
         inserted++;
       }
     }
-    return { inserted, skipped, total: rows.length };
+    return { inserted, skipped, total: rows.length, errors: errors.slice(0, 5) };
   });
 
 // =================================================================
