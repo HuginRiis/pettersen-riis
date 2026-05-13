@@ -132,12 +132,26 @@ async function fetchFitnessExtras(owner: GarminOwner, day: string): Promise<{
     out.endurance_score = asNumber(e?.overallScore) ?? asNumber(e?.enduranceScore) ?? asNumber(e?.score) ?? out.endurance_score;
     const rawContribs: any[] | undefined = Array.isArray(e?.contributors) ? e.contributors : Array.isArray(e?.contributorList) ? e.contributorList : undefined;
     if (rawContribs && rawContribs.length) {
+      // Garmin activity type IDs → lesbare koder
+      const ACTIVITY: Record<number, string> = {
+        1: "RUNNING", 2: "CYCLING", 3: "HIKING", 4: "OTHER",
+        5: "MOUNTAIN_BIKING", 6: "TRAIL_RUNNING", 7: "STREET_RUNNING", 8: "TRACK_RUNNING",
+        9: "WALKING", 10: "ROAD_BIKING", 11: "INDOOR_CYCLING", 12: "FITNESS_EQUIPMENT",
+        13: "SWIMMING", 14: "ELLIPTICAL", 15: "STAIR_CLIMBING", 16: "ROWING",
+        17: "MOUNTAINEERING", 18: "BACKCOUNTRY_SKIING", 19: "CROSS_COUNTRY_SKIING",
+        20: "RESORT_SKIING", 21: "SKATE_SKIING",
+      };
+      const GROUP: Record<number, string> = { 1: "RUNNING_GROUP", 2: "CYCLING_GROUP", 3: "OTHER_GROUP", 8: "OTHER_GROUP" };
       const mapped = rawContribs
         .map((c: any) => {
-          // Foretrekk lesbar etikett over numerisk groupId
-          const label = c?.groupName ?? c?.activityType ?? c?.activityTypeName ?? c?.name ?? c?.group ?? c?.groupId ?? "OTHER";
+          let label: string;
+          const aid = asNumber(c?.activityTypeId);
+          const gid = asNumber(c?.group ?? c?.groupId);
+          if (typeof aid === "number" && ACTIVITY[aid]) label = ACTIVITY[aid];
+          else if (typeof gid === "number" && GROUP[gid]) label = GROUP[gid];
+          else label = String(c?.groupName ?? c?.activityType ?? c?.activityTypeName ?? c?.name ?? (typeof aid === "number" ? `ACT_${aid}` : typeof gid === "number" ? `GROUP_${gid}` : "OTHER"));
           return {
-            group: String(label),
+            group: label,
             contribution: asNumber(c?.contribution ?? c?.value ?? c?.percent ?? c?.percentage) ?? 0,
           };
         })
