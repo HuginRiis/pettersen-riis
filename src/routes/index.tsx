@@ -291,7 +291,7 @@ function Home() {
         </div>
       </section>
 
-      <section className="container mx-auto px-4 pb-20">
+      <section id="husets-saler" className="container mx-auto px-4 pb-20 scroll-mt-4">
         <div className="ornate-divider mb-10">
           <span className="text-display tracking-[0.3em] text-primary text-sm uppercase">
             Husets saler
