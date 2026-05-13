@@ -13,7 +13,9 @@ type Props = {
  */
 export function LastUpdated({ timestamp, label }: Props) {
   const [, force] = useState(0);
+  const [hydrated, setHydrated] = useState(false);
   useEffect(() => {
+    setHydrated(true);
     const t = setInterval(() => force((n) => n + 1), 30_000);
     return () => clearInterval(t);
   }, []);
@@ -28,11 +30,11 @@ export function LastUpdated({ timestamp, label }: Props) {
         {label} · sist oppdatert
       </span>
       <span className="text-[11px] text-foreground font-medium">
-        {valid ? formatRelative(ts!) : "—"}
+        {valid ? (hydrated ? formatRelative(ts!) : "oppdatert") : "—"}
       </span>
       {valid && (
         <span className="text-[10px] text-muted-foreground/70 hidden sm:inline">
-          ({formatClock(ts!)})
+          ({hydrated ? formatClock(ts!) : "--:--"})
         </span>
       )}
     </div>
@@ -52,5 +54,5 @@ function formatRelative(d: Date): string {
 }
 
 function formatClock(d: Date): string {
-  return d.toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit" });
+  return d.toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Oslo" });
 }
