@@ -1,5 +1,6 @@
 import { getRequest } from "@tanstack/react-start/server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { loggedFetch } from "./api-call-log.server";
 
 function parseClientIpFromHeaders(headers: Headers): string | null {
   const xff = headers.get("x-forwarded-for");
