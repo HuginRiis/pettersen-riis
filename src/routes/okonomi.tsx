@@ -177,6 +177,29 @@ function Oversikt({
   const [benchY, setBenchY] = useState<number>(currentY);
   const [benchM, setBenchM] = useState<number>(currentM);
 
+  // Hvilke kategorier som er EKSKLUDERT fra beregning. "uten" = uten kategori.
+  // Default: alle inkludert. Lagres i localStorage.
+  const EXCL_KEY = "okonomi_excluded_cats";
+  const [excludedCats, setExcludedCats] = useState<Set<string>>(() => {
+    if (typeof window === "undefined") return new Set();
+    try {
+      const raw = localStorage.getItem(EXCL_KEY);
+      if (raw) return new Set(JSON.parse(raw));
+    } catch {}
+    return new Set();
+  });
+  useEffect(() => {
+    try {
+      localStorage.setItem(EXCL_KEY, JSON.stringify(Array.from(excludedCats)));
+    } catch {}
+  }, [excludedCats]);
+  const toggleCatExcluded = (id: string) =>
+    setExcludedCats((s) => {
+      const n = new Set(s);
+      if (n.has(id)) n.delete(id); else n.add(id);
+      return n;
+    });
+
   const yearsAvailable = useMemo(() => {
     const set = new Set<number>([currentY]);
     for (const t of txns) {
@@ -187,15 +210,21 @@ function Oversikt({
   }, [txns, currentY]);
 
   const catMap = useMemo(() => new Map(cats.map((c) => [c.id, c])), [cats]);
+  const isIncluded = (t: OkonomiTransaction) => {
+    const key = t.category_id ?? "uten";
+    return !excludedCats.has(key);
+  };
   const isExpense = (t: OkonomiTransaction) => {
+    if (!isIncluded(t)) return false;
     const c = t.category_id ? catMap.get(t.category_id) : undefined;
-    if (c?.is_transfer || c?.is_income) return false;
+    if (c?.is_income) return false;
     return Number(t.amount) < 0;
   };
   const isIncome = (t: OkonomiTransaction) => {
+    if (!isIncluded(t)) return false;
     const c = t.category_id ? catMap.get(t.category_id) : undefined;
     if (c?.is_income) return true;
-    return Number(t.amount) > 0 && !c?.is_transfer;
+    return Number(t.amount) > 0;
   };
 
   // Filtrer på valgt år/mnd
