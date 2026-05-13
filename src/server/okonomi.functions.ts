@@ -246,6 +246,64 @@ export const importOkonomiTransactions = createServerFn({ method: "POST" })
   });
 
 // =================================================================
+// Merchant rules — lær fra brukerens valg
+// =================================================================
+
+function extractPattern(description: string): string | null {
+  if (!description) return null;
+  // Fjern dato-aktige fragmenter og rene tall, ta første meningsfulle ord
+  const cleaned = description
+    .replace(/\b\d{1,2}[./-]\d{1,2}([./-]\d{2,4})?\b/g, " ")
+    .replace(/\b\d{2,}\b/g, " ")
+    .replace(/[*]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!cleaned) return null;
+  const tokens = cleaned.split(" ").filter((t) => t.length >= 3);
+  if (tokens.length === 0) return cleaned.slice(0, 24).toLowerCase();
+  // Bruk de første 1–2 tokens (typisk butikknavn) som mønster
+  const pat = tokens.slice(0, Math.min(2, tokens.length)).join(" ").toLowerCase();
+  return pat.slice(0, 60);
+}
+
+export const learnMerchantRule = createServerFn({ method: "POST" })
+  .inputValidator((d) =>
+    z
+      .object({
+        description: z.string().min(1).max(500),
+        category_id: z.string().uuid(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data }) => {
+    const pattern = extractPattern(data.description);
+    if (!pattern) return { ok: false, reason: "no-pattern" };
+    // Finnes regelen allerede? Oppdater kategori — siste valg vinner
+    const { data: existing } = await supabaseAdmin
+      .from("okonomi_merchant_rules")
+      .select("id")
+      .eq("pattern", pattern)
+      .maybeSingle();
+    if (existing) {
+      const { error } = await supabaseAdmin
+        .from("okonomi_merchant_rules")
+        .update({
+          category_id: data.category_id,
+          priority: 100,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", (existing as any).id);
+      if (error) throw new Error(error.message);
+      return { ok: true, pattern, updated: true };
+    }
+    const { error } = await supabaseAdmin
+      .from("okonomi_merchant_rules")
+      .insert({ pattern, category_id: data.category_id, priority: 100 } as any);
+    if (error) throw new Error(error.message);
+    return { ok: true, pattern, updated: false };
+  });
+
+// =================================================================
 // PDF / image kontoutskrift via Lovable AI
 // =================================================================
 
