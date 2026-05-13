@@ -707,11 +707,11 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
                           RUNNING: "Løping", RUN: "Løping", TRAIL_RUNNING: "Terrengløping",
                           CYCLING: "Sykling", BIKING: "Sykling", BIKE: "Sykling", ROAD_BIKING: "Sykling", MOUNTAIN_BIKING: "Terrengsykling", INDOOR_CYCLING: "Sykling",
                           SWIMMING: "Svømming", LAP_SWIMMING: "Svømming", OPEN_WATER_SWIMMING: "Svømming",
-                          HIKING: "Fjelltur", HIKE: "Fjelltur", MOUNTAINEERING: "Fjelltur",
-                          WALKING: "Gåing", WALK: "Gåing", CASUAL_WALKING: "Gåing", SPEED_WALKING: "Rask gange",
+                          HIKING: "Fotturer", HIKE: "Fotturer", MOUNTAINEERING: "Fotturer",
+                          WALKING: "Gåtur", WALK: "Gåtur", CASUAL_WALKING: "Gåtur", SPEED_WALKING: "Gåtur",
                           STRENGTH: "Styrke", STRENGTH_TRAINING: "Styrke",
                           CARDIO: "Kondisjon", OTHER: "Annet",
-                          RUNNING_GROUP: "Løping", CYCLING_GROUP: "Sykling", OTHER_GROUP: "Annet",
+                          RUNNING_GROUP: "Løping", CYCLING_GROUP: "Sykling", HIKING_GROUP: "Fotturer", WALKING_GROUP: "Gåtur", OTHER_GROUP: "Annet",
                         };
                         return (
                           <div className="mt-2 pt-2 border-t border-border/40 space-y-1">
