@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { useSession } from "@tanstack/react-start/server";
 import { z } from "zod";
+import { loggedFetch } from "@/server/api-call-log.server";
 import {
   getWeeklyQuotaForIp,
   getRecentSearchesForIp,
