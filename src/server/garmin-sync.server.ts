@@ -128,10 +128,11 @@ async function fetchFitnessExtras(owner: GarminOwner, day: string): Promise<{
   }
   try {
     const e = await garminGet<any>(owner, `/metrics-service/metrics/endurancescore?calendarDate=${day}`);
-    console.log(`[garmin-sync:${owner}] endurancescore RAW`, JSON.stringify(e).slice(0, 2000));
+    console.log(`[garmin-sync:${owner}] endurancescore RAW`, JSON.stringify(e).slice(0, 3000));
     out.endurance_score = asNumber(e?.overallScore) ?? asNumber(e?.enduranceScore) ?? asNumber(e?.score) ?? out.endurance_score;
     const rawContribs: any[] | undefined = Array.isArray(e?.contributors) ? e.contributors : Array.isArray(e?.contributorList) ? e.contributorList : undefined;
     if (rawContribs && rawContribs.length) {
+      console.log(`[garmin-sync:${owner}] endurance contributor[0] keys`, Object.keys(rawContribs[0] ?? {}), JSON.stringify(rawContribs[0]).slice(0, 500));
       // Garmin activity type IDs → lesbare koder
       const ACTIVITY: Record<number, string> = {
         1: "RUNNING", 2: "CYCLING", 3: "HIKING", 4: "OTHER",
@@ -141,15 +142,20 @@ async function fetchFitnessExtras(owner: GarminOwner, day: string): Promise<{
         17: "MOUNTAINEERING", 18: "BACKCOUNTRY_SKIING", 19: "CROSS_COUNTRY_SKIING",
         20: "RESORT_SKIING", 21: "SKATE_SKIING",
       };
-      const GROUP: Record<number, string> = { 1: "RUNNING_GROUP", 2: "CYCLING_GROUP", 3: "OTHER_GROUP", 8: "OTHER_GROUP" };
+      // Empirisk: Garmin endurancescore-API bruker groupId 1=CYCLING, 2=RUNNING, 3=OTHER
+      // (motsatt av activityTypeId-skjemaet). Bekreftet ved sammenlikning med Garmin Connect.
+      const GROUP: Record<number, string> = { 1: "CYCLING_GROUP", 2: "RUNNING_GROUP", 3: "OTHER_GROUP", 8: "OTHER_GROUP" };
       const mapped = rawContribs
         .map((c: any) => {
           let label: string;
           const aid = asNumber(c?.activityTypeId);
           const gid = asNumber(c?.group ?? c?.groupId);
-          if (typeof aid === "number" && ACTIVITY[aid]) label = ACTIVITY[aid];
+          // Strenger fra Garmin har høyest prioritet (HIKING/WALKING osv.)
+          const namedStr = c?.groupName ?? c?.activityType ?? c?.activityTypeName ?? c?.name;
+          if (typeof namedStr === "string" && namedStr.trim()) label = namedStr.trim().toUpperCase();
+          else if (typeof aid === "number" && ACTIVITY[aid]) label = ACTIVITY[aid];
           else if (typeof gid === "number" && GROUP[gid]) label = GROUP[gid];
-          else label = String(c?.groupName ?? c?.activityType ?? c?.activityTypeName ?? c?.name ?? (typeof aid === "number" ? `ACT_${aid}` : typeof gid === "number" ? `GROUP_${gid}` : "OTHER"));
+          else label = typeof aid === "number" ? `ACT_${aid}` : typeof gid === "number" ? `GROUP_${gid}` : "OTHER";
           return {
             group: label,
             contribution: asNumber(c?.contribution ?? c?.value ?? c?.percent ?? c?.percentage) ?? 0,
@@ -408,6 +414,79 @@ export async function syncIntraday(owner: GarminOwner, daysBack = 1): Promise<nu
   return count;
 }
 
+async function generateWatchImageDataUrl(deviceName: string): Promise<string | null> {
+  const apiKey = process.env.LOVABLE_API_KEY;
+  if (!apiKey) {
+    console.warn("[garmin-sync] LOVABLE_API_KEY mangler — hopper over klokkebilde");
+    return null;
+  }
+  try {
+    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash-image",
+        modalities: ["image", "text"],
+        messages: [{
+          role: "user",
+          content: `Photorealistic product shot of a Garmin ${deviceName} smartwatch on a clean white background, top-down view, sharp focus, soft studio lighting, no text overlays, square 1:1.`,
+        }],
+      }),
+    });
+    if (!res.ok) {
+      console.warn(`[garmin-sync] watch image gen failed ${res.status}`);
+      return null;
+    }
+    const json = await res.json() as any;
+    const url: string | undefined = json?.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+    return typeof url === "string" && url.startsWith("data:image/") ? url : null;
+  } catch (e) {
+    console.warn("[garmin-sync] watch image gen error", (e as Error).message);
+    return null;
+  }
+}
+
+export async function syncDevice(owner: GarminOwner): Promise<{ name: string | null; changed: boolean }> {
+  try {
+    const list = await garminGet<any[]>(owner, "/device-service/deviceregistration/devices");
+    const arr = Array.isArray(list) ? list : [];
+    // Velg nyeste etter lastUsedDate / registerDate
+    const sorted = arr
+      .filter((d) => d && (d.productDisplayName || d.displayName))
+      .sort((a, b) => (Number(b?.lastUsedDate ?? b?.registerDate ?? 0)) - (Number(a?.lastUsedDate ?? a?.registerDate ?? 0)));
+    const top = sorted[0];
+    if (!top) return { name: null, changed: false };
+    const name: string = String(top.productDisplayName ?? top.displayName ?? "").trim();
+    const productId: string | null = top.productNumber ? String(top.productNumber) : top.partNumber ? String(top.partNumber) : null;
+    if (!name) return { name: null, changed: false };
+
+    const { data: existing } = await supabaseAdmin
+      .from("garmin_tokens")
+      .select("id, device_name, device_image_url")
+      .eq("owner", owner)
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (!existing) return { name, changed: false };
+
+    const changed = (existing as any).device_name !== name;
+    let imageUrl: string | null = (existing as any).device_image_url ?? null;
+    if (changed || !imageUrl) {
+      imageUrl = await generateWatchImageDataUrl(name);
+    }
+    await supabaseAdmin.from("garmin_tokens").update({
+      device_name: name,
+      device_product_id: productId,
+      device_image_url: imageUrl,
+      device_updated_at: new Date().toISOString(),
+    } as never).eq("id", (existing as any).id);
+    return { name, changed };
+  } catch (e) {
+    console.warn(`[garmin-sync:${owner}] device sync failed`, (e as Error).message);
+    return { name: null, changed: false };
+  }
+}
+
 export async function syncOne(owner: GarminOwner, trigger: string): Promise<{
   ok: boolean; owner: GarminOwner; daily: number; activities: number; sleep: number; intraday: number; duration_ms: number; error?: string;
 }> {
@@ -419,6 +498,7 @@ export async function syncOne(owner: GarminOwner, trigger: string): Promise<{
     activities = await syncActivities(owner, 50);
     sleep = await syncSleep(owner, 14);
     intraday = await syncIntraday(owner, 1);
+    await syncDevice(owner);
   } catch (e) {
     error = (e as Error).message;
   }

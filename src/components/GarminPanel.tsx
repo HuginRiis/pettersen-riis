@@ -38,7 +38,7 @@ type Activity = {
 type Sleep = { day: string; total_seconds: number | null; deep_seconds: number | null; light_seconds: number | null; rem_seconds: number | null; awake_seconds: number | null; sleep_score: number | null; average_spo2: number | null; average_respiration: number | null; hrv_avg: number | null };
 type Intraday = { day: string; hour: number; heart_rate_avg: number | null; heart_rate_max: number | null; stress_avg: number | null; body_battery: number | null };
 type Overview = {
-  status: { connected: boolean; username: string | null; expires_at: string | null; last_login_at: string | null; mfa_pending?: boolean };
+  status: { connected: boolean; username: string | null; expires_at: string | null; last_login_at: string | null; mfa_pending?: boolean; device_name?: string | null; device_image_url?: string | null };
   daily: Daily[]; activities: Activity[]; sleep: Sleep[]; intraday?: Intraday[];
   lastSync: { ran_at: string; ok: boolean; daily_count: number; activities_count: number; sleep_count: number; error: string | null } | null;
 };
@@ -339,7 +339,35 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
       <div className="space-y-4">
         <div className="flex items-center justify-between flex-wrap gap-2">
           <h2 className="text-sm font-semibold uppercase tracking-wider text-primary flex items-center gap-2">
-            <Activity size={16} /> Garmin — {displayName}
+            {data?.status.device_image_url ? (
+              <img
+                src={data.status.device_image_url}
+                alt={data.status.device_name ?? "Garmin"}
+                className="h-7 w-7 rounded-md object-cover border border-border/60 bg-background"
+                loading="lazy"
+              />
+            ) : (
+              <Activity size={16} />
+            )}
+            <span className="flex flex-col leading-tight">
+              <span>{data?.status.device_name ?? `Garmin — ${displayName}`}</span>
+              {data?.status.device_name && (
+                <span className="text-[10px] font-normal normal-case tracking-normal text-muted-foreground">{displayName}</span>
+              )}
+            </span>
+            <span
+              className={`hidden sm:inline-flex items-center gap-1.5 ml-2 rounded border px-2 py-0.5 text-[10px] tracking-[0.2em] ${
+                owner === "arne"
+                  ? "border-slate-400/40 text-slate-200 bg-slate-900/40"
+                  : "border-rose-500/40 text-rose-200 bg-rose-950/30"
+              }`}
+              style={{ fontFamily: "var(--font-display)" }}
+            >
+              {owner === "arne" ? "House Stark" : "House Targaryen"}
+              <em className="not-italic text-muted-foreground" style={{ fontFamily: "var(--font-medieval)" }}>
+                « {owner === "arne" ? "Winter is Coming" : "Fire and Blood"} »
+              </em>
+            </span>
           </h2>
           <div className="flex items-center gap-2">
             <button
