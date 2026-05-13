@@ -107,18 +107,23 @@ async function fetchFitnessExtras(owner: GarminOwner, day: string): Promise<{
   } catch {}
   if (out.fitness_age == null) {
     try {
-      const fa = await garminGet<{ fitnessAge?: number; chronologicalAge?: number }>(
+      const fa = await garminGet<any>(
         owner,
         `/fitnessage-service/fitnessage/${day}`,
       );
+      console.log(`[garmin-debug ${owner}] fitnessage:`, JSON.stringify(fa).slice(0, 400));
       if (typeof fa?.fitnessAge === "number") out.fitness_age = fa.fitnessAge;
-    } catch {}
+      else if (typeof fa?.chronologicalAge === "number" && typeof fa?.normalizedAge === "number") {
+        out.fitness_age = fa.normalizedAge;
+      }
+    } catch (e) { console.log(`[garmin-debug ${owner}] fitnessage err:`, (e as Error).message); }
   }
   try {
-    const e = await garminGet<EnduranceResp>(owner, `/metrics-service/metrics/endurancescore?calendarDate=${day}`);
-    const score = e?.overallScore ?? e?.enduranceScore;
+    const e = await garminGet<any>(owner, `/metrics-service/metrics/endurancescore?calendarDate=${day}`);
+    console.log(`[garmin-debug ${owner}] endurance:`, JSON.stringify(e).slice(0, 400));
+    const score = e?.overallScore ?? e?.enduranceScore ?? e?.score;
     if (typeof score === "number") out.endurance_score = score;
-  } catch {}
+  } catch (e) { console.log(`[garmin-debug ${owner}] endurance err:`, (e as Error).message); }
   try {
     const t = await garminGet<TrainingStatusResp>(owner, `/metrics-service/metrics/trainingstatus/aggregated/${day}`);
     const stat = t?.mostRecentTrainingStatus?.latestTrainingStatusData;
