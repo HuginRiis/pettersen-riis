@@ -49,6 +49,7 @@ type EnduranceResp = {
   classificationValue?: number;
 };
 type TrainingStatusResp = {
+  mostRecentVO2Max?: Vo2Resp;
   mostRecentTrainingStatus?: {
     latestTrainingStatusData?: Record<string, { trainingStatusFeedbackPhrase?: string; trainingStatus?: number }>;
   };
@@ -67,6 +68,15 @@ type TrainingStatusResp = {
     }>;
   };
 };
+
+function asNumber(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string" && value.trim() !== "") {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+}
 
 const TRAINING_STATUS_LABELS: Record<number, string> = {
   0: "Ingen status",
@@ -101,9 +111,9 @@ async function fetchFitnessExtras(owner: GarminOwner, day: string): Promise<{
     // maxmet returnerer enten et objekt eller en liste (latest vs daily-range)
     const vRaw = await garminGet<Vo2Resp | Vo2Resp[]>(owner, `/metrics-service/metrics/maxmet/${day}/${day}`);
     const v: Vo2Resp | undefined = Array.isArray(vRaw) ? vRaw[vRaw.length - 1] : vRaw ?? undefined;
-    if (typeof v?.generic?.vo2MaxValue === "number") out.vo2max_running = v.generic.vo2MaxValue;
-    if (typeof v?.cycling?.vo2MaxValue === "number") out.vo2max_cycling = v.cycling.vo2MaxValue;
-    if (typeof v?.generic?.fitnessAge === "number") out.fitness_age = v.generic.fitnessAge;
+    out.vo2max_running = asNumber(v?.generic?.vo2MaxValue) ?? out.vo2max_running;
+    out.vo2max_cycling = asNumber(v?.cycling?.vo2MaxValue) ?? out.vo2max_cycling;
+    out.fitness_age = asNumber(v?.generic?.fitnessAge) ?? out.fitness_age;
   } catch {}
   if (out.fitness_age == null) {
     try {
@@ -111,21 +121,18 @@ async function fetchFitnessExtras(owner: GarminOwner, day: string): Promise<{
         owner,
         `/fitnessage-service/fitnessage/${day}`,
       );
-      console.log(`[garmin-debug ${owner}] fitnessage:`, JSON.stringify(fa).slice(0, 400));
-      if (typeof fa?.fitnessAge === "number") out.fitness_age = fa.fitnessAge;
-      else if (typeof fa?.chronologicalAge === "number" && typeof fa?.normalizedAge === "number") {
-        out.fitness_age = fa.normalizedAge;
-      }
-    } catch (e) { console.log(`[garmin-debug ${owner}] fitnessage err:`, (e as Error).message); }
+      out.fitness_age = asNumber(fa?.fitnessAge) ?? asNumber(fa?.normalizedAge) ?? out.fitness_age;
+    } catch (e) { console.warn(`[garmin-sync:${owner}] fitnessage failed`, (e as Error).message); }
   }
   try {
     const e = await garminGet<any>(owner, `/metrics-service/metrics/endurancescore?calendarDate=${day}`);
-    console.log(`[garmin-debug ${owner}] endurance:`, JSON.stringify(e).slice(0, 400));
-    const score = e?.overallScore ?? e?.enduranceScore ?? e?.score;
-    if (typeof score === "number") out.endurance_score = score;
-  } catch (e) { console.log(`[garmin-debug ${owner}] endurance err:`, (e as Error).message); }
+    out.endurance_score = asNumber(e?.overallScore) ?? asNumber(e?.enduranceScore) ?? asNumber(e?.score) ?? out.endurance_score;
+  } catch (e) { console.warn(`[garmin-sync:${owner}] endurance failed`, (e as Error).message); }
   try {
     const t = await garminGet<TrainingStatusResp>(owner, `/metrics-service/metrics/trainingstatus/aggregated/${day}`);
+    out.vo2max_running = asNumber(t?.mostRecentVO2Max?.generic?.vo2MaxValue) ?? out.vo2max_running;
+    out.vo2max_cycling = asNumber(t?.mostRecentVO2Max?.cycling?.vo2MaxValue) ?? out.vo2max_cycling;
+    out.fitness_age = asNumber(t?.mostRecentVO2Max?.generic?.fitnessAge) ?? out.fitness_age;
     const stat = t?.mostRecentTrainingStatus?.latestTrainingStatusData;
     if (stat) {
       const first = Object.values(stat)[0];
