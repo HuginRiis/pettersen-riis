@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { Loader2, Upload, Plus, Trash2, Coins, FileText, Sparkles, Check, X } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -158,6 +159,11 @@ function Oversikt({
   const [month, setMonth] = useState<number | "all">(currentM);
   const [chartEndY, setChartEndY] = useState<number>(currentY);
   const [chartEndM, setChartEndM] = useState<number>(currentM);
+  const [chartEndPayCut, setChartEndPayCut] = useState<boolean>(true);
+  const startDefault = new Date(currentY, currentM - 1 - 11, 1);
+  const [chartStartY, setChartStartY] = useState<number>(startDefault.getFullYear());
+  const [chartStartM, setChartStartM] = useState<number>(startDefault.getMonth() + 1);
+  const [chartStartPayCut, setChartStartPayCut] = useState<boolean>(false);
 
   const yearsAvailable = useMemo(() => {
     const set = new Set<number>([currentY]);
@@ -263,27 +269,42 @@ function Oversikt({
 
   const top5 = catData.slice(0, 5);
 
-  // 12 mnd trend som slutter i valgt periode-slutt (chartEndY/chartEndM)
-  const chartAnchor = new Date(chartEndY, chartEndM - 1, 1);
-  const months: { key: string; label: string; isLast: boolean }[] = [];
-  for (let i = 11; i >= 0; i--) {
-    const d = new Date(chartAnchor.getFullYear(), chartAnchor.getMonth() - i, 1);
-    months.push({
-      key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`,
-      label: d.toLocaleDateString("nb-NO", { month: "short", year: "2-digit" }),
-      isLast: i === 0,
-    });
+  // Trend fra valgt startmåned til valgt sluttmåned (inkl). Lønnsperiode-kutt valgfritt på hver side.
+  const startAnchor = new Date(chartStartY, chartStartM - 1, 1);
+  const endAnchor = new Date(chartEndY, chartEndM - 1, 1);
+  const months: { key: string; label: string; isFirst: boolean; isLast: boolean }[] = [];
+  if (endAnchor >= startAnchor) {
+    const cursor = new Date(startAnchor);
+    while (cursor <= endAnchor) {
+      const key = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, "0")}`;
+      months.push({
+        key,
+        label: cursor.toLocaleDateString("nb-NO", { month: "short", year: "2-digit" }),
+        isFirst: false,
+        isLast: false,
+      });
+      cursor.setMonth(cursor.getMonth() + 1);
+    }
+    if (months.length > 0) {
+      months[0].isFirst = true;
+      months[months.length - 1].isLast = true;
+    }
   }
   const trend = months.map((m) => {
     let rows = txns.filter((t) => t.txn_date.startsWith(m.key));
-    if (m.isLast) {
-      // Finn første lønnsutbetaling (inntekt > 30000) i sluttmåneden, og kutt der
+    if (m.isLast && chartEndPayCut) {
+      // Kutt alt fra og med første lønnsutbetaling i sluttmåneden (lønnen tas IKKE med)
       const salary = rows
         .filter((t) => isIncome(t) && Number(t.amount) > 30000)
         .sort((a, b) => a.txn_date.localeCompare(b.txn_date))[0];
-      if (salary) {
-        rows = rows.filter((t) => t.txn_date < salary.txn_date);
-      }
+      if (salary) rows = rows.filter((t) => t.txn_date < salary.txn_date);
+    }
+    if (m.isFirst && chartStartPayCut) {
+      // Kutt alt før første lønn i startmåneden (lønnen tas MED)
+      const salary = rows
+        .filter((t) => isIncome(t) && Number(t.amount) > 30000)
+        .sort((a, b) => a.txn_date.localeCompare(b.txn_date))[0];
+      if (salary) rows = rows.filter((t) => t.txn_date >= salary.txn_date);
     }
     return {
       label: m.label,
@@ -435,30 +456,67 @@ function Oversikt({
       </Card>
 
       <Card className="p-4 border-amber-500/30">
-        <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-          <h3 className="text-sm tracking-[0.25em] uppercase text-amber-400">
-            Inntekt vs utgift — 12 mnd
-          </h3>
-          <div className="flex items-center gap-1.5">
-            <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">
-              Slutt
-            </Label>
-            <Select value={String(chartEndM)} onValueChange={(v) => setChartEndM(Number(v))}>
-              <SelectTrigger className="h-7 w-[88px] text-xs"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {monthNames.map((n, i) => (
-                  <SelectItem key={i} value={String(i + 1)}>{n}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={String(chartEndY)} onValueChange={(v) => setChartEndY(Number(v))}>
-              <SelectTrigger className="h-7 w-[72px] text-xs"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {yearsAvailable.map((y) => (
-                  <SelectItem key={y} value={String(y)}>{y}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        <div className="flex flex-col gap-2 mb-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h3 className="text-sm tracking-[0.25em] uppercase text-amber-400">
+              Inntekt vs utgift
+            </h3>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div className="flex flex-col gap-1 p-2 rounded border border-amber-500/20">
+              <div className="flex items-center justify-between">
+                <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Fra</Label>
+                <div className="flex items-center gap-1.5">
+                  <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Lønnsperiode</Label>
+                  <Switch checked={chartStartPayCut} onCheckedChange={setChartStartPayCut} />
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Select value={String(chartStartM)} onValueChange={(v) => setChartStartM(Number(v))}>
+                  <SelectTrigger className="h-7 w-full text-xs"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {monthNames.map((n, i) => (
+                      <SelectItem key={i} value={String(i + 1)}>{n}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={String(chartStartY)} onValueChange={(v) => setChartStartY(Number(v))}>
+                  <SelectTrigger className="h-7 w-[80px] text-xs"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {yearsAvailable.map((y) => (
+                      <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="flex flex-col gap-1 p-2 rounded border border-amber-500/20">
+              <div className="flex items-center justify-between">
+                <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Til</Label>
+                <div className="flex items-center gap-1.5">
+                  <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Lønnsperiode</Label>
+                  <Switch checked={chartEndPayCut} onCheckedChange={setChartEndPayCut} />
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Select value={String(chartEndM)} onValueChange={(v) => setChartEndM(Number(v))}>
+                  <SelectTrigger className="h-7 w-full text-xs"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {monthNames.map((n, i) => (
+                      <SelectItem key={i} value={String(i + 1)}>{n}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={String(chartEndY)} onValueChange={(v) => setChartEndY(Number(v))}>
+                  <SelectTrigger className="h-7 w-[80px] text-xs"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {yearsAvailable.map((y) => (
+                      <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
           </div>
         </div>
         <div className="h-56">
@@ -553,7 +611,7 @@ function Oversikt({
 
       <Card className="p-4 border-amber-500/30">
         <h3 className="text-sm tracking-[0.25em] uppercase text-amber-400 mb-3">
-          Netto pr måned — 12 mnd
+          Netto pr måned
         </h3>
         <div className="h-48">
           <ResponsiveContainer width="100%" height="100%">
