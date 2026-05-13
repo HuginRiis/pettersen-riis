@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { loggedFetch } from "@/server/api-call-log.server";
+import { logAiSearch, isHouseAuthenticated } from "@/server/ai-usage.server";
 
 export type TaxMonth = {
   id: string;
