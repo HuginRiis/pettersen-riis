@@ -74,6 +74,7 @@ const ROUTE_ICON: Partial<Record<RoutePath, React.ComponentType<{ size?: number;
   "/oppussing-hytta": Hammer,
   "/matvarer": ShoppingCart,
   "/kvitteringer": Receipt,
+  "/okonomi": Wallet,
   "/hundene": Dog,
   "/trening": Dumbbell,
   "/varsler": AlertTriangle,
