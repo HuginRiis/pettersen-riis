@@ -1009,8 +1009,17 @@ function Posteringer({
           </Button>
         </Card>
       )}
+      <Card className="p-2 px-3 border-amber-500/20 flex items-center justify-between">
+        <Label className="text-xs text-muted-foreground">Kun ukategoriserte</Label>
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] text-muted-foreground tabular-nums">
+            {txns.filter((t) => !t.category_id).length} stk
+          </span>
+          <Switch checked={onlyUncat} onCheckedChange={setOnlyUncat} />
+        </div>
+      </Card>
       <div className="space-y-1.5">
-        {txns.slice(0, 200).map((t) => {
+        {(onlyUncat ? txns.filter((t) => !t.category_id) : txns).slice(0, 200).map((t) => {
           const cat = cats.find((c) => c.id === t.category_id);
           if (editingId === t.id) {
             return (
