@@ -184,6 +184,7 @@ export async function syncDaily(owner: GarminOwner, daysBack = 30): Promise<numb
         stress_average: ds.averageStressLevel ?? null,
         raw: ds as any,
         updated_at: new Date().toISOString(),
+        ...(isLatest ? fitnessExtras : {}),
       };
       await supabaseAdmin.from("garmin_daily_stats").upsert([row], { onConflict: "owner,day" });
       count++;
