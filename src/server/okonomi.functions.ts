@@ -193,11 +193,12 @@ const importSchema = z.object({
         amount: z.number(),
         account: z.string().nullable().optional(),
         external_ref: z.string().nullable().optional(),
+        category_id: z.string().uuid().nullable().optional(),
       }),
     )
     .min(1)
     .max(2000),
-  source: z.enum(["csv", "pdf"]).default("csv"),
+  source: z.enum(["csv", "pdf", "manual"]).default("csv"),
   default_account: z.string().optional(),
 });
 
@@ -211,7 +212,7 @@ export const importOkonomiTransactions = createServerFn({ method: "POST" })
       amount: r.amount,
       account: r.account ?? data.default_account ?? null,
       external_ref: r.external_ref ?? null,
-      category_id: applyRules(r.description, rules),
+      category_id: r.category_id ?? applyRules(r.description, rules),
       source: data.source,
       approved: true,
     }));
