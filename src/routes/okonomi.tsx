@@ -932,6 +932,7 @@ function Posteringer({
   const learn = useServerFn(learnMerchantRule);
   const [adding, setAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [onlyUncat, setOnlyUncat] = useState(false);
   const [form, setForm] = useState({
     txn_date: new Date().toISOString().slice(0, 10),
     description: "",
