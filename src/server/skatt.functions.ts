@@ -275,6 +275,17 @@ Hold det kort, faktabasert og nøyaktig — alle tall som står på slippen MÅ 
       throw new Error(`AI-feil ${res.status}: ${txt.slice(0, 300)}`);
     }
     const json: any = await res.json();
+    const u = json?.usage ?? {};
+    await logAiSearch({
+      feature: "lonnslipp",
+      query: `lønnslipp-saga ${data.id}`,
+      model: "google/gemini-2.5-pro",
+      authenticated: await isHouseAuthenticated(),
+      status: "ok",
+      promptTokens: u.prompt_tokens ?? null,
+      completionTokens: u.completion_tokens ?? null,
+      totalTokens: u.total_tokens ?? null,
+    });
     const text: string = (json?.choices?.[0]?.message?.content ?? "").trim();
     if (!text) throw new Error("AI returnerte tom tekst");
 
