@@ -58,18 +58,26 @@ const fmt = (n: number) =>
 function OkonomiPage() {
   const listCats = useServerFn(listOkonomiCategories);
   const listTxns = useServerFn(listOkonomiTransactions);
+  const getSettings = useServerFn(getOkonomiSettings);
   const [cats, setCats] = useState<OkonomiCategory[]>([]);
   const [txns, setTxns] = useState<OkonomiTransaction[]>([]);
+  const [settings, setSettings] = useState<OkonomiSettings | null>(null);
   const [loading, setLoading] = useState(true);
 
   async function reload() {
     setLoading(true);
     try {
+      // Hent 2 hele år tilbake — gir oss filter-mulighet uten ekstra rundtur
       const now = new Date();
-      const from = new Date(now.getFullYear(), now.getMonth() - 5, 1).toISOString().slice(0, 10);
-      const [c, t] = await Promise.all([listCats(), listTxns({ data: { from, limit: 2000 } })]);
+      const from = `${now.getFullYear() - 1}-01-01`;
+      const [c, t, s] = await Promise.all([
+        listCats(),
+        listTxns({ data: { from, limit: 2000 } }),
+        getSettings(),
+      ]);
       setCats(c);
       setTxns(t);
+      setSettings(s);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Kunne ikke laste");
     } finally {
@@ -112,7 +120,7 @@ function OkonomiPage() {
             </TabsList>
 
             <TabsContent value="oversikt" className="mt-4">
-              <Oversikt cats={cats} txns={txns} />
+              <Oversikt cats={cats} txns={txns} settings={settings} />
             </TabsContent>
             <TabsContent value="posteringer" className="mt-4">
               <Posteringer cats={cats} txns={txns} reload={reload} />
