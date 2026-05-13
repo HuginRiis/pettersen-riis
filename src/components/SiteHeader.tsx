@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Menu, X, LogOut, Crown, Swords, Shield, KeyRound, Home, Star, Flower2,
   Sun, Compass, Castle, CalendarDays, BellRing, Eye, Mountain, Lightbulb, Lamp, Zap, Hammer,
   ShoppingCart, Receipt, Dog, Dumbbell, AlertTriangle, ScrollText, Globe, ChevronDown, ChevronRight,
-  TreePine, Coins, Bot } from "lucide-react";
+  TreePine, Coins, Bot, Wallet } from "lucide-react";
 import { logoutFn } from "@/server/auth";
 import { getIcon as getWebFavIcon, getIconColor as getWebFavIconColor, faviconUrl, FAVICON_ICON } from "@/lib/web-favorite-icons";
 import birchImg from "@/assets/pollen-birch.png";
@@ -43,6 +43,7 @@ type RoutePath =
   | "/oppussing-hytta"
   | "/matvarer"
   | "/kvitteringer"
+  | "/okonomi"
   | "/skatte-utregningen"
   | "/gressklipper"
   | "/stovsugeren"
@@ -73,6 +74,7 @@ const ROUTE_ICON: Partial<Record<RoutePath, React.ComponentType<{ size?: number;
   "/oppussing-hytta": Hammer,
   "/matvarer": ShoppingCart,
   "/kvitteringer": Receipt,
+  "/okonomi": Wallet,
   "/hundene": Dog,
   "/trening": Dumbbell,
   "/varsler": AlertTriangle,
@@ -99,6 +101,7 @@ const ROUTE_ICON_COLOR: Partial<Record<RoutePath, string>> = {
   "/oppussing-hytta": "#a16207",     // tre — rustbrun
   "/matvarer": "#84cc16",            // varer — markens grønt
   "/kvitteringer": "#94a3b8",        // pergament — sølv
+  "/okonomi": "#d4af37",             // Iron Bank — gull
   "/hundene": "#f59e0b",             // ulv/hund — ravgull
   "/trening": "#ef4444",             // sverd — blod
   "/varsler": "#dc2626",             // farevarsel — rødt skilt
@@ -129,6 +132,7 @@ const navLinks: NavLink[] = [
   { to: "/oppussing-hytta", label: "Prosjekter på hytta" },
   { to: "/matvarer", label: "Varer" },
   { to: "/kvitteringer", label: "Kvitteringer" },
+  { to: "/okonomi", label: "Budsjett" },
   { to: "/skatte-utregningen", label: "Skatte utregningen" },
   { to: "/hundene", label: "Hundene" },
   { to: "/trening", label: "Trening" },
