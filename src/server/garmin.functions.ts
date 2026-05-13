@@ -150,7 +150,7 @@ export const listGarminDevices = createServerFn({ method: "GET" })
     const owner = data.owner as GarminOwner;
     const { data: rows, error } = await supabaseAdmin
       .from("garmin_devices")
-      .select("id, product_id, name, image_url, is_default, last_used_at, register_date")
+      .select("id, product_id, name, image_url, image_transparent_url, is_default, last_used_at, register_date")
       .eq("owner", owner)
       .order("last_used_at", { ascending: false, nullsFirst: false });
     if (error) throw new Error(error.message);
@@ -177,7 +177,7 @@ export const setDefaultGarminDevice = createServerFn({ method: "POST" })
       .update({ is_default: true } as never)
       .eq("id", deviceId)
       .eq("owner", owner)
-      .select("name, product_id, image_url")
+      .select("name, product_id, image_url, image_transparent_url")
       .maybeSingle();
     if (e2) throw new Error(e2.message);
     if (!row) throw new Error("Klokken finnes ikke");
@@ -194,6 +194,7 @@ export const setDefaultGarminDevice = createServerFn({ method: "POST" })
         device_name: (row as any).name,
         device_product_id: (row as any).product_id,
         device_image_url: (row as any).image_url,
+        device_image_transparent_url: (row as any).image_transparent_url,
         device_updated_at: new Date().toISOString(),
       } as never).eq("id", (tok as any).id);
     }
