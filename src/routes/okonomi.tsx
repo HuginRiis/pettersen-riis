@@ -165,6 +165,14 @@ function Oversikt({
   const [chartStartM, setChartStartM] = useState<number>(startDefault.getMonth() + 1);
   const [chartStartPayCut, setChartStartPayCut] = useState<boolean>(false);
 
+  // Periodefilter for "stats-boksene" (uavhengig av år/mnd-filteret over)
+  const [periodStartY, setPeriodStartY] = useState<number>(startDefault.getFullYear());
+  const [periodStartM, setPeriodStartM] = useState<number>(startDefault.getMonth() + 1);
+  const [periodStartPayCut, setPeriodStartPayCut] = useState<boolean>(false);
+  const [periodEndY, setPeriodEndY] = useState<number>(currentY);
+  const [periodEndM, setPeriodEndM] = useState<number>(currentM);
+  const [periodEndPayCut, setPeriodEndPayCut] = useState<boolean>(true);
+
   const yearsAvailable = useMemo(() => {
     const set = new Set<number>([currentY]);
     for (const t of txns) {
@@ -243,6 +251,61 @@ function Oversikt({
   const snittPrDag = elapsedDays > 0 ? brukt / elapsedDays : 0;
   const overskudd = inntekt - brukt;
   const igjenPrDag = daysUntilPayday > 0 ? overskudd / daysUntilPayday : overskudd;
+
+  // ---- Periodefilter-stats (uavhengig sett med bokser) ----
+  const periodStartAnchor = new Date(periodStartY, periodStartM - 1, 1);
+  const periodEndAnchorLast = new Date(periodEndY, periodEndM, 0);
+  const startKey = `${periodStartY}-${String(periodStartM).padStart(2, "0")}`;
+  const endKey = `${periodEndY}-${String(periodEndM).padStart(2, "0")}`;
+  let periodTxns: OkonomiTransaction[] = [];
+  let effectiveStartDate = periodStartAnchor;
+  let effectiveEndDate = periodEndAnchorLast;
+  if (periodEndAnchorLast >= periodStartAnchor) {
+    periodTxns = txns.filter((t) => {
+      const k = t.txn_date.slice(0, 7);
+      return k >= startKey && k <= endKey;
+    });
+    if (periodStartPayCut) {
+      const salary = periodTxns
+        .filter((t) => t.txn_date.slice(0, 7) === startKey && isIncome(t) && Number(t.amount) > 30000)
+        .sort((a, b) => a.txn_date.localeCompare(b.txn_date))[0];
+      if (salary) {
+        periodTxns = periodTxns.filter(
+          (t) => t.txn_date.slice(0, 7) !== startKey || t.txn_date >= salary.txn_date,
+        );
+        effectiveStartDate = new Date(salary.txn_date);
+      }
+    }
+    if (periodEndPayCut) {
+      const salary = periodTxns
+        .filter((t) => t.txn_date.slice(0, 7) === endKey && isIncome(t) && Number(t.amount) > 30000)
+        .sort((a, b) => a.txn_date.localeCompare(b.txn_date))[0];
+      if (salary) {
+        periodTxns = periodTxns.filter(
+          (t) => t.txn_date.slice(0, 7) !== endKey || t.txn_date < salary.txn_date,
+        );
+        const d = new Date(salary.txn_date);
+        d.setDate(d.getDate() - 1);
+        effectiveEndDate = d;
+      }
+    }
+  }
+  const periodBrukt = periodTxns.filter(isExpense).reduce((s, t) => s + Math.abs(Number(t.amount)), 0);
+  const periodInntekt = periodTxns.filter(isIncome).reduce((s, t) => s + Number(t.amount), 0);
+  const periodMonths = Math.max(
+    1,
+    (periodEndY - periodStartY) * 12 + (periodEndM - periodStartM) + 1,
+  );
+  const periodBudsjett = cats.reduce((s, c) => s + (Number(c.monthly_budget) || 0), 0) * periodMonths;
+  const periodOverskudd = periodInntekt - periodBrukt;
+  const periodIgjen = Math.max(0, periodBudsjett - periodBrukt);
+  const cappedEnd = effectiveEndDate > today ? today : effectiveEndDate;
+  const periodDays = Math.max(
+    1,
+    Math.floor((cappedEnd.getTime() - effectiveStartDate.getTime()) / 86400000) + 1,
+  );
+  const periodSnittPrDag = periodBrukt / periodDays;
+
 
   // Per kategori i valgt periode
   const perCat = new Map<string, number>();
@@ -372,6 +435,80 @@ function Oversikt({
           <Stat label="Igjen" value={fmt(igjen)} />
         )}
       </div>
+
+      {/* Periodefilter med lønnsperiode (egne bokser) */}
+      <Card className="p-3 border-amber-500/30">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <div className="flex flex-col gap-1 p-2 rounded border border-amber-500/20">
+            <div className="flex items-center justify-between">
+              <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Fra</Label>
+              <div className="flex items-center gap-1.5">
+                <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Lønnsperiode</Label>
+                <Switch checked={periodStartPayCut} onCheckedChange={setPeriodStartPayCut} />
+              </div>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Select value={String(periodStartM)} onValueChange={(v) => setPeriodStartM(Number(v))}>
+                <SelectTrigger className="h-7 w-full text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {monthNames.map((n, i) => (
+                    <SelectItem key={i} value={String(i + 1)}>{n}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={String(periodStartY)} onValueChange={(v) => setPeriodStartY(Number(v))}>
+                <SelectTrigger className="h-7 w-[80px] text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {yearsAvailable.map((y) => (
+                    <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="flex flex-col gap-1 p-2 rounded border border-amber-500/20">
+            <div className="flex items-center justify-between">
+              <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Til</Label>
+              <div className="flex items-center gap-1.5">
+                <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Lønnsperiode</Label>
+                <Switch checked={periodEndPayCut} onCheckedChange={setPeriodEndPayCut} />
+              </div>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Select value={String(periodEndM)} onValueChange={(v) => setPeriodEndM(Number(v))}>
+                <SelectTrigger className="h-7 w-full text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {monthNames.map((n, i) => (
+                    <SelectItem key={i} value={String(i + 1)}>{n}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={String(periodEndY)} onValueChange={(v) => setPeriodEndY(Number(v))}>
+                <SelectTrigger className="h-7 w-[80px] text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {yearsAvailable.map((y) => (
+                    <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      <div className="grid grid-cols-2 gap-3">
+        <Stat label="Brukt" value={fmt(periodBrukt)} tone="warn" />
+        <Stat label="Inntekt" value={fmt(periodInntekt)} tone="ok" />
+        <Stat label="Budsjett" value={fmt(periodBudsjett)} />
+        <Stat
+          label={periodOverskudd >= 0 ? "Overskudd" : "Underskudd"}
+          value={fmt(Math.abs(periodOverskudd))}
+          tone={periodOverskudd >= 0 ? "ok" : "warn"}
+        />
+        <Stat label={`Snitt pr dag (${periodDays} d)`} value={fmt(periodSnittPrDag)} />
+        <Stat label="Igjen" value={fmt(periodIgjen)} />
+      </div>
+
 
       {!isCurrentPeriod && (
         <p className="text-[11px] text-muted-foreground italic">
