@@ -436,6 +436,80 @@ function Oversikt({
         )}
       </div>
 
+      {/* Periodefilter med lønnsperiode (egne bokser) */}
+      <Card className="p-3 border-amber-500/30">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <div className="flex flex-col gap-1 p-2 rounded border border-amber-500/20">
+            <div className="flex items-center justify-between">
+              <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Fra</Label>
+              <div className="flex items-center gap-1.5">
+                <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Lønnsperiode</Label>
+                <Switch checked={periodStartPayCut} onCheckedChange={setPeriodStartPayCut} />
+              </div>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Select value={String(periodStartM)} onValueChange={(v) => setPeriodStartM(Number(v))}>
+                <SelectTrigger className="h-7 w-full text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {monthNames.map((n, i) => (
+                    <SelectItem key={i} value={String(i + 1)}>{n}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={String(periodStartY)} onValueChange={(v) => setPeriodStartY(Number(v))}>
+                <SelectTrigger className="h-7 w-[80px] text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {yearsAvailable.map((y) => (
+                    <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="flex flex-col gap-1 p-2 rounded border border-amber-500/20">
+            <div className="flex items-center justify-between">
+              <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Til</Label>
+              <div className="flex items-center gap-1.5">
+                <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Lønnsperiode</Label>
+                <Switch checked={periodEndPayCut} onCheckedChange={setPeriodEndPayCut} />
+              </div>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Select value={String(periodEndM)} onValueChange={(v) => setPeriodEndM(Number(v))}>
+                <SelectTrigger className="h-7 w-full text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {monthNames.map((n, i) => (
+                    <SelectItem key={i} value={String(i + 1)}>{n}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={String(periodEndY)} onValueChange={(v) => setPeriodEndY(Number(v))}>
+                <SelectTrigger className="h-7 w-[80px] text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {yearsAvailable.map((y) => (
+                    <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      <div className="grid grid-cols-2 gap-3">
+        <Stat label="Brukt" value={fmt(periodBrukt)} tone="warn" />
+        <Stat label="Inntekt" value={fmt(periodInntekt)} tone="ok" />
+        <Stat label="Budsjett" value={fmt(periodBudsjett)} />
+        <Stat
+          label={periodOverskudd >= 0 ? "Overskudd" : "Underskudd"}
+          value={fmt(Math.abs(periodOverskudd))}
+          tone={periodOverskudd >= 0 ? "ok" : "warn"}
+        />
+        <Stat label={`Snitt pr dag (${periodDays} d)`} value={fmt(periodSnittPrDag)} />
+        <Stat label="Igjen" value={fmt(periodIgjen)} />
+      </div>
+
+
       {!isCurrentPeriod && (
         <p className="text-[11px] text-muted-foreground italic">
           Viser historisk periode — «igjen pr dag» og lønn vises kun for inneværende måned.
