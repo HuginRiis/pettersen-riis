@@ -1,7 +1,18 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { openLoginDialog } from "@/components/LoginDialog";
-import { KeyRound, LogIn, Clock, MapPin, User } from "lucide-react";
+import { KeyRound, LogIn, Clock, MapPin, User, Bell, BellOff } from "lucide-react";
+import { getPushPublicKey } from "@/server/agenda-push";
+import {
+  type Who,
+  getStoredWho,
+  isPushSupported,
+  isCurrentlySubscribed,
+  subscribePush,
+  unsubscribePush,
+  updateSubscriptionWho,
+} from "@/lib/push-client";
 import { getWelcomeInfo } from "@/server/auth";
 import {
   Dialog,
@@ -780,6 +791,8 @@ function WelcomeInfoStrip({ info }: { info: WelcomeInfo | null }) {
   );
 }
 
+const DEVICE_WHO_OPTIONS: Who[] = ["Arne", "Rebekka", "Marita", "Nora", "Celine", "Mira"];
+
 function HeroAuthPill({
   authenticated,
   onLogout,
@@ -787,7 +800,20 @@ function HeroAuthPill({
   authenticated: boolean;
   onLogout: () => void;
 }) {
+  const fetchPushPublicKey = useServerFn(getPushPublicKey);
   const [info, setInfo] = useState<WelcomeInfo | null>(null);
+  const [pushSupported, setPushSupported] = useState<boolean>(true);
+  const [pushSubscribed, setPushSubscribed] = useState<boolean>(false);
+  const [pushWho, setPushWho] = useState<Who>("Alle");
+  const [pushBusy, setPushBusy] = useState(false);
+  const [pushMsg, setPushMsg] = useState<string | null>(null);
+  const [editingWho, setEditingWho] = useState(false);
+
+  useEffect(() => {
+    setPushSupported(isPushSupported());
+    setPushWho(getStoredWho());
+    isCurrentlySubscribed().then(setPushSubscribed);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -795,10 +821,10 @@ function HeroAuthPill({
       let endpoint: string | null = null;
       let storedWho: string | null = null;
       try {
-        const { getCurrentSubscriptionDetails, getStoredWho } = await import("@/lib/push-client");
+        const { getCurrentSubscriptionDetails, getStoredWho: gw } = await import("@/lib/push-client");
         const sub = await getCurrentSubscriptionDetails();
         if (sub) endpoint = sub.endpoint;
-        storedWho = getStoredWho();
+        storedWho = gw();
       } catch {
         /* ignore */
       }
@@ -814,54 +840,131 @@ function HeroAuthPill({
     };
   }, [authenticated]);
 
+  async function togglePush() {
+    setPushBusy(true);
+    setPushMsg(null);
+    if (pushSubscribed) {
+      const r = await unsubscribePush();
+      if (r.ok) {
+        setPushSubscribed(false);
+        setPushMsg("Ravnene er kalt hjem.");
+      } else setPushMsg(r.error || "Kunne ikke slå av.");
+    } else {
+      const { vapidPublicKey } = await fetchPushPublicKey();
+      const r = await subscribePush(pushWho, vapidPublicKey);
+      if (r.ok) {
+        setPushSubscribed(true);
+        setPushMsg(`Ravnene flyr nå til "${pushWho}".`);
+      } else setPushMsg(r.error || "Kunne ikke slå på.");
+    }
+    setPushBusy(false);
+  }
+
+  async function changePushWho(next: Who) {
+    setPushWho(next);
+    if (pushSubscribed) {
+      setPushBusy(true);
+      const r = await updateSubscriptionWho(next);
+      setPushBusy(false);
+      setPushMsg(r.ok ? `Denne enheten er nå satt som "${next}".` : r.error || "Feil");
+    }
+  }
+
   const greetingName = info?.who && info.who !== "Alle" ? info.who : null;
 
   return (
-    <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-20 pointer-events-none">
-      <div className="pointer-events-auto flex items-center gap-2 rounded-full border border-primary/40 bg-background/70 backdrop-blur-md px-2.5 py-1.5 shadow-[0_4px_20px_rgba(0,0,0,0.45)]">
-        <div className="w-7 h-7 rounded-full border border-primary/50 flex items-center justify-center text-primary text-sm shrink-0">
-          ❦
-        </div>
-        {authenticated ? (
-          <>
-            <div className="flex flex-col leading-tight pr-1">
-              <span className="text-[8px] tracking-[0.25em] uppercase text-primary/80">
-                Borgen er åpne
-              </span>
-              <span className="text-[11px] text-foreground truncate max-w-[140px]">
-                {greetingName ? `Velkommen ${greetingName}` : "Velkommen Gjest"}
-              </span>
-            </div>
+    <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 pointer-events-none w-[min(92vw,440px)]">
+      <div className="pointer-events-auto rounded-2xl border border-primary/40 bg-background/75 backdrop-blur-md px-3 py-2.5 shadow-[0_4px_20px_rgba(0,0,0,0.45)] flex flex-col gap-2">
+        {/* Welcome row */}
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 rounded-full border border-primary/50 flex items-center justify-center text-primary text-sm shrink-0">
+            ❦
+          </div>
+          <div className="flex flex-col leading-tight flex-1 min-w-0">
+            <span className="text-[8px] tracking-[0.25em] uppercase text-primary/80">
+              {authenticated ? "Borgen er åpen" : "Husets port"}
+            </span>
+            <span className="text-[11px] text-foreground truncate">
+              {greetingName ? `Velkommen ${greetingName}` : "Velkommen Gjest"}
+            </span>
+          </div>
+          {authenticated ? (
             <button
               onClick={onLogout}
               type="button"
               title="Logg ut"
-              className="inline-flex items-center gap-1 text-[10px] tracking-[0.2em] uppercase text-muted-foreground hover:text-primary transition-colors px-2.5 py-1.5 border border-border rounded-full hover:border-primary/60"
+              className="inline-flex items-center gap-1 text-[10px] tracking-[0.2em] uppercase text-muted-foreground hover:text-primary transition-colors px-2.5 py-1.5 border border-border rounded-full hover:border-primary/60 shrink-0"
             >
               <KeyRound size={12} />
               <span className="hidden sm:inline">Logg ut</span>
             </button>
-          </>
-        ) : (
-          <>
-            <div className="flex flex-col leading-tight pr-1">
-              <span className="text-[8px] tracking-[0.25em] uppercase text-primary/80">
-                Husets port
-              </span>
-              <span className="text-[11px] text-foreground truncate max-w-[140px]">
-                {greetingName ? `Velkommen ${greetingName}` : "Velkommen Gjest"}
-              </span>
-            </div>
+          ) : (
             <button
               type="button"
               onClick={() => openLoginDialog()}
               title="Logg inn"
-              className="inline-flex items-center gap-1 text-[10px] tracking-[0.2em] uppercase text-primary hover:text-primary px-2.5 py-1.5 border border-primary/50 rounded-full bg-primary/10 hover:bg-primary/20 transition-colors"
+              className="inline-flex items-center gap-1 text-[10px] tracking-[0.2em] uppercase text-primary hover:text-primary px-2.5 py-1.5 border border-primary/50 rounded-full bg-primary/10 hover:bg-primary/20 transition-colors shrink-0"
             >
               <LogIn size={12} />
               <span className="hidden sm:inline">Logg inn</span>
             </button>
-          </>
+          )}
+        </div>
+
+        {/* Push row */}
+        {pushSupported ? (
+          <div className="flex items-center gap-2 border-t border-primary/20 pt-2">
+            {pushSubscribed ? (
+              <Bell size={14} className="text-primary shrink-0" />
+            ) : (
+              <BellOff size={14} className="text-muted-foreground shrink-0" />
+            )}
+            <div className="flex flex-col leading-tight flex-1 min-w-0">
+              <span className="text-[8px] tracking-[0.25em] uppercase text-primary/80">
+                Ravnenes bud
+              </span>
+              {editingWho ? (
+                <select
+                  autoFocus
+                  value={pushWho}
+                  onChange={(e) => changePushWho(e.target.value as Who)}
+                  onBlur={() => setEditingWho(false)}
+                  className="bg-input border border-border rounded px-1.5 py-0.5 text-[11px] text-foreground"
+                >
+                  {DEVICE_WHO_OPTIONS.map((w) => (
+                    <option key={w} value={w}>
+                      {w}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setEditingWho(true)}
+                  className="text-[11px] text-foreground text-left hover:text-primary transition-colors truncate inline-flex items-center gap-1"
+                  title="Endre bruker"
+                >
+                  <User size={10} className="text-primary/70" />
+                  {pushWho === "Alle" ? "Velg bruker" : pushWho}
+                </button>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={togglePush}
+              disabled={pushBusy}
+              className={`px-2.5 py-1 rounded-full text-[10px] tracking-[0.2em] uppercase font-medium border transition shrink-0 ${
+                pushSubscribed
+                  ? "border-border text-foreground hover:bg-accent/40"
+                  : "bg-primary text-primary-foreground border-primary hover:opacity-90"
+              } disabled:opacity-50`}
+            >
+              {pushBusy ? "..." : pushSubscribed ? "Slå av" : "Slå på"}
+            </button>
+          </div>
+        ) : null}
+        {pushMsg && (
+          <p className="text-[10px] text-muted-foreground px-1 leading-tight">{pushMsg}</p>
         )}
       </div>
     </div>

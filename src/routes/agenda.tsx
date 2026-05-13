@@ -22,10 +22,10 @@ import {
 export const Route = createFileRoute("/agenda")({
   head: () => ({
     meta: [
-      { title: "Krøniken — Agenda | House Pettersen Riis" },
-      { name: "description", content: "Husets kalender & meldinger med dato, tid og push-varsler." },
-      { property: "og:title", content: "Krøniken — Agenda | House Pettersen Riis" },
-      { property: "og:description", content: "Send korte meldinger med dato, tid og varsler til familiens agenda." },
+      { title: "Søppel, bursdager og meldinger | House Pettersen Riis" },
+      { name: "description", content: "Husets kalender med søppeldager, fødselsdager og meldinger med varsler." },
+      { property: "og:title", content: "Søppel, bursdager og meldinger | House Pettersen Riis" },
+      { property: "og:description", content: "Ravnene bærer bud om søppeldager, fødselsfester og påminnelser fra borgen." },
     ],
   }),
   component: AgendaPage,
@@ -125,8 +125,8 @@ function AgendaPage() {
     <PageShell>
       <PageHero
         eyebrow="Husets krønike"
-        title="Agenda & Meldinger"
-        subtitle="Skriv korte meldinger med dato, tid og varsler — så husker huset hva som venter."
+        title="Søppel, bursdager og meldinger"
+        subtitle="Når ravnene bærer bud om søppeldager, fødselsfester og varsler — slik at intet faller i glemsel ved borgens mur."
         image={heroImg}
       />
 
