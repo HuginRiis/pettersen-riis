@@ -473,6 +473,62 @@ function Oversikt({
         </div>
       </Card>
 
+      {/* Kategorier inkludert i beregningen */}
+      <Card className="p-3 border-amber-500/30">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-[11px] tracking-[0.2em] uppercase text-amber-400">
+            Kategorier i beregning
+          </h3>
+          <div className="flex gap-1">
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-6 px-2 text-[10px]"
+              onClick={() => setExcludedCats(new Set())}
+            >
+              Alle på
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-6 px-2 text-[10px]"
+              onClick={() =>
+                setExcludedCats(new Set([...cats.map((c) => c.id), "uten"]))
+              }
+            >
+              Alle av
+            </Button>
+          </div>
+        </div>
+        <ul className="space-y-1.5">
+          {cats.map((c) => {
+            const on = !excludedCats.has(c.id);
+            return (
+              <li key={c.id} className="flex items-center gap-2">
+                <span
+                  className="inline-block w-2.5 h-2.5 rounded-full shrink-0"
+                  style={{ background: c.color }}
+                />
+                <span className="flex-1 text-xs truncate">
+                  {c.name}
+                  {c.is_income && <span className="text-emerald-400/70 ml-1">(inntekt)</span>}
+                  {c.is_transfer && <span className="text-sky-400/70 ml-1">(overføring)</span>}
+                </span>
+                <Switch checked={on} onCheckedChange={() => toggleCatExcluded(c.id)} />
+              </li>
+            );
+          })}
+          <li className="flex items-center gap-2 pt-1 border-t border-amber-500/10">
+            <span className="inline-block w-2.5 h-2.5 rounded-full shrink-0 bg-slate-500" />
+            <span className="flex-1 text-xs italic text-muted-foreground">Uten kategori</span>
+            <Switch
+              checked={!excludedCats.has("uten")}
+              onCheckedChange={() => toggleCatExcluded("uten")}
+            />
+          </li>
+        </ul>
+      </Card>
+
       <div className="grid grid-cols-2 gap-3">
         <Stat label="Brukt" value={fmt(brukt)} tone="warn" />
         <Stat label="Inntekt" value={fmt(inntekt)} tone="ok" />
