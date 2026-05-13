@@ -329,7 +329,7 @@ function Oversikt({
     1,
     (periodEndY - periodStartY) * 12 + (periodEndM - periodStartM) + 1,
   );
-  const periodBudsjett = cats.reduce((s, c) => s + (Number(c.monthly_budget) || 0), 0) * periodMonths;
+  const periodBudsjett = cats.filter((c) => !excludedCats.has(c.id)).reduce((s, c) => s + (Number(c.monthly_budget) || 0), 0) * periodMonths;
   const periodOverskudd = periodInntekt - periodBrukt;
   const periodIgjen = Math.max(0, periodBudsjett - periodBrukt);
   const cappedEnd = effectiveEndDate > today ? today : effectiveEndDate;
