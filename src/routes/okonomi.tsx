@@ -1190,6 +1190,13 @@ function ImportTab({ cats, reload }: { cats: OkonomiCategory[]; reload: () => vo
 
   function updateRow(i: number, patch: Partial<ParsedTxn>) {
     setPreview((p) => p.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
+    // Lær regelen straks brukeren velger en kategori — neste import bruker den
+    if (patch.category_id) {
+      const desc = preview[i]?.description;
+      if (desc) {
+        learn({ data: { description: desc, category_id: patch.category_id } }).catch(() => {});
+      }
+    }
   }
   function removeRow(i: number) {
     setPreview((p) => p.filter((_, idx) => idx !== i));
