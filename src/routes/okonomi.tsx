@@ -848,10 +848,13 @@ function ImportTab({ cats, reload }: { cats: OkonomiCategory[]; reload: () => vo
   async function handleCsv(file: File) {
     setBusy(true);
     setSource("csv");
+    setAiLog([]);
+    pushLog(`Leser CSV-fil «${file.name}» (${Math.round(file.size / 1024)} kB)`);
     setBusyMsg("Leser CSV…");
     try {
       const text = await file.text();
       const lines = text.split(/\r?\n/).filter(Boolean);
+      pushLog(`Fant ${lines.length} linjer i filen`);
       if (lines.length < 2) throw new Error("Tomt CSV");
       const sep = lines[0].includes(";") ? ";" : ",";
       const header = lines[0].split(sep).map((h) => h.trim().toLowerCase().replace(/"/g, ""));
@@ -861,12 +864,16 @@ function ImportTab({ cats, reload }: { cats: OkonomiCategory[]; reload: () => vo
       if (idxDate < 0 || idxDesc < 0 || idxAmt < 0)
         throw new Error("Fant ikke dato/tekst/beløp-kolonner");
       const rows: ParsedTxn[] = [];
+      let skipped = 0;
       for (let i = 1; i < lines.length; i++) {
         const cells = lines[i].split(sep).map((c) => c.trim().replace(/^"|"$/g, ""));
         const date = parseNorDate(cells[idxDate]);
         const desc = cells[idxDesc];
         const amt = parseNorNum(cells[idxAmt]);
-        if (!date || !desc || !isFinite(amt)) continue;
+        if (!date || !desc || !isFinite(amt)) {
+          skipped++;
+          continue;
+        }
         rows.push({
           txn_date: date,
           description: desc,
@@ -874,11 +881,14 @@ function ImportTab({ cats, reload }: { cats: OkonomiCategory[]; reload: () => vo
           external_ref: `csv:${date}:${desc}:${amt}`,
         });
       }
+      pushLog(`Tolket ${rows.length} gyldige posteringer (${skipped} hoppet over)`);
       const enriched = await autoCategorize(rows);
       setPreview(enriched);
       const cat = enriched.filter((r) => r.category_id).length;
+      pushLog(`Klar — ${cat}/${enriched.length} har fått kategori`);
       toast.success(`${enriched.length} rader klare — ${cat} kategorisert`);
     } catch (e) {
+      pushLog(`Feil: ${e instanceof Error ? e.message : "ukjent"}`);
       toast.error(e instanceof Error ? e.message : "CSV-feil");
     } finally {
       setBusy(false);
@@ -889,13 +899,17 @@ function ImportTab({ cats, reload }: { cats: OkonomiCategory[]; reload: () => vo
   async function handlePdfImage(file: File) {
     setBusy(true);
     setSource("pdf");
+    setAiLog([]);
+    pushLog(`Sender «${file.name}» (${Math.round(file.size / 1024)} kB) til AI`);
     setBusyMsg("AI leser kontoutskrift…");
     try {
       const buf = await file.arrayBuffer();
       const b64 = btoa(String.fromCharCode(...new Uint8Array(buf)));
+      pushLog("AI analyserer dokumentet — dette tar gjerne 10–40 sek");
       const res = await parseAi({
         data: { fileBase64: b64, mimeType: file.type || "application/pdf" },
       });
+      pushLog(`AI fant ${res.rows.length} posteringer i utskriften`);
       const rows = res.rows.map((r) => ({
         ...r,
         external_ref: `ai:${r.txn_date}:${r.description}:${r.amount}`,
@@ -903,8 +917,10 @@ function ImportTab({ cats, reload }: { cats: OkonomiCategory[]; reload: () => vo
       const enriched = await autoCategorize(rows);
       setPreview(enriched);
       const cat = enriched.filter((r) => r.category_id).length;
+      pushLog(`Klar — ${cat}/${enriched.length} har fått kategori`);
       toast.success(`AI fant ${enriched.length} posteringer — ${cat} kategorisert`);
     } catch (e) {
+      pushLog(`Feil: ${e instanceof Error ? e.message : "ukjent"}`);
       toast.error(e instanceof Error ? e.message : "AI-feil");
     } finally {
       setBusy(false);
