@@ -154,6 +154,22 @@ function Home() {
         <HeroAuthPill authenticated={isAuthed} onLogout={handleLogout} />
       </div>
 
+      <div className="container mx-auto px-4 -mt-4 sm:-mt-6 mb-6 flex justify-center relative z-10">
+        <button
+          type="button"
+          onClick={() => {
+            const el = document.getElementById("husets-saler");
+            if (el) {
+              const y = el.getBoundingClientRect().top + window.scrollY - 8;
+              window.scrollTo({ top: y, behavior: "smooth" });
+            }
+          }}
+          className="text-display tracking-[0.35em] text-sm sm:text-base uppercase px-6 sm:px-8 py-3 border-2 border-primary/70 bg-background/80 backdrop-blur text-primary hover:bg-primary hover:text-primary-foreground transition-colors shadow-elegant"
+        >
+          ⚔ Menyen ⚔
+        </button>
+      </div>
+
       <OutdoorWeatherStrip stationMatch="tollnes" />
       <IndoorWeatherStrip stationMatch="tollnes" label="Inne nå · Tollnes" />
 
