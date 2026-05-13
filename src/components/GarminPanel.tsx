@@ -704,9 +704,13 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
                         if (!contribsSrc?.length) return null;
                         const top = contribsSrc.slice(0, 3);
                         const labelMap: Record<string, string> = {
-                          RUNNING: "Løping", CYCLING: "Sykling", SWIMMING: "Svømming",
-                          HIKING: "Tur", WALKING: "Gåing", STRENGTH: "Styrke",
-                          STRENGTH_TRAINING: "Styrke", CARDIO: "Kondisjon", OTHER: "Annet",
+                          RUNNING: "Løping", RUN: "Løping", TRAIL_RUNNING: "Terrengløping",
+                          CYCLING: "Sykling", BIKING: "Sykling", BIKE: "Sykling", ROAD_BIKING: "Sykling", MOUNTAIN_BIKING: "Terrengsykling", INDOOR_CYCLING: "Sykling",
+                          SWIMMING: "Svømming", LAP_SWIMMING: "Svømming", OPEN_WATER_SWIMMING: "Svømming",
+                          HIKING: "Fjelltur", HIKE: "Fjelltur", MOUNTAINEERING: "Fjelltur",
+                          WALKING: "Gåing", WALK: "Gåing", CASUAL_WALKING: "Gåing", SPEED_WALKING: "Rask gange",
+                          STRENGTH: "Styrke", STRENGTH_TRAINING: "Styrke",
+                          CARDIO: "Kondisjon", OTHER: "Annet",
                         };
                         return (
                           <div className="mt-2 pt-2 border-t border-border/40 space-y-1">
