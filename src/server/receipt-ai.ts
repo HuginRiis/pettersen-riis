@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { logAiSearch, isHouseAuthenticated } from "@/server/ai-usage.server";
+import { loggedFetch } from "@/server/api-call-log.server";
 
 export type ReceiptItem = {
   name: string;
