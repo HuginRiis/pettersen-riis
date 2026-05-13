@@ -156,6 +156,8 @@ function Oversikt({
 
   const [year, setYear] = useState<number>(currentY);
   const [month, setMonth] = useState<number | "all">(currentM);
+  const [chartEndY, setChartEndY] = useState<number>(currentY);
+  const [chartEndM, setChartEndM] = useState<number>(currentM);
 
   const yearsAvailable = useMemo(() => {
     const set = new Set<number>([currentY]);
