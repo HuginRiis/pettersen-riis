@@ -18,6 +18,13 @@ export type ApiSource =
   | "garbage"
   | "spot"
   | "kassal"
+  | "gardena"
+  | "garmin"
+  | "roborock"
+  | "ai"
+  | "posten"
+  | "geoip"
+  | "uv"
   | "other";
 
 export interface LogEntry {
