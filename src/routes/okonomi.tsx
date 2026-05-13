@@ -193,6 +193,7 @@ function Oversikt({
       localStorage.setItem(EXCL_KEY, JSON.stringify(Array.from(excludedCats)));
     } catch {}
   }, [excludedCats]);
+  const [catsOpen, setCatsOpen] = useState(false);
   const toggleCatExcluded = (id: string) =>
     setExcludedCats((s) => {
       const n = new Set(s);
@@ -475,10 +476,19 @@ function Oversikt({
 
       {/* Kategorier inkludert i beregningen */}
       <Card className="p-3 border-amber-500/30">
-        <div className="flex items-center justify-between mb-2">
-          <h3 className="text-[11px] tracking-[0.2em] uppercase text-amber-400">
+        <div className="flex items-center justify-between mb-2 gap-2">
+          <button
+            type="button"
+            onClick={() => setCatsOpen((v) => !v)}
+            className="flex items-center gap-1.5 text-[11px] tracking-[0.2em] uppercase text-amber-400"
+          >
+            <span className="text-xs">{catsOpen ? "▾" : "▸"}</span>
             Kategorier i beregning
-          </h3>
+            <span className="text-[10px] text-muted-foreground normal-case tracking-normal ml-1">
+              ({cats.length - excludedCats.size + (excludedCats.has("uten") ? 0 : 1)}/{cats.length + 1} på)
+            </span>
+          </button>
+          {catsOpen && (
           <div className="flex gap-1">
             <Button
               size="sm"
@@ -499,7 +509,9 @@ function Oversikt({
               Alle av
             </Button>
           </div>
+          )}
         </div>
+        {catsOpen && (
         <ul className="space-y-1.5">
           {cats.map((c) => {
             const on = !excludedCats.has(c.id);
@@ -527,6 +539,7 @@ function Oversikt({
             />
           </li>
         </ul>
+        )}
       </Card>
 
       <div className="grid grid-cols-2 gap-3">
