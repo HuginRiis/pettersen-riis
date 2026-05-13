@@ -421,7 +421,7 @@ export function SiteHeader() {
       </div>
 
       {open && (
-        <nav className="mobile-menu-popup xl:hidden border-t border-border bg-card/95 backdrop-blur">
+        <nav className="mobile-menu-popup border-t border-border bg-card/95 backdrop-blur">
           <div className="container mx-auto px-4 py-2 flex flex-col max-h-[calc(100vh-64px)] overflow-y-auto overscroll-contain">
             <div className="border-b border-border">
               <button
