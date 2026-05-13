@@ -446,6 +446,7 @@ export type Database = {
           created_at: string
           day: string
           distance_meters: number | null
+          endurance_contributors: Json | null
           endurance_score: number | null
           fitness_age: number | null
           floors_climbed: number | null
@@ -476,6 +477,7 @@ export type Database = {
           created_at?: string
           day: string
           distance_meters?: number | null
+          endurance_contributors?: Json | null
           endurance_score?: number | null
           fitness_age?: number | null
           floors_climbed?: number | null
@@ -506,6 +508,7 @@ export type Database = {
           created_at?: string
           day?: string
           distance_meters?: number | null
+          endurance_contributors?: Json | null
           endurance_score?: number | null
           fitness_age?: number | null
           floors_climbed?: number | null
