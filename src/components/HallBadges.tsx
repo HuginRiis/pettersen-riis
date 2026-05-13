@@ -1109,7 +1109,7 @@ async function fetchOkonomiKpis(): Promise<OkonomiKpis> {
     nextPayday.setMonth(nextPayday.getMonth() + 1);
     const daysUntilPayday = Math.max(0, Math.ceil((nextPayday.getTime() - now.getTime()) / 86400000));
     const snittPrDag = elapsedDays > 0 ? brukt / elapsedDays : 0;
-    const igjen = Math.max(0, budsjett - brukt);
+    const igjen = overskudd > 0 ? overskudd : Math.max(0, budsjett - brukt);
     const igjenPrDag = daysUntilPayday > 0 ? igjen / daysUntilPayday : 0;
 
     const data: OkonomiKpis = {
