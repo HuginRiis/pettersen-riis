@@ -125,8 +125,8 @@ function AgendaPage() {
     <PageShell>
       <PageHero
         eyebrow="Husets krønike"
-        title="Agenda & Meldinger"
-        subtitle="Skriv korte meldinger med dato, tid og varsler — så husker huset hva som venter."
+        title="Søppel, bursdager og meldinger"
+        subtitle="Når ravnene bærer bud om søppeldager, fødselsfester og varsler — slik at intet faller i glemsel ved borgens mur."
         image={heroImg}
       />
 
