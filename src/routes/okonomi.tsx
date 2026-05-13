@@ -36,6 +36,7 @@ import {
   parseStatementWithAI,
   categorizeTransactionsWithAI,
   getOkonomiSettings,
+  learnMerchantRule,
   type OkonomiCategory,
   type OkonomiTransaction,
   type OkonomiSettings,
