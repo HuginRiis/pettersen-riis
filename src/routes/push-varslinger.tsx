@@ -20,6 +20,7 @@ import { GarminNotificationSettings } from "@/components/GarminNotificationSetti
 import { LoginNotificationSettings } from "@/components/LoginNotificationSettings";
 import { AppearanceSettingsPanel } from "@/components/AppearanceSettingsPanel";
 import { ChartAppearanceSettingsPanel } from "@/components/ChartAppearanceSettingsPanel";
+import { OkonomiSettingsPanel } from "@/components/OkonomiSettingsPanel";
 import {
   Bell, BellOff, Calendar, Cake, Trash2, CloudSun, Sun, Lightbulb, ScrollText, ShieldCheck, Lock, ExternalLink, Smartphone, X,
 } from "lucide-react";
