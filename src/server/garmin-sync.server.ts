@@ -414,6 +414,79 @@ export async function syncIntraday(owner: GarminOwner, daysBack = 1): Promise<nu
   return count;
 }
 
+async function generateWatchImageDataUrl(deviceName: string): Promise<string | null> {
+  const apiKey = process.env.LOVABLE_API_KEY;
+  if (!apiKey) {
+    console.warn("[garmin-sync] LOVABLE_API_KEY mangler — hopper over klokkebilde");
+    return null;
+  }
+  try {
+    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash-image",
+        modalities: ["image", "text"],
+        messages: [{
+          role: "user",
+          content: `Photorealistic product shot of a Garmin ${deviceName} smartwatch on a clean white background, top-down view, sharp focus, soft studio lighting, no text overlays, square 1:1.`,
+        }],
+      }),
+    });
+    if (!res.ok) {
+      console.warn(`[garmin-sync] watch image gen failed ${res.status}`);
+      return null;
+    }
+    const json = await res.json() as any;
+    const url: string | undefined = json?.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+    return typeof url === "string" && url.startsWith("data:image/") ? url : null;
+  } catch (e) {
+    console.warn("[garmin-sync] watch image gen error", (e as Error).message);
+    return null;
+  }
+}
+
+export async function syncDevice(owner: GarminOwner): Promise<{ name: string | null; changed: boolean }> {
+  try {
+    const list = await garminGet<any[]>(owner, "/device-service/deviceregistration/devices");
+    const arr = Array.isArray(list) ? list : [];
+    // Velg nyeste etter lastUsedDate / registerDate
+    const sorted = arr
+      .filter((d) => d && (d.productDisplayName || d.displayName))
+      .sort((a, b) => (Number(b?.lastUsedDate ?? b?.registerDate ?? 0)) - (Number(a?.lastUsedDate ?? a?.registerDate ?? 0)));
+    const top = sorted[0];
+    if (!top) return { name: null, changed: false };
+    const name: string = String(top.productDisplayName ?? top.displayName ?? "").trim();
+    const productId: string | null = top.productNumber ? String(top.productNumber) : top.partNumber ? String(top.partNumber) : null;
+    if (!name) return { name: null, changed: false };
+
+    const { data: existing } = await supabaseAdmin
+      .from("garmin_tokens")
+      .select("id, device_name, device_image_url")
+      .eq("owner", owner)
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (!existing) return { name, changed: false };
+
+    const changed = (existing as any).device_name !== name;
+    let imageUrl: string | null = (existing as any).device_image_url ?? null;
+    if (changed || !imageUrl) {
+      imageUrl = await generateWatchImageDataUrl(name);
+    }
+    await supabaseAdmin.from("garmin_tokens").update({
+      device_name: name,
+      device_product_id: productId,
+      device_image_url: imageUrl,
+      device_updated_at: new Date().toISOString(),
+    } as never).eq("id", (existing as any).id);
+    return { name, changed };
+  } catch (e) {
+    console.warn(`[garmin-sync:${owner}] device sync failed`, (e as Error).message);
+    return { name: null, changed: false };
+  }
+}
+
 export async function syncOne(owner: GarminOwner, trigger: string): Promise<{
   ok: boolean; owner: GarminOwner; daily: number; activities: number; sleep: number; intraday: number; duration_ms: number; error?: string;
 }> {
@@ -425,6 +498,7 @@ export async function syncOne(owner: GarminOwner, trigger: string): Promise<{
     activities = await syncActivities(owner, 50);
     sleep = await syncSleep(owner, 14);
     intraday = await syncIntraday(owner, 1);
+    await syncDevice(owner);
   } catch (e) {
     error = (e as Error).message;
   }
