@@ -1024,6 +1024,7 @@ function ImportTab({ cats, reload }: { cats: OkonomiCategory[]; reload: () => vo
   const importFn = useServerFn(importOkonomiTransactions);
   const parseAi = useServerFn(parseStatementWithAI);
   const categorizeAi = useServerFn(categorizeTransactionsWithAI);
+  const learn = useServerFn(learnMerchantRule);
   const STORAGE_KEY = "okonomi:import:preview:v1";
   const [busy, setBusy] = useState(false);
   const [busyMsg, setBusyMsg] = useState("");
