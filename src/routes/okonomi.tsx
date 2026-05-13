@@ -532,16 +532,48 @@ function Budsjett({ cats, reload }: { cats: OkonomiCategory[]; reload: () => voi
 // ---------------- Import ----------------
 
 function ImportTab({ cats, reload }: { cats: OkonomiCategory[]; reload: () => void }) {
-  void cats;
   const importFn = useServerFn(importOkonomiTransactions);
   const parseAi = useServerFn(parseStatementWithAI);
+  const categorizeAi = useServerFn(categorizeTransactionsWithAI);
   const [busy, setBusy] = useState(false);
+  const [busyMsg, setBusyMsg] = useState("");
   const [preview, setPreview] = useState<ParsedTxn[]>([]);
+  const [source, setSource] = useState<"csv" | "pdf">("csv");
   const csvRef = useRef<HTMLInputElement>(null);
   const pdfRef = useRef<HTMLInputElement>(null);
 
+  async function autoCategorize(rows: ParsedTxn[]): Promise<ParsedTxn[]> {
+    const needIdx: number[] = [];
+    rows.forEach((r, i) => {
+      if (!r.category_id) needIdx.push(i);
+    });
+    if (needIdx.length === 0) return rows;
+    setBusyMsg(`AI kategoriserer ${needIdx.length} rader…`);
+    try {
+      const res = await categorizeAi({
+        data: {
+          rows: needIdx.map((i) => ({
+            description: rows[i].description,
+            amount: rows[i].amount,
+          })),
+        },
+      });
+      const out = [...rows];
+      needIdx.forEach((rowIdx, i) => {
+        const cid = res.category_ids[i];
+        if (cid) out[rowIdx] = { ...out[rowIdx], category_id: cid };
+      });
+      return out;
+    } catch (e) {
+      toast.error(`AI-kategorisering feilet: ${e instanceof Error ? e.message : ""}`);
+      return rows;
+    }
+  }
+
   async function handleCsv(file: File) {
     setBusy(true);
+    setSource("csv");
+    setBusyMsg("Leser CSV…");
     try {
       const text = await file.text();
       const lines = text.split(/\r?\n/).filter(Boolean);
@@ -556,8 +588,7 @@ function ImportTab({ cats, reload }: { cats: OkonomiCategory[]; reload: () => vo
       const rows: ParsedTxn[] = [];
       for (let i = 1; i < lines.length; i++) {
         const cells = lines[i].split(sep).map((c) => c.trim().replace(/^"|"$/g, ""));
-        const dateRaw = cells[idxDate];
-        const date = parseNorDate(dateRaw);
+        const date = parseNorDate(cells[idxDate]);
         const desc = cells[idxDesc];
         const amt = parseNorNum(cells[idxAmt]);
         if (!date || !desc || !isFinite(amt)) continue;
@@ -568,37 +599,89 @@ function ImportTab({ cats, reload }: { cats: OkonomiCategory[]; reload: () => vo
           external_ref: `csv:${date}:${desc}:${amt}`,
         });
       }
-      setPreview(rows);
-      toast.success(`${rows.length} rader klare`);
+      const enriched = await autoCategorize(rows);
+      setPreview(enriched);
+      const cat = enriched.filter((r) => r.category_id).length;
+      toast.success(`${enriched.length} rader klare — ${cat} kategorisert`);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "CSV-feil");
     } finally {
       setBusy(false);
+      setBusyMsg("");
     }
   }
 
   async function handlePdfImage(file: File) {
     setBusy(true);
+    setSource("pdf");
+    setBusyMsg("AI leser kontoutskrift…");
     try {
       const buf = await file.arrayBuffer();
       const b64 = btoa(String.fromCharCode(...new Uint8Array(buf)));
-      const res = await parseAi({ data: { fileBase64: b64, mimeType: file.type || "application/pdf" } });
+      const res = await parseAi({
+        data: { fileBase64: b64, mimeType: file.type || "application/pdf" },
+      });
       const rows = res.rows.map((r) => ({
         ...r,
         external_ref: `ai:${r.txn_date}:${r.description}:${r.amount}`,
       }));
-      setPreview(rows);
-      toast.success(`AI fant ${rows.length} posteringer`);
+      const enriched = await autoCategorize(rows);
+      setPreview(enriched);
+      const cat = enriched.filter((r) => r.category_id).length;
+      toast.success(`AI fant ${enriched.length} posteringer — ${cat} kategorisert`);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "AI-feil");
+    } finally {
+      setBusy(false);
+      setBusyMsg("");
+    }
+  }
+
+  function updateRow(i: number, patch: Partial<ParsedTxn>) {
+    setPreview((p) => p.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
+  }
+  function removeRow(i: number) {
+    setPreview((p) => p.filter((_, idx) => idx !== i));
+  }
+
+  async function commitOne(i: number) {
+    const r = preview[i];
+    setBusy(true);
+    try {
+      const res = await importFn({
+        data: {
+          rows: [
+            {
+              txn_date: r.txn_date,
+              description: r.description,
+              amount: r.amount,
+              account: r.account ?? null,
+              external_ref: r.external_ref ?? null,
+              category_id: r.category_id ?? null,
+            },
+          ],
+          source,
+        },
+      });
+      if (res.inserted > 0) {
+        toast.success("Postert");
+        removeRow(i);
+        reload();
+      } else {
+        toast.message("Allerede registrert");
+        removeRow(i);
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Feil");
     } finally {
       setBusy(false);
     }
   }
 
-  async function commit() {
+  async function commitAll() {
     if (preview.length === 0) return;
     setBusy(true);
+    setBusyMsg(`Importerer ${preview.length}…`);
     try {
       const res = await importFn({
         data: {
@@ -608,8 +691,9 @@ function ImportTab({ cats, reload }: { cats: OkonomiCategory[]; reload: () => vo
             amount: r.amount,
             account: r.account ?? null,
             external_ref: r.external_ref ?? null,
+            category_id: r.category_id ?? null,
           })),
-          source: "csv",
+          source,
         },
       });
       toast.success(`Importert ${res.inserted} (${res.skipped} duplikater)`);
@@ -619,8 +703,24 @@ function ImportTab({ cats, reload }: { cats: OkonomiCategory[]; reload: () => vo
       toast.error(e instanceof Error ? e.message : "Feil");
     } finally {
       setBusy(false);
+      setBusyMsg("");
     }
   }
+
+  async function recategorize() {
+    setBusy(true);
+    try {
+      const cleared = preview.map((r) => ({ ...r, category_id: null as string | null }));
+      const enriched = await autoCategorize(cleared);
+      setPreview(enriched);
+      toast.success("Kategorisert på nytt");
+    } finally {
+      setBusy(false);
+      setBusyMsg("");
+    }
+  }
+
+  const uncategorized = preview.filter((r) => !r.category_id).length;
 
   return (
     <div className="space-y-3">
@@ -646,7 +746,7 @@ function ImportTab({ cats, reload }: { cats: OkonomiCategory[]; reload: () => vo
             <Sparkles className="w-3 h-3 text-amber-400" /> PDF / bilde av kontoutskrift
           </Label>
           <p className="text-[11px] text-muted-foreground mb-2">
-            AI leser ut posteringene (Lovable AI Gateway).
+            AI leser ut posteringene og kategoriserer automatisk.
           </p>
           <input
             ref={pdfRef}
@@ -663,42 +763,100 @@ function ImportTab({ cats, reload }: { cats: OkonomiCategory[]; reload: () => vo
 
       {busy && (
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Loader2 className="w-4 h-4 animate-spin" /> Jobber…
+          <Loader2 className="w-4 h-4 animate-spin" /> {busyMsg || "Jobber…"}
         </div>
       )}
 
       {preview.length > 0 && (
         <Card className="p-3 border-amber-500/30">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-semibold">Forhåndsvisning ({preview.length})</h3>
-            <Button size="sm" onClick={commit} disabled={busy}>
-              Importer alle
-            </Button>
-          </div>
-          <div className="max-h-96 overflow-auto space-y-1">
-            {preview.slice(0, 50).map((r, i) => (
-              <div key={i} className="text-xs flex justify-between border-b border-border/30 py-1">
-                <span className="truncate flex-1">
-                  {r.txn_date} · {r.description}
-                </span>
-                <span
-                  className={`tabular-nums ${r.amount < 0 ? "text-red-400" : "text-emerald-400"}`}
-                >
-                  {fmt(r.amount)}
-                </span>
-              </div>
-            ))}
-            {preview.length > 50 && (
-              <p className="text-[11px] text-muted-foreground italic">
-                +{preview.length - 50} flere…
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+            <div>
+              <h3 className="text-sm font-semibold text-amber-100">
+                Forhåndsvisning ({preview.length})
+              </h3>
+              <p className="text-[11px] text-muted-foreground">
+                {uncategorized > 0 ? `${uncategorized} mangler kategori` : "Alle kategorisert ✓"}
               </p>
-            )}
+            </div>
+            <div className="flex gap-1.5">
+              <Button size="sm" variant="ghost" onClick={recategorize} disabled={busy}>
+                <Sparkles className="w-3 h-3 mr-1" /> AI på nytt
+              </Button>
+              <Button size="sm" onClick={commitAll} disabled={busy}>
+                Importer alle
+              </Button>
+            </div>
+          </div>
+          <div className="max-h-[60vh] overflow-auto space-y-1.5">
+            {preview.map((r, i) => {
+              const cat = cats.find((c) => c.id === r.category_id);
+              return (
+                <div
+                  key={i}
+                  className="text-xs border border-border/40 rounded p-2 space-y-1.5 bg-background/40"
+                >
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="inline-block w-2 h-2 rounded-full shrink-0"
+                      style={{ background: cat?.color ?? "#64748b" }}
+                    />
+                    <span className="flex-1 truncate font-medium">{r.description}</span>
+                    <span
+                      className={`tabular-nums font-semibold ${r.amount < 0 ? "text-red-400" : "text-emerald-400"}`}
+                    >
+                      {r.amount > 0 ? "+" : ""}
+                      {fmt(r.amount)}
+                    </span>
+                  </div>
+                  <div className="flex gap-1.5 items-center">
+                    <span className="text-[10px] text-muted-foreground w-16 shrink-0">
+                      {r.txn_date}
+                    </span>
+                    <Select
+                      value={r.category_id ?? ""}
+                      onValueChange={(v) => updateRow(i, { category_id: v || null })}
+                    >
+                      <SelectTrigger className="h-7 text-xs flex-1">
+                        <SelectValue placeholder="Velg kategori" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {cats.map((c) => (
+                          <SelectItem key={c.id} value={c.id}>
+                            {c.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-7 w-7 text-emerald-400 hover:text-emerald-300"
+                      onClick={() => commitOne(i)}
+                      disabled={busy}
+                      title="Poster denne"
+                    >
+                      <Check className="w-3.5 h-3.5" />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-7 w-7 text-red-400 hover:text-red-300"
+                      onClick={() => removeRow(i)}
+                      title="Fjern"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </Card>
       )}
     </div>
   );
 }
+
 
 function parseNorDate(s: string): string | null {
   if (!s) return null;
