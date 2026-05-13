@@ -1072,19 +1072,17 @@ async function fetchOkonomiKpis(): Promise<OkonomiKpis> {
   _kpiInflight = (async () => {
     const now = new Date();
     const y = now.getFullYear();
-    const m = now.getMonth();
-    const ymStart = `${y}-${String(m + 1).padStart(2, "0")}-01`;
-    const ymEnd = `${y}-${String(m + 1).padStart(2, "0")}-${String(new Date(y, m + 1, 0).getDate()).padStart(2, "0")}`;
+    const yStart = `${y}-01-01`;
+    const yEnd = `${y}-12-31`;
 
-    const [{ data: cats }, { data: txns }, { data: settings }] = await Promise.all([
+    const [{ data: cats }, { data: txns }] = await Promise.all([
       supabase.from("okonomi_categories").select("id,monthly_budget,is_income,is_transfer"),
-      supabase.from("okonomi_transactions").select("amount,category_id,txn_date").gte("txn_date", ymStart).lte("txn_date", ymEnd),
-      supabase.from("okonomi_budget_settings").select("payday_day").eq("id", 1).maybeSingle(),
+      supabase.from("okonomi_transactions").select("amount,category_id,txn_date").gte("txn_date", yStart).lte("txn_date", yEnd),
     ]);
     const catMap = new Map((cats ?? []).map((c: any) => [c.id, c]));
     const budsjett = (cats ?? [])
       .filter((c: any) => !c.is_income && !c.is_transfer)
-      .reduce((s: number, c: any) => s + (Number(c.monthly_budget) || 0), 0);
+      .reduce((s: number, c: any) => s + (Number(c.monthly_budget) || 0), 0) * 12;
     let brukt = 0;
     let inntekt = 0;
     for (const t of txns ?? []) {
@@ -1099,15 +1097,10 @@ async function fetchOkonomiKpis(): Promise<OkonomiKpis> {
     }
     const overskudd = inntekt - brukt;
 
-    const payday = Number((settings as any)?.payday_day ?? 15);
-    const today = now.getDate();
-    let lastPayday: Date;
-    if (today >= payday) lastPayday = new Date(y, m, payday);
-    else lastPayday = new Date(y, m - 1, payday);
-    const elapsedDays = Math.max(1, Math.floor((now.getTime() - lastPayday.getTime()) / 86400000) + 1);
-    let nextPayday = new Date(lastPayday);
-    nextPayday.setMonth(nextPayday.getMonth() + 1);
-    const daysUntilPayday = Math.max(0, Math.ceil((nextPayday.getTime() - now.getTime()) / 86400000));
+    const yearStartDate = new Date(y, 0, 1);
+    const yearEndDate = new Date(y, 11, 31);
+    const elapsedDays = Math.max(1, Math.floor((now.getTime() - yearStartDate.getTime()) / 86400000) + 1);
+    const daysUntilPayday = Math.max(0, Math.ceil((yearEndDate.getTime() - now.getTime()) / 86400000));
     const snittPrDag = elapsedDays > 0 ? brukt / elapsedDays : 0;
     const igjenPrDag = daysUntilPayday > 0 ? overskudd / daysUntilPayday : overskudd;
 
@@ -1171,32 +1164,36 @@ function KpiPill({
 export function OkonomiBruktBadge({ inline }: { inline?: boolean } = {}) {
   const k = useOkonomiKpis();
   if (!k) return null;
-  return <KpiPill inline={inline} icon="💸" value={fmtKpi(k.brukt)} tone="warn" title={`Brukt denne måneden: ${Math.round(k.brukt).toLocaleString("nb-NO")} kr`} />;
+  const y = new Date().getFullYear();
+  return <KpiPill inline={inline} icon="💸" value={fmtKpi(k.brukt)} tone="warn" title={`Brukt i ${y}: ${Math.round(k.brukt).toLocaleString("nb-NO")} kr`} />;
 }
 export function OkonomiInntektBadge({ inline }: { inline?: boolean } = {}) {
   const k = useOkonomiKpis();
   if (!k) return null;
-  return <KpiPill inline={inline} icon="💰" value={fmtKpi(k.inntekt)} tone="ok" title={`Inntekt denne måneden: ${Math.round(k.inntekt).toLocaleString("nb-NO")} kr`} />;
+  const y = new Date().getFullYear();
+  return <KpiPill inline={inline} icon="💰" value={fmtKpi(k.inntekt)} tone="ok" title={`Inntekt i ${y}: ${Math.round(k.inntekt).toLocaleString("nb-NO")} kr`} />;
 }
 export function OkonomiBudsjettBadge({ inline }: { inline?: boolean } = {}) {
   const k = useOkonomiKpis();
   if (!k) return null;
-  return <KpiPill inline={inline} icon="🎯" value={fmtKpi(k.budsjett)} tone="neutral" title={`Budsjett: ${Math.round(k.budsjett).toLocaleString("nb-NO")} kr`} />;
+  const y = new Date().getFullYear();
+  return <KpiPill inline={inline} icon="🎯" value={fmtKpi(k.budsjett)} tone="neutral" title={`Budsjett ${y} (12 mnd): ${Math.round(k.budsjett).toLocaleString("nb-NO")} kr`} />;
 }
 export function OkonomiOverskuddBadge({ inline }: { inline?: boolean } = {}) {
   const k = useOkonomiKpis();
   if (!k) return null;
   const tone = k.overskudd >= 0 ? "ok" : "danger";
-  return <KpiPill inline={inline} icon={k.overskudd >= 0 ? "📈" : "📉"} value={fmtKpi(k.overskudd)} tone={tone} title={`Overskudd: ${Math.round(k.overskudd).toLocaleString("nb-NO")} kr`} />;
+  const y = new Date().getFullYear();
+  return <KpiPill inline={inline} icon={k.overskudd >= 0 ? "📈" : "📉"} value={fmtKpi(k.overskudd)} tone={tone} title={`Overskudd ${y}: ${Math.round(k.overskudd).toLocaleString("nb-NO")} kr`} />;
 }
 export function OkonomiSnittPrDagBadge({ inline }: { inline?: boolean } = {}) {
   const k = useOkonomiKpis();
   if (!k) return null;
-  return <KpiPill inline={inline} icon="∅" value={fmtKpi(k.snittPrDag)} tone="neutral" title={`Snitt brukt pr dag (${k.elapsedDays} d): ${Math.round(k.snittPrDag).toLocaleString("nb-NO")} kr`} />;
+  return <KpiPill inline={inline} icon="∅" value={fmtKpi(k.snittPrDag)} tone="neutral" title={`Snitt brukt pr dag i år (${k.elapsedDays} d): ${Math.round(k.snittPrDag).toLocaleString("nb-NO")} kr`} />;
 }
 export function OkonomiIgjenPrDagBadge({ inline }: { inline?: boolean } = {}) {
   const k = useOkonomiKpis();
   if (!k) return null;
   const tone = k.igjenPrDag <= 0 ? "danger" : k.igjenPrDag < 100 ? "warn" : "ok";
-  return <KpiPill inline={inline} icon="📅" value={fmtKpi(k.igjenPrDag)} tone={tone} title={`Igjen pr dag (${k.daysUntilPayday} d til lønn): ${Math.round(k.igjenPrDag).toLocaleString("nb-NO")} kr`} />;
+  return <KpiPill inline={inline} icon="📅" value={fmtKpi(k.igjenPrDag)} tone={tone} title={`Igjen pr dag (${k.daysUntilPayday} d til årsslutt): ${Math.round(k.igjenPrDag).toLocaleString("nb-NO")} kr`} />;
 }
