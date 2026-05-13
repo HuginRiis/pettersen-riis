@@ -336,6 +336,31 @@ function Oversikt({
 
   const top5 = catData.slice(0, 5);
 
+  // Per kategori for benchmark-perioden (jan..benchM i benchY)
+  const benchMonths = Math.max(1, benchM);
+  const benchPerCat = new Map<string, number>();
+  for (const t of txns) {
+    if (!isExpense(t)) continue;
+    const y = Number(t.txn_date.slice(0, 4));
+    const m = Number(t.txn_date.slice(5, 7));
+    if (y !== benchY || m < 1 || m > benchMonths) continue;
+    const k = t.category_id ?? "uten";
+    benchPerCat.set(k, (benchPerCat.get(k) || 0) + Math.abs(Number(t.amount)));
+  }
+  const benchCatData = Array.from(benchPerCat.entries())
+    .map(([id, sum]) => {
+      const c = cats.find((x) => x.id === id);
+      const benchPerMonth = Number(benchmarks[id] || 0);
+      return {
+        id,
+        name: c?.name ?? "Uten kategori",
+        color: c?.color ?? "#94a3b8",
+        sum,
+        bench: benchPerMonth * benchMonths,
+      };
+    })
+    .sort((a, b) => b.sum - a.sum);
+
   // Trend fra valgt startmåned til valgt sluttmåned (inkl). Lønnsperiode-kutt valgfritt på hver side.
   const startAnchor = new Date(chartStartY, chartStartM - 1, 1);
   const endAnchor = new Date(chartEndY, chartEndM - 1, 1);
