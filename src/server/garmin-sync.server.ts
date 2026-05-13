@@ -128,10 +128,11 @@ async function fetchFitnessExtras(owner: GarminOwner, day: string): Promise<{
   }
   try {
     const e = await garminGet<any>(owner, `/metrics-service/metrics/endurancescore?calendarDate=${day}`);
-    console.log(`[garmin-sync:${owner}] endurancescore RAW`, JSON.stringify(e).slice(0, 2000));
+    console.log(`[garmin-sync:${owner}] endurancescore RAW`, JSON.stringify(e).slice(0, 3000));
     out.endurance_score = asNumber(e?.overallScore) ?? asNumber(e?.enduranceScore) ?? asNumber(e?.score) ?? out.endurance_score;
     const rawContribs: any[] | undefined = Array.isArray(e?.contributors) ? e.contributors : Array.isArray(e?.contributorList) ? e.contributorList : undefined;
     if (rawContribs && rawContribs.length) {
+      console.log(`[garmin-sync:${owner}] endurance contributor[0] keys`, Object.keys(rawContribs[0] ?? {}), JSON.stringify(rawContribs[0]).slice(0, 500));
       // Garmin activity type IDs → lesbare koder
       const ACTIVITY: Record<number, string> = {
         1: "RUNNING", 2: "CYCLING", 3: "HIKING", 4: "OTHER",
@@ -141,15 +142,20 @@ async function fetchFitnessExtras(owner: GarminOwner, day: string): Promise<{
         17: "MOUNTAINEERING", 18: "BACKCOUNTRY_SKIING", 19: "CROSS_COUNTRY_SKIING",
         20: "RESORT_SKIING", 21: "SKATE_SKIING",
       };
-      const GROUP: Record<number, string> = { 1: "RUNNING_GROUP", 2: "CYCLING_GROUP", 3: "OTHER_GROUP", 8: "OTHER_GROUP" };
+      // Empirisk: Garmin endurancescore-API bruker groupId 1=CYCLING, 2=RUNNING, 3=OTHER
+      // (motsatt av activityTypeId-skjemaet). Bekreftet ved sammenlikning med Garmin Connect.
+      const GROUP: Record<number, string> = { 1: "CYCLING_GROUP", 2: "RUNNING_GROUP", 3: "OTHER_GROUP", 8: "OTHER_GROUP" };
       const mapped = rawContribs
         .map((c: any) => {
           let label: string;
           const aid = asNumber(c?.activityTypeId);
           const gid = asNumber(c?.group ?? c?.groupId);
-          if (typeof aid === "number" && ACTIVITY[aid]) label = ACTIVITY[aid];
+          // Strenger fra Garmin har høyest prioritet (HIKING/WALKING osv.)
+          const namedStr = c?.groupName ?? c?.activityType ?? c?.activityTypeName ?? c?.name;
+          if (typeof namedStr === "string" && namedStr.trim()) label = namedStr.trim().toUpperCase();
+          else if (typeof aid === "number" && ACTIVITY[aid]) label = ACTIVITY[aid];
           else if (typeof gid === "number" && GROUP[gid]) label = GROUP[gid];
-          else label = String(c?.groupName ?? c?.activityType ?? c?.activityTypeName ?? c?.name ?? (typeof aid === "number" ? `ACT_${aid}` : typeof gid === "number" ? `GROUP_${gid}` : "OTHER"));
+          else label = typeof aid === "number" ? `ACT_${aid}` : typeof gid === "number" ? `GROUP_${gid}` : "OTHER";
           return {
             group: label,
             contribution: asNumber(c?.contribution ?? c?.value ?? c?.percent ?? c?.percentage) ?? 0,
