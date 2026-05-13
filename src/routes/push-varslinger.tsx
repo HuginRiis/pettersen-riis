@@ -159,6 +159,7 @@ function PushSettingsPage() {
       <section id="sec-scener" className="scroll-mt-24"><LightScenesPanel /></section>
       <section id="sec-scheduling" className="scroll-mt-24"><PushSchedulingSettings /></section>
       <section id="sec-tibber" className="scroll-mt-24"><TibberCronStatusPanel /></section>
+      <OkonomiSettingsPanel />
 
       <section id="sec-farevarsel" className="container mx-auto px-4 pb-4 scroll-mt-24">
         <div className="panel rounded-lg p-4 border border-orange-500/40">
