@@ -1172,7 +1172,7 @@ function DrillTxns({
   const max = 100;
   const shown = items.slice(0, max);
   return (
-    <ul className="mt-1 ml-6 space-y-0.5 text-[11px] border-l border-amber-500/20 pl-2">
+    <ul className="mt-1 ml-6 space-y-0.5 text-[11px] border-l border-amber-500/20 pl-2 max-h-80 overflow-y-auto overscroll-contain">
       {shown.map((t) => {
         const n = Number(t.amount);
         const pos = n > 0;
