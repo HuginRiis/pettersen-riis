@@ -946,12 +946,23 @@ function Posteringer({
   const [adding, setAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [onlyUncat, setOnlyUncat] = useState(false);
+  const [filterCat, setFilterCat] = useState<string>("__all__");
+  const [filterPeriod, setFilterPeriod] = useState<string>("__all__");
   const [form, setForm] = useState({
     txn_date: new Date().toISOString().slice(0, 10),
     description: "",
     amount: "",
     category_id: "",
   });
+
+  // Tilgjengelige perioder (YYYY-MM) fra posteringene
+  const periods = useMemo(() => {
+    const set = new Set<string>();
+    for (const t of txns) {
+      if (t.txn_date && t.txn_date.length >= 7) set.add(t.txn_date.slice(0, 7));
+    }
+    return Array.from(set).sort().reverse();
+  }, [txns]);
 
   async function add() {
     if (!form.description || !form.amount) return;
@@ -1031,8 +1042,52 @@ function Posteringer({
           <Switch checked={onlyUncat} onCheckedChange={setOnlyUncat} />
         </div>
       </Card>
+      <div className="grid grid-cols-2 gap-2">
+        <Select value={filterCat} onValueChange={setFilterCat}>
+          <SelectTrigger className="h-9">
+            <SelectValue placeholder="Kategori" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__all__">Alle kategorier</SelectItem>
+            <SelectItem value="__none__">Uten kategori</SelectItem>
+            {cats.map((c) => (
+              <SelectItem key={c.id} value={c.id}>
+                {c.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={filterPeriod} onValueChange={setFilterPeriod}>
+          <SelectTrigger className="h-9">
+            <SelectValue placeholder="Periode" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__all__">Alle perioder</SelectItem>
+            {periods.map((p) => {
+              const [y, m] = p.split("-");
+              const label = new Date(Number(y), Number(m) - 1, 1).toLocaleDateString("nb-NO", {
+                month: "long",
+                year: "numeric",
+              });
+              return (
+                <SelectItem key={p} value={p}>
+                  {label}
+                </SelectItem>
+              );
+            })}
+          </SelectContent>
+        </Select>
+      </div>
       <div className="space-y-1.5">
-        {(onlyUncat ? txns.filter((t) => !t.category_id) : txns).slice(0, 200).map((t) => {
+        {(() => {
+          let list = txns;
+          if (onlyUncat) list = list.filter((t) => !t.category_id);
+          if (filterCat === "__none__") list = list.filter((t) => !t.category_id);
+          else if (filterCat !== "__all__") list = list.filter((t) => t.category_id === filterCat);
+          if (filterPeriod !== "__all__")
+            list = list.filter((t) => (t.txn_date ?? "").slice(0, 7) === filterPeriod);
+          return list.slice(0, 200);
+        })().map((t) => {
           const cat = cats.find((c) => c.id === t.category_id);
           if (editingId === t.id) {
             return (
@@ -1123,7 +1178,8 @@ function PosteringEditor({
     if (isFinite(n)) setAmount(String(-n));
   }
 
-  async function save() {
+  async function save(overrideCatId?: string) {
+    const useCat = overrideCatId !== undefined ? overrideCatId : catId;
     setBusy(true);
     try {
       await upsert({
@@ -1132,16 +1188,16 @@ function PosteringEditor({
           txn_date: date,
           description: desc,
           amount: Number(amount),
-          category_id: catId || null,
+          category_id: useCat || null,
           note: note || null,
           source: txn.source,
           approved: txn.approved,
         },
       });
       // Husk kategori-valget for fremtidige importer
-      if (catId && (catId !== txn.category_id || desc !== txn.description)) {
+      if (useCat && (useCat !== txn.category_id || desc !== txn.description)) {
         try {
-          await learn({ data: { description: desc, category_id: catId } });
+          await learn({ data: { description: desc, category_id: useCat } });
         } catch {}
       }
       toast.success("Lagret");
@@ -1150,6 +1206,13 @@ function PosteringEditor({
       toast.error(e instanceof Error ? e.message : "Feil");
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function onPickCategory(v: string) {
+    setCatId(v);
+    if (v !== (txn.category_id ?? "")) {
+      await save(v);
     }
   }
 
@@ -1192,7 +1255,7 @@ function PosteringEditor({
       </div>
       <div>
         <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Kategori</Label>
-        <Select value={catId} onValueChange={setCatId}>
+        <Select value={catId} onValueChange={onPickCategory}>
           <SelectTrigger className="h-8">
             <SelectValue placeholder="Velg kategori" />
           </SelectTrigger>
@@ -1215,7 +1278,7 @@ function PosteringEditor({
         <Button variant="ghost" size="sm" onClick={onCancel} disabled={busy} className="flex-1">
           Avbryt
         </Button>
-        <Button size="sm" onClick={save} disabled={busy} className="flex-1">
+        <Button size="sm" onClick={() => save()} disabled={busy} className="flex-1">
           {busy ? <Loader2 className="w-3 h-3 animate-spin" /> : "Lagre"}
         </Button>
       </div>
