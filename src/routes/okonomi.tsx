@@ -1123,7 +1123,8 @@ function PosteringEditor({
     if (isFinite(n)) setAmount(String(-n));
   }
 
-  async function save() {
+  async function save(overrideCatId?: string) {
+    const useCat = overrideCatId !== undefined ? overrideCatId : catId;
     setBusy(true);
     try {
       await upsert({
@@ -1132,16 +1133,16 @@ function PosteringEditor({
           txn_date: date,
           description: desc,
           amount: Number(amount),
-          category_id: catId || null,
+          category_id: useCat || null,
           note: note || null,
           source: txn.source,
           approved: txn.approved,
         },
       });
       // Husk kategori-valget for fremtidige importer
-      if (catId && (catId !== txn.category_id || desc !== txn.description)) {
+      if (useCat && (useCat !== txn.category_id || desc !== txn.description)) {
         try {
-          await learn({ data: { description: desc, category_id: catId } });
+          await learn({ data: { description: desc, category_id: useCat } });
         } catch {}
       }
       toast.success("Lagret");
@@ -1150,6 +1151,13 @@ function PosteringEditor({
       toast.error(e instanceof Error ? e.message : "Feil");
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function onPickCategory(v: string) {
+    setCatId(v);
+    if (v !== (txn.category_id ?? "")) {
+      await save(v);
     }
   }
 
