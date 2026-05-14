@@ -43,10 +43,19 @@ const DAILY_FIELD_OPTIONS = [
 
 const COMPARE_FIELD_OPTIONS = [
   { key: "steps", label: "Skritt" },
-  { key: "sleep", label: "Søvn" },
+  { key: "sleep", label: "Søvn (totalt)" },
+  { key: "deep_sleep", label: "Dyp søvn" },
+  { key: "rem_sleep", label: "REM-søvn" },
+  { key: "sleep_score", label: "Søvnscore" },
   { key: "rhr", label: "Hvilepuls" },
-  { key: "calories", label: "Kalorier" },
-  { key: "helse", label: "Body battery" },
+  { key: "hrv", label: "Pulsvariasjon (HRV)" },
+  { key: "spo2", label: "Pulsoksygen (SpO₂)" },
+  { key: "calories", label: "Kalorier (totalt)" },
+  { key: "active_kcal", label: "Aktive kcal" },
+  { key: "helse", label: "Body Battery" },
+  { key: "stress", label: "Stress" },
+  { key: "intensity", label: "Intensitetsminutter" },
+  { key: "floors", label: "Trapper" },
 ] as const;
 
 const OWNER_OPTIONS = [
@@ -250,7 +259,7 @@ export function GarminNotificationSettings() {
                     <span className="text-muted-foreground">Felt som teller i duellen (vinneren bestemmes ut fra disse):</span>
                     <div className="flex flex-wrap gap-1.5">
                       {COMPARE_FIELD_OPTIONS.map((f) => {
-                        const list = p.compare_fields ?? ["steps","sleep","rhr","calories","helse"];
+                        const list = p.compare_fields ?? COMPARE_FIELD_OPTIONS.map((o) => o.key);
                         const active = list.includes(f.key);
                         return (
                           <button
