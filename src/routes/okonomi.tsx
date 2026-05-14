@@ -1223,7 +1223,7 @@ function PosteringEditor({
         <Button variant="ghost" size="sm" onClick={onCancel} disabled={busy} className="flex-1">
           Avbryt
         </Button>
-        <Button size="sm" onClick={save} disabled={busy} className="flex-1">
+        <Button size="sm" onClick={() => save()} disabled={busy} className="flex-1">
           {busy ? <Loader2 className="w-3 h-3 animate-spin" /> : "Lagre"}
         </Button>
       </div>
