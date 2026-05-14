@@ -646,7 +646,7 @@ export const generateOkonomiBenchmarks = createServerFn({ method: "POST" }).hand
 - ${s.household_children_under18} barn under 18 år
 - ${s.household_children_over18} barn over 18 år
 
-Bruk SIFOs referansebudsjett og SSB forbruksundersøkelser som utgangspunkt. Inkluder også kommunale utgifter (eiendomsskatt, vann/avløp, renovasjon, feiing) der det passer i kategorien — fordel årlig kommunal avgift på 12 måneder. Gi ett tall per kategori under. Hvis kategorien ikke gir mening for snittfamilien, sett 0.
+Bruk SIFOs referansebudsjett og SSB forbruksundersøkelser som utgangspunkt. Inkluder også kommunale utgifter (eiendomsskatt, vann/avløp, renovasjon, feiing) der det passer i kategorien — fordel årlig kommunal avgift på 12 måneder. Inkluder også billån (typisk månedlig avdrag + renter for en norsk familie med bil) der kategorien Billån finnes. Gi ett tall per kategori under. Hvis kategorien ikke gir mening for snittfamilien, sett 0.
 
 KATEGORIER:
 ${catList}
