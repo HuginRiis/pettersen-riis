@@ -687,7 +687,7 @@ function Oversikt({
                     <span className="flex-1 truncate">{d.name}</span>
                     <span className="tabular-nums text-amber-100">{fmt(d.sum)}</span>
                   </button>
-                  {open && <DrillTxns items={items} />}
+                  {open && <DrillTxns items={items} cats={cats} reload={reload} />}
                 </li>
               );
             })}
@@ -801,7 +801,7 @@ function Oversikt({
                         </span>
                       </div>
                     </button>
-                    {open && <DrillTxns items={items} />}
+                    {open && <DrillTxns items={items} cats={cats} reload={reload} />}
                   </li>
                 );
               })}
@@ -934,7 +934,7 @@ function Oversikt({
                   Lukk
                 </button>
               </div>
-              <DrillTxns items={items} signed />
+              <DrillTxns items={items} signed cats={cats} reload={reload} />
             </div>
           );
         })()}
@@ -1013,7 +1013,7 @@ function Oversikt({
                     Lukk
                   </button>
                 </div>
-                <DrillTxns items={items} />
+                <DrillTxns items={items} cats={cats} reload={reload} />
               </div>
             );
           })()}
