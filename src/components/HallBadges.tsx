@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { usePersistedState } from "@/hooks/use-persisted-state";
 import { getUpcomingWeatherEvaluations } from "@/server/weather-push.functions";
 import { getUpcomingUvEvaluations } from "@/server/uv-push.functions";
 import { getGarbageOverview } from "@/server/garbage-collection";
