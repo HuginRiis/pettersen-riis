@@ -2126,21 +2126,53 @@ function ImportTab({ cats, reload }: { cats: OkonomiCategory[]; reload: () => vo
   async function commitAll() {
     if (preview.length === 0) return;
     setBusy(true);
-    setBusyMsg(`Importerer ${preview.length}…`);
+    setBusyMsg(`Sjekker duplikater…`);
     try {
-      const res = await importFn({
+      const dupRes = await findDupes({
         data: {
           rows: preview.map((r) => ({
             txn_date: r.txn_date,
             description: r.description,
             amount: r.amount,
             account: r.account ?? null,
-            external_ref: r.external_ref ?? null,
-            category_id: r.category_id ?? null,
           })),
-          source,
         },
       });
+      const dupIdx = new Set(dupRes.duplicates.map((d) => d.index));
+      let includeDupes = false;
+      if (dupIdx.size > 0) {
+        const sample = dupRes.duplicates
+          .slice(0, 8)
+          .map((d) => {
+            const r = preview[d.index]!;
+            return `• ${r.txn_date} · ${r.description} · ${r.amount} kr${r.account ? " · " + r.account : ""}`;
+          })
+          .join("\n");
+        const more = dupRes.duplicates.length > 8 ? `\n…og ${dupRes.duplicates.length - 8} til` : "";
+        includeDupes = window.confirm(
+          `${dupIdx.size} mulige duplikater funnet (samme dato, tekst, konto og beløp finnes fra før):\n\n${sample}${more}\n\nVil du importere disse likevel?\n\nOK = importer alt inkl. duplikater\nAvbryt = importer kun de ${preview.length - dupIdx.size} unike`,
+        );
+      }
+      const rowsToImport = preview
+        .map((r, i) => ({ r, i }))
+        .filter(({ i }) => includeDupes || !dupIdx.has(i))
+        .map(({ r, i }) => ({
+          txn_date: r.txn_date,
+          description: r.description,
+          amount: r.amount,
+          account: r.account ?? null,
+          // bypass external_ref-dedupe når brukeren bevisst godtar duplikat
+          external_ref: dupIdx.has(i) ? null : r.external_ref ?? null,
+          category_id: r.category_id ?? null,
+        }));
+      if (rowsToImport.length === 0) {
+        toast.message("Ingen rader å importere");
+        setBusy(false);
+        setBusyMsg("");
+        return;
+      }
+      setBusyMsg(`Importerer ${rowsToImport.length}…`);
+      const res = await importFn({ data: { rows: rowsToImport, source } });
       toast.success(`Importert ${res.inserted} (${res.skipped} duplikater)`);
       setPreview([]);
       reload();
