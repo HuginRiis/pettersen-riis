@@ -971,6 +971,47 @@ function Posteringer({
     return Array.from(set).sort().reverse();
   }, [txns]);
 
+  // Grupper posteringer etter beskrivelse for "Endre alle"
+  const descGroups = useMemo(() => {
+    const map = new Map<string, { ids: string[]; total: number; sample: number }>();
+    for (const t of txns) {
+      const key = (t.description ?? "").trim();
+      if (!key) continue;
+      const g = map.get(key) ?? { ids: [], total: 0, sample: Number(t.amount) };
+      g.ids.push(t.id);
+      g.total += Number(t.amount) || 0;
+      map.set(key, g);
+    }
+    return Array.from(map.entries())
+      .map(([desc, g]) => ({ desc, ...g }))
+      .filter((g) => g.ids.length >= 2)
+      .sort((a, b) => b.ids.length - a.ids.length);
+  }, [txns]);
+
+  const bulkGroup = descGroups.find((g) => g.desc === bulkDesc);
+
+  async function applyBulk() {
+    if (!bulkGroup || !bulkCat) return;
+    setBulkBusy(true);
+    try {
+      await bulk({ data: { ids: bulkGroup.ids, category_id: bulkCat } });
+      if (bulkLearn) {
+        try {
+          await learn({ data: { description: bulkDesc, category_id: bulkCat } });
+        } catch {}
+      }
+      toast.success(`Oppdaterte ${bulkGroup.ids.length} posteringer`);
+      setBulkOpen(false);
+      setBulkDesc("");
+      setBulkCat("");
+      reload();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Feil");
+    } finally {
+      setBulkBusy(false);
+    }
+  }
+
   async function add() {
     if (!form.description || !form.amount) return;
     try {
