@@ -873,7 +873,18 @@ function Oversikt({
         </div>
         <div className="h-56">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={trend} margin={{ top: 4, right: 4, left: -16, bottom: 0 }}>
+            <BarChart
+              data={trend}
+              margin={{ top: 4, right: 4, left: -16, bottom: 0 }}
+              onClick={(e: any) => {
+                const lbl = e?.activeLabel;
+                if (!lbl) return;
+                const idx = trend.findIndex((t) => t.label === lbl);
+                if (idx < 0) return;
+                const key = months[idx]?.key ?? null;
+                setDrillTrendMonth((cur) => (cur === key ? null : key));
+              }}
+            >
               <CartesianGrid stroke="#3f2d10" strokeDasharray="2 4" vertical={false} />
               <XAxis dataKey="label" stroke="#a78b4a" fontSize={11} />
               <YAxis stroke="#a78b4a" fontSize={11} tickFormatter={(v) => `${Math.round(v / 1000)}k`} />
@@ -882,11 +893,49 @@ function Oversikt({
                 formatter={(v: any) => fmt(Number(v))}
               />
               <Legend wrapperStyle={{ fontSize: 11 }} />
-              <Bar dataKey="Inntekt" fill="#10b981" radius={[3, 3, 0, 0]} />
-              <Bar dataKey="Utgift" fill="#ef4444" radius={[3, 3, 0, 0]} />
+              <Bar dataKey="Inntekt" fill="#10b981" radius={[3, 3, 0, 0]} cursor="pointer" />
+              <Bar dataKey="Utgift" fill="#ef4444" radius={[3, 3, 0, 0]} cursor="pointer" />
             </BarChart>
           </ResponsiveContainer>
         </div>
+        {drillTrendMonth && (() => {
+          const idx = months.findIndex((m) => m.key === drillTrendMonth);
+          if (idx < 0) return null;
+          const m = months[idx];
+          let rows = txns.filter((t) => t.txn_date.startsWith(m.key));
+          if (m.isLast && chartEndPayCut) {
+            const salary = rows
+              .filter((t) => isIncome(t) && Number(t.amount) > 30000)
+              .sort((a, b) => a.txn_date.localeCompare(b.txn_date))[0];
+            if (salary) rows = rows.filter((t) => t.txn_date < salary.txn_date);
+          }
+          if (m.isFirst && chartStartPayCut) {
+            const salary = rows
+              .filter((t) => isIncome(t) && Number(t.amount) > 30000)
+              .sort((a, b) => a.txn_date.localeCompare(b.txn_date))[0];
+            if (salary) rows = rows.filter((t) => t.txn_date >= salary.txn_date);
+          }
+          const items = rows
+            .filter((t) => isExpense(t) || isIncome(t))
+            .sort((a, b) => b.txn_date.localeCompare(a.txn_date));
+          return (
+            <div className="mt-3 pt-3 border-t border-amber-500/20">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs uppercase tracking-wider text-amber-400">
+                  {m.label} — {items.length} posteringer
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setDrillTrendMonth(null)}
+                  className="text-[10px] text-muted-foreground hover:text-amber-400"
+                >
+                  Lukk
+                </button>
+              </div>
+              <DrillTxns items={items} signed />
+            </div>
+          );
+        })()}
       </Card>
 
       {catData.length > 0 && (
