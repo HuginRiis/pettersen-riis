@@ -1227,10 +1227,10 @@ export function OkonomiOverskuddBadge({ inline }: { inline?: boolean } = {}) {
     title={`Overskudd (${periodLabel(k)}): ${Math.round(k.overskudd).toLocaleString("nb-NO")} kr`} />;
 }
 export function OkonomiSnittPrDagBadge({ inline }: { inline?: boolean } = {}) {
-  const k = useOkonomiKpis();
+  const k = useOkonomiKpisCurrentMonth();
   if (!k) return null;
   return <KpiPill inline={inline} icon="∅" value={fmtKpi(k.snittPrDag)} tone="neutral"
-    title={`Snitt brukt pr dag (${periodLabel(k)}, ${k.elapsedDays} d): ${Math.round(k.snittPrDag).toLocaleString("nb-NO")} kr`} />;
+    title={`Snitt brukt pr dag denne måned (${periodLabel(k)}, ${k.elapsedDays} d): ${Math.round(k.snittPrDag).toLocaleString("nb-NO")} kr`} />;
 }
 export function OkonomiIgjenPrDagBadge({ inline }: { inline?: boolean } = {}) {
   const k = useOkonomiKpis();
