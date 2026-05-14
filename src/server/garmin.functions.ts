@@ -93,10 +93,18 @@ export type GarminSyncSchedule = {
   interval_minutes: number;
   first_local_hour: number;
   last_local_hour: number;
+  extra_sync_enabled: boolean;
+  extra_sync_time: string; // HH:MM in Europe/Oslo
 };
 
 // Nattevindu sperret hardt 21:00–05:59 i agenda-cron. Default: hver time 06–20.
-const DEFAULT_SCHEDULE: GarminSyncSchedule = { interval_minutes: 60, first_local_hour: 6, last_local_hour: 20 };
+const DEFAULT_SCHEDULE: GarminSyncSchedule = {
+  interval_minutes: 60,
+  first_local_hour: 6,
+  last_local_hour: 20,
+  extra_sync_enabled: false,
+  extra_sync_time: "12:00",
+};
 
 function scheduleKey(owner: GarminOwner): string {
   return `garmin_sync_schedule_${owner}`;
