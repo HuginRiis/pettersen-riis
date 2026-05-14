@@ -3,8 +3,12 @@ import { useServerFn } from "@tanstack/react-start";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Loader2, Sparkles, Coins } from "lucide-react";
+import { Loader2, Sparkles, Coins, Lock, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
+
+const VAULT_PIN = "9272";
+const VAULT_OWNER = "Arne";
+const VAULT_UNLOCK_KEY = "okonomi_vault_unlocked";
 import {
   getOkonomiSettings,
   updateOkonomiSettings,
