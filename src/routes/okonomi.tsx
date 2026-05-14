@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Loader2, Upload, Plus, Trash2, Coins, FileText, Sparkles, Check, X } from "lucide-react";
 import { toast } from "sonner";
+import { usePersistedState } from "@/hooks/use-persisted-state";
 import {
   BarChart,
   Bar,
@@ -156,27 +157,27 @@ function Oversikt({
   const currentY = today.getFullYear();
   const currentM = today.getMonth() + 1;
 
-  const [year, setYear] = useState<number>(currentY);
-  const [month, setMonth] = useState<number | "all">(currentM);
-  const [chartEndY, setChartEndY] = useState<number>(currentY);
-  const [chartEndM, setChartEndM] = useState<number>(currentM);
-  const [chartEndPayCut, setChartEndPayCut] = useState<boolean>(true);
+  const [year, setYear] = usePersistedState<number>("okonomi_oversikt_year", currentY);
+  const [month, setMonth] = usePersistedState<number | "all">("okonomi_oversikt_month", currentM);
+  const [chartEndY, setChartEndY] = usePersistedState<number>("okonomi_chart_end_y", currentY);
+  const [chartEndM, setChartEndM] = usePersistedState<number>("okonomi_chart_end_m", currentM);
+  const [chartEndPayCut, setChartEndPayCut] = usePersistedState<boolean>("okonomi_chart_end_paycut", true);
   const startDefault = new Date(currentY, currentM - 1 - 11, 1);
-  const [chartStartY, setChartStartY] = useState<number>(startDefault.getFullYear());
-  const [chartStartM, setChartStartM] = useState<number>(startDefault.getMonth() + 1);
-  const [chartStartPayCut, setChartStartPayCut] = useState<boolean>(false);
+  const [chartStartY, setChartStartY] = usePersistedState<number>("okonomi_chart_start_y", startDefault.getFullYear());
+  const [chartStartM, setChartStartM] = usePersistedState<number>("okonomi_chart_start_m", startDefault.getMonth() + 1);
+  const [chartStartPayCut, setChartStartPayCut] = usePersistedState<boolean>("okonomi_chart_start_paycut", false);
 
   // Periodefilter for "stats-boksene" (uavhengig av år/mnd-filteret over)
-  const [periodStartY, setPeriodStartY] = useState<number>(startDefault.getFullYear());
-  const [periodStartM, setPeriodStartM] = useState<number>(startDefault.getMonth() + 1);
-  const [periodStartPayCut, setPeriodStartPayCut] = useState<boolean>(false);
-  const [periodEndY, setPeriodEndY] = useState<number>(currentY);
-  const [periodEndM, setPeriodEndM] = useState<number>(currentM);
-  const [periodEndPayCut, setPeriodEndPayCut] = useState<boolean>(true);
+  const [periodStartY, setPeriodStartY] = usePersistedState<number>("okonomi_period_start_y", startDefault.getFullYear());
+  const [periodStartM, setPeriodStartM] = usePersistedState<number>("okonomi_period_start_m", startDefault.getMonth() + 1);
+  const [periodStartPayCut, setPeriodStartPayCut] = usePersistedState<boolean>("okonomi_period_start_paycut", false);
+  const [periodEndY, setPeriodEndY] = usePersistedState<number>("okonomi_period_end_y", currentY);
+  const [periodEndM, setPeriodEndM] = usePersistedState<number>("okonomi_period_end_m", currentM);
+  const [periodEndPayCut, setPeriodEndPayCut] = usePersistedState<boolean>("okonomi_period_end_paycut", true);
 
   // Filter for "Mot typisk norsk familie": år + tom-måned (jan..valgt mnd)
-  const [benchY, setBenchY] = useState<number>(currentY);
-  const [benchM, setBenchM] = useState<number>(currentM);
+  const [benchY, setBenchY] = usePersistedState<number>("okonomi_bench_y", currentY);
+  const [benchM, setBenchM] = usePersistedState<number>("okonomi_bench_m", currentM);
 
   // Hvilke kategorier som er EKSKLUDERT fra beregning. "uten" = uten kategori.
   // Default: alle inkludert. Lagres i localStorage.
@@ -947,9 +948,9 @@ function Posteringer({
   const learn = useServerFn(learnMerchantRule);
   const [adding, setAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [onlyUncat, setOnlyUncat] = useState(false);
-  const [filterCat, setFilterCat] = useState<string>("__all__");
-  const [filterPeriod, setFilterPeriod] = useState<string>("__all__");
+  const [onlyUncat, setOnlyUncat] = usePersistedState<boolean>("okonomi_post_only_uncat", false);
+  const [filterCat, setFilterCat] = usePersistedState<string>("okonomi_post_filter_cat", "__all__");
+  const [filterPeriod, setFilterPeriod] = usePersistedState<string>("okonomi_post_filter_period", "__all__");
   const [bulkOpen, setBulkOpen] = useState(false);
   const [bulkDesc, setBulkDesc] = useState<string>("");
   const [bulkCat, setBulkCat] = useState<string>("");
