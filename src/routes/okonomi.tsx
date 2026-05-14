@@ -760,27 +760,46 @@ function Oversikt({
                 const diff = d.sum - d.bench;
                 const pct = d.bench > 0 ? (diff / d.bench) * 100 : 0;
                 const over = diff > 0;
+                const open = drillBenchCat === d.id;
+                const items = txns
+                  .filter(isExpense)
+                  .filter((t) => (t.category_id ?? "uten") === d.id)
+                  .filter((t) => {
+                    const y = Number(t.txn_date.slice(0, 4));
+                    const m = Number(t.txn_date.slice(5, 7));
+                    const idx = y * 12 + (m - 1);
+                    return idx >= benchStartIdx && idx <= benchEndIdx;
+                  })
+                  .sort((a, b) => b.txn_date.localeCompare(a.txn_date));
                 return (
                   <li key={d.id} className="text-sm">
-                    <div className="flex justify-between mb-1">
-                      <span className="flex items-center gap-2 min-w-0">
-                        <span
-                          className="inline-block w-2.5 h-2.5 rounded-full shrink-0"
-                          style={{ background: d.color }}
-                        />
-                        <span className="truncate">{d.name}</span>
-                      </span>
-                      <span className="tabular-nums text-xs flex items-center gap-2">
-                        <span className="text-amber-100">{fmt(d.sum)}</span>
-                        <span className="text-muted-foreground">/ snitt {fmt(d.bench)}</span>
-                        <span
-                          className={`font-semibold ${over ? "text-red-400" : "text-emerald-400"}`}
-                        >
-                          {over ? "+" : ""}
-                          {pct.toFixed(0)}%
+                    <button
+                      type="button"
+                      onClick={() => setDrillBenchCat(open ? null : d.id)}
+                      className="w-full text-left hover:bg-amber-500/5 rounded px-1 py-0.5"
+                    >
+                      <div className="flex justify-between mb-1">
+                        <span className="flex items-center gap-2 min-w-0">
+                          <span className="text-amber-400/70 text-[10px] w-3">{open ? "▾" : "▸"}</span>
+                          <span
+                            className="inline-block w-2.5 h-2.5 rounded-full shrink-0"
+                            style={{ background: d.color }}
+                          />
+                          <span className="truncate">{d.name}</span>
                         </span>
-                      </span>
-                    </div>
+                        <span className="tabular-nums text-xs flex items-center gap-2">
+                          <span className="text-amber-100">{fmt(d.sum)}</span>
+                          <span className="text-muted-foreground">/ snitt {fmt(d.bench)}</span>
+                          <span
+                            className={`font-semibold ${over ? "text-red-400" : "text-emerald-400"}`}
+                          >
+                            {over ? "+" : ""}
+                            {pct.toFixed(0)}%
+                          </span>
+                        </span>
+                      </div>
+                    </button>
+                    {open && <DrillTxns items={items} />}
                   </li>
                 );
               })}
