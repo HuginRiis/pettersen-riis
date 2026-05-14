@@ -181,6 +181,12 @@ function Oversikt({
   const [benchY, setBenchY] = usePersistedState<number>("okonomi_bench_y", currentY);
   const [benchM, setBenchM] = usePersistedState<number>("okonomi_bench_m", currentM);
 
+  // Drill-down state (inline ekspandering)
+  const [drillTopCat, setDrillTopCat] = useState<string | null>(null);
+  const [drillBenchCat, setDrillBenchCat] = useState<string | null>(null);
+  const [drillPieCat, setDrillPieCat] = useState<string | null>(null);
+  const [drillTrendMonth, setDrillTrendMonth] = useState<string | null>(null);
+
   // Hvilke kategorier som er EKSKLUDERT fra beregning. "uten" = uten kategori.
   // Default: alle inkludert. Lagres i localStorage.
   const EXCL_KEY = "okonomi_excluded_cats";
@@ -657,17 +663,32 @@ function Oversikt({
             Topp 5 kategorier
           </h3>
           <ul className="space-y-1.5 text-sm">
-            {top5.map((d, i) => (
-              <li key={d.id} className="flex items-center gap-2">
-                <span className="w-5 text-amber-400/70 tabular-nums text-xs">#{i + 1}</span>
-                <span
-                  className="inline-block w-2.5 h-2.5 rounded-full"
-                  style={{ background: d.color }}
-                />
-                <span className="flex-1 truncate">{d.name}</span>
-                <span className="tabular-nums text-amber-100">{fmt(d.sum)}</span>
-              </li>
-            ))}
+            {top5.map((d, i) => {
+              const open = drillTopCat === d.id;
+              const items = filtered
+                .filter(isExpense)
+                .filter((t) => (t.category_id ?? "uten") === d.id)
+                .sort((a, b) => b.txn_date.localeCompare(a.txn_date));
+              return (
+                <li key={d.id}>
+                  <button
+                    type="button"
+                    onClick={() => setDrillTopCat(open ? null : d.id)}
+                    className="w-full flex items-center gap-2 text-left hover:bg-amber-500/5 rounded px-1 py-0.5"
+                  >
+                    <span className="w-3 text-amber-400/70 text-[10px]">{open ? "▾" : "▸"}</span>
+                    <span className="w-5 text-amber-400/70 tabular-nums text-xs">#{i + 1}</span>
+                    <span
+                      className="inline-block w-2.5 h-2.5 rounded-full"
+                      style={{ background: d.color }}
+                    />
+                    <span className="flex-1 truncate">{d.name}</span>
+                    <span className="tabular-nums text-amber-100">{fmt(d.sum)}</span>
+                  </button>
+                  {open && <DrillTxns items={items} />}
+                </li>
+              );
+            })}
           </ul>
         </Card>
       )}
@@ -739,27 +760,46 @@ function Oversikt({
                 const diff = d.sum - d.bench;
                 const pct = d.bench > 0 ? (diff / d.bench) * 100 : 0;
                 const over = diff > 0;
+                const open = drillBenchCat === d.id;
+                const items = txns
+                  .filter(isExpense)
+                  .filter((t) => (t.category_id ?? "uten") === d.id)
+                  .filter((t) => {
+                    const y = Number(t.txn_date.slice(0, 4));
+                    const m = Number(t.txn_date.slice(5, 7));
+                    const idx = y * 12 + (m - 1);
+                    return idx >= benchStartIdx && idx <= benchEndIdx;
+                  })
+                  .sort((a, b) => b.txn_date.localeCompare(a.txn_date));
                 return (
                   <li key={d.id} className="text-sm">
-                    <div className="flex justify-between mb-1">
-                      <span className="flex items-center gap-2 min-w-0">
-                        <span
-                          className="inline-block w-2.5 h-2.5 rounded-full shrink-0"
-                          style={{ background: d.color }}
-                        />
-                        <span className="truncate">{d.name}</span>
-                      </span>
-                      <span className="tabular-nums text-xs flex items-center gap-2">
-                        <span className="text-amber-100">{fmt(d.sum)}</span>
-                        <span className="text-muted-foreground">/ snitt {fmt(d.bench)}</span>
-                        <span
-                          className={`font-semibold ${over ? "text-red-400" : "text-emerald-400"}`}
-                        >
-                          {over ? "+" : ""}
-                          {pct.toFixed(0)}%
+                    <button
+                      type="button"
+                      onClick={() => setDrillBenchCat(open ? null : d.id)}
+                      className="w-full text-left hover:bg-amber-500/5 rounded px-1 py-0.5"
+                    >
+                      <div className="flex justify-between mb-1">
+                        <span className="flex items-center gap-2 min-w-0">
+                          <span className="text-amber-400/70 text-[10px] w-3">{open ? "▾" : "▸"}</span>
+                          <span
+                            className="inline-block w-2.5 h-2.5 rounded-full shrink-0"
+                            style={{ background: d.color }}
+                          />
+                          <span className="truncate">{d.name}</span>
                         </span>
-                      </span>
-                    </div>
+                        <span className="tabular-nums text-xs flex items-center gap-2">
+                          <span className="text-amber-100">{fmt(d.sum)}</span>
+                          <span className="text-muted-foreground">/ snitt {fmt(d.bench)}</span>
+                          <span
+                            className={`font-semibold ${over ? "text-red-400" : "text-emerald-400"}`}
+                          >
+                            {over ? "+" : ""}
+                            {pct.toFixed(0)}%
+                          </span>
+                        </span>
+                      </div>
+                    </button>
+                    {open && <DrillTxns items={items} />}
                   </li>
                 );
               })}
@@ -833,7 +873,18 @@ function Oversikt({
         </div>
         <div className="h-56">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={trend} margin={{ top: 4, right: 4, left: -16, bottom: 0 }}>
+            <BarChart
+              data={trend}
+              margin={{ top: 4, right: 4, left: -16, bottom: 0 }}
+              onClick={(e: any) => {
+                const lbl = e?.activeLabel;
+                if (!lbl) return;
+                const idx = trend.findIndex((t) => t.label === lbl);
+                if (idx < 0) return;
+                const key = months[idx]?.key ?? null;
+                setDrillTrendMonth((cur) => (cur === key ? null : key));
+              }}
+            >
               <CartesianGrid stroke="#3f2d10" strokeDasharray="2 4" vertical={false} />
               <XAxis dataKey="label" stroke="#a78b4a" fontSize={11} />
               <YAxis stroke="#a78b4a" fontSize={11} tickFormatter={(v) => `${Math.round(v / 1000)}k`} />
@@ -842,11 +893,49 @@ function Oversikt({
                 formatter={(v: any) => fmt(Number(v))}
               />
               <Legend wrapperStyle={{ fontSize: 11 }} />
-              <Bar dataKey="Inntekt" fill="#10b981" radius={[3, 3, 0, 0]} />
-              <Bar dataKey="Utgift" fill="#ef4444" radius={[3, 3, 0, 0]} />
+              <Bar dataKey="Inntekt" fill="#10b981" radius={[3, 3, 0, 0]} cursor="pointer" />
+              <Bar dataKey="Utgift" fill="#ef4444" radius={[3, 3, 0, 0]} cursor="pointer" />
             </BarChart>
           </ResponsiveContainer>
         </div>
+        {drillTrendMonth && (() => {
+          const idx = months.findIndex((m) => m.key === drillTrendMonth);
+          if (idx < 0) return null;
+          const m = months[idx];
+          let rows = txns.filter((t) => t.txn_date.startsWith(m.key));
+          if (m.isLast && chartEndPayCut) {
+            const salary = rows
+              .filter((t) => isIncome(t) && Number(t.amount) > 30000)
+              .sort((a, b) => a.txn_date.localeCompare(b.txn_date))[0];
+            if (salary) rows = rows.filter((t) => t.txn_date < salary.txn_date);
+          }
+          if (m.isFirst && chartStartPayCut) {
+            const salary = rows
+              .filter((t) => isIncome(t) && Number(t.amount) > 30000)
+              .sort((a, b) => a.txn_date.localeCompare(b.txn_date))[0];
+            if (salary) rows = rows.filter((t) => t.txn_date >= salary.txn_date);
+          }
+          const items = rows
+            .filter((t) => isExpense(t) || isIncome(t))
+            .sort((a, b) => b.txn_date.localeCompare(a.txn_date));
+          return (
+            <div className="mt-3 pt-3 border-t border-amber-500/20">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs uppercase tracking-wider text-amber-400">
+                  {m.label} — {items.length} posteringer
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setDrillTrendMonth(null)}
+                  className="text-[10px] text-muted-foreground hover:text-amber-400"
+                >
+                  Lukk
+                </button>
+              </div>
+              <DrillTxns items={items} signed />
+            </div>
+          );
+        })()}
       </Card>
 
       {catData.length > 0 && (
@@ -858,9 +947,21 @@ function Oversikt({
             <div className="h-56">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie data={catData} dataKey="sum" nameKey="name" innerRadius={45} outerRadius={80} paddingAngle={2}>
+                  <Pie
+                    data={catData}
+                    dataKey="sum"
+                    nameKey="name"
+                    innerRadius={45}
+                    outerRadius={80}
+                    paddingAngle={2}
+                    onClick={(data: any) => {
+                      const id = data?.id ?? data?.payload?.id;
+                      if (!id) return;
+                      setDrillPieCat((cur) => (cur === id ? null : id));
+                    }}
+                  >
                     {catData.map((d) => (
-                      <Cell key={d.id} fill={d.color} stroke="#1a1208" />
+                      <Cell key={d.id} fill={d.color} stroke="#1a1208" cursor="pointer" />
                     ))}
                   </Pie>
                   <Tooltip
@@ -871,15 +972,49 @@ function Oversikt({
               </ResponsiveContainer>
             </div>
             <ul className="space-y-1.5 text-xs">
-              {catData.slice(0, 8).map((d) => (
-                <li key={d.id} className="flex items-center gap-2">
-                  <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ background: d.color }} />
-                  <span className="flex-1 truncate">{d.name}</span>
-                  <span className="tabular-nums text-amber-100">{fmt(d.sum)}</span>
-                </li>
-              ))}
+              {catData.slice(0, 8).map((d) => {
+                const open = drillPieCat === d.id;
+                return (
+                  <li key={d.id}>
+                    <button
+                      type="button"
+                      onClick={() => setDrillPieCat(open ? null : d.id)}
+                      className="w-full flex items-center gap-2 text-left hover:bg-amber-500/5 rounded px-1 py-0.5"
+                    >
+                      <span className="text-amber-400/70 text-[10px] w-3">{open ? "▾" : "▸"}</span>
+                      <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ background: d.color }} />
+                      <span className="flex-1 truncate">{d.name}</span>
+                      <span className="tabular-nums text-amber-100">{fmt(d.sum)}</span>
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
           </div>
+          {drillPieCat && (() => {
+            const items = filtered
+              .filter(isExpense)
+              .filter((t) => (t.category_id ?? "uten") === drillPieCat)
+              .sort((a, b) => b.txn_date.localeCompare(a.txn_date));
+            const cat = catData.find((c) => c.id === drillPieCat);
+            return (
+              <div className="mt-3 pt-3 border-t border-amber-500/20">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs uppercase tracking-wider text-amber-400">
+                    {cat?.name ?? "?"} — {items.length} posteringer
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setDrillPieCat(null)}
+                    className="text-[10px] text-muted-foreground hover:text-amber-400"
+                  >
+                    Lukk
+                  </button>
+                </div>
+                <DrillTxns items={items} />
+              </div>
+            );
+          })()}
         </Card>
       )}
 
@@ -941,6 +1076,35 @@ function Oversikt({
         </div>
       </Card>
     </div>
+  );
+}
+
+function DrillTxns({ items, signed = false }: { items: OkonomiTransaction[]; signed?: boolean }) {
+  if (items.length === 0) {
+    return <p className="mt-2 pl-6 text-[11px] italic text-muted-foreground">Ingen posteringer.</p>;
+  }
+  const max = 100;
+  const shown = items.slice(0, max);
+  return (
+    <ul className="mt-1 ml-6 space-y-0.5 text-[11px] border-l border-amber-500/20 pl-2">
+      {shown.map((t) => {
+        const n = Number(t.amount);
+        const pos = n > 0;
+        return (
+          <li key={t.id} className="flex justify-between gap-2">
+            <span className="text-muted-foreground tabular-nums shrink-0 w-12">{t.txn_date.slice(5)}</span>
+            <span className="flex-1 truncate text-amber-100/80">{t.description}</span>
+            <span className={`tabular-nums shrink-0 ${signed ? (pos ? "text-emerald-400" : "text-red-400") : "text-amber-100"}`}>
+              {signed && pos ? "+" : ""}
+              {fmt(signed ? n : Math.abs(n))}
+            </span>
+          </li>
+        );
+      })}
+      {items.length > max && (
+        <li className="text-muted-foreground italic">+{items.length - max} flere…</li>
+      )}
+    </ul>
   );
 }
 
