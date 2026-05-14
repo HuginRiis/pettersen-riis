@@ -161,6 +161,24 @@ export const deleteOkonomiTransaction = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const bulkUpdateOkonomiCategory = createServerFn({ method: "POST" })
+  .inputValidator((d) =>
+    z
+      .object({
+        ids: z.array(z.string().uuid()).min(1).max(5000),
+        category_id: z.string().uuid().nullable(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data }) => {
+    const { error } = await supabaseAdmin
+      .from("okonomi_transactions")
+      .update({ category_id: data.category_id })
+      .in("id", data.ids);
+    if (error) throw new Error(error.message);
+    return { ok: true, count: data.ids.length };
+  });
+
 // =================================================================
 // Import
 // =================================================================
