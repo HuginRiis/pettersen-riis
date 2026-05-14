@@ -131,6 +131,10 @@ export const getGarminSyncSchedule = createServerFn({ method: "GET" })
       interval_minutes: v?.interval_minutes ?? DEFAULT_SCHEDULE.interval_minutes,
       first_local_hour: v?.first_local_hour ?? DEFAULT_SCHEDULE.first_local_hour,
       last_local_hour: v?.last_local_hour ?? DEFAULT_SCHEDULE.last_local_hour,
+      extra_sync_enabled: !!v?.extra_sync_enabled,
+      extra_sync_time: typeof v?.extra_sync_time === "string" && /^\d{2}:\d{2}$/.test(v.extra_sync_time)
+        ? v.extra_sync_time
+        : DEFAULT_SCHEDULE.extra_sync_time,
     } as GarminSyncSchedule;
   });
 
@@ -141,7 +145,17 @@ export const saveGarminSyncSchedule = createServerFn({ method: "POST" })
     const first = Math.max(6, Math.min(20, Number(x?.first_local_hour ?? 6)));
     const last = Math.max(6, Math.min(20, Number(x?.last_local_hour ?? 20)));
     const owner = (x?.owner === "rebekka" ? "rebekka" : "arne") as GarminOwner;
-    return { owner, interval_minutes: interval, first_local_hour: first, last_local_hour: last };
+    const extraEnabled = !!x?.extra_sync_enabled;
+    const extraTimeRaw = typeof x?.extra_sync_time === "string" ? x.extra_sync_time : "12:00";
+    const extraTime = /^\d{2}:\d{2}$/.test(extraTimeRaw) ? extraTimeRaw : "12:00";
+    return {
+      owner,
+      interval_minutes: interval,
+      first_local_hour: first,
+      last_local_hour: last,
+      extra_sync_enabled: extraEnabled,
+      extra_sync_time: extraTime,
+    };
   })
   .handler(async ({ data }) => {
     const { owner, ...sched } = data;
