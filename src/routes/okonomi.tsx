@@ -1109,7 +1109,7 @@ function Posteringer({
             <SelectContent>
               {descGroups.slice(0, 300).map((g) => (
                 <SelectItem key={g.desc} value={g.desc}>
-                  {g.desc} — {g.ids.length} stk
+                  {g.desc} — {g.ids.length} stk · {g.breakdown}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -1117,6 +1117,8 @@ function Posteringer({
           {bulkGroup && (
             <p className="text-[11px] text-muted-foreground">
               {bulkGroup.ids.length} posteringer · totalt {fmt(bulkGroup.total)}
+              <br />
+              <span className="text-amber-300/80">Nåværende: {bulkGroup.breakdown}</span>
             </p>
           )}
           <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">
