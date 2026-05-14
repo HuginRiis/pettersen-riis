@@ -2077,6 +2077,22 @@ function ImportTab({ cats, reload }: { cats: OkonomiCategory[]; reload: () => vo
     const r = preview[i];
     setBusy(true);
     try {
+      const dupRes = await findDupes({
+        data: {
+          rows: [{ txn_date: r.txn_date, description: r.description, amount: r.amount, account: r.account ?? null }],
+        },
+      });
+      if (dupRes.duplicates.length > 0) {
+        const ok = window.confirm(
+          `Mulig duplikat funnet:\n\n${r.txn_date} · ${r.description} · ${r.amount} kr${r.account ? " · " + r.account : ""}\n\nDenne posten finnes allerede med samme dato, tekst, konto og beløp. Vil du importere den likevel?`,
+        );
+        if (!ok) {
+          toast.message("Hoppet over duplikat");
+          removeRow(i);
+          setBusy(false);
+          return;
+        }
+      }
       const res = await importFn({
         data: {
           rows: [
@@ -2085,7 +2101,7 @@ function ImportTab({ cats, reload }: { cats: OkonomiCategory[]; reload: () => vo
               description: r.description,
               amount: r.amount,
               account: r.account ?? null,
-              external_ref: r.external_ref ?? null,
+              external_ref: dupRes.duplicates.length > 0 ? null : r.external_ref ?? null,
               category_id: r.category_id ?? null,
             },
           ],
