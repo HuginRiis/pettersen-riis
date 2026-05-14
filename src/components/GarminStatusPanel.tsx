@@ -24,6 +24,8 @@ type Schedule = {
   interval_minutes: number;
   first_local_hour: number;
   last_local_hour: number;
+  extra_sync_enabled: boolean;
+  extra_sync_time: string;
 };
 
 const INTERVAL_OPTIONS: Array<{ value: number; label: string }> = Array.from({ length: 16 }, (_, i) => {
