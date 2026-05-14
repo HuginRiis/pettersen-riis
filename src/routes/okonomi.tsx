@@ -973,20 +973,29 @@ function Posteringer({
 
   // Grupper posteringer etter beskrivelse for "Endre alle"
   const descGroups = useMemo(() => {
-    const map = new Map<string, { ids: string[]; total: number; sample: number }>();
+    const map = new Map<string, { ids: string[]; total: number; sample: number; catCounts: Map<string, number> }>();
     for (const t of txns) {
       const key = (t.description ?? "").trim();
       if (!key) continue;
-      const g = map.get(key) ?? { ids: [], total: 0, sample: Number(t.amount) };
+      const g = map.get(key) ?? { ids: [], total: 0, sample: Number(t.amount), catCounts: new Map<string, number>() };
       g.ids.push(t.id);
       g.total += Number(t.amount) || 0;
+      const ck = t.category_id ?? "__none__";
+      g.catCounts.set(ck, (g.catCounts.get(ck) ?? 0) + 1);
       map.set(key, g);
     }
+    const catName = (id: string) => id === "__none__" ? "Ukategorisert" : (cats.find((c) => c.id === id)?.name ?? "?");
     return Array.from(map.entries())
-      .map(([desc, g]) => ({ desc, ...g }))
+      .map(([desc, g]) => {
+        const breakdown = Array.from(g.catCounts.entries())
+          .sort((a, b) => b[1] - a[1])
+          .map(([id, n]) => `${catName(id)} (${n})`)
+          .join(", ");
+        return { desc, ...g, breakdown };
+      })
       .filter((g) => g.ids.length >= 2)
       .sort((a, b) => b.ids.length - a.ids.length);
-  }, [txns]);
+  }, [txns, cats]);
 
   const bulkGroup = descGroups.find((g) => g.desc === bulkDesc);
 
@@ -1100,7 +1109,7 @@ function Posteringer({
             <SelectContent>
               {descGroups.slice(0, 300).map((g) => (
                 <SelectItem key={g.desc} value={g.desc}>
-                  {g.desc} — {g.ids.length} stk
+                  {g.desc} — {g.ids.length} stk · {g.breakdown}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -1108,6 +1117,8 @@ function Posteringer({
           {bulkGroup && (
             <p className="text-[11px] text-muted-foreground">
               {bulkGroup.ids.length} posteringer · totalt {fmt(bulkGroup.total)}
+              <br />
+              <span className="text-amber-300/80">Nåværende: {bulkGroup.breakdown}</span>
             </p>
           )}
           <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">
