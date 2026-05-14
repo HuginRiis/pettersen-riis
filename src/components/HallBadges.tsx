@@ -1157,6 +1157,24 @@ function useOkonomiKpisCurrentMonth() {
   return useOkonomiKpisFor({ pStartY: y, pStartM: m, pStartPC: false, pEndY: y, pEndM: m, pEndPC: false });
 }
 
+// Overskudd-perioden: rullende lønnsperiode-vindu.
+// Før den 15. i måneden: forrige måned (lønnsp.) → denne måned (lønnsp.).
+// Fra og med den 15.: denne måned (lønnsp.) → neste måned (lønnsp.).
+function useOkonomiKpisOverskuddPeriod() {
+  const now = new Date();
+  const day = now.getDate();
+  const baseY = now.getFullYear();
+  const baseM = now.getMonth() + 1; // 1..12
+  const shift = day >= 15 ? 0 : -1;
+  const startIdx = (baseY * 12 + (baseM - 1)) + shift;
+  const endIdx = startIdx + 1;
+  const pStartY = Math.floor(startIdx / 12);
+  const pStartM = (startIdx % 12) + 1;
+  const pEndY = Math.floor(endIdx / 12);
+  const pEndM = (endIdx % 12) + 1;
+  return useOkonomiKpisFor({ pStartY, pStartM, pStartPC: true, pEndY, pEndM, pEndPC: true });
+}
+
 const fmtKpi = (n: number) => {
   const a = Math.abs(Math.round(n));
   if (a >= 1000) return `${(n / 1000).toFixed(a >= 10000 ? 0 : 1).replace(".0", "")}k`;
@@ -1220,7 +1238,7 @@ export function OkonomiBudsjettBadge({ inline }: { inline?: boolean } = {}) {
     title={`Budsjett (${periodLabel(k)}, ${k.months} mnd): ${Math.round(k.budsjett).toLocaleString("nb-NO")} kr`} />;
 }
 export function OkonomiOverskuddBadge({ inline }: { inline?: boolean } = {}) {
-  const k = useOkonomiKpis();
+  const k = useOkonomiKpisOverskuddPeriod();
   if (!k) return null;
   const tone = k.overskudd >= 0 ? "ok" : "danger";
   return <KpiPill inline={inline} icon={k.overskudd >= 0 ? "📈" : "📉"} value={fmtKpi(k.overskudd)} tone={tone}
