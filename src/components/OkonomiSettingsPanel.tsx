@@ -59,6 +59,83 @@ function NumField({
 }
 
 export function OkonomiSettingsPanel() {
+  const [who, setWho] = useState<string | null>(null);
+  const [unlocked, setUnlocked] = useState(false);
+  const [pin, setPin] = useState("");
+  const [pinErr, setPinErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    try {
+      setWho(localStorage.getItem("agenda_push_who"));
+      setUnlocked(sessionStorage.getItem(VAULT_UNLOCK_KEY) === "1");
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  if (who !== VAULT_OWNER) {
+    return (
+      <section id="sec-okonomi" className="container mx-auto px-4 pb-4 scroll-mt-24">
+        <div className="panel rounded-lg p-4 border border-amber-500/40 flex items-start gap-3">
+          <ShieldAlert className="w-5 h-5 text-amber-400 mt-0.5" />
+          <div>
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-amber-400 flex items-center gap-2">
+              <Coins className="w-4 h-4" /> Husholdningens hvelv
+            </h2>
+            <p className="text-xs text-muted-foreground mt-1">
+              Hvelvet er låst til <span className="text-amber-300 font-semibold">{VAULT_OWNER}</span>.
+              {who ? <> Innlogget som <span className="text-foreground">{who}</span>.</> : <> Velg bruker for push-varsler først.</>}
+            </p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (!unlocked) {
+    function tryUnlock(e: React.FormEvent) {
+      e.preventDefault();
+      if (pin === VAULT_PIN) {
+        try { sessionStorage.setItem(VAULT_UNLOCK_KEY, "1"); } catch { /* ignore */ }
+        setUnlocked(true);
+        setPinErr(null);
+      } else {
+        setPinErr("Feil kode");
+      }
+    }
+    return (
+      <section id="sec-okonomi" className="container mx-auto px-4 pb-4 scroll-mt-24">
+        <div className="panel rounded-lg p-4 border border-amber-500/40">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-amber-400 mb-2 flex items-center gap-2">
+            <Lock className="w-4 h-4" /> Husholdningens hvelv — låst
+          </h2>
+          <p className="text-[11px] text-muted-foreground mb-3">
+            Skriv inn 4-sifret kode for å åpne hvelvet.
+          </p>
+          <form onSubmit={tryUnlock} className="flex gap-2 items-start">
+            <Input
+              autoFocus
+              type="password"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              maxLength={4}
+              value={pin}
+              onChange={(e) => { setPin(e.target.value.replace(/[^0-9]/g, "").slice(0, 4)); setPinErr(null); }}
+              placeholder="••••"
+              className="h-9 w-28 tracking-[0.4em] text-center"
+            />
+            <Button type="submit" variant="secondary" className="h-9">Åpne</Button>
+          </form>
+          {pinErr && <p className="text-xs text-destructive mt-2">{pinErr}</p>}
+        </div>
+      </section>
+    );
+  }
+
+  return <OkonomiSettingsPanelInner />;
+}
+
+function OkonomiSettingsPanelInner() {
   const get = useServerFn(getOkonomiSettings);
   const update = useServerFn(updateOkonomiSettings);
   const generate = useServerFn(generateOkonomiBenchmarks);
