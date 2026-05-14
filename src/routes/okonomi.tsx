@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Loader2, Upload, Plus, Trash2, Coins, FileText, Sparkles, Check, X } from "lucide-react";
 import { toast } from "sonner";
+import { usePersistedState } from "@/hooks/use-persisted-state";
 import {
   BarChart,
   Bar,
