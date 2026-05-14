@@ -663,17 +663,32 @@ function Oversikt({
             Topp 5 kategorier
           </h3>
           <ul className="space-y-1.5 text-sm">
-            {top5.map((d, i) => (
-              <li key={d.id} className="flex items-center gap-2">
-                <span className="w-5 text-amber-400/70 tabular-nums text-xs">#{i + 1}</span>
-                <span
-                  className="inline-block w-2.5 h-2.5 rounded-full"
-                  style={{ background: d.color }}
-                />
-                <span className="flex-1 truncate">{d.name}</span>
-                <span className="tabular-nums text-amber-100">{fmt(d.sum)}</span>
-              </li>
-            ))}
+            {top5.map((d, i) => {
+              const open = drillTopCat === d.id;
+              const items = filtered
+                .filter(isExpense)
+                .filter((t) => (t.category_id ?? "uten") === d.id)
+                .sort((a, b) => b.txn_date.localeCompare(a.txn_date));
+              return (
+                <li key={d.id}>
+                  <button
+                    type="button"
+                    onClick={() => setDrillTopCat(open ? null : d.id)}
+                    className="w-full flex items-center gap-2 text-left hover:bg-amber-500/5 rounded px-1 py-0.5"
+                  >
+                    <span className="w-3 text-amber-400/70 text-[10px]">{open ? "▾" : "▸"}</span>
+                    <span className="w-5 text-amber-400/70 tabular-nums text-xs">#{i + 1}</span>
+                    <span
+                      className="inline-block w-2.5 h-2.5 rounded-full"
+                      style={{ background: d.color }}
+                    />
+                    <span className="flex-1 truncate">{d.name}</span>
+                    <span className="tabular-nums text-amber-100">{fmt(d.sum)}</span>
+                  </button>
+                  {open && <DrillTxns items={items} />}
+                </li>
+              );
+            })}
           </ul>
         </Card>
       )}
