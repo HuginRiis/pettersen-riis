@@ -90,9 +90,11 @@ export function GarminStatusPanel({ owner = "arne", displayName }: { owner?: Own
   const [intraday, setIntraday] = useState<Array<{ day: string; hour: number; heart_rate_avg: number | null; heart_rate_max: number | null; stress_avg: number | null; body_battery: number | null }>>([]);
   const [loading, setLoading] = useState(true);
   const [showSettings, setShowSettings] = useState(false);
+  const [showExtra, setShowExtra] = useState(false);
   const [showIntraday, setShowIntraday] = useState(false);
   const [schedule, setSchedule] = useState<Schedule | null>(null);
   const [saving, setSaving] = useState(false);
+  const [savingExtra, setSavingExtra] = useState(false);
 
   useEffect(() => {
     let alive = true;
