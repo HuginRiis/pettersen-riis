@@ -124,7 +124,7 @@ function OkonomiPage() {
             </TabsList>
 
             <TabsContent value="oversikt" className="mt-4">
-              <Oversikt cats={cats} txns={txns} settings={settings} />
+              <Oversikt cats={cats} txns={txns} settings={settings} reload={reload} />
             </TabsContent>
             <TabsContent value="posteringer" className="mt-4">
               <Posteringer cats={cats} txns={txns} reload={reload} />
