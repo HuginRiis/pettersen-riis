@@ -946,12 +946,23 @@ function Posteringer({
   const [adding, setAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [onlyUncat, setOnlyUncat] = useState(false);
+  const [filterCat, setFilterCat] = useState<string>("__all__");
+  const [filterPeriod, setFilterPeriod] = useState<string>("__all__");
   const [form, setForm] = useState({
     txn_date: new Date().toISOString().slice(0, 10),
     description: "",
     amount: "",
     category_id: "",
   });
+
+  // Tilgjengelige perioder (YYYY-MM) fra posteringene
+  const periods = useMemo(() => {
+    const set = new Set<string>();
+    for (const t of txns) {
+      if (t.txn_date && t.txn_date.length >= 7) set.add(t.txn_date.slice(0, 7));
+    }
+    return Array.from(set).sort().reverse();
+  }, [txns]);
 
   async function add() {
     if (!form.description || !form.amount) return;
