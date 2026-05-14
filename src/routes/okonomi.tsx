@@ -175,7 +175,9 @@ function Oversikt({
   const [periodEndM, setPeriodEndM] = usePersistedState<number>("okonomi_period_end_m", currentM);
   const [periodEndPayCut, setPeriodEndPayCut] = usePersistedState<boolean>("okonomi_period_end_paycut", true);
 
-  // Filter for "Mot typisk norsk familie": år + tom-måned (jan..valgt mnd)
+  // Filter for "Mot typisk norsk familie": fra–til år/måned
+  const [benchStartY, setBenchStartY] = usePersistedState<number>("okonomi_bench_start_y", currentY);
+  const [benchStartM, setBenchStartM] = usePersistedState<number>("okonomi_bench_start_m", 1);
   const [benchY, setBenchY] = usePersistedState<number>("okonomi_bench_y", currentY);
   const [benchM, setBenchM] = usePersistedState<number>("okonomi_bench_m", currentM);
 
@@ -368,14 +370,17 @@ function Oversikt({
 
   const top5 = catData.slice(0, 5);
 
-  // Per kategori for benchmark-perioden (jan..benchM i benchY)
-  const benchMonths = Math.max(1, benchM);
+  // Per kategori for benchmark-perioden (fra benchStart til benchY/benchM, inkl)
+  const benchStartIdx = benchStartY * 12 + (benchStartM - 1);
+  const benchEndIdx = benchY * 12 + (benchM - 1);
+  const benchMonths = Math.max(1, benchEndIdx - benchStartIdx + 1);
   const benchPerCat = new Map<string, number>();
   for (const t of txns) {
     if (!isExpense(t)) continue;
     const y = Number(t.txn_date.slice(0, 4));
     const m = Number(t.txn_date.slice(5, 7));
-    if (y !== benchY || m < 1 || m > benchMonths) continue;
+    const idx = y * 12 + (m - 1);
+    if (idx < benchStartIdx || idx > benchEndIdx) continue;
     const k = t.category_id ?? "uten";
     benchPerCat.set(k, (benchPerCat.get(k) || 0) + Math.abs(Number(t.amount)));
   }
@@ -680,28 +685,46 @@ function Oversikt({
             <> · Generer snitt-tall i Innstillinger.</>
           )}
         </p>
-        <div className="flex items-center gap-1.5 mb-3 p-2 rounded border border-amber-500/20">
-          <Label className="text-[10px] uppercase tracking-wider text-muted-foreground mr-1">
-            Periode
-          </Label>
-          <span className="text-[10px] text-muted-foreground">Jan –</span>
-          <Select value={String(benchM)} onValueChange={(v) => setBenchM(Number(v))}>
-            <SelectTrigger className="h-7 w-full text-xs"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {monthNames.map((n, i) => (
-                <SelectItem key={i} value={String(i + 1)}>{n}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={String(benchY)} onValueChange={(v) => setBenchY(Number(v))}>
-            <SelectTrigger className="h-7 w-[80px] text-xs"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {yearsAvailable.map((y) => (
-                <SelectItem key={y} value={String(y)}>{y}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <span className="text-[10px] text-muted-foreground whitespace-nowrap">× {benchMonths} mnd</span>
+        <div className="flex flex-col gap-2 mb-3 p-2 rounded border border-amber-500/20">
+          <div className="flex items-center gap-1.5">
+            <Label className="text-[10px] uppercase tracking-wider text-muted-foreground w-8">Fra</Label>
+            <Select value={String(benchStartM)} onValueChange={(v) => setBenchStartM(Number(v))}>
+              <SelectTrigger className="h-7 w-full text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {monthNames.map((n, i) => (
+                  <SelectItem key={i} value={String(i + 1)}>{n}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={String(benchStartY)} onValueChange={(v) => setBenchStartY(Number(v))}>
+              <SelectTrigger className="h-7 w-[80px] text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {yearsAvailable.map((y) => (
+                  <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <Label className="text-[10px] uppercase tracking-wider text-muted-foreground w-8">Til</Label>
+            <Select value={String(benchM)} onValueChange={(v) => setBenchM(Number(v))}>
+              <SelectTrigger className="h-7 w-full text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {monthNames.map((n, i) => (
+                  <SelectItem key={i} value={String(i + 1)}>{n}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={String(benchY)} onValueChange={(v) => setBenchY(Number(v))}>
+              <SelectTrigger className="h-7 w-[80px] text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {yearsAvailable.map((y) => (
+                  <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="text-[10px] text-muted-foreground text-right">× {benchMonths} mnd</div>
         </div>
         {benchCatData.filter((d) => d.bench > 0).length === 0 ? (
           <p className="text-sm text-muted-foreground">
