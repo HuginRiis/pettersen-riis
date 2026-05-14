@@ -1124,19 +1124,9 @@ async function fetchOkonomiKpis(cfg: PeriodCfg): Promise<OkonomiKpis> {
   try { return await p; } finally { _kpiInflight.delete(key); }
 }
 
-function useOkonomiKpis() {
-  const now = new Date();
-  const [pStartY] = usePersistedState<number>("okonomi_period_start_y", now.getFullYear());
-  const [pStartM] = usePersistedState<number>("okonomi_period_start_m", 1);
-  const [pStartPC] = usePersistedState<boolean>("okonomi_period_start_paycut", false);
-  const [pEndY] = usePersistedState<number>("okonomi_period_end_y", now.getFullYear());
-  const [pEndM] = usePersistedState<number>("okonomi_period_end_m", now.getMonth() + 1);
-  const [pEndPC] = usePersistedState<boolean>("okonomi_period_end_paycut", true);
-
-  const cfg: PeriodCfg = { pStartY, pStartM, pStartPC, pEndY, pEndM, pEndPC };
+function useOkonomiKpisFor(cfg: PeriodCfg) {
   const cacheKey = JSON.stringify(cfg);
   const [k, setK] = useState<OkonomiKpis | null>(_kpiCache.get(cacheKey)?.data ?? null);
-
   useEffect(() => {
     let cancelled = false;
     fetchOkonomiKpis(cfg).then((d) => { if (!cancelled) setK(d); }).catch(() => {});
@@ -1147,6 +1137,24 @@ function useOkonomiKpis() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cacheKey]);
   return k;
+}
+
+function useOkonomiKpis() {
+  const now = new Date();
+  const [pStartY] = usePersistedState<number>("okonomi_period_start_y", now.getFullYear());
+  const [pStartM] = usePersistedState<number>("okonomi_period_start_m", 1);
+  const [pStartPC] = usePersistedState<boolean>("okonomi_period_start_paycut", false);
+  const [pEndY] = usePersistedState<number>("okonomi_period_end_y", now.getFullYear());
+  const [pEndM] = usePersistedState<number>("okonomi_period_end_m", now.getMonth() + 1);
+  const [pEndPC] = usePersistedState<boolean>("okonomi_period_end_paycut", true);
+  return useOkonomiKpisFor({ pStartY, pStartM, pStartPC, pEndY, pEndM, pEndPC });
+}
+
+function useOkonomiKpisCurrentMonth() {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = now.getMonth() + 1;
+  return useOkonomiKpisFor({ pStartY: y, pStartM: m, pStartPC: false, pEndY: y, pEndM: m, pEndPC: false });
 }
 
 const fmtKpi = (n: number) => {
@@ -1194,16 +1202,16 @@ export function BudgetRemainingBadge({ inline }: { inline?: boolean } = {}) {
 }
 
 export function OkonomiBruktBadge({ inline }: { inline?: boolean } = {}) {
-  const k = useOkonomiKpis();
+  const k = useOkonomiKpisCurrentMonth();
   if (!k) return null;
   return <KpiPill inline={inline} icon="💸" value={fmtKpi(k.brukt)} tone="warn"
-    title={`Brukt (${periodLabel(k)}): ${Math.round(k.brukt).toLocaleString("nb-NO")} kr`} />;
+    title={`Brukt denne måned (${periodLabel(k)}): ${Math.round(k.brukt).toLocaleString("nb-NO")} kr`} />;
 }
 export function OkonomiInntektBadge({ inline }: { inline?: boolean } = {}) {
-  const k = useOkonomiKpis();
+  const k = useOkonomiKpisCurrentMonth();
   if (!k) return null;
   return <KpiPill inline={inline} icon="💰" value={fmtKpi(k.inntekt)} tone="ok"
-    title={`Inntekt (${periodLabel(k)}): ${Math.round(k.inntekt).toLocaleString("nb-NO")} kr`} />;
+    title={`Inntekt denne måned (${periodLabel(k)}): ${Math.round(k.inntekt).toLocaleString("nb-NO")} kr`} />;
 }
 export function OkonomiBudsjettBadge({ inline }: { inline?: boolean } = {}) {
   const k = useOkonomiKpis();
@@ -1219,10 +1227,10 @@ export function OkonomiOverskuddBadge({ inline }: { inline?: boolean } = {}) {
     title={`Overskudd (${periodLabel(k)}): ${Math.round(k.overskudd).toLocaleString("nb-NO")} kr`} />;
 }
 export function OkonomiSnittPrDagBadge({ inline }: { inline?: boolean } = {}) {
-  const k = useOkonomiKpis();
+  const k = useOkonomiKpisCurrentMonth();
   if (!k) return null;
   return <KpiPill inline={inline} icon="∅" value={fmtKpi(k.snittPrDag)} tone="neutral"
-    title={`Snitt brukt pr dag (${periodLabel(k)}, ${k.elapsedDays} d): ${Math.round(k.snittPrDag).toLocaleString("nb-NO")} kr`} />;
+    title={`Snitt brukt pr dag denne måned (${periodLabel(k)}, ${k.elapsedDays} d): ${Math.round(k.snittPrDag).toLocaleString("nb-NO")} kr`} />;
 }
 export function OkonomiIgjenPrDagBadge({ inline }: { inline?: boolean } = {}) {
   const k = useOkonomiKpis();
