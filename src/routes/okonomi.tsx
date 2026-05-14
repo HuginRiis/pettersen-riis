@@ -1976,28 +1976,54 @@ function ImportTab({ cats, reload }: { cats: OkonomiCategory[]; reload: () => vo
     }
   }
 
+  async function extractRowsFromXlsx(file: File): Promise<string[][]> {
+    const XLSX = await import("xlsx");
+    const buf = await file.arrayBuffer();
+    const wb = XLSX.read(buf, { type: "array", cellDates: false });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    if (!ws) throw new Error("Tomt regneark");
+    const aoa = XLSX.utils.sheet_to_json<unknown[]>(ws, { header: 1, raw: false, defval: "" });
+    return aoa.map((row) => row.map((c) => (c == null ? "" : String(c))));
+  }
+
   async function handleCsv(file: File) {
     setBusy(true);
     setSource("csv");
     setAiLog([]);
-    pushLog(`Leser CSV-fil «${file.name}» (${Math.round(file.size / 1024)} kB)`);
-    setBusyMsg("Leser CSV…");
+    const isXlsx = /\.(xlsx|xls)$/i.test(file.name);
+    const kind = isXlsx ? "Excel" : "CSV";
+    pushLog(`Leser ${kind}-fil «${file.name}» (${Math.round(file.size / 1024)} kB)`);
+    setBusyMsg(`Leser ${kind}…`);
     try {
-      const text = await file.text();
-      const lines = text.split(/\r?\n/).filter(Boolean);
-      pushLog(`Fant ${lines.length} linjer i filen`);
-      if (lines.length < 2) throw new Error("Tomt CSV");
-      const sep = lines[0].includes(";") ? ";" : ",";
-      const header = lines[0].split(sep).map((h) => h.trim().toLowerCase().replace(/"/g, ""));
-      const idxDate = header.findIndex((h) => /dato|date/.test(h));
-      const idxDesc = header.findIndex((h) => /tekst|beskriv|descr|tittel|melding|text/.test(h));
-      const idxAmt = header.findIndex((h) => /beløp|belop|amount|sum/.test(h));
+      let grid: string[][];
+      if (isXlsx) {
+        grid = await extractRowsFromXlsx(file);
+      } else {
+        const text = await file.text();
+        const lines = text.split(/\r?\n/).filter(Boolean);
+        const sep = lines[0]?.includes(";") ? ";" : ",";
+        grid = lines.map((l) => l.split(sep).map((c) => c.trim().replace(/^"|"$/g, "")));
+      }
+      pushLog(`Fant ${grid.length} linjer i filen`);
+      if (grid.length < 2) throw new Error(`Tom ${kind}`);
+      // Finn header-rad (første rad som har dato/tekst/beløp)
+      let headerIdx = 0;
+      let idxDate = -1, idxDesc = -1, idxAmt = -1;
+      for (let i = 0; i < Math.min(grid.length, 10); i++) {
+        const h = grid[i].map((c) => c.trim().toLowerCase().replace(/"/g, ""));
+        const d = h.findIndex((c) => /dato|date/.test(c));
+        const t = h.findIndex((c) => /tekst|beskriv|descr|tittel|melding|text/.test(c));
+        const a = h.findIndex((c) => /beløp|belop|amount|sum/.test(c));
+        if (d >= 0 && t >= 0 && a >= 0) {
+          headerIdx = i; idxDate = d; idxDesc = t; idxAmt = a; break;
+        }
+      }
       if (idxDate < 0 || idxDesc < 0 || idxAmt < 0)
         throw new Error("Fant ikke dato/tekst/beløp-kolonner");
       const rows: ParsedTxn[] = [];
       let skipped = 0;
-      for (let i = 1; i < lines.length; i++) {
-        const cells = lines[i].split(sep).map((c) => c.trim().replace(/^"|"$/g, ""));
+      for (let i = headerIdx + 1; i < grid.length; i++) {
+        const cells = grid[i];
         const date = parseNorDate(cells[idxDate]);
         const desc = cells[idxDesc];
         const amt = parseNorNum(cells[idxAmt]);
@@ -2009,7 +2035,7 @@ function ImportTab({ cats, reload }: { cats: OkonomiCategory[]; reload: () => vo
           txn_date: date,
           description: desc,
           amount: amt,
-          external_ref: `csv:${date}:${desc}:${amt}`,
+          external_ref: `${isXlsx ? "xlsx" : "csv"}:${date}:${desc}:${amt}`,
         });
       }
       pushLog(`Tolket ${rows.length} gyldige posteringer (${skipped} hoppet over)`);
@@ -2020,7 +2046,7 @@ function ImportTab({ cats, reload }: { cats: OkonomiCategory[]; reload: () => vo
       toast.success(`${enriched.length} rader klare — ${cat} kategorisert`);
     } catch (e) {
       pushLog(`Feil: ${e instanceof Error ? e.message : "ukjent"}`);
-      toast.error(e instanceof Error ? e.message : "CSV-feil");
+      toast.error(e instanceof Error ? e.message : `${kind}-feil`);
     } finally {
       setBusy(false);
       setBusyMsg("");
