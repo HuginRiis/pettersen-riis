@@ -41,6 +41,14 @@ const DAILY_FIELD_OPTIONS = [
   { key: "helse", label: "Helse (stress / body battery)" },
 ] as const;
 
+const COMPARE_FIELD_OPTIONS = [
+  { key: "steps", label: "Skritt" },
+  { key: "sleep", label: "Søvn" },
+  { key: "rhr", label: "Hvilepuls" },
+  { key: "calories", label: "Kalorier" },
+  { key: "helse", label: "Body battery" },
+] as const;
+
 const OWNER_OPTIONS = [
   { value: "arne", label: "Arne" },
   { value: "rebekka", label: "Rebekka" },
