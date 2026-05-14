@@ -2229,19 +2229,19 @@ function ImportTab({ cats, reload }: { cats: OkonomiCategory[]; reload: () => vo
     <div className="space-y-3">
       <Card className="p-4 border-amber-500/30 space-y-3">
         <div>
-          <Label className="text-xs uppercase tracking-wider">CSV fra norsk bank</Label>
+          <Label className="text-xs uppercase tracking-wider">CSV / Excel fra norsk bank</Label>
           <p className="text-[11px] text-muted-foreground mb-2">
-            DNB, Sparebank1, Nordea m.fl. Forventer kolonner: dato, tekst, beløp.
+            DNB, Sparebank1, Nordea m.fl. Forventer kolonner: dato, tekst, beløp. Støtter .csv, .xlsx og .xls.
           </p>
           <input
             ref={csvRef}
             type="file"
-            accept=".csv,text/csv"
+            accept=".csv,text/csv,.xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
             className="hidden"
             onChange={(e) => e.target.files?.[0] && handleCsv(e.target.files[0])}
           />
           <Button onClick={() => csvRef.current?.click()} disabled={busy} variant="secondary" className="w-full">
-            <Upload className="w-4 h-4 mr-1" /> Velg CSV
+            <Upload className="w-4 h-4 mr-1" /> Velg CSV / Excel
           </Button>
         </div>
         <div className="border-t border-border/40 pt-3">
