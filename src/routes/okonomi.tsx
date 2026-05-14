@@ -33,6 +33,7 @@ import {
   listOkonomiTransactions,
   upsertOkonomiTransaction,
   deleteOkonomiTransaction,
+  bulkUpdateOkonomiCategory,
   importOkonomiTransactions,
   parseStatementWithAI,
   categorizeTransactionsWithAI,
