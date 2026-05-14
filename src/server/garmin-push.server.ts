@@ -41,6 +41,7 @@ type Pref = {
   compare_time: string;
   daily_show_both: boolean;
   daily_fields: string[];
+  compare_fields: string[];
 };
 
 function osloDateKey(d = new Date()): string {
