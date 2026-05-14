@@ -97,20 +97,20 @@ async function sendToRecipient(pref: Pref, title: string, body: string) {
   return { sent, errors };
 }
 
-async function getTodayDaily(owner: "arne" | "rebekka"): Promise<{ steps: number | null; step_goal: number | null; resting_heart_rate: number | null; total_kilocalories: number | null; stress_average: number | null; body_battery_high: number | null } | null> {
+async function getTodayDaily(owner: "arne" | "rebekka"): Promise<{ steps: number | null; step_goal: number | null; resting_heart_rate: number | null; total_kilocalories: number | null; active_kilocalories: number | null; floors_climbed: number | null; moderate_intensity_minutes: number | null; vigorous_intensity_minutes: number | null; stress_average: number | null; body_battery_high: number | null } | null> {
   const today = osloDateKey();
   const { data } = await supabaseAdmin
     .from("garmin_daily_stats")
-    .select("steps, step_goal, resting_heart_rate, total_kilocalories, stress_average, body_battery_high")
+    .select("steps, step_goal, resting_heart_rate, total_kilocalories, active_kilocalories, floors_climbed, moderate_intensity_minutes, vigorous_intensity_minutes, stress_average, body_battery_high")
     .eq("owner", owner)
     .eq("day", today)
     .maybeSingle();
   return data ?? null;
 }
-async function getLastSleep(owner: "arne" | "rebekka"): Promise<{ total_seconds: number | null } | null> {
+async function getLastSleep(owner: "arne" | "rebekka"): Promise<{ total_seconds: number | null; deep_seconds: number | null; rem_seconds: number | null; sleep_score: number | null; hrv_avg: number | null; average_spo2: number | null } | null> {
   const { data } = await supabaseAdmin
     .from("garmin_sleep")
-    .select("total_seconds, day")
+    .select("total_seconds, deep_seconds, rem_seconds, sleep_score, hrv_avg, average_spo2, day")
     .eq("owner", owner)
     .order("day", { ascending: false })
     .limit(1)
@@ -144,10 +144,20 @@ type CompareCmp = "higher" | "lower";
 const COMPARE_FIELDS: Array<{ key: string; label: string; cmp: CompareCmp; get: (d: Awaited<ReturnType<typeof getTodayDaily>>, s: Awaited<ReturnType<typeof getLastSleep>>) => number | null }> = [
   { key: "steps", label: "skritt", cmp: "higher", get: (d) => d?.steps ?? null },
   { key: "sleep", label: "søvn", cmp: "higher", get: (_d, s) => (s?.total_seconds ? s.total_seconds / 3600 : null) },
+  { key: "deep_sleep", label: "dyp søvn", cmp: "higher", get: (_d, s) => (s?.deep_seconds ? s.deep_seconds / 60 : null) },
+  { key: "rem_sleep", label: "REM-søvn", cmp: "higher", get: (_d, s) => (s?.rem_seconds ? s.rem_seconds / 60 : null) },
+  { key: "sleep_score", label: "søvnscore", cmp: "higher", get: (_d, s) => s?.sleep_score ?? null },
   { key: "rhr", label: "hvilepuls", cmp: "lower", get: (d) => d?.resting_heart_rate ?? null },
+  { key: "hrv", label: "pulsvariasjon", cmp: "higher", get: (_d, s) => (s?.hrv_avg != null ? Number(s.hrv_avg) : null) },
+  { key: "spo2", label: "SpO₂", cmp: "higher", get: (_d, s) => (s?.average_spo2 != null ? Number(s.average_spo2) : null) },
   { key: "calories", label: "kalorier", cmp: "higher", get: (d) => d?.total_kilocalories ?? null },
+  { key: "active_kcal", label: "aktive kcal", cmp: "higher", get: (d) => d?.active_kilocalories ?? null },
   { key: "helse", label: "body battery", cmp: "higher", get: (d) => d?.body_battery_high ?? null },
+  { key: "stress", label: "stress", cmp: "lower", get: (d) => d?.stress_average ?? null },
+  { key: "intensity", label: "intensitetsminutter", cmp: "higher", get: (d) => d ? ((d.moderate_intensity_minutes ?? 0) + (d.vigorous_intensity_minutes ?? 0)) || null : null },
+  { key: "floors", label: "trapper", cmp: "higher", get: (d) => (d?.floors_climbed != null ? Number(d.floors_climbed) : null) },
 ];
+
 
 async function markNotified(pref: Pref, key: string) {
   const updated = Array.from(new Set([...(pref.notified_keys ?? []), key])).slice(-200);
