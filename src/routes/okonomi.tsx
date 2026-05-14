@@ -175,7 +175,9 @@ function Oversikt({
   const [periodEndM, setPeriodEndM] = usePersistedState<number>("okonomi_period_end_m", currentM);
   const [periodEndPayCut, setPeriodEndPayCut] = usePersistedState<boolean>("okonomi_period_end_paycut", true);
 
-  // Filter for "Mot typisk norsk familie": år + tom-måned (jan..valgt mnd)
+  // Filter for "Mot typisk norsk familie": fra–til år/måned
+  const [benchStartY, setBenchStartY] = usePersistedState<number>("okonomi_bench_start_y", currentY);
+  const [benchStartM, setBenchStartM] = usePersistedState<number>("okonomi_bench_start_m", 1);
   const [benchY, setBenchY] = usePersistedState<number>("okonomi_bench_y", currentY);
   const [benchM, setBenchM] = usePersistedState<number>("okonomi_bench_m", currentM);
 
