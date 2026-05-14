@@ -943,12 +943,18 @@ function Posteringer({
 }) {
   const upsert = useServerFn(upsertOkonomiTransaction);
   const del = useServerFn(deleteOkonomiTransaction);
+  const bulk = useServerFn(bulkUpdateOkonomiCategory);
   const learn = useServerFn(learnMerchantRule);
   const [adding, setAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [onlyUncat, setOnlyUncat] = useState(false);
   const [filterCat, setFilterCat] = useState<string>("__all__");
   const [filterPeriod, setFilterPeriod] = useState<string>("__all__");
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const [bulkDesc, setBulkDesc] = useState<string>("");
+  const [bulkCat, setBulkCat] = useState<string>("");
+  const [bulkLearn, setBulkLearn] = useState(true);
+  const [bulkBusy, setBulkBusy] = useState(false);
   const [form, setForm] = useState({
     txn_date: new Date().toISOString().slice(0, 10),
     description: "",
