@@ -1,0 +1,1 @@
+UPDATE okonomi_transactions SET category_id = '161a33d4-26a7-4d33-a2d7-bd298f0e94d8' WHERE description ILIKE 'småsparing%' AND (category_id IS NULL OR category_id <> '161a33d4-26a7-4d33-a2d7-bd298f0e94d8');
