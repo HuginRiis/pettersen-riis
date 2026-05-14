@@ -1238,7 +1238,7 @@ export function OkonomiBudsjettBadge({ inline }: { inline?: boolean } = {}) {
     title={`Budsjett (${periodLabel(k)}, ${k.months} mnd): ${Math.round(k.budsjett).toLocaleString("nb-NO")} kr`} />;
 }
 export function OkonomiOverskuddBadge({ inline }: { inline?: boolean } = {}) {
-  const k = useOkonomiKpis();
+  const k = useOkonomiKpisOverskuddPeriod();
   if (!k) return null;
   const tone = k.overskudd >= 0 ? "ok" : "danger";
   return <KpiPill inline={inline} icon={k.overskudd >= 0 ? "📈" : "📉"} value={fmtKpi(k.overskudd)} tone={tone}
