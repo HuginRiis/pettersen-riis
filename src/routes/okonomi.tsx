@@ -1079,6 +1079,35 @@ function Oversikt({
   );
 }
 
+function DrillTxns({ items, signed = false }: { items: OkonomiTransaction[]; signed?: boolean }) {
+  if (items.length === 0) {
+    return <p className="mt-2 pl-6 text-[11px] italic text-muted-foreground">Ingen posteringer.</p>;
+  }
+  const max = 100;
+  const shown = items.slice(0, max);
+  return (
+    <ul className="mt-1 ml-6 space-y-0.5 text-[11px] border-l border-amber-500/20 pl-2">
+      {shown.map((t) => {
+        const n = Number(t.amount);
+        const pos = n > 0;
+        return (
+          <li key={t.id} className="flex justify-between gap-2">
+            <span className="text-muted-foreground tabular-nums shrink-0 w-12">{t.txn_date.slice(5)}</span>
+            <span className="flex-1 truncate text-amber-100/80">{t.description}</span>
+            <span className={`tabular-nums shrink-0 ${signed ? (pos ? "text-emerald-400" : "text-red-400") : "text-amber-100"}`}>
+              {signed && pos ? "+" : ""}
+              {fmt(signed ? n : Math.abs(n))}
+            </span>
+          </li>
+        );
+      })}
+      {items.length > max && (
+        <li className="text-muted-foreground italic">+{items.length - max} flere…</li>
+      )}
+    </ul>
+  );
+}
+
 function Stat({ label, value, tone }: { label: string; value: string; tone?: "ok" | "warn" }) {
   const c = tone === "warn" ? "text-red-400" : tone === "ok" ? "text-emerald-400" : "text-amber-200";
   return (
