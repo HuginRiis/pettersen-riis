@@ -1202,16 +1202,16 @@ export function BudgetRemainingBadge({ inline }: { inline?: boolean } = {}) {
 }
 
 export function OkonomiBruktBadge({ inline }: { inline?: boolean } = {}) {
-  const k = useOkonomiKpis();
+  const k = useOkonomiKpisCurrentMonth();
   if (!k) return null;
   return <KpiPill inline={inline} icon="💸" value={fmtKpi(k.brukt)} tone="warn"
-    title={`Brukt (${periodLabel(k)}): ${Math.round(k.brukt).toLocaleString("nb-NO")} kr`} />;
+    title={`Brukt denne måned (${periodLabel(k)}): ${Math.round(k.brukt).toLocaleString("nb-NO")} kr`} />;
 }
 export function OkonomiInntektBadge({ inline }: { inline?: boolean } = {}) {
-  const k = useOkonomiKpis();
+  const k = useOkonomiKpisCurrentMonth();
   if (!k) return null;
   return <KpiPill inline={inline} icon="💰" value={fmtKpi(k.inntekt)} tone="ok"
-    title={`Inntekt (${periodLabel(k)}): ${Math.round(k.inntekt).toLocaleString("nb-NO")} kr`} />;
+    title={`Inntekt denne måned (${periodLabel(k)}): ${Math.round(k.inntekt).toLocaleString("nb-NO")} kr`} />;
 }
 export function OkonomiBudsjettBadge({ inline }: { inline?: boolean } = {}) {
   const k = useOkonomiKpis();
