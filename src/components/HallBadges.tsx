@@ -1124,19 +1124,9 @@ async function fetchOkonomiKpis(cfg: PeriodCfg): Promise<OkonomiKpis> {
   try { return await p; } finally { _kpiInflight.delete(key); }
 }
 
-function useOkonomiKpis() {
-  const now = new Date();
-  const [pStartY] = usePersistedState<number>("okonomi_period_start_y", now.getFullYear());
-  const [pStartM] = usePersistedState<number>("okonomi_period_start_m", 1);
-  const [pStartPC] = usePersistedState<boolean>("okonomi_period_start_paycut", false);
-  const [pEndY] = usePersistedState<number>("okonomi_period_end_y", now.getFullYear());
-  const [pEndM] = usePersistedState<number>("okonomi_period_end_m", now.getMonth() + 1);
-  const [pEndPC] = usePersistedState<boolean>("okonomi_period_end_paycut", true);
-
-  const cfg: PeriodCfg = { pStartY, pStartM, pStartPC, pEndY, pEndM, pEndPC };
+function useOkonomiKpisFor(cfg: PeriodCfg) {
   const cacheKey = JSON.stringify(cfg);
   const [k, setK] = useState<OkonomiKpis | null>(_kpiCache.get(cacheKey)?.data ?? null);
-
   useEffect(() => {
     let cancelled = false;
     fetchOkonomiKpis(cfg).then((d) => { if (!cancelled) setK(d); }).catch(() => {});
@@ -1147,6 +1137,24 @@ function useOkonomiKpis() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cacheKey]);
   return k;
+}
+
+function useOkonomiKpis() {
+  const now = new Date();
+  const [pStartY] = usePersistedState<number>("okonomi_period_start_y", now.getFullYear());
+  const [pStartM] = usePersistedState<number>("okonomi_period_start_m", 1);
+  const [pStartPC] = usePersistedState<boolean>("okonomi_period_start_paycut", false);
+  const [pEndY] = usePersistedState<number>("okonomi_period_end_y", now.getFullYear());
+  const [pEndM] = usePersistedState<number>("okonomi_period_end_m", now.getMonth() + 1);
+  const [pEndPC] = usePersistedState<boolean>("okonomi_period_end_paycut", true);
+  return useOkonomiKpisFor({ pStartY, pStartM, pStartPC, pEndY, pEndM, pEndPC });
+}
+
+function useOkonomiKpisCurrentMonth() {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = now.getMonth() + 1;
+  return useOkonomiKpisFor({ pStartY: y, pStartM: m, pStartPC: false, pEndY: y, pEndM: m, pEndPC: false });
 }
 
 const fmtKpi = (n: number) => {
