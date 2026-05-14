@@ -685,28 +685,46 @@ function Oversikt({
             <> · Generer snitt-tall i Innstillinger.</>
           )}
         </p>
-        <div className="flex items-center gap-1.5 mb-3 p-2 rounded border border-amber-500/20">
-          <Label className="text-[10px] uppercase tracking-wider text-muted-foreground mr-1">
-            Periode
-          </Label>
-          <span className="text-[10px] text-muted-foreground">Jan –</span>
-          <Select value={String(benchM)} onValueChange={(v) => setBenchM(Number(v))}>
-            <SelectTrigger className="h-7 w-full text-xs"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {monthNames.map((n, i) => (
-                <SelectItem key={i} value={String(i + 1)}>{n}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={String(benchY)} onValueChange={(v) => setBenchY(Number(v))}>
-            <SelectTrigger className="h-7 w-[80px] text-xs"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {yearsAvailable.map((y) => (
-                <SelectItem key={y} value={String(y)}>{y}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <span className="text-[10px] text-muted-foreground whitespace-nowrap">× {benchMonths} mnd</span>
+        <div className="flex flex-col gap-2 mb-3 p-2 rounded border border-amber-500/20">
+          <div className="flex items-center gap-1.5">
+            <Label className="text-[10px] uppercase tracking-wider text-muted-foreground w-8">Fra</Label>
+            <Select value={String(benchStartM)} onValueChange={(v) => setBenchStartM(Number(v))}>
+              <SelectTrigger className="h-7 w-full text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {monthNames.map((n, i) => (
+                  <SelectItem key={i} value={String(i + 1)}>{n}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={String(benchStartY)} onValueChange={(v) => setBenchStartY(Number(v))}>
+              <SelectTrigger className="h-7 w-[80px] text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {yearsAvailable.map((y) => (
+                  <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <Label className="text-[10px] uppercase tracking-wider text-muted-foreground w-8">Til</Label>
+            <Select value={String(benchM)} onValueChange={(v) => setBenchM(Number(v))}>
+              <SelectTrigger className="h-7 w-full text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {monthNames.map((n, i) => (
+                  <SelectItem key={i} value={String(i + 1)}>{n}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={String(benchY)} onValueChange={(v) => setBenchY(Number(v))}>
+              <SelectTrigger className="h-7 w-[80px] text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {yearsAvailable.map((y) => (
+                  <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="text-[10px] text-muted-foreground text-right">× {benchMonths} mnd</div>
         </div>
         {benchCatData.filter((d) => d.bench > 0).length === 0 ? (
           <p className="text-sm text-muted-foreground">
