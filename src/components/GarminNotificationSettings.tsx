@@ -43,10 +43,19 @@ const DAILY_FIELD_OPTIONS = [
 
 const COMPARE_FIELD_OPTIONS = [
   { key: "steps", label: "Skritt" },
-  { key: "sleep", label: "Søvn" },
+  { key: "sleep", label: "Søvn (totalt)" },
+  { key: "deep_sleep", label: "Dyp søvn" },
+  { key: "rem_sleep", label: "REM-søvn" },
+  { key: "sleep_score", label: "Søvnscore" },
   { key: "rhr", label: "Hvilepuls" },
-  { key: "calories", label: "Kalorier" },
-  { key: "helse", label: "Body battery" },
+  { key: "hrv", label: "Pulsvariasjon (HRV)" },
+  { key: "spo2", label: "Pulsoksygen (SpO₂)" },
+  { key: "calories", label: "Kalorier (totalt)" },
+  { key: "active_kcal", label: "Aktive kcal" },
+  { key: "helse", label: "Body Battery" },
+  { key: "stress", label: "Stress" },
+  { key: "intensity", label: "Intensitetsminutter" },
+  { key: "floors", label: "Trapper" },
 ] as const;
 
 const OWNER_OPTIONS = [
