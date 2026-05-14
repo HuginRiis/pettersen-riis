@@ -41,6 +41,7 @@ type Pref = {
   compare_time: string;
   daily_show_both: boolean;
   daily_fields: string[];
+  compare_fields: string[];
 };
 
 function osloDateKey(d = new Date()): string {
@@ -224,7 +225,9 @@ export async function processGarminNotifications(): Promise<{ checked: number; s
         const rS = sleepCache.get("rebekka") ?? null;
         const wins = { arne: 0, rebekka: 0, tie: 0 };
         const lines: string[] = [];
+        const enabled = new Set(p.compare_fields?.length ? p.compare_fields : ["steps","sleep","rhr","calories","helse"]);
         for (const f of COMPARE_FIELDS) {
+          if (!enabled.has(f.key)) continue;
           const a = f.get(aD, aS);
           const b = f.get(rD, rS);
           if (a == null || b == null) continue;

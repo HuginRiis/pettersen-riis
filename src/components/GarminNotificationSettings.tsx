@@ -30,6 +30,7 @@ type Pref = {
   compare_time: string;
   daily_show_both: boolean;
   daily_fields: string[];
+  compare_fields: string[];
 };
 
 const DAILY_FIELD_OPTIONS = [
@@ -38,6 +39,14 @@ const DAILY_FIELD_OPTIONS = [
   { key: "rhr", label: "Hvilepuls" },
   { key: "calories", label: "Kalorier" },
   { key: "helse", label: "Helse (stress / body battery)" },
+] as const;
+
+const COMPARE_FIELD_OPTIONS = [
+  { key: "steps", label: "Skritt" },
+  { key: "sleep", label: "Søvn" },
+  { key: "rhr", label: "Hvilepuls" },
+  { key: "calories", label: "Kalorier" },
+  { key: "helse", label: "Body battery" },
 ] as const;
 
 const OWNER_OPTIONS = [
@@ -54,7 +63,7 @@ export function GarminNotificationSettings() {
   const load = async () => {
     const { data, error } = await supabase
       .from("garmin_notification_prefs" as never)
-      .select("id, recipient, sender_label, enabled, notify_daily, daily_time, notify_step_goal, notify_low_sleep, low_sleep_hours, notify_high_resting_hr, high_rhr_bpm, garmin_owner, notify_compare, compare_time, daily_show_both, daily_fields")
+      .select("id, recipient, sender_label, enabled, notify_daily, daily_time, notify_step_goal, notify_low_sleep, low_sleep_hours, notify_high_resting_hr, high_rhr_bpm, garmin_owner, notify_compare, compare_time, daily_show_both, daily_fields, compare_fields")
       .order("created_at", { ascending: true });
     if (error) toast.error("Kunne ikke laste regler");
     else setPrefs((data ?? []) as unknown as Pref[]);
@@ -227,15 +236,43 @@ export function GarminNotificationSettings() {
                 <Switch checked={!!p.notify_compare} onCheckedChange={(v) => update(p.id, { notify_compare: v })} />
               </div>
               {p.notify_compare && (
-                <div className="flex items-center gap-2 text-xs">
-                  <span className="text-muted-foreground">Klokkeslett:</span>
-                  <Input
-                    type="time"
-                    value={(p.compare_time || "20:00").slice(0, 5)}
-                    onChange={(e) => update(p.id, { compare_time: `${e.target.value}:00` })}
-                    className="h-8 w-28"
-                  />
-                  <span className="text-muted-foreground italic">viser hvem som vant på skritt, søvn, hvilepuls, kalorier og body battery</span>
+                <div className="space-y-2 text-xs">
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground">Klokkeslett:</span>
+                    <Input
+                      type="time"
+                      value={(p.compare_time || "20:00").slice(0, 5)}
+                      onChange={(e) => update(p.id, { compare_time: `${e.target.value}:00` })}
+                      className="h-8 w-28"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-muted-foreground">Felt som teller i duellen (vinneren bestemmes ut fra disse):</span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {COMPARE_FIELD_OPTIONS.map((f) => {
+                        const list = p.compare_fields ?? ["steps","sleep","rhr","calories","helse"];
+                        const active = list.includes(f.key);
+                        return (
+                          <button
+                            key={f.key}
+                            type="button"
+                            onClick={() => {
+                              const cur = new Set(list);
+                              if (active) cur.delete(f.key); else cur.add(f.key);
+                              update(p.id, { compare_fields: Array.from(cur) });
+                            }}
+                            className={`px-2 py-0.5 rounded border text-[11px] transition-colors ${
+                              active
+                                ? "bg-primary/20 border-primary/40 text-primary"
+                                : "border-border/60 text-muted-foreground hover:bg-muted/40"
+                            }`}
+                          >
+                            {f.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
               )}
             </div>

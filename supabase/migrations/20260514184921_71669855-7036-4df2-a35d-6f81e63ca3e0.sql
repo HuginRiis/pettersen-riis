@@ -1,0 +1,1 @@
+ALTER TABLE public.garmin_notification_prefs ADD COLUMN IF NOT EXISTS compare_fields text[] NOT NULL DEFAULT ARRAY['steps','sleep','rhr','calories','helse'];
