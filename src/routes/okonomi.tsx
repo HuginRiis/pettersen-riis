@@ -1042,8 +1042,52 @@ function Posteringer({
           <Switch checked={onlyUncat} onCheckedChange={setOnlyUncat} />
         </div>
       </Card>
+      <div className="grid grid-cols-2 gap-2">
+        <Select value={filterCat} onValueChange={setFilterCat}>
+          <SelectTrigger className="h-9">
+            <SelectValue placeholder="Kategori" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__all__">Alle kategorier</SelectItem>
+            <SelectItem value="__none__">Uten kategori</SelectItem>
+            {cats.map((c) => (
+              <SelectItem key={c.id} value={c.id}>
+                {c.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={filterPeriod} onValueChange={setFilterPeriod}>
+          <SelectTrigger className="h-9">
+            <SelectValue placeholder="Periode" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__all__">Alle perioder</SelectItem>
+            {periods.map((p) => {
+              const [y, m] = p.split("-");
+              const label = new Date(Number(y), Number(m) - 1, 1).toLocaleDateString("nb-NO", {
+                month: "long",
+                year: "numeric",
+              });
+              return (
+                <SelectItem key={p} value={p}>
+                  {label}
+                </SelectItem>
+              );
+            })}
+          </SelectContent>
+        </Select>
+      </div>
       <div className="space-y-1.5">
-        {(onlyUncat ? txns.filter((t) => !t.category_id) : txns).slice(0, 200).map((t) => {
+        {(() => {
+          let list = txns;
+          if (onlyUncat) list = list.filter((t) => !t.category_id);
+          if (filterCat === "__none__") list = list.filter((t) => !t.category_id);
+          else if (filterCat !== "__all__") list = list.filter((t) => t.category_id === filterCat);
+          if (filterPeriod !== "__all__")
+            list = list.filter((t) => (t.txn_date ?? "").slice(0, 7) === filterPeriod);
+          return list.slice(0, 200);
+        })().map((t) => {
           const cat = cats.find((c) => c.id === t.category_id);
           if (editingId === t.id) {
             return (
