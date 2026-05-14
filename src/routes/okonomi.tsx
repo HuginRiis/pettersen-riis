@@ -1081,6 +1081,70 @@ function Posteringer({
           </Button>
         </Card>
       )}
+      <Button
+        onClick={() => setBulkOpen((v) => !v)}
+        className="w-full"
+        variant="outline"
+      >
+        <Sparkles className="w-4 h-4 mr-1" /> Endre alle med samme navn
+      </Button>
+      {bulkOpen && (
+        <Card className="p-3 space-y-2 border-amber-500/30">
+          <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">
+            Velg navn ({descGroups.length} grupper med 2+ posteringer)
+          </Label>
+          <Select value={bulkDesc} onValueChange={setBulkDesc}>
+            <SelectTrigger>
+              <SelectValue placeholder="Velg beskrivelse…" />
+            </SelectTrigger>
+            <SelectContent>
+              {descGroups.slice(0, 300).map((g) => (
+                <SelectItem key={g.desc} value={g.desc}>
+                  {g.desc} — {g.ids.length} stk
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {bulkGroup && (
+            <p className="text-[11px] text-muted-foreground">
+              {bulkGroup.ids.length} posteringer · totalt {fmt(bulkGroup.total)}
+            </p>
+          )}
+          <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">
+            Ny kategori
+          </Label>
+          <Select value={bulkCat} onValueChange={setBulkCat}>
+            <SelectTrigger>
+              <SelectValue placeholder="Kategori" />
+            </SelectTrigger>
+            <SelectContent>
+              {cats.map((c) => (
+                <SelectItem key={c.id} value={c.id}>
+                  {c.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <div className="flex items-center justify-between pt-1">
+            <Label className="text-xs text-muted-foreground flex items-center gap-2">
+              <Switch checked={bulkLearn} onCheckedChange={setBulkLearn} />
+              Lær regel for fremtiden
+            </Label>
+          </div>
+          <Button
+            onClick={applyBulk}
+            disabled={!bulkGroup || !bulkCat || bulkBusy}
+            className="w-full"
+          >
+            {bulkBusy ? (
+              <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+            ) : (
+              <Check className="w-4 h-4 mr-1" />
+            )}
+            Bruk på alle {bulkGroup ? `(${bulkGroup.ids.length})` : ""}
+          </Button>
+        </Card>
+      )}
       <Card className="p-2 px-3 border-amber-500/20 flex items-center justify-between">
         <Label className="text-xs text-muted-foreground">Kun ukategoriserte</Label>
         <div className="flex items-center gap-2">
