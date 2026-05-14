@@ -457,10 +457,15 @@ function Oversikt({
     const k = t.category_id ?? "uten";
     benchPerCat.set(k, (benchPerCat.get(k) || 0) + Math.abs(Number(t.amount)));
   }
-  const benchCatData = Array.from(benchPerCat.entries())
-    .map(([id, sum]) => {
+  // Inkluder ALLE kategorier (også de uten forbruk/benchmark) + "uten" hvis brukt
+  const benchCatIds = new Set<string>(cats.map((c) => c.id));
+  for (const k of benchPerCat.keys()) benchCatIds.add(k);
+  for (const k of Object.keys(benchmarks)) benchCatIds.add(k);
+  const benchCatData = Array.from(benchCatIds)
+    .map((id) => {
       const c = cats.find((x) => x.id === id);
       const benchPerMonth = Number(benchmarks[id] || 0);
+      const sum = benchPerCat.get(id) || 0;
       return {
         id,
         name: c?.name ?? "Uten kategori",
@@ -469,7 +474,7 @@ function Oversikt({
         bench: benchPerMonth * benchMonths,
       };
     })
-    .sort((a, b) => b.sum - a.sum);
+    .sort((a, b) => (b.sum + b.bench) - (a.sum + a.bench));
 
   // Trend fra valgt startmåned til valgt sluttmåned (inkl). Lønnsperiode-kutt valgfritt på hver side.
   const startAnchor = new Date(chartStartY, chartStartM - 1, 1);
