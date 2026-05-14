@@ -53,8 +53,73 @@ export const Route = createFileRoute("/okonomi")({
       { name: "description", content: "Budsjett og forbruk — familieøkonomi i Iron Bank-stil." },
     ],
   }),
-  component: OkonomiPage,
+  component: OkonomiGate,
 });
+
+const VAULT_PIN = "9272";
+const VAULT_UNLOCK_KEY = "okonomi_vault_unlocked";
+
+function OkonomiGate() {
+  const [unlocked, setUnlocked] = useState(false);
+  const [checked, setChecked] = useState(false);
+  const [pin, setPin] = useState("");
+  const [err, setErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    try {
+      setUnlocked(sessionStorage.getItem(VAULT_UNLOCK_KEY) === "1");
+    } catch {
+      // ignore
+    }
+    setChecked(true);
+  }, []);
+
+  if (!checked) return null;
+  if (unlocked) return <OkonomiPage />;
+
+  function tryUnlock(e: React.FormEvent) {
+    e.preventDefault();
+    if (pin === VAULT_PIN) {
+      try { sessionStorage.setItem(VAULT_UNLOCK_KEY, "1"); } catch { /* ignore */ }
+      setUnlocked(true);
+      setErr(null);
+    } else {
+      setErr("Feil kode");
+      setPin("");
+    }
+  }
+
+  return (
+    <PageShell>
+      <div className="container mx-auto px-4 py-10 max-w-md">
+        <div className="panel rounded-lg p-6 border border-amber-500/40">
+          <div className="flex items-center gap-2 mb-2 text-amber-400">
+            <Lock className="w-5 h-5" />
+            <h1 className="text-lg font-serif">Husholdningens hvelv — låst</h1>
+          </div>
+          <p className="text-xs text-muted-foreground mb-4">
+            Skriv inn 4-sifret kode for å åpne hvelvet.
+          </p>
+          <form onSubmit={tryUnlock} className="flex gap-2 items-start">
+            <Input
+              autoFocus
+              type="password"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              maxLength={4}
+              value={pin}
+              onChange={(e) => { setPin(e.target.value.replace(/[^0-9]/g, "").slice(0, 4)); setErr(null); }}
+              placeholder="••••"
+              className="h-10 w-32 tracking-[0.4em] text-center"
+            />
+            <Button type="submit" variant="secondary" className="h-10">Åpne</Button>
+          </form>
+          {err && <p className="text-xs text-destructive mt-2">{err}</p>}
+        </div>
+      </div>
+    </PageShell>
+  );
+}
 
 const fmt = (n: number) =>
   new Intl.NumberFormat("nb-NO", { maximumFractionDigits: 0 }).format(n) + " kr";
