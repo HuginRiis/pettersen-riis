@@ -1081,7 +1081,18 @@ function Oversikt({
   );
 }
 
-function DrillTxns({ items, signed = false }: { items: OkonomiTransaction[]; signed?: boolean }) {
+function DrillTxns({
+  items,
+  signed = false,
+  cats,
+  reload,
+}: {
+  items: OkonomiTransaction[];
+  signed?: boolean;
+  cats: OkonomiCategory[];
+  reload: () => void;
+}) {
+  const [editId, setEditId] = useState<string | null>(null);
   if (items.length === 0) {
     return <p className="mt-2 pl-6 text-[11px] italic text-muted-foreground">Ingen posteringer.</p>;
   }
@@ -1092,14 +1103,35 @@ function DrillTxns({ items, signed = false }: { items: OkonomiTransaction[]; sig
       {shown.map((t) => {
         const n = Number(t.amount);
         const pos = n > 0;
+        if (editId === t.id) {
+          return (
+            <li key={t.id} className="my-1.5">
+              <PosteringEditor
+                txn={t}
+                cats={cats}
+                onCancel={() => setEditId(null)}
+                onSaved={() => {
+                  setEditId(null);
+                  reload();
+                }}
+              />
+            </li>
+          );
+        }
         return (
-          <li key={t.id} className="flex justify-between gap-2">
-            <span className="text-muted-foreground tabular-nums shrink-0 w-12">{t.txn_date.slice(5)}</span>
-            <span className="flex-1 truncate text-amber-100/80">{t.description}</span>
-            <span className={`tabular-nums shrink-0 ${signed ? (pos ? "text-emerald-400" : "text-red-400") : "text-amber-100"}`}>
-              {signed && pos ? "+" : ""}
-              {fmt(signed ? n : Math.abs(n))}
-            </span>
+          <li key={t.id}>
+            <button
+              type="button"
+              onClick={() => setEditId(t.id)}
+              className="w-full flex justify-between gap-2 text-left hover:bg-amber-500/5 rounded px-1 py-0.5"
+            >
+              <span className="text-muted-foreground tabular-nums shrink-0 w-12">{t.txn_date.slice(5)}</span>
+              <span className="flex-1 truncate text-amber-100/80">{t.description}</span>
+              <span className={`tabular-nums shrink-0 ${signed ? (pos ? "text-emerald-400" : "text-red-400") : "text-amber-100"}`}>
+                {signed && pos ? "+" : ""}
+                {fmt(signed ? n : Math.abs(n))}
+              </span>
+            </button>
           </li>
         );
       })}
