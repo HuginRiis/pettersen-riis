@@ -1200,7 +1200,7 @@ function PosteringEditor({
       </div>
       <div>
         <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Kategori</Label>
-        <Select value={catId} onValueChange={setCatId}>
+        <Select value={catId} onValueChange={onPickCategory}>
           <SelectTrigger className="h-8">
             <SelectValue placeholder="Velg kategori" />
           </SelectTrigger>
