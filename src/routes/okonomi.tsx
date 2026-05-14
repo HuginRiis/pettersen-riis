@@ -947,9 +947,21 @@ function Oversikt({
             <div className="h-56">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie data={catData} dataKey="sum" nameKey="name" innerRadius={45} outerRadius={80} paddingAngle={2}>
+                  <Pie
+                    data={catData}
+                    dataKey="sum"
+                    nameKey="name"
+                    innerRadius={45}
+                    outerRadius={80}
+                    paddingAngle={2}
+                    onClick={(data: any) => {
+                      const id = data?.id ?? data?.payload?.id;
+                      if (!id) return;
+                      setDrillPieCat((cur) => (cur === id ? null : id));
+                    }}
+                  >
                     {catData.map((d) => (
-                      <Cell key={d.id} fill={d.color} stroke="#1a1208" />
+                      <Cell key={d.id} fill={d.color} stroke="#1a1208" cursor="pointer" />
                     ))}
                   </Pie>
                   <Tooltip
@@ -960,15 +972,49 @@ function Oversikt({
               </ResponsiveContainer>
             </div>
             <ul className="space-y-1.5 text-xs">
-              {catData.slice(0, 8).map((d) => (
-                <li key={d.id} className="flex items-center gap-2">
-                  <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ background: d.color }} />
-                  <span className="flex-1 truncate">{d.name}</span>
-                  <span className="tabular-nums text-amber-100">{fmt(d.sum)}</span>
-                </li>
-              ))}
+              {catData.slice(0, 8).map((d) => {
+                const open = drillPieCat === d.id;
+                return (
+                  <li key={d.id}>
+                    <button
+                      type="button"
+                      onClick={() => setDrillPieCat(open ? null : d.id)}
+                      className="w-full flex items-center gap-2 text-left hover:bg-amber-500/5 rounded px-1 py-0.5"
+                    >
+                      <span className="text-amber-400/70 text-[10px] w-3">{open ? "▾" : "▸"}</span>
+                      <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ background: d.color }} />
+                      <span className="flex-1 truncate">{d.name}</span>
+                      <span className="tabular-nums text-amber-100">{fmt(d.sum)}</span>
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
           </div>
+          {drillPieCat && (() => {
+            const items = filtered
+              .filter(isExpense)
+              .filter((t) => (t.category_id ?? "uten") === drillPieCat)
+              .sort((a, b) => b.txn_date.localeCompare(a.txn_date));
+            const cat = catData.find((c) => c.id === drillPieCat);
+            return (
+              <div className="mt-3 pt-3 border-t border-amber-500/20">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs uppercase tracking-wider text-amber-400">
+                    {cat?.name ?? "?"} — {items.length} posteringer
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setDrillPieCat(null)}
+                    className="text-[10px] text-muted-foreground hover:text-amber-400"
+                  >
+                    Lukk
+                  </button>
+                </div>
+                <DrillTxns items={items} />
+              </div>
+            );
+          })()}
         </Card>
       )}
 
