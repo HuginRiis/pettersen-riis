@@ -246,6 +246,27 @@ export function GarminStatusPanel({ owner = "arne", displayName }: { owner?: Own
               </select>
             </label>
           </div>
+          <div className="border-t border-border/40 pt-2 space-y-1">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={schedule.extra_sync_enabled}
+                onChange={(e) => setSchedule({ ...schedule, extra_sync_enabled: e.target.checked })}
+              />
+              <span className="text-[11px]">Ekstra sync på fast tidspunkt</span>
+            </label>
+            {schedule.extra_sync_enabled && (
+              <label className="block">
+                <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Tidspunkt (lokal)</span>
+                <input
+                  type="time"
+                  className="mt-1 w-full rounded border border-border/60 bg-background px-2 py-1 text-xs"
+                  value={schedule.extra_sync_time}
+                  onChange={(e) => setSchedule({ ...schedule, extra_sync_time: e.target.value })}
+                />
+              </label>
+            )}
+          </div>
           <button
             onClick={handleSave}
             disabled={saving}
