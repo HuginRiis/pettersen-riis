@@ -1892,6 +1892,7 @@ function Budsjett({ cats, reload }: { cats: OkonomiCategory[]; reload: () => voi
 
 function ImportTab({ cats, reload }: { cats: OkonomiCategory[]; reload: () => void }) {
   const importFn = useServerFn(importOkonomiTransactions);
+  const findDupes = useServerFn(findOkonomiDuplicates);
   const parseAi = useServerFn(parseStatementWithAI);
   const categorizeAi = useServerFn(categorizeTransactionsWithAI);
   const learn = useServerFn(learnMerchantRule);
