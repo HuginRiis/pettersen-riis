@@ -457,10 +457,15 @@ function Oversikt({
     const k = t.category_id ?? "uten";
     benchPerCat.set(k, (benchPerCat.get(k) || 0) + Math.abs(Number(t.amount)));
   }
-  const benchCatData = Array.from(benchPerCat.entries())
-    .map(([id, sum]) => {
+  // Inkluder ALLE kategorier (også de uten forbruk/benchmark) + "uten" hvis brukt
+  const benchCatIds = new Set<string>(cats.map((c) => c.id));
+  for (const k of benchPerCat.keys()) benchCatIds.add(k);
+  for (const k of Object.keys(benchmarks)) benchCatIds.add(k);
+  const benchCatData = Array.from(benchCatIds)
+    .map((id) => {
       const c = cats.find((x) => x.id === id);
       const benchPerMonth = Number(benchmarks[id] || 0);
+      const sum = benchPerCat.get(id) || 0;
       return {
         id,
         name: c?.name ?? "Uten kategori",
@@ -469,7 +474,7 @@ function Oversikt({
         bench: benchPerMonth * benchMonths,
       };
     })
-    .sort((a, b) => b.sum - a.sum);
+    .sort((a, b) => (b.sum + b.bench) - (a.sum + a.bench));
 
   // Trend fra valgt startmåned til valgt sluttmåned (inkl). Lønnsperiode-kutt valgfritt på hver side.
   const startAnchor = new Date(chartStartY, chartStartM - 1, 1);
@@ -814,16 +819,13 @@ function Oversikt({
           </div>
           <div className="text-[10px] text-muted-foreground text-right">× {benchMonths} mnd</div>
         </div>
-        {benchCatData.filter((d) => d.bench > 0).length === 0 ? (
+        {benchCatData.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            Ingen snitt-tall ennå. Gå til Innstillinger → Husholdningens hvelv og trykk «Generer
-            nye snitt-tall».
+            Ingen kategorier ennå.
           </p>
         ) : (
           <ul className="space-y-2">
-            {benchCatData
-              .filter((d) => d.bench > 0)
-              .map((d) => {
+            {benchCatData.map((d) => {
                 const diff = d.sum - d.bench;
                 const pct = d.bench > 0 ? (diff / d.bench) * 100 : 0;
                 const over = diff > 0;
@@ -856,13 +858,19 @@ function Oversikt({
                         </span>
                         <span className="tabular-nums text-xs flex items-center gap-2">
                           <span className="text-amber-100">{fmt(d.sum)}</span>
-                          <span className="text-muted-foreground">/ snitt {fmt(d.bench)}</span>
-                          <span
-                            className={`font-semibold ${over ? "text-red-400" : "text-emerald-400"}`}
-                          >
-                            {over ? "+" : ""}
-                            {pct.toFixed(0)}%
+                          <span className="text-muted-foreground">
+                            / snitt {d.bench > 0 ? fmt(d.bench) : "—"}
                           </span>
+                          {d.bench > 0 ? (
+                            <span
+                              className={`font-semibold ${over ? "text-red-400" : "text-emerald-400"}`}
+                            >
+                              {over ? "+" : ""}
+                              {pct.toFixed(0)}%
+                            </span>
+                          ) : (
+                            <span className="font-semibold text-muted-foreground">—</span>
+                          )}
                         </span>
                       </div>
                     </button>
