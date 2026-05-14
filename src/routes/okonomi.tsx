@@ -370,14 +370,17 @@ function Oversikt({
 
   const top5 = catData.slice(0, 5);
 
-  // Per kategori for benchmark-perioden (jan..benchM i benchY)
-  const benchMonths = Math.max(1, benchM);
+  // Per kategori for benchmark-perioden (fra benchStart til benchY/benchM, inkl)
+  const benchStartIdx = benchStartY * 12 + (benchStartM - 1);
+  const benchEndIdx = benchY * 12 + (benchM - 1);
+  const benchMonths = Math.max(1, benchEndIdx - benchStartIdx + 1);
   const benchPerCat = new Map<string, number>();
   for (const t of txns) {
     if (!isExpense(t)) continue;
     const y = Number(t.txn_date.slice(0, 4));
     const m = Number(t.txn_date.slice(5, 7));
-    if (y !== benchY || m < 1 || m > benchMonths) continue;
+    const idx = y * 12 + (m - 1);
+    if (idx < benchStartIdx || idx > benchEndIdx) continue;
     const k = t.category_id ?? "uten";
     benchPerCat.set(k, (benchPerCat.get(k) || 0) + Math.abs(Number(t.amount)));
   }
