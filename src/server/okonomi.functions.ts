@@ -220,6 +220,42 @@ const importSchema = z.object({
   default_account: z.string().optional(),
 });
 
+const dupCheckSchema = z.object({
+  rows: z
+    .array(
+      z.object({
+        txn_date: z.string(),
+        description: z.string().min(1),
+        amount: z.number(),
+        account: z.string().nullable().optional(),
+      }),
+    )
+    .min(1)
+    .max(2000),
+  default_account: z.string().optional(),
+});
+
+export const findOkonomiDuplicates = createServerFn({ method: "POST" })
+  .inputValidator((d) => dupCheckSchema.parse(d))
+  .handler(async ({ data }) => {
+    const dupes: Array<{ index: number; existing_id: string }> = [];
+    for (let i = 0; i < data.rows.length; i++) {
+      const r = data.rows[i]!;
+      const account = r.account ?? data.default_account ?? null;
+      let q = supabaseAdmin
+        .from("okonomi_transactions")
+        .select("id")
+        .eq("txn_date", r.txn_date)
+        .eq("description", r.description)
+        .eq("amount", r.amount)
+        .limit(1);
+      q = account === null ? q.is("account", null) : q.eq("account", account);
+      const { data: existing } = await q.maybeSingle();
+      if (existing) dupes.push({ index: i, existing_id: (existing as any).id });
+    }
+    return { duplicates: dupes };
+  });
+
 export const importOkonomiTransactions = createServerFn({ method: "POST" })
   .inputValidator((d) => importSchema.parse(d))
   .handler(async ({ data }) => {
