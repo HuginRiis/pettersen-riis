@@ -33,6 +33,7 @@ import {
   listOkonomiTransactions,
   upsertOkonomiTransaction,
   deleteOkonomiTransaction,
+  bulkUpdateOkonomiCategory,
   importOkonomiTransactions,
   parseStatementWithAI,
   categorizeTransactionsWithAI,
@@ -942,12 +943,18 @@ function Posteringer({
 }) {
   const upsert = useServerFn(upsertOkonomiTransaction);
   const del = useServerFn(deleteOkonomiTransaction);
+  const bulk = useServerFn(bulkUpdateOkonomiCategory);
   const learn = useServerFn(learnMerchantRule);
   const [adding, setAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [onlyUncat, setOnlyUncat] = useState(false);
   const [filterCat, setFilterCat] = useState<string>("__all__");
   const [filterPeriod, setFilterPeriod] = useState<string>("__all__");
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const [bulkDesc, setBulkDesc] = useState<string>("");
+  const [bulkCat, setBulkCat] = useState<string>("");
+  const [bulkLearn, setBulkLearn] = useState(true);
+  const [bulkBusy, setBulkBusy] = useState(false);
   const [form, setForm] = useState({
     txn_date: new Date().toISOString().slice(0, 10),
     description: "",
@@ -963,6 +970,47 @@ function Posteringer({
     }
     return Array.from(set).sort().reverse();
   }, [txns]);
+
+  // Grupper posteringer etter beskrivelse for "Endre alle"
+  const descGroups = useMemo(() => {
+    const map = new Map<string, { ids: string[]; total: number; sample: number }>();
+    for (const t of txns) {
+      const key = (t.description ?? "").trim();
+      if (!key) continue;
+      const g = map.get(key) ?? { ids: [], total: 0, sample: Number(t.amount) };
+      g.ids.push(t.id);
+      g.total += Number(t.amount) || 0;
+      map.set(key, g);
+    }
+    return Array.from(map.entries())
+      .map(([desc, g]) => ({ desc, ...g }))
+      .filter((g) => g.ids.length >= 2)
+      .sort((a, b) => b.ids.length - a.ids.length);
+  }, [txns]);
+
+  const bulkGroup = descGroups.find((g) => g.desc === bulkDesc);
+
+  async function applyBulk() {
+    if (!bulkGroup || !bulkCat) return;
+    setBulkBusy(true);
+    try {
+      await bulk({ data: { ids: bulkGroup.ids, category_id: bulkCat } });
+      if (bulkLearn) {
+        try {
+          await learn({ data: { description: bulkDesc, category_id: bulkCat } });
+        } catch {}
+      }
+      toast.success(`Oppdaterte ${bulkGroup.ids.length} posteringer`);
+      setBulkOpen(false);
+      setBulkDesc("");
+      setBulkCat("");
+      reload();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Feil");
+    } finally {
+      setBulkBusy(false);
+    }
+  }
 
   async function add() {
     if (!form.description || !form.amount) return;
@@ -1030,6 +1078,70 @@ function Posteringer({
           </Select>
           <Button onClick={add} className="w-full">
             Lagre
+          </Button>
+        </Card>
+      )}
+      <Button
+        onClick={() => setBulkOpen((v) => !v)}
+        className="w-full"
+        variant="outline"
+      >
+        <Sparkles className="w-4 h-4 mr-1" /> Endre alle med samme navn
+      </Button>
+      {bulkOpen && (
+        <Card className="p-3 space-y-2 border-amber-500/30">
+          <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">
+            Velg navn ({descGroups.length} grupper med 2+ posteringer)
+          </Label>
+          <Select value={bulkDesc} onValueChange={setBulkDesc}>
+            <SelectTrigger>
+              <SelectValue placeholder="Velg beskrivelse…" />
+            </SelectTrigger>
+            <SelectContent>
+              {descGroups.slice(0, 300).map((g) => (
+                <SelectItem key={g.desc} value={g.desc}>
+                  {g.desc} — {g.ids.length} stk
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {bulkGroup && (
+            <p className="text-[11px] text-muted-foreground">
+              {bulkGroup.ids.length} posteringer · totalt {fmt(bulkGroup.total)}
+            </p>
+          )}
+          <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">
+            Ny kategori
+          </Label>
+          <Select value={bulkCat} onValueChange={setBulkCat}>
+            <SelectTrigger>
+              <SelectValue placeholder="Kategori" />
+            </SelectTrigger>
+            <SelectContent>
+              {cats.map((c) => (
+                <SelectItem key={c.id} value={c.id}>
+                  {c.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <div className="flex items-center justify-between pt-1">
+            <Label className="text-xs text-muted-foreground flex items-center gap-2">
+              <Switch checked={bulkLearn} onCheckedChange={setBulkLearn} />
+              Lær regel for fremtiden
+            </Label>
+          </div>
+          <Button
+            onClick={applyBulk}
+            disabled={!bulkGroup || !bulkCat || bulkBusy}
+            className="w-full"
+          >
+            {bulkBusy ? (
+              <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+            ) : (
+              <Check className="w-4 h-4 mr-1" />
+            )}
+            Bruk på alle {bulkGroup ? `(${bulkGroup.ids.length})` : ""}
           </Button>
         </Card>
       )}
