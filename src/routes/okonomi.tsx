@@ -819,16 +819,13 @@ function Oversikt({
           </div>
           <div className="text-[10px] text-muted-foreground text-right">× {benchMonths} mnd</div>
         </div>
-        {benchCatData.filter((d) => d.bench > 0).length === 0 ? (
+        {benchCatData.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            Ingen snitt-tall ennå. Gå til Innstillinger → Husholdningens hvelv og trykk «Generer
-            nye snitt-tall».
+            Ingen kategorier ennå.
           </p>
         ) : (
           <ul className="space-y-2">
-            {benchCatData
-              .filter((d) => d.bench > 0)
-              .map((d) => {
+            {benchCatData.map((d) => {
                 const diff = d.sum - d.bench;
                 const pct = d.bench > 0 ? (diff / d.bench) * 100 : 0;
                 const over = diff > 0;
@@ -861,13 +858,19 @@ function Oversikt({
                         </span>
                         <span className="tabular-nums text-xs flex items-center gap-2">
                           <span className="text-amber-100">{fmt(d.sum)}</span>
-                          <span className="text-muted-foreground">/ snitt {fmt(d.bench)}</span>
-                          <span
-                            className={`font-semibold ${over ? "text-red-400" : "text-emerald-400"}`}
-                          >
-                            {over ? "+" : ""}
-                            {pct.toFixed(0)}%
+                          <span className="text-muted-foreground">
+                            / snitt {d.bench > 0 ? fmt(d.bench) : "—"}
                           </span>
+                          {d.bench > 0 ? (
+                            <span
+                              className={`font-semibold ${over ? "text-red-400" : "text-emerald-400"}`}
+                            >
+                              {over ? "+" : ""}
+                              {pct.toFixed(0)}%
+                            </span>
+                          ) : (
+                            <span className="font-semibold text-muted-foreground">—</span>
+                          )}
                         </span>
                       </div>
                     </button>
