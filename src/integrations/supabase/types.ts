@@ -613,6 +613,7 @@ export type Database = {
       }
       garmin_notification_prefs: {
         Row: {
+          compare_fields: string[]
           compare_time: string
           created_at: string
           daily_fields: string[]
@@ -634,6 +635,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          compare_fields?: string[]
           compare_time?: string
           created_at?: string
           daily_fields?: string[]
@@ -655,6 +657,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          compare_fields?: string[]
           compare_time?: string
           created_at?: string
           daily_fields?: string[]
