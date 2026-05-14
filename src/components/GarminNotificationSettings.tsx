@@ -259,7 +259,7 @@ export function GarminNotificationSettings() {
                     <span className="text-muted-foreground">Felt som teller i duellen (vinneren bestemmes ut fra disse):</span>
                     <div className="flex flex-wrap gap-1.5">
                       {COMPARE_FIELD_OPTIONS.map((f) => {
-                        const list = p.compare_fields ?? ["steps","sleep","rhr","calories","helse"];
+                        const list = p.compare_fields ?? COMPARE_FIELD_OPTIONS.map((o) => o.key);
                         const active = list.includes(f.key);
                         return (
                           <button
