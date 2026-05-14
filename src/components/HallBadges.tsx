@@ -1004,54 +1004,7 @@ export function RoborockStatusBadge({ inline, match, name }: { inline?: boolean;
   );
 }
 
-/** Husholdningens hvelv — gjenstår av månedsbudsjett. */
-export function BudgetRemainingBadge({ inline }: { inline?: boolean } = {}) {
-  const [info, setInfo] = useState<{ remaining: number; budget: number } | null>(null);
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const now = new Date();
-        const ymStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
-        const [{ data: cats }, { data: txns }] = await Promise.all([
-          supabase.from("okonomi_categories").select("id,monthly_budget,is_income,is_transfer"),
-          supabase.from("okonomi_transactions").select("amount,category_id,txn_date").gte("txn_date", ymStart),
-        ]);
-        const catMap = new Map((cats ?? []).map((c: any) => [c.id, c]));
-        const budget = (cats ?? []).reduce((s: number, c: any) => s + (Number(c.monthly_budget) || 0), 0);
-        let brukt = 0;
-        for (const t of txns ?? []) {
-          const c: any = t.category_id ? catMap.get(t.category_id) : null;
-          if (c?.is_transfer || c?.is_income) continue;
-          const a = Number((t as any).amount);
-          if (a < 0) brukt += Math.abs(a);
-        }
-        if (!cancelled) setInfo({ remaining: Math.max(0, budget - brukt), budget });
-      } catch {}
-    })();
-    return () => { cancelled = true; };
-  }, []);
-  if (!info || info.budget === 0) return null;
-  const pct = info.remaining / info.budget;
-  const tone = pct > 0.33
-    ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40"
-    : pct > 0.1
-      ? "bg-amber-500/20 text-amber-300 border-amber-500/40"
-      : "bg-rose-500/20 text-rose-300 border-rose-500/40";
-  const cls = `px-1.5 h-[18px] rounded-full text-[10px] font-semibold inline-flex items-center justify-center border ${tone}`;
-  const fmt = (n: number) =>
-    n >= 1000 ? `${Math.round(n / 1000)}k` : `${Math.round(n)}`;
-  return (
-    <span
-      title={`${Math.round(info.remaining).toLocaleString("nb-NO")} kr igjen av ${Math.round(info.budget).toLocaleString("nb-NO")} kr`}
-      className={inline ? `ml-1 ${cls}` : `absolute top-2 right-2 z-10 ${cls}`}
-    >
-      💰{fmt(info.remaining)}
-    </span>
-  );
-}
-
-// ============== Husholdningens hvelv KPI badges ==============
+// ============== Husholdningens hvelv KPI badges (lønnsperiode) ==============
 
 type OkonomiKpis = {
   brukt: number;
@@ -1060,74 +1013,139 @@ type OkonomiKpis = {
   overskudd: number;
   snittPrDag: number;
   igjenPrDag: number;
+  remaining: number;
   elapsedDays: number;
-  daysUntilPayday: number;
+  daysUntilEnd: number;
+  startKey: string;
+  endKey: string;
+  months: number;
 };
 
-let _kpiCache: { at: number; data: OkonomiKpis } | null = null;
-let _kpiInflight: Promise<OkonomiKpis> | null = null;
+type PeriodCfg = {
+  pStartY: number; pStartM: number; pStartPC: boolean;
+  pEndY: number; pEndM: number; pEndPC: boolean;
+};
 
-async function fetchOkonomiKpis(): Promise<OkonomiKpis> {
-  if (_kpiCache && Date.now() - _kpiCache.at < 60_000) return _kpiCache.data;
-  if (_kpiInflight) return _kpiInflight;
-  _kpiInflight = (async () => {
-    const now = new Date();
-    const y = now.getFullYear();
-    const yStart = `${y}-01-01`;
-    const yEnd = `${y}-12-31`;
+const _kpiCache = new Map<string, { at: number; data: OkonomiKpis }>();
+const _kpiInflight = new Map<string, Promise<OkonomiKpis>>();
+
+function isIncomeTxn(t: any, c: any | null): boolean {
+  if (c?.is_income) return true;
+  return Number(t.amount) > 0 && !c?.is_transfer;
+}
+function isExpenseTxn(t: any, c: any | null): boolean {
+  if (c?.is_transfer || c?.is_income) return false;
+  return Number(t.amount) < 0;
+}
+
+async function fetchOkonomiKpis(cfg: PeriodCfg): Promise<OkonomiKpis> {
+  const key = JSON.stringify(cfg);
+  const cached = _kpiCache.get(key);
+  if (cached && Date.now() - cached.at < 60_000) return cached.data;
+  const inflight = _kpiInflight.get(key);
+  if (inflight) return inflight;
+
+  const p = (async () => {
+    const startKey = `${cfg.pStartY}-${String(cfg.pStartM).padStart(2, "0")}`;
+    const endKey = `${cfg.pEndY}-${String(cfg.pEndM).padStart(2, "0")}`;
+    const startDateStr = `${startKey}-01`;
+    const endLast = new Date(cfg.pEndY, cfg.pEndM, 0);
+    const endDateStr = `${endKey}-${String(endLast.getDate()).padStart(2, "0")}`;
 
     const [{ data: cats }, { data: txns }] = await Promise.all([
       supabase.from("okonomi_categories").select("id,monthly_budget,is_income,is_transfer"),
-      supabase.from("okonomi_transactions").select("amount,category_id,txn_date").gte("txn_date", yStart).lte("txn_date", yEnd),
+      supabase.from("okonomi_transactions")
+        .select("amount,category_id,txn_date")
+        .gte("txn_date", startDateStr)
+        .lte("txn_date", endDateStr),
     ]);
     const catMap = new Map((cats ?? []).map((c: any) => [c.id, c]));
-    const budsjett = (cats ?? [])
-      .filter((c: any) => !c.is_income && !c.is_transfer)
-      .reduce((s: number, c: any) => s + (Number(c.monthly_budget) || 0), 0) * 12;
-    let brukt = 0;
-    let inntekt = 0;
-    for (const t of txns ?? []) {
-      const c: any = t.category_id ? catMap.get(t.category_id) : null;
-      if (c?.is_transfer) continue;
-      const a = Number((t as any).amount);
-      if (c?.is_income || a > 0) {
-        if (a > 0) inntekt += a;
-      } else if (a < 0) {
-        brukt += Math.abs(a);
+
+    let list = (txns ?? []) as any[];
+    let effectiveStart = new Date(cfg.pStartY, cfg.pStartM - 1, 1);
+    let effectiveEnd = endLast;
+
+    if (cfg.pStartPC) {
+      const salary = list
+        .filter((t) => t.txn_date.slice(0, 7) === startKey
+          && isIncomeTxn(t, t.category_id ? catMap.get(t.category_id) : null)
+          && Number(t.amount) > 30000)
+        .sort((a, b) => a.txn_date.localeCompare(b.txn_date))[0];
+      if (salary) {
+        list = list.filter((t) => t.txn_date.slice(0, 7) !== startKey || t.txn_date >= salary.txn_date);
+        effectiveStart = new Date(salary.txn_date);
       }
     }
-    const overskudd = inntekt - brukt;
+    if (cfg.pEndPC) {
+      const salary = list
+        .filter((t) => t.txn_date.slice(0, 7) === endKey
+          && isIncomeTxn(t, t.category_id ? catMap.get(t.category_id) : null)
+          && Number(t.amount) > 30000)
+        .sort((a, b) => a.txn_date.localeCompare(b.txn_date))[0];
+      if (salary) {
+        list = list.filter((t) => t.txn_date.slice(0, 7) !== endKey || t.txn_date < salary.txn_date);
+        const d = new Date(salary.txn_date);
+        d.setDate(d.getDate() - 1);
+        effectiveEnd = d;
+      }
+    }
 
-    const yearStartDate = new Date(y, 0, 1);
-    const yearEndDate = new Date(y, 11, 31);
-    const elapsedDays = Math.max(1, Math.floor((now.getTime() - yearStartDate.getTime()) / 86400000) + 1);
-    const daysUntilPayday = Math.max(0, Math.ceil((yearEndDate.getTime() - now.getTime()) / 86400000));
-    const snittPrDag = elapsedDays > 0 ? brukt / elapsedDays : 0;
-    const igjenPrDag = daysUntilPayday > 0 ? overskudd / daysUntilPayday : overskudd;
+    let brukt = 0, inntekt = 0;
+    for (const t of list) {
+      const c: any = t.category_id ? catMap.get(t.category_id) : null;
+      if (c?.is_transfer) continue;
+      if (isIncomeTxn(t, c)) inntekt += Number(t.amount);
+      else if (isExpenseTxn(t, c)) brukt += Math.abs(Number(t.amount));
+    }
+
+    const months = Math.max(1, (cfg.pEndY - cfg.pStartY) * 12 + (cfg.pEndM - cfg.pStartM) + 1);
+    const budsjett = (cats ?? [])
+      .filter((c: any) => !c.is_income && !c.is_transfer)
+      .reduce((s: number, c: any) => s + (Number(c.monthly_budget) || 0), 0) * months;
+
+    const overskudd = inntekt - brukt;
+    const remaining = Math.max(0, budsjett - brukt);
+    const today = new Date();
+    const cappedEnd = effectiveEnd > today ? today : effectiveEnd;
+    const elapsedDays = Math.max(1, Math.floor((cappedEnd.getTime() - effectiveStart.getTime()) / 86400000) + 1);
+    const daysUntilEnd = Math.max(0, Math.ceil((effectiveEnd.getTime() - today.getTime()) / 86400000));
+    const snittPrDag = brukt / elapsedDays;
+    const igjenPrDag = daysUntilEnd > 0 ? remaining / daysUntilEnd : remaining;
 
     const data: OkonomiKpis = {
-      brukt, inntekt, budsjett, overskudd, snittPrDag, igjenPrDag, elapsedDays, daysUntilPayday,
+      brukt, inntekt, budsjett, overskudd, snittPrDag, igjenPrDag, remaining,
+      elapsedDays, daysUntilEnd, startKey, endKey, months,
     };
-    _kpiCache = { at: Date.now(), data };
+    _kpiCache.set(key, { at: Date.now(), data });
     return data;
   })();
-  try {
-    return await _kpiInflight;
-  } finally {
-    _kpiInflight = null;
-  }
+
+  _kpiInflight.set(key, p);
+  try { return await p; } finally { _kpiInflight.delete(key); }
 }
 
 function useOkonomiKpis() {
-  const [k, setK] = useState<OkonomiKpis | null>(_kpiCache?.data ?? null);
+  const now = new Date();
+  const [pStartY] = usePersistedState<number>("okonomi_period_start_y", now.getFullYear());
+  const [pStartM] = usePersistedState<number>("okonomi_period_start_m", 1);
+  const [pStartPC] = usePersistedState<boolean>("okonomi_period_start_paycut", false);
+  const [pEndY] = usePersistedState<number>("okonomi_period_end_y", now.getFullYear());
+  const [pEndM] = usePersistedState<number>("okonomi_period_end_m", now.getMonth() + 1);
+  const [pEndPC] = usePersistedState<boolean>("okonomi_period_end_paycut", true);
+
+  const cfg: PeriodCfg = { pStartY, pStartM, pStartPC, pEndY, pEndM, pEndPC };
+  const cacheKey = JSON.stringify(cfg);
+  const [k, setK] = useState<OkonomiKpis | null>(_kpiCache.get(cacheKey)?.data ?? null);
+
   useEffect(() => {
     let cancelled = false;
-    fetchOkonomiKpis().then((d) => { if (!cancelled) setK(d); }).catch(() => {});
+    fetchOkonomiKpis(cfg).then((d) => { if (!cancelled) setK(d); }).catch(() => {});
     const t = setInterval(() => {
-      fetchOkonomiKpis().then((d) => { if (!cancelled) setK(d); }).catch(() => {});
+      fetchOkonomiKpis(cfg).then((d) => { if (!cancelled) setK(d); }).catch(() => {});
     }, 120_000);
     return () => { cancelled = true; clearInterval(t); };
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cacheKey]);
   return k;
 }
 
@@ -1162,39 +1180,54 @@ function KpiPill({
   );
 }
 
+function periodLabel(k: OkonomiKpis): string {
+  return k.startKey === k.endKey ? k.startKey : `${k.startKey} → ${k.endKey}`;
+}
+
+export function BudgetRemainingBadge({ inline }: { inline?: boolean } = {}) {
+  const k = useOkonomiKpis();
+  if (!k || k.budsjett === 0) return null;
+  const pct = k.remaining / k.budsjett;
+  const tone = pct > 0.33 ? "ok" : pct > 0.1 ? "warn" : "danger";
+  return <KpiPill inline={inline} icon="💰" value={fmtKpi(k.remaining)} tone={tone}
+    title={`${Math.round(k.remaining).toLocaleString("nb-NO")} kr igjen av ${Math.round(k.budsjett).toLocaleString("nb-NO")} kr (${periodLabel(k)})`} />;
+}
+
 export function OkonomiBruktBadge({ inline }: { inline?: boolean } = {}) {
   const k = useOkonomiKpis();
   if (!k) return null;
-  const y = new Date().getFullYear();
-  return <KpiPill inline={inline} icon="💸" value={fmtKpi(k.brukt)} tone="warn" title={`Brukt i ${y}: ${Math.round(k.brukt).toLocaleString("nb-NO")} kr`} />;
+  return <KpiPill inline={inline} icon="💸" value={fmtKpi(k.brukt)} tone="warn"
+    title={`Brukt (${periodLabel(k)}): ${Math.round(k.brukt).toLocaleString("nb-NO")} kr`} />;
 }
 export function OkonomiInntektBadge({ inline }: { inline?: boolean } = {}) {
   const k = useOkonomiKpis();
   if (!k) return null;
-  const y = new Date().getFullYear();
-  return <KpiPill inline={inline} icon="💰" value={fmtKpi(k.inntekt)} tone="ok" title={`Inntekt i ${y}: ${Math.round(k.inntekt).toLocaleString("nb-NO")} kr`} />;
+  return <KpiPill inline={inline} icon="💰" value={fmtKpi(k.inntekt)} tone="ok"
+    title={`Inntekt (${periodLabel(k)}): ${Math.round(k.inntekt).toLocaleString("nb-NO")} kr`} />;
 }
 export function OkonomiBudsjettBadge({ inline }: { inline?: boolean } = {}) {
   const k = useOkonomiKpis();
   if (!k) return null;
-  const y = new Date().getFullYear();
-  return <KpiPill inline={inline} icon="🎯" value={fmtKpi(k.budsjett)} tone="neutral" title={`Budsjett ${y} (12 mnd): ${Math.round(k.budsjett).toLocaleString("nb-NO")} kr`} />;
+  return <KpiPill inline={inline} icon="🎯" value={fmtKpi(k.budsjett)} tone="neutral"
+    title={`Budsjett (${periodLabel(k)}, ${k.months} mnd): ${Math.round(k.budsjett).toLocaleString("nb-NO")} kr`} />;
 }
 export function OkonomiOverskuddBadge({ inline }: { inline?: boolean } = {}) {
   const k = useOkonomiKpis();
   if (!k) return null;
   const tone = k.overskudd >= 0 ? "ok" : "danger";
-  const y = new Date().getFullYear();
-  return <KpiPill inline={inline} icon={k.overskudd >= 0 ? "📈" : "📉"} value={fmtKpi(k.overskudd)} tone={tone} title={`Overskudd ${y}: ${Math.round(k.overskudd).toLocaleString("nb-NO")} kr`} />;
+  return <KpiPill inline={inline} icon={k.overskudd >= 0 ? "📈" : "📉"} value={fmtKpi(k.overskudd)} tone={tone}
+    title={`Overskudd (${periodLabel(k)}): ${Math.round(k.overskudd).toLocaleString("nb-NO")} kr`} />;
 }
 export function OkonomiSnittPrDagBadge({ inline }: { inline?: boolean } = {}) {
   const k = useOkonomiKpis();
   if (!k) return null;
-  return <KpiPill inline={inline} icon="∅" value={fmtKpi(k.snittPrDag)} tone="neutral" title={`Snitt brukt pr dag i år (${k.elapsedDays} d): ${Math.round(k.snittPrDag).toLocaleString("nb-NO")} kr`} />;
+  return <KpiPill inline={inline} icon="∅" value={fmtKpi(k.snittPrDag)} tone="neutral"
+    title={`Snitt brukt pr dag (${periodLabel(k)}, ${k.elapsedDays} d): ${Math.round(k.snittPrDag).toLocaleString("nb-NO")} kr`} />;
 }
 export function OkonomiIgjenPrDagBadge({ inline }: { inline?: boolean } = {}) {
   const k = useOkonomiKpis();
   if (!k) return null;
   const tone = k.igjenPrDag <= 0 ? "danger" : k.igjenPrDag < 100 ? "warn" : "ok";
-  return <KpiPill inline={inline} icon="📅" value={fmtKpi(k.igjenPrDag)} tone={tone} title={`Igjen pr dag (${k.daysUntilPayday} d til årsslutt): ${Math.round(k.igjenPrDag).toLocaleString("nb-NO")} kr`} />;
+  return <KpiPill inline={inline} icon="📅" value={fmtKpi(k.igjenPrDag)} tone={tone}
+    title={`Igjen pr dag (${k.daysUntilEnd} d til periodeslutt): ${Math.round(k.igjenPrDag).toLocaleString("nb-NO")} kr`} />;
 }
