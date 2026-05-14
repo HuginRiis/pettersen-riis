@@ -181,6 +181,12 @@ function Oversikt({
   const [benchY, setBenchY] = usePersistedState<number>("okonomi_bench_y", currentY);
   const [benchM, setBenchM] = usePersistedState<number>("okonomi_bench_m", currentM);
 
+  // Drill-down state (inline ekspandering)
+  const [drillTopCat, setDrillTopCat] = useState<string | null>(null);
+  const [drillBenchCat, setDrillBenchCat] = useState<string | null>(null);
+  const [drillPieCat, setDrillPieCat] = useState<string | null>(null);
+  const [drillTrendMonth, setDrillTrendMonth] = useState<string | null>(null);
+
   // Hvilke kategorier som er EKSKLUDERT fra beregning. "uten" = uten kategori.
   // Default: alle inkludert. Lagres i localStorage.
   const EXCL_KEY = "okonomi_excluded_cats";
