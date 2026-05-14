@@ -130,6 +130,19 @@ export function GarminStatusPanel({ owner = "arne", displayName }: { owner?: Own
     }
   };
 
+  const handleSaveExtra = async () => {
+    if (!schedule) return;
+    setSavingExtra(true);
+    try {
+      await saveSchedule({ data: { ...schedule, owner } });
+      toast.success(`Ekstra sync lagret${displayName ? ` for ${displayName}` : ""}`);
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setSavingExtra(false);
+    }
+  };
+
   if (loading) {
     return <div className="flex items-center gap-2 text-xs text-muted-foreground"><Loader2 className="h-3.5 w-3.5 animate-spin" /> Laster Garmin-status…</div>;
   }
