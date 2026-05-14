@@ -236,15 +236,43 @@ export function GarminNotificationSettings() {
                 <Switch checked={!!p.notify_compare} onCheckedChange={(v) => update(p.id, { notify_compare: v })} />
               </div>
               {p.notify_compare && (
-                <div className="flex items-center gap-2 text-xs">
-                  <span className="text-muted-foreground">Klokkeslett:</span>
-                  <Input
-                    type="time"
-                    value={(p.compare_time || "20:00").slice(0, 5)}
-                    onChange={(e) => update(p.id, { compare_time: `${e.target.value}:00` })}
-                    className="h-8 w-28"
-                  />
-                  <span className="text-muted-foreground italic">viser hvem som vant på skritt, søvn, hvilepuls, kalorier og body battery</span>
+                <div className="space-y-2 text-xs">
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground">Klokkeslett:</span>
+                    <Input
+                      type="time"
+                      value={(p.compare_time || "20:00").slice(0, 5)}
+                      onChange={(e) => update(p.id, { compare_time: `${e.target.value}:00` })}
+                      className="h-8 w-28"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-muted-foreground">Felt som teller i duellen (vinneren bestemmes ut fra disse):</span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {COMPARE_FIELD_OPTIONS.map((f) => {
+                        const list = p.compare_fields ?? ["steps","sleep","rhr","calories","helse"];
+                        const active = list.includes(f.key);
+                        return (
+                          <button
+                            key={f.key}
+                            type="button"
+                            onClick={() => {
+                              const cur = new Set(list);
+                              if (active) cur.delete(f.key); else cur.add(f.key);
+                              update(p.id, { compare_fields: Array.from(cur) });
+                            }}
+                            className={`px-2 py-0.5 rounded border text-[11px] transition-colors ${
+                              active
+                                ? "bg-primary/20 border-primary/40 text-primary"
+                                : "border-border/60 text-muted-foreground hover:bg-muted/40"
+                            }`}
+                          >
+                            {f.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
