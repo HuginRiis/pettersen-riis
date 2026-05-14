@@ -148,10 +148,12 @@ function Oversikt({
   cats,
   txns,
   settings,
+  reload,
 }: {
   cats: OkonomiCategory[];
   txns: OkonomiTransaction[];
   settings: OkonomiSettings | null;
+  reload: () => void;
 }) {
   const today = new Date();
   const currentY = today.getFullYear();
