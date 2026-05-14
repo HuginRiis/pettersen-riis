@@ -799,7 +799,7 @@ let __gardenaPromise: Promise<any> | null = null;
 let __gardenaCachedAt = 0;
 function loadGardena(): Promise<any> {
   const now = Date.now();
-  if (__gardenaPromise && now - __gardenaCachedAt < 60_000) return __gardenaPromise;
+  if (__gardenaPromise && now - __gardenaCachedAt < 5 * 60_000) return __gardenaPromise;
   __gardenaCachedAt = now;
   __gardenaPromise = import("@/lib/gardena.functions").then((m) => m.getGardenaSnapshot()).catch(() => null);
   return __gardenaPromise;
