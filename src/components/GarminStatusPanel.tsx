@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Activity, Loader2, CheckCircle2, AlertTriangle, ShieldAlert, Settings2, Save } from "lucide-react";
+import { Activity, Loader2, CheckCircle2, AlertTriangle, ShieldAlert, Settings2, Save, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { getGarminOverview, getGarminSyncSchedule, saveGarminSyncSchedule } from "@/server/garmin.functions";
 
