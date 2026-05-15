@@ -41,11 +41,15 @@ import {
   categorizeTransactionsWithAI,
   getOkonomiSettings,
   learnMerchantRule,
+  listOkonomiAccounts,
   type OkonomiCategory,
   type OkonomiTransaction,
   type OkonomiSettings,
+  type OkonomiAccount,
   type ParsedTxn,
 } from "@/server/okonomi.functions";
+import { OkonomiAccountsTab, classifyAccount } from "@/components/OkonomiAccountsTab";
+import { OkonomiBulkEditSheet } from "@/components/OkonomiBulkEditSheet";
 
 export const Route = createFileRoute("/okonomi")({
   head: () => ({
