@@ -397,9 +397,9 @@ export function GardenaPanel() {
 
   useEffect(() => {
     load();
-    // Husqvarna/Gardena API har strenge rate limits — poll hvert 5. minutt
-    const id = window.setInterval(load, 5 * 60_000);
-    return () => window.clearInterval(id);
+    // Auto-polling midlertidig skrudd av pga Husqvarna rate-limit (24h blokk).
+    // const id = window.setInterval(load, 5 * 60_000);
+    // return () => window.clearInterval(id);
   }, [load]);
 
   const onCommand = async (svcId: string, cmd: string, seconds?: number) => {
