@@ -223,9 +223,13 @@ export const setDefaultGarminDevice = createServerFn({ method: "POST" })
   });
 
 export const ensureGarminDeviceHero = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => ownerSchema.parse(d ?? {}))
+  .inputValidator((d: unknown) => {
+    const x = (d ?? {}) as { owner?: string; generate?: boolean };
+    const owner = (x.owner === "rebekka" ? "rebekka" : "arne") as GarminOwner;
+    return { owner, generate: !!x.generate };
+  })
   .handler(async ({ data }) => {
-    const owner = data.owner as GarminOwner;
+    const { owner, generate } = data;
     // Hent default-klokken
     const { data: dev } = await supabaseAdmin
       .from("garmin_devices")
