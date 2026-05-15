@@ -97,11 +97,11 @@ export function GarminHouses() {
         </TabsList>
 
         <TabsContent value="arne" className="mt-3">
-          <HouseBanner owner="arne" />
+          <GarminHero owner="arne" />
           <GarminPanel owner="arne" displayName="Arne" />
         </TabsContent>
         <TabsContent value="rebekka" className="mt-3">
-          <HouseBanner owner="rebekka" />
+          <GarminHero owner="rebekka" />
           <GarminPanel owner="rebekka" displayName="Rebekka" />
         </TabsContent>
         <TabsContent value="compare" className="mt-3">
