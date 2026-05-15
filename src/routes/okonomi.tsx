@@ -1257,10 +1257,14 @@ function DrillTxns({
   );
 }
 
-function Stat({ label, value, tone }: { label: string; value: string; tone?: "ok" | "warn" }) {
+function Stat({ label, value, tone, onClick }: { label: string; value: string; tone?: "ok" | "warn"; onClick?: () => void }) {
   const c = tone === "warn" ? "text-red-400" : tone === "ok" ? "text-emerald-400" : "text-amber-200";
+  const clickable = !!onClick;
   return (
-    <Card className="p-3 border-amber-500/20 bg-gradient-to-br from-amber-950/20 to-transparent">
+    <Card
+      className={`p-3 border-amber-500/20 bg-gradient-to-br from-amber-950/20 to-transparent ${clickable ? "cursor-pointer hover:border-amber-500/50 hover:bg-amber-950/30 transition" : ""}`}
+      onClick={onClick}
+    >
       <p className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">{label}</p>
       <p className={`text-xl font-semibold tabular-nums ${c}`}>{value}</p>
     </Card>
