@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { GarminPanel } from "@/components/GarminPanel";
 import { GarminCompare } from "@/components/GarminCompare";
+import { GarminHero } from "@/components/GarminHero";
 import { Crown, Flame, Swords } from "lucide-react";
 
 type Owner = "arne" | "rebekka";
@@ -96,11 +97,11 @@ export function GarminHouses() {
         </TabsList>
 
         <TabsContent value="arne" className="mt-3">
-          <HouseBanner owner="arne" />
+          <GarminHero owner="arne" />
           <GarminPanel owner="arne" displayName="Arne" />
         </TabsContent>
         <TabsContent value="rebekka" className="mt-3">
-          <HouseBanner owner="rebekka" />
+          <GarminHero owner="rebekka" />
           <GarminPanel owner="rebekka" displayName="Rebekka" />
         </TabsContent>
         <TabsContent value="compare" className="mt-3">

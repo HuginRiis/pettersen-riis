@@ -222,5 +222,73 @@ export const setDefaultGarminDevice = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const ensureGarminDeviceHero = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => {
+    const x = (d ?? {}) as { owner?: string; generate?: boolean };
+    const owner = (x.owner === "rebekka" ? "rebekka" : "arne") as GarminOwner;
+    return { owner, generate: !!x.generate };
+  })
+  .handler(async ({ data }) => {
+    const { owner, generate } = data;
+    // Hent default-klokken
+    const { data: dev } = await supabaseAdmin
+      .from("garmin_devices")
+      .select("id, name, image_transparent_url")
+      .eq("owner", owner)
+      .eq("is_default", true)
+      .maybeSingle();
+    if (!dev) return { url: null as string | null };
+    const row = dev as { id: string; name: string; image_transparent_url: string | null };
+    if (row.image_transparent_url) return { url: row.image_transparent_url };
+    if (!generate) return { url: null as string | null };
+
+    const apiKey = process.env.LOVABLE_API_KEY;
+    if (!apiKey) throw new Error("LOVABLE_API_KEY mangler");
+
+    const prompt = `A high-quality, photo-realistic product render of a Garmin "${row.name}" ${
+      /scale/i.test(row.name) ? "smart bathroom scale" : "smartwatch"
+    }, centered, front-facing, on a clean transparent background, no text, no logos overlay, soft studio lighting, sharp detail.`;
+
+    const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash-image",
+        messages: [{ role: "user", content: prompt }],
+        modalities: ["image", "text"],
+      }),
+    });
+    if (!aiRes.ok) {
+      const t = await aiRes.text();
+      throw new Error(`AI image error (${aiRes.status}): ${t.slice(0, 200)}`);
+    }
+    const json = await aiRes.json();
+    const dataUrl: string | undefined =
+      json?.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+    if (!dataUrl || !dataUrl.startsWith("data:")) {
+      throw new Error("AI returnerte ingen bilde-data");
+    }
+    const m = dataUrl.match(/^data:(image\/[^;]+);base64,(.+)$/);
+    if (!m) throw new Error("Ugyldig bilde-data");
+    const mime = m[1];
+    const ext = mime.split("/")[1] ?? "png";
+    const buf = Buffer.from(m[2], "base64");
+    const path = `${owner}/${row.id}.${ext}`;
+    const { error: upErr } = await supabaseAdmin.storage
+      .from("garmin-devices")
+      .upload(path, buf, { contentType: mime, upsert: true });
+    if (upErr) throw new Error(upErr.message);
+    const { data: pub } = supabaseAdmin.storage.from("garmin-devices").getPublicUrl(path);
+    const url = pub.publicUrl;
+    await supabaseAdmin
+      .from("garmin_devices")
+      .update({ image_transparent_url: url } as never)
+      .eq("id", row.id);
+    return { url };
+  });
+
 export { GARMIN_OWNERS };
 export type { GarminOwner };
