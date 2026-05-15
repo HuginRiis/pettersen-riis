@@ -107,7 +107,7 @@ export function GarminHero({ owner }: { owner: Owner }) {
   const generateHero = async () => {
     setGenLoading(true);
     try {
-      const r = (await ensureHero({ data: { owner } })) as { url: string | null };
+      const r = (await ensureHero({ data: { owner, generate: true } })) as { url: string | null };
       setHeroUrl(r.url);
       toast.success("AI-bilde generert");
     } catch (e) {
