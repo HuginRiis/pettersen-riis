@@ -251,9 +251,14 @@ export const ensureGarminDeviceHero = createServerFn({ method: "POST" })
       owner === "rebekka"
         ? `with a LIGHT/WHITE silicone strap and a polished GOLD bezel ring around the watch face, elegant feminine styling`
         : `with a dark/graphite strap and a brushed steel bezel`;
+    // Solid bakgrunn som matcher husets banner-farge — unngår transparent/sjakkbrett
+    const bgDescription =
+      owner === "rebekka"
+        ? "a deep dark crimson/burgundy background (#4c0519), smoothly fading to near-black at the edges"
+        : "a deep dark slate background (#0f172a), smoothly fading to near-black at the edges";
     const prompt = `A high-quality, photo-realistic product render of a Garmin "${row.name}" ${deviceKind}${
       isScale ? "" : `, ${styleForOwner}`
-    }, centered, front-facing, on a clean transparent background, no text, no logos overlay, soft studio lighting, sharp detail.`;
+    }, centered, front-facing, on ${bgDescription}. The background must be a SOLID painted gradient (NOT transparent, NOT a checkerboard pattern). The product is positioned slightly to the right side of the frame so the left side has more empty background space. No text, no logos overlay, soft studio lighting, sharp detail, cinematic dark moody atmosphere.`;
 
     const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
