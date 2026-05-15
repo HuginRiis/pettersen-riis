@@ -170,6 +170,13 @@ export function GarminHero({ owner }: { owner: Owner }) {
             loading="lazy"
           />
         )}
+        {/* House-color fade on the right edge so the watch blends into the banner color */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: `radial-gradient(ellipse 60% 100% at 100% 50%, ${h.fadeColor} 0%, ${h.fadeColor.replace("rgb(", "rgba(").replace(")", ", 0.6)")} 35%, rgba(0,0,0,0) 75%)`,
+          }}
+        />
         {/* Dark gradient overlay for left-side text legibility */}
         <div
           className="absolute inset-0 pointer-events-none"
