@@ -753,16 +753,17 @@ function Oversikt({
       </Card>
 
       <div className="grid grid-cols-2 gap-3">
-        <Stat label="Brukt" value={fmt(periodBrukt)} tone="warn" />
-        <Stat label="Inntekt" value={fmt(periodInntekt)} tone="ok" />
-        <Stat label="Budsjett" value={fmt(periodBudsjett)} />
+        <Stat label="Brukt" value={fmt(periodBrukt)} tone="warn" onClick={() => openBulk(`Brukt — ${startKey} → ${endKey}`, periodTxns.filter(isExpense))} />
+        <Stat label="Inntekt" value={fmt(periodInntekt)} tone="ok" onClick={() => openBulk(`Inntekt — ${startKey} → ${endKey}`, periodTxns.filter(isIncome))} />
+        <Stat label="Budsjett" value={fmt(periodBudsjett)} onClick={() => openBulk(`Periode — ${startKey} → ${endKey}`, periodTxns)} />
         <Stat
           label={periodOverskudd >= 0 ? "Overskudd" : "Underskudd"}
           value={fmt(Math.abs(periodOverskudd))}
           tone={periodOverskudd >= 0 ? "ok" : "warn"}
+          onClick={() => openBulk(`Netto — ${startKey} → ${endKey}`, periodTxns)}
         />
-        <Stat label={`Snitt pr dag (${periodDays} d)`} value={fmt(periodSnittPrDag)} />
-        <Stat label="Igjen" value={fmt(periodIgjen)} />
+        <Stat label={`Snitt pr dag (${periodDays} d)`} value={fmt(periodSnittPrDag)} onClick={() => openBulk(`Utgifter — ${startKey} → ${endKey}`, periodTxns.filter(isExpense))} />
+        <Stat label="Igjen" value={fmt(periodIgjen)} onClick={() => openBulk(`Periode — ${startKey} → ${endKey}`, periodTxns)} />
       </div>
 
 
