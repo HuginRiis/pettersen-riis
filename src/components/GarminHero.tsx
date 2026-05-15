@@ -165,12 +165,13 @@ export function GarminHero({ owner }: { owner: Owner }) {
             src={heroUrl}
             alt=""
             aria-hidden="true"
-            className="absolute inset-0 w-full h-full object-cover object-right opacity-95"
+            className="absolute inset-0 w-full h-full object-cover opacity-95"
             style={{
+              objectPosition: "65% 50%",
               WebkitMaskImage:
-                "radial-gradient(ellipse 55% 75% at 75% 50%, #000 0%, #000 30%, rgba(0,0,0,0.5) 55%, rgba(0,0,0,0) 85%)",
+                "radial-gradient(ellipse 45% 70% at 65% 50%, #000 0%, #000 25%, rgba(0,0,0,0.55) 50%, rgba(0,0,0,0.15) 70%, rgba(0,0,0,0) 82%)",
               maskImage:
-                "radial-gradient(ellipse 55% 75% at 75% 50%, #000 0%, #000 30%, rgba(0,0,0,0.5) 55%, rgba(0,0,0,0) 85%)",
+                "radial-gradient(ellipse 45% 70% at 65% 50%, #000 0%, #000 25%, rgba(0,0,0,0.55) 50%, rgba(0,0,0,0.15) 70%, rgba(0,0,0,0) 82%)",
             }}
             loading="lazy"
           />
