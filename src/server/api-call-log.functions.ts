@@ -55,7 +55,7 @@ export const getApiErrorLog = createServerFn({ method: "GET" })
     if (data.source) q = q.eq("source", data.source);
 
     const { data: rows, error } = (await q) as {
-      data: ApiErrorEntry[] | null;
+      data: Array<Omit<ApiErrorEntry, "metadata"> & { metadata: unknown }> | null;
       error: { message?: string } | null;
     };
 
