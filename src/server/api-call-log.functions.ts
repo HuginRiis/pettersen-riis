@@ -64,7 +64,16 @@ export const getApiErrorLog = createServerFn({ method: "GET" })
       return { fetchedAt: Date.now(), windowHours: hours, errors: [], countsBySource: [] };
     }
 
-    const errors = rows ?? [];
+    const errors: ApiErrorEntry[] = (rows ?? []).map((r) => ({
+      id: r.id,
+      source: r.source,
+      endpoint: r.endpoint,
+      status_code: r.status_code,
+      duration_ms: r.duration_ms,
+      error_message: r.error_message,
+      called_at: r.called_at,
+      metadata: r.metadata == null ? null : JSON.stringify(r.metadata),
+    }));
     const map = new Map<string, number>();
     for (const r of errors) map.set(r.source, (map.get(r.source) ?? 0) + 1);
     const countsBySource = Array.from(map.entries())
