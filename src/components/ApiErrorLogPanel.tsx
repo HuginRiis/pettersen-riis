@@ -59,6 +59,20 @@ export function ApiErrorLogPanel() {
   const [filterSource, setFilterSource] = useState<string | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+
+  const isGroupOpen = (key: string) => !collapsedGroups.has(key);
+  const toggleGroup = (key: string) => {
+    setCollapsedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+  const expandAllGroups = () => setCollapsedGroups(new Set());
+  const collapseAllGroups = () =>
+    setCollapsedGroups(new Set(grouped.map((g) => `${g.source}::${g.endpoint}`)));
 
   const load = async (h = hours, source: string | null = filterSource) => {
     setLoading(true);
@@ -152,6 +166,21 @@ export function ApiErrorLogPanel() {
 
         <button
           type="button"
+          onClick={collapseAllGroups}
+          className="px-2 py-1 rounded border border-border text-[10px] tracking-[0.15em] uppercase hover:bg-primary/10"
+        >
+          ▾ Lukk alle
+        </button>
+        <button
+          type="button"
+          onClick={expandAllGroups}
+          className="px-2 py-1 rounded border border-border text-[10px] tracking-[0.15em] uppercase hover:bg-primary/10"
+        >
+          ▸ Åpne alle
+        </button>
+
+        <button
+          type="button"
           onClick={() => load()}
           disabled={loading}
           className="ml-auto px-3 py-1 rounded border border-border text-[10px] tracking-[0.15em] uppercase hover:bg-primary/10 disabled:opacity-50"
@@ -172,88 +201,101 @@ export function ApiErrorLogPanel() {
         </p>
       ) : (
         <div className="space-y-2">
-          {grouped.map(({ source, endpoint, list }) => (
-            <div key={`${source}::${endpoint}`} className="border border-border rounded">
-              <div className="px-3 py-2 bg-muted/20 flex items-center gap-2 flex-wrap">
-                <span className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground">
-                  {SOURCE_LABELS[source] ?? source}
-                </span>
-                <span className="font-mono text-xs text-foreground truncate flex-1 min-w-0">
-                  {endpoint}
-                </span>
-                <span className="text-[10px] text-destructive tracking-[0.15em] uppercase">
-                  {list.length} feil
-                </span>
+          {grouped.map(({ source, endpoint, list }) => {
+            const groupKey = `${source}::${endpoint}`;
+            const groupOpen = isGroupOpen(groupKey);
+            return (
+              <div key={groupKey} className="border border-border rounded">
+                <button
+                  type="button"
+                  onClick={() => toggleGroup(groupKey)}
+                  className="w-full px-3 py-2 bg-muted/20 flex items-center gap-2 flex-wrap text-left"
+                >
+                  <span className="text-muted-foreground text-[10px] w-3 shrink-0">
+                    {groupOpen ? "▾" : "▸"}
+                  </span>
+                  <span className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground">
+                    {SOURCE_LABELS[source] ?? source}
+                  </span>
+                  <span className="font-mono text-xs text-foreground truncate flex-1 min-w-0">
+                    {endpoint}
+                  </span>
+                  <span className="text-[10px] text-destructive tracking-[0.15em] uppercase">
+                    {list.length} feil
+                  </span>
+                </button>
+                {groupOpen && (
+                  <ul className="divide-y divide-border/60">
+                    {list.map((e) => {
+                      const isOpen = openId === e.id;
+                      return (
+                        <li key={e.id} className="px-3 py-2">
+                          <button
+                            type="button"
+                            onClick={() => setOpenId(isOpen ? null : e.id)}
+                            className="w-full text-left flex items-start gap-2 flex-wrap"
+                          >
+                            <span className="text-muted-foreground text-[10px] mt-0.5 w-3">
+                              {isOpen ? "▾" : "▸"}
+                            </span>
+                            <span className="text-[11px] tabular-nums text-muted-foreground shrink-0">
+                              {formatTime(e.called_at)}
+                            </span>
+                            <span className="text-[10px] text-muted-foreground/80 shrink-0">
+                              ({formatAgo(e.called_at)})
+                            </span>
+                            {e.status_code !== null && (
+                              <span className="text-[10px] tracking-[0.15em] uppercase px-1.5 py-0.5 rounded border border-destructive/40 text-destructive bg-destructive/10 shrink-0">
+                                {e.status_code}
+                              </span>
+                            )}
+                            {e.duration_ms !== null && (
+                              <span className="text-[10px] tabular-nums text-muted-foreground shrink-0">
+                                {e.duration_ms}ms
+                              </span>
+                            )}
+                            <span className="text-xs text-destructive flex-1 min-w-0 truncate">
+                              {e.error_message ?? "(ingen feilmelding)"}
+                            </span>
+                          </button>
+                          {isOpen && (
+                            <div className="mt-2 pl-5 space-y-2">
+                              {e.error_message && (
+                                <div>
+                                  <div className="text-[9px] tracking-[0.2em] uppercase text-muted-foreground mb-1">
+                                    Feilmelding
+                                  </div>
+                                  <pre className="text-[11px] font-mono whitespace-pre-wrap break-words bg-muted/30 border border-border rounded p-2 text-destructive">
+                                    {e.error_message}
+                                  </pre>
+                                </div>
+                              )}
+                              {e.metadata && (
+                                <div>
+                                  <div className="text-[9px] tracking-[0.2em] uppercase text-muted-foreground mb-1">
+                                    Metadata
+                                  </div>
+                                  <pre className="text-[11px] font-mono whitespace-pre-wrap break-words bg-muted/30 border border-border rounded p-2">
+                                    {(() => {
+                                      try {
+                                        return JSON.stringify(JSON.parse(e.metadata), null, 2);
+                                      } catch {
+                                        return e.metadata;
+                                      }
+                                    })()}
+                                  </pre>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
               </div>
-              <ul className="divide-y divide-border/60">
-                {list.map((e) => {
-                  const isOpen = openId === e.id;
-                  return (
-                    <li key={e.id} className="px-3 py-2">
-                      <button
-                        type="button"
-                        onClick={() => setOpenId(isOpen ? null : e.id)}
-                        className="w-full text-left flex items-start gap-2 flex-wrap"
-                      >
-                        <span className="text-muted-foreground text-[10px] mt-0.5 w-3">
-                          {isOpen ? "▾" : "▸"}
-                        </span>
-                        <span className="text-[11px] tabular-nums text-muted-foreground shrink-0">
-                          {formatTime(e.called_at)}
-                        </span>
-                        <span className="text-[10px] text-muted-foreground/80 shrink-0">
-                          ({formatAgo(e.called_at)})
-                        </span>
-                        {e.status_code !== null && (
-                          <span className="text-[10px] tracking-[0.15em] uppercase px-1.5 py-0.5 rounded border border-destructive/40 text-destructive bg-destructive/10 shrink-0">
-                            {e.status_code}
-                          </span>
-                        )}
-                        {e.duration_ms !== null && (
-                          <span className="text-[10px] tabular-nums text-muted-foreground shrink-0">
-                            {e.duration_ms}ms
-                          </span>
-                        )}
-                        <span className="text-xs text-destructive flex-1 min-w-0 truncate">
-                          {e.error_message ?? "(ingen feilmelding)"}
-                        </span>
-                      </button>
-                      {isOpen && (
-                        <div className="mt-2 pl-5 space-y-2">
-                          {e.error_message && (
-                            <div>
-                              <div className="text-[9px] tracking-[0.2em] uppercase text-muted-foreground mb-1">
-                                Feilmelding
-                              </div>
-                              <pre className="text-[11px] font-mono whitespace-pre-wrap break-words bg-muted/30 border border-border rounded p-2 text-destructive">
-                                {e.error_message}
-                              </pre>
-                            </div>
-                          )}
-                          {e.metadata && (
-                            <div>
-                              <div className="text-[9px] tracking-[0.2em] uppercase text-muted-foreground mb-1">
-                                Metadata
-                              </div>
-                              <pre className="text-[11px] font-mono whitespace-pre-wrap break-words bg-muted/30 border border-border rounded p-2">
-                                {(() => {
-                                  try {
-                                    return JSON.stringify(JSON.parse(e.metadata), null, 2);
-                                  } catch {
-                                    return e.metadata;
-                                  }
-                                })()}
-                              </pre>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
