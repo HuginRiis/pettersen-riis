@@ -59,6 +59,20 @@ export function ApiErrorLogPanel() {
   const [filterSource, setFilterSource] = useState<string | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+
+  const isGroupOpen = (key: string) => !collapsedGroups.has(key);
+  const toggleGroup = (key: string) => {
+    setCollapsedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+  const expandAllGroups = () => setCollapsedGroups(new Set());
+  const collapseAllGroups = () =>
+    setCollapsedGroups(new Set(grouped.map((g) => `${g.source}::${g.endpoint}`)));
 
   const load = async (h = hours, source: string | null = filterSource) => {
     setLoading(true);
