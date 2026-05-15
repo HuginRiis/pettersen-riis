@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Crown, Flame, ChevronDown, Check, Loader2, Sparkles } from "lucide-react";
+import { Crown, Flame, ChevronDown, Check, Loader2, Sparkles, Watch, SlidersHorizontal, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import {
   listGarminDevices,
