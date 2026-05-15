@@ -150,13 +150,19 @@ export function GarminHero({ owner }: { owner: Owner }) {
       <div
         className={`relative overflow-hidden rounded-lg border ${h.border} bg-gradient-to-r ${h.bannerFrom} ${h.bannerTo} mb-3 min-h-[170px]`}
       >
-        {/* Background hero image */}
+        {/* Background hero image — fades into banner color on all edges */}
         {heroUrl && (
           <img
             src={heroUrl}
             alt=""
             aria-hidden="true"
             className="absolute inset-0 w-full h-full object-cover object-right opacity-90"
+            style={{
+              WebkitMaskImage:
+                "radial-gradient(ellipse 70% 90% at 80% 50%, #000 35%, rgba(0,0,0,0.6) 60%, rgba(0,0,0,0) 95%)",
+              maskImage:
+                "radial-gradient(ellipse 70% 90% at 80% 50%, #000 35%, rgba(0,0,0,0.6) 60%, rgba(0,0,0,0) 95%)",
+            }}
             loading="lazy"
           />
         )}
