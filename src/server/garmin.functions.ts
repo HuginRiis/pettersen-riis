@@ -240,6 +240,7 @@ export const ensureGarminDeviceHero = createServerFn({ method: "POST" })
     if (!dev) return { url: null as string | null };
     const row = dev as { id: string; name: string; image_transparent_url: string | null };
     if (row.image_transparent_url) return { url: row.image_transparent_url };
+    if (!generate) return { url: null as string | null };
 
     const apiKey = process.env.LOVABLE_API_KEY;
     if (!apiKey) throw new Error("LOVABLE_API_KEY mangler");
