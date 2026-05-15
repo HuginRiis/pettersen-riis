@@ -1235,6 +1235,51 @@ export type Database = {
         }
         Relationships: []
       }
+      okonomi_accounts: {
+        Row: {
+          account_patterns: string[]
+          color: string
+          created_at: string
+          id: string
+          monthly_change: number
+          name: string
+          slug: string
+          sort_order: number
+          start_balance: number
+          start_date: string
+          updated_at: string
+          yearly_change: number
+        }
+        Insert: {
+          account_patterns?: string[]
+          color?: string
+          created_at?: string
+          id?: string
+          monthly_change?: number
+          name: string
+          slug: string
+          sort_order?: number
+          start_balance?: number
+          start_date?: string
+          updated_at?: string
+          yearly_change?: number
+        }
+        Update: {
+          account_patterns?: string[]
+          color?: string
+          created_at?: string
+          id?: string
+          monthly_change?: number
+          name?: string
+          slug?: string
+          sort_order?: number
+          start_balance?: number
+          start_date?: string
+          updated_at?: string
+          yearly_change?: number
+        }
+        Relationships: []
+      }
       okonomi_budget_settings: {
         Row: {
           benchmarks: Json
