@@ -271,6 +271,10 @@ function OkonomiSettingsPanelInner() {
               {Object.keys(s.benchmarks).length} kategorier har snitt.
             </p>
           </div>
+
+          <div className="border-t border-border/40 pt-3">
+            <OkonomiAccountsSettings />
+          </div>
         </div>
       </div>
     </section>
