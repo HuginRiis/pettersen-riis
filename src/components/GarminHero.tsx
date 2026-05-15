@@ -30,8 +30,10 @@ const HOUSES: Record<
     accent: string;
     border: string;
     bg: string;
-    bannerFrom: string;
+   bannerFrom: string;
     bannerTo: string;
+    /** Solid edge color the watch image should fade into (right side) */
+    fadeColor: string;
   }
 > = {
   arne: {
@@ -42,8 +44,9 @@ const HOUSES: Record<
     accent: "text-slate-200",
     border: "border-slate-400/40",
     bg: "bg-slate-900/40",
-    bannerFrom: "from-slate-700/60",
-    bannerTo: "to-slate-900/80",
+    bannerFrom: "from-slate-700",
+    bannerTo: "to-slate-900",
+    fadeColor: "rgb(15, 23, 42)", // slate-900
   },
   rebekka: {
     name: "Rebekka",
@@ -53,8 +56,9 @@ const HOUSES: Record<
     accent: "text-rose-200",
     border: "border-rose-500/40",
     bg: "bg-rose-950/30",
-    bannerFrom: "from-rose-900/60",
-    bannerTo: "to-black/80",
+    bannerFrom: "from-rose-900",
+    bannerTo: "to-rose-950",
+    fadeColor: "rgb(76, 5, 25)", // deep targaryen red
   },
 };
 
