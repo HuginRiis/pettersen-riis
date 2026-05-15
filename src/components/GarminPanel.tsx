@@ -374,45 +374,8 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
       <div className="space-y-4">
         <div className="flex items-center justify-between flex-wrap gap-2">
           <h2 className="text-sm font-semibold uppercase tracking-wider text-primary flex items-center gap-2">
-            <button
-              type="button"
-              onClick={openDevices}
-              title="Velg klokke"
-              className="flex items-center gap-2 hover:opacity-80 focus:outline-none focus:ring-1 focus:ring-primary rounded px-1 -mx-1"
-            >
-              {data?.status.device_image_url ? (
-                <img
-                  src={data.status.device_image_url}
-                  alt={data.status.device_name ?? "Garmin"}
-                  className="h-7 w-7 rounded-md object-cover border border-border/60 bg-background"
-                  loading="lazy"
-                />
-              ) : (
-                <Activity size={16} />
-              )}
-              <span className="flex flex-col leading-tight text-left">
-                <span className="flex items-center gap-1">
-                  {data?.status.device_name ?? `Garmin — ${displayName}`}
-                  <ChevronDown size={12} className="opacity-60" />
-                </span>
-                {data?.status.device_name && (
-                  <span className="text-[10px] font-normal normal-case tracking-normal text-muted-foreground">{displayName}</span>
-                )}
-              </span>
-            </button>
-            <span
-              className={`hidden sm:inline-flex items-center gap-1.5 ml-2 rounded border px-2 py-0.5 text-[10px] tracking-[0.2em] ${
-                owner === "arne"
-                  ? "border-slate-400/40 text-slate-200 bg-slate-900/40"
-                  : "border-rose-500/40 text-rose-200 bg-rose-950/30"
-              }`}
-              style={{ fontFamily: "var(--font-display)" }}
-            >
-              {owner === "arne" ? "House Stark" : "House Targaryen"}
-              <em className="not-italic text-muted-foreground" style={{ fontFamily: "var(--font-medieval)" }}>
-                « {owner === "arne" ? "Winter is Coming" : "Fire and Blood"} »
-              </em>
-            </span>
+            <Activity size={16} />
+            <span>Garmin — {displayName}</span>
           </h2>
           <div className="flex items-center gap-2">
             <button
