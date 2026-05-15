@@ -254,11 +254,13 @@ function Oversikt({
   txns,
   settings,
   reload,
+  openBulk,
 }: {
   cats: OkonomiCategory[];
   txns: OkonomiTransaction[];
   settings: OkonomiSettings | null;
   reload: () => void;
+  openBulk: (title: string, items: OkonomiTransaction[], subtitle?: string) => void;
 }) {
   const today = new Date();
   const currentY = today.getFullYear();
