@@ -61,6 +61,7 @@ const VAKTTARN_TOC: { id: string; label: string; icon: React.ComponentType<{ cla
   { id: "vt-db", label: "Database & cron", icon: Database },
   { id: "vt-garmin", label: "Garmin Connect", icon: Watch },
   { id: "vt-apilog", label: "API-logg", icon: Network },
+  { id: "vt-apierrors", label: "API-feil", icon: AlertTriangle },
   { id: "vt-changelog", label: "Changelog", icon: History },
 ];
 
