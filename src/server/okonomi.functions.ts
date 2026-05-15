@@ -746,3 +746,117 @@ Returner alle ${cats.length} kategoriene.`;
     return { benchmarks, updated: Object.keys(benchmarks).length };
   },
 );
+
+// =================================================================
+// Accounts (Lønnskonto, Lånekonto, Hyttkonto)
+// =================================================================
+
+export type OkonomiAccount = {
+  id: string;
+  slug: string;
+  name: string;
+  start_balance: number;
+  start_date: string;
+  monthly_change: number;
+  yearly_change: number;
+  account_patterns: string[];
+  color: string;
+  sort_order: number;
+};
+
+export const listOkonomiAccounts = createServerFn({ method: "GET" }).handler(
+  async (): Promise<OkonomiAccount[]> => {
+    const { data, error } = await supabaseAdmin
+      .from("okonomi_accounts")
+      .select("*")
+      .order("sort_order", { ascending: true });
+    if (error) throw new Error(error.message);
+    return (data ?? []).map((r: any) => ({
+      ...r,
+      start_balance: Number(r.start_balance),
+      monthly_change: Number(r.monthly_change),
+      yearly_change: Number(r.yearly_change),
+      account_patterns: r.account_patterns ?? [],
+    })) as OkonomiAccount[];
+  },
+);
+
+export const upsertOkonomiAccount = createServerFn({ method: "POST" })
+  .inputValidator((d) =>
+    z
+      .object({
+        id: z.string().uuid().optional(),
+        slug: z.string().min(1).max(40),
+        name: z.string().min(1).max(80),
+        start_balance: z.number().default(0),
+        start_date: z.string().default(() => new Date().toISOString().slice(0, 10)),
+        monthly_change: z.number().default(0),
+        yearly_change: z.number().default(0),
+        account_patterns: z.array(z.string().max(120)).max(50).default([]),
+        color: z.string().max(20).default("#f59e0b"),
+        sort_order: z.number().int().default(100),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data }) => {
+    const { data: row, error } = await supabaseAdmin
+      .from("okonomi_accounts")
+      .upsert(data as any, { onConflict: "id" })
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+    return row as any;
+  });
+
+export const deleteOkonomiAccount = createServerFn({ method: "POST" })
+  .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data }) => {
+    const { error } = await supabaseAdmin.from("okonomi_accounts").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+// =================================================================
+// Bulk update transactions (multi-field)
+// =================================================================
+
+export const bulkUpsertOkonomiTransactions = createServerFn({ method: "POST" })
+  .inputValidator((d) =>
+    z
+      .object({
+        rows: z
+          .array(
+            z.object({
+              id: z.string().uuid(),
+              txn_date: z.string().optional(),
+              description: z.string().min(1).max(500).optional(),
+              amount: z.number().optional(),
+              category_id: z.string().uuid().nullable().optional(),
+              account: z.string().max(200).nullable().optional(),
+              note: z.string().max(2000).nullable().optional(),
+            }),
+          )
+          .min(1)
+          .max(500),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data }) => {
+    let count = 0;
+    for (const r of data.rows) {
+      const { id, ...patch } = r;
+      const cleanPatch: any = {};
+      for (const [k, v] of Object.entries(patch)) {
+        if (v !== undefined) cleanPatch[k] = v;
+      }
+      if (Object.keys(cleanPatch).length === 0) continue;
+      cleanPatch.updated_at = new Date().toISOString();
+      const { error } = await supabaseAdmin
+        .from("okonomi_transactions")
+        .update(cleanPatch)
+        .eq("id", id);
+      if (error) throw new Error(error.message);
+      count++;
+    }
+    return { ok: true, count };
+  });
