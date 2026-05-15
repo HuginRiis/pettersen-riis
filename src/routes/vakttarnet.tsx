@@ -343,6 +343,16 @@ function VakttarnetPage() {
 
         <section id="vt-apilog" className="scroll-mt-24"><ApiCallLogPanel /></section>
 
+        <section id="vt-apierrors" className="scroll-mt-24">
+          <Panel
+            title="API-feil — detaljert logg"
+            icon={<AlertTriangle size={14} />}
+            subtitle="Alle feilede eksterne API-kall med statuskode, feilmelding og metadata. Klikk for detaljer."
+          >
+            <ApiErrorLogPanel />
+          </Panel>
+        </section>
+
         <section id="vt-changelog" className="scroll-mt-24"><ChangelogPanel /></section>
       </section>
     </PageShell>
