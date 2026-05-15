@@ -224,12 +224,12 @@ export const setDefaultGarminDevice = createServerFn({ method: "POST" })
 
 export const ensureGarminDeviceHero = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => {
-    const x = (d ?? {}) as { owner?: string; generate?: boolean };
+    const x = (d ?? {}) as { owner?: string; generate?: boolean; force?: boolean };
     const owner = (x.owner === "rebekka" ? "rebekka" : "arne") as GarminOwner;
-    return { owner, generate: !!x.generate };
+    return { owner, generate: !!x.generate, force: !!x.force };
   })
   .handler(async ({ data }) => {
-    const { owner, generate } = data;
+    const { owner, generate, force } = data;
     // Hent default-klokken
     const { data: dev } = await supabaseAdmin
       .from("garmin_devices")
@@ -239,7 +239,7 @@ export const ensureGarminDeviceHero = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!dev) return { url: null as string | null };
     const row = dev as { id: string; name: string; image_transparent_url: string | null };
-    if (row.image_transparent_url) return { url: row.image_transparent_url };
+    if (row.image_transparent_url && !force) return { url: row.image_transparent_url };
     if (!generate) return { url: null as string | null };
 
     const apiKey = process.env.LOVABLE_API_KEY;
