@@ -152,29 +152,34 @@ export function GarminHero({ owner }: { owner: Owner }) {
   return (
     <>
       <div
-        className={`relative overflow-hidden rounded-lg border ${h.border} bg-gradient-to-r ${h.bannerFrom} ${h.bannerTo} mb-3 min-h-[170px]`}
+        className={`relative overflow-hidden rounded-lg border ${h.border} mb-3 min-h-[170px]`}
+        style={{ backgroundColor: h.fadeColor }}
       >
-        {/* Background hero image — fades into banner color on all edges */}
+        {/* Solid house-color base + subtle gradient for depth */}
+        <div
+          className={`absolute inset-0 bg-gradient-to-r ${h.bannerFrom} ${h.bannerTo} opacity-90`}
+        />
+        {/* Background hero image — fades into the solid banner color on ALL edges */}
         {heroUrl && (
           <img
             src={heroUrl}
             alt=""
             aria-hidden="true"
-            className="absolute inset-0 w-full h-full object-cover object-right opacity-90"
+            className="absolute inset-0 w-full h-full object-cover object-right opacity-95"
             style={{
               WebkitMaskImage:
-                "radial-gradient(ellipse 70% 90% at 80% 50%, #000 35%, rgba(0,0,0,0.6) 60%, rgba(0,0,0,0) 95%)",
+                "radial-gradient(ellipse 55% 75% at 75% 50%, #000 0%, #000 30%, rgba(0,0,0,0.5) 55%, rgba(0,0,0,0) 85%)",
               maskImage:
-                "radial-gradient(ellipse 70% 90% at 80% 50%, #000 35%, rgba(0,0,0,0.6) 60%, rgba(0,0,0,0) 95%)",
+                "radial-gradient(ellipse 55% 75% at 75% 50%, #000 0%, #000 30%, rgba(0,0,0,0.5) 55%, rgba(0,0,0,0) 85%)",
             }}
             loading="lazy"
           />
         )}
-        {/* House-color fade on the right edge so the watch blends into the banner color */}
+        {/* Vignette in solid house color so any remaining transparent edges blend in */}
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
-            background: `radial-gradient(ellipse 60% 100% at 100% 50%, ${h.fadeColor} 0%, ${h.fadeColor.replace("rgb(", "rgba(").replace(")", ", 0.6)")} 35%, rgba(0,0,0,0) 75%)`,
+            background: `radial-gradient(ellipse 80% 100% at 50% 50%, rgba(0,0,0,0) 30%, ${h.fadeColor} 85%)`,
           }}
         />
         {/* Dark gradient overlay for left-side text legibility */}
