@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { GarminPanel } from "@/components/GarminPanel";
 import { GarminCompare } from "@/components/GarminCompare";
+import { GarminHero } from "@/components/GarminHero";
 import { Crown, Flame, Swords } from "lucide-react";
 
 type Owner = "arne" | "rebekka";
