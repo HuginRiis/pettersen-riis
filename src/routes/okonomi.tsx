@@ -133,25 +133,41 @@ function OkonomiPage() {
   const listCats = useServerFn(listOkonomiCategories);
   const listTxns = useServerFn(listOkonomiTransactions);
   const getSettings = useServerFn(getOkonomiSettings);
+  const listAccs = useServerFn(listOkonomiAccounts);
   const [cats, setCats] = useState<OkonomiCategory[]>([]);
   const [txns, setTxns] = useState<OkonomiTransaction[]>([]);
   const [settings, setSettings] = useState<OkonomiSettings | null>(null);
+  const [accounts, setAccounts] = useState<OkonomiAccount[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Bulk-edit sheet state (åpnes når man klikker på en av stat-boksene)
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const [bulkTitle, setBulkTitle] = useState("");
+  const [bulkSubtitle, setBulkSubtitle] = useState<string | undefined>(undefined);
+  const [bulkTxns, setBulkTxns] = useState<OkonomiTransaction[]>([]);
+
+  function openBulk(title: string, items: OkonomiTransaction[], subtitle?: string) {
+    setBulkTitle(title);
+    setBulkSubtitle(subtitle);
+    setBulkTxns(items);
+    setBulkOpen(true);
+  }
 
   async function reload() {
     setLoading(true);
     try {
-      // Hent 2 hele år tilbake — gir oss filter-mulighet uten ekstra rundtur
       const now = new Date();
       const from = `${now.getFullYear() - 1}-01-01`;
-      const [c, t, s] = await Promise.all([
+      const [c, t, s, a] = await Promise.all([
         listCats(),
         listTxns({ data: { from, limit: 2000 } }),
         getSettings(),
+        listAccs(),
       ]);
       setCats(c);
       setTxns(t);
       setSettings(s);
+      setAccounts(a);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Kunne ikke laste");
     } finally {
@@ -186,18 +202,26 @@ function OkonomiPage() {
           </div>
         ) : (
           <Tabs defaultValue="oversikt">
-            <TabsList className="grid grid-cols-4 w-full">
+            <TabsList className="grid grid-cols-5 w-full">
               <TabsTrigger value="oversikt">Oversikt</TabsTrigger>
               <TabsTrigger value="posteringer">Posteringer</TabsTrigger>
+              <TabsTrigger value="kontoer">Kontoer</TabsTrigger>
               <TabsTrigger value="budsjett">Budsjett</TabsTrigger>
               <TabsTrigger value="import">Importer</TabsTrigger>
             </TabsList>
 
             <TabsContent value="oversikt" className="mt-4">
-              <Oversikt cats={cats} txns={txns} settings={settings} reload={reload} />
+              <Oversikt cats={cats} txns={txns} settings={settings} reload={reload} openBulk={openBulk} />
             </TabsContent>
             <TabsContent value="posteringer" className="mt-4">
               <Posteringer cats={cats} txns={txns} reload={reload} />
+            </TabsContent>
+            <TabsContent value="kontoer" className="mt-4">
+              <OkonomiAccountsTab
+                accounts={accounts}
+                txns={txns}
+                onPickAccount={(a, items) => openBulk(a.name, items, "Posteringer på konto")}
+              />
             </TabsContent>
             <TabsContent value="budsjett" className="mt-4">
               <Budsjett cats={cats} reload={reload} />
@@ -207,6 +231,17 @@ function OkonomiPage() {
             </TabsContent>
           </Tabs>
         )}
+
+        <OkonomiBulkEditSheet
+          open={bulkOpen}
+          onOpenChange={setBulkOpen}
+          title={bulkTitle}
+          subtitle={bulkSubtitle}
+          txns={bulkTxns}
+          cats={cats}
+          accounts={accounts}
+          onSaved={reload}
+        />
       </div>
     </PageShell>
   );
