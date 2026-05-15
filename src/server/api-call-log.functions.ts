@@ -19,7 +19,7 @@ export type ApiErrorEntry = {
   status_code: number | null;
   duration_ms: number | null;
   error_message: string | null;
-  metadata: Record<string, unknown> | null;
+  metadata: string | null;
   called_at: string;
 };
 
