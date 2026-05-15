@@ -293,7 +293,7 @@ export const ensureGarminDeviceHero = createServerFn({ method: "POST" })
       .upload(path, buf, { contentType: mime, upsert: true });
     if (upErr) throw new Error(upErr.message);
     const { data: pub } = supabaseAdmin.storage.from("garmin-devices").getPublicUrl(path);
-    const url = pub.publicUrl;
+    const url = `${pub.publicUrl}?v=${Date.now()}`;
     await supabaseAdmin
       .from("garmin_devices")
       .update({ image_transparent_url: url } as never)
