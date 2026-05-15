@@ -15,6 +15,7 @@ import {
   generateOkonomiBenchmarks,
   type OkonomiSettings,
 } from "@/server/okonomi.functions";
+import { OkonomiAccountsSettings } from "./OkonomiAccountsSettings";
 
 type NumKey = "payday_day" | "household_adults" | "household_children_under18" | "household_children_over18";
 
@@ -269,6 +270,10 @@ function OkonomiSettingsPanelInner() {
             <p className="text-[10px] text-muted-foreground mt-2">
               {Object.keys(s.benchmarks).length} kategorier har snitt.
             </p>
+          </div>
+
+          <div className="border-t border-border/40 pt-3">
+            <OkonomiAccountsSettings />
           </div>
         </div>
       </div>

@@ -41,11 +41,15 @@ import {
   categorizeTransactionsWithAI,
   getOkonomiSettings,
   learnMerchantRule,
+  listOkonomiAccounts,
   type OkonomiCategory,
   type OkonomiTransaction,
   type OkonomiSettings,
+  type OkonomiAccount,
   type ParsedTxn,
 } from "@/server/okonomi.functions";
+import { OkonomiAccountsTab, classifyAccount } from "@/components/OkonomiAccountsTab";
+import { OkonomiBulkEditSheet } from "@/components/OkonomiBulkEditSheet";
 
 export const Route = createFileRoute("/okonomi")({
   head: () => ({
@@ -129,25 +133,41 @@ function OkonomiPage() {
   const listCats = useServerFn(listOkonomiCategories);
   const listTxns = useServerFn(listOkonomiTransactions);
   const getSettings = useServerFn(getOkonomiSettings);
+  const listAccs = useServerFn(listOkonomiAccounts);
   const [cats, setCats] = useState<OkonomiCategory[]>([]);
   const [txns, setTxns] = useState<OkonomiTransaction[]>([]);
   const [settings, setSettings] = useState<OkonomiSettings | null>(null);
+  const [accounts, setAccounts] = useState<OkonomiAccount[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Bulk-edit sheet state (åpnes når man klikker på en av stat-boksene)
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const [bulkTitle, setBulkTitle] = useState("");
+  const [bulkSubtitle, setBulkSubtitle] = useState<string | undefined>(undefined);
+  const [bulkTxns, setBulkTxns] = useState<OkonomiTransaction[]>([]);
+
+  function openBulk(title: string, items: OkonomiTransaction[], subtitle?: string) {
+    setBulkTitle(title);
+    setBulkSubtitle(subtitle);
+    setBulkTxns(items);
+    setBulkOpen(true);
+  }
 
   async function reload() {
     setLoading(true);
     try {
-      // Hent 2 hele år tilbake — gir oss filter-mulighet uten ekstra rundtur
       const now = new Date();
       const from = `${now.getFullYear() - 1}-01-01`;
-      const [c, t, s] = await Promise.all([
+      const [c, t, s, a] = await Promise.all([
         listCats(),
         listTxns({ data: { from, limit: 2000 } }),
         getSettings(),
+        listAccs(),
       ]);
       setCats(c);
       setTxns(t);
       setSettings(s);
+      setAccounts(a);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Kunne ikke laste");
     } finally {
@@ -182,18 +202,26 @@ function OkonomiPage() {
           </div>
         ) : (
           <Tabs defaultValue="oversikt">
-            <TabsList className="grid grid-cols-4 w-full">
+            <TabsList className="grid grid-cols-5 w-full">
               <TabsTrigger value="oversikt">Oversikt</TabsTrigger>
               <TabsTrigger value="posteringer">Posteringer</TabsTrigger>
+              <TabsTrigger value="kontoer">Kontoer</TabsTrigger>
               <TabsTrigger value="budsjett">Budsjett</TabsTrigger>
               <TabsTrigger value="import">Importer</TabsTrigger>
             </TabsList>
 
             <TabsContent value="oversikt" className="mt-4">
-              <Oversikt cats={cats} txns={txns} settings={settings} reload={reload} />
+              <Oversikt cats={cats} txns={txns} settings={settings} reload={reload} openBulk={openBulk} />
             </TabsContent>
             <TabsContent value="posteringer" className="mt-4">
               <Posteringer cats={cats} txns={txns} reload={reload} />
+            </TabsContent>
+            <TabsContent value="kontoer" className="mt-4">
+              <OkonomiAccountsTab
+                accounts={accounts}
+                txns={txns}
+                onPickAccount={(a, items) => openBulk(a.name, items, "Posteringer på konto")}
+              />
             </TabsContent>
             <TabsContent value="budsjett" className="mt-4">
               <Budsjett cats={cats} reload={reload} />
@@ -203,6 +231,17 @@ function OkonomiPage() {
             </TabsContent>
           </Tabs>
         )}
+
+        <OkonomiBulkEditSheet
+          open={bulkOpen}
+          onOpenChange={setBulkOpen}
+          title={bulkTitle}
+          subtitle={bulkSubtitle}
+          txns={bulkTxns}
+          cats={cats}
+          accounts={accounts}
+          onSaved={reload}
+        />
       </div>
     </PageShell>
   );
@@ -215,11 +254,13 @@ function Oversikt({
   txns,
   settings,
   reload,
+  openBulk,
 }: {
   cats: OkonomiCategory[];
   txns: OkonomiTransaction[];
   settings: OkonomiSettings | null;
   reload: () => void;
+  openBulk: (title: string, items: OkonomiTransaction[], subtitle?: string) => void;
 }) {
   const today = new Date();
   const currentY = today.getFullYear();
@@ -629,23 +670,25 @@ function Oversikt({
       </Card>
 
       <div className="grid grid-cols-2 gap-3">
-        <Stat label="Brukt" value={fmt(brukt)} tone="warn" />
-        <Stat label="Inntekt" value={fmt(inntekt)} tone="ok" />
-        <Stat label="Budsjett" value={fmt(budsjett)} />
+        <Stat label="Brukt" value={fmt(brukt)} tone="warn" onClick={() => openBulk(`Brukt — ${ymPrefix}`, filtered.filter(isExpense), "Klikk for å redigere")} />
+        <Stat label="Inntekt" value={fmt(inntekt)} tone="ok" onClick={() => openBulk(`Inntekt — ${ymPrefix}`, filtered.filter(isIncome), "Klikk for å redigere")} />
+        <Stat label="Budsjett" value={fmt(budsjett)} onClick={() => openBulk(`Posteringer i periode — ${ymPrefix}`, filtered, "Alle posteringer")} />
         <Stat
           label={netto >= 0 ? "Overskudd" : "Underskudd"}
           value={fmt(Math.abs(netto))}
           tone={netto >= 0 ? "ok" : "warn"}
+          onClick={() => openBulk(`Netto — ${ymPrefix}`, filtered, "Inntekt + utgift")}
         />
-        <Stat label={`Snitt pr dag (${elapsedDays} d)`} value={fmt(snittPrDag)} />
+        <Stat label={`Snitt pr dag (${elapsedDays} d)`} value={fmt(snittPrDag)} onClick={() => openBulk(`Utgifter — ${ymPrefix}`, filtered.filter(isExpense))} />
         {daysUntilPayday > 0 ? (
           <Stat
             label={`Igjen pr dag (${daysUntilPayday} d til lønn)`}
             value={fmt(igjenPrDag)}
             tone={igjenPrDag <= 0 ? "warn" : "ok"}
+            onClick={() => openBulk(`Posteringer — ${ymPrefix}`, filtered)}
           />
         ) : (
-          <Stat label="Igjen" value={fmt(igjen)} />
+          <Stat label="Igjen" value={fmt(igjen)} onClick={() => openBulk(`Posteringer — ${ymPrefix}`, filtered)} />
         )}
       </div>
 
@@ -710,16 +753,17 @@ function Oversikt({
       </Card>
 
       <div className="grid grid-cols-2 gap-3">
-        <Stat label="Brukt" value={fmt(periodBrukt)} tone="warn" />
-        <Stat label="Inntekt" value={fmt(periodInntekt)} tone="ok" />
-        <Stat label="Budsjett" value={fmt(periodBudsjett)} />
+        <Stat label="Brukt" value={fmt(periodBrukt)} tone="warn" onClick={() => openBulk(`Brukt — ${startKey} → ${endKey}`, periodTxns.filter(isExpense))} />
+        <Stat label="Inntekt" value={fmt(periodInntekt)} tone="ok" onClick={() => openBulk(`Inntekt — ${startKey} → ${endKey}`, periodTxns.filter(isIncome))} />
+        <Stat label="Budsjett" value={fmt(periodBudsjett)} onClick={() => openBulk(`Periode — ${startKey} → ${endKey}`, periodTxns)} />
         <Stat
           label={periodOverskudd >= 0 ? "Overskudd" : "Underskudd"}
           value={fmt(Math.abs(periodOverskudd))}
           tone={periodOverskudd >= 0 ? "ok" : "warn"}
+          onClick={() => openBulk(`Netto — ${startKey} → ${endKey}`, periodTxns)}
         />
-        <Stat label={`Snitt pr dag (${periodDays} d)`} value={fmt(periodSnittPrDag)} />
-        <Stat label="Igjen" value={fmt(periodIgjen)} />
+        <Stat label={`Snitt pr dag (${periodDays} d)`} value={fmt(periodSnittPrDag)} onClick={() => openBulk(`Utgifter — ${startKey} → ${endKey}`, periodTxns.filter(isExpense))} />
+        <Stat label="Igjen" value={fmt(periodIgjen)} onClick={() => openBulk(`Periode — ${startKey} → ${endKey}`, periodTxns)} />
       </div>
 
 
@@ -1216,10 +1260,14 @@ function DrillTxns({
   );
 }
 
-function Stat({ label, value, tone }: { label: string; value: string; tone?: "ok" | "warn" }) {
+function Stat({ label, value, tone, onClick }: { label: string; value: string; tone?: "ok" | "warn"; onClick?: () => void }) {
   const c = tone === "warn" ? "text-red-400" : tone === "ok" ? "text-emerald-400" : "text-amber-200";
+  const clickable = !!onClick;
   return (
-    <Card className="p-3 border-amber-500/20 bg-gradient-to-br from-amber-950/20 to-transparent">
+    <Card
+      className={`p-3 border-amber-500/20 bg-gradient-to-br from-amber-950/20 to-transparent ${clickable ? "cursor-pointer hover:border-amber-500/50 hover:bg-amber-950/30 transition" : ""}`}
+      onClick={onClick}
+    >
       <p className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">{label}</p>
       <p className={`text-xl font-semibold tabular-nums ${c}`}>{value}</p>
     </Card>
