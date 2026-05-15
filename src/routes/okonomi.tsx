@@ -670,23 +670,25 @@ function Oversikt({
       </Card>
 
       <div className="grid grid-cols-2 gap-3">
-        <Stat label="Brukt" value={fmt(brukt)} tone="warn" />
-        <Stat label="Inntekt" value={fmt(inntekt)} tone="ok" />
-        <Stat label="Budsjett" value={fmt(budsjett)} />
+        <Stat label="Brukt" value={fmt(brukt)} tone="warn" onClick={() => openBulk(`Brukt — ${ymPrefix}`, filtered.filter(isExpense), "Klikk for å redigere")} />
+        <Stat label="Inntekt" value={fmt(inntekt)} tone="ok" onClick={() => openBulk(`Inntekt — ${ymPrefix}`, filtered.filter(isIncome), "Klikk for å redigere")} />
+        <Stat label="Budsjett" value={fmt(budsjett)} onClick={() => openBulk(`Posteringer i periode — ${ymPrefix}`, filtered, "Alle posteringer")} />
         <Stat
           label={netto >= 0 ? "Overskudd" : "Underskudd"}
           value={fmt(Math.abs(netto))}
           tone={netto >= 0 ? "ok" : "warn"}
+          onClick={() => openBulk(`Netto — ${ymPrefix}`, filtered, "Inntekt + utgift")}
         />
-        <Stat label={`Snitt pr dag (${elapsedDays} d)`} value={fmt(snittPrDag)} />
+        <Stat label={`Snitt pr dag (${elapsedDays} d)`} value={fmt(snittPrDag)} onClick={() => openBulk(`Utgifter — ${ymPrefix}`, filtered.filter(isExpense))} />
         {daysUntilPayday > 0 ? (
           <Stat
             label={`Igjen pr dag (${daysUntilPayday} d til lønn)`}
             value={fmt(igjenPrDag)}
             tone={igjenPrDag <= 0 ? "warn" : "ok"}
+            onClick={() => openBulk(`Posteringer — ${ymPrefix}`, filtered)}
           />
         ) : (
-          <Stat label="Igjen" value={fmt(igjen)} />
+          <Stat label="Igjen" value={fmt(igjen)} onClick={() => openBulk(`Posteringer — ${ymPrefix}`, filtered)} />
         )}
       </div>
 
