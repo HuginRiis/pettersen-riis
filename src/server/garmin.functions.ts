@@ -245,8 +245,14 @@ export const ensureGarminDeviceHero = createServerFn({ method: "POST" })
     const apiKey = process.env.LOVABLE_API_KEY;
     if (!apiKey) throw new Error("LOVABLE_API_KEY mangler");
 
-    const prompt = `A high-quality, photo-realistic product render of a Garmin "${row.name}" ${
-      /scale/i.test(row.name) ? "smart bathroom scale" : "smartwatch"
+    const isScale = /scale/i.test(row.name);
+    const deviceKind = isScale ? "smart bathroom scale" : "smartwatch";
+    const styleForOwner =
+      owner === "rebekka"
+        ? `with a LIGHT/WHITE silicone strap and a polished GOLD bezel ring around the watch face, elegant feminine styling`
+        : `with a dark/graphite strap and a brushed steel bezel`;
+    const prompt = `A high-quality, photo-realistic product render of a Garmin "${row.name}" ${deviceKind}${
+      isScale ? "" : `, ${styleForOwner}`
     }, centered, front-facing, on a clean transparent background, no text, no logos overlay, soft studio lighting, sharp detail.`;
 
     const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
