@@ -15,6 +15,7 @@ import {
   generateOkonomiBenchmarks,
   type OkonomiSettings,
 } from "@/server/okonomi.functions";
+import { OkonomiAccountsSettings } from "./OkonomiAccountsSettings";
 
 type NumKey = "payday_day" | "household_adults" | "household_children_under18" | "household_children_over18";
 
