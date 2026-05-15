@@ -30,8 +30,10 @@ const HOUSES: Record<
     accent: string;
     border: string;
     bg: string;
-    bannerFrom: string;
+   bannerFrom: string;
     bannerTo: string;
+    /** Solid edge color the watch image should fade into (right side) */
+    fadeColor: string;
   }
 > = {
   arne: {
@@ -42,8 +44,9 @@ const HOUSES: Record<
     accent: "text-slate-200",
     border: "border-slate-400/40",
     bg: "bg-slate-900/40",
-    bannerFrom: "from-slate-700/60",
-    bannerTo: "to-slate-900/80",
+    bannerFrom: "from-slate-700",
+    bannerTo: "to-slate-900",
+    fadeColor: "rgb(15, 23, 42)", // slate-900
   },
   rebekka: {
     name: "Rebekka",
@@ -53,8 +56,9 @@ const HOUSES: Record<
     accent: "text-rose-200",
     border: "border-rose-500/40",
     bg: "bg-rose-950/30",
-    bannerFrom: "from-rose-900/60",
-    bannerTo: "to-black/80",
+    bannerFrom: "from-rose-900",
+    bannerTo: "to-rose-950",
+    fadeColor: "rgb(76, 5, 25)", // deep targaryen red
   },
 };
 
@@ -166,6 +170,13 @@ export function GarminHero({ owner }: { owner: Owner }) {
             loading="lazy"
           />
         )}
+        {/* House-color fade on the right edge so the watch blends into the banner color */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: `radial-gradient(ellipse 60% 100% at 100% 50%, ${h.fadeColor} 0%, ${h.fadeColor.replace("rgb(", "rgba(").replace(")", ", 0.6)")} 35%, rgba(0,0,0,0) 75%)`,
+          }}
+        />
         {/* Dark gradient overlay for left-side text legibility */}
         <div
           className="absolute inset-0 pointer-events-none"
