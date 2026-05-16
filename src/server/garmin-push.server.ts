@@ -69,6 +69,7 @@ async function sendOne(
   ctx: { recipient: string; title: string },
 ) {
   try {
+    if (await isWhoInQuietHours(sub.who ?? null)) return;
     await webpush.sendNotification(
       { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
       payload,

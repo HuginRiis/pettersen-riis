@@ -366,6 +366,7 @@ async function sendPush(
 ): Promise<{ ok: boolean; statusCode?: number }> {
   try {
     ensureVapid();
+    if (await isWhoInQuietHours(sub.who ?? null)) return { ok: false };
     await webpush.sendNotification(
       { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
       payload,

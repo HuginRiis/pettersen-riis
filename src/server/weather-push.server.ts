@@ -231,6 +231,7 @@ async function sendOne(
   ctx: { feature: string; recipient?: string; title?: string } = { feature: "weather" },
 ): Promise<boolean> {
   try {
+    if (await isWhoInQuietHours(sub.who ?? null)) return false;
     await webpush.sendNotification(
       { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
       payload,

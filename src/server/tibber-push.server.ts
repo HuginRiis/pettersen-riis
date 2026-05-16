@@ -113,6 +113,7 @@ export async function processTibberNotifications(): Promise<{
 
     for (const sub of subs ?? []) {
       try {
+        if (await isWhoInQuietHours((sub as any).who ?? null)) continue;
         await webpush.sendNotification(
           { endpoint: sub.endpoint as string, keys: { p256dh: sub.p256dh as string, auth: sub.auth as string } },
           payload,
