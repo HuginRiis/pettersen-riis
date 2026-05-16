@@ -76,6 +76,18 @@ export function withApiLog<T extends (...args: any[]) => Promise<any>>(
   fn: T,
 ): T {
   return (async (...args: Parameters<T>) => {
+    if (await isApiSourcePaused(String(source))) {
+      const err = new ApiSourcePausedError(String(source));
+      await recordApiCall({
+        source,
+        endpoint,
+        ok: false,
+        duration_ms: 0,
+        error_message: err.message,
+        metadata: { paused: true },
+      });
+      throw err;
+    }
     const started = Date.now();
     try {
       const result = await fn(...args);
