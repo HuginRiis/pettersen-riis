@@ -6,6 +6,7 @@
 // klient-bundlet. Bruker service role.
 
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { isApiSourcePaused, ApiSourcePausedError } from "./api-pause.server";
 
 export type ApiSource =
   | "homey"
@@ -75,6 +76,18 @@ export function withApiLog<T extends (...args: any[]) => Promise<any>>(
   fn: T,
 ): T {
   return (async (...args: Parameters<T>) => {
+    if (await isApiSourcePaused(String(source))) {
+      const err = new ApiSourcePausedError(String(source));
+      await recordApiCall({
+        source,
+        endpoint,
+        ok: false,
+        duration_ms: 0,
+        error_message: err.message,
+        metadata: { paused: true },
+      });
+      throw err;
+    }
     const started = Date.now();
     try {
       const result = await fn(...args);
@@ -118,6 +131,18 @@ export async function loggedFetch(
   url: string,
   init?: RequestInit,
 ): Promise<Response> {
+  if (await isApiSourcePaused(String(source))) {
+    const err = new ApiSourcePausedError(String(source));
+    await recordApiCall({
+      source,
+      endpoint,
+      ok: false,
+      duration_ms: 0,
+      error_message: err.message,
+      metadata: { paused: true },
+    });
+    throw err;
+  }
   const started = Date.now();
   try {
     const res = await fetch(url, init);
