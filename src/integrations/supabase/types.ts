@@ -1554,6 +1554,36 @@ export type Database = {
         }
         Relationships: []
       }
+      push_quiet_hours: {
+        Row: {
+          enabled: boolean
+          recipient: string
+          updated_at: string
+          weekday_end: string
+          weekday_start: string
+          weekend_end: string
+          weekend_start: string
+        }
+        Insert: {
+          enabled?: boolean
+          recipient: string
+          updated_at?: string
+          weekday_end?: string
+          weekday_start?: string
+          weekend_end?: string
+          weekend_start?: string
+        }
+        Update: {
+          enabled?: boolean
+          recipient?: string
+          updated_at?: string
+          weekday_end?: string
+          weekday_start?: string
+          weekend_end?: string
+          weekend_start?: string
+        }
+        Relationships: []
+      }
       push_send_log: {
         Row: {
           body: string | null
