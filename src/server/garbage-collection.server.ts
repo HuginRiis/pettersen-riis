@@ -7,6 +7,7 @@
  * Skien hører til RiG (Renovasjon i Grenland), kommunenr 4003.
  */
 import webpush from "web-push";
+import { isWhoInQuietHours } from "./push-quiet-hours.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { buildSubscriptionWhoOr } from "./push-recipients";
 import { recordApiCall } from "@/server/api-call-log.server";
@@ -366,6 +367,7 @@ async function sendPush(
 ): Promise<{ ok: boolean; statusCode?: number }> {
   try {
     ensureVapid();
+    if (await isWhoInQuietHours(sub.who ?? null)) return { ok: false };
     await webpush.sendNotification(
       { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
       payload,

@@ -4,6 +4,7 @@
  * Kjøres av agenda-push cron-hooken.
  */
 import webpush from "web-push";
+import { isWhoInQuietHours } from "./push-quiet-hours.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { logPushSend } from "./push-log.server";
 import { buildSubscriptionWhoOr } from "./push-recipients";
@@ -113,6 +114,7 @@ export async function processTibberNotifications(): Promise<{
 
     for (const sub of subs ?? []) {
       try {
+        if (await isWhoInQuietHours((sub as any).who ?? null)) continue;
         await webpush.sendNotification(
           { endpoint: sub.endpoint as string, keys: { p256dh: sub.p256dh as string, auth: sub.auth as string } },
           payload,
