@@ -5,7 +5,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { UpcomingPushPanel } from "@/components/UpcomingPushPanel";
 import { TibberCronStatusPanel } from "@/components/TibberCronStatusPanel";
 import { PushSchedulingSettings } from "@/components/PushSchedulingSettings";
-import { PushQuietHoursPanel } from "@/components/PushQuietHoursPanel";
 import { MenuPreferencesPanel } from "@/components/MenuPreferencesPanel";
 import { MenuVisibilityPanel } from "@/components/MenuVisibilityPanel";
 import { HeaderBadgeSettingsPanel } from "@/components/HeaderBadgeSettingsPanel";
@@ -57,7 +56,6 @@ type Counts = {
 };
 
 const TOC_ITEMS: { id: string; label: string; emoji: string }[] = [
-  { id: "sec-stille", label: "Stille timer", emoji: "🌙" },
   { id: "sec-kommende", label: "Kommende push", emoji: "📨" },
   { id: "sec-personlig", label: "Personlig", emoji: "✦" },
   { id: "sec-utseende", label: "Utseende (skrift/bredde)", emoji: "🅰️" },
@@ -136,8 +134,6 @@ function PushSettingsPage() {
         subtitle="Personlige innstillinger og alle push-varsler — samlet på ett sted."
         image={heroImg}
       />
-
-      <section id="sec-stille" className="scroll-mt-24"><PushQuietHoursPanel /></section>
 
       <SettingsTOC />
 

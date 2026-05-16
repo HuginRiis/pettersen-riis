@@ -5,7 +5,6 @@
  * Tidssone: alle hendelser tolkes som Europe/Oslo lokaltid.
  */
 import webpush from "web-push";
-import { isWhoInQuietHours } from "./push-quiet-hours.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { logPushSend } from "./push-log.server";
 import { buildSubscriptionWhoOr } from "./push-recipients";
@@ -52,7 +51,6 @@ async function sendPushToSubscription(
 ): Promise<{ ok: true } | { ok: false; statusCode?: number; error: string }> {
   try {
     ensureConfigured();
-    if (await isWhoInQuietHours(sub.who ?? null)) return { ok: false, error: "quiet_hours" };
     await webpush.sendNotification(
       {
         endpoint: sub.endpoint,
