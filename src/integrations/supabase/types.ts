@@ -176,6 +176,24 @@ export type Database = {
         }
         Relationships: []
       }
+      api_pause_flags: {
+        Row: {
+          paused: boolean
+          source: string
+          updated_at: string
+        }
+        Insert: {
+          paused?: boolean
+          source: string
+          updated_at?: string
+        }
+        Update: {
+          paused?: boolean
+          source?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       birthdays: {
         Row: {
           birth_date: string
