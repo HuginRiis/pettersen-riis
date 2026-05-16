@@ -131,6 +131,18 @@ export async function loggedFetch(
   url: string,
   init?: RequestInit,
 ): Promise<Response> {
+  if (await isApiSourcePaused(String(source))) {
+    const err = new ApiSourcePausedError(String(source));
+    await recordApiCall({
+      source,
+      endpoint,
+      ok: false,
+      duration_ms: 0,
+      error_message: err.message,
+      metadata: { paused: true },
+    });
+    throw err;
+  }
   const started = Date.now();
   try {
     const res = await fetch(url, init);
