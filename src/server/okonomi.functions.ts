@@ -293,7 +293,7 @@ export const findExistingOkonomiDuplicates = createServerFn({ method: "GET" }).h
       Array<{ id: string; txn_date: string; description: string; amount: number; account: string | null; created_at: string }>
     >();
     for (const r of (data ?? []) as any[]) {
-      const key = `${r.txn_date}|${amountKey(Number(r.amount))}|${normDesc(r.description)}|${normAccount(r.account)}`;
+      const key = `${r.txn_date}|${amountKey(Number(r.amount))}|${normDesc(r.description)}`;
       const arr = groups.get(key) ?? [];
       arr.push(r);
       groups.set(key, arr);
