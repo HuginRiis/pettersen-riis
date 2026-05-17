@@ -102,7 +102,7 @@ function DecibelPage() {
       } catch {}
 
       const freqBuf = new Float32Array(analyser.frequencyBinCount);
-      const timeBuf = timeBufRef.current!;
+      const timeBuf = new Float32Array(analyser.fftSize);
       const sr = ctx.sampleRate;
       const binHz = sr / analyser.fftSize;
       samplesRef.current = [];
