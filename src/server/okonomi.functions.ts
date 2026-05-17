@@ -259,22 +259,20 @@ export const findOkonomiDuplicates = createServerFn({ method: "POST" })
       .select("id,txn_date,description,amount,account")
       .in("txn_date", dates)
       .in("amount", amounts as any);
-    const buckets = new Map<string, Array<{ id: string; desc: string; account: string }>>();
+    // Match kun på dato + beskrivelse + beløp (case-insensitiv, whitespace-tolerant).
+    const buckets = new Map<string, Array<{ id: string; desc: string }>>();
     for (const c of (candidates ?? []) as any[]) {
       const key = `${c.txn_date}|${amountKey(Number(c.amount))}`;
       const arr = buckets.get(key) ?? [];
-      arr.push({ id: c.id, desc: normDesc(c.description), account: normAccount(c.account) });
+      arr.push({ id: c.id, desc: normDesc(c.description) });
       buckets.set(key, arr);
     }
     for (let i = 0; i < data.rows.length; i++) {
       const r = data.rows[i]!;
-      const account = normAccount(r.account ?? data.default_account ?? null);
       const desc = normDesc(r.description);
       const key = `${r.txn_date}|${amountKey(r.amount)}`;
       const arr = buckets.get(key) ?? [];
-      const match = arr.find(
-        (c) => c.desc === desc && (account === "" || c.account === "" || c.account === account),
-      );
+      const match = arr.find((c) => c.desc === desc);
       if (match) dupes.push({ index: i, existing_id: match.id });
     }
     return { duplicates: dupes };
@@ -295,7 +293,7 @@ export const findExistingOkonomiDuplicates = createServerFn({ method: "GET" }).h
       Array<{ id: string; txn_date: string; description: string; amount: number; account: string | null; created_at: string }>
     >();
     for (const r of (data ?? []) as any[]) {
-      const key = `${r.txn_date}|${amountKey(Number(r.amount))}|${normDesc(r.description)}|${normAccount(r.account)}`;
+      const key = `${r.txn_date}|${amountKey(Number(r.amount))}|${normDesc(r.description)}`;
       const arr = groups.get(key) ?? [];
       arr.push(r);
       groups.set(key, arr);
