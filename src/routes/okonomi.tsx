@@ -2426,10 +2426,15 @@ function ImportTab({ cats, reload }: { cats: OkonomiCategory[]; reload: () => vo
           <div className="max-h-[60vh] overflow-auto space-y-1.5">
             {preview.map((r, i) => {
               const cat = cats.find((c) => c.id === r.category_id);
+              const isDup = dupIdx.has(i);
               return (
                 <div
                   key={i}
-                  className="text-xs border border-border/40 rounded p-2 space-y-1.5 bg-background/40"
+                  className={`text-xs border rounded p-2 space-y-1.5 ${
+                    isDup
+                      ? "border-red-500/60 bg-red-950/30"
+                      : "border-border/40 bg-background/40"
+                  }`}
                 >
                   <div className="flex items-center gap-2">
                     <span
@@ -2437,6 +2442,11 @@ function ImportTab({ cats, reload }: { cats: OkonomiCategory[]; reload: () => vo
                       style={{ background: cat?.color ?? "#64748b" }}
                     />
                     <span className="flex-1 truncate font-medium">{r.description}</span>
+                    {isDup && (
+                      <span className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-red-500/20 text-red-300 border border-red-500/40 shrink-0">
+                        Duplikat
+                      </span>
+                    )}
                     <span
                       className={`tabular-nums font-semibold ${r.amount < 0 ? "text-red-400" : "text-emerald-400"}`}
                     >
