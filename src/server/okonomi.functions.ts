@@ -235,25 +235,94 @@ const dupCheckSchema = z.object({
   default_account: z.string().optional(),
 });
 
+function normDesc(s: string | null | undefined): string {
+  return (s ?? "").toString().toLowerCase().replace(/\s+/g, " ").trim();
+}
+function normAccount(s: string | null | undefined): string {
+  return (s ?? "").toString().replace(/[\s.\-]/g, "").trim();
+}
+function amountKey(a: number): string {
+  // matche på 2 desimaler for å unngå float-støy
+  return (Math.round(Number(a) * 100) / 100).toFixed(2);
+}
+
 export const findOkonomiDuplicates = createServerFn({ method: "POST" })
   .inputValidator((d) => dupCheckSchema.parse(d))
   .handler(async ({ data }) => {
     const dupes: Array<{ index: number; existing_id: string }> = [];
+    // Hent alle kandidater (samme dato + beløp) i én sveip for å unngå
+    // skjøre per-rad eq-spørringer mot description (whitespace/case-følsomt)
+    const dates = Array.from(new Set(data.rows.map((r) => r.txn_date)));
+    const amounts = Array.from(new Set(data.rows.map((r) => amountKey(r.amount))));
+    const { data: candidates } = await supabaseAdmin
+      .from("okonomi_transactions")
+      .select("id,txn_date,description,amount,account")
+      .in("txn_date", dates)
+      .in("amount", amounts as any);
+    const buckets = new Map<string, Array<{ id: string; desc: string; account: string }>>();
+    for (const c of (candidates ?? []) as any[]) {
+      const key = `${c.txn_date}|${amountKey(Number(c.amount))}`;
+      const arr = buckets.get(key) ?? [];
+      arr.push({ id: c.id, desc: normDesc(c.description), account: normAccount(c.account) });
+      buckets.set(key, arr);
+    }
     for (let i = 0; i < data.rows.length; i++) {
       const r = data.rows[i]!;
-      const account = r.account ?? data.default_account ?? null;
-      let q = supabaseAdmin
-        .from("okonomi_transactions")
-        .select("id")
-        .eq("txn_date", r.txn_date)
-        .eq("description", r.description)
-        .eq("amount", r.amount)
-        .limit(1);
-      q = account === null ? q.is("account", null) : q.eq("account", account);
-      const { data: existing } = await q.maybeSingle();
-      if (existing) dupes.push({ index: i, existing_id: (existing as any).id });
+      const account = normAccount(r.account ?? data.default_account ?? null);
+      const desc = normDesc(r.description);
+      const key = `${r.txn_date}|${amountKey(r.amount)}`;
+      const arr = buckets.get(key) ?? [];
+      const match = arr.find(
+        (c) => c.desc === desc && (account === "" || c.account === "" || c.account === account),
+      );
+      if (match) dupes.push({ index: i, existing_id: match.id });
     }
     return { duplicates: dupes };
+  });
+
+// Finn duplikatgrupper blant *eksisterende* posteringer i databasen.
+// To rader regnes som duplikat hvis dato + normalisert beskrivelse + beløp + konto matcher.
+export const findExistingOkonomiDuplicates = createServerFn({ method: "GET" }).handler(
+  async () => {
+    const { data, error } = await supabaseAdmin
+      .from("okonomi_transactions")
+      .select("id,txn_date,description,amount,account,created_at")
+      .order("created_at", { ascending: true })
+      .limit(10000);
+    if (error) throw new Error(error.message);
+    const groups = new Map<
+      string,
+      Array<{ id: string; txn_date: string; description: string; amount: number; account: string | null; created_at: string }>
+    >();
+    for (const r of (data ?? []) as any[]) {
+      const key = `${r.txn_date}|${amountKey(Number(r.amount))}|${normDesc(r.description)}|${normAccount(r.account)}`;
+      const arr = groups.get(key) ?? [];
+      arr.push(r);
+      groups.set(key, arr);
+    }
+    const result: Array<{
+      key: string;
+      keep_id: string;
+      duplicates: Array<{ id: string; txn_date: string; description: string; amount: number; account: string | null }>;
+    }> = [];
+    for (const [key, arr] of groups.entries()) {
+      if (arr.length < 2) continue;
+      const [keep, ...rest] = arr;
+      result.push({ key, keep_id: keep!.id, duplicates: rest });
+    }
+    return { groups: result };
+  },
+);
+
+export const bulkDeleteOkonomiTransactions = createServerFn({ method: "POST" })
+  .inputValidator((d) => z.object({ ids: z.array(z.string().uuid()).min(1).max(2000) }).parse(d))
+  .handler(async ({ data }) => {
+    const { error } = await supabaseAdmin
+      .from("okonomi_transactions")
+      .delete()
+      .in("id", data.ids);
+    if (error) throw new Error(error.message);
+    return { deleted: data.ids.length };
   });
 
 export const importOkonomiTransactions = createServerFn({ method: "POST" })
