@@ -2273,6 +2273,45 @@ function ImportTab({ cats, reload }: { cats: OkonomiCategory[]; reload: () => vo
 
   const uncategorized = preview.filter((r) => !r.category_id).length;
 
+  // Auto-sjekk duplikater i bakgrunnen hver gang preview endres
+  const [dupIdx, setDupIdx] = useState<Set<number>>(new Set());
+  const [dupBusy, setDupBusy] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    if (preview.length === 0) {
+      setDupIdx(new Set());
+      return;
+    }
+    setDupBusy(true);
+    findDupes({
+      data: {
+        rows: preview.map((r) => ({
+          txn_date: r.txn_date,
+          description: r.description,
+          amount: r.amount,
+          account: r.account ?? null,
+        })),
+      },
+    })
+      .then((res) => {
+        if (cancelled) return;
+        setDupIdx(new Set(res.duplicates.map((d) => d.index)));
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setDupBusy(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [preview]);
+
+  function removeAllDuplicates() {
+    if (dupIdx.size === 0) return;
+    setPreview((p) => p.filter((_, i) => !dupIdx.has(i)));
+  }
+
   return (
     <div className="space-y-3">
       <Card className="p-4 border-amber-500/30 space-y-3">
