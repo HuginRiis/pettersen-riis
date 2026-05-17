@@ -32,6 +32,7 @@ import { Route as HyttaRouteImport } from './routes/hytta'
 import { Route as HundeneRouteImport } from './routes/hundene'
 import { Route as GressklipperRouteImport } from './routes/gressklipper'
 import { Route as GotSagaRouteImport } from './routes/got-saga'
+import { Route as DecibelRouteImport } from './routes/decibel'
 import { Route as AgendaRouteImport } from './routes/agenda'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as HooksLogPulseRouteImport } from './routes/hooks.log-pulse'
@@ -161,6 +162,11 @@ const GotSagaRoute = GotSagaRouteImport.update({
   path: '/got-saga',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DecibelRoute = DecibelRouteImport.update({
+  id: '/decibel',
+  path: '/decibel',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AgendaRoute = AgendaRouteImport.update({
   id: '/agenda',
   path: '/agenda',
@@ -234,6 +240,7 @@ const ApiPublicHooksAgendaPushRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/agenda': typeof AgendaRoute
+  '/decibel': typeof DecibelRoute
   '/got-saga': typeof GotSagaRoute
   '/gressklipper': typeof GressklipperRoute
   '/hundene': typeof HundeneRoute
@@ -272,6 +279,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/agenda': typeof AgendaRoute
+  '/decibel': typeof DecibelRoute
   '/got-saga': typeof GotSagaRoute
   '/gressklipper': typeof GressklipperRoute
   '/hundene': typeof HundeneRoute
@@ -311,6 +319,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/agenda': typeof AgendaRoute
+  '/decibel': typeof DecibelRoute
   '/got-saga': typeof GotSagaRoute
   '/gressklipper': typeof GressklipperRoute
   '/hundene': typeof HundeneRoute
@@ -351,6 +360,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/agenda'
+    | '/decibel'
     | '/got-saga'
     | '/gressklipper'
     | '/hundene'
@@ -389,6 +399,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/agenda'
+    | '/decibel'
     | '/got-saga'
     | '/gressklipper'
     | '/hundene'
@@ -427,6 +438,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/agenda'
+    | '/decibel'
     | '/got-saga'
     | '/gressklipper'
     | '/hundene'
@@ -466,6 +478,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AgendaRoute: typeof AgendaRoute
+  DecibelRoute: typeof DecibelRoute
   GotSagaRoute: typeof GotSagaRoute
   GressklipperRoute: typeof GressklipperRoute
   HundeneRoute: typeof HundeneRoute
@@ -665,6 +678,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GotSagaRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/decibel': {
+      id: '/decibel'
+      path: '/decibel'
+      fullPath: '/decibel'
+      preLoaderRoute: typeof DecibelRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/agenda': {
       id: '/agenda'
       path: '/agenda'
@@ -762,6 +782,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AgendaRoute: AgendaRoute,
+  DecibelRoute: DecibelRoute,
   GotSagaRoute: GotSagaRoute,
   GressklipperRoute: GressklipperRoute,
   HundeneRoute: HundeneRoute,
