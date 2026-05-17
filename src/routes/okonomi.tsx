@@ -1563,6 +1563,84 @@ function Posteringer({
           </Button>
         </Card>
       )}
+      <Button
+        onClick={scanDuplicates}
+        className="w-full"
+        variant="outline"
+        disabled={dupBusy}
+      >
+        {dupBusy ? (
+          <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+        ) : (
+          <Trash2 className="w-4 h-4 mr-1" />
+        )}
+        Finn duplikater i databasen
+      </Button>
+      {dupOpen && dupGroups.length > 0 && (
+        <Card className="p-3 space-y-2 border-red-500/40 bg-red-950/10">
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <h3 className="text-sm font-semibold text-red-200">
+                {dupGroups.length} grupper · {dupGroups.reduce((s, g) => s + g.duplicates.length, 0)}{" "}
+                duplikater
+              </h3>
+              <p className="text-[11px] text-muted-foreground">
+                Lik dato, tekst, konto og beløp. Eldste posten beholdes.
+              </p>
+            </div>
+            <div className="flex gap-1.5">
+              <Button size="sm" variant="ghost" onClick={() => setDupOpen(false)}>
+                <X className="w-3 h-3" />
+              </Button>
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={deleteAllDuplicates}
+                disabled={dupBusy}
+              >
+                Slett alle
+              </Button>
+            </div>
+          </div>
+          <div className="max-h-[50vh] overflow-auto space-y-2">
+            {dupGroups.map((g) => (
+              <div key={g.key} className="border border-red-500/20 rounded p-2 space-y-1">
+                {g.duplicates.map((d) => (
+                  <div
+                    key={d.id}
+                    className="flex items-center gap-2 text-xs bg-background/40 rounded p-1.5"
+                  >
+                    <span className="text-[10px] text-muted-foreground w-16 shrink-0">
+                      {d.txn_date}
+                    </span>
+                    <span className="flex-1 truncate">{d.description}</span>
+                    {d.account && (
+                      <span className="text-[10px] text-muted-foreground truncate max-w-[80px]">
+                        {d.account}
+                      </span>
+                    )}
+                    <span
+                      className={`tabular-nums font-semibold ${d.amount < 0 ? "text-red-400" : "text-emerald-400"}`}
+                    >
+                      {fmt(d.amount)}
+                    </span>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-6 w-6 text-red-400"
+                      onClick={() => deleteSingleDup(d.id)}
+                      disabled={dupBusy}
+                      title="Slett denne"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
       <Card className="p-2 px-3 border-amber-500/20 flex items-center justify-between">
         <Label className="text-xs text-muted-foreground">Kun ukategoriserte</Label>
         <div className="flex items-center gap-2">
