@@ -2382,13 +2382,31 @@ function ImportTab({ cats, reload }: { cats: OkonomiCategory[]; reload: () => vo
               </h3>
               <p className="text-[11px] text-muted-foreground">
                 {uncategorized > 0 ? `${uncategorized} mangler kategori` : "Alle kategorisert ✓"}
+                {" · "}
+                {dupBusy
+                  ? "sjekker duplikater…"
+                  : dupIdx.size > 0
+                    ? `${dupIdx.size} duplikat${dupIdx.size === 1 ? "" : "er"} oppdaget`
+                    : "ingen duplikater"}
                 {" · "}ligger her til du importerer eller sletter
               </p>
             </div>
-            <div className="flex gap-1.5">
+            <div className="flex gap-1.5 flex-wrap">
               <Button size="sm" variant="ghost" onClick={recategorize} disabled={busy}>
                 <Sparkles className="w-3 h-3 mr-1" /> AI på nytt
               </Button>
+              {dupIdx.size > 0 && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="text-amber-300 hover:text-amber-200"
+                  onClick={removeAllDuplicates}
+                  disabled={busy}
+                  title="Fjern alle duplikater fra forhåndsvisningen"
+                >
+                  <Trash2 className="w-3 h-3 mr-1" /> Fjern duplikater ({dupIdx.size})
+                </Button>
+              )}
               <Button
                 size="sm"
                 variant="ghost"
