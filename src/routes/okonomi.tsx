@@ -37,6 +37,8 @@ import {
   bulkUpdateOkonomiCategory,
   importOkonomiTransactions,
   findOkonomiDuplicates,
+  findExistingOkonomiDuplicates,
+  bulkDeleteOkonomiTransactions,
   parseStatementWithAI,
   categorizeTransactionsWithAI,
   getOkonomiSettings,
@@ -1289,6 +1291,67 @@ function Posteringer({
   const del = useServerFn(deleteOkonomiTransaction);
   const bulk = useServerFn(bulkUpdateOkonomiCategory);
   const learn = useServerFn(learnMerchantRule);
+  const findExistingDupes = useServerFn(findExistingOkonomiDuplicates);
+  const bulkDelete = useServerFn(bulkDeleteOkonomiTransactions);
+  const [dupGroups, setDupGroups] = useState<
+    Array<{
+      key: string;
+      keep_id: string;
+      duplicates: Array<{ id: string; txn_date: string; description: string; amount: number; account: string | null }>;
+    }>
+  >([]);
+  const [dupOpen, setDupOpen] = useState(false);
+  const [dupBusy, setDupBusy] = useState(false);
+
+  async function scanDuplicates() {
+    setDupBusy(true);
+    try {
+      const res = await findExistingDupes();
+      setDupGroups(res.groups);
+      setDupOpen(true);
+      if (res.groups.length === 0) toast.success("Ingen duplikater funnet");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Feil");
+    } finally {
+      setDupBusy(false);
+    }
+  }
+
+  async function deleteAllDuplicates() {
+    const ids = dupGroups.flatMap((g) => g.duplicates.map((d) => d.id));
+    if (ids.length === 0) return;
+    if (!confirm(`Slette ${ids.length} duplikater (beholder eldste i hver gruppe)?`)) return;
+    setDupBusy(true);
+    try {
+      await bulkDelete({ data: { ids } });
+      toast.success(`Slettet ${ids.length} duplikater`);
+      setDupGroups([]);
+      setDupOpen(false);
+      reload();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Feil");
+    } finally {
+      setDupBusy(false);
+    }
+  }
+
+  async function deleteSingleDup(id: string) {
+    setDupBusy(true);
+    try {
+      await bulkDelete({ data: { ids: [id] } });
+      setDupGroups((gs) =>
+        gs
+          .map((g) => ({ ...g, duplicates: g.duplicates.filter((d) => d.id !== id) }))
+          .filter((g) => g.duplicates.length > 0),
+      );
+      reload();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Feil");
+    } finally {
+      setDupBusy(false);
+    }
+  }
+
   const [adding, setAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [onlyUncat, setOnlyUncat] = usePersistedState<boolean>("okonomi_post_only_uncat", false);
@@ -1498,6 +1561,84 @@ function Posteringer({
             )}
             Bruk på alle {bulkGroup ? `(${bulkGroup.ids.length})` : ""}
           </Button>
+        </Card>
+      )}
+      <Button
+        onClick={scanDuplicates}
+        className="w-full"
+        variant="outline"
+        disabled={dupBusy}
+      >
+        {dupBusy ? (
+          <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+        ) : (
+          <Trash2 className="w-4 h-4 mr-1" />
+        )}
+        Finn duplikater i databasen
+      </Button>
+      {dupOpen && dupGroups.length > 0 && (
+        <Card className="p-3 space-y-2 border-red-500/40 bg-red-950/10">
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <h3 className="text-sm font-semibold text-red-200">
+                {dupGroups.length} grupper · {dupGroups.reduce((s, g) => s + g.duplicates.length, 0)}{" "}
+                duplikater
+              </h3>
+              <p className="text-[11px] text-muted-foreground">
+                Lik dato, tekst, konto og beløp. Eldste posten beholdes.
+              </p>
+            </div>
+            <div className="flex gap-1.5">
+              <Button size="sm" variant="ghost" onClick={() => setDupOpen(false)}>
+                <X className="w-3 h-3" />
+              </Button>
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={deleteAllDuplicates}
+                disabled={dupBusy}
+              >
+                Slett alle
+              </Button>
+            </div>
+          </div>
+          <div className="max-h-[50vh] overflow-auto space-y-2">
+            {dupGroups.map((g) => (
+              <div key={g.key} className="border border-red-500/20 rounded p-2 space-y-1">
+                {g.duplicates.map((d) => (
+                  <div
+                    key={d.id}
+                    className="flex items-center gap-2 text-xs bg-background/40 rounded p-1.5"
+                  >
+                    <span className="text-[10px] text-muted-foreground w-16 shrink-0">
+                      {d.txn_date}
+                    </span>
+                    <span className="flex-1 truncate">{d.description}</span>
+                    {d.account && (
+                      <span className="text-[10px] text-muted-foreground truncate max-w-[80px]">
+                        {d.account}
+                      </span>
+                    )}
+                    <span
+                      className={`tabular-nums font-semibold ${d.amount < 0 ? "text-red-400" : "text-emerald-400"}`}
+                    >
+                      {fmt(d.amount)}
+                    </span>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-6 w-6 text-red-400"
+                      onClick={() => deleteSingleDup(d.id)}
+                      disabled={dupBusy}
+                      title="Slett denne"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
         </Card>
       )}
       <Card className="p-2 px-3 border-amber-500/20 flex items-center justify-between">
@@ -2273,6 +2414,45 @@ function ImportTab({ cats, reload }: { cats: OkonomiCategory[]; reload: () => vo
 
   const uncategorized = preview.filter((r) => !r.category_id).length;
 
+  // Auto-sjekk duplikater i bakgrunnen hver gang preview endres
+  const [dupIdx, setDupIdx] = useState<Set<number>>(new Set());
+  const [dupBusy, setDupBusy] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    if (preview.length === 0) {
+      setDupIdx(new Set());
+      return;
+    }
+    setDupBusy(true);
+    findDupes({
+      data: {
+        rows: preview.map((r) => ({
+          txn_date: r.txn_date,
+          description: r.description,
+          amount: r.amount,
+          account: r.account ?? null,
+        })),
+      },
+    })
+      .then((res) => {
+        if (cancelled) return;
+        setDupIdx(new Set(res.duplicates.map((d) => d.index)));
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setDupBusy(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [preview]);
+
+  function removeAllDuplicates() {
+    if (dupIdx.size === 0) return;
+    setPreview((p) => p.filter((_, i) => !dupIdx.has(i)));
+  }
+
   return (
     <div className="space-y-3">
       <Card className="p-4 border-amber-500/30 space-y-3">
@@ -2343,13 +2523,31 @@ function ImportTab({ cats, reload }: { cats: OkonomiCategory[]; reload: () => vo
               </h3>
               <p className="text-[11px] text-muted-foreground">
                 {uncategorized > 0 ? `${uncategorized} mangler kategori` : "Alle kategorisert ✓"}
+                {" · "}
+                {dupBusy
+                  ? "sjekker duplikater…"
+                  : dupIdx.size > 0
+                    ? `${dupIdx.size} duplikat${dupIdx.size === 1 ? "" : "er"} oppdaget`
+                    : "ingen duplikater"}
                 {" · "}ligger her til du importerer eller sletter
               </p>
             </div>
-            <div className="flex gap-1.5">
+            <div className="flex gap-1.5 flex-wrap">
               <Button size="sm" variant="ghost" onClick={recategorize} disabled={busy}>
                 <Sparkles className="w-3 h-3 mr-1" /> AI på nytt
               </Button>
+              {dupIdx.size > 0 && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="text-amber-300 hover:text-amber-200"
+                  onClick={removeAllDuplicates}
+                  disabled={busy}
+                  title="Fjern alle duplikater fra forhåndsvisningen"
+                >
+                  <Trash2 className="w-3 h-3 mr-1" /> Fjern duplikater ({dupIdx.size})
+                </Button>
+              )}
               <Button
                 size="sm"
                 variant="ghost"
@@ -2369,10 +2567,15 @@ function ImportTab({ cats, reload }: { cats: OkonomiCategory[]; reload: () => vo
           <div className="max-h-[60vh] overflow-auto space-y-1.5">
             {preview.map((r, i) => {
               const cat = cats.find((c) => c.id === r.category_id);
+              const isDup = dupIdx.has(i);
               return (
                 <div
                   key={i}
-                  className="text-xs border border-border/40 rounded p-2 space-y-1.5 bg-background/40"
+                  className={`text-xs border rounded p-2 space-y-1.5 ${
+                    isDup
+                      ? "border-red-500/60 bg-red-950/30"
+                      : "border-border/40 bg-background/40"
+                  }`}
                 >
                   <div className="flex items-center gap-2">
                     <span
@@ -2380,6 +2583,11 @@ function ImportTab({ cats, reload }: { cats: OkonomiCategory[]; reload: () => vo
                       style={{ background: cat?.color ?? "#64748b" }}
                     />
                     <span className="flex-1 truncate font-medium">{r.description}</span>
+                    {isDup && (
+                      <span className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-red-500/20 text-red-300 border border-red-500/40 shrink-0">
+                        Duplikat
+                      </span>
+                    )}
                     <span
                       className={`tabular-nums font-semibold ${r.amount < 0 ? "text-red-400" : "text-emerald-400"}`}
                     >
