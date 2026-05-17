@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { PageShell } from "@/components/PageShell";
-import { Mic, MicOff, Activity, Waves, AlertTriangle, Volume2, Radio, Zap } from "lucide-react";
+import { PageShell, PageHero } from "@/components/PageShell";
+import { Mic, MicOff, Waves, AlertTriangle, Volume2, Radio, Zap } from "lucide-react";
+import heroImg from "@/assets/got-decibel.jpg";
 
 export const Route = createFileRoute("/decibel")({
   component: DecibelPage,
@@ -299,15 +300,13 @@ function DecibelPage() {
 
   return (
     <PageShell>
+      <PageHero
+        eyebrow="Mæsterens øre"
+        title="Decibelmåler & lydanalyse"
+        subtitle="dB SPL, frekvensspektrum, klang/etterklang og diagnose for tale og konsert."
+        image={heroImg}
+      />
       <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
-        <header className="space-y-1">
-          <h1 className="text-2xl font-semibold flex items-center gap-2">
-            <Activity className="text-primary" /> Decibelmåler & lydanalyse
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            dB SPL, frekvensspektrum, klang/etterklang og diagnose for tale og konsert.
-          </p>
-        </header>
 
         {/* Hoved dB-måler */}
         <div className="rounded-lg border border-border bg-card p-6 space-y-4">
