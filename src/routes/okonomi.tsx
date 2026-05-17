@@ -37,6 +37,8 @@ import {
   bulkUpdateOkonomiCategory,
   importOkonomiTransactions,
   findOkonomiDuplicates,
+  findExistingOkonomiDuplicates,
+  bulkDeleteOkonomiTransactions,
   parseStatementWithAI,
   categorizeTransactionsWithAI,
   getOkonomiSettings,
