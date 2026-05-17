@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { PageShell, PageHero } from "@/components/PageShell";
-import { Mic, MicOff, Activity, Waves, AlertTriangle, Volume2, Radio, Zap } from "lucide-react";
+import { Mic, MicOff, Waves, AlertTriangle, Volume2, Radio, Zap } from "lucide-react";
 import heroImg from "@/assets/got-decibel.jpg";
 
 export const Route = createFileRoute("/decibel")({
