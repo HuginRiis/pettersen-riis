@@ -1291,6 +1291,67 @@ function Posteringer({
   const del = useServerFn(deleteOkonomiTransaction);
   const bulk = useServerFn(bulkUpdateOkonomiCategory);
   const learn = useServerFn(learnMerchantRule);
+  const findExistingDupes = useServerFn(findExistingOkonomiDuplicates);
+  const bulkDelete = useServerFn(bulkDeleteOkonomiTransactions);
+  const [dupGroups, setDupGroups] = useState<
+    Array<{
+      key: string;
+      keep_id: string;
+      duplicates: Array<{ id: string; txn_date: string; description: string; amount: number; account: string | null }>;
+    }>
+  >([]);
+  const [dupOpen, setDupOpen] = useState(false);
+  const [dupBusy, setDupBusy] = useState(false);
+
+  async function scanDuplicates() {
+    setDupBusy(true);
+    try {
+      const res = await findExistingDupes();
+      setDupGroups(res.groups);
+      setDupOpen(true);
+      if (res.groups.length === 0) toast.success("Ingen duplikater funnet");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Feil");
+    } finally {
+      setDupBusy(false);
+    }
+  }
+
+  async function deleteAllDuplicates() {
+    const ids = dupGroups.flatMap((g) => g.duplicates.map((d) => d.id));
+    if (ids.length === 0) return;
+    if (!confirm(`Slette ${ids.length} duplikater (beholder eldste i hver gruppe)?`)) return;
+    setDupBusy(true);
+    try {
+      await bulkDelete({ data: { ids } });
+      toast.success(`Slettet ${ids.length} duplikater`);
+      setDupGroups([]);
+      setDupOpen(false);
+      reload();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Feil");
+    } finally {
+      setDupBusy(false);
+    }
+  }
+
+  async function deleteSingleDup(id: string) {
+    setDupBusy(true);
+    try {
+      await bulkDelete({ data: { ids: [id] } });
+      setDupGroups((gs) =>
+        gs
+          .map((g) => ({ ...g, duplicates: g.duplicates.filter((d) => d.id !== id) }))
+          .filter((g) => g.duplicates.length > 0),
+      );
+      reload();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Feil");
+    } finally {
+      setDupBusy(false);
+    }
+  }
+
   const [adding, setAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [onlyUncat, setOnlyUncat] = usePersistedState<boolean>("okonomi_post_only_uncat", false);
