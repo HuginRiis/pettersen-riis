@@ -4,7 +4,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { Menu, X, LogOut, Crown, Swords, Shield, KeyRound, Home, Star, Flower2,
   Sun, Compass, Castle, CalendarDays, BellRing, Eye, Mountain, Lightbulb, Lamp, Zap, Hammer,
   ShoppingCart, Receipt, Dog, Dumbbell, AlertTriangle, ScrollText, Globe, ChevronDown, ChevronRight,
-  TreePine, Coins, Bot, Wallet } from "lucide-react";
+  TreePine, Coins, Bot, Wallet, Volume2 } from "lucide-react";
+
 import { logoutFn } from "@/server/auth";
 import { getIcon as getWebFavIcon, getIconColor as getWebFavIconColor, faviconUrl, FAVICON_ICON } from "@/lib/web-favorite-icons";
 import birchImg from "@/assets/pollen-birch.png";
@@ -47,7 +48,8 @@ type RoutePath =
   | "/skatte-utregningen"
   | "/gressklipper"
   | "/stovsugeren"
-  | "/got-saga";
+  | "/got-saga"
+  | "/decibel";
 
 type NavLink = { to: RoutePath; label: string; public?: boolean };
 
@@ -82,6 +84,7 @@ const ROUTE_ICON: Partial<Record<RoutePath, React.ComponentType<{ size?: number;
   "/skatte-utregningen": Coins,
   "/gressklipper": Bot,
   "/stovsugeren": Bot,
+  "/decibel": Volume2,
 };
 
 // Fargerike ikoner i GoT-stil — én distinkt farge per sal, matcher salens tema.
@@ -109,6 +112,7 @@ const ROUTE_ICON_COLOR: Partial<Record<RoutePath, string>> = {
   "/skatte-utregningen": "#d4af37",  // gull-mynt
   "/gressklipper": "#10b981",        // gressklipper — gressgrønn
   "/stovsugeren": "#38bdf8",         // støvsuger — sky-cyan
+  "/decibel": "#f43f5e",             // lyd — rose (høyt volum)
 };
 
 // Public halls — open to any visitor entering the courtyard.
@@ -137,6 +141,7 @@ const navLinks: NavLink[] = [
   { to: "/hundene", label: "Hundene" },
   { to: "/trening", label: "Trening" },
   { to: "/varsler", label: "Farevarsler", public: true },
+  { to: "/decibel", label: "Decibelmåler", public: true },
   { to: "/steintavle", label: "Steintavle" },
 ];
 
