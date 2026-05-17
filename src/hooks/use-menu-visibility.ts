@@ -31,6 +31,7 @@ export const MENU_LINK_DEFS: { to: string; label: string }[] = [
   { to: "/trening", label: "Trening" },
   { to: "/varsler", label: "Farevarsler" },
   { to: "/steintavle", label: "Steintavle" },
+  { to: "/decibel", label: "Decibelmåler" },
 ];
 
 export const DEFAULT_MENU_VISIBILITY: MenuVisibility = Object.fromEntries(
