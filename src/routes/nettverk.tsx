@@ -93,10 +93,15 @@ function NettverkPage() {
           </div>
         )}
 
-        {/* MAIN ROUTER / WAN */}
-        {data?.mainRouter && (
-          <MainRouterCard main={data.mainRouter} history={data.speedHistory} totals={data.totalsLast24h} />
-        )}
+        {/* MAIN ROUTER / WAN with tabs over all Decos */}
+        {data?.routers.length ? (
+          <MainRouterCard
+            routers={data.routers}
+            mainId={data.mainRouter?.id ?? data.routers[0].id}
+            history={data.routerHistory ?? {}}
+            totals={data.totalsLast24h}
+          />
+        ) : null}
 
         {/* Topology */}
         <Card title="Nettverkskart" icon={<Activity size={18} className="text-primary" />}>
