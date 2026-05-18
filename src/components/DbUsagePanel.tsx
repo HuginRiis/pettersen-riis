@@ -1,9 +1,46 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { getDbUsage, setCronJobActive, type DbUsageStats } from "@/server/db-usage.functions";
-import { Database, Clock, AlertTriangle } from "lucide-react";
+import { getStorageUsage, type StorageBucket } from "@/server/storage-usage.functions";
+import { Database, Clock, AlertTriangle, HardDrive } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
+
+// Kategori-mapping for tabeller (matches mot tabellnavn uten public.-prefiks).
+const TABLE_CATEGORIES: Array<{ name: string; match: (t: string) => boolean }> = [
+  {
+    name: "Logger",
+    match: (t) =>
+      /^(api_call_log|api_error|garmin_sync_log|home_alarm_log|push_send_log|garbage_notification_log|ai_search_log|visitor_|visitors_|login_attempts|pageview)/.test(t),
+  },
+  {
+    name: "API-data",
+    match: (t) =>
+      /^(tibber|pulse_|spot_|met_|netatmo|garmin_(?!sync)|gardena|homey|roborock|nrk_|strava|kassal|eufy|lightning)/.test(t),
+  },
+  {
+    name: "Innstillinger",
+    match: (t) =>
+      /(_prefs|_settings|favorites|api_pause_flags|notification_settings|menu_)/.test(t),
+  },
+  {
+    name: "App-data",
+    match: (t) =>
+      /^(okonomi|hytta|planter|plants|agenda|birthdays|renovation|grocery|payslip|receipt|changelog|garbage_address|ip_user_mapping)/.test(t),
+  },
+];
+
+function categorizeTable(table: string): string {
+  const bare = table.replace(/^public\./, "");
+  for (const c of TABLE_CATEGORIES) if (c.match(bare)) return c.name;
+  return "Andre";
+}
+
+// Buckets: vi gjør et grovt skille mellom bilder og dokumenter.
+function categorizeBucket(bucket: string): string {
+  if (/payslip|receipt|kvittering/i.test(bucket)) return "Dokumenter";
+  return "Bilder";
+}
 
 function prettyBytes(b: number): string {
   if (!b) return "0 B";
