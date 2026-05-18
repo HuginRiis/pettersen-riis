@@ -85,6 +85,10 @@ function DecibelPage() {
     localStorage.setItem("vu-fall-speed", String(vuFallSpeed));
   }, [vuFallSpeed]);
 
+  useEffect(() => {
+    localStorage.setItem("band-window-sec", String(bandWindowSec));
+  }, [bandWindowSec]);
+
   const stop = () => {
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
     rafRef.current = null;
