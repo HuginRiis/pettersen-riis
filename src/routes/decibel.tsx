@@ -407,6 +407,22 @@ function DecibelPage() {
     return { tvOk, filmOk, trebleAdvice, bassAdvice, speechClarity, trebleBalance, bassBalance };
   }, [bands, running]);
 
+  // Prosent-fordeling av lyd-energi pr oktav (sum = 100)
+  const bandPercent = useMemo(() => {
+    if (!running) return OCTAVE_BANDS.map(() => 0);
+    const lin = bands.map((d) => Math.pow(10, Math.max(-90, d) / 10));
+    const sum = lin.reduce((a, b) => a + b, 0);
+    if (sum <= 0) return OCTAVE_BANDS.map(() => 0);
+    return lin.map((v) => (v / sum) * 100);
+  }, [bands, running]);
+
+  const dominantBandIdx = useMemo(() => {
+    let mi = 0;
+    let m = -1;
+    bandPercent.forEach((p, i) => { if (p > m) { m = p; mi = i; } });
+    return mi;
+  }, [bandPercent]);
+
   return (
     <PageShell>
       <PageHero
@@ -415,7 +431,7 @@ function DecibelPage() {
         subtitle="dB SPL, frekvensspektrum, klang/etterklang og diagnose for tale og konsert."
         image={heroImg}
       />
-      <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
+      <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
 
         {/* Hoved dB-måler */}
         <div className="rounded-lg border border-border bg-card p-6 space-y-4">
