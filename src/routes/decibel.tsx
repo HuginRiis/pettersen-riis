@@ -5,6 +5,7 @@ import { Mic, MicOff, Waves, AlertTriangle, Volume2, Radio, Zap, Tv, Film, Music
 import heroImg from "@/assets/got-decibel.jpg";
 import { VuMeter } from "@/components/decibel/VuMeter";
 import { DbHistoryChart } from "@/components/decibel/DbHistoryChart";
+import { SpectrumChart } from "@/components/decibel/SpectrumChart";
 
 export const Route = createFileRoute("/decibel")({
   component: DecibelPage,
