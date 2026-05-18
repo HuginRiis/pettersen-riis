@@ -4,8 +4,8 @@ import { getStoredWho } from "@/lib/push-client";
 
 const KEY_PREFIX = "last_route_";
 
-// Routes the app should NOT auto-restore to (they're transient or not meaningful entry points).
-const SKIP_RESTORE = new Set<string>(["/", "/login"]);
+// Ruter vi aldri lagrer/restorer til (login er transient).
+const SKIP_RESTORE = new Set<string>(["/login"]);
 
 function storageKey(who: string) {
   return `${KEY_PREFIX}${who}`;
