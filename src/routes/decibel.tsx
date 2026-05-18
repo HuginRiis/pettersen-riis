@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { PageShell, PageHero } from "@/components/PageShell";
 import { Mic, MicOff, Waves, AlertTriangle, Volume2, Radio, Zap } from "lucide-react";
 import heroImg from "@/assets/got-decibel.jpg";
+import { DeviceSensorsPanel } from "@/components/DeviceSensorsPanel";
 
 export const Route = createFileRoute("/decibel")({
   component: DecibelPage,
