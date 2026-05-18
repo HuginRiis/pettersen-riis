@@ -24,6 +24,14 @@ export type NetworkDevice = {
   ipAddress: string | null;
   master: boolean | null;
   wired: boolean | null;
+  // utvidet info fra Homey-capabilities
+  wanConnected: boolean | null;       // alarm_wan_connected_ipv4 (true = tilkoblet)
+  meshConnected: boolean | null;      // alarm_connected_mesh (true = i mesh)
+  deviceRole: string | null;          // "master" | "slave"
+  signal24: string | null;            // "Good" / "Fair" osv 2.4 GHz
+  signal5: string | null;             // 5 GHz
+  wifiBand: string | null;            // "WiFi 2.4 GHz + WiFi 5 GHz"
+  uptime: number | null;              // sekunder
   driver: string | null;
   class: string | null;
   capabilities: Record<string, CapValue>;
@@ -117,6 +125,13 @@ function mapDevice(d: any): NetworkDevice {
   const ipAddress = readStr(caps, "ip_address", "wan_ip", "lan_ip");
   const master = readBool(caps, "is_master", "alarm_master", "master");
   const wired = readBool(caps, "is_wired", "ethernet", "wired");
+  const wanConnected = readBool(caps, "alarm_wan_connected_ipv4", "alarm_wan_connected", "wan_connected", "wan_connected_ipv4");
+  const meshConnected = readBool(caps, "alarm_connected_mesh", "alarm_mesh_connected", "mesh_connected", "connected_to_mesh");
+  const deviceRole = readStr(caps, "device_role", "role", "deco_role") ?? (master === true ? "master" : master === false ? "slave" : null);
+  const signal24 = readStr(caps, "signal_strength_2_4_ghz", "signal_2_4_ghz", "wifi_signal_2_4");
+  const signal5 = readStr(caps, "signal_strength_5_ghz", "signal_5_ghz", "wifi_signal_5");
+  const wifiBand = readStr(caps, "wifi_band", "wifi_bands", "wifi_mode");
+  const uptime = readNum(caps, "uptime", "measure_uptime", "device_uptime");
 
   const capSummary: Record<string, CapValue> = {};
   for (const [k, v] of Object.entries(caps)) {
@@ -142,6 +157,13 @@ function mapDevice(d: any): NetworkDevice {
     ipAddress,
     master,
     wired,
+    wanConnected,
+    meshConnected,
+    deviceRole,
+    signal24,
+    signal5,
+    wifiBand,
+    uptime,
     driver: String(d.driverUri ?? d.driverId ?? d.driver?.uri ?? d.driver?.id ?? "") || null,
     class: d.class ?? null,
     capabilities: capSummary,

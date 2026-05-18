@@ -127,7 +127,7 @@ function NettverkPage() {
         <Card title="Tilkoblede enheter" icon={<Wifi size={18} className="text-primary" />}>
           {data?.clients.length ? (
             <ul className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {data.clients.map((d) => <DeviceCard key={d.id} d={d} />)}
+              {data.clients.map((d) => <DeviceCard key={d.id} d={d} detailed />)}
             </ul>
           ) : (
             <Empty text="Homey eksponerer ikke per-klient-info fra Deco — vi viser klienter rapportert som egne nettverksenheter." />
@@ -356,6 +356,13 @@ function DeviceCard({ d, detailed }: { d: NetworkDevice; detailed?: boolean }) {
           {d.memory != null && <Mini icon={<MemoryStick size={10} />} label="mem" value={fmtPct(d.memory)} />}
           {d.clients != null && <Mini icon={<Users size={10} />} label="klienter" value={String(d.clients)} />}
           {d.ipAddress && <Mini icon={<Globe size={10} />} label="ip" value={d.ipAddress} />}
+          {d.deviceRole && <Mini icon={<Crown size={10} />} label="rolle" value={d.deviceRole} />}
+          {d.wanConnected != null && <Mini icon={<Globe size={10} />} label="wan" value={d.wanConnected ? "ja" : "nei"} />}
+          {d.meshConnected != null && <Mini icon={<Wifi size={10} />} label="mesh" value={d.meshConnected ? "ja" : "nei"} />}
+          {d.signal24 && <Mini icon={<Signal size={10} />} label="2.4 GHz" value={d.signal24} />}
+          {d.signal5 && <Mini icon={<Signal size={10} />} label="5 GHz" value={d.signal5} />}
+          {d.wifiBand && <Mini icon={<Wifi size={10} />} label="bånd" value={d.wifiBand} />}
+          {d.uptime != null && <Mini icon={<Activity size={10} />} label="oppe" value={fmtUptime(d.uptime)} />}
         </div>
       )}
       <div className="text-[10px] text-muted-foreground">
@@ -385,4 +392,12 @@ function fmtKbs(v: number | null | undefined): string {
 function fmtPct(v: number | null | undefined): string {
   if (v == null || !Number.isFinite(v)) return "—";
   return `${Math.round(v)} %`;
+}
+function fmtUptime(s: number | null | undefined): string {
+  if (s == null || !Number.isFinite(s)) return "—";
+  const d = Math.floor(s / 86400);
+  const h = Math.floor((s % 86400) / 3600);
+  if (d > 0) return `${d}d ${h}t`;
+  const m = Math.floor((s % 3600) / 60);
+  return `${h}t ${m}m`;
 }

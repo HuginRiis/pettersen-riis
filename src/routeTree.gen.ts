@@ -44,6 +44,7 @@ import { Route as ApiHomeyStartRouteImport } from './routes/api.homey.start'
 import { Route as ApiHomeyCallbackRouteImport } from './routes/api.homey.callback'
 import { Route as ApiPublicHooksSnapshotTibberDailyRouteImport } from './routes/api.public.hooks.snapshot-tibber-daily'
 import { Route as ApiPublicHooksSnapshotPulseRouteImport } from './routes/api.public.hooks.snapshot-pulse'
+import { Route as ApiPublicHooksNetworkSnapshotRouteImport } from './routes/api/public/hooks/network-snapshot'
 import { Route as ApiPublicHooksEufyPollRouteImport } from './routes/api/public/hooks/eufy-poll'
 import { Route as ApiPublicHooksEufyRouteImport } from './routes/api/public/hooks/eufy'
 import { Route as ApiPublicHooksBackfillPbthHistoryRouteImport } from './routes/api.public.hooks.backfill-pbth-history'
@@ -226,6 +227,12 @@ const ApiPublicHooksSnapshotPulseRoute =
     path: '/api/public/hooks/snapshot-pulse',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksNetworkSnapshotRoute =
+  ApiPublicHooksNetworkSnapshotRouteImport.update({
+    id: '/api/public/hooks/network-snapshot',
+    path: '/api/public/hooks/network-snapshot',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksEufyPollRoute = ApiPublicHooksEufyPollRouteImport.update({
   id: '/api/public/hooks/eufy-poll',
   path: '/api/public/hooks/eufy-poll',
@@ -287,6 +294,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/backfill-pbth-history': typeof ApiPublicHooksBackfillPbthHistoryRoute
   '/api/public/hooks/eufy': typeof ApiPublicHooksEufyRoute
   '/api/public/hooks/eufy-poll': typeof ApiPublicHooksEufyPollRoute
+  '/api/public/hooks/network-snapshot': typeof ApiPublicHooksNetworkSnapshotRoute
   '/api/public/hooks/snapshot-pulse': typeof ApiPublicHooksSnapshotPulseRoute
   '/api/public/hooks/snapshot-tibber-daily': typeof ApiPublicHooksSnapshotTibberDailyRoute
 }
@@ -328,6 +336,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/backfill-pbth-history': typeof ApiPublicHooksBackfillPbthHistoryRoute
   '/api/public/hooks/eufy': typeof ApiPublicHooksEufyRoute
   '/api/public/hooks/eufy-poll': typeof ApiPublicHooksEufyPollRoute
+  '/api/public/hooks/network-snapshot': typeof ApiPublicHooksNetworkSnapshotRoute
   '/api/public/hooks/snapshot-pulse': typeof ApiPublicHooksSnapshotPulseRoute
   '/api/public/hooks/snapshot-tibber-daily': typeof ApiPublicHooksSnapshotTibberDailyRoute
 }
@@ -370,6 +379,7 @@ export interface FileRoutesById {
   '/api/public/hooks/backfill-pbth-history': typeof ApiPublicHooksBackfillPbthHistoryRoute
   '/api/public/hooks/eufy': typeof ApiPublicHooksEufyRoute
   '/api/public/hooks/eufy-poll': typeof ApiPublicHooksEufyPollRoute
+  '/api/public/hooks/network-snapshot': typeof ApiPublicHooksNetworkSnapshotRoute
   '/api/public/hooks/snapshot-pulse': typeof ApiPublicHooksSnapshotPulseRoute
   '/api/public/hooks/snapshot-tibber-daily': typeof ApiPublicHooksSnapshotTibberDailyRoute
 }
@@ -413,6 +423,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/backfill-pbth-history'
     | '/api/public/hooks/eufy'
     | '/api/public/hooks/eufy-poll'
+    | '/api/public/hooks/network-snapshot'
     | '/api/public/hooks/snapshot-pulse'
     | '/api/public/hooks/snapshot-tibber-daily'
   fileRoutesByTo: FileRoutesByTo
@@ -454,6 +465,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/backfill-pbth-history'
     | '/api/public/hooks/eufy'
     | '/api/public/hooks/eufy-poll'
+    | '/api/public/hooks/network-snapshot'
     | '/api/public/hooks/snapshot-pulse'
     | '/api/public/hooks/snapshot-tibber-daily'
   id:
@@ -495,6 +507,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/backfill-pbth-history'
     | '/api/public/hooks/eufy'
     | '/api/public/hooks/eufy-poll'
+    | '/api/public/hooks/network-snapshot'
     | '/api/public/hooks/snapshot-pulse'
     | '/api/public/hooks/snapshot-tibber-daily'
   fileRoutesById: FileRoutesById
@@ -537,6 +550,7 @@ export interface RootRouteChildren {
   ApiPublicHooksBackfillPbthHistoryRoute: typeof ApiPublicHooksBackfillPbthHistoryRoute
   ApiPublicHooksEufyRoute: typeof ApiPublicHooksEufyRoute
   ApiPublicHooksEufyPollRoute: typeof ApiPublicHooksEufyPollRoute
+  ApiPublicHooksNetworkSnapshotRoute: typeof ApiPublicHooksNetworkSnapshotRoute
   ApiPublicHooksSnapshotPulseRoute: typeof ApiPublicHooksSnapshotPulseRoute
   ApiPublicHooksSnapshotTibberDailyRoute: typeof ApiPublicHooksSnapshotTibberDailyRoute
 }
@@ -788,6 +802,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksSnapshotPulseRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/network-snapshot': {
+      id: '/api/public/hooks/network-snapshot'
+      path: '/api/public/hooks/network-snapshot'
+      fullPath: '/api/public/hooks/network-snapshot'
+      preLoaderRoute: typeof ApiPublicHooksNetworkSnapshotRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/eufy-poll': {
       id: '/api/public/hooks/eufy-poll'
       path: '/api/public/hooks/eufy-poll'
@@ -858,6 +879,7 @@ const rootRouteChildren: RootRouteChildren = {
     ApiPublicHooksBackfillPbthHistoryRoute,
   ApiPublicHooksEufyRoute: ApiPublicHooksEufyRoute,
   ApiPublicHooksEufyPollRoute: ApiPublicHooksEufyPollRoute,
+  ApiPublicHooksNetworkSnapshotRoute: ApiPublicHooksNetworkSnapshotRoute,
   ApiPublicHooksSnapshotPulseRoute: ApiPublicHooksSnapshotPulseRoute,
   ApiPublicHooksSnapshotTibberDailyRoute:
     ApiPublicHooksSnapshotTibberDailyRoute,
