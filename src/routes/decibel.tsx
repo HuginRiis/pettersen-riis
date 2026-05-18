@@ -687,3 +687,36 @@ function DecibelPage() {
     </PageShell>
   );
 }
+
+const TONE_CLASS: Record<string, string> = {
+  green: "bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-300",
+  blue: "bg-sky-500/10 border-sky-500/30 text-sky-700 dark:text-sky-300",
+  red: "bg-rose-500/10 border-rose-500/30 text-rose-700 dark:text-rose-300",
+  amber: "bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-300",
+  purple: "bg-violet-500/10 border-violet-500/30 text-violet-700 dark:text-violet-300",
+};
+
+function StatBox({
+  label,
+  value,
+  unit,
+  tone = "blue",
+  hint,
+}: {
+  label: string;
+  value: string;
+  unit?: string;
+  tone?: "green" | "blue" | "red" | "amber" | "purple";
+  hint?: string;
+}) {
+  return (
+    <div className={`rounded-lg border p-3 ${TONE_CLASS[tone]}`}>
+      <div className="text-[10px] uppercase tracking-wider opacity-80">{label}</div>
+      <div className="font-mono font-bold text-2xl tabular-nums leading-tight mt-0.5">
+        {value}
+        {unit && <span className="text-xs font-normal opacity-70 ml-1">{unit}</span>}
+      </div>
+      {hint && <div className="text-[10px] opacity-60 mt-0.5">{hint}</div>}
+    </div>
+  );
+}
