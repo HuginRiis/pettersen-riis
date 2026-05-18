@@ -700,9 +700,35 @@ function DecibelPage() {
 
         {/* Frekvensbånd (oktav) - bar + prosent */}
         <div className="rounded-lg border border-border bg-card p-4 space-y-3">
-          <h2 className="font-semibold flex items-center gap-2">
-            <Waves size={16} className="text-primary" /> Frekvensbånd (oktav) — andel av total lyd-energi
-          </h2>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="font-semibold flex items-center gap-2">
+              <Waves size={16} className="text-primary" /> Frekvensbånd (oktav) — andel av total lyd-energi
+            </h2>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-[11px] text-muted-foreground mr-1">Vindu:</span>
+              {[
+                { s: 10, label: "10 s" },
+                { s: 30, label: "30 s" },
+                { s: 60, label: "1 min" },
+                { s: 5 * 60, label: "5 min" },
+                { s: 15 * 60, label: "15 min" },
+                { s: 30 * 60, label: "30 min" },
+                { s: 60 * 60, label: "60 min" },
+              ].map((opt) => (
+                <button
+                  key={opt.s}
+                  onClick={() => setBandWindowSec(opt.s)}
+                  className={`text-[11px] px-2 py-0.5 rounded border ${
+                    bandWindowSec === opt.s
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "border-border text-muted-foreground hover:bg-muted"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
           <div className="grid lg:grid-cols-[2fr_1fr] gap-4">
             <div>
               <div className="flex items-end gap-1 h-48 border-b border-border/50">
