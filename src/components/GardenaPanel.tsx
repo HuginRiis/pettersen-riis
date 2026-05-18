@@ -187,18 +187,25 @@ function MowerCard({
         )}
       </div>
 
-      {hasError && (
-        <div className="flex items-start gap-2 text-xs text-destructive border border-destructive/30 bg-destructive/10 rounded px-3 py-2">
-          <AlertTriangle size={14} className="mt-0.5 shrink-0" />
-          <div className="min-w-0">
-            <div className="uppercase tracking-[0.15em] text-[10px]">Sist feil</div>
-            <div className="mt-0.5 truncate">{mower.lastErrorCode}</div>
-            {mower.lastErrorTimestamp && (
-              <div className="text-[10px] opacity-70">{ago(mower.lastErrorTimestamp)}</div>
-            )}
+      {hasError && (() => {
+        const info = lookupGardenaError(mower.lastErrorCode);
+        return (
+          <div className="flex items-start gap-2 text-xs text-destructive border border-destructive/30 bg-destructive/10 rounded px-3 py-2">
+            <AlertTriangle size={14} className="mt-0.5 shrink-0" />
+            <div className="min-w-0">
+              <div className="uppercase tracking-[0.15em] text-[10px]">Sist feil</div>
+              <div className="mt-0.5 truncate font-medium">{info?.label ?? mower.lastErrorCode}</div>
+              {info?.description && (
+                <div className="text-[11px] opacity-80 mt-0.5">{info.description}</div>
+              )}
+              <div className="text-[10px] opacity-60 mt-0.5 font-mono">{mower.lastErrorCode}</div>
+              {mower.lastErrorTimestamp && (
+                <div className="text-[10px] opacity-70">{ago(mower.lastErrorTimestamp)}</div>
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
       {!hasError && mower.lastErrorCode && (
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <CheckCircle2 size={14} className="text-emerald-400" />
