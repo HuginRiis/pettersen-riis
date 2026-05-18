@@ -448,14 +448,26 @@ function DecibelPage() {
     return { hasSignal: true as const, tvOk, filmOk, trebleAdvice, bassAdvice, speechClarity, trebleBalance, bassBalance, highlights };
   }, [bands, running]);
 
-  // Prosent-fordeling av lyd-energi pr oktav (sum = 100)
+  // Prosent-fordeling av lyd-energi pr oktav (sum = 100) — snittet over valgt vindu
   const bandPercent = useMemo(() => {
     if (!running) return OCTAVE_BANDS.map(() => 0);
-    const lin = bands.map((d) => Math.pow(10, Math.max(-90, d) / 10));
-    const sum = lin.reduce((a, b) => a + b, 0);
+    const now = performance.now();
+    const cutoff = now - bandWindowSec * 1000;
+    const samples = bandHistRef.current.filter((s) => s.t >= cutoff);
+    let summed: number[];
+    if (samples.length === 0) {
+      summed = bands.map((d) => Math.pow(10, Math.max(-90, d) / 10));
+    } else {
+      summed = OCTAVE_BANDS.map((_, i) =>
+        samples.reduce((acc, s) => acc + (s.lin[i] ?? 0), 0) / samples.length,
+      );
+    }
+    const sum = summed.reduce((a, b) => a + b, 0);
     if (sum <= 0) return OCTAVE_BANDS.map(() => 0);
-    return lin.map((v) => (v / sum) * 100);
-  }, [bands, running]);
+    return summed.map((v) => (v / sum) * 100);
+    // history endrer seg hver ~100 ms og driver re-evaluering
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [history, bands, running, bandWindowSec]);
 
   const dominantBandIdx = useMemo(() => {
     let mi = 0;
