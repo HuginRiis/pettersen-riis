@@ -769,8 +769,8 @@ function DecibelPage() {
               <div className="flex items-end gap-1 h-48 border-b border-border/50">
                 {OCTAVE_BANDS.map((b, i) => {
                   const pct = bandPercent[i] ?? 0;
-                  // Skaler høyde: 0% → 2, 40% → 100%
-                  const h = Math.max(2, Math.min(100, (pct / 40) * 100));
+                  // Relativ skalering: høyeste bånd fyller stolpen (med litt headroom)
+                  const h = Math.max(2, Math.min(100, (pct / maxBandPct) * 95));
                   const isDom = i === dominantBandIdx && pct > 1;
                   const color = pct > 25 ? "bg-rose-500" : pct > 12 ? "bg-amber-500" : pct > 4 ? "bg-sky-500" : "bg-emerald-500";
                   return (
