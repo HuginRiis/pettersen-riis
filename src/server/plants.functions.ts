@@ -163,6 +163,27 @@ export const searchPlantContext = createServerFn({ method: "POST" })
     return { text: json.choices?.[0]?.message?.content ?? "Ingen info." };
   });
 
+// Reverse-geocode via Nominatim (OpenStreetMap) — gratis, ingen nøkkel
+export const reverseGeocode = createServerFn({ method: "POST" })
+  .inputValidator((input: { lat: number; lon: number }) => input)
+  .handler(async ({ data }): Promise<{ label: string | null }> => {
+    try {
+      const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${data.lat}&lon=${data.lon}&zoom=16&accept-language=nb`;
+      const res = await fetch(url, { headers: { "User-Agent": "house-pettersen-riis/1.0 (planter)" } });
+      if (!res.ok) return { label: null };
+      const j = await res.json();
+      const a = j.address ?? {};
+      const parts = [
+        a.road,
+        a.suburb || a.neighbourhood || a.hamlet || a.village || a.town,
+        a.city || a.municipality,
+      ].filter(Boolean);
+      return { label: parts.length > 0 ? parts.join(", ") : (j.display_name ?? null) };
+    } catch {
+      return { label: null };
+    }
+  });
+
 // ===== Mi Flora via Homey =====
 
 export type MiFloraDevice = {
