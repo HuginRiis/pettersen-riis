@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { getValidConnection, getHomeyRawSnapshot } from "./homey";
+import { getValidConnection, getHomeyRawSnapshot, fetchHomeyInsightsLog } from "./homey";
 
 export type CapValue = string | number | boolean | null;
 
