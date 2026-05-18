@@ -24,6 +24,14 @@ export type NetworkDevice = {
   ipAddress: string | null;
   master: boolean | null;
   wired: boolean | null;
+  // utvidet info fra Homey-capabilities
+  wanConnected: boolean | null;       // alarm_wan_connected_ipv4 (true = tilkoblet)
+  meshConnected: boolean | null;      // alarm_connected_mesh (true = i mesh)
+  deviceRole: string | null;          // "master" | "slave"
+  signal24: string | null;            // "Good" / "Fair" osv 2.4 GHz
+  signal5: string | null;             // 5 GHz
+  wifiBand: string | null;            // "WiFi 2.4 GHz + WiFi 5 GHz"
+  uptime: number | null;              // sekunder
   driver: string | null;
   class: string | null;
   capabilities: Record<string, CapValue>;
