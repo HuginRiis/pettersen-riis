@@ -1,71 +1,62 @@
-# Planter & Trær
+# Plan: Vakttårn-oppgraderinger + smart søk på hjemskjerm
 
-Ny side `/planter` med AI-identifikasjon (spiselig/giftig/stell), bilde-arkiv med GPS, Mi Flora-sensor via Homey, og varslinger.
+## Oppgave 1 — Vakttårn
 
-## Hva blir bygget
+### 1a. Full oversikt over cron + datasynk
+- Database/Cron-seksjonen viser allerede `cronJobs` og `dataSyncs`. Den listen er komplett (cron-jobs leses fra `cron.job` via RPC `get_db_usage_stats`, datasynk legges til manuelt for garmin).
+- Utvider `dataSyncs` slik at den også inkluderer andre faktiske bakgrunnsjobber vi har: agenda-push (varsler), tibber daily snapshot, pulse snapshot, plante-vanning push, met-alerts, mail-delivery, weather-push, uv-push, met-alert-push, warranty-push, login-push, garbage-push — alle som trigges fra `agenda-push` hvert minutt. Vi lister dem som "datasynk" med sist kjøring fra api_call_log eller egne logger der vi har det, ellers fra `notification_settings` der det finnes.
+- Resultat: én tabell "Cron (pg_cron)" og én tabell "Bakgrunnssynk (agenda-push)" med navn, intervall/regel, sist kjørt, neste, status.
 
-### 1. Database
-Migrasjon med tre tabeller (alle med åpne RLS-policies som resten av prosjektet):
+### 1b. Lagringsbruk per kategori
+Ny seksjon under Database som grupperer tabeller + storage-buckets i kategorier:
 
-- **`plants`** — én rad per plante/tre:
-  - `name`, `species_common`, `species_latin`, `kind` (plante/tre/busk/urt/blomst)
-  - `edible` (boolean/null), `toxicity` (none/mild/moderate/severe/unknown), `toxicity_notes`
-  - `care_summary`, `watering_days_interval`, `fertilize_weeks_interval`
-  - `season_start_month`, `season_end_month` (for høsting)
-  - `miflora_device_id`, `miflora_device_name` (Homey)
-  - Sensor-terskler: `soil_moisture_min`, `light_lux_min`, `temp_min`, `temp_max`
-  - Varsling-toggles: `notify_watering`, `notify_fertilize`, `notify_sensor`, `notify_season`
-  - `last_watered_at`, `last_fertilized_at`
-  - `cover_photo_id`, `ai_reference_image_url`
+| Kategori | Inkluderer |
+|---|---|
+| App-data | økonomi, hytta, planter, agenda, birthdays, renovation, grocery, … |
+| Logger | api_call_log, garmin_sync_log, home_alarm_log, push_send_log, garbage_notification_log, ai_search_log, visitor_*, login_attempts |
+| API-data | tibber-snapshots, pulse-readings, garmin_*, netatmo_*, spot-pris, met, gardena_auth, homey_* |
+| Bilder | storage-buckets: receipts, plants, payslips, garmin-devices, renovation (image-andelen) |
+| Innstillinger | notification_settings, *_notification_prefs, api_pause_flags, favorites |
+| Andre | resten |
 
-- **`plant_photos`** — flere bilder per plante:
-  - `plant_id`, `photo_url`, `taken_at`, `lat`, `lon`, `location_label`, `is_ai_generated`, `notes`
+Vi henter storage-størrelse via en ny SQL-funksjon `get_storage_usage_stats()` som summerer `storage.objects.metadata->>'size'` per bucket. Viser stolpe + MB/GB per kategori.
 
-- **`plant_notification_log`** — hindrer gjenta-spamming:
-  - `plant_id`, `kind` (watering/fertilize/sensor/season), `notified_at`
+### 1c. Rydde-knapper i API-Call-Log
+Nederst i `ApiCallLogPanel` legger jeg tre knapper:
+- "Slett eldre enn 7 dager"
+- "Slett eldre enn 14 dager"
+- "Slett eldre enn 30 dager"
 
-Storage bucket `plants` (public).
+Bekreftelsesdialog før sletting. Bruker en ny serverFn `purgeApiCallLog({ olderThanDays })` som sletter både fra `api_call_log` (vellykkede + feilede).
 
-### 2. Server-funksjoner (`src/server/plants.functions.ts`)
-- `analyzePlantImage({ imageUrl })` — Lovable AI Gemini vision returnerer struktur: art, spiselig, giftighet, stell-tips, vanning, gjødsling.
-- `generatePlantReference({ species })` — Lovable AI image (gemini-2.5-flash-image) lager illustrasjon, lagres i bucket.
-- `searchPlantContext({ species, lat, lon })` — Gemini-tekst-svar: hvor vokser den i Norge, hva er spiselig på den, sesong.
-- `getMiFloraDevices()` — filtrer Homey-snapshot på capabilities (`measure_humidity`+`measure_luminance`+`measure_conductivity`) eller navn-mønster (Flower Care, Mi Flora).
-- `getMiFloraReading({ deviceId })` — leser fersk verdier fra Homey.
-- CRUD: `listPlants`, `savePlant`, `deletePlant`, `addPlantPhoto`, `deletePlantPhoto`.
+### 1d. API-feil kollapset som standard
+I `ApiErrorLogPanel`: endre `useState<Set<string>>(new Set())` → start med alle grupper kollapset (dvs `collapsedGroups = new Set(alle keys)`). Kollapset = default.
 
-### 3. Side `/planter`
-- Hero (AI-generert GoT-aktig hage-bilde).
-- Knapp "Ta bilde / last opp" → kamera-input → laster opp til Storage → henter GPS via `navigator.geolocation` → kjører AI-analyse → forslag til nytt plante-kort som kan lagres.
-- Grid med plante-kort: bilde, navn, spiselig-/giftig-merke, neste vanning, Mi Flora-verdier (fukt/lys/temp/næring) hvis koblet.
-- Klikk på kort → detalj-dialog: alle bilder med GPS-prikker på mini-kart, AI-referansebilde, stell-tips, "hvor vokser den"-tekst, kobling til Mi Flora-enhet, vanning-/gjødsling-knapper ("vannet nå"), varsling-toggles.
+## Oppgave 2 — Smart søk på hjemskjermen
 
-### 4. Komponent: `PlantNotificationSettings`
-- Liste over alle planter, per-plante toggles for vanning/gjødsling/sensor/sesong, intervaller, sensor-terskler.
-- Brukes i `/push-varslinger` som ny seksjon `sec-planter`.
+Nytt felt rett under hovedmenyen på `/`:
+- Inputfelt med placeholder "Søk i hele borgen… (Gardena, planter, økonomi…)"
+- To handlinger:
+  - **Vanlig søk** (knapp / Enter): viser dropdown med statiske treff matchet mot et søkeindeks
+  - **AI-søk** (knapp ✦): sender spørringen til Lovable AI Gateway (`google/gemini-2.5-flash`) med samme indeks som kontekst, og lar AI svare med relevante sider + kort forklaring
+- Søkeindeks: en statisk liste i `src/lib/search-index.ts` med alle sider/funksjoner: `{ title, path, keywords[], description, section }`. Eksempel: Gardena → `/gressklipper`, Planter → `/planter`, Økonomi → `/okonomi`, Vakttårn → `/vakttarnet`, …
+- Resultat-popup viser tittel + sti + kort beskrivelse. Klikk → navigerer dit.
+- AI-svar logges i `ai_search_log` (eksisterende tabell) for budsjett-sporing.
 
-### 5. Cron-/sjekk-server-funksjon
-- `checkPlantNotifications()` — kjøres fra eksisterende push-cron (snapshot-pulse-mønster) eller fra Steintavle-loop. Sender push når:
-  - dager siden `last_watered_at` ≥ `watering_days_interval`
-  - Mi Flora-måling under terskler
-  - sesong starter
-- Logger til `plant_notification_log` for å unngå spam.
+## Tekniske detaljer
 
-### 6. Meny & navigasjon
-- `RoutePath` får `/planter`, ikon `TreePine`, farge `#22c55e`.
-- `navLinks` i `SiteHeader.tsx` — ny `{ to: "/planter", label: "Planter & Trær" }`.
-- `MENU_LINK_DEFS` i `use-menu-visibility.ts` — samme.
-- `/push-varslinger` TOC_ITEMS — ny `sec-planter`, "🌿 Planter & Trær".
+**Nye filer:**
+- `src/lib/search-index.ts` — statisk liste over alle ruter med søkenøkkelord
+- `src/components/SmartSearch.tsx` — søkefelt + popup, AI-knapp
+- `src/server/smart-search.functions.ts` — serverFn `aiSmartSearch({query})` mot Lovable AI
+- `src/server/api-call-log-purge.functions.ts` — serverFn `purgeApiCallLog`
+- `src/server/storage-usage.functions.ts` — serverFn for storage bucket-størrelser
 
-## Tekniske notater
+**Endrede filer:**
+- `src/components/DbUsagePanel.tsx` — ny "Lagring per kategori"-seksjon
+- `src/components/ApiCallLogPanel.tsx` — purge-knapper
+- `src/components/ApiErrorLogPanel.tsx` — start kollapset
+- `src/server/db-usage.functions.ts` — utvid datasynk-lista
+- `src/routes/index.tsx` — sett inn `<SmartSearch />` under menyen
 
-- Bildelagring: `supabase.storage.from("plants").upload(...)`, public URL.
-- GPS: `navigator.geolocation.getCurrentPosition`, valgfritt — fallback "ukjent sted".
-- Mi Flora-kobling: ingen ny OAuth — vi gjenbruker eksisterende Homey-tilkobling. Auto-deteksjon ved at vi viser alle Homey-enheter med `measure_humidity`/`measure_conductivity` i en dropdown når man redigerer en plante.
-- AI: `google/gemini-2.5-flash` for vision-analyse (rimelig, rask), `google/gemini-2.5-flash-image` for referanse-illustrasjon.
-- Push-cron-integrasjon: legger plant-sjekken inn i eksisterende `api.public.hooks.agenda-push.ts`-mønster.
-
-## Avgrensninger
-- Ingen offline-modus.
-- Ingen kart-visning med alle plantenes GPS i denne runden (vises som koordinat-tekst og mini-link til Google Maps).
-- AI-svar kan ta feil — UI viser tydelig "AI-forslag, sjekk selv før du spiser".
+**Database-migrering:** Ny RPC `get_storage_usage_stats()` (security definer).
