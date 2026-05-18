@@ -247,7 +247,7 @@ export const getNetworkSnapshot = createServerFn({ method: "GET" }).handler(
     const since = new Date(Date.now() - 24 * 60 * 60_000).toISOString();
     const { data: aggRows } = await supabaseAdmin
       .from("network_snapshots")
-      .select("device_id, device_name, ts, available, raw")
+      .select("device_id, device_name, ts, available, download_kbs, upload_kbs, raw")
       .gte("ts", since)
       .order("ts", { ascending: false })
       .limit(5000);
