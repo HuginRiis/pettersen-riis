@@ -1,8 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { PageShell, PageHero } from "@/components/PageShell";
-import { Mic, MicOff, Waves, AlertTriangle, Volume2, Radio, Zap } from "lucide-react";
+import { Mic, MicOff, Waves, AlertTriangle, Volume2, Radio, Zap, Tv, Film, Music2, Activity } from "lucide-react";
 import heroImg from "@/assets/got-decibel.jpg";
+import { VuMeter } from "@/components/decibel/VuMeter";
+import { DbHistoryChart } from "@/components/decibel/DbHistoryChart";
 
 export const Route = createFileRoute("/decibel")({
   component: DecibelPage,
