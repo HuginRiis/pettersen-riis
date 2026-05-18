@@ -139,7 +139,12 @@ function DecibelPage() {
         }
         samplesRef.current.push(spl);
         if (samplesRef.current.length > 600) samplesRef.current.shift();
-        setAvg(samplesRef.current.reduce((x, y) => x + y, 0) / samplesRef.current.length);
+        const a = samplesRef.current.reduce((x, y) => x + y, 0) / samplesRef.current.length;
+        setAvg(a);
+        // Min — bare når signalet er over ~ridge for å unngå stille mikrofon-floor
+        if (spl > 25) {
+          setMinDb((prev) => (prev === null ? spl : Math.min(prev, spl)));
+        }
 
         // Oktav-bånd RMS (gjennomsnitt av dB i båndet)
         const bandVals = OCTAVE_BANDS.map((b) => {
@@ -167,7 +172,67 @@ function DecibelPage() {
             maxI = i;
           }
         }
-        setDominantHz(maxV > -70 ? Math.round(maxI * binHz) : null);
+        const domHz = maxV > -70 ? Math.round(maxI * binHz) : null;
+        setDominantHz(domHz);
+
+        // Pitch-historikk for vibrato/chorus
+        const nowT = performance.now();
+        if (domHz && domHz > 60 && domHz < 4000 && maxV > -55) {
+          pitchHistRef.current.push({ t: nowT, hz: domHz });
+        }
+        // Behold siste 2 sek
+        pitchHistRef.current = pitchHistRef.current.filter((p) => nowT - p.t < 2000);
+
+        // Push til SPL-historikk hver ~100 ms
+        if (nowT - lastHistoryPushRef.current > 100) {
+          lastHistoryPushRef.current = nowT;
+          setHistory((h) => {
+            const next = [...h, spl];
+            if (next.length > 600) next.shift();
+            return next;
+          });
+
+          // Beregn vibrato (modulasjonsrate + dybde i cents)
+          const pts = pitchHistRef.current;
+          if (pts.length > 20) {
+            const hzs = pts.map((p) => p.hz);
+            const mean = hzs.reduce((x, y) => x + y, 0) / hzs.length;
+            // Cents-dev std
+            const cents = hzs.map((h) => 1200 * Math.log2(h / mean));
+            const meanC = cents.reduce((x, y) => x + y, 0) / cents.length;
+            const std = Math.sqrt(cents.reduce((s, c) => s + (c - meanC) ** 2, 0) / cents.length);
+            // Tell nullkrysninger i cents → rate
+            let zc = 0;
+            for (let i = 1; i < cents.length; i++) {
+              if ((cents[i - 1] - meanC) * (cents[i] - meanC) < 0) zc++;
+            }
+            const durS = (pts[pts.length - 1].t - pts[0].t) / 1000;
+            const rateHz = durS > 0 ? zc / (2 * durS) : 0;
+            // Chorus: flere stabile pitcher samtidig → bredt spektralt fingeravtrykk i 200-2k
+            const presence = freqBuf.slice(
+              Math.floor(200 / binHz),
+              Math.floor(2000 / binHz),
+            );
+            let peaks = 0;
+            for (let i = 2; i < presence.length - 2; i++) {
+              if (
+                presence[i] > -50 &&
+                presence[i] > presence[i - 1] &&
+                presence[i] > presence[i + 1] &&
+                presence[i] - Math.min(presence[i - 2], presence[i + 2]) > 6
+              ) {
+                peaks++;
+              }
+            }
+            setPitchStats({
+              vibratoCents: Math.round(std * 2), // ± cents (1 std ≈ halv-bredde)
+              vibratoHz: Math.round(rateHz * 10) / 10,
+              chorus: peaks > 8,
+            });
+          } else {
+            setPitchStats(null);
+          }
+        }
 
         rafRef.current = requestAnimationFrame(tick);
       };
