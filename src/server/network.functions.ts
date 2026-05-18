@@ -38,6 +38,14 @@ export type NetworkDevice = {
 };
 
 export type SpeedPoint = { ts: string; download: number | null; upload: number | null };
+export type MetricPoint = {
+  ts: string;
+  download: number | null;
+  upload: number | null;
+  cpu: number | null;
+  memory: number | null;
+  clients: number | null;
+};
 
 export type NetworkSnapshotResult = {
   ok: boolean;
@@ -57,6 +65,7 @@ export type NetworkSnapshotResult = {
     uploadKbsAvg: number | null;
   };
   speedHistory: SpeedPoint[];
+  routerHistory: Record<string, MetricPoint[]>;
 };
 
 function classify(d: any): NetworkDevice["kind"] {
@@ -238,6 +247,7 @@ export const getNetworkSnapshot = createServerFn({ method: "GET" }).handler(
 
     // Velg hoved-ruter
     const mainRouter =
+      routers.find((r) => /living\s*room/i.test(r.name)) ??
       routers.find((r) => r.master === true) ??
       routers.find((r) => r.ipAddress && r.ipAddress.startsWith("192.")) ??
       routers[0] ??
@@ -247,10 +257,10 @@ export const getNetworkSnapshot = createServerFn({ method: "GET" }).handler(
     const since = new Date(Date.now() - 24 * 60 * 60_000).toISOString();
     const { data: aggRows } = await supabaseAdmin
       .from("network_snapshots")
-      .select("device_id, device_name, ts, available, download_kbs, upload_kbs, raw")
+      .select("device_id, device_name, ts, available, download_kbs, upload_kbs, cpu, memory, clients, raw")
       .gte("ts", since)
       .order("ts", { ascending: false })
-      .limit(5000);
+      .limit(8000);
 
     const byDevice = new Map<string, { name: string | null; samples: number; last: string }>();
     let totalSamples = 0;
@@ -298,23 +308,31 @@ export const getNetworkSnapshot = createServerFn({ method: "GET" }).handler(
     }
     recentEvents.sort((a, b) => b.ts.localeCompare(a.ts));
 
-    // Speed history for main router (siste 60 punkter)
-    let speedHistory: SpeedPoint[] = [];
-    if (mainRouter) {
-      const points = (aggRows ?? [])
-        .filter((r) => r.device_id === mainRouter.id)
-        .slice(0, 60)
+    // Per-ruter historikk (siste 120 punkter per ruter)
+    const routerHistory: Record<string, MetricPoint[]> = {};
+    for (const router of routers) {
+      const pts = (aggRows ?? [])
+        .filter((r) => r.device_id === router.id)
+        .slice(0, 120)
         .reverse()
-        .map((r) => {
+        .map((r): MetricPoint => {
           const raw = (r.raw ?? {}) as any;
+          const numOr = (v: any, fb: any) =>
+            typeof v === "number" ? v : typeof fb === "number" ? fb : null;
           return {
             ts: r.ts,
-            download: typeof (r as any).download_kbs === "number" ? (r as any).download_kbs : (typeof raw._download === "number" ? raw._download : null),
-            upload: typeof (r as any).upload_kbs === "number" ? (r as any).upload_kbs : (typeof raw._upload === "number" ? raw._upload : null),
+            download: numOr((r as any).download_kbs, raw._download),
+            upload: numOr((r as any).upload_kbs, raw._upload),
+            cpu: numOr((r as any).cpu, raw.measure_cpu_usage),
+            memory: numOr((r as any).memory, raw.measure_memory_usage),
+            clients: numOr((r as any).clients, raw.meter_connected_clients),
           };
         });
-      speedHistory = points;
+      routerHistory[router.id] = pts;
     }
+    const speedHistory: SpeedPoint[] = mainRouter
+      ? (routerHistory[mainRouter.id] ?? []).map((p) => ({ ts: p.ts, download: p.download, upload: p.upload }))
+      : [];
 
     return {
       ok: !error,
@@ -334,6 +352,7 @@ export const getNetworkSnapshot = createServerFn({ method: "GET" }).handler(
         uploadKbsAvg: upN ? upSum / upN : null,
       },
       speedHistory,
+      routerHistory,
     };
   },
 );
