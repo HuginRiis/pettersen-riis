@@ -23,6 +23,7 @@ import { useMenuVisibility, isMenuLinkVisible } from "@/hooks/use-menu-visibilit
 
 const BORGEN_COORD = { lat: 59.1789, lon: 9.5732 };
 const HYTTA_COORD = { lat: 59.8733, lon: 9.4297 };
+const TOLLNES_COORD = { lat: 59.2096, lon: 9.609 };
 
 type RoutePath =
   | "/"
@@ -207,23 +208,10 @@ export function SiteHeader() {
   }, [who]);
   const myWebFavs = webFavs.filter((f) => f.who === "Alle" || f.who === who);
 
-  // Pollen-koordinater fra brukerens valgte default for /pollen (eller fallback Borgen)
+  // Pollen-koordinater: alltid Tollnes (brukerønske)
   const fetchDefaultLoc = useServerFn(getDefaultLocation);
-  const [pollenCoord, setPollenCoord] = useState<{ lat: number; lon: number }>(BORGEN_COORD);
-  useEffect(() => {
-    let cancelled = false;
-    fetchDefaultLoc({ data: { who: who || "Offentlig", page: "pollen" } })
-      .then((r) => {
-        if (cancelled) return;
-        if (typeof r?.lat === "number" && typeof r?.lon === "number") {
-          setPollenCoord({ lat: r.lat, lon: r.lon });
-        }
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, [who, fetchDefaultLoc]);
+  void fetchDefaultLoc;
+  const [pollenCoord] = useState<{ lat: number; lon: number }>(TOLLNES_COORD);
 
   // Visitors outside the gate only see public halls; authed users see everything.
   const menuVisibility = useMenuVisibility();
@@ -737,6 +725,7 @@ const ALLERGEN_NAME: Record<Allergen, string> = {
 
 function useWorstPollen(lat: number, lon: number) {
   const [worst, setWorst] = useState<{ label: string; color: string; rank: number; allergen: Allergen } | null>(null);
+  const [active, setActive] = useState<Array<{ allergen: Allergen; value: number; label: string; color: string; rank: number }>>([]);
   useEffect(() => {
     let cancelled = false;
     async function load() {
@@ -749,22 +738,24 @@ function useWorstPollen(lat: number, lon: number) {
         if (!h?.time) return;
         const allergens: Allergen[] = ["alder", "birch", "grass", "mugwort"];
         let best: { label: string; color: string; rank: number; allergen: Allergen } = { ...pollenLevel("birch", 0), allergen: "birch" };
+        const act: Array<{ allergen: Allergen; value: number; label: string; color: string; rank: number }> = [];
         for (const a of allergens) {
           const arr: number[] = h[`${a}_pollen`] ?? [];
           const max = arr.reduce((m, v) => (typeof v === "number" && v > m ? v : m), 0);
           const lvl = pollenLevel(a, max);
           if (lvl.rank > best.rank) best = { ...lvl, allergen: a };
+          if (max > 0) act.push({ allergen: a, value: max, ...lvl });
         }
-        if (!cancelled) setWorst(best);
+        act.sort((x, y) => y.rank - x.rank || y.value - x.value);
+        if (!cancelled) { setWorst(best); setActive(act); }
       } catch { /* ignore */ }
     }
     load();
     const id = setInterval(load, 60 * 60_000);
     return () => { cancelled = true; clearInterval(id); };
   }, [lat, lon]);
-  return worst;
+  return { worst, active };
 }
-
 function AllergenGlyph({ allergen, size = 12, color }: { allergen: Allergen; size?: number; color?: string }) {
   if (allergen === "birch") {
     return (
@@ -784,7 +775,7 @@ function AllergenGlyph({ allergen, size = 12, color }: { allergen: Allergen; siz
 }
 
 function PollenIcon({ lat, lon }: { lat: number; lon: number }) {
-  const worst = useWorstPollen(lat, lon);
+  const { worst } = useWorstPollen(lat, lon);
   if (!worst) return null;
   if (worst.allergen === "birch") {
     return <AllergenGlyph allergen="birch" size={14} />;
@@ -799,20 +790,25 @@ function PollenIcon({ lat, lon }: { lat: number; lon: number }) {
 }
 
 function PollenBadge({ lat, lon }: { lat: number; lon: number }) {
-  const worst = useWorstPollen(lat, lon);
-  if (!worst) return null;
+  const { active } = useWorstPollen(lat, lon);
+  if (!active || active.length === 0) return null;
   return (
-    <span
-      className="inline-flex items-center gap-1 justify-center rounded-full text-[9px] font-semibold leading-none px-1.5 py-0.5"
-      style={{
-        background: `color-mix(in oklab, ${worst.color} 22%, transparent)`,
-        color: worst.color,
-        border: `1px solid color-mix(in oklab, ${worst.color} 50%, transparent)`,
-      }}
-      title={`Pollen i dag: ${worst.label} (${ALLERGEN_NAME[worst.allergen]})`}
-    >
-      {worst.label}
-      <AllergenGlyph allergen={worst.allergen} size={12} color={worst.color} />
+    <span className="inline-flex items-center gap-1 flex-wrap">
+      {active.map((a) => (
+        <span
+          key={a.allergen}
+          className="inline-flex items-center gap-1 justify-center rounded-full text-[9px] font-semibold leading-none px-1.5 py-0.5"
+          style={{
+            background: `color-mix(in oklab, ${a.color} 22%, transparent)`,
+            color: a.color,
+            border: `1px solid color-mix(in oklab, ${a.color} 50%, transparent)`,
+          }}
+          title={`${ALLERGEN_NAME[a.allergen]}: ${a.label} (${a.value.toFixed(1)})`}
+        >
+          <AllergenGlyph allergen={a.allergen} size={10} color={a.color} />
+          {a.label}
+        </span>
+      ))}
     </span>
   );
 }
