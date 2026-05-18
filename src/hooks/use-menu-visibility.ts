@@ -32,7 +32,10 @@ export const MENU_LINK_DEFS: { to: string; label: string }[] = [
   { to: "/varsler", label: "Farevarsler" },
   { to: "/steintavle", label: "Steintavle" },
   { to: "/decibel", label: "Decibelmåler" },
+  { to: "/nettverk", label: "Nettverk" },
+  { to: "/roborock", label: "Roborock" },
   { to: "/planter", label: "Planter & Trær" },
+
 ];
 
 export const DEFAULT_MENU_VISIBILITY: MenuVisibility = Object.fromEntries(

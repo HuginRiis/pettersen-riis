@@ -146,6 +146,8 @@ const navLinks: NavLink[] = [
   { to: "/trening", label: "Trening" },
   { to: "/varsler", label: "Farevarsler", public: true },
   { to: "/decibel", label: "Decibelmåler", public: true },
+  { to: "/nettverk", label: "Nettverk" },
+  { to: "/roborock", label: "Roborock" },
   { to: "/planter", label: "Planter & Trær" },
   { to: "/steintavle", label: "Steintavle" },
 ];
