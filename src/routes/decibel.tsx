@@ -447,7 +447,7 @@ function DecibelPage() {
               </button>
             )}
             <button
-              onClick={() => { setPeak(0); samplesRef.current = []; }}
+              onClick={() => { setPeak(0); setMinDb(null); samplesRef.current = []; setHistory([]); }}
               className="inline-flex items-center gap-2 rounded-md border border-border px-4 py-2 text-sm hover:bg-muted"
             >
               Nullstill
@@ -455,6 +455,112 @@ function DecibelPage() {
           </div>
           {error && <p className="text-sm text-destructive text-center">{error}</p>}
         </div>
+
+        {/* Stat-bokser: SPL min / snitt / maks / topp-freq */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <StatBox label="SPL Min" value={minDb !== null ? `${minDb.toFixed(1)}` : "—"} unit="dB" tone="green" />
+          <StatBox label="SPL Snitt" value={running ? avg.toFixed(1) : "—"} unit="dB" tone="blue" />
+          <StatBox label="SPL Maks" value={running ? peak.toFixed(1) : "—"} unit="dB" tone="red" />
+          <StatBox label="Topp-frekvens" value={dominantHz !== null ? `${dominantHz}` : "—"} unit="Hz" tone="purple" />
+        </div>
+
+        {/* Analog VU + sanntids dB SPL-graf */}
+        <div className="grid md:grid-cols-2 gap-4">
+          <div className="rounded-lg border border-border bg-card p-4">
+            <div className="text-xs text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-2">
+              <Activity size={12} /> Analog VU-meter
+            </div>
+            <div className="aspect-[2/1.1]">
+              <VuMeter db={db} running={running} />
+            </div>
+            <p className="text-[11px] text-muted-foreground mt-2">
+              Klassisk integrasjon (~300 ms). Rødt felt: over 0 VU (≈ 110 dB SPL).
+            </p>
+          </div>
+          <div className="rounded-lg border border-border bg-card p-4">
+            <div className="text-xs text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-2">
+              <Activity size={12} /> Nivå over tid (dB SPL)
+            </div>
+            <div className="h-44">
+              <DbHistoryChart samples={history} />
+            </div>
+            <p className="text-[11px] text-muted-foreground mt-2">
+              Grønn sone &lt; 60 dB · gul 60–85 · rød &gt; 85 (hørselbelastende ved lang eksponering).
+            </p>
+          </div>
+        </div>
+
+        {/* Klang / Vibrato / Chorus */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <StatBox
+            label="Klang / ekko"
+            value={reverbPct !== null ? `${reverbPct}` : "—"}
+            unit="%"
+            tone={reverbPct === null ? "blue" : reverbPct < 30 ? "green" : reverbPct < 65 ? "amber" : "red"}
+            hint="kjør romskann"
+          />
+          <StatBox
+            label="RT60"
+            value={scanResult?.rt60 ? scanResult.rt60.toFixed(2) : "—"}
+            unit="s"
+            tone="blue"
+            hint="tale-ideal < 0,6"
+          />
+          <StatBox
+            label="Vibrato"
+            value={pitchStats ? `±${pitchStats.vibratoCents}` : "—"}
+            unit={pitchStats ? `cent · ${pitchStats.vibratoHz} Hz` : ""}
+            tone="purple"
+            hint="syng/spill en tone"
+          />
+          <StatBox
+            label="Chorus"
+            value={pitchStats ? (pitchStats.chorus ? "Ja" : "Nei") : "—"}
+            unit=""
+            tone={pitchStats?.chorus ? "amber" : "green"}
+            hint="flere samtidige pitcher"
+          />
+        </div>
+
+        {/* TV / film-lytting */}
+        {tvAssessment && (
+          <div className="rounded-lg border border-border bg-card p-4 space-y-3">
+            <h2 className="font-semibold flex items-center gap-2">
+              <Tv size={16} className="text-primary" /> Lytte-vurdering for TV & film
+            </h2>
+            <div className="grid sm:grid-cols-2 gap-3 text-sm">
+              <div className={`rounded-md p-3 ${tvAssessment.tvOk ? "bg-emerald-500/10 border border-emerald-500/30" : "bg-amber-500/10 border border-amber-500/30"}`}>
+                <div className="flex items-center gap-2 font-medium">
+                  <Tv size={14} /> Vanlig TV-titting
+                </div>
+                <div className="text-xs text-muted-foreground mt-1">
+                  {tvAssessment.tvOk ? "OK — dialog skal være tydelig." : "Tale-området henger etter. Vurder dialog-modus eller hev senter-kanal."}
+                </div>
+              </div>
+              <div className={`rounded-md p-3 ${tvAssessment.filmOk ? "bg-emerald-500/10 border border-emerald-500/30" : "bg-amber-500/10 border border-amber-500/30"}`}>
+                <div className="flex items-center gap-2 font-medium">
+                  <Film size={14} /> Film / serie
+                </div>
+                <div className="text-xs text-muted-foreground mt-1">
+                  {tvAssessment.filmOk ? "OK — dynamikk og bunn ser balansert ut." : "Ubalansert — film-dynamikk vil føles tynn eller maskert."}
+                </div>
+              </div>
+            </div>
+            <div className="border-t border-border pt-3 space-y-1 text-xs">
+              <p className="flex items-start gap-2">
+                <Music2 size={12} className="text-primary mt-0.5 shrink-0" />
+                <span><strong className="text-foreground">Diskant:</strong> {tvAssessment.trebleAdvice}</span>
+              </p>
+              <p className="flex items-start gap-2">
+                <Music2 size={12} className="text-primary mt-0.5 shrink-0" />
+                <span><strong className="text-foreground">Bass:</strong> {tvAssessment.bassAdvice}</span>
+              </p>
+              <p className="text-muted-foreground pt-1">
+                Tale-klarhet: {tvAssessment.speechClarity.toFixed(1)} dB · Diskant-balanse: {tvAssessment.trebleBalance.toFixed(1)} dB · Bass-balanse: {tvAssessment.bassBalance.toFixed(1)} dB
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Frekvensspektrum */}
         <div className="rounded-lg border border-border bg-card p-4 space-y-3">
