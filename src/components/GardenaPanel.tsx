@@ -370,14 +370,24 @@ export function GardenaPanel() {
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const inFlight = useRef(false);
+  const lastLoadedAt = useRef(0);
+  const [cooldown, setCooldown] = useState(0);
 
-  const load = useCallback(async () => {
+  const MIN_INTERVAL_MS = 10_000;
+
+  const load = useCallback(async (manual = false) => {
     if (inFlight.current) return;
+    const since = Date.now() - lastLoadedAt.current;
+    if (manual && since < MIN_INTERVAL_MS) {
+      setMsg(`Vent ${Math.ceil((MIN_INTERVAL_MS - since) / 1000)} s før neste oppdatering`);
+      return;
+    }
     inFlight.current = true;
     setLoading(true);
     try {
       const res = await fetchSnap();
       setSnap(res);
+      lastLoadedAt.current = Date.now();
     } catch (e: any) {
       setSnap({
         ok: false,
@@ -395,12 +405,19 @@ export function GardenaPanel() {
     }
   }, [fetchSnap]);
 
+  // Kun én spørring ved åpning av siden — ingen auto-polling.
   useEffect(() => {
     load();
-    // Auto-polling midlertidig skrudd av pga Husqvarna rate-limit (24h blokk).
-    // const id = window.setInterval(load, 5 * 60_000);
-    // return () => window.clearInterval(id);
   }, [load]);
+
+  // Tikk-tikk for å vise nedtelling på Oppdater-knappen.
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      const remain = Math.max(0, MIN_INTERVAL_MS - (Date.now() - lastLoadedAt.current));
+      setCooldown(remain);
+    }, 500);
+    return () => window.clearInterval(id);
+  }, []);
 
   const onCommand = async (svcId: string, cmd: string, seconds?: number) => {
     setBusy(`${svcId}:${cmd}`);
@@ -437,12 +454,12 @@ export function GardenaPanel() {
           </span>
           <button
             type="button"
-            onClick={load}
-            disabled={loading}
+            onClick={() => load(true)}
+            disabled={loading || cooldown > 0}
             className="flex items-center gap-2 text-[10px] tracking-[0.25em] uppercase text-primary/80 hover:text-primary disabled:opacity-50"
           >
             {loading ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
-            Oppdater
+            {cooldown > 0 ? `Vent ${Math.ceil(cooldown / 1000)}s` : "Oppdater"}
           </button>
         </div>
 
