@@ -393,3 +393,11 @@ function fmtPct(v: number | null | undefined): string {
   if (v == null || !Number.isFinite(v)) return "—";
   return `${Math.round(v)} %`;
 }
+function fmtUptime(s: number | null | undefined): string {
+  if (s == null || !Number.isFinite(s)) return "—";
+  const d = Math.floor(s / 86400);
+  const h = Math.floor((s % 86400) / 3600);
+  if (d > 0) return `${d}d ${h}t`;
+  const m = Math.floor((s % 3600) / 60);
+  return `${h}t ${m}m`;
+}
