@@ -170,18 +170,34 @@ export function LoginDialog() {
               </Button>
             </div>
           ) : (
-            <form onSubmit={onSubmit} className="space-y-4 mb-5">
+            <form onSubmit={onSubmit} className="space-y-4 mb-5" method="post" action="#">
+              {/* Hidden username so iOS Keychain / password managers can save the credential */}
+              <input
+                type="text"
+                name="username"
+                autoComplete="username"
+                value="house-riis"
+                readOnly
+                hidden
+                aria-hidden="true"
+                tabIndex={-1}
+              />
               <div>
-                <label className="block text-xs tracking-wider uppercase text-muted-foreground mb-2">
+                <label
+                  htmlFor="house-riis-password"
+                  className="block text-xs tracking-wider uppercase text-muted-foreground mb-2"
+                >
                   Husets passord
                 </label>
                 <Input
+                  id="house-riis-password"
+                  name="password"
                   type="password"
                   autoFocus
                   autoComplete="current-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
+                  placeholder=""
                   className="bg-background/60"
                 />
               </div>
