@@ -205,6 +205,9 @@ function NettverkPage() {
             <Empty text="Ingen hendelser registrert enda." />
           )}
         </Card>
+
+        {/* Homey insights */}
+        {data?.routers.length ? <HomeyInsightsCard routers={data.routers} /> : null}
       </section>
     </PageShell>
   );
