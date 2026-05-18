@@ -535,11 +535,40 @@ function PlantDetailDialog({ plantId, floras, onClose, onChanged }: { plantId: s
           </Panel>
         )}
 
+        {/* Location with mini map */}
+        {(() => {
+          const geo = photos.find((p) => p.lat && p.lon);
+          if (!geo) return null;
+          const lat = geo.lat!; const lon = geo.lon!;
+          const d = 0.005;
+          const bbox = `${lon - d},${lat - d},${lon + d},${lat + d}`;
+          return (
+            <Panel title="📍 Hvor bildet ble tatt">
+              {geo.location_label && <p className="text-sm mb-2">{geo.location_label}</p>}
+              <div className="rounded overflow-hidden border border-border/60">
+                <iframe
+                  title="kart"
+                  src={`https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${lat},${lon}`}
+                  className="w-full h-48 bg-muted"
+                  loading="lazy"
+                />
+              </div>
+              <div className="flex items-center justify-between mt-2 text-xs">
+                <span className="text-muted-foreground">{lat.toFixed(5)}, {lon.toFixed(5)}</span>
+                <a href={`https://www.google.com/maps?q=${lat},${lon}`} target="_blank" rel="noreferrer" className="text-primary hover:underline">Åpne i Google Maps →</a>
+              </div>
+            </Panel>
+          );
+        })()}
+
         {/* Photos */}
         <div>
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-[10px] uppercase tracking-wider text-muted-foreground">Bilder ({photos.length})</h3>
-            <button onClick={generateRef} className="text-xs text-primary hover:underline flex items-center gap-1"><Sparkles size={12} /> AI-illustrasjon</button>
+            <div className="flex items-center gap-3">
+              <AddPhotoButton plantId={plantId} onAdded={refresh} />
+              <button onClick={generateRef} className="text-xs text-primary hover:underline flex items-center gap-1"><Sparkles size={12} /> AI-illustrasjon</button>
+            </div>
           </div>
           <div className="grid grid-cols-3 gap-2">
             {photos.map((ph) => (
