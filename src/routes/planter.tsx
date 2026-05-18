@@ -322,12 +322,9 @@ function CameraButton({ onCaptured }: { onCaptured: (s: CaptureState) => void })
   );
 }
 
-function CaptureDialog({ state, floras, onClose, onSaved }: { state: CaptureState; floras: MiFloraDevice[]; onClose: () => void; onSaved: () => void }) {
+function CaptureDialog({ state, onClose, onSaved }: { state: CaptureState; floras: MiFloraDevice[]; onClose: () => void; onSaved: () => void }) {
   const [s, setS] = useState<CaptureState>(state);
-  const [name, setName] = useState("");
-  const [locationLabel, setLocationLabel] = useState("");
-  const [mifloraId, setMifloraId] = useState<string>("");
-  const [saving, setSaving] = useState(false);
+  const [savedName, setSavedName] = useState<string | null>(null);
   const analyze = useServerFn(analyzePlantImage);
   const genRef = useServerFn(generatePlantReference);
   const revGeo = useServerFn(reverseGeocode);
@@ -335,32 +332,74 @@ function CaptureDialog({ state, floras, onClose, onSaved }: { state: CaptureStat
   useEffect(() => {
     (async () => {
       try {
-        // GPS + reverse-geocode
+        // GPS in parallel with upload
+        let lat: number | null = null;
+        let lon: number | null = null;
+        let locationLabel: string | null = null;
         try {
           const pos = await new Promise<GeolocationPosition>((res, rej) =>
             navigator.geolocation.getCurrentPosition(res, rej, { timeout: 8000, maximumAge: 60000 }),
           );
-          const lat = pos.coords.latitude;
-          const lon = pos.coords.longitude;
+          lat = pos.coords.latitude;
+          lon = pos.coords.longitude;
           setS((p) => ({ ...p, lat, lon }));
-          revGeo({ data: { lat, lon } }).then((r) => {
-            if (r.label) setLocationLabel((cur) => cur || r.label!);
-          }).catch(() => {});
+          try {
+            const r = await revGeo({ data: { lat, lon } });
+            locationLabel = r.label;
+          } catch { /* ignore */ }
         } catch { /* ignore */ }
 
         // Upload
         const ext = s.file.name.split(".").pop() ?? "jpg";
         const path = `uploads/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-        const { error } = await supabase.storage.from("plants").upload(path, s.file, { contentType: s.file.type });
-        if (error) throw error;
+        const { error: upErr } = await supabase.storage.from("plants").upload(path, s.file, { contentType: s.file.type });
+        if (upErr) throw upErr;
         const { data: pub } = supabase.storage.from("plants").getPublicUrl(path);
         const uploadUrl = pub.publicUrl;
 
         setS((p) => ({ ...p, uploadUrl, status: "analyzing" }));
 
-        const analysis = await analyze({ data: { imageUrl: uploadUrl } });
-        setS((p) => ({ ...p, analysis, status: "ready" }));
-        setName(analysis.species_common ?? "Ny plante");
+        const a = await analyze({ data: { imageUrl: uploadUrl } });
+        setS((p) => ({ ...p, analysis: a, status: "ready" }));
+
+        // Auto-save
+        const name = a.species_common ?? "Ny plante";
+        setSavedName(name);
+        const { data: plant, error: insErr } = await supabase
+          .from("plants")
+          .insert({
+            name,
+            species_common: a.species_common,
+            species_latin: a.species_latin,
+            kind: a.kind,
+            edible: a.edible,
+            toxicity: a.toxicity,
+            toxicity_notes: a.toxicity_notes,
+            care_summary: a.care_summary,
+            where_grows: a.where_grows,
+            watering_days_interval: a.watering_days_interval,
+            fertilize_weeks_interval: a.fertilize_weeks_interval,
+            season_start_month: a.season_start_month,
+            season_end_month: a.season_end_month,
+            cover_photo_url: uploadUrl,
+            ai_raw: a as never,
+          })
+          .select()
+          .single();
+        if (insErr) throw insErr;
+        await supabase.from("plant_photos").insert({
+          plant_id: plant.id,
+          photo_url: uploadUrl,
+          lat,
+          lon,
+          location_label: locationLabel,
+        });
+        // Fire-and-forget AI reference
+        if (a.species_common || a.species_latin) {
+          genRef({ data: { plantId: plant.id, species: a.species_latin ?? a.species_common ?? name } }).catch(() => {});
+        }
+        // Close after a brief moment so user sees the result
+        setTimeout(() => onSaved(), 1200);
       } catch (e) {
         setS((p) => ({ ...p, status: "error", error: e instanceof Error ? e.message : "Feilet" }));
       }
@@ -368,57 +407,8 @@ function CaptureDialog({ state, floras, onClose, onSaved }: { state: CaptureStat
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleSave = async () => {
-    if (!s.analysis || !s.uploadUrl) return;
-    setSaving(true);
-    try {
-      const a = s.analysis;
-      const flora = floras.find((f) => f.id === mifloraId);
-      const { data: plant, error } = await supabase
-        .from("plants")
-        .insert({
-          name: name || "Ukjent plante",
-          species_common: a.species_common,
-          species_latin: a.species_latin,
-          kind: a.kind,
-          edible: a.edible,
-          toxicity: a.toxicity,
-          toxicity_notes: a.toxicity_notes,
-          care_summary: a.care_summary,
-          where_grows: a.where_grows,
-          watering_days_interval: a.watering_days_interval,
-          fertilize_weeks_interval: a.fertilize_weeks_interval,
-          season_start_month: a.season_start_month,
-          season_end_month: a.season_end_month,
-          miflora_device_id: flora?.id ?? null,
-          miflora_device_name: flora?.name ?? null,
-          cover_photo_url: s.uploadUrl,
-          ai_raw: a as never,
-        })
-        .select()
-        .single();
-      if (error) throw error;
-      await supabase.from("plant_photos").insert({
-        plant_id: plant.id,
-        photo_url: s.uploadUrl,
-        lat: s.lat ?? null,
-        lon: s.lon ?? null,
-        location_label: locationLabel || null,
-      });
-      // Fire-and-forget AI reference
-      if (a.species_common || a.species_latin) {
-        genRef({ data: { plantId: plant.id, species: a.species_latin ?? a.species_common ?? name } }).catch(() => {});
-      }
-      onSaved();
-    } catch (e) {
-      alert(e instanceof Error ? e.message : "Kunne ikke lagre");
-    } finally {
-      setSaving(false);
-    }
-  };
-
   return (
-    <DialogShell onClose={onClose} title="Identifiser plante">
+    <DialogShell onClose={onClose} title="Identifiserer plante">
       <div className="grid md:grid-cols-2 gap-4">
         <img src={s.previewUrl} alt="" className="w-full rounded-lg object-cover aspect-[4/3]" />
         <div className="space-y-3">
@@ -428,32 +418,11 @@ function CaptureDialog({ state, floras, onClose, onSaved }: { state: CaptureStat
           {s.status === "ready" && s.analysis && (
             <>
               <AnalysisView a={s.analysis} />
-              <div>
-                <label className="text-[10px] uppercase tracking-wider text-muted-foreground">Navn (din etikett)</label>
-                <input value={name} onChange={(e) => setName(e.target.value)} className="w-full mt-1 px-3 py-2 rounded bg-background border border-border text-sm" />
-              </div>
-              <div>
-                <label className="text-[10px] uppercase tracking-wider text-muted-foreground">Sted (valgfritt)</label>
-                <input value={locationLabel} onChange={(e) => setLocationLabel(e.target.value)} placeholder="f.eks. Hagen ved hytta" className="w-full mt-1 px-3 py-2 rounded bg-background border border-border text-sm" />
-                {s.lat && s.lon && (
-                  <p className="text-[10px] text-muted-foreground mt-1 flex items-center gap-1"><MapPin size={10} /> {s.lat.toFixed(4)}, {s.lon.toFixed(4)}</p>
-                )}
-              </div>
-              {floras.length > 0 && (
-                <div>
-                  <label className="text-[10px] uppercase tracking-wider text-muted-foreground">Mi Flora-sensor (valgfritt)</label>
-                  <select value={mifloraId} onChange={(e) => setMifloraId(e.target.value)} className="w-full mt-1 px-3 py-2 rounded bg-background border border-border text-sm">
-                    <option value="">— Ingen —</option>
-                    {floras.map((f) => <option key={f.id} value={f.id}>{f.name}{f.zone ? ` (${f.zone})` : ""}</option>)}
-                  </select>
+              {savedName && (
+                <div className="flex items-center gap-2 text-sm text-emerald-400 pt-2 border-t border-border/40">
+                  <Check size={16} /> Lagret som «{savedName}»
                 </div>
               )}
-              <div className="flex gap-2 pt-2">
-                <button onClick={onClose} className="px-3 py-2 rounded border border-border text-sm">Avbryt</button>
-                <button onClick={handleSave} disabled={saving} className="flex-1 px-3 py-2 rounded bg-primary text-primary-foreground font-semibold text-sm disabled:opacity-50">
-                  {saving ? "Lagrer…" : "Lagre plante"}
-                </button>
-              </div>
             </>
           )}
         </div>
