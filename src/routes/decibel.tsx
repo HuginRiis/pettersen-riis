@@ -71,6 +71,11 @@ function DecibelPage() {
   const lastHistoryPushRef = useRef(0);
   const timeBufRef = useRef<Float32Array | null>(null);
   const [spectrum, setSpectrum] = useState<{ data: Float32Array; binHz: number } | null>(null);
+  const bandHistRef = useRef<{ t: number; lin: number[] }[]>([]);
+  const [bandWindowSec, setBandWindowSec] = useState<number>(() => {
+    if (typeof window === "undefined") return 10;
+    return Number(localStorage.getItem("band-window-sec") ?? "10");
+  });
 
   useEffect(() => {
     localStorage.setItem("db-calibration", String(calibration));
