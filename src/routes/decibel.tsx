@@ -61,6 +61,18 @@ function DecibelPage() {
     if (typeof window === "undefined") return 0.05;
     return Number(localStorage.getItem("vu-fall-speed") ?? "0.05");
   });
+  // Følsomhet for TV/film-vurdering: 0 = streng, 10 = veldig følsom (fanger svake signal)
+  const [tvSensitivity, setTvSensitivity] = useState<number>(() => {
+    if (typeof window === "undefined") return 6;
+    return Number(localStorage.getItem("tv-sensitivity") ?? "6");
+  });
+  // Lyd-identifikator
+  const [idActive, setIdActive] = useState(false);
+  const [idSensitivity, setIdSensitivity] = useState<number>(() => {
+    if (typeof window === "undefined") return 5;
+    return Number(localStorage.getItem("id-sensitivity") ?? "5");
+  });
+  const [idResult, setIdResult] = useState<{ label: string; confidence: number; detail: string } | null>(null);
 
   const ctxRef = useRef<AudioContext | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -89,6 +101,14 @@ function DecibelPage() {
   useEffect(() => {
     localStorage.setItem("band-window-sec", String(bandWindowSec));
   }, [bandWindowSec]);
+
+  useEffect(() => {
+    localStorage.setItem("tv-sensitivity", String(tvSensitivity));
+  }, [tvSensitivity]);
+
+  useEffect(() => {
+    localStorage.setItem("id-sensitivity", String(idSensitivity));
+  }, [idSensitivity]);
 
   const stop = () => {
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
