@@ -50,27 +50,32 @@ function NettverkPage() {
         eyebrow="Borgens nett"
         title="Nettverk"
         subtitle="Deco XE75 (3 stk.) via Homey — tilkoblede enheter, signal, historikk og topp 10."
-        image="https://images.unsplash.com/photo-1606857521015-7f9fcf423740?w=1600&q=70"
+        image={nettverkHero}
       />
 
       <section className="container mx-auto px-4 py-6 space-y-6">
         <div className="flex items-center justify-between">
           <div className="text-sm text-muted-foreground">
-            {lastFetched ? `Sist oppdatert: ${new Date(lastFetched).toLocaleString("nb-NO")}` : "Henter …"}
+            {data?.generatedAt ? `Sist oppdatert: ${new Date(data.generatedAt).toLocaleString("nb-NO")}` : "Henter …"}
           </div>
           <button
-            onClick={() => q.refetch()}
+            onClick={() => load()}
             className="inline-flex items-center gap-2 text-xs px-3 py-1.5 rounded border border-border hover:bg-accent"
           >
-            <RefreshCw size={12} className={q.isFetching ? "animate-spin" : ""} /> Oppdater
+            <RefreshCw size={12} className={loading ? "animate-spin" : ""} /> Oppdater
           </button>
         </div>
 
-        {data?.error && (
+        {(error || data?.error) && (
           <div className="panel rounded-lg p-4 border border-destructive/40 text-sm text-destructive">
-            {data.error}
+            {error ?? data?.error}
           </div>
         )}
+
+        {/* Topology */}
+        <Card title="Nettverkskart" icon={<Activity size={18} className="text-primary" />}>
+          <NetworkTopology routers={data?.routers ?? []} clients={data?.clients ?? []} />
+        </Card>
 
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -79,6 +84,7 @@ function NettverkPage() {
           <Stat icon={<Activity size={16} />} label="Tilkoblet nå (24t)" value={data?.totalsLast24h.connectedClients ?? 0} />
           <Stat icon={<History size={16} />} label="Snapshots 24t" value={data?.totalsLast24h.totalSamples ?? 0} />
         </div>
+
 
         {/* Routers */}
         <Card title="Deco-rutere" icon={<RouterIcon size={18} className="text-primary" />}>
