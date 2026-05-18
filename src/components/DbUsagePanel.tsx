@@ -103,8 +103,10 @@ function nextRun(cron: string, lastRun: string | null, explicit?: string | null)
 
 export function DbUsagePanel() {
   const fetchFn = useServerFn(getDbUsage);
+  const fetchStorage = useServerFn(getStorageUsage);
   const toggleFn = useServerFn(setCronJobActive);
   const [data, setData] = useState<DbUsageStats | null>(null);
+  const [storage, setStorage] = useState<{ buckets: StorageBucket[]; totalBytes: number } | null>(null);
   const [loading, setLoading] = useState(true);
   const [pending, setPending] = useState<string | null>(null);
 
@@ -137,8 +139,11 @@ export function DbUsagePanel() {
     let alive = true;
     const load = async () => {
       try {
-        const d = await fetchFn();
-        if (alive) setData(d);
+        const [d, s] = await Promise.all([fetchFn(), fetchStorage()]);
+        if (alive) {
+          setData(d);
+          setStorage(s);
+        }
       } finally {
         if (alive) setLoading(false);
       }
@@ -149,7 +154,24 @@ export function DbUsagePanel() {
       alive = false;
       window.clearInterval(i);
     };
-  }, [fetchFn]);
+  }, [fetchFn, fetchStorage]);
+
+  // Bygg kategoriaggregat over tabeller + buckets.
+  const categoryUsage = useMemo(() => {
+    const tot = new Map<string, number>();
+    for (const t of data?.tables ?? []) {
+      const cat = categorizeTable(t.table);
+      tot.set(cat, (tot.get(cat) ?? 0) + t.bytes);
+    }
+    for (const b of storage?.buckets ?? []) {
+      const cat = categorizeBucket(b.bucket);
+      tot.set(cat, (tot.get(cat) ?? 0) + b.bytes);
+    }
+    const arr = Array.from(tot.entries()).map(([name, bytes]) => ({ name, bytes }));
+    arr.sort((a, b) => b.bytes - a.bytes);
+    const total = arr.reduce((s, c) => s + c.bytes, 0);
+    return { categories: arr, total };
+  }, [data, storage]);
 
   if (loading && !data) {
     return <div className="text-sm text-muted-foreground">Henter forbruk…</div>;
