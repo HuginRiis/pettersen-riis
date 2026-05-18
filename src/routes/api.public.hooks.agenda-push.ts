@@ -163,7 +163,14 @@ export const Route = createFileRoute("/api/public/hooks/agenda-push")({
           } catch (err) {
             console.error("[garmin-push] failed", err);
           }
-          return new Response(JSON.stringify({ ok: true, agenda, checklist, garbage, birthdays, warranty, uv, weather, lightIdle, tibber, metAlerts, mailDelivery, garmin, garminPush }), {
+          let plants = { checked: 0, sent: 0, errors: 0, skipped: 0 };
+          try {
+            const pmod = await import("@/server/plants-push.server");
+            plants = await pmod.processPlantsNotifications();
+          } catch (err) {
+            console.error("[plants-push] failed", err);
+          }
+          return new Response(JSON.stringify({ ok: true, agenda, checklist, garbage, birthdays, warranty, uv, weather, lightIdle, tibber, metAlerts, mailDelivery, garmin, garminPush, plants }), {
             headers: { "Content-Type": "application/json" },
           });
         } catch (err) {
