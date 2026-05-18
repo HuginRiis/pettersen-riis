@@ -193,6 +193,8 @@ function DecibelPage() {
             if (next.length > 600) next.shift();
             return next;
           });
+          // Oppdater spektrum-snapshot (kopi pga react ref-likhet)
+          setSpectrum({ data: new Float32Array(freqBuf), binHz });
 
           // Beregn vibrato (modulasjonsrate + dybde i cents)
           const pts = pitchHistRef.current;
