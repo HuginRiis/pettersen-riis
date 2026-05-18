@@ -71,6 +71,11 @@ function DecibelPage() {
   const lastHistoryPushRef = useRef(0);
   const timeBufRef = useRef<Float32Array | null>(null);
   const [spectrum, setSpectrum] = useState<{ data: Float32Array; binHz: number } | null>(null);
+  const bandHistRef = useRef<{ t: number; lin: number[] }[]>([]);
+  const [bandWindowSec, setBandWindowSec] = useState<number>(() => {
+    if (typeof window === "undefined") return 10;
+    return Number(localStorage.getItem("band-window-sec") ?? "10");
+  });
 
   useEffect(() => {
     localStorage.setItem("db-calibration", String(calibration));
@@ -79,6 +84,10 @@ function DecibelPage() {
   useEffect(() => {
     localStorage.setItem("vu-fall-speed", String(vuFallSpeed));
   }, [vuFallSpeed]);
+
+  useEffect(() => {
+    localStorage.setItem("band-window-sec", String(bandWindowSec));
+  }, [bandWindowSec]);
 
   const stop = () => {
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
@@ -201,6 +210,14 @@ function DecibelPage() {
             if (next.length > 600) next.shift();
             return next;
           });
+          // Bånd-energi (lineær) for prosent-vindu opp til 60 min
+          const lin = bandVals.map((d) => Math.pow(10, Math.max(-90, d) / 10));
+          bandHistRef.current.push({ t: nowT, lin });
+          // Behold maks 60 min + litt slakk
+          const cutoff = nowT - 61 * 60 * 1000;
+          while (bandHistRef.current.length && bandHistRef.current[0].t < cutoff) {
+            bandHistRef.current.shift();
+          }
           // Oppdater spektrum-snapshot (kopi pga react ref-likhet)
           setSpectrum({ data: new Float32Array(freqBuf), binHz });
 
@@ -431,14 +448,26 @@ function DecibelPage() {
     return { hasSignal: true as const, tvOk, filmOk, trebleAdvice, bassAdvice, speechClarity, trebleBalance, bassBalance, highlights };
   }, [bands, running]);
 
-  // Prosent-fordeling av lyd-energi pr oktav (sum = 100)
+  // Prosent-fordeling av lyd-energi pr oktav (sum = 100) — snittet over valgt vindu
   const bandPercent = useMemo(() => {
     if (!running) return OCTAVE_BANDS.map(() => 0);
-    const lin = bands.map((d) => Math.pow(10, Math.max(-90, d) / 10));
-    const sum = lin.reduce((a, b) => a + b, 0);
+    const now = performance.now();
+    const cutoff = now - bandWindowSec * 1000;
+    const samples = bandHistRef.current.filter((s) => s.t >= cutoff);
+    let summed: number[];
+    if (samples.length === 0) {
+      summed = bands.map((d) => Math.pow(10, Math.max(-90, d) / 10));
+    } else {
+      summed = OCTAVE_BANDS.map((_, i) =>
+        samples.reduce((acc, s) => acc + (s.lin[i] ?? 0), 0) / samples.length,
+      );
+    }
+    const sum = summed.reduce((a, b) => a + b, 0);
     if (sum <= 0) return OCTAVE_BANDS.map(() => 0);
-    return lin.map((v) => (v / sum) * 100);
-  }, [bands, running]);
+    return summed.map((v) => (v / sum) * 100);
+    // history endrer seg hver ~100 ms og driver re-evaluering
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [history, bands, running, bandWindowSec]);
 
   const dominantBandIdx = useMemo(() => {
     let mi = 0;
@@ -671,9 +700,35 @@ function DecibelPage() {
 
         {/* Frekvensbånd (oktav) - bar + prosent */}
         <div className="rounded-lg border border-border bg-card p-4 space-y-3">
-          <h2 className="font-semibold flex items-center gap-2">
-            <Waves size={16} className="text-primary" /> Frekvensbånd (oktav) — andel av total lyd-energi
-          </h2>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="font-semibold flex items-center gap-2">
+              <Waves size={16} className="text-primary" /> Frekvensbånd (oktav) — andel av total lyd-energi
+            </h2>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-[11px] text-muted-foreground mr-1">Vindu:</span>
+              {[
+                { s: 10, label: "10 s" },
+                { s: 30, label: "30 s" },
+                { s: 60, label: "1 min" },
+                { s: 5 * 60, label: "5 min" },
+                { s: 15 * 60, label: "15 min" },
+                { s: 30 * 60, label: "30 min" },
+                { s: 60 * 60, label: "60 min" },
+              ].map((opt) => (
+                <button
+                  key={opt.s}
+                  onClick={() => setBandWindowSec(opt.s)}
+                  className={`text-[11px] px-2 py-0.5 rounded border ${
+                    bandWindowSec === opt.s
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "border-border text-muted-foreground hover:bg-muted"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
           <div className="grid lg:grid-cols-[2fr_1fr] gap-4">
             <div>
               <div className="flex items-end gap-1 h-48 border-b border-border/50">
