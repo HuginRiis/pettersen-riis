@@ -567,6 +567,22 @@ function DecibelPage() {
     return mi;
   }, [bandPercent]);
 
+  // Maks-prosent for relativ skalering av oktav-stolpene (så høyeste fyller stolpen)
+  const maxBandPct = useMemo(() => Math.max(1, ...bandPercent), [bandPercent]);
+
+  // Lyd-identifikator: kjør klassifisering hvert sekund mens aktiv
+  useEffect(() => {
+    if (!idActive || !running) {
+      if (!idActive) setIdResult(null);
+      return;
+    }
+    const id = setInterval(() => {
+      setIdResult(classifySound(bandPercent, db, dominantHz, pitchStats, idSensitivity));
+    }, 1000);
+    return () => clearInterval(id);
+  }, [idActive, running, bandPercent, db, dominantHz, pitchStats, idSensitivity]);
+
+
   return (
     <PageShell>
       <PageHero
