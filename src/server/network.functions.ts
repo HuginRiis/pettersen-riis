@@ -178,19 +178,24 @@ async function logSnapshot(devices: NetworkDevice[]) {
     kind: d.kind === "iot" || d.kind === "other" ? "other" : d.kind,
     available: d.available,
     signal: d.signal,
+    signal_quality: d.signalQuality,
     watt: d.watt,
     zone: d.zone,
-    raw: {
-      ...d.capabilities,
-      _download: d.downloadKbs,
-      _upload: d.uploadKbs,
-      _cpu: d.cpu,
-      _memory: d.memory,
-      _clients: d.clients,
-      _ip: d.ipAddress,
-      _master: d.master,
-      _quality: d.signalQuality,
-    } as never,
+    download_kbs: d.downloadKbs,
+    upload_kbs: d.uploadKbs,
+    cpu: d.cpu,
+    memory: d.memory,
+    clients: d.clients,
+    ip_address: d.ipAddress,
+    master: d.master,
+    wan_connected: d.wanConnected,
+    mesh_connected: d.meshConnected,
+    device_role: d.deviceRole,
+    signal_2_4: d.signal24,
+    signal_5: d.signal5,
+    wifi_band: d.wifiBand,
+    uptime_s: d.uptime,
+    raw: d.capabilities as never,
   }));
   await supabaseAdmin.from("network_snapshots").insert(rows);
 }
@@ -242,7 +247,7 @@ export const getNetworkSnapshot = createServerFn({ method: "GET" }).handler(
     const since = new Date(Date.now() - 24 * 60 * 60_000).toISOString();
     const { data: aggRows } = await supabaseAdmin
       .from("network_snapshots")
-      .select("device_id, device_name, ts, available, raw")
+      .select("device_id, device_name, ts, available, download_kbs, upload_kbs, raw")
       .gte("ts", since)
       .order("ts", { ascending: false })
       .limit(5000);
@@ -261,15 +266,10 @@ export const getNetworkSnapshot = createServerFn({ method: "GET" }).handler(
       if (r.ts > cur.last) cur.last = r.ts;
       byDevice.set(r.device_id, cur);
       if (r.available && r.ts === cur.last) connectedNow.add(r.device_id);
-      const raw = (r.raw ?? {}) as any;
-      if (typeof raw._download === "number") {
-        dlSum += raw._download;
-        dlN++;
-      }
-      if (typeof raw._upload === "number") {
-        upSum += raw._upload;
-        upN++;
-      }
+      const dl = (r as any).download_kbs ?? (r.raw as any)?._download;
+      const up = (r as any).upload_kbs ?? (r.raw as any)?._upload;
+      if (typeof dl === "number") { dlSum += dl; dlN++; }
+      if (typeof up === "number") { upSum += up; upN++; }
     }
     const topMostSeen = [...byDevice.entries()]
       .map(([device_id, v]) => ({ device_id, device_name: v.name, samples: v.samples, last_seen: v.last }))
@@ -309,8 +309,8 @@ export const getNetworkSnapshot = createServerFn({ method: "GET" }).handler(
           const raw = (r.raw ?? {}) as any;
           return {
             ts: r.ts,
-            download: typeof raw._download === "number" ? raw._download : null,
-            upload: typeof raw._upload === "number" ? raw._upload : null,
+            download: typeof (r as any).download_kbs === "number" ? (r as any).download_kbs : (typeof raw._download === "number" ? raw._download : null),
+            upload: typeof (r as any).upload_kbs === "number" ? (r as any).upload_kbs : (typeof raw._upload === "number" ? raw._upload : null),
           };
         });
       speedHistory = points;

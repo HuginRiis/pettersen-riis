@@ -1235,38 +1235,83 @@ export type Database = {
       network_snapshots: {
         Row: {
           available: boolean
+          clients: number | null
+          cpu: number | null
           device_id: string
           device_name: string | null
+          device_role: string | null
+          download_kbs: number | null
           id: number
+          ip_address: string | null
           kind: string
+          master: boolean | null
+          memory: number | null
+          mesh_connected: boolean | null
           raw: Json | null
           signal: number | null
+          signal_2_4: string | null
+          signal_5: string | null
+          signal_quality: string | null
           ts: string
+          upload_kbs: number | null
+          uptime_s: number | null
+          wan_connected: boolean | null
           watt: number | null
+          wifi_band: string | null
           zone: string | null
         }
         Insert: {
           available?: boolean
+          clients?: number | null
+          cpu?: number | null
           device_id: string
           device_name?: string | null
+          device_role?: string | null
+          download_kbs?: number | null
           id?: number
+          ip_address?: string | null
           kind: string
+          master?: boolean | null
+          memory?: number | null
+          mesh_connected?: boolean | null
           raw?: Json | null
           signal?: number | null
+          signal_2_4?: string | null
+          signal_5?: string | null
+          signal_quality?: string | null
           ts?: string
+          upload_kbs?: number | null
+          uptime_s?: number | null
+          wan_connected?: boolean | null
           watt?: number | null
+          wifi_band?: string | null
           zone?: string | null
         }
         Update: {
           available?: boolean
+          clients?: number | null
+          cpu?: number | null
           device_id?: string
           device_name?: string | null
+          device_role?: string | null
+          download_kbs?: number | null
           id?: number
+          ip_address?: string | null
           kind?: string
+          master?: boolean | null
+          memory?: number | null
+          mesh_connected?: boolean | null
           raw?: Json | null
           signal?: number | null
+          signal_2_4?: string | null
+          signal_5?: string | null
+          signal_quality?: string | null
           ts?: string
+          upload_kbs?: number | null
+          uptime_s?: number | null
+          wan_connected?: boolean | null
           watt?: number | null
+          wifi_band?: string | null
           zone?: string | null
         }
         Relationships: []

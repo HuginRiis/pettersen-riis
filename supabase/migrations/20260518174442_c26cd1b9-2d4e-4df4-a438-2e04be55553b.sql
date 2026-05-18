@@ -1,0 +1,16 @@
+ALTER TABLE public.network_snapshots
+  ADD COLUMN IF NOT EXISTS download_kbs numeric,
+  ADD COLUMN IF NOT EXISTS upload_kbs numeric,
+  ADD COLUMN IF NOT EXISTS cpu numeric,
+  ADD COLUMN IF NOT EXISTS memory numeric,
+  ADD COLUMN IF NOT EXISTS clients integer,
+  ADD COLUMN IF NOT EXISTS ip_address text,
+  ADD COLUMN IF NOT EXISTS master boolean,
+  ADD COLUMN IF NOT EXISTS wan_connected boolean,
+  ADD COLUMN IF NOT EXISTS mesh_connected boolean,
+  ADD COLUMN IF NOT EXISTS device_role text,
+  ADD COLUMN IF NOT EXISTS signal_2_4 text,
+  ADD COLUMN IF NOT EXISTS signal_5 text,
+  ADD COLUMN IF NOT EXISTS wifi_band text,
+  ADD COLUMN IF NOT EXISTS uptime_s numeric,
+  ADD COLUMN IF NOT EXISTS signal_quality text;
