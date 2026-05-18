@@ -115,6 +115,7 @@ const ROUTE_ICON_COLOR: Partial<Record<RoutePath, string>> = {
   "/gressklipper": "#10b981",        // gressklipper — gressgrønn
   "/stovsugeren": "#38bdf8",         // støvsuger — sky-cyan
   "/decibel": "#f43f5e",             // lyd — rose (høyt volum)
+  "/planter": "#22c55e",             // planter — bladgrønn
 };
 
 // Public halls — open to any visitor entering the courtyard.
