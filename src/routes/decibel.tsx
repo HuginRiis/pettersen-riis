@@ -512,14 +512,29 @@ function DecibelPage() {
         <div className="grid md:grid-cols-2 gap-4">
           <div className="rounded-lg border border-border bg-card p-4">
             <div className="text-xs text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-2">
-              <Activity size={12} /> Analog VU-meter
+              <Activity size={12} /> Analog dB-meter
             </div>
             <div className="aspect-[2/1.1]">
-              <VuMeter db={db} running={running} />
+              <VuMeter db={db} running={running} fallSpeed={vuFallSpeed} />
             </div>
-            <p className="text-[11px] text-muted-foreground mt-2">
-              Klassisk integrasjon (~300 ms). Rødt felt: over 0 VU (≈ 110 dB SPL).
-            </p>
+            <div className="mt-3 space-y-1">
+              <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                <span>Nedgangs-hastighet</span>
+                <span className="tabular-nums">{vuFallSpeed.toFixed(3)} {vuFallSpeed < 0.04 ? "(treg)" : vuFallSpeed > 0.12 ? "(rask)" : "(middels)"}</span>
+              </div>
+              <input
+                type="range"
+                min={0.005}
+                max={0.25}
+                step={0.005}
+                value={vuFallSpeed}
+                onChange={(e) => setVuFallSpeed(Number(e.target.value))}
+                className="w-full accent-primary"
+              />
+              <p className="text-[11px] text-muted-foreground">
+                Skala 30–110 dB. Grønn sone ≈ prat (60 dB), gul ≈ trafikk (80 dB), rød ≈ kraftig (&gt;85 dB).
+              </p>
+            </div>
           </div>
           <div className="rounded-lg border border-border bg-card p-4">
             <div className="text-xs text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-2">
