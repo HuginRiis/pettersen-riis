@@ -208,23 +208,10 @@ export function SiteHeader() {
   }, [who]);
   const myWebFavs = webFavs.filter((f) => f.who === "Alle" || f.who === who);
 
-  // Pollen-koordinater fra brukerens valgte default for /pollen (eller fallback Borgen)
+  // Pollen-koordinater: alltid Tollnes (brukerønske)
   const fetchDefaultLoc = useServerFn(getDefaultLocation);
-  const [pollenCoord, setPollenCoord] = useState<{ lat: number; lon: number }>(BORGEN_COORD);
-  useEffect(() => {
-    let cancelled = false;
-    fetchDefaultLoc({ data: { who: who || "Offentlig", page: "pollen" } })
-      .then((r) => {
-        if (cancelled) return;
-        if (typeof r?.lat === "number" && typeof r?.lon === "number") {
-          setPollenCoord({ lat: r.lat, lon: r.lon });
-        }
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, [who, fetchDefaultLoc]);
+  void fetchDefaultLoc;
+  const [pollenCoord] = useState<{ lat: number; lon: number }>(TOLLNES_COORD);
 
   // Visitors outside the gate only see public halls; authed users see everything.
   const menuVisibility = useMenuVisibility();
