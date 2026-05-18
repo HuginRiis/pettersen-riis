@@ -916,6 +916,66 @@ function DecibelPage() {
           </p>
         </div>
 
+        {/* Lyd-identifikator — manuelt aktivert */}
+        <div className="rounded-lg border border-border bg-card p-4 space-y-3">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <h2 className="font-semibold flex items-center gap-2">
+              <Radio size={16} className="text-primary" /> Lyd-identifikator
+            </h2>
+            <button
+              disabled={!running}
+              onClick={() => setIdActive((v) => !v)}
+              className={`inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium disabled:opacity-50 ${
+                idActive
+                  ? "bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  : "bg-primary text-primary-foreground hover:bg-primary/90"
+              }`}
+            >
+              {idActive ? <><MicOff size={14} /> Stopp identifisering</> : <><Mic size={14} /> Start identifisering</>}
+            </button>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Analyserer spektral-fordeling hvert sekund og forsøker å klassifisere hva slags lyd som spilles
+            (tale, sang, musikk, plystring, perkusjon, bass-rumling, støy m.m.). Krever at måling kjører.
+          </p>
+          <div className="rounded-md border border-border bg-muted/20 p-2.5 space-y-1.5">
+            <div className="flex items-center justify-between text-[11px]">
+              <span className="text-muted-foreground">Følsomhet</span>
+              <span className="tabular-nums font-mono">
+                {idSensitivity.toFixed(0)} / 10 — terskel ≈ {(55 - idSensitivity * 3).toFixed(0)} dB
+              </span>
+            </div>
+            <input
+              type="range" min={0} max={10} step={1}
+              value={idSensitivity}
+              onChange={(e) => setIdSensitivity(Number(e.target.value))}
+              className="w-full accent-primary"
+            />
+            <p className="text-[10px] text-muted-foreground">
+              Høyere = forsøker å identifisere svakere lyd (ned mot 25 dB). Lavere = krever klart, høyt signal.
+            </p>
+          </div>
+          <div className={`rounded-md border p-3 ${idActive && idResult ? "bg-primary/5 border-primary/30" : "bg-muted/30 border-border"}`}>
+            <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
+              {idActive ? "Lytter…" : "Inaktiv"}
+            </div>
+            <div className="font-semibold text-lg">
+              {idActive
+                ? (idResult ? idResult.label : "Analyserer …")
+                : "Trykk «Start identifisering» for å begynne."}
+            </div>
+            {idActive && idResult && (
+              <>
+                <div className="text-xs text-muted-foreground mt-1">{idResult.detail}</div>
+                <div className="mt-2 h-1.5 w-full bg-muted rounded overflow-hidden">
+                  <div className="h-full bg-primary transition-all" style={{ width: `${idResult.confidence}%` }} />
+                </div>
+                <div className="text-[10px] text-muted-foreground mt-1">Sikkerhet: {idResult.confidence}%</div>
+              </>
+            )}
+          </div>
+        </div>
+
         {/* Lytte-vurdering — alltid synlig i bunn, oppdateres hvert sekund */}
         <div className="rounded-lg border border-border bg-card p-4 space-y-3">
           <div className="flex items-center justify-between gap-2">
