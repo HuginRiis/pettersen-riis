@@ -406,9 +406,19 @@ function DecibelPage() {
     return Math.round(Math.max(0, Math.min(100, ((scanResult.rt60 - 0.2) / 1.3) * 100)));
   }, [scanResult]);
 
-  // TV-lytting & diskant-anbefaling
+  // Oppdater "tregt" snapshot av bands hvert 1s slik at lytte-vurderingen er lesbar
+  useEffect(() => {
+    if (!running) {
+      setBandsSlow(OCTAVE_BANDS.map(() => -100));
+      return;
+    }
+    const id = setInterval(() => setBandsSlow(bands), 1000);
+    return () => clearInterval(id);
+  }, [running, bands]);
+
+  // TV-lytting & diskant-anbefaling (basert på 1s-snapshot)
   const tvAssessment = useMemo(() => {
-    const hasSignal = running && bands.some((b) => b > -85);
+    const hasSignal = running && bandsSlow.some((b) => b > -85);
     if (!hasSignal) {
       return {
         hasSignal: false as const,
@@ -419,10 +429,10 @@ function DecibelPage() {
         highlights: [] as string[],
       };
     }
-    const speech = (bands[5] + bands[6]) / 2;
-    const treble = (bands[7] + bands[8]) / 2;
-    const warmth = (bands[3] + bands[4]) / 2;
-    const bass = (bands[1] + bands[2]) / 2;
+    const speech = (bandsSlow[5] + bandsSlow[6]) / 2;
+    const treble = (bandsSlow[7] + bandsSlow[8]) / 2;
+    const warmth = (bandsSlow[3] + bandsSlow[4]) / 2;
+    const bass = (bandsSlow[1] + bandsSlow[2]) / 2;
 
     const speechClarity = speech - warmth;
     const trebleBalance = treble - speech;
@@ -447,7 +457,7 @@ function DecibelPage() {
     if (filmOk) highlights.push("OK for film");
 
     return { hasSignal: true as const, tvOk, filmOk, trebleAdvice, bassAdvice, speechClarity, trebleBalance, bassBalance, highlights };
-  }, [bands, running]);
+  }, [bandsSlow, running]);
 
   // Prosent-fordeling av lyd-energi pr oktav (sum = 100) — snittet over valgt vindu
   const bandPercent = useMemo(() => {
