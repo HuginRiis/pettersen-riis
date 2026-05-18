@@ -376,6 +376,30 @@ export function ApiCallLogPanel() {
           </button>
         )}
 
+        <div className="mt-6 pt-4 border-t border-border">
+          <div className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-2">
+            Rydd opp i loggen
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {[7, 14, 30].map((days) => (
+              <button
+                key={days}
+                type="button"
+                onClick={() => handlePurge(days)}
+                disabled={purging !== null}
+                className="px-3 py-1.5 rounded border border-destructive/40 text-destructive text-[11px] tracking-[0.15em] uppercase hover:bg-destructive/10 disabled:opacity-50"
+              >
+                {purging === days
+                  ? "Sletter…"
+                  : `🗑 Eldre enn ${days < 30 ? `${days} dager` : "1 måned"}`}
+              </button>
+            ))}
+          </div>
+          {purgeMsg && (
+            <p className="mt-2 text-[11px] text-muted-foreground">{purgeMsg}</p>
+          )}
+        </div>
+
         {data && (
           <p className="text-[10px] text-muted-foreground mt-4 text-right">
             Oppdatert {new Date(data.fetchedAt).toLocaleTimeString("nb-NO")}
