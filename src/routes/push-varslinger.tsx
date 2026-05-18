@@ -357,6 +357,18 @@ function PushSettingsPage() {
         <section id="sec-abonnenter" className="block scroll-mt-24">
           <SubscribersListPanel />
         </section>
+
+        <section id="sec-planter" className="block scroll-mt-24">
+          <div className="panel rounded-lg p-4">
+            <h3 className="text-sm uppercase tracking-wider text-muted-foreground mb-2">🌿 Planter & Trær</h3>
+            <p className="text-sm text-muted-foreground mb-3">
+              Per-plante varsler for vanning, gjødsling, sesong og Mi&nbsp;Flora sensorterskler administreres på Planter-siden.
+            </p>
+            <a href="/planter" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded border border-border/60 text-xs hover:border-primary/60 hover:text-primary transition">
+              Åpne Planter & Trær →
+            </a>
+          </div>
+        </section>
       </div>
     </PageShell>
   );
