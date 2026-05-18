@@ -52,7 +52,8 @@ export function LastRouteMemory() {
     restoredRef.current = true;
     if (typeof window === "undefined") return;
     const path = location.pathname;
-    if (!SKIP_RESTORE.has(path)) return;
+    // Restore kun hvis vi lander på "/" (standard inngang)
+    if (path !== "/") return;
     // Ikke restore hvis login-dialogen åpnes via ?login=1
     const search = new URLSearchParams(window.location.search);
     if (search.get("login") === "1") return;
