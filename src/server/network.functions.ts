@@ -10,7 +10,7 @@ export type NetworkDevice = {
   available: boolean;
   signal: number | null;
   watt: number | null;
-  capabilities: Record<string, unknown>;
+  capabilities: Record<string, string | number | boolean | null>;
 };
 
 export type NetworkSnapshotResult = {
@@ -65,9 +65,10 @@ function mapDevice(d: any): NetworkDevice {
     readNum(caps, "measure_rssi", "signal_strength", "measure_signal_strength") ??
     readNum(caps, "rssi");
   const watt = readNum(caps, "measure_power");
-  const capSummary: Record<string, unknown> = {};
+  const capSummary: Record<string, string | number | boolean | null> = {};
   for (const [k, v] of Object.entries(caps)) {
-    capSummary[k] = (v as any)?.value ?? null;
+    const val = (v as any)?.value;
+    capSummary[k] = typeof val === "string" || typeof val === "number" || typeof val === "boolean" ? val : null;
   }
   return {
     id: d.id ?? d._id ?? "",
