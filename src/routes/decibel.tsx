@@ -594,15 +594,29 @@ function DecibelPage() {
             )}
           </div>
 
-          {tvAssessment.hasSignal && tvAssessment.highlights.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
-              {tvAssessment.highlights.map((h) => (
-                <span key={h} className="text-[11px] px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 border border-emerald-500/30">
-                  ✓ {h}
-                </span>
-              ))}
-            </div>
-          )}
+          {(() => {
+            const allChips = ["Tydelig tale-område", "Balansert diskant", "Stabil bass", "OK for vanlig TV", "OK for film"];
+            const active = new Set(tvAssessment.hasSignal ? tvAssessment.highlights : []);
+            return (
+              <div className="flex flex-wrap gap-1.5">
+                {allChips.map((h) => {
+                  const on = active.has(h);
+                  return (
+                    <span
+                      key={h}
+                      className={`text-[11px] px-2 py-0.5 rounded-full border ${
+                        on
+                          ? "bg-emerald-500/15 text-emerald-700 border-emerald-500/30"
+                          : "bg-muted/40 text-muted-foreground border-border"
+                      }`}
+                    >
+                      {on ? "✓" : "○"} {h}
+                    </span>
+                  );
+                })}
+              </div>
+            );
+          })()}
 
           <div className="grid sm:grid-cols-2 gap-3 text-sm">
             <div className={`rounded-md p-3 ${!tvAssessment.hasSignal ? "bg-muted/40 border border-border" : tvAssessment.tvOk ? "bg-emerald-500/10 border border-emerald-500/30" : "bg-amber-500/10 border border-amber-500/30"}`}>
