@@ -4,7 +4,7 @@ import { PageShell, PageHero } from "@/components/PageShell";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { analyzePlantImage, generatePlantReference, searchPlantContext, getMiFloraDevices, reverseGeocode, type PlantAnalysis, type MiFloraDevice } from "@/server/plants.functions";
-import { Camera, Loader2, MapPin, Droplet, Sun, Thermometer, Sprout, AlertTriangle, Check, X, Sparkles, Trash2, Plus, BellRing, BellOff } from "lucide-react";
+import { Camera, Loader2, MapPin, Droplet, Sun, Thermometer, Sprout, AlertTriangle, Check, X, Sparkles, Trash2, Plus, BellRing, BellOff, Battery, Leaf } from "lucide-react";
 import heroImg from "@/assets/got-plants.jpg";
 
 export const Route = createFileRoute("/planter")({
