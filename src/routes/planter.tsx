@@ -711,3 +711,142 @@ function DialogShell({ title, onClose, children }: { title: string; onClose: () 
     </div>
   );
 }
+
+// ============ Mi Flora dashboard ============
+
+function MiFloraDashboard({ floras, plants, onAttach }: { floras: MiFloraDevice[]; plants: Plant[]; onAttach: (deviceId: string, plantId: string) => Promise<void> }) {
+  const attachedIds = new Set(plants.map((p) => p.miflora_device_id).filter(Boolean) as string[]);
+  return (
+    <div className="panel rounded-lg p-4 mb-5 border border-border/60">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground flex items-center gap-1.5"><Leaf size={12} className="text-emerald-400" /> Mi Flora-sensorer ({floras.length})</h3>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        {floras.map((f) => {
+          const linked = plants.find((p) => p.miflora_device_id === f.id);
+          const batteryLow = f.battery !== null && f.battery < 20;
+          return (
+            <div key={f.id} className="rounded border border-border/60 bg-background/40 p-3">
+              <div className="flex items-start justify-between mb-2">
+                <div className="min-w-0">
+                  <div className="font-semibold text-sm truncate">{f.name}</div>
+                  {f.zone && <div className="text-[10px] text-muted-foreground">{f.zone}</div>}
+                </div>
+                {f.battery !== null && (
+                  <span className={`text-[10px] inline-flex items-center gap-1 px-1.5 py-0.5 rounded ${batteryLow ? "bg-red-600/20 text-red-300" : "bg-muted text-muted-foreground"}`}>
+                    <Battery size={10} /> {Math.round(f.battery)}%
+                  </span>
+                )}
+              </div>
+              <div className="grid grid-cols-4 gap-1.5 text-[10px]">
+                <StatCell icon={Droplet} value={f.soilMoisture !== null ? `${Math.round(f.soilMoisture)}%` : "—"} label="Vann" color="text-cyan-400" />
+                <StatCell icon={Sun} value={f.light !== null ? `${Math.round(f.light)}` : "—"} label="Lux" color="text-amber-400" />
+                <StatCell icon={Thermometer} value={f.temperature !== null ? `${f.temperature.toFixed(1)}°` : "—"} label="Temp" color="text-rose-400" />
+                <StatCell icon={Sprout} value={f.fertility !== null ? `${Math.round(f.fertility)}` : "—"} label="Næring" color="text-emerald-400" />
+              </div>
+              <div className="mt-2 pt-2 border-t border-border/40">
+                {linked ? (
+                  <div className="text-[10px] text-emerald-400">Koblet til <span className="text-foreground">{linked.name}</span></div>
+                ) : plants.length > 0 ? (
+                  <select
+                    defaultValue=""
+                    onChange={(e) => { if (e.target.value) void onAttach(f.id, e.target.value); }}
+                    className="w-full text-[10px] px-1.5 py-1 rounded bg-background border border-border"
+                  >
+                    <option value="">— Koble til plante —</option>
+                    {plants.filter((p) => !attachedIds.has(p.id) || p.miflora_device_id === f.id).map((p) => (
+                      <option key={p.id} value={p.id}>{p.name}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <div className="text-[10px] text-muted-foreground">Ingen planter å koble til ennå</div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function StatCell({ icon: Icon, value, label, color }: { icon: any; value: string; label: string; color: string }) {
+  return (
+    <div className="text-center rounded bg-background/60 py-1.5">
+      <Icon size={11} className={`mx-auto ${color}`} />
+      <div className="text-xs font-semibold mt-0.5">{value}</div>
+      <div className="text-[9px] uppercase text-muted-foreground">{label}</div>
+    </div>
+  );
+}
+
+// ============ Add photo button ============
+
+function AddPhotoButton({ plantId, onAdded }: { plantId: string; onAdded: () => Promise<void> | void }) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [busy, setBusy] = useState(false);
+  const revGeo = useServerFn(reverseGeocode);
+
+  const handle = async (file: File) => {
+    setBusy(true);
+    try {
+      let lat: number | null = null;
+      let lon: number | null = null;
+      try {
+        const pos = await new Promise<GeolocationPosition>((res, rej) =>
+          navigator.geolocation.getCurrentPosition(res, rej, { timeout: 6000, maximumAge: 60000 }),
+        );
+        lat = pos.coords.latitude;
+        lon = pos.coords.longitude;
+      } catch { /* ignore */ }
+
+      const ext = file.name.split(".").pop() ?? "jpg";
+      const path = `uploads/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const { error } = await supabase.storage.from("plants").upload(path, file, { contentType: file.type });
+      if (error) throw error;
+      const { data: pub } = supabase.storage.from("plants").getPublicUrl(path);
+
+      let label: string | null = null;
+      if (lat !== null && lon !== null) {
+        try { label = (await revGeo({ data: { lat, lon } })).label; } catch { /* ignore */ }
+      }
+
+      await supabase.from("plant_photos").insert({
+        plant_id: plantId,
+        photo_url: pub.publicUrl,
+        lat,
+        lon,
+        location_label: label,
+      });
+      await onAdded();
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Kunne ikke laste opp");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <>
+      <button
+        onClick={() => inputRef.current?.click()}
+        disabled={busy}
+        className="text-xs text-primary hover:underline flex items-center gap-1 disabled:opacity-50"
+      >
+        {busy ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />} Legg til bilde
+      </button>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) void handle(f);
+          e.target.value = "";
+        }}
+      />
+    </>
+  );
+}
