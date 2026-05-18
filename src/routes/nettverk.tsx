@@ -208,22 +208,67 @@ function NettverkPage() {
   );
 }
 
+type MetricKey = "download" | "upload" | "cpu" | "memory" | "clients";
+
+const METRICS: { key: MetricKey; label: string; icon: React.ReactNode; color: string; unit: "kbs" | "pct" | "n" }[] = [
+  { key: "download", label: "Nedlasting", icon: <Download size={12} />, color: "#38bdf8", unit: "kbs" },
+  { key: "upload", label: "Opplasting", icon: <Upload size={12} />, color: "#34d399", unit: "kbs" },
+  { key: "cpu", label: "CPU", icon: <Cpu size={12} />, color: "#f472b6", unit: "pct" },
+  { key: "memory", label: "Minne", icon: <MemoryStick size={12} />, color: "#a78bfa", unit: "pct" },
+  { key: "clients", label: "Klienter", icon: <Users size={12} />, color: "#facc15", unit: "n" },
+];
+
 function MainRouterCard({
-  main,
+  routers,
+  mainId,
   history,
   totals,
 }: {
-  main: NetworkDevice;
-  history: SpeedPoint[];
+  routers: NetworkDevice[];
+  mainId: string;
+  history: Record<string, MetricPoint[]>;
   totals: NetworkSnapshotResult["totalsLast24h"];
 }) {
-  const wanHref = main.ipAddress ? `http://${main.ipAddress}` : "https://www.tp-link.com/deco/";
+  const [selectedId, setSelectedId] = useState<string>(mainId);
+  const [metric, setMetric] = useState<MetricKey>("download");
+  useEffect(() => { setSelectedId(mainId); }, [mainId]);
+
+  const selected = routers.find((r) => r.id === selectedId) ?? routers[0];
+  const isMain = selected.id === mainId;
+  const pts = history[selected.id] ?? [];
+  const wanHref = selected.ipAddress ? `http://${selected.ipAddress}` : "https://www.tp-link.com/deco/";
+
   return (
     <article className="panel rounded-xl p-5 border border-primary/30 bg-gradient-to-br from-primary/10 via-transparent to-transparent">
+      {/* Router tabs */}
+      <div className="flex gap-1.5 mb-4 overflow-x-auto -mx-1 px-1">
+        {routers.map((r) => {
+          const main = r.id === mainId;
+          const active = r.id === selectedId;
+          return (
+            <button
+              key={r.id}
+              onClick={() => setSelectedId(r.id)}
+              className={`shrink-0 inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md border transition ${
+                active
+                  ? "bg-primary/20 border-primary/50 text-foreground"
+                  : "border-border text-muted-foreground hover:bg-accent"
+              }`}
+            >
+              {main && <Crown size={11} className="text-amber-400" />}
+              {r.name}
+              <span className={`inline-block w-1.5 h-1.5 rounded-full ${r.available ? "bg-emerald-500" : "bg-muted"}`} />
+            </button>
+          );
+        })}
+      </div>
+
       <header className="flex items-center justify-between gap-3 mb-4">
         <div className="flex items-center gap-2">
-          <Crown size={18} className="text-amber-400" />
-          <h2 className="text-foreground font-semibold">Hoved-ruter (WAN) — {main.name}</h2>
+          {isMain && <Crown size={18} className="text-amber-400" />}
+          <h2 className="text-foreground font-semibold">
+            {isMain ? "Hoved-ruter (WAN) — " : "Deco — "}{selected.name}
+          </h2>
         </div>
         <a
           href={wanHref}
@@ -236,58 +281,77 @@ function MainRouterCard({
       </header>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-        <Metric icon={<Download size={14} />} label="Nedlasting" value={fmtKbs(main.downloadKbs)} accent="text-sky-300" />
-        <Metric icon={<Upload size={14} />} label="Opplasting" value={fmtKbs(main.uploadKbs)} accent="text-emerald-300" />
-        <Metric icon={<Cpu size={14} />} label="CPU" value={fmtPct(main.cpu)} />
-        <Metric icon={<MemoryStick size={14} />} label="Minne" value={fmtPct(main.memory)} />
-        <Metric icon={<Users size={14} />} label="Klienter" value={main.clients != null ? `${main.clients} stk` : "—"} />
-        <Metric icon={<Globe size={14} />} label="IP" value={main.ipAddress ?? "—"} small />
-        <Metric icon={<Signal size={14} />} label="Signal" value={main.signalQuality ?? (main.signal != null ? `${Math.round(main.signal)} dBm` : "—")} />
+        <Metric icon={<Download size={14} />} label="Nedlasting" value={fmtKbs(selected.downloadKbs)} accent="text-sky-300" />
+        <Metric icon={<Upload size={14} />} label="Opplasting" value={fmtKbs(selected.uploadKbs)} accent="text-emerald-300" />
+        <Metric icon={<Cpu size={14} />} label="CPU" value={fmtPct(selected.cpu)} />
+        <Metric icon={<MemoryStick size={14} />} label="Minne" value={fmtPct(selected.memory)} />
+        <Metric icon={<Users size={14} />} label="Klienter" value={selected.clients != null ? `${selected.clients} stk` : "—"} />
+        <Metric icon={<Globe size={14} />} label="IP" value={selected.ipAddress ?? "—"} small />
+        <Metric icon={<Signal size={14} />} label="Signal" value={selected.signalQuality ?? (selected.signal != null ? `${Math.round(selected.signal)} dBm` : "—")} />
         <Metric icon={<Activity size={14} />} label="Snitt 24t ↓" value={fmtKbs(totals.downloadKbsAvg)} />
       </div>
 
-      <SpeedSparkline points={history} />
+      {/* Metric tabs */}
+      <div className="flex gap-1.5 mb-2 flex-wrap">
+        {METRICS.map((m) => (
+          <button
+            key={m.key}
+            onClick={() => setMetric(m.key)}
+            className={`inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded border transition ${
+              metric === m.key
+                ? "border-primary/50 bg-primary/15 text-foreground"
+                : "border-border text-muted-foreground hover:bg-accent"
+            }`}
+            style={metric === m.key ? { color: m.color } : undefined}
+          >
+            {m.icon}{m.label}
+          </button>
+        ))}
+      </div>
+
+      <MetricSparkline points={pts} metric={metric} />
     </article>
   );
 }
 
-function SpeedSparkline({ points }: { points: SpeedPoint[] }) {
-  const { dPath, uPath, maxV } = useMemo(() => {
-    if (!points.length) return { dPath: "", uPath: "", maxV: 0 };
-    const dl = points.map((p) => p.download ?? 0);
-    const ul = points.map((p) => p.upload ?? 0);
-    const max = Math.max(1, ...dl, ...ul);
-    const w = 600;
-    const h = 80;
-    const stepX = points.length > 1 ? w / (points.length - 1) : 0;
-    const toPath = (arr: number[]) =>
-      arr
-        .map((v, i) => {
-          const x = i * stepX;
-          const y = h - (v / max) * (h - 6) - 3;
-          return `${i === 0 ? "M" : "L"} ${x.toFixed(1)} ${y.toFixed(1)}`;
-        })
-        .join(" ");
-    return { dPath: toPath(dl), uPath: toPath(ul), maxV: max };
-  }, [points]);
+function fmtMetric(v: number | null, unit: "kbs" | "pct" | "n"): string {
+  if (v == null || !Number.isFinite(v)) return "—";
+  if (unit === "kbs") return fmtKbs(v);
+  if (unit === "pct") return fmtPct(v);
+  return String(Math.round(v));
+}
+
+function MetricSparkline({ points, metric }: { points: MetricPoint[]; metric: MetricKey }) {
+  const meta = METRICS.find((m) => m.key === metric)!;
+  const { path, max, last } = useMemo(() => {
+    if (!points.length) return { path: "", max: 0, last: null as number | null };
+    const vals = points.map((p) => (p[metric] ?? 0));
+    const m = Math.max(1, ...vals);
+    const w = 600, h = 80;
+    const step = points.length > 1 ? w / (points.length - 1) : 0;
+    const path = vals
+      .map((v, i) => {
+        const x = i * step;
+        const y = h - (v / m) * (h - 6) - 3;
+        return `${i === 0 ? "M" : "L"} ${x.toFixed(1)} ${y.toFixed(1)}`;
+      })
+      .join(" ");
+    const lastValRaw = points[points.length - 1]?.[metric];
+    return { path, max: m, last: typeof lastValRaw === "number" ? lastValRaw : null };
+  }, [points, metric]);
 
   if (!points.length) {
-    return <p className="text-xs text-muted-foreground">Bygger opp hastighetshistorikk …</p>;
+    return <p className="text-xs text-muted-foreground">Bygger opp historikk for {meta.label.toLowerCase()} …</p>;
   }
   return (
     <div>
       <div className="flex items-center justify-between text-[11px] text-muted-foreground mb-1">
-        <span>Hastighet (siste {points.length} målinger)</span>
-        <span>Topp: {fmtKbs(maxV)}</span>
+        <span>{meta.label} (siste {points.length} målinger)</span>
+        <span>Nå: <span className="text-foreground font-semibold">{fmtMetric(last, meta.unit)}</span> · topp {fmtMetric(max, meta.unit)}</span>
       </div>
-      <svg viewBox="0 0 600 80" className="w-full h-20" role="img" aria-label="Hastighetsgraf">
-        <path d={dPath} fill="none" stroke="#38bdf8" strokeWidth="1.8" />
-        <path d={uPath} fill="none" stroke="#34d399" strokeWidth="1.8" />
+      <svg viewBox="0 0 600 80" className="w-full h-20" role="img" aria-label={`${meta.label}-graf`}>
+        <path d={path} fill="none" stroke={meta.color} strokeWidth="1.8" />
       </svg>
-      <div className="flex gap-4 text-[11px] text-muted-foreground">
-        <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-sky-400" /> ned</span>
-        <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-400" /> opp</span>
-      </div>
     </div>
   );
 }
