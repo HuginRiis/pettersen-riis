@@ -131,23 +131,26 @@ function mapDevice(d: any): NetworkDevice {
   const watt = readNum(caps, "measure_power");
 
   const downloadKbs =
-    readNum(caps, "meter_download_speed", "measure_download_speed", "meter_download", "download_speed", "wan_down") ??
+    readNum(caps, "meter_download_speed", "measure_download_speed", "measure_down_kilo_bytes_per_second", "meter_download", "download_speed", "wan_down") ??
     null;
   const uploadKbs =
-    readNum(caps, "meter_upload_speed", "measure_upload_speed", "meter_upload", "upload_speed", "wan_up") ?? null;
+    readNum(caps, "meter_upload_speed", "measure_upload_speed", "measure_up_kilo_bytes_per_second", "meter_upload", "upload_speed", "wan_up") ?? null;
   const cpu = readNum(caps, "measure_cpu_usage", "measure_cpu", "cpu_usage");
   const memory = readNum(caps, "measure_memory_usage", "measure_memory", "memory_usage");
   const clients = readNum(caps, "meter_connected_clients", "measure_connected_clients", "connected_clients", "clients_count");
-  const ipAddress = readStr(caps, "ip_address", "wan_ip", "lan_ip");
+  const ipAddress = readStr(caps, "ip_address", "wan_ip", "lan_ip", "lan_ipv4_ipaddr", "wan_ipv4_ipaddr");
   const master = readBool(caps, "is_master", "alarm_master", "master");
   const wired = readBool(caps, "is_wired", "ethernet", "wired");
   const wanConnected = readBool(caps, "alarm_wan_connected_ipv4", "alarm_wan_connected", "wan_connected", "wan_connected_ipv4");
-  const meshConnected = readBool(caps, "alarm_connected_mesh", "alarm_mesh_connected", "mesh_connected", "connected_to_mesh");
+  const meshConnected =
+    readBool(caps, "alarm_connected_mesh", "alarm_mesh_connected", "mesh_connected", "connected_to_mesh") ??
+    (readBool(caps, "alarm_group_state") === false ? true : readBool(caps, "alarm_group_state") === true ? false : null);
   const deviceRole = readStr(caps, "device_role", "role", "deco_role") ?? (master === true ? "master" : master === false ? "slave" : null);
-  const signal24 = readStr(caps, "signal_strength_2_4_ghz", "signal_2_4_ghz", "wifi_signal_2_4");
-  const signal5 = readStr(caps, "signal_strength_5_ghz", "signal_5_ghz", "wifi_signal_5");
-  const wifiBand = readStr(caps, "wifi_band", "wifi_bands", "wifi_mode");
+  const signal24 = readStr(caps, "signal_strength_2_4_ghz", "signal_2_4_ghz", "wifi_signal_2_4", "signal_strength_2g");
+  const signal5 = readStr(caps, "signal_strength_5_ghz", "signal_5_ghz", "wifi_signal_5", "signal_strength_5g");
+  const wifiBand = readStr(caps, "wifi_band", "wifi_bands", "wifi_mode", "backhaul_connection");
   const uptime = readNum(caps, "uptime", "measure_uptime", "device_uptime");
+
 
   const capSummary: Record<string, CapValue> = {};
   for (const [k, v] of Object.entries(caps)) {
@@ -324,15 +327,18 @@ export const getNetworkSnapshot = createServerFn({ method: "GET" }).handler(
         .reverse()
         .map((r): MetricPoint => {
           const raw = (r.raw ?? {}) as any;
-          const numOr = (v: any, fb: any) =>
-            typeof v === "number" ? v : typeof fb === "number" ? fb : null;
+          const numOr = (...vals: any[]) => {
+            for (const v of vals) if (typeof v === "number" && Number.isFinite(v)) return v;
+            return null;
+          };
           return {
             ts: r.ts,
-            download: numOr((r as any).download_kbs, raw._download),
-            upload: numOr((r as any).upload_kbs, raw._upload),
+            download: numOr((r as any).download_kbs, raw._download, raw.measure_down_kilo_bytes_per_second, raw.meter_download_speed),
+            upload: numOr((r as any).upload_kbs, raw._upload, raw.measure_up_kilo_bytes_per_second, raw.meter_upload_speed),
             cpu: numOr((r as any).cpu, raw.measure_cpu_usage),
             memory: numOr((r as any).memory, raw.measure_memory_usage),
-            clients: numOr((r as any).clients, raw.meter_connected_clients),
+            clients: numOr((r as any).clients, raw.meter_connected_clients, raw.connected_clients),
+
           };
         });
       routerHistory[router.id] = pts;
