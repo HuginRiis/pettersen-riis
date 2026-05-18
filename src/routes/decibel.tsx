@@ -436,9 +436,13 @@ function DecibelPage() {
     return () => clearInterval(id);
   }, [running, bands]);
 
-  // TV-lytting & diskant-anbefaling (basert på 1s-snapshot)
+  // TV-lytting & diskant-anbefaling (basert på 1s-snapshot + følsomhet)
   const tvAssessment = useMemo(() => {
-    const hasSignal = running && bandsSlow.some((b) => b > -85);
+    // Sensitivity 0..10 → terskel for "har signal" går fra -60 (streng) til -95 (veldig følsom)
+    const sigThreshold = -60 - (tvSensitivity / 10) * 35;
+    // Tolerance-utvidelse: mer følsom = mer slingringsrom for å si "OK"
+    const tol = 1 + tvSensitivity * 0.4; // 1.0 .. 5.0
+    const hasSignal = running && bandsSlow.some((b) => b > sigThreshold);
     if (!hasSignal) {
       return {
         hasSignal: false as const,
@@ -458,26 +462,82 @@ function DecibelPage() {
     const trebleBalance = treble - speech;
     const bassBalance = bass - warmth;
 
-    const tvOk = speechClarity > -4 && trebleBalance > -6 && trebleBalance < 4;
-    const filmOk = bassBalance > -8 && trebleBalance > -8 && trebleBalance < 6;
+    const tvOk = speechClarity > -4 - tol && trebleBalance > -6 - tol && trebleBalance < 4 + tol;
+    const filmOk = bassBalance > -8 - tol && trebleBalance > -8 - tol && trebleBalance < 6 + tol;
 
     let trebleAdvice = "Diskant ser balansert ut.";
-    if (trebleBalance < -4) trebleAdvice = "Skru opp diskant +2 til +4 dB — tale mister konsonanter.";
-    else if (trebleBalance > 3) trebleAdvice = "Skru ned diskant 2–3 dB — for skarpt, sliter på ørene.";
+    if (trebleBalance < -4 - tol * 0.5) trebleAdvice = "Skru opp diskant +2 til +4 dB — tale mister konsonanter.";
+    else if (trebleBalance > 3 + tol * 0.5) trebleAdvice = "Skru ned diskant 2–3 dB — for skarpt, sliter på ørene.";
 
     let bassAdvice = "Bass virker ok.";
-    if (bassBalance < -6) bassAdvice = "Skru opp bass litt — filmscener mister tyngde.";
-    else if (bassBalance > 6) bassAdvice = "Demp bass — kan maskere dialogen.";
+    if (bassBalance < -6 - tol * 0.5) bassAdvice = "Skru opp bass litt — filmscener mister tyngde.";
+    else if (bassBalance > 6 + tol * 0.5) bassAdvice = "Demp bass — kan maskere dialogen.";
 
     const highlights: string[] = [];
-    if (speechClarity > -2) highlights.push("Tydelig tale-område");
-    if (trebleBalance >= -3 && trebleBalance <= 3) highlights.push("Balansert diskant");
-    if (bassBalance >= -5 && bassBalance <= 5) highlights.push("Stabil bass");
+    if (speechClarity > -2 - tol * 0.5) highlights.push("Tydelig tale-område");
+    if (trebleBalance >= -3 - tol * 0.5 && trebleBalance <= 3 + tol * 0.5) highlights.push("Balansert diskant");
+    if (bassBalance >= -5 - tol * 0.5 && bassBalance <= 5 + tol * 0.5) highlights.push("Stabil bass");
     if (tvOk) highlights.push("OK for vanlig TV");
     if (filmOk) highlights.push("OK for film");
 
     return { hasSignal: true as const, tvOk, filmOk, trebleAdvice, bassAdvice, speechClarity, trebleBalance, bassBalance, highlights };
-  }, [bandsSlow, running]);
+  }, [bandsSlow, running, tvSensitivity]);
+
+  // Lyd-identifikator: klassifiser type lyd basert på spektral-distribusjon
+  // Bruker bandPercent + db + dominantHz + pitchStats. Følsomhet justerer min-db-terskel.
+  const classifySound = (
+    pct: number[],
+    splDb: number,
+    domHz: number | null,
+    vibrato: { vibratoCents: number; vibratoHz: number; chorus: boolean } | null,
+    sens: number,
+  ): { label: string; confidence: number; detail: string } => {
+    const minDbForId = 55 - sens * 3; // sens 0→55, sens 10→25
+    if (splDb < minDbForId) {
+      return { label: "Stillhet / for svakt", confidence: 100, detail: `Under ${minDbForId.toFixed(0)} dB. Øk følsomhet eller nivå.` };
+    }
+    const sub = pct[0] + pct[1];
+    const lowMid = pct[2] + pct[3];
+    const speech = pct[5] + pct[6];
+    const presence = pct[6] + pct[7];
+    const air = pct[8] + pct[9];
+    const broadband = pct.filter((p) => p > 4).length;
+
+    // Plystring / ren tone: smalt spektrum, høy dominant, lav vibrato
+    if (domHz && domHz > 700 && domHz < 4000 && presence > 35 && lowMid < 15) {
+      return { label: "Plystring / ren tone", confidence: 85, detail: `${domHz} Hz dominant. Smalt spektrum.` };
+    }
+    // Sang: vibrato + tale-/musikkområde
+    if (vibrato && vibrato.vibratoCents > 8 && vibrato.vibratoHz > 3 && vibrato.vibratoHz < 8 && speech > 20) {
+      return { label: "Sang", confidence: 80, detail: `Vibrato ±${vibrato.vibratoCents} cent @ ${vibrato.vibratoHz} Hz.` };
+    }
+    // Musikk: bredt spektrum + bass + diskant tilstede
+    if (broadband >= 6 && sub + lowMid > 20 && air + presence > 25) {
+      return { label: "Musikk", confidence: 75, detail: `Bredt spektrum, ${broadband} aktive bånd.` };
+    }
+    // Tale: dominans i 500–2k, lite sub
+    if (speech > 35 && sub < 15 && air < 25) {
+      return { label: "Tale / dialog", confidence: 80, detail: `Tale-kjerne ${speech.toFixed(0)}% av energien.` };
+    }
+    // Klapping/perkusjon: kort, høy diskant + bredt spektrum
+    if (air + presence > 45 && lowMid < 20) {
+      return { label: "Klapping / perkusjon", confidence: 65, detail: `Høyt energi-innhold i diskant.` };
+    }
+    // Bass-rumling / motor
+    if (sub + lowMid > 55 && air < 15) {
+      return { label: "Bass-rumling / motor / vind", confidence: 70, detail: `${(sub + lowMid).toFixed(0)}% i sub/lav-mid.` };
+    }
+    // Hvit/rosa støy
+    if (broadband >= 7 && Math.max(...pct) < 20) {
+      return { label: "Bredbåndsstøy (vifte/regn)", confidence: 65, detail: `Jevn fordeling over hele spekteret.` };
+    }
+    // Sibilance / hvesing
+    if (air > 30 && sub < 10) {
+      return { label: "Hvesing / sus", confidence: 55, detail: `Dominans i 8–16 kHz.` };
+    }
+    return { label: "Blandet / ubestemt", confidence: 30, detail: `Dominant ${domHz ?? "?"} Hz · ${splDb.toFixed(0)} dB.` };
+  };
+
 
   // Prosent-fordeling av lyd-energi pr oktav (sum = 100) — snittet over valgt vindu
   const bandPercent = useMemo(() => {
