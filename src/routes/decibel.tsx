@@ -582,33 +582,84 @@ function DecibelPage() {
           </div>
         )}
 
-        {/* Frekvensspektrum */}
+        {/* Spektralanalyse - hele frekvensspekteret */}
         <div className="rounded-lg border border-border bg-card p-4 space-y-3">
           <h2 className="font-semibold flex items-center gap-2">
-            <Waves size={16} className="text-primary" /> Frekvensbånd (oktav)
+            <Waves size={16} className="text-primary" /> Spektralanalyse (20 Hz – 20 kHz)
           </h2>
-          <div className="flex items-end gap-1 h-40">
-            {OCTAVE_BANDS.map((b, i) => {
-              const dbVal = bands[i] ?? -100;
-              // Map -90..-10 dB → 0..100%
-              const h = Math.max(2, Math.min(100, ((dbVal + 90) / 80) * 100));
-              const color = dbVal > -25 ? "bg-destructive" : dbVal > -45 ? "bg-amber-500" : "bg-emerald-500";
-              return (
-                <div key={b.center} className="flex-1 flex flex-col items-center gap-1 group relative">
-                  <div className="flex-1 w-full flex items-end">
-                    <div className={`w-full rounded-t transition-all ${color}`} style={{ height: `${h}%` }} />
-                  </div>
-                  <div className="text-[10px] text-muted-foreground font-mono">{b.label}</div>
-                  <div className="absolute bottom-full mb-1 hidden group-hover:block bg-popover border border-border text-[10px] px-2 py-1 rounded shadow whitespace-nowrap z-10">
-                    {b.center} Hz · {b.role} · {dbVal.toFixed(0)} dB
-                  </div>
-                </div>
-              );
-            })}
+          <div className="h-56 lg:h-72">
+            <SpectrumChart freqDb={spectrum?.data ?? null} binHz={spectrum?.binHz ?? 0} />
           </div>
-          <p className="text-[11px] text-muted-foreground">
-            Hold pekeren over et bånd for forklaring. Verdier er relative (dBFS) — bruk dem til balanse, ikke absolutt nivå.
-          </p>
+          <div className="flex flex-wrap gap-3 text-[11px] text-muted-foreground">
+            <span className="inline-flex items-center gap-1"><span className="inline-block w-3 h-3 rounded bg-violet-400/30 border border-violet-500/50" /> Musikk-fundament 60 Hz–4 kHz</span>
+            <span className="inline-flex items-center gap-1"><span className="inline-block w-3 h-3 rounded bg-emerald-400/30 border border-emerald-500/50" /> Tale-kjerne 300 Hz–3,4 kHz</span>
+            <span className="inline-flex items-center gap-1"><span className="inline-block w-3 h-3 rounded bg-amber-400/30 border border-amber-500/50" /> Klarhet 2–8 kHz</span>
+            <span className="text-muted-foreground">Mennesker hører 20 Hz–20 kHz (hele aksen)</span>
+          </div>
+        </div>
+
+        {/* Frekvensbånd (oktav) - bar + prosent */}
+        <div className="rounded-lg border border-border bg-card p-4 space-y-3">
+          <h2 className="font-semibold flex items-center gap-2">
+            <Waves size={16} className="text-primary" /> Frekvensbånd (oktav) — andel av total lyd-energi
+          </h2>
+          <div className="grid lg:grid-cols-[2fr_1fr] gap-4">
+            <div>
+              <div className="flex items-end gap-1 h-48 border-b border-border/50">
+                {OCTAVE_BANDS.map((b, i) => {
+                  const pct = bandPercent[i] ?? 0;
+                  // Skaler høyde: 0% → 2, 40% → 100%
+                  const h = Math.max(2, Math.min(100, (pct / 40) * 100));
+                  const isDom = i === dominantBandIdx && pct > 1;
+                  const color = pct > 25 ? "bg-rose-500" : pct > 12 ? "bg-amber-500" : pct > 4 ? "bg-sky-500" : "bg-emerald-500";
+                  return (
+                    <div key={b.center} className="flex-1 flex flex-col items-center gap-1 group relative">
+                      <div className="text-[10px] font-mono font-bold tabular-nums" style={{ opacity: pct < 0.5 ? 0.4 : 1 }}>
+                        {pct.toFixed(0)}%
+                      </div>
+                      <div className="flex-1 w-full flex items-end">
+                        <div
+                          className={`w-full rounded-t transition-all ${color} ${isDom ? "ring-2 ring-primary ring-offset-1" : ""}`}
+                          style={{ height: `${h}%` }}
+                        />
+                      </div>
+                      <div className="text-[10px] text-muted-foreground font-mono">{b.label}</div>
+                      <div className="absolute bottom-full mb-1 hidden group-hover:block bg-popover border border-border text-[10px] px-2 py-1 rounded shadow whitespace-nowrap z-10">
+                        {b.center} Hz · {b.role} · {(bands[i] ?? -100).toFixed(0)} dB · {pct.toFixed(1)}%
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="text-[11px] text-muted-foreground mt-2">
+                Prosent viser hvor stor andel av total lyd-energi som ligger i hvert oktavbånd. Markert bånd = mest dominante frekvensområde nå.
+              </p>
+            </div>
+
+            <div className="rounded-md border border-border overflow-hidden text-xs">
+              <table className="w-full">
+                <thead className="bg-muted/50 text-[10px] uppercase tracking-wider text-muted-foreground">
+                  <tr>
+                    <th className="text-left px-2 py-1.5">Hz</th>
+                    <th className="text-left px-2 py-1.5">Område</th>
+                    <th className="text-right px-2 py-1.5">%</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {OCTAVE_BANDS.map((b, i) => {
+                    const pct = bandPercent[i] ?? 0;
+                    return (
+                      <tr key={b.center} className={`border-t border-border ${i === dominantBandIdx && pct > 1 ? "bg-primary/5" : ""}`}>
+                        <td className="px-2 py-1 font-mono text-primary">{b.label}</td>
+                        <td className="px-2 py-1 text-muted-foreground">{b.role}</td>
+                        <td className="px-2 py-1 text-right font-mono tabular-nums">{pct.toFixed(1)}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
           {balanceHints.length > 0 && (
             <ul className="text-xs text-muted-foreground list-disc pl-5 space-y-1 border-t border-border pt-2">
               {balanceHints.map((h, i) => <li key={i}>{h}</li>)}
