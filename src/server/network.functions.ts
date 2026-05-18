@@ -266,15 +266,10 @@ export const getNetworkSnapshot = createServerFn({ method: "GET" }).handler(
       if (r.ts > cur.last) cur.last = r.ts;
       byDevice.set(r.device_id, cur);
       if (r.available && r.ts === cur.last) connectedNow.add(r.device_id);
-      const raw = (r.raw ?? {}) as any;
-      if (typeof raw._download === "number") {
-        dlSum += raw._download;
-        dlN++;
-      }
-      if (typeof raw._upload === "number") {
-        upSum += raw._upload;
-        upN++;
-      }
+      const dl = (r as any).download_kbs ?? (r.raw as any)?._download;
+      const up = (r as any).upload_kbs ?? (r.raw as any)?._upload;
+      if (typeof dl === "number") { dlSum += dl; dlN++; }
+      if (typeof up === "number") { upSum += up; upN++; }
     }
     const topMostSeen = [...byDevice.entries()]
       .map(([device_id, v]) => ({ device_id, device_name: v.name, samples: v.samples, last_seen: v.last }))
