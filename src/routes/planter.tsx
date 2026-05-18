@@ -141,7 +141,14 @@ function PlanterPage() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {plants.map((p) => (
-              <PlantCard key={p.id} plant={p} flora={floras.find((f) => f.id === p.miflora_device_id) ?? null} onOpen={() => setOpenId(p.id)} />
+              <PlantCard
+                key={p.id}
+                plant={p}
+                flora={floras.find((f) => f.id === p.miflora_device_id) ?? null}
+                locationLabel={locations[p.id] ?? null}
+                onOpen={() => setOpenId(p.id)}
+                onDelete={() => handleDelete(p.id)}
+              />
             ))}
           </div>
         )}
