@@ -91,6 +91,7 @@ const TOC_ITEMS: { id: string; label: string; emoji: string }[] = [
   { id: "sec-garantiprefs", label: "Garanti pr bruker", emoji: "👥" },
   { id: "sec-abonnementer", label: "Abonnement", emoji: "🔔" },
   { id: "sec-abonnenter", label: "Enheter", emoji: "📱" },
+  { id: "sec-planter", label: "Planter & Trær", emoji: "🌿" },
   { id: "sec-okonomi", label: "Husholdningens hvelv", emoji: "🪙" },
 ];
 
