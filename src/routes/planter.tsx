@@ -188,7 +188,7 @@ function PlantCard({ plant, flora, locationLabel, onOpen, onDelete }: { plant: P
 
   return (
     <div className="panel rounded-lg overflow-hidden border border-border/60 hover:border-primary/60 transition group relative">
-      <button onClick={onDelete && handleDeleteClick} className="absolute top-2 left-2 z-10 p-1.5 rounded-md bg-black/60 text-white opacity-0 group-hover:opacity-100 hover:bg-red-600 transition" aria-label="Slett plante" title="Slett plante">
+      <button onClick={handleDeleteClick} className="absolute top-2 left-2 z-10 p-1.5 rounded-md bg-black/60 text-white opacity-0 group-hover:opacity-100 hover:bg-red-600 transition" aria-label="Slett plante" title="Slett plante">
         <Trash2 size={12} />
       </button>
       <button onClick={onOpen} className="block w-full text-left">
