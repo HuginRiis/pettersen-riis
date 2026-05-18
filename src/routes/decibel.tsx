@@ -76,6 +76,10 @@ function DecibelPage() {
     localStorage.setItem("db-calibration", String(calibration));
   }, [calibration]);
 
+  useEffect(() => {
+    localStorage.setItem("vu-fall-speed", String(vuFallSpeed));
+  }, [vuFallSpeed]);
+
   const stop = () => {
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
     rafRef.current = null;
