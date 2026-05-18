@@ -22,6 +22,7 @@ import { Route as SkatteUtregningenRouteImport } from './routes/skatte-utregning
 import { Route as RoborockRouteImport } from './routes/roborock'
 import { Route as PushVarslingerRouteImport } from './routes/push-varslinger'
 import { Route as PollenRouteImport } from './routes/pollen'
+import { Route as PlanterRouteImport } from './routes/planter'
 import { Route as OppussingHyttaRouteImport } from './routes/oppussing-hytta'
 import { Route as OppussingBorgenRouteImport } from './routes/oppussing-borgen'
 import { Route as OkonomiRouteImport } from './routes/okonomi'
@@ -110,6 +111,11 @@ const PushVarslingerRoute = PushVarslingerRouteImport.update({
 const PollenRoute = PollenRouteImport.update({
   id: '/pollen',
   path: '/pollen',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PlanterRoute = PlanterRouteImport.update({
+  id: '/planter',
+  path: '/planter',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OppussingHyttaRoute = OppussingHyttaRouteImport.update({
@@ -251,6 +257,7 @@ export interface FileRoutesByFullPath {
   '/okonomi': typeof OkonomiRoute
   '/oppussing-borgen': typeof OppussingBorgenRoute
   '/oppussing-hytta': typeof OppussingHyttaRoute
+  '/planter': typeof PlanterRoute
   '/pollen': typeof PollenRoute
   '/push-varslinger': typeof PushVarslingerRoute
   '/roborock': typeof RoborockRoute
@@ -290,6 +297,7 @@ export interface FileRoutesByTo {
   '/okonomi': typeof OkonomiRoute
   '/oppussing-borgen': typeof OppussingBorgenRoute
   '/oppussing-hytta': typeof OppussingHyttaRoute
+  '/planter': typeof PlanterRoute
   '/pollen': typeof PollenRoute
   '/push-varslinger': typeof PushVarslingerRoute
   '/roborock': typeof RoborockRoute
@@ -330,6 +338,7 @@ export interface FileRoutesById {
   '/okonomi': typeof OkonomiRoute
   '/oppussing-borgen': typeof OppussingBorgenRoute
   '/oppussing-hytta': typeof OppussingHyttaRoute
+  '/planter': typeof PlanterRoute
   '/pollen': typeof PollenRoute
   '/push-varslinger': typeof PushVarslingerRoute
   '/roborock': typeof RoborockRoute
@@ -371,6 +380,7 @@ export interface FileRouteTypes {
     | '/okonomi'
     | '/oppussing-borgen'
     | '/oppussing-hytta'
+    | '/planter'
     | '/pollen'
     | '/push-varslinger'
     | '/roborock'
@@ -410,6 +420,7 @@ export interface FileRouteTypes {
     | '/okonomi'
     | '/oppussing-borgen'
     | '/oppussing-hytta'
+    | '/planter'
     | '/pollen'
     | '/push-varslinger'
     | '/roborock'
@@ -449,6 +460,7 @@ export interface FileRouteTypes {
     | '/okonomi'
     | '/oppussing-borgen'
     | '/oppussing-hytta'
+    | '/planter'
     | '/pollen'
     | '/push-varslinger'
     | '/roborock'
@@ -489,6 +501,7 @@ export interface RootRouteChildren {
   OkonomiRoute: typeof OkonomiRoute
   OppussingBorgenRoute: typeof OppussingBorgenRoute
   OppussingHyttaRoute: typeof OppussingHyttaRoute
+  PlanterRoute: typeof PlanterRoute
   PollenRoute: typeof PollenRoute
   PushVarslingerRoute: typeof PushVarslingerRoute
   RoborockRoute: typeof RoborockRoute
@@ -606,6 +619,13 @@ declare module '@tanstack/react-router' {
       path: '/pollen'
       fullPath: '/pollen'
       preLoaderRoute: typeof PollenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/planter': {
+      id: '/planter'
+      path: '/planter'
+      fullPath: '/planter'
+      preLoaderRoute: typeof PlanterRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/oppussing-hytta': {
@@ -793,6 +813,7 @@ const rootRouteChildren: RootRouteChildren = {
   OkonomiRoute: OkonomiRoute,
   OppussingBorgenRoute: OppussingBorgenRoute,
   OppussingHyttaRoute: OppussingHyttaRoute,
+  PlanterRoute: PlanterRoute,
   PollenRoute: PollenRoute,
   PushVarslingerRoute: PushVarslingerRoute,
   RoborockRoute: RoborockRoute,

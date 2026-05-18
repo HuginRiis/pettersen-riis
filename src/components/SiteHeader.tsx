@@ -49,7 +49,8 @@ type RoutePath =
   | "/gressklipper"
   | "/stovsugeren"
   | "/got-saga"
-  | "/decibel";
+  | "/decibel"
+  | "/planter";
 
 type NavLink = { to: RoutePath; label: string; public?: boolean };
 
@@ -85,6 +86,7 @@ const ROUTE_ICON: Partial<Record<RoutePath, React.ComponentType<{ size?: number;
   "/gressklipper": Bot,
   "/stovsugeren": Bot,
   "/decibel": Volume2,
+  "/planter": TreePine,
 };
 
 // Fargerike ikoner i GoT-stil — én distinkt farge per sal, matcher salens tema.
@@ -113,6 +115,7 @@ const ROUTE_ICON_COLOR: Partial<Record<RoutePath, string>> = {
   "/gressklipper": "#10b981",        // gressklipper — gressgrønn
   "/stovsugeren": "#38bdf8",         // støvsuger — sky-cyan
   "/decibel": "#f43f5e",             // lyd — rose (høyt volum)
+  "/planter": "#22c55e",             // planter — bladgrønn
 };
 
 // Public halls — open to any visitor entering the courtyard.
@@ -142,6 +145,7 @@ const navLinks: NavLink[] = [
   { to: "/trening", label: "Trening" },
   { to: "/varsler", label: "Farevarsler", public: true },
   { to: "/decibel", label: "Decibelmåler", public: true },
+  { to: "/planter", label: "Planter & Trær" },
   { to: "/steintavle", label: "Steintavle" },
 ];
 
