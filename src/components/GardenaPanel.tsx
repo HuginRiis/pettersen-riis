@@ -454,12 +454,12 @@ export function GardenaPanel() {
           </span>
           <button
             type="button"
-            onClick={load}
-            disabled={loading}
+            onClick={() => load(true)}
+            disabled={loading || cooldown > 0}
             className="flex items-center gap-2 text-[10px] tracking-[0.25em] uppercase text-primary/80 hover:text-primary disabled:opacity-50"
           >
             {loading ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
-            Oppdater
+            {cooldown > 0 ? `Vent ${Math.ceil(cooldown / 1000)}s` : "Oppdater"}
           </button>
         </div>
 
