@@ -102,6 +102,18 @@ function PlanterPage() {
           <CameraButton onCaptured={(s) => setCapture(s)} />
         </div>
 
+        {floras.length > 0 && (
+          <MiFloraDashboard
+            floras={floras}
+            plants={plants}
+            onAttach={async (deviceId, plantId) => {
+              const f = floras.find((x) => x.id === deviceId);
+              await supabase.from("plants").update({ miflora_device_id: f?.id ?? null, miflora_device_name: f?.name ?? null }).eq("id", plantId);
+              await load();
+            }}
+          />
+        )}
+
         {loading ? (
           <div className="flex items-center gap-2 text-muted-foreground text-sm"><Loader2 className="animate-spin" size={16} /> Henter planter…</div>
         ) : plants.length === 0 ? (
