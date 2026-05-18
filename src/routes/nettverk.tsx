@@ -127,7 +127,7 @@ function NettverkPage() {
         <Card title="Tilkoblede enheter" icon={<Wifi size={18} className="text-primary" />}>
           {data?.clients.length ? (
             <ul className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {data.clients.map((d) => <DeviceCard key={d.id} d={d} />)}
+              {data.clients.map((d) => <DeviceCard key={d.id} d={d} detailed />)}
             </ul>
           ) : (
             <Empty text="Homey eksponerer ikke per-klient-info fra Deco — vi viser klienter rapportert som egne nettverksenheter." />
