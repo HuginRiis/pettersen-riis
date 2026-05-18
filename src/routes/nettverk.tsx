@@ -23,12 +23,15 @@ import { PageShell, PageHero } from "@/components/PageShell";
 import {
   getNetworkSnapshot,
   getRouterInsights,
+  listRouterInsightLogs,
   type NetworkDevice,
   type NetworkSnapshotResult,
   type SpeedPoint,
   type MetricPoint,
   type InsightResult,
+  type InsightLogMeta,
 } from "@/server/network.functions";
+
 import { NetworkTopology } from "@/components/NetworkTopology";
 import nettverkHero from "@/assets/nettverk-hero.jpg";
 
