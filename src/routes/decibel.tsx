@@ -360,15 +360,48 @@ function DecibelPage() {
   const balanceHints = (() => {
     if (!running) return [];
     const tips: string[] = [];
-    const lowMid = (bands[2] + bands[3]) / 2; // 125–250 Hz
-    const presence = (bands[5] + bands[6]) / 2; // 1–2 kHz
-    const sibilance = bands[7]; // 4 kHz
+    const lowMid = (bands[2] + bands[3]) / 2;
+    const presence = (bands[5] + bands[6]) / 2;
+    const sibilance = bands[7];
     if (lowMid > presence + 6) tips.push("Mudrent: kutt 3–5 dB rundt 200–300 Hz for klarere tale.");
     if (presence > lowMid + 10) tips.push("Tynn lyd: løft 2–3 dB rundt 200 Hz for varme.");
     if (sibilance > presence + 6) tips.push("Skarpe s-er: bruk de-esser eller demp 4–6 kHz.");
     if (bands[0] > -40) tips.push("Mye sub-bass — kan være rumling eller vindstøy.");
     return tips;
   })();
+
+  // Klang/ekko-prosent (0–100). RT60 0.2s→0%, 1.5s→100%
+  const reverbPct = useMemo(() => {
+    if (!scanResult?.rt60) return null;
+    return Math.round(Math.max(0, Math.min(100, ((scanResult.rt60 - 0.2) / 1.3) * 100)));
+  }, [scanResult]);
+
+  // TV-lytting & diskant-anbefaling
+  const tvAssessment = useMemo(() => {
+    if (!running || bands.every((b) => b <= -90)) return null;
+    const speech = (bands[5] + bands[6]) / 2; // 1-2 kHz
+    const treble = (bands[7] + bands[8]) / 2; // 4-8 kHz
+    const warmth = (bands[3] + bands[4]) / 2; // 250-500 Hz
+    const bass = (bands[1] + bands[2]) / 2;   // 63-125 Hz
+
+    const speechClarity = speech - warmth; // > 0 = klart
+    const trebleBalance = treble - speech; // ~ -3..+3 ideal
+    const bassBalance = bass - warmth;
+
+    // Vurdering
+    const tvOk = speechClarity > -4 && trebleBalance > -6 && trebleBalance < 4;
+    const filmOk = bassBalance > -8 && trebleBalance > -8 && trebleBalance < 6;
+
+    let trebleAdvice = "Diskant ser balansert ut.";
+    if (trebleBalance < -4) trebleAdvice = "Skru opp diskant +2 til +4 dB — tale mister konsonanter.";
+    else if (trebleBalance > 3) trebleAdvice = "Skru ned diskant 2–3 dB — for skarpt, sliter på ørene.";
+
+    let bassAdvice = "Bass virker ok.";
+    if (bassBalance < -6) bassAdvice = "Skru opp bass litt — filmscener mister tyngde.";
+    else if (bassBalance > 6) bassAdvice = "Demp bass — kan maskere dialogen.";
+
+    return { tvOk, filmOk, trebleAdvice, bassAdvice, speechClarity, trebleBalance, bassBalance };
+  }, [bands, running]);
 
   return (
     <PageShell>
