@@ -1,10 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Wifi, Router as RouterIcon, Signal, Activity, History, Trophy, RefreshCw } from "lucide-react";
 import { PageShell, PageHero } from "@/components/PageShell";
-import { getNetworkSnapshot, type NetworkDevice } from "@/server/network.functions";
+import { getNetworkSnapshot, type NetworkDevice, type NetworkSnapshotResult } from "@/server/network.functions";
+import { NetworkTopology } from "@/components/NetworkTopology";
+import nettverkHero from "@/assets/nettverk-hero.jpg";
 
 export const Route = createFileRoute("/nettverk")({
   head: () => ({
@@ -18,17 +19,30 @@ export const Route = createFileRoute("/nettverk")({
 
 function NettverkPage() {
   const fn = useServerFn(getNetworkSnapshot);
-  const q = useQuery({
-    queryKey: ["network-snapshot"],
-    queryFn: () => fn(),
-    refetchInterval: 60_000,
-  });
-  const [lastFetched, setLastFetched] = useState<string | null>(null);
-  useEffect(() => {
-    if (q.data?.generatedAt) setLastFetched(q.data.generatedAt);
-  }, [q.data]);
+  const [data, setData] = useState<NetworkSnapshotResult | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const data = q.data;
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const r = await fn();
+      setData(r);
+      setError(null);
+    } catch (e: any) {
+      setError(e?.message ?? "Klarte ikke hente nettverksdata");
+    } finally {
+      setLoading(false);
+    }
+  }, [fn]);
+
+  useEffect(() => {
+    load();
+    const t = setInterval(load, 60_000);
+    return () => clearInterval(t);
+  }, [load]);
+
+
 
   return (
     <PageShell>
