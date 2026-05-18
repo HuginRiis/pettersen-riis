@@ -38,6 +38,14 @@ export type NetworkDevice = {
 };
 
 export type SpeedPoint = { ts: string; download: number | null; upload: number | null };
+export type MetricPoint = {
+  ts: string;
+  download: number | null;
+  upload: number | null;
+  cpu: number | null;
+  memory: number | null;
+  clients: number | null;
+};
 
 export type NetworkSnapshotResult = {
   ok: boolean;
@@ -57,6 +65,7 @@ export type NetworkSnapshotResult = {
     uploadKbsAvg: number | null;
   };
   speedHistory: SpeedPoint[];
+  routerHistory: Record<string, MetricPoint[]>;
 };
 
 function classify(d: any): NetworkDevice["kind"] {
