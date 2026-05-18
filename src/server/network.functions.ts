@@ -309,8 +309,8 @@ export const getNetworkSnapshot = createServerFn({ method: "GET" }).handler(
           const raw = (r.raw ?? {}) as any;
           return {
             ts: r.ts,
-            download: typeof raw._download === "number" ? raw._download : null,
-            upload: typeof raw._upload === "number" ? raw._upload : null,
+            download: typeof (r as any).download_kbs === "number" ? (r as any).download_kbs : (typeof raw._download === "number" ? raw._download : null),
+            upload: typeof (r as any).upload_kbs === "number" ? (r as any).upload_kbs : (typeof raw._upload === "number" ? raw._upload : null),
           };
         });
       speedHistory = points;
