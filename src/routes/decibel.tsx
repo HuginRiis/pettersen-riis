@@ -56,6 +56,10 @@ function DecibelPage() {
   const [scanResult, setScanResult] = useState<ScanResult | null>(null);
   const [history, setHistory] = useState<number[]>([]);
   const [pitchStats, setPitchStats] = useState<{ vibratoCents: number; vibratoHz: number; chorus: boolean } | null>(null);
+  const [vuFallSpeed, setVuFallSpeed] = useState<number>(() => {
+    if (typeof window === "undefined") return 0.05;
+    return Number(localStorage.getItem("vu-fall-speed") ?? "0.05");
+  });
 
   const ctxRef = useRef<AudioContext | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
