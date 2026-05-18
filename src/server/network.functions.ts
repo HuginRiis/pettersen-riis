@@ -125,6 +125,13 @@ function mapDevice(d: any): NetworkDevice {
   const ipAddress = readStr(caps, "ip_address", "wan_ip", "lan_ip");
   const master = readBool(caps, "is_master", "alarm_master", "master");
   const wired = readBool(caps, "is_wired", "ethernet", "wired");
+  const wanConnected = readBool(caps, "alarm_wan_connected_ipv4", "alarm_wan_connected", "wan_connected", "wan_connected_ipv4");
+  const meshConnected = readBool(caps, "alarm_connected_mesh", "alarm_mesh_connected", "mesh_connected", "connected_to_mesh");
+  const deviceRole = readStr(caps, "device_role", "role", "deco_role") ?? (master === true ? "master" : master === false ? "slave" : null);
+  const signal24 = readStr(caps, "signal_strength_2_4_ghz", "signal_2_4_ghz", "wifi_signal_2_4");
+  const signal5 = readStr(caps, "signal_strength_5_ghz", "signal_5_ghz", "wifi_signal_5");
+  const wifiBand = readStr(caps, "wifi_band", "wifi_bands", "wifi_mode");
+  const uptime = readNum(caps, "uptime", "measure_uptime", "device_uptime");
 
   const capSummary: Record<string, CapValue> = {};
   for (const [k, v] of Object.entries(caps)) {
