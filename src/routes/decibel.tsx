@@ -45,6 +45,7 @@ function DecibelPage() {
   const [minDb, setMinDb] = useState<number | null>(null);
   const [avg, setAvg] = useState(0);
   const [bands, setBands] = useState<number[]>(() => OCTAVE_BANDS.map(() => -100));
+  const [bandsSlow, setBandsSlow] = useState<number[]>(() => OCTAVE_BANDS.map(() => -100));
   const [dominantHz, setDominantHz] = useState<number | null>(null);
   const [clipping, setClipping] = useState(false);
   const [error, setError] = useState<string | null>(null);
