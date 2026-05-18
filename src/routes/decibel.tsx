@@ -927,6 +927,26 @@ function DecibelPage() {
             </span>
           </div>
 
+          {/* Følsomhets-slider */}
+          <div className="rounded-md border border-border bg-muted/20 p-2.5 space-y-1.5">
+            <div className="flex items-center justify-between text-[11px]">
+              <span className="text-muted-foreground">Følsomhet</span>
+              <span className="tabular-nums font-mono">
+                {tvSensitivity.toFixed(0)} / 10 {tvSensitivity < 3 ? "(streng)" : tvSensitivity > 7 ? "(svært følsom)" : "(middels)"}
+              </span>
+            </div>
+            <input
+              type="range" min={0} max={10} step={1}
+              value={tvSensitivity}
+              onChange={(e) => setTvSensitivity(Number(e.target.value))}
+              className="w-full accent-primary"
+            />
+            <p className="text-[10px] text-muted-foreground">
+              Høyere = fanger svakere lyd og er mildere med "OK"-merkene. Lavere = krever tydeligere signal.
+            </p>
+          </div>
+
+
           {(() => {
             const allChips = ["Tydelig tale-område", "Balansert diskant", "Stabil bass", "OK for vanlig TV", "OK for film"];
             const active = new Set(tvAssessment.hasSignal ? tvAssessment.highlights : []);
