@@ -205,6 +205,57 @@ export function DbUsagePanel() {
         </p>
       </div>
 
+      {/* Lagring per kategori */}
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground">
+            <HardDrive size={12} /> Lagring per kategori
+          </div>
+          <div className="text-[11px] font-mono text-muted-foreground">
+            Totalt {prettyBytes(categoryUsage.total)}
+          </div>
+        </div>
+        {categoryUsage.categories.length === 0 ? (
+          <div className="text-sm text-muted-foreground">Ingen data.</div>
+        ) : (
+          <div className="space-y-1.5">
+            {categoryUsage.categories.map((c) => {
+              const pctC = categoryUsage.total > 0 ? (c.bytes / categoryUsage.total) * 100 : 0;
+              return (
+                <div key={c.name}>
+                  <div className="flex items-center justify-between text-xs mb-0.5">
+                    <span className="text-foreground">{c.name}</span>
+                    <span className="font-mono text-muted-foreground tabular-nums">
+                      {prettyBytes(c.bytes)} · {pctC.toFixed(1)}%
+                    </span>
+                  </div>
+                  <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                    <div className="h-full bg-primary/70" style={{ width: `${pctC}%` }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+        {storage && storage.buckets.length > 0 && (
+          <div className="mt-3 pt-3 border-t border-border/60">
+            <div className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-1.5">
+              Storage-buckets
+            </div>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+              {storage.buckets.map((b) => (
+                <div key={b.bucket} className="flex items-center justify-between">
+                  <span className="font-mono">{b.bucket}</span>
+                  <span className="font-mono text-muted-foreground tabular-nums">
+                    {prettyBytes(b.bytes)} · {b.objects}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Cron jobs */}
       <div>
         <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground mb-2">
