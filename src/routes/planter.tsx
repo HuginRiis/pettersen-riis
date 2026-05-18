@@ -177,35 +177,83 @@ function PlanterPage() {
 
 // ============ Plant card ============
 
-function PlantCard({ plant, flora, onOpen }: { plant: Plant; flora: MiFloraDevice | null; onOpen: () => void }) {
+function PlantCard({ plant, flora, locationLabel, onOpen, onDelete }: { plant: Plant; flora: MiFloraDevice | null; locationLabel: string | null; onOpen: () => void; onDelete: () => void }) {
   const daysSinceWater = plant.last_watered_at ? Math.floor((Date.now() - new Date(plant.last_watered_at).getTime()) / 86400000) : null;
   const waterDue = plant.watering_days_interval && daysSinceWater !== null && daysSinceWater >= plant.watering_days_interval;
 
+  const handleDeleteClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onDelete();
+  };
+
   return (
-    <button onClick={onOpen} className="panel rounded-lg overflow-hidden border border-border/60 hover:border-primary/60 transition text-left">
-      <div className="aspect-[4/3] bg-muted relative">
-        {plant.cover_photo_url ? (
-          <img src={plant.cover_photo_url} alt={plant.name} className="w-full h-full object-cover" loading="lazy" />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center"><Sprout size={48} className="text-muted-foreground/40" /></div>
-        )}
-        <ToxicityBadge edible={plant.edible} toxicity={plant.toxicity} />
-      </div>
-      <div className="p-3">
-        <div className="font-semibold text-foreground truncate">{plant.name}</div>
-        {plant.species_latin && <div className="text-[10px] italic text-muted-foreground truncate">{plant.species_latin}</div>}
-        <div className="mt-2 flex flex-wrap gap-1.5 text-[10px]">
+    <div className="panel rounded-lg overflow-hidden border border-border/60 hover:border-primary/60 transition group relative">
+      <button onClick={onDelete && handleDeleteClick} className="absolute top-2 left-2 z-10 p-1.5 rounded-md bg-black/60 text-white opacity-0 group-hover:opacity-100 hover:bg-red-600 transition" aria-label="Slett plante" title="Slett plante">
+        <Trash2 size={12} />
+      </button>
+      <button onClick={onOpen} className="block w-full text-left">
+        <div className="aspect-[4/3] bg-muted relative">
+          {plant.cover_photo_url ? (
+            <img src={plant.cover_photo_url} alt={plant.name} className="w-full h-full object-cover" loading="lazy" />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center"><Sprout size={48} className="text-muted-foreground/40" /></div>
+          )}
+          <ToxicityBadge edible={plant.edible} toxicity={plant.toxicity} />
+        </div>
+        <div className="p-3 space-y-2">
+          <div>
+            <div className="font-semibold text-foreground truncate">{plant.species_common ?? plant.name}</div>
+            {plant.species_latin && <div className="text-[10px] italic text-muted-foreground truncate">{plant.species_latin}</div>}
+          </div>
+
+          <div className="flex flex-wrap gap-1 text-[10px]">
+            <span className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground capitalize">{plant.kind}</span>
+            {plant.edible === true && <span className="px-1.5 py-0.5 rounded bg-emerald-600/25 text-emerald-300 font-semibold flex items-center gap-0.5"><Check size={9} /> Spiselig</span>}
+            {plant.edible === false && <span className="px-1.5 py-0.5 rounded bg-red-600/25 text-red-300 font-semibold">Ikke spis</span>}
+            {plant.toxicity === "severe" && <span className="px-1.5 py-0.5 rounded bg-red-600/30 text-red-300 font-semibold">Sterkt giftig</span>}
+            {plant.toxicity === "moderate" && <span className="px-1.5 py-0.5 rounded bg-red-600/20 text-red-300 font-semibold">Giftig</span>}
+            {plant.toxicity === "mild" && <span className="px-1.5 py-0.5 rounded bg-amber-600/25 text-amber-300">Mild gift</span>}
+            {plant.toxicity === "none" && plant.edible !== true && <span className="px-1.5 py-0.5 rounded bg-emerald-600/15 text-emerald-300/80 flex items-center gap-0.5"><Leaf size={9} /> Ufarlig</span>}
+          </div>
+
+          {locationLabel && (
+            <div className="text-[11px] text-muted-foreground flex items-start gap-1">
+              <MapPin size={11} className="mt-0.5 flex-shrink-0 text-primary/70" />
+              <span className="truncate">{locationLabel}</span>
+            </div>
+          )}
+
+          {plant.where_grows && (
+            <div className="text-[11px] text-foreground/70 line-clamp-2">
+              <span className="text-muted-foreground">Vokser: </span>{plant.where_grows}
+            </div>
+          )}
+
+          {plant.care_summary && (
+            <div className="text-[11px] text-foreground/70 line-clamp-2">
+              <span className="text-muted-foreground">Stell: </span>{plant.care_summary}
+            </div>
+          )}
+
+          {(plant.watering_days_interval || plant.season_start_month) && (
+            <div className="flex flex-wrap gap-1 text-[10px] text-muted-foreground">
+              {plant.watering_days_interval && <span className="inline-flex items-center gap-0.5"><Droplet size={9} /> hver {plant.watering_days_interval}d</span>}
+              {plant.season_start_month && plant.season_end_month && <span>· sesong {plant.season_start_month}–{plant.season_end_month}</span>}
+            </div>
+          )}
+
           {flora && (
-            <>
+            <div className="flex flex-wrap gap-1 text-[10px] pt-1 border-t border-border/40">
               {flora.soilMoisture !== null && <Pill icon={Droplet} label={`${Math.round(flora.soilMoisture)}%`} color={flora.soilMoisture < (plant.soil_moisture_min ?? 20) ? "text-orange-400" : "text-cyan-400"} />}
               {flora.light !== null && <Pill icon={Sun} label={`${Math.round(flora.light)} lx`} color="text-amber-400" />}
               {flora.temperature !== null && <Pill icon={Thermometer} label={`${flora.temperature.toFixed(1)}°`} color="text-rose-400" />}
-            </>
+            </div>
           )}
-          {waterDue && <span className="px-1.5 py-0.5 rounded bg-orange-500/20 text-orange-300 font-semibold">Trenger vann</span>}
+
+          {waterDue && <div className="text-[10px] px-1.5 py-0.5 rounded bg-orange-500/20 text-orange-300 font-semibold inline-block">Trenger vann</div>}
         </div>
-      </div>
-    </button>
+      </button>
+    </div>
   );
 }
 
