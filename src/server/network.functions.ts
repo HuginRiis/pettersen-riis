@@ -327,15 +327,18 @@ export const getNetworkSnapshot = createServerFn({ method: "GET" }).handler(
         .reverse()
         .map((r): MetricPoint => {
           const raw = (r.raw ?? {}) as any;
-          const numOr = (v: any, fb: any) =>
-            typeof v === "number" ? v : typeof fb === "number" ? fb : null;
+          const numOr = (...vals: any[]) => {
+            for (const v of vals) if (typeof v === "number" && Number.isFinite(v)) return v;
+            return null;
+          };
           return {
             ts: r.ts,
-            download: numOr((r as any).download_kbs, raw._download),
-            upload: numOr((r as any).upload_kbs, raw._upload),
+            download: numOr((r as any).download_kbs, raw._download, raw.measure_down_kilo_bytes_per_second, raw.meter_download_speed),
+            upload: numOr((r as any).upload_kbs, raw._upload, raw.measure_up_kilo_bytes_per_second, raw.meter_upload_speed),
             cpu: numOr((r as any).cpu, raw.measure_cpu_usage),
             memory: numOr((r as any).memory, raw.measure_memory_usage),
-            clients: numOr((r as any).clients, raw.meter_connected_clients),
+            clients: numOr((r as any).clients, raw.meter_connected_clients, raw.connected_clients),
+
           };
         });
       routerHistory[router.id] = pts;
