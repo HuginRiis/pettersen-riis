@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { PageShell, PageHero } from "@/components/PageShell";
 import { Mic, MicOff, Waves, AlertTriangle, Volume2, Radio, Zap } from "lucide-react";
 import heroImg from "@/assets/got-decibel.jpg";
+import { DeviceSensorsPanel } from "@/components/DeviceSensorsPanel";
 
 export const Route = createFileRoute("/decibel")({
   component: DecibelPage,
@@ -465,6 +466,8 @@ function DecibelPage() {
             <p><strong className="text-foreground">RT60 ideal:</strong> tale &lt; 0,6 s · klassisk 1,5–2,2 s · rock/PA 0,8–1,2 s.</p>
           </div>
         </div>
+
+        <DeviceSensorsPanel />
 
         <div className="rounded-lg border border-border bg-card p-4 text-xs text-muted-foreground">
           <p>
