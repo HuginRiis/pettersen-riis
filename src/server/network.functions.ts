@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { getValidConnection, getHomeyRawSnapshot } from "./homey";
+import { getValidConnection, getHomeyRawSnapshot, fetchHomeyInsightsLog } from "./homey";
 
 export type CapValue = string | number | boolean | null;
 
@@ -356,3 +357,75 @@ export const getNetworkSnapshot = createServerFn({ method: "GET" }).handler(
     };
   },
 );
+
+export type InsightPoint = { t: string; v: number | null };
+export type InsightResult = {
+  ok: boolean;
+  error?: string;
+  deviceId: string;
+  capabilityId: string;
+  resolution: string;
+  units: string | null;
+  points: InsightPoint[];
+};
+
+const InsightInput = z.object({
+  deviceId: z.string().min(1).max(128),
+  capabilityId: z.string().min(1).max(128).regex(/^[a-zA-Z0-9_]+$/),
+  resolution: z.enum([
+    "lastHour",
+    "last6Hours",
+    "last24Hours",
+    "last7Days",
+    "last14Days",
+    "last31Days",
+    "last3Months",
+    "last6Months",
+    "lastYear",
+    "last2Years",
+  ]),
+});
+
+export const getRouterInsights = createServerFn({ method: "POST" })
+  .inputValidator((input) => InsightInput.parse(input))
+  .handler(async ({ data }): Promise<InsightResult> => {
+    try {
+      const res = await fetchHomeyInsightsLog(data.deviceId, data.capabilityId, data.resolution);
+      if (!res || (res as any).__error) {
+        return {
+          ok: false,
+          error: (res as any)?.__error ?? "Ingen data fra Homey",
+          deviceId: data.deviceId,
+          capabilityId: data.capabilityId,
+          resolution: data.resolution,
+          units: null,
+          points: [],
+        };
+      }
+      const arr = Array.isArray(res?.values) ? res.values : Array.isArray(res) ? res : [];
+      const points: InsightPoint[] = arr
+        .map((p: any) => ({
+          t: typeof p?.t === "string" ? p.t : typeof p?.date === "string" ? p.date : new Date(p?.timestamp ?? Date.now()).toISOString(),
+          v: typeof p?.v === "number" ? p.v : typeof p?.value === "number" ? p.value : null,
+        }))
+        .filter((p: InsightPoint) => p.t && (p.v == null || Number.isFinite(p.v)));
+      return {
+        ok: true,
+        deviceId: data.deviceId,
+        capabilityId: data.capabilityId,
+        resolution: data.resolution,
+        units: typeof res?.units === "string" ? res.units : null,
+        points,
+      };
+    } catch (e: any) {
+      return {
+        ok: false,
+        error: e?.message ?? "Ukjent feil",
+        deviceId: data.deviceId,
+        capabilityId: data.capabilityId,
+        resolution: data.resolution,
+        units: null,
+        points: [],
+      };
+    }
+  });

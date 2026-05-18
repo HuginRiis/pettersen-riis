@@ -22,10 +22,12 @@ import {
 import { PageShell, PageHero } from "@/components/PageShell";
 import {
   getNetworkSnapshot,
+  getRouterInsights,
   type NetworkDevice,
   type NetworkSnapshotResult,
   type SpeedPoint,
   type MetricPoint,
+  type InsightResult,
 } from "@/server/network.functions";
 import { NetworkTopology } from "@/components/NetworkTopology";
 import nettverkHero from "@/assets/nettverk-hero.jpg";
@@ -203,6 +205,9 @@ function NettverkPage() {
             <Empty text="Ingen hendelser registrert enda." />
           )}
         </Card>
+
+        {/* Homey insights */}
+        {data?.routers.length ? <HomeyInsightsCard routers={data.routers} /> : null}
       </section>
     </PageShell>
   );
@@ -470,4 +475,130 @@ function fmtUptime(s: number | null | undefined): string {
   if (d > 0) return `${d}d ${h}t`;
   const m = Math.floor((s % 3600) / 60);
   return `${h}t ${m}m`;
+}
+
+const INSIGHT_CAPS: { key: MetricKey; capability: string; label: string; color: string; unit: "kbs" | "pct" | "n" }[] = [
+  { key: "download", capability: "meter_download_speed", label: "Nedlasting", color: "#38bdf8", unit: "kbs" },
+  { key: "upload", capability: "meter_upload_speed", label: "Opplasting", color: "#34d399", unit: "kbs" },
+  { key: "cpu", capability: "measure_cpu_usage", label: "CPU", color: "#f472b6", unit: "pct" },
+  { key: "memory", capability: "measure_memory_usage", label: "Minne", color: "#a78bfa", unit: "pct" },
+  { key: "clients", capability: "meter_connected_clients", label: "Klienter", color: "#facc15", unit: "n" },
+];
+
+const RESOLUTIONS = [
+  { key: "lastHour", label: "1t" },
+  { key: "last6Hours", label: "6t" },
+  { key: "last24Hours", label: "24t" },
+  { key: "last7Days", label: "7d" },
+  { key: "last31Days", label: "31d" },
+] as const;
+
+function HomeyInsightsCard({ routers }: { routers: NetworkDevice[] }) {
+  const fn = useServerFn(getRouterInsights);
+  const [routerId, setRouterId] = useState(routers[0]?.id ?? "");
+  const [cap, setCap] = useState<MetricKey>("download");
+  const [resolution, setResolution] = useState<(typeof RESOLUTIONS)[number]["key"]>("last24Hours");
+  const [data, setData] = useState<InsightResult | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const capMeta = INSIGHT_CAPS.find((c) => c.key === cap)!;
+
+  useEffect(() => {
+    if (!routerId) return;
+    let cancelled = false;
+    setLoading(true);
+    fn({ data: { deviceId: routerId, capabilityId: capMeta.capability, resolution } })
+      .then((r) => { if (!cancelled) setData(r); })
+      .catch((e) => { if (!cancelled) setData({ ok: false, error: e?.message ?? "Feil", deviceId: routerId, capabilityId: capMeta.capability, resolution, units: null, points: [] }); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [fn, routerId, capMeta.capability, resolution]);
+
+  const { path, max, min, last } = useMemo(() => {
+    const pts = (data?.points ?? []).filter((p) => typeof p.v === "number") as { t: string; v: number }[];
+    if (!pts.length) return { path: "", max: 0, min: 0, last: null as number | null };
+    const vals = pts.map((p) => p.v);
+    const mx = Math.max(...vals);
+    const mn = Math.min(...vals);
+    const range = Math.max(1, mx - mn);
+    const w = 600, h = 120;
+    const step = pts.length > 1 ? w / (pts.length - 1) : 0;
+    const path = vals
+      .map((v, i) => {
+        const x = i * step;
+        const y = h - ((v - mn) / range) * (h - 8) - 4;
+        return `${i === 0 ? "M" : "L"} ${x.toFixed(1)} ${y.toFixed(1)}`;
+      })
+      .join(" ");
+    return { path, max: mx, min: mn, last: vals[vals.length - 1] };
+  }, [data]);
+
+  return (
+    <Card title="Homey-innsikter (live fra Homey)" icon={<Activity size={18} className="text-primary" />}>
+      <div className="space-y-3">
+        <div className="flex flex-wrap gap-1.5">
+          {routers.map((r) => (
+            <button
+              key={r.id}
+              onClick={() => setRouterId(r.id)}
+              className={`text-xs px-3 py-1.5 rounded-md border ${
+                routerId === r.id ? "bg-primary/20 border-primary/50 text-foreground" : "border-border text-muted-foreground hover:bg-accent"
+              }`}
+            >
+              {r.name}
+            </button>
+          ))}
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          {INSIGHT_CAPS.map((c) => (
+            <button
+              key={c.key}
+              onClick={() => setCap(c.key)}
+              className={`text-[11px] px-2.5 py-1 rounded border ${
+                cap === c.key ? "border-primary/50 bg-primary/15 text-foreground" : "border-border text-muted-foreground hover:bg-accent"
+              }`}
+              style={cap === c.key ? { color: c.color } : undefined}
+            >
+              {c.label}
+            </button>
+          ))}
+          <div className="ml-auto flex gap-1">
+            {RESOLUTIONS.map((r) => (
+              <button
+                key={r.key}
+                onClick={() => setResolution(r.key)}
+                className={`text-[11px] px-2 py-1 rounded border ${
+                  resolution === r.key ? "border-primary/50 bg-primary/15 text-foreground" : "border-border text-muted-foreground hover:bg-accent"
+                }`}
+              >
+                {r.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {loading && !data ? (
+          <p className="text-xs text-muted-foreground">Henter fra Homey …</p>
+        ) : data?.error ? (
+          <p className="text-xs text-destructive">Homey: {data.error}</p>
+        ) : !data?.points.length ? (
+          <p className="text-xs text-muted-foreground">Homey har ikke logget {capMeta.label.toLowerCase()} for denne ruteren ennå — kommer etter hvert som det samles inn.</p>
+        ) : (
+          <div>
+            <div className="flex items-center justify-between text-[11px] text-muted-foreground mb-1">
+              <span>{capMeta.label} · {data.points.length} punkter ({data.resolution})</span>
+              <span>
+                Nå: <span className="text-foreground font-semibold">{fmtMetric(last, capMeta.unit)}</span>
+                {" · min "}{fmtMetric(min, capMeta.unit)}
+                {" · maks "}{fmtMetric(max, capMeta.unit)}
+              </span>
+            </div>
+            <svg viewBox="0 0 600 120" className="w-full h-32" role="img" aria-label={`${capMeta.label} fra Homey`}>
+              <path d={path} fill="none" stroke={capMeta.color} strokeWidth="1.8" />
+            </svg>
+          </div>
+        )}
+      </div>
+    </Card>
+  );
 }
