@@ -1232,6 +1232,45 @@ export type Database = {
         }
         Relationships: []
       }
+      network_snapshots: {
+        Row: {
+          available: boolean
+          device_id: string
+          device_name: string | null
+          id: number
+          kind: string
+          raw: Json | null
+          signal: number | null
+          ts: string
+          watt: number | null
+          zone: string | null
+        }
+        Insert: {
+          available?: boolean
+          device_id: string
+          device_name?: string | null
+          id?: number
+          kind: string
+          raw?: Json | null
+          signal?: number | null
+          ts?: string
+          watt?: number | null
+          zone?: string | null
+        }
+        Update: {
+          available?: boolean
+          device_id?: string
+          device_name?: string | null
+          id?: number
+          kind?: string
+          raw?: Json | null
+          signal?: number | null
+          ts?: string
+          watt?: number | null
+          zone?: string | null
+        }
+        Relationships: []
+      }
       notification_settings: {
         Row: {
           id: string
