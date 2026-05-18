@@ -2,10 +2,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { getGardenaSnapshot, controlGardenaMower } from "@/lib/gardena.functions";
 import { GardenaMap } from "@/components/GardenaMap";
+import { GARDENA_ERROR_CODES, lookupGardenaError } from "@/lib/gardena-error-codes";
 import {
   Bot, Battery, BatteryLow, BatteryFull, AlertTriangle, CheckCircle2,
   Activity, RefreshCw, Loader2, Play, ParkingSquare, Pause, Signal, Clock,
-  Thermometer, Droplets, Sun, MapPin, CalendarClock, Settings2, Hash,
+  Thermometer, Droplets, Sun, MapPin, CalendarClock, Settings2, Hash, BookOpen,
 } from "lucide-react";
 
 type Snap = Awaited<ReturnType<typeof getGardenaSnapshot>>;
