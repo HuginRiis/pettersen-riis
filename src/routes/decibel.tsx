@@ -41,6 +41,7 @@ function DecibelPage() {
   const [running, setRunning] = useState(false);
   const [db, setDb] = useState(0);
   const [peak, setPeak] = useState(0);
+  const [minDb, setMinDb] = useState<number | null>(null);
   const [avg, setAvg] = useState(0);
   const [bands, setBands] = useState<number[]>(() => OCTAVE_BANDS.map(() => -100));
   const [dominantHz, setDominantHz] = useState<number | null>(null);
@@ -52,6 +53,8 @@ function DecibelPage() {
   });
   const [scanState, setScanState] = useState<"idle" | "arming" | "listening" | "done">("idle");
   const [scanResult, setScanResult] = useState<ScanResult | null>(null);
+  const [history, setHistory] = useState<number[]>([]);
+  const [pitchStats, setPitchStats] = useState<{ vibratoCents: number; vibratoHz: number; chorus: boolean } | null>(null);
 
   const ctxRef = useRef<AudioContext | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -59,6 +62,8 @@ function DecibelPage() {
   const rafRef = useRef<number | null>(null);
   const wakeLockRef = useRef<any>(null);
   const samplesRef = useRef<number[]>([]);
+  const pitchHistRef = useRef<{ t: number; hz: number }[]>([]);
+  const lastHistoryPushRef = useRef(0);
   const timeBufRef = useRef<Float32Array | null>(null);
 
   useEffect(() => {
