@@ -1,44 +1,71 @@
-## Hva vi bygger
+# Planter & Trær
 
-To deler:
+Ny side `/planter` med AI-identifikasjon (spiselig/giftig/stell), bilde-arkiv med GPS, Mi Flora-sensor via Homey, og varslinger.
 
-**1. En liten Node-tjeneste ("roborock-bridge") som du kjører hjemme**
-- Logger inn på Roborock-skyen med e-post/passord (jeg lager en ferdig docker-pakke)
-- Snakker MQTT med begge S7-ene og holder forbindelsen åpen
-- Eksponerer enkle HTTP-endepunkter, f.eks. `POST /devices/:duid/start`, `/stop`, `/dock`, `/pause`, `/fan/:level`, `/mop/:level`, `/zone`, `/find`
-- Beskyttes med en bearer-token du selv velger
-- Kan kjøre på: Raspberry Pi, NAS (Synology/Unraid), gammel Mac/PC, eller en billig VPS (~30 kr/mnd). Trenger bare Docker.
+## Hva blir bygget
 
-**2. Utvidelse av RoborockPanel i appen**
-- Knapper for hver robot: Start, Pause, Stopp, Send til dokk, Finn (pip), Tøm støvbeholder, Vask mopp
-- Slider/knapper for sugehastighet (Stille / Balansert / Turbo / Maks)
-- Slider/knapper for moppvann (Av / Lav / Middels / Høy)
-- Velg rom å rense (henter rom-kart fra brokeren)
-- Sone-rens: tegn rektangel på et lite kart, send koordinater
-- Live-status (renser nå, batteri, feilkode, areal igjen)
-- Bruker en ny secret `ROBOROCK_BRIDGE_URL` + `ROBOROCK_BRIDGE_TOKEN` så Worker kaller broren over HTTPS
+### 1. Database
+Migrasjon med tre tabeller (alle med åpne RLS-policies som resten av prosjektet):
 
-## Hva jeg trenger fra deg
+- **`plants`** — én rad per plante/tre:
+  - `name`, `species_common`, `species_latin`, `kind` (plante/tre/busk/urt/blomst)
+  - `edible` (boolean/null), `toxicity` (none/mild/moderate/severe/unknown), `toxicity_notes`
+  - `care_summary`, `watering_days_interval`, `fertilize_weeks_interval`
+  - `season_start_month`, `season_end_month` (for høsting)
+  - `miflora_device_id`, `miflora_device_name` (Homey)
+  - Sensor-terskler: `soil_moisture_min`, `light_lux_min`, `temp_min`, `temp_max`
+  - Varsling-toggles: `notify_watering`, `notify_fertilize`, `notify_sensor`, `notify_season`
+  - `last_watered_at`, `last_fertilized_at`
+  - `cover_photo_id`, `ai_reference_image_url`
 
-Før jeg bygger noe i appen må jeg vite:
+- **`plant_photos`** — flere bilder per plante:
+  - `plant_id`, `photo_url`, `taken_at`, `lat`, `lon`, `location_label`, `is_ai_generated`, `notes`
 
-- **Hvor vil du kjøre broren?** (Pi / NAS / VPS / annet — jeg skreddersyr docker-compose deretter)
-- **Har du Docker tilgjengelig der?** Hvis ikke, jeg kan også lage en ren Node-versjon uten Docker.
-- Når den kjører hjemme: trenger vi en måte å nå den fra Lovable Cloud — enten Cloudflare Tunnel (gratis, anbefalt) eller port-forwarding. Jeg foreslår Cloudflare Tunnel.
+- **`plant_notification_log`** — hindrer gjenta-spamming:
+  - `plant_id`, `kind` (watering/fertilize/sensor/season), `notified_at`
 
-## Rekkefølge
+Storage bucket `plants` (public).
 
-1. Du svarer på de tre spørsmålene over.
-2. Jeg lager `roborock-bridge`-pakken (egen mappe i repoet, eller eget repo om du vil) med README, docker-compose og alt klart til å kjøre.
-3. Du starter den, tester at `curl https://din-bro/devices` lister begge S7-ene.
-4. Du legger inn `ROBOROCK_BRIDGE_URL` + `ROBOROCK_BRIDGE_TOKEN` som secrets.
-5. Jeg bygger ut RoborockPanel med alle kontrollene.
+### 2. Server-funksjoner (`src/server/plants.functions.ts`)
+- `analyzePlantImage({ imageUrl })` — Lovable AI Gemini vision returnerer struktur: art, spiselig, giftighet, stell-tips, vanning, gjødsling.
+- `generatePlantReference({ species })` — Lovable AI image (gemini-2.5-flash-image) lager illustrasjon, lagres i bucket.
+- `searchPlantContext({ species, lat, lon })` — Gemini-tekst-svar: hvor vokser den i Norge, hva er spiselig på den, sesong.
+- `getMiFloraDevices()` — filtrer Homey-snapshot på capabilities (`measure_humidity`+`measure_luminance`+`measure_conductivity`) eller navn-mønster (Flower Care, Mi Flora).
+- `getMiFloraReading({ deviceId })` — leser fersk verdier fra Homey.
+- CRUD: `listPlants`, `savePlant`, `deletePlant`, `addPlantPhoto`, `deletePlantPhoto`.
 
-## Tekniske detaljer
+### 3. Side `/planter`
+- Hero (AI-generert GoT-aktig hage-bilde).
+- Knapp "Ta bilde / last opp" → kamera-input → laster opp til Storage → henter GPS via `navigator.geolocation` → kjører AI-analyse → forslag til nytt plante-kort som kan lagres.
+- Grid med plante-kort: bilde, navn, spiselig-/giftig-merke, neste vanning, Mi Flora-verdier (fukt/lys/temp/næring) hvis koblet.
+- Klikk på kort → detalj-dialog: alle bilder med GPS-prikker på mini-kart, AI-referansebilde, stell-tips, "hvor vokser den"-tekst, kobling til Mi Flora-enhet, vanning-/gjødsling-knapper ("vannet nå"), varsling-toggles.
 
-- Bro bruker `python-roborock`-protokollen reimplementert i Node (`@bnxbnx/roborock-mqtt-client` eller egen liten klient mot `mqtts://eu-mqtt.roborock.com:8883`)
-- Kommandoer sendes som AES-128-ECB-kryptert JSON med enhetens lokale nøkkel (hentes automatisk fra `home/v3` ved oppstart)
-- Worker→Bro: vanlig `fetch` med `Authorization: Bearer …` — ingen MQTT i Worker
-- Eksisterende login-flyt i appen beholdes som "lese-kanal" for snapshot, broren får egne credentials
+### 4. Komponent: `PlantNotificationSettings`
+- Liste over alle planter, per-plante toggles for vanning/gjødsling/sensor/sesong, intervaller, sensor-terskler.
+- Brukes i `/push-varslinger` som ny seksjon `sec-planter`.
 
-Si fra hvilken host + om Docker er ok, så ruller jeg.
+### 5. Cron-/sjekk-server-funksjon
+- `checkPlantNotifications()` — kjøres fra eksisterende push-cron (snapshot-pulse-mønster) eller fra Steintavle-loop. Sender push når:
+  - dager siden `last_watered_at` ≥ `watering_days_interval`
+  - Mi Flora-måling under terskler
+  - sesong starter
+- Logger til `plant_notification_log` for å unngå spam.
+
+### 6. Meny & navigasjon
+- `RoutePath` får `/planter`, ikon `TreePine`, farge `#22c55e`.
+- `navLinks` i `SiteHeader.tsx` — ny `{ to: "/planter", label: "Planter & Trær" }`.
+- `MENU_LINK_DEFS` i `use-menu-visibility.ts` — samme.
+- `/push-varslinger` TOC_ITEMS — ny `sec-planter`, "🌿 Planter & Trær".
+
+## Tekniske notater
+
+- Bildelagring: `supabase.storage.from("plants").upload(...)`, public URL.
+- GPS: `navigator.geolocation.getCurrentPosition`, valgfritt — fallback "ukjent sted".
+- Mi Flora-kobling: ingen ny OAuth — vi gjenbruker eksisterende Homey-tilkobling. Auto-deteksjon ved at vi viser alle Homey-enheter med `measure_humidity`/`measure_conductivity` i en dropdown når man redigerer en plante.
+- AI: `google/gemini-2.5-flash` for vision-analyse (rimelig, rask), `google/gemini-2.5-flash-image` for referanse-illustrasjon.
+- Push-cron-integrasjon: legger plant-sjekken inn i eksisterende `api.public.hooks.agenda-push.ts`-mønster.
+
+## Avgrensninger
+- Ingen offline-modus.
+- Ingen kart-visning med alle plantenes GPS i denne runden (vises som koordinat-tekst og mini-link til Google Maps).
+- AI-svar kan ta feil — UI viser tydelig "AI-forslag, sjekk selv før du spiser".
