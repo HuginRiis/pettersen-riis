@@ -246,16 +246,22 @@ function CaptureDialog({ state, floras, onClose, onSaved }: { state: CaptureStat
   const [saving, setSaving] = useState(false);
   const analyze = useServerFn(analyzePlantImage);
   const genRef = useServerFn(generatePlantReference);
+  const revGeo = useServerFn(reverseGeocode);
 
   useEffect(() => {
     (async () => {
       try {
-        // GPS
+        // GPS + reverse-geocode
         try {
           const pos = await new Promise<GeolocationPosition>((res, rej) =>
             navigator.geolocation.getCurrentPosition(res, rej, { timeout: 8000, maximumAge: 60000 }),
           );
-          setS((p) => ({ ...p, lat: pos.coords.latitude, lon: pos.coords.longitude }));
+          const lat = pos.coords.latitude;
+          const lon = pos.coords.longitude;
+          setS((p) => ({ ...p, lat, lon }));
+          revGeo({ data: { lat, lon } }).then((r) => {
+            if (r.label) setLocationLabel((cur) => cur || r.label!);
+          }).catch(() => {});
         } catch { /* ignore */ }
 
         // Upload
