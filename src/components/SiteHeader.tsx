@@ -86,6 +86,7 @@ const ROUTE_ICON: Partial<Record<RoutePath, React.ComponentType<{ size?: number;
   "/gressklipper": Bot,
   "/stovsugeren": Bot,
   "/decibel": Volume2,
+  "/planter": TreePine,
 };
 
 // Fargerike ikoner i GoT-stil — én distinkt farge per sal, matcher salens tema.
