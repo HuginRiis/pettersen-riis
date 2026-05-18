@@ -545,6 +545,80 @@ export function GardenaPanel() {
           </div>
         </div>
       )}
+
+      {/* Feilkode-referanse (kollapset) */}
+      <div>
+        <div className="ornate-divider mb-4 flex items-center gap-2">
+          <BookOpen size={14} className="text-primary" />
+          <span className="text-display tracking-[0.3em] text-primary text-sm uppercase">
+            Feilkoder · Sileno
+          </span>
+        </div>
+        <div className="panel rounded-lg p-4">
+          <details>
+            <summary className="cursor-pointer text-[11px] tracking-[0.2em] uppercase text-muted-foreground hover:text-primary flex items-center justify-between gap-2">
+              <span>Vis alle {GARDENA_ERROR_CODES.length} kjente feilkoder</span>
+              {(() => {
+                const active = snap?.mowers
+                  .map((m) => m.lastErrorCode)
+                  .filter((c): c is string => !!c && c.toLowerCase() !== "no_message");
+                if (!active || active.length === 0) return null;
+                return (
+                  <span className="text-[10px] text-destructive normal-case tracking-normal">
+                    {active.length} aktiv{active.length === 1 ? "" : "e"}
+                  </span>
+                );
+              })()}
+            </summary>
+            <div className="mt-4 grid gap-2 sm:grid-cols-2">
+              {GARDENA_ERROR_CODES.map((e) => {
+                const isActive = snap?.mowers.some(
+                  (m) => m.lastErrorCode && m.lastErrorCode.toUpperCase() === e.code,
+                );
+                const toneCls =
+                  e.severity === "error"
+                    ? "border-destructive/30"
+                    : e.severity === "warn"
+                      ? "border-amber-400/30"
+                      : "border-border/40";
+                return (
+                  <div
+                    key={e.code}
+                    className={`rounded border ${toneCls} ${
+                      isActive ? "bg-destructive/10 ring-1 ring-destructive/40" : "bg-background/30"
+                    } p-2.5`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-medium">{e.label}</span>
+                      {isActive && (
+                        <span className="text-[9px] tracking-[0.2em] uppercase text-destructive">
+                          Aktiv nå
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-[11px] text-muted-foreground mt-0.5">{e.description}</div>
+                    <div className="text-[9px] font-mono text-muted-foreground/60 mt-1">{e.code}</div>
+                  </div>
+                );
+              })}
+            </div>
+          </details>
+          <p className="text-[10px] text-muted-foreground/70 mt-3 italic">
+            Kildemodell: Gardena Smart System v2 API · {GARDENA_ERROR_CODES.length} dokumenterte koder for Sileno-serien.
+          </p>
+        </div>
+      </div>
+
+      {/* GPS-notis */}
+      <div className="panel rounded-lg p-4 text-[11px] text-muted-foreground flex items-start gap-2">
+        <MapPin size={14} className="text-primary/70 mt-0.5 shrink-0" />
+        <p>
+          <span className="text-foreground">GPS:</span> Sileno via Smart System v2 eksponerer
+          ikke posisjon per klipper — kun lokasjon-koordinater (vist på kartet over).
+          Live GPS er kun tilgjengelig på Husqvarna Automower-modeller via Automower
+          Connect API (annen produktlinje).
+        </p>
+      </div>
     </section>
   );
 }
