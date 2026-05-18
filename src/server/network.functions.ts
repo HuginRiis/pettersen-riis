@@ -1,7 +1,13 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { getValidConnection, getHomeyRawSnapshot, fetchHomeyInsightsLog } from "./homey";
+import {
+  getValidConnection,
+  getHomeyRawSnapshot,
+  fetchHomeyInsightsLog,
+  listHomeyInsightsLogs,
+} from "./homey";
+
 
 export type CapValue = string | number | boolean | null;
 
@@ -427,5 +433,53 @@ export const getRouterInsights = createServerFn({ method: "POST" })
         units: null,
         points: [],
       };
+    }
+  });
+
+export type InsightLogMeta = {
+  id: string;
+  name: string | null;
+  units: string | null;
+  type: string | null;
+  lastValue: number | string | boolean | null;
+};
+
+export type InsightLogsResult = {
+  ok: boolean;
+  error?: string;
+  deviceId: string;
+  logs: InsightLogMeta[];
+};
+
+const ListLogsInput = z.object({ deviceId: z.string().min(1).max(128) });
+
+export const listRouterInsightLogs = createServerFn({ method: "POST" })
+  .inputValidator((input) => ListLogsInput.parse(input))
+  .handler(async ({ data }): Promise<InsightLogsResult> => {
+    try {
+      const res = await listHomeyInsightsLogs(data.deviceId);
+      const matches: any[] = Array.isArray(res?.matches) ? res.matches : [];
+      const seen = new Set<string>();
+      const logs: InsightLogMeta[] = [];
+      for (const m of matches) {
+        const id = String(m?.id ?? m?.ownerId ?? "");
+        if (!id || seen.has(id)) continue;
+        seen.add(id);
+        logs.push({
+          id,
+          name: typeof m?.ownerName === "string" ? m.ownerName : null,
+          units: typeof m?.units === "string" ? m.units : null,
+          type: typeof m?.type === "string" ? m.type : null,
+          lastValue:
+            typeof m?.lastValue === "number" ||
+            typeof m?.lastValue === "string" ||
+            typeof m?.lastValue === "boolean"
+              ? m.lastValue
+              : null,
+        });
+      }
+      return { ok: true, deviceId: data.deviceId, logs };
+    } catch (e: any) {
+      return { ok: false, error: e?.message ?? "Ukjent feil", deviceId: data.deviceId, logs: [] };
     }
   });

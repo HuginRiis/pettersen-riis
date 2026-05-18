@@ -23,12 +23,15 @@ import { PageShell, PageHero } from "@/components/PageShell";
 import {
   getNetworkSnapshot,
   getRouterInsights,
+  listRouterInsightLogs,
   type NetworkDevice,
   type NetworkSnapshotResult,
   type SpeedPoint,
   type MetricPoint,
   type InsightResult,
+  type InsightLogMeta,
 } from "@/server/network.functions";
+
 import { NetworkTopology } from "@/components/NetworkTopology";
 import nettverkHero from "@/assets/nettverk-hero.jpg";
 
@@ -477,14 +480,6 @@ function fmtUptime(s: number | null | undefined): string {
   return `${h}t ${m}m`;
 }
 
-const INSIGHT_CAPS: { key: MetricKey; capability: string; label: string; color: string; unit: "kbs" | "pct" | "n" }[] = [
-  { key: "download", capability: "meter_download_speed", label: "Nedlasting", color: "#38bdf8", unit: "kbs" },
-  { key: "upload", capability: "meter_upload_speed", label: "Opplasting", color: "#34d399", unit: "kbs" },
-  { key: "cpu", capability: "measure_cpu_usage", label: "CPU", color: "#f472b6", unit: "pct" },
-  { key: "memory", capability: "measure_memory_usage", label: "Minne", color: "#a78bfa", unit: "pct" },
-  { key: "clients", capability: "meter_connected_clients", label: "Klienter", color: "#facc15", unit: "n" },
-];
-
 const RESOLUTIONS = [
   { key: "lastHour", label: "1t" },
   { key: "last6Hours", label: "6t" },
@@ -493,26 +488,78 @@ const RESOLUTIONS = [
   { key: "last31Days", label: "31d" },
 ] as const;
 
+function inferUnit(units: string | null, id: string): "kbs" | "pct" | "n" {
+  const u = (units ?? "").toLowerCase();
+  const i = id.toLowerCase();
+  if (u.includes("%") || i.includes("cpu") || i.includes("memory")) return "pct";
+  if (u.includes("kb") || u.includes("mb") || i.includes("speed") || i.includes("download") || i.includes("upload")) return "kbs";
+  return "n";
+}
+
+function prettyLogName(log: InsightLogMeta): string {
+  if (log.name && log.name.length > 0) return log.name;
+  const tail = log.id.split(":").pop() ?? log.id;
+  return tail.replace(/_/g, " ");
+}
+
 function HomeyInsightsCard({ routers }: { routers: NetworkDevice[] }) {
-  const fn = useServerFn(getRouterInsights);
+  const fetchInsights = useServerFn(getRouterInsights);
+  const fetchLogs = useServerFn(listRouterInsightLogs);
   const [routerId, setRouterId] = useState(routers[0]?.id ?? "");
-  const [cap, setCap] = useState<MetricKey>("download");
+  const [logs, setLogs] = useState<InsightLogMeta[]>([]);
+  const [logsLoading, setLogsLoading] = useState(false);
+  const [logsError, setLogsError] = useState<string | null>(null);
+  const [selectedLogId, setSelectedLogId] = useState<string | null>(null);
   const [resolution, setResolution] = useState<(typeof RESOLUTIONS)[number]["key"]>("last24Hours");
   const [data, setData] = useState<InsightResult | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const capMeta = INSIGHT_CAPS.find((c) => c.key === cap)!;
-
+  // Discover available logs per router
   useEffect(() => {
     if (!routerId) return;
     let cancelled = false;
+    setLogsLoading(true);
+    setLogsError(null);
+    setLogs([]);
+    setSelectedLogId(null);
+    setData(null);
+    fetchLogs({ data: { deviceId: routerId } })
+      .then((r) => {
+        if (cancelled) return;
+        if (!r.ok) setLogsError(r.error ?? "Klarte ikke hente logg-liste");
+        setLogs(r.logs);
+        // Foretrekk download/upload/cpu/memory hvis tilgjengelig
+        const prefer = ["download", "upload", "cpu", "memory", "clients"];
+        const pick =
+          r.logs.find((l) => prefer.some((p) => l.id.toLowerCase().includes(p))) ?? r.logs[0];
+        setSelectedLogId(pick?.id ?? null);
+      })
+      .catch((e) => { if (!cancelled) setLogsError(e?.message ?? "Feil"); })
+      .finally(() => { if (!cancelled) setLogsLoading(false); });
+    return () => { cancelled = true; };
+  }, [fetchLogs, routerId]);
+
+  const activeLog = useMemo(
+    () => logs.find((l) => l.id === selectedLogId) ?? null,
+    [logs, selectedLogId],
+  );
+
+  // Fetch log data when selection changes
+  useEffect(() => {
+    if (!routerId || !selectedLogId) return;
+    let cancelled = false;
     setLoading(true);
-    fn({ data: { deviceId: routerId, capabilityId: capMeta.capability, resolution } })
+    // Pass last segment as capabilityId — server tries both "ownerUri:cap" and "cap"
+    const capId = selectedLogId.includes(":") ? selectedLogId.split(":").pop()! : selectedLogId;
+    fetchInsights({ data: { deviceId: routerId, capabilityId: capId, resolution } })
       .then((r) => { if (!cancelled) setData(r); })
-      .catch((e) => { if (!cancelled) setData({ ok: false, error: e?.message ?? "Feil", deviceId: routerId, capabilityId: capMeta.capability, resolution, units: null, points: [] }); })
+      .catch((e) => { if (!cancelled) setData({ ok: false, error: e?.message ?? "Feil", deviceId: routerId, capabilityId: capId, resolution, units: null, points: [] }); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [fn, routerId, capMeta.capability, resolution]);
+  }, [fetchInsights, routerId, selectedLogId, resolution]);
+
+  const unit = activeLog ? inferUnit(activeLog.units, activeLog.id) : "n";
+  const color = unit === "pct" ? "#a78bfa" : unit === "kbs" ? "#38bdf8" : "#facc15";
 
   const { path, max, min, last } = useMemo(() => {
     const pts = (data?.points ?? []).filter((p) => typeof p.v === "number") as { t: string; v: number }[];
@@ -533,6 +580,8 @@ function HomeyInsightsCard({ routers }: { routers: NetworkDevice[] }) {
     return { path, max: mx, min: mn, last: vals[vals.length - 1] };
   }, [data]);
 
+  const logLabel = activeLog ? prettyLogName(activeLog) : "logg";
+
   return (
     <Card title="Homey-innsikter (live fra Homey)" icon={<Activity size={18} className="text-primary" />}>
       <div className="space-y-3">
@@ -549,56 +598,69 @@ function HomeyInsightsCard({ routers }: { routers: NetworkDevice[] }) {
             </button>
           ))}
         </div>
-        <div className="flex flex-wrap gap-1.5">
-          {INSIGHT_CAPS.map((c) => (
-            <button
-              key={c.key}
-              onClick={() => setCap(c.key)}
-              className={`text-[11px] px-2.5 py-1 rounded border ${
-                cap === c.key ? "border-primary/50 bg-primary/15 text-foreground" : "border-border text-muted-foreground hover:bg-accent"
-              }`}
-              style={cap === c.key ? { color: c.color } : undefined}
-            >
-              {c.label}
-            </button>
-          ))}
-          <div className="ml-auto flex gap-1">
-            {RESOLUTIONS.map((r) => (
+
+        {logsLoading ? (
+          <p className="text-xs text-muted-foreground">Henter tilgjengelige logger fra Homey …</p>
+        ) : logsError ? (
+          <p className="text-xs text-destructive">Homey: {logsError}</p>
+        ) : logs.length === 0 ? (
+          <p className="text-xs text-muted-foreground">Homey har ingen Insights-logger registrert for denne ruteren ennå. Logger dukker opp etter hvert som Homey samler data.</p>
+        ) : (
+          <div className="flex flex-wrap gap-1.5">
+            {logs.map((l) => (
               <button
-                key={r.key}
-                onClick={() => setResolution(r.key)}
-                className={`text-[11px] px-2 py-1 rounded border ${
-                  resolution === r.key ? "border-primary/50 bg-primary/15 text-foreground" : "border-border text-muted-foreground hover:bg-accent"
+                key={l.id}
+                onClick={() => setSelectedLogId(l.id)}
+                title={l.id}
+                className={`text-[11px] px-2.5 py-1 rounded border ${
+                  selectedLogId === l.id ? "border-primary/50 bg-primary/15 text-foreground" : "border-border text-muted-foreground hover:bg-accent"
                 }`}
               >
-                {r.label}
+                {prettyLogName(l)}
+                {l.units ? <span className="ml-1 opacity-60">{l.units}</span> : null}
               </button>
             ))}
-          </div>
-        </div>
-
-        {loading && !data ? (
-          <p className="text-xs text-muted-foreground">Henter fra Homey …</p>
-        ) : data?.error ? (
-          <p className="text-xs text-destructive">Homey: {data.error}</p>
-        ) : !data?.points.length ? (
-          <p className="text-xs text-muted-foreground">Homey har ikke logget {capMeta.label.toLowerCase()} for denne ruteren ennå — kommer etter hvert som det samles inn.</p>
-        ) : (
-          <div>
-            <div className="flex items-center justify-between text-[11px] text-muted-foreground mb-1">
-              <span>{capMeta.label} · {data.points.length} punkter ({data.resolution})</span>
-              <span>
-                Nå: <span className="text-foreground font-semibold">{fmtMetric(last, capMeta.unit)}</span>
-                {" · min "}{fmtMetric(min, capMeta.unit)}
-                {" · maks "}{fmtMetric(max, capMeta.unit)}
-              </span>
+            <div className="ml-auto flex gap-1">
+              {RESOLUTIONS.map((r) => (
+                <button
+                  key={r.key}
+                  onClick={() => setResolution(r.key)}
+                  className={`text-[11px] px-2 py-1 rounded border ${
+                    resolution === r.key ? "border-primary/50 bg-primary/15 text-foreground" : "border-border text-muted-foreground hover:bg-accent"
+                  }`}
+                >
+                  {r.label}
+                </button>
+              ))}
             </div>
-            <svg viewBox="0 0 600 120" className="w-full h-32" role="img" aria-label={`${capMeta.label} fra Homey`}>
-              <path d={path} fill="none" stroke={capMeta.color} strokeWidth="1.8" />
-            </svg>
           </div>
         )}
+
+        {selectedLogId ? (
+          loading && !data ? (
+            <p className="text-xs text-muted-foreground">Henter fra Homey …</p>
+          ) : data?.error ? (
+            <p className="text-xs text-destructive">Homey: {data.error}</p>
+          ) : !data?.points.length ? (
+            <p className="text-xs text-muted-foreground">Homey har ikke logget {logLabel} for valgt periode ennå.</p>
+          ) : (
+            <div>
+              <div className="flex items-center justify-between text-[11px] text-muted-foreground mb-1">
+                <span>{logLabel} · {data.points.length} punkter ({data.resolution})</span>
+                <span>
+                  Nå: <span className="text-foreground font-semibold">{fmtMetric(last, unit)}</span>
+                  {" · min "}{fmtMetric(min, unit)}
+                  {" · maks "}{fmtMetric(max, unit)}
+                </span>
+              </div>
+              <svg viewBox="0 0 600 120" className="w-full h-32" role="img" aria-label={`${logLabel} fra Homey`}>
+                <path d={path} fill="none" stroke={color} strokeWidth="1.8" />
+              </svg>
+            </div>
+          )
+        ) : null}
       </div>
     </Card>
   );
 }
+
