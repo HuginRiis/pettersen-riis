@@ -192,7 +192,7 @@ function capVal(caps: Record<string, unknown>, key: string): number | null {
   return typeof v === "number" ? v : null;
 }
 
-export const getMiFloraDevices = createServerFn({ method: "GET" }).handler(async (): Promise<MiFloraDevice[]> => {
+async function loadMiFloraDevices(): Promise<MiFloraDevice[]> {
   const conn = await getValidConnection().catch(() => null);
   if (!conn) return [];
   const raw = await getHomeyRawSnapshot(conn).catch(() => null);
@@ -216,11 +216,15 @@ export const getMiFloraDevices = createServerFn({ method: "GET" }).handler(async
     });
   }
   return out;
-});
+}
+
+export const getMiFloraDevices = createServerFn({ method: "GET" }).handler(
+  async (): Promise<MiFloraDevice[]> => loadMiFloraDevices(),
+);
 
 export const getMiFloraReading = createServerFn({ method: "POST" })
   .inputValidator((input: { deviceId: string }) => input)
   .handler(async ({ data }): Promise<MiFloraDevice | null> => {
-    const all = await (getMiFloraDevices as any)();
-    return (all as MiFloraDevice[]).find((d) => d.id === data.deviceId) ?? null;
+    const all = await loadMiFloraDevices();
+    return all.find((d) => d.id === data.deviceId) ?? null;
   });
