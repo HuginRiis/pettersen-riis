@@ -756,15 +756,6 @@ function useWorstPollen(lat: number, lon: number) {
   }, [lat, lon]);
   return { worst, active };
 }
-      } catch { /* ignore */ }
-    }
-    load();
-    const id = setInterval(load, 60 * 60_000);
-    return () => { cancelled = true; clearInterval(id); };
-  }, [lat, lon]);
-  return worst;
-}
-
 function AllergenGlyph({ allergen, size = 12, color }: { allergen: Allergen; size?: number; color?: string }) {
   if (allergen === "birch") {
     return (
@@ -784,7 +775,7 @@ function AllergenGlyph({ allergen, size = 12, color }: { allergen: Allergen; siz
 }
 
 function PollenIcon({ lat, lon }: { lat: number; lon: number }) {
-  const worst = useWorstPollen(lat, lon);
+  const { worst } = useWorstPollen(lat, lon);
   if (!worst) return null;
   if (worst.allergen === "birch") {
     return <AllergenGlyph allergen="birch" size={14} />;
@@ -799,20 +790,25 @@ function PollenIcon({ lat, lon }: { lat: number; lon: number }) {
 }
 
 function PollenBadge({ lat, lon }: { lat: number; lon: number }) {
-  const worst = useWorstPollen(lat, lon);
-  if (!worst) return null;
+  const { active } = useWorstPollen(lat, lon);
+  if (!active || active.length === 0) return null;
   return (
-    <span
-      className="inline-flex items-center gap-1 justify-center rounded-full text-[9px] font-semibold leading-none px-1.5 py-0.5"
-      style={{
-        background: `color-mix(in oklab, ${worst.color} 22%, transparent)`,
-        color: worst.color,
-        border: `1px solid color-mix(in oklab, ${worst.color} 50%, transparent)`,
-      }}
-      title={`Pollen i dag: ${worst.label} (${ALLERGEN_NAME[worst.allergen]})`}
-    >
-      {worst.label}
-      <AllergenGlyph allergen={worst.allergen} size={12} color={worst.color} />
+    <span className="inline-flex items-center gap-1 flex-wrap">
+      {active.map((a) => (
+        <span
+          key={a.allergen}
+          className="inline-flex items-center gap-1 justify-center rounded-full text-[9px] font-semibold leading-none px-1.5 py-0.5"
+          style={{
+            background: `color-mix(in oklab, ${a.color} 22%, transparent)`,
+            color: a.color,
+            border: `1px solid color-mix(in oklab, ${a.color} 50%, transparent)`,
+          }}
+          title={`${ALLERGEN_NAME[a.allergen]}: ${a.label} (${a.value.toFixed(1)})`}
+        >
+          <AllergenGlyph allergen={a.allergen} size={10} color={a.color} />
+          {a.label}
+        </span>
+      ))}
     </span>
   );
 }
