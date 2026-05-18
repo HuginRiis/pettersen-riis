@@ -382,17 +382,26 @@ function DecibelPage() {
 
   // TV-lytting & diskant-anbefaling
   const tvAssessment = useMemo(() => {
-    if (!running || bands.every((b) => b <= -90)) return null;
-    const speech = (bands[5] + bands[6]) / 2; // 1-2 kHz
-    const treble = (bands[7] + bands[8]) / 2; // 4-8 kHz
-    const warmth = (bands[3] + bands[4]) / 2; // 250-500 Hz
-    const bass = (bands[1] + bands[2]) / 2;   // 63-125 Hz
+    const hasSignal = running && bands.some((b) => b > -85);
+    if (!hasSignal) {
+      return {
+        hasSignal: false as const,
+        tvOk: false, filmOk: false,
+        trebleAdvice: "Venter på lyd — start måling og spill av tale eller musikk.",
+        bassAdvice: "Venter på lyd — vurdering kommer når mikrofonen fanger nok signal.",
+        speechClarity: 0, trebleBalance: 0, bassBalance: 0,
+        highlights: [] as string[],
+      };
+    }
+    const speech = (bands[5] + bands[6]) / 2;
+    const treble = (bands[7] + bands[8]) / 2;
+    const warmth = (bands[3] + bands[4]) / 2;
+    const bass = (bands[1] + bands[2]) / 2;
 
-    const speechClarity = speech - warmth; // > 0 = klart
-    const trebleBalance = treble - speech; // ~ -3..+3 ideal
+    const speechClarity = speech - warmth;
+    const trebleBalance = treble - speech;
     const bassBalance = bass - warmth;
 
-    // Vurdering
     const tvOk = speechClarity > -4 && trebleBalance > -6 && trebleBalance < 4;
     const filmOk = bassBalance > -8 && trebleBalance > -8 && trebleBalance < 6;
 
@@ -404,7 +413,14 @@ function DecibelPage() {
     if (bassBalance < -6) bassAdvice = "Skru opp bass litt — filmscener mister tyngde.";
     else if (bassBalance > 6) bassAdvice = "Demp bass — kan maskere dialogen.";
 
-    return { tvOk, filmOk, trebleAdvice, bassAdvice, speechClarity, trebleBalance, bassBalance };
+    const highlights: string[] = [];
+    if (speechClarity > -2) highlights.push("Tydelig tale-område");
+    if (trebleBalance >= -3 && trebleBalance <= 3) highlights.push("Balansert diskant");
+    if (bassBalance >= -5 && bassBalance <= 5) highlights.push("Stabil bass");
+    if (tvOk) highlights.push("OK for vanlig TV");
+    if (filmOk) highlights.push("OK for film");
+
+    return { hasSignal: true as const, tvOk, filmOk, trebleAdvice, bassAdvice, speechClarity, trebleBalance, bassBalance, highlights };
   }, [bands, running]);
 
   // Prosent-fordeling av lyd-energi pr oktav (sum = 100)
@@ -542,45 +558,63 @@ function DecibelPage() {
           />
         </div>
 
-        {/* TV / film-lytting */}
-        {tvAssessment && (
-          <div className="rounded-lg border border-border bg-card p-4 space-y-3">
+        {/* TV / film-lytting — alltid synlig */}
+        <div className="rounded-lg border border-border bg-card p-4 space-y-3">
+          <div className="flex items-center justify-between gap-2">
             <h2 className="font-semibold flex items-center gap-2">
               <Tv size={16} className="text-primary" /> Lytte-vurdering for TV & film
             </h2>
-            <div className="grid sm:grid-cols-2 gap-3 text-sm">
-              <div className={`rounded-md p-3 ${tvAssessment.tvOk ? "bg-emerald-500/10 border border-emerald-500/30" : "bg-amber-500/10 border border-amber-500/30"}`}>
-                <div className="flex items-center gap-2 font-medium">
-                  <Tv size={14} /> Vanlig TV-titting
-                </div>
-                <div className="text-xs text-muted-foreground mt-1">
-                  {tvAssessment.tvOk ? "OK — dialog skal være tydelig." : "Tale-området henger etter. Vurder dialog-modus eller hev senter-kanal."}
-                </div>
+            {!tvAssessment.hasSignal && (
+              <span className="text-[10px] uppercase tracking-wider text-muted-foreground px-2 py-0.5 rounded border border-border">
+                Venter på lyd
+              </span>
+            )}
+          </div>
+
+          {tvAssessment.hasSignal && tvAssessment.highlights.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {tvAssessment.highlights.map((h) => (
+                <span key={h} className="text-[11px] px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 border border-emerald-500/30">
+                  ✓ {h}
+                </span>
+              ))}
+            </div>
+          )}
+
+          <div className="grid sm:grid-cols-2 gap-3 text-sm">
+            <div className={`rounded-md p-3 ${!tvAssessment.hasSignal ? "bg-muted/40 border border-border" : tvAssessment.tvOk ? "bg-emerald-500/10 border border-emerald-500/30" : "bg-amber-500/10 border border-amber-500/30"}`}>
+              <div className="flex items-center gap-2 font-medium">
+                <Tv size={14} /> Vanlig TV-titting
               </div>
-              <div className={`rounded-md p-3 ${tvAssessment.filmOk ? "bg-emerald-500/10 border border-emerald-500/30" : "bg-amber-500/10 border border-amber-500/30"}`}>
-                <div className="flex items-center gap-2 font-medium">
-                  <Film size={14} /> Film / serie
-                </div>
-                <div className="text-xs text-muted-foreground mt-1">
-                  {tvAssessment.filmOk ? "OK — dynamikk og bunn ser balansert ut." : "Ubalansert — film-dynamikk vil føles tynn eller maskert."}
-                </div>
+              <div className="text-xs text-muted-foreground mt-1">
+                {!tvAssessment.hasSignal ? "Mangler signal — start lyd for vurdering." : tvAssessment.tvOk ? "OK — dialog skal være tydelig." : "Tale-området henger etter. Vurder dialog-modus eller hev senter-kanal."}
               </div>
             </div>
-            <div className="border-t border-border pt-3 space-y-1 text-xs">
-              <p className="flex items-start gap-2">
-                <Music2 size={12} className="text-primary mt-0.5 shrink-0" />
-                <span><strong className="text-foreground">Diskant:</strong> {tvAssessment.trebleAdvice}</span>
-              </p>
-              <p className="flex items-start gap-2">
-                <Music2 size={12} className="text-primary mt-0.5 shrink-0" />
-                <span><strong className="text-foreground">Bass:</strong> {tvAssessment.bassAdvice}</span>
-              </p>
+            <div className={`rounded-md p-3 ${!tvAssessment.hasSignal ? "bg-muted/40 border border-border" : tvAssessment.filmOk ? "bg-emerald-500/10 border border-emerald-500/30" : "bg-amber-500/10 border border-amber-500/30"}`}>
+              <div className="flex items-center gap-2 font-medium">
+                <Film size={14} /> Film / serie
+              </div>
+              <div className="text-xs text-muted-foreground mt-1">
+                {!tvAssessment.hasSignal ? "Mangler signal — start lyd for vurdering." : tvAssessment.filmOk ? "OK — dynamikk og bunn ser balansert ut." : "Ubalansert — film-dynamikk vil føles tynn eller maskert."}
+              </div>
+            </div>
+          </div>
+          <div className="border-t border-border pt-3 space-y-1 text-xs">
+            <p className="flex items-start gap-2">
+              <Music2 size={12} className="text-primary mt-0.5 shrink-0" />
+              <span><strong className="text-foreground">Diskant:</strong> {tvAssessment.trebleAdvice}</span>
+            </p>
+            <p className="flex items-start gap-2">
+              <Music2 size={12} className="text-primary mt-0.5 shrink-0" />
+              <span><strong className="text-foreground">Bass:</strong> {tvAssessment.bassAdvice}</span>
+            </p>
+            {tvAssessment.hasSignal && (
               <p className="text-muted-foreground pt-1">
                 Tale-klarhet: {tvAssessment.speechClarity.toFixed(1)} dB · Diskant-balanse: {tvAssessment.trebleBalance.toFixed(1)} dB · Bass-balanse: {tvAssessment.bassBalance.toFixed(1)} dB
               </p>
-            </div>
+            )}
           </div>
-        )}
+        </div>
 
         {/* Spektralanalyse - hele frekvensspekteret */}
         <div className="rounded-lg border border-border bg-card p-4 space-y-3">
