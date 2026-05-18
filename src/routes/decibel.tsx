@@ -210,6 +210,14 @@ function DecibelPage() {
             if (next.length > 600) next.shift();
             return next;
           });
+          // Bånd-energi (lineær) for prosent-vindu opp til 60 min
+          const lin = bandVals.map((d) => Math.pow(10, Math.max(-90, d) / 10));
+          bandHistRef.current.push({ t: nowT, lin });
+          // Behold maks 60 min + litt slakk
+          const cutoff = nowT - 61 * 60 * 1000;
+          while (bandHistRef.current.length && bandHistRef.current[0].t < cutoff) {
+            bandHistRef.current.shift();
+          }
           // Oppdater spektrum-snapshot (kopi pga react ref-likhet)
           setSpectrum({ data: new Float32Array(freqBuf), binHz });
 
