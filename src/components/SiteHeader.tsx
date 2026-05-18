@@ -725,6 +725,7 @@ const ALLERGEN_NAME: Record<Allergen, string> = {
 
 function useWorstPollen(lat: number, lon: number) {
   const [worst, setWorst] = useState<{ label: string; color: string; rank: number; allergen: Allergen } | null>(null);
+  const [active, setActive] = useState<Array<{ allergen: Allergen; value: number; label: string; color: string; rank: number }>>([]);
   useEffect(() => {
     let cancelled = false;
     async function load() {
@@ -737,13 +738,24 @@ function useWorstPollen(lat: number, lon: number) {
         if (!h?.time) return;
         const allergens: Allergen[] = ["alder", "birch", "grass", "mugwort"];
         let best: { label: string; color: string; rank: number; allergen: Allergen } = { ...pollenLevel("birch", 0), allergen: "birch" };
+        const act: Array<{ allergen: Allergen; value: number; label: string; color: string; rank: number }> = [];
         for (const a of allergens) {
           const arr: number[] = h[`${a}_pollen`] ?? [];
           const max = arr.reduce((m, v) => (typeof v === "number" && v > m ? v : m), 0);
           const lvl = pollenLevel(a, max);
           if (lvl.rank > best.rank) best = { ...lvl, allergen: a };
+          if (max > 0) act.push({ allergen: a, value: max, ...lvl });
         }
-        if (!cancelled) setWorst(best);
+        act.sort((x, y) => y.rank - x.rank || y.value - x.value);
+        if (!cancelled) { setWorst(best); setActive(act); }
+      } catch { /* ignore */ }
+    }
+    load();
+    const id = setInterval(load, 60 * 60_000);
+    return () => { cancelled = true; clearInterval(id); };
+  }, [lat, lon]);
+  return { worst, active };
+}
       } catch { /* ignore */ }
     }
     load();
