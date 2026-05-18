@@ -66,6 +66,7 @@ type Photo = {
 function PlanterPage() {
   const [plants, setPlants] = useState<Plant[]>([]);
   const [floras, setFloras] = useState<MiFloraDevice[]>([]);
+  const [locations, setLocations] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [openId, setOpenId] = useState<string | null>(null);
   const [capture, setCapture] = useState<CaptureState | null>(null);
@@ -76,7 +77,23 @@ function PlanterPage() {
     setLoading(true);
     const { data } = await supabase.from("plants").select("*").order("created_at", { ascending: false });
     setPlants((data ?? []) as Plant[]);
+    const { data: ph } = await supabase
+      .from("plant_photos")
+      .select("plant_id, location_label, taken_at")
+      .not("location_label", "is", null)
+      .order("taken_at", { ascending: true });
+    const map: Record<string, string> = {};
+    for (const row of (ph ?? []) as { plant_id: string; location_label: string | null }[]) {
+      if (row.location_label && !map[row.plant_id]) map[row.plant_id] = row.location_label;
+    }
+    setLocations(map);
     setLoading(false);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Slette denne planten og alle bilder?")) return;
+    await supabase.from("plants").delete().eq("id", id);
+    await load();
   };
 
   useEffect(() => {
@@ -124,7 +141,14 @@ function PlanterPage() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {plants.map((p) => (
-              <PlantCard key={p.id} plant={p} flora={floras.find((f) => f.id === p.miflora_device_id) ?? null} onOpen={() => setOpenId(p.id)} />
+              <PlantCard
+                key={p.id}
+                plant={p}
+                flora={floras.find((f) => f.id === p.miflora_device_id) ?? null}
+                locationLabel={locations[p.id] ?? null}
+                onOpen={() => setOpenId(p.id)}
+                onDelete={() => handleDelete(p.id)}
+              />
             ))}
           </div>
         )}
@@ -153,35 +177,83 @@ function PlanterPage() {
 
 // ============ Plant card ============
 
-function PlantCard({ plant, flora, onOpen }: { plant: Plant; flora: MiFloraDevice | null; onOpen: () => void }) {
+function PlantCard({ plant, flora, locationLabel, onOpen, onDelete }: { plant: Plant; flora: MiFloraDevice | null; locationLabel: string | null; onOpen: () => void; onDelete: () => void }) {
   const daysSinceWater = plant.last_watered_at ? Math.floor((Date.now() - new Date(plant.last_watered_at).getTime()) / 86400000) : null;
   const waterDue = plant.watering_days_interval && daysSinceWater !== null && daysSinceWater >= plant.watering_days_interval;
 
+  const handleDeleteClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onDelete();
+  };
+
   return (
-    <button onClick={onOpen} className="panel rounded-lg overflow-hidden border border-border/60 hover:border-primary/60 transition text-left">
-      <div className="aspect-[4/3] bg-muted relative">
-        {plant.cover_photo_url ? (
-          <img src={plant.cover_photo_url} alt={plant.name} className="w-full h-full object-cover" loading="lazy" />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center"><Sprout size={48} className="text-muted-foreground/40" /></div>
-        )}
-        <ToxicityBadge edible={plant.edible} toxicity={plant.toxicity} />
-      </div>
-      <div className="p-3">
-        <div className="font-semibold text-foreground truncate">{plant.name}</div>
-        {plant.species_latin && <div className="text-[10px] italic text-muted-foreground truncate">{plant.species_latin}</div>}
-        <div className="mt-2 flex flex-wrap gap-1.5 text-[10px]">
+    <div className="panel rounded-lg overflow-hidden border border-border/60 hover:border-primary/60 transition group relative">
+      <button onClick={handleDeleteClick} className="absolute top-2 left-2 z-10 p-1.5 rounded-md bg-black/60 text-white opacity-0 group-hover:opacity-100 hover:bg-red-600 transition" aria-label="Slett plante" title="Slett plante">
+        <Trash2 size={12} />
+      </button>
+      <button onClick={onOpen} className="block w-full text-left">
+        <div className="aspect-[4/3] bg-muted relative">
+          {plant.cover_photo_url ? (
+            <img src={plant.cover_photo_url} alt={plant.name} className="w-full h-full object-cover" loading="lazy" />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center"><Sprout size={48} className="text-muted-foreground/40" /></div>
+          )}
+          <ToxicityBadge edible={plant.edible} toxicity={plant.toxicity} />
+        </div>
+        <div className="p-3 space-y-2">
+          <div>
+            <div className="font-semibold text-foreground truncate">{plant.species_common ?? plant.name}</div>
+            {plant.species_latin && <div className="text-[10px] italic text-muted-foreground truncate">{plant.species_latin}</div>}
+          </div>
+
+          <div className="flex flex-wrap gap-1 text-[10px]">
+            <span className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground capitalize">{plant.kind}</span>
+            {plant.edible === true && <span className="px-1.5 py-0.5 rounded bg-emerald-600/25 text-emerald-300 font-semibold flex items-center gap-0.5"><Check size={9} /> Spiselig</span>}
+            {plant.edible === false && <span className="px-1.5 py-0.5 rounded bg-red-600/25 text-red-300 font-semibold">Ikke spis</span>}
+            {plant.toxicity === "severe" && <span className="px-1.5 py-0.5 rounded bg-red-600/30 text-red-300 font-semibold">Sterkt giftig</span>}
+            {plant.toxicity === "moderate" && <span className="px-1.5 py-0.5 rounded bg-red-600/20 text-red-300 font-semibold">Giftig</span>}
+            {plant.toxicity === "mild" && <span className="px-1.5 py-0.5 rounded bg-amber-600/25 text-amber-300">Mild gift</span>}
+            {plant.toxicity === "none" && plant.edible !== true && <span className="px-1.5 py-0.5 rounded bg-emerald-600/15 text-emerald-300/80 flex items-center gap-0.5"><Leaf size={9} /> Ufarlig</span>}
+          </div>
+
+          {locationLabel && (
+            <div className="text-[11px] text-muted-foreground flex items-start gap-1">
+              <MapPin size={11} className="mt-0.5 flex-shrink-0 text-primary/70" />
+              <span className="truncate">{locationLabel}</span>
+            </div>
+          )}
+
+          {plant.where_grows && (
+            <div className="text-[11px] text-foreground/70 line-clamp-2">
+              <span className="text-muted-foreground">Vokser: </span>{plant.where_grows}
+            </div>
+          )}
+
+          {plant.care_summary && (
+            <div className="text-[11px] text-foreground/70 line-clamp-2">
+              <span className="text-muted-foreground">Stell: </span>{plant.care_summary}
+            </div>
+          )}
+
+          {(plant.watering_days_interval || plant.season_start_month) && (
+            <div className="flex flex-wrap gap-1 text-[10px] text-muted-foreground">
+              {plant.watering_days_interval && <span className="inline-flex items-center gap-0.5"><Droplet size={9} /> hver {plant.watering_days_interval}d</span>}
+              {plant.season_start_month && plant.season_end_month && <span>· sesong {plant.season_start_month}–{plant.season_end_month}</span>}
+            </div>
+          )}
+
           {flora && (
-            <>
+            <div className="flex flex-wrap gap-1 text-[10px] pt-1 border-t border-border/40">
               {flora.soilMoisture !== null && <Pill icon={Droplet} label={`${Math.round(flora.soilMoisture)}%`} color={flora.soilMoisture < (plant.soil_moisture_min ?? 20) ? "text-orange-400" : "text-cyan-400"} />}
               {flora.light !== null && <Pill icon={Sun} label={`${Math.round(flora.light)} lx`} color="text-amber-400" />}
               {flora.temperature !== null && <Pill icon={Thermometer} label={`${flora.temperature.toFixed(1)}°`} color="text-rose-400" />}
-            </>
+            </div>
           )}
-          {waterDue && <span className="px-1.5 py-0.5 rounded bg-orange-500/20 text-orange-300 font-semibold">Trenger vann</span>}
+
+          {waterDue && <div className="text-[10px] px-1.5 py-0.5 rounded bg-orange-500/20 text-orange-300 font-semibold inline-block">Trenger vann</div>}
         </div>
-      </div>
-    </button>
+      </button>
+    </div>
   );
 }
 
@@ -250,12 +322,9 @@ function CameraButton({ onCaptured }: { onCaptured: (s: CaptureState) => void })
   );
 }
 
-function CaptureDialog({ state, floras, onClose, onSaved }: { state: CaptureState; floras: MiFloraDevice[]; onClose: () => void; onSaved: () => void }) {
+function CaptureDialog({ state, onClose, onSaved }: { state: CaptureState; floras: MiFloraDevice[]; onClose: () => void; onSaved: () => void }) {
   const [s, setS] = useState<CaptureState>(state);
-  const [name, setName] = useState("");
-  const [locationLabel, setLocationLabel] = useState("");
-  const [mifloraId, setMifloraId] = useState<string>("");
-  const [saving, setSaving] = useState(false);
+  const [savedName, setSavedName] = useState<string | null>(null);
   const analyze = useServerFn(analyzePlantImage);
   const genRef = useServerFn(generatePlantReference);
   const revGeo = useServerFn(reverseGeocode);
@@ -263,32 +332,74 @@ function CaptureDialog({ state, floras, onClose, onSaved }: { state: CaptureStat
   useEffect(() => {
     (async () => {
       try {
-        // GPS + reverse-geocode
+        // GPS in parallel with upload
+        let lat: number | null = null;
+        let lon: number | null = null;
+        let locationLabel: string | null = null;
         try {
           const pos = await new Promise<GeolocationPosition>((res, rej) =>
             navigator.geolocation.getCurrentPosition(res, rej, { timeout: 8000, maximumAge: 60000 }),
           );
-          const lat = pos.coords.latitude;
-          const lon = pos.coords.longitude;
+          lat = pos.coords.latitude;
+          lon = pos.coords.longitude;
           setS((p) => ({ ...p, lat, lon }));
-          revGeo({ data: { lat, lon } }).then((r) => {
-            if (r.label) setLocationLabel((cur) => cur || r.label!);
-          }).catch(() => {});
+          try {
+            const r = await revGeo({ data: { lat, lon } });
+            locationLabel = r.label;
+          } catch { /* ignore */ }
         } catch { /* ignore */ }
 
         // Upload
         const ext = s.file.name.split(".").pop() ?? "jpg";
         const path = `uploads/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-        const { error } = await supabase.storage.from("plants").upload(path, s.file, { contentType: s.file.type });
-        if (error) throw error;
+        const { error: upErr } = await supabase.storage.from("plants").upload(path, s.file, { contentType: s.file.type });
+        if (upErr) throw upErr;
         const { data: pub } = supabase.storage.from("plants").getPublicUrl(path);
         const uploadUrl = pub.publicUrl;
 
         setS((p) => ({ ...p, uploadUrl, status: "analyzing" }));
 
-        const analysis = await analyze({ data: { imageUrl: uploadUrl } });
-        setS((p) => ({ ...p, analysis, status: "ready" }));
-        setName(analysis.species_common ?? "Ny plante");
+        const a = await analyze({ data: { imageUrl: uploadUrl } });
+        setS((p) => ({ ...p, analysis: a, status: "ready" }));
+
+        // Auto-save
+        const name = a.species_common ?? "Ny plante";
+        setSavedName(name);
+        const { data: plant, error: insErr } = await supabase
+          .from("plants")
+          .insert({
+            name,
+            species_common: a.species_common,
+            species_latin: a.species_latin,
+            kind: a.kind,
+            edible: a.edible,
+            toxicity: a.toxicity,
+            toxicity_notes: a.toxicity_notes,
+            care_summary: a.care_summary,
+            where_grows: a.where_grows,
+            watering_days_interval: a.watering_days_interval,
+            fertilize_weeks_interval: a.fertilize_weeks_interval,
+            season_start_month: a.season_start_month,
+            season_end_month: a.season_end_month,
+            cover_photo_url: uploadUrl,
+            ai_raw: a as never,
+          })
+          .select()
+          .single();
+        if (insErr) throw insErr;
+        await supabase.from("plant_photos").insert({
+          plant_id: plant.id,
+          photo_url: uploadUrl,
+          lat,
+          lon,
+          location_label: locationLabel,
+        });
+        // Fire-and-forget AI reference
+        if (a.species_common || a.species_latin) {
+          genRef({ data: { plantId: plant.id, species: a.species_latin ?? a.species_common ?? name } }).catch(() => {});
+        }
+        // Close after a brief moment so user sees the result
+        setTimeout(() => onSaved(), 1200);
       } catch (e) {
         setS((p) => ({ ...p, status: "error", error: e instanceof Error ? e.message : "Feilet" }));
       }
@@ -296,57 +407,8 @@ function CaptureDialog({ state, floras, onClose, onSaved }: { state: CaptureStat
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleSave = async () => {
-    if (!s.analysis || !s.uploadUrl) return;
-    setSaving(true);
-    try {
-      const a = s.analysis;
-      const flora = floras.find((f) => f.id === mifloraId);
-      const { data: plant, error } = await supabase
-        .from("plants")
-        .insert({
-          name: name || "Ukjent plante",
-          species_common: a.species_common,
-          species_latin: a.species_latin,
-          kind: a.kind,
-          edible: a.edible,
-          toxicity: a.toxicity,
-          toxicity_notes: a.toxicity_notes,
-          care_summary: a.care_summary,
-          where_grows: a.where_grows,
-          watering_days_interval: a.watering_days_interval,
-          fertilize_weeks_interval: a.fertilize_weeks_interval,
-          season_start_month: a.season_start_month,
-          season_end_month: a.season_end_month,
-          miflora_device_id: flora?.id ?? null,
-          miflora_device_name: flora?.name ?? null,
-          cover_photo_url: s.uploadUrl,
-          ai_raw: a as never,
-        })
-        .select()
-        .single();
-      if (error) throw error;
-      await supabase.from("plant_photos").insert({
-        plant_id: plant.id,
-        photo_url: s.uploadUrl,
-        lat: s.lat ?? null,
-        lon: s.lon ?? null,
-        location_label: locationLabel || null,
-      });
-      // Fire-and-forget AI reference
-      if (a.species_common || a.species_latin) {
-        genRef({ data: { plantId: plant.id, species: a.species_latin ?? a.species_common ?? name } }).catch(() => {});
-      }
-      onSaved();
-    } catch (e) {
-      alert(e instanceof Error ? e.message : "Kunne ikke lagre");
-    } finally {
-      setSaving(false);
-    }
-  };
-
   return (
-    <DialogShell onClose={onClose} title="Identifiser plante">
+    <DialogShell onClose={onClose} title="Identifiserer plante">
       <div className="grid md:grid-cols-2 gap-4">
         <img src={s.previewUrl} alt="" className="w-full rounded-lg object-cover aspect-[4/3]" />
         <div className="space-y-3">
@@ -356,32 +418,11 @@ function CaptureDialog({ state, floras, onClose, onSaved }: { state: CaptureStat
           {s.status === "ready" && s.analysis && (
             <>
               <AnalysisView a={s.analysis} />
-              <div>
-                <label className="text-[10px] uppercase tracking-wider text-muted-foreground">Navn (din etikett)</label>
-                <input value={name} onChange={(e) => setName(e.target.value)} className="w-full mt-1 px-3 py-2 rounded bg-background border border-border text-sm" />
-              </div>
-              <div>
-                <label className="text-[10px] uppercase tracking-wider text-muted-foreground">Sted (valgfritt)</label>
-                <input value={locationLabel} onChange={(e) => setLocationLabel(e.target.value)} placeholder="f.eks. Hagen ved hytta" className="w-full mt-1 px-3 py-2 rounded bg-background border border-border text-sm" />
-                {s.lat && s.lon && (
-                  <p className="text-[10px] text-muted-foreground mt-1 flex items-center gap-1"><MapPin size={10} /> {s.lat.toFixed(4)}, {s.lon.toFixed(4)}</p>
-                )}
-              </div>
-              {floras.length > 0 && (
-                <div>
-                  <label className="text-[10px] uppercase tracking-wider text-muted-foreground">Mi Flora-sensor (valgfritt)</label>
-                  <select value={mifloraId} onChange={(e) => setMifloraId(e.target.value)} className="w-full mt-1 px-3 py-2 rounded bg-background border border-border text-sm">
-                    <option value="">— Ingen —</option>
-                    {floras.map((f) => <option key={f.id} value={f.id}>{f.name}{f.zone ? ` (${f.zone})` : ""}</option>)}
-                  </select>
+              {savedName && (
+                <div className="flex items-center gap-2 text-sm text-emerald-400 pt-2 border-t border-border/40">
+                  <Check size={16} /> Lagret som «{savedName}»
                 </div>
               )}
-              <div className="flex gap-2 pt-2">
-                <button onClick={onClose} className="px-3 py-2 rounded border border-border text-sm">Avbryt</button>
-                <button onClick={handleSave} disabled={saving} className="flex-1 px-3 py-2 rounded bg-primary text-primary-foreground font-semibold text-sm disabled:opacity-50">
-                  {saving ? "Lagrer…" : "Lagre plante"}
-                </button>
-              </div>
             </>
           )}
         </div>
