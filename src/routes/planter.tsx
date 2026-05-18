@@ -66,6 +66,7 @@ type Photo = {
 function PlanterPage() {
   const [plants, setPlants] = useState<Plant[]>([]);
   const [floras, setFloras] = useState<MiFloraDevice[]>([]);
+  const [locations, setLocations] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [openId, setOpenId] = useState<string | null>(null);
   const [capture, setCapture] = useState<CaptureState | null>(null);
@@ -76,7 +77,23 @@ function PlanterPage() {
     setLoading(true);
     const { data } = await supabase.from("plants").select("*").order("created_at", { ascending: false });
     setPlants((data ?? []) as Plant[]);
+    const { data: ph } = await supabase
+      .from("plant_photos")
+      .select("plant_id, location_label, taken_at")
+      .not("location_label", "is", null)
+      .order("taken_at", { ascending: true });
+    const map: Record<string, string> = {};
+    for (const row of (ph ?? []) as { plant_id: string; location_label: string | null }[]) {
+      if (row.location_label && !map[row.plant_id]) map[row.plant_id] = row.location_label;
+    }
+    setLocations(map);
     setLoading(false);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Slette denne planten og alle bilder?")) return;
+    await supabase.from("plants").delete().eq("id", id);
+    await load();
   };
 
   useEffect(() => {
