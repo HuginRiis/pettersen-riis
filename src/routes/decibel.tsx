@@ -1,8 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { PageShell, PageHero } from "@/components/PageShell";
-import { Mic, MicOff, Waves, AlertTriangle, Volume2, Radio, Zap } from "lucide-react";
+import { Mic, MicOff, Waves, AlertTriangle, Volume2, Radio, Zap, Tv, Film, Music2, Activity } from "lucide-react";
 import heroImg from "@/assets/got-decibel.jpg";
+import { VuMeter } from "@/components/decibel/VuMeter";
+import { DbHistoryChart } from "@/components/decibel/DbHistoryChart";
 
 export const Route = createFileRoute("/decibel")({
   component: DecibelPage,
@@ -39,6 +41,7 @@ function DecibelPage() {
   const [running, setRunning] = useState(false);
   const [db, setDb] = useState(0);
   const [peak, setPeak] = useState(0);
+  const [minDb, setMinDb] = useState<number | null>(null);
   const [avg, setAvg] = useState(0);
   const [bands, setBands] = useState<number[]>(() => OCTAVE_BANDS.map(() => -100));
   const [dominantHz, setDominantHz] = useState<number | null>(null);
@@ -50,6 +53,8 @@ function DecibelPage() {
   });
   const [scanState, setScanState] = useState<"idle" | "arming" | "listening" | "done">("idle");
   const [scanResult, setScanResult] = useState<ScanResult | null>(null);
+  const [history, setHistory] = useState<number[]>([]);
+  const [pitchStats, setPitchStats] = useState<{ vibratoCents: number; vibratoHz: number; chorus: boolean } | null>(null);
 
   const ctxRef = useRef<AudioContext | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -57,6 +62,8 @@ function DecibelPage() {
   const rafRef = useRef<number | null>(null);
   const wakeLockRef = useRef<any>(null);
   const samplesRef = useRef<number[]>([]);
+  const pitchHistRef = useRef<{ t: number; hz: number }[]>([]);
+  const lastHistoryPushRef = useRef(0);
   const timeBufRef = useRef<Float32Array | null>(null);
 
   useEffect(() => {
@@ -132,7 +139,12 @@ function DecibelPage() {
         }
         samplesRef.current.push(spl);
         if (samplesRef.current.length > 600) samplesRef.current.shift();
-        setAvg(samplesRef.current.reduce((x, y) => x + y, 0) / samplesRef.current.length);
+        const a = samplesRef.current.reduce((x, y) => x + y, 0) / samplesRef.current.length;
+        setAvg(a);
+        // Min — bare når signalet er over ~ridge for å unngå stille mikrofon-floor
+        if (spl > 25) {
+          setMinDb((prev) => (prev === null ? spl : Math.min(prev, spl)));
+        }
 
         // Oktav-bånd RMS (gjennomsnitt av dB i båndet)
         const bandVals = OCTAVE_BANDS.map((b) => {
@@ -160,7 +172,67 @@ function DecibelPage() {
             maxI = i;
           }
         }
-        setDominantHz(maxV > -70 ? Math.round(maxI * binHz) : null);
+        const domHz = maxV > -70 ? Math.round(maxI * binHz) : null;
+        setDominantHz(domHz);
+
+        // Pitch-historikk for vibrato/chorus
+        const nowT = performance.now();
+        if (domHz && domHz > 60 && domHz < 4000 && maxV > -55) {
+          pitchHistRef.current.push({ t: nowT, hz: domHz });
+        }
+        // Behold siste 2 sek
+        pitchHistRef.current = pitchHistRef.current.filter((p) => nowT - p.t < 2000);
+
+        // Push til SPL-historikk hver ~100 ms
+        if (nowT - lastHistoryPushRef.current > 100) {
+          lastHistoryPushRef.current = nowT;
+          setHistory((h) => {
+            const next = [...h, spl];
+            if (next.length > 600) next.shift();
+            return next;
+          });
+
+          // Beregn vibrato (modulasjonsrate + dybde i cents)
+          const pts = pitchHistRef.current;
+          if (pts.length > 20) {
+            const hzs = pts.map((p) => p.hz);
+            const mean = hzs.reduce((x, y) => x + y, 0) / hzs.length;
+            // Cents-dev std
+            const cents = hzs.map((h) => 1200 * Math.log2(h / mean));
+            const meanC = cents.reduce((x, y) => x + y, 0) / cents.length;
+            const std = Math.sqrt(cents.reduce((s, c) => s + (c - meanC) ** 2, 0) / cents.length);
+            // Tell nullkrysninger i cents → rate
+            let zc = 0;
+            for (let i = 1; i < cents.length; i++) {
+              if ((cents[i - 1] - meanC) * (cents[i] - meanC) < 0) zc++;
+            }
+            const durS = (pts[pts.length - 1].t - pts[0].t) / 1000;
+            const rateHz = durS > 0 ? zc / (2 * durS) : 0;
+            // Chorus: flere stabile pitcher samtidig → bredt spektralt fingeravtrykk i 200-2k
+            const presence = freqBuf.slice(
+              Math.floor(200 / binHz),
+              Math.floor(2000 / binHz),
+            );
+            let peaks = 0;
+            for (let i = 2; i < presence.length - 2; i++) {
+              if (
+                presence[i] > -50 &&
+                presence[i] > presence[i - 1] &&
+                presence[i] > presence[i + 1] &&
+                presence[i] - Math.min(presence[i - 2], presence[i + 2]) > 6
+              ) {
+                peaks++;
+              }
+            }
+            setPitchStats({
+              vibratoCents: Math.round(std * 2), // ± cents (1 std ≈ halv-bredde)
+              vibratoHz: Math.round(rateHz * 10) / 10,
+              chorus: peaks > 8,
+            });
+          } else {
+            setPitchStats(null);
+          }
+        }
 
         rafRef.current = requestAnimationFrame(tick);
       };
@@ -288,15 +360,48 @@ function DecibelPage() {
   const balanceHints = (() => {
     if (!running) return [];
     const tips: string[] = [];
-    const lowMid = (bands[2] + bands[3]) / 2; // 125–250 Hz
-    const presence = (bands[5] + bands[6]) / 2; // 1–2 kHz
-    const sibilance = bands[7]; // 4 kHz
+    const lowMid = (bands[2] + bands[3]) / 2;
+    const presence = (bands[5] + bands[6]) / 2;
+    const sibilance = bands[7];
     if (lowMid > presence + 6) tips.push("Mudrent: kutt 3–5 dB rundt 200–300 Hz for klarere tale.");
     if (presence > lowMid + 10) tips.push("Tynn lyd: løft 2–3 dB rundt 200 Hz for varme.");
     if (sibilance > presence + 6) tips.push("Skarpe s-er: bruk de-esser eller demp 4–6 kHz.");
     if (bands[0] > -40) tips.push("Mye sub-bass — kan være rumling eller vindstøy.");
     return tips;
   })();
+
+  // Klang/ekko-prosent (0–100). RT60 0.2s→0%, 1.5s→100%
+  const reverbPct = useMemo(() => {
+    if (!scanResult?.rt60) return null;
+    return Math.round(Math.max(0, Math.min(100, ((scanResult.rt60 - 0.2) / 1.3) * 100)));
+  }, [scanResult]);
+
+  // TV-lytting & diskant-anbefaling
+  const tvAssessment = useMemo(() => {
+    if (!running || bands.every((b) => b <= -90)) return null;
+    const speech = (bands[5] + bands[6]) / 2; // 1-2 kHz
+    const treble = (bands[7] + bands[8]) / 2; // 4-8 kHz
+    const warmth = (bands[3] + bands[4]) / 2; // 250-500 Hz
+    const bass = (bands[1] + bands[2]) / 2;   // 63-125 Hz
+
+    const speechClarity = speech - warmth; // > 0 = klart
+    const trebleBalance = treble - speech; // ~ -3..+3 ideal
+    const bassBalance = bass - warmth;
+
+    // Vurdering
+    const tvOk = speechClarity > -4 && trebleBalance > -6 && trebleBalance < 4;
+    const filmOk = bassBalance > -8 && trebleBalance > -8 && trebleBalance < 6;
+
+    let trebleAdvice = "Diskant ser balansert ut.";
+    if (trebleBalance < -4) trebleAdvice = "Skru opp diskant +2 til +4 dB — tale mister konsonanter.";
+    else if (trebleBalance > 3) trebleAdvice = "Skru ned diskant 2–3 dB — for skarpt, sliter på ørene.";
+
+    let bassAdvice = "Bass virker ok.";
+    if (bassBalance < -6) bassAdvice = "Skru opp bass litt — filmscener mister tyngde.";
+    else if (bassBalance > 6) bassAdvice = "Demp bass — kan maskere dialogen.";
+
+    return { tvOk, filmOk, trebleAdvice, bassAdvice, speechClarity, trebleBalance, bassBalance };
+  }, [bands, running]);
 
   return (
     <PageShell>
@@ -342,7 +447,7 @@ function DecibelPage() {
               </button>
             )}
             <button
-              onClick={() => { setPeak(0); samplesRef.current = []; }}
+              onClick={() => { setPeak(0); setMinDb(null); samplesRef.current = []; setHistory([]); }}
               className="inline-flex items-center gap-2 rounded-md border border-border px-4 py-2 text-sm hover:bg-muted"
             >
               Nullstill
@@ -350,6 +455,112 @@ function DecibelPage() {
           </div>
           {error && <p className="text-sm text-destructive text-center">{error}</p>}
         </div>
+
+        {/* Stat-bokser: SPL min / snitt / maks / topp-freq */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <StatBox label="SPL Min" value={minDb !== null ? `${minDb.toFixed(1)}` : "—"} unit="dB" tone="green" />
+          <StatBox label="SPL Snitt" value={running ? avg.toFixed(1) : "—"} unit="dB" tone="blue" />
+          <StatBox label="SPL Maks" value={running ? peak.toFixed(1) : "—"} unit="dB" tone="red" />
+          <StatBox label="Topp-frekvens" value={dominantHz !== null ? `${dominantHz}` : "—"} unit="Hz" tone="purple" />
+        </div>
+
+        {/* Analog VU + sanntids dB SPL-graf */}
+        <div className="grid md:grid-cols-2 gap-4">
+          <div className="rounded-lg border border-border bg-card p-4">
+            <div className="text-xs text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-2">
+              <Activity size={12} /> Analog VU-meter
+            </div>
+            <div className="aspect-[2/1.1]">
+              <VuMeter db={db} running={running} />
+            </div>
+            <p className="text-[11px] text-muted-foreground mt-2">
+              Klassisk integrasjon (~300 ms). Rødt felt: over 0 VU (≈ 110 dB SPL).
+            </p>
+          </div>
+          <div className="rounded-lg border border-border bg-card p-4">
+            <div className="text-xs text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-2">
+              <Activity size={12} /> Nivå over tid (dB SPL)
+            </div>
+            <div className="h-44">
+              <DbHistoryChart samples={history} />
+            </div>
+            <p className="text-[11px] text-muted-foreground mt-2">
+              Grønn sone &lt; 60 dB · gul 60–85 · rød &gt; 85 (hørselbelastende ved lang eksponering).
+            </p>
+          </div>
+        </div>
+
+        {/* Klang / Vibrato / Chorus */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <StatBox
+            label="Klang / ekko"
+            value={reverbPct !== null ? `${reverbPct}` : "—"}
+            unit="%"
+            tone={reverbPct === null ? "blue" : reverbPct < 30 ? "green" : reverbPct < 65 ? "amber" : "red"}
+            hint="kjør romskann"
+          />
+          <StatBox
+            label="RT60"
+            value={scanResult?.rt60 ? scanResult.rt60.toFixed(2) : "—"}
+            unit="s"
+            tone="blue"
+            hint="tale-ideal < 0,6"
+          />
+          <StatBox
+            label="Vibrato"
+            value={pitchStats ? `±${pitchStats.vibratoCents}` : "—"}
+            unit={pitchStats ? `cent · ${pitchStats.vibratoHz} Hz` : ""}
+            tone="purple"
+            hint="syng/spill en tone"
+          />
+          <StatBox
+            label="Chorus"
+            value={pitchStats ? (pitchStats.chorus ? "Ja" : "Nei") : "—"}
+            unit=""
+            tone={pitchStats?.chorus ? "amber" : "green"}
+            hint="flere samtidige pitcher"
+          />
+        </div>
+
+        {/* TV / film-lytting */}
+        {tvAssessment && (
+          <div className="rounded-lg border border-border bg-card p-4 space-y-3">
+            <h2 className="font-semibold flex items-center gap-2">
+              <Tv size={16} className="text-primary" /> Lytte-vurdering for TV & film
+            </h2>
+            <div className="grid sm:grid-cols-2 gap-3 text-sm">
+              <div className={`rounded-md p-3 ${tvAssessment.tvOk ? "bg-emerald-500/10 border border-emerald-500/30" : "bg-amber-500/10 border border-amber-500/30"}`}>
+                <div className="flex items-center gap-2 font-medium">
+                  <Tv size={14} /> Vanlig TV-titting
+                </div>
+                <div className="text-xs text-muted-foreground mt-1">
+                  {tvAssessment.tvOk ? "OK — dialog skal være tydelig." : "Tale-området henger etter. Vurder dialog-modus eller hev senter-kanal."}
+                </div>
+              </div>
+              <div className={`rounded-md p-3 ${tvAssessment.filmOk ? "bg-emerald-500/10 border border-emerald-500/30" : "bg-amber-500/10 border border-amber-500/30"}`}>
+                <div className="flex items-center gap-2 font-medium">
+                  <Film size={14} /> Film / serie
+                </div>
+                <div className="text-xs text-muted-foreground mt-1">
+                  {tvAssessment.filmOk ? "OK — dynamikk og bunn ser balansert ut." : "Ubalansert — film-dynamikk vil føles tynn eller maskert."}
+                </div>
+              </div>
+            </div>
+            <div className="border-t border-border pt-3 space-y-1 text-xs">
+              <p className="flex items-start gap-2">
+                <Music2 size={12} className="text-primary mt-0.5 shrink-0" />
+                <span><strong className="text-foreground">Diskant:</strong> {tvAssessment.trebleAdvice}</span>
+              </p>
+              <p className="flex items-start gap-2">
+                <Music2 size={12} className="text-primary mt-0.5 shrink-0" />
+                <span><strong className="text-foreground">Bass:</strong> {tvAssessment.bassAdvice}</span>
+              </p>
+              <p className="text-muted-foreground pt-1">
+                Tale-klarhet: {tvAssessment.speechClarity.toFixed(1)} dB · Diskant-balanse: {tvAssessment.trebleBalance.toFixed(1)} dB · Bass-balanse: {tvAssessment.bassBalance.toFixed(1)} dB
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Frekvensspektrum */}
         <div className="rounded-lg border border-border bg-card p-4 space-y-3">
@@ -474,5 +685,38 @@ function DecibelPage() {
         </div>
       </div>
     </PageShell>
+  );
+}
+
+const TONE_CLASS: Record<string, string> = {
+  green: "bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-300",
+  blue: "bg-sky-500/10 border-sky-500/30 text-sky-700 dark:text-sky-300",
+  red: "bg-rose-500/10 border-rose-500/30 text-rose-700 dark:text-rose-300",
+  amber: "bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-300",
+  purple: "bg-violet-500/10 border-violet-500/30 text-violet-700 dark:text-violet-300",
+};
+
+function StatBox({
+  label,
+  value,
+  unit,
+  tone = "blue",
+  hint,
+}: {
+  label: string;
+  value: string;
+  unit?: string;
+  tone?: "green" | "blue" | "red" | "amber" | "purple";
+  hint?: string;
+}) {
+  return (
+    <div className={`rounded-lg border p-3 ${TONE_CLASS[tone]}`}>
+      <div className="text-[10px] uppercase tracking-wider opacity-80">{label}</div>
+      <div className="font-mono font-bold text-2xl tabular-nums leading-tight mt-0.5">
+        {value}
+        {unit && <span className="text-xs font-normal opacity-70 ml-1">{unit}</span>}
+      </div>
+      {hint && <div className="text-[10px] opacity-60 mt-0.5">{hint}</div>}
+    </div>
   );
 }
