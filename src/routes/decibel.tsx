@@ -61,6 +61,18 @@ function DecibelPage() {
     if (typeof window === "undefined") return 0.05;
     return Number(localStorage.getItem("vu-fall-speed") ?? "0.05");
   });
+  // Følsomhet for TV/film-vurdering: 0 = streng, 10 = veldig følsom (fanger svake signal)
+  const [tvSensitivity, setTvSensitivity] = useState<number>(() => {
+    if (typeof window === "undefined") return 6;
+    return Number(localStorage.getItem("tv-sensitivity") ?? "6");
+  });
+  // Lyd-identifikator
+  const [idActive, setIdActive] = useState(false);
+  const [idSensitivity, setIdSensitivity] = useState<number>(() => {
+    if (typeof window === "undefined") return 5;
+    return Number(localStorage.getItem("id-sensitivity") ?? "5");
+  });
+  const [idResult, setIdResult] = useState<{ label: string; confidence: number; detail: string } | null>(null);
 
   const ctxRef = useRef<AudioContext | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -89,6 +101,14 @@ function DecibelPage() {
   useEffect(() => {
     localStorage.setItem("band-window-sec", String(bandWindowSec));
   }, [bandWindowSec]);
+
+  useEffect(() => {
+    localStorage.setItem("tv-sensitivity", String(tvSensitivity));
+  }, [tvSensitivity]);
+
+  useEffect(() => {
+    localStorage.setItem("id-sensitivity", String(idSensitivity));
+  }, [idSensitivity]);
 
   const stop = () => {
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
@@ -416,9 +436,13 @@ function DecibelPage() {
     return () => clearInterval(id);
   }, [running, bands]);
 
-  // TV-lytting & diskant-anbefaling (basert på 1s-snapshot)
+  // TV-lytting & diskant-anbefaling (basert på 1s-snapshot + følsomhet)
   const tvAssessment = useMemo(() => {
-    const hasSignal = running && bandsSlow.some((b) => b > -85);
+    // Sensitivity 0..10 → terskel for "har signal" går fra -60 (streng) til -95 (veldig følsom)
+    const sigThreshold = -60 - (tvSensitivity / 10) * 35;
+    // Tolerance-utvidelse: mer følsom = mer slingringsrom for å si "OK"
+    const tol = 1 + tvSensitivity * 0.4; // 1.0 .. 5.0
+    const hasSignal = running && bandsSlow.some((b) => b > sigThreshold);
     if (!hasSignal) {
       return {
         hasSignal: false as const,
@@ -438,26 +462,82 @@ function DecibelPage() {
     const trebleBalance = treble - speech;
     const bassBalance = bass - warmth;
 
-    const tvOk = speechClarity > -4 && trebleBalance > -6 && trebleBalance < 4;
-    const filmOk = bassBalance > -8 && trebleBalance > -8 && trebleBalance < 6;
+    const tvOk = speechClarity > -4 - tol && trebleBalance > -6 - tol && trebleBalance < 4 + tol;
+    const filmOk = bassBalance > -8 - tol && trebleBalance > -8 - tol && trebleBalance < 6 + tol;
 
     let trebleAdvice = "Diskant ser balansert ut.";
-    if (trebleBalance < -4) trebleAdvice = "Skru opp diskant +2 til +4 dB — tale mister konsonanter.";
-    else if (trebleBalance > 3) trebleAdvice = "Skru ned diskant 2–3 dB — for skarpt, sliter på ørene.";
+    if (trebleBalance < -4 - tol * 0.5) trebleAdvice = "Skru opp diskant +2 til +4 dB — tale mister konsonanter.";
+    else if (trebleBalance > 3 + tol * 0.5) trebleAdvice = "Skru ned diskant 2–3 dB — for skarpt, sliter på ørene.";
 
     let bassAdvice = "Bass virker ok.";
-    if (bassBalance < -6) bassAdvice = "Skru opp bass litt — filmscener mister tyngde.";
-    else if (bassBalance > 6) bassAdvice = "Demp bass — kan maskere dialogen.";
+    if (bassBalance < -6 - tol * 0.5) bassAdvice = "Skru opp bass litt — filmscener mister tyngde.";
+    else if (bassBalance > 6 + tol * 0.5) bassAdvice = "Demp bass — kan maskere dialogen.";
 
     const highlights: string[] = [];
-    if (speechClarity > -2) highlights.push("Tydelig tale-område");
-    if (trebleBalance >= -3 && trebleBalance <= 3) highlights.push("Balansert diskant");
-    if (bassBalance >= -5 && bassBalance <= 5) highlights.push("Stabil bass");
+    if (speechClarity > -2 - tol * 0.5) highlights.push("Tydelig tale-område");
+    if (trebleBalance >= -3 - tol * 0.5 && trebleBalance <= 3 + tol * 0.5) highlights.push("Balansert diskant");
+    if (bassBalance >= -5 - tol * 0.5 && bassBalance <= 5 + tol * 0.5) highlights.push("Stabil bass");
     if (tvOk) highlights.push("OK for vanlig TV");
     if (filmOk) highlights.push("OK for film");
 
     return { hasSignal: true as const, tvOk, filmOk, trebleAdvice, bassAdvice, speechClarity, trebleBalance, bassBalance, highlights };
-  }, [bandsSlow, running]);
+  }, [bandsSlow, running, tvSensitivity]);
+
+  // Lyd-identifikator: klassifiser type lyd basert på spektral-distribusjon
+  // Bruker bandPercent + db + dominantHz + pitchStats. Følsomhet justerer min-db-terskel.
+  const classifySound = (
+    pct: number[],
+    splDb: number,
+    domHz: number | null,
+    vibrato: { vibratoCents: number; vibratoHz: number; chorus: boolean } | null,
+    sens: number,
+  ): { label: string; confidence: number; detail: string } => {
+    const minDbForId = 55 - sens * 3; // sens 0→55, sens 10→25
+    if (splDb < minDbForId) {
+      return { label: "Stillhet / for svakt", confidence: 100, detail: `Under ${minDbForId.toFixed(0)} dB. Øk følsomhet eller nivå.` };
+    }
+    const sub = pct[0] + pct[1];
+    const lowMid = pct[2] + pct[3];
+    const speech = pct[5] + pct[6];
+    const presence = pct[6] + pct[7];
+    const air = pct[8] + pct[9];
+    const broadband = pct.filter((p) => p > 4).length;
+
+    // Plystring / ren tone: smalt spektrum, høy dominant, lav vibrato
+    if (domHz && domHz > 700 && domHz < 4000 && presence > 35 && lowMid < 15) {
+      return { label: "Plystring / ren tone", confidence: 85, detail: `${domHz} Hz dominant. Smalt spektrum.` };
+    }
+    // Sang: vibrato + tale-/musikkområde
+    if (vibrato && vibrato.vibratoCents > 8 && vibrato.vibratoHz > 3 && vibrato.vibratoHz < 8 && speech > 20) {
+      return { label: "Sang", confidence: 80, detail: `Vibrato ±${vibrato.vibratoCents} cent @ ${vibrato.vibratoHz} Hz.` };
+    }
+    // Musikk: bredt spektrum + bass + diskant tilstede
+    if (broadband >= 6 && sub + lowMid > 20 && air + presence > 25) {
+      return { label: "Musikk", confidence: 75, detail: `Bredt spektrum, ${broadband} aktive bånd.` };
+    }
+    // Tale: dominans i 500–2k, lite sub
+    if (speech > 35 && sub < 15 && air < 25) {
+      return { label: "Tale / dialog", confidence: 80, detail: `Tale-kjerne ${speech.toFixed(0)}% av energien.` };
+    }
+    // Klapping/perkusjon: kort, høy diskant + bredt spektrum
+    if (air + presence > 45 && lowMid < 20) {
+      return { label: "Klapping / perkusjon", confidence: 65, detail: `Høyt energi-innhold i diskant.` };
+    }
+    // Bass-rumling / motor
+    if (sub + lowMid > 55 && air < 15) {
+      return { label: "Bass-rumling / motor / vind", confidence: 70, detail: `${(sub + lowMid).toFixed(0)}% i sub/lav-mid.` };
+    }
+    // Hvit/rosa støy
+    if (broadband >= 7 && Math.max(...pct) < 20) {
+      return { label: "Bredbåndsstøy (vifte/regn)", confidence: 65, detail: `Jevn fordeling over hele spekteret.` };
+    }
+    // Sibilance / hvesing
+    if (air > 30 && sub < 10) {
+      return { label: "Hvesing / sus", confidence: 55, detail: `Dominans i 8–16 kHz.` };
+    }
+    return { label: "Blandet / ubestemt", confidence: 30, detail: `Dominant ${domHz ?? "?"} Hz · ${splDb.toFixed(0)} dB.` };
+  };
+
 
   // Prosent-fordeling av lyd-energi pr oktav (sum = 100) — snittet over valgt vindu
   const bandPercent = useMemo(() => {
@@ -486,6 +566,22 @@ function DecibelPage() {
     bandPercent.forEach((p, i) => { if (p > m) { m = p; mi = i; } });
     return mi;
   }, [bandPercent]);
+
+  // Maks-prosent for relativ skalering av oktav-stolpene (så høyeste fyller stolpen)
+  const maxBandPct = useMemo(() => Math.max(1, ...bandPercent), [bandPercent]);
+
+  // Lyd-identifikator: kjør klassifisering hvert sekund mens aktiv
+  useEffect(() => {
+    if (!idActive || !running) {
+      if (!idActive) setIdResult(null);
+      return;
+    }
+    const id = setInterval(() => {
+      setIdResult(classifySound(bandPercent, db, dominantHz, pitchStats, idSensitivity));
+    }, 1000);
+    return () => clearInterval(id);
+  }, [idActive, running, bandPercent, db, dominantHz, pitchStats, idSensitivity]);
+
 
   return (
     <PageShell>
@@ -673,8 +769,8 @@ function DecibelPage() {
               <div className="flex items-end gap-1 h-48 border-b border-border/50">
                 {OCTAVE_BANDS.map((b, i) => {
                   const pct = bandPercent[i] ?? 0;
-                  // Skaler høyde: 0% → 2, 40% → 100%
-                  const h = Math.max(2, Math.min(100, (pct / 40) * 100));
+                  // Relativ skalering: høyeste bånd fyller stolpen (med litt headroom)
+                  const h = Math.max(2, Math.min(100, (pct / maxBandPct) * 95));
                   const isDom = i === dominantBandIdx && pct > 1;
                   const color = pct > 25 ? "bg-rose-500" : pct > 12 ? "bg-amber-500" : pct > 4 ? "bg-sky-500" : "bg-emerald-500";
                   return (
@@ -820,6 +916,66 @@ function DecibelPage() {
           </p>
         </div>
 
+        {/* Lyd-identifikator — manuelt aktivert */}
+        <div className="rounded-lg border border-border bg-card p-4 space-y-3">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <h2 className="font-semibold flex items-center gap-2">
+              <Radio size={16} className="text-primary" /> Lyd-identifikator
+            </h2>
+            <button
+              disabled={!running}
+              onClick={() => setIdActive((v) => !v)}
+              className={`inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium disabled:opacity-50 ${
+                idActive
+                  ? "bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  : "bg-primary text-primary-foreground hover:bg-primary/90"
+              }`}
+            >
+              {idActive ? <><MicOff size={14} /> Stopp identifisering</> : <><Mic size={14} /> Start identifisering</>}
+            </button>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Analyserer spektral-fordeling hvert sekund og forsøker å klassifisere hva slags lyd som spilles
+            (tale, sang, musikk, plystring, perkusjon, bass-rumling, støy m.m.). Krever at måling kjører.
+          </p>
+          <div className="rounded-md border border-border bg-muted/20 p-2.5 space-y-1.5">
+            <div className="flex items-center justify-between text-[11px]">
+              <span className="text-muted-foreground">Følsomhet</span>
+              <span className="tabular-nums font-mono">
+                {idSensitivity.toFixed(0)} / 10 — terskel ≈ {(55 - idSensitivity * 3).toFixed(0)} dB
+              </span>
+            </div>
+            <input
+              type="range" min={0} max={10} step={1}
+              value={idSensitivity}
+              onChange={(e) => setIdSensitivity(Number(e.target.value))}
+              className="w-full accent-primary"
+            />
+            <p className="text-[10px] text-muted-foreground">
+              Høyere = forsøker å identifisere svakere lyd (ned mot 25 dB). Lavere = krever klart, høyt signal.
+            </p>
+          </div>
+          <div className={`rounded-md border p-3 ${idActive && idResult ? "bg-primary/5 border-primary/30" : "bg-muted/30 border-border"}`}>
+            <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
+              {idActive ? "Lytter…" : "Inaktiv"}
+            </div>
+            <div className="font-semibold text-lg">
+              {idActive
+                ? (idResult ? idResult.label : "Analyserer …")
+                : "Trykk «Start identifisering» for å begynne."}
+            </div>
+            {idActive && idResult && (
+              <>
+                <div className="text-xs text-muted-foreground mt-1">{idResult.detail}</div>
+                <div className="mt-2 h-1.5 w-full bg-muted rounded overflow-hidden">
+                  <div className="h-full bg-primary transition-all" style={{ width: `${idResult.confidence}%` }} />
+                </div>
+                <div className="text-[10px] text-muted-foreground mt-1">Sikkerhet: {idResult.confidence}%</div>
+              </>
+            )}
+          </div>
+        </div>
+
         {/* Lytte-vurdering — alltid synlig i bunn, oppdateres hvert sekund */}
         <div className="rounded-lg border border-border bg-card p-4 space-y-3">
           <div className="flex items-center justify-between gap-2">
@@ -830,6 +986,26 @@ function DecibelPage() {
               {tvAssessment.hasSignal ? "Oppdateres hvert 1 s" : "Venter på lyd"}
             </span>
           </div>
+
+          {/* Følsomhets-slider */}
+          <div className="rounded-md border border-border bg-muted/20 p-2.5 space-y-1.5">
+            <div className="flex items-center justify-between text-[11px]">
+              <span className="text-muted-foreground">Følsomhet</span>
+              <span className="tabular-nums font-mono">
+                {tvSensitivity.toFixed(0)} / 10 {tvSensitivity < 3 ? "(streng)" : tvSensitivity > 7 ? "(svært følsom)" : "(middels)"}
+              </span>
+            </div>
+            <input
+              type="range" min={0} max={10} step={1}
+              value={tvSensitivity}
+              onChange={(e) => setTvSensitivity(Number(e.target.value))}
+              className="w-full accent-primary"
+            />
+            <p className="text-[10px] text-muted-foreground">
+              Høyere = fanger svakere lyd og er mildere med "OK"-merkene. Lavere = krever tydeligere signal.
+            </p>
+          </div>
+
 
           {(() => {
             const allChips = ["Tydelig tale-område", "Balansert diskant", "Stabil bass", "OK for vanlig TV", "OK for film"];
