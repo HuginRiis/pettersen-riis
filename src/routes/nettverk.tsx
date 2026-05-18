@@ -659,8 +659,131 @@ function HomeyInsightsCard({ routers }: { routers: NetworkDevice[] }) {
             </div>
           )
         ) : null}
+
+        <AggregateInsights routers={routers} resolution={resolution} />
       </div>
     </Card>
+  );
+}
+
+type AggMetric = { key: "download" | "upload" | "cpu"; label: string; match: string[]; unit: "kbs" | "pct" };
+const AGG_METRICS: AggMetric[] = [
+  { key: "download", label: "Nedlasting", match: ["download", "down_kilo"], unit: "kbs" },
+  { key: "upload", label: "Opplasting", match: ["upload", "up_kilo"], unit: "kbs" },
+  { key: "cpu", label: "CPU", match: ["cpu"], unit: "pct" },
+];
+
+type AggRow = { routerId: string; routerName: string; avg: number | null; max: number | null };
+type AggResult = Record<AggMetric["key"], { rows: AggRow[]; avgAll: number | null; maxAll: number | null }>;
+
+function AggregateInsights({
+  routers,
+  resolution,
+}: {
+  routers: NetworkDevice[];
+  resolution: (typeof RESOLUTIONS)[number]["key"];
+}) {
+  const fetchLogs = useServerFn(listRouterInsightLogs);
+  const fetchInsights = useServerFn(getRouterInsights);
+  const [agg, setAgg] = useState<AggResult | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!routers.length) return;
+    let cancelled = false;
+    setLoading(true);
+    (async () => {
+      const result: AggResult = {
+        download: { rows: [], avgAll: null, maxAll: null },
+        upload: { rows: [], avgAll: null, maxAll: null },
+        cpu: { rows: [], avgAll: null, maxAll: null },
+      };
+      const accAll: Record<AggMetric["key"], number[]> = { download: [], upload: [], cpu: [] };
+
+      await Promise.all(
+        routers.map(async (router) => {
+          let logs: InsightLogMeta[] = [];
+          try {
+            const r = await fetchLogs({ data: { deviceId: router.id } });
+            logs = r.logs ?? [];
+          } catch { return; }
+          for (const metric of AGG_METRICS) {
+            const log = logs.find((l) => metric.match.some((m) => l.id.toLowerCase().includes(m)));
+            if (!log) {
+              result[metric.key].rows.push({ routerId: router.id, routerName: router.name, avg: null, max: null });
+              continue;
+            }
+            const capId = log.id.includes(":") ? log.id.split(":").pop()! : log.id;
+            try {
+              const ins = await fetchInsights({ data: { deviceId: router.id, capabilityId: capId, resolution } });
+              const vals = (ins.points ?? []).map((p) => p.v).filter((v): v is number => typeof v === "number");
+              if (vals.length) {
+                const avg = vals.reduce((s, n) => s + n, 0) / vals.length;
+                const mx = Math.max(...vals);
+                result[metric.key].rows.push({ routerId: router.id, routerName: router.name, avg, max: mx });
+                accAll[metric.key].push(...vals);
+              } else {
+                result[metric.key].rows.push({ routerId: router.id, routerName: router.name, avg: null, max: null });
+              }
+            } catch {
+              result[metric.key].rows.push({ routerId: router.id, routerName: router.name, avg: null, max: null });
+            }
+          }
+        }),
+      );
+
+      for (const m of AGG_METRICS) {
+        const arr = accAll[m.key];
+        if (arr.length) {
+          result[m.key].avgAll = arr.reduce((s, n) => s + n, 0) / arr.length;
+          result[m.key].maxAll = Math.max(...arr);
+        }
+      }
+
+      if (!cancelled) setAgg(result);
+    })().finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [fetchLogs, fetchInsights, routers, resolution]);
+
+  if (!routers.length) return null;
+
+  return (
+    <div className="pt-3 border-t border-border/50">
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+          Sammendrag på tvers av alle rutere
+        </h3>
+        {loading ? <span className="text-[10px] text-muted-foreground">Laster …</span> : null}
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+        {AGG_METRICS.map((m) => {
+          const data = agg?.[m.key];
+          return (
+            <div key={m.key} className="rounded-lg border border-border bg-card/40 p-3">
+              <div className="text-[11px] uppercase tracking-wide text-muted-foreground mb-1">{m.label}</div>
+              <div className="flex items-baseline justify-between mb-1">
+                <span className="text-[10px] text-muted-foreground">Maks alle</span>
+                <span className="text-sm font-semibold text-foreground">{fmtMetric(data?.maxAll ?? null, m.unit)}</span>
+              </div>
+              <div className="flex items-baseline justify-between mb-2">
+                <span className="text-[10px] text-muted-foreground">Snitt alle</span>
+                <span className="text-sm font-medium text-foreground">{fmtMetric(data?.avgAll ?? null, m.unit)}</span>
+              </div>
+              <div className="space-y-0.5 border-t border-border/40 pt-1.5">
+                {data?.rows.map((row) => (
+                  <div key={row.routerId} className="flex items-center justify-between text-[10px]">
+                    <span className="text-muted-foreground truncate mr-2">{row.routerName}</span>
+                    <span className="text-foreground/80 tabular-nums">
+                      maks {fmtMetric(row.max, m.unit)} · snitt {fmtMetric(row.avg, m.unit)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
