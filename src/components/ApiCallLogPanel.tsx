@@ -5,6 +5,7 @@ import {
   refreshApiSource,
   type ApiCallSummary,
 } from "@/server/api-call-log";
+import { purgeApiCallLog } from "@/server/api-call-log-purge.functions";
 
 const SOURCE_LABELS: Record<string, string> = {
   homey: "Homey",
@@ -58,6 +59,7 @@ function formatClock(iso: string | null): string {
 export function ApiCallLogPanel() {
   const fetchLog = useServerFn(getApiCallLog);
   const refresh = useServerFn(refreshApiSource);
+  const purge = useServerFn(purgeApiCallLog);
 
   const [data, setData] = useState<ApiCallSummary | null>(null);
   const [loading, setLoading] = useState(false);
@@ -65,6 +67,26 @@ export function ApiCallLogPanel() {
   const [busySource, setBusySource] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
+  const [purging, setPurging] = useState<number | null>(null);
+  const [purgeMsg, setPurgeMsg] = useState<string | null>(null);
+
+  async function handlePurge(days: number) {
+    const ok = window.confirm(
+      `Vil du slette alle API-logger eldre enn ${days} dager?`,
+    );
+    if (!ok) return;
+    setPurging(days);
+    setPurgeMsg(null);
+    try {
+      const res = await purge({ data: { olderThanDays: days } });
+      setPurgeMsg(`✓ Slettet ${res.deleted} rader eldre enn ${days} dager.`);
+      await load();
+    } catch (e: any) {
+      setPurgeMsg(`⚠ Feil: ${e?.message ?? String(e)}`);
+    } finally {
+      setPurging(null);
+    }
+  }
 
   const load = async () => {
     setLoading(true);
@@ -353,6 +375,30 @@ export function ApiCallLogPanel() {
               : `▾ Vis ${hiddenCount} til`}
           </button>
         )}
+
+        <div className="mt-6 pt-4 border-t border-border">
+          <div className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-2">
+            Rydd opp i loggen
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {[7, 14, 30].map((days) => (
+              <button
+                key={days}
+                type="button"
+                onClick={() => handlePurge(days)}
+                disabled={purging !== null}
+                className="px-3 py-1.5 rounded border border-destructive/40 text-destructive text-[11px] tracking-[0.15em] uppercase hover:bg-destructive/10 disabled:opacity-50"
+              >
+                {purging === days
+                  ? "Sletter…"
+                  : `🗑 Eldre enn ${days < 30 ? `${days} dager` : "1 måned"}`}
+              </button>
+            ))}
+          </div>
+          {purgeMsg && (
+            <p className="mt-2 text-[11px] text-muted-foreground">{purgeMsg}</p>
+          )}
+        </div>
 
         {data && (
           <p className="text-[10px] text-muted-foreground mt-4 text-right">

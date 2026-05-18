@@ -60,6 +60,7 @@ export function ApiErrorLogPanel() {
   const [openId, setOpenId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+  const [hasInitializedCollapse, setHasInitializedCollapse] = useState(false);
 
   const isGroupOpen = (key: string) => !collapsedGroups.has(key);
   const toggleGroup = (key: string) => {
@@ -115,6 +116,14 @@ export function ApiErrorLogPanel() {
       })
       .sort((a, b) => b.list.length - a.list.length);
   }, [errors]);
+
+  // Start kollapset første gang grupper er tilgjengelig.
+  useEffect(() => {
+    if (!hasInitializedCollapse && grouped.length > 0) {
+      setCollapsedGroups(new Set(grouped.map((g) => `${g.source}::${g.endpoint}`)));
+      setHasInitializedCollapse(true);
+    }
+  }, [grouped, hasInitializedCollapse]);
 
   return (
     <div className="space-y-4">

@@ -32,6 +32,7 @@ import { BirthdaysOverview } from "@/components/BirthdaysOverview";
 import { UpcomingHolidays } from "@/components/UpcomingHolidays";
 import { PushTodayBadge, LightsOnBadge, TomorrowWeatherBadge, MowerStatusBadge, GardenaStatusBadge, GardenaBatteryBadge, GardenaSignalBadge, RoborockStatusBadge, AlarmStateBadge, UtgangsdorenLockBadge, AlertsSeverityBadge, PowerVsYesterdayBadge, StepsTodayBadge, TrainingLast4WeeksBadge, GarbageNextPickupBadge, CurrentTempBadge, WeatherDaysBadge } from "@/components/HallBadges";
 import { useMenuVisibility, isMenuLinkVisible } from "@/hooks/use-menu-visibility";
+import { SmartSearch } from "@/components/SmartSearch";
 
 import { useAuthStatus } from "@/hooks/use-auth-status";
 import { logoutFn } from "@/server/auth";
@@ -182,6 +183,8 @@ function Home() {
           ⚔ Menyen ⚔
         </button>
       </div>
+
+      <SmartSearch />
 
       <OutdoorWeatherStrip stationMatch="tollnes" />
       <IndoorWeatherStrip stationMatch="tollnes" label="Inne nå · Tollnes" />

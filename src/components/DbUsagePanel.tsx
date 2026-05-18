@@ -1,9 +1,46 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { getDbUsage, setCronJobActive, type DbUsageStats } from "@/server/db-usage.functions";
-import { Database, Clock, AlertTriangle } from "lucide-react";
+import { getStorageUsage, type StorageBucket } from "@/server/storage-usage.functions";
+import { Database, Clock, AlertTriangle, HardDrive } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
+
+// Kategori-mapping for tabeller (matches mot tabellnavn uten public.-prefiks).
+const TABLE_CATEGORIES: Array<{ name: string; match: (t: string) => boolean }> = [
+  {
+    name: "Logger",
+    match: (t) =>
+      /^(api_call_log|api_error|garmin_sync_log|home_alarm_log|push_send_log|garbage_notification_log|ai_search_log|visitor_|visitors_|login_attempts|pageview)/.test(t),
+  },
+  {
+    name: "API-data",
+    match: (t) =>
+      /^(tibber|pulse_|spot_|met_|netatmo|garmin_(?!sync)|gardena|homey|roborock|nrk_|strava|kassal|eufy|lightning)/.test(t),
+  },
+  {
+    name: "Innstillinger",
+    match: (t) =>
+      /(_prefs|_settings|favorites|api_pause_flags|notification_settings|menu_)/.test(t),
+  },
+  {
+    name: "App-data",
+    match: (t) =>
+      /^(okonomi|hytta|planter|plants|agenda|birthdays|renovation|grocery|payslip|receipt|changelog|garbage_address|ip_user_mapping)/.test(t),
+  },
+];
+
+function categorizeTable(table: string): string {
+  const bare = table.replace(/^public\./, "");
+  for (const c of TABLE_CATEGORIES) if (c.match(bare)) return c.name;
+  return "Andre";
+}
+
+// Buckets: vi gjør et grovt skille mellom bilder og dokumenter.
+function categorizeBucket(bucket: string): string {
+  if (/payslip|receipt|kvittering/i.test(bucket)) return "Dokumenter";
+  return "Bilder";
+}
 
 function prettyBytes(b: number): string {
   if (!b) return "0 B";
@@ -66,8 +103,10 @@ function nextRun(cron: string, lastRun: string | null, explicit?: string | null)
 
 export function DbUsagePanel() {
   const fetchFn = useServerFn(getDbUsage);
+  const fetchStorage = useServerFn(getStorageUsage);
   const toggleFn = useServerFn(setCronJobActive);
   const [data, setData] = useState<DbUsageStats | null>(null);
+  const [storage, setStorage] = useState<{ buckets: StorageBucket[]; totalBytes: number } | null>(null);
   const [loading, setLoading] = useState(true);
   const [pending, setPending] = useState<string | null>(null);
 
@@ -100,8 +139,11 @@ export function DbUsagePanel() {
     let alive = true;
     const load = async () => {
       try {
-        const d = await fetchFn();
-        if (alive) setData(d);
+        const [d, s] = await Promise.all([fetchFn(), fetchStorage()]);
+        if (alive) {
+          setData(d);
+          setStorage(s);
+        }
       } finally {
         if (alive) setLoading(false);
       }
@@ -112,7 +154,24 @@ export function DbUsagePanel() {
       alive = false;
       window.clearInterval(i);
     };
-  }, [fetchFn]);
+  }, [fetchFn, fetchStorage]);
+
+  // Bygg kategoriaggregat over tabeller + buckets.
+  const categoryUsage = useMemo(() => {
+    const tot = new Map<string, number>();
+    for (const t of data?.tables ?? []) {
+      const cat = categorizeTable(t.table);
+      tot.set(cat, (tot.get(cat) ?? 0) + t.bytes);
+    }
+    for (const b of storage?.buckets ?? []) {
+      const cat = categorizeBucket(b.bucket);
+      tot.set(cat, (tot.get(cat) ?? 0) + b.bytes);
+    }
+    const arr = Array.from(tot.entries()).map(([name, bytes]) => ({ name, bytes }));
+    arr.sort((a, b) => b.bytes - a.bytes);
+    const total = arr.reduce((s, c) => s + c.bytes, 0);
+    return { categories: arr, total };
+  }, [data, storage]);
 
   if (loading && !data) {
     return <div className="text-sm text-muted-foreground">Henter forbruk…</div>;
@@ -144,6 +203,57 @@ export function DbUsagePanel() {
           Lovable Cloud free-tier gir 500 MB. Snakk med hærmesteren før vi når
           taket.
         </p>
+      </div>
+
+      {/* Lagring per kategori */}
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground">
+            <HardDrive size={12} /> Lagring per kategori
+          </div>
+          <div className="text-[11px] font-mono text-muted-foreground">
+            Totalt {prettyBytes(categoryUsage.total)}
+          </div>
+        </div>
+        {categoryUsage.categories.length === 0 ? (
+          <div className="text-sm text-muted-foreground">Ingen data.</div>
+        ) : (
+          <div className="space-y-1.5">
+            {categoryUsage.categories.map((c) => {
+              const pctC = categoryUsage.total > 0 ? (c.bytes / categoryUsage.total) * 100 : 0;
+              return (
+                <div key={c.name}>
+                  <div className="flex items-center justify-between text-xs mb-0.5">
+                    <span className="text-foreground">{c.name}</span>
+                    <span className="font-mono text-muted-foreground tabular-nums">
+                      {prettyBytes(c.bytes)} · {pctC.toFixed(1)}%
+                    </span>
+                  </div>
+                  <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                    <div className="h-full bg-primary/70" style={{ width: `${pctC}%` }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+        {storage && storage.buckets.length > 0 && (
+          <div className="mt-3 pt-3 border-t border-border/60">
+            <div className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-1.5">
+              Storage-buckets
+            </div>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+              {storage.buckets.map((b) => (
+                <div key={b.bucket} className="flex items-center justify-between">
+                  <span className="font-mono">{b.bucket}</span>
+                  <span className="font-mono text-muted-foreground tabular-nums">
+                    {prettyBytes(b.bytes)} · {b.objects}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Cron jobs */}

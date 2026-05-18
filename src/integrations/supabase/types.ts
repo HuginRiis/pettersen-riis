@@ -2825,6 +2825,7 @@ export type Database = {
     }
     Functions: {
       get_db_usage_stats: { Args: never; Returns: Json }
+      get_storage_usage_stats: { Args: never; Returns: Json }
       set_cron_job_active: {
         Args: { _active: boolean; _jobname: string }
         Returns: boolean
