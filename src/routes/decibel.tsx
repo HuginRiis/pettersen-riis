@@ -467,6 +467,8 @@ function DecibelPage() {
           </div>
         </div>
 
+        <DeviceSensorsPanel />
+
         <div className="rounded-lg border border-border bg-card p-4 text-xs text-muted-foreground">
           <p>
             <strong className="text-foreground">Bakgrunnsmåling:</strong> nettlesere stopper mikrofontilgang når fanen
