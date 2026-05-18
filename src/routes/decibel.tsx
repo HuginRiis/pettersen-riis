@@ -66,6 +66,7 @@ function DecibelPage() {
   const pitchHistRef = useRef<{ t: number; hz: number }[]>([]);
   const lastHistoryPushRef = useRef(0);
   const timeBufRef = useRef<Float32Array | null>(null);
+  const [spectrum, setSpectrum] = useState<{ data: Float32Array; binHz: number } | null>(null);
 
   useEffect(() => {
     localStorage.setItem("db-calibration", String(calibration));
