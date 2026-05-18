@@ -23,6 +23,7 @@ import { useMenuVisibility, isMenuLinkVisible } from "@/hooks/use-menu-visibilit
 
 const BORGEN_COORD = { lat: 59.1789, lon: 9.5732 };
 const HYTTA_COORD = { lat: 59.8733, lon: 9.4297 };
+const TOLLNES_COORD = { lat: 59.2096, lon: 9.609 };
 
 type RoutePath =
   | "/"
