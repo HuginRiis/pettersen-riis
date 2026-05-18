@@ -356,6 +356,13 @@ function DeviceCard({ d, detailed }: { d: NetworkDevice; detailed?: boolean }) {
           {d.memory != null && <Mini icon={<MemoryStick size={10} />} label="mem" value={fmtPct(d.memory)} />}
           {d.clients != null && <Mini icon={<Users size={10} />} label="klienter" value={String(d.clients)} />}
           {d.ipAddress && <Mini icon={<Globe size={10} />} label="ip" value={d.ipAddress} />}
+          {d.deviceRole && <Mini icon={<Crown size={10} />} label="rolle" value={d.deviceRole} />}
+          {d.wanConnected != null && <Mini icon={<Globe size={10} />} label="wan" value={d.wanConnected ? "ja" : "nei"} />}
+          {d.meshConnected != null && <Mini icon={<Wifi size={10} />} label="mesh" value={d.meshConnected ? "ja" : "nei"} />}
+          {d.signal24 && <Mini icon={<Signal size={10} />} label="2.4 GHz" value={d.signal24} />}
+          {d.signal5 && <Mini icon={<Signal size={10} />} label="5 GHz" value={d.signal5} />}
+          {d.wifiBand && <Mini icon={<Wifi size={10} />} label="bånd" value={d.wifiBand} />}
+          {d.uptime != null && <Mini icon={<Activity size={10} />} label="oppe" value={fmtUptime(d.uptime)} />}
         </div>
       )}
       <div className="text-[10px] text-muted-foreground">
