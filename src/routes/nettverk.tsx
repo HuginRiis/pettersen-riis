@@ -25,6 +25,7 @@ import {
   type NetworkDevice,
   type NetworkSnapshotResult,
   type SpeedPoint,
+  type MetricPoint,
 } from "@/server/network.functions";
 import { NetworkTopology } from "@/components/NetworkTopology";
 import nettverkHero from "@/assets/nettverk-hero.jpg";
