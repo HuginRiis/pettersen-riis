@@ -1527,6 +1527,199 @@ export type Database = {
         }
         Relationships: []
       }
+      plant_notification_log: {
+        Row: {
+          detail: string | null
+          id: string
+          kind: string
+          notified_at: string
+          plant_id: string
+        }
+        Insert: {
+          detail?: string | null
+          id?: string
+          kind: string
+          notified_at?: string
+          plant_id: string
+        }
+        Update: {
+          detail?: string | null
+          id?: string
+          kind?: string
+          notified_at?: string
+          plant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plant_notification_log_plant_id_fkey"
+            columns: ["plant_id"]
+            isOneToOne: false
+            referencedRelation: "plants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plant_photos: {
+        Row: {
+          created_at: string
+          id: string
+          is_ai_generated: boolean
+          lat: number | null
+          location_label: string | null
+          lon: number | null
+          notes: string | null
+          photo_url: string
+          plant_id: string
+          taken_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_ai_generated?: boolean
+          lat?: number | null
+          location_label?: string | null
+          lon?: number | null
+          notes?: string | null
+          photo_url: string
+          plant_id: string
+          taken_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_ai_generated?: boolean
+          lat?: number | null
+          location_label?: string | null
+          lon?: number | null
+          notes?: string | null
+          photo_url?: string
+          plant_id?: string
+          taken_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plant_photos_plant_id_fkey"
+            columns: ["plant_id"]
+            isOneToOne: false
+            referencedRelation: "plants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plants: {
+        Row: {
+          ai_raw: Json | null
+          ai_reference_image_url: string | null
+          care_summary: string | null
+          cover_photo_url: string | null
+          created_at: string
+          edible: boolean | null
+          fertility_min: number | null
+          fertilize_weeks_interval: number | null
+          id: string
+          kind: string
+          last_fertilized_at: string | null
+          last_watered_at: string | null
+          light_lux_min: number | null
+          miflora_device_id: string | null
+          miflora_device_name: string | null
+          name: string
+          notify_fertilize: boolean
+          notify_recipient: string
+          notify_season: boolean
+          notify_sensor: boolean
+          notify_watering: boolean
+          season_end_month: number | null
+          season_start_month: number | null
+          soil_moisture_max: number | null
+          soil_moisture_min: number | null
+          sort_order: number
+          species_common: string | null
+          species_latin: string | null
+          temp_max: number | null
+          temp_min: number | null
+          toxicity: string
+          toxicity_notes: string | null
+          updated_at: string
+          watering_days_interval: number | null
+          where_grows: string | null
+        }
+        Insert: {
+          ai_raw?: Json | null
+          ai_reference_image_url?: string | null
+          care_summary?: string | null
+          cover_photo_url?: string | null
+          created_at?: string
+          edible?: boolean | null
+          fertility_min?: number | null
+          fertilize_weeks_interval?: number | null
+          id?: string
+          kind?: string
+          last_fertilized_at?: string | null
+          last_watered_at?: string | null
+          light_lux_min?: number | null
+          miflora_device_id?: string | null
+          miflora_device_name?: string | null
+          name: string
+          notify_fertilize?: boolean
+          notify_recipient?: string
+          notify_season?: boolean
+          notify_sensor?: boolean
+          notify_watering?: boolean
+          season_end_month?: number | null
+          season_start_month?: number | null
+          soil_moisture_max?: number | null
+          soil_moisture_min?: number | null
+          sort_order?: number
+          species_common?: string | null
+          species_latin?: string | null
+          temp_max?: number | null
+          temp_min?: number | null
+          toxicity?: string
+          toxicity_notes?: string | null
+          updated_at?: string
+          watering_days_interval?: number | null
+          where_grows?: string | null
+        }
+        Update: {
+          ai_raw?: Json | null
+          ai_reference_image_url?: string | null
+          care_summary?: string | null
+          cover_photo_url?: string | null
+          created_at?: string
+          edible?: boolean | null
+          fertility_min?: number | null
+          fertilize_weeks_interval?: number | null
+          id?: string
+          kind?: string
+          last_fertilized_at?: string | null
+          last_watered_at?: string | null
+          light_lux_min?: number | null
+          miflora_device_id?: string | null
+          miflora_device_name?: string | null
+          name?: string
+          notify_fertilize?: boolean
+          notify_recipient?: string
+          notify_season?: boolean
+          notify_sensor?: boolean
+          notify_watering?: boolean
+          season_end_month?: number | null
+          season_start_month?: number | null
+          soil_moisture_max?: number | null
+          soil_moisture_min?: number | null
+          sort_order?: number
+          species_common?: string | null
+          species_latin?: string | null
+          temp_max?: number | null
+          temp_min?: number | null
+          toxicity?: string
+          toxicity_notes?: string | null
+          updated_at?: string
+          watering_days_interval?: number | null
+          where_grows?: string | null
+        }
+        Relationships: []
+      }
       pulse_readings: {
         Row: {
           device_name: string | null
