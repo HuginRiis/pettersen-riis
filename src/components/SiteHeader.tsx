@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Menu, X, LogOut, Crown, Swords, Shield, KeyRound, Home, Star, Flower2,
   Sun, Compass, Castle, CalendarDays, BellRing, Eye, Mountain, Lightbulb, Lamp, Zap, Hammer,
   ShoppingCart, Receipt, Dog, Dumbbell, AlertTriangle, ScrollText, Globe, ChevronDown, ChevronRight,
-  TreePine, Coins, Bot, Wallet, Volume2 } from "lucide-react";
+  TreePine, Coins, Bot, Wallet, Volume2, Wifi, Router as RouterIcon } from "lucide-react";
 
 import { logoutFn } from "@/server/auth";
 import { getIcon as getWebFavIcon, getIconColor as getWebFavIconColor, faviconUrl, FAVICON_ICON } from "@/lib/web-favorite-icons";
@@ -89,6 +89,8 @@ const ROUTE_ICON: Partial<Record<RoutePath, React.ComponentType<{ size?: number;
   "/gressklipper": Bot,
   "/stovsugeren": Bot,
   "/decibel": Volume2,
+  "/nettverk": Wifi,
+  "/roborock": Bot,
   "/planter": TreePine,
 };
 
@@ -118,6 +120,8 @@ const ROUTE_ICON_COLOR: Partial<Record<RoutePath, string>> = {
   "/gressklipper": "#10b981",        // gressklipper — gressgrønn
   "/stovsugeren": "#38bdf8",         // støvsuger — sky-cyan
   "/decibel": "#f43f5e",             // lyd — rose (høyt volum)
+  "/nettverk": "#38bdf8",            // nettverk — signalblå
+  "/roborock": "#a78bfa",            // roborock — lilla rytter
   "/planter": "#22c55e",             // planter — bladgrønn
 };
 
