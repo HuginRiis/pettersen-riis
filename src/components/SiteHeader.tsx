@@ -49,7 +49,8 @@ type RoutePath =
   | "/gressklipper"
   | "/stovsugeren"
   | "/got-saga"
-  | "/decibel";
+  | "/decibel"
+  | "/planter";
 
 type NavLink = { to: RoutePath; label: string; public?: boolean };
 
