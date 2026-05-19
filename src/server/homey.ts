@@ -380,7 +380,7 @@ async function createSessionToken(baseUrl: string, delegationToken: string): Pro
   });
 }
 
-async function getHomeySessionContext(conn: HomeyConnection): Promise<HomeySessionContext | null> {
+export async function getHomeySessionContext(conn: HomeyConnection): Promise<HomeySessionContext | null> {
   const key = getHomeyCacheKey(conn);
   const cached = getCacheEntry(homeySessionCache, key);
   if (cached) return cached.value;
