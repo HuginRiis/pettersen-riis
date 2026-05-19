@@ -1,9 +1,14 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { Card } from "@/components/ui/card";
-import { Wallet, Home, TrendingDown, Building2 } from "lucide-react";
-import type {
-  OkonomiAccount,
-  OkonomiTransaction,
+import { Button } from "@/components/ui/button";
+import { Wallet, Home, TrendingDown, Building2, Loader2, Check, ChevronDown } from "lucide-react";
+import { toast } from "sonner";
+import {
+  upsertOkonomiAccount,
+  type ImportedAccount,
+  type OkonomiAccount,
+  type OkonomiTransaction,
 } from "@/server/okonomi.functions";
 
 const fmt = (n: number) =>
@@ -44,15 +49,22 @@ function monthsBetween(fromIso: string, toDate: Date): number {
 export function OkonomiAccountsTab({
   accounts,
   txns,
+  importedAccounts,
   onPickAccount,
+  reload,
 }: {
   accounts: OkonomiAccount[];
   txns: OkonomiTransaction[];
+  importedAccounts: ImportedAccount[];
   onPickAccount: (acc: OkonomiAccount, items: OkonomiTransaction[]) => void;
+  reload: () => void;
 }) {
   const today = new Date();
   const ymPrefix = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
   const ytdPrefix = `${today.getFullYear()}-`;
+  const upsert = useServerFn(upsertOkonomiAccount);
+  const [openId, setOpenId] = useState<string | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
 
   const grouped = useMemo(() => {
     const map = new Map<string, OkonomiTransaction[]>();
@@ -63,6 +75,36 @@ export function OkonomiAccountsTab({
     }
     return map;
   }, [accounts, txns]);
+
+  async function togglePattern(a: OkonomiAccount, pattern: string) {
+    const has = a.account_patterns.includes(pattern);
+    const next = has
+      ? a.account_patterns.filter((p) => p !== pattern)
+      : [...a.account_patterns, pattern];
+    setBusyId(a.id);
+    try {
+      await upsert({
+        data: {
+          id: a.id,
+          slug: a.slug,
+          name: a.name,
+          start_balance: Number(a.start_balance) || 0,
+          start_date: a.start_date,
+          monthly_change: Number(a.monthly_change) || 0,
+          yearly_change: Number(a.yearly_change) || 0,
+          account_patterns: next,
+          color: a.color,
+          sort_order: a.sort_order,
+        },
+      });
+      toast.success(has ? `Fjernet ${pattern}` : `Knyttet ${pattern} til ${a.name}`);
+      reload();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Feil");
+    } finally {
+      setBusyId(null);
+    }
+  }
 
   if (accounts.length === 0) {
     return (
@@ -78,7 +120,7 @@ export function OkonomiAccountsTab({
     <div className="space-y-3">
       <Card className="p-3 border-amber-500/20 text-[11px] text-muted-foreground">
         Saldo = startsaldo + (måneder × månedlig endring) + sum av posteringer fra startdato.
-        Kontotilknytning bestemmes av tekstmønstre du legger inn under innstillinger.
+        Trykk «Velg kontonummer» for å koble importerte kontonummer til hver konto.
       </Card>
 
       {accounts.map((a) => {
@@ -99,6 +141,9 @@ export function OkonomiAccountsTab({
         const ytdNet = items
           .filter((t) => t.txn_date.startsWith(ytdPrefix))
           .reduce((s, t) => s + Number(t.amount), 0);
+
+        const isOpen = openId === a.id;
+        const linked = a.account_patterns.filter(Boolean);
 
         return (
           <Card key={a.id} className="p-4 border-amber-500/30">
@@ -137,11 +182,87 @@ export function OkonomiAccountsTab({
 
             <button
               type="button"
+              onClick={() => setOpenId(isOpen ? null : a.id)}
+              className="w-full flex items-center justify-between text-[11px] tracking-[0.2em] uppercase text-amber-400 hover:text-amber-300 border border-amber-500/30 rounded py-2 px-3 hover:bg-amber-500/5 transition mb-2"
+            >
+              <span>
+                Velg kontonummer{" "}
+                {linked.length > 0 && (
+                  <span className="text-amber-200 normal-case tracking-normal ml-1">
+                    ({linked.length} tilknyttet)
+                  </span>
+                )}
+              </span>
+              <ChevronDown
+                className={`w-3.5 h-3.5 transition-transform ${isOpen ? "rotate-180" : ""}`}
+              />
+            </button>
+
+            {isOpen && (
+              <div className="mb-3 rounded border border-amber-500/20 bg-card/40 p-2 space-y-1">
+                {importedAccounts.length === 0 && (
+                  <p className="text-[11px] text-muted-foreground italic px-1 py-2">
+                    Ingen importerte kontonumre ennå.
+                  </p>
+                )}
+                {importedAccounts.map((ia) => {
+                  const checked = a.account_patterns.some(
+                    (p) => p.toLowerCase() === ia.account.toLowerCase(),
+                  );
+                  const usedByOther = accounts.find(
+                    (other) =>
+                      other.id !== a.id &&
+                      other.account_patterns.some(
+                        (p) => p.toLowerCase() === ia.account.toLowerCase(),
+                      ),
+                  );
+                  return (
+                    <button
+                      key={ia.account}
+                      type="button"
+                      disabled={busyId === a.id}
+                      onClick={() => togglePattern(a, ia.account)}
+                      className={`w-full flex items-center gap-2 text-left text-[12px] rounded px-2 py-1.5 transition ${
+                        checked
+                          ? "bg-amber-500/15 text-amber-100"
+                          : "hover:bg-amber-500/5 text-muted-foreground"
+                      }`}
+                    >
+                      <span
+                        className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${
+                          checked ? "border-amber-400 bg-amber-500/30" : "border-amber-500/40"
+                        }`}
+                      >
+                        {checked && <Check className="w-3 h-3 text-amber-200" />}
+                      </span>
+                      <span className="flex-1 truncate tabular-nums">{ia.account}</span>
+                      <span className="text-[10px] text-muted-foreground shrink-0">
+                        {ia.count} posteringer
+                      </span>
+                      {usedByOther && !checked && (
+                        <span className="text-[10px] text-amber-500/70 shrink-0">
+                          → {usedByOther.name}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+                {busyId === a.id && (
+                  <div className="flex items-center gap-2 text-[11px] text-muted-foreground px-2 pt-1">
+                    <Loader2 className="w-3 h-3 animate-spin" /> Lagrer…
+                  </div>
+                )}
+              </div>
+            )}
+
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => onPickAccount(a, items)}
-              className="w-full text-[11px] tracking-[0.2em] uppercase text-amber-400 hover:text-amber-300 border border-amber-500/30 rounded py-2 hover:bg-amber-500/5 transition"
+              className="w-full text-[11px] tracking-[0.2em] uppercase text-amber-400 hover:text-amber-300 border-amber-500/30 hover:bg-amber-500/5"
             >
               Vis & rediger {items.length} posteringer
-            </button>
+            </Button>
           </Card>
         );
       })}
