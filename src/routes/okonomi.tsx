@@ -1860,6 +1860,60 @@ function Posteringer({
         </Card>
       )}
       <Button
+        onClick={() => setRangeOpen((v) => !v)}
+        className="w-full"
+        variant="outline"
+      >
+        <Trash2 className="w-4 h-4 mr-1 text-red-400" /> Slett posteringer i datointervall
+      </Button>
+      {rangeOpen && (
+        <Card className="p-3 space-y-2 border-red-500/30 bg-red-950/10">
+          <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">
+            Fra og til dato (inklusiv). Velg konto for å begrense.
+          </Label>
+          <div className="grid grid-cols-2 gap-2">
+            <Input type="date" value={rangeFrom} onChange={(e) => { setRangeFrom(e.target.value); setRangeMatched(null); }} />
+            <Input type="date" value={rangeTo} onChange={(e) => { setRangeTo(e.target.value); setRangeMatched(null); }} />
+          </div>
+          <Select value={rangeAccount} onValueChange={(v) => { setRangeAccount(v); setRangeMatched(null); }}>
+            <SelectTrigger>
+              <SelectValue placeholder="Konto" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">Alle kontoer</SelectItem>
+              {importedAccounts.map((a) => (
+                <SelectItem key={a.account} value={a.account}>
+                  {a.account} ({a.count})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {rangeMatched !== null && (
+            <p className="text-[11px] text-amber-300">
+              {rangeMatched} posteringer treffer filteret.
+            </p>
+          )}
+          <div className="flex gap-2">
+            <Button variant="outline" className="flex-1" onClick={previewRange} disabled={rangeBusy}>
+              {rangeBusy ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : null}
+              Forhåndsvis
+            </Button>
+            <Button
+              variant="destructive"
+              className="flex-1"
+              onClick={confirmDeleteRange}
+              disabled={rangeBusy || rangeMatched === 0}
+            >
+              {rangeBusy ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Trash2 className="w-4 h-4 mr-1" />}
+              Slett{rangeMatched ? ` ${rangeMatched}` : ""}
+            </Button>
+          </div>
+          <p className="text-[10px] text-muted-foreground">
+            Etter sletting kan du importere på nytt uten duplikat-feil (duplikat matches på dato + tekst + beløp).
+          </p>
+        </Card>
+      )}
+      <Button
         onClick={scanDuplicates}
         className="w-full"
         variant="outline"
