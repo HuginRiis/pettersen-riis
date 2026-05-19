@@ -39,6 +39,7 @@ import {
   findOkonomiDuplicates,
   findExistingOkonomiDuplicates,
   bulkDeleteOkonomiTransactions,
+  deleteOkonomiByDateRange,
   parseStatementWithAI,
   categorizeTransactionsWithAI,
   getOkonomiSettings,
