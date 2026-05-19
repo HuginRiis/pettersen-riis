@@ -947,8 +947,8 @@ export const getLastImportSummary = createServerFn({ method: "POST" })
   .inputValidator((d) =>
     z.object({ account: z.string().max(200).nullable().optional() }).parse(d ?? {}),
   )
-  .handler(async ({ data }): Promise<LastImportSummary> => {
-    const acct = (data?.account ?? "").trim();
+  .handler(async ({ data: input }): Promise<LastImportSummary> => {
+    const acct = (input?.account ?? "").trim();
     let latestQ = supabaseAdmin
       .from("okonomi_transactions")
       .select("created_at")
@@ -967,9 +967,9 @@ export const getLastImportSummary = createServerFn({ method: "POST" })
       .order("created_at", { ascending: false })
       .limit(5000);
     if (acct) q = q.eq("account", acct);
-    const { data, error } = await q;
+    const { data: rowsData, error } = await q;
     if (error) throw new Error(error.message);
-    const rows = data ?? [];
+    const rows = rowsData ?? [];
     if (rows.length === 0) return null;
 
     const accCount = new Map<string, number>();
