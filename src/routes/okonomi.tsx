@@ -255,10 +255,26 @@ function HvelvHero({
 function LonnsBudsjett({
   txns,
   selectedAccount,
+  importedAccounts,
 }: {
   txns: OkonomiTransaction[];
   selectedAccount: string;
+  importedAccounts: ImportedAccount[];
 }) {
+  // Multi-konto-filter. Tom = bruk Hero-valg (selectedAccount).
+  const [lonnAccounts, setLonnAccounts] = usePersistedState<string[]>(
+    "okonomi_lonn_accounts",
+    [],
+  );
+  const [pickerOpen, setPickerOpen] = useState(false);
+
+  const activeAccounts =
+    lonnAccounts.length > 0
+      ? lonnAccounts
+      : selectedAccount
+        ? [selectedAccount]
+        : [];
+
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const PAYDAY = 15;
@@ -277,11 +293,13 @@ function LonnsBudsjett({
     `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   const startIso = isoDay(cycleStart);
   const endIso = isoDay(cycleEnd);
-  const todayIso = isoDay(today);
 
   const inPeriod = txns.filter((t) => {
     if (t.txn_date < startIso || t.txn_date > endIso) return false;
-    if (selectedAccount && (t.account ?? "").trim() !== selectedAccount) return false;
+    if (activeAccounts.length > 0) {
+      const a = (t.account ?? "").trim();
+      if (!activeAccounts.includes(a)) return false;
+    }
     return true;
   });
 
@@ -306,13 +324,25 @@ function LonnsBudsjett({
   const fmtD = (d: Date) =>
     d.toLocaleDateString("nb-NO", { day: "2-digit", month: "short" });
 
+  function toggleAcc(acc: string) {
+    setLonnAccounts((prev) =>
+      prev.includes(acc) ? prev.filter((a) => a !== acc) : [...prev, acc],
+    );
+  }
+
+  const accLabel =
+    lonnAccounts.length === 0
+      ? selectedAccount
+        ? `Hero: ${selectedAccount}`
+        : "Alle kontoer"
+      : `${lonnAccounts.length} valgt`;
+
   return (
     <div className="mt-8 mb-4">
-      <div className="flex items-baseline justify-between mb-3">
+      <div className="flex items-baseline justify-between mb-3 flex-wrap gap-2">
         <h2 className="text-sm tracking-[0.3em] uppercase text-amber-300">Lønnsperiode</h2>
         <p className="text-[11px] text-muted-foreground">
-          {fmtD(cycleStart)} → {fmtD(cycleEnd)} · dag {daysElapsed}/{totalDays}
-          {selectedAccount ? ` · ${selectedAccount}` : ""}
+          {fmtD(cycleStart)} → {fmtD(cycleEnd)} · dag {daysElapsed}/{totalDays} · {accLabel}
         </p>
       </div>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -340,9 +370,67 @@ function LonnsBudsjett({
           tone="ok"
         />
       </div>
+
+      <div className="mt-3 rounded border border-amber-500/20 bg-card/40 p-2">
+        <button
+          type="button"
+          onClick={() => setPickerOpen((v) => !v)}
+          className="w-full flex items-center justify-between text-[11px] tracking-[0.2em] uppercase text-amber-400 hover:text-amber-300 py-1 px-1"
+        >
+          <span>Filtrér kontonummer ({accLabel})</span>
+          <span className="text-[10px]">{pickerOpen ? "▲" : "▼"}</span>
+        </button>
+        {pickerOpen && (
+          <div className="mt-2 space-y-1">
+            {importedAccounts.length === 0 && (
+              <p className="text-[11px] text-muted-foreground italic px-1 py-2">
+                Ingen importerte kontonumre ennå.
+              </p>
+            )}
+            {importedAccounts.map((ia) => {
+              const checked = lonnAccounts.includes(ia.account);
+              return (
+                <button
+                  key={ia.account}
+                  type="button"
+                  onClick={() => toggleAcc(ia.account)}
+                  className={`w-full flex items-center gap-2 text-left text-[12px] rounded px-2 py-1.5 transition ${
+                    checked ? "bg-amber-500/15 text-amber-100" : "hover:bg-amber-500/5 text-muted-foreground"
+                  }`}
+                >
+                  <span
+                    className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${
+                      checked ? "border-amber-400 bg-amber-500/30" : "border-amber-500/40"
+                    }`}
+                  >
+                    {checked && <Check className="w-3 h-3 text-amber-200" />}
+                  </span>
+                  <span className="flex-1 truncate tabular-nums">{ia.account}</span>
+                  <span className="text-[10px] text-muted-foreground shrink-0">
+                    {ia.count} posteringer
+                  </span>
+                </button>
+              );
+            })}
+            {lonnAccounts.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setLonnAccounts([])}
+                className="w-full text-[10px] uppercase tracking-wider text-muted-foreground hover:text-amber-300 py-1.5 mt-1 border-t border-amber-500/10"
+              >
+                Tilbakestill (bruk Hero-valg)
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+
       <p className="text-[10px] text-muted-foreground mt-2 italic">
-        Lønningsdag er 15. hver måned. «Brukt» = sum av utgifter (negative beløp) i denne perioden
-        {selectedAccount ? ` på konto ${selectedAccount}` : " på tvers av alle kontoer"}.
+        Lønningsdag er 15. hver måned. «Brukt» = sum av utgifter i denne perioden
+        {activeAccounts.length > 0
+          ? ` på ${activeAccounts.length === 1 ? `konto ${activeAccounts[0]}` : `${activeAccounts.length} kontoer`}`
+          : " på tvers av alle kontoer"}
+        .
       </p>
     </div>
   );
@@ -475,7 +563,7 @@ function OkonomiPage() {
           </Tabs>
         )}
 
-        {!loading && <LonnsBudsjett txns={txns} selectedAccount={selectedAccount} />}
+        {!loading && <LonnsBudsjett txns={txns} selectedAccount={selectedAccount} importedAccounts={importedAccounts} />}
 
 
         <OkonomiBulkEditSheet

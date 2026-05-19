@@ -2,8 +2,16 @@ import { useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Wallet, Home, TrendingDown, Building2, Loader2, Check, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
+import { usePersistedState } from "@/hooks/use-persisted-state";
 import {
   upsertOkonomiAccount,
   type ImportedAccount,
@@ -60,8 +68,38 @@ export function OkonomiAccountsTab({
   reload: () => void;
 }) {
   const today = new Date();
-  const ymPrefix = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
-  const ytdPrefix = `${today.getFullYear()}-`;
+  const currentY = today.getFullYear();
+  const currentM = today.getMonth() + 1;
+  const [filterYear, setFilterYear] = usePersistedState<number>(
+    "okonomi_konto_filter_year",
+    currentY,
+  );
+  const [filterMonth, setFilterMonth] = usePersistedState<number | "all">(
+    "okonomi_konto_filter_month",
+    currentM,
+  );
+  const ymPrefix =
+    filterMonth === "all"
+      ? `${filterYear}-`
+      : `${filterYear}-${String(filterMonth).padStart(2, "0")}`;
+  const ytdPrefix = `${filterYear}-`;
+  const periodLabel =
+    filterMonth === "all"
+      ? `hele ${filterYear}`
+      : new Date(filterYear, (filterMonth as number) - 1, 1).toLocaleDateString("nb-NO", {
+          month: "long",
+          year: "numeric",
+        });
+
+  const yearsAvailable = useMemo(() => {
+    const set = new Set<number>([currentY, filterYear]);
+    for (const t of txns) {
+      const y = Number(t.txn_date.slice(0, 4));
+      if (isFinite(y)) set.add(y);
+    }
+    return Array.from(set).sort((a, b) => b - a);
+  }, [txns, currentY, filterYear]);
+
   const upsert = useServerFn(upsertOkonomiAccount);
   const [openId, setOpenId] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -123,6 +161,42 @@ export function OkonomiAccountsTab({
         Trykk «Velg kontonummer» for å koble importerte kontonummer til hver konto.
       </Card>
 
+      <Card className="p-3 border-amber-500/30 bg-card/60">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-[10px] uppercase tracking-[0.2em] text-amber-300 mr-1">Periode</span>
+          <Select
+            value={String(filterMonth)}
+            onValueChange={(v) => setFilterMonth(v === "all" ? "all" : Number(v))}
+          >
+            <SelectTrigger className="h-8 w-[140px] text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Hele året</SelectItem>
+              {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+                <SelectItem key={m} value={String(m)}>
+                  {new Date(2000, m - 1, 1).toLocaleDateString("nb-NO", { month: "long" })}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={String(filterYear)} onValueChange={(v) => setFilterYear(Number(v))}>
+            <SelectTrigger className="h-8 w-[100px] text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {yearsAvailable.map((y) => (
+                <SelectItem key={y} value={String(y)}>
+                  {y}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <span className="text-[10px] text-muted-foreground ml-auto">Viser tall for {periodLabel}</span>
+        </div>
+      </Card>
+
+
       {accounts.map((a) => {
         const items = grouped.get(a.id) ?? [];
         const Icon = iconFor(a.slug);
@@ -171,14 +245,15 @@ export function OkonomiAccountsTab({
             </div>
 
             <div className="grid grid-cols-3 gap-2 mb-3">
-              <Mini label="Inn (mnd)" value={fmt(monthIn)} tone="ok" />
-              <Mini label="Ut (mnd)" value={fmt(monthOut)} tone="warn" />
+              <Mini label={`Inn (${filterMonth === "all" ? "år" : "mnd"})`} value={fmt(monthIn)} tone="ok" />
+              <Mini label={`Ut (${filterMonth === "all" ? "år" : "mnd"})`} value={fmt(monthOut)} tone="warn" />
               <Mini
                 label="Netto (år)"
                 value={fmtSigned(ytdNet)}
                 tone={ytdNet >= 0 ? "ok" : "warn"}
               />
             </div>
+
 
             <button
               type="button"
