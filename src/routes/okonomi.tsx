@@ -563,7 +563,7 @@ function OkonomiPage() {
           </Tabs>
         )}
 
-        {!loading && <LonnsBudsjett txns={txns} selectedAccount={selectedAccount} />}
+        {!loading && <LonnsBudsjett txns={txns} selectedAccount={selectedAccount} importedAccounts={importedAccounts} />}
 
 
         <OkonomiBulkEditSheet
