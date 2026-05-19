@@ -461,7 +461,9 @@ function OkonomiPage() {
               <OkonomiAccountsTab
                 accounts={accounts}
                 txns={txns}
+                importedAccounts={importedAccounts}
                 onPickAccount={(a, items) => openBulk(a.name, items, "Posteringer på konto")}
+                reload={reload}
               />
             </TabsContent>
             <TabsContent value="budsjett" className="mt-4">
