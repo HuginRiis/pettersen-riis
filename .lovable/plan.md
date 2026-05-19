@@ -1,62 +1,50 @@
-# Plan: Vakttårn-oppgraderinger + smart søk på hjemskjerm
+# Plan: Flyradar-side
 
-## Oppgave 1 — Vakttårn
+## Datakilde
+- **OpenSky Network** (gratis, åpen API, ingen nøkkel for anonym bruk).
+- Endpoint: `https://opensky-network.org/api/states/all?lamin=...&lomin=...&lamax=...&lomax=...`
+- Norge-bbox: lat 57.5–71.5, lon 4.0–31.5. Pollet hvert 30. sek på klient (anonym ratelimit ok).
 
-### 1a. Full oversikt over cron + datasynk
-- Database/Cron-seksjonen viser allerede `cronJobs` og `dataSyncs`. Den listen er komplett (cron-jobs leses fra `cron.job` via RPC `get_db_usage_stats`, datasynk legges til manuelt for garmin).
-- Utvider `dataSyncs` slik at den også inkluderer andre faktiske bakgrunnsjobber vi har: agenda-push (varsler), tibber daily snapshot, pulse snapshot, plante-vanning push, met-alerts, mail-delivery, weather-push, uv-push, met-alert-push, warranty-push, login-push, garbage-push — alle som trigges fra `agenda-push` hvert minutt. Vi lister dem som "datasynk" med sist kjøring fra api_call_log eller egne logger der vi har det, ellers fra `notification_settings` der det finnes.
-- Resultat: én tabell "Cron (pg_cron)" og én tabell "Bakgrunnssynk (agenda-push)" med navn, intervall/regel, sist kjørt, neste, status.
+## Sider og komponenter
 
-### 1b. Lagringsbruk per kategori
-Ny seksjon under Database som grupperer tabeller + storage-buckets i kategorier:
+### `/flyradar` (ny rute)
+- **Hero** — eget GOT-bilde generert (himmel/festning + ravner + fly-silhuett, lik stilen som de andre hero-bildene).
+- **Live statistikk**: totalt antall fly, antall i lufta, antall på bakken, snitt-høyde, snitt-fart, høyeste fly, raskeste fly.
+- **Filter**:
+  - Søk på flynummer/callsign
+  - Land (default Norge — alle ICAO `nor*` callsigns + alle innenfor bbox)
+  - Lufthavn (dropdown: OSL, BGO, TRD, SVG, TOS, BOO, KRS, AES, HAU, MOL, SKE, TRF, ALF) — viser fly innen 30 km
+  - Radius fra punkt (lat/lon + km) — bruker også «min posisjon»-knapp
+  - Min/maks høyde og fart (slider)
+  - Bare «i lufta» / «på bakken» / «alle»
+- **Liste**: callsign, land, høyde, fart, retning, posisjon, tid sist sett. Klikkbar — åpner detalj-modal med kart (mini-SVG over Norge med plassering).
+- **Innstillinger-tab**:
+  - Multi-select flyplasser å abonnere på + checkbox «varsel ved landing» / «varsel ved avgang»
+  - Radius-sone: lat/lon + km + checkbox «varsel når fly krysser sonen»
+  - Lagres i ny tabell `flight_alert_prefs` (single row).
 
-| Kategori | Inkluderer |
-|---|---|
-| App-data | økonomi, hytta, planter, agenda, birthdays, renovation, grocery, … |
-| Logger | api_call_log, garmin_sync_log, home_alarm_log, push_send_log, garbage_notification_log, ai_search_log, visitor_*, login_attempts |
-| API-data | tibber-snapshots, pulse-readings, garmin_*, netatmo_*, spot-pris, met, gardena_auth, homey_* |
-| Bilder | storage-buckets: receipts, plants, payslips, garmin-devices, renovation (image-andelen) |
-| Innstillinger | notification_settings, *_notification_prefs, api_pause_flags, favorites |
-| Andre | resten |
+### Innholdsfortegnelse / meny
+- Legge til i `MENU_LINK_DEFS` (use-menu-visibility) som `{ to: "/flyradar", label: "Flyradar" }`.
+- Legge til hall-card på `/` (med GOT-tema desc, hero-bilde).
+- Legge til i `SEARCH_INDEX` med keywords (fly, flyradar, opensky, osl, lufthavn, gardermoen, …).
+- Utvide HallCard `to`-union med `/flyradar`.
 
-Vi henter storage-størrelse via en ny SQL-funksjon `get_storage_usage_stats()` som summerer `storage.objects.metadata->>'size'` per bucket. Viser stolpe + MB/GB per kategori.
+## Backend (server functions)
+- `src/server/flyradar.functions.ts`:
+  - `fetchFlightStates({ bbox, airport })` — proxy mot OpenSky for å unngå CORS og legge til litt caching (30 sek server-cache).
+  - `getFlightAlertPrefs()` / `saveFlightAlertPrefs({...})` — single-row prefs.
 
-### 1c. Rydde-knapper i API-Call-Log
-Nederst i `ApiCallLogPanel` legger jeg tre knapper:
-- "Slett eldre enn 7 dager"
-- "Slett eldre enn 14 dager"
-- "Slett eldre enn 30 dager"
+## Database
+- Ny tabell `flight_alert_prefs`:
+  - `id uuid PK`, `airports text[]`, `notify_arrivals bool`, `notify_departures bool`,
+  - `radius_center_lat numeric`, `radius_center_lon numeric`, `radius_km int`, `notify_radius bool`,
+  - `min_altitude_m int default 0`, `updated_at timestamptz`.
+  - Public read/write (samme mønster som andre prefs-tabeller her).
 
-Bekreftelsesdialog før sletting. Bruker en ny serverFn `purgeApiCallLog({ olderThanDays })` som sletter både fra `api_call_log` (vellykkede + feilede).
+## Hva som ikke leveres nå
+- Selve push-sendingen (cron som poller OpenSky og sender push når tilstand endres) er stort nok til egen runde. Innstillinger lagres, men varsler aktiveres når cron-jobben legges til etterpå.
 
-### 1d. API-feil kollapset som standard
-I `ApiErrorLogPanel`: endre `useState<Set<string>>(new Set())` → start med alle grupper kollapset (dvs `collapsedGroups = new Set(alle keys)`). Kollapset = default.
-
-## Oppgave 2 — Smart søk på hjemskjermen
-
-Nytt felt rett under hovedmenyen på `/`:
-- Inputfelt med placeholder "Søk i hele borgen… (Gardena, planter, økonomi…)"
-- To handlinger:
-  - **Vanlig søk** (knapp / Enter): viser dropdown med statiske treff matchet mot et søkeindeks
-  - **AI-søk** (knapp ✦): sender spørringen til Lovable AI Gateway (`google/gemini-2.5-flash`) med samme indeks som kontekst, og lar AI svare med relevante sider + kort forklaring
-- Søkeindeks: en statisk liste i `src/lib/search-index.ts` med alle sider/funksjoner: `{ title, path, keywords[], description, section }`. Eksempel: Gardena → `/gressklipper`, Planter → `/planter`, Økonomi → `/okonomi`, Vakttårn → `/vakttarnet`, …
-- Resultat-popup viser tittel + sti + kort beskrivelse. Klikk → navigerer dit.
-- AI-svar logges i `ai_search_log` (eksisterende tabell) for budsjett-sporing.
-
-## Tekniske detaljer
-
-**Nye filer:**
-- `src/lib/search-index.ts` — statisk liste over alle ruter med søkenøkkelord
-- `src/components/SmartSearch.tsx` — søkefelt + popup, AI-knapp
-- `src/server/smart-search.functions.ts` — serverFn `aiSmartSearch({query})` mot Lovable AI
-- `src/server/api-call-log-purge.functions.ts` — serverFn `purgeApiCallLog`
-- `src/server/storage-usage.functions.ts` — serverFn for storage bucket-størrelser
-
-**Endrede filer:**
-- `src/components/DbUsagePanel.tsx` — ny "Lagring per kategori"-seksjon
-- `src/components/ApiCallLogPanel.tsx` — purge-knapper
-- `src/components/ApiErrorLogPanel.tsx` — start kollapset
-- `src/server/db-usage.functions.ts` — utvid datasynk-lista
-- `src/routes/index.tsx` — sett inn `<SmartSearch />` under menyen
-
-**Database-migrering:** Ny RPC `get_storage_usage_stats()` (security definer).
+## Filer som endres / opprettes
+- **Ny**: `src/routes/flyradar.tsx`, `src/server/flyradar.functions.ts`, `src/assets/got-flyradar.jpg` (generert).
+- **Endret**: `src/routes/index.tsx` (hall-card + union), `src/hooks/use-menu-visibility.ts` (MENU_LINK_DEFS), `src/lib/search-index.ts`.
+- **Migrering**: ny `flight_alert_prefs`-tabell.
