@@ -68,8 +68,38 @@ export function OkonomiAccountsTab({
   reload: () => void;
 }) {
   const today = new Date();
-  const ymPrefix = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
-  const ytdPrefix = `${today.getFullYear()}-`;
+  const currentY = today.getFullYear();
+  const currentM = today.getMonth() + 1;
+  const [filterYear, setFilterYear] = usePersistedState<number>(
+    "okonomi_konto_filter_year",
+    currentY,
+  );
+  const [filterMonth, setFilterMonth] = usePersistedState<number | "all">(
+    "okonomi_konto_filter_month",
+    currentM,
+  );
+  const ymPrefix =
+    filterMonth === "all"
+      ? `${filterYear}-`
+      : `${filterYear}-${String(filterMonth).padStart(2, "0")}`;
+  const ytdPrefix = `${filterYear}-`;
+  const periodLabel =
+    filterMonth === "all"
+      ? `hele ${filterYear}`
+      : new Date(filterYear, (filterMonth as number) - 1, 1).toLocaleDateString("nb-NO", {
+          month: "long",
+          year: "numeric",
+        });
+
+  const yearsAvailable = useMemo(() => {
+    const set = new Set<number>([currentY, filterYear]);
+    for (const t of txns) {
+      const y = Number(t.txn_date.slice(0, 4));
+      if (isFinite(y)) set.add(y);
+    }
+    return Array.from(set).sort((a, b) => b - a);
+  }, [txns, currentY, filterYear]);
+
   const upsert = useServerFn(upsertOkonomiAccount);
   const [openId, setOpenId] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
