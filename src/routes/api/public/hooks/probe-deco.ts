@@ -4,7 +4,7 @@ import { getValidConnection, getHomeySessionContext } from "@/server/homey";
 export const Route = createFileRoute("/api/public/hooks/probe-deco")({
   server: {
     handlers: {
-      GET: async () => {
+      POST: async () => {
         const conn = await getValidConnection();
         if (!conn) return Response.json({ error: "no conn" });
         const session = await getHomeySessionContext(conn);
