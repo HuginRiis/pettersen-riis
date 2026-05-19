@@ -39,6 +39,7 @@ import {
   findOkonomiDuplicates,
   findExistingOkonomiDuplicates,
   bulkDeleteOkonomiTransactions,
+  deleteOkonomiByDateRange,
   parseStatementWithAI,
   categorizeTransactionsWithAI,
   getOkonomiSettings,
@@ -454,7 +455,7 @@ function OkonomiPage() {
               <Oversikt cats={cats} txns={txns} settings={settings} reload={reload} openBulk={openBulk} />
             </TabsContent>
             <TabsContent value="posteringer" className="mt-4">
-              <Posteringer cats={cats} txns={txns} reload={reload} />
+              <Posteringer cats={cats} txns={txns} importedAccounts={importedAccounts} reload={reload} />
             </TabsContent>
             <TabsContent value="kontoer" className="mt-4">
               <OkonomiAccountsTab
@@ -1522,10 +1523,12 @@ function Stat({ label, value, tone, onClick }: { label: string; value: string; t
 function Posteringer({
   cats,
   txns,
+  importedAccounts,
   reload,
 }: {
   cats: OkonomiCategory[];
   txns: OkonomiTransaction[];
+  importedAccounts: ImportedAccount[];
   reload: () => void;
 }) {
   const upsert = useServerFn(upsertOkonomiTransaction);
@@ -1534,6 +1537,7 @@ function Posteringer({
   const learn = useServerFn(learnMerchantRule);
   const findExistingDupes = useServerFn(findExistingOkonomiDuplicates);
   const bulkDelete = useServerFn(bulkDeleteOkonomiTransactions);
+  const deleteRange = useServerFn(deleteOkonomiByDateRange);
   const [dupGroups, setDupGroups] = useState<
     Array<{
       key: string;
@@ -1603,6 +1607,57 @@ function Posteringer({
   const [bulkCat, setBulkCat] = useState<string>("");
   const [bulkLearn, setBulkLearn] = useState(true);
   const [bulkBusy, setBulkBusy] = useState(false);
+  const [rangeOpen, setRangeOpen] = useState(false);
+  const [rangeFrom, setRangeFrom] = useState<string>(() => {
+    const d = new Date(); d.setDate(d.getDate() - 30);
+    return d.toISOString().slice(0, 10);
+  });
+  const [rangeTo, setRangeTo] = useState<string>(() => new Date().toISOString().slice(0, 10));
+  const [rangeAccount, setRangeAccount] = useState<string>("__all__");
+  const [rangeMatched, setRangeMatched] = useState<number | null>(null);
+  const [rangeBusy, setRangeBusy] = useState(false);
+
+  async function previewRange() {
+    setRangeBusy(true);
+    try {
+      const res = await deleteRange({
+        data: {
+          from_date: rangeFrom,
+          to_date: rangeTo,
+          account: rangeAccount === "__all__" ? null : rangeAccount,
+          dry_run: true,
+        },
+      });
+      setRangeMatched(res.matched);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Feil");
+    } finally {
+      setRangeBusy(false);
+    }
+  }
+
+  async function confirmDeleteRange() {
+    const accLabel = rangeAccount === "__all__" ? "alle kontoer" : rangeAccount;
+    if (!confirm(`Slette posteringer mellom ${rangeFrom} og ${rangeTo} (${accLabel})?`)) return;
+    setRangeBusy(true);
+    try {
+      const res = await deleteRange({
+        data: {
+          from_date: rangeFrom,
+          to_date: rangeTo,
+          account: rangeAccount === "__all__" ? null : rangeAccount,
+        },
+      });
+      toast.success(`Slettet ${res.deleted} posteringer`);
+      setRangeMatched(null);
+      reload();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Feil");
+    } finally {
+      setRangeBusy(false);
+    }
+  }
+
   const [form, setForm] = useState({
     txn_date: new Date().toISOString().slice(0, 10),
     description: "",
@@ -1802,6 +1857,60 @@ function Posteringer({
             )}
             Bruk på alle {bulkGroup ? `(${bulkGroup.ids.length})` : ""}
           </Button>
+        </Card>
+      )}
+      <Button
+        onClick={() => setRangeOpen((v) => !v)}
+        className="w-full"
+        variant="outline"
+      >
+        <Trash2 className="w-4 h-4 mr-1 text-red-400" /> Slett posteringer i datointervall
+      </Button>
+      {rangeOpen && (
+        <Card className="p-3 space-y-2 border-red-500/30 bg-red-950/10">
+          <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">
+            Fra og til dato (inklusiv). Velg konto for å begrense.
+          </Label>
+          <div className="grid grid-cols-2 gap-2">
+            <Input type="date" value={rangeFrom} onChange={(e) => { setRangeFrom(e.target.value); setRangeMatched(null); }} />
+            <Input type="date" value={rangeTo} onChange={(e) => { setRangeTo(e.target.value); setRangeMatched(null); }} />
+          </div>
+          <Select value={rangeAccount} onValueChange={(v) => { setRangeAccount(v); setRangeMatched(null); }}>
+            <SelectTrigger>
+              <SelectValue placeholder="Konto" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">Alle kontoer</SelectItem>
+              {importedAccounts.map((a) => (
+                <SelectItem key={a.account} value={a.account}>
+                  {a.account} ({a.count})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {rangeMatched !== null && (
+            <p className="text-[11px] text-amber-300">
+              {rangeMatched} posteringer treffer filteret.
+            </p>
+          )}
+          <div className="flex gap-2">
+            <Button variant="outline" className="flex-1" onClick={previewRange} disabled={rangeBusy}>
+              {rangeBusy ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : null}
+              Forhåndsvis
+            </Button>
+            <Button
+              variant="destructive"
+              className="flex-1"
+              onClick={confirmDeleteRange}
+              disabled={rangeBusy || rangeMatched === 0}
+            >
+              {rangeBusy ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Trash2 className="w-4 h-4 mr-1" />}
+              Slett{rangeMatched ? ` ${rangeMatched}` : ""}
+            </Button>
+          </div>
+          <p className="text-[10px] text-muted-foreground">
+            Etter sletting kan du importere på nytt uten duplikat-feil (duplikat matches på dato + tekst + beløp).
+          </p>
         </Card>
       )}
       <Button
