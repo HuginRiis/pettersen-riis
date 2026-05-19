@@ -1602,6 +1602,7 @@ function Posteringer({
   const [onlyUncat, setOnlyUncat] = usePersistedState<boolean>("okonomi_post_only_uncat", false);
   const [filterCat, setFilterCat] = usePersistedState<string>("okonomi_post_filter_cat", "__all__");
   const [filterPeriod, setFilterPeriod] = usePersistedState<string>("okonomi_post_filter_period", "__all__");
+  const [filterAccount, setFilterAccount] = usePersistedState<string>("okonomi_post_filter_acct", "__all__");
   const [bulkOpen, setBulkOpen] = useState(false);
   const [bulkDesc, setBulkDesc] = useState<string>("");
   const [bulkCat, setBulkCat] = useState<string>("");
