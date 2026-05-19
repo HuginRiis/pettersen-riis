@@ -374,10 +374,16 @@ function OkonomiPage() {
   const listTxns = useServerFn(listOkonomiTransactions);
   const getSettings = useServerFn(getOkonomiSettings);
   const listAccs = useServerFn(listOkonomiAccounts);
+  const listImpAccs = useServerFn(listImportedAccounts);
   const [cats, setCats] = useState<OkonomiCategory[]>([]);
   const [txns, setTxns] = useState<OkonomiTransaction[]>([]);
   const [settings, setSettings] = useState<OkonomiSettings | null>(null);
   const [accounts, setAccounts] = useState<OkonomiAccount[]>([]);
+  const [importedAccounts, setImportedAccounts] = useState<ImportedAccount[]>([]);
+  const [selectedAccount, setSelectedAccount] = usePersistedState<string>(
+    "okonomi_hero_selected_account",
+    "",
+  );
   const [loading, setLoading] = useState(true);
 
   // Bulk-edit sheet state (åpnes når man klikker på en av stat-boksene)
@@ -398,16 +404,18 @@ function OkonomiPage() {
     try {
       const now = new Date();
       const from = `${now.getFullYear() - 1}-01-01`;
-      const [c, t, s, a] = await Promise.all([
+      const [c, t, s, a, ia] = await Promise.all([
         listCats(),
         listTxns({ data: { from, limit: 2000 } }),
         getSettings(),
         listAccs(),
+        listImpAccs(),
       ]);
       setCats(c);
       setTxns(t);
       setSettings(s);
       setAccounts(a);
+      setImportedAccounts(ia);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Kunne ikke laste");
     } finally {
