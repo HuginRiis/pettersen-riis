@@ -489,3 +489,4 @@ export const listRouterInsightLogs = createServerFn({ method: "POST" })
       return { ok: false, error: e?.message ?? "Ukjent feil", deviceId: data.deviceId, logs: [] };
     }
   });
+
