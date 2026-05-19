@@ -49,9 +49,12 @@ import {
   type OkonomiSettings,
   type OkonomiAccount,
   type ParsedTxn,
+  getLastImportSummary,
+  type LastImportSummary,
 } from "@/server/okonomi.functions";
 import { OkonomiAccountsTab, classifyAccount } from "@/components/OkonomiAccountsTab";
 import { OkonomiBulkEditSheet } from "@/components/OkonomiBulkEditSheet";
+import hvelvHero from "@/assets/got-okonomi.jpg";
 
 export const Route = createFileRoute("/okonomi")({
   head: () => ({
