@@ -1522,10 +1522,12 @@ function Stat({ label, value, tone, onClick }: { label: string; value: string; t
 function Posteringer({
   cats,
   txns,
+  importedAccounts,
   reload,
 }: {
   cats: OkonomiCategory[];
   txns: OkonomiTransaction[];
+  importedAccounts: ImportedAccount[];
   reload: () => void;
 }) {
   const upsert = useServerFn(upsertOkonomiTransaction);
@@ -1534,6 +1536,7 @@ function Posteringer({
   const learn = useServerFn(learnMerchantRule);
   const findExistingDupes = useServerFn(findExistingOkonomiDuplicates);
   const bulkDelete = useServerFn(bulkDeleteOkonomiTransactions);
+  const deleteRange = useServerFn(deleteOkonomiByDateRange);
   const [dupGroups, setDupGroups] = useState<
     Array<{
       key: string;
