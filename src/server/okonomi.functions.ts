@@ -943,24 +943,31 @@ export type LastImportSummary = {
   totalOut: number;
 } | null;
 
-export const getLastImportSummary = createServerFn({ method: "GET" }).handler(
-  async (): Promise<LastImportSummary> => {
-    const { data: latest, error: e1 } = await supabaseAdmin
+export const getLastImportSummary = createServerFn({ method: "POST" })
+  .inputValidator((d) =>
+    z.object({ account: z.string().max(200).nullable().optional() }).parse(d ?? {}),
+  )
+  .handler(async ({ data }): Promise<LastImportSummary> => {
+    const acct = (data?.account ?? "").trim();
+    let latestQ = supabaseAdmin
       .from("okonomi_transactions")
       .select("created_at")
       .order("created_at", { ascending: false })
       .limit(1);
+    if (acct) latestQ = latestQ.eq("account", acct);
+    const { data: latest, error: e1 } = await latestQ;
     if (e1) throw new Error(e1.message);
     if (!latest || latest.length === 0) return null;
     const latestTs = new Date(latest[0].created_at as string).getTime();
-    // Anse alt innenfor 5 minutter av nyeste created_at som samme batch
     const windowStart = new Date(latestTs - 5 * 60 * 1000).toISOString();
-    const { data, error } = await supabaseAdmin
+    let q = supabaseAdmin
       .from("okonomi_transactions")
       .select("created_at, source, account, txn_date, amount")
       .gte("created_at", windowStart)
       .order("created_at", { ascending: false })
       .limit(5000);
+    if (acct) q = q.eq("account", acct);
+    const { data, error } = await q;
     if (error) throw new Error(error.message);
     const rows = data ?? [];
     if (rows.length === 0) return null;
@@ -998,5 +1005,26 @@ export const getLastImportSummary = createServerFn({ method: "GET" }).handler(
       totalIn: Math.round(totalIn * 100) / 100,
       totalOut: Math.round(totalOut * 100) / 100,
     };
+  });
+
+// Distinct account-strings from imports, with counts.
+export type ImportedAccount = { account: string; count: number };
+export const listImportedAccounts = createServerFn({ method: "GET" }).handler(
+  async (): Promise<ImportedAccount[]> => {
+    const { data, error } = await supabaseAdmin
+      .from("okonomi_transactions")
+      .select("account")
+      .not("account", "is", null)
+      .limit(20000);
+    if (error) throw new Error(error.message);
+    const counts = new Map<string, number>();
+    for (const r of (data ?? []) as any[]) {
+      const a = (r.account ?? "").toString().trim();
+      if (!a) continue;
+      counts.set(a, (counts.get(a) ?? 0) + 1);
+    }
+    return [...counts.entries()]
+      .map(([account, count]) => ({ account, count }))
+      .sort((a, b) => b.count - a.count);
   },
 );
