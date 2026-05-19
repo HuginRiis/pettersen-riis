@@ -454,7 +454,7 @@ function OkonomiPage() {
               <Oversikt cats={cats} txns={txns} settings={settings} reload={reload} openBulk={openBulk} />
             </TabsContent>
             <TabsContent value="posteringer" className="mt-4">
-              <Posteringer cats={cats} txns={txns} reload={reload} />
+              <Posteringer cats={cats} txns={txns} importedAccounts={importedAccounts} reload={reload} />
             </TabsContent>
             <TabsContent value="kontoer" className="mt-4">
               <OkonomiAccountsTab
