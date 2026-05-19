@@ -218,6 +218,8 @@ function HvelvHero() {
     </div>
   );
 }
+
+function OkonomiPage() {
   const listCats = useServerFn(listOkonomiCategories);
   const listTxns = useServerFn(listOkonomiTransactions);
   const getSettings = useServerFn(getOkonomiSettings);
