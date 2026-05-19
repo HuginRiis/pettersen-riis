@@ -1602,6 +1602,7 @@ function Posteringer({
   const [onlyUncat, setOnlyUncat] = usePersistedState<boolean>("okonomi_post_only_uncat", false);
   const [filterCat, setFilterCat] = usePersistedState<string>("okonomi_post_filter_cat", "__all__");
   const [filterPeriod, setFilterPeriod] = usePersistedState<string>("okonomi_post_filter_period", "__all__");
+  const [filterAccount, setFilterAccount] = usePersistedState<string>("okonomi_post_filter_acct", "__all__");
   const [bulkOpen, setBulkOpen] = useState(false);
   const [bulkDesc, setBulkDesc] = useState<string>("");
   const [bulkCat, setBulkCat] = useState<string>("");
@@ -2036,6 +2037,19 @@ function Posteringer({
           </SelectContent>
         </Select>
       </div>
+      <Select value={filterAccount} onValueChange={setFilterAccount}>
+        <SelectTrigger className="h-9">
+          <SelectValue placeholder="Konto" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="__all__">Alle kontoer</SelectItem>
+          {importedAccounts.map((a) => (
+            <SelectItem key={a.account} value={a.account}>
+              {a.account} ({a.count})
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
       <div className="space-y-1.5">
         {(() => {
           let list = txns;
@@ -2044,6 +2058,8 @@ function Posteringer({
           else if (filterCat !== "__all__") list = list.filter((t) => t.category_id === filterCat);
           if (filterPeriod !== "__all__")
             list = list.filter((t) => (t.txn_date ?? "").slice(0, 7) === filterPeriod);
+          if (filterAccount !== "__all__")
+            list = list.filter((t) => (t.account ?? "") === filterAccount);
           return list.slice(0, 200);
         })().map((t) => {
           const cat = cats.find((c) => c.id === t.category_id);
@@ -2075,6 +2091,7 @@ function Posteringer({
                 <p className="text-sm font-medium truncate">{t.description}</p>
                 <p className="text-[11px] text-muted-foreground">
                   {t.txn_date} · {cat?.name ?? "Uten kategori"}
+                  {t.account ? ` · ${t.account}` : ""}
                 </p>
               </div>
               <span
