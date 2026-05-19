@@ -2037,6 +2037,19 @@ function Posteringer({
           </SelectContent>
         </Select>
       </div>
+      <Select value={filterAccount} onValueChange={setFilterAccount}>
+        <SelectTrigger className="h-9">
+          <SelectValue placeholder="Konto" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="__all__">Alle kontoer</SelectItem>
+          {importedAccounts.map((a) => (
+            <SelectItem key={a.account} value={a.account}>
+              {a.account} ({a.count})
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
       <div className="space-y-1.5">
         {(() => {
           let list = txns;
