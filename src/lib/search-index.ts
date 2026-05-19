@@ -207,6 +207,13 @@ export const SEARCH_INDEX: SearchEntry[] = [
     description: "Decibel-måler / lyd.",
     keywords: ["decibel", "lyd", "støy"],
   },
+  {
+    title: "Flyradar",
+    path: "/flyradar",
+    section: "Vakttårnet",
+    description: "Live oversikt over fly i Norge — filtrer på flyplass, posisjon og høyde. Varsler for avgang og landing.",
+    keywords: ["fly", "flyradar", "flightradar", "opensky", "lufthavn", "gardermoen", "osl", "bgo", "trd", "svg", "tos", "torp", "ravner", "ravn"],
+  },
 ];
 
 // Enkel scoring: navn/keyword-match veier mest, beskrivelse mindre.

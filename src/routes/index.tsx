@@ -68,6 +68,7 @@ import hallLys from "@/assets/got-lys.jpg";
 import hallGressklipper from "@/assets/got-gressklipper.jpg";
 import hallStovsuger from "@/assets/got-stovsuger.jpg";
 import hallSkatt from "@/assets/got-skatt.jpg";
+import hallFlyradar from "@/assets/got-flyradar.jpg";
 
 // Halls available to anyone who steps into the courtyard (no password required)
 const PUBLIC_HALL_PATHS = new Set<string>(["/var", "/pollen", "/turer"]);
@@ -337,6 +338,7 @@ function Home() {
           {showHall("/oppussing-hytta") && <HallCard to="/oppussing-hytta" title="Prosjekter på hytta" desc="Prosjekter, planer og bilder fra hytta." icon="🪵" image={hallOppussingHytta} locked={!isAuthed} />}
           {showHall("/kvitteringer") && <HallCard to="/kvitteringer" title="Kvitteringer" desc="Husets kvitteringer, garanti og utgifter." icon="🧾" image={hallKvitteringer} locked={!isAuthed} />}
           {showHall("/okonomi") && <HallCard to="/okonomi" title="Husholdningens hvelv" desc="Budsjett og forbruk — Iron Bank of Braavos." icon="🏦" image={hallOkonomi} locked={!isAuthed} />}
+          {showHall("/flyradar") && <HallCard to="/flyradar" title="Flyradar" desc="Ravnenes vei — fly i Norges himmel." icon="🛩" image={hallFlyradar} locked={!isAuthed} />}
           {showHall("/push-varslinger") && <HallCard to="/push-varslinger" title="Innstillinger" desc="Push-varsler og innstillinger for husets ravner." icon="🔔" image={hallVarslinger} locked={!isAuthed} badge={<HallBadgeStack><PushTodayBadge inline /></HallBadgeStack>} />}
         </div>
       </section>
@@ -668,6 +670,7 @@ function HallCard({
     | "/kvitteringer"
     | "/okonomi"
     | "/push-varslinger"
+    | "/flyradar"
     | "/got-saga";
   title: string;
   desc: string;

@@ -272,6 +272,45 @@ export type Database = {
         }
         Relationships: []
       }
+      flight_alert_prefs: {
+        Row: {
+          airports: string[]
+          id: string
+          min_altitude_m: number
+          notify_arrivals: boolean
+          notify_departures: boolean
+          notify_radius: boolean
+          radius_center_lat: number | null
+          radius_center_lon: number | null
+          radius_km: number
+          updated_at: string
+        }
+        Insert: {
+          airports?: string[]
+          id?: string
+          min_altitude_m?: number
+          notify_arrivals?: boolean
+          notify_departures?: boolean
+          notify_radius?: boolean
+          radius_center_lat?: number | null
+          radius_center_lon?: number | null
+          radius_km?: number
+          updated_at?: string
+        }
+        Update: {
+          airports?: string[]
+          id?: string
+          min_altitude_m?: number
+          notify_arrivals?: boolean
+          notify_departures?: boolean
+          notify_radius?: boolean
+          radius_center_lat?: number | null
+          radius_center_lon?: number | null
+          radius_km?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       garbage_address: {
         Row: {
           address_text: string
