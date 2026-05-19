@@ -426,15 +426,19 @@ function DecibelPage() {
     return Math.round(Math.max(0, Math.min(100, ((scanResult.rt60 - 0.2) / 1.3) * 100)));
   }, [scanResult]);
 
-  // Oppdater "tregt" snapshot av bands hvert 1s slik at lytte-vurderingen er lesbar
+  // Oppdater "tregt" snapshot av bands hvert 1s slik at lytte-vurderingen er lesbar.
+  // Bruk ref for å unngå at intervallet re-opprettes hver gang `bands` endrer seg
+  // (ellers ryddes timeren opp før den rekker å fyre, og snapshot oppdateres aldri).
+  const bandsRef = useRef<number[]>(bands);
+  useEffect(() => { bandsRef.current = bands; }, [bands]);
   useEffect(() => {
     if (!running) {
       setBandsSlow(OCTAVE_BANDS.map(() => -100));
       return;
     }
-    const id = setInterval(() => setBandsSlow(bands), 1000);
+    const id = setInterval(() => setBandsSlow([...bandsRef.current]), 1000);
     return () => clearInterval(id);
-  }, [running, bands]);
+  }, [running]);
 
   // TV-lytting & diskant-anbefaling (basert på 1s-snapshot + følsomhet)
   const tvAssessment = useMemo(() => {
