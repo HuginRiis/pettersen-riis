@@ -323,6 +323,38 @@ export const bulkDeleteOkonomiTransactions = createServerFn({ method: "POST" })
     return { deleted: data.ids.length };
   });
 
+// Slett posteringer i et datointervall, valgfritt filtrert på konto.
+export const deleteOkonomiByDateRange = createServerFn({ method: "POST" })
+  .inputValidator((d) =>
+    z
+      .object({
+        from_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        to_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        account: z.string().nullable().optional(),
+        dry_run: z.boolean().optional(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data }) => {
+    let q = supabaseAdmin
+      .from("okonomi_transactions")
+      .select("id,account", { count: "exact" })
+      .gte("txn_date", data.from_date)
+      .lte("txn_date", data.to_date);
+    if (data.account && data.account.trim()) q = q.eq("account", data.account);
+    const { data: rows, error, count } = await q.limit(5000);
+    if (error) throw new Error(error.message);
+    const ids = (rows ?? []).map((r: any) => r.id as string);
+    if (data.dry_run) return { matched: count ?? ids.length, deleted: 0 };
+    if (ids.length === 0) return { matched: 0, deleted: 0 };
+    const { error: delErr } = await supabaseAdmin
+      .from("okonomi_transactions")
+      .delete()
+      .in("id", ids);
+    if (delErr) throw new Error(delErr.message);
+    return { matched: count ?? ids.length, deleted: ids.length };
+  });
+
 export const importOkonomiTransactions = createServerFn({ method: "POST" })
   .inputValidator((d) => importSchema.parse(d))
   .handler(async ({ data }) => {
