@@ -1607,6 +1607,57 @@ function Posteringer({
   const [bulkCat, setBulkCat] = useState<string>("");
   const [bulkLearn, setBulkLearn] = useState(true);
   const [bulkBusy, setBulkBusy] = useState(false);
+  const [rangeOpen, setRangeOpen] = useState(false);
+  const [rangeFrom, setRangeFrom] = useState<string>(() => {
+    const d = new Date(); d.setDate(d.getDate() - 30);
+    return d.toISOString().slice(0, 10);
+  });
+  const [rangeTo, setRangeTo] = useState<string>(() => new Date().toISOString().slice(0, 10));
+  const [rangeAccount, setRangeAccount] = useState<string>("__all__");
+  const [rangeMatched, setRangeMatched] = useState<number | null>(null);
+  const [rangeBusy, setRangeBusy] = useState(false);
+
+  async function previewRange() {
+    setRangeBusy(true);
+    try {
+      const res = await deleteRange({
+        data: {
+          from_date: rangeFrom,
+          to_date: rangeTo,
+          account: rangeAccount === "__all__" ? null : rangeAccount,
+          dry_run: true,
+        },
+      });
+      setRangeMatched(res.matched);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Feil");
+    } finally {
+      setRangeBusy(false);
+    }
+  }
+
+  async function confirmDeleteRange() {
+    const accLabel = rangeAccount === "__all__" ? "alle kontoer" : rangeAccount;
+    if (!confirm(`Slette posteringer mellom ${rangeFrom} og ${rangeTo} (${accLabel})?`)) return;
+    setRangeBusy(true);
+    try {
+      const res = await deleteRange({
+        data: {
+          from_date: rangeFrom,
+          to_date: rangeTo,
+          account: rangeAccount === "__all__" ? null : rangeAccount,
+        },
+      });
+      toast.success(`Slettet ${res.deleted} posteringer`);
+      setRangeMatched(null);
+      reload();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Feil");
+    } finally {
+      setRangeBusy(false);
+    }
+  }
+
   const [form, setForm] = useState({
     txn_date: new Date().toISOString().slice(0, 10),
     description: "",
