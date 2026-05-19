@@ -927,3 +927,76 @@ export const bulkUpsertOkonomiTransactions = createServerFn({ method: "POST" })
     }
     return { ok: true, count };
   });
+
+// =================================================================
+// Last import summary (for hero card)
+// =================================================================
+
+export type LastImportSummary = {
+  importedAt: string;
+  source: string | null;
+  account: string | null;
+  count: number;
+  fromDate: string | null;
+  toDate: string | null;
+  totalIn: number;
+  totalOut: number;
+} | null;
+
+export const getLastImportSummary = createServerFn({ method: "GET" }).handler(
+  async (): Promise<LastImportSummary> => {
+    const { data: latest, error: e1 } = await supabaseAdmin
+      .from("okonomi_transactions")
+      .select("created_at")
+      .order("created_at", { ascending: false })
+      .limit(1);
+    if (e1) throw new Error(e1.message);
+    if (!latest || latest.length === 0) return null;
+    const latestTs = new Date(latest[0].created_at as string).getTime();
+    // Anse alt innenfor 5 minutter av nyeste created_at som samme batch
+    const windowStart = new Date(latestTs - 5 * 60 * 1000).toISOString();
+    const { data, error } = await supabaseAdmin
+      .from("okonomi_transactions")
+      .select("created_at, source, account, txn_date, amount")
+      .gte("created_at", windowStart)
+      .order("created_at", { ascending: false })
+      .limit(5000);
+    if (error) throw new Error(error.message);
+    const rows = data ?? [];
+    if (rows.length === 0) return null;
+
+    const accCount = new Map<string, number>();
+    const srcCount = new Map<string, number>();
+    let totalIn = 0;
+    let totalOut = 0;
+    let from: string | null = null;
+    let to: string | null = null;
+    for (const r of rows as any[]) {
+      const amt = Number(r.amount ?? 0);
+      if (amt >= 0) totalIn += amt;
+      else totalOut += amt;
+      const a = (r.account ?? "").trim() || "(ukjent)";
+      accCount.set(a, (accCount.get(a) ?? 0) + 1);
+      const s = (r.source ?? "").trim() || "ukjent";
+      srcCount.set(s, (srcCount.get(s) ?? 0) + 1);
+      const d = r.txn_date as string;
+      if (d) {
+        if (!from || d < from) from = d;
+        if (!to || d > to) to = d;
+      }
+    }
+    const topAcc = [...accCount.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+    const topSrc = [...srcCount.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+
+    return {
+      importedAt: rows[0].created_at as string,
+      source: topSrc,
+      account: topAcc,
+      count: rows.length,
+      fromDate: from,
+      toDate: to,
+      totalIn: Math.round(totalIn * 100) / 100,
+      totalOut: Math.round(totalOut * 100) / 100,
+    };
+  },
+);
