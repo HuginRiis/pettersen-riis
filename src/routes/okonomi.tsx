@@ -472,6 +472,9 @@ function OkonomiPage() {
           </Tabs>
         )}
 
+        {!loading && <LonnsBudsjett txns={txns} selectedAccount={selectedAccount} />}
+
+
         <OkonomiBulkEditSheet
           open={bulkOpen}
           onOpenChange={setBulkOpen}
