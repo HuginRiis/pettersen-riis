@@ -2058,6 +2058,8 @@ function Posteringer({
           else if (filterCat !== "__all__") list = list.filter((t) => t.category_id === filterCat);
           if (filterPeriod !== "__all__")
             list = list.filter((t) => (t.txn_date ?? "").slice(0, 7) === filterPeriod);
+          if (filterAccount !== "__all__")
+            list = list.filter((t) => (t.account ?? "") === filterAccount);
           return list.slice(0, 200);
         })().map((t) => {
           const cat = cats.find((c) => c.id === t.category_id);
