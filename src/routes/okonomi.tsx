@@ -134,7 +134,90 @@ function OkonomiGate() {
 const fmt = (n: number) =>
   new Intl.NumberFormat("nb-NO", { maximumFractionDigits: 0 }).format(n) + " kr";
 
-function OkonomiPage() {
+function HvelvHero() {
+  const fetchSummary = useServerFn(getLastImportSummary);
+  const [s, setS] = useState<LastImportSummary>(null);
+  useEffect(() => {
+    fetchSummary().then(setS).catch(() => setS(null));
+  }, [fetchSummary]);
+
+  const fmtDate = (d: string | null) =>
+    d ? new Date(d).toLocaleDateString("nb-NO", { day: "2-digit", month: "short" }) : "–";
+  const fmtDateTime = (d: string) =>
+    new Date(d).toLocaleString("nb-NO", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
+
+  return (
+    <div className="relative mb-6 overflow-hidden rounded-2xl border border-amber-500/30 shadow-[0_0_40px_rgba(245,158,11,0.15)]">
+      <img
+        src={hvelvHero}
+        alt="Husholdningens hvelv"
+        className="absolute inset-0 h-full w-full object-cover"
+        loading="eager"
+      />
+      <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/70 to-black/40" />
+      <div className="relative p-5 sm:p-7 min-h-[220px] flex flex-col justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-full border-2 border-amber-500/60 bg-gradient-to-br from-amber-900/40 to-amber-600/20 flex items-center justify-center shadow-[0_0_30px_rgba(245,158,11,0.3)]">
+            <Coins className="w-6 h-6 text-amber-400" />
+          </div>
+          <div>
+            <p className="text-[10px] tracking-[0.4em] uppercase text-amber-400/80">
+              Iron Bank of Braavos
+            </p>
+            <h1 className="text-2xl font-serif text-amber-100">Husholdningens hvelv</h1>
+            <p className="text-xs text-amber-200/70 italic">
+              «The Iron Bank will have its due»
+            </p>
+          </div>
+        </div>
+
+        {s ? (
+          <div className="rounded-xl border border-amber-500/20 bg-black/40 backdrop-blur-sm p-3 sm:p-4">
+            <div className="flex items-center justify-between gap-2 mb-2">
+              <p className="text-[10px] tracking-[0.3em] uppercase text-amber-300/80">
+                Siste sending til hvelvet
+              </p>
+              <p className="text-[10px] text-amber-200/60">{fmtDateTime(s.importedAt)}</p>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 text-amber-100">
+              <div>
+                <p className="text-[10px] uppercase tracking-wider text-amber-300/60">Konto</p>
+                <p className="text-sm font-medium truncate" title={s.account ?? ""}>
+                  {s.account ?? "–"}
+                </p>
+              </div>
+              <div>
+                <p className="text-[10px] uppercase tracking-wider text-amber-300/60">Poster</p>
+                <p className="text-sm font-medium">
+                  {s.count}
+                  {s.source ? <span className="text-amber-300/60 ml-1">· {s.source}</span> : null}
+                </p>
+              </div>
+              <div>
+                <p className="text-[10px] uppercase tracking-wider text-amber-300/60">Periode</p>
+                <p className="text-sm font-medium">
+                  {fmtDate(s.fromDate)} – {fmtDate(s.toDate)}
+                </p>
+              </div>
+              <div>
+                <p className="text-[10px] uppercase tracking-wider text-emerald-300/70">Inn</p>
+                <p className="text-sm font-semibold text-emerald-300">{fmt(s.totalIn)}</p>
+              </div>
+              <div>
+                <p className="text-[10px] uppercase tracking-wider text-rose-300/70">Ut</p>
+                <p className="text-sm font-semibold text-rose-300">{fmt(Math.abs(s.totalOut))}</p>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="rounded-xl border border-amber-500/20 bg-black/40 backdrop-blur-sm p-3 text-xs text-amber-200/60">
+            Ingen importer registrert ennå.
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
   const listCats = useServerFn(listOkonomiCategories);
   const listTxns = useServerFn(listOkonomiTransactions);
   const getSettings = useServerFn(getOkonomiSettings);
