@@ -35,6 +35,7 @@ export const MENU_LINK_DEFS: { to: string; label: string }[] = [
   { to: "/nettverk", label: "Nettverk" },
   { to: "/roborock", label: "Roborock" },
   { to: "/planter", label: "Planter & Trær" },
+  { to: "/flyradar", label: "Flyradar" },
 
 ];
 
