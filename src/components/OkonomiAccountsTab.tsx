@@ -245,14 +245,15 @@ export function OkonomiAccountsTab({
             </div>
 
             <div className="grid grid-cols-3 gap-2 mb-3">
-              <Mini label="Inn (mnd)" value={fmt(monthIn)} tone="ok" />
-              <Mini label="Ut (mnd)" value={fmt(monthOut)} tone="warn" />
+              <Mini label={`Inn (${filterMonth === "all" ? "år" : "mnd"})`} value={fmt(monthIn)} tone="ok" />
+              <Mini label={`Ut (${filterMonth === "all" ? "år" : "mnd"})`} value={fmt(monthOut)} tone="warn" />
               <Mini
                 label="Netto (år)"
                 value={fmtSigned(ytdNet)}
                 tone={ytdNet >= 0 ? "ok" : "warn"}
               />
             </div>
+
 
             <button
               type="button"
