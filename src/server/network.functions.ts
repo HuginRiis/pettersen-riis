@@ -489,3 +489,43 @@ export const listRouterInsightLogs = createServerFn({ method: "POST" })
       return { ok: false, error: e?.message ?? "Ukjent feil", deviceId: data.deviceId, logs: [] };
     }
   });
+
+export const probeHomeyDeco = createServerFn({ method: "GET" }).handler(async (): Promise<any> => {
+  const { getValidConnection } = await import("./homey");
+  const conn = await getValidConnection();
+  if (!conn) return { error: "no conn" };
+  // Use internal session via getHomeyRawSnapshot path; reuse fetchJson via apps endpoint
+  const homey: any = await import("./homey");
+  const session = await (homey as any).getHomeySessionContext?.(conn);
+  if (!session) return { error: "no session" };
+  const base = session.target.baseUrl;
+  const tok = session.sessionToken;
+  const fj = async (u: string) => {
+    try {
+      const r = await fetch(u, { headers: { Authorization: `Bearer ${tok}`, Accept: "application/json" } });
+      const ct = r.headers.get("content-type") || "";
+      const body = ct.includes("json") ? await r.json() : (await r.text()).slice(0, 500);
+      return { status: r.status, body };
+    } catch (e: any) { return { error: e?.message }; }
+  };
+  // Discover apps + devices structure
+  const apps = await fj(`${base}/api/manager/apps/app`);
+  const devices = await fj(`${base}/api/manager/devices/device`);
+  let routerSample: any = null;
+  if (Array.isArray((devices as any).body) || typeof (devices as any).body === "object") {
+    const list = Array.isArray((devices as any).body) ? (devices as any).body : Object.values((devices as any).body);
+    const r = (list as any[]).find((d: any) => /deco|xe75/i.test(d?.name ?? "") || /deco/i.test(String(d?.driverUri ?? d?.driverId ?? "")));
+    if (r) routerSample = { id: r.id, name: r.name, driverUri: r.driverUri, driverId: r.driverId, capKeys: Object.keys(r.capabilitiesObj ?? r.capabilities_obj ?? {}), flowKeys: Object.keys(r ?? {}) };
+  }
+  // Try Deco app endpoints
+  const decoIds = ["com.tp-link.deco", "com.tplink.deco", "com.tp_link.deco", "io.tplink.deco"];
+  const appProbes: Record<string, any> = {};
+  for (const id of decoIds) {
+    appProbes[id] = {
+      app: await fj(`${base}/api/manager/apps/app/${id}`),
+      clients: await fj(`${base}/api/app/${id}/clients`),
+      getClients: await fj(`${base}/api/app/${id}/getClients`),
+    };
+  }
+  return { apps_status: (apps as any).status, appKeysSample: typeof (apps as any).body === "object" ? Object.keys((apps as any).body).slice(0, 30) : null, routerSample, appProbes };
+});
