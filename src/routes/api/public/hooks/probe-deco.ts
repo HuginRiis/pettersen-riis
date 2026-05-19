@@ -53,7 +53,7 @@ export const Route = createFileRoute("/api/public/hooks/probe-deco")({
           };
         }
 
-        return Response.json({ decoAppIds, routerSample, appProbes }, null, 2);
+        return new Response(JSON.stringify({ decoAppIds, routerSample, appProbes }, null, 2), { headers: { "content-type": "application/json" } });
       },
     },
   },
