@@ -51,6 +51,8 @@ import {
   type ParsedTxn,
   getLastImportSummary,
   type LastImportSummary,
+  listImportedAccounts,
+  type ImportedAccount,
 } from "@/server/okonomi.functions";
 import { OkonomiAccountsTab, classifyAccount } from "@/components/OkonomiAccountsTab";
 import { OkonomiBulkEditSheet } from "@/components/OkonomiBulkEditSheet";
@@ -134,12 +136,22 @@ function OkonomiGate() {
 const fmt = (n: number) =>
   new Intl.NumberFormat("nb-NO", { maximumFractionDigits: 0 }).format(n) + " kr";
 
-function HvelvHero() {
+function HvelvHero({
+  selectedAccount,
+  onSelectAccount,
+  accountOptions,
+}: {
+  selectedAccount: string;
+  onSelectAccount: (a: string) => void;
+  accountOptions: ImportedAccount[];
+}) {
   const fetchSummary = useServerFn(getLastImportSummary);
   const [s, setS] = useState<LastImportSummary>(null);
   useEffect(() => {
-    fetchSummary().then(setS).catch(() => setS(null));
-  }, [fetchSummary]);
+    fetchSummary({ data: { account: selectedAccount || null } })
+      .then(setS)
+      .catch(() => setS(null));
+  }, [fetchSummary, selectedAccount]);
 
   const fmtDate = (d: string | null) =>
     d ? new Date(d).toLocaleDateString("nb-NO", { day: "2-digit", month: "short" }) : "–";
@@ -156,18 +168,36 @@ function HvelvHero() {
       />
       <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/70 to-black/40" />
       <div className="relative p-5 sm:p-7 min-h-[220px] flex flex-col justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-full border-2 border-amber-500/60 bg-gradient-to-br from-amber-900/40 to-amber-600/20 flex items-center justify-center shadow-[0_0_30px_rgba(245,158,11,0.3)]">
-            <Coins className="w-6 h-6 text-amber-400" />
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-full border-2 border-amber-500/60 bg-gradient-to-br from-amber-900/40 to-amber-600/20 flex items-center justify-center shadow-[0_0_30px_rgba(245,158,11,0.3)]">
+              <Coins className="w-6 h-6 text-amber-400" />
+            </div>
+            <div>
+              <p className="text-[10px] tracking-[0.4em] uppercase text-amber-400/80">
+                Iron Bank of Braavos
+              </p>
+              <h1 className="text-2xl font-serif text-amber-100">Husholdningens hvelv</h1>
+              <p className="text-xs text-amber-200/70 italic">
+                «The Iron Bank will have its due»
+              </p>
+            </div>
           </div>
-          <div>
-            <p className="text-[10px] tracking-[0.4em] uppercase text-amber-400/80">
-              Iron Bank of Braavos
-            </p>
-            <h1 className="text-2xl font-serif text-amber-100">Husholdningens hvelv</h1>
-            <p className="text-xs text-amber-200/70 italic">
-              «The Iron Bank will have its due»
-            </p>
+          <div className="min-w-[180px]">
+            <p className="text-[10px] uppercase tracking-[0.25em] text-amber-300/70 mb-1">Konto</p>
+            <Select value={selectedAccount || "__all"} onValueChange={(v) => onSelectAccount(v === "__all" ? "" : v)}>
+              <SelectTrigger className="h-8 text-xs bg-black/40 border-amber-500/40 text-amber-100">
+                <SelectValue placeholder="Alle kontoer" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all">Alle kontoer</SelectItem>
+                {accountOptions.map((a) => (
+                  <SelectItem key={a.account} value={a.account}>
+                    {a.account} <span className="text-muted-foreground">· {a.count}</span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
@@ -211,11 +241,131 @@ function HvelvHero() {
           </div>
         ) : (
           <div className="rounded-xl border border-amber-500/20 bg-black/40 backdrop-blur-sm p-3 text-xs text-amber-200/60">
-            Ingen importer registrert ennå.
+            Ingen importer registrert ennå{selectedAccount ? ` for ${selectedAccount}` : ""}.
           </div>
         )}
       </div>
     </div>
+  );
+}
+
+// ---------------- Lønnsperiode-budsjett ----------------
+// Lønningsdag = 15. hver måned. Periode = forrige 15. → neste 15.
+function LonnsBudsjett({
+  txns,
+  selectedAccount,
+}: {
+  txns: OkonomiTransaction[];
+  selectedAccount: string;
+}) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const PAYDAY = 15;
+  const cycleStart = new Date(today);
+  if (today.getDate() >= PAYDAY) {
+    cycleStart.setDate(PAYDAY);
+  } else {
+    cycleStart.setMonth(cycleStart.getMonth() - 1);
+    cycleStart.setDate(PAYDAY);
+  }
+  const cycleEnd = new Date(cycleStart);
+  cycleEnd.setMonth(cycleEnd.getMonth() + 1);
+  cycleEnd.setDate(PAYDAY - 1);
+
+  const isoDay = (d: Date) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  const startIso = isoDay(cycleStart);
+  const endIso = isoDay(cycleEnd);
+  const todayIso = isoDay(today);
+
+  const inPeriod = txns.filter((t) => {
+    if (t.txn_date < startIso || t.txn_date > endIso) return false;
+    if (selectedAccount && (t.account ?? "").trim() !== selectedAccount) return false;
+    return true;
+  });
+
+  const incomes = inPeriod.filter((t) => Number(t.amount) > 0);
+  const expenses = inPeriod.filter((t) => Number(t.amount) < 0);
+  const lastSalary = incomes.reduce((s, t) => s + Number(t.amount), 0);
+  const spent = expenses.reduce((s, t) => s + Math.abs(Number(t.amount)), 0);
+
+  const msPerDay = 86400000;
+  const totalDays = Math.max(1, Math.round((cycleEnd.getTime() - cycleStart.getTime()) / msPerDay) + 1);
+  const daysElapsed = Math.max(
+    1,
+    Math.min(totalDays, Math.round((today.getTime() - cycleStart.getTime()) / msPerDay) + 1),
+  );
+  const daysRemaining = Math.max(0, totalDays - daysElapsed);
+
+  const avgPerDay = spent / daysElapsed;
+  const remainingBudget = Math.max(0, lastSalary - spent);
+  const maxPerDay = daysRemaining > 0 ? remainingBudget / daysRemaining : 0;
+  const expectedAtNextSalary = lastSalary - spent - avgPerDay * daysRemaining;
+
+  const fmtD = (d: Date) =>
+    d.toLocaleDateString("nb-NO", { day: "2-digit", month: "short" });
+
+  return (
+    <div className="mt-8 mb-4">
+      <div className="flex items-baseline justify-between mb-3">
+        <h2 className="text-sm tracking-[0.3em] uppercase text-amber-300">Lønnsperiode</h2>
+        <p className="text-[11px] text-muted-foreground">
+          {fmtD(cycleStart)} → {fmtD(cycleEnd)} · dag {daysElapsed}/{totalDays}
+          {selectedAccount ? ` · ${selectedAccount}` : ""}
+        </p>
+      </div>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <LonnBox
+          label="Brukt siden siste lønn"
+          value={fmt(spent)}
+          sub={`av ${fmt(lastSalary)} lønn`}
+          tone="warn"
+        />
+        <LonnBox
+          label="Snitt pr dag så langt"
+          value={fmt(avgPerDay)}
+          sub={`${daysElapsed} dager siden ${fmtD(cycleStart)}`}
+        />
+        <LonnBox
+          label="Forventet ved neste lønn"
+          value={fmt(expectedAtNextSalary)}
+          sub={`hvis snittet holder i ${daysRemaining} dager til`}
+          tone={expectedAtNextSalary < 0 ? "warn" : "ok"}
+        />
+        <LonnBox
+          label="Maks bruk pr dag"
+          value={fmt(maxPerDay)}
+          sub={`${fmt(remainingBudget)} igjen · ${daysRemaining} dager`}
+          tone="ok"
+        />
+      </div>
+      <p className="text-[10px] text-muted-foreground mt-2 italic">
+        Lønningsdag er 15. hver måned. «Brukt» = sum av utgifter (negative beløp) i denne perioden
+        {selectedAccount ? ` på konto ${selectedAccount}` : " på tvers av alle kontoer"}.
+      </p>
+    </div>
+  );
+}
+
+function LonnBox({
+  label,
+  value,
+  sub,
+  tone,
+}: {
+  label: string;
+  value: string;
+  sub?: string;
+  tone?: "ok" | "warn";
+}) {
+  const c =
+    tone === "warn" ? "text-rose-400" : tone === "ok" ? "text-emerald-400" : "text-amber-200";
+  return (
+    <Card className="p-3 border-amber-500/30 bg-card/60">
+      <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">{label}</p>
+      <p className={`text-xl font-semibold tabular-nums mt-1 ${c}`}>{value}</p>
+      {sub && <p className="text-[10px] text-muted-foreground mt-1">{sub}</p>}
+    </Card>
   );
 }
 
@@ -224,10 +374,16 @@ function OkonomiPage() {
   const listTxns = useServerFn(listOkonomiTransactions);
   const getSettings = useServerFn(getOkonomiSettings);
   const listAccs = useServerFn(listOkonomiAccounts);
+  const listImpAccs = useServerFn(listImportedAccounts);
   const [cats, setCats] = useState<OkonomiCategory[]>([]);
   const [txns, setTxns] = useState<OkonomiTransaction[]>([]);
   const [settings, setSettings] = useState<OkonomiSettings | null>(null);
   const [accounts, setAccounts] = useState<OkonomiAccount[]>([]);
+  const [importedAccounts, setImportedAccounts] = useState<ImportedAccount[]>([]);
+  const [selectedAccount, setSelectedAccount] = usePersistedState<string>(
+    "okonomi_hero_selected_account",
+    "",
+  );
   const [loading, setLoading] = useState(true);
 
   // Bulk-edit sheet state (åpnes når man klikker på en av stat-boksene)
@@ -248,16 +404,18 @@ function OkonomiPage() {
     try {
       const now = new Date();
       const from = `${now.getFullYear() - 1}-01-01`;
-      const [c, t, s, a] = await Promise.all([
+      const [c, t, s, a, ia] = await Promise.all([
         listCats(),
         listTxns({ data: { from, limit: 2000 } }),
         getSettings(),
         listAccs(),
+        listImpAccs(),
       ]);
       setCats(c);
       setTxns(t);
       setSettings(s);
       setAccounts(a);
+      setImportedAccounts(ia);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Kunne ikke laste");
     } finally {
@@ -271,7 +429,11 @@ function OkonomiPage() {
   return (
     <PageShell>
       <div className="container mx-auto px-4 py-6 max-w-5xl">
-        <HvelvHero />
+        <HvelvHero
+          selectedAccount={selectedAccount}
+          onSelectAccount={setSelectedAccount}
+          accountOptions={importedAccounts}
+        />
 
 
         {loading ? (
@@ -309,6 +471,9 @@ function OkonomiPage() {
             </TabsContent>
           </Tabs>
         )}
+
+        {!loading && <LonnsBudsjett txns={txns} selectedAccount={selectedAccount} />}
+
 
         <OkonomiBulkEditSheet
           open={bulkOpen}
