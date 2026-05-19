@@ -161,6 +161,42 @@ export function OkonomiAccountsTab({
         Trykk «Velg kontonummer» for å koble importerte kontonummer til hver konto.
       </Card>
 
+      <Card className="p-3 border-amber-500/30 bg-card/60">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-[10px] uppercase tracking-[0.2em] text-amber-300 mr-1">Periode</span>
+          <Select
+            value={String(filterMonth)}
+            onValueChange={(v) => setFilterMonth(v === "all" ? "all" : Number(v))}
+          >
+            <SelectTrigger className="h-8 w-[140px] text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Hele året</SelectItem>
+              {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+                <SelectItem key={m} value={String(m)}>
+                  {new Date(2000, m - 1, 1).toLocaleDateString("nb-NO", { month: "long" })}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={String(filterYear)} onValueChange={(v) => setFilterYear(Number(v))}>
+            <SelectTrigger className="h-8 w-[100px] text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {yearsAvailable.map((y) => (
+                <SelectItem key={y} value={String(y)}>
+                  {y}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <span className="text-[10px] text-muted-foreground ml-auto">Viser tall for {periodLabel}</span>
+        </div>
+      </Card>
+
+
       {accounts.map((a) => {
         const items = grouped.get(a.id) ?? [];
         const Icon = iconFor(a.slug);
