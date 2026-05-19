@@ -186,20 +186,8 @@ function OkonomiPage() {
   return (
     <PageShell>
       <div className="container mx-auto px-4 py-6 max-w-5xl">
-        <div className="mb-6 flex items-center gap-3">
-          <div className="w-12 h-12 rounded-full border-2 border-amber-500/60 bg-gradient-to-br from-amber-900/40 to-amber-600/20 flex items-center justify-center shadow-[0_0_30px_rgba(245,158,11,0.3)]">
-            <Coins className="w-6 h-6 text-amber-400" />
-          </div>
-          <div>
-            <p className="text-[10px] tracking-[0.4em] uppercase text-amber-400/80">
-              Iron Bank of Braavos
-            </p>
-            <h1 className="text-2xl font-serif text-amber-100">Husholdningens hvelv</h1>
-            <p className="text-xs text-muted-foreground italic">
-              «The Iron Bank will have its due»
-            </p>
-          </div>
-        </div>
+        <HvelvHero />
+
 
         {loading ? (
           <div className="flex items-center gap-2 text-muted-foreground">
