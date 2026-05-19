@@ -44,7 +44,6 @@ import { Route as ApiHomeyStartRouteImport } from './routes/api.homey.start'
 import { Route as ApiHomeyCallbackRouteImport } from './routes/api.homey.callback'
 import { Route as ApiPublicHooksSnapshotTibberDailyRouteImport } from './routes/api.public.hooks.snapshot-tibber-daily'
 import { Route as ApiPublicHooksSnapshotPulseRouteImport } from './routes/api.public.hooks.snapshot-pulse'
-import { Route as ApiPublicHooksProbeDecoRouteImport } from './routes/api/public/hooks/probe-deco'
 import { Route as ApiPublicHooksNetworkSnapshotRouteImport } from './routes/api/public/hooks/network-snapshot'
 import { Route as ApiPublicHooksEufyPollRouteImport } from './routes/api/public/hooks/eufy-poll'
 import { Route as ApiPublicHooksEufyRouteImport } from './routes/api/public/hooks/eufy'
@@ -228,11 +227,6 @@ const ApiPublicHooksSnapshotPulseRoute =
     path: '/api/public/hooks/snapshot-pulse',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicHooksProbeDecoRoute = ApiPublicHooksProbeDecoRouteImport.update({
-  id: '/api/public/hooks/probe-deco',
-  path: '/api/public/hooks/probe-deco',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ApiPublicHooksNetworkSnapshotRoute =
   ApiPublicHooksNetworkSnapshotRouteImport.update({
     id: '/api/public/hooks/network-snapshot',
@@ -301,7 +295,6 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/eufy': typeof ApiPublicHooksEufyRoute
   '/api/public/hooks/eufy-poll': typeof ApiPublicHooksEufyPollRoute
   '/api/public/hooks/network-snapshot': typeof ApiPublicHooksNetworkSnapshotRoute
-  '/api/public/hooks/probe-deco': typeof ApiPublicHooksProbeDecoRoute
   '/api/public/hooks/snapshot-pulse': typeof ApiPublicHooksSnapshotPulseRoute
   '/api/public/hooks/snapshot-tibber-daily': typeof ApiPublicHooksSnapshotTibberDailyRoute
 }
@@ -344,7 +337,6 @@ export interface FileRoutesByTo {
   '/api/public/hooks/eufy': typeof ApiPublicHooksEufyRoute
   '/api/public/hooks/eufy-poll': typeof ApiPublicHooksEufyPollRoute
   '/api/public/hooks/network-snapshot': typeof ApiPublicHooksNetworkSnapshotRoute
-  '/api/public/hooks/probe-deco': typeof ApiPublicHooksProbeDecoRoute
   '/api/public/hooks/snapshot-pulse': typeof ApiPublicHooksSnapshotPulseRoute
   '/api/public/hooks/snapshot-tibber-daily': typeof ApiPublicHooksSnapshotTibberDailyRoute
 }
@@ -388,7 +380,6 @@ export interface FileRoutesById {
   '/api/public/hooks/eufy': typeof ApiPublicHooksEufyRoute
   '/api/public/hooks/eufy-poll': typeof ApiPublicHooksEufyPollRoute
   '/api/public/hooks/network-snapshot': typeof ApiPublicHooksNetworkSnapshotRoute
-  '/api/public/hooks/probe-deco': typeof ApiPublicHooksProbeDecoRoute
   '/api/public/hooks/snapshot-pulse': typeof ApiPublicHooksSnapshotPulseRoute
   '/api/public/hooks/snapshot-tibber-daily': typeof ApiPublicHooksSnapshotTibberDailyRoute
 }
@@ -433,7 +424,6 @@ export interface FileRouteTypes {
     | '/api/public/hooks/eufy'
     | '/api/public/hooks/eufy-poll'
     | '/api/public/hooks/network-snapshot'
-    | '/api/public/hooks/probe-deco'
     | '/api/public/hooks/snapshot-pulse'
     | '/api/public/hooks/snapshot-tibber-daily'
   fileRoutesByTo: FileRoutesByTo
@@ -476,7 +466,6 @@ export interface FileRouteTypes {
     | '/api/public/hooks/eufy'
     | '/api/public/hooks/eufy-poll'
     | '/api/public/hooks/network-snapshot'
-    | '/api/public/hooks/probe-deco'
     | '/api/public/hooks/snapshot-pulse'
     | '/api/public/hooks/snapshot-tibber-daily'
   id:
@@ -519,7 +508,6 @@ export interface FileRouteTypes {
     | '/api/public/hooks/eufy'
     | '/api/public/hooks/eufy-poll'
     | '/api/public/hooks/network-snapshot'
-    | '/api/public/hooks/probe-deco'
     | '/api/public/hooks/snapshot-pulse'
     | '/api/public/hooks/snapshot-tibber-daily'
   fileRoutesById: FileRoutesById
@@ -563,7 +551,6 @@ export interface RootRouteChildren {
   ApiPublicHooksEufyRoute: typeof ApiPublicHooksEufyRoute
   ApiPublicHooksEufyPollRoute: typeof ApiPublicHooksEufyPollRoute
   ApiPublicHooksNetworkSnapshotRoute: typeof ApiPublicHooksNetworkSnapshotRoute
-  ApiPublicHooksProbeDecoRoute: typeof ApiPublicHooksProbeDecoRoute
   ApiPublicHooksSnapshotPulseRoute: typeof ApiPublicHooksSnapshotPulseRoute
   ApiPublicHooksSnapshotTibberDailyRoute: typeof ApiPublicHooksSnapshotTibberDailyRoute
 }
@@ -815,13 +802,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksSnapshotPulseRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/hooks/probe-deco': {
-      id: '/api/public/hooks/probe-deco'
-      path: '/api/public/hooks/probe-deco'
-      fullPath: '/api/public/hooks/probe-deco'
-      preLoaderRoute: typeof ApiPublicHooksProbeDecoRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/public/hooks/network-snapshot': {
       id: '/api/public/hooks/network-snapshot'
       path: '/api/public/hooks/network-snapshot'
@@ -900,7 +880,6 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksEufyRoute: ApiPublicHooksEufyRoute,
   ApiPublicHooksEufyPollRoute: ApiPublicHooksEufyPollRoute,
   ApiPublicHooksNetworkSnapshotRoute: ApiPublicHooksNetworkSnapshotRoute,
-  ApiPublicHooksProbeDecoRoute: ApiPublicHooksProbeDecoRoute,
   ApiPublicHooksSnapshotPulseRoute: ApiPublicHooksSnapshotPulseRoute,
   ApiPublicHooksSnapshotTibberDailyRoute:
     ApiPublicHooksSnapshotTibberDailyRoute,
@@ -908,3 +887,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
