@@ -2091,6 +2091,7 @@ function Posteringer({
                 <p className="text-sm font-medium truncate">{t.description}</p>
                 <p className="text-[11px] text-muted-foreground">
                   {t.txn_date} · {cat?.name ?? "Uten kategori"}
+                  {t.account ? ` · ${t.account}` : ""}
                 </p>
               </div>
               <span
