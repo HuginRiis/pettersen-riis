@@ -371,6 +371,214 @@ export function GarminNotificationSettings() {
       <Button size="sm" variant="outline" onClick={add}>
         <Plus className="h-3.5 w-3.5 mr-1" /> Ny Garmin-regel
       </Button>
+
+      <GarminThresholdSettings />
+    </div>
+  );
+}
+
+function GarminThresholdSettings() {
+  const [rows, setRows] = useState<Threshold[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState<string | null>(null);
+  const [testing, setTesting] = useState<string | null>(null);
+
+  const load = async () => {
+    const { data, error } = await supabase
+      .from("garmin_threshold_prefs" as never)
+      .select("*")
+      .order("created_at", { ascending: true });
+    if (error) toast.error("Kunne ikke laste terskler");
+    else setRows((data ?? []) as unknown as Threshold[]);
+    setLoading(false);
+  };
+  useEffect(() => { void load(); }, []);
+
+  const update = async (id: string, patch: Partial<Threshold>) => {
+    setSaving(id);
+    const prev = rows;
+    setRows((arr) => arr.map((x) => (x.id === id ? { ...x, ...patch } : x)));
+    const { error } = await supabase.from("garmin_threshold_prefs" as never).update(patch as never).eq("id", id);
+    setSaving(null);
+    if (error) { setRows(prev); toast.error("Kunne ikke lagre"); }
+  };
+  const remove = async (id: string) => {
+    if (!confirm("Slett denne terskel-regelen?")) return;
+    const { error } = await supabase.from("garmin_threshold_prefs" as never).delete().eq("id", id);
+    if (error) toast.error("Kunne ikke slette"); else { toast.success("Slettet"); void load(); }
+  };
+  const add = async () => {
+    const m = THRESHOLD_METRIC_OPTIONS[0];
+    const { error } = await supabase
+      .from("garmin_threshold_prefs" as never)
+      .insert({
+        garmin_owner: "arne",
+        recipient: "Arne",
+        sender_label: "Helse-vakta",
+        enabled: true,
+        metric: m.key,
+        direction: m.defaultDirection,
+        threshold: m.defaultThreshold,
+        cooldown_hours: 6,
+      } as never);
+    if (error) toast.error("Kunne ikke opprette"); else { toast.success("Ny terskel opprettet"); void load(); }
+  };
+  const test = async (id: string) => {
+    setTesting(id);
+    try {
+      const r = await sendGarminThresholdTestPush({ data: { prefId: id } });
+      toast.success(`Sendt: ${r.sent} · feil: ${r.errors}`);
+    } catch (e) { toast.error((e as Error).message); }
+    finally { setTesting(null); }
+  };
+
+  if (loading) return null;
+
+  return (
+    <div className="space-y-3 mt-6">
+      <div className="rounded-lg border border-border/60 bg-muted/20 p-3 text-xs text-muted-foreground">
+        <p className="font-medium text-foreground mb-1 flex items-center gap-1.5">
+          <Activity className="h-3.5 w-3.5" /> Egendefinerte terskler
+        </p>
+        <p>
+          Få push når en valgt Garmin-verdi krysser en grense (f.eks. Body Battery under 20,
+          stress over 50, hvilepuls over 70). Varselet sendes når verdien går fra "trygg" til "varsel",
+          og deretter ikke før etter cooldown-perioden.
+        </p>
+      </div>
+
+      <div className="space-y-3">
+        {rows.map((r) => {
+          const meta = THRESHOLD_METRIC_OPTIONS.find((m) => m.key === r.metric);
+          return (
+            <div key={r.id} className="rounded-lg border border-border/60 bg-card/40 p-3 space-y-2">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <div className="flex items-center gap-2 min-w-0">
+                  {r.enabled ? <Bell className="h-4 w-4 text-primary" /> : <BellOff className="h-4 w-4 text-muted-foreground" />}
+                  <span className="font-medium text-sm">
+                    {OWNER_OPTIONS.find((o) => o.value === r.garmin_owner)?.label} — {meta?.label ?? r.metric}
+                    {" "}{r.direction === "below" ? "<" : ">"} {r.threshold}{meta?.unit ? ` ${meta.unit}` : ""}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button size="sm" variant="ghost" onClick={() => test(r.id)} disabled={testing === r.id}>
+                    {testing === r.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
+                    <span className="ml-1 text-xs">Test</span>
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => remove(r.id)} className="text-destructive">
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                  <Switch checked={r.enabled} disabled={saving === r.id} onCheckedChange={(v) => update(r.id, { enabled: v })} />
+                </div>
+              </div>
+
+              <div className="grid sm:grid-cols-3 gap-2 text-xs">
+                <label className="space-y-1">
+                  <span className="text-muted-foreground">Bruker (Garmin)</span>
+                  <Select value={r.garmin_owner} onValueChange={(v) => update(r.id, { garmin_owner: v as "arne" | "rebekka" })}>
+                    <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {OWNER_OPTIONS.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </label>
+                <label className="space-y-1">
+                  <span className="text-muted-foreground">Mottaker</span>
+                  <Select value={r.recipient} onValueChange={(v) => update(r.id, { recipient: v })}>
+                    <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {WHO_OPTIONS.map((w) => <SelectItem key={w} value={w}>{w}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </label>
+                <label className="space-y-1">
+                  <span className="text-muted-foreground">Avsender</span>
+                  <Select value={r.sender_label} onValueChange={(v) => update(r.id, { sender_label: v })}>
+                    <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {SENDER_OPTIONS.map((w) => <SelectItem key={w} value={w}>{w}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </label>
+              </div>
+
+              <div className="grid sm:grid-cols-4 gap-2 text-xs">
+                <label className="space-y-1 sm:col-span-2">
+                  <span className="text-muted-foreground">Verdi som overvåkes</span>
+                  <Select
+                    value={r.metric}
+                    onValueChange={(v) => {
+                      const m = THRESHOLD_METRIC_OPTIONS.find((x) => x.key === v);
+                      update(r.id, {
+                        metric: v,
+                        direction: m?.defaultDirection ?? "below",
+                        threshold: m?.defaultThreshold ?? 0,
+                      });
+                    }}
+                  >
+                    <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {THRESHOLD_METRIC_OPTIONS.map((m) => <SelectItem key={m.key} value={m.key}>{m.label}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </label>
+                <label className="space-y-1">
+                  <span className="text-muted-foreground">Retning</span>
+                  <Select value={r.direction} onValueChange={(v) => update(r.id, { direction: v as "below" | "above" })}>
+                    <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="below">Går under (⬇️)</SelectItem>
+                      <SelectItem value="above">Går over (⬆️)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </label>
+                <label className="space-y-1">
+                  <span className="text-muted-foreground">Grense{meta?.unit ? ` (${meta.unit})` : ""}</span>
+                  <Input
+                    type="number"
+                    step="0.1"
+                    value={r.threshold}
+                    onChange={(e) => update(r.id, { threshold: Number(e.target.value) })}
+                    className="h-8"
+                  />
+                </label>
+              </div>
+
+              <div className="grid sm:grid-cols-2 gap-2 text-xs">
+                <label className="space-y-1">
+                  <span className="text-muted-foreground">Cooldown (timer mellom varsler)</span>
+                  <Input
+                    type="number" min={1} max={48}
+                    value={r.cooldown_hours}
+                    onChange={(e) => update(r.id, { cooldown_hours: Math.max(1, Number(e.target.value) || 6) })}
+                    className="h-8 w-24"
+                  />
+                </label>
+                <label className="space-y-1">
+                  <span className="text-muted-foreground">Egen tittel (valgfritt)</span>
+                  <Input
+                    value={r.label ?? ""}
+                    onChange={(e) => update(r.id, { label: e.target.value || null })}
+                    placeholder="f.eks. «Pust ut!»"
+                    className="h-8"
+                  />
+                </label>
+              </div>
+
+              {r.last_value != null && (
+                <p className="text-[11px] text-muted-foreground">
+                  Siste avlesning: {r.last_value}
+                  {r.last_notified_at ? ` · sist varslet ${new Date(r.last_notified_at).toLocaleString("nb-NO")}` : " · ikke varslet enda"}
+                </p>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      <Button size="sm" variant="outline" onClick={add}>
+        <Plus className="h-3.5 w-3.5 mr-1" /> Ny terskel-regel
+      </Button>
     </div>
   );
 }
