@@ -170,7 +170,7 @@ export const getHomeySensorDashboard = createServerFn({ method: "GET" })
         .limit(20000),
       supabaseAdmin
         .from("homey_sensor_state")
-        .select("device_name, zone, kind, last_ts"),
+        .select("device_id, device_name, zone, kind, last_ts"),
     ]);
 
     const events = rows ?? [];
