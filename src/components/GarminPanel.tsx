@@ -559,6 +559,10 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
                   { k: "Igjen", v: today?.steps != null && today?.step_goal ? fmtNum(Math.max(0, today.step_goal - today.steps)) : "—" },
                   { k: "Distanse", v: fmtKm(today?.distance_meters) },
                   { k: "% av mål", v: today?.steps != null && today?.step_goal ? `${Math.round((today.steps / today.step_goal) * 100)}%` : "—" },
+                  { k: "Aktiv tid", v: fmtSecondsClock(today?.active_seconds) },
+                  { k: "Høyt aktiv", v: fmtSecondsClock(today?.highly_active_seconds) },
+                  { k: "Stillesittende", v: fmtSecondsClock(today?.sedentary_seconds) },
+                  { k: "Sovende", v: fmtSecondsClock(today?.sleeping_seconds) },
                   { k: "Snitt 7d", v: avgFmt(data?.daily?.slice(-7).map((d) => d.steps), 0) },
                   { k: "Snitt 30d", v: avgFmt(data?.daily?.map((d) => d.steps), 0) },
                 ]}
