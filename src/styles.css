@@ -423,30 +423,30 @@ main .container {
   color: var(--chart-tooltip-text) !important;
 }
 .recharts-default-tooltip * { color: var(--chart-tooltip-text) !important; }
-.recharts-tooltip-label, .recharts-tooltip-item { color: var(--chart-tooltip-text) !important; }
+.recharts-tooltip-label { color: var(--chart-tooltip-text) !important; }
 .recharts-default-legend .recharts-legend-item-text { color: var(--chart-tooltip-text) !important; }
 
-/* 5 farger pr serie (linjer, areal, søyler, dot/scatter) */
-.recharts-layer.recharts-line:nth-of-type(5n+1) .recharts-curve { stroke: var(--chart-series-1) !important; }
-.recharts-layer.recharts-line:nth-of-type(5n+2) .recharts-curve { stroke: var(--chart-series-2) !important; }
-.recharts-layer.recharts-line:nth-of-type(5n+3) .recharts-curve { stroke: var(--chart-series-3) !important; }
-.recharts-layer.recharts-line:nth-of-type(5n+4) .recharts-curve { stroke: var(--chart-series-4) !important; }
-.recharts-layer.recharts-line:nth-of-type(5n+5) .recharts-curve { stroke: var(--chart-series-5) !important; }
-.recharts-layer.recharts-line:nth-of-type(5n+1) .recharts-line-dot { stroke: var(--chart-series-1) !important; fill: var(--chart-series-1) !important; }
-.recharts-layer.recharts-line:nth-of-type(5n+2) .recharts-line-dot { stroke: var(--chart-series-2) !important; fill: var(--chart-series-2) !important; }
-.recharts-layer.recharts-line:nth-of-type(5n+3) .recharts-line-dot { stroke: var(--chart-series-3) !important; fill: var(--chart-series-3) !important; }
-.recharts-layer.recharts-line:nth-of-type(5n+4) .recharts-line-dot { stroke: var(--chart-series-4) !important; fill: var(--chart-series-4) !important; }
-.recharts-layer.recharts-line:nth-of-type(5n+5) .recharts-line-dot { stroke: var(--chart-series-5) !important; fill: var(--chart-series-5) !important; }
-.recharts-layer.recharts-bar:nth-of-type(5n+1) .recharts-rectangle { fill: var(--chart-series-1) !important; }
-.recharts-layer.recharts-bar:nth-of-type(5n+2) .recharts-rectangle { fill: var(--chart-series-2) !important; }
-.recharts-layer.recharts-bar:nth-of-type(5n+3) .recharts-rectangle { fill: var(--chart-series-3) !important; }
-.recharts-layer.recharts-bar:nth-of-type(5n+4) .recharts-rectangle { fill: var(--chart-series-4) !important; }
-.recharts-layer.recharts-bar:nth-of-type(5n+5) .recharts-rectangle { fill: var(--chart-series-5) !important; }
-.recharts-layer.recharts-area:nth-of-type(5n+1) .recharts-curve.recharts-area-area { fill: var(--chart-series-1) !important; }
-.recharts-layer.recharts-area:nth-of-type(5n+2) .recharts-curve.recharts-area-area { fill: var(--chart-series-2) !important; }
-.recharts-layer.recharts-area:nth-of-type(5n+3) .recharts-curve.recharts-area-area { fill: var(--chart-series-3) !important; }
-.recharts-layer.recharts-area:nth-of-type(5n+4) .recharts-curve.recharts-area-area { fill: var(--chart-series-4) !important; }
-.recharts-layer.recharts-area:nth-of-type(5n+5) .recharts-curve.recharts-area-area { fill: var(--chart-series-5) !important; }
+/* 5 farger pr serie. Bruk `of .recharts-*` slik at rutenett/akser ikke forskyver fargene. */
+.recharts-layer.recharts-line:nth-child(5n+1 of .recharts-layer.recharts-line) .recharts-curve { stroke: var(--chart-series-1) !important; }
+.recharts-layer.recharts-line:nth-child(5n+2 of .recharts-layer.recharts-line) .recharts-curve { stroke: var(--chart-series-2) !important; }
+.recharts-layer.recharts-line:nth-child(5n+3 of .recharts-layer.recharts-line) .recharts-curve { stroke: var(--chart-series-3) !important; }
+.recharts-layer.recharts-line:nth-child(5n+4 of .recharts-layer.recharts-line) .recharts-curve { stroke: var(--chart-series-4) !important; }
+.recharts-layer.recharts-line:nth-child(5n+5 of .recharts-layer.recharts-line) .recharts-curve { stroke: var(--chart-series-5) !important; }
+.recharts-layer.recharts-line:nth-child(5n+1 of .recharts-layer.recharts-line) .recharts-line-dot { stroke: var(--chart-series-1) !important; fill: var(--chart-series-1) !important; }
+.recharts-layer.recharts-line:nth-child(5n+2 of .recharts-layer.recharts-line) .recharts-line-dot { stroke: var(--chart-series-2) !important; fill: var(--chart-series-2) !important; }
+.recharts-layer.recharts-line:nth-child(5n+3 of .recharts-layer.recharts-line) .recharts-line-dot { stroke: var(--chart-series-3) !important; fill: var(--chart-series-3) !important; }
+.recharts-layer.recharts-line:nth-child(5n+4 of .recharts-layer.recharts-line) .recharts-line-dot { stroke: var(--chart-series-4) !important; fill: var(--chart-series-4) !important; }
+.recharts-layer.recharts-line:nth-child(5n+5 of .recharts-layer.recharts-line) .recharts-line-dot { stroke: var(--chart-series-5) !important; fill: var(--chart-series-5) !important; }
+.recharts-layer.recharts-bar:nth-child(5n+1 of .recharts-layer.recharts-bar) .recharts-rectangle { fill: var(--chart-series-1) !important; }
+.recharts-layer.recharts-bar:nth-child(5n+2 of .recharts-layer.recharts-bar) .recharts-rectangle { fill: var(--chart-series-2) !important; }
+.recharts-layer.recharts-bar:nth-child(5n+3 of .recharts-layer.recharts-bar) .recharts-rectangle { fill: var(--chart-series-3) !important; }
+.recharts-layer.recharts-bar:nth-child(5n+4 of .recharts-layer.recharts-bar) .recharts-rectangle { fill: var(--chart-series-4) !important; }
+.recharts-layer.recharts-bar:nth-child(5n+5 of .recharts-layer.recharts-bar) .recharts-rectangle { fill: var(--chart-series-5) !important; }
+.recharts-layer.recharts-area:nth-child(5n+1 of .recharts-layer.recharts-area) .recharts-curve.recharts-area-area { fill: var(--chart-series-1) !important; }
+.recharts-layer.recharts-area:nth-child(5n+2 of .recharts-layer.recharts-area) .recharts-curve.recharts-area-area { fill: var(--chart-series-2) !important; }
+.recharts-layer.recharts-area:nth-child(5n+3 of .recharts-layer.recharts-area) .recharts-curve.recharts-area-area { fill: var(--chart-series-3) !important; }
+.recharts-layer.recharts-area:nth-child(5n+4 of .recharts-layer.recharts-area) .recharts-curve.recharts-area-area { fill: var(--chart-series-4) !important; }
+.recharts-layer.recharts-area:nth-child(5n+5 of .recharts-layer.recharts-area) .recharts-curve.recharts-area-area { fill: var(--chart-series-5) !important; }
 
 /* Forklaring (legend) — fargeikon må følge samme serie-fargene som søyler/linjer
    slik at endringer i Innstillinger → Graf-utseende reflekteres både på grafen og
