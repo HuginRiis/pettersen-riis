@@ -279,6 +279,78 @@ export function HomeySensorDashboard() {
             </div>
           </div>
 
+          {/* Door + lock dedicated chart */}
+          <div className="rounded-md border border-border bg-background/40 p-3">
+            <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground mb-2 flex items-center gap-1.5">
+              <Lock className="h-3 w-3" /> Dør & lås over perioden
+            </div>
+            <div className="h-48">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={data.daily.length > 1 ? data.daily : data.hourly.map((h) => ({ label: String(h.hour).padStart(2, "0"), door: h.door, lock: h.lock }))}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis dataKey="label" stroke="hsl(var(--muted-foreground))" fontSize={10} />
+                  <YAxis stroke="hsl(var(--muted-foreground))" fontSize={10} />
+                  <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", fontSize: 11 }} />
+                  <Legend wrapperStyle={{ fontSize: 10 }} />
+                  <Line type="monotone" dataKey="door" stroke="#6a8caf" strokeWidth={2} dot={{ r: 2 }} name="Dør" />
+                  <Line type="monotone" dataKey="lock" stroke="#c97b4a" strokeWidth={2} dot={{ r: 2 }} name="Lås" />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Top 5 rooms + inactive motion sensors */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="rounded-md border border-border bg-background/40 p-3">
+              <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground mb-2 flex items-center gap-1.5">
+                <MapPin className="h-3 w-3" /> Mest aktive rom (topp 5)
+              </div>
+              {data.topRooms.length === 0 ? (
+                <div className="text-[11px] text-muted-foreground italic">Ingen aktivitet i perioden.</div>
+              ) : (
+                <ol className="space-y-1">
+                  {data.topRooms.map((r, i) => {
+                    const max = data.topRooms[0].count || 1;
+                    return (
+                      <li key={r.zone} className="flex items-center gap-2 text-[12px]">
+                        <span className="w-4 text-muted-foreground tabular-nums">{i + 1}.</span>
+                        <span className="flex-1 truncate text-foreground">{r.zone}</span>
+                        <div className="flex-1 h-1.5 rounded bg-border/40 overflow-hidden">
+                          <div className="h-full bg-primary/60" style={{ width: `${(r.count / max) * 100}%` }} />
+                        </div>
+                        <span className="tabular-nums text-primary w-10 text-right">{r.count}</span>
+                      </li>
+                    );
+                  })}
+                </ol>
+              )}
+            </div>
+
+            <div className="rounded-md border border-border bg-background/40 p-3">
+              <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground mb-2 flex items-center gap-1.5">
+                <EyeOff className="h-3 w-3" /> Stille sensorer (ingen bevegelse 7+ dager)
+              </div>
+              {data.inactiveMotion.length === 0 ? (
+                <div className="text-[11px] text-muted-foreground italic">Alle bevegelsessensorer har vært aktive siste 7 dager.</div>
+              ) : (
+                <ul className="space-y-1 text-[11px]">
+                  {data.inactiveMotion.map((s) => (
+                    <li key={s.device_name} className="flex items-center justify-between gap-2">
+                      <span className="truncate">
+                        <span className="text-foreground">{s.device_name}</span>
+                        {s.zone && <span className="text-muted-foreground"> · {s.zone}</span>}
+                      </span>
+                      <span className="text-amber-400 tabular-nums whitespace-nowrap">
+                        {s.last_ts ? `${s.days} d` : "aldri"}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+
+
           {/* Smart insights - collapsible, default closed */}
           <div className="rounded-md border border-border bg-background/40">
             <button
