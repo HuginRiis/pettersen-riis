@@ -107,6 +107,46 @@ function stressLevel(n?: number | null): string {
   if (n < 75) return "Medium";
   return "Høyt";
 }
+function fmtMinOfDay(mins?: number | null): string {
+  if (mins == null) return "—";
+  const m = ((mins % 1440) + 1440) % 1440;
+  return `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
+}
+function fmtClock(iso?: string | null): string {
+  if (!iso) return "—";
+  try { return new Date(iso).toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit" }); } catch { return "—"; }
+}
+function fmtSecondsClock(sec?: number | null): string {
+  if (!sec || sec <= 0) return "—";
+  const h = Math.floor(sec / 3600); const m = Math.floor((sec % 3600) / 60);
+  if (h === 0) return `${m}m`;
+  return `${h}t ${m}m`;
+}
+function fmtSkinTemp(c?: number | null): string {
+  if (c == null) return "—";
+  const sign = c > 0 ? "+" : "";
+  return `${sign}${c.toFixed(1)} °C`;
+}
+const SLEEP_FEEDBACK_NB: Record<string, string> = {
+  NO_CHANGE_NO_ADJUSTMENTS: "Stabilt — ingen justeringer",
+  NO_CHANGE: "Ingen endring",
+  INCREASE_SLEEP_NEED: "Anbefaler mer søvn",
+  DECREASE_SLEEP_NEED: "Anbefaler mindre søvn",
+};
+const HRV_STATUS_NB: Record<string, string> = {
+  BALANCED: "I balanse",
+  UNBALANCED: "Ubalansert",
+  LOW: "Lav",
+  POOR: "Dårlig",
+  NONE: "Ingen data",
+};
+const ALIGNMENT_NB: Record<string, string> = {
+  ON_TIME: "På sporet",
+  EARLY: "Tidlig",
+  LATE: "Sen",
+  BEHIND: "På etterskudd",
+  AHEAD: "Foran skjema",
+};
 
 type ChartPeriod = "today" | "yesterday" | "thisWeek" | "lastWeek" | "last30" | "thisMonth";
 
