@@ -299,10 +299,16 @@ function VakttarnetPage() {
           <Panel
             title="Kameraer — siste bilde"
             icon={<Camera size={14} />}
-            subtitle="Siste snapshot fra Eufy-kameraer (via Homey) og Netatmo dørklokke"
+            subtitle="Siste event-snapshot fra Eufy-kameraer (via Homey) og Netatmo dørklokke"
+            collapsible
+            defaultOpen={true}
           >
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <HomeyCameraStrip match="eufy" label="Eufy" />
+              <HomeyCameraStrip match="hage" label="Hage" />
+              <HomeyCameraStrip match="mot alle bilene" label="Mot alle bilene" />
+              <HomeyCameraStrip match="mot gul nabo" label="Mot gul nabo" />
+              <HomeyCameraStrip match="ved soverom" label="Ved soverom" />
+              <HomeyCameraStrip match="langs garasjen" label="Langs garasjen" />
               <TollnesCameraStrip cameraMatch="tollnes" label="Netatmo Tollnes" intervalMs={10000} />
             </div>
           </Panel>

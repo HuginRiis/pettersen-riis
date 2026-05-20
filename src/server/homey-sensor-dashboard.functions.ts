@@ -402,15 +402,25 @@ export const saveHomeySensorHistorySettingsFn = createServerFn({ method: "POST" 
 // Hero-status for vakttårnet: siste dør lukket + siste sensor
 // ============================================================
 
+export type OutdoorMotionItem = {
+  ts: string;
+  source: "sensor" | "camera";
+  label: string;
+  zone: string | null;
+  detail: string | null;
+};
+
 export type VakttarnetHeroStatus = {
   lastDoorClose: { ts: string; device_name: string; zone: string | null; kind: string } | null;
   lastSensor: { ts: string; device_name: string; zone: string | null; kind: string; event_type: string } | null;
   lastMotionRoom: { ts: string; device_name: string; zone: string | null } | null;
+  outdoorMotion: OutdoorMotionItem[];
 };
 
 export const getVakttarnetHeroStatus = createServerFn({ method: "GET" }).handler(
   async (): Promise<VakttarnetHeroStatus> => {
-    const [doorRes, sensorRes, motionRes] = await Promise.all([
+    const sinceIso = new Date(Date.now() - 24 * 3600_000).toISOString();
+    const [doorRes, sensorRes, motionRes, outdoorSensorRes, outdoorCamRes] = await Promise.all([
       supabaseAdmin
         .from("homey_sensor_events")
         .select("ts, device_name, zone, kind")
@@ -428,14 +438,51 @@ export const getVakttarnetHeroStatus = createServerFn({ method: "GET" }).handler
         .eq("event_type", "motion_on")
         .order("ts", { ascending: false })
         .limit(1),
+      supabaseAdmin
+        .from("homey_sensor_events")
+        .select("ts, device_name, zone")
+        .eq("event_type", "motion_on")
+        .ilike("zone", "%ute%")
+        .gte("ts", sinceIso)
+        .order("ts", { ascending: false })
+        .limit(8),
+      supabaseAdmin
+        .from("vakttarn_events")
+        .select("detected_at, camera, category")
+        .gte("detected_at", sinceIso)
+        .order("detected_at", { ascending: false })
+        .limit(8),
     ]);
     const d = doorRes.data?.[0];
     const s = sensorRes.data?.[0];
     const m = motionRes.data?.[0];
+
+    const outdoor: OutdoorMotionItem[] = [];
+    for (const r of outdoorSensorRes.data ?? []) {
+      outdoor.push({
+        ts: r.ts,
+        source: "sensor",
+        label: r.device_name ?? "Sensor",
+        zone: r.zone,
+        detail: r.zone,
+      });
+    }
+    for (const r of outdoorCamRes.data ?? []) {
+      outdoor.push({
+        ts: r.detected_at,
+        source: "camera",
+        label: r.camera ?? "Kamera",
+        zone: r.camera,
+        detail: r.category ?? null,
+      });
+    }
+    outdoor.sort((a, b) => (a.ts < b.ts ? 1 : -1));
+
     return {
       lastDoorClose: d ? { ts: d.ts, device_name: d.device_name ?? "", zone: d.zone, kind: d.kind } : null,
       lastSensor: s ? { ts: s.ts, device_name: s.device_name ?? "", zone: s.zone, kind: s.kind, event_type: s.event_type } : null,
       lastMotionRoom: m ? { ts: m.ts, device_name: m.device_name ?? "", zone: m.zone } : null,
+      outdoorMotion: outdoor.slice(0, 5),
     };
   },
 );
