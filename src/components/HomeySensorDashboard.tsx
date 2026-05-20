@@ -185,6 +185,7 @@ export function HomeySensorDashboard() {
   const [backfilling, setBackfilling] = useState<string | null>(null);
   const [backfillMsg, setBackfillMsg] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const [detail, setDetail] = useState<DetailQuery>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -292,7 +293,15 @@ export function HomeySensorDashboard() {
         <>
           {/* Siste rom med bevegelse — fremhevet boks */}
           {data.lastMotion && (
-            <div className="rounded-lg border border-emerald-400/40 bg-gradient-to-br from-emerald-400/10 via-emerald-400/5 to-transparent p-4 flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setDetail({
+                title: `Bevegelse i ${data.lastMotion?.zone ?? "rommet"}`,
+                eventTypes: ["motion_on"],
+                zone: data.lastMotion?.zone ?? undefined,
+              })}
+              className="w-full text-left rounded-lg border border-emerald-400/40 bg-gradient-to-br from-emerald-400/10 via-emerald-400/5 to-transparent p-4 flex items-center gap-3 hover:border-emerald-400/70 transition"
+            >
               <MapPin className="h-6 w-6 text-emerald-400 shrink-0" />
               <div className="flex-1 min-w-0">
                 <div className="text-[10px] uppercase tracking-[0.25em] text-emerald-300/80">Siste rom med bevegelse</div>
@@ -303,29 +312,59 @@ export function HomeySensorDashboard() {
                   {data.lastMotion.device} · {ago(data.lastMotion.ts)}
                 </div>
               </div>
-            </div>
+            </button>
           )}
 
           {/* KPI grid */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
 
-            <Kpi icon={Activity} label="Bevegelser" value={data.totals.motion} tone="primary" />
+            <Kpi
+              icon={Activity}
+              label="Bevegelser"
+              value={data.totals.motion}
+              tone="primary"
+              onClick={() => setDetail({ title: "Bevegelser", eventTypes: ["motion_on"] })}
+            />
             <Kpi
               icon={MapPin}
               label="Mest aktivt"
               value={data.topRoom?.zone ?? "—"}
               sub={data.topRoom ? `${data.topRoom.count} hendelser` : undefined}
               tone="success"
+              onClick={data.topRoom ? () => setDetail({
+                title: `Hendelser i ${data.topRoom!.zone}`,
+                zone: data.topRoom!.zone,
+              }) : undefined}
             />
             <Kpi
               icon={Clock}
               label="Siste bevegelse"
               value={data.lastMotion ? ago(data.lastMotion.ts) : "—"}
               sub={data.lastMotion ? `${data.lastMotion.zone ?? ""} · ${data.lastMotion.device}` : undefined}
+              onClick={() => setDetail({ title: "Siste bevegelser", eventTypes: ["motion_on"] })}
             />
-            <Kpi icon={DoorOpen} label="Døråpninger" value={data.totals.door_open} sub={`Lukket: ${data.totals.door_close}`} />
-            <Kpi icon={Unlock} label="Lås opp" value={data.totals.unlocked} sub={`Låst: ${data.totals.locked}`} tone="warn" />
-            <Kpi icon={DoorOpen} label="Vindusåpninger" value={data.totals.window_open} sub={`Lukket: ${data.totals.window_close}`} />
+            <Kpi
+              icon={DoorOpen}
+              label="Døråpninger"
+              value={data.totals.door_open}
+              sub={`Lukket: ${data.totals.door_close}`}
+              onClick={() => setDetail({ title: "Dør-hendelser", eventTypes: ["door_open", "door_close"] })}
+            />
+            <Kpi
+              icon={Unlock}
+              label="Lås opp"
+              value={data.totals.unlocked}
+              sub={`Låst: ${data.totals.locked}`}
+              tone="warn"
+              onClick={() => setDetail({ title: "Lås-hendelser", eventTypes: ["locked", "unlocked"] })}
+            />
+            <Kpi
+              icon={DoorOpen}
+              label="Vindusåpninger"
+              value={data.totals.window_open}
+              sub={`Lukket: ${data.totals.window_close}`}
+              onClick={() => setDetail({ title: "Vindus-hendelser", eventTypes: ["window_open", "window_close", "open", "close"] })}
+            />
             <Kpi
               icon={data.trend.deltaPct >= 0 ? TrendingUp : TrendingDown}
               label="vs forrige periode"
