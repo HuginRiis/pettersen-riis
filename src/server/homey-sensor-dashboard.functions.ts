@@ -6,6 +6,7 @@ import {
   saveSummaryConfig,
   sendHomeySensorSummaryTest,
 } from "./homey-sensor-summary.server";
+import { backfillHomeySensorHistory } from "./homey-sensor-backfill.server";
 
 export type SensorRange = "today" | "yesterday" | "week" | "last7";
 
