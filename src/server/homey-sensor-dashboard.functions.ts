@@ -243,6 +243,7 @@ export const getHomeySensorDashboard = createServerFn({ method: "GET" })
     }
     const byRoom = Array.from(roomMap.values()).sort((a, b) => b.total - a.total);
     const topRoom = byRoom[0] ? { zone: byRoom[0].zone, count: byRoom[0].total } : null;
+    const topRooms = byRoom.slice(0, 5).map((r) => ({ zone: r.zone, count: r.total }));
 
     // Last motion
     const lastMotionEv = events.find((e) => e.event_type === "motion_on");
@@ -265,6 +266,35 @@ export const getHomeySensorDashboard = createServerFn({ method: "GET" })
         last_ts: r.last_ts,
       }))
       .sort((a, b) => a.last_ts.localeCompare(b.last_ts))
+      .slice(0, 10);
+
+    // Motion sensors with no motion in 7 days (uses last event of type motion_on)
+    const motionStates = (stateRows ?? []).filter((r) => r.kind === "motion");
+    // For motion we want last *transition to true*. Use homey_sensor_events most recent motion_on per device.
+    const { data: lastMotionRows } = await supabaseAdmin
+      .from("homey_sensor_events")
+      .select("device_id, device_name, zone, ts")
+      .eq("event_type", "motion_on")
+      .gte("ts", new Date(Date.now() - 60 * 86400000).toISOString())
+      .order("ts", { ascending: false })
+      .limit(2000);
+    const lastMotionByDevice = new Map<string, string>();
+    for (const r of lastMotionRows ?? []) {
+      if (!lastMotionByDevice.has(r.device_id)) lastMotionByDevice.set(r.device_id, r.ts);
+    }
+    const allMotionDevices = await supabaseAdmin
+      .from("homey_sensor_state")
+      .select("device_id, device_name, zone")
+      .eq("kind", "motion");
+    const inactiveMotion = (allMotionDevices.data ?? [])
+      .map((d) => {
+        const lastTs = lastMotionByDevice.get(d.device_id) ?? null;
+        const ts = lastTs ?? motionStates.find((s) => s.device_id === d.device_id)?.last_ts ?? null;
+        const days = ts ? Math.floor((Date.now() - new Date(ts).getTime()) / 86400000) : 999;
+        return { device_name: d.device_name || "Ukjent", zone: d.zone, last_ts: ts ?? "", days };
+      })
+      .filter((d) => d.days >= 7)
+      .sort((a, b) => b.days - a.days)
       .slice(0, 10);
 
     // Anomalies: detect hours where count > 2x avg of non-zero hours
