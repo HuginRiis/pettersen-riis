@@ -442,7 +442,15 @@ export function HomeySensorDashboard() {
               </div>
               <div className="h-56">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={data.byRoom.slice(0, 10)} layout="vertical">
+                  <BarChart
+                    data={data.byRoom.slice(0, 10)}
+                    layout="vertical"
+                    onClick={(e: any) => {
+                      const zone = e?.activePayload?.[0]?.payload?.zone;
+                      if (zone) setDetail({ title: `Hendelser i ${zone}`, zone });
+                    }}
+                    style={{ cursor: "pointer" }}
+                  >
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis type="number" stroke="hsl(var(--muted-foreground))" fontSize={10} />
                     <YAxis type="category" dataKey="zone" stroke="hsl(var(--muted-foreground))" fontSize={10} width={80} />
