@@ -681,11 +681,14 @@ export type Database = {
           high_rhr_bpm: number
           id: string
           low_sleep_hours: number
+          no_sync_check_time: string
+          no_sync_hours: number
           notified_keys: string[]
           notify_compare: boolean
           notify_daily: boolean
           notify_high_resting_hr: boolean
           notify_low_sleep: boolean
+          notify_no_sync: boolean
           notify_step_goal: boolean
           recipient: string
           sender_label: string
@@ -703,11 +706,14 @@ export type Database = {
           high_rhr_bpm?: number
           id?: string
           low_sleep_hours?: number
+          no_sync_check_time?: string
+          no_sync_hours?: number
           notified_keys?: string[]
           notify_compare?: boolean
           notify_daily?: boolean
           notify_high_resting_hr?: boolean
           notify_low_sleep?: boolean
+          notify_no_sync?: boolean
           notify_step_goal?: boolean
           recipient?: string
           sender_label?: string
@@ -725,11 +731,14 @@ export type Database = {
           high_rhr_bpm?: number
           id?: string
           low_sleep_hours?: number
+          no_sync_check_time?: string
+          no_sync_hours?: number
           notified_keys?: string[]
           notify_compare?: boolean
           notify_daily?: boolean
           notify_high_resting_hr?: boolean
           notify_low_sleep?: boolean
+          notify_no_sync?: boolean
           notify_step_goal?: boolean
           recipient?: string
           sender_label?: string
