@@ -56,6 +56,13 @@ export type HomeySensorSummarySettings = {
 };
 
 export type { HomeySensorHistorySettings };
+export type SensorEventDetail = {
+  ts: string;
+  device_name: string | null;
+  zone: string | null;
+  kind: string;
+  event_type: string;
+};
 
 const RANGE = z.enum(["today", "yesterday", "week", "last7"]);
 
