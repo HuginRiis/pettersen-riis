@@ -12,6 +12,7 @@ import {
 import { Wallet, Home, TrendingDown, Building2, Loader2, Check, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { usePersistedState } from "@/hooks/use-persisted-state";
+import { usePerUserPersistedState } from "@/hooks/use-per-user-persisted-state";
 import {
   upsertOkonomiAccount,
   type ImportedAccount,
@@ -101,7 +102,7 @@ export function OkonomiAccountsTab({
   }, [txns, currentY, filterYear]);
 
   const upsert = useServerFn(upsertOkonomiAccount);
-  const [openId, setOpenId] = useState<string | null>(null);
+  const [openId, setOpenId] = usePerUserPersistedState<string | null>("okonomi:accounts:openId", null);
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const grouped = useMemo(() => {

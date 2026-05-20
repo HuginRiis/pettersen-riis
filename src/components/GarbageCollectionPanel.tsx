@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { usePerUserPersistedState } from "@/hooks/use-per-user-persisted-state";
 import { Trash2, Bell, BellOff, Loader2, MapPin, Settings, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -89,7 +90,8 @@ export function GarbageCollectionPanel() {
   const [data, setData] = useState<Overview | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [addrEdit, setAddrEdit] = useState(false);
+  const [addrEdit, setAddrEdit] = usePerUserPersistedState<boolean>("garbage:addrEdit", false);
+  const [prefsOpen, setPrefsOpen] = usePerUserPersistedState<boolean>("garbage:prefs", false);
   const [showAll, setShowAll] = useState(false);
   const [addrForm, setAddrForm] = useState({
     address_text: "",
@@ -246,7 +248,7 @@ export function GarbageCollectionPanel() {
           </button>
         )}
 
-        <Collapsible className="mt-5 border-t border-border/40 pt-4">
+        <Collapsible open={prefsOpen} onOpenChange={setPrefsOpen} className="mt-5 border-t border-border/40 pt-4">
           <CollapsibleTrigger asChild>
             <button
               type="button"
