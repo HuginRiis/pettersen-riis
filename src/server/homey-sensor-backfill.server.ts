@@ -142,24 +142,15 @@ export async function backfillHomeySensorHistory(resolution: string): Promise<{
 
       if (events.length === 0) continue;
 
-      // Dedup: fetch existing event timestamps in window for this device
-      const { data: existing } = await supabaseAdmin
+      // Dedup via unique constraint (device_id, ts, event_type)
+      const { error: insErr, count } = await supabaseAdmin
         .from("homey_sensor_events")
-        .select("ts, event_type")
-        .eq("device_id", s.device_id)
-        .gte("ts", new Date(windowStart).toISOString());
-      const existingKeys = new Set(
-        (existing ?? []).map((e) => `${e.ts}|${e.event_type}`),
-      );
-      const fresh = events.filter((e) => !existingKeys.has(`${e.ts}|${e.event_type}`));
-      if (fresh.length === 0) continue;
-
-      const { error: insErr } = await supabaseAdmin.from("homey_sensor_events").insert(fresh);
+        .upsert(events, { onConflict: "device_id,ts,event_type", ignoreDuplicates: true, count: "exact" });
       if (insErr) {
         errors++;
-        console.error("[homey-backfill] insert", insErr.message);
+        console.error("[homey-backfill] upsert", insErr.message);
       } else {
-        inserted += fresh.length;
+        inserted += count ?? 0;
       }
     } catch (e: any) {
       errors++;
