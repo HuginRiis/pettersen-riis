@@ -11,8 +11,9 @@ import {
 import {
   Activity, DoorOpen, Lock, Unlock, Sun, Moon, AlertTriangle,
   Sparkles, ChevronDown, MapPin, Clock, TrendingUp, TrendingDown,
-  EyeOff, RefreshCw,
+  EyeOff, RefreshCw, AppWindow,
 } from "lucide-react";
+
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid,
   LineChart, Line, Legend,
@@ -196,6 +197,18 @@ export function HomeySensorDashboard() {
   const [backfillMsg, setBackfillMsg] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
   const [detail, setDetail] = useState<DetailQuery>(null);
+  const [activeKinds, setActiveKinds] = useState<Set<"motion" | "door" | "window" | "lock">>(
+    new Set(["motion", "door", "window", "lock"]),
+  );
+  const isOn = (k: "motion" | "door" | "window" | "lock") => activeKinds.has(k);
+  const toggleKind = (k: "motion" | "door" | "window" | "lock") =>
+    setActiveKinds((prev) => {
+      const n = new Set(prev);
+      if (n.has(k)) n.delete(k);
+      else n.add(k);
+      return n;
+    });
+
 
   useEffect(() => {
     let cancelled = false;
@@ -249,6 +262,35 @@ export function HomeySensorDashboard() {
           Innstillinger →
         </a>
       </div>
+
+      {/* Kind filter */}
+      <div className="flex flex-wrap items-center gap-1.5">
+        <span className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground mr-1">Vis:</span>
+        {([
+          { k: "motion" as const, l: "Bevegelse", Icon: Activity },
+          { k: "door" as const, l: "Dør", Icon: DoorOpen },
+          { k: "window" as const, l: "Vindu", Icon: AppWindow },
+          { k: "lock" as const, l: "Lås", Icon: Lock },
+        ]).map(({ k, l, Icon }) => {
+          const on = isOn(k);
+          return (
+            <button
+              key={k}
+              type="button"
+              onClick={() => toggleKind(k)}
+              aria-pressed={on}
+              className={`inline-flex items-center gap-1 text-[10px] uppercase tracking-[0.2em] px-2.5 py-1.5 rounded-md border transition ${
+                on
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-border bg-background/40 text-muted-foreground/60 hover:border-primary/40 line-through decoration-muted-foreground/40"
+              }`}
+            >
+              <Icon className="h-3 w-3" /> {l}
+            </button>
+          );
+        })}
+      </div>
+
 
       {/* Range filter */}
       <div className="flex flex-wrap gap-1.5">
@@ -328,13 +370,15 @@ export function HomeySensorDashboard() {
           {/* KPI grid */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
 
-            <Kpi
-              icon={Activity}
-              label="Bevegelser"
-              value={data.totals.motion}
-              tone="primary"
-              onClick={() => setDetail({ title: "Bevegelser", eventTypes: ["motion_on"] })}
-            />
+            {isOn("motion") && (
+              <Kpi
+                icon={Activity}
+                label="Bevegelser"
+                value={data.totals.motion}
+                tone="primary"
+                onClick={() => setDetail({ title: "Bevegelser", eventTypes: ["motion_on"] })}
+              />
+            )}
             <Kpi
               icon={MapPin}
               label="Mest aktivt"
@@ -346,35 +390,44 @@ export function HomeySensorDashboard() {
                 zone: data.topRoom!.zone,
               }) : undefined}
             />
-            <Kpi
-              icon={Clock}
-              label="Siste bevegelse"
-              value={data.lastMotion ? ago(data.lastMotion.ts) : "—"}
-              sub={data.lastMotion ? `${data.lastMotion.zone ?? ""} · ${data.lastMotion.device}` : undefined}
-              onClick={() => setDetail({ title: "Siste bevegelser", eventTypes: ["motion_on"] })}
-            />
-            <Kpi
-              icon={DoorOpen}
-              label="Døråpninger"
-              value={data.totals.door_open}
-              sub={`Lukket: ${data.totals.door_close}`}
-              onClick={() => setDetail({ title: "Dør-hendelser", eventTypes: ["door_open", "door_close"] })}
-            />
-            <Kpi
-              icon={Unlock}
-              label="Lås opp"
-              value={data.totals.unlocked}
-              sub={`Låst: ${data.totals.locked}`}
-              tone="warn"
-              onClick={() => setDetail({ title: "Lås-hendelser", eventTypes: ["locked", "unlocked"] })}
-            />
-            <Kpi
-              icon={DoorOpen}
-              label="Vindusåpninger"
-              value={data.totals.window_open}
-              sub={`Lukket: ${data.totals.window_close}`}
-              onClick={() => setDetail({ title: "Vindus-hendelser", eventTypes: ["window_open", "window_close", "open", "close"] })}
-            />
+            {isOn("motion") && (
+              <Kpi
+                icon={Clock}
+                label="Siste bevegelse"
+                value={data.lastMotion ? ago(data.lastMotion.ts) : "—"}
+                sub={data.lastMotion ? `${data.lastMotion.zone ?? ""} · ${data.lastMotion.device}` : undefined}
+                onClick={() => setDetail({ title: "Siste bevegelser", eventTypes: ["motion_on"] })}
+              />
+            )}
+            {isOn("door") && (
+              <Kpi
+                icon={DoorOpen}
+                label="Døråpninger"
+                value={data.totals.door_open}
+                sub={`Lukket: ${data.totals.door_close}`}
+                onClick={() => setDetail({ title: "Dør-hendelser", eventTypes: ["door_open", "door_close"] })}
+              />
+            )}
+            {isOn("lock") && (
+              <Kpi
+                icon={Unlock}
+                label="Lås opp"
+                value={data.totals.unlocked}
+                sub={`Låst: ${data.totals.locked}`}
+                tone="warn"
+                onClick={() => setDetail({ title: "Lås-hendelser", eventTypes: ["locked", "unlocked"] })}
+              />
+            )}
+            {isOn("window") && (
+              <Kpi
+                icon={DoorOpen}
+                label="Vindusåpninger"
+                value={data.totals.window_open}
+                sub={`Lukket: ${data.totals.window_close}`}
+                onClick={() => setDetail({ title: "Vindus-hendelser", eventTypes: ["window_open", "window_close", "open", "close"] })}
+              />
+            )}
+
             <Kpi
               icon={data.trend.deltaPct >= 0 ? TrendingUp : TrendingDown}
               label="vs forrige periode"
@@ -424,10 +477,11 @@ export function HomeySensorDashboard() {
                   <YAxis stroke="hsl(var(--muted-foreground))" fontSize={10} />
                   <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", fontSize: 11 }} />
                   <Legend wrapperStyle={{ fontSize: 10 }} />
-                  <Bar dataKey="motion" stackId="a" fill={SENSOR_CHART_COLORS.motion} name="Bevegelse" />
-                  <Bar dataKey="door" stackId="a" fill={SENSOR_CHART_COLORS.door} name="Dør" />
-                  <Bar dataKey="window" stackId="a" fill={SENSOR_CHART_COLORS.window} name="Vindu" />
-                  <Bar dataKey="lock" stackId="a" fill={SENSOR_CHART_COLORS.lock} name="Lås" />
+                  {isOn("motion") && <Bar dataKey="motion" stackId="a" fill={SENSOR_CHART_COLORS.motion} name="Bevegelse" />}
+                  {isOn("door") && <Bar dataKey="door" stackId="a" fill={SENSOR_CHART_COLORS.door} name="Dør" />}
+                  {isOn("window") && <Bar dataKey="window" stackId="a" fill={SENSOR_CHART_COLORS.window} name="Vindu" />}
+                  {isOn("lock") && <Bar dataKey="lock" stackId="a" fill={SENSOR_CHART_COLORS.lock} name="Lås" />}
+
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -455,10 +509,11 @@ export function HomeySensorDashboard() {
                     <XAxis type="number" stroke="hsl(var(--muted-foreground))" fontSize={10} />
                     <YAxis type="category" dataKey="zone" stroke="hsl(var(--muted-foreground))" fontSize={10} width={80} />
                     <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", fontSize: 11 }} />
-                    <Bar dataKey="motion" stackId="a" fill={SENSOR_CHART_COLORS.motion} name="Bevegelse" />
-                    <Bar dataKey="door" stackId="a" fill={SENSOR_CHART_COLORS.door} name="Dør" />
-                    <Bar dataKey="window" stackId="a" fill={SENSOR_CHART_COLORS.window} name="Vindu" />
-                    <Bar dataKey="lock" stackId="a" fill={SENSOR_CHART_COLORS.lock} name="Lås" />
+                    {isOn("motion") && <Bar dataKey="motion" stackId="a" fill={SENSOR_CHART_COLORS.motion} name="Bevegelse" />}
+                    {isOn("door") && <Bar dataKey="door" stackId="a" fill={SENSOR_CHART_COLORS.door} name="Dør" />}
+                    {isOn("window") && <Bar dataKey="window" stackId="a" fill={SENSOR_CHART_COLORS.window} name="Vindu" />}
+                    {isOn("lock") && <Bar dataKey="lock" stackId="a" fill={SENSOR_CHART_COLORS.lock} name="Lås" />}
+
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -489,9 +544,11 @@ export function HomeySensorDashboard() {
                     <YAxis stroke="hsl(var(--muted-foreground))" fontSize={10} />
                     <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", fontSize: 11 }} />
                     <Legend wrapperStyle={{ fontSize: 10 }} />
-                    <Line type="monotone" dataKey="motion" stroke={SENSOR_CHART_COLORS.motion} strokeWidth={2} dot={false} name="Bevegelse" />
-                    <Line type="monotone" dataKey="door" stroke={SENSOR_CHART_COLORS.door} strokeWidth={2} dot={false} name="Dør" />
-                    <Line type="monotone" dataKey="lock" stroke={SENSOR_CHART_COLORS.lock} strokeWidth={2} dot={false} name="Lås" />
+                    {isOn("motion") && <Line type="monotone" dataKey="motion" stroke={SENSOR_CHART_COLORS.motion} strokeWidth={2} dot={false} name="Bevegelse" />}
+                    {isOn("door") && <Line type="monotone" dataKey="door" stroke={SENSOR_CHART_COLORS.door} strokeWidth={2} dot={false} name="Dør" />}
+                    {isOn("window") && <Line type="monotone" dataKey="window" stroke={SENSOR_CHART_COLORS.window} strokeWidth={2} dot={false} name="Vindu" />}
+                    {isOn("lock") && <Line type="monotone" dataKey="lock" stroke={SENSOR_CHART_COLORS.lock} strokeWidth={2} dot={false} name="Lås" />}
+
                   </LineChart>
                 </ResponsiveContainer>
               </div>
@@ -523,8 +580,9 @@ export function HomeySensorDashboard() {
                   <YAxis stroke="hsl(var(--muted-foreground))" fontSize={10} />
                   <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", fontSize: 11 }} />
                   <Legend wrapperStyle={{ fontSize: 10 }} />
-                  <Line type="monotone" dataKey="door" stroke={SENSOR_CHART_COLORS.door} strokeWidth={2} dot={{ r: 2 }} name="Dør" />
-                  <Line type="monotone" dataKey="lock" stroke={SENSOR_CHART_COLORS.lock} strokeWidth={2} dot={{ r: 2 }} name="Lås" />
+                  {isOn("door") && <Line type="monotone" dataKey="door" stroke={SENSOR_CHART_COLORS.door} strokeWidth={2} dot={{ r: 2 }} name="Dør" />}
+                  {isOn("lock") && <Line type="monotone" dataKey="lock" stroke={SENSOR_CHART_COLORS.lock} strokeWidth={2} dot={{ r: 2 }} name="Lås" />}
+
                 </LineChart>
               </ResponsiveContainer>
             </div>
