@@ -142,7 +142,9 @@ export async function pollHomeySensors(): Promise<{
   }
 
   if (events.length > 0) {
-    await supabaseAdmin.from("homey_sensor_events").insert(events);
+    await supabaseAdmin
+      .from("homey_sensor_events")
+      .upsert(events, { onConflict: "device_id,ts,event_type", ignoreDuplicates: true });
   }
   // Upsert state
   await supabaseAdmin
