@@ -2,12 +2,12 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import {
-  type HomeySensorHistorySettings,
   loadSummaryConfig,
   saveSummaryConfig,
   sendHomeySensorSummaryTest,
 } from "./homey-sensor-summary.server";
 import {
+  type HomeySensorHistorySettings,
   backfillHomeySensorHistory,
   loadHomeySensorHistorySettings,
   saveHomeySensorHistorySettings,
