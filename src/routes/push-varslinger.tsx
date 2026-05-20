@@ -416,25 +416,28 @@ function PrefsToggleList({ table, title, getLabel, mdSpan = true }: {
     await supabase.from(table).update({ enabled: !current }).eq("id", id);
     setItems(p => p.map(x => x.id === id ? { ...x, enabled: !current } : x));
   }
-  if (items.length === 0) return null;
   return (
-    <article className={`panel rounded-lg p-4 ${mdSpan ? "md:col-span-2" : ""}`}>
+    <article className="panel rounded-lg p-4">
       <h3 className="text-sm uppercase tracking-wider text-muted-foreground mb-2">{title}</h3>
-      <ul className="space-y-1.5">
-        {items.map(p => (
-          <li key={p.id} className="flex items-center justify-between gap-2 text-sm">
-            <span className="text-foreground truncate">{getLabel(p)}</span>
-            <button
-              onClick={() => toggle(p.id, p.enabled)}
-              className={`px-2 py-1 rounded border text-xs transition flex items-center gap-1.5 shrink-0 ${
-                p.enabled ? "border-primary/60 text-primary" : "border-border text-muted-foreground"
-              }`}
-            >
-              {p.enabled ? <Bell size={12} /> : <BellOff size={12} />} {p.enabled ? "På" : "Av"}
-            </button>
-          </li>
-        ))}
-      </ul>
+      {items.length === 0 ? (
+        <p className="text-xs text-muted-foreground">Ingen regler satt opp ennå.</p>
+      ) : (
+        <ul className="space-y-1.5">
+          {items.map(p => (
+            <li key={p.id} className="flex items-center justify-between gap-2 text-sm">
+              <span className="text-foreground break-words min-w-0 flex-1">{getLabel(p)}</span>
+              <button
+                onClick={() => toggle(p.id, p.enabled)}
+                className={`px-2 py-1 rounded border text-xs transition flex items-center gap-1.5 shrink-0 ${
+                  p.enabled ? "border-primary/60 text-primary" : "border-border text-muted-foreground"
+                }`}
+              >
+                {p.enabled ? <Bell size={12} /> : <BellOff size={12} />} {p.enabled ? "På" : "Av"}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
     </article>
   );
 }
