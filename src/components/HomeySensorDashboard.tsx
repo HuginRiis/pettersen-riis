@@ -505,7 +505,19 @@ export function HomeySensorDashboard() {
             </div>
             <div className="h-48">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={data.daily.length > 1 ? data.daily : data.hourly.map((h) => ({ label: String(h.hour).padStart(2, "0"), door: h.door, lock: h.lock }))}>
+                <LineChart
+                  data={data.daily.length > 1 ? data.daily : data.hourly.map((h) => ({ label: String(h.hour).padStart(2, "0"), hour: h.hour, door: h.door, lock: h.lock }))}
+                  onClick={(e: any) => {
+                    const p = e?.activePayload?.[0]?.payload;
+                    if (!p) return;
+                    if (typeof p.hour === "number") {
+                      setDetail({ title: `Dør & lås kl ${String(p.hour).padStart(2, "0")}:00`, hourOfDay: p.hour, eventTypes: ["door_open", "door_close", "locked", "unlocked"] });
+                    } else if (p.date) {
+                      setDetail({ title: `Dør & lås ${p.label ?? p.date}`, dateStr: p.date, eventTypes: ["door_open", "door_close", "locked", "unlocked"] });
+                    }
+                  }}
+                  style={{ cursor: "pointer" }}
+                >
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis dataKey="label" stroke="hsl(var(--muted-foreground))" fontSize={10} />
                   <YAxis stroke="hsl(var(--muted-foreground))" fontSize={10} />
