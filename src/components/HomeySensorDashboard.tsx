@@ -2,9 +2,11 @@ import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import {
   getHomeySensorDashboard,
+  getHomeySensorEvents,
   backfillHomeySensorHistoryFn,
   type HomeySensorDashboard,
   type SensorRange,
+  type SensorEventDetail,
 } from "@/server/homey-sensor-dashboard.functions";
 import {
   Activity, DoorOpen, Lock, Unlock, Sun, Moon, AlertTriangle,
@@ -15,6 +17,9 @@ import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid,
   LineChart, Line, Legend,
 } from "recharts";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
+} from "@/components/ui/dialog";
 
 const RANGES: { key: SensorRange; label: string }[] = [
   { key: "today", label: "I dag" },
@@ -41,8 +46,10 @@ function ago(iso: string | null): string {
   return `${Math.floor(h / 24)} d siden`;
 }
 
-function Kpi({ icon: Icon, label, value, sub, tone = "primary" }: {
-  icon: any; label: string; value: string | number; sub?: string; tone?: "primary" | "success" | "warn" | "danger";
+function Kpi({ icon: Icon, label, value, sub, tone = "primary", onClick }: {
+  icon: any; label: string; value: string | number; sub?: string;
+  tone?: "primary" | "success" | "warn" | "danger";
+  onClick?: () => void;
 }) {
   const toneCls = {
     primary: "text-primary border-primary/30",
@@ -50,14 +57,120 @@ function Kpi({ icon: Icon, label, value, sub, tone = "primary" }: {
     warn: "text-amber-400 border-amber-400/30",
     danger: "text-destructive border-destructive/30",
   }[tone];
+  const Tag: any = onClick ? "button" : "div";
   return (
-    <div className={`rounded-lg border ${toneCls} bg-card/60 backdrop-blur p-3 flex flex-col gap-1 min-w-0`}>
+    <Tag
+      type={onClick ? "button" : undefined}
+      onClick={onClick}
+      className={`rounded-lg border ${toneCls} bg-card/60 backdrop-blur p-3 flex flex-col gap-1 min-w-0 text-left ${
+        onClick ? "hover:border-current/60 hover:bg-card/80 cursor-pointer transition" : ""
+      }`}
+    >
       <div className="flex items-center gap-1.5 text-[10px] tracking-[0.2em] uppercase text-muted-foreground">
         <Icon className="h-3 w-3" /> <span className="truncate">{label}</span>
       </div>
       <div className={`text-xl sm:text-2xl font-display tabular-nums ${toneCls.split(" ")[0]}`}>{value}</div>
       {sub && <div className="text-[10px] text-muted-foreground truncate">{sub}</div>}
-    </div>
+    </Tag>
+  );
+}
+
+type DetailQuery =
+  | { title: string; eventTypes?: string[]; zone?: string }
+  | null;
+
+function fmtTs(iso: string): string {
+  const d = new Date(iso);
+  return d.toLocaleString("nb-NO", {
+    weekday: "short", day: "2-digit", month: "short",
+    hour: "2-digit", minute: "2-digit", second: "2-digit",
+  });
+}
+
+function eventLabel(et: string): string {
+  switch (et) {
+    case "motion_on": return "Bevegelse oppdaget";
+    case "motion_off": return "Bevegelse stoppet";
+    case "door_open": return "Dør åpnet";
+    case "door_close": return "Dør lukket";
+    case "window_open": return "Vindu åpnet";
+    case "window_close": return "Vindu lukket";
+    case "locked": return "Låst";
+    case "unlocked": return "Låst opp";
+    case "open": return "Åpnet";
+    case "close": return "Lukket";
+    default: return et;
+  }
+}
+
+function SensorEventsDialog({
+  query, range, onClose,
+}: {
+  query: DetailQuery; range: SensorRange; onClose: () => void;
+}) {
+  const fetchEvents = useServerFn(getHomeySensorEvents);
+  const [events, setEvents] = useState<SensorEventDetail[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!query) return;
+    let alive = true;
+    setLoading(true);
+    setEvents([]);
+    fetchEvents({
+      data: {
+        range,
+        eventTypes: query.eventTypes,
+        zone: query.zone,
+        limit: 300,
+      },
+    })
+      .then((r) => { if (alive) setEvents(r.events); })
+      .catch((e) => console.error("[sensor-events]", e))
+      .finally(() => { if (alive) setLoading(false); });
+    return () => { alive = false; };
+  }, [query, range, fetchEvents]);
+
+  return (
+    <Dialog open={!!query} onOpenChange={(o) => { if (!o) onClose(); }}>
+      <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
+        <DialogHeader>
+          <DialogTitle className="text-display tracking-[0.2em] uppercase text-sm">
+            {query?.title ?? "Detaljer"}
+          </DialogTitle>
+          <DialogDescription className="text-[11px]">
+            {events.length > 0 ? `${events.length} hendelser i valgt periode` : (loading ? "Henter…" : "Ingen hendelser i perioden.")}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="overflow-y-auto flex-1 -mx-2 px-2">
+          {loading && events.length === 0 ? (
+            <div className="py-8 text-center text-[11px] text-muted-foreground italic">Henter hendelser…</div>
+          ) : events.length === 0 ? (
+            <div className="py-8 text-center text-[11px] text-muted-foreground italic">Ingen hendelser å vise.</div>
+          ) : (
+            <ul className="space-y-1.5">
+              {events.map((e, i) => (
+                <li
+                  key={`${e.ts}-${i}`}
+                  className="flex items-start gap-3 rounded border border-border/40 bg-background/40 px-3 py-2 text-[12px]"
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-foreground truncate">{eventLabel(e.event_type)}</div>
+                    <div className="text-[11px] text-muted-foreground truncate">
+                      {e.device_name ?? "Ukjent enhet"}
+                      {e.zone && <> · <span className="italic">{e.zone}</span></>}
+                    </div>
+                  </div>
+                  <div className="text-[10px] text-muted-foreground whitespace-nowrap tabular-nums">
+                    {fmtTs(e.ts)}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -72,6 +185,7 @@ export function HomeySensorDashboard() {
   const [backfilling, setBackfilling] = useState<string | null>(null);
   const [backfillMsg, setBackfillMsg] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const [detail, setDetail] = useState<DetailQuery>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -179,7 +293,15 @@ export function HomeySensorDashboard() {
         <>
           {/* Siste rom med bevegelse — fremhevet boks */}
           {data.lastMotion && (
-            <div className="rounded-lg border border-emerald-400/40 bg-gradient-to-br from-emerald-400/10 via-emerald-400/5 to-transparent p-4 flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setDetail({
+                title: `Bevegelse i ${data.lastMotion?.zone ?? "rommet"}`,
+                eventTypes: ["motion_on"],
+                zone: data.lastMotion?.zone ?? undefined,
+              })}
+              className="w-full text-left rounded-lg border border-emerald-400/40 bg-gradient-to-br from-emerald-400/10 via-emerald-400/5 to-transparent p-4 flex items-center gap-3 hover:border-emerald-400/70 transition"
+            >
               <MapPin className="h-6 w-6 text-emerald-400 shrink-0" />
               <div className="flex-1 min-w-0">
                 <div className="text-[10px] uppercase tracking-[0.25em] text-emerald-300/80">Siste rom med bevegelse</div>
@@ -190,29 +312,59 @@ export function HomeySensorDashboard() {
                   {data.lastMotion.device} · {ago(data.lastMotion.ts)}
                 </div>
               </div>
-            </div>
+            </button>
           )}
 
           {/* KPI grid */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
 
-            <Kpi icon={Activity} label="Bevegelser" value={data.totals.motion} tone="primary" />
+            <Kpi
+              icon={Activity}
+              label="Bevegelser"
+              value={data.totals.motion}
+              tone="primary"
+              onClick={() => setDetail({ title: "Bevegelser", eventTypes: ["motion_on"] })}
+            />
             <Kpi
               icon={MapPin}
               label="Mest aktivt"
               value={data.topRoom?.zone ?? "—"}
               sub={data.topRoom ? `${data.topRoom.count} hendelser` : undefined}
               tone="success"
+              onClick={data.topRoom ? () => setDetail({
+                title: `Hendelser i ${data.topRoom!.zone}`,
+                zone: data.topRoom!.zone,
+              }) : undefined}
             />
             <Kpi
               icon={Clock}
               label="Siste bevegelse"
               value={data.lastMotion ? ago(data.lastMotion.ts) : "—"}
               sub={data.lastMotion ? `${data.lastMotion.zone ?? ""} · ${data.lastMotion.device}` : undefined}
+              onClick={() => setDetail({ title: "Siste bevegelser", eventTypes: ["motion_on"] })}
             />
-            <Kpi icon={DoorOpen} label="Døråpninger" value={data.totals.door_open} sub={`Lukket: ${data.totals.door_close}`} />
-            <Kpi icon={Unlock} label="Lås opp" value={data.totals.unlocked} sub={`Låst: ${data.totals.locked}`} tone="warn" />
-            <Kpi icon={DoorOpen} label="Vindusåpninger" value={data.totals.window_open} sub={`Lukket: ${data.totals.window_close}`} />
+            <Kpi
+              icon={DoorOpen}
+              label="Døråpninger"
+              value={data.totals.door_open}
+              sub={`Lukket: ${data.totals.door_close}`}
+              onClick={() => setDetail({ title: "Dør-hendelser", eventTypes: ["door_open", "door_close"] })}
+            />
+            <Kpi
+              icon={Unlock}
+              label="Lås opp"
+              value={data.totals.unlocked}
+              sub={`Låst: ${data.totals.locked}`}
+              tone="warn"
+              onClick={() => setDetail({ title: "Lås-hendelser", eventTypes: ["locked", "unlocked"] })}
+            />
+            <Kpi
+              icon={DoorOpen}
+              label="Vindusåpninger"
+              value={data.totals.window_open}
+              sub={`Lukket: ${data.totals.window_close}`}
+              onClick={() => setDetail({ title: "Vindus-hendelser", eventTypes: ["window_open", "window_close", "open", "close"] })}
+            />
             <Kpi
               icon={data.trend.deltaPct >= 0 ? TrendingUp : TrendingDown}
               label="vs forrige periode"
@@ -452,6 +604,7 @@ export function HomeySensorDashboard() {
           </div>
         </>
       )}
+      <SensorEventsDialog query={detail} range={range} onClose={() => setDetail(null)} />
     </div>
   );
 }

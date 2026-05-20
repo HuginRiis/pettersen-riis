@@ -56,6 +56,13 @@ export type HomeySensorSummarySettings = {
 };
 
 export type { HomeySensorHistorySettings };
+export type SensorEventDetail = {
+  ts: string;
+  device_name: string | null;
+  zone: string | null;
+  kind: string;
+  event_type: string;
+};
 
 const RANGE = z.enum(["today", "yesterday", "week", "last7"]);
 
@@ -397,6 +404,39 @@ export const saveHomeySensorHistorySettingsFn = createServerFn({ method: "POST" 
   .handler(async ({ data }) => {
     return saveHomeySensorHistorySettings(data);
   });
+
+// ============================================================
+// Hendelses-detaljer for KPI-bokser på sensor-dashbord
+// ============================================================
+
+export const getHomeySensorEvents = createServerFn({ method: "GET" })
+  .inputValidator(
+    z.object({
+      range: RANGE.default("today"),
+      eventTypes: z.array(z.string()).min(1).max(10).optional(),
+      zone: z.string().min(1).max(120).optional(),
+      limit: z.number().int().min(1).max(500).default(200),
+    }).parse,
+  )
+  .handler(async ({ data }): Promise<{ events: SensorEventDetail[] }> => {
+    const { start, end } = computeRange(data.range);
+    let q = supabaseAdmin
+      .from("homey_sensor_events")
+      .select("ts, device_name, zone, kind, event_type")
+      .gte("ts", start.toISOString())
+      .lte("ts", end.toISOString())
+      .order("ts", { ascending: false })
+      .limit(data.limit);
+    if (data.eventTypes && data.eventTypes.length > 0) {
+      q = q.in("event_type", data.eventTypes);
+    }
+    if (data.zone) {
+      q = q.eq("zone", data.zone);
+    }
+    const { data: rows } = await q;
+    return { events: (rows ?? []) as SensorEventDetail[] };
+  });
+
 
 // ============================================================
 // Hero-status for vakttårnet: siste dør lukket + siste sensor
