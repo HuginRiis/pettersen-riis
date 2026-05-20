@@ -379,3 +379,21 @@ export const backfillHomeySensorHistoryFn = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     return backfillHomeySensorHistory(data.resolution);
   });
+
+export const getHomeySensorHistorySettings = createServerFn({ method: "GET" }).handler(
+  async (): Promise<HomeySensorHistorySettings> => {
+    return loadHomeySensorHistorySettings();
+  },
+);
+
+export const saveHomeySensorHistorySettingsFn = createServerFn({ method: "POST" })
+  .inputValidator(
+    z.object({
+      enabled: z.boolean().optional(),
+      resolution: z.enum(["lastHour", "last6Hours", "last24Hours", "last7Days", "last31Days"]).optional(),
+      interval_hours: z.number().int().min(1).max(24).optional(),
+    }).parse,
+  )
+  .handler(async ({ data }) => {
+    return saveHomeySensorHistorySettings(data);
+  });
