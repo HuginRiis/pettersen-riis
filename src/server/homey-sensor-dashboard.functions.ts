@@ -34,6 +34,14 @@ export type HomeySensorSettings = {
   dayEnd: string;
 };
 
+export type HomeySensorSummarySettings = {
+  enabled: boolean;
+  recipient: string;
+  hour: number;
+  minute: number;
+  last_sent_date: string | null;
+};
+
 const RANGE = z.enum(["today", "yesterday", "week", "last7"]);
 
 function computeRange(range: SensorRange): { start: Date; end: Date; prevStart: Date; prevEnd: Date } {
