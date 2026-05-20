@@ -177,7 +177,14 @@ export const Route = createFileRoute("/api/public/hooks/agenda-push")({
           } catch (err) {
             console.error("[garmin-thresholds] failed", err);
           }
-          return new Response(JSON.stringify({ ok: true, agenda, checklist, garbage, birthdays, warranty, uv, weather, lightIdle, tibber, metAlerts, mailDelivery, garmin, garminPush, garminThresholds, plants }), {
+          let sensorSummary = { checked: 0, sent: 0, errors: 0, skipped: 0 };
+          try {
+            const smod = await import("@/server/homey-sensor-summary.server");
+            sensorSummary = await smod.processHomeySensorSummary();
+          } catch (err) {
+            console.error("[homey-sensor-summary] failed", err);
+          }
+          return new Response(JSON.stringify({ ok: true, agenda, checklist, garbage, birthdays, warranty, uv, weather, lightIdle, tibber, metAlerts, mailDelivery, garmin, garminPush, garminThresholds, plants, sensorSummary }), {
             headers: { "Content-Type": "application/json" },
           });
         } catch (err) {

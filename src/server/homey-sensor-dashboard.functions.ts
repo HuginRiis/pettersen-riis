@@ -1,6 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import {
+  loadSummaryConfig,
+  saveSummaryConfig,
+  sendHomeySensorSummaryTest,
+} from "./homey-sensor-summary.server";
 
 export type SensorRange = "today" | "yesterday" | "week" | "last7";
 
@@ -32,6 +37,14 @@ export type HomeySensorDashboard = {
 export type HomeySensorSettings = {
   dayStart: string; // "HH:MM"
   dayEnd: string;
+};
+
+export type HomeySensorSummarySettings = {
+  enabled: boolean;
+  recipient: string;
+  hour: number;
+  minute: number;
+  last_sent_date: string | null;
 };
 
 const RANGE = z.enum(["today", "yesterday", "week", "last7"]);
@@ -285,3 +298,32 @@ export const getHomeySensorDashboard = createServerFn({ method: "GET" })
       trend: { current: currentCount, previous: prevCount, deltaPct },
     };
   });
+
+// ============================================================
+// Daily sensor summary push settings
+// ============================================================
+
+export const getHomeySensorSummarySettings = createServerFn({ method: "GET" }).handler(
+  async (): Promise<HomeySensorSummarySettings> => {
+    return loadSummaryConfig();
+  },
+);
+
+export const saveHomeySensorSummarySettings = createServerFn({ method: "POST" })
+  .inputValidator(
+    z.object({
+      enabled: z.boolean().optional(),
+      recipient: z.string().min(1).max(64).optional(),
+      hour: z.number().int().min(0).max(23).optional(),
+      minute: z.number().int().min(0).max(59).optional(),
+    }).parse,
+  )
+  .handler(async ({ data }) => {
+    return saveSummaryConfig(data);
+  });
+
+export const sendHomeySensorSummaryTestPush = createServerFn({ method: "POST" }).handler(
+  async () => {
+    return sendHomeySensorSummaryTest();
+  },
+);

@@ -21,8 +21,9 @@ import { LoginNotificationSettings } from "@/components/LoginNotificationSetting
 import { AppearanceSettingsPanel } from "@/components/AppearanceSettingsPanel";
 import { ChartAppearanceSettingsPanel } from "@/components/ChartAppearanceSettingsPanel";
 import { OkonomiSettingsPanel } from "@/components/OkonomiSettingsPanel";
+import { HomeySensorSettings } from "@/components/HomeySensorSettings";
 import {
-  Bell, BellOff, Calendar, Cake, Trash2, CloudSun, Sun, Lightbulb, ScrollText, ShieldCheck, Lock, ExternalLink, Smartphone, X,
+  Bell, BellOff, Calendar, Cake, Trash2, CloudSun, Sun, Lightbulb, ScrollText, ShieldCheck, Lock, ExternalLink, Smartphone, X, Activity,
 } from "lucide-react";
 import heroImg from "@/assets/got-agenda.jpg";
 
@@ -93,6 +94,7 @@ const TOC_ITEMS: { id: string; label: string; emoji: string }[] = [
   { id: "sec-abonnenter", label: "Enheter", emoji: "📱" },
   { id: "sec-planter", label: "Planter & Trær", emoji: "🌿" },
   { id: "sec-okonomi", label: "Husholdningens hvelv", emoji: "🪙" },
+  { id: "sec-sensor-dashboard", label: "Sensor-dashboard", emoji: "📡" },
 ];
 
 function SettingsTOC() {
@@ -224,6 +226,16 @@ function PushSettingsPage() {
           <LoginNotificationSettings />
         </div>
       </section>
+
+      <section id="sec-sensor-dashboard" className="container mx-auto px-4 pb-4 scroll-mt-24">
+        <div className="panel rounded-lg p-4">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-primary mb-3 flex items-center gap-2">
+            <Activity className="h-4 w-4" /> Sensor-dashboard (Homey) — dag/natt & dagsoppsummering
+          </h2>
+          <HomeySensorSettings />
+        </div>
+      </section>
+
 
 
       <div className="container mx-auto px-4 pb-12 grid md:grid-cols-2 gap-4">
