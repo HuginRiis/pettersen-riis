@@ -477,10 +477,11 @@ export function HomeySensorDashboard() {
                   <YAxis stroke="hsl(var(--muted-foreground))" fontSize={10} />
                   <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", fontSize: 11 }} />
                   <Legend wrapperStyle={{ fontSize: 10 }} />
-                  <Bar dataKey="motion" stackId="a" fill={SENSOR_CHART_COLORS.motion} name="Bevegelse" />
-                  <Bar dataKey="door" stackId="a" fill={SENSOR_CHART_COLORS.door} name="Dør" />
-                  <Bar dataKey="window" stackId="a" fill={SENSOR_CHART_COLORS.window} name="Vindu" />
-                  <Bar dataKey="lock" stackId="a" fill={SENSOR_CHART_COLORS.lock} name="Lås" />
+                  {isOn("motion") && <Bar dataKey="motion" stackId="a" fill={SENSOR_CHART_COLORS.motion} name="Bevegelse" />}
+                  {isOn("door") && <Bar dataKey="door" stackId="a" fill={SENSOR_CHART_COLORS.door} name="Dør" />}
+                  {isOn("window") && <Bar dataKey="window" stackId="a" fill={SENSOR_CHART_COLORS.window} name="Vindu" />}
+                  {isOn("lock") && <Bar dataKey="lock" stackId="a" fill={SENSOR_CHART_COLORS.lock} name="Lås" />}
+
                 </BarChart>
               </ResponsiveContainer>
             </div>
