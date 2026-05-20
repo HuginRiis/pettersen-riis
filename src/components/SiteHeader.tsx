@@ -53,7 +53,8 @@ type RoutePath =
   | "/decibel"
   | "/nettverk"
   | "/roborock"
-  | "/planter";
+  | "/planter"
+  | "/flyradar";
 
 type NavLink = { to: RoutePath; label: string; public?: boolean };
 
@@ -156,6 +157,7 @@ const navLinks: NavLink[] = [
   { to: "/roborock", label: "Roborock" },
   { to: "/planter", label: "Planter & Trær" },
   { to: "/steintavle", label: "Steintavle" },
+  { to: "/flyradar", label: "Flyradar", public: true },
 ];
 
 export function SiteHeader() {
