@@ -197,6 +197,18 @@ export function HomeySensorDashboard() {
   const [backfillMsg, setBackfillMsg] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
   const [detail, setDetail] = useState<DetailQuery>(null);
+  const [activeKinds, setActiveKinds] = useState<Set<"motion" | "door" | "window" | "lock">>(
+    new Set(["motion", "door", "window", "lock"]),
+  );
+  const isOn = (k: "motion" | "door" | "window" | "lock") => activeKinds.has(k);
+  const toggleKind = (k: "motion" | "door" | "window" | "lock") =>
+    setActiveKinds((prev) => {
+      const n = new Set(prev);
+      if (n.has(k)) n.delete(k);
+      else n.add(k);
+      return n;
+    });
+
 
   useEffect(() => {
     let cancelled = false;
