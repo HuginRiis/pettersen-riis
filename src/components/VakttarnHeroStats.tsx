@@ -25,7 +25,7 @@ export function VakttarnHeroStats() {
     return () => { alive = false; clearInterval(i); };
   }, [fetchFn]);
   if (!s) return null;
-  const outdoor = s.outdoorMotion ?? [];
+  const outdoor = (s.outdoorMotion ?? []).slice(0, 1);
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[11px] md:text-xs text-foreground/90 drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
