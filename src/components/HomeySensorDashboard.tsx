@@ -137,6 +137,30 @@ export function HomeySensorDashboard() {
         ))}
       </div>
 
+      {/* Backfill controls */}
+      <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
+        <span className="uppercase tracking-[0.2em] text-muted-foreground">Hent fra Homey:</span>
+        {([
+          { k: "last24Hours", l: "24 t" },
+          { k: "last7Days", l: "7 d" },
+          { k: "last31Days", l: "31 d" },
+        ] as const).map((b) => (
+          <button
+            key={b.k}
+            type="button"
+            disabled={!!backfilling}
+            onClick={() => handleBackfill(b.k)}
+            className="px-2 py-1 rounded border border-border bg-background/40 text-muted-foreground hover:border-primary/40 hover:text-primary disabled:opacity-50 inline-flex items-center gap-1"
+          >
+            <RefreshCw className={`h-3 w-3 ${backfilling === b.k ? "animate-spin" : ""}`} />
+            {b.l}
+          </button>
+        ))}
+        {backfillMsg && <span className="text-muted-foreground italic">{backfillMsg}</span>}
+      </div>
+
+
+
 
       {loading && !data && (
         <div className="text-[11px] text-muted-foreground italic py-8 text-center">
