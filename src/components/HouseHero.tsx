@@ -224,6 +224,8 @@ export function HouseHero({
             <span className="inline-block w-8 h-px bg-primary/60" />
           </div>
         )}
+        {extraStatus && <div className="mt-3">{extraStatus}</div>}
+
       </div>
 
       <HouseHeroStyles />
