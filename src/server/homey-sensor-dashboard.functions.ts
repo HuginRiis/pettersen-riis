@@ -415,26 +415,47 @@ export const getHomeySensorEvents = createServerFn({ method: "GET" })
       range: RANGE.default("today"),
       eventTypes: z.array(z.string()).min(1).max(10).optional(),
       zone: z.string().min(1).max(120).optional(),
+      kind: z.enum(["motion", "door", "window", "lock"]).optional(),
+      hourOfDay: z.number().int().min(0).max(23).optional(),
+      dateStr: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
       limit: z.number().int().min(1).max(500).default(200),
     }).parse,
   )
   .handler(async ({ data }): Promise<{ events: SensorEventDetail[] }> => {
     const { start, end } = computeRange(data.range);
+    const needsPostFilter = data.hourOfDay !== undefined || !!data.dateStr;
     let q = supabaseAdmin
       .from("homey_sensor_events")
       .select("ts, device_name, zone, kind, event_type")
       .gte("ts", start.toISOString())
       .lte("ts", end.toISOString())
       .order("ts", { ascending: false })
-      .limit(data.limit);
+      .limit(needsPostFilter ? 5000 : data.limit);
     if (data.eventTypes && data.eventTypes.length > 0) {
       q = q.in("event_type", data.eventTypes);
     }
     if (data.zone) {
       q = q.eq("zone", data.zone);
     }
+    if (data.kind) {
+      q = q.eq("kind", data.kind);
+    }
     const { data: rows } = await q;
-    return { events: (rows ?? []) as SensorEventDetail[] };
+    let events = (rows ?? []) as SensorEventDetail[];
+    if (data.hourOfDay !== undefined) {
+      const h = data.hourOfDay;
+      events = events.filter((e) => new Date(e.ts).getHours() === h);
+    }
+    if (data.dateStr) {
+      events = events.filter((e) => {
+        const d = new Date(e.ts);
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, "0");
+        const day = String(d.getDate()).padStart(2, "0");
+        return `${y}-${m}-${day}` === data.dateStr;
+      });
+    }
+    return { events: events.slice(0, data.limit) };
   });
 
 

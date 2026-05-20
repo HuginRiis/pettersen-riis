@@ -76,7 +76,14 @@ function Kpi({ icon: Icon, label, value, sub, tone = "primary", onClick }: {
 }
 
 type DetailQuery =
-  | { title: string; eventTypes?: string[]; zone?: string }
+  | {
+      title: string;
+      eventTypes?: string[];
+      zone?: string;
+      kind?: "motion" | "door" | "window" | "lock";
+      hourOfDay?: number;
+      dateStr?: string;
+    }
   | null;
 
 function fmtTs(iso: string): string {
@@ -122,6 +129,9 @@ function SensorEventsDialog({
         range,
         eventTypes: query.eventTypes,
         zone: query.zone,
+        kind: query.kind,
+        hourOfDay: query.hourOfDay,
+        dateStr: query.dateStr,
         limit: 300,
       },
     })
@@ -396,7 +406,19 @@ export function HomeySensorDashboard() {
             </div>
             <div className="h-48">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={data.hourly}>
+                <BarChart
+                  data={data.hourly}
+                  onClick={(e: any) => {
+                    const hour = e?.activePayload?.[0]?.payload?.hour;
+                    if (typeof hour === "number") {
+                      setDetail({
+                        title: `Hendelser kl ${String(hour).padStart(2, "0")}:00–${String(hour).padStart(2, "0")}:59`,
+                        hourOfDay: hour,
+                      });
+                    }
+                  }}
+                  style={{ cursor: "pointer" }}
+                >
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis dataKey="hour" stroke="hsl(var(--muted-foreground))" fontSize={10} />
                   <YAxis stroke="hsl(var(--muted-foreground))" fontSize={10} />
@@ -409,6 +431,7 @@ export function HomeySensorDashboard() {
                 </BarChart>
               </ResponsiveContainer>
             </div>
+            <div className="text-[10px] text-muted-foreground italic mt-1">Trykk på en stolpe for å se hendelsene i den timen.</div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
@@ -419,7 +442,15 @@ export function HomeySensorDashboard() {
               </div>
               <div className="h-56">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={data.byRoom.slice(0, 10)} layout="vertical">
+                  <BarChart
+                    data={data.byRoom.slice(0, 10)}
+                    layout="vertical"
+                    onClick={(e: any) => {
+                      const zone = e?.activePayload?.[0]?.payload?.zone;
+                      if (zone) setDetail({ title: `Hendelser i ${zone}`, zone });
+                    }}
+                    style={{ cursor: "pointer" }}
+                  >
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis type="number" stroke="hsl(var(--muted-foreground))" fontSize={10} />
                     <YAxis type="category" dataKey="zone" stroke="hsl(var(--muted-foreground))" fontSize={10} width={80} />
@@ -440,9 +471,21 @@ export function HomeySensorDashboard() {
               </div>
               <div className="h-56">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={data.daily.length > 1 ? data.daily : data.hourly.map((h) => ({ label: String(h.hour).padStart(2, "0"), motion: h.motion, door: h.door, lock: h.lock, window: h.window }))}>
+                  <LineChart
+                    data={data.daily.length > 1 ? data.daily : data.hourly.map((h) => ({ label: String(h.hour).padStart(2, "0"), hour: h.hour, motion: h.motion, door: h.door, lock: h.lock, window: h.window }))}
+                    onClick={(e: any) => {
+                      const p = e?.activePayload?.[0]?.payload;
+                      if (!p) return;
+                      if (typeof p.hour === "number") {
+                        setDetail({ title: `Hendelser kl ${String(p.hour).padStart(2, "0")}:00`, hourOfDay: p.hour });
+                      } else if (p.date) {
+                        setDetail({ title: `Hendelser ${p.label ?? p.date}`, dateStr: p.date });
+                      }
+                    }}
+                    style={{ cursor: "pointer" }}
+                  >
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey={data.daily.length > 1 ? "label" : "label"} stroke="hsl(var(--muted-foreground))" fontSize={10} />
+                    <XAxis dataKey="label" stroke="hsl(var(--muted-foreground))" fontSize={10} />
                     <YAxis stroke="hsl(var(--muted-foreground))" fontSize={10} />
                     <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", fontSize: 11 }} />
                     <Legend wrapperStyle={{ fontSize: 10 }} />
@@ -462,7 +505,19 @@ export function HomeySensorDashboard() {
             </div>
             <div className="h-48">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={data.daily.length > 1 ? data.daily : data.hourly.map((h) => ({ label: String(h.hour).padStart(2, "0"), door: h.door, lock: h.lock }))}>
+                <LineChart
+                  data={data.daily.length > 1 ? data.daily : data.hourly.map((h) => ({ label: String(h.hour).padStart(2, "0"), hour: h.hour, door: h.door, lock: h.lock }))}
+                  onClick={(e: any) => {
+                    const p = e?.activePayload?.[0]?.payload;
+                    if (!p) return;
+                    if (typeof p.hour === "number") {
+                      setDetail({ title: `Dør & lås kl ${String(p.hour).padStart(2, "0")}:00`, hourOfDay: p.hour, eventTypes: ["door_open", "door_close", "locked", "unlocked"] });
+                    } else if (p.date) {
+                      setDetail({ title: `Dør & lås ${p.label ?? p.date}`, dateStr: p.date, eventTypes: ["door_open", "door_close", "locked", "unlocked"] });
+                    }
+                  }}
+                  style={{ cursor: "pointer" }}
+                >
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis dataKey="label" stroke="hsl(var(--muted-foreground))" fontSize={10} />
                   <YAxis stroke="hsl(var(--muted-foreground))" fontSize={10} />
