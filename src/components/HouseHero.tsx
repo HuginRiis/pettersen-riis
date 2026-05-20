@@ -101,12 +101,15 @@ export function HouseHero({
   eyebrow,
   title,
   subtitle,
+  extraStatus,
 }: {
   image: string;
   eyebrow?: string;
   title: string;
   subtitle?: string;
+  extraStatus?: React.ReactNode;
 }) {
+
   // Mount-flag for å unngå SSR-hydreringsmismatch
   const [mounted, setMounted] = useState(false);
   const [now, setNow] = useState<Date | null>(null);
@@ -221,6 +224,8 @@ export function HouseHero({
             <span className="inline-block w-8 h-px bg-primary/60" />
           </div>
         )}
+        {extraStatus && <div className="mt-3">{extraStatus}</div>}
+
       </div>
 
       <HouseHeroStyles />

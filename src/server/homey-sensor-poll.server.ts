@@ -1,5 +1,6 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { getValidConnection, getHomeyRawSnapshot } from "./homey";
+import { getValidConnection, getHomeyRawSnapshot, fetchHomeyInsightsLog } from "./homey";
+
 
 type Kind = "motion" | "door" | "window" | "lock" | "contact";
 
@@ -150,5 +151,69 @@ export async function pollHomeySensors(): Promise<{
       onConflict: "device_id,capability_id",
     });
 
-  return { ok: true, scanned: currents.length, events: events.length };
+  // Mini-backfill via Homey Insights for lock/door/window — fanger transisjoner
+  // som skjer mellom poll-intervaller (typisk: dør åpnet+lukket på 30 sek).
+  const insightsKinds: Kind[] = ["lock", "door", "window", "contact"];
+  const insightsTargets = currents.filter((c) => insightsKinds.includes(c.kind));
+  let backfilledCount = 0;
+  if (insightsTargets.length > 0) {
+    const sinceMs = Date.now() - 65 * 60_000; // litt mer enn 1 time
+    for (const t of insightsTargets) {
+      try {
+        const log: any = await fetchHomeyInsightsLog(t.device_id, t.capability_id, "lastHour");
+        if (!log || log.__error) continue;
+        const values: any[] = log?.values ?? log?.data ?? [];
+        if (!Array.isArray(values) || values.length === 0) continue;
+        const points = values
+          .map((p) => ({
+            t: p?.t ?? p?.time ?? p?.timestamp,
+            v: typeof (p?.v ?? p?.value) === "boolean"
+              ? (p.v ?? p.value)
+              : (p?.v === 1 || p?.value === 1 || p?.v === "true" || p?.value === "true")
+                ? true
+                : (p?.v === 0 || p?.value === 0 || p?.v === "false" || p?.value === "false")
+                  ? false
+                  : null,
+          }))
+          .filter((p) => p.t && p.v !== null)
+          .sort((a, b) => new Date(a.t).getTime() - new Date(b.t).getTime());
+        const transitions: any[] = [];
+        let prev: boolean | null = null;
+        for (const p of points) {
+          const ts = new Date(p.t).getTime();
+          if (ts < sinceMs) { prev = p.v as boolean; continue; }
+          if (prev !== null && p.v !== prev) {
+            transitions.push({
+              ts: new Date(p.t).toISOString(),
+              device_id: t.device_id,
+              device_name: t.device_name,
+              zone: t.zone,
+              kind: t.kind,
+              capability_id: t.capability_id,
+              event_type: eventTypeFor(t.kind, p.v as boolean),
+              value: p.v ? "true" : "false",
+            });
+          }
+          prev = p.v as boolean;
+        }
+        if (transitions.length === 0) continue;
+        const { data: existing } = await supabaseAdmin
+          .from("homey_sensor_events")
+          .select("ts, event_type")
+          .eq("device_id", t.device_id)
+          .gte("ts", new Date(sinceMs).toISOString());
+        const seen = new Set((existing ?? []).map((e) => `${e.ts}|${e.event_type}`));
+        const fresh = transitions.filter((e) => !seen.has(`${e.ts}|${e.event_type}`));
+        if (fresh.length > 0) {
+          await supabaseAdmin.from("homey_sensor_events").insert(fresh);
+          backfilledCount += fresh.length;
+        }
+      } catch {
+        // ignorer per-device feil
+      }
+    }
+  }
+
+  return { ok: true, scanned: currents.length, events: events.length + backfilledCount };
 }
+

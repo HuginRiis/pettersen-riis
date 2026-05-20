@@ -26,6 +26,9 @@ import { HomeySensorDashboard } from "@/components/HomeySensorDashboard";
 import { EufyInspector } from "@/components/EufyInspector";
 import { UtgangsdorenPanel } from "@/components/UtgangsdorenPanel";
 import { GarminStatusPanel } from "@/components/GarminStatusPanel";
+import { VakttarnHeroStats } from "@/components/VakttarnHeroStats";
+import { TollnesCameraStrip } from "@/components/TollnesCameraStrip";
+
 
 export const Route = createFileRoute("/vakttarnet")({
   head: () => ({
@@ -178,9 +181,11 @@ function VakttarnetPage() {
         title="Vakttårnet"
         subtitle="Vaktene ved muren rapporterer hver eneste sjel som nærmer seg porten."
         image={heroImg}
+        extraStatus={<VakttarnHeroStats />}
       />
 
       <section className="container mx-auto px-3 sm:px-4 py-6 sm:py-10 space-y-6 sm:space-y-10">
+
         <VakttarnetTOC />
 
         <section id="vt-utgangsdoren" className="scroll-mt-24"><UtgangsdorenPanel /></section>
