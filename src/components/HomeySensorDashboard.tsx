@@ -11,8 +11,9 @@ import {
 import {
   Activity, DoorOpen, Lock, Unlock, Sun, Moon, AlertTriangle,
   Sparkles, ChevronDown, MapPin, Clock, TrendingUp, TrendingDown,
-  EyeOff, RefreshCw,
+  EyeOff, RefreshCw, AppWindow,
 } from "lucide-react";
+
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid,
   LineChart, Line, Legend,
