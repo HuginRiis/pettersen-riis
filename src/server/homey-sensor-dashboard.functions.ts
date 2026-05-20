@@ -320,6 +320,7 @@ export const getHomeySensorDashboard = createServerFn({ method: "GET" })
       rangeEnd: end.toISOString(),
       totals,
       topRoom,
+      topRooms,
       lastMotion,
       hourly,
       daily,
@@ -327,6 +328,7 @@ export const getHomeySensorDashboard = createServerFn({ method: "GET" })
       dayNight: { day: dayCount, night: nightCount },
       peakHours,
       inactiveSensors,
+      inactiveMotion,
       anomalies,
       trend: { current: currentCount, previous: prevCount, deltaPct },
     };
