@@ -471,9 +471,21 @@ export function HomeySensorDashboard() {
               </div>
               <div className="h-56">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={data.daily.length > 1 ? data.daily : data.hourly.map((h) => ({ label: String(h.hour).padStart(2, "0"), motion: h.motion, door: h.door, lock: h.lock, window: h.window }))}>
+                  <LineChart
+                    data={data.daily.length > 1 ? data.daily : data.hourly.map((h) => ({ label: String(h.hour).padStart(2, "0"), hour: h.hour, motion: h.motion, door: h.door, lock: h.lock, window: h.window }))}
+                    onClick={(e: any) => {
+                      const p = e?.activePayload?.[0]?.payload;
+                      if (!p) return;
+                      if (typeof p.hour === "number") {
+                        setDetail({ title: `Hendelser kl ${String(p.hour).padStart(2, "0")}:00`, hourOfDay: p.hour });
+                      } else if (p.date) {
+                        setDetail({ title: `Hendelser ${p.label ?? p.date}`, dateStr: p.date });
+                      }
+                    }}
+                    style={{ cursor: "pointer" }}
+                  >
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey={data.daily.length > 1 ? "label" : "label"} stroke="hsl(var(--muted-foreground))" fontSize={10} />
+                    <XAxis dataKey="label" stroke="hsl(var(--muted-foreground))" fontSize={10} />
                     <YAxis stroke="hsl(var(--muted-foreground))" fontSize={10} />
                     <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", fontSize: 11 }} />
                     <Legend wrapperStyle={{ fontSize: 10 }} />
