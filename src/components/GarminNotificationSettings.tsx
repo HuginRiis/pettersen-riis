@@ -109,7 +109,7 @@ export function GarminNotificationSettings() {
   const load = async () => {
     const { data, error } = await supabase
       .from("garmin_notification_prefs" as never)
-      .select("id, recipient, sender_label, enabled, notify_daily, daily_time, notify_step_goal, notify_low_sleep, low_sleep_hours, notify_high_resting_hr, high_rhr_bpm, garmin_owner, notify_compare, compare_time, daily_show_both, daily_fields, compare_fields")
+      .select("id, recipient, sender_label, enabled, notify_daily, daily_time, notify_step_goal, notify_low_sleep, low_sleep_hours, notify_high_resting_hr, high_rhr_bpm, garmin_owner, notify_compare, compare_time, daily_show_both, daily_fields, compare_fields, notify_no_sync, no_sync_hours, no_sync_check_time")
       .order("created_at", { ascending: true });
     if (error) toast.error("Kunne ikke laste regler");
     else setPrefs((data ?? []) as unknown as Pref[]);
