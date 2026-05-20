@@ -76,7 +76,14 @@ function Kpi({ icon: Icon, label, value, sub, tone = "primary", onClick }: {
 }
 
 type DetailQuery =
-  | { title: string; eventTypes?: string[]; zone?: string }
+  | {
+      title: string;
+      eventTypes?: string[];
+      zone?: string;
+      kind?: "motion" | "door" | "window" | "lock";
+      hourOfDay?: number;
+      dateStr?: string;
+    }
   | null;
 
 function fmtTs(iso: string): string {
