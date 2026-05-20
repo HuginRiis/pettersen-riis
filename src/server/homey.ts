@@ -1153,7 +1153,7 @@ async function triggerSnapshotCapability(
     : device.raw?.capabilities && typeof device.raw.capabilities === "object"
       ? Object.keys(device.raw.capabilities)
       : [];
-  const candidates = ["button.snapshot", "camera_refresh"];
+  const candidates = ["button.snapshot", "camera_refresh", "CMD_SNAPSHOT"];
   for (const cap of candidates) {
     if (!caps.includes(cap)) continue;
     try {
@@ -1189,8 +1189,21 @@ async function tryCameraSnapshot(
   ): Promise<{ buffer: ArrayBuffer; contentType: string } | null> {
     const images = Array.isArray(dev?.images) ? dev.images : [];
     const errors: string[] = [];
-    for (const img of [...images].reverse()) {
-      const directUrl = typeof img?.url === "string" ? img.url : null;
+    const preferredImages = [...images].sort((a, b) => {
+      const aEvent = /event/i.test(`${a?.title ?? ""} ${a?.id ?? ""}`) ? 1 : 0;
+      const bEvent = /event/i.test(`${b?.title ?? ""} ${b?.id ?? ""}`) ? 1 : 0;
+      if (aEvent !== bEvent) return bEvent - aEvent;
+      const aUpdated = Number(a?.lastUpdated ?? a?.imageObj?.lastUpdated ?? 0);
+      const bUpdated = Number(b?.lastUpdated ?? b?.imageObj?.lastUpdated ?? 0);
+      return bUpdated - aUpdated;
+    });
+    for (const img of preferredImages) {
+      const directUrl =
+        typeof img?.url === "string"
+          ? img.url
+          : typeof img?.imageObj?.url === "string"
+            ? img.imageObj.url
+            : null;
       if (directUrl) {
         try {
           const fullUrl = directUrl.startsWith("http") ? directUrl : `${baseUrl}${directUrl}`;
@@ -1203,7 +1216,7 @@ async function tryCameraSnapshot(
       }
       // For Eufy: hopp over id-fallback (id er enhetsserie, ikke Homey image-id)
       if (!isEufy) {
-        const imgId = img?.id ?? img?._id ?? img?.imageId;
+        const imgId = img?.imageObj?.id ?? img?.id ?? img?._id ?? img?.imageId;
         if (imgId) {
           try {
             return await fetchImageById(baseUrl, sessionToken, imgId);
@@ -1219,24 +1232,17 @@ async function tryCameraSnapshot(
   }
 
   if (isEufy) {
-    // Logg hva Homey eksponerer for dette Eufy-kameraet (debug)
-    console.log("[eufy-snapshot] device", {
-      id: device.id,
-      name: device.name,
-      driverUri,
-      images: device.raw?.images,
-      capabilities: Array.isArray(device.raw?.capabilities)
-        ? device.raw.capabilities
-        : Object.keys(device.raw?.capabilities ?? {}),
-    });
-    // Trigg snapshot først så Homey registrerer et ferskt bilde
+    // Eufy legger siste bevegelsesbilde under images[].imageObj.url på "Event".
+    const existing = await readFromDevice(device.raw);
+    if (existing) return existing;
+
+    // Hvis Homey ikke har bilde klart, trigges snapshot og enheten leses på nytt.
     await triggerSnapshotCapability(sessionToken, apiBase, device);
     await new Promise((r) => setTimeout(r, 2500));
     const refreshed = await fetchJson<any>(
       `${apiBase}/manager/devices/device/${device.id}`,
       sessionToken,
     );
-    console.log("[eufy-snapshot] after refresh images", refreshed?.images);
     const res = await readFromDevice(refreshed);
     if (res) return res;
   } else {
