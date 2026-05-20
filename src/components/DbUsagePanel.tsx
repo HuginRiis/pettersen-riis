@@ -353,8 +353,8 @@ export function DbUsagePanel() {
             })}
           </div>
         )}
-        )}
       </div>
+
 
       {/* Cron jobs */}
       <div>
