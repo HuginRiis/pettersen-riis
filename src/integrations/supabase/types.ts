@@ -1112,6 +1112,75 @@ export type Database = {
         }
         Relationships: []
       }
+      homey_sensor_events: {
+        Row: {
+          capability_id: string
+          device_id: string
+          device_name: string | null
+          event_type: string
+          id: string
+          kind: string
+          ts: string
+          value: string | null
+          zone: string | null
+        }
+        Insert: {
+          capability_id: string
+          device_id: string
+          device_name?: string | null
+          event_type: string
+          id?: string
+          kind: string
+          ts?: string
+          value?: string | null
+          zone?: string | null
+        }
+        Update: {
+          capability_id?: string
+          device_id?: string
+          device_name?: string | null
+          event_type?: string
+          id?: string
+          kind?: string
+          ts?: string
+          value?: string | null
+          zone?: string | null
+        }
+        Relationships: []
+      }
+      homey_sensor_state: {
+        Row: {
+          capability_id: string
+          device_id: string
+          device_name: string | null
+          kind: string
+          last_seen: string
+          last_ts: string
+          last_value: string | null
+          zone: string | null
+        }
+        Insert: {
+          capability_id: string
+          device_id: string
+          device_name?: string | null
+          kind: string
+          last_seen?: string
+          last_ts?: string
+          last_value?: string | null
+          zone?: string | null
+        }
+        Update: {
+          capability_id?: string
+          device_id?: string
+          device_name?: string | null
+          kind?: string
+          last_seen?: string
+          last_ts?: string
+          last_value?: string | null
+          zone?: string | null
+        }
+        Relationships: []
+      }
       hytta_checklist: {
         Row: {
           added_by: string
