@@ -1481,6 +1481,8 @@ export type Database = {
           household_children_over18: number
           household_children_under18: number
           id: number
+          internal_transfer_accounts: string[]
+          internal_transfer_filter_enabled: boolean
           payday_day: number
           primary_account: string | null
           savings_target_pct: number
@@ -1494,6 +1496,8 @@ export type Database = {
           household_children_over18?: number
           household_children_under18?: number
           id?: number
+          internal_transfer_accounts?: string[]
+          internal_transfer_filter_enabled?: boolean
           payday_day?: number
           primary_account?: string | null
           savings_target_pct?: number
@@ -1507,6 +1511,8 @@ export type Database = {
           household_children_over18?: number
           household_children_under18?: number
           id?: number
+          internal_transfer_accounts?: string[]
+          internal_transfer_filter_enabled?: boolean
           payday_day?: number
           primary_account?: string | null
           savings_target_pct?: number
