@@ -1143,6 +1143,35 @@ async function fetchImageById(
   throw lastErr ?? new Error("Fant ikke bilde");
 }
 
+async function triggerSnapshotCapability(
+  sessionToken: string,
+  apiBase: string,
+  device: { id: string; raw: any },
+): Promise<void> {
+  const caps: string[] = Array.isArray(device.raw?.capabilities)
+    ? device.raw.capabilities
+    : device.raw?.capabilities && typeof device.raw.capabilities === "object"
+      ? Object.keys(device.raw.capabilities)
+      : [];
+  const candidates = ["button.snapshot", "camera_refresh"];
+  for (const cap of candidates) {
+    if (!caps.includes(cap)) continue;
+    try {
+      await fetch(`${apiBase}/manager/devices/device/${device.id}/capability/${cap}`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${sessionToken}`,
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({ value: true }),
+      });
+    } catch {
+      // ignore
+    }
+  }
+}
+
 async function tryCameraSnapshot(
   sessionToken: string,
   baseUrl: string,
@@ -1150,19 +1179,18 @@ async function tryCameraSnapshot(
 ): Promise<{ buffer: ArrayBuffer; contentType: string }> {
   const apiBase = `${baseUrl}/api`;
 
-  // Strategy 1: device.images array (most cameras expose this)
-  const images = Array.isArray(device.raw?.images) ? device.raw.images : [];
-  if (images.length > 0) {
-    const lastErrors: string[] = [];
-    // Prefer the last image (typically newest snapshot)
-    for (const img of [...images].reverse()) {
-      const imgId =
-        img?.id ??
-        img?._id ??
-        img?.imageId ??
-        (typeof img?.url === "string" ? img.url.split("/").filter(Boolean).pop() : null);
-      const directUrl = typeof img?.url === "string" ? img.url : null;
+  // For Eufy (og lignende) er images[].id en native enhetsserienummer som
+  // ikke finnes i Homey image-manager. Vi må trigge snapshot først, så lese url.
+  const driverUri = String(device.raw?.driverUri ?? device.raw?.driverId ?? "").toLowerCase();
+  const isEufy = driverUri.includes("eufy");
 
+  async function readFromDevice(
+    dev: any,
+  ): Promise<{ buffer: ArrayBuffer; contentType: string } | null> {
+    const images = Array.isArray(dev?.images) ? dev.images : [];
+    const errors: string[] = [];
+    for (const img of [...images].reverse()) {
+      const directUrl = typeof img?.url === "string" ? img.url : null;
       if (directUrl) {
         try {
           const fullUrl = directUrl.startsWith("http") ? directUrl : `${baseUrl}${directUrl}`;
@@ -1170,56 +1198,47 @@ async function tryCameraSnapshot(
             headers: { Authorization: `Bearer ${sessionToken}`, Accept: "image/*" },
           });
         } catch (e: any) {
-          lastErrors.push(`url ${directUrl}: ${e?.message ?? e}`);
+          errors.push(`url ${directUrl}: ${e?.message ?? e}`);
         }
       }
-      if (imgId) {
-        try {
-          return await fetchImageById(baseUrl, sessionToken, imgId);
-        } catch (e: any) {
-          lastErrors.push(`id ${imgId}: ${e?.message ?? e}`);
+      // For Eufy: hopp over id-fallback (id er enhetsserie, ikke Homey image-id)
+      if (!isEufy) {
+        const imgId = img?.id ?? img?._id ?? img?.imageId;
+        if (imgId) {
+          try {
+            return await fetchImageById(baseUrl, sessionToken, imgId);
+          } catch (e: any) {
+            errors.push(`id ${imgId}: ${e?.message ?? e}`);
+          }
         }
       }
     }
-    if (lastErrors.length > 0) {
-      throw new Error(`Klarte ikke hente kamera-bilde (${lastErrors.join(" | ")})`);
-    }
+    if (errors.length > 0)
+      throw new Error(`Klarte ikke hente kamera-bilde (${errors.join(" | ")})`);
+    return null;
   }
 
-  // Strategy 2: refresh capability (camera devices often support this) then re-fetch device
-  try {
-    await fetch(`${apiBase}/manager/devices/device/${device.id}/capability/camera_refresh`, {
-      method: "PUT",
-      headers: {
-        Authorization: `Bearer ${sessionToken}`,
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: JSON.stringify({ value: true }),
-    });
-  } catch {
-    // ignore — fall through
-  }
-
-  const refreshed = await fetchJson<any>(
-    `${apiBase}/manager/devices/device/${device.id}`,
-    sessionToken,
-  );
-  const imgs2 = Array.isArray(refreshed?.images) ? refreshed.images : [];
-  if (imgs2.length > 0) {
-    const last = imgs2[imgs2.length - 1];
-    const imgId = last?.id ?? last?._id ?? last?.imageId;
-    if (last?.url) {
-      const fullUrl = String(last.url).startsWith("http")
-        ? last.url
-        : `${baseUrl}${last.url}`;
-      return await fetchBinary(fullUrl, {
-        headers: { Authorization: `Bearer ${sessionToken}`, Accept: "image/*" },
-      });
-    }
-    if (imgId) {
-      return await fetchImageById(baseUrl, sessionToken, imgId);
-    }
+  if (isEufy) {
+    // Trigg snapshot først så Homey registrerer et ferskt bilde
+    await triggerSnapshotCapability(sessionToken, apiBase, device);
+    await new Promise((r) => setTimeout(r, 2500));
+    const refreshed = await fetchJson<any>(
+      `${apiBase}/manager/devices/device/${device.id}`,
+      sessionToken,
+    );
+    const res = await readFromDevice(refreshed);
+    if (res) return res;
+  } else {
+    const res = await readFromDevice(device.raw);
+    if (res) return res;
+    await triggerSnapshotCapability(sessionToken, apiBase, device);
+    await new Promise((r) => setTimeout(r, 1500));
+    const refreshed = await fetchJson<any>(
+      `${apiBase}/manager/devices/device/${device.id}`,
+      sessionToken,
+    );
+    const res2 = await readFromDevice(refreshed);
+    if (res2) return res2;
   }
 
   throw new Error("Kameraet eksponerer ingen bilder via Homey API");
