@@ -1,50 +1,60 @@
-# Plan: Flyradar-side
+# Sensor-dashboard på Vakttårnet
 
-## Datakilde
-- **OpenSky Network** (gratis, åpen API, ingen nøkkel for anonym bruk).
-- Endpoint: `https://opensky-network.org/api/states/all?lamin=...&lomin=...&lamax=...&lomax=...`
-- Norge-bbox: lat 57.5–71.5, lon 4.0–31.5. Pollet hvert 30. sek på klient (anonym ratelimit ok).
+Plassering: rett over "Sendte varslinger" på `/vakttarnet`. Henter data fra Homey-sensorer (bevegelse, dør, vindu, lås) og viser KPI-er, grafer, filter og innstillinger.
 
-## Sider og komponenter
+## Datalag (ny tabell + cron)
 
-### `/flyradar` (ny rute)
-- **Hero** — eget GOT-bilde generert (himmel/festning + ravner + fly-silhuett, lik stilen som de andre hero-bildene).
-- **Live statistikk**: totalt antall fly, antall i lufta, antall på bakken, snitt-høyde, snitt-fart, høyeste fly, raskeste fly.
-- **Filter**:
-  - Søk på flynummer/callsign
-  - Land (default Norge — alle ICAO `nor*` callsigns + alle innenfor bbox)
-  - Lufthavn (dropdown: OSL, BGO, TRD, SVG, TOS, BOO, KRS, AES, HAU, MOL, SKE, TRF, ALF) — viser fly innen 30 km
-  - Radius fra punkt (lat/lon + km) — bruker også «min posisjon»-knapp
-  - Min/maks høyde og fart (slider)
-  - Bare «i lufta» / «på bakken» / «alle»
-- **Liste**: callsign, land, høyde, fart, retning, posisjon, tid sist sett. Klikkbar — åpner detalj-modal med kart (mini-SVG over Norge med plassering).
-- **Innstillinger-tab**:
-  - Multi-select flyplasser å abonnere på + checkbox «varsel ved landing» / «varsel ved avgang»
-  - Radius-sone: lat/lon + km + checkbox «varsel når fly krysser sonen»
-  - Lagres i ny tabell `flight_alert_prefs` (single row).
+Homey eksponerer kun nåværende tilstand i snapshot — vi må selv logge endringer over tid for å bygge statistikk.
 
-### Innholdsfortegnelse / meny
-- Legge til i `MENU_LINK_DEFS` (use-menu-visibility) som `{ to: "/flyradar", label: "Flyradar" }`.
-- Legge til hall-card på `/` (med GOT-tema desc, hero-bilde).
-- Legge til i `SEARCH_INDEX` med keywords (fly, flyradar, opensky, osl, lufthavn, gardermoen, …).
-- Utvide HallCard `to`-union med `/flyradar`.
+- Ny tabell `homey_sensor_events` (id, ts, device_id, device_name, zone, kind, capability_id, event_type, value).
+- Ny tabell `homey_sensor_state` (siste verdi per device+capability) for diff-deteksjon mellom kjøringer.
+- Ny route-hook `POST /api/public/hooks/homey-sensor-poll`:
+  - Henter `getHomeyRawSnapshot()`, plukker ut enheter med `alarm_motion`, `alarm_contact`, `locked`.
+  - Diff mot `homey_sensor_state`. Skriv ny rad i `homey_sensor_events` ved transisjon (motion_on/off, opened/closed, locked/unlocked). Upsert state.
+- pg_cron-jobb hvert minutt kaller hooken.
+- Settings (dag/natt-tider) lagres i eksisterende `notification_settings`-tabell under key `homey_sensor_dashboard`.
 
-## Backend (server functions)
-- `src/server/flyradar.functions.ts`:
-  - `fetchFlightStates({ bbox, airport })` — proxy mot OpenSky for å unngå CORS og legge til litt caching (30 sek server-cache).
-  - `getFlightAlertPrefs()` / `saveFlightAlertPrefs({...})` — single-row prefs.
+## Server-funksjoner
 
-## Database
-- Ny tabell `flight_alert_prefs`:
-  - `id uuid PK`, `airports text[]`, `notify_arrivals bool`, `notify_departures bool`,
-  - `radius_center_lat numeric`, `radius_center_lon numeric`, `radius_km int`, `notify_radius bool`,
-  - `min_altitude_m int default 0`, `updated_at timestamptz`.
-  - Public read/write (samme mønster som andre prefs-tabeller her).
+`src/server/homey-sensor-dashboard.functions.ts`:
 
-## Hva som ikke leveres nå
-- Selve push-sendingen (cron som poller OpenSky og sender push når tilstand endres) er stort nok til egen runde. Innstillinger lagres, men varsler aktiveres når cron-jobben legges til etterpå.
+- `getHomeySensorDashboard({ range })` — range = `today | yesterday | week | last7`. Returnerer:
+  - totals: motion-events, door open/close, lock/unlock, window opens
+  - topRoom (zone med mest aktivitet)
+  - lastMotion: { ts, device, zone }
+  - hourly: 24 buckets med motion/door/lock/window
+  - byRoom: liste over rom med antall events
+  - daily: bucket per dag (for week/last7)
+  - dayNight: { day, night } counts basert på innstillinger
+  - inactiveSensors: enheter uten event på > 7 dager
+  - anomalies: enkel z-score mot 7-dagers gjennomsnitt per time → markerer uvanlige topper
+  - peakHours: topp 3 timer typisk aktivitet
+- `getHomeySensorSettings()` / `saveHomeySensorSettings({ dayStart, dayEnd })` (lagrer i `notification_settings`).
+
+## UI
+
+`src/components/HomeySensorDashboard.tsx`:
+
+- Filter-pills: I dag / I går / Denne uken / Siste 7 dager
+- KPI-grid (6 bokser): Total bevegelse, Mest aktivt rom, Siste bevegelse, Dør-åpninger, Lås opp-hendelser, Vindu-åpninger
+- KPI: Natt vs dag (mini bar)
+- Graf 1: Aktivitet per time (stacked bar: motion/door/lock)
+- Graf 2: Per rom (horisontal bar)
+- Graf 3: Dør- og lås-aktivitet over tid (line)
+- Graf 4: Trend for valgt periode (line)
+- "Smart innsikt"-panel (kollapset by default): uvanlige mønstre, økning vs forrige periode, inaktive sensorer, vanlige aktivitetstopper
+- Settings-popover: dag start/slutt + natt start/slutt (HH:MM)
+
+## Integrering i `src/routes/vakttarnet.tsx`
+
+- Ny seksjon `vt-sensors` plassert rett over `vt-push`.
+- Ny TOC-oppføring "Sensor-dashboard" (Activity-ikon).
 
 ## Filer som endres / opprettes
-- **Ny**: `src/routes/flyradar.tsx`, `src/server/flyradar.functions.ts`, `src/assets/got-flyradar.jpg` (generert).
-- **Endret**: `src/routes/index.tsx` (hall-card + union), `src/hooks/use-menu-visibility.ts` (MENU_LINK_DEFS), `src/lib/search-index.ts`.
-- **Migrering**: ny `flight_alert_prefs`-tabell.
+
+- `supabase/migrations/<ts>_homey_sensor_events.sql` (tabeller + RLS + cron-jobb)
+- `src/server/homey-sensor-poll.server.ts` (poll/diff-logikk)
+- `src/server/homey-sensor-dashboard.functions.ts` (stats + settings server fns)
+- `src/routes/api/public/hooks/homey-sensor-poll.ts` (cron-hook)
+- `src/components/HomeySensorDashboard.tsx`
+- `src/routes/vakttarnet.tsx` (TOC + ny seksjon)
