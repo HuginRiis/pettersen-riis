@@ -263,6 +263,35 @@ export function HomeySensorDashboard() {
         </a>
       </div>
 
+      {/* Kind filter */}
+      <div className="flex flex-wrap items-center gap-1.5">
+        <span className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground mr-1">Vis:</span>
+        {([
+          { k: "motion" as const, l: "Bevegelse", Icon: Activity },
+          { k: "door" as const, l: "Dør", Icon: DoorOpen },
+          { k: "window" as const, l: "Vindu", Icon: AppWindow },
+          { k: "lock" as const, l: "Lås", Icon: Lock },
+        ]).map(({ k, l, Icon }) => {
+          const on = isOn(k);
+          return (
+            <button
+              key={k}
+              type="button"
+              onClick={() => toggleKind(k)}
+              aria-pressed={on}
+              className={`inline-flex items-center gap-1 text-[10px] uppercase tracking-[0.2em] px-2.5 py-1.5 rounded-md border transition ${
+                on
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-border bg-background/40 text-muted-foreground/60 hover:border-primary/40 line-through decoration-muted-foreground/40"
+              }`}
+            >
+              <Icon className="h-3 w-3" /> {l}
+            </button>
+          );
+        })}
+      </div>
+
+
       {/* Range filter */}
       <div className="flex flex-wrap gap-1.5">
         {RANGES.map((r) => (
