@@ -22,6 +22,7 @@ import { MaesterAiBudget } from "@/components/MaesterAiBudget";
 import { PushSendCountsPanel } from "@/components/PushSendCountsPanel";
 import { ChangelogPanel } from "@/components/ChangelogPanel";
 import { VakttarnEventsPanel } from "@/components/VakttarnEventsPanel";
+import { HomeySensorDashboard } from "@/components/HomeySensorDashboard";
 import { EufyInspector } from "@/components/EufyInspector";
 import { UtgangsdorenPanel } from "@/components/UtgangsdorenPanel";
 import { GarminStatusPanel } from "@/components/GarminStatusPanel";
