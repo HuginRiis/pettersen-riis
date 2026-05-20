@@ -53,7 +53,8 @@ type RoutePath =
   | "/decibel"
   | "/nettverk"
   | "/roborock"
-  | "/planter";
+  | "/planter"
+  | "/flyradar";
 
 type NavLink = { to: RoutePath; label: string; public?: boolean };
 
