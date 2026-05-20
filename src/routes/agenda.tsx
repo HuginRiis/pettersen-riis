@@ -441,7 +441,7 @@ function formatDateTimeNorwegian(iso: string) {
 }
 
 function CollapsiblePast({ entries, onDelete }: { entries: [string, Msg[]][]; onDelete: (id: string) => void }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = usePerUserPersistedState<boolean>("agenda:past", false);
   const total = entries.reduce((sum, [, m]) => sum + m.length, 0);
   return (
     <div>

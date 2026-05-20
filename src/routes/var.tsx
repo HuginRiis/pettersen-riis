@@ -1177,7 +1177,7 @@ const WINDY_OVERLAYS: { key: string; label: string; icon: string }[] = [
 ];
 
 function CollapsibleMap() {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = usePerUserPersistedState<boolean>("var:windyMap", false);
   return (
     <div className="space-y-3">
       <button

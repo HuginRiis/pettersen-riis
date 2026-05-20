@@ -37,6 +37,7 @@ function BatteryFlame({ value, size = 11 }: { value: number; size?: number }) {
   );
 }
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { usePerUserPersistedState } from "@/hooks/use-per-user-persisted-state";
 
 const REFRESH_MS = 30_000;
 const ALARM_REFRESH_MS = 20_000;
@@ -264,7 +265,7 @@ function SealedCollapsible({
   count: number;
   children: React.ReactNode;
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = usePerUserPersistedState<boolean>(`doorslocks:sealed:${label}`, false);
   if (count === 0) return null;
   return (
     <Collapsible open={open} onOpenChange={setOpen} className="mt-2">
@@ -314,8 +315,8 @@ function HomeAlarmPanel() {
   const [busy, setBusy] = useState(false);
   const [who, setWho] = useState<Who>("Alle");
   const [log, setLog] = useState<AlarmLogRow[]>([]);
-  const [historyOpen, setHistoryOpen] = useState(false);
-  const [controlsOpen, setControlsOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = usePerUserPersistedState<boolean>("doorslocks:alarm:history", false);
+  const [controlsOpen, setControlsOpen] = usePerUserPersistedState<boolean>("doorslocks:alarm:controls", false);
   const inFlight = useRef(false);
 
   // Hent lagret "hvem" på klienten
