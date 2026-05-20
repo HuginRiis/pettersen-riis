@@ -23,6 +23,13 @@ const RANGES: { key: SensorRange; label: string }[] = [
   { key: "last7", label: "Siste 7 dager" },
 ];
 
+const SENSOR_CHART_COLORS = {
+  motion: "var(--chart-series-1)",
+  door: "var(--chart-series-2)",
+  window: "var(--chart-series-3)",
+  lock: "var(--chart-series-4)",
+} as const;
+
 function ago(iso: string | null): string {
   if (!iso) return "—";
   const diff = Date.now() - new Date(iso).getTime();
@@ -226,10 +233,10 @@ export function HomeySensorDashboard() {
                   <YAxis stroke="hsl(var(--muted-foreground))" fontSize={10} />
                   <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", fontSize: 11 }} />
                   <Legend wrapperStyle={{ fontSize: 10 }} />
-                  <Bar dataKey="motion" stackId="a" fill="#d4af37" name="Bevegelse" />
-                  <Bar dataKey="door" stackId="a" fill="#6a8caf" name="Dør" />
-                  <Bar dataKey="window" stackId="a" fill="#7fb069" name="Vindu" />
-                  <Bar dataKey="lock" stackId="a" fill="#c97b4a" name="Lås" />
+                  <Bar dataKey="motion" stackId="a" fill={SENSOR_CHART_COLORS.motion} name="Bevegelse" />
+                  <Bar dataKey="door" stackId="a" fill={SENSOR_CHART_COLORS.door} name="Dør" />
+                  <Bar dataKey="window" stackId="a" fill={SENSOR_CHART_COLORS.window} name="Vindu" />
+                  <Bar dataKey="lock" stackId="a" fill={SENSOR_CHART_COLORS.lock} name="Lås" />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -248,10 +255,10 @@ export function HomeySensorDashboard() {
                     <XAxis type="number" stroke="hsl(var(--muted-foreground))" fontSize={10} />
                     <YAxis type="category" dataKey="zone" stroke="hsl(var(--muted-foreground))" fontSize={10} width={80} />
                     <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", fontSize: 11 }} />
-                    <Bar dataKey="motion" stackId="a" fill="#d4af37" name="Bevegelse" />
-                    <Bar dataKey="door" stackId="a" fill="#6a8caf" name="Dør" />
-                    <Bar dataKey="window" stackId="a" fill="#7fb069" name="Vindu" />
-                    <Bar dataKey="lock" stackId="a" fill="#c97b4a" name="Lås" />
+                    <Bar dataKey="motion" stackId="a" fill={SENSOR_CHART_COLORS.motion} name="Bevegelse" />
+                    <Bar dataKey="door" stackId="a" fill={SENSOR_CHART_COLORS.door} name="Dør" />
+                    <Bar dataKey="window" stackId="a" fill={SENSOR_CHART_COLORS.window} name="Vindu" />
+                    <Bar dataKey="lock" stackId="a" fill={SENSOR_CHART_COLORS.lock} name="Lås" />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
