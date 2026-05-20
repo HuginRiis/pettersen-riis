@@ -544,9 +544,11 @@ export function HomeySensorDashboard() {
                     <YAxis stroke="hsl(var(--muted-foreground))" fontSize={10} />
                     <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", fontSize: 11 }} />
                     <Legend wrapperStyle={{ fontSize: 10 }} />
-                    <Line type="monotone" dataKey="motion" stroke={SENSOR_CHART_COLORS.motion} strokeWidth={2} dot={false} name="Bevegelse" />
-                    <Line type="monotone" dataKey="door" stroke={SENSOR_CHART_COLORS.door} strokeWidth={2} dot={false} name="Dør" />
-                    <Line type="monotone" dataKey="lock" stroke={SENSOR_CHART_COLORS.lock} strokeWidth={2} dot={false} name="Lås" />
+                    {isOn("motion") && <Line type="monotone" dataKey="motion" stroke={SENSOR_CHART_COLORS.motion} strokeWidth={2} dot={false} name="Bevegelse" />}
+                    {isOn("door") && <Line type="monotone" dataKey="door" stroke={SENSOR_CHART_COLORS.door} strokeWidth={2} dot={false} name="Dør" />}
+                    {isOn("window") && <Line type="monotone" dataKey="window" stroke={SENSOR_CHART_COLORS.window} strokeWidth={2} dot={false} name="Vindu" />}
+                    {isOn("lock") && <Line type="monotone" dataKey="lock" stroke={SENSOR_CHART_COLORS.lock} strokeWidth={2} dot={false} name="Lås" />}
+
                   </LineChart>
                 </ResponsiveContainer>
               </div>
