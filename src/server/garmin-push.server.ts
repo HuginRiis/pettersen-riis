@@ -293,6 +293,42 @@ export async function processGarminNotifications(): Promise<{ checked: number; s
         await markNotified(p, key);
       }
     }
+
+    // Klokken ikke syncet
+    if (p.notify_no_sync) {
+      const wantHm = (p.no_sync_check_time || "10:00").slice(0, 5);
+      const key = `nosync:${today}`;
+      if (nowHm >= wantHm && !already.has(key)) {
+        const hoursLimit = Math.max(1, Number(p.no_sync_hours) || 12);
+        // Hent siste vellykkede sync
+        const { data: lastSync } = await supabaseAdmin
+          .from("garmin_sync_log")
+          .select("ran_at, ok")
+          .eq("owner", owner)
+          .eq("ok", true)
+          .order("ran_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        const lastMs = lastSync?.ran_at ? new Date(lastSync.ran_at as string).getTime() : 0;
+        const ageHours = lastMs ? (Date.now() - lastMs) / 3_600_000 : Infinity;
+        // Fallback-signal: ingen søvn-data registrert for natten (sleep.day < today)
+        const sleepDay = (sleep as { day?: string } | null)?.day ?? null;
+        const noSleepToday = !sleepDay || sleepDay < today;
+        if (ageHours >= hoursLimit || noSleepToday) {
+          const ownerLabel = OWNER_LABEL[owner];
+          const reason = ageHours >= hoursLimit
+            ? (lastMs ? `siste sync var for ${ageHours.toFixed(1)}t siden` : "ingen sync registrert ennå")
+            : "ingen søvn-data registrert i natt";
+          const r = await sendToRecipient(
+            p,
+            "Garmin-klokken er ikke synket ⌚",
+            `${ownerLabel}: ${reason}. Åpne Garmin Connect og synk klokken.`,
+          );
+          sent += r.sent; errors += r.errors;
+          await markNotified(p, key);
+        }
+      } else if (already.has(key)) skipped++;
+    }
   }
 
   return { checked, sent, errors, skipped };
