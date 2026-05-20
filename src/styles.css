@@ -447,3 +447,32 @@ main .container {
 .recharts-layer.recharts-area:nth-of-type(5n+3) .recharts-curve.recharts-area-area { fill: var(--chart-series-3) !important; }
 .recharts-layer.recharts-area:nth-of-type(5n+4) .recharts-curve.recharts-area-area { fill: var(--chart-series-4) !important; }
 .recharts-layer.recharts-area:nth-of-type(5n+5) .recharts-curve.recharts-area-area { fill: var(--chart-series-5) !important; }
+
+/* Forklaring (legend) — fargeikon må følge samme serie-fargene som søyler/linjer
+   slik at endringer i Innstillinger → Graf-utseende reflekteres både på grafen og
+   i tekst-/farge-forklaringen under. */
+.recharts-default-legend .recharts-legend-item:nth-of-type(5n+1) .recharts-legend-icon,
+.recharts-default-legend .recharts-legend-item:nth-of-type(5n+1) .recharts-surface path {
+  fill: var(--chart-series-1) !important;
+  color: var(--chart-series-1) !important;
+}
+.recharts-default-legend .recharts-legend-item:nth-of-type(5n+2) .recharts-legend-icon,
+.recharts-default-legend .recharts-legend-item:nth-of-type(5n+2) .recharts-surface path {
+  fill: var(--chart-series-2) !important;
+  color: var(--chart-series-2) !important;
+}
+.recharts-default-legend .recharts-legend-item:nth-of-type(5n+3) .recharts-legend-icon,
+.recharts-default-legend .recharts-legend-item:nth-of-type(5n+3) .recharts-surface path {
+  fill: var(--chart-series-3) !important;
+  color: var(--chart-series-3) !important;
+}
+.recharts-default-legend .recharts-legend-item:nth-of-type(5n+4) .recharts-legend-icon,
+.recharts-default-legend .recharts-legend-item:nth-of-type(5n+4) .recharts-surface path {
+  fill: var(--chart-series-4) !important;
+  color: var(--chart-series-4) !important;
+}
+.recharts-default-legend .recharts-legend-item:nth-of-type(5n+5) .recharts-legend-icon,
+.recharts-default-legend .recharts-legend-item:nth-of-type(5n+5) .recharts-surface path {
+  fill: var(--chart-series-5) !important;
+  color: var(--chart-series-5) !important;
+}
