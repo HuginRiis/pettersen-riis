@@ -52,7 +52,7 @@ export const Route = createFileRoute("/vakttarnet")({
 
 const VAKTTARN_TOC: { id: string; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { id: "vt-utgangsdoren", label: "Utgangsdøren", icon: DoorOpen },
-  { id: "vt-stats", label: "Statistikk", icon: BarChart3 },
+  
   { id: "vt-doors", label: "Porter & låser", icon: DoorClosed },
   { id: "vt-sensors", label: "Sensor-dashboard", icon: Activity },
   { id: "vt-push", label: "Sendte varsel", icon: Bell },
@@ -192,15 +192,6 @@ function VakttarnetPage() {
 
         <section id="vt-utgangsdoren" className="scroll-mt-24"><UtgangsdorenPanel /></section>
 
-        <section id="vt-stats" className="scroll-mt-24">
-          <StatsCards
-            sessions={sessions}
-            pageviews={pageviews}
-            attempts={attempts}
-            totalPageviews={totalPageviews}
-            totalSouls={totalSouls}
-          />
-        </section>
 
         <section id="vt-doors" className="scroll-mt-24">
           <Panel
@@ -237,6 +228,8 @@ function VakttarnetPage() {
             title="AI-skattkammeret"
             icon={<Sparkles size={14} />}
             subtitle="Hærmesterens forbruk av AI-credits — denne måned, totalt og per funksjon"
+            collapsible
+            defaultOpen={false}
           >
             <MaesterAiBudget />
           </Panel>
