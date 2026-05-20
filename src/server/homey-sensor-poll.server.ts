@@ -23,6 +23,14 @@ function eventTypeFor(kind: Kind, value: boolean | null): string {
   return value ? "open" : "close";
 }
 
+function pickCapTimestamp(capObj: any): string | null {
+  const t = capObj?.lastUpdated ?? capObj?.last_updated ?? capObj?.lastChanged;
+  if (!t) return null;
+  if (typeof t === "string") return t;
+  if (typeof t === "number") return new Date(t).toISOString();
+  return null;
+}
+
 export async function pollHomeySensors(): Promise<{
   ok: boolean;
   scanned: number;
@@ -32,7 +40,9 @@ export async function pollHomeySensors(): Promise<{
   const conn = await getValidConnection();
   if (!conn) return { ok: false, scanned: 0, events: 0, error: "no homey connection" };
 
-  const raw = await getHomeyRawSnapshot(conn, { force: false });
+  // Cron må hente fersk Homey-snapshot hver gang. Cache på flere minutter gjør
+  // at korte bevegelser (typisk baderomssensorer) kan bli borte mellom poll.
+  const raw = await getHomeyRawSnapshot(conn, { force: true });
   if (!raw) return { ok: false, scanned: 0, events: 0, error: "snapshot failed" };
 
   const zonesById: Record<string, string> = {};
@@ -48,6 +58,7 @@ export async function pollHomeySensors(): Promise<{
     kind: Kind;
     capability_id: string;
     value: boolean | null;
+    changed_at: string | null;
   };
   const currents: Current[] = [];
 
@@ -64,8 +75,9 @@ export async function pollHomeySensors(): Promise<{
         : kind === "lock"
         ? "locked"
         : "alarm_contact";
-    const raw = capsObj?.[capId]?.value;
-    const value = typeof raw === "boolean" ? raw : raw == null ? null : Boolean(raw);
+    const cap = capsObj?.[capId];
+    const rawValue = cap?.value;
+    const value = typeof rawValue === "boolean" ? rawValue : rawValue == null ? null : Boolean(rawValue);
     currents.push({
       device_id: id,
       device_name: name,
@@ -73,6 +85,7 @@ export async function pollHomeySensors(): Promise<{
       kind,
       capability_id: capId,
       value,
+      changed_at: pickCapTimestamp(cap),
     });
   }
 
@@ -82,12 +95,15 @@ export async function pollHomeySensors(): Promise<{
   const ids = currents.map((c) => c.device_id);
   const { data: prevRows } = await supabaseAdmin
     .from("homey_sensor_state")
-    .select("device_id, capability_id, last_value")
+    .select("device_id, capability_id, last_value, last_ts")
     .in("device_id", ids);
 
-  const prevMap = new Map<string, string | null>();
+  const prevMap = new Map<string, { value: string | null; lastTs: string | null }>();
   for (const r of prevRows ?? []) {
-    prevMap.set(`${r.device_id}:${r.capability_id}`, r.last_value as string | null);
+    prevMap.set(`${r.device_id}:${r.capability_id}`, {
+      value: r.last_value as string | null,
+      lastTs: (r.last_ts as string | null) ?? null,
+    });
   }
 
   const events: any[] = [];
@@ -98,10 +114,11 @@ export async function pollHomeySensors(): Promise<{
     const key = `${c.device_id}:${c.capability_id}`;
     const prev = prevMap.get(key);
     const curStr = c.value == null ? null : c.value ? "true" : "false";
-    const isTransition = prev !== undefined && prev !== curStr && curStr != null;
+    const isTransition = prev !== undefined && prev.value !== curStr && curStr != null;
+    const transitionTs = c.changed_at ?? nowIso;
     if (isTransition) {
       events.push({
-        ts: nowIso,
+        ts: transitionTs,
         device_id: c.device_id,
         device_name: c.device_name,
         zone: c.zone,
@@ -118,7 +135,7 @@ export async function pollHomeySensors(): Promise<{
       zone: c.zone,
       kind: c.kind,
       last_value: curStr,
-      last_ts: isTransition ? nowIso : undefined,
+      last_ts: isTransition ? transitionTs : (prev?.lastTs ?? nowIso),
       last_seen: nowIso,
     });
   }
