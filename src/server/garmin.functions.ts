@@ -16,12 +16,52 @@ export const getGarminOverview = createServerFn({ method: "GET" })
     since.setDate(since.getDate() - 30);
     const sinceIso = since.toISOString().slice(0, 10);
 
-    const { data: daily } = await supabaseAdmin
+    const { data: dailyRows } = await supabaseAdmin
       .from("garmin_daily_stats")
-      .select("day, steps, step_goal, floors_climbed, floors_goal, resting_heart_rate, average_heart_rate, weight_kg, total_kilocalories, active_kilocalories, distance_meters, moderate_intensity_minutes, vigorous_intensity_minutes, intensity_minutes_goal, body_battery_high, body_battery_low, stress_average, vo2max_running, vo2max_cycling, endurance_score, fitness_age, training_status, training_load_focus, endurance_contributors")
+      .select("day, steps, step_goal, floors_climbed, floors_goal, resting_heart_rate, average_heart_rate, weight_kg, total_kilocalories, active_kilocalories, distance_meters, moderate_intensity_minutes, vigorous_intensity_minutes, intensity_minutes_goal, body_battery_high, body_battery_low, stress_average, vo2max_running, vo2max_cycling, endurance_score, fitness_age, training_status, training_load_focus, endurance_contributors, raw")
       .eq("owner", owner)
       .gte("day", sinceIso)
       .order("day", { ascending: true });
+
+    const daily = (dailyRows ?? []).map((row) => {
+      const r: any = (row as any).raw ?? {};
+      const { raw: _raw, ...rest } = row as any;
+      const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : null);
+      return {
+        ...rest,
+        max_heart_rate: num(r.maxHeartRate),
+        max_avg_heart_rate: num(r.maxAvgHeartRate),
+        bmr_kilocalories: num(r.bmrKilocalories),
+        consumed_kilocalories: num(r.consumedKilocalories),
+        remaining_kilocalories: num(r.remainingKilocalories),
+        floors_ascended: num(r.floorsAscended),
+        floors_descended: num(r.floorsDescended),
+        floors_ascended_meters: num(r.floorsAscendedInMeters),
+        floors_descended_meters: num(r.floorsDescendedInMeters),
+        avg_altitude_meters: num(r.averageMonitoringEnvironmentAltitude),
+        highly_active_seconds: num(r.highlyActiveSeconds),
+        active_seconds: num(r.activeSeconds),
+        sedentary_seconds: num(r.sedentarySeconds),
+        sleeping_seconds: num(r.sleepingSeconds),
+        max_stress: num(r.maxStressLevel),
+        high_stress_seconds: num(r.highStressDuration),
+        medium_stress_seconds: num(r.mediumStressDuration),
+        low_stress_seconds: num(r.lowStressDuration),
+        rest_stress_seconds: num(r.restStressDuration),
+        activity_stress_seconds: num(r.activityStressDuration),
+        abnormal_hr_alerts: num(r.abnormalHeartRateAlertsCount),
+        latest_spo2: num(r.latestSpo2),
+        lowest_spo2: num(r.lowestSpo2),
+        latest_respiration: num(r.latestRespirationValue),
+        highest_respiration: num(r.highestRespirationValue),
+        lowest_respiration: num(r.lowestRespirationValue),
+        body_battery_charged: num(r.bodyBatteryChargedValue),
+        body_battery_at_wake: num(r.bodyBatteryAtWakeTime),
+        body_battery_recent: num(r.bodyBatteryMostRecentValue),
+        body_battery_during_sleep: num(r.bodyBatteryDuringSleep),
+        last_7d_avg_rhr: num(r.lastSevenDaysAvgRestingHeartRate),
+      };
+    });
 
     const { data: activities } = await supabaseAdmin
       .from("garmin_activities")
@@ -30,12 +70,50 @@ export const getGarminOverview = createServerFn({ method: "GET" })
       .order("start_time_local", { ascending: false })
       .limit(20);
 
-    const { data: sleep } = await supabaseAdmin
+    const { data: sleepRows } = await supabaseAdmin
       .from("garmin_sleep")
-      .select("day, total_seconds, deep_seconds, light_seconds, rem_seconds, awake_seconds, sleep_score, average_spo2, average_respiration, hrv_avg")
+      .select("day, total_seconds, deep_seconds, light_seconds, rem_seconds, awake_seconds, sleep_score, average_spo2, average_respiration, hrv_avg, sleep_start, sleep_end, raw")
       .eq("owner", owner)
       .gte("day", sinceIso)
       .order("day", { ascending: true });
+
+    const sleep = (sleepRows ?? []).map((s) => {
+      const r: any = (s as any).raw ?? {};
+      const dto: any = r.dailySleepDTO ?? {};
+      const scores: any = dto.sleepScores ?? {};
+      const need: any = dto.sleepNeed ?? {};
+      const align: any = dto.sleepAlignment ?? {};
+      const { raw: _raw, ...rest } = s as any;
+      const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : null);
+      const str = (v: unknown) => (typeof v === "string" && v.length ? v : null);
+      return {
+        ...rest,
+        skin_temp_dev_c: num(r.avgSkinTempDeviationC),
+        skin_temp_dev_f: num(r.avgSkinTempDeviationF),
+        skin_temp_calibration_days: num(r.skinTempCalibrationDays),
+        avg_overnight_hrv: num(r.avgOvernightHrv),
+        hrv_status: str(r.hrvStatus),
+        avg_sleep_stress: num(dto.avgSleepStress),
+        nap_time_seconds: num(dto.napTimeSeconds),
+        awake_count: num(dto.awakeCount),
+        sleep_avg_hr: num(dto.avgHeartRate),
+        sleep_score_qualifier: str(scores?.overall?.qualifierKey),
+        sleep_need_actual_min: num(need.actual),
+        sleep_need_baseline_min: num(need.baseline),
+        sleep_need_feedback: str(need.feedback),
+        sleep_history_adjustment: str(need.sleepHistoryAdjustment),
+        hrv_adjustment: str(need.hrvAdjustment),
+        nap_adjustment: str(need.napAdjustment),
+        recommended_bedtime_start_mins: num(need.recommendedBedtimeStartMins),
+        recommended_bedtime_end_mins: num(need.recommendedBedtimeEndMins),
+        sleep_alignment_status: str(align.status),
+        rem_pct: num(scores?.remPercentage?.value),
+        deep_pct: num(scores?.deepPercentage?.value),
+        light_pct: num(scores?.lightPercentage?.value),
+        lowest_spo2_value: num(dto.lowestSpO2Value),
+        highest_spo2_value: num(dto.highestSpO2Value),
+      };
+    });
 
     const intradaySince = new Date();
     intradaySince.setDate(intradaySince.getDate() - 7);
@@ -55,8 +133,9 @@ export const getGarminOverview = createServerFn({ method: "GET" })
       .limit(1)
       .maybeSingle();
 
-    return { owner, status, daily: daily ?? [], activities: activities ?? [], sleep: sleep ?? [], intraday: intraday ?? [], lastSync };
+    return { owner, status, daily, activities: activities ?? [], sleep, intraday: intraday ?? [], lastSync };
   });
+
 
 export const garminLoginNow = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => ownerSchema.parse(d ?? {}))

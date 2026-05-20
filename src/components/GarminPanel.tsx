@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Activity, Footprints, Heart, HeartPulse, Flame, Moon, RefreshCw, LogIn, Loader2, TrendingUp, ShieldCheck, Battery, Brain, Timer, Scale, ChevronDown, ChevronRight, ArrowUp, ArrowDown, Minus, Building2, Wind, Droplets, Waves, Award, Gauge, Target } from "lucide-react";
+import { Activity, Footprints, Heart, HeartPulse, Flame, Moon, RefreshCw, LogIn, Loader2, TrendingUp, ShieldCheck, Battery, Brain, Timer, Scale, ChevronDown, ChevronRight, ArrowUp, ArrowDown, Minus, Building2, Wind, Droplets, Waves, Award, Gauge, Target, Mountain, Thermometer, Sparkles, Clock, BedDouble } from "lucide-react";
+import { ScrollMarquee } from "@/components/ScrollMarquee";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, CartesianGrid } from "recharts";
 import { toast } from "sonner";
 import { getGarminOverview, garminLoginNow, garminSyncNow, garminSubmitMfaCode, listGarminDevices, setDefaultGarminDevice } from "@/server/garmin.functions";
@@ -30,19 +31,52 @@ type Daily = {
     anaerobic_target?: [number, number] | null;
   } | null;
   endurance_contributors?: Array<{ group: string; contribution: number }> | null;
+  // Utvidede felt fra raw
+  max_heart_rate?: number | null; max_avg_heart_rate?: number | null;
+  bmr_kilocalories?: number | null; consumed_kilocalories?: number | null; remaining_kilocalories?: number | null;
+  floors_ascended?: number | null; floors_descended?: number | null;
+  floors_ascended_meters?: number | null; floors_descended_meters?: number | null;
+  avg_altitude_meters?: number | null;
+  highly_active_seconds?: number | null; active_seconds?: number | null;
+  sedentary_seconds?: number | null; sleeping_seconds?: number | null;
+  max_stress?: number | null;
+  high_stress_seconds?: number | null; medium_stress_seconds?: number | null;
+  low_stress_seconds?: number | null; rest_stress_seconds?: number | null; activity_stress_seconds?: number | null;
+  abnormal_hr_alerts?: number | null;
+  latest_spo2?: number | null; lowest_spo2?: number | null;
+  latest_respiration?: number | null; highest_respiration?: number | null; lowest_respiration?: number | null;
+  body_battery_charged?: number | null; body_battery_at_wake?: number | null;
+  body_battery_recent?: number | null; body_battery_during_sleep?: number | null;
+  last_7d_avg_rhr?: number | null;
 };
 type Activity = {
   garmin_activity_id: number; activity_type: string | null; activity_name: string | null;
   start_time_local: string; duration_seconds: number | null; distance_meters: number | null;
   calories: number | null; average_hr: number | null; max_hr: number | null;
 };
-type Sleep = { day: string; total_seconds: number | null; deep_seconds: number | null; light_seconds: number | null; rem_seconds: number | null; awake_seconds: number | null; sleep_score: number | null; average_spo2: number | null; average_respiration: number | null; hrv_avg: number | null };
+type Sleep = {
+  day: string; total_seconds: number | null; deep_seconds: number | null; light_seconds: number | null;
+  rem_seconds: number | null; awake_seconds: number | null; sleep_score: number | null;
+  average_spo2: number | null; average_respiration: number | null; hrv_avg: number | null;
+  sleep_start?: string | null; sleep_end?: string | null;
+  skin_temp_dev_c?: number | null; skin_temp_dev_f?: number | null; skin_temp_calibration_days?: number | null;
+  avg_overnight_hrv?: number | null; hrv_status?: string | null;
+  avg_sleep_stress?: number | null; nap_time_seconds?: number | null; awake_count?: number | null;
+  sleep_avg_hr?: number | null; sleep_score_qualifier?: string | null;
+  sleep_need_actual_min?: number | null; sleep_need_baseline_min?: number | null; sleep_need_feedback?: string | null;
+  sleep_history_adjustment?: string | null; hrv_adjustment?: string | null; nap_adjustment?: string | null;
+  recommended_bedtime_start_mins?: number | null; recommended_bedtime_end_mins?: number | null;
+  sleep_alignment_status?: string | null;
+  rem_pct?: number | null; deep_pct?: number | null; light_pct?: number | null;
+  lowest_spo2_value?: number | null; highest_spo2_value?: number | null;
+};
 type Intraday = { day: string; hour: number; heart_rate_avg: number | null; heart_rate_max: number | null; stress_avg: number | null; body_battery: number | null };
 type Overview = {
   status: { connected: boolean; username: string | null; expires_at: string | null; last_login_at: string | null; mfa_pending?: boolean; device_name?: string | null; device_image_url?: string | null };
   daily: Daily[]; activities: Activity[]; sleep: Sleep[]; intraday?: Intraday[];
   lastSync: { ran_at: string; ok: boolean; daily_count: number; activities_count: number; sleep_count: number; error: string | null } | null;
 };
+
 type GarminLoginResult =
   | { ok: true; mfa: true }
   | { ok: true; mfa: false; expires_at: string }
@@ -73,6 +107,46 @@ function stressLevel(n?: number | null): string {
   if (n < 75) return "Medium";
   return "Høyt";
 }
+function fmtMinOfDay(mins?: number | null): string {
+  if (mins == null) return "—";
+  const m = ((mins % 1440) + 1440) % 1440;
+  return `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
+}
+function fmtClock(iso?: string | null): string {
+  if (!iso) return "—";
+  try { return new Date(iso).toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit" }); } catch { return "—"; }
+}
+function fmtSecondsClock(sec?: number | null): string {
+  if (!sec || sec <= 0) return "—";
+  const h = Math.floor(sec / 3600); const m = Math.floor((sec % 3600) / 60);
+  if (h === 0) return `${m}m`;
+  return `${h}t ${m}m`;
+}
+function fmtSkinTemp(c?: number | null): string {
+  if (c == null) return "—";
+  const sign = c > 0 ? "+" : "";
+  return `${sign}${c.toFixed(1)} °C`;
+}
+const SLEEP_FEEDBACK_NB: Record<string, string> = {
+  NO_CHANGE_NO_ADJUSTMENTS: "Stabilt — ingen justeringer",
+  NO_CHANGE: "Ingen endring",
+  INCREASE_SLEEP_NEED: "Anbefaler mer søvn",
+  DECREASE_SLEEP_NEED: "Anbefaler mindre søvn",
+};
+const HRV_STATUS_NB: Record<string, string> = {
+  BALANCED: "I balanse",
+  UNBALANCED: "Ubalansert",
+  LOW: "Lav",
+  POOR: "Dårlig",
+  NONE: "Ingen data",
+};
+const ALIGNMENT_NB: Record<string, string> = {
+  ON_TIME: "På sporet",
+  EARLY: "Tidlig",
+  LATE: "Sen",
+  BEHIND: "På etterskudd",
+  AHEAD: "Foran skjema",
+};
 
 type ChartPeriod = "today" | "yesterday" | "thisWeek" | "lastWeek" | "last30" | "thisMonth";
 
@@ -369,6 +443,50 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
   const maxHrToday = todaysActs.reduce((m, a) => Math.max(m, a.max_hr ?? 0), 0) || null;
   const maxHrYesterday = yesterdaysActs.reduce((m, a) => Math.max(m, a.max_hr ?? 0), 0) || null;
 
+  // Intraday i dag og i går for puls-tile
+  const todayIntraday = (data?.intraday ?? []).filter((x) => x.day === todayDay);
+  const yesterdayIntraday = (data?.intraday ?? []).filter((x) => x.day === yesterdayDay);
+  const intradayHrLatest = (() => {
+    const hrPts = todayIntraday.filter((x) => x.heart_rate_avg != null);
+    return hrPts.length ? hrPts[hrPts.length - 1].heart_rate_avg : null;
+  })();
+  const intradayHrLatestYesterday = (() => {
+    const hrPts = yesterdayIntraday.filter((x) => x.heart_rate_avg != null);
+    return hrPts.length ? hrPts[hrPts.length - 1].heart_rate_avg : null;
+  })();
+  const intradayHrMin = (() => {
+    const v = todayIntraday.map((x) => x.heart_rate_avg).filter((n): n is number => typeof n === "number" && n > 0);
+    return v.length ? Math.min(...v) : null;
+  })();
+  const intradayHrMax = (() => {
+    const v = todayIntraday.map((x) => x.heart_rate_max ?? x.heart_rate_avg).filter((n): n is number => typeof n === "number" && n > 0);
+    return v.length ? Math.max(...v) : null;
+  })();
+  const intradayHrAvg = (() => {
+    const v = todayIntraday.map((x) => x.heart_rate_avg).filter((n): n is number => typeof n === "number" && n > 0);
+    return v.length ? Math.round(v.reduce((a, b) => a + b, 0) / v.length) : null;
+  })();
+  const intradayHrPeakHour = (() => {
+    let best: { hour: number; v: number } | null = null;
+    for (const x of todayIntraday) {
+      const v = x.heart_rate_max ?? x.heart_rate_avg;
+      if (typeof v === "number" && (best == null || v > best.v)) best = { hour: x.hour, v };
+    }
+    return best;
+  })();
+  const intradaySparkData = todayIntraday.map((x) => ({ day: String(x.hour).padStart(2, "0"), hr: x.heart_rate_avg }));
+
+  // Hud-temp tile
+  const lastSkinEntry = (data?.sleep ?? []).slice().reverse().find((s) => s.skin_temp_dev_c != null);
+  const prevSkinEntry = (() => {
+    const arr = (data?.sleep ?? []).filter((s) => s.skin_temp_dev_c != null);
+    return arr.length >= 2 ? arr[arr.length - 2] : undefined;
+  })();
+
+  // Søvntrener tile (basert på sleep need + feedback)
+  const lastCoachEntry = (data?.sleep ?? []).slice().reverse().find((s) => s.sleep_need_actual_min != null || s.sleep_need_feedback != null || s.sleep_score_qualifier != null);
+
+
   return (
     <section className="container mx-auto px-2 sm:px-4 pb-6">
       <div className="space-y-4">
@@ -441,6 +559,10 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
                   { k: "Igjen", v: today?.steps != null && today?.step_goal ? fmtNum(Math.max(0, today.step_goal - today.steps)) : "—" },
                   { k: "Distanse", v: fmtKm(today?.distance_meters) },
                   { k: "% av mål", v: today?.steps != null && today?.step_goal ? `${Math.round((today.steps / today.step_goal) * 100)}%` : "—" },
+                  { k: "Aktiv tid", v: fmtSecondsClock(today?.active_seconds) },
+                  { k: "Høyt aktiv", v: fmtSecondsClock(today?.highly_active_seconds) },
+                  { k: "Stillesittende", v: fmtSecondsClock(today?.sedentary_seconds) },
+                  { k: "Sovende", v: fmtSecondsClock(today?.sleeping_seconds) },
                   { k: "Snitt 7d", v: avgFmt(data?.daily?.slice(-7).map((d) => d.steps), 0) },
                   { k: "Snitt 30d", v: avgFmt(data?.daily?.map((d) => d.steps), 0) },
                 ]}
@@ -452,8 +574,10 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
                 details={[
                   { k: "I dag", v: today?.resting_heart_rate != null ? `${today.resting_heart_rate} bpm` : "—" },
                   { k: "I går", v: yesterday?.resting_heart_rate != null ? `${yesterday.resting_heart_rate} bpm` : "—" },
+                  { k: "Garmin 7d", v: today?.last_7d_avg_rhr != null ? `${today.last_7d_avg_rhr} bpm` : "—" },
                   { k: "Snitt 7d", v: avgFmt(data?.daily?.slice(-7).map((d) => d.resting_heart_rate), 0, " bpm") },
                   { k: "Snitt 30d", v: avgFmt(data?.daily?.map((d) => d.resting_heart_rate), 0, " bpm") },
+                  { k: "Lav 30d", v: (() => { const v = (data?.daily ?? []).map((d) => d.resting_heart_rate).filter((n): n is number => typeof n === "number" && n > 0); return v.length ? `${Math.min(...v)} bpm` : "—"; })() },
                 ]}
                 chart={sparkLine(data?.daily, "resting_heart_rate", false, C.hr)} />
               <Tile icon={<Heart size={14} style={{color: C.hrAvg}} />} label="Snitt puls"
@@ -678,12 +802,100 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
                 details={[
                   { k: "Total", v: today?.total_kilocalories != null ? `${fmtNum(today.total_kilocalories)} kcal` : "—" },
                   { k: "Aktive", v: today?.active_kilocalories != null ? `${fmtNum(today.active_kilocalories)} kcal` : "—" },
-                  { k: "BMR", v: today?.total_kilocalories != null && today?.active_kilocalories != null ? `${fmtNum(today.total_kilocalories - today.active_kilocalories)} kcal` : "—" },
+                  { k: "BMR", v: today?.bmr_kilocalories != null ? `${fmtNum(today.bmr_kilocalories)} kcal` : (today?.total_kilocalories != null && today?.active_kilocalories != null ? `${fmtNum(today.total_kilocalories - today.active_kilocalories)} kcal` : "—") },
+                  { k: "Spist", v: today?.consumed_kilocalories != null ? `${fmtNum(today.consumed_kilocalories)} kcal` : "—" },
+                  { k: "Igjen", v: today?.remaining_kilocalories != null ? `${fmtNum(today.remaining_kilocalories)} kcal` : "—" },
                   { k: "Snitt 7d", v: avgFmt(data?.daily?.slice(-7).map((d) => d.total_kilocalories), 0, " kcal") },
                   { k: "Snitt 30d", v: avgFmt(data?.daily?.map((d) => d.total_kilocalories), 0, " kcal") },
                 ]}
                 chart={sparkLine2(data?.daily, "total_kilocalories", "active_kilocalories", C.caloriesTotal, C.caloriesActive)} />
+
+              {/* Puls gjennom dagen (intraday) */}
+              <Tile icon={<HeartPulse size={14} style={{color: C.hr}} />} label="Puls i dag"
+                value={intradayHrLatest ?? null} prev={intradayHrLatestYesterday ?? null}
+                unit=" bpm" fallbackSub={intradayHrAvg != null ? `snitt ${intradayHrAvg} bpm` : "ingen måling"}
+                showDetails={showDetails}
+                details={[
+                  { k: "Siste", v: intradayHrLatest != null ? `${intradayHrLatest} bpm` : "—" },
+                  { k: "Snitt i dag", v: intradayHrAvg != null ? `${intradayHrAvg} bpm` : "—" },
+                  { k: "Min i dag", v: intradayHrMin != null ? `${intradayHrMin} bpm` : "—" },
+                  { k: "Maks i dag", v: intradayHrMax != null ? `${intradayHrMax} bpm` : "—" },
+                  { k: "Topp kl", v: intradayHrPeakHour ? `${String(intradayHrPeakHour.hour).padStart(2, "0")}:00 (${intradayHrPeakHour.v})` : "—" },
+                  { k: "Datapunkter", v: String(todayIntraday.filter((x) => x.heart_rate_avg != null).length) },
+                  { k: "Avvik fra hvile", v: intradayHrAvg != null && today?.resting_heart_rate != null ? `+${intradayHrAvg - today.resting_heart_rate} bpm` : "—" },
+                ]}
+                chart={sparkLine(intradaySparkData, "hr", false, C.hr)} />
+
+              {/* Hud-temperatur */}
+              <Tile icon={<Thermometer size={14} style={{color: C.hrAvg}} />} label="Hud-temperatur"
+                value={lastSkinEntry?.skin_temp_dev_c ?? null} prev={prevSkinEntry?.skin_temp_dev_c ?? null}
+                unit=" °C" digits={1}
+                fallbackSub={lastSkinEntry?.skin_temp_calibration_days != null && lastSkinEntry.skin_temp_calibration_days > 0 ? `kalibrerer (${lastSkinEntry.skin_temp_calibration_days} d igjen)` : "ingen måling"}
+                showDetails={showDetails}
+                details={[
+                  { k: "Avvik (°C)", v: fmtSkinTemp(lastSkinEntry?.skin_temp_dev_c) },
+                  { k: "Avvik (°F)", v: lastSkinEntry?.skin_temp_dev_f != null ? `${lastSkinEntry.skin_temp_dev_f > 0 ? "+" : ""}${lastSkinEntry.skin_temp_dev_f.toFixed(1)} °F` : "—" },
+                  { k: "Dato", v: lastSkinEntry?.day ?? "—" },
+                  { k: "Forrige natt", v: fmtSkinTemp(prevSkinEntry?.skin_temp_dev_c) },
+                  { k: "Snitt 7d", v: avgFmt(data?.sleep?.slice(-7).map((s) => s.skin_temp_dev_c), 1, " °C") },
+                  { k: "Snitt 30d", v: avgFmt(data?.sleep?.map((s) => s.skin_temp_dev_c), 1, " °C") },
+                  { k: "Kalibreringsdager", v: lastSkinEntry?.skin_temp_calibration_days != null ? String(lastSkinEntry.skin_temp_calibration_days) : "—" },
+                ]}
+                chart={sparkLine(
+                  (data?.sleep ?? []).map((s) => ({ day: s.day, skin: s.skin_temp_dev_c })),
+                  "skin", false, C.hrAvg,
+                )} />
+
+              {/* Høydemåler */}
+              <Tile icon={<Mountain size={14} style={{color: C.floors}} />} label="Høydemåler"
+                value={today?.floors_ascended_meters ?? null} prev={yesterday?.floors_ascended_meters ?? null}
+                unit=" m" digits={0}
+                fallbackSub={today?.avg_altitude_meters != null ? `snitt ${Math.round(today.avg_altitude_meters)} moh` : "ingen data"}
+                showDetails={showDetails}
+                details={[
+                  { k: "Opp (m)", v: today?.floors_ascended_meters != null ? `${Math.round(today.floors_ascended_meters)} m` : "—" },
+                  { k: "Ned (m)", v: today?.floors_descended_meters != null ? `${Math.round(today.floors_descended_meters)} m` : "—" },
+                  { k: "Etasjer opp", v: today?.floors_ascended != null ? fmtNum(today.floors_ascended) : "—" },
+                  { k: "Etasjer ned", v: today?.floors_descended != null ? fmtNum(today.floors_descended) : "—" },
+                  { k: "Snitt høyde", v: today?.avg_altitude_meters != null ? `${Math.round(today.avg_altitude_meters)} moh` : "—" },
+                  { k: "I går (opp)", v: yesterday?.floors_ascended_meters != null ? `${Math.round(yesterday.floors_ascended_meters)} m` : "—" },
+                  { k: "Snitt 7d", v: avgFmt(data?.daily?.slice(-7).map((d) => d.floors_ascended_meters), 0, " m") },
+                  { k: "Snitt 30d", v: avgFmt(data?.daily?.map((d) => d.floors_ascended_meters), 0, " m") },
+                ]}
+                chart={sparkBar(
+                  (data?.daily ?? []).map((d) => ({ day: d.day, asc: d.floors_ascended_meters })),
+                  "asc", C.floors,
+                )} />
+
+              {/* Søvntrener */}
+              <Tile icon={<Sparkles size={14} style={{color: C.sleepRem}} />} label="Søvntrener"
+                value={lastCoachEntry?.sleep_need_actual_min != null ? lastCoachEntry.sleep_need_actual_min / 60 : null}
+                prev={null}
+                unit=" t" digits={1}
+                fallbackSub={lastCoachEntry?.sleep_need_feedback ? (SLEEP_FEEDBACK_NB[lastCoachEntry.sleep_need_feedback] ?? lastCoachEntry.sleep_need_feedback) : "ingen anbefaling"}
+                showDetails={showDetails}
+                details={[
+                  { k: "Behov", v: lastCoachEntry?.sleep_need_actual_min != null ? `${(lastCoachEntry.sleep_need_actual_min / 60).toFixed(1)} t` : "—" },
+                  { k: "Baseline", v: lastCoachEntry?.sleep_need_baseline_min != null ? `${(lastCoachEntry.sleep_need_baseline_min / 60).toFixed(1)} t` : "—" },
+                  { k: "Tilbakemelding", v: lastCoachEntry?.sleep_need_feedback ? (SLEEP_FEEDBACK_NB[lastCoachEntry.sleep_need_feedback] ?? lastCoachEntry.sleep_need_feedback) : "—" },
+                  { k: "Søvnkvalitet", v: lastCoachEntry?.sleep_score_qualifier ?? "—" },
+                  { k: "HRV-status", v: lastCoachEntry?.hrv_status ? (HRV_STATUS_NB[lastCoachEntry.hrv_status] ?? lastCoachEntry.hrv_status) : "—" },
+                  { k: "HRV-justering", v: lastCoachEntry?.hrv_adjustment ?? "—" },
+                  { k: "Lur-justering", v: lastCoachEntry?.nap_adjustment ?? "—" },
+                  { k: "Lur i natt", v: fmtSecondsClock(lastCoachEntry?.nap_time_seconds) },
+                  { k: "Søvn-stress", v: lastCoachEntry?.avg_sleep_stress != null ? String(lastCoachEntry.avg_sleep_stress) : "—" },
+                  { k: "Rytme", v: lastCoachEntry?.sleep_alignment_status ? (ALIGNMENT_NB[lastCoachEntry.sleep_alignment_status] ?? lastCoachEntry.sleep_alignment_status) : "—" },
+                  { k: "Anbef. leggetid", v: fmtMinOfDay(lastCoachEntry?.recommended_bedtime_start_mins) },
+                  { k: "Anbef. opp", v: fmtMinOfDay(lastCoachEntry?.recommended_bedtime_end_mins) },
+                  { k: "La seg", v: fmtClock(lastCoachEntry?.sleep_start) },
+                  { k: "Stod opp", v: fmtClock(lastCoachEntry?.sleep_end) },
+                ]}
+                chart={sparkLine(
+                  (data?.sleep ?? []).map((s) => ({ day: s.day, need: s.sleep_need_actual_min != null ? s.sleep_need_actual_min / 60 : null })),
+                  "need", false, C.sleepRem,
+                )} />
             </div>
+
 
             {/* Treningsstatus, kondisjonsalder og belastningsfokus */}
             {(() => {
@@ -1165,9 +1377,9 @@ function Tile({
       {showDetails && details && details.length > 0 && (
         <div className="mt-2 pt-2 border-t border-border/40 grid grid-cols-2 gap-x-2 gap-y-0.5 text-[10px]">
           {details.map((d) => (
-            <div key={d.k} className="flex justify-between gap-1">
-              <span className="text-muted-foreground truncate">{d.k}</span>
-              <span className="tabular-nums font-medium">{d.v}</span>
+            <div key={d.k} className="flex justify-between gap-1 min-w-0">
+              <ScrollMarquee text={d.k} className="text-muted-foreground flex-1" />
+              <ScrollMarquee text={d.v} className="tabular-nums font-medium max-w-[55%] text-right" />
             </div>
           ))}
         </div>
