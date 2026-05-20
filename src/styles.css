@@ -478,8 +478,13 @@ main .container {
 }
 
 /* Tooltip-serier må følge samme rekkefølge som graf og legend. */
-.recharts-default-tooltip .recharts-tooltip-item:nth-of-type(5n+1) { color: var(--chart-series-1) !important; }
-.recharts-default-tooltip .recharts-tooltip-item:nth-of-type(5n+2) { color: var(--chart-series-2) !important; }
-.recharts-default-tooltip .recharts-tooltip-item:nth-of-type(5n+3) { color: var(--chart-series-3) !important; }
-.recharts-default-tooltip .recharts-tooltip-item:nth-of-type(5n+4) { color: var(--chart-series-4) !important; }
-.recharts-default-tooltip .recharts-tooltip-item:nth-of-type(5n+5) { color: var(--chart-series-5) !important; }
+.recharts-default-tooltip .recharts-tooltip-item:nth-of-type(5n+1),
+.recharts-default-tooltip .recharts-tooltip-item:nth-of-type(5n+1) * { color: var(--chart-series-1) !important; }
+.recharts-default-tooltip .recharts-tooltip-item:nth-of-type(5n+2),
+.recharts-default-tooltip .recharts-tooltip-item:nth-of-type(5n+2) * { color: var(--chart-series-2) !important; }
+.recharts-default-tooltip .recharts-tooltip-item:nth-of-type(5n+3),
+.recharts-default-tooltip .recharts-tooltip-item:nth-of-type(5n+3) * { color: var(--chart-series-3) !important; }
+.recharts-default-tooltip .recharts-tooltip-item:nth-of-type(5n+4),
+.recharts-default-tooltip .recharts-tooltip-item:nth-of-type(5n+4) * { color: var(--chart-series-4) !important; }
+.recharts-default-tooltip .recharts-tooltip-item:nth-of-type(5n+5),
+.recharts-default-tooltip .recharts-tooltip-item:nth-of-type(5n+5) * { color: var(--chart-series-5) !important; }
