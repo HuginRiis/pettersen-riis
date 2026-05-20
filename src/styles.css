@@ -454,26 +454,31 @@ main .container {
 .recharts-default-legend .recharts-legend-item:nth-of-type(5n+1) .recharts-legend-icon,
 .recharts-default-legend .recharts-legend-item:nth-of-type(5n+1) .recharts-surface path {
   fill: var(--chart-series-1) !important;
+  stroke: var(--chart-series-1) !important;
   color: var(--chart-series-1) !important;
 }
 .recharts-default-legend .recharts-legend-item:nth-of-type(5n+2) .recharts-legend-icon,
 .recharts-default-legend .recharts-legend-item:nth-of-type(5n+2) .recharts-surface path {
   fill: var(--chart-series-2) !important;
+  stroke: var(--chart-series-2) !important;
   color: var(--chart-series-2) !important;
 }
 .recharts-default-legend .recharts-legend-item:nth-of-type(5n+3) .recharts-legend-icon,
 .recharts-default-legend .recharts-legend-item:nth-of-type(5n+3) .recharts-surface path {
   fill: var(--chart-series-3) !important;
+  stroke: var(--chart-series-3) !important;
   color: var(--chart-series-3) !important;
 }
 .recharts-default-legend .recharts-legend-item:nth-of-type(5n+4) .recharts-legend-icon,
 .recharts-default-legend .recharts-legend-item:nth-of-type(5n+4) .recharts-surface path {
   fill: var(--chart-series-4) !important;
+  stroke: var(--chart-series-4) !important;
   color: var(--chart-series-4) !important;
 }
 .recharts-default-legend .recharts-legend-item:nth-of-type(5n+5) .recharts-legend-icon,
 .recharts-default-legend .recharts-legend-item:nth-of-type(5n+5) .recharts-surface path {
   fill: var(--chart-series-5) !important;
+  stroke: var(--chart-series-5) !important;
   color: var(--chart-series-5) !important;
 }
 
