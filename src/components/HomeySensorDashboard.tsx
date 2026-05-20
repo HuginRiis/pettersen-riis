@@ -2,12 +2,14 @@ import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import {
   getHomeySensorDashboard,
+  backfillHomeySensorHistoryFn,
   type HomeySensorDashboard,
   type SensorRange,
 } from "@/server/homey-sensor-dashboard.functions";
 import {
   Activity, DoorOpen, Lock, Unlock, Sun, Moon, AlertTriangle,
   Sparkles, ChevronDown, MapPin, Clock, TrendingUp, TrendingDown,
+  EyeOff, RefreshCw,
 } from "lucide-react";
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid,
