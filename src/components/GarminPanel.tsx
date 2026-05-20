@@ -30,19 +30,52 @@ type Daily = {
     anaerobic_target?: [number, number] | null;
   } | null;
   endurance_contributors?: Array<{ group: string; contribution: number }> | null;
+  // Utvidede felt fra raw
+  max_heart_rate?: number | null; max_avg_heart_rate?: number | null;
+  bmr_kilocalories?: number | null; consumed_kilocalories?: number | null; remaining_kilocalories?: number | null;
+  floors_ascended?: number | null; floors_descended?: number | null;
+  floors_ascended_meters?: number | null; floors_descended_meters?: number | null;
+  avg_altitude_meters?: number | null;
+  highly_active_seconds?: number | null; active_seconds?: number | null;
+  sedentary_seconds?: number | null; sleeping_seconds?: number | null;
+  max_stress?: number | null;
+  high_stress_seconds?: number | null; medium_stress_seconds?: number | null;
+  low_stress_seconds?: number | null; rest_stress_seconds?: number | null; activity_stress_seconds?: number | null;
+  abnormal_hr_alerts?: number | null;
+  latest_spo2?: number | null; lowest_spo2?: number | null;
+  latest_respiration?: number | null; highest_respiration?: number | null; lowest_respiration?: number | null;
+  body_battery_charged?: number | null; body_battery_at_wake?: number | null;
+  body_battery_recent?: number | null; body_battery_during_sleep?: number | null;
+  last_7d_avg_rhr?: number | null;
 };
 type Activity = {
   garmin_activity_id: number; activity_type: string | null; activity_name: string | null;
   start_time_local: string; duration_seconds: number | null; distance_meters: number | null;
   calories: number | null; average_hr: number | null; max_hr: number | null;
 };
-type Sleep = { day: string; total_seconds: number | null; deep_seconds: number | null; light_seconds: number | null; rem_seconds: number | null; awake_seconds: number | null; sleep_score: number | null; average_spo2: number | null; average_respiration: number | null; hrv_avg: number | null };
+type Sleep = {
+  day: string; total_seconds: number | null; deep_seconds: number | null; light_seconds: number | null;
+  rem_seconds: number | null; awake_seconds: number | null; sleep_score: number | null;
+  average_spo2: number | null; average_respiration: number | null; hrv_avg: number | null;
+  sleep_start?: string | null; sleep_end?: string | null;
+  skin_temp_dev_c?: number | null; skin_temp_dev_f?: number | null; skin_temp_calibration_days?: number | null;
+  avg_overnight_hrv?: number | null; hrv_status?: string | null;
+  avg_sleep_stress?: number | null; nap_time_seconds?: number | null; awake_count?: number | null;
+  sleep_avg_hr?: number | null; sleep_score_qualifier?: string | null;
+  sleep_need_actual_min?: number | null; sleep_need_baseline_min?: number | null; sleep_need_feedback?: string | null;
+  sleep_history_adjustment?: string | null; hrv_adjustment?: string | null; nap_adjustment?: string | null;
+  recommended_bedtime_start_mins?: number | null; recommended_bedtime_end_mins?: number | null;
+  sleep_alignment_status?: string | null;
+  rem_pct?: number | null; deep_pct?: number | null; light_pct?: number | null;
+  lowest_spo2_value?: number | null; highest_spo2_value?: number | null;
+};
 type Intraday = { day: string; hour: number; heart_rate_avg: number | null; heart_rate_max: number | null; stress_avg: number | null; body_battery: number | null };
 type Overview = {
   status: { connected: boolean; username: string | null; expires_at: string | null; last_login_at: string | null; mfa_pending?: boolean; device_name?: string | null; device_image_url?: string | null };
   daily: Daily[]; activities: Activity[]; sleep: Sleep[]; intraday?: Intraday[];
   lastSync: { ran_at: string; ok: boolean; daily_count: number; activities_count: number; sleep_count: number; error: string | null } | null;
 };
+
 type GarminLoginResult =
   | { ok: true; mfa: true }
   | { ok: true; mfa: false; expires_at: string }
