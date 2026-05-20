@@ -38,6 +38,7 @@ function NotFoundComponent() {
 export const Route = createRootRoute({
   beforeLoad: async ({ location }) => {
     // Public paths that do not require auth — visitors may enter the courtyard freely
+    if (location.pathname.startsWith("/api/")) return;
     if (PUBLIC_PATHS.has(location.pathname)) return;
     const { authenticated } = await checkAuth();
     if (!authenticated) {
