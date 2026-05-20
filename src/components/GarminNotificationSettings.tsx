@@ -65,6 +65,9 @@ type Pref = {
   daily_show_both: boolean;
   daily_fields: string[];
   compare_fields: string[];
+  notify_no_sync: boolean;
+  no_sync_hours: number;
+  no_sync_check_time: string;
 };
 
 const DAILY_FIELD_OPTIONS = [
@@ -106,7 +109,7 @@ export function GarminNotificationSettings() {
   const load = async () => {
     const { data, error } = await supabase
       .from("garmin_notification_prefs" as never)
-      .select("id, recipient, sender_label, enabled, notify_daily, daily_time, notify_step_goal, notify_low_sleep, low_sleep_hours, notify_high_resting_hr, high_rhr_bpm, garmin_owner, notify_compare, compare_time, daily_show_both, daily_fields, compare_fields")
+      .select("id, recipient, sender_label, enabled, notify_daily, daily_time, notify_step_goal, notify_low_sleep, low_sleep_hours, notify_high_resting_hr, high_rhr_bpm, garmin_owner, notify_compare, compare_time, daily_show_both, daily_fields, compare_fields, notify_no_sync, no_sync_hours, no_sync_check_time")
       .order("created_at", { ascending: true });
     if (error) toast.error("Kunne ikke laste regler");
     else setPrefs((data ?? []) as unknown as Pref[]);
@@ -167,6 +170,7 @@ export function GarminNotificationSettings() {
           <li>• <span className="text-foreground">Skritt-mål nådd</span> — varsel én gang per dag når dagens skritt-mål er passert</li>
           <li>• <span className="text-foreground">Lav søvn</span> — varsler hvis natten ble kortere enn grensa</li>
           <li>• <span className="text-foreground">Høy hvilepuls</span> — varsler hvis hvilepulsen er over grensa</li>
+          <li>• <span className="text-foreground">Klokken ikke synket</span> — varsler hvis Garmin ikke har syncet eller mangler dagens søvn-data</li>
         </ul>
       </div>
 
@@ -361,6 +365,40 @@ export function GarminNotificationSettings() {
                     className="h-8 w-20"
                   />
                   <span className="text-muted-foreground">bpm</span>
+                </div>
+              )}
+            </div>
+
+            <div className="rounded-md border border-border/40 p-2 space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-medium">Klokken ikke synket</span>
+                <Switch checked={!!p.notify_no_sync} onCheckedChange={(v) => update(p.id, { notify_no_sync: v })} />
+              </div>
+              {p.notify_no_sync && (
+                <div className="space-y-2 text-xs">
+                  <p className="text-muted-foreground">
+                    Varsler hvis Garmin-klokken ikke har syncet på X timer, eller hvis det
+                    ikke finnes søvn-data for natten når sjekken kjører.
+                  </p>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-muted-foreground">Uten sync i mer enn:</span>
+                    <Input
+                      type="number" min={1} max={72} step={1}
+                      value={p.no_sync_hours ?? 12}
+                      onChange={(e) => update(p.id, { no_sync_hours: Math.max(1, Math.min(72, Number(e.target.value) || 12)) })}
+                      className="h-8 w-20"
+                    />
+                    <span className="text-muted-foreground">timer</span>
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-muted-foreground">Sjekk-tidspunkt:</span>
+                    <Input
+                      type="time"
+                      value={(p.no_sync_check_time || "10:00").slice(0, 5)}
+                      onChange={(e) => update(p.id, { no_sync_check_time: `${e.target.value}:00` })}
+                      className="h-8 w-28"
+                    />
+                  </div>
                 </div>
               )}
             </div>
