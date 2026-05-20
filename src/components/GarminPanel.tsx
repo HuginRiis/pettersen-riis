@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Activity, Footprints, Heart, HeartPulse, Flame, Moon, RefreshCw, LogIn, Loader2, TrendingUp, ShieldCheck, Battery, Brain, Timer, Scale, ChevronDown, ChevronRight, ArrowUp, ArrowDown, Minus, Building2, Wind, Droplets, Waves, Award, Gauge, Target } from "lucide-react";
+import { Activity, Footprints, Heart, HeartPulse, Flame, Moon, RefreshCw, LogIn, Loader2, TrendingUp, ShieldCheck, Battery, Brain, Timer, Scale, ChevronDown, ChevronRight, ArrowUp, ArrowDown, Minus, Building2, Wind, Droplets, Waves, Award, Gauge, Target, Mountain, Thermometer, Sparkles, Clock, BedDouble } from "lucide-react";
+import { ScrollMarquee } from "@/components/ScrollMarquee";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, CartesianGrid } from "recharts";
 import { toast } from "sonner";
 import { getGarminOverview, garminLoginNow, garminSyncNow, garminSubmitMfaCode, listGarminDevices, setDefaultGarminDevice } from "@/server/garmin.functions";
