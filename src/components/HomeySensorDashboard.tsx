@@ -129,6 +129,9 @@ function SensorEventsDialog({
         range,
         eventTypes: query.eventTypes,
         zone: query.zone,
+        kind: query.kind,
+        hourOfDay: query.hourOfDay,
+        dateStr: query.dateStr,
         limit: 300,
       },
     })
