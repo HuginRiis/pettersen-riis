@@ -276,6 +276,10 @@ function OkonomiSettingsPanelInner() {
           <div className="border-t border-border/40 pt-3">
             <OkonomiAccountsSettings />
           </div>
+
+          <div className="border-t border-border/40 pt-3">
+            <OkonomiInternalTransferSettings />
+          </div>
         </div>
       </div>
     </section>
