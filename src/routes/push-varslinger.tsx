@@ -26,6 +26,7 @@ import {
   Bell, BellOff, Calendar, Cake, Trash2, CloudSun, Sun, Lightbulb, ScrollText, ShieldCheck, Lock, ExternalLink, Smartphone, X, Activity,
 } from "lucide-react";
 import heroImg from "@/assets/got-agenda.jpg";
+import { CollapsibleSection } from "@/components/CollapsibleSection";
 
 export const Route = createFileRoute("/push-varslinger")({
   head: () => ({
@@ -140,249 +141,151 @@ function PushSettingsPage() {
 
       <SettingsTOC />
 
-      <section id="sec-kommende" className="scroll-mt-24">
-        <UpcomingPushPanel />
+      <section id="sec-kommende" className="container mx-auto px-4 pt-4 scroll-mt-24">
+        <CollapsibleSection id="sec-kommende" title="📨 Kommende push">
+          <UpcomingPushPanel />
+        </CollapsibleSection>
       </section>
 
       <section id="sec-personlig" className="container mx-auto px-4 pt-4 scroll-mt-24">
-        <h2 className="text-display text-primary text-sm tracking-[0.3em] uppercase mb-2">
-          ✦ Innstillinger
-        </h2>
-        <p className="text-xs text-muted-foreground mb-3">
-          Personlige innstillinger for menyen, snarveier, favoritt-rom og lys-scener — knyttet til deg som push-mottaker.
-        </p>
-      </section>
-      <section id="sec-utseende" className="scroll-mt-24"><AppearanceSettingsPanel /></section>
-      <section id="sec-graf-utseende" className="scroll-mt-24"><ChartAppearanceSettingsPanel /></section>
-      <section id="sec-meny" className="scroll-mt-24"><MenuPreferencesPanel /></section>
-      <section id="sec-meny-synlig" className="scroll-mt-24"><MenuVisibilityPanel /></section>
-      <section id="sec-badges" className="scroll-mt-24"><HeaderBadgeSettingsPanel /></section>
-      <section id="sec-snarveier" className="scroll-mt-24"><FavoritesManagerPanel /></section>
-      <section id="sec-rom" className="scroll-mt-24"><FavoriteZonesPanel /></section>
-      <section id="sec-scener" className="scroll-mt-24"><LightScenesPanel /></section>
-      <section id="sec-scheduling" className="scroll-mt-24"><PushSchedulingSettings /></section>
-      <section id="sec-tibber" className="scroll-mt-24"><TibberCronStatusPanel /></section>
-      <OkonomiSettingsPanel />
-
-      <section id="sec-farevarsel" className="container mx-auto px-4 pb-4 scroll-mt-24">
-        <div className="panel rounded-lg p-4 border border-orange-500/40">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-orange-400 mb-3 flex items-center gap-2">
-            ⚠️ Vær farevarsel — av/på
-          </h2>
-          <MetAlertNotificationSettings />
-        </div>
+        <CollapsibleSection id="sec-personlig" title="✦ Innstillinger">
+          <p className="text-xs text-muted-foreground">
+            Personlige innstillinger for menyen, snarveier, favoritt-rom og lys-scener — knyttet til deg som push-mottaker.
+          </p>
+        </CollapsibleSection>
       </section>
 
-      <section id="sec-uv" className="container mx-auto px-4 pb-4 scroll-mt-24">
-        <div className="panel rounded-lg p-4">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-primary mb-3 flex items-center gap-2">
-            🧴 Solkrem-varsler — UV
-          </h2>
-          <UvNotificationSettings />
-        </div>
-      </section>
-
-      <section id="sec-vaer" className="container mx-auto px-4 pb-4 scroll-mt-24">
-        <div className="panel rounded-lg p-4">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-primary mb-3 flex items-center gap-2">
-            🪶 Værvaktens Ravner — Push-varsler
-          </h2>
-          <WeatherNotificationSettings />
-        </div>
-      </section>
-
-      <section id="sec-lys" className="container mx-auto px-4 pb-4 scroll-mt-24">
-        <div className="panel rounded-lg p-4">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-primary mb-3 flex items-center gap-2">
-            💡 Lys på uten bevegelse
-          </h2>
-          <LightIdleNotificationSettings />
-        </div>
-      </section>
-
-      <section id="sec-post" className="container mx-auto px-4 pb-4 scroll-mt-24">
-        <div className="panel rounded-lg p-4">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-primary mb-3 flex items-center gap-2">
-            📬 Postlevering — Posten
-          </h2>
-          <MailDeliveryNotificationSettings />
-        </div>
-      </section>
-
-      <section id="sec-garmin" className="container mx-auto px-4 pb-4 scroll-mt-24">
-        <div className="panel rounded-lg p-4">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-primary mb-3 flex items-center gap-2">
-            ⌚ Garmin — helse og trening
-          </h2>
-          <GarminNotificationSettings />
-        </div>
-      </section>
-
-      <section id="sec-innlogging" className="container mx-auto px-4 pb-4 scroll-mt-24">
-        <div className="panel rounded-lg p-4">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-primary mb-3 flex items-center gap-2">
-            🔐 Innlogging — vellykket og feilet
-          </h2>
-          <LoginNotificationSettings />
-        </div>
-      </section>
-
-      <section id="sec-sensor-dashboard" className="container mx-auto px-4 pb-4 scroll-mt-24">
-        <div className="panel rounded-lg p-4">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-primary mb-3 flex items-center gap-2">
-            <Activity className="h-4 w-4" /> Sensor-dashboard (Homey) — dag/natt & dagsoppsummering
-          </h2>
-          <HomeySensorSettings />
-        </div>
-      </section>
-
-
+      <SettingsBox id="sec-utseende" title="🅰️ Utseende — skrift og bredde"><AppearanceSettingsPanel /></SettingsBox>
+      <SettingsBox id="sec-graf-utseende" title="📈 Graf-utseende"><ChartAppearanceSettingsPanel /></SettingsBox>
+      <SettingsBox id="sec-meny" title="🧭 Meny"><MenuPreferencesPanel /></SettingsBox>
+      <SettingsBox id="sec-meny-synlig" title="👁 Meny — synlige sider"><MenuVisibilityPanel /></SettingsBox>
+      <SettingsBox id="sec-badges" title="🏷️ Topp-badges"><HeaderBadgeSettingsPanel /></SettingsBox>
+      <SettingsBox id="sec-snarveier" title="⭐ Snarveier"><FavoritesManagerPanel /></SettingsBox>
+      <SettingsBox id="sec-rom" title="🏠 Favoritt-rom"><FavoriteZonesPanel /></SettingsBox>
+      <SettingsBox id="sec-scener" title="🎬 Lys-scener"><LightScenesPanel /></SettingsBox>
+      <SettingsBox id="sec-scheduling" title="⏰ Push-tidsplan"><PushSchedulingSettings /></SettingsBox>
+      <SettingsBox id="sec-tibber" title="⚡ Tibber-cron"><TibberCronStatusPanel /></SettingsBox>
+      <SettingsBox id="sec-okonomi" title="🪙 Husholdningens hvelv"><OkonomiSettingsPanel /></SettingsBox>
+      <SettingsBox id="sec-farevarsel" title="⚠️ Vær farevarsel — av/på" accent="border-orange-500/40"><MetAlertNotificationSettings /></SettingsBox>
+      <SettingsBox id="sec-uv" title="🧴 Solkrem-varsler — UV"><UvNotificationSettings /></SettingsBox>
+      <SettingsBox id="sec-vaer" title="🪶 Værvaktens Ravner — Push-varsler"><WeatherNotificationSettings /></SettingsBox>
+      <SettingsBox id="sec-lys" title="💡 Lys på uten bevegelse"><LightIdleNotificationSettings /></SettingsBox>
+      <SettingsBox id="sec-post" title="📬 Postlevering — Posten"><MailDeliveryNotificationSettings /></SettingsBox>
+      <SettingsBox id="sec-garmin" title="⌚ Garmin — helse og trening"><GarminNotificationSettings /></SettingsBox>
+      <SettingsBox id="sec-innlogging" title="🔐 Innlogging — vellykket og feilet"><LoginNotificationSettings /></SettingsBox>
+      <SettingsBox id="sec-sensor-dashboard" title="📡 Sensor-dashboard (Homey)" icon={<Activity className="h-4 w-4" />}><HomeySensorSettings /></SettingsBox>
 
       <div className="container mx-auto px-4 pb-12 grid md:grid-cols-2 gap-4">
-        <section id="sec-agenda" className="block scroll-mt-24">
+        <SettingsBox id="sec-agenda" title="📅 Agenda-meldinger" inGrid>
           <CategoryCard
-            icon={Calendar}
-            title="Agenda-meldinger"
-            editPath="/agenda"
+            icon={Calendar} title="Agenda-meldinger" editPath="/agenda"
             count={counts ? `${counts.agendaPending} planlagte` : null}
-            description="Korte meldinger med dato, tid og varsling før hendelsen."
-            editable
+            description="Korte meldinger med dato, tid og varsling før hendelsen." editable
           >
             <p className="text-xs text-muted-foreground">
               Hver melding har egen mottaker og varsel-tid (5 min – 1 time før). Rediger på agenda-siden.
             </p>
           </CategoryCard>
-        </section>
+        </SettingsBox>
 
-        <section id="sec-bursdager" className="block scroll-mt-24">
-          <CategoryCard
-            icon={Cake}
-            title="Bursdager"
-            editPath="/agenda"
+        <SettingsBox id="sec-bursdager" title="🎂 Bursdager" inGrid>
+          <CategoryCard icon={Cake} title="Bursdager" editPath="/agenda"
             count={counts ? `${counts.birthdaysOn} av ${counts.birthdaysTotal} aktive` : null}
-            description="Sender push kl 08:00 Oslo-tid på selve bursdagen."
-            editable
-          />
-        </section>
+            description="Sender push kl 08:00 Oslo-tid på selve bursdagen." editable />
+        </SettingsBox>
 
-        <section id="sec-bursdager-toggle" className="block scroll-mt-24">
-          <BirthdaysQuickPanel />
-        </section>
+        <SettingsBox id="sec-bursdager-toggle" title="🔔 Bursd. av/på" inGrid><BirthdaysQuickPanel /></SettingsBox>
 
-        <section id="sec-vaervarsler" className="block scroll-mt-24">
-          <CategoryCard
-            icon={CloudSun}
-            title="Værvarsler"
-            editPath="/var"
+        <SettingsBox id="sec-vaervarsler" title="🌦️ Værvarsler" inGrid>
+          <CategoryCard icon={CloudSun} title="Værvarsler" editPath="/var"
             count={counts ? `${counts.weatherOn} av ${counts.weatherTotal} aktive` : null}
-            description="Påminnelser om regn, snø, vind, kulde m.m. til valgt tid om morgenen."
-            editable
-          />
-        </section>
+            description="Påminnelser om regn, snø, vind, kulde m.m. til valgt tid om morgenen." editable />
+        </SettingsBox>
 
-        <section id="sec-vaerprefs" className="block scroll-mt-24">
-          <WeatherPrefsList />
-        </section>
+        <SettingsBox id="sec-vaerprefs" title="🔔 Vær av/på" inGrid><WeatherPrefsList /></SettingsBox>
 
-        <section id="sec-uvvarsler" className="block scroll-mt-24">
-          <CategoryCard
-            icon={Sun}
-            title="UV-varsler"
-            editPath="/var"
+        <SettingsBox id="sec-uvvarsler" title="☀️ UV-varsler" inGrid>
+          <CategoryCard icon={Sun} title="UV-varsler" editPath="/var"
             count={counts ? `${counts.uvOn} av ${counts.uvTotal} aktive` : null}
-            description="Varsler når UV-indeks når 3, 6 og 8 — én gang per nivå per dag."
-            editable
-          />
-        </section>
+            description="Varsler når UV-indeks når 3, 6 og 8 — én gang per nivå per dag." editable />
+        </SettingsBox>
 
-        <section id="sec-uvprefs" className="block scroll-mt-24">
-          <UvPrefsList />
-        </section>
+        <SettingsBox id="sec-uvprefs" title="🔔 UV av/på" inGrid><UvPrefsList /></SettingsBox>
 
-        <section id="sec-soppel" className="block scroll-mt-24">
-          <CategoryCard
-            icon={Trash2}
-            title="Søppeltømming"
-            editPath="/agenda"
+        <SettingsBox id="sec-soppel" title="🗑️ Søppeltømming" inGrid>
+          <CategoryCard icon={Trash2} title="Søppeltømming" editPath="/agenda"
             count={counts ? `${counts.garbageOn} av ${counts.garbageTotal} fraksjoner` : null}
-            description="Varsler dagen før (eller flere dager før) tømming, til valgt klokkeslett."
-            editable
-          />
-        </section>
+            description="Varsler dagen før (eller flere dager før) tømming, til valgt klokkeslett." editable />
+        </SettingsBox>
 
-        <section id="sec-soppelprefs" className="block scroll-mt-24">
-          <GarbagePrefsList />
-        </section>
+        <SettingsBox id="sec-soppelprefs" title="🔔 Søppel av/på" inGrid><GarbagePrefsList /></SettingsBox>
 
-        <section id="sec-lyspaa" className="block scroll-mt-24">
-          <CategoryCard
-            icon={Lightbulb}
-            title="Lys står på lenge"
-            editPath="/smarthus"
+        <SettingsBox id="sec-lyspaa" title="💡 Lys står på" inGrid>
+          <CategoryCard icon={Lightbulb} title="Lys står på lenge" editPath="/smarthus"
             count={counts ? `${counts.lightOn} av ${counts.lightTotal} aktive` : null}
-            description="Varsler når lys i en sone har stått på uten bevegelse en stund."
-            editable
-          />
-        </section>
+            description="Varsler når lys i en sone har stått på uten bevegelse en stund." editable />
+        </SettingsBox>
 
-        <section id="sec-lyspaaprefs" className="block scroll-mt-24">
-          <LightIdlePrefsList />
-        </section>
+        <SettingsBox id="sec-lyspaaprefs" title="🔔 Lys av/på" inGrid><LightIdlePrefsList /></SettingsBox>
 
-        <section id="sec-hytta" className="block scroll-mt-24">
-          <CategoryCard
-            icon={ScrollText}
-            title="Hytta — huskeliste"
-            editPath="/hytta"
+        <SettingsBox id="sec-hytta" title="📜 Hytta — huskeliste" inGrid>
+          <CategoryCard icon={ScrollText} title="Hytta — huskeliste" editPath="/hytta"
             count={counts ? `${counts.hyttaScheduled} planlagte påminnelser` : null}
-            description="Påminnelse om åpne punkter på hyttas huskeliste til valgt tidspunkt."
-            editable
-          />
-        </section>
+            description="Påminnelse om åpne punkter på hyttas huskeliste til valgt tidspunkt." editable />
+        </SettingsBox>
 
-        <section id="sec-garanti" className="block scroll-mt-24">
-          <CategoryCard
-            icon={ShieldCheck}
-            title="Garanti — kvitteringer"
-            editPath="/kvitteringer"
+        <SettingsBox id="sec-garanti" title="🛡️ Garanti — kvitteringer" inGrid>
+          <CategoryCard icon={ShieldCheck} title="Garanti — kvitteringer" editPath="/kvitteringer"
             count={counts ? `${counts.warrantyPending} kvitteringer venter` : null}
-            description="Hardkodet: sender push 30, 60 og 90 dager før garantien (1 år) går ut."
-            editable={false}
-          />
-        </section>
+            description="Hardkodet: sender push 30, 60 og 90 dager før garantien (1 år) går ut." editable={false} />
+        </SettingsBox>
 
-        <section id="sec-garantiprefs" className="block scroll-mt-24">
-          <WarrantyGlobalPrefsPanel />
-        </section>
+        <SettingsBox id="sec-garantiprefs" title="👥 Garanti pr bruker" inGrid><WarrantyGlobalPrefsPanel /></SettingsBox>
 
-        <section id="sec-abonnementer" className="block scroll-mt-24">
-          <CategoryCard
-            icon={Bell}
-            title="Push-abonnementer"
-            editPath="/agenda"
+        <SettingsBox id="sec-abonnementer" title="🔔 Push-abonnementer" inGrid>
+          <CategoryCard icon={Bell} title="Push-abonnementer" editPath="/agenda"
             count={counts ? `${counts.subscribers} enheter` : null}
-            description="Enheter som er registrert for å motta push fra huset."
-            editable
-          />
-        </section>
+            description="Enheter som er registrert for å motta push fra huset." editable />
+        </SettingsBox>
 
-        <section id="sec-abonnenter" className="block scroll-mt-24">
-          <SubscribersListPanel />
-        </section>
+        <SettingsBox id="sec-abonnenter" title="📱 Enheter" inGrid><SubscribersListPanel /></SettingsBox>
 
-        <section id="sec-planter" className="block scroll-mt-24">
-          <div className="panel rounded-lg p-4">
-            <h3 className="text-sm uppercase tracking-wider text-muted-foreground mb-2">🌿 Planter & Trær</h3>
-            <p className="text-sm text-muted-foreground mb-3">
-              Per-plante varsler for vanning, gjødsling, sesong og Mi&nbsp;Flora sensorterskler administreres på Planter-siden.
-            </p>
-            <a href="/planter" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded border border-border/60 text-xs hover:border-primary/60 hover:text-primary transition">
-              Åpne Planter & Trær →
-            </a>
-          </div>
-        </section>
+        <SettingsBox id="sec-planter" title="🌿 Planter & Trær" inGrid>
+          <p className="text-sm text-muted-foreground mb-3">
+            Per-plante varsler for vanning, gjødsling, sesong og Mi&nbsp;Flora sensorterskler administreres på Planter-siden.
+          </p>
+          <a href="/planter" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded border border-border/60 text-xs hover:border-primary/60 hover:text-primary transition">
+            Åpne Planter & Trær →
+          </a>
+        </SettingsBox>
       </div>
     </PageShell>
+  );
+}
+
+function SettingsBox({
+  id, title, icon, accent, inGrid, children,
+}: {
+  id: string;
+  title: string;
+  icon?: React.ReactNode;
+  accent?: string;
+  inGrid?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <section
+      id={id}
+      className={
+        inGrid
+          ? "block scroll-mt-24"
+          : "container mx-auto px-4 pb-4 scroll-mt-24"
+      }
+    >
+      <CollapsibleSection id={id} title={title} icon={icon} className={accent ? `border ${accent}` : undefined}>
+        {children}
+      </CollapsibleSection>
+    </section>
   );
 }
 
