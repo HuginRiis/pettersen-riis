@@ -4,7 +4,7 @@ import { Activity, Footprints, Heart, HeartPulse, Flame, Moon, RefreshCw, LogIn,
 import { ScrollMarquee } from "@/components/ScrollMarquee";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, CartesianGrid } from "recharts";
 import { toast } from "sonner";
-import { getGarminOverview, garminLoginNow, garminSyncNow, garminSubmitMfaCode, listGarminDevices, setDefaultGarminDevice } from "@/server/garmin.functions";
+import { getGarminCore, getGarminExtras, garminLoginNow, garminSyncNow, garminSubmitMfaCode, listGarminDevices, setDefaultGarminDevice } from "@/server/garmin.functions";
 import { Check } from "lucide-react";
 import { getStoredWho, isCurrentlySubscribed } from "@/lib/push-client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
@@ -284,7 +284,8 @@ function renderHourBar(items: Array<{ hour: number; value: number | null }>, col
 
 type GarminOwner = "arne" | "rebekka";
 export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: GarminOwner; displayName?: string } = {}) {
-  const fetchOverview = useServerFn(getGarminOverview);
+  const fetchCore = useServerFn(getGarminCore);
+  const fetchExtras = useServerFn(getGarminExtras);
   const loginFn = useServerFn(garminLoginNow);
   const syncFn = useServerFn(garminSyncNow);
   const mfaFn = useServerFn(garminSubmitMfaCode);
@@ -327,9 +328,19 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
 
   const load = async () => {
     setLoading(true);
-    try { setData(await fetchOverview({ data: { owner } }) as Overview); }
-    catch (e) { toast.error((e as Error).message); }
-    finally { setLoading(false); }
+    try {
+      const core = await fetchCore({ data: { owner } }) as Omit<Overview, "activities" | "intraday">;
+      setData({ ...core, activities: [], intraday: [] } as Overview);
+      setLoading(false);
+      // Fase 2: hent aktiviteter og intraday i bakgrunnen — siden er allerede interaktiv.
+      try {
+        const extras = await fetchExtras({ data: { owner } }) as { activities: Activity[]; intraday: Intraday[] };
+        setData((prev) => prev ? { ...prev, activities: extras.activities, intraday: extras.intraday } : prev);
+      } catch (e) {
+        console.error("Garmin extras failed", e);
+      }
+    }
+    catch (e) { toast.error((e as Error).message); setLoading(false); }
   };
   useEffect(() => { void load(); }, [owner]);
 
