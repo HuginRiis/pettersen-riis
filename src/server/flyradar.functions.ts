@@ -27,6 +27,8 @@ export type FlightState = {
 type CacheEntry = { at: number; value: FlightState[] };
 let cache: CacheEntry | null = null;
 const CACHE_MS = 25_000;
+// Hvor lenge vi godtar å vise stale-cache når OpenSky er treig/nede.
+const STALE_OK_MS = 10 * 60_000;
 
 const bboxSchema = z.object({
   lamin: z.number().min(-90).max(90).optional(),
@@ -37,6 +39,13 @@ const bboxSchema = z.object({
 
 // Norge-bbox som default
 const NORWAY = { lamin: 57.5, lomin: 3.0, lamax: 71.6, lomax: 31.6 };
+
+async function fetchOpenSkyOnce(url: string, timeoutMs: number) {
+  return fetch(url, {
+    headers: { Accept: "application/json", "User-Agent": "borgen-flyradar/1.0" },
+    signal: AbortSignal.timeout(timeoutMs),
+  });
+}
 
 export const fetchFlightStates = createServerFn({ method: "GET" })
   .inputValidator((d) => bboxSchema.parse(d ?? {}))
@@ -52,23 +61,43 @@ export const fetchFlightStates = createServerFn({ method: "GET" })
       lomax: data.lomax ?? NORWAY.lomax,
     };
     const url = `https://opensky-network.org/api/states/all?lamin=${b.lamin}&lomin=${b.lomin}&lamax=${b.lamax}&lomax=${b.lomax}`;
-    try {
-      const res = await fetch(url, {
-        headers: { Accept: "application/json", "User-Agent": "borgen-flyradar/1.0" },
-        signal: AbortSignal.timeout(12_000),
-      });
-      if (!res.ok) {
-        return { states: cache?.value ?? [], cachedAgeMs: 0, source: "opensky" as const, error: `OpenSky ${res.status}` };
+    // OpenSky's anonyme endepunkt kan være tregt; prøv to ganger med økende timeout.
+    const attempts: number[] = [20_000, 25_000];
+    let lastErr = "ukjent feil";
+    for (const t of attempts) {
+      try {
+        const res = await fetchOpenSkyOnce(url, t);
+        if (!res.ok) {
+          lastErr = `OpenSky ${res.status}`;
+          continue;
+        }
+        const json = (await res.json()) as { states: unknown[][] | null };
+        const arr = (json.states ?? [])
+          .map(toFlightState)
+          .filter((s) => s.latitude !== null && s.longitude !== null);
+        cache = { at: now, value: arr };
+        return { states: arr, cachedAgeMs: 0, source: "opensky" as const };
+      } catch (e) {
+        lastErr = e instanceof Error ? e.message : "ukjent feil";
       }
-      const json = (await res.json()) as { states: unknown[][] | null };
-      const arr = (json.states ?? []).map(toFlightState).filter((s) => s.latitude !== null && s.longitude !== null);
-      cache = { at: now, value: arr };
-      return { states: arr, cachedAgeMs: 0, source: "opensky" as const };
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : "unknown";
-      return { states: cache?.value ?? [], cachedAgeMs: cache ? now - cache.at : 0, source: "opensky" as const, error: msg };
     }
+    // Fall tilbake til stale-cache hvis den ikke er for gammel.
+    if (cache && now - cache.at < STALE_OK_MS) {
+      return {
+        states: cache.value,
+        cachedAgeMs: now - cache.at,
+        source: "opensky" as const,
+        error: `OpenSky tregt — viser bufret data (${lastErr})`,
+      };
+    }
+    return {
+      states: cache?.value ?? [],
+      cachedAgeMs: cache ? now - cache.at : 0,
+      source: "opensky" as const,
+      error: lastErr,
+    };
   });
+
 
 function toFlightState(row: unknown[]): FlightState {
   return {
