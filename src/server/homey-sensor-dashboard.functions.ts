@@ -6,6 +6,7 @@ import {
   saveSummaryConfig,
   sendHomeySensorSummaryTest,
 } from "./homey-sensor-summary.server";
+import { backfillHomeySensorHistory } from "./homey-sensor-backfill.server";
 
 export type SensorRange = "today" | "yesterday" | "week" | "last7";
 
@@ -23,6 +24,7 @@ export type HomeySensorDashboard = {
     all: number;
   };
   topRoom: { zone: string; count: number } | null;
+  topRooms: Array<{ zone: string; count: number }>;
   lastMotion: { ts: string; device: string; zone: string | null } | null;
   hourly: Array<{ hour: number; motion: number; door: number; lock: number; window: number }>;
   daily: Array<{ label: string; date: string; motion: number; door: number; lock: number; window: number }>;
@@ -30,6 +32,7 @@ export type HomeySensorDashboard = {
   dayNight: { day: number; night: number };
   peakHours: Array<{ hour: number; count: number }>;
   inactiveSensors: Array<{ device_name: string; zone: string | null; kind: string; last_ts: string }>;
+  inactiveMotion: Array<{ device_name: string; zone: string | null; last_ts: string; days: number }>;
   anomalies: Array<{ hour: number; count: number; expected: number; note: string }>;
   trend: { current: number; previous: number; deltaPct: number };
 };
@@ -167,7 +170,7 @@ export const getHomeySensorDashboard = createServerFn({ method: "GET" })
         .limit(20000),
       supabaseAdmin
         .from("homey_sensor_state")
-        .select("device_name, zone, kind, last_ts"),
+        .select("device_id, device_name, zone, kind, last_ts"),
     ]);
 
     const events = rows ?? [];
@@ -240,6 +243,7 @@ export const getHomeySensorDashboard = createServerFn({ method: "GET" })
     }
     const byRoom = Array.from(roomMap.values()).sort((a, b) => b.total - a.total);
     const topRoom = byRoom[0] ? { zone: byRoom[0].zone, count: byRoom[0].total } : null;
+    const topRooms = byRoom.slice(0, 5).map((r) => ({ zone: r.zone, count: r.total }));
 
     // Last motion
     const lastMotionEv = events.find((e) => e.event_type === "motion_on");
@@ -262,6 +266,35 @@ export const getHomeySensorDashboard = createServerFn({ method: "GET" })
         last_ts: r.last_ts,
       }))
       .sort((a, b) => a.last_ts.localeCompare(b.last_ts))
+      .slice(0, 10);
+
+    // Motion sensors with no motion in 7 days (uses last event of type motion_on)
+    const motionStates = (stateRows ?? []).filter((r) => r.kind === "motion");
+    // For motion we want last *transition to true*. Use homey_sensor_events most recent motion_on per device.
+    const { data: lastMotionRows } = await supabaseAdmin
+      .from("homey_sensor_events")
+      .select("device_id, device_name, zone, ts")
+      .eq("event_type", "motion_on")
+      .gte("ts", new Date(Date.now() - 60 * 86400000).toISOString())
+      .order("ts", { ascending: false })
+      .limit(2000);
+    const lastMotionByDevice = new Map<string, string>();
+    for (const r of lastMotionRows ?? []) {
+      if (!lastMotionByDevice.has(r.device_id)) lastMotionByDevice.set(r.device_id, r.ts);
+    }
+    const allMotionDevices = await supabaseAdmin
+      .from("homey_sensor_state")
+      .select("device_id, device_name, zone")
+      .eq("kind", "motion");
+    const inactiveMotion = (allMotionDevices.data ?? [])
+      .map((d) => {
+        const lastTs = lastMotionByDevice.get(d.device_id) ?? null;
+        const ts = lastTs ?? motionStates.find((s) => s.device_id === d.device_id)?.last_ts ?? null;
+        const days = ts ? Math.floor((Date.now() - new Date(ts).getTime()) / 86400000) : 999;
+        return { device_name: d.device_name || "Ukjent", zone: d.zone, last_ts: ts ?? "", days };
+      })
+      .filter((d) => d.days >= 7)
+      .sort((a, b) => b.days - a.days)
       .slice(0, 10);
 
     // Anomalies: detect hours where count > 2x avg of non-zero hours
@@ -287,6 +320,7 @@ export const getHomeySensorDashboard = createServerFn({ method: "GET" })
       rangeEnd: end.toISOString(),
       totals,
       topRoom,
+      topRooms,
       lastMotion,
       hourly,
       daily,
@@ -294,6 +328,7 @@ export const getHomeySensorDashboard = createServerFn({ method: "GET" })
       dayNight: { day: dayCount, night: nightCount },
       peakHours,
       inactiveSensors,
+      inactiveMotion,
       anomalies,
       trend: { current: currentCount, previous: prevCount, deltaPct },
     };
@@ -327,3 +362,13 @@ export const sendHomeySensorSummaryTestPush = createServerFn({ method: "POST" })
     return sendHomeySensorSummaryTest();
   },
 );
+
+export const backfillHomeySensorHistoryFn = createServerFn({ method: "POST" })
+  .inputValidator(
+    z.object({
+      resolution: z.enum(["lastHour", "last6Hours", "last24Hours", "last7Days", "last31Days"]).default("last7Days"),
+    }).parse,
+  )
+  .handler(async ({ data }) => {
+    return backfillHomeySensorHistory(data.resolution);
+  });
