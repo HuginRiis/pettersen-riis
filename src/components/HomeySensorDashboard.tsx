@@ -56,11 +56,15 @@ function Kpi({ icon: Icon, label, value, sub, tone = "primary" }: {
 
 export function HomeySensorDashboard() {
   const fetchDash = useServerFn(getHomeySensorDashboard);
+  const runBackfill = useServerFn(backfillHomeySensorHistoryFn);
 
   const [range, setRange] = useState<SensorRange>("today");
   const [data, setData] = useState<HomeySensorDashboard | null>(null);
   const [loading, setLoading] = useState(true);
   const [insightOpen, setInsightOpen] = useState(false);
+  const [backfilling, setBackfilling] = useState<string | null>(null);
+  const [backfillMsg, setBackfillMsg] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -70,7 +74,25 @@ export function HomeySensorDashboard() {
       .catch((e) => console.error("[sensor-dashboard]", e))
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [range, fetchDash]);
+  }, [range, fetchDash, reloadKey]);
+
+  async function handleBackfill(resolution: "last24Hours" | "last7Days" | "last31Days") {
+    setBackfilling(resolution);
+    setBackfillMsg(null);
+    try {
+      const res = await runBackfill({ data: { resolution } });
+      setBackfillMsg(
+        res.ok
+          ? `Hentet ${res.eventsInserted} hendelser fra ${res.sensorsProcessed} sensorer${res.errors ? ` (${res.errors} feilet)` : ""}.`
+          : `Feil: ${res.error ?? "ukjent"}`,
+      );
+      setReloadKey((k) => k + 1);
+    } catch (e: any) {
+      setBackfillMsg(`Feil: ${e?.message ?? "ukjent"}`);
+    } finally {
+      setBackfilling(null);
+    }
+  }
 
   const dayNightData = useMemo(() => {
     if (!data) return [];
