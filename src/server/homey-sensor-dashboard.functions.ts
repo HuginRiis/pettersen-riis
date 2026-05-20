@@ -298,3 +298,32 @@ export const getHomeySensorDashboard = createServerFn({ method: "GET" })
       trend: { current: currentCount, previous: prevCount, deltaPct },
     };
   });
+
+// ============================================================
+// Daily sensor summary push settings
+// ============================================================
+
+export const getHomeySensorSummarySettings = createServerFn({ method: "GET" }).handler(
+  async (): Promise<HomeySensorSummarySettings> => {
+    return loadSummaryConfig();
+  },
+);
+
+export const saveHomeySensorSummarySettings = createServerFn({ method: "POST" })
+  .inputValidator(
+    z.object({
+      enabled: z.boolean().optional(),
+      recipient: z.string().min(1).max(64).optional(),
+      hour: z.number().int().min(0).max(23).optional(),
+      minute: z.number().int().min(0).max(59).optional(),
+    }).parse,
+  )
+  .handler(async ({ data }) => {
+    return saveSummaryConfig(data);
+  });
+
+export const sendHomeySensorSummaryTestPush = createServerFn({ method: "POST" }).handler(
+  async () => {
+    return sendHomeySensorSummaryTest();
+  },
+);
