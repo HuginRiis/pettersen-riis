@@ -28,6 +28,7 @@ import { UtgangsdorenPanel } from "@/components/UtgangsdorenPanel";
 import { GarminStatusPanel } from "@/components/GarminStatusPanel";
 import { VakttarnHeroStats } from "@/components/VakttarnHeroStats";
 import { TollnesCameraStrip } from "@/components/TollnesCameraStrip";
+import { HomeyCameraStrip } from "@/components/HomeyCameraStrip";
 
 
 export const Route = createFileRoute("/vakttarnet")({
@@ -61,6 +62,7 @@ const VAKTTARN_TOC: { id: string; label: string; icon: React.ComponentType<{ cla
   { id: "vt-attempts", label: "Login-forsøk", icon: KeyRound },
   { id: "vt-lockouts", label: "Stengte porter", icon: ShieldOff },
   { id: "vt-toplist", label: "Topplister", icon: Trophy },
+  { id: "vt-cameras", label: "Kameraer", icon: Camera },
   { id: "vt-events", label: "Kameralogg", icon: Camera },
   { id: "vt-ai-usage", label: "Mesterens orakel", icon: Brain },
   { id: "vt-allvisitors", label: "Alle besøk", icon: UserSearch },
@@ -297,6 +299,19 @@ function VakttarnetPage() {
             subtitle="Hvem og hva troner øverst"
           >
             <TopLists sessions={sessions} pageviews={pageviews} />
+          </Panel>
+        </section>
+
+        <section id="vt-cameras" className="scroll-mt-24">
+          <Panel
+            title="Kameraer — siste bilde"
+            icon={<Camera size={14} />}
+            subtitle="Siste snapshot fra Eufy-kameraer (via Homey) og Netatmo dørklokke"
+          >
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <HomeyCameraStrip match="eufy" label="Eufy" />
+              <TollnesCameraStrip cameraMatch="tollnes" label="Netatmo Tollnes" intervalMs={10000} />
+            </div>
           </Panel>
         </section>
 
