@@ -6,13 +6,23 @@ import {
   getHomeySensorSummarySettings,
   saveHomeySensorSummarySettings,
   sendHomeySensorSummaryTestPush,
+  backfillHomeySensorHistoryFn,
+  getHomeySensorHistorySettings,
+  saveHomeySensorHistorySettingsFn,
 } from "@/server/homey-sensor-dashboard.functions";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { Activity, Loader2, Send, Save, Bell, BellOff } from "lucide-react";
+import { Activity, Loader2, Send, Save, Bell, BellOff, RefreshCw, Database } from "lucide-react";
 import { toast } from "sonner";
 
 const WHO_OPTIONS = ["Alle", "Arne & Rebekka", "Arne", "Rebekka", "Marita", "Nora", "Celine", "Mira"] as const;
+const HISTORY_OPTIONS = [
+  { value: "lastHour", label: "Siste time" },
+  { value: "last6Hours", label: "Siste 6 timer" },
+  { value: "last24Hours", label: "Siste 24 timer" },
+  { value: "last7Days", label: "Siste 7 dager" },
+  { value: "last31Days", label: "Siste 31 dager" },
+] as const;
 
 export function HomeySensorSettings() {
   const getDN = useServerFn(getHomeySensorSettings);
@@ -20,6 +30,9 @@ export function HomeySensorSettings() {
   const getSum = useServerFn(getHomeySensorSummarySettings);
   const saveSum = useServerFn(saveHomeySensorSummarySettings);
   const sendTest = useServerFn(sendHomeySensorSummaryTestPush);
+  const getHistory = useServerFn(getHomeySensorHistorySettings);
+  const saveHistory = useServerFn(saveHomeySensorHistorySettingsFn);
+  const runBackfill = useServerFn(backfillHomeySensorHistoryFn);
 
   const [dayStart, setDayStart] = useState("06:00");
   const [dayEnd, setDayEnd] = useState("22:00");
@@ -28,13 +41,18 @@ export function HomeySensorSettings() {
   const [hour, setHour] = useState(21);
   const [minute, setMinute] = useState(0);
   const [lastSent, setLastSent] = useState<string | null>(null);
+  const [historyEnabled, setHistoryEnabled] = useState(false);
+  const [historyResolution, setHistoryResolution] = useState<(typeof HISTORY_OPTIONS)[number]["value"]>("last24Hours");
+  const [historyInterval, setHistoryInterval] = useState(6);
+  const [historyLastRun, setHistoryLastRun] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [savingDN, setSavingDN] = useState(false);
   const [testing, setTesting] = useState(false);
+  const [backfilling, setBackfilling] = useState(false);
 
   useEffect(() => {
-    Promise.all([getDN(), getSum()])
-      .then(([dn, sum]) => {
+    Promise.all([getDN(), getSum(), getHistory()])
+      .then(([dn, sum, history]) => {
         setDayStart(dn.dayStart);
         setDayEnd(dn.dayEnd);
         setEnabled(sum.enabled);
@@ -42,10 +60,14 @@ export function HomeySensorSettings() {
         setHour(sum.hour);
         setMinute(sum.minute);
         setLastSent(sum.last_sent_date);
+        setHistoryEnabled(history.enabled);
+        setHistoryResolution(history.resolution);
+        setHistoryInterval(history.interval_hours);
+        setHistoryLastRun(history.last_run_at);
       })
       .catch((e) => toast.error(e instanceof Error ? e.message : "Klarte ikke laste"))
       .finally(() => setLoading(false));
-  }, [getDN, getSum]);
+  }, [getDN, getSum, getHistory]);
 
   async function saveDayNight() {
     setSavingDN(true);
