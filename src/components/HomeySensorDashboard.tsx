@@ -370,13 +370,15 @@ export function HomeySensorDashboard() {
           {/* KPI grid */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
 
-            <Kpi
-              icon={Activity}
-              label="Bevegelser"
-              value={data.totals.motion}
-              tone="primary"
-              onClick={() => setDetail({ title: "Bevegelser", eventTypes: ["motion_on"] })}
-            />
+            {isOn("motion") && (
+              <Kpi
+                icon={Activity}
+                label="Bevegelser"
+                value={data.totals.motion}
+                tone="primary"
+                onClick={() => setDetail({ title: "Bevegelser", eventTypes: ["motion_on"] })}
+              />
+            )}
             <Kpi
               icon={MapPin}
               label="Mest aktivt"
@@ -388,35 +390,44 @@ export function HomeySensorDashboard() {
                 zone: data.topRoom!.zone,
               }) : undefined}
             />
-            <Kpi
-              icon={Clock}
-              label="Siste bevegelse"
-              value={data.lastMotion ? ago(data.lastMotion.ts) : "—"}
-              sub={data.lastMotion ? `${data.lastMotion.zone ?? ""} · ${data.lastMotion.device}` : undefined}
-              onClick={() => setDetail({ title: "Siste bevegelser", eventTypes: ["motion_on"] })}
-            />
-            <Kpi
-              icon={DoorOpen}
-              label="Døråpninger"
-              value={data.totals.door_open}
-              sub={`Lukket: ${data.totals.door_close}`}
-              onClick={() => setDetail({ title: "Dør-hendelser", eventTypes: ["door_open", "door_close"] })}
-            />
-            <Kpi
-              icon={Unlock}
-              label="Lås opp"
-              value={data.totals.unlocked}
-              sub={`Låst: ${data.totals.locked}`}
-              tone="warn"
-              onClick={() => setDetail({ title: "Lås-hendelser", eventTypes: ["locked", "unlocked"] })}
-            />
-            <Kpi
-              icon={DoorOpen}
-              label="Vindusåpninger"
-              value={data.totals.window_open}
-              sub={`Lukket: ${data.totals.window_close}`}
-              onClick={() => setDetail({ title: "Vindus-hendelser", eventTypes: ["window_open", "window_close", "open", "close"] })}
-            />
+            {isOn("motion") && (
+              <Kpi
+                icon={Clock}
+                label="Siste bevegelse"
+                value={data.lastMotion ? ago(data.lastMotion.ts) : "—"}
+                sub={data.lastMotion ? `${data.lastMotion.zone ?? ""} · ${data.lastMotion.device}` : undefined}
+                onClick={() => setDetail({ title: "Siste bevegelser", eventTypes: ["motion_on"] })}
+              />
+            )}
+            {isOn("door") && (
+              <Kpi
+                icon={DoorOpen}
+                label="Døråpninger"
+                value={data.totals.door_open}
+                sub={`Lukket: ${data.totals.door_close}`}
+                onClick={() => setDetail({ title: "Dør-hendelser", eventTypes: ["door_open", "door_close"] })}
+              />
+            )}
+            {isOn("lock") && (
+              <Kpi
+                icon={Unlock}
+                label="Lås opp"
+                value={data.totals.unlocked}
+                sub={`Låst: ${data.totals.locked}`}
+                tone="warn"
+                onClick={() => setDetail({ title: "Lås-hendelser", eventTypes: ["locked", "unlocked"] })}
+              />
+            )}
+            {isOn("window") && (
+              <Kpi
+                icon={DoorOpen}
+                label="Vindusåpninger"
+                value={data.totals.window_open}
+                sub={`Lukket: ${data.totals.window_close}`}
+                onClick={() => setDetail({ title: "Vindus-hendelser", eventTypes: ["window_open", "window_close", "open", "close"] })}
+              />
+            )}
+
             <Kpi
               icon={data.trend.deltaPct >= 0 ? TrendingUp : TrendingDown}
               label="vs forrige periode"
