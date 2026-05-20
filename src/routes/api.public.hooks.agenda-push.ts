@@ -184,7 +184,14 @@ export const Route = createFileRoute("/api/public/hooks/agenda-push")({
           } catch (err) {
             console.error("[homey-sensor-summary] failed", err);
           }
-          return new Response(JSON.stringify({ ok: true, agenda, checklist, garbage, birthdays, warranty, uv, weather, lightIdle, tibber, metAlerts, mailDelivery, garmin, garminPush, garminThresholds, plants, sensorSummary }), {
+          let sensorHistory = { checked: 0, ran: false, skipped: 1 } as any;
+          try {
+            const hmod = await import("@/server/homey-sensor-backfill.server");
+            sensorHistory = await hmod.processHomeySensorHistoryCron();
+          } catch (err) {
+            console.error("[homey-sensor-history] failed", err);
+          }
+          return new Response(JSON.stringify({ ok: true, agenda, checklist, garbage, birthdays, warranty, uv, weather, lightIdle, tibber, metAlerts, mailDelivery, garmin, garminPush, garminThresholds, plants, sensorSummary, sensorHistory }), {
             headers: { "Content-Type": "application/json" },
           });
         } catch (err) {

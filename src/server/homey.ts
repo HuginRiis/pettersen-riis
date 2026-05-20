@@ -584,13 +584,27 @@ export async function fetchHomeyInsightsLog(
   if (!session) return null;
   const ownerUri = `homey:device:${deviceId}`;
   const logId = `${ownerUri}:${capabilityId}`;
+  const ids = new Set([logId, capabilityId]);
+  try {
+    const listed = await listHomeyInsightsLogs(deviceId);
+    for (const m of listed?.matches ?? []) {
+      const id = String(m?.id ?? m?.ownerId ?? "");
+      if (id && (id === capabilityId || id.endsWith(`:${capabilityId}`) || id.includes(capabilityId))) {
+        ids.add(id);
+      }
+    }
+  } catch {
+    // Fall back to deterministic IDs below.
+  }
   const urls = [
-    `${session.target.baseUrl}/api/manager/insights/log/${encodeURIComponent(
-      ownerUri,
-    )}/${encodeURIComponent(logId)}/entry?resolution=${encodeURIComponent(resolution)}`,
-    `${session.target.baseUrl}/api/manager/insights/log/${encodeURIComponent(
-      ownerUri,
-    )}/${encodeURIComponent(capabilityId)}/entry?resolution=${encodeURIComponent(resolution)}`,
+    ...Array.from(ids).flatMap((id) => [
+      `${session.target.baseUrl}/api/manager/insights/log/${encodeURIComponent(
+        ownerUri,
+      )}/${encodeURIComponent(id)}/entry?resolution=${encodeURIComponent(resolution)}`,
+      `${session.target.baseUrl}/api/manager/insights/log/${encodeURIComponent(
+        id,
+      )}/entry?resolution=${encodeURIComponent(resolution)}`,
+    ]),
   ];
   let lastError = "";
   for (const url of urls) {
@@ -633,7 +647,19 @@ export async function listHomeyInsightsLogs(deviceId: string): Promise<any> {
           }));
         }
       } else if (res && typeof res === "object") {
-        out[url] = { keys: Object.keys(res).slice(0, 30) };
+        const arr = Object.values(res);
+        const matches = arr.filter((e: any) => e?.ownerUri === ownerUri || e?.uri === ownerUri);
+        out[url] = { keys: Object.keys(res).slice(0, 30), matchCount: matches.length };
+        if (matches.length > 0) {
+          out.matches = matches.map((m: any) => ({
+            id: m.id,
+            ownerId: m.ownerId,
+            ownerName: m.ownerName ?? m.title ?? m.name,
+            type: m.type,
+            units: m.units,
+            lastValue: m.lastValue,
+          }));
+        }
       } else {
         out[url] = { value: res };
       }

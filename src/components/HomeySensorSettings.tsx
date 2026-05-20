@@ -6,13 +6,23 @@ import {
   getHomeySensorSummarySettings,
   saveHomeySensorSummarySettings,
   sendHomeySensorSummaryTestPush,
+  backfillHomeySensorHistoryFn,
+  getHomeySensorHistorySettings,
+  saveHomeySensorHistorySettingsFn,
 } from "@/server/homey-sensor-dashboard.functions";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { Activity, Loader2, Send, Save, Bell, BellOff } from "lucide-react";
+import { Activity, Loader2, Send, Save, Bell, BellOff, RefreshCw, Database } from "lucide-react";
 import { toast } from "sonner";
 
 const WHO_OPTIONS = ["Alle", "Arne & Rebekka", "Arne", "Rebekka", "Marita", "Nora", "Celine", "Mira"] as const;
+const HISTORY_OPTIONS = [
+  { value: "lastHour", label: "Siste time" },
+  { value: "last6Hours", label: "Siste 6 timer" },
+  { value: "last24Hours", label: "Siste 24 timer" },
+  { value: "last7Days", label: "Siste 7 dager" },
+  { value: "last31Days", label: "Siste 31 dager" },
+] as const;
 
 export function HomeySensorSettings() {
   const getDN = useServerFn(getHomeySensorSettings);
@@ -20,6 +30,9 @@ export function HomeySensorSettings() {
   const getSum = useServerFn(getHomeySensorSummarySettings);
   const saveSum = useServerFn(saveHomeySensorSummarySettings);
   const sendTest = useServerFn(sendHomeySensorSummaryTestPush);
+  const getHistory = useServerFn(getHomeySensorHistorySettings);
+  const saveHistory = useServerFn(saveHomeySensorHistorySettingsFn);
+  const runBackfill = useServerFn(backfillHomeySensorHistoryFn);
 
   const [dayStart, setDayStart] = useState("06:00");
   const [dayEnd, setDayEnd] = useState("22:00");
@@ -28,13 +41,18 @@ export function HomeySensorSettings() {
   const [hour, setHour] = useState(21);
   const [minute, setMinute] = useState(0);
   const [lastSent, setLastSent] = useState<string | null>(null);
+  const [historyEnabled, setHistoryEnabled] = useState(false);
+  const [historyResolution, setHistoryResolution] = useState<(typeof HISTORY_OPTIONS)[number]["value"]>("last24Hours");
+  const [historyInterval, setHistoryInterval] = useState(6);
+  const [historyLastRun, setHistoryLastRun] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [savingDN, setSavingDN] = useState(false);
   const [testing, setTesting] = useState(false);
+  const [backfilling, setBackfilling] = useState(false);
 
   useEffect(() => {
-    Promise.all([getDN(), getSum()])
-      .then(([dn, sum]) => {
+    Promise.all([getDN(), getSum(), getHistory()])
+      .then(([dn, sum, history]) => {
         setDayStart(dn.dayStart);
         setDayEnd(dn.dayEnd);
         setEnabled(sum.enabled);
@@ -42,10 +60,14 @@ export function HomeySensorSettings() {
         setHour(sum.hour);
         setMinute(sum.minute);
         setLastSent(sum.last_sent_date);
+        setHistoryEnabled(history.enabled);
+        setHistoryResolution(history.resolution);
+        setHistoryInterval(history.interval_hours);
+        setHistoryLastRun(history.last_run_at);
       })
       .catch((e) => toast.error(e instanceof Error ? e.message : "Klarte ikke laste"))
       .finally(() => setLoading(false));
-  }, [getDN, getSum]);
+  }, [getDN, getSum, getHistory]);
 
   async function saveDayNight() {
     setSavingDN(true);
@@ -80,6 +102,34 @@ export function HomeySensorSettings() {
       toast.error(e instanceof Error ? e.message : "Feil");
     } finally {
       setTesting(false);
+    }
+  }
+
+  async function patchHistory(p: Partial<{ enabled: boolean; resolution: typeof historyResolution; interval_hours: number }>) {
+    try {
+      const next = await saveHistory({ data: p });
+      setHistoryEnabled(next.enabled);
+      setHistoryResolution(next.resolution);
+      setHistoryInterval(next.interval_hours);
+      setHistoryLastRun(next.last_run_at);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Feil");
+    }
+  }
+
+  async function runManualHistory() {
+    setBackfilling(true);
+    try {
+      const r = await runBackfill({ data: { resolution: historyResolution } });
+      toast.success(
+        r.ok
+          ? `Historikk hentet: ${r.eventsInserted} hendelser fra ${r.sensorsProcessed} sensorer${r.errors ? `, ${r.errors} feil` : ""}.`
+          : `Feil: ${r.error ?? "ukjent"}`,
+      );
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Feil");
+    } finally {
+      setBackfilling(false);
     }
   }
 
@@ -179,6 +229,54 @@ export function HomeySensorSettings() {
 
         {lastSent && (
           <p className="text-[10px] text-muted-foreground">Sist sendt: {lastSent}</p>
+        )}
+      </div>
+
+      {/* History backfill */}
+      <div className="rounded-md border border-border/60 bg-background/40 p-3 space-y-3">
+        <div className="flex items-center gap-2">
+          <Database className="h-4 w-4 text-primary" />
+          <span className="text-sm font-semibold">Historikk fra Homey</span>
+          <span className="ml-auto flex items-center gap-2">
+            <Switch checked={historyEnabled} onCheckedChange={(v) => patchHistory({ enabled: v })} />
+            <span className="text-xs text-muted-foreground">Cron {historyEnabled ? "på" : "av"}</span>
+          </span>
+        </div>
+        <p className="text-[11px] text-muted-foreground">
+          Hent gamle sensorhendelser manuelt, eller la dags-cron hente historikk automatisk med valgt periode.
+        </p>
+        <div className="flex flex-wrap items-center gap-3 text-xs">
+          <label className="flex items-center gap-1">
+            <span className="text-muted-foreground">Periode:</span>
+            <select
+              value={historyResolution}
+              onChange={(e) => patchHistory({ resolution: e.target.value as typeof historyResolution })}
+              className="bg-background border border-border/60 rounded px-2 py-1 text-xs"
+            >
+              {HISTORY_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+          </label>
+          <label className="flex items-center gap-1">
+            <span className="text-muted-foreground">Cron hver:</span>
+            <input
+              type="number"
+              min={1}
+              max={24}
+              value={historyInterval}
+              onChange={(e) => patchHistory({ interval_hours: Math.max(1, Math.min(24, Number(e.target.value) || 1)) })}
+              className="w-14 bg-background border border-border/60 rounded px-2 py-1 text-xs tabular-nums"
+            />
+            <span className="text-muted-foreground">t</span>
+          </label>
+          <div className="ml-auto">
+            <Button size="sm" variant="outline" onClick={runManualHistory} disabled={backfilling} className="text-xs">
+              {backfilling ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <RefreshCw className="h-3 w-3 mr-1" />}
+              Hent historikk nå
+            </Button>
+          </div>
+        </div>
+        {historyLastRun && (
+          <p className="text-[10px] text-muted-foreground">Sist kjørt automatisk: {new Date(historyLastRun).toLocaleString("nb-NO")}</p>
         )}
       </div>
     </div>
