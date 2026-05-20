@@ -29,6 +29,22 @@ export function VakttarnHeroStats() {
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[11px] md:text-xs text-foreground/90 drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
+        {s.lastAlarmChange && (() => {
+          const st = s.lastAlarmChange.state;
+          const Icon = st === "disarmed" ? ShieldOff : st === "partially_armed" ? ShieldAlert : ShieldCheck;
+          const tone = st === "disarmed" ? "border-amber-400/40 text-amber-300" : "border-emerald-400/40 text-emerald-300";
+          const label = st === "disarmed" ? "Alarm av" : st === "partially_armed" ? "Delvis på" : "Alarm på";
+          return (
+            <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded bg-background/50 backdrop-blur-sm border ${tone}`}>
+              <Icon size={12} />
+              <span className="text-muted-foreground">{label}</span>
+              <span className="font-semibold text-foreground">{minsAgo(s.lastAlarmChange.ts)}</span>
+              {s.lastAlarmChange.who && (
+                <span className="text-muted-foreground italic">· {s.lastAlarmChange.who}</span>
+              )}
+            </span>
+          );
+        })()}
         {s.lastDoorClose && (
           <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-background/50 backdrop-blur-sm border border-primary/30">
             <DoorClosed size={12} className="text-primary" />
