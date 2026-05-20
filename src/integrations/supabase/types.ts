@@ -836,6 +836,57 @@ export type Database = {
         }
         Relationships: []
       }
+      garmin_threshold_prefs: {
+        Row: {
+          cooldown_hours: number
+          created_at: string
+          direction: string
+          enabled: boolean
+          garmin_owner: string
+          id: string
+          label: string | null
+          last_notified_at: string | null
+          last_value: number | null
+          metric: string
+          recipient: string
+          sender_label: string
+          threshold: number
+          updated_at: string
+        }
+        Insert: {
+          cooldown_hours?: number
+          created_at?: string
+          direction?: string
+          enabled?: boolean
+          garmin_owner?: string
+          id?: string
+          label?: string | null
+          last_notified_at?: string | null
+          last_value?: number | null
+          metric: string
+          recipient?: string
+          sender_label?: string
+          threshold: number
+          updated_at?: string
+        }
+        Update: {
+          cooldown_hours?: number
+          created_at?: string
+          direction?: string
+          enabled?: boolean
+          garmin_owner?: string
+          id?: string
+          label?: string | null
+          last_notified_at?: string | null
+          last_value?: number | null
+          metric?: string
+          recipient?: string
+          sender_label?: string
+          threshold?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       garmin_tokens: {
         Row: {
           created_at: string

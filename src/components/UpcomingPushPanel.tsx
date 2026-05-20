@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Bell, Calendar, Cake, ScrollText, CloudSun, Sun, HelpCircle, Trash2, ShieldCheck, Newspaper, Apple, Wine, Milk, AlertTriangle, Recycle, Zap, Lightbulb } from "lucide-react";
+import { Bell, Calendar, Cake, ScrollText, CloudSun, Sun, HelpCircle, Trash2, ShieldCheck, Newspaper, Apple, Wine, Milk, AlertTriangle, Recycle, Zap, Lightbulb, Activity, Mail, LogIn, Plane, Leaf, TrendingDown, TrendingUp } from "lucide-react";
 
 const GARBAGE_ICON: Record<number, typeof Bell> = {
   1: Trash2,        // Restavfall
@@ -479,6 +479,149 @@ function EventBasedRules() {
         });
       }
     } catch (e) { console.error("[EventBasedRules] tibber pref failed", e); }
+
+    // Garmin notification prefs (daglig sammendrag + terskler)
+    try {
+      const { data } = await supabase
+        .from("garmin_notification_prefs" as never)
+        .select("id, recipient, sender_label, garmin_owner, enabled, notify_daily, daily_time, notify_compare, compare_time, notify_step_goal, notify_low_sleep, low_sleep_hours, notify_high_resting_hr, high_rhr_bpm");
+      for (const r of (data ?? []) as Array<{
+        id: string; recipient: string; sender_label: string; garmin_owner: string; enabled: boolean;
+        notify_daily: boolean; daily_time: string; notify_compare: boolean; compare_time: string;
+        notify_step_goal: boolean; notify_low_sleep: boolean; low_sleep_hours: number;
+        notify_high_resting_hr: boolean; high_rhr_bpm: number;
+      }>) {
+        const owner = r.garmin_owner === "rebekka" ? "Rebekka" : "Arne";
+        const bits: string[] = [];
+        if (r.notify_daily) bits.push(`daglig kl ${(r.daily_time || "07:30").slice(0,5)}`);
+        if (r.notify_compare) bits.push(`duell kl ${(r.compare_time || "20:00").slice(0,5)}`);
+        if (r.notify_step_goal) bits.push("skritt-mål");
+        if (r.notify_low_sleep) bits.push(`lav søvn <${r.low_sleep_hours}t`);
+        if (r.notify_high_resting_hr) bits.push(`høy hvilepuls >${r.high_rhr_bpm}`);
+        out.push({
+          key: `garmin-${r.id}`,
+          icon: Activity,
+          source: "Garmin",
+          title: `${r.sender_label} — ${owner}`,
+          detail: bits.join(" · ") || "Ingen triggere",
+          recipients: r.recipient || "Alle",
+          enabled: r.enabled,
+        });
+      }
+    } catch (e) { console.error("[EventBasedRules] garmin prefs failed", e); }
+
+    // Garmin terskler (egendefinerte)
+    try {
+      const { data } = await supabase
+        .from("garmin_threshold_prefs" as never)
+        .select("id, recipient, garmin_owner, enabled, label, metric, direction, threshold, cooldown_hours");
+      for (const r of (data ?? []) as Array<{
+        id: string; recipient: string; garmin_owner: string; enabled: boolean;
+        label: string | null; metric: string; direction: "below" | "above";
+        threshold: number; cooldown_hours: number;
+      }>) {
+        const owner = r.garmin_owner === "rebekka" ? "Rebekka" : "Arne";
+        out.push({
+          key: `garmin-thr-${r.id}`,
+          icon: r.direction === "below" ? TrendingDown : TrendingUp,
+          source: "Garmin terskel",
+          title: r.label || `${owner} — ${r.metric}`,
+          detail: `${r.direction === "below" ? "Under" : "Over"} ${r.threshold} · cooldown ${r.cooldown_hours}t`,
+          recipients: r.recipient || "Alle",
+          enabled: r.enabled,
+        });
+      }
+    } catch (e) { console.error("[EventBasedRules] garmin thresholds failed", e); }
+
+    // Postlevering
+    try {
+      const { data } = await supabase
+        .from("mail_delivery_prefs")
+        .select("id, recipient, enabled, notify_hour, notify_minute, days_before, postal_code");
+      for (const r of data ?? []) {
+        out.push({
+          key: `mail-${(r as any).id}`,
+          icon: Mail,
+          source: "Postlevering",
+          title: `Posten — ${(r as any).postal_code}`,
+          detail: `${(r as any).days_before === 0 ? "Samme dag" : `${(r as any).days_before} dag(er) før`} · kl ${String((r as any).notify_hour).padStart(2,"0")}:${String((r as any).notify_minute).padStart(2,"0")}`,
+          recipients: (r as any).recipient || "Alle",
+          enabled: (r as any).enabled,
+        });
+      }
+    } catch (e) { console.error("[EventBasedRules] mail prefs failed", e); }
+
+    // Innlogginger
+    try {
+      const { data } = await supabase
+        .from("login_notification_prefs")
+        .select("id, recipient, enabled, notify_on_success, notify_on_failure");
+      for (const r of data ?? []) {
+        const bits: string[] = [];
+        if ((r as any).notify_on_success) bits.push("vellykket");
+        if ((r as any).notify_on_failure) bits.push("feilet");
+        out.push({
+          key: `login-${(r as any).id}`,
+          icon: LogIn,
+          source: "Innlogging",
+          title: "Innloggingsforsøk",
+          detail: bits.join(" + ") || "ingen",
+          recipients: (r as any).recipient || "Alle",
+          enabled: (r as any).enabled,
+        });
+      }
+    } catch (e) { console.error("[EventBasedRules] login prefs failed", e); }
+
+    // Flyradar
+    try {
+      const { data } = await supabase
+        .from("flight_alert_prefs" as never)
+        .select("id, airports, notify_arrivals, notify_departures, notify_radius, radius_km");
+      for (const r of (data ?? []) as Array<{
+        id: string; airports: string[]; notify_arrivals: boolean; notify_departures: boolean;
+        notify_radius: boolean; radius_km: number;
+      }>) {
+        const bits: string[] = [];
+        if (r.airports?.length) bits.push(`${r.airports.length} flyplass`);
+        if (r.notify_arrivals) bits.push("ankomst");
+        if (r.notify_departures) bits.push("avgang");
+        if (r.notify_radius) bits.push(`radius ${r.radius_km}km`);
+        if (bits.length === 0) continue;
+        out.push({
+          key: `flight-${r.id}`,
+          icon: Plane,
+          source: "Flyradar",
+          title: "Fly-varsler",
+          detail: bits.join(" · "),
+          recipients: "Alle",
+          enabled: true,
+        });
+      }
+    } catch (e) { console.error("[EventBasedRules] flight prefs failed", e); }
+
+    // Planter
+    try {
+      const { data } = await supabase
+        .from("plants")
+        .select("id, name, notify_recipient, notify_watering, notify_fertilize, notify_sensor, notify_season");
+      for (const p of data ?? []) {
+        const bits: string[] = [];
+        if ((p as any).notify_watering) bits.push("vanning");
+        if ((p as any).notify_fertilize) bits.push("gjødsling");
+        if ((p as any).notify_sensor) bits.push("sensor");
+        if ((p as any).notify_season) bits.push("sesong");
+        if (bits.length === 0) continue;
+        out.push({
+          key: `plant-${(p as any).id}`,
+          icon: Leaf,
+          source: "Planter",
+          title: (p as any).name,
+          detail: bits.join(" · "),
+          recipients: (p as any).notify_recipient || "Alle",
+          enabled: true,
+        });
+      }
+    } catch (e) { console.error("[EventBasedRules] plants failed", e); }
 
     setRows(out);
     setLoading(false);
