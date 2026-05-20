@@ -170,6 +170,7 @@ export function GarminNotificationSettings() {
           <li>• <span className="text-foreground">Skritt-mål nådd</span> — varsel én gang per dag når dagens skritt-mål er passert</li>
           <li>• <span className="text-foreground">Lav søvn</span> — varsler hvis natten ble kortere enn grensa</li>
           <li>• <span className="text-foreground">Høy hvilepuls</span> — varsler hvis hvilepulsen er over grensa</li>
+          <li>• <span className="text-foreground">Klokken ikke synket</span> — varsler hvis Garmin ikke har syncet eller mangler dagens søvn-data</li>
         </ul>
       </div>
 
