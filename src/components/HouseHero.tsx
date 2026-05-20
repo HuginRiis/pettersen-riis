@@ -101,12 +101,15 @@ export function HouseHero({
   eyebrow,
   title,
   subtitle,
+  extraStatus,
 }: {
   image: string;
   eyebrow?: string;
   title: string;
   subtitle?: string;
+  extraStatus?: React.ReactNode;
 }) {
+
   // Mount-flag for å unngå SSR-hydreringsmismatch
   const [mounted, setMounted] = useState(false);
   const [now, setNow] = useState<Date | null>(null);
