@@ -1219,6 +1219,16 @@ async function tryCameraSnapshot(
   }
 
   if (isEufy) {
+    // Logg hva Homey eksponerer for dette Eufy-kameraet (debug)
+    console.log("[eufy-snapshot] device", {
+      id: device.id,
+      name: device.name,
+      driverUri,
+      images: device.raw?.images,
+      capabilities: Array.isArray(device.raw?.capabilities)
+        ? device.raw.capabilities
+        : Object.keys(device.raw?.capabilities ?? {}),
+    });
     // Trigg snapshot først så Homey registrerer et ferskt bilde
     await triggerSnapshotCapability(sessionToken, apiBase, device);
     await new Promise((r) => setTimeout(r, 2500));
@@ -1226,6 +1236,7 @@ async function tryCameraSnapshot(
       `${apiBase}/manager/devices/device/${device.id}`,
       sessionToken,
     );
+    console.log("[eufy-snapshot] after refresh images", refreshed?.images);
     const res = await readFromDevice(refreshed);
     if (res) return res;
   } else {
