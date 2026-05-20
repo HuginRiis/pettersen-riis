@@ -2,11 +2,16 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import {
+  type HomeySensorHistorySettings,
   loadSummaryConfig,
   saveSummaryConfig,
   sendHomeySensorSummaryTest,
 } from "./homey-sensor-summary.server";
-import { backfillHomeySensorHistory } from "./homey-sensor-backfill.server";
+import {
+  backfillHomeySensorHistory,
+  loadHomeySensorHistorySettings,
+  saveHomeySensorHistorySettings,
+} from "./homey-sensor-backfill.server";
 
 export type SensorRange = "today" | "yesterday" | "week" | "last7";
 
@@ -49,6 +54,8 @@ export type HomeySensorSummarySettings = {
   minute: number;
   last_sent_date: string | null;
 };
+
+export type { HomeySensorHistorySettings };
 
 const RANGE = z.enum(["today", "yesterday", "week", "last7"]);
 
