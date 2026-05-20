@@ -177,8 +177,25 @@ export function HomeySensorDashboard() {
 
       {data && (
         <>
+          {/* Siste rom med bevegelse — fremhevet boks */}
+          {data.lastMotion && (
+            <div className="rounded-lg border border-emerald-400/40 bg-gradient-to-br from-emerald-400/10 via-emerald-400/5 to-transparent p-4 flex items-center gap-3">
+              <MapPin className="h-6 w-6 text-emerald-400 shrink-0" />
+              <div className="flex-1 min-w-0">
+                <div className="text-[10px] uppercase tracking-[0.25em] text-emerald-300/80">Siste rom med bevegelse</div>
+                <div className="text-lg sm:text-xl font-display text-emerald-200 truncate">
+                  {data.lastMotion.zone ?? "Ukjent rom"}
+                </div>
+                <div className="text-[11px] text-muted-foreground truncate">
+                  {data.lastMotion.device} · {ago(data.lastMotion.ts)}
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* KPI grid */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
+
             <Kpi icon={Activity} label="Bevegelser" value={data.totals.motion} tone="primary" />
             <Kpi
               icon={MapPin}
