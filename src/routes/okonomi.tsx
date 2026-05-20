@@ -495,7 +495,7 @@ function OkonomiPage() {
       const from = `${now.getFullYear() - 1}-01-01`;
       const [c, t, s, a, ia] = await Promise.all([
         listCats(),
-        listTxns({ data: { from, limit: 2000 } }),
+        listTxns({ data: { from, limit: 2000, exclude_internal_transfers: true } }),
         getSettings(),
         listAccs(),
         listImpAccs(),

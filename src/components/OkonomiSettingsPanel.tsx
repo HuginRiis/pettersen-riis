@@ -16,6 +16,7 @@ import {
   type OkonomiSettings,
 } from "@/server/okonomi.functions";
 import { OkonomiAccountsSettings } from "./OkonomiAccountsSettings";
+import { OkonomiInternalTransferSettings } from "./OkonomiInternalTransferSettings";
 
 type NumKey = "payday_day" | "household_adults" | "household_children_under18" | "household_children_over18";
 
@@ -274,6 +275,10 @@ function OkonomiSettingsPanelInner() {
 
           <div className="border-t border-border/40 pt-3">
             <OkonomiAccountsSettings />
+          </div>
+
+          <div className="border-t border-border/40 pt-3">
+            <OkonomiInternalTransferSettings />
           </div>
         </div>
       </div>
