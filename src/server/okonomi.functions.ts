@@ -675,6 +675,8 @@ export type OkonomiSettings = {
   primary_account: string | null;
   benchmarks: Record<string, number>; // category_id -> monthly NOK
   benchmarks_generated_at: string | null;
+  internal_transfer_filter_enabled: boolean;
+  internal_transfer_accounts: string[];
 };
 
 const DEFAULT_SETTINGS: OkonomiSettings = {
@@ -686,6 +688,8 @@ const DEFAULT_SETTINGS: OkonomiSettings = {
   primary_account: null,
   benchmarks: {},
   benchmarks_generated_at: null,
+  internal_transfer_filter_enabled: false,
+  internal_transfer_accounts: [],
 };
 
 export const getOkonomiSettings = createServerFn({ method: "GET" }).handler(
@@ -705,6 +709,12 @@ export const getOkonomiSettings = createServerFn({ method: "GET" }).handler(
       primary_account: (data as any).primary_account ?? null,
       benchmarks: ((data as any).benchmarks ?? {}) as Record<string, number>,
       benchmarks_generated_at: (data as any).benchmarks_generated_at ?? null,
+      internal_transfer_filter_enabled: Boolean(
+        (data as any).internal_transfer_filter_enabled ?? false,
+      ),
+      internal_transfer_accounts: Array.isArray((data as any).internal_transfer_accounts)
+        ? ((data as any).internal_transfer_accounts as string[])
+        : [],
     };
   },
 );
@@ -719,6 +729,8 @@ export const updateOkonomiSettings = createServerFn({ method: "POST" })
         household_children_over18: z.number().int().min(0).max(15).optional(),
         savings_target_pct: z.number().min(0).max(100).optional(),
         primary_account: z.string().max(200).nullable().optional(),
+        internal_transfer_filter_enabled: z.boolean().optional(),
+        internal_transfer_accounts: z.array(z.string().min(1).max(200)).max(50).optional(),
       })
       .parse(d),
   )
