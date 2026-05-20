@@ -415,12 +415,13 @@ export type VakttarnetHeroStatus = {
   lastSensor: { ts: string; device_name: string; zone: string | null; kind: string; event_type: string } | null;
   lastMotionRoom: { ts: string; device_name: string; zone: string | null } | null;
   outdoorMotion: OutdoorMotionItem[];
+  lastAlarmChange: { ts: string; state: string; who: string | null; source: string | null } | null;
 };
 
 export const getVakttarnetHeroStatus = createServerFn({ method: "GET" }).handler(
   async (): Promise<VakttarnetHeroStatus> => {
     const sinceIso = new Date(Date.now() - 24 * 3600_000).toISOString();
-    const [doorRes, sensorRes, motionRes, outdoorSensorRes, outdoorCamRes] = await Promise.all([
+    const [doorRes, sensorRes, motionRes, outdoorSensorRes, outdoorCamRes, alarmRes] = await Promise.all([
       supabaseAdmin
         .from("homey_sensor_events")
         .select("ts, device_name, zone, kind")
@@ -452,10 +453,16 @@ export const getVakttarnetHeroStatus = createServerFn({ method: "GET" }).handler
         .gte("detected_at", sinceIso)
         .order("detected_at", { ascending: false })
         .limit(8),
+      supabaseAdmin
+        .from("home_alarm_log")
+        .select("changed_at, state, who, source")
+        .order("changed_at", { ascending: false })
+        .limit(1),
     ]);
     const d = doorRes.data?.[0];
     const s = sensorRes.data?.[0];
     const m = motionRes.data?.[0];
+    const a = alarmRes.data?.[0];
 
     const outdoor: OutdoorMotionItem[] = [];
     for (const r of outdoorSensorRes.data ?? []) {
@@ -483,7 +490,9 @@ export const getVakttarnetHeroStatus = createServerFn({ method: "GET" }).handler
       lastSensor: s ? { ts: s.ts, device_name: s.device_name ?? "", zone: s.zone, kind: s.kind, event_type: s.event_type } : null,
       lastMotionRoom: m ? { ts: m.ts, device_name: m.device_name ?? "", zone: m.zone } : null,
       outdoorMotion: outdoor.slice(0, 5),
+      lastAlarmChange: a ? { ts: a.changed_at, state: a.state, who: a.who, source: a.source } : null,
     };
   },
 );
+
 
