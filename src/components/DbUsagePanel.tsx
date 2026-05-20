@@ -109,11 +109,36 @@ function nextRun(cron: string, lastRun: string | null, explicit?: string | null)
 export function DbUsagePanel() {
   const fetchFn = useServerFn(getDbUsage);
   const fetchStorage = useServerFn(getStorageUsage);
+  const fetchBucket = useServerFn(getBucketObjects);
   const toggleFn = useServerFn(setCronJobActive);
   const [data, setData] = useState<DbUsageStats | null>(null);
   const [storage, setStorage] = useState<{ buckets: StorageBucket[]; totalBytes: number } | null>(null);
   const [loading, setLoading] = useState(true);
   const [pending, setPending] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [bucketFiles, setBucketFiles] = useState<Record<string, { loading: boolean; objects: StorageObject[] }>>({});
+
+  async function toggleCategory(name: string, bucketsInCat: StorageBucket[]) {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(name)) next.delete(name);
+      else next.add(name);
+      return next;
+    });
+    // Last filer for alle buckets i kategorien hvis vi åpner og ikke allerede har dem.
+    for (const b of bucketsInCat) {
+      if (bucketFiles[b.bucket]) continue;
+      setBucketFiles((prev) => ({ ...prev, [b.bucket]: { loading: true, objects: [] } }));
+      try {
+        const res = await fetchBucket({ data: { bucket: b.bucket, limit: 25 } });
+        setBucketFiles((prev) => ({ ...prev, [b.bucket]: { loading: false, objects: res.objects } }));
+      } catch (e: any) {
+        setBucketFiles((prev) => ({ ...prev, [b.bucket]: { loading: false, objects: [] } }));
+        toast.error(`Kunne ikke hente filer i ${b.bucket}: ${e?.message ?? e}`);
+      }
+    }
+  }
+
 
   async function handleToggle(jobname: string, next: boolean) {
     setPending(jobname);
