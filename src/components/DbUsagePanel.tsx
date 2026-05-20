@@ -1,8 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { getDbUsage, setCronJobActive, type DbUsageStats } from "@/server/db-usage.functions";
-import { getStorageUsage, type StorageBucket } from "@/server/storage-usage.functions";
-import { Database, Clock, AlertTriangle, HardDrive } from "lucide-react";
+import {
+  getStorageUsage,
+  getBucketObjects,
+  type StorageBucket,
+  type StorageObject,
+} from "@/server/storage-usage.functions";
+import { Database, Clock, AlertTriangle, HardDrive, ChevronDown, ChevronRight } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 
@@ -104,11 +109,36 @@ function nextRun(cron: string, lastRun: string | null, explicit?: string | null)
 export function DbUsagePanel() {
   const fetchFn = useServerFn(getDbUsage);
   const fetchStorage = useServerFn(getStorageUsage);
+  const fetchBucket = useServerFn(getBucketObjects);
   const toggleFn = useServerFn(setCronJobActive);
   const [data, setData] = useState<DbUsageStats | null>(null);
   const [storage, setStorage] = useState<{ buckets: StorageBucket[]; totalBytes: number } | null>(null);
   const [loading, setLoading] = useState(true);
   const [pending, setPending] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [bucketFiles, setBucketFiles] = useState<Record<string, { loading: boolean; objects: StorageObject[] }>>({});
+
+  async function toggleCategory(name: string, bucketsInCat: StorageBucket[]) {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(name)) next.delete(name);
+      else next.add(name);
+      return next;
+    });
+    // Last filer for alle buckets i kategorien hvis vi åpner og ikke allerede har dem.
+    for (const b of bucketsInCat) {
+      if (bucketFiles[b.bucket]) continue;
+      setBucketFiles((prev) => ({ ...prev, [b.bucket]: { loading: true, objects: [] } }));
+      try {
+        const res = await fetchBucket({ data: { bucket: b.bucket, limit: 25 } });
+        setBucketFiles((prev) => ({ ...prev, [b.bucket]: { loading: false, objects: res.objects } }));
+      } catch (e: any) {
+        setBucketFiles((prev) => ({ ...prev, [b.bucket]: { loading: false, objects: [] } }));
+        toast.error(`Kunne ikke hente filer i ${b.bucket}: ${e?.message ?? e}`);
+      }
+    }
+  }
+
 
   async function handleToggle(jobname: string, next: boolean) {
     setPending(jobname);
@@ -156,18 +186,38 @@ export function DbUsagePanel() {
     };
   }, [fetchFn, fetchStorage]);
 
-  // Bygg kategoriaggregat over tabeller + buckets.
+  // Bygg kategoriaggregat over tabeller + buckets, og hold styr på medlemmer per kategori.
   const categoryUsage = useMemo(() => {
-    const tot = new Map<string, number>();
+    type Cat = {
+      name: string;
+      bytes: number;
+      tables: { table: string; bytes: number; rows: number }[];
+      buckets: StorageBucket[];
+    };
+    const map = new Map<string, Cat>();
+    const ensure = (name: string): Cat => {
+      let c = map.get(name);
+      if (!c) {
+        c = { name, bytes: 0, tables: [], buckets: [] };
+        map.set(name, c);
+      }
+      return c;
+    };
     for (const t of data?.tables ?? []) {
-      const cat = categorizeTable(t.table);
-      tot.set(cat, (tot.get(cat) ?? 0) + t.bytes);
+      const c = ensure(categorizeTable(t.table));
+      c.bytes += t.bytes;
+      c.tables.push({ table: t.table.replace(/^public\./, ""), bytes: t.bytes, rows: t.rows });
     }
     for (const b of storage?.buckets ?? []) {
-      const cat = categorizeBucket(b.bucket);
-      tot.set(cat, (tot.get(cat) ?? 0) + b.bytes);
+      const c = ensure(categorizeBucket(b.bucket));
+      c.bytes += b.bytes;
+      c.buckets.push(b);
     }
-    const arr = Array.from(tot.entries()).map(([name, bytes]) => ({ name, bytes }));
+    const arr = Array.from(map.values());
+    for (const c of arr) {
+      c.tables.sort((a, b) => b.bytes - a.bytes);
+      c.buckets.sort((a, b) => b.bytes - a.bytes);
+    }
     arr.sort((a, b) => b.bytes - a.bytes);
     const total = arr.reduce((s, c) => s + c.bytes, 0);
     return { categories: arr, total };
@@ -221,40 +271,90 @@ export function DbUsagePanel() {
           <div className="space-y-1.5">
             {categoryUsage.categories.map((c) => {
               const pctC = categoryUsage.total > 0 ? (c.bytes / categoryUsage.total) * 100 : 0;
+              const isOpen = expanded.has(c.name);
               return (
-                <div key={c.name}>
-                  <div className="flex items-center justify-between text-xs mb-0.5">
-                    <span className="text-foreground">{c.name}</span>
-                    <span className="font-mono text-muted-foreground tabular-nums">
-                      {prettyBytes(c.bytes)} · {pctC.toFixed(1)}%
-                    </span>
-                  </div>
-                  <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
-                    <div className="h-full bg-primary/70" style={{ width: `${pctC}%` }} />
-                  </div>
+                <div key={c.name} className="rounded border border-transparent hover:border-border/60 transition-colors">
+                  <button
+                    type="button"
+                    onClick={() => toggleCategory(c.name, c.buckets)}
+                    className="w-full text-left px-1 py-1"
+                    aria-expanded={isOpen}
+                  >
+                    <div className="flex items-center justify-between text-xs mb-0.5">
+                      <span className="text-foreground flex items-center gap-1">
+                        {isOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                        {c.name}
+                      </span>
+                      <span className="font-mono text-muted-foreground tabular-nums">
+                        {prettyBytes(c.bytes)} · {pctC.toFixed(1)}%
+                      </span>
+                    </div>
+                    <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                      <div className="h-full bg-primary/70" style={{ width: `${pctC}%` }} />
+                    </div>
+                  </button>
+                  {isOpen && (
+                    <div className="px-2 pt-2 pb-3 space-y-3">
+                      {c.tables.length > 0 && (
+                        <div>
+                          <div className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-1">
+                            Tabeller ({c.tables.length})
+                          </div>
+                          <div className="space-y-0.5">
+                            {c.tables.map((t) => (
+                              <div key={t.table} className="flex items-center justify-between text-[11px]">
+                                <span className="font-mono truncate pr-2">{t.table}</span>
+                                <span className="font-mono text-muted-foreground tabular-nums shrink-0">
+                                  {prettyBytes(t.bytes)} · {t.rows.toLocaleString("nb-NO")} rader
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {c.buckets.map((b) => {
+                        const files = bucketFiles[b.bucket];
+                        return (
+                          <div key={b.bucket}>
+                            <div className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-1 flex items-center justify-between">
+                              <span>Bucket · {b.bucket}</span>
+                              <span className="font-mono">
+                                {prettyBytes(b.bytes)} · {b.objects} filer
+                              </span>
+                            </div>
+                            {!files || files.loading ? (
+                              <div className="text-[11px] text-muted-foreground">Henter filer…</div>
+                            ) : files.objects.length === 0 ? (
+                              <div className="text-[11px] text-muted-foreground">Ingen filer.</div>
+                            ) : (
+                              <div className="space-y-0.5">
+                                {files.objects.map((o) => (
+                                  <div key={o.name} className="flex items-center justify-between text-[11px]">
+                                    <span className="font-mono truncate pr-2" title={o.name}>{o.name}</span>
+                                    <span className="font-mono text-muted-foreground tabular-nums shrink-0">
+                                      {prettyBytes(o.bytes)}
+                                    </span>
+                                  </div>
+                                ))}
+                                {b.objects > files.objects.length && (
+                                  <div className="text-[10px] text-muted-foreground italic pt-1">
+                                    Viser {files.objects.length} største av {b.objects} filer.
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               );
             })}
           </div>
         )}
-        {storage && storage.buckets.length > 0 && (
-          <div className="mt-3 pt-3 border-t border-border/60">
-            <div className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-1.5">
-              Storage-buckets
-            </div>
-            <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
-              {storage.buckets.map((b) => (
-                <div key={b.bucket} className="flex items-center justify-between">
-                  <span className="font-mono">{b.bucket}</span>
-                  <span className="font-mono text-muted-foreground tabular-nums">
-                    {prettyBytes(b.bytes)} · {b.objects}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
+
 
       {/* Cron jobs */}
       <div>
