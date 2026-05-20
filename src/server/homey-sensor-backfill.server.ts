@@ -29,6 +29,62 @@ const RESOLUTION_MS: Record<string, number> = {
   last31Days: 31 * 24 * 60 * 60 * 1000,
 };
 
+export type HomeySensorHistorySettings = {
+  enabled: boolean;
+  resolution: "lastHour" | "last6Hours" | "last24Hours" | "last7Days" | "last31Days";
+  interval_hours: number;
+  last_run_at: string | null;
+};
+
+const HISTORY_KEY = "homey_sensor_history_cron";
+const HISTORY_DEFAULT: HomeySensorHistorySettings = {
+  enabled: false,
+  resolution: "last24Hours",
+  interval_hours: 6,
+  last_run_at: null,
+};
+
+export async function loadHomeySensorHistorySettings(): Promise<HomeySensorHistorySettings> {
+  const { data } = await supabaseAdmin
+    .from("notification_settings")
+    .select("value")
+    .eq("key", HISTORY_KEY)
+    .maybeSingle();
+  const v = (data?.value as Partial<HomeySensorHistorySettings>) ?? {};
+  return {
+    enabled: v.enabled === true,
+    resolution: typeof v.resolution === "string" && v.resolution in RESOLUTION_MS ? v.resolution as HomeySensorHistorySettings["resolution"] : HISTORY_DEFAULT.resolution,
+    interval_hours: typeof v.interval_hours === "number" ? Math.max(1, Math.min(24, Math.round(v.interval_hours))) : HISTORY_DEFAULT.interval_hours,
+    last_run_at: typeof v.last_run_at === "string" ? v.last_run_at : null,
+  };
+}
+
+export async function saveHomeySensorHistorySettings(
+  patch: Partial<HomeySensorHistorySettings>,
+): Promise<HomeySensorHistorySettings> {
+  const current = await loadHomeySensorHistorySettings();
+  const next: HomeySensorHistorySettings = {
+    ...current,
+    ...patch,
+    resolution: patch.resolution && patch.resolution in RESOLUTION_MS ? patch.resolution : current.resolution,
+    interval_hours: patch.interval_hours == null ? current.interval_hours : Math.max(1, Math.min(24, Math.round(patch.interval_hours))),
+  };
+  const { data: existing } = await supabaseAdmin
+    .from("notification_settings")
+    .select("id")
+    .eq("key", HISTORY_KEY)
+    .maybeSingle();
+  if (existing) {
+    await supabaseAdmin
+      .from("notification_settings")
+      .update({ value: next as any, updated_at: new Date().toISOString() })
+      .eq("id", existing.id);
+  } else {
+    await supabaseAdmin.from("notification_settings").insert({ key: HISTORY_KEY, value: next as any });
+  }
+  return next;
+}
+
 export async function backfillHomeySensorHistory(resolution: string): Promise<{
   ok: boolean;
   sensorsProcessed: number;
@@ -112,4 +168,20 @@ export async function backfillHomeySensorHistory(resolution: string): Promise<{
   }
 
   return { ok: true, sensorsProcessed: sensors.length, eventsInserted: inserted, errors };
+}
+
+export async function processHomeySensorHistoryCron(): Promise<{
+  checked: number;
+  ran: boolean;
+  skipped: number;
+  result?: Awaited<ReturnType<typeof backfillHomeySensorHistory>>;
+}> {
+  const cfg = await loadHomeySensorHistorySettings();
+  if (!cfg.enabled) return { checked: 1, ran: false, skipped: 1 };
+  const lastRun = cfg.last_run_at ? new Date(cfg.last_run_at).getTime() : 0;
+  const dueAt = lastRun + cfg.interval_hours * 60 * 60_000;
+  if (lastRun > 0 && Date.now() < dueAt) return { checked: 1, ran: false, skipped: 1 };
+  const result = await backfillHomeySensorHistory(cfg.resolution);
+  await saveHomeySensorHistorySettings({ last_run_at: new Date().toISOString() });
+  return { checked: 1, ran: true, skipped: 0, result };
 }
