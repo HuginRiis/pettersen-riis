@@ -4,7 +4,7 @@ import { Activity, Footprints, Heart, HeartPulse, Flame, Moon, RefreshCw, LogIn,
 import { ScrollMarquee } from "@/components/ScrollMarquee";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, CartesianGrid } from "recharts";
 import { toast } from "sonner";
-import { getGarminOverview, garminLoginNow, garminSyncNow, garminSubmitMfaCode, listGarminDevices, setDefaultGarminDevice } from "@/server/garmin.functions";
+import { getGarminCore, getGarminExtras, garminLoginNow, garminSyncNow, garminSubmitMfaCode, listGarminDevices, setDefaultGarminDevice } from "@/server/garmin.functions";
 import { Check } from "lucide-react";
 import { getStoredWho, isCurrentlySubscribed } from "@/lib/push-client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
