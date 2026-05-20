@@ -102,6 +102,56 @@ export const deleteOkonomiCategory = createServerFn({ method: "POST" })
 // Transactions
 // =================================================================
 
+function accountMatchesAny(account: string | null | undefined, patterns: string[]): boolean {
+  if (!account || patterns.length === 0) return false;
+  const a = account.toString().toLowerCase().replace(/[\s.\-]/g, "");
+  for (const p of patterns) {
+    const pp = p.toString().toLowerCase().replace(/[\s.\-]/g, "");
+    if (!pp) continue;
+    if (a.includes(pp) || pp.includes(a)) return true;
+  }
+  return false;
+}
+
+function filterInternalTransfers<T extends OkonomiTransaction>(
+  rows: T[],
+  patterns: string[],
+): T[] {
+  if (patterns.length === 0) return rows;
+  const internal = rows
+    .map((r, idx) => ({ r, idx }))
+    .filter(({ r }) => accountMatchesAny(r.account, patterns));
+  if (internal.length < 2) return rows;
+  const drop = new Set<number>();
+  // Group by abs(amount)
+  const byAmt = new Map<string, Array<{ r: T; idx: number }>>();
+  for (const it of internal) {
+    const k = amountKey(Math.abs(Number(it.r.amount)));
+    const arr = byAmt.get(k) ?? [];
+    arr.push(it);
+    byAmt.set(k, arr);
+  }
+  for (const arr of byAmt.values()) {
+    const pos = arr.filter((x) => Number(x.r.amount) > 0).sort((a, b) => a.r.txn_date.localeCompare(b.r.txn_date));
+    const neg = arr.filter((x) => Number(x.r.amount) < 0).sort((a, b) => a.r.txn_date.localeCompare(b.r.txn_date));
+    for (const p of pos) {
+      if (drop.has(p.idx)) continue;
+      const match = neg.find((n) => {
+        if (drop.has(n.idx)) return false;
+        const dp = Date.parse(p.r.txn_date);
+        const dn = Date.parse(n.r.txn_date);
+        if (isNaN(dp) || isNaN(dn)) return false;
+        return Math.abs(dp - dn) <= 1000 * 60 * 60 * 24 * 3;
+      });
+      if (match) {
+        drop.add(p.idx);
+        drop.add(match.idx);
+      }
+    }
+  }
+  return rows.filter((_, idx) => !drop.has(idx));
+}
+
 export const listOkonomiTransactions = createServerFn({ method: "GET" })
   .inputValidator((d) =>
     z
@@ -109,6 +159,7 @@ export const listOkonomiTransactions = createServerFn({ method: "GET" })
         from: z.string().optional(),
         to: z.string().optional(),
         limit: z.number().int().min(1).max(2000).default(500),
+        exclude_internal_transfers: z.boolean().optional(),
       })
       .parse(d),
   )
@@ -123,7 +174,22 @@ export const listOkonomiTransactions = createServerFn({ method: "GET" })
     if (data.to) q = q.lte("txn_date", data.to);
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
-    return (rows ?? []).map((r: any) => ({ ...r, amount: Number(r.amount) })) as OkonomiTransaction[];
+    const mapped = (rows ?? []).map((r: any) => ({ ...r, amount: Number(r.amount) })) as OkonomiTransaction[];
+    if (data.exclude_internal_transfers) {
+      const { data: s } = await supabaseAdmin
+        .from("okonomi_budget_settings")
+        .select("internal_transfer_filter_enabled, internal_transfer_accounts")
+        .eq("id", 1)
+        .maybeSingle();
+      const enabled = Boolean((s as any)?.internal_transfer_filter_enabled);
+      const patterns = Array.isArray((s as any)?.internal_transfer_accounts)
+        ? ((s as any).internal_transfer_accounts as string[])
+        : [];
+      if (enabled && patterns.length > 0) {
+        return filterInternalTransfers(mapped, patterns);
+      }
+    }
+    return mapped;
   });
 
 export const upsertOkonomiTransaction = createServerFn({ method: "POST" })
