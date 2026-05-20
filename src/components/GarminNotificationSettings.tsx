@@ -368,6 +368,40 @@ export function GarminNotificationSettings() {
                 </div>
               )}
             </div>
+
+            <div className="rounded-md border border-border/40 p-2 space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-medium">Klokken ikke synket</span>
+                <Switch checked={!!p.notify_no_sync} onCheckedChange={(v) => update(p.id, { notify_no_sync: v })} />
+              </div>
+              {p.notify_no_sync && (
+                <div className="space-y-2 text-xs">
+                  <p className="text-muted-foreground">
+                    Varsler hvis Garmin-klokken ikke har syncet på X timer, eller hvis det
+                    ikke finnes søvn-data for natten når sjekken kjører.
+                  </p>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-muted-foreground">Uten sync i mer enn:</span>
+                    <Input
+                      type="number" min={1} max={72} step={1}
+                      value={p.no_sync_hours ?? 12}
+                      onChange={(e) => update(p.id, { no_sync_hours: Math.max(1, Math.min(72, Number(e.target.value) || 12)) })}
+                      className="h-8 w-20"
+                    />
+                    <span className="text-muted-foreground">timer</span>
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-muted-foreground">Sjekk-tidspunkt:</span>
+                    <Input
+                      type="time"
+                      value={(p.no_sync_check_time || "10:00").slice(0, 5)}
+                      onChange={(e) => update(p.id, { no_sync_check_time: `${e.target.value}:00` })}
+                      className="h-8 w-28"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         ))}
       </div>
