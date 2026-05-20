@@ -443,6 +443,50 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
   const maxHrToday = todaysActs.reduce((m, a) => Math.max(m, a.max_hr ?? 0), 0) || null;
   const maxHrYesterday = yesterdaysActs.reduce((m, a) => Math.max(m, a.max_hr ?? 0), 0) || null;
 
+  // Intraday i dag og i går for puls-tile
+  const todayIntraday = (data?.intraday ?? []).filter((x) => x.day === todayDay);
+  const yesterdayIntraday = (data?.intraday ?? []).filter((x) => x.day === yesterdayDay);
+  const intradayHrLatest = (() => {
+    const hrPts = todayIntraday.filter((x) => x.heart_rate_avg != null);
+    return hrPts.length ? hrPts[hrPts.length - 1].heart_rate_avg : null;
+  })();
+  const intradayHrLatestYesterday = (() => {
+    const hrPts = yesterdayIntraday.filter((x) => x.heart_rate_avg != null);
+    return hrPts.length ? hrPts[hrPts.length - 1].heart_rate_avg : null;
+  })();
+  const intradayHrMin = (() => {
+    const v = todayIntraday.map((x) => x.heart_rate_avg).filter((n): n is number => typeof n === "number" && n > 0);
+    return v.length ? Math.min(...v) : null;
+  })();
+  const intradayHrMax = (() => {
+    const v = todayIntraday.map((x) => x.heart_rate_max ?? x.heart_rate_avg).filter((n): n is number => typeof n === "number" && n > 0);
+    return v.length ? Math.max(...v) : null;
+  })();
+  const intradayHrAvg = (() => {
+    const v = todayIntraday.map((x) => x.heart_rate_avg).filter((n): n is number => typeof n === "number" && n > 0);
+    return v.length ? Math.round(v.reduce((a, b) => a + b, 0) / v.length) : null;
+  })();
+  const intradayHrPeakHour = (() => {
+    let best: { hour: number; v: number } | null = null;
+    for (const x of todayIntraday) {
+      const v = x.heart_rate_max ?? x.heart_rate_avg;
+      if (typeof v === "number" && (best == null || v > best.v)) best = { hour: x.hour, v };
+    }
+    return best;
+  })();
+  const intradaySparkData = todayIntraday.map((x) => ({ day: String(x.hour).padStart(2, "0"), hr: x.heart_rate_avg }));
+
+  // Hud-temp tile
+  const lastSkinEntry = (data?.sleep ?? []).slice().reverse().find((s) => s.skin_temp_dev_c != null);
+  const prevSkinEntry = (() => {
+    const arr = (data?.sleep ?? []).filter((s) => s.skin_temp_dev_c != null);
+    return arr.length >= 2 ? arr[arr.length - 2] : undefined;
+  })();
+
+  // Søvntrener tile (basert på sleep need + feedback)
+  const lastCoachEntry = (data?.sleep ?? []).slice().reverse().find((s) => s.sleep_need_actual_min != null || s.sleep_need_feedback != null || s.sleep_score_qualifier != null);
+
+
   return (
     <section className="container mx-auto px-2 sm:px-4 pb-6">
       <div className="space-y-4">
