@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { getVakttarnetHeroStatus, type VakttarnetHeroStatus } from "@/server/homey-sensor-dashboard.functions";
-import { DoorClosed, Activity, Eye, Camera } from "lucide-react";
+import { DoorClosed, Activity, Eye, Camera, ShieldCheck, ShieldOff, ShieldAlert } from "lucide-react";
 
 function minsAgo(iso: string | null): string {
   if (!iso) return "—";
