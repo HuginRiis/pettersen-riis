@@ -574,8 +574,10 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
                 details={[
                   { k: "I dag", v: today?.resting_heart_rate != null ? `${today.resting_heart_rate} bpm` : "—" },
                   { k: "I går", v: yesterday?.resting_heart_rate != null ? `${yesterday.resting_heart_rate} bpm` : "—" },
+                  { k: "Garmin 7d", v: today?.last_7d_avg_rhr != null ? `${today.last_7d_avg_rhr} bpm` : "—" },
                   { k: "Snitt 7d", v: avgFmt(data?.daily?.slice(-7).map((d) => d.resting_heart_rate), 0, " bpm") },
                   { k: "Snitt 30d", v: avgFmt(data?.daily?.map((d) => d.resting_heart_rate), 0, " bpm") },
+                  { k: "Lav 30d", v: (() => { const v = (data?.daily ?? []).map((d) => d.resting_heart_rate).filter((n): n is number => typeof n === "number" && n > 0); return v.length ? `${Math.min(...v)} bpm` : "—"; })() },
                 ]}
                 chart={sparkLine(data?.daily, "resting_heart_rate", false, C.hr)} />
               <Tile icon={<Heart size={14} style={{color: C.hrAvg}} />} label="Snitt puls"
