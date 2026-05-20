@@ -205,6 +205,16 @@ function VakttarnetPage() {
           </Panel>
         </section>
 
+        <section id="vt-sensors" className="scroll-mt-24">
+          <Panel
+            title="Sensor-dashboard"
+            icon={<Activity size={14} />}
+            subtitle="Bevegelse, dører, vinduer og låser fra Homey — statistikk, grafer og smart innsikt"
+          >
+            <HomeySensorDashboard />
+          </Panel>
+        </section>
+
         <section id="vt-push" className="scroll-mt-24">
           <Panel
             title="Sendte varslinger"
