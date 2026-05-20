@@ -65,6 +65,9 @@ type Pref = {
   daily_show_both: boolean;
   daily_fields: string[];
   compare_fields: string[];
+  notify_no_sync: boolean;
+  no_sync_hours: number;
+  no_sync_check_time: string;
 };
 
 const DAILY_FIELD_OPTIONS = [
