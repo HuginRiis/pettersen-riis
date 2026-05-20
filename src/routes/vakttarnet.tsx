@@ -26,6 +26,9 @@ import { HomeySensorDashboard } from "@/components/HomeySensorDashboard";
 import { EufyInspector } from "@/components/EufyInspector";
 import { UtgangsdorenPanel } from "@/components/UtgangsdorenPanel";
 import { GarminStatusPanel } from "@/components/GarminStatusPanel";
+import { VakttarnHeroStats } from "@/components/VakttarnHeroStats";
+import { TollnesCameraStrip } from "@/components/TollnesCameraStrip";
+
 
 export const Route = createFileRoute("/vakttarnet")({
   head: () => ({
