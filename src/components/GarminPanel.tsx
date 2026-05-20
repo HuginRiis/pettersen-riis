@@ -284,7 +284,8 @@ function renderHourBar(items: Array<{ hour: number; value: number | null }>, col
 
 type GarminOwner = "arne" | "rebekka";
 export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: GarminOwner; displayName?: string } = {}) {
-  const fetchOverview = useServerFn(getGarminOverview);
+  const fetchCore = useServerFn(getGarminCore);
+  const fetchExtras = useServerFn(getGarminExtras);
   const loginFn = useServerFn(garminLoginNow);
   const syncFn = useServerFn(garminSyncNow);
   const mfaFn = useServerFn(garminSubmitMfaCode);
