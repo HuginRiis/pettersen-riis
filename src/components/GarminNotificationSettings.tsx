@@ -9,6 +9,40 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { sendGarminTestPush } from "@/server/garmin-push.functions";
+import { sendGarminThresholdTestPush } from "@/server/garmin-thresholds.functions";
+
+const THRESHOLD_METRIC_OPTIONS: Array<{ key: string; label: string; unit: string; defaultDirection: "below" | "above"; defaultThreshold: number }> = [
+  { key: "stress",         label: "Stress (snitt i dag)",      unit: "",     defaultDirection: "above", defaultThreshold: 50 },
+  { key: "body_battery",   label: "Body Battery (siste time)", unit: "",     defaultDirection: "below", defaultThreshold: 20 },
+  { key: "rhr",            label: "Hvilepuls",                 unit: "bpm",  defaultDirection: "above", defaultThreshold: 65 },
+  { key: "intraday_hr",    label: "Puls (siste time, snitt)",  unit: "bpm",  defaultDirection: "above", defaultThreshold: 100 },
+  { key: "steps",          label: "Skritt (hittil i dag)",     unit: "",     defaultDirection: "below", defaultThreshold: 3000 },
+  { key: "sleep_total",    label: "Søvn (timer)",              unit: "t",    defaultDirection: "below", defaultThreshold: 6 },
+  { key: "sleep_score",    label: "Søvnscore",                 unit: "",     defaultDirection: "below", defaultThreshold: 60 },
+  { key: "deep_sleep",     label: "Dyp søvn (min)",            unit: "min",  defaultDirection: "below", defaultThreshold: 45 },
+  { key: "rem_sleep",      label: "REM-søvn (min)",            unit: "min",  defaultDirection: "below", defaultThreshold: 60 },
+  { key: "hrv",            label: "HRV-snitt",                 unit: "ms",   defaultDirection: "below", defaultThreshold: 35 },
+  { key: "spo2",           label: "SpO₂",                      unit: "%",    defaultDirection: "below", defaultThreshold: 92 },
+  { key: "calories",       label: "Kalorier (totalt)",         unit: "kcal", defaultDirection: "above", defaultThreshold: 3500 },
+  { key: "active_kcal",    label: "Aktive kcal",               unit: "kcal", defaultDirection: "below", defaultThreshold: 300 },
+  { key: "intensity",      label: "Intensitetsminutter",       unit: "min",  defaultDirection: "below", defaultThreshold: 20 },
+  { key: "floors",         label: "Trapper",                   unit: "",     defaultDirection: "below", defaultThreshold: 5 },
+];
+
+type Threshold = {
+  id: string;
+  garmin_owner: "arne" | "rebekka";
+  recipient: string;
+  sender_label: string;
+  enabled: boolean;
+  label: string | null;
+  metric: string;
+  direction: "below" | "above";
+  threshold: number;
+  cooldown_hours: number;
+  last_value: number | null;
+  last_notified_at: string | null;
+};
 
 const WHO_OPTIONS = ["Alle", "Arne & Rebekka", "Arne", "Rebekka", "Marita", "Nora", "Celine", "Mira"] as const;
 const SENDER_OPTIONS = ["Garmin", "Arne", "Rebekka", "Helse-vakta", "Husmesteren"] as const;
