@@ -22,6 +22,7 @@ import { MaesterAiBudget } from "@/components/MaesterAiBudget";
 import { PushSendCountsPanel } from "@/components/PushSendCountsPanel";
 import { ChangelogPanel } from "@/components/ChangelogPanel";
 import { VakttarnEventsPanel } from "@/components/VakttarnEventsPanel";
+import { HomeySensorDashboard } from "@/components/HomeySensorDashboard";
 import { EufyInspector } from "@/components/EufyInspector";
 import { UtgangsdorenPanel } from "@/components/UtgangsdorenPanel";
 import { GarminStatusPanel } from "@/components/GarminStatusPanel";
@@ -49,6 +50,7 @@ const VAKTTARN_TOC: { id: string; label: string; icon: React.ComponentType<{ cla
   { id: "vt-utgangsdoren", label: "Utgangsdøren", icon: DoorOpen },
   { id: "vt-stats", label: "Statistikk", icon: BarChart3 },
   { id: "vt-doors", label: "Porter & låser", icon: DoorClosed },
+  { id: "vt-sensors", label: "Sensor-dashboard", icon: Activity },
   { id: "vt-push", label: "Sendte varsel", icon: Bell },
   { id: "vt-ai-budget", label: "AI-skattkammer", icon: Wallet },
   { id: "vt-map", label: "Vaktens kart", icon: MapIcon },
@@ -200,6 +202,16 @@ function VakttarnetPage() {
             subtitle="Yale Doorman og Verisure rapporterer hva som er åpent og lukket"
           >
             <DoorsLocksPanel />
+          </Panel>
+        </section>
+
+        <section id="vt-sensors" className="scroll-mt-24">
+          <Panel
+            title="Sensor-dashboard"
+            icon={<Activity size={14} />}
+            subtitle="Bevegelse, dører, vinduer og låser fra Homey — statistikk, grafer og smart innsikt"
+          >
+            <HomeySensorDashboard />
           </Panel>
         </section>
 
