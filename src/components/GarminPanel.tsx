@@ -1377,9 +1377,9 @@ function Tile({
       {showDetails && details && details.length > 0 && (
         <div className="mt-2 pt-2 border-t border-border/40 grid grid-cols-2 gap-x-2 gap-y-0.5 text-[10px]">
           {details.map((d) => (
-            <div key={d.k} className="flex justify-between gap-1">
-              <span className="text-muted-foreground truncate">{d.k}</span>
-              <span className="tabular-nums font-medium">{d.v}</span>
+            <div key={d.k} className="flex justify-between gap-1 min-w-0">
+              <ScrollMarquee text={d.k} className="text-muted-foreground flex-1" />
+              <ScrollMarquee text={d.v} className="tabular-nums font-medium max-w-[55%] text-right" />
             </div>
           ))}
         </div>
