@@ -24,6 +24,7 @@ export type HomeySensorDashboard = {
     all: number;
   };
   topRoom: { zone: string; count: number } | null;
+  topRooms: Array<{ zone: string; count: number }>;
   lastMotion: { ts: string; device: string; zone: string | null } | null;
   hourly: Array<{ hour: number; motion: number; door: number; lock: number; window: number }>;
   daily: Array<{ label: string; date: string; motion: number; door: number; lock: number; window: number }>;
@@ -31,6 +32,7 @@ export type HomeySensorDashboard = {
   dayNight: { day: number; night: number };
   peakHours: Array<{ hour: number; count: number }>;
   inactiveSensors: Array<{ device_name: string; zone: string | null; kind: string; last_ts: string }>;
+  inactiveMotion: Array<{ device_name: string; zone: string | null; last_ts: string; days: number }>;
   anomalies: Array<{ hour: number; count: number; expected: number; note: string }>;
   trend: { current: number; previous: number; deltaPct: number };
 };
