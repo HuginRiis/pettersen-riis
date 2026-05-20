@@ -199,17 +199,10 @@ export async function pollHomeySensors(): Promise<{
           prev = p.v as boolean;
         }
         if (transitions.length === 0) continue;
-        const { data: existing } = await supabaseAdmin
+        const { error: upErr } = await supabaseAdmin
           .from("homey_sensor_events")
-          .select("ts, event_type")
-          .eq("device_id", t.device_id)
-          .gte("ts", new Date(sinceMs).toISOString());
-        const seen = new Set((existing ?? []).map((e) => `${e.ts}|${e.event_type}`));
-        const fresh = transitions.filter((e) => !seen.has(`${e.ts}|${e.event_type}`));
-        if (fresh.length > 0) {
-          await supabaseAdmin.from("homey_sensor_events").insert(fresh);
-          backfilledCount += fresh.length;
-        }
+          .upsert(transitions, { onConflict: "device_id,ts,event_type", ignoreDuplicates: true });
+        if (!upErr) backfilledCount += transitions.length;
       } catch {
         // ignorer per-device feil
       }
