@@ -362,3 +362,13 @@ export const sendHomeySensorSummaryTestPush = createServerFn({ method: "POST" })
     return sendHomeySensorSummaryTest();
   },
 );
+
+export const backfillHomeySensorHistoryFn = createServerFn({ method: "POST" })
+  .inputValidator(
+    z.object({
+      resolution: z.enum(["lastHour", "last6Hours", "last24Hours", "last7Days", "last31Days"]).default("last7Days"),
+    }).parse,
+  )
+  .handler(async ({ data }) => {
+    return backfillHomeySensorHistory(data.resolution);
+  });
