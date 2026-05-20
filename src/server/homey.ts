@@ -1835,42 +1835,46 @@ export const setLivingRoomDeviceCapability = createServerFn({ method: "POST" })
 
 export const getTollnesCameraSnapshot = createServerFn({ method: "GET" }).handler(
   withApiLog("homey", "getTollnesCameraSnapshot", async (): Promise<CameraSnapshotResult> => {
-    let conn: HomeyConnection | null;
-    try {
-      conn = await getValidConnection();
-    } catch (e: any) {
-      return { ok: false, error: e?.message ?? "Token-feil" };
-    }
-    if (!conn) return { ok: false, error: "Ingen Homey-tilkobling" };
-
-    try {
-      const session = await getHomeySessionContext(conn);
-      if (!session) return { ok: false, error: "Fant ingen Homey" };
-
-      const device = await findCameraDevice(
-        session.sessionToken,
-        session.target.baseUrl,
-        "tollnes",
-      );
-      if (!device) return { ok: false, error: "Fant ingen Netatmo-kamera" };
-
-      const { buffer, contentType } = await tryCameraSnapshot(
-        session.sessionToken,
-        session.target.baseUrl,
-        device,
-      );
-
-      return {
-        ok: true,
-        dataUrl: bufferToDataUrl(buffer, contentType),
-        deviceName: device.name,
-        capturedAt: new Date().toISOString(),
-      };
-    } catch (e: any) {
-      return { ok: false, error: e?.message ?? "Klarte ikke hente snapshot" };
-    }
+    return await fetchHomeyCameraSnapshotByHint("tollnes");
   }),
 );
+
+export const getHomeyCameraSnapshot = createServerFn({ method: "GET" })
+  .inputValidator((input: { match?: string }) => input ?? {})
+  .handler(async ({ data }): Promise<CameraSnapshotResult> => {
+    const hint = (data?.match ?? "").toString().toLowerCase().trim() || "camera";
+    return await fetchHomeyCameraSnapshotByHint(hint);
+  });
+
+async function fetchHomeyCameraSnapshotByHint(hint: string): Promise<CameraSnapshotResult> {
+  let conn: HomeyConnection | null;
+  try {
+    conn = await getValidConnection();
+  } catch (e: any) {
+    return { ok: false, error: e?.message ?? "Token-feil" };
+  }
+  if (!conn) return { ok: false, error: "Ingen Homey-tilkobling" };
+  try {
+    const session = await getHomeySessionContext(conn);
+    if (!session) return { ok: false, error: "Fant ingen Homey" };
+    const device = await findCameraDevice(session.sessionToken, session.target.baseUrl, hint);
+    if (!device) return { ok: false, error: `Fant ingen kamera som matcher "${hint}"` };
+    const { buffer, contentType } = await tryCameraSnapshot(
+      session.sessionToken,
+      session.target.baseUrl,
+      device,
+    );
+    return {
+      ok: true,
+      dataUrl: bufferToDataUrl(buffer, contentType),
+      deviceName: device.name,
+      capturedAt: new Date().toISOString(),
+    };
+  } catch (e: any) {
+    return { ok: false, error: e?.message ?? "Klarte ikke hente snapshot" };
+  }
+}
+
 
 // ============================================================
 // Lock control (Yale Doorman / Verisure smart lock)
