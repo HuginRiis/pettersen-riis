@@ -604,6 +604,7 @@ export function HomeySensorDashboard() {
           </div>
         </>
       )}
+      <SensorEventsDialog query={detail} range={range} onClose={() => setDetail(null)} />
     </div>
   );
 }
