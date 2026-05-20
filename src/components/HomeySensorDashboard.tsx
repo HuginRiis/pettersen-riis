@@ -406,7 +406,19 @@ export function HomeySensorDashboard() {
             </div>
             <div className="h-48">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={data.hourly}>
+                <BarChart
+                  data={data.hourly}
+                  onClick={(e: any) => {
+                    const hour = e?.activePayload?.[0]?.payload?.hour;
+                    if (typeof hour === "number") {
+                      setDetail({
+                        title: `Hendelser kl ${String(hour).padStart(2, "0")}:00–${String(hour).padStart(2, "0")}:59`,
+                        hourOfDay: hour,
+                      });
+                    }
+                  }}
+                  style={{ cursor: "pointer" }}
+                >
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis dataKey="hour" stroke="hsl(var(--muted-foreground))" fontSize={10} />
                   <YAxis stroke="hsl(var(--muted-foreground))" fontSize={10} />
@@ -419,6 +431,7 @@ export function HomeySensorDashboard() {
                 </BarChart>
               </ResponsiveContainer>
             </div>
+            <div className="text-[10px] text-muted-foreground italic mt-1">Trykk på en stolpe for å se hendelsene i den timen.</div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
