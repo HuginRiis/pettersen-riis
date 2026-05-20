@@ -2,14 +2,12 @@ import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import {
   getHomeySensorDashboard,
-  getHomeySensorSettings,
-  saveHomeySensorSettings,
   type HomeySensorDashboard,
   type SensorRange,
 } from "@/server/homey-sensor-dashboard.functions";
 import {
   Activity, DoorOpen, Lock, Unlock, Sun, Moon, AlertTriangle,
-  Sparkles, Settings, ChevronDown, MapPin, Clock, TrendingUp, TrendingDown,
+  Sparkles, ChevronDown, MapPin, Clock, TrendingUp, TrendingDown,
 } from "lucide-react";
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid,
@@ -56,17 +54,11 @@ function Kpi({ icon: Icon, label, value, sub, tone = "primary" }: {
 
 export function HomeySensorDashboard() {
   const fetchDash = useServerFn(getHomeySensorDashboard);
-  const fetchSet = useServerFn(getHomeySensorSettings);
-  const saveSet = useServerFn(saveHomeySensorSettings);
 
   const [range, setRange] = useState<SensorRange>("today");
   const [data, setData] = useState<HomeySensorDashboard | null>(null);
   const [loading, setLoading] = useState(true);
   const [insightOpen, setInsightOpen] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const [dayStart, setDayStart] = useState("06:00");
-  const [dayEnd, setDayEnd] = useState("22:00");
-  const [savingSet, setSavingSet] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -78,12 +70,6 @@ export function HomeySensorDashboard() {
     return () => { cancelled = true; };
   }, [range, fetchDash]);
 
-  useEffect(() => {
-    fetchSet()
-      .then((s) => { setDayStart(s.dayStart); setDayEnd(s.dayEnd); })
-      .catch(() => {});
-  }, [fetchSet]);
-
   const dayNightData = useMemo(() => {
     if (!data) return [];
     return [
@@ -91,18 +77,6 @@ export function HomeySensorDashboard() {
       { name: "Natt", value: data.dayNight.night },
     ];
   }, [data]);
-
-  const handleSaveSettings = async () => {
-    setSavingSet(true);
-    try {
-      await saveSet({ data: { dayStart, dayEnd } });
-      const fresh = await fetchDash({ data: { range } });
-      setData(fresh);
-      setSettingsOpen(false);
-    } finally {
-      setSavingSet(false);
-    }
-  };
 
   return (
     <div className="rounded-lg border border-border bg-card/60 backdrop-blur p-3 sm:p-4 space-y-4">
@@ -113,13 +87,12 @@ export function HomeySensorDashboard() {
             Sensor-dashboard
           </h3>
         </div>
-        <button
-          type="button"
-          onClick={() => setSettingsOpen((o) => !o)}
-          className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground hover:text-primary flex items-center gap-1.5 border border-border rounded-md px-2 py-1"
+        <a
+          href="/push-varslinger#sec-sensor-dashboard"
+          className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground hover:text-primary"
         >
-          <Settings className="h-3 w-3" /> Innstillinger
-        </button>
+          Innstillinger →
+        </a>
       </div>
 
       {/* Range filter */}
@@ -140,45 +113,6 @@ export function HomeySensorDashboard() {
         ))}
       </div>
 
-      {/* Settings panel */}
-      {settingsOpen && (
-        <div className="rounded-md border border-border bg-background/40 p-3 space-y-2">
-          <div className="text-[11px] text-muted-foreground">
-            Definer når dagen begynner og slutter — brukes til natt/dag-analyse.
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <label className="flex flex-col gap-1 text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-              Dag starter
-              <input
-                type="time"
-                value={dayStart}
-                onChange={(e) => setDayStart(e.target.value)}
-                className="bg-background border border-border rounded px-2 py-1 text-sm text-foreground"
-              />
-            </label>
-            <label className="flex flex-col gap-1 text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-              Dag slutter
-              <input
-                type="time"
-                value={dayEnd}
-                onChange={(e) => setDayEnd(e.target.value)}
-                className="bg-background border border-border rounded px-2 py-1 text-sm text-foreground"
-              />
-            </label>
-          </div>
-          <div className="text-[10px] text-muted-foreground italic">
-            Natt = utenfor dette intervallet.
-          </div>
-          <button
-            type="button"
-            onClick={handleSaveSettings}
-            disabled={savingSet}
-            className="text-[10px] uppercase tracking-[0.2em] px-3 py-1.5 rounded-md border border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 disabled:opacity-50"
-          >
-            {savingSet ? "Lagrer…" : "Lagre"}
-          </button>
-        </div>
-      )}
 
       {loading && !data && (
         <div className="text-[11px] text-muted-foreground italic py-8 text-center">
