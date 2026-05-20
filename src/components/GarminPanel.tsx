@@ -328,9 +328,19 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
 
   const load = async () => {
     setLoading(true);
-    try { setData(await fetchOverview({ data: { owner } }) as Overview); }
-    catch (e) { toast.error((e as Error).message); }
-    finally { setLoading(false); }
+    try {
+      const core = await fetchCore({ data: { owner } }) as Omit<Overview, "activities" | "intraday">;
+      setData({ ...core, activities: [], intraday: [] } as Overview);
+      setLoading(false);
+      // Fase 2: hent aktiviteter og intraday i bakgrunnen — siden er allerede interaktiv.
+      try {
+        const extras = await fetchExtras({ data: { owner } }) as { activities: Activity[]; intraday: Intraday[] };
+        setData((prev) => prev ? { ...prev, activities: extras.activities, intraday: extras.intraday } : prev);
+      } catch (e) {
+        console.error("Garmin extras failed", e);
+      }
+    }
+    catch (e) { toast.error((e as Error).message); setLoading(false); }
   };
   useEffect(() => { void load(); }, [owner]);
 
