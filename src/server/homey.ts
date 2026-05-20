@@ -1153,7 +1153,7 @@ async function triggerSnapshotCapability(
     : device.raw?.capabilities && typeof device.raw.capabilities === "object"
       ? Object.keys(device.raw.capabilities)
       : [];
-  const candidates = ["button.snapshot", "camera_refresh"];
+  const candidates = ["button.snapshot", "camera_refresh", "CMD_SNAPSHOT"];
   for (const cap of candidates) {
     if (!caps.includes(cap)) continue;
     try {
@@ -1232,7 +1232,11 @@ async function tryCameraSnapshot(
   }
 
   if (isEufy) {
-    // Trigg snapshot først så Homey registrerer et ferskt bilde
+    // Eufy legger siste bevegelsesbilde under images[].imageObj.url på "Event".
+    const existing = await readFromDevice(device.raw);
+    if (existing) return existing;
+
+    // Hvis Homey ikke har bilde klart, trigges snapshot og enheten leses på nytt.
     await triggerSnapshotCapability(sessionToken, apiBase, device);
     await new Promise((r) => setTimeout(r, 2500));
     const refreshed = await fetchJson<any>(
