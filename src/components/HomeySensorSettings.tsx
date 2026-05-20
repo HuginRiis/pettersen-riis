@@ -105,6 +105,34 @@ export function HomeySensorSettings() {
     }
   }
 
+  async function patchHistory(p: Partial<{ enabled: boolean; resolution: typeof historyResolution; interval_hours: number }>) {
+    try {
+      const next = await saveHistory({ data: p });
+      setHistoryEnabled(next.enabled);
+      setHistoryResolution(next.resolution);
+      setHistoryInterval(next.interval_hours);
+      setHistoryLastRun(next.last_run_at);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Feil");
+    }
+  }
+
+  async function runManualHistory() {
+    setBackfilling(true);
+    try {
+      const r = await runBackfill({ data: { resolution: historyResolution } });
+      toast.success(
+        r.ok
+          ? `Historikk hentet: ${r.eventsInserted} hendelser fra ${r.sensorsProcessed} sensorer${r.errors ? `, ${r.errors} feil` : ""}.`
+          : `Feil: ${r.error ?? "ukjent"}`,
+      );
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Feil");
+    } finally {
+      setBackfilling(false);
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -201,6 +229,54 @@ export function HomeySensorSettings() {
 
         {lastSent && (
           <p className="text-[10px] text-muted-foreground">Sist sendt: {lastSent}</p>
+        )}
+      </div>
+
+      {/* History backfill */}
+      <div className="rounded-md border border-border/60 bg-background/40 p-3 space-y-3">
+        <div className="flex items-center gap-2">
+          <Database className="h-4 w-4 text-primary" />
+          <span className="text-sm font-semibold">Historikk fra Homey</span>
+          <span className="ml-auto flex items-center gap-2">
+            <Switch checked={historyEnabled} onCheckedChange={(v) => patchHistory({ enabled: v })} />
+            <span className="text-xs text-muted-foreground">Cron {historyEnabled ? "på" : "av"}</span>
+          </span>
+        </div>
+        <p className="text-[11px] text-muted-foreground">
+          Hent gamle sensorhendelser manuelt, eller la dags-cron hente historikk automatisk med valgt periode.
+        </p>
+        <div className="flex flex-wrap items-center gap-3 text-xs">
+          <label className="flex items-center gap-1">
+            <span className="text-muted-foreground">Periode:</span>
+            <select
+              value={historyResolution}
+              onChange={(e) => patchHistory({ resolution: e.target.value as typeof historyResolution })}
+              className="bg-background border border-border/60 rounded px-2 py-1 text-xs"
+            >
+              {HISTORY_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+          </label>
+          <label className="flex items-center gap-1">
+            <span className="text-muted-foreground">Cron hver:</span>
+            <input
+              type="number"
+              min={1}
+              max={24}
+              value={historyInterval}
+              onChange={(e) => patchHistory({ interval_hours: Math.max(1, Math.min(24, Number(e.target.value) || 1)) })}
+              className="w-14 bg-background border border-border/60 rounded px-2 py-1 text-xs tabular-nums"
+            />
+            <span className="text-muted-foreground">t</span>
+          </label>
+          <div className="ml-auto">
+            <Button size="sm" variant="outline" onClick={runManualHistory} disabled={backfilling} className="text-xs">
+              {backfilling ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <RefreshCw className="h-3 w-3 mr-1" />}
+              Hent historikk nå
+            </Button>
+          </div>
+        </div>
+        {historyLastRun && (
+          <p className="text-[10px] text-muted-foreground">Sist kjørt automatisk: {new Date(historyLastRun).toLocaleString("nb-NO")}</p>
         )}
       </div>
     </div>
