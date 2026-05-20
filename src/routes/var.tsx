@@ -9,6 +9,7 @@ import { findDeviceFuzzy, type DeviceLike } from "@/lib/homey-match";
 import { getTollnesAlerts, type AlertsResult, type MetAlert } from "@/server/lightning";
 import { useUserLocation, UserLocationBar } from "@/hooks/use-user-location";
 import { UvPanel } from "@/components/UvPanel";
+import { usePerUserPersistedState } from "@/hooks/use-per-user-persisted-state";
 
 
 export const Route = createFileRoute("/var")({

@@ -8,6 +8,7 @@ import { Trash2, Plus, Bell, BellOff, Clock, ChevronDown } from "lucide-react";
 import { getPushPublicKey } from "@/server/agenda-push";
 import { GarbageCollectionPanel } from "@/components/GarbageCollectionPanel";
 import { BirthdaysPanel } from "@/components/BirthdaysPanel";
+import { usePerUserPersistedState } from "@/hooks/use-per-user-persisted-state";
 import { UpcomingPushPanel } from "@/components/UpcomingPushPanel";
 import {
   type Who,
