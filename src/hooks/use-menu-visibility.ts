@@ -1,11 +1,23 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
-export type MenuVisibility = Record<string, boolean>;
+export const MENU_USERS = ["Arne", "Rebekka", "Nora"] as const;
+export type MenuUser = (typeof MENU_USERS)[number];
+
+/**
+ * Per-link visibility state.
+ * - `enabled: false` skjuler lenken for alle.
+ * - `users` er en allow-list. Tom liste = synlig for alle brukere.
+ *   Ellers vises lenken kun for navngitte brukere (samt "anon"/uautentiserte
+ *   håndteres separat via `public`-flagget på lenken).
+ */
+export type MenuLinkState = { enabled: boolean; users: string[] };
+export type MenuVisibility = Record<string, MenuLinkState>;
 
 export const MENU_VISIBILITY_KEY = "menu_visibility";
 
-// Alle ruter som kan vises i topp-menyen. Holdes synkron med navLinks i SiteHeader.
+// Alle ruter som kan vises i topp-menyen. Holdes synkron med navLinks i SiteHeader
+// og med "Husets saler" i src/routes/index.tsx.
 export const MENU_LINK_DEFS: { to: string; label: string }[] = [
   { to: "/", label: "Hjem" },
   { to: "/var", label: "Vær" },
@@ -30,7 +42,6 @@ export const MENU_LINK_DEFS: { to: string; label: string }[] = [
   { to: "/hundene", label: "Hundene" },
   { to: "/trening", label: "Trening" },
   { to: "/fysisk", label: "Fysisk" },
-
   { to: "/varsler", label: "Farevarsler" },
   { to: "/steintavle", label: "Steintavle" },
   { to: "/decibel", label: "Decibelmåler" },
@@ -38,22 +49,37 @@ export const MENU_LINK_DEFS: { to: string; label: string }[] = [
   { to: "/roborock", label: "Roborock" },
   { to: "/planter", label: "Planter & Trær" },
   { to: "/flyradar", label: "Flyradar" },
-
 ];
 
+const DEFAULT_LINK_STATE: MenuLinkState = { enabled: true, users: [] };
+
 export const DEFAULT_MENU_VISIBILITY: MenuVisibility = Object.fromEntries(
-  MENU_LINK_DEFS.map((l) => [l.to, true]),
+  MENU_LINK_DEFS.map((l) => [l.to, { ...DEFAULT_LINK_STATE }]),
 );
 
 let cache: MenuVisibility | null = null;
 let inflight: Promise<MenuVisibility> | null = null;
 const listeners = new Set<(v: MenuVisibility) => void>();
 
+function coerceLinkState(value: unknown): MenuLinkState {
+  // Bakoverkompatibel: gamle innstillinger lagret bare en boolean per lenke.
+  if (typeof value === "boolean") return { enabled: value, users: [] };
+  if (value && typeof value === "object") {
+    const v = value as Record<string, unknown>;
+    const enabled = v.enabled === false ? false : true;
+    const users = Array.isArray(v.users)
+      ? (v.users as unknown[]).filter((x): x is string => typeof x === "string")
+      : [];
+    return { enabled, users };
+  }
+  return { ...DEFAULT_LINK_STATE };
+}
+
 function merge(value: unknown): MenuVisibility {
   const v = (value ?? {}) as Record<string, unknown>;
-  const out: MenuVisibility = { ...DEFAULT_MENU_VISIBILITY };
+  const out: MenuVisibility = {};
   for (const def of MENU_LINK_DEFS) {
-    if (def.to in v) out[def.to] = v[def.to] !== false;
+    out[def.to] = def.to in v ? coerceLinkState(v[def.to]) : { ...DEFAULT_LINK_STATE };
   }
   return out;
 }
@@ -93,11 +119,23 @@ export function useMenuVisibility(): MenuVisibility {
   return s;
 }
 
-export function isMenuLinkVisible(s: MenuVisibility, to: string): boolean {
-  // Hjem skal aldri kunne skjules — den er låst på.
+export function getMenuLinkState(s: MenuVisibility, to: string): MenuLinkState {
+  return s[to] ?? { ...DEFAULT_LINK_STATE };
+}
+
+/**
+ * Synlig for brukeren `who`? Hjem alltid synlig.
+ * Hvis `enabled = false` → skjult.
+ * Hvis `users` er tom → synlig for alle.
+ * Ellers: kun synlig hvis `who` er i `users`-listen.
+ */
+export function isMenuLinkVisible(s: MenuVisibility, to: string, who?: string | null): boolean {
   if (to === "/") return true;
-  const v = s[to];
-  return v !== false;
+  const st = getMenuLinkState(s, to);
+  if (!st.enabled) return false;
+  if (!st.users || st.users.length === 0) return true;
+  if (!who || who === "anon") return true; // pre-auth: behandle global toggle, brukerfilter ignoreres
+  return st.users.includes(who);
 }
 
 export async function saveMenuVisibility(next: MenuVisibility): Promise<void> {
