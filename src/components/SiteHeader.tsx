@@ -450,9 +450,10 @@ export function SiteHeader() {
               onClick={() => setOpen(false)}
               aria-label="Innstillinger"
               title="Innstillinger"
-              className="text-primary p-2 rounded-md hover:bg-primary/10 transition"
+              className="text-primary p-2 rounded-md hover:bg-primary/10 transition flex items-center gap-1.5"
             >
               <Settings size={20} />
+              {showB("push_today") && <PushTodayBadge inline />}
             </Link>
           )}
           <button
