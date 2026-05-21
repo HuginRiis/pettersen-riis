@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Footprints, Heart, Flame, Moon, BedDouble, Loader2, Scale } from "lucide-react";
+import { Footprints, Heart, HeartPulse, Flame, Moon, BedDouble, Loader2, Scale } from "lucide-react";
 import { getGarminOverview } from "@/server/garmin.functions";
 
 type Daily = {
   day: string;
   steps: number | null;
   resting_heart_rate: number | null;
+  average_heart_rate: number | null;
   total_kilocalories: number | null;
   weight_kg: number | null;
 };
@@ -59,6 +60,7 @@ export function GarminAverageStats() {
     const d = daily.slice(-days);
     const s = sleep.slice(-days);
     const avgRhr = avg(d.map((x) => x.resting_heart_rate));
+    const avgHr = avg(d.map((x) => x.average_heart_rate));
     const avgSteps = avg(d.map((x) => x.steps));
     const avgKcal = avg(d.map((x) => x.total_kilocalories));
     const avgSleepSec = avg(s.map((x) => x.total_seconds));
@@ -78,7 +80,7 @@ export function GarminAverageStats() {
       const trendPenalty = Math.min(40, Math.abs((wTrend ?? 0) / avgWeight) * 1000);
       weightScore = Math.round(Math.max(0, Math.min(100, stability - trendPenalty / 2)));
     }
-    return { avgRhr, avgSteps, avgKcal, avgSleepSec, avgDeep, avgLight, avgRem, avgWeight, wTrend, weightScore };
+    return { avgRhr, avgHr, avgSteps, avgKcal, avgSleepSec, avgDeep, avgLight, avgRem, avgWeight, wTrend, weightScore };
   }, [daily, sleep, period]);
 
   const sleepHours = stats.avgSleepSec ? stats.avgSleepSec / 3600 : null;
@@ -112,8 +114,9 @@ export function GarminAverageStats() {
           <Loader2 className="h-3.5 w-3.5 animate-spin" /> Laster…
         </div>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
           <Box icon={<Heart size={14} />} label="Hvilepuls" value={stats.avgRhr ? `${fmt(stats.avgRhr, 0)} bpm` : "—"} />
+          <Box icon={<HeartPulse size={14} />} label="Snitt puls" value={stats.avgHr ? `${fmt(stats.avgHr, 0)} bpm` : "—"} />
           <Box icon={<Footprints size={14} />} label="Skritt" value={fmt(stats.avgSteps)} />
           <Box
             icon={<Moon size={14} />}

@@ -1271,16 +1271,21 @@ function Tile({
       <div className="text-[10px] mt-0.5">
         {trend ?? (value == null && fallbackSub ? <span className="text-muted-foreground">{fallbackSub}</span> : null)}
       </div>
-      {showDetails && details && details.length > 0 && (
-        <div className="mt-2 pt-2 border-t border-border/40 grid grid-cols-2 gap-x-2 gap-y-0.5 text-[10px]">
-          {details.map((d) => (
-            <div key={d.k} className="flex justify-between items-baseline gap-1 min-w-0">
-              <InlineMarquee text={d.k} className="text-muted-foreground text-left" />
-              <span className="tabular-nums font-medium text-right shrink-0">{d.v}</span>
-            </div>
-          ))}
-        </div>
-      )}
+      {showDetails && details && (() => {
+        // Skjul alt som handler om 7 dager eller lengre tilbake
+        const filtered = details.filter((d) => !/7d|30d/i.test(d.k));
+        if (!filtered.length) return null;
+        return (
+          <div className="mt-2 pt-2 border-t border-border/40 grid grid-cols-2 gap-x-2 gap-y-0.5 text-[10px]">
+            {filtered.map((d) => (
+              <div key={d.k} className="flex justify-between items-baseline gap-1 min-w-0">
+                <InlineMarquee text={d.k} className="text-muted-foreground text-left" />
+                <span className="tabular-nums font-medium text-right shrink-0">{d.v}</span>
+              </div>
+            ))}
+          </div>
+        );
+      })()}
     </div>
   );
 }
