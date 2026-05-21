@@ -201,6 +201,26 @@ export function ApiCallLogPanel() {
     return { chartData: arr, chartSources: srcList };
   }, [data]);
 
+  // Felles fargekart per kilde — brukes både i grafen og i kortene under,
+  // slik at fargene alltid stemmer overens.
+  const colorBySource = useMemo(() => {
+    const map = new Map<string, string>();
+    const palette = appearance.series;
+    let i = 0;
+    for (const s of chartSources) {
+      map.set(s, palette[i % palette.length]);
+      i++;
+    }
+    for (const s of sortedSources) {
+      if (!map.has(s.id)) {
+        map.set(s.id, palette[i % palette.length]);
+        i++;
+      }
+    }
+    return map;
+  }, [chartSources, sortedSources, appearance.series]);
+
+
 
   const visibleSources = expanded
     ? sortedSources
