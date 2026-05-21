@@ -111,7 +111,7 @@ async function fetchFitnessExtras(owner: GarminOwner, day: string): Promise<{
   };
   try {
     // maxmet returnerer enten et objekt eller en liste (latest vs daily-range)
-    const vRaw = await garminGet<Vo2Resp | Vo2Resp[]>(owner, `/metrics-service/metrics/maxmet/${day}/${day}`);
+    const vRaw = await garminGetMaybe<Vo2Resp | Vo2Resp[]>(owner, `/metrics-service/metrics/maxmet/${day}/${day}`);
     const v: Vo2Resp | undefined = Array.isArray(vRaw) ? vRaw[vRaw.length - 1] : vRaw ?? undefined;
     out.vo2max_running = asNumber(v?.generic?.vo2MaxValue) ?? out.vo2max_running;
     out.vo2max_cycling = asNumber(v?.cycling?.vo2MaxValue) ?? out.vo2max_cycling;
