@@ -44,7 +44,7 @@ import celinePortrait from "@/assets/celine-portrait.jpg";
 import maritaPortrait from "@/assets/marita-portrait.jpg";
 import noraPortrait from "@/assets/nora-portrait.jpg";
 import miraPortrait from "@/assets/mira-portrait.jpg";
-import heroImg from "@/assets/hero-westeros.jpg";
+import heroImg from "@/assets/hero-westeros.webp";
 import borgenSeasons from "@/assets/borgen-seasons.png";
 // Hall background images (hentet fra hver sals egen hero)
 import hallVar from "@/assets/got-var.jpg";
@@ -53,7 +53,7 @@ import hallTurer from "@/assets/got-turer.jpg";
 import hallAgenda from "@/assets/got-agenda.jpg";
 import hallVarsler from "@/assets/got-varsler.jpg";
 import hallVakttarnet from "@/assets/got-vakttarnet.jpg";
-import hallHytta from "@/assets/hytta-aurora-got.jpg";
+import hallHytta from "@/assets/hytta-aurora-got.webp";
 import hallHundene from "@/assets/hundene-pack.jpg";
 import hallTrening from "@/assets/got-trening.jpg";
 import hallFysisk from "@/assets/got-fysisk.jpg";
