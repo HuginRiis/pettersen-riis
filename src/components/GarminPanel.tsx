@@ -575,10 +575,14 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
                 showDetails={showDetails}
                 details={[
                   { k: "Snitt i dag", v: today?.stress_average != null ? String(today.stress_average) : "—" },
+                  { k: "Nivå i dag", v: stressLevel(today?.stress_average) },
                   { k: "I går", v: yesterday?.stress_average != null ? String(yesterday.stress_average) : "—" },
-                  { k: "Nivå", v: stressLevel(today?.stress_average) },
+                  { k: "Nivå i går", v: stressLevel(yesterday?.stress_average) },
                   { k: "Snitt 7d", v: avgFmt(data?.daily?.slice(-7).map((d) => d.stress_average), 0) },
                   { k: "Snitt 30d", v: avgFmt(data?.daily?.map((d) => d.stress_average), 0) },
+                  { k: "Lavest 30d", v: minFmt(data?.daily?.map((d) => d.stress_average), 0) },
+                  { k: "Høyest 30d", v: maxFmt(data?.daily?.map((d) => d.stress_average), 0) },
+                  { k: "Trend 30d", v: trendFmt(data?.daily?.map((d) => d.stress_average), 0) },
                 ]}
                 chart={sparkLine(data?.daily, "stress_average", false, C.stress)} />
               <Tile icon={<Timer size={14} style={{color: C.intensity}} />} label="Intensitetsmin."
