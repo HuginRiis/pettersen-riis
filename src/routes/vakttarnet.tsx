@@ -31,6 +31,8 @@ import { GarminStatusPanel } from "@/components/GarminStatusPanel";
 import { VakttarnHeroStats } from "@/components/VakttarnHeroStats";
 import { TollnesCameraStrip } from "@/components/TollnesCameraStrip";
 import { HomeyCameraStrip } from "@/components/HomeyCameraStrip";
+import { usePerUserPersistedState } from "@/hooks/use-per-user-persisted-state";
+
 
 
 export const Route = createFileRoute("/vakttarnet")({
@@ -446,7 +448,13 @@ function Panel({
   collapsible?: boolean;
   defaultOpen?: boolean;
 }) {
-  const [open, setOpen] = useState(defaultOpen);
+  // Husker per-bruker (who) om panelet er åpent eller lukket mellom besøk.
+  // Stabil nøkkel basert på tittel.
+  const storageKey = `vakttarn-panel:${title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")}`;
+  const [open, setOpen] = usePerUserPersistedState<boolean>(storageKey, defaultOpen);
   return (
     <div className="panel rounded-lg border border-border bg-card/60 backdrop-blur p-3 sm:p-5 min-w-0">
       <div className="flex items-center gap-2 mb-1">
