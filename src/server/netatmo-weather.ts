@@ -27,7 +27,10 @@ async function getAccessToken(): Promise<string> {
     return tokenCache.accessToken;
   }
 
-  const refreshToken = tokenCache?.refreshToken ?? initialRefresh;
+  // Netatmo roterer refresh_token ved hver bruk. Foretrekk lagret token fra DB
+  // (overlever cold start), så cache, så initialToken fra env (kun første gang).
+  const stored = await loadStoredRefreshToken(REFRESH_TOKEN_KEY);
+  const refreshToken = tokenCache?.refreshToken ?? stored ?? initialRefresh;
 
   const res = await fetch(`${NETATMO_BASE}/oauth2/token`, {
     method: "POST",
@@ -56,6 +59,10 @@ async function getAccessToken(): Promise<string> {
     refreshToken: tok.refresh_token,
     expiresAt: Date.now() + tok.expires_in * 1000,
   };
+
+  // Persister den roterte refresh-tokenen så neste cold start ikke faller tilbake
+  // til en utgått env-token.
+  await saveStoredRefreshToken(REFRESH_TOKEN_KEY, tok.refresh_token);
 
   return tokenCache.accessToken;
 }
