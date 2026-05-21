@@ -4,7 +4,9 @@ import { useServerFn } from "@tanstack/react-start";
 import { Menu, X, LogOut, Crown, Swords, Shield, KeyRound, Home, Star, Flower2,
   Sun, Compass, Castle, CalendarDays, BellRing, Eye, Mountain, Lightbulb, Lamp, Zap, Hammer,
   ShoppingCart, Receipt, Dog, Dumbbell, AlertTriangle, ScrollText, Globe, ChevronDown, ChevronRight,
-  TreePine, Coins, Bot, Wallet, Volume2, Wifi, Router as RouterIcon, Plane, Bike } from "lucide-react";
+  TreePine, Coins, Bot, Wallet, Volume2, Wifi, Router as RouterIcon, Plane, Bike, Settings } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { HeaderBadgeSettingsPanel } from "@/components/HeaderBadgeSettingsPanel";
 
 
 import { logoutFn } from "@/server/auth";
@@ -173,6 +175,7 @@ const navLinks: NavLink[] = [
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const router = useRouter();
   const { authenticated } = useAuthStatus();
   const isAuthed = authenticated === true;
@@ -442,15 +445,28 @@ export function SiteHeader() {
           )}
         </nav>
 
-        <button
-          className={`relative text-primary p-2 rounded-md transition ${
-            open ? "" : "shadow-[0_0_10px_hsl(var(--primary)/0.55)] hover:shadow-[0_0_16px_hsl(var(--primary)/0.8)]"
-          }`}
-          onClick={() => setOpen((v) => { if (!v) setFavOpenMobile(false); return !v; })}
-          aria-label="Meny"
-        >
-          {open ? <X size={22} /> : <Menu size={22} />}
-        </button>
+        <div className="flex items-center gap-1">
+          {open && isAuthed && (
+            <button
+              type="button"
+              onClick={() => setSettingsOpen(true)}
+              aria-label="Topp-meny innstillinger"
+              title="Topp-meny innstillinger"
+              className="text-primary p-2 rounded-md hover:bg-primary/10 transition"
+            >
+              <Settings size={20} />
+            </button>
+          )}
+          <button
+            className={`relative text-primary p-2 rounded-md transition ${
+              open ? "" : "shadow-[0_0_10px_hsl(var(--primary)/0.55)] hover:shadow-[0_0_16px_hsl(var(--primary)/0.8)]"
+            }`}
+            onClick={() => setOpen((v) => { if (!v) setFavOpenMobile(false); return !v; })}
+            aria-label="Meny"
+          >
+            {open ? <X size={22} /> : <Menu size={22} />}
+          </button>
+        </div>
       </div>
 
       {open && (
@@ -572,6 +588,14 @@ export function SiteHeader() {
           </div>
         </nav>
       )}
+      <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto p-0">
+          <DialogHeader className="px-6 pt-6">
+            <DialogTitle>Topp-meny innstillinger</DialogTitle>
+          </DialogHeader>
+          <HeaderBadgeSettingsPanel />
+        </DialogContent>
+      </Dialog>
     </header>
   );
 }
