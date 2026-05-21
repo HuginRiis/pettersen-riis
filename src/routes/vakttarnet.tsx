@@ -14,6 +14,7 @@ import { useAuthStatus } from "@/hooks/use-auth-status";
 import heroImg from "@/assets/got-vakttarnet.jpg";
 import { Eye, Globe2, Smartphone, Monitor, Tablet, Clock, Crown, ShieldAlert, Map as MapIcon, Lock, Unlock, Sparkles, DoorClosed, Users, Bell, Database, Activity, ChevronDown, DoorOpen, BarChart3, Wallet, Radio, KeyRound, ShieldOff, Trophy, Camera, Brain, UserSearch, Watch, Network, History, List as ListIcon, AlertTriangle, PowerOff } from "lucide-react";
 import { DbUsagePanel } from "@/components/DbUsagePanel";
+import { DbDetailPanel } from "@/components/DbDetailPanel";
 import { DoorsLocksPanel } from "@/components/DoorsLocksPanel";
 import { ApiCallLogPanel } from "@/components/ApiCallLogPanel";
 import { ApiErrorLogPanel } from "@/components/ApiErrorLogPanel";
@@ -360,6 +361,19 @@ function VakttarnetPage() {
             <DbUsagePanel />
           </Panel>
         </section>
+
+        <section id="vt-db-detail" className="scroll-mt-24">
+          <Panel
+            title="Detaljert DB-oversikt"
+            icon={<Database size={14} />}
+            subtitle="Alle tabeller, views og cron-jobber med størrelse og sist oppdatert"
+            collapsible
+            defaultOpen={false}
+          >
+            <DbDetailPanel />
+          </Panel>
+        </section>
+
 
         <section id="vt-garmin" className="scroll-mt-24">
           <Panel
