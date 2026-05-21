@@ -96,13 +96,16 @@ export const getSmartklokkeOverview = createServerFn({ method: "GET" })
     };
   });
 
-type LiveResult<T = unknown> = { ok: true; data: T } | { ok: false; error: string };
+// JSON-serialiserbar respons fra Garmin — bruker `any` så RPC-serialiseringen
+// godtar dynamisk JSON fra eksterne endepunkter.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type LiveResult = { ok: true; data: any } | { ok: false; error: string };
 
-async function safeCall<T>(label: string, fn: () => Promise<T>, timeoutMs = 8000): Promise<LiveResult<T>> {
+async function safeCall(label: string, fn: () => Promise<unknown>, timeoutMs = 8000): Promise<LiveResult> {
   try {
-    const r = await Promise.race<T>([
+    const r = await Promise.race<unknown>([
       fn(),
-      new Promise<T>((_, rej) => setTimeout(() => rej(new Error(`${label} timeout`)), timeoutMs)),
+      new Promise<unknown>((_, rej) => setTimeout(() => rej(new Error(`${label} timeout`)), timeoutMs)),
     ]);
     return { ok: true, data: r };
   } catch (e) {
