@@ -632,14 +632,19 @@ export const runStravaDashboard = async (owner: StravaOwner) => {
       })),
     };
     dashboardCache.set(owner, { at: Date.now(), data: result });
+    // Persistér så vi har siste gode snapshot også etter Worker-restart / feil
+    void savePersistentCache(owner, result);
     return result;
   } catch (error) {
     // Ved feil: server siste cache hvis vi har det, ellers returner feil
-    if (cached) return cached.data;
+    if (cached) return withStaleMarker(cached.data, cached.at);
+    const persistedOnError = await loadPersistentCache(owner);
+    if (persistedOnError) return withStaleMarker(persistedOnError.data, persistedOnError.at);
     const message = error instanceof Error ? error.message : "Ukjent feil";
     return { ok: false as const, error: message };
   }
 };
+
 
 
 export const getStravaDashboard = createServerFn({ method: "GET" })
