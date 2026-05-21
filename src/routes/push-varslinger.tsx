@@ -175,6 +175,7 @@ function PushSettingsPage() {
       <SettingsBox id="sec-post" title="📬 Postlevering — Posten"><MailDeliveryNotificationSettings /></SettingsBox>
       <SettingsBox id="sec-garmin" title="⌚ Garmin — helse og trening"><GarminNotificationSettings /></SettingsBox>
       <SettingsBox id="sec-innlogging" title="🔐 Innlogging — vellykket og feilet"><LoginNotificationSettings /></SettingsBox>
+      <SettingsBox id="sec-ytelse" title="🐢 Ytelse — treg sidelasting"><SlowPageLoadNotificationSettings /></SettingsBox>
       <SettingsBox id="sec-sensor-dashboard" title="📡 Sensor-dashboard (Homey)" icon={<Activity className="h-4 w-4" />}><HomeySensorSettings /></SettingsBox>
 
       <div className="container mx-auto px-4 pb-12 grid md:grid-cols-2 gap-4">
