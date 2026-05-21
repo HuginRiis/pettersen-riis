@@ -448,7 +448,66 @@ export function ApiCallLogPanel() {
                 </div>
 
                 {isOpen && (
-                  <div className="border-t border-border bg-muted/20 px-3 py-2 space-y-1">
+                  <div className="border-t border-border bg-muted/20 px-3 py-2 space-y-2">
+                    {/* Forklaring: hvorfor kjøres denne kilden? */}
+                    <p className="text-[11px] text-muted-foreground italic">
+                      {triggerExplanation(sched?.trigger, sched?.description)}
+                    </p>
+
+                    {/* Sider som trigget kallene (on-demand) eller (server / cron) */}
+                    {(() => {
+                      const pages = data?.pagesBySource?.[src.id] ?? [];
+                      if (pages.length === 0) return null;
+                      const top = pages.slice(0, 8);
+                      const totalPages = pages.reduce((s, p) => s + p.total, 0);
+                      return (
+                        <div className="rounded border border-border/50 bg-background/40 px-2 py-1.5">
+                          <div className="text-[9px] tracking-[0.2em] uppercase text-muted-foreground mb-1">
+                            Hva trigget kallene
+                          </div>
+                          <ul className="space-y-0.5">
+                            {top.map((p) => {
+                              const pct = totalPages > 0
+                                ? Math.max(2, Math.round((p.total / totalPages) * 100))
+                                : 0;
+                              return (
+                                <li
+                                  key={p.page}
+                                  className="flex items-center gap-2 text-[11px]"
+                                >
+                                  <span className="font-mono text-foreground flex-1 min-w-0 truncate">
+                                    {p.page}
+                                  </span>
+                                  <div className="w-20 h-1.5 bg-background/60 rounded-full overflow-hidden border border-border/30">
+                                    <div
+                                      className="h-full"
+                                      style={{
+                                        width: `${pct}%`,
+                                        background: colorFor(src.id),
+                                      }}
+                                    />
+                                  </div>
+                                  <span className="text-muted-foreground tabular-nums w-10 text-right">
+                                    {p.total}×
+                                  </span>
+                                  <span className="text-muted-foreground tabular-nums w-16 text-right text-[10px]">
+                                    {formatAgo(p.last_at)}
+                                  </span>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                          {pages.length > top.length && (
+                            <div className="text-[10px] text-muted-foreground mt-1">
+                              + {pages.length - top.length} flere kilder
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
+
+                    {/* Endepunkter */}
+
                     {rows.length === 0 ? (
                       <p className="text-[11px] text-muted-foreground italic py-2">
                         Ingen kall registrert siste 24t. Trykk «Oppdater» for å trigge.
