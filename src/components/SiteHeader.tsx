@@ -5,8 +5,6 @@ import { Menu, X, LogOut, Crown, Swords, Shield, KeyRound, Home, Star, Flower2,
   Sun, Compass, Castle, CalendarDays, BellRing, Eye, Mountain, Lightbulb, Lamp, Zap, Hammer,
   ShoppingCart, Receipt, Dog, Dumbbell, AlertTriangle, ScrollText, Globe, ChevronDown, ChevronRight,
   TreePine, Coins, Bot, Wallet, Volume2, Wifi, Router as RouterIcon, Plane, Bike, Settings } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { HeaderBadgeSettingsPanel } from "@/components/HeaderBadgeSettingsPanel";
 
 
 import { logoutFn } from "@/server/auth";
@@ -175,7 +173,7 @@ const navLinks: NavLink[] = [
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
+  
   const router = useRouter();
   const { authenticated } = useAuthStatus();
   const isAuthed = authenticated === true;
@@ -447,15 +445,15 @@ export function SiteHeader() {
 
         <div className="flex items-center gap-1">
           {open && isAuthed && (
-            <button
-              type="button"
-              onClick={() => setSettingsOpen(true)}
-              aria-label="Topp-meny innstillinger"
-              title="Topp-meny innstillinger"
+            <Link
+              to="/push-varslinger"
+              onClick={() => setOpen(false)}
+              aria-label="Innstillinger"
+              title="Innstillinger"
               className="text-primary p-2 rounded-md hover:bg-primary/10 transition"
             >
               <Settings size={20} />
-            </button>
+            </Link>
           )}
           <button
             className={`relative text-primary p-2 rounded-md transition ${
@@ -588,14 +586,6 @@ export function SiteHeader() {
           </div>
         </nav>
       )}
-      <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
-        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto p-0">
-          <DialogHeader className="px-6 pt-6">
-            <DialogTitle>Topp-meny innstillinger</DialogTitle>
-          </DialogHeader>
-          <HeaderBadgeSettingsPanel />
-        </DialogContent>
-      </Dialog>
     </header>
   );
 }
