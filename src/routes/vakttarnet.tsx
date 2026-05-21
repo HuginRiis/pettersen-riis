@@ -75,6 +75,7 @@ const VAKTTARN_TOC: { id: string; label: string; icon: React.ComponentType<{ cla
   { id: "vt-db-detail", label: "DB-detaljer", icon: Database },
   { id: "vt-page-load", label: "Sidelaster", icon: Activity },
   { id: "vt-garmin", label: "Garmin Connect", icon: Watch },
+  { id: "vt-apiblackout", label: "Master-blackout", icon: PowerOff },
   { id: "vt-apilog", label: "API-logg", icon: Network },
   { id: "vt-apipause", label: "Pause API", icon: PowerOff },
   { id: "vt-apierrors", label: "API-feil", icon: AlertTriangle },
