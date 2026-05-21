@@ -20,6 +20,7 @@ import { DoorsLocksPanel } from "@/components/DoorsLocksPanel";
 import { ApiCallLogPanel } from "@/components/ApiCallLogPanel";
 import { ApiErrorLogPanel } from "@/components/ApiErrorLogPanel";
 import { ApiPausePanel } from "@/components/ApiPausePanel";
+import { ApiBlackoutPanel } from "@/components/ApiBlackoutPanel";
 import { MaesterAiBudget } from "@/components/MaesterAiBudget";
 import { PushSendCountsPanel } from "@/components/PushSendCountsPanel";
 import { ChangelogPanel } from "@/components/ChangelogPanel";
