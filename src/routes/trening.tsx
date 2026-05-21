@@ -6,7 +6,7 @@ import { PageShell, PageHero } from "@/components/PageShell";
 import { ActivityMap } from "@/components/ActivityMap";
 import { GarminHouses } from "@/components/GarminHouses";
 import { getActivityStreams, getStravaDashboard, getStravaStatus } from "@/server/strava";
-import { getGarminOverview } from "@/server/garmin.functions";
+import { getGarminCore } from "@/server/garmin.functions";
 import treningImg from "@/assets/got-trening.jpg";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -264,7 +264,7 @@ function TreningPage() {
 }
 
 function StepsChip({ owner = "arne", displayName }: { owner?: Owner; displayName?: string } = {}) {
-  const fetchOverview = useServerFn(getGarminOverview);
+  const fetchOverview = useServerFn(getGarminCore);
   const [steps, setSteps] = useState<number | null>(null);
   const [goal, setGoal] = useState<number | null>(null);
 
@@ -303,7 +303,7 @@ function StepsChip({ owner = "arne", displayName }: { owner?: Owner; displayName
 }
 
 function RestingHrChip({ owner = "arne", displayName }: { owner?: Owner; displayName?: string } = {}) {
-  const fetchOverview = useServerFn(getGarminOverview);
+  const fetchOverview = useServerFn(getGarminCore);
   const [today, setToday] = useState<number | null>(null);
   const [avg7, setAvg7] = useState<number | null>(null);
 
@@ -340,7 +340,7 @@ function RestingHrChip({ owner = "arne", displayName }: { owner?: Owner; display
 }
 
 function HealthStatusChip({ owner = "arne", displayName }: { owner?: Owner; displayName?: string } = {}) {
-  const fetchOverview = useServerFn(getGarminOverview);
+  const fetchOverview = useServerFn(getGarminCore);
   const [data, setData] = useState<any>(null);
   const [open, setOpen] = useState(false);
 
