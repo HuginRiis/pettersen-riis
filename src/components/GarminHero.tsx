@@ -6,7 +6,7 @@ import {
   listGarminDevices,
   setDefaultGarminDevice,
   ensureGarminDeviceHero,
-  getGarminOverview,
+  getGarminCore,
 } from "@/server/garmin.functions";
 import {
   Dialog,
@@ -76,7 +76,7 @@ export function GarminHero({ owner }: { owner: Owner }) {
   const h = HOUSES[owner];
   const Icon = h.Icon;
 
-  const fetchOverview = useServerFn(getGarminOverview);
+  const fetchOverview = useServerFn(getGarminCore);
   const listDevicesFn = useServerFn(listGarminDevices);
   const setDefaultDeviceFn = useServerFn(setDefaultGarminDevice);
   const ensureHero = useServerFn(ensureGarminDeviceHero);
