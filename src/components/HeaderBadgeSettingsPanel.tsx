@@ -102,7 +102,7 @@ export function HeaderBadgeSettingsPanel() {
         </div>
 
         <div className="mt-4 panel rounded p-3 border border-border/50">
-          <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Søppeltømming-badge</p>
+          <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Søppeltømming-badge <span className="ml-1 text-[10px] normal-case text-muted-foreground/70">(lagres automatisk)</span></p>
           <div className="flex flex-wrap gap-3 items-center text-sm">
             <label className="flex items-center gap-2">
               <span>Vis fra:</span>
@@ -114,7 +114,9 @@ export function HeaderBadgeSettingsPanel() {
                 onChange={(e) => {
                   const raw = e.target.value.replace(/[^0-9]/g, "");
                   const n = raw === "" ? 0 : Math.min(30, Math.max(0, parseInt(raw, 10)));
-                  setDraft((d) => ({ ...d, garbage: { ...d.garbage, maxDaysAhead: n } }));
+                  const next = { ...draft, garbage: { ...draft.garbage, maxDaysAhead: n } };
+                  setDraft(next);
+                  void saveHeaderBadgeSettings(next);
                 }}
                 className="w-16 bg-background border border-border rounded px-2 py-1"
               />
@@ -124,7 +126,11 @@ export function HeaderBadgeSettingsPanel() {
               <input
                 type="checkbox"
                 checked={draft.garbage.showAllSameDay}
-                onChange={(e) => setDraft((d) => ({ ...d, garbage: { ...d.garbage, showAllSameDay: e.target.checked } }))}
+                onChange={(e) => {
+                  const next = { ...draft, garbage: { ...draft.garbage, showAllSameDay: e.target.checked } };
+                  setDraft(next);
+                  void saveHeaderBadgeSettings(next);
+                }}
                 className="accent-primary"
               />
               <span>Vis alle fraksjoner samme dag</span>
@@ -134,6 +140,7 @@ export function HeaderBadgeSettingsPanel() {
             </span>
           </div>
         </div>
+
 
         <div className="mt-4 grid gap-2">
           {HEADER_BADGE_DEFS.map((b) => {
