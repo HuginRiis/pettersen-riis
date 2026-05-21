@@ -31,6 +31,7 @@ type Daily = {
     anaerobic_target?: [number, number] | null;
   } | null;
   endurance_contributors?: Array<{ group: string; contribution: number }> | null;
+  raw?: { sedentarySeconds?: number | null; highlyActiveSeconds?: number | null; activeSeconds?: number | null; sleepingSeconds?: number | null } | null;
 };
 type Activity = {
   garmin_activity_id: number; activity_type: string | null; activity_name: string | null;
