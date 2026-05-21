@@ -137,6 +137,30 @@ export type Database = {
         }
         Relationships: []
       }
+      api_blackout_window: {
+        Row: {
+          enabled: boolean
+          end_time: string
+          id: number
+          start_time: string
+          updated_at: string
+        }
+        Insert: {
+          enabled?: boolean
+          end_time?: string
+          id?: number
+          start_time?: string
+          updated_at?: string
+        }
+        Update: {
+          enabled?: boolean
+          end_time?: string
+          id?: number
+          start_time?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       api_call_log: {
         Row: {
           cached: boolean

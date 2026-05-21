@@ -20,6 +20,7 @@ import { DoorsLocksPanel } from "@/components/DoorsLocksPanel";
 import { ApiCallLogPanel } from "@/components/ApiCallLogPanel";
 import { ApiErrorLogPanel } from "@/components/ApiErrorLogPanel";
 import { ApiPausePanel } from "@/components/ApiPausePanel";
+import { ApiBlackoutPanel } from "@/components/ApiBlackoutPanel";
 import { MaesterAiBudget } from "@/components/MaesterAiBudget";
 import { PushSendCountsPanel } from "@/components/PushSendCountsPanel";
 import { ChangelogPanel } from "@/components/ChangelogPanel";
@@ -74,6 +75,7 @@ const VAKTTARN_TOC: { id: string; label: string; icon: React.ComponentType<{ cla
   { id: "vt-db-detail", label: "DB-detaljer", icon: Database },
   { id: "vt-page-load", label: "Sidelaster", icon: Activity },
   { id: "vt-garmin", label: "Garmin Connect", icon: Watch },
+  { id: "vt-apiblackout", label: "Master-blackout", icon: PowerOff },
   { id: "vt-apilog", label: "API-logg", icon: Network },
   { id: "vt-apipause", label: "Pause API", icon: PowerOff },
   { id: "vt-apierrors", label: "API-feil", icon: AlertTriangle },
@@ -407,7 +409,18 @@ function VakttarnetPage() {
           </Panel>
         </section>
 
+        <section id="vt-apiblackout" className="scroll-mt-24">
+          <Panel
+            title="Master-blackout — alle API"
+            icon={<PowerOff size={14} />}
+            subtitle="Sett et tidsvindu (Europe/Oslo) der ALT av eksterne API-kall blokkeres — cron, cache-refresh og on-demand. Overstyrer per-kilde-pause."
+          >
+            <ApiBlackoutPanel />
+          </Panel>
+        </section>
+
         <section id="vt-apilog" className="scroll-mt-24"><ApiCallLogPanel /></section>
+
 
         <section id="vt-apipause" className="scroll-mt-24">
           <Panel
