@@ -231,8 +231,35 @@ export function DbUsagePanel() {
   const pct = Math.min(100, (data.dbBytes / data.limitBytes) * 100);
   const tone = pct > 80 ? "text-destructive" : pct > 50 ? "text-yellow-500" : "text-primary";
 
+  const storageBytes = storage?.totalBytes ?? 0;
+  const totalLovable = data.dbBytes + storageBytes;
+  const freeBytes = Math.max(0, data.limitBytes - data.dbBytes);
+
   return (
     <div className="space-y-5">
+      {/* Totalsum på Lovable */}
+      <div className="rounded-lg border border-border/60 bg-muted/20 p-3">
+        <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground mb-2">
+          Totalt på Lovable
+        </div>
+        <div className="grid grid-cols-3 gap-3 text-center">
+          <div>
+            <div className="text-base font-mono text-foreground">{prettyBytes(totalLovable)}</div>
+            <div className="text-[10px] text-muted-foreground mt-0.5">DB + lagring</div>
+          </div>
+          <div>
+            <div className="text-base font-mono text-foreground">{prettyBytes(storageBytes)}</div>
+            <div className="text-[10px] text-muted-foreground mt-0.5">Filbøtter</div>
+          </div>
+          <div>
+            <div className={`text-base font-mono ${freeBytes < 50 * 1024 * 1024 ? "text-destructive" : "text-[oklch(0.72_0.16_150)]"}`}>
+              {prettyBytes(freeBytes)}
+            </div>
+            <div className="text-[10px] text-muted-foreground mt-0.5">Ledig i DB</div>
+          </div>
+        </div>
+      </div>
+
       {/* Database-størrelse */}
       <div>
         <div className="flex items-center justify-between mb-1.5">
@@ -250,8 +277,7 @@ export function DbUsagePanel() {
           />
         </div>
         <p className="text-[11px] text-muted-foreground mt-1 italic">
-          Lovable Cloud free-tier gir 500 MB. Snakk med hærmesteren før vi når
-          taket.
+          Lovable Cloud free-tier gir 500 MB database. Filbøtter (bilder, kvitteringer) teller separat.
         </p>
       </div>
 
