@@ -3171,12 +3171,26 @@ export type Database = {
     Functions: {
       get_api_call_hourly_24h: { Args: never; Returns: Json }
       get_api_call_summary_24h: { Args: never; Returns: Json }
+      get_cron_jobs: {
+        Args: never
+        Returns: {
+          active: boolean
+          command: string
+          jobid: number
+          jobname: string
+          schedule: string
+        }[]
+      }
       get_db_detail_stats: { Args: never; Returns: Json }
       get_db_usage_stats: { Args: never; Returns: Json }
       get_storage_usage_stats: { Args: never; Returns: Json }
       set_cron_job_active: {
         Args: { _active: boolean; _jobname: string }
         Returns: boolean
+      }
+      set_cron_job_config: {
+        Args: { p_jobid: number; p_minutes?: number; p_mode: string }
+        Returns: undefined
       }
     }
     Enums: {
