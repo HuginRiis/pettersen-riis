@@ -720,6 +720,10 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
                   { k: "Forrige", v: prevSpo2Entry?.average_spo2 != null ? `${Math.round(prevSpo2Entry.average_spo2)} %` : "—" },
                   { k: "Snitt 7d", v: avgFmt(data?.sleep?.slice(-7).map((s) => s.average_spo2), 0, " %") },
                   { k: "Snitt 30d", v: avgFmt(data?.sleep?.map((s) => s.average_spo2), 0, " %") },
+                  { k: "Lavest 30d", v: minFmt(data?.sleep?.map((s) => s.average_spo2), 0, " %") },
+                  { k: "Høyest 30d", v: maxFmt(data?.sleep?.map((s) => s.average_spo2), 0, " %") },
+                  { k: "Målinger 30d", v: countFmt(data?.sleep?.map((s) => s.average_spo2)) },
+                  { k: "Trend 30d", v: trendFmt(data?.sleep?.map((s) => s.average_spo2), 0, " %") },
                 ]}
                 chart={sparkLine(
                   (data?.sleep ?? []).map((s) => ({ day: s.day, spo2: s.average_spo2 })),
