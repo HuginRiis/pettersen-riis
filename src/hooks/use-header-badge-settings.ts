@@ -49,6 +49,7 @@ export const DEFAULT_HEADER_BADGE_SETTINGS: HeaderBadgeSettings = {
     HEADER_BADGE_DEFS.map((b) => [b.id, { enabled: true, users: [] as string[] }]),
   ),
   weather: { startOffset: 1, days: 1, showTemp: true },
+  garbage: { maxDaysAhead: 14, showAllSameDay: false },
 };
 
 let cache: HeaderBadgeSettings | null = null;
