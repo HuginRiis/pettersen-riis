@@ -530,7 +530,7 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
           </h2>
           <div className="flex items-center gap-2">
             <button
-              onClick={() => setShowDetails((v) => !v)}
+              onClick={() => { setShowDetails((v) => { const n = !v; if (n) void ensureDetails(); return n; }); }}
               className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded border text-xs ${showDetails ? "border-primary/60 text-primary bg-primary/10" : "border-border/60 hover:bg-muted/40"}`}
             >
               {showDetails ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
