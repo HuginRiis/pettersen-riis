@@ -191,7 +191,14 @@ export const Route = createFileRoute("/api/public/hooks/agenda-push")({
           } catch (err) {
             console.error("[homey-sensor-history] failed", err);
           }
-          return new Response(JSON.stringify({ ok: true, agenda, checklist, garbage, birthdays, warranty, uv, weather, lightIdle, tibber, metAlerts, mailDelivery, garmin, garminPush, garminThresholds, plants, sensorSummary, sensorHistory }), {
+          let slowPage = { checked: 0, sent: 0, errors: 0, skipped: 0 };
+          try {
+            const spmod = await import("@/server/slow-page-push.server");
+            slowPage = await spmod.processSlowPageLoadNotifications();
+          } catch (err) {
+            console.error("[slow-page-push] failed", err);
+          }
+          return new Response(JSON.stringify({ ok: true, agenda, checklist, garbage, birthdays, warranty, uv, weather, lightIdle, tibber, metAlerts, mailDelivery, garmin, garminPush, garminThresholds, plants, sensorSummary, sensorHistory, slowPage }), {
             headers: { "Content-Type": "application/json" },
           });
         } catch (err) {
