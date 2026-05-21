@@ -165,7 +165,7 @@ export const getGarminOverview = createServerFn({ method: "GET" })
     return { owner, status, daily, activities, sleep, intraday, lastSync };
   });
 
-// Fase 1: rask kjerne — status + dagsstatistikk + søvn + lastSync (uten aktiviteter/intraday).
+// Fase 1: rask kjerne — kun hovedtall (uten raw-projeksjoner, aktiviteter, intraday).
 export const getGarminCore = createServerFn({ method: "GET" })
   .inputValidator((d: unknown) => ownerSchema.parse(d ?? {}))
   .handler(async ({ data }) => {
@@ -177,12 +177,27 @@ export const getGarminCore = createServerFn({ method: "GET" })
 
     const [status, daily, sleep, lastSync] = await Promise.all([
       mod.getGarminStatus(owner),
-      loadDaily(owner, sinceIso),
-      loadSleep(owner, sinceIso),
+      loadDaily(owner, sinceIso, false),
+      loadSleep(owner, sinceIso, false),
       loadLastSync(owner),
     ]);
 
     return { owner, status, daily, sleep, lastSync };
+  });
+
+// Fase 2a: detaljer — full daily/sleep med raw-projeksjoner (hentes når brukeren åpner "Vis detaljer").
+export const getGarminDetails = createServerFn({ method: "GET" })
+  .inputValidator((d: unknown) => ownerSchema.parse(d ?? {}))
+  .handler(async ({ data }) => {
+    const owner = data.owner as GarminOwner;
+    const since = new Date();
+    since.setDate(since.getDate() - 30);
+    const sinceIso = since.toISOString().slice(0, 10);
+    const [daily, sleep] = await Promise.all([
+      loadDaily(owner, sinceIso, true),
+      loadSleep(owner, sinceIso, true),
+    ]);
+    return { owner, daily, sleep };
   });
 
 // Fase 2: tunge ekstra-data — aktiviteter og intraday-puls.
