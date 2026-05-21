@@ -175,6 +175,7 @@ const navLinks: NavLink[] = [
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const router = useRouter();
   const { authenticated } = useAuthStatus();
   const isAuthed = authenticated === true;
