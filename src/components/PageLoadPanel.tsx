@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { getPageLoadStats, type PageLoadStats } from "@/server/page-load.functions";
-import { Gauge, Smartphone, History, TrendingUp } from "lucide-react";
+import { Gauge, Smartphone, History, TrendingUp, Users } from "lucide-react";
 import {
   LineChart,
   Line,
@@ -41,6 +41,7 @@ export function PageLoadPanel() {
   const [data, setData] = useState<PageLoadStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedRoute, setSelectedRoute] = useState<string | null>(null);
+  const [expandedUser, setExpandedUser] = useState<string | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -190,6 +191,60 @@ export function PageLoadPanel() {
                 <Bar dataKey="ms" fill="hsl(var(--primary))" />
               </BarChart>
             </ResponsiveContainer>
+          </div>
+        </div>
+      )}
+
+      {/* Per bruker */}
+      {data.users.length > 0 && (
+        <div>
+          <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-muted-foreground mb-2">
+            <Users size={12} /> Per bruker ({data.users.length})
+          </div>
+          <div className="space-y-1">
+            {data.users.map((u) => {
+              const open = expandedUser === u.who;
+              return (
+                <div key={u.who} className="rounded border border-border/60 bg-muted/10">
+                  <button
+                    type="button"
+                    onClick={() => setExpandedUser(open ? null : u.who)}
+                    className="w-full flex items-center justify-between px-2 py-1.5 text-xs hover:bg-muted/30"
+                  >
+                    <span className="font-medium">{u.who}</span>
+                    <span className="font-mono text-muted-foreground tabular-nums">
+                      {u.count} visninger · {u.routes.length} sider · snitt{" "}
+                      <span className={tone(u.avg_ms)}>{fmtMs(u.avg_ms)}</span> ·{" "}
+                      <span title={u.last_at}>{relTime(u.last_at)}</span>
+                    </span>
+                  </button>
+                  {open && (
+                    <div className="px-2 pb-2">
+                      <table className="w-full text-xs">
+                        <thead className="text-muted-foreground">
+                          <tr className="text-left border-b border-border/40">
+                            <th className="py-1 pr-2">Side</th>
+                            <th className="py-1 pr-2 text-right">Antall</th>
+                            <th className="py-1 pr-2">Sist</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {u.routes.map((r) => (
+                            <tr key={r.route} className="border-b border-border/20">
+                              <td className="py-1 pr-2 font-mono">{r.route}</td>
+                              <td className="py-1 pr-2 text-right tabular-nums">{r.count}</td>
+                              <td className="py-1 pr-2 text-muted-foreground" title={r.last_at}>
+                                {relTime(r.last_at)}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
