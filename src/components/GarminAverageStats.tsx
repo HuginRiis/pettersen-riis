@@ -114,8 +114,9 @@ export function GarminAverageStats() {
           <Loader2 className="h-3.5 w-3.5 animate-spin" /> Laster…
         </div>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
           <Box icon={<Heart size={14} />} label="Hvilepuls" value={stats.avgRhr ? `${fmt(stats.avgRhr, 0)} bpm` : "—"} />
+          <Box icon={<HeartPulse size={14} />} label="Snitt puls" value={stats.avgHr ? `${fmt(stats.avgHr, 0)} bpm` : "—"} />
           <Box icon={<Footprints size={14} />} label="Skritt" value={fmt(stats.avgSteps)} />
           <Box
             icon={<Moon size={14} />}
