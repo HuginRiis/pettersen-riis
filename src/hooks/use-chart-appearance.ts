@@ -1,14 +1,14 @@
 import { useEffect, useState } from "react";
 
 export type ChartAppearance = {
-  axisText: string;       // tall på x/y akse + andre tekster i grafen
-  axisLine: string;       // selve aksene + tick-strek
-  gridHorizontal: string; // horisontale gridlinjer
-  gridVertical: string;   // vertikale gridlinjer
-  tooltipText: string;    // tekst i tooltip
-  tooltipBg: string;      // bakgrunn i tooltip
-  tooltipBorder: string;  // ramme i tooltip
-  series: [string, string, string, string, string]; // 5 grafer
+  axisText: string;
+  axisLine: string;
+  gridHorizontal: string;
+  gridVertical: string;
+  tooltipText: string;
+  tooltipBg: string;
+  tooltipBorder: string;
+  series: string[]; // 15 grafer
 };
 
 export const CHART_APPEARANCE_DEFAULT: ChartAppearance = {
@@ -19,7 +19,11 @@ export const CHART_APPEARANCE_DEFAULT: ChartAppearance = {
   tooltipText: "#7dd3fc",
   tooltipBg: "#0b1220",
   tooltipBorder: "#7dd3fc",
-  series: ["#22c55e", "#f59e0b", "#ef4444", "#3b82f6", "#a855f7"],
+  series: [
+    "#22c55e", "#f59e0b", "#ef4444", "#3b82f6", "#a855f7",
+    "#ec4899", "#14b8a6", "#eab308", "#f97316", "#06b6d4",
+    "#84cc16", "#8b5cf6", "#f43f5e", "#10b981", "#6366f1",
+  ],
 };
 
 const KEY = "chart-appearance-v1";
@@ -46,7 +50,7 @@ export function normalizeChartAppearance(value: unknown): ChartAppearance {
     tooltipBorder: colorOrDefault(parsed.tooltipBorder, CHART_APPEARANCE_DEFAULT.tooltipBorder),
     series: CHART_APPEARANCE_DEFAULT.series.map((fallback, index) =>
       colorOrDefault(parsedSeries[index], fallback),
-    ) as ChartAppearance["series"],
+    ),
   };
 }
 
