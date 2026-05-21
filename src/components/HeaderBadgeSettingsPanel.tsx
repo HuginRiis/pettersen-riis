@@ -101,8 +101,41 @@ export function HeaderBadgeSettingsPanel() {
           </div>
         </div>
 
-        <div className="mt-4 grid gap-2">
-          {HEADER_BADGE_DEFS.map((b) => {
+        <div className="mt-4 panel rounded p-3 border border-border/50">
+          <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Søppeltømming-badge</p>
+          <div className="flex flex-wrap gap-3 items-center text-sm">
+            <label className="flex items-center gap-2">
+              <span>Vis fra:</span>
+              <input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                value={draft.garbage.maxDaysAhead === 0 ? "" : String(draft.garbage.maxDaysAhead)}
+                onChange={(e) => {
+                  const raw = e.target.value.replace(/[^0-9]/g, "");
+                  const n = raw === "" ? 0 : Math.min(30, Math.max(0, parseInt(raw, 10)));
+                  setDraft((d) => ({ ...d, garbage: { ...d.garbage, maxDaysAhead: n } }));
+                }}
+                className="w-16 bg-background border border-border rounded px-2 py-1"
+              />
+              <span>dager før</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={draft.garbage.showAllSameDay}
+                onChange={(e) => setDraft((d) => ({ ...d, garbage: { ...d.garbage, showAllSameDay: e.target.checked } }))}
+                className="accent-primary"
+              />
+              <span>Vis alle fraksjoner samme dag</span>
+            </label>
+            <span className="text-xs text-muted-foreground">
+              Av = kun første kommende tømming. På = alle som tømmes samme dag vises.
+            </span>
+          </div>
+        </div>
+
+        <div className="mt-4 grid gap-2"></div>
             const cfg = draft.badges[b.id] ?? { enabled: true, users: [] };
             return (
               <div key={b.id} className="panel rounded p-3 border border-border/50">
