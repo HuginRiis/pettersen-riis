@@ -445,15 +445,28 @@ export function SiteHeader() {
           )}
         </nav>
 
-        <button
-          className={`relative text-primary p-2 rounded-md transition ${
-            open ? "" : "shadow-[0_0_10px_hsl(var(--primary)/0.55)] hover:shadow-[0_0_16px_hsl(var(--primary)/0.8)]"
-          }`}
-          onClick={() => setOpen((v) => { if (!v) setFavOpenMobile(false); return !v; })}
-          aria-label="Meny"
-        >
-          {open ? <X size={22} /> : <Menu size={22} />}
-        </button>
+        <div className="flex items-center gap-1">
+          {open && isAuthed && (
+            <button
+              type="button"
+              onClick={() => setSettingsOpen(true)}
+              aria-label="Topp-meny innstillinger"
+              title="Topp-meny innstillinger"
+              className="text-primary p-2 rounded-md hover:bg-primary/10 transition"
+            >
+              <Settings size={20} />
+            </button>
+          )}
+          <button
+            className={`relative text-primary p-2 rounded-md transition ${
+              open ? "" : "shadow-[0_0_10px_hsl(var(--primary)/0.55)] hover:shadow-[0_0_16px_hsl(var(--primary)/0.8)]"
+            }`}
+            onClick={() => setOpen((v) => { if (!v) setFavOpenMobile(false); return !v; })}
+            aria-label="Meny"
+          >
+            {open ? <X size={22} /> : <Menu size={22} />}
+          </button>
+        </div>
       </div>
 
       {open && (
