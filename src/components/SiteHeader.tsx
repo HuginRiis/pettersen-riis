@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Menu, X, LogOut, Crown, Swords, Shield, KeyRound, Home, Star, Flower2,
   Sun, Compass, Castle, CalendarDays, BellRing, Eye, Mountain, Lightbulb, Lamp, Zap, Hammer,
   ShoppingCart, Receipt, Dog, Dumbbell, AlertTriangle, ScrollText, Globe, ChevronDown, ChevronRight,
-  TreePine, Coins, Bot, Wallet, Volume2, Wifi, Router as RouterIcon, Plane, Bike } from "lucide-react";
+  TreePine, Coins, Bot, Wallet, Volume2, Wifi, Router as RouterIcon, Plane, Bike, Watch } from "lucide-react";
 
 
 import { logoutFn } from "@/server/auth";
@@ -56,7 +56,8 @@ type RoutePath =
   | "/roborock"
   | "/planter"
   | "/flyradar"
-  | "/fysisk";
+  | "/fysisk"
+  | "/smartklokke";
 
 
 type NavLink = { to: RoutePath; label: string; public?: boolean };
@@ -98,6 +99,7 @@ const ROUTE_ICON: Partial<Record<RoutePath, React.ComponentType<{ size?: number;
   "/planter": TreePine,
   "/flyradar": Plane,
   "/fysisk": Bike,
+  "/smartklokke": Watch,
 };
 
 
@@ -132,6 +134,7 @@ const ROUTE_ICON_COLOR: Partial<Record<RoutePath, string>> = {
   "/planter": "#22c55e",             // planter — bladgrønn
   "/flyradar": "#38bdf8",            // raven — himmelblå
   "/fysisk": "#22c55e",              // utholdenhet — markens grønt
+  "/smartklokke": "#94a3b8",         // klokke — stål
 };
 
 
@@ -161,6 +164,7 @@ const navLinks: NavLink[] = [
   { to: "/hundene", label: "Hundene" },
   { to: "/trening", label: "Trening" },
   { to: "/fysisk", label: "Fysisk" },
+  { to: "/smartklokke", label: "Smartklokke" },
 
   { to: "/varsler", label: "Farevarsler", public: true },
   { to: "/decibel", label: "Decibelmåler", public: true },
