@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { usePersistedState } from "@/hooks/use-persisted-state";
+import { useHeaderBadgeSettings } from "@/hooks/use-header-badge-settings";
 import { getUpcomingWeatherEvaluations } from "@/server/weather-push.functions";
 import { getUpcomingUvEvaluations } from "@/server/uv-push.functions";
 import { getGarbageOverview } from "@/server/garbage-collection";
@@ -716,40 +717,55 @@ const FRAKSJON_EMOJI_HDR: Record<number, string> = {
 };
 
 export function GarbageNextPickupBadge({ inline }: { inline?: boolean } = {}) {
-  const [next, setNext] = useState<{ fraksjonId: number; fraksjonNavn: string; daysUntil: number } | null>(null);
+  const settings = useHeaderBadgeSettings();
+  const [items, setItems] = useState<Array<{ fraksjonId: number; fraksjonNavn: string; daysUntil: number }>>([]);
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
         const o = await getGarbageOverview();
         if (cancelled) return;
-        const sorted = [...(o.pickups ?? [])].sort((a, b) => a.daysUntil - b.daysUntil);
-        const n = sorted.find((p) => p.daysUntil >= 0) ?? null;
-        if (n) setNext({ fraksjonId: n.fraksjonId, fraksjonNavn: n.fraksjonNavn, daysUntil: n.daysUntil });
+        const sorted = [...(o.pickups ?? [])]
+          .filter((p) => p.daysUntil >= 0)
+          .sort((a, b) => a.daysUntil - b.daysUntil);
+        setItems(sorted.map((p) => ({ fraksjonId: p.fraksjonId, fraksjonNavn: p.fraksjonNavn, daysUntil: p.daysUntil })));
       } catch {}
     })();
     return () => { cancelled = true; };
   }, []);
-  if (!next) return null;
-  const color = FRAKSJON_COLOR[next.fraksjonId] ?? "hsl(220 10% 65%)";
-  const emoji = FRAKSJON_EMOJI_HDR[next.fraksjonId] ?? "🗑";
-  const showEmoji = next.daysUntil <= 1;
-  const txt = next.daysUntil === 0 ? "i dag" : next.daysUntil === 1 ? "i morgen" : `${next.daysUntil}d`;
-  const title = `Neste tømming: ${next.fraksjonNavn} ${next.daysUntil === 0 ? "i dag" : next.daysUntil === 1 ? "i morgen" : `om ${next.daysUntil} dager`}`;
+  if (items.length === 0) return null;
+  const first = items[0];
+  if (first.daysUntil > settings.garbage.maxDaysAhead) return null;
+  const toShow = settings.garbage.showAllSameDay
+    ? items.filter((it) => it.daysUntil === first.daysUntil)
+    : [first];
   const cls = "inline-flex items-center justify-center rounded-full text-[10px] font-semibold leading-none px-1.5 h-[18px] gap-0.5 tabular-nums";
   return (
-    <span
-      className={inline ? `ml-1 ${cls}` : `absolute top-2 right-2 z-10 ${cls}`}
-      style={{
-        background: `color-mix(in oklab, ${color} 22%, transparent)`,
-        color,
-        border: `1px solid color-mix(in oklab, ${color} 50%, transparent)`,
-      }}
-      title={title}
-    >
-      {showEmoji && <span>{emoji}</span>}
-      <span>{txt}</span>
-    </span>
+    <>
+      {toShow.map((next, idx) => {
+        const color = FRAKSJON_COLOR[next.fraksjonId] ?? "hsl(220 10% 65%)";
+        const emoji = FRAKSJON_EMOJI_HDR[next.fraksjonId] ?? "🗑";
+        const showEmoji = next.daysUntil <= 1;
+        const txt = next.daysUntil === 0 ? "i dag" : next.daysUntil === 1 ? "i morgen" : `${next.daysUntil}d`;
+        const title = `Neste tømming: ${next.fraksjonNavn} ${next.daysUntil === 0 ? "i dag" : next.daysUntil === 1 ? "i morgen" : `om ${next.daysUntil} dager`}`;
+        return (
+          <span
+            key={`${next.fraksjonId}-${idx}`}
+            className={inline ? `ml-1 ${cls}` : `absolute top-2 z-10 ${cls}`}
+            style={{
+              background: `color-mix(in oklab, ${color} 22%, transparent)`,
+              color,
+              border: `1px solid color-mix(in oklab, ${color} 50%, transparent)`,
+              ...(inline ? {} : { right: `${0.5 + idx * 2.5}rem` }),
+            }}
+            title={title}
+          >
+            {showEmoji && <span>{emoji}</span>}
+            <span>{txt}</span>
+          </span>
+        );
+      })}
+    </>
   );
 }
 

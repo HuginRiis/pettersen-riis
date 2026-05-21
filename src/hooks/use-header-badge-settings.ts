@@ -5,6 +5,7 @@ export type BadgeSetting = { enabled: boolean; users: string[] };
 export type HeaderBadgeSettings = {
   badges: Record<string, BadgeSetting>;
   weather: { startOffset: 0 | 1; days: number; showTemp: boolean };
+  garbage: { maxDaysAhead: number; showAllSameDay: boolean };
 };
 
 export const HEADER_BADGE_KEY = "header_badges";
@@ -48,6 +49,7 @@ export const DEFAULT_HEADER_BADGE_SETTINGS: HeaderBadgeSettings = {
     HEADER_BADGE_DEFS.map((b) => [b.id, { enabled: true, users: [] as string[] }]),
   ),
   weather: { startOffset: 1, days: 1, showTemp: true },
+  garbage: { maxDaysAhead: 14, showAllSameDay: false },
 };
 
 let cache: HeaderBadgeSettings | null = null;
@@ -66,7 +68,11 @@ function merge(value: unknown): HeaderBadgeSettings {
     days: Math.min(14, Math.max(1, Number(v.weather?.days ?? 1))),
     showTemp: v.weather?.showTemp !== false,
   };
-  return { badges, weather };
+  const garbage = {
+    maxDaysAhead: Math.min(30, Math.max(0, Number(v.garbage?.maxDaysAhead ?? 14))),
+    showAllSameDay: v.garbage?.showAllSameDay === true,
+  };
+  return { badges, weather, garbage };
 }
 
 async function load(): Promise<HeaderBadgeSettings> {
