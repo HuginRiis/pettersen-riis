@@ -18,6 +18,7 @@ import { WeatherNotificationSettings } from "@/components/WeatherNotificationSet
 import { MailDeliveryNotificationSettings } from "@/components/MailDeliveryNotificationSettings";
 import { GarminNotificationSettings } from "@/components/GarminNotificationSettings";
 import { LoginNotificationSettings } from "@/components/LoginNotificationSettings";
+import { SlowPageLoadNotificationSettings } from "@/components/SlowPageLoadNotificationSettings";
 import { AppearanceSettingsPanel } from "@/components/AppearanceSettingsPanel";
 import { ChartAppearanceSettingsPanel } from "@/components/ChartAppearanceSettingsPanel";
 import { OkonomiSettingsPanel } from "@/components/OkonomiSettingsPanel";
@@ -77,6 +78,7 @@ const TOC_ITEMS: { id: string; label: string; emoji: string }[] = [
   { id: "sec-post", label: "Posten", emoji: "📬" },
   { id: "sec-garmin", label: "Garmin", emoji: "⌚" },
   { id: "sec-innlogging", label: "Innlogging", emoji: "🔐" },
+  { id: "sec-ytelse", label: "Ytelse / Treg sidelasting", emoji: "🐢" },
   { id: "sec-agenda", label: "Agenda", emoji: "📅" },
   { id: "sec-bursdager", label: "Bursdager", emoji: "🎂" },
   { id: "sec-bursdager-toggle", label: "Bursd. av/på", emoji: "🔔" },
@@ -173,6 +175,7 @@ function PushSettingsPage() {
       <SettingsBox id="sec-post" title="📬 Postlevering — Posten"><MailDeliveryNotificationSettings /></SettingsBox>
       <SettingsBox id="sec-garmin" title="⌚ Garmin — helse og trening"><GarminNotificationSettings /></SettingsBox>
       <SettingsBox id="sec-innlogging" title="🔐 Innlogging — vellykket og feilet"><LoginNotificationSettings /></SettingsBox>
+      <SettingsBox id="sec-ytelse" title="🐢 Ytelse — treg sidelasting"><SlowPageLoadNotificationSettings /></SettingsBox>
       <SettingsBox id="sec-sensor-dashboard" title="📡 Sensor-dashboard (Homey)" icon={<Activity className="h-4 w-4" />}><HomeySensorSettings /></SettingsBox>
 
       <div className="container mx-auto px-4 pb-12 grid md:grid-cols-2 gap-4">
