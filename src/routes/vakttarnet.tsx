@@ -15,6 +15,7 @@ import heroImg from "@/assets/got-vakttarnet.jpg";
 import { Eye, Globe2, Smartphone, Monitor, Tablet, Clock, Crown, ShieldAlert, Map as MapIcon, Lock, Unlock, Sparkles, DoorClosed, Users, Bell, Database, Activity, ChevronDown, DoorOpen, BarChart3, Wallet, Radio, KeyRound, ShieldOff, Trophy, Camera, Brain, UserSearch, Watch, Network, History, List as ListIcon, AlertTriangle, PowerOff } from "lucide-react";
 import { DbUsagePanel } from "@/components/DbUsagePanel";
 import { DbDetailPanel } from "@/components/DbDetailPanel";
+import { PageLoadPanel } from "@/components/PageLoadPanel";
 import { DoorsLocksPanel } from "@/components/DoorsLocksPanel";
 import { ApiCallLogPanel } from "@/components/ApiCallLogPanel";
 import { ApiErrorLogPanel } from "@/components/ApiErrorLogPanel";
@@ -373,6 +374,20 @@ function VakttarnetPage() {
             <DbDetailPanel />
           </Panel>
         </section>
+
+        <section id="vt-page-load" className="scroll-mt-24">
+          <Panel
+            title="Sidelaster (ytelse)"
+            icon={<Activity size={14} />}
+            subtitle="Hvor lang tid hver side bruker å laste på telefon og PC, med historikk og enheter"
+            collapsible
+            defaultOpen={false}
+          >
+            <PageLoadPanel />
+          </Panel>
+        </section>
+
+
 
 
         <section id="vt-garmin" className="scroll-mt-24">

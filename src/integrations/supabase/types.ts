@@ -1737,6 +1737,51 @@ export type Database = {
           },
         ]
       }
+      page_load_log: {
+        Row: {
+          browser: string | null
+          device: string | null
+          dom_ms: number | null
+          id: string
+          kind: string
+          load_ms: number
+          loaded_at: string
+          os: string | null
+          route: string
+          ttfb_ms: number | null
+          user_agent: string | null
+          who: string
+        }
+        Insert: {
+          browser?: string | null
+          device?: string | null
+          dom_ms?: number | null
+          id?: string
+          kind?: string
+          load_ms: number
+          loaded_at?: string
+          os?: string | null
+          route: string
+          ttfb_ms?: number | null
+          user_agent?: string | null
+          who?: string
+        }
+        Update: {
+          browser?: string | null
+          device?: string | null
+          dom_ms?: number | null
+          id?: string
+          kind?: string
+          load_ms?: number
+          loaded_at?: string
+          os?: string | null
+          route?: string
+          ttfb_ms?: number | null
+          user_agent?: string | null
+          who?: string
+        }
+        Relationships: []
+      }
       payslip_files: {
         Row: {
           employer: string | null
