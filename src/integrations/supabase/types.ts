@@ -3145,6 +3145,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_api_call_hourly_24h: { Args: never; Returns: Json }
       get_api_call_summary_24h: { Args: never; Returns: Json }
       get_db_detail_stats: { Args: never; Returns: Json }
       get_db_usage_stats: { Args: never; Returns: Json }
