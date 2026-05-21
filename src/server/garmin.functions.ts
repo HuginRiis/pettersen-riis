@@ -14,10 +14,17 @@ const garminCache = new Map<string, { expires: number; value: unknown }>();
 async function cached<T>(key: string, loader: () => Promise<T>): Promise<T> {
   const now = Date.now();
   const hit = garminCache.get(key);
-  if (hit && hit.expires > now) return hit.value as T;
-  const value = await loader();
-  garminCache.set(key, { expires: now + GARMIN_CACHE_TTL_MS, value });
-  return value;
+  if (hit && hit.expires > now) return await (hit.value as T | Promise<T>);
+  const pending = loader();
+  garminCache.set(key, { expires: now + GARMIN_CACHE_TTL_MS, value: pending });
+  try {
+    const value = await pending;
+    garminCache.set(key, { expires: Date.now() + GARMIN_CACHE_TTL_MS, value });
+    return value;
+  } catch (error) {
+    garminCache.delete(key);
+    throw error;
+  }
 }
 
 function clearGarminCache(owner?: GarminOwner | null) {
