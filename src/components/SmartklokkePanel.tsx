@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import {
-  Watch, Crown, Flame, Loader2, Heart, Activity, Moon, Footprints, Flame as FireIcon,
-  Battery, Brain, Droplets, Wind, Zap, Trophy, Mountain, Gauge, Calendar, Cog,
+  Watch, Crown, Flame, Loader2, Heart, Activity, Moon, Footprints,
+  Battery, Brain, Droplets, Wind, Zap, Trophy, Mountain, Gauge, Cog,
   ChevronDown, ChevronRight, Wifi, WifiOff, AlertTriangle, Target, Bike, Dumbbell, Award,
 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
