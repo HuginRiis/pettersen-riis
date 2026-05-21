@@ -18,6 +18,7 @@ import { WeatherNotificationSettings } from "@/components/WeatherNotificationSet
 import { MailDeliveryNotificationSettings } from "@/components/MailDeliveryNotificationSettings";
 import { GarminNotificationSettings } from "@/components/GarminNotificationSettings";
 import { LoginNotificationSettings } from "@/components/LoginNotificationSettings";
+import { SlowPageLoadNotificationSettings } from "@/components/SlowPageLoadNotificationSettings";
 import { AppearanceSettingsPanel } from "@/components/AppearanceSettingsPanel";
 import { ChartAppearanceSettingsPanel } from "@/components/ChartAppearanceSettingsPanel";
 import { OkonomiSettingsPanel } from "@/components/OkonomiSettingsPanel";
