@@ -19,6 +19,9 @@ type Sleep = {
   awake_seconds: number | null;
 };
 
+type Intraday = { day: string; hour: number; heart_rate_avg: number | null };
+type SkinTemp = { day: string; deviation_c: number | null };
+
 type Period = "week" | "month";
 
 function avg(nums: Array<number | null | undefined>): number | null {
