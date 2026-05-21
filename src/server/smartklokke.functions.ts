@@ -101,16 +101,24 @@ export const getSmartklokkeOverview = createServerFn({ method: "GET" })
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type LiveResult = { ok: true; data: any } | { ok: false; error: string };
 
-async function safeCall(label: string, fn: () => Promise<unknown>, timeoutMs = 8000): Promise<LiveResult> {
-  try {
-    const r = await Promise.race<unknown>([
-      fn(),
-      new Promise<unknown>((_, rej) => setTimeout(() => rej(new Error(`${label} timeout`)), timeoutMs)),
-    ]);
-    return { ok: true, data: r };
-  } catch (e) {
-    return { ok: false, error: (e as Error).message?.slice(0, 200) ?? "feil" };
+async function safeCall(label: string, fn: () => Promise<unknown>, timeoutMs = 20000, retries = 1): Promise<LiveResult> {
+  let lastErr = "feil";
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const r = await Promise.race<unknown>([
+        fn(),
+        new Promise<unknown>((_, rej) => setTimeout(() => rej(new Error(`${label} timeout`)), timeoutMs)),
+      ]);
+      return { ok: true, data: r };
+    } catch (e) {
+      lastErr = (e as Error).message?.slice(0, 200) ?? "feil";
+      // Bare prøv på nytt ved timeout/nettverk-feil, ikke ved 404 e.l.
+      if (!/timeout|fetch|network|ECONN|socket/i.test(lastErr)) break;
+      // Kort backoff før retry
+      await new Promise((res) => setTimeout(res, 400));
+    }
   }
+  return { ok: false, error: lastErr };
 }
 
 async function fetchLiveExtras(owner: GarminOwner, today: string, sinceIso: string) {
