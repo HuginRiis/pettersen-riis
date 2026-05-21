@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { ArrowUp, ArrowDown, Minus, Swords, Loader2, Crown, Flame } from "lucide-react";
-import { getGarminOverview } from "@/server/garmin.functions";
+import { getGarminCore } from "@/server/garmin.functions";
 
 type Owner = "arne" | "rebekka";
 type Daily = {
