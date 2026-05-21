@@ -78,6 +78,7 @@ const TOC_ITEMS: { id: string; label: string; emoji: string }[] = [
   { id: "sec-post", label: "Posten", emoji: "📬" },
   { id: "sec-garmin", label: "Garmin", emoji: "⌚" },
   { id: "sec-innlogging", label: "Innlogging", emoji: "🔐" },
+  { id: "sec-ytelse", label: "Ytelse / Treg sidelasting", emoji: "🐢" },
   { id: "sec-agenda", label: "Agenda", emoji: "📅" },
   { id: "sec-bursdager", label: "Bursdager", emoji: "🎂" },
   { id: "sec-bursdager-toggle", label: "Bursd. av/på", emoji: "🔔" },
