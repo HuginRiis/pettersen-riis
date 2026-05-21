@@ -545,6 +545,10 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
                   { k: "I går", v: yesterday?.floors_climbed != null ? fmtNum(yesterday.floors_climbed) : "—" },
                   { k: "Snitt 7d", v: avgFmt(data?.daily?.slice(-7).map((d) => d.floors_climbed), 0) },
                   { k: "Snitt 30d", v: avgFmt(data?.daily?.map((d) => d.floors_climbed), 0) },
+                  { k: "Beste 30d", v: maxFmt(data?.daily?.map((d) => d.floors_climbed), 0) },
+                  { k: "Sum 7d", v: sumFmt(data?.daily?.slice(-7).map((d) => d.floors_climbed), 0) },
+                  { k: "Sum 30d", v: sumFmt(data?.daily?.map((d) => d.floors_climbed), 0) },
+                  { k: "Trend 30d", v: trendFmt(data?.daily?.map((d) => d.floors_climbed), 0) },
                 ]}
                 chart={sparkBar(data?.daily, "floors_climbed", C.floors)} />
               <Tile icon={<Battery size={14} style={{color: C.batteryHigh}} />} label="Body battery"
