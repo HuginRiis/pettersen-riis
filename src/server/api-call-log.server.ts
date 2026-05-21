@@ -77,16 +77,9 @@ export function withApiLog<T extends (...args: any[]) => Promise<any>>(
 ): T {
   return (async (...args: Parameters<T>) => {
     if (await isApiSourcePaused(String(source))) {
-      const err = new ApiSourcePausedError(String(source));
-      await recordApiCall({
-        source,
-        endpoint,
-        ok: false,
-        duration_ms: 0,
-        error_message: err.message,
-        metadata: { paused: true },
-      });
-      throw err;
+      // Ikke logg pausede forsøk — vi vil at "Sist kalt" skal vise siste
+      // ekte API-kall, ikke at noe forsøkte mens kilden var pauset.
+      throw new ApiSourcePausedError(String(source));
     }
     const started = Date.now();
     try {
@@ -132,16 +125,8 @@ export async function loggedFetch(
   init?: RequestInit,
 ): Promise<Response> {
   if (await isApiSourcePaused(String(source))) {
-    const err = new ApiSourcePausedError(String(source));
-    await recordApiCall({
-      source,
-      endpoint,
-      ok: false,
-      duration_ms: 0,
-      error_message: err.message,
-      metadata: { paused: true },
-    });
-    throw err;
+    // Ikke logg pausede forsøk i api_call_log.
+    throw new ApiSourcePausedError(String(source));
   }
   const started = Date.now();
   try {
