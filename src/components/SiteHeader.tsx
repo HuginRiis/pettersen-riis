@@ -56,7 +56,8 @@ type RoutePath =
   | "/roborock"
   | "/planter"
   | "/flyradar"
-  | "/fysisk";
+  | "/fysisk"
+  | "/smartklokke";
 
 
 type NavLink = { to: RoutePath; label: string; public?: boolean };
