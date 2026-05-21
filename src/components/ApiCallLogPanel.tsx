@@ -189,6 +189,39 @@ export function ApiCallLogPanel() {
       .sort((a, b) => b.total - a.total);
   }, [grouped]);
 
+  // Bygg timeserie for stacked bar chart (siste 24t per kilde).
+  const { chartData, chartSources } = useMemo(() => {
+    const hourly = data?.hourly ?? [];
+    const buckets = new Map<string, Record<string, number | string>>();
+    const srcSet = new Set<string>();
+    for (const h of hourly) {
+      const d = new Date(h.hour);
+      const key = d.toISOString();
+      const label = d.toLocaleTimeString("nb-NO", { hour: "2-digit" });
+      const row = buckets.get(key) ?? { _ts: key, label };
+      if (h.source && h.total > 0) {
+        row[h.source] = ((row[h.source] as number) ?? 0) + h.total;
+        srcSet.add(h.source);
+      }
+      buckets.set(key, row);
+    }
+    const arr = Array.from(buckets.values()).sort(
+      (a, b) => String(a._ts).localeCompare(String(b._ts)),
+    );
+    // Sorter kilder så største totalt vises nederst i stacken
+    const totals = new Map<string, number>();
+    for (const s of srcSet) {
+      let t = 0;
+      for (const row of arr) t += (row[s] as number) ?? 0;
+      totals.set(s, t);
+    }
+    const srcList = Array.from(srcSet).sort(
+      (a, b) => (totals.get(b) ?? 0) - (totals.get(a) ?? 0),
+    );
+    return { chartData: arr, chartSources: srcList };
+  }, [data]);
+
+
   const visibleSources = expanded
     ? sortedSources
     : sortedSources.slice(0, INITIAL_VISIBLE);
