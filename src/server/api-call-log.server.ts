@@ -147,6 +147,7 @@ export async function loggedFetch(
     throw new ApiSourcePausedError(String(source));
   }
   const started = Date.now();
+  const path = getTriggerPath();
   try {
     const res = await fetch(url, init);
     await recordApiCall({
@@ -155,6 +156,7 @@ export async function loggedFetch(
       ok: res.ok,
       duration_ms: Date.now() - started,
       status_code: res.status,
+      metadata: path ? { path } : null,
     });
     return res;
   } catch (err) {
@@ -164,6 +166,7 @@ export async function loggedFetch(
       ok: false,
       duration_ms: Date.now() - started,
       error_message: err instanceof Error ? err.message : String(err),
+      metadata: path ? { path } : null,
     });
     throw err;
   }
