@@ -89,6 +89,7 @@ export function ApiCallLogPanel() {
   const fetchLog = useServerFn(getApiCallLog);
   const refresh = useServerFn(refreshApiSource);
   const purge = useServerFn(purgeApiCallLog);
+  const appearance = useChartAppearance();
 
   const [data, setData] = useState<ApiCallSummary | null>(null);
   const [loading, setLoading] = useState(false);
