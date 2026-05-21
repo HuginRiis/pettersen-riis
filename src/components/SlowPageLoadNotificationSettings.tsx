@@ -22,6 +22,7 @@ type Cfg = {
   routes: RouteRule[];
   slow_avg_enabled: boolean;
   slow_avg_ms: number;
+  slow_avg_recipient: string;
 };
 
 const DEFAULTS: Cfg = {
@@ -35,6 +36,7 @@ const DEFAULTS: Cfg = {
   routes: [],
   slow_avg_enabled: false,
   slow_avg_ms: 3000,
+  slow_avg_recipient: "",
 };
 
 export function SlowPageLoadNotificationSettings() {
