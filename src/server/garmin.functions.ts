@@ -60,13 +60,16 @@ async function loadDaily(owner: GarminOwner, sinceIso: string, withRaw = true) {
   });
 }
 
-async function loadSleep(owner: GarminOwner, sinceIso: string) {
+async function loadSleep(owner: GarminOwner, sinceIso: string, withRaw = true) {
+  const cols = withRaw ? `${SLEEP_LITE_COLS}, raw` : SLEEP_LITE_COLS;
   const { data: sleepRows } = await supabaseAdmin
     .from("garmin_sleep")
-    .select("day, total_seconds, deep_seconds, light_seconds, rem_seconds, awake_seconds, sleep_score, average_spo2, average_respiration, hrv_avg, sleep_start, sleep_end, raw")
+    .select(cols)
     .eq("owner", owner)
     .gte("day", sinceIso)
     .order("day", { ascending: true });
+
+  if (!withRaw) return (sleepRows ?? []) as any[];
 
   return (sleepRows ?? []).map((s) => {
     const r: any = (s as any).raw ?? {};
