@@ -5,272 +5,64 @@ import { GARMIN_OWNERS, type GarminOwner } from "./garmin.shared";
 
 const ownerSchema = z.object({ owner: z.enum(["arne", "rebekka"]).default("arne") });
 
-const DAILY_LITE_COLS = "day, steps, step_goal, floors_climbed, floors_goal, resting_heart_rate, average_heart_rate, weight_kg, total_kilocalories, active_kilocalories, distance_meters, moderate_intensity_minutes, vigorous_intensity_minutes, intensity_minutes_goal, body_battery_high, body_battery_low, stress_average, vo2max_running, vo2max_cycling, endurance_score, fitness_age, training_status, training_load_focus, endurance_contributors";
-const SLEEP_LITE_COLS = "day, total_seconds, deep_seconds, light_seconds, rem_seconds, awake_seconds, sleep_score, average_spo2, average_respiration, hrv_avg, sleep_start, sleep_end";
-const GARMIN_CACHE_TTL_MS = 60_000;
-
-const garminCache = new Map<string, { expires: number; value: unknown }>();
-
-async function cached<T>(key: string, loader: () => Promise<T>): Promise<T> {
-  const now = Date.now();
-  const hit = garminCache.get(key);
-  if (hit && hit.expires > now) return await (hit.value as T | Promise<T>);
-  const pending = loader();
-  garminCache.set(key, { expires: now + GARMIN_CACHE_TTL_MS, value: pending });
-  try {
-    const value = await pending;
-    garminCache.set(key, { expires: Date.now() + GARMIN_CACHE_TTL_MS, value });
-    return value;
-  } catch (error) {
-    garminCache.delete(key);
-    throw error;
-  }
-}
-
-function clearGarminCache(owner?: GarminOwner | null) {
-  for (const key of garminCache.keys()) {
-    if (!owner || key.includes(`:${owner}:`) || key.endsWith(`:${owner}`)) garminCache.delete(key);
-  }
-}
-
-async function loadStatus(owner: GarminOwner) {
-  const { data } = await supabaseAdmin
-    .from("garmin_tokens")
-    .select("username, oauth2_expires_at, last_login_at, oauth1_token, pending_mfa, device_name, device_image_url")
-    .eq("owner", owner)
-    .order("updated_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  return {
-    connected: !!data?.oauth1_token,
-    username: data?.username ?? null,
-    expires_at: data?.oauth2_expires_at ?? null,
-    last_login_at: data?.last_login_at ?? null,
-    mfa_pending: !!(data as { pending_mfa?: unknown } | null)?.pending_mfa,
-    device_name: (data as any)?.device_name ?? null,
-    device_image_url: (data as any)?.device_image_url ?? null,
-  };
-}
-
-async function loadDaily(owner: GarminOwner, sinceIso: string, withRaw = true) {
-  const cols = withRaw ? `${DAILY_LITE_COLS}, raw` : DAILY_LITE_COLS;
-  const { data: dailyRows } = await supabaseAdmin
-    .from("garmin_daily_stats")
-    .select(cols)
-    .eq("owner", owner)
-    .gte("day", sinceIso)
-    .order("day", { ascending: true });
-
-  if (!withRaw) return (dailyRows ?? []) as any[];
-
-  return (dailyRows ?? []).map((row) => {
-    const r: any = (row as any).raw ?? {};
-    const { raw: _raw, ...rest } = row as any;
-    const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : null);
-    return {
-      ...rest,
-      max_heart_rate: num(r.maxHeartRate),
-      max_avg_heart_rate: num(r.maxAvgHeartRate),
-      bmr_kilocalories: num(r.bmrKilocalories),
-      consumed_kilocalories: num(r.consumedKilocalories),
-      remaining_kilocalories: num(r.remainingKilocalories),
-      floors_ascended: num(r.floorsAscended),
-      floors_descended: num(r.floorsDescended),
-      floors_ascended_meters: num(r.floorsAscendedInMeters),
-      floors_descended_meters: num(r.floorsDescendedInMeters),
-      avg_altitude_meters: num(r.averageMonitoringEnvironmentAltitude),
-      highly_active_seconds: num(r.highlyActiveSeconds),
-      active_seconds: num(r.activeSeconds),
-      sedentary_seconds: num(r.sedentarySeconds),
-      sleeping_seconds: num(r.sleepingSeconds),
-      max_stress: num(r.maxStressLevel),
-      high_stress_seconds: num(r.highStressDuration),
-      medium_stress_seconds: num(r.mediumStressDuration),
-      low_stress_seconds: num(r.lowStressDuration),
-      rest_stress_seconds: num(r.restStressDuration),
-      activity_stress_seconds: num(r.activityStressDuration),
-      abnormal_hr_alerts: num(r.abnormalHeartRateAlertsCount),
-      latest_spo2: num(r.latestSpo2),
-      lowest_spo2: num(r.lowestSpo2),
-      latest_respiration: num(r.latestRespirationValue),
-      highest_respiration: num(r.highestRespirationValue),
-      lowest_respiration: num(r.lowestRespirationValue),
-      body_battery_charged: num(r.bodyBatteryChargedValue),
-      body_battery_at_wake: num(r.bodyBatteryAtWakeTime),
-      body_battery_recent: num(r.bodyBatteryMostRecentValue),
-      body_battery_during_sleep: num(r.bodyBatteryDuringSleep),
-      last_7d_avg_rhr: num(r.lastSevenDaysAvgRestingHeartRate),
-    };
-  });
-}
-
-async function loadSleep(owner: GarminOwner, sinceIso: string, withRaw = true) {
-  const cols = withRaw ? `${SLEEP_LITE_COLS}, raw` : SLEEP_LITE_COLS;
-  const { data: sleepRows } = await supabaseAdmin
-    .from("garmin_sleep")
-    .select(cols)
-    .eq("owner", owner)
-    .gte("day", sinceIso)
-    .order("day", { ascending: true });
-
-  if (!withRaw) return (sleepRows ?? []) as any[];
-
-  return (sleepRows ?? []).map((s) => {
-    const r: any = (s as any).raw ?? {};
-    const dto: any = r.dailySleepDTO ?? {};
-    const scores: any = dto.sleepScores ?? {};
-    const need: any = dto.sleepNeed ?? {};
-    const align: any = dto.sleepAlignment ?? {};
-    const { raw: _raw, ...rest } = s as any;
-    const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : null);
-    const str = (v: unknown) => (typeof v === "string" && v.length ? v : null);
-    return {
-      ...rest,
-      skin_temp_dev_c: num(r.avgSkinTempDeviationC),
-      skin_temp_dev_f: num(r.avgSkinTempDeviationF),
-      skin_temp_calibration_days: num(r.skinTempCalibrationDays),
-      avg_overnight_hrv: num(r.avgOvernightHrv),
-      hrv_status: str(r.hrvStatus),
-      avg_sleep_stress: num(dto.avgSleepStress),
-      nap_time_seconds: num(dto.napTimeSeconds),
-      awake_count: num(dto.awakeCount),
-      sleep_avg_hr: num(dto.avgHeartRate),
-      sleep_score_qualifier: str(scores?.overall?.qualifierKey),
-      sleep_need_actual_min: num(need.actual),
-      sleep_need_baseline_min: num(need.baseline),
-      sleep_need_feedback: str(need.feedback),
-      sleep_history_adjustment: str(need.sleepHistoryAdjustment),
-      hrv_adjustment: str(need.hrvAdjustment),
-      nap_adjustment: str(need.napAdjustment),
-      recommended_bedtime_start_mins: num(need.recommendedBedtimeStartMins),
-      recommended_bedtime_end_mins: num(need.recommendedBedtimeEndMins),
-      sleep_alignment_status: str(align.status),
-      rem_pct: num(scores?.remPercentage?.value),
-      deep_pct: num(scores?.deepPercentage?.value),
-      light_pct: num(scores?.lightPercentage?.value),
-      lowest_spo2_value: num(dto.lowestSpO2Value),
-      highest_spo2_value: num(dto.highestSpO2Value),
-    };
-  });
-}
-
-async function loadLastSync(owner: GarminOwner) {
-  const { data: lastSync } = await supabaseAdmin
-    .from("garmin_sync_log")
-    .select("ran_at, ok, daily_count, activities_count, sleep_count, error")
-    .eq("owner", owner)
-    .order("ran_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  return lastSync;
-}
-
-async function loadActivities(owner: GarminOwner) {
-  const { data: activities } = await supabaseAdmin
-    .from("garmin_activities")
-    .select("garmin_activity_id, activity_type, activity_name, start_time_local, duration_seconds, distance_meters, calories, average_hr, max_hr, elevation_gain")
-    .eq("owner", owner)
-    .order("start_time_local", { ascending: false })
-    .limit(20);
-  return activities ?? [];
-}
-
-async function loadIntraday(owner: GarminOwner) {
-  const intradaySince = new Date();
-  intradaySince.setDate(intradaySince.getDate() - 7);
-  const { data: intraday } = await supabaseAdmin
-    .from("garmin_intraday")
-    .select("day, hour, heart_rate_avg, heart_rate_max, stress_avg, body_battery")
-    .eq("owner", owner)
-    .gte("day", intradaySince.toISOString().slice(0, 10))
-    .order("day", { ascending: true })
-    .order("hour", { ascending: true });
-  return intraday ?? [];
-}
-
 export const getGarminOverview = createServerFn({ method: "GET" })
   .inputValidator((d: unknown) => ownerSchema.parse(d ?? {}))
   .handler(async ({ data }) => {
     const owner = data.owner as GarminOwner;
     const mod = await import("./garmin.server");
+    const status = await mod.getGarminStatus(owner);
+
     const since = new Date();
     since.setDate(since.getDate() - 30);
     const sinceIso = since.toISOString().slice(0, 10);
 
-    const [status, daily, sleep, activities, intraday, lastSync] = await Promise.all([
-      mod.getGarminStatus(owner),
-      loadDaily(owner, sinceIso),
-      loadSleep(owner, sinceIso),
-      loadActivities(owner),
-      loadIntraday(owner),
-      loadLastSync(owner),
-    ]);
+    const { data: daily } = await supabaseAdmin
+      .from("garmin_daily_stats")
+      .select("day, steps, step_goal, floors_climbed, floors_goal, resting_heart_rate, average_heart_rate, weight_kg, total_kilocalories, active_kilocalories, distance_meters, moderate_intensity_minutes, vigorous_intensity_minutes, intensity_minutes_goal, body_battery_high, body_battery_low, stress_average, vo2max_running, vo2max_cycling, endurance_score, fitness_age, training_status, training_load_focus, endurance_contributors")
+      .eq("owner", owner)
+      .gte("day", sinceIso)
+      .order("day", { ascending: true });
 
-    return { owner, status, daily, activities, sleep, intraday, lastSync };
+    const { data: activities } = await supabaseAdmin
+      .from("garmin_activities")
+      .select("garmin_activity_id, activity_type, activity_name, start_time_local, duration_seconds, distance_meters, calories, average_hr, max_hr, elevation_gain")
+      .eq("owner", owner)
+      .order("start_time_local", { ascending: false })
+      .limit(20);
+
+    const { data: sleep } = await supabaseAdmin
+      .from("garmin_sleep")
+      .select("day, total_seconds, deep_seconds, light_seconds, rem_seconds, awake_seconds, sleep_score, average_spo2, average_respiration, hrv_avg")
+      .eq("owner", owner)
+      .gte("day", sinceIso)
+      .order("day", { ascending: true });
+
+    const intradaySince = new Date();
+    intradaySince.setDate(intradaySince.getDate() - 7);
+    const { data: intraday } = await supabaseAdmin
+      .from("garmin_intraday")
+      .select("day, hour, heart_rate_avg, heart_rate_max, stress_avg, body_battery")
+      .eq("owner", owner)
+      .gte("day", intradaySince.toISOString().slice(0, 10))
+      .order("day", { ascending: true })
+      .order("hour", { ascending: true });
+
+    const { data: lastSync } = await supabaseAdmin
+      .from("garmin_sync_log")
+      .select("ran_at, ok, daily_count, activities_count, sleep_count, error")
+      .eq("owner", owner)
+      .order("ran_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    return { owner, status, daily: daily ?? [], activities: activities ?? [], sleep: sleep ?? [], intraday: intraday ?? [], lastSync };
   });
-
-// Fase 1: rask kjerne — kun hovedtall (uten raw-projeksjoner, aktiviteter, intraday).
-export const getGarminCore = createServerFn({ method: "GET" })
-  .inputValidator((d: unknown) => ownerSchema.parse(d ?? {}))
-  .handler(async ({ data }) => {
-    const owner = data.owner as GarminOwner;
-    const since = new Date();
-    since.setDate(since.getDate() - 30);
-    const sinceIso = since.toISOString().slice(0, 10);
-
-    return cached(`core:${owner}:${sinceIso}`, async () => {
-      const [status, daily, sleep, lastSync] = await Promise.all([
-        loadStatus(owner),
-        loadDaily(owner, sinceIso, false),
-        loadSleep(owner, sinceIso, false),
-        loadLastSync(owner),
-      ]);
-
-      return { owner, status, daily, sleep, lastSync };
-    });
-  });
-
-// Fase 2a: detaljer — full daily/sleep med raw-projeksjoner (hentes når brukeren åpner "Vis detaljer").
-export const getGarminDetails = createServerFn({ method: "GET" })
-  .inputValidator((d: unknown) => ownerSchema.parse(d ?? {}))
-  .handler(async ({ data }) => {
-    const owner = data.owner as GarminOwner;
-    const since = new Date();
-    since.setDate(since.getDate() - 30);
-    const sinceIso = since.toISOString().slice(0, 10);
-    return cached(`details:${owner}:${sinceIso}`, async () => {
-      const [daily, sleep] = await Promise.all([
-        loadDaily(owner, sinceIso, true),
-        loadSleep(owner, sinceIso, true),
-      ]);
-      return { owner, daily, sleep };
-    });
-  });
-
-// Fase 2: tunge ekstra-data — aktiviteter og intraday-puls.
-export const getGarminExtras = createServerFn({ method: "GET" })
-  .inputValidator((d: unknown) => ownerSchema.parse(d ?? {}))
-  .handler(async ({ data }) => {
-    const owner = data.owner as GarminOwner;
-    return cached(`extras:${owner}`, async () => {
-      const [activities, intraday] = await Promise.all([
-        loadActivities(owner),
-        loadIntraday(owner),
-      ]);
-      return { owner, activities, intraday };
-    });
-  });
-
 
 export const garminLoginNow = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => ownerSchema.parse(d ?? {}))
   .handler(async ({ data }) => {
     const mod = await import("./garmin.server");
-    const owner = data.owner as GarminOwner;
-    const result = await mod.garminLogin(owner);
-    clearGarminCache(owner);
-    return result;
+    return mod.garminLogin(data.owner as GarminOwner);
   });
 
 export const garminSubmitMfaCode = createServerFn({ method: "POST" })
@@ -283,9 +75,7 @@ export const garminSubmitMfaCode = createServerFn({ method: "POST" })
   })
   .handler(async ({ data }) => {
     const mod = await import("./garmin.server");
-    const result = await mod.garminSubmitMfa(data.owner, data.code);
-    clearGarminCache(data.owner);
-    return result;
+    return mod.garminSubmitMfa(data.owner, data.code);
   });
 
 export const garminSyncNow = createServerFn({ method: "POST" })
@@ -295,14 +85,8 @@ export const garminSyncNow = createServerFn({ method: "POST" })
   })
   .handler(async ({ data }) => {
     const mod = await import("./garmin-sync.server");
-    if (data.owner) {
-      const result = await mod.syncOne(data.owner, "manual");
-      clearGarminCache(data.owner);
-      return result;
-    }
-    const result = await mod.syncAll("manual");
-    clearGarminCache();
-    return result;
+    if (data.owner) return mod.syncOne(data.owner, "manual");
+    return mod.syncAll("manual");
   });
 
 export type GarminSyncSchedule = {

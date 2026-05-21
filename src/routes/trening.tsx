@@ -6,7 +6,7 @@ import { PageShell, PageHero } from "@/components/PageShell";
 import { ActivityMap } from "@/components/ActivityMap";
 import { GarminHouses } from "@/components/GarminHouses";
 import { getActivityStreams, getStravaDashboard, getStravaStatus } from "@/server/strava";
-import { getGarminCore } from "@/server/garmin.functions";
+import { getGarminOverview } from "@/server/garmin.functions";
 import treningImg from "@/assets/got-trening.jpg";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -238,13 +238,6 @@ function sportColor(s: string) {
 type Owner = "arne" | "rebekka";
 
 function TreningPage() {
-  const [stravaReady, setStravaReady] = useState(false);
-
-  useEffect(() => {
-    const id = window.setTimeout(() => setStravaReady(true), 1800);
-    return () => window.clearTimeout(id);
-  }, []);
-
   return (
     <PageShell>
       <PageHero
@@ -264,20 +257,14 @@ function TreningPage() {
       <section className="container mx-auto px-4 py-12 space-y-16">
         
         <GarminHouses />
-        {stravaReady ? (
-          <StravaHouses />
-        ) : (
-          <div className="rounded-lg border border-border/60 bg-card/40 p-4 text-center text-xs text-muted-foreground">
-            Strava-krøniken lastes etter Garmin-tallene…
-          </div>
-        )}
+        <StravaHouses />
       </section>
     </PageShell>
   );
 }
 
 function StepsChip({ owner = "arne", displayName }: { owner?: Owner; displayName?: string } = {}) {
-  const fetchOverview = useServerFn(getGarminCore);
+  const fetchOverview = useServerFn(getGarminOverview);
   const [steps, setSteps] = useState<number | null>(null);
   const [goal, setGoal] = useState<number | null>(null);
 
@@ -316,7 +303,7 @@ function StepsChip({ owner = "arne", displayName }: { owner?: Owner; displayName
 }
 
 function RestingHrChip({ owner = "arne", displayName }: { owner?: Owner; displayName?: string } = {}) {
-  const fetchOverview = useServerFn(getGarminCore);
+  const fetchOverview = useServerFn(getGarminOverview);
   const [today, setToday] = useState<number | null>(null);
   const [avg7, setAvg7] = useState<number | null>(null);
 
@@ -353,7 +340,7 @@ function RestingHrChip({ owner = "arne", displayName }: { owner?: Owner; display
 }
 
 function HealthStatusChip({ owner = "arne", displayName }: { owner?: Owner; displayName?: string } = {}) {
-  const fetchOverview = useServerFn(getGarminCore);
+  const fetchOverview = useServerFn(getGarminOverview);
   const [data, setData] = useState<any>(null);
   const [open, setOpen] = useState(false);
 

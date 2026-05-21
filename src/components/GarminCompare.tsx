@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { ArrowUp, ArrowDown, Minus, Swords, Loader2, Crown, Flame } from "lucide-react";
-import { getGarminCore } from "@/server/garmin.functions";
+import { getGarminOverview } from "@/server/garmin.functions";
 
 type Owner = "arne" | "rebekka";
 type Daily = {
@@ -118,7 +118,7 @@ type Row = {
 };
 
 export function GarminCompare() {
-  const fetchOverview = useServerFn(getGarminCore);
+  const fetchOverview = useServerFn(getGarminOverview);
   const [arne, setArne] = useState<Overview | null>(null);
   const [rebekka, setRebekka] = useState<Overview | null>(null);
   const [loading, setLoading] = useState(true);
