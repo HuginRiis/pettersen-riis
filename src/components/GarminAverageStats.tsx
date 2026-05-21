@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Footprints, Heart, Flame, Moon, BedDouble, Loader2, Scale } from "lucide-react";
+import { Footprints, Heart, Flame, Moon, BedDouble, Loader2, Scale, Activity, Thermometer } from "lucide-react";
 import { getGarminOverview } from "@/server/garmin.functions";
 
 type Daily = {
@@ -19,6 +19,9 @@ type Sleep = {
   awake_seconds: number | null;
 };
 
+type Intraday = { day: string; hour: number; heart_rate_avg: number | null };
+type SkinTemp = { day: string; deviation_c: number | null };
+
 type Period = "week" | "month";
 
 function avg(nums: Array<number | null | undefined>): number | null {
@@ -36,6 +39,8 @@ export function GarminAverageStats() {
   const fetchOverview = useServerFn(getGarminOverview);
   const [daily, setDaily] = useState<Daily[]>([]);
   const [sleep, setSleep] = useState<Sleep[]>([]);
+  const [intraday, setIntraday] = useState<Intraday[]>([]);
+  const [skinTemp, setSkinTemp] = useState<SkinTemp[]>([]);
   const [period, setPeriod] = useState<Period>("week");
   const [loading, setLoading] = useState(true);
 
@@ -43,10 +48,12 @@ export function GarminAverageStats() {
     let alive = true;
     (async () => {
       try {
-        const r = (await fetchOverview()) as { daily: Daily[]; sleep: Sleep[] };
+        const r = (await fetchOverview()) as { daily: Daily[]; sleep: Sleep[]; intraday?: Intraday[]; skinTemp?: SkinTemp[] };
         if (!alive) return;
         setDaily(r.daily ?? []);
         setSleep(r.sleep ?? []);
+        setIntraday(r.intraday ?? []);
+        setSkinTemp(r.skinTemp ?? []);
       } finally {
         if (alive) setLoading(false);
       }
@@ -78,8 +85,28 @@ export function GarminAverageStats() {
       const trendPenalty = Math.min(40, Math.abs((wTrend ?? 0) / avgWeight) * 1000);
       weightScore = Math.round(Math.max(0, Math.min(100, stability - trendPenalty / 2)));
     }
-    return { avgRhr, avgSteps, avgKcal, avgSleepSec, avgDeep, avgLight, avgRem, avgWeight, wTrend, weightScore };
-  }, [daily, sleep, period]);
+
+    // Puls gjennom dagen: gjennomsnitt av timesvis HR (siste 7 dager intraday, men begrenset av periode)
+    const intraDays = intraday.slice().reduce((acc: Record<string, Intraday[]>, x) => {
+      (acc[x.day] ||= []).push(x);
+      return acc;
+    }, {});
+    const intraDayKeys = Object.keys(intraDays).sort().slice(-days);
+    const todayKey = intraDayKeys[intraDayKeys.length - 1] ?? null;
+    const hrVals = intraDayKeys.flatMap((k) => intraDays[k].map((x) => x.heart_rate_avg));
+    const avgDayHr = avg(hrVals);
+    const todayHrVals = todayKey ? intraDays[todayKey].map((x) => x.heart_rate_avg).filter((n): n is number => typeof n === "number" && n > 0) : [];
+    const todayHrMax = todayHrVals.length ? Math.max(...todayHrVals) : null;
+    const todayHrMin = todayHrVals.length ? Math.min(...todayHrVals) : null;
+
+    // Hudtemperatur: avvik fra baseline i °C
+    const st = skinTemp.slice(-days);
+    const avgSkin = avg(st.map((x) => x.deviation_c));
+    const lastSkin = st.length ? st[st.length - 1].deviation_c : null;
+
+    return { avgRhr, avgSteps, avgKcal, avgSleepSec, avgDeep, avgLight, avgRem, avgWeight, wTrend, weightScore, avgDayHr, todayHrMin, todayHrMax, avgSkin, lastSkin };
+  }, [daily, sleep, intraday, skinTemp, period]);
+
 
   const sleepHours = stats.avgSleepSec ? stats.avgSleepSec / 3600 : null;
   const total = (stats.avgDeep ?? 0) + (stats.avgLight ?? 0) + (stats.avgRem ?? 0);
@@ -112,8 +139,14 @@ export function GarminAverageStats() {
           <Loader2 className="h-3.5 w-3.5 animate-spin" /> Laster…
         </div>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
           <Box icon={<Heart size={14} />} label="Hvilepuls" value={stats.avgRhr ? `${fmt(stats.avgRhr, 0)} bpm` : "—"} />
+          <Box
+            icon={<Activity size={14} />}
+            label="Puls i dag"
+            value={stats.todayHrMax && stats.todayHrMin ? `${fmt(stats.todayHrMin)}–${fmt(stats.todayHrMax)}` : "—"}
+            sub={stats.avgDayHr ? `Snitt ${fmt(stats.avgDayHr)} bpm` : undefined}
+          />
           <Box icon={<Footprints size={14} />} label="Skritt" value={fmt(stats.avgSteps)} />
           <Box
             icon={<Moon size={14} />}
@@ -128,6 +161,12 @@ export function GarminAverageStats() {
           />
           <Box icon={<Flame size={14} />} label="Kalorier" value={fmt(stats.avgKcal)} />
           <Box
+            icon={<Thermometer size={14} />}
+            label="Hudtemp."
+            value={stats.avgSkin != null ? `${stats.avgSkin > 0 ? "+" : ""}${stats.avgSkin.toFixed(1)} °C` : "—"}
+            sub={stats.lastSkin != null ? `Siste: ${stats.lastSkin > 0 ? "+" : ""}${stats.lastSkin.toFixed(1)} °C` : "avvik fra baseline"}
+          />
+          <Box
             icon={<Scale size={14} />}
             label="Vekt"
             value={stats.avgWeight ? `${stats.avgWeight.toFixed(1)} kg` : "—"}
@@ -138,6 +177,7 @@ export function GarminAverageStats() {
             }
           />
         </div>
+
       )}
     </div>
   );
