@@ -4,7 +4,7 @@ import { Activity, Footprints, Heart, HeartPulse, Flame, Moon, RefreshCw, LogIn,
 import { ScrollMarquee } from "@/components/ScrollMarquee";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, CartesianGrid } from "recharts";
 import { toast } from "sonner";
-import { getGarminCore, getGarminExtras, garminLoginNow, garminSyncNow, garminSubmitMfaCode, listGarminDevices, setDefaultGarminDevice } from "@/server/garmin.functions";
+import { getGarminCore, getGarminDetails, getGarminExtras, garminLoginNow, garminSyncNow, garminSubmitMfaCode, listGarminDevices, setDefaultGarminDevice } from "@/server/garmin.functions";
 import { Check } from "lucide-react";
 import { getStoredWho, isCurrentlySubscribed } from "@/lib/push-client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
@@ -285,6 +285,7 @@ function renderHourBar(items: Array<{ hour: number; value: number | null }>, col
 type GarminOwner = "arne" | "rebekka";
 export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: GarminOwner; displayName?: string } = {}) {
   const fetchCore = useServerFn(getGarminCore);
+  const fetchDetails = useServerFn(getGarminDetails);
   const fetchExtras = useServerFn(getGarminExtras);
   const loginFn = useServerFn(garminLoginNow);
   const syncFn = useServerFn(garminSyncNow);
@@ -300,6 +301,8 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
   const [showCharts, setShowCharts] = useState(false);
   const [showActivities, setShowActivities] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
+  const [detailsLoaded, setDetailsLoaded] = useState(false);
+  const [extrasLoaded, setExtrasLoaded] = useState(false);
   const [chartPeriod, setChartPeriod] = useState<ChartPeriod>("last30");
   const [showTrend, setShowTrend] = useState(false);
   const [weightAllowed, setWeightAllowed] = useState(false);
@@ -328,21 +331,40 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
 
   const load = async () => {
     setLoading(true);
+    setDetailsLoaded(false);
+    setExtrasLoaded(false);
     try {
       const core = await fetchCore({ data: { owner } }) as Omit<Overview, "activities" | "intraday">;
       setData({ ...core, activities: [], intraday: [] } as Overview);
       setLoading(false);
-      // Fase 2: hent aktiviteter og intraday i bakgrunnen — siden er allerede interaktiv.
-      try {
-        const extras = await fetchExtras({ data: { owner } }) as { activities: Activity[]; intraday: Intraday[] };
-        setData((prev) => prev ? { ...prev, activities: extras.activities, intraday: extras.intraday } : prev);
-      } catch (e) {
-        console.error("Garmin extras failed", e);
-      }
     }
     catch (e) { toast.error((e as Error).message); setLoading(false); }
   };
   useEffect(() => { void load(); }, [owner]);
+
+  const ensureDetails = async () => {
+    if (detailsLoaded) return;
+    setDetailsLoaded(true);
+    try {
+      const det = await fetchDetails({ data: { owner } }) as { daily: Daily[]; sleep: Sleep[] };
+      setData((prev) => prev ? { ...prev, daily: det.daily, sleep: det.sleep } : prev);
+    } catch (e) {
+      setDetailsLoaded(false);
+      console.error("Garmin details failed", e);
+    }
+  };
+
+  const ensureExtras = async () => {
+    if (extrasLoaded) return;
+    setExtrasLoaded(true);
+    try {
+      const extras = await fetchExtras({ data: { owner } }) as { activities: Activity[]; intraday: Intraday[] };
+      setData((prev) => prev ? { ...prev, activities: extras.activities, intraday: extras.intraday } : prev);
+    } catch (e) {
+      setExtrasLoaded(false);
+      console.error("Garmin extras failed", e);
+    }
+  };
 
   const openDevices = async () => {
     setDevicesOpen(true);
@@ -508,7 +530,7 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
           </h2>
           <div className="flex items-center gap-2">
             <button
-              onClick={() => setShowDetails((v) => !v)}
+              onClick={() => { setShowDetails((v) => { const n = !v; if (n) void ensureDetails(); return n; }); }}
               className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded border text-xs ${showDetails ? "border-primary/60 text-primary bg-primary/10" : "border-border/60 hover:bg-muted/40"}`}
             >
               {showDetails ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
@@ -1007,7 +1029,7 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
             {/* Grafer (skjult som default) */}
             <div className="flex flex-wrap items-center gap-2">
               <button
-                onClick={() => setShowCharts((v) => !v)}
+                onClick={() => { setShowCharts((v) => { const n = !v; if (n) void ensureExtras(); return n; }); }}
                 className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
               >
                 {showCharts ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
@@ -1227,7 +1249,7 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
             {data && data.activities.length > 0 && (
               <>
                 <button
-                  onClick={() => setShowActivities((v) => !v)}
+                  onClick={() => { setShowActivities((v) => { const n = !v; if (n) void ensureExtras(); return n; }); }}
                   className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
                 >
                   {showActivities ? <ChevronDown size={14} /> : <ChevronRight size={14} />}

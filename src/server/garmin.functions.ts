@@ -5,13 +5,19 @@ import { GARMIN_OWNERS, type GarminOwner } from "./garmin.shared";
 
 const ownerSchema = z.object({ owner: z.enum(["arne", "rebekka"]).default("arne") });
 
-async function loadDaily(owner: GarminOwner, sinceIso: string) {
+const DAILY_LITE_COLS = "day, steps, step_goal, floors_climbed, floors_goal, resting_heart_rate, average_heart_rate, weight_kg, total_kilocalories, active_kilocalories, distance_meters, moderate_intensity_minutes, vigorous_intensity_minutes, intensity_minutes_goal, body_battery_high, body_battery_low, stress_average, vo2max_running, vo2max_cycling, endurance_score, fitness_age, training_status, training_load_focus, endurance_contributors";
+const SLEEP_LITE_COLS = "day, total_seconds, deep_seconds, light_seconds, rem_seconds, awake_seconds, sleep_score, average_spo2, average_respiration, hrv_avg, sleep_start, sleep_end";
+
+async function loadDaily(owner: GarminOwner, sinceIso: string, withRaw = true) {
+  const cols = withRaw ? `${DAILY_LITE_COLS}, raw` : DAILY_LITE_COLS;
   const { data: dailyRows } = await supabaseAdmin
     .from("garmin_daily_stats")
-    .select("day, steps, step_goal, floors_climbed, floors_goal, resting_heart_rate, average_heart_rate, weight_kg, total_kilocalories, active_kilocalories, distance_meters, moderate_intensity_minutes, vigorous_intensity_minutes, intensity_minutes_goal, body_battery_high, body_battery_low, stress_average, vo2max_running, vo2max_cycling, endurance_score, fitness_age, training_status, training_load_focus, endurance_contributors, raw")
+    .select(cols)
     .eq("owner", owner)
     .gte("day", sinceIso)
     .order("day", { ascending: true });
+
+  if (!withRaw) return (dailyRows ?? []) as any[];
 
   return (dailyRows ?? []).map((row) => {
     const r: any = (row as any).raw ?? {};
@@ -54,13 +60,16 @@ async function loadDaily(owner: GarminOwner, sinceIso: string) {
   });
 }
 
-async function loadSleep(owner: GarminOwner, sinceIso: string) {
+async function loadSleep(owner: GarminOwner, sinceIso: string, withRaw = true) {
+  const cols = withRaw ? `${SLEEP_LITE_COLS}, raw` : SLEEP_LITE_COLS;
   const { data: sleepRows } = await supabaseAdmin
     .from("garmin_sleep")
-    .select("day, total_seconds, deep_seconds, light_seconds, rem_seconds, awake_seconds, sleep_score, average_spo2, average_respiration, hrv_avg, sleep_start, sleep_end, raw")
+    .select(cols)
     .eq("owner", owner)
     .gte("day", sinceIso)
     .order("day", { ascending: true });
+
+  if (!withRaw) return (sleepRows ?? []) as any[];
 
   return (sleepRows ?? []).map((s) => {
     const r: any = (s as any).raw ?? {};
@@ -156,7 +165,7 @@ export const getGarminOverview = createServerFn({ method: "GET" })
     return { owner, status, daily, activities, sleep, intraday, lastSync };
   });
 
-// Fase 1: rask kjerne — status + dagsstatistikk + søvn + lastSync (uten aktiviteter/intraday).
+// Fase 1: rask kjerne — kun hovedtall (uten raw-projeksjoner, aktiviteter, intraday).
 export const getGarminCore = createServerFn({ method: "GET" })
   .inputValidator((d: unknown) => ownerSchema.parse(d ?? {}))
   .handler(async ({ data }) => {
@@ -168,12 +177,27 @@ export const getGarminCore = createServerFn({ method: "GET" })
 
     const [status, daily, sleep, lastSync] = await Promise.all([
       mod.getGarminStatus(owner),
-      loadDaily(owner, sinceIso),
-      loadSleep(owner, sinceIso),
+      loadDaily(owner, sinceIso, false),
+      loadSleep(owner, sinceIso, false),
       loadLastSync(owner),
     ]);
 
     return { owner, status, daily, sleep, lastSync };
+  });
+
+// Fase 2a: detaljer — full daily/sleep med raw-projeksjoner (hentes når brukeren åpner "Vis detaljer").
+export const getGarminDetails = createServerFn({ method: "GET" })
+  .inputValidator((d: unknown) => ownerSchema.parse(d ?? {}))
+  .handler(async ({ data }) => {
+    const owner = data.owner as GarminOwner;
+    const since = new Date();
+    since.setDate(since.getDate() - 30);
+    const sinceIso = since.toISOString().slice(0, 10);
+    const [daily, sleep] = await Promise.all([
+      loadDaily(owner, sinceIso, true),
+      loadSleep(owner, sinceIso, true),
+    ]);
+    return { owner, daily, sleep };
   });
 
 // Fase 2: tunge ekstra-data — aktiviteter og intraday-puls.
