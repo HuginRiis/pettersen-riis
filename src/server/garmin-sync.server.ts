@@ -3,7 +3,7 @@
  * Idempotent — kan kjøres flere ganger om dagen.
  */
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { garminGet, GARMIN_OWNERS, type GarminOwner } from "./garmin.server";
+import { garminGet, garminGetMaybe, GARMIN_OWNERS, type GarminOwner } from "./garmin.server";
 
 function isoDay(d: Date): string {
   const y = d.getFullYear();
@@ -111,7 +111,7 @@ async function fetchFitnessExtras(owner: GarminOwner, day: string): Promise<{
   };
   try {
     // maxmet returnerer enten et objekt eller en liste (latest vs daily-range)
-    const vRaw = await garminGet<Vo2Resp | Vo2Resp[]>(owner, `/metrics-service/metrics/maxmet/${day}/${day}`);
+    const vRaw = await garminGetMaybe<Vo2Resp | Vo2Resp[]>(owner, `/metrics-service/metrics/maxmet/${day}/${day}`);
     const v: Vo2Resp | undefined = Array.isArray(vRaw) ? vRaw[vRaw.length - 1] : vRaw ?? undefined;
     out.vo2max_running = asNumber(v?.generic?.vo2MaxValue) ?? out.vo2max_running;
     out.vo2max_cycling = asNumber(v?.cycling?.vo2MaxValue) ?? out.vo2max_cycling;
@@ -119,7 +119,7 @@ async function fetchFitnessExtras(owner: GarminOwner, day: string): Promise<{
   } catch {}
   if (out.fitness_age == null) {
     try {
-      const fa = await garminGet<any>(
+      const fa = await garminGetMaybe<any>(
         owner,
         `/fitnessage-service/fitnessage/${day}`,
       );
@@ -127,7 +127,7 @@ async function fetchFitnessExtras(owner: GarminOwner, day: string): Promise<{
     } catch (e) { console.warn(`[garmin-sync:${owner}] fitnessage failed`, (e as Error).message); }
   }
   try {
-    const e = await garminGet<any>(owner, `/metrics-service/metrics/endurancescore?calendarDate=${day}`);
+    const e = await garminGetMaybe<any>(owner, `/metrics-service/metrics/endurancescore?calendarDate=${day}`);
     console.log(`[garmin-sync:${owner}] endurancescore RAW`, JSON.stringify(e).slice(0, 3000));
     out.endurance_score = asNumber(e?.overallScore) ?? asNumber(e?.enduranceScore) ?? asNumber(e?.score) ?? out.endurance_score;
     const rawContribs: any[] | undefined = Array.isArray(e?.contributors) ? e.contributors : Array.isArray(e?.contributorList) ? e.contributorList : undefined;
@@ -167,7 +167,7 @@ async function fetchFitnessExtras(owner: GarminOwner, day: string): Promise<{
     }
   } catch (e) { console.warn(`[garmin-sync:${owner}] endurance failed`, (e as Error).message); }
   try {
-    const t = await garminGet<TrainingStatusResp>(owner, `/metrics-service/metrics/trainingstatus/aggregated/${day}`);
+    const t = await garminGetMaybe<TrainingStatusResp>(owner, `/metrics-service/metrics/trainingstatus/aggregated/${day}`);
     out.vo2max_running = asNumber(t?.mostRecentVO2Max?.generic?.vo2MaxValue) ?? out.vo2max_running;
     out.vo2max_cycling = asNumber(t?.mostRecentVO2Max?.cycling?.vo2MaxValue) ?? out.vo2max_cycling;
     out.fitness_age = asNumber(t?.mostRecentVO2Max?.generic?.fitnessAge) ?? out.fitness_age;

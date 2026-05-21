@@ -74,11 +74,32 @@ export const getApiErrorLog = createServerFn({ method: "GET" })
       called_at: r.called_at,
       metadata: r.metadata == null ? null : JSON.stringify(r.metadata),
     }));
-    const map = new Map<string, number>();
-    for (const r of errors) map.set(r.source, (map.get(r.source) ?? 0) + 1);
-    const countsBySource = Array.from(map.entries())
-      .map(([source, count]) => ({ source, count }))
-      .sort((a, b) => b.count - a.count);
+
+    // Tellinger per kilde må hentes separat fra hele vinduet — ellers blir
+    // mindre kilder (renovasjon, geoip, kassal …) skjøvet ut av limit når
+    // én støyende kilde (f.eks. gardena) dominerer.
+    let countsBySource: Array<{ source: string; count: number }> = [];
+    try {
+      let cq = (supabaseAdmin.from("api_call_log") as any)
+        .select("source")
+        .eq("ok", false)
+        .gte("called_at", since)
+        .limit(10_000);
+      if (data.source) cq = cq.eq("source", data.source);
+      const { data: cRows } = (await cq) as { data: Array<{ source: string }> | null };
+      const cm = new Map<string, number>();
+      for (const r of cRows ?? []) cm.set(r.source, (cm.get(r.source) ?? 0) + 1);
+      countsBySource = Array.from(cm.entries())
+        .map(([source, count]) => ({ source, count }))
+        .sort((a, b) => b.count - a.count);
+    } catch (e) {
+      console.warn("[api-error-log] counts query failed", e);
+      const map = new Map<string, number>();
+      for (const r of errors) map.set(r.source, (map.get(r.source) ?? 0) + 1);
+      countsBySource = Array.from(map.entries())
+        .map(([source, count]) => ({ source, count }))
+        .sort((a, b) => b.count - a.count);
+    }
 
     return { fetchedAt: Date.now(), windowHours: hours, errors, countsBySource };
   });
