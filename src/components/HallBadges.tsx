@@ -735,8 +735,10 @@ export function GarbageNextPickupBadge({ inline }: { inline?: boolean } = {}) {
   }, []);
   if (items.length === 0) return null;
   const first = items[0];
-  if (first.daysUntil > settings.garbage.maxDaysAhead) return null;
-  const toShow = settings.garbage.showAllSameDay
+  const maxDaysAhead = settings.garbage?.maxDaysAhead ?? 14;
+  const showAllSameDay = settings.garbage?.showAllSameDay ?? false;
+  if (first.daysUntil > maxDaysAhead) return null;
+  const toShow = showAllSameDay
     ? items.filter((it) => it.daysUntil === first.daysUntil)
     : [first];
   const cls = "inline-flex items-center justify-center rounded-full text-[10px] font-semibold leading-none px-1.5 h-[18px] gap-0.5 tabular-nums";
