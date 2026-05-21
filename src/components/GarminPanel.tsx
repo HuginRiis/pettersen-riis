@@ -664,10 +664,15 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
                     fallbackSub={latestFit?.endurance_score != null ? `utholdenhet ${Math.round(latestFit.endurance_score)}` : "ingen måling"}
                     showDetails={showDetails}
                     details={[
-                      { k: "Løping", v: latestFit?.vo2max_running != null ? `${latestFit.vo2max_running.toFixed(1)} ml/kg/min` : "—" },
-                      { k: "Sykling", v: latestFit?.vo2max_cycling != null ? `${latestFit.vo2max_cycling.toFixed(1)} ml/kg/min` : "—" },
+                      { k: "VO₂max løping", v: latestFit?.vo2max_running != null ? `${latestFit.vo2max_running.toFixed(1)} ml/kg/min` : "—" },
+                      { k: "VO₂max sykling", v: latestFit?.vo2max_cycling != null ? `${latestFit.vo2max_cycling.toFixed(1)} ml/kg/min` : "—" },
                       { k: "Utholdenhetspoeng", v: latestFit?.endurance_score != null ? String(Math.round(latestFit.endurance_score)) : "—" },
                       { k: "Kondisjonsalder", v: latestFit?.fitness_age != null ? `${Math.round(latestFit.fitness_age)} år` : "—" },
+                      { k: "Treningsstatus", v: latestFit?.training_status ?? "—" },
+                      { k: "Forrige VO₂", v: prevFit?.vo2max_running != null ? `${prevFit.vo2max_running.toFixed(1)}` : "—" },
+                      { k: "Endring", v: prevFit?.vo2max_running != null && latestFit?.vo2max_running != null ? `${latestFit.vo2max_running - prevFit.vo2max_running > 0 ? "+" : ""}${(latestFit.vo2max_running - prevFit.vo2max_running).toFixed(1)}` : "—" },
+                      { k: "Snitt løping 30d", v: avgFmt(data?.daily?.map((d) => d.vo2max_running), 1) },
+                      { k: "Max løping 30d", v: maxFmt(data?.daily?.map((d) => d.vo2max_running), 1) },
                       { k: "Sist oppdatert", v: latestFit?.day ?? "—" },
                     ]}
                     chart={sparkLine(data?.daily, "vo2max_running", true, C.intensity)} />
