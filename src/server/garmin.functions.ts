@@ -5,13 +5,19 @@ import { GARMIN_OWNERS, type GarminOwner } from "./garmin.shared";
 
 const ownerSchema = z.object({ owner: z.enum(["arne", "rebekka"]).default("arne") });
 
-async function loadDaily(owner: GarminOwner, sinceIso: string) {
+const DAILY_LITE_COLS = "day, steps, step_goal, floors_climbed, floors_goal, resting_heart_rate, average_heart_rate, weight_kg, total_kilocalories, active_kilocalories, distance_meters, moderate_intensity_minutes, vigorous_intensity_minutes, intensity_minutes_goal, body_battery_high, body_battery_low, stress_average, vo2max_running, vo2max_cycling, endurance_score, fitness_age, training_status, training_load_focus, endurance_contributors";
+const SLEEP_LITE_COLS = "day, total_seconds, deep_seconds, light_seconds, rem_seconds, awake_seconds, sleep_score, average_spo2, average_respiration, hrv_avg, sleep_start, sleep_end";
+
+async function loadDaily(owner: GarminOwner, sinceIso: string, withRaw = true) {
+  const cols = withRaw ? `${DAILY_LITE_COLS}, raw` : DAILY_LITE_COLS;
   const { data: dailyRows } = await supabaseAdmin
     .from("garmin_daily_stats")
-    .select("day, steps, step_goal, floors_climbed, floors_goal, resting_heart_rate, average_heart_rate, weight_kg, total_kilocalories, active_kilocalories, distance_meters, moderate_intensity_minutes, vigorous_intensity_minutes, intensity_minutes_goal, body_battery_high, body_battery_low, stress_average, vo2max_running, vo2max_cycling, endurance_score, fitness_age, training_status, training_load_focus, endurance_contributors, raw")
+    .select(cols)
     .eq("owner", owner)
     .gte("day", sinceIso)
     .order("day", { ascending: true });
+
+  if (!withRaw) return (dailyRows ?? []) as any[];
 
   return (dailyRows ?? []).map((row) => {
     const r: any = (row as any).raw ?? {};
