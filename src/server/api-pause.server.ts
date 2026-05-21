@@ -2,10 +2,15 @@
 // Status lagres i public.api_pause_flags og caches kort i minnet.
 
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { isInBlackoutWindow } from "./api-blackout.server";
 
 export class ApiSourcePausedError extends Error {
-  constructor(public source: string) {
-    super(`API-kilden "${source}" er pauset fra Vakttårnet`);
+  constructor(public source: string, reason?: string) {
+    super(
+      reason
+        ? `API-kilden "${source}" er blokkert: ${reason}`
+        : `API-kilden "${source}" er pauset fra Vakttårnet`,
+    );
     this.name = "ApiSourcePausedError";
   }
 }
