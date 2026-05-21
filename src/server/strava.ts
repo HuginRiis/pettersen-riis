@@ -193,11 +193,47 @@ function bucketSport(type: string): "run" | "ride" | "swim" | "hike" | "ski" | "
 // api-call-log.functions.ts og getStravaDashboard.handler under) — vi importerer
 // ikke api-call-log.server her, fordi denne filen også brukes fra klient-ruter
 // (trening.tsx) via RPC-stubs.
+
+// In-memory cache per eier for å holde oss godt under Stravas 1000 kall/dag.
+// Hvert dashboard-kall = 2 Strava-API-kall (activities + athlete stats),
+// så med 10 min TTL: maks 6 * 24 = 144 dashboard/dag/eier → 288 API-kall.
+// To eiere = ~576 API-kall/dag i verste fall. Godt under 1000-grensen.
+const DASHBOARD_TTL_MS = 10 * 60 * 1000;
+const dashboardCache = new Map<StravaOwner, { at: number; data: any }>();
+
+// Sikkerhetsbrems: hvis vi nærmer oss daglig grense, server stale data fra cache
+// (selv etter TTL) i stedet for å fyre flere kall mot Strava.
+const DAILY_SAFE_LIMIT = 800; // hvert dashboard = 2 strava-kall
+const dailyCounter = { day: "", calls: 0 };
+function bumpDailyCounter(n = 2): number {
+  const today = new Date().toISOString().slice(0, 10);
+  if (dailyCounter.day !== today) {
+    dailyCounter.day = today;
+    dailyCounter.calls = 0;
+  }
+  dailyCounter.calls += n;
+  return dailyCounter.calls;
+}
+
 export const runStravaDashboard = async (owner: StravaOwner) => {
+  // 1) Fersk cache → returner umiddelbart
+  const cached = dashboardCache.get(owner);
+  const nowMs = Date.now();
+  if (cached && nowMs - cached.at < DASHBOARD_TTL_MS) {
+    return cached.data;
+  }
+
+  // 2) Hard daglig brems — server stale cache hvis vi har det
+  if (dailyCounter.calls >= DAILY_SAFE_LIMIT) {
+    if (cached) return cached.data;
+    return { ok: false as const, error: "Strava daglig grense nådd — prøv igjen senere" };
+  }
+
   const auth = await getValidStravaAccessToken(owner);
   if (!auth) {
     return { ok: false as const, error: "Ikke koblet til Strava" };
   }
+  bumpDailyCounter(2);
 
   try {
     // Hent siste 100 aktiviteter (gir oss ~3 mnd for trender)
