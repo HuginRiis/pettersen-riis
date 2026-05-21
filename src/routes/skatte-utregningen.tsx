@@ -26,6 +26,7 @@ import heroImg from "@/assets/got-skatt.jpg";
 import { PayslipArchive } from "@/components/PayslipArchive";
 import { SkattCharts } from "@/components/SkattCharts";
 import { StandaloneTaxCalculator } from "@/components/StandaloneTaxCalculator";
+import { compressImageToWebp } from "@/lib/image-compress";
 
 export const Route = createFileRoute("/skatte-utregningen")({
   head: () => ({
