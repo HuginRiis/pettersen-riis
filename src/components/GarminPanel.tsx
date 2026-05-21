@@ -1190,12 +1190,57 @@ function Tile({
       {showDetails && details && details.length > 0 && (
         <div className="mt-2 pt-2 border-t border-border/40 grid grid-cols-2 gap-x-2 gap-y-0.5 text-[10px]">
           {details.map((d) => (
-            <div key={d.k} className="flex justify-between gap-1">
-              <span className="text-muted-foreground truncate">{d.k}</span>
-              <span className="tabular-nums font-medium">{d.v}</span>
+            <div key={d.k} className="flex justify-between items-baseline gap-1 min-w-0">
+              <span className="text-muted-foreground shrink-0">{d.k}</span>
+              <InlineMarquee text={d.v} className="tabular-nums font-medium text-right" />
             </div>
           ))}
         </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Inline-marquee som ruller verdien horisontalt hvis den ikke får plass i
+ * tilgjengelig bredde. Bruker hastighet og modus fra scene-marquee-
+ * innstillingen (samme som lys-scenene), men arver fontstørrelse fra
+ * forelderen så små detalj-rader holder seg på 10px.
+ */
+function InlineMarquee({ text, className }: { text: string; className?: string }) {
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const measureRef = useRef<HTMLSpanElement>(null);
+  const [containerW, setContainerW] = useState(0);
+  const [textW, setTextW] = useState(0);
+  const { speedPxPerSec, mode } = useSceneMarquee();
+  const useIso = typeof window !== "undefined" ? useLayoutEffect : useEffect;
+  useIso(() => {
+    const wrap = wrapRef.current; const m = measureRef.current;
+    if (!wrap || !m) return;
+    const run = () => { setContainerW(wrap.clientWidth); setTextW(m.scrollWidth); };
+    run();
+    const ro = new ResizeObserver(run);
+    ro.observe(wrap); ro.observe(m);
+    return () => ro.disconnect();
+  }, [text]);
+  const overflow = textW > containerW + 1;
+  const distance = Math.max(0, textW - containerW);
+  const speed = Math.max(10, speedPxPerSec);
+  const gap = 16;
+  const loopDuration = overflow ? (textW + gap) / speed : 0;
+  const pingDuration = overflow ? (distance / speed) * 2 + 1.2 : 0;
+  return (
+    <div ref={wrapRef} className={`relative min-w-0 flex-1 overflow-hidden ${className ?? ""}`}>
+      <span ref={measureRef} aria-hidden className="invisible absolute left-0 top-0 whitespace-nowrap pointer-events-none">{text}</span>
+      {overflow && mode === "loop" ? (
+        <div className="flex whitespace-nowrap will-change-transform" style={{ animation: `scene-marquee-loop ${loopDuration}s linear infinite`, gap: `${gap}px`, ["--marquee-loop" as any]: `${textW + gap}px` }}>
+          <span className="shrink-0">{text}</span>
+          <span className="shrink-0" aria-hidden>{text}</span>
+        </div>
+      ) : overflow && mode === "pingpong" ? (
+        <span className="block whitespace-nowrap will-change-transform" style={{ animation: `scene-marquee-ping ${pingDuration}s ease-in-out infinite`, ["--marquee-dist" as any]: `-${distance}px` }}>{text}</span>
+      ) : (
+        <span className="block whitespace-nowrap">{text}</span>
       )}
     </div>
   );
