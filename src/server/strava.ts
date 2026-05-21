@@ -512,7 +512,7 @@ export const runStravaDashboard = async (owner: StravaOwner) => {
           }
         : null;
 
-    return {
+    const result = {
       ok: true as const,
       athleteName: auth.athleteName,
       week: {
@@ -552,8 +552,6 @@ export const runStravaDashboard = async (owner: StravaOwner) => {
         elevation: walkTotals.elevation,
       },
       totals: {
-        // Bruker lokale beregninger for "siste 4 uker" — Stravas recent_*_totals
-        // henger ofte etter ferske aktiviteter og dekker ikke walk.
         recentRun: recentRunLocal,
         recentRide: recentRideLocal,
         recentSwim: recentSwimLocal,
@@ -586,11 +584,16 @@ export const runStravaDashboard = async (owner: StravaOwner) => {
         achievements: a.achievement_count ?? 0,
       })),
     };
+    dashboardCache.set(owner, { at: Date.now(), data: result });
+    return result;
   } catch (error) {
+    // Ved feil: server siste cache hvis vi har det, ellers returner feil
+    if (cached) return cached.data;
     const message = error instanceof Error ? error.message : "Ukjent feil";
     return { ok: false as const, error: message };
   }
 };
+
 
 export const getStravaDashboard = createServerFn({ method: "GET" })
   .inputValidator((input: { owner?: StravaOwner } | undefined) => ({
