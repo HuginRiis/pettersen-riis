@@ -119,7 +119,7 @@ async function fetchFitnessExtras(owner: GarminOwner, day: string): Promise<{
   } catch {}
   if (out.fitness_age == null) {
     try {
-      const fa = await garminGet<any>(
+      const fa = await garminGetMaybe<any>(
         owner,
         `/fitnessage-service/fitnessage/${day}`,
       );
