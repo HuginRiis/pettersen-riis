@@ -4,7 +4,9 @@ import { useServerFn } from "@tanstack/react-start";
 import { Menu, X, LogOut, Crown, Swords, Shield, KeyRound, Home, Star, Flower2,
   Sun, Compass, Castle, CalendarDays, BellRing, Eye, Mountain, Lightbulb, Lamp, Zap, Hammer,
   ShoppingCart, Receipt, Dog, Dumbbell, AlertTriangle, ScrollText, Globe, ChevronDown, ChevronRight,
-  TreePine, Coins, Bot, Wallet, Volume2, Wifi, Router as RouterIcon, Plane, Bike } from "lucide-react";
+  TreePine, Coins, Bot, Wallet, Volume2, Wifi, Router as RouterIcon, Plane, Bike, Settings } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { HeaderBadgeSettingsPanel } from "@/components/HeaderBadgeSettingsPanel";
 
 
 import { logoutFn } from "@/server/auth";
