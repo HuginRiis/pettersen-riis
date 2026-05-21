@@ -3082,6 +3082,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_db_detail_stats: { Args: never; Returns: Json }
       get_db_usage_stats: { Args: never; Returns: Json }
       get_storage_usage_stats: { Args: never; Returns: Json }
       set_cron_job_active: {
