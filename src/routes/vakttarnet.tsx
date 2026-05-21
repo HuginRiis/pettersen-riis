@@ -362,6 +362,19 @@ function VakttarnetPage() {
           </Panel>
         </section>
 
+        <section id="vt-db-detail" className="scroll-mt-24">
+          <Panel
+            title="Detaljert DB-oversikt"
+            icon={<Database size={14} />}
+            subtitle="Alle tabeller, views og cron-jobber med størrelse og sist oppdatert"
+            collapsible
+            defaultOpen={false}
+          >
+            <DbDetailPanel />
+          </Panel>
+        </section>
+
+
         <section id="vt-garmin" className="scroll-mt-24">
           <Panel
             title="Garmin Connect"
