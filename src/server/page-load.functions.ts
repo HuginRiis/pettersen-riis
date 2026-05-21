@@ -71,11 +71,20 @@ export type PageDailyPoint = {
   count: number;
 };
 
+export type PageUserStat = {
+  who: string;
+  count: number;
+  avg_ms: number;
+  last_at: string;
+  routes: { route: string; count: number; last_at: string }[];
+};
+
 export type PageLoadStats = {
   routes: PageRouteStat[];
   devices: PageDeviceStat[];
   recent: PageLoadEntry[];
   daily: PageDailyPoint[];
+  users: PageUserStat[];
   totalCount: number;
   avgMs: number;
 };
