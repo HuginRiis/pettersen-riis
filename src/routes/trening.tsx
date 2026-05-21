@@ -238,6 +238,13 @@ function sportColor(s: string) {
 type Owner = "arne" | "rebekka";
 
 function TreningPage() {
+  const [stravaReady, setStravaReady] = useState(false);
+
+  useEffect(() => {
+    const id = window.setTimeout(() => setStravaReady(true), 1800);
+    return () => window.clearTimeout(id);
+  }, []);
+
   return (
     <PageShell>
       <PageHero
@@ -257,7 +264,13 @@ function TreningPage() {
       <section className="container mx-auto px-4 py-12 space-y-16">
         
         <GarminHouses />
-        <StravaHouses />
+        {stravaReady ? (
+          <StravaHouses />
+        ) : (
+          <div className="rounded-lg border border-border/60 bg-card/40 p-4 text-center text-xs text-muted-foreground">
+            Strava-krøniken lastes etter Garmin-tallene…
+          </div>
+        )}
       </section>
     </PageShell>
   );
