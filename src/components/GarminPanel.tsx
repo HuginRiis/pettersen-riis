@@ -686,17 +686,25 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
                 showDetails={showDetails}
                 details={(() => {
                   const ws = (data?.daily ?? []).map((d) => d.weight_kg).filter((x): x is number => x != null);
+                  const ws7 = (data?.daily?.slice(-7) ?? []).map((d) => d.weight_kg).filter((x): x is number => x != null);
                   const first = ws[0];
                   const last = ws[ws.length - 1];
                   const min = ws.length ? Math.min(...ws) : null;
                   const max = ws.length ? Math.max(...ws) : null;
-                  const trend = first != null && last != null ? last - first : null;
+                  const trend30 = first != null && last != null ? last - first : null;
+                  const trend7 = ws7.length >= 2 ? ws7[ws7.length - 1] - ws7[0] : null;
                   return [
                     { k: "Siste veiing", v: latestWeightEntry?.day ?? "—" },
+                    { k: "Forrige", v: prevWeightEntry?.weight_kg != null ? `${prevWeightEntry.weight_kg.toFixed(1)} kg` : "—" },
+                    { k: "Endring", v: latestWeightEntry?.weight_kg != null && prevWeightEntry?.weight_kg != null ? `${(latestWeightEntry.weight_kg - prevWeightEntry.weight_kg) > 0 ? "+" : ""}${(latestWeightEntry.weight_kg - prevWeightEntry.weight_kg).toFixed(1)} kg` : "—" },
+                    { k: "Snitt 7d", v: avgFmt(ws7, 1, " kg") },
                     { k: "Snitt 30d", v: avgFmt(ws, 1, " kg") },
                     { k: "Min 30d", v: min != null ? `${min.toFixed(1)} kg` : "—" },
                     { k: "Max 30d", v: max != null ? `${max.toFixed(1)} kg` : "—" },
-                    { k: "Trend 30d", v: trend != null ? `${trend > 0 ? "+" : ""}${trend.toFixed(1)} kg` : "—" },
+                    { k: "Spenn 30d", v: min != null && max != null ? `${(max - min).toFixed(1)} kg` : "—" },
+                    { k: "Trend 7d", v: trend7 != null ? `${trend7 > 0 ? "+" : ""}${trend7.toFixed(1)} kg` : "—" },
+                    { k: "Trend 30d", v: trend30 != null ? `${trend30 > 0 ? "+" : ""}${trend30.toFixed(1)} kg` : "—" },
+                    { k: "Antall målinger", v: String(ws.length) },
                   ];
                 })()}
                 chart={sparkLine(data?.daily, "weight_kg", true, C.weight)} />
