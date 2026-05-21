@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Footprints, Heart, Flame, Moon, BedDouble, Loader2, Scale } from "lucide-react";
+import { Footprints, Heart, HeartPulse, Flame, Moon, BedDouble, Loader2, Scale } from "lucide-react";
 import { getGarminOverview } from "@/server/garmin.functions";
 
 type Daily = {
   day: string;
   steps: number | null;
   resting_heart_rate: number | null;
+  average_heart_rate: number | null;
   total_kilocalories: number | null;
   weight_kg: number | null;
 };
