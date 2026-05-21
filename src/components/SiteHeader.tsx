@@ -134,6 +134,7 @@ const ROUTE_ICON_COLOR: Partial<Record<RoutePath, string>> = {
   "/planter": "#22c55e",             // planter — bladgrønn
   "/flyradar": "#38bdf8",            // raven — himmelblå
   "/fysisk": "#22c55e",              // utholdenhet — markens grønt
+  "/smartklokke": "#94a3b8",         // klokke — stål
 };
 
 
