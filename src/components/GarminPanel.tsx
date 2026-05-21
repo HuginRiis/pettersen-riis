@@ -740,6 +740,10 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
                   { k: "Forrige", v: prevHrvEntry?.hrv_avg != null ? `${Math.round(prevHrvEntry.hrv_avg)} ms` : "—" },
                   { k: "Snitt 7d", v: avgFmt(data?.sleep?.slice(-7).map((s) => s.hrv_avg), 0, " ms") },
                   { k: "Snitt 30d", v: avgFmt(data?.sleep?.map((s) => s.hrv_avg), 0, " ms") },
+                  { k: "Min 30d", v: minFmt(data?.sleep?.map((s) => s.hrv_avg), 0, " ms") },
+                  { k: "Max 30d", v: maxFmt(data?.sleep?.map((s) => s.hrv_avg), 0, " ms") },
+                  { k: "Målinger 30d", v: countFmt(data?.sleep?.map((s) => s.hrv_avg)) },
+                  { k: "Trend 30d", v: trendFmt(data?.sleep?.map((s) => s.hrv_avg), 0, " ms") },
                 ]}
                 chart={sparkLine(
                   (data?.sleep ?? []).map((s) => ({ day: s.day, hrv: s.hrv_avg })),
