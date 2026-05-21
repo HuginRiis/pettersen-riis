@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { getPageLoadStats, type PageLoadStats } from "@/server/page-load.functions";
-import { Gauge, Smartphone, History, TrendingUp } from "lucide-react";
+import { Gauge, Smartphone, History, TrendingUp, Users } from "lucide-react";
 import {
   LineChart,
   Line,
