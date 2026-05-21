@@ -7,6 +7,51 @@ const ownerSchema = z.object({ owner: z.enum(["arne", "rebekka"]).default("arne"
 
 const DAILY_LITE_COLS = "day, steps, step_goal, floors_climbed, floors_goal, resting_heart_rate, average_heart_rate, weight_kg, total_kilocalories, active_kilocalories, distance_meters, moderate_intensity_minutes, vigorous_intensity_minutes, intensity_minutes_goal, body_battery_high, body_battery_low, stress_average, vo2max_running, vo2max_cycling, endurance_score, fitness_age, training_status, training_load_focus, endurance_contributors";
 const SLEEP_LITE_COLS = "day, total_seconds, deep_seconds, light_seconds, rem_seconds, awake_seconds, sleep_score, average_spo2, average_respiration, hrv_avg, sleep_start, sleep_end";
+const GARMIN_CACHE_TTL_MS = 60_000;
+
+const garminCache = new Map<string, { expires: number; value: unknown }>();
+
+async function cached<T>(key: string, loader: () => Promise<T>): Promise<T> {
+  const now = Date.now();
+  const hit = garminCache.get(key);
+  if (hit && hit.expires > now) return await (hit.value as T | Promise<T>);
+  const pending = loader();
+  garminCache.set(key, { expires: now + GARMIN_CACHE_TTL_MS, value: pending });
+  try {
+    const value = await pending;
+    garminCache.set(key, { expires: Date.now() + GARMIN_CACHE_TTL_MS, value });
+    return value;
+  } catch (error) {
+    garminCache.delete(key);
+    throw error;
+  }
+}
+
+function clearGarminCache(owner?: GarminOwner | null) {
+  for (const key of garminCache.keys()) {
+    if (!owner || key.includes(`:${owner}:`) || key.endsWith(`:${owner}`)) garminCache.delete(key);
+  }
+}
+
+async function loadStatus(owner: GarminOwner) {
+  const { data } = await supabaseAdmin
+    .from("garmin_tokens")
+    .select("username, oauth2_expires_at, last_login_at, oauth1_token, pending_mfa, device_name, device_image_url")
+    .eq("owner", owner)
+    .order("updated_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  return {
+    connected: !!data?.oauth1_token,
+    username: data?.username ?? null,
+    expires_at: data?.oauth2_expires_at ?? null,
+    last_login_at: data?.last_login_at ?? null,
+    mfa_pending: !!(data as { pending_mfa?: unknown } | null)?.pending_mfa,
+    device_name: (data as any)?.device_name ?? null,
+    device_image_url: (data as any)?.device_image_url ?? null,
+  };
+}
 
 async function loadDaily(owner: GarminOwner, sinceIso: string, withRaw = true) {
   const cols = withRaw ? `${DAILY_LITE_COLS}, raw` : DAILY_LITE_COLS;
@@ -170,19 +215,20 @@ export const getGarminCore = createServerFn({ method: "GET" })
   .inputValidator((d: unknown) => ownerSchema.parse(d ?? {}))
   .handler(async ({ data }) => {
     const owner = data.owner as GarminOwner;
-    const mod = await import("./garmin.server");
     const since = new Date();
     since.setDate(since.getDate() - 30);
     const sinceIso = since.toISOString().slice(0, 10);
 
-    const [status, daily, sleep, lastSync] = await Promise.all([
-      mod.getGarminStatus(owner),
-      loadDaily(owner, sinceIso, false),
-      loadSleep(owner, sinceIso, false),
-      loadLastSync(owner),
-    ]);
+    return cached(`core:${owner}:${sinceIso}`, async () => {
+      const [status, daily, sleep, lastSync] = await Promise.all([
+        loadStatus(owner),
+        loadDaily(owner, sinceIso, false),
+        loadSleep(owner, sinceIso, false),
+        loadLastSync(owner),
+      ]);
 
-    return { owner, status, daily, sleep, lastSync };
+      return { owner, status, daily, sleep, lastSync };
+    });
   });
 
 // Fase 2a: detaljer — full daily/sleep med raw-projeksjoner (hentes når brukeren åpner "Vis detaljer").
@@ -193,11 +239,13 @@ export const getGarminDetails = createServerFn({ method: "GET" })
     const since = new Date();
     since.setDate(since.getDate() - 30);
     const sinceIso = since.toISOString().slice(0, 10);
-    const [daily, sleep] = await Promise.all([
-      loadDaily(owner, sinceIso, true),
-      loadSleep(owner, sinceIso, true),
-    ]);
-    return { owner, daily, sleep };
+    return cached(`details:${owner}:${sinceIso}`, async () => {
+      const [daily, sleep] = await Promise.all([
+        loadDaily(owner, sinceIso, true),
+        loadSleep(owner, sinceIso, true),
+      ]);
+      return { owner, daily, sleep };
+    });
   });
 
 // Fase 2: tunge ekstra-data — aktiviteter og intraday-puls.
@@ -205,11 +253,13 @@ export const getGarminExtras = createServerFn({ method: "GET" })
   .inputValidator((d: unknown) => ownerSchema.parse(d ?? {}))
   .handler(async ({ data }) => {
     const owner = data.owner as GarminOwner;
-    const [activities, intraday] = await Promise.all([
-      loadActivities(owner),
-      loadIntraday(owner),
-    ]);
-    return { owner, activities, intraday };
+    return cached(`extras:${owner}`, async () => {
+      const [activities, intraday] = await Promise.all([
+        loadActivities(owner),
+        loadIntraday(owner),
+      ]);
+      return { owner, activities, intraday };
+    });
   });
 
 
@@ -217,7 +267,10 @@ export const garminLoginNow = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => ownerSchema.parse(d ?? {}))
   .handler(async ({ data }) => {
     const mod = await import("./garmin.server");
-    return mod.garminLogin(data.owner as GarminOwner);
+    const owner = data.owner as GarminOwner;
+    const result = await mod.garminLogin(owner);
+    clearGarminCache(owner);
+    return result;
   });
 
 export const garminSubmitMfaCode = createServerFn({ method: "POST" })
@@ -230,7 +283,9 @@ export const garminSubmitMfaCode = createServerFn({ method: "POST" })
   })
   .handler(async ({ data }) => {
     const mod = await import("./garmin.server");
-    return mod.garminSubmitMfa(data.owner, data.code);
+    const result = await mod.garminSubmitMfa(data.owner, data.code);
+    clearGarminCache(data.owner);
+    return result;
   });
 
 export const garminSyncNow = createServerFn({ method: "POST" })
@@ -240,8 +295,14 @@ export const garminSyncNow = createServerFn({ method: "POST" })
   })
   .handler(async ({ data }) => {
     const mod = await import("./garmin-sync.server");
-    if (data.owner) return mod.syncOne(data.owner, "manual");
-    return mod.syncAll("manual");
+    if (data.owner) {
+      const result = await mod.syncOne(data.owner, "manual");
+      clearGarminCache(data.owner);
+      return result;
+    }
+    const result = await mod.syncAll("manual");
+    clearGarminCache();
+    return result;
   });
 
 export type GarminSyncSchedule = {
