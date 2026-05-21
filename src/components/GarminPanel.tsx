@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Activity, Footprints, Heart, HeartPulse, Flame, Moon, RefreshCw, LogIn, Loader2, TrendingUp, ShieldCheck, Battery, Brain, Timer, Scale, ChevronDown, ChevronRight, ArrowUp, ArrowDown, Minus, Building2, Wind, Droplets, Waves, Award, Gauge, Target } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, CartesianGrid } from "recharts";
@@ -9,6 +9,7 @@ import { getStoredWho, isCurrentlySubscribed } from "@/lib/push-client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { useSceneMarquee } from "@/hooks/use-scene-marquee";
 
 type Daily = {
   day: string; steps: number | null; step_goal: number | null;
@@ -72,6 +73,30 @@ function stressLevel(n?: number | null): string {
   if (n < 50) return "Lavt";
   if (n < 75) return "Medium";
   return "Høyt";
+}
+function nums(arr: Array<number | null | undefined> | undefined): number[] {
+  return (arr ?? []).filter((n): n is number => typeof n === "number" && Number.isFinite(n) && n > 0);
+}
+function minFmt(arr: Array<number | null | undefined> | undefined, digits = 0, unit = ""): string {
+  const v = nums(arr); if (!v.length) return "—";
+  return Math.min(...v).toLocaleString("nb-NO", { maximumFractionDigits: digits, minimumFractionDigits: digits > 0 ? digits : 0 }) + unit;
+}
+function maxFmt(arr: Array<number | null | undefined> | undefined, digits = 0, unit = ""): string {
+  const v = nums(arr); if (!v.length) return "—";
+  return Math.max(...v).toLocaleString("nb-NO", { maximumFractionDigits: digits, minimumFractionDigits: digits > 0 ? digits : 0 }) + unit;
+}
+function sumFmt(arr: Array<number | null | undefined> | undefined, digits = 0, unit = ""): string {
+  const v = (arr ?? []).filter((n): n is number => typeof n === "number" && Number.isFinite(n));
+  if (!v.length) return "—";
+  return v.reduce((a, b) => a + b, 0).toLocaleString("nb-NO", { maximumFractionDigits: digits, minimumFractionDigits: digits > 0 ? digits : 0 }) + unit;
+}
+function trendFmt(arr: Array<number | null | undefined> | undefined, digits = 1, unit = ""): string {
+  const v = nums(arr); if (v.length < 2) return "—";
+  const d = v[v.length - 1] - v[0];
+  return `${d > 0 ? "+" : ""}${d.toLocaleString("nb-NO", { maximumFractionDigits: digits, minimumFractionDigits: digits > 0 ? digits : 0 })}${unit}`;
+}
+function countFmt(arr: Array<number | null | undefined> | undefined): string {
+  return String(nums(arr).length);
 }
 
 type ChartPeriod = "today" | "yesterday" | "thisWeek" | "lastWeek" | "last30" | "thisMonth";
@@ -439,10 +464,20 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
                 details={[
                   { k: "Mål", v: today?.step_goal ? fmtNum(today.step_goal) : "—" },
                   { k: "Igjen", v: today?.steps != null && today?.step_goal ? fmtNum(Math.max(0, today.step_goal - today.steps)) : "—" },
-                  { k: "Distanse", v: fmtKm(today?.distance_meters) },
                   { k: "% av mål", v: today?.steps != null && today?.step_goal ? `${Math.round((today.steps / today.step_goal) * 100)}%` : "—" },
+                  { k: "Distanse i dag", v: fmtKm(today?.distance_meters) },
+                  { k: "I går", v: yesterday?.steps != null ? fmtNum(yesterday.steps) : "—" },
                   { k: "Snitt 7d", v: avgFmt(data?.daily?.slice(-7).map((d) => d.steps), 0) },
                   { k: "Snitt 30d", v: avgFmt(data?.daily?.map((d) => d.steps), 0) },
+                  { k: "Min 30d", v: minFmt(data?.daily?.map((d) => d.steps), 0) },
+                  { k: "Beste 30d", v: maxFmt(data?.daily?.map((d) => d.steps), 0) },
+                  { k: "Sum 7d", v: sumFmt(data?.daily?.slice(-7).map((d) => d.steps), 0) },
+                  { k: "Sum 30d", v: sumFmt(data?.daily?.map((d) => d.steps), 0) },
+                  { k: "Distanse 7d", v: (() => { const m = (data?.daily?.slice(-7) ?? []).reduce((a, d) => a + (d.distance_meters ?? 0), 0); return m > 0 ? `${(m/1000).toFixed(1)} km` : "—"; })() },
+                  { k: "Distanse 30d", v: (() => { const m = (data?.daily ?? []).reduce((a, d) => a + (d.distance_meters ?? 0), 0); return m > 0 ? `${(m/1000).toFixed(1)} km` : "—"; })() },
+                  { k: "Mål nådd 7d", v: String((data?.daily?.slice(-7) ?? []).filter((d) => d.steps != null && d.step_goal != null && d.steps >= d.step_goal).length) },
+                  { k: "Mål nådd 30d", v: String((data?.daily ?? []).filter((d) => d.steps != null && d.step_goal != null && d.steps >= d.step_goal).length) },
+                  { k: "Trend 30d", v: trendFmt(data?.daily?.map((d) => d.steps), 0) },
                 ]}
                 chart={sparkBar(data?.daily, "steps", C.steps)} />
               <Tile icon={<HeartPulse size={14} style={{color: C.hr}} />} label="Hvilepuls"
@@ -454,6 +489,10 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
                   { k: "I går", v: yesterday?.resting_heart_rate != null ? `${yesterday.resting_heart_rate} bpm` : "—" },
                   { k: "Snitt 7d", v: avgFmt(data?.daily?.slice(-7).map((d) => d.resting_heart_rate), 0, " bpm") },
                   { k: "Snitt 30d", v: avgFmt(data?.daily?.map((d) => d.resting_heart_rate), 0, " bpm") },
+                  { k: "Lavest 30d", v: minFmt(data?.daily?.map((d) => d.resting_heart_rate), 0, " bpm") },
+                  { k: "Høyest 30d", v: maxFmt(data?.daily?.map((d) => d.resting_heart_rate), 0, " bpm") },
+                  { k: "Trend 30d", v: trendFmt(data?.daily?.map((d) => d.resting_heart_rate), 0, " bpm") },
+                  { k: "Målinger 30d", v: countFmt(data?.daily?.map((d) => d.resting_heart_rate)) },
                 ]}
                 chart={sparkLine(data?.daily, "resting_heart_rate", false, C.hr)} />
               <Tile icon={<Heart size={14} style={{color: C.hrAvg}} />} label="Snitt puls"
@@ -465,6 +504,9 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
                   { k: "I går", v: yesterday?.average_heart_rate != null ? `${yesterday.average_heart_rate} bpm` : "—" },
                   { k: "Snitt 7d", v: avgFmt(data?.daily?.slice(-7).map((d) => d.average_heart_rate), 0, " bpm") },
                   { k: "Snitt 30d", v: avgFmt(data?.daily?.map((d) => d.average_heart_rate), 0, " bpm") },
+                  { k: "Min 30d", v: minFmt(data?.daily?.map((d) => d.average_heart_rate), 0, " bpm") },
+                  { k: "Max 30d", v: maxFmt(data?.daily?.map((d) => d.average_heart_rate), 0, " bpm") },
+                  { k: "Trend 30d", v: trendFmt(data?.daily?.map((d) => d.average_heart_rate), 0, " bpm") },
                 ]}
                 chart={sparkLine(data?.daily, "average_heart_rate", false, C.hrAvg)} />
               <Tile icon={<TrendingUp size={14} style={{color: C.hrMax}} />} label="Maks puls"
@@ -475,7 +517,10 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
                   { k: "I dag", v: maxHrToday ? `${maxHrToday} bpm` : "—" },
                   { k: "I går", v: maxHrYesterday ? `${maxHrYesterday} bpm` : "—" },
                   { k: "Aktiviteter i dag", v: String(todaysActs.length) },
+                  { k: "Aktiviteter i går", v: String(yesterdaysActs.length) },
+                  { k: "Snitt maks", v: avgFmt(data?.activities?.map((a) => a.max_hr), 0, " bpm") },
                   { k: "Topp 30d", v: (() => { const top = data?.activities?.reduce((m, a) => Math.max(m, a.max_hr ?? 0), 0) ?? 0; return top ? `${top} bpm` : "—"; })() },
+                  { k: "Aktiviteter 30d", v: String((data?.activities ?? []).length) },
                 ]}
                 chart={sparkLine(
                   (() => {
@@ -500,6 +545,10 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
                   { k: "I går", v: yesterday?.floors_climbed != null ? fmtNum(yesterday.floors_climbed) : "—" },
                   { k: "Snitt 7d", v: avgFmt(data?.daily?.slice(-7).map((d) => d.floors_climbed), 0) },
                   { k: "Snitt 30d", v: avgFmt(data?.daily?.map((d) => d.floors_climbed), 0) },
+                  { k: "Beste 30d", v: maxFmt(data?.daily?.map((d) => d.floors_climbed), 0) },
+                  { k: "Sum 7d", v: sumFmt(data?.daily?.slice(-7).map((d) => d.floors_climbed), 0) },
+                  { k: "Sum 30d", v: sumFmt(data?.daily?.map((d) => d.floors_climbed), 0) },
+                  { k: "Trend 30d", v: trendFmt(data?.daily?.map((d) => d.floors_climbed), 0) },
                 ]}
                 chart={sparkBar(data?.daily, "floors_climbed", C.floors)} />
               <Tile icon={<Battery size={14} style={{color: C.batteryHigh}} />} label="Body battery"
@@ -507,12 +556,17 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
                 fallbackSub={today?.body_battery_low != null ? `lav ${today.body_battery_low}` : "ingen data"}
                 showDetails={showDetails}
                 details={[
-                  { k: "Høy", v: today?.body_battery_high != null ? String(today.body_battery_high) : "—" },
-                  { k: "Lav", v: today?.body_battery_low != null ? String(today.body_battery_low) : "—" },
-                  { k: "Differanse", v: today?.body_battery_high != null && today?.body_battery_low != null ? String(today.body_battery_high - today.body_battery_low) : "—" },
-                  { k: "I går (høy)", v: yesterday?.body_battery_high != null ? String(yesterday.body_battery_high) : "—" },
+                  { k: "Høy i dag", v: today?.body_battery_high != null ? String(today.body_battery_high) : "—" },
+                  { k: "Lav i dag", v: today?.body_battery_low != null ? String(today.body_battery_low) : "—" },
+                  { k: "Ladet i dag", v: today?.body_battery_high != null && today?.body_battery_low != null ? `+${today.body_battery_high - today.body_battery_low}` : "—" },
+                  { k: "Høy i går", v: yesterday?.body_battery_high != null ? String(yesterday.body_battery_high) : "—" },
+                  { k: "Lav i går", v: yesterday?.body_battery_low != null ? String(yesterday.body_battery_low) : "—" },
                   { k: "Snitt høy 7d", v: avgFmt(data?.daily?.slice(-7).map((d) => d.body_battery_high), 0) },
                   { k: "Snitt lav 7d", v: avgFmt(data?.daily?.slice(-7).map((d) => d.body_battery_low), 0) },
+                  { k: "Snitt høy 30d", v: avgFmt(data?.daily?.map((d) => d.body_battery_high), 0) },
+                  { k: "Snitt lav 30d", v: avgFmt(data?.daily?.map((d) => d.body_battery_low), 0) },
+                  { k: "Maks høy 30d", v: maxFmt(data?.daily?.map((d) => d.body_battery_high), 0) },
+                  { k: "Min lav 30d", v: minFmt(data?.daily?.map((d) => d.body_battery_low), 0) },
                 ]}
                 chart={sparkLine2(data?.daily, "body_battery_high", "body_battery_low", C.batteryHigh, C.batteryLow)} />
               <Tile icon={<Brain size={14} style={{color: C.stress}} />} label="Stress (snitt)"
@@ -521,10 +575,14 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
                 showDetails={showDetails}
                 details={[
                   { k: "Snitt i dag", v: today?.stress_average != null ? String(today.stress_average) : "—" },
+                  { k: "Nivå i dag", v: stressLevel(today?.stress_average) },
                   { k: "I går", v: yesterday?.stress_average != null ? String(yesterday.stress_average) : "—" },
-                  { k: "Nivå", v: stressLevel(today?.stress_average) },
+                  { k: "Nivå i går", v: stressLevel(yesterday?.stress_average) },
                   { k: "Snitt 7d", v: avgFmt(data?.daily?.slice(-7).map((d) => d.stress_average), 0) },
                   { k: "Snitt 30d", v: avgFmt(data?.daily?.map((d) => d.stress_average), 0) },
+                  { k: "Lavest 30d", v: minFmt(data?.daily?.map((d) => d.stress_average), 0) },
+                  { k: "Høyest 30d", v: maxFmt(data?.daily?.map((d) => d.stress_average), 0) },
+                  { k: "Trend 30d", v: trendFmt(data?.daily?.map((d) => d.stress_average), 0) },
                 ]}
                 chart={sparkLine(data?.daily, "stress_average", false, C.stress)} />
               <Tile icon={<Timer size={14} style={{color: C.intensity}} />} label="Intensitetsmin."
@@ -532,11 +590,17 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
                 fallbackSub={today?.intensity_minutes_goal ? `mål ${today.intensity_minutes_goal}` : "ingen mål"}
                 showDetails={showDetails}
                 details={[
-                  { k: "Moderat", v: today?.moderate_intensity_minutes != null ? `${today.moderate_intensity_minutes} min` : "—" },
-                  { k: "Hard", v: today?.vigorous_intensity_minutes != null ? `${today.vigorous_intensity_minutes} min` : "—" },
+                  { k: "Moderat i dag", v: today?.moderate_intensity_minutes != null ? `${today.moderate_intensity_minutes} min` : "—" },
+                  { k: "Hard i dag", v: today?.vigorous_intensity_minutes != null ? `${today.vigorous_intensity_minutes} min` : "—" },
+                  { k: "Totalt i dag", v: `${intensityToday} min` },
+                  { k: "Totalt i går", v: `${intensityYesterday} min` },
                   { k: "Mål", v: today?.intensity_minutes_goal ? `${today.intensity_minutes_goal} min` : "—" },
+                  { k: "% av mål", v: today?.intensity_minutes_goal ? `${Math.round((intensityToday / today.intensity_minutes_goal) * 100)}%` : "—" },
                   { k: "Sum 7d", v: (() => { const s = (data?.daily?.slice(-7) ?? []).reduce((a, d) => a + (d.moderate_intensity_minutes ?? 0) + (d.vigorous_intensity_minutes ?? 0), 0); return `${s} min`; })() },
+                  { k: "Sum 30d", v: (() => { const s = (data?.daily ?? []).reduce((a, d) => a + (d.moderate_intensity_minutes ?? 0) + (d.vigorous_intensity_minutes ?? 0), 0); return `${s} min`; })() },
+                  { k: "Snitt 7d", v: (() => { const arr = (data?.daily?.slice(-7) ?? []).map((d) => (d.moderate_intensity_minutes ?? 0) + (d.vigorous_intensity_minutes ?? 0)); return arr.length ? `${Math.round(arr.reduce((a,b)=>a+b,0)/arr.length)} min` : "—"; })() },
                   { k: "Snitt 30d", v: (() => { const arr = (data?.daily ?? []).map((d) => (d.moderate_intensity_minutes ?? 0) + (d.vigorous_intensity_minutes ?? 0)).filter((n) => n > 0); return arr.length ? `${Math.round(arr.reduce((a,b)=>a+b,0)/arr.length)} min` : "—"; })() },
+                  { k: "Beste dag 30d", v: (() => { const arr = (data?.daily ?? []).map((d) => (d.moderate_intensity_minutes ?? 0) + (d.vigorous_intensity_minutes ?? 0)); return arr.length ? `${Math.max(...arr)} min` : "—"; })() },
                 ]}
                 chart={sparkBar(
                   (data?.daily ?? []).map((d) => ({ ...d, total_intensity: (d.moderate_intensity_minutes ?? 0) + (d.vigorous_intensity_minutes ?? 0) })),
@@ -549,12 +613,19 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
                 showDetails={showDetails}
                 details={[
                   { k: "Score", v: lastSleep?.sleep_score != null ? String(lastSleep.sleep_score) : "—" },
+                  { k: "Dato", v: lastSleep?.day ?? "—" },
+                  { k: "Total", v: lastSleep?.total_seconds ? hoursMin(lastSleep.total_seconds) : "—" },
                   { k: "Dyp", v: lastSleep?.deep_seconds ? hoursMin(lastSleep.deep_seconds) : "—" },
                   { k: "Lett", v: lastSleep?.light_seconds ? hoursMin(lastSleep.light_seconds) : "—" },
                   { k: "REM", v: lastSleep?.rem_seconds ? hoursMin(lastSleep.rem_seconds) : "—" },
                   { k: "Våken", v: lastSleep?.awake_seconds ? hoursMin(lastSleep.awake_seconds) : "—" },
+                  { k: "% dyp", v: lastSleep?.total_seconds && lastSleep?.deep_seconds ? `${Math.round((lastSleep.deep_seconds / lastSleep.total_seconds) * 100)}%` : "—" },
+                  { k: "% REM", v: lastSleep?.total_seconds && lastSleep?.rem_seconds ? `${Math.round((lastSleep.rem_seconds / lastSleep.total_seconds) * 100)}%` : "—" },
                   { k: "Snitt 7d", v: (() => { const s = (data?.sleep?.slice(-7) ?? []).map((x) => x.total_seconds).filter((x): x is number => !!x); return s.length ? `${(s.reduce((a, b) => a + b, 0) / s.length / 3600).toFixed(1)} t` : "—"; })() },
                   { k: "Snitt 30d", v: (() => { const s = (data?.sleep ?? []).map((x) => x.total_seconds).filter((x): x is number => !!x); return s.length ? `${(s.reduce((a, b) => a + b, 0) / s.length / 3600).toFixed(1)} t` : "—"; })() },
+                  { k: "Min 30d", v: (() => { const s = (data?.sleep ?? []).map((x) => x.total_seconds).filter((x): x is number => !!x); return s.length ? `${(Math.min(...s) / 3600).toFixed(1)} t` : "—"; })() },
+                  { k: "Max 30d", v: (() => { const s = (data?.sleep ?? []).map((x) => x.total_seconds).filter((x): x is number => !!x); return s.length ? `${(Math.max(...s) / 3600).toFixed(1)} t` : "—"; })() },
+                  { k: "Sum 7d", v: (() => { const s = (data?.sleep?.slice(-7) ?? []).map((x) => x.total_seconds ?? 0).reduce((a, b) => a + b, 0); return s ? `${(s / 3600).toFixed(1)} t` : "—"; })() },
                 ]}
                 chart={sparkBar(
                   (data?.sleep ?? []).map((s) => ({ day: s.day, hours: s.total_seconds ? s.total_seconds / 3600 : null })),
@@ -570,7 +641,10 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
                   { k: "Forrige natt", v: prevSleep?.sleep_score != null ? String(prevSleep.sleep_score) : "—" },
                   { k: "Snitt 7d", v: avgFmt(data?.sleep?.slice(-7).map((s) => s.sleep_score), 0) },
                   { k: "Snitt 30d", v: avgFmt(data?.sleep?.map((s) => s.sleep_score), 0) },
-                  { k: "Beste 30d", v: (() => { const ss = (data?.sleep ?? []).map((s) => s.sleep_score).filter((x): x is number => x != null); return ss.length ? String(Math.max(...ss)) : "—"; })() },
+                  { k: "Lavest 30d", v: minFmt(data?.sleep?.map((s) => s.sleep_score), 0) },
+                  { k: "Beste 30d", v: maxFmt(data?.sleep?.map((s) => s.sleep_score), 0) },
+                  { k: "Målinger 30d", v: countFmt(data?.sleep?.map((s) => s.sleep_score)) },
+                  { k: "Trend 30d", v: trendFmt(data?.sleep?.map((s) => s.sleep_score), 0) },
                 ]}
                 chart={sparkLine(
                   (data?.sleep ?? []).map((s) => ({ day: s.day, score: s.sleep_score })),
@@ -590,10 +664,15 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
                     fallbackSub={latestFit?.endurance_score != null ? `utholdenhet ${Math.round(latestFit.endurance_score)}` : "ingen måling"}
                     showDetails={showDetails}
                     details={[
-                      { k: "Løping", v: latestFit?.vo2max_running != null ? `${latestFit.vo2max_running.toFixed(1)} ml/kg/min` : "—" },
-                      { k: "Sykling", v: latestFit?.vo2max_cycling != null ? `${latestFit.vo2max_cycling.toFixed(1)} ml/kg/min` : "—" },
+                      { k: "VO₂max løping", v: latestFit?.vo2max_running != null ? `${latestFit.vo2max_running.toFixed(1)} ml/kg/min` : "—" },
+                      { k: "VO₂max sykling", v: latestFit?.vo2max_cycling != null ? `${latestFit.vo2max_cycling.toFixed(1)} ml/kg/min` : "—" },
                       { k: "Utholdenhetspoeng", v: latestFit?.endurance_score != null ? String(Math.round(latestFit.endurance_score)) : "—" },
                       { k: "Kondisjonsalder", v: latestFit?.fitness_age != null ? `${Math.round(latestFit.fitness_age)} år` : "—" },
+                      { k: "Treningsstatus", v: latestFit?.training_status ?? "—" },
+                      { k: "Forrige VO₂", v: prevFit?.vo2max_running != null ? `${prevFit.vo2max_running.toFixed(1)}` : "—" },
+                      { k: "Endring", v: prevFit?.vo2max_running != null && latestFit?.vo2max_running != null ? `${latestFit.vo2max_running - prevFit.vo2max_running > 0 ? "+" : ""}${(latestFit.vo2max_running - prevFit.vo2max_running).toFixed(1)}` : "—" },
+                      { k: "Snitt løping 30d", v: avgFmt(data?.daily?.map((d) => d.vo2max_running), 1) },
+                      { k: "Max løping 30d", v: maxFmt(data?.daily?.map((d) => d.vo2max_running), 1) },
                       { k: "Sist oppdatert", v: latestFit?.day ?? "—" },
                     ]}
                     chart={sparkLine(data?.daily, "vo2max_running", true, C.intensity)} />
@@ -607,17 +686,25 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
                 showDetails={showDetails}
                 details={(() => {
                   const ws = (data?.daily ?? []).map((d) => d.weight_kg).filter((x): x is number => x != null);
+                  const ws7 = (data?.daily?.slice(-7) ?? []).map((d) => d.weight_kg).filter((x): x is number => x != null);
                   const first = ws[0];
                   const last = ws[ws.length - 1];
                   const min = ws.length ? Math.min(...ws) : null;
                   const max = ws.length ? Math.max(...ws) : null;
-                  const trend = first != null && last != null ? last - first : null;
+                  const trend30 = first != null && last != null ? last - first : null;
+                  const trend7 = ws7.length >= 2 ? ws7[ws7.length - 1] - ws7[0] : null;
                   return [
                     { k: "Siste veiing", v: latestWeightEntry?.day ?? "—" },
+                    { k: "Forrige", v: prevWeightEntry?.weight_kg != null ? `${prevWeightEntry.weight_kg.toFixed(1)} kg` : "—" },
+                    { k: "Endring", v: latestWeightEntry?.weight_kg != null && prevWeightEntry?.weight_kg != null ? `${(latestWeightEntry.weight_kg - prevWeightEntry.weight_kg) > 0 ? "+" : ""}${(latestWeightEntry.weight_kg - prevWeightEntry.weight_kg).toFixed(1)} kg` : "—" },
+                    { k: "Snitt 7d", v: avgFmt(ws7, 1, " kg") },
                     { k: "Snitt 30d", v: avgFmt(ws, 1, " kg") },
                     { k: "Min 30d", v: min != null ? `${min.toFixed(1)} kg` : "—" },
                     { k: "Max 30d", v: max != null ? `${max.toFixed(1)} kg` : "—" },
-                    { k: "Trend 30d", v: trend != null ? `${trend > 0 ? "+" : ""}${trend.toFixed(1)} kg` : "—" },
+                    { k: "Spenn 30d", v: min != null && max != null ? `${(max - min).toFixed(1)} kg` : "—" },
+                    { k: "Trend 7d", v: trend7 != null ? `${trend7 > 0 ? "+" : ""}${trend7.toFixed(1)} kg` : "—" },
+                    { k: "Trend 30d", v: trend30 != null ? `${trend30 > 0 ? "+" : ""}${trend30.toFixed(1)} kg` : "—" },
+                    { k: "Antall målinger", v: String(ws.length) },
                   ];
                 })()}
                 chart={sparkLine(data?.daily, "weight_kg", true, C.weight)} />
@@ -633,6 +720,10 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
                   { k: "Forrige", v: prevSpo2Entry?.average_spo2 != null ? `${Math.round(prevSpo2Entry.average_spo2)} %` : "—" },
                   { k: "Snitt 7d", v: avgFmt(data?.sleep?.slice(-7).map((s) => s.average_spo2), 0, " %") },
                   { k: "Snitt 30d", v: avgFmt(data?.sleep?.map((s) => s.average_spo2), 0, " %") },
+                  { k: "Lavest 30d", v: minFmt(data?.sleep?.map((s) => s.average_spo2), 0, " %") },
+                  { k: "Høyest 30d", v: maxFmt(data?.sleep?.map((s) => s.average_spo2), 0, " %") },
+                  { k: "Målinger 30d", v: countFmt(data?.sleep?.map((s) => s.average_spo2)) },
+                  { k: "Trend 30d", v: trendFmt(data?.sleep?.map((s) => s.average_spo2), 0, " %") },
                 ]}
                 chart={sparkLine(
                   (data?.sleep ?? []).map((s) => ({ day: s.day, spo2: s.average_spo2 })),
@@ -649,6 +740,10 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
                   { k: "Forrige", v: prevHrvEntry?.hrv_avg != null ? `${Math.round(prevHrvEntry.hrv_avg)} ms` : "—" },
                   { k: "Snitt 7d", v: avgFmt(data?.sleep?.slice(-7).map((s) => s.hrv_avg), 0, " ms") },
                   { k: "Snitt 30d", v: avgFmt(data?.sleep?.map((s) => s.hrv_avg), 0, " ms") },
+                  { k: "Min 30d", v: minFmt(data?.sleep?.map((s) => s.hrv_avg), 0, " ms") },
+                  { k: "Max 30d", v: maxFmt(data?.sleep?.map((s) => s.hrv_avg), 0, " ms") },
+                  { k: "Målinger 30d", v: countFmt(data?.sleep?.map((s) => s.hrv_avg)) },
+                  { k: "Trend 30d", v: trendFmt(data?.sleep?.map((s) => s.hrv_avg), 0, " ms") },
                 ]}
                 chart={sparkLine(
                   (data?.sleep ?? []).map((s) => ({ day: s.day, hrv: s.hrv_avg })),
@@ -665,6 +760,9 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
                   { k: "Forrige", v: prevRespEntry?.average_respiration != null ? `${Math.round(prevRespEntry.average_respiration)} /min` : "—" },
                   { k: "Snitt 7d", v: avgFmt(data?.sleep?.slice(-7).map((s) => s.average_respiration), 0, " /min") },
                   { k: "Snitt 30d", v: avgFmt(data?.sleep?.map((s) => s.average_respiration), 0, " /min") },
+                  { k: "Min 30d", v: minFmt(data?.sleep?.map((s) => s.average_respiration), 0, " /min") },
+                  { k: "Max 30d", v: maxFmt(data?.sleep?.map((s) => s.average_respiration), 0, " /min") },
+                  { k: "Målinger 30d", v: countFmt(data?.sleep?.map((s) => s.average_respiration)) },
                 ]}
                 chart={sparkLine(
                   (data?.sleep ?? []).map((s) => ({ day: s.day, resp: s.average_respiration })),
@@ -676,11 +774,18 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
                 fallbackSub={today?.active_kilocalories ? `aktive ${fmtNum(today.active_kilocalories)}` : "ingen data"}
                 showDetails={showDetails}
                 details={[
-                  { k: "Total", v: today?.total_kilocalories != null ? `${fmtNum(today.total_kilocalories)} kcal` : "—" },
-                  { k: "Aktive", v: today?.active_kilocalories != null ? `${fmtNum(today.active_kilocalories)} kcal` : "—" },
+                  { k: "Total i dag", v: today?.total_kilocalories != null ? `${fmtNum(today.total_kilocalories)} kcal` : "—" },
+                  { k: "Aktive i dag", v: today?.active_kilocalories != null ? `${fmtNum(today.active_kilocalories)} kcal` : "—" },
                   { k: "BMR", v: today?.total_kilocalories != null && today?.active_kilocalories != null ? `${fmtNum(today.total_kilocalories - today.active_kilocalories)} kcal` : "—" },
+                  { k: "Total i går", v: yesterday?.total_kilocalories != null ? `${fmtNum(yesterday.total_kilocalories)} kcal` : "—" },
+                  { k: "Aktive i går", v: yesterday?.active_kilocalories != null ? `${fmtNum(yesterday.active_kilocalories)} kcal` : "—" },
                   { k: "Snitt 7d", v: avgFmt(data?.daily?.slice(-7).map((d) => d.total_kilocalories), 0, " kcal") },
                   { k: "Snitt 30d", v: avgFmt(data?.daily?.map((d) => d.total_kilocalories), 0, " kcal") },
+                  { k: "Snitt aktive 7d", v: avgFmt(data?.daily?.slice(-7).map((d) => d.active_kilocalories), 0, " kcal") },
+                  { k: "Snitt aktive 30d", v: avgFmt(data?.daily?.map((d) => d.active_kilocalories), 0, " kcal") },
+                  { k: "Sum 7d", v: sumFmt(data?.daily?.slice(-7).map((d) => d.total_kilocalories), 0, " kcal") },
+                  { k: "Sum 30d", v: sumFmt(data?.daily?.map((d) => d.total_kilocalories), 0, " kcal") },
+                  { k: "Beste dag 30d", v: maxFmt(data?.daily?.map((d) => d.total_kilocalories), 0, " kcal") },
                 ]}
                 chart={sparkLine2(data?.daily, "total_kilocalories", "active_kilocalories", C.caloriesTotal, C.caloriesActive)} />
             </div>
@@ -1165,12 +1270,57 @@ function Tile({
       {showDetails && details && details.length > 0 && (
         <div className="mt-2 pt-2 border-t border-border/40 grid grid-cols-2 gap-x-2 gap-y-0.5 text-[10px]">
           {details.map((d) => (
-            <div key={d.k} className="flex justify-between gap-1">
-              <span className="text-muted-foreground truncate">{d.k}</span>
-              <span className="tabular-nums font-medium">{d.v}</span>
+            <div key={d.k} className="flex justify-between items-baseline gap-1 min-w-0">
+              <span className="text-muted-foreground shrink-0">{d.k}</span>
+              <InlineMarquee text={d.v} className="tabular-nums font-medium text-right" />
             </div>
           ))}
         </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Inline-marquee som ruller verdien horisontalt hvis den ikke får plass i
+ * tilgjengelig bredde. Bruker hastighet og modus fra scene-marquee-
+ * innstillingen (samme som lys-scenene), men arver fontstørrelse fra
+ * forelderen så små detalj-rader holder seg på 10px.
+ */
+function InlineMarquee({ text, className }: { text: string; className?: string }) {
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const measureRef = useRef<HTMLSpanElement>(null);
+  const [containerW, setContainerW] = useState(0);
+  const [textW, setTextW] = useState(0);
+  const { speedPxPerSec, mode } = useSceneMarquee();
+  const useIso = typeof window !== "undefined" ? useLayoutEffect : useEffect;
+  useIso(() => {
+    const wrap = wrapRef.current; const m = measureRef.current;
+    if (!wrap || !m) return;
+    const run = () => { setContainerW(wrap.clientWidth); setTextW(m.scrollWidth); };
+    run();
+    const ro = new ResizeObserver(run);
+    ro.observe(wrap); ro.observe(m);
+    return () => ro.disconnect();
+  }, [text]);
+  const overflow = textW > containerW + 1;
+  const distance = Math.max(0, textW - containerW);
+  const speed = Math.max(10, speedPxPerSec);
+  const gap = 16;
+  const loopDuration = overflow ? (textW + gap) / speed : 0;
+  const pingDuration = overflow ? (distance / speed) * 2 + 1.2 : 0;
+  return (
+    <div ref={wrapRef} className={`relative min-w-0 flex-1 overflow-hidden ${className ?? ""}`}>
+      <span ref={measureRef} aria-hidden className="invisible absolute left-0 top-0 whitespace-nowrap pointer-events-none">{text}</span>
+      {overflow && mode === "loop" ? (
+        <div className="flex whitespace-nowrap will-change-transform" style={{ animation: `scene-marquee-loop ${loopDuration}s linear infinite`, gap: `${gap}px`, ["--marquee-loop" as any]: `${textW + gap}px` }}>
+          <span className="shrink-0">{text}</span>
+          <span className="shrink-0" aria-hidden>{text}</span>
+        </div>
+      ) : overflow && mode === "pingpong" ? (
+        <span className="block whitespace-nowrap will-change-transform" style={{ animation: `scene-marquee-ping ${pingDuration}s ease-in-out infinite`, ["--marquee-dist" as any]: `-${distance}px` }}>{text}</span>
+      ) : (
+        <span className="block whitespace-nowrap">{text}</span>
       )}
     </div>
   );
