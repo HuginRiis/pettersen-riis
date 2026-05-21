@@ -7,6 +7,25 @@
 
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { isApiSourcePaused, ApiSourcePausedError } from "./api-pause.server";
+import { getRequestHeader } from "@tanstack/react-start/server";
+
+/**
+ * Best-effort: hent path til siden som trigget API-kallet ut fra Referer.
+ * Returnerer null hvis vi er utenfor request-context (cron, hooks).
+ */
+function getTriggerPath(): string | null {
+  try {
+    const ref = getRequestHeader("referer") || getRequestHeader("referrer");
+    if (!ref) return null;
+    try {
+      return new URL(String(ref)).pathname || "/";
+    } catch {
+      return String(ref);
+    }
+  } catch {
+    return null;
+  }
+}
 
 export type ApiSource =
   | "homey"
@@ -82,23 +101,20 @@ export function withApiLog<T extends (...args: any[]) => Promise<any>>(
       throw new ApiSourcePausedError(String(source));
     }
     const started = Date.now();
+    const path = getTriggerPath();
     try {
       const result = await fn(...args);
-      // forsøk å detektere "cached"-flagg på resultatet
       const cached =
         result && typeof result === "object" && "cached" in result
           ? Boolean((result as { cached?: unknown }).cached)
           : false;
-      // VIKTIG: vi må AWAIT inserten i stedet for fire-and-forget,
-      // ellers kanselleres den av Cloudflare Worker-runtime når
-      // responsen returneres — spesielt for raske/cached handlere
-      // (Netatmo, Strava, NRK osv. som returnerer på <50ms ved cache).
       await recordApiCall({
         source,
         endpoint,
         ok: true,
         duration_ms: Date.now() - started,
         cached,
+        metadata: path ? { path } : null,
       });
       return result;
     } catch (err) {
@@ -108,6 +124,7 @@ export function withApiLog<T extends (...args: any[]) => Promise<any>>(
         ok: false,
         duration_ms: Date.now() - started,
         error_message: err instanceof Error ? err.message : String(err),
+        metadata: path ? { path } : null,
       });
       throw err;
     }
@@ -129,6 +146,7 @@ export async function loggedFetch(
     throw new ApiSourcePausedError(String(source));
   }
   const started = Date.now();
+  const path = getTriggerPath();
   try {
     const res = await fetch(url, init);
     await recordApiCall({
@@ -137,6 +155,7 @@ export async function loggedFetch(
       ok: res.ok,
       duration_ms: Date.now() - started,
       status_code: res.status,
+      metadata: path ? { path } : null,
     });
     return res;
   } catch (err) {
@@ -146,6 +165,7 @@ export async function loggedFetch(
       ok: false,
       duration_ms: Date.now() - started,
       error_message: err instanceof Error ? err.message : String(err),
+      metadata: path ? { path } : null,
     });
     throw err;
   }
@@ -217,6 +237,10 @@ export type ApiCallSummary = {
     cached: boolean;
     called_at: string;
   }>;
+  /** Per time siste 24t, per kilde, antall kall. */
+  hourly: Array<{ hour: string; source: string; total: number; errors: number }>;
+  /** Per kilde: hvilke sider som har trigget kallene siste 24t. */
+  pagesBySource: Record<string, Array<{ page: string; total: number; last_at: string }>>;
 };
 
 export async function computeApiCallSummary(): Promise<ApiCallSummary> {
@@ -232,6 +256,8 @@ export async function computeApiCallSummary(): Promise<ApiCallSummary> {
       nextRunBySource: {},
       schedules: SOURCE_SCHEDULES,
       recent: [],
+      hourly: [],
+      pagesBySource: {},
     };
   }
 
@@ -316,11 +342,35 @@ export async function computeApiCallSummary(): Promise<ApiCallSummary> {
     if (!(src in nextRunBySource)) nextRunBySource[src] = null;
   }
 
+  // Hent time-for-time + sider per kilde (egen RPC).
+  let hourly: ApiCallSummary["hourly"] = [];
+  const pagesBySource: ApiCallSummary["pagesBySource"] = {};
+  try {
+    const { data: hd } = await (supabaseAdmin as any).rpc("get_api_call_hourly_24h");
+    if (hd) {
+      hourly = (hd.hourly ?? []) as ApiCallSummary["hourly"];
+      for (const p of (hd.pages ?? []) as Array<{
+        source: string; page: string; total: number; last_at: string;
+      }>) {
+        if (!p.source) continue;
+        (pagesBySource[p.source] ??= []).push({
+          page: p.page,
+          total: Number(p.total) || 0,
+          last_at: p.last_at,
+        });
+      }
+    }
+  } catch (e) {
+    console.warn("[api-call-log] hourly rpc failed", e);
+  }
+
   return {
     fetchedAt: Date.now(),
     rows: summary,
     nextRunBySource,
     schedules: SOURCE_SCHEDULES,
     recent,
+    hourly,
+    pagesBySource,
   };
 }

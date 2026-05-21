@@ -6,6 +6,56 @@ import {
   type ApiCallSummary,
 } from "@/server/api-call-log";
 import { purgeApiCallLog } from "@/server/api-call-log-purge.functions";
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Legend,
+  CartesianGrid,
+} from "recharts";
+
+const SOURCE_COLORS: Record<string, string> = {
+  homey: "#d4af37",
+  strava: "#fc4c02",
+  netatmo: "#6a8caf",
+  tibber: "#7fb069",
+  met: "#9b8cc6",
+  nrk: "#c97b4a",
+  spot: "#e8a87c",
+  lightning: "#ffd166",
+  garbage: "#8b6f47",
+  kassal: "#b56576",
+  gardena: "#83c5be",
+  garmin: "#5fb3a2",
+  roborock: "#b07bac",
+  ai: "#6c5ce7",
+  posten: "#e84393",
+  geoip: "#74b9ff",
+  uv: "#fdcb6e",
+  other: "#888",
+};
+const colorFor = (s: string) => SOURCE_COLORS[s] ?? "#888";
+
+function triggerExplanation(
+  trigger: string | undefined,
+  description: string | undefined,
+): string {
+  switch (trigger) {
+    case "cron":
+      return `Kjøres automatisk fra serveren etter en tidsplan (${description ?? "cron"}). Ingen side trigger dette — pg_cron eller en backend-hook ringer inn med jevne mellomrom.`;
+    case "cache":
+      return `Hentes ved bruk, men bufres på serveren (${description ?? "cache"}). Nye kall går mot APIet først når bufferen utløper.`;
+    case "webhook":
+      return "Trigges av en innkommende webhook fra ekstern tjeneste. Ingen side trigger dette direkte.";
+    case "on-demand":
+    default:
+      return "On-demand: spørres når en side i borgen laster og trenger ferske data. Sidene under viser hvor kallene kom fra siste 24t.";
+  }
+}
+
 
 const SOURCE_LABELS: Record<string, string> = {
   homey: "Homey",
@@ -139,6 +189,39 @@ export function ApiCallLogPanel() {
       .sort((a, b) => b.total - a.total);
   }, [grouped]);
 
+  // Bygg timeserie for stacked bar chart (siste 24t per kilde).
+  const { chartData, chartSources } = useMemo(() => {
+    const hourly = data?.hourly ?? [];
+    const buckets = new Map<string, Record<string, number | string>>();
+    const srcSet = new Set<string>();
+    for (const h of hourly) {
+      const d = new Date(h.hour);
+      const key = d.toISOString();
+      const label = d.toLocaleTimeString("nb-NO", { hour: "2-digit" });
+      const row = buckets.get(key) ?? { _ts: key, label };
+      if (h.source && h.total > 0) {
+        row[h.source] = ((row[h.source] as number) ?? 0) + h.total;
+        srcSet.add(h.source);
+      }
+      buckets.set(key, row);
+    }
+    const arr = Array.from(buckets.values()).sort(
+      (a, b) => String(a._ts).localeCompare(String(b._ts)),
+    );
+    // Sorter kilder så største totalt vises nederst i stacken
+    const totals = new Map<string, number>();
+    for (const s of srcSet) {
+      let t = 0;
+      for (const row of arr) t += (row[s] as number) ?? 0;
+      totals.set(s, t);
+    }
+    const srcList = Array.from(srcSet).sort(
+      (a, b) => (totals.get(b) ?? 0) - (totals.get(a) ?? 0),
+    );
+    return { chartData: arr, chartSources: srcList };
+  }, [data]);
+
+
   const visibleSources = expanded
     ? sortedSources
     : sortedSources.slice(0, INITIAL_VISIBLE);
@@ -195,6 +278,66 @@ export function ApiCallLogPanel() {
             ⚠ {error}
           </div>
         )}
+
+        {/* Time-for-time graf siste 24t */}
+        <div className="mb-5 rounded border border-border bg-background/40 p-3">
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-[10px] tracking-[0.3em] uppercase text-muted-foreground">
+              API-kall per time · siste 24t
+            </div>
+            <div className="text-[10px] text-muted-foreground tabular-nums">
+              {chartData.reduce((s, r) => {
+                let t = 0;
+                for (const k of chartSources) t += (r[k] as number) ?? 0;
+                return s + t;
+              }, 0)}{" "}
+              kall totalt
+            </div>
+          </div>
+          <div style={{ width: "100%", height: 200 }}>
+            <ResponsiveContainer>
+              <BarChart data={chartData}>
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="color-mix(in oklab, var(--border) 40%, transparent)"
+                />
+                <XAxis dataKey="label" stroke="#ffffff" tick={{ fill: "#ffffff" }} fontSize={10} />
+                <YAxis
+                  stroke="#ffffff"
+                  tick={{ fill: "#ffffff" }}
+                  fontSize={10}
+                  allowDecimals={false}
+                />
+                <Tooltip
+                  trigger="click"
+                  contentStyle={{
+                    background: "#0a0a0a",
+                    border: "1px solid var(--border)",
+                    borderRadius: 6,
+                    fontSize: 11,
+                    color: "#ffffff",
+                  }}
+                  labelStyle={{ color: "#ffffff" }}
+                  itemStyle={{ color: "#ffffff" }}
+                />
+                <Legend wrapperStyle={{ fontSize: 10, color: "#ffffff" }} />
+                {chartSources.map((s) => (
+                  <Bar
+                    key={s}
+                    dataKey={s}
+                    stackId="a"
+                    fill={colorFor(s)}
+                    name={SOURCE_LABELS[s] ?? s}
+                  />
+                ))}
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          <p className="text-[10px] text-muted-foreground/80 italic mt-2">
+            Hver søyle = én time. Fargene viser hvilken kilde som ble spurt. Klikk på en søyle for detaljer.
+          </p>
+        </div>
+
 
         <div className="space-y-2">
           {visibleSources.map((src) => {
@@ -305,7 +448,66 @@ export function ApiCallLogPanel() {
                 </div>
 
                 {isOpen && (
-                  <div className="border-t border-border bg-muted/20 px-3 py-2 space-y-1">
+                  <div className="border-t border-border bg-muted/20 px-3 py-2 space-y-2">
+                    {/* Forklaring: hvorfor kjøres denne kilden? */}
+                    <p className="text-[11px] text-muted-foreground italic">
+                      {triggerExplanation(sched?.trigger, sched?.description)}
+                    </p>
+
+                    {/* Sider som trigget kallene (on-demand) eller (server / cron) */}
+                    {(() => {
+                      const pages = data?.pagesBySource?.[src.id] ?? [];
+                      if (pages.length === 0) return null;
+                      const top = pages.slice(0, 8);
+                      const totalPages = pages.reduce((s, p) => s + p.total, 0);
+                      return (
+                        <div className="rounded border border-border/50 bg-background/40 px-2 py-1.5">
+                          <div className="text-[9px] tracking-[0.2em] uppercase text-muted-foreground mb-1">
+                            Hva trigget kallene
+                          </div>
+                          <ul className="space-y-0.5">
+                            {top.map((p) => {
+                              const pct = totalPages > 0
+                                ? Math.max(2, Math.round((p.total / totalPages) * 100))
+                                : 0;
+                              return (
+                                <li
+                                  key={p.page}
+                                  className="flex items-center gap-2 text-[11px]"
+                                >
+                                  <span className="font-mono text-foreground flex-1 min-w-0 truncate">
+                                    {p.page}
+                                  </span>
+                                  <div className="w-20 h-1.5 bg-background/60 rounded-full overflow-hidden border border-border/30">
+                                    <div
+                                      className="h-full"
+                                      style={{
+                                        width: `${pct}%`,
+                                        background: colorFor(src.id),
+                                      }}
+                                    />
+                                  </div>
+                                  <span className="text-muted-foreground tabular-nums w-10 text-right">
+                                    {p.total}×
+                                  </span>
+                                  <span className="text-muted-foreground tabular-nums w-16 text-right text-[10px]">
+                                    {formatAgo(p.last_at)}
+                                  </span>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                          {pages.length > top.length && (
+                            <div className="text-[10px] text-muted-foreground mt-1">
+                              + {pages.length - top.length} flere kilder
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
+
+                    {/* Endepunkter */}
+
                     {rows.length === 0 ? (
                       <p className="text-[11px] text-muted-foreground italic py-2">
                         Ingen kall registrert siste 24t. Trykk «Oppdater» for å trigge.
