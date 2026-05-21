@@ -375,6 +375,20 @@ function VakttarnetPage() {
           </Panel>
         </section>
 
+        <section id="vt-page-load" className="scroll-mt-24">
+          <Panel
+            title="Sidelaster (ytelse)"
+            icon={<Activity size={14} />}
+            subtitle="Hvor lang tid hver side bruker å laste på telefon og PC, med historikk og enheter"
+            collapsible
+            defaultOpen={false}
+          >
+            <PageLoadPanel />
+          </Panel>
+        </section>
+
+
+
 
         <section id="vt-garmin" className="scroll-mt-24">
           <Panel
