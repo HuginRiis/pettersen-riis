@@ -238,18 +238,6 @@ function sportColor(s: string) {
 type Owner = "arne" | "rebekka";
 
 function TreningPage() {
-  const [showStrava, setShowStrava] = useState(false);
-  useEffect(() => {
-    const w = window as any;
-    const idle = w.requestIdleCallback as undefined | ((cb: () => void, opts?: { timeout: number }) => number);
-    if (idle) {
-      const id = idle(() => setShowStrava(true), { timeout: 1500 });
-      return () => (w.cancelIdleCallback ? w.cancelIdleCallback(id) : undefined);
-    }
-    const t = setTimeout(() => setShowStrava(true), 800);
-    return () => clearTimeout(t);
-  }, []);
-
   return (
     <PageShell>
       <PageHero
@@ -268,11 +256,11 @@ function TreningPage() {
 
       <section className="container mx-auto px-4 py-12 space-y-16">
         <GarminHouses />
-        {showStrava && <StravaHouses />}
       </section>
     </PageShell>
   );
 }
+
 
 
 function StepsChip({ owner = "arne", displayName }: { owner?: Owner; displayName?: string } = {}) {
@@ -610,7 +598,7 @@ function StravaHouseBanner({ owner }: { owner: Owner }) {
   );
 }
 
-function StravaHouses() {
+export function StravaHouses() {
   const [tab, setTab] = useState<"arne" | "rebekka" | "compare">("arne");
   return (
     <div className="space-y-3">
