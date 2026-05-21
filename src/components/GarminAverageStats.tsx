@@ -60,6 +60,7 @@ export function GarminAverageStats() {
     const d = daily.slice(-days);
     const s = sleep.slice(-days);
     const avgRhr = avg(d.map((x) => x.resting_heart_rate));
+    const avgHr = avg(d.map((x) => x.average_heart_rate));
     const avgSteps = avg(d.map((x) => x.steps));
     const avgKcal = avg(d.map((x) => x.total_kilocalories));
     const avgSleepSec = avg(s.map((x) => x.total_seconds));
