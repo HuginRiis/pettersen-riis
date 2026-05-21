@@ -167,7 +167,7 @@ async function fetchFitnessExtras(owner: GarminOwner, day: string): Promise<{
     }
   } catch (e) { console.warn(`[garmin-sync:${owner}] endurance failed`, (e as Error).message); }
   try {
-    const t = await garminGet<TrainingStatusResp>(owner, `/metrics-service/metrics/trainingstatus/aggregated/${day}`);
+    const t = await garminGetMaybe<TrainingStatusResp>(owner, `/metrics-service/metrics/trainingstatus/aggregated/${day}`);
     out.vo2max_running = asNumber(t?.mostRecentVO2Max?.generic?.vo2MaxValue) ?? out.vo2max_running;
     out.vo2max_cycling = asNumber(t?.mostRecentVO2Max?.cycling?.vo2MaxValue) ?? out.vo2max_cycling;
     out.fitness_age = asNumber(t?.mostRecentVO2Max?.generic?.fitnessAge) ?? out.fitness_age;
