@@ -238,6 +238,10 @@ export type ApiCallSummary = {
     cached: boolean;
     called_at: string;
   }>;
+  /** Per time siste 24t, per kilde, antall kall. */
+  hourly: Array<{ hour: string; source: string; total: number; errors: number }>;
+  /** Per kilde: hvilke sider som har trigget kallene siste 24t. */
+  pagesBySource: Record<string, Array<{ page: string; total: number; last_at: string }>>;
 };
 
 export async function computeApiCallSummary(): Promise<ApiCallSummary> {
