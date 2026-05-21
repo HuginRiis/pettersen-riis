@@ -50,7 +50,7 @@ export function normalizeChartAppearance(value: unknown): ChartAppearance {
     tooltipBorder: colorOrDefault(parsed.tooltipBorder, CHART_APPEARANCE_DEFAULT.tooltipBorder),
     series: CHART_APPEARANCE_DEFAULT.series.map((fallback, index) =>
       colorOrDefault(parsedSeries[index], fallback),
-    ) as ChartAppearance["series"],
+    ),
   };
 }
 
