@@ -409,7 +409,18 @@ function VakttarnetPage() {
           </Panel>
         </section>
 
+        <section id="vt-apiblackout" className="scroll-mt-24">
+          <Panel
+            title="Master-blackout — alle API"
+            icon={<PowerOff size={14} />}
+            subtitle="Sett et tidsvindu (Europe/Oslo) der ALT av eksterne API-kall blokkeres — cron, cache-refresh og on-demand. Overstyrer per-kilde-pause."
+          >
+            <ApiBlackoutPanel />
+          </Panel>
+        </section>
+
         <section id="vt-apilog" className="scroll-mt-24"><ApiCallLogPanel /></section>
+
 
         <section id="vt-apipause" className="scroll-mt-24">
           <Panel
