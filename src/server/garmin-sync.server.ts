@@ -3,7 +3,7 @@
  * Idempotent — kan kjøres flere ganger om dagen.
  */
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { garminGet, GARMIN_OWNERS, type GarminOwner } from "./garmin.server";
+import { garminGet, garminGetMaybe, GARMIN_OWNERS, type GarminOwner } from "./garmin.server";
 
 function isoDay(d: Date): string {
   const y = d.getFullYear();
