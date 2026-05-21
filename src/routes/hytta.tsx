@@ -14,7 +14,7 @@ import { useAuthStatus } from "@/hooks/use-auth-status";
 
 const HYTTA_COORD = { lat: 59.8733, lon: 9.4297 };
 
-import hyttaImg from "@/assets/hytta-aurora-got.jpg";
+import hyttaImg from "@/assets/hytta-aurora-got.webp";
 import g0314 from "@/assets/hytta-gallery/0314.jpg";
 import g0342 from "@/assets/hytta-gallery/0342.jpg";
 import g0851 from "@/assets/hytta-gallery/0851.jpg";
