@@ -7,6 +7,44 @@ const ownerSchema = z.object({ owner: z.enum(["arne", "rebekka"]).default("arne"
 
 const DAILY_LITE_COLS = "day, steps, step_goal, floors_climbed, floors_goal, resting_heart_rate, average_heart_rate, weight_kg, total_kilocalories, active_kilocalories, distance_meters, moderate_intensity_minutes, vigorous_intensity_minutes, intensity_minutes_goal, body_battery_high, body_battery_low, stress_average, vo2max_running, vo2max_cycling, endurance_score, fitness_age, training_status, training_load_focus, endurance_contributors";
 const SLEEP_LITE_COLS = "day, total_seconds, deep_seconds, light_seconds, rem_seconds, awake_seconds, sleep_score, average_spo2, average_respiration, hrv_avg, sleep_start, sleep_end";
+const GARMIN_CACHE_TTL_MS = 60_000;
+
+const garminCache = new Map<string, { expires: number; value: unknown }>();
+
+async function cached<T>(key: string, loader: () => Promise<T>): Promise<T> {
+  const now = Date.now();
+  const hit = garminCache.get(key);
+  if (hit && hit.expires > now) return hit.value as T;
+  const value = await loader();
+  garminCache.set(key, { expires: now + GARMIN_CACHE_TTL_MS, value });
+  return value;
+}
+
+function clearGarminCache(owner?: GarminOwner | null) {
+  for (const key of garminCache.keys()) {
+    if (!owner || key.includes(`:${owner}:`) || key.endsWith(`:${owner}`)) garminCache.delete(key);
+  }
+}
+
+async function loadStatus(owner: GarminOwner) {
+  const { data } = await supabaseAdmin
+    .from("garmin_tokens")
+    .select("username, oauth2_expires_at, last_login_at, oauth1_token, pending_mfa, device_name, device_image_url")
+    .eq("owner", owner)
+    .order("updated_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  return {
+    connected: !!data?.oauth1_token,
+    username: data?.username ?? null,
+    expires_at: data?.oauth2_expires_at ?? null,
+    last_login_at: data?.last_login_at ?? null,
+    mfa_pending: !!(data as { pending_mfa?: unknown } | null)?.pending_mfa,
+    device_name: (data as any)?.device_name ?? null,
+    device_image_url: (data as any)?.device_image_url ?? null,
+  };
+}
 
 async function loadDaily(owner: GarminOwner, sinceIso: string, withRaw = true) {
   const cols = withRaw ? `${DAILY_LITE_COLS}, raw` : DAILY_LITE_COLS;
