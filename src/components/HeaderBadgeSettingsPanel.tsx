@@ -135,7 +135,8 @@ export function HeaderBadgeSettingsPanel() {
           </div>
         </div>
 
-        <div className="mt-4 grid gap-2"></div>
+        <div className="mt-4 grid gap-2">
+          {HEADER_BADGE_DEFS.map((b) => {
             const cfg = draft.badges[b.id] ?? { enabled: true, users: [] };
             return (
               <div key={b.id} className="panel rounded p-3 border border-border/50">
