@@ -1029,7 +1029,7 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
             {/* Grafer (skjult som default) */}
             <div className="flex flex-wrap items-center gap-2">
               <button
-                onClick={() => setShowCharts((v) => !v)}
+                onClick={() => { setShowCharts((v) => { const n = !v; if (n) void ensureExtras(); return n; }); }}
                 className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
               >
                 {showCharts ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
