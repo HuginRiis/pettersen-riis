@@ -119,7 +119,7 @@ export function SlowPageLoadNotificationSettings() {
 
             <div className="grid sm:grid-cols-2 gap-3">
               <div>
-                <label className="text-[10px] uppercase tracking-wider text-muted-foreground">Mottaker</label>
+                <label className="text-[10px] uppercase tracking-wider text-muted-foreground">Mottaker (treg sidelasting)</label>
                 <select
                   value={cfg.recipient}
                   onChange={(e) => setCfg((p) => ({ ...p, recipient: e.target.value }))}
