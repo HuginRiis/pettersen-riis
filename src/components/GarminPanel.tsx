@@ -613,12 +613,19 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
                 showDetails={showDetails}
                 details={[
                   { k: "Score", v: lastSleep?.sleep_score != null ? String(lastSleep.sleep_score) : "—" },
+                  { k: "Dato", v: lastSleep?.day ?? "—" },
+                  { k: "Total", v: lastSleep?.total_seconds ? hoursMin(lastSleep.total_seconds) : "—" },
                   { k: "Dyp", v: lastSleep?.deep_seconds ? hoursMin(lastSleep.deep_seconds) : "—" },
                   { k: "Lett", v: lastSleep?.light_seconds ? hoursMin(lastSleep.light_seconds) : "—" },
                   { k: "REM", v: lastSleep?.rem_seconds ? hoursMin(lastSleep.rem_seconds) : "—" },
                   { k: "Våken", v: lastSleep?.awake_seconds ? hoursMin(lastSleep.awake_seconds) : "—" },
+                  { k: "% dyp", v: lastSleep?.total_seconds && lastSleep?.deep_seconds ? `${Math.round((lastSleep.deep_seconds / lastSleep.total_seconds) * 100)}%` : "—" },
+                  { k: "% REM", v: lastSleep?.total_seconds && lastSleep?.rem_seconds ? `${Math.round((lastSleep.rem_seconds / lastSleep.total_seconds) * 100)}%` : "—" },
                   { k: "Snitt 7d", v: (() => { const s = (data?.sleep?.slice(-7) ?? []).map((x) => x.total_seconds).filter((x): x is number => !!x); return s.length ? `${(s.reduce((a, b) => a + b, 0) / s.length / 3600).toFixed(1)} t` : "—"; })() },
                   { k: "Snitt 30d", v: (() => { const s = (data?.sleep ?? []).map((x) => x.total_seconds).filter((x): x is number => !!x); return s.length ? `${(s.reduce((a, b) => a + b, 0) / s.length / 3600).toFixed(1)} t` : "—"; })() },
+                  { k: "Min 30d", v: (() => { const s = (data?.sleep ?? []).map((x) => x.total_seconds).filter((x): x is number => !!x); return s.length ? `${(Math.min(...s) / 3600).toFixed(1)} t` : "—"; })() },
+                  { k: "Max 30d", v: (() => { const s = (data?.sleep ?? []).map((x) => x.total_seconds).filter((x): x is number => !!x); return s.length ? `${(Math.max(...s) / 3600).toFixed(1)} t` : "—"; })() },
+                  { k: "Sum 7d", v: (() => { const s = (data?.sleep?.slice(-7) ?? []).map((x) => x.total_seconds ?? 0).reduce((a, b) => a + b, 0); return s ? `${(s / 3600).toFixed(1)} t` : "—"; })() },
                 ]}
                 chart={sparkBar(
                   (data?.sleep ?? []).map((s) => ({ day: s.day, hours: s.total_seconds ? s.total_seconds / 3600 : null })),
