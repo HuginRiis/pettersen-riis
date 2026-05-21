@@ -8,6 +8,26 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { isApiSourcePaused, ApiSourcePausedError } from "./api-pause.server";
 
+/**
+ * Best-effort: hent path til siden som trigget API-kallet ut fra Referer.
+ * Returnerer null hvis vi er utenfor request-context (cron, hooks).
+ */
+function getTriggerPath(): string | null {
+  try {
+    // Lazy import for å unngå å feile utenfor request-context
+    const { getRequestHeader } = require("@tanstack/react-start/server");
+    const ref = getRequestHeader("referer") || getRequestHeader("referrer");
+    if (!ref) return null;
+    try {
+      return new URL(String(ref)).pathname || "/";
+    } catch {
+      return String(ref);
+    }
+  } catch {
+    return null;
+  }
+}
+
 export type ApiSource =
   | "homey"
   | "strava"
