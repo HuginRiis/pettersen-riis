@@ -5,6 +5,7 @@ import { LoginDialog } from "@/components/LoginDialog";
 import { PullToRefresh } from "@/components/PullToRefresh";
 import { LastRouteMemory } from "@/components/LastRouteMemory";
 import { AppearanceApplier } from "@/components/AppearanceApplier";
+import { PageLoadTracker } from "@/components/PageLoadTracker";
 
 // Routes that are accessible without logging in (visitors entering the castle gates).
 // Locked routes now redirect to "/" (where the login dialog opens automatically) instead
