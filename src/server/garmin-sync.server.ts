@@ -223,7 +223,19 @@ export async function syncDaily(owner: GarminOwner, daysBack = 30): Promise<numb
         const grams = w?.totalAverage?.weight ?? w?.dateWeightList?.[0]?.weight ?? null;
         if (typeof grams === "number" && grams > 0) weightKg = Math.round((grams / 1000) * 100) / 100;
       } catch {}
-      const avgHr = ds.averageHeartRateInBeatsPerMinute ?? ds.averageHeartRate ?? null;
+      let avgHr: number | null = ds.averageHeartRateInBeatsPerMinute ?? ds.averageHeartRate ?? null;
+      if (!avgHr) {
+        // Garmin's userSummary mangler ofte snittpuls — regn ut fra dailyHeartRate
+        try {
+          const hr = await garminGet<{ heartRateValues?: Array<[number, number | null]> }>(
+            owner, `/wellness-service/wellness/dailyHeartRate?date=${day}`,
+          );
+          const vals = (hr?.heartRateValues ?? [])
+            .map(([, v]) => v)
+            .filter((v): v is number => typeof v === "number" && v > 0);
+          if (vals.length) avgHr = vals.reduce((a, b) => a + b, 0) / vals.length;
+        } catch {}
+      }
       const isLatest = day === todayKey;
       const row = {
         owner, day,
