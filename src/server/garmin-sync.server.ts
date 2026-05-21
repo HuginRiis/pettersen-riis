@@ -566,9 +566,9 @@ export async function syncOne(owner: GarminOwner, trigger: string): Promise<{
   let daily = 0, activities = 0, sleep = 0, intraday = 0;
   let error: string | undefined;
   try {
-    daily = await syncDaily(owner, 30);
-    activities = await syncActivities(owner, 50);
-    sleep = await syncSleep(owner, 14);
+    daily = await syncDaily(owner, 7);
+    activities = await syncActivities(owner, 7);
+    sleep = await syncSleep(owner, 7);
     intraday = await syncIntraday(owner, 1);
     await syncDevice(owner);
   } catch (e) {
