@@ -16,28 +16,7 @@ import {
   Legend,
   CartesianGrid,
 } from "recharts";
-
-const SOURCE_COLORS: Record<string, string> = {
-  homey: "#d4af37",
-  strava: "#fc4c02",
-  netatmo: "#6a8caf",
-  tibber: "#7fb069",
-  met: "#9b8cc6",
-  nrk: "#c97b4a",
-  spot: "#e8a87c",
-  lightning: "#ffd166",
-  garbage: "#8b6f47",
-  kassal: "#b56576",
-  gardena: "#83c5be",
-  garmin: "#5fb3a2",
-  roborock: "#b07bac",
-  ai: "#6c5ce7",
-  posten: "#e84393",
-  geoip: "#74b9ff",
-  uv: "#fdcb6e",
-  other: "#888",
-};
-const colorFor = (s: string) => SOURCE_COLORS[s] ?? "#888";
+import { useChartAppearance } from "@/hooks/use-chart-appearance";
 
 function triggerExplanation(
   trigger: string | undefined,
