@@ -139,8 +139,14 @@ export function GarminAverageStats() {
           <Loader2 className="h-3.5 w-3.5 animate-spin" /> Laster…
         </div>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
           <Box icon={<Heart size={14} />} label="Hvilepuls" value={stats.avgRhr ? `${fmt(stats.avgRhr, 0)} bpm` : "—"} />
+          <Box
+            icon={<Activity size={14} />}
+            label="Puls i dag"
+            value={stats.todayHrMax && stats.todayHrMin ? `${fmt(stats.todayHrMin)}–${fmt(stats.todayHrMax)}` : "—"}
+            sub={stats.avgDayHr ? `Snitt ${fmt(stats.avgDayHr)} bpm` : undefined}
+          />
           <Box icon={<Footprints size={14} />} label="Skritt" value={fmt(stats.avgSteps)} />
           <Box
             icon={<Moon size={14} />}
@@ -155,6 +161,12 @@ export function GarminAverageStats() {
           />
           <Box icon={<Flame size={14} />} label="Kalorier" value={fmt(stats.avgKcal)} />
           <Box
+            icon={<Thermometer size={14} />}
+            label="Hudtemp."
+            value={stats.avgSkin != null ? `${stats.avgSkin > 0 ? "+" : ""}${stats.avgSkin.toFixed(1)} °C` : "—"}
+            sub={stats.lastSkin != null ? `Siste: ${stats.lastSkin > 0 ? "+" : ""}${stats.lastSkin.toFixed(1)} °C` : "avvik fra baseline"}
+          />
+          <Box
             icon={<Scale size={14} />}
             label="Vekt"
             value={stats.avgWeight ? `${stats.avgWeight.toFixed(1)} kg` : "—"}
@@ -165,6 +177,7 @@ export function GarminAverageStats() {
             }
           />
         </div>
+
       )}
     </div>
   );
