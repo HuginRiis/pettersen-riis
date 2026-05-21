@@ -74,6 +74,30 @@ function stressLevel(n?: number | null): string {
   if (n < 75) return "Medium";
   return "Høyt";
 }
+function nums(arr: Array<number | null | undefined> | undefined): number[] {
+  return (arr ?? []).filter((n): n is number => typeof n === "number" && Number.isFinite(n) && n > 0);
+}
+function minFmt(arr: Array<number | null | undefined> | undefined, digits = 0, unit = ""): string {
+  const v = nums(arr); if (!v.length) return "—";
+  return Math.min(...v).toLocaleString("nb-NO", { maximumFractionDigits: digits, minimumFractionDigits: digits > 0 ? digits : 0 }) + unit;
+}
+function maxFmt(arr: Array<number | null | undefined> | undefined, digits = 0, unit = ""): string {
+  const v = nums(arr); if (!v.length) return "—";
+  return Math.max(...v).toLocaleString("nb-NO", { maximumFractionDigits: digits, minimumFractionDigits: digits > 0 ? digits : 0 }) + unit;
+}
+function sumFmt(arr: Array<number | null | undefined> | undefined, digits = 0, unit = ""): string {
+  const v = (arr ?? []).filter((n): n is number => typeof n === "number" && Number.isFinite(n));
+  if (!v.length) return "—";
+  return v.reduce((a, b) => a + b, 0).toLocaleString("nb-NO", { maximumFractionDigits: digits, minimumFractionDigits: digits > 0 ? digits : 0 }) + unit;
+}
+function trendFmt(arr: Array<number | null | undefined> | undefined, digits = 1, unit = ""): string {
+  const v = nums(arr); if (v.length < 2) return "—";
+  const d = v[v.length - 1] - v[0];
+  return `${d > 0 ? "+" : ""}${d.toLocaleString("nb-NO", { maximumFractionDigits: digits, minimumFractionDigits: digits > 0 ? digits : 0 })}${unit}`;
+}
+function countFmt(arr: Array<number | null | undefined> | undefined): string {
+  return String(nums(arr).length);
+}
 
 type ChartPeriod = "today" | "yesterday" | "thisWeek" | "lastWeek" | "last30" | "thisMonth";
 
