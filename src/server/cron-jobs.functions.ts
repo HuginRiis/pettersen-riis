@@ -9,7 +9,7 @@ export type CronJobRow = {
   active: boolean;
   /** Beskrivelse for visning: "hvert minutt", "hver 5. min", "daglig 03:15", "kun ved bruk" */
   description: string;
-  /** Parsed: hvis det er et "*/N * * * *"-mønster, returnerer N. Ellers null. */
+  /** Parsed: hvis det er et N-minutters intervall-mønster, returnerer N. Ellers null. */
   intervalMinutes: number | null;
   /** Hvilken modus jobben er i nå. */
   mode: "cron" | "on-demand";
