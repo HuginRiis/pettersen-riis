@@ -198,12 +198,14 @@ function KvitteringerPage() {
     let okCount = 0;
     const total = files.length;
     let idx = 0;
-    for (const file of Array.from(files)) {
+    for (const rawFile of Array.from(files)) {
       idx += 1;
       const tag = total > 1 ? ` (${idx}/${total})` : "";
       try {
+        setUploadStatus(`Komprimerer bilde${tag}…`);
+        const file = await compressImageToWebp(rawFile).catch(() => rawFile);
         setUploadStatus(`Laster opp bilde${tag}…`);
-        const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+        const ext = file.name.split(".").pop()?.toLowerCase() || "webp";
         const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
         const { error: upErr } = await supabase.storage
           .from("receipts")
