@@ -1249,7 +1249,7 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
             {data && data.activities.length > 0 && (
               <>
                 <button
-                  onClick={() => setShowActivities((v) => !v)}
+                  onClick={() => { setShowActivities((v) => { const n = !v; if (n) void ensureExtras(); return n; }); }}
                   className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
                 >
                   {showActivities ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
