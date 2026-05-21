@@ -57,6 +57,7 @@ import hallHytta from "@/assets/hytta-aurora-got.jpg";
 import hallHundene from "@/assets/hundene-pack.jpg";
 import hallTrening from "@/assets/got-trening.jpg";
 import hallFysisk from "@/assets/got-fysisk.jpg";
+import hallSmartklokke from "@/assets/got-smartklokke.jpg";
 
 import hallSmarthus from "@/assets/got-smarthus.jpg";
 import hallStrom from "@/assets/stromkroniken.jpg";
