@@ -26,6 +26,7 @@ import heroImg from "@/assets/got-skatt.jpg";
 import { PayslipArchive } from "@/components/PayslipArchive";
 import { SkattCharts } from "@/components/SkattCharts";
 import { StandaloneTaxCalculator } from "@/components/StandaloneTaxCalculator";
+import { compressImageToWebp } from "@/lib/image-compress";
 
 export const Route = createFileRoute("/skatte-utregningen")({
   head: () => ({
@@ -266,11 +267,13 @@ function SkattePage() {
     }
   };
 
-  const onUploadPayslip = async (file: File) => {
+  const onUploadPayslip = async (rawFile: File) => {
     setImportBusy(true);
     setImportMsg(null);
     setImportErr(null);
     try {
+      // Komprimer bildefiler til WebP før opplasting (PDF slippes uendret igjennom).
+      const file = await compressImageToWebp(rawFile).catch(() => rawFile);
       const { mime, base64 } = await fileToBase64(file);
       const result = await fnParsePayslip({ data: { fileName: file.name, mimeType: mime, base64 } });
       const employer = (importEmployer.trim() || result.employer || "Hovedjobb").trim();
