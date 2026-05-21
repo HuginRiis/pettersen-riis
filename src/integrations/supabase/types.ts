@@ -2505,6 +2505,24 @@ export type Database = {
         }
         Relationships: []
       }
+      strava_dashboard_cache: {
+        Row: {
+          data: Json
+          fetched_at: string
+          owner: string
+        }
+        Insert: {
+          data: Json
+          fetched_at?: string
+          owner: string
+        }
+        Update: {
+          data?: Json
+          fetched_at?: string
+          owner?: string
+        }
+        Relationships: []
+      }
       tax_monthly: {
         Row: {
           ekstra: number
