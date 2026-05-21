@@ -48,6 +48,8 @@ export type SlowPageConfig = {
   last_notified: Record<string, string>;
   slow_avg_enabled: boolean;
   slow_avg_ms: number;
+  /** Egen mottaker for "Lav generell ytelse" — fallback til `recipient` hvis tom. */
+  slow_avg_recipient: string;
 };
 
 const DEFAULTS: SlowPageConfig = {
@@ -62,6 +64,7 @@ const DEFAULTS: SlowPageConfig = {
   last_notified: {},
   slow_avg_enabled: false,
   slow_avg_ms: 3000,
+  slow_avg_recipient: "",
 };
 
 export async function loadSlowPageConfig(): Promise<SlowPageConfig> {
@@ -188,7 +191,8 @@ export async function processSlowPageLoadNotifications(): Promise<{
         const title = `🐢 Lav ytelse på hele sidi`;
         const body = `Snitt ${(avg / 1000).toFixed(1)}s på tvers av ${all.length} målinger siste ${cfg.window_min} min (terskel ${(cfg.slow_avg_ms / 1000).toFixed(1)}s).`;
         const payload = JSON.stringify({ title, body, tag: `slow-page-global`, url: "/vakttarnet" });
-        const r = await pushToRecipient(cfg.recipient || "Alle", payload, title, "slow-page-load-global");
+        const rcpt = cfg.slow_avg_recipient || cfg.recipient || "Alle";
+        const r = await pushToRecipient(rcpt, payload, title, "slow-page-load-global");
         sent += r.sent; errors += r.errors;
         lastNotified[key] = new Date(now).toISOString();
       }

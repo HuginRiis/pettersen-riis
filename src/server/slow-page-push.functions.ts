@@ -27,6 +27,7 @@ export const saveSlowPageConfigFn = createServerFn({ method: "POST" })
         routes: z.array(routeRule).max(200).optional(),
         slow_avg_enabled: z.boolean().optional(),
         slow_avg_ms: z.number().int().min(500).max(120_000).optional(),
+        slow_avg_recipient: z.string().max(60).optional(),
       })
       .parse,
   )
