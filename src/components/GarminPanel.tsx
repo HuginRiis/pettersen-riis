@@ -760,6 +760,9 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
                   { k: "Forrige", v: prevRespEntry?.average_respiration != null ? `${Math.round(prevRespEntry.average_respiration)} /min` : "—" },
                   { k: "Snitt 7d", v: avgFmt(data?.sleep?.slice(-7).map((s) => s.average_respiration), 0, " /min") },
                   { k: "Snitt 30d", v: avgFmt(data?.sleep?.map((s) => s.average_respiration), 0, " /min") },
+                  { k: "Min 30d", v: minFmt(data?.sleep?.map((s) => s.average_respiration), 0, " /min") },
+                  { k: "Max 30d", v: maxFmt(data?.sleep?.map((s) => s.average_respiration), 0, " /min") },
+                  { k: "Målinger 30d", v: countFmt(data?.sleep?.map((s) => s.average_respiration)) },
                 ]}
                 chart={sparkLine(
                   (data?.sleep ?? []).map((s) => ({ day: s.day, resp: s.average_respiration })),
