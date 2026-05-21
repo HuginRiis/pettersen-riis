@@ -4,7 +4,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { Menu, X, LogOut, Crown, Swords, Shield, KeyRound, Home, Star, Flower2,
   Sun, Compass, Castle, CalendarDays, BellRing, Eye, Mountain, Lightbulb, Lamp, Zap, Hammer,
   ShoppingCart, Receipt, Dog, Dumbbell, AlertTriangle, ScrollText, Globe, ChevronDown, ChevronRight,
-  TreePine, Coins, Bot, Wallet, Volume2, Wifi, Router as RouterIcon } from "lucide-react";
+  TreePine, Coins, Bot, Wallet, Volume2, Wifi, Router as RouterIcon, Plane, Bike } from "lucide-react";
+
 
 import { logoutFn } from "@/server/auth";
 import { getIcon as getWebFavIcon, getIconColor as getWebFavIconColor, faviconUrl, FAVICON_ICON } from "@/lib/web-favorite-icons";
@@ -54,7 +55,9 @@ type RoutePath =
   | "/nettverk"
   | "/roborock"
   | "/planter"
-  | "/flyradar";
+  | "/flyradar"
+  | "/fysisk";
+
 
 type NavLink = { to: RoutePath; label: string; public?: boolean };
 
@@ -93,7 +96,10 @@ const ROUTE_ICON: Partial<Record<RoutePath, React.ComponentType<{ size?: number;
   "/nettverk": Wifi,
   "/roborock": Bot,
   "/planter": TreePine,
+  "/flyradar": Plane,
+  "/fysisk": Bike,
 };
+
 
 // Fargerike ikoner i GoT-stil — én distinkt farge per sal, matcher salens tema.
 const ROUTE_ICON_COLOR: Partial<Record<RoutePath, string>> = {
@@ -124,7 +130,10 @@ const ROUTE_ICON_COLOR: Partial<Record<RoutePath, string>> = {
   "/nettverk": "#38bdf8",            // nettverk — signalblå
   "/roborock": "#a78bfa",            // roborock — lilla rytter
   "/planter": "#22c55e",             // planter — bladgrønn
+  "/flyradar": "#38bdf8",            // raven — himmelblå
+  "/fysisk": "#22c55e",              // utholdenhet — markens grønt
 };
+
 
 // Public halls — open to any visitor entering the courtyard.
 // Other halls only appear after the portal is opened (login).
@@ -151,6 +160,8 @@ const navLinks: NavLink[] = [
   { to: "/skatte-utregningen", label: "Skatte utregningen" },
   { to: "/hundene", label: "Hundene" },
   { to: "/trening", label: "Trening" },
+  { to: "/fysisk", label: "Fysisk" },
+
   { to: "/varsler", label: "Farevarsler", public: true },
   { to: "/decibel", label: "Decibelmåler", public: true },
   { to: "/nettverk", label: "Nettverk" },

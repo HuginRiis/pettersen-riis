@@ -54,6 +54,8 @@ import hallVakttarnet from "@/assets/got-vakttarnet.jpg";
 import hallHytta from "@/assets/hytta-aurora-got.jpg";
 import hallHundene from "@/assets/hundene-pack.jpg";
 import hallTrening from "@/assets/got-trening.jpg";
+import hallFysisk from "@/assets/got-fysisk.jpg";
+
 import hallSmarthus from "@/assets/got-smarthus.jpg";
 import hallStrom from "@/assets/stromkroniken.jpg";
 import hallMatvarer from "@/assets/got-matvarer.jpg";
@@ -326,6 +328,8 @@ function Home() {
           {showHall("/hytta") && <HallCard to="/hytta" title="Hytta" desc="Husets tilflukt i fjellet." icon="🏔" image={hallHytta} locked={false} />}
           {showHall("/hundene") && <HallCard to="/hundene" title="Hundene" desc="Husets tro følgesvenner." icon="🐺" image={hallHundene} locked={!isAuthed} />}
           {showHall("/trening") && <HallCard to="/trening" title="Treningssalen" desc="Kroppen som rustning." icon="⚔️" image={hallTrening} locked={!isAuthed} badge={<HallBadgeStack><StepsTodayBadge inline owner="arne" /><StepsTodayBadge inline owner="rebekka" /><TrainingLast4WeeksBadge inline /></HallBadgeStack>} />}
+          {showHall("/fysisk") && <HallCard to="/fysisk" title="Fysisk" desc="Gåing, sykling og løping fra Strava." icon="🚴" image={hallFysisk} locked={!isAuthed} />}
+
           {showHall("/smarthus") && <HallCard to="/smarthus" title="Smartborg" desc="Lys, varme og varslere fra Homey." icon="🏰" image={hallSmarthus} locked={!isAuthed} badge={<HallBadgeStack><MowerStatusBadge inline /></HallBadgeStack>} />}
           {showHall("/lys") && <HallCard to="/lys" title="Lys" desc="Husets ild — tente lys og scener." icon="💡" image={hallLys} locked={!isAuthed} badge={<HallBadgeStack><LightsOnBadge inline /></HallBadgeStack>} />}
           {showHall("/gressklipper") && <HallCard to="/gressklipper" title="Gressklipper" desc="Sileno-vokteren av plenen." icon="🌱" image={hallGressklipper} locked={!isAuthed} badge={<HallBadgeStack><GardenaStatusBadge inline /><GardenaBatteryBadge inline /><GardenaSignalBadge inline /></HallBadgeStack>} />}
@@ -671,7 +675,9 @@ function HallCard({
     | "/okonomi"
     | "/push-varslinger"
     | "/flyradar"
+    | "/fysisk"
     | "/got-saga";
+
   title: string;
   desc: string;
   icon: string;
