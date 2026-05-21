@@ -1,4 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
+import { loadStoredRefreshToken, saveStoredRefreshToken } from "./netatmo-token-store.server";
+
+const REFRESH_TOKEN_KEY = "netatmo_refresh_token";
 
 const NETATMO_BASE = "https://api.netatmo.com";
 
@@ -23,7 +26,8 @@ async function getAccessToken(): Promise<string> {
     return tokenCache.accessToken;
   }
 
-  const refreshToken = tokenCache?.refreshToken ?? initialRefresh;
+  const stored = await loadStoredRefreshToken(REFRESH_TOKEN_KEY);
+  const refreshToken = tokenCache?.refreshToken ?? stored ?? initialRefresh;
 
   const res = await fetch(`${NETATMO_BASE}/oauth2/token`, {
     method: "POST",
@@ -52,6 +56,8 @@ async function getAccessToken(): Promise<string> {
     refreshToken: tok.refresh_token,
     expiresAt: Date.now() + tok.expires_in * 1000,
   };
+
+  await saveStoredRefreshToken(REFRESH_TOKEN_KEY, tok.refresh_token);
 
   return tokenCache.accessToken;
 }
