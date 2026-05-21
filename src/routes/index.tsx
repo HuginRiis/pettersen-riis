@@ -682,6 +682,7 @@ function HallCard({
     | "/push-varslinger"
     | "/flyradar"
     | "/fysisk"
+    | "/smartklokke"
     | "/got-saga";
 
   title: string;
