@@ -32,6 +32,8 @@ import { BirthdaysOverview } from "@/components/BirthdaysOverview";
 import { UpcomingHolidays } from "@/components/UpcomingHolidays";
 import { PushTodayBadge, LightsOnBadge, TomorrowWeatherBadge, MowerStatusBadge, GardenaStatusBadge, GardenaBatteryBadge, GardenaSignalBadge, RoborockStatusBadge, AlarmStateBadge, UtgangsdorenLockBadge, AlertsSeverityBadge, PowerVsYesterdayBadge, StepsTodayBadge, TrainingLast4WeeksBadge, GarbageNextPickupBadge, CurrentTempBadge, WeatherDaysBadge } from "@/components/HallBadges";
 import { useMenuVisibility, isMenuLinkVisible } from "@/hooks/use-menu-visibility";
+import { useCurrentWho } from "@/hooks/use-current-who";
+
 import { SmartSearch } from "@/components/SmartSearch";
 
 import { useAuthStatus } from "@/hooks/use-auth-status";
@@ -122,7 +124,9 @@ function Home() {
   const { authenticated } = useAuthStatus();
   const isAuthed = authenticated === true;
   const menuVisibility = useMenuVisibility();
-  const showHall = (to: string) => isMenuLinkVisible(menuVisibility, to);
+  const who = useCurrentWho();
+  const showHall = (to: string) => isMenuLinkVisible(menuVisibility, to, who);
+
 
   // Tidligere kiosk-minne sendte enheten automatisk til Steintavlen.
   // Det er nå deaktivert — Hjem skal alltid være startsiden. Rydder opp gammel verdi.
