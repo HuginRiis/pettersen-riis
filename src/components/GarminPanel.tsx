@@ -556,12 +556,17 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
                 fallbackSub={today?.body_battery_low != null ? `lav ${today.body_battery_low}` : "ingen data"}
                 showDetails={showDetails}
                 details={[
-                  { k: "Høy", v: today?.body_battery_high != null ? String(today.body_battery_high) : "—" },
-                  { k: "Lav", v: today?.body_battery_low != null ? String(today.body_battery_low) : "—" },
-                  { k: "Differanse", v: today?.body_battery_high != null && today?.body_battery_low != null ? String(today.body_battery_high - today.body_battery_low) : "—" },
-                  { k: "I går (høy)", v: yesterday?.body_battery_high != null ? String(yesterday.body_battery_high) : "—" },
+                  { k: "Høy i dag", v: today?.body_battery_high != null ? String(today.body_battery_high) : "—" },
+                  { k: "Lav i dag", v: today?.body_battery_low != null ? String(today.body_battery_low) : "—" },
+                  { k: "Ladet i dag", v: today?.body_battery_high != null && today?.body_battery_low != null ? `+${today.body_battery_high - today.body_battery_low}` : "—" },
+                  { k: "Høy i går", v: yesterday?.body_battery_high != null ? String(yesterday.body_battery_high) : "—" },
+                  { k: "Lav i går", v: yesterday?.body_battery_low != null ? String(yesterday.body_battery_low) : "—" },
                   { k: "Snitt høy 7d", v: avgFmt(data?.daily?.slice(-7).map((d) => d.body_battery_high), 0) },
                   { k: "Snitt lav 7d", v: avgFmt(data?.daily?.slice(-7).map((d) => d.body_battery_low), 0) },
+                  { k: "Snitt høy 30d", v: avgFmt(data?.daily?.map((d) => d.body_battery_high), 0) },
+                  { k: "Snitt lav 30d", v: avgFmt(data?.daily?.map((d) => d.body_battery_low), 0) },
+                  { k: "Maks høy 30d", v: maxFmt(data?.daily?.map((d) => d.body_battery_high), 0) },
+                  { k: "Min lav 30d", v: minFmt(data?.daily?.map((d) => d.body_battery_low), 0) },
                 ]}
                 chart={sparkLine2(data?.daily, "body_battery_high", "body_battery_low", C.batteryHigh, C.batteryLow)} />
               <Tile icon={<Brain size={14} style={{color: C.stress}} />} label="Stress (snitt)"
