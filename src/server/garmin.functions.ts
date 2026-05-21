@@ -32,10 +32,21 @@ export const getGarminOverview = createServerFn({ method: "GET" })
 
     const { data: sleep } = await supabaseAdmin
       .from("garmin_sleep")
-      .select("day, total_seconds, deep_seconds, light_seconds, rem_seconds, awake_seconds, sleep_score, average_spo2, average_respiration, hrv_avg")
+      .select("day, total_seconds, deep_seconds, light_seconds, rem_seconds, awake_seconds, sleep_score, average_spo2, average_respiration, hrv_avg, raw")
       .eq("owner", owner)
       .gte("day", sinceIso)
       .order("day", { ascending: true });
+
+    const skinTemp = ((sleep ?? []) as Array<{ day: string; raw: Record<string, unknown> | null }>)
+      .map((s) => {
+        const v = s.raw && typeof s.raw === "object" ? (s.raw as Record<string, unknown>)["avgSkinTempDeviationC"] : null;
+        const n = typeof v === "number" ? v : null;
+        return { day: s.day, deviation_c: n };
+      })
+      .filter((s) => s.deviation_c !== null);
+
+    // Strip raw from sleep so we don't ship it to the client
+    const sleepLite = ((sleep ?? []) as Array<Record<string, unknown>>).map(({ raw: _raw, ...rest }) => rest);
 
     const intradaySince = new Date();
     intradaySince.setDate(intradaySince.getDate() - 7);
@@ -55,7 +66,8 @@ export const getGarminOverview = createServerFn({ method: "GET" })
       .limit(1)
       .maybeSingle();
 
-    return { owner, status, daily: daily ?? [], activities: activities ?? [], sleep: sleep ?? [], intraday: intraday ?? [], lastSync };
+    return { owner, status, daily: daily ?? [], activities: activities ?? [], sleep: sleepLite, intraday: intraday ?? [], skinTemp, lastSync };
+
   });
 
 export const garminLoginNow = createServerFn({ method: "POST" })
