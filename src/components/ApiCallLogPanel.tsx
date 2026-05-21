@@ -301,12 +301,12 @@ export function ApiCallLogPanel() {
                   itemStyle={{ color: "#ffffff" }}
                 />
                 <Legend wrapperStyle={{ fontSize: 10, color: "#ffffff" }} />
-                {chartSources.map((s) => (
+                {chartSources.map((s, i) => (
                   <Bar
                     key={s}
                     dataKey={s}
                     stackId="a"
-                    fill={colorFor(s)}
+                    fill={appearance.series[i % appearance.series.length]}
                     name={SOURCE_LABELS[s] ?? s}
                   />
                 ))}
