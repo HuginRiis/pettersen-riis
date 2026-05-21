@@ -15,6 +15,7 @@ import heroImg from "@/assets/got-vakttarnet.jpg";
 import { Eye, Globe2, Smartphone, Monitor, Tablet, Clock, Crown, ShieldAlert, Map as MapIcon, Lock, Unlock, Sparkles, DoorClosed, Users, Bell, Database, Activity, ChevronDown, DoorOpen, BarChart3, Wallet, Radio, KeyRound, ShieldOff, Trophy, Camera, Brain, UserSearch, Watch, Network, History, List as ListIcon, AlertTriangle, PowerOff } from "lucide-react";
 import { DbUsagePanel } from "@/components/DbUsagePanel";
 import { DbDetailPanel } from "@/components/DbDetailPanel";
+import { PageLoadPanel } from "@/components/PageLoadPanel";
 import { DoorsLocksPanel } from "@/components/DoorsLocksPanel";
 import { ApiCallLogPanel } from "@/components/ApiCallLogPanel";
 import { ApiErrorLogPanel } from "@/components/ApiErrorLogPanel";
