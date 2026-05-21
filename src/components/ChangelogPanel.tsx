@@ -8,7 +8,6 @@ import {
   listChangelog,
   upsertChangelog,
   deleteChangelog,
-  deleteAllChangelog,
   type ChangelogEntry,
   type ChangelogCategory,
 } from "@/server/changelog.functions";
@@ -99,19 +98,6 @@ export function ChangelogPanel() {
     }
   }
 
-  async function handleDeleteAll() {
-    if (entries.length === 0) return;
-    if (!confirm(`Slette alle ${entries.length} oppføringer i endringsloggen? Dette kan ikke angres.`)) return;
-    try {
-      await deleteAllChangelog();
-      setEntries([]);
-      toast.success("Endringsloggen er tømt");
-    } catch {
-      toast.error("Kunne ikke slette alle");
-    }
-  }
-
-
   const filtered = useMemo(
     () => (filter === "all" ? entries : entries.filter((e) => e.category === filter)),
     [entries, filter],
@@ -201,18 +187,6 @@ export function ChangelogPanel() {
           >
             <Download size={12} className="mr-1" />
             Eksporter
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="ghost"
-            onClick={handleDeleteAll}
-            disabled={entries.length === 0}
-            className="h-7 px-2 text-xs text-destructive hover:text-destructive"
-            title="Slett alle oppføringer"
-          >
-            <Trash2 size={12} className="mr-1" />
-            Slett alt
           </Button>
           <Button
             type="button"

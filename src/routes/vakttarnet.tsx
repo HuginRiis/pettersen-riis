@@ -12,7 +12,7 @@ import type {
 import { getAiUsageStats, type AiUsageStats } from "@/server/ai-usage";
 import { useAuthStatus } from "@/hooks/use-auth-status";
 import heroImg from "@/assets/got-vakttarnet.jpg";
-import { Eye, Globe2, Smartphone, Monitor, Tablet, Clock, Crown, ShieldAlert, Map as MapIcon, Lock, Unlock, Sparkles, DoorClosed, Users, Bell, Database, Activity, ChevronDown, DoorOpen, BarChart3, Wallet, Radio, KeyRound, ShieldOff, Trophy, Camera, Brain, UserSearch, Watch, Network, History, List as ListIcon, AlertTriangle, PowerOff, CalendarClock } from "lucide-react";
+import { Eye, Globe2, Smartphone, Monitor, Tablet, Clock, Crown, ShieldAlert, Map as MapIcon, Lock, Unlock, Sparkles, DoorClosed, Users, Bell, Database, Activity, ChevronDown, DoorOpen, BarChart3, Wallet, Radio, KeyRound, ShieldOff, Trophy, Camera, Brain, UserSearch, Watch, Network, History, List as ListIcon, AlertTriangle, PowerOff } from "lucide-react";
 import { DbUsagePanel } from "@/components/DbUsagePanel";
 import { DbDetailPanel } from "@/components/DbDetailPanel";
 import { PageLoadPanel } from "@/components/PageLoadPanel";
@@ -24,7 +24,6 @@ import { ApiBlackoutPanel } from "@/components/ApiBlackoutPanel";
 import { MaesterAiBudget } from "@/components/MaesterAiBudget";
 import { PushSendCountsPanel } from "@/components/PushSendCountsPanel";
 import { ChangelogPanel } from "@/components/ChangelogPanel";
-import { CronJobsPanel } from "@/components/CronJobsPanel";
 import { VakttarnEventsPanel } from "@/components/VakttarnEventsPanel";
 import { HomeySensorDashboard } from "@/components/HomeySensorDashboard";
 import { EufyInspector } from "@/components/EufyInspector";
@@ -81,7 +80,6 @@ const VAKTTARN_TOC: { id: string; label: string; icon: React.ComponentType<{ cla
   { id: "vt-apipause", label: "Pause API", icon: PowerOff },
   { id: "vt-apierrors", label: "API-feil", icon: AlertTriangle },
   { id: "vt-changelog", label: "Changelog", icon: History },
-  { id: "vt-cronjobs", label: "Api-kjøringer", icon: CalendarClock },
 ];
 
 function VakttarnetTOC() {
@@ -445,8 +443,6 @@ function VakttarnetPage() {
         </section>
 
         <section id="vt-changelog" className="scroll-mt-24"><ChangelogPanel /></section>
-
-        <section id="vt-cronjobs" className="scroll-mt-24"><CronJobsPanel /></section>
       </section>
     </PageShell>
   );
