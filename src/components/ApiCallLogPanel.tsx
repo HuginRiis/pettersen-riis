@@ -463,7 +463,7 @@ export function ApiCallLogPanel() {
                                       className="h-full"
                                       style={{
                                         width: `${pct}%`,
-                                        background: colorFor(src.id),
+                                        background: appearance.series[chartSources.indexOf(src.id) % appearance.series.length] ?? appearance.series[0],
                                       }}
                                     />
                                   </div>
