@@ -229,16 +229,33 @@ export function SlowPageLoadNotificationSettings() {
               <p className="text-xs text-muted-foreground">
                 Varsler hvis snitt-lastetid på tvers av alle sider overstiger terskelen i vinduet over. Bruker samme mottaker, vindu og cooldown.
               </p>
+              <div className="grid sm:grid-cols-2 gap-2">
+                <div>
+                  <label className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                    Mottaker (lav generell ytelse)
+                  </label>
+                  <select
+                    value={cfg.slow_avg_recipient || ""}
+                    onChange={(e) => setCfg((p) => ({ ...p, slow_avg_recipient: e.target.value }))}
+                    className="mt-1 w-full bg-background border border-border/60 rounded px-2 py-1.5 text-sm"
+                  >
+                    <option value="">Samme som over ({cfg.recipient})</option>
+                    {WHO_OPTIONS.map((w) => <option key={w} value={w}>{w}</option>)}
+                  </select>
+                </div>
+                <div className="flex items-end">
+                  <button
+                    onClick={() => setCfg((p) => ({ ...p, slow_avg_enabled: !p.slow_avg_enabled }))}
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded border text-xs uppercase tracking-wider transition ${
+                      cfg.slow_avg_enabled ? "border-primary/60 text-primary" : "border-border text-muted-foreground"
+                    }`}
+                  >
+                    {cfg.slow_avg_enabled ? <Bell size={12} /> : <BellOff size={12} />}
+                    {cfg.slow_avg_enabled ? "På" : "Av"}
+                  </button>
+                </div>
+              </div>
               <div className="flex items-end gap-2 flex-wrap">
-                <button
-                  onClick={() => setCfg((p) => ({ ...p, slow_avg_enabled: !p.slow_avg_enabled }))}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded border text-xs uppercase tracking-wider transition ${
-                    cfg.slow_avg_enabled ? "border-primary/60 text-primary" : "border-border text-muted-foreground"
-                  }`}
-                >
-                  {cfg.slow_avg_enabled ? <Bell size={12} /> : <BellOff size={12} />}
-                  {cfg.slow_avg_enabled ? "På" : "Av"}
-                </button>
                 <NumField label="Snitt-terskel (ms)" value={cfg.slow_avg_ms} min={500} step={100}
                   onChange={(v) => setCfg((p) => ({ ...p, slow_avg_ms: v }))} />
               </div>
