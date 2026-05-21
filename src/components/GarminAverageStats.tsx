@@ -39,6 +39,8 @@ export function GarminAverageStats() {
   const fetchOverview = useServerFn(getGarminOverview);
   const [daily, setDaily] = useState<Daily[]>([]);
   const [sleep, setSleep] = useState<Sleep[]>([]);
+  const [intraday, setIntraday] = useState<Intraday[]>([]);
+  const [skinTemp, setSkinTemp] = useState<SkinTemp[]>([]);
   const [period, setPeriod] = useState<Period>("week");
   const [loading, setLoading] = useState(true);
 
@@ -46,10 +48,12 @@ export function GarminAverageStats() {
     let alive = true;
     (async () => {
       try {
-        const r = (await fetchOverview()) as { daily: Daily[]; sleep: Sleep[] };
+        const r = (await fetchOverview()) as { daily: Daily[]; sleep: Sleep[]; intraday?: Intraday[]; skinTemp?: SkinTemp[] };
         if (!alive) return;
         setDaily(r.daily ?? []);
         setSleep(r.sleep ?? []);
+        setIntraday(r.intraday ?? []);
+        setSkinTemp(r.skinTemp ?? []);
       } finally {
         if (alive) setLoading(false);
       }
@@ -81,8 +85,28 @@ export function GarminAverageStats() {
       const trendPenalty = Math.min(40, Math.abs((wTrend ?? 0) / avgWeight) * 1000);
       weightScore = Math.round(Math.max(0, Math.min(100, stability - trendPenalty / 2)));
     }
-    return { avgRhr, avgSteps, avgKcal, avgSleepSec, avgDeep, avgLight, avgRem, avgWeight, wTrend, weightScore };
-  }, [daily, sleep, period]);
+
+    // Puls gjennom dagen: gjennomsnitt av timesvis HR (siste 7 dager intraday, men begrenset av periode)
+    const intraDays = intraday.slice().reduce((acc: Record<string, Intraday[]>, x) => {
+      (acc[x.day] ||= []).push(x);
+      return acc;
+    }, {});
+    const intraDayKeys = Object.keys(intraDays).sort().slice(-days);
+    const todayKey = intraDayKeys[intraDayKeys.length - 1] ?? null;
+    const hrVals = intraDayKeys.flatMap((k) => intraDays[k].map((x) => x.heart_rate_avg));
+    const avgDayHr = avg(hrVals);
+    const todayHrVals = todayKey ? intraDays[todayKey].map((x) => x.heart_rate_avg).filter((n): n is number => typeof n === "number" && n > 0) : [];
+    const todayHrMax = todayHrVals.length ? Math.max(...todayHrVals) : null;
+    const todayHrMin = todayHrVals.length ? Math.min(...todayHrVals) : null;
+
+    // Hudtemperatur: avvik fra baseline i °C
+    const st = skinTemp.slice(-days);
+    const avgSkin = avg(st.map((x) => x.deviation_c));
+    const lastSkin = st.length ? st[st.length - 1].deviation_c : null;
+
+    return { avgRhr, avgSteps, avgKcal, avgSleepSec, avgDeep, avgLight, avgRem, avgWeight, wTrend, weightScore, avgDayHr, todayHrMin, todayHrMax, avgSkin, lastSkin };
+  }, [daily, sleep, intraday, skinTemp, period]);
+
 
   const sleepHours = stats.avgSleepSec ? stats.avgSleepSec / 3600 : null;
   const total = (stats.avgDeep ?? 0) + (stats.avgLight ?? 0) + (stats.avgRem ?? 0);
