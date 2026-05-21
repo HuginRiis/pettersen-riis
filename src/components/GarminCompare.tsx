@@ -118,7 +118,7 @@ type Row = {
 };
 
 export function GarminCompare() {
-  const fetchOverview = useServerFn(getGarminOverview);
+  const fetchOverview = useServerFn(getGarminCore);
   const [arne, setArne] = useState<Overview | null>(null);
   const [rebekka, setRebekka] = useState<Overview | null>(null);
   const [loading, setLoading] = useState(true);
