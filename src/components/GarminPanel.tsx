@@ -641,7 +641,10 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
                   { k: "Forrige natt", v: prevSleep?.sleep_score != null ? String(prevSleep.sleep_score) : "—" },
                   { k: "Snitt 7d", v: avgFmt(data?.sleep?.slice(-7).map((s) => s.sleep_score), 0) },
                   { k: "Snitt 30d", v: avgFmt(data?.sleep?.map((s) => s.sleep_score), 0) },
-                  { k: "Beste 30d", v: (() => { const ss = (data?.sleep ?? []).map((s) => s.sleep_score).filter((x): x is number => x != null); return ss.length ? String(Math.max(...ss)) : "—"; })() },
+                  { k: "Lavest 30d", v: minFmt(data?.sleep?.map((s) => s.sleep_score), 0) },
+                  { k: "Beste 30d", v: maxFmt(data?.sleep?.map((s) => s.sleep_score), 0) },
+                  { k: "Målinger 30d", v: countFmt(data?.sleep?.map((s) => s.sleep_score)) },
+                  { k: "Trend 30d", v: trendFmt(data?.sleep?.map((s) => s.sleep_score), 0) },
                 ]}
                 chart={sparkLine(
                   (data?.sleep ?? []).map((s) => ({ day: s.day, score: s.sleep_score })),
