@@ -191,7 +191,8 @@ export async function processSlowPageLoadNotifications(): Promise<{
         const title = `🐢 Lav ytelse på hele sidi`;
         const body = `Snitt ${(avg / 1000).toFixed(1)}s på tvers av ${all.length} målinger siste ${cfg.window_min} min (terskel ${(cfg.slow_avg_ms / 1000).toFixed(1)}s).`;
         const payload = JSON.stringify({ title, body, tag: `slow-page-global`, url: "/vakttarnet" });
-        const r = await pushToRecipient(cfg.recipient || "Alle", payload, title, "slow-page-load-global");
+        const rcpt = cfg.slow_avg_recipient || cfg.recipient || "Alle";
+        const r = await pushToRecipient(rcpt, payload, title, "slow-page-load-global");
         sent += r.sent; errors += r.errors;
         lastNotified[key] = new Date(now).toISOString();
       }
