@@ -68,7 +68,11 @@ function merge(value: unknown): HeaderBadgeSettings {
     days: Math.min(14, Math.max(1, Number(v.weather?.days ?? 1))),
     showTemp: v.weather?.showTemp !== false,
   };
-  return { badges, weather };
+  const garbage = {
+    maxDaysAhead: Math.min(30, Math.max(0, Number(v.garbage?.maxDaysAhead ?? 14))),
+    showAllSameDay: v.garbage?.showAllSameDay === true,
+  };
+  return { badges, weather, garbage };
 }
 
 async function load(): Promise<HeaderBadgeSettings> {
