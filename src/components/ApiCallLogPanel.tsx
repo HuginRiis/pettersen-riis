@@ -6,6 +6,56 @@ import {
   type ApiCallSummary,
 } from "@/server/api-call-log";
 import { purgeApiCallLog } from "@/server/api-call-log-purge.functions";
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Legend,
+  CartesianGrid,
+} from "recharts";
+
+const SOURCE_COLORS: Record<string, string> = {
+  homey: "#d4af37",
+  strava: "#fc4c02",
+  netatmo: "#6a8caf",
+  tibber: "#7fb069",
+  met: "#9b8cc6",
+  nrk: "#c97b4a",
+  spot: "#e8a87c",
+  lightning: "#ffd166",
+  garbage: "#8b6f47",
+  kassal: "#b56576",
+  gardena: "#83c5be",
+  garmin: "#5fb3a2",
+  roborock: "#b07bac",
+  ai: "#6c5ce7",
+  posten: "#e84393",
+  geoip: "#74b9ff",
+  uv: "#fdcb6e",
+  other: "#888",
+};
+const colorFor = (s: string) => SOURCE_COLORS[s] ?? "#888";
+
+function triggerExplanation(
+  trigger: string | undefined,
+  description: string | undefined,
+): string {
+  switch (trigger) {
+    case "cron":
+      return `Kjøres automatisk fra serveren etter en tidsplan (${description ?? "cron"}). Ingen side trigger dette — pg_cron eller en backend-hook ringer inn med jevne mellomrom.`;
+    case "cache":
+      return `Hentes ved bruk, men bufres på serveren (${description ?? "cache"}). Nye kall går mot APIet først når bufferen utløper.`;
+    case "webhook":
+      return "Trigges av en innkommende webhook fra ekstern tjeneste. Ingen side trigger dette direkte.";
+    case "on-demand":
+    default:
+      return "On-demand: spørres når en side i borgen laster og trenger ferske data. Sidene under viser hvor kallene kom fra siste 24t.";
+  }
+}
+
 
 const SOURCE_LABELS: Record<string, string> = {
   homey: "Homey",
