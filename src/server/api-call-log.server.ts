@@ -235,17 +235,12 @@ export type ApiCallSummary = {
 };
 
 export async function computeApiCallSummary(): Promise<ApiCallSummary> {
-  const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  // Aggregert i DB for å unngå at høyt-trafikkerte kilder skyver de mindre
+  // ut av en limit. Returnerer alle (source, endpoint) siste 24t.
+  const { data, error } = await (supabaseAdmin as any).rpc("get_api_call_summary_24h");
 
-  // Hent alle kall siste 24t (begrens til 5000 for å være trygg).
-  const { data: rows, error } = await (supabaseAdmin.from("api_call_log") as any)
-    .select("id,source,endpoint,ok,duration_ms,error_message,cached,called_at")
-    .gte("called_at", since)
-    .order("called_at", { ascending: false })
-    .limit(5000) as { data: Array<{ id: string; source: string; endpoint: string; ok: boolean; duration_ms: number | null; error_message: string | null; cached: boolean; called_at: string }> | null; error: any };
-
-  if (error) {
-    console.error("[api-call-log] summary query failed", error);
+  if (error || !data) {
+    console.error("[api-call-log] summary rpc failed", error);
     return {
       fetchedAt: Date.now(),
       rows: [],
@@ -255,7 +250,40 @@ export async function computeApiCallSummary(): Promise<ApiCallSummary> {
     };
   }
 
-  type Row = {
+  const rawRows = (data.rows ?? []) as Array<{
+    source: string;
+    endpoint: string;
+    total_24h: number;
+    errors_24h: number;
+    avg_duration_ms_24h: number | null;
+    last_called_at: string | null;
+    last_ok: boolean | null;
+    last_duration_ms: number | null;
+    last_error: string | null;
+    last_cached: boolean;
+  }>;
+
+  const summary: ApiCallSummaryRow[] = rawRows.map((r) => ({
+    source: r.source,
+    endpoint: r.endpoint,
+    last_called_at: r.last_called_at,
+    last_ok: r.last_ok,
+    last_duration_ms: r.last_duration_ms,
+    last_error: r.last_error,
+    last_cached: r.last_cached ?? false,
+    total_24h: Number(r.total_24h) || 0,
+    errors_24h: Number(r.errors_24h) || 0,
+    avg_duration_ms_24h:
+      r.avg_duration_ms_24h == null ? null : Number(r.avg_duration_ms_24h),
+  }));
+
+  summary.sort((a, b) => {
+    const ta = a.last_called_at ? Date.parse(a.last_called_at) : 0;
+    const tb = b.last_called_at ? Date.parse(b.last_called_at) : 0;
+    return tb - ta;
+  });
+
+  const recent = ((data.recent ?? []) as Array<{
     id: string;
     source: string;
     endpoint: string;
@@ -264,70 +292,7 @@ export async function computeApiCallSummary(): Promise<ApiCallSummary> {
     error_message: string | null;
     cached: boolean;
     called_at: string;
-  };
-
-  const buckets = new Map<
-    string,
-    {
-      source: string;
-      endpoint: string;
-      last: Row | null;
-      total: number;
-      errors: number;
-      durations: number[];
-    }
-  >();
-
-  for (const r of rows ?? []) {
-    const key = `${r.source}::${r.endpoint}`;
-    let b = buckets.get(key);
-    if (!b) {
-      b = {
-        source: r.source,
-        endpoint: r.endpoint,
-        last: null,
-        total: 0,
-        errors: 0,
-        durations: [],
-      };
-      buckets.set(key, b);
-    }
-    if (!b.last) b.last = r; // første (nyeste pga sortering)
-    b.total += 1;
-    if (!r.ok) b.errors += 1;
-    if (typeof r.duration_ms === "number") b.durations.push(r.duration_ms);
-  }
-
-  // For endpoints uten kall siste 24t — hent siste kjente uansett tid.
-  // Vi sjekker hvilke endpoints vi vet om fra en kjent liste også, men her
-  // holder vi det enkelt og lar tabellen styre.
-
-  const summary: ApiCallSummaryRow[] = Array.from(buckets.values()).map((b) => ({
-    source: b.source,
-    endpoint: b.endpoint,
-    last_called_at: b.last?.called_at ?? null,
-    last_ok: b.last?.ok ?? null,
-    last_duration_ms: b.last?.duration_ms ?? null,
-    last_error: b.last?.error_message ?? null,
-    last_cached: b.last?.cached ?? false,
-    total_24h: b.total,
-    errors_24h: b.errors,
-    avg_duration_ms_24h:
-      b.durations.length > 0
-        ? Math.round(
-            b.durations.reduce((s, d) => s + d, 0) / b.durations.length,
-          )
-        : null,
-  }));
-
-  // Sortér: nyeste sist-kall først
-  summary.sort((a, b) => {
-    const ta = a.last_called_at ? Date.parse(a.last_called_at) : 0;
-    const tb = b.last_called_at ? Date.parse(b.last_called_at) : 0;
-    return tb - ta;
-  });
-
-  const recent = (rows ?? []).slice(0, 50).map((r) => ({
+  }>).map((r) => ({
     id: r.id,
     source: r.source,
     endpoint: r.endpoint,
@@ -337,6 +302,7 @@ export async function computeApiCallSummary(): Promise<ApiCallSummary> {
     cached: r.cached,
     called_at: r.called_at,
   }));
+
 
   // Beregn neste forventede sync per kilde basert på siste kall + kjent intervall.
   const lastBySource = new Map<string, number>();
