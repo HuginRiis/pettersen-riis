@@ -390,6 +390,44 @@ function OwnerView({ owner }: { owner: Owner }) {
         </div>
       </Section>
 
+      {/* ---- Tidsbruk i døgnet (stillesitting / aktiv / hvile) ---- */}
+      <Section title="Tidsbruk i døgnet — stillesitting, aktiv, hvile" icon={<Activity size={14} />}>
+        {(() => {
+          const r = (today?.raw ?? {}) as any;
+          const ry = (yesterday?.raw ?? {}) as any;
+          const sed7 = avg(daily.map((d: any) => d?.raw?.sedentarySeconds));
+          const act7 = avg(daily.map((d: any) => d?.raw?.activeSeconds));
+          const hi7 = avg(daily.map((d: any) => d?.raw?.highlyActiveSeconds));
+          const slp7 = avg(daily.map((d: any) => d?.raw?.sleepingSeconds));
+          const restToday = stressDetail?.restStressDuration;
+          return (
+            <>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <Stat label="Stillesitting i dag" value={hhmm(r.sedentarySeconds)} sub="hvor lenge sittende" />
+                <Stat label="Stillesitting i går" value={hhmm(ry.sedentarySeconds)} />
+                <Stat label="Stillesitting snitt 7d" value={hhmm(sed7 ?? 0)} />
+                <Stat label="Hviletid i dag" value={hhmm(restToday)} sub="lav-stress / hvile" />
+                <Stat label="Lett aktiv (gåing) i dag" value={hhmm(r.activeSeconds)} sub="gange / lett bevegelse" />
+                <Stat label="Lett aktiv i går" value={hhmm(ry.activeSeconds)} />
+                <Stat label="Lett aktiv snitt 7d" value={hhmm(act7 ?? 0)} />
+                <Stat label="Høy aktivitet snitt 7d" value={hhmm(hi7 ?? 0)} />
+                <Stat label="Søvn/hvile i dag" value={hhmm(r.sleepingSeconds)} />
+                <Stat label="Søvn/hvile snitt 7d" value={hhmm(slp7 ?? 0)} />
+                <Stat label="Høy aktivitet i dag" value={hhmm(r.highlyActiveSeconds)} sub="løp / trening" />
+                <Stat label="Høy aktivitet i går" value={hhmm(ry.highlyActiveSeconds)} />
+              </div>
+              <div className="mt-3">
+                <div className="text-[10px] text-muted-foreground mb-1">Stillesitting 7d</div>
+                <MiniBar values={daily.map((d: any) => d?.raw?.sedentarySeconds ?? 0)} color="bg-slate-500/60" />
+                <div className="flex justify-between mt-1 text-[10px] text-muted-foreground">
+                  {daily.map((d: any) => <span key={d.day}>{dayShort(d.day).split(".")[0]}</span>)}
+                </div>
+              </div>
+            </>
+          );
+        })()}
+      </Section>
+
       {/* ---- Stress & Body Battery ---- */}
       <Section title="Stress & Body Battery" icon={<Zap size={14} />}>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
