@@ -279,6 +279,66 @@ export function ApiCallLogPanel() {
           </div>
         )}
 
+        {/* Time-for-time graf siste 24t */}
+        <div className="mb-5 rounded border border-border bg-background/40 p-3">
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-[10px] tracking-[0.3em] uppercase text-muted-foreground">
+              API-kall per time · siste 24t
+            </div>
+            <div className="text-[10px] text-muted-foreground tabular-nums">
+              {chartData.reduce((s, r) => {
+                let t = 0;
+                for (const k of chartSources) t += (r[k] as number) ?? 0;
+                return s + t;
+              }, 0)}{" "}
+              kall totalt
+            </div>
+          </div>
+          <div style={{ width: "100%", height: 200 }}>
+            <ResponsiveContainer>
+              <BarChart data={chartData}>
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="color-mix(in oklab, var(--border) 40%, transparent)"
+                />
+                <XAxis dataKey="label" stroke="#ffffff" tick={{ fill: "#ffffff" }} fontSize={10} />
+                <YAxis
+                  stroke="#ffffff"
+                  tick={{ fill: "#ffffff" }}
+                  fontSize={10}
+                  allowDecimals={false}
+                />
+                <Tooltip
+                  trigger="click"
+                  contentStyle={{
+                    background: "#0a0a0a",
+                    border: "1px solid var(--border)",
+                    borderRadius: 6,
+                    fontSize: 11,
+                    color: "#ffffff",
+                  }}
+                  labelStyle={{ color: "#ffffff" }}
+                  itemStyle={{ color: "#ffffff" }}
+                />
+                <Legend wrapperStyle={{ fontSize: 10, color: "#ffffff" }} />
+                {chartSources.map((s) => (
+                  <Bar
+                    key={s}
+                    dataKey={s}
+                    stackId="a"
+                    fill={colorFor(s)}
+                    name={SOURCE_LABELS[s] ?? s}
+                  />
+                ))}
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          <p className="text-[10px] text-muted-foreground/80 italic mt-2">
+            Hver søyle = én time. Fargene viser hvilken kilde som ble spurt. Klikk på en søyle for detaljer.
+          </p>
+        </div>
+
+
         <div className="space-y-2">
           {visibleSources.map((src) => {
             const rows = grouped.get(src.id) ?? [];
