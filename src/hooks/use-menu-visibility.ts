@@ -42,7 +42,6 @@ export const MENU_LINK_DEFS: { to: string; label: string }[] = [
   { to: "/hundene", label: "Hundene" },
   { to: "/trening", label: "Trening" },
   { to: "/fysisk", label: "Fysisk" },
-  { to: "/smartklokke", label: "Smartklokke" },
   { to: "/varsler", label: "Farevarsler" },
   { to: "/steintavle", label: "Steintavle" },
   { to: "/decibel", label: "Decibelmåler" },

@@ -17,7 +17,6 @@ import { Route as TreningRouteImport } from './routes/trening'
 import { Route as StromkronikenRouteImport } from './routes/stromkroniken'
 import { Route as StovsugerenRouteImport } from './routes/stovsugeren'
 import { Route as SteintavleRouteImport } from './routes/steintavle'
-import { Route as SmartklokkeRouteImport } from './routes/smartklokke'
 import { Route as SmarthusRouteImport } from './routes/smarthus'
 import { Route as SkatteUtregningenRouteImport } from './routes/skatte-utregningen'
 import { Route as RoborockRouteImport } from './routes/roborock'
@@ -92,11 +91,6 @@ const StovsugerenRoute = StovsugerenRouteImport.update({
 const SteintavleRoute = SteintavleRouteImport.update({
   id: '/steintavle',
   path: '/steintavle',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SmartklokkeRoute = SmartklokkeRouteImport.update({
-  id: '/smartklokke',
-  path: '/smartklokke',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SmarthusRoute = SmarthusRouteImport.update({
@@ -304,7 +298,6 @@ export interface FileRoutesByFullPath {
   '/roborock': typeof RoborockRoute
   '/skatte-utregningen': typeof SkatteUtregningenRoute
   '/smarthus': typeof SmarthusRoute
-  '/smartklokke': typeof SmartklokkeRoute
   '/steintavle': typeof SteintavleRoute
   '/stovsugeren': typeof StovsugerenRoute
   '/stromkroniken': typeof StromkronikenRoute
@@ -350,7 +343,6 @@ export interface FileRoutesByTo {
   '/roborock': typeof RoborockRoute
   '/skatte-utregningen': typeof SkatteUtregningenRoute
   '/smarthus': typeof SmarthusRoute
-  '/smartklokke': typeof SmartklokkeRoute
   '/steintavle': typeof SteintavleRoute
   '/stovsugeren': typeof StovsugerenRoute
   '/stromkroniken': typeof StromkronikenRoute
@@ -397,7 +389,6 @@ export interface FileRoutesById {
   '/roborock': typeof RoborockRoute
   '/skatte-utregningen': typeof SkatteUtregningenRoute
   '/smarthus': typeof SmarthusRoute
-  '/smartklokke': typeof SmartklokkeRoute
   '/steintavle': typeof SteintavleRoute
   '/stovsugeren': typeof StovsugerenRoute
   '/stromkroniken': typeof StromkronikenRoute
@@ -445,7 +436,6 @@ export interface FileRouteTypes {
     | '/roborock'
     | '/skatte-utregningen'
     | '/smarthus'
-    | '/smartklokke'
     | '/steintavle'
     | '/stovsugeren'
     | '/stromkroniken'
@@ -491,7 +481,6 @@ export interface FileRouteTypes {
     | '/roborock'
     | '/skatte-utregningen'
     | '/smarthus'
-    | '/smartklokke'
     | '/steintavle'
     | '/stovsugeren'
     | '/stromkroniken'
@@ -537,7 +526,6 @@ export interface FileRouteTypes {
     | '/roborock'
     | '/skatte-utregningen'
     | '/smarthus'
-    | '/smartklokke'
     | '/steintavle'
     | '/stovsugeren'
     | '/stromkroniken'
@@ -584,7 +572,6 @@ export interface RootRouteChildren {
   RoborockRoute: typeof RoborockRoute
   SkatteUtregningenRoute: typeof SkatteUtregningenRoute
   SmarthusRoute: typeof SmarthusRoute
-  SmartklokkeRoute: typeof SmartklokkeRoute
   SteintavleRoute: typeof SteintavleRoute
   StovsugerenRoute: typeof StovsugerenRoute
   StromkronikenRoute: typeof StromkronikenRoute
@@ -664,13 +651,6 @@ declare module '@tanstack/react-router' {
       path: '/steintavle'
       fullPath: '/steintavle'
       preLoaderRoute: typeof SteintavleRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/smartklokke': {
-      id: '/smartklokke'
-      path: '/smartklokke'
-      fullPath: '/smartklokke'
-      preLoaderRoute: typeof SmartklokkeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/smarthus': {
@@ -944,7 +924,6 @@ const rootRouteChildren: RootRouteChildren = {
   RoborockRoute: RoborockRoute,
   SkatteUtregningenRoute: SkatteUtregningenRoute,
   SmarthusRoute: SmarthusRoute,
-  SmartklokkeRoute: SmartklokkeRoute,
   SteintavleRoute: SteintavleRoute,
   StovsugerenRoute: StovsugerenRoute,
   StromkronikenRoute: StromkronikenRoute,
