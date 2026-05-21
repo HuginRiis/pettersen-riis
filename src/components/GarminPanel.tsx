@@ -31,6 +31,7 @@ type Daily = {
     anaerobic_target?: [number, number] | null;
   } | null;
   endurance_contributors?: Array<{ group: string; contribution: number }> | null;
+  raw?: { sedentarySeconds?: number | null; highlyActiveSeconds?: number | null; activeSeconds?: number | null; sleepingSeconds?: number | null } | null;
 };
 type Activity = {
   garmin_activity_id: number; activity_type: string | null; activity_name: string | null;
@@ -493,6 +494,9 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
                   { k: "Høyest 30d", v: maxFmt(data?.daily?.map((d) => d.resting_heart_rate), 0, " bpm") },
                   { k: "Trend 30d", v: trendFmt(data?.daily?.map((d) => d.resting_heart_rate), 0, " bpm") },
                   { k: "Målinger 30d", v: countFmt(data?.daily?.map((d) => d.resting_heart_rate)) },
+                  { k: "Stillesitting i dag", v: today?.raw?.sedentarySeconds != null ? hoursMin(today.raw.sedentarySeconds) : "—" },
+                  { k: "Stillesitting i går", v: yesterday?.raw?.sedentarySeconds != null ? hoursMin(yesterday.raw.sedentarySeconds) : "—" },
+                  { k: "Stillesitting snitt 7d", v: (() => { const a = (data?.daily?.slice(-7) ?? []).map((d) => d.raw?.sedentarySeconds ?? null).filter((n): n is number => typeof n === "number" && n > 0); return a.length ? hoursMin(Math.round(a.reduce((x,y)=>x+y,0)/a.length)) : "—"; })() },
                 ]}
                 chart={sparkLine(data?.daily, "resting_heart_rate", false, C.hr)} />
               <Tile icon={<Heart size={14} style={{color: C.hrAvg}} />} label="Snitt puls"
