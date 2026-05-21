@@ -590,11 +590,17 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
                 fallbackSub={today?.intensity_minutes_goal ? `mål ${today.intensity_minutes_goal}` : "ingen mål"}
                 showDetails={showDetails}
                 details={[
-                  { k: "Moderat", v: today?.moderate_intensity_minutes != null ? `${today.moderate_intensity_minutes} min` : "—" },
-                  { k: "Hard", v: today?.vigorous_intensity_minutes != null ? `${today.vigorous_intensity_minutes} min` : "—" },
+                  { k: "Moderat i dag", v: today?.moderate_intensity_minutes != null ? `${today.moderate_intensity_minutes} min` : "—" },
+                  { k: "Hard i dag", v: today?.vigorous_intensity_minutes != null ? `${today.vigorous_intensity_minutes} min` : "—" },
+                  { k: "Totalt i dag", v: `${intensityToday} min` },
+                  { k: "Totalt i går", v: `${intensityYesterday} min` },
                   { k: "Mål", v: today?.intensity_minutes_goal ? `${today.intensity_minutes_goal} min` : "—" },
+                  { k: "% av mål", v: today?.intensity_minutes_goal ? `${Math.round((intensityToday / today.intensity_minutes_goal) * 100)}%` : "—" },
                   { k: "Sum 7d", v: (() => { const s = (data?.daily?.slice(-7) ?? []).reduce((a, d) => a + (d.moderate_intensity_minutes ?? 0) + (d.vigorous_intensity_minutes ?? 0), 0); return `${s} min`; })() },
+                  { k: "Sum 30d", v: (() => { const s = (data?.daily ?? []).reduce((a, d) => a + (d.moderate_intensity_minutes ?? 0) + (d.vigorous_intensity_minutes ?? 0), 0); return `${s} min`; })() },
+                  { k: "Snitt 7d", v: (() => { const arr = (data?.daily?.slice(-7) ?? []).map((d) => (d.moderate_intensity_minutes ?? 0) + (d.vigorous_intensity_minutes ?? 0)); return arr.length ? `${Math.round(arr.reduce((a,b)=>a+b,0)/arr.length)} min` : "—"; })() },
                   { k: "Snitt 30d", v: (() => { const arr = (data?.daily ?? []).map((d) => (d.moderate_intensity_minutes ?? 0) + (d.vigorous_intensity_minutes ?? 0)).filter((n) => n > 0); return arr.length ? `${Math.round(arr.reduce((a,b)=>a+b,0)/arr.length)} min` : "—"; })() },
+                  { k: "Beste dag 30d", v: (() => { const arr = (data?.daily ?? []).map((d) => (d.moderate_intensity_minutes ?? 0) + (d.vigorous_intensity_minutes ?? 0)); return arr.length ? `${Math.max(...arr)} min` : "—"; })() },
                 ]}
                 chart={sparkBar(
                   (data?.daily ?? []).map((d) => ({ ...d, total_intensity: (d.moderate_intensity_minutes ?? 0) + (d.vigorous_intensity_minutes ?? 0) })),
