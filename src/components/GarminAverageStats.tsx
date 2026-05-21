@@ -80,7 +80,7 @@ export function GarminAverageStats() {
       const trendPenalty = Math.min(40, Math.abs((wTrend ?? 0) / avgWeight) * 1000);
       weightScore = Math.round(Math.max(0, Math.min(100, stability - trendPenalty / 2)));
     }
-    return { avgRhr, avgSteps, avgKcal, avgSleepSec, avgDeep, avgLight, avgRem, avgWeight, wTrend, weightScore };
+    return { avgRhr, avgHr, avgSteps, avgKcal, avgSleepSec, avgDeep, avgLight, avgRem, avgWeight, wTrend, weightScore };
   }, [daily, sleep, period]);
 
   const sleepHours = stats.avgSleepSec ? stats.avgSleepSec / 3600 : null;
