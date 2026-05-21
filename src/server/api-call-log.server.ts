@@ -102,23 +102,20 @@ export function withApiLog<T extends (...args: any[]) => Promise<any>>(
       throw new ApiSourcePausedError(String(source));
     }
     const started = Date.now();
+    const path = getTriggerPath();
     try {
       const result = await fn(...args);
-      // forsøk å detektere "cached"-flagg på resultatet
       const cached =
         result && typeof result === "object" && "cached" in result
           ? Boolean((result as { cached?: unknown }).cached)
           : false;
-      // VIKTIG: vi må AWAIT inserten i stedet for fire-and-forget,
-      // ellers kanselleres den av Cloudflare Worker-runtime når
-      // responsen returneres — spesielt for raske/cached handlere
-      // (Netatmo, Strava, NRK osv. som returnerer på <50ms ved cache).
       await recordApiCall({
         source,
         endpoint,
         ok: true,
         duration_ms: Date.now() - started,
         cached,
+        metadata: path ? { path } : null,
       });
       return result;
     } catch (err) {
@@ -128,6 +125,7 @@ export function withApiLog<T extends (...args: any[]) => Promise<any>>(
         ok: false,
         duration_ms: Date.now() - started,
         error_message: err instanceof Error ? err.message : String(err),
+        metadata: path ? { path } : null,
       });
       throw err;
     }
