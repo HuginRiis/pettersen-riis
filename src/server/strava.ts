@@ -215,25 +215,72 @@ function bumpDailyCounter(n = 2): number {
   return dailyCounter.calls;
 }
 
+async function loadPersistentCache(owner: StravaOwner): Promise<{ at: number; data: any } | null> {
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await (supabaseAdmin.from("strava_dashboard_cache") as any)
+      .select("data, fetched_at")
+      .eq("owner", owner)
+      .maybeSingle();
+    if (error || !data) return null;
+    return { at: new Date(data.fetched_at).getTime(), data: data.data };
+  } catch {
+    return null;
+  }
+}
+
+async function savePersistentCache(owner: StravaOwner, data: any): Promise<void> {
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await (supabaseAdmin.from("strava_dashboard_cache") as any).upsert({
+      owner,
+      data,
+      fetched_at: new Date().toISOString(),
+    });
+  } catch (err) {
+    console.warn("[strava] persistent cache write failed", err);
+  }
+}
+
+function withStaleMarker(data: any, fetchedAt: number) {
+  if (!data || typeof data !== "object") return data;
+  return {
+    ...data,
+    stale: true,
+    cachedAt: new Date(fetchedAt).toISOString(),
+  };
+}
+
 export const runStravaDashboard = async (owner: StravaOwner) => {
-  // 1) Fersk cache → returner umiddelbart
+  // 1) Fersk in-memory cache → returner umiddelbart
   const cached = dashboardCache.get(owner);
   const nowMs = Date.now();
   if (cached && nowMs - cached.at < DASHBOARD_TTL_MS) {
     return cached.data;
   }
 
+  // 1b) Last persistent cache (overlever Worker-restart)
+  const persisted = !cached ? await loadPersistentCache(owner) : null;
+  if (persisted && nowMs - persisted.at < DASHBOARD_TTL_MS) {
+    dashboardCache.set(owner, persisted);
+    return persisted.data;
+  }
+
+  const fallback = cached ?? persisted;
+
   // 2) Hard daglig brems — server stale cache hvis vi har det
   if (dailyCounter.calls >= DAILY_SAFE_LIMIT) {
-    if (cached) return cached.data;
+    if (fallback) return withStaleMarker(fallback.data, fallback.at);
     return { ok: false as const, error: "Strava daglig grense nådd — prøv igjen senere" };
   }
 
   const auth = await getValidStravaAccessToken(owner);
   if (!auth) {
+    if (fallback) return withStaleMarker(fallback.data, fallback.at);
     return { ok: false as const, error: "Ikke koblet til Strava" };
   }
   bumpDailyCounter(2);
+
 
   try {
     // Hent siste 100 aktiviteter (gir oss ~3 mnd for trender)
