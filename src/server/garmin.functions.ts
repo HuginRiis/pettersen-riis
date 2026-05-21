@@ -46,7 +46,11 @@ export const getGarminOverview = createServerFn({ method: "GET" })
       .filter((s) => s.deviation_c !== null);
 
     // Strip raw from sleep so we don't ship it to the client
-    const sleepLite = ((sleep ?? []) as Array<Record<string, unknown>>).map(({ raw: _raw, ...rest }) => rest);
+    const sleepLite = ((sleep ?? []) as Array<Record<string, unknown>>).map((s) => {
+      const { raw: _raw, ...rest } = s;
+      return rest as { day: string; total_seconds: number | null; deep_seconds: number | null; light_seconds: number | null; rem_seconds: number | null; awake_seconds: number | null; sleep_score: number | null; average_spo2: number | null; average_respiration: number | null; hrv_avg: number | null };
+    });
+
 
     const intradaySince = new Date();
     intradaySince.setDate(intradaySince.getDate() - 7);
