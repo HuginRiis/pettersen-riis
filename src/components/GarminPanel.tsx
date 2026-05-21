@@ -31,6 +31,7 @@ type Daily = {
     anaerobic_target?: [number, number] | null;
   } | null;
   endurance_contributors?: Array<{ group: string; contribution: number }> | null;
+  raw?: Record<string, unknown> | null;
 };
 type Activity = {
   garmin_activity_id: number; activity_type: string | null; activity_name: string | null;
@@ -60,6 +61,15 @@ function hoursMin(sec?: number | null) {
   if (!sec) return "—";
   const h = Math.floor(sec / 3600); const m = Math.floor((sec % 3600) / 60);
   return h > 0 ? `${h}t ${m}m` : `${m}m`;
+}
+function rawNum(raw: unknown, ...keys: string[]): number | null {
+  if (!raw || typeof raw !== "object") return null;
+  const o = raw as Record<string, unknown>;
+  for (const k of keys) {
+    const v = o[k];
+    if (typeof v === "number" && Number.isFinite(v)) return v;
+  }
+  return null;
 }
 function avgFmt(arr: Array<number | null | undefined> | undefined, digits = 0, unit = ""): string {
   const v = (arr ?? []).filter((n): n is number => typeof n === "number" && n > 0);
@@ -467,6 +477,13 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
                   { k: "% av mål", v: today?.steps != null && today?.step_goal ? `${Math.round((today.steps / today.step_goal) * 100)}%` : "—" },
                   { k: "Distanse i dag", v: fmtKm(today?.distance_meters) },
                   { k: "I går", v: yesterday?.steps != null ? fmtNum(yesterday.steps) : "—" },
+                  { k: "Gå-tid i dag", v: hoursMin((rawNum(today?.raw, "activeSeconds") ?? 0) + (rawNum(today?.raw, "highlyActiveSeconds") ?? 0)) },
+                  { k: "Hvile-tid i dag", v: hoursMin(rawNum(today?.raw, "sedentarySeconds")) },
+                  { k: "Lett aktiv i dag", v: hoursMin(rawNum(today?.raw, "activeSeconds")) },
+                  { k: "Høy aktivitet i dag", v: hoursMin(rawNum(today?.raw, "highlyActiveSeconds")) },
+                  { k: "Søvn-tid i dag", v: hoursMin(rawNum(today?.raw, "sleepingSeconds")) },
+                  { k: "Gå-tid i går", v: hoursMin((rawNum(yesterday?.raw, "activeSeconds") ?? 0) + (rawNum(yesterday?.raw, "highlyActiveSeconds") ?? 0)) },
+                  { k: "Hvile-tid i går", v: hoursMin(rawNum(yesterday?.raw, "sedentarySeconds")) },
                   { k: "Snitt 7d", v: avgFmt(data?.daily?.slice(-7).map((d) => d.steps), 0) },
                   { k: "Snitt 30d", v: avgFmt(data?.daily?.map((d) => d.steps), 0) },
                   { k: "Min 30d", v: minFmt(data?.daily?.map((d) => d.steps), 0) },
@@ -475,6 +492,8 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
                   { k: "Sum 30d", v: sumFmt(data?.daily?.map((d) => d.steps), 0) },
                   { k: "Distanse 7d", v: (() => { const m = (data?.daily?.slice(-7) ?? []).reduce((a, d) => a + (d.distance_meters ?? 0), 0); return m > 0 ? `${(m/1000).toFixed(1)} km` : "—"; })() },
                   { k: "Distanse 30d", v: (() => { const m = (data?.daily ?? []).reduce((a, d) => a + (d.distance_meters ?? 0), 0); return m > 0 ? `${(m/1000).toFixed(1)} km` : "—"; })() },
+                  { k: "Snitt gå-tid 7d", v: hoursMin((data?.daily?.slice(-7) ?? []).reduce((a, d) => a + (rawNum(d.raw, "activeSeconds") ?? 0) + (rawNum(d.raw, "highlyActiveSeconds") ?? 0), 0) / Math.max(1, (data?.daily?.slice(-7) ?? []).length)) },
+                  { k: "Snitt hvile-tid 7d", v: hoursMin((data?.daily?.slice(-7) ?? []).reduce((a, d) => a + (rawNum(d.raw, "sedentarySeconds") ?? 0), 0) / Math.max(1, (data?.daily?.slice(-7) ?? []).length)) },
                   { k: "Mål nådd 7d", v: String((data?.daily?.slice(-7) ?? []).filter((d) => d.steps != null && d.step_goal != null && d.steps >= d.step_goal).length) },
                   { k: "Mål nådd 30d", v: String((data?.daily ?? []).filter((d) => d.steps != null && d.step_goal != null && d.steps >= d.step_goal).length) },
                   { k: "Trend 30d", v: trendFmt(data?.daily?.map((d) => d.steps), 0) },
@@ -487,6 +506,15 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
                 details={[
                   { k: "I dag", v: today?.resting_heart_rate != null ? `${today.resting_heart_rate} bpm` : "—" },
                   { k: "I går", v: yesterday?.resting_heart_rate != null ? `${yesterday.resting_heart_rate} bpm` : "—" },
+                  { k: "Stillesittende i dag", v: hoursMin(rawNum(today?.raw, "sedentarySeconds")) },
+                  { k: "På beina i dag", v: hoursMin((rawNum(today?.raw, "activeSeconds") ?? 0) + (rawNum(today?.raw, "highlyActiveSeconds") ?? 0)) },
+                  { k: "Lett aktiv i dag", v: hoursMin(rawNum(today?.raw, "activeSeconds")) },
+                  { k: "Høy aktivitet i dag", v: hoursMin(rawNum(today?.raw, "highlyActiveSeconds")) },
+                  { k: "Søvn i dag", v: hoursMin(rawNum(today?.raw, "sleepingSeconds")) },
+                  { k: "Stillesittende i går", v: hoursMin(rawNum(yesterday?.raw, "sedentarySeconds")) },
+                  { k: "På beina i går", v: hoursMin((rawNum(yesterday?.raw, "activeSeconds") ?? 0) + (rawNum(yesterday?.raw, "highlyActiveSeconds") ?? 0)) },
+                  { k: "Snitt stillesittende 7d", v: hoursMin((data?.daily?.slice(-7) ?? []).reduce((a, d) => a + (rawNum(d.raw, "sedentarySeconds") ?? 0), 0) / Math.max(1, (data?.daily?.slice(-7) ?? []).length)) },
+                  { k: "Snitt på beina 7d", v: hoursMin((data?.daily?.slice(-7) ?? []).reduce((a, d) => a + (rawNum(d.raw, "activeSeconds") ?? 0) + (rawNum(d.raw, "highlyActiveSeconds") ?? 0), 0) / Math.max(1, (data?.daily?.slice(-7) ?? []).length)) },
                   { k: "Snitt 7d", v: avgFmt(data?.daily?.slice(-7).map((d) => d.resting_heart_rate), 0, " bpm") },
                   { k: "Snitt 30d", v: avgFmt(data?.daily?.map((d) => d.resting_heart_rate), 0, " bpm") },
                   { k: "Lavest 30d", v: minFmt(data?.daily?.map((d) => d.resting_heart_rate), 0, " bpm") },
@@ -1271,8 +1299,8 @@ function Tile({
         <div className="mt-2 pt-2 border-t border-border/40 grid grid-cols-2 gap-x-2 gap-y-0.5 text-[10px]">
           {details.map((d) => (
             <div key={d.k} className="flex justify-between items-baseline gap-1 min-w-0">
-              <span className="text-muted-foreground shrink-0">{d.k}</span>
-              <InlineMarquee text={d.v} className="tabular-nums font-medium text-right" />
+              <InlineMarquee text={d.k} className="text-muted-foreground" />
+              <span className="tabular-nums font-medium text-right shrink-0">{d.v}</span>
             </div>
           ))}
         </div>
