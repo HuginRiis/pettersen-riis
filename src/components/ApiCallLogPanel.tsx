@@ -326,7 +326,7 @@ export function ApiCallLogPanel() {
                     key={s}
                     dataKey={s}
                     stackId="a"
-                    fill={appearance.series[i % appearance.series.length]}
+                    fill={colorBySource.get(s) ?? appearance.series[i % appearance.series.length]}
                     name={SOURCE_LABELS[s] ?? s}
                   />
                 ))}
