@@ -334,6 +334,7 @@ function Home() {
           {showHall("/hundene") && <HallCard to="/hundene" title="Hundene" desc="Husets tro følgesvenner." icon="🐺" image={hallHundene} locked={!isAuthed} />}
           {showHall("/trening") && <HallCard to="/trening" title="Treningssalen" desc="Kroppen som rustning." icon="⚔️" image={hallTrening} locked={!isAuthed} badge={<HallBadgeStack><StepsTodayBadge inline owner="arne" /><StepsTodayBadge inline owner="rebekka" /><TrainingLast4WeeksBadge inline /></HallBadgeStack>} />}
           {showHall("/fysisk") && <HallCard to="/fysisk" title="Fysisk" desc="Gåing, sykling og løping fra Strava." icon="🚴" image={hallFysisk} locked={!isAuthed} />}
+          {showHall("/smartklokke") && <HallCard to="/smartklokke" title="Smartklokke" desc="Garmin Fenix 8 — alt klokken vet." icon="⌚" image={hallSmartklokke} locked={!isAuthed} />}
 
           {showHall("/smarthus") && <HallCard to="/smarthus" title="Smartborg" desc="Lys, varme og varslere fra Homey." icon="🏰" image={hallSmarthus} locked={!isAuthed} badge={<HallBadgeStack><MowerStatusBadge inline /></HallBadgeStack>} />}
           {showHall("/lys") && <HallCard to="/lys" title="Lys" desc="Husets ild — tente lys og scener." icon="💡" image={hallLys} locked={!isAuthed} badge={<HallBadgeStack><LightsOnBadge inline /></HallBadgeStack>} />}
