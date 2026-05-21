@@ -48,6 +48,8 @@ export type SlowPageConfig = {
   last_notified: Record<string, string>;
   slow_avg_enabled: boolean;
   slow_avg_ms: number;
+  /** Egen mottaker for "Lav generell ytelse" — fallback til `recipient` hvis tom. */
+  slow_avg_recipient: string;
 };
 
 const DEFAULTS: SlowPageConfig = {
@@ -62,6 +64,7 @@ const DEFAULTS: SlowPageConfig = {
   last_notified: {},
   slow_avg_enabled: false,
   slow_avg_ms: 3000,
+  slow_avg_recipient: "",
 };
 
 export async function loadSlowPageConfig(): Promise<SlowPageConfig> {
