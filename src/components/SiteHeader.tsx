@@ -447,15 +447,15 @@ export function SiteHeader() {
 
         <div className="flex items-center gap-1">
           {open && isAuthed && (
-            <button
-              type="button"
-              onClick={() => setSettingsOpen(true)}
-              aria-label="Topp-meny innstillinger"
-              title="Topp-meny innstillinger"
+            <Link
+              to="/push-varslinger"
+              onClick={() => setOpen(false)}
+              aria-label="Innstillinger"
+              title="Innstillinger"
               className="text-primary p-2 rounded-md hover:bg-primary/10 transition"
             >
               <Settings size={20} />
-            </button>
+            </Link>
           )}
           <button
             className={`relative text-primary p-2 rounded-md transition ${
