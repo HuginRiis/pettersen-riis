@@ -479,6 +479,44 @@ export const garminGet = withApiLog(
   },
 );
 
+/**
+ * Som garminGet, men returnerer null hvis Garmin svarer 404 (ingen data for
+ * dagen) i stedet for å kaste. Slik unngår vi at forventede "ingen data"-
+ * svar (maxmet/fitnessage tidlig på dagen, hviledager osv.) spammer
+ * api-feil-loggen. Andre statuskoder kaster som vanlig.
+ */
+export const garminGetMaybe = withApiLog(
+  "garmin",
+  "GET (maybe)",
+  async <T = unknown>(owner: GarminOwner, path: string): Promise<T | null> => {
+    let t = await ensureValid(owner);
+    const url = path.startsWith("http") ? path : `${API}${path}`;
+    let res = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${t.oauth2_token}`,
+        "User-Agent": USER_AGENT,
+        "Di-Backend": "connectapi.garmin.com",
+        Accept: "application/json",
+      },
+    });
+    if (res.status === 401) {
+      t = await refreshOauth2(owner, t);
+      res = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${t.oauth2_token}`,
+          "User-Agent": USER_AGENT,
+          Accept: "application/json",
+        },
+      });
+    }
+    if (res.status === 404) return null;
+    if (!res.ok) {
+      throw new Error(`Garmin API ${res.status} for ${path}: ${(await res.text()).slice(0, 240)}`);
+    }
+    return res.json() as Promise<T>;
+  },
+);
+
 export async function garminLogin(owner: GarminOwner): Promise<
   | { ok: true; mfa: false; expires_at: string }
   | { ok: true; mfa: true }
