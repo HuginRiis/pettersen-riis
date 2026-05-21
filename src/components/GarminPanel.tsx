@@ -248,7 +248,7 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
   const [mfaOpen, setMfaOpen] = useState(false);
   const [mfaCode, setMfaCode] = useState("");
   const [loginNotice, setLoginNotice] = useState<string | null>(null);
-  const [showCharts, setShowCharts] = useState(false);
+  const [showCharts, setShowCharts] = useState(true);
   const [showActivities, setShowActivities] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   const [chartPeriod, setChartPeriod] = useState<ChartPeriod>("last30");
