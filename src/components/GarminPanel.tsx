@@ -774,11 +774,18 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
                 fallbackSub={today?.active_kilocalories ? `aktive ${fmtNum(today.active_kilocalories)}` : "ingen data"}
                 showDetails={showDetails}
                 details={[
-                  { k: "Total", v: today?.total_kilocalories != null ? `${fmtNum(today.total_kilocalories)} kcal` : "—" },
-                  { k: "Aktive", v: today?.active_kilocalories != null ? `${fmtNum(today.active_kilocalories)} kcal` : "—" },
+                  { k: "Total i dag", v: today?.total_kilocalories != null ? `${fmtNum(today.total_kilocalories)} kcal` : "—" },
+                  { k: "Aktive i dag", v: today?.active_kilocalories != null ? `${fmtNum(today.active_kilocalories)} kcal` : "—" },
                   { k: "BMR", v: today?.total_kilocalories != null && today?.active_kilocalories != null ? `${fmtNum(today.total_kilocalories - today.active_kilocalories)} kcal` : "—" },
+                  { k: "Total i går", v: yesterday?.total_kilocalories != null ? `${fmtNum(yesterday.total_kilocalories)} kcal` : "—" },
+                  { k: "Aktive i går", v: yesterday?.active_kilocalories != null ? `${fmtNum(yesterday.active_kilocalories)} kcal` : "—" },
                   { k: "Snitt 7d", v: avgFmt(data?.daily?.slice(-7).map((d) => d.total_kilocalories), 0, " kcal") },
                   { k: "Snitt 30d", v: avgFmt(data?.daily?.map((d) => d.total_kilocalories), 0, " kcal") },
+                  { k: "Snitt aktive 7d", v: avgFmt(data?.daily?.slice(-7).map((d) => d.active_kilocalories), 0, " kcal") },
+                  { k: "Snitt aktive 30d", v: avgFmt(data?.daily?.map((d) => d.active_kilocalories), 0, " kcal") },
+                  { k: "Sum 7d", v: sumFmt(data?.daily?.slice(-7).map((d) => d.total_kilocalories), 0, " kcal") },
+                  { k: "Sum 30d", v: sumFmt(data?.daily?.map((d) => d.total_kilocalories), 0, " kcal") },
+                  { k: "Beste dag 30d", v: maxFmt(data?.daily?.map((d) => d.total_kilocalories), 0, " kcal") },
                 ]}
                 chart={sparkLine2(data?.daily, "total_kilocalories", "active_kilocalories", C.caloriesTotal, C.caloriesActive)} />
             </div>
