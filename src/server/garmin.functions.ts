@@ -208,19 +208,20 @@ export const getGarminCore = createServerFn({ method: "GET" })
   .inputValidator((d: unknown) => ownerSchema.parse(d ?? {}))
   .handler(async ({ data }) => {
     const owner = data.owner as GarminOwner;
-    const mod = await import("./garmin.server");
     const since = new Date();
     since.setDate(since.getDate() - 30);
     const sinceIso = since.toISOString().slice(0, 10);
 
-    const [status, daily, sleep, lastSync] = await Promise.all([
-      mod.getGarminStatus(owner),
-      loadDaily(owner, sinceIso, false),
-      loadSleep(owner, sinceIso, false),
-      loadLastSync(owner),
-    ]);
+    return cached(`core:${owner}:${sinceIso}`, async () => {
+      const [status, daily, sleep, lastSync] = await Promise.all([
+        loadStatus(owner),
+        loadDaily(owner, sinceIso, false),
+        loadSleep(owner, sinceIso, false),
+        loadLastSync(owner),
+      ]);
 
-    return { owner, status, daily, sleep, lastSync };
+      return { owner, status, daily, sleep, lastSync };
+    });
   });
 
 // Fase 2a: detaljer — full daily/sleep med raw-projeksjoner (hentes når brukeren åpner "Vis detaljer").
@@ -231,11 +232,13 @@ export const getGarminDetails = createServerFn({ method: "GET" })
     const since = new Date();
     since.setDate(since.getDate() - 30);
     const sinceIso = since.toISOString().slice(0, 10);
-    const [daily, sleep] = await Promise.all([
-      loadDaily(owner, sinceIso, true),
-      loadSleep(owner, sinceIso, true),
-    ]);
-    return { owner, daily, sleep };
+    return cached(`details:${owner}:${sinceIso}`, async () => {
+      const [daily, sleep] = await Promise.all([
+        loadDaily(owner, sinceIso, true),
+        loadSleep(owner, sinceIso, true),
+      ]);
+      return { owner, daily, sleep };
+    });
   });
 
 // Fase 2: tunge ekstra-data — aktiviteter og intraday-puls.
@@ -243,11 +246,13 @@ export const getGarminExtras = createServerFn({ method: "GET" })
   .inputValidator((d: unknown) => ownerSchema.parse(d ?? {}))
   .handler(async ({ data }) => {
     const owner = data.owner as GarminOwner;
-    const [activities, intraday] = await Promise.all([
-      loadActivities(owner),
-      loadIntraday(owner),
-    ]);
-    return { owner, activities, intraday };
+    return cached(`extras:${owner}`, async () => {
+      const [activities, intraday] = await Promise.all([
+        loadActivities(owner),
+        loadIntraday(owner),
+      ]);
+      return { owner, activities, intraday };
+    });
   });
 
 
