@@ -464,10 +464,20 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
                 details={[
                   { k: "Mål", v: today?.step_goal ? fmtNum(today.step_goal) : "—" },
                   { k: "Igjen", v: today?.steps != null && today?.step_goal ? fmtNum(Math.max(0, today.step_goal - today.steps)) : "—" },
-                  { k: "Distanse", v: fmtKm(today?.distance_meters) },
                   { k: "% av mål", v: today?.steps != null && today?.step_goal ? `${Math.round((today.steps / today.step_goal) * 100)}%` : "—" },
+                  { k: "Distanse i dag", v: fmtKm(today?.distance_meters) },
+                  { k: "I går", v: yesterday?.steps != null ? fmtNum(yesterday.steps) : "—" },
                   { k: "Snitt 7d", v: avgFmt(data?.daily?.slice(-7).map((d) => d.steps), 0) },
                   { k: "Snitt 30d", v: avgFmt(data?.daily?.map((d) => d.steps), 0) },
+                  { k: "Min 30d", v: minFmt(data?.daily?.map((d) => d.steps), 0) },
+                  { k: "Beste 30d", v: maxFmt(data?.daily?.map((d) => d.steps), 0) },
+                  { k: "Sum 7d", v: sumFmt(data?.daily?.slice(-7).map((d) => d.steps), 0) },
+                  { k: "Sum 30d", v: sumFmt(data?.daily?.map((d) => d.steps), 0) },
+                  { k: "Distanse 7d", v: (() => { const m = (data?.daily?.slice(-7) ?? []).reduce((a, d) => a + (d.distance_meters ?? 0), 0); return m > 0 ? `${(m/1000).toFixed(1)} km` : "—"; })() },
+                  { k: "Distanse 30d", v: (() => { const m = (data?.daily ?? []).reduce((a, d) => a + (d.distance_meters ?? 0), 0); return m > 0 ? `${(m/1000).toFixed(1)} km` : "—"; })() },
+                  { k: "Mål nådd 7d", v: String((data?.daily?.slice(-7) ?? []).filter((d) => d.steps != null && d.step_goal != null && d.steps >= d.step_goal).length) },
+                  { k: "Mål nådd 30d", v: String((data?.daily ?? []).filter((d) => d.steps != null && d.step_goal != null && d.steps >= d.step_goal).length) },
+                  { k: "Trend 30d", v: trendFmt(data?.daily?.map((d) => d.steps), 0) },
                 ]}
                 chart={sparkBar(data?.daily, "steps", C.steps)} />
               <Tile icon={<HeartPulse size={14} style={{color: C.hr}} />} label="Hvilepuls"
@@ -479,6 +489,10 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
                   { k: "I går", v: yesterday?.resting_heart_rate != null ? `${yesterday.resting_heart_rate} bpm` : "—" },
                   { k: "Snitt 7d", v: avgFmt(data?.daily?.slice(-7).map((d) => d.resting_heart_rate), 0, " bpm") },
                   { k: "Snitt 30d", v: avgFmt(data?.daily?.map((d) => d.resting_heart_rate), 0, " bpm") },
+                  { k: "Lavest 30d", v: minFmt(data?.daily?.map((d) => d.resting_heart_rate), 0, " bpm") },
+                  { k: "Høyest 30d", v: maxFmt(data?.daily?.map((d) => d.resting_heart_rate), 0, " bpm") },
+                  { k: "Trend 30d", v: trendFmt(data?.daily?.map((d) => d.resting_heart_rate), 0, " bpm") },
+                  { k: "Målinger 30d", v: countFmt(data?.daily?.map((d) => d.resting_heart_rate)) },
                 ]}
                 chart={sparkLine(data?.daily, "resting_heart_rate", false, C.hr)} />
               <Tile icon={<Heart size={14} style={{color: C.hrAvg}} />} label="Snitt puls"
@@ -490,6 +504,9 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
                   { k: "I går", v: yesterday?.average_heart_rate != null ? `${yesterday.average_heart_rate} bpm` : "—" },
                   { k: "Snitt 7d", v: avgFmt(data?.daily?.slice(-7).map((d) => d.average_heart_rate), 0, " bpm") },
                   { k: "Snitt 30d", v: avgFmt(data?.daily?.map((d) => d.average_heart_rate), 0, " bpm") },
+                  { k: "Min 30d", v: minFmt(data?.daily?.map((d) => d.average_heart_rate), 0, " bpm") },
+                  { k: "Max 30d", v: maxFmt(data?.daily?.map((d) => d.average_heart_rate), 0, " bpm") },
+                  { k: "Trend 30d", v: trendFmt(data?.daily?.map((d) => d.average_heart_rate), 0, " bpm") },
                 ]}
                 chart={sparkLine(data?.daily, "average_heart_rate", false, C.hrAvg)} />
               <Tile icon={<TrendingUp size={14} style={{color: C.hrMax}} />} label="Maks puls"
@@ -500,7 +517,10 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
                   { k: "I dag", v: maxHrToday ? `${maxHrToday} bpm` : "—" },
                   { k: "I går", v: maxHrYesterday ? `${maxHrYesterday} bpm` : "—" },
                   { k: "Aktiviteter i dag", v: String(todaysActs.length) },
+                  { k: "Aktiviteter i går", v: String(yesterdaysActs.length) },
+                  { k: "Snitt maks", v: avgFmt(data?.activities?.map((a) => a.max_hr), 0, " bpm") },
                   { k: "Topp 30d", v: (() => { const top = data?.activities?.reduce((m, a) => Math.max(m, a.max_hr ?? 0), 0) ?? 0; return top ? `${top} bpm` : "—"; })() },
+                  { k: "Aktiviteter 30d", v: String((data?.activities ?? []).length) },
                 ]}
                 chart={sparkLine(
                   (() => {
