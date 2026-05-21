@@ -285,6 +285,7 @@ function renderHourBar(items: Array<{ hour: number; value: number | null }>, col
 type GarminOwner = "arne" | "rebekka";
 export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: GarminOwner; displayName?: string } = {}) {
   const fetchCore = useServerFn(getGarminCore);
+  const fetchDetails = useServerFn(getGarminDetails);
   const fetchExtras = useServerFn(getGarminExtras);
   const loginFn = useServerFn(garminLoginNow);
   const syncFn = useServerFn(garminSyncNow);
@@ -300,6 +301,8 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
   const [showCharts, setShowCharts] = useState(false);
   const [showActivities, setShowActivities] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
+  const [detailsLoaded, setDetailsLoaded] = useState(false);
+  const [extrasLoaded, setExtrasLoaded] = useState(false);
   const [chartPeriod, setChartPeriod] = useState<ChartPeriod>("last30");
   const [showTrend, setShowTrend] = useState(false);
   const [weightAllowed, setWeightAllowed] = useState(false);
@@ -328,21 +331,40 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
 
   const load = async () => {
     setLoading(true);
+    setDetailsLoaded(false);
+    setExtrasLoaded(false);
     try {
       const core = await fetchCore({ data: { owner } }) as Omit<Overview, "activities" | "intraday">;
       setData({ ...core, activities: [], intraday: [] } as Overview);
       setLoading(false);
-      // Fase 2: hent aktiviteter og intraday i bakgrunnen — siden er allerede interaktiv.
-      try {
-        const extras = await fetchExtras({ data: { owner } }) as { activities: Activity[]; intraday: Intraday[] };
-        setData((prev) => prev ? { ...prev, activities: extras.activities, intraday: extras.intraday } : prev);
-      } catch (e) {
-        console.error("Garmin extras failed", e);
-      }
     }
     catch (e) { toast.error((e as Error).message); setLoading(false); }
   };
   useEffect(() => { void load(); }, [owner]);
+
+  const ensureDetails = async () => {
+    if (detailsLoaded) return;
+    setDetailsLoaded(true);
+    try {
+      const det = await fetchDetails({ data: { owner } }) as { daily: Daily[]; sleep: Sleep[] };
+      setData((prev) => prev ? { ...prev, daily: det.daily, sleep: det.sleep } : prev);
+    } catch (e) {
+      setDetailsLoaded(false);
+      console.error("Garmin details failed", e);
+    }
+  };
+
+  const ensureExtras = async () => {
+    if (extrasLoaded) return;
+    setExtrasLoaded(true);
+    try {
+      const extras = await fetchExtras({ data: { owner } }) as { activities: Activity[]; intraday: Intraday[] };
+      setData((prev) => prev ? { ...prev, activities: extras.activities, intraday: extras.intraday } : prev);
+    } catch (e) {
+      setExtrasLoaded(false);
+      console.error("Garmin extras failed", e);
+    }
+  };
 
   const openDevices = async () => {
     setDevicesOpen(true);
