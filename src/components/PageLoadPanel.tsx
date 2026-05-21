@@ -41,6 +41,7 @@ export function PageLoadPanel() {
   const [data, setData] = useState<PageLoadStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedRoute, setSelectedRoute] = useState<string | null>(null);
+  const [expandedUser, setExpandedUser] = useState<string | null>(null);
 
   useEffect(() => {
     let alive = true;
