@@ -61,6 +61,15 @@ function hoursMin(sec?: number | null) {
   const h = Math.floor(sec / 3600); const m = Math.floor((sec % 3600) / 60);
   return h > 0 ? `${h}t ${m}m` : `${m}m`;
 }
+function rawNum(raw: unknown, ...keys: string[]): number | null {
+  if (!raw || typeof raw !== "object") return null;
+  const o = raw as Record<string, unknown>;
+  for (const k of keys) {
+    const v = o[k];
+    if (typeof v === "number" && Number.isFinite(v)) return v;
+  }
+  return null;
+}
 function avgFmt(arr: Array<number | null | undefined> | undefined, digits = 0, unit = ""): string {
   const v = (arr ?? []).filter((n): n is number => typeof n === "number" && n > 0);
   if (!v.length) return "—";
