@@ -170,12 +170,47 @@ export const getPageLoadStats = createServerFn({ method: "GET" })
       .map(([day, v]) => ({ day, avg_ms: Math.round(v.sum / v.count), count: v.count }))
       .sort((a, b) => a.day.localeCompare(b.day));
 
+    // per user
+    const byUser = new Map<string, PageLoadEntry[]>();
+    for (const r of all) {
+      const key = r.who || "anon";
+      const arr = byUser.get(key) ?? [];
+      arr.push(r);
+      byUser.set(key, arr);
+    }
+    const users: PageUserStat[] = Array.from(byUser.entries())
+      .map(([who, list]) => {
+        const sum = list.reduce((s, x) => s + x.load_ms, 0);
+        const routeMap = new Map<string, { count: number; last_at: string }>();
+        for (const r of list) {
+          const cur = routeMap.get(r.route);
+          if (cur) {
+            cur.count += 1;
+            if (r.loaded_at > cur.last_at) cur.last_at = r.loaded_at;
+          } else {
+            routeMap.set(r.route, { count: 1, last_at: r.loaded_at });
+          }
+        }
+        const routes = Array.from(routeMap.entries())
+          .map(([route, v]) => ({ route, count: v.count, last_at: v.last_at }))
+          .sort((a, b) => b.count - a.count);
+        return {
+          who,
+          count: list.length,
+          avg_ms: Math.round(sum / list.length),
+          last_at: list[0].loaded_at,
+          routes,
+        };
+      })
+      .sort((a, b) => b.count - a.count);
+
     const totalSum = all.reduce((s, r) => s + r.load_ms, 0);
     return {
       routes,
       devices,
       recent: all.slice(0, 100),
       daily,
+      users,
       totalCount: all.length,
       avgMs: all.length ? Math.round(totalSum / all.length) : 0,
     };
