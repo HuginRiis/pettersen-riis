@@ -260,7 +260,10 @@ export const garminLoginNow = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => ownerSchema.parse(d ?? {}))
   .handler(async ({ data }) => {
     const mod = await import("./garmin.server");
-    return mod.garminLogin(data.owner as GarminOwner);
+    const owner = data.owner as GarminOwner;
+    const result = await mod.garminLogin(owner);
+    clearGarminCache(owner);
+    return result;
   });
 
 export const garminSubmitMfaCode = createServerFn({ method: "POST" })
@@ -273,7 +276,9 @@ export const garminSubmitMfaCode = createServerFn({ method: "POST" })
   })
   .handler(async ({ data }) => {
     const mod = await import("./garmin.server");
-    return mod.garminSubmitMfa(data.owner, data.code);
+    const result = await mod.garminSubmitMfa(data.owner, data.code);
+    clearGarminCache(data.owner);
+    return result;
   });
 
 export const garminSyncNow = createServerFn({ method: "POST" })
@@ -283,8 +288,14 @@ export const garminSyncNow = createServerFn({ method: "POST" })
   })
   .handler(async ({ data }) => {
     const mod = await import("./garmin-sync.server");
-    if (data.owner) return mod.syncOne(data.owner, "manual");
-    return mod.syncAll("manual");
+    if (data.owner) {
+      const result = await mod.syncOne(data.owner, "manual");
+      clearGarminCache(data.owner);
+      return result;
+    }
+    const result = await mod.syncAll("manual");
+    clearGarminCache();
+    return result;
   });
 
 export type GarminSyncSchedule = {
