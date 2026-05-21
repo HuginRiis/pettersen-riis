@@ -588,6 +588,14 @@ export function SiteHeader() {
           </div>
         </nav>
       )}
+      <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto p-0">
+          <DialogHeader className="px-6 pt-6">
+            <DialogTitle>Topp-meny innstillinger</DialogTitle>
+          </DialogHeader>
+          <HeaderBadgeSettingsPanel />
+        </DialogContent>
+      </Dialog>
     </header>
   );
 }
