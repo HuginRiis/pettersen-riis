@@ -7,6 +7,7 @@
 
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { isApiSourcePaused, ApiSourcePausedError } from "./api-pause.server";
+import { getRequestHeader } from "@tanstack/react-start/server";
 
 /**
  * Best-effort: hent path til siden som trigget API-kallet ut fra Referer.
@@ -14,8 +15,6 @@ import { isApiSourcePaused, ApiSourcePausedError } from "./api-pause.server";
  */
 function getTriggerPath(): string | null {
   try {
-    // Lazy import for å unngå å feile utenfor request-context
-    const { getRequestHeader } = require("@tanstack/react-start/server");
     const ref = getRequestHeader("referer") || getRequestHeader("referrer");
     if (!ref) return null;
     try {
