@@ -5,6 +5,7 @@ export type BadgeSetting = { enabled: boolean; users: string[] };
 export type HeaderBadgeSettings = {
   badges: Record<string, BadgeSetting>;
   weather: { startOffset: 0 | 1; days: number; showTemp: boolean };
+  garbage: { maxDaysAhead: number; showAllSameDay: boolean };
 };
 
 export const HEADER_BADGE_KEY = "header_badges";
