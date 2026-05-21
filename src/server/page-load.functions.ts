@@ -111,7 +111,7 @@ export const getPageLoadStats = createServerFn({ method: "GET" })
       .limit(10000);
     if (error) {
       console.warn("[page-load] select failed", error.message);
-      return { routes: [], devices: [], recent: [], daily: [], totalCount: 0, avgMs: 0 };
+      return { routes: [], devices: [], recent: [], daily: [], users: [], totalCount: 0, avgMs: 0 };
     }
 
     const all = (rows ?? []) as PageLoadEntry[];
