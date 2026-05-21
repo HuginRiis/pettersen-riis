@@ -95,6 +95,7 @@ function RootComponent() {
       <AppearanceApplier />
       <PullToRefresh />
       <VisitorTracker />
+      <PageLoadTracker />
       <LastRouteMemory />
       <Outlet />
       <LoginDialog />
