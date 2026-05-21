@@ -1271,8 +1271,8 @@ function Tile({
         <div className="mt-2 pt-2 border-t border-border/40 grid grid-cols-2 gap-x-2 gap-y-0.5 text-[10px]">
           {details.map((d) => (
             <div key={d.k} className="flex justify-between items-baseline gap-1 min-w-0">
-              <span className="text-muted-foreground shrink-0">{d.k}</span>
-              <InlineMarquee text={d.v} className="tabular-nums font-medium text-right" />
+              <InlineMarquee text={d.k} className="text-muted-foreground text-left" />
+              <span className="tabular-nums font-medium text-right shrink-0">{d.v}</span>
             </div>
           ))}
         </div>
