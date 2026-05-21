@@ -65,3 +65,13 @@ export const deleteChangelog = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+export const deleteAllChangelog = createServerFn({ method: "POST" }).handler(async () => {
+  const { error } = await supabaseAdmin
+    .from("changelog_entries")
+    .delete()
+    .not("id", "is", null);
+  if (error) throw new Error(error.message);
+  return { ok: true };
+});
+
