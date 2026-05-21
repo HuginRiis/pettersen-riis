@@ -257,6 +257,8 @@ export async function computeApiCallSummary(): Promise<ApiCallSummary> {
       nextRunBySource: {},
       schedules: SOURCE_SCHEDULES,
       recent: [],
+      hourly: [],
+      pagesBySource: {},
     };
   }
 
