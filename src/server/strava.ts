@@ -255,18 +255,19 @@ function withStaleMarker(data: any, fetchedAt: number) {
   };
 }
 
-export const runStravaDashboard = async (owner: StravaOwner) => {
+export const runStravaDashboard = async (owner: StravaOwner, opts?: { force?: boolean }) => {
   const ttl = currentTtlMs();
-  // 1) Fersk in-memory cache → returner umiddelbart
+  const force = opts?.force === true;
+  // 1) Fersk in-memory cache → returner umiddelbart (hoppes over ved force)
   const cached = dashboardCache.get(owner);
   const nowMs = Date.now();
-  if (cached && nowMs - cached.at < ttl) {
+  if (!force && cached && nowMs - cached.at < ttl) {
     return cached.data;
   }
 
   // 1b) Last persistent cache (overlever Worker-restart)
   const persisted = !cached ? await loadPersistentCache(owner) : null;
-  if (persisted && nowMs - persisted.at < ttl) {
+  if (!force && persisted && nowMs - persisted.at < ttl) {
     dashboardCache.set(owner, persisted);
     return persisted.data;
   }
