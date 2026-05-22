@@ -55,102 +55,96 @@ function Badge({ children, title, inline }: { children: React.ReactNode; title?:
 
 /** Antall planlagte push-varsler i dag (Oslo-tid). */
 export function PushTodayBadge({ inline }: { inline?: boolean } = {}) {
-  const [count, setCount] = useState<number | null>(null);
+  const count = useBadgeCache<number>(
+    "push-today-count",
+    async () => {
+      const now = new Date();
+      const today = osloDateIso(now);
+      const horizon = new Date(now.getTime() + 2 * 86400000);
+      let n = 0;
+      const inToday = (d: Date) => osloDateIso(d) === today && d >= now;
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
       try {
-        const now = new Date();
-        const today = osloDateIso(now);
-        const horizon = new Date(now.getTime() + 2 * 86400000);
-        let n = 0;
-        const inToday = (d: Date) => osloDateIso(d) === today && d >= now;
+        const { data: agenda } = await supabase
+          .from("agenda_messages")
+          .select("event_date, event_time, notify_minutes_before, notified_at")
+          .is("notified_at", null)
+          .not("event_time", "is", null)
+          .not("notify_minutes_before", "is", null)
+          .gte("event_date", today);
+        for (const a of agenda ?? []) {
+          if (!a.event_time || a.notify_minutes_before == null) continue;
+          const ev = osloLocalToUtc(a.event_date as string, (a.event_time as string).slice(0, 5));
+          const at = new Date(ev.getTime() - (a.notify_minutes_before as number) * 60000);
+          if (inToday(at)) n++;
+        }
+      } catch {}
 
-        try {
-          const { data: agenda } = await supabase
-            .from("agenda_messages")
-            .select("event_date, event_time, notify_minutes_before, notified_at")
-            .is("notified_at", null)
-            .not("event_time", "is", null)
-            .not("notify_minutes_before", "is", null)
-            .gte("event_date", today);
-          for (const a of agenda ?? []) {
-            if (!a.event_time || a.notify_minutes_before == null) continue;
-            const ev = osloLocalToUtc(a.event_date as string, (a.event_time as string).slice(0, 5));
-            const at = new Date(ev.getTime() - (a.notify_minutes_before as number) * 60000);
-            if (inToday(at)) n++;
-          }
-        } catch {}
+      try {
+        const { data: bSetting } = await supabase
+          .from("notification_settings").select("value").eq("key", "birthday_time").maybeSingle();
+        const bcfg = ((bSetting?.value as any) ?? {}) as { hour?: number; minute?: number };
+        const bTime = `${String(bcfg.hour ?? 8).padStart(2, "0")}:${String(bcfg.minute ?? 0).padStart(2, "0")}`;
+        const { data: birthdays } = await supabase
+          .from("birthdays")
+          .select("birth_date, notify_enabled, notified_year")
+          .eq("notify_enabled", true);
+        const yr = Number(new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Oslo", year: "numeric" }).format(now));
+        for (const b of birthdays ?? []) {
+          const [, bm, bd] = (b.birth_date as string).split("-").map(Number);
+          if (b.notified_year === yr) continue;
+          const at = osloLocalToUtc(`${yr}-${String(bm).padStart(2, "0")}-${String(bd).padStart(2, "0")}`, bTime);
+          if (inToday(at)) n++;
+        }
+      } catch {}
 
-        try {
-          const { data: bSetting } = await supabase
-            .from("notification_settings").select("value").eq("key", "birthday_time").maybeSingle();
-          const bcfg = ((bSetting?.value as any) ?? {}) as { hour?: number; minute?: number };
-          const bTime = `${String(bcfg.hour ?? 8).padStart(2, "0")}:${String(bcfg.minute ?? 0).padStart(2, "0")}`;
-          const { data: birthdays } = await supabase
-            .from("birthdays")
-            .select("birth_date, notify_enabled, notified_year")
-            .eq("notify_enabled", true);
-          const yr = Number(new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Oslo", year: "numeric" }).format(now));
-          for (const b of birthdays ?? []) {
-            const [, bm, bd] = (b.birth_date as string).split("-").map(Number);
-            if (b.notified_year === yr) continue;
-            const at = osloLocalToUtc(`${yr}-${String(bm).padStart(2, "0")}-${String(bd).padStart(2, "0")}`, bTime);
-            if (inToday(at)) n++;
-          }
-        } catch {}
+      try {
+        const { data: hytta } = await supabase
+          .from("hytta_checklist")
+          .select("notify_at, notified_at, checked")
+          .is("notified_at", null).eq("checked", false).not("notify_at", "is", null);
+        for (const h of hytta ?? []) {
+          const at = new Date(h.notify_at as string);
+          if (inToday(at)) n++;
+        }
+      } catch {}
 
-        try {
-          const { data: hytta } = await supabase
-            .from("hytta_checklist")
-            .select("notify_at, notified_at, checked")
-            .is("notified_at", null).eq("checked", false).not("notify_at", "is", null);
-          for (const h of hytta ?? []) {
-            const at = new Date(h.notify_at as string);
-            if (inToday(at)) n++;
-          }
-        } catch {}
+      try {
+        const w = await getUpcomingWeatherEvaluations();
+        for (const x of w) {
+          const at = new Date(x.notifyAt);
+          if (x.status !== "no-hit" && inToday(at)) n++;
+        }
+      } catch {}
+      try {
+        const u = await getUpcomingUvEvaluations();
+        for (const x of u) {
+          const at = new Date(x.notifyAt);
+          if (x.status !== "no-hit" && inToday(at)) n++;
+        }
+      } catch {}
 
-        try {
-          const w = await getUpcomingWeatherEvaluations();
-          for (const x of w) {
-            const at = new Date(x.notifyAt);
-            if (x.status !== "no-hit" && inToday(at)) n++;
-          }
-        } catch {}
-        try {
-          const u = await getUpcomingUvEvaluations();
-          for (const x of u) {
-            const at = new Date(x.notifyAt);
-            if (x.status !== "no-hit" && inToday(at)) n++;
-          }
-        } catch {}
+      try {
+        const overview = await getGarbageOverview();
+        const prefMap = new Map<number, typeof overview.prefs[number]>();
+        for (const p of overview.prefs) prefMap.set(p.fraksjon_id, p);
+        for (const p of overview.pickups) {
+          const pref = prefMap.get(p.fraksjonId);
+          if (!pref || !pref.enabled) continue;
+          const [py, pm, pd] = p.date.split("-").map(Number);
+          const ndUtc = new Date(Date.UTC(py, pm - 1, pd) - pref.days_before * 86400000);
+          const dateIso = `${ndUtc.getUTCFullYear()}-${String(ndUtc.getUTCMonth() + 1).padStart(2, "0")}-${String(ndUtc.getUTCDate()).padStart(2, "0")}`;
+          const time = `${String(pref.notify_hour).padStart(2, "0")}:${String(pref.notify_minute).padStart(2, "0")}`;
+          const at = osloLocalToUtc(dateIso, time);
+          if (at > horizon) continue;
+          if (inToday(at)) n++;
+        }
+      } catch {}
 
-        try {
-          const overview = await getGarbageOverview();
-          const prefMap = new Map<number, typeof overview.prefs[number]>();
-          for (const p of overview.prefs) prefMap.set(p.fraksjon_id, p);
-          for (const p of overview.pickups) {
-            const pref = prefMap.get(p.fraksjonId);
-            if (!pref || !pref.enabled) continue;
-            const [py, pm, pd] = p.date.split("-").map(Number);
-            const ndUtc = new Date(Date.UTC(py, pm - 1, pd) - pref.days_before * 86400000);
-            const dateIso = `${ndUtc.getUTCFullYear()}-${String(ndUtc.getUTCMonth() + 1).padStart(2, "0")}-${String(ndUtc.getUTCDate()).padStart(2, "0")}`;
-            const time = `${String(pref.notify_hour).padStart(2, "0")}:${String(pref.notify_minute).padStart(2, "0")}`;
-            const at = osloLocalToUtc(dateIso, time);
-            if (at > horizon) continue;
-            if (inToday(at)) n++;
-          }
-        } catch {}
-
-        if (!cancelled) setCount(n);
-      } catch {
-        if (!cancelled) setCount(null);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, []);
+      return n;
+    },
+    { ttlMs: 15 * 60_000 },
+  );
 
   if (count == null || count === 0) return null;
   return <Badge inline={inline} title={`${count} planlagte varsler i dag`}>{count}</Badge>;
