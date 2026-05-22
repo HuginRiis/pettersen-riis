@@ -142,6 +142,10 @@ export function GarminCompare() {
   const [rebekka, setRebekka] = useState<Overview | null>(null);
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState<Period>("today");
+  const [showSettings, setShowSettings] = useState(false);
+  const [topN, setTopN] = usePersistedState<number>("garmin-compare:topN", 5);
+  const [showExplanations, setShowExplanations] = usePersistedState<boolean>("garmin-compare:explain", false);
+  const safeTopN = Math.min(15, Math.max(1, Number(topN) || 5));
 
   useEffect(() => {
     (async () => {
