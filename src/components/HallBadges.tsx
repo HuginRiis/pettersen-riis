@@ -412,32 +412,28 @@ export function AlertsSeverityBadge({ inline }: { inline?: boolean } = {}) {
 
 /** Strømforbruk i dag vs i går (Borgen + Hytta), prosent endring. */
 export function PowerVsYesterdayBadge({ inline }: { inline?: boolean } = {}) {
-  const [pct, setPct] = useState<number | null>(null);
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const fmt = (d: Date) => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Oslo", year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
-        const today = fmt(new Date());
-        const y = new Date(); y.setDate(y.getDate() - 1);
-        const yest = fmt(y);
-        const { data } = await supabase
-          .from("tibber_daily_kwh")
-          .select("day, location, kwh")
-          .in("day", [today, yest]);
-        let t = 0, ye = 0;
-        for (const r of (data ?? []) as Array<{ day: string; kwh: number | string }>) {
-          const v = Number(r.kwh) || 0;
-          if (r.day === today) t += v;
-          else if (r.day === yest) ye += v;
-        }
-        if (cancelled) return;
-        if (ye <= 0) { setPct(null); return; }
-        setPct(((t - ye) / ye) * 100);
-      } catch {}
-    })();
-    return () => { cancelled = true; };
-  }, []);
+  const pct = useBadgeCache<number>(
+    "power-vs-yesterday-pct",
+    async () => {
+      const fmt = (d: Date) => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Oslo", year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
+      const today = fmt(new Date());
+      const y = new Date(); y.setDate(y.getDate() - 1);
+      const yest = fmt(y);
+      const { data } = await supabase
+        .from("tibber_daily_kwh")
+        .select("day, location, kwh")
+        .in("day", [today, yest]);
+      let t = 0, ye = 0;
+      for (const r of (data ?? []) as Array<{ day: string; kwh: number | string }>) {
+        const v = Number(r.kwh) || 0;
+        if (r.day === today) t += v;
+        else if (r.day === yest) ye += v;
+      }
+      if (ye <= 0) return null;
+      return ((t - ye) / ye) * 100;
+    },
+    { ttlMs: 15 * 60_000 },
+  );
   if (pct == null || !isFinite(pct)) return null;
   const up = pct >= 0;
   const tone = up
