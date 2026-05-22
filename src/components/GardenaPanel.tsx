@@ -434,8 +434,7 @@ export function GardenaPanel() {
       const res = await sendCmd({ data: { serviceId: svcId, command: cmd, seconds } });
       if (!res.ok) setMsg(`Feil: ${res.error ?? "ukjent"}`);
       else {
-        setMsg(`Sendte ${cmd}`);
-        setTimeout(load, 2500);
+        setMsg(`Sendte ${cmd} — trykk Oppdater for ny status`);
       }
     } catch (e: any) {
       setMsg(`Feil: ${e?.message ?? "ukjent"}`);
