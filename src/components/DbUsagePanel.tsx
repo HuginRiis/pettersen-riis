@@ -117,6 +117,7 @@ export function DbUsagePanel() {
   const [pending, setPending] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [bucketFiles, setBucketFiles] = useState<Record<string, { loading: boolean; objects: StorageObject[] }>>({});
+  const [catSort, setCatSort] = useState<Record<string, "bytes" | "name">>({});
 
   async function toggleCategory(name: string, bucketsInCat: StorageBucket[]) {
     setExpanded((prev) => {
@@ -321,13 +322,31 @@ export function DbUsagePanel() {
                   </button>
                   {isOpen && (
                     <div className="px-2 pt-2 pb-3 space-y-3">
+                      <div className="flex items-center justify-end gap-1.5">
+                        <span className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Sorter</span>
+                        <select
+                          value={catSort[c.name] ?? "bytes"}
+                          onChange={(e) =>
+                            setCatSort((prev) => ({ ...prev, [c.name]: e.target.value as "bytes" | "name" }))
+                          }
+                          className="text-[11px] px-1.5 py-0.5 rounded border border-border bg-background"
+                          aria-label={`Sorter ${c.name}`}
+                        >
+                          <option value="bytes">Størrelse (høy → lav)</option>
+                          <option value="name">Navn (A → Å)</option>
+                        </select>
+                      </div>
                       {c.tables.length > 0 && (
                         <div>
                           <div className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-1">
                             Tabeller ({c.tables.length})
                           </div>
                           <div className="space-y-0.5">
-                            {c.tables.map((t) => (
+                            {[...c.tables].sort((a, b) =>
+                              (catSort[c.name] ?? "bytes") === "name"
+                                ? a.table.localeCompare(b.table, "nb")
+                                : b.bytes - a.bytes,
+                            ).map((t) => (
                               <div key={t.table} className="flex items-center justify-between text-[11px]">
                                 <span className="font-mono truncate pr-2">{t.table}</span>
                                 <span className="font-mono text-muted-foreground tabular-nums shrink-0">
@@ -354,7 +373,11 @@ export function DbUsagePanel() {
                               <div className="text-[11px] text-muted-foreground">Ingen filer.</div>
                             ) : (
                               <div className="space-y-0.5">
-                                {files.objects.map((o) => (
+                                {[...files.objects].sort((a, b) =>
+                                  (catSort[c.name] ?? "bytes") === "name"
+                                    ? a.name.localeCompare(b.name, "nb")
+                                    : b.bytes - a.bytes,
+                                ).map((o) => (
                                   <div key={o.name} className="flex items-center justify-between text-[11px]">
                                     <span className="font-mono truncate pr-2" title={o.name}>{o.name}</span>
                                     <span className="font-mono text-muted-foreground tabular-nums shrink-0">
