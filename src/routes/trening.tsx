@@ -598,7 +598,7 @@ function StravaHouseBanner({ owner }: { owner: Owner }) {
   );
 }
 
-export function StravaHouses() {
+export function StravaHouses({ autoLoad = true }: { autoLoad?: boolean } = {}) {
   const [tab, setTab] = useState<"arne" | "rebekka" | "compare">("arne");
   return (
     <div className="space-y-3">
@@ -629,14 +629,14 @@ export function StravaHouses() {
 
         <TabsContent value="arne" className="mt-3">
           <StravaHouseBanner owner="arne" />
-          <StravaSection owner="arne" displayName="Arne" />
+          <StravaSection owner="arne" displayName="Arne" autoLoad={autoLoad} />
         </TabsContent>
         <TabsContent value="rebekka" className="mt-3">
           <StravaHouseBanner owner="rebekka" />
-          <StravaSection owner="rebekka" displayName="Rebekka" />
+          <StravaSection owner="rebekka" displayName="Rebekka" autoLoad={autoLoad} />
         </TabsContent>
         <TabsContent value="compare" className="mt-3">
-          <StravaCompare />
+          <StravaCompare autoLoad={autoLoad} />
         </TabsContent>
       </Tabs>
     </div>
