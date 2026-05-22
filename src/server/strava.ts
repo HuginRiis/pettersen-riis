@@ -654,8 +654,7 @@ export const getStravaDashboard = createServerFn({ method: "GET" })
     owner: parseOwner(input?.owner),
   }))
   .handler(async ({ data }) => {
-    const { withApiLog } = await import("./api-call-log.server");
-    return withApiLog("strava", "getStravaDashboard", () =>
-      runStravaDashboard(data.owner),
-    )();
+    // Ingen withApiLog her — stravaFetch logger selve Strava-kallene.
+    // Cache-treff produserer dermed ingen api_call_log-entry.
+    return runStravaDashboard(data.owner);
   });
