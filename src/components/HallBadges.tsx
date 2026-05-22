@@ -461,24 +461,28 @@ export function TrainingLast4WeeksBadge({ inline }: { inline?: boolean } = {}) {
   const [counts, setCounts] = useState<{ run: number; ride: number; swim: number; walk: number } | null>(null);
   useEffect(() => {
     let cancelled = false;
+    const apply = (r: any) => {
+      if (cancelled || !r?.ok) return;
+      const t = r.totals ?? {};
+      setCounts({
+        run: t.recentRun?.count ?? 0,
+        ride: t.recentRide?.count ?? 0,
+        swim: t.recentSwim?.count ?? 0,
+        walk: t.recentWalk?.count ?? 0,
+      });
+    };
+    let unsub: (() => void) | null = null;
     (async () => {
       try {
-        // Bruker KUN delt cache — trigger aldri nytt Strava-kall ved
-        // badge-rendering (header-meny, sidebytte osv.).
-        const { getCachedStrava } = await import("@/lib/strava-cache");
-        const r: any = getCachedStrava("arne");
-        if (cancelled) return;
-        if (!r?.ok) return;
-        const t = r.totals ?? {};
-        setCounts({
-          run: t.recentRun?.count ?? 0,
-          ride: t.recentRide?.count ?? 0,
-          swim: t.recentSwim?.count ?? 0,
-          walk: t.recentWalk?.count ?? 0,
-        });
+        // Bruker KUN delt (persistert) cache — trigger aldri nytt Strava-kall
+        // ved badge-rendering. Abonnerer slik at badget oppdateres når /fysisk
+        // henter nye data.
+        const { getCachedStrava, subscribeStrava } = await import("@/lib/strava-cache");
+        apply(getCachedStrava("arne"));
+        unsub = subscribeStrava("arne", apply);
       } catch {}
     })();
-    return () => { cancelled = true; };
+    return () => { cancelled = true; if (unsub) unsub(); };
   }, []);
   if (!counts) return null;
   const items: Array<{ n: number; emoji: string; label: string; cls: string }> = [];
