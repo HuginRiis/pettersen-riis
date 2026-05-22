@@ -916,7 +916,7 @@ function StravaSection({ owner, displayName }: { owner: Owner; displayName: stri
                 ↺ Bytt konto
               </a>
               <button
-                onClick={loadDash}
+                onClick={() => loadDash(true)}
                 disabled={dash.kind === "loading"}
                 className="text-xs uppercase tracking-[0.2em] text-muted-foreground hover:text-primary disabled:opacity-50"
               >
