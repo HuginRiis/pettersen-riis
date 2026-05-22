@@ -38,27 +38,43 @@ const LEVELS = [
   {
     threshold: 8,
     column: "notified_date_8" as const,
+    fallColumn: "notified_fall_date_8" as const,
+    fallEnabledColumn: "notify_fall_8" as const,
     title: (lead: number) =>
       lead <= 0 ? "☀️ Ekstrem UV nå" : `☀️ Ekstrem UV om ${lead} min — forbered deg`,
     body: (loc: string, uv: number, lead: number) =>
       `${loc}: UV når ${uv.toFixed(1)} ${leadLabel(lead)}. Unngå sol kl 12-15. Smør med SPF 50, finn klær og skygge.`,
+    fallTitle: () => "🌤️ UV under 8 — ekstrem-fare over",
+    fallBody: (loc: string, uv: number) =>
+      `${loc}: UV er nå ${uv.toFixed(1)} (under 8). Du kan gå ut igjen, men hold SPF 30+ på.`,
   },
   {
     threshold: 6,
     column: "notified_date_6" as const,
+    fallColumn: "notified_fall_date_6" as const,
+    fallEnabledColumn: "notify_fall_6" as const,
     title: (lead: number) =>
       lead <= 0 ? "🧴 Sterk UV nå — styrk beskyttelsen" : `🧴 Sterk UV om ${lead} min — styrk beskyttelsen`,
     body: (loc: string, uv: number, lead: number) =>
       `${loc}: UV når ${uv.toFixed(1)} ${leadLabel(lead)}. Smør med SPF 30+, ta på solhatt og lette klær. Søk skygge midt på dagen.`,
+    fallTitle: () => "🌤️ UV under 6 — du kan slappe litt av",
+    fallBody: (loc: string, uv: number) =>
+      `${loc}: UV er nå ${uv.toFixed(1)} (under 6). SPF 30 holder, men du trenger ikke søke skygge spesielt.`,
   },
   {
     threshold: 3,
     column: "notified_date_3" as const,
+    fallColumn: "notified_fall_date_3" as const,
+    fallEnabledColumn: "notify_fall_3" as const,
     title: (lead: number) => (lead <= 0 ? "🧴 På tide med solkrem" : `🧴 Solkrem om ${lead} min`),
     body: (loc: string, uv: number, lead: number) =>
       `${loc}: UV når ${uv.toFixed(1)} ${leadLabel(lead)}. Smør med SPF 30 på utsatt hud (DSA-anbefaling).`,
+    fallTitle: () => "🌤️ UV under 3 — solkrem ikke nødvendig",
+    fallBody: (loc: string, uv: number) =>
+      `${loc}: UV er nå ${uv.toFixed(1)} (under 3). Solkrem er ikke lenger nødvendig i dag.`,
   },
 ] as const;
+
 
 /**
  * Henter forventet UV ~`leadMinutes` frem i tid fra MET.no, slik at vi
