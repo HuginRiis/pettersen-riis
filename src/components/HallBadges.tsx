@@ -943,12 +943,14 @@ function pickRoborockStatus(snap: { cloud: any; homey: any }, match: "hjem" | "h
 }
 
 export function RoborockStatusBadge({ inline, match, name }: { inline?: boolean; match: "hjem" | "hytt"; name: string }) {
-  const [info, setInfo] = useState<{ label: string; emoji: string; tone: "ok" | "warn" | "error" | "info"; battery: number | null } | null>(null);
-  useEffect(() => {
-    let cancelled = false;
-    loadRoborock().then((snap) => { if (!cancelled) setInfo(pickRoborockStatus(snap, match)); });
-    return () => { cancelled = true; };
-  }, [match]);
+  const info = useBadgeCache<{ label: string; emoji: string; tone: "ok" | "warn" | "error" | "info"; battery: number | null }>(
+    `roborock-status:${match}`,
+    async () => {
+      const snap = await loadRoborock();
+      return pickRoborockStatus(snap, match);
+    },
+    { ttlMs: 10 * 60_000 },
+  );
   if (!info) return null;
   const tone =
     info.tone === "ok" ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40" :
