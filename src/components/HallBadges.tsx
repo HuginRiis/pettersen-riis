@@ -1091,11 +1091,9 @@ function useOkonomiKpisFor(cfg: PeriodCfg) {
   const [k, setK] = useState<OkonomiKpis | null>(_kpiCache.get(cacheKey)?.data ?? null);
   useEffect(() => {
     let cancelled = false;
+    // Ingen interval-polling — kun én henting per mount, og bare hvis cache er tom/utgått.
     fetchOkonomiKpis(cfg).then((d) => { if (!cancelled) setK(d); }).catch(() => {});
-    const t = setInterval(() => {
-      fetchOkonomiKpis(cfg).then((d) => { if (!cancelled) setK(d); }).catch(() => {});
-    }, 120_000);
-    return () => { cancelled = true; clearInterval(t); };
+    return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cacheKey]);
   return k;
