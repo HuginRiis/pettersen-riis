@@ -295,22 +295,73 @@ export function GarminCompare() {
           </div>
         </div>
 
-        {/* Top 5 Krønike-pekepinner */}
+        {/* Krønike-pekepinner — antall styres i innstillinger */}
         {!loading && top5.length > 0 && (
           <div className="rounded border border-amber-500/30 bg-black/30 p-3">
-            <div className="text-[10px] uppercase tracking-[0.2em] text-amber-300 mb-2 flex items-center gap-1.5" style={{ fontFamily: display }}>
-              <Swords size={12} /> KRØNIKEN — TOPP 5
+            <div className="flex items-center justify-between mb-2 gap-2">
+              <div className="text-[10px] uppercase tracking-[0.2em] text-amber-300 flex items-center gap-1.5" style={{ fontFamily: display }}>
+                <Swords size={12} /> KRØNIKEN — TOPP {safeTopN}
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowSettings((v) => !v)}
+                className="text-[10px] uppercase tracking-[0.15em] text-amber-300/70 hover:text-amber-200 inline-flex items-center gap-1"
+                style={{ fontFamily: display }}
+                aria-expanded={showSettings}
+              >
+                <Settings2 size={12} /> Innstillinger
+              </button>
             </div>
+
+            {showSettings && (
+              <div className="mb-3 rounded border border-amber-500/20 bg-black/40 p-2.5 space-y-2">
+                <label className="flex items-center justify-between gap-3 text-[11px]">
+                  <span className="text-amber-100/90">Antall topp ({safeTopN})</span>
+                  <input
+                    type="range"
+                    min={1}
+                    max={15}
+                    step={1}
+                    value={safeTopN}
+                    onChange={(e) => setTopN(Number(e.target.value))}
+                    className="flex-1 max-w-[60%] accent-amber-400"
+                  />
+                </label>
+                <label className="flex items-center justify-between gap-3 text-[11px] cursor-pointer">
+                  <span className="text-amber-100/90">
+                    Vis forklaringer
+                    <span className="block text-[10px] text-muted-foreground italic">
+                      Når på vises en kort forklaring under hver pekepinn om hva målingen betyr og hva som er bra.
+                    </span>
+                  </span>
+                  <input
+                    type="checkbox"
+                    checked={showExplanations}
+                    onChange={(e) => setShowExplanations(e.target.checked)}
+                    className="h-4 w-4 accent-amber-400 shrink-0"
+                  />
+                </label>
+              </div>
+            )}
+
             <ol className="space-y-1.5">
-              {top5.map((h, i) => (
-                <li key={i} className="text-xs flex items-start gap-2">
-                  <span className="text-amber-400/80 tabular-nums w-4 shrink-0" style={{ fontFamily: display }}>{i + 1}.</span>
-                  {h.winner === "arne"
-                    ? <Crown className="h-3 w-3 text-slate-200 mt-0.5 shrink-0" />
-                    : <Flame className="h-3 w-3 text-rose-300 mt-0.5 shrink-0" />}
-                  <span className={h.winner === "arne" ? "text-slate-100" : "text-rose-100"}>{h.text}</span>
-                </li>
-              ))}
+              {top5.map((h, i) => {
+                const expl = EXPLANATIONS[h.label.toLowerCase()];
+                return (
+                  <li key={i} className="text-xs">
+                    <div className="flex items-start gap-2">
+                      <span className="text-amber-400/80 tabular-nums w-4 shrink-0" style={{ fontFamily: display }}>{i + 1}.</span>
+                      {h.winner === "arne"
+                        ? <Crown className="h-3 w-3 text-slate-200 mt-0.5 shrink-0" />
+                        : <Flame className="h-3 w-3 text-rose-300 mt-0.5 shrink-0" />}
+                      <span className={h.winner === "arne" ? "text-slate-100" : "text-rose-100"}>{h.text}</span>
+                    </div>
+                    {showExplanations && expl && (
+                      <div className="pl-9 mt-0.5 text-[10px] text-muted-foreground italic">{expl}</div>
+                    )}
+                  </li>
+                );
+              })}
             </ol>
           </div>
         )}
