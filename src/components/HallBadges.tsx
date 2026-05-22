@@ -375,24 +375,20 @@ export function AlarmStateBadge({ inline }: { inline?: boolean } = {}) {
 
 /** Antall aktive farevarsler etter alvorlighet (rød/oransje/gul). 0 vises ikke. */
 export function AlertsSeverityBadge({ inline }: { inline?: boolean } = {}) {
-  const [counts, setCounts] = useState<{ red: number; orange: number; yellow: number } | null>(null);
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const r = await getTelemarkAlerts();
-        if (cancelled) return;
-        let red = 0, orange = 0, yellow = 0;
-        for (const a of r.alerts ?? []) {
-          if (a.riskMatrixColor === "Red") red++;
-          else if (a.riskMatrixColor === "Orange") orange++;
-          else if (a.riskMatrixColor === "Yellow") yellow++;
-        }
-        setCounts({ red, orange, yellow });
-      } catch {}
-    })();
-    return () => { cancelled = true; };
-  }, []);
+  const counts = useBadgeCache<{ red: number; orange: number; yellow: number }>(
+    "alerts-severity",
+    async () => {
+      const r = await getTelemarkAlerts();
+      let red = 0, orange = 0, yellow = 0;
+      for (const a of r.alerts ?? []) {
+        if (a.riskMatrixColor === "Red") red++;
+        else if (a.riskMatrixColor === "Orange") orange++;
+        else if (a.riskMatrixColor === "Yellow") yellow++;
+      }
+      return { red, orange, yellow };
+    },
+    { ttlMs: 10 * 60_000 },
+  );
   if (!counts) return null;
   const items: Array<{ n: number; cls: string; title: string }> = [];
   if (counts.red > 0) items.push({ n: counts.red, cls: "bg-destructive/30 text-destructive border-destructive/50", title: "Røde varsler" });
