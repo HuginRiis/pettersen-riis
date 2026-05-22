@@ -24,7 +24,7 @@ import { ChartAppearanceSettingsPanel } from "@/components/ChartAppearanceSettin
 import { OkonomiSettingsPanel } from "@/components/OkonomiSettingsPanel";
 import { HomeySensorSettings } from "@/components/HomeySensorSettings";
 import {
-  Bell, BellOff, Calendar, Cake, Trash2, CloudSun, Sun, Lightbulb, ScrollText, ShieldCheck, Lock, ExternalLink, Smartphone, X, Activity,
+  Bell, BellOff, Calendar, Cake, Trash2, CloudSun, Lightbulb, ScrollText, ShieldCheck, Lock, ExternalLink, Smartphone, X, Activity,
 } from "lucide-react";
 import heroImg from "@/assets/got-agenda.jpg";
 import { CollapsibleSection } from "@/components/CollapsibleSection";
