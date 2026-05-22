@@ -192,7 +192,6 @@ function symbolEmoji(symbol: string | null): string {
 
 /** Værsymbol for i morgen (Tollnes). */
 export function TomorrowWeatherBadge({ lat, lon, inline, useGps }: { lat: number; lon: number; inline?: boolean; useGps?: boolean }) {
-  const [emoji, setEmoji] = useState<string | null>(null);
   const [coord, setCoord] = useState<{ lat: number; lon: number }>({ lat, lon });
   useEffect(() => {
     if (!useGps || typeof navigator === "undefined" || !navigator.geolocation) {
@@ -209,41 +208,37 @@ export function TomorrowWeatherBadge({ lat, lon, inline, useGps }: { lat: number
     );
     return () => { cancelled = true; };
   }, [useGps, lat, lon]);
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetch(
-          `https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=${coord.lat}&lon=${coord.lon}`,
-          { headers: { Accept: "application/json" } },
-        );
-        if (!res.ok) return;
-        const data = await res.json();
-        const series = data?.properties?.timeseries ?? [];
-        const tomorrow = new Date();
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        const tIso = tomorrow.toISOString().slice(0, 10);
-        let best: any = null;
-        let bestDiff = Infinity;
-        for (const e of series) {
-          const t: string = e.time;
-          if (!t.startsWith(tIso)) continue;
-          const hour = parseInt(t.slice(11, 13));
-          const diff = Math.abs(hour - 12);
-          if (diff < bestDiff) {
-            bestDiff = diff;
-            best = e;
-          }
-        }
-        const sym =
-          best?.data?.next_6_hours?.summary?.symbol_code ??
-          best?.data?.next_1_hours?.summary?.symbol_code ??
-          null;
-        if (!cancelled) setEmoji(symbolEmoji(sym));
-      } catch {}
-    })();
-    return () => { cancelled = true; };
-  }, [coord.lat, coord.lon]);
+  const key = `weather-tomorrow:${coord.lat.toFixed(3)},${coord.lon.toFixed(3)}`;
+  const emoji = useBadgeCache<string>(
+    key,
+    async () => {
+      const res = await fetch(
+        `https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=${coord.lat}&lon=${coord.lon}`,
+        { headers: { Accept: "application/json" } },
+      );
+      if (!res.ok) return null;
+      const data = await res.json();
+      const series = data?.properties?.timeseries ?? [];
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const tIso = tomorrow.toISOString().slice(0, 10);
+      let best: any = null;
+      let bestDiff = Infinity;
+      for (const e of series) {
+        const t: string = e.time;
+        if (!t.startsWith(tIso)) continue;
+        const hour = parseInt(t.slice(11, 13));
+        const diff = Math.abs(hour - 12);
+        if (diff < bestDiff) { bestDiff = diff; best = e; }
+      }
+      const sym =
+        best?.data?.next_6_hours?.summary?.symbol_code ??
+        best?.data?.next_1_hours?.summary?.symbol_code ??
+        null;
+      return symbolEmoji(sym);
+    },
+    { ttlMs: 30 * 60_000 },
+  );
   if (!emoji) return null;
   if (inline) {
     return (
