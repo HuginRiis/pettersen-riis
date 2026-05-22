@@ -812,15 +812,14 @@ export function UtgangsdorenLockBadge({ inline }: { inline?: boolean } = {}) {
 }
 
 /* ----------------------------- Gardena gressklipper-badges ----------------------------- */
+// Ingen automatisk API-henting. Badges leser kun fra delt klient-cache som fylles
+// av "Oppdater"-knappen på /gressklipper. Uten cache → ingen badge (null).
+import { getCachedGardena, subscribeGardena, type GardenaSnap } from "@/lib/gardena-cache";
 
-let __gardenaPromise: Promise<any> | null = null;
-let __gardenaCachedAt = 0;
-function loadGardena(): Promise<any> {
-  const now = Date.now();
-  if (__gardenaPromise && now - __gardenaCachedAt < 5 * 60_000) return __gardenaPromise;
-  __gardenaCachedAt = now;
-  __gardenaPromise = import("@/lib/gardena.functions").then((m) => m.getGardenaSnapshot()).catch(() => null);
-  return __gardenaPromise;
+function useCachedGardena(): GardenaSnap | null {
+  const [snap, setSnap] = useState<GardenaSnap | null>(() => getCachedGardena());
+  useEffect(() => subscribeGardena(setSnap), []);
+  return snap;
 }
 
 const GARDENA_ACTIVITY_LABEL: Record<string, { label: string; emoji: string; tone: "ok" | "warn" | "error" | "info" }> = {
@@ -837,23 +836,20 @@ const GARDENA_ACTIVITY_LABEL: Record<string, { label: string; emoji: string; ton
 };
 
 export function GardenaStatusBadge({ inline }: { inline?: boolean } = {}) {
-  const [info, setInfo] = useState<{ label: string; emoji: string; tone: "ok" | "warn" | "error" | "info" } | null>(null);
-  useEffect(() => {
-    let cancelled = false;
-    loadGardena().then((snap) => {
-      if (cancelled || !snap?.ok || !snap.mowers?.length) return;
-      const m = snap.mowers[0];
-      const stUp = (m.state ?? "").toUpperCase();
-      if (stUp && stUp !== "OK") {
-        if (stUp.includes("ERROR")) { setInfo({ label: "Feil", emoji: "⚠️", tone: "error" }); return; }
-        if (stUp.includes("WARNING")) { setInfo({ label: "Advarsel", emoji: "⚠️", tone: "warn" }); return; }
-      }
-      const a = GARDENA_ACTIVITY_LABEL[(m.activity ?? "").toUpperCase()];
-      if (a) setInfo(a);
-      else if (m.activity) setInfo({ label: String(m.activity).replaceAll("_", " ").toLowerCase(), emoji: "🤖", tone: "info" });
-    });
-    return () => { cancelled = true; };
-  }, []);
+  const snap = useCachedGardena();
+  if (!snap?.ok || !snap.mowers?.length) return null;
+  const m = snap.mowers[0];
+  let info: { label: string; emoji: string; tone: "ok" | "warn" | "error" | "info" } | null = null;
+  const stUp = (m.state ?? "").toUpperCase();
+  if (stUp && stUp !== "OK") {
+    if (stUp.includes("ERROR")) info = { label: "Feil", emoji: "⚠️", tone: "error" };
+    else if (stUp.includes("WARNING")) info = { label: "Advarsel", emoji: "⚠️", tone: "warn" };
+  }
+  if (!info) {
+    const a = GARDENA_ACTIVITY_LABEL[(m.activity ?? "").toUpperCase()];
+    if (a) info = a;
+    else if (m.activity) info = { label: String(m.activity).replaceAll("_", " ").toLowerCase(), emoji: "🤖", tone: "info" };
+  }
   if (!info) return null;
   const tone =
     info.tone === "ok" ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40" :
@@ -869,16 +865,10 @@ export function GardenaStatusBadge({ inline }: { inline?: boolean } = {}) {
 }
 
 export function GardenaBatteryBadge({ inline }: { inline?: boolean } = {}) {
-  const [pct, setPct] = useState<number | null>(null);
-  useEffect(() => {
-    let cancelled = false;
-    loadGardena().then((snap) => {
-      if (cancelled || !snap?.ok || !snap.mowers?.length) return;
-      const v = snap.mowers[0]?.battery;
-      if (typeof v === "number") setPct(v);
-    });
-    return () => { cancelled = true; };
-  }, []);
+  const snap = useCachedGardena();
+  const pct = snap?.ok && snap.mowers?.length && typeof snap.mowers[0]?.battery === "number"
+    ? snap.mowers[0].battery as number
+    : null;
   if (pct == null) return null;
   const tone = pct >= 60
     ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40"
@@ -895,23 +885,17 @@ export function GardenaBatteryBadge({ inline }: { inline?: boolean } = {}) {
 }
 
 export function GardenaSignalBadge({ inline }: { inline?: boolean } = {}) {
-  const [val, setVal] = useState<number | null>(null);
-  useEffect(() => {
-    let cancelled = false;
-    loadGardena().then((snap) => {
-      if (cancelled || !snap?.ok || !snap.mowers?.length) return;
-      const v = snap.mowers[0]?.rfLinkLevel;
-      if (typeof v === "number") setVal(v);
-    });
-    return () => { cancelled = true; };
-  }, []);
+  const snap = useCachedGardena();
+  const val = snap?.ok && snap.mowers?.length && typeof snap.mowers[0]?.rfLinkLevel === "number"
+    ? snap.mowers[0].rfLinkLevel as number
+    : null;
   if (val == null) return null;
   const tone = val >= 70
     ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40"
     : val >= 40
     ? "bg-amber-500/20 text-amber-300 border-amber-500/40"
     : "bg-rose-500/20 text-rose-300 border-rose-500/40";
-  const bars = val >= 75 ? "📶" : val >= 50 ? "📶" : val >= 25 ? "📡" : "📡";
+  const bars = val >= 25 ? "📶" : "📡";
   const cls = `px-1.5 h-[18px] rounded-full text-[10px] font-semibold inline-flex items-center justify-center border tabular-nums ${tone}`;
   return (
     <span title={`Signalstyrke: ${val}%`} className={inline ? `ml-1 ${cls}` : `absolute top-2 right-2 z-10 ${cls}`}>
