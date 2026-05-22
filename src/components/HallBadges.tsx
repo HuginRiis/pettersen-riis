@@ -463,8 +463,10 @@ export function TrainingLast4WeeksBadge({ inline }: { inline?: boolean } = {}) {
     let cancelled = false;
     (async () => {
       try {
-        const { loadStrava } = await import("@/lib/strava-cache");
-        const r: any = await loadStrava("arne");
+        // Bruker KUN delt cache — trigger aldri nytt Strava-kall ved
+        // badge-rendering (header-meny, sidebytte osv.).
+        const { getCachedStrava } = await import("@/lib/strava-cache");
+        const r: any = getCachedStrava("arne");
         if (cancelled) return;
         if (!r?.ok) return;
         const t = r.totals ?? {};
