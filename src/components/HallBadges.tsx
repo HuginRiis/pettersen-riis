@@ -489,7 +489,8 @@ export function TrainingLast4WeeksBadge({ inline }: { inline?: boolean } = {}) {
     let cancelled = false;
     (async () => {
       try {
-        const r: any = await getStravaDashboard({ data: { owner: "arne" } });
+        const { loadStrava } = await import("@/lib/strava-cache");
+        const r: any = await loadStrava("arne");
         if (cancelled) return;
         if (!r?.ok) return;
         const t = r.totals ?? {};
