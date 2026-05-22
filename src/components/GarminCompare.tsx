@@ -233,7 +233,7 @@ export function GarminCompare() {
     const j = Math.floor(Math.random() * (i + 1));
     [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
-  const top5 = shuffled.slice(0, 5);
+  const top5 = shuffled.slice(0, safeTopN);
 
   const display = "var(--font-display)";
 
