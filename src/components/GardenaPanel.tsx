@@ -2,7 +2,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { getGardenaSnapshot, controlGardenaMower } from "@/lib/gardena.functions";
 import { GardenaMap } from "@/components/GardenaMap";
-import { getCachedGardena, setCachedGardena } from "@/lib/gardena-cache";
+import {
+  getCachedGardena,
+  setCachedGardena,
+  isGardenaCacheFresh,
+  isGardenaNightWindow,
+} from "@/lib/gardena-cache";
 import { GARDENA_ERROR_CODES, lookupGardenaError } from "@/lib/gardena-error-codes";
 import {
   Bot, Battery, BatteryLow, BatteryFull, AlertTriangle, CheckCircle2,
@@ -416,7 +421,15 @@ export function GardenaPanel() {
     }
   }, [fetchSnap]);
 
-  // Ingen automatisk henting ved åpning av siden — kun manuelt via "Oppdater"-knappen.
+  // Auto-hent ved åpning av siden HVIS cache er eldre enn 1 time
+  // og vi ikke er i nattevindu (22:00–06:00 Europe/Oslo).
+  // Manuell "Oppdater" omgår dette.
+  useEffect(() => {
+    if (isGardenaCacheFresh()) return;
+    if (isGardenaNightWindow()) return;
+    void load(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Tikk-tikk for å vise nedtelling på Oppdater-knappen.
   useEffect(() => {
@@ -426,6 +439,7 @@ export function GardenaPanel() {
     }, 500);
     return () => window.clearInterval(id);
   }, []);
+
 
   const onCommand = async (svcId: string, cmd: string, seconds?: number) => {
     setBusy(`${svcId}:${cmd}`);
