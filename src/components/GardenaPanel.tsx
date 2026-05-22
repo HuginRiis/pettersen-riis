@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { getGardenaSnapshot, controlGardenaMower } from "@/lib/gardena.functions";
 import { GardenaMap } from "@/components/GardenaMap";
+import { getCachedGardena, setCachedGardena } from "@/lib/gardena-cache";
 import { GARDENA_ERROR_CODES, lookupGardenaError } from "@/lib/gardena-error-codes";
 import {
   Bot, Battery, BatteryLow, BatteryFull, AlertTriangle, CheckCircle2,
@@ -373,7 +374,7 @@ function SensorCard({ sensor }: { sensor: Sensor }) {
 export function GardenaPanel() {
   const fetchSnap = useServerFn(getGardenaSnapshot);
   const sendCmd = useServerFn(controlGardenaMower);
-  const [snap, setSnap] = useState<Snap | null>(null);
+  const [snap, setSnap] = useState<Snap | null>(() => getCachedGardena());
   const [loading, setLoading] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
@@ -395,9 +396,10 @@ export function GardenaPanel() {
     try {
       const res = await fetchSnap();
       setSnap(res);
+      setCachedGardena(res);
       lastLoadedAt.current = Date.now();
     } catch (e: any) {
-      setSnap({
+      const errSnap: Snap = {
         ok: false,
         error: e?.message ?? "Ukjent feil",
         fetchedAt: new Date().toISOString(),
@@ -406,17 +408,15 @@ export function GardenaPanel() {
         sensors: [],
         homeLat: 59.2096,
         homeLon: 9.609,
-      });
+      };
+      setSnap(errSnap);
     } finally {
       setLoading(false);
       inFlight.current = false;
     }
   }, [fetchSnap]);
 
-  // Kun én spørring ved åpning av siden — ingen auto-polling.
-  useEffect(() => {
-    load();
-  }, [load]);
+  // Ingen automatisk henting ved åpning av siden — kun manuelt via "Oppdater"-knappen.
 
   // Tikk-tikk for å vise nedtelling på Oppdater-knappen.
   useEffect(() => {
@@ -434,8 +434,7 @@ export function GardenaPanel() {
       const res = await sendCmd({ data: { serviceId: svcId, command: cmd, seconds } });
       if (!res.ok) setMsg(`Feil: ${res.error ?? "ukjent"}`);
       else {
-        setMsg(`Sendte ${cmd}`);
-        setTimeout(load, 2500);
+        setMsg(`Sendte ${cmd} — trykk Oppdater for ny status`);
       }
     } catch (e: any) {
       setMsg(`Feil: ${e?.message ?? "ukjent"}`);
