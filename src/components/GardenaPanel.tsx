@@ -7,7 +7,6 @@ import {
   setCachedGardena,
   isGardenaCacheFresh,
   isGardenaNightWindow,
-  GARDENA_TTL_MS,
 } from "@/lib/gardena-cache";
 import { GARDENA_ERROR_CODES, lookupGardenaError } from "@/lib/gardena-error-codes";
 import {
