@@ -84,8 +84,8 @@ const TOC_ITEMS: { id: string; label: string; emoji: string }[] = [
   { id: "sec-bursdager-toggle", label: "Bursd. av/på", emoji: "🔔" },
   { id: "sec-vaervarsler", label: "Værvarsler", emoji: "🌦️" },
   { id: "sec-vaerprefs", label: "Vær av/på", emoji: "🔔" },
-  { id: "sec-uvvarsler", label: "UV-varsler", emoji: "☀️" },
-  { id: "sec-uvprefs", label: "UV av/på", emoji: "🔔" },
+  { id: "sec-soppel", label: "Søppel", emoji: "🗑️" },
+
   { id: "sec-soppel", label: "Søppel", emoji: "🗑️" },
   { id: "sec-soppelprefs", label: "Søppel av/på", emoji: "🔔" },
   { id: "sec-lyspaa", label: "Lys står på", emoji: "💡" },
