@@ -262,16 +262,17 @@ function withStaleMarker(data: any, fetchedAt: number) {
 }
 
 export const runStravaDashboard = async (owner: StravaOwner) => {
+  const ttl = currentTtlMs();
   // 1) Fersk in-memory cache → returner umiddelbart
   const cached = dashboardCache.get(owner);
   const nowMs = Date.now();
-  if (cached && nowMs - cached.at < DASHBOARD_TTL_MS) {
+  if (cached && nowMs - cached.at < ttl) {
     return cached.data;
   }
 
   // 1b) Last persistent cache (overlever Worker-restart)
   const persisted = !cached ? await loadPersistentCache(owner) : null;
-  if (persisted && nowMs - persisted.at < DASHBOARD_TTL_MS) {
+  if (persisted && nowMs - persisted.at < ttl) {
     dashboardCache.set(owner, persisted);
     return persisted.data;
   }
