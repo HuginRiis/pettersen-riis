@@ -38,27 +38,43 @@ const LEVELS = [
   {
     threshold: 8,
     column: "notified_date_8" as const,
+    fallColumn: "notified_fall_date_8" as const,
+    fallEnabledColumn: "notify_fall_8" as const,
     title: (lead: number) =>
       lead <= 0 ? "☀️ Ekstrem UV nå" : `☀️ Ekstrem UV om ${lead} min — forbered deg`,
     body: (loc: string, uv: number, lead: number) =>
       `${loc}: UV når ${uv.toFixed(1)} ${leadLabel(lead)}. Unngå sol kl 12-15. Smør med SPF 50, finn klær og skygge.`,
+    fallTitle: () => "🌤️ UV under 8 — ekstrem-fare over",
+    fallBody: (loc: string, uv: number) =>
+      `${loc}: UV er nå ${uv.toFixed(1)} (under 8). Du kan gå ut igjen, men hold SPF 30+ på.`,
   },
   {
     threshold: 6,
     column: "notified_date_6" as const,
+    fallColumn: "notified_fall_date_6" as const,
+    fallEnabledColumn: "notify_fall_6" as const,
     title: (lead: number) =>
       lead <= 0 ? "🧴 Sterk UV nå — styrk beskyttelsen" : `🧴 Sterk UV om ${lead} min — styrk beskyttelsen`,
     body: (loc: string, uv: number, lead: number) =>
       `${loc}: UV når ${uv.toFixed(1)} ${leadLabel(lead)}. Smør med SPF 30+, ta på solhatt og lette klær. Søk skygge midt på dagen.`,
+    fallTitle: () => "🌤️ UV under 6 — du kan slappe litt av",
+    fallBody: (loc: string, uv: number) =>
+      `${loc}: UV er nå ${uv.toFixed(1)} (under 6). SPF 30 holder, men du trenger ikke søke skygge spesielt.`,
   },
   {
     threshold: 3,
     column: "notified_date_3" as const,
+    fallColumn: "notified_fall_date_3" as const,
+    fallEnabledColumn: "notify_fall_3" as const,
     title: (lead: number) => (lead <= 0 ? "🧴 På tide med solkrem" : `🧴 Solkrem om ${lead} min`),
     body: (loc: string, uv: number, lead: number) =>
       `${loc}: UV når ${uv.toFixed(1)} ${leadLabel(lead)}. Smør med SPF 30 på utsatt hud (DSA-anbefaling).`,
+    fallTitle: () => "🌤️ UV under 3 — solkrem ikke nødvendig",
+    fallBody: (loc: string, uv: number) =>
+      `${loc}: UV er nå ${uv.toFixed(1)} (under 3). Solkrem er ikke lenger nødvendig i dag.`,
   },
 ] as const;
+
 
 /**
  * Henter forventet UV ~`leadMinutes` frem i tid fra MET.no, slik at vi
@@ -175,16 +191,24 @@ export async function processUvNotifications(): Promise<{
     notified_date_3: string | null;
     notified_date_6: string | null;
     notified_date_8: string | null;
+    notify_fall_3: boolean;
+    notify_fall_6: boolean;
+    notify_fall_8: boolean;
+    notified_fall_date_3: string | null;
+    notified_fall_date_6: string | null;
+    notified_fall_date_8: string | null;
   }>) {
     checked++;
     const lead = typeof p.lead_minutes === "number" ? p.lead_minutes : LEAD_MINUTES;
     const uv = await fetchUvAhead(p.lat, p.lon, lead);
+    // For fall-deteksjon vil vi vite UV NÅ (lead=0), ikke fremover
+    const uvNow = lead === 0 ? uv : await fetchUvAhead(p.lat, p.lon, 0);
     if (uv == null) {
       skipped++;
       continue;
     }
 
-    // Finn høyeste nivå som er nådd og ikke varslet i dag.
+    // 1) Finn høyeste nivå som er nådd og ikke varslet i dag (stigning).
     let trigger: (typeof LEVELS)[number] | null = null;
     for (const lvl of LEVELS) {
       if (uv >= lvl.threshold) {
@@ -195,7 +219,23 @@ export async function processUvNotifications(): Promise<{
         }
       }
     }
-    if (!trigger) {
+
+    // 2) Finn høyeste nivå som er "falt under" i dag (etter at vi har varslet stigning).
+    //    Sender én gang per nivå per dag, kun hvis fall-varsling er på for nivået.
+    let fallTrigger: (typeof LEVELS)[number] | null = null;
+    if (uvNow != null) {
+      for (const lvl of LEVELS) {
+        if (!p[lvl.fallEnabledColumn]) continue;
+        if (p[lvl.column] !== today) continue; // vi varslet ikke stigning i dag → ikke fall heller
+        if (p[lvl.fallColumn] === today) continue; // allerede fall-varslet
+        if (uvNow < lvl.threshold) {
+          fallTrigger = lvl;
+          break;
+        }
+      }
+    }
+
+    if (!trigger && !fallTrigger) {
       skipped++;
       continue;
     }
@@ -215,37 +255,69 @@ export async function processUvNotifications(): Promise<{
     }
 
     const locPrefix = (p.location ?? "").toLowerCase() === "hytta" ? "Fra hytta 🛖 · " : "Fra Tollnes 🏠 · ";
-    const payload = JSON.stringify({
-      title: `${locPrefix}${trigger.title(lead)}`,
-      body: trigger.body(p.label, uv, lead),
-      tag: `uv-${p.location}-${trigger.threshold}-${today}`,
-      url: "/var",
-    });
 
-    for (const sub of subs ?? []) {
-      const ok = await sendOne(
-        {
-          endpoint: sub.endpoint as string,
-          p256dh: sub.p256dh as string,
-          auth: sub.auth as string,
-          who: (sub as any).who ?? null,
-        },
-        payload,
-        { feature: "uv", recipient: targetWho, title: trigger.title(lead) },
-      );
-      if (ok) sent++;
-      else errors++;
+    if (trigger) {
+      const payload = JSON.stringify({
+        title: `${locPrefix}${trigger.title(lead)}`,
+        body: trigger.body(p.label, uv, lead),
+        tag: `uv-${p.location}-${trigger.threshold}-${today}`,
+        url: "/var",
+      });
+
+      for (const sub of subs ?? []) {
+        const ok = await sendOne(
+          {
+            endpoint: sub.endpoint as string,
+            p256dh: sub.p256dh as string,
+            auth: sub.auth as string,
+            who: (sub as any).who ?? null,
+          },
+          payload,
+          { feature: "uv", recipient: targetWho, title: trigger.title(lead) },
+        );
+        if (ok) sent++;
+        else errors++;
+      }
+
+      await supabaseAdmin
+        .from("uv_notification_prefs" as never)
+        .update({ [trigger.column]: today } as never)
+        .eq("id", p.id);
     }
 
-    // Marker som varslet for dette nivået i dag (uansett — unngå spam).
-    await supabaseAdmin
-      .from("uv_notification_prefs" as never)
-      .update({ [trigger.column]: today } as never)
-      .eq("id", p.id);
+    if (fallTrigger && uvNow != null) {
+      const payload = JSON.stringify({
+        title: `${locPrefix}${fallTrigger.fallTitle()}`,
+        body: fallTrigger.fallBody(p.label, uvNow),
+        tag: `uv-fall-${p.location}-${fallTrigger.threshold}-${today}`,
+        url: "/var",
+      });
+
+      for (const sub of subs ?? []) {
+        const ok = await sendOne(
+          {
+            endpoint: sub.endpoint as string,
+            p256dh: sub.p256dh as string,
+            auth: sub.auth as string,
+            who: (sub as any).who ?? null,
+          },
+          payload,
+          { feature: "uv-fall", recipient: targetWho, title: fallTrigger.fallTitle() },
+        );
+        if (ok) sent++;
+        else errors++;
+      }
+
+      await supabaseAdmin
+        .from("uv_notification_prefs" as never)
+        .update({ [fallTrigger.fallColumn]: today } as never)
+        .eq("id", p.id);
+    }
   }
 
   return { checked, sent, errors, skipped };
 }
+
 
 /**
  * Sender et test-push for UV-varsel for én lokasjon, uavhengig av faktisk UV

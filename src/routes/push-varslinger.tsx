@@ -24,7 +24,7 @@ import { ChartAppearanceSettingsPanel } from "@/components/ChartAppearanceSettin
 import { OkonomiSettingsPanel } from "@/components/OkonomiSettingsPanel";
 import { HomeySensorSettings } from "@/components/HomeySensorSettings";
 import {
-  Bell, BellOff, Calendar, Cake, Trash2, CloudSun, Sun, Lightbulb, ScrollText, ShieldCheck, Lock, ExternalLink, Smartphone, X, Activity,
+  Bell, BellOff, Calendar, Cake, Trash2, CloudSun, Lightbulb, ScrollText, ShieldCheck, Lock, ExternalLink, Smartphone, X, Activity,
 } from "lucide-react";
 import heroImg from "@/assets/got-agenda.jpg";
 import { CollapsibleSection } from "@/components/CollapsibleSection";
@@ -84,9 +84,8 @@ const TOC_ITEMS: { id: string; label: string; emoji: string }[] = [
   { id: "sec-bursdager-toggle", label: "Bursd. av/på", emoji: "🔔" },
   { id: "sec-vaervarsler", label: "Værvarsler", emoji: "🌦️" },
   { id: "sec-vaerprefs", label: "Vær av/på", emoji: "🔔" },
-  { id: "sec-uvvarsler", label: "UV-varsler", emoji: "☀️" },
-  { id: "sec-uvprefs", label: "UV av/på", emoji: "🔔" },
   { id: "sec-soppel", label: "Søppel", emoji: "🗑️" },
+
   { id: "sec-soppelprefs", label: "Søppel av/på", emoji: "🔔" },
   { id: "sec-lyspaa", label: "Lys står på", emoji: "💡" },
   { id: "sec-lyspaaprefs", label: "Lys av/på", emoji: "🔔" },
@@ -207,13 +206,8 @@ function PushSettingsPage() {
 
         <SettingsBox id="sec-vaerprefs" title="🔔 Vær av/på" inGrid><WeatherPrefsList /></SettingsBox>
 
-        <SettingsBox id="sec-uvvarsler" title="☀️ UV-varsler" inGrid>
-          <CategoryCard icon={Sun} title="UV-varsler" editPath="/var"
-            count={counts ? `${counts.uvOn} av ${counts.uvTotal} aktive` : null}
-            description="Varsler når UV-indeks når 3, 6 og 8 — én gang per nivå per dag." editable />
-        </SettingsBox>
 
-        <SettingsBox id="sec-uvprefs" title="🔔 UV av/på" inGrid><UvPrefsList /></SettingsBox>
+
 
         <SettingsBox id="sec-soppel" title="🗑️ Søppeltømming" inGrid>
           <CategoryCard icon={Trash2} title="Søppeltømming" editPath="/agenda"
@@ -450,13 +444,6 @@ const WeatherPrefsList = () => (
     table="weather_notification_prefs"
     title="Værvarsler — av/på"
     getLabel={(p) => `${p.label ?? ""} • ${p.kind ?? ""} → ${p.recipient ?? "Alle"}`}
-  />
-);
-const UvPrefsList = () => (
-  <PrefsToggleList
-    table="uv_notification_prefs"
-    title="UV-varsler — av/på"
-    getLabel={(p) => `${p.label ?? ""} → ${p.recipient ?? "Alle"}`}
   />
 );
 const LightIdlePrefsList = () => (

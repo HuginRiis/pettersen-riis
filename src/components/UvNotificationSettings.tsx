@@ -20,7 +20,11 @@ type UvPref = {
   enabled: boolean;
   recipient: string;
   lead_minutes: number;
+  notify_fall_3: boolean;
+  notify_fall_6: boolean;
+  notify_fall_8: boolean;
 };
+
 
 type Forecast = {
   id: string;
@@ -76,8 +80,11 @@ export function UvNotificationSettings() {
     (async () => {
       const { data, error } = await supabase
         .from("uv_notification_prefs" as never)
-        .select("id, location, label, enabled, recipient, lead_minutes")
+        .select(
+          "id, location, label, enabled, recipient, lead_minutes, notify_fall_3, notify_fall_6, notify_fall_8",
+        )
         .order("location");
+
       if (cancelled) return;
       if (error) {
         toast.error("Kunne ikke laste UV-varselinnstillinger");
@@ -234,6 +241,27 @@ export function UvNotificationSettings() {
                   </SelectContent>
                 </Select>
               </div>
+
+              <div className="rounded-md border border-border/50 bg-muted/20 p-2 space-y-1.5">
+                <div className="text-[11px] text-muted-foreground">
+                  Varsle også når UV faller under nivå:
+                </div>
+                {([8, 6, 3] as const).map((lvl) => {
+                  const key = `notify_fall_${lvl}` as const;
+                  return (
+                    <div key={lvl} className="flex items-center justify-between gap-2">
+                      <span className="text-xs">UV under {lvl}</span>
+                      <Switch
+                        checked={Boolean(p[key])}
+                        disabled={!p.enabled || saving === p.id}
+                        onCheckedChange={(v) => update(p.id, { [key]: v } as Partial<UvPref>)}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+
+
 
               <div className="pt-1">
                 <div className="text-[11px] text-muted-foreground mb-1">Send test-push:</div>

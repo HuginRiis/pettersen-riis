@@ -2806,6 +2806,12 @@ export type Database = {
           notified_date_3: string | null
           notified_date_6: string | null
           notified_date_8: string | null
+          notified_fall_date_3: string | null
+          notified_fall_date_6: string | null
+          notified_fall_date_8: string | null
+          notify_fall_3: boolean
+          notify_fall_6: boolean
+          notify_fall_8: boolean
           recipient: string
           updated_at: string
         }
@@ -2821,6 +2827,12 @@ export type Database = {
           notified_date_3?: string | null
           notified_date_6?: string | null
           notified_date_8?: string | null
+          notified_fall_date_3?: string | null
+          notified_fall_date_6?: string | null
+          notified_fall_date_8?: string | null
+          notify_fall_3?: boolean
+          notify_fall_6?: boolean
+          notify_fall_8?: boolean
           recipient?: string
           updated_at?: string
         }
@@ -2836,6 +2848,12 @@ export type Database = {
           notified_date_3?: string | null
           notified_date_6?: string | null
           notified_date_8?: string | null
+          notified_fall_date_3?: string | null
+          notified_fall_date_6?: string | null
+          notified_fall_date_8?: string | null
+          notify_fall_3?: boolean
+          notify_fall_6?: boolean
+          notify_fall_8?: boolean
           recipient?: string
           updated_at?: string
         }
