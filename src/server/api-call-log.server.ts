@@ -201,7 +201,7 @@ export type SourceSchedule = {
  */
 export const SOURCE_SCHEDULES: Record<string, SourceSchedule> = {
   homey: { description: "hvert minutt (poll + snapshot + agenda)", intervalMs: 60_000, trigger: "cron" },
-  strava: { description: "hver 30. min 06–22", intervalMs: 30 * 60_000, trigger: "cron" },
+  strava: { description: "hver 30. min 06:30–21:00", intervalMs: 30 * 60_000, trigger: "cron" },
   netatmo: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
   tibber: { description: "hvert minutt (push) + hver time (backfill)", intervalMs: 60_000, trigger: "cron" },
   met: { description: "hvert minutt (weather + met-alert push)", intervalMs: 60_000, trigger: "cron" },
@@ -210,7 +210,7 @@ export const SOURCE_SCHEDULES: Record<string, SourceSchedule> = {
   lightning: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
   garbage: { description: "cache 6t (poll hvert minutt fra agenda-push)", intervalMs: 6 * 60 * 60 * 1000, trigger: "cache" },
   kassal: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
-  gardena: { description: "hver 30. min 06–22", intervalMs: 30 * 60_000, trigger: "cron" },
+  gardena: { description: "hver 40. min 06:30–21:00", intervalMs: 40 * 60_000, trigger: "cron" },
   garmin: { description: "hvert minutt (egen tidsplan per bruker)", intervalMs: 60_000, trigger: "cron" },
   roborock: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
   ai: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
