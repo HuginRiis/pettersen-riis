@@ -31,7 +31,7 @@ function FysiskPage() {
       />
 
       <section className="container mx-auto px-4 py-12 space-y-16">
-        <StravaHouses />
+        <StravaHouses autoLoad={false} />
       </section>
     </PageShell>
   );

@@ -598,7 +598,7 @@ function StravaHouseBanner({ owner }: { owner: Owner }) {
   );
 }
 
-export function StravaHouses() {
+export function StravaHouses({ autoLoad = true }: { autoLoad?: boolean } = {}) {
   const [tab, setTab] = useState<"arne" | "rebekka" | "compare">("arne");
   return (
     <div className="space-y-3">
@@ -629,53 +629,73 @@ export function StravaHouses() {
 
         <TabsContent value="arne" className="mt-3">
           <StravaHouseBanner owner="arne" />
-          <StravaSection owner="arne" displayName="Arne" />
+          <StravaSection owner="arne" displayName="Arne" autoLoad={autoLoad} />
         </TabsContent>
         <TabsContent value="rebekka" className="mt-3">
           <StravaHouseBanner owner="rebekka" />
-          <StravaSection owner="rebekka" displayName="Rebekka" />
+          <StravaSection owner="rebekka" displayName="Rebekka" autoLoad={autoLoad} />
         </TabsContent>
         <TabsContent value="compare" className="mt-3">
-          <StravaCompare />
+          <StravaCompare autoLoad={autoLoad} />
         </TabsContent>
       </Tabs>
     </div>
   );
 }
 
-function StravaCompare() {
+function StravaCompare({ autoLoad = true }: { autoLoad?: boolean } = {}) {
   const fetchStatus = useServerFn(getStravaStatus);
   const [arne, setArne] = useState<DashOk | null>(null);
   const [rebekka, setRebekka] = useState<DashOk | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(autoLoad);
   const [error, setError] = useState<string | null>(null);
+  const [hasCache, setHasCache] = useState(false);
+
+  const loadCompare = async (force = false) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { loadStrava, invalidateStrava, getCachedStrava } = await import("@/lib/strava-cache");
+      const load = async (owner: Owner) => {
+        const s = await fetchStatus({ data: { owner } });
+        if (!s.connected) return null;
+        if (force) invalidateStrava(owner);
+        const r = await loadStrava(owner);
+        return r?.ok ? (r as DashOk) : null;
+      };
+      const [a, r] = await Promise.all([load("arne"), load("rebekka")]);
+      setArne(a);
+      setRebekka(r);
+      setHasCache(true);
+      // markere cache
+      void getCachedStrava;
+    } catch (e: any) {
+      setError(e?.message ?? "Ukjent feil");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const { loadStrava } = await import("@/lib/strava-cache");
-        const load = async (owner: Owner) => {
-          const s = await fetchStatus({ data: { owner } });
-          if (!s.connected) return null;
-          const r = await loadStrava(owner);
-          return r?.ok ? (r as DashOk) : null;
-        };
-        const [a, r] = await Promise.all([load("arne"), load("rebekka")]);
-        if (!cancelled) {
-          setArne(a);
-          setRebekka(r);
-        }
-      } catch (e: any) {
-        if (!cancelled) setError(e?.message ?? "Ukjent feil");
-      } finally {
-        if (!cancelled) setLoading(false);
+      if (autoLoad) {
+        if (!cancelled) await loadCompare(false);
+        return;
       }
+      // Manuell modus: bare bruk delt cache hvis den finnes
+      const { getCachedStrava } = await import("@/lib/strava-cache");
+      const a = getCachedStrava("arne");
+      const r = getCachedStrava("rebekka");
+      if (cancelled) return;
+      if (a?.ok) setArne(a as DashOk);
+      if (r?.ok) setRebekka(r as DashOk);
+      setHasCache(Boolean(a || r));
+      setLoading(false);
     })();
     return () => { cancelled = true; };
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoLoad]);
 
   if (loading) {
     return <p className="text-center text-sm text-muted-foreground italic">Veier de to husene mot hverandre…</p>;
@@ -684,6 +704,19 @@ function StravaCompare() {
     return <p className="text-center text-xs text-destructive">{error}</p>;
   }
   if (!arne && !rebekka) {
+    if (!autoLoad && !hasCache) {
+      return (
+        <div className="text-center space-y-3 py-6">
+          <p className="text-sm text-muted-foreground">Strava-data er ikke hentet på denne siden.</p>
+          <button
+            onClick={() => loadCompare(true)}
+            className="inline-flex items-center gap-2 rounded-md border border-primary/40 bg-primary/10 px-4 py-2 text-xs uppercase tracking-[0.2em] text-primary hover:bg-primary/20"
+          >
+            Oppdater fra Strava
+          </button>
+        </div>
+      );
+    }
     return <p className="text-center text-sm text-muted-foreground">Ingen av husene er lenket til Strava ennå.</p>;
   }
 
@@ -824,7 +857,7 @@ function StravaCompare() {
   );
 }
 
-function StravaSection({ owner, displayName }: { owner: Owner; displayName: string }) {
+function StravaSection({ owner, displayName, autoLoad = true }: { owner: Owner; displayName: string; autoLoad?: boolean }) {
   const [status, setStatus] = useState<StatusState>({ kind: "loading" });
   const [dash, setDash] = useState<DashState>({ kind: "idle" });
   const fetchStatus = useServerFn(getStravaStatus);
@@ -865,9 +898,19 @@ function StravaSection({ owner, displayName }: { owner: Owner; displayName: stri
   }, [owner]);
 
   useEffect(() => {
-    if (status.kind === "connected") loadDash();
+    if (status.kind !== "connected") return;
+    if (autoLoad) {
+      loadDash();
+      return;
+    }
+    // Manuell modus: bruk delt cache hvis den finnes, ellers stå i idle
+    (async () => {
+      const { getCachedStrava } = await import("@/lib/strava-cache");
+      const cached = getCachedStrava(owner);
+      if (cached?.ok) setDash({ kind: "ok", ...cached });
+    })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [status.kind]);
+  }, [status.kind, autoLoad]);
 
   return (
     <div>
