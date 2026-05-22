@@ -704,6 +704,19 @@ function StravaCompare({ autoLoad = true }: { autoLoad?: boolean } = {}) {
     return <p className="text-center text-xs text-destructive">{error}</p>;
   }
   if (!arne && !rebekka) {
+    if (!autoLoad && !hasCache) {
+      return (
+        <div className="text-center space-y-3 py-6">
+          <p className="text-sm text-muted-foreground">Strava-data er ikke hentet på denne siden.</p>
+          <button
+            onClick={() => loadCompare(true)}
+            className="inline-flex items-center gap-2 rounded-md border border-primary/40 bg-primary/10 px-4 py-2 text-xs uppercase tracking-[0.2em] text-primary hover:bg-primary/20"
+          >
+            Oppdater fra Strava
+          </button>
+        </div>
+      );
+    }
     return <p className="text-center text-sm text-muted-foreground">Ingen av husene er lenket til Strava ennå.</p>;
   }
 
