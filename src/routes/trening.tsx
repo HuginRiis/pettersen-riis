@@ -643,39 +643,59 @@ export function StravaHouses({ autoLoad = true }: { autoLoad?: boolean } = {}) {
   );
 }
 
-function StravaCompare() {
+function StravaCompare({ autoLoad = true }: { autoLoad?: boolean } = {}) {
   const fetchStatus = useServerFn(getStravaStatus);
   const [arne, setArne] = useState<DashOk | null>(null);
   const [rebekka, setRebekka] = useState<DashOk | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(autoLoad);
   const [error, setError] = useState<string | null>(null);
+  const [hasCache, setHasCache] = useState(false);
+
+  const loadCompare = async (force = false) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { loadStrava, invalidateStrava, getCachedStrava } = await import("@/lib/strava-cache");
+      const load = async (owner: Owner) => {
+        const s = await fetchStatus({ data: { owner } });
+        if (!s.connected) return null;
+        if (force) invalidateStrava(owner);
+        const r = await loadStrava(owner);
+        return r?.ok ? (r as DashOk) : null;
+      };
+      const [a, r] = await Promise.all([load("arne"), load("rebekka")]);
+      setArne(a);
+      setRebekka(r);
+      setHasCache(true);
+      // markere cache
+      void getCachedStrava;
+    } catch (e: any) {
+      setError(e?.message ?? "Ukjent feil");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const { loadStrava } = await import("@/lib/strava-cache");
-        const load = async (owner: Owner) => {
-          const s = await fetchStatus({ data: { owner } });
-          if (!s.connected) return null;
-          const r = await loadStrava(owner);
-          return r?.ok ? (r as DashOk) : null;
-        };
-        const [a, r] = await Promise.all([load("arne"), load("rebekka")]);
-        if (!cancelled) {
-          setArne(a);
-          setRebekka(r);
-        }
-      } catch (e: any) {
-        if (!cancelled) setError(e?.message ?? "Ukjent feil");
-      } finally {
-        if (!cancelled) setLoading(false);
+      if (autoLoad) {
+        if (!cancelled) await loadCompare(false);
+        return;
       }
+      // Manuell modus: bare bruk delt cache hvis den finnes
+      const { getCachedStrava } = await import("@/lib/strava-cache");
+      const a = getCachedStrava("arne");
+      const r = getCachedStrava("rebekka");
+      if (cancelled) return;
+      if (a?.ok) setArne(a as DashOk);
+      if (r?.ok) setRebekka(r as DashOk);
+      setHasCache(Boolean(a || r));
+      setLoading(false);
     })();
     return () => { cancelled = true; };
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoLoad]);
 
   if (loading) {
     return <p className="text-center text-sm text-muted-foreground italic">Veier de to husene mot hverandre…</p>;
