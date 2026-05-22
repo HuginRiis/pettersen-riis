@@ -81,41 +81,46 @@ export const fetchVakttarnEvents = createServerFn({ method: "GET" })
     }).parse
   )
   .handler(async ({ data }): Promise<VakttarnStats> => {
-    // ---- Oslo timezone helpers ----
-    const osloFmt = new Intl.DateTimeFormat("en-GB", {
-      timeZone: "Europe/Oslo",
-      year: "numeric", month: "2-digit", day: "2-digit",
-      hour: "2-digit", minute: "2-digit", second: "2-digit",
-      hour12: false,
-    });
+    // ---- Oslo timezone helpers (manual DST; robust on edge runtimes) ----
+    // CEST (UTC+2) from last Sunday of March 01:00 UTC to last Sunday of October 01:00 UTC,
+    // otherwise CET (UTC+1).
+    const lastSundayUtc = (year: number, monthIdx: number): Date => {
+      const d = new Date(Date.UTC(year, monthIdx, 31, 1, 0, 0));
+      const dow = d.getUTCDay(); // 0=Sun
+      d.setUTCDate(31 - dow);
+      return d;
+    };
+    const osloOffsetHours = (d: Date): number => {
+      const y = d.getUTCFullYear();
+      const dstStart = lastSundayUtc(y, 2);   // March
+      const dstEnd = lastSundayUtc(y, 9);     // October
+      return d >= dstStart && d < dstEnd ? 2 : 1;
+    };
+    // Oslo wall-clock parts for a given UTC instant
     const osloParts = (d: Date) => {
-      const p: Record<string, string> = {};
-      for (const part of osloFmt.formatToParts(d)) {
-        if (part.type !== "literal") p[part.type] = part.value;
-      }
-      const hour = p.hour === "24" ? 0 : parseInt(p.hour);
+      const shifted = new Date(d.getTime() + osloOffsetHours(d) * 3600_000);
       return {
-        year: parseInt(p.year), month: parseInt(p.month), day: parseInt(p.day),
-        hour, minute: parseInt(p.minute), second: parseInt(p.second),
+        year: shifted.getUTCFullYear(),
+        month: shifted.getUTCMonth() + 1,
+        day: shifted.getUTCDate(),
+        hour: shifted.getUTCHours(),
+        minute: shifted.getUTCMinutes(),
+        second: shifted.getUTCSeconds(),
       };
     };
     // UTC instant corresponding to a given Oslo wall-clock time
     const osloToUtc = (y: number, mo: number, d: number, h = 0, mi = 0, s = 0): Date => {
-      let utc = new Date(Date.UTC(y, mo - 1, d, h, mi, s));
-      for (let i = 0; i < 3; i++) {
-        const p = osloParts(utc);
-        const desired = Date.UTC(y, mo - 1, d, h, mi, s);
-        const actual = Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute, p.second);
-        const drift = actual - desired;
-        if (drift === 0) break;
-        utc = new Date(utc.getTime() - drift);
-      }
+      // Guess using +1, then correct if guess falls in DST
+      let utc = new Date(Date.UTC(y, mo - 1, d, h - 1, mi, s));
+      const off = osloOffsetHours(utc);
+      if (off !== 1) utc = new Date(Date.UTC(y, mo - 1, d, h - off, mi, s));
       return utc;
     };
     const osloDayIndex = (d: Date): number => {
       const p = osloParts(d);
       return Date.UTC(p.year, p.month - 1, p.day) / 86400000;
     };
+
 
     const anchor = data.date ? new Date(data.date + "T12:00:00Z") : new Date();
     const aP = osloParts(anchor);
