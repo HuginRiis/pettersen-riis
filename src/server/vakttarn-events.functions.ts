@@ -81,28 +81,64 @@ export const fetchVakttarnEvents = createServerFn({ method: "GET" })
     }).parse
   )
   .handler(async ({ data }): Promise<VakttarnStats> => {
+    // ---- Oslo timezone helpers ----
+    const osloFmt = new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Europe/Oslo",
+      year: "numeric", month: "2-digit", day: "2-digit",
+      hour: "2-digit", minute: "2-digit", second: "2-digit",
+      hour12: false,
+    });
+    const osloParts = (d: Date) => {
+      const p: Record<string, string> = {};
+      for (const part of osloFmt.formatToParts(d)) {
+        if (part.type !== "literal") p[part.type] = part.value;
+      }
+      const hour = p.hour === "24" ? 0 : parseInt(p.hour);
+      return {
+        year: parseInt(p.year), month: parseInt(p.month), day: parseInt(p.day),
+        hour, minute: parseInt(p.minute), second: parseInt(p.second),
+      };
+    };
+    // UTC instant corresponding to a given Oslo wall-clock time
+    const osloToUtc = (y: number, mo: number, d: number, h = 0, mi = 0, s = 0): Date => {
+      let utc = new Date(Date.UTC(y, mo - 1, d, h, mi, s));
+      for (let i = 0; i < 3; i++) {
+        const p = osloParts(utc);
+        const desired = Date.UTC(y, mo - 1, d, h, mi, s);
+        const actual = Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute, p.second);
+        const drift = actual - desired;
+        if (drift === 0) break;
+        utc = new Date(utc.getTime() - drift);
+      }
+      return utc;
+    };
+    const osloDayIndex = (d: Date): number => {
+      const p = osloParts(d);
+      return Date.UTC(p.year, p.month - 1, p.day) / 86400000;
+    };
+
     const anchor = data.date ? new Date(data.date + "T12:00:00Z") : new Date();
-    const start = new Date(anchor);
-    const end = new Date(anchor);
+    const aP = osloParts(anchor);
+    let start: Date;
+    let end: Date;
 
     if (data.range === "day") {
-      start.setUTCHours(0, 0, 0, 0);
-      end.setUTCHours(23, 59, 59, 999);
+      start = osloToUtc(aP.year, aP.month, aP.day, 0, 0, 0);
+      end = new Date(osloToUtc(aP.year, aP.month, aP.day + 1, 0, 0, 0).getTime() - 1);
     } else if (data.range === "week") {
-      // ISO week: monday..sunday in local (Europe/Oslo ~ UTC+1/2). Use UTC approx.
-      const day = start.getUTCDay() || 7;
-      start.setUTCDate(start.getUTCDate() - day + 1);
-      start.setUTCHours(0, 0, 0, 0);
-      end.setTime(start.getTime());
-      end.setUTCDate(end.getUTCDate() + 6);
-      end.setUTCHours(23, 59, 59, 999);
+      // ISO week: monday..sunday in Oslo
+      const tmp = new Date(Date.UTC(aP.year, aP.month - 1, aP.day));
+      const dow = tmp.getUTCDay() || 7; // 1=Mon..7=Sun
+      const mondayUtcMs = tmp.getTime() - (dow - 1) * 86400000;
+      const m = new Date(mondayUtcMs);
+      start = osloToUtc(m.getUTCFullYear(), m.getUTCMonth() + 1, m.getUTCDate(), 0, 0, 0);
+      const sun = new Date(mondayUtcMs + 6 * 86400000);
+      end = new Date(
+        osloToUtc(sun.getUTCFullYear(), sun.getUTCMonth() + 1, sun.getUTCDate() + 1, 0, 0, 0).getTime() - 1
+      );
     } else {
-      start.setUTCDate(1);
-      start.setUTCHours(0, 0, 0, 0);
-      end.setTime(start.getTime());
-      end.setUTCMonth(end.getUTCMonth() + 1);
-      end.setUTCDate(0);
-      end.setUTCHours(23, 59, 59, 999);
+      start = osloToUtc(aP.year, aP.month, 1, 0, 0, 0);
+      end = new Date(osloToUtc(aP.year, aP.month + 1, 1, 0, 0, 0).getTime() - 1);
     }
 
     const { data: rows, error } = await supabaseAdmin
@@ -143,7 +179,7 @@ export const fetchVakttarnEvents = createServerFn({ method: "GET" })
     };
     for (const ev of events) totals[ev.category] = (totals[ev.category] ?? 0) + 1;
 
-    // Build buckets
+    // Build buckets (all in Europe/Oslo)
     const buckets: VakttarnStats["buckets"] = [];
     const makeEmpty = (label: string, iso: string) => ({
       label, iso, person: 0, dyr: 0, bil: 0, pakke: 0, ringt_pa: 0, annet: 0,
@@ -151,39 +187,35 @@ export const fetchVakttarnEvents = createServerFn({ method: "GET" })
 
     if (data.range === "day") {
       for (let h = 0; h < 24; h++) {
-        const d = new Date(start);
-        d.setUTCHours(h, 0, 0, 0);
+        const d = osloToUtc(aP.year, aP.month, aP.day, h, 0, 0);
         buckets.push(makeEmpty(String(h).padStart(2, "0"), d.toISOString()));
       }
       for (const ev of events) {
-        const h = new Date(ev.detected_at).getUTCHours();
+        const h = osloParts(new Date(ev.detected_at)).hour;
         if (buckets[h]) buckets[h][ev.category]++;
       }
     } else if (data.range === "week") {
       const days = ["Man", "Tir", "Ons", "Tor", "Fre", "Lør", "Søn"];
+      const startIdx = osloDayIndex(start);
       for (let i = 0; i < 7; i++) {
-        const d = new Date(start);
-        d.setUTCDate(start.getUTCDate() + i);
+        const sp = osloParts(start);
+        const d = osloToUtc(sp.year, sp.month, sp.day + i, 0, 0, 0);
         buckets.push(makeEmpty(days[i], d.toISOString()));
       }
       for (const ev of events) {
-        const evDate = new Date(ev.detected_at);
-        const diffDays = Math.floor(
-          (Date.UTC(evDate.getUTCFullYear(), evDate.getUTCMonth(), evDate.getUTCDate()) -
-            Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate())) /
-            86400000
-        );
+        const diffDays = osloDayIndex(new Date(ev.detected_at)) - startIdx;
         if (buckets[diffDays]) buckets[diffDays][ev.category]++;
       }
     } else {
-      const daysInMonth = end.getUTCDate();
-      for (let i = 1; i <= daysInMonth; i++) {
-        const d = new Date(start);
-        d.setUTCDate(i);
+      // Month: number of days in Oslo month
+      const nextMonthStart = osloToUtc(aP.year, aP.month + 1, 1, 0, 0, 0);
+      const lastDay = osloParts(new Date(nextMonthStart.getTime() - 1)).day;
+      for (let i = 1; i <= lastDay; i++) {
+        const d = osloToUtc(aP.year, aP.month, i, 0, 0, 0);
         buckets.push(makeEmpty(String(i), d.toISOString()));
       }
       for (const ev of events) {
-        const day = new Date(ev.detected_at).getUTCDate();
+        const day = osloParts(new Date(ev.detected_at)).day;
         if (buckets[day - 1]) buckets[day - 1][ev.category]++;
       }
     }
