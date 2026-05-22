@@ -9,6 +9,7 @@ import { getHomeySnapshot, getHomeAlarmStatus, getDoorsLocksSnapshot } from "@/s
 import { getTelemarkAlerts } from "@/server/met-alerts";
 // Strava-dashboard hentes via @/lib/strava-cache (15-min delt cache).
 import { getGarminOverview } from "@/server/garmin.functions";
+import { useBadgeCache } from "@/lib/badge-cache";
 
 function osloLocalToUtc(dateStr: string, timeStr: string): Date {
   const [y, m, d] = dateStr.split("-").map(Number);
