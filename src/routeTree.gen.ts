@@ -44,10 +44,12 @@ import { Route as ApiStravaStartRouteImport } from './routes/api.strava.start'
 import { Route as ApiStravaCallbackRouteImport } from './routes/api.strava.callback'
 import { Route as ApiHomeyStartRouteImport } from './routes/api.homey.start'
 import { Route as ApiHomeyCallbackRouteImport } from './routes/api.homey.callback'
+import { Route as ApiPublicHooksStravaPollRouteImport } from './routes/api/public/hooks/strava-poll'
 import { Route as ApiPublicHooksSnapshotTibberDailyRouteImport } from './routes/api.public.hooks.snapshot-tibber-daily'
 import { Route as ApiPublicHooksSnapshotPulseRouteImport } from './routes/api.public.hooks.snapshot-pulse'
 import { Route as ApiPublicHooksNetworkSnapshotRouteImport } from './routes/api/public/hooks/network-snapshot'
 import { Route as ApiPublicHooksHomeySensorPollRouteImport } from './routes/api/public/hooks/homey-sensor-poll'
+import { Route as ApiPublicHooksGardenaPollRouteImport } from './routes/api/public/hooks/gardena-poll'
 import { Route as ApiPublicHooksEufyPollRouteImport } from './routes/api/public/hooks/eufy-poll'
 import { Route as ApiPublicHooksEufyRouteImport } from './routes/api/public/hooks/eufy'
 import { Route as ApiPublicHooksBackfillPbthHistoryRouteImport } from './routes/api.public.hooks.backfill-pbth-history'
@@ -228,6 +230,12 @@ const ApiHomeyCallbackRoute = ApiHomeyCallbackRouteImport.update({
   path: '/api/homey/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksStravaPollRoute =
+  ApiPublicHooksStravaPollRouteImport.update({
+    id: '/api/public/hooks/strava-poll',
+    path: '/api/public/hooks/strava-poll',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksSnapshotTibberDailyRoute =
   ApiPublicHooksSnapshotTibberDailyRouteImport.update({
     id: '/api/public/hooks/snapshot-tibber-daily',
@@ -250,6 +258,12 @@ const ApiPublicHooksHomeySensorPollRoute =
   ApiPublicHooksHomeySensorPollRouteImport.update({
     id: '/api/public/hooks/homey-sensor-poll',
     path: '/api/public/hooks/homey-sensor-poll',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksGardenaPollRoute =
+  ApiPublicHooksGardenaPollRouteImport.update({
+    id: '/api/public/hooks/gardena-poll',
+    path: '/api/public/hooks/gardena-poll',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicHooksEufyPollRoute = ApiPublicHooksEufyPollRouteImport.update({
@@ -315,10 +329,12 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/backfill-pbth-history': typeof ApiPublicHooksBackfillPbthHistoryRoute
   '/api/public/hooks/eufy': typeof ApiPublicHooksEufyRoute
   '/api/public/hooks/eufy-poll': typeof ApiPublicHooksEufyPollRoute
+  '/api/public/hooks/gardena-poll': typeof ApiPublicHooksGardenaPollRoute
   '/api/public/hooks/homey-sensor-poll': typeof ApiPublicHooksHomeySensorPollRoute
   '/api/public/hooks/network-snapshot': typeof ApiPublicHooksNetworkSnapshotRoute
   '/api/public/hooks/snapshot-pulse': typeof ApiPublicHooksSnapshotPulseRoute
   '/api/public/hooks/snapshot-tibber-daily': typeof ApiPublicHooksSnapshotTibberDailyRoute
+  '/api/public/hooks/strava-poll': typeof ApiPublicHooksStravaPollRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -360,10 +376,12 @@ export interface FileRoutesByTo {
   '/api/public/hooks/backfill-pbth-history': typeof ApiPublicHooksBackfillPbthHistoryRoute
   '/api/public/hooks/eufy': typeof ApiPublicHooksEufyRoute
   '/api/public/hooks/eufy-poll': typeof ApiPublicHooksEufyPollRoute
+  '/api/public/hooks/gardena-poll': typeof ApiPublicHooksGardenaPollRoute
   '/api/public/hooks/homey-sensor-poll': typeof ApiPublicHooksHomeySensorPollRoute
   '/api/public/hooks/network-snapshot': typeof ApiPublicHooksNetworkSnapshotRoute
   '/api/public/hooks/snapshot-pulse': typeof ApiPublicHooksSnapshotPulseRoute
   '/api/public/hooks/snapshot-tibber-daily': typeof ApiPublicHooksSnapshotTibberDailyRoute
+  '/api/public/hooks/strava-poll': typeof ApiPublicHooksStravaPollRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -406,10 +424,12 @@ export interface FileRoutesById {
   '/api/public/hooks/backfill-pbth-history': typeof ApiPublicHooksBackfillPbthHistoryRoute
   '/api/public/hooks/eufy': typeof ApiPublicHooksEufyRoute
   '/api/public/hooks/eufy-poll': typeof ApiPublicHooksEufyPollRoute
+  '/api/public/hooks/gardena-poll': typeof ApiPublicHooksGardenaPollRoute
   '/api/public/hooks/homey-sensor-poll': typeof ApiPublicHooksHomeySensorPollRoute
   '/api/public/hooks/network-snapshot': typeof ApiPublicHooksNetworkSnapshotRoute
   '/api/public/hooks/snapshot-pulse': typeof ApiPublicHooksSnapshotPulseRoute
   '/api/public/hooks/snapshot-tibber-daily': typeof ApiPublicHooksSnapshotTibberDailyRoute
+  '/api/public/hooks/strava-poll': typeof ApiPublicHooksStravaPollRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -453,10 +473,12 @@ export interface FileRouteTypes {
     | '/api/public/hooks/backfill-pbth-history'
     | '/api/public/hooks/eufy'
     | '/api/public/hooks/eufy-poll'
+    | '/api/public/hooks/gardena-poll'
     | '/api/public/hooks/homey-sensor-poll'
     | '/api/public/hooks/network-snapshot'
     | '/api/public/hooks/snapshot-pulse'
     | '/api/public/hooks/snapshot-tibber-daily'
+    | '/api/public/hooks/strava-poll'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -498,10 +520,12 @@ export interface FileRouteTypes {
     | '/api/public/hooks/backfill-pbth-history'
     | '/api/public/hooks/eufy'
     | '/api/public/hooks/eufy-poll'
+    | '/api/public/hooks/gardena-poll'
     | '/api/public/hooks/homey-sensor-poll'
     | '/api/public/hooks/network-snapshot'
     | '/api/public/hooks/snapshot-pulse'
     | '/api/public/hooks/snapshot-tibber-daily'
+    | '/api/public/hooks/strava-poll'
   id:
     | '__root__'
     | '/'
@@ -543,10 +567,12 @@ export interface FileRouteTypes {
     | '/api/public/hooks/backfill-pbth-history'
     | '/api/public/hooks/eufy'
     | '/api/public/hooks/eufy-poll'
+    | '/api/public/hooks/gardena-poll'
     | '/api/public/hooks/homey-sensor-poll'
     | '/api/public/hooks/network-snapshot'
     | '/api/public/hooks/snapshot-pulse'
     | '/api/public/hooks/snapshot-tibber-daily'
+    | '/api/public/hooks/strava-poll'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -589,10 +615,12 @@ export interface RootRouteChildren {
   ApiPublicHooksBackfillPbthHistoryRoute: typeof ApiPublicHooksBackfillPbthHistoryRoute
   ApiPublicHooksEufyRoute: typeof ApiPublicHooksEufyRoute
   ApiPublicHooksEufyPollRoute: typeof ApiPublicHooksEufyPollRoute
+  ApiPublicHooksGardenaPollRoute: typeof ApiPublicHooksGardenaPollRoute
   ApiPublicHooksHomeySensorPollRoute: typeof ApiPublicHooksHomeySensorPollRoute
   ApiPublicHooksNetworkSnapshotRoute: typeof ApiPublicHooksNetworkSnapshotRoute
   ApiPublicHooksSnapshotPulseRoute: typeof ApiPublicHooksSnapshotPulseRoute
   ApiPublicHooksSnapshotTibberDailyRoute: typeof ApiPublicHooksSnapshotTibberDailyRoute
+  ApiPublicHooksStravaPollRoute: typeof ApiPublicHooksStravaPollRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -842,6 +870,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiHomeyCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/strava-poll': {
+      id: '/api/public/hooks/strava-poll'
+      path: '/api/public/hooks/strava-poll'
+      fullPath: '/api/public/hooks/strava-poll'
+      preLoaderRoute: typeof ApiPublicHooksStravaPollRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/snapshot-tibber-daily': {
       id: '/api/public/hooks/snapshot-tibber-daily'
       path: '/api/public/hooks/snapshot-tibber-daily'
@@ -868,6 +903,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/hooks/homey-sensor-poll'
       fullPath: '/api/public/hooks/homey-sensor-poll'
       preLoaderRoute: typeof ApiPublicHooksHomeySensorPollRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/gardena-poll': {
+      id: '/api/public/hooks/gardena-poll'
+      path: '/api/public/hooks/gardena-poll'
+      fullPath: '/api/public/hooks/gardena-poll'
+      preLoaderRoute: typeof ApiPublicHooksGardenaPollRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/hooks/eufy-poll': {
@@ -942,11 +984,13 @@ const rootRouteChildren: RootRouteChildren = {
     ApiPublicHooksBackfillPbthHistoryRoute,
   ApiPublicHooksEufyRoute: ApiPublicHooksEufyRoute,
   ApiPublicHooksEufyPollRoute: ApiPublicHooksEufyPollRoute,
+  ApiPublicHooksGardenaPollRoute: ApiPublicHooksGardenaPollRoute,
   ApiPublicHooksHomeySensorPollRoute: ApiPublicHooksHomeySensorPollRoute,
   ApiPublicHooksNetworkSnapshotRoute: ApiPublicHooksNetworkSnapshotRoute,
   ApiPublicHooksSnapshotPulseRoute: ApiPublicHooksSnapshotPulseRoute,
   ApiPublicHooksSnapshotTibberDailyRoute:
     ApiPublicHooksSnapshotTibberDailyRoute,
+  ApiPublicHooksStravaPollRoute: ApiPublicHooksStravaPollRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
