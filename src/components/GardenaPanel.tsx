@@ -422,7 +422,15 @@ export function GardenaPanel() {
     }
   }, [fetchSnap]);
 
-  // Ingen automatisk henting ved åpning av siden — kun manuelt via "Oppdater"-knappen.
+  // Auto-hent ved åpning av siden HVIS cache er eldre enn 1 time
+  // og vi ikke er i nattevindu (22:00–06:00 Europe/Oslo).
+  // Manuell "Oppdater" omgår dette.
+  useEffect(() => {
+    if (isGardenaCacheFresh()) return;
+    if (isGardenaNightWindow()) return;
+    void load(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Tikk-tikk for å vise nedtelling på Oppdater-knappen.
   useEffect(() => {
@@ -432,6 +440,7 @@ export function GardenaPanel() {
     }, 500);
     return () => window.clearInterval(id);
   }, []);
+
 
   const onCommand = async (svcId: string, cmd: string, seconds?: number) => {
     setBusy(`${svcId}:${cmd}`);
