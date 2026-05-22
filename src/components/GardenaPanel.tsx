@@ -2,7 +2,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { getGardenaSnapshot, controlGardenaMower } from "@/lib/gardena.functions";
 import { GardenaMap } from "@/components/GardenaMap";
-import { getCachedGardena, setCachedGardena } from "@/lib/gardena-cache";
+import {
+  getCachedGardena,
+  setCachedGardena,
+  isGardenaCacheFresh,
+  isGardenaNightWindow,
+  GARDENA_TTL_MS,
+} from "@/lib/gardena-cache";
 import { GARDENA_ERROR_CODES, lookupGardenaError } from "@/lib/gardena-error-codes";
 import {
   Bot, Battery, BatteryLow, BatteryFull, AlertTriangle, CheckCircle2,
