@@ -682,21 +682,17 @@ const FRAKSJON_EMOJI_HDR: Record<number, string> = {
 
 export function GarbageNextPickupBadge({ inline }: { inline?: boolean } = {}) {
   const settings = useHeaderBadgeSettings();
-  const [items, setItems] = useState<Array<{ fraksjonId: number; fraksjonNavn: string; daysUntil: number }>>([]);
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const o = await getGarbageOverview();
-        if (cancelled) return;
-        const sorted = [...(o.pickups ?? [])]
-          .filter((p) => p.daysUntil >= 0)
-          .sort((a, b) => a.daysUntil - b.daysUntil);
-        setItems(sorted.map((p) => ({ fraksjonId: p.fraksjonId, fraksjonNavn: p.fraksjonNavn, daysUntil: p.daysUntil })));
-      } catch {}
-    })();
-    return () => { cancelled = true; };
-  }, []);
+  const items = useBadgeCache<Array<{ fraksjonId: number; fraksjonNavn: string; daysUntil: number }>>(
+    "garbage-next-pickups",
+    async () => {
+      const o = await getGarbageOverview();
+      const sorted = [...(o.pickups ?? [])]
+        .filter((p) => p.daysUntil >= 0)
+        .sort((a, b) => a.daysUntil - b.daysUntil);
+      return sorted.map((p) => ({ fraksjonId: p.fraksjonId, fraksjonNavn: p.fraksjonNavn, daysUntil: p.daysUntil }));
+    },
+    { ttlMs: 60 * 60_000 },
+  ) ?? [];
   if (items.length === 0) return null;
   const first = items[0];
   const maxDaysAhead = settings.garbage?.maxDaysAhead ?? 14;
