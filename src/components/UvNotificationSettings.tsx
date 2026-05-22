@@ -20,7 +20,11 @@ type UvPref = {
   enabled: boolean;
   recipient: string;
   lead_minutes: number;
+  notify_fall_3: boolean;
+  notify_fall_6: boolean;
+  notify_fall_8: boolean;
 };
+
 
 type Forecast = {
   id: string;
