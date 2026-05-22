@@ -1,0 +1,2 @@
+ALTER TABLE public.vakttarn_events DROP CONSTRAINT IF EXISTS vakttarn_events_category_check;
+ALTER TABLE public.vakttarn_events ADD CONSTRAINT vakttarn_events_category_check CHECK (category = ANY (ARRAY['person'::text, 'dyr'::text, 'bil'::text, 'pakke'::text, 'ringt_pa'::text, 'annet'::text]));
