@@ -857,7 +857,7 @@ function StravaCompare({ autoLoad = true }: { autoLoad?: boolean } = {}) {
   );
 }
 
-function StravaSection({ owner, displayName }: { owner: Owner; displayName: string }) {
+function StravaSection({ owner, displayName, autoLoad = true }: { owner: Owner; displayName: string; autoLoad?: boolean }) {
   const [status, setStatus] = useState<StatusState>({ kind: "loading" });
   const [dash, setDash] = useState<DashState>({ kind: "idle" });
   const fetchStatus = useServerFn(getStravaStatus);
@@ -898,9 +898,19 @@ function StravaSection({ owner, displayName }: { owner: Owner; displayName: stri
   }, [owner]);
 
   useEffect(() => {
-    if (status.kind === "connected") loadDash();
+    if (status.kind !== "connected") return;
+    if (autoLoad) {
+      loadDash();
+      return;
+    }
+    // Manuell modus: bruk delt cache hvis den finnes, ellers stå i idle
+    (async () => {
+      const { getCachedStrava } = await import("@/lib/strava-cache");
+      const cached = getCachedStrava(owner);
+      if (cached?.ok) setDash({ kind: "ok", ...cached });
+    })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [status.kind]);
+  }, [status.kind, autoLoad]);
 
   return (
     <div>
