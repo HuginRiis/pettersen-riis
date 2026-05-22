@@ -336,18 +336,14 @@ export function WeatherDaysBadge({ lat, lon, inline, useGps, startOffset = 1, da
 
 /** Alarm-status (AV / DELVIS / PÅ). */
 export function AlarmStateBadge({ inline }: { inline?: boolean } = {}) {
-  const [state, setState] = useState<"armed" | "partially_armed" | "disarmed" | null>(null);
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await getHomeAlarmStatus();
-        if (cancelled) return;
-        if (res.ok && res.state) setState(res.state);
-      } catch {}
-    })();
-    return () => { cancelled = true; };
-  }, []);
+  const state = useBadgeCache<"armed" | "partially_armed" | "disarmed">(
+    "alarm-state",
+    async () => {
+      const res = await getHomeAlarmStatus();
+      return res.ok && res.state ? res.state : null;
+    },
+    { ttlMs: 10 * 60_000 },
+  );
   if (!state) return null;
   const label = state === "armed" ? "PÅ" : state === "partially_armed" ? "DELVIS" : "AV";
   const emoji = state === "armed" ? "🛡" : state === "partially_armed" ? "🛡" : "🔓";
