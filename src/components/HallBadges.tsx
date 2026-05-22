@@ -543,52 +543,49 @@ export function StepsTodayBadge({ inline, owner = "arne" }: { inline?: boolean; 
 
 /** Status på gressklipper(e) (Gardena Sileno via Homey). */
 export function MowerStatusBadge({ inline }: { inline?: boolean } = {}) {
-  const [info, setInfo] = useState<{ label: string; emoji: string; tone: "ok" | "warn" | "error" | "info" } | null>(null);
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const snap = await getHomeySnapshot();
-        if (!snap.ok || cancelled) return;
-        const isMower = (d: any) => {
-          const n = (d.name ?? "").toLowerCase();
-          const drv = (d.driverUri ?? "").toLowerCase();
-          return n.includes("sileno") || n.includes("gardena") || n.includes("klipper") || n.includes("mower") ||
-            drv.includes("gardena") || drv.includes("husqvarna") || drv.includes("automower");
+  const info = useBadgeCache<{ label: string; emoji: string; tone: "ok" | "warn" | "error" | "info" }>(
+    "mower-status",
+    async () => {
+      const snap = await getHomeySnapshot();
+      if (!snap.ok) return null;
+      const isMower = (d: any) => {
+        const n = (d.name ?? "").toLowerCase();
+        const drv = (d.driverUri ?? "").toLowerCase();
+        return n.includes("sileno") || n.includes("gardena") || n.includes("klipper") || n.includes("mower") ||
+          drv.includes("gardena") || drv.includes("husqvarna") || drv.includes("automower");
+      };
+      const mowers = snap.devices.filter(isMower);
+      if (mowers.length === 0) return null;
+      const states = mowers.map((d: any) => {
+        const cap = (id: string) => d.capabilities[id]?.value;
+        const findStr = (test: (id: string) => boolean) => {
+          for (const [id, c] of Object.entries<any>(d.capabilities)) {
+            if (test(id.toLowerCase()) && typeof c.value === "string") return c.value as string;
+          }
+          return null;
         };
-        const mowers = snap.devices.filter(isMower);
-        if (mowers.length === 0) return;
-        // Pick "worst" / most informative state across mowers
-        const states = mowers.map((d: any) => {
-          const cap = (id: string) => d.capabilities[id]?.value;
-          const findStr = (test: (id: string) => boolean) => {
-            for (const [id, c] of Object.entries<any>(d.capabilities)) {
-              if (test(id.toLowerCase()) && typeof c.value === "string") return c.value as string;
-            }
-            return null;
-          };
-          const err = (typeof cap("mower_error") === "string" ? cap("mower_error") as string : null) ||
-            findStr((id) => id.includes("error") && !id.includes("last"));
-          const state = (typeof cap("mower_state") === "string" ? cap("mower_state") as string : null) ||
-            (typeof cap("state") === "string" ? cap("state") as string : null) ||
-            findStr((id) => id.includes("state"));
-          const charging = typeof cap("charging") === "boolean" ? cap("charging") as boolean : null;
-          return { err, state, charging };
-        });
-        const hasErr = states.find((s) => s.err && s.err.toLowerCase() !== "no_message");
-        if (hasErr) { setInfo({ label: "Feil", emoji: "⚠️", tone: "error" }); return; }
-        const stUp = (states[0].state ?? "").toUpperCase();
-        const anyMowing = states.some((s) => (s.state ?? "").toUpperCase().includes("MOW") || (s.state ?? "").toUpperCase().includes("CUTTING") || (s.state ?? "").toUpperCase().includes("LEAVING"));
-        const anyCharging = states.some((s) => s.charging === true || (s.state ?? "").toUpperCase().includes("CHARGING"));
-        const anyParked = states.some((s) => (s.state ?? "").toUpperCase().includes("PARK") || (s.state ?? "").toUpperCase().includes("HOME"));
-        if (anyMowing) setInfo({ label: "Klipper", emoji: "🤖", tone: "ok" });
-        else if (anyCharging) setInfo({ label: "Lader", emoji: "🔌", tone: "info" });
-        else if (anyParked) setInfo({ label: "Parkert", emoji: "🅿️", tone: "info" });
-        else if (stUp) setInfo({ label: stUp.replaceAll("_", " ").toLowerCase(), emoji: "🤖", tone: "info" });
-      } catch { /* ignore */ }
-    })();
-    return () => { cancelled = true; };
-  }, []);
+        const err = (typeof cap("mower_error") === "string" ? cap("mower_error") as string : null) ||
+          findStr((id) => id.includes("error") && !id.includes("last"));
+        const state = (typeof cap("mower_state") === "string" ? cap("mower_state") as string : null) ||
+          (typeof cap("state") === "string" ? cap("state") as string : null) ||
+          findStr((id) => id.includes("state"));
+        const charging = typeof cap("charging") === "boolean" ? cap("charging") as boolean : null;
+        return { err, state, charging };
+      });
+      const hasErr = states.find((s) => s.err && s.err.toLowerCase() !== "no_message");
+      if (hasErr) return { label: "Feil", emoji: "⚠️", tone: "error" as const };
+      const stUp = (states[0].state ?? "").toUpperCase();
+      const anyMowing = states.some((s) => (s.state ?? "").toUpperCase().includes("MOW") || (s.state ?? "").toUpperCase().includes("CUTTING") || (s.state ?? "").toUpperCase().includes("LEAVING"));
+      const anyCharging = states.some((s) => s.charging === true || (s.state ?? "").toUpperCase().includes("CHARGING"));
+      const anyParked = states.some((s) => (s.state ?? "").toUpperCase().includes("PARK") || (s.state ?? "").toUpperCase().includes("HOME"));
+      if (anyMowing) return { label: "Klipper", emoji: "🤖", tone: "ok" as const };
+      if (anyCharging) return { label: "Lader", emoji: "🔌", tone: "info" as const };
+      if (anyParked) return { label: "Parkert", emoji: "🅿️", tone: "info" as const };
+      if (stUp) return { label: stUp.replaceAll("_", " ").toLowerCase(), emoji: "🤖", tone: "info" as const };
+      return null;
+    },
+    { ttlMs: 10 * 60_000 },
+  );
   if (!info) return null;
   const tone =
     info.tone === "ok" ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40" :
