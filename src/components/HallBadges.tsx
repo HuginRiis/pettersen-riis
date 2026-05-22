@@ -152,29 +152,26 @@ export function PushTodayBadge({ inline }: { inline?: boolean } = {}) {
 
 /** Antall lys (Hue) som er tent nå. */
 export function LightsOnBadge({ inline }: { inline?: boolean } = {}) {
-  const [text, setText] = useState<string | null>(null);
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const snap = await getHomeySnapshot();
-        if (!snap.ok) return;
-        const EXTRA: string[][] = [["garsej", "lys"], ["stålampe"], ["taklys"]];
-        const lights = snap.devices.filter((d: any) => {
-          const hasOn = "onoff" in d.capabilities;
-          const hasDim = "dim" in d.capabilities;
-          if (d.class === "light") return true;
-          if (hasDim) return true;
-          const nm = (d.name ?? "").toLowerCase();
-          if (hasOn && EXTRA.some((toks) => toks.every((t) => nm.includes(t)))) return true;
-          return false;
-        });
-        const lit = lights.filter((d: any) => d.capabilities["onoff"]?.value === true).length;
-        if (!cancelled) setText(`${lit}/${lights.length}`);
-      } catch {}
-    })();
-    return () => { cancelled = true; };
-  }, []);
+  const text = useBadgeCache<string>(
+    "lights-on-text",
+    async () => {
+      const snap = await getHomeySnapshot();
+      if (!snap.ok) return null;
+      const EXTRA: string[][] = [["garsej", "lys"], ["stålampe"], ["taklys"]];
+      const lights = snap.devices.filter((d: any) => {
+        const hasOn = "onoff" in d.capabilities;
+        const hasDim = "dim" in d.capabilities;
+        if (d.class === "light") return true;
+        if (hasDim) return true;
+        const nm = (d.name ?? "").toLowerCase();
+        if (hasOn && EXTRA.some((toks) => toks.every((t) => nm.includes(t)))) return true;
+        return false;
+      });
+      const lit = lights.filter((d: any) => d.capabilities["onoff"]?.value === true).length;
+      return `${lit}/${lights.length}`;
+    },
+    { ttlMs: 10 * 60_000 },
+  );
   if (!text) return null;
   return <Badge inline={inline} title={`${text} lys tent`}>💡{text}</Badge>;
 }
