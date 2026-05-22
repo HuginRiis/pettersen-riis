@@ -259,7 +259,6 @@ export function TomorrowWeatherBadge({ lat, lon, inline, useGps }: { lat: number
 
 /** Værsymbol for N dager fremover, fra valgt start (i dag eller i morgen). */
 export function WeatherDaysBadge({ lat, lon, inline, useGps, startOffset = 1, days = 1, showTemp = true }: { lat: number; lon: number; inline?: boolean; useGps?: boolean; startOffset?: 0 | 1; days?: number; showTemp?: boolean }) {
-  const [items, setItems] = useState<{ emoji: string; temp: number | null }[] | null>(null);
   const [coord, setCoord] = useState<{ lat: number; lon: number }>({ lat, lon });
   useEffect(() => {
     if (!useGps || typeof navigator === "undefined" || !navigator.geolocation) {
@@ -274,39 +273,39 @@ export function WeatherDaysBadge({ lat, lon, inline, useGps, startOffset = 1, da
     );
     return () => { cancelled = true; };
   }, [useGps, lat, lon]);
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetch(
-          `https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=${coord.lat}&lon=${coord.lon}`,
-          { headers: { Accept: "application/json" } },
-        );
-        if (!res.ok) return;
-        const data = await res.json();
-        const series = data?.properties?.timeseries ?? [];
-        const out: { emoji: string; temp: number | null }[] = [];
-        for (let i = 0; i < days; i++) {
-          const day = new Date();
-          day.setDate(day.getDate() + startOffset + i);
-          const tIso = day.toISOString().slice(0, 10);
-          let best: any = null;
-          let bestDiff = Infinity;
-          for (const e of series) {
-            const t: string = e.time;
-            if (!t.startsWith(tIso)) continue;
-            const hour = parseInt(t.slice(11, 13));
-            const diff = Math.abs(hour - 12);
-            if (diff < bestDiff) { bestDiff = diff; best = e; }
-          }
-          const sym = best?.data?.next_6_hours?.summary?.symbol_code ?? best?.data?.next_1_hours?.summary?.symbol_code ?? null;
-          const temp = typeof best?.data?.instant?.details?.air_temperature === "number" ? best.data.instant.details.air_temperature : null;
-          out.push({ emoji: symbolEmoji(sym), temp });
+  const key = `weather-days:${coord.lat.toFixed(3)},${coord.lon.toFixed(3)}:${startOffset}:${days}`;
+  const items = useBadgeCache<{ emoji: string; temp: number | null }[]>(
+    key,
+    async () => {
+      const res = await fetch(
+        `https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=${coord.lat}&lon=${coord.lon}`,
+        { headers: { Accept: "application/json" } },
+      );
+      if (!res.ok) return null;
+      const data = await res.json();
+      const series = data?.properties?.timeseries ?? [];
+      const out: { emoji: string; temp: number | null }[] = [];
+      for (let i = 0; i < days; i++) {
+        const day = new Date();
+        day.setDate(day.getDate() + startOffset + i);
+        const tIso = day.toISOString().slice(0, 10);
+        let best: any = null;
+        let bestDiff = Infinity;
+        for (const e of series) {
+          const t: string = e.time;
+          if (!t.startsWith(tIso)) continue;
+          const hour = parseInt(t.slice(11, 13));
+          const diff = Math.abs(hour - 12);
+          if (diff < bestDiff) { bestDiff = diff; best = e; }
         }
-        if (!cancelled) setItems(out);
-      } catch {}
-    })();
-  }, [coord.lat, coord.lon, startOffset, days]);
+        const sym = best?.data?.next_6_hours?.summary?.symbol_code ?? best?.data?.next_1_hours?.summary?.symbol_code ?? null;
+        const temp = typeof best?.data?.instant?.details?.air_temperature === "number" ? best.data.instant.details.air_temperature : null;
+        out.push({ emoji: symbolEmoji(sym), temp });
+      }
+      return out;
+    },
+    { ttlMs: 30 * 60_000 },
+  );
   if (!items || items.length === 0) return null;
   const title = days === 1 ? (startOffset === 0 ? "Vær i dag" : "Vær i morgen") : `Vær neste ${days} dager`;
   const fmt = (t: number | null) => (t == null ? "" : `${Math.round(t)}°`);
