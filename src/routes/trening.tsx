@@ -645,7 +645,6 @@ export function StravaHouses() {
 
 function StravaCompare() {
   const fetchStatus = useServerFn(getStravaStatus);
-  const fetchDash = useServerFn(getStravaDashboard);
   const [arne, setArne] = useState<DashOk | null>(null);
   const [rebekka, setRebekka] = useState<DashOk | null>(null);
   const [loading, setLoading] = useState(true);
@@ -657,11 +656,12 @@ function StravaCompare() {
       setLoading(true);
       setError(null);
       try {
+        const { loadStrava } = await import("@/lib/strava-cache");
         const load = async (owner: Owner) => {
           const s = await fetchStatus({ data: { owner } });
           if (!s.connected) return null;
-          const r = await fetchDash({ data: { owner } });
-          return r.ok ? (r as DashOk) : null;
+          const r = await loadStrava(owner);
+          return r?.ok ? (r as DashOk) : null;
         };
         const [a, r] = await Promise.all([load("arne"), load("rebekka")]);
         if (!cancelled) {
