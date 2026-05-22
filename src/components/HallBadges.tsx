@@ -7,7 +7,7 @@ import { getUpcomingUvEvaluations } from "@/server/uv-push.functions";
 import { getGarbageOverview } from "@/server/garbage-collection";
 import { getHomeySnapshot, getHomeAlarmStatus, getDoorsLocksSnapshot } from "@/server/homey";
 import { getTelemarkAlerts } from "@/server/met-alerts";
-import { getStravaDashboard } from "@/server/strava";
+// Strava-dashboard hentes via @/lib/strava-cache (15-min delt cache).
 import { getGarminOverview } from "@/server/garmin.functions";
 
 function osloLocalToUtc(dateStr: string, timeStr: string): Date {
@@ -489,7 +489,8 @@ export function TrainingLast4WeeksBadge({ inline }: { inline?: boolean } = {}) {
     let cancelled = false;
     (async () => {
       try {
-        const r: any = await getStravaDashboard({ data: { owner: "arne" } });
+        const { loadStrava } = await import("@/lib/strava-cache");
+        const r: any = await loadStrava("arne");
         if (cancelled) return;
         if (!r?.ok) return;
         const t = r.totals ?? {};

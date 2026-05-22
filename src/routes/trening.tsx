@@ -5,7 +5,7 @@ import { Footprints, Heart, Moon, Battery, Brain, Dumbbell, Activity as Activity
 import { PageShell, PageHero } from "@/components/PageShell";
 import { ActivityMap } from "@/components/ActivityMap";
 import { GarminHouses } from "@/components/GarminHouses";
-import { getActivityStreams, getStravaDashboard, getStravaStatus } from "@/server/strava";
+import { getActivityStreams, getStravaStatus } from "@/server/strava";
 import { getGarminOverview } from "@/server/garmin.functions";
 import treningImg from "@/assets/got-trening.jpg";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -645,7 +645,6 @@ export function StravaHouses() {
 
 function StravaCompare() {
   const fetchStatus = useServerFn(getStravaStatus);
-  const fetchDash = useServerFn(getStravaDashboard);
   const [arne, setArne] = useState<DashOk | null>(null);
   const [rebekka, setRebekka] = useState<DashOk | null>(null);
   const [loading, setLoading] = useState(true);
@@ -657,11 +656,12 @@ function StravaCompare() {
       setLoading(true);
       setError(null);
       try {
+        const { loadStrava } = await import("@/lib/strava-cache");
         const load = async (owner: Owner) => {
           const s = await fetchStatus({ data: { owner } });
           if (!s.connected) return null;
-          const r = await fetchDash({ data: { owner } });
-          return r.ok ? (r as DashOk) : null;
+          const r = await loadStrava(owner);
+          return r?.ok ? (r as DashOk) : null;
         };
         const [a, r] = await Promise.all([load("arne"), load("rebekka")]);
         if (!cancelled) {
@@ -828,7 +828,6 @@ function StravaSection({ owner, displayName }: { owner: Owner; displayName: stri
   const [status, setStatus] = useState<StatusState>({ kind: "loading" });
   const [dash, setDash] = useState<DashState>({ kind: "idle" });
   const fetchStatus = useServerFn(getStravaStatus);
-  const fetchDash = useServerFn(getStravaDashboard);
 
   const loadStatus = async () => {
     try {
@@ -844,14 +843,16 @@ function StravaSection({ owner, displayName }: { owner: Owner; displayName: stri
     }
   };
 
-  const loadDash = async () => {
+  const loadDash = async (force = false) => {
     setDash({ kind: "loading" });
     try {
-      const res = await fetchDash({ data: { owner } });
-      if (res.ok) {
+      const { loadStrava, invalidateStrava } = await import("@/lib/strava-cache");
+      if (force) invalidateStrava(owner);
+      const res = await loadStrava(owner);
+      if (res?.ok) {
         setDash({ kind: "ok", ...res });
       } else {
-        setDash({ kind: "error", message: res.error });
+        setDash({ kind: "error", message: res?.error ?? "Ukjent feil" });
       }
     } catch (e: any) {
       setDash({ kind: "error", message: e?.message ?? "Ukjent feil" });
@@ -915,7 +916,7 @@ function StravaSection({ owner, displayName }: { owner: Owner; displayName: stri
                 ↺ Bytt konto
               </a>
               <button
-                onClick={loadDash}
+                onClick={() => loadDash(true)}
                 disabled={dash.kind === "loading"}
                 className="text-xs uppercase tracking-[0.2em] text-muted-foreground hover:text-primary disabled:opacity-50"
               >

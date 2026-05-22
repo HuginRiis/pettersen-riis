@@ -60,7 +60,9 @@ function estimateCalories(a: StravaActivity): number {
 }
 
 async function stravaFetch<T>(path: string, accessToken: string): Promise<T> {
-  const res = await fetch(`${STRAVA_API}${path}`, {
+  // Logg kun ekte Strava-HTTP-kall (ikke cache-treff i runStravaDashboard).
+  const { loggedFetch } = await import("./api-call-log.server");
+  const res = await loggedFetch("strava", path, `${STRAVA_API}${path}`, {
     headers: { Authorization: `Bearer ${accessToken}` },
   });
   if (!res.ok) {
@@ -198,7 +200,7 @@ function bucketSport(type: string): "run" | "ride" | "swim" | "hike" | "ski" | "
 // Hvert dashboard-kall = 2 Strava-API-kall (activities + athlete stats),
 // så med 10 min TTL: maks 6 * 24 = 144 dashboard/dag/eier → 288 API-kall.
 // To eiere = ~576 API-kall/dag i verste fall. Godt under 1000-grensen.
-const DASHBOARD_TTL_MS = 10 * 60 * 1000;
+const DASHBOARD_TTL_MS = 15 * 60 * 1000;
 const dashboardCache = new Map<StravaOwner, { at: number; data: any }>();
 
 // Sikkerhetsbrems: hvis vi nærmer oss daglig grense, server stale data fra cache
@@ -652,8 +654,7 @@ export const getStravaDashboard = createServerFn({ method: "GET" })
     owner: parseOwner(input?.owner),
   }))
   .handler(async ({ data }) => {
-    const { withApiLog } = await import("./api-call-log.server");
-    return withApiLog("strava", "getStravaDashboard", () =>
-      runStravaDashboard(data.owner),
-    )();
+    // Ingen withApiLog her — stravaFetch logger selve Strava-kallene.
+    // Cache-treff produserer dermed ingen api_call_log-entry.
+    return runStravaDashboard(data.owner);
   });
