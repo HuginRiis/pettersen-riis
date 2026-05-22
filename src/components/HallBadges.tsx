@@ -610,23 +610,20 @@ export function MowerStatusBadge({ inline }: { inline?: boolean } = {}) {
 
 /** Nåværende temperatur fra MET locationforecast for gitte koordinater. */
 export function CurrentTempBadge({ lat, lon, inline }: { lat: number; lon: number; inline?: boolean }) {
-  const [t, setT] = useState<number | null>(null);
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetch(
-          `https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=${lat}&lon=${lon}`,
-          { headers: { Accept: "application/json" } },
-        );
-        if (!res.ok) return;
-        const data = await res.json();
-        const v = data?.properties?.timeseries?.[0]?.data?.instant?.details?.air_temperature;
-        if (!cancelled && typeof v === "number") setT(v);
-      } catch {}
-    })();
-    return () => { cancelled = true; };
-  }, [lat, lon]);
+  const t = useBadgeCache<number>(
+    `current-temp:${lat.toFixed(3)},${lon.toFixed(3)}`,
+    async () => {
+      const res = await fetch(
+        `https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=${lat}&lon=${lon}`,
+        { headers: { Accept: "application/json" } },
+      );
+      if (!res.ok) return null;
+      const data = await res.json();
+      const v = data?.properties?.timeseries?.[0]?.data?.instant?.details?.air_temperature;
+      return typeof v === "number" ? v : null;
+    },
+    { ttlMs: 15 * 60_000 },
+  );
   if (t == null) return null;
   // Reuse same color scale as TempBadge
   const color = (() => {
