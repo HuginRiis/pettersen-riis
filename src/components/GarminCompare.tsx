@@ -201,7 +201,7 @@ export function GarminCompare() {
   }, { arne: 0, rebekka: 0 });
 
   // Top 5 highlights — shuffled "she slept X more than him"-style insights
-  type Highlight = { text: string; winner: "arne" | "rebekka" };
+  type Highlight = { text: string; winner: "arne" | "rebekka"; label: string };
   const highlights: Highlight[] = [];
   for (const row of rows) {
     const w = winner(row);
