@@ -374,7 +374,7 @@ function SensorCard({ sensor }: { sensor: Sensor }) {
 export function GardenaPanel() {
   const fetchSnap = useServerFn(getGardenaSnapshot);
   const sendCmd = useServerFn(controlGardenaMower);
-  const [snap, setSnap] = useState<Snap | null>(null);
+  const [snap, setSnap] = useState<Snap | null>(() => getCachedGardena());
   const [loading, setLoading] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
@@ -396,9 +396,10 @@ export function GardenaPanel() {
     try {
       const res = await fetchSnap();
       setSnap(res);
+      setCachedGardena(res);
       lastLoadedAt.current = Date.now();
     } catch (e: any) {
-      setSnap({
+      const errSnap: Snap = {
         ok: false,
         error: e?.message ?? "Ukjent feil",
         fetchedAt: new Date().toISOString(),
@@ -407,17 +408,15 @@ export function GardenaPanel() {
         sensors: [],
         homeLat: 59.2096,
         homeLon: 9.609,
-      });
+      };
+      setSnap(errSnap);
     } finally {
       setLoading(false);
       inFlight.current = false;
     }
   }, [fetchSnap]);
 
-  // Kun én spørring ved åpning av siden — ingen auto-polling.
-  useEffect(() => {
-    load();
-  }, [load]);
+  // Ingen automatisk henting ved åpning av siden — kun manuelt via "Oppdater"-knappen.
 
   // Tikk-tikk for å vise nedtelling på Oppdater-knappen.
   useEffect(() => {
