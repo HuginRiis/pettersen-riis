@@ -502,23 +502,18 @@ export function TrainingLast4WeeksBadge({ inline }: { inline?: boolean } = {}) {
 
 /** Skritt i dag fra Garmin (for menyen). */
 export function StepsTodayBadge({ inline, owner = "arne" }: { inline?: boolean; owner?: "arne" | "rebekka" } = {}) {
-  const [steps, setSteps] = useState<number | null>(null);
-  const [goal, setGoal] = useState<number | null>(null);
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const o: any = await getGarminOverview({ data: { owner } });
-        if (cancelled) return;
-        const today = o?.daily?.[o.daily.length - 1];
-        if (today) {
-          setSteps(today.steps ?? null);
-          setGoal(today.step_goal ?? null);
-        }
-      } catch {}
-    })();
-    return () => { cancelled = true; };
-  }, [owner]);
+  const data = useBadgeCache<{ steps: number | null; goal: number | null }>(
+    `steps-today:${owner}`,
+    async () => {
+      const o: any = await getGarminOverview({ data: { owner } });
+      const today = o?.daily?.[o.daily.length - 1];
+      if (!today) return null;
+      return { steps: today.steps ?? null, goal: today.step_goal ?? null };
+    },
+    { ttlMs: 15 * 60_000 },
+  );
+  const steps = data?.steps ?? null;
+  const goal = data?.goal ?? null;
   if (steps == null) return null;
   // House Stark (Arne) = slate, House Targaryen (Rebekka) = rose
   const tone = owner === "rebekka"
