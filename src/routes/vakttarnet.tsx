@@ -32,6 +32,7 @@ import { GarminStatusPanel } from "@/components/GarminStatusPanel";
 import { VakttarnHeroStats } from "@/components/VakttarnHeroStats";
 import { TollnesCameraStrip } from "@/components/TollnesCameraStrip";
 import { HomeyCameraStrip } from "@/components/HomeyCameraStrip";
+import { LatestDoorbellSnapshot } from "@/components/LatestDoorbellSnapshot";
 import { usePerUserPersistedState } from "@/hooks/use-per-user-persisted-state";
 
 
