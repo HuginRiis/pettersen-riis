@@ -206,13 +206,8 @@ function PushSettingsPage() {
 
         <SettingsBox id="sec-vaerprefs" title="🔔 Vær av/på" inGrid><WeatherPrefsList /></SettingsBox>
 
-        <SettingsBox id="sec-uvvarsler" title="☀️ UV-varsler" inGrid>
-          <CategoryCard icon={Sun} title="UV-varsler" editPath="/var"
-            count={counts ? `${counts.uvOn} av ${counts.uvTotal} aktive` : null}
-            description="Varsler når UV-indeks når 3, 6 og 8 — én gang per nivå per dag." editable />
-        </SettingsBox>
 
-        <SettingsBox id="sec-uvprefs" title="🔔 UV av/på" inGrid><UvPrefsList /></SettingsBox>
+
 
         <SettingsBox id="sec-soppel" title="🗑️ Søppeltømming" inGrid>
           <CategoryCard icon={Trash2} title="Søppeltømming" editPath="/agenda"
