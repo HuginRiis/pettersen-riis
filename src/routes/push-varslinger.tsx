@@ -446,13 +446,6 @@ const WeatherPrefsList = () => (
     getLabel={(p) => `${p.label ?? ""} • ${p.kind ?? ""} → ${p.recipient ?? "Alle"}`}
   />
 );
-const UvPrefsList = () => (
-  <PrefsToggleList
-    table="uv_notification_prefs"
-    title="UV-varsler — av/på"
-    getLabel={(p) => `${p.label ?? ""} → ${p.recipient ?? "Alle"}`}
-  />
-);
 const LightIdlePrefsList = () => (
   <PrefsToggleList
     table="light_idle_notification_prefs"
