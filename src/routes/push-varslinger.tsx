@@ -86,7 +86,6 @@ const TOC_ITEMS: { id: string; label: string; emoji: string }[] = [
   { id: "sec-vaerprefs", label: "Vær av/på", emoji: "🔔" },
   { id: "sec-soppel", label: "Søppel", emoji: "🗑️" },
 
-  { id: "sec-soppel", label: "Søppel", emoji: "🗑️" },
   { id: "sec-soppelprefs", label: "Søppel av/på", emoji: "🔔" },
   { id: "sec-lyspaa", label: "Lys står på", emoji: "💡" },
   { id: "sec-lyspaaprefs", label: "Lys av/på", emoji: "🔔" },
