@@ -117,6 +117,7 @@ export function DbUsagePanel() {
   const [pending, setPending] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [bucketFiles, setBucketFiles] = useState<Record<string, { loading: boolean; objects: StorageObject[] }>>({});
+  const [catSort, setCatSort] = useState<Record<string, "bytes" | "name">>({});
 
   async function toggleCategory(name: string, bucketsInCat: StorageBucket[]) {
     setExpanded((prev) => {
