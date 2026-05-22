@@ -732,23 +732,21 @@ export function GarbageNextPickupBadge({ inline }: { inline?: boolean } = {}) {
 }
 
 export function UtgangsdorenLockBadge({ inline }: { inline?: boolean } = {}) {
-  const [locked, setLocked] = useState<boolean | null>(null);
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const r = await getDoorsLocksSnapshot({ data: {} });
-        if (cancelled || !r.ok) return;
-        const found =
-          r.locks.find((l) => l.brand === "verisure") ??
-          r.locks.find((l) => l.name.toLowerCase().includes("utgangsdør")) ??
-          r.locks.find((l) => l.name.toLowerCase().includes("utgang")) ??
-          null;
-        if (found && typeof found.locked === "boolean") setLocked(found.locked);
-      } catch {}
-    })();
-    return () => { cancelled = true; };
-  }, []);
+  const locked = useBadgeCache<boolean>(
+    "utgangsdoren-lock",
+    async () => {
+      const r = await getDoorsLocksSnapshot({ data: {} });
+      if (!r.ok) return null;
+      const found =
+        r.locks.find((l) => l.brand === "verisure") ??
+        r.locks.find((l) => l.name.toLowerCase().includes("utgangsdør")) ??
+        r.locks.find((l) => l.name.toLowerCase().includes("utgang")) ??
+        null;
+      if (found && typeof found.locked === "boolean") return found.locked;
+      return null;
+    },
+    { ttlMs: 10 * 60_000 },
+  );
   if (locked == null) return null;
   const label = locked ? "LÅST" : "ÅPEN";
   const emoji = locked ? "🔒" : "🔓";
