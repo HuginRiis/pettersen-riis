@@ -373,7 +373,11 @@ export function DbUsagePanel() {
                               <div className="text-[11px] text-muted-foreground">Ingen filer.</div>
                             ) : (
                               <div className="space-y-0.5">
-                                {files.objects.map((o) => (
+                                {[...files.objects].sort((a, b) =>
+                                  (catSort[c.name] ?? "bytes") === "name"
+                                    ? a.name.localeCompare(b.name, "nb")
+                                    : b.bytes - a.bytes,
+                                ).map((o) => (
                                   <div key={o.name} className="flex items-center justify-between text-[11px]">
                                     <span className="font-mono truncate pr-2" title={o.name}>{o.name}</span>
                                     <span className="font-mono text-muted-foreground tabular-nums shrink-0">
