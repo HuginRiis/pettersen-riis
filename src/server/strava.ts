@@ -200,7 +200,7 @@ function bucketSport(type: string): "run" | "ride" | "swim" | "hike" | "ski" | "
 // Hvert dashboard-kall = 2 Strava-API-kall (activities + athlete stats),
 // så med 10 min TTL: maks 6 * 24 = 144 dashboard/dag/eier → 288 API-kall.
 // To eiere = ~576 API-kall/dag i verste fall. Godt under 1000-grensen.
-const DASHBOARD_TTL_MS = 10 * 60 * 1000;
+const DASHBOARD_TTL_MS = 15 * 60 * 1000;
 const dashboardCache = new Map<StravaOwner, { at: number; data: any }>();
 
 // Sikkerhetsbrems: hvis vi nærmer oss daglig grense, server stale data fra cache
