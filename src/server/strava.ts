@@ -196,18 +196,12 @@ function bucketSport(type: string): "run" | "ride" | "swim" | "hike" | "ski" | "
 // ikke api-call-log.server her, fordi denne filen også brukes fra klient-ruter
 // (trening.tsx) via RPC-stubs.
 
-// In-memory cache per eier for å holde oss godt under Stravas 1000 kall/dag.
-// Hvert dashboard-kall = 2 Strava-API-kall (activities + athlete stats).
-// Dynamisk TTL:
-//   - < 500 kall i dag → 15 min (normal modus)
-//   - >= 500 kall i dag → 60 min (sparemodus, nær daglig grense)
-const DASHBOARD_TTL_NORMAL_MS = 15 * 60 * 1000;
-const DASHBOARD_TTL_SAVER_MS = 60 * 60 * 1000;
-const DAILY_SAVER_THRESHOLD = 500;
+// In-memory cache per eier. Vi henter kun én gang per time for å holde oss
+// godt innenfor Stravas daglige grense. Manuell "Oppdater"-knapp kan
+// invalidere cachen for å tvinge nytt kall.
+const DASHBOARD_TTL_MS = 60 * 60 * 1000;
 function currentTtlMs(): number {
-  return dailyCounter.calls >= DAILY_SAVER_THRESHOLD
-    ? DASHBOARD_TTL_SAVER_MS
-    : DASHBOARD_TTL_NORMAL_MS;
+  return DASHBOARD_TTL_MS;
 }
 const dashboardCache = new Map<StravaOwner, { at: number; data: any }>();
 
