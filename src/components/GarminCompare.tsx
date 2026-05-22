@@ -1,7 +1,26 @@
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowUp, ArrowDown, Minus, Swords, Loader2, Crown, Flame } from "lucide-react";
+import { ArrowUp, ArrowDown, Minus, Swords, Loader2, Crown, Flame, Settings2 } from "lucide-react";
 import { getGarminOverview } from "@/server/garmin.functions";
+import { usePersistedState } from "@/hooks/use-persisted-state";
+
+// Forklaringer per måling — vises når brukeren slår på "Vis forklaringer"
+const EXPLANATIONS: Record<string, string> = {
+  "skritt": "Daglig bevegelse — mål rundt 8–10 000 styrker hjerte og humør.",
+  "søvn (totalt)": "Voksne trenger 7–9 timer for restitusjon og hukommelse.",
+  "dyp søvn": "Dyp søvn reparerer kropp og immunforsvar — sikt mot 1–2 timer.",
+  "rem-søvn": "REM bygger minne og følelsesregulering — ca. 20–25 % av natten er bra.",
+  "søvnscore": "Garmins helhetsvurdering av natten (0–100). Over 80 er utmerket.",
+  "hvilepuls": "Lavere hvilepuls = bedre kondisjon. 50–70 bpm er typisk for voksne.",
+  "pulsvariasjon (hrv)": "Høyere HRV antyder god restitusjon og lavt stressnivå.",
+  "pulsoksygen (spo₂)": "Oksygenmetning i blodet — friske verdier ligger 95–100 %.",
+  "respirasjon": "Pust per minutt under søvn — 12–20 er normalt.",
+  "body battery (topp)": "Garmins «energinivå». Høyere topp = bedre lading gjennom døgnet.",
+  "stress (snitt)": "Lavere er bedre. Under 25 regnes som hvilende.",
+  "intensitetsminutter": "WHO anbefaler minst 150 min/uke moderat aktivitet.",
+  "aktive kcal": "Kalorier brent utover hvileforbrenning — mål på aktivitet.",
+  "trapper": "Trappetrinn klatret — enkel måte å øke daglig pulsbelastning.",
+};
 
 type Owner = "arne" | "rebekka";
 type Daily = {
