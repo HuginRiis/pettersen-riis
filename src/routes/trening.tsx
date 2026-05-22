@@ -598,7 +598,7 @@ function StravaHouseBanner({ owner }: { owner: Owner }) {
   );
 }
 
-export function StravaHouses({ autoLoad = false }: { autoLoad?: boolean } = {}) {
+export function StravaHouses({ autoLoad = true }: { autoLoad?: boolean } = {}) {
   const [tab, setTab] = useState<"arne" | "rebekka" | "compare">("arne");
   return (
     <div className="space-y-3">

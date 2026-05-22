@@ -7,7 +7,7 @@ import { getStravaDashboard } from "@/server/strava";
 type Owner = "arne" | "rebekka";
 type Entry = { at: number; data: any };
 
-const TTL_MS = 15 * 60 * 1000;
+const TTL_MS = 60 * 60 * 1000;
 const cache = new Map<Owner, Entry>();
 const inflight = new Map<Owner, Promise<any>>();
 
