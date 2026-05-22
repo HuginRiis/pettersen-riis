@@ -60,7 +60,9 @@ function estimateCalories(a: StravaActivity): number {
 }
 
 async function stravaFetch<T>(path: string, accessToken: string): Promise<T> {
-  const res = await fetch(`${STRAVA_API}${path}`, {
+  // Logg kun ekte Strava-HTTP-kall (ikke cache-treff i runStravaDashboard).
+  const { loggedFetch } = await import("./api-call-log.server");
+  const res = await loggedFetch("strava", path, `${STRAVA_API}${path}`, {
     headers: { Authorization: `Bearer ${accessToken}` },
   });
   if (!res.ok) {
