@@ -201,7 +201,7 @@ export type SourceSchedule = {
  */
 export const SOURCE_SCHEDULES: Record<string, SourceSchedule> = {
   homey: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
-  strava: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
+  strava: { description: "hver 30. min 06–22", intervalMs: 30 * 60_000, trigger: "cron" },
   netatmo: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
   tibber: { description: "hver 15. min (GraphQL HOURLY)", intervalMs: 15 * 60_000, trigger: "cron" },
   met: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
@@ -210,7 +210,7 @@ export const SOURCE_SCHEDULES: Record<string, SourceSchedule> = {
   lightning: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
   garbage: { description: "cache 6t", intervalMs: 6 * 60 * 60 * 1000, trigger: "cache" },
   kassal: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
-  gardena: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
+  gardena: { description: "hver 30. min 06–22", intervalMs: 30 * 60_000, trigger: "cron" },
   garmin: { description: "hver time 06–20", intervalMs: 60 * 60_000, trigger: "cron" },
   roborock: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
   ai: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
