@@ -200,23 +200,23 @@ export type SourceSchedule = {
  * - on-demand: trigges når en side lastes; ikke noe fast intervall
  */
 export const SOURCE_SCHEDULES: Record<string, SourceSchedule> = {
-  homey: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
+  homey: { description: "hvert minutt (poll + snapshot + agenda)", intervalMs: 60_000, trigger: "cron" },
   strava: { description: "hver 30. min 06–22", intervalMs: 30 * 60_000, trigger: "cron" },
   netatmo: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
-  tibber: { description: "hver 15. min (GraphQL HOURLY)", intervalMs: 15 * 60_000, trigger: "cron" },
-  met: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
+  tibber: { description: "hvert minutt (push) + hver time (backfill)", intervalMs: 60_000, trigger: "cron" },
+  met: { description: "hvert minutt (weather + met-alert push)", intervalMs: 60_000, trigger: "cron" },
   nrk: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
   spot: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
   lightning: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
-  garbage: { description: "cache 6t", intervalMs: 6 * 60 * 60 * 1000, trigger: "cache" },
+  garbage: { description: "cache 6t (poll hvert minutt fra agenda-push)", intervalMs: 6 * 60 * 60 * 1000, trigger: "cache" },
   kassal: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
   gardena: { description: "hver 30. min 06–22", intervalMs: 30 * 60_000, trigger: "cron" },
-  garmin: { description: "hver time 06–20", intervalMs: 60 * 60_000, trigger: "cron" },
+  garmin: { description: "hvert minutt (egen tidsplan per bruker)", intervalMs: 60_000, trigger: "cron" },
   roborock: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
   ai: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
-  posten: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
+  posten: { description: "hvert minutt (mail-delivery-push)", intervalMs: 60_000, trigger: "cron" },
   geoip: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
-  uv: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
+  uv: { description: "hvert minutt (uv-push)", intervalMs: 60_000, trigger: "cron" },
   other: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
 };
 
