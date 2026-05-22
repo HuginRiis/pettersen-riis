@@ -80,8 +80,11 @@ export function UvNotificationSettings() {
     (async () => {
       const { data, error } = await supabase
         .from("uv_notification_prefs" as never)
-        .select("id, location, label, enabled, recipient, lead_minutes")
+        .select(
+          "id, location, label, enabled, recipient, lead_minutes, notify_fall_3, notify_fall_6, notify_fall_8",
+        )
         .order("location");
+
       if (cancelled) return;
       if (error) {
         toast.error("Kunne ikke laste UV-varselinnstillinger");
