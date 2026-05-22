@@ -201,7 +201,7 @@ export type SourceSchedule = {
  */
 export const SOURCE_SCHEDULES: Record<string, SourceSchedule> = {
   homey: { description: "hvert minutt (poll + snapshot + agenda)", intervalMs: 60_000, trigger: "cron" },
-  strava: { description: "hver 30. min 06–22", intervalMs: 30 * 60_000, trigger: "cron" },
+  strava: { description: "hver 30. min 06:30–21:00", intervalMs: 30 * 60_000, trigger: "cron" },
   netatmo: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
   tibber: { description: "hvert minutt (push) + hver time (backfill)", intervalMs: 60_000, trigger: "cron" },
   met: { description: "hvert minutt (weather + met-alert push)", intervalMs: 60_000, trigger: "cron" },
