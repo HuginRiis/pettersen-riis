@@ -225,7 +225,7 @@ export function GarminCompare() {
     else if (lbl.includes("intensitet")) verb = "tok flere intensitetsminutter enn";
     else if (lbl.includes("kcal")) verb = "brente mer enn";
     else if (lbl.includes("trapper")) verb = "tok flere trapper enn";
-    highlights.push({ text: `${leader} ${verb} ${trailer} med ${diffStr} (${row.label.toLowerCase()})`, winner: w });
+    highlights.push({ text: `${leader} ${verb} ${trailer} med ${diffStr} (${row.label.toLowerCase()})`, winner: w, label: row.label });
   }
   // Shuffle (Fisher–Yates) and take 5
   const shuffled = [...highlights];
