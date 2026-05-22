@@ -828,7 +828,6 @@ function StravaSection({ owner, displayName }: { owner: Owner; displayName: stri
   const [status, setStatus] = useState<StatusState>({ kind: "loading" });
   const [dash, setDash] = useState<DashState>({ kind: "idle" });
   const fetchStatus = useServerFn(getStravaStatus);
-  const fetchDash = useServerFn(getStravaDashboard);
 
   const loadStatus = async () => {
     try {
@@ -844,14 +843,16 @@ function StravaSection({ owner, displayName }: { owner: Owner; displayName: stri
     }
   };
 
-  const loadDash = async () => {
+  const loadDash = async (force = false) => {
     setDash({ kind: "loading" });
     try {
-      const res = await fetchDash({ data: { owner } });
-      if (res.ok) {
+      const { loadStrava, invalidateStrava } = await import("@/lib/strava-cache");
+      if (force) invalidateStrava(owner);
+      const res = await loadStrava(owner);
+      if (res?.ok) {
         setDash({ kind: "ok", ...res });
       } else {
-        setDash({ kind: "error", message: res.error });
+        setDash({ kind: "error", message: res?.error ?? "Ukjent feil" });
       }
     } catch (e: any) {
       setDash({ kind: "error", message: e?.message ?? "Ukjent feil" });
