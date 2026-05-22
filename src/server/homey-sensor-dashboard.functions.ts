@@ -442,16 +442,35 @@ export const getHomeySensorEvents = createServerFn({ method: "GET" })
     }
     const { data: rows } = await q;
     let events = (rows ?? []) as SensorEventDetail[];
+    // Oslo timezone (manual DST — robust on edge runtimes)
+    const lastSundayUtc = (year: number, monthIdx: number): Date => {
+      const d = new Date(Date.UTC(year, monthIdx, 31, 1, 0, 0));
+      d.setUTCDate(31 - d.getUTCDay());
+      return d;
+    };
+    const osloOffsetHours = (d: Date): number => {
+      const y = d.getUTCFullYear();
+      return d >= lastSundayUtc(y, 2) && d < lastSundayUtc(y, 9) ? 2 : 1;
+    };
+    const osloParts = (d: Date) => {
+      const shifted = new Date(d.getTime() + osloOffsetHours(d) * 3600_000);
+      return {
+        year: shifted.getUTCFullYear(),
+        month: shifted.getUTCMonth() + 1,
+        day: shifted.getUTCDate(),
+        hour: shifted.getUTCHours(),
+      };
+    };
     if (data.hourOfDay !== undefined) {
       const h = data.hourOfDay;
-      events = events.filter((e) => new Date(e.ts).getHours() === h);
+      events = events.filter((e) => osloParts(new Date(e.ts)).hour === h);
     }
     if (data.dateStr) {
       events = events.filter((e) => {
-        const d = new Date(e.ts);
-        const y = d.getFullYear();
-        const m = String(d.getMonth() + 1).padStart(2, "0");
-        const day = String(d.getDate()).padStart(2, "0");
+        const p = osloParts(new Date(e.ts));
+        const y = p.year;
+        const m = String(p.month).padStart(2, "0");
+        const day = String(p.day).padStart(2, "0");
         return `${y}-${m}-${day}` === data.dateStr;
       });
     }
