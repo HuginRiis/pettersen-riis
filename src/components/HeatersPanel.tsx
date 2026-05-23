@@ -13,6 +13,15 @@ import {
   Droplets,
   RefreshCw,
   Power,
+  ArrowUp,
+  ArrowDown,
+  ArrowLeft,
+  ArrowRight,
+  ArrowUpDown,
+  ArrowLeftRight,
+  RotateCw,
+  Maximize2,
+  Move,
 } from "lucide-react";
 import {
   getHomeySnapshot,
