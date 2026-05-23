@@ -98,12 +98,15 @@ const HOUSE_LIGHTS: LightSpot[] = [
 
 export function HouseHero({
   image,
+  video,
   eyebrow,
   title,
   subtitle,
   extraStatus,
 }: {
   image: string;
+  /** Valgfri MP4/WebM som spilles av i loop bak hero. Faller tilbake til `image` mens videoen laster. */
+  video?: string;
   eyebrow?: string;
   title: string;
   subtitle?: string;
@@ -149,15 +152,28 @@ export function HouseHero({
 
   return (
     <section className="relative h-[58vh] min-h-[360px] w-full overflow-hidden border-b border-border">
-      {/* Bakgrunnsbilde med subtil Ken Burns */}
-      <div className="house-kenburns absolute inset-0">
+      {/* Bakgrunnsbilde/video med subtil Ken Burns (kun for bildet) */}
+      <div className={video ? "absolute inset-0" : "house-kenburns absolute inset-0"}>
         <img
           src={image}
           alt=""
           className="absolute inset-0 w-full h-full object-cover"
           loading="eager"
         />
+        {video && (
+          <video
+            src={video}
+            poster={image}
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="auto"
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+        )}
       </div>
+
 
       {/* Tid-på-døgnet overlay */}
       <div
