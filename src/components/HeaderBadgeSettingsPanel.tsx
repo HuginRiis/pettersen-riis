@@ -141,6 +141,32 @@ export function HeaderBadgeSettingsPanel() {
           </div>
         </div>
 
+        <div className="mt-4 panel rounded p-3 border border-border/50">
+          <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Trening siste 4 uker — sportstyper</p>
+          <div className="flex flex-wrap gap-3 items-center text-sm">
+            {([
+              { id: "run", label: "🏃 Løping" },
+              { id: "ride", label: "🚴 Sykkel" },
+              { id: "swim", label: "🏊 Svømming" },
+              { id: "walk", label: "🚶 Gåing" },
+              { id: "hike", label: "🥾 Fjelltur" },
+            ] as const).map((s) => (
+              <label key={s.id} className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={draft.training[s.id]}
+                  onChange={(e) => setDraft((d) => ({ ...d, training: { ...d.training, [s.id]: e.target.checked } }))}
+                  className="accent-primary"
+                />
+                <span>{s.label}</span>
+              </label>
+            ))}
+            <span className="text-xs text-muted-foreground">Gjelder badge for både Arne og Rebekka.</span>
+          </div>
+        </div>
+
+
+
 
         <div className="mt-4 grid gap-2">
           {HEADER_BADGE_DEFS.map((b) => {
