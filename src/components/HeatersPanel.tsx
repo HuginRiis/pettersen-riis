@@ -619,6 +619,26 @@ function UnitToggle({
   );
 }
 
+function swingValueIcon(id: string, title?: string): typeof Sun {
+  const s = `${id} ${title ?? ""}`.toLowerCase();
+  if (/auto/.test(s)) return RefreshCw;
+  if (/oppover|^up$|opp\b|top/.test(s)) return ArrowUp;
+  if (/nedover|^down$|ned\b|bottom/.test(s)) return ArrowDown;
+  if (/venstre|left/.test(s)) return ArrowLeft;
+  if (/h(ø|o)yre|right/.test(s)) return ArrowRight;
+  if (/midt|midten|center|middle/.test(s)) return Minus;
+  if (/sving|swing|oscill/.test(s)) return RotateCw;
+  if (/bred|wide|full|range/.test(s)) return Maximize2;
+  return Move;
+}
+
+function swingHeaderIcon(label: string, capabilityId: string): typeof Sun {
+  const s = `${label} ${capabilityId}`.toLowerCase();
+  if (/opp|ned|vert|updown|vane_vertical|^vertical/.test(s)) return ArrowUpDown;
+  if (/side|left|right|horiz|leftright|vane_horizontal|^horizontal/.test(s)) return ArrowLeftRight;
+  return Move;
+}
+
 function HeaterCard({
   heater,
   busy,
