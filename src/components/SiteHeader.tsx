@@ -2,7 +2,7 @@ import { Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Menu, X, LogOut, Crown, Swords, Shield, KeyRound, Home, Star, Flower2,
-  Sun, Compass, Castle, CalendarDays, BellRing, Eye, Mountain, Lightbulb, Lamp, Zap, Hammer,
+  Sun, Compass, Castle, CalendarDays, BellRing, Eye, Mountain, Lightbulb, Lamp, Flame, Zap, Hammer,
   ShoppingCart, Receipt, Dog, Dumbbell, AlertTriangle, ScrollText, Globe, ChevronDown, ChevronRight,
   TreePine, Coins, Bot, Wallet, Volume2, Wifi, Router as RouterIcon, Plane, Settings } from "lucide-react";
 
