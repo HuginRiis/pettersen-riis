@@ -149,11 +149,12 @@ function buildHeaters(
     // Sort: vertical first, then horizontal, then other
     swings.sort((a, b) => {
       const score = (s: SwingControl) =>
-        /vert|up_?down|updown/i.test(s.capabilityId) ? 0
-          : /horiz|side|left_?right/i.test(s.capabilityId) ? 1
+        /vert|up_?down|updown|^vertical$|vane_vertical/i.test(s.capabilityId) ? 0
+          : /horiz|side|left_?right|^horizontal$|vane_horizontal/i.test(s.capabilityId) ? 1
           : 2;
       return score(a) - score(b);
     });
+
 
     out.push({
       id: d.id,
