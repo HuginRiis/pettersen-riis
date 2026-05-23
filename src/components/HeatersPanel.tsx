@@ -634,7 +634,10 @@ function HeaterCard({
   const onoffBusy = busy[`${heater.id}:onoff`];
   const modeBusy = busy[`${heater.id}:thermostat_mode`];
   const fanBusy =
-    busy[`${heater.id}:fan_speed`] || busy[`${heater.id}:fan_mode`];
+    busy[`${heater.id}:${heater.fanCapabilityId ?? "fan_speed"}`] ||
+    busy[`${heater.id}:fan_speed`] ||
+    busy[`${heater.id}:fan_mode`];
+
   const isOn = heater.onoff !== false;
 
   const supportsMode =
