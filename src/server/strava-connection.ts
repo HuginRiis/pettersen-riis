@@ -1,8 +1,8 @@
 import { createHmac, randomUUID, timingSafeEqual } from "crypto";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { getStravaCredentials, getStravaOwnerFromState, STRAVA_OWNERS, type StravaOwner } from "@/lib/strava-shared";
+import { getStravaCredentials, getStravaOwnerFromState, isStravaOwner, STRAVA_OWNERS, type StravaOwner } from "@/lib/strava-shared";
 
-export { getStravaCredentials, getStravaOwnerFromState, STRAVA_OWNERS, type StravaOwner };
+export { getStravaCredentials, getStravaOwnerFromState, isStravaOwner, STRAVA_OWNERS, type StravaOwner };
 
 export function createStravaState(owner: StravaOwner, signingSecret: string) {
   const issuedAt = Math.floor(Date.now() / 1000).toString();
