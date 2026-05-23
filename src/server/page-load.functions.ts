@@ -79,15 +79,30 @@ export type PageUserStat = {
   routes: { route: string; count: number; last_at: string }[];
 };
 
+export type SlowPageInsight = {
+  route: string;
+  avg_ms: number;
+  p95_ms: number;
+  count: number;
+  recent_avg_ms: number;
+  prev_avg_ms: number;
+  trend: "up" | "down" | "flat";
+  trend_pct: number;
+  recommendation: string;
+};
+
 export type PageLoadStats = {
   routes: PageRouteStat[];
   devices: PageDeviceStat[];
   recent: PageLoadEntry[];
   daily: PageDailyPoint[];
   users: PageUserStat[];
+  slowest: SlowPageInsight[];
   totalCount: number;
   avgMs: number;
+  sampleLimit: number;
 };
+
 
 function percentile(sorted: number[], p: number): number {
   if (sorted.length === 0) return 0;
