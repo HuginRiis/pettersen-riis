@@ -2,10 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import {
   getStravaCredentials,
   getStravaOwnerFromState,
-  saveStravaConnection,
-  verifyStravaState,
   type StravaOwner,
-} from "@/server/strava-connection";
+} from "@/lib/strava-shared";
 
 function htmlResponse(body: string, status = 200) {
   return new Response(body, {
