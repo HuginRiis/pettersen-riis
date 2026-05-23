@@ -403,14 +403,14 @@ function buildTips(args: {
 
   if (target !== null && indoor !== null) {
     const diff = target - indoor;
-    if (diff > 3)
+    if (diff > 3 && canHeatActive)
       tips.push({
         text: `${label}: varmepumpa er satt ${diff.toFixed(1)}° høyere enn romtemp — pumpa jobber hardt.`,
         tone: "warm",
         icon: ArrowUp,
         scope,
       });
-    if (diff < -3)
+    if (diff < -3 && canCoolActive)
       tips.push({
         text: `${label}: varmepumpa er satt ${Math.abs(diff).toFixed(1)}° under romtemp — kjøler aktivt.`,
         tone: "cold",
