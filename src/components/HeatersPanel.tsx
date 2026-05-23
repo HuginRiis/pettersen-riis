@@ -120,18 +120,19 @@ function buildHeaters(
     const swings: SwingControl[] = [];
     for (const [capId, cap] of Object.entries(d.capabilities)) {
       if (
-        !/swing|vane|louver|oscill|airdir|air_dir|fan_dir|flap|wind_dir|updown|up_?down|leftright|left_?right|direction/i.test(
+        !/swing|vane|louver|oscill|airdir|air_dir|fan_dir|flap|wind_dir|updown|up_?down|leftright|left_?right|direction|^vertical$|^horizontal$|vane_vertical|vane_horizontal/i.test(
           capId,
         )
       )
         continue;
-      const isHoriz = /horiz|side|sideway|left_?right|leftright/i.test(capId);
-      const isVert = /vert|up_?down|updown/i.test(capId);
+      const isHoriz = /horiz|side|sideway|left_?right|leftright|^horizontal$|vane_horizontal/i.test(capId);
+      const isVert = /vert|up_?down|updown|^vertical$|vane_vertical/i.test(capId);
       const label = isHoriz
         ? "Side til side"
         : isVert
           ? "Opp og ned"
           : capId.replace(/_/g, " ");
+
       const v = cap?.value;
       const kind: "boolean" | "enum" =
         (cap?.values?.length ?? 0) > 0 || typeof v === "string"
