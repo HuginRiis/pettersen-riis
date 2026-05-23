@@ -1,10 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import {
-  createStravaState,
   getStravaCredentials,
   isStravaOwner,
   type StravaOwner,
-} from "@/server/strava-connection";
+} from "@/lib/strava-shared";
 
 const STRAVA_AUTH_URL = "https://www.strava.com/oauth/authorize";
 const REBEKKA_STRAVA_ORIGIN = "https://arne.riis.cc";
