@@ -6,7 +6,7 @@ import {
   isStravaOwner,
   STRAVA_OWNERS,
   type StravaOwner,
-} from "./strava-connection.server";
+} from "./strava-connection";
 
 
 const STRAVA_API = "https://www.strava.com/api/v3";

@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { runStravaDashboard } from "@/server/strava";
-import { STRAVA_OWNERS, getStravaConnection } from "@/serve./strava-connection.server.server";
+import { STRAVA_OWNERS, getStravaConnection } from "@/serve./strava-connection.server";
 
 /**
  * Bakgrunns-polling for Strava-dashboards.
