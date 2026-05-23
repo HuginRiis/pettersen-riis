@@ -51,7 +51,25 @@ type ChecklistItem = {
   notify_at: string | null;
   notified_at: string | null;
   notify_who: string;
+  repeat_interval_days: number | null;
 };
+
+const REPEAT_OPTIONS: { value: string; label: string }[] = [
+  { value: "0", label: "Ingen gjentakelse" },
+  { value: "1", label: "Hver dag" },
+  { value: "7", label: "Hver uke" },
+  { value: "14", label: "Hver 14. dag" },
+  { value: "30", label: "Hver 30. dag" },
+];
+
+function repeatLabel(days: number | null | undefined): string | null {
+  if (!days || days <= 0) return null;
+  if (days === 1) return "hver dag";
+  if (days === 7) return "hver uke";
+  if (days === 14) return "hver 14. dag";
+  if (days === 30) return "hver 30. dag";
+  return `hver ${days}. dag`;
+}
 
 function formatRelativeOslo(iso: string): string {
   const then = new Date(iso).getTime();
@@ -184,6 +202,7 @@ export function HyttaChecklist() {
   const [bulkDate, setBulkDate] = useState<Date | undefined>(undefined);
   const [bulkTime, setBulkTime] = useState<string>("18:00");
   const [bulkWho, setBulkWho] = useState<string>("Alle");
+  const [bulkRepeat, setBulkRepeat] = useState<string>("0");
   const [bulkOpen, setBulkOpen] = useState(false);
   const [scheduling, setScheduling] = useState(false);
 
@@ -316,9 +335,15 @@ export function HyttaChecklist() {
     }
 
     setScheduling(true);
+    const repeatDays = parseInt(bulkRepeat, 10);
     const { error } = await supabase
       .from("hytta_checklist")
-      .update({ notify_at: iso, notified_at: null, notify_who: bulkWho })
+      .update({
+        notify_at: iso,
+        notified_at: null,
+        notify_who: bulkWho,
+        repeat_interval_days: repeatDays > 0 ? repeatDays : null,
+      } as never)
       .in("id", toUpdate);
     setScheduling(false);
     if (error) {
@@ -337,11 +362,11 @@ export function HyttaChecklist() {
 
   const openCount = items.filter((i) => !i.checked).length;
 
-  // Group scheduled reminders by (notify_at + notify_who) — each unique combo is one "påminnelse"
+  // Group scheduled reminders by (notify_at + notify_who + repeat) — each unique combo is one "påminnelse"
   const scheduledReminders = useMemo(() => {
     const groups = new Map<
       string,
-      { notify_at: string; notify_who: string; itemIds: string[] }
+      { notify_at: string; notify_who: string; repeat_interval_days: number | null; itemIds: string[] }
     >();
     for (const i of items) {
       if (
@@ -350,13 +375,15 @@ export function HyttaChecklist() {
         !i.notified_at &&
         new Date(i.notify_at).getTime() > Date.now()
       ) {
-        const key = `${i.notify_at}__${i.notify_who || "Alle"}`;
+        const repeat = i.repeat_interval_days ?? null;
+        const key = `${i.notify_at}__${i.notify_who || "Alle"}__${repeat ?? 0}`;
         const existing = groups.get(key);
         if (existing) existing.itemIds.push(i.id);
         else
           groups.set(key, {
             notify_at: i.notify_at,
             notify_who: i.notify_who || "Alle",
+            repeat_interval_days: repeat,
             itemIds: [i.id],
           });
       }
@@ -370,11 +397,17 @@ export function HyttaChecklist() {
   const [editingReminder, setEditingReminder] = useState<{
     notify_at: string;
     notify_who: string;
+    repeat_interval_days: number | null;
     itemIds: string[];
   } | null>(null);
 
   const openSchedulePopover = (
-    reminder?: { notify_at: string; notify_who: string; itemIds: string[] } | null,
+    reminder?: {
+      notify_at: string;
+      notify_who: string;
+      repeat_interval_days: number | null;
+      itemIds: string[];
+    } | null,
   ) => {
     if (reminder) {
       const d = new Date(reminder.notify_at);
@@ -383,11 +416,13 @@ export function HyttaChecklist() {
         `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`,
       );
       setBulkWho(reminder.notify_who);
+      setBulkRepeat(String(reminder.repeat_interval_days ?? 0));
       setEditingReminder(reminder);
     } else {
       setBulkDate(undefined);
       setBulkTime("18:00");
       setBulkWho("Alle");
+      setBulkRepeat("0");
       setEditingReminder(null);
     }
     setBulkOpen(true);
@@ -396,7 +431,7 @@ export function HyttaChecklist() {
   const removeReminder = async (itemIds: string[]) => {
     const { error } = await supabase
       .from("hytta_checklist")
-      .update({ notify_at: null, notified_at: null })
+      .update({ notify_at: null, notified_at: null, repeat_interval_days: null } as never)
       .in("id", itemIds);
     if (error) {
       toast.error("Kunne ikke fjerne påminnelsen");
@@ -423,7 +458,7 @@ export function HyttaChecklist() {
               <div className="mt-2 space-y-1">
                 {scheduledReminders.map((r) => (
                   <p
-                    key={`${r.notify_at}__${r.notify_who}`}
+                    key={`${r.notify_at}__${r.notify_who}__${r.repeat_interval_days ?? 0}`}
                     className="text-xs text-primary inline-flex items-center gap-1.5 flex-wrap mr-3"
                   >
                     <BellRing className="h-3 w-3" />
@@ -434,6 +469,9 @@ export function HyttaChecklist() {
                     <span className="text-muted-foreground/70">
                       ({r.itemIds.length} punkt{r.itemIds.length === 1 ? "" : "er"})
                     </span>
+                    {repeatLabel(r.repeat_interval_days) && (
+                      <span className="text-primary/80">↻ {repeatLabel(r.repeat_interval_days)}</span>
+                    )}
                     <button
                       onClick={() => openSchedulePopover(r)}
                       className="ml-1 text-muted-foreground/70 hover:text-primary inline-flex items-center"
@@ -505,6 +543,21 @@ export function HyttaChecklist() {
                     </SelectTrigger>
                     <SelectContent>
                       {RECIPIENT_OPTIONS.map((o) => (
+                        <SelectItem key={o.value} value={o.value}>
+                          {o.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex items-center gap-2">
+                  <BellRing className="h-4 w-4 text-muted-foreground" />
+                  <Select value={bulkRepeat} onValueChange={setBulkRepeat}>
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder="Gjentakelse" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {REPEAT_OPTIONS.map((o) => (
                         <SelectItem key={o.value} value={o.value}>
                           {o.label}
                         </SelectItem>

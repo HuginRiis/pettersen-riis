@@ -1224,6 +1224,7 @@ export type Database = {
           notified_at: string | null
           notify_at: string | null
           notify_who: string
+          repeat_interval_days: number | null
           sort_order: number
           updated_at: string
         }
@@ -1236,6 +1237,7 @@ export type Database = {
           notified_at?: string | null
           notify_at?: string | null
           notify_who?: string
+          repeat_interval_days?: number | null
           sort_order?: number
           updated_at?: string
         }
@@ -1248,6 +1250,7 @@ export type Database = {
           notified_at?: string | null
           notify_at?: string | null
           notify_who?: string
+          repeat_interval_days?: number | null
           sort_order?: number
           updated_at?: string
         }
