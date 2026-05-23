@@ -640,7 +640,7 @@ export const runStravaDashboard = async (owner: StravaOwner, opts?: { force?: bo
     };
     dashboardCache.set(owner, { at: Date.now(), data: result });
     // Persistér så vi har siste gode snapshot også etter Worker-restart / feil
-    void savePersistentCache(owner, result);
+    await savePersistentCache(owner, result);
     return result;
   } catch (error) {
     // Ved feil: server siste cache hvis vi har det, ellers returner feil
