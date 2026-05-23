@@ -244,7 +244,7 @@ function LocationBadge({
             style={{ color: arrowColor }}
             title={`Varmepumpe satt til ${target.toFixed(1)}°`}
           >
-            <Arrow size={12} />
+            {Arrow && <Arrow size={12} />}
             {target.toFixed(0)}°
           </span>
         )}
