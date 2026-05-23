@@ -135,6 +135,50 @@ export function PageLoadPanel() {
         </div>
       </div>
 
+      <div className="text-[10px] text-muted-foreground -mt-3">
+        Analyserer siste {data.totalCount.toLocaleString("nb-NO")} av maks {data.sampleLimit.toLocaleString("nb-NO")} sidelastinger.
+      </div>
+
+      {/* Tregeste sider */}
+      {data.slowest.length > 0 && (
+        <div>
+          <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-muted-foreground mb-2">
+            <AlertTriangle size={12} /> Tregeste sider (topp {data.slowest.length})
+          </div>
+          <div className="space-y-2">
+            {data.slowest.map((s) => {
+              const TrendIcon = s.trend === "up" ? ArrowUp : s.trend === "down" ? ArrowDown : Minus;
+              const trendColor = s.trend === "up" ? "text-destructive" : s.trend === "down" ? "text-[oklch(0.72_0.16_150)]" : "text-muted-foreground";
+              return (
+                <div key={s.route} className="rounded-lg border border-border/60 bg-muted/10 p-2.5">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <div className="font-mono text-xs truncate">{s.route}</div>
+                    <div className={`flex items-center gap-1 text-xs font-mono ${trendColor}`}>
+                      <TrendIcon size={12} />
+                      {s.trend === "flat" ? "stabil" : `${s.trend_pct}%`}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 mt-1.5 text-[11px] font-mono">
+                    <span className={tone(s.avg_ms)}>snitt {fmtMs(s.avg_ms)}</span>
+                    <span className="text-muted-foreground">p95 {fmtMs(s.p95_ms)}</span>
+                    <span className="text-muted-foreground">{s.count} visn.</span>
+                    <span className="text-muted-foreground">
+                      før {fmtMs(s.prev_avg_ms)} → nå {fmtMs(s.recent_avg_ms)}
+                    </span>
+                  </div>
+                  <div className="flex items-start gap-1.5 mt-1.5 text-[11px] text-foreground/80">
+                    <Lightbulb size={12} className="mt-0.5 shrink-0 text-yellow-500" />
+                    <span>{s.recommendation}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+
+
       {/* Daglig trend */}
       {data.daily.length > 1 && (
         <div>
