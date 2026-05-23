@@ -304,21 +304,27 @@ export const getHomeySensorDashboard = createServerFn({ method: "GET" })
     // Motion sensors with no motion in 7 days (uses last event of type motion_on)
     const motionStates = (stateRows ?? []).filter((r) => r.kind === "motion");
     // For motion we want last *transition to true*. Use homey_sensor_events most recent motion_on per device.
-    const { data: lastMotionRows } = await supabaseAdmin
-      .from("homey_sensor_events")
-      .select("device_id, device_name, zone, ts")
-      .eq("event_type", "motion_on")
-      .gte("ts", new Date(Date.now() - 60 * 86400000).toISOString())
+    const { data: lastMotionRows } = await applyLocation(
+      supabaseAdmin
+        .from("homey_sensor_events")
+        .select("device_id, device_name, zone, ts")
+        .eq("event_type", "motion_on")
+        .gte("ts", new Date(Date.now() - 60 * 86400000).toISOString()),
+      loc,
+    )
       .order("ts", { ascending: false })
       .limit(2000);
     const lastMotionByDevice = new Map<string, string>();
     for (const r of lastMotionRows ?? []) {
       if (!lastMotionByDevice.has(r.device_id)) lastMotionByDevice.set(r.device_id, r.ts);
     }
-    const allMotionDevices = await supabaseAdmin
-      .from("homey_sensor_state")
-      .select("device_id, device_name, zone")
-      .eq("kind", "motion");
+    const allMotionDevices = await applyLocation(
+      supabaseAdmin
+        .from("homey_sensor_state")
+        .select("device_id, device_name, zone")
+        .eq("kind", "motion"),
+      loc,
+    );
     const inactiveMotion = (allMotionDevices.data ?? [])
       .map((d) => {
         const lastTs = lastMotionByDevice.get(d.device_id) ?? null;
