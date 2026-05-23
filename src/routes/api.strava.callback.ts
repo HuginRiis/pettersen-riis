@@ -45,6 +45,7 @@ export const Route = createFileRoute("/api/strava/callback")({
         const stateSecret = process.env.STRAVA_OAUTH_STATE_SECRET;
         const cookieState = readCookie(request.headers.get("cookie"), "strava_oauth_state");
         const validCookieState = Boolean(cookieState && cookieState === state);
+        const { verifyStravaState, saveStravaConnection } = await import("@/server/strava-connection");
         const validSignedState = stateSecret ? verifyStravaState(state, stateSecret) : false;
         if (!validCookieState && !validSignedState) {
           return errorPage("Ugyldig state — start tilkoblingen på nytt.", 400);
