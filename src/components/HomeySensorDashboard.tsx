@@ -295,6 +295,30 @@ export function HomeySensorDashboard() {
       </div>
 
 
+      {/* Location filter */}
+      <div className="flex flex-wrap items-center gap-1.5">
+        <span className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground mr-1">Sted:</span>
+        {([
+          { k: "all" as const, l: "Alle", Icon: Activity },
+          { k: "borgen" as const, l: "Borgen", Icon: Home },
+          { k: "hytta" as const, l: "Hytta", Icon: TreePine },
+        ]).map(({ k, l, Icon }) => (
+          <button
+            key={k}
+            type="button"
+            onClick={() => setLocation(k)}
+            aria-pressed={location === k}
+            className={`inline-flex items-center gap-1 text-[10px] uppercase tracking-[0.2em] px-2.5 py-1.5 rounded-md border transition ${
+              location === k
+                ? "border-primary bg-primary/10 text-primary"
+                : "border-border bg-background/40 text-muted-foreground hover:border-primary/40 hover:text-primary"
+            }`}
+          >
+            <Icon className="h-3 w-3" /> {l}
+          </button>
+        ))}
+      </div>
+
       {/* Range filter */}
       <div className="flex flex-wrap gap-1.5">
         {RANGES.map((r) => (
