@@ -51,7 +51,25 @@ type ChecklistItem = {
   notify_at: string | null;
   notified_at: string | null;
   notify_who: string;
+  repeat_interval_days: number | null;
 };
+
+const REPEAT_OPTIONS: { value: string; label: string }[] = [
+  { value: "0", label: "Ingen gjentakelse" },
+  { value: "1", label: "Hver dag" },
+  { value: "7", label: "Hver uke" },
+  { value: "14", label: "Hver 14. dag" },
+  { value: "30", label: "Hver 30. dag" },
+];
+
+function repeatLabel(days: number | null | undefined): string | null {
+  if (!days || days <= 0) return null;
+  if (days === 1) return "hver dag";
+  if (days === 7) return "hver uke";
+  if (days === 14) return "hver 14. dag";
+  if (days === 30) return "hver 30. dag";
+  return `hver ${days}. dag`;
+}
 
 function formatRelativeOslo(iso: string): string {
   const then = new Date(iso).getTime();
