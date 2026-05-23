@@ -83,55 +83,64 @@ export function OutdoorWeatherStrip({
           )}
         </div>
 
-        <div className="grid grid-cols-3 gap-2 sm:gap-4">
-          {/* Temperatur */}
-          <div className="flex flex-col items-center text-center">
-            <Thermometer className="h-4 w-4 text-primary mb-1" />
-            <div className="text-lg sm:text-2xl font-semibold text-foreground tabular-nums leading-none">
-              {fmt(temp, 1, "°")}
-            </div>
-            <div className="mt-1 flex items-center gap-1.5 text-[10px] sm:text-xs text-muted-foreground tabular-nums">
-              <span className="inline-flex items-center gap-0.5">
-                <ArrowDown className="h-3 w-3 text-sky-400" />
-                {fmt(tMin, 1, "°")}
-              </span>
-              <span className="inline-flex items-center gap-0.5">
-                <ArrowUp className="h-3 w-3 text-orange-400" />
-                {fmt(tMax, 1, "°")}
-              </span>
-            </div>
-          </div>
-
-          {/* Vind / kast */}
-          <div className="flex flex-col items-center text-center border-x border-border">
-            <Wind className="h-4 w-4 text-primary mb-1" />
-            <div className="text-lg sm:text-2xl font-semibold text-foreground tabular-nums leading-none">
-              {fmt(gust ?? windNow, 0)}
-              <span className="text-[10px] sm:text-xs text-muted-foreground ml-1">
-                km/t
-              </span>
-            </div>
-            <div className="mt-1 text-[10px] sm:text-xs text-muted-foreground tabular-nums">
-              {gust !== null ? "maks kast" : "vind nå"}
-              {gust !== null && windNow !== null && (
-                <> · {fmt(windNow, 0)} nå</>
+        <div className={`grid ${gridCols} gap-2 sm:gap-4`}>
+          {hasTemp && (
+            <div className="flex flex-col items-center text-center">
+              <Thermometer className="h-4 w-4 text-primary mb-1" />
+              <div className="text-lg sm:text-2xl font-semibold text-foreground tabular-nums leading-none">
+                {fmt(temp, 1, "°")}
+              </div>
+              {(tMin !== null || tMax !== null) && (
+                <div className="mt-1 flex items-center gap-1.5 text-[10px] sm:text-xs text-muted-foreground tabular-nums">
+                  {tMin !== null && (
+                    <span className="inline-flex items-center gap-0.5">
+                      <ArrowDown className="h-3 w-3 text-sky-400" />
+                      {fmt(tMin, 1, "°")}
+                    </span>
+                  )}
+                  {tMax !== null && (
+                    <span className="inline-flex items-center gap-0.5">
+                      <ArrowUp className="h-3 w-3 text-orange-400" />
+                      {fmt(tMax, 1, "°")}
+                    </span>
+                  )}
+                </div>
               )}
             </div>
-          </div>
+          )}
 
-          {/* Regn i dag */}
-          <div className="flex flex-col items-center text-center">
-            <CloudRain className="h-4 w-4 text-primary mb-1" />
-            <div className="text-lg sm:text-2xl font-semibold text-foreground tabular-nums leading-none">
-              {fmt(rainDay, 1)}
-              <span className="text-[10px] sm:text-xs text-muted-foreground ml-1">
-                mm
-              </span>
+          {hasWind && (
+            <div className={`flex flex-col items-center text-center ${tiles === 3 ? "border-x border-border" : ""}`}>
+              <Wind className="h-4 w-4 text-primary mb-1" />
+              <div className="text-lg sm:text-2xl font-semibold text-foreground tabular-nums leading-none">
+                {fmt(gust ?? windNow, 0)}
+                <span className="text-[10px] sm:text-xs text-muted-foreground ml-1">
+                  km/t
+                </span>
+              </div>
+              <div className="mt-1 text-[10px] sm:text-xs text-muted-foreground tabular-nums">
+                {gust !== null ? "maks kast" : "vind nå"}
+                {gust !== null && windNow !== null && (
+                  <> · {fmt(windNow, 0)} nå</>
+                )}
+              </div>
             </div>
-            <div className="mt-1 text-[10px] sm:text-xs text-muted-foreground">
-              regn i dag
+          )}
+
+          {hasRain && (
+            <div className="flex flex-col items-center text-center">
+              <CloudRain className="h-4 w-4 text-primary mb-1" />
+              <div className="text-lg sm:text-2xl font-semibold text-foreground tabular-nums leading-none">
+                {fmt(rainDay, 1)}
+                <span className="text-[10px] sm:text-xs text-muted-foreground ml-1">
+                  mm
+                </span>
+              </div>
+              <div className="mt-1 text-[10px] sm:text-xs text-muted-foreground">
+                regn i dag
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </section>
