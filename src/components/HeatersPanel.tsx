@@ -51,6 +51,7 @@ type HeaterDevice = {
   hasTarget: boolean;
   thermostatMode?: string;
   thermostatModeValues?: HomeyCapabilityEnumValue[];
+  fanCapabilityId?: string;
   fanSpeed?: string | number;
   fanSpeedValues?: HomeyCapabilityEnumValue[];
   fanSpeedMin?: number;
@@ -58,6 +59,7 @@ type HeaterDevice = {
   fanSpeedStep?: number;
   swings: SwingControl[];
 };
+
 
 type State =
   | { status: "loading" }
@@ -87,10 +89,13 @@ function buildHeaters(
     const onoffCap = d.capabilities["onoff"];
     const measureCap = d.capabilities["measure_temperature"];
     const modeCap = d.capabilities["thermostat_mode"];
-    const fanCap =
-      d.capabilities["fan_speed"] ??
-      d.capabilities["fan_mode"] ??
-      d.capabilities["qlima_fan_speed"];
+    const fanEntry =
+      (["fan_speed", "fan_mode", "qlima_fan_speed", "fan_level", "fan_rate", "fan_power"] as const)
+        .map((k) => [k, d.capabilities[k]] as const)
+        .find(([, c]) => !!c) ??
+      Object.entries(d.capabilities).find(([k]) => /^fan[_-]?(speed|mode|level|rate|power)/i.test(k));
+    const fanCap = fanEntry?.[1];
+    const fanCapId = fanEntry?.[0];
 
     const isQlima = isQlimaDevice(d);
     const hasTarget = !!ttCap && typeof ttCap.value === "number";
@@ -114,9 +119,14 @@ function buildHeaters(
     // Detect swing-like capabilities (horizontal/vertical air direction)
     const swings: SwingControl[] = [];
     for (const [capId, cap] of Object.entries(d.capabilities)) {
-      if (!/swing|vane|louver|oscill/i.test(capId)) continue;
-      const isHoriz = /horiz|side|sideway|left|right/i.test(capId);
-      const isVert = /vert|up|down/i.test(capId);
+      if (
+        !/swing|vane|louver|oscill|airdir|air_dir|fan_dir|flap|wind_dir|updown|up_?down|leftright|left_?right|direction/i.test(
+          capId,
+        )
+      )
+        continue;
+      const isHoriz = /horiz|side|sideway|left_?right|leftright/i.test(capId);
+      const isVert = /vert|up_?down|updown/i.test(capId);
       const label = isHoriz
         ? "Side til side"
         : isVert
@@ -124,9 +134,9 @@ function buildHeaters(
           : capId.replace(/_/g, " ");
       const v = cap?.value;
       const kind: "boolean" | "enum" =
-        typeof v === "boolean" || (!cap?.values?.length && typeof v !== "string")
-          ? "boolean"
-          : "enum";
+        (cap?.values?.length ?? 0) > 0 || typeof v === "string"
+          ? "enum"
+          : "boolean";
       swings.push({
         capabilityId: capId,
         label,
@@ -135,6 +145,14 @@ function buildHeaters(
         values: cap?.values,
       });
     }
+    // Sort: vertical first, then horizontal, then other
+    swings.sort((a, b) => {
+      const score = (s: SwingControl) =>
+        /vert|up_?down|updown/i.test(s.capabilityId) ? 0
+          : /horiz|side|left_?right/i.test(s.capabilityId) ? 1
+          : 2;
+      return score(a) - score(b);
+    });
 
     out.push({
       id: d.id,
@@ -151,6 +169,7 @@ function buildHeaters(
       thermostatMode:
         typeof modeCap?.value === "string" ? modeCap.value : undefined,
       thermostatModeValues: modeCap?.values,
+      fanCapabilityId: fanCapId,
       fanSpeed:
         typeof fanCap?.value === "string" || typeof fanCap?.value === "number"
           ? fanCap.value
@@ -162,6 +181,7 @@ function buildHeaters(
       swings,
     });
   }
+
   out.sort((a, b) => {
     const z = a.zoneName.localeCompare(b.zoneName, "nb");
     if (z !== 0) return z;
@@ -316,9 +336,11 @@ export function HeatersPanel({
             ? "target"
             : capability === "thermostat_mode"
               ? "thermostatMode"
-              : capability === "fan_speed" || capability === "fan_mode"
+              : /^fan[_-]?(speed|mode|level|rate|power)/i.test(capability) ||
+                  capability === "qlima_fan_speed"
                 ? "fanSpeed"
                 : null;
+
       if (overrideKey) {
         setOverrides((o) => ({
           ...o,
@@ -489,11 +511,15 @@ export function HeatersPanel({
                         onSetFan={(v) =>
                           sendCap(
                             h.id,
-                            h.fanSpeedValues || h.fanSpeed !== undefined ? "fan_speed" : "fan_mode",
+                            h.fanCapabilityId ??
+                              (h.fanSpeedValues || h.fanSpeed !== undefined
+                                ? "fan_speed"
+                                : "fan_mode"),
                             v,
                           )
                         }
                         onSetSwing={(capId, v) => sendCap(h.id, capId, v)}
+
                       />
                     ))}
                   </div>
@@ -608,7 +634,10 @@ function HeaterCard({
   const onoffBusy = busy[`${heater.id}:onoff`];
   const modeBusy = busy[`${heater.id}:thermostat_mode`];
   const fanBusy =
-    busy[`${heater.id}:fan_speed`] || busy[`${heater.id}:fan_mode`];
+    busy[`${heater.id}:${heater.fanCapabilityId ?? "fan_speed"}`] ||
+    busy[`${heater.id}:fan_speed`] ||
+    busy[`${heater.id}:fan_mode`];
+
   const isOn = heater.onoff !== false;
 
   const supportsMode =
