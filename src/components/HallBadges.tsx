@@ -456,8 +456,8 @@ export function PowerVsYesterdayBadge({ inline }: { inline?: boolean } = {}) {
   );
 }
 
-/** Antall treningsøkter siste 4 uker (Strava — Arne), delt opp per sport. */
-export function TrainingLast4WeeksBadge({ inline }: { inline?: boolean } = {}) {
+/** Antall treningsøkter siste 4 uker (Strava), delt opp per sport. */
+export function TrainingLast4WeeksBadge({ inline, owner = "arne" }: { inline?: boolean; owner?: "arne" | "rebekka" } = {}) {
   const [counts, setCounts] = useState<{ run: number; ride: number; swim: number; walk: number } | null>(null);
   useEffect(() => {
     let cancelled = false;
@@ -474,17 +474,15 @@ export function TrainingLast4WeeksBadge({ inline }: { inline?: boolean } = {}) {
     let unsub: (() => void) | null = null;
     (async () => {
       try {
-        // Bruker KUN delt (persistert) cache — trigger aldri nytt Strava-kall
-        // ved badge-rendering. Abonnerer slik at badget oppdateres når /fysisk
-        // henter nye data.
         const { getCachedStrava, subscribeStrava } = await import("@/lib/strava-cache");
-        apply(getCachedStrava("arne"));
-        unsub = subscribeStrava("arne", apply);
+        apply(getCachedStrava(owner));
+        unsub = subscribeStrava(owner, apply);
       } catch {}
     })();
     return () => { cancelled = true; if (unsub) unsub(); };
-  }, []);
+  }, [owner]);
   if (!counts) return null;
+  const initial = owner === "rebekka" ? "R" : "A";
   const items: Array<{ n: number; emoji: string; label: string; cls: string }> = [];
   if (counts.run > 0) items.push({ n: counts.run, emoji: "🏃", label: "løpeturer", cls: "bg-orange-500/20 text-orange-300 border-orange-500/40" });
   if (counts.ride > 0) items.push({ n: counts.ride, emoji: "🚴", label: "sykkelturer", cls: "bg-sky-500/20 text-sky-300 border-sky-500/40" });
@@ -496,10 +494,10 @@ export function TrainingLast4WeeksBadge({ inline }: { inline?: boolean } = {}) {
       {items.map((it, i) => (
         <span
           key={i}
-          title={`${it.n} ${it.label} siste 4 uker`}
+          title={`${initial}: ${it.n} ${it.label} siste 4 uker`}
           className={`min-w-[20px] h-[18px] px-1 rounded-full text-[10px] font-semibold inline-flex items-center justify-center border ${it.cls}`}
         >
-          {it.emoji}{it.n}
+          {it.emoji}{initial}{it.n}
         </span>
       ))}
     </span>
