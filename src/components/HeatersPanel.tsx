@@ -51,6 +51,7 @@ type HeaterDevice = {
   hasTarget: boolean;
   thermostatMode?: string;
   thermostatModeValues?: HomeyCapabilityEnumValue[];
+  fanCapabilityId?: string;
   fanSpeed?: string | number;
   fanSpeedValues?: HomeyCapabilityEnumValue[];
   fanSpeedMin?: number;
@@ -58,6 +59,7 @@ type HeaterDevice = {
   fanSpeedStep?: number;
   swings: SwingControl[];
 };
+
 
 type State =
   | { status: "loading" }
