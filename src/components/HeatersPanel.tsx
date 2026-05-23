@@ -925,18 +925,18 @@ function HeaterCard({
         )}
 
         {supportsFan && fanValues.length > 0 && (
-          <div className="w-full max-w-[260px] mt-1">
+          <div className="w-full mt-1">
             <div className="flex items-center justify-between mb-1.5">
-              <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground">
-                Vifte
+              <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground flex items-center gap-1.5">
+                <Wind size={11} /> Vifte
               </span>
               {fanBusy && (
                 <Loader2 size={12} className="animate-spin text-muted-foreground" />
               )}
             </div>
             <div
-              className="grid gap-1"
-              style={{ gridTemplateColumns: `repeat(${Math.min(fanValues.length, 5)}, minmax(0, 1fr))` }}
+              className="grid gap-1.5"
+              style={{ gridTemplateColumns: `repeat(auto-fit, minmax(60px, 1fr))` }}
             >
               {fanValues.map((f) => {
                 const active =
@@ -953,7 +953,7 @@ function HeaterCard({
                     disabled={fanBusy}
                     aria-label={`Vifte ${f.title ?? f.id}`}
                     title={f.title ?? f.id}
-                    className="rounded py-1.5 flex items-center justify-center transition-all disabled:opacity-50 active:scale-95"
+                    className="rounded py-2 px-2 flex items-center justify-center gap-1 transition-all disabled:opacity-50 active:scale-95 min-h-[40px]"
                     style={{
                       background: active
                         ? `color-mix(in oklab, ${accent} 22%, transparent)`
@@ -962,7 +962,8 @@ function HeaterCard({
                       color: active ? accent : "var(--muted-foreground)",
                     }}
                   >
-                    <span className="text-[8px] tracking-[0.15em] uppercase">
+                    <Wind size={10} className="opacity-70" />
+                    <span className="text-[9px] tracking-[0.15em] uppercase">
                       {f.title ?? f.id}
                     </span>
                   </button>
