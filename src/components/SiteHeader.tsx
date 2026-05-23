@@ -113,6 +113,7 @@ const ROUTE_ICON_COLOR: Partial<Record<RoutePath, string>> = {
   "/hytta": "#60a5fa",               // fjellet — vinterblå
   "/smarthus": "#facc15",            // smartborg — glødende gul
   "/lys": "#fde047",                 // lys — lampegult
+  "/varme": "#fb923c",               // varme — flammeoransje
   "/stromkroniken": "#eab308",       // strøm — lyngull
   "/oppussing-borgen": "#f97316",    // hammer — gloende
   "/oppussing-hytta": "#a16207",     // tre — rustbrun
@@ -148,6 +149,7 @@ const navLinks: NavLink[] = [
   { to: "/hytta", label: "Hytta", public: true },
   { to: "/smarthus", label: "Smartborg" },
   { to: "/lys", label: "Lys" },
+  { to: "/varme", label: "Varme & Klima" },
   { to: "/gressklipper", label: "Gressklipper" },
   { to: "/stovsugeren", label: "Støvsugeren" },
   { to: "/stromkroniken", label: "Strømkrøniken" },

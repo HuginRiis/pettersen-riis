@@ -69,6 +69,7 @@ import hallVarslinger from "@/assets/got-varslinger.jpg";
 import hallKvitteringer from "@/assets/got-kvitteringer.jpg";
 import hallOkonomi from "@/assets/got-okonomi.jpg";
 import hallLys from "@/assets/got-lys.jpg";
+import hallVarme from "@/assets/got-varme.jpg";
 import hallGressklipper from "@/assets/got-gressklipper.jpg";
 import hallStovsuger from "@/assets/got-stovsuger.jpg";
 import hallSkatt from "@/assets/got-skatt.jpg";
@@ -337,6 +338,7 @@ function Home() {
 
           {showHall("/smarthus") && <HallCard to="/smarthus" title="Smartborg" desc="Lys, varme og varslere fra Homey." icon="🏰" image={hallSmarthus} locked={!isAuthed} badge={<HallBadgeStack><MowerStatusBadge inline /></HallBadgeStack>} />}
           {showHall("/lys") && <HallCard to="/lys" title="Lys" desc="Husets ild — tente lys og scener." icon="💡" image={hallLys} locked={!isAuthed} badge={<HallBadgeStack><LightsOnBadge inline /></HallBadgeStack>} />}
+          {showHall("/varme") && <HallCard to="/varme" title="Varme & Klima" desc="Ovner, varmepumper og luftretning — borgen og hytta." icon="🔥" image={hallVarme} locked={!isAuthed} />}
           {showHall("/gressklipper") && <HallCard to="/gressklipper" title="Gressklipper" desc="Sileno-vokteren av plenen." icon="🌱" image={hallGressklipper} locked={!isAuthed} badge={<HallBadgeStack><GardenaStatusBadge inline /><GardenaBatteryBadge inline /><GardenaSignalBadge inline /></HallBadgeStack>} />}
           {showHall("/stovsugeren") && <HallCard to="/stovsugeren" title="Støvsugeren" desc="Roborock — Hjemme og Hytta." icon="🤖" image={hallStovsuger} locked={!isAuthed} badge={<HallBadgeStack><RoborockStatusBadge inline match="hjem" name="Hjemme" /><RoborockStatusBadge inline match="hytt" name="Hytta" /></HallBadgeStack>} />}
           {showHall("/stromkroniken") && <HallCard to="/stromkroniken" title="Strømkrøniken" desc="Husets strømgull — kostnader, forbruk og priser." icon="⚡" image={hallStrom} locked={!isAuthed} badge={<HallBadgeStack><PowerVsYesterdayBadge inline /></HallBadgeStack>} />}
@@ -669,6 +671,7 @@ function HallCard({
     | "/stromkroniken"
     | "/smarthus"
     | "/lys"
+    | "/varme"
     | "/gressklipper"
     | "/stovsugeren"
     | "/skatte-utregningen"
