@@ -402,7 +402,12 @@ export function HyttaChecklist() {
   } | null>(null);
 
   const openSchedulePopover = (
-    reminder?: { notify_at: string; notify_who: string; itemIds: string[] } | null,
+    reminder?: {
+      notify_at: string;
+      notify_who: string;
+      repeat_interval_days: number | null;
+      itemIds: string[];
+    } | null,
   ) => {
     if (reminder) {
       const d = new Date(reminder.notify_at);
@@ -411,11 +416,13 @@ export function HyttaChecklist() {
         `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`,
       );
       setBulkWho(reminder.notify_who);
+      setBulkRepeat(String(reminder.repeat_interval_days ?? 0));
       setEditingReminder(reminder);
     } else {
       setBulkDate(undefined);
       setBulkTime("18:00");
       setBulkWho("Alle");
+      setBulkRepeat("0");
       setEditingReminder(null);
     }
     setBulkOpen(true);
