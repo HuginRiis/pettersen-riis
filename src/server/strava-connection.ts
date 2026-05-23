@@ -1,13 +1,8 @@
 import { createHmac, randomUUID, timingSafeEqual } from "crypto";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { getStravaCredentials, getStravaOwnerFromState, isStravaOwner, STRAVA_OWNERS, type StravaOwner } from "@/lib/strava-shared";
 
-export type StravaOwner = "arne" | "rebekka";
-
-export const STRAVA_OWNERS: StravaOwner[] = ["arne", "rebekka"];
-
-export function isStravaOwner(value: unknown): value is StravaOwner {
-  return value === "arne" || value === "rebekka";
-}
+export { getStravaCredentials, getStravaOwnerFromState, isStravaOwner, STRAVA_OWNERS, type StravaOwner };
 
 export function createStravaState(owner: StravaOwner, signingSecret: string) {
   const issuedAt = Math.floor(Date.now() / 1000).toString();
@@ -17,17 +12,12 @@ export function createStravaState(owner: StravaOwner, signingSecret: string) {
   return `${payload}.${signature}`;
 }
 
-export function getStravaOwnerFromState(state: string | null): StravaOwner | null {
-  const ownerPart = state?.split(".")[0];
-  return isStravaOwner(ownerPart) ? ownerPart : null;
-}
-
 export function verifyStravaState(state: string | null, signingSecret: string) {
   if (!state) return false;
   const parts = state.split(".");
   if (parts.length !== 4) return false;
   const [owner, issuedAt, nonce, signature] = parts;
-  if (!isStravaOwner(owner)) return false;
+  if (!getStravaOwnerFromState(state)) return false;
   const ageSeconds = Math.floor(Date.now() / 1000) - Number(issuedAt);
   if (!Number.isFinite(ageSeconds) || ageSeconds < 0 || ageSeconds > 600) return false;
 
@@ -36,26 +26,6 @@ export function verifyStravaState(state: string | null, signingSecret: string) {
   const givenBuffer = Buffer.from(signature, "hex");
   const expectedBuffer = Buffer.from(expected, "hex");
   return givenBuffer.length === expectedBuffer.length && timingSafeEqual(givenBuffer, expectedBuffer);
-}
-
-/**
- * Returnerer client_id / client_secret for gitt Strava-eier.
- * Rebekka kan ha egen Strava-app (STRAVA_CLIENT_ID_REBEKKA/SECRET) —
- * faller tilbake til delte STRAVA_CLIENT_ID/SECRET hvis ikke satt.
- */
-export function getStravaCredentials(owner: StravaOwner): {
-  clientId: string | undefined;
-  clientSecret: string | undefined;
-} {
-  if (owner === "rebekka") {
-    const id = process.env.STRAVA_CLIENT_ID_REBEKKA;
-    const secret = process.env.STRAVA_CLIENT_SECRET_REBEKKA;
-    if (id && secret) return { clientId: id, clientSecret: secret };
-  }
-  return {
-    clientId: process.env.STRAVA_CLIENT_ID,
-    clientSecret: process.env.STRAVA_CLIENT_SECRET,
-  };
 }
 
 export type StravaConnection = {
