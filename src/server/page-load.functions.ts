@@ -79,15 +79,30 @@ export type PageUserStat = {
   routes: { route: string; count: number; last_at: string }[];
 };
 
+export type SlowPageInsight = {
+  route: string;
+  avg_ms: number;
+  p95_ms: number;
+  count: number;
+  recent_avg_ms: number;
+  prev_avg_ms: number;
+  trend: "up" | "down" | "flat";
+  trend_pct: number;
+  recommendation: string;
+};
+
 export type PageLoadStats = {
   routes: PageRouteStat[];
   devices: PageDeviceStat[];
   recent: PageLoadEntry[];
   daily: PageDailyPoint[];
   users: PageUserStat[];
+  slowest: SlowPageInsight[];
   totalCount: number;
   avgMs: number;
+  sampleLimit: number;
 };
+
 
 function percentile(sorted: number[], p: number): number {
   if (sorted.length === 0) return 0;
@@ -99,6 +114,7 @@ export const getPageLoadStats = createServerFn({ method: "GET" })
   .inputValidator(
     z.object({
       days: z.number().int().min(1).max(90).default(14),
+      limit: z.number().int().min(100).max(100000).default(10000),
     }).parse,
   )
   .handler(async ({ data }): Promise<PageLoadStats> => {
@@ -108,11 +124,12 @@ export const getPageLoadStats = createServerFn({ method: "GET" })
       .select("loaded_at, route, who, device, os, load_ms, kind")
       .gte("loaded_at", since)
       .order("loaded_at", { ascending: false })
-      .limit(10000);
+      .limit(data.limit);
     if (error) {
       console.warn("[page-load] select failed", error.message);
-      return { routes: [], devices: [], recent: [], daily: [], users: [], totalCount: 0, avgMs: 0 };
+      return { routes: [], devices: [], recent: [], daily: [], users: [], slowest: [], totalCount: 0, avgMs: 0, sampleLimit: data.limit };
     }
+
 
     const all = (rows ?? []) as PageLoadEntry[];
     // routes
@@ -204,6 +221,51 @@ export const getPageLoadStats = createServerFn({ method: "GET" })
       })
       .sort((a, b) => b.count - a.count);
 
+    // Slowest pages with trend & recommendation (min 5 samples)
+    function recommendFor(route: string, avg: number, p95: number, trend: "up" | "down" | "flat", trendPct: number): string {
+      const tips: string[] = [];
+      if (trend === "up" && trendPct >= 15) tips.push(`Tregere enn før (+${trendPct}%) — sjekk nye endringer på denne siden.`);
+      if (p95 > 4000) tips.push("P95 over 4s — vurder code-splitting, lazy-load tunge komponenter eller bilder.");
+      else if (avg > 2500) tips.push("Snitt over 2.5s — flytt tunge data-kall til server-loader og cache resultatet.");
+      if (/charts?|recharts|chart/i.test(route)) tips.push("Dynamisk import av chart-biblioteket kan kutte initial last.");
+      if (/okonomi|skatt|payslip|kvitter/i.test(route)) tips.push("Paginer eller virtualiser store lister/tabeller.");
+      if (/api|hooks/i.test(route)) tips.push("Sjekk om eksternt API svarer tregt — vurder cache eller bakgrunnsjobb.");
+      if (tips.length === 0) {
+        if (avg < 800) tips.push("OK — innenfor 'rask' (<800ms).");
+        else tips.push("Vurder å forhåndshente data, redusere antall requests eller komprimere assets.");
+      }
+      return tips.join(" ");
+    }
+
+    const slowest: SlowPageInsight[] = routes
+      .filter((r) => r.count >= 5)
+      .sort((a, b) => b.avg_ms - a.avg_ms)
+      .slice(0, 3)
+      .map((r) => {
+        const list = byRoute.get(r.route) ?? [];
+        // sort by time ascending
+        const chrono = [...list].sort((a, b) => a.loaded_at.localeCompare(b.loaded_at));
+        const half = Math.max(1, Math.floor(chrono.length / 2));
+        const prev = chrono.slice(0, half);
+        const recent = chrono.slice(half);
+        const avgOf = (xs: PageLoadEntry[]) => xs.length ? Math.round(xs.reduce((s, x) => s + x.load_ms, 0) / xs.length) : 0;
+        const prevAvg = avgOf(prev);
+        const recentAvg = avgOf(recent);
+        const diffPct = prevAvg > 0 ? Math.round(((recentAvg - prevAvg) / prevAvg) * 100) : 0;
+        const trend: "up" | "down" | "flat" = Math.abs(diffPct) < 10 ? "flat" : diffPct > 0 ? "up" : "down";
+        return {
+          route: r.route,
+          avg_ms: r.avg_ms,
+          p95_ms: r.p95_ms,
+          count: r.count,
+          recent_avg_ms: recentAvg,
+          prev_avg_ms: prevAvg,
+          trend,
+          trend_pct: Math.abs(diffPct),
+          recommendation: recommendFor(r.route, r.avg_ms, r.p95_ms, trend, Math.abs(diffPct)),
+        };
+      });
+
     const totalSum = all.reduce((s, r) => s + r.load_ms, 0);
     return {
       routes,
@@ -211,7 +273,10 @@ export const getPageLoadStats = createServerFn({ method: "GET" })
       recent: all.slice(0, 100),
       daily,
       users,
+      slowest,
       totalCount: all.length,
       avgMs: all.length ? Math.round(totalSum / all.length) : 0,
+      sampleLimit: data.limit,
     };
   });
+
