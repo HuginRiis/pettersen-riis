@@ -76,7 +76,15 @@ function merge(value: unknown): HeaderBadgeSettings {
     maxDaysAhead: Math.min(30, Math.max(0, Number(v.garbage?.maxDaysAhead ?? 14))),
     showAllSameDay: v.garbage?.showAllSameDay === true,
   };
-  return { badges, weather, garbage };
+  const t = (v as any).training ?? {};
+  const training: TrainingSportToggles = {
+    run: t.run !== false,
+    ride: t.ride !== false,
+    swim: t.swim !== false,
+    walk: t.walk !== false,
+    hike: t.hike !== false,
+  };
+  return { badges, weather, garbage, training };
 }
 
 async function load(): Promise<HeaderBadgeSettings> {
