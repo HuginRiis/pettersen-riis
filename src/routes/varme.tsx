@@ -262,8 +262,14 @@ function HeroTempBadges() {
   const hyttaT = useNetatmoTemps("hytta");
   const pumps = useHeatPumps();
   // Kun varmepumper som faktisk er PÅ skal påvirke pila / target i hero
-  const borgTarget = avg(pumps.borg.filter((p) => p.onoff === true).map((p) => p.target));
-  const hyttaTarget = avg(pumps.hytta.filter((p) => p.onoff === true).map((p) => p.target));
+  const borgOn = pumps.borg.filter((p) => p.onoff === true);
+  const hyttaOn = pumps.hytta.filter((p) => p.onoff === true);
+  const borgTarget = avg(borgOn.map((p) => p.target));
+  const hyttaTarget = avg(hyttaOn.map((p) => p.target));
+  const borgCanHeat = borgOn.some((p) => modeAllowsHeat(p.mode));
+  const borgCanCool = borgOn.some((p) => modeAllowsCool(p.mode));
+  const hyttaCanHeat = hyttaOn.some((p) => modeAllowsHeat(p.mode));
+  const hyttaCanCool = hyttaOn.some((p) => modeAllowsCool(p.mode));
   return (
     <div className="flex flex-wrap gap-2 sm:gap-3 max-w-2xl">
       <LocationBadge
@@ -272,6 +278,8 @@ function HeroTempBadges() {
         indoor={borgT.indoor}
         outdoor={borgT.outdoor}
         target={borgTarget}
+        canHeat={borgCanHeat}
+        canCool={borgCanCool}
       />
       <LocationBadge
         label="Hytta"
@@ -279,6 +287,8 @@ function HeroTempBadges() {
         indoor={hyttaT.indoor}
         outdoor={hyttaT.outdoor}
         target={hyttaTarget}
+        canHeat={hyttaCanHeat}
+        canCool={hyttaCanCool}
       />
     </div>
   );
