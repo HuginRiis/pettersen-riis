@@ -1,26 +1,45 @@
-import { Thermometer, Snowflake, Flame } from "lucide-react";
+import { Thermometer, Snowflake, Flame, Users } from "lucide-react";
 import { usePersistedState } from "@/hooks/use-persisted-state";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
-type RoomKey = "stua" | "soverommet";
+type RoomKey = "stua" | "soverommet" | "hytta-stua";
 
 type Settings = {
   enabled: boolean;
-  /** Sett ravnen ut når det blir for varmt (over `hot`-grensen). */
   notifyHot: boolean;
   hot: number;
-  /** Sett ravnen ut når det blir for kaldt (under `cold`-grensen). */
   notifyCold: boolean;
   cold: number;
+  recipient: string;
 };
 
+const WHO_OPTIONS = [
+  "Alle",
+  "Arne & Rebekka",
+  "Arne",
+  "Rebekka",
+  "Marita",
+  "Nora",
+  "Celine",
+  "Mira",
+] as const;
+
 const DEFAULTS: Record<RoomKey, Settings> = {
-  stua: { enabled: true, notifyHot: true, hot: 25, notifyCold: true, cold: 18 },
-  soverommet: { enabled: true, notifyHot: true, hot: 23, notifyCold: true, cold: 16 },
+  stua: { enabled: true, notifyHot: true, hot: 25, notifyCold: true, cold: 18, recipient: "Alle" },
+  soverommet: { enabled: true, notifyHot: true, hot: 23, notifyCold: true, cold: 16, recipient: "Alle" },
+  "hytta-stua": { enabled: true, notifyHot: true, hot: 25, notifyCold: true, cold: 10, recipient: "Alle" },
 };
 
 const ROOM_LABEL: Record<RoomKey, string> = {
-  stua: "Stua",
-  soverommet: "Soverommet",
+  stua: "Borgen · Stua",
+  soverommet: "Borgen · Soverommet",
+  "hytta-stua": "Hytta · Stua",
 };
 
 function TempPicker({
@@ -135,11 +154,33 @@ function RoomCard({ room }: { room: RoomKey }) {
             disabled={!settings.enabled || !settings.notifyCold}
           />
         </div>
+
+        <div className="flex items-center justify-between gap-3">
+          <div className="inline-flex items-center gap-2 text-sm">
+            <Users size={14} className="text-[var(--gold)]" />
+            <span>Mottaker</span>
+          </div>
+          <Select
+            value={settings.recipient}
+            disabled={!settings.enabled}
+            onValueChange={(v) => update({ recipient: v })}
+          >
+            <SelectTrigger className="h-8 w-[160px] text-sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {WHO_OPTIONS.map((w) => (
+                <SelectItem key={w} value={w}>
+                  {w}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <p className="text-[10px] text-muted-foreground italic leading-relaxed">
-        Ravnen flyr når temperaturen forlater området {settings.cold}°–{settings.hot}°.
-        Velg mellom 10° og 30°.
+        Ravnen flyr til {settings.recipient.toLowerCase()} når temperaturen forlater området {settings.cold}°–{settings.hot}°.
       </p>
     </article>
   );
@@ -150,6 +191,7 @@ export function ClimateNotificationSettings() {
     <div className="grid sm:grid-cols-2 gap-4">
       <RoomCard room="stua" />
       <RoomCard room="soverommet" />
+      <RoomCard room="hytta-stua" />
     </div>
   );
 }
