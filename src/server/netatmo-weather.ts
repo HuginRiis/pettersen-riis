@@ -152,9 +152,10 @@ function mapDevice(device: any): WeatherModule[] {
 }
 
 // Delt server-cache per stationMatch — Netatmo oppdaterer kun hvert 10. min,
-// så vi kan trygt servere det samme svaret til alle klienter (forsiden +
-// Steintavlen + iPad) uten å spamme api.netatmo.com.
-const WEATHER_TTL_MS = 5 * 60_000;
+// så vi serverer samme svar til alle klienter (forsiden + Steintavlen + iPad)
+// i 10 minutter. Klient-"refresh" og manuelle besøk bypasser IKKE denne TTL —
+// vi treffer aldri api.netatmo.com oftere enn hvert 10. minutt per stasjon.
+const WEATHER_TTL_MS = 10 * 60_000;
 const weatherCache = new Map<string, { at: number; data: WeatherStationResult }>();
 
 export const getNetatmoWeatherStation = createServerFn({ method: "GET" })

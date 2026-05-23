@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { getNetatmoWeatherStation, type WeatherStationResult } from "@/server/netatmo-weather";
 import { StuaConditionPanel } from "@/components/StuaConditionPanel";
 
-const REFRESH_MS = 5 * 60_000;
+const REFRESH_MS = 10 * 60_000;
 
 export function HyttaIndreSal({ stationMatch = "hytta" }: { stationMatch?: string } = {}) {
   const fetchData = useServerFn(getNetatmoWeatherStation);

@@ -7,7 +7,7 @@ import {
   type WeatherStationResult,
 } from "@/server/netatmo-weather";
 
-const REFRESH_MS = 5 * 60_000; // 5 min
+const REFRESH_MS = 10 * 60_000; // 10 min
 
 /**
  * Pyrelys — drage-ild som markerer batteri-nivå på borgens sensorer.
