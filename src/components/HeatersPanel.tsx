@@ -874,6 +874,80 @@ function HeaterCard({
           </div>
         )}
 
+        {heater.swings.length > 0 && (
+          <div className="w-full max-w-[260px] mt-1 space-y-2">
+            {heater.swings.map((sw) => {
+              const swBusy = busy[`${heater.id}:${sw.capabilityId}`];
+              if (sw.kind === "boolean") {
+                const active = sw.value === true;
+                return (
+                  <div key={sw.capabilityId}>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground">
+                        {sw.label}
+                      </span>
+                      {swBusy && <Loader2 size={12} className="animate-spin text-muted-foreground" />}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => !swBusy && onSetSwing(sw.capabilityId, !active)}
+                      disabled={swBusy}
+                      className="w-full rounded py-1.5 text-[9px] tracking-[0.25em] uppercase transition-all disabled:opacity-50"
+                      style={{
+                        background: active
+                          ? `color-mix(in oklab, ${accent} 22%, transparent)`
+                          : "color-mix(in oklab, var(--foreground) 6%, transparent)",
+                        border: `1px solid color-mix(in oklab, ${accent} ${active ? 50 : 22}%, transparent)`,
+                        color: active ? accent : "var(--muted-foreground)",
+                      }}
+                    >
+                      {active ? "Sving på" : "Sving av"}
+                    </button>
+                  </div>
+                );
+              }
+              const values = sw.values ?? [];
+              return (
+                <div key={sw.capabilityId}>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground">
+                      {sw.label}
+                    </span>
+                    {swBusy && <Loader2 size={12} className="animate-spin text-muted-foreground" />}
+                  </div>
+                  <div
+                    className="grid gap-1"
+                    style={{ gridTemplateColumns: `repeat(${Math.min(Math.max(values.length, 1), 5)}, minmax(0, 1fr))` }}
+                  >
+                    {values.map((v) => {
+                      const active = String(sw.value ?? "").toLowerCase() === String(v.id).toLowerCase();
+                      return (
+                        <button
+                          key={v.id}
+                          type="button"
+                          onClick={() => !swBusy && !active && onSetSwing(sw.capabilityId, v.id)}
+                          disabled={swBusy}
+                          className="rounded py-1.5 text-[8px] tracking-[0.15em] uppercase transition-all disabled:opacity-50"
+                          style={{
+                            background: active
+                              ? `color-mix(in oklab, ${accent} 22%, transparent)`
+                              : "color-mix(in oklab, var(--foreground) 6%, transparent)",
+                            border: `1px solid color-mix(in oklab, ${accent} ${active ? 50 : 18}%, transparent)`,
+                            color: active ? accent : "var(--muted-foreground)",
+                          }}
+                        >
+                          {v.title ?? v.id}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+
         {heater.onoff !== undefined && (
           <button
             type="button"
