@@ -1,8 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import {
   getStravaCredentials,
+  getStravaOwnerFromState,
   isStravaOwner,
   saveStravaConnection,
+  verifyStravaState,
   type StravaOwner,
 } from "@/server/strava-connection";
 
@@ -43,14 +45,16 @@ export const Route = createFileRoute("/api/strava/callback")({
         if (oauthError) return errorPage(`Strava svarte: ${oauthError}`);
         if (!code) return errorPage("Mangler 'code' fra Strava");
 
+        const stateSecret = process.env.STRAVA_OAUTH_STATE_SECRET;
         const cookieState = readCookie(request.headers.get("cookie"), "strava_oauth_state");
-        if (!cookieState || cookieState !== state) {
+        const validCookieState = Boolean(cookieState && cookieState === state);
+        const validSignedState = stateSecret ? verifyStravaState(state, stateSecret) : false;
+        if (!validCookieState && !validSignedState) {
           return errorPage("Ugyldig state — start tilkoblingen på nytt.", 400);
         }
 
         // State har formen "<owner>.<nonce>" — hent eieren ut
-        const ownerPart = (state ?? "").split(".")[0];
-        const owner: StravaOwner = isStravaOwner(ownerPart) ? ownerPart : "arne";
+        const owner: StravaOwner = getStravaOwnerFromState(state) ?? "arne";
 
         const { clientId, clientSecret } = getStravaCredentials(owner);
         if (!clientId || !clientSecret) {
