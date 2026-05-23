@@ -159,9 +159,10 @@ export const saveHomeySensorSettings = createServerFn({ method: "POST" })
   });
 
 export const getHomeySensorDashboard = createServerFn({ method: "GET" })
-  .inputValidator(z.object({ range: RANGE.default("today") }).parse)
+  .inputValidator(z.object({ range: RANGE.default("today"), location: LOCATION.default("all") }).parse)
   .handler(async ({ data }): Promise<HomeySensorDashboard> => {
     const { start, end, prevStart, prevEnd } = computeRange(data.range);
+    const loc = data.location;
 
     const settings = await (async () => {
       const { data: s } = await supabaseAdmin
@@ -179,22 +180,30 @@ export const getHomeySensorDashboard = createServerFn({ method: "GET" })
     const dayEndMin = parseHM(settings.dayEnd);
 
     const [{ data: rows }, { data: prevRows }, { data: stateRows }] = await Promise.all([
-      supabaseAdmin
-        .from("homey_sensor_events")
-        .select("ts, device_id, device_name, zone, kind, event_type")
-        .gte("ts", start.toISOString())
-        .lte("ts", end.toISOString())
+      applyLocation(
+        supabaseAdmin
+          .from("homey_sensor_events")
+          .select("ts, device_id, device_name, zone, kind, event_type")
+          .gte("ts", start.toISOString())
+          .lte("ts", end.toISOString()),
+        loc,
+      )
         .order("ts", { ascending: false })
         .limit(10000),
-      supabaseAdmin
-        .from("homey_sensor_events")
-        .select("ts, kind, event_type")
-        .gte("ts", prevStart.toISOString())
-        .lte("ts", prevEnd.toISOString())
-        .limit(20000),
-      supabaseAdmin
-        .from("homey_sensor_state")
-        .select("device_id, device_name, zone, kind, last_ts"),
+      applyLocation(
+        supabaseAdmin
+          .from("homey_sensor_events")
+          .select("ts, kind, event_type")
+          .gte("ts", prevStart.toISOString())
+          .lte("ts", prevEnd.toISOString()),
+        loc,
+      ).limit(20000),
+      applyLocation(
+        supabaseAdmin
+          .from("homey_sensor_state")
+          .select("device_id, device_name, zone, kind, last_ts"),
+        loc,
+      ),
     ]);
 
     const events = rows ?? [];
