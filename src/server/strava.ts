@@ -609,6 +609,7 @@ export const runStravaDashboard = async (owner: StravaOwner, opts?: { force?: bo
         recentRide: recentRideLocal,
         recentSwim: recentSwimLocal,
         recentWalk: recentWalkLocal,
+        recentHike: recentHikeLocal,
         ytdRun: stats?.ytd_run_totals ?? null,
         ytdRide: stats?.ytd_ride_totals ?? null,
         ytdSwim: stats?.ytd_swim_totals ?? null,
