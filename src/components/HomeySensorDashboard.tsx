@@ -6,12 +6,13 @@ import {
   backfillHomeySensorHistoryFn,
   type HomeySensorDashboard,
   type SensorRange,
+  type SensorLocation,
   type SensorEventDetail,
 } from "@/server/homey-sensor-dashboard.functions";
 import {
   Activity, DoorOpen, Lock, Unlock, Sun, Moon, AlertTriangle,
   Sparkles, ChevronDown, MapPin, Clock, TrendingUp, TrendingDown,
-  EyeOff, RefreshCw, AppWindow,
+  EyeOff, RefreshCw, AppWindow, Home, TreePine,
 } from "lucide-react";
 
 import {
