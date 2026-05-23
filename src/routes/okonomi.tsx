@@ -1545,52 +1545,75 @@ function DrillTxns({
   reload: () => void;
 }) {
   const [editId, setEditId] = useState<string | null>(null);
+  const [sortBy, setSortBy] = useState<"date_desc" | "amount_desc" | "amount_asc" | "name_asc">("date_desc");
   if (items.length === 0) {
     return <p className="mt-2 pl-6 text-[11px] italic text-muted-foreground">Ingen posteringer.</p>;
   }
+  const sorted = [...items].sort((a, b) => {
+    switch (sortBy) {
+      case "amount_desc": return Math.abs(Number(b.amount)) - Math.abs(Number(a.amount));
+      case "amount_asc": return Math.abs(Number(a.amount)) - Math.abs(Number(b.amount));
+      case "name_asc": return (a.description || "").localeCompare(b.description || "", "nb");
+      default: return b.txn_date.localeCompare(a.txn_date);
+    }
+  });
   const max = 100;
-  const shown = items.slice(0, max);
+  const shown = sorted.slice(0, max);
   return (
-    <ul className="mt-1 ml-6 space-y-0.5 text-[11px] border-l border-amber-500/20 pl-2 max-h-80 overflow-y-auto overscroll-contain">
-      {shown.map((t) => {
-        const n = Number(t.amount);
-        const pos = n > 0;
-        if (editId === t.id) {
+    <div className="mt-1 ml-6">
+      <div className="flex justify-end mb-1" onClick={(e) => e.stopPropagation()}>
+        <select
+          value={sortBy}
+          onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+          className="bg-transparent border border-amber-500/30 rounded text-[10px] text-amber-200 px-1 py-0.5 focus:outline-none focus:border-amber-500/60"
+        >
+          <option value="date_desc">Nyeste først</option>
+          <option value="amount_desc">Høyeste sum</option>
+          <option value="amount_asc">Laveste sum</option>
+          <option value="name_asc">Navn (A → Å)</option>
+        </select>
+      </div>
+      <ul className="space-y-0.5 text-[11px] border-l border-amber-500/20 pl-2 max-h-80 overflow-y-auto overscroll-contain">
+        {shown.map((t) => {
+          const n = Number(t.amount);
+          const pos = n > 0;
+          if (editId === t.id) {
+            return (
+              <li key={t.id} className="my-1.5">
+                <PosteringEditor
+                  txn={t}
+                  cats={cats}
+                  onCancel={() => setEditId(null)}
+                  onSaved={() => {
+                    setEditId(null);
+                    reload();
+                  }}
+                />
+              </li>
+            );
+          }
           return (
-            <li key={t.id} className="my-1.5">
-              <PosteringEditor
-                txn={t}
-                cats={cats}
-                onCancel={() => setEditId(null)}
-                onSaved={() => {
-                  setEditId(null);
-                  reload();
-                }}
-              />
+            <li key={t.id}>
+              <button
+                type="button"
+                onClick={() => setEditId(t.id)}
+                className="w-full flex justify-between gap-2 text-left hover:bg-amber-500/5 rounded px-1 py-0.5"
+              >
+                <span className="text-muted-foreground tabular-nums shrink-0 w-12">{t.txn_date.slice(5)}</span>
+                <span className="flex-1 truncate text-amber-100/80">{t.description}</span>
+                <span className={`tabular-nums shrink-0 ${signed ? (pos ? "text-emerald-400" : "text-red-400") : "text-amber-100"}`}>
+                  {signed && pos ? "+" : ""}
+                  {fmt(signed ? n : Math.abs(n))}
+                </span>
+              </button>
             </li>
           );
-        }
-        return (
-          <li key={t.id}>
-            <button
-              type="button"
-              onClick={() => setEditId(t.id)}
-              className="w-full flex justify-between gap-2 text-left hover:bg-amber-500/5 rounded px-1 py-0.5"
-            >
-              <span className="text-muted-foreground tabular-nums shrink-0 w-12">{t.txn_date.slice(5)}</span>
-              <span className="flex-1 truncate text-amber-100/80">{t.description}</span>
-              <span className={`tabular-nums shrink-0 ${signed ? (pos ? "text-emerald-400" : "text-red-400") : "text-amber-100"}`}>
-                {signed && pos ? "+" : ""}
-                {fmt(signed ? n : Math.abs(n))}
-              </span>
-            </button>
-          </li>
-        );
-      })}
-      {items.length > max && (
-        <li className="text-muted-foreground italic">+{items.length - max} flere…</li>
-      )}
-    </ul>
+        })}
+        {items.length > max && (
+          <li className="text-muted-foreground italic">+{items.length - max} flere…</li>
+        )}
+      </ul>
+    </div>
   );
 }
 
