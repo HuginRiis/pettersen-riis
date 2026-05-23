@@ -550,6 +550,21 @@ export function HyttaChecklist() {
                     </SelectContent>
                   </Select>
                 </div>
+                <div className="flex items-center gap-2">
+                  <BellRing className="h-4 w-4 text-muted-foreground" />
+                  <Select value={bulkRepeat} onValueChange={setBulkRepeat}>
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder="Gjentakelse" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {REPEAT_OPTIONS.map((o) => (
+                        <SelectItem key={o.value} value={o.value}>
+                          {o.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
                 <Button
                   onClick={scheduleBulkPush}
                   disabled={scheduling || !bulkDate}
