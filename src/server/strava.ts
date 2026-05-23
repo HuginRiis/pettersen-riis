@@ -128,6 +128,7 @@ export const getActivityStreams = createServerFn({ method: "GET" })
     owner: parseOwner(input.owner),
   }))
   .handler(async ({ data }) => {
+    const { getValidStravaAccessToken } = await import("./strava-connection");
     const auth = await getValidStravaAccessToken(data.owner);
     if (!auth) {
       return { ok: false as const, error: "Ikke koblet til Strava" };
@@ -276,6 +277,7 @@ export const runStravaDashboard = async (owner: StravaOwner, opts?: { force?: bo
     return { ok: false as const, error: "Strava daglig grense nådd — prøv igjen senere" };
   }
 
+  const { getValidStravaAccessToken } = await import("./strava-connection");
   const auth = await getValidStravaAccessToken(owner);
   if (!auth) {
     if (fallback) return withStaleMarker(fallback.data, fallback.at);
