@@ -303,12 +303,7 @@ export function HeatersPanel({
   const sendCap = useCallback(
     async (
       heaterId: string,
-      capability:
-        | "onoff"
-        | "target_temperature"
-        | "thermostat_mode"
-        | "fan_speed"
-        | "fan_mode",
+      capability: string,
       value: boolean | number | string,
     ) => {
       const key = `${heaterId}:${capability}`;
@@ -321,30 +316,35 @@ export function HeatersPanel({
             ? "target"
             : capability === "thermostat_mode"
               ? "thermostatMode"
-              : "fanSpeed";
-      setOverrides((o) => ({
-        ...o,
-        [heaterId]: {
-          ...(o[heaterId] ?? {}),
-          [overrideKey]: value,
-        },
-      }));
+              : capability === "fan_speed" || capability === "fan_mode"
+                ? "fanSpeed"
+                : null;
+      if (overrideKey) {
+        setOverrides((o) => ({
+          ...o,
+          [heaterId]: {
+            ...(o[heaterId] ?? {}),
+            [overrideKey]: value,
+          },
+        }));
+      }
       try {
         const res = await setCap({
-          data: { deviceId: heaterId, capability, value },
+          data: { deviceId: heaterId, capability: capability as any, value },
         });
         recordHomeyApiCall();
         if (!res.ok) {
-          // rull tilbake override
-          setOverrides((o) => {
-            const next = { ...o };
-            const cur = next[heaterId];
-            if (cur) {
-              delete (cur as any)[overrideKey];
-              if (Object.keys(cur).length === 0) delete next[heaterId];
-            }
-            return next;
-          });
+          if (overrideKey) {
+            setOverrides((o) => {
+              const next = { ...o };
+              const cur = next[heaterId];
+              if (cur) {
+                delete (cur as any)[overrideKey];
+                if (Object.keys(cur).length === 0) delete next[heaterId];
+              }
+              return next;
+            });
+          }
         } else {
           scheduleNext(2_000);
         }
