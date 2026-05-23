@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { getStravaCredentials, isStravaOwner, type StravaOwner } from "@/server/strava-connection";
 
 const STRAVA_AUTH_URL = "https://www.strava.com/oauth/authorize";
+const REBEKKA_STRAVA_ORIGIN = "https://arne.riis.cc";
 
 export const Route = createFileRoute("/api/strava/start")({
   server: {
@@ -10,6 +11,19 @@ export const Route = createFileRoute("/api/strava/start")({
         const url = new URL(request.url);
         const ownerParam = url.searchParams.get("owner");
         const owner: StravaOwner = isStravaOwner(ownerParam) ? ownerParam : "arne";
+
+        // Rebekka sin Strava-app tillater bare ett callback-domene.
+        // Hvis tilkoblingen startes fra preview/lovable-domenet, flytt starten
+        // til custom domain først slik at redirect_uri matcher Strava-oppsettet.
+        if (owner === "rebekka" && url.origin !== REBEKKA_STRAVA_ORIGIN) {
+          return new Response(null, {
+            status: 302,
+            headers: {
+              Location: `${REBEKKA_STRAVA_ORIGIN}/api/strava/start?owner=rebekka`,
+            },
+          });
+        }
+
         const { clientId } = getStravaCredentials(owner);
         if (!clientId) {
           return new Response(`STRAVA_CLIENT_ID mangler for ${owner}`, { status: 500 });
