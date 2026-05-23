@@ -875,7 +875,7 @@ function HeaterCard({
         )}
 
         {supportsMode && modes.length > 0 && (
-          <div className="w-full max-w-[260px] mt-1">
+          <div className="w-full mt-1">
             <div className="flex items-center justify-between mb-1.5">
               <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground">
                 Modus
@@ -885,8 +885,8 @@ function HeaterCard({
               )}
             </div>
             <div
-              className="grid gap-1"
-              style={{ gridTemplateColumns: `repeat(${Math.min(modes.length, 5)}, minmax(0, 1fr))` }}
+              className="grid gap-1.5"
+              style={{ gridTemplateColumns: `repeat(auto-fit, minmax(64px, 1fr))` }}
             >
               {modes.map((m) => {
                 const meta = modeMeta(m.id, m.title);
@@ -904,7 +904,7 @@ function HeaterCard({
                     disabled={modeBusy}
                     aria-label={`Modus ${meta.label}`}
                     title={meta.label}
-                    className="rounded py-1.5 flex flex-col items-center justify-center gap-0.5 transition-all disabled:opacity-50 active:scale-95"
+                    className="rounded py-2 px-2 flex flex-col items-center justify-center gap-1 transition-all disabled:opacity-50 active:scale-95 min-h-[52px]"
                     style={{
                       background: active
                         ? `color-mix(in oklab, ${accent} 22%, transparent)`
@@ -913,8 +913,8 @@ function HeaterCard({
                       color: active ? accent : "var(--muted-foreground)",
                     }}
                   >
-                    <meta.Icon size={12} />
-                    <span className="text-[8px] tracking-[0.15em] uppercase">
+                    <meta.Icon size={14} />
+                    <span className="text-[9px] tracking-[0.15em] uppercase leading-tight text-center">
                       {meta.label}
                     </span>
                   </button>
