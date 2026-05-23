@@ -349,9 +349,9 @@ export function HyttaChecklist() {
       await scheduleHyttaChecklistReminder({
         data: {
           ids: toUpdate,
-        notify_at: iso,
-        notify_who: bulkWho,
-        repeat_interval_days: repeatDays > 0 ? repeatDays : null,
+          notify_at: iso,
+          notify_who: bulkWho,
+          repeat_interval_days: repeatDays > 0 ? repeatDays : null,
         },
       });
       await loadChecklist();
