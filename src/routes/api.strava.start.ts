@@ -1,9 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import {
-  getStravaCredentials,
-  isStravaOwner,
-  type StravaOwner,
-} from "@/lib/strava-shared";
+import { isStravaOwner, type StravaOwner } from "@/lib/strava-shared";
 
 const STRAVA_AUTH_URL = "https://www.strava.com/oauth/authorize";
 const REBEKKA_STRAVA_ORIGIN = "https://arne.riis.cc";
@@ -28,6 +24,7 @@ export const Route = createFileRoute("/api/strava/start")({
           });
         }
 
+        const { getStravaCredentials } = await import("@/server/strava-credentials.server");
         const { clientId } = getStravaCredentials(owner);
         if (!clientId) {
           return new Response(`STRAVA_CLIENT_ID mangler for ${owner}`, { status: 500 });

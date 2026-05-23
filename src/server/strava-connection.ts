@@ -1,6 +1,7 @@
 import { createHmac, randomUUID, timingSafeEqual } from "crypto";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { getStravaCredentials, getStravaOwnerFromState, isStravaOwner, STRAVA_OWNERS, type StravaOwner } from "@/lib/strava-shared";
+import { getStravaOwnerFromState, isStravaOwner, STRAVA_OWNERS, type StravaOwner } from "@/lib/strava-shared";
+import { getStravaCredentials } from "./strava-credentials.server";
 
 export { getStravaCredentials, getStravaOwnerFromState, isStravaOwner, STRAVA_OWNERS, type StravaOwner };
 

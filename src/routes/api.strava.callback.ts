@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 import {
-  getStravaCredentials,
   getStravaOwnerFromState,
   type StravaOwner,
 } from "@/lib/strava-shared";
@@ -45,6 +44,7 @@ export const Route = createFileRoute("/api/strava/callback")({
         const stateSecret = process.env.STRAVA_OAUTH_STATE_SECRET;
         const cookieState = readCookie(request.headers.get("cookie"), "strava_oauth_state");
         const validCookieState = Boolean(cookieState && cookieState === state);
+        const { getStravaCredentials } = await import("@/server/strava-credentials.server");
         const { verifyStravaState, saveStravaConnection } = await import("@/server/strava-connection");
         const validSignedState = stateSecret ? verifyStravaState(state, stateSecret) : false;
         if (!validCookieState && !validSignedState) {
