@@ -469,6 +469,9 @@ export function HyttaChecklist() {
                     <span className="text-muted-foreground/70">
                       ({r.itemIds.length} punkt{r.itemIds.length === 1 ? "" : "er"})
                     </span>
+                    {repeatLabel(r.repeat_interval_days) && (
+                      <span className="text-primary/80">↻ {repeatLabel(r.repeat_interval_days)}</span>
+                    )}
                     <button
                       onClick={() => openSchedulePopover(r)}
                       className="ml-1 text-muted-foreground/70 hover:text-primary inline-flex items-center"
