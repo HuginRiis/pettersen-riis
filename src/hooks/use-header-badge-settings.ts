@@ -53,6 +53,7 @@ export const DEFAULT_HEADER_BADGE_SETTINGS: HeaderBadgeSettings = {
   ),
   weather: { startOffset: 1, days: 1, showTemp: true },
   garbage: { maxDaysAhead: 14, showAllSameDay: false },
+  training: { run: true, ride: true, swim: true, walk: true, hike: true },
 };
 
 let cache: HeaderBadgeSettings | null = null;
