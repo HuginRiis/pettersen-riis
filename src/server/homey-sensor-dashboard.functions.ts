@@ -14,6 +14,16 @@ import {
 } from "./homey-sensor-backfill.server";
 
 export type SensorRange = "today" | "yesterday" | "week" | "last7";
+export type SensorLocation = "all" | "hytta" | "borgen";
+
+const LOCATION = z.enum(["all", "hytta", "borgen"]);
+const HYTTA_ZONE = "Hytta";
+
+function applyLocation<T extends { eq: Function; neq: Function }>(q: T, loc: SensorLocation): T {
+  if (loc === "hytta") return q.eq("zone", HYTTA_ZONE);
+  if (loc === "borgen") return q.neq("zone", HYTTA_ZONE);
+  return q;
+}
 
 export type HomeySensorDashboard = {
   rangeStart: string;
