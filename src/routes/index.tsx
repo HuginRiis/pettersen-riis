@@ -56,7 +56,7 @@ import hallVakttarnet from "@/assets/got-vakttarnet.jpg";
 import hallHytta from "@/assets/hytta-aurora-got.webp";
 import hallHundene from "@/assets/hundene-pack.jpg";
 import hallTrening from "@/assets/got-trening.jpg";
-import hallFysisk from "@/assets/got-fysisk.jpg";
+
 
 import hallSmarthus from "@/assets/got-smarthus.jpg";
 import hallStrom from "@/assets/stromkroniken.jpg";
