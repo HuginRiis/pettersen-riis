@@ -11,7 +11,7 @@ export function isStravaOwner(value: unknown): value is StravaOwner {
 
 export function createStravaState(owner: StravaOwner, signingSecret: string) {
   const issuedAt = Math.floor(Date.now() / 1000).toString();
-  const nonce = crypto.randomUUID();
+  const nonce = randomUUID();
   const payload = `${owner}.${issuedAt}.${nonce}`;
   const signature = createHmac("sha256", signingSecret).update(payload).digest("hex");
   return `${payload}.${signature}`;
