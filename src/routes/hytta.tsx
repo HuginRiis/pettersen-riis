@@ -11,6 +11,7 @@ import { TollnesCameraStrip } from "@/components/TollnesCameraStrip";
 import { AuroraPanel } from "@/components/AuroraPanel";
 import { UvPanel } from "@/components/UvPanel";
 import { useAuthStatus } from "@/hooks/use-auth-status";
+import { listHyttaChecklist } from "@/lib/hytta-checklist.functions";
 
 const HYTTA_COORD = { lat: 59.8733, lon: 9.4297 };
 
@@ -105,6 +106,10 @@ const GALLERY: Plate[] = [
 ];
 
 export const Route = createFileRoute("/hytta")({
+  loader: async () => {
+    const { items } = await listHyttaChecklist();
+    return { checklistItems: items };
+  },
   head: () => ({
     meta: [
       { title: "Hytta — House Pettersen Riis' tilflukt" },
@@ -119,6 +124,7 @@ export const Route = createFileRoute("/hytta")({
 
 function HyttaPage() {
   const { authenticated } = useAuthStatus();
+  const { checklistItems } = Route.useLoaderData();
 
   return (
     <PageShell>
@@ -132,7 +138,7 @@ function HyttaPage() {
       <OutdoorWeatherStrip stationMatch="hytt" label="Ute nå · Hytta" />
       <IndoorWeatherStrip stationMatch="hytta" label="Inne nå · Hytta" />
 
-      <HyttaChecklist />
+      <HyttaChecklist initialItems={checklistItems} />
 
       <section className="container mx-auto px-4 py-12 space-y-5">
         <div className="ornate-divider mb-2">
