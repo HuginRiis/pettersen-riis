@@ -55,6 +55,17 @@ export function OutdoorWeatherStrip({
   const windNow = wind?.metrics.windStrength ?? null;
   const rainDay = rain?.metrics.rainDay ?? null;
 
+  const hasTemp = temp !== null;
+  const hasWind = windNow !== null || gust !== null;
+  const hasRain = rainDay !== null;
+
+  // Stasjoner uten utemoduler (f.eks. hytta uten NAModule1/2/3) skal ikke
+  // vise en strip full av "–".
+  if (data && !hasTemp && !hasWind && !hasRain) return null;
+
+  const tiles = [hasTemp, hasWind, hasRain].filter(Boolean).length;
+  const gridCols = tiles === 3 ? "grid-cols-3" : tiles === 2 ? "grid-cols-2" : "grid-cols-1";
+
   return (
     <section className="container mx-auto px-4 pt-4">
       <div className="panel rounded-lg p-3 sm:p-4">
