@@ -720,7 +720,7 @@ export function HomeySensorDashboard() {
           </div>
         </>
       )}
-      <SensorEventsDialog query={detail} range={range} onClose={() => setDetail(null)} />
+      <SensorEventsDialog query={detail} range={range} location={location} onClose={() => setDetail(null)} />
     </div>
   );
 }
