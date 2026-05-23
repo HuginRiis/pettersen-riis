@@ -263,11 +263,43 @@ export async function processHyttaChecklistNotifications(): Promise<{
   const triggerIds = triggers.map((t) => t.id as string);
   const nowIso = new Date().toISOString();
 
+  // Helper: marker triggerne som behandlet. Hvis repeat_interval_days er satt,
+  // ruller vi notify_at fremover til neste fremtidige tidspunkt (i stedet for å sette notified_at).
+  const markProcessed = async () => {
+    const now = Date.now();
+    // Grupper triggere etter (repeat, notify_at) for batch-update.
+    const repeating = triggers.filter(
+      (t) => typeof (t as { repeat_interval_days?: number | null }).repeat_interval_days === "number"
+        && ((t as { repeat_interval_days: number }).repeat_interval_days ?? 0) > 0,
+    );
+    const oneShot = triggers.filter(
+      (t) => !((t as { repeat_interval_days?: number | null }).repeat_interval_days
+        && ((t as { repeat_interval_days: number }).repeat_interval_days ?? 0) > 0),
+    );
+
+    if (oneShot.length > 0) {
+      await supabaseAdmin
+        .from("hytta_checklist")
+        .update({ notified_at: nowIso })
+        .in("id", oneShot.map((t) => t.id as string));
+    }
+
+    for (const t of repeating) {
+      const days = (t as { repeat_interval_days: number }).repeat_interval_days;
+      const base = new Date(t.notify_at as string).getTime();
+      const intervalMs = days * 24 * 60 * 60 * 1000;
+      let next = base + intervalMs;
+      while (next <= now) next += intervalMs;
+      const nextIso = new Date(next).toISOString();
+      await supabaseAdmin
+        .from("hytta_checklist")
+        .update({ notify_at: nextIso, notified_at: null })
+        .eq("id", t.id as string);
+    }
+  };
+
   if (!openItems || openItems.length === 0) {
-    await supabaseAdmin
-      .from("hytta_checklist")
-      .update({ notified_at: nowIso })
-      .in("id", triggerIds);
+    await markProcessed();
     return { checked: triggers.length, sent: 0, errors: 0 };
   }
 
@@ -280,10 +312,7 @@ export async function processHyttaChecklistNotifications(): Promise<{
 
   if (subErr) throw subErr;
   if (!subs || subs.length === 0) {
-    await supabaseAdmin
-      .from("hytta_checklist")
-      .update({ notified_at: nowIso })
-      .in("id", triggerIds);
+    await markProcessed();
     return { checked: triggers.length, sent: 0, errors: 0 };
   }
 
@@ -314,11 +343,7 @@ export async function processHyttaChecklistNotifications(): Promise<{
     else errors++;
   }
 
-  // Marker triggerne som behandlet uansett resultat (unngå dobbeltsending).
-  await supabaseAdmin
-    .from("hytta_checklist")
-    .update({ notified_at: nowIso })
-    .in("id", triggerIds);
+  await markProcessed();
 
   return { checked: triggers.length, sent, errors };
 }
