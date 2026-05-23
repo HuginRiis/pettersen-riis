@@ -1,3 +1,4 @@
+import { createHmac, timingSafeEqual } from "crypto";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 export type StravaOwner = "arne" | "rebekka";
@@ -6,6 +7,35 @@ export const STRAVA_OWNERS: StravaOwner[] = ["arne", "rebekka"];
 
 export function isStravaOwner(value: unknown): value is StravaOwner {
   return value === "arne" || value === "rebekka";
+}
+
+export function createStravaState(owner: StravaOwner, signingSecret: string) {
+  const issuedAt = Math.floor(Date.now() / 1000).toString();
+  const nonce = crypto.randomUUID();
+  const payload = `${owner}.${issuedAt}.${nonce}`;
+  const signature = createHmac("sha256", signingSecret).update(payload).digest("hex");
+  return `${payload}.${signature}`;
+}
+
+export function getStravaOwnerFromState(state: string | null): StravaOwner | null {
+  const ownerPart = state?.split(".")[0];
+  return isStravaOwner(ownerPart) ? ownerPart : null;
+}
+
+export function verifyStravaState(state: string | null, signingSecret: string) {
+  if (!state) return false;
+  const parts = state.split(".");
+  if (parts.length !== 4) return false;
+  const [owner, issuedAt, nonce, signature] = parts;
+  if (!isStravaOwner(owner)) return false;
+  const ageSeconds = Math.floor(Date.now() / 1000) - Number(issuedAt);
+  if (!Number.isFinite(ageSeconds) || ageSeconds < 0 || ageSeconds > 600) return false;
+
+  const payload = `${owner}.${issuedAt}.${nonce}`;
+  const expected = createHmac("sha256", signingSecret).update(payload).digest("hex");
+  const givenBuffer = Buffer.from(signature, "hex");
+  const expectedBuffer = Buffer.from(expected, "hex");
+  return givenBuffer.length === expectedBuffer.length && timingSafeEqual(givenBuffer, expectedBuffer);
 }
 
 /**
