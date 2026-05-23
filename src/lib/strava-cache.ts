@@ -8,7 +8,7 @@ type Owner = "arne" | "rebekka";
 type Entry = { at: number; data: any };
 
 const TTL_MS = 60 * 60 * 1000;
-const STORAGE_PREFIX = "strava-dash-cache:v1:";
+const STORAGE_PREFIX = "strava-dash-cache:v2:";
 
 const cache = new Map<Owner, Entry>();
 const inflight = new Map<Owner, Promise<any>>();
