@@ -197,9 +197,9 @@ function DateTimePicker({ value, onChange, small }: DateTimePickerProps) {
   );
 }
 
-export function HyttaChecklist() {
-  const [items, setItems] = useState<ChecklistItem[]>([]);
-  const [loading, setLoading] = useState(true);
+export function HyttaChecklist({ initialItems = [] }: { initialItems?: ChecklistItem[] }) {
+  const [items, setItems] = useState<ChecklistItem[]>(initialItems);
+  const [loading, setLoading] = useState(initialItems.length === 0);
   const [newLabel, setNewLabel] = useState("");
   const [adding, setAdding] = useState(false);
   const [notifying, setNotifying] = useState(false);
@@ -224,6 +224,11 @@ export function HyttaChecklist() {
   useEffect(() => {
     setWho(getStoredWho());
   }, []);
+
+  useEffect(() => {
+    setItems(initialItems);
+    setLoading(initialItems.length === 0);
+  }, [initialItems]);
 
   useEffect(() => {
     let mounted = true;
