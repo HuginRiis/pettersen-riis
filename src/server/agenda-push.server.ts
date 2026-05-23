@@ -238,7 +238,7 @@ export async function processHyttaChecklistNotifications(): Promise<{
   // Finn punkter med passert notify_at som ennå ikke er varslet (triggere).
   const { data: triggers, error } = await supabaseAdmin
     .from("hytta_checklist")
-    .select("id, notify_at, notify_who")
+    .select("id, notify_at, notify_who, repeat_interval_days")
     .is("notified_at", null)
     .not("notify_at", "is", null)
     .gte("notify_at", fromIso)
