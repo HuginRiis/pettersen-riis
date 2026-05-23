@@ -238,8 +238,9 @@ function HeroTempBadges() {
   const borgT = useNetatmoTemps("tollnes");
   const hyttaT = useNetatmoTemps("hytta");
   const pumps = useHeatPumps();
-  const borgTarget = avg(pumps.borg.map((p) => p.target));
-  const hyttaTarget = avg(pumps.hytta.map((p) => p.target));
+  // Kun varmepumper som faktisk er PÅ skal påvirke pila / target i hero
+  const borgTarget = avg(pumps.borg.filter((p) => p.onoff === true).map((p) => p.target));
+  const hyttaTarget = avg(pumps.hytta.filter((p) => p.onoff === true).map((p) => p.target));
   return (
     <div className="flex flex-wrap gap-2 sm:gap-3 max-w-2xl">
       <LocationBadge
