@@ -458,7 +458,7 @@ export function HyttaChecklist() {
               <div className="mt-2 space-y-1">
                 {scheduledReminders.map((r) => (
                   <p
-                    key={`${r.notify_at}__${r.notify_who}`}
+                    key={`${r.notify_at}__${r.notify_who}__${r.repeat_interval_days ?? 0}`}
                     className="text-xs text-primary inline-flex items-center gap-1.5 flex-wrap mr-3"
                   >
                     <BellRing className="h-3 w-3" />
