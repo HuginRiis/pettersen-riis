@@ -1,11 +1,27 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Thermometer, Snowflake, Sun, Flame, Bell, ChevronRight, Sparkles } from "lucide-react";
+import {
+  Snowflake,
+  Sun,
+  Flame,
+  Bell,
+  ChevronRight,
+  Sparkles,
+  ArrowUp,
+  ArrowDown,
+  Minus,
+  Mountain,
+  Castle,
+  Wind,
+  Droplets,
+  TreePine,
+} from "lucide-react";
 import { PageShell, PageHero } from "@/components/PageShell";
 import { HeatersPanel } from "@/components/HeatersPanel";
 import { ClimateNotificationSettings } from "@/components/ClimateNotificationSettings";
 import { getNetatmoWeatherStation, type WeatherStationResult } from "@/server/netatmo-weather";
+import { getHomeySnapshot, type HomeyDeviceSnapshot } from "@/server/homey";
 import heroImg from "@/assets/got-varme.jpg";
 
 export const Route = createFileRoute("/varme")({
@@ -29,7 +45,7 @@ export const Route = createFileRoute("/varme")({
 
 type OkData = Extract<WeatherStationResult, { ok: true }>;
 
-function useNetatmoTemps(stationMatch = "tollnes") {
+function useNetatmoTemps(stationMatch: string) {
   const fetchData = useServerFn(getNetatmoWeatherStation);
   const [data, setData] = useState<OkData | null>(null);
   const inFlight = useRef(false);
@@ -58,48 +74,196 @@ function useNetatmoTemps(stationMatch = "tollnes") {
   return {
     indoor: indoor?.metrics.temperature ?? null,
     outdoor: outdoor?.metrics.temperature ?? null,
+    humidityIn: indoor?.metrics.humidity ?? null,
+    co2: indoor?.metrics.co2 ?? null,
   };
 }
 
-function HeroTempBadges() {
-  const { indoor, outdoor } = useNetatmoTemps();
-  const Item = ({
-    label,
-    value,
-    icon: Icon,
-  }: {
-    label: string;
-    value: number | null;
-    icon: typeof Sun;
-  }) => (
+type HeatPumpInfo = {
+  name: string;
+  zone: string;
+  target: number | null;
+  measure: number | null;
+  onoff: boolean | null;
+  mode?: string;
+};
+
+function isHeatPump(d: HomeyDeviceSnapshot, zoneName: string): boolean {
+  const driver = (d.driverUri ?? "").toLowerCase();
+  const n = `${d.name} ${zoneName}`.toLowerCase();
+  return (
+    driver.includes("qlima") ||
+    n.includes("qlima") ||
+    n.includes("varmepump") ||
+    n.includes("heatpump") ||
+    n.includes("heat pump") ||
+    n.includes("klimaanlegg") ||
+    n.includes("aircon") ||
+    d.class === "airconditioning"
+  );
+}
+
+function useHeatPumps() {
+  const fetchSnapshot = useServerFn(getHomeySnapshot);
+  const [pumps, setPumps] = useState<{ borg: HeatPumpInfo[]; hytta: HeatPumpInfo[] }>({
+    borg: [],
+    hytta: [],
+  });
+  const inFlight = useRef(false);
+
+  useEffect(() => {
+    let id: ReturnType<typeof setInterval>;
+    const load = async () => {
+      if (inFlight.current) return;
+      inFlight.current = true;
+      try {
+        const snap = await fetchSnapshot();
+        if (snap.ok) {
+          const zoneById = new Map(snap.zones.map((z) => [z.id, z.name]));
+          const borg: HeatPumpInfo[] = [];
+          const hytta: HeatPumpInfo[] = [];
+          for (const d of snap.devices) {
+            const zoneName = d.zone ? zoneById.get(d.zone) ?? "" : "";
+            if (!isHeatPump(d, zoneName)) continue;
+            const tt = d.capabilities["target_temperature"];
+            const ms = d.capabilities["measure_temperature"];
+            const oo = d.capabilities["onoff"];
+            const md = d.capabilities["thermostat_mode"];
+            const info: HeatPumpInfo = {
+              name: d.name,
+              zone: zoneName || "Ukjent",
+              target: typeof tt?.value === "number" ? tt.value : null,
+              measure: typeof ms?.value === "number" ? ms.value : null,
+              onoff: typeof oo?.value === "boolean" ? oo.value : null,
+              mode: typeof md?.value === "string" ? md.value : undefined,
+            };
+            const combined = `${zoneName} ${d.name}`.toLowerCase();
+            const isHytta =
+              combined.includes("hytt") ||
+              driverIsQlima(d.driverUri) ||
+              d.name.toLowerCase().includes("qlima");
+            if (isHytta) hytta.push(info);
+            else borg.push(info);
+          }
+          setPumps({ borg, hytta });
+        }
+      } catch {
+        /* ignore */
+      } finally {
+        inFlight.current = false;
+      }
+    };
+    load();
+    id = setInterval(load, 3 * 60_000);
+    return () => clearInterval(id);
+  }, [fetchSnapshot]);
+
+  return pumps;
+}
+
+function driverIsQlima(uri?: string | null) {
+  return !!uri && uri.toLowerCase().includes("qlima");
+}
+
+function avg(nums: (number | null)[]): number | null {
+  const xs = nums.filter((n): n is number => typeof n === "number");
+  if (!xs.length) return null;
+  return xs.reduce((s, n) => s + n, 0) / xs.length;
+}
+
+function LocationBadge({
+  label,
+  icon: Icon,
+  indoor,
+  outdoor,
+  target,
+}: {
+  label: string;
+  icon: typeof Castle;
+  indoor: number | null;
+  outdoor: number | null;
+  target: number | null;
+}) {
+  // Arrow: target vs indoor → opp = pumpa varmer (target høyere), ned = pumpa kjøler/sparer.
+  let Arrow = Minus;
+  let arrowColor = "var(--muted-foreground)";
+  if (target !== null && indoor !== null) {
+    const diff = target - indoor;
+    if (diff >= 0.5) {
+      Arrow = ArrowUp;
+      arrowColor = "#fb923c";
+    } else if (diff <= -0.5) {
+      Arrow = ArrowDown;
+      arrowColor = "#7dd3fc";
+    }
+  }
+  return (
     <div
-      className="flex items-center gap-2 sm:gap-3 px-3 py-2 rounded-full backdrop-blur-md"
+      className="flex-1 min-w-[150px] rounded-xl px-3 py-2 backdrop-blur-md"
       style={{
-        background: "color-mix(in oklab, var(--background) 35%, transparent)",
+        background: "color-mix(in oklab, var(--background) 45%, transparent)",
         border: "1px solid color-mix(in oklab, var(--gold) 40%, transparent)",
       }}
     >
-      <Icon size={16} className="text-[var(--gold)]" />
-      <span className="text-[9px] sm:text-[10px] tracking-[0.3em] uppercase text-muted-foreground">
-        {label}
-      </span>
-      <span className="text-display tabular-nums text-base sm:text-xl text-[var(--gold)]">
-        {value === null ? "–" : `${value.toFixed(1)}°`}
-      </span>
+      <div className="flex items-center gap-2 mb-1">
+        <Icon size={14} className="text-[var(--gold)]" />
+        <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground">
+          {label}
+        </span>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="text-display tabular-nums text-xl sm:text-2xl text-[var(--gold)]">
+          {indoor === null ? "–" : `${indoor.toFixed(1)}°`}
+        </span>
+        {target !== null && (
+          <span
+            className="inline-flex items-center gap-0.5 text-xs tabular-nums"
+            style={{ color: arrowColor }}
+            title={`Varmepumpe satt til ${target.toFixed(1)}°`}
+          >
+            <Arrow size={12} />
+            {target.toFixed(0)}°
+          </span>
+        )}
+      </div>
+      <div className="text-[10px] text-muted-foreground tabular-nums mt-0.5 flex items-center gap-1">
+        <TreePine size={10} className="text-cyan-300/80" />
+        Ute {outdoor === null ? "–" : `${outdoor.toFixed(1)}°`}
+      </div>
     </div>
   );
+}
+
+function HeroTempBadges() {
+  const borgT = useNetatmoTemps("tollnes");
+  const hyttaT = useNetatmoTemps("hytta");
+  const pumps = useHeatPumps();
+  const borgTarget = avg(pumps.borg.map((p) => p.target));
+  const hyttaTarget = avg(pumps.hytta.map((p) => p.target));
   return (
-    <div className="flex flex-wrap gap-2 sm:gap-3">
-      <Item label="Stua" value={indoor} icon={Flame} />
-      <Item label="Ute" value={outdoor} icon={Snowflake} />
+    <div className="flex flex-wrap gap-2 sm:gap-3 max-w-2xl">
+      <LocationBadge
+        label="Borgen"
+        icon={Castle}
+        indoor={borgT.indoor}
+        outdoor={borgT.outdoor}
+        target={borgTarget}
+      />
+      <LocationBadge
+        label="Hytta"
+        icon={Mountain}
+        indoor={hyttaT.indoor}
+        outdoor={hyttaT.outdoor}
+        target={hyttaTarget}
+      />
     </div>
   );
 }
 
 const TOC = [
   { id: "anbefalinger", label: "Smarte anbefalinger", icon: Sparkles },
-  { id: "borg", label: "Borgen", icon: Flame },
-  { id: "hytta", label: "Hytta", icon: Snowflake },
+  { id: "borg", label: "Borgen", icon: Castle },
+  { id: "hytta", label: "Hytta", icon: Mountain },
   { id: "varslinger", label: "Varslinger", icon: Bell },
 ] as const;
 
@@ -133,26 +297,219 @@ function TableOfContents() {
   );
 }
 
-function SmartAdvice() {
-  const { indoor, outdoor } = useNetatmoTemps();
-  const tips: { text: string; tone: "warm" | "cold" | "ok" | "info" }[] = [];
+type Tip = {
+  text: string;
+  tone: "warm" | "cold" | "ok" | "info";
+  icon: typeof Sparkles;
+  scope: "borg" | "hytta" | "begge";
+};
+
+function buildTips(args: {
+  label: "Borgen" | "Hytta";
+  scope: "borg" | "hytta";
+  indoor: number | null;
+  outdoor: number | null;
+  humidity: number | null;
+  co2: number | null;
+  pumps: HeatPumpInfo[];
+}): Tip[] {
+  const { label, scope, indoor, outdoor, humidity, co2, pumps } = args;
+  const tips: Tip[] = [];
+  const target = avg(pumps.map((p) => p.target));
+  const onCount = pumps.filter((p) => p.onoff === true).length;
+  const allOff = pumps.length > 0 && pumps.every((p) => p.onoff === false);
+
   if (indoor !== null && outdoor !== null) {
-    const diff = indoor - outdoor;
-    if (indoor > 24) tips.push({ text: `Stua er ${indoor.toFixed(1)}° — vurder å skru ned varmen et hakk.`, tone: "warm" });
-    if (indoor < 19) tips.push({ text: `Stua er ${indoor.toFixed(1)}° — kanskje fyre opp varmepumpa?`, tone: "cold" });
-    if (outdoor > 20 && indoor < outdoor) tips.push({ text: "Det er varmere ute enn inne — luft kort for å hente inn varmen.", tone: "info" });
-    if (outdoor < 5 && diff < 15) tips.push({ text: "Kaldt ute. Sjekk at alle ovner står i sparemodus om natten.", tone: "info" });
-    if (outdoor > 25 && indoor > 25) tips.push({ text: "Hetebølge — start klimaanlegget i stua i kjøle-modus.", tone: "warm" });
-    if (!tips.length) tips.push({ text: `Temperaturen ser god ut. Inne ${indoor.toFixed(1)}°, ute ${outdoor.toFixed(1)}°.`, tone: "ok" });
-  } else {
-    tips.push({ text: "Henter måleverdier fra Netatmo …", tone: "info" });
+    if (indoor > 24)
+      tips.push({
+        text: `${label}: stua er ${indoor.toFixed(1)}° — vurder å skru ned varmen et hakk.`,
+        tone: "warm",
+        icon: Flame,
+        scope,
+      });
+    if (indoor < 19)
+      tips.push({
+        text: `${label}: stua er ${indoor.toFixed(1)}° — kanskje fyre opp varmepumpa?`,
+        tone: "cold",
+        icon: Snowflake,
+        scope,
+      });
+    if (outdoor > 20 && indoor < outdoor)
+      tips.push({
+        text: `${label}: varmere ute enn inne (${outdoor.toFixed(1)}° vs ${indoor.toFixed(1)}°) — luft kort for å hente inn varmen.`,
+        tone: "info",
+        icon: Wind,
+        scope,
+      });
+    if (outdoor < 5 && indoor > 22)
+      tips.push({
+        text: `${label}: kaldt ute (${outdoor.toFixed(1)}°) og varmt inne — sjekk om ovnene står høyere enn nødvendig.`,
+        tone: "info",
+        icon: Snowflake,
+        scope,
+      });
+    if (outdoor > 25 && indoor > 25)
+      tips.push({
+        text: `${label}: hetebølge — start varmepumpa i kjøle-modus.`,
+        tone: "warm",
+        icon: Sun,
+        scope,
+      });
+    if (outdoor < -5)
+      tips.push({
+        text: `${label}: streng kulde ute (${outdoor.toFixed(1)}°) — sjekk at frostvakter står på.`,
+        tone: "cold",
+        icon: Snowflake,
+        scope,
+      });
   }
-  const toneStyle = (tone: string) => {
+
+  if (target !== null && indoor !== null) {
+    const diff = target - indoor;
+    if (diff > 3)
+      tips.push({
+        text: `${label}: varmepumpa er satt ${diff.toFixed(1)}° høyere enn romtemp — pumpa jobber hardt.`,
+        tone: "warm",
+        icon: ArrowUp,
+        scope,
+      });
+    if (diff < -3)
+      tips.push({
+        text: `${label}: varmepumpa er satt ${Math.abs(diff).toFixed(1)}° under romtemp — kjøler aktivt.`,
+        tone: "cold",
+        icon: ArrowDown,
+        scope,
+      });
+    if (target >= 24 && outdoor !== null && outdoor > 15)
+      tips.push({
+        text: `${label}: varmepumpe satt til ${target.toFixed(0)}° mens det er ${outdoor.toFixed(0)}° ute — vurder å senke målet.`,
+        tone: "warm",
+        icon: Flame,
+        scope,
+      });
+  }
+
+  if (allOff && outdoor !== null && outdoor < 0)
+    tips.push({
+      text: `${label}: alle varmepumper er av — med ${outdoor.toFixed(0)}° ute bør minst én stå på.`,
+      tone: "cold",
+      icon: Snowflake,
+      scope,
+    });
+
+  if (onCount > 0 && indoor !== null && indoor >= (target ?? indoor) + 1)
+    tips.push({
+      text: `${label}: inne er ${indoor.toFixed(1)}° — målet er nådd, pumpa kan ta en pause.`,
+      tone: "ok",
+      icon: Minus,
+      scope,
+    });
+
+  if (humidity !== null) {
+    if (humidity > 65)
+      tips.push({
+        text: `${label}: luftfuktighet ${humidity.toFixed(0)}% — luft litt eller skru på avfukter.`,
+        tone: "info",
+        icon: Droplets,
+        scope,
+      });
+    if (humidity < 25)
+      tips.push({
+        text: `${label}: tørr luft (${humidity.toFixed(0)}%) — vurder luftfukter.`,
+        tone: "info",
+        icon: Droplets,
+        scope,
+      });
+  }
+
+  if (co2 !== null && co2 > 1200)
+    tips.push({
+      text: `${label}: CO₂ ${co2} ppm — luft for friskere stue.`,
+      tone: "info",
+      icon: Wind,
+      scope,
+    });
+
+  return tips;
+}
+
+function SmartAdvice() {
+  const borg = useNetatmoTemps("tollnes");
+  const hytta = useNetatmoTemps("hytta");
+  const pumps = useHeatPumps();
+
+  const tips = useMemo(() => {
+    const all: Tip[] = [
+      ...buildTips({
+        label: "Borgen",
+        scope: "borg",
+        indoor: borg.indoor,
+        outdoor: borg.outdoor,
+        humidity: borg.humidityIn,
+        co2: borg.co2,
+        pumps: pumps.borg,
+      }),
+      ...buildTips({
+        label: "Hytta",
+        scope: "hytta",
+        indoor: hytta.indoor,
+        outdoor: hytta.outdoor,
+        humidity: hytta.humidityIn,
+        co2: hytta.co2,
+        pumps: pumps.hytta,
+      }),
+    ];
+    if (!all.length) {
+      all.push({
+        text: "Alt ser bra ut — temperaturer og varmepumper er i balanse.",
+        tone: "ok",
+        icon: Sparkles,
+        scope: "begge",
+      });
+    }
+    return all;
+  }, [borg, hytta, pumps]);
+
+  const toneStyle = (tone: Tip["tone"]) => {
     if (tone === "warm") return { color: "#fb923c", border: "color-mix(in oklab, #fb923c 35%, transparent)" };
     if (tone === "cold") return { color: "#7dd3fc", border: "color-mix(in oklab, #7dd3fc 35%, transparent)" };
     if (tone === "ok") return { color: "#86efac", border: "color-mix(in oklab, #86efac 35%, transparent)" };
     return { color: "var(--muted-foreground)", border: "color-mix(in oklab, var(--gold) 22%, transparent)" };
   };
+
+  const borgTips = tips.filter((t) => t.scope === "borg" || t.scope === "begge");
+  const hyttaTips = tips.filter((t) => t.scope === "hytta" || t.scope === "begge");
+
+  const renderList = (list: Tip[], title: string, Icon: typeof Castle) => (
+    <div>
+      <div className="flex items-center gap-2 mb-2">
+        <Icon size={14} className="text-[var(--gold)]" />
+        <span className="text-[10px] tracking-[0.3em] uppercase text-primary">{title}</span>
+      </div>
+      <ul className="space-y-2">
+        {list.length === 0 && (
+          <li className="text-xs text-muted-foreground italic">Ingen anbefalinger akkurat nå.</li>
+        )}
+        {list.map((t, i) => {
+          const s = toneStyle(t.tone);
+          const I = t.icon;
+          return (
+            <li
+              key={i}
+              className="panel rounded-lg p-3 flex items-start gap-3"
+              style={{ border: `1px solid ${s.border}` }}
+            >
+              <I size={14} style={{ color: s.color }} className="shrink-0 mt-0.5" />
+              <span className="text-sm" style={{ color: s.color }}>
+                {t.text}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+
   return (
     <section id="anbefalinger" className="container mx-auto px-4 py-8 scroll-mt-20">
       <div className="ornate-divider mb-6">
@@ -160,21 +517,10 @@ function SmartAdvice() {
           Smarte anbefalinger
         </span>
       </div>
-      <ul className="space-y-2">
-        {tips.map((t, i) => {
-          const s = toneStyle(t.tone);
-          return (
-            <li
-              key={i}
-              className="panel rounded-lg p-3 flex items-start gap-3"
-              style={{ border: `1px solid ${s.border}` }}
-            >
-              <Sparkles size={14} style={{ color: s.color }} className="shrink-0 mt-0.5" />
-              <span className="text-sm" style={{ color: s.color }}>{t.text}</span>
-            </li>
-          );
-        })}
-      </ul>
+      <div className="grid md:grid-cols-2 gap-6">
+        {renderList(borgTips, "Borgen", Castle)}
+        {renderList(hyttaTips, "Hytta", Mountain)}
+      </div>
     </section>
   );
 }
