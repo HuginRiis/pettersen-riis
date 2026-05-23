@@ -55,8 +55,7 @@ type RoutePath =
   | "/nettverk"
   | "/roborock"
   | "/planter"
-  | "/flyradar"
-  | "/fysisk";
+  | "/flyradar";
 
 
 type NavLink = { to: RoutePath; label: string; public?: boolean };
@@ -97,7 +96,6 @@ const ROUTE_ICON: Partial<Record<RoutePath, React.ComponentType<{ size?: number;
   "/roborock": Bot,
   "/planter": TreePine,
   "/flyradar": Plane,
-  "/fysisk": Bike,
 };
 
 
@@ -131,7 +129,6 @@ const ROUTE_ICON_COLOR: Partial<Record<RoutePath, string>> = {
   "/roborock": "#a78bfa",            // roborock — lilla rytter
   "/planter": "#22c55e",             // planter — bladgrønn
   "/flyradar": "#38bdf8",            // raven — himmelblå
-  "/fysisk": "#22c55e",              // utholdenhet — markens grønt
 };
 
 
@@ -160,7 +157,8 @@ const navLinks: NavLink[] = [
   { to: "/skatte-utregningen", label: "Skatte utregningen" },
   { to: "/hundene", label: "Hundene" },
   { to: "/trening", label: "Trening" },
-  { to: "/fysisk", label: "Fysisk" },
+
+
 
   { to: "/varsler", label: "Farevarsler", public: true },
   { to: "/decibel", label: "Decibelmåler", public: true },
