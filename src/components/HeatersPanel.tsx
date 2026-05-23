@@ -974,16 +974,17 @@ function HeaterCard({
         )}
 
         {heater.swings.length > 0 && (
-          <div className="w-full max-w-[260px] mt-1 space-y-2">
+          <div className="w-full mt-1 space-y-2">
             {heater.swings.map((sw) => {
               const swBusy = busy[`${heater.id}:${sw.capabilityId}`];
+              const HeaderIcon = swingHeaderIcon(sw.label, sw.capabilityId);
               if (sw.kind === "boolean") {
                 const active = sw.value === true;
                 return (
                   <div key={sw.capabilityId}>
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground">
-                        {sw.label}
+                      <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground flex items-center gap-1.5">
+                        <HeaderIcon size={11} /> {sw.label}
                       </span>
                       {swBusy && <Loader2 size={12} className="animate-spin text-muted-foreground" />}
                     </div>
@@ -991,7 +992,7 @@ function HeaterCard({
                       type="button"
                       onClick={() => !swBusy && onSetSwing(sw.capabilityId, !active)}
                       disabled={swBusy}
-                      className="w-full rounded py-1.5 text-[9px] tracking-[0.25em] uppercase transition-all disabled:opacity-50"
+                      className="w-full rounded py-2 text-[9px] tracking-[0.25em] uppercase transition-all disabled:opacity-50 flex items-center justify-center gap-1.5"
                       style={{
                         background: active
                           ? `color-mix(in oklab, ${accent} 22%, transparent)`
@@ -1000,6 +1001,7 @@ function HeaterCard({
                         color: active ? accent : "var(--muted-foreground)",
                       }}
                     >
+                      <RotateCw size={11} />
                       {active ? "Sving på" : "Sving av"}
                     </button>
                   </div>
@@ -1009,24 +1011,25 @@ function HeaterCard({
               return (
                 <div key={sw.capabilityId}>
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground">
-                      {sw.label}
+                    <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground flex items-center gap-1.5">
+                      <HeaderIcon size={11} /> {sw.label}
                     </span>
                     {swBusy && <Loader2 size={12} className="animate-spin text-muted-foreground" />}
                   </div>
                   <div
-                    className="grid gap-1"
-                    style={{ gridTemplateColumns: `repeat(${Math.min(Math.max(values.length, 1), 5)}, minmax(0, 1fr))` }}
+                    className="grid gap-1.5"
+                    style={{ gridTemplateColumns: `repeat(auto-fit, minmax(70px, 1fr))` }}
                   >
                     {values.map((v) => {
                       const active = String(sw.value ?? "").toLowerCase() === String(v.id).toLowerCase();
+                      const VIcon = swingValueIcon(String(v.id), v.title);
                       return (
                         <button
                           key={v.id}
                           type="button"
                           onClick={() => !swBusy && !active && onSetSwing(sw.capabilityId, v.id)}
                           disabled={swBusy}
-                          className="rounded py-1.5 text-[8px] tracking-[0.15em] uppercase transition-all disabled:opacity-50"
+                          className="rounded py-2 px-2 text-[9px] tracking-[0.15em] uppercase transition-all disabled:opacity-50 flex flex-col items-center justify-center gap-1 min-h-[44px]"
                           style={{
                             background: active
                               ? `color-mix(in oklab, ${accent} 22%, transparent)`
@@ -1035,7 +1038,10 @@ function HeaterCard({
                             color: active ? accent : "var(--muted-foreground)",
                           }}
                         >
-                          {v.title ?? v.id}
+                          <VIcon size={12} />
+                          <span className="leading-tight text-center break-words">
+                            {v.title ?? v.id}
+                          </span>
                         </button>
                       );
                     })}
