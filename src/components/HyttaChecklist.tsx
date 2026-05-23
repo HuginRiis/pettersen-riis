@@ -532,30 +532,98 @@ export function HyttaChecklist({ initialItems = [] }: { initialItems?: Checklist
                   Planlegg ravn
                 </Button>
               </PopoverTrigger>
-              <PopoverContent align="end" className="w-auto p-3 space-y-3">
+              <PopoverContent
+                align="end"
+                sideOffset={6}
+                collisionPadding={12}
+                className="w-[calc(100vw-1.5rem)] max-w-[20rem] p-3 space-y-3"
+              >
                 <p className="text-xs text-muted-foreground">
-                  Sett én påminnelse for hele huskelisten. Varselet inneholder alle åpne punkter.
+                  Én påminnelse for hele listen. Velg hurtigvalg eller egen tid.
                 </p>
-                <Calendar
-                  mode="single"
-                  selected={bulkDate}
-                  onSelect={setBulkDate}
-                  initialFocus
-                  className={cn("p-0 pointer-events-auto")}
-                />
-                <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-muted-foreground" />
+
+                <div className="grid grid-cols-3 gap-1.5">
+                  {[
+                    {
+                      label: "I kveld 18:00",
+                      build: () => {
+                        const d = new Date();
+                        d.setHours(18, 0, 0, 0);
+                        if (d.getTime() < Date.now()) d.setDate(d.getDate() + 1);
+                        return d;
+                      },
+                    },
+                    {
+                      label: "I morgen 09:00",
+                      build: () => {
+                        const d = new Date();
+                        d.setDate(d.getDate() + 1);
+                        d.setHours(9, 0, 0, 0);
+                        return d;
+                      },
+                    },
+                    {
+                      label: "Om 1 uke",
+                      build: () => {
+                        const d = new Date();
+                        d.setDate(d.getDate() + 7);
+                        d.setHours(18, 0, 0, 0);
+                        return d;
+                      },
+                    },
+                  ].map((q) => (
+                    <Button
+                      key={q.label}
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-8 text-[11px] px-1 leading-tight"
+                      onClick={() => {
+                        const d = q.build();
+                        setBulkDate(d);
+                        setBulkTime(
+                          `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`,
+                        );
+                      }}
+                    >
+                      {q.label}
+                    </Button>
+                  ))}
+                </div>
+
+                <div className="flex gap-2">
+                  <Input
+                    type="date"
+                    value={
+                      bulkDate
+                        ? `${bulkDate.getFullYear()}-${String(bulkDate.getMonth() + 1).padStart(2, "0")}-${String(bulkDate.getDate()).padStart(2, "0")}`
+                        : ""
+                    }
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      if (!v) {
+                        setBulkDate(undefined);
+                        return;
+                      }
+                      const [y, m, d] = v.split("-").map(Number);
+                      const next = bulkDate ? new Date(bulkDate) : new Date();
+                      next.setFullYear(y, m - 1, d);
+                      setBulkDate(next);
+                    }}
+                    className="flex-1 h-9 min-w-0"
+                  />
                   <Input
                     type="time"
                     value={bulkTime}
                     onChange={(e) => setBulkTime(e.target.value)}
-                    className="flex-1"
+                    className="w-[105px] h-9"
                   />
                 </div>
-                <div className="flex items-center gap-2">
-                  <Users className="h-4 w-4 text-muted-foreground" />
+
+                <div className="flex gap-2">
                   <Select value={bulkWho} onValueChange={setBulkWho}>
-                    <SelectTrigger className="flex-1">
+                    <SelectTrigger className="flex-1 h-9 min-w-0" aria-label="Mottaker">
+                      <Users className="h-3.5 w-3.5 mr-1 text-muted-foreground shrink-0" />
                       <SelectValue placeholder="Mottaker" />
                     </SelectTrigger>
                     <SelectContent>
@@ -566,11 +634,9 @@ export function HyttaChecklist({ initialItems = [] }: { initialItems?: Checklist
                       ))}
                     </SelectContent>
                   </Select>
-                </div>
-                <div className="flex items-center gap-2">
-                  <BellRing className="h-4 w-4 text-muted-foreground" />
                   <Select value={bulkRepeat} onValueChange={setBulkRepeat}>
-                    <SelectTrigger className="flex-1">
+                    <SelectTrigger className="flex-1 h-9 min-w-0" aria-label="Gjentakelse">
+                      <BellRing className="h-3.5 w-3.5 mr-1 text-muted-foreground shrink-0" />
                       <SelectValue placeholder="Gjentakelse" />
                     </SelectTrigger>
                     <SelectContent>
@@ -582,6 +648,7 @@ export function HyttaChecklist({ initialItems = [] }: { initialItems?: Checklist
                     </SelectContent>
                   </Select>
                 </div>
+
                 <Button
                   onClick={scheduleBulkPush}
                   disabled={scheduling || !bulkDate}
@@ -589,7 +656,7 @@ export function HyttaChecklist({ initialItems = [] }: { initialItems?: Checklist
                   size="sm"
                 >
                   {scheduling ? <Loader2 className="h-4 w-4 animate-spin" /> : <BellRing className="h-4 w-4" />}
-                  {editingReminder ? "Oppdater påminnelse" : "Planlegg varsel"}
+                  {editingReminder ? "Oppdater" : "Planlegg varsel"}
                 </Button>
               </PopoverContent>
             </Popover>
