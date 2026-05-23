@@ -115,10 +115,9 @@ export async function getValidStravaAccessToken(owner: StravaOwner): Promise<{
     };
   }
 
-  const clientId = process.env.STRAVA_CLIENT_ID;
-  const clientSecret = process.env.STRAVA_CLIENT_SECRET;
+  const { clientId, clientSecret } = getStravaCredentials(owner);
   if (!clientId || !clientSecret) {
-    throw new Error("STRAVA_CLIENT_ID/SECRET mangler");
+    throw new Error(`STRAVA_CLIENT_ID/SECRET mangler for ${owner}`);
   }
 
   const res = await fetch("https://www.strava.com/oauth/token", {
