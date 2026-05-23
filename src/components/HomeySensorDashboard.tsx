@@ -192,6 +192,7 @@ export function HomeySensorDashboard() {
   const runBackfill = useServerFn(backfillHomeySensorHistoryFn);
 
   const [range, setRange] = useState<SensorRange>("today");
+  const [location, setLocation] = useState<SensorLocation>("all");
   const [data, setData] = useState<HomeySensorDashboard | null>(null);
   const [loading, setLoading] = useState(true);
   const [insightOpen, setInsightOpen] = useState(false);
@@ -215,12 +216,12 @@ export function HomeySensorDashboard() {
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    fetchDash({ data: { range } })
+    fetchDash({ data: { range, location } })
       .then((d) => { if (!cancelled) setData(d); })
       .catch((e) => console.error("[sensor-dashboard]", e))
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [range, fetchDash, reloadKey]);
+  }, [range, location, fetchDash, reloadKey]);
 
   async function handleBackfill(resolution: "last24Hours" | "last7Days" | "last31Days") {
     setBackfilling(resolution);
