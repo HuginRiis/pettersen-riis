@@ -82,7 +82,7 @@ export function PageLoadPanel() {
         <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground">
           <Gauge size={12} /> Sidelaster siste {days} dager
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <select
             value={days}
             onChange={(e) => setDays(Number(e.target.value))}
@@ -93,7 +93,34 @@ export function PageLoadPanel() {
             <option value={14}>14 dager</option>
             <option value={30}>30 dager</option>
           </select>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              const n = Math.max(100, Math.min(100000, Number(limitInput) || 10000));
+              setLimitInput(String(n));
+              setLimit(n);
+            }}
+            className="flex items-center gap-1"
+            title="Antall sidelastinger som hentes/analyseres"
+          >
+            <input
+              type="number"
+              min={100}
+              max={100000}
+              step={100}
+              value={limitInput}
+              onChange={(e) => setLimitInput(e.target.value)}
+              className="text-xs px-2 py-1 rounded border border-border bg-background w-24"
+            />
+            <button
+              type="submit"
+              className="text-xs px-2 py-1 rounded border border-border bg-background hover:bg-muted"
+            >
+              Bruk
+            </button>
+          </form>
         </div>
+
       </div>
 
       {/* Totalsum */}
