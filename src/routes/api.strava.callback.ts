@@ -2,7 +2,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import {
   getStravaCredentials,
   getStravaOwnerFromState,
-  isStravaOwner,
   saveStravaConnection,
   verifyStravaState,
   type StravaOwner,
