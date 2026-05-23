@@ -171,30 +171,53 @@ function avg(nums: (number | null)[]): number | null {
   return xs.reduce((s, n) => s + n, 0) / xs.length;
 }
 
+function modeAllowsHeat(mode?: string) {
+  if (!mode) return true;
+  const m = mode.toLowerCase();
+  return m.includes("heat") || m.includes("auto") || m.includes("varm");
+}
+function modeAllowsCool(mode?: string) {
+  if (!mode) return true;
+  const m = mode.toLowerCase();
+  return m.includes("cool") || m.includes("auto") || m.includes("kjøl") || m.includes("kjol");
+}
+
 function LocationBadge({
   label,
   icon: Icon,
   indoor,
   outdoor,
   target,
+  canHeat,
+  canCool,
 }: {
   label: string;
   icon: typeof Castle;
   indoor: number | null;
   outdoor: number | null;
   target: number | null;
+  canHeat: boolean;
+  canCool: boolean;
 }) {
-  // Arrow: target vs indoor → opp = pumpa varmer (target høyere), ned = pumpa kjøler/sparer.
-  let Arrow = Minus;
+  // Pil: respekter modus — opp kun hvis pumpa kan varme, ned kun hvis den kan kjøle.
+  let Arrow: typeof Minus | null = Minus;
   let arrowColor = "var(--muted-foreground)";
   if (target !== null && indoor !== null) {
     const diff = target - indoor;
     if (diff >= 0.5) {
-      Arrow = ArrowUp;
-      arrowColor = "#fb923c";
+      if (canHeat) {
+        Arrow = ArrowUp;
+        arrowColor = "#fb923c";
+      } else {
+        Arrow = null;
+      }
     } else if (diff <= -0.5) {
-      Arrow = ArrowDown;
-      arrowColor = "#7dd3fc";
+      if (canCool) {
+        Arrow = ArrowDown;
+        arrowColor = "#7dd3fc";
+      } else {
+        Arrow = null;
+      }
     }
   }
   return (
@@ -221,7 +244,7 @@ function LocationBadge({
             style={{ color: arrowColor }}
             title={`Varmepumpe satt til ${target.toFixed(1)}°`}
           >
-            <Arrow size={12} />
+            {Arrow && <Arrow size={12} />}
             {target.toFixed(0)}°
           </span>
         )}
@@ -239,8 +262,14 @@ function HeroTempBadges() {
   const hyttaT = useNetatmoTemps("hytta");
   const pumps = useHeatPumps();
   // Kun varmepumper som faktisk er PÅ skal påvirke pila / target i hero
-  const borgTarget = avg(pumps.borg.filter((p) => p.onoff === true).map((p) => p.target));
-  const hyttaTarget = avg(pumps.hytta.filter((p) => p.onoff === true).map((p) => p.target));
+  const borgOn = pumps.borg.filter((p) => p.onoff === true);
+  const hyttaOn = pumps.hytta.filter((p) => p.onoff === true);
+  const borgTarget = avg(borgOn.map((p) => p.target));
+  const hyttaTarget = avg(hyttaOn.map((p) => p.target));
+  const borgCanHeat = borgOn.some((p) => modeAllowsHeat(p.mode));
+  const borgCanCool = borgOn.some((p) => modeAllowsCool(p.mode));
+  const hyttaCanHeat = hyttaOn.some((p) => modeAllowsHeat(p.mode));
+  const hyttaCanCool = hyttaOn.some((p) => modeAllowsCool(p.mode));
   return (
     <div className="flex flex-wrap gap-2 sm:gap-3 max-w-2xl">
       <LocationBadge
@@ -249,6 +278,8 @@ function HeroTempBadges() {
         indoor={borgT.indoor}
         outdoor={borgT.outdoor}
         target={borgTarget}
+        canHeat={borgCanHeat}
+        canCool={borgCanCool}
       />
       <LocationBadge
         label="Hytta"
@@ -256,6 +287,8 @@ function HeroTempBadges() {
         indoor={hyttaT.indoor}
         outdoor={hyttaT.outdoor}
         target={hyttaTarget}
+        canHeat={hyttaCanHeat}
+        canCool={hyttaCanCool}
       />
     </div>
   );
@@ -317,8 +350,11 @@ function buildTips(args: {
   const { label, scope, indoor, outdoor, humidity, co2, pumps } = args;
   const tips: Tip[] = [];
   const target = avg(pumps.map((p) => p.target));
-  const onCount = pumps.filter((p) => p.onoff === true).length;
+  const onPumps = pumps.filter((p) => p.onoff === true);
+  const onCount = onPumps.length;
   const allOff = pumps.length > 0 && pumps.every((p) => p.onoff === false);
+  const canHeatActive = onPumps.some((p) => modeAllowsHeat(p.mode));
+  const canCoolActive = onPumps.some((p) => modeAllowsCool(p.mode));
 
   if (indoor !== null && outdoor !== null) {
     if (indoor > 24)
@@ -367,14 +403,14 @@ function buildTips(args: {
 
   if (target !== null && indoor !== null) {
     const diff = target - indoor;
-    if (diff > 3)
+    if (diff > 3 && canHeatActive)
       tips.push({
         text: `${label}: varmepumpa er satt ${diff.toFixed(1)}° høyere enn romtemp — pumpa jobber hardt.`,
         tone: "warm",
         icon: ArrowUp,
         scope,
       });
-    if (diff < -3)
+    if (diff < -3 && canCoolActive)
       tips.push({
         text: `${label}: varmepumpa er satt ${Math.abs(diff).toFixed(1)}° under romtemp — kjøler aktivt.`,
         tone: "cold",
