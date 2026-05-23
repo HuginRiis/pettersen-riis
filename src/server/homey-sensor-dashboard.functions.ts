@@ -14,6 +14,16 @@ import {
 } from "./homey-sensor-backfill.server";
 
 export type SensorRange = "today" | "yesterday" | "week" | "last7";
+export type SensorLocation = "all" | "hytta" | "borgen";
+
+const LOCATION = z.enum(["all", "hytta", "borgen"]);
+const HYTTA_ZONE = "Hytta";
+
+function applyLocation<T extends { eq: Function; neq: Function }>(q: T, loc: SensorLocation): T {
+  if (loc === "hytta") return q.eq("zone", HYTTA_ZONE);
+  if (loc === "borgen") return q.neq("zone", HYTTA_ZONE);
+  return q;
+}
 
 export type HomeySensorDashboard = {
   rangeStart: string;
@@ -149,9 +159,10 @@ export const saveHomeySensorSettings = createServerFn({ method: "POST" })
   });
 
 export const getHomeySensorDashboard = createServerFn({ method: "GET" })
-  .inputValidator(z.object({ range: RANGE.default("today") }).parse)
+  .inputValidator(z.object({ range: RANGE.default("today"), location: LOCATION.default("all") }).parse)
   .handler(async ({ data }): Promise<HomeySensorDashboard> => {
     const { start, end, prevStart, prevEnd } = computeRange(data.range);
+    const loc = data.location;
 
     const settings = await (async () => {
       const { data: s } = await supabaseAdmin
@@ -169,22 +180,30 @@ export const getHomeySensorDashboard = createServerFn({ method: "GET" })
     const dayEndMin = parseHM(settings.dayEnd);
 
     const [{ data: rows }, { data: prevRows }, { data: stateRows }] = await Promise.all([
-      supabaseAdmin
-        .from("homey_sensor_events")
-        .select("ts, device_id, device_name, zone, kind, event_type")
-        .gte("ts", start.toISOString())
-        .lte("ts", end.toISOString())
+      applyLocation(
+        supabaseAdmin
+          .from("homey_sensor_events")
+          .select("ts, device_id, device_name, zone, kind, event_type")
+          .gte("ts", start.toISOString())
+          .lte("ts", end.toISOString()),
+        loc,
+      )
         .order("ts", { ascending: false })
         .limit(10000),
-      supabaseAdmin
-        .from("homey_sensor_events")
-        .select("ts, kind, event_type")
-        .gte("ts", prevStart.toISOString())
-        .lte("ts", prevEnd.toISOString())
-        .limit(20000),
-      supabaseAdmin
-        .from("homey_sensor_state")
-        .select("device_id, device_name, zone, kind, last_ts"),
+      applyLocation(
+        supabaseAdmin
+          .from("homey_sensor_events")
+          .select("ts, kind, event_type")
+          .gte("ts", prevStart.toISOString())
+          .lte("ts", prevEnd.toISOString()),
+        loc,
+      ).limit(20000),
+      applyLocation(
+        supabaseAdmin
+          .from("homey_sensor_state")
+          .select("device_id, device_name, zone, kind, last_ts"),
+        loc,
+      ),
     ]);
 
     const events = rows ?? [];
@@ -285,21 +304,27 @@ export const getHomeySensorDashboard = createServerFn({ method: "GET" })
     // Motion sensors with no motion in 7 days (uses last event of type motion_on)
     const motionStates = (stateRows ?? []).filter((r) => r.kind === "motion");
     // For motion we want last *transition to true*. Use homey_sensor_events most recent motion_on per device.
-    const { data: lastMotionRows } = await supabaseAdmin
-      .from("homey_sensor_events")
-      .select("device_id, device_name, zone, ts")
-      .eq("event_type", "motion_on")
-      .gte("ts", new Date(Date.now() - 60 * 86400000).toISOString())
+    const { data: lastMotionRows } = await applyLocation(
+      supabaseAdmin
+        .from("homey_sensor_events")
+        .select("device_id, device_name, zone, ts")
+        .eq("event_type", "motion_on")
+        .gte("ts", new Date(Date.now() - 60 * 86400000).toISOString()),
+      loc,
+    )
       .order("ts", { ascending: false })
       .limit(2000);
     const lastMotionByDevice = new Map<string, string>();
     for (const r of lastMotionRows ?? []) {
       if (!lastMotionByDevice.has(r.device_id)) lastMotionByDevice.set(r.device_id, r.ts);
     }
-    const allMotionDevices = await supabaseAdmin
-      .from("homey_sensor_state")
-      .select("device_id, device_name, zone")
-      .eq("kind", "motion");
+    const allMotionDevices = await applyLocation(
+      supabaseAdmin
+        .from("homey_sensor_state")
+        .select("device_id, device_name, zone")
+        .eq("kind", "motion"),
+      loc,
+    );
     const inactiveMotion = (allMotionDevices.data ?? [])
       .map((d) => {
         const lastTs = lastMotionByDevice.get(d.device_id) ?? null;
@@ -413,6 +438,7 @@ export const getHomeySensorEvents = createServerFn({ method: "GET" })
   .inputValidator(
     z.object({
       range: RANGE.default("today"),
+      location: LOCATION.default("all"),
       eventTypes: z.array(z.string()).min(1).max(10).optional(),
       zone: z.string().min(1).max(120).optional(),
       kind: z.enum(["motion", "door", "window", "lock"]).optional(),
@@ -424,11 +450,14 @@ export const getHomeySensorEvents = createServerFn({ method: "GET" })
   .handler(async ({ data }): Promise<{ events: SensorEventDetail[] }> => {
     const { start, end } = computeRange(data.range);
     const needsPostFilter = data.hourOfDay !== undefined || !!data.dateStr;
-    let q = supabaseAdmin
-      .from("homey_sensor_events")
-      .select("ts, device_name, zone, kind, event_type")
-      .gte("ts", start.toISOString())
-      .lte("ts", end.toISOString())
+    let q = applyLocation(
+      supabaseAdmin
+        .from("homey_sensor_events")
+        .select("ts, device_name, zone, kind, event_type")
+        .gte("ts", start.toISOString())
+        .lte("ts", end.toISOString()),
+      data.location,
+    )
       .order("ts", { ascending: false })
       .limit(needsPostFilter ? 5000 : data.limit);
     if (data.eventTypes && data.eventTypes.length > 0) {

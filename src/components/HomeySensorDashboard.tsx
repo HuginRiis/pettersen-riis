@@ -6,12 +6,13 @@ import {
   backfillHomeySensorHistoryFn,
   type HomeySensorDashboard,
   type SensorRange,
+  type SensorLocation,
   type SensorEventDetail,
 } from "@/server/homey-sensor-dashboard.functions";
 import {
   Activity, DoorOpen, Lock, Unlock, Sun, Moon, AlertTriangle,
   Sparkles, ChevronDown, MapPin, Clock, TrendingUp, TrendingDown,
-  EyeOff, RefreshCw, AppWindow,
+  EyeOff, RefreshCw, AppWindow, Home, TreePine,
 } from "lucide-react";
 
 import {
@@ -112,9 +113,9 @@ function eventLabel(et: string): string {
 }
 
 function SensorEventsDialog({
-  query, range, onClose,
+  query, range, location, onClose,
 }: {
-  query: DetailQuery; range: SensorRange; onClose: () => void;
+  query: DetailQuery; range: SensorRange; location: SensorLocation; onClose: () => void;
 }) {
   const fetchEvents = useServerFn(getHomeySensorEvents);
   const [events, setEvents] = useState<SensorEventDetail[]>([]);
@@ -128,6 +129,7 @@ function SensorEventsDialog({
     fetchEvents({
       data: {
         range,
+        location,
         eventTypes: query.eventTypes,
         zone: query.zone,
         kind: query.kind,
@@ -140,7 +142,7 @@ function SensorEventsDialog({
       .catch((e) => console.error("[sensor-events]", e))
       .finally(() => { if (alive) setLoading(false); });
     return () => { alive = false; };
-  }, [query, range, fetchEvents]);
+  }, [query, range, location, fetchEvents]);
 
   return (
     <Dialog open={!!query} onOpenChange={(o) => { if (!o) onClose(); }}>
@@ -190,6 +192,7 @@ export function HomeySensorDashboard() {
   const runBackfill = useServerFn(backfillHomeySensorHistoryFn);
 
   const [range, setRange] = useState<SensorRange>("today");
+  const [location, setLocation] = useState<SensorLocation>("all");
   const [data, setData] = useState<HomeySensorDashboard | null>(null);
   const [loading, setLoading] = useState(true);
   const [insightOpen, setInsightOpen] = useState(false);
@@ -213,12 +216,12 @@ export function HomeySensorDashboard() {
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    fetchDash({ data: { range } })
+    fetchDash({ data: { range, location } })
       .then((d) => { if (!cancelled) setData(d); })
       .catch((e) => console.error("[sensor-dashboard]", e))
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [range, fetchDash, reloadKey]);
+  }, [range, location, fetchDash, reloadKey]);
 
   async function handleBackfill(resolution: "last24Hours" | "last7Days" | "last31Days") {
     setBackfilling(resolution);
@@ -291,6 +294,30 @@ export function HomeySensorDashboard() {
         })}
       </div>
 
+
+      {/* Location filter */}
+      <div className="flex flex-wrap items-center gap-1.5">
+        <span className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground mr-1">Sted:</span>
+        {([
+          { k: "all" as const, l: "Alle", Icon: Activity },
+          { k: "borgen" as const, l: "Borgen", Icon: Home },
+          { k: "hytta" as const, l: "Hytta", Icon: TreePine },
+        ]).map(({ k, l, Icon }) => (
+          <button
+            key={k}
+            type="button"
+            onClick={() => setLocation(k)}
+            aria-pressed={location === k}
+            className={`inline-flex items-center gap-1 text-[10px] uppercase tracking-[0.2em] px-2.5 py-1.5 rounded-md border transition ${
+              location === k
+                ? "border-primary bg-primary/10 text-primary"
+                : "border-border bg-background/40 text-muted-foreground hover:border-primary/40 hover:text-primary"
+            }`}
+          >
+            <Icon className="h-3 w-3" /> {l}
+          </button>
+        ))}
+      </div>
 
       {/* Range filter */}
       <div className="flex flex-wrap gap-1.5">
@@ -717,7 +744,7 @@ export function HomeySensorDashboard() {
           </div>
         </>
       )}
-      <SensorEventsDialog query={detail} range={range} onClose={() => setDetail(null)} />
+      <SensorEventsDialog query={detail} range={range} location={location} onClose={() => setDetail(null)} />
     </div>
   );
 }
