@@ -260,7 +260,7 @@ export async function processHyttaChecklistNotifications(): Promise<{
 
   if (openErr) throw openErr;
 
-  const triggerIds = triggers.map((t) => t.id as string);
+  // (triggerIds removed — markProcessed grouperer selv basert på repeat-felt)
   const nowIso = new Date().toISOString();
 
   // Helper: marker triggerne som behandlet. Hvis repeat_interval_days er satt,
