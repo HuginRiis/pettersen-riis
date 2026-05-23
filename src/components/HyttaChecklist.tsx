@@ -262,30 +262,33 @@ export function HyttaChecklist() {
     if (!label) return;
     setAdding(true);
     const maxOrder = items.reduce((m, i) => Math.max(m, i.sort_order), 0);
-    const { error } = await supabase.from("hytta_checklist").insert({
-      label,
-      added_by: who,
-      sort_order: maxOrder + 1,
-    });
-    setAdding(false);
-    if (error) {
+    try {
+      await addHyttaChecklistItem({ data: { label, added_by: who, sort_order: maxOrder + 1 } });
+      setNewLabel("");
+      await loadChecklist();
+    } catch {
       toast.error("Kunne ikke legge til");
-      return;
+    } finally {
+      setAdding(false);
     }
-    setNewLabel("");
   };
 
   const toggleItem = async (item: ChecklistItem) => {
-    const { error } = await supabase
-      .from("hytta_checklist")
-      .update({ checked: !item.checked })
-      .eq("id", item.id);
-    if (error) toast.error("Kunne ikke oppdatere");
+    try {
+      await toggleHyttaChecklistItem({ data: { id: item.id, checked: !item.checked } });
+      await loadChecklist();
+    } catch {
+      toast.error("Kunne ikke oppdatere");
+    }
   };
 
   const deleteItem = async (id: string) => {
-    const { error } = await supabase.from("hytta_checklist").delete().eq("id", id);
-    if (error) toast.error("Kunne ikke slette");
+    try {
+      await deleteHyttaChecklistItem({ data: { id } });
+      await loadChecklist();
+    } catch {
+      toast.error("Kunne ikke slette");
+    }
   };
 
   const sendListPushNow = async () => {
@@ -342,20 +345,22 @@ export function HyttaChecklist() {
 
     setScheduling(true);
     const repeatDays = parseInt(bulkRepeat, 10);
-    const { error } = await supabase
-      .from("hytta_checklist")
-      .update({
+    try {
+      await scheduleHyttaChecklistReminder({
+        data: {
+          ids: toUpdate,
         notify_at: iso,
-        notified_at: null,
         notify_who: bulkWho,
         repeat_interval_days: repeatDays > 0 ? repeatDays : null,
-      } as never)
-      .in("id", toUpdate);
-    setScheduling(false);
-    if (error) {
+        },
+      });
+      await loadChecklist();
+    } catch {
       toast.error("Kunne ikke planlegge varsel");
+      setScheduling(false);
       return;
     }
+    setScheduling(false);
     setBulkOpen(false);
     setBulkDate(undefined);
     setEditingReminder(null);
@@ -435,11 +440,12 @@ export function HyttaChecklist() {
   };
 
   const removeReminder = async (itemIds: string[]) => {
-    const { error } = await supabase
-      .from("hytta_checklist")
-      .update({ notify_at: null, notified_at: null, repeat_interval_days: null } as never)
-      .in("id", itemIds);
-    if (error) {
+    try {
+      await scheduleHyttaChecklistReminder({
+        data: { ids: itemIds, notify_at: null, notify_who: "Alle", repeat_interval_days: null },
+      });
+      await loadChecklist();
+    } catch {
       toast.error("Kunne ikke fjerne påminnelsen");
       return;
     }
