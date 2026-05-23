@@ -591,6 +591,7 @@ function HeaterCard({
   onToggle,
   onSetMode,
   onSetFan,
+  onSetSwing,
 }: {
   heater: HeaterDevice;
   busy: Record<string, boolean>;
@@ -600,6 +601,7 @@ function HeaterCard({
   onToggle: (v: boolean) => void;
   onSetMode: (v: string) => void;
   onSetFan: (v: string | number) => void;
+  onSetSwing: (capabilityId: string, value: boolean | string | number) => void;
 }) {
   const accent = "var(--gold)";
   const tempBusy = busy[`${heater.id}:target_temperature`];
