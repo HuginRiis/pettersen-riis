@@ -6,7 +6,7 @@ import {
   type WeatherStationResult,
 } from "@/server/netatmo-weather";
 
-const REFRESH_MS = 5 * 60_000;
+const REFRESH_MS = 10 * 60_000;
 
 type OkData = Extract<WeatherStationResult, { ok: true }>;
 
