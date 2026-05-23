@@ -41,7 +41,7 @@ type RoutePath =
   | "/varsler"
   | "/smarthus"
   | "/lys"
-  | "/steintavle"
+  | "/varme"
   | "/oppussing-borgen"
   | "/oppussing-hytta"
   | "/matvarer"
