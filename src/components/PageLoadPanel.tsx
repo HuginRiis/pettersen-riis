@@ -39,6 +39,8 @@ function relTime(iso: string | null): string {
 export function PageLoadPanel() {
   const fetchFn = useServerFn(getPageLoadStats);
   const [days, setDays] = useState(14);
+  const [limit, setLimit] = useState(10000);
+  const [limitInput, setLimitInput] = useState("10000");
   const [data, setData] = useState<PageLoadStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedRoute, setSelectedRoute] = useState<string | null>(null);
@@ -49,7 +51,7 @@ export function PageLoadPanel() {
     (async () => {
       setLoading(true);
       try {
-        const d = await fetchFn({ data: { days } });
+        const d = await fetchFn({ data: { days, limit } });
         if (alive) setData(d);
       } finally {
         if (alive) setLoading(false);
@@ -58,7 +60,8 @@ export function PageLoadPanel() {
     return () => {
       alive = false;
     };
-  }, [fetchFn, days]);
+  }, [fetchFn, days, limit]);
+
 
   const routeHistory = useMemo(() => {
     if (!data || !selectedRoute) return [];
