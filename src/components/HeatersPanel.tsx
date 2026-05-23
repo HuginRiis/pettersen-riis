@@ -29,6 +29,14 @@ const MAX_BACKOFF_MS = 30 * 60_000;
 
 export type HeaterLocation = "hytta" | "borg";
 
+type SwingControl = {
+  capabilityId: string;
+  label: string;
+  kind: "boolean" | "enum";
+  value?: boolean | string | number;
+  values?: HomeyCapabilityEnumValue[];
+};
+
 type HeaterDevice = {
   id: string;
   name: string;
@@ -48,6 +56,7 @@ type HeaterDevice = {
   fanSpeedMin?: number;
   fanSpeedMax?: number;
   fanSpeedStep?: number;
+  swings: SwingControl[];
 };
 
 type State =
