@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { runStravaDashboard } from "@/server/strava";
-import { STRAVA_OWNERS, getStravaConnection } from "@/server/strava-connection";
+import { STRAVA_OWNERS } from "@/lib/strava-shared";
 
 /**
  * Bakgrunns-polling for Strava-dashboards.
@@ -12,6 +12,7 @@ export const Route = createFileRoute("/api/public/hooks/strava-poll")({
     handlers: {
       POST: async () => {
         const results: Array<{ owner: string; ok: boolean; error?: string }> = [];
+        const { getStravaConnection } = await import("@/server/strava-connection");
         for (const owner of STRAVA_OWNERS) {
           try {
             const conn = await getStravaConnection(owner);

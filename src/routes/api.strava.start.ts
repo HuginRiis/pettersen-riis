@@ -1,10 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import {
-  createStravaState,
   getStravaCredentials,
   isStravaOwner,
   type StravaOwner,
-} from "@/server/strava-connection";
+} from "@/lib/strava-shared";
 
 const STRAVA_AUTH_URL = "https://www.strava.com/oauth/authorize";
 const REBEKKA_STRAVA_ORIGIN = "https://arne.riis.cc";
@@ -44,6 +43,7 @@ export const Route = createFileRoute("/api/strava/start")({
 
         // Pakk owner inn i state slik at callback vet hvilken konto vi binder til.
         const stateSecret = process.env.STRAVA_OAUTH_STATE_SECRET;
+        const { createStravaState } = await import("@/server/strava-connection");
         const state = stateSecret
           ? createStravaState(owner, stateSecret)
           : `${owner}.${Date.now()}.${crypto.randomUUID()}`;

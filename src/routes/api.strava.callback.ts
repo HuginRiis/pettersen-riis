@@ -2,10 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import {
   getStravaCredentials,
   getStravaOwnerFromState,
-  saveStravaConnection,
-  verifyStravaState,
   type StravaOwner,
-} from "@/server/strava-connection";
+} from "@/lib/strava-shared";
 
 function htmlResponse(body: string, status = 200) {
   return new Response(body, {
@@ -47,6 +45,7 @@ export const Route = createFileRoute("/api/strava/callback")({
         const stateSecret = process.env.STRAVA_OAUTH_STATE_SECRET;
         const cookieState = readCookie(request.headers.get("cookie"), "strava_oauth_state");
         const validCookieState = Boolean(cookieState && cookieState === state);
+        const { verifyStravaState, saveStravaConnection } = await import("@/server/strava-connection");
         const validSignedState = stateSecret ? verifyStravaState(state, stateSecret) : false;
         if (!validCookieState && !validSignedState) {
           return errorPage("Ugyldig state — start tilkoblingen på nytt.", 400);
