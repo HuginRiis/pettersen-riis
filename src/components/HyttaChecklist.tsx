@@ -335,9 +335,15 @@ export function HyttaChecklist() {
     }
 
     setScheduling(true);
+    const repeatDays = parseInt(bulkRepeat, 10);
     const { error } = await supabase
       .from("hytta_checklist")
-      .update({ notify_at: iso, notified_at: null, notify_who: bulkWho })
+      .update({
+        notify_at: iso,
+        notified_at: null,
+        notify_who: bulkWho,
+        repeat_interval_days: repeatDays > 0 ? repeatDays : null,
+      } as never)
       .in("id", toUpdate);
     setScheduling(false);
     if (error) {
