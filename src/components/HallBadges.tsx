@@ -476,8 +476,13 @@ export function TrainingLast4WeeksBadge({ inline, owner = "arne" }: { inline?: b
     let unsub: (() => void) | null = null;
     (async () => {
       try {
-        const { getCachedStrava, subscribeStrava } = await import("@/lib/strava-cache");
-        apply(getCachedStrava(owner));
+        const { getCachedStrava, loadStrava, subscribeStrava } = await import("@/lib/strava-cache");
+        const cached = getCachedStrava(owner);
+        apply(cached);
+        if (!cached?.ok) {
+          const fresh = await loadStrava(owner);
+          apply(fresh);
+        }
         unsub = subscribeStrava(owner, apply);
       } catch {}
     })();
