@@ -431,7 +431,7 @@ export function HyttaChecklist() {
   const removeReminder = async (itemIds: string[]) => {
     const { error } = await supabase
       .from("hytta_checklist")
-      .update({ notify_at: null, notified_at: null })
+      .update({ notify_at: null, notified_at: null, repeat_interval_days: null } as never)
       .in("id", itemIds);
     if (error) {
       toast.error("Kunne ikke fjerne påminnelsen");
