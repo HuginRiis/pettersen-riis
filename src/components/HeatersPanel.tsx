@@ -713,6 +713,18 @@ function HeaterCard({
     if (v !== heater.target) onSetTemp(v);
   };
 
+  // Steg-veksler: 0.5 eller 1 grad pr +/- (persistert pr enhet)
+  const stepKey = `hpr.step.${heater.id}`;
+  const [userStep, setUserStep] = useState<0.5 | 1>(() => {
+    if (typeof window === "undefined") return 0.5;
+    const v = window.localStorage.getItem(stepKey);
+    return v === "1" ? 1 : 0.5;
+  });
+  useEffect(() => {
+    if (typeof window !== "undefined") window.localStorage.setItem(stepKey, String(userStep));
+  }, [userStep, stepKey]);
+  const effStep = Math.max(heater.step, userStep);
+
   const adjust = (delta: number) => {
     const cur = heater.target ?? 21;
     const next = Math.min(heater.max, Math.max(heater.min, +(cur + delta).toFixed(1)));
