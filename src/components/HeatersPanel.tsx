@@ -111,6 +111,31 @@ function buildHeaters(
 
     const targetVal = hasTarget ? (ttCap!.value as number) : undefined;
 
+    // Detect swing-like capabilities (horizontal/vertical air direction)
+    const swings: SwingControl[] = [];
+    for (const [capId, cap] of Object.entries(d.capabilities)) {
+      if (!/swing|vane|louver|oscill/i.test(capId)) continue;
+      const isHoriz = /horiz|side|sideway|left|right/i.test(capId);
+      const isVert = /vert|up|down/i.test(capId);
+      const label = isHoriz
+        ? "Side til side"
+        : isVert
+          ? "Opp og ned"
+          : capId.replace(/_/g, " ");
+      const v = cap?.value;
+      const kind: "boolean" | "enum" =
+        typeof v === "boolean" || (!cap?.values?.length && typeof v !== "string")
+          ? "boolean"
+          : "enum";
+      swings.push({
+        capabilityId: capId,
+        label,
+        kind,
+        value: (typeof v === "boolean" || typeof v === "string" || typeof v === "number") ? v : undefined,
+        values: cap?.values,
+      });
+    }
+
     out.push({
       id: d.id,
       name: d.name,
@@ -134,6 +159,7 @@ function buildHeaters(
       fanSpeedMin: typeof fanCap?.min === "number" ? fanCap.min : undefined,
       fanSpeedMax: typeof fanCap?.max === "number" ? fanCap.max : undefined,
       fanSpeedStep: typeof fanCap?.step === "number" ? fanCap.step : undefined,
+      swings,
     });
   }
   out.sort((a, b) => {
