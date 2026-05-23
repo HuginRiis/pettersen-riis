@@ -8,6 +8,26 @@ export function isStravaOwner(value: unknown): value is StravaOwner {
   return value === "arne" || value === "rebekka";
 }
 
+/**
+ * Returnerer client_id / client_secret for gitt Strava-eier.
+ * Rebekka kan ha egen Strava-app (STRAVA_CLIENT_ID_REBEKKA/SECRET) —
+ * faller tilbake til delte STRAVA_CLIENT_ID/SECRET hvis ikke satt.
+ */
+export function getStravaCredentials(owner: StravaOwner): {
+  clientId: string | undefined;
+  clientSecret: string | undefined;
+} {
+  if (owner === "rebekka") {
+    const id = process.env.STRAVA_CLIENT_ID_REBEKKA;
+    const secret = process.env.STRAVA_CLIENT_SECRET_REBEKKA;
+    if (id && secret) return { clientId: id, clientSecret: secret };
+  }
+  return {
+    clientId: process.env.STRAVA_CLIENT_ID,
+    clientSecret: process.env.STRAVA_CLIENT_SECRET,
+  };
+}
+
 export type StravaConnection = {
   id: string;
   owner: StravaOwner;
@@ -95,10 +115,9 @@ export async function getValidStravaAccessToken(owner: StravaOwner): Promise<{
     };
   }
 
-  const clientId = process.env.STRAVA_CLIENT_ID;
-  const clientSecret = process.env.STRAVA_CLIENT_SECRET;
+  const { clientId, clientSecret } = getStravaCredentials(owner);
   if (!clientId || !clientSecret) {
-    throw new Error("STRAVA_CLIENT_ID/SECRET mangler");
+    throw new Error(`STRAVA_CLIENT_ID/SECRET mangler for ${owner}`);
   }
 
   const res = await fetch("https://www.strava.com/oauth/token", {

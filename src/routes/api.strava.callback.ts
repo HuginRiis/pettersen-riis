@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import {
+  getStravaCredentials,
   isStravaOwner,
   saveStravaConnection,
   type StravaOwner,
@@ -34,12 +35,6 @@ export const Route = createFileRoute("/api/strava/callback")({
   server: {
     handlers: {
       GET: async ({ request }) => {
-        const clientId = process.env.STRAVA_CLIENT_ID;
-        const clientSecret = process.env.STRAVA_CLIENT_SECRET;
-        if (!clientId || !clientSecret) {
-          return errorPage("Server mangler STRAVA_CLIENT_ID/SECRET", 500);
-        }
-
         const url = new URL(request.url);
         const code = url.searchParams.get("code");
         const state = url.searchParams.get("state");
@@ -56,6 +51,11 @@ export const Route = createFileRoute("/api/strava/callback")({
         // State har formen "<owner>.<nonce>" — hent eieren ut
         const ownerPart = (state ?? "").split(".")[0];
         const owner: StravaOwner = isStravaOwner(ownerPart) ? ownerPart : "arne";
+
+        const { clientId, clientSecret } = getStravaCredentials(owner);
+        if (!clientId || !clientSecret) {
+          return errorPage(`Server mangler STRAVA_CLIENT_ID/SECRET for ${owner}`, 500);
+        }
 
         const tokenRes = await fetch("https://www.strava.com/oauth/token", {
           method: "POST",
