@@ -438,6 +438,7 @@ export const getHomeySensorEvents = createServerFn({ method: "GET" })
   .inputValidator(
     z.object({
       range: RANGE.default("today"),
+      location: LOCATION.default("all"),
       eventTypes: z.array(z.string()).min(1).max(10).optional(),
       zone: z.string().min(1).max(120).optional(),
       kind: z.enum(["motion", "door", "window", "lock"]).optional(),
@@ -449,11 +450,14 @@ export const getHomeySensorEvents = createServerFn({ method: "GET" })
   .handler(async ({ data }): Promise<{ events: SensorEventDetail[] }> => {
     const { start, end } = computeRange(data.range);
     const needsPostFilter = data.hourOfDay !== undefined || !!data.dateStr;
-    let q = supabaseAdmin
-      .from("homey_sensor_events")
-      .select("ts, device_name, zone, kind, event_type")
-      .gte("ts", start.toISOString())
-      .lte("ts", end.toISOString())
+    let q = applyLocation(
+      supabaseAdmin
+        .from("homey_sensor_events")
+        .select("ts, device_name, zone, kind, event_type")
+        .gte("ts", start.toISOString())
+        .lte("ts", end.toISOString()),
+      data.location,
+    )
       .order("ts", { ascending: false })
       .limit(needsPostFilter ? 5000 : data.limit);
     if (data.eventTypes && data.eventTypes.length > 0) {
