@@ -531,10 +531,12 @@ export const runStravaDashboard = async (owner: StravaOwner, opts?: { force?: bo
     const rideLast4 = inLast4Weeks.filter((a) => bucketSport(a.sport_type || a.type) === "ride");
     const swimLast4 = inLast4Weeks.filter((a) => bucketSport(a.sport_type || a.type) === "swim");
     const walkLast4 = inLast4Weeks.filter((a) => bucketSport(a.sport_type || a.type) === "walk");
+    const hikeLast4 = inLast4Weeks.filter((a) => bucketSport(a.sport_type || a.type) === "hike");
     const recentRunLocal = sumBlock(runLast4);
     const recentRideLocal = sumBlock(rideLast4);
     const recentSwimLocal = sumBlock(swimLast4);
     const recentWalkLocal = sumBlock(walkLast4);
+    const recentHikeLocal = sumBlock(hikeLast4);
 
     // Walk-totaler for inneværende år og "alltid" — beregnet fra siste 100
     // aktivitetene, så det er en undergrense (markeres i UI).
@@ -607,6 +609,7 @@ export const runStravaDashboard = async (owner: StravaOwner, opts?: { force?: bo
         recentRide: recentRideLocal,
         recentSwim: recentSwimLocal,
         recentWalk: recentWalkLocal,
+        recentHike: recentHikeLocal,
         ytdRun: stats?.ytd_run_totals ?? null,
         ytdRide: stats?.ytd_ride_totals ?? null,
         ytdSwim: stats?.ytd_swim_totals ?? null,

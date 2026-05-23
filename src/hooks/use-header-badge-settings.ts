@@ -2,10 +2,12 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 export type BadgeSetting = { enabled: boolean; users: string[] };
+export type TrainingSportToggles = { run: boolean; ride: boolean; swim: boolean; walk: boolean; hike: boolean };
 export type HeaderBadgeSettings = {
   badges: Record<string, BadgeSetting>;
   weather: { startOffset: 0 | 1; days: number; showTemp: boolean };
   garbage: { maxDaysAhead: number; showAllSameDay: boolean };
+  training: TrainingSportToggles;
 };
 
 export const HEADER_BADGE_KEY = "header_badges";
@@ -51,6 +53,7 @@ export const DEFAULT_HEADER_BADGE_SETTINGS: HeaderBadgeSettings = {
   ),
   weather: { startOffset: 1, days: 1, showTemp: true },
   garbage: { maxDaysAhead: 14, showAllSameDay: false },
+  training: { run: true, ride: true, swim: true, walk: true, hike: true },
 };
 
 let cache: HeaderBadgeSettings | null = null;
@@ -73,7 +76,15 @@ function merge(value: unknown): HeaderBadgeSettings {
     maxDaysAhead: Math.min(30, Math.max(0, Number(v.garbage?.maxDaysAhead ?? 14))),
     showAllSameDay: v.garbage?.showAllSameDay === true,
   };
-  return { badges, weather, garbage };
+  const t = (v as any).training ?? {};
+  const training: TrainingSportToggles = {
+    run: t.run !== false,
+    ride: t.ride !== false,
+    swim: t.swim !== false,
+    walk: t.walk !== false,
+    hike: t.hike !== false,
+  };
+  return { badges, weather, garbage, training };
 }
 
 async function load(): Promise<HeaderBadgeSettings> {
