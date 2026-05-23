@@ -511,17 +511,38 @@ function SmartAdvice() {
     </div>
   );
 
+  const [open, setOpen] = useState(false);
+  const totalCount = borgTips.length + hyttaTips.length;
+
   return (
     <section id="anbefalinger" className="container mx-auto px-4 py-8 scroll-mt-20">
-      <div className="ornate-divider mb-6">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="w-full ornate-divider mb-6 flex items-center justify-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
+        aria-expanded={open}
+      >
+        <Sparkles size={14} className="text-[var(--gold)]" />
         <span className="text-display tracking-[0.3em] text-primary text-sm uppercase">
           Smarte anbefalinger
         </span>
-      </div>
-      <div className="grid md:grid-cols-2 gap-6">
-        {renderList(borgTips, "Borgen", Castle)}
-        {renderList(hyttaTips, "Hytta", Mountain)}
-      </div>
+        {totalCount > 0 && (
+          <span className="text-[10px] tabular-nums text-muted-foreground">
+            ({totalCount})
+          </span>
+        )}
+        <ChevronRight
+          size={14}
+          className="text-muted-foreground transition-transform"
+          style={{ transform: open ? "rotate(90deg)" : "rotate(0deg)" }}
+        />
+      </button>
+      {open && (
+        <div className="grid md:grid-cols-2 gap-6">
+          {renderList(borgTips, "Borgen", Castle)}
+          {renderList(hyttaTips, "Hytta", Mountain)}
+        </div>
+      )}
     </section>
   );
 }
