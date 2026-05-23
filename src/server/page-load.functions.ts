@@ -143,7 +143,6 @@ export const getPageLoadStats = createServerFn({ method: "GET" })
     }
 
 
-    const all = (rows ?? []) as PageLoadEntry[];
     // routes
     const byRoute = new Map<string, PageLoadEntry[]>();
     for (const r of all) {
