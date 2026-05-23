@@ -458,7 +458,8 @@ export function PowerVsYesterdayBadge({ inline }: { inline?: boolean } = {}) {
 
 /** Antall treningsøkter siste 4 uker (Strava), delt opp per sport. */
 export function TrainingLast4WeeksBadge({ inline, owner = "arne" }: { inline?: boolean; owner?: "arne" | "rebekka" } = {}) {
-  const [counts, setCounts] = useState<{ run: number; ride: number; swim: number; walk: number } | null>(null);
+  const settings = useHeaderBadgeSettings();
+  const [counts, setCounts] = useState<{ run: number; ride: number; swim: number; walk: number; hike: number } | null>(null);
   useEffect(() => {
     let cancelled = false;
     const apply = (r: any) => {
@@ -469,6 +470,7 @@ export function TrainingLast4WeeksBadge({ inline, owner = "arne" }: { inline?: b
         ride: t.recentRide?.count ?? 0,
         swim: t.recentSwim?.count ?? 0,
         walk: t.recentWalk?.count ?? 0,
+        hike: t.recentHike?.count ?? 0,
       });
     };
     let unsub: (() => void) | null = null;
@@ -483,11 +485,13 @@ export function TrainingLast4WeeksBadge({ inline, owner = "arne" }: { inline?: b
   }, [owner]);
   if (!counts) return null;
   const initial = owner === "rebekka" ? "R" : "A";
+  const tr = settings.training;
   const items: Array<{ n: number; emoji: string; label: string; cls: string }> = [];
-  if (counts.run > 0) items.push({ n: counts.run, emoji: "🏃", label: "løpeturer", cls: "bg-orange-500/20 text-orange-300 border-orange-500/40" });
-  if (counts.ride > 0) items.push({ n: counts.ride, emoji: "🚴", label: "sykkelturer", cls: "bg-sky-500/20 text-sky-300 border-sky-500/40" });
-  if (counts.swim > 0) items.push({ n: counts.swim, emoji: "🏊", label: "svømmeøkter", cls: "bg-cyan-500/20 text-cyan-300 border-cyan-500/40" });
-  if (counts.walk > 0) items.push({ n: counts.walk, emoji: "🚶", label: "gåturer", cls: "bg-emerald-500/20 text-emerald-300 border-emerald-500/40" });
+  if (tr.run && counts.run > 0) items.push({ n: counts.run, emoji: "🏃", label: "løpeturer", cls: "bg-orange-500/20 text-orange-300 border-orange-500/40" });
+  if (tr.ride && counts.ride > 0) items.push({ n: counts.ride, emoji: "🚴", label: "sykkelturer", cls: "bg-sky-500/20 text-sky-300 border-sky-500/40" });
+  if (tr.swim && counts.swim > 0) items.push({ n: counts.swim, emoji: "🏊", label: "svømmeøkter", cls: "bg-cyan-500/20 text-cyan-300 border-cyan-500/40" });
+  if (tr.walk && counts.walk > 0) items.push({ n: counts.walk, emoji: "🚶", label: "gåturer", cls: "bg-emerald-500/20 text-emerald-300 border-emerald-500/40" });
+  if (tr.hike && counts.hike > 0) items.push({ n: counts.hike, emoji: "🥾", label: "fjellturer", cls: "bg-amber-500/20 text-amber-300 border-amber-500/40" });
   if (items.length === 0) return null;
   return (
     <span className={inline ? "ml-1 inline-flex items-center gap-0.5" : "absolute top-2 right-2 z-10 inline-flex items-center gap-0.5"}>
