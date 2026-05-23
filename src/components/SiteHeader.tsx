@@ -2,7 +2,7 @@ import { Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Menu, X, LogOut, Crown, Swords, Shield, KeyRound, Home, Star, Flower2,
-  Sun, Compass, Castle, CalendarDays, BellRing, Eye, Mountain, Lightbulb, Lamp, Zap, Hammer,
+  Sun, Compass, Castle, CalendarDays, BellRing, Eye, Mountain, Lightbulb, Lamp, Flame, Zap, Hammer,
   ShoppingCart, Receipt, Dog, Dumbbell, AlertTriangle, ScrollText, Globe, ChevronDown, ChevronRight,
   TreePine, Coins, Bot, Wallet, Volume2, Wifi, Router as RouterIcon, Plane, Settings } from "lucide-react";
 
@@ -41,6 +41,7 @@ type RoutePath =
   | "/varsler"
   | "/smarthus"
   | "/lys"
+  | "/varme"
   | "/steintavle"
   | "/oppussing-borgen"
   | "/oppussing-hytta"
@@ -78,6 +79,7 @@ const ROUTE_ICON: Partial<Record<RoutePath, React.ComponentType<{ size?: number;
   "/hytta": Mountain,
   "/smarthus": Lightbulb,
   "/lys": Lamp,
+  "/varme": Flame,
   "/stromkroniken": Zap,
   "/oppussing-borgen": Hammer,
   "/oppussing-hytta": Hammer,
@@ -111,6 +113,7 @@ const ROUTE_ICON_COLOR: Partial<Record<RoutePath, string>> = {
   "/hytta": "#60a5fa",               // fjellet — vinterblå
   "/smarthus": "#facc15",            // smartborg — glødende gul
   "/lys": "#fde047",                 // lys — lampegult
+  "/varme": "#fb923c",               // varme — flammeoransje
   "/stromkroniken": "#eab308",       // strøm — lyngull
   "/oppussing-borgen": "#f97316",    // hammer — gloende
   "/oppussing-hytta": "#a16207",     // tre — rustbrun
@@ -146,6 +149,7 @@ const navLinks: NavLink[] = [
   { to: "/hytta", label: "Hytta", public: true },
   { to: "/smarthus", label: "Smartborg" },
   { to: "/lys", label: "Lys" },
+  { to: "/varme", label: "Varme & Klima" },
   { to: "/gressklipper", label: "Gressklipper" },
   { to: "/stovsugeren", label: "Støvsugeren" },
   { to: "/stromkroniken", label: "Strømkrøniken" },

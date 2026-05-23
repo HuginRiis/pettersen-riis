@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as VarslerRouteImport } from './routes/varsler'
+import { Route as VarmeRouteImport } from './routes/varme'
 import { Route as VarRouteImport } from './routes/var'
 import { Route as VakttarnetRouteImport } from './routes/vakttarnet'
 import { Route as TurerRouteImport } from './routes/turer'
@@ -57,6 +58,11 @@ import { Route as ApiPublicHooksAgendaPushRouteImport } from './routes/api.publi
 const VarslerRoute = VarslerRouteImport.update({
   id: '/varsler',
   path: '/varsler',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VarmeRoute = VarmeRouteImport.update({
+  id: '/varme',
+  path: '/varme',
   getParentRoute: () => rootRouteImport,
 } as any)
 const VarRoute = VarRouteImport.update({
@@ -312,6 +318,7 @@ export interface FileRoutesByFullPath {
   '/turer': typeof TurerRoute
   '/vakttarnet': typeof VakttarnetRoute
   '/var': typeof VarRoute
+  '/varme': typeof VarmeRoute
   '/varsler': typeof VarslerRoute
   '/hooks/log-pulse': typeof HooksLogPulseRoute
   '/api/homey/callback': typeof ApiHomeyCallbackRoute
@@ -358,6 +365,7 @@ export interface FileRoutesByTo {
   '/turer': typeof TurerRoute
   '/vakttarnet': typeof VakttarnetRoute
   '/var': typeof VarRoute
+  '/varme': typeof VarmeRoute
   '/varsler': typeof VarslerRoute
   '/hooks/log-pulse': typeof HooksLogPulseRoute
   '/api/homey/callback': typeof ApiHomeyCallbackRoute
@@ -405,6 +413,7 @@ export interface FileRoutesById {
   '/turer': typeof TurerRoute
   '/vakttarnet': typeof VakttarnetRoute
   '/var': typeof VarRoute
+  '/varme': typeof VarmeRoute
   '/varsler': typeof VarslerRoute
   '/hooks/log-pulse': typeof HooksLogPulseRoute
   '/api/homey/callback': typeof ApiHomeyCallbackRoute
@@ -453,6 +462,7 @@ export interface FileRouteTypes {
     | '/turer'
     | '/vakttarnet'
     | '/var'
+    | '/varme'
     | '/varsler'
     | '/hooks/log-pulse'
     | '/api/homey/callback'
@@ -499,6 +509,7 @@ export interface FileRouteTypes {
     | '/turer'
     | '/vakttarnet'
     | '/var'
+    | '/varme'
     | '/varsler'
     | '/hooks/log-pulse'
     | '/api/homey/callback'
@@ -545,6 +556,7 @@ export interface FileRouteTypes {
     | '/turer'
     | '/vakttarnet'
     | '/var'
+    | '/varme'
     | '/varsler'
     | '/hooks/log-pulse'
     | '/api/homey/callback'
@@ -592,6 +604,7 @@ export interface RootRouteChildren {
   TurerRoute: typeof TurerRoute
   VakttarnetRoute: typeof VakttarnetRoute
   VarRoute: typeof VarRoute
+  VarmeRoute: typeof VarmeRoute
   VarslerRoute: typeof VarslerRoute
   HooksLogPulseRoute: typeof HooksLogPulseRoute
   ApiHomeyCallbackRoute: typeof ApiHomeyCallbackRoute
@@ -617,6 +630,13 @@ declare module '@tanstack/react-router' {
       path: '/varsler'
       fullPath: '/varsler'
       preLoaderRoute: typeof VarslerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/varme': {
+      id: '/varme'
+      path: '/varme'
+      fullPath: '/varme'
+      preLoaderRoute: typeof VarmeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/var': {
@@ -952,6 +972,7 @@ const rootRouteChildren: RootRouteChildren = {
   TurerRoute: TurerRoute,
   VakttarnetRoute: VakttarnetRoute,
   VarRoute: VarRoute,
+  VarmeRoute: VarmeRoute,
   VarslerRoute: VarslerRoute,
   HooksLogPulseRoute: HooksLogPulseRoute,
   ApiHomeyCallbackRoute: ApiHomeyCallbackRoute,

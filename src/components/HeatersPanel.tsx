@@ -29,6 +29,14 @@ const MAX_BACKOFF_MS = 30 * 60_000;
 
 export type HeaterLocation = "hytta" | "borg";
 
+type SwingControl = {
+  capabilityId: string;
+  label: string;
+  kind: "boolean" | "enum";
+  value?: boolean | string | number;
+  values?: HomeyCapabilityEnumValue[];
+};
+
 type HeaterDevice = {
   id: string;
   name: string;
@@ -48,6 +56,7 @@ type HeaterDevice = {
   fanSpeedMin?: number;
   fanSpeedMax?: number;
   fanSpeedStep?: number;
+  swings: SwingControl[];
 };
 
 type State =
@@ -102,6 +111,31 @@ function buildHeaters(
 
     const targetVal = hasTarget ? (ttCap!.value as number) : undefined;
 
+    // Detect swing-like capabilities (horizontal/vertical air direction)
+    const swings: SwingControl[] = [];
+    for (const [capId, cap] of Object.entries(d.capabilities)) {
+      if (!/swing|vane|louver|oscill/i.test(capId)) continue;
+      const isHoriz = /horiz|side|sideway|left|right/i.test(capId);
+      const isVert = /vert|up|down/i.test(capId);
+      const label = isHoriz
+        ? "Side til side"
+        : isVert
+          ? "Opp og ned"
+          : capId.replace(/_/g, " ");
+      const v = cap?.value;
+      const kind: "boolean" | "enum" =
+        typeof v === "boolean" || (!cap?.values?.length && typeof v !== "string")
+          ? "boolean"
+          : "enum";
+      swings.push({
+        capabilityId: capId,
+        label,
+        kind,
+        value: (typeof v === "boolean" || typeof v === "string" || typeof v === "number") ? v : undefined,
+        values: cap?.values,
+      });
+    }
+
     out.push({
       id: d.id,
       name: d.name,
@@ -125,6 +159,7 @@ function buildHeaters(
       fanSpeedMin: typeof fanCap?.min === "number" ? fanCap.min : undefined,
       fanSpeedMax: typeof fanCap?.max === "number" ? fanCap.max : undefined,
       fanSpeedStep: typeof fanCap?.step === "number" ? fanCap.step : undefined,
+      swings,
     });
   }
   out.sort((a, b) => {
@@ -268,12 +303,7 @@ export function HeatersPanel({
   const sendCap = useCallback(
     async (
       heaterId: string,
-      capability:
-        | "onoff"
-        | "target_temperature"
-        | "thermostat_mode"
-        | "fan_speed"
-        | "fan_mode",
+      capability: string,
       value: boolean | number | string,
     ) => {
       const key = `${heaterId}:${capability}`;
@@ -286,30 +316,35 @@ export function HeatersPanel({
             ? "target"
             : capability === "thermostat_mode"
               ? "thermostatMode"
-              : "fanSpeed";
-      setOverrides((o) => ({
-        ...o,
-        [heaterId]: {
-          ...(o[heaterId] ?? {}),
-          [overrideKey]: value,
-        },
-      }));
+              : capability === "fan_speed" || capability === "fan_mode"
+                ? "fanSpeed"
+                : null;
+      if (overrideKey) {
+        setOverrides((o) => ({
+          ...o,
+          [heaterId]: {
+            ...(o[heaterId] ?? {}),
+            [overrideKey]: value,
+          },
+        }));
+      }
       try {
         const res = await setCap({
-          data: { deviceId: heaterId, capability, value },
+          data: { deviceId: heaterId, capability: capability as any, value },
         });
         recordHomeyApiCall();
         if (!res.ok) {
-          // rull tilbake override
-          setOverrides((o) => {
-            const next = { ...o };
-            const cur = next[heaterId];
-            if (cur) {
-              delete (cur as any)[overrideKey];
-              if (Object.keys(cur).length === 0) delete next[heaterId];
-            }
-            return next;
-          });
+          if (overrideKey) {
+            setOverrides((o) => {
+              const next = { ...o };
+              const cur = next[heaterId];
+              if (cur) {
+                delete (cur as any)[overrideKey];
+                if (Object.keys(cur).length === 0) delete next[heaterId];
+              }
+              return next;
+            });
+          }
         } else {
           scheduleNext(2_000);
         }
@@ -458,6 +493,7 @@ export function HeatersPanel({
                             v,
                           )
                         }
+                        onSetSwing={(capId, v) => sendCap(h.id, capId, v)}
                       />
                     ))}
                   </div>
@@ -555,6 +591,7 @@ function HeaterCard({
   onToggle,
   onSetMode,
   onSetFan,
+  onSetSwing,
 }: {
   heater: HeaterDevice;
   busy: Record<string, boolean>;
@@ -564,6 +601,7 @@ function HeaterCard({
   onToggle: (v: boolean) => void;
   onSetMode: (v: string) => void;
   onSetFan: (v: string | number) => void;
+  onSetSwing: (capabilityId: string, value: boolean | string | number) => void;
 }) {
   const accent = "var(--gold)";
   const tempBusy = busy[`${heater.id}:target_temperature`];
@@ -835,6 +873,80 @@ function HeaterCard({
             </div>
           </div>
         )}
+
+        {heater.swings.length > 0 && (
+          <div className="w-full max-w-[260px] mt-1 space-y-2">
+            {heater.swings.map((sw) => {
+              const swBusy = busy[`${heater.id}:${sw.capabilityId}`];
+              if (sw.kind === "boolean") {
+                const active = sw.value === true;
+                return (
+                  <div key={sw.capabilityId}>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground">
+                        {sw.label}
+                      </span>
+                      {swBusy && <Loader2 size={12} className="animate-spin text-muted-foreground" />}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => !swBusy && onSetSwing(sw.capabilityId, !active)}
+                      disabled={swBusy}
+                      className="w-full rounded py-1.5 text-[9px] tracking-[0.25em] uppercase transition-all disabled:opacity-50"
+                      style={{
+                        background: active
+                          ? `color-mix(in oklab, ${accent} 22%, transparent)`
+                          : "color-mix(in oklab, var(--foreground) 6%, transparent)",
+                        border: `1px solid color-mix(in oklab, ${accent} ${active ? 50 : 22}%, transparent)`,
+                        color: active ? accent : "var(--muted-foreground)",
+                      }}
+                    >
+                      {active ? "Sving på" : "Sving av"}
+                    </button>
+                  </div>
+                );
+              }
+              const values = sw.values ?? [];
+              return (
+                <div key={sw.capabilityId}>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground">
+                      {sw.label}
+                    </span>
+                    {swBusy && <Loader2 size={12} className="animate-spin text-muted-foreground" />}
+                  </div>
+                  <div
+                    className="grid gap-1"
+                    style={{ gridTemplateColumns: `repeat(${Math.min(Math.max(values.length, 1), 5)}, minmax(0, 1fr))` }}
+                  >
+                    {values.map((v) => {
+                      const active = String(sw.value ?? "").toLowerCase() === String(v.id).toLowerCase();
+                      return (
+                        <button
+                          key={v.id}
+                          type="button"
+                          onClick={() => !swBusy && !active && onSetSwing(sw.capabilityId, v.id)}
+                          disabled={swBusy}
+                          className="rounded py-1.5 text-[8px] tracking-[0.15em] uppercase transition-all disabled:opacity-50"
+                          style={{
+                            background: active
+                              ? `color-mix(in oklab, ${accent} 22%, transparent)`
+                              : "color-mix(in oklab, var(--foreground) 6%, transparent)",
+                            border: `1px solid color-mix(in oklab, ${accent} ${active ? 50 : 18}%, transparent)`,
+                            color: active ? accent : "var(--muted-foreground)",
+                          }}
+                        >
+                          {v.title ?? v.id}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
 
         {heater.onoff !== undefined && (
           <button

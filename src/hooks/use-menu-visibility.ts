@@ -30,6 +30,7 @@ export const MENU_LINK_DEFS: { to: string; label: string }[] = [
   { to: "/hytta", label: "Hytta" },
   { to: "/smarthus", label: "Smartborg" },
   { to: "/lys", label: "Lys" },
+  { to: "/varme", label: "Varme & Klima" },
   { to: "/gressklipper", label: "Gressklipper" },
   { to: "/stovsugeren", label: "Støvsugeren" },
   { to: "/stromkroniken", label: "Strømkrøniken" },

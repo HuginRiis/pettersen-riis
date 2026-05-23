@@ -1836,7 +1836,8 @@ export const setLivingRoomDeviceCapability = createServerFn({ method: "POST" })
         | "light_hue"
         | "light_saturation"
         | "light_temperature"
-        | "light_mode";
+        | "light_mode"
+        | (string & {});
       value: boolean | number | string;
     }) => input,
   )
