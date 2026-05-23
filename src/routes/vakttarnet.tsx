@@ -192,6 +192,7 @@ function VakttarnetPage() {
         title="Vakttårnet"
         subtitle="Vaktene ved muren rapporterer hver eneste sjel som nærmer seg porten."
         image={heroImg}
+        video="/videos/vakttarnet-hero.mp4"
         extraStatus={<VakttarnHeroStats />}
       />
 
