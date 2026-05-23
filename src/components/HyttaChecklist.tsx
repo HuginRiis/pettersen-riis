@@ -202,6 +202,7 @@ export function HyttaChecklist() {
   const [bulkDate, setBulkDate] = useState<Date | undefined>(undefined);
   const [bulkTime, setBulkTime] = useState<string>("18:00");
   const [bulkWho, setBulkWho] = useState<string>("Alle");
+  const [bulkRepeat, setBulkRepeat] = useState<string>("0");
   const [bulkOpen, setBulkOpen] = useState(false);
   const [scheduling, setScheduling] = useState(false);
 
