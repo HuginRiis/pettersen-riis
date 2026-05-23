@@ -4,7 +4,7 @@ import {
   getStravaCredentials,
   isStravaOwner,
   type StravaOwner,
-} from "@/serve./strava-connection.server";
+} from "@/server/strava-connection";
 
 const STRAVA_AUTH_URL = "https://www.strava.com/oauth/authorize";
 const REBEKKA_STRAVA_ORIGIN = "https://arne.riis.cc";

@@ -5,7 +5,7 @@ import {
   saveStravaConnection,
   verifyStravaState,
   type StravaOwner,
-} from "@/serve./strava-connection.server";
+} from "@/server/strava-connection";
 
 function htmlResponse(body: string, status = 200) {
   return new Response(body, {
