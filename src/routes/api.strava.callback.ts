@@ -59,6 +59,12 @@ export const Route = createFileRoute("/api/strava/callback")({
         if (!clientId || !clientSecret) {
           return errorPage(`Server mangler STRAVA_CLIENT_ID/SECRET for ${owner}`, 500);
         }
+        if (!/^\d+$/.test(clientId)) {
+          return errorPage(
+            `STRAVA_CLIENT_ID${owner === "rebekka" ? "_REBEKKA" : ""} må være den numeriske Client ID-en fra Strava, ikke Client Secret.`,
+            500,
+          );
+        }
 
         const tokenRes = await fetch("https://www.strava.com/oauth/token", {
           method: "POST",

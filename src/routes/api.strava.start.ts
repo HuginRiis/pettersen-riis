@@ -33,6 +33,12 @@ export const Route = createFileRoute("/api/strava/start")({
         if (!clientId) {
           return new Response(`STRAVA_CLIENT_ID mangler for ${owner}`, { status: 500 });
         }
+        if (!/^\d+$/.test(clientId)) {
+          return new Response(
+            `STRAVA_CLIENT_ID${owner === "rebekka" ? "_REBEKKA" : ""} må være den numeriske Client ID-en fra Strava, ikke Client Secret.`,
+            { status: 500 },
+          );
+        }
         const callbackOrigin = owner === "rebekka" ? REBEKKA_STRAVA_ORIGIN : url.origin;
         const redirectUri = `${callbackOrigin}/api/strava/callback`;
 
