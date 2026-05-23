@@ -119,14 +119,26 @@ export const getPageLoadStats = createServerFn({ method: "GET" })
   )
   .handler(async ({ data }): Promise<PageLoadStats> => {
     const since = new Date(Date.now() - data.days * 86400_000).toISOString();
-    const { data: rows, error } = await supabaseAdmin
-      .from("page_load_log")
-      .select("loaded_at, route, who, device, os, load_ms, kind")
-      .gte("loaded_at", since)
-      .order("loaded_at", { ascending: false })
-      .limit(data.limit);
-    if (error) {
-      console.warn("[page-load] select failed", error.message);
+    // PostgREST/Supabase capper enkeltkall til ~1000 rader, så vi paginerer
+    // med .range() i bolker for å faktisk hente opp til data.limit rader.
+    const PAGE = 1000;
+    const all: PageLoadEntry[] = [];
+    let lastErr: { message?: string } | null = null;
+    for (let from = 0; from < data.limit; from += PAGE) {
+      const to = Math.min(data.limit - 1, from + PAGE - 1);
+      const { data: rows, error } = await supabaseAdmin
+        .from("page_load_log")
+        .select("loaded_at, route, who, device, os, load_ms, kind")
+        .gte("loaded_at", since)
+        .order("loaded_at", { ascending: false })
+        .range(from, to);
+      if (error) { lastErr = error; break; }
+      const batch = (rows ?? []) as PageLoadEntry[];
+      all.push(...batch);
+      if (batch.length < to - from + 1) break;
+    }
+    if (lastErr && all.length === 0) {
+      console.warn("[page-load] select failed", lastErr.message);
       return { routes: [], devices: [], recent: [], daily: [], users: [], slowest: [], totalCount: 0, avgMs: 0, sampleLimit: data.limit };
     }
 
