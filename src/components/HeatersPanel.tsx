@@ -744,8 +744,8 @@ function HeaterCard({
 
   const stepLabel =
     unit === "F"
-      ? `${(heater.step * 1.8).toFixed(heater.step >= 1 ? 1 : 1)}°`
-      : `${heater.step}°`;
+      ? `${(effStep * 1.8).toFixed(1)}°`
+      : `${effStep}°`;
 
   return (
     <article className="panel rounded-lg overflow-hidden flex flex-col">
@@ -789,7 +789,7 @@ function HeaterCard({
 
         {heater.hasTarget && (
           <>
-            <div className="w-full max-w-[260px] mt-0.5 sm:mt-1 px-1">
+            <div className="w-full mt-0.5 sm:mt-1 px-1">
               <input
                 type="range"
                 min={heater.min}
@@ -812,10 +812,10 @@ function HeaterCard({
               />
             </div>
 
-            <div className="grid grid-cols-3 gap-1.5 sm:gap-2 w-full max-w-[260px] mt-0.5 sm:mt-1">
+            <div className="grid grid-cols-3 gap-1.5 sm:gap-2 w-full mt-0.5 sm:mt-1 items-center">
               <button
                 type="button"
-                onClick={() => adjust(-heater.step)}
+                onClick={() => adjust(-effStep)}
                 disabled={tempBusy || (heater.target ?? 0) <= heater.min}
                 aria-label="Senk temperatur"
                 className={`rounded ${btnPad} flex items-center justify-center transition-all disabled:opacity-40 disabled:cursor-not-allowed active:scale-95`}
@@ -827,12 +827,38 @@ function HeaterCard({
               >
                 <Minus size={compact ? 14 : 18} />
               </button>
-              <div className="flex items-center justify-center text-[9px] tracking-[0.2em] sm:tracking-[0.25em] uppercase text-muted-foreground">
-                {tempBusy ? <Loader2 size={12} className="animate-spin" /> : stepLabel}
+              <div className="flex flex-col items-center gap-1">
+                <div className="text-[9px] tracking-[0.2em] sm:tracking-[0.25em] uppercase text-muted-foreground">
+                  {tempBusy ? <Loader2 size={12} className="animate-spin" /> : stepLabel}
+                </div>
+                <div
+                  role="group"
+                  aria-label="Velg steg"
+                  className="inline-flex rounded-full overflow-hidden text-[8px] tracking-[0.15em]"
+                  style={{ border: `1px solid color-mix(in oklab, ${accent} 24%, transparent)` }}
+                >
+                  {([0.5, 1] as const).map((s) => {
+                    const active = userStep === s;
+                    return (
+                      <button
+                        key={s}
+                        type="button"
+                        onClick={() => setUserStep(s)}
+                        className="px-1.5 py-0.5 transition-colors"
+                        style={{
+                          background: active ? `color-mix(in oklab, ${accent} 22%, transparent)` : "transparent",
+                          color: active ? accent : "var(--muted-foreground)",
+                        }}
+                      >
+                        {s}°
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
               <button
                 type="button"
-                onClick={() => adjust(heater.step)}
+                onClick={() => adjust(effStep)}
                 disabled={tempBusy || (heater.target ?? 0) >= heater.max}
                 aria-label="Hev temperatur"
                 className={`rounded ${btnPad} flex items-center justify-center transition-all disabled:opacity-40 disabled:cursor-not-allowed active:scale-95`}
