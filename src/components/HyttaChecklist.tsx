@@ -362,11 +362,11 @@ export function HyttaChecklist() {
 
   const openCount = items.filter((i) => !i.checked).length;
 
-  // Group scheduled reminders by (notify_at + notify_who) — each unique combo is one "påminnelse"
+  // Group scheduled reminders by (notify_at + notify_who + repeat) — each unique combo is one "påminnelse"
   const scheduledReminders = useMemo(() => {
     const groups = new Map<
       string,
-      { notify_at: string; notify_who: string; itemIds: string[] }
+      { notify_at: string; notify_who: string; repeat_interval_days: number | null; itemIds: string[] }
     >();
     for (const i of items) {
       if (
@@ -375,13 +375,15 @@ export function HyttaChecklist() {
         !i.notified_at &&
         new Date(i.notify_at).getTime() > Date.now()
       ) {
-        const key = `${i.notify_at}__${i.notify_who || "Alle"}`;
+        const repeat = i.repeat_interval_days ?? null;
+        const key = `${i.notify_at}__${i.notify_who || "Alle"}__${repeat ?? 0}`;
         const existing = groups.get(key);
         if (existing) existing.itemIds.push(i.id);
         else
           groups.set(key, {
             notify_at: i.notify_at,
             notify_who: i.notify_who || "Alle",
+            repeat_interval_days: repeat,
             itemIds: [i.id],
           });
       }
@@ -395,6 +397,7 @@ export function HyttaChecklist() {
   const [editingReminder, setEditingReminder] = useState<{
     notify_at: string;
     notify_who: string;
+    repeat_interval_days: number | null;
     itemIds: string[];
   } | null>(null);
 
