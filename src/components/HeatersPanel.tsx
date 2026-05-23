@@ -509,11 +509,15 @@ export function HeatersPanel({
                         onSetFan={(v) =>
                           sendCap(
                             h.id,
-                            h.fanSpeedValues || h.fanSpeed !== undefined ? "fan_speed" : "fan_mode",
+                            h.fanCapabilityId ??
+                              (h.fanSpeedValues || h.fanSpeed !== undefined
+                                ? "fan_speed"
+                                : "fan_mode"),
                             v,
                           )
                         }
                         onSetSwing={(capId, v) => sendCap(h.id, capId, v)}
+
                       />
                     ))}
                   </div>
