@@ -113,9 +113,9 @@ function eventLabel(et: string): string {
 }
 
 function SensorEventsDialog({
-  query, range, onClose,
+  query, range, location, onClose,
 }: {
-  query: DetailQuery; range: SensorRange; onClose: () => void;
+  query: DetailQuery; range: SensorRange; location: SensorLocation; onClose: () => void;
 }) {
   const fetchEvents = useServerFn(getHomeySensorEvents);
   const [events, setEvents] = useState<SensorEventDetail[]>([]);
@@ -129,6 +129,7 @@ function SensorEventsDialog({
     fetchEvents({
       data: {
         range,
+        location,
         eventTypes: query.eventTypes,
         zone: query.zone,
         kind: query.kind,
@@ -141,7 +142,7 @@ function SensorEventsDialog({
       .catch((e) => console.error("[sensor-events]", e))
       .finally(() => { if (alive) setLoading(false); });
     return () => { alive = false; };
-  }, [query, range, fetchEvents]);
+  }, [query, range, location, fetchEvents]);
 
   return (
     <Dialog open={!!query} onOpenChange={(o) => { if (!o) onClose(); }}>
