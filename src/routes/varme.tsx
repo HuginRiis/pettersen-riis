@@ -171,30 +171,53 @@ function avg(nums: (number | null)[]): number | null {
   return xs.reduce((s, n) => s + n, 0) / xs.length;
 }
 
+function modeAllowsHeat(mode?: string) {
+  if (!mode) return true;
+  const m = mode.toLowerCase();
+  return m.includes("heat") || m.includes("auto") || m.includes("varm");
+}
+function modeAllowsCool(mode?: string) {
+  if (!mode) return true;
+  const m = mode.toLowerCase();
+  return m.includes("cool") || m.includes("auto") || m.includes("kjøl") || m.includes("kjol");
+}
+
 function LocationBadge({
   label,
   icon: Icon,
   indoor,
   outdoor,
   target,
+  canHeat,
+  canCool,
 }: {
   label: string;
   icon: typeof Castle;
   indoor: number | null;
   outdoor: number | null;
   target: number | null;
+  canHeat: boolean;
+  canCool: boolean;
 }) {
-  // Arrow: target vs indoor → opp = pumpa varmer (target høyere), ned = pumpa kjøler/sparer.
-  let Arrow = Minus;
+  // Pil: respekter modus — opp kun hvis pumpa kan varme, ned kun hvis den kan kjøle.
+  let Arrow: typeof Minus | null = Minus;
   let arrowColor = "var(--muted-foreground)";
   if (target !== null && indoor !== null) {
     const diff = target - indoor;
     if (diff >= 0.5) {
-      Arrow = ArrowUp;
-      arrowColor = "#fb923c";
+      if (canHeat) {
+        Arrow = ArrowUp;
+        arrowColor = "#fb923c";
+      } else {
+        Arrow = null;
+      }
     } else if (diff <= -0.5) {
-      Arrow = ArrowDown;
-      arrowColor = "#7dd3fc";
+      if (canCool) {
+        Arrow = ArrowDown;
+        arrowColor = "#7dd3fc";
+      } else {
+        Arrow = null;
+      }
     }
   }
   return (
