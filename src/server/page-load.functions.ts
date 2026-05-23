@@ -114,6 +114,7 @@ export const getPageLoadStats = createServerFn({ method: "GET" })
   .inputValidator(
     z.object({
       days: z.number().int().min(1).max(90).default(14),
+      limit: z.number().int().min(100).max(100000).default(10000),
     }).parse,
   )
   .handler(async ({ data }): Promise<PageLoadStats> => {
@@ -123,11 +124,12 @@ export const getPageLoadStats = createServerFn({ method: "GET" })
       .select("loaded_at, route, who, device, os, load_ms, kind")
       .gte("loaded_at", since)
       .order("loaded_at", { ascending: false })
-      .limit(10000);
+      .limit(data.limit);
     if (error) {
       console.warn("[page-load] select failed", error.message);
-      return { routes: [], devices: [], recent: [], daily: [], users: [], totalCount: 0, avgMs: 0 };
+      return { routes: [], devices: [], recent: [], daily: [], users: [], slowest: [], totalCount: 0, avgMs: 0, sampleLimit: data.limit };
     }
+
 
     const all = (rows ?? []) as PageLoadEntry[];
     // routes
