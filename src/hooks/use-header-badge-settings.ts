@@ -2,10 +2,12 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 export type BadgeSetting = { enabled: boolean; users: string[] };
+export type TrainingSportToggles = { run: boolean; ride: boolean; swim: boolean; walk: boolean; hike: boolean };
 export type HeaderBadgeSettings = {
   badges: Record<string, BadgeSetting>;
   weather: { startOffset: 0 | 1; days: number; showTemp: boolean };
   garbage: { maxDaysAhead: number; showAllSameDay: boolean };
+  training: TrainingSportToggles;
 };
 
 export const HEADER_BADGE_KEY = "header_badges";
