@@ -493,6 +493,7 @@ export function HeatersPanel({
                             v,
                           )
                         }
+                        onSetSwing={(capId, v) => sendCap(h.id, capId, v)}
                       />
                     ))}
                   </div>
