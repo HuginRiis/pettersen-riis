@@ -350,8 +350,11 @@ function buildTips(args: {
   const { label, scope, indoor, outdoor, humidity, co2, pumps } = args;
   const tips: Tip[] = [];
   const target = avg(pumps.map((p) => p.target));
-  const onCount = pumps.filter((p) => p.onoff === true).length;
+  const onPumps = pumps.filter((p) => p.onoff === true);
+  const onCount = onPumps.length;
   const allOff = pumps.length > 0 && pumps.every((p) => p.onoff === false);
+  const canHeatActive = onPumps.some((p) => modeAllowsHeat(p.mode));
+  const canCoolActive = onPumps.some((p) => modeAllowsCool(p.mode));
 
   if (indoor !== null && outdoor !== null) {
     if (indoor > 24)
