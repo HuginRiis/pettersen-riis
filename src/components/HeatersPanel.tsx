@@ -13,6 +13,15 @@ import {
   Droplets,
   RefreshCw,
   Power,
+  ArrowUp,
+  ArrowDown,
+  ArrowLeft,
+  ArrowRight,
+  ArrowUpDown,
+  ArrowLeftRight,
+  RotateCw,
+  Maximize2,
+  Move,
 } from "lucide-react";
 import {
   getHomeySnapshot,
@@ -610,6 +619,26 @@ function UnitToggle({
   );
 }
 
+function swingValueIcon(id: string, title?: string): typeof Sun {
+  const s = `${id} ${title ?? ""}`.toLowerCase();
+  if (/auto/.test(s)) return RefreshCw;
+  if (/oppover|^up$|opp\b|top/.test(s)) return ArrowUp;
+  if (/nedover|^down$|ned\b|bottom/.test(s)) return ArrowDown;
+  if (/venstre|left/.test(s)) return ArrowLeft;
+  if (/h(ø|o)yre|right/.test(s)) return ArrowRight;
+  if (/midt|midten|center|middle/.test(s)) return Minus;
+  if (/sving|swing|oscill/.test(s)) return RotateCw;
+  if (/bred|wide|full|range/.test(s)) return Maximize2;
+  return Move;
+}
+
+function swingHeaderIcon(label: string, capabilityId: string): typeof Sun {
+  const s = `${label} ${capabilityId}`.toLowerCase();
+  if (/opp|ned|vert|updown|vane_vertical|^vertical/.test(s)) return ArrowUpDown;
+  if (/side|left|right|horiz|leftright|vane_horizontal|^horizontal/.test(s)) return ArrowLeftRight;
+  return Move;
+}
+
 function HeaterCard({
   heater,
   busy,
@@ -684,6 +713,18 @@ function HeaterCard({
     if (v !== heater.target) onSetTemp(v);
   };
 
+  // Steg-veksler: 0.5 eller 1 grad pr +/- (persistert pr enhet)
+  const stepKey = `hpr.step.${heater.id}`;
+  const [userStep, setUserStep] = useState<0.5 | 1>(() => {
+    if (typeof window === "undefined") return 0.5;
+    const v = window.localStorage.getItem(stepKey);
+    return v === "1" ? 1 : 0.5;
+  });
+  useEffect(() => {
+    if (typeof window !== "undefined") window.localStorage.setItem(stepKey, String(userStep));
+  }, [userStep, stepKey]);
+  const effStep = Math.max(heater.step, userStep);
+
   const adjust = (delta: number) => {
     const cur = heater.target ?? 21;
     const next = Math.min(heater.max, Math.max(heater.min, +(cur + delta).toFixed(1)));
@@ -703,8 +744,8 @@ function HeaterCard({
 
   const stepLabel =
     unit === "F"
-      ? `${(heater.step * 1.8).toFixed(heater.step >= 1 ? 1 : 1)}°`
-      : `${heater.step}°`;
+      ? `${(effStep * 1.8).toFixed(1)}°`
+      : `${effStep}°`;
 
   return (
     <article className="panel rounded-lg overflow-hidden flex flex-col">
@@ -748,7 +789,7 @@ function HeaterCard({
 
         {heater.hasTarget && (
           <>
-            <div className="w-full max-w-[260px] mt-0.5 sm:mt-1 px-1">
+            <div className="w-full mt-0.5 sm:mt-1 px-1">
               <input
                 type="range"
                 min={heater.min}
@@ -771,10 +812,10 @@ function HeaterCard({
               />
             </div>
 
-            <div className="grid grid-cols-3 gap-1.5 sm:gap-2 w-full max-w-[260px] mt-0.5 sm:mt-1">
+            <div className="grid grid-cols-3 gap-1.5 sm:gap-2 w-full mt-0.5 sm:mt-1 items-center">
               <button
                 type="button"
-                onClick={() => adjust(-heater.step)}
+                onClick={() => adjust(-effStep)}
                 disabled={tempBusy || (heater.target ?? 0) <= heater.min}
                 aria-label="Senk temperatur"
                 className={`rounded ${btnPad} flex items-center justify-center transition-all disabled:opacity-40 disabled:cursor-not-allowed active:scale-95`}
@@ -786,12 +827,38 @@ function HeaterCard({
               >
                 <Minus size={compact ? 14 : 18} />
               </button>
-              <div className="flex items-center justify-center text-[9px] tracking-[0.2em] sm:tracking-[0.25em] uppercase text-muted-foreground">
-                {tempBusy ? <Loader2 size={12} className="animate-spin" /> : stepLabel}
+              <div className="flex flex-col items-center gap-1">
+                <div className="text-[9px] tracking-[0.2em] sm:tracking-[0.25em] uppercase text-muted-foreground">
+                  {tempBusy ? <Loader2 size={12} className="animate-spin" /> : stepLabel}
+                </div>
+                <div
+                  role="group"
+                  aria-label="Velg steg"
+                  className="inline-flex rounded-full overflow-hidden text-[8px] tracking-[0.15em]"
+                  style={{ border: `1px solid color-mix(in oklab, ${accent} 24%, transparent)` }}
+                >
+                  {([0.5, 1] as const).map((s) => {
+                    const active = userStep === s;
+                    return (
+                      <button
+                        key={s}
+                        type="button"
+                        onClick={() => setUserStep(s)}
+                        className="px-1.5 py-0.5 transition-colors"
+                        style={{
+                          background: active ? `color-mix(in oklab, ${accent} 22%, transparent)` : "transparent",
+                          color: active ? accent : "var(--muted-foreground)",
+                        }}
+                      >
+                        {s}°
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
               <button
                 type="button"
-                onClick={() => adjust(heater.step)}
+                onClick={() => adjust(effStep)}
                 disabled={tempBusy || (heater.target ?? 0) >= heater.max}
                 aria-label="Hev temperatur"
                 className={`rounded ${btnPad} flex items-center justify-center transition-all disabled:opacity-40 disabled:cursor-not-allowed active:scale-95`}
@@ -808,7 +875,7 @@ function HeaterCard({
         )}
 
         {supportsMode && modes.length > 0 && (
-          <div className="w-full max-w-[260px] mt-1">
+          <div className="w-full mt-1">
             <div className="flex items-center justify-between mb-1.5">
               <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground">
                 Modus
@@ -818,8 +885,8 @@ function HeaterCard({
               )}
             </div>
             <div
-              className="grid gap-1"
-              style={{ gridTemplateColumns: `repeat(${Math.min(modes.length, 5)}, minmax(0, 1fr))` }}
+              className="grid gap-1.5"
+              style={{ gridTemplateColumns: `repeat(auto-fit, minmax(64px, 1fr))` }}
             >
               {modes.map((m) => {
                 const meta = modeMeta(m.id, m.title);
@@ -837,7 +904,7 @@ function HeaterCard({
                     disabled={modeBusy}
                     aria-label={`Modus ${meta.label}`}
                     title={meta.label}
-                    className="rounded py-1.5 flex flex-col items-center justify-center gap-0.5 transition-all disabled:opacity-50 active:scale-95"
+                    className="rounded py-2 px-2 flex flex-col items-center justify-center gap-1 transition-all disabled:opacity-50 active:scale-95 min-h-[52px]"
                     style={{
                       background: active
                         ? `color-mix(in oklab, ${accent} 22%, transparent)`
@@ -846,8 +913,8 @@ function HeaterCard({
                       color: active ? accent : "var(--muted-foreground)",
                     }}
                   >
-                    <meta.Icon size={12} />
-                    <span className="text-[8px] tracking-[0.15em] uppercase">
+                    <meta.Icon size={14} />
+                    <span className="text-[9px] tracking-[0.15em] uppercase leading-tight text-center">
                       {meta.label}
                     </span>
                   </button>
@@ -858,18 +925,18 @@ function HeaterCard({
         )}
 
         {supportsFan && fanValues.length > 0 && (
-          <div className="w-full max-w-[260px] mt-1">
+          <div className="w-full mt-1">
             <div className="flex items-center justify-between mb-1.5">
-              <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground">
-                Vifte
+              <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground flex items-center gap-1.5">
+                <Wind size={11} /> Vifte
               </span>
               {fanBusy && (
                 <Loader2 size={12} className="animate-spin text-muted-foreground" />
               )}
             </div>
             <div
-              className="grid gap-1"
-              style={{ gridTemplateColumns: `repeat(${Math.min(fanValues.length, 5)}, minmax(0, 1fr))` }}
+              className="grid gap-1.5"
+              style={{ gridTemplateColumns: `repeat(auto-fit, minmax(60px, 1fr))` }}
             >
               {fanValues.map((f) => {
                 const active =
@@ -886,7 +953,7 @@ function HeaterCard({
                     disabled={fanBusy}
                     aria-label={`Vifte ${f.title ?? f.id}`}
                     title={f.title ?? f.id}
-                    className="rounded py-1.5 flex items-center justify-center transition-all disabled:opacity-50 active:scale-95"
+                    className="rounded py-2 px-2 flex items-center justify-center gap-1 transition-all disabled:opacity-50 active:scale-95 min-h-[40px]"
                     style={{
                       background: active
                         ? `color-mix(in oklab, ${accent} 22%, transparent)`
@@ -895,7 +962,8 @@ function HeaterCard({
                       color: active ? accent : "var(--muted-foreground)",
                     }}
                   >
-                    <span className="text-[8px] tracking-[0.15em] uppercase">
+                    <Wind size={10} className="opacity-70" />
+                    <span className="text-[9px] tracking-[0.15em] uppercase">
                       {f.title ?? f.id}
                     </span>
                   </button>
@@ -906,16 +974,17 @@ function HeaterCard({
         )}
 
         {heater.swings.length > 0 && (
-          <div className="w-full max-w-[260px] mt-1 space-y-2">
+          <div className="w-full mt-1 space-y-2">
             {heater.swings.map((sw) => {
               const swBusy = busy[`${heater.id}:${sw.capabilityId}`];
+              const HeaderIcon = swingHeaderIcon(sw.label, sw.capabilityId);
               if (sw.kind === "boolean") {
                 const active = sw.value === true;
                 return (
                   <div key={sw.capabilityId}>
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground">
-                        {sw.label}
+                      <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground flex items-center gap-1.5">
+                        <HeaderIcon size={11} /> {sw.label}
                       </span>
                       {swBusy && <Loader2 size={12} className="animate-spin text-muted-foreground" />}
                     </div>
@@ -923,7 +992,7 @@ function HeaterCard({
                       type="button"
                       onClick={() => !swBusy && onSetSwing(sw.capabilityId, !active)}
                       disabled={swBusy}
-                      className="w-full rounded py-1.5 text-[9px] tracking-[0.25em] uppercase transition-all disabled:opacity-50"
+                      className="w-full rounded py-2 text-[9px] tracking-[0.25em] uppercase transition-all disabled:opacity-50 flex items-center justify-center gap-1.5"
                       style={{
                         background: active
                           ? `color-mix(in oklab, ${accent} 22%, transparent)`
@@ -932,6 +1001,7 @@ function HeaterCard({
                         color: active ? accent : "var(--muted-foreground)",
                       }}
                     >
+                      <RotateCw size={11} />
                       {active ? "Sving på" : "Sving av"}
                     </button>
                   </div>
@@ -941,24 +1011,25 @@ function HeaterCard({
               return (
                 <div key={sw.capabilityId}>
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground">
-                      {sw.label}
+                    <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground flex items-center gap-1.5">
+                      <HeaderIcon size={11} /> {sw.label}
                     </span>
                     {swBusy && <Loader2 size={12} className="animate-spin text-muted-foreground" />}
                   </div>
                   <div
-                    className="grid gap-1"
-                    style={{ gridTemplateColumns: `repeat(${Math.min(Math.max(values.length, 1), 5)}, minmax(0, 1fr))` }}
+                    className="grid gap-1.5"
+                    style={{ gridTemplateColumns: `repeat(auto-fit, minmax(70px, 1fr))` }}
                   >
                     {values.map((v) => {
                       const active = String(sw.value ?? "").toLowerCase() === String(v.id).toLowerCase();
+                      const VIcon = swingValueIcon(String(v.id), v.title);
                       return (
                         <button
                           key={v.id}
                           type="button"
                           onClick={() => !swBusy && !active && onSetSwing(sw.capabilityId, v.id)}
                           disabled={swBusy}
-                          className="rounded py-1.5 text-[8px] tracking-[0.15em] uppercase transition-all disabled:opacity-50"
+                          className="rounded py-2 px-2 text-[9px] tracking-[0.15em] uppercase transition-all disabled:opacity-50 flex flex-col items-center justify-center gap-1 min-h-[44px]"
                           style={{
                             background: active
                               ? `color-mix(in oklab, ${accent} 22%, transparent)`
@@ -967,7 +1038,10 @@ function HeaterCard({
                             color: active ? accent : "var(--muted-foreground)",
                           }}
                         >
-                          {v.title ?? v.id}
+                          <VIcon size={12} />
+                          <span className="leading-tight text-center break-words">
+                            {v.title ?? v.id}
+                          </span>
                         </button>
                       );
                     })}
