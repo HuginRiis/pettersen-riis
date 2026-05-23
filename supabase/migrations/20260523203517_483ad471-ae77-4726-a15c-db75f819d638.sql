@@ -1,0 +1,1 @@
+ALTER TABLE public.hytta_checklist ADD COLUMN IF NOT EXISTS repeat_interval_days integer;
