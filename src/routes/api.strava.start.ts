@@ -14,11 +14,6 @@ export const Route = createFileRoute("/api/strava/start")({
         if (!clientId) {
           return new Response(`STRAVA_CLIENT_ID mangler for ${owner}`, { status: 500 });
         }
-
-
-        const url = new URL(request.url);
-        const ownerParam = url.searchParams.get("owner");
-        const owner: StravaOwner = isStravaOwner(ownerParam) ? ownerParam : "arne";
         const redirectUri = `${url.origin}/api/strava/callback`;
 
         // Pakk owner inn i state slik at callback vet hvilken konto vi binder til.
