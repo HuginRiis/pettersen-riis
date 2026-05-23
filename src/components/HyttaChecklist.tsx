@@ -1,7 +1,14 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getStoredWho, type Who } from "@/lib/push-client";
 import { sendHyttaChecklistPush } from "@/server/agenda-push";
+import {
+  addHyttaChecklistItem,
+  deleteHyttaChecklistItem,
+  listHyttaChecklist,
+  scheduleHyttaChecklistReminder,
+  toggleHyttaChecklistItem,
+} from "@/lib/hytta-checklist.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -209,6 +216,11 @@ export function HyttaChecklist() {
   // Mottaker for "Send nå"
   const [sendNowWho, setSendNowWho] = useState<string>("Alle");
 
+  const loadChecklist = useCallback(async () => {
+    const res = await listHyttaChecklist();
+    setItems((res.items || []) as ChecklistItem[]);
+  }, []);
+
   useEffect(() => {
     setWho(getStoredWho());
   }, []);
@@ -217,19 +229,13 @@ export function HyttaChecklist() {
     let mounted = true;
 
     const load = async () => {
-      const { data, error } = await supabase
-        .from("hytta_checklist")
-        .select("*")
-        .order("checked", { ascending: true })
-        .order("sort_order", { ascending: true })
-        .order("created_at", { ascending: true });
       if (!mounted) return;
-      if (error) {
+      try {
+        await loadChecklist();
+      } catch {
         toast.error("Kunne ikke laste huskelisten");
-      } else {
-        setItems((data || []) as ChecklistItem[]);
       }
-      setLoading(false);
+      if (mounted) setLoading(false);
     };
 
     load();
@@ -249,7 +255,7 @@ export function HyttaChecklist() {
       mounted = false;
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [loadChecklist]);
 
   const addItem = async () => {
     const label = newLabel.trim();
