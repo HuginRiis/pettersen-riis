@@ -1,12 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import {
-  deleteStravaConnection,
-  getStravaConnection,
-  getValidStravaAccessToken,
-  isStravaOwner,
-  STRAVA_OWNERS,
-  type StravaOwner,
-} from "./strava-connection";
+import { isStravaOwner, STRAVA_OWNERS, type StravaOwner } from "@/lib/strava-shared";
 
 
 const STRAVA_API = "https://www.strava.com/api/v3";
@@ -77,6 +70,7 @@ export const getStravaStatus = createServerFn({ method: "GET" })
     owner: parseOwner(input?.owner),
   }))
   .handler(async ({ data }) => {
+    const { getStravaConnection } = await import("./strava-connection");
     const conn = await getStravaConnection(data.owner);
     if (!conn) return { connected: false as const, owner: data.owner };
     return {
@@ -89,6 +83,7 @@ export const getStravaStatus = createServerFn({ method: "GET" })
   });
 
 export const getAllStravaStatuses = createServerFn({ method: "GET" }).handler(async () => {
+  const { getStravaConnection } = await import("./strava-connection");
   const results = await Promise.all(
     STRAVA_OWNERS.map(async (owner) => {
       const conn = await getStravaConnection(owner);
@@ -110,6 +105,7 @@ export const disconnectStrava = createServerFn({ method: "POST" })
     owner: parseOwner(input?.owner),
   }))
   .handler(async ({ data }) => {
+    const { deleteStravaConnection } = await import("./strava-connection");
     await deleteStravaConnection(data.owner);
     return { ok: true };
   });
