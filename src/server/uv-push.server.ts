@@ -187,6 +187,7 @@ export async function processUvNotifications(): Promise<{
     lat: number;
     lon: number;
     recipient: string;
+    fall_recipient: string | null;
     lead_minutes: number | null;
     notified_date_3: string | null;
     notified_date_6: string | null;
@@ -197,6 +198,9 @@ export async function processUvNotifications(): Promise<{
     notified_fall_date_3: string | null;
     notified_fall_date_6: string | null;
     notified_fall_date_8: string | null;
+    reached_date_3: string | null;
+    reached_date_6: string | null;
+    reached_date_8: string | null;
   }>) {
     checked++;
     const lead = typeof p.lead_minutes === "number" ? p.lead_minutes : LEAD_MINUTES;
@@ -206,6 +210,22 @@ export async function processUvNotifications(): Promise<{
     if (uv == null) {
       skipped++;
       continue;
+    }
+
+    // Marker hvilke nivåer som faktisk er nådd i dag (basert på UV NÅ).
+    // Fall-varsel kan kun sendes for nivåer vi faktisk har vært oppe på.
+    const reachedUpdates: Record<string, string> = {};
+    if (uvNow != null) {
+      for (const lvl of LEVELS) {
+        const reachedCol = `reached_date_${lvl.threshold}` as
+          | "reached_date_3"
+          | "reached_date_6"
+          | "reached_date_8";
+        if (uvNow >= lvl.threshold && p[reachedCol] !== today) {
+          reachedUpdates[reachedCol] = today;
+          p[reachedCol] = today;
+        }
+      }
     }
 
     // 1) Finn høyeste nivå som er nådd og ikke varslet i dag (stigning).
@@ -220,13 +240,17 @@ export async function processUvNotifications(): Promise<{
       }
     }
 
-    // 2) Finn høyeste nivå som er "falt under" i dag (etter at vi har varslet stigning).
-    //    Sender én gang per nivå per dag, kun hvis fall-varsling er på for nivået.
+    // 2) Finn høyeste nivå som er "falt under" i dag — krever at vi
+    //    FAKTISK har vært oppe på nivået i dag (reached_date_X = today).
     let fallTrigger: (typeof LEVELS)[number] | null = null;
     if (uvNow != null) {
       for (const lvl of LEVELS) {
         if (!p[lvl.fallEnabledColumn]) continue;
-        if (p[lvl.column] !== today) continue; // vi varslet ikke stigning i dag → ikke fall heller
+        const reachedCol = `reached_date_${lvl.threshold}` as
+          | "reached_date_3"
+          | "reached_date_6"
+          | "reached_date_8";
+        if (p[reachedCol] !== today) continue; // ikke vært oppe på nivået i dag
         if (p[lvl.fallColumn] === today) continue; // allerede fall-varslet
         if (uvNow < lvl.threshold) {
           fallTrigger = lvl;
@@ -235,28 +259,30 @@ export async function processUvNotifications(): Promise<{
       }
     }
 
-    if (!trigger && !fallTrigger) {
+    if (!trigger && !fallTrigger && Object.keys(reachedUpdates).length === 0) {
       skipped++;
       continue;
     }
 
     const targetWho = p.recipient || "Alle";
-    let subQuery = supabaseAdmin
-      .from("push_subscriptions")
-      .select("endpoint, p256dh, auth, who");
-    {
-      const orFilter = buildSubscriptionWhoOr(targetWho);
-      if (orFilter) subQuery = subQuery.or(orFilter);
-    }
-    const { data: subs, error: subErr } = await subQuery;
-    if (subErr) {
-      errors++;
-      continue;
+    const fallWho = (p.fall_recipient && p.fall_recipient.trim()) || targetWho;
+
+    async function loadSubs(who: string) {
+      let q = supabaseAdmin.from("push_subscriptions").select("endpoint, p256dh, auth, who");
+      const orFilter = buildSubscriptionWhoOr(who);
+      if (orFilter) q = q.or(orFilter);
+      const { data, error: e } = await q;
+      if (e) throw e;
+      return data ?? [];
     }
 
     const locPrefix = (p.location ?? "").toLowerCase() === "hytta" ? "Fra hytta 🛖 · " : "Fra Tollnes 🏠 · ";
 
     if (trigger) {
+      const subs = await loadSubs(targetWho).catch(() => {
+        errors++;
+        return [] as Awaited<ReturnType<typeof loadSubs>>;
+      });
       const payload = JSON.stringify({
         title: `${locPrefix}${trigger.title(lead)}`,
         body: trigger.body(p.label, uv, lead),
@@ -264,7 +290,7 @@ export async function processUvNotifications(): Promise<{
         url: "/var",
       });
 
-      for (const sub of subs ?? []) {
+      for (const sub of subs) {
         const ok = await sendOne(
           {
             endpoint: sub.endpoint as string,
@@ -286,6 +312,10 @@ export async function processUvNotifications(): Promise<{
     }
 
     if (fallTrigger && uvNow != null) {
+      const subs = await loadSubs(fallWho).catch(() => {
+        errors++;
+        return [] as Awaited<ReturnType<typeof loadSubs>>;
+      });
       const payload = JSON.stringify({
         title: `${locPrefix}${fallTrigger.fallTitle()}`,
         body: fallTrigger.fallBody(p.label, uvNow),
@@ -293,7 +323,7 @@ export async function processUvNotifications(): Promise<{
         url: "/var",
       });
 
-      for (const sub of subs ?? []) {
+      for (const sub of subs) {
         const ok = await sendOne(
           {
             endpoint: sub.endpoint as string,
@@ -302,7 +332,7 @@ export async function processUvNotifications(): Promise<{
             who: (sub as any).who ?? null,
           },
           payload,
-          { feature: "uv-fall", recipient: targetWho, title: fallTrigger.fallTitle() },
+          { feature: "uv-fall", recipient: fallWho, title: fallTrigger.fallTitle() },
         );
         if (ok) sent++;
         else errors++;
@@ -311,6 +341,13 @@ export async function processUvNotifications(): Promise<{
       await supabaseAdmin
         .from("uv_notification_prefs" as never)
         .update({ [fallTrigger.fallColumn]: today } as never)
+        .eq("id", p.id);
+    }
+
+    if (Object.keys(reachedUpdates).length > 0) {
+      await supabaseAdmin
+        .from("uv_notification_prefs" as never)
+        .update(reachedUpdates as never)
         .eq("id", p.id);
     }
   }
