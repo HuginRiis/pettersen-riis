@@ -264,16 +264,22 @@ function Steintavle2Page() {
               label="Navn"
               value={sizes.label}
               onChange={(v) => updateSize("label", v)}
+              bold={bold.label}
+              onBoldChange={(b) => updateBold("label", b)}
             />
             <SizeSlider
               label="Verdi"
               value={sizes.value}
               onChange={(v) => updateSize("value", v)}
+              bold={bold.value}
+              onBoldChange={(b) => updateBold("value", b)}
             />
             <SizeSlider
               label="Småtekst"
               value={sizes.sub}
               onChange={(v) => updateSize("sub", v)}
+              bold={bold.sub}
+              onBoldChange={(b) => updateBold("sub", b)}
             />
           </div>
         </div>
