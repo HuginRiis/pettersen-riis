@@ -90,6 +90,27 @@ function Steintavle2Page() {
   const router = useRouter();
   const [live, setLive] = useState(netatmo);
   const [now, setNow] = useState<Date | null>(null);
+  // Tekststørrelse lagres globalt i localStorage, men panelet starter alltid kollapset.
+  const [sizes, setSizes] = useState<TextSizes>(DEFAULT_SIZES);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  useEffect(() => {
+    setSizes(loadSizes());
+  }, []);
+  const updateSize = (key: keyof TextSizes, val: number) => {
+    setSizes((prev) => {
+      const next = { ...prev, [key]: val };
+      try {
+        window.localStorage.setItem(SIZE_STORAGE_KEY, JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  };
+  const resetSizes = () => {
+    setSizes(DEFAULT_SIZES);
+    try {
+      window.localStorage.removeItem(SIZE_STORAGE_KEY);
+    } catch {}
+  };
 
   useEffect(() => {
     setNow(new Date());
