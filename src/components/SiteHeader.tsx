@@ -534,7 +534,7 @@ export function SiteHeader() {
                       bump(l.to);
                       setOpen(false);
                     }}
-                    className="flex-1 px-2 py-2.5 text-xs tracking-wider uppercase text-muted-foreground hover:text-primary data-[status=active]:text-primary data-[status=active]:font-semibold flex items-center gap-2"
+                    className={`flex-1 px-2 py-2.5 tracking-wider uppercase text-muted-foreground hover:text-primary data-[status=active]:text-primary data-[status=active]:font-semibold flex items-center gap-2 ${badgeSettings.fitOneLine ? "text-[10px] whitespace-nowrap overflow-hidden" : "text-xs"}`}
                   >
                     {l.to === "/pollen"
                       ? <PollenIcon lat={pollenCoord.lat} lon={pollenCoord.lon} />
