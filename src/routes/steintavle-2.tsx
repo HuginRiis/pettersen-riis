@@ -212,13 +212,13 @@ function BigCard({
           ? "text-emerald-400"
           : "text-primary";
   return (
-    <article className="panel rounded-lg p-4 sm:p-6 flex flex-col items-center justify-center text-center min-h-[34vh]">
-      <div className="text-display tracking-[0.4em] uppercase text-[11px] sm:text-sm text-primary/80 mb-2 sm:mb-3">
+    <article className="panel rounded-lg p-4 sm:p-6 flex flex-col items-center justify-center text-center min-h-[42vh]">
+      <div className="text-display tracking-[0.4em] uppercase text-base sm:text-xl text-primary/80 mb-3 sm:mb-4">
         {label}
       </div>
       <div
         className={`text-display leading-none tabular-nums ${accentCls}`}
-        style={{ fontSize: "clamp(4rem, 18vw, 11rem)" }}
+        style={{ fontSize: "clamp(5rem, 14vw, 13rem)" }}
       >
         {value}
       </div>
