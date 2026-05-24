@@ -419,21 +419,45 @@ export function PowerVsYesterdayBadge({ inline }: { inline?: boolean } = {}) {
       const today = fmt(new Date());
       const y = new Date(); y.setDate(y.getDate() - 1);
       const yest = fmt(y);
-      const { data } = await supabase
+
+      // I går: ferdige dagstall fra Tibber
+      const { data: daily } = await supabase
         .from("tibber_daily_kwh")
         .select("day, location, kwh")
         .in("day", [today, yest]);
       let t = 0, ye = 0;
-      for (const r of (data ?? []) as Array<{ day: string; kwh: number | string }>) {
+      for (const r of (daily ?? []) as Array<{ day: string; location: string; kwh: number | string }>) {
         const v = Number(r.kwh) || 0;
         if (r.day === today) t += v;
         else if (r.day === yest) ye += v;
       }
-      if (ye <= 0) return null;
+
+      // Hvis i dag mangler i tibber_daily_kwh (Tibber rapporterer først dagen etter),
+      // bruk siste kwh_today fra Pulse-avlesninger per lokasjon.
+      if (t <= 0) {
+        const sinceIso = new Date(Date.now() - 36 * 60 * 60 * 1000).toISOString();
+        const { data: pulse } = await supabase
+          .from("pulse_readings")
+          .select("location, recorded_at, kwh_today")
+          .gte("recorded_at", sinceIso)
+          .not("kwh_today", "is", null)
+          .order("recorded_at", { ascending: false });
+        const latest: Record<string, number> = {};
+        for (const r of (pulse ?? []) as Array<{ location: string; recorded_at: string; kwh_today: number | null }>) {
+          if (r.kwh_today == null) continue;
+          const dKey = new Date(r.recorded_at).toLocaleDateString("sv-SE", { timeZone: "Europe/Oslo" });
+          if (dKey !== today) continue;
+          if (latest[r.location] == null) latest[r.location] = Number(r.kwh_today);
+        }
+        t = Object.values(latest).reduce((a, b) => a + b, 0);
+      }
+
+      if (ye <= 0 || t <= 0) return null;
       return ((t - ye) / ye) * 100;
     },
-    { ttlMs: 15 * 60_000 },
+    { ttlMs: 5 * 60_000 },
   );
+
   if (pct == null || !isFinite(pct)) return null;
   const up = pct >= 0;
   const tone = up
