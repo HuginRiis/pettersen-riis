@@ -173,6 +173,7 @@ const navLinks: NavLink[] = [
   { to: "/roborock", label: "Roborock" },
   { to: "/planter", label: "Planter & Trær" },
   { to: "/steintavle", label: "Steintavle" },
+  { to: "/steintavle-2", label: "Steintavle 2" },
   { to: "/flyradar", label: "Flyradar", public: true },
 ];
 
