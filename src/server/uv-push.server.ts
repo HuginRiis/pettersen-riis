@@ -707,6 +707,7 @@ export async function computeUpcomingUvEvaluations(daysAhead = 3): Promise<
           uvMax: null,
           uvMaxAt: null,
           ruleText: "Sender hvis UV ≥ 3 (sjekk kl 08-17)",
+          kind: "rise",
         });
         continue;
       }
@@ -745,28 +746,67 @@ export async function computeUpcomingUvEvaluations(daysAhead = 3): Promise<
           uvMax: maxPoint.uv,
           uvMaxAt: maxPoint.time,
           ruleText: `Maks UV ${maxPoint.uv.toFixed(1)} — under terskel 3`,
+          kind: "rise",
         });
         continue;
       }
 
       const sendAt = new Date(crossing.at.getTime() - lead * 60 * 1000);
       // For "i dag": ikke vis hvis sending allerede er passert
-      if (targetIso === todayOsloIso && sendAt.getTime() < now.getTime() - 60 * 1000) continue;
+      if (!(targetIso === todayOsloIso && sendAt.getTime() < now.getTime() - 60 * 1000)) {
+        out.push({
+          id: `${raw.id}-${targetIso}-rise`,
+          location: raw.location,
+          label: raw.label,
+          recipient: raw.recipient,
+          leadMinutes: lead,
+          targetDate: targetIso,
+          notifyAt: sendAt.toISOString(),
+          status: "will-fire",
+          threshold: crossing.lvl,
+          uvMax: maxPoint.uv,
+          uvMaxAt: maxPoint.time,
+          ruleText: `UV ≥ ${crossing.lvl} (maks ${maxPoint.uv.toFixed(1)})`,
+          kind: "rise",
+        });
+      }
 
-      out.push({
-        id: `${raw.id}-${targetIso}`,
-        location: raw.location,
-        label: raw.label,
-        recipient: raw.recipient,
-        leadMinutes: lead,
-        targetDate: targetIso,
-        notifyAt: sendAt.toISOString(),
-        status: "will-fire",
-        threshold: crossing.lvl,
-        uvMax: maxPoint.uv,
-        uvMaxAt: maxPoint.time,
-        ruleText: `UV ≥ ${crossing.lvl} (maks ${maxPoint.uv.toFixed(1)})`,
-      });
+      // Fall-varsler: for hvert aktivert fall-nivå som blir nådd i dag,
+      // finn første tidspunkt etter maks der UV synker under nivået.
+      const fallEnabled: Record<3 | 6 | 8, boolean> = {
+        3: raw.notify_fall_3,
+        6: raw.notify_fall_6,
+        8: raw.notify_fall_8,
+      };
+      const maxIdx = dayPoints.findIndex((p) => p === maxPoint);
+      for (const lvl of [8, 6, 3] as const) {
+        if (!fallEnabled[lvl]) continue;
+        if (maxPoint.uv < lvl) continue; // nivået blir aldri nådd
+        let fallAt: Date | null = null;
+        for (let i = Math.max(maxIdx, 0); i < dayPoints.length; i++) {
+          if (dayPoints[i].uv < lvl) {
+            fallAt = new Date(dayPoints[i].time);
+            break;
+          }
+        }
+        if (!fallAt) continue;
+        if (targetIso === todayOsloIso && fallAt.getTime() < now.getTime() - 60 * 1000) continue;
+        out.push({
+          id: `${raw.id}-${targetIso}-fall-${lvl}`,
+          location: raw.location,
+          label: raw.label,
+          recipient: fallRecipient,
+          leadMinutes: lead,
+          targetDate: targetIso,
+          notifyAt: fallAt.toISOString(),
+          status: "will-fire",
+          threshold: lvl,
+          uvMax: maxPoint.uv,
+          uvMaxAt: maxPoint.time,
+          ruleText: `UV faller under ${lvl}`,
+          kind: "fall",
+        });
+      }
     }
   }
 
