@@ -11,10 +11,23 @@ import { useLastGood } from "@/hooks/use-last-good";
 
 const SIZE_STORAGE_KEY = "st2.textSizes.v1";
 const BOLD_STORAGE_KEY = "st2.textBold.v1";
+const SHOW_SUB_STORAGE_KEY = "st2.showSub.v1";
 type TextSizes = { label: number; value: number; sub: number };
 type TextBold = { label: boolean; value: boolean; sub: boolean };
 const DEFAULT_SIZES: TextSizes = { label: 1, value: 1, sub: 1 };
 const DEFAULT_BOLD: TextBold = { label: false, value: false, sub: false };
+const DEFAULT_SHOW_SUB = true;
+
+function loadShowSub(): boolean {
+  if (typeof window === "undefined") return DEFAULT_SHOW_SUB;
+  try {
+    const raw = window.localStorage.getItem(SHOW_SUB_STORAGE_KEY);
+    if (raw === null) return DEFAULT_SHOW_SUB;
+    return raw === "1" || raw === "true";
+  } catch {
+    return DEFAULT_SHOW_SUB;
+  }
+}
 
 function loadSizes(): TextSizes {
   if (typeof window === "undefined") return DEFAULT_SIZES;
