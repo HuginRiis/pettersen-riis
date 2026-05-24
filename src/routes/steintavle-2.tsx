@@ -378,7 +378,7 @@ function SizeSlider({
       <input
         type="range"
         min={0.6}
-        max={2.2}
+        max={4}
         step={0.05}
         value={value}
         onChange={(e) => onChange(parseFloat(e.target.value))}
