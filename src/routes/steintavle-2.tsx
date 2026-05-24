@@ -99,24 +99,44 @@ function Steintavle2Page() {
   const outdoorModule = modules.find((m) => m.type === "NAModule1") ?? null;
   const windModule = modules.find((m) => m.type === "NAModule2") ?? null;
   const rainModule = modules.find((m) => m.type === "NAModule3") ?? null;
+  const indoorModules = modules.filter((m) => m.type === "NAModule4");
+  const noraModule =
+    indoorModules.find((m) => /nora/i.test(m.name)) ?? null;
+  const bedroomModule =
+    indoorModules.find(
+      (m) => /sov|sove|bed/i.test(m.name) && !/nora/i.test(m.name),
+    ) ??
+    indoorModules.find((m) => !noraModule || m.id !== noraModule.id) ??
+    null;
 
   const tempStuaLive = mainModule?.metrics.temperature ?? null;
   const tempUteLive = outdoorModule?.metrics.temperature ?? null;
+  const tempSovLive = bedroomModule?.metrics.temperature ?? null;
+  const tempNoraLive = noraModule?.metrics.temperature ?? null;
 
   const stuaLG = useLastGood("st2.lg.stua", tempStuaLive);
   const uteLG = useLastGood("st2.lg.ute", tempUteLive);
+  const sovLG = useLastGood("st2.lg.sov", tempSovLive);
+  const noraLG = useLastGood("st2.lg.nora", tempNoraLive);
   const tempStua = stuaLG.value;
   const tempUte = uteLG.value;
+  const tempSov = sovLG.value;
+  const tempNora = noraLG.value;
 
   const humUte = outdoorModule?.metrics.humidity ?? null;
   const humStua = mainModule?.metrics.humidity ?? null;
+  const humSov = bedroomModule?.metrics.humidity ?? null;
+  const humNora = noraModule?.metrics.humidity ?? null;
 
   const rainHour = rainModule?.metrics.rain ?? null;
   const rainDay = rainModule?.metrics.rainDay ?? null;
 
-  const wind = windModule?.metrics.windStrength ?? null;
+  // Netatmo gir vind i km/t — vi viser m/s (km/t / 3.6)
+  const windKmh = windModule?.metrics.windStrength ?? null;
+  const gustKmh = windModule?.metrics.gustStrength ?? null;
+  const wind = windKmh !== null ? windKmh / 3.6 : null;
+  const gust = gustKmh !== null ? gustKmh / 3.6 : null;
   const windAng = windModule?.metrics.windAngle;
-  const gust = windModule?.metrics.gustStrength ?? null;
   const gustAng = windModule?.metrics.gustAngle;
 
   const err = !live.ok ? live.error : null;
@@ -146,7 +166,7 @@ function Steintavle2Page() {
       )}
 
       <main className="container mx-auto px-3 sm:px-6 pb-4">
-        <section className="grid gap-3 sm:gap-4 grid-cols-2 mb-3 sm:mb-4">
+        <section className="grid gap-2 sm:gap-3 grid-cols-2">
           <BigCard
             label="Stua"
             value={`${fmt(tempStua, 1)}°`}
@@ -159,9 +179,18 @@ function Steintavle2Page() {
             sub={humUte !== null ? `${Math.round(humUte)}% fukt` : undefined}
             accent="ice"
           />
-        </section>
-
-        <section className="grid gap-3 sm:gap-4 grid-cols-2">
+          <BigCard
+            label="Soverom"
+            value={`${fmt(tempSov, 1)}°`}
+            sub={humSov !== null ? `${Math.round(humSov)}% fukt` : undefined}
+            accent="primary"
+          />
+          <BigCard
+            label="Nora sitt rom"
+            value={`${fmt(tempNora, 1)}°`}
+            sub={humNora !== null ? `${Math.round(humNora)}% fukt` : undefined}
+            accent="primary"
+          />
           <BigCard
             label="Regn"
             value={`${fmt(rainHour, 1)} mm`}
@@ -174,10 +203,10 @@ function Steintavle2Page() {
           />
           <BigCard
             label="Vind"
-            value={`${fmt(wind, 0)} km/t`}
+            value={`${fmt(wind, 1)} m/s`}
             sub={
               gust !== null
-                ? `${compass(windAng)} · kast ${fmt(gust, 0)} ${compass(gustAng)}`
+                ? `${compass(windAng)} · kast ${fmt(gust, 1)} m/s ${compass(gustAng)}`
                 : compass(windAng)
             }
             accent="wind"
@@ -212,13 +241,13 @@ function BigCard({
           ? "text-emerald-400"
           : "text-primary";
   return (
-    <article className="panel rounded-lg p-4 sm:p-6 flex flex-col items-center justify-center text-center min-h-[42vh]">
-      <div className="text-display tracking-[0.4em] uppercase text-base sm:text-xl text-primary/80 mb-3 sm:mb-4">
+    <article className="panel rounded-lg p-3 sm:p-4 flex flex-col items-center justify-center text-center min-h-[28vh]">
+      <div className="text-display tracking-[0.4em] uppercase text-sm sm:text-lg text-primary/80 mb-2 sm:mb-3">
         {label}
       </div>
       <div
         className={`text-display leading-none tabular-nums ${accentCls}`}
-        style={{ fontSize: "clamp(5rem, 14vw, 13rem)" }}
+        style={{ fontSize: "clamp(3.5rem, 11vw, 9rem)" }}
       >
         {value}
       </div>
