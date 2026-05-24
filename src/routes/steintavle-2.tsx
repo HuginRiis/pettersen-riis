@@ -262,25 +262,25 @@ function Steintavle2Page() {
             label="Stua"
             value={`${fmt(tempStua, 1)}°`}
             sub={humStua !== null ? `${Math.round(humStua)}% fukt` : undefined}
-            accent="primary"
+            accent="primary" sizes={sizes}
           />
           <BigCard
             label="Ute · Borgen"
             value={`${fmt(tempUte, 1)}°`}
             sub={humUte !== null ? `${Math.round(humUte)}% fukt` : undefined}
-            accent="ice"
+            accent="ice" sizes={sizes}
           />
           <BigCard
             label="Soverom"
             value={`${fmt(tempSov, 1)}°`}
             sub={humSov !== null ? `${Math.round(humSov)}% fukt` : undefined}
-            accent="primary"
+            accent="primary" sizes={sizes}
           />
           <BigCard
             label="Nora sitt rom"
             value={`${fmt(tempNora, 1)}°`}
             sub={humNora !== null ? `${Math.round(humNora)}% fukt` : undefined}
-            accent="primary"
+            accent="primary" sizes={sizes}
           />
           <BigCard
             label="Regn"
@@ -290,7 +290,7 @@ function Steintavle2Page() {
                 ? `siste døgn ${fmt(rainDay, 1)} mm`
                 : "siste time"
             }
-            accent="rain"
+            accent="rain" sizes={sizes}
           />
           <BigCard
             label="Vind"
@@ -300,7 +300,7 @@ function Steintavle2Page() {
                 ? `${compass(windAng)} · kast ${fmt(gust, 1)} m/s ${compass(gustAng)}`
                 : compass(windAng)
             }
-            accent="wind"
+            accent="wind" sizes={sizes}
           />
         </section>
 
