@@ -8,6 +8,7 @@ export type HeaderBadgeSettings = {
   weather: { startOffset: 0 | 1; days: number; showTemp: boolean };
   garbage: { maxDaysAhead: number; showAllSameDay: boolean };
   training: TrainingSportToggles;
+  fitOneLine: boolean;
 };
 
 export const HEADER_BADGE_KEY = "header_badges";
@@ -54,6 +55,7 @@ export const DEFAULT_HEADER_BADGE_SETTINGS: HeaderBadgeSettings = {
   weather: { startOffset: 1, days: 1, showTemp: true },
   garbage: { maxDaysAhead: 14, showAllSameDay: false },
   training: { run: true, ride: true, swim: true, walk: true, hike: true },
+  fitOneLine: false,
 };
 
 let cache: HeaderBadgeSettings | null = null;
@@ -84,7 +86,8 @@ function merge(value: unknown): HeaderBadgeSettings {
     walk: t.walk !== false,
     hike: t.hike !== false,
   };
-  return { badges, weather, garbage, training };
+  const fitOneLine = (v as any).fitOneLine === true;
+  return { badges, weather, garbage, training, fitOneLine };
 }
 
 async function load(): Promise<HeaderBadgeSettings> {
