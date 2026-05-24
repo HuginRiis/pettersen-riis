@@ -1,12 +1,37 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
+import { Settings2, X } from "lucide-react";
 import { PageShell } from "@/components/PageShell";
 import {
   getNetatmoWeatherStation,
   type WeatherModule,
 } from "@/server/netatmo-weather";
 import { useLastGood } from "@/hooks/use-last-good";
+
+const SIZE_STORAGE_KEY = "st2.textSizes.v1";
+type TextSizes = { label: number; value: number; sub: number };
+const DEFAULT_SIZES: TextSizes = { label: 1, value: 1, sub: 1 };
+
+function loadSizes(): TextSizes {
+  if (typeof window === "undefined") return DEFAULT_SIZES;
+  try {
+    const raw = window.localStorage.getItem(SIZE_STORAGE_KEY);
+    if (!raw) return DEFAULT_SIZES;
+    const parsed = JSON.parse(raw);
+    return {
+      label: clamp(Number(parsed.label) || 1, 0.6, 2.2),
+      value: clamp(Number(parsed.value) || 1, 0.6, 2.2),
+      sub: clamp(Number(parsed.sub) || 1, 0.6, 2.2),
+    };
+  } catch {
+    return DEFAULT_SIZES;
+  }
+}
+
+function clamp(v: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, v));
+}
 
 export const Route = createFileRoute("/steintavle-2")({
   head: () => ({
@@ -65,6 +90,27 @@ function Steintavle2Page() {
   const router = useRouter();
   const [live, setLive] = useState(netatmo);
   const [now, setNow] = useState<Date | null>(null);
+  // Tekststørrelse lagres globalt i localStorage, men panelet starter alltid kollapset.
+  const [sizes, setSizes] = useState<TextSizes>(DEFAULT_SIZES);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  useEffect(() => {
+    setSizes(loadSizes());
+  }, []);
+  const updateSize = (key: keyof TextSizes, val: number) => {
+    setSizes((prev) => {
+      const next = { ...prev, [key]: val };
+      try {
+        window.localStorage.setItem(SIZE_STORAGE_KEY, JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  };
+  const resetSizes = () => {
+    setSizes(DEFAULT_SIZES);
+    try {
+      window.localStorage.removeItem(SIZE_STORAGE_KEY);
+    } catch {}
+  };
 
   useEffect(() => {
     setNow(new Date());
@@ -143,8 +189,9 @@ function Steintavle2Page() {
 
   return (
     <PageShell minimalHeader>
-      <header className="container mx-auto px-6 pt-3 pb-2 text-center">
-        <div className="text-display tracking-[0.5em] text-primary text-xs sm:text-sm uppercase">
+      <header className="container mx-auto px-6 pt-3 pb-2 flex items-center justify-between gap-3">
+        <div className="w-8" aria-hidden />
+        <div className="text-display tracking-[0.5em] text-primary text-xs sm:text-sm uppercase text-center flex-1">
           Steintavle 2 · Borgen ·{" "}
           <span className="text-muted-foreground">
             {now
@@ -155,7 +202,51 @@ function Steintavle2Page() {
               : "—"}
           </span>
         </div>
+        <button
+          type="button"
+          onClick={() => setSettingsOpen((o) => !o)}
+          className="w-8 h-8 rounded-md border border-border bg-background/60 text-muted-foreground hover:text-primary flex items-center justify-center"
+          aria-label="Tekststørrelse"
+          aria-expanded={settingsOpen}
+        >
+          {settingsOpen ? <X size={16} /> : <Settings2 size={16} />}
+        </button>
       </header>
+
+      {settingsOpen && (
+        <div className="container mx-auto px-4 mb-2">
+          <div className="panel rounded-lg p-3 sm:p-4 space-y-2 text-xs">
+            <div className="flex items-center justify-between">
+              <span className="text-display tracking-[0.3em] uppercase text-[10px] text-primary/80">
+                Tekststørrelse
+              </span>
+              <button
+                type="button"
+                onClick={resetSizes}
+                className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground hover:text-primary"
+              >
+                Nullstill
+              </button>
+            </div>
+            <SizeSlider
+              label="Navn"
+              value={sizes.label}
+              onChange={(v) => updateSize("label", v)}
+            />
+            <SizeSlider
+              label="Verdi"
+              value={sizes.value}
+              onChange={(v) => updateSize("value", v)}
+            />
+            <SizeSlider
+              label="Småtekst"
+              value={sizes.sub}
+              onChange={(v) => updateSize("sub", v)}
+            />
+          </div>
+        </div>
+      )}
+
 
       {err && (
         <div className="container mx-auto px-4 mb-2">
@@ -171,25 +262,25 @@ function Steintavle2Page() {
             label="Stua"
             value={`${fmt(tempStua, 1)}°`}
             sub={humStua !== null ? `${Math.round(humStua)}% fukt` : undefined}
-            accent="primary"
+            accent="primary" sizes={sizes}
           />
           <BigCard
             label="Ute · Borgen"
             value={`${fmt(tempUte, 1)}°`}
             sub={humUte !== null ? `${Math.round(humUte)}% fukt` : undefined}
-            accent="ice"
+            accent="ice" sizes={sizes}
           />
           <BigCard
             label="Soverom"
             value={`${fmt(tempSov, 1)}°`}
             sub={humSov !== null ? `${Math.round(humSov)}% fukt` : undefined}
-            accent="primary"
+            accent="primary" sizes={sizes}
           />
           <BigCard
             label="Nora sitt rom"
             value={`${fmt(tempNora, 1)}°`}
             sub={humNora !== null ? `${Math.round(humNora)}% fukt` : undefined}
-            accent="primary"
+            accent="primary" sizes={sizes}
           />
           <BigCard
             label="Regn"
@@ -199,7 +290,7 @@ function Steintavle2Page() {
                 ? `siste døgn ${fmt(rainDay, 1)} mm`
                 : "siste time"
             }
-            accent="rain"
+            accent="rain" sizes={sizes}
           />
           <BigCard
             label="Vind"
@@ -209,7 +300,7 @@ function Steintavle2Page() {
                 ? `${compass(windAng)} · kast ${fmt(gust, 1)} m/s ${compass(gustAng)}`
                 : compass(windAng)
             }
-            accent="wind"
+            accent="wind" sizes={sizes}
           />
         </section>
 
@@ -226,11 +317,13 @@ function BigCard({
   value,
   sub,
   accent,
+  sizes,
 }: {
   label: string;
   value: string;
   sub?: string;
   accent: "primary" | "ice" | "rain" | "wind";
+  sizes: TextSizes;
 }) {
   const accentCls =
     accent === "ice"
@@ -242,20 +335,59 @@ function BigCard({
           : "text-primary";
   return (
     <article className="panel rounded-lg p-3 sm:p-4 flex flex-col items-center justify-center text-center min-h-[28vh]">
-      <div className="text-display tracking-[0.4em] uppercase text-sm sm:text-lg text-primary/80 mb-2 sm:mb-3">
+      <div
+        className="text-display tracking-[0.4em] uppercase text-primary/80 mb-2 sm:mb-3"
+        style={{ fontSize: `clamp(0.75rem, ${2.2 * sizes.label}vw, ${1.4 * sizes.label}rem)` }}
+      >
         {label}
       </div>
       <div
         className={`text-display leading-none tabular-nums ${accentCls}`}
-        style={{ fontSize: "clamp(3.5rem, 11vw, 9rem)" }}
+        style={{
+          fontSize: `clamp(${3.5 * sizes.value}rem, ${11 * sizes.value}vw, ${9 * sizes.value}rem)`,
+        }}
       >
         {value}
       </div>
       {sub && (
-        <div className="mt-3 sm:mt-4 text-muted-foreground tracking-[0.2em] uppercase text-sm sm:text-lg">
+        <div
+          className="mt-3 sm:mt-4 text-muted-foreground tracking-[0.2em] uppercase"
+          style={{ fontSize: `clamp(0.75rem, ${2 * sizes.sub}vw, ${1.25 * sizes.sub}rem)` }}
+        >
           {sub}
         </div>
       )}
     </article>
   );
 }
+
+function SizeSlider({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  onChange: (v: number) => void;
+}) {
+  return (
+    <label className="flex items-center gap-3">
+      <span className="w-20 text-[10px] tracking-[0.2em] uppercase text-muted-foreground">
+        {label}
+      </span>
+      <input
+        type="range"
+        min={0.6}
+        max={2.2}
+        step={0.05}
+        value={value}
+        onChange={(e) => onChange(parseFloat(e.target.value))}
+        className="flex-1 accent-primary"
+      />
+      <span className="w-12 text-right tabular-nums text-[11px] text-foreground">
+        {Math.round(value * 100)}%
+      </span>
+    </label>
+  );
+}
+
