@@ -281,7 +281,8 @@ export function SiteHeader() {
       ro.disconnect();
       mo.disconnect();
     };
-  });
+  }, [open, badgeSettings.fitOneLine]);
+
 
 
 
