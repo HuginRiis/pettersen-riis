@@ -639,9 +639,14 @@ export async function computeUpcomingUvEvaluations(daysAhead = 3): Promise<
     lat: number;
     lon: number;
     recipient: string;
+    fall_recipient: string | null;
     lead_minutes: number | null;
+    notify_fall_3: boolean;
+    notify_fall_6: boolean;
+    notify_fall_8: boolean;
   }>) {
     const lead = typeof raw.lead_minutes === "number" ? raw.lead_minutes : LEAD_MINUTES;
+    const fallRecipient = (raw.fall_recipient && raw.fall_recipient.trim()) || raw.recipient;
     const cacheKey = `${raw.lat},${raw.lon}`;
     let series = seriesCache.get(cacheKey);
     if (!series) {
