@@ -340,25 +340,25 @@ function Steintavle2Page() {
             label="Stua"
             value={`${fmt(tempStua, 1)}°`}
             sub={humStua !== null ? `${Math.round(humStua)}% fukt` : undefined}
-            accent="primary" sizes={sizes} bold={bold}
+            accent="primary" sizes={sizes} bold={bold} showSub={showSub}
           />
           <BigCard
             label="Ute · Borgen"
             value={`${fmt(tempUte, 1)}°`}
             sub={humUte !== null ? `${Math.round(humUte)}% fukt` : undefined}
-            accent="ice" sizes={sizes} bold={bold}
+            accent="ice" sizes={sizes} bold={bold} showSub={showSub}
           />
           <BigCard
             label="Soverom"
             value={`${fmt(tempSov, 1)}°`}
             sub={humSov !== null ? `${Math.round(humSov)}% fukt` : undefined}
-            accent="primary" sizes={sizes} bold={bold}
+            accent="primary" sizes={sizes} bold={bold} showSub={showSub}
           />
           <BigCard
             label="Nora sitt rom"
             value={`${fmt(tempNora, 1)}°`}
             sub={humNora !== null ? `${Math.round(humNora)}% fukt` : undefined}
-            accent="primary" sizes={sizes} bold={bold}
+            accent="primary" sizes={sizes} bold={bold} showSub={showSub}
           />
           <BigCard
             label="Regn"
@@ -368,7 +368,7 @@ function Steintavle2Page() {
                 ? `siste døgn ${fmt(rainDay, 1)} mm`
                 : "siste time"
             }
-            accent="rain" sizes={sizes} bold={bold}
+            accent="rain" sizes={sizes} bold={bold} showSub={showSub}
           />
           <BigCard
             label="Vind"
@@ -378,7 +378,7 @@ function Steintavle2Page() {
                 ? `${compass(windAng)} · kast ${fmt(gust, 1)} m/s ${compass(gustAng)}`
                 : compass(windAng)
             }
-            accent="wind" sizes={sizes} bold={bold}
+            accent="wind" sizes={sizes} bold={bold} showSub={showSub}
           />
         </section>
 
