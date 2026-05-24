@@ -304,6 +304,23 @@ function Steintavle2Page() {
               bold={bold.sub}
               onBoldChange={(b) => updateBold("sub", b)}
             />
+            <label className="flex items-center justify-between pt-1 border-t border-border/40">
+              <span className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground">
+                Vis småtekst (2. verdi)
+              </span>
+              <button
+                type="button"
+                onClick={() => updateShowSub(!showSub)}
+                aria-pressed={showSub}
+                className={`px-3 h-7 rounded border text-[10px] tracking-[0.2em] uppercase ${
+                  showSub
+                    ? "border-primary bg-primary/20 text-primary"
+                    : "border-border bg-background/60 text-muted-foreground hover:text-primary"
+                }`}
+              >
+                {showSub ? "På" : "Av"}
+              </button>
+            </label>
           </div>
         </div>
       )}
