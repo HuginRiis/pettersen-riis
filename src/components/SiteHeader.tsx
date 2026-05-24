@@ -43,6 +43,7 @@ type RoutePath =
   | "/lys"
   | "/varme"
   | "/steintavle"
+  | "/steintavle-2"
   | "/oppussing-borgen"
   | "/oppussing-hytta"
   | "/matvarer"
@@ -90,6 +91,7 @@ const ROUTE_ICON: Partial<Record<RoutePath, React.ComponentType<{ size?: number;
   "/trening": Dumbbell,
   "/varsler": AlertTriangle,
   "/steintavle": ScrollText,
+  "/steintavle-2": ScrollText,
   "/skatte-utregningen": Coins,
   "/gressklipper": Bot,
   "/stovsugeren": Bot,
@@ -124,6 +126,7 @@ const ROUTE_ICON_COLOR: Partial<Record<RoutePath, string>> = {
   "/trening": "#ef4444",             // sverd — blod
   "/varsler": "#dc2626",             // farevarsel — rødt skilt
   "/steintavle": "#cbd5e1",          // stein — lys grå
+  "/steintavle-2": "#94a3b8",        // stein 2 — mørkere grå
   "/skatte-utregningen": "#d4af37",  // gull-mynt
   "/gressklipper": "#10b981",        // gressklipper — gressgrønn
   "/stovsugeren": "#38bdf8",         // støvsuger — sky-cyan
@@ -170,6 +173,7 @@ const navLinks: NavLink[] = [
   { to: "/roborock", label: "Roborock" },
   { to: "/planter", label: "Planter & Trær" },
   { to: "/steintavle", label: "Steintavle" },
+  { to: "/steintavle-2", label: "Steintavle 2" },
   { to: "/flyradar", label: "Flyradar", public: true },
 ];
 
