@@ -82,7 +82,7 @@ export function UvNotificationSettings() {
       const { data, error } = await supabase
         .from("uv_notification_prefs" as never)
         .select(
-          "id, location, label, enabled, recipient, lead_minutes, notify_fall_3, notify_fall_6, notify_fall_8",
+          "id, location, label, enabled, recipient, fall_recipient, lead_minutes, notify_fall_3, notify_fall_6, notify_fall_8",
         )
         .order("location");
 
