@@ -420,7 +420,7 @@ export function SiteHeader() {
             const isFav = menuPrefs.favorites.includes(l.to);
             const canFav = menuPrefs.favoritesEnabled && l.to !== ALWAYS_FIRST && l.to !== ALWAYS_LAST;
             return (
-              <span key={l.to} className={`inline-flex items-center gap-0.5${badgeSettings.fitOneLine ? " whitespace-nowrap text-[10px]" : ""}`}>
+              <span key={l.to} className={`inline-flex items-center gap-0.5${badgeSettings.fitOneLine ? " whitespace-nowrap" : ""}`}>
                 {canFav && (
                   <button
                     type="button"
