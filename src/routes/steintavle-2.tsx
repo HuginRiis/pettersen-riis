@@ -11,10 +11,23 @@ import { useLastGood } from "@/hooks/use-last-good";
 
 const SIZE_STORAGE_KEY = "st2.textSizes.v1";
 const BOLD_STORAGE_KEY = "st2.textBold.v1";
+const SHOW_SUB_STORAGE_KEY = "st2.showSub.v1";
 type TextSizes = { label: number; value: number; sub: number };
 type TextBold = { label: boolean; value: boolean; sub: boolean };
 const DEFAULT_SIZES: TextSizes = { label: 1, value: 1, sub: 1 };
 const DEFAULT_BOLD: TextBold = { label: false, value: false, sub: false };
+const DEFAULT_SHOW_SUB = true;
+
+function loadShowSub(): boolean {
+  if (typeof window === "undefined") return DEFAULT_SHOW_SUB;
+  try {
+    const raw = window.localStorage.getItem(SHOW_SUB_STORAGE_KEY);
+    if (raw === null) return DEFAULT_SHOW_SUB;
+    return raw === "1" || raw === "true";
+  } catch {
+    return DEFAULT_SHOW_SUB;
+  }
+}
 
 function loadSizes(): TextSizes {
   if (typeof window === "undefined") return DEFAULT_SIZES;
@@ -112,10 +125,12 @@ function Steintavle2Page() {
   // Tekststørrelse lagres globalt i localStorage, men panelet starter alltid kollapset.
   const [sizes, setSizes] = useState<TextSizes>(DEFAULT_SIZES);
   const [bold, setBold] = useState<TextBold>(DEFAULT_BOLD);
+  const [showSub, setShowSub] = useState<boolean>(DEFAULT_SHOW_SUB);
   const [settingsOpen, setSettingsOpen] = useState(false);
   useEffect(() => {
     setSizes(loadSizes());
     setBold(loadBold());
+    setShowSub(loadShowSub());
   }, []);
   const updateSize = (key: keyof TextSizes, val: number) => {
     setSizes((prev) => {
@@ -135,12 +150,20 @@ function Steintavle2Page() {
       return next;
     });
   };
+  const updateShowSub = (val: boolean) => {
+    setShowSub(val);
+    try {
+      window.localStorage.setItem(SHOW_SUB_STORAGE_KEY, val ? "1" : "0");
+    } catch {}
+  };
   const resetSizes = () => {
     setSizes(DEFAULT_SIZES);
     setBold(DEFAULT_BOLD);
+    setShowSub(DEFAULT_SHOW_SUB);
     try {
       window.localStorage.removeItem(SIZE_STORAGE_KEY);
       window.localStorage.removeItem(BOLD_STORAGE_KEY);
+      window.localStorage.removeItem(SHOW_SUB_STORAGE_KEY);
     } catch {}
   };
 
@@ -281,6 +304,23 @@ function Steintavle2Page() {
               bold={bold.sub}
               onBoldChange={(b) => updateBold("sub", b)}
             />
+            <label className="flex items-center justify-between pt-1 border-t border-border/40">
+              <span className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground">
+                Vis småtekst (2. verdi)
+              </span>
+              <button
+                type="button"
+                onClick={() => updateShowSub(!showSub)}
+                aria-pressed={showSub}
+                className={`px-3 h-7 rounded border text-[10px] tracking-[0.2em] uppercase ${
+                  showSub
+                    ? "border-primary bg-primary/20 text-primary"
+                    : "border-border bg-background/60 text-muted-foreground hover:text-primary"
+                }`}
+              >
+                {showSub ? "På" : "Av"}
+              </button>
+            </label>
           </div>
         </div>
       )}
@@ -300,25 +340,25 @@ function Steintavle2Page() {
             label="Stua"
             value={`${fmt(tempStua, 1)}°`}
             sub={humStua !== null ? `${Math.round(humStua)}% fukt` : undefined}
-            accent="primary" sizes={sizes} bold={bold}
+            accent="primary" sizes={sizes} bold={bold} showSub={showSub}
           />
           <BigCard
             label="Ute · Borgen"
             value={`${fmt(tempUte, 1)}°`}
             sub={humUte !== null ? `${Math.round(humUte)}% fukt` : undefined}
-            accent="ice" sizes={sizes} bold={bold}
+            accent="ice" sizes={sizes} bold={bold} showSub={showSub}
           />
           <BigCard
             label="Soverom"
             value={`${fmt(tempSov, 1)}°`}
             sub={humSov !== null ? `${Math.round(humSov)}% fukt` : undefined}
-            accent="primary" sizes={sizes} bold={bold}
+            accent="primary" sizes={sizes} bold={bold} showSub={showSub}
           />
           <BigCard
             label="Nora sitt rom"
             value={`${fmt(tempNora, 1)}°`}
             sub={humNora !== null ? `${Math.round(humNora)}% fukt` : undefined}
-            accent="primary" sizes={sizes} bold={bold}
+            accent="primary" sizes={sizes} bold={bold} showSub={showSub}
           />
           <BigCard
             label="Regn"
@@ -328,7 +368,7 @@ function Steintavle2Page() {
                 ? `siste døgn ${fmt(rainDay, 1)} mm`
                 : "siste time"
             }
-            accent="rain" sizes={sizes} bold={bold}
+            accent="rain" sizes={sizes} bold={bold} showSub={showSub}
           />
           <BigCard
             label="Vind"
@@ -338,7 +378,7 @@ function Steintavle2Page() {
                 ? `${compass(windAng)} · kast ${fmt(gust, 1)} m/s ${compass(gustAng)}`
                 : compass(windAng)
             }
-            accent="wind" sizes={sizes} bold={bold}
+            accent="wind" sizes={sizes} bold={bold} showSub={showSub}
           />
         </section>
 
@@ -357,6 +397,7 @@ function BigCard({
   accent,
   sizes,
   bold,
+  showSub,
 }: {
   label: string;
   value: string;
@@ -364,6 +405,7 @@ function BigCard({
   accent: "primary" | "ice" | "rain" | "wind";
   sizes: TextSizes;
   bold: TextBold;
+  showSub: boolean;
 }) {
   const accentCls =
     accent === "ice"
@@ -374,9 +416,9 @@ function BigCard({
           ? "text-emerald-400"
           : "text-primary";
   return (
-    <article className="panel rounded-lg p-3 sm:p-4 flex flex-col items-center justify-center text-center min-h-[28vh]">
+    <article className="panel rounded-lg px-2 py-1 sm:px-3 sm:py-1.5 flex flex-col items-center justify-between text-center min-h-[22vh]">
       <div
-        className="text-display tracking-[0.4em] uppercase text-primary/80 mb-2 sm:mb-3"
+        className="text-display tracking-[0.4em] uppercase text-primary/80 leading-none"
         style={{
           fontSize: `clamp(0.75rem, ${2.2 * sizes.label}vw, ${1.4 * sizes.label}rem)`,
           fontWeight: bold.label ? 700 : undefined,
@@ -393,9 +435,9 @@ function BigCard({
       >
         {value}
       </div>
-      {sub && (
+      {showSub && sub && (
         <div
-          className="mt-3 sm:mt-4 text-muted-foreground tracking-[0.2em] uppercase"
+          className="text-muted-foreground tracking-[0.2em] uppercase leading-none"
           style={{
             fontSize: `clamp(0.75rem, ${2 * sizes.sub}vw, ${1.25 * sizes.sub}rem)`,
             fontWeight: bold.sub ? 700 : undefined,
