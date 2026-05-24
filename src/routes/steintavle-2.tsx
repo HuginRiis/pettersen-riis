@@ -111,9 +111,11 @@ function Steintavle2Page() {
   const [now, setNow] = useState<Date | null>(null);
   // Tekststørrelse lagres globalt i localStorage, men panelet starter alltid kollapset.
   const [sizes, setSizes] = useState<TextSizes>(DEFAULT_SIZES);
+  const [bold, setBold] = useState<TextBold>(DEFAULT_BOLD);
   const [settingsOpen, setSettingsOpen] = useState(false);
   useEffect(() => {
     setSizes(loadSizes());
+    setBold(loadBold());
   }, []);
   const updateSize = (key: keyof TextSizes, val: number) => {
     setSizes((prev) => {
@@ -124,10 +126,21 @@ function Steintavle2Page() {
       return next;
     });
   };
+  const updateBold = (key: keyof TextBold, val: boolean) => {
+    setBold((prev) => {
+      const next = { ...prev, [key]: val };
+      try {
+        window.localStorage.setItem(BOLD_STORAGE_KEY, JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  };
   const resetSizes = () => {
     setSizes(DEFAULT_SIZES);
+    setBold(DEFAULT_BOLD);
     try {
       window.localStorage.removeItem(SIZE_STORAGE_KEY);
+      window.localStorage.removeItem(BOLD_STORAGE_KEY);
     } catch {}
   };
 
