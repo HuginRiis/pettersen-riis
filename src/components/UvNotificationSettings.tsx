@@ -19,6 +19,7 @@ type UvPref = {
   label: string;
   enabled: boolean;
   recipient: string;
+  fall_recipient: string;
   lead_minutes: number;
   notify_fall_3: boolean;
   notify_fall_6: boolean;
