@@ -166,7 +166,7 @@ function Steintavle2Page() {
       )}
 
       <main className="container mx-auto px-3 sm:px-6 pb-4">
-        <section className="grid gap-3 sm:gap-4 grid-cols-2 mb-3 sm:mb-4">
+        <section className="grid gap-2 sm:gap-3 grid-cols-2">
           <BigCard
             label="Stua"
             value={`${fmt(tempStua, 1)}°`}
@@ -179,9 +179,18 @@ function Steintavle2Page() {
             sub={humUte !== null ? `${Math.round(humUte)}% fukt` : undefined}
             accent="ice"
           />
-        </section>
-
-        <section className="grid gap-3 sm:gap-4 grid-cols-2">
+          <BigCard
+            label="Soverom"
+            value={`${fmt(tempSov, 1)}°`}
+            sub={humSov !== null ? `${Math.round(humSov)}% fukt` : undefined}
+            accent="primary"
+          />
+          <BigCard
+            label="Nora sitt rom"
+            value={`${fmt(tempNora, 1)}°`}
+            sub={humNora !== null ? `${Math.round(humNora)}% fukt` : undefined}
+            accent="primary"
+          />
           <BigCard
             label="Regn"
             value={`${fmt(rainHour, 1)} mm`}
@@ -194,10 +203,10 @@ function Steintavle2Page() {
           />
           <BigCard
             label="Vind"
-            value={`${fmt(wind, 0)} km/t`}
+            value={`${fmt(wind, 1)} m/s`}
             sub={
               gust !== null
-                ? `${compass(windAng)} · kast ${fmt(gust, 0)} ${compass(gustAng)}`
+                ? `${compass(windAng)} · kast ${fmt(gust, 1)} m/s ${compass(gustAng)}`
                 : compass(windAng)
             }
             accent="wind"
