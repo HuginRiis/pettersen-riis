@@ -676,6 +676,7 @@ function HallCard({
     | "/stovsugeren"
     | "/skatte-utregningen"
     | "/steintavle"
+    | "/steintavle-2"
     | "/oppussing-borgen"
     | "/oppussing-hytta"
     | "/matvarer"
