@@ -20,9 +20,9 @@ function loadSizes(): TextSizes {
     if (!raw) return DEFAULT_SIZES;
     const parsed = JSON.parse(raw);
     return {
-      label: clamp(Number(parsed.label) || 1, 0.6, 2.2),
-      value: clamp(Number(parsed.value) || 1, 0.6, 2.2),
-      sub: clamp(Number(parsed.sub) || 1, 0.6, 2.2),
+      label: clamp(Number(parsed.label) || 1, 0.6, 4),
+      value: clamp(Number(parsed.value) || 1, 0.6, 4),
+      sub: clamp(Number(parsed.sub) || 1, 0.6, 4),
     };
   } catch {
     return DEFAULT_SIZES;
