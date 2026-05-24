@@ -251,13 +251,19 @@ export function SiteHeader() {
     if (!root) return;
 
     const fitOne = (el: HTMLElement) => {
-      el.style.fontSize = "";
+      const badges = el.querySelector<HTMLElement>('[data-fit-badges]');
+      if (badges) badges.style.fontSize = "";
       const avail = el.clientWidth;
       if (!avail) return;
-      const natural = el.scrollWidth;
-      if (natural <= avail + 0.5) return;
-      const scale = Math.max(0.55, (avail / natural) * 0.98);
-      el.style.fontSize = `${scale}em`;
+      if (el.scrollWidth <= avail + 0.5) return;
+      if (!badges) return;
+      // Krymp kun badgene iterativt til raden får plass på én linje
+      let scale = 1;
+      for (let i = 0; i < 12; i++) {
+        scale = Math.max(0.5, scale - 0.06);
+        badges.style.fontSize = `${scale}em`;
+        if (el.scrollWidth <= avail + 0.5 || scale <= 0.5) break;
+      }
     };
 
     const fitAll = () => {
