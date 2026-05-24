@@ -397,6 +397,7 @@ function BigCard({
   accent,
   sizes,
   bold,
+  showSub,
 }: {
   label: string;
   value: string;
@@ -404,6 +405,7 @@ function BigCard({
   accent: "primary" | "ice" | "rain" | "wind";
   sizes: TextSizes;
   bold: TextBold;
+  showSub: boolean;
 }) {
   const accentCls =
     accent === "ice"
@@ -414,9 +416,9 @@ function BigCard({
           ? "text-emerald-400"
           : "text-primary";
   return (
-    <article className="panel rounded-lg p-3 sm:p-4 flex flex-col items-center justify-center text-center min-h-[28vh]">
+    <article className="panel rounded-lg px-2 py-1 sm:px-3 sm:py-1.5 flex flex-col items-center justify-between text-center min-h-[22vh]">
       <div
-        className="text-display tracking-[0.4em] uppercase text-primary/80 mb-2 sm:mb-3"
+        className="text-display tracking-[0.4em] uppercase text-primary/80 leading-none"
         style={{
           fontSize: `clamp(0.75rem, ${2.2 * sizes.label}vw, ${1.4 * sizes.label}rem)`,
           fontWeight: bold.label ? 700 : undefined,
@@ -433,9 +435,9 @@ function BigCard({
       >
         {value}
       </div>
-      {sub && (
+      {showSub && sub && (
         <div
-          className="mt-3 sm:mt-4 text-muted-foreground tracking-[0.2em] uppercase"
+          className="text-muted-foreground tracking-[0.2em] uppercase leading-none"
           style={{
             fontSize: `clamp(0.75rem, ${2 * sizes.sub}vw, ${1.25 * sizes.sub}rem)`,
             fontWeight: bold.sub ? 700 : undefined,
