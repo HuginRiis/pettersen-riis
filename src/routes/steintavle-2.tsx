@@ -412,10 +412,14 @@ function SizeSlider({
   label,
   value,
   onChange,
+  bold,
+  onBoldChange,
 }: {
   label: string;
   value: number;
   onChange: (v: number) => void;
+  bold: boolean;
+  onBoldChange: (b: boolean) => void;
 }) {
   return (
     <label className="flex items-center gap-3">
