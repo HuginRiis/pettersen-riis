@@ -145,8 +145,8 @@ function Steintavle2Page() {
         </div>
       )}
 
-      <main className="container mx-auto px-3 sm:px-6 pb-6">
-        <section className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 mb-3 sm:mb-4">
+      <main className="container mx-auto px-3 sm:px-6 pb-4">
+        <section className="grid gap-3 sm:gap-4 grid-cols-2 mb-3 sm:mb-4">
           <BigCard
             label="Stua"
             value={`${fmt(tempStua, 1)}°`}
@@ -161,7 +161,7 @@ function Steintavle2Page() {
           />
         </section>
 
-        <section className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2">
+        <section className="grid gap-3 sm:gap-4 grid-cols-2">
           <BigCard
             label="Regn"
             value={`${fmt(rainHour, 1)} mm`}
@@ -184,7 +184,7 @@ function Steintavle2Page() {
           />
         </section>
 
-        <div className="text-center mt-4 text-[10px] tracking-[0.3em] uppercase text-muted-foreground">
+        <div className="text-center mt-3 text-[10px] tracking-[0.3em] uppercase text-muted-foreground">
           Netatmo · oppdaterer hvert 15. min
         </div>
       </main>
