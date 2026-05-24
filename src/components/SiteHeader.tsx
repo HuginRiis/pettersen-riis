@@ -126,6 +126,7 @@ const ROUTE_ICON_COLOR: Partial<Record<RoutePath, string>> = {
   "/trening": "#ef4444",             // sverd — blod
   "/varsler": "#dc2626",             // farevarsel — rødt skilt
   "/steintavle": "#cbd5e1",          // stein — lys grå
+  "/steintavle-2": "#94a3b8",        // stein 2 — mørkere grå
   "/skatte-utregningen": "#d4af37",  // gull-mynt
   "/gressklipper": "#10b981",        // gressklipper — gressgrønn
   "/stovsugeren": "#38bdf8",         // støvsuger — sky-cyan
