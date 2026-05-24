@@ -594,6 +594,7 @@ export async function computeUpcomingUvEvaluations(daysAhead = 3): Promise<
     uvMax: number | null;
     uvMaxAt: string | null; // ISO
     ruleText: string;
+    kind: "rise" | "fall";
   }>
 > {
   const { data: prefs, error } = await supabaseAdmin
