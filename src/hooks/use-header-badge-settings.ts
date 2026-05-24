@@ -8,6 +8,7 @@ export type HeaderBadgeSettings = {
   weather: { startOffset: 0 | 1; days: number; showTemp: boolean };
   garbage: { maxDaysAhead: number; showAllSameDay: boolean };
   training: TrainingSportToggles;
+  fitOneLine: boolean;
 };
 
 export const HEADER_BADGE_KEY = "header_badges";
