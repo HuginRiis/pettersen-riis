@@ -438,6 +438,18 @@ function SizeSlider({
       <span className="w-12 text-right tabular-nums text-[11px] text-foreground">
         {Math.round(value * 100)}%
       </span>
+      <button
+        type="button"
+        onClick={() => onBoldChange(!bold)}
+        aria-pressed={bold}
+        className={`w-8 h-7 rounded border text-[11px] font-bold ${
+          bold
+            ? "border-primary bg-primary/20 text-primary"
+            : "border-border bg-background/60 text-muted-foreground hover:text-primary"
+        }`}
+      >
+        B
+      </button>
     </label>
   );
 }
