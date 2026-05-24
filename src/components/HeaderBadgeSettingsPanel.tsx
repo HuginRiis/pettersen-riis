@@ -49,6 +49,27 @@ export function HeaderBadgeSettingsPanel() {
         </p>
 
         <div className="mt-4 panel rounded p-3 border border-border/50">
+          <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Menyrad-tekst</p>
+          <label className="flex items-center gap-2 text-sm cursor-pointer">
+            <input
+              type="checkbox"
+              checked={draft.fitOneLine}
+              onChange={(e) => {
+                const next = { ...draft, fitOneLine: e.target.checked };
+                setDraft(next);
+                void saveHeaderBadgeSettings(next);
+              }}
+              className="accent-primary"
+            />
+            <span>Krymp skriften så menynavn + badges får plass på én linje</span>
+          </label>
+          <p className="text-xs text-muted-foreground mt-1">
+            Av = normal skriftstørrelse, kan bryte til ny linje. På = mindre skrift og ingen linjebryting.
+          </p>
+        </div>
+
+        <div className="mt-4 panel rounded p-3 border border-border/50">
+
           <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Værmerke — periode</p>
           <div className="flex flex-wrap gap-3 items-center text-sm">
             <label className="flex items-center gap-2">
