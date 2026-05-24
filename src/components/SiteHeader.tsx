@@ -245,7 +245,7 @@ export function SiteHeader() {
   const [pollenCoord] = useState<{ lat: number; lon: number }>(TOLLNES_COORD);
 
   // Krymp menynavn + badges bare når de ikke får plass på én linje.
-  useLayoutEffect(() => {
+  useEffect(() => {
     if (!open || !badgeSettings.fitOneLine) return;
     const root = mobileMenuRef.current;
     if (!root) return;
