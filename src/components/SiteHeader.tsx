@@ -561,13 +561,13 @@ export function SiteHeader() {
               const isFav = menuPrefs.favorites.includes(l.to);
               const canFav = menuPrefs.favoritesEnabled && l.to !== ALWAYS_FIRST && l.to !== ALWAYS_LAST;
               return (
-                <div key={l.to} className="flex items-center gap-1 border-b border-border last:border-0">
+                <div key={l.to} className="flex items-center gap-0 border-b border-border last:border-0">
                   {canFav && (
                     <button
                       type="button"
                       onClick={() => toggleFavorite(l.to)}
                       aria-label={isFav ? "Fjern favoritt" : "Legg til favoritt"}
-                      className={`p-1.5 ${isFav ? "text-primary" : "text-muted-foreground/40"}`}
+                      className={`pl-1.5 pr-0 py-1.5 ${isFav ? "text-primary" : "text-muted-foreground/40"}`}
                     >
                       <Star size={13} fill={isFav ? "currentColor" : "none"} />
                     </button>
