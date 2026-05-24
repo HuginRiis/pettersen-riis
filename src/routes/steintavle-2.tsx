@@ -10,8 +10,11 @@ import {
 import { useLastGood } from "@/hooks/use-last-good";
 
 const SIZE_STORAGE_KEY = "st2.textSizes.v1";
+const BOLD_STORAGE_KEY = "st2.textBold.v1";
 type TextSizes = { label: number; value: number; sub: number };
+type TextBold = { label: boolean; value: boolean; sub: boolean };
 const DEFAULT_SIZES: TextSizes = { label: 1, value: 1, sub: 1 };
+const DEFAULT_BOLD: TextBold = { label: false, value: false, sub: false };
 
 function loadSizes(): TextSizes {
   if (typeof window === "undefined") return DEFAULT_SIZES;
@@ -26,6 +29,22 @@ function loadSizes(): TextSizes {
     };
   } catch {
     return DEFAULT_SIZES;
+  }
+}
+
+function loadBold(): TextBold {
+  if (typeof window === "undefined") return DEFAULT_BOLD;
+  try {
+    const raw = window.localStorage.getItem(BOLD_STORAGE_KEY);
+    if (!raw) return DEFAULT_BOLD;
+    const parsed = JSON.parse(raw);
+    return {
+      label: !!parsed.label,
+      value: !!parsed.value,
+      sub: !!parsed.sub,
+    };
+  } catch {
+    return DEFAULT_BOLD;
   }
 }
 
@@ -92,9 +111,11 @@ function Steintavle2Page() {
   const [now, setNow] = useState<Date | null>(null);
   // Tekststørrelse lagres globalt i localStorage, men panelet starter alltid kollapset.
   const [sizes, setSizes] = useState<TextSizes>(DEFAULT_SIZES);
+  const [bold, setBold] = useState<TextBold>(DEFAULT_BOLD);
   const [settingsOpen, setSettingsOpen] = useState(false);
   useEffect(() => {
     setSizes(loadSizes());
+    setBold(loadBold());
   }, []);
   const updateSize = (key: keyof TextSizes, val: number) => {
     setSizes((prev) => {
@@ -105,10 +126,21 @@ function Steintavle2Page() {
       return next;
     });
   };
+  const updateBold = (key: keyof TextBold, val: boolean) => {
+    setBold((prev) => {
+      const next = { ...prev, [key]: val };
+      try {
+        window.localStorage.setItem(BOLD_STORAGE_KEY, JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  };
   const resetSizes = () => {
     setSizes(DEFAULT_SIZES);
+    setBold(DEFAULT_BOLD);
     try {
       window.localStorage.removeItem(SIZE_STORAGE_KEY);
+      window.localStorage.removeItem(BOLD_STORAGE_KEY);
     } catch {}
   };
 
@@ -232,16 +264,22 @@ function Steintavle2Page() {
               label="Navn"
               value={sizes.label}
               onChange={(v) => updateSize("label", v)}
+              bold={bold.label}
+              onBoldChange={(b) => updateBold("label", b)}
             />
             <SizeSlider
               label="Verdi"
               value={sizes.value}
               onChange={(v) => updateSize("value", v)}
+              bold={bold.value}
+              onBoldChange={(b) => updateBold("value", b)}
             />
             <SizeSlider
               label="Småtekst"
               value={sizes.sub}
               onChange={(v) => updateSize("sub", v)}
+              bold={bold.sub}
+              onBoldChange={(b) => updateBold("sub", b)}
             />
           </div>
         </div>
@@ -262,25 +300,25 @@ function Steintavle2Page() {
             label="Stua"
             value={`${fmt(tempStua, 1)}°`}
             sub={humStua !== null ? `${Math.round(humStua)}% fukt` : undefined}
-            accent="primary" sizes={sizes}
+            accent="primary" sizes={sizes} bold={bold}
           />
           <BigCard
             label="Ute · Borgen"
             value={`${fmt(tempUte, 1)}°`}
             sub={humUte !== null ? `${Math.round(humUte)}% fukt` : undefined}
-            accent="ice" sizes={sizes}
+            accent="ice" sizes={sizes} bold={bold}
           />
           <BigCard
             label="Soverom"
             value={`${fmt(tempSov, 1)}°`}
             sub={humSov !== null ? `${Math.round(humSov)}% fukt` : undefined}
-            accent="primary" sizes={sizes}
+            accent="primary" sizes={sizes} bold={bold}
           />
           <BigCard
             label="Nora sitt rom"
             value={`${fmt(tempNora, 1)}°`}
             sub={humNora !== null ? `${Math.round(humNora)}% fukt` : undefined}
-            accent="primary" sizes={sizes}
+            accent="primary" sizes={sizes} bold={bold}
           />
           <BigCard
             label="Regn"
@@ -290,7 +328,7 @@ function Steintavle2Page() {
                 ? `siste døgn ${fmt(rainDay, 1)} mm`
                 : "siste time"
             }
-            accent="rain" sizes={sizes}
+            accent="rain" sizes={sizes} bold={bold}
           />
           <BigCard
             label="Vind"
@@ -300,7 +338,7 @@ function Steintavle2Page() {
                 ? `${compass(windAng)} · kast ${fmt(gust, 1)} m/s ${compass(gustAng)}`
                 : compass(windAng)
             }
-            accent="wind" sizes={sizes}
+            accent="wind" sizes={sizes} bold={bold}
           />
         </section>
 
@@ -318,12 +356,14 @@ function BigCard({
   sub,
   accent,
   sizes,
+  bold,
 }: {
   label: string;
   value: string;
   sub?: string;
   accent: "primary" | "ice" | "rain" | "wind";
   sizes: TextSizes;
+  bold: TextBold;
 }) {
   const accentCls =
     accent === "ice"
@@ -337,7 +377,10 @@ function BigCard({
     <article className="panel rounded-lg p-3 sm:p-4 flex flex-col items-center justify-center text-center min-h-[28vh]">
       <div
         className="text-display tracking-[0.4em] uppercase text-primary/80 mb-2 sm:mb-3"
-        style={{ fontSize: `clamp(0.75rem, ${2.2 * sizes.label}vw, ${1.4 * sizes.label}rem)` }}
+        style={{
+          fontSize: `clamp(0.75rem, ${2.2 * sizes.label}vw, ${1.4 * sizes.label}rem)`,
+          fontWeight: bold.label ? 700 : undefined,
+        }}
       >
         {label}
       </div>
@@ -345,6 +388,7 @@ function BigCard({
         className={`text-display leading-none tabular-nums ${accentCls}`}
         style={{
           fontSize: `clamp(${3.5 * sizes.value}rem, ${11 * sizes.value}vw, ${9 * sizes.value}rem)`,
+          fontWeight: bold.value ? 700 : undefined,
         }}
       >
         {value}
@@ -352,7 +396,10 @@ function BigCard({
       {sub && (
         <div
           className="mt-3 sm:mt-4 text-muted-foreground tracking-[0.2em] uppercase"
-          style={{ fontSize: `clamp(0.75rem, ${2 * sizes.sub}vw, ${1.25 * sizes.sub}rem)` }}
+          style={{
+            fontSize: `clamp(0.75rem, ${2 * sizes.sub}vw, ${1.25 * sizes.sub}rem)`,
+            fontWeight: bold.sub ? 700 : undefined,
+          }}
         >
           {sub}
         </div>
@@ -365,10 +412,14 @@ function SizeSlider({
   label,
   value,
   onChange,
+  bold,
+  onBoldChange,
 }: {
   label: string;
   value: number;
   onChange: (v: number) => void;
+  bold: boolean;
+  onBoldChange: (b: boolean) => void;
 }) {
   return (
     <label className="flex items-center gap-3">
@@ -387,6 +438,18 @@ function SizeSlider({
       <span className="w-12 text-right tabular-nums text-[11px] text-foreground">
         {Math.round(value * 100)}%
       </span>
+      <button
+        type="button"
+        onClick={() => onBoldChange(!bold)}
+        aria-pressed={bold}
+        className={`w-8 h-7 rounded border text-[11px] font-bold ${
+          bold
+            ? "border-primary bg-primary/20 text-primary"
+            : "border-border bg-background/60 text-muted-foreground hover:text-primary"
+        }`}
+      >
+        B
+      </button>
     </label>
   );
 }
