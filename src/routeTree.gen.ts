@@ -17,6 +17,7 @@ import { Route as TurerRouteImport } from './routes/turer'
 import { Route as TreningRouteImport } from './routes/trening'
 import { Route as StromkronikenRouteImport } from './routes/stromkroniken'
 import { Route as StovsugerenRouteImport } from './routes/stovsugeren'
+import { Route as Steintavle2RouteImport } from './routes/steintavle-2'
 import { Route as SteintavleRouteImport } from './routes/steintavle'
 import { Route as SmarthusRouteImport } from './routes/smarthus'
 import { Route as SkatteUtregningenRouteImport } from './routes/skatte-utregningen'
@@ -93,6 +94,11 @@ const StromkronikenRoute = StromkronikenRouteImport.update({
 const StovsugerenRoute = StovsugerenRouteImport.update({
   id: '/stovsugeren',
   path: '/stovsugeren',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const Steintavle2Route = Steintavle2RouteImport.update({
+  id: '/steintavle-2',
+  path: '/steintavle-2',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SteintavleRoute = SteintavleRouteImport.update({
@@ -312,6 +318,7 @@ export interface FileRoutesByFullPath {
   '/skatte-utregningen': typeof SkatteUtregningenRoute
   '/smarthus': typeof SmarthusRoute
   '/steintavle': typeof SteintavleRoute
+  '/steintavle-2': typeof Steintavle2Route
   '/stovsugeren': typeof StovsugerenRoute
   '/stromkroniken': typeof StromkronikenRoute
   '/trening': typeof TreningRoute
@@ -359,6 +366,7 @@ export interface FileRoutesByTo {
   '/skatte-utregningen': typeof SkatteUtregningenRoute
   '/smarthus': typeof SmarthusRoute
   '/steintavle': typeof SteintavleRoute
+  '/steintavle-2': typeof Steintavle2Route
   '/stovsugeren': typeof StovsugerenRoute
   '/stromkroniken': typeof StromkronikenRoute
   '/trening': typeof TreningRoute
@@ -407,6 +415,7 @@ export interface FileRoutesById {
   '/skatte-utregningen': typeof SkatteUtregningenRoute
   '/smarthus': typeof SmarthusRoute
   '/steintavle': typeof SteintavleRoute
+  '/steintavle-2': typeof Steintavle2Route
   '/stovsugeren': typeof StovsugerenRoute
   '/stromkroniken': typeof StromkronikenRoute
   '/trening': typeof TreningRoute
@@ -456,6 +465,7 @@ export interface FileRouteTypes {
     | '/skatte-utregningen'
     | '/smarthus'
     | '/steintavle'
+    | '/steintavle-2'
     | '/stovsugeren'
     | '/stromkroniken'
     | '/trening'
@@ -503,6 +513,7 @@ export interface FileRouteTypes {
     | '/skatte-utregningen'
     | '/smarthus'
     | '/steintavle'
+    | '/steintavle-2'
     | '/stovsugeren'
     | '/stromkroniken'
     | '/trening'
@@ -550,6 +561,7 @@ export interface FileRouteTypes {
     | '/skatte-utregningen'
     | '/smarthus'
     | '/steintavle'
+    | '/steintavle-2'
     | '/stovsugeren'
     | '/stromkroniken'
     | '/trening'
@@ -598,6 +610,7 @@ export interface RootRouteChildren {
   SkatteUtregningenRoute: typeof SkatteUtregningenRoute
   SmarthusRoute: typeof SmarthusRoute
   SteintavleRoute: typeof SteintavleRoute
+  Steintavle2Route: typeof Steintavle2Route
   StovsugerenRoute: typeof StovsugerenRoute
   StromkronikenRoute: typeof StromkronikenRoute
   TreningRoute: typeof TreningRoute
@@ -679,6 +692,13 @@ declare module '@tanstack/react-router' {
       path: '/stovsugeren'
       fullPath: '/stovsugeren'
       preLoaderRoute: typeof StovsugerenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/steintavle-2': {
+      id: '/steintavle-2'
+      path: '/steintavle-2'
+      fullPath: '/steintavle-2'
+      preLoaderRoute: typeof Steintavle2RouteImport
       parentRoute: typeof rootRouteImport
     }
     '/steintavle': {
@@ -966,6 +986,7 @@ const rootRouteChildren: RootRouteChildren = {
   SkatteUtregningenRoute: SkatteUtregningenRoute,
   SmarthusRoute: SmarthusRoute,
   SteintavleRoute: SteintavleRoute,
+  Steintavle2Route: Steintavle2Route,
   StovsugerenRoute: StovsugerenRoute,
   StromkronikenRoute: StromkronikenRoute,
   TreningRoute: TreningRoute,
