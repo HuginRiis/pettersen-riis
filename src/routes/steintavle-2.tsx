@@ -356,12 +356,14 @@ function BigCard({
   sub,
   accent,
   sizes,
+  bold,
 }: {
   label: string;
   value: string;
   sub?: string;
   accent: "primary" | "ice" | "rain" | "wind";
   sizes: TextSizes;
+  bold: TextBold;
 }) {
   const accentCls =
     accent === "ice"
@@ -375,7 +377,10 @@ function BigCard({
     <article className="panel rounded-lg p-3 sm:p-4 flex flex-col items-center justify-center text-center min-h-[28vh]">
       <div
         className="text-display tracking-[0.4em] uppercase text-primary/80 mb-2 sm:mb-3"
-        style={{ fontSize: `clamp(0.75rem, ${2.2 * sizes.label}vw, ${1.4 * sizes.label}rem)` }}
+        style={{
+          fontSize: `clamp(0.75rem, ${2.2 * sizes.label}vw, ${1.4 * sizes.label}rem)`,
+          fontWeight: bold.label ? 700 : undefined,
+        }}
       >
         {label}
       </div>
@@ -383,6 +388,7 @@ function BigCard({
         className={`text-display leading-none tabular-nums ${accentCls}`}
         style={{
           fontSize: `clamp(${3.5 * sizes.value}rem, ${11 * sizes.value}vw, ${9 * sizes.value}rem)`,
+          fontWeight: bold.value ? 700 : undefined,
         }}
       >
         {value}
@@ -390,7 +396,10 @@ function BigCard({
       {sub && (
         <div
           className="mt-3 sm:mt-4 text-muted-foreground tracking-[0.2em] uppercase"
-          style={{ fontSize: `clamp(0.75rem, ${2 * sizes.sub}vw, ${1.25 * sizes.sub}rem)` }}
+          style={{
+            fontSize: `clamp(0.75rem, ${2 * sizes.sub}vw, ${1.25 * sizes.sub}rem)`,
+            fontWeight: bold.sub ? 700 : undefined,
+          }}
         >
           {sub}
         </div>
