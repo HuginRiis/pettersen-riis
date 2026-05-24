@@ -1,12 +1,37 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
+import { Settings2, X } from "lucide-react";
 import { PageShell } from "@/components/PageShell";
 import {
   getNetatmoWeatherStation,
   type WeatherModule,
 } from "@/server/netatmo-weather";
 import { useLastGood } from "@/hooks/use-last-good";
+
+const SIZE_STORAGE_KEY = "st2.textSizes.v1";
+type TextSizes = { label: number; value: number; sub: number };
+const DEFAULT_SIZES: TextSizes = { label: 1, value: 1, sub: 1 };
+
+function loadSizes(): TextSizes {
+  if (typeof window === "undefined") return DEFAULT_SIZES;
+  try {
+    const raw = window.localStorage.getItem(SIZE_STORAGE_KEY);
+    if (!raw) return DEFAULT_SIZES;
+    const parsed = JSON.parse(raw);
+    return {
+      label: clamp(Number(parsed.label) || 1, 0.6, 2.2),
+      value: clamp(Number(parsed.value) || 1, 0.6, 2.2),
+      sub: clamp(Number(parsed.sub) || 1, 0.6, 2.2),
+    };
+  } catch {
+    return DEFAULT_SIZES;
+  }
+}
+
+function clamp(v: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, v));
+}
 
 export const Route = createFileRoute("/steintavle-2")({
   head: () => ({
