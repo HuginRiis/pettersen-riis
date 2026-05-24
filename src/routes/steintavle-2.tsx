@@ -10,8 +10,11 @@ import {
 import { useLastGood } from "@/hooks/use-last-good";
 
 const SIZE_STORAGE_KEY = "st2.textSizes.v1";
+const BOLD_STORAGE_KEY = "st2.textBold.v1";
 type TextSizes = { label: number; value: number; sub: number };
+type TextBold = { label: boolean; value: boolean; sub: boolean };
 const DEFAULT_SIZES: TextSizes = { label: 1, value: 1, sub: 1 };
+const DEFAULT_BOLD: TextBold = { label: false, value: false, sub: false };
 
 function loadSizes(): TextSizes {
   if (typeof window === "undefined") return DEFAULT_SIZES;
@@ -26,6 +29,22 @@ function loadSizes(): TextSizes {
     };
   } catch {
     return DEFAULT_SIZES;
+  }
+}
+
+function loadBold(): TextBold {
+  if (typeof window === "undefined") return DEFAULT_BOLD;
+  try {
+    const raw = window.localStorage.getItem(BOLD_STORAGE_KEY);
+    if (!raw) return DEFAULT_BOLD;
+    const parsed = JSON.parse(raw);
+    return {
+      label: !!parsed.label,
+      value: !!parsed.value,
+      sub: !!parsed.sub,
+    };
+  } catch {
+    return DEFAULT_BOLD;
   }
 }
 
