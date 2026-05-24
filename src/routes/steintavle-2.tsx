@@ -189,8 +189,9 @@ function Steintavle2Page() {
 
   return (
     <PageShell minimalHeader>
-      <header className="container mx-auto px-6 pt-3 pb-2 text-center">
-        <div className="text-display tracking-[0.5em] text-primary text-xs sm:text-sm uppercase">
+      <header className="container mx-auto px-6 pt-3 pb-2 flex items-center justify-between gap-3">
+        <div className="w-8" aria-hidden />
+        <div className="text-display tracking-[0.5em] text-primary text-xs sm:text-sm uppercase text-center flex-1">
           Steintavle 2 · Borgen ·{" "}
           <span className="text-muted-foreground">
             {now
@@ -201,7 +202,51 @@ function Steintavle2Page() {
               : "—"}
           </span>
         </div>
+        <button
+          type="button"
+          onClick={() => setSettingsOpen((o) => !o)}
+          className="w-8 h-8 rounded-md border border-border bg-background/60 text-muted-foreground hover:text-primary flex items-center justify-center"
+          aria-label="Tekststørrelse"
+          aria-expanded={settingsOpen}
+        >
+          {settingsOpen ? <X size={16} /> : <Settings2 size={16} />}
+        </button>
       </header>
+
+      {settingsOpen && (
+        <div className="container mx-auto px-4 mb-2">
+          <div className="panel rounded-lg p-3 sm:p-4 space-y-2 text-xs">
+            <div className="flex items-center justify-between">
+              <span className="text-display tracking-[0.3em] uppercase text-[10px] text-primary/80">
+                Tekststørrelse
+              </span>
+              <button
+                type="button"
+                onClick={resetSizes}
+                className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground hover:text-primary"
+              >
+                Nullstill
+              </button>
+            </div>
+            <SizeSlider
+              label="Navn"
+              value={sizes.label}
+              onChange={(v) => updateSize("label", v)}
+            />
+            <SizeSlider
+              label="Verdi"
+              value={sizes.value}
+              onChange={(v) => updateSize("value", v)}
+            />
+            <SizeSlider
+              label="Småtekst"
+              value={sizes.sub}
+              onChange={(v) => updateSize("sub", v)}
+            />
+          </div>
+        </div>
+      )}
+
 
       {err && (
         <div className="container mx-auto px-4 mb-2">
