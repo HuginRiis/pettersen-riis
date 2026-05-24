@@ -1,5 +1,5 @@
 import { Link, useRouter } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Menu, X, LogOut, Crown, Swords, Shield, KeyRound, Home, Star, Flower2,
   Sun, Compass, Castle, CalendarDays, BellRing, Eye, Mountain, Lightbulb, Lamp, Flame, Zap, Hammer,
@@ -179,6 +179,9 @@ const navLinks: NavLink[] = [
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
+  const mobileMenuRef = useRef<HTMLElement | null>(null);
+
+
   
   const router = useRouter();
   const { authenticated } = useAuthStatus();
@@ -240,6 +243,48 @@ export function SiteHeader() {
   const fetchDefaultLoc = useServerFn(getDefaultLocation);
   void fetchDefaultLoc;
   const [pollenCoord] = useState<{ lat: number; lon: number }>(TOLLNES_COORD);
+
+  // Krymp menynavn + badges bare når de ikke får plass på én linje.
+  useEffect(() => {
+    if (!open || !badgeSettings.fitOneLine) return;
+    const root = mobileMenuRef.current;
+    if (!root) return;
+
+    const fitOne = (el: HTMLElement) => {
+      el.style.fontSize = "";
+      const avail = el.clientWidth;
+      if (!avail) return;
+      const natural = el.scrollWidth;
+      if (natural <= avail + 0.5) return;
+      const scale = Math.max(0.55, (avail / natural) * 0.98);
+      el.style.fontSize = `${scale}em`;
+    };
+
+    const fitAll = () => {
+      root.querySelectorAll<HTMLElement>('[data-fit-one-line="1"]').forEach(fitOne);
+    };
+
+    fitAll();
+
+    const ro = new ResizeObserver(fitAll);
+    ro.observe(root);
+    root.querySelectorAll<HTMLElement>('[data-fit-one-line="1"]').forEach((el) => ro.observe(el));
+
+    const mo = new MutationObserver(() => fitAll());
+    mo.observe(root, { childList: true, subtree: true, characterData: true });
+
+    if ((document as any).fonts?.ready) {
+      (document as any).fonts.ready.then(fitAll).catch(() => {});
+    }
+
+    return () => {
+      ro.disconnect();
+      mo.disconnect();
+    };
+  }, [open, badgeSettings.fitOneLine]);
+
+
+
 
   // Visitors outside the gate only see public halls; authed users see everything.
   const menuVisibility = useMenuVisibility();
@@ -375,7 +420,7 @@ export function SiteHeader() {
             const isFav = menuPrefs.favorites.includes(l.to);
             const canFav = menuPrefs.favoritesEnabled && l.to !== ALWAYS_FIRST && l.to !== ALWAYS_LAST;
             return (
-              <span key={l.to} className={`inline-flex items-center gap-0.5${badgeSettings.fitOneLine ? " whitespace-nowrap text-[10px]" : ""}`}>
+              <span key={l.to} className={`inline-flex items-center gap-0.5${badgeSettings.fitOneLine ? " whitespace-nowrap" : ""}`}>
                 {canFav && (
                   <button
                     type="button"
@@ -475,8 +520,9 @@ export function SiteHeader() {
       </div>
 
       {open && (
-        <nav className="mobile-menu-popup border-t border-border bg-card/95 backdrop-blur">
+        <nav ref={mobileMenuRef} className="mobile-menu-popup border-t border-border bg-card/95 backdrop-blur">
           <div className="container mx-auto px-4 py-2 flex flex-col max-h-[calc(100vh-64px)] overflow-y-auto overscroll-contain">
+
             <div className="border-b border-border">
               <button
                 type="button"
@@ -534,7 +580,8 @@ export function SiteHeader() {
                       bump(l.to);
                       setOpen(false);
                     }}
-                    className={`flex-1 px-2 py-2.5 tracking-wider uppercase text-muted-foreground hover:text-primary data-[status=active]:text-primary data-[status=active]:font-semibold flex items-center gap-2 ${badgeSettings.fitOneLine ? "text-[10px] whitespace-nowrap overflow-hidden" : "text-xs"}`}
+                    className={`flex-1 px-2 py-2.5 tracking-wider uppercase text-muted-foreground hover:text-primary data-[status=active]:text-primary data-[status=active]:font-semibold flex items-center gap-2 text-xs${badgeSettings.fitOneLine ? " whitespace-nowrap overflow-hidden" : ""}`}
+                    data-fit-one-line={badgeSettings.fitOneLine ? "1" : undefined}
                   >
                     {l.to === "/pollen"
                       ? <PollenIcon lat={pollenCoord.lat} lon={pollenCoord.lon} />
