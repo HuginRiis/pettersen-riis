@@ -179,6 +179,9 @@ const navLinks: NavLink[] = [
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
+  const mobileMenuRef = useRef<HTMLElement | null>(null);
+
+
   
   const router = useRouter();
   const { authenticated } = useAuthStatus();
