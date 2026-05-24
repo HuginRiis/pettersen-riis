@@ -19,6 +19,7 @@ type UvPref = {
   label: string;
   enabled: boolean;
   recipient: string;
+  fall_recipient: string;
   lead_minutes: number;
   notify_fall_3: boolean;
   notify_fall_6: boolean;
@@ -81,7 +82,7 @@ export function UvNotificationSettings() {
       const { data, error } = await supabase
         .from("uv_notification_prefs" as never)
         .select(
-          "id, location, label, enabled, recipient, lead_minutes, notify_fall_3, notify_fall_6, notify_fall_8",
+          "id, location, label, enabled, recipient, fall_recipient, lead_minutes, notify_fall_3, notify_fall_6, notify_fall_8",
         )
         .order("location");
 
@@ -242,9 +243,9 @@ export function UvNotificationSettings() {
                 </Select>
               </div>
 
-              <div className="rounded-md border border-border/50 bg-muted/20 p-2 space-y-1.5">
+              <div className="rounded-md border border-border/50 bg-muted/20 p-2 space-y-2">
                 <div className="text-[11px] text-muted-foreground">
-                  Varsle også når UV faller under nivå:
+                  Varsle også når UV faller under nivå (etter at nivået faktisk er nådd i dag):
                 </div>
                 {([8, 6, 3] as const).map((lvl) => {
                   const key = `notify_fall_${lvl}` as const;
@@ -259,6 +260,25 @@ export function UvNotificationSettings() {
                     </div>
                   );
                 })}
+                <div className="flex items-center gap-2 pt-1 border-t border-border/40">
+                  <span className="text-xs text-muted-foreground shrink-0">Mottaker fall</span>
+                  <Select
+                    value={p.fall_recipient || p.recipient}
+                    disabled={!p.enabled || saving === p.id}
+                    onValueChange={(v) => update(p.id, { fall_recipient: v })}
+                  >
+                    <SelectTrigger className="h-8 text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {WHO_OPTIONS.map((w) => (
+                        <SelectItem key={w} value={w}>
+                          {w}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
 

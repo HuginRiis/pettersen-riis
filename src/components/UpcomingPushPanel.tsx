@@ -217,8 +217,10 @@ export function UpcomingPushPanel() {
           key: `uv-${u.id}`,
           when: at,
           source: "UV",
-          icon: Sun,
-          title: `${u.label} — UV-varsel`,
+          icon: u.kind === "fall" ? TrendingDown : Sun,
+          title: u.kind === "fall"
+            ? `${u.label} — UV under ${u.threshold ?? "?"}`
+            : `${u.label} — UV-varsel`,
           recipients: recipientsLabel(u.recipient),
           detail,
           rule: u.ruleText,

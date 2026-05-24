@@ -2800,6 +2800,7 @@ export type Database = {
         Row: {
           created_at: string
           enabled: boolean
+          fall_recipient: string
           id: string
           label: string
           lat: number
@@ -2815,12 +2816,16 @@ export type Database = {
           notify_fall_3: boolean
           notify_fall_6: boolean
           notify_fall_8: boolean
+          reached_date_3: string | null
+          reached_date_6: string | null
+          reached_date_8: string | null
           recipient: string
           updated_at: string
         }
         Insert: {
           created_at?: string
           enabled?: boolean
+          fall_recipient?: string
           id?: string
           label: string
           lat: number
@@ -2836,12 +2841,16 @@ export type Database = {
           notify_fall_3?: boolean
           notify_fall_6?: boolean
           notify_fall_8?: boolean
+          reached_date_3?: string | null
+          reached_date_6?: string | null
+          reached_date_8?: string | null
           recipient?: string
           updated_at?: string
         }
         Update: {
           created_at?: string
           enabled?: boolean
+          fall_recipient?: string
           id?: string
           label?: string
           lat?: number
@@ -2857,6 +2866,9 @@ export type Database = {
           notify_fall_3?: boolean
           notify_fall_6?: boolean
           notify_fall_8?: boolean
+          reached_date_3?: string | null
+          reached_date_6?: string | null
+          reached_date_8?: string | null
           recipient?: string
           updated_at?: string
         }
