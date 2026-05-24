@@ -99,24 +99,44 @@ function Steintavle2Page() {
   const outdoorModule = modules.find((m) => m.type === "NAModule1") ?? null;
   const windModule = modules.find((m) => m.type === "NAModule2") ?? null;
   const rainModule = modules.find((m) => m.type === "NAModule3") ?? null;
+  const indoorModules = modules.filter((m) => m.type === "NAModule4");
+  const noraModule =
+    indoorModules.find((m) => /nora/i.test(m.name)) ?? null;
+  const bedroomModule =
+    indoorModules.find(
+      (m) => /sov|sove|bed/i.test(m.name) && !/nora/i.test(m.name),
+    ) ??
+    indoorModules.find((m) => !noraModule || m.id !== noraModule.id) ??
+    null;
 
   const tempStuaLive = mainModule?.metrics.temperature ?? null;
   const tempUteLive = outdoorModule?.metrics.temperature ?? null;
+  const tempSovLive = bedroomModule?.metrics.temperature ?? null;
+  const tempNoraLive = noraModule?.metrics.temperature ?? null;
 
   const stuaLG = useLastGood("st2.lg.stua", tempStuaLive);
   const uteLG = useLastGood("st2.lg.ute", tempUteLive);
+  const sovLG = useLastGood("st2.lg.sov", tempSovLive);
+  const noraLG = useLastGood("st2.lg.nora", tempNoraLive);
   const tempStua = stuaLG.value;
   const tempUte = uteLG.value;
+  const tempSov = sovLG.value;
+  const tempNora = noraLG.value;
 
   const humUte = outdoorModule?.metrics.humidity ?? null;
   const humStua = mainModule?.metrics.humidity ?? null;
+  const humSov = bedroomModule?.metrics.humidity ?? null;
+  const humNora = noraModule?.metrics.humidity ?? null;
 
   const rainHour = rainModule?.metrics.rain ?? null;
   const rainDay = rainModule?.metrics.rainDay ?? null;
 
-  const wind = windModule?.metrics.windStrength ?? null;
+  // Netatmo gir vind i km/t — vi viser m/s (km/t / 3.6)
+  const windKmh = windModule?.metrics.windStrength ?? null;
+  const gustKmh = windModule?.metrics.gustStrength ?? null;
+  const wind = windKmh !== null ? windKmh / 3.6 : null;
+  const gust = gustKmh !== null ? gustKmh / 3.6 : null;
   const windAng = windModule?.metrics.windAngle;
-  const gust = windModule?.metrics.gustStrength ?? null;
   const gustAng = windModule?.metrics.gustAngle;
 
   const err = !live.ok ? live.error : null;
