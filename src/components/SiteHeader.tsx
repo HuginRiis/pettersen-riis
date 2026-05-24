@@ -587,6 +587,7 @@ export function SiteHeader() {
                       ? <PollenIcon lat={pollenCoord.lat} lon={pollenCoord.lon} />
                       : ROUTE_ICON[l.to] ? (() => { const I = ROUTE_ICON[l.to]!; return <span style={{ color: ROUTE_ICON_COLOR[l.to], display: "inline-flex" }}><I size={15} strokeWidth={2.25} /></span>; })() : null}
                     <span className="flex-1">{l.label}</span>
+                    <span data-fit-badges className="contents">
                     {count > 0 && menuPrefs.sortByUsage && showB("usage_count") && <UsageBadge count={count} />}
                     {l.to === "/" && showB("uv_hjem") && <UvBadge lat={BORGEN_COORD.lat} lon={BORGEN_COORD.lon} />}
                     {l.to === "/" && showB("temp_tollnes") && <TempBadge stationMatch="tollnes" storageKey="hdr.temp.tollnes" />}
@@ -612,6 +613,7 @@ export function SiteHeader() {
                     {l.to === "/okonomi" && showB("okonomi_overskudd") && <OkonomiOverskuddBadge inline />}
                     {l.to === "/okonomi" && showB("okonomi_snitt_dag") && <OkonomiSnittPrDagBadge inline />}
                     {l.to === "/okonomi" && showB("okonomi_igjen_dag") && <OkonomiIgjenPrDagBadge inline />}
+                    </span>
                   </Link>
                 </div>
               );
