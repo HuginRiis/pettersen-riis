@@ -223,7 +223,7 @@ function BigCard({
         {value}
       </div>
       {sub && (
-        <div className="mt-2 sm:mt-3 text-muted-foreground tracking-[0.2em] uppercase text-[11px] sm:text-base">
+        <div className="mt-3 sm:mt-4 text-muted-foreground tracking-[0.2em] uppercase text-sm sm:text-lg">
           {sub}
         </div>
       )}
