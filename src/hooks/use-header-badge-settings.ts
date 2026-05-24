@@ -86,7 +86,8 @@ function merge(value: unknown): HeaderBadgeSettings {
     walk: t.walk !== false,
     hike: t.hike !== false,
   };
-  return { badges, weather, garbage, training };
+  const fitOneLine = (v as any).fitOneLine === true;
+  return { badges, weather, garbage, training, fitOneLine };
 }
 
 async function load(): Promise<HeaderBadgeSettings> {
