@@ -244,6 +244,47 @@ export function SiteHeader() {
   void fetchDefaultLoc;
   const [pollenCoord] = useState<{ lat: number; lon: number }>(TOLLNES_COORD);
 
+  // Krymp menynavn + badges bare når de ikke får plass på én linje.
+  useLayoutEffect(() => {
+    if (!open || !badgeSettings.fitOneLine) return;
+    const root = mobileMenuRef.current;
+    if (!root) return;
+
+    const fitOne = (el: HTMLElement) => {
+      el.style.fontSize = "";
+      const avail = el.clientWidth;
+      if (!avail) return;
+      const natural = el.scrollWidth;
+      if (natural <= avail + 0.5) return;
+      const scale = Math.max(0.55, (avail / natural) * 0.98);
+      el.style.fontSize = `${scale}em`;
+    };
+
+    const fitAll = () => {
+      root.querySelectorAll<HTMLElement>('[data-fit-one-line="1"]').forEach(fitOne);
+    };
+
+    fitAll();
+
+    const ro = new ResizeObserver(fitAll);
+    ro.observe(root);
+    root.querySelectorAll<HTMLElement>('[data-fit-one-line="1"]').forEach((el) => ro.observe(el));
+
+    const mo = new MutationObserver(() => fitAll());
+    mo.observe(root, { childList: true, subtree: true, characterData: true });
+
+    if ((document as any).fonts?.ready) {
+      (document as any).fonts.ready.then(fitAll).catch(() => {});
+    }
+
+    return () => {
+      ro.disconnect();
+      mo.disconnect();
+    };
+  });
+
+
+
   // Visitors outside the gate only see public halls; authed users see everything.
   const menuVisibility = useMenuVisibility();
   const baseLinks = (isAuthed ? navLinks : navLinks.filter((l) => l.public))
