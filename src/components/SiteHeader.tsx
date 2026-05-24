@@ -251,13 +251,19 @@ export function SiteHeader() {
     if (!root) return;
 
     const fitOne = (el: HTMLElement) => {
-      el.style.fontSize = "";
+      const badges = el.querySelector<HTMLElement>('[data-fit-badges]');
+      if (badges) badges.style.fontSize = "";
       const avail = el.clientWidth;
       if (!avail) return;
-      const natural = el.scrollWidth;
-      if (natural <= avail + 0.5) return;
-      const scale = Math.max(0.55, (avail / natural) * 0.98);
-      el.style.fontSize = `${scale}em`;
+      if (el.scrollWidth <= avail + 0.5) return;
+      if (!badges) return;
+      // Krymp kun badgene iterativt til raden får plass på én linje
+      let scale = 1;
+      for (let i = 0; i < 12; i++) {
+        scale = Math.max(0.5, scale - 0.06);
+        badges.style.fontSize = `${scale}em`;
+        if (el.scrollWidth <= avail + 0.5 || scale <= 0.5) break;
+      }
     };
 
     const fitAll = () => {
@@ -561,13 +567,13 @@ export function SiteHeader() {
               const isFav = menuPrefs.favorites.includes(l.to);
               const canFav = menuPrefs.favoritesEnabled && l.to !== ALWAYS_FIRST && l.to !== ALWAYS_LAST;
               return (
-                <div key={l.to} className="flex items-center gap-1 border-b border-border last:border-0">
+                <div key={l.to} className="flex items-center gap-0 border-b border-border last:border-0">
                   {canFav && (
                     <button
                       type="button"
                       onClick={() => toggleFavorite(l.to)}
                       aria-label={isFav ? "Fjern favoritt" : "Legg til favoritt"}
-                      className={`p-1.5 ${isFav ? "text-primary" : "text-muted-foreground/40"}`}
+                      className={`pl-1.5 pr-0 py-1.5 ${isFav ? "text-primary" : "text-muted-foreground/40"}`}
                     >
                       <Star size={13} fill={isFav ? "currentColor" : "none"} />
                     </button>
@@ -580,13 +586,14 @@ export function SiteHeader() {
                       bump(l.to);
                       setOpen(false);
                     }}
-                    className={`flex-1 px-2 py-2.5 tracking-wider uppercase text-muted-foreground hover:text-primary data-[status=active]:text-primary data-[status=active]:font-semibold flex items-center gap-2 text-xs${badgeSettings.fitOneLine ? " whitespace-nowrap overflow-hidden" : ""}`}
+                    className={`flex-1 pl-1 pr-2 py-2.5 tracking-wider uppercase text-muted-foreground hover:text-primary data-[status=active]:text-primary data-[status=active]:font-semibold flex items-center gap-2 text-xs${badgeSettings.fitOneLine ? " whitespace-nowrap overflow-hidden" : ""}`}
                     data-fit-one-line={badgeSettings.fitOneLine ? "1" : undefined}
                   >
                     {l.to === "/pollen"
                       ? <PollenIcon lat={pollenCoord.lat} lon={pollenCoord.lon} />
                       : ROUTE_ICON[l.to] ? (() => { const I = ROUTE_ICON[l.to]!; return <span style={{ color: ROUTE_ICON_COLOR[l.to], display: "inline-flex" }}><I size={15} strokeWidth={2.25} /></span>; })() : null}
                     <span className="flex-1">{l.label}</span>
+                    <span data-fit-badges className="contents">
                     {count > 0 && menuPrefs.sortByUsage && showB("usage_count") && <UsageBadge count={count} />}
                     {l.to === "/" && showB("uv_hjem") && <UvBadge lat={BORGEN_COORD.lat} lon={BORGEN_COORD.lon} />}
                     {l.to === "/" && showB("temp_tollnes") && <TempBadge stationMatch="tollnes" storageKey="hdr.temp.tollnes" />}
@@ -612,6 +619,7 @@ export function SiteHeader() {
                     {l.to === "/okonomi" && showB("okonomi_overskudd") && <OkonomiOverskuddBadge inline />}
                     {l.to === "/okonomi" && showB("okonomi_snitt_dag") && <OkonomiSnittPrDagBadge inline />}
                     {l.to === "/okonomi" && showB("okonomi_igjen_dag") && <OkonomiIgjenPrDagBadge inline />}
+                    </span>
                   </Link>
                 </div>
               );
