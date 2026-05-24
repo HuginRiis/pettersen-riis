@@ -345,6 +345,7 @@ function Home() {
           {showHall("/matvarer") && <HallCard to="/matvarer" title="Matvarekrøniken" desc="Søk og sammenlign priser i norske butikker." icon="🛒" image={hallMatvarer} locked={!isAuthed} />}
           {showHall("/skatte-utregningen") && <HallCard to="/skatte-utregningen" title="Skatte­utregningen" desc="Skatt og lønn — beregninger." icon="🪙" image={hallSkatt} locked={!isAuthed} />}
           {showHall("/steintavle") && <HallCard to="/steintavle" title="Steintavle" desc="Husets innskrifter og notater." icon="🪨" image={hallSteintavle} locked={!isAuthed} />}
+          {showHall("/steintavle-2") && <HallCard to="/steintavle-2" title="Steintavle 2" desc="Stor visning — temperatur, regn og vind på borgen." icon="🪨" image={hallSteintavle} locked={!isAuthed} />}
           {showHall("/oppussing-borgen") && <HallCard to="/oppussing-borgen" title="Prosjekter på Borgen" desc="Prosjekter, planer og bilder fra borgen." icon="🔨" image={hallOppussingBorgen} locked={!isAuthed} />}
           {showHall("/oppussing-hytta") && <HallCard to="/oppussing-hytta" title="Prosjekter på hytta" desc="Prosjekter, planer og bilder fra hytta." icon="🪵" image={hallOppussingHytta} locked={!isAuthed} />}
           {showHall("/kvitteringer") && <HallCard to="/kvitteringer" title="Kvitteringer" desc="Husets kvitteringer, garanti og utgifter." icon="🧾" image={hallKvitteringer} locked={!isAuthed} />}
