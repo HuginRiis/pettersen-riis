@@ -91,6 +91,7 @@ const ROUTE_ICON: Partial<Record<RoutePath, React.ComponentType<{ size?: number;
   "/trening": Dumbbell,
   "/varsler": AlertTriangle,
   "/steintavle": ScrollText,
+  "/steintavle-2": ScrollText,
   "/skatte-utregningen": Coins,
   "/gressklipper": Bot,
   "/stovsugeren": Bot,
