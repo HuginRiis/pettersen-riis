@@ -207,7 +207,7 @@ export const getNetatmoClimateHistory = createServerFn({ method: "GET" })
             token,
           );
           const devices: any[] = stations?.body?.devices ?? [];
-          if (!devices.length) return { ok: false, error: "Ingen værstasjoner" };
+          if (!devices.length) return await fallbackToDb("Ingen værstasjoner");
           const match = data?.stationMatch?.toLowerCase().trim();
           let device = devices[0];
           if (match) {
