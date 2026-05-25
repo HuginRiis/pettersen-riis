@@ -271,14 +271,31 @@ export const getNetatmoClimateHistory = createServerFn({ method: "GET" })
               `&scale=30min&type=Temperature&date_begin=${beginWeek}&date_end=${beginWeek + 6 * 3600}&optimize=false&real_time=true`
             : null;
 
-          const [inJson48, outJson48, inDaily, outDaily, inWeek, outWeek] = await Promise.all([
+          // Ekstra innemoduler (NAModule4) — fetch 48h temp+hum + 1 uke siden
+          const extraIndoorJobs = extraIndoors.map(async (room) => {
+            const url48 =
+              `${NETATMO_BASE}/api/getmeasure?device_id=${deviceId}&module_id=${room.id}` +
+              `&scale=30min&type=Temperature,Humidity&date_begin=${begin48h}&optimize=false&real_time=true`;
+            const urlWeek =
+              `${NETATMO_BASE}/api/getmeasure?device_id=${deviceId}&module_id=${room.id}` +
+              `&scale=30min&type=Temperature,Humidity&date_begin=${beginWeek}&date_end=${beginWeek + 6 * 3600}&optimize=false&real_time=true`;
+            const [j48, jWeek] = await Promise.all([
+              netatmoFetch(url48, token).catch(() => null),
+              netatmoFetch(urlWeek, token).catch(() => null),
+            ]);
+            return { room, j48, jWeek };
+          });
+
+          const [inJson48, outJson48, inDaily, outDaily, inWeek, outWeek, extraResults] = await Promise.all([
             netatmoFetch(inUrl48, token).catch(() => null),
             outUrl48 ? netatmoFetch(outUrl48, token).catch(() => null) : null,
             netatmoFetch(inDailyUrl, token).catch(() => null),
             outDailyUrl ? netatmoFetch(outDailyUrl, token).catch(() => null) : null,
             netatmoFetch(inWeekUrl, token).catch(() => null),
             outWeekUrl ? netatmoFetch(outWeekUrl, token).catch(() => null) : null,
+            Promise.all(extraIndoorJobs),
           ]);
+
 
           // Parse 48h inne (Temperature, Humidity, CO2)
           const inMeas = parseMeasure(inJson48); // values: [Temperature, Humidity, CO2]
