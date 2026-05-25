@@ -451,7 +451,16 @@ function ThermostatBody({
   const caps = { ...device.capabilities, ...(override ?? {}) };
   const min = device.capabilities.target_temperature_min ?? 16;
   const max = device.capabilities.target_temperature_max ?? 30;
-  const step = device.capabilities.target_temperature_step ?? 0.5;
+  const baseStep = device.capabilities.target_temperature_step ?? 0.5;
+  const stepKey = `steintavle.heatpump.step.${device.id}`;
+  const [userStep, setUserStep] = useState<0.5 | 1>(() => {
+    if (typeof window === "undefined") return 0.5;
+    return window.localStorage.getItem(stepKey) === "1" ? 1 : 0.5;
+  });
+  useEffect(() => {
+    if (typeof window !== "undefined") window.localStorage.setItem(stepKey, String(userStep));
+  }, [userStep, stepKey]);
+  const step = Math.max(baseStep, userStep);
   const tempBusy = busy[`${device.id}:target_temperature`];
   const onoffBusy = busy[`${device.id}:onoff`];
   const modeBusy = busy[`${device.id}:thermostat_mode`];
@@ -553,9 +562,36 @@ function ThermostatBody({
         >
           <Minus size={20} />
         </button>
-        <div className="flex items-center justify-center text-[9px] tracking-[0.25em] uppercase text-muted-foreground">
-          {tempBusy ? <Loader2 size={14} className="animate-spin" /> : `${step}°`}
+        <div className="flex flex-col items-center justify-center gap-1">
+          <div className="text-[9px] tracking-[0.25em] uppercase text-muted-foreground">
+            {tempBusy ? <Loader2 size={14} className="animate-spin" /> : `${step}°`}
+          </div>
+          <div
+            role="group"
+            aria-label="Velg steg"
+            className="inline-flex rounded-full overflow-hidden text-[8px] tracking-[0.15em]"
+            style={{ border: `1px solid color-mix(in oklab, ${accent} 24%, transparent)` }}
+          >
+            {([0.5, 1] as const).map((s) => {
+              const active = userStep === s;
+              return (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => setUserStep(s)}
+                  className="px-1.5 py-0.5 transition-colors"
+                  style={{
+                    background: active ? `color-mix(in oklab, ${accent} 22%, transparent)` : "transparent",
+                    color: active ? accent : "var(--muted-foreground)",
+                  }}
+                >
+                  {s}°
+                </button>
+              );
+            })}
+          </div>
         </div>
+
         <button
           type="button"
           onClick={() => adjust(step)}
