@@ -20,6 +20,8 @@ export const HEADER_BADGE_DEFS: { id: string; label: string }[] = [
   { id: "uv_hytta", label: "UV-indeks Hytta · meny: Hytta" },
   { id: "temp_hytta", label: "Temperatur ute Hytta · meny: Hytta" },
   { id: "temp_stua_hytta", label: "Temperatur stua Hytta · meny: Hytta" },
+  { id: "temp_arrow_hour", label: "Pil ▲/▼ ved temperatur — trend siste time (oransje opp / blå ned, terskel 0,15°/t)" },
+  { id: "temp_arrow_yesterday", label: "Pil ▲/▼ ved temperatur — vs samme tid i går (oransje varmere / blå kaldere, terskel 0,3°)" },
   { id: "pollen", label: "Pollen · meny: Pollen" },
   { id: "push_today", label: "Antall push i dag · meny: Push-varslinger" },
   { id: "lights_on", label: "Lys tent · meny: Lys" },
