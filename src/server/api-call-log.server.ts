@@ -270,6 +270,9 @@ export async function computeApiCallSummary(): Promise<ApiCallSummary> {
     endpoint: string;
     total_24h: number;
     errors_24h: number;
+    ondemand_24h: number | null;
+    cron_24h: number | null;
+    auth_24h: number | null;
     avg_duration_ms_24h: number | null;
     last_called_at: string | null;
     last_ok: boolean | null;
@@ -288,9 +291,13 @@ export async function computeApiCallSummary(): Promise<ApiCallSummary> {
     last_cached: r.last_cached ?? false,
     total_24h: Number(r.total_24h) || 0,
     errors_24h: Number(r.errors_24h) || 0,
+    ondemand_24h: Number(r.ondemand_24h) || 0,
+    cron_24h: Number(r.cron_24h) || 0,
+    auth_24h: Number(r.auth_24h) || 0,
     avg_duration_ms_24h:
       r.avg_duration_ms_24h == null ? null : Number(r.avg_duration_ms_24h),
   }));
+
 
   summary.sort((a, b) => {
     const ta = a.last_called_at ? Date.parse(a.last_called_at) : 0;
