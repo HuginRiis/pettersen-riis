@@ -171,16 +171,21 @@ export function ApiCallLogPanel() {
       .sort((a, b) => b.total - a.total);
   }, [grouped]);
 
-  // Bygg timeserie for stacked bar chart (siste 24t per kilde).
+  // Bygg timeserie for stacked bar chart (siste 24t per kilde) + gårsdagens total per samme time.
   const { chartData, chartSources } = useMemo(() => {
     const hourly = data?.hourly ?? [];
+    const yest = data?.yesterday ?? [];
+    const yestByHour = new Map<string, number>();
+    for (const y of yest) {
+      yestByHour.set(new Date(y.hour).toISOString(), Number(y.yest_total) || 0);
+    }
     const buckets = new Map<string, Record<string, number | string>>();
     const srcSet = new Set<string>();
     for (const h of hourly) {
       const d = new Date(h.hour);
       const key = d.toISOString();
       const label = d.toLocaleTimeString("nb-NO", { hour: "2-digit" });
-      const row = buckets.get(key) ?? { _ts: key, label };
+      const row = buckets.get(key) ?? { _ts: key, label, _yesterday: yestByHour.get(key) ?? 0 };
       if (h.source && h.total > 0) {
         row[h.source] = ((row[h.source] as number) ?? 0) + h.total;
         srcSet.add(h.source);
@@ -202,6 +207,7 @@ export function ApiCallLogPanel() {
     );
     return { chartData: arr, chartSources: srcList };
   }, [data]);
+
 
   // Felles fargekart per kilde — brukes både i grafen og i kortene under,
   // slik at fargene alltid stemmer overens.
