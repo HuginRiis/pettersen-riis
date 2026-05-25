@@ -438,6 +438,52 @@ export const getNetatmoClimateHistory = createServerFn({ method: "GET" })
                 : null,
           };
 
+
+          // Bygg per-rom historikk for ekstra innemoduler
+          const rooms: RoomHistory[] = (extraResults ?? []).map(({ room, j48, jWeek }) => {
+            const meas = parseMeasure(j48); // [Temperature, Humidity]
+            const pts = meas.map((p) => ({
+              t: p.ts,
+              temp: typeof p.values[0] === "number" ? p.values[0] : null,
+              hum: typeof p.values[1] === "number" ? p.values[1] : null,
+            }));
+            const last = pts[pts.length - 1] ?? null;
+            const curR: RoomSnapshot = last ? { t: last.temp, hum: last.hum } : { t: null, hum: null };
+            const pickR = (target: number): RoomSnapshot => {
+              const p = pickAtOrBefore(pts, target);
+              return p ? { t: p.temp, hum: p.hum } : { t: null, hum: null };
+            };
+            const wArr = parseMeasure(jWeek);
+            const w = pickAtOrBefore(
+              wArr.map((p) => ({ t: p.ts, ...p })),
+              weekTarget,
+            );
+            const lastWeekR: RoomSnapshot = {
+              t: w && typeof w.values[0] === "number" ? w.values[0] : null,
+              hum: w && typeof w.values[1] === "number" ? w.values[1] : null,
+            };
+            // Normal = snitt for samme time-på-døgnet over 48h
+            let nt = 0, nh = 0, ct = 0, ch = 0;
+            for (const p of pts) {
+              if (new Date(p.t).getHours() !== nowHour) continue;
+              if (p.temp != null) { nt += p.temp; ct++; }
+              if (p.hum != null) { nh += p.hum; ch++; }
+            }
+            const normR: RoomSnapshot = {
+              t: ct > 0 ? nt / ct : null,
+              hum: ch > 0 ? nh / ch : null,
+            };
+            return {
+              id: room.id,
+              name: room.name,
+              current: curR,
+              oneHourAgo: pickR(nowMs - 3600_000),
+              yesterdaySameTime: pickR(nowMs - 24 * 3600_000),
+              lastWeekSameTime: lastWeekR,
+              normal: normR,
+            };
+          });
+
           const out: ClimateHistoryResult = {
             ok: true,
             stationName,
@@ -451,7 +497,9 @@ export const getNetatmoClimateHistory = createServerFn({ method: "GET" })
             lastWeekSameTime,
             normal,
             trends,
+            rooms,
           };
+
 
           // Guard: ikke cache et tomt svar (Netatmo svarer av og til med 0 punkter
           // for en stasjon selv om token og device er ok). Da serverer vi heller
