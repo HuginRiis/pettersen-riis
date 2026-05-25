@@ -333,16 +333,16 @@ export function UpcomingPushPanel() {
     setLoading(false);
   }
 
+  const todayKey = useMemo(() => osloDateKey(new Date()), []);
   const grouped = useMemo(() => {
     const out: Record<string, Item[]> = {};
     for (const it of items) {
-      const key = new Intl.DateTimeFormat("en-CA", {
-        timeZone: "Europe/Oslo", year: "numeric", month: "2-digit", day: "2-digit",
-      }).format(it.when);
+      const key = osloDateKey(it.when);
+      if (onlyToday && key !== todayKey) continue;
       (out[key] ||= []).push(it);
     }
     return out;
-  }, [items]);
+  }, [items, onlyToday, todayKey]);
 
   return (
     <section className="container mx-auto px-4 pb-12">
