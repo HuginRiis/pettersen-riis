@@ -719,9 +719,19 @@ function tempColor(t: number): string {
   return `hsl(140 60% 55%)`;
 }
 
-function TempBadge({ stationMatch, storageKey }: { stationMatch: string; storageKey: string }) {
+function TempBadge({
+  stationMatch,
+  storageKey,
+  variant = "outdoor",
+}: {
+  stationMatch: string;
+  storageKey: string;
+  variant?: "outdoor" | "indoor";
+}) {
   const fetchData = useServerFn(getNetatmoWeatherStation);
+  const fetchTrend = useServerFn(getNetatmoLiveTrend);
   const [live, setLive] = useState<number | null>(null);
+  const [trend, setTrend] = useState<number | null>(null);
   useEffect(() => {
     let cancelled = false;
     const load = () => {
@@ -729,9 +739,16 @@ function TempBadge({ stationMatch, storageKey }: { stationMatch: string; storage
       fetchData({ data: { stationMatch } })
         .then((r) => {
           if (cancelled || !r.ok) return;
-          const out = r.modules.find((m) => m.type === "NAModule1");
-          const t = out?.metrics.temperature;
+          const mod = r.modules.find((m) => m.type === (variant === "indoor" ? "NAMain" : "NAModule1"));
+          const t = mod?.metrics.temperature;
           if (typeof t === "number" && Number.isFinite(t)) setLive(t);
+        })
+        .catch(() => {});
+      fetchTrend({ data: { stationMatch } })
+        .then((r) => {
+          if (cancelled || !r.ok) return;
+          const d = variant === "indoor" ? r.inDeltaPerHour : r.outDeltaPerHour;
+          if (typeof d === "number" && Number.isFinite(d)) setTrend(d);
         })
         .catch(() => {});
     };
@@ -741,21 +758,32 @@ function TempBadge({ stationMatch, storageKey }: { stationMatch: string; storage
       cancelled = true;
       clearInterval(id);
     };
-  }, [stationMatch, fetchData]);
+  }, [stationMatch, variant, fetchData, fetchTrend]);
   const { value } = useLastGood(storageKey, live);
   if (value == null) return null;
   const color = tempColor(value);
+  // Trend-pil: opp hvis >+0.15°/t, ned hvis <-0.15°/t
+  let arrow: "up" | "down" | "flat" = "flat";
+  if (trend != null) {
+    if (trend > 0.15) arrow = "up";
+    else if (trend < -0.15) arrow = "down";
+  }
+  const arrowChar = arrow === "up" ? "▲" : arrow === "down" ? "▼" : "";
+  const arrowColor = arrow === "up" ? "#fb923c" : arrow === "down" ? "#7dd3fc" : color;
   return (
     <span
-      className="inline-flex items-center justify-center rounded-full text-[9px] font-semibold leading-none px-1.5 py-0.5 min-w-[18px] tabular-nums"
+      className="inline-flex items-center justify-center gap-0.5 rounded-full text-[9px] font-semibold leading-none px-1.5 py-0.5 min-w-[18px] tabular-nums"
       style={{
         background: `color-mix(in oklab, ${color} 22%, transparent)`,
         color,
         border: `1px solid color-mix(in oklab, ${color} 50%, transparent)`,
       }}
-      title={`Ute nå: ${value.toFixed(1)}°`}
+      title={`${variant === "indoor" ? "Inne" : "Ute"} nå: ${value.toFixed(1)}°${trend != null ? ` (${trend >= 0 ? "+" : ""}${trend.toFixed(2)}°/t)` : ""}`}
     >
       {value.toFixed(0)}°
+      {arrowChar && (
+        <span style={{ color: arrowColor, fontSize: 8 }}>{arrowChar}</span>
+      )}
     </span>
   );
 }
