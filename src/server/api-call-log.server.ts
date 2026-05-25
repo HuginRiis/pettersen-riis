@@ -181,8 +181,12 @@ export type ApiCallSummaryRow = {
   last_cached: boolean;
   total_24h: number;
   errors_24h: number;
+  ondemand_24h: number;
+  cron_24h: number;
+  auth_24h: number;
   avg_duration_ms_24h: number | null;
 };
+
 
 export type SourceSchedule = {
   /** Lesbar beskrivelse, f.eks. "hvert minutt", "hver 5 min", "ved bruk" */
