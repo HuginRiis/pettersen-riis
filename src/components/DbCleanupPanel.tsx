@@ -53,6 +53,24 @@ export function DbCleanupPanel() {
     }
   };
 
+  const handleScan = async (mode: "unused" | "recommended" | "month30" | "full30") => {
+    setScanning(mode);
+    try {
+      const fresh = await fetchFn({});
+      setData(fresh);
+      const bytes =
+        mode === "unused" ? fresh.totals.unusedBytes :
+        mode === "recommended" ? fresh.totals.recommendedBytes :
+        mode === "month30" ? fresh.totals.month30Bytes :
+        fresh.totals.full30Bytes;
+      setScanResult((prev) => ({ ...prev, [mode]: { bytes, at: Date.now() } }));
+    } catch (e: any) {
+      alert("Skann feilet: " + (e?.message ?? "ukjent"));
+    } finally {
+      setScanning(null);
+    }
+  };
+
   if (loading && !data) {
     return <div className="text-xs text-muted-foreground flex items-center gap-2"><Loader2 size={14} className="animate-spin" /> Beregner sparing…</div>;
   }
