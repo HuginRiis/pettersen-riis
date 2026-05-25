@@ -191,6 +191,15 @@ export const getNetatmoClimateHistory = createServerFn({ method: "GET" })
         const c = cache.get(key);
         if (c && Date.now() - c.at < CACHE_TTL_MS && c.data.ok) return c.data;
 
+        const fallbackToDb = async (errMsg: string): Promise<ClimateHistoryResult> => {
+          const snap = await loadDbSnapshot(key);
+          if (snap && snap.ok) {
+            cache.set(key, { at: Date.now(), data: snap });
+            return snap;
+          }
+          return { ok: false, error: errMsg };
+        };
+
         try {
           const token = await getAccessToken();
           const stations = await netatmoFetch(
