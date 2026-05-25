@@ -30,6 +30,12 @@ export function DbCleanupPanel() {
   useEffect(() => { load(); }, []);
 
   const handleRun = async (mode: "unused" | "recommended" | "month30", label: string) => {
+    const pwd = prompt(`Skriv inn passord for å slette ${label}:`);
+    if (pwd === null) return;
+    if (pwd !== "9272") {
+      alert("Feil passord.");
+      return;
+    }
     if (!confirm(`Slette ${label}? Dette kan ikke angres.`)) return;
     setBusy(mode);
     try {
