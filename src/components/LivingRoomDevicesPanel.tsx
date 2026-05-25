@@ -366,6 +366,13 @@ export function HeatPumpTile() {
             onSetTemp={(v) => sendCap(device, "target_temperature", v)}
             onToggle={(v) => sendCap(device, "onoff", v)}
             onSetMode={(v) => sendCap(device, "thermostat_mode", v)}
+            onSetFan={(v) =>
+              sendCap(
+                device,
+                device.capabilities.fan_capability_id ?? "fan_speed",
+                v,
+              )
+            }
           />
         )}
       </div>
