@@ -34,7 +34,6 @@ type RoutePath =
   | "/pollen"
   | "/vakttarnet"
   | "/hytta"
-  | "/hundene"
   | "/trening"
   | "/turer"
   | "/stromkroniken"
@@ -44,20 +43,14 @@ type RoutePath =
   | "/varme"
   | "/steintavle"
   | "/steintavle-2"
-  | "/oppussing-borgen"
-  | "/oppussing-hytta"
-  | "/matvarer"
   | "/kvitteringer"
   | "/okonomi"
   | "/skatte-utregningen"
   | "/gressklipper"
   | "/stovsugeren"
-  | "/got-saga"
   | "/decibel"
-  | "/nettverk"
   | "/roborock"
-  | "/planter"
-  | "/flyradar";
+  | "/planter";
 
 
 type NavLink = { to: RoutePath; label: string; public?: boolean };
