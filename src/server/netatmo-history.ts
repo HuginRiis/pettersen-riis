@@ -234,9 +234,30 @@ export const getNetatmoClimateHistory = createServerFn({ method: "GET" })
           const deviceId = device._id;
           const outdoor = (device.modules ?? []).find((m: any) => m.type === "NAModule1");
           const outdoorId: string | null = outdoor?._id ?? null;
-          const extraIndoors: Array<{ id: string; name: string }> = (device.modules ?? [])
-            .filter((m: any) => m.type === "NAModule4")
-            .map((m: any) => ({ id: m._id as string, name: (m.module_name ?? "Rom") as string }));
+          // Samle NAModule4-rom fra ALLE enheter på kontoen som hører til samme
+          // sted (station_name matcher stationMatch). For Tollnes/Borgen kan
+          // rommene (Soverommet, Nora, Kontor) ligge på en separat base-stasjon.
+          const roomDevices = match
+            ? devices.filter((d: any) => {
+                const sn = (d.station_name ?? "").toLowerCase();
+                const mn = (d.module_name ?? "").toLowerCase();
+                return sn.includes(match) || mn.includes(match);
+              })
+            : [device];
+          if (roomDevices.length === 0) roomDevices.push(device);
+          const extraIndoors: Array<{ deviceId: string; id: string; name: string }> = [];
+          for (const dev of roomDevices) {
+            for (const m of dev.modules ?? []) {
+              if (m.type === "NAModule4") {
+                extraIndoors.push({
+                  deviceId: dev._id,
+                  id: m._id,
+                  name: m.module_name ?? "Rom",
+                });
+              }
+            }
+          }
+
 
 
           const nowMs = Date.now();
