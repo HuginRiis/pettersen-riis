@@ -54,16 +54,11 @@ import hallAgenda from "@/assets/got-agenda.jpg";
 import hallVarsler from "@/assets/got-varsler.jpg";
 import hallVakttarnet from "@/assets/got-vakttarnet.jpg";
 import hallHytta from "@/assets/hytta-aurora-got.webp";
-import hallHundene from "@/assets/hundene-pack.jpg";
 import hallTrening from "@/assets/got-trening.jpg";
 
 
 import hallSmarthus from "@/assets/got-smarthus.jpg";
 import hallStrom from "@/assets/stromkroniken.jpg";
-import hallMatvarer from "@/assets/got-matvarer.jpg";
-import hallOppussingBorgen from "@/assets/got-oppussing-borgen.jpg";
-import hallOppussingHytta from "@/assets/got-oppussing-hytta.jpg";
-import hallWesteros from "@/assets/got-westeros-hero.jpg";
 import hallSteintavle from "@/assets/got-brodering.jpg";
 import hallVarslinger from "@/assets/got-varslinger.jpg";
 import hallKvitteringer from "@/assets/got-kvitteringer.jpg";
@@ -73,7 +68,6 @@ import hallVarme from "@/assets/got-varme.jpg";
 import hallGressklipper from "@/assets/got-gressklipper.jpg";
 import hallStovsuger from "@/assets/got-stovsuger.jpg";
 import hallSkatt from "@/assets/got-skatt.jpg";
-import hallFlyradar from "@/assets/got-flyradar.jpg";
 
 // Halls available to anyone who steps into the courtyard (no password required)
 const PUBLIC_HALL_PATHS = new Set<string>(["/var", "/pollen", "/turer"]);
