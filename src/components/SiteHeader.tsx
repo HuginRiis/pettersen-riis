@@ -734,6 +734,9 @@ function TempBadge({
 }) {
   const fetchData = useServerFn(getNetatmoWeatherStation);
   const fetchTrend = useServerFn(getNetatmoLiveTrend);
+  const badgeSettings = useHeaderBadgeSettings();
+  const showHourArrow = badgeSettings.badges["temp_arrow_hour"]?.enabled !== false;
+  const showYesterdayArrow = badgeSettings.badges["temp_arrow_yesterday"]?.enabled !== false;
   const [live, setLive] = useState<number | null>(null);
   const [trend, setTrend] = useState<number | null>(null);
   const [yesterday, setYesterday] = useState<number | null>(null);
