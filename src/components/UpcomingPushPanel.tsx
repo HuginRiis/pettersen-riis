@@ -518,6 +518,27 @@ function EventBasedRules() {
       }
     } catch (e) { console.error("[EventBasedRules] light prefs failed", e); }
 
+    // Treg sidelasting
+    try {
+      const { data } = await supabase
+        .from("notification_settings")
+        .select("value")
+        .eq("key", "slow_page_load")
+        .maybeSingle();
+      const v = ((data?.value as any) ?? {}) as { enabled?: boolean; threshold_ms?: number; recipient?: string };
+      if (v && Object.keys(v).length > 0) {
+        out.push({
+          key: "slow-page-load",
+          icon: Activity,
+          source: "Treg sidelasting",
+          title: "Sidelast over terskel",
+          detail: `Terskel ${v.threshold_ms ?? 3000} ms`,
+          recipients: v.recipient || "Alle",
+          enabled: !!v.enabled,
+        });
+      }
+    } catch (e) { console.error("[EventBasedRules] slow page pref failed", e); }
+
     // Tibber daglig snapshot mangler
     try {
       const { data } = await supabase
