@@ -181,7 +181,12 @@ export function LivingRoomProvider({ children }: { children: ReactNode }) {
   const sendCap = useCallback(
     async (
       device: LivingRoomDevice,
-      capability: "onoff" | "target_temperature" | "dim" | "thermostat_mode",
+      capability:
+        | "onoff"
+        | "target_temperature"
+        | "dim"
+        | "thermostat_mode"
+        | (string & {}),
       value: boolean | number | string,
     ) => {
       const key = `${device.id}:${capability}`;
