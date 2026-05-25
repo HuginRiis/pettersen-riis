@@ -157,7 +157,7 @@ async function evaluatePref(pref: Pref, force = false): Promise<{
   const update: Record<string, unknown> = { last_checked_at: new Date().toISOString(), last_value: temp };
 
   if (temp == null) {
-    await supabaseAdmin.from("climate_notification_prefs").update(update).eq("id", pref.id);
+    await supabaseAdmin.from("climate_notification_prefs").update(update as any).eq("id", pref.id);
     return { prefId: pref.id, label: pref.label, temp: null, triggered: null, skipped: "no-temp" };
   }
 
@@ -183,7 +183,7 @@ async function evaluatePref(pref: Pref, force = false): Promise<{
   }
 
   if (!triggered) {
-    await supabaseAdmin.from("climate_notification_prefs").update(update).eq("id", pref.id);
+    await supabaseAdmin.from("climate_notification_prefs").update(update as any).eq("id", pref.id);
     return { prefId: pref.id, label: pref.label, temp, triggered: null };
   }
 
@@ -198,7 +198,7 @@ async function evaluatePref(pref: Pref, force = false): Promise<{
   if (r.sent > 0 || force) {
     update[triggered === "hot" ? "last_notified_hot_at" : "last_notified_cold_at"] = new Date().toISOString();
   }
-  await supabaseAdmin.from("climate_notification_prefs").update(update).eq("id", pref.id);
+  await supabaseAdmin.from("climate_notification_prefs").update(update as any).eq("id", pref.id);
 
   return { prefId: pref.id, label: pref.label, temp, triggered, sent: r.sent, errors: r.errors };
 }
