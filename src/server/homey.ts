@@ -1776,6 +1776,69 @@ export const getLivingRoomDevices = createServerFn({ method: "GET" }).handler(
               .filter(Boolean) as { id: string; title?: string }[];
             if (cleaned.length > 0) out.capabilities.thermostat_mode_values = cleaned;
           }
+          // Fan capability detection — Sensibo bruker f.eks. se_fanlevel,
+          // mens andre integrasjoner bruker fan_speed / fan_mode.
+          const fanCandidates = [
+            "fan_speed",
+            "fan_mode",
+            "qlima_fan_speed",
+            "fan_level",
+            "fan_rate",
+            "fan_power",
+            "se_fanlevel",
+            "se_fan_level",
+            "se_fanmode",
+            "se_fan_mode",
+          ];
+          let fanCapId: string | undefined;
+          for (const k of fanCandidates) {
+            if (caps?.[k]) { fanCapId = k; break; }
+          }
+          if (!fanCapId) {
+            for (const k of Object.keys(caps ?? {})) {
+              if (
+                /fan/i.test(k) &&
+                !/swing|vane|louver|oscill|airdir|air_dir|fan_dir|flap|wind_dir|updown|up_?down|leftright|left_?right|direction/i.test(
+                  k,
+                )
+              ) {
+                fanCapId = k;
+                break;
+              }
+            }
+          }
+          if (fanCapId) {
+            const fv = readCapValue(caps, fanCapId);
+            if (typeof fv === "string" || typeof fv === "number") {
+              out.capabilities.fan_capability_id = fanCapId;
+              out.capabilities.fan_value = fv;
+            } else if (caps?.[fanCapId]) {
+              out.capabilities.fan_capability_id = fanCapId;
+            }
+            const fanVals = readCapMeta(caps, fanCapId, "values");
+            if (Array.isArray(fanVals)) {
+              const cleaned = fanVals
+                .map((v: any) => {
+                  if (typeof v === "string") return { id: v };
+                  if (v && typeof v === "object" && typeof v.id === "string") {
+                    return {
+                      id: v.id,
+                      title:
+                        typeof v.title === "string"
+                          ? v.title
+                          : typeof v?.title?.no === "string"
+                            ? v.title.no
+                            : typeof v?.title?.en === "string"
+                              ? v.title.en
+                              : undefined,
+                    };
+                  }
+                  return null;
+                })
+                .filter(Boolean) as { id: string; title?: string }[];
+              if (cleaned.length > 0) out.capabilities.fan_values = cleaned;
+            }
+          }
           return out;
         })
         .filter(
