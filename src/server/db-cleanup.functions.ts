@@ -54,24 +54,50 @@ export type DbCleanupEstimate = {
     unusedBytes: number;
     recommendedBytes: number;
     month30Bytes: number;
+    /** Bredt 30-dagers estimat: alle public-tabeller + cron-historikk. */
+    full30Bytes: number;
     dbBytes: number;
   };
+  full30Rows: Array<{ table: string; dateColumn: string; oldRows: number; totalRows: number; estimatedBytes: number }>;
 };
 
 export const getDbCleanupEstimate = createServerFn({ method: "GET" }).handler(
   async (): Promise<DbCleanupEstimate> => {
     const sb = supabaseAdmin as any;
 
-    // Hent total DB-størrelse (gjenbruk eksisterende RPC).
+    // Hent total DB-størrelse + bredt 30-dagers estimat.
     let dbBytes = 0;
+    let full30Bytes = 0;
+    let full30Rows: DbCleanupEstimate["full30Rows"] = [];
     try {
-      const { data } = await sb.rpc("get_db_usage_stats");
-      if (data) dbBytes = Number(data.db_bytes ?? 0);
-    } catch {}
+      const { data, error } = await sb.rpc("get_db_30day_cleanup_estimate");
+      if (error) console.warn("[db-cleanup] 30day rpc error:", error.message);
+      if (data) {
+        dbBytes = Number(data.db_bytes ?? 0);
+        full30Bytes = Number(data.total_bytes ?? 0);
+        full30Rows = (data.rows ?? []).map((r: any) => ({
+          table: String(r.table),
+          dateColumn: String(r.date_column),
+          oldRows: Number(r.old_rows ?? 0),
+          totalRows: Number(r.total_rows ?? 0),
+          estimatedBytes: Number(r.estimated_bytes ?? 0),
+        }));
+      }
+    } catch (e) {
+      console.warn("[db-cleanup] 30day rpc threw", e);
+    }
+    // Fallback hvis db_bytes ikke ble satt.
+    if (dbBytes === 0) {
+      try {
+        const { data } = await sb.rpc("get_db_usage_stats");
+        if (data) dbBytes = Number(data.db_bytes ?? 0);
+      } catch {}
+    }
 
     // Per-tabell statistikk: bygg én SQL via UNION ALL gjennom en RPC vi lager.
     // For å unngå ny migrasjon: kjør per-tabell parallelt via REST count().
     const cutoff30 = new Date(Date.now() - 30 * 24 * 3600_000).toISOString();
+
 
     const rows = await Promise.all(
       CANDIDATES.map(async (c): Promise<DbCleanupRow | null> => {
@@ -140,26 +166,43 @@ export const getDbCleanupEstimate = createServerFn({ method: "GET" }).handler(
         acc.month30Bytes += r.month30Bytes;
         return acc;
       },
-      { unusedBytes: 0, recommendedBytes: 0, month30Bytes: 0, dbBytes },
+      { unusedBytes: 0, recommendedBytes: 0, month30Bytes: 0, full30Bytes, dbBytes },
     );
 
-    return { rows: filtered, totals };
+    return { rows: filtered, totals, full30Rows };
+
   },
 );
 
 export const runDbCleanup = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => {
-    const data = d as { mode: "unused" | "recommended" | "month30" };
-    if (!["unused", "recommended", "month30"].includes(data?.mode)) {
+    const data = d as { mode: "unused" | "recommended" | "month30" | "full30" };
+    if (!["unused", "recommended", "month30", "full30"].includes(data?.mode)) {
       throw new Error("Ugyldig modus");
     }
     return data;
+
   })
   .handler(async ({ data }): Promise<{ deletedPerTable: Record<string, number>; totalDeleted: number }> => {
     const sb = supabaseAdmin as any;
     const cutoff30 = new Date(Date.now() - 30 * 24 * 3600_000).toISOString();
     const deletedPerTable: Record<string, number> = {};
     let total = 0;
+
+    // Bredt 30-dagers modus: kjør SQL-funksjonen som dekker alle tabeller.
+    if (data.mode === "full30") {
+      try {
+        const { data: res, error } = await sb.rpc("run_db_30day_cleanup");
+        if (error) throw new Error(error.message);
+        const rows = (res?.rows ?? []) as Array<{ table: string; deleted: number }>;
+        for (const r of rows) deletedPerTable[r.table] = Number(r.deleted ?? 0);
+        return { deletedPerTable, totalDeleted: Number(res?.total_deleted ?? 0) };
+      } catch (e: any) {
+        throw new Error("Full 30-dagers opprydning feilet: " + (e?.message ?? "ukjent"));
+      }
+    }
+
+
 
     for (const c of CANDIDATES) {
       try {

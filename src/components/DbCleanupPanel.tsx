@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { getDbCleanupEstimate, runDbCleanup, type DbCleanupEstimate } from "@/server/db-cleanup.functions";
-import { Database, Trash2, Sparkles, CalendarClock, Loader2 } from "lucide-react";
+import { Database, Trash2, Sparkles, CalendarClock, Layers, Loader2 } from "lucide-react";
 
 function pretty(b: number): string {
   if (!b) return "0 B";
@@ -29,7 +29,7 @@ export function DbCleanupPanel() {
 
   useEffect(() => { load(); }, []);
 
-  const handleRun = async (mode: "unused" | "recommended" | "month30", label: string) => {
+  const handleRun = async (mode: "unused" | "recommended" | "month30" | "full30", label: string) => {
     const pwd = prompt(`Skriv inn passord for å slette ${label}:`);
     if (pwd === null) return;
     if (pwd !== "9272") {
@@ -84,6 +84,16 @@ export function DbCleanupPanel() {
       desc: "Tømmer alle logger, grafer og cron-historikk eldre enn 30 dager.",
       cta: "Slett >30 dager",
     },
+    {
+      key: "full30" as const,
+      title: "Komplett 30-dagers opprydning",
+      icon: Layers,
+      color: "#60a5fa",
+      bytes: data.totals.full30Bytes,
+      desc: "Skanner ALLE tabeller (inkl. cron-historikk) og sletter alt eldre enn 30 dager — kun siste 30 dager beholdes.",
+      cta: "Kjør komplett",
+    },
+
   ];
 
   return (
@@ -93,7 +103,7 @@ export function DbCleanupPanel() {
         Database-størrelse nå: <span className="font-medium text-foreground">{pretty(data.totals.dbBytes)}</span>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {boxes.map((b) => {
           const Icon = b.icon;
           return (
