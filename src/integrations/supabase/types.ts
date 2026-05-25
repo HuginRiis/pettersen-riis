@@ -1358,6 +1358,24 @@ export type Database = {
         }
         Relationships: []
       }
+      netatmo_climate_snapshot: {
+        Row: {
+          cache_key: string
+          data: Json
+          updated_at: string
+        }
+        Insert: {
+          cache_key: string
+          data: Json
+          updated_at?: string
+        }
+        Update: {
+          cache_key?: string
+          data?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       notification_settings: {
         Row: {
           id: string

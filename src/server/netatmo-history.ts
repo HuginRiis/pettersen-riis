@@ -2,6 +2,39 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { withApiLog } from "./api-call-log.server";
 import { loadStoredRefreshToken, saveStoredRefreshToken } from "./netatmo-token-store.server";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
+
+const DB_CACHE_TABLE = "netatmo_climate_snapshot";
+
+async function loadDbSnapshot(key: string): Promise<ClimateHistoryResult | null> {
+  try {
+    const { data } = await supabaseAdmin
+      .from(DB_CACHE_TABLE as any)
+      .select("data, updated_at")
+      .eq("cache_key", key)
+      .maybeSingle();
+    if (!data) return null;
+    const payload = (data as any).data as ClimateHistoryResult;
+    if (payload && (payload as any).ok) {
+      return { ...(payload as any), fetchedAt: (data as any).updated_at } as ClimateHistoryResult;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+async function saveDbSnapshot(key: string, payload: ClimateHistoryResult): Promise<void> {
+  try {
+    await supabaseAdmin
+      .from(DB_CACHE_TABLE as any)
+      .upsert({ cache_key: key, data: payload as any, updated_at: new Date().toISOString() } as any, {
+        onConflict: "cache_key",
+      });
+  } catch {
+    /* best effort */
+  }
+}
 
 /**
  * Henter historisk data fra Netatmo getmeasure-API.
@@ -158,6 +191,15 @@ export const getNetatmoClimateHistory = createServerFn({ method: "GET" })
         const c = cache.get(key);
         if (c && Date.now() - c.at < CACHE_TTL_MS && c.data.ok) return c.data;
 
+        const fallbackToDb = async (errMsg: string): Promise<ClimateHistoryResult> => {
+          const snap = await loadDbSnapshot(key);
+          if (snap && snap.ok) {
+            cache.set(key, { at: Date.now(), data: snap });
+            return snap;
+          }
+          return { ok: false, error: errMsg };
+        };
+
         try {
           const token = await getAccessToken();
           const stations = await netatmoFetch(
@@ -165,7 +207,7 @@ export const getNetatmoClimateHistory = createServerFn({ method: "GET" })
             token,
           );
           const devices: any[] = stations?.body?.devices ?? [];
-          if (!devices.length) return { ok: false, error: "Ingen værstasjoner" };
+          if (!devices.length) return await fallbackToDb("Ingen værstasjoner");
           const match = data?.stationMatch?.toLowerCase().trim();
           let device = devices[0];
           if (match) {
@@ -378,9 +420,11 @@ export const getNetatmoClimateHistory = createServerFn({ method: "GET" })
             trends,
           };
           cache.set(key, { at: Date.now(), data: out });
+          // Skriv til DB-cache slik at vi har fallback hvis Netatmo-API svikter neste gang.
+          await saveDbSnapshot(key, out);
           return out;
         } catch (e: any) {
-          return { ok: false, error: e?.message ?? "Ukjent feil" };
+          return await fallbackToDb(e?.message ?? "Ukjent feil");
         }
       },
     ),
