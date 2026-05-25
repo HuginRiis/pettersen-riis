@@ -98,6 +98,16 @@ type DayPoint = {
   outAvg: number | null;
 };
 type Snapshot = { inT: number | null; outT: number | null; hum: number | null; co2: number | null };
+type RoomSnapshot = { t: number | null; hum: number | null };
+export type RoomHistory = {
+  id: string;
+  name: string;
+  current: RoomSnapshot;
+  oneHourAgo: RoomSnapshot;
+  yesterdaySameTime: RoomSnapshot;
+  lastWeekSameTime: RoomSnapshot;
+  normal: RoomSnapshot;
+};
 
 export type ClimateHistoryResult =
   | { ok: false; error: string }
@@ -124,7 +134,9 @@ export type ClimateHistoryResult =
         outDeltaPerHour: number | null;
         inDeltaPerHour: number | null;
       };
+      rooms?: RoomHistory[];
     };
+
 
 const CACHE_TTL_MS = 10 * 60_000;
 const cache = new Map<string, { at: number; data: ClimateHistoryResult }>();
@@ -222,6 +234,10 @@ export const getNetatmoClimateHistory = createServerFn({ method: "GET" })
           const deviceId = device._id;
           const outdoor = (device.modules ?? []).find((m: any) => m.type === "NAModule1");
           const outdoorId: string | null = outdoor?._id ?? null;
+          const extraIndoors: Array<{ id: string; name: string }> = (device.modules ?? [])
+            .filter((m: any) => m.type === "NAModule4")
+            .map((m: any) => ({ id: m._id as string, name: (m.module_name ?? "Rom") as string }));
+
 
           const nowMs = Date.now();
           const begin24h = Math.floor((nowMs - 25 * 3600_000) / 1000);
@@ -255,14 +271,31 @@ export const getNetatmoClimateHistory = createServerFn({ method: "GET" })
               `&scale=30min&type=Temperature&date_begin=${beginWeek}&date_end=${beginWeek + 6 * 3600}&optimize=false&real_time=true`
             : null;
 
-          const [inJson48, outJson48, inDaily, outDaily, inWeek, outWeek] = await Promise.all([
+          // Ekstra innemoduler (NAModule4) — fetch 48h temp+hum + 1 uke siden
+          const extraIndoorJobs = extraIndoors.map(async (room) => {
+            const url48 =
+              `${NETATMO_BASE}/api/getmeasure?device_id=${deviceId}&module_id=${room.id}` +
+              `&scale=30min&type=Temperature,Humidity&date_begin=${begin48h}&optimize=false&real_time=true`;
+            const urlWeek =
+              `${NETATMO_BASE}/api/getmeasure?device_id=${deviceId}&module_id=${room.id}` +
+              `&scale=30min&type=Temperature,Humidity&date_begin=${beginWeek}&date_end=${beginWeek + 6 * 3600}&optimize=false&real_time=true`;
+            const [j48, jWeek] = await Promise.all([
+              netatmoFetch(url48, token).catch(() => null),
+              netatmoFetch(urlWeek, token).catch(() => null),
+            ]);
+            return { room, j48, jWeek };
+          });
+
+          const [inJson48, outJson48, inDaily, outDaily, inWeek, outWeek, extraResults] = await Promise.all([
             netatmoFetch(inUrl48, token).catch(() => null),
             outUrl48 ? netatmoFetch(outUrl48, token).catch(() => null) : null,
             netatmoFetch(inDailyUrl, token).catch(() => null),
             outDailyUrl ? netatmoFetch(outDailyUrl, token).catch(() => null) : null,
             netatmoFetch(inWeekUrl, token).catch(() => null),
             outWeekUrl ? netatmoFetch(outWeekUrl, token).catch(() => null) : null,
+            Promise.all(extraIndoorJobs),
           ]);
+
 
           // Parse 48h inne (Temperature, Humidity, CO2)
           const inMeas = parseMeasure(inJson48); // values: [Temperature, Humidity, CO2]
@@ -405,6 +438,52 @@ export const getNetatmoClimateHistory = createServerFn({ method: "GET" })
                 : null,
           };
 
+
+          // Bygg per-rom historikk for ekstra innemoduler
+          const rooms: RoomHistory[] = (extraResults ?? []).map(({ room, j48, jWeek }) => {
+            const meas = parseMeasure(j48); // [Temperature, Humidity]
+            const pts = meas.map((p) => ({
+              t: p.ts,
+              temp: typeof p.values[0] === "number" ? p.values[0] : null,
+              hum: typeof p.values[1] === "number" ? p.values[1] : null,
+            }));
+            const last = pts[pts.length - 1] ?? null;
+            const curR: RoomSnapshot = last ? { t: last.temp, hum: last.hum } : { t: null, hum: null };
+            const pickR = (target: number): RoomSnapshot => {
+              const p = pickAtOrBefore(pts, target);
+              return p ? { t: p.temp, hum: p.hum } : { t: null, hum: null };
+            };
+            const wArr = parseMeasure(jWeek);
+            const w = pickAtOrBefore(
+              wArr.map((p) => ({ t: p.ts, ...p })),
+              weekTarget,
+            );
+            const lastWeekR: RoomSnapshot = {
+              t: w && typeof w.values[0] === "number" ? w.values[0] : null,
+              hum: w && typeof w.values[1] === "number" ? w.values[1] : null,
+            };
+            // Normal = snitt for samme time-på-døgnet over 48h
+            let nt = 0, nh = 0, ct = 0, ch = 0;
+            for (const p of pts) {
+              if (new Date(p.t).getHours() !== nowHour) continue;
+              if (p.temp != null) { nt += p.temp; ct++; }
+              if (p.hum != null) { nh += p.hum; ch++; }
+            }
+            const normR: RoomSnapshot = {
+              t: ct > 0 ? nt / ct : null,
+              hum: ch > 0 ? nh / ch : null,
+            };
+            return {
+              id: room.id,
+              name: room.name,
+              current: curR,
+              oneHourAgo: pickR(nowMs - 3600_000),
+              yesterdaySameTime: pickR(nowMs - 24 * 3600_000),
+              lastWeekSameTime: lastWeekR,
+              normal: normR,
+            };
+          });
+
           const out: ClimateHistoryResult = {
             ok: true,
             stationName,
@@ -418,7 +497,9 @@ export const getNetatmoClimateHistory = createServerFn({ method: "GET" })
             lastWeekSameTime,
             normal,
             trends,
+            rooms,
           };
+
 
           // Guard: ikke cache et tomt svar (Netatmo svarer av og til med 0 punkter
           // for en stasjon selv om token og device er ok). Da serverer vi heller
