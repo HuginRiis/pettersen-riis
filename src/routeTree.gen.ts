@@ -46,7 +46,6 @@ import { Route as ApiPublicHooksHomeySensorPollRouteImport } from './routes/api/
 import { Route as ApiPublicHooksGardenaPollRouteImport } from './routes/api/public/hooks/gardena-poll'
 import { Route as ApiPublicHooksEufyPollRouteImport } from './routes/api/public/hooks/eufy-poll'
 import { Route as ApiPublicHooksEufyRouteImport } from './routes/api/public/hooks/eufy'
-import { Route as ApiPublicHooksClimatePushRouteImport } from './routes/api/public/hooks/climate-push'
 import { Route as ApiPublicHooksBackfillPbthHistoryRouteImport } from './routes/api.public.hooks.backfill-pbth-history'
 import { Route as ApiPublicHooksAgendaPushRouteImport } from './routes/api.public.hooks.agenda-push'
 
@@ -241,12 +240,6 @@ const ApiPublicHooksEufyRoute = ApiPublicHooksEufyRouteImport.update({
   path: '/api/public/hooks/eufy',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicHooksClimatePushRoute =
-  ApiPublicHooksClimatePushRouteImport.update({
-    id: '/api/public/hooks/climate-push',
-    path: '/api/public/hooks/climate-push',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 const ApiPublicHooksBackfillPbthHistoryRoute =
   ApiPublicHooksBackfillPbthHistoryRouteImport.update({
     id: '/api/public/hooks/backfill-pbth-history',
@@ -292,7 +285,6 @@ export interface FileRoutesByFullPath {
   '/api/strava/start': typeof ApiStravaStartRoute
   '/api/public/hooks/agenda-push': typeof ApiPublicHooksAgendaPushRoute
   '/api/public/hooks/backfill-pbth-history': typeof ApiPublicHooksBackfillPbthHistoryRoute
-  '/api/public/hooks/climate-push': typeof ApiPublicHooksClimatePushRoute
   '/api/public/hooks/eufy': typeof ApiPublicHooksEufyRoute
   '/api/public/hooks/eufy-poll': typeof ApiPublicHooksEufyPollRoute
   '/api/public/hooks/gardena-poll': typeof ApiPublicHooksGardenaPollRoute
@@ -334,7 +326,6 @@ export interface FileRoutesByTo {
   '/api/strava/start': typeof ApiStravaStartRoute
   '/api/public/hooks/agenda-push': typeof ApiPublicHooksAgendaPushRoute
   '/api/public/hooks/backfill-pbth-history': typeof ApiPublicHooksBackfillPbthHistoryRoute
-  '/api/public/hooks/climate-push': typeof ApiPublicHooksClimatePushRoute
   '/api/public/hooks/eufy': typeof ApiPublicHooksEufyRoute
   '/api/public/hooks/eufy-poll': typeof ApiPublicHooksEufyPollRoute
   '/api/public/hooks/gardena-poll': typeof ApiPublicHooksGardenaPollRoute
@@ -377,7 +368,6 @@ export interface FileRoutesById {
   '/api/strava/start': typeof ApiStravaStartRoute
   '/api/public/hooks/agenda-push': typeof ApiPublicHooksAgendaPushRoute
   '/api/public/hooks/backfill-pbth-history': typeof ApiPublicHooksBackfillPbthHistoryRoute
-  '/api/public/hooks/climate-push': typeof ApiPublicHooksClimatePushRoute
   '/api/public/hooks/eufy': typeof ApiPublicHooksEufyRoute
   '/api/public/hooks/eufy-poll': typeof ApiPublicHooksEufyPollRoute
   '/api/public/hooks/gardena-poll': typeof ApiPublicHooksGardenaPollRoute
@@ -421,7 +411,6 @@ export interface FileRouteTypes {
     | '/api/strava/start'
     | '/api/public/hooks/agenda-push'
     | '/api/public/hooks/backfill-pbth-history'
-    | '/api/public/hooks/climate-push'
     | '/api/public/hooks/eufy'
     | '/api/public/hooks/eufy-poll'
     | '/api/public/hooks/gardena-poll'
@@ -463,7 +452,6 @@ export interface FileRouteTypes {
     | '/api/strava/start'
     | '/api/public/hooks/agenda-push'
     | '/api/public/hooks/backfill-pbth-history'
-    | '/api/public/hooks/climate-push'
     | '/api/public/hooks/eufy'
     | '/api/public/hooks/eufy-poll'
     | '/api/public/hooks/gardena-poll'
@@ -505,7 +493,6 @@ export interface FileRouteTypes {
     | '/api/strava/start'
     | '/api/public/hooks/agenda-push'
     | '/api/public/hooks/backfill-pbth-history'
-    | '/api/public/hooks/climate-push'
     | '/api/public/hooks/eufy'
     | '/api/public/hooks/eufy-poll'
     | '/api/public/hooks/gardena-poll'
@@ -548,7 +535,6 @@ export interface RootRouteChildren {
   ApiStravaStartRoute: typeof ApiStravaStartRoute
   ApiPublicHooksAgendaPushRoute: typeof ApiPublicHooksAgendaPushRoute
   ApiPublicHooksBackfillPbthHistoryRoute: typeof ApiPublicHooksBackfillPbthHistoryRoute
-  ApiPublicHooksClimatePushRoute: typeof ApiPublicHooksClimatePushRoute
   ApiPublicHooksEufyRoute: typeof ApiPublicHooksEufyRoute
   ApiPublicHooksEufyPollRoute: typeof ApiPublicHooksEufyPollRoute
   ApiPublicHooksGardenaPollRoute: typeof ApiPublicHooksGardenaPollRoute
@@ -820,13 +806,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksEufyRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/hooks/climate-push': {
-      id: '/api/public/hooks/climate-push'
-      path: '/api/public/hooks/climate-push'
-      fullPath: '/api/public/hooks/climate-push'
-      preLoaderRoute: typeof ApiPublicHooksClimatePushRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/public/hooks/backfill-pbth-history': {
       id: '/api/public/hooks/backfill-pbth-history'
       path: '/api/public/hooks/backfill-pbth-history'
@@ -877,7 +856,6 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksAgendaPushRoute: ApiPublicHooksAgendaPushRoute,
   ApiPublicHooksBackfillPbthHistoryRoute:
     ApiPublicHooksBackfillPbthHistoryRoute,
-  ApiPublicHooksClimatePushRoute: ApiPublicHooksClimatePushRoute,
   ApiPublicHooksEufyRoute: ApiPublicHooksEufyRoute,
   ApiPublicHooksEufyPollRoute: ApiPublicHooksEufyPollRoute,
   ApiPublicHooksGardenaPollRoute: ApiPublicHooksGardenaPollRoute,
