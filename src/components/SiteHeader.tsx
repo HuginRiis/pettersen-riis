@@ -2,9 +2,9 @@ import { Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Menu, X, LogOut, Crown, Swords, Shield, KeyRound, Home, Star, Flower2,
-  Sun, Compass, Castle, CalendarDays, BellRing, Eye, Mountain, Lightbulb, Lamp, Flame, Zap, Hammer,
-  ShoppingCart, Receipt, Dog, Dumbbell, AlertTriangle, ScrollText, Globe, ChevronDown, ChevronRight,
-  TreePine, Coins, Bot, Wallet, Volume2, Wifi, Router as RouterIcon, Plane, Settings } from "lucide-react";
+  Sun, Compass, CalendarDays, BellRing, Eye, Mountain, Lightbulb, Lamp, Flame, Zap,
+  Receipt, Dumbbell, AlertTriangle, ScrollText, Globe, ChevronDown, ChevronRight,
+  TreePine, Coins, Bot, Wallet, Volume2, Settings } from "lucide-react";
 
 
 import { logoutFn } from "@/server/auth";
@@ -34,7 +34,6 @@ type RoutePath =
   | "/pollen"
   | "/vakttarnet"
   | "/hytta"
-  | "/hundene"
   | "/trening"
   | "/turer"
   | "/stromkroniken"
@@ -44,20 +43,14 @@ type RoutePath =
   | "/varme"
   | "/steintavle"
   | "/steintavle-2"
-  | "/oppussing-borgen"
-  | "/oppussing-hytta"
-  | "/matvarer"
   | "/kvitteringer"
   | "/okonomi"
   | "/skatte-utregningen"
   | "/gressklipper"
   | "/stovsugeren"
-  | "/got-saga"
   | "/decibel"
-  | "/nettverk"
   | "/roborock"
-  | "/planter"
-  | "/flyradar";
+  | "/planter";
 
 
 type NavLink = { to: RoutePath; label: string; public?: boolean };
@@ -73,7 +66,6 @@ const ROUTE_ICON: Partial<Record<RoutePath, React.ComponentType<{ size?: number;
   "/": Home,
   "/var": Sun,
   "/turer": Compass,
-  "/got-saga": Castle,
   "/agenda": CalendarDays,
   "/push-varslinger": BellRing,
   "/vakttarnet": Eye,
@@ -82,12 +74,8 @@ const ROUTE_ICON: Partial<Record<RoutePath, React.ComponentType<{ size?: number;
   "/lys": Lamp,
   "/varme": Flame,
   "/stromkroniken": Zap,
-  "/oppussing-borgen": Hammer,
-  "/oppussing-hytta": Hammer,
-  "/matvarer": ShoppingCart,
   "/kvitteringer": Receipt,
   "/okonomi": Wallet,
-  "/hundene": Dog,
   "/trening": Dumbbell,
   "/varsler": AlertTriangle,
   "/steintavle": ScrollText,
@@ -96,45 +84,36 @@ const ROUTE_ICON: Partial<Record<RoutePath, React.ComponentType<{ size?: number;
   "/gressklipper": Bot,
   "/stovsugeren": Bot,
   "/decibel": Volume2,
-  "/nettverk": Wifi,
   "/roborock": Bot,
   "/planter": TreePine,
-  "/flyradar": Plane,
 };
 
 
 // Fargerike ikoner i GoT-stil — én distinkt farge per sal, matcher salens tema.
 const ROUTE_ICON_COLOR: Partial<Record<RoutePath, string>> = {
-  "/": "#d4af37",                    // gull — husets sal
-  "/var": "#fbbf24",                 // sol — gyllen
-  "/turer": "#34d399",               // ferden — smaragd
-  "/got-saga": "#a855f7",            // Westeros — drage-lilla
-  "/agenda": "#f472b6",              // krøniken — rosa pergament
-  "/push-varslinger": "#fb923c",     // ravnens varsel — oransje
-  "/vakttarnet": "#22d3ee",          // vaktens øye — cyan
-  "/hytta": "#60a5fa",               // fjellet — vinterblå
-  "/smarthus": "#facc15",            // smartborg — glødende gul
-  "/lys": "#fde047",                 // lys — lampegult
-  "/varme": "#fb923c",               // varme — flammeoransje
-  "/stromkroniken": "#eab308",       // strøm — lyngull
-  "/oppussing-borgen": "#f97316",    // hammer — gloende
-  "/oppussing-hytta": "#a16207",     // tre — rustbrun
-  "/matvarer": "#84cc16",            // varer — markens grønt
-  "/kvitteringer": "#94a3b8",        // pergament — sølv
-  "/okonomi": "#d4af37",             // Iron Bank — gull
-  "/hundene": "#f59e0b",             // ulv/hund — ravgull
-  "/trening": "#ef4444",             // sverd — blod
-  "/varsler": "#dc2626",             // farevarsel — rødt skilt
-  "/steintavle": "#cbd5e1",          // stein — lys grå
-  "/steintavle-2": "#94a3b8",        // stein 2 — mørkere grå
-  "/skatte-utregningen": "#d4af37",  // gull-mynt
-  "/gressklipper": "#10b981",        // gressklipper — gressgrønn
-  "/stovsugeren": "#38bdf8",         // støvsuger — sky-cyan
-  "/decibel": "#f43f5e",             // lyd — rose (høyt volum)
-  "/nettverk": "#38bdf8",            // nettverk — signalblå
-  "/roborock": "#a78bfa",            // roborock — lilla rytter
-  "/planter": "#22c55e",             // planter — bladgrønn
-  "/flyradar": "#38bdf8",            // raven — himmelblå
+  "/": "#d4af37",
+  "/var": "#fbbf24",
+  "/turer": "#34d399",
+  "/agenda": "#f472b6",
+  "/push-varslinger": "#fb923c",
+  "/vakttarnet": "#22d3ee",
+  "/hytta": "#60a5fa",
+  "/smarthus": "#facc15",
+  "/lys": "#fde047",
+  "/varme": "#fb923c",
+  "/stromkroniken": "#eab308",
+  "/kvitteringer": "#94a3b8",
+  "/okonomi": "#d4af37",
+  "/trening": "#ef4444",
+  "/varsler": "#dc2626",
+  "/steintavle": "#cbd5e1",
+  "/steintavle-2": "#94a3b8",
+  "/skatte-utregningen": "#d4af37",
+  "/gressklipper": "#10b981",
+  "/stovsugeren": "#38bdf8",
+  "/decibel": "#f43f5e",
+  "/roborock": "#a78bfa",
+  "/planter": "#22c55e",
 };
 
 
@@ -145,7 +124,6 @@ const navLinks: NavLink[] = [
   { to: "/var", label: "Vær", public: true },
   { to: "/pollen", label: "Pollen", public: true },
   { to: "/turer", label: "Ferden", public: true },
-  { to: "/got-saga", label: "Westeros", public: true },
   { to: "/agenda", label: "Søppel, bursdager og meldinger" },
   { to: "/push-varslinger", label: "Innstillinger" },
   { to: "/vakttarnet", label: "Vakttårnet" },
@@ -156,25 +134,16 @@ const navLinks: NavLink[] = [
   { to: "/gressklipper", label: "Gressklipper" },
   { to: "/stovsugeren", label: "Støvsugeren" },
   { to: "/stromkroniken", label: "Strømkrøniken" },
-  { to: "/oppussing-borgen", label: "Prosjekter på Borgen" },
-  { to: "/oppussing-hytta", label: "Prosjekter på hytta" },
-  { to: "/matvarer", label: "Varer" },
   { to: "/kvitteringer", label: "Kvitteringer" },
   { to: "/okonomi", label: "Husholdningens hvelv" },
   { to: "/skatte-utregningen", label: "Skatte utregningen" },
-  { to: "/hundene", label: "Hundene" },
   { to: "/trening", label: "Trening" },
-
-
-
   { to: "/varsler", label: "Farevarsler", public: true },
   { to: "/decibel", label: "Decibelmåler", public: true },
-  { to: "/nettverk", label: "Nettverk" },
   { to: "/roborock", label: "Roborock" },
   { to: "/planter", label: "Planter & Trær" },
   { to: "/steintavle", label: "Steintavle" },
   { to: "/steintavle-2", label: "Steintavle 2" },
-  { to: "/flyradar", label: "Flyradar", public: true },
 ];
 
 export function SiteHeader() {

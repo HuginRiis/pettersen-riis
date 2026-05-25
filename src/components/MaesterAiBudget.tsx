@@ -52,20 +52,12 @@ const FEATURE_META: Record<string, FeatureMeta> = {
   },
   saga: {
     label: "Sagaskriver",
-    description: "Genererer Game of Thrones-stilet tekst for Westeros-sagaen.",
-  },
-  "got-saga": {
-    label: "Sagaskriver",
-    description: "Genererer Game of Thrones-stilet tekst for Westeros-sagaen.",
+    description: "Genererer Game of Thrones-stilet tekst.",
   },
   agenda: {
     label: "Agenda-magiker",
     description:
       "Tolker meldinger og kalenderoppføringer (søppel, bursdager, meldinger) og foreslår dato/emne.",
-  },
-  matvarer: {
-    label: "Handlelistens skribent",
-    description: "Foreslår handleliste-elementer basert på kvitteringer og forbruk.",
   },
   briefing: {
     label: "Daglig briefing",

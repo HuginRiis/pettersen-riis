@@ -25,18 +25,11 @@ import { Route as RoborockRouteImport } from './routes/roborock'
 import { Route as PushVarslingerRouteImport } from './routes/push-varslinger'
 import { Route as PollenRouteImport } from './routes/pollen'
 import { Route as PlanterRouteImport } from './routes/planter'
-import { Route as OppussingHyttaRouteImport } from './routes/oppussing-hytta'
-import { Route as OppussingBorgenRouteImport } from './routes/oppussing-borgen'
 import { Route as OkonomiRouteImport } from './routes/okonomi'
-import { Route as NettverkRouteImport } from './routes/nettverk'
-import { Route as MatvarerRouteImport } from './routes/matvarer'
 import { Route as LysRouteImport } from './routes/lys'
 import { Route as KvitteringerRouteImport } from './routes/kvitteringer'
 import { Route as HyttaRouteImport } from './routes/hytta'
-import { Route as HundeneRouteImport } from './routes/hundene'
 import { Route as GressklipperRouteImport } from './routes/gressklipper'
-import { Route as GotSagaRouteImport } from './routes/got-saga'
-import { Route as FlyradarRouteImport } from './routes/flyradar'
 import { Route as DecibelRouteImport } from './routes/decibel'
 import { Route as AgendaRouteImport } from './routes/agenda'
 import { Route as IndexRouteImport } from './routes/index'
@@ -48,7 +41,6 @@ import { Route as ApiHomeyCallbackRouteImport } from './routes/api.homey.callbac
 import { Route as ApiPublicHooksStravaPollRouteImport } from './routes/api/public/hooks/strava-poll'
 import { Route as ApiPublicHooksSnapshotTibberDailyRouteImport } from './routes/api.public.hooks.snapshot-tibber-daily'
 import { Route as ApiPublicHooksSnapshotPulseRouteImport } from './routes/api.public.hooks.snapshot-pulse'
-import { Route as ApiPublicHooksNetworkSnapshotRouteImport } from './routes/api/public/hooks/network-snapshot'
 import { Route as ApiPublicHooksHomeySensorPollRouteImport } from './routes/api/public/hooks/homey-sensor-poll'
 import { Route as ApiPublicHooksGardenaPollRouteImport } from './routes/api/public/hooks/gardena-poll'
 import { Route as ApiPublicHooksEufyPollRouteImport } from './routes/api/public/hooks/eufy-poll'
@@ -136,29 +128,9 @@ const PlanterRoute = PlanterRouteImport.update({
   path: '/planter',
   getParentRoute: () => rootRouteImport,
 } as any)
-const OppussingHyttaRoute = OppussingHyttaRouteImport.update({
-  id: '/oppussing-hytta',
-  path: '/oppussing-hytta',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OppussingBorgenRoute = OppussingBorgenRouteImport.update({
-  id: '/oppussing-borgen',
-  path: '/oppussing-borgen',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const OkonomiRoute = OkonomiRouteImport.update({
   id: '/okonomi',
   path: '/okonomi',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const NettverkRoute = NettverkRouteImport.update({
-  id: '/nettverk',
-  path: '/nettverk',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MatvarerRoute = MatvarerRouteImport.update({
-  id: '/matvarer',
-  path: '/matvarer',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LysRoute = LysRouteImport.update({
@@ -176,24 +148,9 @@ const HyttaRoute = HyttaRouteImport.update({
   path: '/hytta',
   getParentRoute: () => rootRouteImport,
 } as any)
-const HundeneRoute = HundeneRouteImport.update({
-  id: '/hundene',
-  path: '/hundene',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const GressklipperRoute = GressklipperRouteImport.update({
   id: '/gressklipper',
   path: '/gressklipper',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const GotSagaRoute = GotSagaRouteImport.update({
-  id: '/got-saga',
-  path: '/got-saga',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const FlyradarRoute = FlyradarRouteImport.update({
-  id: '/flyradar',
-  path: '/flyradar',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DecibelRoute = DecibelRouteImport.update({
@@ -254,12 +211,6 @@ const ApiPublicHooksSnapshotPulseRoute =
     path: '/api/public/hooks/snapshot-pulse',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicHooksNetworkSnapshotRoute =
-  ApiPublicHooksNetworkSnapshotRouteImport.update({
-    id: '/api/public/hooks/network-snapshot',
-    path: '/api/public/hooks/network-snapshot',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 const ApiPublicHooksHomeySensorPollRoute =
   ApiPublicHooksHomeySensorPollRouteImport.update({
     id: '/api/public/hooks/homey-sensor-poll',
@@ -299,18 +250,11 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/agenda': typeof AgendaRoute
   '/decibel': typeof DecibelRoute
-  '/flyradar': typeof FlyradarRoute
-  '/got-saga': typeof GotSagaRoute
   '/gressklipper': typeof GressklipperRoute
-  '/hundene': typeof HundeneRoute
   '/hytta': typeof HyttaRoute
   '/kvitteringer': typeof KvitteringerRoute
   '/lys': typeof LysRoute
-  '/matvarer': typeof MatvarerRoute
-  '/nettverk': typeof NettverkRoute
   '/okonomi': typeof OkonomiRoute
-  '/oppussing-borgen': typeof OppussingBorgenRoute
-  '/oppussing-hytta': typeof OppussingHyttaRoute
   '/planter': typeof PlanterRoute
   '/pollen': typeof PollenRoute
   '/push-varslinger': typeof PushVarslingerRoute
@@ -338,7 +282,6 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/eufy-poll': typeof ApiPublicHooksEufyPollRoute
   '/api/public/hooks/gardena-poll': typeof ApiPublicHooksGardenaPollRoute
   '/api/public/hooks/homey-sensor-poll': typeof ApiPublicHooksHomeySensorPollRoute
-  '/api/public/hooks/network-snapshot': typeof ApiPublicHooksNetworkSnapshotRoute
   '/api/public/hooks/snapshot-pulse': typeof ApiPublicHooksSnapshotPulseRoute
   '/api/public/hooks/snapshot-tibber-daily': typeof ApiPublicHooksSnapshotTibberDailyRoute
   '/api/public/hooks/strava-poll': typeof ApiPublicHooksStravaPollRoute
@@ -347,18 +290,11 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/agenda': typeof AgendaRoute
   '/decibel': typeof DecibelRoute
-  '/flyradar': typeof FlyradarRoute
-  '/got-saga': typeof GotSagaRoute
   '/gressklipper': typeof GressklipperRoute
-  '/hundene': typeof HundeneRoute
   '/hytta': typeof HyttaRoute
   '/kvitteringer': typeof KvitteringerRoute
   '/lys': typeof LysRoute
-  '/matvarer': typeof MatvarerRoute
-  '/nettverk': typeof NettverkRoute
   '/okonomi': typeof OkonomiRoute
-  '/oppussing-borgen': typeof OppussingBorgenRoute
-  '/oppussing-hytta': typeof OppussingHyttaRoute
   '/planter': typeof PlanterRoute
   '/pollen': typeof PollenRoute
   '/push-varslinger': typeof PushVarslingerRoute
@@ -386,7 +322,6 @@ export interface FileRoutesByTo {
   '/api/public/hooks/eufy-poll': typeof ApiPublicHooksEufyPollRoute
   '/api/public/hooks/gardena-poll': typeof ApiPublicHooksGardenaPollRoute
   '/api/public/hooks/homey-sensor-poll': typeof ApiPublicHooksHomeySensorPollRoute
-  '/api/public/hooks/network-snapshot': typeof ApiPublicHooksNetworkSnapshotRoute
   '/api/public/hooks/snapshot-pulse': typeof ApiPublicHooksSnapshotPulseRoute
   '/api/public/hooks/snapshot-tibber-daily': typeof ApiPublicHooksSnapshotTibberDailyRoute
   '/api/public/hooks/strava-poll': typeof ApiPublicHooksStravaPollRoute
@@ -396,18 +331,11 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/agenda': typeof AgendaRoute
   '/decibel': typeof DecibelRoute
-  '/flyradar': typeof FlyradarRoute
-  '/got-saga': typeof GotSagaRoute
   '/gressklipper': typeof GressklipperRoute
-  '/hundene': typeof HundeneRoute
   '/hytta': typeof HyttaRoute
   '/kvitteringer': typeof KvitteringerRoute
   '/lys': typeof LysRoute
-  '/matvarer': typeof MatvarerRoute
-  '/nettverk': typeof NettverkRoute
   '/okonomi': typeof OkonomiRoute
-  '/oppussing-borgen': typeof OppussingBorgenRoute
-  '/oppussing-hytta': typeof OppussingHyttaRoute
   '/planter': typeof PlanterRoute
   '/pollen': typeof PollenRoute
   '/push-varslinger': typeof PushVarslingerRoute
@@ -435,7 +363,6 @@ export interface FileRoutesById {
   '/api/public/hooks/eufy-poll': typeof ApiPublicHooksEufyPollRoute
   '/api/public/hooks/gardena-poll': typeof ApiPublicHooksGardenaPollRoute
   '/api/public/hooks/homey-sensor-poll': typeof ApiPublicHooksHomeySensorPollRoute
-  '/api/public/hooks/network-snapshot': typeof ApiPublicHooksNetworkSnapshotRoute
   '/api/public/hooks/snapshot-pulse': typeof ApiPublicHooksSnapshotPulseRoute
   '/api/public/hooks/snapshot-tibber-daily': typeof ApiPublicHooksSnapshotTibberDailyRoute
   '/api/public/hooks/strava-poll': typeof ApiPublicHooksStravaPollRoute
@@ -446,18 +373,11 @@ export interface FileRouteTypes {
     | '/'
     | '/agenda'
     | '/decibel'
-    | '/flyradar'
-    | '/got-saga'
     | '/gressklipper'
-    | '/hundene'
     | '/hytta'
     | '/kvitteringer'
     | '/lys'
-    | '/matvarer'
-    | '/nettverk'
     | '/okonomi'
-    | '/oppussing-borgen'
-    | '/oppussing-hytta'
     | '/planter'
     | '/pollen'
     | '/push-varslinger'
@@ -485,7 +405,6 @@ export interface FileRouteTypes {
     | '/api/public/hooks/eufy-poll'
     | '/api/public/hooks/gardena-poll'
     | '/api/public/hooks/homey-sensor-poll'
-    | '/api/public/hooks/network-snapshot'
     | '/api/public/hooks/snapshot-pulse'
     | '/api/public/hooks/snapshot-tibber-daily'
     | '/api/public/hooks/strava-poll'
@@ -494,18 +413,11 @@ export interface FileRouteTypes {
     | '/'
     | '/agenda'
     | '/decibel'
-    | '/flyradar'
-    | '/got-saga'
     | '/gressklipper'
-    | '/hundene'
     | '/hytta'
     | '/kvitteringer'
     | '/lys'
-    | '/matvarer'
-    | '/nettverk'
     | '/okonomi'
-    | '/oppussing-borgen'
-    | '/oppussing-hytta'
     | '/planter'
     | '/pollen'
     | '/push-varslinger'
@@ -533,7 +445,6 @@ export interface FileRouteTypes {
     | '/api/public/hooks/eufy-poll'
     | '/api/public/hooks/gardena-poll'
     | '/api/public/hooks/homey-sensor-poll'
-    | '/api/public/hooks/network-snapshot'
     | '/api/public/hooks/snapshot-pulse'
     | '/api/public/hooks/snapshot-tibber-daily'
     | '/api/public/hooks/strava-poll'
@@ -542,18 +453,11 @@ export interface FileRouteTypes {
     | '/'
     | '/agenda'
     | '/decibel'
-    | '/flyradar'
-    | '/got-saga'
     | '/gressklipper'
-    | '/hundene'
     | '/hytta'
     | '/kvitteringer'
     | '/lys'
-    | '/matvarer'
-    | '/nettverk'
     | '/okonomi'
-    | '/oppussing-borgen'
-    | '/oppussing-hytta'
     | '/planter'
     | '/pollen'
     | '/push-varslinger'
@@ -581,7 +485,6 @@ export interface FileRouteTypes {
     | '/api/public/hooks/eufy-poll'
     | '/api/public/hooks/gardena-poll'
     | '/api/public/hooks/homey-sensor-poll'
-    | '/api/public/hooks/network-snapshot'
     | '/api/public/hooks/snapshot-pulse'
     | '/api/public/hooks/snapshot-tibber-daily'
     | '/api/public/hooks/strava-poll'
@@ -591,18 +494,11 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AgendaRoute: typeof AgendaRoute
   DecibelRoute: typeof DecibelRoute
-  FlyradarRoute: typeof FlyradarRoute
-  GotSagaRoute: typeof GotSagaRoute
   GressklipperRoute: typeof GressklipperRoute
-  HundeneRoute: typeof HundeneRoute
   HyttaRoute: typeof HyttaRoute
   KvitteringerRoute: typeof KvitteringerRoute
   LysRoute: typeof LysRoute
-  MatvarerRoute: typeof MatvarerRoute
-  NettverkRoute: typeof NettverkRoute
   OkonomiRoute: typeof OkonomiRoute
-  OppussingBorgenRoute: typeof OppussingBorgenRoute
-  OppussingHyttaRoute: typeof OppussingHyttaRoute
   PlanterRoute: typeof PlanterRoute
   PollenRoute: typeof PollenRoute
   PushVarslingerRoute: typeof PushVarslingerRoute
@@ -630,7 +526,6 @@ export interface RootRouteChildren {
   ApiPublicHooksEufyPollRoute: typeof ApiPublicHooksEufyPollRoute
   ApiPublicHooksGardenaPollRoute: typeof ApiPublicHooksGardenaPollRoute
   ApiPublicHooksHomeySensorPollRoute: typeof ApiPublicHooksHomeySensorPollRoute
-  ApiPublicHooksNetworkSnapshotRoute: typeof ApiPublicHooksNetworkSnapshotRoute
   ApiPublicHooksSnapshotPulseRoute: typeof ApiPublicHooksSnapshotPulseRoute
   ApiPublicHooksSnapshotTibberDailyRoute: typeof ApiPublicHooksSnapshotTibberDailyRoute
   ApiPublicHooksStravaPollRoute: typeof ApiPublicHooksStravaPollRoute
@@ -750,39 +645,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PlanterRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/oppussing-hytta': {
-      id: '/oppussing-hytta'
-      path: '/oppussing-hytta'
-      fullPath: '/oppussing-hytta'
-      preLoaderRoute: typeof OppussingHyttaRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/oppussing-borgen': {
-      id: '/oppussing-borgen'
-      path: '/oppussing-borgen'
-      fullPath: '/oppussing-borgen'
-      preLoaderRoute: typeof OppussingBorgenRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/okonomi': {
       id: '/okonomi'
       path: '/okonomi'
       fullPath: '/okonomi'
       preLoaderRoute: typeof OkonomiRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/nettverk': {
-      id: '/nettverk'
-      path: '/nettverk'
-      fullPath: '/nettverk'
-      preLoaderRoute: typeof NettverkRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/matvarer': {
-      id: '/matvarer'
-      path: '/matvarer'
-      fullPath: '/matvarer'
-      preLoaderRoute: typeof MatvarerRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/lys': {
@@ -806,32 +673,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HyttaRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/hundene': {
-      id: '/hundene'
-      path: '/hundene'
-      fullPath: '/hundene'
-      preLoaderRoute: typeof HundeneRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/gressklipper': {
       id: '/gressklipper'
       path: '/gressklipper'
       fullPath: '/gressklipper'
       preLoaderRoute: typeof GressklipperRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/got-saga': {
-      id: '/got-saga'
-      path: '/got-saga'
-      fullPath: '/got-saga'
-      preLoaderRoute: typeof GotSagaRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/flyradar': {
-      id: '/flyradar'
-      path: '/flyradar'
-      fullPath: '/flyradar'
-      preLoaderRoute: typeof FlyradarRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/decibel': {
@@ -911,13 +757,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksSnapshotPulseRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/hooks/network-snapshot': {
-      id: '/api/public/hooks/network-snapshot'
-      path: '/api/public/hooks/network-snapshot'
-      fullPath: '/api/public/hooks/network-snapshot'
-      preLoaderRoute: typeof ApiPublicHooksNetworkSnapshotRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/public/hooks/homey-sensor-poll': {
       id: '/api/public/hooks/homey-sensor-poll'
       path: '/api/public/hooks/homey-sensor-poll'
@@ -967,18 +806,11 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AgendaRoute: AgendaRoute,
   DecibelRoute: DecibelRoute,
-  FlyradarRoute: FlyradarRoute,
-  GotSagaRoute: GotSagaRoute,
   GressklipperRoute: GressklipperRoute,
-  HundeneRoute: HundeneRoute,
   HyttaRoute: HyttaRoute,
   KvitteringerRoute: KvitteringerRoute,
   LysRoute: LysRoute,
-  MatvarerRoute: MatvarerRoute,
-  NettverkRoute: NettverkRoute,
   OkonomiRoute: OkonomiRoute,
-  OppussingBorgenRoute: OppussingBorgenRoute,
-  OppussingHyttaRoute: OppussingHyttaRoute,
   PlanterRoute: PlanterRoute,
   PollenRoute: PollenRoute,
   PushVarslingerRoute: PushVarslingerRoute,
@@ -1007,7 +839,6 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksEufyPollRoute: ApiPublicHooksEufyPollRoute,
   ApiPublicHooksGardenaPollRoute: ApiPublicHooksGardenaPollRoute,
   ApiPublicHooksHomeySensorPollRoute: ApiPublicHooksHomeySensorPollRoute,
-  ApiPublicHooksNetworkSnapshotRoute: ApiPublicHooksNetworkSnapshotRoute,
   ApiPublicHooksSnapshotPulseRoute: ApiPublicHooksSnapshotPulseRoute,
   ApiPublicHooksSnapshotTibberDailyRoute:
     ApiPublicHooksSnapshotTibberDailyRoute,
