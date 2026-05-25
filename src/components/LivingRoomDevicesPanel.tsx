@@ -562,9 +562,36 @@ function ThermostatBody({
         >
           <Minus size={20} />
         </button>
-        <div className="flex items-center justify-center text-[9px] tracking-[0.25em] uppercase text-muted-foreground">
-          {tempBusy ? <Loader2 size={14} className="animate-spin" /> : `${step}°`}
+        <div className="flex flex-col items-center justify-center gap-1">
+          <div className="text-[9px] tracking-[0.25em] uppercase text-muted-foreground">
+            {tempBusy ? <Loader2 size={14} className="animate-spin" /> : `${step}°`}
+          </div>
+          <div
+            role="group"
+            aria-label="Velg steg"
+            className="inline-flex rounded-full overflow-hidden text-[8px] tracking-[0.15em]"
+            style={{ border: `1px solid color-mix(in oklab, ${accent} 24%, transparent)` }}
+          >
+            {([0.5, 1] as const).map((s) => {
+              const active = userStep === s;
+              return (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => setUserStep(s)}
+                  className="px-1.5 py-0.5 transition-colors"
+                  style={{
+                    background: active ? `color-mix(in oklab, ${accent} 22%, transparent)` : "transparent",
+                    color: active ? accent : "var(--muted-foreground)",
+                  }}
+                >
+                  {s}°
+                </button>
+              );
+            })}
+          </div>
         </div>
+
         <button
           type="button"
           onClick={() => adjust(step)}
