@@ -1660,6 +1660,9 @@ export type LivingRoomDevice = {
     dim?: number;
     thermostat_mode?: string;
     thermostat_mode_values?: { id: string; title?: string }[];
+    fan_capability_id?: string;
+    fan_value?: string | number;
+    fan_values?: { id: string; title?: string }[];
   };
 };
 
