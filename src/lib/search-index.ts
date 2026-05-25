@@ -50,13 +50,6 @@ export const SEARCH_INDEX: SearchEntry[] = [
     keywords: ["hytta", "flesberg", "aurora", "nordlys", "sjekkliste", "blefjell"],
   },
   {
-    title: "Oppussing hytta",
-    path: "/oppussing-hytta",
-    section: "Hytta",
-    description: "Oppussingsprosjekter for hytta i Flesberg.",
-    keywords: ["oppussing", "hytte", "renovering", "prosjekt", "flesberg"],
-  },
-  {
     title: "Turer",
     path: "/turer",
     section: "Aktivitet",
@@ -113,13 +106,6 @@ export const SEARCH_INDEX: SearchEntry[] = [
     description: "Plante-database med vanning, stell, giftighet og fakta.",
     keywords: ["planter", "blomster", "tre", "vanning", "stell", "giftig", "spiselig"],
   },
-  {
-    title: "Hundene",
-    path: "/hundene",
-    section: "Hjemmet",
-    description: "Profiler for husets hunder.",
-    keywords: ["hunder", "hundene", "dyr", "kjæledyr"],
-  },
   // Økonomi
   {
     title: "Økonomi",
@@ -151,20 +137,6 @@ export const SEARCH_INDEX: SearchEntry[] = [
   },
   // Borgen
   {
-    title: "Oppussing Borgen",
-    path: "/oppussing-borgen",
-    section: "Borgen",
-    description: "Oppussingsprosjekter for huset i Skien.",
-    keywords: ["oppussing", "renovering", "borgen", "prosjekt", "hjem"],
-  },
-  {
-    title: "Matvarer",
-    path: "/matvarer",
-    section: "Borgen",
-    description: "Handleliste og favoritter (Kassalapp).",
-    keywords: ["mat", "handleliste", "matvarer", "kassal", "kassalapp", "favoritter"],
-  },
-  {
     title: "Agenda",
     path: "/agenda",
     section: "Borgen",
@@ -194,25 +166,11 @@ export const SEARCH_INDEX: SearchEntry[] = [
     keywords: ["steintavle", "brodering", "pes"],
   },
   {
-    title: "GoT-Saga",
-    path: "/got-saga",
-    section: "Vakttårnet",
-    description: "Krøniken om huset.",
-    keywords: ["got", "saga", "krønike", "historie"],
-  },
-  {
     title: "Decibel",
     path: "/decibel",
     section: "Vakttårnet",
     description: "Decibel-måler / lyd.",
     keywords: ["decibel", "lyd", "støy"],
-  },
-  {
-    title: "Flyradar",
-    path: "/flyradar",
-    section: "Vakttårnet",
-    description: "Live oversikt over fly i Norge — filtrer på flyplass, posisjon og høyde. Varsler for avgang og landing.",
-    keywords: ["fly", "flyradar", "flightradar", "opensky", "lufthavn", "gardermoen", "osl", "bgo", "trd", "svg", "tos", "torp", "ravner", "ravn"],
   },
 ];
 
