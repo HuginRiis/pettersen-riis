@@ -419,10 +419,25 @@ export const getNetatmoClimateHistory = createServerFn({ method: "GET" })
             normal,
             trends,
           };
+
+          // Guard: ikke cache et tomt svar (Netatmo svarer av og til med 0 punkter
+          // for en stasjon selv om token og device er ok). Da serverer vi heller
+          // forrige gode DB-snapshot enn å låse skjermen til "—" i 5 minutter.
+          const isEmpty =
+            points48h.length === 0 &&
+            current.inT == null &&
+            current.outT == null &&
+            current.hum == null &&
+            current.co2 == null;
+          if (isEmpty) {
+            return await fallbackToDb("Netatmo returnerte tomt datasett");
+          }
+
           cache.set(key, { at: Date.now(), data: out });
           // Skriv til DB-cache slik at vi har fallback hvis Netatmo-API svikter neste gang.
           await saveDbSnapshot(key, out);
           return out;
+
         } catch (e: any) {
           return await fallbackToDb(e?.message ?? "Ukjent feil");
         }
