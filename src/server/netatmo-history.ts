@@ -2,6 +2,39 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { withApiLog } from "./api-call-log.server";
 import { loadStoredRefreshToken, saveStoredRefreshToken } from "./netatmo-token-store.server";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
+
+const DB_CACHE_TABLE = "netatmo_climate_snapshot";
+
+async function loadDbSnapshot(key: string): Promise<ClimateHistoryResult | null> {
+  try {
+    const { data } = await supabaseAdmin
+      .from(DB_CACHE_TABLE as any)
+      .select("data, updated_at")
+      .eq("cache_key", key)
+      .maybeSingle();
+    if (!data) return null;
+    const payload = (data as any).data as ClimateHistoryResult;
+    if (payload && (payload as any).ok) {
+      return { ...(payload as any), fetchedAt: (data as any).updated_at } as ClimateHistoryResult;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+async function saveDbSnapshot(key: string, payload: ClimateHistoryResult): Promise<void> {
+  try {
+    await supabaseAdmin
+      .from(DB_CACHE_TABLE as any)
+      .upsert({ cache_key: key, data: payload as any, updated_at: new Date().toISOString() } as any, {
+        onConflict: "cache_key",
+      });
+  } catch {
+    /* best effort */
+  }
+}
 
 /**
  * Henter historisk data fra Netatmo getmeasure-API.
