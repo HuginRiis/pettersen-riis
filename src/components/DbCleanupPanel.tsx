@@ -18,6 +18,10 @@ export function DbCleanupPanel() {
   const [data, setData] = useState<DbCleanupEstimate | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
+  const [scanning, setScanning] = useState<string | null>(null);
+  const [scanResult, setScanResult] = useState<Record<string, { bytes: number; at: number }>>({});
+
+
 
   const load = () => {
     setLoading(true);
