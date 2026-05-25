@@ -12,8 +12,9 @@ import type {
 import { getAiUsageStats, type AiUsageStats } from "@/server/ai-usage";
 import { useAuthStatus } from "@/hooks/use-auth-status";
 import heroImg from "@/assets/got-vakttarnet.jpg";
-import { Eye, Globe2, Smartphone, Monitor, Tablet, Clock, Crown, ShieldAlert, Map as MapIcon, Lock, Unlock, Sparkles, DoorClosed, Users, Bell, Database, Activity, ChevronDown, DoorOpen, BarChart3, Wallet, Radio, KeyRound, ShieldOff, Trophy, Camera, Brain, UserSearch, Watch, Network, History, List as ListIcon, AlertTriangle, PowerOff } from "lucide-react";
+import { Eye, Globe2, Smartphone, Monitor, Tablet, Clock, Crown, ShieldAlert, Map as MapIcon, Lock, Unlock, Sparkles, DoorClosed, Users, Bell, Database, Activity, ChevronDown, DoorOpen, BarChart3, Wallet, Radio, KeyRound, ShieldOff, Trophy, Camera, Brain, UserSearch, Watch, Network, History, List as ListIcon, AlertTriangle, PowerOff, Trash2 } from "lucide-react";
 import { DbUsagePanel } from "@/components/DbUsagePanel";
+import { DbCleanupPanel } from "@/components/DbCleanupPanel";
 import { DbDetailPanel } from "@/components/DbDetailPanel";
 import { PageLoadPanel } from "@/components/PageLoadPanel";
 import { DoorsLocksPanel } from "@/components/DoorsLocksPanel";
@@ -73,6 +74,7 @@ const VAKTTARN_TOC: { id: string; label: string; icon: React.ComponentType<{ cla
   { id: "vt-ai-usage", label: "Mesterens orakel", icon: Brain },
   { id: "vt-allvisitors", label: "Alle besøk", icon: UserSearch },
   { id: "vt-db", label: "Database & cron", icon: Database },
+  { id: "vt-db-cleanup", label: "Rydd opp DB", icon: Trash2 },
   { id: "vt-db-detail", label: "DB-detaljer", icon: Database },
   { id: "vt-page-load", label: "Sidelaster", icon: Activity },
   { id: "vt-garmin", label: "Garmin Connect", icon: Watch },
@@ -373,6 +375,19 @@ function VakttarnetPage() {
             <DbUsagePanel />
           </Panel>
         </section>
+
+        <section id="vt-db-cleanup" className="scroll-mt-24">
+          <Panel
+            title="Rydd opp i databasen"
+            icon={<Trash2 size={14} />}
+            subtitle="Se hvor mye plass du sparer ved å slette ubrukt logg, kjøre anbefalt opprydning eller fjerne alt eldre enn 30 dager"
+            collapsible
+            defaultOpen={false}
+          >
+            <DbCleanupPanel />
+          </Panel>
+        </section>
+
 
         <section id="vt-db-detail" className="scroll-mt-24">
           <Panel
