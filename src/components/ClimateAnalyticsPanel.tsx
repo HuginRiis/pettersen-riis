@@ -227,14 +227,35 @@ export function ClimateAnalyticsPanel({
 
   const chart24 = useMemo(() => {
     if (!data) return [];
-    return data.points24h.map((p) => ({
-      t: p.t,
-      time: timeLabel(p.t),
-      inT: p.inT,
-      outT: p.outT,
-      hum: p.hum,
-      co2: p.co2,
-    }));
+    const rooms = data.rooms ?? [];
+    return data.points24h.map((p) => {
+      const row: any = {
+        t: p.t,
+        time: timeLabel(p.t),
+        inT: p.inT,
+        outT: p.outT,
+        hum: p.hum,
+        co2: p.co2,
+      };
+      for (const r of rooms) {
+        const series = r.series24h ?? [];
+        // nærmeste sample innen ±30 min
+        let best: { t: number; temp: number | null; hum: number | null } | null = null;
+        let bestDiff = Infinity;
+        for (const s of series) {
+          const d = Math.abs(s.t - p.t);
+          if (d < bestDiff) { bestDiff = d; best = s; }
+        }
+        if (best && bestDiff <= 30 * 60_000) {
+          row[`t_${r.id}`] = best.temp;
+          row[`h_${r.id}`] = best.hum;
+        } else {
+          row[`t_${r.id}`] = null;
+          row[`h_${r.id}`] = null;
+        }
+      }
+      return row;
+    });
   }, [data]);
 
   const chartCompare = useMemo(() => {
