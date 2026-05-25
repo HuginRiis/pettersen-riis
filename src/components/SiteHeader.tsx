@@ -800,10 +800,10 @@ function TempBadge({
       title={`${variant === "indoor" ? "Inne" : "Ute"} nå: ${value.toFixed(1)}°${trend != null ? ` (${trend >= 0 ? "+" : ""}${trend.toFixed(2)}°/t)` : ""}${dyDay != null ? ` · vs i går: ${dyDay >= 0 ? "+" : ""}${dyDay.toFixed(1)}°` : ""}`}
     >
       {value.toFixed(0)}°
-      {arrowChar && (
-        <span style={{ color: arrowColor, fontSize: 8 }}>{arrowChar}</span>
+      {showHourArrow && arrowChar && (
+        <span style={{ color: arrowColor, fontSize: 8 }} title="Trend siste time">{arrowChar}</span>
       )}
-      {dayArrowChar && (
+      {showYesterdayArrow && dayArrowChar && (
         <span style={{ color: dayArrowColor, fontSize: 8, opacity: 0.85 }} title="vs i går">
           {dayArrowChar}
         </span>
