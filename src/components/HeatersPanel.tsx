@@ -31,6 +31,7 @@ import {
   type HomeyCapabilityEnumValue,
 } from "@/server/homey";
 import { recordHomeyApiCall } from "@/lib/homey-api-tracker";
+import { usePerUserPersistedState } from "@/hooks/use-per-user-persisted-state";
 
 // Skånsom polling — gjenbruker samme cache-vindu som Smarthus (3 min server-side).
 const REFRESH_MS = 3 * 60_000;
