@@ -608,6 +608,7 @@ function VarmePage() {
         title="Borgen — varme & klima"
         emptyHint="Ingen varme- eller klimaenheter i borgen ennå."
       />
+      <div id="klima-borg" className="scroll-mt-20" />
       <ClimateAnalyticsPanel stationMatch="tollnes" title="Borgen — klimaanalyse" />
 
       <div id="hytta" className="scroll-mt-20" />
@@ -616,6 +617,7 @@ function VarmePage() {
         title="Hytta — varme & klima"
         emptyHint="Ingen varme- eller klimaenheter på hytta ennå."
       />
+      <div id="klima-hytta" className="scroll-mt-20" />
       <ClimateAnalyticsPanel stationMatch="hytta" title="Hytta — klimaanalyse" />
 
       <section id="varslinger" className="container mx-auto px-4 py-12 scroll-mt-20">
