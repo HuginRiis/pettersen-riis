@@ -736,6 +736,7 @@ function TempBadge({
   const fetchTrend = useServerFn(getNetatmoLiveTrend);
   const [live, setLive] = useState<number | null>(null);
   const [trend, setTrend] = useState<number | null>(null);
+  const [yesterday, setYesterday] = useState<number | null>(null);
   useEffect(() => {
     let cancelled = false;
     const load = () => {
@@ -753,6 +754,8 @@ function TempBadge({
           if (cancelled || !r.ok) return;
           const d = variant === "indoor" ? r.inDeltaPerHour : r.outDeltaPerHour;
           if (typeof d === "number" && Number.isFinite(d)) setTrend(d);
+          const y = variant === "indoor" ? r.yesterdayInT : r.yesterdayOutT;
+          if (typeof y === "number" && Number.isFinite(y)) setYesterday(y);
         })
         .catch(() => {});
     };
@@ -766,7 +769,14 @@ function TempBadge({
   const { value } = useLastGood(storageKey, live);
   if (value == null) return null;
   const color = tempColor(value);
-  // Trend-pil: opp hvis >+0.15°/t, ned hvis <-0.15°/t
+  // Vs i går: pil opp = varmere, ned = kaldere (terskel 0.3°)
+  const dyDay = yesterday != null ? value - yesterday : null;
+  let dayArrow: "up" | "down" | "flat" = "flat";
+  if (dyDay != null) {
+    if (dyDay > 0.3) dayArrow = "up";
+    else if (dyDay < -0.3) dayArrow = "down";
+  }
+  // Trend-pil per time: opp hvis >+0.15°/t, ned hvis <-0.15°/t
   let arrow: "up" | "down" | "flat" = "flat";
   if (trend != null) {
     if (trend > 0.15) arrow = "up";
@@ -774,6 +784,8 @@ function TempBadge({
   }
   const arrowChar = arrow === "up" ? "▲" : arrow === "down" ? "▼" : "";
   const arrowColor = arrow === "up" ? "#fb923c" : arrow === "down" ? "#7dd3fc" : color;
+  const dayArrowChar = dayArrow === "up" ? "▲" : dayArrow === "down" ? "▼" : "";
+  const dayArrowColor = dayArrow === "up" ? "#fb923c" : dayArrow === "down" ? "#7dd3fc" : color;
   return (
     <span
       className="inline-flex items-center justify-center gap-0.5 rounded-full text-[9px] font-semibold leading-none px-1.5 py-0.5 min-w-[18px] tabular-nums"
@@ -782,11 +794,16 @@ function TempBadge({
         color,
         border: `1px solid color-mix(in oklab, ${color} 50%, transparent)`,
       }}
-      title={`${variant === "indoor" ? "Inne" : "Ute"} nå: ${value.toFixed(1)}°${trend != null ? ` (${trend >= 0 ? "+" : ""}${trend.toFixed(2)}°/t)` : ""}`}
+      title={`${variant === "indoor" ? "Inne" : "Ute"} nå: ${value.toFixed(1)}°${trend != null ? ` (${trend >= 0 ? "+" : ""}${trend.toFixed(2)}°/t)` : ""}${dyDay != null ? ` · vs i går: ${dyDay >= 0 ? "+" : ""}${dyDay.toFixed(1)}°` : ""}`}
     >
       {value.toFixed(0)}°
       {arrowChar && (
         <span style={{ color: arrowColor, fontSize: 8 }}>{arrowChar}</span>
+      )}
+      {dayArrowChar && (
+        <span style={{ color: dayArrowColor, fontSize: 8, opacity: 0.85 }} title="vs i går">
+          {dayArrowChar}
+        </span>
       )}
     </span>
   );
