@@ -202,9 +202,10 @@ export function LivingRoomProvider({ children }: { children: ReactNode }) {
           setOverrides((o) => {
             const next = { ...o };
             if (next[device.id]) {
-              const { [capability]: _drop, ...rest } = next[device.id]!;
-              if (Object.keys(rest).length === 0) delete next[device.id];
-              else next[device.id] = rest;
+              const cur = { ...(next[device.id] as any) };
+              delete cur[capability];
+              if (Object.keys(cur).length === 0) delete next[device.id];
+              else next[device.id] = cur;
             }
             return next;
           });
@@ -217,9 +218,10 @@ export function LivingRoomProvider({ children }: { children: ReactNode }) {
         setOverrides((o) => {
           const next = { ...o };
           if (next[device.id]) {
-            const { [capability]: _drop, ...rest } = next[device.id]!;
-            if (Object.keys(rest).length === 0) delete next[device.id];
-            else next[device.id] = rest;
+            const cur = { ...(next[device.id] as any) };
+            delete cur[capability];
+            if (Object.keys(cur).length === 0) delete next[device.id];
+            else next[device.id] = cur;
           }
           return next;
         });
