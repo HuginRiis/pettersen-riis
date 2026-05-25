@@ -8,8 +8,9 @@ import {
 import { purgeApiCallLog } from "@/server/api-call-log-purge.functions";
 import {
   ResponsiveContainer,
-  BarChart,
+  ComposedChart,
   Bar,
+  Line,
   XAxis,
   YAxis,
   Tooltip,
@@ -17,6 +18,7 @@ import {
   CartesianGrid,
 } from "recharts";
 import { useChartAppearance } from "@/hooks/use-chart-appearance";
+
 
 function triggerExplanation(
   trigger: string | undefined,
@@ -169,16 +171,21 @@ export function ApiCallLogPanel() {
       .sort((a, b) => b.total - a.total);
   }, [grouped]);
 
-  // Bygg timeserie for stacked bar chart (siste 24t per kilde).
+  // Bygg timeserie for stacked bar chart (siste 24t per kilde) + gårsdagens total per samme time.
   const { chartData, chartSources } = useMemo(() => {
     const hourly = data?.hourly ?? [];
+    const yest = data?.yesterday ?? [];
+    const yestByHour = new Map<string, number>();
+    for (const y of yest) {
+      yestByHour.set(new Date(y.hour).toISOString(), Number(y.yest_total) || 0);
+    }
     const buckets = new Map<string, Record<string, number | string>>();
     const srcSet = new Set<string>();
     for (const h of hourly) {
       const d = new Date(h.hour);
       const key = d.toISOString();
       const label = d.toLocaleTimeString("nb-NO", { hour: "2-digit" });
-      const row = buckets.get(key) ?? { _ts: key, label };
+      const row = buckets.get(key) ?? { _ts: key, label, _yesterday: yestByHour.get(key) ?? 0 };
       if (h.source && h.total > 0) {
         row[h.source] = ((row[h.source] as number) ?? 0) + h.total;
         srcSet.add(h.source);
@@ -200,6 +207,7 @@ export function ApiCallLogPanel() {
     );
     return { chartData: arr, chartSources: srcList };
   }, [data]);
+
 
   // Felles fargekart per kilde — brukes både i grafen og i kortene under,
   // slik at fargene alltid stemmer overens.
@@ -280,63 +288,104 @@ export function ApiCallLogPanel() {
         )}
 
         {/* Time-for-time graf siste 24t */}
-        <div className="mb-5 rounded border border-border bg-background/40 p-3">
-          <div className="flex items-center justify-between mb-2">
-            <div className="text-[10px] tracking-[0.3em] uppercase text-muted-foreground">
-              API-kall per time · siste 24t
+        {(() => {
+          const todayTotal = chartData.reduce((s, r) => {
+            let t = 0;
+            for (const k of chartSources) t += (r[k] as number) ?? 0;
+            return s + t;
+          }, 0);
+          const yestTotal = chartData.reduce(
+            (s, r) => s + ((r._yesterday as number) ?? 0),
+            0,
+          );
+          const diff = todayTotal - yestTotal;
+          const diffPct = yestTotal > 0 ? Math.round((diff / yestTotal) * 100) : null;
+          return (
+            <div className="mb-5 rounded border border-border bg-background/40 p-3">
+              <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
+                <div className="text-[10px] tracking-[0.3em] uppercase text-muted-foreground">
+                  API-kall per time · siste 24t (linje = samme time i går)
+                </div>
+                <div className="flex items-center gap-2 text-[10px] tabular-nums">
+                  <span className="text-muted-foreground">
+                    I dag: <span className="text-foreground">{todayTotal}</span>
+                  </span>
+                  <span className="text-muted-foreground">·</span>
+                  <span className="text-muted-foreground">
+                    I går: <span className="text-foreground">{yestTotal}</span>
+                  </span>
+                  <span
+                    className={
+                      "px-2 py-0.5 rounded-sm border " +
+                      (diff > 0
+                        ? "border-destructive/40 text-destructive bg-destructive/10"
+                        : diff < 0
+                          ? "border-primary/40 text-primary bg-primary/10"
+                          : "border-border text-muted-foreground")
+                    }
+                  >
+                    {diff > 0 ? "▲" : diff < 0 ? "▼" : "="} {Math.abs(diff)}
+                    {diffPct !== null ? ` (${diffPct > 0 ? "+" : ""}${diffPct}%)` : ""}
+                  </span>
+                </div>
+              </div>
+              <div style={{ width: "100%", height: 200 }}>
+                <ResponsiveContainer>
+                  <ComposedChart data={chartData}>
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      stroke="color-mix(in oklab, var(--border) 40%, transparent)"
+                    />
+                    <XAxis dataKey="label" stroke="#ffffff" tick={{ fill: "#ffffff" }} fontSize={10} />
+                    <YAxis
+                      stroke="#ffffff"
+                      tick={{ fill: "#ffffff" }}
+                      fontSize={10}
+                      allowDecimals={false}
+                    />
+                    <Tooltip
+                      trigger="click"
+                      contentStyle={{
+                        background: "#0a0a0a",
+                        border: "1px solid var(--border)",
+                        borderRadius: 6,
+                        fontSize: 11,
+                        color: "#ffffff",
+                      }}
+                      labelStyle={{ color: "#ffffff" }}
+                      itemStyle={{ color: "#ffffff" }}
+                    />
+                    <Legend wrapperStyle={{ fontSize: 10, color: "#ffffff" }} />
+                    {chartSources.map((s, i) => (
+                      <Bar
+                        key={s}
+                        dataKey={s}
+                        stackId="a"
+                        fill={colorBySource.get(s) ?? appearance.series[i % appearance.series.length]}
+                        name={SOURCE_LABELS[s] ?? s}
+                      />
+                    ))}
+                    <Line
+                      type="monotone"
+                      dataKey="_yesterday"
+                      stroke="#fbbf24"
+                      strokeWidth={2}
+                      strokeDasharray="4 3"
+                      dot={false}
+                      name="I går (samme time)"
+                      isAnimationActive={false}
+                    />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              </div>
+              <p className="text-[10px] text-muted-foreground/80 italic mt-2">
+                Hver søyle = én time. Den stiplede linjen viser totalt antall kall samme klokketime i går.
+              </p>
             </div>
-            <div className="text-[10px] text-muted-foreground tabular-nums">
-              {chartData.reduce((s, r) => {
-                let t = 0;
-                for (const k of chartSources) t += (r[k] as number) ?? 0;
-                return s + t;
-              }, 0)}{" "}
-              kall totalt
-            </div>
-          </div>
-          <div style={{ width: "100%", height: 200 }}>
-            <ResponsiveContainer>
-              <BarChart data={chartData}>
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  stroke="color-mix(in oklab, var(--border) 40%, transparent)"
-                />
-                <XAxis dataKey="label" stroke="#ffffff" tick={{ fill: "#ffffff" }} fontSize={10} />
-                <YAxis
-                  stroke="#ffffff"
-                  tick={{ fill: "#ffffff" }}
-                  fontSize={10}
-                  allowDecimals={false}
-                />
-                <Tooltip
-                  trigger="click"
-                  contentStyle={{
-                    background: "#0a0a0a",
-                    border: "1px solid var(--border)",
-                    borderRadius: 6,
-                    fontSize: 11,
-                    color: "#ffffff",
-                  }}
-                  labelStyle={{ color: "#ffffff" }}
-                  itemStyle={{ color: "#ffffff" }}
-                />
-                <Legend wrapperStyle={{ fontSize: 10, color: "#ffffff" }} />
-                {chartSources.map((s, i) => (
-                  <Bar
-                    key={s}
-                    dataKey={s}
-                    stackId="a"
-                    fill={colorBySource.get(s) ?? appearance.series[i % appearance.series.length]}
-                    name={SOURCE_LABELS[s] ?? s}
-                  />
-                ))}
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-          <p className="text-[10px] text-muted-foreground/80 italic mt-2">
-            Hver søyle = én time. Fargene viser hvilken kilde som ble spurt. Klikk på en søyle for detaljer.
-          </p>
-        </div>
+          );
+        })()}
+
+
 
 
         <div className="space-y-2">
@@ -541,6 +590,25 @@ export function ApiCallLogPanel() {
                           <span className="text-muted-foreground tabular-nums">
                             {r.total_24h}× / 24t
                           </span>
+                          <span
+                            className="text-[9px] tracking-[0.15em] uppercase tabular-nums px-1.5 py-0.5 rounded-sm border border-primary/30 text-primary bg-primary/5"
+                            title="On-demand: trigget av en side"
+                          >
+                            side {r.ondemand_24h}
+                          </span>
+                          <span
+                            className="text-[9px] tracking-[0.15em] uppercase tabular-nums px-1.5 py-0.5 rounded-sm border border-border text-muted-foreground bg-muted/20"
+                            title="Cron / server / webhook"
+                          >
+                            cron {r.cron_24h}
+                          </span>
+                          <span
+                            className="text-[9px] tracking-[0.15em] uppercase tabular-nums px-1.5 py-0.5 rounded-sm border border-amber-500/40 text-amber-400 bg-amber-500/10"
+                            title="Auth / token / login (brukernavn + passord)"
+                          >
+                            auth {r.auth_24h}
+                          </span>
+
                           {r.errors_24h > 0 && (
                             <span className="text-destructive">
                               {r.errors_24h} feil
