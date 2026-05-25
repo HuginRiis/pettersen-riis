@@ -20,7 +20,7 @@ import {
 import { PageShell, PageHero } from "@/components/PageShell";
 import { HeatersPanel } from "@/components/HeatersPanel";
 import { ClimateAnalyticsPanel } from "@/components/ClimateAnalyticsPanel";
-import { ClimateNotificationSettings } from "@/components/ClimateNotificationSettings";
+
 import { getNetatmoWeatherStation, type WeatherStationResult } from "@/server/netatmo-weather";
 import { getHomeySnapshot, type HomeyDeviceSnapshot } from "@/server/homey";
 import heroImg from "@/assets/got-varme.jpg";
