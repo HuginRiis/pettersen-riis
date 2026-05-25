@@ -413,19 +413,23 @@ export function ClimateAnalyticsPanel({
 
 
           {/* Per-rom sammenligning (NAModule4) */}
-          {data.rooms?.map((room) => (
-            <div key={room.id}>
-              <div className="text-[10px] tracking-[0.3em] uppercase text-primary mb-2 flex items-center gap-1.5">
-                <Thermometer size={12} className="text-[var(--gold)]" /> {room.name} — sammenlign nå med…
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <CompareBox label="For 1 time siden" icon={Clock} current={room.current.t} refValue={room.oneHourAgo.t} />
-                <CompareBox label="Samme tid i går" icon={Calendar} current={room.current.t} refValue={room.yesterdaySameTime.t} />
-                <CompareBox label="Samme tid sist uke" icon={Calendar} current={room.current.t} refValue={room.lastWeekSameTime.t} />
-                <CompareBox label="Mot normalen" icon={TrendingUp} current={room.current.t} refValue={room.normal.t} tooltip="Snitt samme time-på-døgnet (siste 48t)" />
-              </div>
+          {data.rooms && data.rooms.length > 0 && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {data.rooms.map((room) => (
+                <div key={room.id}>
+                  <div className="text-[10px] tracking-[0.3em] uppercase text-primary mb-2 flex items-center gap-1.5">
+                    <Thermometer size={12} className="text-[var(--gold)]" /> {room.name} — sammenlign nå med…
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <CompareBox label="For 1 time siden" icon={Clock} current={room.current.t} refValue={room.oneHourAgo.t} />
+                    <CompareBox label="Samme tid i går" icon={Calendar} current={room.current.t} refValue={room.yesterdaySameTime.t} />
+                    <CompareBox label="Samme tid sist uke" icon={Calendar} current={room.current.t} refValue={room.lastWeekSameTime.t} />
+                    <CompareBox label="Mot normalen" icon={TrendingUp} current={room.current.t} refValue={room.normal.t} tooltip="Snitt samme time-på-døgnet (siste 48t)" />
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
+          )}
 
 
           {/* Linjegraf 24h */}

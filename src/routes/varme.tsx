@@ -16,6 +16,7 @@ import {
   Wind,
   Droplets,
   TreePine,
+  Activity,
 } from "lucide-react";
 import { PageShell, PageHero } from "@/components/PageShell";
 import { HeatersPanel } from "@/components/HeatersPanel";
@@ -298,7 +299,9 @@ function HeroTempBadges() {
 const TOC = [
   { id: "anbefalinger", label: "Smarte anbefalinger", icon: Sparkles },
   { id: "borg", label: "Borgen", icon: Castle },
+  { id: "klima-borg", label: "Borgen — klimaanalyse", icon: Activity },
   { id: "hytta", label: "Hytta", icon: Mountain },
+  { id: "klima-hytta", label: "Hytta — klimaanalyse", icon: Activity },
   { id: "varslinger", label: "Varslinger", icon: Bell },
 ] as const;
 
@@ -309,7 +312,7 @@ function TableOfContents() {
         <div className="text-[10px] tracking-[0.3em] uppercase text-muted-foreground mb-3">
           Innholdsfortegnelse
         </div>
-        <ul className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        <ul className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
           {TOC.map((t) => (
             <li key={t.id}>
               <a
@@ -605,6 +608,7 @@ function VarmePage() {
         title="Borgen — varme & klima"
         emptyHint="Ingen varme- eller klimaenheter i borgen ennå."
       />
+      <div id="klima-borg" className="scroll-mt-20" />
       <ClimateAnalyticsPanel stationMatch="tollnes" title="Borgen — klimaanalyse" />
 
       <div id="hytta" className="scroll-mt-20" />
@@ -613,6 +617,7 @@ function VarmePage() {
         title="Hytta — varme & klima"
         emptyHint="Ingen varme- eller klimaenheter på hytta ennå."
       />
+      <div id="klima-hytta" className="scroll-mt-20" />
       <ClimateAnalyticsPanel stationMatch="hytta" title="Hytta — klimaanalyse" />
 
       <section id="varslinger" className="container mx-auto px-4 py-12 scroll-mt-20">
