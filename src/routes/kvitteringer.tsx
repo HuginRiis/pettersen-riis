@@ -31,7 +31,7 @@ import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { parseReceiptImage, type ReceiptItem } from "@/server/receipt-ai";
 import { compressImageToWebp } from "@/lib/image-compress";
-import matvarerImg from "@/assets/got-matvarer.jpg";
+import matvarerImg from "@/assets/got-kvitteringer.jpg";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/kvitteringer")({
