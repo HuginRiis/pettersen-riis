@@ -176,11 +176,12 @@ export const getDbCleanupEstimate = createServerFn({ method: "GET" }).handler(
 
 export const runDbCleanup = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => {
-    const data = d as { mode: "unused" | "recommended" | "month30" };
-    if (!["unused", "recommended", "month30"].includes(data?.mode)) {
+    const data = d as { mode: "unused" | "recommended" | "month30" | "full30" };
+    if (!["unused", "recommended", "month30", "full30"].includes(data?.mode)) {
       throw new Error("Ugyldig modus");
     }
     return data;
+
   })
   .handler(async ({ data }): Promise<{ deletedPerTable: Record<string, number>; totalDeleted: number }> => {
     const sb = supabaseAdmin as any;
