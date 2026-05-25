@@ -27,7 +27,16 @@ export function IndoorWeatherStrip({
   label = "Inne nå · Tollnes",
 }: { stationMatch?: string; label?: string } = {}) {
   const fetchData = useServerFn(getNetatmoWeatherStation);
-  const [data, setData] = useState<OkData | null>(null);
+  const cacheKey = `indoor-strip:${stationMatch}`;
+  const [data, setData] = useState<OkData | null>(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      const raw = localStorage.getItem(cacheKey);
+      return raw ? (JSON.parse(raw) as OkData) : null;
+    } catch {
+      return null;
+    }
+  });
   const inFlight = useRef(false);
 
   const load = async () => {
@@ -36,7 +45,10 @@ export function IndoorWeatherStrip({
     inFlight.current = true;
     try {
       const res = await fetchData({ data: { stationMatch } });
-      if (res.ok) setData(res);
+      if (res.ok) {
+        setData(res);
+        try { localStorage.setItem(cacheKey, JSON.stringify(res)); } catch {}
+      }
     } catch {
       /* ignore */
     } finally {
