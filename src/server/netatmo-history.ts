@@ -444,6 +444,8 @@ export const getNetatmoLiveTrend = createServerFn({ method: "GET" })
         outT: c.data.current.outT,
         outDeltaPerHour: c.data.trends.outDeltaPerHour,
         inDeltaPerHour: c.data.trends.inDeltaPerHour,
+        yesterdayOutT: c.data.yesterdaySameTime.outT,
+        yesterdayInT: c.data.yesterdaySameTime.inT,
       };
     }
     // Trigger en full henting hvis ingen cache
@@ -455,5 +457,7 @@ export const getNetatmoLiveTrend = createServerFn({ method: "GET" })
       outT: full.current.outT,
       outDeltaPerHour: full.trends.outDeltaPerHour,
       inDeltaPerHour: full.trends.inDeltaPerHour,
+      yesterdayOutT: full.yesterdaySameTime.outT,
+      yesterdayInT: full.yesterdaySameTime.inT,
     };
   });
