@@ -3,7 +3,6 @@ import { useServerFn } from "@tanstack/react-start";
 import {
   LineChart,
   Line,
-  Area,
   ComposedChart,
   XAxis,
   YAxis,
