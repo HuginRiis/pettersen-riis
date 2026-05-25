@@ -65,13 +65,38 @@ function recipientsLabel(arr: string[] | string | null | undefined): string {
   return arr.join(", ");
 }
 
+const LS_BADGES = "upcomingPush.showBadges";
+const LS_ONLY_TODAY = "upcomingPush.onlyToday";
+
+function readBool(key: string, def: boolean): boolean {
+  if (typeof window === "undefined") return def;
+  const v = window.localStorage.getItem(key);
+  return v == null ? def : v === "1";
+}
+
+function osloDateKey(d: Date): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Oslo", year: "numeric", month: "2-digit", day: "2-digit",
+  }).format(d);
+}
+
 export function UpcomingPushPanel() {
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showBadges, setShowBadges] = useState<boolean>(() => readBool(LS_BADGES, true));
+  const [onlyToday, setOnlyToday] = useState<boolean>(() => readBool(LS_ONLY_TODAY, false));
+
+  useEffect(() => {
+    if (typeof window !== "undefined") window.localStorage.setItem(LS_BADGES, showBadges ? "1" : "0");
+  }, [showBadges]);
+  useEffect(() => {
+    if (typeof window !== "undefined") window.localStorage.setItem(LS_ONLY_TODAY, onlyToday ? "1" : "0");
+  }, [onlyToday]);
 
   useEffect(() => {
     void load();
   }, []);
+
 
   async function load() {
     setLoading(true);
@@ -308,16 +333,16 @@ export function UpcomingPushPanel() {
     setLoading(false);
   }
 
+  const todayKey = useMemo(() => osloDateKey(new Date()), []);
   const grouped = useMemo(() => {
     const out: Record<string, Item[]> = {};
     for (const it of items) {
-      const key = new Intl.DateTimeFormat("en-CA", {
-        timeZone: "Europe/Oslo", year: "numeric", month: "2-digit", day: "2-digit",
-      }).format(it.when);
+      const key = osloDateKey(it.when);
+      if (onlyToday && key !== todayKey) continue;
       (out[key] ||= []).push(it);
     }
     return out;
-  }, [items]);
+  }, [items, onlyToday, todayKey]);
 
   return (
     <section className="container mx-auto px-4 pb-12">
@@ -334,10 +359,31 @@ export function UpcomingPushPanel() {
             Oppdater
           </button>
         </div>
-        <p className="text-xs text-muted-foreground mb-4">
+        <p className="text-xs text-muted-foreground mb-3">
           Planlagte varsler de neste {HORIZON_DAYS} dagene på tvers av agenda, bursdager, hytta, vær, UV, renovasjon og garanti.
         </p>
+        <div className="flex flex-wrap gap-4 mb-4">
+          <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={showBadges}
+              onChange={(e) => setShowBadges(e.target.checked)}
+              className="accent-primary"
+            />
+            Vis status-merker (I dag / Trigger)
+          </label>
+          <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={onlyToday}
+              onChange={(e) => setOnlyToday(e.target.checked)}
+              className="accent-primary"
+            />
+            Skjul varsler i morgen og senere
+          </label>
+        </div>
         <EventBasedRules />
+
 
         {loading && <p className="text-sm text-muted-foreground">Henter planlagte varsler…</p>}
         {!loading && items.length === 0 && (
@@ -353,6 +399,8 @@ export function UpcomingPushPanel() {
               <ul className="space-y-1.5">
                 {list.map((it) => {
                   const Icon = it.icon;
+                  const isToday = osloDateKey(it.when) === todayKey;
+                  const needsTrigger = it.status === "uncertain" || it.status === "will-fire";
                   return (
                     <li key={it.key} className="flex items-start gap-3 panel rounded p-3">
                       <Icon size={16} className="text-primary mt-0.5 shrink-0" />
@@ -360,12 +408,22 @@ export function UpcomingPushPanel() {
                         <div className="flex items-baseline gap-2 flex-wrap">
                           <span className="text-sm font-medium text-foreground">{it.title}</span>
                           <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{it.source}</span>
-                          {it.status === "uncertain" && (
+                          {showBadges && isToday && (
+                            <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded border border-emerald-500/60 text-emerald-500">
+                              I dag
+                            </span>
+                          )}
+                          {showBadges && needsTrigger && (
+                            <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded border border-sky-500/60 text-sky-500">
+                              Krever trigger
+                            </span>
+                          )}
+                          {showBadges && it.status === "uncertain" && (
                             <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded border border-amber-500/50 text-amber-500 flex items-center gap-1">
                               <HelpCircle size={10} /> Usikker
                             </span>
                           )}
-                          {it.status === "will-fire" && (
+                          {showBadges && it.status === "will-fire" && (
                             <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded border border-primary/50 text-primary">
                               Vil utløse
                             </span>
@@ -382,6 +440,7 @@ export function UpcomingPushPanel() {
                     </li>
                   );
                 })}
+
               </ul>
             </li>
           ))}
@@ -458,6 +517,27 @@ function EventBasedRules() {
         });
       }
     } catch (e) { console.error("[EventBasedRules] light prefs failed", e); }
+
+    // Treg sidelasting
+    try {
+      const { data } = await supabase
+        .from("notification_settings")
+        .select("value")
+        .eq("key", "slow_page_load")
+        .maybeSingle();
+      const v = ((data?.value as any) ?? {}) as { enabled?: boolean; threshold_ms?: number; recipient?: string };
+      if (v && Object.keys(v).length > 0) {
+        out.push({
+          key: "slow-page-load",
+          icon: Activity,
+          source: "Treg sidelasting",
+          title: "Sidelast over terskel",
+          detail: `Terskel ${v.threshold_ms ?? 3000} ms`,
+          recipients: v.recipient || "Alle",
+          enabled: !!v.enabled,
+        });
+      }
+    } catch (e) { console.error("[EventBasedRules] slow page pref failed", e); }
 
     // Tibber daglig snapshot mangler
     try {
