@@ -654,7 +654,6 @@ function HallCard({
     | "/vakttarnet"
     | "/varsler"
     | "/hytta"
-    | "/hundene"
     | "/trening"
     | "/turer"
     | "/stromkroniken"
@@ -666,14 +665,9 @@ function HallCard({
     | "/skatte-utregningen"
     | "/steintavle"
     | "/steintavle-2"
-    | "/oppussing-borgen"
-    | "/oppussing-hytta"
-    | "/matvarer"
     | "/kvitteringer"
     | "/okonomi"
-    | "/push-varslinger"
-    | "/flyradar"
-    | "/got-saga";
+    | "/push-varslinger";
 
   title: string;
   desc: string;
