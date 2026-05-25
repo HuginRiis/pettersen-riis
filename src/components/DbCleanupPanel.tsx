@@ -84,6 +84,16 @@ export function DbCleanupPanel() {
       desc: "Tømmer alle logger, grafer og cron-historikk eldre enn 30 dager.",
       cta: "Slett >30 dager",
     },
+    {
+      key: "full30" as const,
+      title: "Komplett 30-dagers opprydning",
+      icon: Layers,
+      color: "#60a5fa",
+      bytes: data.totals.full30Bytes,
+      desc: "Skanner ALLE tabeller (inkl. cron-historikk) og sletter alt eldre enn 30 dager — kun siste 30 dager beholdes.",
+      cta: "Kjør komplett",
+    },
+
   ];
 
   return (
