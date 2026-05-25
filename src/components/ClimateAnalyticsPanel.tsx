@@ -188,6 +188,28 @@ function dateLabel(ds: string) {
   return d.toLocaleDateString("nb-NO", { day: "numeric", month: "short" });
 }
 
+const ROOM_COLORS = ["#34d399", "#f472b6", "#facc15", "#c084fc", "#fb7185", "#22d3ee", "#fdba74", "#a3e635"];
+function roomColor(i: number) { return ROOM_COLORS[i % ROOM_COLORS.length]; }
+
+function TogglePill({ active, color, onClick, children }: { active: boolean; color: string; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="text-[10px] tracking-wide uppercase px-2 py-1 rounded-full transition-opacity"
+      style={{
+        background: active ? `color-mix(in oklab, ${color} 22%, transparent)` : "transparent",
+        border: `1px solid color-mix(in oklab, ${color} ${active ? 60 : 25}%, transparent)`,
+        color: active ? color : "var(--muted-foreground)",
+        opacity: active ? 1 : 0.7,
+      }}
+    >
+      <span className="inline-block w-2 h-2 rounded-full mr-1.5 align-middle" style={{ background: color }} />
+      {children}
+    </button>
+  );
+}
+
 export function ClimateAnalyticsPanel({
   stationMatch,
   title,
