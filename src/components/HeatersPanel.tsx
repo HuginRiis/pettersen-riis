@@ -530,7 +530,7 @@ export function HeatersPanel({
                   <div className="text-[10px] tracking-[0.3em] text-muted-foreground uppercase mb-3">
                     {zone}
                   </div>
-                  <div className={compact ? "grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4" : "grid sm:grid-cols-2 lg:grid-cols-3 gap-4"}>
+                  <div className={compact ? "grid grid-cols-2 gap-2 sm:gap-4" : "grid grid-cols-2 gap-4"}>
                     {list.map((h) => (
                       <HeaterCard
                         key={h.id}
