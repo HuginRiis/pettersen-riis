@@ -203,7 +203,9 @@ export const getNetatmoClimateHistory = createServerFn({ method: "GET" })
       async ({ data }: { data: { stationMatch?: string } }): Promise<ClimateHistoryResult> => {
         const key = (data?.stationMatch ?? "").toLowerCase().trim() || "__default";
         const c = cache.get(key);
-        if (c && Date.now() - c.at < CACHE_TTL_MS && c.data.ok) return c.data;
+        const hasSeries = (d: ClimateHistoryResult) =>
+          d.ok && (!d.rooms || d.rooms.length === 0 || d.rooms.some((r) => Array.isArray((r as any).series24h)));
+        if (c && Date.now() - c.at < CACHE_TTL_MS && c.data.ok && hasSeries(c.data)) return c.data;
 
         const fallbackToDb = async (errMsg: string): Promise<ClimateHistoryResult> => {
           const snap = await loadDbSnapshot(key);
