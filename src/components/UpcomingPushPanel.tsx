@@ -399,6 +399,8 @@ export function UpcomingPushPanel() {
               <ul className="space-y-1.5">
                 {list.map((it) => {
                   const Icon = it.icon;
+                  const isToday = osloDateKey(it.when) === todayKey;
+                  const needsTrigger = it.status === "uncertain" || it.status === "will-fire";
                   return (
                     <li key={it.key} className="flex items-start gap-3 panel rounded p-3">
                       <Icon size={16} className="text-primary mt-0.5 shrink-0" />
@@ -406,12 +408,22 @@ export function UpcomingPushPanel() {
                         <div className="flex items-baseline gap-2 flex-wrap">
                           <span className="text-sm font-medium text-foreground">{it.title}</span>
                           <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{it.source}</span>
-                          {it.status === "uncertain" && (
+                          {showBadges && isToday && (
+                            <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded border border-emerald-500/60 text-emerald-500">
+                              I dag
+                            </span>
+                          )}
+                          {showBadges && needsTrigger && (
+                            <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded border border-sky-500/60 text-sky-500">
+                              Krever trigger
+                            </span>
+                          )}
+                          {showBadges && it.status === "uncertain" && (
                             <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded border border-amber-500/50 text-amber-500 flex items-center gap-1">
                               <HelpCircle size={10} /> Usikker
                             </span>
                           )}
-                          {it.status === "will-fire" && (
+                          {showBadges && it.status === "will-fire" && (
                             <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded border border-primary/50 text-primary">
                               Vil utløse
                             </span>
@@ -428,6 +440,7 @@ export function UpcomingPushPanel() {
                     </li>
                   );
                 })}
+
               </ul>
             </li>
           ))}
