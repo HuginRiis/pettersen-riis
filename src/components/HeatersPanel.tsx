@@ -556,8 +556,6 @@ export function HeatersPanel({
               )}
             </div>
           )}
-            </div>
-          )}
         </>
       )}
     </section>
