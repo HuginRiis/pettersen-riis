@@ -282,19 +282,38 @@ export function ClimateAnalyticsPanel({
   // Beregn ekstra KPI-er
   const extra = useMemo(() => {
     if (!data) return null;
-    const outs = data.points24h.map((p) => p.outT).filter((v): v is number => v != null);
-    const ins = data.points24h.map((p) => p.inT).filter((v): v is number => v != null);
-    const min = (a: number[]) => (a.length ? Math.min(...a) : null);
-    const max = (a: number[]) => (a.length ? Math.max(...a) : null);
-    const avg = (a: number[]) => (a.length ? a.reduce((s, n) => s + n, 0) / a.length : null);
-    const swing = outs.length ? (Math.max(...outs) - Math.min(...outs)) : null;
-    const insulation =
-      avg(ins) != null && avg(outs) != null ? (avg(ins) as number) - (avg(outs) as number) : null;
-    return {
-      out24: { min: min(outs), max: max(outs), avg: avg(outs), swing },
-      in24: { min: min(ins), max: max(ins), avg: avg(ins) },
-      insulation,
+    type P = { t: number; outT: number | null; inT: number | null };
+    const now = Date.now();
+    const todayPts = data.points24h as P[];
+    const prevPts = (data.points48h as P[]).filter(
+      (p) => p.t >= now - 48 * 3600_000 && p.t < now - 24 * 3600_000,
+    );
+    const pick = (pts: P[], key: "outT" | "inT") =>
+      pts
+        .map((p) => ({ t: p.t, v: p[key] }))
+        .filter((x): x is { t: number; v: number } => x.v != null && Number.isFinite(x.v));
+
+    const stats = (pts: P[], key: "outT" | "inT") => {
+      const xs = pick(pts, key);
+      if (xs.length === 0) return { min: null, minAt: null, max: null, maxAt: null, avg: null, swing: null };
+      let mn = xs[0], mx = xs[0], sum = 0;
+      for (const x of xs) {
+        if (x.v < mn.v) mn = x;
+        if (x.v > mx.v) mx = x;
+        sum += x.v;
+      }
+      return { min: mn.v, minAt: mn.t, max: mx.v, maxAt: mx.t, avg: sum / xs.length, swing: mx.v - mn.v };
     };
+
+    const out24 = stats(todayPts, "outT");
+    const in24 = stats(todayPts, "inT");
+    const outPrev = stats(prevPts, "outT");
+    const inPrev = stats(prevPts, "inT");
+    const insulation =
+      out24.avg != null && in24.avg != null ? in24.avg - out24.avg : null;
+    const insulationPrev =
+      outPrev.avg != null && inPrev.avg != null ? inPrev.avg - outPrev.avg : null;
+    return { out24, in24, outPrev, inPrev, insulation, insulationPrev };
   }, [data]);
 
   if (err) {
