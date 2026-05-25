@@ -359,10 +359,31 @@ export function UpcomingPushPanel() {
             Oppdater
           </button>
         </div>
-        <p className="text-xs text-muted-foreground mb-4">
+        <p className="text-xs text-muted-foreground mb-3">
           Planlagte varsler de neste {HORIZON_DAYS} dagene på tvers av agenda, bursdager, hytta, vær, UV, renovasjon og garanti.
         </p>
+        <div className="flex flex-wrap gap-4 mb-4">
+          <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={showBadges}
+              onChange={(e) => setShowBadges(e.target.checked)}
+              className="accent-primary"
+            />
+            Vis status-merker (I dag / Trigger)
+          </label>
+          <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={onlyToday}
+              onChange={(e) => setOnlyToday(e.target.checked)}
+              className="accent-primary"
+            />
+            Skjul varsler i morgen og senere
+          </label>
+        </div>
         <EventBasedRules />
+
 
         {loading && <p className="text-sm text-muted-foreground">Henter planlagte varsler…</p>}
         {!loading && items.length === 0 && (
