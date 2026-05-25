@@ -73,7 +73,12 @@ type Ctx = {
   busy: Record<string, boolean>;
   sendCap: (
     device: LivingRoomDevice,
-    capability: "onoff" | "target_temperature" | "dim" | "thermostat_mode",
+    capability:
+      | "onoff"
+      | "target_temperature"
+      | "dim"
+      | "thermostat_mode"
+      | (string & {}),
     value: boolean | number | string,
   ) => Promise<void>;
   findByKind: (kind: Kind) => LivingRoomDevice | null;
