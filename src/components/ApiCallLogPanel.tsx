@@ -590,6 +590,25 @@ export function ApiCallLogPanel() {
                           <span className="text-muted-foreground tabular-nums">
                             {r.total_24h}× / 24t
                           </span>
+                          <span
+                            className="text-[9px] tracking-[0.15em] uppercase tabular-nums px-1.5 py-0.5 rounded-sm border border-primary/30 text-primary bg-primary/5"
+                            title="On-demand: trigget av en side"
+                          >
+                            side {r.ondemand_24h}
+                          </span>
+                          <span
+                            className="text-[9px] tracking-[0.15em] uppercase tabular-nums px-1.5 py-0.5 rounded-sm border border-border text-muted-foreground bg-muted/20"
+                            title="Cron / server / webhook"
+                          >
+                            cron {r.cron_24h}
+                          </span>
+                          <span
+                            className="text-[9px] tracking-[0.15em] uppercase tabular-nums px-1.5 py-0.5 rounded-sm border border-amber-500/40 text-amber-400 bg-amber-500/10"
+                            title="Auth / token / login (brukernavn + passord)"
+                          >
+                            auth {r.auth_24h}
+                          </span>
+
                           {r.errors_24h > 0 && (
                             <span className="text-destructive">
                               {r.errors_24h} feil
