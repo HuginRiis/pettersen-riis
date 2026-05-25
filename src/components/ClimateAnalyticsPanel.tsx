@@ -357,10 +357,10 @@ export function ClimateAnalyticsPanel({
             </div>
           </div>
 
-          {/* Sammenlign — inne */}
+          {/* Sammenlign — Stua (NAMain) */}
           <div>
             <div className="text-[10px] tracking-[0.3em] uppercase text-primary mb-2 flex items-center gap-1.5">
-              <Calendar size={12} className="text-[var(--gold)]" /> Inne — sammenlign nå med…
+              <Thermometer size={12} className="text-[var(--gold)]" /> Stua — sammenlign nå med…
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <CompareBox label="For 1 time siden" icon={Clock} current={current.inT} refValue={oneHourAgo.inT} />
@@ -369,6 +369,7 @@ export function ClimateAnalyticsPanel({
               <CompareBox label="Mot normalen" icon={TrendingUp} current={current.inT} refValue={normal.inT} tooltip="30d snitt samme tid på døgnet" />
             </div>
           </div>
+
 
           {/* Per-rom sammenligning (NAModule4) */}
           {data.rooms?.map((room) => (
