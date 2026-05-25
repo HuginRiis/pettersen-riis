@@ -166,10 +166,11 @@ export const getDbCleanupEstimate = createServerFn({ method: "GET" }).handler(
         acc.month30Bytes += r.month30Bytes;
         return acc;
       },
-      { unusedBytes: 0, recommendedBytes: 0, month30Bytes: 0, dbBytes },
+      { unusedBytes: 0, recommendedBytes: 0, month30Bytes: 0, full30Bytes, dbBytes },
     );
 
-    return { rows: filtered, totals };
+    return { rows: filtered, totals, full30Rows };
+
   },
 );
 
