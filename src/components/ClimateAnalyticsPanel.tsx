@@ -538,22 +538,24 @@ export function ClimateAnalyticsPanel({
                 <Activity size={12} className="text-[var(--gold)]" /> Døgnstatistikk siste 24 timer
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <MetricKPI label="Ute min" value={extra.out24.min} unit="°" Icon={Thermometer} />
-                <MetricKPI label="Ute maks" value={extra.out24.max} unit="°" Icon={Thermometer} />
-                <MetricKPI label="Ute snitt" value={extra.out24.avg} unit="°" Icon={Thermometer} />
+                <MetricKPI label="Ute min" value={extra.out24.min} at={extra.out24.minAt} prevValue={extra.outPrev.min} unit="°" Icon={Thermometer} />
+                <MetricKPI label="Ute maks" value={extra.out24.max} at={extra.out24.maxAt} prevValue={extra.outPrev.max} unit="°" Icon={Thermometer} />
+                <MetricKPI label="Ute snitt" value={extra.out24.avg} prevValue={extra.outPrev.avg} unit="°" Icon={Thermometer} />
                 <MetricKPI
                   label="Ute-svingning"
                   value={extra.out24.swing}
+                  prevValue={extra.outPrev.swing}
                   unit="°"
                   hint="Forskjell maks – min"
                   Icon={TrendingUp}
                 />
-                <MetricKPI label="Inne min" value={extra.in24.min} unit="°" Icon={Thermometer} />
-                <MetricKPI label="Inne maks" value={extra.in24.max} unit="°" Icon={Thermometer} />
-                <MetricKPI label="Inne snitt" value={extra.in24.avg} unit="°" Icon={Thermometer} />
+                <MetricKPI label="Inne min" value={extra.in24.min} at={extra.in24.minAt} prevValue={extra.inPrev.min} unit="°" Icon={Thermometer} />
+                <MetricKPI label="Inne maks" value={extra.in24.max} at={extra.in24.maxAt} prevValue={extra.inPrev.max} unit="°" Icon={Thermometer} />
+                <MetricKPI label="Inne snitt" value={extra.in24.avg} prevValue={extra.inPrev.avg} unit="°" Icon={Thermometer} />
                 <MetricKPI
                   label="Termisk gevinst"
                   value={extra.insulation}
+                  prevValue={extra.insulationPrev}
                   unit="°"
                   hint="Snitt inne – ute"
                   Icon={Sparkles}
