@@ -23,6 +23,7 @@ import { AppearanceSettingsPanel } from "@/components/AppearanceSettingsPanel";
 import { ChartAppearanceSettingsPanel } from "@/components/ChartAppearanceSettingsPanel";
 import { OkonomiSettingsPanel } from "@/components/OkonomiSettingsPanel";
 import { HomeySensorSettings } from "@/components/HomeySensorSettings";
+import { ClimateNotificationSettings } from "@/components/ClimateNotificationSettings";
 import {
   Bell, BellOff, Calendar, Cake, Trash2, CloudSun, Lightbulb, ScrollText, ShieldCheck, Lock, ExternalLink, Smartphone, X, Activity,
 } from "lucide-react";
