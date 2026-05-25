@@ -296,6 +296,66 @@ export type Database = {
         }
         Relationships: []
       }
+      climate_notification_prefs: {
+        Row: {
+          cold_threshold: number
+          cooldown_minutes: number
+          enabled: boolean
+          hot_threshold: number
+          id: string
+          label: string
+          last_checked_at: string | null
+          last_notified_cold_at: string | null
+          last_notified_hot_at: string | null
+          last_value: number | null
+          module_match: string | null
+          notify_cold: boolean
+          notify_hot: boolean
+          recipient: string
+          room_key: string
+          station_match: string
+          updated_at: string
+        }
+        Insert: {
+          cold_threshold?: number
+          cooldown_minutes?: number
+          enabled?: boolean
+          hot_threshold?: number
+          id?: string
+          label: string
+          last_checked_at?: string | null
+          last_notified_cold_at?: string | null
+          last_notified_hot_at?: string | null
+          last_value?: number | null
+          module_match?: string | null
+          notify_cold?: boolean
+          notify_hot?: boolean
+          recipient?: string
+          room_key: string
+          station_match: string
+          updated_at?: string
+        }
+        Update: {
+          cold_threshold?: number
+          cooldown_minutes?: number
+          enabled?: boolean
+          hot_threshold?: number
+          id?: string
+          label?: string
+          last_checked_at?: string | null
+          last_notified_cold_at?: string | null
+          last_notified_hot_at?: string | null
+          last_value?: number | null
+          module_match?: string | null
+          notify_cold?: boolean
+          notify_hot?: boolean
+          recipient?: string
+          room_key?: string
+          station_match?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       garbage_address: {
         Row: {
           address_text: string
