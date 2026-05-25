@@ -16,6 +16,7 @@ import {
   Wind,
   Droplets,
   TreePine,
+  Activity,
 } from "lucide-react";
 import { PageShell, PageHero } from "@/components/PageShell";
 import { HeatersPanel } from "@/components/HeatersPanel";
