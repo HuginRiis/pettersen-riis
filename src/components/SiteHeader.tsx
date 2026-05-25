@@ -814,8 +814,9 @@ function TempBadge({
   }
   const arrowChar = arrow === "up" ? "▲" : arrow === "down" ? "▼" : "";
   const arrowColor = arrow === "up" ? "#fb923c" : arrow === "down" ? "#7dd3fc" : color;
-  const dayArrowChar = dayArrow === "up" ? "▲" : dayArrow === "down" ? "▼" : "";
-  const dayArrowColor = dayArrow === "up" ? "#fb923c" : dayArrow === "down" ? "#7dd3fc" : color;
+  // Vis "−" når lik (innen terskel) så vi ser at pilen faktisk virker
+  const dayArrowChar = dayArrow === "up" ? "▲" : dayArrow === "down" ? "▼" : (yesterday != null ? "−" : "");
+  const dayArrowColor = dayArrow === "up" ? "#fb923c" : dayArrow === "down" ? "#7dd3fc" : "#9ca3af";
   return (
     <span
       className="inline-flex items-center justify-center gap-0.5 rounded-full text-[9px] font-semibold leading-none px-1.5 py-0.5 min-w-[18px] tabular-nums"
