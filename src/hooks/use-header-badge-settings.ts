@@ -15,9 +15,11 @@ export const HEADER_BADGE_KEY = "header_badges";
 
 export const HEADER_BADGE_DEFS: { id: string; label: string }[] = [
   { id: "uv_hjem", label: "UV (Hjem)" },
-  { id: "temp_tollnes", label: "Temperatur Tollnes (Hjem)" },
+  { id: "temp_tollnes", label: "Temperatur ute Tollnes (Hjem)" },
+  { id: "temp_stua_tollnes", label: "Temperatur stua Tollnes (Hjem)" },
   { id: "uv_hytta", label: "UV (Hytta)" },
-  { id: "temp_hytta", label: "Temperatur Hytta" },
+  { id: "temp_hytta", label: "Temperatur ute Hytta" },
+  { id: "temp_stua_hytta", label: "Temperatur stua Hytta" },
   { id: "pollen", label: "Pollen" },
   { id: "push_today", label: "Antall push i dag (Innstillinger)" },
   { id: "lights_on", label: "Lys tent (Lys)" },
