@@ -482,35 +482,51 @@ export function ClimateAnalyticsPanel({
 
 
           {/* Linjegraf 24h */}
-          <ChartShell title="Temperatur siste 24 timer — inne vs ute">
-            <ResponsiveContainer>
-              <LineChart data={chart24} margin={{ top: 8, right: 12, left: -10, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border) / 0.4)" />
-                <XAxis dataKey="time" tick={AXIS_TICK} interval="preserveStartEnd" minTickGap={32} />
-                <YAxis tick={AXIS_TICK} width={36} unit="°" />
-                <Tooltip
-                  contentStyle={{
-                    background: "var(--background)",
-                    border: "1px solid color-mix(in oklab, var(--gold) 30%, transparent)",
-                    borderRadius: 8,
-                    fontSize: 12,
-                  }}
-                  formatter={(v: any) => (typeof v === "number" ? `${v.toFixed(1)}°` : v)}
-                />
-                <Legend wrapperStyle={{ fontSize: 11 }} />
-                {normal.outT != null && (
-                  <ReferenceLine
-                    y={normal.outT}
-                    stroke="#7dd3fc"
-                    strokeDasharray="4 4"
-                    label={{ value: `Normal ute ${normal.outT.toFixed(1)}°`, fontSize: 9, fill: "#7dd3fc", position: "insideTopRight" }}
+          <div>
+            <div className="flex flex-wrap gap-1.5 mb-2">
+              <TogglePill active={isTempOn("inT")} color="#fb923c" onClick={() => toggleTemp("inT")}>Stua</TogglePill>
+              <TogglePill active={isTempOn("outT")} color="#60a5fa" onClick={() => toggleTemp("outT")}>Ute</TogglePill>
+              {(data.rooms ?? []).map((r, i) => (
+                <TogglePill key={r.id} active={isTempOn(r.id)} color={roomColor(i)} onClick={() => toggleTemp(r.id)}>
+                  {r.name}
+                </TogglePill>
+              ))}
+            </div>
+            <ChartShell title="Temperatur siste 24 timer — alle rom">
+              <ResponsiveContainer>
+                <LineChart data={chart24} margin={{ top: 8, right: 12, left: -10, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border) / 0.4)" />
+                  <XAxis dataKey="time" tick={AXIS_TICK} interval="preserveStartEnd" minTickGap={32} />
+                  <YAxis tick={AXIS_TICK} width={36} unit="°" />
+                  <Tooltip
+                    contentStyle={{
+                      background: "var(--background)",
+                      border: "1px solid color-mix(in oklab, var(--gold) 30%, transparent)",
+                      borderRadius: 8,
+                      fontSize: 12,
+                    }}
+                    formatter={(v: any) => (typeof v === "number" ? `${v.toFixed(1)}°` : v)}
                   />
-                )}
-                <Line type="monotone" dataKey="inT" name="Inne" stroke="#fb923c" strokeWidth={2} dot={false} connectNulls />
-                <Line type="monotone" dataKey="outT" name="Ute" stroke="#60a5fa" strokeWidth={2} dot={false} connectNulls />
-              </LineChart>
-            </ResponsiveContainer>
-          </ChartShell>
+                  <Legend wrapperStyle={{ fontSize: 11 }} />
+                  {normal.outT != null && isTempOn("outT") && (
+                    <ReferenceLine
+                      y={normal.outT}
+                      stroke="#7dd3fc"
+                      strokeDasharray="4 4"
+                      label={{ value: `Normal ute ${normal.outT.toFixed(1)}°`, fontSize: 9, fill: "#7dd3fc", position: "insideTopRight" }}
+                    />
+                  )}
+                  {isTempOn("inT") && <Line type="monotone" dataKey="inT" name="Stua" stroke="#fb923c" strokeWidth={2} dot={false} connectNulls />}
+                  {isTempOn("outT") && <Line type="monotone" dataKey="outT" name="Ute" stroke="#60a5fa" strokeWidth={2} dot={false} connectNulls />}
+                  {(data.rooms ?? []).map((r, i) =>
+                    isTempOn(r.id) ? (
+                      <Line key={r.id} type="monotone" dataKey={`t_${r.id}`} name={r.name} stroke={roomColor(i)} strokeWidth={1.5} dot={false} connectNulls />
+                    ) : null,
+                  )}
+                </LineChart>
+              </ResponsiveContainer>
+            </ChartShell>
+          </div>
 
           {/* Sammenlign i dag vs i går (ute) */}
           <ChartShell title="Ute-temp: i dag vs i går (samme klokkeslett)">
