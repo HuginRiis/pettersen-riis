@@ -100,10 +100,29 @@ function buildHeaters(
     const measureCap = d.capabilities["measure_temperature"];
     const modeCap = d.capabilities["thermostat_mode"];
     const fanEntry =
-      (["fan_speed", "fan_mode", "qlima_fan_speed", "fan_level", "fan_rate", "fan_power"] as const)
+      ([
+        "fan_speed",
+        "fan_mode",
+        "qlima_fan_speed",
+        "fan_level",
+        "fan_rate",
+        "fan_power",
+        "se_fanlevel",
+        "se_fan_level",
+        "se_fanmode",
+        "se_fan_mode",
+        "fanlevel",
+        "fanspeed",
+      ] as const)
         .map((k) => [k, d.capabilities[k]] as const)
         .find(([, c]) => !!c) ??
-      Object.entries(d.capabilities).find(([k]) => /^fan[_-]?(speed|mode|level|rate|power)/i.test(k));
+      Object.entries(d.capabilities).find(
+        ([k]) =>
+          /fan/i.test(k) &&
+          !/swing|vane|louver|oscill|airdir|air_dir|fan_dir|flap|wind_dir|updown|up_?down|leftright|left_?right|direction/i.test(
+            k,
+          ),
+      );
     const fanCap = fanEntry?.[1];
     const fanCapId = fanEntry?.[0];
 
@@ -348,8 +367,10 @@ export function HeatersPanel({
             ? "target"
             : capability === "thermostat_mode"
               ? "thermostatMode"
-              : /^fan[_-]?(speed|mode|level|rate|power)/i.test(capability) ||
-                  capability === "qlima_fan_speed"
+              : /fan/i.test(capability) &&
+                  !/swing|vane|louver|oscill|airdir|air_dir|fan_dir|flap|wind_dir|updown|up_?down|leftright|left_?right|direction/i.test(
+                    capability,
+                  )
                 ? "fanSpeed"
                 : null;
 

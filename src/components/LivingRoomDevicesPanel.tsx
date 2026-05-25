@@ -73,7 +73,12 @@ type Ctx = {
   busy: Record<string, boolean>;
   sendCap: (
     device: LivingRoomDevice,
-    capability: "onoff" | "target_temperature" | "dim" | "thermostat_mode",
+    capability:
+      | "onoff"
+      | "target_temperature"
+      | "dim"
+      | "thermostat_mode"
+      | (string & {}),
     value: boolean | number | string,
   ) => Promise<void>;
   findByKind: (kind: Kind) => LivingRoomDevice | null;
@@ -176,7 +181,12 @@ export function LivingRoomProvider({ children }: { children: ReactNode }) {
   const sendCap = useCallback(
     async (
       device: LivingRoomDevice,
-      capability: "onoff" | "target_temperature" | "dim" | "thermostat_mode",
+      capability:
+        | "onoff"
+        | "target_temperature"
+        | "dim"
+        | "thermostat_mode"
+        | (string & {}),
       value: boolean | number | string,
     ) => {
       const key = `${device.id}:${capability}`;
@@ -192,9 +202,10 @@ export function LivingRoomProvider({ children }: { children: ReactNode }) {
           setOverrides((o) => {
             const next = { ...o };
             if (next[device.id]) {
-              const { [capability]: _drop, ...rest } = next[device.id]!;
-              if (Object.keys(rest).length === 0) delete next[device.id];
-              else next[device.id] = rest;
+              const cur = { ...(next[device.id] as any) };
+              delete cur[capability];
+              if (Object.keys(cur).length === 0) delete next[device.id];
+              else next[device.id] = cur;
             }
             return next;
           });
@@ -207,9 +218,10 @@ export function LivingRoomProvider({ children }: { children: ReactNode }) {
         setOverrides((o) => {
           const next = { ...o };
           if (next[device.id]) {
-            const { [capability]: _drop, ...rest } = next[device.id]!;
-            if (Object.keys(rest).length === 0) delete next[device.id];
-            else next[device.id] = rest;
+            const cur = { ...(next[device.id] as any) };
+            delete cur[capability];
+            if (Object.keys(cur).length === 0) delete next[device.id];
+            else next[device.id] = cur;
           }
           return next;
         });
@@ -354,6 +366,13 @@ export function HeatPumpTile() {
             onSetTemp={(v) => sendCap(device, "target_temperature", v)}
             onToggle={(v) => sendCap(device, "onoff", v)}
             onSetMode={(v) => sendCap(device, "thermostat_mode", v)}
+            onSetFan={(v) =>
+              sendCap(
+                device,
+                device.capabilities.fan_capability_id ?? "fan_speed",
+                v,
+              )
+            }
           />
         )}
       </div>
@@ -439,6 +458,7 @@ function ThermostatBody({
   onSetTemp,
   onToggle,
   onSetMode,
+  onSetFan,
 }: {
   device: LivingRoomDevice;
   override?: Partial<LivingRoomDevice["capabilities"]>;
@@ -447,6 +467,7 @@ function ThermostatBody({
   onSetTemp: (v: number) => void;
   onToggle: (v: boolean) => void;
   onSetMode: (v: string) => void;
+  onSetFan: (v: string | number) => void;
 }) {
   const caps = { ...device.capabilities, ...(override ?? {}) };
   const min = device.capabilities.target_temperature_min ?? 16;
@@ -656,6 +677,70 @@ function ThermostatBody({
           </div>
         </div>
       )}
+
+      {(() => {
+        const fanCapId = device.capabilities.fan_capability_id;
+        const fanValues = device.capabilities.fan_values ?? [];
+        if (!fanCapId || fanValues.length === 0) return null;
+        const fanBusy =
+          busy[`${device.id}:${fanCapId}`] ||
+          busy[`${device.id}:fan_speed`] ||
+          busy[`${device.id}:fan_mode`];
+        const currentFan =
+          (override as any)?.fan_value ?? device.capabilities.fan_value;
+        return (
+          <div className="w-full max-w-[280px] mt-1">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground">
+                Vifte
+              </span>
+              {fanBusy && (
+                <Loader2 size={12} className="animate-spin text-muted-foreground" />
+              )}
+            </div>
+            <div
+              className="grid gap-1.5"
+              style={{ gridTemplateColumns: `repeat(${Math.min(fanValues.length, 5)}, minmax(0, 1fr))` }}
+            >
+              {fanValues.map((f) => {
+                const active =
+                  currentFan !== undefined &&
+                  String(currentFan).toLowerCase() === String(f.id).toLowerCase();
+                return (
+                  <button
+                    key={f.id}
+                    type="button"
+                    onClick={() => {
+                      if (active || fanBusy) return;
+                      onSetFan(f.id);
+                    }}
+                    disabled={fanBusy}
+                    aria-label={`Vifte ${f.title ?? f.id}`}
+                    title={f.title ?? f.id}
+                    className="rounded py-2 flex flex-col items-center justify-center gap-0.5 transition-all disabled:opacity-50 active:scale-95"
+                    style={{
+                      background: active
+                        ? `color-mix(in oklab, ${accent} 22%, transparent)`
+                        : "color-mix(in oklab, var(--foreground) 6%, transparent)",
+                      border: `1px solid color-mix(in oklab, ${accent} ${
+                        active ? 55 : 18
+                      }%, transparent)`,
+                      color: active ? accent : "var(--muted-foreground)",
+                    }}
+                  >
+                    <Wind size={14} />
+                    <span className="text-[8px] tracking-[0.2em] uppercase truncate max-w-full">
+                      {f.title ?? f.id}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
+
+
 
       {caps.onoff !== undefined && (
         <button
