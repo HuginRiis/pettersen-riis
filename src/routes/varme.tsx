@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { PageShell, PageHero } from "@/components/PageShell";
 import { HeatersPanel } from "@/components/HeatersPanel";
+import { ClimateAnalyticsPanel } from "@/components/ClimateAnalyticsPanel";
 import { ClimateNotificationSettings } from "@/components/ClimateNotificationSettings";
 import { getNetatmoWeatherStation, type WeatherStationResult } from "@/server/netatmo-weather";
 import { getHomeySnapshot, type HomeyDeviceSnapshot } from "@/server/homey";
@@ -604,6 +605,7 @@ function VarmePage() {
         title="Borgen — varme & klima"
         emptyHint="Ingen varme- eller klimaenheter i borgen ennå."
       />
+      <ClimateAnalyticsPanel stationMatch="tollnes" title="Borgen — klimaanalyse" />
 
       <div id="hytta" className="scroll-mt-20" />
       <HeatersPanel
@@ -611,6 +613,7 @@ function VarmePage() {
         title="Hytta — varme & klima"
         emptyHint="Ingen varme- eller klimaenheter på hytta ennå."
       />
+      <ClimateAnalyticsPanel stationMatch="hytta" title="Hytta — klimaanalyse" />
 
       <section id="varslinger" className="container mx-auto px-4 py-12 scroll-mt-20">
         <div className="ornate-divider mb-6 flex items-center gap-2">

@@ -17,6 +17,7 @@ import { getNameForCurrentIp, getDefaultLocation } from "@/server/user-locations
 import { useNavUsage } from "@/hooks/use-nav-usage";
 import { useMenuPrefs } from "@/hooks/use-menu-prefs";
 import { getNetatmoWeatherStation } from "@/server/netatmo-weather";
+import { getNetatmoLiveTrend } from "@/server/netatmo-history";
 import { useLastGood } from "@/hooks/use-last-good";
 import { PushTodayBadge, LightsOnBadge, WeatherDaysBadge, AlarmStateBadge, AlertsSeverityBadge, PowerVsYesterdayBadge, TrainingLast4WeeksBadge, UtgangsdorenLockBadge, StepsTodayBadge, MowerStatusBadge, CurrentTempBadge, GarbageNextPickupBadge, GardenaStatusBadge, GardenaBatteryBadge, GardenaSignalBadge, RoborockStatusBadge, BudgetRemainingBadge, OkonomiBruktBadge, OkonomiInntektBadge, OkonomiBudsjettBadge, OkonomiOverskuddBadge, OkonomiSnittPrDagBadge, OkonomiIgjenPrDagBadge } from "@/components/HallBadges";
 import { useHeaderBadgeSettings, isBadgeVisible } from "@/hooks/use-header-badge-settings";
@@ -421,8 +422,10 @@ export function SiteHeader() {
                   {count > 0 && menuPrefs.sortByUsage && showB("usage_count") && <UsageBadge count={count} />}
                   {l.to === "/" && showB("uv_hjem") && <UvBadge lat={BORGEN_COORD.lat} lon={BORGEN_COORD.lon} />}
                   {l.to === "/" && showB("temp_tollnes") && <TempBadge stationMatch="tollnes" storageKey="hdr.temp.tollnes" />}
+                  {l.to === "/" && showB("temp_stua_tollnes") && <TempBadge stationMatch="tollnes" storageKey="hdr.temp.stua.tollnes" variant="indoor" />}
                   {l.to === "/hytta" && showB("uv_hytta") && <UvBadge lat={HYTTA_COORD.lat} lon={HYTTA_COORD.lon} />}
                   {l.to === "/hytta" && showB("temp_hytta") && <TempBadge stationMatch="hytta" storageKey="hdr.temp.hytta" />}
+                  {l.to === "/hytta" && showB("temp_stua_hytta") && <TempBadge stationMatch="hytta" storageKey="hdr.temp.stua.hytta" variant="indoor" />}
                   {l.to === "/pollen" && showB("pollen") && <PollenBadge lat={pollenCoord.lat} lon={pollenCoord.lon} />}
                   {l.to === "/push-varslinger" && showB("push_today") && <PushTodayBadge inline />}
                   {l.to === "/lys" && showB("lights_on") && <LightsOnBadge inline />}
@@ -566,8 +569,10 @@ export function SiteHeader() {
                     {count > 0 && menuPrefs.sortByUsage && showB("usage_count") && <UsageBadge count={count} />}
                     {l.to === "/" && showB("uv_hjem") && <UvBadge lat={BORGEN_COORD.lat} lon={BORGEN_COORD.lon} />}
                     {l.to === "/" && showB("temp_tollnes") && <TempBadge stationMatch="tollnes" storageKey="hdr.temp.tollnes" />}
+                    {l.to === "/" && showB("temp_stua_tollnes") && <TempBadge stationMatch="tollnes" storageKey="hdr.temp.stua.tollnes" variant="indoor" />}
                     {l.to === "/hytta" && showB("uv_hytta") && <UvBadge lat={HYTTA_COORD.lat} lon={HYTTA_COORD.lon} />}
                     {l.to === "/hytta" && showB("temp_hytta") && <TempBadge stationMatch="hytta" storageKey="hdr.temp.hytta" />}
+                    {l.to === "/hytta" && showB("temp_stua_hytta") && <TempBadge stationMatch="hytta" storageKey="hdr.temp.stua.hytta" variant="indoor" />}
                     {l.to === "/pollen" && showB("pollen") && <PollenBadge lat={pollenCoord.lat} lon={pollenCoord.lon} />}
                     {l.to === "/push-varslinger" && showB("push_today") && <PushTodayBadge inline />}
                     {l.to === "/lys" && showB("lights_on") && <LightsOnBadge inline />}
@@ -718,9 +723,19 @@ function tempColor(t: number): string {
   return `hsl(140 60% 55%)`;
 }
 
-function TempBadge({ stationMatch, storageKey }: { stationMatch: string; storageKey: string }) {
+function TempBadge({
+  stationMatch,
+  storageKey,
+  variant = "outdoor",
+}: {
+  stationMatch: string;
+  storageKey: string;
+  variant?: "outdoor" | "indoor";
+}) {
   const fetchData = useServerFn(getNetatmoWeatherStation);
+  const fetchTrend = useServerFn(getNetatmoLiveTrend);
   const [live, setLive] = useState<number | null>(null);
+  const [trend, setTrend] = useState<number | null>(null);
   useEffect(() => {
     let cancelled = false;
     const load = () => {
@@ -728,9 +743,16 @@ function TempBadge({ stationMatch, storageKey }: { stationMatch: string; storage
       fetchData({ data: { stationMatch } })
         .then((r) => {
           if (cancelled || !r.ok) return;
-          const out = r.modules.find((m) => m.type === "NAModule1");
-          const t = out?.metrics.temperature;
+          const mod = r.modules.find((m) => m.type === (variant === "indoor" ? "NAMain" : "NAModule1"));
+          const t = mod?.metrics.temperature;
           if (typeof t === "number" && Number.isFinite(t)) setLive(t);
+        })
+        .catch(() => {});
+      fetchTrend({ data: { stationMatch } })
+        .then((r) => {
+          if (cancelled || !r.ok) return;
+          const d = variant === "indoor" ? r.inDeltaPerHour : r.outDeltaPerHour;
+          if (typeof d === "number" && Number.isFinite(d)) setTrend(d);
         })
         .catch(() => {});
     };
@@ -740,21 +762,32 @@ function TempBadge({ stationMatch, storageKey }: { stationMatch: string; storage
       cancelled = true;
       clearInterval(id);
     };
-  }, [stationMatch, fetchData]);
+  }, [stationMatch, variant, fetchData, fetchTrend]);
   const { value } = useLastGood(storageKey, live);
   if (value == null) return null;
   const color = tempColor(value);
+  // Trend-pil: opp hvis >+0.15°/t, ned hvis <-0.15°/t
+  let arrow: "up" | "down" | "flat" = "flat";
+  if (trend != null) {
+    if (trend > 0.15) arrow = "up";
+    else if (trend < -0.15) arrow = "down";
+  }
+  const arrowChar = arrow === "up" ? "▲" : arrow === "down" ? "▼" : "";
+  const arrowColor = arrow === "up" ? "#fb923c" : arrow === "down" ? "#7dd3fc" : color;
   return (
     <span
-      className="inline-flex items-center justify-center rounded-full text-[9px] font-semibold leading-none px-1.5 py-0.5 min-w-[18px] tabular-nums"
+      className="inline-flex items-center justify-center gap-0.5 rounded-full text-[9px] font-semibold leading-none px-1.5 py-0.5 min-w-[18px] tabular-nums"
       style={{
         background: `color-mix(in oklab, ${color} 22%, transparent)`,
         color,
         border: `1px solid color-mix(in oklab, ${color} 50%, transparent)`,
       }}
-      title={`Ute nå: ${value.toFixed(1)}°`}
+      title={`${variant === "indoor" ? "Inne" : "Ute"} nå: ${value.toFixed(1)}°${trend != null ? ` (${trend >= 0 ? "+" : ""}${trend.toFixed(2)}°/t)` : ""}`}
     >
       {value.toFixed(0)}°
+      {arrowChar && (
+        <span style={{ color: arrowColor, fontSize: 8 }}>{arrowChar}</span>
+      )}
     </span>
   );
 }
