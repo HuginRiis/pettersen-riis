@@ -101,6 +101,8 @@ function MetricKPI({
   trendPerHour,
   hint,
   Icon,
+  at,
+  prevValue,
 }: {
   label: string;
   value: number | null;
@@ -108,6 +110,8 @@ function MetricKPI({
   trendPerHour?: number | null;
   hint?: string;
   Icon: typeof Thermometer;
+  at?: number | null;
+  prevValue?: number | null;
 }) {
   let trendNode: React.ReactNode = null;
   if (trendPerHour != null) {
@@ -118,7 +122,20 @@ function MetricKPI({
         {Math.abs(trendPerHour).toFixed(2)}{unit}/t
       </span>
     );
+  } else if (prevValue !== undefined) {
+    const t = trendArrow(value, prevValue ?? null);
+    trendNode = (
+      <span
+        className="inline-flex items-center gap-0.5 text-[11px] tabular-nums"
+        style={{ color: t.color }}
+        title={`Forrige døgn: ${fmt(prevValue ?? null, unit)}`}
+      >
+        <t.Icon size={11} />
+        {t.deltaTxt}{unit}
+      </span>
+    );
   }
+  const atTxt = at != null && Number.isFinite(at) ? timeLabel(at) : null;
   return (
     <div
       className="rounded-xl p-3"
@@ -135,6 +152,11 @@ function MetricKPI({
         <span className="text-display tabular-nums text-2xl text-[var(--gold)]">{fmt(value, unit)}</span>
         {trendNode}
       </div>
+      {atTxt && (
+        <div className="text-[10px] text-muted-foreground mt-0.5 tabular-nums flex items-center gap-1">
+          <Clock size={9} /> kl. {atTxt}
+        </div>
+      )}
       {hint && <div className="text-[10px] text-muted-foreground mt-0.5">{hint}</div>}
     </div>
   );
