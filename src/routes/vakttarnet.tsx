@@ -376,6 +376,19 @@ function VakttarnetPage() {
           </Panel>
         </section>
 
+        <section id="vt-db-cleanup" className="scroll-mt-24">
+          <Panel
+            title="Rydd opp i databasen"
+            icon={<Trash2 size={14} />}
+            subtitle="Se hvor mye plass du sparer ved å slette ubrukt logg, kjøre anbefalt opprydning eller fjerne alt eldre enn 30 dager"
+            collapsible
+            defaultOpen={false}
+          >
+            <DbCleanupPanel />
+          </Panel>
+        </section>
+
+
         <section id="vt-db-detail" className="scroll-mt-24">
           <Panel
             title="Detaljert DB-oversikt"
