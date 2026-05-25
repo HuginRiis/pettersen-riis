@@ -298,7 +298,9 @@ function HeroTempBadges() {
 const TOC = [
   { id: "anbefalinger", label: "Smarte anbefalinger", icon: Sparkles },
   { id: "borg", label: "Borgen", icon: Castle },
+  { id: "klima-borg", label: "Borgen — klimaanalyse", icon: Activity },
   { id: "hytta", label: "Hytta", icon: Mountain },
+  { id: "klima-hytta", label: "Hytta — klimaanalyse", icon: Activity },
   { id: "varslinger", label: "Varslinger", icon: Bell },
 ] as const;
 
