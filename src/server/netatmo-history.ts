@@ -343,7 +343,7 @@ export const getNetatmoClimateHistory = createServerFn({ method: "GET" })
             }
             return den === 0 ? null : num / den;
           };
-          const tsHrs = last3h.map((p) => p.t / 3600_000);
+          // (lokale slope-input per metrikk bygges nedenfor)
           const outVals = last3h.map((p) => p.outT).filter((v): v is number => v != null);
           const inVals = last3h.map((p) => p.inT).filter((v): v is number => v != null);
           const trends = {
