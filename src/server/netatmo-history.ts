@@ -234,9 +234,30 @@ export const getNetatmoClimateHistory = createServerFn({ method: "GET" })
           const deviceId = device._id;
           const outdoor = (device.modules ?? []).find((m: any) => m.type === "NAModule1");
           const outdoorId: string | null = outdoor?._id ?? null;
-          const extraIndoors: Array<{ id: string; name: string }> = (device.modules ?? [])
-            .filter((m: any) => m.type === "NAModule4")
-            .map((m: any) => ({ id: m._id as string, name: (m.module_name ?? "Rom") as string }));
+          // Samle NAModule4-rom fra ALLE enheter på kontoen som hører til samme
+          // sted (station_name matcher stationMatch). For Tollnes/Borgen kan
+          // rommene (Soverommet, Nora, Kontor) ligge på en separat base-stasjon.
+          const roomDevices = match
+            ? devices.filter((d: any) => {
+                const sn = (d.station_name ?? "").toLowerCase();
+                const mn = (d.module_name ?? "").toLowerCase();
+                return sn.includes(match) || mn.includes(match);
+              })
+            : [device];
+          if (roomDevices.length === 0) roomDevices.push(device);
+          const extraIndoors: Array<{ deviceId: string; id: string; name: string }> = [];
+          for (const dev of roomDevices) {
+            for (const m of dev.modules ?? []) {
+              if (m.type === "NAModule4") {
+                extraIndoors.push({
+                  deviceId: dev._id,
+                  id: m._id,
+                  name: m.module_name ?? "Rom",
+                });
+              }
+            }
+          }
+
 
 
           const nowMs = Date.now();
@@ -274,10 +295,10 @@ export const getNetatmoClimateHistory = createServerFn({ method: "GET" })
           // Ekstra innemoduler (NAModule4) — fetch 48h temp+hum + 1 uke siden
           const extraIndoorJobs = extraIndoors.map(async (room) => {
             const url48 =
-              `${NETATMO_BASE}/api/getmeasure?device_id=${deviceId}&module_id=${room.id}` +
+              `${NETATMO_BASE}/api/getmeasure?device_id=${room.deviceId}&module_id=${room.id}` +
               `&scale=30min&type=Temperature,Humidity&date_begin=${begin48h}&optimize=false&real_time=true`;
             const urlWeek =
-              `${NETATMO_BASE}/api/getmeasure?device_id=${deviceId}&module_id=${room.id}` +
+              `${NETATMO_BASE}/api/getmeasure?device_id=${room.deviceId}&module_id=${room.id}` +
               `&scale=30min&type=Temperature,Humidity&date_begin=${beginWeek}&date_end=${beginWeek + 6 * 3600}&optimize=false&real_time=true`;
             const [j48, jWeek] = await Promise.all([
               netatmoFetch(url48, token).catch(() => null),
@@ -285,6 +306,7 @@ export const getNetatmoClimateHistory = createServerFn({ method: "GET" })
             ]);
             return { room, j48, jWeek };
           });
+
 
           const [inJson48, outJson48, inDaily, outDaily, inWeek, outWeek, extraResults] = await Promise.all([
             netatmoFetch(inUrl48, token).catch(() => null),
