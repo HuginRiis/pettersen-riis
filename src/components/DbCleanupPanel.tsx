@@ -145,15 +145,32 @@ export function DbCleanupPanel() {
                 ≈ {pct(b.bytes)}% av databasen
               </div>
               <div className="text-[11px] text-muted-foreground/90 mt-1 flex-1">{b.desc}</div>
-              <button
-                type="button"
-                disabled={busy !== null || b.bytes === 0}
-                onClick={() => handleRun(b.key, b.title.toLowerCase())}
-                className="mt-2 text-xs px-2 py-1 rounded border border-border/60 bg-background/60 hover:bg-background disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-1.5"
-              >
-                {busy === b.key ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
-                {b.cta}
-              </button>
+              {scanResult[b.key] && (
+                <div className="text-[10px] text-muted-foreground/80 mt-1">
+                  Sist skannet: {pretty(scanResult[b.key].bytes)} ({new Date(scanResult[b.key].at).toLocaleTimeString("no-NO")})
+                </div>
+              )}
+              <div className="mt-2 grid grid-cols-2 gap-1.5">
+                <button
+                  type="button"
+                  disabled={scanning !== null || busy !== null}
+                  onClick={() => handleScan(b.key)}
+                  className="text-xs px-2 py-1 rounded border border-border/60 bg-background/60 hover:bg-background disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-1.5"
+                >
+                  {scanning === b.key ? <Loader2 size={12} className="animate-spin" /> : <Database size={12} />}
+                  Skann
+                </button>
+                <button
+                  type="button"
+                  disabled={busy !== null || scanning !== null || b.bytes === 0}
+                  onClick={() => handleRun(b.key, b.title.toLowerCase())}
+                  className="text-xs px-2 py-1 rounded border border-border/60 bg-background/60 hover:bg-background disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-1.5"
+                  style={{ borderColor: `${b.color}80` }}
+                >
+                  {busy === b.key ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
+                  Slett
+                </button>
+              </div>
             </div>
           );
         })}
