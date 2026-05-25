@@ -398,6 +398,11 @@ export function ApiCallLogPanel() {
             }, null);
             const errors24 = rows.reduce((s, r) => s + r.errors_24h, 0);
             const total24 = rows.reduce((s, r) => s + r.total_24h, 0);
+            const ondemand24 = rows.reduce((s, r) => s + (r.ondemand_24h ?? 0), 0);
+            const cron24 = rows.reduce((s, r) => s + (r.cron_24h ?? 0), 0);
+            const auth24 = rows.reduce((s, r) => s + (r.auth_24h ?? 0), 0);
+            const live24 = rows.reduce((s, r) => s + (r.live_24h ?? 0), 0);
+            const cache24 = rows.reduce((s, r) => s + (r.cache_24h ?? 0), 0);
             const isOpen = open.has(src.id);
             const hasErrors = errors24 > 0;
             // Siste status: om noen endpoint sist svarte med feil → feil
