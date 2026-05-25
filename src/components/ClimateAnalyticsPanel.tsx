@@ -577,28 +577,46 @@ export function ClimateAnalyticsPanel({
           </ChartShell>
 
           {/* Luftfukt + CO2 siste 24h */}
-          <ChartShell title="Luftfukt & CO₂ inne — siste 24 timer">
-            <ResponsiveContainer>
-              <LineChart data={chart24} margin={{ top: 8, right: 12, left: -10, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border) / 0.4)" />
-                <XAxis dataKey="time" tick={AXIS_TICK} interval="preserveStartEnd" minTickGap={32} />
-                <YAxis yAxisId="hum" tick={AXIS_TICK} width={36} unit="%" />
-                <YAxis yAxisId="co2" orientation="right" tick={AXIS_TICK} width={42} unit=" ppm" />
-                <Tooltip
-                  contentStyle={{
-                    background: "var(--background)",
-                    border: "1px solid color-mix(in oklab, var(--gold) 30%, transparent)",
-                    borderRadius: 8,
-                    fontSize: 12,
-                  }}
-                />
-                <Legend wrapperStyle={{ fontSize: 11 }} />
-                <ReferenceLine yAxisId="co2" y={1000} stroke="#f87171" strokeDasharray="4 4" label={{ value: "Luft! 1000ppm", fontSize: 9, fill: "#f87171", position: "insideTopRight" }} />
-                <Line yAxisId="hum" type="monotone" dataKey="hum" name="Luftfukt %" stroke="#22d3ee" strokeWidth={2} dot={false} connectNulls />
-                <Line yAxisId="co2" type="monotone" dataKey="co2" name="CO₂ ppm" stroke="#a78bfa" strokeWidth={2} dot={false} connectNulls />
-              </LineChart>
-            </ResponsiveContainer>
-          </ChartShell>
+          <div>
+            <div className="flex flex-wrap gap-1.5 mb-2">
+              <TogglePill active={isHumOn("hum")} color="#22d3ee" onClick={() => toggleHum("hum")}>Stua %</TogglePill>
+              <TogglePill active={isHumOn("co2")} color="#a78bfa" onClick={() => toggleHum("co2")}>CO₂ ppm</TogglePill>
+              {(data.rooms ?? []).map((r, i) => (
+                <TogglePill key={r.id} active={isHumOn(r.id)} color={roomColor(i)} onClick={() => toggleHum(r.id)}>
+                  {r.name} %
+                </TogglePill>
+              ))}
+            </div>
+            <ChartShell title="Luftfukt & CO₂ — siste 24 timer">
+              <ResponsiveContainer>
+                <LineChart data={chart24} margin={{ top: 8, right: 12, left: -10, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border) / 0.4)" />
+                  <XAxis dataKey="time" tick={AXIS_TICK} interval="preserveStartEnd" minTickGap={32} />
+                  <YAxis yAxisId="hum" tick={AXIS_TICK} width={36} unit="%" />
+                  <YAxis yAxisId="co2" orientation="right" tick={AXIS_TICK} width={42} unit=" ppm" />
+                  <Tooltip
+                    contentStyle={{
+                      background: "var(--background)",
+                      border: "1px solid color-mix(in oklab, var(--gold) 30%, transparent)",
+                      borderRadius: 8,
+                      fontSize: 12,
+                    }}
+                  />
+                  <Legend wrapperStyle={{ fontSize: 11 }} />
+                  {isHumOn("co2") && (
+                    <ReferenceLine yAxisId="co2" y={1000} stroke="#f87171" strokeDasharray="4 4" label={{ value: "Luft! 1000ppm", fontSize: 9, fill: "#f87171", position: "insideTopRight" }} />
+                  )}
+                  {isHumOn("hum") && <Line yAxisId="hum" type="monotone" dataKey="hum" name="Stua %" stroke="#22d3ee" strokeWidth={2} dot={false} connectNulls />}
+                  {isHumOn("co2") && <Line yAxisId="co2" type="monotone" dataKey="co2" name="CO₂ ppm" stroke="#a78bfa" strokeWidth={2} dot={false} connectNulls />}
+                  {(data.rooms ?? []).map((r, i) =>
+                    isHumOn(r.id) ? (
+                      <Line key={r.id} yAxisId="hum" type="monotone" dataKey={`h_${r.id}`} name={`${r.name} %`} stroke={roomColor(i)} strokeWidth={1.5} strokeDasharray="3 3" dot={false} connectNulls />
+                    ) : null,
+                  )}
+                </LineChart>
+              </ResponsiveContainer>
+            </ChartShell>
+          </div>
 
           {/* Ekstra bokser — døgnstatistikk */}
           {extra && (
