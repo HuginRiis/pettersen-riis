@@ -524,40 +524,38 @@ export function HeatersPanel({
           )}
 
           {state.status === "ok" && heaters.length > 0 && (
-            <div className="space-y-8">
-              {grouped.map(([zone, list]) => (
-                <div key={zone}>
-                  <div className="text-[10px] tracking-[0.3em] text-muted-foreground uppercase mb-3">
-                    {zone}
+            <div className={compact ? "grid grid-cols-2 gap-2 sm:gap-4" : "grid grid-cols-2 gap-4"}>
+              {grouped.flatMap(([zone, list]) =>
+                list.map((h) => (
+                  <div key={h.id} className="space-y-1.5">
+                    <div className="text-[10px] tracking-[0.3em] text-muted-foreground uppercase">
+                      {zone}
+                    </div>
+                    <HeaterCard
+                      heater={h}
+                      busy={busy}
+                      compact={compact}
+                      unit={unit}
+                      onSetTemp={(v) => sendCap(h.id, "target_temperature", v)}
+                      onToggle={(v) => sendCap(h.id, "onoff", v)}
+                      onSetMode={(v) => sendCap(h.id, "thermostat_mode", v)}
+                      onSetFan={(v) =>
+                        sendCap(
+                          h.id,
+                          h.fanCapabilityId ??
+                            (h.fanSpeedValues || h.fanSpeed !== undefined
+                              ? "fan_speed"
+                              : "fan_mode"),
+                          v,
+                        )
+                      }
+                      onSetSwing={(capId, v) => sendCap(h.id, capId, v)}
+                    />
                   </div>
-                  <div className={compact ? "grid grid-cols-2 gap-2 sm:gap-4" : "grid grid-cols-2 gap-4"}>
-                    {list.map((h) => (
-                      <HeaterCard
-                        key={h.id}
-                        heater={h}
-                        busy={busy}
-                        compact={compact}
-                        unit={unit}
-                        onSetTemp={(v) => sendCap(h.id, "target_temperature", v)}
-                        onToggle={(v) => sendCap(h.id, "onoff", v)}
-                        onSetMode={(v) => sendCap(h.id, "thermostat_mode", v)}
-                        onSetFan={(v) =>
-                          sendCap(
-                            h.id,
-                            h.fanCapabilityId ??
-                              (h.fanSpeedValues || h.fanSpeed !== undefined
-                                ? "fan_speed"
-                                : "fan_mode"),
-                            v,
-                          )
-                        }
-                        onSetSwing={(capId, v) => sendCap(h.id, capId, v)}
-
-                      />
-                    ))}
-                  </div>
-                </div>
-              ))}
+                )),
+              )}
+            </div>
+          )}
             </div>
           )}
         </>
