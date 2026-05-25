@@ -99,6 +99,7 @@ type DayPoint = {
 };
 type Snapshot = { inT: number | null; outT: number | null; hum: number | null; co2: number | null };
 type RoomSnapshot = { t: number | null; hum: number | null };
+export type RoomSeriesPoint = { t: number; temp: number | null; hum: number | null };
 export type RoomHistory = {
   id: string;
   name: string;
@@ -107,6 +108,7 @@ export type RoomHistory = {
   yesterdaySameTime: RoomSnapshot;
   lastWeekSameTime: RoomSnapshot;
   normal: RoomSnapshot;
+  series24h?: RoomSeriesPoint[];
 };
 
 export type ClimateHistoryResult =
@@ -503,6 +505,7 @@ export const getNetatmoClimateHistory = createServerFn({ method: "GET" })
               yesterdaySameTime: pickR(nowMs - 24 * 3600_000),
               lastWeekSameTime: lastWeekR,
               normal: normR,
+              series24h: pts.filter((p) => p.t >= cut24).map((p) => ({ t: p.t, temp: p.temp, hum: p.hum })),
             };
           });
 
