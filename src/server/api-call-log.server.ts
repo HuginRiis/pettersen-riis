@@ -184,6 +184,8 @@ export type ApiCallSummaryRow = {
   ondemand_24h: number;
   cron_24h: number;
   auth_24h: number;
+  live_24h: number;
+  cache_24h: number;
   avg_duration_ms_24h: number | null;
 };
 
