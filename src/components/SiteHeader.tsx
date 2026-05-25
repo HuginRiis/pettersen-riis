@@ -422,8 +422,10 @@ export function SiteHeader() {
                   {count > 0 && menuPrefs.sortByUsage && showB("usage_count") && <UsageBadge count={count} />}
                   {l.to === "/" && showB("uv_hjem") && <UvBadge lat={BORGEN_COORD.lat} lon={BORGEN_COORD.lon} />}
                   {l.to === "/" && showB("temp_tollnes") && <TempBadge stationMatch="tollnes" storageKey="hdr.temp.tollnes" />}
+                  {l.to === "/" && showB("temp_stua_tollnes") && <TempBadge stationMatch="tollnes" storageKey="hdr.temp.stua.tollnes" variant="indoor" />}
                   {l.to === "/hytta" && showB("uv_hytta") && <UvBadge lat={HYTTA_COORD.lat} lon={HYTTA_COORD.lon} />}
                   {l.to === "/hytta" && showB("temp_hytta") && <TempBadge stationMatch="hytta" storageKey="hdr.temp.hytta" />}
+                  {l.to === "/hytta" && showB("temp_stua_hytta") && <TempBadge stationMatch="hytta" storageKey="hdr.temp.stua.hytta" variant="indoor" />}
                   {l.to === "/pollen" && showB("pollen") && <PollenBadge lat={pollenCoord.lat} lon={pollenCoord.lon} />}
                   {l.to === "/push-varslinger" && showB("push_today") && <PushTodayBadge inline />}
                   {l.to === "/lys" && showB("lights_on") && <LightsOnBadge inline />}
