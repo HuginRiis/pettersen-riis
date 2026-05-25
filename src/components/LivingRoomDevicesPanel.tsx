@@ -458,6 +458,7 @@ function ThermostatBody({
   onSetTemp,
   onToggle,
   onSetMode,
+  onSetFan,
 }: {
   device: LivingRoomDevice;
   override?: Partial<LivingRoomDevice["capabilities"]>;
@@ -466,6 +467,7 @@ function ThermostatBody({
   onSetTemp: (v: number) => void;
   onToggle: (v: boolean) => void;
   onSetMode: (v: string) => void;
+  onSetFan: (v: string | number) => void;
 }) {
   const caps = { ...device.capabilities, ...(override ?? {}) };
   const min = device.capabilities.target_temperature_min ?? 16;
