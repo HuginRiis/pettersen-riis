@@ -505,6 +505,7 @@ export const getNetatmoClimateHistory = createServerFn({ method: "GET" })
               yesterdaySameTime: pickR(nowMs - 24 * 3600_000),
               lastWeekSameTime: lastWeekR,
               normal: normR,
+              series24h: pts.filter((p) => p.t >= cut24).map((p) => ({ t: p.t, temp: p.temp, hum: p.hum })),
             };
           });
 
