@@ -608,6 +608,18 @@ export function ApiCallLogPanel() {
                           >
                             auth {r.auth_24h}
                           </span>
+                          <span
+                            className="text-[9px] tracking-[0.15em] uppercase tabular-nums px-1.5 py-0.5 rounded-sm border border-emerald-500/40 text-emerald-400 bg-emerald-500/10"
+                            title="Faktiske utgående kall til ekstern API"
+                          >
+                            live {r.live_24h}
+                          </span>
+                          <span
+                            className="text-[9px] tracking-[0.15em] uppercase tabular-nums px-1.5 py-0.5 rounded-sm border border-sky-500/40 text-sky-400 bg-sky-500/10"
+                            title="Treff i lokal/server-cache (ingen ekstern spørring)"
+                          >
+                            cache {r.cache_24h}
+                          </span>
 
                           {r.errors_24h > 0 && (
                             <span className="text-destructive">

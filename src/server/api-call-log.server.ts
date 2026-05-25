@@ -184,6 +184,8 @@ export type ApiCallSummaryRow = {
   ondemand_24h: number;
   cron_24h: number;
   auth_24h: number;
+  live_24h: number;
+  cache_24h: number;
   avg_duration_ms_24h: number | null;
 };
 
@@ -278,6 +280,8 @@ export async function computeApiCallSummary(): Promise<ApiCallSummary> {
     ondemand_24h: number | null;
     cron_24h: number | null;
     auth_24h: number | null;
+    live_24h: number | null;
+    cache_24h: number | null;
     avg_duration_ms_24h: number | null;
     last_called_at: string | null;
     last_ok: boolean | null;
@@ -299,6 +303,8 @@ export async function computeApiCallSummary(): Promise<ApiCallSummary> {
     ondemand_24h: Number(r.ondemand_24h) || 0,
     cron_24h: Number(r.cron_24h) || 0,
     auth_24h: Number(r.auth_24h) || 0,
+    live_24h: Number(r.live_24h) || 0,
+    cache_24h: Number(r.cache_24h) || 0,
     avg_duration_ms_24h:
       r.avg_duration_ms_24h == null ? null : Number(r.avg_duration_ms_24h),
   }));
