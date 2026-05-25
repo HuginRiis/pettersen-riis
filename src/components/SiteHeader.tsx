@@ -803,8 +803,8 @@ function TempBadge({
   const dyDay = yesterday != null ? value - yesterday : null;
   let dayArrow: "up" | "down" | "flat" = "flat";
   if (dyDay != null) {
-    if (dyDay > 0.3) dayArrow = "up";
-    else if (dyDay < -0.3) dayArrow = "down";
+    if (dyDay > 0.1) dayArrow = "up";
+    else if (dyDay < -0.1) dayArrow = "down";
   }
   // Trend-pil per time: opp hvis >+0.15°/t, ned hvis <-0.15°/t
   let arrow: "up" | "down" | "flat" = "flat";
