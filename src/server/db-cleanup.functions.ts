@@ -189,6 +189,21 @@ export const runDbCleanup = createServerFn({ method: "POST" })
     const deletedPerTable: Record<string, number> = {};
     let total = 0;
 
+    // Bredt 30-dagers modus: kjør SQL-funksjonen som dekker alle tabeller.
+    if (data.mode === "full30") {
+      try {
+        const { data: res, error } = await sb.rpc("run_db_30day_cleanup");
+        if (error) throw new Error(error.message);
+        const rows = (res?.rows ?? []) as Array<{ table: string; deleted: number }>;
+        for (const r of rows) deletedPerTable[r.table] = Number(r.deleted ?? 0);
+        return { deletedPerTable, totalDeleted: Number(res?.total_deleted ?? 0) };
+      } catch (e: any) {
+        throw new Error("Full 30-dagers opprydning feilet: " + (e?.message ?? "ukjent"));
+      }
+    }
+
+
+
     for (const c of CANDIDATES) {
       try {
         let q = sb.from(c.table).delete({ count: "exact" });
