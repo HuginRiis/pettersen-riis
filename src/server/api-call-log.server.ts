@@ -358,13 +358,18 @@ export async function computeApiCallSummary(): Promise<ApiCallSummary> {
     if (!(src in nextRunBySource)) nextRunBySource[src] = null;
   }
 
-  // Hent time-for-time + sider per kilde (egen RPC).
+  // Hent time-for-time + sider per kilde + gårsdagens kall per time (egen RPC).
   let hourly: ApiCallSummary["hourly"] = [];
+  let yesterday: ApiCallSummary["yesterday"] = [];
   const pagesBySource: ApiCallSummary["pagesBySource"] = {};
   try {
     const { data: hd } = await (supabaseAdmin as any).rpc("get_api_call_hourly_24h");
     if (hd) {
       hourly = (hd.hourly ?? []) as ApiCallSummary["hourly"];
+      yesterday = ((hd.yesterday ?? []) as Array<{ hour: string; yest_total: number | string }>).map((y) => ({
+        hour: y.hour,
+        yest_total: Number(y.yest_total) || 0,
+      }));
       for (const p of (hd.pages ?? []) as Array<{
         source: string; page: string; total: number; last_at: string;
       }>) {
@@ -388,5 +393,7 @@ export async function computeApiCallSummary(): Promise<ApiCallSummary> {
     recent,
     hourly,
     pagesBySource,
+    yesterday,
   };
 }
+
