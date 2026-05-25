@@ -245,7 +245,10 @@ export type ApiCallSummary = {
   hourly: Array<{ hour: string; source: string; total: number; errors: number }>;
   /** Per kilde: hvilke sider som har trigget kallene siste 24t. */
   pagesBySource: Record<string, Array<{ page: string; total: number; last_at: string }>>;
+  /** Gårsdagens totale kall per time (samme time-buckets som `hourly`). */
+  yesterday: Array<{ hour: string; yest_total: number }>;
 };
+
 
 export async function computeApiCallSummary(): Promise<ApiCallSummary> {
   // Aggregert i DB for å unngå at høyt-trafikkerte kilder skyver de mindre
