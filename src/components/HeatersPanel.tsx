@@ -876,8 +876,9 @@ function HeaterCard({
         )}
 
         <ExtraSettings heaterId={heater.id} hasContent={(supportsMode && modes.length > 0) || (supportsFan && fanValues.length > 0) || heater.swings.length > 0}>
-
+        {supportsMode && modes.length > 0 && (
           <div className="w-full mt-1">
+
             <div className="flex items-center justify-between mb-1.5">
               <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground">
                 Modus
