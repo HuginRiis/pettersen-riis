@@ -221,6 +221,12 @@ export function ClimateAnalyticsPanel({
   const [data, setData] = useState<Ok | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [open, setOpen] = useState(true);
+  const [tempOff, setTempOff] = useState<Set<string>>(new Set());
+  const [humOff, setHumOff] = useState<Set<string>>(new Set());
+  const toggleTemp = (k: string) => setTempOff((s) => { const n = new Set(s); n.has(k) ? n.delete(k) : n.add(k); return n; });
+  const toggleHum = (k: string) => setHumOff((s) => { const n = new Set(s); n.has(k) ? n.delete(k) : n.add(k); return n; });
+  const isTempOn = (k: string) => !tempOff.has(k);
+  const isHumOn = (k: string) => !humOff.has(k);
   const inFlight = useRef(false);
 
   useEffect(() => {
