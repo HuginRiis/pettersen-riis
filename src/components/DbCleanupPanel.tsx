@@ -29,7 +29,7 @@ export function DbCleanupPanel() {
 
   useEffect(() => { load(); }, []);
 
-  const handleRun = async (mode: "unused" | "recommended" | "month30", label: string) => {
+  const handleRun = async (mode: "unused" | "recommended" | "month30" | "full30", label: string) => {
     const pwd = prompt(`Skriv inn passord for å slette ${label}:`);
     if (pwd === null) return;
     if (pwd !== "9272") {
