@@ -265,8 +265,10 @@ export async function computeApiCallSummary(): Promise<ApiCallSummary> {
       recent: [],
       hourly: [],
       pagesBySource: {},
+      yesterday: [],
     };
   }
+
 
   const rawRows = (data.rows ?? []) as Array<{
     source: string;
