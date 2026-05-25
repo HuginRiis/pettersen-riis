@@ -1053,6 +1053,9 @@ function HeaterCard({
             })}
           </div>
         )}
+        </ExtraSettings>
+
+
 
 
         {heater.onoff !== undefined && (
