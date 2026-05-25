@@ -2930,10 +2930,12 @@ export type Database = {
           schedule: string
         }[]
       }
+      get_db_30day_cleanup_estimate: { Args: never; Returns: Json }
       get_db_detail_stats: { Args: never; Returns: Json }
       get_db_usage_stats: { Args: never; Returns: Json }
       get_storage_usage_stats: { Args: never; Returns: Json }
       get_table_bytes: { Args: { _table: string }; Returns: number }
+      run_db_30day_cleanup: { Args: never; Returns: Json }
       set_cron_job_active: {
         Args: { _active: boolean; _jobname: string }
         Returns: boolean
