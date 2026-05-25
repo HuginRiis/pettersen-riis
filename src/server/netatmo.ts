@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { withApiLog } from "./api-call-log.server";
 import { loadStoredRefreshToken, saveStoredRefreshToken } from "./netatmo-token-store.server";
 
 const REFRESH_TOKEN_KEY = "netatmo_refresh_token";
@@ -156,14 +157,16 @@ async function getCameraSnapshot(match: string): Promise<NetatmoCameraResult> {
 
 export const getNetatmoCameraSnapshot = createServerFn({ method: "GET" })
   .inputValidator((data: { match?: string }) => data ?? {})
-  .handler(async ({ data }) => {
-    const match = (data?.match ?? "tollnes").toLowerCase().trim();
-    return await getCameraSnapshot(match);
-  });
+  .handler(
+    withApiLog("netatmo", "getNetatmoCameraSnapshot", async ({ data }: { data: { match?: string } }) => {
+      const match = (data?.match ?? "tollnes").toLowerCase().trim();
+      return await getCameraSnapshot(match);
+    }),
+  );
 
 // Bakoverkompatibel: Tollnes-spesifikk
 export const getNetatmoTollnesSnapshot = createServerFn({ method: "GET" }).handler(
-  async (): Promise<NetatmoCameraResult> => {
+  withApiLog("netatmo", "getNetatmoTollnesSnapshot", async (): Promise<NetatmoCameraResult> => {
     return await getCameraSnapshot("tollnes");
-  },
+  }),
 );
