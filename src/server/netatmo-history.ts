@@ -234,6 +234,10 @@ export const getNetatmoClimateHistory = createServerFn({ method: "GET" })
           const deviceId = device._id;
           const outdoor = (device.modules ?? []).find((m: any) => m.type === "NAModule1");
           const outdoorId: string | null = outdoor?._id ?? null;
+          const extraIndoors: Array<{ id: string; name: string }> = (device.modules ?? [])
+            .filter((m: any) => m.type === "NAModule4")
+            .map((m: any) => ({ id: m._id as string, name: (m.module_name ?? "Rom") as string }));
+
 
           const nowMs = Date.now();
           const begin24h = Math.floor((nowMs - 25 * 3600_000) / 1000);
