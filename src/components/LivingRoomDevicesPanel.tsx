@@ -451,7 +451,16 @@ function ThermostatBody({
   const caps = { ...device.capabilities, ...(override ?? {}) };
   const min = device.capabilities.target_temperature_min ?? 16;
   const max = device.capabilities.target_temperature_max ?? 30;
-  const step = device.capabilities.target_temperature_step ?? 0.5;
+  const baseStep = device.capabilities.target_temperature_step ?? 0.5;
+  const stepKey = `steintavle.heatpump.step.${device.id}`;
+  const [userStep, setUserStep] = useState<0.5 | 1>(() => {
+    if (typeof window === "undefined") return 0.5;
+    return window.localStorage.getItem(stepKey) === "1" ? 1 : 0.5;
+  });
+  useEffect(() => {
+    if (typeof window !== "undefined") window.localStorage.setItem(stepKey, String(userStep));
+  }, [userStep, stepKey]);
+  const step = Math.max(baseStep, userStep);
   const tempBusy = busy[`${device.id}:target_temperature`];
   const onoffBusy = busy[`${device.id}:onoff`];
   const modeBusy = busy[`${device.id}:thermostat_mode`];
