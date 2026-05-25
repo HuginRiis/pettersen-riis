@@ -498,6 +498,37 @@ export function ApiCallLogPanel() {
                     {hasErrors && (
                       <span className="text-destructive">⚠ {errors24} feil</span>
                     )}
+                    <span className="basis-full h-0" />
+                    <span
+                      className="text-[9px] tracking-[0.15em] uppercase tabular-nums px-1.5 py-0.5 rounded-sm border border-primary/30 text-primary bg-primary/5"
+                      title="On-demand: trigget av sidevisning"
+                    >
+                      side {ondemand24}
+                    </span>
+                    <span
+                      className="text-[9px] tracking-[0.15em] uppercase tabular-nums px-1.5 py-0.5 rounded-sm border border-border text-muted-foreground bg-muted/20"
+                      title="Cron / server / webhook"
+                    >
+                      cron {cron24}
+                    </span>
+                    <span
+                      className="text-[9px] tracking-[0.15em] uppercase tabular-nums px-1.5 py-0.5 rounded-sm border border-amber-500/40 text-amber-400 bg-amber-500/10"
+                      title="Auth / token / login (brukernavn + passord)"
+                    >
+                      auth {auth24}
+                    </span>
+                    <span
+                      className="text-[9px] tracking-[0.15em] uppercase tabular-nums px-1.5 py-0.5 rounded-sm border border-emerald-500/40 text-emerald-400 bg-emerald-500/10"
+                      title="Faktiske utgående kall til ekstern API"
+                    >
+                      live {live24}
+                    </span>
+                    <span
+                      className="text-[9px] tracking-[0.15em] uppercase tabular-nums px-1.5 py-0.5 rounded-sm border border-sky-500/40 text-sky-400 bg-sky-500/10"
+                      title="Treff i lokal/server-cache (ingen ekstern spørring)"
+                    >
+                      cache {cache24}
+                    </span>
                   </div>
                 </div>
 
