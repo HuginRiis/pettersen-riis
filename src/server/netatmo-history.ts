@@ -420,9 +420,11 @@ export const getNetatmoClimateHistory = createServerFn({ method: "GET" })
             trends,
           };
           cache.set(key, { at: Date.now(), data: out });
+          // Skriv til DB-cache slik at vi har fallback hvis Netatmo-API svikter neste gang.
+          await saveDbSnapshot(key, out);
           return out;
         } catch (e: any) {
-          return { ok: false, error: e?.message ?? "Ukjent feil" };
+          return await fallbackToDb(e?.message ?? "Ukjent feil");
         }
       },
     ),
