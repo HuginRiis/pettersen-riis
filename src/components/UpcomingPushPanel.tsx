@@ -65,13 +65,38 @@ function recipientsLabel(arr: string[] | string | null | undefined): string {
   return arr.join(", ");
 }
 
+const LS_BADGES = "upcomingPush.showBadges";
+const LS_ONLY_TODAY = "upcomingPush.onlyToday";
+
+function readBool(key: string, def: boolean): boolean {
+  if (typeof window === "undefined") return def;
+  const v = window.localStorage.getItem(key);
+  return v == null ? def : v === "1";
+}
+
+function osloDateKey(d: Date): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Oslo", year: "numeric", month: "2-digit", day: "2-digit",
+  }).format(d);
+}
+
 export function UpcomingPushPanel() {
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showBadges, setShowBadges] = useState<boolean>(() => readBool(LS_BADGES, true));
+  const [onlyToday, setOnlyToday] = useState<boolean>(() => readBool(LS_ONLY_TODAY, false));
+
+  useEffect(() => {
+    if (typeof window !== "undefined") window.localStorage.setItem(LS_BADGES, showBadges ? "1" : "0");
+  }, [showBadges]);
+  useEffect(() => {
+    if (typeof window !== "undefined") window.localStorage.setItem(LS_ONLY_TODAY, onlyToday ? "1" : "0");
+  }, [onlyToday]);
 
   useEffect(() => {
     void load();
   }, []);
+
 
   async function load() {
     setLoading(true);
