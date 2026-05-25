@@ -23,6 +23,7 @@ import { AppearanceSettingsPanel } from "@/components/AppearanceSettingsPanel";
 import { ChartAppearanceSettingsPanel } from "@/components/ChartAppearanceSettingsPanel";
 import { OkonomiSettingsPanel } from "@/components/OkonomiSettingsPanel";
 import { HomeySensorSettings } from "@/components/HomeySensorSettings";
+import { ClimateNotificationSettings } from "@/components/ClimateNotificationSettings";
 import {
   Bell, BellOff, Calendar, Cake, Trash2, CloudSun, Lightbulb, ScrollText, ShieldCheck, Lock, ExternalLink, Smartphone, X, Activity,
 } from "lucide-react";
@@ -72,6 +73,7 @@ const TOC_ITEMS: { id: string; label: string; emoji: string }[] = [
   { id: "sec-scheduling", label: "Push-tidsplan", emoji: "⏰" },
   { id: "sec-tibber", label: "Tibber-cron", emoji: "⚡" },
   { id: "sec-farevarsel", label: "Farevarsel", emoji: "⚠️" },
+  { id: "sec-klima", label: "Klima — for varmt/kaldt", emoji: "🌡️" },
   { id: "sec-uv", label: "UV / Solkrem", emoji: "🧴" },
   { id: "sec-vaer", label: "Vær push", emoji: "🪶" },
   { id: "sec-lys", label: "Lys på", emoji: "💡" },
@@ -168,6 +170,7 @@ function PushSettingsPage() {
       <SettingsBox id="sec-tibber" title="⚡ Tibber-cron"><TibberCronStatusPanel /></SettingsBox>
       <SettingsBox id="sec-okonomi" title="🪙 Husholdningens hvelv"><OkonomiSettingsPanel /></SettingsBox>
       <SettingsBox id="sec-farevarsel" title="⚠️ Vær farevarsel — av/på" accent="border-orange-500/40"><MetAlertNotificationSettings /></SettingsBox>
+      <SettingsBox id="sec-klima" title="🌡️ Klima — for varmt / for kaldt (Borgen & Hytta)"><ClimateNotificationSettings /></SettingsBox>
       <SettingsBox id="sec-uv" title="🧴 Solkrem-varsler — UV"><UvNotificationSettings /></SettingsBox>
       <SettingsBox id="sec-vaer" title="🪶 Værvaktens Ravner — Push-varsler"><WeatherNotificationSettings /></SettingsBox>
       <SettingsBox id="sec-lys" title="💡 Lys på uten bevegelse"><LightIdleNotificationSettings /></SettingsBox>
