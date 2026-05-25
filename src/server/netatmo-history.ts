@@ -98,6 +98,16 @@ type DayPoint = {
   outAvg: number | null;
 };
 type Snapshot = { inT: number | null; outT: number | null; hum: number | null; co2: number | null };
+type RoomSnapshot = { t: number | null; hum: number | null };
+export type RoomHistory = {
+  id: string;
+  name: string;
+  current: RoomSnapshot;
+  oneHourAgo: RoomSnapshot;
+  yesterdaySameTime: RoomSnapshot;
+  lastWeekSameTime: RoomSnapshot;
+  normal: RoomSnapshot;
+};
 
 export type ClimateHistoryResult =
   | { ok: false; error: string }
@@ -124,7 +134,9 @@ export type ClimateHistoryResult =
         outDeltaPerHour: number | null;
         inDeltaPerHour: number | null;
       };
+      rooms?: RoomHistory[];
     };
+
 
 const CACHE_TTL_MS = 10 * 60_000;
 const cache = new Map<string, { at: number; data: ClimateHistoryResult }>();
