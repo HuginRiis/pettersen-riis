@@ -622,11 +622,9 @@ function VarmePage() {
             Varslinger om temperatur
           </span>
         </div>
-        <p className="text-sm text-muted-foreground mb-4">
-          Velg når ravnen skal varsle deg om at det blir for varmt eller for kaldt
-          i stua og soverommet (10°–30°).
+        <p className="text-sm text-muted-foreground">
+          Klima-varslinger administreres nå på <a href="/push-varslinger#sec-klima" className="text-primary hover:underline">Innstillinger-siden</a> under «🌡️ Klima — for varmt / for kaldt».
         </p>
-        <ClimateNotificationSettings />
       </section>
     </PageShell>
   );
