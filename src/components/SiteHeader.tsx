@@ -737,12 +737,24 @@ function TempBadge({
   const badgeSettings = useHeaderBadgeSettings();
   const showHourArrow = badgeSettings.badges["temp_arrow_hour"]?.enabled !== false;
   const showYesterdayArrow = badgeSettings.badges["temp_arrow_yesterday"]?.enabled !== false;
+  const trendCacheKey = `hdr.trendcache:${stationMatch}:${variant}`;
+  type TrendCache = { trend: number | null; yesterday: number | null; at: number };
+  const readTrendCache = (): TrendCache | null => {
+    if (typeof window === "undefined") return null;
+    try {
+      const raw = window.localStorage.getItem(trendCacheKey);
+      if (!raw) return null;
+      return JSON.parse(raw) as TrendCache;
+    } catch { return null; }
+  };
   const [live, setLive] = useState<number | null>(null);
-  const [trend, setTrend] = useState<number | null>(null);
-  const [yesterday, setYesterday] = useState<number | null>(null);
+  const initialTrend = readTrendCache();
+  const [trend, setTrend] = useState<number | null>(initialTrend?.trend ?? null);
+  const [yesterday, setYesterday] = useState<number | null>(initialTrend?.yesterday ?? null);
   useEffect(() => {
     let cancelled = false;
-    const load = () => {
+    const TTL = 10 * 60_000;
+    const load = (force = false) => {
       if (typeof document !== "undefined" && document.hidden) return;
       fetchData({ data: { stationMatch } })
         .then((r) => {
@@ -752,23 +764,38 @@ function TempBadge({
           if (typeof t === "number" && Number.isFinite(t)) setLive(t);
         })
         .catch(() => {});
+      const cached = readTrendCache();
+      if (!force && cached && Date.now() - cached.at < TTL) return;
       fetchTrend({ data: { stationMatch } })
         .then((r) => {
           if (cancelled || !r.ok) return;
           const d = variant === "indoor" ? r.inDeltaPerHour : r.outDeltaPerHour;
-          if (typeof d === "number" && Number.isFinite(d)) setTrend(d);
           const y = variant === "indoor" ? r.yesterdayInT : r.yesterdayOutT;
-          if (typeof y === "number" && Number.isFinite(y)) setYesterday(y);
+          const nextTrend = typeof d === "number" && Number.isFinite(d) ? d : null;
+          const nextY = typeof y === "number" && Number.isFinite(y) ? y : null;
+          if (nextTrend != null) setTrend(nextTrend);
+          if (nextY != null) setYesterday(nextY);
+          if (typeof window !== "undefined" && (nextTrend != null || nextY != null)) {
+            try {
+              const prev = readTrendCache();
+              const payload: TrendCache = {
+                trend: nextTrend ?? prev?.trend ?? null,
+                yesterday: nextY ?? prev?.yesterday ?? null,
+                at: Date.now(),
+              };
+              window.localStorage.setItem(trendCacheKey, JSON.stringify(payload));
+            } catch {}
+          }
         })
         .catch(() => {});
     };
     load();
-    const id = setInterval(load, 5 * 60_000);
+    const id = setInterval(() => load(true), 10 * 60_000);
     return () => {
       cancelled = true;
       clearInterval(id);
     };
-  }, [stationMatch, variant, fetchData, fetchTrend]);
+  }, [stationMatch, variant, fetchData, fetchTrend, trendCacheKey]);
   const { value } = useLastGood(storageKey, live);
   if (value == null) return null;
   const color = tempColor(value);
