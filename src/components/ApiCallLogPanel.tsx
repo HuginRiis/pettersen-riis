@@ -385,8 +385,7 @@ export function ApiCallLogPanel() {
           );
         })()}
 
-          </p>
-        </div>
+
 
 
         <div className="space-y-2">
