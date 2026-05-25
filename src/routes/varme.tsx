@@ -312,7 +312,7 @@ function TableOfContents() {
         <div className="text-[10px] tracking-[0.3em] uppercase text-muted-foreground mb-3">
           Innholdsfortegnelse
         </div>
-        <ul className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        <ul className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
           {TOC.map((t) => (
             <li key={t.id}>
               <a
