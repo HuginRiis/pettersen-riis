@@ -1086,3 +1086,41 @@ function HeaterCard({
 function isQlimaName(name: string): boolean {
   return name.toLowerCase().includes("qlima");
 }
+
+function ExtraSettings({
+  heaterId,
+  hasContent,
+  children,
+}: {
+  heaterId: string;
+  hasContent: boolean;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = usePerUserPersistedState<boolean>(
+    `hpr.extraOpen:${heaterId}`,
+    false,
+  );
+  if (!hasContent) return null;
+  return (
+    <div className="w-full mt-2">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        className="w-full flex items-center justify-between gap-2 px-2 py-1.5 rounded text-[9px] tracking-[0.3em] uppercase text-muted-foreground hover:text-primary transition-colors"
+        style={{
+          background: "color-mix(in oklab, var(--foreground) 4%, transparent)",
+          border: `1px solid color-mix(in oklab, var(--gold) 18%, transparent)`,
+        }}
+      >
+        <span>Ekstra innstillinger</span>
+        <ChevronDown
+          size={12}
+          className={`transition-transform ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+      {open && <div className="mt-2 space-y-2 w-full">{children}</div>}
+    </div>
+  );
+}
+
