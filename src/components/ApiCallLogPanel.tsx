@@ -8,8 +8,9 @@ import {
 import { purgeApiCallLog } from "@/server/api-call-log-purge.functions";
 import {
   ResponsiveContainer,
-  BarChart,
+  ComposedChart,
   Bar,
+  Line,
   XAxis,
   YAxis,
   Tooltip,
@@ -17,6 +18,7 @@ import {
   CartesianGrid,
 } from "recharts";
 import { useChartAppearance } from "@/hooks/use-chart-appearance";
+
 
 function triggerExplanation(
   trigger: string | undefined,
