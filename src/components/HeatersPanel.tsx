@@ -367,8 +367,10 @@ export function HeatersPanel({
             ? "target"
             : capability === "thermostat_mode"
               ? "thermostatMode"
-              : /^fan[_-]?(speed|mode|level|rate|power)/i.test(capability) ||
-                  capability === "qlima_fan_speed"
+              : /fan/i.test(capability) &&
+                  !/swing|vane|louver|oscill|airdir|air_dir|fan_dir|flap|wind_dir|updown|up_?down|leftright|left_?right|direction/i.test(
+                    capability,
+                  )
                 ? "fanSpeed"
                 : null;
 
