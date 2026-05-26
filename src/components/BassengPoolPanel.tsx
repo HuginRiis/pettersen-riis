@@ -4,7 +4,7 @@ type Verdict = "kald" | "frisk" | "perfekt" | "varm";
 
 function classify(t: number | null): { verdict: Verdict | "ukjent"; tone: string; ring: string; banner: string; sigil: string } {
   if (t === null) return { verdict: "ukjent", tone: "text-muted-foreground", ring: "from-muted/20 ring-border", banner: "Termometeret tier i dypet", sigil: "○" };
-  if (t < 20) return { verdict: "kald", tone: "text-rose-400", ring: "from-rose-500/25 ring-rose-400/40", banner: "Iskaldt som Veggen — kun for de modige", sigil: "❄" };
+  if (t < 20) return { verdict: "kald", tone: "text-sky-300", ring: "from-sky-500/25 ring-sky-400/40", banner: "Iskaldt som Veggen — kun for de modige", sigil: "❄" };
   if (t < 25) return { verdict: "frisk", tone: "text-amber-300", ring: "from-amber-500/25 ring-amber-400/40", banner: "Friskt, men ikke uten gys", sigil: "◐" };
   if (t <= 35) return { verdict: "perfekt", tone: "text-emerald-400", ring: "from-emerald-500/25 ring-emerald-400/40", banner: "Vannet hilser deg velkommen, min herre", sigil: "✦" };
   return { verdict: "varm", tone: "text-orange-400", ring: "from-orange-500/25 ring-orange-400/40", banner: "Som drage-bad — pass på huden", sigil: "♨" };
@@ -73,8 +73,8 @@ export function BassengPoolPanel({
             style={{
               width: "100%",
               background:
-                "linear-gradient(to right, hsl(0 75% 55%) 0%, hsl(0 75% 55%) 33%, hsl(45 90% 55%) 33%, hsl(45 90% 55%) 50%, hsl(150 65% 45%) 50%, hsl(150 65% 45%) 100%)",
-              opacity: 0.25,
+                "linear-gradient(to right, hsl(200 85% 65%) 0%, hsl(200 85% 65%) 33%, hsl(45 90% 55%) 33%, hsl(45 90% 55%) 50%, hsl(150 65% 45%) 50%, hsl(150 65% 45%) 100%)",
+              opacity: 0.28,
             }}
           />
           {temperature !== null && (
@@ -87,7 +87,7 @@ export function BassengPoolPanel({
         </div>
         <div className="flex justify-between text-[9px] sm:text-[10px] tracking-[0.2em] uppercase text-muted-foreground mt-2 tabular-nums">
           <span>{MIN}°</span>
-          <span className="text-rose-400/80">&lt; 20° Iskaldt</span>
+          <span className="text-sky-300/80">&lt; 20° Iskaldt</span>
           <span className="text-amber-300/80">20–25° Friskt</span>
           <span className="text-emerald-400/80">25–35° Perfekt</span>
           <span>{MAX}°</span>
