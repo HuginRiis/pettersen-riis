@@ -151,7 +151,7 @@ export async function processBassengNotifications(force = false): Promise<{
 }> {
   const { data, error } = await supabaseAdmin.from("basseng_notification_prefs" as any).select("*");
   if (error) throw error;
-  const prefs = (data ?? []) as Pref[];
+  const prefs = ((data ?? []) as unknown) as Pref[];
   const details: any[] = [];
   let triggered = 0;
   let sent = 0;
@@ -250,7 +250,7 @@ export async function sendBassengTestPush(prefId: string): Promise<{
     .maybeSingle();
   if (error) throw error;
   if (!data) throw new Error("Fant ikke basseng-preferansen");
-  const pref = data as Pref;
+  const pref = (data as unknown) as Pref;
   const { temp } = await readBassengTemp(pref.device_match);
   const title = `🏊 Test: ${pref.label}`;
   const body =
