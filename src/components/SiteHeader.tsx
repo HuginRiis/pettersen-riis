@@ -475,6 +475,19 @@ export function SiteHeader() {
         </nav>
 
         <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => setUpdatesPaused(!updatesPaused)}
+            aria-label={updatesPaused ? "Start oppdateringer" : "Pause oppdateringer"}
+            title={updatesPaused ? "Oppdateringer pauset — trykk for å starte" : "Pause alle auto-oppdateringer"}
+            className={`p-2 rounded-md transition ${
+              updatesPaused
+                ? "text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 shadow-[0_0_10px_hsl(45_100%_50%/0.4)]"
+                : "text-muted-foreground hover:text-primary hover:bg-primary/10"
+            }`}
+          >
+            {updatesPaused ? <Play size={18} /> : <Pause size={18} />}
+          </button>
           {open && isAuthed && (
             <Link
               to="/push-varslinger"
