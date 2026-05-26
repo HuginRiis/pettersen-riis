@@ -150,6 +150,7 @@ const navLinks: NavLink[] = [
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
+  const [updatesPaused, setUpdatesPaused] = useUpdatesPaused();
   const mobileMenuRef = useRef<HTMLElement | null>(null);
 
 
