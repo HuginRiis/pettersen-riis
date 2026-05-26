@@ -75,6 +75,7 @@ const TOC_ITEMS: { id: string; label: string; emoji: string }[] = [
   { id: "sec-tibber", label: "Tibber-cron", emoji: "⚡" },
   { id: "sec-farevarsel", label: "Farevarsel", emoji: "⚠️" },
   { id: "sec-klima", label: "Klima — for varmt/kaldt", emoji: "🌡️" },
+  { id: "sec-basseng", label: "Basseng — temp-endring", emoji: "🏊" },
   { id: "sec-uv", label: "UV / Solkrem", emoji: "🧴" },
   { id: "sec-vaer", label: "Vær push", emoji: "🪶" },
   { id: "sec-lys", label: "Lys på", emoji: "💡" },
