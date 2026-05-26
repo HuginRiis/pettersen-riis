@@ -1254,3 +1254,79 @@ export function OkonomiIgjenPrDagBadge({ inline }: { inline?: boolean } = {}) {
   return <KpiPill inline={inline} icon="📅" value={fmtKpi(k.igjenPrDag)} tone={tone}
     title={`Igjen pr dag (${k.daysUntilEnd} d til periodeslutt): ${Math.round(k.igjenPrDag).toLocaleString("nb-NO")} kr`} />;
 }
+
+/** Basseng temperatur med pil for trend siste time. */
+export function BassengTempBadge({ inline }: { inline?: boolean } = {}) {
+  const result = useBadgeCache<{ temp: number; arrow: "up" | "down" | "flat" | null }>(
+    "basseng-temp-trend",
+    async () => {
+      const snap = await getHomeySnapshot();
+      if (!snap.ok) return null;
+      const zoneById = new Map((snap.zones ?? []).map((z: any) => [z.id, z]));
+      const dev = snap.devices.find((d: any) => {
+        const zn = d.zone ? (zoneById.get(d.zone) as any)?.name ?? "" : "";
+        const c = `${d.name} ${zn}`.toLowerCase();
+        return (
+          (c.includes("basseng") || c.includes("pool")) &&
+          !c.includes("hytt") &&
+          typeof d.capabilities["measure_temperature"]?.value === "number"
+        );
+      });
+      if (!dev) return null;
+      const temp = dev.capabilities["measure_temperature"].value as number;
+
+      const key = "hdr.basseng.history";
+      let hist: { t: number; v: number }[] = [];
+      try { hist = JSON.parse(localStorage.getItem(key) ?? "[]"); } catch {}
+      const now = Date.now();
+      hist = hist.filter((h) => now - h.t < 3 * 3600_000);
+      const last = hist[hist.length - 1];
+      if (!last || now - last.t > 5 * 60_000) {
+        hist.push({ t: now, v: temp });
+        try { localStorage.setItem(key, JSON.stringify(hist)); } catch {}
+      }
+      const refTarget = now - 60 * 60_000;
+      const ref = hist.reduce<{ t: number; v: number } | null>((best, h) => {
+        if (now - h.t < 30 * 60_000) return best;
+        if (!best) return h;
+        return Math.abs(h.t - refTarget) < Math.abs(best.t - refTarget) ? h : best;
+      }, null);
+      let arrow: "up" | "down" | "flat" | null = null;
+      if (ref) {
+        const diff = temp - ref.v;
+        if (diff > 0.1) arrow = "up";
+        else if (diff < -0.1) arrow = "down";
+        else arrow = "flat";
+      }
+      return { temp, arrow };
+    },
+    { ttlMs: 10 * 60_000 },
+  );
+  if (!result) return null;
+  const tempTxt = `${result.temp.toFixed(1)}°`;
+  const arrowChar = result.arrow === "up" ? "▲" : result.arrow === "down" ? "▼" : "";
+  const arrowColor =
+    result.arrow === "up" ? "text-orange-300"
+    : result.arrow === "down" ? "text-sky-300"
+    : "text-muted-foreground";
+  const dirLabel = result.arrow === "up" ? "opp" : result.arrow === "down" ? "ned" : result.arrow === "flat" ? "stabil" : "ingen historikk";
+  const title = `Basseng: ${tempTxt} (${dirLabel} siste time)`;
+  if (inline) {
+    return (
+      <span
+        title={title}
+        className="ml-1 h-[18px] px-1.5 rounded-full bg-cyan-500/20 text-cyan-200 text-[10px] font-semibold inline-flex items-center gap-0.5 border border-cyan-500/40"
+      >
+        🏊{tempTxt}{arrowChar && <span className={arrowColor}>{arrowChar}</span>}
+      </span>
+    );
+  }
+  return (
+    <span
+      title={title}
+      className="absolute top-2 right-2 z-10 h-[22px] px-2 rounded-full bg-cyan-500/30 text-cyan-100 text-[11px] font-semibold flex items-center gap-0.5 border border-cyan-500/50 backdrop-blur shadow"
+    >
+      🏊{tempTxt}{arrowChar && <span className={arrowColor}>{arrowChar}</span>}
+    </span>
+  );
+}
