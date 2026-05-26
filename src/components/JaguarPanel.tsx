@@ -139,6 +139,61 @@ function ConnectPanel({ auth, onChanged }: { auth: AuthStatus; onChanged: () => 
   );
 }
 
+function ProbePanel() {
+  const probe = useServerFn(probeJaguarPortalFn);
+  const [busy, setBusy] = useState(false);
+  const [result, setResult] = useState<Awaited<ReturnType<typeof probeJaguarPortalFn>> | null>(null);
+
+  const run = async () => {
+    setBusy(true);
+    try {
+      setResult(await probe());
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="rounded-lg border border-dashed border-border bg-card/20 p-3 space-y-2">
+      <div className="flex items-center gap-2">
+        <span className="text-xs font-semibold text-foreground flex-1">
+          Cookie-probe (incontrol.jaguar.com)
+        </span>
+        <button
+          onClick={run}
+          disabled={busy}
+          className="text-[11px] inline-flex items-center gap-1 px-2 py-1 rounded border border-border hover:border-primary/60 disabled:opacity-50"
+        >
+          {busy ? <Loader2 size={11} className="animate-spin" /> : <RefreshCw size={11} />}
+          Test cookie
+        </button>
+      </div>
+      {result && !result.cookieConfigured && (
+        <div className="text-[11px] text-destructive">JAGUAR_INCONTROL_COOKIE mangler.</div>
+      )}
+      {result && result.cookieConfigured && (
+        <div className="space-y-2">
+          {result.results.map((r) => (
+            <details key={r.url} className="text-[11px] rounded border border-border bg-card/30 px-2 py-1">
+              <summary className="cursor-pointer flex items-center gap-2">
+                <span className={r.ok ? "text-emerald-500" : r.looksLikeLogin ? "text-amber-500" : "text-destructive"}>
+                  {r.status || "ERR"}
+                </span>
+                <span className="font-mono break-all flex-1">{r.url.replace(/^https?:\/\/[^/]+/, "")}</span>
+                {r.looksLikeLogin && <span className="text-amber-500">login</span>}
+                {r.contentType && <span className="text-muted-foreground">{r.contentType.split(";")[0]}</span>}
+              </summary>
+              <pre className="mt-1 max-h-60 overflow-auto text-[10px] whitespace-pre-wrap break-words text-muted-foreground">
+                {r.json ? JSON.stringify(r.json, null, 2) : r.bodyPreview}
+              </pre>
+            </details>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function JaguarPanel() {
   const fetchSnap = useServerFn(getJaguarSnapshot);
   const fetchHist = useServerFn(getJaguarHistory);
