@@ -326,7 +326,7 @@ function SteintavlePage() {
       clearTimeout(t2);
       clearTimeout(t3);
     };
-  }, [tempMissing, fetchNetatmo]);
+  }, [tempMissing, fetchNetatmo, paused]);
 
   // ---- Varsler ----
   const thunderAlerts =
