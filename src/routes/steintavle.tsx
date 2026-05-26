@@ -1,9 +1,9 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Lightbulb, LightbulbOff, Loader2, Pause, Play } from "lucide-react";
+import { Lightbulb, LightbulbOff, Loader2 } from "lucide-react";
 import { PageShell } from "@/components/PageShell";
-import { usePersistedState } from "@/hooks/use-persisted-state";
+import { useUpdatesPaused } from "@/hooks/use-updates-paused";
 import { TollnesCameraStrip } from "@/components/TollnesCameraStrip";
 import {
   HeatPumpTile,
