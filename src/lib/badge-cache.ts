@@ -12,11 +12,12 @@
 
 import { useEffect, useState } from "react";
 
-type Entry<T> = { at: number; data: T };
+type Entry<T> = { at: number; prevAt: number | null; data: T };
 
 const cache = new Map<string, Entry<any>>();
 const inflight = new Map<string, Promise<any>>();
 const listeners = new Map<string, Set<(v: any) => void>>();
+const metaListeners = new Set<() => void>();
 
 const DEFAULT_TTL = 10 * 60_000; // 10 min
 
@@ -28,14 +29,32 @@ export function getBadgeCache<T = unknown>(key: string, ttlMs = DEFAULT_TTL): T 
 }
 
 export function setBadgeCache<T>(key: string, data: T) {
-  cache.set(key, { at: Date.now(), data });
+  const prev = cache.get(key);
+  cache.set(key, { at: Date.now(), prevAt: prev ? prev.at : null, data });
   const ls = listeners.get(key);
   if (ls) for (const l of ls) l(data);
+  for (const l of metaListeners) l();
 }
 
 export function invalidateBadgeCache(key?: string) {
   if (key) cache.delete(key);
   else cache.clear();
+  for (const l of metaListeners) l();
+}
+
+export function getBadgeMeta(key: string): { at: number; prevAt: number | null } | null {
+  const e = cache.get(key);
+  if (!e) return null;
+  return { at: e.at, prevAt: e.prevAt };
+}
+
+export function listBadgeKeys(): string[] {
+  return Array.from(cache.keys()).sort();
+}
+
+export function subscribeBadgeMeta(cb: () => void): () => void {
+  metaListeners.add(cb);
+  return () => { metaListeners.delete(cb); };
 }
 
 export function subscribeBadge<T = unknown>(key: string, cb: (v: T | null) => void): () => void {
@@ -49,6 +68,7 @@ export function subscribeBadge<T = unknown>(key: string, cb: (v: T | null) => vo
     ls!.delete(cb as (v: any) => void);
   };
 }
+
 
 /**
  * Hook for badges. Returnerer cached verdi umiddelbart (null hvis tom/utgått).
