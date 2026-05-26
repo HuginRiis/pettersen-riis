@@ -166,6 +166,7 @@ function SteintavlePage() {
   useEffect(() => {
     let cancelled = false;
     setNow(new Date());
+    if (paused) return;
 
     const isHidden = () => typeof document !== "undefined" && document.hidden;
 
