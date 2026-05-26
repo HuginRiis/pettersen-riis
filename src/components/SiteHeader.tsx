@@ -578,7 +578,7 @@ export function SiteHeader() {
                     {l.to === "/lys" && showB("lights_on") && <LightsOnBadge inline />}
                     {l.to === "/var" && showB("weather_days") && <WeatherDaysBadge inline useGps lat={BORGEN_COORD.lat} lon={BORGEN_COORD.lon} startOffset={badgeSettings.weather.startOffset} days={badgeSettings.weather.days} showTemp={badgeSettings.weather.showTemp} />}
                     {l.to === "/var" && showB("weather_temp") && <CurrentTempBadge inline lat={BORGEN_COORD.lat} lon={BORGEN_COORD.lon} />}
-                    {l.to === "/smarthus" && showB("mower_status") && <MowerStatusBadge inline />}
+                    {l.to === "/smarthus" && <>{showB("mower_status") && <MowerStatusBadge inline />}{showB("basseng_temp") && <BassengTempBadge inline />}</>}
                     {l.to === "/gressklipper" && <>{showB("gardena_status") && <GardenaStatusBadge inline />}{showB("gardena_battery") && <GardenaBatteryBadge inline />}{showB("gardena_signal") && <GardenaSignalBadge inline />}</>}
                     {l.to === "/stovsugeren" && <>{showB("roborock_hjemme_status") && <RoborockStatusBadge inline match="hjem" name="Hjemme" />}{showB("roborock_hytta_status") && <RoborockStatusBadge inline match="hytt" name="Hytta" />}</>}
                     {l.to === "/vakttarnet" && <>{showB("alarm_state") && <AlarmStateBadge inline />}{showB("utgangsdoren_lock") && <UtgangsdorenLockBadge inline />}</>}
