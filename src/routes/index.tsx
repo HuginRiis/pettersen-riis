@@ -664,6 +664,7 @@ function HallCard({
     | "/varme"
     | "/gressklipper"
     | "/stovsugeren"
+    | "/jaguar"
     | "/skatte-utregningen"
     | "/steintavle"
     | "/steintavle-2"
