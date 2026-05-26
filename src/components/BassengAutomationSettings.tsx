@@ -278,21 +278,32 @@ export function BassengAutomationSettings() {
             <SelectContent>{switches.map(deviceOption)}</SelectContent>
           </Select>
         </label>
-        <label className="space-y-1.5">
-          <span className="text-xs flex items-center gap-1.5"><Plug size={12} className="text-amber-300" /> Watt-sensor (sjekk før av)</span>
-          <Select value={config.wattSensorId ?? ""} disabled={!config.enabled} onValueChange={(v) => void save({ wattSensorId: v })}>
+        <div className="space-y-1.5">
+          <label className="inline-flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={config.wattCheckEnabled}
+              disabled={!config.enabled}
+              onChange={(e) => void save({ wattCheckEnabled: e.target.checked })}
+              className="accent-[var(--gold)]"
+            />
+            <span className="text-xs flex items-center gap-1.5">
+              <Plug size={12} className="text-amber-300" /> Sjekk watt før av
+            </span>
+          </label>
+          <Select value={config.wattSensorId ?? ""} disabled={!config.enabled || !config.wattCheckEnabled} onValueChange={(v) => void save({ wattSensorId: v })}>
             <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Samme som bryter…" /></SelectTrigger>
             <SelectContent>{wattSensors.map(deviceOption)}</SelectContent>
           </Select>
-        </label>
+        </div>
         <label className="space-y-1.5 sm:col-span-2">
           <span className="text-xs">Skru bare av hvis watt &lt; (W)</span>
           <input
             type="number"
             value={config.wattMax}
-            disabled={!config.enabled}
+            disabled={!config.enabled || !config.wattCheckEnabled}
             onChange={(e) => void save({ wattMax: Number(e.target.value) })}
-            className="w-full bg-background border border-border/60 rounded px-2 py-1 text-sm tabular-nums"
+            className="w-full bg-background border border-border/60 rounded px-2 py-1 text-sm tabular-nums disabled:opacity-50"
           />
         </label>
       </div>
