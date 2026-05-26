@@ -58,7 +58,7 @@ async function probeUrl(url: string): Promise<ProbeResult> {
     const ct = res.headers.get("content-type");
     const text = await res.text();
     const preview = text.slice(0, 4096);
-    let json: unknown = null;
+    let json: any = null;
     if (ct && ct.includes("application/json")) {
       try {
         json = JSON.parse(text);
