@@ -188,8 +188,9 @@ function dateLabel(ds: string) {
   return d.toLocaleDateString("nb-NO", { day: "numeric", month: "short" });
 }
 
-const ROOM_COLORS = ["#34d399", "#f472b6", "#facc15", "#c084fc", "#fb7185", "#22d3ee", "#fdba74", "#a3e635"];
-function roomColor(i: number) { return ROOM_COLORS[i % ROOM_COLORS.length]; }
+// Bruker samme CSS-variabler som recharts-linjene (se styles.css), så pills matcher graf-fargene.
+function seriesColor(i: number) { return `var(--chart-series-${(i % 15) + 1})`; }
+function roomColor(i: number) { return seriesColor(i + 2); }
 
 function TogglePill({ active, color, onClick, children }: { active: boolean; color: string; onClick: () => void; children: React.ReactNode }) {
   return (
