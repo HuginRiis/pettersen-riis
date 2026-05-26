@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Lightbulb, LightbulbOff, Loader2 } from "lucide-react";
 import { PageShell } from "@/components/PageShell";
-import { useUpdatesPaused } from "@/hooks/use-updates-paused";
 import { TollnesCameraStrip } from "@/components/TollnesCameraStrip";
 import {
   HeatPumpTile,
@@ -119,7 +118,6 @@ function SteintavlePage() {
   // Optimistisk overstyring av lys-status — null betyr "bruk verdien fra snapshot".
   const [lightsOverride, setLightsOverride] = useState<boolean | null>(null);
   const [lightsBusy, setLightsBusy] = useState(false);
-  const [paused, setPaused] = useUpdatesPaused();
 
   // Lys-status leses fra snapshot (samme zone-logikk som server),
   // så vi unngår et eget API-kall mot Athom.
@@ -128,7 +126,6 @@ function SteintavlePage() {
 
   // Auto-refresh hver 10 minutt mens fanen er synlig (bra for iPad i kiosk-modus)
   useEffect(() => {
-    if (paused) return;
     const REFRESH_MS = 10 * 60_000;
     const tick = () => {
       if (typeof document !== "undefined" && document.hidden) return;
@@ -146,7 +143,7 @@ function SteintavlePage() {
       clearInterval(id);
       document.removeEventListener("visibilitychange", onVisible);
     };
-  }, [router, fetchNetatmo, paused]);
+  }, [router, fetchNetatmo]);
 
   // Når snapshot oppdateres og matcher overstyringen → dropp overstyringen.
   useEffect(() => {
@@ -166,7 +163,6 @@ function SteintavlePage() {
   useEffect(() => {
     let cancelled = false;
     setNow(new Date());
-    if (paused) return;
 
     const isHidden = () => typeof document !== "undefined" && document.hidden;
 
@@ -230,7 +226,7 @@ function SteintavlePage() {
         document.removeEventListener("visibilitychange", onVisibility);
       }
     };
-  }, [fetchAlerts, fetchNetatmo, router, paused]);
+  }, [fetchAlerts, fetchNetatmo, router]);
 
   const handleSetLights = async (next: boolean) => {
     if (lightsBusy) return;
@@ -303,7 +299,7 @@ function SteintavlePage() {
     (tempUteLive === null && uteMM !== null) ||
     (tempSovLive === null && sovMM !== null);
   useEffect(() => {
-    if (!tempMissing || paused) return;
+    if (!tempMissing) return;
     let cancelled = false;
     let attempt = 0;
     const tryRefetch = async () => {
@@ -326,7 +322,7 @@ function SteintavlePage() {
       clearTimeout(t2);
       clearTimeout(t3);
     };
-  }, [tempMissing, fetchNetatmo, paused]);
+  }, [tempMissing, fetchNetatmo]);
 
   // ---- Varsler ----
   const thunderAlerts =
@@ -350,11 +346,6 @@ function SteintavlePage() {
                 })
               : "—"}
           </span>
-          {paused && (
-            <span className="ml-2 text-[9px] tracking-[0.3em] text-amber-400 uppercase">
-              · pauset
-            </span>
-          )}
         </div>
       </header>
 
