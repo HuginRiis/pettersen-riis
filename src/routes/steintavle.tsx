@@ -230,7 +230,7 @@ function SteintavlePage() {
         document.removeEventListener("visibilitychange", onVisibility);
       }
     };
-  }, [fetchAlerts, fetchNetatmo, router]);
+  }, [fetchAlerts, fetchNetatmo, router, paused]);
 
   const handleSetLights = async (next: boolean) => {
     if (lightsBusy) return;
