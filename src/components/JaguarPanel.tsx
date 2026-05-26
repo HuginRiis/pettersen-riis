@@ -209,6 +209,9 @@ export function JaguarPanel() {
 
         {auth && <ConnectPanel auth={auth} onChanged={load} />}
 
+        <ProbePanel />
+
+
         {loading && !snap && auth?.connected && (
           <div className="text-xs text-muted-foreground">Henter status fra InControl…</div>
         )}
