@@ -285,9 +285,10 @@ export const getNetatmoClimateHistory = createServerFn({ method: "GET" })
           const inUrl48 =
             `${NETATMO_BASE}/api/getmeasure?device_id=${deviceId}` +
             `&scale=30min&type=Temperature,Humidity,CO2&date_begin=${begin48h}&optimize=false&real_time=true`;
-          // Utendørs 48h @ 30min (Temperature, Humidity)
+          // Utendørs 48h @ 30min (Temperature, Humidity) — bruker outdoorDeviceId
+          // siden NAModule1 kan ligge på en annen base-stasjon enn hovedmodulen.
           const outUrl48 = outdoorId
-            ? `${NETATMO_BASE}/api/getmeasure?device_id=${deviceId}&module_id=${outdoorId}` +
+            ? `${NETATMO_BASE}/api/getmeasure?device_id=${outdoorDeviceId}&module_id=${outdoorId}` +
               `&scale=30min&type=Temperature,Humidity&date_begin=${begin48h}&optimize=false&real_time=true`
             : null;
           // 30 dager daglig (min/max temp inne)
@@ -295,7 +296,7 @@ export const getNetatmoClimateHistory = createServerFn({ method: "GET" })
             `${NETATMO_BASE}/api/getmeasure?device_id=${deviceId}` +
             `&scale=1day&type=min_temp,max_temp,Temperature&date_begin=${begin30d}&optimize=false&real_time=true`;
           const outDailyUrl = outdoorId
-            ? `${NETATMO_BASE}/api/getmeasure?device_id=${deviceId}&module_id=${outdoorId}` +
+            ? `${NETATMO_BASE}/api/getmeasure?device_id=${outdoorDeviceId}&module_id=${outdoorId}` +
               `&scale=1day&type=min_temp,max_temp,Temperature&date_begin=${begin30d}&optimize=false&real_time=true`
             : null;
           // Forrige uke samme time (1 datapunkt rundt nå-1uke)
@@ -303,7 +304,7 @@ export const getNetatmoClimateHistory = createServerFn({ method: "GET" })
             `${NETATMO_BASE}/api/getmeasure?device_id=${deviceId}` +
             `&scale=30min&type=Temperature,Humidity,CO2&date_begin=${beginWeek}&date_end=${beginWeek + 6 * 3600}&optimize=false&real_time=true`;
           const outWeekUrl = outdoorId
-            ? `${NETATMO_BASE}/api/getmeasure?device_id=${deviceId}&module_id=${outdoorId}` +
+            ? `${NETATMO_BASE}/api/getmeasure?device_id=${outdoorDeviceId}&module_id=${outdoorId}` +
               `&scale=30min&type=Temperature&date_begin=${beginWeek}&date_end=${beginWeek + 6 * 3600}&optimize=false&real_time=true`
             : null;
 
