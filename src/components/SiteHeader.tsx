@@ -19,7 +19,7 @@ import { useMenuPrefs } from "@/hooks/use-menu-prefs";
 import { getNetatmoWeatherStation } from "@/server/netatmo-weather";
 import { getNetatmoLiveTrend } from "@/server/netatmo-history";
 import { useLastGood } from "@/hooks/use-last-good";
-import { PushTodayBadge, LightsOnBadge, WeatherDaysBadge, AlarmStateBadge, AlertsSeverityBadge, PowerVsYesterdayBadge, TrainingLast4WeeksBadge, UtgangsdorenLockBadge, StepsTodayBadge, MowerStatusBadge, CurrentTempBadge, GarbageNextPickupBadge, GardenaStatusBadge, GardenaBatteryBadge, GardenaSignalBadge, RoborockStatusBadge, BudgetRemainingBadge, OkonomiBruktBadge, OkonomiInntektBadge, OkonomiBudsjettBadge, OkonomiOverskuddBadge, OkonomiSnittPrDagBadge, OkonomiIgjenPrDagBadge } from "@/components/HallBadges";
+import { PushTodayBadge, LightsOnBadge, WeatherDaysBadge, AlarmStateBadge, AlertsSeverityBadge, PowerVsYesterdayBadge, TrainingLast4WeeksBadge, UtgangsdorenLockBadge, StepsTodayBadge, MowerStatusBadge, BassengTempBadge, CurrentTempBadge, GarbageNextPickupBadge, GardenaStatusBadge, GardenaBatteryBadge, GardenaSignalBadge, RoborockStatusBadge, BudgetRemainingBadge, OkonomiBruktBadge, OkonomiInntektBadge, OkonomiBudsjettBadge, OkonomiOverskuddBadge, OkonomiSnittPrDagBadge, OkonomiIgjenPrDagBadge } from "@/components/HallBadges";
 import { useHeaderBadgeSettings, isBadgeVisible } from "@/hooks/use-header-badge-settings";
 import { useMenuVisibility, isMenuLinkVisible } from "@/hooks/use-menu-visibility";
 
