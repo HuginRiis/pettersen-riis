@@ -7,7 +7,12 @@ import {
   setJaguarRefreshToken,
   getJaguarAuthStatus,
 } from "@/server/jaguar.server";
+import { probeJaguarPortal } from "@/server/jaguar-portal.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+
+export const probeJaguarPortalFn = createServerFn({ method: "GET" }).handler(async () => {
+  return await probeJaguarPortal();
+});
 
 export const getJaguarSnapshot = createServerFn({ method: "GET" }).handler(async () => {
   return await fetchJaguarSnapshot();
