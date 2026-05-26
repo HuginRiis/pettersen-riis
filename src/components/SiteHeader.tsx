@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Menu, X, LogOut, Crown, Swords, Shield, KeyRound, Home, Star, Flower2,
   Sun, Compass, CalendarDays, BellRing, Eye, Mountain, Lightbulb, Lamp, Flame, Zap,
   Receipt, Dumbbell, AlertTriangle, ScrollText, Globe, ChevronDown, ChevronRight,
-  TreePine, Coins, Bot, Wallet, Volume2, Settings } from "lucide-react";
+  TreePine, Coins, Bot, Wallet, Volume2, Settings, Car } from "lucide-react";
 
 
 import { logoutFn } from "@/server/auth";
@@ -51,7 +51,8 @@ type RoutePath =
   | "/stovsugeren"
   | "/decibel"
   | "/roborock"
-  | "/planter";
+  | "/planter"
+  | "/jaguar";
 
 
 type NavLink = { to: RoutePath; label: string; public?: boolean };
@@ -87,6 +88,7 @@ const ROUTE_ICON: Partial<Record<RoutePath, React.ComponentType<{ size?: number;
   "/decibel": Volume2,
   "/roborock": Bot,
   "/planter": TreePine,
+  "/jaguar": Car,
 };
 
 
@@ -115,6 +117,7 @@ const ROUTE_ICON_COLOR: Partial<Record<RoutePath, string>> = {
   "/decibel": "#f43f5e",
   "/roborock": "#a78bfa",
   "/planter": "#22c55e",
+  "/jaguar": "#e5e7eb",
 };
 
 
@@ -142,6 +145,7 @@ const navLinks: NavLink[] = [
   { to: "/varsler", label: "Farevarsler", public: true },
   { to: "/decibel", label: "Decibelmåler", public: true },
   { to: "/roborock", label: "Roborock" },
+  { to: "/jaguar", label: "Jaguar" },
   { to: "/planter", label: "Planter & Trær" },
   { to: "/steintavle", label: "Steintavle" },
   { to: "/steintavle-2", label: "Steintavle 2" },
