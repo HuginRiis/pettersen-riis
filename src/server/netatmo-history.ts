@@ -236,11 +236,9 @@ export const getNetatmoClimateHistory = createServerFn({ method: "GET" })
           }
           const stationName: string = device.station_name ?? device.module_name ?? "Værstasjonen";
           const deviceId = device._id;
-          const outdoor = (device.modules ?? []).find((m: any) => m.type === "NAModule1");
-          const outdoorId: string | null = outdoor?._id ?? null;
-          // Samle NAModule4-rom fra ALLE enheter på kontoen som hører til samme
-          // sted (station_name matcher stationMatch). For Tollnes/Borgen kan
-          // rommene (Soverommet, Nora, Kontor) ligge på en separat base-stasjon.
+          // Samle ALLE enheter som hører til samme sted. For Tollnes/Borgen ligger
+          // både utemodulen (NAModule1) og noen innendørs-rom (NAModule4) på en
+          // separat base-stasjon enn hovedmodulen vi traff på først.
           const roomDevices = match
             ? devices.filter((d: any) => {
                 const sn = (d.station_name ?? "").toLowerCase();
@@ -249,6 +247,19 @@ export const getNetatmoClimateHistory = createServerFn({ method: "GET" })
               })
             : [device];
           if (roomDevices.length === 0) roomDevices.push(device);
+          // Finn NAModule1 (ute) på tvers av alle matchende devices — bruk den
+          // tilhørende deviceId for getmeasure-kall (Netatmo krever at module_id
+          // sendes sammen med riktig device_id).
+          let outdoorId: string | null = null;
+          let outdoorDeviceId: string = deviceId;
+          for (const dev of roomDevices) {
+            const m = (dev.modules ?? []).find((x: any) => x.type === "NAModule1");
+            if (m) {
+              outdoorId = m._id;
+              outdoorDeviceId = dev._id;
+              break;
+            }
+          }
           const extraIndoors: Array<{ deviceId: string; id: string; name: string }> = [];
           for (const dev of roomDevices) {
             for (const m of dev.modules ?? []) {
