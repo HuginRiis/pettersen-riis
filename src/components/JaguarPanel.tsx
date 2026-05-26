@@ -1,10 +1,19 @@
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Car, Loader2, RefreshCw, Lock, Unlock, Wind, Power, Bell, MapPin, Gauge, Battery, Fuel } from "lucide-react";
-import { getJaguarSnapshot, getJaguarHistory, sendJaguarCommandFn } from "@/server/jaguar.functions";
+import { Car, Loader2, RefreshCw, Lock, Unlock, Wind, Power, Bell, MapPin, Gauge, Battery, Fuel, KeyRound, Mail } from "lucide-react";
+import {
+  getJaguarSnapshot,
+  getJaguarHistory,
+  sendJaguarCommandFn,
+  getJaguarAuthStatusFn,
+  requestJaguarOtpFn,
+  verifyJaguarOtpFn,
+  setJaguarRefreshTokenFn,
+} from "@/server/jaguar.functions";
 
 type Snap = Awaited<ReturnType<typeof getJaguarSnapshot>>;
 type Hist = Awaited<ReturnType<typeof getJaguarHistory>>;
+type AuthStatus = Awaited<ReturnType<typeof getJaguarAuthStatusFn>>;
 
 const CMDS: Array<{ key: "LOCK" | "UNLOCK" | "CLIMATE_START" | "CLIMATE_STOP" | "HONK_FLASH"; label: string; icon: typeof Lock }> = [
   { key: "LOCK", label: "Lås", icon: Lock },
@@ -19,13 +28,125 @@ function fmt(v: number | null | undefined, suffix = "") {
   return `${Math.round(v)}${suffix}`;
 }
 
+function ConnectPanel({ auth, onChanged }: { auth: AuthStatus; onChanged: () => void }) {
+  const reqOtp = useServerFn(requestJaguarOtpFn);
+  const verOtp = useServerFn(verifyJaguarOtpFn);
+  const setRt = useServerFn(setJaguarRefreshTokenFn);
+
+  const [busy, setBusy] = useState<string | null>(null);
+  const [msg, setMsg] = useState<string | null>(null);
+  const [otp, setOtp] = useState("");
+  const [rt, setRtVal] = useState("");
+  const [showRt, setShowRt] = useState(false);
+
+  const run = async (label: string, fn: () => Promise<{ ok: boolean; error?: string }>) => {
+    setBusy(label);
+    setMsg(null);
+    const r = await fn();
+    setBusy(null);
+    setMsg(r.ok ? `✓ ${label} ok` : `✗ ${label}: ${r.error}`);
+    if (r.ok) onChanged();
+  };
+
+  return (
+    <div className="rounded-lg border border-border bg-card/30 p-3 space-y-3">
+      <div className="flex items-center gap-2">
+        <KeyRound size={14} className="text-primary" />
+        <span className="text-sm font-semibold text-foreground flex-1">
+          {auth.connected ? "Tilkoblet" : "Koble til Jaguar InControl"}
+        </span>
+        {auth.connected && auth.expiresAt && (
+          <span className="text-[10px] text-muted-foreground">
+            token fornyes auto
+          </span>
+        )}
+      </div>
+
+      {!auth.connected && (
+        <p className="text-xs text-muted-foreground">
+          Jaguar krever en engangskode (OTP) sendt på e-post ({auth.email ?? "?"}).
+          Trykk «Send kode», sjekk mailen og lim inn koden under.
+        </p>
+      )}
+
+      <div className="flex flex-wrap gap-2">
+        <button
+          onClick={() => run("Send kode", () => reqOtp())}
+          disabled={busy !== null}
+          className="text-xs inline-flex items-center gap-1 px-3 py-2 rounded border border-border hover:border-primary/60 disabled:opacity-50"
+        >
+          {busy === "Send kode" ? <Loader2 size={11} className="animate-spin" /> : <Mail size={11} />}
+          Send kode på e-post
+        </button>
+      </div>
+
+      <div className="flex flex-wrap gap-2 items-center">
+        <input
+          type="text"
+          inputMode="numeric"
+          autoComplete="one-time-code"
+          placeholder="Engangskode"
+          value={otp}
+          onChange={(e) => setOtp(e.target.value)}
+          className="flex-1 min-w-[140px] text-sm px-3 py-2 rounded border border-border bg-background/40 text-foreground"
+        />
+        <button
+          onClick={() => run("Verifiser kode", () => verOtp({ data: { otp } }))}
+          disabled={busy !== null || !otp.trim()}
+          className="text-xs inline-flex items-center gap-1 px-3 py-2 rounded border border-border hover:border-primary/60 disabled:opacity-50"
+        >
+          {busy === "Verifiser kode" ? <Loader2 size={11} className="animate-spin" /> : <KeyRound size={11} />}
+          Verifiser
+        </button>
+      </div>
+
+      <div className="pt-2 border-t border-border/40">
+        <button
+          type="button"
+          onClick={() => setShowRt((s) => !s)}
+          className="text-[11px] text-muted-foreground hover:text-primary"
+        >
+          {showRt ? "Skjul" : "Avansert: lim inn refresh-token"}
+        </button>
+        {showRt && (
+          <div className="mt-2 flex flex-wrap gap-2 items-center">
+            <input
+              type="password"
+              placeholder="refresh_token"
+              value={rt}
+              onChange={(e) => setRtVal(e.target.value)}
+              className="flex-1 min-w-[180px] text-sm px-3 py-2 rounded border border-border bg-background/40 text-foreground"
+            />
+            <button
+              onClick={() => run("Lagre token", () => setRt({ data: { refresh_token: rt } }))}
+              disabled={busy !== null || !rt.trim()}
+              className="text-xs inline-flex items-center gap-1 px-3 py-2 rounded border border-border hover:border-primary/60 disabled:opacity-50"
+            >
+              {busy === "Lagre token" ? <Loader2 size={11} className="animate-spin" /> : <KeyRound size={11} />}
+              Lagre
+            </button>
+          </div>
+        )}
+      </div>
+
+      {msg && (
+        <div className="text-[11px] px-3 py-2 rounded border border-border bg-card/40 text-foreground break-words">
+          {msg}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function JaguarPanel() {
   const fetchSnap = useServerFn(getJaguarSnapshot);
   const fetchHist = useServerFn(getJaguarHistory);
+  const fetchAuth = useServerFn(getJaguarAuthStatusFn);
   const send = useServerFn(sendJaguarCommandFn);
 
   const [snap, setSnap] = useState<Snap | null>(null);
   const [hist, setHist] = useState<Hist | null>(null);
+  const [auth, setAuth] = useState<AuthStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
@@ -33,9 +154,16 @@ export function JaguarPanel() {
   const load = async () => {
     setLoading(true);
     try {
-      const [s, h] = await Promise.all([fetchSnap(), fetchHist()]);
-      setSnap(s);
-      setHist(h);
+      const a = await fetchAuth();
+      setAuth(a);
+      if (a.connected) {
+        const [s, h] = await Promise.all([fetchSnap(), fetchHist()]);
+        setSnap(s);
+        setHist(h);
+      } else {
+        setSnap(null);
+        setHist(null);
+      }
     } finally {
       setLoading(false);
     }
@@ -78,12 +206,14 @@ export function JaguarPanel() {
           </button>
         </div>
 
-        {loading && !snap && (
+        {auth && <ConnectPanel auth={auth} onChanged={load} />}
+
+        {loading && !snap && auth?.connected && (
           <div className="text-xs text-muted-foreground">Henter status fra InControl…</div>
         )}
 
         {snap && !snap.ok && (
-          <div className="text-xs text-destructive bg-destructive/10 border border-destructive/30 rounded px-3 py-2">
+          <div className="text-xs text-destructive bg-destructive/10 border border-destructive/30 rounded px-3 py-2 break-words">
             Kunne ikke hente status: {snap.error}
           </div>
         )}
@@ -181,7 +311,7 @@ export function JaguarPanel() {
         })}
 
         {msg && (
-          <div className="text-[11px] px-3 py-2 rounded border border-border bg-card/40 text-foreground">
+          <div className="text-[11px] px-3 py-2 rounded border border-border bg-card/40 text-foreground break-words">
             {msg}
           </div>
         )}
