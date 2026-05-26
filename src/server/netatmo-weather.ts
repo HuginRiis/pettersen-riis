@@ -198,18 +198,31 @@ export const getNetatmoWeatherStation = createServerFn({ method: "GET" })
       );
 
       const match = data?.stationMatch?.toLowerCase().trim();
-      let device = devices[0];
-      if (match) {
-        const found = devices.find((d: any) => {
-          const sn = (d.station_name ?? "").toLowerCase();
-          const mn = (d.module_name ?? "").toLowerCase();
-          return sn.includes(match) || mn.includes(match);
-        });
-        if (found) device = found;
-      }
+      // Samle ALLE devices som matcher stedet — Tollnes/Borgen har flere
+      // base-stasjoner, og utemodulen (NAModule1) + noen rom (NAModule4) kan
+      // ligge på en annen device enn hovedmodulen vi traff på først.
+      const matched = match
+        ? devices.filter((d: any) => {
+            const sn = (d.station_name ?? "").toLowerCase();
+            const mn = (d.module_name ?? "").toLowerCase();
+            return sn.includes(match) || mn.includes(match);
+          })
+        : [devices[0]];
+      if (matched.length === 0) matched.push(devices[0]);
+      const device = matched[0];
 
       const stationName: string = device.station_name ?? device.module_name ?? "Værstasjonen";
-      const modules = mapDevice(device);
+      // Slå sammen moduler fra alle matchende devices. Dedupliser på _id slik
+      // at hovedmodulen ikke kommer dobbelt om flere devices deler samme oppsett.
+      const seen = new Set<string>();
+      const modules: WeatherModule[] = [];
+      for (const dev of matched) {
+        for (const mod of mapDevice(dev)) {
+          if (seen.has(mod.id)) continue;
+          seen.add(mod.id);
+          modules.push(mod);
+        }
+      }
 
       const out: WeatherStationResult = {
         ok: true,
