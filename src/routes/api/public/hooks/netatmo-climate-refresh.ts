@@ -32,7 +32,15 @@ export const Route = createFileRoute("/api/public/hooks/netatmo-climate-refresh"
           climate = { ok: false, error: e?.message ?? "unknown" };
         }
 
-        return new Response(JSON.stringify({ ok: true, results, climate }), {
+        let basseng: unknown = null;
+        try {
+          const { processBassengNotifications } = await import("@/server/basseng-push.server");
+          basseng = await processBassengNotifications();
+        } catch (e: any) {
+          basseng = { ok: false, error: e?.message ?? "unknown" };
+        }
+
+        return new Response(JSON.stringify({ ok: true, results, climate, basseng }), {
           headers: { "Content-Type": "application/json" },
         });
       },

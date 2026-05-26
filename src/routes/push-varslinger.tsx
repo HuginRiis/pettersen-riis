@@ -24,6 +24,7 @@ import { ChartAppearanceSettingsPanel } from "@/components/ChartAppearanceSettin
 import { OkonomiSettingsPanel } from "@/components/OkonomiSettingsPanel";
 import { HomeySensorSettings } from "@/components/HomeySensorSettings";
 import { ClimateNotificationSettings } from "@/components/ClimateNotificationSettings";
+import { BassengNotificationSettings } from "@/components/BassengNotificationSettings";
 import {
   Bell, BellOff, Calendar, Cake, Trash2, CloudSun, Lightbulb, ScrollText, ShieldCheck, Lock, ExternalLink, Smartphone, X, Activity,
 } from "lucide-react";
@@ -171,6 +172,7 @@ function PushSettingsPage() {
       <SettingsBox id="sec-okonomi" title="🪙 Husholdningens hvelv"><OkonomiSettingsPanel /></SettingsBox>
       <SettingsBox id="sec-farevarsel" title="⚠️ Vær farevarsel — av/på" accent="border-orange-500/40"><MetAlertNotificationSettings /></SettingsBox>
       <SettingsBox id="sec-klima" title="🌡️ Klima — for varmt / for kaldt (Borgen & Hytta)"><ClimateNotificationSettings /></SettingsBox>
+      <SettingsBox id="sec-basseng" title="🏊 Basseng — varsel ved temperaturendring"><BassengNotificationSettings /></SettingsBox>
       <SettingsBox id="sec-uv" title="🧴 Solkrem-varsler — UV"><UvNotificationSettings /></SettingsBox>
       <SettingsBox id="sec-vaer" title="🪶 Værvaktens Ravner — Push-varsler"><WeatherNotificationSettings /></SettingsBox>
       <SettingsBox id="sec-lys" title="💡 Lys på uten bevegelse"><LightIdleNotificationSettings /></SettingsBox>
