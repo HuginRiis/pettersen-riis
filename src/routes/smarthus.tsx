@@ -11,6 +11,7 @@ import { HomeyApiActivity } from "@/components/HomeyApiActivity";
 import { HomeyApiPauseToggle } from "@/components/HomeyApiPauseToggle";
 import { HeatersPanel } from "@/components/HeatersPanel";
 import { StuaConditionPanel } from "@/components/StuaConditionPanel";
+import { BassengPoolPanel } from "@/components/BassengPoolPanel";
 import { MowerPanel } from "@/components/MowerPanel";
 
 import { getLightIdleStatuses, type LightIdleZoneStatusRow } from "@/server/light-idle-push.functions";
