@@ -119,7 +119,7 @@ function SteintavlePage() {
   // Optimistisk overstyring av lys-status — null betyr "bruk verdien fra snapshot".
   const [lightsOverride, setLightsOverride] = useState<boolean | null>(null);
   const [lightsBusy, setLightsBusy] = useState(false);
-  const [paused, setPaused] = usePersistedState<boolean>("st.updates.paused", false);
+  const [paused, setPaused] = useUpdatesPaused();
 
   // Lys-status leses fra snapshot (samme zone-logikk som server),
   // så vi unngår et eget API-kall mot Athom.
