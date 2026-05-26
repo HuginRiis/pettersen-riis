@@ -47,7 +47,7 @@ export type ProbeResult = {
   /** First ~4 KB av response-body, så vi ser hva vi får. */
   bodyPreview: string;
   /** Parset JSON hvis Content-Type var json. */
-  json: unknown;
+  json: any;
   /** true hvis responsen så ut som en login-redirect / HTML innlogging. */
   looksLikeLogin: boolean;
 };
