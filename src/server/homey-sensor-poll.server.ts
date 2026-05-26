@@ -209,6 +209,31 @@ export async function pollHomeySensors(): Promise<{
     }
   }
 
+  // === Basseng watt-logger ===
+  // Logger effekt (measure_power) for konfigurert basseng-bryter/sensor hvert poll.
+  try {
+    const { data: cfgRow } = await supabaseAdmin
+      .from("notification_settings")
+      .select("value")
+      .eq("key", "basseng_automation")
+      .maybeSingle();
+    const cfg = (cfgRow?.value ?? {}) as any;
+    const sensorId = (cfg?.wattSensorId ?? cfg?.bassengSwitchId ?? null) as string | null;
+    if (sensorId) {
+      const d = (raw.devicesRaw ?? []).find((x: any) => String(x?.id) === sensorId);
+      const caps = (d as any)?.capabilitiesObj ?? (d as any)?.capabilities_obj ?? {};
+      const w = caps?.["measure_power"]?.value;
+      if (typeof w === "number" && Number.isFinite(w)) {
+        await supabaseAdmin
+          .from("device_power_samples")
+          .insert({ device_id: sensorId, watts: w, ts: nowIso });
+      }
+    }
+  } catch {
+    // ignorer logging-feil
+  }
+
   return { ok: true, scanned: currents.length, events: events.length + backfilledCount };
 }
+
 

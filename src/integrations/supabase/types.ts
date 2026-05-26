@@ -419,6 +419,24 @@ export type Database = {
         }
         Relationships: []
       }
+      device_power_samples: {
+        Row: {
+          device_id: string
+          ts: string
+          watts: number
+        }
+        Insert: {
+          device_id: string
+          ts?: string
+          watts: number
+        }
+        Update: {
+          device_id?: string
+          ts?: string
+          watts?: number
+        }
+        Relationships: []
+      }
       garbage_address: {
         Row: {
           address_text: string
