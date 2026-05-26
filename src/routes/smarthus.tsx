@@ -739,12 +739,32 @@ function SmarthusPage() {
       </section>
       <HomeyApiPauseToggle />
 
+      {bassengDevice && (
+        <section className="container mx-auto px-4 pt-4 sm:pt-6">
+          <StuaConditionPanel
+            title="🏊 Bassengets tilstand"
+            temperature={bassengReadings.temperature}
+            humidity={bassengReadings.humidity}
+            co2={bassengReadings.co2}
+            sourceName={bassengReadings.sourceName}
+            tempRange={{
+              goodMin: 26,
+              goodMax: 30,
+              okBelow: 22,
+              okAbove: 32,
+              normLabel: "26–30 °C",
+            }}
+          />
+        </section>
+      )}
+
       <StuaConditionPanel
         temperature={stuaTemp}
         humidity={stuaHum}
         co2={stuaCo2}
         sourceName={stuaSourceName}
       />
+
 
       {(kontorDevice || soveromDevice) && (
         <section className="container mx-auto px-4 pt-4 sm:pt-6">
