@@ -188,8 +188,9 @@ function dateLabel(ds: string) {
   return d.toLocaleDateString("nb-NO", { day: "numeric", month: "short" });
 }
 
-const ROOM_COLORS = ["#34d399", "#f472b6", "#facc15", "#c084fc", "#fb7185", "#22d3ee", "#fdba74", "#a3e635"];
-function roomColor(i: number) { return ROOM_COLORS[i % ROOM_COLORS.length]; }
+// Bruker samme CSS-variabler som recharts-linjene (se styles.css), så pills matcher graf-fargene.
+function seriesColor(i: number) { return `var(--chart-series-${(i % 15) + 1})`; }
+function roomColor(i: number) { return seriesColor(i + 2); }
 
 function TogglePill({ active, color, onClick, children }: { active: boolean; color: string; onClick: () => void; children: React.ReactNode }) {
   return (
@@ -484,8 +485,8 @@ export function ClimateAnalyticsPanel({
           {/* Linjegraf 24h */}
           <div>
             <div className="flex flex-wrap gap-1.5 mb-2">
-              <TogglePill active={isTempOn("inT")} color="#fb923c" onClick={() => toggleTemp("inT")}>Stua</TogglePill>
-              <TogglePill active={isTempOn("outT")} color="#60a5fa" onClick={() => toggleTemp("outT")}>Ute</TogglePill>
+              <TogglePill active={isTempOn("inT")} color={seriesColor(0)} onClick={() => toggleTemp("inT")}>Stua</TogglePill>
+              <TogglePill active={isTempOn("outT")} color={seriesColor(1)} onClick={() => toggleTemp("outT")}>Ute</TogglePill>
               {(data.rooms ?? []).map((r, i) => (
                 <TogglePill key={r.id} active={isTempOn(r.id)} color={roomColor(i)} onClick={() => toggleTemp(r.id)}>
                   {r.name}
@@ -579,8 +580,8 @@ export function ClimateAnalyticsPanel({
           {/* Luftfukt + CO2 siste 24h */}
           <div>
             <div className="flex flex-wrap gap-1.5 mb-2">
-              <TogglePill active={isHumOn("hum")} color="#22d3ee" onClick={() => toggleHum("hum")}>Stua %</TogglePill>
-              <TogglePill active={isHumOn("co2")} color="#a78bfa" onClick={() => toggleHum("co2")}>CO₂ ppm</TogglePill>
+              <TogglePill active={isHumOn("hum")} color={seriesColor(0)} onClick={() => toggleHum("hum")}>Stua %</TogglePill>
+              <TogglePill active={isHumOn("co2")} color={seriesColor(1)} onClick={() => toggleHum("co2")}>CO₂ ppm</TogglePill>
               {(data.rooms ?? []).map((r, i) => (
                 <TogglePill key={r.id} active={isHumOn(r.id)} color={roomColor(i)} onClick={() => toggleHum(r.id)}>
                   {r.name} %
