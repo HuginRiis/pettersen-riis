@@ -28,6 +28,7 @@ import { Route as PlanterRouteImport } from './routes/planter'
 import { Route as OkonomiRouteImport } from './routes/okonomi'
 import { Route as LysRouteImport } from './routes/lys'
 import { Route as KvitteringerRouteImport } from './routes/kvitteringer'
+import { Route as JaguarRouteImport } from './routes/jaguar'
 import { Route as HyttaRouteImport } from './routes/hytta'
 import { Route as GressklipperRouteImport } from './routes/gressklipper'
 import { Route as DecibelRouteImport } from './routes/decibel'
@@ -42,6 +43,7 @@ import { Route as ApiPublicHooksStravaPollRouteImport } from './routes/api/publi
 import { Route as ApiPublicHooksSnapshotTibberDailyRouteImport } from './routes/api.public.hooks.snapshot-tibber-daily'
 import { Route as ApiPublicHooksSnapshotPulseRouteImport } from './routes/api.public.hooks.snapshot-pulse'
 import { Route as ApiPublicHooksNetatmoClimateRefreshRouteImport } from './routes/api/public/hooks/netatmo-climate-refresh'
+import { Route as ApiPublicHooksJaguarPollRouteImport } from './routes/api/public/hooks/jaguar-poll'
 import { Route as ApiPublicHooksHomeySensorPollRouteImport } from './routes/api/public/hooks/homey-sensor-poll'
 import { Route as ApiPublicHooksGardenaPollRouteImport } from './routes/api/public/hooks/gardena-poll'
 import { Route as ApiPublicHooksEufyPollRouteImport } from './routes/api/public/hooks/eufy-poll'
@@ -144,6 +146,11 @@ const KvitteringerRoute = KvitteringerRouteImport.update({
   path: '/kvitteringer',
   getParentRoute: () => rootRouteImport,
 } as any)
+const JaguarRoute = JaguarRouteImport.update({
+  id: '/jaguar',
+  path: '/jaguar',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const HyttaRoute = HyttaRouteImport.update({
   id: '/hytta',
   path: '/hytta',
@@ -218,6 +225,12 @@ const ApiPublicHooksNetatmoClimateRefreshRoute =
     path: '/api/public/hooks/netatmo-climate-refresh',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksJaguarPollRoute =
+  ApiPublicHooksJaguarPollRouteImport.update({
+    id: '/api/public/hooks/jaguar-poll',
+    path: '/api/public/hooks/jaguar-poll',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksHomeySensorPollRoute =
   ApiPublicHooksHomeySensorPollRouteImport.update({
     id: '/api/public/hooks/homey-sensor-poll',
@@ -259,6 +272,7 @@ export interface FileRoutesByFullPath {
   '/decibel': typeof DecibelRoute
   '/gressklipper': typeof GressklipperRoute
   '/hytta': typeof HyttaRoute
+  '/jaguar': typeof JaguarRoute
   '/kvitteringer': typeof KvitteringerRoute
   '/lys': typeof LysRoute
   '/okonomi': typeof OkonomiRoute
@@ -289,6 +303,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/eufy-poll': typeof ApiPublicHooksEufyPollRoute
   '/api/public/hooks/gardena-poll': typeof ApiPublicHooksGardenaPollRoute
   '/api/public/hooks/homey-sensor-poll': typeof ApiPublicHooksHomeySensorPollRoute
+  '/api/public/hooks/jaguar-poll': typeof ApiPublicHooksJaguarPollRoute
   '/api/public/hooks/netatmo-climate-refresh': typeof ApiPublicHooksNetatmoClimateRefreshRoute
   '/api/public/hooks/snapshot-pulse': typeof ApiPublicHooksSnapshotPulseRoute
   '/api/public/hooks/snapshot-tibber-daily': typeof ApiPublicHooksSnapshotTibberDailyRoute
@@ -300,6 +315,7 @@ export interface FileRoutesByTo {
   '/decibel': typeof DecibelRoute
   '/gressklipper': typeof GressklipperRoute
   '/hytta': typeof HyttaRoute
+  '/jaguar': typeof JaguarRoute
   '/kvitteringer': typeof KvitteringerRoute
   '/lys': typeof LysRoute
   '/okonomi': typeof OkonomiRoute
@@ -330,6 +346,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/eufy-poll': typeof ApiPublicHooksEufyPollRoute
   '/api/public/hooks/gardena-poll': typeof ApiPublicHooksGardenaPollRoute
   '/api/public/hooks/homey-sensor-poll': typeof ApiPublicHooksHomeySensorPollRoute
+  '/api/public/hooks/jaguar-poll': typeof ApiPublicHooksJaguarPollRoute
   '/api/public/hooks/netatmo-climate-refresh': typeof ApiPublicHooksNetatmoClimateRefreshRoute
   '/api/public/hooks/snapshot-pulse': typeof ApiPublicHooksSnapshotPulseRoute
   '/api/public/hooks/snapshot-tibber-daily': typeof ApiPublicHooksSnapshotTibberDailyRoute
@@ -342,6 +359,7 @@ export interface FileRoutesById {
   '/decibel': typeof DecibelRoute
   '/gressklipper': typeof GressklipperRoute
   '/hytta': typeof HyttaRoute
+  '/jaguar': typeof JaguarRoute
   '/kvitteringer': typeof KvitteringerRoute
   '/lys': typeof LysRoute
   '/okonomi': typeof OkonomiRoute
@@ -372,6 +390,7 @@ export interface FileRoutesById {
   '/api/public/hooks/eufy-poll': typeof ApiPublicHooksEufyPollRoute
   '/api/public/hooks/gardena-poll': typeof ApiPublicHooksGardenaPollRoute
   '/api/public/hooks/homey-sensor-poll': typeof ApiPublicHooksHomeySensorPollRoute
+  '/api/public/hooks/jaguar-poll': typeof ApiPublicHooksJaguarPollRoute
   '/api/public/hooks/netatmo-climate-refresh': typeof ApiPublicHooksNetatmoClimateRefreshRoute
   '/api/public/hooks/snapshot-pulse': typeof ApiPublicHooksSnapshotPulseRoute
   '/api/public/hooks/snapshot-tibber-daily': typeof ApiPublicHooksSnapshotTibberDailyRoute
@@ -385,6 +404,7 @@ export interface FileRouteTypes {
     | '/decibel'
     | '/gressklipper'
     | '/hytta'
+    | '/jaguar'
     | '/kvitteringer'
     | '/lys'
     | '/okonomi'
@@ -415,6 +435,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/eufy-poll'
     | '/api/public/hooks/gardena-poll'
     | '/api/public/hooks/homey-sensor-poll'
+    | '/api/public/hooks/jaguar-poll'
     | '/api/public/hooks/netatmo-climate-refresh'
     | '/api/public/hooks/snapshot-pulse'
     | '/api/public/hooks/snapshot-tibber-daily'
@@ -426,6 +447,7 @@ export interface FileRouteTypes {
     | '/decibel'
     | '/gressklipper'
     | '/hytta'
+    | '/jaguar'
     | '/kvitteringer'
     | '/lys'
     | '/okonomi'
@@ -456,6 +478,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/eufy-poll'
     | '/api/public/hooks/gardena-poll'
     | '/api/public/hooks/homey-sensor-poll'
+    | '/api/public/hooks/jaguar-poll'
     | '/api/public/hooks/netatmo-climate-refresh'
     | '/api/public/hooks/snapshot-pulse'
     | '/api/public/hooks/snapshot-tibber-daily'
@@ -467,6 +490,7 @@ export interface FileRouteTypes {
     | '/decibel'
     | '/gressklipper'
     | '/hytta'
+    | '/jaguar'
     | '/kvitteringer'
     | '/lys'
     | '/okonomi'
@@ -497,6 +521,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/eufy-poll'
     | '/api/public/hooks/gardena-poll'
     | '/api/public/hooks/homey-sensor-poll'
+    | '/api/public/hooks/jaguar-poll'
     | '/api/public/hooks/netatmo-climate-refresh'
     | '/api/public/hooks/snapshot-pulse'
     | '/api/public/hooks/snapshot-tibber-daily'
@@ -509,6 +534,7 @@ export interface RootRouteChildren {
   DecibelRoute: typeof DecibelRoute
   GressklipperRoute: typeof GressklipperRoute
   HyttaRoute: typeof HyttaRoute
+  JaguarRoute: typeof JaguarRoute
   KvitteringerRoute: typeof KvitteringerRoute
   LysRoute: typeof LysRoute
   OkonomiRoute: typeof OkonomiRoute
@@ -539,6 +565,7 @@ export interface RootRouteChildren {
   ApiPublicHooksEufyPollRoute: typeof ApiPublicHooksEufyPollRoute
   ApiPublicHooksGardenaPollRoute: typeof ApiPublicHooksGardenaPollRoute
   ApiPublicHooksHomeySensorPollRoute: typeof ApiPublicHooksHomeySensorPollRoute
+  ApiPublicHooksJaguarPollRoute: typeof ApiPublicHooksJaguarPollRoute
   ApiPublicHooksNetatmoClimateRefreshRoute: typeof ApiPublicHooksNetatmoClimateRefreshRoute
   ApiPublicHooksSnapshotPulseRoute: typeof ApiPublicHooksSnapshotPulseRoute
   ApiPublicHooksSnapshotTibberDailyRoute: typeof ApiPublicHooksSnapshotTibberDailyRoute
@@ -680,6 +707,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof KvitteringerRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/jaguar': {
+      id: '/jaguar'
+      path: '/jaguar'
+      fullPath: '/jaguar'
+      preLoaderRoute: typeof JaguarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/hytta': {
       id: '/hytta'
       path: '/hytta'
@@ -778,6 +812,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksNetatmoClimateRefreshRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/jaguar-poll': {
+      id: '/api/public/hooks/jaguar-poll'
+      path: '/api/public/hooks/jaguar-poll'
+      fullPath: '/api/public/hooks/jaguar-poll'
+      preLoaderRoute: typeof ApiPublicHooksJaguarPollRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/homey-sensor-poll': {
       id: '/api/public/hooks/homey-sensor-poll'
       path: '/api/public/hooks/homey-sensor-poll'
@@ -829,6 +870,7 @@ const rootRouteChildren: RootRouteChildren = {
   DecibelRoute: DecibelRoute,
   GressklipperRoute: GressklipperRoute,
   HyttaRoute: HyttaRoute,
+  JaguarRoute: JaguarRoute,
   KvitteringerRoute: KvitteringerRoute,
   LysRoute: LysRoute,
   OkonomiRoute: OkonomiRoute,
@@ -860,6 +902,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksEufyPollRoute: ApiPublicHooksEufyPollRoute,
   ApiPublicHooksGardenaPollRoute: ApiPublicHooksGardenaPollRoute,
   ApiPublicHooksHomeySensorPollRoute: ApiPublicHooksHomeySensorPollRoute,
+  ApiPublicHooksJaguarPollRoute: ApiPublicHooksJaguarPollRoute,
   ApiPublicHooksNetatmoClimateRefreshRoute:
     ApiPublicHooksNetatmoClimateRefreshRoute,
   ApiPublicHooksSnapshotPulseRoute: ApiPublicHooksSnapshotPulseRoute,

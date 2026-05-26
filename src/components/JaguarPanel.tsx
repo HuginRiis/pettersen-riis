@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Car, Loader2, RefreshCw, Lock, Unlock, Wind, WindOff, Bell, MapPin, Gauge, Battery, Fuel } from "lucide-react";
+import { Car, Loader2, RefreshCw, Lock, Unlock, Wind, Power, Bell, MapPin, Gauge, Battery, Fuel } from "lucide-react";
 import { getJaguarSnapshot, getJaguarHistory, sendJaguarCommandFn } from "@/server/jaguar.functions";
 
 type Snap = Awaited<ReturnType<typeof getJaguarSnapshot>>;
@@ -10,7 +10,7 @@ const CMDS: Array<{ key: "LOCK" | "UNLOCK" | "CLIMATE_START" | "CLIMATE_STOP" | 
   { key: "LOCK", label: "Lås", icon: Lock },
   { key: "UNLOCK", label: "Lås opp", icon: Unlock },
   { key: "CLIMATE_START", label: "Start klima", icon: Wind },
-  { key: "CLIMATE_STOP", label: "Stopp klima", icon: WindOff },
+  { key: "CLIMATE_STOP", label: "Stopp klima", icon: Power },
   { key: "HONK_FLASH", label: "Tut & blink", icon: Bell },
 ];
 
