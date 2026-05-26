@@ -69,7 +69,6 @@ import hallGressklipper from "@/assets/got-gressklipper.jpg";
 import hallStovsuger from "@/assets/got-stovsuger.jpg";
 import hallSkatt from "@/assets/got-skatt.jpg";
 
-
 // Halls available to anyone who steps into the courtyard (no password required)
 const PUBLIC_HALL_PATHS = new Set<string>(["/var", "/pollen", "/turer"]);
 
@@ -334,7 +333,6 @@ function Home() {
           {showHall("/varme") && <HallCard to="/varme" title="Varme & Klima" desc="Ovner, varmepumper og luftretning — borgen og hytta." icon="🔥" image={hallVarme} locked={!isAuthed} />}
           {showHall("/gressklipper") && <HallCard to="/gressklipper" title="Gressklipper" desc="Sileno-vokteren av plenen." icon="🌱" image={hallGressklipper} locked={!isAuthed} badge={<HallBadgeStack><GardenaStatusBadge inline /><GardenaBatteryBadge inline /><GardenaSignalBadge inline /></HallBadgeStack>} />}
           {showHall("/stovsugeren") && <HallCard to="/stovsugeren" title="Støvsugeren" desc="Roborock — Hjemme og Hytta." icon="🤖" image={hallStovsuger} locked={!isAuthed} badge={<HallBadgeStack><RoborockStatusBadge inline match="hjem" name="Hjemme" /><RoborockStatusBadge inline match="hytt" name="Hytta" /></HallBadgeStack>} />}
-          
           {showHall("/stromkroniken") && <HallCard to="/stromkroniken" title="Strømkrøniken" desc="Husets strømgull — kostnader, forbruk og priser." icon="⚡" image={hallStrom} locked={!isAuthed} badge={<HallBadgeStack><PowerVsYesterdayBadge inline /></HallBadgeStack>} />}
           {showHall("/skatte-utregningen") && <HallCard to="/skatte-utregningen" title="Skatte­utregningen" desc="Skatt og lønn — beregninger." icon="🪙" image={hallSkatt} locked={!isAuthed} />}
           {showHall("/steintavle") && <HallCard to="/steintavle" title="Steintavle" desc="Husets innskrifter og notater." icon="🪨" image={hallSteintavle} locked={!isAuthed} />}
@@ -664,7 +662,6 @@ function HallCard({
     | "/varme"
     | "/gressklipper"
     | "/stovsugeren"
-    
     | "/skatte-utregningen"
     | "/steintavle"
     | "/steintavle-2"
