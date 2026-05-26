@@ -9,6 +9,7 @@ import {
   requestJaguarOtpFn,
   verifyJaguarOtpFn,
   setJaguarRefreshTokenFn,
+  probeJaguarPortalFn,
 } from "@/server/jaguar.functions";
 
 type Snap = Awaited<ReturnType<typeof getJaguarSnapshot>>;
