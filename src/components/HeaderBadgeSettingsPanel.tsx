@@ -125,6 +125,8 @@ export function HeaderBadgeSettingsPanel() {
           Tom liste = vises for alle.
         </p>
 
+        <BadgeUpdateTimesPanel />
+
         <div className="mt-4 panel rounded p-3 border border-border/50">
           <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Menyrad-tekst</p>
           <label className="flex items-center gap-2 text-sm cursor-pointer">
