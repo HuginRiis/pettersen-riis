@@ -1265,6 +1265,48 @@ export type Database = {
         }
         Relationships: []
       }
+      jaguar_auth: {
+        Row: {
+          access_token: string | null
+          authorization_token: string | null
+          device_id: string | null
+          email: string | null
+          expires_at: string | null
+          id: number
+          pending_email: string | null
+          pending_started_at: string | null
+          refresh_token: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          access_token?: string | null
+          authorization_token?: string | null
+          device_id?: string | null
+          email?: string | null
+          expires_at?: string | null
+          id?: number
+          pending_email?: string | null
+          pending_started_at?: string | null
+          refresh_token?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          access_token?: string | null
+          authorization_token?: string | null
+          device_id?: string | null
+          email?: string | null
+          expires_at?: string | null
+          id?: number
+          pending_email?: string | null
+          pending_started_at?: string | null
+          refresh_token?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       jaguar_snapshots: {
         Row: {
           error: string | null
