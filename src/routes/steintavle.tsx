@@ -303,7 +303,7 @@ function SteintavlePage() {
     (tempUteLive === null && uteMM !== null) ||
     (tempSovLive === null && sovMM !== null);
   useEffect(() => {
-    if (!tempMissing) return;
+    if (!tempMissing || paused) return;
     let cancelled = false;
     let attempt = 0;
     const tryRefetch = async () => {
