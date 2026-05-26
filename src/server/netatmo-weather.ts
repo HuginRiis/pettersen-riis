@@ -179,7 +179,7 @@ export const getNetatmoWeatherStation = createServerFn({ method: "GET" })
         // 429 → server forrige cache litt lenger om vi har den
         if (res.status === 429 && cached?.data.ok) {
           weatherCache.set(cacheKey, { at: Date.now() - WEATHER_TTL_MS + 60_000, data: cached.data });
-          return cached.data;
+          return { ...cached.data, cached: true } as WeatherStationResult;
         }
         return {
           ok: false,
