@@ -485,8 +485,8 @@ export function ClimateAnalyticsPanel({
           {/* Linjegraf 24h */}
           <div>
             <div className="flex flex-wrap gap-1.5 mb-2">
-              <TogglePill active={isTempOn("inT")} color="#fb923c" onClick={() => toggleTemp("inT")}>Stua</TogglePill>
-              <TogglePill active={isTempOn("outT")} color="#60a5fa" onClick={() => toggleTemp("outT")}>Ute</TogglePill>
+              <TogglePill active={isTempOn("inT")} color={seriesColor(0)} onClick={() => toggleTemp("inT")}>Stua</TogglePill>
+              <TogglePill active={isTempOn("outT")} color={seriesColor(1)} onClick={() => toggleTemp("outT")}>Ute</TogglePill>
               {(data.rooms ?? []).map((r, i) => (
                 <TogglePill key={r.id} active={isTempOn(r.id)} color={roomColor(i)} onClick={() => toggleTemp(r.id)}>
                   {r.name}
