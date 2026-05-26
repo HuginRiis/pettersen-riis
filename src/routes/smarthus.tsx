@@ -679,8 +679,11 @@ function SmarthusPage() {
     "master",
     "soverom",
   ]);
+  const bassengDevice = findRoomDevice(["basseng", "pool"]);
   const kontorReadings = readRoom(kontorDevice);
   const soveromReadings = readRoom(soveromDevice);
+  const bassengReadings = readRoom(bassengDevice);
+
 
 
   const handleDisconnect = async () => {
