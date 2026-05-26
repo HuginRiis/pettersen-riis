@@ -580,8 +580,8 @@ export function ClimateAnalyticsPanel({
           {/* Luftfukt + CO2 siste 24h */}
           <div>
             <div className="flex flex-wrap gap-1.5 mb-2">
-              <TogglePill active={isHumOn("hum")} color="#22d3ee" onClick={() => toggleHum("hum")}>Stua %</TogglePill>
-              <TogglePill active={isHumOn("co2")} color="#a78bfa" onClick={() => toggleHum("co2")}>CO₂ ppm</TogglePill>
+              <TogglePill active={isHumOn("hum")} color={seriesColor(0)} onClick={() => toggleHum("hum")}>Stua %</TogglePill>
+              <TogglePill active={isHumOn("co2")} color={seriesColor(1)} onClick={() => toggleHum("co2")}>CO₂ ppm</TogglePill>
               {(data.rooms ?? []).map((r, i) => (
                 <TogglePill key={r.id} active={isHumOn(r.id)} color={roomColor(i)} onClick={() => toggleHum(r.id)}>
                   {r.name} %
