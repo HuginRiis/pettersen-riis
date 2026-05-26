@@ -28,6 +28,7 @@ export const HEADER_BADGE_DEFS: { id: string; label: string }[] = [
   { id: "weather_days", label: "Værmelding (dager fremover) · meny: Vær" },
   { id: "weather_temp", label: "Temperatur nå · meny: Vær" },
   { id: "mower_status", label: "Gressklipper-status · meny: Smartborg" },
+  { id: "basseng_temp", label: "Basseng temperatur (med trend-pil siste time) · meny: Smartborg" },
   { id: "roborock_hjemme_status", label: "Støvsuger Hjemme – status · meny: Støvsugeren" },
   { id: "roborock_hytta_status", label: "Støvsuger Hytta – status · meny: Støvsugeren" },
   { id: "gardena_status", label: "Gardena status · meny: Gressklipper" },
