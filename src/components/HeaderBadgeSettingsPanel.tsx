@@ -5,9 +5,86 @@ import {
   saveHeaderBadgeSettings,
   useHeaderBadgeSettings,
 } from "@/hooks/use-header-badge-settings";
-import { LayoutGrid, Save } from "lucide-react";
+import { LayoutGrid, Save, Clock } from "lucide-react";
+import { getBadgeMeta, listBadgeKeys, subscribeBadgeMeta } from "@/lib/badge-cache";
 
 const KNOWN_USERS = ["Arne", "Rebekka", "Ada", "Noah", "Petter", "Mor", "Far"];
+
+const BADGE_KEY_LABELS: Record<string, string> = {
+  "push-today-count": "Push i dag",
+  "lights-on-text": "Lys tent",
+  "alarm-state": "Alarm-status",
+  "alerts-severity": "Farevarsler",
+  "power-vs-yesterday-pct": "Strøm i dag vs i går",
+  "mower-status": "Gressklipper-status",
+  "garbage-next-pickups": "Neste søppeltømming",
+  "utgangsdoren-lock": "Utgangsdøren låst/åpen",
+};
+
+function labelForKey(key: string): string {
+  if (BADGE_KEY_LABELS[key]) return BADGE_KEY_LABELS[key];
+  if (key.startsWith("steps-today:")) return `Skritt — ${key.slice("steps-today:".length)}`;
+  if (key.startsWith("current-temp:")) return `Temperatur (${key.slice("current-temp:".length)})`;
+  if (key.startsWith("roborock-status:")) return `Støvsuger — ${key.slice("roborock-status:".length)}`;
+  return key;
+}
+
+function fmtClock(ms: number): string {
+  return new Date(ms).toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit", second: "2-digit", timeZone: "Europe/Oslo" });
+}
+function fmtRel(ms: number): string {
+  const s = Math.max(0, Math.round((Date.now() - ms) / 1000));
+  if (s < 10) return "nå";
+  if (s < 60) return `${s}s siden`;
+  const m = Math.round(s / 60);
+  if (m < 60) return `${m} min siden`;
+  const h = Math.round(m / 60);
+  if (h < 24) return `${h} t siden`;
+  return `${Math.round(h / 24)} d siden`;
+}
+
+function BadgeUpdateTimesPanel() {
+  const [, force] = useState(0);
+  useEffect(() => {
+    const unsub = subscribeBadgeMeta(() => force((n) => n + 1));
+    const t = setInterval(() => force((n) => n + 1), 30_000);
+    return () => { unsub(); clearInterval(t); };
+  }, []);
+  const keys = listBadgeKeys();
+  return (
+    <div className="mt-4 panel rounded p-3 border border-border/50">
+      <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-2">
+        <Clock size={12} /> Sist oppdatert pr badge
+      </p>
+      {keys.length === 0 ? (
+        <p className="text-xs text-muted-foreground">Ingen badges har lastet data ennå i denne økten.</p>
+      ) : (
+        <div className="grid gap-1.5">
+          {keys.map((k) => {
+            const m = getBadgeMeta(k);
+            if (!m) return null;
+            return (
+              <div key={k} className="flex items-center justify-between gap-3 text-xs border-b border-border/30 last:border-0 pb-1.5 last:pb-0">
+                <span className="font-medium text-foreground truncate">{labelForKey(k)}</span>
+                <span className="text-muted-foreground tabular-nums whitespace-nowrap">
+                  <span className="text-foreground">{fmtClock(m.at)}</span>
+                  <span className="text-muted-foreground/70"> · {fmtRel(m.at)}</span>
+                  {m.prevAt != null && (
+                    <span className="text-muted-foreground/60"> (forrige {fmtClock(m.prevAt)})</span>
+                  )}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+      <p className="text-[10px] text-muted-foreground mt-2">
+        Viser når hvert badge sist hentet data, samt forrige henting. Listen oppdateres når badges
+        oppdaterer cachen.
+      </p>
+    </div>
+  );
+}
 
 export function HeaderBadgeSettingsPanel() {
   const remote = useHeaderBadgeSettings();
