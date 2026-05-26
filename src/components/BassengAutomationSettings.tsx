@@ -16,6 +16,7 @@ type Config = {
   stuaTempThreshold: number;       // hvis stuetemp < dette → trigge
   stuaDeviceId: string | null;     // sensor for stue
   bassengSwitchId: string | null;  // bryter for basseng som skal skrus av
+  wattCheckEnabled: boolean;       // sjekk watt før vi skrur av?
   wattMax: number;                 // skru bare av når W < wattMax
   wattSensorId: string | null;     // hvor watt leses fra (kan være samme som bryter)
   melcloudDeviceId: string | null; // varmepumpa
@@ -30,6 +31,7 @@ const DEFAULT_CONFIG: Config = {
   stuaTempThreshold: 18,
   stuaDeviceId: null,
   bassengSwitchId: null,
+  wattCheckEnabled: true,
   wattMax: 30,
   wattSensorId: null,
   melcloudDeviceId: null,
