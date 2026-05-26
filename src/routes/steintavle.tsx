@@ -1,9 +1,9 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Lightbulb, LightbulbOff, Loader2, Pause, Play } from "lucide-react";
+import { Lightbulb, LightbulbOff, Loader2 } from "lucide-react";
 import { PageShell } from "@/components/PageShell";
-import { usePersistedState } from "@/hooks/use-persisted-state";
+import { useUpdatesPaused } from "@/hooks/use-updates-paused";
 import { TollnesCameraStrip } from "@/components/TollnesCameraStrip";
 import {
   HeatPumpTile,
@@ -119,7 +119,7 @@ function SteintavlePage() {
   // Optimistisk overstyring av lys-status — null betyr "bruk verdien fra snapshot".
   const [lightsOverride, setLightsOverride] = useState<boolean | null>(null);
   const [lightsBusy, setLightsBusy] = useState(false);
-  const [paused, setPaused] = usePersistedState<boolean>("st.updates.paused", false);
+  const [paused, setPaused] = useUpdatesPaused();
 
   // Lys-status leses fra snapshot (samme zone-logikk som server),
   // så vi unngår et eget API-kall mot Athom.
@@ -339,7 +339,7 @@ function SteintavlePage() {
 
   return (
     <PageShell minimalHeader>
-      <header className="container mx-auto px-6 pt-3 pb-2 relative text-center">
+      <header className="container mx-auto px-6 pt-3 pb-2 text-center">
         <div className="text-display tracking-[0.5em] text-primary text-xs sm:text-sm uppercase">
           Steintavlen · Tollnes ·{" "}
           <span className="text-muted-foreground">
@@ -356,20 +356,6 @@ function SteintavlePage() {
             </span>
           )}
         </div>
-        <button
-          type="button"
-          onClick={() => setPaused((p) => !p)}
-          aria-label={paused ? "Start oppdateringer" : "Stopp oppdateringer"}
-          title={paused ? "Start oppdateringer" : "Stopp oppdateringer"}
-          className={`absolute right-3 top-2 sm:right-6 sm:top-3 inline-flex items-center gap-1.5 rounded border px-2 py-1 text-[9px] tracking-[0.25em] uppercase transition-colors ${
-            paused
-              ? "border-amber-400/60 text-amber-300 bg-amber-500/10 hover:bg-amber-500/20"
-              : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/40"
-          }`}
-        >
-          {paused ? <Play size={11} /> : <Pause size={11} />}
-          <span className="hidden sm:inline">{paused ? "Start" : "Pause"}</span>
-        </button>
       </header>
 
       {hasThunder && (

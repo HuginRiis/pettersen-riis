@@ -4,7 +4,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { Menu, X, LogOut, Crown, Swords, Shield, KeyRound, Home, Star, Flower2,
   Sun, Compass, CalendarDays, BellRing, Eye, Mountain, Lightbulb, Lamp, Flame, Zap,
   Receipt, Dumbbell, AlertTriangle, ScrollText, Globe, ChevronDown, ChevronRight,
-  TreePine, Coins, Bot, Wallet, Volume2, Settings } from "lucide-react";
+  TreePine, Coins, Bot, Wallet, Volume2, Settings, Pause, Play } from "lucide-react";
+import { useUpdatesPaused } from "@/hooks/use-updates-paused";
 
 
 import { logoutFn } from "@/server/auth";
@@ -149,6 +150,7 @@ const navLinks: NavLink[] = [
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
+  const [updatesPaused, setUpdatesPaused] = useUpdatesPaused();
   const mobileMenuRef = useRef<HTMLElement | null>(null);
 
 
@@ -473,6 +475,19 @@ export function SiteHeader() {
         </nav>
 
         <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => setUpdatesPaused(!updatesPaused)}
+            aria-label={updatesPaused ? "Start oppdateringer" : "Pause oppdateringer"}
+            title={updatesPaused ? "Oppdateringer pauset — trykk for å starte" : "Pause alle auto-oppdateringer"}
+            className={`p-2 rounded-md transition ${
+              updatesPaused
+                ? "text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 shadow-[0_0_10px_hsl(45_100%_50%/0.4)]"
+                : "text-muted-foreground hover:text-primary hover:bg-primary/10"
+            }`}
+          >
+            {updatesPaused ? <Play size={18} /> : <Pause size={18} />}
+          </button>
           {open && isAuthed && (
             <Link
               to="/push-varslinger"
