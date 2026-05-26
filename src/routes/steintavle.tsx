@@ -194,12 +194,12 @@ function SteintavlePage() {
     loadNetatmo();
 
     // Polling-intervaller (skånsomme mot APIene):
-    // - Netatmo: 5 min (Netatmo oppdaterer selv hvert 10. min)
+    // - Netatmo: 10 min (server-cache er 10 min — kortere polling gir bare cache-hits)
     // - Værvarsel: 10 min
     // - Klokke: 30 sek
     // - Homey-snapshot: 3 min (lyskontroll)
     const a = setInterval(loadAlerts, 10 * 60_000);
-    const n = setInterval(loadNetatmo, 5 * 60_000);
+    const n = setInterval(loadNetatmo, 10 * 60_000);
     const c = setInterval(() => setNow(new Date()), 30_000);
     const t = setInterval(refreshSnapshot, 3 * 60_000);
 
