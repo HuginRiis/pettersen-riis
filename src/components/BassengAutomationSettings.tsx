@@ -16,6 +16,7 @@ type Config = {
   stuaTempThreshold: number;       // hvis stuetemp < dette → trigge
   stuaDeviceId: string | null;     // sensor for stue
   bassengSwitchId: string | null;  // bryter for basseng som skal skrus av
+  wattCheckEnabled: boolean;       // sjekk watt før vi skrur av?
   wattMax: number;                 // skru bare av når W < wattMax
   wattSensorId: string | null;     // hvor watt leses fra (kan være samme som bryter)
   melcloudDeviceId: string | null; // varmepumpa
@@ -30,6 +31,7 @@ const DEFAULT_CONFIG: Config = {
   stuaTempThreshold: 18,
   stuaDeviceId: null,
   bassengSwitchId: null,
+  wattCheckEnabled: true,
   wattMax: 30,
   wattSensorId: null,
   melcloudDeviceId: null,
@@ -169,14 +171,18 @@ export function BassengAutomationSettings() {
 
       const log: string[] = [`Stua: ${stuaTemp.toFixed(1)}° < ${config.stuaTempThreshold}° → trigger.`];
 
-      // Sjekk watt før vi skrur av bryter
-      const wattSrc = find(config.wattSensorId) ?? find(config.bassengSwitchId);
-      const watt = wattSrc?.capabilities?.["measure_power"]?.value;
-      if (typeof watt === "number" && watt >= config.wattMax) {
-        setMsg(`${log.join(" ")} Basseng bruker ${watt.toFixed(0)} W (≥ ${config.wattMax}). Avbryter.`);
-        return;
+      // Sjekk watt før vi skrur av bryter (valgfritt)
+      if (config.wattCheckEnabled) {
+        const wattSrc = find(config.wattSensorId) ?? find(config.bassengSwitchId);
+        const watt = wattSrc?.capabilities?.["measure_power"]?.value;
+        if (typeof watt === "number" && watt >= config.wattMax) {
+          setMsg(`${log.join(" ")} Basseng bruker ${watt.toFixed(0)} W (≥ ${config.wattMax}). Avbryter.`);
+          return;
+        }
+        log.push(`Watt: ${typeof watt === "number" ? `${watt.toFixed(0)} W ok` : "ukjent"}.`);
+      } else {
+        log.push("Watt-sjekk: av.");
       }
-      log.push(`Watt: ${typeof watt === "number" ? `${watt.toFixed(0)} W ok` : "ukjent"}.`);
 
       // Skru av basseng-bryter
       if (config.bassengSwitchId) {
@@ -272,21 +278,32 @@ export function BassengAutomationSettings() {
             <SelectContent>{switches.map(deviceOption)}</SelectContent>
           </Select>
         </label>
-        <label className="space-y-1.5">
-          <span className="text-xs flex items-center gap-1.5"><Plug size={12} className="text-amber-300" /> Watt-sensor (sjekk før av)</span>
-          <Select value={config.wattSensorId ?? ""} disabled={!config.enabled} onValueChange={(v) => void save({ wattSensorId: v })}>
+        <div className="space-y-1.5">
+          <label className="inline-flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={config.wattCheckEnabled}
+              disabled={!config.enabled}
+              onChange={(e) => void save({ wattCheckEnabled: e.target.checked })}
+              className="accent-[var(--gold)]"
+            />
+            <span className="text-xs flex items-center gap-1.5">
+              <Plug size={12} className="text-amber-300" /> Sjekk watt før av
+            </span>
+          </label>
+          <Select value={config.wattSensorId ?? ""} disabled={!config.enabled || !config.wattCheckEnabled} onValueChange={(v) => void save({ wattSensorId: v })}>
             <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Samme som bryter…" /></SelectTrigger>
             <SelectContent>{wattSensors.map(deviceOption)}</SelectContent>
           </Select>
-        </label>
+        </div>
         <label className="space-y-1.5 sm:col-span-2">
           <span className="text-xs">Skru bare av hvis watt &lt; (W)</span>
           <input
             type="number"
             value={config.wattMax}
-            disabled={!config.enabled}
+            disabled={!config.enabled || !config.wattCheckEnabled}
             onChange={(e) => void save({ wattMax: Number(e.target.value) })}
-            className="w-full bg-background border border-border/60 rounded px-2 py-1 text-sm tabular-nums"
+            className="w-full bg-background border border-border/60 rounded px-2 py-1 text-sm tabular-nums disabled:opacity-50"
           />
         </label>
       </div>
