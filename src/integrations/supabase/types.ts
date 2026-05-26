@@ -1265,6 +1265,51 @@ export type Database = {
         }
         Relationships: []
       }
+      jaguar_snapshots: {
+        Row: {
+          error: string | null
+          fetched_at: string
+          id: string
+          level: number | null
+          locked: boolean | null
+          odometer_km: number | null
+          ok: boolean
+          position_lat: number | null
+          position_lon: number | null
+          range_km: number | null
+          raw: Json | null
+          vin: string | null
+        }
+        Insert: {
+          error?: string | null
+          fetched_at?: string
+          id?: string
+          level?: number | null
+          locked?: boolean | null
+          odometer_km?: number | null
+          ok?: boolean
+          position_lat?: number | null
+          position_lon?: number | null
+          range_km?: number | null
+          raw?: Json | null
+          vin?: string | null
+        }
+        Update: {
+          error?: string | null
+          fetched_at?: string
+          id?: string
+          level?: number | null
+          locked?: boolean | null
+          odometer_km?: number | null
+          ok?: boolean
+          position_lat?: number | null
+          position_lon?: number | null
+          range_km?: number | null
+          raw?: Json | null
+          vin?: string | null
+        }
+        Relationships: []
+      }
       light_idle_notification_prefs: {
         Row: {
           cooldown_minutes: number
