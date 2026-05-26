@@ -218,6 +218,69 @@ export type Database = {
         }
         Relationships: []
       }
+      basseng_notification_prefs: {
+        Row: {
+          active_from: string
+          active_to: string
+          created_at: string
+          delta: number
+          device_match: string
+          enabled: boolean
+          id: string
+          label: string
+          last_checked_at: string | null
+          last_direction: string | null
+          last_notified_at: string | null
+          last_notified_value: number | null
+          last_value: number | null
+          notify_down: boolean
+          notify_up: boolean
+          recipient_down: string
+          recipient_up: string
+          updated_at: string
+        }
+        Insert: {
+          active_from?: string
+          active_to?: string
+          created_at?: string
+          delta?: number
+          device_match?: string
+          enabled?: boolean
+          id?: string
+          label?: string
+          last_checked_at?: string | null
+          last_direction?: string | null
+          last_notified_at?: string | null
+          last_notified_value?: number | null
+          last_value?: number | null
+          notify_down?: boolean
+          notify_up?: boolean
+          recipient_down?: string
+          recipient_up?: string
+          updated_at?: string
+        }
+        Update: {
+          active_from?: string
+          active_to?: string
+          created_at?: string
+          delta?: number
+          device_match?: string
+          enabled?: boolean
+          id?: string
+          label?: string
+          last_checked_at?: string | null
+          last_direction?: string | null
+          last_notified_at?: string | null
+          last_notified_value?: number | null
+          last_value?: number | null
+          notify_down?: boolean
+          notify_up?: boolean
+          recipient_down?: string
+          recipient_up?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       birthdays: {
         Row: {
           birth_date: string
