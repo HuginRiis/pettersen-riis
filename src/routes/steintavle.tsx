@@ -128,6 +128,7 @@ function SteintavlePage() {
 
   // Auto-refresh hver 10 minutt mens fanen er synlig (bra for iPad i kiosk-modus)
   useEffect(() => {
+    if (paused) return;
     const REFRESH_MS = 10 * 60_000;
     const tick = () => {
       if (typeof document !== "undefined" && document.hidden) return;
@@ -145,7 +146,7 @@ function SteintavlePage() {
       clearInterval(id);
       document.removeEventListener("visibilitychange", onVisible);
     };
-  }, [router, fetchNetatmo]);
+  }, [router, fetchNetatmo, paused]);
 
   // Når snapshot oppdateres og matcher overstyringen → dropp overstyringen.
   useEffect(() => {
