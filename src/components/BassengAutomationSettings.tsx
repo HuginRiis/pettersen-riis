@@ -171,14 +171,18 @@ export function BassengAutomationSettings() {
 
       const log: string[] = [`Stua: ${stuaTemp.toFixed(1)}° < ${config.stuaTempThreshold}° → trigger.`];
 
-      // Sjekk watt før vi skrur av bryter
-      const wattSrc = find(config.wattSensorId) ?? find(config.bassengSwitchId);
-      const watt = wattSrc?.capabilities?.["measure_power"]?.value;
-      if (typeof watt === "number" && watt >= config.wattMax) {
-        setMsg(`${log.join(" ")} Basseng bruker ${watt.toFixed(0)} W (≥ ${config.wattMax}). Avbryter.`);
-        return;
+      // Sjekk watt før vi skrur av bryter (valgfritt)
+      if (config.wattCheckEnabled) {
+        const wattSrc = find(config.wattSensorId) ?? find(config.bassengSwitchId);
+        const watt = wattSrc?.capabilities?.["measure_power"]?.value;
+        if (typeof watt === "number" && watt >= config.wattMax) {
+          setMsg(`${log.join(" ")} Basseng bruker ${watt.toFixed(0)} W (≥ ${config.wattMax}). Avbryter.`);
+          return;
+        }
+        log.push(`Watt: ${typeof watt === "number" ? `${watt.toFixed(0)} W ok` : "ukjent"}.`);
+      } else {
+        log.push("Watt-sjekk: av.");
       }
-      log.push(`Watt: ${typeof watt === "number" ? `${watt.toFixed(0)} W ok` : "ukjent"}.`);
 
       // Skru av basseng-bryter
       if (config.bassengSwitchId) {
