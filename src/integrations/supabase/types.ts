@@ -218,6 +218,27 @@ export type Database = {
         }
         Relationships: []
       }
+      basseng_climate_samples: {
+        Row: {
+          outdoor_temp: number | null
+          pool_temp: number | null
+          ts: string
+          watts: number | null
+        }
+        Insert: {
+          outdoor_temp?: number | null
+          pool_temp?: number | null
+          ts?: string
+          watts?: number | null
+        }
+        Update: {
+          outdoor_temp?: number | null
+          pool_temp?: number | null
+          ts?: string
+          watts?: number | null
+        }
+        Relationships: []
+      }
       basseng_notification_prefs: {
         Row: {
           active_from: string
