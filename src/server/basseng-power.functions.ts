@@ -35,6 +35,8 @@ export const getBassengPowerStats = createServerFn({ method: "GET" }).handler(
         deviceId: null,
         deviceName: null,
         liveWatts: null as number | null,
+        isOn: null as boolean | null,
+        lastMotion: null as { ts: string; deviceName: string; zone: string | null } | null,
         kwh24h: 0,
         kwh7d: 0,
         kwhTotal: 0,
