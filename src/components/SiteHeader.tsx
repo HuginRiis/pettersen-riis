@@ -473,7 +473,7 @@ export function SiteHeader() {
         </nav>
 
         <div className="flex items-center gap-1">
-          {open && isAuthed && (
+          {isAuthed && (
             <Link
               to="/push-varslinger"
               onClick={() => setOpen(false)}
