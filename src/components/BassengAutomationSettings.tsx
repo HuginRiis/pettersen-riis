@@ -357,6 +357,48 @@ export function BassengAutomationSettings() {
             onChange={(e) => void save({ stuaTempHighThreshold: Number(e.target.value) })}
             className="w-full bg-background border border-border/60 rounded px-2 py-1 text-sm tabular-nums disabled:opacity-50"
           />
+        <div className="space-y-1.5 sm:col-span-2">
+          <label className="inline-flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={config.neutralEnabled}
+              disabled={!config.enabled}
+              onChange={(e) => void save({ neutralEnabled: e.target.checked })}
+              className="accent-[var(--gold)]"
+            />
+            <span className="text-xs flex items-center gap-1.5">
+              <Power size={12} className="text-emerald-400" /> Tilbakestill når stua er mellom
+            </span>
+          </label>
+          <div className="flex items-center gap-2">
+            <input
+              type="number" step="0.5"
+              value={config.neutralMin}
+              disabled={!config.enabled || !config.neutralEnabled}
+              onChange={(e) => void save({ neutralMin: Number(e.target.value) })}
+              className="w-20 bg-background border border-border/60 rounded px-2 py-1 text-sm tabular-nums disabled:opacity-50"
+            />
+            <span className="text-xs text-muted-foreground">og</span>
+            <input
+              type="number" step="0.5"
+              value={config.neutralMax}
+              disabled={!config.enabled || !config.neutralEnabled}
+              onChange={(e) => void save({ neutralMax: Number(e.target.value) })}
+              className="w-20 bg-background border border-border/60 rounded px-2 py-1 text-sm tabular-nums disabled:opacity-50"
+            />
+            <span className="text-xs text-muted-foreground">°, etter</span>
+            <input
+              type="number" min={1}
+              value={config.neutralDelayMinutes}
+              disabled={!config.enabled || !config.neutralEnabled}
+              onChange={(e) => void save({ neutralDelayMinutes: Number(e.target.value) })}
+              className="w-20 bg-background border border-border/60 rounded px-2 py-1 text-sm tabular-nums disabled:opacity-50"
+            />
+            <span className="text-xs text-muted-foreground">min</span>
+          </div>
+          <p className="text-[10px] text-muted-foreground">
+            Skrur varmepumpa <strong>av</strong> og basseng-bryter <strong>på</strong> — kun hvis basseng har vært av minst så lenge.
+          </p>
         </div>
       </div>
 
