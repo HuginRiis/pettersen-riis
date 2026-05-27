@@ -182,24 +182,63 @@ export function BassengAutomationSettings() {
         setMsg("Fant ikke stuetemperatur.");
         return;
       }
-      let trigger: "cold" | "hot" | null = null;
+      let trigger: "cold" | "hot" | "neutral" | null = null;
       if (stuaTemp < config.stuaTempThreshold) trigger = "cold";
       else if (config.stuaTempHighEnabled && stuaTemp > config.stuaTempHighThreshold) trigger = "hot";
+      else if (
+        config.neutralEnabled &&
+        stuaTemp >= config.neutralMin &&
+        stuaTemp <= config.neutralMax
+      ) {
+        // Krev at basseng ble skrudd av for minst N minutter siden
+        const lastOff = config.lastBassengOffAt ? new Date(config.lastBassengOffAt).getTime() : 0;
+        const minsSince = lastOff ? (Date.now() - lastOff) / 60000 : Infinity;
+        if (lastOff && minsSince >= config.neutralDelayMinutes) {
+          trigger = "neutral";
+        } else if (lastOff) {
+          setMsg(
+            `Stua er ${stuaTemp.toFixed(1)}° (nøytral ${config.neutralMin}°–${config.neutralMax}°). ` +
+            `Venter — ${Math.round(minsSince)}/${config.neutralDelayMinutes} min siden basseng av.`
+          );
+          return;
+        }
+      }
 
       if (!trigger) {
-        const range = config.stuaTempHighEnabled
-          ? `${config.stuaTempThreshold}°–${config.stuaTempHighThreshold}°`
-          : `≥ ${config.stuaTempThreshold}°`;
-        setMsg(`Stua er ${stuaTemp.toFixed(1)}° (${range}). Ingen handling.`);
+        const parts: string[] = [`< ${config.stuaTempThreshold}°`];
+        if (config.stuaTempHighEnabled) parts.push(`> ${config.stuaTempHighThreshold}°`);
+        if (config.neutralEnabled) parts.push(`${config.neutralMin}°–${config.neutralMax}° (etter ${config.neutralDelayMinutes} min)`);
+        setMsg(`Stua er ${stuaTemp.toFixed(1)}°. Ingen trigger (${parts.join(" / ")}).`);
+        return;
+      }
+
+      const arrow =
+        trigger === "cold" ? `< ${config.stuaTempThreshold}° → varme`
+        : trigger === "hot" ? `> ${config.stuaTempHighThreshold}° → kjøl`
+        : `${config.neutralMin}°–${config.neutralMax}° → tilbakestill`;
+      const log: string[] = [`Stua: ${stuaTemp.toFixed(1)}° ${arrow}.`];
+
+      if (trigger === "neutral") {
+        // Skru AV varmepumpa og PÅ basseng-bryteren
+        if (config.melcloudDeviceId) {
+          const md = find(config.melcloudDeviceId);
+          if (md?.capabilities?.["onoff"]) {
+            const r = await setCap({ data: { deviceId: config.melcloudDeviceId, capability: "onoff", value: false } });
+            log.push(r.ok ? "Varmepumpe AV ✓" : `Varmepumpe av-feil: ${r.error}`);
+          }
+        }
+        if (config.bassengSwitchId) {
+          const r = await setCap({ data: { deviceId: config.bassengSwitchId, capability: "onoff", value: true } });
+          log.push(r.ok ? "Basseng-bryter PÅ ✓" : `Bryter feilet: ${r.error}`);
+        }
+        // Nullstill lastBassengOffAt så vi ikke trigger igjen umiddelbart
+        await save({ lastBassengOffAt: null });
+        setMsg(log.join(" · "));
         return;
       }
 
       const mode = trigger === "cold" ? config.melcloudMode : config.melcloudCoolMode;
       const targetTemp = trigger === "cold" ? config.melcloudTargetTemp : config.melcloudCoolTargetTemp;
-      const arrow = trigger === "cold"
-        ? `< ${config.stuaTempThreshold}° → varme`
-        : `> ${config.stuaTempHighThreshold}° → kjøl`;
-      const log: string[] = [`Stua: ${stuaTemp.toFixed(1)}° ${arrow}.`];
 
       // Sjekk watt før vi skrur av bryter (valgfritt)
       if (config.wattCheckEnabled) {
@@ -218,6 +257,7 @@ export function BassengAutomationSettings() {
       if (config.bassengSwitchId) {
         const r = await setCap({ data: { deviceId: config.bassengSwitchId, capability: "onoff", value: false } });
         log.push(r.ok ? "Basseng-bryter AV ✓" : `Bryter feilet: ${r.error}`);
+        if (r.ok) await save({ lastBassengOffAt: new Date().toISOString() });
       }
 
       // Skru på varmepumpa
