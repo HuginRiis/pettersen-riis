@@ -193,8 +193,19 @@ export async function processBassengNotifications(force = false): Promise<{
     }
 
     const diff = temp - pref.last_notified_value;
-    const direction: "up" | "down" | null =
-      diff >= pref.delta ? "up" : diff <= -pref.delta ? "down" : null;
+    const mode = pref.trigger_mode === "interval" ? "interval" : "delta";
+    let direction: "up" | "down" | null = null;
+
+    if (mode === "interval") {
+      const intervalMs = Math.max(1, pref.interval_hours || 1) * 3600_000;
+      const lastTs = pref.last_notified_at ? new Date(pref.last_notified_at).getTime() : 0;
+      const elapsed = Date.now() - lastTs;
+      if (elapsed >= intervalMs) {
+        direction = diff >= 0 ? "up" : "down";
+      }
+    } else {
+      direction = diff >= pref.delta ? "up" : diff <= -pref.delta ? "down" : null;
+    }
 
     if (!direction) {
       await supabaseAdmin.from("basseng_notification_prefs" as any).update(update as any).eq("id", pref.id);
