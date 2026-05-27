@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Waves, ArrowUp, ArrowDown, Users, Send, Loader2, Clock } from "lucide-react";
+import { Waves, ArrowUp, ArrowDown, Users, Send, Loader2, Clock, Thermometer, Timer } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { sendBassengTestPush } from "@/server/basseng-push.functions";
 import {
@@ -22,7 +22,8 @@ const WHO_OPTIONS = [
   "Mira",
 ] as const;
 
-const DELTAS = [0.5, 1] as const;
+const DELTAS = [0.5, 1, 2, 3, 4] as const;
+const INTERVALS = [1, 2, 3, 4, 5, 6] as const;
 
 type Pref = {
   id: string;
@@ -36,6 +37,8 @@ type Pref = {
   recipient_down: string;
   active_from: string;
   active_to: string;
+  trigger_mode: "delta" | "interval";
+  interval_hours: number;
   last_value: number | null;
   last_checked_at: string | null;
   last_notified_value: number | null;
