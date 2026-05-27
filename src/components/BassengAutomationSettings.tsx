@@ -264,14 +264,14 @@ export function BassengAutomationSettings() {
       </header>
 
       <p className="text-[11px] text-muted-foreground leading-relaxed">
-        Når <strong>stuetemperaturen</strong> faller under terskel, og basseng-bryteren bruker lite strøm (varmeren er av),
-        skrur vi basseng-bryteren <strong>av</strong> og slår på varmepumpa (MELCloud) i valgt modus og temperatur.
+        Når <strong>stuetemperaturen</strong> går under (eller over) terskel, og basseng-bryteren bruker lite strøm,
+        skrur vi basseng-bryteren <strong>av</strong> og slår på varmepumpa i passende modus.
       </p>
 
       {/* Stue + terskel */}
       <div className="grid sm:grid-cols-2 gap-3 pt-2 border-t border-border/40">
         <label className="space-y-1.5">
-          <span className="text-xs flex items-center gap-1.5"><Thermometer size={12} className="text-sky-300" /> Stue-temperatur trigger under</span>
+          <span className="text-xs flex items-center gap-1.5"><Flame size={12} className="text-orange-400" /> Trigg varme når stua &lt;</span>
           <input
             type="number" step="0.5"
             value={config.stuaTempThreshold}
@@ -281,12 +281,33 @@ export function BassengAutomationSettings() {
           />
         </label>
         <label className="space-y-1.5">
-          <span className="text-xs">Stue-sensor</span>
+          <span className="text-xs flex items-center gap-1.5"><Thermometer size={12} className="text-sky-300" /> Stue-sensor</span>
           <Select value={config.stuaDeviceId ?? ""} disabled={!config.enabled} onValueChange={(v) => void save({ stuaDeviceId: v })}>
             <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Velg…" /></SelectTrigger>
             <SelectContent>{tempSensors.map(deviceOption)}</SelectContent>
           </Select>
         </label>
+        <div className="space-y-1.5 sm:col-span-2">
+          <label className="inline-flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={config.stuaTempHighEnabled}
+              disabled={!config.enabled}
+              onChange={(e) => void save({ stuaTempHighEnabled: e.target.checked })}
+              className="accent-[var(--gold)]"
+            />
+            <span className="text-xs flex items-center gap-1.5">
+              <Snowflake size={12} className="text-cyan-300" /> Trigg kjøl når stua &gt;
+            </span>
+          </label>
+          <input
+            type="number" step="0.5"
+            value={config.stuaTempHighThreshold}
+            disabled={!config.enabled || !config.stuaTempHighEnabled}
+            onChange={(e) => void save({ stuaTempHighThreshold: Number(e.target.value) })}
+            className="w-full bg-background border border-border/60 rounded px-2 py-1 text-sm tabular-nums disabled:opacity-50"
+          />
+        </div>
       </div>
 
       {/* Basseng-bryter + watt */}
