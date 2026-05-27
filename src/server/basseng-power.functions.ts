@@ -42,9 +42,10 @@ export const getBassengPowerStats = createServerFn({ method: "GET" }).handler(
       };
     }
 
-    // Live watt fra Homey-snapshot (cachet)
+    // Live watt + on/off fra Homey-snapshot (cachet)
     let liveWatts: number | null = null;
     let deviceName: string | null = null;
+    let isOn: boolean | null = null;
     try {
       const conn = await getValidConnection();
       if (conn) {
@@ -55,7 +56,31 @@ export const getBassengPowerStats = createServerFn({ method: "GET" }).handler(
           const caps = (d as any)?.capabilitiesObj ?? (d as any)?.capabilities_obj ?? {};
           const v = caps?.["measure_power"]?.value;
           if (typeof v === "number") liveWatts = v;
+          const on = caps?.["onoff"]?.value;
+          if (typeof on === "boolean") isOn = on;
         }
+      }
+    } catch {
+      // ignorer
+    }
+
+    // Siste bevegelse fra hvilken som helst motion-sensor
+    let lastMotion: { ts: string; deviceName: string; zone: string | null } | null = null;
+    try {
+      const { data: m } = await supabaseAdmin
+        .from("homey_sensor_events")
+        .select("ts, device_name, zone")
+        .eq("kind", "motion")
+        .eq("event_type", "motion_on")
+        .order("ts", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (m) {
+        lastMotion = {
+          ts: String(m.ts),
+          deviceName: String(m.device_name ?? ""),
+          zone: (m.zone as string | null) ?? null,
+        };
       }
     } catch {
       // ignorer
