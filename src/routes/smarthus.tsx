@@ -8,7 +8,7 @@ import { getHomeySnapshot, disconnectHomey, setAllOutdoorLights, setLivingRoomDe
 import { Switch } from "@/components/ui/switch";
 import { findDeviceFuzzy, readTemp } from "@/lib/homey-match";
 import { HomeyApiActivity } from "@/components/HomeyApiActivity";
-import { HomeyApiPauseToggle } from "@/components/HomeyApiPauseToggle";
+
 import { HeatersPanel } from "@/components/HeatersPanel";
 import { StuaConditionPanel } from "@/components/StuaConditionPanel";
 import { BassengPoolPanel } from "@/components/BassengPoolPanel";
@@ -91,7 +91,6 @@ function ConnectPanel({ message }: { message?: string }) {
         subtitle="Bind ravnene til Homey for å våkne borgen."
         image={heroImg}
       />
-      <HomeyApiPauseToggle />
       <section className="container mx-auto px-4 py-12">
         <div className="panel rounded-lg p-8 max-w-2xl mx-auto text-center">
           <h2 className="text-display text-primary text-xl mb-3 tracking-[0.25em]">
@@ -739,7 +738,7 @@ function SmarthusPage() {
       <section className="container mx-auto px-4 pt-6 flex flex-wrap items-center justify-center gap-3">
         <LastUpdated label="Homey" timestamp={homeyUpdated} />
       </section>
-      <HomeyApiPauseToggle />
+      
 
       {bassengDevice && (
         <>
