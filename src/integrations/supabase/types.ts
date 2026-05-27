@@ -227,6 +227,7 @@ export type Database = {
           device_match: string
           enabled: boolean
           id: string
+          interval_hours: number
           label: string
           last_checked_at: string | null
           last_direction: string | null
@@ -237,6 +238,7 @@ export type Database = {
           notify_up: boolean
           recipient_down: string
           recipient_up: string
+          trigger_mode: string
           updated_at: string
         }
         Insert: {
@@ -247,6 +249,7 @@ export type Database = {
           device_match?: string
           enabled?: boolean
           id?: string
+          interval_hours?: number
           label?: string
           last_checked_at?: string | null
           last_direction?: string | null
@@ -257,6 +260,7 @@ export type Database = {
           notify_up?: boolean
           recipient_down?: string
           recipient_up?: string
+          trigger_mode?: string
           updated_at?: string
         }
         Update: {
@@ -267,6 +271,7 @@ export type Database = {
           device_match?: string
           enabled?: boolean
           id?: string
+          interval_hours?: number
           label?: string
           last_checked_at?: string | null
           last_direction?: string | null
@@ -277,6 +282,7 @@ export type Database = {
           notify_up?: boolean
           recipient_down?: string
           recipient_up?: string
+          trigger_mode?: string
           updated_at?: string
         }
         Relationships: []
