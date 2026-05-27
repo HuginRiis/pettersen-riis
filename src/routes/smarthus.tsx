@@ -13,6 +13,7 @@ import { HeatersPanel } from "@/components/HeatersPanel";
 import { StuaConditionPanel } from "@/components/StuaConditionPanel";
 import { BassengPoolPanel } from "@/components/BassengPoolPanel";
 import { BassengPowerPanel } from "@/components/BassengPowerPanel";
+import { BassengHistoryChart } from "@/components/BassengHistoryChart";
 import { MowerPanel } from "@/components/MowerPanel";
 
 import { getLightIdleStatuses, type LightIdleZoneStatusRow } from "@/server/light-idle-push.functions";
