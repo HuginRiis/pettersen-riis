@@ -745,6 +745,7 @@ function SmarthusPage() {
             sourceName={bassengReadings.sourceName}
           />
           <BassengPowerPanel />
+          <BassengHistoryChart />
         </>
       )}
 
