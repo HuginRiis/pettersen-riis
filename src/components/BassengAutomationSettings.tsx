@@ -13,15 +13,19 @@ type Mode = "heat" | "cool" | "auto";
 
 type Config = {
   enabled: boolean;
-  stuaTempThreshold: number;       // hvis stuetemp < dette → trigge
+  stuaTempThreshold: number;       // hvis stuetemp < dette → trigge varme
+  stuaTempHighEnabled: boolean;    // også trigge på høy temp?
+  stuaTempHighThreshold: number;   // hvis stuetemp > dette → trigge kjøl
   stuaDeviceId: string | null;     // sensor for stue
   bassengSwitchId: string | null;  // bryter for basseng som skal skrus av
   wattCheckEnabled: boolean;       // sjekk watt før vi skrur av?
   wattMax: number;                 // skru bare av når W < wattMax
   wattSensorId: string | null;     // hvor watt leses fra (kan være samme som bryter)
   melcloudDeviceId: string | null; // varmepumpa
-  melcloudMode: Mode;
-  melcloudTargetTemp: number;
+  melcloudMode: Mode;              // modus ved kald trigger
+  melcloudTargetTemp: number;      // måltemp ved kald trigger
+  melcloudCoolMode: Mode;          // modus ved varm trigger
+  melcloudCoolTargetTemp: number;  // måltemp ved varm trigger
   activeFrom: string;              // HH:MM (Oslo)
   activeTo: string;
 };
@@ -29,6 +33,8 @@ type Config = {
 const DEFAULT_CONFIG: Config = {
   enabled: false,
   stuaTempThreshold: 18,
+  stuaTempHighEnabled: false,
+  stuaTempHighThreshold: 26,
   stuaDeviceId: null,
   bassengSwitchId: null,
   wattCheckEnabled: true,
@@ -37,6 +43,8 @@ const DEFAULT_CONFIG: Config = {
   melcloudDeviceId: null,
   melcloudMode: "heat",
   melcloudTargetTemp: 21,
+  melcloudCoolMode: "cool",
+  melcloudCoolTargetTemp: 22,
   activeFrom: "00:00",
   activeTo: "23:59",
 };
