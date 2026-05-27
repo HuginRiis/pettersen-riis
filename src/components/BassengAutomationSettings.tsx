@@ -357,6 +357,7 @@ export function BassengAutomationSettings() {
             onChange={(e) => void save({ stuaTempHighThreshold: Number(e.target.value) })}
             className="w-full bg-background border border-border/60 rounded px-2 py-1 text-sm tabular-nums disabled:opacity-50"
           />
+        </div>
         <div className="space-y-1.5 sm:col-span-2">
           <label className="inline-flex items-center gap-2 cursor-pointer">
             <input
