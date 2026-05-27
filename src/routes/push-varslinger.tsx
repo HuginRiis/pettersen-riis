@@ -26,6 +26,7 @@ import { HomeySensorSettings } from "@/components/HomeySensorSettings";
 import { ClimateNotificationSettings } from "@/components/ClimateNotificationSettings";
 import { BassengNotificationSettings } from "@/components/BassengNotificationSettings";
 import { BassengAutomationSettings } from "@/components/BassengAutomationSettings";
+import { HomeyApiPauseToggle } from "@/components/HomeyApiPauseToggle";
 import {
   Bell, BellOff, Calendar, Cake, Trash2, CloudSun, Lightbulb, ScrollText, ShieldCheck, Lock, ExternalLink, Smartphone, X, Activity,
 } from "lucide-react";
@@ -103,6 +104,7 @@ const TOC_ITEMS: { id: string; label: string; emoji: string }[] = [
   { id: "sec-planter", label: "Planter & Trær", emoji: "🌿" },
   { id: "sec-okonomi", label: "Husholdningens hvelv", emoji: "🪙" },
   { id: "sec-sensor-dashboard", label: "Sensor-dashboard", emoji: "📡" },
+  { id: "sec-homey-pause", label: "Homey API — pause", emoji: "🐦‍⬛" },
 ];
 
 function SettingsTOC() {
@@ -185,6 +187,7 @@ function PushSettingsPage() {
       <SettingsBox id="sec-innlogging" title="🔐 Innlogging — vellykket og feilet"><LoginNotificationSettings /></SettingsBox>
       <SettingsBox id="sec-ytelse" title="🐢 Ytelse — treg sidelasting"><SlowPageLoadNotificationSettings /></SettingsBox>
       <SettingsBox id="sec-sensor-dashboard" title="📡 Sensor-dashboard (Homey)" icon={<Activity className="h-4 w-4" />}><HomeySensorSettings /></SettingsBox>
+      <SettingsBox id="sec-homey-pause" title="🐦‍⬛ Homey API — pause ravnene"><HomeyApiPauseToggle /></SettingsBox>
 
       <div className="container mx-auto px-4 pb-12 grid md:grid-cols-2 gap-4">
         <SettingsBox id="sec-agenda" title="📅 Agenda-meldinger" inGrid>
