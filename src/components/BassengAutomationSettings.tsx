@@ -16,6 +16,10 @@ type Config = {
   stuaTempThreshold: number;       // hvis stuetemp < dette → trigge varme
   stuaTempHighEnabled: boolean;    // også trigge på høy temp?
   stuaTempHighThreshold: number;   // hvis stuetemp > dette → trigge kjøl
+  neutralEnabled: boolean;         // trigge tilbakestilling i nøytralt sjikt
+  neutralMin: number;              // nedre grense for nøytralt sjikt
+  neutralMax: number;              // øvre grense for nøytralt sjikt
+  neutralDelayMinutes: number;     // min minutter siden basseng ble skrudd av
   stuaDeviceId: string | null;     // sensor for stue
   bassengSwitchId: string | null;  // bryter for basseng som skal skrus av
   wattCheckEnabled: boolean;       // sjekk watt før vi skrur av?
@@ -28,6 +32,7 @@ type Config = {
   melcloudCoolTargetTemp: number;  // måltemp ved varm trigger
   activeFrom: string;              // HH:MM (Oslo)
   activeTo: string;
+  lastBassengOffAt: string | null; // ISO-tid sist basseng ble skrudd av
 };
 
 const DEFAULT_CONFIG: Config = {
@@ -35,6 +40,10 @@ const DEFAULT_CONFIG: Config = {
   stuaTempThreshold: 18,
   stuaTempHighEnabled: false,
   stuaTempHighThreshold: 26,
+  neutralEnabled: false,
+  neutralMin: 22,
+  neutralMax: 24,
+  neutralDelayMinutes: 60,
   stuaDeviceId: null,
   bassengSwitchId: null,
   wattCheckEnabled: true,
@@ -47,6 +56,7 @@ const DEFAULT_CONFIG: Config = {
   melcloudCoolTargetTemp: 22,
   activeFrom: "00:00",
   activeTo: "23:59",
+  lastBassengOffAt: null,
 };
 
 type DeviceLite = {
