@@ -34,6 +34,8 @@ type Pref = {
   recipient_down: string;
   active_from: string; // HH:MM
   active_to: string;   // HH:MM
+  trigger_mode: "delta" | "interval";
+  interval_hours: number;
   last_value: number | null;
   last_notified_value: number | null;
   last_notified_at: string | null;
