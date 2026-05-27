@@ -727,17 +727,14 @@ function SmarthusPage() {
       <PageHero
         eyebrow="Krøniken om"
         title="Borgens Smarthus"
-        subtitle={
-          data.homeName
-            ? `${data.homeName} — husets smarthus, voktet av ravnene fra Homey.`
-            : "Husets smarthus, voktet av ravnene fra Homey."
-        }
         image={heroImg}
-      />
-
-      <section className="container mx-auto px-4 pt-6 flex flex-wrap items-center justify-center gap-3">
+        compact
+      >
         <LastUpdated label="Homey" timestamp={homeyUpdated} />
-      </section>
+      </PageHero>
+      
+
+
       
 
       {bassengDevice && (
