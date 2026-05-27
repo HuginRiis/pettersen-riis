@@ -211,6 +211,7 @@ export async function pollHomeySensors(): Promise<{
 
   // === Basseng watt-logger ===
   // Logger effekt (measure_power) for konfigurert basseng-bryter/sensor hvert poll.
+  let bassengWatts: number | null = null;
   try {
     const { data: cfgRow } = await supabaseAdmin
       .from("notification_settings")
@@ -224,10 +225,43 @@ export async function pollHomeySensors(): Promise<{
       const caps = (d as any)?.capabilitiesObj ?? (d as any)?.capabilities_obj ?? {};
       const w = caps?.["measure_power"]?.value;
       if (typeof w === "number" && Number.isFinite(w)) {
+        bassengWatts = w;
         await supabaseAdmin
           .from("device_power_samples")
           .insert({ device_id: sensorId, watts: w, ts: nowIso });
       }
+    }
+  } catch {
+    // ignorer logging-feil
+  }
+
+  // === Basseng klima-logger ===
+  // Logger basseng-temperatur + ute-temperatur (Homey) sammen med effekt
+  // for å kunne tegne sammenhengen mellom strømforbruk, vanntemperatur og uteklima.
+  try {
+    const devices = (raw.devicesRaw ?? []) as any[];
+    let poolTemp: number | null = null;
+    let outdoorTemp: number | null = null;
+    for (const d of devices) {
+      const caps = d?.capabilitiesObj ?? d?.capabilities_obj ?? {};
+      const t = caps?.["measure_temperature"]?.value;
+      if (typeof t !== "number" || !Number.isFinite(t)) continue;
+      const zoneName = d?.zone ? zonesById[String(d.zone)] ?? "" : "";
+      const combined = `${d?.name ?? ""} ${zoneName}`.toLowerCase();
+      if (poolTemp == null && /basseng|pool/.test(combined)) poolTemp = t;
+      if (
+        outdoorTemp == null &&
+        /(^|[^a-z])(ute|outdoor|outside|utendørs|utendors)([^a-z]|$)/.test(combined)
+      )
+        outdoorTemp = t;
+    }
+    if (poolTemp != null || outdoorTemp != null || bassengWatts != null) {
+      await supabaseAdmin.from("basseng_climate_samples" as any).insert({
+        ts: nowIso,
+        pool_temp: poolTemp,
+        outdoor_temp: outdoorTemp,
+        watts: bassengWatts,
+      } as any);
     }
   } catch {
     // ignorer logging-feil
