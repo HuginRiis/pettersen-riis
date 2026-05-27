@@ -13,15 +13,19 @@ type Mode = "heat" | "cool" | "auto";
 
 type Config = {
   enabled: boolean;
-  stuaTempThreshold: number;       // hvis stuetemp < dette → trigge
+  stuaTempThreshold: number;       // hvis stuetemp < dette → trigge varme
+  stuaTempHighEnabled: boolean;    // også trigge på høy temp?
+  stuaTempHighThreshold: number;   // hvis stuetemp > dette → trigge kjøl
   stuaDeviceId: string | null;     // sensor for stue
   bassengSwitchId: string | null;  // bryter for basseng som skal skrus av
   wattCheckEnabled: boolean;       // sjekk watt før vi skrur av?
   wattMax: number;                 // skru bare av når W < wattMax
   wattSensorId: string | null;     // hvor watt leses fra (kan være samme som bryter)
   melcloudDeviceId: string | null; // varmepumpa
-  melcloudMode: Mode;
-  melcloudTargetTemp: number;
+  melcloudMode: Mode;              // modus ved kald trigger
+  melcloudTargetTemp: number;      // måltemp ved kald trigger
+  melcloudCoolMode: Mode;          // modus ved varm trigger
+  melcloudCoolTargetTemp: number;  // måltemp ved varm trigger
   activeFrom: string;              // HH:MM (Oslo)
   activeTo: string;
 };
@@ -29,6 +33,8 @@ type Config = {
 const DEFAULT_CONFIG: Config = {
   enabled: false,
   stuaTempThreshold: 18,
+  stuaTempHighEnabled: false,
+  stuaTempHighThreshold: 26,
   stuaDeviceId: null,
   bassengSwitchId: null,
   wattCheckEnabled: true,
@@ -37,6 +43,8 @@ const DEFAULT_CONFIG: Config = {
   melcloudDeviceId: null,
   melcloudMode: "heat",
   melcloudTargetTemp: 21,
+  melcloudCoolMode: "cool",
+  melcloudCoolTargetTemp: 22,
   activeFrom: "00:00",
   activeTo: "23:59",
 };
@@ -164,12 +172,24 @@ export function BassengAutomationSettings() {
         setMsg("Fant ikke stuetemperatur.");
         return;
       }
-      if (stuaTemp >= config.stuaTempThreshold) {
-        setMsg(`Stua er ${stuaTemp.toFixed(1)}° — over terskel (${config.stuaTempThreshold}°). Ingen handling.`);
+      let trigger: "cold" | "hot" | null = null;
+      if (stuaTemp < config.stuaTempThreshold) trigger = "cold";
+      else if (config.stuaTempHighEnabled && stuaTemp > config.stuaTempHighThreshold) trigger = "hot";
+
+      if (!trigger) {
+        const range = config.stuaTempHighEnabled
+          ? `${config.stuaTempThreshold}°–${config.stuaTempHighThreshold}°`
+          : `≥ ${config.stuaTempThreshold}°`;
+        setMsg(`Stua er ${stuaTemp.toFixed(1)}° (${range}). Ingen handling.`);
         return;
       }
 
-      const log: string[] = [`Stua: ${stuaTemp.toFixed(1)}° < ${config.stuaTempThreshold}° → trigger.`];
+      const mode = trigger === "cold" ? config.melcloudMode : config.melcloudCoolMode;
+      const targetTemp = trigger === "cold" ? config.melcloudTargetTemp : config.melcloudCoolTargetTemp;
+      const arrow = trigger === "cold"
+        ? `< ${config.stuaTempThreshold}° → varme`
+        : `> ${config.stuaTempHighThreshold}° → kjøl`;
+      const log: string[] = [`Stua: ${stuaTemp.toFixed(1)}° ${arrow}.`];
 
       // Sjekk watt før vi skrur av bryter (valgfritt)
       if (config.wattCheckEnabled) {
@@ -198,12 +218,12 @@ export function BassengAutomationSettings() {
           log.push(r.ok ? "Varmepumpe PÅ ✓" : `Varmepumpe på-feil: ${r.error}`);
         }
         if (md?.capabilities?.["thermostat_mode"]) {
-          const r = await setCap({ data: { deviceId: config.melcloudDeviceId, capability: "thermostat_mode", value: config.melcloudMode } });
-          log.push(r.ok ? `Modus: ${config.melcloudMode} ✓` : `Modus-feil: ${r.error}`);
+          const r = await setCap({ data: { deviceId: config.melcloudDeviceId, capability: "thermostat_mode", value: mode } });
+          log.push(r.ok ? `Modus: ${mode} ✓` : `Modus-feil: ${r.error}`);
         }
         if (md?.capabilities?.["target_temperature"]) {
-          const r = await setCap({ data: { deviceId: config.melcloudDeviceId, capability: "target_temperature", value: config.melcloudTargetTemp } });
-          log.push(r.ok ? `${config.melcloudTargetTemp}° ✓` : `Temp-feil: ${r.error}`);
+          const r = await setCap({ data: { deviceId: config.melcloudDeviceId, capability: "target_temperature", value: targetTemp } });
+          log.push(r.ok ? `${targetTemp}° ✓` : `Temp-feil: ${r.error}`);
         }
       }
 
@@ -244,14 +264,14 @@ export function BassengAutomationSettings() {
       </header>
 
       <p className="text-[11px] text-muted-foreground leading-relaxed">
-        Når <strong>stuetemperaturen</strong> faller under terskel, og basseng-bryteren bruker lite strøm (varmeren er av),
-        skrur vi basseng-bryteren <strong>av</strong> og slår på varmepumpa (MELCloud) i valgt modus og temperatur.
+        Når <strong>stuetemperaturen</strong> går under (eller over) terskel, og basseng-bryteren bruker lite strøm,
+        skrur vi basseng-bryteren <strong>av</strong> og slår på varmepumpa i passende modus.
       </p>
 
       {/* Stue + terskel */}
       <div className="grid sm:grid-cols-2 gap-3 pt-2 border-t border-border/40">
         <label className="space-y-1.5">
-          <span className="text-xs flex items-center gap-1.5"><Thermometer size={12} className="text-sky-300" /> Stue-temperatur trigger under</span>
+          <span className="text-xs flex items-center gap-1.5"><Flame size={12} className="text-orange-400" /> Trigg varme når stua &lt;</span>
           <input
             type="number" step="0.5"
             value={config.stuaTempThreshold}
@@ -261,12 +281,33 @@ export function BassengAutomationSettings() {
           />
         </label>
         <label className="space-y-1.5">
-          <span className="text-xs">Stue-sensor</span>
+          <span className="text-xs flex items-center gap-1.5"><Thermometer size={12} className="text-sky-300" /> Stue-sensor</span>
           <Select value={config.stuaDeviceId ?? ""} disabled={!config.enabled} onValueChange={(v) => void save({ stuaDeviceId: v })}>
             <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Velg…" /></SelectTrigger>
             <SelectContent>{tempSensors.map(deviceOption)}</SelectContent>
           </Select>
         </label>
+        <div className="space-y-1.5 sm:col-span-2">
+          <label className="inline-flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={config.stuaTempHighEnabled}
+              disabled={!config.enabled}
+              onChange={(e) => void save({ stuaTempHighEnabled: e.target.checked })}
+              className="accent-[var(--gold)]"
+            />
+            <span className="text-xs flex items-center gap-1.5">
+              <Snowflake size={12} className="text-cyan-300" /> Trigg kjøl når stua &gt;
+            </span>
+          </label>
+          <input
+            type="number" step="0.5"
+            value={config.stuaTempHighThreshold}
+            disabled={!config.enabled || !config.stuaTempHighEnabled}
+            onChange={(e) => void save({ stuaTempHighThreshold: Number(e.target.value) })}
+            className="w-full bg-background border border-border/60 rounded px-2 py-1 text-sm tabular-nums disabled:opacity-50"
+          />
+        </div>
       </div>
 
       {/* Basseng-bryter + watt */}
@@ -318,7 +359,7 @@ export function BassengAutomationSettings() {
           </Select>
         </label>
         <div className="space-y-1.5">
-          <span className="text-xs">Modus</span>
+          <span className="text-xs flex items-center gap-1.5"><Flame size={12} className="text-orange-400" /> Modus ved kald trigger</span>
           <div className="inline-flex rounded-full border border-border/60 overflow-hidden w-full">
             {(["heat", "cool", "auto"] as Mode[]).map((m) => (
               <button
@@ -341,13 +382,46 @@ export function BassengAutomationSettings() {
           </div>
         </div>
         <label className="space-y-1.5">
-          <span className="text-xs">Måltemperatur °C</span>
+          <span className="text-xs">Måltemp ved kald °C</span>
           <input
             type="number" step="0.5"
             value={config.melcloudTargetTemp}
             disabled={!config.enabled}
             onChange={(e) => void save({ melcloudTargetTemp: Number(e.target.value) })}
             className="w-full bg-background border border-border/60 rounded px-2 py-1 text-sm tabular-nums"
+          />
+        </label>
+        <div className="space-y-1.5">
+          <span className="text-xs flex items-center gap-1.5"><Snowflake size={12} className="text-cyan-300" /> Modus ved varm trigger</span>
+          <div className="inline-flex rounded-full border border-border/60 overflow-hidden w-full">
+            {(["heat", "cool", "auto"] as Mode[]).map((m) => (
+              <button
+                key={m}
+                type="button"
+                disabled={!config.enabled || !config.stuaTempHighEnabled}
+                onClick={() => void save({ melcloudCoolMode: m })}
+                className={`flex-1 px-3 py-1 text-xs inline-flex items-center justify-center gap-1 ${
+                  config.melcloudCoolMode === m
+                    ? "bg-[var(--gold)]/20 text-[var(--gold)]"
+                    : "text-muted-foreground hover:text-foreground"
+                } disabled:opacity-50`}
+              >
+                {m === "heat" && <Flame size={12} />}
+                {m === "cool" && <Snowflake size={12} />}
+                {m === "auto" && <Wind size={12} />}
+                {m === "heat" ? "Varme" : m === "cool" ? "Kjøl" : "Auto"}
+              </button>
+            ))}
+          </div>
+        </div>
+        <label className="space-y-1.5">
+          <span className="text-xs">Måltemp ved varm °C</span>
+          <input
+            type="number" step="0.5"
+            value={config.melcloudCoolTargetTemp}
+            disabled={!config.enabled || !config.stuaTempHighEnabled}
+            onChange={(e) => void save({ melcloudCoolTargetTemp: Number(e.target.value) })}
+            className="w-full bg-background border border-border/60 rounded px-2 py-1 text-sm tabular-nums disabled:opacity-50"
           />
         </label>
       </div>
