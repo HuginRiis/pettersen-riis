@@ -313,8 +313,9 @@ export function BassengNotificationSettings() {
       {msg && <p className="text-[10px] text-muted-foreground">{msg}</p>}
 
       <p className="text-[10px] text-muted-foreground italic leading-relaxed">
-        Sjekkes hvert 20. min via klima-cron. Varsel sendes når bassenget har endret
-        seg ±{pref.delta}° siden forrige varsel, innenfor tidsrommet.
+        Sjekkes hvert 20. min via klima-cron. {pref.trigger_mode === "interval"
+          ? `Varsel sendes hver ${pref.interval_hours}. time innenfor tidsrommet.`
+          : `Varsel sendes når bassenget har endret seg ±${pref.delta}° siden forrige varsel, innenfor tidsrommet.`}
       </p>
     </article>
   );
