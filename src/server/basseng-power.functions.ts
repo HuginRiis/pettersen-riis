@@ -116,6 +116,8 @@ export const getBassengPowerStats = createServerFn({ method: "GET" }).handler(
       deviceId,
       deviceName,
       liveWatts,
+      isOn,
+      lastMotion,
       kwh24h,
       kwh7d,
       kwhTotal,
