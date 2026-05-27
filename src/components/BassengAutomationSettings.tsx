@@ -359,7 +359,7 @@ export function BassengAutomationSettings() {
           </Select>
         </label>
         <div className="space-y-1.5">
-          <span className="text-xs">Modus</span>
+          <span className="text-xs flex items-center gap-1.5"><Flame size={12} className="text-orange-400" /> Modus ved kald trigger</span>
           <div className="inline-flex rounded-full border border-border/60 overflow-hidden w-full">
             {(["heat", "cool", "auto"] as Mode[]).map((m) => (
               <button
@@ -382,13 +382,46 @@ export function BassengAutomationSettings() {
           </div>
         </div>
         <label className="space-y-1.5">
-          <span className="text-xs">Måltemperatur °C</span>
+          <span className="text-xs">Måltemp ved kald °C</span>
           <input
             type="number" step="0.5"
             value={config.melcloudTargetTemp}
             disabled={!config.enabled}
             onChange={(e) => void save({ melcloudTargetTemp: Number(e.target.value) })}
             className="w-full bg-background border border-border/60 rounded px-2 py-1 text-sm tabular-nums"
+          />
+        </label>
+        <div className="space-y-1.5">
+          <span className="text-xs flex items-center gap-1.5"><Snowflake size={12} className="text-cyan-300" /> Modus ved varm trigger</span>
+          <div className="inline-flex rounded-full border border-border/60 overflow-hidden w-full">
+            {(["heat", "cool", "auto"] as Mode[]).map((m) => (
+              <button
+                key={m}
+                type="button"
+                disabled={!config.enabled || !config.stuaTempHighEnabled}
+                onClick={() => void save({ melcloudCoolMode: m })}
+                className={`flex-1 px-3 py-1 text-xs inline-flex items-center justify-center gap-1 ${
+                  config.melcloudCoolMode === m
+                    ? "bg-[var(--gold)]/20 text-[var(--gold)]"
+                    : "text-muted-foreground hover:text-foreground"
+                } disabled:opacity-50`}
+              >
+                {m === "heat" && <Flame size={12} />}
+                {m === "cool" && <Snowflake size={12} />}
+                {m === "auto" && <Wind size={12} />}
+                {m === "heat" ? "Varme" : m === "cool" ? "Kjøl" : "Auto"}
+              </button>
+            ))}
+          </div>
+        </div>
+        <label className="space-y-1.5">
+          <span className="text-xs">Måltemp ved varm °C</span>
+          <input
+            type="number" step="0.5"
+            value={config.melcloudCoolTargetTemp}
+            disabled={!config.enabled || !config.stuaTempHighEnabled}
+            onChange={(e) => void save({ melcloudCoolTargetTemp: Number(e.target.value) })}
+            className="w-full bg-background border border-border/60 rounded px-2 py-1 text-sm tabular-nums disabled:opacity-50"
           />
         </label>
       </div>
