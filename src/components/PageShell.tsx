@@ -42,15 +42,21 @@ export function PageHero({
   subtitle,
   image,
   children,
+  compact = false,
 }: {
   eyebrow?: string;
   title: string;
   subtitle?: string;
   image: string;
   children?: React.ReactNode;
+  compact?: boolean;
 }) {
   return (
-    <section className="relative h-[42vh] min-h-[280px] w-full overflow-hidden border-b border-border">
+    <section
+      className={`relative w-full overflow-hidden border-b border-border ${
+        compact ? "h-[31vh] min-h-[210px]" : "h-[42vh] min-h-[280px]"
+      }`}
+    >
       <img
         src={image}
         alt=""
@@ -63,7 +69,7 @@ export function PageHero({
       />
       {/* Dobbel-tapp øverst på bildet → scroll til topp */}
       <DoubleTapToTop />
-      <div className="relative h-full container mx-auto px-4 flex flex-col justify-end pb-10">
+      <div className={`relative h-full container mx-auto px-4 flex flex-col justify-end ${compact ? "pb-6" : "pb-10"}`}>
         {eyebrow && (
           <div className="text-display text-xs md:text-sm tracking-[0.4em] text-primary uppercase mb-3">
             {eyebrow}
