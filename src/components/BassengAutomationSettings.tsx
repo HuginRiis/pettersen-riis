@@ -172,12 +172,24 @@ export function BassengAutomationSettings() {
         setMsg("Fant ikke stuetemperatur.");
         return;
       }
-      if (stuaTemp >= config.stuaTempThreshold) {
-        setMsg(`Stua er ${stuaTemp.toFixed(1)}° — over terskel (${config.stuaTempThreshold}°). Ingen handling.`);
+      let trigger: "cold" | "hot" | null = null;
+      if (stuaTemp < config.stuaTempThreshold) trigger = "cold";
+      else if (config.stuaTempHighEnabled && stuaTemp > config.stuaTempHighThreshold) trigger = "hot";
+
+      if (!trigger) {
+        const range = config.stuaTempHighEnabled
+          ? `${config.stuaTempThreshold}°–${config.stuaTempHighThreshold}°`
+          : `≥ ${config.stuaTempThreshold}°`;
+        setMsg(`Stua er ${stuaTemp.toFixed(1)}° (${range}). Ingen handling.`);
         return;
       }
 
-      const log: string[] = [`Stua: ${stuaTemp.toFixed(1)}° < ${config.stuaTempThreshold}° → trigger.`];
+      const mode = trigger === "cold" ? config.melcloudMode : config.melcloudCoolMode;
+      const targetTemp = trigger === "cold" ? config.melcloudTargetTemp : config.melcloudCoolTargetTemp;
+      const arrow = trigger === "cold"
+        ? `< ${config.stuaTempThreshold}° → varme`
+        : `> ${config.stuaTempHighThreshold}° → kjøl`;
+      const log: string[] = [`Stua: ${stuaTemp.toFixed(1)}° ${arrow}.`];
 
       // Sjekk watt før vi skrur av bryter (valgfritt)
       if (config.wattCheckEnabled) {
@@ -206,12 +218,12 @@ export function BassengAutomationSettings() {
           log.push(r.ok ? "Varmepumpe PÅ ✓" : `Varmepumpe på-feil: ${r.error}`);
         }
         if (md?.capabilities?.["thermostat_mode"]) {
-          const r = await setCap({ data: { deviceId: config.melcloudDeviceId, capability: "thermostat_mode", value: config.melcloudMode } });
-          log.push(r.ok ? `Modus: ${config.melcloudMode} ✓` : `Modus-feil: ${r.error}`);
+          const r = await setCap({ data: { deviceId: config.melcloudDeviceId, capability: "thermostat_mode", value: mode } });
+          log.push(r.ok ? `Modus: ${mode} ✓` : `Modus-feil: ${r.error}`);
         }
         if (md?.capabilities?.["target_temperature"]) {
-          const r = await setCap({ data: { deviceId: config.melcloudDeviceId, capability: "target_temperature", value: config.melcloudTargetTemp } });
-          log.push(r.ok ? `${config.melcloudTargetTemp}° ✓` : `Temp-feil: ${r.error}`);
+          const r = await setCap({ data: { deviceId: config.melcloudDeviceId, capability: "target_temperature", value: targetTemp } });
+          log.push(r.ok ? `${targetTemp}° ✓` : `Temp-feil: ${r.error}`);
         }
       }
 
