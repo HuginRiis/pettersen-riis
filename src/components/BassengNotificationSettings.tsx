@@ -124,25 +124,78 @@ export function BassengNotificationSettings() {
 
       <div className="space-y-3">
         <div className="flex items-center justify-between gap-3">
-          <span className="text-sm">Endring som trigger varsel</span>
+          <span className="text-sm">Trigger</span>
           <div className="inline-flex rounded-full border border-border/60 overflow-hidden">
-            {DELTAS.map((d) => (
-              <button
-                key={d}
-                type="button"
-                disabled={!pref.enabled}
-                onClick={() => update({ delta: d })}
-                className={`px-3 py-1 text-xs tabular-nums ${
-                  pref.delta === d
-                    ? "bg-[var(--gold)]/20 text-[var(--gold)]"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                ±{d}°
-              </button>
-            ))}
+            <button
+              type="button"
+              disabled={!pref.enabled}
+              onClick={() => update({ trigger_mode: "delta" })}
+              className={`inline-flex items-center gap-1 px-3 py-1 text-xs ${
+                pref.trigger_mode !== "interval"
+                  ? "bg-[var(--gold)]/20 text-[var(--gold)]"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Thermometer size={12} /> Temperatur
+            </button>
+            <button
+              type="button"
+              disabled={!pref.enabled}
+              onClick={() => update({ trigger_mode: "interval" })}
+              className={`inline-flex items-center gap-1 px-3 py-1 text-xs ${
+                pref.trigger_mode === "interval"
+                  ? "bg-[var(--gold)]/20 text-[var(--gold)]"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Timer size={12} /> Tid
+            </button>
           </div>
         </div>
+
+        {pref.trigger_mode !== "interval" ? (
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-sm">Endring som trigger varsel</span>
+            <div className="inline-flex rounded-full border border-border/60 overflow-hidden flex-wrap">
+              {DELTAS.map((d) => (
+                <button
+                  key={d}
+                  type="button"
+                  disabled={!pref.enabled}
+                  onClick={() => update({ delta: d })}
+                  className={`px-3 py-1 text-xs tabular-nums ${
+                    pref.delta === d
+                      ? "bg-[var(--gold)]/20 text-[var(--gold)]"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  ±{d}°
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-sm">Send varsel hver</span>
+            <div className="inline-flex rounded-full border border-border/60 overflow-hidden flex-wrap">
+              {INTERVALS.map((h) => (
+                <button
+                  key={h}
+                  type="button"
+                  disabled={!pref.enabled}
+                  onClick={() => update({ interval_hours: h })}
+                  className={`px-3 py-1 text-xs tabular-nums ${
+                    pref.interval_hours === h
+                      ? "bg-[var(--gold)]/20 text-[var(--gold)]"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {h}t
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="grid sm:grid-cols-2 gap-3 pt-2 border-t border-border/40">
           <div className="space-y-2">
