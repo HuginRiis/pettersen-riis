@@ -16,6 +16,10 @@ type Config = {
   stuaTempThreshold: number;       // hvis stuetemp < dette → trigge varme
   stuaTempHighEnabled: boolean;    // også trigge på høy temp?
   stuaTempHighThreshold: number;   // hvis stuetemp > dette → trigge kjøl
+  neutralEnabled: boolean;         // trigge tilbakestilling i nøytralt sjikt
+  neutralMin: number;              // nedre grense for nøytralt sjikt
+  neutralMax: number;              // øvre grense for nøytralt sjikt
+  neutralDelayMinutes: number;     // min minutter siden basseng ble skrudd av
   stuaDeviceId: string | null;     // sensor for stue
   bassengSwitchId: string | null;  // bryter for basseng som skal skrus av
   wattCheckEnabled: boolean;       // sjekk watt før vi skrur av?
@@ -28,6 +32,7 @@ type Config = {
   melcloudCoolTargetTemp: number;  // måltemp ved varm trigger
   activeFrom: string;              // HH:MM (Oslo)
   activeTo: string;
+  lastBassengOffAt: string | null; // ISO-tid sist basseng ble skrudd av
 };
 
 const DEFAULT_CONFIG: Config = {
@@ -35,6 +40,10 @@ const DEFAULT_CONFIG: Config = {
   stuaTempThreshold: 18,
   stuaTempHighEnabled: false,
   stuaTempHighThreshold: 26,
+  neutralEnabled: false,
+  neutralMin: 22,
+  neutralMax: 24,
+  neutralDelayMinutes: 60,
   stuaDeviceId: null,
   bassengSwitchId: null,
   wattCheckEnabled: true,
@@ -47,6 +56,7 @@ const DEFAULT_CONFIG: Config = {
   melcloudCoolTargetTemp: 22,
   activeFrom: "00:00",
   activeTo: "23:59",
+  lastBassengOffAt: null,
 };
 
 type DeviceLite = {
@@ -172,24 +182,63 @@ export function BassengAutomationSettings() {
         setMsg("Fant ikke stuetemperatur.");
         return;
       }
-      let trigger: "cold" | "hot" | null = null;
+      let trigger: "cold" | "hot" | "neutral" | null = null;
       if (stuaTemp < config.stuaTempThreshold) trigger = "cold";
       else if (config.stuaTempHighEnabled && stuaTemp > config.stuaTempHighThreshold) trigger = "hot";
+      else if (
+        config.neutralEnabled &&
+        stuaTemp >= config.neutralMin &&
+        stuaTemp <= config.neutralMax
+      ) {
+        // Krev at basseng ble skrudd av for minst N minutter siden
+        const lastOff = config.lastBassengOffAt ? new Date(config.lastBassengOffAt).getTime() : 0;
+        const minsSince = lastOff ? (Date.now() - lastOff) / 60000 : Infinity;
+        if (lastOff && minsSince >= config.neutralDelayMinutes) {
+          trigger = "neutral";
+        } else if (lastOff) {
+          setMsg(
+            `Stua er ${stuaTemp.toFixed(1)}° (nøytral ${config.neutralMin}°–${config.neutralMax}°). ` +
+            `Venter — ${Math.round(minsSince)}/${config.neutralDelayMinutes} min siden basseng av.`
+          );
+          return;
+        }
+      }
 
       if (!trigger) {
-        const range = config.stuaTempHighEnabled
-          ? `${config.stuaTempThreshold}°–${config.stuaTempHighThreshold}°`
-          : `≥ ${config.stuaTempThreshold}°`;
-        setMsg(`Stua er ${stuaTemp.toFixed(1)}° (${range}). Ingen handling.`);
+        const parts: string[] = [`< ${config.stuaTempThreshold}°`];
+        if (config.stuaTempHighEnabled) parts.push(`> ${config.stuaTempHighThreshold}°`);
+        if (config.neutralEnabled) parts.push(`${config.neutralMin}°–${config.neutralMax}° (etter ${config.neutralDelayMinutes} min)`);
+        setMsg(`Stua er ${stuaTemp.toFixed(1)}°. Ingen trigger (${parts.join(" / ")}).`);
+        return;
+      }
+
+      const arrow =
+        trigger === "cold" ? `< ${config.stuaTempThreshold}° → varme`
+        : trigger === "hot" ? `> ${config.stuaTempHighThreshold}° → kjøl`
+        : `${config.neutralMin}°–${config.neutralMax}° → tilbakestill`;
+      const log: string[] = [`Stua: ${stuaTemp.toFixed(1)}° ${arrow}.`];
+
+      if (trigger === "neutral") {
+        // Skru AV varmepumpa og PÅ basseng-bryteren
+        if (config.melcloudDeviceId) {
+          const md = find(config.melcloudDeviceId);
+          if (md?.capabilities?.["onoff"]) {
+            const r = await setCap({ data: { deviceId: config.melcloudDeviceId, capability: "onoff", value: false } });
+            log.push(r.ok ? "Varmepumpe AV ✓" : `Varmepumpe av-feil: ${r.error}`);
+          }
+        }
+        if (config.bassengSwitchId) {
+          const r = await setCap({ data: { deviceId: config.bassengSwitchId, capability: "onoff", value: true } });
+          log.push(r.ok ? "Basseng-bryter PÅ ✓" : `Bryter feilet: ${r.error}`);
+        }
+        // Nullstill lastBassengOffAt så vi ikke trigger igjen umiddelbart
+        await save({ lastBassengOffAt: null });
+        setMsg(log.join(" · "));
         return;
       }
 
       const mode = trigger === "cold" ? config.melcloudMode : config.melcloudCoolMode;
       const targetTemp = trigger === "cold" ? config.melcloudTargetTemp : config.melcloudCoolTargetTemp;
-      const arrow = trigger === "cold"
-        ? `< ${config.stuaTempThreshold}° → varme`
-        : `> ${config.stuaTempHighThreshold}° → kjøl`;
-      const log: string[] = [`Stua: ${stuaTemp.toFixed(1)}° ${arrow}.`];
 
       // Sjekk watt før vi skrur av bryter (valgfritt)
       if (config.wattCheckEnabled) {
@@ -208,6 +257,7 @@ export function BassengAutomationSettings() {
       if (config.bassengSwitchId) {
         const r = await setCap({ data: { deviceId: config.bassengSwitchId, capability: "onoff", value: false } });
         log.push(r.ok ? "Basseng-bryter AV ✓" : `Bryter feilet: ${r.error}`);
+        if (r.ok) await save({ lastBassengOffAt: new Date().toISOString() });
       }
 
       // Skru på varmepumpa
@@ -307,6 +357,49 @@ export function BassengAutomationSettings() {
             onChange={(e) => void save({ stuaTempHighThreshold: Number(e.target.value) })}
             className="w-full bg-background border border-border/60 rounded px-2 py-1 text-sm tabular-nums disabled:opacity-50"
           />
+        </div>
+        <div className="space-y-1.5 sm:col-span-2">
+          <label className="inline-flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={config.neutralEnabled}
+              disabled={!config.enabled}
+              onChange={(e) => void save({ neutralEnabled: e.target.checked })}
+              className="accent-[var(--gold)]"
+            />
+            <span className="text-xs flex items-center gap-1.5">
+              <Power size={12} className="text-emerald-400" /> Tilbakestill når stua er mellom
+            </span>
+          </label>
+          <div className="flex items-center gap-2">
+            <input
+              type="number" step="0.5"
+              value={config.neutralMin}
+              disabled={!config.enabled || !config.neutralEnabled}
+              onChange={(e) => void save({ neutralMin: Number(e.target.value) })}
+              className="w-20 bg-background border border-border/60 rounded px-2 py-1 text-sm tabular-nums disabled:opacity-50"
+            />
+            <span className="text-xs text-muted-foreground">og</span>
+            <input
+              type="number" step="0.5"
+              value={config.neutralMax}
+              disabled={!config.enabled || !config.neutralEnabled}
+              onChange={(e) => void save({ neutralMax: Number(e.target.value) })}
+              className="w-20 bg-background border border-border/60 rounded px-2 py-1 text-sm tabular-nums disabled:opacity-50"
+            />
+            <span className="text-xs text-muted-foreground">°, etter</span>
+            <input
+              type="number" min={1}
+              value={config.neutralDelayMinutes}
+              disabled={!config.enabled || !config.neutralEnabled}
+              onChange={(e) => void save({ neutralDelayMinutes: Number(e.target.value) })}
+              className="w-20 bg-background border border-border/60 rounded px-2 py-1 text-sm tabular-nums disabled:opacity-50"
+            />
+            <span className="text-xs text-muted-foreground">min</span>
+          </div>
+          <p className="text-[10px] text-muted-foreground">
+            Skrur varmepumpa <strong>av</strong> og basseng-bryter <strong>på</strong> — kun hvis basseng har vært av minst så lenge.
+          </p>
         </div>
       </div>
 
