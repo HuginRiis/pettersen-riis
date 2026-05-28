@@ -24,17 +24,18 @@ const RANGES: { v: Range; label: string }[] = [
   { v: 168, label: "7d" },
 ];
 
-function fmtClock(ts: string, range: Range): string {
+function fmtClock(ts: string, _range: Range): string {
   const d = new Date(ts);
-  if (range === 24) {
-    return d.toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit" });
-  }
   return d.toLocaleString("nb-NO", {
     day: "2-digit",
     month: "2-digit",
     hour: "2-digit",
   });
 }
+
+const C_EFFEKT = "#22c55e";
+const C_VANN = "#f59e0b";
+const C_UTE = "#ef4444";
 
 export function BassengHistoryChart() {
   const fetchHistory = useServerFn(getBassengHistory);
