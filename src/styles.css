@@ -492,3 +492,11 @@ main .container {
 .recharts-default-tooltip .recharts-tooltip-item:nth-of-type(5n+4) * { color: var(--chart-series-4) !important; }
 .recharts-default-tooltip .recharts-tooltip-item:nth-of-type(5n+5),
 .recharts-default-tooltip .recharts-tooltip-item:nth-of-type(5n+5) * { color: var(--chart-series-5) !important; }
+
+/* Basseng-forløp har faste farger uavhengig av global serie-rekkefølge. */
+.basseng-history-chart .basseng-chart-effekt .recharts-area-area { fill: var(--chart-series-1) !important; }
+.basseng-history-chart .basseng-chart-effekt .recharts-area-curve { stroke: var(--chart-series-1) !important; }
+.basseng-history-chart .basseng-chart-vann .recharts-curve,
+.basseng-history-chart .basseng-chart-vann .recharts-dot { stroke: var(--chart-series-2) !important; fill: var(--chart-series-2) !important; }
+.basseng-history-chart .basseng-chart-ute .recharts-curve,
+.basseng-history-chart .basseng-chart-ute .recharts-dot { stroke: var(--chart-series-3) !important; fill: var(--chart-series-3) !important; }
