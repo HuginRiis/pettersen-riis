@@ -33,9 +33,9 @@ function fmtClock(ts: string, _range: Range): string {
   });
 }
 
-const C_EFFEKT = "#22c55e";
-const C_VANN = "#f59e0b";
-const C_UTE = "#ef4444";
+const C_EFFEKT = "var(--chart-series-1)";
+const C_VANN = "var(--chart-series-2)";
+const C_UTE = "var(--chart-series-3)";
 
 export function BassengHistoryChart() {
   const fetchHistory = useServerFn(getBassengHistory);
@@ -136,7 +136,7 @@ export function BassengHistoryChart() {
           </div>
         </div>
 
-        <div className="h-64 sm:h-80">
+        <div className="basseng-history-chart h-64 sm:h-80">
           {loading ? (
             <div className="h-full flex items-center justify-center text-xs text-muted-foreground italic">
               Maesteren leser i rullene…
@@ -197,6 +197,7 @@ export function BassengHistoryChart() {
                   iconType="line"
                 />
                 <Area
+                  className="basseng-chart-effekt"
                   yAxisId="watt"
                   type="monotone"
                   dataKey="watts"
@@ -209,6 +210,7 @@ export function BassengHistoryChart() {
                   dot={false}
                 />
                 <Line
+                  className="basseng-chart-vann"
                   yAxisId="temp"
                   type="monotone"
                   dataKey="pool"
@@ -219,13 +221,13 @@ export function BassengHistoryChart() {
                   connectNulls
                 />
                 <Line
+                  className="basseng-chart-ute"
                   yAxisId="temp"
                   type="monotone"
                   dataKey="outdoor"
                   name="Ute"
                   stroke={C_UTE}
-                  strokeWidth={2}
-                  strokeDasharray="4 3"
+                  strokeWidth={3}
                   dot={false}
                   connectNulls
                 />
