@@ -201,9 +201,9 @@ export function BassengHistoryChart() {
                   type="monotone"
                   dataKey="watts"
                   name="Effekt"
-                  stroke="#fbbf24"
-                  strokeWidth={1.5}
-                  fill="#fbbf24"
+                  stroke={C_EFFEKT}
+                  strokeWidth={2}
+                  fill={C_EFFEKT}
                   fillOpacity={0.18}
                   connectNulls
                   dot={false}
@@ -213,7 +213,7 @@ export function BassengHistoryChart() {
                   type="monotone"
                   dataKey="pool"
                   name="Vann"
-                  stroke="#38bdf8"
+                  stroke={C_VANN}
                   strokeWidth={2}
                   dot={false}
                   connectNulls
@@ -223,7 +223,7 @@ export function BassengHistoryChart() {
                   type="monotone"
                   dataKey="outdoor"
                   name="Ute"
-                  stroke="#34d399"
+                  stroke={C_UTE}
                   strokeWidth={2}
                   strokeDasharray="4 3"
                   dot={false}
