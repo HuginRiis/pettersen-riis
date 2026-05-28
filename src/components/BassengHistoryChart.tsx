@@ -109,13 +109,13 @@ export function BassengHistoryChart() {
             </h3>
             <div className="hidden sm:flex items-center gap-3 text-[10px] tracking-[0.2em] uppercase text-muted-foreground/70 mt-1">
               <span className="flex items-center gap-1">
-                <Thermometer size={10} className="text-sky-300" /> Vann
+                <Thermometer size={10} style={{ color: C_VANN }} /> Vann
               </span>
               <span className="flex items-center gap-1">
-                <Thermometer size={10} className="text-emerald-300" /> Ute
+                <Thermometer size={10} style={{ color: C_UTE }} /> Ute
               </span>
               <span className="flex items-center gap-1">
-                <Zap size={10} className="text-amber-300" /> Effekt
+                <Zap size={10} style={{ color: C_EFFEKT }} /> Effekt
               </span>
             </div>
           </div>
