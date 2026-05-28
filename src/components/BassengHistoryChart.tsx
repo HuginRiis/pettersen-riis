@@ -24,17 +24,18 @@ const RANGES: { v: Range; label: string }[] = [
   { v: 168, label: "7d" },
 ];
 
-function fmtClock(ts: string, range: Range): string {
+function fmtClock(ts: string, _range: Range): string {
   const d = new Date(ts);
-  if (range === 24) {
-    return d.toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit" });
-  }
   return d.toLocaleString("nb-NO", {
     day: "2-digit",
     month: "2-digit",
     hour: "2-digit",
   });
 }
+
+const C_EFFEKT = "#22c55e";
+const C_VANN = "#f59e0b";
+const C_UTE = "#ef4444";
 
 export function BassengHistoryChart() {
   const fetchHistory = useServerFn(getBassengHistory);
@@ -108,13 +109,13 @@ export function BassengHistoryChart() {
             </h3>
             <div className="hidden sm:flex items-center gap-3 text-[10px] tracking-[0.2em] uppercase text-muted-foreground/70 mt-1">
               <span className="flex items-center gap-1">
-                <Thermometer size={10} className="text-sky-300" /> Vann
+                <Thermometer size={10} style={{ color: C_VANN }} /> Vann
               </span>
               <span className="flex items-center gap-1">
-                <Thermometer size={10} className="text-emerald-300" /> Ute
+                <Thermometer size={10} style={{ color: C_UTE }} /> Ute
               </span>
               <span className="flex items-center gap-1">
-                <Zap size={10} className="text-amber-300" /> Effekt
+                <Zap size={10} style={{ color: C_EFFEKT }} /> Effekt
               </span>
             </div>
           </div>
@@ -200,9 +201,9 @@ export function BassengHistoryChart() {
                   type="monotone"
                   dataKey="watts"
                   name="Effekt"
-                  stroke="#fbbf24"
-                  strokeWidth={1.5}
-                  fill="#fbbf24"
+                  stroke={C_EFFEKT}
+                  strokeWidth={2}
+                  fill={C_EFFEKT}
                   fillOpacity={0.18}
                   connectNulls
                   dot={false}
@@ -212,7 +213,7 @@ export function BassengHistoryChart() {
                   type="monotone"
                   dataKey="pool"
                   name="Vann"
-                  stroke="#38bdf8"
+                  stroke={C_VANN}
                   strokeWidth={2}
                   dot={false}
                   connectNulls
@@ -222,7 +223,7 @@ export function BassengHistoryChart() {
                   type="monotone"
                   dataKey="outdoor"
                   name="Ute"
-                  stroke="#34d399"
+                  stroke={C_UTE}
                   strokeWidth={2}
                   strokeDasharray="4 3"
                   dot={false}
