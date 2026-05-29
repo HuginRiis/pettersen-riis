@@ -189,11 +189,9 @@ export const getDbCleanupEstimate = createServerFn({ method: "GET" }).handler(
 
   },
 );
-
-export const runDbCleanup = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => {
-    const data = d as { mode: "unused" | "recommended" | "month30" | "full30" };
-    if (!["unused", "recommended", "month30", "full30"].includes(data?.mode)) {
+    const data = d as { mode: "unused" | "recommended" | "month30" | "full30" | "pgnet" };
+    if (!["unused", "recommended", "month30", "full30", "pgnet"].includes(data?.mode)) {
       throw new Error("Ugyldig modus");
     }
     return data;
@@ -205,19 +203,21 @@ export const runDbCleanup = createServerFn({ method: "POST" })
     const deletedPerTable: Record<string, number> = {};
     let total = 0;
 
-    // Bredt 30-dagers modus: kjør SQL-funksjonen som dekker alle tabeller.
-    if (data.mode === "full30") {
+    // pg_net responscache — TRUNCATE + frigjør disk.
+    if (data.mode === "pgnet") {
       try {
-        const { data: res, error } = await sb.rpc("run_db_30day_cleanup");
+        const { data: res, error } = await sb.rpc("cleanup_pgnet_cache");
         if (error) throw new Error(error.message);
-        const rows = (res?.rows ?? []) as Array<{ table: string; deleted: number }>;
-        for (const r of rows) deletedPerTable[r.table] = Number(r.deleted ?? 0);
-        return { deletedPerTable, totalDeleted: Number(res?.total_deleted ?? 0) };
+        const deleted = Number(res?.deleted_rows ?? 0);
+        deletedPerTable["net._http_response"] = deleted;
+        return { deletedPerTable, totalDeleted: deleted };
       } catch (e: any) {
-        throw new Error("Full 30-dagers opprydning feilet: " + (e?.message ?? "ukjent"));
+        throw new Error("pg_net opprydning feilet: " + (e?.message ?? "ukjent"));
       }
     }
 
+    // Bredt 30-dagers modus: kjør SQL-funksjonen som dekker alle tabeller.
+    if (data.mode === "full30") {
 
 
     for (const c of CANDIDATES) {
