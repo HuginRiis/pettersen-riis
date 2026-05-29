@@ -36,6 +36,17 @@ type DayBucket = {
   peak: HourSlot;
 };
 
+/** Nåværende time i Europe/Oslo (0–23) — uavhengig av nettleserens tidssone. */
+function osloHourNow(): number {
+  const s = new Date().toLocaleString("en-GB", {
+    timeZone: "Europe/Oslo",
+    hour: "2-digit",
+    hour12: false,
+  });
+  return parseInt(s, 10) % 24;
+}
+
+
 const ALLERGEN_META: Record<keyof Pollen, { name: string; sigil: string; color: string }> = {
   alder: { name: "Or", sigil: "🌫", color: "oklch(0.70 0.14 50)" },
   birch: { name: "Bjørk", sigil: "🌳", color: "oklch(0.78 0.16 90)" },
