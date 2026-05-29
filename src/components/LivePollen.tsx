@@ -36,6 +36,17 @@ type DayBucket = {
   peak: HourSlot;
 };
 
+/** Nåværende time i Europe/Oslo (0–23) — uavhengig av nettleserens tidssone. */
+function osloHourNow(): number {
+  const s = new Date().toLocaleString("en-GB", {
+    timeZone: "Europe/Oslo",
+    hour: "2-digit",
+    hour12: false,
+  });
+  return parseInt(s, 10) % 24;
+}
+
+
 const ALLERGEN_META: Record<keyof Pollen, { name: string; sigil: string; color: string }> = {
   alder: { name: "Or", sigil: "🌫", color: "oklch(0.70 0.14 50)" },
   birch: { name: "Bjørk", sigil: "🌳", color: "oklch(0.78 0.16 90)" },
@@ -287,7 +298,7 @@ function NaafPanel({
 // ─────────────────────────────────────────────────────────────────────────────
 
 function MyAllergenAlert({ today, tomorrow }: { today: DayBucket; tomorrow?: DayBucket }) {
-  const nowHour = new Date().getHours();
+  const nowHour = osloHourNow();
 
   // Se på upcoming timer i dag + hele morgendagen for å finne neste topp
   const upcomingHours = [
@@ -384,7 +395,7 @@ function MyAllergenAlert({ today, tomorrow }: { today: DayBucket; tomorrow?: Day
 // ─────────────────────────────────────────────────────────────────────────────
 
 function NowPanel({ day }: { day: DayBucket }) {
-  const nowHour = new Date().getHours();
+  const nowHour = osloHourNow();
   const slot =
     day.hours.find((h) => h.hour === nowHour) ?? day.hours[day.hours.length - 1] ?? day.peak;
   const entries = (Object.keys(ALLERGEN_META) as (keyof Pollen)[])
@@ -462,7 +473,7 @@ function NowPanel({ day }: { day: DayBucket }) {
 }
 
 function DayPeakHint({ day }: { day: DayBucket }) {
-  const nowHour = new Date().getHours();
+  const nowHour = osloHourNow();
   const peaks = MY_ALLERGENS.map((k) => {
     const peak = day.hours.reduce(
       (m, h) => (h.pollen[k] > m.v ? { v: h.pollen[k], hour: h.hour } : m),
@@ -515,7 +526,7 @@ function HourlyChart({ day }: { day: DayBucket }) {
 
   const xFor = (i: number) => padL + i * stepX;
   const yFor = (v: number) => padT + innerH - (v / maxY) * innerH;
-  const nowHour = new Date().getHours();
+  const nowHour = osloHourNow();
   const nowIdx = day.hours.findIndex((h) => h.hour === nowHour);
 
   const series: { key: keyof Pollen; color: string; name: string }[] = [
