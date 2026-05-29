@@ -159,8 +159,18 @@ export const getDbCleanupEstimate = createServerFn({ method: "GET" }).handler(
         }
       }),
     );
-
-    const filtered = rows.filter((r): r is DbCleanupRow => r !== null);
+    // pg_net cache size
+    let pgnetBytes = 0;
+    let pgnetRows = 0;
+    try {
+      const { data } = await sb.rpc("get_pgnet_cache_size");
+      if (data) {
+        pgnetBytes = Number(data.bytes ?? 0);
+        pgnetRows = Number(data.rows ?? 0);
+      }
+    } catch (e) {
+      console.warn("[db-cleanup] pgnet size rpc failed", e);
+    }
 
     const totals = filtered.reduce(
       (acc, r) => {
@@ -169,7 +179,7 @@ export const getDbCleanupEstimate = createServerFn({ method: "GET" }).handler(
         acc.month30Bytes += r.month30Bytes;
         return acc;
       },
-      { unusedBytes: 0, recommendedBytes: 0, month30Bytes: 0, full30Bytes, dbBytes },
+      { unusedBytes: 0, recommendedBytes: 0, month30Bytes: 0, full30Bytes, pgnetBytes, pgnetRows, dbBytes },
     );
 
     return { rows: filtered, totals, full30Rows };
