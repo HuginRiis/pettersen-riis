@@ -116,6 +116,15 @@ export function DbCleanupPanel() {
       desc: "Skanner ALLE tabeller (inkl. cron-historikk) og sletter alt eldre enn 30 dager — kun siste 30 dager beholdes.",
       cta: "Kjør komplett",
     },
+    {
+      key: "pgnet" as const,
+      title: "pg_net responscache",
+      icon: Zap,
+      color: "#f472b6",
+      bytes: data.totals.pgnetBytes,
+      desc: `Midlertidig HTTP-responscache fra webhooks/cron (${data.totals.pgnetRows.toLocaleString("no-NO")} rader). Ingen UI bruker dette — kan tømmes helt og diskplass frigjøres umiddelbart.`,
+      cta: "Tøm cache",
+    },
 
   ];
 
