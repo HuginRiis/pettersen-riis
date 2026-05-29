@@ -136,7 +136,7 @@ export function LivePollen({ lat, lon, title, subtitle }: Props) {
 
       {days && days.length > 0 && (
         <div className="space-y-5">
-          <MyAllergenAlert day={days[0]} />
+          <MyAllergenAlert today={days[0]} tomorrow={days[1]} />
           <NowPanel day={days[0]} />
           <HourlyChart day={days[0]} />
           <ForecastDays days={days.slice(1)} />
@@ -145,6 +145,7 @@ export function LivePollen({ lat, lon, title, subtitle }: Props) {
     </article>
   );
 }
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 
