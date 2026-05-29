@@ -159,6 +159,9 @@ export const getDbCleanupEstimate = createServerFn({ method: "GET" }).handler(
         }
       }),
     );
+
+    const filtered = rows.filter((r): r is DbCleanupRow => r !== null);
+
     // pg_net cache size
     let pgnetBytes = 0;
     let pgnetRows = 0;
