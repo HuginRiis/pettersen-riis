@@ -1,12 +1,17 @@
 import { useEffect, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { LastUpdated } from "@/components/LastUpdated";
+import { getNaafForecast } from "@/lib/naaf-pollen.functions";
 
 type Props = {
   lat: number;
   lon: number;
   title: string;
   subtitle: string;
+  /** NAAF-region for daglig referansenivå, f.eks. "ostlandetMedOslo". */
+  naafRegion?: string;
 };
+
 
 type Pollen = {
   alder: number;
