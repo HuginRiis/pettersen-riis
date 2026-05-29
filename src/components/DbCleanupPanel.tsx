@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { getDbCleanupEstimate, runDbCleanup, type DbCleanupEstimate } from "@/server/db-cleanup.functions";
-import { Database, Trash2, Sparkles, CalendarClock, Layers, Loader2 } from "lucide-react";
+import { Database, Trash2, Sparkles, CalendarClock, Layers, Loader2, Zap } from "lucide-react";
 
 function pretty(b: number): string {
   if (!b) return "0 B";
@@ -33,7 +33,7 @@ export function DbCleanupPanel() {
 
   useEffect(() => { load(); }, []);
 
-  const handleRun = async (mode: "unused" | "recommended" | "month30" | "full30", label: string) => {
+  const handleRun = async (mode: "unused" | "recommended" | "month30" | "full30" | "pgnet", label: string) => {
     const pwd = prompt(`Skriv inn passord for å slette ${label}:`);
     if (pwd === null) return;
     if (pwd !== "9272") {
@@ -53,7 +53,7 @@ export function DbCleanupPanel() {
     }
   };
 
-  const handleScan = async (mode: "unused" | "recommended" | "month30" | "full30") => {
+  const handleScan = async (mode: "unused" | "recommended" | "month30" | "full30" | "pgnet") => {
     setScanning(mode);
     try {
       const fresh = await fetchFn({});
@@ -62,6 +62,7 @@ export function DbCleanupPanel() {
         mode === "unused" ? fresh.totals.unusedBytes :
         mode === "recommended" ? fresh.totals.recommendedBytes :
         mode === "month30" ? fresh.totals.month30Bytes :
+        mode === "pgnet" ? fresh.totals.pgnetBytes :
         fresh.totals.full30Bytes;
       setScanResult((prev) => ({ ...prev, [mode]: { bytes, at: Date.now() } }));
     } catch (e: any) {
@@ -114,6 +115,15 @@ export function DbCleanupPanel() {
       bytes: data.totals.full30Bytes,
       desc: "Skanner ALLE tabeller (inkl. cron-historikk) og sletter alt eldre enn 30 dager — kun siste 30 dager beholdes.",
       cta: "Kjør komplett",
+    },
+    {
+      key: "pgnet" as const,
+      title: "pg_net responscache",
+      icon: Zap,
+      color: "#f472b6",
+      bytes: data.totals.pgnetBytes,
+      desc: `Midlertidig HTTP-responscache fra webhooks/cron (${data.totals.pgnetRows.toLocaleString("no-NO")} rader). Ingen UI bruker dette — kan tømmes helt og diskplass frigjøres umiddelbart.`,
+      cta: "Tøm cache",
     },
 
   ];

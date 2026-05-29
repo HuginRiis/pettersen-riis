@@ -56,6 +56,9 @@ export type DbCleanupEstimate = {
     month30Bytes: number;
     /** Bredt 30-dagers estimat: alle public-tabeller + cron-historikk. */
     full30Bytes: number;
+    /** pg_net responscache (net._http_response). */
+    pgnetBytes: number;
+    pgnetRows: number;
     dbBytes: number;
   };
   full30Rows: Array<{ table: string; dateColumn: string; oldRows: number; totalRows: number; estimatedBytes: number }>;
@@ -159,6 +162,19 @@ export const getDbCleanupEstimate = createServerFn({ method: "GET" }).handler(
 
     const filtered = rows.filter((r): r is DbCleanupRow => r !== null);
 
+    // pg_net cache size
+    let pgnetBytes = 0;
+    let pgnetRows = 0;
+    try {
+      const { data } = await sb.rpc("get_pgnet_cache_size");
+      if (data) {
+        pgnetBytes = Number(data.bytes ?? 0);
+        pgnetRows = Number(data.rows ?? 0);
+      }
+    } catch (e) {
+      console.warn("[db-cleanup] pgnet size rpc failed", e);
+    }
+
     const totals = filtered.reduce(
       (acc, r) => {
         acc.unusedBytes += r.unusedBytes;
@@ -166,7 +182,7 @@ export const getDbCleanupEstimate = createServerFn({ method: "GET" }).handler(
         acc.month30Bytes += r.month30Bytes;
         return acc;
       },
-      { unusedBytes: 0, recommendedBytes: 0, month30Bytes: 0, full30Bytes, dbBytes },
+      { unusedBytes: 0, recommendedBytes: 0, month30Bytes: 0, full30Bytes, pgnetBytes, pgnetRows, dbBytes },
     );
 
     return { rows: filtered, totals, full30Rows };
@@ -176,18 +192,30 @@ export const getDbCleanupEstimate = createServerFn({ method: "GET" }).handler(
 
 export const runDbCleanup = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => {
-    const data = d as { mode: "unused" | "recommended" | "month30" | "full30" };
-    if (!["unused", "recommended", "month30", "full30"].includes(data?.mode)) {
+    const data = d as { mode: "unused" | "recommended" | "month30" | "full30" | "pgnet" };
+    if (!["unused", "recommended", "month30", "full30", "pgnet"].includes(data?.mode)) {
       throw new Error("Ugyldig modus");
     }
     return data;
-
   })
   .handler(async ({ data }): Promise<{ deletedPerTable: Record<string, number>; totalDeleted: number }> => {
     const sb = supabaseAdmin as any;
     const cutoff30 = new Date(Date.now() - 30 * 24 * 3600_000).toISOString();
     const deletedPerTable: Record<string, number> = {};
     let total = 0;
+
+    // pg_net responscache — TRUNCATE + frigjør disk via SQL-funksjon.
+    if (data.mode === "pgnet") {
+      try {
+        const { data: res, error } = await sb.rpc("cleanup_pgnet_cache");
+        if (error) throw new Error(error.message);
+        const deleted = Number(res?.deleted_rows ?? 0);
+        deletedPerTable["net._http_response"] = deleted;
+        return { deletedPerTable, totalDeleted: deleted };
+      } catch (e: any) {
+        throw new Error("pg_net opprydning feilet: " + (e?.message ?? "ukjent"));
+      }
+    }
 
     // Bredt 30-dagers modus: kjør SQL-funksjonen som dekker alle tabeller.
     if (data.mode === "full30") {
@@ -202,14 +230,11 @@ export const runDbCleanup = createServerFn({ method: "POST" })
       }
     }
 
-
-
     for (const c of CANDIDATES) {
       try {
         let q = sb.from(c.table).delete({ count: "exact" });
         if (data.mode === "unused") {
           if (!c.unused) continue;
-          // slett alt
           q = q.not(c.dateColumn, "is", null);
         } else if (data.mode === "recommended") {
           if (c.unused) {
@@ -219,7 +244,7 @@ export const runDbCleanup = createServerFn({ method: "POST" })
             q = q.lt(c.dateColumn, cutoff);
           } else continue;
         } else {
-          // month30 — alt eldre enn 30 dager, inkl. unused-tabeller (alt).
+          // month30
           if (c.unused) {
             q = q.not(c.dateColumn, "is", null);
           } else {
