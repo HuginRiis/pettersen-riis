@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { getDbCleanupEstimate, runDbCleanup, type DbCleanupEstimate } from "@/server/db-cleanup.functions";
-import { Database, Trash2, Sparkles, CalendarClock, Layers, Loader2 } from "lucide-react";
+import { Database, Trash2, Sparkles, CalendarClock, Layers, Loader2, Zap } from "lucide-react";
 
 function pretty(b: number): string {
   if (!b) return "0 B";
