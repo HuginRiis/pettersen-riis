@@ -3026,6 +3026,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cleanup_pgnet_cache: { Args: never; Returns: Json }
       get_api_call_hourly_24h: { Args: never; Returns: Json }
       get_api_call_summary_24h: { Args: never; Returns: Json }
       get_cron_jobs: {
@@ -3041,6 +3042,7 @@ export type Database = {
       get_db_30day_cleanup_estimate: { Args: never; Returns: Json }
       get_db_detail_stats: { Args: never; Returns: Json }
       get_db_usage_stats: { Args: never; Returns: Json }
+      get_pgnet_cache_size: { Args: never; Returns: Json }
       get_storage_usage_stats: { Args: never; Returns: Json }
       get_table_bytes: { Args: { _table: string }; Returns: number }
       run_db_30day_cleanup: { Args: never; Returns: Json }
