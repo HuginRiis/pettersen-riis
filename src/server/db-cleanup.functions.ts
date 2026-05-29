@@ -189,13 +189,14 @@ export const getDbCleanupEstimate = createServerFn({ method: "GET" }).handler(
 
   },
 );
+
+export const runDbCleanup = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => {
     const data = d as { mode: "unused" | "recommended" | "month30" | "full30" | "pgnet" };
     if (!["unused", "recommended", "month30", "full30", "pgnet"].includes(data?.mode)) {
       throw new Error("Ugyldig modus");
     }
     return data;
-
   })
   .handler(async ({ data }): Promise<{ deletedPerTable: Record<string, number>; totalDeleted: number }> => {
     const sb = supabaseAdmin as any;
@@ -203,7 +204,7 @@ export const getDbCleanupEstimate = createServerFn({ method: "GET" }).handler(
     const deletedPerTable: Record<string, number> = {};
     let total = 0;
 
-    // pg_net responscache — TRUNCATE + frigjør disk.
+    // pg_net responscache — TRUNCATE + frigjør disk via SQL-funksjon.
     if (data.mode === "pgnet") {
       try {
         const { data: res, error } = await sb.rpc("cleanup_pgnet_cache");
@@ -218,14 +219,22 @@ export const getDbCleanupEstimate = createServerFn({ method: "GET" }).handler(
 
     // Bredt 30-dagers modus: kjør SQL-funksjonen som dekker alle tabeller.
     if (data.mode === "full30") {
-
+      try {
+        const { data: res, error } = await sb.rpc("run_db_30day_cleanup");
+        if (error) throw new Error(error.message);
+        const rows = (res?.rows ?? []) as Array<{ table: string; deleted: number }>;
+        for (const r of rows) deletedPerTable[r.table] = Number(r.deleted ?? 0);
+        return { deletedPerTable, totalDeleted: Number(res?.total_deleted ?? 0) };
+      } catch (e: any) {
+        throw new Error("Full 30-dagers opprydning feilet: " + (e?.message ?? "ukjent"));
+      }
+    }
 
     for (const c of CANDIDATES) {
       try {
         let q = sb.from(c.table).delete({ count: "exact" });
         if (data.mode === "unused") {
           if (!c.unused) continue;
-          // slett alt
           q = q.not(c.dateColumn, "is", null);
         } else if (data.mode === "recommended") {
           if (c.unused) {
@@ -235,7 +244,7 @@ export const getDbCleanupEstimate = createServerFn({ method: "GET" }).handler(
             q = q.lt(c.dateColumn, cutoff);
           } else continue;
         } else {
-          // month30 — alt eldre enn 30 dager, inkl. unused-tabeller (alt).
+          // month30
           if (c.unused) {
             q = q.not(c.dateColumn, "is", null);
           } else {
