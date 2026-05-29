@@ -53,7 +53,7 @@ export function DbCleanupPanel() {
     }
   };
 
-  const handleScan = async (mode: "unused" | "recommended" | "month30" | "full30") => {
+  const handleScan = async (mode: "unused" | "recommended" | "month30" | "full30" | "pgnet") => {
     setScanning(mode);
     try {
       const fresh = await fetchFn({});
@@ -62,6 +62,7 @@ export function DbCleanupPanel() {
         mode === "unused" ? fresh.totals.unusedBytes :
         mode === "recommended" ? fresh.totals.recommendedBytes :
         mode === "month30" ? fresh.totals.month30Bytes :
+        mode === "pgnet" ? fresh.totals.pgnetBytes :
         fresh.totals.full30Bytes;
       setScanResult((prev) => ({ ...prev, [mode]: { bytes, at: Date.now() } }));
     } catch (e: any) {
