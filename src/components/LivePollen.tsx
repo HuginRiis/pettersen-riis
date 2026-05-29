@@ -298,7 +298,7 @@ function NaafPanel({
 // ─────────────────────────────────────────────────────────────────────────────
 
 function MyAllergenAlert({ today, tomorrow }: { today: DayBucket; tomorrow?: DayBucket }) {
-  const nowHour = new Date().getHours();
+  const nowHour = osloHourNow();
 
   // Se på upcoming timer i dag + hele morgendagen for å finne neste topp
   const upcomingHours = [
@@ -395,7 +395,7 @@ function MyAllergenAlert({ today, tomorrow }: { today: DayBucket; tomorrow?: Day
 // ─────────────────────────────────────────────────────────────────────────────
 
 function NowPanel({ day }: { day: DayBucket }) {
-  const nowHour = new Date().getHours();
+  const nowHour = osloHourNow();
   const slot =
     day.hours.find((h) => h.hour === nowHour) ?? day.hours[day.hours.length - 1] ?? day.peak;
   const entries = (Object.keys(ALLERGEN_META) as (keyof Pollen)[])
@@ -473,7 +473,7 @@ function NowPanel({ day }: { day: DayBucket }) {
 }
 
 function DayPeakHint({ day }: { day: DayBucket }) {
-  const nowHour = new Date().getHours();
+  const nowHour = osloHourNow();
   const peaks = MY_ALLERGENS.map((k) => {
     const peak = day.hours.reduce(
       (m, h) => (h.pollen[k] > m.v ? { v: h.pollen[k], hour: h.hour } : m),
@@ -526,7 +526,7 @@ function HourlyChart({ day }: { day: DayBucket }) {
 
   const xFor = (i: number) => padL + i * stepX;
   const yFor = (v: number) => padT + innerH - (v / maxY) * innerH;
-  const nowHour = new Date().getHours();
+  const nowHour = osloHourNow();
   const nowIdx = day.hours.findIndex((h) => h.hour === nowHour);
 
   const series: { key: keyof Pollen; color: string; name: string }[] = [
