@@ -84,11 +84,43 @@ function levelFor(allergen: keyof Pollen, value: number): { label: string; color
 // Allergener Arne reagerer på — disse fremheves i UI med varsel
 const MY_ALLERGENS: (keyof Pollen)[] = ["birch", "grass", "alder", "mugwort"];
 
-export function LivePollen({ lat, lon, title, subtitle }: Props) {
+export function LivePollen({ lat, lon, title, subtitle, naafRegion }: Props) {
   const [days, setDays] = useState<DayBucket[] | null>(null);
   const [updated, setUpdated] = useState<Date | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [naaf, setNaaf] = useState<{
+    days: { date: string; pollen: Record<string, number> }[];
+    textForecast: string | null;
+  } | null>(null);
+  const fetchNaaf = useServerFn(getNaafForecast);
+
+  useEffect(() => {
+    if (!naafRegion) {
+      setNaaf(null);
+      return;
+    }
+    let cancelled = false;
+    fetchNaaf({ data: { region: naafRegion } })
+      .then((r) => {
+        if (!cancelled) setNaaf({ days: r.days, textForecast: r.textForecast });
+      })
+      .catch(() => {
+        if (!cancelled) setNaaf(null);
+      });
+    const id = setInterval(() => {
+      fetchNaaf({ data: { region: naafRegion } })
+        .then((r) => {
+          if (!cancelled) setNaaf({ days: r.days, textForecast: r.textForecast });
+        })
+        .catch(() => {});
+    }, 60 * 60 * 1000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, [naafRegion, fetchNaaf]);
+
 
   useEffect(() => {
     let cancelled = false;
