@@ -174,6 +174,7 @@ export function LivePollen({ lat, lon, title, subtitle, naafRegion }: Props) {
       {days && days.length > 0 && (
         <div className="space-y-5">
           <MyAllergenAlert today={days[0]} tomorrow={days[1]} />
+          {naaf && <NaafPanel naaf={naaf} />}
           <NowPanel day={days[0]} />
           <HourlyChart day={days[0]} />
           <ForecastDays days={days.slice(1)} />
@@ -182,6 +183,105 @@ export function LivePollen({ lat, lon, title, subtitle, naafRegion }: Props) {
     </article>
   );
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+const NAAF_KEYS: { naaf: string; name: string; sigil: string; mine: boolean }[] = [
+  { naaf: "or", name: "Or", sigil: "🌫", mine: true },
+  { naaf: "hassel", name: "Hassel", sigil: "🌰", mine: false },
+  { naaf: "salix", name: "Salix", sigil: "🌿", mine: false },
+  { naaf: "bjork", name: "Bjørk", sigil: "🌳", mine: true },
+  { naaf: "gress", name: "Gress", sigil: "🌾", mine: true },
+  { naaf: "burot", name: "Burot", sigil: "🍂", mine: true },
+];
+
+const NAAF_LEVELS = [
+  { label: "Ingen", color: "oklch(0.55 0.04 240)" },
+  { label: "Lav", color: "oklch(0.72 0.15 140)" },
+  { label: "Moderat", color: "oklch(0.78 0.15 70)" },
+  { label: "Høy", color: "oklch(0.65 0.20 25)" },
+  { label: "Svært høy", color: "oklch(0.55 0.25 15)" },
+];
+
+function NaafPanel({
+  naaf,
+}: {
+  naaf: {
+    days: { date: string; pollen: Record<string, number> }[];
+    textForecast: string | null;
+  };
+}) {
+  const today = naaf.days[0];
+  const tomorrow = naaf.days[1];
+  if (!today) return null;
+
+  const active = NAAF_KEYS.map((k) => ({
+    ...k,
+    today: today.pollen[k.naaf] ?? 0,
+    tomorrow: tomorrow?.pollen[k.naaf] ?? 0,
+  })).filter((x) => x.today > 0 || x.tomorrow > 0);
+
+  return (
+    <div className="rounded-md border border-border bg-background/40 p-4">
+      <div className="flex items-baseline justify-between mb-3">
+        <span className="text-[10px] uppercase tracking-[0.25em] text-primary">
+          NAAF · regionvarsel
+        </span>
+        <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+          manuelt satt
+        </span>
+      </div>
+
+      {active.length === 0 ? (
+        <p className="text-sm text-muted-foreground italic">
+          NAAF rapporterer ingen pollen i regionen i dag.
+        </p>
+      ) : (
+        <div className="space-y-1.5">
+          {active.map((a) => {
+            const lvlT = NAAF_LEVELS[Math.min(4, Math.max(0, a.today))];
+            const lvlM = NAAF_LEVELS[Math.min(4, Math.max(0, a.tomorrow))];
+            return (
+              <div key={a.naaf} className="flex items-center gap-3 text-sm">
+                <span className="text-lg w-6 text-center relative">
+                  {a.sigil}
+                  {a.mine && (
+                    <span className="absolute -top-1.5 -right-1.5 text-[9px] text-primary">
+                      ⚔
+                    </span>
+                  )}
+                </span>
+                <span className="flex-1 text-foreground">{a.name}</span>
+                <span
+                  className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded border"
+                  style={{ borderColor: lvlT.color, color: lvlT.color }}
+                  title={`I dag: ${lvlT.label}`}
+                >
+                  {lvlT.label}
+                </span>
+                <span className="text-[10px] text-muted-foreground">→</span>
+                <span
+                  className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded border"
+                  style={{ borderColor: lvlM.color, color: lvlM.color }}
+                  title={`I morgen: ${lvlM.label}`}
+                >
+                  {lvlM.label}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {naaf.textForecast && (
+        <p className="text-[11px] text-muted-foreground italic mt-3 pt-3 border-t border-border/40 leading-snug">
+          {naaf.textForecast}
+        </p>
+      )}
+    </div>
+  );
+}
+
 
 
 // ─────────────────────────────────────────────────────────────────────────────
