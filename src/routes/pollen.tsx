@@ -163,6 +163,7 @@ function PollenPage() {
                 lon={userLoc.active.lon}
                 title={userLoc.active.label}
                 subtitle="Live pollen for valgt sted — oppdateres hver time"
+                naafRegion="ostlandetMedOslo"
               />
             )}
             <LivePollen
@@ -170,7 +171,9 @@ function PollenPage() {
               lon={9.07}
               title="Hytta · Lyngdal i Numedal"
               subtitle="Live pollen for Numedal — sesongen kommer 1–2 uker senere"
+              naafRegion="indreOstlandet"
             />
+
           </div>
         </div>
 
