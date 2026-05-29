@@ -56,6 +56,9 @@ export type DbCleanupEstimate = {
     month30Bytes: number;
     /** Bredt 30-dagers estimat: alle public-tabeller + cron-historikk. */
     full30Bytes: number;
+    /** pg_net responscache (net._http_response). */
+    pgnetBytes: number;
+    pgnetRows: number;
     dbBytes: number;
   };
   full30Rows: Array<{ table: string; dateColumn: string; oldRows: number; totalRows: number; estimatedBytes: number }>;
