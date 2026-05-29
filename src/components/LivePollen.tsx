@@ -319,9 +319,42 @@ function NowPanel({ day }: { day: DayBucket }) {
           })}
         </div>
       )}
+      <DayPeakHint day={day} />
     </div>
   );
 }
+
+function DayPeakHint({ day }: { day: DayBucket }) {
+  const nowHour = new Date().getHours();
+  const peaks = MY_ALLERGENS.map((k) => {
+    const peak = day.hours.reduce(
+      (m, h) => (h.pollen[k] > m.v ? { v: h.pollen[k], hour: h.hour } : m),
+      { v: 0, hour: 0 },
+    );
+    return { k, peak, lvl: levelFor(k, peak.v), isPast: peak.hour < nowHour };
+  })
+    .filter((x) => x.lvl.rank >= 3)
+    .sort((a, b) => b.peak.v - a.peak.v)
+    .slice(0, 2);
+
+  if (peaks.length === 0) return null;
+
+  return (
+    <div className="mt-3 pt-3 border-t border-border/40 text-[11px] text-muted-foreground">
+      <span className="uppercase tracking-wider text-[10px] mr-1.5">Dagens topp:</span>
+      {peaks.map((p, i) => (
+        <span key={p.k}>
+          {i > 0 && " · "}
+          <span className="text-foreground">{ALLERGEN_META[p.k].name}</span>{" "}
+          <span style={{ color: p.lvl.color }}>{p.lvl.label.toLowerCase()}</span>{" "}
+          ({p.peak.v.toFixed(0)} kl. {String(p.peak.hour).padStart(2, "0")}
+          {p.isPast ? ", over" : ""})
+        </span>
+      ))}
+    </div>
+  );
+}
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 
