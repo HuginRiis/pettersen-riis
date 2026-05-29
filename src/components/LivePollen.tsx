@@ -149,30 +149,66 @@ export function LivePollen({ lat, lon, title, subtitle }: Props) {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-function MyAllergenAlert({ day }: { day: DayBucket }) {
-  const worst = MY_ALLERGENS.map((k) => {
-    const peak = day.hours.reduce(
+function MyAllergenAlert({ today, tomorrow }: { today: DayBucket; tomorrow?: DayBucket }) {
+  const nowHour = new Date().getHours();
+
+  // Se på upcoming timer i dag + hele morgendagen for å finne neste topp
+  const upcomingHours = [
+    ...today.hours.filter((h) => h.hour >= nowHour),
+    ...(tomorrow?.hours ?? []).map((h) => ({ ...h, hour: h.hour + 24 })),
+  ];
+
+  const upcoming = MY_ALLERGENS.map((k) => {
+    const peak = upcomingHours.reduce(
       (m, h) => (h.pollen[k] > m.v ? { v: h.pollen[k], hour: h.hour } : m),
-      { v: 0, hour: 0 },
+      { v: 0, hour: nowHour },
     );
     return { k, peak, lvl: levelFor(k, peak.v) };
   })
     .filter((x) => x.lvl.rank >= 2)
     .sort((a, b) => b.lvl.rank - a.lvl.rank || b.peak.v - a.peak.v);
 
-  if (worst.length === 0) {
+  // Også: se om noen "mine" allergener allerede hadde høy topp tidligere i dag
+  const earlierToday = MY_ALLERGENS.map((k) => {
+    const peak = today.hours
+      .filter((h) => h.hour < nowHour)
+      .reduce(
+        (m, h) => (h.pollen[k] > m.v ? { v: h.pollen[k], hour: h.hour } : m),
+        { v: 0, hour: 0 },
+      );
+    return { k, peak, lvl: levelFor(k, peak.v) };
+  })
+    .filter((x) => x.lvl.rank >= 3)
+    .sort((a, b) => b.peak.v - a.peak.v);
+
+  // Hvis ingenting kommer fremover — vis rolig (evt. med "men det var høyt i morges")
+  if (upcoming.length === 0) {
     return (
-      <div className="rounded-md border border-border/60 bg-background/40 p-3 flex items-center gap-2">
-        <span className="text-lg">🛡</span>
-        <span className="text-xs text-muted-foreground">
-          Mine allergener (bjørk, gress, or, burot) er rolige i dag.
-        </span>
+      <div className="rounded-md border border-border/60 bg-background/40 p-3">
+        <div className="flex items-center gap-2">
+          <span className="text-lg">🛡</span>
+          <span className="text-xs text-muted-foreground">
+            Mine allergener (bjørk, gress, or, burot) er rolige resten av dagen.
+          </span>
+        </div>
+        {earlierToday.length > 0 && (
+          <p className="text-[11px] text-muted-foreground mt-1.5 pl-7">
+            Tidligere i dag: <strong className="text-foreground">{ALLERGEN_META[earlierToday[0].k].name}</strong>{" "}
+            nådde {earlierToday[0].lvl.label.toLowerCase()} ({earlierToday[0].peak.v.toFixed(1)} korn/m³) kl.{" "}
+            {String(earlierToday[0].peak.hour).padStart(2, "0")}:00.
+          </p>
+        )}
       </div>
     );
   }
 
-  const top = worst[0];
+  const top = upcoming[0];
   const isHigh = top.lvl.rank >= 3;
+  const isTomorrow = top.peak.hour >= 24;
+  const displayHour = top.peak.hour % 24;
+  const whenLabel = isTomorrow
+    ? `i morgen kl. ${String(displayHour).padStart(2, "0")}:00`
+    : `kl. ${String(displayHour).padStart(2, "0")}:00`;
 
   return (
     <div
@@ -193,19 +229,20 @@ function MyAllergenAlert({ day }: { day: DayBucket }) {
       </div>
       <p className="text-sm text-foreground leading-snug">
         <strong>{ALLERGEN_META[top.k].name}</strong> når{" "}
-        <span style={{ color: top.lvl.color }}>{top.lvl.label.toLowerCase()}</span> nivå
-        kl. {String(top.peak.hour).padStart(2, "0")}:00 ({top.peak.v.toFixed(1)} korn/m³).
-        {worst.length > 1 && (
+        <span style={{ color: top.lvl.color }}>{top.lvl.label.toLowerCase()}</span> nivå{" "}
+        {whenLabel} ({top.peak.v.toFixed(1)} korn/m³).
+        {upcoming.length > 1 && (
           <>
             {" "}Også{" "}
-            {worst.slice(1).map((w) => ALLERGEN_META[w.k].name.toLowerCase()).join(", ")} er
-            aktive.
+            {upcoming.slice(1).map((w) => ALLERGEN_META[w.k].name.toLowerCase()).join(", ")} er
+            aktive fremover.
           </>
         )}
       </p>
     </div>
   );
 }
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 
