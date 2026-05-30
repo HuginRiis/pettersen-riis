@@ -181,7 +181,7 @@ export function BassengHistoryChart() {
                 <Tooltip
                   contentStyle={{
                     background: "#1e293b",
-                    border: "1px solid hsl(var(--border))",
+                    border: "1px solid #7dd3fc",
                     borderRadius: 6,
                     fontSize: 12,
                   }}

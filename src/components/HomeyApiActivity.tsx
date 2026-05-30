@@ -187,13 +187,13 @@ export function HomeyApiActivity() {
                   <XAxis
                     dataKey="label"
                     interval={9}
-                    tick={{ fill: "var(--muted-foreground)", fontSize: 10 }}
+                    tick={{ fill: "#cbd5e1", fontSize: 10 }}
                     axisLine={{ stroke: "#64748b" }}
                     tickLine={false}
                   />
                   <YAxis
                     allowDecimals={false}
-                    tick={{ fill: "var(--muted-foreground)", fontSize: 10 }}
+                    tick={{ fill: "#cbd5e1", fontSize: 10 }}
                     axisLine={{ stroke: "#64748b" }}
                     tickLine={false}
                     width={28}
@@ -240,13 +240,13 @@ export function HomeyApiActivity() {
                   <XAxis
                     dataKey="label"
                     interval={9}
-                    tick={{ fill: "var(--muted-foreground)", fontSize: 10 }}
+                    tick={{ fill: "#cbd5e1", fontSize: 10 }}
                     axisLine={{ stroke: "#64748b" }}
                     tickLine={false}
                   />
                   <YAxis
                     allowDecimals={false}
-                    tick={{ fill: "var(--muted-foreground)", fontSize: 10 }}
+                    tick={{ fill: "#cbd5e1", fontSize: 10 }}
                     axisLine={{ stroke: "#64748b" }}
                     tickLine={false}
                     width={28}
