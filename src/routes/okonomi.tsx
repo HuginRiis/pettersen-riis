@@ -1339,11 +1339,11 @@ function Oversikt({
                 setDrillTrendMonth((cur) => (cur === key ? null : key));
               }}
             >
-              <CartesianGrid stroke="#3f2d10" strokeDasharray="2 4" vertical={false} />
-              <XAxis dataKey="label" stroke="#a78b4a" fontSize={11} />
-              <YAxis stroke="#a78b4a" fontSize={11} tickFormatter={(v) => `${Math.round(v / 1000)}k`} />
+              <CartesianGrid stroke="#64748b" strokeDasharray="2 4" vertical={false} />
+              <XAxis dataKey="label" stroke="#cbd5e1" fontSize={11} />
+              <YAxis stroke="#cbd5e1" fontSize={11} tickFormatter={(v) => `${Math.round(v / 1000)}k`} />
               <Tooltip
-                contentStyle={{ background: "#1a1208", border: "1px solid #92651a" }}
+                contentStyle={{ background: "#1e293b", border: "1px solid #7dd3fc" }}
                 formatter={(v: any) => fmt(Number(v))}
               />
               <Legend wrapperStyle={{ fontSize: 11 }} />
@@ -1415,11 +1415,11 @@ function Oversikt({
                     }}
                   >
                     {catData.map((d) => (
-                      <Cell key={d.id} fill={d.color} stroke="#1a1208" cursor="pointer" />
+                      <Cell key={d.id} fill={d.color} stroke="#1e293b" cursor="pointer" />
                     ))}
                   </Pie>
                   <Tooltip
-                    contentStyle={{ background: "#1a1208", border: "1px solid #92651a" }}
+                    contentStyle={{ background: "#1e293b", border: "1px solid #7dd3fc" }}
                     formatter={(v: any) => fmt(Number(v))}
                   />
                 </PieChart>
@@ -1517,11 +1517,11 @@ function Oversikt({
         <div className="h-48">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={trend.map((t) => ({ label: t.label, Netto: t.Inntekt - t.Utgift }))} margin={{ top: 4, right: 4, left: -16, bottom: 0 }}>
-              <CartesianGrid stroke="#3f2d10" strokeDasharray="2 4" vertical={false} />
-              <XAxis dataKey="label" stroke="#a78b4a" fontSize={11} />
-              <YAxis stroke="#a78b4a" fontSize={11} tickFormatter={(v) => `${Math.round(v / 1000)}k`} />
+              <CartesianGrid stroke="#64748b" strokeDasharray="2 4" vertical={false} />
+              <XAxis dataKey="label" stroke="#cbd5e1" fontSize={11} />
+              <YAxis stroke="#cbd5e1" fontSize={11} tickFormatter={(v) => `${Math.round(v / 1000)}k`} />
               <Tooltip
-                contentStyle={{ background: "#1a1208", border: "1px solid #92651a" }}
+                contentStyle={{ background: "#1e293b", border: "1px solid #7dd3fc" }}
                 formatter={(v: any) => fmt(Number(v))}
               />
               <Line type="monotone" dataKey="Netto" stroke="#f59e0b" strokeWidth={2} dot={{ fill: "#f59e0b", r: 3 }} />
