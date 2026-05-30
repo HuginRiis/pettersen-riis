@@ -165,7 +165,7 @@ function PushSettingsPage() {
       </section>
 
       <SettingsBox id="sec-utseende" title="🅰️ Utseende — skrift og bredde"><AppearanceSettingsPanel /></SettingsBox>
-      <SettingsBox id="sec-graf-utseende" title="📈 Graf-utseende"><ChartAppearanceSettingsPanel /></SettingsBox>
+      
       <SettingsBox id="sec-meny" title="🧭 Meny"><MenuPreferencesPanel /></SettingsBox>
       <SettingsBox id="sec-meny-synlig" title="👁 Meny — synlige sider"><MenuVisibilityPanel /></SettingsBox>
       <SettingsBox id="sec-badges" title="🏷️ Topp-badges"><HeaderBadgeSettingsPanel /></SettingsBox>
