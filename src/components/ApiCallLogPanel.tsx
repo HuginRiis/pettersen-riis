@@ -346,7 +346,7 @@ export function ApiCallLogPanel() {
                     <Tooltip
                       trigger="click"
                       contentStyle={{
-                        background: "#0a0a0a",
+                        background: "#1e293b",
                         border: "1px solid var(--border)",
                         borderRadius: 6,
                         fontSize: 11,
