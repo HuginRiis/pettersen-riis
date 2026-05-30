@@ -389,20 +389,20 @@ main .container {
   100%      { transform: translateX(0); }
 }
 
-/* === Graf-utseende (recharts) — styres fra Innstillinger → Graf-utseende === */
+/* === Graf-utseende (recharts) — fast lys palett for mørkt tema === */
 :root {
-  --chart-axis-text: #fef08a;
-  --chart-axis-line: #7dd3fc;
-  --chart-grid-h: #7dd3fc;
-  --chart-grid-v: #7dd3fc;
-  --chart-tooltip-text: #7dd3fc;
-  --chart-tooltip-bg: #0b1220;
+  --chart-axis-text: #fde68a;
+  --chart-axis-line: #93c5fd;
+  --chart-grid-h: #64748b;
+  --chart-grid-v: #64748b;
+  --chart-tooltip-text: #f1f5f9;
+  --chart-tooltip-bg: #1e293b;
   --chart-tooltip-border: #7dd3fc;
-  --chart-series-1: #22c55e;
-  --chart-series-2: #f59e0b;
-  --chart-series-3: #ef4444;
-  --chart-series-4: #3b82f6;
-  --chart-series-5: #a855f7;
+  --chart-series-1: #4ade80;
+  --chart-series-2: #fbbf24;
+  --chart-series-3: #f87171;
+  --chart-series-4: #60a5fa;
+  --chart-series-5: #c084fc;
 }
 .recharts-cartesian-axis-tick-value,
 .recharts-text.recharts-label,
