@@ -97,22 +97,22 @@ export function PulseHourlyPanel({
           ) : (
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData} margin={{ top: 5, right: 8, left: -16, bottom: 0 }}>
-                <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
+                <CartesianGrid stroke="#64748b" strokeDasharray="3 3" vertical={false} />
                 <XAxis
                   dataKey="hour"
-                  tick={{ fill: "var(--muted-foreground)", fontSize: 10 }}
+                  tick={{ fill: "#cbd5e1", fontSize: 10 }}
                   interval="preserveStartEnd"
                   minTickGap={20}
                 />
                 <YAxis
-                  tick={{ fill: "var(--muted-foreground)", fontSize: 10 }}
+                  tick={{ fill: "#cbd5e1", fontSize: 10 }}
                   width={48}
                   unit=" kWh"
                 />
                 <Tooltip trigger="click"
                   contentStyle={{
-                    background: "var(--card)",
-                    border: "1px solid var(--border)",
+                    background: "#1e293b",
+                    border: "1px solid #7dd3fc",
                     borderRadius: 6,
                     fontSize: 12,
                   }}

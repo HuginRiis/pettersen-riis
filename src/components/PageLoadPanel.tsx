@@ -192,7 +192,7 @@ export function PageLoadPanel() {
                 <XAxis dataKey="day" tick={{ fontSize: 10 }} tickFormatter={(d) => d.slice(5)} />
                 <YAxis tick={{ fontSize: 10 }} tickFormatter={(v) => `${v}ms`} />
                 <Tooltip
-                  contentStyle={{ background: "hsl(var(--background))", border: "1px solid hsl(var(--border))", fontSize: 12 }}
+                  contentStyle={{ background: "#1e293b", border: "1px solid #7dd3fc", fontSize: 12 }}
                   formatter={(v: number) => fmtMs(v)}
                 />
                 <Line type="monotone" dataKey="avg_ms" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
@@ -259,7 +259,7 @@ export function PageLoadPanel() {
                 <XAxis dataKey="i" tick={{ fontSize: 10 }} />
                 <YAxis tick={{ fontSize: 10 }} tickFormatter={(v) => `${v}ms`} />
                 <Tooltip
-                  contentStyle={{ background: "hsl(var(--background))", border: "1px solid hsl(var(--border))", fontSize: 12 }}
+                  contentStyle={{ background: "#1e293b", border: "1px solid #7dd3fc", fontSize: 12 }}
                   formatter={(v: number) => fmtMs(v)}
                   labelFormatter={(i: number) => routeHistory[i]?.when ?? ""}
                 />

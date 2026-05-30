@@ -180,28 +180,28 @@ export function HomeyApiActivity() {
                   margin={{ top: 8, right: 8, bottom: 0, left: -16 }}
                 >
                   <CartesianGrid
-                    stroke="var(--border)"
+                    stroke="#64748b"
                     strokeDasharray="2 4"
                     vertical={false}
                   />
                   <XAxis
                     dataKey="label"
                     interval={9}
-                    tick={{ fill: "var(--muted-foreground)", fontSize: 10 }}
-                    axisLine={{ stroke: "var(--border)" }}
+                    tick={{ fill: "#cbd5e1", fontSize: 10 }}
+                    axisLine={{ stroke: "#64748b" }}
                     tickLine={false}
                   />
                   <YAxis
                     allowDecimals={false}
-                    tick={{ fill: "var(--muted-foreground)", fontSize: 10 }}
-                    axisLine={{ stroke: "var(--border)" }}
+                    tick={{ fill: "#cbd5e1", fontSize: 10 }}
+                    axisLine={{ stroke: "#64748b" }}
                     tickLine={false}
                     width={28}
                   />
                   <Tooltip trigger="click"
                     cursor={{ stroke: ACCENT, strokeOpacity: 0.4 }}
                     contentStyle={{
-                      background: "var(--card)",
+                      background: "#1e293b",
                       border: `1px solid ${ACCENT}`,
                       borderRadius: 6,
                       fontSize: 12,
@@ -233,28 +233,28 @@ export function HomeyApiActivity() {
                   margin={{ top: 8, right: 8, bottom: 0, left: -16 }}
                 >
                   <CartesianGrid
-                    stroke="var(--border)"
+                    stroke="#64748b"
                     strokeDasharray="2 4"
                     vertical={false}
                   />
                   <XAxis
                     dataKey="label"
                     interval={9}
-                    tick={{ fill: "var(--muted-foreground)", fontSize: 10 }}
-                    axisLine={{ stroke: "var(--border)" }}
+                    tick={{ fill: "#cbd5e1", fontSize: 10 }}
+                    axisLine={{ stroke: "#64748b" }}
                     tickLine={false}
                   />
                   <YAxis
                     allowDecimals={false}
-                    tick={{ fill: "var(--muted-foreground)", fontSize: 10 }}
-                    axisLine={{ stroke: "var(--border)" }}
+                    tick={{ fill: "#cbd5e1", fontSize: 10 }}
+                    axisLine={{ stroke: "#64748b" }}
                     tickLine={false}
                     width={28}
                   />
                   <Tooltip trigger="click"
                     cursor={{ fill: ACCENT_SOFT }}
                     contentStyle={{
-                      background: "var(--card)",
+                      background: "#1e293b",
                       border: `1px solid ${ACCENT}`,
                       borderRadius: 6,
                       fontSize: 12,

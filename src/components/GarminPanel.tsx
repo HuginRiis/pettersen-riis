@@ -181,7 +181,7 @@ function renderBar<T extends Record<string, unknown> & { day?: string }>(data: T
       <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
       <XAxis dataKey="day" tick={{ fontSize: 10 }} tickFormatter={(v: string) => String(v).slice(5)} />
       <YAxis tick={{ fontSize: 10 }} />
-      <Tooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", fontSize: 12 }} />
+      <Tooltip contentStyle={{ background: "#1e293b", border: "1px solid #7dd3fc", fontSize: 12 }} />
       <Bar dataKey={key} fill={color} radius={[2, 2, 0, 0]} />
       {showTrend && <Line type="monotone" dataKey="_trend" stroke={color} strokeOpacity={0.45} strokeWidth={2} strokeDasharray="4 3" dot={false} />}
     </BarChart>
@@ -195,7 +195,7 @@ function renderLine<T extends Record<string, unknown> & { day?: string }>(data: 
       <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
       <XAxis dataKey="day" tick={{ fontSize: 10 }} tickFormatter={(v: string) => String(v).slice(5)} />
       <YAxis tick={{ fontSize: 10 }} domain={["auto", "auto"]} />
-      <Tooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", fontSize: 12 }} />
+      <Tooltip contentStyle={{ background: "#1e293b", border: "1px solid #7dd3fc", fontSize: 12 }} />
       <Line type="monotone" dataKey={key} stroke={color} strokeWidth={2} dot={{ r: 2 }} connectNulls={connectNulls} />
       {showTrend && <Line type="monotone" dataKey="_trend" stroke={color} strokeOpacity={0.45} strokeWidth={2} strokeDasharray="4 3" dot={false} />}
     </LineChart>
@@ -209,7 +209,7 @@ function renderLine2<T extends Record<string, unknown> & { day?: string }>(data:
       <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
       <XAxis dataKey="day" tick={{ fontSize: 10 }} tickFormatter={(v: string) => String(v).slice(5)} />
       <YAxis tick={{ fontSize: 10 }} domain={["auto", "auto"]} />
-      <Tooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", fontSize: 12 }} />
+      <Tooltip contentStyle={{ background: "#1e293b", border: "1px solid #7dd3fc", fontSize: 12 }} />
       <Line type="monotone" dataKey={k1} stroke={color1} strokeWidth={2} dot={false} />
       <Line type="monotone" dataKey={k2} stroke={color2} strokeWidth={2} dot={false} />
       {showTrend && <Line type="monotone" dataKey="_trend" stroke={color1} strokeOpacity={0.4} strokeWidth={2} strokeDasharray="4 3" dot={false} />}
@@ -225,7 +225,7 @@ function renderHourBar(items: Array<{ hour: number; value: number | null }>, col
       <XAxis dataKey="hour" tick={{ fontSize: 10 }} tickFormatter={(h: number) => `${String(h).padStart(2, "0")}`} interval={1} />
       <YAxis tick={{ fontSize: 10 }} />
       <Tooltip
-        contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", fontSize: 12 }}
+        contentStyle={{ background: "#1e293b", border: "1px solid #7dd3fc", fontSize: 12 }}
         labelFormatter={(h) => `kl ${String(h).padStart(2, "0")}:00`}
         formatter={(v: number) => [`${v}${unit}`, ""]}
       />
@@ -1096,7 +1096,7 @@ export function GarminPanel({ owner = "arne", displayName = "Arne" }: { owner?: 
                         <XAxis dataKey="day" tick={{ fontSize: 10 }} tickFormatter={(v: string) => v.slice(5)} />
                         <YAxis yAxisId="left" tick={{ fontSize: 10 }} />
                         <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 10 }} domain={[0, 100]} />
-                        <Tooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", fontSize: 12 }} />
+                        <Tooltip contentStyle={{ background: "#1e293b", border: "1px solid #7dd3fc", fontSize: 12 }} />
                         <Bar yAxisId="left" dataKey="deep" stackId="a" fill={C.sleepDeep} name="Dyp" />
                         <Bar yAxisId="left" dataKey="light" stackId="a" fill={C.sleepLight} name="Lett" />
                         <Bar yAxisId="left" dataKey="rem" stackId="a" fill={C.sleepRem} name="REM" />
@@ -1350,7 +1350,7 @@ function sparkBar<T extends Record<string, unknown>>(data: T[] | undefined, key:
   if (!data || !data.some((d) => typeof d[key] === "number" && (d[key] as number) > 0)) return null;
   return (
     <BarChart data={data as Array<Record<string, unknown>>}>
-      <Tooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", fontSize: 11 }} labelFormatter={(v) => String(v).slice(5)} />
+      <Tooltip contentStyle={{ background: "#1e293b", border: "1px solid #7dd3fc", fontSize: 11 }} labelFormatter={(v) => String(v).slice(5)} />
       <XAxis dataKey="day" hide />
       <YAxis hide />
       <Bar dataKey={key as string} fill={color} radius={[2,2,0,0]} />
@@ -1362,7 +1362,7 @@ function sparkLine<T extends Record<string, unknown>>(data: T[] | undefined, key
   if (!data || !data.some((d) => typeof d[key] === "number" && (d[key] as number) > 0)) return null;
   return (
     <LineChart data={data as Array<Record<string, unknown>>}>
-      <Tooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", fontSize: 11 }} labelFormatter={(v) => String(v).slice(5)} />
+      <Tooltip contentStyle={{ background: "#1e293b", border: "1px solid #7dd3fc", fontSize: 11 }} labelFormatter={(v) => String(v).slice(5)} />
       <XAxis dataKey="day" hide />
       <YAxis hide domain={["auto", "auto"]} />
       <Line type="monotone" dataKey={key as string} stroke={color} strokeWidth={1.5} dot={false} connectNulls={connectNulls} />
@@ -1374,7 +1374,7 @@ function sparkLine2<T extends Record<string, unknown>>(data: T[] | undefined, k1
   if (!data || !data.some((d) => typeof d[k1] === "number" || typeof d[k2] === "number")) return null;
   return (
     <LineChart data={data as Array<Record<string, unknown>>}>
-      <Tooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", fontSize: 11 }} labelFormatter={(v) => String(v).slice(5)} />
+      <Tooltip contentStyle={{ background: "#1e293b", border: "1px solid #7dd3fc", fontSize: 11 }} labelFormatter={(v) => String(v).slice(5)} />
       <XAxis dataKey="day" hide />
       <YAxis hide domain={["auto", "auto"]} />
       <Line type="monotone" dataKey={k1 as string} stroke={color1} strokeWidth={1.5} dot={false} />
