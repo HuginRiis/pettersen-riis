@@ -830,6 +830,37 @@ export const getTibberWeeklyMeter = createServerFn({ method: "GET" })
           }
 
           const last = nodes.length > 0 ? nodes[nodes.length - 1] : null;
+
+          // Fallback for ukesnitt: hvis Tibber HOURLY ikke gir nok timer,
+          // hent fra pulse_readings (PBTH-snapshots fra cron).
+          let weeklyAvgKwh: number | null =
+            weeklyCount > 0 ? weeklySum / weeklyCount : null;
+          let weeklyMaxKwh: number | null = weeklyMax > 0 ? weeklyMax : null;
+          if (weeklyAvgKwh == null || weeklyCount < 24) {
+            try {
+              const sinceIso = new Date(
+                Date.now() - 7 * 24 * 60 * 60 * 1000,
+              ).toISOString();
+              const { data: pulseRows } = await supabaseAdmin
+                .from("pulse_readings")
+                .select("watt")
+                .eq("location", data.location)
+                .gte("recorded_at", sinceIso)
+                .not("watt", "is", null);
+              const watts = (pulseRows ?? [])
+                .map((r: any) => Number(r.watt))
+                .filter((v: number) => Number.isFinite(v) && v >= 0);
+              if (watts.length > 0) {
+                const avgW = watts.reduce((s, v) => s + v, 0) / watts.length;
+                const maxW = Math.max(...watts);
+                weeklyAvgKwh = avgW / 1000; // W -> "kWh per time"
+                if (weeklyMaxKwh == null) weeklyMaxKwh = maxW / 1000;
+              }
+            } catch {
+              // ignorér – la weeklyAvgKwh forbli null
+            }
+          }
+
           const result: TibberWeeklyMeter = {
             location: data.location,
             latestHourKwh:
@@ -840,10 +871,9 @@ export const getTibberWeeklyMeter = createServerFn({ method: "GET" })
             todayKwh: Math.round(todayKwh * 100) / 100,
             todayMaxHourKwh: todayMax > 0 ? Math.round(todayMax * 1000) / 1000 : null,
             weeklyAvgHourKwh:
-              weeklyCount > 0
-                ? Math.round((weeklySum / weeklyCount) * 1000) / 1000
-                : null,
-            weeklyMaxHourKwh: weeklyMax > 0 ? Math.round(weeklyMax * 1000) / 1000 : null,
+              weeklyAvgKwh != null ? Math.round(weeklyAvgKwh * 1000) / 1000 : null,
+            weeklyMaxHourKwh:
+              weeklyMaxKwh != null ? Math.round(weeklyMaxKwh * 1000) / 1000 : null,
           };
 
           weeklyMeterCache.set(data.location, { at: Date.now(), data: result });
