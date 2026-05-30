@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Lightbulb, LightbulbOff, Loader2 } from "lucide-react";
 import { PageShell } from "@/components/PageShell";
-import { TollnesCameraStrip } from "@/components/TollnesCameraStrip";
+import { TibberVuTile } from "@/components/TibberVuTile";
 import {
   HeatPumpTile,
   CeilingLampTile,
@@ -412,22 +412,17 @@ function SteintavlePage() {
         <section
           className={`grid gap-3 ${homeyDown ? "" : "lg:grid-cols-3"}`}
         >
-          <div className="panel rounded-lg overflow-hidden flex flex-col lg:col-span-1">
-            <div className="px-4 py-2 border-b border-border flex items-center justify-between">
-              <span className="text-display tracking-[0.3em] text-primary text-[10px] sm:text-xs uppercase">
-                Vakttårnet · Live
-              </span>
-              <span className="text-[9px] tracking-[0.25em] text-muted-foreground/70 uppercase">
-                Netatmo
-              </span>
-            </div>
-            <div className="flex-1">
-              <TollnesCameraStrip
-                intervalMs={5000}
-                aspectClass="aspect-video"
-                compact
-              />
-            </div>
+          <div className="panel rounded-lg overflow-hidden flex flex-col lg:col-span-1 gap-2 p-2">
+            <TibberVuTile
+              location="tollnes"
+              title="Borgen · Tollnes"
+              subtitle="Strømforbruk live"
+            />
+            <TibberVuTile
+              location="hytta"
+              title="Hytta · Bjørkeset"
+              subtitle="Strømforbruk live"
+            />
           </div>
 
           {!homeyDown && (
