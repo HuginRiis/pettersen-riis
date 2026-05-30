@@ -746,3 +746,111 @@ function computeHourlySummary(hours: HourlyKwh[]): TibberHourlyResult {
     latestHourFrom: last?.from ?? null,
   };
 }
+
+// ---- Weekly VU-meter (siste ~8 døgn) for Steintavlen ----
+export type TibberWeeklyMeter = {
+  location: "hytta" | "tollnes";
+  latestHourKwh: number | null;
+  latestHourFrom: string | null;
+  todayKwh: number;
+  todayMaxHourKwh: number | null;
+  weeklyAvgHourKwh: number | null; // snitt per time forrige 7 døgn (eks. i dag)
+  weeklyMaxHourKwh: number | null;
+  error?: string;
+};
+
+const weeklyMeterCache = new Map<
+  "hytta" | "tollnes",
+  { at: number; data: TibberWeeklyMeter }
+>();
+const WEEKLY_METER_TTL_MS = 5 * 60_000;
+
+export const getTibberWeeklyMeter = createServerFn({ method: "GET" })
+  .inputValidator((data: { location: "hytta" | "tollnes" }) => data)
+  .handler(
+    withApiLog(
+      "tibber",
+      "getTibberWeeklyMeter",
+      async ({
+        data,
+      }: {
+        data: { location: "hytta" | "tollnes" };
+      }): Promise<TibberWeeklyMeter> => {
+        const empty: TibberWeeklyMeter = {
+          location: data.location,
+          latestHourKwh: null,
+          latestHourFrom: null,
+          todayKwh: 0,
+          todayMaxHourKwh: null,
+          weeklyAvgHourKwh: null,
+          weeklyMaxHourKwh: null,
+        };
+
+        const token = process.env.TIBBER_TOKEN;
+        if (!token) return { ...empty, error: "TIBBER_TOKEN mangler" };
+
+        const cached = weeklyMeterCache.get(data.location);
+        if (cached && Date.now() - cached.at < WEEKLY_METER_TTL_MS) {
+          return cached.data;
+        }
+
+        try {
+          const homes = await fetchHourlyHomes(token, 24 * 8);
+          const home = homes.find((h) => classifyHome(h) === data.location);
+          if (!home) {
+            return { ...empty, error: `Fant ikke ${data.location} hos Tibber` };
+          }
+
+          const nodes = (home.consumption?.nodes ?? []).filter(
+            (n) => n.consumption != null,
+          );
+          const todayKey = new Date().toLocaleDateString("sv-SE", {
+            timeZone: "Europe/Oslo",
+          });
+
+          let todayKwh = 0;
+          let todayMax = 0;
+          let weeklySum = 0;
+          let weeklyCount = 0;
+          let weeklyMax = 0;
+
+          for (const n of nodes) {
+            const kwh = n.consumption as number;
+            const dKey = new Date(n.from).toLocaleDateString("sv-SE", {
+              timeZone: "Europe/Oslo",
+            });
+            if (dKey === todayKey) {
+              todayKwh += kwh;
+              if (kwh > todayMax) todayMax = kwh;
+            } else {
+              weeklySum += kwh;
+              weeklyCount += 1;
+              if (kwh > weeklyMax) weeklyMax = kwh;
+            }
+          }
+
+          const last = nodes.length > 0 ? nodes[nodes.length - 1] : null;
+          const result: TibberWeeklyMeter = {
+            location: data.location,
+            latestHourKwh:
+              last && last.consumption != null
+                ? Math.round((last.consumption as number) * 1000) / 1000
+                : null,
+            latestHourFrom: last?.from ?? null,
+            todayKwh: Math.round(todayKwh * 100) / 100,
+            todayMaxHourKwh: todayMax > 0 ? Math.round(todayMax * 1000) / 1000 : null,
+            weeklyAvgHourKwh:
+              weeklyCount > 0
+                ? Math.round((weeklySum / weeklyCount) * 1000) / 1000
+                : null,
+            weeklyMaxHourKwh: weeklyMax > 0 ? Math.round(weeklyMax * 1000) / 1000 : null,
+          };
+
+          weeklyMeterCache.set(data.location, { at: Date.now(), data: result });
+          return result;
+        } catch (e: any) {
+          return { ...empty, error: e?.message ?? "Ukjent feil" };
+        }
+      },
+    ),
+  );
