@@ -20,7 +20,7 @@ import { GarminNotificationSettings } from "@/components/GarminNotificationSetti
 import { LoginNotificationSettings } from "@/components/LoginNotificationSettings";
 import { SlowPageLoadNotificationSettings } from "@/components/SlowPageLoadNotificationSettings";
 import { AppearanceSettingsPanel } from "@/components/AppearanceSettingsPanel";
-import { ChartAppearanceSettingsPanel } from "@/components/ChartAppearanceSettingsPanel";
+
 import { OkonomiSettingsPanel } from "@/components/OkonomiSettingsPanel";
 import { HomeySensorSettings } from "@/components/HomeySensorSettings";
 import { ClimateNotificationSettings } from "@/components/ClimateNotificationSettings";
