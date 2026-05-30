@@ -430,8 +430,20 @@ function MarkerArrow({
   const base1 = polar(deg - 2.2, r + 5);
   const base2 = polar(deg + 2.2, r + 5);
   const labelPos = polar(deg, r + 9);
+  // Radial tick som krysser skala-buen for å gjøre markøren tydeligere
+  const tickInner = polar(deg, r - 6);
+  const tickOuter = polar(deg, r + 1);
   return (
     <g>
+      <line
+        x1={tickInner.x}
+        y1={tickInner.y}
+        x2={tickOuter.x}
+        y2={tickOuter.y}
+        stroke={color}
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
       <polygon
         points={`${tip.x},${tip.y} ${base1.x},${base1.y} ${base2.x},${base2.y}`}
         fill={color}
@@ -445,6 +457,7 @@ function MarkerArrow({
         fontSize="4.5"
         fill={color}
         fontFamily="ui-monospace, monospace"
+        fontWeight="700"
       >
         {label}
       </text>
