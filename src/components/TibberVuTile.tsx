@@ -1,7 +1,18 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { getTibberWeeklyMeter, type TibberWeeklyMeter } from "@/server/tibber";
+import {
+  getTibberWeeklyMeter,
+  type TibberWeeklyMeter,
+} from "@/server/tibber";
+import { useTibberLive } from "@/hooks/useTibberLive";
 
+/**
+ * Analog "gammeldags" strøm-VU for Borgen / Hytta.
+ *
+ *  - Nålen: live watt fra Tibber Pulse (samme WSS som Strømkrøniken bruker).
+ *  - Fallback: snitt forrige time fra getTibberWeeklyMeter (kWh → W).
+ *  - Markører på buen: "snitt uke" og "maks i dag".
+ */
 export function TibberVuTile({
   location,
   title,
@@ -12,7 +23,10 @@ export function TibberVuTile({
   subtitle?: string;
 }) {
   const fetchMeter = useServerFn(getTibberWeeklyMeter);
-  const [state, setState] = useState<TibberWeeklyMeter | null>(null);
+  const live = useTibberLive();
+  const homeLive = live.homes[location];
+
+  const [meter, setMeter] = useState<TibberWeeklyMeter | null>(null);
   const [updated, setUpdated] = useState<Date | null>(null);
 
   useEffect(() => {
@@ -21,38 +35,57 @@ export function TibberVuTile({
       try {
         const res = await fetchMeter({ data: { location } });
         if (cancelled) return;
-        setState(res);
+        setMeter(res);
         setUpdated(new Date());
       } catch (e) {
-        console.error("[TibberVuTile]", e);
+        console.error("[TibberVuTile] meter", e);
       }
     };
     load();
-    const id = setInterval(load, 60_000);
+    const id = setInterval(load, 5 * 60_000);
     return () => {
       cancelled = true;
       clearInterval(id);
     };
   }, [fetchMeter, location]);
 
-  const nowKwh = state?.latestHourKwh ?? null;
-  const avgKwh = state?.weeklyAvgHourKwh ?? null;
-  const maxToday = state?.todayMaxHourKwh ?? null;
-  const maxWeek = state?.weeklyMaxHourKwh ?? null;
-  const todayKwh = state?.todayKwh ?? null;
+  // Watt nå: foretrekk live, fall tilbake på siste time fra meteret.
+  const liveW = homeLive?.reading?.power ?? null;
+  const fallbackW =
+    meter?.latestHourKwh != null ? meter.latestHourKwh * 1000 : null;
+  const nowW = liveW != null ? liveW : fallbackW;
 
-  // Skala for VU-meter: bruk max(uke, i dag, nå) som tak, med litt slack.
-  const peakCandidates = [nowKwh, maxToday, maxWeek, avgKwh]
-    .filter((v): v is number => typeof v === "number");
-  const scaleMax = peakCandidates.length > 0
-    ? Math.max(...peakCandidates) * 1.1
-    : 1;
-  const pct = (v: number | null) =>
-    v == null ? 0 : Math.min(100, Math.max(0, (v / scaleMax) * 100));
+  // Snitt uke og maks i dag → W
+  const avgW =
+    meter?.weeklyAvgHourKwh != null ? meter.weeklyAvgHourKwh * 1000 : null;
+  // Maks i dag: bruk live maxPower (siden midnatt) hvis tilgjengelig, ellers meterets time-maks.
+  const liveMaxW = homeLive?.reading?.maxPower ?? null;
+  const meterMaxW =
+    meter?.todayMaxHourKwh != null ? meter.todayMaxHourKwh * 1000 : null;
+  const maxTodayW =
+    liveMaxW != null && meterMaxW != null
+      ? Math.max(liveMaxW, meterMaxW)
+      : liveMaxW ?? meterMaxW;
 
-  const watt = (kwh: number | null) =>
-    kwh == null ? "—" : `${Math.round(kwh * 1000).toLocaleString("nb-NO")} W`;
+  const todayKwh =
+    homeLive?.reading?.accumulatedConsumption != null
+      ? homeLive.reading.accumulatedConsumption
+      : meter?.todayKwh ?? null;
 
+  // Skala
+  const candidates = [nowW, avgW, maxTodayW, 3000].filter(
+    (v): v is number => typeof v === "number" && v > 0,
+  );
+  const scaleMaxRaw = candidates.length > 0 ? Math.max(...candidates) * 1.15 : 5000;
+  // Rund opp til pen verdi (nærmeste 1000 W)
+  const scaleMax = Math.max(1000, Math.ceil(scaleMaxRaw / 1000) * 1000);
+
+  const fmtW = (v: number | null) =>
+    v == null ? "—" : `${Math.round(v).toLocaleString("nb-NO")} W`;
+  const fmtKwh = (v: number | null) =>
+    v == null ? "—" : `${v.toFixed(1)} kWh`;
+
+  const status = homeLive?.status ?? "idle";
   const updatedLabel = updated
     ? updated.toLocaleTimeString("nb-NO", {
         hour: "2-digit",
@@ -60,14 +93,7 @@ export function TibberVuTile({
       })
     : "—";
 
-  // "Trafikklys"-farge basert på hvor mye over snittet vi er.
-  const ratio = nowKwh != null && avgKwh && avgKwh > 0 ? nowKwh / avgKwh : 1;
-  const barColor =
-    ratio >= 1.5
-      ? "var(--chart-series-3)" // rød
-      : ratio >= 1.0
-        ? "var(--chart-series-2)" // gul
-        : "var(--chart-series-1)"; // grønn
+  const err = meter?.error ?? homeLive?.error ?? null;
 
   return (
     <article className="panel rounded-lg p-3 sm:p-4 flex flex-col">
@@ -84,79 +110,352 @@ export function TibberVuTile({
         </div>
         <div className="text-right">
           <div className="text-2xl sm:text-3xl font-semibold tabular-nums text-foreground leading-none">
-            {watt(nowKwh)}
+            {fmtW(nowW)}
           </div>
           <div className="text-[9px] tracking-[0.25em] uppercase text-muted-foreground/70 mt-0.5">
-            Nå · snitt forrige time
+            {liveW != null ? "Live · Tibber Pulse" : "Snitt forrige time"}
           </div>
         </div>
       </div>
 
-      {state?.error ? (
-        <div className="text-[11px] text-destructive">{state.error}</div>
-      ) : (
-        <>
-          {/* VU-meter */}
-          <div className="relative h-6 sm:h-7 rounded-md overflow-hidden bg-background/40 border border-border/40">
-            {/* "nå"-bar */}
-            <div
-              className="absolute inset-y-0 left-0 transition-all duration-500"
-              style={{
-                width: `${pct(nowKwh)}%`,
-                background: barColor,
-                opacity: 0.85,
-              }}
-            />
-            {/* Snitt-marker (uke) */}
-            {avgKwh != null && (
-              <div
-                className="absolute inset-y-0 w-[2px] bg-foreground/80"
-                style={{ left: `${pct(avgKwh)}%` }}
-                title={`Snitt uke: ${watt(avgKwh)}`}
-              />
-            )}
-            {/* Maks i dag-marker */}
-            {maxToday != null && (
-              <div
-                className="absolute inset-y-0 w-[2px] bg-primary"
-                style={{ left: `${pct(maxToday)}%` }}
-                title={`Maks i dag: ${watt(maxToday)}`}
-              />
-            )}
-          </div>
+      <AnalogPowerMeter
+        nowW={nowW}
+        avgW={avgW}
+        maxTodayW={maxTodayW}
+        scaleMax={scaleMax}
+      />
 
-          <div className="grid grid-cols-3 gap-2 mt-2 text-center">
-            <div>
-              <div className="text-[8px] tracking-[0.25em] uppercase text-muted-foreground/70">
-                Snitt uke
-              </div>
-              <div className="text-xs sm:text-sm font-medium tabular-nums text-foreground">
-                {watt(avgKwh)}
-              </div>
-            </div>
-            <div>
-              <div className="text-[8px] tracking-[0.25em] uppercase text-primary">
-                Maks i dag
-              </div>
-              <div className="text-xs sm:text-sm font-medium tabular-nums text-foreground">
-                {watt(maxToday)}
-              </div>
-            </div>
-            <div>
-              <div className="text-[8px] tracking-[0.25em] uppercase text-muted-foreground/70">
-                I dag
-              </div>
-              <div className="text-xs sm:text-sm font-medium tabular-nums text-foreground">
-                {todayKwh != null ? `${todayKwh.toFixed(1)} kWh` : "—"}
-              </div>
-            </div>
+      <div className="grid grid-cols-3 gap-2 mt-2 text-center">
+        <div>
+          <div className="text-[8px] tracking-[0.25em] uppercase text-muted-foreground/70">
+            Snitt uke
           </div>
+          <div className="text-xs sm:text-sm font-medium tabular-nums text-foreground">
+            {fmtW(avgW)}
+          </div>
+        </div>
+        <div>
+          <div className="text-[8px] tracking-[0.25em] uppercase text-primary">
+            Maks i dag
+          </div>
+          <div className="text-xs sm:text-sm font-medium tabular-nums text-foreground">
+            {fmtW(maxTodayW)}
+          </div>
+        </div>
+        <div>
+          <div className="text-[8px] tracking-[0.25em] uppercase text-muted-foreground/70">
+            I dag
+          </div>
+          <div className="text-xs sm:text-sm font-medium tabular-nums text-foreground">
+            {fmtKwh(todayKwh)}
+          </div>
+        </div>
+      </div>
 
-          <div className="text-[8px] tracking-[0.25em] uppercase text-muted-foreground/60 mt-2 text-right">
-            Oppdatert {updatedLabel}
-          </div>
-        </>
+      <div className="flex items-center justify-between mt-2">
+        <span
+          className={`text-[8px] tracking-[0.25em] uppercase ${
+            status === "live"
+              ? "text-emerald-400"
+              : status === "stale"
+                ? "text-amber-400"
+                : status === "error"
+                  ? "text-destructive"
+                  : "text-muted-foreground/60"
+          }`}
+        >
+          {status === "live"
+            ? "● Live"
+            : status === "stale"
+              ? "● Pause"
+              : status === "connecting"
+                ? "● Kobler til"
+                : status === "error"
+                  ? "● Feil"
+                  : "● Av"}
+        </span>
+        <span className="text-[8px] tracking-[0.25em] uppercase text-muted-foreground/60">
+          Oppdatert {updatedLabel}
+        </span>
+      </div>
+
+      {err && (
+        <div className="text-[10px] text-destructive mt-1 truncate" title={err}>
+          {err}
+        </div>
       )}
     </article>
   );
+}
+
+/* -------------------------------------------------------------------------- */
+/*                               Analog meter                                  */
+/* -------------------------------------------------------------------------- */
+
+function AnalogPowerMeter({
+  nowW,
+  avgW,
+  maxTodayW,
+  scaleMax,
+}: {
+  nowW: number | null;
+  avgW: number | null;
+  maxTodayW: number | null;
+  scaleMax: number;
+}) {
+  const needleRef = useRef<SVGLineElement | null>(null);
+  const smoothRef = useRef(0);
+
+  const ANGLE_RANGE = 130; // -65 .. +65
+  const cx = 100;
+  const cy = 95;
+  const r = 78;
+
+  const valueToDeg = (v: number) => {
+    const clamped = Math.max(0, Math.min(scaleMax, v));
+    return (clamped / scaleMax) * ANGLE_RANGE - ANGLE_RANGE / 2;
+  };
+
+  useEffect(() => {
+    let raf = 0;
+    const tick = () => {
+      const target = nowW ?? 0;
+      const diff = target - smoothRef.current;
+      const k = diff >= 0 ? 0.18 : 0.08;
+      smoothRef.current += diff * k;
+      const deg = valueToDeg(smoothRef.current);
+      if (needleRef.current) {
+        needleRef.current.setAttribute(
+          "transform",
+          `rotate(${deg.toFixed(2)} ${cx} ${cy})`,
+        );
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    tick();
+    return () => cancelAnimationFrame(raf);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nowW, scaleMax]);
+
+  const polar = (deg: number, radius: number) => {
+    const rad = (deg * Math.PI) / 180;
+    return { x: cx + Math.sin(rad) * radius, y: cy - Math.cos(rad) * radius };
+  };
+
+  const arcPath = (vFrom: number, vTo: number, radius: number) => {
+    const a = polar(valueToDeg(vFrom), radius);
+    const b = polar(valueToDeg(vTo), radius);
+    const large =
+      Math.abs(valueToDeg(vTo) - valueToDeg(vFrom)) > 180 ? 1 : 0;
+    return `M ${a.x} ${a.y} A ${radius} ${radius} 0 ${large} 1 ${b.x} ${b.y}`;
+  };
+
+  // Soner i % av skala
+  const greenTo = scaleMax * 0.4;
+  const yellowTo = scaleMax * 0.75;
+
+  // Ticks: 5 hovedstreker
+  const stepCount = 5;
+  const ticks: { v: number; major: boolean; label: string }[] = [];
+  for (let i = 0; i <= stepCount * 2; i++) {
+    const v = (scaleMax / (stepCount * 2)) * i;
+    const major = i % 2 === 0;
+    ticks.push({
+      v,
+      major,
+      label: major ? formatTickLabel(v) : "",
+    });
+  }
+
+  return (
+    <div className="relative w-full" style={{ aspectRatio: "200 / 110" }}>
+      <svg viewBox="0 0 200 110" className="w-full h-full">
+        <defs>
+          <linearGradient id="vu-bg-power" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#fef9e7" />
+            <stop offset="100%" stopColor="#e9d8a6" />
+          </linearGradient>
+          <radialGradient id="vu-hub" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="#c9a86b" />
+            <stop offset="100%" stopColor="#7a5a2a" />
+          </radialGradient>
+        </defs>
+
+        <rect
+          x="2"
+          y="2"
+          width="196"
+          height="106"
+          rx="6"
+          fill="url(#vu-bg-power)"
+          stroke="#8b6a3a"
+          strokeWidth="0.8"
+        />
+
+        {/* Sone-buer: grønn / gul / rød */}
+        <path
+          d={arcPath(0, greenTo, r)}
+          fill="none"
+          stroke="#27ae60"
+          strokeWidth="3"
+          opacity="0.75"
+        />
+        <path
+          d={arcPath(greenTo, yellowTo, r)}
+          fill="none"
+          stroke="#f1c40f"
+          strokeWidth="3"
+          opacity="0.8"
+        />
+        <path
+          d={arcPath(yellowTo, scaleMax, r)}
+          fill="none"
+          stroke="#e74c3c"
+          strokeWidth="3"
+          opacity="0.85"
+        />
+
+        {/* Hoved skala-bue */}
+        <path
+          d={arcPath(0, scaleMax, r - 4)}
+          fill="none"
+          stroke="#5a4a2a"
+          strokeWidth="0.6"
+        />
+
+        {/* Ticks */}
+        {ticks.map((t, i) => {
+          const deg = valueToDeg(t.v);
+          const rad = (deg * Math.PI) / 180;
+          const inner = r - (t.major ? 10 : 5);
+          const outer = r - 1;
+          const x1 = cx + Math.sin(rad) * inner;
+          const y1 = cy - Math.cos(rad) * inner;
+          const x2 = cx + Math.sin(rad) * outer;
+          const y2 = cy - Math.cos(rad) * outer;
+          const lx = cx + Math.sin(rad) * (r - 20);
+          const ly = cy - Math.cos(rad) * (r - 20);
+          return (
+            <g key={i}>
+              <line
+                x1={x1}
+                y1={y1}
+                x2={x2}
+                y2={y2}
+                stroke="#3d2f1a"
+                strokeWidth={t.major ? 1.2 : 0.6}
+              />
+              {t.label && (
+                <text
+                  x={lx}
+                  y={ly + 3}
+                  textAnchor="middle"
+                  fontSize="6.5"
+                  fill="#3d2f1a"
+                  fontFamily="ui-monospace, monospace"
+                >
+                  {t.label}
+                </text>
+              )}
+            </g>
+          );
+        })}
+
+        {/* Snitt-uke-markør (blå pil utenfor buen) */}
+        {avgW != null && avgW > 0 && avgW <= scaleMax && (
+          <MarkerArrow
+            polar={polar}
+            deg={valueToDeg(avgW)}
+            r={r + 2}
+            color="#1f4e8a"
+            label="snitt"
+          />
+        )}
+
+        {/* Maks-i-dag-markør (rød pil) */}
+        {maxTodayW != null && maxTodayW > 0 && maxTodayW <= scaleMax && (
+          <MarkerArrow
+            polar={polar}
+            deg={valueToDeg(maxTodayW)}
+            r={r + 2}
+            color="#a8321a"
+            label="maks"
+          />
+        )}
+
+        {/* Etikett */}
+        <text
+          x={cx}
+          y="72"
+          textAnchor="middle"
+          fontSize="7"
+          fill="#3d2f1a"
+          fontFamily="serif"
+          fontStyle="italic"
+        >
+          Watt
+        </text>
+
+        {/* Nål */}
+        <line
+          ref={needleRef}
+          x1={cx}
+          y1={cy}
+          x2={cx}
+          y2={cy - r + 4}
+          stroke="#1c1c1c"
+          strokeWidth="1.6"
+          strokeLinecap="round"
+        />
+        <circle cx={cx} cy={cy} r="4.5" fill="url(#vu-hub)" stroke="#3d2f1a" strokeWidth="0.8" />
+      </svg>
+    </div>
+  );
+}
+
+function MarkerArrow({
+  polar,
+  deg,
+  r,
+  color,
+  label,
+}: {
+  polar: (deg: number, r: number) => { x: number; y: number };
+  deg: number;
+  r: number;
+  color: string;
+  label: string;
+}) {
+  const tip = polar(deg, r);
+  const base1 = polar(deg - 2.2, r + 5);
+  const base2 = polar(deg + 2.2, r + 5);
+  const labelPos = polar(deg, r + 9);
+  return (
+    <g>
+      <polygon
+        points={`${tip.x},${tip.y} ${base1.x},${base1.y} ${base2.x},${base2.y}`}
+        fill={color}
+        stroke="#1c1c1c"
+        strokeWidth="0.3"
+      />
+      <text
+        x={labelPos.x}
+        y={labelPos.y + 1.5}
+        textAnchor="middle"
+        fontSize="4.5"
+        fill={color}
+        fontFamily="ui-monospace, monospace"
+      >
+        {label}
+      </text>
+    </g>
+  );
+}
+
+function formatTickLabel(w: number): string {
+  if (w >= 1000) {
+    const k = w / 1000;
+    return Number.isInteger(k) ? `${k}k` : `${k.toFixed(1)}k`;
+  }
+  return String(Math.round(w));
 }
