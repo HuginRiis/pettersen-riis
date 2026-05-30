@@ -501,7 +501,7 @@ export function ClimateAnalyticsPanel({
                   <YAxis tick={AXIS_TICK} width={36} unit="°" />
                   <Tooltip
                     contentStyle={{
-                      background: "var(--background)",
+                      background: "#1e293b",
                       border: "1px solid color-mix(in oklab, var(--gold) 30%, transparent)",
                       borderRadius: 8,
                       fontSize: 12,
@@ -538,7 +538,7 @@ export function ClimateAnalyticsPanel({
                 <YAxis tick={AXIS_TICK} width={36} unit="°" />
                 <Tooltip
                   contentStyle={{
-                    background: "var(--background)",
+                    background: "#1e293b",
                     border: "1px solid color-mix(in oklab, var(--gold) 30%, transparent)",
                     borderRadius: 8,
                     fontSize: 12,
@@ -561,7 +561,7 @@ export function ClimateAnalyticsPanel({
                 <YAxis tick={AXIS_TICK} width={36} unit="°" />
                 <Tooltip
                   contentStyle={{
-                    background: "var(--background)",
+                    background: "#1e293b",
                     border: "1px solid color-mix(in oklab, var(--gold) 30%, transparent)",
                     borderRadius: 8,
                     fontSize: 12,
@@ -597,7 +597,7 @@ export function ClimateAnalyticsPanel({
                   <YAxis yAxisId="co2" orientation="right" tick={AXIS_TICK} width={42} unit=" ppm" />
                   <Tooltip
                     contentStyle={{
-                      background: "var(--background)",
+                      background: "#1e293b",
                       border: "1px solid color-mix(in oklab, var(--gold) 30%, transparent)",
                       borderRadius: 8,
                       fontSize: 12,
