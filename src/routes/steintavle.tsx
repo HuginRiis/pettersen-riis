@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Lightbulb, LightbulbOff, Loader2 } from "lucide-react";
 import { PageShell } from "@/components/PageShell";
-import { TollnesCameraStrip } from "@/components/TollnesCameraStrip";
+import { TibberVuTile } from "@/components/TibberVuTile";
 import {
   HeatPumpTile,
   CeilingLampTile,
