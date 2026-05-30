@@ -96,8 +96,8 @@ export function TibberVuTile({
   const err = meter?.error ?? homeLive?.error ?? null;
 
   return (
-    <article className="panel rounded-lg p-3 sm:p-4 flex flex-col">
-      <div className="flex items-center justify-between mb-2">
+    <article className="panel rounded-lg p-2 sm:p-3 flex flex-col">
+      <div className="flex items-center justify-between mb-1">
         <div>
           <div className="text-display tracking-[0.3em] text-primary text-[10px] sm:text-xs uppercase">
             {title}
@@ -109,7 +109,7 @@ export function TibberVuTile({
           )}
         </div>
         <div className="text-right">
-          <div className="text-2xl sm:text-3xl font-semibold tabular-nums text-foreground leading-none">
+          <div className="text-xl sm:text-2xl font-semibold tabular-nums text-foreground leading-none">
             {fmtW(nowW)}
           </div>
           <div className="text-[9px] tracking-[0.25em] uppercase text-muted-foreground/70 mt-0.5">
@@ -125,12 +125,12 @@ export function TibberVuTile({
         scaleMax={scaleMax}
       />
 
-      <div className="grid grid-cols-3 gap-2 mt-2 text-center">
+      <div className="grid grid-cols-3 gap-2 mt-1 text-center">
         <div>
           <div className="text-[8px] tracking-[0.25em] uppercase text-muted-foreground/70">
             Snitt uke
           </div>
-          <div className="text-xs sm:text-sm font-medium tabular-nums text-foreground">
+          <div className="text-[11px] sm:text-xs font-medium tabular-nums text-foreground">
             {fmtW(avgW)}
           </div>
         </div>
@@ -138,7 +138,7 @@ export function TibberVuTile({
           <div className="text-[8px] tracking-[0.25em] uppercase text-primary">
             Maks i dag
           </div>
-          <div className="text-xs sm:text-sm font-medium tabular-nums text-foreground">
+          <div className="text-[11px] sm:text-xs font-medium tabular-nums text-foreground">
             {fmtW(maxTodayW)}
           </div>
         </div>
@@ -146,13 +146,13 @@ export function TibberVuTile({
           <div className="text-[8px] tracking-[0.25em] uppercase text-muted-foreground/70">
             I dag
           </div>
-          <div className="text-xs sm:text-sm font-medium tabular-nums text-foreground">
+          <div className="text-[11px] sm:text-xs font-medium tabular-nums text-foreground">
             {fmtKwh(todayKwh)}
           </div>
         </div>
       </div>
 
-      <div className="flex items-center justify-between mt-2">
+      <div className="flex items-center justify-between mt-1">
         <span
           className={`text-[8px] tracking-[0.25em] uppercase ${
             status === "live"
@@ -208,8 +208,8 @@ function AnalogPowerMeter({
 
   const ANGLE_RANGE = 130; // -65 .. +65
   const cx = 100;
-  const cy = 95;
-  const r = 78;
+  const cy = 82;
+  const r = 66;
 
   const valueToDeg = (v: number) => {
     const clamped = Math.max(0, Math.min(scaleMax, v));
@@ -268,8 +268,8 @@ function AnalogPowerMeter({
   }
 
   return (
-    <div className="relative w-full" style={{ aspectRatio: "200 / 110" }}>
-      <svg viewBox="0 0 200 110" className="w-full h-full">
+    <div className="relative w-full" style={{ aspectRatio: "200 / 95" }}>
+      <svg viewBox="0 0 200 95" className="w-full h-full">
         <defs>
           <linearGradient id="vu-bg-power" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="#fef9e7" />
@@ -285,7 +285,7 @@ function AnalogPowerMeter({
           x="2"
           y="2"
           width="196"
-          height="106"
+          height="86"
           rx="6"
           fill="url(#vu-bg-power)"
           stroke="#8b6a3a"
@@ -327,14 +327,14 @@ function AnalogPowerMeter({
         {ticks.map((t, i) => {
           const deg = valueToDeg(t.v);
           const rad = (deg * Math.PI) / 180;
-          const inner = r - (t.major ? 10 : 5);
+          const inner = r - (t.major ? 9 : 4);
           const outer = r - 1;
           const x1 = cx + Math.sin(rad) * inner;
           const y1 = cy - Math.cos(rad) * inner;
           const x2 = cx + Math.sin(rad) * outer;
           const y2 = cy - Math.cos(rad) * outer;
-          const lx = cx + Math.sin(rad) * (r - 20);
-          const ly = cy - Math.cos(rad) * (r - 20);
+          const lx = cx + Math.sin(rad) * (r - 17);
+          const ly = cy - Math.cos(rad) * (r - 17);
           return (
             <g key={i}>
               <line
@@ -386,7 +386,7 @@ function AnalogPowerMeter({
         {/* Etikett */}
         <text
           x={cx}
-          y="72"
+          y="60"
           textAnchor="middle"
           fontSize="7"
           fill="#3d2f1a"
