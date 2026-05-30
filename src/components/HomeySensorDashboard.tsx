@@ -499,9 +499,9 @@ export function HomeySensorDashboard() {
                   }}
                   style={{ cursor: "pointer" }}
                 >
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="hour" stroke="hsl(var(--muted-foreground))" fontSize={10} />
-                  <YAxis stroke="hsl(var(--muted-foreground))" fontSize={10} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#64748b" />
+                  <XAxis dataKey="hour" stroke="#cbd5e1" fontSize={10} />
+                  <YAxis stroke="#cbd5e1" fontSize={10} />
                   <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", fontSize: 11 }} />
                   <Legend wrapperStyle={{ fontSize: 10 }} />
                   {isOn("motion") && <Bar dataKey="motion" stackId="a" fill={SENSOR_CHART_COLORS.motion} name="Bevegelse" />}
@@ -532,9 +532,9 @@ export function HomeySensorDashboard() {
                     }}
                     style={{ cursor: "pointer" }}
                   >
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis type="number" stroke="hsl(var(--muted-foreground))" fontSize={10} />
-                    <YAxis type="category" dataKey="zone" stroke="hsl(var(--muted-foreground))" fontSize={10} width={80} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#64748b" />
+                    <XAxis type="number" stroke="#cbd5e1" fontSize={10} />
+                    <YAxis type="category" dataKey="zone" stroke="#cbd5e1" fontSize={10} width={80} />
                     <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", fontSize: 11 }} />
                     {isOn("motion") && <Bar dataKey="motion" stackId="a" fill={SENSOR_CHART_COLORS.motion} name="Bevegelse" />}
                     {isOn("door") && <Bar dataKey="door" stackId="a" fill={SENSOR_CHART_COLORS.door} name="Dør" />}
@@ -566,9 +566,9 @@ export function HomeySensorDashboard() {
                     }}
                     style={{ cursor: "pointer" }}
                   >
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey="label" stroke="hsl(var(--muted-foreground))" fontSize={10} />
-                    <YAxis stroke="hsl(var(--muted-foreground))" fontSize={10} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#64748b" />
+                    <XAxis dataKey="label" stroke="#cbd5e1" fontSize={10} />
+                    <YAxis stroke="#cbd5e1" fontSize={10} />
                     <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", fontSize: 11 }} />
                     <Legend wrapperStyle={{ fontSize: 10 }} />
                     {isOn("motion") && <Line type="monotone" dataKey="motion" stroke={SENSOR_CHART_COLORS.motion} strokeWidth={2} dot={false} name="Bevegelse" />}
@@ -602,9 +602,9 @@ export function HomeySensorDashboard() {
                   }}
                   style={{ cursor: "pointer" }}
                 >
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="label" stroke="hsl(var(--muted-foreground))" fontSize={10} />
-                  <YAxis stroke="hsl(var(--muted-foreground))" fontSize={10} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#64748b" />
+                  <XAxis dataKey="label" stroke="#cbd5e1" fontSize={10} />
+                  <YAxis stroke="#cbd5e1" fontSize={10} />
                   <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", fontSize: 11 }} />
                   <Legend wrapperStyle={{ fontSize: 10 }} />
                   {isOn("door") && <Line type="monotone" dataKey="door" stroke={SENSOR_CHART_COLORS.door} strokeWidth={2} dot={{ r: 2 }} name="Dør" />}

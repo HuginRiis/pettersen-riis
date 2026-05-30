@@ -151,10 +151,10 @@ export function BassengHistoryChart() {
                 data={data}
                 margin={{ top: 5, right: 8, left: -10, bottom: 0 }}
               >
-                <CartesianGrid stroke="hsl(var(--border))" strokeOpacity={0.25} vertical={false} />
+                <CartesianGrid stroke="#64748b" strokeOpacity={0.25} vertical={false} />
                 <XAxis
                   dataKey="label"
-                  tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                  tick={{ fontSize: 10, fill: "#cbd5e1" }}
                   tickLine={false}
                   axisLine={false}
                   minTickGap={28}
@@ -162,7 +162,7 @@ export function BassengHistoryChart() {
                 <YAxis
                   yAxisId="temp"
                   domain={tempDomain}
-                  tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                  tick={{ fontSize: 10, fill: "#cbd5e1" }}
                   tickLine={false}
                   axisLine={false}
                   width={36}
@@ -172,7 +172,7 @@ export function BassengHistoryChart() {
                   yAxisId="watt"
                   orientation="right"
                   domain={[0, wattMax]}
-                  tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                  tick={{ fontSize: 10, fill: "#cbd5e1" }}
                   tickLine={false}
                   axisLine={false}
                   width={42}
@@ -180,12 +180,12 @@ export function BassengHistoryChart() {
                 />
                 <Tooltip
                   contentStyle={{
-                    background: "hsl(var(--background))",
+                    background: "#1e293b",
                     border: "1px solid hsl(var(--border))",
                     borderRadius: 6,
                     fontSize: 12,
                   }}
-                  labelStyle={{ color: "hsl(var(--muted-foreground))", fontSize: 11 }}
+                  labelStyle={{ color: "#cbd5e1", fontSize: 11 }}
                   formatter={(value: any, name: any) => {
                     if (value == null) return ["—", name];
                     if (name === "Effekt") return [`${Math.round(value)} W`, name];

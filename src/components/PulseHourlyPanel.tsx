@@ -97,7 +97,7 @@ export function PulseHourlyPanel({
           ) : (
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData} margin={{ top: 5, right: 8, left: -16, bottom: 0 }}>
-                <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
+                <CartesianGrid stroke="#64748b" strokeDasharray="3 3" vertical={false} />
                 <XAxis
                   dataKey="hour"
                   tick={{ fill: "var(--muted-foreground)", fontSize: 10 }}
@@ -111,7 +111,7 @@ export function PulseHourlyPanel({
                 />
                 <Tooltip trigger="click"
                   contentStyle={{
-                    background: "var(--card)",
+                    background: "#1e293b",
                     border: "1px solid var(--border)",
                     borderRadius: 6,
                     fontSize: 12,

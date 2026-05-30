@@ -177,7 +177,7 @@ function ChartShell({ title, children, height = 220 }: { title: string; children
   );
 }
 
-const AXIS_TICK = { fontSize: 10, fill: "hsl(var(--muted-foreground))" } as const;
+const AXIS_TICK = { fontSize: 10, fill: "#cbd5e1" } as const;
 
 function timeLabel(ms: number) {
   const d = new Date(ms);
@@ -496,7 +496,7 @@ export function ClimateAnalyticsPanel({
             <ChartShell title="Temperatur siste 24 timer — alle rom">
               <ResponsiveContainer>
                 <LineChart data={chart24} margin={{ top: 8, right: 12, left: -10, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border) / 0.4)" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#64748b" />
                   <XAxis dataKey="time" tick={AXIS_TICK} interval="preserveStartEnd" minTickGap={32} />
                   <YAxis tick={AXIS_TICK} width={36} unit="°" />
                   <Tooltip
@@ -533,7 +533,7 @@ export function ClimateAnalyticsPanel({
           <ChartShell title="Ute-temp: i dag vs i går (samme klokkeslett)">
             <ResponsiveContainer>
               <LineChart data={chartCompare} margin={{ top: 8, right: 12, left: -10, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border) / 0.4)" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#64748b" />
                 <XAxis dataKey="label" tick={AXIS_TICK} interval="preserveStartEnd" minTickGap={32} />
                 <YAxis tick={AXIS_TICK} width={36} unit="°" />
                 <Tooltip
@@ -556,7 +556,7 @@ export function ClimateAnalyticsPanel({
           <ChartShell title="Min/maks siste 14 dager" height={240}>
             <ResponsiveContainer>
               <ComposedChart data={dailyMinMax} margin={{ top: 8, right: 12, left: -10, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border) / 0.4)" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#64748b" />
                 <XAxis dataKey="label" tick={AXIS_TICK} interval={0} angle={-30} textAnchor="end" height={50} />
                 <YAxis tick={AXIS_TICK} width={36} unit="°" />
                 <Tooltip
@@ -591,7 +591,7 @@ export function ClimateAnalyticsPanel({
             <ChartShell title="Luftfukt & CO₂ — siste 24 timer">
               <ResponsiveContainer>
                 <LineChart data={chart24} margin={{ top: 8, right: 12, left: -10, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border) / 0.4)" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#64748b" />
                   <XAxis dataKey="time" tick={AXIS_TICK} interval="preserveStartEnd" minTickGap={32} />
                   <YAxis yAxisId="hum" tick={AXIS_TICK} width={36} unit="%" />
                   <YAxis yAxisId="co2" orientation="right" tick={AXIS_TICK} width={42} unit=" ppm" />
