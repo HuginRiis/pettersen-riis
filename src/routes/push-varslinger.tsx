@@ -20,7 +20,7 @@ import { GarminNotificationSettings } from "@/components/GarminNotificationSetti
 import { LoginNotificationSettings } from "@/components/LoginNotificationSettings";
 import { SlowPageLoadNotificationSettings } from "@/components/SlowPageLoadNotificationSettings";
 import { AppearanceSettingsPanel } from "@/components/AppearanceSettingsPanel";
-import { ChartAppearanceSettingsPanel } from "@/components/ChartAppearanceSettingsPanel";
+
 import { OkonomiSettingsPanel } from "@/components/OkonomiSettingsPanel";
 import { HomeySensorSettings } from "@/components/HomeySensorSettings";
 import { ClimateNotificationSettings } from "@/components/ClimateNotificationSettings";
@@ -165,7 +165,7 @@ function PushSettingsPage() {
       </section>
 
       <SettingsBox id="sec-utseende" title="🅰️ Utseende — skrift og bredde"><AppearanceSettingsPanel /></SettingsBox>
-      <SettingsBox id="sec-graf-utseende" title="📈 Graf-utseende"><ChartAppearanceSettingsPanel /></SettingsBox>
+      
       <SettingsBox id="sec-meny" title="🧭 Meny"><MenuPreferencesPanel /></SettingsBox>
       <SettingsBox id="sec-meny-synlig" title="👁 Meny — synlige sider"><MenuVisibilityPanel /></SettingsBox>
       <SettingsBox id="sec-badges" title="🏷️ Topp-badges"><HeaderBadgeSettingsPanel /></SettingsBox>

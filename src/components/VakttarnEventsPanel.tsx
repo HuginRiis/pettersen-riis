@@ -243,7 +243,7 @@ export function VakttarnEventsPanel() {
               <YAxis stroke="#ffffff" tick={{ fill: "#ffffff" }} fontSize={11} allowDecimals={false} />
               <Tooltip trigger="click"
                 contentStyle={{
-                  background: "#0a0a0a",
+                  background: "#1e293b",
                   border: "1px solid var(--border)",
                   borderRadius: 6,
                   fontSize: 12,

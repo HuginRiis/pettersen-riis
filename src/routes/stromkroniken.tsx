@@ -992,7 +992,7 @@ function PriceChart({
       <div className="h-56 w-full">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
-            <CartesianGrid stroke="oklch(0.3 0.02 270)" strokeDasharray="2 4" vertical={false} />
+            <CartesianGrid stroke="#64748b" strokeDasharray="2 4" vertical={false} />
             <XAxis
               dataKey="label"
               tick={{ fill: "oklch(0.78 0.13 85)", fontSize: 10 }}
@@ -1064,7 +1064,7 @@ function HourlyChart({ hourly }: { hourly: ConsumptionPoint[] }) {
       <div className="h-56 w-full">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
-            <CartesianGrid stroke="oklch(0.3 0.02 270)" strokeDasharray="2 4" vertical={false} />
+            <CartesianGrid stroke="#64748b" strokeDasharray="2 4" vertical={false} />
             <XAxis
               dataKey="label"
               tick={{ fill: "oklch(0.78 0.13 85)", fontSize: 10 }}
@@ -1119,7 +1119,7 @@ function DailyChart({ daily }: { daily: ConsumptionPoint[] }) {
       <div className="h-56 w-full">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
-            <CartesianGrid stroke="oklch(0.3 0.02 270)" strokeDasharray="2 4" vertical={false} />
+            <CartesianGrid stroke="#64748b" strokeDasharray="2 4" vertical={false} />
             <XAxis
               dataKey="label"
               tick={{ fill: "oklch(0.78 0.13 85)", fontSize: 10 }}
@@ -1259,7 +1259,7 @@ function MonthVsLastChart({ daily }: { daily: ConsumptionPoint[] }) {
                 <stop offset="100%" stopColor="oklch(0.65 0.04 250)" stopOpacity={0} />
               </linearGradient>
             </defs>
-            <CartesianGrid stroke="oklch(0.3 0.02 270)" strokeDasharray="2 4" vertical={false} />
+            <CartesianGrid stroke="#64748b" strokeDasharray="2 4" vertical={false} />
             <XAxis
               dataKey="day"
               tick={{ fill: "oklch(0.78 0.13 85)", fontSize: 11 }}
@@ -1334,7 +1334,7 @@ function MonthlyChart({ monthly }: { monthly: ConsumptionPoint[] }) {
       <div className="h-56 w-full">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
-            <CartesianGrid stroke="oklch(0.3 0.02 270)" strokeDasharray="2 4" vertical={false} />
+            <CartesianGrid stroke="#64748b" strokeDasharray="2 4" vertical={false} />
             <XAxis dataKey="label" tick={{ fill: "oklch(0.78 0.13 85)", fontSize: 10 }} />
             <YAxis
               yAxisId="kwh"
@@ -1543,7 +1543,7 @@ function MonthlyAccumulatedChart({
                 <stop offset="100%" stopColor="oklch(0.7 0.18 150)" stopOpacity={0} />
               </linearGradient>
             </defs>
-            <CartesianGrid stroke="oklch(0.3 0.02 270)" strokeDasharray="2 4" vertical={false} />
+            <CartesianGrid stroke="#64748b" strokeDasharray="2 4" vertical={false} />
             <XAxis
               dataKey="day"
               tick={{ fill: "oklch(0.78 0.13 85)", fontSize: 11 }}
