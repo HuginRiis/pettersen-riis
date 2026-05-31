@@ -336,19 +336,7 @@ function SteintavlePage() {
 
   return (
     <PageShell minimalHeader>
-      <header className="container mx-auto px-6 pt-3 pb-2 text-center">
-        <div className="text-display tracking-[0.5em] text-primary text-xs sm:text-sm uppercase">
-          Steintavlen · Tollnes ·{" "}
-          <span className="text-muted-foreground">
-            {now
-              ? now.toLocaleTimeString("nb-NO", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })
-              : "—"}
-          </span>
-        </div>
-      </header>
+
 
       {hasThunder && (
         <div className="container mx-auto px-4 sm:px-6 mb-2">
