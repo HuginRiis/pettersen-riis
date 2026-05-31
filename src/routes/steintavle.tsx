@@ -428,7 +428,10 @@ function SteintavlePage() {
           {!homeyDown && (
             <LivingRoomProvider>
               <HeatPumpTile />
-              <CeilingLampTile />
+              <div className="flex flex-col gap-2">
+                <CeilingLampTile />
+                <LightsOnTile snapshot={data.ok ? data : null} />
+              </div>
             </LivingRoomProvider>
           )}
 
