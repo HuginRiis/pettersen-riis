@@ -756,3 +756,133 @@ function alertColor(c: string): string {
       return "oklch(0.65 0.10 150)";
   }
 }
+
+// --- Lights-on tile ---------------------------------------------------------
+const EXTRA_LIGHT_TOKENS: string[][] = [["garsej", "lys"], ["stålampe"], ["taklys"]];
+
+type HomeySnapshotOk = Extract<
+  Awaited<ReturnType<typeof getHomeySnapshot>>,
+  { ok: true }
+>;
+type SnapDevice = HomeySnapshotOk["devices"][number];
+
+function isLightLike(d: SnapDevice): boolean {
+  if (d.class === "light") return true;
+  if (d.capabilities && "dim" in d.capabilities) return true;
+  const nm = (d.name ?? "").toLowerCase();
+  const hasOn = d.capabilities && "onoff" in d.capabilities;
+  if (hasOn && EXTRA_LIGHT_TOKENS.some((toks) => toks.every((t) => nm.includes(t)))) {
+    return true;
+  }
+  return false;
+}
+
+function LightsOnTile({ snapshot }: { snapshot: HomeySnapshotOk | null }) {
+  const lights = snapshot ? snapshot.devices.filter(isLightLike) : [];
+  const total = lights.length;
+  const onCount = lights.filter(
+    (d) => d.capabilities?.onoff?.value === true,
+  ).length;
+  const glow = "var(--gold)";
+
+  // Max ikoner i grafikken — cap til 24 så det ser ryddig ut
+  const cap = Math.min(total, 24);
+  const onShown = total > 0 ? Math.round((onCount / total) * cap) : 0;
+  const bulbs = Array.from({ length: cap }, (_, i) => i < onShown);
+
+  // Hvis vi har snapshot men ingen lys ble plukket opp, ikke vis tom rute
+  if (snapshot && total === 0) return null;
+
+  return (
+    <article
+      className="panel rounded-lg overflow-hidden flex flex-col"
+      style={
+        onCount > 0
+          ? {
+              boxShadow: `inset 0 0 0 1px color-mix(in oklab, ${glow} 22%, transparent), 0 0 18px color-mix(in oklab, ${glow} 14%, transparent)`,
+            }
+          : undefined
+      }
+    >
+      <div className="px-3 py-1.5 border-b border-border flex items-center justify-between">
+        <span className="text-display tracking-[0.3em] text-primary text-[10px] sm:text-xs uppercase">
+          Lys i borgen
+        </span>
+        <span className="text-[9px] tracking-[0.25em] text-muted-foreground/70 uppercase tabular-nums">
+          {onCount} / {total}
+        </span>
+      </div>
+      <div className="flex-1 p-2 flex flex-col items-center justify-center gap-1.5">
+        {snapshot === null ? (
+          <div className="text-[10px] tracking-[0.3em] text-muted-foreground uppercase">
+            Henter…
+          </div>
+        ) : (
+          <>
+            <div className="flex items-baseline gap-1.5">
+              <span
+                className="text-display leading-none tabular-nums"
+                style={{
+                  color: onCount > 0 ? glow : "var(--muted-foreground)",
+                  fontSize: "clamp(1.5rem, 5vw, 2.5rem)",
+                }}
+              >
+                {onCount}
+              </span>
+              <span className="text-[10px] tracking-[0.3em] uppercase text-muted-foreground/70">
+                tente
+              </span>
+            </div>
+
+            <div
+              className="grid gap-[3px] w-full max-w-[240px] place-items-center"
+              style={{
+                gridTemplateColumns: `repeat(${Math.min(cap, 12)}, minmax(0, 1fr))`,
+              }}
+              aria-label={`${onCount} av ${total} lys tente`}
+            >
+              {bulbs.map((on, i) =>
+                on ? (
+                  <Lightbulb
+                    key={i}
+                    size={12}
+                    style={{ color: glow }}
+                    fill={glow}
+                    strokeWidth={1.5}
+                  />
+                ) : (
+                  <LightbulbOff
+                    key={i}
+                    size={12}
+                    style={{ color: "var(--muted-foreground)", opacity: 0.5 }}
+                    strokeWidth={1.5}
+                  />
+                ),
+              )}
+            </div>
+
+            {/* Andel-bar */}
+            <div className="w-full max-w-[220px] h-1 rounded-full bg-[color-mix(in_oklab,var(--foreground)_10%,transparent)] overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all"
+                style={{
+                  width: `${total > 0 ? (onCount / total) * 100 : 0}%`,
+                  background: glow,
+                }}
+              />
+            </div>
+
+            <div className="text-[9px] tracking-[0.25em] text-muted-foreground/70 uppercase flex items-center gap-1">
+              <Power size={9} />
+              {onCount === 0
+                ? "Alt slukket"
+                : onCount === total
+                  ? "Alle tente"
+                  : `${Math.round((onCount / total) * 100)} % aktive`}
+            </div>
+          </>
+        )}
+      </div>
+    </article>
+  );
+}
