@@ -1,52 +1,41 @@
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import {
-  ComposedChart,
+  AreaChart,
   Area,
-  Line,
   XAxis,
   YAxis,
   Tooltip,
   CartesianGrid,
   ResponsiveContainer,
   Legend,
+  ReferenceLine,
 } from "recharts";
-import { Waves, Thermometer, Zap } from "lucide-react";
+import { Thermometer, Droplet, Sun } from "lucide-react";
 import {
   getBassengHistory,
   type BassengHistoryPoint,
 } from "@/server/basseng-history.functions";
 
-type Range = 24 | 72 | 168;
-const RANGES: { v: Range; label: string }[] = [
-  { v: 24, label: "24t" },
-  { v: 72, label: "3d" },
-  { v: 168, label: "7d" },
-];
+const C_POOL = "#38bdf8"; // sky-400 — vann
+const C_OUT = "#f97316"; // orange-500 — ute
 
-function fmtClock(ts: string, _range: Range): string {
-  const d = new Date(ts);
-  return d.toLocaleString("nb-NO", {
-    day: "2-digit",
-    month: "2-digit",
+function fmtHour(ts: string): string {
+  return new Date(ts).toLocaleTimeString("nb-NO", {
     hour: "2-digit",
+    minute: "2-digit",
   });
 }
 
-const C_EFFEKT = "#22c55e";
-const C_VANN = "#f59e0b";
-const C_UTE = "#ef4444";
-
 export function BassengHistoryChart() {
   const fetchHistory = useServerFn(getBassengHistory);
-  const [range, setRange] = useState<Range>(72);
   const [points, setPoints] = useState<BassengHistoryPoint[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    fetchHistory({ data: { hours: range } })
+    fetchHistory({ data: { hours: 24 } })
       .then((r) => {
         if (!cancelled) setPoints(r.points);
       })
@@ -59,108 +48,110 @@ export function BassengHistoryChart() {
     return () => {
       cancelled = true;
     };
-  }, [fetchHistory, range]);
+  }, [fetchHistory]);
 
   const data = useMemo(
     () =>
       points.map((p) => ({
         ts: p.ts,
-        label: fmtClock(p.ts, range),
+        label: fmtHour(p.ts),
         pool: p.pool_temp,
-        outdoor: p.outdoor_temp,
-        watts: p.watts,
+        out: p.outdoor_temp,
       })),
-    [points, range],
+    [points],
   );
 
-  const tempDomain = useMemo(() => {
+  const stats = useMemo(() => {
+    const poolVals = points.map((p) => p.pool_temp).filter((v): v is number => v != null);
+    const outVals = points.map((p) => p.outdoor_temp).filter((v): v is number => v != null);
+    const minMax = (xs: number[]) =>
+      xs.length === 0
+        ? { min: null, max: null, last: null }
+        : { min: Math.min(...xs), max: Math.max(...xs), last: xs[xs.length - 1] };
+    return { pool: minMax(poolVals), out: minMax(outVals) };
+  }, [points]);
+
+  const tempDomain = useMemo<[number, number]>(() => {
     const vals: number[] = [];
     for (const p of points) {
       if (p.pool_temp != null) vals.push(p.pool_temp);
       if (p.outdoor_temp != null) vals.push(p.outdoor_temp);
     }
-    if (vals.length === 0) return [0, 40] as [number, number];
+    if (vals.length === 0) return [0, 30];
     const lo = Math.floor(Math.min(...vals) - 1);
     const hi = Math.ceil(Math.max(...vals) + 1);
-    return [lo, hi] as [number, number];
+    return [lo, hi];
   }, [points]);
 
-  const wattMax = useMemo(() => {
-    const vals = points.map((p) => p.watts ?? 0);
-    const m = vals.length === 0 ? 1000 : Math.max(...vals, 100);
-    return Math.ceil(m / 100) * 100;
-  }, [points]);
-
-  const hasData = points.some(
-    (p) => p.pool_temp != null || p.outdoor_temp != null || p.watts != null,
-  );
+  const hasData = data.some((d) => d.pool != null || d.out != null);
 
   return (
     <section className="container mx-auto px-4 pt-3 sm:pt-4">
-      <div className="panel rounded-lg p-4 sm:p-5 bg-gradient-to-br from-sky-500/10 to-transparent">
+      <div className="panel rounded-lg p-4 sm:p-5 bg-gradient-to-br from-sky-500/10 via-transparent to-orange-500/10">
         <div className="flex items-start justify-between gap-3 mb-3 flex-wrap">
           <div className="min-w-0">
             <div className="text-[9px] sm:text-[10px] tracking-[0.25em] sm:tracking-[0.3em] text-muted-foreground uppercase mb-0.5">
-              Krønikens linjer
+              Siste døgn
             </div>
             <h3 className="text-display text-primary text-sm sm:text-lg tracking-[0.2em] sm:tracking-[0.25em] uppercase flex items-center gap-2">
-              <Waves size={14} className="text-[var(--gold)]" />
-              Basseng — forløp
+              <Thermometer size={14} className="text-[var(--gold)]" />
+              Basseng — temperatur
             </h3>
-            <div className="hidden sm:flex items-center gap-3 text-[10px] tracking-[0.2em] uppercase text-muted-foreground/70 mt-1">
-              <span className="flex items-center gap-1">
-                <Thermometer size={10} style={{ color: C_VANN }} /> Vann
-              </span>
-              <span className="flex items-center gap-1">
-                <Thermometer size={10} style={{ color: C_UTE }} /> Ute
-              </span>
-              <span className="flex items-center gap-1">
-                <Zap size={10} style={{ color: C_EFFEKT }} /> Effekt
-              </span>
-            </div>
           </div>
-          <div className="flex gap-1">
-            {RANGES.map((r) => (
-              <button
-                key={r.v}
-                onClick={() => setRange(r.v)}
-                className={`px-2.5 py-1 text-[10px] tracking-[0.2em] uppercase rounded border transition ${
-                  range === r.v
-                    ? "border-[var(--gold)]/60 bg-[var(--gold)]/10 text-[var(--gold)]"
-                    : "border-border/60 text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {r.label}
-              </button>
-            ))}
+          <div className="flex gap-3 sm:gap-4 text-right">
+            <StatPill
+              icon={<Droplet size={11} style={{ color: C_POOL }} />}
+              label="Vann nå"
+              value={stats.pool.last}
+              min={stats.pool.min}
+              max={stats.pool.max}
+              color={C_POOL}
+            />
+            <StatPill
+              icon={<Sun size={11} style={{ color: C_OUT }} />}
+              label="Ute nå"
+              value={stats.out.last}
+              min={stats.out.min}
+              max={stats.out.max}
+              color={C_OUT}
+            />
           </div>
         </div>
 
-        <div className="h-64 sm:h-80">
+        <div className="h-56 sm:h-72">
           {loading ? (
             <div className="h-full flex items-center justify-center text-xs text-muted-foreground italic">
-              Maesteren leser i rullene…
+              Henter målinger…
             </div>
           ) : !hasData ? (
             <div className="h-full flex items-center justify-center text-xs text-muted-foreground italic px-4 text-center">
-              Ingen målinger ennå — grafen fylles etter hvert som Homey-pollen samler data.
+              Ingen målinger siste døgn ennå.
             </div>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart
+              <AreaChart
                 data={data}
-                margin={{ top: 5, right: 8, left: -10, bottom: 0 }}
+                margin={{ top: 8, right: 12, left: -12, bottom: 0 }}
               >
-                <CartesianGrid stroke="#64748b" strokeOpacity={0.25} vertical={false} />
+                <defs>
+                  <linearGradient id="poolFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={C_POOL} stopOpacity={0.45} />
+                    <stop offset="100%" stopColor={C_POOL} stopOpacity={0.02} />
+                  </linearGradient>
+                  <linearGradient id="outFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={C_OUT} stopOpacity={0.35} />
+                    <stop offset="100%" stopColor={C_OUT} stopOpacity={0.02} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid stroke="#64748b" strokeOpacity={0.2} vertical={false} />
                 <XAxis
                   dataKey="label"
                   tick={{ fontSize: 10, fill: "#cbd5e1" }}
                   tickLine={false}
                   axisLine={false}
-                  minTickGap={28}
+                  minTickGap={32}
                 />
                 <YAxis
-                  yAxisId="temp"
                   domain={tempDomain}
                   tick={{ fontSize: 10, fill: "#cbd5e1" }}
                   tickLine={false}
@@ -168,76 +159,87 @@ export function BassengHistoryChart() {
                   width={36}
                   unit="°"
                 />
-                <YAxis
-                  yAxisId="watt"
-                  orientation="right"
-                  domain={[0, wattMax]}
-                  tick={{ fontSize: 10, fill: "#cbd5e1" }}
-                  tickLine={false}
-                  axisLine={false}
-                  width={42}
-                  unit="W"
-                />
+                <ReferenceLine y={0} stroke="#94a3b8" strokeOpacity={0.35} strokeDasharray="2 3" />
                 <Tooltip
                   contentStyle={{
-                    background: "#1e293b",
-                    border: "1px solid #7dd3fc",
-                    borderRadius: 6,
+                    background: "#0f172a",
+                    border: "1px solid #38bdf8",
+                    borderRadius: 8,
                     fontSize: 12,
                   }}
                   labelStyle={{ color: "#cbd5e1", fontSize: 11 }}
                   formatter={(value: any, name: any) => {
                     if (value == null) return ["—", name];
-                    if (name === "Effekt") return [`${Math.round(value)} W`, name];
                     return [`${Number(value).toFixed(1)} °C`, name];
                   }}
                 />
                 <Legend
-                  wrapperStyle={{ fontSize: 11, paddingTop: 4 }}
-                  iconType="line"
+                  wrapperStyle={{ fontSize: 11, paddingTop: 6 }}
+                  iconType="circle"
                 />
                 <Area
-                  yAxisId="watt"
-                  type="monotone"
-                  dataKey="watts"
-                  name="Effekt"
-                  stroke={C_EFFEKT}
-                  strokeWidth={2}
-                  fill={C_EFFEKT}
-                  fillOpacity={0.18}
-                  connectNulls
-                  dot={false}
-                />
-                <Line
-                  yAxisId="temp"
                   type="monotone"
                   dataKey="pool"
                   name="Vann"
-                  stroke={C_VANN}
-                  strokeWidth={2}
-                  dot={false}
+                  stroke={C_POOL}
+                  strokeWidth={2.5}
+                  fill="url(#poolFill)"
                   connectNulls
+                  dot={false}
+                  activeDot={{ r: 4, stroke: "#0f172a", strokeWidth: 2 }}
                 />
-                <Line
-                  yAxisId="temp"
+                <Area
                   type="monotone"
-                  dataKey="outdoor"
+                  dataKey="out"
                   name="Ute"
-                  stroke={C_UTE}
+                  stroke={C_OUT}
                   strokeWidth={2}
-                  strokeDasharray="4 3"
-                  dot={false}
+                  fill="url(#outFill)"
                   connectNulls
+                  dot={false}
+                  activeDot={{ r: 4, stroke: "#0f172a", strokeWidth: 2 }}
                 />
-              </ComposedChart>
+              </AreaChart>
             </ResponsiveContainer>
           )}
         </div>
-
-        <p className="text-[10px] sm:text-xs italic text-muted-foreground/80 mt-3">
-          Effekt vises mot høyre akse (W). Vann- og utetemperatur deler venstre akse (°C). Maesteren bøker en måling per Homey-poll.
-        </p>
       </div>
     </section>
+  );
+}
+
+function StatPill({
+  icon,
+  label,
+  value,
+  min,
+  max,
+  color,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: number | null;
+  min: number | null;
+  max: number | null;
+  color: string;
+}) {
+  return (
+    <div>
+      <div className="flex items-center gap-1 justify-end text-[9px] sm:text-[10px] tracking-[0.2em] uppercase text-muted-foreground">
+        {icon}
+        <span>{label}</span>
+      </div>
+      <div
+        className="text-xl sm:text-2xl text-display tabular-nums leading-none mt-0.5"
+        style={{ color }}
+      >
+        {value == null ? "—" : `${value.toFixed(1)}°`}
+      </div>
+      {min != null && max != null && (
+        <div className="text-[9px] sm:text-[10px] text-muted-foreground/80 tabular-nums mt-0.5">
+          {min.toFixed(1)}° – {max.toFixed(1)}°
+        </div>
+      )}
+    </div>
   );
 }
