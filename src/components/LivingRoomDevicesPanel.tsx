@@ -795,14 +795,14 @@ function DimmerBody({
   }, [dim, local]);
 
   return (
-    <div className="w-full flex flex-col items-center gap-3">
-      <div className="flex items-center gap-2">
+    <div className="w-full flex flex-col items-center gap-1.5">
+      <div className="flex items-center gap-1.5">
         <Lightbulb
-          size={18}
+          size={14}
           style={{ color: isOn ? accent : "var(--muted-foreground)" }}
         />
         <div
-          className="text-[10px] tracking-[0.25em] uppercase text-muted-foreground truncate max-w-[200px]"
+          className="text-[9px] tracking-[0.25em] uppercase text-muted-foreground truncate max-w-[180px]"
           title={device.name}
         >
           {device.name}
@@ -813,17 +813,17 @@ function DimmerBody({
         className="text-display leading-none tabular-nums"
         style={{
           color: isOn ? accent : "var(--muted-foreground)",
-          fontSize: "clamp(2.5rem, 8vw, 4.5rem)",
+          fontSize: "clamp(1.25rem, 4vw, 2.25rem)",
         }}
       >
         {pct}%
       </div>
 
-      <div className="text-[10px] tracking-[0.25em] text-muted-foreground/80 uppercase">
+      <div className="text-[9px] tracking-[0.25em] text-muted-foreground/80 uppercase">
         {isOn ? "Tent" : "Slukket"}
       </div>
 
-      <div className="w-full max-w-[280px] px-2">
+      <div className="w-full max-w-[220px] px-1">
         <input
           type="range"
           min={0}
@@ -847,16 +847,11 @@ function DimmerBody({
           }}
           disabled={dimBusy}
           aria-label="Lysstyrke"
-          className="w-full h-2 rounded-full appearance-none cursor-pointer disabled:opacity-50 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[var(--gold)] [&::-webkit-slider-thumb]:shadow-md [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-[var(--gold)] [&::-moz-range-thumb]:border-0"
+          className="w-full h-1.5 rounded-full appearance-none cursor-pointer disabled:opacity-50 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[var(--gold)] [&::-webkit-slider-thumb]:shadow-md [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-[var(--gold)] [&::-moz-range-thumb]:border-0"
           style={{
             background: `linear-gradient(to right, ${accent} 0%, ${accent} ${pct}%, color-mix(in oklab, var(--foreground) 12%, transparent) ${pct}%, color-mix(in oklab, var(--foreground) 12%, transparent) 100%)`,
           }}
         />
-        <div className="flex justify-between text-[8px] tracking-[0.2em] uppercase text-muted-foreground/60 mt-1">
-          <span>0%</span>
-          <span>50%</span>
-          <span>100%</span>
-        </div>
       </div>
 
       {caps.onoff !== undefined && (
@@ -864,7 +859,7 @@ function DimmerBody({
           type="button"
           onClick={() => onToggle(!isOn)}
           disabled={onoffBusy}
-          className="rounded px-4 py-1.5 text-[10px] tracking-[0.3em] uppercase font-semibold transition-all disabled:opacity-50"
+          className="rounded px-3 py-1 text-[9px] tracking-[0.3em] uppercase font-semibold transition-all disabled:opacity-50"
           style={{
             background: isOn
               ? `color-mix(in oklab, ${accent} 22%, transparent)`
