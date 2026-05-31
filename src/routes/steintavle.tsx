@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Lightbulb, LightbulbOff, Loader2, Power } from "lucide-react";
 import { PageShell } from "@/components/PageShell";
 import { TibberVuTile } from "@/components/TibberVuTile";
+import { DoorAlarmTile } from "@/components/DoorAlarmTile";
 import {
   HeatPumpTile,
   CeilingLampTile,
@@ -427,7 +428,10 @@ function SteintavlePage() {
 
           {!homeyDown && (
             <LivingRoomProvider>
-              <HeatPumpTile />
+              <div className="flex flex-col gap-2">
+                <HeatPumpTile />
+                <DoorAlarmTile />
+              </div>
               <div className="flex flex-col gap-2">
                 <CeilingLampTile />
                 <LightsOnTile snapshot={data.ok ? data : null} />
