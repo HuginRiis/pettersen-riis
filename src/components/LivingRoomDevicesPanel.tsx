@@ -387,7 +387,7 @@ export function CeilingLampTile() {
 
   return (
     <article className="panel rounded-lg overflow-hidden flex flex-col">
-      <div className="px-4 py-2 border-b border-border flex items-center justify-between">
+      <div className="px-3 py-1.5 border-b border-border flex items-center justify-between">
         <span className="text-display tracking-[0.3em] text-primary text-[10px] sm:text-xs uppercase">
           Taklampe · Stua
         </span>
@@ -395,15 +395,15 @@ export function CeilingLampTile() {
           EYCR-201
         </span>
       </div>
-      <div className="flex-1 p-4 flex flex-col items-center justify-center">
+      <div className="flex-1 p-2 flex flex-col items-center justify-center">
         {state.status === "loading" && (
-          <Loader2 className="animate-spin text-muted-foreground" size={24} />
+          <Loader2 className="animate-spin text-muted-foreground" size={20} />
         )}
         {state.status === "error" && (
-          <div className="text-center text-sm text-destructive">{state.message}</div>
+          <div className="text-center text-xs text-destructive">{state.message}</div>
         )}
         {state.status === "ok" && !device && (
-          <div className="text-center text-[11px] tracking-[0.3em] text-muted-foreground uppercase">
+          <div className="text-center text-[10px] tracking-[0.3em] text-muted-foreground uppercase">
             Fant ikke EYCR-201
           </div>
         )}
