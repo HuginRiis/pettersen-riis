@@ -336,19 +336,7 @@ function SteintavlePage() {
 
   return (
     <PageShell minimalHeader>
-      <header className="container mx-auto px-6 pt-3 pb-2 text-center">
-        <div className="text-display tracking-[0.5em] text-primary text-xs sm:text-sm uppercase">
-          Steintavlen · Tollnes ·{" "}
-          <span className="text-muted-foreground">
-            {now
-              ? now.toLocaleTimeString("nb-NO", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })
-              : "—"}
-          </span>
-        </div>
-      </header>
+
 
       {hasThunder && (
         <div className="container mx-auto px-4 sm:px-6 mb-2">
@@ -430,14 +418,15 @@ function SteintavlePage() {
             <LivingRoomProvider>
               <div className="flex flex-col gap-2">
                 <HeatPumpTile />
-                <DoorAlarmTile />
               </div>
               <div className="flex flex-col gap-2">
                 <CeilingLampTile />
                 <LightsOnTile snapshot={data.ok ? data : null} />
+                <DoorAlarmTile />
               </div>
             </LivingRoomProvider>
           )}
+
 
           {homeyDown && (
             <div className="panel rounded-lg p-4 lg:col-span-2 flex flex-col items-center justify-center text-center">
