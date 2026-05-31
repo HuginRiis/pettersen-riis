@@ -1,7 +1,7 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Lightbulb, LightbulbOff, Loader2 } from "lucide-react";
+import { Lightbulb, LightbulbOff, Loader2, Power } from "lucide-react";
 import { PageShell } from "@/components/PageShell";
 import { TibberVuTile } from "@/components/TibberVuTile";
 import {
