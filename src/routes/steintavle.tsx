@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Lightbulb, LightbulbOff, Loader2, Power } from "lucide-react";
 import { PageShell } from "@/components/PageShell";
 import { TibberVuTile } from "@/components/TibberVuTile";
+import { DoorAlarmTile } from "@/components/DoorAlarmTile";
 import {
   HeatPumpTile,
   CeilingLampTile,
