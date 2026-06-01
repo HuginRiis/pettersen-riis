@@ -5,14 +5,17 @@ import {
   Activity,
   AlertTriangle,
   Bell,
+  Cpu,
   Database,
   Gauge,
   Loader2,
+  MemoryStick,
   RefreshCw,
   Server,
   Timer,
   Zap,
 } from "lucide-react";
+import { PageShell } from "@/components/PageShell";
 import {
   Bar,
   BarChart,
@@ -42,6 +45,17 @@ export const Route = createFileRoute("/ytelse")({
 });
 
 const PALETTE = ["#d4af37", "#22d3ee", "#a78bfa", "#34d399", "#fb923c", "#f472b6", "#60a5fa", "#facc15", "#f87171", "#10b981"];
+
+function fmtUptime(sec: number): string {
+  if (!sec) return "—";
+  if (sec < 60) return `${sec}s`;
+  const m = Math.floor(sec / 60);
+  if (m < 60) return `${m}m ${sec % 60}s`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}t ${m % 60}m`;
+  const d = Math.floor(h / 24);
+  return `${d}d ${h % 24}t`;
+}
 
 function prettyBytes(b: number): string {
   if (!b) return "0 B";
@@ -113,7 +127,7 @@ function YtelsePage() {
   const dbPct = snap ? Math.min(100, Math.round((snap.db.bytes / snap.db.limitBytes) * 100)) : 0;
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <PageShell>
       <div className="max-w-6xl mx-auto px-4 py-6 space-y-5">
         <header className="flex items-center justify-between gap-3 flex-wrap">
           <div>
@@ -163,6 +177,47 @@ function YtelsePage() {
               <KpiCard icon={Database} color="#22d3ee" label="Database" value={prettyBytes(snap.db.bytes)} sub={`${dbPct}% av 500 MB`} />
               <KpiCard icon={Bell} color="#fb923c" label="Push i dag" value={snap.push.reduce((s, r) => s + r.today, 0).toString()} sub={`${snap.push.reduce((s, r) => s + r.week, 0)} siste 7d`} />
             </div>
+
+            {/* Runtime: RAM + CPU på serverless-workeren */}
+            <section className="panel rounded-lg p-4">
+              <h2 className="text-display tracking-[0.2em] uppercase text-sm text-primary mb-3 flex items-center gap-2">
+                <Cpu size={16} /> Worker-prosess (denne forespørselen)
+              </h2>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <KpiCard
+                  icon={MemoryStick}
+                  color="#a78bfa"
+                  label="Heap brukt"
+                  value={prettyBytes(snap.runtime.heapUsedBytes)}
+                  sub={`av ${prettyBytes(snap.runtime.heapTotalBytes)} (${snap.runtime.heapTotalBytes ? Math.round((snap.runtime.heapUsedBytes / snap.runtime.heapTotalBytes) * 100) : 0}%)`}
+                />
+                <KpiCard
+                  icon={MemoryStick}
+                  color="#34d399"
+                  label="RSS-minne"
+                  value={prettyBytes(snap.runtime.rssBytes)}
+                  sub={`extern ${prettyBytes(snap.runtime.externalBytes)}`}
+                />
+                <KpiCard
+                  icon={Cpu}
+                  color="#fb923c"
+                  label="CPU last"
+                  value={`${snap.runtime.cpuPercent}%`}
+                  sub={`${snap.runtime.cpuUserMs.toFixed(1)} ms user · ${snap.runtime.cpuSystemMs.toFixed(1)} ms sys`}
+                />
+                <KpiCard
+                  icon={Server}
+                  color="#22d3ee"
+                  label="Uptime"
+                  value={fmtUptime(snap.runtime.uptimeSec)}
+                  sub={`${snap.runtime.nodeVersion || "—"} · ${snap.runtime.platform || "edge"}`}
+                />
+              </div>
+              <p className="text-[10px] text-muted-foreground mt-2 italic">
+                Måles per kall i den serverless workeren som svarte. Cloudflare gjenbruker isolater, så RAM/uptime gjenspeiler aktiv instans — ikke hele appen.
+              </p>
+            </section>
+
 
             {/* Flaskehalser */}
             <section className="panel rounded-lg p-4">
@@ -383,7 +438,7 @@ function YtelsePage() {
           </>
         )}
       </div>
-    </div>
+    </PageShell>
   );
 }
 
