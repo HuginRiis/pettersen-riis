@@ -116,7 +116,7 @@ function YtelsePage() {
   const dbPct = snap ? Math.min(100, Math.round((snap.db.bytes / snap.db.limitBytes) * 100)) : 0;
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <PageShell>
       <div className="max-w-6xl mx-auto px-4 py-6 space-y-5">
         <header className="flex items-center justify-between gap-3 flex-wrap">
           <div>
