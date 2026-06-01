@@ -1,5 +1,16 @@
 import { useEffect, useState } from "react";
 import { LastUpdated } from "@/components/LastUpdated";
+import { ChartZoom } from "@/components/ChartZoom";
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+  ResponsiveContainer,
+  ReferenceLine,
+} from "recharts";
 
 type Props = {
   lat: number;
