@@ -96,6 +96,10 @@ export const getPerformanceSnapshot = createServerFn({ method: "GET" }).handler(
   async (): Promise<PerfSnapshot> => {
     const sb = supabaseAdmin as any;
 
+    // Runtime sample: measure CPU over ~80 ms window
+    const cpuStart = (typeof process !== "undefined" && (process as any).cpuUsage) ? process.cpuUsage() : null;
+    const tStart = Date.now();
+
     const [dbRes, hourlyRes, summaryRes, pgnetRes] = await Promise.allSettled([
       sb.rpc("get_db_usage_stats"),
       sb.rpc("get_api_call_hourly_24h"),
