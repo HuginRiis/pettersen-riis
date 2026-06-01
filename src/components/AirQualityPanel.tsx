@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { LastUpdated } from "@/components/LastUpdated";
 import { ChartZoom } from "@/components/ChartZoom";
+import { fetchAirQualityPanel } from "@/server/air-quality-fetch.functions";
 import {
   AreaChart,
   Area,
@@ -143,18 +145,14 @@ export function AirQualityPanel({ lat, lon, title, subtitle }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const fetchAq = useServerFn(fetchAirQualityPanel);
+
   useEffect(() => {
     let cancelled = false;
     async function load() {
       try {
         setLoading(true);
-        const url =
-          `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}` +
-          `&hourly=${HOURLY_FIELDS}&current=${CURRENT_FIELDS}` +
-          `&timezone=Europe%2FOslo&forecast_days=2`;
-        const res = await fetch(url);
-        if (!res.ok) throw new Error("Kunne ikke hente luftkvalitet");
-        const j = await res.json();
+        const j = await fetchAq({ data: { lat, lon } });
         if (cancelled) return;
         setData({ hourly: j.hourly, current: j.current });
         setUpdated(new Date());
@@ -171,7 +169,7 @@ export function AirQualityPanel({ lat, lon, title, subtitle }: Props) {
       cancelled = true;
       clearInterval(id);
     };
-  }, [lat, lon]);
+  }, [lat, lon, fetchAq]);
 
   return (
     <article className="panel rounded-lg p-6 glow-on-hover">
