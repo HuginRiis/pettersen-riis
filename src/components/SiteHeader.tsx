@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Menu, X, LogOut, Crown, Swords, Shield, KeyRound, Home, Star, Flower2,
   Sun, Compass, CalendarDays, BellRing, Eye, Mountain, Lightbulb, Lamp, Flame, Zap,
   Receipt, Dumbbell, AlertTriangle, ScrollText, Globe, ChevronDown, ChevronRight,
-  TreePine, Coins, Bot, Wallet, Volume2, Settings } from "lucide-react";
+  TreePine, Coins, Bot, Wallet, Volume2, Settings, Gauge } from "lucide-react";
 
 
 import { logoutFn } from "@/server/auth";
@@ -52,7 +52,8 @@ type RoutePath =
   | "/stovsugeren"
   | "/decibel"
   | "/roborock"
-  | "/planter";
+  | "/planter"
+  | "/ytelse";
 
 
 type NavLink = { to: RoutePath; label: string; public?: boolean };
@@ -88,6 +89,7 @@ const ROUTE_ICON: Partial<Record<RoutePath, React.ComponentType<{ size?: number;
   "/decibel": Volume2,
   "/roborock": Bot,
   "/planter": TreePine,
+  "/ytelse": Gauge,
 };
 
 
@@ -116,6 +118,7 @@ const ROUTE_ICON_COLOR: Partial<Record<RoutePath, string>> = {
   "/decibel": "#f43f5e",
   "/roborock": "#a78bfa",
   "/planter": "#22c55e",
+  "/ytelse": "#22d3ee",
 };
 
 
@@ -129,6 +132,7 @@ const navLinks: NavLink[] = [
   { to: "/agenda", label: "Søppel, bursdager og meldinger" },
   { to: "/push-varslinger", label: "Innstillinger" },
   { to: "/vakttarnet", label: "Vakttårnet" },
+  { to: "/ytelse", label: "Ytelse" },
   { to: "/hytta", label: "Hytta", public: true },
   { to: "/smarthus", label: "Smartborg" },
   { to: "/lys", label: "Lys" },

@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as YtelseRouteImport } from './routes/ytelse'
 import { Route as VarslerRouteImport } from './routes/varsler'
 import { Route as VarmeRouteImport } from './routes/varme'
 import { Route as VarRouteImport } from './routes/var'
@@ -49,6 +50,11 @@ import { Route as ApiPublicHooksEufyRouteImport } from './routes/api/public/hook
 import { Route as ApiPublicHooksBackfillPbthHistoryRouteImport } from './routes/api.public.hooks.backfill-pbth-history'
 import { Route as ApiPublicHooksAgendaPushRouteImport } from './routes/api.public.hooks.agenda-push'
 
+const YtelseRoute = YtelseRouteImport.update({
+  id: '/ytelse',
+  path: '/ytelse',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const VarslerRoute = VarslerRouteImport.update({
   id: '/varsler',
   path: '/varsler',
@@ -278,6 +284,7 @@ export interface FileRoutesByFullPath {
   '/var': typeof VarRoute
   '/varme': typeof VarmeRoute
   '/varsler': typeof VarslerRoute
+  '/ytelse': typeof YtelseRoute
   '/hooks/log-pulse': typeof HooksLogPulseRoute
   '/api/homey/callback': typeof ApiHomeyCallbackRoute
   '/api/homey/start': typeof ApiHomeyStartRoute
@@ -319,6 +326,7 @@ export interface FileRoutesByTo {
   '/var': typeof VarRoute
   '/varme': typeof VarmeRoute
   '/varsler': typeof VarslerRoute
+  '/ytelse': typeof YtelseRoute
   '/hooks/log-pulse': typeof HooksLogPulseRoute
   '/api/homey/callback': typeof ApiHomeyCallbackRoute
   '/api/homey/start': typeof ApiHomeyStartRoute
@@ -361,6 +369,7 @@ export interface FileRoutesById {
   '/var': typeof VarRoute
   '/varme': typeof VarmeRoute
   '/varsler': typeof VarslerRoute
+  '/ytelse': typeof YtelseRoute
   '/hooks/log-pulse': typeof HooksLogPulseRoute
   '/api/homey/callback': typeof ApiHomeyCallbackRoute
   '/api/homey/start': typeof ApiHomeyStartRoute
@@ -404,6 +413,7 @@ export interface FileRouteTypes {
     | '/var'
     | '/varme'
     | '/varsler'
+    | '/ytelse'
     | '/hooks/log-pulse'
     | '/api/homey/callback'
     | '/api/homey/start'
@@ -445,6 +455,7 @@ export interface FileRouteTypes {
     | '/var'
     | '/varme'
     | '/varsler'
+    | '/ytelse'
     | '/hooks/log-pulse'
     | '/api/homey/callback'
     | '/api/homey/start'
@@ -486,6 +497,7 @@ export interface FileRouteTypes {
     | '/var'
     | '/varme'
     | '/varsler'
+    | '/ytelse'
     | '/hooks/log-pulse'
     | '/api/homey/callback'
     | '/api/homey/start'
@@ -528,6 +540,7 @@ export interface RootRouteChildren {
   VarRoute: typeof VarRoute
   VarmeRoute: typeof VarmeRoute
   VarslerRoute: typeof VarslerRoute
+  YtelseRoute: typeof YtelseRoute
   HooksLogPulseRoute: typeof HooksLogPulseRoute
   ApiHomeyCallbackRoute: typeof ApiHomeyCallbackRoute
   ApiHomeyStartRoute: typeof ApiHomeyStartRoute
@@ -547,6 +560,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/ytelse': {
+      id: '/ytelse'
+      path: '/ytelse'
+      fullPath: '/ytelse'
+      preLoaderRoute: typeof YtelseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/varsler': {
       id: '/varsler'
       path: '/varsler'
@@ -848,6 +868,7 @@ const rootRouteChildren: RootRouteChildren = {
   VarRoute: VarRoute,
   VarmeRoute: VarmeRoute,
   VarslerRoute: VarslerRoute,
+  YtelseRoute: YtelseRoute,
   HooksLogPulseRoute: HooksLogPulseRoute,
   ApiHomeyCallbackRoute: ApiHomeyCallbackRoute,
   ApiHomeyStartRoute: ApiHomeyStartRoute,
@@ -870,12 +891,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}
