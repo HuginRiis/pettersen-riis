@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { LastUpdated } from "@/components/LastUpdated";
 import { getNaafForecast } from "@/lib/naaf-pollen.functions";
+import { fetchOpenMeteoPollen } from "@/server/air-quality-fetch.functions";
 
 type Props = {
   lat: number;
@@ -105,6 +106,7 @@ export function LivePollen({ lat, lon, title, subtitle, naafRegion }: Props) {
     textForecast: string | null;
   } | null>(null);
   const fetchNaaf = useServerFn(getNaafForecast);
+  const fetchPollen = useServerFn(fetchOpenMeteoPollen);
 
   useEffect(() => {
     if (!naafRegion) {
@@ -139,10 +141,7 @@ export function LivePollen({ lat, lon, title, subtitle, naafRegion }: Props) {
     async function load() {
       try {
         setLoading(true);
-        const url = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&hourly=alder_pollen,birch_pollen,grass_pollen,mugwort_pollen,olive_pollen,ragweed_pollen&timezone=Europe%2FOslo&forecast_days=4`;
-        const res = await fetch(url);
-        if (!res.ok) throw new Error("Kunne ikke hente pollendata");
-        const data = await res.json();
+        const data = await fetchPollen({ data: { lat, lon } });
         if (cancelled) return;
         const buckets = parseDays(data);
         setDays(buckets);
@@ -163,7 +162,7 @@ export function LivePollen({ lat, lon, title, subtitle, naafRegion }: Props) {
       cancelled = true;
       clearInterval(id);
     };
-  }, [lat, lon]);
+  }, [lat, lon, fetchPollen]);
 
   return (
     <article className="panel rounded-lg p-6 glow-on-hover">
