@@ -339,7 +339,12 @@ export const getPerformanceSnapshot = createServerFn({ method: "GET" }).handler(
     };
     try {
       const mem = (typeof process !== "undefined" && process.memoryUsage) ? process.memoryUsage() : null;
-      const cpuEnd = (cpuStart && (process as any).cpuUsage) ? process.cpuUsage(cpuStart) : null;
+      let cpuEnd: ReturnType<typeof process.cpuUsage> | null = null;
+      try {
+        if (cpuStart && (process as any).cpuUsage) {
+          cpuEnd = process.cpuUsage(cpuStart);
+        }
+      } catch { /* cpuUsage ikke tilgjengelig i Worker */ }
       const sampleMs = Math.max(1, Date.now() - tStart);
       const userMs = cpuEnd ? cpuEnd.user / 1000 : 0;
       const sysMs = cpuEnd ? cpuEnd.system / 1000 : 0;
