@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import {
   ComposedChart,
   Area,
@@ -14,6 +15,7 @@ import {
 import { Sun, Cloud } from "lucide-react";
 import { LastUpdated } from "@/components/LastUpdated";
 import { ChartZoom } from "@/components/ChartZoom";
+import { fetchUvCloudPanel } from "@/server/air-quality-fetch.functions";
 
 type Props = {
   lat: number;
@@ -49,22 +51,14 @@ export function UvCloudPanel({ lat, lon, title, subtitle }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const fetchUvCloud = useServerFn(fetchUvCloudPanel);
+
   useEffect(() => {
     let cancelled = false;
     async function load() {
       try {
         setLoading(true);
-        // Forecast API for cloud_cover, AQ API for uv + uv_clear_sky
-        const aqUrl =
-          `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}` +
-          `&hourly=uv_index,uv_index_clear_sky&timezone=Europe%2FOslo&forecast_days=3`;
-        const fcUrl =
-          `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
-          `&hourly=cloud_cover&timezone=Europe%2FOslo&forecast_days=3`;
-        const [aqRes, fcRes] = await Promise.all([fetch(aqUrl), fetch(fcUrl)]);
-        if (!aqRes.ok || !fcRes.ok) throw new Error("Kunne ikke hente UV/skyer");
-        const aq = await aqRes.json();
-        const fc = await fcRes.json();
+        const { aq, fc } = await fetchUvCloud({ data: { lat, lon } });
 
         const times: string[] = aq.hourly.time;
         const uv: number[] = aq.hourly.uv_index;
@@ -122,7 +116,7 @@ export function UvCloudPanel({ lat, lon, title, subtitle }: Props) {
       cancelled = true;
       clearInterval(id);
     };
-  }, [lat, lon]);
+  }, [lat, lon, fetchUvCloud]);
 
   const stats = useMemo(() => {
     if (!rows || rows.length === 0) return null;
