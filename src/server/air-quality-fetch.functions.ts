@@ -26,3 +26,13 @@ export const fetchUvCloudPanel = createServerFn({ method: "GET" })
     const mod = await import("./air-quality-fetch.server");
     return mod.fetchUvCloudPanelData(data.lat, data.lon);
   });
+
+/**
+ * Henter pollen fra Open-Meteo via server-cache/backoff/pause.
+ */
+export const fetchOpenMeteoPollen = createServerFn({ method: "GET" })
+  .inputValidator((data) => coordSchema.parse(data))
+  .handler(async ({ data }) => {
+    const mod = await import("./air-quality-fetch.server");
+    return mod.fetchOpenMeteoPollenData(data.lat, data.lon);
+  });
