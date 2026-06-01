@@ -56,6 +56,13 @@ export const Route = createFileRoute("/api/public/hooks/agenda-push")({
           } catch (err) {
             console.error("[uv-push] failed", err);
           }
+          let airQuality = { checked: 0, sent: 0, errors: 0, skipped: 0 };
+          try {
+            const aqmod = await import("@/server/air-quality-push.server");
+            airQuality = await aqmod.processAirQualityNotifications();
+          } catch (err) {
+            console.error("[air-quality-push] failed", err);
+          }
           let weather = { checked: 0, sent: 0, errors: 0, skipped: 0 };
           try {
             const wmod = await import("@/server/weather-push.server");
