@@ -31,28 +31,34 @@ const CURRENT_FIELDS = [
   "uv_index_clear_sky",
 ].join(",");
 
-export async function fetchAirQualityPanelData(lat: number, lon: number) {
+type AqPanelData = { hourly: Record<string, number[]>; current: Record<string, number | string> };
+type UvCloudData = {
+  aq: { hourly: { time: string[]; uv_index: number[]; uv_index_clear_sky: number[] } };
+  fc: { hourly: { time: string[]; cloud_cover: number[] } };
+};
+
+export async function fetchAirQualityPanelData(lat: number, lon: number): Promise<AqPanelData> {
   const key = `aq:${lat.toFixed(3)},${lon.toFixed(3)}`;
-  return withCache(key, async () => {
+  return withCache<AqPanelData>(key, async () => {
     const url =
       `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}` +
       `&hourly=${HOURLY_FIELDS}&current=${CURRENT_FIELDS}` +
       `&timezone=Europe%2FOslo&forecast_days=2`;
     const res = await fetchWithBackoff("air-quality", "open-meteo:panel", url);
     if (!res) {
-      const stale = getCached<{ hourly: unknown; current: unknown }>(key);
+      const stale = getCached<AqPanelData>(key);
       if (stale) return stale;
       throw new Error("Open-Meteo air-quality rate-limited (429) – prøv igjen om noen minutter");
     }
     if (!res.ok) throw new Error(`Open-Meteo air-quality ${res.status}`);
-    const j = await res.json();
+    const j = (await res.json()) as AqPanelData;
     return { hourly: j.hourly, current: j.current };
   });
 }
 
-export async function fetchUvCloudPanelData(lat: number, lon: number) {
+export async function fetchUvCloudPanelData(lat: number, lon: number): Promise<UvCloudData> {
   const key = `uvcloud:${lat.toFixed(3)},${lon.toFixed(3)}`;
-  return withCache(key, async () => {
+  return withCache<UvCloudData>(key, async () => {
     const aqUrl =
       `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}` +
       `&hourly=uv_index,uv_index_clear_sky&timezone=Europe%2FOslo&forecast_days=3`;
@@ -64,17 +70,14 @@ export async function fetchUvCloudPanelData(lat: number, lon: number) {
       fetchWithBackoff("air-quality", "open-meteo:uv-cloud:forecast", fcUrl),
     ]);
     if (!aqRes || !fcRes || !aqRes.ok || !fcRes.ok) {
-      const stale = getCached<{ aq: unknown; fc: unknown }>(key);
+      const stale = getCached<UvCloudData>(key);
       if (stale) return stale;
       throw new Error(
         `Open-Meteo UV/cloud ${aqRes?.status ?? "backoff"}/${fcRes?.status ?? "backoff"}`,
       );
     }
-    const aq = await aqRes.json();
-    const fc = await fcRes.json();
-    return {
-      aq: { hourly: aq.hourly },
-      fc: { hourly: fc.hourly },
-    };
+    const aq = (await aqRes.json()) as { hourly: UvCloudData["aq"]["hourly"] };
+    const fc = (await fcRes.json()) as { hourly: UvCloudData["fc"]["hourly"] };
+    return { aq: { hourly: aq.hourly }, fc: { hourly: fc.hourly } };
   });
 }
