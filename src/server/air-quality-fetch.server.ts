@@ -36,6 +36,7 @@ type UvCloudData = {
   aq: { hourly: any };
   fc: { hourly: any };
 };
+type OpenMeteoPollenData = { hourly: any };
 
 export async function fetchAirQualityPanelData(lat: number, lon: number): Promise<AqPanelData> {
   const key = `aq:${lat.toFixed(3)},${lon.toFixed(3)}`;
@@ -79,5 +80,24 @@ export async function fetchUvCloudPanelData(lat: number, lon: number): Promise<U
     const aq = (await aqRes.json()) as { hourly: UvCloudData["aq"]["hourly"] };
     const fc = (await fcRes.json()) as { hourly: UvCloudData["fc"]["hourly"] };
     return { aq: { hourly: aq.hourly }, fc: { hourly: fc.hourly } };
+  });
+}
+
+export async function fetchOpenMeteoPollenData(lat: number, lon: number): Promise<OpenMeteoPollenData> {
+  const key = `pollen:${lat.toFixed(3)},${lon.toFixed(3)}`;
+  return withCache<OpenMeteoPollenData>(key, async () => {
+    const url =
+      `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}` +
+      "&hourly=alder_pollen,birch_pollen,grass_pollen,mugwort_pollen,olive_pollen,ragweed_pollen" +
+      "&timezone=Europe%2FOslo&forecast_days=4";
+    const res = await fetchWithBackoff("air-quality", "open-meteo:pollen", url);
+    if (!res) {
+      const stale = getCached<OpenMeteoPollenData>(key);
+      if (stale) return stale;
+      throw new Error("Open-Meteo pollen er pauset eller i 429-backoff");
+    }
+    if (!res.ok) throw new Error(`Open-Meteo pollen ${res.status}`);
+    const j = (await res.json()) as OpenMeteoPollenData;
+    return { hourly: j.hourly };
   });
 }

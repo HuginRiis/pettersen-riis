@@ -5,6 +5,7 @@
 
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { loggedFetch } from "./api-call-log.server";
+import { isApiSourcePaused } from "./api-pause.server";
 
 const DEFAULT_TTL_MS = 30 * 60 * 1000; // 30 min
 const BACKOFF_MS = 60 * 60 * 1000; // ved 429 uten Retry-After: vent 1 time
@@ -23,6 +24,11 @@ function hostFromUrl(url: string): string {
   } catch {
     return url;
   }
+}
+
+function backoffKeysFromUrl(url: string): string[] {
+  const host = hostFromUrl(url);
+  return host.endsWith("open-meteo.com") ? ["open-meteo", host] : [host];
 }
 
 async function readKv<T>(key: string): Promise<T | null> {
@@ -67,23 +73,26 @@ async function setPersistentCache<T>(key: string, entry: CacheEntry<T>): Promise
 }
 
 export async function isBackedOff(url: string): Promise<boolean> {
-  const host = hostFromUrl(url);
-  const until = backoffUntil.get(host);
-  if (until && until > Date.now()) return true;
-  const entry = await readKv<BackoffEntry>(`${BACKOFF_PREFIX}${host}`);
-  if (entry?.until && entry.until > Date.now()) {
-    backoffUntil.set(host, entry.until);
-    return true;
+  const now = Date.now();
+  for (const key of backoffKeysFromUrl(url)) {
+    const until = backoffUntil.get(key);
+    if (until && until > now) return true;
+    const entry = await readKv<BackoffEntry>(`${BACKOFF_PREFIX}${key}`);
+    if (entry?.until && entry.until > now) {
+      backoffUntil.set(key, entry.until);
+      return true;
+    }
+    if (until && until <= now) backoffUntil.delete(key);
   }
-  if (until && until <= Date.now()) backoffUntil.delete(host);
-  return !!until && until > Date.now();
+  return false;
 }
 
 export function markBackoff(url: string, ms: number = BACKOFF_MS, endpoint?: string) {
-  const host = hostFromUrl(url);
   const until = Date.now() + ms;
-  backoffUntil.set(host, until);
-  void writeKv(`${BACKOFF_PREFIX}${host}`, { until, endpoint, status: 429 } satisfies BackoffEntry);
+  for (const key of backoffKeysFromUrl(url)) {
+    backoffUntil.set(key, until);
+    void writeKv(`${BACKOFF_PREFIX}${key}`, { until, endpoint, status: 429 } satisfies BackoffEntry);
+  }
 }
 
 /**
@@ -96,6 +105,8 @@ export async function fetchWithBackoff(
   url: string,
   init?: RequestInit,
 ): Promise<Response | null> {
+  if (await isApiSourcePaused("open-meteo")) return null;
+  if (source !== "open-meteo" && (await isApiSourcePaused(source))) return null;
   if (await isBackedOff(url)) return null;
   const res = await loggedFetch(source, endpoint, url, init);
   if (res.status === 429) {

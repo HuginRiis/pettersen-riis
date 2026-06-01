@@ -7,6 +7,7 @@ import {
 } from "@/server/api-pause.functions";
 
 const SOURCES: { id: string; label: string }[] = [
+  { id: "open-meteo", label: "Open-Meteo (total: pollen, UV, luftkvalitet)" },
   { id: "homey", label: "Homey" },
   { id: "gardena", label: "Gardena (Husqvarna)" },
   { id: "garmin", label: "Garmin Connect" },
@@ -24,6 +25,7 @@ const SOURCES: { id: string; label: string }[] = [
   { id: "posten", label: "Posten" },
   { id: "geoip", label: "GeoIP" },
   { id: "uv", label: "UV" },
+  { id: "air-quality", label: "Luftkvalitet" },
 ];
 
 export function ApiPausePanel() {
