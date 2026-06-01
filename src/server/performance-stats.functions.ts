@@ -55,6 +55,21 @@ export type PerfBottleneck = {
   detail: string;
 };
 
+export type PerfRuntime = {
+  heapUsedBytes: number;
+  heapTotalBytes: number;
+  rssBytes: number;
+  externalBytes: number;
+  arrayBuffersBytes: number;
+  cpuUserMs: number;
+  cpuSystemMs: number;
+  cpuSampleMs: number;
+  cpuPercent: number;
+  uptimeSec: number;
+  nodeVersion: string;
+  platform: string;
+};
+
 export type PerfSnapshot = {
   fetchedAt: string;
   db: {
@@ -73,6 +88,7 @@ export type PerfSnapshot = {
   };
   pgnet: { bytes: number; rows: number };
   push: PerfPushRow[];
+  runtime: PerfRuntime;
   bottlenecks: PerfBottleneck[];
 };
 
