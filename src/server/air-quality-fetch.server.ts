@@ -31,10 +31,10 @@ const CURRENT_FIELDS = [
   "uv_index_clear_sky",
 ].join(",");
 
-type AqPanelData = { hourly: Record<string, number[]>; current: Record<string, number | string> };
+type AqPanelData = { hourly: any; current: any };
 type UvCloudData = {
-  aq: { hourly: { time: string[]; uv_index: number[]; uv_index_clear_sky: number[] } };
-  fc: { hourly: { time: string[]; cloud_cover: number[] } };
+  aq: { hourly: any };
+  fc: { hourly: any };
 };
 
 export async function fetchAirQualityPanelData(lat: number, lon: number): Promise<AqPanelData> {
