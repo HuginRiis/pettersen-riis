@@ -46,6 +46,17 @@ export const Route = createFileRoute("/ytelse")({
 
 const PALETTE = ["#d4af37", "#22d3ee", "#a78bfa", "#34d399", "#fb923c", "#f472b6", "#60a5fa", "#facc15", "#f87171", "#10b981"];
 
+function fmtUptime(sec: number): string {
+  if (!sec) return "—";
+  if (sec < 60) return `${sec}s`;
+  const m = Math.floor(sec / 60);
+  if (m < 60) return `${m}m ${sec % 60}s`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}t ${m % 60}m`;
+  const d = Math.floor(h / 24);
+  return `${d}d ${h % 24}t`;
+}
+
 function prettyBytes(b: number): string {
   if (!b) return "0 B";
   const u = ["B", "kB", "MB", "GB"];
