@@ -223,8 +223,8 @@ export const SOURCE_SCHEDULES: Record<string, SourceSchedule> = {
   ai: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
   posten: { description: "hvert minutt (mail-delivery-push)", intervalMs: 60_000, trigger: "cron" },
   geoip: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
-  uv: { description: "hvert minutt (uv-push)", intervalMs: 60_000, trigger: "cron" },
-  "air-quality": { description: "ved bruk + hvert minutt (air-quality-push)", intervalMs: 60_000, trigger: "cron" },
+  uv: { description: "cache 30 min + 429-backoff (uv-push)", intervalMs: 30 * 60_000, trigger: "cache" },
+  "air-quality": { description: "cache 30 min + 429-backoff (panel + push)", intervalMs: 30 * 60_000, trigger: "cache" },
   other: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
 };
 
