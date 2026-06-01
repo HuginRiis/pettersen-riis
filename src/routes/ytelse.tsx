@@ -5,14 +5,17 @@ import {
   Activity,
   AlertTriangle,
   Bell,
+  Cpu,
   Database,
   Gauge,
   Loader2,
+  MemoryStick,
   RefreshCw,
   Server,
   Timer,
   Zap,
 } from "lucide-react";
+import { PageShell } from "@/components/PageShell";
 import {
   Bar,
   BarChart,
