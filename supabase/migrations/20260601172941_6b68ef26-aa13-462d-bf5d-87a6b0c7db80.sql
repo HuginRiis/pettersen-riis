@@ -1,0 +1,1 @@
+DELETE FROM public.notification_settings WHERE key LIKE 'open_meteo_backoff:%';
