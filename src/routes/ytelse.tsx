@@ -386,7 +386,7 @@ function YtelsePage() {
           </>
         )}
       </div>
-    </div>
+    </PageShell>
   );
 }
 
