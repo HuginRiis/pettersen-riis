@@ -3,16 +3,25 @@ import { useEffect, useState } from "react";
 import { PageShell, PageHero } from "@/components/PageShell";
 import { LastUpdated } from "@/components/LastUpdated";
 import { LivePollen } from "@/components/LivePollen";
+import { AirQualityPanel } from "@/components/AirQualityPanel";
 import { useUserLocation, UserLocationBar } from "@/hooks/use-user-location";
 import heroImg from "@/assets/got-pollen.jpg";
 
 export const Route = createFileRoute("/pollen")({
   head: () => ({
     meta: [
-      { title: "Pollenvarsel | House Pettersen Riis" },
-      { name: "description", content: "Pollenvarsel for Skien og hytta i Numedal — kalender, kurver og sesong-oversikt." },
-      { property: "og:title", content: "Pollenvarsel | House Pettersen Riis" },
-      { property: "og:description", content: "Pollenestimat for Skien og Lyngdal i Numedal." },
+      { title: "Luftkvalitet | House Pettersen Riis" },
+      {
+        name: "description",
+        content:
+          "Luftkvalitet for Skien og hytta i Numedal — pollen, UV, svevestøv, ozon og gasser time-for-time fra Open-Meteo.",
+      },
+      { property: "og:title", content: "Luftkvalitet | House Pettersen Riis" },
+      {
+        property: "og:description",
+        content:
+          "Pollen, UV, svevestøv (PM2.5/PM10), NO₂, O₃, SO₂, CO og mineralstøv — live fra Open-Meteo.",
+      },
     ],
   }),
   component: PollenPage,
