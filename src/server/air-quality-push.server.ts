@@ -165,8 +165,8 @@ async function fetchCurrent(lat: number, lon: number): Promise<Current | null> {
     const res = await fetchWithBackoff("air-quality", "open-meteo:air-quality", url, {
       headers: { "User-Agent": "riis.cc air quality push (agenda@riis.cc)" },
     });
-    if (!res) return getCached<Current>(key);
-    if (!res.ok) return getCached<Current>(key);
+    if (!res) throw new Error("Open-Meteo air-quality er i midlertidig backoff");
+    if (!res.ok) throw new Error(`Open-Meteo air-quality ${res.status}`);
     const json = (await res.json()) as { current?: Record<string, unknown> };
     return (json.current ?? null) as Current | null;
   }).catch((err) => {
