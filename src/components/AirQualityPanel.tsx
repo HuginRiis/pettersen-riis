@@ -1,5 +1,16 @@
 import { useEffect, useState } from "react";
 import { LastUpdated } from "@/components/LastUpdated";
+import { ChartZoom } from "@/components/ChartZoom";
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+  ResponsiveContainer,
+  ReferenceLine,
+} from "recharts";
 
 type Props = {
   lat: number;
@@ -399,35 +410,107 @@ function MiniChart({
   const peakIdx = values.indexOf(peak);
   const peakHour = times[peakIdx]?.slice(11, 16) ?? "";
   return (
-    <div>
-      <div className="flex items-baseline justify-between text-[10px]">
-        <span className="text-muted-foreground uppercase tracking-wider">{label}</span>
-        <span className="text-muted-foreground">
-          Topp <span style={{ color }}>{peak.toFixed(1)}</span> kl. {peakHour}
-        </span>
+    <ChartZoom
+      title={label}
+      subtitle={`Time-for-time · 24 timer · Topp ${peak.toFixed(1)} kl. ${peakHour}`}
+      detail={<DetailHourlyChart label={label} values={values} times={times} color={color} />}
+    >
+      <div>
+        <div className="flex items-baseline justify-between text-[10px]">
+          <span className="text-muted-foreground uppercase tracking-wider">{label}</span>
+          <span className="text-muted-foreground">
+            Topp <span style={{ color }}>{peak.toFixed(1)}</span> kl. {peakHour}
+          </span>
+        </div>
+        <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="w-full h-10 mt-1">
+          <defs>
+            <linearGradient id={`g-${label}`} x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0%" stopColor={color} stopOpacity="0.5" />
+              <stop offset="100%" stopColor={color} stopOpacity="0.05" />
+            </linearGradient>
+          </defs>
+          <path d={area} fill={`url(#g-${label})`} />
+          <path
+            d={`M${points}`}
+            fill="none"
+            stroke={color}
+            strokeWidth="0.8"
+            strokeLinejoin="round"
+            strokeLinecap="round"
+          />
+        </svg>
+        <div className="flex justify-between text-[9px] text-muted-foreground/70">
+          <span>{times[0]?.slice(11, 13)}</span>
+          <span>{times[Math.floor(times.length / 2)]?.slice(11, 13)}</span>
+          <span>{times[times.length - 1]?.slice(11, 13)}</span>
+        </div>
       </div>
-      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="w-full h-10 mt-1">
-        <defs>
-          <linearGradient id={`g-${label}`} x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0%" stopColor={color} stopOpacity="0.5" />
-            <stop offset="100%" stopColor={color} stopOpacity="0.05" />
-          </linearGradient>
-        </defs>
-        <path d={area} fill={`url(#g-${label})`} />
-        <path
-          d={`M${points}`}
-          fill="none"
-          stroke={color}
-          strokeWidth="0.8"
-          strokeLinejoin="round"
-          strokeLinecap="round"
-        />
-      </svg>
-      <div className="flex justify-between text-[9px] text-muted-foreground/70">
-        <span>{times[0]?.slice(11, 13)}</span>
-        <span>{times[Math.floor(times.length / 2)]?.slice(11, 13)}</span>
-        <span>{times[times.length - 1]?.slice(11, 13)}</span>
-      </div>
+    </ChartZoom>
+  );
+}
+
+function DetailHourlyChart({
+  label,
+  values,
+  times,
+  color,
+}: {
+  label: string;
+  values: number[];
+  times: string[];
+  color: string;
+}) {
+  const data = values.map((v, i) => ({
+    label: times[i]?.slice(11, 16) ?? "",
+    value: v,
+  }));
+  return (
+    <div className="h-72">
+      <ResponsiveContainer width="100%" height="100%">
+        <AreaChart data={data} margin={{ top: 8, right: 12, left: -8, bottom: 0 }}>
+          <defs>
+            <linearGradient id={`detail-${label}`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={color} stopOpacity={0.5} />
+              <stop offset="100%" stopColor={color} stopOpacity={0.03} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid stroke="#64748b" strokeOpacity={0.2} vertical={false} />
+          <XAxis
+            dataKey="label"
+            tick={{ fontSize: 10, fill: "#cbd5e1" }}
+            tickLine={false}
+            axisLine={false}
+            minTickGap={24}
+          />
+          <YAxis
+            tick={{ fontSize: 10, fill: "#cbd5e1" }}
+            tickLine={false}
+            axisLine={false}
+            width={32}
+          />
+          <ReferenceLine y={0} stroke="#94a3b8" strokeOpacity={0.3} />
+          <Tooltip
+            contentStyle={{
+              background: "#0f172a",
+              border: `1px solid ${color}`,
+              borderRadius: 8,
+              fontSize: 12,
+            }}
+            labelStyle={{ color: "#cbd5e1", fontSize: 11 }}
+            formatter={(v: any) => [Number(v).toFixed(1), label]}
+          />
+          <Area
+            type="monotone"
+            dataKey="value"
+            name={label}
+            stroke={color}
+            strokeWidth={2.5}
+            fill={`url(#detail-${label})`}
+            dot={{ r: 2, fill: color }}
+            activeDot={{ r: 5, stroke: "#0f172a", strokeWidth: 2 }}
+          />
+        </AreaChart>
+      </ResponsiveContainer>
     </div>
   );
 }
