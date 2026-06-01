@@ -22,6 +22,7 @@ import { useLastGood } from "@/hooks/use-last-good";
 import { PushTodayBadge, LightsOnBadge, WeatherDaysBadge, AlarmStateBadge, AlertsSeverityBadge, PowerVsYesterdayBadge, TrainingLast4WeeksBadge, UtgangsdorenLockBadge, StepsTodayBadge, MowerStatusBadge, BassengTempBadge, CurrentTempBadge, GarbageNextPickupBadge, GardenaStatusBadge, GardenaBatteryBadge, GardenaSignalBadge, RoborockStatusBadge, BudgetRemainingBadge, OkonomiBruktBadge, OkonomiInntektBadge, OkonomiBudsjettBadge, OkonomiOverskuddBadge, OkonomiSnittPrDagBadge, OkonomiIgjenPrDagBadge } from "@/components/HallBadges";
 import { useHeaderBadgeSettings, isBadgeVisible } from "@/hooks/use-header-badge-settings";
 import { useMenuVisibility, isMenuLinkVisible } from "@/hooks/use-menu-visibility";
+import { fetchOpenMeteoPollen } from "@/server/air-quality-fetch.functions";
 
 const BORGEN_COORD = { lat: 59.1789, lon: 9.5732 };
 const HYTTA_COORD = { lat: 59.8733, lon: 9.4297 };
@@ -874,14 +875,12 @@ const ALLERGEN_NAME: Record<Allergen, string> = {
 function useWorstPollen(lat: number, lon: number) {
   const [worst, setWorst] = useState<{ label: string; color: string; rank: number; allergen: Allergen } | null>(null);
   const [active, setActive] = useState<Array<{ allergen: Allergen; value: number; label: string; color: string; rank: number }>>([]);
+  const fetchPollen = useServerFn(fetchOpenMeteoPollen);
   useEffect(() => {
     let cancelled = false;
     async function load() {
       try {
-        const url = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&hourly=alder_pollen,birch_pollen,grass_pollen,mugwort_pollen&timezone=Europe%2FOslo&forecast_days=1`;
-        const res = await fetch(url);
-        if (!res.ok) return;
-        const data = await res.json();
+        const data = await fetchPollen({ data: { lat, lon } });
         const h = data?.hourly;
         if (!h?.time) return;
         const allergens: Allergen[] = ["alder", "birch", "grass", "mugwort"];
@@ -901,7 +900,7 @@ function useWorstPollen(lat: number, lon: number) {
     load();
     const id = setInterval(load, 60 * 60_000);
     return () => { cancelled = true; clearInterval(id); };
-  }, [lat, lon]);
+  }, [lat, lon, fetchPollen]);
   return { worst, active };
 }
 function AllergenGlyph({ allergen, size = 12, color }: { allergen: Allergen; size?: number; color?: string }) {
