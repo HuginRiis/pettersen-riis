@@ -363,7 +363,3 @@ export async function sendAirQualityTestNotification(
   return { sent, errors, recipient: targetWho, label: `${p.label} · ${m.label}` };
 }
 
-void locPrefix;
-function locPrefix() {
-  /* unused */
-}
