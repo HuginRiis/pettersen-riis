@@ -228,12 +228,14 @@ export async function processUvNotifications(): Promise<{
     reached_date_3: string | null;
     reached_date_6: string | null;
     reached_date_8: string | null;
+    uv_source?: "clear_sky" | "with_clouds" | null;
   }>) {
     checked++;
     const lead = typeof p.lead_minutes === "number" ? p.lead_minutes : LEAD_MINUTES;
-    const uv = await fetchUvAhead(p.lat, p.lon, lead);
+    const source = p.uv_source === "with_clouds" ? "with_clouds" : "clear_sky";
+    const uv = await fetchUvAhead(p.lat, p.lon, lead, source);
     // For fall-deteksjon vil vi vite UV NÅ (lead=0), ikke fremover
-    const uvNow = lead === 0 ? uv : await fetchUvAhead(p.lat, p.lon, 0);
+    const uvNow = lead === 0 ? uv : await fetchUvAhead(p.lat, p.lon, 0, source);
     if (uv == null) {
       skipped++;
       continue;
