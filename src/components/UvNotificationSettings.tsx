@@ -24,6 +24,7 @@ type UvPref = {
   notify_fall_3: boolean;
   notify_fall_6: boolean;
   notify_fall_8: boolean;
+  uv_source: "clear_sky" | "with_clouds";
 };
 
 
@@ -82,7 +83,7 @@ export function UvNotificationSettings() {
       const { data, error } = await supabase
         .from("uv_notification_prefs" as never)
         .select(
-          "id, location, label, enabled, recipient, fall_recipient, lead_minutes, notify_fall_3, notify_fall_6, notify_fall_8",
+          "id, location, label, enabled, recipient, fall_recipient, lead_minutes, notify_fall_3, notify_fall_6, notify_fall_8, uv_source",
         )
         .order("location");
 
@@ -242,6 +243,29 @@ export function UvNotificationSettings() {
                   </SelectContent>
                 </Select>
               </div>
+
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground shrink-0">UV-kilde</span>
+                <Select
+                  value={p.uv_source ?? "clear_sky"}
+                  disabled={!p.enabled || saving === p.id}
+                  onValueChange={(v) =>
+                    update(p.id, { uv_source: v as "clear_sky" | "with_clouds" })
+                  }
+                >
+                  <SelectTrigger className="h-8 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="clear_sky">Skyfri himmel (konservativ)</SelectItem>
+                    <SelectItem value="with_clouds">Med skydekke (realistisk)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <p className="text-[10px] text-muted-foreground -mt-1 leading-snug">
+                Skyfri varsler oftere fordi den ignorerer skydekke. Med skydekke
+                bruker Open-Meteo sin prognose for hvor mye skyene faktisk demper UV-en.
+              </p>
 
               <div className="rounded-md border border-border/50 bg-muted/20 p-2 space-y-2">
                 <div className="text-[11px] text-muted-foreground">

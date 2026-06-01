@@ -14,6 +14,7 @@ import { FavoriteZonesPanel } from "@/components/FavoriteZonesPanel";
 import { MetAlertNotificationSettings } from "@/components/MetAlertNotificationSettings";
 import { LightIdleNotificationSettings } from "@/components/LightIdleNotificationSettings";
 import { UvNotificationSettings } from "@/components/UvNotificationSettings";
+import { AirQualityNotificationSettings } from "@/components/AirQualityNotificationSettings";
 import { WeatherNotificationSettings } from "@/components/WeatherNotificationSettings";
 import { MailDeliveryNotificationSettings } from "@/components/MailDeliveryNotificationSettings";
 import { GarminNotificationSettings } from "@/components/GarminNotificationSettings";
@@ -80,6 +81,7 @@ const TOC_ITEMS: { id: string; label: string; emoji: string }[] = [
   { id: "sec-basseng", label: "Basseng — temp-endring", emoji: "🏊" },
   { id: "sec-basseng-auto", label: "Basseng — automatikk (stue/watt/varmepumpe)", emoji: "♨️" },
   { id: "sec-uv", label: "UV / Solkrem", emoji: "🧴" },
+  { id: "sec-luftkvalitet", label: "Luftkvalitet / forurensning", emoji: "💨" },
   { id: "sec-vaer", label: "Vær push", emoji: "🪶" },
   { id: "sec-lys", label: "Lys på", emoji: "💡" },
   { id: "sec-post", label: "Posten", emoji: "📬" },
@@ -180,6 +182,7 @@ function PushSettingsPage() {
       <SettingsBox id="sec-basseng" title="🏊 Basseng — varsel ved temperaturendring"><BassengNotificationSettings /></SettingsBox>
       <SettingsBox id="sec-basseng-auto" title="♨️ Basseng — automatikk (stue → bryter av + varmepumpe på)"><BassengAutomationSettings /></SettingsBox>
       <SettingsBox id="sec-uv" title="🧴 Solkrem-varsler — UV"><UvNotificationSettings /></SettingsBox>
+      <SettingsBox id="sec-luftkvalitet" title="💨 Luftkvalitet — forurensning, svevestøv, gasser"><AirQualityNotificationSettings /></SettingsBox>
       <SettingsBox id="sec-vaer" title="🪶 Værvaktens Ravner — Push-varsler"><WeatherNotificationSettings /></SettingsBox>
       <SettingsBox id="sec-lys" title="💡 Lys på uten bevegelse"><LightIdleNotificationSettings /></SettingsBox>
       <SettingsBox id="sec-post" title="📬 Postlevering — Posten"><MailDeliveryNotificationSettings /></SettingsBox>
