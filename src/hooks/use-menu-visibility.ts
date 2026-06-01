@@ -21,7 +21,7 @@ export const MENU_VISIBILITY_KEY = "menu_visibility";
 export const MENU_LINK_DEFS: { to: string; label: string }[] = [
   { to: "/", label: "Hjem" },
   { to: "/var", label: "Vær" },
-  { to: "/pollen", label: "Pollen" },
+  { to: "/pollen", label: "Luftkvalitet" },
   { to: "/turer", label: "Ferden" },
   { to: "/agenda", label: "Søppel, bursdager og meldinger" },
   { to: "/push-varslinger", label: "Innstillinger" },

@@ -123,7 +123,7 @@ const ROUTE_ICON_COLOR: Partial<Record<RoutePath, string>> = {
 const navLinks: NavLink[] = [
   { to: "/", label: "Hjem", public: true },
   { to: "/var", label: "Vær", public: true },
-  { to: "/pollen", label: "Pollen", public: true },
+  { to: "/pollen", label: "Luftkvalitet", public: true },
   { to: "/turer", label: "Ferden", public: true },
   { to: "/agenda", label: "Søppel, bursdager og meldinger" },
   { to: "/push-varslinger", label: "Innstillinger" },
