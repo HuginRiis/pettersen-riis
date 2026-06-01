@@ -159,59 +159,24 @@ async function fetchUvAhead(
   leadMinutes = LEAD_MINUTES,
   source: "clear_sky" | "with_clouds" = "clear_sky",
 ): Promise<number | null> {
-  const key = `uv-ahead:${source}:${lat.toFixed(3)},${lon.toFixed(3)}:${leadMinutes}`;
-  return withCache<number | null>(key, async () => {
-    if (source === "with_clouds") {
-      // Open-Meteo gir UV justert for prognosert skydekke
-      const url =
-        `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}` +
-        `&hourly=uv_index&timezone=Europe%2FOslo&forecast_days=2`;
-      const res = await fetchWithBackoff("uv", "open-meteo:uv", url);
-      if (!res) throw new Error("Open-Meteo UV er i midlertidig backoff");
-      if (!res.ok) throw new Error(`Open-Meteo UV ${res.status}`);
-      const json = (await res.json()) as {
-        hourly?: { time?: string[]; uv_index?: number[] };
-      };
-      const times = json.hourly?.time ?? [];
-      const values = json.hourly?.uv_index ?? [];
-      if (!times.length) return null;
-      const target = Date.now() + leadMinutes * 60 * 1000;
-      let best: { uv: number; diff: number } | null = null;
-      for (let i = 0; i < times.length; i++) {
-        const uv = values[i];
-        if (typeof uv !== "number") continue;
-        const t = new Date(times[i]).getTime();
-        const diff = Math.abs(t - target);
-        if (!best || diff < best.diff) best = { uv, diff };
-        if (t - target > 4 * 3600 * 1000 && best) break;
-      }
-      return best?.uv ?? null;
-    }
-    const url = `https://api.met.no/weatherapi/locationforecast/2.0/complete?lat=${lat}&lon=${lon}`;
-    const res = await loggedFetch("uv", "met:locationforecast", url, {
-      headers: { "User-Agent": "riis.cc agenda push (agenda@riis.cc)" },
-    });
-    if (!res.ok) return null;
-    const json = (await res.json()) as {
-      properties?: { timeseries?: Array<{ time: string; data?: { instant?: { details?: { ultraviolet_index_clear_sky?: number } } } }> };
-    };
-    const series = json.properties?.timeseries ?? [];
-    if (!series.length) return null;
+  try {
+    const hourly = await fetchUvHourly(lat, lon, source);
+    if (!hourly || !hourly.times.length) return null;
     const target = Date.now() + leadMinutes * 60 * 1000;
     let best: { uv: number; diff: number } | null = null;
-    for (const e of series) {
-      const uv = e?.data?.instant?.details?.ultraviolet_index_clear_sky;
+    for (let i = 0; i < hourly.times.length; i++) {
+      const uv = hourly.values[i];
       if (typeof uv !== "number") continue;
-      const t = new Date(e.time).getTime();
+      const t = new Date(hourly.times[i]).getTime();
       const diff = Math.abs(t - target);
       if (!best || diff < best.diff) best = { uv, diff };
       if (t - target > 4 * 3600 * 1000 && best) break;
     }
     return best?.uv ?? null;
-  }).catch((err) => {
+  } catch (err) {
     console.error("[uv-push] fetch failed", err);
-    return getCached<number | null>(key);
-  });
+    return null;
+  }
 }
 
 async function sendOne(
