@@ -14,6 +14,77 @@ import { logPushSend } from "./push-log.server";
 import { buildSubscriptionWhoOr } from "./push-recipients";
 import { loggedFetch } from "./api-call-log.server";
 import { fetchWithBackoff, withCache, getCached } from "./open-meteo-cache.server";
+import { isApiSourcePaused } from "./api-pause.server";
+
+type UvHourly = { times: string[]; values: number[] };
+
+/**
+ * Henter HELE UV-timeserien for et sted én gang per 30 min, slik at alle
+ * lokasjoner/lead-tider deler samme cache-treff og vi unngår å hamre
+ * Open-Meteo / MET. Respekterer pause-flagget "uv" + (for Open-Meteo)
+ * "open-meteo".
+ */
+async function fetchUvHourly(
+  lat: number,
+  lon: number,
+  source: "clear_sky" | "with_clouds",
+): Promise<UvHourly | null> {
+  const key = `uv-hourly:${source}:${lat.toFixed(3)},${lon.toFixed(3)}`;
+  return withCache<UvHourly | null>(key, async () => {
+    // Felles pause-flagg for hele UV-pipeline
+    if (await isApiSourcePaused("uv")) {
+      const stale = getCached<UvHourly | null>(key);
+      if (stale) return stale;
+      return null;
+    }
+    if (source === "with_clouds") {
+      const url =
+        `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}` +
+        `&hourly=uv_index&timezone=Europe%2FOslo&forecast_days=2`;
+      const res = await fetchWithBackoff("uv", "open-meteo:uv", url);
+      if (!res) {
+        const stale = getCached<UvHourly | null>(key);
+        if (stale) return stale;
+        return null;
+      }
+      if (!res.ok) throw new Error(`Open-Meteo UV ${res.status}`);
+      const json = (await res.json()) as {
+        hourly?: { time?: string[]; uv_index?: number[] };
+      };
+      return {
+        times: json.hourly?.time ?? [],
+        values: (json.hourly?.uv_index ?? []) as number[],
+      };
+    }
+    const url = `https://api.met.no/weatherapi/locationforecast/2.0/complete?lat=${lat}&lon=${lon}`;
+    const res = await loggedFetch("uv", "met:locationforecast", url, {
+      headers: { "User-Agent": "riis.cc agenda push (agenda@riis.cc)" },
+    });
+    if (!res.ok) {
+      const stale = getCached<UvHourly | null>(key);
+      if (stale) return stale;
+      return null;
+    }
+    const json = (await res.json()) as {
+      properties?: {
+        timeseries?: Array<{
+          time: string;
+          data?: { instant?: { details?: { ultraviolet_index_clear_sky?: number } } };
+        }>;
+      };
+    };
+    const series = json.properties?.timeseries ?? [];
+    const times: string[] = [];
+    const values: number[] = [];
+    for (const e of series) {
+      const uv = e?.data?.instant?.details?.ultraviolet_index_clear_sky;
+      if (typeof uv !== "number") continue;
+      times.push(e.time);
+      values.push(uv);
+    }
+    return { times, values };
+  });
+}
 
 const VAPID_PUBLIC = process.env.VAPID_PUBLIC_KEY!;
 const VAPID_PRIVATE = process.env.VAPID_PRIVATE_KEY!;
