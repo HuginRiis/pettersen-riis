@@ -111,11 +111,10 @@ export function UvCloudPanel({ lat, lon, title, subtitle }: Props) {
       }
     }
     load();
-    const id = setInterval(load, 30 * 60 * 1000);
     return () => {
       cancelled = true;
-      clearInterval(id);
     };
+
   }, [lat, lon, fetchUvCloud]);
 
   const stats = useMemo(() => {
