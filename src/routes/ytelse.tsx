@@ -167,6 +167,47 @@ function YtelsePage() {
               <KpiCard icon={Bell} color="#fb923c" label="Push i dag" value={snap.push.reduce((s, r) => s + r.today, 0).toString()} sub={`${snap.push.reduce((s, r) => s + r.week, 0)} siste 7d`} />
             </div>
 
+            {/* Runtime: RAM + CPU på serverless-workeren */}
+            <section className="panel rounded-lg p-4">
+              <h2 className="text-display tracking-[0.2em] uppercase text-sm text-primary mb-3 flex items-center gap-2">
+                <Cpu size={16} /> Worker-prosess (denne forespørselen)
+              </h2>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <KpiCard
+                  icon={MemoryStick}
+                  color="#a78bfa"
+                  label="Heap brukt"
+                  value={prettyBytes(snap.runtime.heapUsedBytes)}
+                  sub={`av ${prettyBytes(snap.runtime.heapTotalBytes)} (${snap.runtime.heapTotalBytes ? Math.round((snap.runtime.heapUsedBytes / snap.runtime.heapTotalBytes) * 100) : 0}%)`}
+                />
+                <KpiCard
+                  icon={MemoryStick}
+                  color="#34d399"
+                  label="RSS-minne"
+                  value={prettyBytes(snap.runtime.rssBytes)}
+                  sub={`extern ${prettyBytes(snap.runtime.externalBytes)}`}
+                />
+                <KpiCard
+                  icon={Cpu}
+                  color="#fb923c"
+                  label="CPU last"
+                  value={`${snap.runtime.cpuPercent}%`}
+                  sub={`${snap.runtime.cpuUserMs.toFixed(1)} ms user · ${snap.runtime.cpuSystemMs.toFixed(1)} ms sys`}
+                />
+                <KpiCard
+                  icon={Server}
+                  color="#22d3ee"
+                  label="Uptime"
+                  value={fmtUptime(snap.runtime.uptimeSec)}
+                  sub={`${snap.runtime.nodeVersion || "—"} · ${snap.runtime.platform || "edge"}`}
+                />
+              </div>
+              <p className="text-[10px] text-muted-foreground mt-2 italic">
+                Måles per kall i den serverless workeren som svarte. Cloudflare gjenbruker isolater, så RAM/uptime gjenspeiler aktiv instans — ikke hele appen.
+              </p>
+            </section>
+
+
             {/* Flaskehalser */}
             <section className="panel rounded-lg p-4">
               <h2 className="text-display tracking-[0.2em] uppercase text-sm text-primary mb-3 flex items-center gap-2">
