@@ -44,6 +44,7 @@ export type ApiSource =
   | "ai"
   | "posten"
   | "geoip"
+  | "open-meteo"
   | "uv"
   | "air-quality"
   | "other";
@@ -223,6 +224,7 @@ export const SOURCE_SCHEDULES: Record<string, SourceSchedule> = {
   ai: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
   posten: { description: "hvert minutt (mail-delivery-push)", intervalMs: 60_000, trigger: "cron" },
   geoip: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
+  "open-meteo": { description: "master-pause for pollen, UV og luftkvalitet", intervalMs: null, trigger: "cache" },
   uv: { description: "cache 30 min + 429-backoff (uv-push)", intervalMs: 30 * 60_000, trigger: "cache" },
   "air-quality": { description: "cache 30 min + 429-backoff (panel + push)", intervalMs: 30 * 60_000, trigger: "cache" },
   other: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
