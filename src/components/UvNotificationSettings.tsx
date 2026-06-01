@@ -244,6 +244,29 @@ export function UvNotificationSettings() {
                 </Select>
               </div>
 
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground shrink-0">UV-kilde</span>
+                <Select
+                  value={p.uv_source ?? "clear_sky"}
+                  disabled={!p.enabled || saving === p.id}
+                  onValueChange={(v) =>
+                    update(p.id, { uv_source: v as "clear_sky" | "with_clouds" })
+                  }
+                >
+                  <SelectTrigger className="h-8 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="clear_sky">Skyfri himmel (konservativ)</SelectItem>
+                    <SelectItem value="with_clouds">Med skydekke (realistisk)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <p className="text-[10px] text-muted-foreground -mt-1 leading-snug">
+                Skyfri varsler oftere fordi den ignorerer skydekke. Med skydekke
+                bruker Open-Meteo sin prognose for hvor mye skyene faktisk demper UV-en.
+              </p>
+
               <div className="rounded-md border border-border/50 bg-muted/20 p-2 space-y-2">
                 <div className="text-[11px] text-muted-foreground">
                   Varsle også når UV faller under nivå (etter at nivået faktisk er nådd i dag):
