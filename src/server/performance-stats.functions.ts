@@ -97,8 +97,13 @@ export const getPerformanceSnapshot = createServerFn({ method: "GET" }).handler(
     const sb = supabaseAdmin as any;
 
     // Runtime sample: measure CPU over ~80 ms window
-    const cpuStart = (typeof process !== "undefined" && (process as any).cpuUsage) ? process.cpuUsage() : null;
-    const tStart = Date.now();
+    let cpuStart: ReturnType<typeof process.cpuUsage> | null = null;
+    let tStart = Date.now();
+    try {
+      if (typeof process !== "undefined" && (process as any).cpuUsage) {
+        cpuStart = process.cpuUsage();
+      }
+    } catch { /* cpuUsage ikke tilgjengelig i Worker */ }
 
     const [dbRes, hourlyRes, summaryRes, pgnetRes] = await Promise.allSettled([
       sb.rpc("get_db_usage_stats"),
