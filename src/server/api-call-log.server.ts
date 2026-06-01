@@ -45,6 +45,7 @@ export type ApiSource =
   | "posten"
   | "geoip"
   | "uv"
+  | "air-quality"
   | "other";
 
 export interface LogEntry {
@@ -223,6 +224,7 @@ export const SOURCE_SCHEDULES: Record<string, SourceSchedule> = {
   posten: { description: "hvert minutt (mail-delivery-push)", intervalMs: 60_000, trigger: "cron" },
   geoip: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
   uv: { description: "hvert minutt (uv-push)", intervalMs: 60_000, trigger: "cron" },
+  "air-quality": { description: "ved bruk + hvert minutt (air-quality-push)", intervalMs: 60_000, trigger: "cron" },
   other: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
 };
 

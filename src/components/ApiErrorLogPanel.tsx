@@ -20,6 +20,7 @@ const SOURCE_LABELS: Record<string, string> = {
   posten: "Posten",
   geoip: "GeoIP",
   uv: "UV",
+  "air-quality": "Luftkvalitet",
   other: "Andre",
 };
 
