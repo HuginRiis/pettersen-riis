@@ -96,8 +96,8 @@ async function fetchUvAhead(
         `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}` +
         `&hourly=uv_index&timezone=Europe%2FOslo&forecast_days=2`;
       const res = await fetchWithBackoff("uv", "open-meteo:uv", url);
-      if (!res) return getCached<number | null>(key);
-      if (!res.ok) return getCached<number | null>(key);
+      if (!res) throw new Error("Open-Meteo UV er i midlertidig backoff");
+      if (!res.ok) throw new Error(`Open-Meteo UV ${res.status}`);
       const json = (await res.json()) as {
         hourly?: { time?: string[]; uv_index?: number[] };
       };
