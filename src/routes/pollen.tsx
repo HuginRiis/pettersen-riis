@@ -137,13 +137,20 @@ function PollenPage() {
     <PageShell>
       <PageHero
         eyebrow="Skien & Numedal · Norge"
-        title="Pollenvarsel"
-        subtitle="Live time-for-time pollennivå — oppdateres hver time."
+        title="Luftkvalitet"
+        subtitle="Pollen, UV, svevestøv, ozon og gasser — time-for-time fra Open-Meteo."
         image={heroImg}
       />
 
       <section className="container mx-auto px-4 pt-6 flex flex-col items-center gap-3">
-        <LastUpdated label="Pollen (sidelast)" timestamp={loadedAt} />
+        <LastUpdated label="Luftkvalitet (sidelast)" timestamp={loadedAt} />
+        <p className="max-w-2xl text-center text-xs text-muted-foreground leading-relaxed">
+          Samlet oversikt over alt som påvirker lufta du puster inn: pollen
+          (bjørk, gress, or, burot m.fl.), UV-stråling, svevestøv (PM2.5 og
+          PM10), bakkenært ozon (O₃), nitrogendioksid (NO₂), svoveldioksid
+          (SO₂), karbonmonoksid (CO) og mineralstøv. Alle målinger hentes live
+          fra Open-Meteo og oppdateres hver halvtime.
+        </p>
         <div className="panel rounded-md px-4 py-2 flex items-center gap-2 text-xs">
           <span className="text-primary">⚔</span>
           <span className="text-muted-foreground">
@@ -158,11 +165,36 @@ function PollenPage() {
       </section>
 
       <section className="container mx-auto px-4 py-10 space-y-12">
+        {/* Air quality — AQI, UV, dust, gases */}
+        <div>
+          <SectionHeader
+            eyebrow="Live luftkvalitet · Open-Meteo"
+            title="Akkurat nå i lufta"
+          />
+          <div className="grid lg:grid-cols-2 gap-6 mt-6">
+            {userLoc.ready && (
+              <AirQualityPanel
+                key={`aq-${userLoc.active.lat}-${userLoc.active.lon}`}
+                lat={userLoc.active.lat}
+                lon={userLoc.active.lon}
+                title={userLoc.active.label}
+                subtitle="AQI, UV, svevestøv, ozon og gasser"
+              />
+            )}
+            <AirQualityPanel
+              lat={59.91}
+              lon={9.07}
+              title="Hytta · Lyngdal i Numedal"
+              subtitle="Renere fjell-luft — sammenlign med byen"
+            />
+          </div>
+        </div>
+
         {/* LIVE — what's flying right now, hourly forecast */}
         <div>
           <SectionHeader
             eyebrow="Live målinger · Open-Meteo"
-            title="Hva som flyr akkurat nå"
+            title="Pollen — hva som flyr akkurat nå"
           />
           <div className="grid lg:grid-cols-2 gap-6 mt-6">
             {userLoc.ready && (
