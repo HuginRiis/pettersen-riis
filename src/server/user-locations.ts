@@ -281,11 +281,12 @@ export const reverseGeocode = createServerFn({ method: "POST" })
             gUrl.searchParams.set("count", "10");
             gUrl.searchParams.set("language", "no");
             gUrl.searchParams.set("countryCode", a.country_code?.toUpperCase() || "NO");
-            const gRes = await fetch(gUrl.toString(), {
+            const { fetchWithBackoff } = await import("./open-meteo-cache.server");
+            const gRes = await fetchWithBackoff("geoip", "open-meteo:geocoding", gUrl.toString(), {
               headers: { Accept: "application/json" },
               signal: AbortSignal.timeout(6000),
             });
-            if (gRes.ok) {
+            if (gRes?.ok) {
               const gJson = (await gRes.json()) as any;
               const results: any[] = Array.isArray(gJson?.results) ? gJson.results : [];
               // Velg det treffet som er nærmest GPS-punktet
