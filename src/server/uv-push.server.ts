@@ -77,15 +77,42 @@ const LEVELS = [
 
 
 /**
- * Henter forventet UV ~`leadMinutes` frem i tid fra MET.no, slik at vi
- * kan varsle FØR terskelen faktisk nås.
+ * Henter forventet UV ~`leadMinutes` frem i tid. `source` velger om vi skal
+ * bruke MET.no `ultraviolet_index_clear_sky` (skyfri himmel, mest konservativ)
+ * eller Open-Meteo `uv_index` (justert for prognosert skydekke).
  */
 async function fetchUvAhead(
   lat: number,
   lon: number,
   leadMinutes = LEAD_MINUTES,
+  source: "clear_sky" | "with_clouds" = "clear_sky",
 ): Promise<number | null> {
   try {
+    if (source === "with_clouds") {
+      // Open-Meteo gir UV justert for prognosert skydekke
+      const url =
+        `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}` +
+        `&hourly=uv_index&timezone=Europe%2FOslo&forecast_days=2`;
+      const res = await loggedFetch("uv", "open-meteo:uv", url);
+      if (!res.ok) return null;
+      const json = (await res.json()) as {
+        hourly?: { time?: string[]; uv_index?: number[] };
+      };
+      const times = json.hourly?.time ?? [];
+      const values = json.hourly?.uv_index ?? [];
+      if (!times.length) return null;
+      const target = Date.now() + leadMinutes * 60 * 1000;
+      let best: { uv: number; diff: number } | null = null;
+      for (let i = 0; i < times.length; i++) {
+        const uv = values[i];
+        if (typeof uv !== "number") continue;
+        const t = new Date(times[i]).getTime();
+        const diff = Math.abs(t - target);
+        if (!best || diff < best.diff) best = { uv, diff };
+        if (t - target > 4 * 3600 * 1000 && best) break;
+      }
+      return best?.uv ?? null;
+    }
     const url = `https://api.met.no/weatherapi/locationforecast/2.0/complete?lat=${lat}&lon=${lon}`;
     const res = await loggedFetch("uv", "met:locationforecast", url, {
       headers: { "User-Agent": "riis.cc agenda push (agenda@riis.cc)" },
@@ -108,7 +135,7 @@ async function fetchUvAhead(
     }
     return best?.uv ?? null;
   } catch (err) {
-    console.error("[uv-push] met.no fetch failed", err);
+    console.error("[uv-push] fetch failed", err);
     return null;
   }
 }
