@@ -97,8 +97,13 @@ export const getPerformanceSnapshot = createServerFn({ method: "GET" }).handler(
     const sb = supabaseAdmin as any;
 
     // Runtime sample: measure CPU over ~80 ms window
-    const cpuStart = (typeof process !== "undefined" && (process as any).cpuUsage) ? process.cpuUsage() : null;
-    const tStart = Date.now();
+    let cpuStart: ReturnType<typeof process.cpuUsage> | null = null;
+    let tStart = Date.now();
+    try {
+      if (typeof process !== "undefined" && (process as any).cpuUsage) {
+        cpuStart = process.cpuUsage();
+      }
+    } catch { /* cpuUsage ikke tilgjengelig i Worker */ }
 
     const [dbRes, hourlyRes, summaryRes, pgnetRes] = await Promise.allSettled([
       sb.rpc("get_db_usage_stats"),
@@ -334,7 +339,12 @@ export const getPerformanceSnapshot = createServerFn({ method: "GET" }).handler(
     };
     try {
       const mem = (typeof process !== "undefined" && process.memoryUsage) ? process.memoryUsage() : null;
-      const cpuEnd = (cpuStart && (process as any).cpuUsage) ? process.cpuUsage(cpuStart) : null;
+      let cpuEnd: ReturnType<typeof process.cpuUsage> | null = null;
+      try {
+        if (cpuStart && (process as any).cpuUsage) {
+          cpuEnd = process.cpuUsage(cpuStart);
+        }
+      } catch { /* cpuUsage ikke tilgjengelig i Worker */ }
       const sampleMs = Math.max(1, Date.now() - tStart);
       const userMs = cpuEnd ? cpuEnd.user / 1000 : 0;
       const sysMs = cpuEnd ? cpuEnd.system / 1000 : 0;
