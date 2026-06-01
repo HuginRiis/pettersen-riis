@@ -164,11 +164,10 @@ export function AirQualityPanel({ lat, lon, title, subtitle }: Props) {
       }
     }
     load();
-    const id = setInterval(load, 30 * 60 * 1000);
     return () => {
       cancelled = true;
-      clearInterval(id);
     };
+
   }, [lat, lon, fetchAq]);
 
   return (
