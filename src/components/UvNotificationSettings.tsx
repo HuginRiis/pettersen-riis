@@ -24,6 +24,7 @@ type UvPref = {
   notify_fall_3: boolean;
   notify_fall_6: boolean;
   notify_fall_8: boolean;
+  uv_source: "clear_sky" | "with_clouds";
 };
 
 
@@ -82,7 +83,7 @@ export function UvNotificationSettings() {
       const { data, error } = await supabase
         .from("uv_notification_prefs" as never)
         .select(
-          "id, location, label, enabled, recipient, fall_recipient, lead_minutes, notify_fall_3, notify_fall_6, notify_fall_8",
+          "id, location, label, enabled, recipient, fall_recipient, lead_minutes, notify_fall_3, notify_fall_6, notify_fall_8, uv_source",
         )
         .order("location");
 
