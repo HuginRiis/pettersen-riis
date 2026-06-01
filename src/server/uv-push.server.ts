@@ -13,6 +13,7 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { logPushSend } from "./push-log.server";
 import { buildSubscriptionWhoOr } from "./push-recipients";
 import { loggedFetch } from "./api-call-log.server";
+import { fetchWithBackoff, withCache, getCached } from "./open-meteo-cache.server";
 
 const VAPID_PUBLIC = process.env.VAPID_PUBLIC_KEY!;
 const VAPID_PRIVATE = process.env.VAPID_PRIVATE_KEY!;
@@ -87,14 +88,16 @@ async function fetchUvAhead(
   leadMinutes = LEAD_MINUTES,
   source: "clear_sky" | "with_clouds" = "clear_sky",
 ): Promise<number | null> {
-  try {
+  const key = `uv-ahead:${source}:${lat.toFixed(3)},${lon.toFixed(3)}:${leadMinutes}`;
+  return withCache<number | null>(key, async () => {
     if (source === "with_clouds") {
       // Open-Meteo gir UV justert for prognosert skydekke
       const url =
         `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}` +
         `&hourly=uv_index&timezone=Europe%2FOslo&forecast_days=2`;
-      const res = await loggedFetch("uv", "open-meteo:uv", url);
-      if (!res.ok) return null;
+      const res = await fetchWithBackoff("uv", "open-meteo:uv", url);
+      if (!res) return getCached<number | null>(key);
+      if (!res.ok) return getCached<number | null>(key);
       const json = (await res.json()) as {
         hourly?: { time?: string[]; uv_index?: number[] };
       };
@@ -134,10 +137,10 @@ async function fetchUvAhead(
       if (t - target > 4 * 3600 * 1000 && best) break;
     }
     return best?.uv ?? null;
-  } catch (err) {
+  }).catch((err) => {
     console.error("[uv-push] fetch failed", err);
-    return null;
-  }
+    return getCached<number | null>(key);
+  });
 }
 
 async function sendOne(
