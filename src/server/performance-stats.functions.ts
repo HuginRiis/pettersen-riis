@@ -326,6 +326,45 @@ export const getPerformanceSnapshot = createServerFn({ method: "GET" }).handler(
       });
     }
 
+    // Runtime: worker-prosess minne + CPU samplet over kort vindu
+    let runtime: PerfRuntime = {
+      heapUsedBytes: 0, heapTotalBytes: 0, rssBytes: 0, externalBytes: 0, arrayBuffersBytes: 0,
+      cpuUserMs: 0, cpuSystemMs: 0, cpuSampleMs: 0, cpuPercent: 0,
+      uptimeSec: 0, nodeVersion: "", platform: "",
+    };
+    try {
+      const mem = (typeof process !== "undefined" && process.memoryUsage) ? process.memoryUsage() : null;
+      const cpuEnd = (cpuStart && (process as any).cpuUsage) ? process.cpuUsage(cpuStart) : null;
+      const sampleMs = Math.max(1, Date.now() - tStart);
+      const userMs = cpuEnd ? cpuEnd.user / 1000 : 0;
+      const sysMs = cpuEnd ? cpuEnd.system / 1000 : 0;
+      runtime = {
+        heapUsedBytes: Number(mem?.heapUsed ?? 0),
+        heapTotalBytes: Number(mem?.heapTotal ?? 0),
+        rssBytes: Number(mem?.rss ?? 0),
+        externalBytes: Number((mem as any)?.external ?? 0),
+        arrayBuffersBytes: Number((mem as any)?.arrayBuffers ?? 0),
+        cpuUserMs: Math.round(userMs * 100) / 100,
+        cpuSystemMs: Math.round(sysMs * 100) / 100,
+        cpuSampleMs: sampleMs,
+        cpuPercent: Math.round(((userMs + sysMs) / sampleMs) * 100),
+        uptimeSec: typeof process !== "undefined" && process.uptime ? Math.round(process.uptime()) : 0,
+        nodeVersion: typeof process !== "undefined" ? (process.version ?? "") : "",
+        platform: typeof process !== "undefined" ? (process.platform ?? "") : "",
+      };
+    } catch (e) {
+      console.warn("[perf] runtime sample failed", e);
+    }
+
+    if (runtime.heapUsedBytes && runtime.heapTotalBytes && runtime.heapUsedBytes / runtime.heapTotalBytes > 0.9) {
+      bottlenecks.push({
+        level: "warn",
+        area: "Minne",
+        title: "Worker-heap nær full",
+        detail: `${prettyBytes(runtime.heapUsedBytes)} av ${prettyBytes(runtime.heapTotalBytes)} brukt. Reduser store responser eller cache.`,
+      });
+    }
+
     return {
       fetchedAt: new Date().toISOString(),
       db: { bytes: dbBytes, limitBytes, tables },
@@ -333,6 +372,7 @@ export const getPerformanceSnapshot = createServerFn({ method: "GET" }).handler(
       api: { rows: apiRows, hourly, total24h, errors24h, avgPerHour, peakHourTotal },
       pgnet,
       push,
+      runtime,
       bottlenecks,
     };
   },
