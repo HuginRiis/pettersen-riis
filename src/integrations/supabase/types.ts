@@ -137,6 +137,111 @@ export type Database = {
         }
         Relationships: []
       }
+      air_quality_notification_prefs: {
+        Row: {
+          aqi_threshold: number
+          cooldown_minutes: number
+          created_at: string
+          dust_threshold: number
+          enabled: boolean
+          id: string
+          label: string
+          last_checked_at: string | null
+          last_notified_aqi_at: string | null
+          last_notified_dust_at: string | null
+          last_notified_no2_at: string | null
+          last_notified_o3_at: string | null
+          last_notified_pm10_at: string | null
+          last_notified_pm25_at: string | null
+          last_notified_so2_at: string | null
+          lat: number
+          location: string
+          lon: number
+          no2_threshold: number
+          notify_aqi: boolean
+          notify_dust: boolean
+          notify_no2: boolean
+          notify_o3: boolean
+          notify_pm10: boolean
+          notify_pm25: boolean
+          notify_so2: boolean
+          o3_threshold: number
+          pm10_threshold: number
+          pm25_threshold: number
+          recipient: string
+          so2_threshold: number
+          updated_at: string
+        }
+        Insert: {
+          aqi_threshold?: number
+          cooldown_minutes?: number
+          created_at?: string
+          dust_threshold?: number
+          enabled?: boolean
+          id?: string
+          label: string
+          last_checked_at?: string | null
+          last_notified_aqi_at?: string | null
+          last_notified_dust_at?: string | null
+          last_notified_no2_at?: string | null
+          last_notified_o3_at?: string | null
+          last_notified_pm10_at?: string | null
+          last_notified_pm25_at?: string | null
+          last_notified_so2_at?: string | null
+          lat: number
+          location: string
+          lon: number
+          no2_threshold?: number
+          notify_aqi?: boolean
+          notify_dust?: boolean
+          notify_no2?: boolean
+          notify_o3?: boolean
+          notify_pm10?: boolean
+          notify_pm25?: boolean
+          notify_so2?: boolean
+          o3_threshold?: number
+          pm10_threshold?: number
+          pm25_threshold?: number
+          recipient?: string
+          so2_threshold?: number
+          updated_at?: string
+        }
+        Update: {
+          aqi_threshold?: number
+          cooldown_minutes?: number
+          created_at?: string
+          dust_threshold?: number
+          enabled?: boolean
+          id?: string
+          label?: string
+          last_checked_at?: string | null
+          last_notified_aqi_at?: string | null
+          last_notified_dust_at?: string | null
+          last_notified_no2_at?: string | null
+          last_notified_o3_at?: string | null
+          last_notified_pm10_at?: string | null
+          last_notified_pm25_at?: string | null
+          last_notified_so2_at?: string | null
+          lat?: number
+          location?: string
+          lon?: number
+          no2_threshold?: number
+          notify_aqi?: boolean
+          notify_dust?: boolean
+          notify_no2?: boolean
+          notify_o3?: boolean
+          notify_pm10?: boolean
+          notify_pm25?: boolean
+          notify_so2?: boolean
+          o3_threshold?: number
+          pm10_threshold?: number
+          pm25_threshold?: number
+          recipient?: string
+          so2_threshold?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       api_blackout_window: {
         Row: {
           enabled: boolean
@@ -2645,6 +2750,7 @@ export type Database = {
           reached_date_8: string | null
           recipient: string
           updated_at: string
+          uv_source: string
         }
         Insert: {
           created_at?: string
@@ -2670,6 +2776,7 @@ export type Database = {
           reached_date_8?: string | null
           recipient?: string
           updated_at?: string
+          uv_source?: string
         }
         Update: {
           created_at?: string
@@ -2695,6 +2802,7 @@ export type Database = {
           reached_date_8?: string | null
           recipient?: string
           updated_at?: string
+          uv_source?: string
         }
         Relationships: []
       }
