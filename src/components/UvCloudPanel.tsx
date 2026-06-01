@@ -116,7 +116,7 @@ export function UvCloudPanel({ lat, lon, title, subtitle }: Props) {
       cancelled = true;
       clearInterval(id);
     };
-  }, [lat, lon]);
+  }, [lat, lon, fetchUvCloud]);
 
   const stats = useMemo(() => {
     if (!rows || rows.length === 0) return null;
