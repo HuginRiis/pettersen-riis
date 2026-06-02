@@ -145,7 +145,7 @@ export function LivePollen({ lat, lon, title, subtitle, naafRegion }: Props) {
         if (cancelled) return;
         const buckets = parseDays(data);
         setDays(buckets);
-        setUpdated(new Date());
+        setUpdated(data.cachedAt ? new Date(data.cachedAt) : null);
         setError(null);
       } catch (e) {
         if (cancelled) return;
