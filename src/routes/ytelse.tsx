@@ -32,7 +32,7 @@ import {
 import {
   getPerformanceSnapshot,
   type PerfSnapshot,
-} from "@/server/performance-stats.functions";
+} from "@/lib/performance-stats.functions";
 
 export const Route = createFileRoute("/ytelse")({
   head: () => ({
