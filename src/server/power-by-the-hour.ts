@@ -154,7 +154,7 @@ function buildHomeData(device: HomeyDeviceSnapshot | null): PbthHomeData {
         id,
         label: meta.label,
         unit: meta.unit,
-        value: c.value,
+        value: (c as { value: number | string | boolean | null }).value,
       };
     })
     .sort((a, b) => a.id.localeCompare(b.id));

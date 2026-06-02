@@ -61,7 +61,7 @@ function withinWindow(now: string, from: string, to: string): boolean {
 }
 
 async function readBassengTemp(deviceMatch: string): Promise<{ temp: number | null; deviceName: string | null }> {
-  const { getHomeySnapshot } = await import("./homey");
+  const { getHomeySnapshot } = await import("@/lib/homey.functions");
   const snap = await (getHomeySnapshot as any)({});
   if (!snap?.ok) return { temp: null, deviceName: null };
   const match = (deviceMatch || "basseng").toLowerCase();
