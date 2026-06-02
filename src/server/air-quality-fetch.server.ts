@@ -55,6 +55,7 @@ export type OpenMeteoPollenData = { hourly: any };
 type OpenMeteoCoreData = { hourly: any; current: any };
 
 const NOT_WARM_ERR = "Cache er ikke fylt enda — neste oppdatering kommer fra cron-jobben";
+const CACHE_TTL_MS = 30 * 60 * 1000;
 
 function aqKey(lat: number, lon: number) {
   return `aq:${lat.toFixed(3)},${lon.toFixed(3)}`;
@@ -78,21 +79,26 @@ function pickFields(source: any, fields: string[]): any {
   return out;
 }
 
-export async function fetchAirQualityPanelData(lat: number, lon: number): Promise<AqPanelData> {
+/** Når ble cachen sist fylt av cron-jobben (expiresAt - TTL). */
+function cachedAtISO(expiresAt: number): string {
+  return new Date(expiresAt - CACHE_TTL_MS).toISOString();
+}
+
+export async function fetchAirQualityPanelData(lat: number, lon: number): Promise<AqPanelData & { cachedAt: string }> {
   const hit = await readCacheOnly<AqPanelData>(aqKey(lat, lon));
-  if (hit) return hit.value;
+  if (hit) return { ...hit.value, cachedAt: cachedAtISO(hit.expiresAt) };
   throw new Error(NOT_WARM_ERR);
 }
 
-export async function fetchUvCloudPanelData(lat: number, lon: number): Promise<UvCloudData> {
+export async function fetchUvCloudPanelData(lat: number, lon: number): Promise<UvCloudData & { cachedAt: string }> {
   const hit = await readCacheOnly<UvCloudData>(uvKey(lat, lon));
-  if (hit) return hit.value;
+  if (hit) return { ...hit.value, cachedAt: cachedAtISO(hit.expiresAt) };
   throw new Error(NOT_WARM_ERR);
 }
 
-export async function fetchOpenMeteoPollenData(lat: number, lon: number): Promise<OpenMeteoPollenData> {
+export async function fetchOpenMeteoPollenData(lat: number, lon: number): Promise<OpenMeteoPollenData & { cachedAt: string }> {
   const hit = await readCacheOnly<OpenMeteoPollenData>(pollenKey(lat, lon));
-  if (hit) return hit.value;
+  if (hit) return { ...hit.value, cachedAt: cachedAtISO(hit.expiresAt) };
   throw new Error(NOT_WARM_ERR);
 }
 
