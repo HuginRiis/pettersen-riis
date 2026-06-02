@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import {
   getTibberWeeklyMeter,
   type TibberWeeklyMeter,
-} from "@/server/tibber";
+} from "@/lib/tibber.functions";
 import { useTibberLive } from "@/hooks/useTibberLive";
 
 /**
