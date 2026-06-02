@@ -125,10 +125,6 @@ async function warmOpenMeteoCore(lat: number, lon: number): Promise<OpenMeteoCor
       setCached<OpenMeteoPollenData>(pollenKey(lat, lon), {
         hourly: pickFields(core.hourly, POLLEN_FIELDS.split(",")),
       }),
-      setCached<UvCloudData>(uvKey(lat, lon), {
-        aq: { hourly: pickFields(core.hourly, ["uv_index", "uv_index_clear_sky"]) },
-        fc: { hourly: { time: core.hourly?.time ?? [], cloud_cover: [] } },
-      }),
     ]);
     return core;
   });
