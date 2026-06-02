@@ -41,8 +41,15 @@ export const Route = createFileRoute("/api/public/hooks/open-meteo-warm")({
         const aqLocs = dedupeLocs((aq ?? []) as LocRow[]);
         const uvLocs = dedupeLocs((uv ?? []) as LocRow[]);
 
-        // Pollen henter samme datasett som luftkvalitet (samme host/kvote),
-        // så vi varmer pollen for alle air-quality-lokasjoner.
+        // Pollen varmes for unionen av air-quality- og UV-lokasjoner slik at
+        // hjemme-lokasjonen (typisk kun aktiv på UV-push) også får pollen-cache.
+        const pollenSeen = new Map<string, { lat: number; lon: number }>();
+        for (const l of [...aqLocs, ...uvLocs]) {
+          const k = `${l.lat.toFixed(3)},${l.lon.toFixed(3)}`;
+          if (!pollenSeen.has(k)) pollenSeen.set(k, l);
+        }
+        const pollenLocs = [...pollenSeen.values()];
+
         const results: Array<{ kind: string; lat: number; lon: number; ok: boolean; err?: string }> = [];
 
         async function run(kind: string, lat: number, lon: number, fn: () => Promise<void>) {
@@ -56,6 +63,8 @@ export const Route = createFileRoute("/api/public/hooks/open-meteo-warm")({
 
         for (const { lat, lon } of aqLocs) {
           await run("aq", lat, lon, () => warmAirQualityPanel(lat, lon));
+        }
+        for (const { lat, lon } of pollenLocs) {
           await run("pollen", lat, lon, () => warmOpenMeteoPollen(lat, lon));
         }
         for (const { lat, lon } of uvLocs) {
