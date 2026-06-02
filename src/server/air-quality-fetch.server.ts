@@ -1,8 +1,11 @@
 // Server-side fetch for AirQualityPanel + UvCloudPanel.
-// Bruker felles cache + 429-backoff (open-meteo-cache.server) slik at
-// både panel og push-cron deler kvote og slipper å hamre Open-Meteo.
+//
+// VIKTIG: Disse panel-leserne er CACHE-ONLY. De gjør ALDRI nye kall mot
+// Open-Meteo når en bruker åpner/refresher siden. Cachen holdes varm av
+// cron-jobben i src/routes/api/public/hooks/open-meteo-warm.ts som kjører
+// hvert 30. minutt for alle lokasjoner med aktive air-quality/UV-push.
 
-import { fetchWithBackoff, withCache, getCached } from "./open-meteo-cache.server";
+import { readCacheOnly, withCache, fetchWithBackoff, getCached } from "./open-meteo-cache.server";
 
 const HOURLY_FIELDS = [
   "pm10",
@@ -31,16 +34,51 @@ const CURRENT_FIELDS = [
   "uv_index_clear_sky",
 ].join(",");
 
-type AqPanelData = { hourly: any; current: any };
-type UvCloudData = {
+export type AqPanelData = { hourly: any; current: any };
+export type UvCloudData = {
   aq: { hourly: any };
   fc: { hourly: any };
 };
-type OpenMeteoPollenData = { hourly: any };
+export type OpenMeteoPollenData = { hourly: any };
+
+const NOT_WARM_ERR = "Cache er ikke fylt enda — neste oppdatering kommer fra cron-jobben";
+
+function aqKey(lat: number, lon: number) {
+  return `aq:${lat.toFixed(3)},${lon.toFixed(3)}`;
+}
+function uvKey(lat: number, lon: number) {
+  return `uvcloud:${lat.toFixed(3)},${lon.toFixed(3)}`;
+}
+function pollenKey(lat: number, lon: number) {
+  return `pollen:${lat.toFixed(3)},${lon.toFixed(3)}`;
+}
 
 export async function fetchAirQualityPanelData(lat: number, lon: number): Promise<AqPanelData> {
-  const key = `aq:${lat.toFixed(3)},${lon.toFixed(3)}`;
-  return withCache<AqPanelData>(key, async () => {
+  const hit = await readCacheOnly<AqPanelData>(aqKey(lat, lon));
+  if (hit) return hit.value;
+  throw new Error(NOT_WARM_ERR);
+}
+
+export async function fetchUvCloudPanelData(lat: number, lon: number): Promise<UvCloudData> {
+  const hit = await readCacheOnly<UvCloudData>(uvKey(lat, lon));
+  if (hit) return hit.value;
+  throw new Error(NOT_WARM_ERR);
+}
+
+export async function fetchOpenMeteoPollenData(lat: number, lon: number): Promise<OpenMeteoPollenData> {
+  const hit = await readCacheOnly<OpenMeteoPollenData>(pollenKey(lat, lon));
+  if (hit) return hit.value;
+  throw new Error(NOT_WARM_ERR);
+}
+
+// ---------------------------------------------------------------------------
+// Warm-funksjoner: KUN kalt fra cron (api/public/hooks/open-meteo-warm).
+// Disse gjør de faktiske Open-Meteo-kallene og fyller cachen.
+// ---------------------------------------------------------------------------
+
+export async function warmAirQualityPanel(lat: number, lon: number): Promise<void> {
+  const key = aqKey(lat, lon);
+  await withCache<AqPanelData>(key, async () => {
     const url =
       `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}` +
       `&hourly=${HOURLY_FIELDS}&current=${CURRENT_FIELDS}` +
@@ -49,7 +87,7 @@ export async function fetchAirQualityPanelData(lat: number, lon: number): Promis
     if (!res) {
       const stale = getCached<AqPanelData>(key);
       if (stale) return stale;
-      throw new Error("Open-Meteo air-quality rate-limited (429) – prøv igjen om noen minutter");
+      throw new Error("Open-Meteo air-quality rate-limited (429)");
     }
     if (!res.ok) throw new Error(`Open-Meteo air-quality ${res.status}`);
     const j = (await res.json()) as AqPanelData;
@@ -57,9 +95,9 @@ export async function fetchAirQualityPanelData(lat: number, lon: number): Promis
   });
 }
 
-export async function fetchUvCloudPanelData(lat: number, lon: number): Promise<UvCloudData> {
-  const key = `uvcloud:${lat.toFixed(3)},${lon.toFixed(3)}`;
-  return withCache<UvCloudData>(key, async () => {
+export async function warmUvCloudPanel(lat: number, lon: number): Promise<void> {
+  const key = uvKey(lat, lon);
+  await withCache<UvCloudData>(key, async () => {
     const aqUrl =
       `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}` +
       `&hourly=uv_index,uv_index_clear_sky&timezone=Europe%2FOslo&forecast_days=3`;
@@ -70,9 +108,6 @@ export async function fetchUvCloudPanelData(lat: number, lon: number): Promise<U
       fetchWithBackoff("air-quality", "open-meteo:uv-cloud:aq", aqUrl),
       fetchWithBackoff("air-quality", "open-meteo:uv-cloud:forecast", fcUrl),
     ]);
-    // UV (aq) er det essensielle; skydekke fra forecast er nice-to-have.
-    // Hvis aq feiler kan vi ikke gjøre noe; hvis kun forecast feiler, returnér
-    // UV uten skydekke i stedet for å feile hele panelet.
     if (!aqRes || !aqRes.ok) {
       const stale = getCached<UvCloudData>(key);
       if (stale) return stale;
@@ -85,17 +120,16 @@ export async function fetchUvCloudPanelData(lat: number, lon: number): Promise<U
       fcHourly = fc.hourly;
     } else {
       console.warn(
-        `[air-quality-fetch] forecast (cloud_cover) utilgjengelig (${fcRes?.status ?? "backoff"}), returnerer UV uten skydekke`,
+        `[air-quality-fetch] forecast (cloud_cover) utilgjengelig (${fcRes?.status ?? "backoff"}), warmer UV uten skydekke`,
       );
     }
     return { aq: { hourly: aq.hourly }, fc: { hourly: fcHourly } };
-
   });
 }
 
-export async function fetchOpenMeteoPollenData(lat: number, lon: number): Promise<OpenMeteoPollenData> {
-  const key = `pollen:${lat.toFixed(3)},${lon.toFixed(3)}`;
-  return withCache<OpenMeteoPollenData>(key, async () => {
+export async function warmOpenMeteoPollen(lat: number, lon: number): Promise<void> {
+  const key = pollenKey(lat, lon);
+  await withCache<OpenMeteoPollenData>(key, async () => {
     const url =
       `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}` +
       "&hourly=alder_pollen,birch_pollen,grass_pollen,mugwort_pollen,olive_pollen,ragweed_pollen" +
