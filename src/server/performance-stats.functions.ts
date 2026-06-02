@@ -1,7 +1,16 @@
 // Aggregert ytelse-snapshot: DB-bruk, cron-jobber, API-volum, push, pg_net-cache,
 // og enkle heuristikker for flaskehalser. Brukes av /ytelse-siden.
-import { createServerFn } from "@tanstack/react-start";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { createServerFn, createIsomorphicFn } from "@tanstack/react-start";
+
+const loadAdmin = createIsomorphicFn()
+  .server((): Promise<typeof import("@/integrations/supabase/client.server")> =>
+    import("@/integrations/supabase/client.server"),
+  )
+  .client(
+    (): Promise<typeof import("@/integrations/supabase/client.server")> =>
+      Promise.resolve({ supabaseAdmin: null } as unknown as typeof import("@/integrations/supabase/client.server")),
+  );
+const { supabaseAdmin } = await loadAdmin();
 
 export type PerfCronJob = {
   jobname: string;
