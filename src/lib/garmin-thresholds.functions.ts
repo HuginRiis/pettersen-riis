@@ -7,7 +7,7 @@ const { THRESHOLD_METRICS } = await __load_garmin_thresholds_server();
 export const sendGarminThresholdTestPush = createServerFn({ method: "POST" })
   .inputValidator((data) => z.object({ prefId: z.string().uuid() }).parse(data))
   .handler(async ({ data }) => {
-    const { sendGarminThresholdTest } = await import("@/server/garmin-thresholds.server");
+    const { sendGarminThresholdTest } = await __load_garmin_thresholds_server();
     return sendGarminThresholdTest(data.prefId);
   });
 

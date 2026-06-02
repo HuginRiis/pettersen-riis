@@ -144,7 +144,7 @@ export const refreshApiSource = createServerFn({ method: "POST" })
       await tryRun("getTollnesCameraSnapshot", () => m.getTollnesCameraSnapshot());
     } else if (source === "strava") {
       const m = await import("@/lib/strava.functions");
-      const { withApiLog } = await import("@/server/api-call-log.server");
+      const { withApiLog } = await __load_api_call_log_server();
       await tryRun("getStravaDashboard[arne]", () =>
         withApiLog("strava", "getStravaDashboard", () =>
           m.runStravaDashboard("arne"),
