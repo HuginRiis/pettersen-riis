@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useRouter } from "@tanstack/react-router";
-import { getHomeyApiPaused, setHomeyApiPaused } from "@/server/homey";
+import { getHomeyApiPaused, setHomeyApiPaused } from "@/lib/homey.functions";
 
 /**
  * Liten admin-bryter for å pause/åpne Homey-API på serveren.

@@ -13,7 +13,7 @@ import {
 import {
   getHomeySnapshot,
   setLivingRoomLights,
-} from "@/server/homey";
+} from "@/lib/homey.functions";
 import { useDailyMinMax, type MinMax } from "@/hooks/use-daily-minmax";
 import { useLastGood } from "@/hooks/use-last-good";
 import {

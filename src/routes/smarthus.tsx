@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Swords, Shield, Flame, DoorOpen, Lightbulb, Zap, Crown, ChevronDown } from "lucide-react";
 import { PageShell, PageHero } from "@/components/PageShell";
 import { LastUpdated } from "@/components/LastUpdated";
-import { getHomeySnapshot, disconnectHomey, setAllOutdoorLights, setLivingRoomDeviceCapability } from "@/server/homey";
+import { getHomeySnapshot, disconnectHomey, setAllOutdoorLights, setLivingRoomDeviceCapability } from "@/lib/homey.functions";
 import { Switch } from "@/components/ui/switch";
 import { findDeviceFuzzy, readTemp } from "@/lib/homey-match";
 import { HomeyApiActivity } from "@/components/HomeyApiActivity";

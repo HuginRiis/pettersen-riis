@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { HOMEY_SCOPES } from "@/server/homey";
+import { HOMEY_SCOPES } from "@/lib/homey.functions";
 
 const ATHOM_AUTH_BASE = "https://api.athom.com";
 const REDIRECT_URI = "https://pettersen-riis.lovable.app/api/homey/callback";

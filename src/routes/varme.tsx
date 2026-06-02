@@ -23,7 +23,7 @@ import { HeatersPanel } from "@/components/HeatersPanel";
 import { ClimateAnalyticsPanel } from "@/components/ClimateAnalyticsPanel";
 
 import { getNetatmoWeatherStation, type WeatherStationResult } from "@/server/netatmo-weather";
-import { getHomeySnapshot, type HomeyDeviceSnapshot } from "@/server/homey";
+import { getHomeySnapshot, type HomeyDeviceSnapshot } from "@/lib/homey.functions";
 import heroImg from "@/assets/got-varme.jpg";
 
 export const Route = createFileRoute("/varme")({

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { getHomeyCameraSnapshot } from "@/server/homey";
+import { getHomeyCameraSnapshot } from "@/lib/homey.functions";
 
 type Props = {
   /** Substring-match på Homey-enhetsnavn. F.eks "eufy" eller "inngang". */

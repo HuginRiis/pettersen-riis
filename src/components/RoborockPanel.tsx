@@ -13,7 +13,7 @@ import {
   setRoborockHomeyCapability,
   type RoborockHomeyCap,
   type RoborockHomeyDevice,
-} from "@/server/homey";
+} from "@/lib/homey.functions";
 
 type Snap = Awaited<ReturnType<typeof getRoborockSnapshot>>;
 type HomeySnap = Awaited<ReturnType<typeof getRoborockHomeySnapshot>>;

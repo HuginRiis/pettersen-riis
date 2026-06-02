@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Waves, Loader2, Play, Snowflake, Flame, Wind, Power, Plug, Thermometer, Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { getHomeySnapshot, setLivingRoomDeviceCapability } from "@/server/homey";
+import { getHomeySnapshot, setLivingRoomDeviceCapability } from "@/lib/homey.functions";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";

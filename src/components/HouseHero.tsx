@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Lightbulb, Sunrise, Sunset, Sun } from "lucide-react";
-import { getBorgenLightsStatus, type BorgenLightsStatus } from "@/server/homey";
+import { getBorgenLightsStatus, type BorgenLightsStatus } from "@/lib/homey.functions";
 import { useUvSun, uvLevel } from "@/hooks/use-uv-sun";
 import { DoubleTapToTop } from "@/components/PageShell";
 

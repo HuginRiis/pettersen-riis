@@ -9,7 +9,7 @@ import {
   getHomeySnapshot,
   setLivingRoomDeviceCapability,
   type HomeyDeviceSnapshot,
-} from "@/server/homey";
+} from "@/lib/homey.functions";
 import { recordHomeyApiCall } from "@/lib/homey-api-tracker";
 import { Slider } from "@/components/ui/slider";
 import { MarqueeText } from "@/components/MarqueeText";

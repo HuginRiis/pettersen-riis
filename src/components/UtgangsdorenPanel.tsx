@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { getDoorsLocksSnapshot, setLockState, type DoorOrLockEntry } from "@/server/homey";
+import { getDoorsLocksSnapshot, setLockState, type DoorOrLockEntry } from "@/lib/homey.functions";
 import { Lock, Unlock, Loader2, Flame, DoorClosed } from "lucide-react";
 
 const REFRESH_MS = 20_000;

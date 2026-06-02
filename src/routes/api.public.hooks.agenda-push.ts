@@ -186,14 +186,14 @@ export const Route = createFileRoute("/api/public/hooks/agenda-push")({
           }
           let sensorSummary = { checked: 0, sent: 0, errors: 0, skipped: 0 };
           try {
-            const smod = await import("@/server/homey-sensor-summary.server");
+            const smod = await import("@/lib/homey.functions-sensor-summary.server");
             sensorSummary = await smod.processHomeySensorSummary();
           } catch (err) {
             console.error("[homey-sensor-summary] failed", err);
           }
           let sensorHistory = { checked: 0, ran: false, skipped: 1 } as any;
           try {
-            const hmod = await import("@/server/homey-sensor-backfill.server");
+            const hmod = await import("@/lib/homey.functions-sensor-backfill.server");
             sensorHistory = await hmod.processHomeySensorHistoryCron();
           } catch (err) {
             console.error("[homey-sensor-history] failed", err);

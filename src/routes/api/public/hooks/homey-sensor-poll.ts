@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { pollHomeySensors } from "@/server/homey-sensor-poll.server";
+import { pollHomeySensors } from "@/lib/homey.functions-sensor-poll.server";
 
 export const Route = createFileRoute("/api/public/hooks/homey-sensor-poll")({
   server: {

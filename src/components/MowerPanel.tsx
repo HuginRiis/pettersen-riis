@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Bot, Battery, BatteryLow, BatteryFull, AlertTriangle, CheckCircle2, Clock, Activity } from "lucide-react";
-import type { HomeyDeviceSnapshot, HomeyZone } from "@/server/homey";
+import type { HomeyDeviceSnapshot, HomeyZone } from "@/lib/homey.functions";
 
 /**
  * Panel som viser status for Gardena Sileno-gressklipper(e) i Homey.

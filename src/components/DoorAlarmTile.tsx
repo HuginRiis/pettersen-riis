@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Lock, Unlock, ShieldCheck, ShieldOff, ShieldAlert, DoorClosed, DoorOpen } from "lucide-react";
-import { getDoorsLocksSnapshot, type DoorOrLockEntry } from "@/server/homey";
-import { getVakttarnetHeroStatus, type VakttarnetHeroStatus } from "@/server/homey-sensor-dashboard.functions";
+import { getDoorsLocksSnapshot, type DoorOrLockEntry } from "@/lib/homey.functions";
+import { getVakttarnetHeroStatus, type VakttarnetHeroStatus } from "@/lib/homey.functions-sensor-dashboard.functions";
 
 function minsAgo(iso: string | null): string {
   if (!iso) return "—";
