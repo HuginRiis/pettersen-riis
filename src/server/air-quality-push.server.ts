@@ -7,7 +7,7 @@ import webpush from "web-push";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { logPushSend } from "./push-log.server";
 import { buildSubscriptionWhoOr } from "./push-recipients";
-import { fetchWithBackoff, withCache, getCached } from "./open-meteo-cache.server";
+import { fetchAirQualityPanelData } from "./air-quality-fetch.server";
 
 const VAPID_PUBLIC = process.env.VAPID_PUBLIC_KEY!;
 const VAPID_PRIVATE = process.env.VAPID_PRIVATE_KEY!;
@@ -156,22 +156,9 @@ const METRICS: {
 type Current = Partial<Record<string, number>>;
 
 async function fetchCurrent(lat: number, lon: number): Promise<Current | null> {
-  const key = `aq-current:${lat.toFixed(3)},${lon.toFixed(3)}`;
-  return withCache<Current | null>(key, async () => {
-    const fields = METRICS.map((m) => m.apiField).join(",");
-    const url =
-      `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}` +
-      `&current=${fields}&timezone=Europe%2FOslo`;
-    const res = await fetchWithBackoff("air-quality", "open-meteo:air-quality", url, {
-      headers: { "User-Agent": "riis.cc air quality push (agenda@riis.cc)" },
-    });
-    if (!res) throw new Error("Open-Meteo air-quality er i midlertidig backoff");
-    if (!res.ok) throw new Error(`Open-Meteo air-quality ${res.status}`);
-    const json = (await res.json()) as { current?: Record<string, unknown> };
-    return (json.current ?? null) as Current | null;
-  }).catch((err) => {
+  return fetchAirQualityPanelData(lat, lon).then((data) => (data.current ?? null) as Current | null).catch((err) => {
     console.error("[air-quality-push] open-meteo fetch failed", err);
-    return getCached<Current>(key);
+    return null;
   });
 }
 
