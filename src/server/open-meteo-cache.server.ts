@@ -166,6 +166,9 @@ export async function readCacheOnly<T>(key: string): Promise<{ value: T; fresh: 
   const persisted = await getPersistentCache<T>(key);
   if (persisted) return { value: persisted.value, fresh: persisted.expiresAt > now, expiresAt: persisted.expiresAt };
   return null;
+}
+
+
 
 
 export function getCached<T>(key: string): T | null {
