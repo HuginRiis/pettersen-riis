@@ -1,4 +1,4 @@
-import type { TelemarkAlert } from "@/server/met-alerts";
+import type { TelemarkAlert } from "@/lib/met-alerts.types";
 
 /**
  * Oversetter Met.no farevarsler til Game of Thrones-stil meldinger

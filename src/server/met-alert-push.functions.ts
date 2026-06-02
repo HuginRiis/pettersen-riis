@@ -10,7 +10,7 @@ export const sendMetAlertTestPush = createServerFn({ method: "POST" })
 
 /** Henter unike event-typer fra aktive varsler så bruker kan velge mellom dem. */
 export const getMetAlertEventTypes = createServerFn({ method: "GET" }).handler(async () => {
-  const { getTelemarkAlerts } = await import("./met-alerts");
+  const { getTelemarkAlerts } = await import("@/lib/met-alerts.functions");
   const r = await getTelemarkAlerts();
   const map = new Map<string, string>();
   for (const a of r.alerts ?? []) {
@@ -24,7 +24,7 @@ export const getMetAlertEventTypes = createServerFn({ method: "GET" }).handler(a
 
 /** Aktive farevarsler (forenklet) for visning på push-siden. */
 export const getActiveMetAlerts = createServerFn({ method: "GET" }).handler(async () => {
-  const { getTelemarkAlerts } = await import("./met-alerts");
+  const { getTelemarkAlerts } = await import("@/lib/met-alerts.functions");
   const r = await getTelemarkAlerts();
   return (r.alerts ?? []).map((a) => ({
     id: a.id,

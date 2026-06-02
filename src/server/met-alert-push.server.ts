@@ -94,7 +94,7 @@ export async function processMetAlertNotifications(): Promise<{
   const prefs = (prefsRaw ?? []) as unknown as Pref[];
   if (prefs.length === 0) return { checked: 0, sent: 0, errors: 0, skipped: 0 };
 
-  const { getTelemarkAlerts } = await import("./met-alerts");
+  const { getTelemarkAlerts } = await import("./met-alerts.server");
   const r = await getTelemarkAlerts();
   const alerts = r.alerts ?? [];
 

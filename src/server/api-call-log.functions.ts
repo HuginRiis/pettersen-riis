@@ -163,7 +163,7 @@ export const refreshApiSource = createServerFn({ method: "POST" })
         m.getTibberHourly({ data: { location: "hytta" } }),
       );
     } else if (source === "met") {
-      const m = await import("./met-alerts");
+      const m = await import("@/lib/met-alerts.functions");
       await tryRun("getTelemarkAlerts", () => m.getTelemarkAlerts());
     } else if (source === "nrk") {
       const m = await import("./nrk-traffic");
