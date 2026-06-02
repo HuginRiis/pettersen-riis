@@ -43,7 +43,7 @@ import {
   type PricePoint,
   type ConsumptionPoint,
   type StoredDailyKwh,
-} from "@/server/tibber";
+} from "@/lib/tibber.functions";
 
 import { getSpotPrices, type SpotPriceResult } from "@/server/spot-price";
 import { getPowerByTheHour, type PbthResult, type PbthHomeData } from "@/server/power-by-the-hour";

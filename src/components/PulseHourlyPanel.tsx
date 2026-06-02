@@ -10,7 +10,7 @@ import {
   Tooltip,
   CartesianGrid,
 } from "recharts";
-import { getTibberHourly, type TibberHourlyResult } from "@/server/tibber";
+import { getTibberHourly, type TibberHourlyResult } from "@/lib/tibber.functions";
 
 export function PulseHourlyPanel({
   location,
