@@ -35,15 +35,20 @@ function osloDateKey(d = new Date()): string {
   }).format(d);
 }
 
+function osloYesterdayKey(): string {
+  const d = new Date();
+  d.setUTCDate(d.getUTCDate() - 1);
+  return osloDateKey(d);
+}
+
 function pickDay<T extends { day: string }>(arr: T[] | undefined, day: string): T | undefined {
   return arr?.find((x) => x.day === day);
 }
 
 type Metric = { a: number | null | undefined; r: number | null | undefined; higherIsBetter: boolean };
 
-function countWins(arne: Overview | null, rebekka: Overview | null): { arne: number; rebekka: number } {
+function countWins(arne: Overview | null, rebekka: Overview | null, day: string): { arne: number; rebekka: number } {
   if (!arne || !rebekka) return { arne: 0, rebekka: 0 };
-  const day = osloDateKey();
   const aD = pickDay(arne.daily, day);
   const rD = pickDay(rebekka.daily, day);
   const aS = pickDay(arne.sleep, day);
@@ -103,64 +108,85 @@ export function GarminHouseScore() {
     };
   }, [fetchOverview]);
 
-  const wins = countWins(arne, rebekka);
-  const arneLeads = wins.arne > wins.rebekka;
-  const rebekkaLeads = wins.rebekka > wins.arne;
+  const today = osloDateKey();
+  const yesterday = osloYesterdayKey();
+  const winsToday = countWins(arne, rebekka, today);
+  const winsYesterday = countWins(arne, rebekka, yesterday);
   const display = "var(--font-display)";
 
-  return (
-    <div className="grid grid-cols-2 gap-2">
-      <div
-        className={`rounded border bg-gradient-to-r from-slate-700/60 to-slate-900/80 px-3 py-2 flex items-center gap-2 transition ${
-          arneLeads
-            ? "border-slate-200/80 shadow-[0_0_22px_rgba(226,232,240,0.45)] ring-1 ring-slate-200/40"
-            : "border-slate-500/30"
-        }`}
-      >
-        <Crown className={`h-4 w-4 ${arneLeads ? "text-slate-50" : "text-slate-200"}`} />
-        <div className="flex-1 min-w-0">
-          <div
-            className="text-[10px] uppercase tracking-[0.2em] text-slate-300"
-            style={{ fontFamily: display }}
-          >
-            House Stark
-          </div>
-          <div className={`font-semibold ${arneLeads ? "text-white" : "text-slate-100"}`}>Arne</div>
-        </div>
+  const Row = ({ wins, label }: { wins: { arne: number; rebekka: number }; label: string }) => {
+    const arneLeads = wins.arne > wins.rebekka;
+    const rebekkaLeads = wins.rebekka > wins.arne;
+    return (
+      <div className="space-y-1">
         <div
-          className={`text-2xl tabular-nums ${arneLeads ? "text-white drop-shadow-[0_0_8px_rgba(226,232,240,0.65)]" : "text-slate-100"}`}
-          style={{ fontFamily: display, fontWeight: 700 }}
+          className="text-[9px] uppercase tracking-[0.2em] text-muted-foreground"
+          style={{ fontFamily: display }}
         >
-          {wins.arne}
+          {label}
         </div>
-      </div>
+        <div className="grid grid-cols-2 gap-2">
+          <div
+            className={`rounded border bg-gradient-to-r from-slate-700/60 to-slate-900/80 px-3 py-2 flex items-center gap-2 transition ${
+              arneLeads
+                ? "border-slate-200/80 shadow-[0_0_22px_rgba(226,232,240,0.45)] ring-1 ring-slate-200/40"
+                : "border-slate-500/30"
+            }`}
+          >
+            <Crown className={`h-4 w-4 ${arneLeads ? "text-slate-50" : "text-slate-200"}`} />
+            <div className="flex-1 min-w-0">
+              <div
+                className="text-[10px] uppercase tracking-[0.2em] text-slate-300"
+                style={{ fontFamily: display }}
+              >
+                House Stark
+              </div>
+              <div className={`font-semibold ${arneLeads ? "text-white" : "text-slate-100"}`}>Arne</div>
+            </div>
+            <div
+              className={`text-2xl tabular-nums ${arneLeads ? "text-white drop-shadow-[0_0_8px_rgba(226,232,240,0.65)]" : "text-slate-100"}`}
+              style={{ fontFamily: display, fontWeight: 700 }}
+            >
+              {wins.arne}
+            </div>
+          </div>
 
-      <div
-        className={`rounded border bg-gradient-to-r from-rose-900/70 to-black/80 px-3 py-2 flex items-center gap-2 transition ${
-          rebekkaLeads
-            ? "border-rose-200/80 shadow-[0_0_22px_rgba(244,114,182,0.55)] ring-1 ring-rose-300/50"
-            : "border-rose-500/30"
-        }`}
-      >
-        <Flame className={`h-4 w-4 ${rebekkaLeads ? "text-rose-50" : "text-rose-200"}`} />
-        <div className="flex-1 min-w-0">
           <div
-            className="text-[10px] uppercase tracking-[0.2em] text-rose-200"
-            style={{ fontFamily: display }}
+            className={`rounded border bg-gradient-to-r from-rose-900/70 to-black/80 px-3 py-2 flex items-center gap-2 transition ${
+              rebekkaLeads
+                ? "border-rose-200/80 shadow-[0_0_22px_rgba(244,114,182,0.55)] ring-1 ring-rose-300/50"
+                : "border-rose-500/30"
+            }`}
           >
-            House Targaryen
+            <Flame className={`h-4 w-4 ${rebekkaLeads ? "text-rose-50" : "text-rose-200"}`} />
+            <div className="flex-1 min-w-0">
+              <div
+                className="text-[10px] uppercase tracking-[0.2em] text-rose-200"
+                style={{ fontFamily: display }}
+              >
+                House Targaryen
+              </div>
+              <div className={`font-semibold ${rebekkaLeads ? "text-white" : "text-rose-100"}`}>
+                Rebekka
+              </div>
+            </div>
+            <div
+              className={`text-2xl tabular-nums ${rebekkaLeads ? "text-white drop-shadow-[0_0_8px_rgba(244,114,182,0.7)]" : "text-rose-100"}`}
+              style={{ fontFamily: display, fontWeight: 700 }}
+            >
+              {wins.rebekka}
+            </div>
           </div>
-          <div className={`font-semibold ${rebekkaLeads ? "text-white" : "text-rose-100"}`}>
-            Rebekka
-          </div>
-        </div>
-        <div
-          className={`text-2xl tabular-nums ${rebekkaLeads ? "text-white drop-shadow-[0_0_8px_rgba(244,114,182,0.7)]" : "text-rose-100"}`}
-          style={{ fontFamily: display, fontWeight: 700 }}
-        >
-          {wins.rebekka}
         </div>
       </div>
+    );
+  };
+
+  return (
+    <div className="space-y-2">
+      <Row wins={winsToday} label="I dag" />
+      <Row wins={winsYesterday} label="I går" />
     </div>
   );
 }
+
