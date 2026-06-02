@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { checkAuth } from "@/server/auth";
+import { checkAuth } from "@/lib/auth.functions";
 
 /**
  * Lightweight client-side hook that tells us whether the current visitor has

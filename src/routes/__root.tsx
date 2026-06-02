@@ -1,5 +1,5 @@
 import { Outlet, Link, createRootRoute, HeadContent, Scripts, redirect } from "@tanstack/react-router";
-import { checkAuth } from "@/server/auth";
+import { checkAuth } from "@/lib/auth.functions";
 import { VisitorTracker } from "@/components/VisitorTracker";
 import { LoginDialog } from "@/components/LoginDialog";
 import { PullToRefresh } from "@/components/PullToRefresh";

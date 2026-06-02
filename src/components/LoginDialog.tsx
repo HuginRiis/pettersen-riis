@@ -3,7 +3,7 @@ import { useRouter } from "@tanstack/react-router";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { loginFn, logoutFn, getWelcomeInfo } from "@/server/auth";
+import { loginFn, logoutFn, getWelcomeInfo } from "@/lib/auth.functions";
 import { LogIn, LogOut, Clock, MapPin } from "lucide-react";
 
 /**

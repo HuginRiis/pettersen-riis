@@ -13,7 +13,7 @@ import {
   unsubscribePush,
   updateSubscriptionWho,
 } from "@/lib/push-client";
-import { getWelcomeInfo } from "@/server/auth";
+import { getWelcomeInfo } from "@/lib/auth.functions";
 import {
   Dialog,
   DialogContent,
@@ -37,7 +37,7 @@ import { useCurrentWho } from "@/hooks/use-current-who";
 import { SmartSearch } from "@/components/SmartSearch";
 
 import { useAuthStatus } from "@/hooks/use-auth-status";
-import { logoutFn } from "@/server/auth";
+import { logoutFn } from "@/lib/auth.functions";
 import arnePortrait from "@/assets/arne-portrait.jpg";
 import rebekkaPortrait from "@/assets/rebekka-portrait.jpg";
 import celinePortrait from "@/assets/celine-portrait.jpg";
