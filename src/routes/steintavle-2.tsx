@@ -245,29 +245,15 @@ function Steintavle2Page() {
 
   return (
     <PageShell minimalHeader>
-      <header className="container mx-auto px-6 pt-3 pb-2 flex items-center justify-between gap-3">
-        <div className="w-8" aria-hidden />
-        <div className="text-display tracking-[0.5em] text-primary text-xs sm:text-sm uppercase text-center flex-1">
-          Steintavle 2 · Borgen ·{" "}
-          <span className="text-muted-foreground">
-            {now
-              ? now.toLocaleTimeString("nb-NO", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })
-              : "—"}
-          </span>
-        </div>
-        <button
-          type="button"
-          onClick={() => setSettingsOpen((o) => !o)}
-          className="w-8 h-8 rounded-md border border-border bg-background/60 text-muted-foreground hover:text-primary flex items-center justify-center"
-          aria-label="Tekststørrelse"
-          aria-expanded={settingsOpen}
-        >
-          {settingsOpen ? <X size={16} /> : <Settings2 size={16} />}
-        </button>
-      </header>
+      <button
+        type="button"
+        onClick={() => setSettingsOpen((o) => !o)}
+        className="fixed top-3 right-3 z-50 w-8 h-8 rounded-md border border-border bg-background/60 text-muted-foreground hover:text-primary flex items-center justify-center"
+        aria-label="Tekststørrelse"
+        aria-expanded={settingsOpen}
+      >
+        {settingsOpen ? <X size={16} /> : <Settings2 size={16} />}
+      </button>
 
       {settingsOpen && (
         <div className="container mx-auto px-4 mb-2">
