@@ -1,7 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
 import { PageShell, PageHero } from "@/components/PageShell";
-import { LastUpdated } from "@/components/LastUpdated";
 import { LivePollen } from "@/components/LivePollen";
 import { AirQualityPanel } from "@/components/AirQualityPanel";
 import { UvCloudPanel } from "@/components/UvCloudPanel";
