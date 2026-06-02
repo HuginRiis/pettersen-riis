@@ -1,10 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
 import { useSession, getRequestHeader } from "@tanstack/react-start/server";
-import {
-  logLoginAttempt,
-  getFailedAttemptTimestampsForIp,
-  getCurrentRequestIp,
-} from "./visitors-log.server";
 
 /**
  * Detect whether the current request is coming from an iframe (e.g. the
