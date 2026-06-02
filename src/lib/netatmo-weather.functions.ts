@@ -14,9 +14,13 @@ const loadTokenStore = createIsomorphicFn()
   .server((): Promise<typeof import("@/server/netatmo-token-store.server")> =>
     import("@/server/netatmo-token-store.server"),
   )
-  .client((): Promise<typeof import("@/server/netatmo-token-store.server")> => {
-    throw new Error("netatmo-token-store is server-only");
-  });
+  .client(
+    (): Promise<typeof import("@/server/netatmo-token-store.server")> =>
+      Promise.resolve({
+        loadStoredRefreshToken: async () => null,
+        saveStoredRefreshToken: async () => {},
+      } as unknown as typeof import("@/server/netatmo-token-store.server")),
+  );
 const { withApiLog } = await loadApiLog();
 const { loadStoredRefreshToken, saveStoredRefreshToken } = await loadTokenStore();
 
