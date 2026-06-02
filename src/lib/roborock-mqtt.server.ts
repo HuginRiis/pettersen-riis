@@ -29,7 +29,7 @@ async function openSocket(hostname: string, port: number): Promise<Sock> {
       },
     };
   } catch {
-    const tls: any = await import("node:tls");
+    const tls: any = await import(/* @vite-ignore */ "node:tls");
     const sock: any = tls.connect({ host: hostname, port, servername: hostname });
     await new Promise<void>((res, rej) => {
       sock.once("secureConnect", () => res());
