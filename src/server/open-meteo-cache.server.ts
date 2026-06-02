@@ -27,9 +27,12 @@ function hostFromUrl(url: string): string {
 }
 
 function backoffKeysFromUrl(url: string): string[] {
-  const host = hostFromUrl(url);
-  return host.endsWith("open-meteo.com") ? ["open-meteo", host] : [host];
+  // Per-host backoff. api.open-meteo.com (forecast) og
+  // air-quality-api.open-meteo.com har separate kvoter hos Open-Meteo,
+  // så vi pauser kun den hosten som faktisk fikk 429.
+  return [hostFromUrl(url)];
 }
+
 
 async function readKv<T>(key: string): Promise<T | null> {
   try {

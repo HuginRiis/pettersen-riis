@@ -70,16 +70,26 @@ export async function fetchUvCloudPanelData(lat: number, lon: number): Promise<U
       fetchWithBackoff("air-quality", "open-meteo:uv-cloud:aq", aqUrl),
       fetchWithBackoff("air-quality", "open-meteo:uv-cloud:forecast", fcUrl),
     ]);
-    if (!aqRes || !fcRes || !aqRes.ok || !fcRes.ok) {
+    // UV (aq) er det essensielle; skydekke fra forecast er nice-to-have.
+    // Hvis aq feiler kan vi ikke gjøre noe; hvis kun forecast feiler, returnér
+    // UV uten skydekke i stedet for å feile hele panelet.
+    if (!aqRes || !aqRes.ok) {
       const stale = getCached<UvCloudData>(key);
       if (stale) return stale;
-      throw new Error(
-        `Open-Meteo UV/cloud ${aqRes?.status ?? "backoff"}/${fcRes?.status ?? "backoff"}`,
-      );
+      throw new Error(`Open-Meteo UV/cloud ${aqRes?.status ?? "backoff"}/${fcRes?.status ?? "backoff"}`);
     }
     const aq = (await aqRes.json()) as { hourly: UvCloudData["aq"]["hourly"] };
-    const fc = (await fcRes.json()) as { hourly: UvCloudData["fc"]["hourly"] };
-    return { aq: { hourly: aq.hourly }, fc: { hourly: fc.hourly } };
+    let fcHourly: UvCloudData["fc"]["hourly"] = { time: [], cloud_cover: [] } as any;
+    if (fcRes && fcRes.ok) {
+      const fc = (await fcRes.json()) as { hourly: UvCloudData["fc"]["hourly"] };
+      fcHourly = fc.hourly;
+    } else {
+      console.warn(
+        `[air-quality-fetch] forecast (cloud_cover) utilgjengelig (${fcRes?.status ?? "backoff"}), returnerer UV uten skydekke`,
+      );
+    }
+    return { aq: { hourly: aq.hourly }, fc: { hourly: fcHourly } };
+
   });
 }
 
