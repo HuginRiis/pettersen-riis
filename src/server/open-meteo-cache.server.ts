@@ -154,6 +154,20 @@ export async function withCache<T>(
   return p;
 }
 
+/**
+ * Cache-only-lesing: returnerer KV-cachet verdi (selv om TTL har gått ut)
+ * uten å trigge nye Open-Meteo-kall. Brukes av panelene slik at
+ * side-oppdateringer KUN serverer cache, mens cron-jobben holder den varm.
+ */
+export async function readCacheOnly<T>(key: string): Promise<{ value: T; fresh: boolean; expiresAt: number } | null> {
+  const now = Date.now();
+  const mem = cache.get(key) as CacheEntry<T> | undefined;
+  if (mem) return { value: mem.value, fresh: mem.expiresAt > now, expiresAt: mem.expiresAt };
+  const persisted = await getPersistentCache<T>(key);
+  if (persisted) return { value: persisted.value, fresh: persisted.expiresAt > now, expiresAt: persisted.expiresAt };
+  return null;
+
+
 export function getCached<T>(key: string): T | null {
   const hit = cache.get(key) as CacheEntry<T> | undefined;
   if (!hit) return null;
