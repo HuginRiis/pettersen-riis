@@ -1,6 +1,6 @@
 import { createServerFn, createIsomorphicFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { GARMIN_OWNERS, type GarminOwner } from "./garmin.shared";
+import { GARMIN_OWNERS, type GarminOwner } from "@/server/garmin.shared";
 
 const loadAdmin = createIsomorphicFn()
   .server((): Promise<typeof import("@/integrations/supabase/client.server")> =>
@@ -18,7 +18,7 @@ export const getGarminOverview = createServerFn({ method: "GET" })
   .inputValidator((d: unknown) => ownerSchema.parse(d ?? {}))
   .handler(async ({ data }) => {
     const owner = data.owner as GarminOwner;
-    const mod = await import("./garmin.server");
+    const mod = await import("@/server/garmin.server");
     const status = await mod.getGarminStatus(owner);
 
     const since = new Date();
@@ -70,7 +70,7 @@ export const getGarminOverview = createServerFn({ method: "GET" })
 export const garminLoginNow = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => ownerSchema.parse(d ?? {}))
   .handler(async ({ data }) => {
-    const mod = await import("./garmin.server");
+    const mod = await import("@/server/garmin.server");
     return mod.garminLogin(data.owner as GarminOwner);
   });
 
@@ -83,7 +83,7 @@ export const garminSubmitMfaCode = createServerFn({ method: "POST" })
     return { code, owner };
   })
   .handler(async ({ data }) => {
-    const mod = await import("./garmin.server");
+    const mod = await import("@/server/garmin.server");
     return mod.garminSubmitMfa(data.owner, data.code);
   });
 
@@ -93,7 +93,7 @@ export const garminSyncNow = createServerFn({ method: "POST" })
     return { owner: (x.owner === "rebekka" || x.owner === "arne") ? (x.owner as GarminOwner) : null };
   })
   .handler(async ({ data }) => {
-    const mod = await import("./garmin-sync.server");
+    const mod = await import("@/server/garmin-sync.server");
     if (data.owner) return mod.syncOne(data.owner, "manual");
     return mod.syncAll("manual");
   });

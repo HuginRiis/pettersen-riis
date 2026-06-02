@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { ArrowUp, ArrowDown, Minus, Swords, Loader2, Crown, Flame, Settings2 } from "lucide-react";
-import { getGarminOverview } from "@/server/garmin.functions";
+import { getGarminOverview } from "@/lib/garmin.functions";
 import { usePersistedState } from "@/hooks/use-persisted-state";
 
 // Forklaringer per måling — vises når brukeren slår på "Vis forklaringer"
