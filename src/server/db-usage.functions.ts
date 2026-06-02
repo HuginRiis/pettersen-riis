@@ -1,5 +1,13 @@
 import { createServerFn } from "@tanstack/react-start";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
+const __loadAdmin = createIsomorphicFn()
+  .server((): Promise<typeof import("@/integrations/supabase/client.server")> =>
+    import("@/integrations/supabase/client.server"),
+  )
+  .client(
+    (): Promise<typeof import("@/integrations/supabase/client.server")> =>
+      Promise.resolve({ supabaseAdmin: null } as unknown as typeof import("@/integrations/supabase/client.server")),
+  );
+const { supabaseAdmin } = await __loadAdmin();
 
 export const setCronJobActive = createServerFn({ method: "POST" })
   .inputValidator((input: { jobname: string; active: boolean }) => input)
