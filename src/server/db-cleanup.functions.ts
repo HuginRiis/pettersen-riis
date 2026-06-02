@@ -1,5 +1,5 @@
 // Estimerer hvor mye plass man sparer i databasen ved ulike opprydningsstrategier.
-import { createServerFn } from "@tanstack/react-start";
+import { createServerFn, createIsomorphicFn } from "@tanstack/react-start";
 const __loadAdmin = createIsomorphicFn()
   .server((): Promise<typeof import("@/integrations/supabase/client.server")> =>
     import("@/integrations/supabase/client.server"),

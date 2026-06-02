@@ -1,5 +1,5 @@
 // AI-drevet smart-søk. Bruker Lovable AI Gateway og logger til ai_search_log.
-import { createServerFn } from "@tanstack/react-start";
+import { createServerFn, createIsomorphicFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { SEARCH_INDEX } from "@/lib/search-index";
 const __loadAdmin = createIsomorphicFn()

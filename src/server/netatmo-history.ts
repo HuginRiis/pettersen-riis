@@ -1,4 +1,4 @@
-import { createServerFn } from "@tanstack/react-start";
+import { createServerFn, createIsomorphicFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { withApiLog } from "./api-call-log.server";
 import { loadStoredRefreshToken, saveStoredRefreshToken } from "./netatmo-token-store.server";
