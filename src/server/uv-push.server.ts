@@ -13,7 +13,8 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { logPushSend } from "./push-log.server";
 import { buildSubscriptionWhoOr } from "./push-recipients";
 import { loggedFetch } from "./api-call-log.server";
-import { fetchWithBackoff, withCache, getCached } from "./open-meteo-cache.server";
+import { withCache, getCached } from "./open-meteo-cache.server";
+import { fetchUvCloudPanelData } from "./air-quality-fetch.server";
 import { isApiSourcePaused } from "./api-pause.server";
 
 type UvHourly = { times: string[]; values: number[] };
@@ -29,6 +30,18 @@ async function fetchUvHourly(
   lon: number,
   source: "clear_sky" | "with_clouds",
 ): Promise<UvHourly | null> {
+  if (source === "with_clouds") {
+    try {
+      const cached = await fetchUvCloudPanelData(lat, lon);
+      return {
+        times: cached.aq?.hourly?.time ?? [],
+        values: (cached.aq?.hourly?.uv_index ?? []) as number[],
+      };
+    } catch {
+      return null;
+    }
+  }
+
   const key = `uv-hourly:${source}:${lat.toFixed(3)},${lon.toFixed(3)}`;
   return withCache<UvHourly | null>(key, async () => {
     // Felles pause-flagg for hele UV-pipeline
@@ -36,25 +49,6 @@ async function fetchUvHourly(
       const stale = getCached<UvHourly | null>(key);
       if (stale) return stale;
       return null;
-    }
-    if (source === "with_clouds") {
-      const url =
-        `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}` +
-        `&hourly=uv_index&timezone=Europe%2FOslo&forecast_days=2`;
-      const res = await fetchWithBackoff("uv", "open-meteo:uv", url);
-      if (!res) {
-        const stale = getCached<UvHourly | null>(key);
-        if (stale) return stale;
-        return null;
-      }
-      if (!res.ok) throw new Error(`Open-Meteo UV ${res.status}`);
-      const json = (await res.json()) as {
-        hourly?: { time?: string[]; uv_index?: number[] };
-      };
-      return {
-        times: json.hourly?.time ?? [],
-        values: (json.hourly?.uv_index ?? []) as number[],
-      };
     }
     const url = `https://api.met.no/weatherapi/locationforecast/2.0/complete?lat=${lat}&lon=${lon}`;
     const res = await loggedFetch("uv", "met:locationforecast", url, {
