@@ -1,0 +1,1 @@
+DELETE FROM public.notification_settings WHERE key = 'open_meteo_backoff:air-quality-api.open-meteo.com';
