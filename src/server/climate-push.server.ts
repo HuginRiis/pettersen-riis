@@ -59,7 +59,7 @@ type Snapshot = { temperature: number | null; moduleName: string };
 
 async function readLatestTemp(stationMatch: string, moduleMatch: string | null): Promise<Snapshot | null> {
   // Bruker live henter (cache 10 min på server) — samme funksjon som /varme bruker.
-  const { getNetatmoWeatherStation } = await import("./netatmo-weather");
+  const { getNetatmoWeatherStation } = await import("@/lib/netatmo-weather.functions");
   const res = await (getNetatmoWeatherStation as any)({ data: { stationMatch } });
   if (!res?.ok) return null;
   const modules = res.modules as Array<{ type: string; name: string; metrics: { temperature?: number } }>;
