@@ -42,6 +42,7 @@ import { Route as ApiHomeyCallbackRouteImport } from './routes/api.homey.callbac
 import { Route as ApiPublicHooksStravaPollRouteImport } from './routes/api/public/hooks/strava-poll'
 import { Route as ApiPublicHooksSnapshotTibberDailyRouteImport } from './routes/api.public.hooks.snapshot-tibber-daily'
 import { Route as ApiPublicHooksSnapshotPulseRouteImport } from './routes/api.public.hooks.snapshot-pulse'
+import { Route as ApiPublicHooksOpenMeteoWarmRouteImport } from './routes/api/public/hooks/open-meteo-warm'
 import { Route as ApiPublicHooksNetatmoClimateRefreshRouteImport } from './routes/api/public/hooks/netatmo-climate-refresh'
 import { Route as ApiPublicHooksHomeySensorPollRouteImport } from './routes/api/public/hooks/homey-sensor-poll'
 import { Route as ApiPublicHooksGardenaPollRouteImport } from './routes/api/public/hooks/gardena-poll'
@@ -218,6 +219,12 @@ const ApiPublicHooksSnapshotPulseRoute =
     path: '/api/public/hooks/snapshot-pulse',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksOpenMeteoWarmRoute =
+  ApiPublicHooksOpenMeteoWarmRouteImport.update({
+    id: '/api/public/hooks/open-meteo-warm',
+    path: '/api/public/hooks/open-meteo-warm',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksNetatmoClimateRefreshRoute =
   ApiPublicHooksNetatmoClimateRefreshRouteImport.update({
     id: '/api/public/hooks/netatmo-climate-refresh',
@@ -297,6 +304,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/gardena-poll': typeof ApiPublicHooksGardenaPollRoute
   '/api/public/hooks/homey-sensor-poll': typeof ApiPublicHooksHomeySensorPollRoute
   '/api/public/hooks/netatmo-climate-refresh': typeof ApiPublicHooksNetatmoClimateRefreshRoute
+  '/api/public/hooks/open-meteo-warm': typeof ApiPublicHooksOpenMeteoWarmRoute
   '/api/public/hooks/snapshot-pulse': typeof ApiPublicHooksSnapshotPulseRoute
   '/api/public/hooks/snapshot-tibber-daily': typeof ApiPublicHooksSnapshotTibberDailyRoute
   '/api/public/hooks/strava-poll': typeof ApiPublicHooksStravaPollRoute
@@ -339,6 +347,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/gardena-poll': typeof ApiPublicHooksGardenaPollRoute
   '/api/public/hooks/homey-sensor-poll': typeof ApiPublicHooksHomeySensorPollRoute
   '/api/public/hooks/netatmo-climate-refresh': typeof ApiPublicHooksNetatmoClimateRefreshRoute
+  '/api/public/hooks/open-meteo-warm': typeof ApiPublicHooksOpenMeteoWarmRoute
   '/api/public/hooks/snapshot-pulse': typeof ApiPublicHooksSnapshotPulseRoute
   '/api/public/hooks/snapshot-tibber-daily': typeof ApiPublicHooksSnapshotTibberDailyRoute
   '/api/public/hooks/strava-poll': typeof ApiPublicHooksStravaPollRoute
@@ -382,6 +391,7 @@ export interface FileRoutesById {
   '/api/public/hooks/gardena-poll': typeof ApiPublicHooksGardenaPollRoute
   '/api/public/hooks/homey-sensor-poll': typeof ApiPublicHooksHomeySensorPollRoute
   '/api/public/hooks/netatmo-climate-refresh': typeof ApiPublicHooksNetatmoClimateRefreshRoute
+  '/api/public/hooks/open-meteo-warm': typeof ApiPublicHooksOpenMeteoWarmRoute
   '/api/public/hooks/snapshot-pulse': typeof ApiPublicHooksSnapshotPulseRoute
   '/api/public/hooks/snapshot-tibber-daily': typeof ApiPublicHooksSnapshotTibberDailyRoute
   '/api/public/hooks/strava-poll': typeof ApiPublicHooksStravaPollRoute
@@ -426,6 +436,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/gardena-poll'
     | '/api/public/hooks/homey-sensor-poll'
     | '/api/public/hooks/netatmo-climate-refresh'
+    | '/api/public/hooks/open-meteo-warm'
     | '/api/public/hooks/snapshot-pulse'
     | '/api/public/hooks/snapshot-tibber-daily'
     | '/api/public/hooks/strava-poll'
@@ -468,6 +479,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/gardena-poll'
     | '/api/public/hooks/homey-sensor-poll'
     | '/api/public/hooks/netatmo-climate-refresh'
+    | '/api/public/hooks/open-meteo-warm'
     | '/api/public/hooks/snapshot-pulse'
     | '/api/public/hooks/snapshot-tibber-daily'
     | '/api/public/hooks/strava-poll'
@@ -510,6 +522,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/gardena-poll'
     | '/api/public/hooks/homey-sensor-poll'
     | '/api/public/hooks/netatmo-climate-refresh'
+    | '/api/public/hooks/open-meteo-warm'
     | '/api/public/hooks/snapshot-pulse'
     | '/api/public/hooks/snapshot-tibber-daily'
     | '/api/public/hooks/strava-poll'
@@ -553,6 +566,7 @@ export interface RootRouteChildren {
   ApiPublicHooksGardenaPollRoute: typeof ApiPublicHooksGardenaPollRoute
   ApiPublicHooksHomeySensorPollRoute: typeof ApiPublicHooksHomeySensorPollRoute
   ApiPublicHooksNetatmoClimateRefreshRoute: typeof ApiPublicHooksNetatmoClimateRefreshRoute
+  ApiPublicHooksOpenMeteoWarmRoute: typeof ApiPublicHooksOpenMeteoWarmRoute
   ApiPublicHooksSnapshotPulseRoute: typeof ApiPublicHooksSnapshotPulseRoute
   ApiPublicHooksSnapshotTibberDailyRoute: typeof ApiPublicHooksSnapshotTibberDailyRoute
   ApiPublicHooksStravaPollRoute: typeof ApiPublicHooksStravaPollRoute
@@ -791,6 +805,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksSnapshotPulseRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/open-meteo-warm': {
+      id: '/api/public/hooks/open-meteo-warm'
+      path: '/api/public/hooks/open-meteo-warm'
+      fullPath: '/api/public/hooks/open-meteo-warm'
+      preLoaderRoute: typeof ApiPublicHooksOpenMeteoWarmRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/netatmo-climate-refresh': {
       id: '/api/public/hooks/netatmo-climate-refresh'
       path: '/api/public/hooks/netatmo-climate-refresh'
@@ -883,6 +904,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksHomeySensorPollRoute: ApiPublicHooksHomeySensorPollRoute,
   ApiPublicHooksNetatmoClimateRefreshRoute:
     ApiPublicHooksNetatmoClimateRefreshRoute,
+  ApiPublicHooksOpenMeteoWarmRoute: ApiPublicHooksOpenMeteoWarmRoute,
   ApiPublicHooksSnapshotPulseRoute: ApiPublicHooksSnapshotPulseRoute,
   ApiPublicHooksSnapshotTibberDailyRoute:
     ApiPublicHooksSnapshotTibberDailyRoute,
