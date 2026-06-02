@@ -1,10 +1,10 @@
 import { createServerFn, createIsomorphicFn } from "@tanstack/react-start";
 import { z } from "zod";
 const __load_slow_page_push_server = createIsomorphicFn()
-  .server((): Promise<typeof import("@/server/slow-page-push.server")> => import("@/server/slow-page-push.server"))
-  .client((): Promise<typeof import("@/server/slow-page-push.server")> => Promise.resolve({} as unknown as typeof import("@/server/slow-page-push.server")));
+  .server((): Promise<typeof import("@/lib/slow-page-push.server")> => import("@/lib/slow-page-push.server"))
+  .client((): Promise<typeof import("@/lib/slow-page-push.server")> => Promise.resolve({} as unknown as typeof import("@/lib/slow-page-push.server")));
 const { loadSlowPageConfig, saveSlowPageConfig, sendSlowPageLoadTest } = await __load_slow_page_push_server();
-import type { SlowPageConfig } from "@/server/slow-page-push.server";
+import type { SlowPageConfig } from "@/lib/slow-page-push.server";
 export const getSlowPageConfig = createServerFn({ method: "GET" }).handler(
   async (): Promise<SlowPageConfig> => loadSlowPageConfig(),
 );

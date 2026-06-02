@@ -24,7 +24,7 @@ export const Route = createFileRoute("/api/strava/start")({
           });
         }
 
-        const { getStravaCredentials } = await import("@/server/strava-credentials.server");
+        const { getStravaCredentials } = await import("@/lib/strava-credentials.server");
         const { clientId } = getStravaCredentials(owner);
         if (!clientId) {
           return new Response(`STRAVA_CLIENT_ID mangler for ${owner}`, { status: 500 });
@@ -40,7 +40,7 @@ export const Route = createFileRoute("/api/strava/start")({
 
         // Pakk owner inn i state slik at callback vet hvilken konto vi binder til.
         const stateSecret = process.env.STRAVA_OAUTH_STATE_SECRET;
-        const { createStravaState } = await import("@/server/strava-connection.server");
+        const { createStravaState } = await import("@/lib/strava-connection.server");
         const state = stateSecret
           ? createStravaState(owner, stateSecret)
           : `${owner}.${Date.now()}.${crypto.randomUUID()}`;

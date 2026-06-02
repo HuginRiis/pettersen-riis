@@ -1,11 +1,11 @@
 import { createServerFn, createIsomorphicFn } from "@tanstack/react-start";
 import { z } from "zod";
 const __load_met_alert_push_server = createIsomorphicFn()
-  .server((): Promise<typeof import("@/server/met-alert-push.server")> => import("@/server/met-alert-push.server"))
-  .client((): Promise<typeof import("@/server/met-alert-push.server")> => Promise.resolve({} as unknown as typeof import("@/server/met-alert-push.server")));
+  .server((): Promise<typeof import("@/lib/met-alert-push.server")> => import("@/lib/met-alert-push.server"))
+  .client((): Promise<typeof import("@/lib/met-alert-push.server")> => Promise.resolve({} as unknown as typeof import("@/lib/met-alert-push.server")));
 const __load_met_alerts_server = createIsomorphicFn()
-  .server((): Promise<typeof import("@/server/met-alerts.server")> => import("@/server/met-alerts.server"))
-  .client((): Promise<typeof import("@/server/met-alerts.server")> => Promise.resolve({} as unknown as typeof import("@/server/met-alerts.server")));
+  .server((): Promise<typeof import("@/lib/met-alerts.server")> => import("@/lib/met-alerts.server"))
+  .client((): Promise<typeof import("@/lib/met-alerts.server")> => Promise.resolve({} as unknown as typeof import("@/lib/met-alerts.server")));
 
 export const sendMetAlertTestPush = createServerFn({ method: "POST" })
   .inputValidator((data) => z.object({ prefId: z.string().uuid() }).parse(data))

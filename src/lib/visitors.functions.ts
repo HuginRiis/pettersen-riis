@@ -10,15 +10,15 @@ const __loadAdmin = createIsomorphicFn()
   );
 const { supabaseAdmin } = await __loadAdmin();
 const __loadApiLog = createIsomorphicFn()
-  .server((): Promise<typeof import("@/server/api-call-log.server")> =>
-    import("@/server/api-call-log.server"),
+  .server((): Promise<typeof import("@/lib/api-call-log.server")> =>
+    import("@/lib/api-call-log.server"),
   )
   .client(
-    (): Promise<typeof import("@/server/api-call-log.server")> =>
+    (): Promise<typeof import("@/lib/api-call-log.server")> =>
       Promise.resolve({
         loggedFetch: ((_s: any, _n: any, url: any, init: any) => fetch(url, init)) as any,
         withApiLog: ((_s: any, _n: any, fn: any) => fn) as any,
-      } as unknown as typeof import("@/server/api-call-log.server")),
+      } as unknown as typeof import("@/lib/api-call-log.server")),
   );
 const { loggedFetch } = await __loadApiLog();
 

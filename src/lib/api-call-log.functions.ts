@@ -2,13 +2,13 @@
 import { createServerFn, createIsomorphicFn } from "@tanstack/react-start";
 import { z } from "zod";
 const __load_air_quality_fetch_server = createIsomorphicFn()
-  .server((): Promise<typeof import("@/server/air-quality-fetch.server")> => import("@/server/air-quality-fetch.server"))
-  .client((): Promise<typeof import("@/server/air-quality-fetch.server")> => Promise.resolve({} as unknown as typeof import("@/server/air-quality-fetch.server")));
+  .server((): Promise<typeof import("@/lib/air-quality-fetch.server")> => import("@/lib/air-quality-fetch.server"))
+  .client((): Promise<typeof import("@/lib/air-quality-fetch.server")> => Promise.resolve({} as unknown as typeof import("@/lib/air-quality-fetch.server")));
 const __load_api_call_log_server = createIsomorphicFn()
-  .server((): Promise<typeof import("@/server/api-call-log.server")> => import("@/server/api-call-log.server"))
-  .client((): Promise<typeof import("@/server/api-call-log.server")> => Promise.resolve({} as unknown as typeof import("@/server/api-call-log.server")));
+  .server((): Promise<typeof import("@/lib/api-call-log.server")> => import("@/lib/api-call-log.server"))
+  .client((): Promise<typeof import("@/lib/api-call-log.server")> => Promise.resolve({} as unknown as typeof import("@/lib/api-call-log.server")));
 const { computeApiCallSummary } = await __load_api_call_log_server();
-import type { ApiCallSummary } from "@/server/api-call-log.server";
+import type { ApiCallSummary } from "@/lib/api-call-log.server";
 export const getApiCallLog = createServerFn({ method: "GET" }).handler(
   async (): Promise<ApiCallSummary> => {
     return computeApiCallSummary();

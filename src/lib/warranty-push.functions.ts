@@ -1,8 +1,8 @@
 import { createServerFn, createIsomorphicFn } from "@tanstack/react-start";
 import { z } from "zod";
 const __load_warranty_push_server = createIsomorphicFn()
-  .server((): Promise<typeof import("@/server/warranty-push.server")> => import("@/server/warranty-push.server"))
-  .client((): Promise<typeof import("@/server/warranty-push.server")> => Promise.resolve({} as unknown as typeof import("@/server/warranty-push.server")));
+  .server((): Promise<typeof import("@/lib/warranty-push.server")> => import("@/lib/warranty-push.server"))
+  .client((): Promise<typeof import("@/lib/warranty-push.server")> => Promise.resolve({} as unknown as typeof import("@/lib/warranty-push.server")));
 
 /**
  * Sender en test-push for garanti-varsel for en valgt kvittering.

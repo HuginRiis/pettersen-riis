@@ -1,8 +1,8 @@
 import { createServerFn, createIsomorphicFn } from "@tanstack/react-start";
 import { useSession, getRequestHeader } from "@tanstack/react-start/server";
 const __load_visitors_log_server = createIsomorphicFn()
-  .server((): Promise<typeof import("@/server/visitors-log.server")> => import("@/server/visitors-log.server"))
-  .client((): Promise<typeof import("@/server/visitors-log.server")> => Promise.resolve({} as unknown as typeof import("@/server/visitors-log.server")));
+  .server((): Promise<typeof import("@/lib/visitors-log.server")> => import("@/lib/visitors-log.server"))
+  .client((): Promise<typeof import("@/lib/visitors-log.server")> => Promise.resolve({} as unknown as typeof import("@/lib/visitors-log.server")));
 
 /**
  * Detect whether the current request is coming from an iframe (e.g. the

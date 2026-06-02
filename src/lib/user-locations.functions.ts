@@ -9,24 +9,24 @@ const __loadAdmin = createIsomorphicFn()
   );
 const { supabaseAdmin } = await __loadAdmin();
 const __loadVisitorsLog = createIsomorphicFn()
-  .server((): Promise<typeof import("@/server/visitors-log.server")> =>
-    import("@/server/visitors-log.server"),
+  .server((): Promise<typeof import("@/lib/visitors-log.server")> =>
+    import("@/lib/visitors-log.server"),
   )
   .client(
-    (): Promise<typeof import("@/server/visitors-log.server")> =>
-      Promise.resolve({ getCurrentRequestIp: (() => null) as any } as unknown as typeof import("@/server/visitors-log.server")),
+    (): Promise<typeof import("@/lib/visitors-log.server")> =>
+      Promise.resolve({ getCurrentRequestIp: (() => null) as any } as unknown as typeof import("@/lib/visitors-log.server")),
   );
 const { getCurrentRequestIp } = await __loadVisitorsLog();
 
 const __loadOpenMeteoCache = createIsomorphicFn()
-  .server((): Promise<typeof import("@/server/open-meteo-cache.server")> =>
-    import("@/server/open-meteo-cache.server"),
+  .server((): Promise<typeof import("@/lib/open-meteo-cache.server")> =>
+    import("@/lib/open-meteo-cache.server"),
   )
   .client(
-    (): Promise<typeof import("@/server/open-meteo-cache.server")> =>
+    (): Promise<typeof import("@/lib/open-meteo-cache.server")> =>
       Promise.resolve({
         fetchWithBackoff: ((_s: any, _n: any, url: any, init: any) => fetch(url, init)) as any,
-      } as unknown as typeof import("@/server/open-meteo-cache.server")),
+      } as unknown as typeof import("@/lib/open-meteo-cache.server")),
   );
 
 export type WhoName = "Arne" | "Rebekka" | string;

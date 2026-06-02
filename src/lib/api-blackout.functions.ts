@@ -2,10 +2,10 @@
 import { createServerFn, createIsomorphicFn } from "@tanstack/react-start";
 import { z } from "zod";
 const __load_api_blackout_server = createIsomorphicFn()
-  .server((): Promise<typeof import("@/server/api-blackout.server")> => import("@/server/api-blackout.server"))
-  .client((): Promise<typeof import("@/server/api-blackout.server")> => Promise.resolve({} as unknown as typeof import("@/server/api-blackout.server")));
+  .server((): Promise<typeof import("@/lib/api-blackout.server")> => import("@/lib/api-blackout.server"))
+  .client((): Promise<typeof import("@/lib/api-blackout.server")> => Promise.resolve({} as unknown as typeof import("@/lib/api-blackout.server")));
 const { getBlackoutConfig, setBlackoutConfig } = await __load_api_blackout_server();
-import type { BlackoutConfig } from "@/server/api-blackout.server";
+import type { BlackoutConfig } from "@/lib/api-blackout.server";
 export type { BlackoutConfig };
 
 const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;

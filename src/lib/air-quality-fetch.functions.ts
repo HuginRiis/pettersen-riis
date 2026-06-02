@@ -1,8 +1,8 @@
 import { createServerFn, createIsomorphicFn } from "@tanstack/react-start";
 import { z } from "zod";
 const __load_air_quality_fetch_server = createIsomorphicFn()
-  .server((): Promise<typeof import("@/server/air-quality-fetch.server")> => import("@/server/air-quality-fetch.server"))
-  .client((): Promise<typeof import("@/server/air-quality-fetch.server")> => Promise.resolve({} as unknown as typeof import("@/server/air-quality-fetch.server")));
+  .server((): Promise<typeof import("@/lib/air-quality-fetch.server")> => import("@/lib/air-quality-fetch.server"))
+  .client((): Promise<typeof import("@/lib/air-quality-fetch.server")> => Promise.resolve({} as unknown as typeof import("@/lib/air-quality-fetch.server")));
 
 const coordSchema = z.object({
   lat: z.number().min(-90).max(90),

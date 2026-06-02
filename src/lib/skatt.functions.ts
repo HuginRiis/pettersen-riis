@@ -10,12 +10,12 @@ const __loadAdmin = createIsomorphicFn()
   );
 const { supabaseAdmin } = await __loadAdmin();
 const __load_api_call_log_server = createIsomorphicFn()
-  .server((): Promise<typeof import("@/server/api-call-log.server")> => import("@/server/api-call-log.server"))
-  .client((): Promise<typeof import("@/server/api-call-log.server")> => Promise.resolve({} as unknown as typeof import("@/server/api-call-log.server")));
+  .server((): Promise<typeof import("@/lib/api-call-log.server")> => import("@/lib/api-call-log.server"))
+  .client((): Promise<typeof import("@/lib/api-call-log.server")> => Promise.resolve({} as unknown as typeof import("@/lib/api-call-log.server")));
 const { loggedFetch } = await __load_api_call_log_server();
 const __load_ai_usage_server = createIsomorphicFn()
-  .server((): Promise<typeof import("@/server/ai-usage.server")> => import("@/server/ai-usage.server"))
-  .client((): Promise<typeof import("@/server/ai-usage.server")> => Promise.resolve({} as unknown as typeof import("@/server/ai-usage.server")));
+  .server((): Promise<typeof import("@/lib/ai-usage.server")> => import("@/lib/ai-usage.server"))
+  .client((): Promise<typeof import("@/lib/ai-usage.server")> => Promise.resolve({} as unknown as typeof import("@/lib/ai-usage.server")));
 const { logAiSearch, isHouseAuthenticated } = await __load_ai_usage_server();
 export type TaxMonth = {
   id: string;

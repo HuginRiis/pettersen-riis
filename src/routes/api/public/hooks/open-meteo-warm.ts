@@ -9,7 +9,7 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import {
   warmAirQualityPanel,
   warmUvCloudPanel,
-} from "@/server/air-quality-fetch.server";
+} from "@/lib/air-quality-fetch.server";
 
 type LocRow = { lat: number; lon: number; enabled: boolean };
 

@@ -1,8 +1,8 @@
 import { createServerFn, createIsomorphicFn } from "@tanstack/react-start";
 import { z } from "zod";
 const __load_weather_push_server = createIsomorphicFn()
-  .server((): Promise<typeof import("@/server/weather-push.server")> => import("@/server/weather-push.server"))
-  .client((): Promise<typeof import("@/server/weather-push.server")> => Promise.resolve({} as unknown as typeof import("@/server/weather-push.server")));
+  .server((): Promise<typeof import("@/lib/weather-push.server")> => import("@/lib/weather-push.server"))
+  .client((): Promise<typeof import("@/lib/weather-push.server")> => Promise.resolve({} as unknown as typeof import("@/lib/weather-push.server")));
 
 export const sendWeatherTestPush = createServerFn({ method: "POST" })
   .inputValidator((data) => z.object({ prefId: z.string().uuid() }).parse(data))

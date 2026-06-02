@@ -1,8 +1,8 @@
 import { createServerFn, createIsomorphicFn } from "@tanstack/react-start";
 import { z } from "zod";
 const __load_uv_push_server = createIsomorphicFn()
-  .server((): Promise<typeof import("@/server/uv-push.server")> => import("@/server/uv-push.server"))
-  .client((): Promise<typeof import("@/server/uv-push.server")> => Promise.resolve({} as unknown as typeof import("@/server/uv-push.server")));
+  .server((): Promise<typeof import("@/lib/uv-push.server")> => import("@/lib/uv-push.server"))
+  .client((): Promise<typeof import("@/lib/uv-push.server")> => Promise.resolve({} as unknown as typeof import("@/lib/uv-push.server")));
 
 /**
  * Sender et test-push for UV-varsel for en valgt lokasjon.

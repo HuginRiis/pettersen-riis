@@ -351,7 +351,7 @@ export async function fetchRoborockSnapshot(): Promise<RoborockSnapshot> {
   }
 }
 
-import { sendRoborockMqttCommand } from "@/server/roborock-mqtt.server";
+import { sendRoborockMqttCommand } from "@/lib/roborock-mqtt.server";
 
 export type RoborockCommandResult = {
   ok: boolean;

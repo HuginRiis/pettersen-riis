@@ -1,7 +1,7 @@
 import { createServerFn, createIsomorphicFn } from "@tanstack/react-start";
 const __load_agenda_push_server = createIsomorphicFn()
-  .server((): Promise<typeof import("@/server/agenda-push.server")> => import("@/server/agenda-push.server"))
-  .client((): Promise<typeof import("@/server/agenda-push.server")> => Promise.resolve({} as unknown as typeof import("@/server/agenda-push.server")));
+  .server((): Promise<typeof import("@/lib/agenda-push.server")> => import("@/lib/agenda-push.server"))
+  .client((): Promise<typeof import("@/lib/agenda-push.server")> => Promise.resolve({} as unknown as typeof import("@/lib/agenda-push.server")));
 
 export async function processAgendaNotifications() {
   const mod = await __load_agenda_push_server();

@@ -1,7 +1,7 @@
 import { createServerFn, createIsomorphicFn } from "@tanstack/react-start";
 const __load_garbage_collection_server = createIsomorphicFn()
-  .server((): Promise<typeof import("@/server/garbage-collection.server")> => import("@/server/garbage-collection.server"))
-  .client((): Promise<typeof import("@/server/garbage-collection.server")> => Promise.resolve({} as unknown as typeof import("@/server/garbage-collection.server")));
+  .server((): Promise<typeof import("@/lib/garbage-collection.server")> => import("@/lib/garbage-collection.server"))
+  .client((): Promise<typeof import("@/lib/garbage-collection.server")> => Promise.resolve({} as unknown as typeof import("@/lib/garbage-collection.server")));
 
 export const getGarbageOverview = createServerFn({ method: "GET" }).handler(async () => {
   const mod = await __load_garbage_collection_server();

@@ -2,8 +2,8 @@
 import { createServerFn, createIsomorphicFn } from "@tanstack/react-start";
 import { z } from "zod";
 const __load_api_pause_server = createIsomorphicFn()
-  .server((): Promise<typeof import("@/server/api-pause.server")> => import("@/server/api-pause.server"))
-  .client((): Promise<typeof import("@/server/api-pause.server")> => Promise.resolve({} as unknown as typeof import("@/server/api-pause.server")));
+  .server((): Promise<typeof import("@/lib/api-pause.server")> => import("@/lib/api-pause.server"))
+  .client((): Promise<typeof import("@/lib/api-pause.server")> => Promise.resolve({} as unknown as typeof import("@/lib/api-pause.server")));
 const { listApiPauseFlags, setApiSourcePausedDb } = await __load_api_pause_server();
 export type ApiPauseFlag = { source: string; paused: boolean; updated_at: string };
 

@@ -1,25 +1,25 @@
 import { createServerFn, createIsomorphicFn } from "@tanstack/react-start";
 
 const loadApiLog = createIsomorphicFn()
-  .server((): Promise<typeof import("@/server/api-call-log.server")> =>
-    import("@/server/api-call-log.server"),
+  .server((): Promise<typeof import("@/lib/api-call-log.server")> =>
+    import("@/lib/api-call-log.server"),
   )
   .client(
-    (): Promise<typeof import("@/server/api-call-log.server")> =>
+    (): Promise<typeof import("@/lib/api-call-log.server")> =>
       Promise.resolve({
         withApiLog: (_g: string, _n: string, fn: any) => fn,
-      } as unknown as typeof import("@/server/api-call-log.server")),
+      } as unknown as typeof import("@/lib/api-call-log.server")),
   );
 const loadTokenStore = createIsomorphicFn()
-  .server((): Promise<typeof import("@/server/netatmo-token-store.server")> =>
-    import("@/server/netatmo-token-store.server"),
+  .server((): Promise<typeof import("@/lib/netatmo-token-store.server")> =>
+    import("@/lib/netatmo-token-store.server"),
   )
   .client(
-    (): Promise<typeof import("@/server/netatmo-token-store.server")> =>
+    (): Promise<typeof import("@/lib/netatmo-token-store.server")> =>
       Promise.resolve({
         loadStoredRefreshToken: async () => null,
         saveStoredRefreshToken: async () => {},
-      } as unknown as typeof import("@/server/netatmo-token-store.server")),
+      } as unknown as typeof import("@/lib/netatmo-token-store.server")),
   );
 const { withApiLog } = await loadApiLog();
 const { loadStoredRefreshToken, saveStoredRefreshToken } = await loadTokenStore();
