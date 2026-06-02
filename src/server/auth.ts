@@ -187,6 +187,7 @@ export const getWelcomeInfo = createServerFn({ method: "POST" })
   })
   .handler(async ({ data }) => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { getCurrentRequestIp } = await import("./visitors-log.server");
   const ip = getCurrentRequestIp();
   const session = await useSession<SessionData>(getSessionConfig());
   const authenticated = session.data?.authenticated === true;
