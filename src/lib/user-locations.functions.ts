@@ -308,7 +308,7 @@ export const reverseGeocode = createServerFn({ method: "POST" })
             gUrl.searchParams.set("count", "10");
             gUrl.searchParams.set("language", "no");
             gUrl.searchParams.set("countryCode", a.country_code?.toUpperCase() || "NO");
-            const { fetchWithBackoff } = await import("@/server/open-meteo-cache.server");
+            const { fetchWithBackoff } = await __loadOpenMeteoCache();
             const gRes = await fetchWithBackoff("geoip", "open-meteo:geocoding", gUrl.toString(), {
               headers: { Accept: "application/json" },
               signal: AbortSignal.timeout(6000),
