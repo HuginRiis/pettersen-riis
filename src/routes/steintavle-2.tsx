@@ -6,7 +6,7 @@ import { PageShell } from "@/components/PageShell";
 import {
   getNetatmoWeatherStation,
   type WeatherModule,
-} from "@/server/netatmo-weather";
+} from "@/lib/netatmo-weather.functions";
 import { useLastGood } from "@/hooks/use-last-good";
 
 const SIZE_STORAGE_KEY = "st2.textSizes.v1";

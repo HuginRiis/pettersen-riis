@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { getNetatmoWeatherStation, type WeatherStationResult } from "@/server/netatmo-weather";
+import { getNetatmoWeatherStation, type WeatherStationResult } from "@/lib/netatmo-weather.functions";
 import { StuaConditionPanel } from "@/components/StuaConditionPanel";
 
 const REFRESH_MS = 10 * 60_000;

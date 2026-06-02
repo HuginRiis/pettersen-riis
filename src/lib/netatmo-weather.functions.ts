@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
-import { withApiLog } from "./api-call-log.server";
-import { loadStoredRefreshToken, saveStoredRefreshToken } from "./netatmo-token-store.server";
+import { withApiLog } from "@/server/api-call-log.server";
+import { loadStoredRefreshToken, saveStoredRefreshToken } from "@/server/netatmo-token-store.server";
 
 const REFRESH_TOKEN_KEY = "netatmo_ws_refresh_token";
 

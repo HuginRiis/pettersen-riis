@@ -4,7 +4,7 @@ import { Thermometer, Wind, CloudRain, ArrowDown, ArrowUp } from "lucide-react";
 import {
   getNetatmoWeatherStation,
   type WeatherStationResult,
-} from "@/server/netatmo-weather";
+} from "@/lib/netatmo-weather.functions";
 
 const REFRESH_MS = 10 * 60_000;
 

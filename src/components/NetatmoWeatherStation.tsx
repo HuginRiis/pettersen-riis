@@ -5,7 +5,7 @@ import {
   getNetatmoWeatherStation,
   type WeatherModule,
   type WeatherStationResult,
-} from "@/server/netatmo-weather";
+} from "@/lib/netatmo-weather.functions";
 
 const REFRESH_MS = 10 * 60_000; // 10 min
 
