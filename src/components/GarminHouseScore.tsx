@@ -35,15 +35,20 @@ function osloDateKey(d = new Date()): string {
   }).format(d);
 }
 
+function osloYesterdayKey(): string {
+  const d = new Date();
+  d.setUTCDate(d.getUTCDate() - 1);
+  return osloDateKey(d);
+}
+
 function pickDay<T extends { day: string }>(arr: T[] | undefined, day: string): T | undefined {
   return arr?.find((x) => x.day === day);
 }
 
 type Metric = { a: number | null | undefined; r: number | null | undefined; higherIsBetter: boolean };
 
-function countWins(arne: Overview | null, rebekka: Overview | null): { arne: number; rebekka: number } {
+function countWins(arne: Overview | null, rebekka: Overview | null, day: string): { arne: number; rebekka: number } {
   if (!arne || !rebekka) return { arne: 0, rebekka: 0 };
-  const day = osloDateKey();
   const aD = pickDay(arne.daily, day);
   const rD = pickDay(rebekka.daily, day);
   const aS = pickDay(arne.sleep, day);
