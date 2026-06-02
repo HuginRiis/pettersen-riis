@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { getHomeySnapshot, type HomeyDeviceSnapshot } from "./homey";
+import { getHomeySnapshot, type HomeyDeviceSnapshot } from "@/lib/homey.functions";
 
 export type PbthCapability = {
   id: string;

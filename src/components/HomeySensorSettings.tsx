@@ -9,7 +9,7 @@ import {
   backfillHomeySensorHistoryFn,
   getHomeySensorHistorySettings,
   saveHomeySensorHistorySettingsFn,
-} from "@/lib/homey.functions-sensor-dashboard.functions";
+} from "@/server/homey-sensor-dashboard.functions";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Activity, Loader2, Send, Save, Bell, BellOff, RefreshCw, Database } from "lucide-react";

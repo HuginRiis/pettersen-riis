@@ -1,5 +1,5 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { fetchHomeyInsightsLog } from "./homey";
+import { fetchHomeyInsightsLog } from "@/lib/homey.functions";
 
 type Kind = "motion" | "door" | "lock" | "window" | "contact";
 
