@@ -127,7 +127,21 @@ async function warmOpenMeteoCore(lat: number, lon: number): Promise<OpenMeteoCor
 }
 
 export async function warmAirQualityPanel(lat: number, lon: number): Promise<void> {
-  const core = await warmOpenMeteoCore(lat, lon);
+  let core: OpenMeteoCoreData;
+  try {
+    core = await warmOpenMeteoCore(lat, lon);
+  } catch (err) {
+    // 429 / nettverksfeil: behold forrige vellykkede aq/pollen-cache uendret.
+    const [aqHit, pollenHit] = await Promise.all([
+      readCacheOnly<AqPanelData>(aqKey(lat, lon)),
+      readCacheOnly<OpenMeteoPollenData>(pollenKey(lat, lon)),
+    ]);
+    if (aqHit || pollenHit) {
+      console.warn("[open-meteo warm] core feilet, beholder forrige cache:", String((err as any)?.message ?? err));
+      return;
+    }
+    throw err;
+  }
   await Promise.all([
     setCached<AqPanelData>(aqKey(lat, lon), {
       hourly: pickFields(core.hourly, HOURLY_FIELDS.split(",")),
