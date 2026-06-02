@@ -8,7 +8,26 @@ const __loadAdmin = createIsomorphicFn()
       Promise.resolve({ supabaseAdmin: null } as unknown as typeof import("@/integrations/supabase/client.server")),
   );
 const { supabaseAdmin } = await __loadAdmin();
-import { getCurrentRequestIp } from "@/server/visitors-log.server";
+const __loadVisitorsLog = createIsomorphicFn()
+  .server((): Promise<typeof import("@/server/visitors-log.server")> =>
+    import("@/server/visitors-log.server"),
+  )
+  .client(
+    (): Promise<typeof import("@/server/visitors-log.server")> =>
+      Promise.resolve({ getCurrentRequestIp: (() => null) as any } as unknown as typeof import("@/server/visitors-log.server")),
+  );
+const { getCurrentRequestIp } = await __loadVisitorsLog();
+
+const __loadOpenMeteoCache = createIsomorphicFn()
+  .server((): Promise<typeof import("@/server/open-meteo-cache.server")> =>
+    import("@/server/open-meteo-cache.server"),
+  )
+  .client(
+    (): Promise<typeof import("@/server/open-meteo-cache.server")> =>
+      Promise.resolve({
+        fetchWithBackoff: ((_s: any, _n: any, url: any, init: any) => fetch(url, init)) as any,
+      } as unknown as typeof import("@/server/open-meteo-cache.server")),
+  );
 
 export type WhoName = "Arne" | "Rebekka" | string;
 export type LocationPage = "var" | "pollen";
