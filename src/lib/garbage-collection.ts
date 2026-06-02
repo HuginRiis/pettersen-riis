@@ -1,7 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
+const __load_garbage_collection_server = createIsomorphicFn()
+  .server((): Promise<typeof import("@/server/garbage-collection.server")> => import("@/server/garbage-collection.server"))
+  .client((): Promise<typeof import("@/server/garbage-collection.server")> => Promise.resolve({} as unknown as typeof import("@/server/garbage-collection.server")));
 
 export const getGarbageOverview = createServerFn({ method: "GET" }).handler(async () => {
-  const mod = await import("@/server/garbage-collection.server");
+  const mod = await __load_garbage_collection_server();
   return mod.getGarbageOverview();
 });
 
@@ -35,7 +38,7 @@ export const setGarbageAddress = createServerFn({ method: "POST" })
     };
   })
   .handler(async ({ data }) => {
-    const mod = await import("@/server/garbage-collection.server");
+    const mod = await __load_garbage_collection_server();
     return mod.setGarbageAddress(data);
   });
 
@@ -61,12 +64,12 @@ export const updateGarbagePref = createServerFn({ method: "POST" })
     };
   })
   .handler(async ({ data }) => {
-    const mod = await import("@/server/garbage-collection.server");
+    const mod = await __load_garbage_collection_server();
     return mod.updateGarbagePref(data);
   });
 
 // For agenda-push hooken
 export async function processGarbageNotifications() {
-  const mod = await import("@/server/garbage-collection.server");
+  const mod = await __load_garbage_collection_server();
   return mod.processGarbageNotifications();
 }

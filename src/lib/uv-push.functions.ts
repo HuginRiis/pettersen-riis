@@ -1,5 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+const __load_uv_push_server = createIsomorphicFn()
+  .server((): Promise<typeof import("@/server/uv-push.server")> => import("@/server/uv-push.server"))
+  .client((): Promise<typeof import("@/server/uv-push.server")> => Promise.resolve({} as unknown as typeof import("@/server/uv-push.server")));
 
 /**
  * Sender et test-push for UV-varsel for en valgt lokasjon.
@@ -16,7 +19,7 @@ export const sendUvTestPush = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ data }) => {
-    const { sendUvTestNotification } = await import("@/server/uv-push.server");
+    const { sendUvTestNotification } = await __load_uv_push_server();
     return sendUvTestNotification(data.prefId, data.level ?? 3);
   });
 
@@ -25,7 +28,7 @@ export const sendUvTestPush = createServerFn({ method: "POST" })
  * aktiverte lokasjon (basert på MET.no-prognose og lead_minutes).
  */
 export const getUvForecast = createServerFn({ method: "GET" }).handler(async () => {
-  const { computeUvForecast } = await import("@/server/uv-push.server");
+  const { computeUvForecast } = await __load_uv_push_server();
   return computeUvForecast();
 });
 
@@ -34,6 +37,6 @@ export const getUvForecast = createServerFn({ method: "GET" }).handler(async () 
  * Brukt i "Kommende push-varslinger".
  */
 export const getUpcomingUvEvaluations = createServerFn({ method: "GET" }).handler(async () => {
-  const { computeUpcomingUvEvaluations } = await import("@/server/uv-push.server");
+  const { computeUpcomingUvEvaluations } = await __load_uv_push_server();
   return computeUpcomingUvEvaluations(3);
 });

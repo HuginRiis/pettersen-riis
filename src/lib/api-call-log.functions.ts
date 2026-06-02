@@ -1,6 +1,9 @@
 // Klient-trygge serverFn-wrappere for API-kall-logg.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+const __load_air_quality_fetch_server = createIsomorphicFn()
+  .server((): Promise<typeof import("@/server/air-quality-fetch.server")> => import("@/server/air-quality-fetch.server"))
+  .client((): Promise<typeof import("@/server/air-quality-fetch.server")> => Promise.resolve({} as unknown as typeof import("@/server/air-quality-fetch.server")));
 const __load_api_call_log_server = createIsomorphicFn()
   .server((): Promise<typeof import("@/server/api-call-log.server")> => import("@/server/api-call-log.server"))
   .client((): Promise<typeof import("@/server/api-call-log.server")> => Promise.resolve({} as unknown as typeof import("@/server/api-call-log.server")));
@@ -184,7 +187,7 @@ export const refreshApiSource = createServerFn({ method: "POST" })
       const {
         warmAirQualityPanel,
         warmUvCloudPanel,
-      } = await import("@/server/air-quality-fetch.server");
+      } = await __load_air_quality_fetch_server();
 
       const dedupe = (rows: Array<{ lat: number; lon: number; enabled: boolean }>) => {
         const m = new Map<string, { lat: number; lon: number }>();

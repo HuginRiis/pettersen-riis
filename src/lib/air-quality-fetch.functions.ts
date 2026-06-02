@@ -1,5 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+const __load_air_quality_fetch_server = createIsomorphicFn()
+  .server((): Promise<typeof import("@/server/air-quality-fetch.server")> => import("@/server/air-quality-fetch.server"))
+  .client((): Promise<typeof import("@/server/air-quality-fetch.server")> => Promise.resolve({} as unknown as typeof import("@/server/air-quality-fetch.server")));
 
 const coordSchema = z.object({
   lat: z.number().min(-90).max(90),
@@ -13,7 +16,7 @@ const coordSchema = z.object({
 export const fetchAirQualityPanel = createServerFn({ method: "GET" })
   .inputValidator((data) => coordSchema.parse(data))
   .handler(async ({ data }) => {
-    const mod = await import("@/server/air-quality-fetch.server");
+    const mod = await __load_air_quality_fetch_server();
     return mod.fetchAirQualityPanelData(data.lat, data.lon);
   });
 
@@ -23,7 +26,7 @@ export const fetchAirQualityPanel = createServerFn({ method: "GET" })
 export const fetchUvCloudPanel = createServerFn({ method: "GET" })
   .inputValidator((data) => coordSchema.parse(data))
   .handler(async ({ data }) => {
-    const mod = await import("@/server/air-quality-fetch.server");
+    const mod = await __load_air_quality_fetch_server();
     return mod.fetchUvCloudPanelData(data.lat, data.lon);
   });
 
@@ -33,6 +36,6 @@ export const fetchUvCloudPanel = createServerFn({ method: "GET" })
 export const fetchOpenMeteoPollen = createServerFn({ method: "GET" })
   .inputValidator((data) => coordSchema.parse(data))
   .handler(async ({ data }) => {
-    const mod = await import("@/server/air-quality-fetch.server");
+    const mod = await __load_air_quality_fetch_server();
     return mod.fetchOpenMeteoPollenData(data.lat, data.lon);
   });

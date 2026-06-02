@@ -1,9 +1,12 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+const __load_login_push_server = createIsomorphicFn()
+  .server((): Promise<typeof import("@/server/login-push.server")> => import("@/server/login-push.server"))
+  .client((): Promise<typeof import("@/server/login-push.server")> => Promise.resolve({} as unknown as typeof import("@/server/login-push.server")));
 
 export const sendLoginTestPush = createServerFn({ method: "POST" })
   .inputValidator((data) => z.object({ prefId: z.string().uuid() }).parse(data))
   .handler(async ({ data }) => {
-    const { sendLoginTestNotification } = await import("@/server/login-push.server");
+    const { sendLoginTestNotification } = await __load_login_push_server();
     return sendLoginTestNotification(data.prefId);
   });
