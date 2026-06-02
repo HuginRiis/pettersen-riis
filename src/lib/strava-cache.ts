@@ -2,7 +2,7 @@
 // badges i topp-menyen kan vises umiddelbart når appen åpnes på nytt — uten
 // å trigge nye Strava-kall. TTL 1 time; fersk henting skjer kun via
 // `loadStrava()` (kalt fra /fysisk) eller manuell "Oppdater".
-import { getStravaDashboard } from "@/server/strava";
+import { getStravaDashboard } from "@/lib/strava.functions";
 
 type Owner = "arne" | "rebekka";
 type Entry = { at: number; data: any };
