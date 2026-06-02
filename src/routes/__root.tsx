@@ -10,7 +10,7 @@ import { PageLoadTracker } from "@/components/PageLoadTracker";
 // Routes that are accessible without logging in (visitors entering the castle gates).
 // Locked routes now redirect to "/" (where the login dialog opens automatically) instead
 // of a dedicated /login page.
-const PUBLIC_PATHS = new Set<string>(["/", "/var", "/pollen", "/turer", "/hytta", "/varsler"]);
+const PUBLIC_PATHS = new Set<string>(["/", "/var", "/pollen", "/turer", "/varsler"]);
 
 import appCss from "../styles.css?url";
 
