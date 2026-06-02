@@ -115,22 +115,21 @@ async function warmOpenMeteoCore(lat: number, lon: number): Promise<OpenMeteoCor
     }
     if (!res.ok) throw new Error(`Open-Meteo core ${res.status}`);
     const j = (await res.json()) as OpenMeteoCoreData;
-    const core = { hourly: j.hourly, current: j.current };
-    await Promise.all([
-      setCached<AqPanelData>(aqKey(lat, lon), {
-        hourly: pickFields(core.hourly, HOURLY_FIELDS.split(",")),
-        current: core.current,
-      }),
-      setCached<OpenMeteoPollenData>(pollenKey(lat, lon), {
-        hourly: pickFields(core.hourly, POLLEN_FIELDS.split(",")),
-      }),
-    ]);
-    return core;
+    return { hourly: j.hourly, current: j.current };
   });
 }
 
 export async function warmAirQualityPanel(lat: number, lon: number): Promise<void> {
-  await warmOpenMeteoCore(lat, lon);
+  const core = await warmOpenMeteoCore(lat, lon);
+  await Promise.all([
+    setCached<AqPanelData>(aqKey(lat, lon), {
+      hourly: pickFields(core.hourly, HOURLY_FIELDS.split(",")),
+      current: core.current,
+    }),
+    setCached<OpenMeteoPollenData>(pollenKey(lat, lon), {
+      hourly: pickFields(core.hourly, POLLEN_FIELDS.split(",")),
+    }),
+  ]);
 }
 
 export async function warmUvCloudPanel(lat: number, lon: number): Promise<void> {
@@ -156,5 +155,8 @@ export async function warmUvCloudPanel(lat: number, lon: number): Promise<void> 
 }
 
 export async function warmOpenMeteoPollen(lat: number, lon: number): Promise<void> {
-  await warmOpenMeteoCore(lat, lon);
+  const core = await warmOpenMeteoCore(lat, lon);
+  await setCached<OpenMeteoPollenData>(pollenKey(lat, lon), {
+    hourly: pickFields(core.hourly, POLLEN_FIELDS.split(",")),
+  });
 }
