@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { getTelemarkAlerts, type TelemarkAlert } from "@/server/met-alerts";
+import { getTelemarkAlerts, type TelemarkAlert } from "@/lib/met-alerts.functions";
 import { alertsToCounselLines, severityBadge } from "@/lib/telemark-alerts-got";
 import { CloakIcon, HorseCartIcon, PollenIcon } from "@/components/MaesterIcons";
 

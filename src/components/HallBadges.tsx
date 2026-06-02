@@ -6,7 +6,7 @@ import { getUpcomingWeatherEvaluations } from "@/server/weather-push.functions";
 import { getUpcomingUvEvaluations } from "@/server/uv-push.functions";
 import { getGarbageOverview } from "@/server/garbage-collection";
 import { getHomeySnapshot, getHomeAlarmStatus, getDoorsLocksSnapshot } from "@/lib/homey.functions";
-import { getTelemarkAlerts } from "@/server/met-alerts";
+import { getTelemarkAlerts } from "@/lib/met-alerts.functions";
 // Strava-dashboard hentes via @/lib/strava-cache (15-min delt cache).
 import { getGarminOverview } from "@/lib/garmin.functions";
 import { useBadgeCache } from "@/lib/badge-cache";

@@ -1,5 +1,5 @@
-import { createServerFn } from "@tanstack/react-start";
 import { withApiLog } from "./api-call-log.server";
+import type { AlertGeometry, TelemarkAlert } from "@/lib/met-alerts.types";
 
 /**
  * Henter aktive farevarsler fra Met.no for Sør- og Østlandet.
@@ -8,29 +8,6 @@ import { withApiLog } from "./api-call-log.server";
  * Dekker fylker: Oslo, Akershus, Østfold, Buskerud, Vestfold, Telemark,
  * Innlandet (sørlige deler), Agder.
  */
-
-export type AlertGeometry =
-  | { type: "Polygon"; coordinates: number[][][] }
-  | { type: "MultiPolygon"; coordinates: number[][][][] }
-  | { type: "Point"; coordinates: number[] }
-  | null;
-
-export type TelemarkAlert = {
-  id: string;
-  event: string;
-  eventAwarenessName: string | null;
-  severity: string | null;
-  riskMatrixColor: string | null;
-  area: string | null;
-  description: string | null;
-  instruction: string | null;
-  consequences: string | null;
-  start: string | null;
-  end: string | null;
-  counties: string[];
-  countyNames: string[];
-  geometry: AlertGeometry;
-};
 
 // Fylkeskoder → navn (både gamle og nye fylker som kan dukke opp i datasettet)
 export const COUNTY_NAMES: Record<string, string> = {
@@ -194,22 +171,20 @@ async function fetchAlerts(): Promise<TelemarkAlert[]> {
   return filtered;
 }
 
-export const getTelemarkAlerts = createServerFn({ method: "GET" }).handler(
-  withApiLog("met", "getTelemarkAlerts", async () => {
-    const now = Date.now();
-    if (cache && now - cache.ts < TTL_MS) {
-      return { alerts: cache.data, fetchedAt: cache.ts, cached: true };
+export const fetchTelemarkAlertsSnapshot = withApiLog("met", "getTelemarkAlerts", async () => {
+  const now = Date.now();
+  if (cache && now - cache.ts < TTL_MS) {
+    return { alerts: cache.data, fetchedAt: cache.ts, cached: true };
+  }
+  try {
+    const data = await fetchAlerts();
+    cache = { ts: now, data };
+    return { alerts: data, fetchedAt: now, cached: false };
+  } catch (err) {
+    console.error("Sør-/Østlandet alerts fetch failed:", err);
+    if (cache) {
+      return { alerts: cache.data, fetchedAt: cache.ts, cached: true, stale: true };
     }
-    try {
-      const data = await fetchAlerts();
-      cache = { ts: now, data };
-      return { alerts: data, fetchedAt: now, cached: false };
-    } catch (err) {
-      console.error("Sør-/Østlandet alerts fetch failed:", err);
-      if (cache) {
-        return { alerts: cache.data, fetchedAt: cache.ts, cached: true, stale: true };
-      }
-      return { alerts: [], fetchedAt: now, cached: false, error: String(err) };
-    }
-  }),
-);
+    return { alerts: [], fetchedAt: now, cached: false, error: String(err) };
+  }
+});

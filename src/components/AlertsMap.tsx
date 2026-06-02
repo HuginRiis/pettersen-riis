@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import type { TelemarkAlert } from "@/server/met-alerts";
+import type { TelemarkAlert } from "@/lib/met-alerts.types";
 
 /**
  * AlertsMap — viser alle aktive farevarsler som polygoner på et Leaflet-kart.

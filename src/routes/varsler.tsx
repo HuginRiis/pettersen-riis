@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { PageShell, PageHero } from "@/components/PageShell";
 import { AlertsMap } from "@/components/AlertsMap";
 import { NrkTrafficSection } from "@/components/NrkTrafficSection";
-import { getTelemarkAlerts, type TelemarkAlert } from "@/server/met-alerts";
+import { getTelemarkAlerts, type TelemarkAlert } from "@/lib/met-alerts.functions";
 import heroImg from "@/assets/got-varsler.jpg";
 
 export const Route = createFileRoute("/varsler")({
