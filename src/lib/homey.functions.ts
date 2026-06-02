@@ -1,6 +1,19 @@
 import { createServerFn, createIsomorphicFn } from "@tanstack/react-start";
 import type { HomeyConnection } from "@/server/homey-connection.server";
-import { withApiLog } from "@/server/api-call-log.server";
+
+// Load withApiLog only on the server; on the client createIsomorphicFn strips
+// the .server() body so the .server.ts file never enters the client bundle.
+const loadApiLog = createIsomorphicFn()
+  .server((): Promise<typeof import("@/server/api-call-log.server")> =>
+    import("@/server/api-call-log.server"),
+  )
+  .client(
+    (): Promise<typeof import("@/server/api-call-log.server")> =>
+      Promise.resolve({
+        withApiLog: (_g: string, _n: string, fn: any) => fn,
+      } as unknown as typeof import("@/server/api-call-log.server")),
+  );
+const { withApiLog } = await loadApiLog();
 
 // Server-only loader — createIsomorphicFn strips the .server() body from the
 // client bundle, so the static import below never leaks into client code.
