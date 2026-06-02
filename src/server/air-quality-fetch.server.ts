@@ -101,23 +101,41 @@ export async function fetchOpenMeteoPollenData(lat: number, lon: number): Promis
 // Disse gjør de faktiske Open-Meteo-kallene og fyller cachen.
 // ---------------------------------------------------------------------------
 
-export async function warmAirQualityPanel(lat: number, lon: number): Promise<void> {
-  const key = aqKey(lat, lon);
-  await withCache<AqPanelData>(key, async () => {
+async function warmOpenMeteoCore(lat: number, lon: number): Promise<OpenMeteoCoreData> {
+  const key = coreKey(lat, lon);
+  return withCache<OpenMeteoCoreData>(key, async () => {
     const url =
       `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}` +
-      `&hourly=${HOURLY_FIELDS}&current=${CURRENT_FIELDS}` +
-      `&timezone=Europe%2FOslo&forecast_days=2`;
-    const res = await fetchWithBackoff("air-quality", "open-meteo:panel", url);
+      `&hourly=${CORE_HOURLY_FIELDS}&current=${CURRENT_FIELDS}` +
+      `&timezone=Europe%2FOslo&forecast_days=4`;
+    const res = await fetchWithBackoff("open-meteo", "open-meteo:core", url);
     if (!res) {
-      const stale = getCached<AqPanelData>(key);
+      const stale = getCached<OpenMeteoCoreData>(key);
       if (stale) return stale;
-      throw new Error("Open-Meteo air-quality rate-limited (429)");
+      throw new Error("Open-Meteo core er pauset eller i 429-backoff");
     }
-    if (!res.ok) throw new Error(`Open-Meteo air-quality ${res.status}`);
-    const j = (await res.json()) as AqPanelData;
-    return { hourly: j.hourly, current: j.current };
+    if (!res.ok) throw new Error(`Open-Meteo core ${res.status}`);
+    const j = (await res.json()) as OpenMeteoCoreData;
+    const core = { hourly: j.hourly, current: j.current };
+    await Promise.all([
+      setCached<AqPanelData>(aqKey(lat, lon), {
+        hourly: pickFields(core.hourly, HOURLY_FIELDS.split(",")),
+        current: core.current,
+      }),
+      setCached<OpenMeteoPollenData>(pollenKey(lat, lon), {
+        hourly: pickFields(core.hourly, POLLEN_FIELDS.split(",")),
+      }),
+      setCached<UvCloudData>(uvKey(lat, lon), {
+        aq: { hourly: pickFields(core.hourly, ["uv_index", "uv_index_clear_sky"]) },
+        fc: { hourly: { time: core.hourly?.time ?? [], cloud_cover: [] } },
+      }),
+    ]);
+    return core;
   });
+}
+
+export async function warmAirQualityPanel(lat: number, lon: number): Promise<void> {
+  await warmOpenMeteoCore(lat, lon);
 }
 
 export async function warmUvCloudPanel(lat: number, lon: number): Promise<void> {
