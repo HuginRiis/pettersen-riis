@@ -5,17 +5,11 @@ const __load_api_call_log_server = createIsomorphicFn()
   .server((): Promise<typeof import("@/server/api-call-log.server")> => import("@/server/api-call-log.server"))
   .client((): Promise<typeof import("@/server/api-call-log.server")> => Promise.resolve({} as unknown as typeof import("@/server/api-call-log.server")));
 const { loggedFetch } = await __load_api_call_log_server();
-import {
-  getWeeklyQuotaForIp,
-  getRecentSearchesForIp,
-  getLastVisitForIp,
-  isHouseAuthenticated,
-  logAiSearch,
-  readClientIp,
-  PUBLIC_WEEKLY_LIMIT,
-  type RecentSearchRow,
-} from "@/server/ai-usage.server";
-
+const __load_ai_usage_server = createIsomorphicFn()
+  .server((): Promise<typeof import("@/server/ai-usage.server")> => import("@/server/ai-usage.server"))
+  .client((): Promise<typeof import("@/server/ai-usage.server")> => Promise.resolve({} as unknown as typeof import("@/server/ai-usage.server")));
+const { getWeeklyQuotaForIp, getRecentSearchesForIp, getLastVisitForIp, isHouseAuthenticated, logAiSearch, readClientIp, PUBLIC_WEEKLY_LIMIT } = await __load_ai_usage_server();
+import type { RecentSearchRow } from "@/server/ai-usage.server";
 // Beholdt for `requireHouseAuth` som brukes i reverseGeocode lenger nede.
 type SessionData = { authenticated?: boolean };
 function getSessionConfig() {

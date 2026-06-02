@@ -9,13 +9,11 @@ const __loadAdmin = createIsomorphicFn()
       Promise.resolve({ supabaseAdmin: null } as unknown as typeof import("@/integrations/supabase/client.server")),
   );
 const { supabaseAdmin } = await __loadAdmin();
-import {
-  listLightAndMotionZones,
-  sendLightIdleTest,
-  getLightIdleZoneStatuses,
-  type LightIdleZoneStatusRow,
-} from "@/server/light-idle-push.server";
-
+const __load_light_idle_push_server = createIsomorphicFn()
+  .server((): Promise<typeof import("@/server/light-idle-push.server")> => import("@/server/light-idle-push.server"))
+  .client((): Promise<typeof import("@/server/light-idle-push.server")> => Promise.resolve({} as unknown as typeof import("@/server/light-idle-push.server")));
+const { listLightAndMotionZones, sendLightIdleTest, getLightIdleZoneStatuses } = await __load_light_idle_push_server();
+import type { LightIdleZoneStatusRow } from "@/server/light-idle-push.server";
 export type LightIdlePref = {
   id: string;
   scope: "zone" | "global";

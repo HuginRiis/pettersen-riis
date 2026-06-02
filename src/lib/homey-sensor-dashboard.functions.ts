@@ -13,13 +13,11 @@ const __load_homey_sensor_summary_server = createIsomorphicFn()
   .server((): Promise<typeof import("@/server/homey-sensor-summary.server")> => import("@/server/homey-sensor-summary.server"))
   .client((): Promise<typeof import("@/server/homey-sensor-summary.server")> => Promise.resolve({} as unknown as typeof import("@/server/homey-sensor-summary.server")));
 const { loadSummaryConfig, saveSummaryConfig, sendHomeySensorSummaryTest } = await __load_homey_sensor_summary_server();
-import {
-  type HomeySensorHistorySettings,
-  backfillHomeySensorHistory,
-  loadHomeySensorHistorySettings,
-  saveHomeySensorHistorySettings,
-} from "@/server/homey-sensor-backfill.server";
-
+const __load_homey_sensor_backfill_server = createIsomorphicFn()
+  .server((): Promise<typeof import("@/server/homey-sensor-backfill.server")> => import("@/server/homey-sensor-backfill.server"))
+  .client((): Promise<typeof import("@/server/homey-sensor-backfill.server")> => Promise.resolve({} as unknown as typeof import("@/server/homey-sensor-backfill.server")));
+const { backfillHomeySensorHistory, loadHomeySensorHistorySettings, saveHomeySensorHistorySettings } = await __load_homey_sensor_backfill_server();
+import type { HomeySensorHistorySettings } from "@/server/homey-sensor-backfill.server";
 export type SensorRange = "today" | "yesterday" | "week" | "last7";
 export type SensorLocation = "all" | "hytta" | "borgen";
 
