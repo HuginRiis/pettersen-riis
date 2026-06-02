@@ -155,7 +155,7 @@ export function AirQualityPanel({ lat, lon, title, subtitle }: Props) {
         const j = await fetchAq({ data: { lat, lon } });
         if (cancelled) return;
         setData({ hourly: j.hourly, current: j.current });
-        setUpdated(new Date());
+        setUpdated(j.cachedAt ? new Date(j.cachedAt) : null);
         setError(null);
       } catch (e) {
         if (!cancelled) setError(e instanceof Error ? e.message : "Ukjent feil");
