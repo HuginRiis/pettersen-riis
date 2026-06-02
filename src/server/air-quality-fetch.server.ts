@@ -5,7 +5,6 @@
 // cron-jobben i src/routes/api/public/hooks/open-meteo-warm.ts som kjører
 // hvert 30. minutt for alle lokasjoner med aktive air-quality/UV-push.
 
-import { loggedFetch } from "./api-call-log.server";
 import { readCacheOnly, withCache, fetchWithBackoff, getCached, setCached } from "./open-meteo-cache.server";
 
 const HOURLY_FIELDS = [
