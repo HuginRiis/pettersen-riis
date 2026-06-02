@@ -1,7 +1,12 @@
 import { createServerFn } from "@tanstack/react-start";
-import { withApiLog } from "@/server/api-call-log.server";
-import { loadStoredRefreshToken, saveStoredRefreshToken } from "@/server/netatmo-token-store.server";
-
+const __load_api_call_log_server = createIsomorphicFn()
+  .server((): Promise<typeof import("@/server/api-call-log.server")> => import("@/server/api-call-log.server"))
+  .client((): Promise<typeof import("@/server/api-call-log.server")> => Promise.resolve({} as unknown as typeof import("@/server/api-call-log.server")));
+const { withApiLog } = await __load_api_call_log_server();
+const __load_netatmo_token_store_server = createIsomorphicFn()
+  .server((): Promise<typeof import("@/server/netatmo-token-store.server")> => import("@/server/netatmo-token-store.server"))
+  .client((): Promise<typeof import("@/server/netatmo-token-store.server")> => Promise.resolve({} as unknown as typeof import("@/server/netatmo-token-store.server")));
+const { loadStoredRefreshToken, saveStoredRefreshToken } = await __load_netatmo_token_store_server();
 const REFRESH_TOKEN_KEY = "netatmo_refresh_token";
 
 const NETATMO_BASE = "https://api.netatmo.com";

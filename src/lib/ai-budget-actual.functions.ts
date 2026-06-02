@@ -9,8 +9,10 @@ const __loadAdmin = createIsomorphicFn()
       Promise.resolve({ supabaseAdmin: null } as unknown as typeof import("@/integrations/supabase/client.server")),
   );
 const { supabaseAdmin } = await __loadAdmin();
-import { recordApiCall } from "@/server/api-call-log.server";
-
+const __load_api_call_log_server = createIsomorphicFn()
+  .server((): Promise<typeof import("@/server/api-call-log.server")> => import("@/server/api-call-log.server"))
+  .client((): Promise<typeof import("@/server/api-call-log.server")> => Promise.resolve({} as unknown as typeof import("@/server/api-call-log.server")));
+const { recordApiCall } = await __load_api_call_log_server();
 function currentMonth(): string {
   const d = new Date();
   return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;

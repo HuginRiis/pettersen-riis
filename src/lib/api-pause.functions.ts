@@ -1,11 +1,10 @@
 // Klient-trygge serverFn for pause-flagg per API-kilde.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import {
-  listApiPauseFlags,
-  setApiSourcePausedDb,
-} from "@/server/api-pause.server";
-
+const __load_api_pause_server = createIsomorphicFn()
+  .server((): Promise<typeof import("@/server/api-pause.server")> => import("@/server/api-pause.server"))
+  .client((): Promise<typeof import("@/server/api-pause.server")> => Promise.resolve({} as unknown as typeof import("@/server/api-pause.server")));
+const { listApiPauseFlags, setApiSourcePausedDb } = await __load_api_pause_server();
 export type ApiPauseFlag = { source: string; paused: boolean; updated_at: string };
 
 export const getApiPauseFlags = createServerFn({ method: "GET" }).handler(

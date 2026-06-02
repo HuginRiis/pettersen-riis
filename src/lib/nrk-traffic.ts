@@ -1,6 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
-import { withApiLog } from "@/server/api-call-log.server";
-
+const __load_api_call_log_server = createIsomorphicFn()
+  .server((): Promise<typeof import("@/server/api-call-log.server")> => import("@/server/api-call-log.server"))
+  .client((): Promise<typeof import("@/server/api-call-log.server")> => Promise.resolve({} as unknown as typeof import("@/server/api-call-log.server")));
+const { withApiLog } = await __load_api_call_log_server();
 /**
  * Henter ferske trafikkrelaterte nyheter fra NRK distrikts-RSS for Sør-/Østlandet.
  * Filtrerer på trafikknøkkelord (stengt, ulykke, kolonne, ras, vei, E18 osv.).

@@ -1,6 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
-import { fetchGardenaSnapshot, sendMowerCommand } from "@/server/gardena.server";
-
+const __load_gardena_server = createIsomorphicFn()
+  .server((): Promise<typeof import("@/server/gardena.server")> => import("@/server/gardena.server"))
+  .client((): Promise<typeof import("@/server/gardena.server")> => Promise.resolve({} as unknown as typeof import("@/server/gardena.server")));
+const { fetchGardenaSnapshot, sendMowerCommand } = await __load_gardena_server();
 export const getGardenaSnapshot = createServerFn({ method: "GET" }).handler(async () => {
   return await fetchGardenaSnapshot();
 });

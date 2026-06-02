@@ -1,7 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
 import { useSession } from "@tanstack/react-start/server";
 import { z } from "zod";
-import { loggedFetch } from "@/server/api-call-log.server";
+const __load_api_call_log_server = createIsomorphicFn()
+  .server((): Promise<typeof import("@/server/api-call-log.server")> => import("@/server/api-call-log.server"))
+  .client((): Promise<typeof import("@/server/api-call-log.server")> => Promise.resolve({} as unknown as typeof import("@/server/api-call-log.server")));
+const { loggedFetch } = await __load_api_call_log_server();
 import {
   getWeeklyQuotaForIp,
   getRecentSearchesForIp,

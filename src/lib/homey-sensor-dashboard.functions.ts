@@ -9,11 +9,10 @@ const __loadAdmin = createIsomorphicFn()
       Promise.resolve({ supabaseAdmin: null } as unknown as typeof import("@/integrations/supabase/client.server")),
   );
 const { supabaseAdmin } = await __loadAdmin();
-import {
-  loadSummaryConfig,
-  saveSummaryConfig,
-  sendHomeySensorSummaryTest,
-} from "@/server/homey-sensor-summary.server";
+const __load_homey_sensor_summary_server = createIsomorphicFn()
+  .server((): Promise<typeof import("@/server/homey-sensor-summary.server")> => import("@/server/homey-sensor-summary.server"))
+  .client((): Promise<typeof import("@/server/homey-sensor-summary.server")> => Promise.resolve({} as unknown as typeof import("@/server/homey-sensor-summary.server")));
+const { loadSummaryConfig, saveSummaryConfig, sendHomeySensorSummaryTest } = await __load_homey_sensor_summary_server();
 import {
   type HomeySensorHistorySettings,
   backfillHomeySensorHistory,
