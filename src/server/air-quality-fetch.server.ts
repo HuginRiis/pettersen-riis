@@ -137,22 +137,12 @@ export async function warmAirQualityPanel(lat: number, lon: number): Promise<voi
 export async function warmUvCloudPanel(lat: number, lon: number): Promise<void> {
   const key = uvKey(lat, lon);
   await withCache<UvCloudData>(key, async () => {
-    const aqUrl =
-      `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}` +
-      `&hourly=uv_index,uv_index_clear_sky&timezone=Europe%2FOslo&forecast_days=3`;
+    const core = await warmOpenMeteoCore(lat, lon);
     const fcUrl =
       `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
       `&hourly=cloud_cover&timezone=Europe%2FOslo&forecast_days=3`;
-    const [aqRes, fcRes] = await Promise.all([
-      fetchWithBackoff("air-quality", "open-meteo:uv-cloud:aq", aqUrl),
-      fetchWithBackoff("air-quality", "open-meteo:uv-cloud:forecast", fcUrl),
-    ]);
-    if (!aqRes || !aqRes.ok) {
-      const stale = getCached<UvCloudData>(key);
-      if (stale) return stale;
-      throw new Error(`Open-Meteo UV/cloud ${aqRes?.status ?? "backoff"}/${fcRes?.status ?? "backoff"}`);
-    }
-    const aq = (await aqRes.json()) as { hourly: UvCloudData["aq"]["hourly"] };
+    const fcRes = await fetchWithBackoff("open-meteo", "open-meteo:forecast-cloud", fcUrl);
+    const aqHourly = pickFields(core.hourly, ["uv_index", "uv_index_clear_sky"]);
     let fcHourly: UvCloudData["fc"]["hourly"] = { time: [], cloud_cover: [] } as any;
     if (fcRes && fcRes.ok) {
       const fc = (await fcRes.json()) as { hourly: UvCloudData["fc"]["hourly"] };
@@ -162,25 +152,10 @@ export async function warmUvCloudPanel(lat: number, lon: number): Promise<void> 
         `[air-quality-fetch] forecast (cloud_cover) utilgjengelig (${fcRes?.status ?? "backoff"}), warmer UV uten skydekke`,
       );
     }
-    return { aq: { hourly: aq.hourly }, fc: { hourly: fcHourly } };
+    return { aq: { hourly: aqHourly }, fc: { hourly: fcHourly } };
   });
 }
 
 export async function warmOpenMeteoPollen(lat: number, lon: number): Promise<void> {
-  const key = pollenKey(lat, lon);
-  await withCache<OpenMeteoPollenData>(key, async () => {
-    const url =
-      `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}` +
-      "&hourly=alder_pollen,birch_pollen,grass_pollen,mugwort_pollen,olive_pollen,ragweed_pollen" +
-      "&timezone=Europe%2FOslo&forecast_days=4";
-    const res = await fetchWithBackoff("air-quality", "open-meteo:pollen", url);
-    if (!res) {
-      const stale = getCached<OpenMeteoPollenData>(key);
-      if (stale) return stale;
-      throw new Error("Open-Meteo pollen er pauset eller i 429-backoff");
-    }
-    if (!res.ok) throw new Error(`Open-Meteo pollen ${res.status}`);
-    const j = (await res.json()) as OpenMeteoPollenData;
-    return { hourly: j.hourly };
-  });
+  await warmOpenMeteoCore(lat, lon);
 }
