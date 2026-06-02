@@ -131,7 +131,7 @@ export const refreshApiSource = createServerFn({ method: "POST" })
     };
 
     if (source === "homey") {
-      const m = await import("./homey");
+      const m = await import("@/lib/homey.functions");
       await tryRun("getHomeySnapshot", () => m.getHomeySnapshot());
       await tryRun("getOutdoorLightsStatus", () => m.getOutdoorLightsStatus());
       await tryRun("getHomeAlarmStatus", () => m.getHomeAlarmStatus());
