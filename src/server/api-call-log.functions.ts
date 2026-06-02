@@ -184,7 +184,6 @@ export const refreshApiSource = createServerFn({ method: "POST" })
       const {
         warmAirQualityPanel,
         warmUvCloudPanel,
-        warmOpenMeteoPollen,
       } = await import("./air-quality-fetch.server");
 
       const dedupe = (rows: Array<{ lat: number; lon: number; enabled: boolean }>) => {
@@ -204,18 +203,15 @@ export const refreshApiSource = createServerFn({ method: "POST" })
       ]);
       const aqLocs = dedupe((aq ?? []) as any);
       const uvLocs = dedupe((uv ?? []) as any);
-      const pollenMap = new Map<string, { lat: number; lon: number }>();
+      const unionMap = new Map<string, { lat: number; lon: number }>();
       for (const l of [...aqLocs, ...uvLocs]) {
-        pollenMap.set(`${l.lat.toFixed(3)},${l.lon.toFixed(3)}`, l);
+        unionMap.set(`${l.lat.toFixed(3)},${l.lon.toFixed(3)}`, l);
       }
-      const pollenLocs = [...pollenMap.values()];
+      const unionLocs = [...unionMap.values()];
 
       if (source === "open-meteo" || source === "air-quality") {
-        for (const { lat, lon } of aqLocs) {
-          await tryRun(`warmAirQualityPanel[${lat},${lon}]`, () => warmAirQualityPanel(lat, lon));
-        }
-        for (const { lat, lon } of pollenLocs) {
-          await tryRun(`warmOpenMeteoPollen[${lat},${lon}]`, () => warmOpenMeteoPollen(lat, lon));
+        for (const { lat, lon } of unionLocs) {
+          await tryRun(`warmOpenMeteoCore[${lat},${lon}]`, () => warmAirQualityPanel(lat, lon));
         }
       }
       if (source === "open-meteo" || source === "uv") {
