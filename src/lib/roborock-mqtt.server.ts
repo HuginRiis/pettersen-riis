@@ -16,7 +16,8 @@ type Sock = {
 async function openSocket(hostname: string, port: number): Promise<Sock> {
   try {
     // @ts-ignore - cloudflare:sockets is only present in the Worker runtime
-    const mod: any = await import(/* @vite-ignore */ "cloudflare:sockets");
+    const cloudflareSocketsSpecifier = "cloudflare:" + "sockets";
+    const mod: any = await import(/* @vite-ignore */ cloudflareSocketsSpecifier);
     const s: any = mod.connect({ hostname, port }, { secureTransport: "on", allowHalfOpen: false });
     const writer = s.writable.getWriter();
     const reader = s.readable.getReader();
