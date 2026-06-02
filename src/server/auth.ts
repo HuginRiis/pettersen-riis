@@ -115,6 +115,7 @@ export const loginFn = createServerFn({ method: "POST" })
     }
 
     // ---- Escalating rate-limit: 1st lockout = 1 min, 2nd = 15 min, 3rd+ = 60 min ----
+    const { logLoginAttempt, getFailedAttemptTimestampsForIp, getCurrentRequestIp } = await import("./visitors-log.server");
     const ip = getCurrentRequestIp();
     if (ip) {
       const failures = await getFailedAttemptTimestampsForIp(ip, ESCALATION_LOOKBACK_HOURS);
