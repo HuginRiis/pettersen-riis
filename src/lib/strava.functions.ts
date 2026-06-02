@@ -1,5 +1,26 @@
-import { createServerFn } from "@tanstack/react-start";
+import { createServerFn, createIsomorphicFn } from "@tanstack/react-start";
 import { isStravaOwner, STRAVA_OWNERS, type StravaOwner } from "@/lib/strava-shared";
+
+const __loadApiLog = createIsomorphicFn()
+  .server((): Promise<typeof import("@/server/api-call-log.server")> =>
+    import("@/server/api-call-log.server"),
+  )
+  .client(
+    (): Promise<typeof import("@/server/api-call-log.server")> =>
+      Promise.resolve({
+        loggedFetch: ((_s: any, _n: any, url: any, init: any) => fetch(url, init)) as any,
+        withApiLog: ((_s: any, _n: any, fn: any) => fn) as any,
+      } as unknown as typeof import("@/server/api-call-log.server")),
+  );
+
+const __loadStravaConn = createIsomorphicFn()
+  .server((): Promise<typeof import("@/server/strava-connection.server")> =>
+    import("@/server/strava-connection.server"),
+  )
+  .client(
+    (): Promise<typeof import("@/server/strava-connection.server")> =>
+      Promise.resolve({} as unknown as typeof import("@/server/strava-connection.server")),
+  );
 
 
 const STRAVA_API = "https://www.strava.com/api/v3";
