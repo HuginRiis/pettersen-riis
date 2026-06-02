@@ -5,7 +5,7 @@ import { Footprints, Heart, Moon, Battery, Brain, Dumbbell, Activity as Activity
 import { PageShell, PageHero } from "@/components/PageShell";
 import { ActivityMap } from "@/components/ActivityMap";
 import { GarminHouses } from "@/components/GarminHouses";
-import { getActivityStreams, getStravaStatus } from "@/server/strava";
+import { getActivityStreams, getStravaStatus } from "@/lib/strava.functions";
 import { getGarminOverview } from "@/server/garmin.functions";
 import treningImg from "@/assets/got-trening.jpg";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";

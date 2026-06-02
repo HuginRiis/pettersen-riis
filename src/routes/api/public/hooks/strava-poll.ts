@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { runStravaDashboard } from "@/server/strava";
+import { runStravaDashboard } from "@/lib/strava.functions";
 import { STRAVA_OWNERS } from "@/lib/strava-shared";
 
 /**
