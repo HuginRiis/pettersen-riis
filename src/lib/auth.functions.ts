@@ -1,5 +1,8 @@
-import { createServerFn } from "@tanstack/react-start";
+import { createServerFn, createIsomorphicFn } from "@tanstack/react-start";
 import { useSession, getRequestHeader } from "@tanstack/react-start/server";
+const __load_visitors_log_server = createIsomorphicFn()
+  .server((): Promise<typeof import("@/lib/visitors-log.server")> => import("@/lib/visitors-log.server"))
+  .client((): Promise<typeof import("@/lib/visitors-log.server")> => Promise.resolve({} as unknown as typeof import("@/lib/visitors-log.server")));
 
 /**
  * Detect whether the current request is coming from an iframe (e.g. the
@@ -115,7 +118,7 @@ export const loginFn = createServerFn({ method: "POST" })
     }
 
     // ---- Escalating rate-limit: 1st lockout = 1 min, 2nd = 15 min, 3rd+ = 60 min ----
-    const { logLoginAttempt, getFailedAttemptTimestampsForIp, getCurrentRequestIp } = await import("@/server/visitors-log.server");
+    const { logLoginAttempt, getFailedAttemptTimestampsForIp, getCurrentRequestIp } = await __load_visitors_log_server();
     const ip = getCurrentRequestIp();
     if (ip) {
       const failures = await getFailedAttemptTimestampsForIp(ip, ESCALATION_LOOKBACK_HOURS);
@@ -187,7 +190,7 @@ export const getWelcomeInfo = createServerFn({ method: "POST" })
   })
   .handler(async ({ data }) => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { getCurrentRequestIp } = await import("@/server/visitors-log.server");
+  const { getCurrentRequestIp } = await __load_visitors_log_server();
   const ip = getCurrentRequestIp();
   const session = await useSession<SessionData>(getSessionConfig());
   const authenticated = session.data?.authenticated === true;

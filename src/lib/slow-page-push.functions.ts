@@ -1,0 +1,36 @@
+import { createServerFn, createIsomorphicFn } from "@tanstack/react-start";
+import { z } from "zod";
+const __load_slow_page_push_server = createIsomorphicFn()
+  .server((): Promise<typeof import("@/lib/slow-page-push.server")> => import("@/lib/slow-page-push.server"))
+  .client((): Promise<typeof import("@/lib/slow-page-push.server")> => Promise.resolve({} as unknown as typeof import("@/lib/slow-page-push.server")));
+const { loadSlowPageConfig, saveSlowPageConfig, sendSlowPageLoadTest } = await __load_slow_page_push_server();
+import type { SlowPageConfig } from "@/lib/slow-page-push.server";
+export const getSlowPageConfig = createServerFn({ method: "GET" }).handler(
+  async (): Promise<SlowPageConfig> => loadSlowPageConfig(),
+);
+
+const routeRule = z.object({ route: z.string().min(1).max(200), ms: z.number().int().min(200).max(120_000) });
+
+export const saveSlowPageConfigFn = createServerFn({ method: "POST" })
+  .inputValidator(
+    z
+      .object({
+        enabled: z.boolean().optional(),
+        recipient: z.string().min(1).max(60).optional(),
+        default_ms: z.number().int().min(500).max(120_000).optional(),
+        cooldown_min: z.number().int().min(5).max(1440).optional(),
+        window_min: z.number().int().min(5).max(720).optional(),
+        min_samples: z.number().int().min(1).max(100).optional(),
+        only_mobile: z.boolean().optional(),
+        routes: z.array(routeRule).max(200).optional(),
+        slow_avg_enabled: z.boolean().optional(),
+        slow_avg_ms: z.number().int().min(500).max(120_000).optional(),
+        slow_avg_recipient: z.string().max(60).optional(),
+      })
+      .parse,
+  )
+  .handler(async ({ data }) => saveSlowPageConfig(data));
+
+export const sendSlowPageLoadTestFn = createServerFn({ method: "POST" }).handler(async () =>
+  sendSlowPageLoadTest(),
+);

@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { logPulseReadings } from "@/server/pulse-readings.server";
+import { logPulseReadings } from "@/lib/pulse-readings.server";
 
 export const Route = createFileRoute("/hooks/log-pulse")({
   server: {

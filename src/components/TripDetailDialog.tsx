@@ -21,7 +21,7 @@ import {
   ExternalLink,
   Footprints,
 } from "lucide-react";
-import type { TripSuggestion } from "@/server/turer";
+import type { TripSuggestion } from "@/lib/turer";
 
 const TripPointMap = lazy(() =>
   import("@/components/TripPointMap").then((m) => ({ default: m.TripPointMap })),

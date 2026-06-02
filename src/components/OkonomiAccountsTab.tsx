@@ -18,7 +18,7 @@ import {
   type ImportedAccount,
   type OkonomiAccount,
   type OkonomiTransaction,
-} from "@/server/okonomi.functions";
+} from "@/lib/okonomi.functions";
 
 const fmt = (n: number) =>
   new Intl.NumberFormat("nb-NO", { maximumFractionDigits: 0 }).format(n) + " kr";

@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { snapshotPulseToDb } from "@/server/tibber-pulse-snapshot.server";
+import { snapshotPulseToDb } from "@/lib/tibber-pulse-snapshot.server";
 
 export const Route = createFileRoute("/api/public/hooks/snapshot-pulse")({
   server: {

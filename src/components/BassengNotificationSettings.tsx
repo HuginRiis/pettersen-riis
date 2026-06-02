@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Waves, ArrowUp, ArrowDown, Users, Send, Loader2, Clock, Thermometer, Timer } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { sendBassengTestPush } from "@/server/basseng-push.functions";
+import { sendBassengTestPush } from "@/lib/basseng-push.functions";
 import {
   Select,
   SelectContent,

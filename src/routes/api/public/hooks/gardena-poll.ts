@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { fetchGardenaSnapshot } from "@/server/gardena.server";
+import { fetchGardenaSnapshot } from "@/lib/gardena.server";
 
 /**
  * Bakgrunns-polling for Gardena/Husqvarna.

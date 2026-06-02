@@ -4,8 +4,8 @@ import {
   getApiCallLog,
   refreshApiSource,
   type ApiCallSummary,
-} from "@/server/api-call-log";
-import { purgeApiCallLog } from "@/server/api-call-log-purge.functions";
+} from "@/lib/api-call-log";
+import { purgeApiCallLog } from "@/lib/api-call-log-purge.functions";
 import {
   ResponsiveContainer,
   ComposedChart,

@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { processAgendaNotifications } from "@/server/agenda-push";
+import { processAgendaNotifications } from "@/lib/agenda-push";
 
 export const Route = createFileRoute("/api/public/hooks/agenda-push")({
   server: {
@@ -23,84 +23,84 @@ export const Route = createFileRoute("/api/public/hooks/agenda-push")({
           const agenda = await processAgendaNotifications();
           let checklist = { checked: 0, sent: 0, errors: 0 };
           try {
-            const mod = await import("@/server/agenda-push.server");
+            const mod = await import("@/lib/agenda-push.server");
             checklist = await mod.processHyttaChecklistNotifications();
           } catch (err) {
             console.error("[hytta-checklist-push] failed", err);
           }
           let garbage = { checked: 0, sent: 0, errors: 0, skipped: 0 };
           try {
-            const gmod = await import("@/server/garbage-collection.server");
+            const gmod = await import("@/lib/garbage-collection.server");
             garbage = await gmod.processGarbageNotifications();
           } catch (err) {
             console.error("[garbage-push] failed", err);
           }
           let birthdays = { checked: 0, sent: 0, errors: 0 };
           try {
-            const bmod = await import("@/server/birthdays.server");
+            const bmod = await import("@/lib/birthdays.server");
             birthdays = await bmod.processBirthdayNotifications();
           } catch (err) {
             console.error("[birthday-push] failed", err);
           }
           let warranty = { checked: 0, sent: 0, errors: 0 };
           try {
-            const wmod = await import("@/server/warranty-push.server");
+            const wmod = await import("@/lib/warranty-push.server");
             warranty = await wmod.processWarrantyNotifications();
           } catch (err) {
             console.error("[warranty-push] failed", err);
           }
           let uv = { checked: 0, sent: 0, errors: 0, skipped: 0 };
           try {
-            const umod = await import("@/server/uv-push.server");
+            const umod = await import("@/lib/uv-push.server");
             uv = await umod.processUvNotifications();
           } catch (err) {
             console.error("[uv-push] failed", err);
           }
           let airQuality = { checked: 0, sent: 0, errors: 0, skipped: 0 };
           try {
-            const aqmod = await import("@/server/air-quality-push.server");
+            const aqmod = await import("@/lib/air-quality-push.server");
             airQuality = await aqmod.processAirQualityNotifications();
           } catch (err) {
             console.error("[air-quality-push] failed", err);
           }
           let weather = { checked: 0, sent: 0, errors: 0, skipped: 0 };
           try {
-            const wmod = await import("@/server/weather-push.server");
+            const wmod = await import("@/lib/weather-push.server");
             weather = await wmod.processWeatherNotifications();
           } catch (err) {
             console.error("[weather-push] failed", err);
           }
           let lightIdle = { checked: 0, sent: 0, errors: 0, skipped: 0 };
           try {
-            const lmod = await import("@/server/light-idle-push.server");
+            const lmod = await import("@/lib/light-idle-push.server");
             lightIdle = await lmod.processLightIdleNotifications();
           } catch (err) {
             console.error("[light-idle-push] failed", err);
           }
           let tibber = { checked: 0, sent: 0, errors: 0, skipped: 0 };
           try {
-            const tmod = await import("@/server/tibber-push.server");
+            const tmod = await import("@/lib/tibber-push.server");
             tibber = await tmod.processTibberNotifications();
           } catch (err) {
             console.error("[tibber-push] failed", err);
           }
           let metAlerts = { checked: 0, sent: 0, errors: 0, skipped: 0 };
           try {
-            const mmod = await import("@/server/met-alert-push.server");
+            const mmod = await import("@/lib/met-alert-push.server");
             metAlerts = await mmod.processMetAlertNotifications();
           } catch (err) {
             console.error("[met-alert-push] failed", err);
           }
           let mailDelivery = { checked: 0, sent: 0, errors: 0, skipped: 0 };
           try {
-            const mdmod = await import("@/server/mail-delivery-push.server");
+            const mdmod = await import("@/lib/mail-delivery-push.server");
             mailDelivery = await mdmod.processMailDeliveryNotifications();
           } catch (err) {
             console.error("[mail-delivery-push] failed", err);
           }
           let garmin: any = { per_owner: [] as any[] };
           try {
-            const gmod = await import("@/server/garmin-sync.server");
+            const gmod = await import("@/lib/garmin-sync.server");
             const { GARMIN_OWNERS } = await import("@/lib/garmin-shared");
             const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
             const localHourStr = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Oslo", hour: "2-digit", hour12: false }).format(new Date());
@@ -165,42 +165,42 @@ export const Route = createFileRoute("/api/public/hooks/agenda-push")({
           }
           let garminPush = { checked: 0, sent: 0, errors: 0, skipped: 0 };
           try {
-            const gpmod = await import("@/server/garmin-push.server");
+            const gpmod = await import("@/lib/garmin-push.server");
             garminPush = await gpmod.processGarminNotifications();
           } catch (err) {
             console.error("[garmin-push] failed", err);
           }
           let plants = { checked: 0, sent: 0, errors: 0, skipped: 0 };
           try {
-            const pmod = await import("@/server/plants-push.server");
+            const pmod = await import("@/lib/plants-push.server");
             plants = await pmod.processPlantsNotifications();
           } catch (err) {
             console.error("[plants-push] failed", err);
           }
           let garminThresholds = { checked: 0, sent: 0, errors: 0, skipped: 0 };
           try {
-            const gtmod = await import("@/server/garmin-thresholds.server");
+            const gtmod = await import("@/lib/garmin-thresholds.server");
             garminThresholds = await gtmod.processGarminThresholdNotifications();
           } catch (err) {
             console.error("[garmin-thresholds] failed", err);
           }
           let sensorSummary = { checked: 0, sent: 0, errors: 0, skipped: 0 };
           try {
-            const smod = await import("@/server/homey-sensor-summary.server");
+            const smod = await import("@/lib/homey-sensor-summary.server");
             sensorSummary = await smod.processHomeySensorSummary();
           } catch (err) {
             console.error("[homey-sensor-summary] failed", err);
           }
           let sensorHistory = { checked: 0, ran: false, skipped: 1 } as any;
           try {
-            const hmod = await import("@/server/homey-sensor-backfill.server");
+            const hmod = await import("@/lib/homey-sensor-backfill.server");
             sensorHistory = await hmod.processHomeySensorHistoryCron();
           } catch (err) {
             console.error("[homey-sensor-history] failed", err);
           }
           let slowPage = { checked: 0, sent: 0, errors: 0, skipped: 0 };
           try {
-            const spmod = await import("@/server/slow-page-push.server");
+            const spmod = await import("@/lib/slow-page-push.server");
             slowPage = await spmod.processSlowPageLoadNotifications();
           } catch (err) {
             console.error("[slow-page-push] failed", err);

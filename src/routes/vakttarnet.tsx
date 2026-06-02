@@ -9,7 +9,7 @@ import type {
   LoginAttemptRow,
   PageviewRow,
 } from "@/lib/visitors.functions";
-import { getAiUsageStats, type AiUsageStats } from "@/server/ai-usage";
+import { getAiUsageStats, type AiUsageStats } from "@/lib/ai-usage";
 import { useAuthStatus } from "@/hooks/use-auth-status";
 import heroImg from "@/assets/got-vakttarnet.jpg";
 import { Eye, Globe2, Smartphone, Monitor, Tablet, Clock, Crown, ShieldAlert, Map as MapIcon, Lock, Unlock, Sparkles, DoorClosed, Users, Bell, Database, Activity, ChevronDown, DoorOpen, BarChart3, Wallet, Radio, KeyRound, ShieldOff, Trophy, Camera, Brain, UserSearch, Watch, Network, History, List as ListIcon, AlertTriangle, PowerOff, Trash2 } from "lucide-react";

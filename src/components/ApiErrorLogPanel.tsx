@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { getApiErrorLog, type ApiErrorLog } from "@/server/api-call-log";
+import { getApiErrorLog, type ApiErrorLog } from "@/lib/api-call-log";
 
 const SOURCE_LABELS: Record<string, string> = {
   homey: "Homey",

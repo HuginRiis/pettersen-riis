@@ -1,4 +1,7 @@
-import { createServerFn } from "@tanstack/react-start";
+import { createServerFn, createIsomorphicFn } from "@tanstack/react-start";
+const __load_api_call_log_server = createIsomorphicFn()
+  .server((): Promise<typeof import("@/lib/api-call-log.server")> => import("@/lib/api-call-log.server"))
+  .client((): Promise<typeof import("@/lib/api-call-log.server")> => Promise.resolve({} as unknown as typeof import("@/lib/api-call-log.server")));
 
 const TOLLNES = { lat: 59.1789, lon: 9.5732 };
 
@@ -40,7 +43,7 @@ function parseRadarTimestamp(disposition: string | null): string {
 
 export const getMetRadarSouthernNorway = createServerFn({ method: "GET" }).handler(
   async (): Promise<RadarResult> => {
-    const { withApiLog } = await import("@/server/api-call-log.server");
+    const { withApiLog } = await __load_api_call_log_server();
     return withApiLog("lightning", "getMetRadarSouthernNorway", async (): Promise<RadarResult> => {
       try {
         const res = await fetch(
@@ -107,7 +110,7 @@ function parseAwareness(raw: string | undefined): {
 
 export const getTollnesAlerts = createServerFn({ method: "GET" }).handler(
   async (): Promise<AlertsResult> => {
-    const { withApiLog } = await import("@/server/api-call-log.server");
+    const { withApiLog } = await __load_api_call_log_server();
     return withApiLog("lightning", "getTollnesAlerts", async (): Promise<AlertsResult> => {
       try {
         const url = `https://api.met.no/weatherapi/metalerts/2.0/current.json?lat=${TOLLNES.lat}&lon=${TOLLNES.lon}`;

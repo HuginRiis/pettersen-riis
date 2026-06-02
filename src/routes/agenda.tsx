@@ -5,7 +5,7 @@ import { PageShell, PageHero } from "@/components/PageShell";
 import { supabase } from "@/integrations/supabase/client";
 import heroImg from "@/assets/got-agenda.jpg";
 import { Trash2, Plus, Bell, BellOff, Clock, ChevronDown } from "lucide-react";
-import { getPushPublicKey } from "@/server/agenda-push";
+import { getPushPublicKey } from "@/lib/agenda-push";
 import { GarbageCollectionPanel } from "@/components/GarbageCollectionPanel";
 import { BirthdaysPanel } from "@/components/BirthdaysPanel";
 import { usePerUserPersistedState } from "@/hooks/use-per-user-persisted-state";

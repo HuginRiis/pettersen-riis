@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { sendWeatherTestPush, getWeatherForecast } from "@/server/weather-push.functions";
+import { sendWeatherTestPush, getWeatherForecast } from "@/lib/weather-push.functions";
 
 type Kind = "rain" | "wind" | "snow" | "frost" | "thunder" | "heat" | "fog";
 

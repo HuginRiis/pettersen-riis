@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { getNetatmoClimateHistory } from "@/server/netatmo-history";
+import { getNetatmoClimateHistory } from "@/lib/netatmo-history";
 
 /**
  * Kjøres av pg_cron hvert 20. min for å fylle DB-cachen
@@ -26,7 +26,7 @@ export const Route = createFileRoute("/api/public/hooks/netatmo-climate-refresh"
 
         let climate: unknown = null;
         try {
-          const { processClimateNotifications } = await import("@/server/climate-push.server");
+          const { processClimateNotifications } = await import("@/lib/climate-push.server");
           climate = await processClimateNotifications();
         } catch (e: any) {
           climate = { ok: false, error: e?.message ?? "unknown" };
@@ -34,7 +34,7 @@ export const Route = createFileRoute("/api/public/hooks/netatmo-climate-refresh"
 
         let basseng: unknown = null;
         try {
-          const { processBassengNotifications } = await import("@/server/basseng-push.server");
+          const { processBassengNotifications } = await import("@/lib/basseng-push.server");
           basseng = await processBassengNotifications();
         } catch (e: any) {
           basseng = { ok: false, error: e?.message ?? "unknown" };

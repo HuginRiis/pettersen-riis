@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { getTibberLiveSession, type TibberLiveSession } from "@/lib/tibber.functions";
-import { recordPulseSample } from "@/server/pulse-readings";
+import { recordPulseSample } from "@/lib/pulse-readings";
 
 export type TibberLiveReading = {
   timestamp: string; // ISO med tz

@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Loader2, Calculator } from "lucide-react";
-import { calculateNorwegianTax } from "@/server/skatt.functions";
+import { calculateNorwegianTax } from "@/lib/skatt.functions";
 
 const fmt = (n: number) =>
   new Intl.NumberFormat("nb-NO", { maximumFractionDigits: 0 }).format(Math.round(n));

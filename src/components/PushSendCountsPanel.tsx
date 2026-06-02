@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Bell } from "lucide-react";
-import { getPushCounts, type PushCountsRow } from "@/server/push-log.functions";
+import { getPushCounts, type PushCountsRow } from "@/lib/push-log.functions";
 
 export function PushSendCountsPanel() {
   const fetchCounts = useServerFn(getPushCounts);

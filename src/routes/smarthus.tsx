@@ -16,7 +16,7 @@ import { BassengPowerPanel } from "@/components/BassengPowerPanel";
 import { BassengHistoryChart } from "@/components/BassengHistoryChart";
 import { MowerPanel } from "@/components/MowerPanel";
 
-import { getLightIdleStatuses, type LightIdleZoneStatusRow } from "@/server/light-idle-push.functions";
+import { getLightIdleStatuses, type LightIdleZoneStatusRow } from "@/lib/light-idle-push.functions";
 
 
 import { recordHomeyApiCall } from "@/lib/homey-api-tracker";
@@ -128,7 +128,7 @@ function fmtMinShort(min: number): string {
  * Returnerer beste/snareste regel: tekst + om den allerede ville trigget.
  */
 function describeNextAlert(
-  status: import("@/server/light-idle-push.functions").LightIdleZoneStatusRow,
+  status: import("@/lib/light-idle-push.functions").LightIdleZoneStatusRow,
   nowMs: number,
 ): { text: string; imminent: boolean; cooldown: boolean } | null {
   const enabledRules = status.rules.filter((r) => r.enabled);
@@ -194,7 +194,7 @@ function describeNextAlert(
  * på (uavhengig av om rommet har sensor).
  */
 function describeGlobalAlert(
-  statuses: import("@/server/light-idle-push.functions").LightIdleZoneStatusRow[],
+  statuses: import("@/lib/light-idle-push.functions").LightIdleZoneStatusRow[],
   nowMs: number,
 ): { text: string; imminent: boolean; cooldown: boolean } | null {
   // Samle unike globale regler (samme regel er duplisert per zone)

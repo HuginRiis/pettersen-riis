@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { ChevronDown, Loader2, Pencil, Sparkles } from "lucide-react";
-import { getAiUsageStats } from "@/server/ai-usage.functions";
+import { getAiUsageStats } from "@/lib/ai-usage.functions";
 import {
   getAiBudgetActual,
   setAiBudgetActual,
   type AiBudgetActual,
-} from "@/server/ai-budget-actual.functions";
+} from "@/lib/ai-budget-actual.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 

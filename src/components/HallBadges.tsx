@@ -2,9 +2,9 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { usePersistedState } from "@/hooks/use-persisted-state";
 import { useHeaderBadgeSettings } from "@/hooks/use-header-badge-settings";
-import { getUpcomingWeatherEvaluations } from "@/server/weather-push.functions";
-import { getUpcomingUvEvaluations } from "@/server/uv-push.functions";
-import { getGarbageOverview } from "@/server/garbage-collection";
+import { getUpcomingWeatherEvaluations } from "@/lib/weather-push.functions";
+import { getUpcomingUvEvaluations } from "@/lib/uv-push.functions";
+import { getGarbageOverview } from "@/lib/garbage-collection";
 import { getHomeySnapshot, getHomeAlarmStatus, getDoorsLocksSnapshot } from "@/lib/homey.functions";
 import { getTelemarkAlerts } from "@/lib/met-alerts.functions";
 // Strava-dashboard hentes via @/lib/strava-cache (15-min delt cache).
@@ -910,7 +910,7 @@ function loadRoborock(): Promise<{ cloud: any; homey: any }> {
     return Promise.all([__roborockPromise, __roborockHomeyPromise]).then(([cloud, homey]) => ({ cloud, homey }));
   }
   __roborockCachedAt = now;
-  __roborockPromise = import("@/server/roborock.functions").then((m) => m.getRoborockSnapshot()).catch(() => null);
+  __roborockPromise = import("@/lib/roborock.functions").then((m) => m.getRoborockSnapshot()).catch(() => null);
   __roborockHomeyPromise = import("@/lib/homey.functions").then((m) => m.getRoborockHomeySnapshot()).catch(() => null);
   return Promise.all([__roborockPromise, __roborockHomeyPromise]).then(([cloud, homey]) => ({ cloud, homey }));
 }

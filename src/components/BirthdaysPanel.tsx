@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { Cake, Bell, BellOff, Trash2, Plus, Send, Pencil, X, Check } from "lucide-react";
-import { sendBirthdayTestPush } from "@/server/birthdays";
+import { sendBirthdayTestPush } from "@/lib/birthdays";
 
 export type Birthday = {
   id: string;

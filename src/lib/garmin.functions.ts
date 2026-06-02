@@ -13,21 +13,21 @@ const loadAdmin = createIsomorphicFn()
 const { supabaseAdmin } = await loadAdmin();
 
 const __loadGarminServer = createIsomorphicFn()
-  .server((): Promise<typeof import("@/server/garmin.server")> =>
-    import("@/server/garmin.server"),
+  .server((): Promise<typeof import("@/lib/garmin.server")> =>
+    import("@/lib/garmin.server"),
   )
   .client(
-    (): Promise<typeof import("@/server/garmin.server")> =>
-      Promise.resolve({} as unknown as typeof import("@/server/garmin.server")),
+    (): Promise<typeof import("@/lib/garmin.server")> =>
+      Promise.resolve({} as unknown as typeof import("@/lib/garmin.server")),
   );
 
 const __loadGarminSync = createIsomorphicFn()
-  .server((): Promise<typeof import("@/server/garmin-sync.server")> =>
-    import("@/server/garmin-sync.server"),
+  .server((): Promise<typeof import("@/lib/garmin-sync.server")> =>
+    import("@/lib/garmin-sync.server"),
   )
   .client(
-    (): Promise<typeof import("@/server/garmin-sync.server")> =>
-      Promise.resolve({} as unknown as typeof import("@/server/garmin-sync.server")),
+    (): Promise<typeof import("@/lib/garmin-sync.server")> =>
+      Promise.resolve({} as unknown as typeof import("@/lib/garmin-sync.server")),
   );
 
 const ownerSchema = z.object({ owner: z.enum(["arne", "rebekka"]).default("arne") });

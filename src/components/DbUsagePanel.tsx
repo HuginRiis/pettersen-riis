@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { getDbUsage, setCronJobActive, type DbUsageStats } from "@/server/db-usage.functions";
+import { getDbUsage, setCronJobActive, type DbUsageStats } from "@/lib/db-usage.functions";
 import {
   getStorageUsage,
   getBucketObjects,
   type StorageBucket,
   type StorageObject,
-} from "@/server/storage-usage.functions";
+} from "@/lib/storage-usage.functions";
 import { Database, Clock, AlertTriangle, HardDrive, ChevronDown, ChevronRight } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";

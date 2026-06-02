@@ -12,7 +12,7 @@ import {
   type OkonomiCategory,
   type OkonomiTransaction,
   type OkonomiAccount,
-} from "@/server/okonomi.functions";
+} from "@/lib/okonomi.functions";
 
 type EditRow = {
   id: string;

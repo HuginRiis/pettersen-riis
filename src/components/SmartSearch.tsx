@@ -3,7 +3,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { Search, Sparkles, X } from "lucide-react";
 import { searchIndex, type SearchEntry } from "@/lib/search-index";
-import { aiSmartSearch, type SmartSearchResult } from "@/server/smart-search.functions";
+import { aiSmartSearch, type SmartSearchResult } from "@/lib/smart-search.functions";
 
 export function SmartSearch() {
   const navigate = useNavigate();

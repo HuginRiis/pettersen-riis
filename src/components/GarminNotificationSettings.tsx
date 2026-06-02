@@ -8,8 +8,8 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { sendGarminTestPush } from "@/server/garmin-push.functions";
-import { sendGarminThresholdTestPush } from "@/server/garmin-thresholds.functions";
+import { sendGarminTestPush } from "@/lib/garmin-push.functions";
+import { sendGarminThresholdTestPush } from "@/lib/garmin-thresholds.functions";
 
 const THRESHOLD_METRIC_OPTIONS: Array<{ key: string; label: string; unit: string; defaultDirection: "below" | "above"; defaultThreshold: number }> = [
   { key: "stress",         label: "Stress (snitt i dag)",      unit: "",     defaultDirection: "above", defaultThreshold: 50 },

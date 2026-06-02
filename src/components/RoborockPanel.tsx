@@ -7,7 +7,7 @@ import {
   submitRoborockCode,
   loginRoborockWithPassword,
   sendRoborockCommand,
-} from "@/server/roborock.functions";
+} from "@/lib/roborock.functions";
 import {
   getRoborockHomeySnapshot,
   setRoborockHomeyCapability,

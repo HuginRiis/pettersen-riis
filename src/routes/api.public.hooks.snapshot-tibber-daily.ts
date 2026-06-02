@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { snapshotTibberDailyToDb } from "@/server/tibber-daily-snapshot.server";
+import { snapshotTibberDailyToDb } from "@/lib/tibber-daily-snapshot.server";
 
 export const Route = createFileRoute("/api/public/hooks/snapshot-tibber-daily")({
   server: {
