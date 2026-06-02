@@ -1,5 +1,5 @@
 import { createServerFn, createIsomorphicFn } from "@tanstack/react-start";
-import { withApiLog } from "./api-call-log.server";
+
 const __loadAdmin = createIsomorphicFn()
   .server((): Promise<typeof import("@/integrations/supabase/client.server")> =>
     import("@/integrations/supabase/client.server"),
@@ -9,6 +9,18 @@ const __loadAdmin = createIsomorphicFn()
       Promise.resolve({ supabaseAdmin: null } as unknown as typeof import("@/integrations/supabase/client.server")),
   );
 const { supabaseAdmin } = await __loadAdmin();
+
+const __loadLogger = createIsomorphicFn()
+  .server((): Promise<typeof import("@/server/api-call-log.server")> =>
+    import("@/server/api-call-log.server"),
+  )
+  .client(
+    (): Promise<typeof import("@/server/api-call-log.server")> =>
+      Promise.resolve({
+        withApiLog: ((_s: any, _n: any, fn: any) => fn) as any,
+      } as unknown as typeof import("@/server/api-call-log.server")),
+  );
+const { withApiLog } = await __loadLogger();
 
 export type StoredDailyKwh = {
   location: "hytta" | "tollnes";
