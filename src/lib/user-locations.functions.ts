@@ -8,7 +8,7 @@ const __loadAdmin = createIsomorphicFn()
       Promise.resolve({ supabaseAdmin: null } as unknown as typeof import("@/integrations/supabase/client.server")),
   );
 const { supabaseAdmin } = await __loadAdmin();
-import { getCurrentRequestIp } from "./visitors-log.server";
+import { getCurrentRequestIp } from "@/server/visitors-log.server";
 
 export type WhoName = "Arne" | "Rebekka" | string;
 export type LocationPage = "var" | "pollen";
@@ -289,7 +289,7 @@ export const reverseGeocode = createServerFn({ method: "POST" })
             gUrl.searchParams.set("count", "10");
             gUrl.searchParams.set("language", "no");
             gUrl.searchParams.set("countryCode", a.country_code?.toUpperCase() || "NO");
-            const { fetchWithBackoff } = await import("./open-meteo-cache.server");
+            const { fetchWithBackoff } = await import("@/server/open-meteo-cache.server");
             const gRes = await fetchWithBackoff("geoip", "open-meteo:geocoding", gUrl.toString(), {
               headers: { Accept: "application/json" },
               signal: AbortSignal.timeout(6000),

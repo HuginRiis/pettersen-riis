@@ -101,7 +101,7 @@ export const Route = createFileRoute("/api/public/hooks/agenda-push")({
           let garmin: any = { per_owner: [] as any[] };
           try {
             const gmod = await import("@/server/garmin-sync.server");
-            const { GARMIN_OWNERS } = await import("@/server/garmin.shared");
+            const { GARMIN_OWNERS } = await import("@/lib/garmin-shared");
             const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
             const localHourStr = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Oslo", hour: "2-digit", hour12: false }).format(new Date());
             const localHour = parseInt(localHourStr, 10);
