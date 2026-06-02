@@ -1,0 +1,75 @@
+// Cron-endepunkt som varmer Open-Meteo-cachen for alle lokasjoner som har
+// aktive air-quality- eller UV-push. Kalles hvert 30. minutt fra pg_cron.
+// Brukere som åpner luftkvalitet-/UV-/pollen-panelene ser kun cachet data;
+// dette endepunktet er den eneste plassen vi faktisk treffer Open-Meteo
+// for panel-dataene.
+
+import { createFileRoute } from "@tanstack/react-router";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import {
+  warmAirQualityPanel,
+  warmUvCloudPanel,
+  warmOpenMeteoPollen,
+} from "@/server/air-quality-fetch.server";
+
+type LocRow = { lat: number; lon: number; enabled: boolean };
+
+function dedupeLocs(rows: LocRow[]): Array<{ lat: number; lon: number }> {
+  const seen = new Map<string, { lat: number; lon: number }>();
+  for (const r of rows) {
+    if (!r.enabled) continue;
+    if (typeof r.lat !== "number" || typeof r.lon !== "number") continue;
+    const key = `${r.lat.toFixed(3)},${r.lon.toFixed(3)}`;
+    if (!seen.has(key)) seen.set(key, { lat: r.lat, lon: r.lon });
+  }
+  return [...seen.values()];
+}
+
+export const Route = createFileRoute("/api/public/hooks/open-meteo-warm")({
+  server: {
+    handlers: {
+      POST: async () => {
+        const started = Date.now();
+        const [{ data: aq }, { data: uv }] = await Promise.all([
+          supabaseAdmin
+            .from("air_quality_notification_prefs" as never)
+            .select("lat,lon,enabled") as any,
+          supabaseAdmin
+            .from("uv_notification_prefs" as never)
+            .select("lat,lon,enabled") as any,
+        ]);
+        const aqLocs = dedupeLocs((aq ?? []) as LocRow[]);
+        const uvLocs = dedupeLocs((uv ?? []) as LocRow[]);
+
+        // Pollen henter samme datasett som luftkvalitet (samme host/kvote),
+        // så vi varmer pollen for alle air-quality-lokasjoner.
+        const results: Array<{ kind: string; lat: number; lon: number; ok: boolean; err?: string }> = [];
+
+        async function run(kind: string, lat: number, lon: number, fn: () => Promise<void>) {
+          try {
+            await fn();
+            results.push({ kind, lat, lon, ok: true });
+          } catch (err: any) {
+            results.push({ kind, lat, lon, ok: false, err: String(err?.message ?? err) });
+          }
+        }
+
+        for (const { lat, lon } of aqLocs) {
+          await run("aq", lat, lon, () => warmAirQualityPanel(lat, lon));
+          await run("pollen", lat, lon, () => warmOpenMeteoPollen(lat, lon));
+        }
+        for (const { lat, lon } of uvLocs) {
+          await run("uvcloud", lat, lon, () => warmUvCloudPanel(lat, lon));
+        }
+
+        return Response.json({
+          ok: true,
+          duration_ms: Date.now() - started,
+          aq_locations: aqLocs.length,
+          uv_locations: uvLocs.length,
+          results,
+        });
+      },
+    },
+  },
+});
