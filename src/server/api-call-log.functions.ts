@@ -153,7 +153,7 @@ export const refreshApiSource = createServerFn({ method: "POST" })
         m.getNetatmoWeatherStation({ data: {} }),
       );
     } else if (source === "tibber") {
-      const m = await import("./tibber");
+      const m = await import("@/lib/tibber.functions");
       await tryRun("getTibberFullData", () => m.getTibberFullData());
       await tryRun("getTibberMonthly", () => m.getTibberMonthly());
       await tryRun("getTibberHourly[tollnes]", () =>
@@ -172,7 +172,7 @@ export const refreshApiSource = createServerFn({ method: "POST" })
       const m = await import("./spot-price");
       await tryRun("getSpotPrices", () => m.getSpotPrices());
     } else if (source === "lightning") {
-      const m = await import("./lightning");
+      const m = await import("@/lib/lightning.functions");
       await tryRun("getMetRadarSouthernNorway", () =>
         m.getMetRadarSouthernNorway(),
       );
