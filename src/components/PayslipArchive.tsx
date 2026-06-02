@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { ChevronDown, FileText, ExternalLink, Trash2, Eye, Sparkles } from "lucide-react";
-import type { PayslipFile } from "@/server/skatt.functions";
+import type { PayslipFile } from "@/lib/skatt.functions";
 import { PayslipDetailDialog } from "@/components/PayslipDetailDialog";
 
 const MONTH_NAMES = [

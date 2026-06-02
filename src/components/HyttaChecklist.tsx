@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getStoredWho, type Who } from "@/lib/push-client";
-import { sendHyttaChecklistPush } from "@/server/agenda-push";
+import { sendHyttaChecklistPush } from "@/lib/agenda-push";
 import {
   addHyttaChecklistItem,
   deleteHyttaChecklistItem,

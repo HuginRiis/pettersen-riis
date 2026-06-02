@@ -15,7 +15,7 @@ import {
 import { Sun, Cloud } from "lucide-react";
 import { LastUpdated } from "@/components/LastUpdated";
 import { ChartZoom } from "@/components/ChartZoom";
-import { fetchUvCloudPanel } from "@/server/air-quality-fetch.functions";
+import { fetchUvCloudPanel } from "@/lib/air-quality-fetch.functions";
 
 type Props = {
   lat: number;

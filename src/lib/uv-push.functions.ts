@@ -16,7 +16,7 @@ export const sendUvTestPush = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ data }) => {
-    const { sendUvTestNotification } = await import("./uv-push.server");
+    const { sendUvTestNotification } = await import("@/server/uv-push.server");
     return sendUvTestNotification(data.prefId, data.level ?? 3);
   });
 
@@ -25,7 +25,7 @@ export const sendUvTestPush = createServerFn({ method: "POST" })
  * aktiverte lokasjon (basert på MET.no-prognose og lead_minutes).
  */
 export const getUvForecast = createServerFn({ method: "GET" }).handler(async () => {
-  const { computeUvForecast } = await import("./uv-push.server");
+  const { computeUvForecast } = await import("@/server/uv-push.server");
   return computeUvForecast();
 });
 
@@ -34,6 +34,6 @@ export const getUvForecast = createServerFn({ method: "GET" }).handler(async () 
  * Brukt i "Kommende push-varslinger".
  */
 export const getUpcomingUvEvaluations = createServerFn({ method: "GET" }).handler(async () => {
-  const { computeUpcomingUvEvaluations } = await import("./uv-push.server");
+  const { computeUpcomingUvEvaluations } = await import("@/server/uv-push.server");
   return computeUpcomingUvEvaluations(3);
 });

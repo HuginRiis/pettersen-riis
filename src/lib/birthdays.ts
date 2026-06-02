@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 
 export async function processBirthdayNotifications() {
-  const mod = await import("./birthdays.server");
+  const mod = await import("@/server/birthdays.server");
   return mod.processBirthdayNotifications();
 }
 
@@ -13,7 +13,7 @@ export const sendBirthdayTestPush = createServerFn({ method: "POST" })
     return { id: input.id };
   })
   .handler(async ({ data }) => {
-    const mod = await import("./birthdays.server");
+    const mod = await import("@/server/birthdays.server");
     // Trigger on-demand: bruk samme prosess men send uavhengig av tid.
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: row, error } = await supabaseAdmin

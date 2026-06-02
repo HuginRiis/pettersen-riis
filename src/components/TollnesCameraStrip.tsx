@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { getNetatmoCameraSnapshot } from "@/server/netatmo";
+import { getNetatmoCameraSnapshot } from "@/lib/netatmo";
 
 type Props = {
   /** Refresh interval in ms. Default 5000. */

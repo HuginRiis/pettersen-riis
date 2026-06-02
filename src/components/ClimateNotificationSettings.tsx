@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Thermometer, Snowflake, Flame, Users, Send, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { sendClimateTestPush } from "@/server/climate-push.functions";
+import { sendClimateTestPush } from "@/lib/climate-push.functions";
 import {
   Select,
   SelectContent,

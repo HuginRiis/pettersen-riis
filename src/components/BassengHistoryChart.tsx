@@ -15,7 +15,7 @@ import { Thermometer, Droplet, Sun } from "lucide-react";
 import {
   getBassengHistory,
   type BassengHistoryPoint,
-} from "@/server/basseng-history.functions";
+} from "@/lib/basseng-history.functions";
 
 const C_POOL = "#38bdf8"; // sky-400 — vann
 const C_OUT = "#f97316"; // orange-500 — ute

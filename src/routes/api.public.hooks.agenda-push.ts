@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { processAgendaNotifications } from "@/server/agenda-push";
+import { processAgendaNotifications } from "@/lib/agenda-push";
 
 export const Route = createFileRoute("/api/public/hooks/agenda-push")({
   server: {

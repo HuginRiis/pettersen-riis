@@ -8,7 +8,7 @@ import {
   type SensorRange,
   type SensorLocation,
   type SensorEventDetail,
-} from "@/server/homey-sensor-dashboard.functions";
+} from "@/lib/homey-sensor-dashboard.functions";
 import {
   Activity, DoorOpen, Lock, Unlock, Sun, Moon, AlertTriangle,
   Sparkles, ChevronDown, MapPin, Clock, TrendingUp, TrendingDown,

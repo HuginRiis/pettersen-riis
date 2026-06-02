@@ -14,7 +14,7 @@ import {
   sendLightIdleTest,
   getLightIdleZoneStatuses,
   type LightIdleZoneStatusRow,
-} from "./light-idle-push.server";
+} from "@/server/light-idle-push.server";
 
 export type LightIdlePref = {
   id: string;

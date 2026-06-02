@@ -5,7 +5,7 @@ import {
   saveSlowPageConfig,
   sendSlowPageLoadTest,
   type SlowPageConfig,
-} from "./slow-page-push.server";
+} from "@/server/slow-page-push.server";
 
 export const getSlowPageConfig = createServerFn({ method: "GET" }).handler(
   async (): Promise<SlowPageConfig> => loadSlowPageConfig(),

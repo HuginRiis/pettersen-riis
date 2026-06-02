@@ -4,7 +4,7 @@ import { z } from "zod";
 import {
   computeApiCallSummary,
   type ApiCallSummary,
-} from "./api-call-log.server";
+} from "@/server/api-call-log.server";
 
 export const getApiCallLog = createServerFn({ method: "GET" }).handler(
   async (): Promise<ApiCallSummary> => {
@@ -141,7 +141,7 @@ export const refreshApiSource = createServerFn({ method: "POST" })
       await tryRun("getTollnesCameraSnapshot", () => m.getTollnesCameraSnapshot());
     } else if (source === "strava") {
       const m = await import("@/lib/strava.functions");
-      const { withApiLog } = await import("./api-call-log.server");
+      const { withApiLog } = await import("@/server/api-call-log.server");
       await tryRun("getStravaDashboard[arne]", () =>
         withApiLog("strava", "getStravaDashboard", () =>
           m.runStravaDashboard("arne"),
@@ -166,10 +166,10 @@ export const refreshApiSource = createServerFn({ method: "POST" })
       const m = await import("@/lib/met-alerts.functions");
       await tryRun("getTelemarkAlerts", () => m.getTelemarkAlerts());
     } else if (source === "nrk") {
-      const m = await import("./nrk-traffic");
+      const m = await import("@/lib/nrk-traffic");
       await tryRun("getNrkTraffic", () => m.getNrkTraffic());
     } else if (source === "spot") {
-      const m = await import("./spot-price");
+      const m = await import("@/lib/spot-price");
       await tryRun("getSpotPrices", () => m.getSpotPrices());
     } else if (source === "lightning") {
       const m = await import("@/lib/lightning.functions");
@@ -184,7 +184,7 @@ export const refreshApiSource = createServerFn({ method: "POST" })
       const {
         warmAirQualityPanel,
         warmUvCloudPanel,
-      } = await import("./air-quality-fetch.server");
+      } = await import("@/server/air-quality-fetch.server");
 
       const dedupe = (rows: Array<{ lat: number; lon: number; enabled: boolean }>) => {
         const m = new Map<string, { lat: number; lon: number }>();

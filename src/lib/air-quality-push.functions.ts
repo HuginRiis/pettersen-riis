@@ -11,11 +11,11 @@ export const sendAirQualityTestPush = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ data }) => {
-    const mod = await import("./air-quality-push.server");
+    const mod = await import("@/server/air-quality-push.server");
     return mod.sendAirQualityTestNotification(data.prefId, data.metric);
   });
 
 export const processAirQualityPush = createServerFn({ method: "POST" }).handler(async () => {
-  const mod = await import("./air-quality-push.server");
+  const mod = await import("@/server/air-quality-push.server");
   return mod.processAirQualityNotifications();
 });

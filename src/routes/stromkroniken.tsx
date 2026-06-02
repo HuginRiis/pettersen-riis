@@ -45,8 +45,8 @@ import {
   type StoredDailyKwh,
 } from "@/lib/tibber.functions";
 
-import { getSpotPrices, type SpotPriceResult } from "@/server/spot-price";
-import { getPowerByTheHour, type PbthResult, type PbthHomeData } from "@/server/power-by-the-hour";
+import { getSpotPrices, type SpotPriceResult } from "@/lib/spot-price";
+import { getPowerByTheHour, type PbthResult, type PbthHomeData } from "@/lib/power-by-the-hour";
 import { useTibberLive, type TibberLiveHomeState } from "@/hooks/useTibberLive";
 import stromImg from "@/assets/stromkroniken.jpg";
 

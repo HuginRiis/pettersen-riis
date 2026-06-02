@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { inspectEufyCameras, type EufyCameraInfo } from "@/server/eufy-inspect.functions";
+import { inspectEufyCameras, type EufyCameraInfo } from "@/lib/eufy-inspect.functions";
 import { Search, Camera } from "lucide-react";
 
 export function EufyInspector() {

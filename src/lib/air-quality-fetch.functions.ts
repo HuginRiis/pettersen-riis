@@ -13,7 +13,7 @@ const coordSchema = z.object({
 export const fetchAirQualityPanel = createServerFn({ method: "GET" })
   .inputValidator((data) => coordSchema.parse(data))
   .handler(async ({ data }) => {
-    const mod = await import("./air-quality-fetch.server");
+    const mod = await import("@/server/air-quality-fetch.server");
     return mod.fetchAirQualityPanelData(data.lat, data.lon);
   });
 
@@ -23,7 +23,7 @@ export const fetchAirQualityPanel = createServerFn({ method: "GET" })
 export const fetchUvCloudPanel = createServerFn({ method: "GET" })
   .inputValidator((data) => coordSchema.parse(data))
   .handler(async ({ data }) => {
-    const mod = await import("./air-quality-fetch.server");
+    const mod = await import("@/server/air-quality-fetch.server");
     return mod.fetchUvCloudPanelData(data.lat, data.lon);
   });
 
@@ -33,6 +33,6 @@ export const fetchUvCloudPanel = createServerFn({ method: "GET" })
 export const fetchOpenMeteoPollen = createServerFn({ method: "GET" })
   .inputValidator((data) => coordSchema.parse(data))
   .handler(async ({ data }) => {
-    const mod = await import("./air-quality-fetch.server");
+    const mod = await import("@/server/air-quality-fetch.server");
     return mod.fetchOpenMeteoPollenData(data.lat, data.lon);
   });

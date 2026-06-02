@@ -4,7 +4,7 @@ import {
   getApiBlackoutConfig,
   setApiBlackoutConfig,
   type BlackoutConfig,
-} from "@/server/api-blackout.functions";
+} from "@/lib/api-blackout.functions";
 
 function toMinutes(hhmm: string): number {
   const [h, m] = hhmm.split(":").map((n) => Number(n) || 0);

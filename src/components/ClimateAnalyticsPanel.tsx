@@ -29,7 +29,7 @@ import {
 import {
   getNetatmoClimateHistory,
   type ClimateHistoryResult,
-} from "@/server/netatmo-history";
+} from "@/lib/netatmo-history";
 
 type Ok = Extract<ClimateHistoryResult, { ok: true }>;
 

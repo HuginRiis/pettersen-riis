@@ -11,9 +11,9 @@ const GARBAGE_ICON: Record<number, typeof Bell> = {
   6: AlertTriangle, // Farlig avfall
   7: Recycle,       // Annet/plast
 };
-import { getUpcomingWeatherEvaluations } from "@/server/weather-push.functions";
-import { getUpcomingUvEvaluations } from "@/server/uv-push.functions";
-import { getGarbageOverview } from "@/server/garbage-collection";
+import { getUpcomingWeatherEvaluations } from "@/lib/weather-push.functions";
+import { getUpcomingUvEvaluations } from "@/lib/uv-push.functions";
+import { getGarbageOverview } from "@/lib/garbage-collection";
 
 type WeatherStatus = "will-fire" | "no-hit" | "uncertain";
 

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { LastUpdated } from "@/components/LastUpdated";
 import { ChartZoom } from "@/components/ChartZoom";
-import { fetchAirQualityPanel } from "@/server/air-quality-fetch.functions";
+import { fetchAirQualityPanel } from "@/lib/air-quality-fetch.functions";
 import {
   AreaChart,
   Area,

@@ -4,7 +4,7 @@ import { z } from "zod";
 import {
   listApiPauseFlags,
   setApiSourcePausedDb,
-} from "./api-pause.server";
+} from "@/server/api-pause.server";
 
 export type ApiPauseFlag = { source: string; paused: boolean; updated_at: string };
 

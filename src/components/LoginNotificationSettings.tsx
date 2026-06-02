@@ -7,7 +7,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { sendLoginTestPush } from "@/server/login-push.functions";
+import { sendLoginTestPush } from "@/lib/login-push.functions";
 import { LoginAttemptsLog } from "@/components/LoginAttemptsLog";
 
 const WHO_OPTIONS = ["Alle", "Arne & Rebekka", "Arne", "Rebekka", "Marita", "Nora", "Celine", "Mira"] as const;

@@ -1,12 +1,12 @@
 import { createServerFn } from "@tanstack/react-start";
 
 export async function processAgendaNotifications() {
-  const mod = await import("./agenda-push.server");
+  const mod = await import("@/server/agenda-push.server");
   return mod.processAgendaNotifications();
 }
 
 export const getPushPublicKey = createServerFn({ method: "GET" }).handler(async () => {
-  const mod = await import("./agenda-push.server");
+  const mod = await import("@/server/agenda-push.server");
   return { vapidPublicKey: mod.getVapidPublicKey() };
 });
 
@@ -21,7 +21,7 @@ export const sendAgendaTestPush = createServerFn({ method: "POST" })
     return { endpoint: input.endpoint, who: input.who };
   })
   .handler(async ({ data }) => {
-    const mod = await import("./agenda-push.server");
+    const mod = await import("@/server/agenda-push.server");
     return mod.sendAgendaTestPushByEndpoint(data);
   });
 
@@ -42,6 +42,6 @@ export const sendHyttaChecklistPush = createServerFn({ method: "POST" })
     };
   })
   .handler(async ({ data }) => {
-    const mod = await import("./agenda-push.server");
+    const mod = await import("@/server/agenda-push.server");
     return mod.sendHyttaChecklistPush(data);
   });

@@ -11,7 +11,7 @@ import {
   updateOkonomiSettings,
   listImportedAccounts,
   type ImportedAccount,
-} from "@/server/okonomi.functions";
+} from "@/lib/okonomi.functions";
 
 export function OkonomiInternalTransferSettings() {
   const get = useServerFn(getOkonomiSettings);

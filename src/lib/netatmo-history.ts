@@ -1,7 +1,7 @@
 import { createServerFn, createIsomorphicFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { withApiLog } from "./api-call-log.server";
-import { loadStoredRefreshToken, saveStoredRefreshToken } from "./netatmo-token-store.server";
+import { withApiLog } from "@/server/api-call-log.server";
+import { loadStoredRefreshToken, saveStoredRefreshToken } from "@/server/netatmo-token-store.server";
 const __loadAdmin = createIsomorphicFn()
   .server((): Promise<typeof import("@/integrations/supabase/client.server")> =>
     import("@/integrations/supabase/client.server"),

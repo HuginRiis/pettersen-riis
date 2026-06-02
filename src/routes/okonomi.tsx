@@ -54,7 +54,7 @@ import {
   type LastImportSummary,
   listImportedAccounts,
   type ImportedAccount,
-} from "@/server/okonomi.functions";
+} from "@/lib/okonomi.functions";
 import { OkonomiAccountsTab, classifyAccount } from "@/components/OkonomiAccountsTab";
 import { OkonomiBulkEditSheet } from "@/components/OkonomiBulkEditSheet";
 import hvelvHero from "@/assets/got-okonomi.jpg";

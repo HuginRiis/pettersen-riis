@@ -10,7 +10,7 @@ import {
   deleteChangelog,
   type ChangelogEntry,
   type ChangelogCategory,
-} from "@/server/changelog.functions";
+} from "@/lib/changelog.functions";
 
 function fmtDate(iso: string) {
   const d = new Date(iso);

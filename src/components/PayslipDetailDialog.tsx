@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Loader2, ZoomIn, ZoomOut, RotateCcw, ExternalLink, Sparkles, FileText } from "lucide-react";
-import { extractPayslipText, type PayslipFile } from "@/server/skatt.functions";
+import { extractPayslipText, type PayslipFile } from "@/lib/skatt.functions";
 import { toast } from "sonner";
 
 const MONTH_NAMES = [

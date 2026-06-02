@@ -21,7 +21,7 @@ import {
   type TaxMonth,
   type TaxYearSettings,
   type PayslipFile,
-} from "@/server/skatt.functions";
+} from "@/lib/skatt.functions";
 import heroImg from "@/assets/got-skatt.jpg";
 import { PayslipArchive } from "@/components/PayslipArchive";
 import { SkattCharts } from "@/components/SkattCharts";

@@ -4,7 +4,7 @@ import {
   getApiPauseFlags,
   setApiSourcePaused,
   type ApiPauseFlag,
-} from "@/server/api-pause.functions";
+} from "@/lib/api-pause.functions";
 
 const SOURCES: { id: string; label: string }[] = [
   { id: "open-meteo", label: "Open-Meteo (total: pollen, UV, luftkvalitet)" },

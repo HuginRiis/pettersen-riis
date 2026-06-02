@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { MapPin, Loader2, Mountain, Bike, Car, Footprints, Compass, Sparkles, Clock, History } from "lucide-react";
 import { PageShell, PageHero } from "@/components/PageShell";
 import { TripDetailDialog } from "@/components/TripDetailDialog";
-import { getTripSuggestions, reverseGeocode, getTripQuotaInfo, type TripSuggestion, type TripQuotaInfo } from "@/server/turer";
+import { getTripSuggestions, reverseGeocode, getTripQuotaInfo, type TripSuggestion, type TripQuotaInfo } from "@/lib/turer";
 import { openLoginDialog } from "@/components/LoginDialog";
 import turerImg from "@/assets/got-turer.jpg";
 

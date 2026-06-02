@@ -4,6 +4,6 @@ import { z } from "zod";
 export const sendLoginTestPush = createServerFn({ method: "POST" })
   .inputValidator((data) => z.object({ prefId: z.string().uuid() }).parse(data))
   .handler(async ({ data }) => {
-    const { sendLoginTestNotification } = await import("./login-push.server");
+    const { sendLoginTestNotification } = await import("@/server/login-push.server");
     return sendLoginTestNotification(data.prefId);
   });

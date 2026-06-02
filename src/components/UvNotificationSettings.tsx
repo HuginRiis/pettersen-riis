@@ -11,7 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { sendUvTestPush, getUvForecast } from "@/server/uv-push.functions";
+import { sendUvTestPush, getUvForecast } from "@/lib/uv-push.functions";
 
 type UvPref = {
   id: string;

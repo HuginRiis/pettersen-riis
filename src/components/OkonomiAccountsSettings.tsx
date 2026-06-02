@@ -10,7 +10,7 @@ import {
   upsertOkonomiAccount,
   deleteOkonomiAccount,
   type OkonomiAccount,
-} from "@/server/okonomi.functions";
+} from "@/lib/okonomi.functions";
 
 export function OkonomiAccountsSettings() {
   const list = useServerFn(listOkonomiAccounts);

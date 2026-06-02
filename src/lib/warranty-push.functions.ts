@@ -8,6 +8,6 @@ import { z } from "zod";
 export const sendWarrantyTestPush = createServerFn({ method: "POST" })
   .inputValidator((data) => z.object({ receiptId: z.string().uuid() }).parse(data))
   .handler(async ({ data }) => {
-    const { sendWarrantyTestNotification } = await import("./warranty-push.server");
+    const { sendWarrantyTestNotification } = await import("@/server/warranty-push.server");
     return sendWarrantyTestNotification(data.receiptId);
   });

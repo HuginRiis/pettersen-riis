@@ -21,7 +21,7 @@ import {
   Package,
   Send,
 } from "lucide-react";
-import { sendWarrantyTestPush } from "@/server/warranty-push.functions";
+import { sendWarrantyTestPush } from "@/lib/warranty-push.functions";
 import { PageShell, PageHero } from "@/components/PageShell";
 import { getStoredWho } from "@/lib/push-client";
 import { Button } from "@/components/ui/button";
@@ -29,7 +29,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
-import { parseReceiptImage, type ReceiptItem } from "@/server/receipt-ai";
+import { parseReceiptImage, type ReceiptItem } from "@/lib/receipt-ai";
 import { compressImageToWebp } from "@/lib/image-compress";
 import matvarerImg from "@/assets/got-kvitteringer.jpg";
 import { toast } from "sonner";

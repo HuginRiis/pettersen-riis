@@ -5,7 +5,7 @@ import {
   getBlackoutConfig,
   setBlackoutConfig,
   type BlackoutConfig,
-} from "./api-blackout.server";
+} from "@/server/api-blackout.server";
 
 export type { BlackoutConfig };
 

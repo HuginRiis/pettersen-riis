@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Zap, Plug, Power, Footprints, Loader2 } from "lucide-react";
-import { getBassengPowerStats } from "@/server/basseng-power.functions";
+import { getBassengPowerStats } from "@/lib/basseng-power.functions";
 import { setLivingRoomDeviceCapability } from "@/lib/homey.functions";
 import { Button } from "@/components/ui/button";
 import {

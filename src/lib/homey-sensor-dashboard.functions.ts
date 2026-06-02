@@ -13,13 +13,13 @@ import {
   loadSummaryConfig,
   saveSummaryConfig,
   sendHomeySensorSummaryTest,
-} from "./homey-sensor-summary.server";
+} from "@/server/homey-sensor-summary.server";
 import {
   type HomeySensorHistorySettings,
   backfillHomeySensorHistory,
   loadHomeySensorHistorySettings,
   saveHomeySensorHistorySettings,
-} from "./homey-sensor-backfill.server";
+} from "@/server/homey-sensor-backfill.server";
 
 export type SensorRange = "today" | "yesterday" | "week" | "last7";
 export type SensorLocation = "all" | "hytta" | "borgen";

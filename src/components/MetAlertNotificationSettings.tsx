@@ -7,7 +7,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { sendMetAlertTestPush, getMetAlertEventTypes, getActiveMetAlerts } from "@/server/met-alert-push.functions";
+import { sendMetAlertTestPush, getMetAlertEventTypes, getActiveMetAlerts } from "@/lib/met-alert-push.functions";
 
 type ActiveAlert = {
   id: string;

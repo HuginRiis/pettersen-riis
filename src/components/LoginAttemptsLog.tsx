@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { CheckCircle2, XCircle, Loader2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { listLoginAttempts } from "@/server/login-attempts.functions";
+import { listLoginAttempts } from "@/lib/login-attempts.functions";
 
 type Attempt = {
   id: string;

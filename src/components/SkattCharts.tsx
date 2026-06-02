@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Card } from "@/components/ui/card";
-import { listMonthlyRange, type MonthlyAgg } from "@/server/skatt.functions";
+import { listMonthlyRange, type MonthlyAgg } from "@/lib/skatt.functions";
 import {
   ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, Legend, CartesianGrid,
 } from "recharts";

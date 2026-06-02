@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { sendAirQualityTestPush } from "@/server/air-quality-push.functions";
+import { sendAirQualityTestPush } from "@/lib/air-quality-push.functions";
 
 type MetricKey = "aqi" | "pm25" | "pm10" | "no2" | "o3" | "so2" | "dust";
 

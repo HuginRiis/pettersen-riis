@@ -14,7 +14,7 @@ import {
   updateOkonomiSettings,
   generateOkonomiBenchmarks,
   type OkonomiSettings,
-} from "@/server/okonomi.functions";
+} from "@/lib/okonomi.functions";
 import { OkonomiAccountsSettings } from "./OkonomiAccountsSettings";
 import { OkonomiInternalTransferSettings } from "./OkonomiInternalTransferSettings";
 

@@ -18,7 +18,7 @@ import {
   deleteLightIdlePref,
   testLightIdlePref,
   type LightIdlePref,
-} from "@/server/light-idle-push.functions";
+} from "@/lib/light-idle-push.functions";
 
 const RECIPIENTS = ["Alle", "Arne & Rebekka", "Arne", "Rebekka", "Marita", "Nora", "Celine", "Mira"] as const;
 

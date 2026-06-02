@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { getDbDetailStats, type DbDetailStats } from "@/server/db-detail.functions";
+import { getDbDetailStats, type DbDetailStats } from "@/lib/db-detail.functions";
 import { Database, Table2, Eye, Clock, ArrowUpDown } from "lucide-react";
 
 function prettyBytes(b: number): string {

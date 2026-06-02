@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { getNetatmoClimateHistory } from "@/server/netatmo-history";
+import { getNetatmoClimateHistory } from "@/lib/netatmo-history";
 
 /**
  * Kjøres av pg_cron hvert 20. min for å fylle DB-cachen

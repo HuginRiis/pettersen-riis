@@ -9,7 +9,7 @@ const __loadAdmin = createIsomorphicFn()
       Promise.resolve({ supabaseAdmin: null } as unknown as typeof import("@/integrations/supabase/client.server")),
   );
 const { supabaseAdmin } = await __loadAdmin();
-import { recordApiCall } from "./api-call-log.server";
+import { recordApiCall } from "@/server/api-call-log.server";
 
 function currentMonth(): string {
   const d = new Date();

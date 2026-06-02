@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import {
   getMailDeliveryOverview,
   sendMailDeliveryTestPush,
-} from "@/server/mail-delivery-push.functions";
+} from "@/lib/mail-delivery-push.functions";
 
 const WHO_OPTIONS = ["Alle", "Arne & Rebekka", "Arne", "Rebekka", "Marita", "Nora", "Celine", "Mira"] as const;
 const DAYS_BEFORE_OPTIONS = [

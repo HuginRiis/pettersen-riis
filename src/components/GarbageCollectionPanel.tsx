@@ -18,7 +18,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { toast } from "sonner";
-import { getGarbageOverview, setGarbageAddress, updateGarbagePref } from "@/server/garbage-collection";
+import { getGarbageOverview, setGarbageAddress, updateGarbagePref } from "@/lib/garbage-collection";
 
 type Pickup = {
   fraksjonId: number;

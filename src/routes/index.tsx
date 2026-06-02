@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { openLoginDialog } from "@/components/LoginDialog";
 import { KeyRound, LogIn, Clock, MapPin, User, Bell, BellOff } from "lucide-react";
-import { getPushPublicKey } from "@/server/agenda-push";
+import { getPushPublicKey } from "@/lib/agenda-push";
 import {
   type Who,
   getStoredWho,

@@ -29,7 +29,7 @@ import {
   submitRoborockCode,
   loginRoborockWithPassword,
   sendRoborockCommand,
-} from "@/server/roborock.functions";
+} from "@/lib/roborock.functions";
 import stovsugerArt from "@/assets/got-stovsuger.jpg";
 
 type Snap = Awaited<ReturnType<typeof getRoborockSnapshot>>;

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getNrkTraffic, type NrkTrafficItem } from "@/server/nrk-traffic";
+import { getNrkTraffic, type NrkTrafficItem } from "@/lib/nrk-traffic";
 
 export function NrkTrafficSection() {
   const [items, setItems] = useState<NrkTrafficItem[] | null>(null);

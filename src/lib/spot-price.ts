@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { withApiLog } from "./api-call-log.server";
+import { withApiLog } from "@/server/api-call-log.server";
 
 /**
  * Henter dagens spotpriser fra hvakosterstrommen.no (data fra Nord Pool).

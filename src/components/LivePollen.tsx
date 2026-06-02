@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { LastUpdated } from "@/components/LastUpdated";
 import { getNaafForecast } from "@/lib/naaf-pollen.functions";
-import { fetchOpenMeteoPollen } from "@/server/air-quality-fetch.functions";
+import { fetchOpenMeteoPollen } from "@/lib/air-quality-fetch.functions";
 
 type Props = {
   lat: number;
