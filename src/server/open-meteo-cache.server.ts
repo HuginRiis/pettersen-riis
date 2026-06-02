@@ -178,6 +178,6 @@ export function getCached<T>(key: string): T | null {
   return hit.value;
 }
 
-export function setCached<T>(key: string, value: T, ttlMs: number = DEFAULT_TTL_MS) {
-  void setPersistentCache(key, { value, expiresAt: Date.now() + ttlMs });
+export function setCached<T>(key: string, value: T, ttlMs: number = DEFAULT_TTL_MS): Promise<void> {
+  return setPersistentCache(key, { value, expiresAt: Date.now() + ttlMs });
 }
