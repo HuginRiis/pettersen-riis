@@ -1,8 +1,16 @@
 // AI-drevet smart-søk. Bruker Lovable AI Gateway og logger til ai_search_log.
-import { createServerFn } from "@tanstack/react-start";
+import { createServerFn, createIsomorphicFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { SEARCH_INDEX } from "@/lib/search-index";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
+const __loadAdmin = createIsomorphicFn()
+  .server((): Promise<typeof import("@/integrations/supabase/client.server")> =>
+    import("@/integrations/supabase/client.server"),
+  )
+  .client(
+    (): Promise<typeof import("@/integrations/supabase/client.server")> =>
+      Promise.resolve({ supabaseAdmin: null } as unknown as typeof import("@/integrations/supabase/client.server")),
+  );
+const { supabaseAdmin } = await __loadAdmin();
 
 export type SmartSearchResult = {
   answer: string;

@@ -1,6 +1,14 @@
-import { createServerFn } from "@tanstack/react-start";
+import { createServerFn, createIsomorphicFn } from "@tanstack/react-start";
 import { getRequest, getRequestHeader, useSession } from "@tanstack/react-start/server";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
+const __loadAdmin = createIsomorphicFn()
+  .server((): Promise<typeof import("@/integrations/supabase/client.server")> =>
+    import("@/integrations/supabase/client.server"),
+  )
+  .client(
+    (): Promise<typeof import("@/integrations/supabase/client.server")> =>
+      Promise.resolve({ supabaseAdmin: null } as unknown as typeof import("@/integrations/supabase/client.server")),
+  );
+const { supabaseAdmin } = await __loadAdmin();
 import { loggedFetch } from "./api-call-log.server";
 
 // Mirror of the session config in src/server/auth.ts — kept inline to avoid a
