@@ -7,7 +7,7 @@ import { Menu, X, LogOut, Crown, Swords, Shield, KeyRound, Home, Star, Flower2,
   TreePine, Coins, Bot, Wallet, Volume2, Settings, Gauge } from "lucide-react";
 
 
-import { logoutFn } from "@/server/auth";
+import { logoutFn } from "@/lib/auth.functions";
 import { getIcon as getWebFavIcon, getIconColor as getWebFavIconColor, faviconUrl, FAVICON_ICON } from "@/lib/web-favorite-icons";
 import birchImg from "@/assets/pollen-birch.png";
 import { useAuthStatus } from "@/hooks/use-auth-status";
