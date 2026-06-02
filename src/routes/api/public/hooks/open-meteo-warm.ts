@@ -43,8 +43,8 @@ export const Route = createFileRoute("/api/public/hooks/open-meteo-warm")({
         const uvLocs = dedupeLocs((uv ?? []) as LocRow[]);
 
         // Én felles Open-Meteo core-varming dekker AQ + pollen for unionen av
-        // air-quality- og UV-lokasjoner. UV-cloud bruker samme core-cache og
-        // henter bare skydekke separat fra forecast-host.
+        // air-quality- og UV-lokasjoner. UV-cloud bruker samme core-cache;
+        // skydekke hentes fra MET for å unngå flere Open-Meteo-hosts.
         const unionSeen = new Map<string, { lat: number; lon: number }>();
         for (const l of [...aqLocs, ...uvLocs]) {
           const k = `${l.lat.toFixed(3)},${l.lon.toFixed(3)}`;
