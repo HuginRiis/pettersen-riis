@@ -9,10 +9,11 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import {
   warmAirQualityPanel,
   warmUvCloudPanel,
-  warmOpenMeteoPollen,
 } from "@/server/air-quality-fetch.server";
 
 type LocRow = { lat: number; lon: number; enabled: boolean };
+
+const BETWEEN_LOCATIONS_DELAY_MS = 1500;
 
 function dedupeLocs(rows: LocRow[]): Array<{ lat: number; lon: number }> {
   const seen = new Map<string, { lat: number; lon: number }>();
@@ -41,9 +42,9 @@ export const Route = createFileRoute("/api/public/hooks/open-meteo-warm")({
         const aqLocs = dedupeLocs((aq ?? []) as LocRow[]);
         const uvLocs = dedupeLocs((uv ?? []) as LocRow[]);
 
-        // AQ-panel og pollen varmes for unionen av air-quality- og UV-lokasjoner
-        // slik at hjemme-lokasjonen (typisk bare UV-push aktiv) også får
-        // AQ-/pollen-cache. UV-cloud varmes kun for UV-lokasjoner.
+        // Én felles Open-Meteo core-varming dekker AQ + pollen for unionen av
+        // air-quality- og UV-lokasjoner. UV-cloud bruker samme core-cache og
+        // henter bare skydekke separat fra forecast-host.
         const unionSeen = new Map<string, { lat: number; lon: number }>();
         for (const l of [...aqLocs, ...uvLocs]) {
           const k = `${l.lat.toFixed(3)},${l.lon.toFixed(3)}`;
@@ -52,6 +53,8 @@ export const Route = createFileRoute("/api/public/hooks/open-meteo-warm")({
         const unionLocs = [...unionSeen.values()];
 
         const results: Array<{ kind: string; lat: number; lon: number; ok: boolean; err?: string }> = [];
+
+        const pause = () => new Promise((resolve) => setTimeout(resolve, BETWEEN_LOCATIONS_DELAY_MS));
 
         async function run(kind: string, lat: number, lon: number, fn: () => Promise<void>) {
           try {
@@ -62,14 +65,15 @@ export const Route = createFileRoute("/api/public/hooks/open-meteo-warm")({
           }
         }
 
-        for (const { lat, lon } of unionLocs) {
-          await run("aq", lat, lon, () => warmAirQualityPanel(lat, lon));
+        for (let i = 0; i < unionLocs.length; i++) {
+          const { lat, lon } = unionLocs[i];
+          await run("core", lat, lon, () => warmAirQualityPanel(lat, lon));
+          if (i < unionLocs.length - 1) await pause();
         }
-        for (const { lat, lon } of unionLocs) {
-          await run("pollen", lat, lon, () => warmOpenMeteoPollen(lat, lon));
-        }
-        for (const { lat, lon } of uvLocs) {
+        for (let i = 0; i < uvLocs.length; i++) {
+          const { lat, lon } = uvLocs[i];
           await run("uvcloud", lat, lon, () => warmUvCloudPanel(lat, lon));
+          if (i < uvLocs.length - 1) await pause();
         }
 
         return Response.json({
