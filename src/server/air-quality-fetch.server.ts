@@ -5,6 +5,7 @@
 // cron-jobben i src/routes/api/public/hooks/open-meteo-warm.ts som kjører
 // hvert 30. minutt for alle lokasjoner med aktive air-quality/UV-push.
 
+import { loggedFetch } from "./api-call-log.server";
 import { readCacheOnly, withCache, fetchWithBackoff, getCached, setCached } from "./open-meteo-cache.server";
 
 const HOURLY_FIELDS = [
@@ -132,24 +133,37 @@ export async function warmAirQualityPanel(lat: number, lon: number): Promise<voi
   ]);
 }
 
+async function fetchMetCloudHourly(lat: number, lon: number): Promise<any> {
+  const url = `https://api.met.no/weatherapi/locationforecast/2.0/complete?lat=${lat}&lon=${lon}`;
+  const res = await loggedFetch("uv", "met:cloud-cover", url, {
+    headers: { "User-Agent": "riis.cc open-meteo warm (agenda@riis.cc)" },
+  });
+  if (!res.ok) return { time: [], cloud_cover: [] };
+  const json = (await res.json()) as {
+    properties?: {
+      timeseries?: Array<{
+        time: string;
+        data?: { instant?: { details?: { cloud_area_fraction?: number } } };
+      }>;
+    };
+  };
+  const time: string[] = [];
+  const cloud_cover: number[] = [];
+  for (const e of json.properties?.timeseries ?? []) {
+    const cloud = e.data?.instant?.details?.cloud_area_fraction;
+    if (typeof cloud !== "number") continue;
+    time.push(e.time.slice(0, 16));
+    cloud_cover.push(cloud);
+  }
+  return { time, cloud_cover };
+}
+
 export async function warmUvCloudPanel(lat: number, lon: number): Promise<void> {
   const key = uvKey(lat, lon);
   await withCache<UvCloudData>(key, async () => {
     const core = await warmOpenMeteoCore(lat, lon);
-    const fcUrl =
-      `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
-      `&hourly=cloud_cover&timezone=Europe%2FOslo&forecast_days=3`;
-    const fcRes = await fetchWithBackoff("open-meteo", "open-meteo:forecast-cloud", fcUrl);
     const aqHourly = pickFields(core.hourly, ["uv_index", "uv_index_clear_sky"]);
-    let fcHourly: UvCloudData["fc"]["hourly"] = { time: [], cloud_cover: [] } as any;
-    if (fcRes && fcRes.ok) {
-      const fc = (await fcRes.json()) as { hourly: UvCloudData["fc"]["hourly"] };
-      fcHourly = fc.hourly;
-    } else {
-      console.warn(
-        `[air-quality-fetch] forecast (cloud_cover) utilgjengelig (${fcRes?.status ?? "backoff"}), warmer UV uten skydekke`,
-      );
-    }
+    const fcHourly = await fetchMetCloudHourly(lat, lon).catch(() => ({ time: [], cloud_cover: [] }));
     return { aq: { hourly: aqHourly }, fc: { hourly: fcHourly } };
   });
 }
