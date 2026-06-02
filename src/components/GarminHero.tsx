@@ -7,7 +7,7 @@ import {
   setDefaultGarminDevice,
   ensureGarminDeviceHero,
   getGarminOverview,
-} from "@/server/garmin.functions";
+} from "@/lib/garmin.functions";
 import {
   Dialog,
   DialogContent,

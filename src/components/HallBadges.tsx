@@ -8,7 +8,7 @@ import { getGarbageOverview } from "@/server/garbage-collection";
 import { getHomeySnapshot, getHomeAlarmStatus, getDoorsLocksSnapshot } from "@/lib/homey.functions";
 import { getTelemarkAlerts } from "@/server/met-alerts";
 // Strava-dashboard hentes via @/lib/strava-cache (15-min delt cache).
-import { getGarminOverview } from "@/server/garmin.functions";
+import { getGarminOverview } from "@/lib/garmin.functions";
 import { useBadgeCache } from "@/lib/badge-cache";
 
 function osloLocalToUtc(dateStr: string, timeStr: string): Date {
