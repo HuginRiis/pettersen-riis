@@ -386,6 +386,10 @@ function Steintavle2Page() {
         <div className="text-center mt-3 text-[10px] tracking-[0.3em] uppercase text-muted-foreground">
           Netatmo · oppdaterer hvert 15. min
         </div>
+
+        <section className="mt-4">
+          <GarminCompare />
+        </section>
       </main>
     </PageShell>
   );
