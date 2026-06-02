@@ -22,7 +22,7 @@ import { PageShell, PageHero } from "@/components/PageShell";
 import { HeatersPanel } from "@/components/HeatersPanel";
 import { ClimateAnalyticsPanel } from "@/components/ClimateAnalyticsPanel";
 
-import { getNetatmoWeatherStation, type WeatherStationResult } from "@/server/netatmo-weather";
+import { getNetatmoWeatherStation, type WeatherStationResult } from "@/lib/netatmo-weather.functions";
 import { getHomeySnapshot, type HomeyDeviceSnapshot } from "@/lib/homey.functions";
 import heroImg from "@/assets/got-varme.jpg";
 

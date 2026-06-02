@@ -19,7 +19,7 @@ import { useLastGood } from "@/hooks/use-last-good";
 import {
   getNetatmoWeatherStation,
   type WeatherModule,
-} from "@/server/netatmo-weather";
+} from "@/lib/netatmo-weather.functions";
 import {
   getTollnesAlerts,
   type AlertsResult,

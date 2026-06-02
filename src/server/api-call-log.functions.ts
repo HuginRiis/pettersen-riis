@@ -148,7 +148,7 @@ export const refreshApiSource = createServerFn({ method: "POST" })
         )(),
       );
     } else if (source === "netatmo") {
-      const m = await import("./netatmo-weather");
+      const m = await import("@/lib/netatmo-weather.functions");
       await tryRun("getNetatmoWeatherStation", () =>
         m.getNetatmoWeatherStation({ data: {} }),
       );
