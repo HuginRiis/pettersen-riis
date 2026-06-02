@@ -1,4 +1,4 @@
-import { createServerFn } from "@tanstack/react-start";
+import { createServerFn, createIsomorphicFn } from "@tanstack/react-start";
 import { z } from "zod";
 const __load_mail_delivery_push_server = createIsomorphicFn()
   .server((): Promise<typeof import("@/server/mail-delivery-push.server")> => import("@/server/mail-delivery-push.server"))

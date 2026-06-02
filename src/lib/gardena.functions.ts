@@ -1,4 +1,4 @@
-import { createServerFn } from "@tanstack/react-start";
+import { createServerFn, createIsomorphicFn } from "@tanstack/react-start";
 const __load_gardena_server = createIsomorphicFn()
   .server((): Promise<typeof import("@/server/gardena.server")> => import("@/server/gardena.server"))
   .client((): Promise<typeof import("@/server/gardena.server")> => Promise.resolve({} as unknown as typeof import("@/server/gardena.server")));

@@ -1,5 +1,5 @@
 // Klient-trygge serverFn for pause-flagg per API-kilde.
-import { createServerFn } from "@tanstack/react-start";
+import { createServerFn, createIsomorphicFn } from "@tanstack/react-start";
 import { z } from "zod";
 const __load_api_pause_server = createIsomorphicFn()
   .server((): Promise<typeof import("@/server/api-pause.server")> => import("@/server/api-pause.server"))

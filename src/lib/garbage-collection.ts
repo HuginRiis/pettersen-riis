@@ -1,4 +1,4 @@
-import { createServerFn } from "@tanstack/react-start";
+import { createServerFn, createIsomorphicFn } from "@tanstack/react-start";
 const __load_garbage_collection_server = createIsomorphicFn()
   .server((): Promise<typeof import("@/server/garbage-collection.server")> => import("@/server/garbage-collection.server"))
   .client((): Promise<typeof import("@/server/garbage-collection.server")> => Promise.resolve({} as unknown as typeof import("@/server/garbage-collection.server")));

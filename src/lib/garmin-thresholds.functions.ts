@@ -1,4 +1,4 @@
-import { createServerFn } from "@tanstack/react-start";
+import { createServerFn, createIsomorphicFn } from "@tanstack/react-start";
 import { z } from "zod";
 const __load_garmin_thresholds_server = createIsomorphicFn()
   .server((): Promise<typeof import("@/server/garmin-thresholds.server")> => import("@/server/garmin-thresholds.server"))

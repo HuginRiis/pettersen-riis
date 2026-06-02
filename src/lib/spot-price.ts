@@ -1,4 +1,4 @@
-import { createServerFn } from "@tanstack/react-start";
+import { createServerFn, createIsomorphicFn } from "@tanstack/react-start";
 const __load_api_call_log_server = createIsomorphicFn()
   .server((): Promise<typeof import("@/server/api-call-log.server")> => import("@/server/api-call-log.server"))
   .client((): Promise<typeof import("@/server/api-call-log.server")> => Promise.resolve({} as unknown as typeof import("@/server/api-call-log.server")));

@@ -1,4 +1,4 @@
-import { createServerFn } from "@tanstack/react-start";
+import { createServerFn, createIsomorphicFn } from "@tanstack/react-start";
 import { z } from "zod";
 const __load_slow_page_push_server = createIsomorphicFn()
   .server((): Promise<typeof import("@/server/slow-page-push.server")> => import("@/server/slow-page-push.server"))

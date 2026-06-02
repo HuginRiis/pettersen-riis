@@ -1,5 +1,5 @@
 // Klient-trygge serverFn for master API-blackout.
-import { createServerFn } from "@tanstack/react-start";
+import { createServerFn, createIsomorphicFn } from "@tanstack/react-start";
 import { z } from "zod";
 const __load_api_blackout_server = createIsomorphicFn()
   .server((): Promise<typeof import("@/server/api-blackout.server")> => import("@/server/api-blackout.server"))

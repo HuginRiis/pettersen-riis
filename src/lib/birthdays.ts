@@ -1,4 +1,4 @@
-import { createServerFn } from "@tanstack/react-start";
+import { createServerFn, createIsomorphicFn } from "@tanstack/react-start";
 const __load_birthdays_server = createIsomorphicFn()
   .server((): Promise<typeof import("@/server/birthdays.server")> => import("@/server/birthdays.server"))
   .client((): Promise<typeof import("@/server/birthdays.server")> => Promise.resolve({} as unknown as typeof import("@/server/birthdays.server")));

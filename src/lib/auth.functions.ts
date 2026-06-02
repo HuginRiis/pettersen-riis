@@ -1,4 +1,4 @@
-import { createServerFn } from "@tanstack/react-start";
+import { createServerFn, createIsomorphicFn } from "@tanstack/react-start";
 import { useSession, getRequestHeader } from "@tanstack/react-start/server";
 const __load_visitors_log_server = createIsomorphicFn()
   .server((): Promise<typeof import("@/server/visitors-log.server")> => import("@/server/visitors-log.server"))

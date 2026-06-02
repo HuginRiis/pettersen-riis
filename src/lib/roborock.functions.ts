@@ -1,4 +1,4 @@
-import { createServerFn } from "@tanstack/react-start";
+import { createServerFn, createIsomorphicFn } from "@tanstack/react-start";
 const __load_roborock_server = createIsomorphicFn()
   .server((): Promise<typeof import("@/server/roborock.server")> => import("@/server/roborock.server"))
   .client((): Promise<typeof import("@/server/roborock.server")> => Promise.resolve({} as unknown as typeof import("@/server/roborock.server")));

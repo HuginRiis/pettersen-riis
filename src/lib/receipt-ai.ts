@@ -1,4 +1,4 @@
-import { createServerFn } from "@tanstack/react-start";
+import { createServerFn, createIsomorphicFn } from "@tanstack/react-start";
 const __load_ai_usage_server = createIsomorphicFn()
   .server((): Promise<typeof import("@/server/ai-usage.server")> => import("@/server/ai-usage.server"))
   .client((): Promise<typeof import("@/server/ai-usage.server")> => Promise.resolve({} as unknown as typeof import("@/server/ai-usage.server")));

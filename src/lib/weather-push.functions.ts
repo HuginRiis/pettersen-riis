@@ -1,4 +1,4 @@
-import { createServerFn } from "@tanstack/react-start";
+import { createServerFn, createIsomorphicFn } from "@tanstack/react-start";
 import { z } from "zod";
 const __load_weather_push_server = createIsomorphicFn()
   .server((): Promise<typeof import("@/server/weather-push.server")> => import("@/server/weather-push.server"))
