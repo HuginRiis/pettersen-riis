@@ -388,7 +388,7 @@ function Steintavle2Page() {
         </div>
 
         <section className="mt-4">
-          <GarminCompare />
+          <GarminHouseScore />
         </section>
       </main>
     </PageShell>
