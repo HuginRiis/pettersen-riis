@@ -41,14 +41,15 @@ export const Route = createFileRoute("/api/public/hooks/open-meteo-warm")({
         const aqLocs = dedupeLocs((aq ?? []) as LocRow[]);
         const uvLocs = dedupeLocs((uv ?? []) as LocRow[]);
 
-        // Pollen varmes for unionen av air-quality- og UV-lokasjoner slik at
-        // hjemme-lokasjonen (typisk kun aktiv på UV-push) også får pollen-cache.
-        const pollenSeen = new Map<string, { lat: number; lon: number }>();
+        // AQ-panel og pollen varmes for unionen av air-quality- og UV-lokasjoner
+        // slik at hjemme-lokasjonen (typisk bare UV-push aktiv) også får
+        // AQ-/pollen-cache. UV-cloud varmes kun for UV-lokasjoner.
+        const unionSeen = new Map<string, { lat: number; lon: number }>();
         for (const l of [...aqLocs, ...uvLocs]) {
           const k = `${l.lat.toFixed(3)},${l.lon.toFixed(3)}`;
-          if (!pollenSeen.has(k)) pollenSeen.set(k, l);
+          if (!unionSeen.has(k)) unionSeen.set(k, l);
         }
-        const pollenLocs = [...pollenSeen.values()];
+        const unionLocs = [...unionSeen.values()];
 
         const results: Array<{ kind: string; lat: number; lon: number; ok: boolean; err?: string }> = [];
 
@@ -61,10 +62,10 @@ export const Route = createFileRoute("/api/public/hooks/open-meteo-warm")({
           }
         }
 
-        for (const { lat, lon } of aqLocs) {
+        for (const { lat, lon } of unionLocs) {
           await run("aq", lat, lon, () => warmAirQualityPanel(lat, lon));
         }
-        for (const { lat, lon } of pollenLocs) {
+        for (const { lat, lon } of unionLocs) {
           await run("pollen", lat, lon, () => warmOpenMeteoPollen(lat, lon));
         }
         for (const { lat, lon } of uvLocs) {
