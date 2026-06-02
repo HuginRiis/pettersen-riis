@@ -177,6 +177,52 @@ export const refreshApiSource = createServerFn({ method: "POST" })
         m.getMetRadarSouthernNorway(),
       );
       await tryRun("getTollnesAlerts", () => m.getTollnesAlerts());
+    } else if (source === "open-meteo" || source === "air-quality" || source === "uv") {
+      // Triggrer cache-oppvarmingen for Open-Meteo (pollen, luftkvalitet, UV).
+      // Respekterer api-pause + blackout via fetchWithBackoff inne i warm-*.
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const {
+        warmAirQualityPanel,
+        warmUvCloudPanel,
+        warmOpenMeteoPollen,
+      } = await import("./air-quality-fetch.server");
+
+      const dedupe = (rows: Array<{ lat: number; lon: number; enabled: boolean }>) => {
+        const m = new Map<string, { lat: number; lon: number }>();
+        for (const r of rows ?? []) {
+          if (!r?.enabled) continue;
+          if (typeof r.lat !== "number" || typeof r.lon !== "number") continue;
+          const k = `${r.lat.toFixed(3)},${r.lon.toFixed(3)}`;
+          if (!m.has(k)) m.set(k, { lat: r.lat, lon: r.lon });
+        }
+        return [...m.values()];
+      };
+
+      const [{ data: aq }, { data: uv }] = await Promise.all([
+        (supabaseAdmin.from("air_quality_notification_prefs" as never).select("lat,lon,enabled") as any),
+        (supabaseAdmin.from("uv_notification_prefs" as never).select("lat,lon,enabled") as any),
+      ]);
+      const aqLocs = dedupe((aq ?? []) as any);
+      const uvLocs = dedupe((uv ?? []) as any);
+      const pollenMap = new Map<string, { lat: number; lon: number }>();
+      for (const l of [...aqLocs, ...uvLocs]) {
+        pollenMap.set(`${l.lat.toFixed(3)},${l.lon.toFixed(3)}`, l);
+      }
+      const pollenLocs = [...pollenMap.values()];
+
+      if (source === "open-meteo" || source === "air-quality") {
+        for (const { lat, lon } of aqLocs) {
+          await tryRun(`warmAirQualityPanel[${lat},${lon}]`, () => warmAirQualityPanel(lat, lon));
+        }
+        for (const { lat, lon } of pollenLocs) {
+          await tryRun(`warmOpenMeteoPollen[${lat},${lon}]`, () => warmOpenMeteoPollen(lat, lon));
+        }
+      }
+      if (source === "open-meteo" || source === "uv") {
+        for (const { lat, lon } of uvLocs) {
+          await tryRun(`warmUvCloudPanel[${lat},${lon}]`, () => warmUvCloudPanel(lat, lon));
+        }
+      }
     } else {
       throw new Error(`Ukjent kilde: ${source}`);
     }
