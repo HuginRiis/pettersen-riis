@@ -58,7 +58,8 @@ export function UvCloudPanel({ lat, lon, title, subtitle }: Props) {
     async function load() {
       try {
         setLoading(true);
-        const { aq, fc } = await fetchUvCloud({ data: { lat, lon } });
+        const res = await fetchUvCloud({ data: { lat, lon } });
+        const { aq, fc, cachedAt } = res as typeof res & { cachedAt?: string };
 
         const times: string[] = aq.hourly.time;
         const uv: number[] = aq.hourly.uv_index;
@@ -101,7 +102,7 @@ export function UvCloudPanel({ lat, lon, title, subtitle }: Props) {
 
         if (!cancelled) {
           setRows(data);
-          setUpdated(new Date());
+          setUpdated(cachedAt ? new Date(cachedAt) : null);
           setError(null);
         }
       } catch (e) {
