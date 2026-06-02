@@ -6,7 +6,7 @@ import {
   saveSlowPageConfigFn,
   sendSlowPageLoadTestFn,
 } from "@/server/slow-page-push.functions";
-import { getPageLoadStats } from "@/server/page-load.functions";
+import { getPageLoadStats } from "@/lib/page-load.functions";
 
 const WHO_OPTIONS = ["Alle", "Arne & Rebekka", "Arne", "Rebekka", "Marita", "Nora", "Celine", "Mira"] as const;
 

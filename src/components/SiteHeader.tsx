@@ -13,7 +13,7 @@ import birchImg from "@/assets/pollen-birch.png";
 import { useAuthStatus } from "@/hooks/use-auth-status";
 import { openLoginDialog } from "@/components/LoginDialog";
 import { useUvSun, uvLevel } from "@/hooks/use-uv-sun";
-import { getNameForCurrentIp, getDefaultLocation } from "@/server/user-locations";
+import { getNameForCurrentIp, getDefaultLocation } from "@/lib/user-locations.functions";
 import { useNavUsage } from "@/hooks/use-nav-usage";
 import { useMenuPrefs } from "@/hooks/use-menu-prefs";
 import { getNetatmoWeatherStation } from "@/lib/netatmo-weather.functions";

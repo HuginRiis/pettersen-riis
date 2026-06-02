@@ -9,7 +9,18 @@ const __loadAdmin = createIsomorphicFn()
       Promise.resolve({ supabaseAdmin: null } as unknown as typeof import("@/integrations/supabase/client.server")),
   );
 const { supabaseAdmin } = await __loadAdmin();
-import { loggedFetch } from "./api-call-log.server";
+const __loadApiLog = createIsomorphicFn()
+  .server((): Promise<typeof import("@/server/api-call-log.server")> =>
+    import("@/server/api-call-log.server"),
+  )
+  .client(
+    (): Promise<typeof import("@/server/api-call-log.server")> =>
+      Promise.resolve({
+        loggedFetch: ((_s: any, _n: any, url: any, init: any) => fetch(url, init)) as any,
+        withApiLog: ((_s: any, _n: any, fn: any) => fn) as any,
+      } as unknown as typeof import("@/server/api-call-log.server")),
+  );
+const { loggedFetch } = await __loadApiLog();
 
 // Mirror of the session config in src/server/auth.ts — kept inline to avoid a
 // circular import. Used by `releaseIpFn` to ensure only authenticated users

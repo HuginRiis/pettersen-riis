@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useRouterState } from "@tanstack/react-router";
-import { startVisitorSession, recordPageview, heartbeat } from "@/server/visitors";
+import { startVisitorSession, recordPageview, heartbeat } from "@/lib/visitors.functions";
 import { getStoredWho } from "@/lib/push-client";
 
 const SESSION_KEY = "vakttarnet_client_session_id";

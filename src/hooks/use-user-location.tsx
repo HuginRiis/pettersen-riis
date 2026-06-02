@@ -7,7 +7,7 @@ import {
   getNameForCurrentIp,
   type LocationPage,
   type WhoName,
-} from "@/server/user-locations";
+} from "@/lib/user-locations.functions";
 
 export type UserLocationState = {
   who: WhoName;

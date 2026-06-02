@@ -8,7 +8,26 @@ const __loadAdmin = createIsomorphicFn()
       Promise.resolve({ supabaseAdmin: null } as unknown as typeof import("@/integrations/supabase/client.server")),
   );
 const { supabaseAdmin } = await __loadAdmin();
-import { getCurrentRequestIp } from "./visitors-log.server";
+const __loadVisitorsLog = createIsomorphicFn()
+  .server((): Promise<typeof import("@/server/visitors-log.server")> =>
+    import("@/server/visitors-log.server"),
+  )
+  .client(
+    (): Promise<typeof import("@/server/visitors-log.server")> =>
+      Promise.resolve({ getCurrentRequestIp: (() => null) as any } as unknown as typeof import("@/server/visitors-log.server")),
+  );
+const { getCurrentRequestIp } = await __loadVisitorsLog();
+
+const __loadOpenMeteoCache = createIsomorphicFn()
+  .server((): Promise<typeof import("@/server/open-meteo-cache.server")> =>
+    import("@/server/open-meteo-cache.server"),
+  )
+  .client(
+    (): Promise<typeof import("@/server/open-meteo-cache.server")> =>
+      Promise.resolve({
+        fetchWithBackoff: ((_s: any, _n: any, url: any, init: any) => fetch(url, init)) as any,
+      } as unknown as typeof import("@/server/open-meteo-cache.server")),
+  );
 
 export type WhoName = "Arne" | "Rebekka" | string;
 export type LocationPage = "var" | "pollen";
@@ -289,7 +308,7 @@ export const reverseGeocode = createServerFn({ method: "POST" })
             gUrl.searchParams.set("count", "10");
             gUrl.searchParams.set("language", "no");
             gUrl.searchParams.set("countryCode", a.country_code?.toUpperCase() || "NO");
-            const { fetchWithBackoff } = await import("./open-meteo-cache.server");
+            const { fetchWithBackoff } = await __loadOpenMeteoCache();
             const gRes = await fetchWithBackoff("geoip", "open-meteo:geocoding", gUrl.toString(), {
               headers: { Accept: "application/json" },
               signal: AbortSignal.timeout(6000),

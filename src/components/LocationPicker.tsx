@@ -10,7 +10,7 @@ import {
   type PlaceHit,
   type WhoName,
   type LocationPage,
-} from "@/server/user-locations";
+} from "@/lib/user-locations.functions";
 
 export type ActiveLocation = {
   label: string;

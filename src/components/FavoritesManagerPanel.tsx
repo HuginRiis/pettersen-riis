@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus, Trash2, ChevronDown, ChevronUp, Pencil, Save, X, Globe } from "lucide-react";
 import { ICON_NAMES, getIcon, getIconColor, faviconUrl, FAVICON_ICON } from "@/lib/web-favorite-icons";
-import { getNameForCurrentIp } from "@/server/user-locations";
+import { getNameForCurrentIp } from "@/lib/user-locations.functions";
 import { getStoredWho } from "@/lib/push-client";
 
 type Row = {
