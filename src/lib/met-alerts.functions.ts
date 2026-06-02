@@ -1,5 +1,4 @@
 import { createServerFn } from "@tanstack/react-start";
-import { withApiLog } from "./api-call-log.server";
 
 /**
  * Henter aktive farevarsler fra Met.no for Sør- og Østlandet.
@@ -195,7 +194,8 @@ async function fetchAlerts(): Promise<TelemarkAlert[]> {
 }
 
 export const getTelemarkAlerts = createServerFn({ method: "GET" }).handler(
-  withApiLog("met", "getTelemarkAlerts", async () => {
+  async () => {
+    const { withApiLog } = await import("@/server/api-call-log.server");
     const now = Date.now();
     if (cache && now - cache.ts < TTL_MS) {
       return { alerts: cache.data, fetchedAt: cache.ts, cached: true };
@@ -211,5 +211,5 @@ export const getTelemarkAlerts = createServerFn({ method: "GET" }).handler(
       }
       return { alerts: [], fetchedAt: now, cached: false, error: String(err) };
     }
-  }),
+  },
 );
