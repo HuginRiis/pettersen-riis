@@ -5,7 +5,8 @@
 // cron-jobben i src/routes/api/public/hooks/open-meteo-warm.ts som kjører
 // hvert 30. minutt for alle lokasjoner med aktive air-quality/UV-push.
 
-import { readCacheOnly, withCache, fetchWithBackoff, getCached } from "./open-meteo-cache.server";
+import { loggedFetch } from "./api-call-log.server";
+import { readCacheOnly, withCache, fetchWithBackoff, getCached, setCached } from "./open-meteo-cache.server";
 
 const HOURLY_FIELDS = [
   "pm10",
@@ -34,12 +35,24 @@ const CURRENT_FIELDS = [
   "uv_index_clear_sky",
 ].join(",");
 
+const POLLEN_FIELDS = [
+  "alder_pollen",
+  "birch_pollen",
+  "grass_pollen",
+  "mugwort_pollen",
+  "olive_pollen",
+  "ragweed_pollen",
+].join(",");
+
+const CORE_HOURLY_FIELDS = `${HOURLY_FIELDS},${POLLEN_FIELDS}`;
+
 export type AqPanelData = { hourly: any; current: any };
 export type UvCloudData = {
   aq: { hourly: any };
   fc: { hourly: any };
 };
 export type OpenMeteoPollenData = { hourly: any };
+type OpenMeteoCoreData = { hourly: any; current: any };
 
 const NOT_WARM_ERR = "Cache er ikke fylt enda — neste oppdatering kommer fra cron-jobben";
 
@@ -51,6 +64,18 @@ function uvKey(lat: number, lon: number) {
 }
 function pollenKey(lat: number, lon: number) {
   return `pollen:${lat.toFixed(3)},${lon.toFixed(3)}`;
+}
+function coreKey(lat: number, lon: number) {
+  return `core:${lat.toFixed(3)},${lon.toFixed(3)}`;
+}
+
+function pickFields(source: any, fields: string[]): any {
+  const out: any = {};
+  if (source?.time !== undefined) out.time = source.time;
+  for (const f of fields) {
+    if (source?.[f] !== undefined) out[f] = source[f];
+  }
+  return out;
 }
 
 export async function fetchAirQualityPanelData(lat: number, lon: number): Promise<AqPanelData> {
