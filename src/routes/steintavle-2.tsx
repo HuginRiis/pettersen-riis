@@ -7,7 +7,7 @@ import {
   getNetatmoWeatherStation,
   type WeatherModule,
 } from "@/lib/netatmo-weather.functions";
-import { GarminCompare } from "@/components/GarminCompare";
+import { GarminHouseScore } from "@/components/GarminHouseScore";
 import { useLastGood } from "@/hooks/use-last-good";
 
 const SIZE_STORAGE_KEY = "st2.textSizes.v1";
@@ -388,7 +388,7 @@ function Steintavle2Page() {
         </div>
 
         <section className="mt-4">
-          <GarminCompare />
+          <GarminHouseScore />
         </section>
       </main>
     </PageShell>
