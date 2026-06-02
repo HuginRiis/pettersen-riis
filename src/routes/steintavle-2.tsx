@@ -7,6 +7,7 @@ import {
   getNetatmoWeatherStation,
   type WeatherModule,
 } from "@/lib/netatmo-weather.functions";
+import { GarminCompare } from "@/components/GarminCompare";
 import { useLastGood } from "@/hooks/use-last-good";
 
 const SIZE_STORAGE_KEY = "st2.textSizes.v1";
@@ -385,6 +386,10 @@ function Steintavle2Page() {
         <div className="text-center mt-3 text-[10px] tracking-[0.3em] uppercase text-muted-foreground">
           Netatmo · oppdaterer hvert 15. min
         </div>
+
+        <section className="mt-4">
+          <GarminCompare />
+        </section>
       </main>
     </PageShell>
   );

@@ -180,6 +180,12 @@ function mapDevice(device: any): WeatherModule[] {
 const WEATHER_TTL_MS = 10 * 60_000;
 const weatherCache = new Map<string, { at: number; data: WeatherStationResult }>();
 
+async function fetchStations(token: string) {
+  return fetch(`${NETATMO_BASE}/api/getstationsdata?get_favorites=false`, {
+    headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+  });
+}
+
 export const getNetatmoWeatherStation = createServerFn({ method: "GET" })
   .inputValidator((data: { stationMatch?: string }) => data ?? {})
   .handler(withApiLog("netatmo", "getNetatmoWeatherStation", async ({ data }: { data: { stationMatch?: string } }): Promise<WeatherStationResult> => {
@@ -190,16 +196,27 @@ export const getNetatmoWeatherStation = createServerFn({ method: "GET" })
     }
 
     try {
-      const token = await getAccessToken();
+      let token = await getAccessToken();
+      let res = await fetchStations(token);
 
-      const res = await fetch(`${NETATMO_BASE}/api/getstationsdata?get_favorites=false`, {
-        headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
-      });
+      // Netatmo svarer 401/403 "Invalid access token" hvis access-tokenen er
+      // ugyldig (f.eks. om refresh_token har blitt rotert av et annet eksemplar
+      // av samme worker). Nullstill cache og prøv én gang til med fersk token.
+      if (res.status === 401 || res.status === 403) {
+        tokenCache = null;
+        try {
+          token = await getAccessToken();
+          res = await fetchStations(token);
+        } catch (err) {
+          if (cached?.data.ok) return { ...cached.data, cached: true } as WeatherStationResult;
+          throw err;
+        }
+      }
 
       if (!res.ok) {
         const text = await res.text();
-        // 429 → server forrige cache litt lenger om vi har den
-        if (res.status === 429 && cached?.data.ok) {
+        // 429 / fortsatt 401/403 → server forrige cache så lenge vi har den
+        if (cached?.data.ok) {
           weatherCache.set(cacheKey, { at: Date.now() - WEATHER_TTL_MS + 60_000, data: cached.data });
           return { ...cached.data, cached: true } as WeatherStationResult;
         }
@@ -212,6 +229,7 @@ export const getNetatmoWeatherStation = createServerFn({ method: "GET" })
       const json = (await res.json()) as any;
       const devices: any[] = json?.body?.devices ?? [];
       if (devices.length === 0) {
+        if (cached?.data.ok) return { ...cached.data, cached: true } as WeatherStationResult;
         return { ok: false, error: "Fant ingen værstasjoner på kontoen" };
       }
 
@@ -220,9 +238,6 @@ export const getNetatmoWeatherStation = createServerFn({ method: "GET" })
       );
 
       const match = data?.stationMatch?.toLowerCase().trim();
-      // Samle ALLE devices som matcher stedet — Tollnes/Borgen har flere
-      // base-stasjoner, og utemodulen (NAModule1) + noen rom (NAModule4) kan
-      // ligge på en annen device enn hovedmodulen vi traff på først.
       const matched = match
         ? devices.filter((d: any) => {
             const sn = (d.station_name ?? "").toLowerCase();
@@ -234,8 +249,6 @@ export const getNetatmoWeatherStation = createServerFn({ method: "GET" })
       const device = matched[0];
 
       const stationName: string = device.station_name ?? device.module_name ?? "Værstasjonen";
-      // Slå sammen moduler fra alle matchende devices. Dedupliser på _id slik
-      // at hovedmodulen ikke kommer dobbelt om flere devices deler samme oppsett.
       const seen = new Set<string>();
       const modules: WeatherModule[] = [];
       for (const dev of matched) {
@@ -256,6 +269,8 @@ export const getNetatmoWeatherStation = createServerFn({ method: "GET" })
       weatherCache.set(cacheKey, { at: Date.now(), data: out });
       return out;
     } catch (e: any) {
+      // Behold forrige gode svar ved nettverksfeil / token-feil
+      if (cached?.data.ok) return { ...cached.data, cached: true } as WeatherStationResult;
       return { ok: false, error: e?.message ?? "Ukjent feil" };
     }
   }));
