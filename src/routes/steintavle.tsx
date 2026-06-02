@@ -24,7 +24,7 @@ import {
   getTollnesAlerts,
   type AlertsResult,
   type MetAlert,
-} from "@/server/lightning";
+} from "@/lib/lightning.functions";
 
 export const Route = createFileRoute("/steintavle")({
   head: () => ({
