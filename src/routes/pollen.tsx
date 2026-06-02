@@ -29,13 +29,7 @@ export const Route = createFileRoute("/pollen")({
 });
 
 function PollenPage() {
-  const [loadedAt, setLoadedAt] = useState(() => new Date());
   const userLoc = useUserLocation("pollen");
-
-  useEffect(() => {
-    const id = setInterval(() => setLoadedAt(new Date()), 60 * 60 * 1000);
-    return () => clearInterval(id);
-  }, []);
 
   return (
     <PageShell>
@@ -47,15 +41,15 @@ function PollenPage() {
       />
 
       <section className="container mx-auto px-4 pt-6 flex flex-col items-center gap-3">
-        <LastUpdated label="Luftkvalitet (sidelast)" timestamp={loadedAt} />
         <p className="max-w-2xl text-center text-xs text-muted-foreground leading-relaxed">
           Samlet oversikt over alt som påvirker lufta du puster inn: pollen
           (bjørk, gress, or, burot m.fl.), UV-stråling, svevestøv (PM2.5 og
           PM10), bakkenært ozon (O₃), nitrogendioksid (NO₂), svoveldioksid
-          (SO₂), karbonmonoksid (CO) og mineralstøv. Alle målinger hentes live
-          fra Open-Meteo og oppdateres hver halvtime.
+          (SO₂), karbonmonoksid (CO) og mineralstøv. Alle målinger hentes fra
+          felles cache som varmes opp av cron-jobben hver halvtime.
         </p>
       </section>
+
 
       <section className="container mx-auto px-4 pt-8 space-y-5">
         <UserLocationBar page="pollen" state={userLoc} readOnlyWho />
