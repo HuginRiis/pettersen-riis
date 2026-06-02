@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Lightbulb, Save, Search, Loader2, Settings2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getStoredWho } from "@/lib/push-client";
-import { getHomeySnapshot, type HomeyDeviceSnapshot } from "@/server/homey";
+import { getHomeySnapshot, type HomeyDeviceSnapshot } from "@/lib/homey.functions";
 
 type Scene = {
   slot: number;

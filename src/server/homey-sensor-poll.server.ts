@@ -1,5 +1,5 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { getValidConnection, getHomeyRawSnapshot, fetchHomeyInsightsLog } from "./homey";
+import { getValidConnection, getHomeyRawSnapshot, fetchHomeyInsightsLog } from "@/lib/homey.functions";
 
 
 type Kind = "motion" | "door" | "window" | "lock" | "contact";

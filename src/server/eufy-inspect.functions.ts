@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { getValidConnection, getHomeyRawSnapshot } from "./homey";
+import { getValidConnection, getHomeyRawSnapshot } from "@/lib/homey.functions";
 
 export type EufyCameraInfo = {
   id: string;

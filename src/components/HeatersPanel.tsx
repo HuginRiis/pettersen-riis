@@ -29,7 +29,7 @@ import {
   type HomeyDeviceSnapshot,
   type HomeyZone,
   type HomeyCapabilityEnumValue,
-} from "@/server/homey";
+} from "@/lib/homey.functions";
 import { recordHomeyApiCall } from "@/lib/homey-api-tracker";
 import { usePerUserPersistedState } from "@/hooks/use-per-user-persisted-state";
 

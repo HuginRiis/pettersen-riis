@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Star, ArrowUp, ArrowDown, Home } from "lucide-react";
 import { useMenuPrefs } from "@/hooks/use-menu-prefs";
-import { getHomeySnapshot, type HomeyDeviceSnapshot } from "@/server/homey";
+import { getHomeySnapshot, type HomeyDeviceSnapshot } from "@/lib/homey.functions";
 
 const EXTRA_LIGHT_NAME_TOKENS: string[][] = [["garsej", "lys"], ["stålampe"]];
 

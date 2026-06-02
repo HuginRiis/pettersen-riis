@@ -26,7 +26,7 @@ import {
   getLivingRoomDevices,
   setLivingRoomDeviceCapability,
   type LivingRoomDevice,
-} from "@/server/homey";
+} from "@/lib/homey.functions";
 
 // Skånsom polling for alltid-på iPad: 3 min normalt, dobles ved 429-feil.
 const REFRESH_MS = 3 * 60_000;

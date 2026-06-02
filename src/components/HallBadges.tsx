@@ -5,7 +5,7 @@ import { useHeaderBadgeSettings } from "@/hooks/use-header-badge-settings";
 import { getUpcomingWeatherEvaluations } from "@/server/weather-push.functions";
 import { getUpcomingUvEvaluations } from "@/server/uv-push.functions";
 import { getGarbageOverview } from "@/server/garbage-collection";
-import { getHomeySnapshot, getHomeAlarmStatus, getDoorsLocksSnapshot } from "@/server/homey";
+import { getHomeySnapshot, getHomeAlarmStatus, getDoorsLocksSnapshot } from "@/lib/homey.functions";
 import { getTelemarkAlerts } from "@/server/met-alerts";
 // Strava-dashboard hentes via @/lib/strava-cache (15-min delt cache).
 import { getGarminOverview } from "@/server/garmin.functions";
@@ -911,7 +911,7 @@ function loadRoborock(): Promise<{ cloud: any; homey: any }> {
   }
   __roborockCachedAt = now;
   __roborockPromise = import("@/server/roborock.functions").then((m) => m.getRoborockSnapshot()).catch(() => null);
-  __roborockHomeyPromise = import("@/server/homey").then((m) => m.getRoborockHomeySnapshot()).catch(() => null);
+  __roborockHomeyPromise = import("@/lib/homey.functions").then((m) => m.getRoborockHomeySnapshot()).catch(() => null);
   return Promise.all([__roborockPromise, __roborockHomeyPromise]).then(([cloud, homey]) => ({ cloud, homey }));
 }
 

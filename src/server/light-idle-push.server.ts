@@ -10,7 +10,7 @@
 import webpush from "web-push";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { logPushSend } from "./push-log.server";
-import { getValidConnection, getHomeyRawSnapshot } from "./homey";
+import { getValidConnection, getHomeyRawSnapshot } from "@/lib/homey.functions";
 import { buildSubscriptionWhoOr } from "./push-recipients";
 
 const VAPID_PUBLIC = process.env.VAPID_PUBLIC_KEY!;

@@ -8,7 +8,7 @@ import {
   type DoorsLocksResult,
   type HomeAlarmStatusResult,
   type HomeAlarmState,
-} from "@/server/homey";
+} from "@/lib/homey.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { getStoredWho, setStoredWho, type Who } from "@/lib/push-client";
 import { DoorClosed, DoorOpen, Lock, Unlock, Activity, ShieldAlert, Plus, Minus, ShieldCheck, ShieldOff, Loader2, Flame, ChevronDown } from "lucide-react";

@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { getHomeySnapshot } from "./homey";
+import { getHomeySnapshot } from "@/lib/homey.functions";
 
 export type PulseLocation = "hytta" | "tollnes";
 
