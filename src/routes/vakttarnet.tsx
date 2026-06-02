@@ -3,12 +3,12 @@ import { createFileRoute } from "@tanstack/react-router";
 import { PageShell } from "@/components/PageShell";
 import { HouseHero } from "@/components/HouseHero";
 import { useServerFn } from "@tanstack/react-start";
-import { fetchVakttarnetData, releaseIpFn } from "@/server/visitors";
+import { fetchVakttarnetData, releaseIpFn } from "@/lib/visitors.functions";
 import type {
   VisitorSessionRow,
   LoginAttemptRow,
   PageviewRow,
-} from "@/server/visitors";
+} from "@/lib/visitors.functions";
 import { getAiUsageStats, type AiUsageStats } from "@/server/ai-usage";
 import { useAuthStatus } from "@/hooks/use-auth-status";
 import heroImg from "@/assets/got-vakttarnet.jpg";

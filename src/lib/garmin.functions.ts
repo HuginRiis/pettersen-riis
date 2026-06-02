@@ -1,6 +1,6 @@
 import { createServerFn, createIsomorphicFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { GARMIN_OWNERS, type GarminOwner } from "@/server/garmin.shared";
+import { GARMIN_OWNERS, type GarminOwner } from "@/lib/garmin-shared";
 
 const loadAdmin = createIsomorphicFn()
   .server((): Promise<typeof import("@/integrations/supabase/client.server")> =>

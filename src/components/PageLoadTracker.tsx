@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { useRouterState } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useCurrentWho } from "@/hooks/use-current-who";
-import { logPageLoad } from "@/server/page-load.functions";
+import { logPageLoad } from "@/lib/page-load.functions";
 
 function detectDevice(): { device: string; os: string; browser: string } {
   if (typeof navigator === "undefined") return { device: "Server", os: "?", browser: "?" };

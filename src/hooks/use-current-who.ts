@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useAuthStatus } from "@/hooks/use-auth-status";
-import { getNameForCurrentIp } from "@/server/user-locations";
+import { getNameForCurrentIp } from "@/lib/user-locations.functions";
 
 let cache: string | null = null;
 const listeners = new Set<(v: string) => void>();
