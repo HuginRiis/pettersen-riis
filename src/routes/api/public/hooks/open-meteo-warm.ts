@@ -46,9 +46,9 @@ export const Route = createFileRoute("/api/public/hooks/open-meteo-warm")({
             .select("lat,lon,enabled") as any,
           supabaseAdmin
             .from("user_location_prefs" as never)
-            .select("lat,lon,page")
-            .in("page", ["pollen"]) as any,
+            .select("lat,lon,page") as any,
         ]);
+
         const aqLocs = dedupeLocs((aq ?? []) as LocRow[]);
         const uvLocs = dedupeLocs((uv ?? []) as LocRow[]);
         const userPollenLocs: Array<{ lat: number; lon: number }> = ((userLocs ?? []) as any[])
