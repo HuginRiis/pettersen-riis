@@ -89,9 +89,24 @@ export const Route = createFileRoute("/api/public/hooks/open-meteo-warm")({
           }
         }
 
+        // ETT multi-coord-kall for ALLE lokasjoner — fyller per-lokasjon-cachen
+        // før vi går videre. Drastisk lavere 429-risiko enn N separate kall.
+        let multiOk = false;
+        try {
+          await warmOpenMeteoCoreMulti(unionLocs);
+          multiOk = true;
+          results.push({ kind: "core-multi", lat: 0, lon: 0, ok: true });
+        } catch (err: any) {
+          results.push({ kind: "core-multi", lat: 0, lon: 0, ok: false, err: String(err?.message ?? err) });
+        }
+
+        // Per-lokasjon: skriver aq/pollen-cache fra core-cachen (cache-hit etter multi).
+        // Hvis multi feilet, faller den enkelte warmAirQualityPanel tilbake til
+        // single-coord-kall — men sannsynligvis i 429-backoff allerede.
         for (let i = 0; i < unionLocs.length; i++) {
           const { lat, lon } = unionLocs[i];
           await run("core", lat, lon, () => warmAirQualityPanel(lat, lon));
+          if (multiOk) continue; // cache-hit, ingen pause nødvendig
           if (i < unionLocs.length - 1) await pause();
         }
         for (let i = 0; i < uvCloudLocs.length; i++) {
