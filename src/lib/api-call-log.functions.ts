@@ -9,6 +9,12 @@ const __load_api_call_log_server = createIsomorphicFn()
   .client((): Promise<typeof import("@/lib/api-call-log.server")> => Promise.resolve({} as unknown as typeof import("@/lib/api-call-log.server")));
 const { computeApiCallSummary } = await __load_api_call_log_server();
 import type { ApiCallSummary } from "@/lib/api-call-log.server";
+
+const FIXED_OPEN_METEO_PANEL_LOCS = [
+  { lat: 59.1789, lon: 9.5732 }, // Borgen · Tollnes, Skien
+  { lat: 59.91, lon: 9.07 }, // Hytta · Lyngdal i Numedal
+];
+
 export const getApiCallLog = createServerFn({ method: "GET" }).handler(
   async (): Promise<ApiCallSummary> => {
     return computeApiCallSummary();
@@ -207,10 +213,15 @@ export const refreshApiSource = createServerFn({ method: "POST" })
       const aqLocs = dedupe((aq ?? []) as any);
       const uvLocs = dedupe((uv ?? []) as any);
       const unionMap = new Map<string, { lat: number; lon: number }>();
-      for (const l of [...aqLocs, ...uvLocs]) {
+      for (const l of [...aqLocs, ...uvLocs, ...FIXED_OPEN_METEO_PANEL_LOCS]) {
         unionMap.set(`${l.lat.toFixed(3)},${l.lon.toFixed(3)}`, l);
       }
       const unionLocs = [...unionMap.values()];
+      const uvMap = new Map<string, { lat: number; lon: number }>();
+      for (const l of [...uvLocs, ...FIXED_OPEN_METEO_PANEL_LOCS]) {
+        uvMap.set(`${l.lat.toFixed(3)},${l.lon.toFixed(3)}`, l);
+      }
+      const uvCloudLocs = [...uvMap.values()];
 
       if (source === "open-meteo" || source === "air-quality") {
         for (const { lat, lon } of unionLocs) {
@@ -218,7 +229,7 @@ export const refreshApiSource = createServerFn({ method: "POST" })
         }
       }
       if (source === "open-meteo" || source === "uv") {
-        for (const { lat, lon } of uvLocs) {
+        for (const { lat, lon } of uvCloudLocs) {
           await tryRun(`warmUvCloudPanel[${lat},${lon}]`, () => warmUvCloudPanel(lat, lon));
         }
       }
