@@ -19,6 +19,7 @@ const BETWEEN_LOCATIONS_DELAY_MS = 1500;
 // Disse vises som hardkodede paneler på /pollen.
 const ALWAYS_WARM: Array<{ lat: number; lon: number }> = [
   { lat: 59.91, lon: 9.07 }, // Hytta · Lyngdal i Numedal
+  { lat: 59.15673, lon: 9.63708 }, // Tollnes, Skien (Arne sin pollen-lokasjon)
 ];
 
 function dedupeLocs(rows: LocRow[]): Array<{ lat: number; lon: number }> {
@@ -37,22 +38,32 @@ export const Route = createFileRoute("/api/public/hooks/open-meteo-warm")({
     handlers: {
       POST: async () => {
         const started = Date.now();
-        const [{ data: aq }, { data: uv }] = await Promise.all([
+        const [{ data: aq }, { data: uv }, { data: userLocs }] = await Promise.all([
           supabaseAdmin
             .from("air_quality_notification_prefs" as never)
             .select("lat,lon,enabled") as any,
           supabaseAdmin
             .from("uv_notification_prefs" as never)
             .select("lat,lon,enabled") as any,
+          supabaseAdmin
+            .from("user_location_prefs" as never)
+            .select("lat,lon,page") as any,
         ]);
+
         const aqLocs = dedupeLocs((aq ?? []) as LocRow[]);
         const uvLocs = dedupeLocs((uv ?? []) as LocRow[]);
+        const userPollenLocs: Array<{ lat: number; lon: number }> = ((userLocs ?? []) as any[])
+          .filter((r) => r?.page === "pollen" && typeof r.lat === "number" && typeof r.lon === "number")
+          .map((r) => ({ lat: r.lat, lon: r.lon }));
+
 
         // Én felles Open-Meteo core-varming dekker AQ + pollen for unionen av
-        // air-quality- og UV-lokasjoner. UV-cloud bruker samme core-cache;
-        // skydekke hentes fra MET for å unngå flere Open-Meteo-hosts.
+        // air-quality-, UV- og aktive pollen-side-lokasjoner. UV-cloud bruker
+        // samme core-cache; skydekke hentes fra MET for å unngå flere
+        // Open-Meteo-hosts. Vi kjører UV-cloud for HELE unionen slik at både
+        // Borgen/Tollnes (fra user_location_prefs) og hytta får UV-data.
         const unionSeen = new Map<string, { lat: number; lon: number }>();
-        for (const l of [...aqLocs, ...uvLocs, ...ALWAYS_WARM]) {
+        for (const l of [...aqLocs, ...uvLocs, ...userPollenLocs, ...ALWAYS_WARM]) {
           const k = `${l.lat.toFixed(3)},${l.lon.toFixed(3)}`;
           if (!unionSeen.has(k)) unionSeen.set(k, l);
         }
@@ -76,25 +87,23 @@ export const Route = createFileRoute("/api/public/hooks/open-meteo-warm")({
           await run("core", lat, lon, () => warmAirQualityPanel(lat, lon));
           if (i < unionLocs.length - 1) await pause();
         }
-        const uvSeen = new Map<string, { lat: number; lon: number }>();
-        for (const l of [...uvLocs, ...ALWAYS_WARM]) {
-          const k = `${l.lat.toFixed(3)},${l.lon.toFixed(3)}`;
-          if (!uvSeen.has(k)) uvSeen.set(k, l);
-        }
-        const uvAllLocs = [...uvSeen.values()];
-        for (let i = 0; i < uvAllLocs.length; i++) {
-          const { lat, lon } = uvAllLocs[i];
+        for (let i = 0; i < unionLocs.length; i++) {
+          const { lat, lon } = unionLocs[i];
           await run("uvcloud", lat, lon, () => warmUvCloudPanel(lat, lon));
-          if (i < uvAllLocs.length - 1) await pause();
+          if (i < unionLocs.length - 1) await pause();
         }
+
 
         return Response.json({
           ok: true,
           duration_ms: Date.now() - started,
           aq_locations: aqLocs.length,
           uv_locations: uvLocs.length,
+          user_pollen_locations: userPollenLocs.length,
+          union_locations: unionLocs.length,
           results,
         });
+
       },
     },
   },
