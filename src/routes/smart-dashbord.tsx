@@ -655,18 +655,16 @@ function VarmepumpeTile({
   const setCap = useServerFn(setLivingRoomDeviceCapability);
   const [busy, setBusy] = useState(false);
 
-  const onoff = device?.capabilities?.onoff;
-  const isOn = onoff === true;
-  const target = typeof device?.capabilities?.target_temperature === "number"
-    ? device.capabilities.target_temperature : null;
-  const measured = typeof device?.capabilities?.measure_temperature === "number"
-    ? device.capabilities.measure_temperature : null;
-  const mode = typeof device?.capabilities?.thermostat_mode === "string"
-    ? device.capabilities.thermostat_mode : null;
-  const modeValues = device?.capabilities?.thermostat_mode_values ?? [];
-  const tMin = device?.capabilities?.target_temperature_min ?? 16;
-  const tMax = device?.capabilities?.target_temperature_max ?? 30;
-  const tStep = device?.capabilities?.target_temperature_step ?? 1;
+  const isOn = capBool(device, "onoff");
+  const target = capNum(device, "target_temperature");
+  const measured = capNum(device, "measure_temperature");
+  const mode = capStr(device, "thermostat_mode");
+  const ttMeta = device?.capabilities?.target_temperature;
+  const tmMeta = device?.capabilities?.thermostat_mode;
+  const modeValues: { id: string; title?: string }[] = Array.isArray(tmMeta?.values) ? tmMeta!.values! : [];
+  const tMin = typeof ttMeta?.min === "number" ? ttMeta.min : 16;
+  const tMax = typeof ttMeta?.max === "number" ? ttMeta.max : 30;
+  const tStep = typeof ttMeta?.step === "number" ? ttMeta.step : 1;
 
   const send = async (cap: string, value: any) => {
     if (!device || busy) return;
