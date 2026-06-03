@@ -521,6 +521,138 @@ function BassengTile({
   );
 }
 
+// ----- Hunde-vann tile (samme stil som BassengTile) -----
+function HundeTile({
+  device, countdownSeconds, onReload,
+}: {
+  device: HomeyDeviceSnapshot | null;
+  countdownSeconds: number | null;
+  onReload: () => void;
+}) {
+  const setCap = useServerFn(setLivingRoomDeviceCapability);
+  const [busy, setBusy] = useState(false);
+  const snapOn = capBool(device, "onoff");
+  const [onLocal, setOnLocal] = useState<boolean | null>(null);
+  useEffect(() => {
+    if (onLocal !== null && snapOn === onLocal) setOnLocal(null);
+  }, [snapOn, onLocal]);
+  const isOn = onLocal ?? snapOn;
+
+  const [remaining, setRemaining] = useState<number | null>(countdownSeconds);
+  useEffect(() => { setRemaining(countdownSeconds); }, [countdownSeconds]);
+  useEffect(() => {
+    if (remaining == null || remaining <= 0 || !isOn) return;
+    const t = setInterval(() => {
+      setRemaining((r) => (r == null ? null : Math.max(0, r - 1)));
+    }, 1000);
+    return () => clearInterval(t);
+  }, [remaining, isOn]);
+
+  const fmt = (s: number | null) => {
+    if (s == null) return null;
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return `${m}:${String(sec).padStart(2, "0")}`;
+  };
+
+  const toggle = async (next: boolean) => {
+    if (!device || busy) return;
+    setOnLocal(next);
+    setBusy(true);
+    try {
+      await setCap({ data: { deviceId: device.id, capability: "onoff", value: next } });
+      onReload();
+    } catch {
+      setOnLocal(null);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Tile
+      title="Hunde vann"
+      icon={<PawPrint size={14} />}
+      accent="text-sky-300"
+      action={
+        device ? (
+          <Switch
+            checked={isOn}
+            disabled={busy}
+            onCheckedChange={toggle}
+            onClick={(e) => e.stopPropagation()}
+          />
+        ) : (
+          <span className="text-[10px] text-white/30">ingen enhet</span>
+        )
+      }
+    >
+      <div className="relative flex flex-col h-full justify-between">
+        {isOn && (
+          <div className="pointer-events-none absolute inset-0 overflow-hidden">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div
+                key={i}
+                className="absolute text-sky-300/40"
+                style={{
+                  left: `${15 + i * 16}%`,
+                  top: "-12px",
+                  animation: `hvDrop ${1.2 + (i % 3) * 0.4}s ${i * 0.18}s ease-in infinite`,
+                }}
+              >
+                <Droplets size={12} />
+              </div>
+            ))}
+          </div>
+        )}
+        <div className="flex items-start justify-between relative">
+          <div>
+            <div className="text-4xl font-semibold text-white tabular-nums leading-none">
+              {isOn ? "💧" : "○"}
+            </div>
+            <div className="text-xs text-sky-300/80 mt-1">{isOn == null ? "Ukjent" : isOn ? "Renner" : "Av"}</div>
+            <div className="text-[10px] uppercase tracking-widest text-white/40 mt-1">Drikkevann hunder</div>
+          </div>
+          <svg viewBox="0 0 120 80" className="w-20 h-14">
+            <path
+              d="M15 30 Q60 80 105 30 Z"
+              fill={isOn ? "rgba(56,189,248,0.25)" : "rgba(148,163,184,0.12)"}
+              stroke={isOn ? "#38bdf8" : "#64748b"}
+              strokeWidth="2"
+            />
+            {isOn && (
+              <>
+                <path d="M22 32 Q60 48 98 32" fill="none" stroke="#7dd3fc" strokeWidth="1.5" opacity="0.9">
+                  <animate attributeName="d" dur="2.5s" repeatCount="indefinite"
+                    values="M22 32 Q60 48 98 32;M22 34 Q60 46 98 34;M22 32 Q60 48 98 32" />
+                </path>
+                <line x1="60" y1="0" x2="60" y2="30" stroke="#38bdf8" strokeWidth="2.5" strokeLinecap="round">
+                  <animate attributeName="opacity" dur="0.4s" repeatCount="indefinite" values="0.4;1;0.4" />
+                </line>
+              </>
+            )}
+          </svg>
+        </div>
+        {remaining != null && remaining > 0 && isOn && (
+          <div className="relative">
+            <div className="text-[10px] uppercase tracking-widest text-white/40">Skrur seg av om</div>
+            <div className="text-lg text-sky-300 tabular-nums tracking-widest">{fmt(remaining)}</div>
+          </div>
+        )}
+      </div>
+      <style>{`
+        @keyframes hvDrop {
+          0% { transform: translateY(0) scale(0.6); opacity: 0; }
+          20% { opacity: 1; }
+          100% { transform: translateY(120px) scale(1); opacity: 0; }
+        }
+      `}</style>
+    </Tile>
+  );
+}
+
+
+
 // ----- Lys (Hue via Homey) -----
 function LysTile({
   loc, hueLights, onReload, zoneLabel,
