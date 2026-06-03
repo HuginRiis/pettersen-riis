@@ -673,8 +673,9 @@ function LysTile({
               <div className="text-sm text-white/50">Ingen Hue-lys koblet til Homey.</div>
             )}
             {hueLights.map((d) => {
-              const on = capBool(d, "onoff");
-              const dim = capNum(d, "dim");
+              const on = isOnFor(d);
+              const dim = dimFor(d);
+
               return (
                 <div key={d.id} className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
                   <div className="flex items-center justify-between">
