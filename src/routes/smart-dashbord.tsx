@@ -2161,8 +2161,9 @@ function SmartDashbord() {
               </div>
               <div className="col-span-2"><UvCompact loc={loc} /></div>
               <div className="col-span-2"><AqiCompact loc={loc} /></div>
-              <div className="col-span-2"><RainTile rainDay={tollnes.rainDay} /></div>
+              <div className="col-span-2"><RainTile rainDay={tollnes.rainDay} rainHour={tollnes.rainHour} /></div>
               <div className="col-span-2"><WindTile windNow={tollnes.windNow} gustNow={tollnes.gustNow} windAngle={tollnes.windAngle} /></div>
+
 
               {/* Rad 3: Kalender + Leader */}
               <div className="col-span-6"><CalendarTile /></div>
