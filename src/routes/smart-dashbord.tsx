@@ -352,7 +352,13 @@ function BassengTile({ loc }: { loc: typeof LOCS[LocId] }) {
   const [points, setPoints] = useState<BassengHistoryPoint[]>([]);
   const [on, setOn] = useState(true);
   useEffect(() => {
-    fetch3({ data: { hours: 3 } }).then((r) => setPoints(r.points)).catch(() => {});
+    let c = false;
+    const load = () => {
+      fetch3({ data: { hours: 3 } }).then((r) => { if (!c) setPoints(r.points); }).catch(() => {});
+    };
+    load();
+    const id = setInterval(load, 5 * 60 * 1000);
+    return () => { c = true; clearInterval(id); };
   }, [fetch3]);
 
   const latest = useMemo(() => {
