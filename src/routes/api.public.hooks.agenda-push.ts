@@ -30,15 +30,14 @@ export const Route = createFileRoute("/api/public/hooks/agenda-push")({
           }
           let garbage: { checked: number; sent: number; errors: number; skipped: number | string } = { checked: 0, sent: 0, errors: 0, skipped: 0 };
           try {
-            // Renovasjon API: kjør kun hver 2. time (Oslo-tid), ved minutt 0–4
+            // Renovasjon API: kjør kun én gang i timen (Oslo-tid), ved minutt 00
             const osloParts = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Oslo", hour: "2-digit", minute: "2-digit", hour12: false }).formatToParts(new Date());
-            const osloHour = parseInt(osloParts.find(p => p.type === "hour")?.value ?? "0", 10);
             const osloMin = parseInt(osloParts.find(p => p.type === "minute")?.value ?? "0", 10);
-            if (osloHour % 2 === 0 && osloMin < 5) {
+            if (osloMin === 0) {
               const gmod = await import("@/lib/garbage-collection.server");
               garbage = await gmod.processGarbageNotifications();
             } else {
-              garbage.skipped = "throttled-2h";
+              garbage.skipped = "throttled-1h";
             }
           } catch (err) {
             console.error("[garbage-push] failed", err);

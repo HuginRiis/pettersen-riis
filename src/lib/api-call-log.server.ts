@@ -216,7 +216,7 @@ export const SOURCE_SCHEDULES: Record<string, SourceSchedule> = {
   nrk: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
   spot: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
   lightning: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
-  garbage: { description: "cache 6t (poll hvert minutt fra agenda-push)", intervalMs: 6 * 60 * 60 * 1000, trigger: "cache" },
+  garbage: { description: "cache 6t (sjekkes én gang i timen fra agenda-push)", intervalMs: 60 * 60 * 1000, trigger: "cron" },
   kassal: { description: "ved bruk", intervalMs: null, trigger: "on-demand" },
   gardena: { description: "hver 45. min 06:30–21:00", intervalMs: 45 * 60_000, trigger: "cron" },
   garmin: { description: "hvert minutt (egen tidsplan per bruker)", intervalMs: 60_000, trigger: "cron" },
