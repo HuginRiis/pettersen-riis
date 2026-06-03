@@ -1416,15 +1416,18 @@ function StromTile({ home }: { home: "borgen" | "hytta" }) {
           <div className="flex-1 min-w-0">
             <div className="text-[10px] uppercase tracking-widest text-white/40">I dag</div>
             <div className="text-xl text-white tabular-nums leading-tight">
-              {h?.energyToday != null ? `${h.energyToday.toFixed(1)} kWh` : "—"}
+              {energyTodayKwh != null ? `${energyTodayKwh.toFixed(1)} kWh` : "—"}
             </div>
             <div className="text-[10px] uppercase tracking-widest text-white/40 mt-1.5">Topp i dag</div>
             <div className="text-xl text-white tabular-nums leading-tight">
-              {peakToday > 0 ? `${peakToday.toFixed(1)} kW` : "—"}
+              {(() => {
+                const top = Math.max(peakToday, liveMaxKw ?? 0);
+                return top > 0 ? `${top.toFixed(1)} kW` : "—";
+              })()}
             </div>
             <div className="flex items-center gap-1.5 mt-1.5">
-              <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-[11px] text-emerald-300">live</span>
+              <span className={`h-2 w-2 rounded-full ${isLive ? "bg-emerald-400 animate-pulse" : "bg-white/30"}`} />
+              <span className={`text-[11px] ${isLive ? "text-emerald-300" : "text-white/40"}`}>{isLive ? "live" : "henter…"}</span>
             </div>
           </div>
         </div>
