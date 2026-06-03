@@ -20,7 +20,7 @@ import { PageLoadPanel } from "@/components/PageLoadPanel";
 import { DoorsLocksPanel } from "@/components/DoorsLocksPanel";
 import { ApiCallLogPanel } from "@/components/ApiCallLogPanel";
 import { ApiErrorLogPanel } from "@/components/ApiErrorLogPanel";
-import { ApiPausePanel } from "@/components/ApiPausePanel";
+
 import { ApiBlackoutPanel } from "@/components/ApiBlackoutPanel";
 import { MaesterAiBudget } from "@/components/MaesterAiBudget";
 import { PushSendCountsPanel } from "@/components/PushSendCountsPanel";
@@ -80,7 +80,7 @@ const VAKTTARN_TOC: { id: string; label: string; icon: React.ComponentType<{ cla
   { id: "vt-garmin", label: "Garmin Connect", icon: Watch },
   { id: "vt-apiblackout", label: "Master-blackout", icon: PowerOff },
   { id: "vt-apilog", label: "API-logg", icon: Network },
-  { id: "vt-apipause", label: "Pause API", icon: PowerOff },
+  
   { id: "vt-apierrors", label: "API-feil", icon: AlertTriangle },
   { id: "vt-changelog", label: "Changelog", icon: History },
 ];
@@ -442,15 +442,8 @@ function VakttarnetPage() {
         <section id="vt-apilog" className="scroll-mt-24"><ApiCallLogPanel /></section>
 
 
-        <section id="vt-apipause" className="scroll-mt-24">
-          <Panel
-            title="Pause API totalt"
-            icon={<PowerOff size={14} />}
-            subtitle="Slå av alle serverkall til en kilde — gjelder hele appen, ikke bare denne siden. Brukes når et API spammer 429/feiler."
-          >
-            <ApiPausePanel />
-          </Panel>
-        </section>
+        {/* ApiPausePanel fjernet — pause/tidsvindu er nå inline per kilde i API-loggen over. */}
+
 
         <section id="vt-apierrors" className="scroll-mt-24">
           <Panel
