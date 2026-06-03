@@ -1582,17 +1582,25 @@ function StromTile({ home }: { home: "borgen" | "hytta" }) {
 type NetatmoTollnes = {
   noise: number | null;
   humBedroom: number | null;
+  humStua: number | null;
+  co2Stua: number | null;
+  co2Bedroom: number | null;
+  co2BedroomName: string | null;
+  outTemp: number | null;
   rainHour: number | null;
   rainDay: number | null;
   windNow: number | null; // m/s
   windAngle: number | null;
   gustNow: number | null; // m/s
+  modules: WeatherModule[];
 };
 function useNetatmoTollnes(): NetatmoTollnes {
   const fetchNet = useServerFn(getNetatmoWeatherStation);
   const [d, setD] = useState<NetatmoTollnes>({
-    noise: null, humBedroom: null, rainHour: null, rainDay: null,
-    windNow: null, windAngle: null, gustNow: null,
+    noise: null, humBedroom: null, humStua: null, co2Stua: null,
+    co2Bedroom: null, co2BedroomName: null, outTemp: null,
+    rainHour: null, rainDay: null,
+    windNow: null, windAngle: null, gustNow: null, modules: [],
   });
   useEffect(() => {
     let c = false;
@@ -1604,19 +1612,29 @@ function useNetatmoTollnes(): NetatmoTollnes {
           if (c || !r?.ok) return;
           const modules: WeatherModule[] = r.modules ?? [];
           const main = modules.find((m) => m.type === "NAMain") ?? null;
-          const bed =
-            modules.find((m) => m.type === "NAModule4" && /sov|sove|bed/i.test(m.name)) ??
-            modules.find((m) => m.type === "NAModule4") ?? null;
+          // Arne/Rebekka soverom — match først, fall tilbake til høyeste CO2
+          const bedrooms = modules.filter((m) => m.type === "NAModule4");
+          const bedArne =
+            bedrooms.find((m) => /arne|rebek/i.test(m.name)) ??
+            bedrooms.find((m) => /sov|sove|bed/i.test(m.name)) ??
+            bedrooms[0] ?? null;
+          const outdoor = modules.find((m) => m.type === "NAModule1") ?? null;
           const rain = modules.find((m) => m.type === "NAModule3") ?? null;
           const wind = modules.find((m) => m.type === "NAModule2") ?? null;
           setD({
             noise: main?.metrics.noise ?? null,
-            humBedroom: bed?.metrics.humidity ?? null,
+            humBedroom: bedArne?.metrics.humidity ?? null,
+            humStua: main?.metrics.humidity ?? null,
+            co2Stua: main?.metrics.co2 ?? null,
+            co2Bedroom: bedArne?.metrics.co2 ?? null,
+            co2BedroomName: bedArne?.name ?? null,
+            outTemp: outdoor?.metrics.temperature ?? null,
             rainHour: rain?.metrics.rainHour ?? rain?.metrics.rain ?? null,
             rainDay: rain?.metrics.rainDay ?? null,
             windNow: kmhToMs(wind?.metrics.windStrength),
             windAngle: wind?.metrics.windAngle ?? null,
             gustNow: kmhToMs(wind?.metrics.gustStrength),
+            modules,
           });
         })
         .catch(() => {});
@@ -1627,6 +1645,7 @@ function useNetatmoTollnes(): NetatmoTollnes {
   }, [fetchNet]);
   return d;
 }
+
 
 
 // ----- Compact UV tile (half size) -----
