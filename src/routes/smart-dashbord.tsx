@@ -749,6 +749,14 @@ function SmartDashbord() {
             </div>
           </div>
           <div className="flex items-center gap-3">
+            <Link
+              to="/"
+              aria-label="Hjem"
+              title="Hjem"
+              className="h-9 w-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/70 hover:text-white transition"
+            >
+              <Home size={15} />
+            </Link>
             {(Object.keys(LOCS) as LocId[]).map((id) => (
               <button
                 key={id}
