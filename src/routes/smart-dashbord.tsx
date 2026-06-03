@@ -1483,27 +1483,102 @@ function useNetatmoTollnes(): NetatmoTollnes {
 }
 
 // ----- Compact UV tile (half size) -----
+const UV_CLOUDS_KEY = "pbth.smart.uvWithClouds";
 function UvCompact({ loc }: { loc: typeof LOCS[LocId] }) {
   const uv = useUvSun(loc.lat, loc.lon);
-  const v = uv.uvNow ?? 0;
+  const fetchUvCloud = useServerFn(fetchUvCloudPanel);
+  const [withClouds, setWithClouds] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    try { return window.localStorage.getItem(UV_CLOUDS_KEY) === "1"; } catch { return false; }
+  });
+  const [cloudPct, setCloudPct] = useState<number | null>(null);
+  const [uvLive, setUvLive] = useState<{ uv: number | null; uvClear: number | null }>({ uv: null, uvClear: null });
+
+  useEffect(() => {
+    let c = false;
+    const load = () => {
+      fetchUvCloud({ data: { lat: loc.lat, lon: loc.lon } })
+        .then((r: any) => {
+          if (c) return;
+          const h = r?.aq?.hourly;
+          const fh = r?.fc?.hourly;
+          if (h?.time) {
+            const now = Date.now();
+            let best = -1, bd = Infinity;
+            for (let i = 0; i < h.time.length; i++) {
+              const d = Math.abs(new Date(h.time[i]).getTime() - now);
+              if (d < bd) { bd = d; best = i; }
+            }
+            if (best >= 0) {
+              setUvLive({
+                uv: h.uv_index?.[best] ?? null,
+                uvClear: h.uv_index_clear_sky?.[best] ?? null,
+              });
+            }
+          }
+          if (fh?.time && fh?.cloud_cover?.length) {
+            const now = Date.now();
+            let best = -1, bd = Infinity;
+            for (let i = 0; i < fh.time.length; i++) {
+              const d = Math.abs(new Date(fh.time[i]).getTime() - now);
+              if (d < bd) { bd = d; best = i; }
+            }
+            if (best >= 0) setCloudPct(fh.cloud_cover[best] ?? null);
+          }
+        })
+        .catch(() => {});
+    };
+    load();
+    const id = setInterval(load, 5 * 60 * 1000);
+    return () => { c = true; clearInterval(id); };
+  }, [fetchUvCloud, loc.lat, loc.lon]);
+
+  const toggleClouds = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setWithClouds((p) => {
+      const next = !p;
+      try { window.localStorage.setItem(UV_CLOUDS_KEY, next ? "1" : "0"); } catch {}
+      return next;
+    });
+  };
+
+  const baseClear = uvLive.uvClear ?? uv.uvNow ?? 0;
+  const baseWith = uvLive.uv ?? (cloudPct != null ? baseClear * (1 - 0.75 * (cloudPct / 100)) : baseClear);
+  const v = withClouds ? baseWith : baseClear;
   const max = uv.uvMaxToday ?? 0;
   const pct = Math.min(100, (v / 11) * 100);
   const ring = `conic-gradient(rgb(251 191 36) ${pct}%, rgba(255,255,255,0.08) 0)`;
   return (
     <Tile title={`UV · ${loc.label}`} icon={<Sun size={14} />} accent="text-amber-400">
-      <div className="flex items-center gap-3 h-full">
-        <div className="relative h-20 w-20 rounded-full flex items-center justify-center shrink-0" style={{ background: ring }}>
-          <div className="absolute inset-[5px] rounded-full bg-[#0c0f15] flex flex-col items-center justify-center">
-            <div className="text-xl font-semibold text-white tabular-nums leading-none">
-              {uv.loading ? "—" : v.toFixed(1)}
+      <div className="flex flex-col h-full">
+        <div className="flex items-center gap-3 flex-1 min-h-0">
+          <div className="relative h-16 w-16 rounded-full flex items-center justify-center shrink-0" style={{ background: ring }}>
+            <div className="absolute inset-[4px] rounded-full bg-[#0c0f15] flex flex-col items-center justify-center">
+              <div className="text-lg font-semibold text-white tabular-nums leading-none">
+                {uv.loading ? "—" : v.toFixed(1)}
+              </div>
+              <div className="text-[8px] uppercase tracking-widest text-white/40 mt-0.5">nå</div>
             </div>
-            <div className="text-[8px] uppercase tracking-widest text-white/40 mt-0.5">UV nå</div>
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="text-[9px] uppercase tracking-widest text-white/40">Maks</div>
+            <div className="text-base font-medium text-white tabular-nums">{max.toFixed(1)}</div>
+            {cloudPct != null && (
+              <div className="text-[9px] text-white/40 mt-0.5">Sky {Math.round(cloudPct)}%</div>
+            )}
           </div>
         </div>
-        <div className="min-w-0">
-          <div className="text-[9px] uppercase tracking-widest text-white/40">Maks</div>
-          <div className="text-base font-medium text-white tabular-nums">{max.toFixed(1)}</div>
-        </div>
+        <button
+          onClick={toggleClouds}
+          className={`mt-1.5 w-full text-[10px] py-1 rounded-md border transition flex items-center justify-center gap-1 ${
+            withClouds
+              ? "bg-sky-400/15 border-sky-400/40 text-sky-200"
+              : "bg-amber-400/10 border-amber-400/30 text-amber-200"
+          }`}
+        >
+          {withClouds ? <Cloud size={10} /> : <CloudOff size={10} />}
+          {withClouds ? "Med sky" : "Uten sky"}
+        </button>
       </div>
     </Tile>
   );
@@ -1512,22 +1587,19 @@ function UvCompact({ loc }: { loc: typeof LOCS[LocId] }) {
 // ----- Compact AQI tile (half size) -----
 function AqiCompact({ loc }: { loc: typeof LOCS[LocId] }) {
   const fetchAq = useServerFn(fetchAirQualityPanel);
-  const [aqi, setAqi] = useState<number | null>(null);
+  const [current, setCurrent] = useState<any>(null);
   useEffect(() => {
     let c = false;
     const load = () => {
       fetchAq({ data: { lat: loc.lat, lon: loc.lon } })
-        .then((r: any) => {
-          if (c) return;
-          const v = r?.aq?.current?.european_aqi;
-          if (typeof v === "number") setAqi(v);
-        })
+        .then((r: any) => { if (!c) setCurrent(r?.current ?? null); })
         .catch(() => {});
     };
     load();
     const id = setInterval(load, 10 * 60 * 1000);
     return () => { c = true; clearInterval(id); };
   }, [fetchAq, loc.lat, loc.lon]);
+  const aqi: number | null = current?.european_aqi ?? null;
   const status =
     aqi == null ? "—" :
     aqi <= 20 ? "Utmerket" : aqi <= 40 ? "God" :
@@ -1536,15 +1608,72 @@ function AqiCompact({ loc }: { loc: typeof LOCS[LocId] }) {
     aqi == null ? "text-white/60" :
     aqi <= 20 ? "text-emerald-400" : aqi <= 40 ? "text-lime-400" :
     aqi <= 60 ? "text-amber-400" : aqi <= 80 ? "text-orange-400" : "text-rose-400";
+
+  // Finn høyeste forurensnings-bidrag (relativ til WHO-grense)
+  const top = useMemo(() => {
+    if (!current) return null;
+    const items: Array<{ label: string; v: number; unit: string; thr: number }> = [
+      { label: "PM2.5", v: current.pm2_5 ?? 0, unit: "µg/m³", thr: 25 },
+      { label: "PM10",  v: current.pm10 ?? 0,  unit: "µg/m³", thr: 50 },
+      { label: "NO₂",   v: current.nitrogen_dioxide ?? 0, unit: "µg/m³", thr: 50 },
+      { label: "O₃",    v: current.ozone ?? 0, unit: "µg/m³", thr: 120 },
+      { label: "SO₂",   v: current.sulphur_dioxide ?? 0, unit: "µg/m³", thr: 100 },
+      { label: "CO",    v: current.carbon_monoxide ?? 0, unit: "µg/m³", thr: 10000 },
+    ];
+    let best = items[0];
+    let bestRatio = -1;
+    for (const it of items) {
+      const r = it.v / it.thr;
+      if (r > bestRatio) { bestRatio = r; best = it; }
+    }
+    return best;
+  }, [current]);
+
+  // Animerte støvpartikler
+  const particles = Array.from({ length: 10 });
   return (
     <Tile title={`Luftkval · ${loc.label}`} icon={<Wind size={14} />} accent="text-emerald-400">
-      <div className="flex flex-col justify-center h-full">
-        <div className="text-4xl font-semibold text-white tabular-nums leading-none">
-          {aqi == null ? "—" : Math.round(aqi)}
+      <div className="relative h-full overflow-hidden">
+        <div className="pointer-events-none absolute inset-0">
+          {particles.map((_, i) => {
+            const top = (i * 11) % 90;
+            const dur = 4 + ((i * 7) % 6);
+            const delay = (i * 0.4) % 4;
+            const size = 2 + (i % 3);
+            return (
+              <span
+                key={i}
+                className="absolute block rounded-full bg-emerald-300/40"
+                style={{
+                  top: `${top}%`,
+                  left: "-10%",
+                  width: size,
+                  height: size,
+                  animation: `pbthAqDrift ${dur}s linear ${delay}s infinite`,
+                }}
+              />
+            );
+          })}
         </div>
-        <div className={`text-xs mt-1 ${color}`}>{status}</div>
-        <div className="text-[9px] uppercase tracking-widest text-white/40 mt-1">Europeisk AQI</div>
+        <div className="relative flex flex-col justify-center h-full">
+          <div className="flex items-baseline gap-2">
+            <div className="text-3xl font-semibold text-white tabular-nums leading-none">
+              {aqi == null ? "—" : Math.round(aqi)}
+            </div>
+            <div className={`text-xs ${color}`}>{status}</div>
+          </div>
+          {top && top.v > 0 ? (
+            <div className="text-[10px] text-white/60 mt-1.5">
+              Høyest <span className="text-white/90">{top.label}</span>{" "}
+              <span className="tabular-nums">{top.v.toFixed(top.v < 10 ? 1 : 0)}</span>
+              <span className="text-white/40"> {top.unit}</span>
+            </div>
+          ) : (
+            <div className="text-[9px] uppercase tracking-widest text-white/40 mt-1">Europeisk AQI</div>
+          )}
+        </div>
       </div>
+      <style>{`@keyframes pbthAqDrift{0%{transform:translateX(0)}100%{transform:translateX(800%)}}`}</style>
     </Tile>
   );
 }
