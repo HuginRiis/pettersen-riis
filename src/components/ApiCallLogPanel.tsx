@@ -49,7 +49,7 @@ const SOURCE_LABELS: Record<string, string> = {
   lightning: "Lyn / radar",
   garbage: "Renovasjon",
   kassal: "Kassalapp",
-  uv: "UV",
+  uv: "UV · MET.no",
   "air-quality": "Luftkvalitet",
   "open-meteo": "Open-Meteo (core)",
   other: "Andre",
