@@ -504,11 +504,9 @@ function LysTile({
   const [busy, setBusy] = useState<string | null>(null);
 
   const total = hueLights.length;
-  const onCount = hueLights.filter((d) => d.capabilities?.onoff === true).length;
+  const onCount = hueLights.filter((d) => capBool(d, "onoff")).length;
   const dimAvg = (() => {
-    const dims = hueLights
-      .map((d) => d.capabilities?.dim)
-      .filter((v): v is number => typeof v === "number");
+    const dims = hueLights.map((d) => capNum(d, "dim")).filter((v): v is number => v != null);
     if (!dims.length) return null;
     return Math.round((dims.reduce((a, b) => a + b, 0) / dims.length) * 100);
   })();
