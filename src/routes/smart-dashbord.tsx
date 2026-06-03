@@ -1439,7 +1439,223 @@ function StromTile({ home }: { home: "borgen" | "hytta" }) {
 }
 
 
+// ----- Netatmo (Tollnes) shared hook -----
+type NetatmoTollnes = {
+  noise: number | null;
+  humBedroom: number | null;
+  rainDay: number | null;
+  windNow: number | null;
+  windAngle: number | null;
+  gustNow: number | null;
+};
+function useNetatmoTollnes(): NetatmoTollnes {
+  const fetchNet = useServerFn(getNetatmoWeatherStation);
+  const [d, setD] = useState<NetatmoTollnes>({
+    noise: null, humBedroom: null, rainDay: null,
+    windNow: null, windAngle: null, gustNow: null,
+  });
+  useEffect(() => {
+    let c = false;
+    const load = () => {
+      fetchNet({ data: { stationMatch: "tollnes" } })
+        .then((r: any) => {
+          if (c || !r?.ok) return;
+          const modules: WeatherModule[] = r.modules ?? [];
+          const main = modules.find((m) => m.type === "NAMain") ?? null;
+          const bed =
+            modules.find((m) => m.type === "NAModule4" && /sov|sove|bed/i.test(m.name)) ??
+            modules.find((m) => m.type === "NAModule4") ?? null;
+          const rain = modules.find((m) => m.type === "NAModule3") ?? null;
+          const wind = modules.find((m) => m.type === "NAModule2") ?? null;
+          setD({
+            noise: main?.metrics.noise ?? null,
+            humBedroom: bed?.metrics.humidity ?? null,
+            rainDay: rain?.metrics.rainDay ?? null,
+            windNow: wind?.metrics.windStrength ?? null,
+            windAngle: wind?.metrics.windAngle ?? null,
+            gustNow: wind?.metrics.gustStrength ?? null,
+          });
+        })
+        .catch(() => {});
+    };
+    load();
+    const id = setInterval(load, 2 * 60 * 1000);
+    return () => { c = true; clearInterval(id); };
+  }, [fetchNet]);
+  return d;
+}
+
+// ----- Compact UV tile (half size) -----
+function UvCompact({ loc }: { loc: typeof LOCS[LocId] }) {
+  const uv = useUvSun(loc.lat, loc.lon);
+  const v = uv.uvNow ?? 0;
+  const max = uv.uvMaxToday ?? 0;
+  const pct = Math.min(100, (v / 11) * 100);
+  const ring = `conic-gradient(rgb(251 191 36) ${pct}%, rgba(255,255,255,0.08) 0)`;
+  return (
+    <Tile title={`UV · ${loc.label}`} icon={<Sun size={14} />} accent="text-amber-400">
+      <div className="flex items-center gap-3 h-full">
+        <div className="relative h-20 w-20 rounded-full flex items-center justify-center shrink-0" style={{ background: ring }}>
+          <div className="absolute inset-[5px] rounded-full bg-[#0c0f15] flex flex-col items-center justify-center">
+            <div className="text-xl font-semibold text-white tabular-nums leading-none">
+              {uv.loading ? "—" : v.toFixed(1)}
+            </div>
+            <div className="text-[8px] uppercase tracking-widest text-white/40 mt-0.5">UV nå</div>
+          </div>
+        </div>
+        <div className="min-w-0">
+          <div className="text-[9px] uppercase tracking-widest text-white/40">Maks</div>
+          <div className="text-base font-medium text-white tabular-nums">{max.toFixed(1)}</div>
+        </div>
+      </div>
+    </Tile>
+  );
+}
+
+// ----- Compact AQI tile (half size) -----
+function AqiCompact({ loc }: { loc: typeof LOCS[LocId] }) {
+  const fetchAq = useServerFn(fetchAirQualityPanel);
+  const [aqi, setAqi] = useState<number | null>(null);
+  useEffect(() => {
+    let c = false;
+    const load = () => {
+      fetchAq({ data: { lat: loc.lat, lon: loc.lon } })
+        .then((r: any) => {
+          if (c) return;
+          const v = r?.aq?.current?.european_aqi;
+          if (typeof v === "number") setAqi(v);
+        })
+        .catch(() => {});
+    };
+    load();
+    const id = setInterval(load, 10 * 60 * 1000);
+    return () => { c = true; clearInterval(id); };
+  }, [fetchAq, loc.lat, loc.lon]);
+  const status =
+    aqi == null ? "—" :
+    aqi <= 20 ? "Utmerket" : aqi <= 40 ? "God" :
+    aqi <= 60 ? "Middels" : aqi <= 80 ? "Dårlig" : "Svært dårlig";
+  const color =
+    aqi == null ? "text-white/60" :
+    aqi <= 20 ? "text-emerald-400" : aqi <= 40 ? "text-lime-400" :
+    aqi <= 60 ? "text-amber-400" : aqi <= 80 ? "text-orange-400" : "text-rose-400";
+  return (
+    <Tile title={`Luftkval · ${loc.label}`} icon={<Wind size={14} />} accent="text-emerald-400">
+      <div className="flex flex-col justify-center h-full">
+        <div className="text-4xl font-semibold text-white tabular-nums leading-none">
+          {aqi == null ? "—" : Math.round(aqi)}
+        </div>
+        <div className={`text-xs mt-1 ${color}`}>{status}</div>
+        <div className="text-[9px] uppercase tracking-widest text-white/40 mt-1">Europeisk AQI</div>
+      </div>
+    </Tile>
+  );
+}
+
+// ----- Rain tile (mm i dag, Tollnes) -----
+function RainTile({ rainDay }: { rainDay: number | null }) {
+  const mm = rainDay ?? 0;
+  const intensity = Math.min(1, mm / 10); // 10mm = full
+  const drops = Array.from({ length: 14 });
+  return (
+    <Tile title="Regn · Tollnes" icon={<CloudRain size={14} />} accent="text-sky-300">
+      <div className="relative h-full flex items-end justify-between gap-2 overflow-hidden">
+        {/* animerte regndråper */}
+        <div className="pointer-events-none absolute inset-0">
+          {drops.map((_, i) => {
+            const left = (i * 7.3) % 100;
+            const delay = (i * 0.23) % 2;
+            const dur = 1.1 + ((i * 13) % 7) / 10;
+            return (
+              <span
+                key={i}
+                className="absolute block w-[2px] rounded-full bg-sky-300/60"
+                style={{
+                  left: `${left}%`,
+                  top: "-12%",
+                  height: `${10 + ((i * 5) % 14)}px`,
+                  opacity: 0.25 + intensity * 0.6,
+                  animation: `pbthRainFall ${dur}s linear ${delay}s infinite`,
+                }}
+              />
+            );
+          })}
+        </div>
+        <div className="relative z-10">
+          <div className="text-[10px] uppercase tracking-widest text-white/40">I dag</div>
+          <div className="text-3xl font-semibold text-white tabular-nums leading-tight">
+            {rainDay == null ? "—" : mm.toFixed(1).replace(".", ",")}
+            <span className="text-sm text-white/40 ml-1">mm</span>
+          </div>
+          <div className="text-[10px] text-white/50 mt-1">
+            {mm < 0.1 ? "Tørt" : mm < 1 ? "Yr" : mm < 5 ? "Lett regn" : mm < 15 ? "Moderat" : "Kraftig"}
+          </div>
+        </div>
+        <div className="relative z-10 self-end">
+          <Droplets size={36} className="text-sky-300/70" />
+        </div>
+      </div>
+      <style>{`@keyframes pbthRainFall{0%{transform:translateY(0)}100%{transform:translateY(180px)}}`}</style>
+    </Tile>
+  );
+}
+
+// ----- Wind tile (maks gust i dag, Tollnes) -----
+function WindTile({ windNow, gustNow, windAngle }: { windNow: number | null; gustNow: number | null; windAngle: number | null }) {
+  const mm = useDailyMinMax("pbth.smart.gustMax", gustNow);
+  const maxToday = Math.max(gustNow ?? 0, mm?.max ?? 0);
+  const speed = gustNow ?? windNow ?? 0; // km/h
+  const spinDur = speed > 0 ? Math.max(0.6, Math.min(6, 30 / speed)) : 6;
+  return (
+    <Tile title="Vind · Tollnes" icon={<Wind size={14} />} accent="text-cyan-300">
+      <div className="relative h-full flex items-center justify-between gap-2 overflow-hidden">
+        {/* roterende vindrose */}
+        <div className="relative h-20 w-20 shrink-0">
+          <div
+            className="absolute inset-0 rounded-full border border-cyan-300/20"
+            style={{ background: "radial-gradient(circle at 50% 50%, rgba(34,211,238,0.18), transparent 65%)" }}
+          />
+          <div
+            className="absolute inset-0 flex items-center justify-center"
+            style={{ animation: `pbthWindSpin ${spinDur}s linear infinite` }}
+          >
+            <svg viewBox="0 0 40 40" className="h-16 w-16 text-cyan-300">
+              <g fill="currentColor" opacity="0.85">
+                <path d="M20 4 L24 18 L20 16 L16 18 Z" />
+                <path d="M36 20 L22 24 L24 20 L22 16 Z" />
+                <path d="M20 36 L16 22 L20 24 L24 22 Z" />
+                <path d="M4 20 L18 16 L16 20 L18 24 Z" />
+              </g>
+            </svg>
+          </div>
+          {windAngle != null && (
+            <div
+              className="absolute top-1 left-1/2 -translate-x-1/2 text-[9px] text-cyan-200/80"
+              style={{ transform: `translateX(-50%) rotate(${windAngle}deg)` }}
+            >
+              ▲
+            </div>
+          )}
+        </div>
+        <div className="min-w-0 text-right">
+          <div className="text-[10px] uppercase tracking-widest text-white/40">Nå</div>
+          <div className="text-2xl font-semibold text-white tabular-nums leading-none">
+            {gustNow == null ? "—" : gustNow.toFixed(1).replace(".", ",")}
+            <span className="text-xs text-white/40 ml-1">m/s</span>
+          </div>
+          <div className="text-[9px] uppercase tracking-widest text-white/40 mt-2">Maks i dag</div>
+          <div className="text-sm text-cyan-200 tabular-nums">
+            {maxToday > 0 ? `${maxToday.toFixed(1).replace(".", ",")} m/s` : "—"}
+          </div>
+        </div>
+      </div>
+      <style>{`@keyframes pbthWindSpin{from{transform:rotate(0)}to{transform:rotate(360deg)}}`}</style>
+    </Tile>
+  );
+}
+
 // ----- mini-tiles -----
+
 
 function MiniTile({ icon, label, value, sub, accent }:
   { icon: React.ReactNode; label: string; value: string; sub?: string; accent?: string }) {
