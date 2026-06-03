@@ -952,22 +952,32 @@ function LeaderTile() {
       </div>
 
       <div className="grid grid-cols-2 gap-2">
-        <div className={`rounded-xl px-3 py-2 border transition ${
+        <div className={`relative rounded-xl px-3 py-2 border transition overflow-hidden ${
           arneLeads ? "border-sky-300/50 bg-sky-400/10 shadow-[0_0_18px_-4px_rgba(56,189,248,0.6)]"
                     : "border-white/10 bg-white/[0.03]"
         }`}>
+          <img
+            src={arneLeads ? arneHappy : rebLeads ? arneSad : arneHappy}
+            alt=""
+            className="absolute -right-2 -bottom-2 w-12 h-12 object-contain opacity-90 pointer-events-none select-none"
+          />
           <div className="text-[9px] uppercase tracking-widest text-sky-200/70">Arne</div>
-          <div className="flex items-baseline justify-between mt-0.5">
+          <div className="flex items-baseline gap-1 mt-0.5">
             <span className="text-2xl tabular-nums text-white" style={{ fontWeight: 600 }}>{wt.a}</span>
             <span className="text-[10px] text-white/40">poeng</span>
           </div>
         </div>
-        <div className={`rounded-xl px-3 py-2 border transition ${
+        <div className={`relative rounded-xl px-3 py-2 border transition overflow-hidden ${
           rebLeads ? "border-rose-300/50 bg-rose-400/10 shadow-[0_0_18px_-4px_rgba(244,114,182,0.6)]"
                    : "border-white/10 bg-white/[0.03]"
         }`}>
+          <img
+            src={rebLeads ? rebekkaHappy : arneLeads ? rebekkaSad : rebekkaHappy}
+            alt=""
+            className="absolute -right-2 -bottom-2 w-12 h-12 object-contain opacity-90 pointer-events-none select-none"
+          />
           <div className="text-[9px] uppercase tracking-widest text-rose-200/70">Rebekka</div>
-          <div className="flex items-baseline justify-between mt-0.5">
+          <div className="flex items-baseline gap-1 mt-0.5">
             <span className="text-2xl tabular-nums text-white" style={{ fontWeight: 600 }}>{wt.r}</span>
             <span className="text-[10px] text-white/40">poeng</span>
           </div>
