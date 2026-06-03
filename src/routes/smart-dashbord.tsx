@@ -2012,6 +2012,56 @@ function WindTile({ windNow, gustNow, windAngle }: { windNow: number | null; gus
 // ----- mini-tiles -----
 
 
+function NetatmoMetricList({
+  modules, metric, unit, digits,
+}: {
+  modules: WeatherModule[];
+  metric: "temperature" | "humidity" | "co2";
+  unit: string;
+  digits: number;
+}) {
+  const typeLabel = (t: string) =>
+    t === "NAMain" ? "Stua (hovedmodul)"
+    : t === "NAModule1" ? "Ute"
+    : t === "NAModule2" ? "Vind"
+    : t === "NAModule3" ? "Regn"
+    : t === "NAModule4" ? "Innemodul"
+    : t;
+  const rows = modules
+    .map((m) => {
+      const v = (m.metrics as any)[metric];
+      return typeof v === "number" && Number.isFinite(v) ? { m, v } : null;
+    })
+    .filter((r): r is { m: WeatherModule; v: number } => r !== null)
+    .sort((a, b) => b.v - a.v);
+  if (rows.length === 0) {
+    return <div className="text-xs text-white/40 italic">Ingen verdier tilgjengelig fra Netatmo.</div>;
+  }
+  const tone = (v: number): string => {
+    if (metric === "co2") {
+      if (v >= 1500) return "text-rose-300";
+      if (v >= 1000) return "text-amber-300";
+      return "text-emerald-300";
+    }
+    return "text-white";
+  };
+  return (
+    <div className="divide-y divide-white/5 rounded-lg border border-white/10 overflow-hidden">
+      {rows.map(({ m, v }) => (
+        <div key={m.id} className="flex items-center justify-between px-3 py-2 bg-white/[0.02]">
+          <div className="min-w-0">
+            <div className="text-sm text-white truncate">{m.name}</div>
+            <div className="text-[10px] uppercase tracking-widest text-white/40">{typeLabel(m.type)}</div>
+          </div>
+          <div className={`text-lg tabular-nums font-semibold ${tone(v)}`}>
+            {v.toFixed(digits).replace(".", ",")}{unit}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function MiniTile({ icon, label, value, sub, accent, detail }:
   { icon: React.ReactNode; label: string; value: string; sub?: string; accent?: string; detail?: React.ReactNode }) {
   const [open, setOpen] = useState(false);
