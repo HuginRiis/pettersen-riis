@@ -906,6 +906,7 @@ function LeaderTile() {
   const fetchG = useServerFn(getGarminOverview);
   const [arne, setArne] = useState<Overview | null>(null);
   const [rebekka, setRebekka] = useState<Overview | null>(null);
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
     let c = false;
@@ -934,8 +935,23 @@ function LeaderTile() {
   const aPct = wt.total ? (wt.a / wt.total) * 100 : 50;
   const rPct = wt.total ? (wt.r / wt.total) * 100 : 50;
 
+  // Forrige uke (7 dager: i går og 6 dager tilbake)
+  const weekDays = useMemo(() => Array.from({ length: 7 }, (_, i) => osloDay(-1 - i)), []);
+  const weekWins = useMemo(() => {
+    let a = 0, r = 0;
+    const perDay: Array<{ day: string; a: number; r: number }> = [];
+    for (const d of weekDays) {
+      const w = countWins(arne, rebekka, d);
+      perDay.push({ day: d, a: w.a, r: w.r });
+      if (w.a > w.r) a++;
+      else if (w.r > w.a) r++;
+    }
+    return { a, r, perDay };
+  }, [arne, rebekka, weekDays]);
+
   return (
-    <Tile title="Vinner-poeng · Garmin" icon={<Trophy size={14} />} accent="text-violet-300">
+    <>
+    <Tile title="Vinner-poeng · Garmin" icon={<Trophy size={14} />} accent="text-violet-300" onClick={() => setOpen(true)}>
       <div className="flex items-center justify-between mb-2">
         <div>
           <div className="text-[10px] uppercase tracking-widest text-white/40">Leder i dag</div>
@@ -990,6 +1006,70 @@ function LeaderTile() {
         13 metrikker · søvn, skritt, puls, HRV, stress, m.fl.
       </div>
     </Tile>
+
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogContent className="bg-[#0c0f15] border-white/10 text-white max-w-md">
+        <DialogHeader>
+          <DialogTitle>Vinner-poeng · Garmin</DialogTitle>
+          <DialogDescription className="text-white/50">I går og siste 7 dager</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4 mt-2">
+          {/* I går */}
+          <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
+            <div className="text-[10px] uppercase tracking-widest text-white/40 mb-1">I går</div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <img src={wy.a > wy.r ? arneHappy : wy.r > wy.a ? arneSad : arneHappy} alt="" className="w-10 h-10 object-contain" />
+                <div>
+                  <div className="text-xs text-sky-200/80">Arne</div>
+                  <div className="text-2xl font-semibold tabular-nums text-white">{wy.a}</div>
+                </div>
+              </div>
+              <div className="text-white/30">vs</div>
+              <div className="flex items-center gap-2">
+                <div className="text-right">
+                  <div className="text-xs text-rose-200/80">Rebekka</div>
+                  <div className="text-2xl font-semibold tabular-nums text-white">{wy.r}</div>
+                </div>
+                <img src={wy.r > wy.a ? rebekkaHappy : wy.a > wy.r ? rebekkaSad : rebekkaHappy} alt="" className="w-10 h-10 object-contain" />
+              </div>
+            </div>
+          </div>
+
+          {/* Forrige 7 dager */}
+          <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-[10px] uppercase tracking-widest text-white/40">Siste 7 dager</div>
+              <div className="text-sm tabular-nums">
+                <span className="text-sky-300">{weekWins.a}</span>
+                <span className="text-white/30 mx-1">–</span>
+                <span className="text-rose-300">{weekWins.r}</span>
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              {weekWins.perDay.map((d) => {
+                const total = Math.max(1, d.a + d.r);
+                const aW = (d.a / total) * 100;
+                const rW = (d.r / total) * 100;
+                const dt = new Date(d.day + "T00:00:00Z");
+                const lbl = dt.toLocaleDateString("nb-NO", { weekday: "short", day: "numeric", month: "short", timeZone: "Europe/Oslo" });
+                return (
+                  <div key={d.day} className="flex items-center gap-2 text-[11px]">
+                    <span className="w-20 text-white/50 capitalize">{lbl}</span>
+                    <div className="flex-1 h-2 rounded-full overflow-hidden bg-white/[0.06] flex">
+                      <div className="bg-sky-400" style={{ width: `${aW}%` }} />
+                      <div className="bg-rose-400 ml-auto" style={{ width: `${rW}%` }} />
+                    </div>
+                    <span className="w-12 text-right tabular-nums text-white/70">{d.a}–{d.r}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }
 
@@ -1154,9 +1234,6 @@ function CalendarTile() {
                     <div className="scale-[3]">{e.icon}</div>
                   </div>
                   <div className="relative">
-                    <div className="text-[8px] uppercase tracking-widest text-white/70">
-                      {e.kind === "garbage" ? "Tømming" : e.kind === "mail" ? "Post" : "Hendelse"}
-                    </div>
                     <div className="text-[12px] font-semibold text-white leading-tight truncate">{e.title}</div>
                   </div>
                   <div className="relative flex items-end justify-between gap-2 mt-1">
@@ -1392,9 +1469,39 @@ function StromTile({ home }: { home: "borgen" | "hytta" }) {
           {data?.ok ? "Fant ingen Power-by-the-Hour-enhet" : "Henter…"}
         </div>
       ) : (
-        <div className="flex items-center gap-3 h-full">
+        <div className="relative flex items-center gap-3 h-full overflow-hidden">
+          {/* Elektrisitets-animasjon: gnister + bolt */}
+          <div className="pointer-events-none absolute inset-0">
+            {Array.from({ length: 8 }).map((_, i) => {
+              const top = (i * 13) % 90;
+              const left = 10 + ((i * 17) % 80);
+              const dur = 1.6 + ((i * 7) % 5) / 3;
+              const delay = (i * 0.21) % 2;
+              return (
+                <span
+                  key={i}
+                  className="absolute block rounded-full bg-amber-300"
+                  style={{
+                    top: `${top}%`,
+                    left: `${left}%`,
+                    width: 2,
+                    height: 2,
+                    opacity: 0.35 + Math.min(0.5, nowKw / 6),
+                    boxShadow: "0 0 6px rgba(252,211,77,0.9)",
+                    animation: `pbthSpark ${dur}s ease-in-out ${delay}s infinite`,
+                  }}
+                />
+              );
+            })}
+            <Zap
+              size={48}
+              className="absolute right-2 top-1 text-amber-300/15"
+              style={{ animation: "pbthBolt 2.4s ease-in-out infinite" }}
+            />
+          </div>
+
           {/* Gauge */}
-          <div className="relative shrink-0" style={{ width: 100, height: 100 }}>
+          <div className="relative shrink-0 z-10" style={{ width: 100, height: 100 }}>
             <svg width="100" height="100" viewBox="0 0 100 100" className="-rotate-90">
               <circle cx="50" cy="50" r={R} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="7" />
               <circle
@@ -1404,7 +1511,10 @@ function StromTile({ home }: { home: "borgen" | "hytta" }) {
                 strokeWidth="7"
                 strokeLinecap="round"
                 strokeDasharray={`${dash} ${C}`}
-                style={{ transition: "stroke-dasharray 0.6s ease, stroke 0.6s ease" }}
+                style={{
+                  transition: "stroke-dasharray 0.6s ease, stroke 0.6s ease",
+                  filter: `drop-shadow(0 0 6px ${arcColor})`,
+                }}
               />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
@@ -1415,7 +1525,7 @@ function StromTile({ home }: { home: "borgen" | "hytta" }) {
             </div>
           </div>
           {/* Stats */}
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 relative z-10">
             <div className="text-[10px] uppercase tracking-widest text-white/40">I dag</div>
             <div className="text-xl text-white tabular-nums leading-tight">
               {energyTodayKwh != null ? `${energyTodayKwh.toFixed(1)} kWh` : "—"}
@@ -1432,6 +1542,10 @@ function StromTile({ home }: { home: "borgen" | "hytta" }) {
               <span className={`text-[11px] ${isLive ? "text-emerald-300" : "text-white/40"}`}>{isLive ? "live" : "henter…"}</span>
             </div>
           </div>
+          <style>{`
+            @keyframes pbthSpark{0%,100%{transform:translateY(0) scale(1);opacity:0.25}50%{transform:translateY(-6px) scale(1.6);opacity:1}}
+            @keyframes pbthBolt{0%,100%{opacity:0.1;transform:scale(1)}50%{opacity:0.35;transform:scale(1.08)}}
+          `}</style>
         </div>
       )}
     </Tile>
@@ -1486,27 +1600,102 @@ function useNetatmoTollnes(): NetatmoTollnes {
 }
 
 // ----- Compact UV tile (half size) -----
+const UV_CLOUDS_KEY = "pbth.smart.uvWithClouds";
 function UvCompact({ loc }: { loc: typeof LOCS[LocId] }) {
   const uv = useUvSun(loc.lat, loc.lon);
-  const v = uv.uvNow ?? 0;
+  const fetchUvCloud = useServerFn(fetchUvCloudPanel);
+  const [withClouds, setWithClouds] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    try { return window.localStorage.getItem(UV_CLOUDS_KEY) === "1"; } catch { return false; }
+  });
+  const [cloudPct, setCloudPct] = useState<number | null>(null);
+  const [uvLive, setUvLive] = useState<{ uv: number | null; uvClear: number | null }>({ uv: null, uvClear: null });
+
+  useEffect(() => {
+    let c = false;
+    const load = () => {
+      fetchUvCloud({ data: { lat: loc.lat, lon: loc.lon } })
+        .then((r: any) => {
+          if (c) return;
+          const h = r?.aq?.hourly;
+          const fh = r?.fc?.hourly;
+          if (h?.time) {
+            const now = Date.now();
+            let best = -1, bd = Infinity;
+            for (let i = 0; i < h.time.length; i++) {
+              const d = Math.abs(new Date(h.time[i]).getTime() - now);
+              if (d < bd) { bd = d; best = i; }
+            }
+            if (best >= 0) {
+              setUvLive({
+                uv: h.uv_index?.[best] ?? null,
+                uvClear: h.uv_index_clear_sky?.[best] ?? null,
+              });
+            }
+          }
+          if (fh?.time && fh?.cloud_cover?.length) {
+            const now = Date.now();
+            let best = -1, bd = Infinity;
+            for (let i = 0; i < fh.time.length; i++) {
+              const d = Math.abs(new Date(fh.time[i]).getTime() - now);
+              if (d < bd) { bd = d; best = i; }
+            }
+            if (best >= 0) setCloudPct(fh.cloud_cover[best] ?? null);
+          }
+        })
+        .catch(() => {});
+    };
+    load();
+    const id = setInterval(load, 5 * 60 * 1000);
+    return () => { c = true; clearInterval(id); };
+  }, [fetchUvCloud, loc.lat, loc.lon]);
+
+  const toggleClouds = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setWithClouds((p) => {
+      const next = !p;
+      try { window.localStorage.setItem(UV_CLOUDS_KEY, next ? "1" : "0"); } catch {}
+      return next;
+    });
+  };
+
+  const baseClear = uvLive.uvClear ?? uv.uvNow ?? 0;
+  const baseWith = uvLive.uv ?? (cloudPct != null ? baseClear * (1 - 0.75 * (cloudPct / 100)) : baseClear);
+  const v = withClouds ? baseWith : baseClear;
   const max = uv.uvMaxToday ?? 0;
   const pct = Math.min(100, (v / 11) * 100);
   const ring = `conic-gradient(rgb(251 191 36) ${pct}%, rgba(255,255,255,0.08) 0)`;
   return (
     <Tile title={`UV · ${loc.label}`} icon={<Sun size={14} />} accent="text-amber-400">
-      <div className="flex items-center gap-3 h-full">
-        <div className="relative h-20 w-20 rounded-full flex items-center justify-center shrink-0" style={{ background: ring }}>
-          <div className="absolute inset-[5px] rounded-full bg-[#0c0f15] flex flex-col items-center justify-center">
-            <div className="text-xl font-semibold text-white tabular-nums leading-none">
-              {uv.loading ? "—" : v.toFixed(1)}
+      <div className="flex flex-col h-full">
+        <div className="flex items-center gap-3 flex-1 min-h-0">
+          <div className="relative h-16 w-16 rounded-full flex items-center justify-center shrink-0" style={{ background: ring }}>
+            <div className="absolute inset-[4px] rounded-full bg-[#0c0f15] flex flex-col items-center justify-center">
+              <div className="text-lg font-semibold text-white tabular-nums leading-none">
+                {uv.loading ? "—" : v.toFixed(1)}
+              </div>
+              <div className="text-[8px] uppercase tracking-widest text-white/40 mt-0.5">nå</div>
             </div>
-            <div className="text-[8px] uppercase tracking-widest text-white/40 mt-0.5">UV nå</div>
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="text-[9px] uppercase tracking-widest text-white/40">Maks</div>
+            <div className="text-base font-medium text-white tabular-nums">{max.toFixed(1)}</div>
+            {cloudPct != null && (
+              <div className="text-[9px] text-white/40 mt-0.5">Sky {Math.round(cloudPct)}%</div>
+            )}
           </div>
         </div>
-        <div className="min-w-0">
-          <div className="text-[9px] uppercase tracking-widest text-white/40">Maks</div>
-          <div className="text-base font-medium text-white tabular-nums">{max.toFixed(1)}</div>
-        </div>
+        <button
+          onClick={toggleClouds}
+          className={`mt-1.5 w-full text-[10px] py-1 rounded-md border transition flex items-center justify-center gap-1 ${
+            withClouds
+              ? "bg-sky-400/15 border-sky-400/40 text-sky-200"
+              : "bg-amber-400/10 border-amber-400/30 text-amber-200"
+          }`}
+        >
+          {withClouds ? <Cloud size={10} /> : <CloudOff size={10} />}
+          {withClouds ? "Med sky" : "Uten sky"}
+        </button>
       </div>
     </Tile>
   );
@@ -1515,22 +1704,19 @@ function UvCompact({ loc }: { loc: typeof LOCS[LocId] }) {
 // ----- Compact AQI tile (half size) -----
 function AqiCompact({ loc }: { loc: typeof LOCS[LocId] }) {
   const fetchAq = useServerFn(fetchAirQualityPanel);
-  const [aqi, setAqi] = useState<number | null>(null);
+  const [current, setCurrent] = useState<any>(null);
   useEffect(() => {
     let c = false;
     const load = () => {
       fetchAq({ data: { lat: loc.lat, lon: loc.lon } })
-        .then((r: any) => {
-          if (c) return;
-          const v = r?.aq?.current?.european_aqi;
-          if (typeof v === "number") setAqi(v);
-        })
+        .then((r: any) => { if (!c) setCurrent(r?.current ?? null); })
         .catch(() => {});
     };
     load();
     const id = setInterval(load, 10 * 60 * 1000);
     return () => { c = true; clearInterval(id); };
   }, [fetchAq, loc.lat, loc.lon]);
+  const aqi: number | null = current?.european_aqi ?? null;
   const status =
     aqi == null ? "—" :
     aqi <= 20 ? "Utmerket" : aqi <= 40 ? "God" :
@@ -1539,15 +1725,72 @@ function AqiCompact({ loc }: { loc: typeof LOCS[LocId] }) {
     aqi == null ? "text-white/60" :
     aqi <= 20 ? "text-emerald-400" : aqi <= 40 ? "text-lime-400" :
     aqi <= 60 ? "text-amber-400" : aqi <= 80 ? "text-orange-400" : "text-rose-400";
+
+  // Finn høyeste forurensnings-bidrag (relativ til WHO-grense)
+  const top = useMemo(() => {
+    if (!current) return null;
+    const items: Array<{ label: string; v: number; unit: string; thr: number }> = [
+      { label: "PM2.5", v: current.pm2_5 ?? 0, unit: "µg/m³", thr: 25 },
+      { label: "PM10",  v: current.pm10 ?? 0,  unit: "µg/m³", thr: 50 },
+      { label: "NO₂",   v: current.nitrogen_dioxide ?? 0, unit: "µg/m³", thr: 50 },
+      { label: "O₃",    v: current.ozone ?? 0, unit: "µg/m³", thr: 120 },
+      { label: "SO₂",   v: current.sulphur_dioxide ?? 0, unit: "µg/m³", thr: 100 },
+      { label: "CO",    v: current.carbon_monoxide ?? 0, unit: "µg/m³", thr: 10000 },
+    ];
+    let best = items[0];
+    let bestRatio = -1;
+    for (const it of items) {
+      const r = it.v / it.thr;
+      if (r > bestRatio) { bestRatio = r; best = it; }
+    }
+    return best;
+  }, [current]);
+
+  // Animerte støvpartikler
+  const particles = Array.from({ length: 10 });
   return (
     <Tile title={`Luftkval · ${loc.label}`} icon={<Wind size={14} />} accent="text-emerald-400">
-      <div className="flex flex-col justify-center h-full">
-        <div className="text-4xl font-semibold text-white tabular-nums leading-none">
-          {aqi == null ? "—" : Math.round(aqi)}
+      <div className="relative h-full overflow-hidden">
+        <div className="pointer-events-none absolute inset-0">
+          {particles.map((_, i) => {
+            const top = (i * 11) % 90;
+            const dur = 4 + ((i * 7) % 6);
+            const delay = (i * 0.4) % 4;
+            const size = 2 + (i % 3);
+            return (
+              <span
+                key={i}
+                className="absolute block rounded-full bg-emerald-300/40"
+                style={{
+                  top: `${top}%`,
+                  left: "-10%",
+                  width: size,
+                  height: size,
+                  animation: `pbthAqDrift ${dur}s linear ${delay}s infinite`,
+                }}
+              />
+            );
+          })}
         </div>
-        <div className={`text-xs mt-1 ${color}`}>{status}</div>
-        <div className="text-[9px] uppercase tracking-widest text-white/40 mt-1">Europeisk AQI</div>
+        <div className="relative flex flex-col justify-center h-full">
+          <div className="flex items-baseline gap-2">
+            <div className="text-3xl font-semibold text-white tabular-nums leading-none">
+              {aqi == null ? "—" : Math.round(aqi)}
+            </div>
+            <div className={`text-xs ${color}`}>{status}</div>
+          </div>
+          {top && top.v > 0 ? (
+            <div className="text-[10px] text-white/60 mt-1.5">
+              Høyest <span className="text-white/90">{top.label}</span>{" "}
+              <span className="tabular-nums">{top.v.toFixed(top.v < 10 ? 1 : 0)}</span>
+              <span className="text-white/40"> {top.unit}</span>
+            </div>
+          ) : (
+            <div className="text-[9px] uppercase tracking-widest text-white/40 mt-1">Europeisk AQI</div>
+          )}
+        </div>
       </div>
+      <style>{`@keyframes pbthAqDrift{0%{transform:translateX(0)}100%{transform:translateX(800%)}}`}</style>
     </Tile>
   );
 }
@@ -1657,17 +1900,44 @@ function WindTile({ windNow, gustNow, windAngle }: { windNow: number | null; gus
 // ----- mini-tiles -----
 
 
-function MiniTile({ icon, label, value, sub, accent }:
-  { icon: React.ReactNode; label: string; value: string; sub?: string; accent?: string }) {
+function MiniTile({ icon, label, value, sub, accent, detail }:
+  { icon: React.ReactNode; label: string; value: string; sub?: string; accent?: string; detail?: React.ReactNode }) {
+  const [open, setOpen] = useState(false);
   return (
-    <div className="rounded-2xl bg-white/[0.03] border border-white/10 p-3 flex items-center gap-3 h-full">
-      <div className={`h-9 w-9 rounded-full bg-white/5 flex items-center justify-center ${accent ?? "text-white/70"}`}>{icon}</div>
-      <div className="min-w-0">
-        <div className="text-[10px] uppercase tracking-widest text-white/40">{label}</div>
-        <div className="text-sm text-white tabular-nums truncate">{value}</div>
-        {sub && <div className="text-[10px] text-white/40">{sub}</div>}
-      </div>
-    </div>
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="text-left rounded-2xl bg-white/[0.03] border border-white/10 p-3 flex items-center gap-3 h-full hover:bg-white/[0.06] hover:border-white/20 active:scale-[0.98] transition"
+      >
+        <div className={`h-9 w-9 rounded-full bg-white/5 flex items-center justify-center ${accent ?? "text-white/70"}`}>{icon}</div>
+        <div className="min-w-0">
+          <div className="text-[10px] uppercase tracking-widest text-white/40">{label}</div>
+          <div className="text-sm text-white tabular-nums truncate">{value}</div>
+          {sub && <div className="text-[10px] text-white/40">{sub}</div>}
+        </div>
+      </button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="bg-[#0c0f15] border-white/10 text-white max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <span className={`h-7 w-7 rounded-full bg-white/5 flex items-center justify-center ${accent ?? "text-white/70"}`}>{icon}</span>
+              {label}
+            </DialogTitle>
+            <DialogDescription className="text-white/50">{sub ?? "Detaljer"}</DialogDescription>
+          </DialogHeader>
+          <div className="mt-2">
+            <div className={`text-4xl font-semibold tabular-nums ${accent ?? "text-white"}`}>{value}</div>
+            <div className="text-xs text-white/40 mt-1">{sub}</div>
+            {detail ? <div className="mt-4">{detail}</div> : (
+              <div className="mt-4 text-xs text-white/40 italic">
+                Sanntid fra sensoren. Historikk kommer her etter hvert.
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
