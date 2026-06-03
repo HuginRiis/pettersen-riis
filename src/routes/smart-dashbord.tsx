@@ -1106,7 +1106,7 @@ function CalendarTile() {
     const day = dt.toLocaleDateString("nb-NO", { day: "numeric", timeZone: "Europe/Oslo" });
     const wd = dt.toLocaleDateString("nb-NO", { weekday: "short", timeZone: "Europe/Oslo" });
     const mon = dt.toLocaleDateString("nb-NO", { month: "short", timeZone: "Europe/Oslo" });
-    return { big: `${day}. ${mon}`, small: wd };
+    return { big: `${wd} ${day}. ${mon}`, small: "" };
   };
 
   return (
