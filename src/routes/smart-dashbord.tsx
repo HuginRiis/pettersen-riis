@@ -30,12 +30,10 @@ export const Route = createFileRoute("/smart-dashbord")({
   component: SmartDashbord,
 });
 
-type LocId = "borgen" | "hytta" | "garasje" | "hagen";
+type LocId = "borgen" | "hytta";
 const LOCS: Record<LocId, { label: string; lat: number; lon: number; tibber: "tollnes" | "hytta" }> = {
   borgen:  { label: "Borgen",  lat: 59.1789, lon: 9.5732, tibber: "tollnes" },
   hytta:   { label: "Hytta",   lat: 59.91,   lon: 9.07,   tibber: "hytta"   },
-  garasje: { label: "Garasje", lat: 59.1789, lon: 9.5732, tibber: "tollnes" },
-  hagen:   { label: "Hagen",   lat: 59.1789, lon: 9.5732, tibber: "tollnes" },
 };
 
 // ----- shared tile -----
