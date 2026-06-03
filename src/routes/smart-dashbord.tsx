@@ -701,12 +701,36 @@ function SmartDashbord() {
   const [locId, setLocId] = useState<LocId>("borgen");
   const loc = LOCS[locId];
 
+  // settings (skala, bold, gap) — lagres i localStorage
+  const [settings, setSettings] = useState<DashSettings>(DEFAULT_SETTINGS);
+  const [hydrated, setHydrated] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  useEffect(() => { setSettings(loadSettings()); setHydrated(true); }, []);
+  useEffect(() => {
+    if (!hydrated) return;
+    try { window.localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch {}
+  }, [settings, hydrated]);
+  const update = (p: Partial<DashSettings>) => setSettings((s) => ({ ...s, ...p }));
+
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 30_000);
     return () => clearInterval(id);
   }, []);
   const dateStr = now.toLocaleDateString("nb-NO", { weekday: "long", day: "numeric", month: "long" });
   const timeStr = now.toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit" });
+
+  // zoom skalerer både skrift OG element-størrelser, gap-pixler beholdes etter zoom
+  const gridStyle: React.CSSProperties = {
+    zoom: settings.scale as any,
+    columnGap: `${settings.gapX}px`,
+    rowGap: `${settings.gapY}px`,
+  };
+  const miniStyle: React.CSSProperties = {
+    zoom: settings.scale as any,
+    columnGap: `${settings.gapX}px`,
+    rowGap: `${settings.gapY}px`,
+    marginTop: `${settings.gapY}px`,
+  };
 
   return (
     <div className="min-h-screen bg-[#0a0d13] text-white">
