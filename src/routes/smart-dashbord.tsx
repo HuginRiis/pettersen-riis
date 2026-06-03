@@ -647,15 +647,15 @@ function SmartDashbord() {
         </div>
 
         {/* bento grid */}
-        <div className="grid grid-cols-12 gap-4 auto-rows-[150px]">
-          <div className="col-span-4 row-span-2"><StromTile loc={loc} /></div>
-          <div className="col-span-4 row-span-2"><LysTile loc={loc} /></div>
-          <div className="col-span-4 row-span-2"><VarmepumpeTile loc={loc} /></div>
+        <div className="grid grid-cols-12 gap-4 auto-rows-[220px]">
+          <div className="col-span-4"><StromTile loc={loc} /></div>
+          <div className="col-span-4"><LysTile loc={loc} /></div>
+          <div className="col-span-4"><VarmepumpeTile loc={loc} /></div>
 
-          <div className="col-span-3 row-span-2"><UvTile loc={loc} /></div>
-          <div className="col-span-3 row-span-2"><AqiTile loc={loc} /></div>
-          <div className="col-span-3 row-span-2"><BassengTile loc={loc} /></div>
-          <div className="col-span-3 row-span-2"><LeaderTile /></div>
+          <div className="col-span-3"><UvTile loc={loc} /></div>
+          <div className="col-span-3"><AqiTile loc={loc} /></div>
+          <div className="col-span-3"><BassengTile loc={loc} /></div>
+          <div className="col-span-3"><LeaderTile /></div>
         </div>
 
         {/* mini-rad nederst */}
