@@ -63,7 +63,7 @@ const HOMEY_BACKED_ROUTES: RoutePath[] = ["/smarthus", "/var", "/steintavle"];
 
 // Hjem skal alltid stå først, og Steintavle / Steintavle 2 / Smarthus alltid sist — uavhengig av bruksstatistikk.
 const ALWAYS_FIRST: RoutePath = "/";
-const ALWAYS_LAST_LIST: RoutePath[] = ["/steintavle", "/steintavle-2", "/smarthus"];
+const ALWAYS_LAST_LIST: RoutePath[] = ["/steintavle", "/steintavle-2", "/smart-dashbord"];
 const ALWAYS_LAST_SET = new Set<RoutePath>(ALWAYS_LAST_LIST);
 const isAlwaysLast = (p: RoutePath) => ALWAYS_LAST_SET.has(p);
 
