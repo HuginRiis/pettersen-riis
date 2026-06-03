@@ -997,14 +997,33 @@ function CalendarTile() {
 
   const today = osloToday();
   const todayEvents = events.filter((e) => e.date === today);
-  const upcoming = events.filter((e) => e.date > today).slice(0, 8);
+  // Maks 4 neste hendelser etter i dag
+  const upcoming = events.filter((e) => e.date > today).slice(0, 4);
 
-  const formatDay = (date: string): string => {
+  // Grafisk gradient per type
+  const gradientFor = (e: CalEvent): string => {
+    if (e.kind === "garbage") {
+      const t = e.title.toLowerCase();
+      if (t.includes("rest")) return "from-zinc-500/70 to-zinc-700/70";
+      if (t.includes("papir") || t.includes("pp")) return "from-blue-500/70 to-indigo-600/70";
+      if (t.includes("plast")) return "from-amber-400/70 to-orange-500/70";
+      if (t.includes("glas") || t.includes("metall")) return "from-violet-500/70 to-fuchsia-600/70";
+      if (t.includes("mat") || t.includes("bio")) return "from-emerald-500/70 to-green-700/70";
+      return "from-emerald-500/70 to-teal-600/70";
+    }
+    if (e.kind === "mail") return "from-amber-400/70 to-rose-500/70";
+    return "from-sky-500/70 to-cyan-500/70";
+  };
+
+  const formatDayShort = (date: string): { big: string; small: string } => {
     const d = daysFromToday(date);
-    if (d === 0) return "I dag";
-    if (d === 1) return "I morgen";
+    if (d === 0) return { big: "i dag", small: "" };
+    if (d === 1) return { big: "i morgen", small: "" };
     const dt = new Date(date + "T00:00:00Z");
-    return dt.toLocaleDateString("nb-NO", { weekday: "short", day: "numeric", month: "short", timeZone: "Europe/Oslo" });
+    const day = dt.toLocaleDateString("nb-NO", { day: "numeric", timeZone: "Europe/Oslo" });
+    const wd = dt.toLocaleDateString("nb-NO", { weekday: "short", timeZone: "Europe/Oslo" });
+    const mon = dt.toLocaleDateString("nb-NO", { month: "short", timeZone: "Europe/Oslo" });
+    return { big: `${day}. ${mon}`, small: wd };
   };
 
   return (
@@ -1013,51 +1032,58 @@ function CalendarTile() {
       icon={<CalendarDays size={14} />}
       accent="text-cyan-300"
     >
-      <div className="flex flex-col h-full gap-3 overflow-hidden">
-        {/* I dag */}
-        <div>
-          <div className="text-[10px] uppercase tracking-widest text-white/40 mb-1.5">I dag</div>
-          {todayEvents.length === 0 ? (
-            <div className="text-xs text-white/40 italic">Ingenting planlagt</div>
+      <div className="flex flex-col h-full gap-2 overflow-hidden">
+        {/* I dag — kompakt chip-rad */}
+        {todayEvents.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 shrink-0">
+            <span className="text-[9px] uppercase tracking-widest text-white/40 self-center">I dag</span>
+            {todayEvents.slice(0, 3).map((e, i) => (
+              <div
+                key={i}
+                className={`flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] bg-gradient-to-r ${gradientFor(e)} text-white/95`}
+              >
+                <span className="opacity-80">{e.icon}</span>
+                <span className="truncate max-w-[110px]">{e.title}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* 4 neste hendelser — grafiske kort */}
+        <div className="grid grid-cols-2 gap-1.5 flex-1 min-h-0">
+          {upcoming.length === 0 ? (
+            <div className="col-span-2 flex items-center justify-center text-xs text-white/40 italic">
+              Ingen planlagte hendelser
+            </div>
           ) : (
-            <div className="flex flex-wrap gap-1.5">
-              {todayEvents.map((e, i) => (
+            upcoming.map((e, i) => {
+              const fd = formatDayShort(e.date);
+              return (
                 <div
                   key={i}
-                  className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] bg-white/[0.05] border border-white/10"
+                  className={`relative overflow-hidden rounded-xl border border-white/10 p-2.5 flex flex-col justify-between
+                              bg-gradient-to-br ${gradientFor(e)} shadow-[0_4px_18px_-6px_rgba(0,0,0,0.5)]`}
                 >
-                  <span className={`inline-block h-2 w-2 rounded-full ${e.color}`} />
-                  <span className="text-white/90 truncate max-w-[140px]">{e.title}</span>
-                  {e.time && <span className="text-white/40 tabular-nums">{e.time.slice(0, 5)}</span>}
+                  <div className="absolute -top-3 -right-3 opacity-20 text-white">
+                    <div className="scale-[3]">{e.icon}</div>
+                  </div>
+                  <div className="relative">
+                    <div className="text-[8px] uppercase tracking-widest text-white/70">
+                      {fd.small || (e.kind === "garbage" ? "Tømming" : e.kind === "mail" ? "Post" : "Hendelse")}
+                    </div>
+                    <div className="text-[12px] font-semibold text-white leading-tight truncate">{e.title}</div>
+                  </div>
+                  <div className="relative flex items-end justify-between mt-1">
+                    <div className="text-[15px] font-semibold text-white tabular-nums leading-none capitalize">
+                      {fd.big}
+                    </div>
+                    {e.time && (
+                      <div className="text-[10px] text-white/80 tabular-nums">{e.time.slice(0, 5)}</div>
+                    )}
+                  </div>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Kommende */}
-        <div className="flex-1 min-h-0 overflow-y-auto">
-          <div className="text-[10px] uppercase tracking-widest text-white/40 mb-1.5">Kommer</div>
-          {upcoming.length === 0 ? (
-            <div className="text-xs text-white/40 italic">Ingen planlagte hendelser de neste 30 dagene.</div>
-          ) : (
-            <ul className="space-y-1.5">
-              {upcoming.map((e, i) => (
-                <li key={i} className="flex items-center gap-2 rounded-lg bg-white/[0.03] border border-white/10 px-2.5 py-1.5">
-                  <span className={`inline-flex items-center justify-center h-6 w-6 rounded-full text-white ${e.color}/80`}>
-                    {e.icon}
-                  </span>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-xs text-white truncate">{e.title}</div>
-                    {e.sub && <div className="text-[10px] text-white/40 truncate">{e.sub}</div>}
-                  </div>
-                  <div className="text-right">
-                    <div className="text-[11px] text-white/80 tabular-nums">{formatDay(e.date)}</div>
-                    {e.time && <div className="text-[10px] text-white/40 tabular-nums">{e.time.slice(0, 5)}</div>}
-                  </div>
-                </li>
-              ))}
-            </ul>
+              );
+            })
           )}
         </div>
       </div>
