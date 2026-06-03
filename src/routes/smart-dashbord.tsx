@@ -526,11 +526,44 @@ function LysTile({
   const [open, setOpen] = useState(false);
   const setCap = useServerFn(setLivingRoomDeviceCapability);
   const [busy, setBusy] = useState<string | null>(null);
+  // Per-device optimistiske overrides
+  const [onOverride, setOnOverride] = useState<Record<string, boolean>>({});
+  const [dimOverride, setDimOverride] = useState<Record<string, number>>({});
+
+  // Rens overrides når snapshot matcher
+  useEffect(() => {
+    setOnOverride((prev) => {
+      const next = { ...prev };
+      let changed = false;
+      for (const d of hueLights) {
+        if (next[d.id] !== undefined && capBool(d, "onoff") === next[d.id]) {
+          delete next[d.id]; changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+    setDimOverride((prev) => {
+      const next = { ...prev };
+      let changed = false;
+      for (const d of hueLights) {
+        const snap = capNum(d, "dim");
+        if (next[d.id] !== undefined && snap != null && Math.abs(snap - next[d.id]) < 0.01) {
+          delete next[d.id]; changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+  }, [hueLights]);
+
+  const isOnFor = (d: HomeyDeviceSnapshot): boolean =>
+    onOverride[d.id] ?? capBool(d, "onoff");
+  const dimFor = (d: HomeyDeviceSnapshot): number | null =>
+    dimOverride[d.id] ?? capNum(d, "dim");
 
   const total = hueLights.length;
-  const onCount = hueLights.filter((d) => capBool(d, "onoff")).length;
+  const onCount = hueLights.filter(isOnFor).length;
   const dimAvg = (() => {
-    const dims = hueLights.map((d) => capNum(d, "dim")).filter((v): v is number => v != null);
+    const dims = hueLights.map(dimFor).filter((v): v is number => v != null);
     if (!dims.length) return null;
     return Math.round((dims.reduce((a, b) => a + b, 0) / dims.length) * 100);
   })();
@@ -539,6 +572,11 @@ function LysTile({
 
   const setAll = async (on: boolean) => {
     if (busy) return;
+    setOnOverride((p) => {
+      const n = { ...p };
+      for (const d of hueLights) n[d.id] = on;
+      return n;
+    });
     setBusy("__all");
     try {
       await Promise.all(
@@ -554,6 +592,7 @@ function LysTile({
 
   const toggleOne = async (d: HomeyDeviceSnapshot, on: boolean) => {
     if (busy) return;
+    setOnOverride((p) => ({ ...p, [d.id]: on }));
     setBusy(d.id);
     try {
       await setCap({ data: { deviceId: d.id, capability: "onoff", value: on } });
@@ -564,6 +603,7 @@ function LysTile({
   };
 
   const setDim = async (d: HomeyDeviceSnapshot, v: number) => {
+    setDimOverride((p) => ({ ...p, [d.id]: v }));
     setBusy(d.id);
     try {
       await setCap({ data: { deviceId: d.id, capability: "dim", value: v } });
@@ -572,6 +612,7 @@ function LysTile({
       setBusy(null);
     }
   };
+
 
   return (
     <>
