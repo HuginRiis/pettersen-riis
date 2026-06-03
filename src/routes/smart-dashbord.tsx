@@ -99,20 +99,24 @@ function UvTile({ loc }: { loc: typeof LOCS[LocId] }) {
 
   useEffect(() => {
     let c = false;
-    fetchUvCloud({ data: { lat: loc.lat, lon: loc.lon } })
-      .then((r: any) => {
-        if (c) return;
-        const h = r?.aq?.hourly;
-        if (h?.time) {
-          setCloudData({
-            time: h.time,
-            uv: h.uv_index ?? [],
-            uvClear: h.uv_index_clear_sky ?? [],
-          });
-        }
-      })
-      .catch(() => {});
-    return () => { c = true; };
+    const load = () => {
+      fetchUvCloud({ data: { lat: loc.lat, lon: loc.lon } })
+        .then((r: any) => {
+          if (c) return;
+          const h = r?.aq?.hourly;
+          if (h?.time) {
+            setCloudData({
+              time: h.time,
+              uv: h.uv_index ?? [],
+              uvClear: h.uv_index_clear_sky ?? [],
+            });
+          }
+        })
+        .catch(() => {});
+    };
+    load();
+    const id = setInterval(load, 5 * 60 * 1000);
+    return () => { c = true; clearInterval(id); };
   }, [fetchUvCloud, loc.lat, loc.lon]);
 
   // pick "now" value for the selected mode
