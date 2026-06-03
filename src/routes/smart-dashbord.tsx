@@ -5,12 +5,14 @@ import {
   Wind, Sun, Lightbulb, Thermometer, Waves,
   Droplets, Gauge, CloudSun, Activity, Power, Settings2,
   TrendingUp, TrendingDown, Minus, Cloud, CloudOff, Plus, Trophy, Home,
-  CalendarDays, Trash2, Mail, Cake, Bell, Zap,
+  CalendarDays, Trash2, Mail, Cake, Bell, Zap, CloudRain,
 } from "lucide-react";
 import {
   AreaChart, Area, ResponsiveContainer,
 } from "recharts";
 import { useUvSun } from "@/hooks/use-uv-sun";
+import { useDailyMinMax } from "@/hooks/use-daily-minmax";
+import { getNetatmoWeatherStation, type WeatherModule } from "@/lib/netatmo-weather.functions";
 import { fetchAirQualityPanel, fetchUvCloudPanel } from "@/lib/air-quality-fetch.functions";
 import { getBassengHistory, type BassengHistoryPoint } from "@/lib/basseng-history.functions";
 import { getGarminOverview } from "@/lib/garmin.functions";
