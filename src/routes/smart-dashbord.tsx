@@ -1,15 +1,14 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import {
   Wind, Sun, Zap, Lightbulb, Thermometer, Waves,
   Droplets, Gauge, CloudSun, Activity, Power, Settings2,
-  TrendingUp, TrendingDown, Minus, Cloud, CloudOff, Plus, Trophy,
+  TrendingUp, TrendingDown, Minus, Cloud, CloudOff, Plus, Trophy, Home,
 } from "lucide-react";
 import {
   AreaChart, Area, ResponsiveContainer,
 } from "recharts";
-import { SiteHeader } from "@/components/SiteHeader";
 import { useUvSun } from "@/hooks/use-uv-sun";
 import { useTibberLive } from "@/hooks/useTibberLive";
 import { fetchAirQualityPanel, fetchUvCloudPanel } from "@/lib/air-quality-fetch.functions";
@@ -734,7 +733,6 @@ function SmartDashbord() {
 
   return (
     <div className="min-h-screen bg-[#0a0d13] text-white">
-      <SiteHeader />
       <main
         className="px-6 py-5"
         style={{
@@ -751,6 +749,14 @@ function SmartDashbord() {
             </div>
           </div>
           <div className="flex items-center gap-3">
+            <Link
+              to="/"
+              aria-label="Hjem"
+              title="Hjem"
+              className="h-9 w-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/70 hover:text-white transition"
+            >
+              <Home size={15} />
+            </Link>
             {(Object.keys(LOCS) as LocId[]).map((id) => (
               <button
                 key={id}
