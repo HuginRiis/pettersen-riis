@@ -505,11 +505,12 @@ function BassengTile({
 
 // ----- Lys (Hue via Homey) -----
 function LysTile({
-  loc, hueLights, onReload,
+  loc, hueLights, onReload, zoneLabel,
 }: {
   loc: typeof LOCS[LocId];
   hueLights: HomeyDeviceSnapshot[];
   onReload: () => void;
+  zoneLabel?: string;
 }) {
   const [open, setOpen] = useState(false);
   const setCap = useServerFn(setLivingRoomDeviceCapability);
