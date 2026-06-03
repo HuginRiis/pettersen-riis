@@ -22,6 +22,7 @@ import {
 } from "@/lib/homey.functions";
 import { getGarbageOverview } from "@/lib/garbage-collection";
 import { getPowerByTheHour } from "@/lib/power-by-the-hour";
+import { useTibberLive } from "@/hooks/useTibberLive";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
