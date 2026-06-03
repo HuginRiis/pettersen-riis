@@ -17,6 +17,14 @@ export type PbthHomeData = {
   highlights: {
     priceNow?: number;
     consumptionNow?: number; // W
+    /** Topp-effekt registrert i dag (W). */
+    peakPowerToday?: number;
+    /** Snitt-effekt over siste 7 dager (W). */
+    avgPowerWeek?: number;
+    /** Snitt-effekt over inneværende måned (W). */
+    avgPowerThisMonth?: number;
+    /** Topp-effekt inneværende måned (W). */
+    peakPowerThisMonth?: number;
     costToday?: number;
     costYesterday?: number;
     costThisMonth?: number;
@@ -24,6 +32,8 @@ export type PbthHomeData = {
     costThisYear?: number;
     energyToday?: number; // kWh
     energyYesterday?: number;
+    energyThisWeek?: number;
+    energyLastWeek?: number;
     energyThisMonth?: number;
     energyLastMonth?: number;
     energyThisYear?: number;
