@@ -406,7 +406,7 @@ export function SiteHeader() {
           {sortedLinks.map((l) => {
             const count = usage[l.to] ?? 0;
             const isFav = menuPrefs.favorites.includes(l.to);
-            const canFav = menuPrefs.favoritesEnabled && l.to !== ALWAYS_FIRST && l.to !== ALWAYS_LAST;
+            const canFav = menuPrefs.favoritesEnabled && l.to !== ALWAYS_FIRST && !isAlwaysLast(l.to);
             return (
               <span key={l.to} className={`inline-flex items-center gap-0.5${badgeSettings.fitOneLine ? " whitespace-nowrap" : ""}`}>
                 {canFav && (
