@@ -764,14 +764,20 @@ function SmartDashbord() {
                 {LOCS[id].label}
               </button>
             ))}
-            <button className="h-9 w-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/70 hover:text-white">
+            <button
+              onClick={() => setSettingsOpen(true)}
+              className="h-9 w-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/70 hover:text-white"
+            >
               <Settings2 size={15} />
             </button>
           </div>
         </div>
 
         {/* bento grid */}
-        <div className="grid grid-cols-12 gap-4 auto-rows-[220px]">
+        <div
+          className={`grid grid-cols-12 auto-rows-[220px] ${settings.bold ? "smart-bold-all" : ""}`}
+          style={gridStyle}
+        >
           <div className="col-span-4"><StromTile loc={loc} /></div>
           <div className="col-span-4"><LysTile loc={loc} /></div>
           <div className="col-span-4"><VarmepumpeTile loc={loc} /></div>
@@ -783,7 +789,10 @@ function SmartDashbord() {
         </div>
 
         {/* mini-rad nederst */}
-        <div className="grid grid-cols-6 gap-3 mt-4">
+        <div
+          className={`grid grid-cols-6 ${settings.bold ? "smart-bold-all" : ""}`}
+          style={miniStyle}
+        >
           <MiniTile icon={<Droplets size={16} />} label="Luftfukt" value="42 %" sub="Stua" accent="text-sky-300" />
           <MiniTile icon={<CloudSun size={16} />} label="Ute" value="6.2°" sub={loc.label} accent="text-amber-300" />
           <MiniTile icon={<Gauge size={16} />} label="CO₂" value="612 ppm" sub="Soverom" accent="text-emerald-300" />
@@ -792,6 +801,70 @@ function SmartDashbord() {
           <MiniTile icon={<Wind size={16} />} label="Vind" value="3.1 m/s" sub="SW" accent="text-cyan-300" />
         </div>
       </main>
+
+      {/* Innstillinger */}
+      <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
+        <DialogContent className="bg-[#0f1320] border-white/10 text-white">
+          <DialogHeader>
+            <DialogTitle>Dashbord-innstillinger</DialogTitle>
+            <DialogDescription className="text-white/50">
+              Justér skriftstørrelse, vekt og avstand mellom boksene. Lagres lokalt på denne iPaden.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-5 mt-2">
+            <div>
+              <div className="flex items-center justify-between text-xs mb-2">
+                <span className="text-white/70">Skriftstørrelse</span>
+                <span className="tabular-nums text-white/50">{Math.round(settings.scale * 100)} %</span>
+              </div>
+              <Slider
+                min={70} max={160} step={5}
+                value={[Math.round(settings.scale * 100)]}
+                onValueChange={(v) => update({ scale: (v[0] ?? 100) / 100 })}
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-white/70">Fet skrift</span>
+              <Switch checked={settings.bold} onCheckedChange={(b) => update({ bold: b })} />
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between text-xs mb-2">
+                <span className="text-white/70">Horisontal avstand</span>
+                <span className="tabular-nums text-white/50">{settings.gapX} px</span>
+              </div>
+              <Slider
+                min={0} max={40} step={2}
+                value={[settings.gapX]}
+                onValueChange={(v) => update({ gapX: v[0] ?? 16 })}
+              />
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between text-xs mb-2">
+                <span className="text-white/70">Vertikal avstand</span>
+                <span className="tabular-nums text-white/50">{settings.gapY} px</span>
+              </div>
+              <Slider
+                min={0} max={40} step={2}
+                value={[settings.gapY]}
+                onValueChange={(v) => update({ gapY: v[0] ?? 16 })}
+              />
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <button
+                onClick={() => setSettings(DEFAULT_SETTINGS)}
+                className="text-xs text-white/50 hover:text-white/80 underline underline-offset-4"
+              >
+                Nullstill
+              </button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
