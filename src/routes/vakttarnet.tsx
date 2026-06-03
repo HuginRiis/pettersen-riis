@@ -442,15 +442,8 @@ function VakttarnetPage() {
         <section id="vt-apilog" className="scroll-mt-24"><ApiCallLogPanel /></section>
 
 
-        <section id="vt-apipause" className="scroll-mt-24">
-          <Panel
-            title="Pause API totalt"
-            icon={<PowerOff size={14} />}
-            subtitle="Slå av alle serverkall til en kilde — gjelder hele appen, ikke bare denne siden. Brukes når et API spammer 429/feiler."
-          >
-            <ApiPausePanel />
-          </Panel>
-        </section>
+        {/* ApiPausePanel fjernet — pause/tidsvindu er nå inline per kilde i API-loggen over. */}
+
 
         <section id="vt-apierrors" className="scroll-mt-24">
           <Panel
