@@ -5,7 +5,7 @@ import {
   Wind, Sun, Lightbulb, Thermometer, Waves,
   Droplets, Gauge, CloudSun, Activity, Power, Settings2,
   TrendingUp, TrendingDown, Minus, Cloud, CloudOff, Plus, Trophy, Home,
-  CalendarDays, Trash2, Mail, Cake, Bell,
+  CalendarDays, Trash2, Mail, Cake, Bell, Zap,
 } from "lucide-react";
 import {
   AreaChart, Area, ResponsiveContainer,
@@ -21,12 +21,14 @@ import {
   type HomeyZone,
 } from "@/lib/homey.functions";
 import { getGarbageOverview } from "@/lib/garbage-collection";
+import { getPowerByTheHour } from "@/lib/power-by-the-hour";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
+
 
 // ----- shared settings (skala, bold, gap) -----
 type DashSettings = { scale: number; bold: boolean; gapX: number; gapY: number };
@@ -421,8 +423,13 @@ function BassengTile({
     return newest - oldest;
   }, [points]);
 
-  // Live status fra Homey
-  const isOn = capBool(switchDevice, "onoff");
+  // Live status fra Homey + optimistisk override
+  const snapOn = capBool(switchDevice, "onoff");
+  const [onLocal, setOnLocal] = useState<boolean | null>(null);
+  useEffect(() => {
+    if (onLocal !== null && snapOn === onLocal) setOnLocal(null);
+  }, [snapOn, onLocal]);
+  const isOn = onLocal ?? snapOn;
   const watts = capNum(switchDevice, "measure_power");
 
   // sparkline – pool temp last 24h
@@ -438,14 +445,18 @@ function BassengTile({
 
   const toggle = async (next: boolean) => {
     if (!switchDevice || busy) return;
+    setOnLocal(next); // umiddelbar UI
     setBusy(true);
     try {
       await setCap({ data: { deviceId: switchDevice.id, capability: "onoff", value: next } });
       onReload();
+    } catch {
+      setOnLocal(null);
     } finally {
       setBusy(false);
     }
   };
+
 
   return (
     <Tile
@@ -515,11 +526,44 @@ function LysTile({
   const [open, setOpen] = useState(false);
   const setCap = useServerFn(setLivingRoomDeviceCapability);
   const [busy, setBusy] = useState<string | null>(null);
+  // Per-device optimistiske overrides
+  const [onOverride, setOnOverride] = useState<Record<string, boolean>>({});
+  const [dimOverride, setDimOverride] = useState<Record<string, number>>({});
+
+  // Rens overrides når snapshot matcher
+  useEffect(() => {
+    setOnOverride((prev) => {
+      const next = { ...prev };
+      let changed = false;
+      for (const d of hueLights) {
+        if (next[d.id] !== undefined && capBool(d, "onoff") === next[d.id]) {
+          delete next[d.id]; changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+    setDimOverride((prev) => {
+      const next = { ...prev };
+      let changed = false;
+      for (const d of hueLights) {
+        const snap = capNum(d, "dim");
+        if (next[d.id] !== undefined && snap != null && Math.abs(snap - next[d.id]) < 0.01) {
+          delete next[d.id]; changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+  }, [hueLights]);
+
+  const isOnFor = (d: HomeyDeviceSnapshot): boolean =>
+    onOverride[d.id] ?? capBool(d, "onoff");
+  const dimFor = (d: HomeyDeviceSnapshot): number | null =>
+    dimOverride[d.id] ?? capNum(d, "dim");
 
   const total = hueLights.length;
-  const onCount = hueLights.filter((d) => capBool(d, "onoff")).length;
+  const onCount = hueLights.filter(isOnFor).length;
   const dimAvg = (() => {
-    const dims = hueLights.map((d) => capNum(d, "dim")).filter((v): v is number => v != null);
+    const dims = hueLights.map(dimFor).filter((v): v is number => v != null);
     if (!dims.length) return null;
     return Math.round((dims.reduce((a, b) => a + b, 0) / dims.length) * 100);
   })();
@@ -528,6 +572,11 @@ function LysTile({
 
   const setAll = async (on: boolean) => {
     if (busy) return;
+    setOnOverride((p) => {
+      const n = { ...p };
+      for (const d of hueLights) n[d.id] = on;
+      return n;
+    });
     setBusy("__all");
     try {
       await Promise.all(
@@ -543,6 +592,7 @@ function LysTile({
 
   const toggleOne = async (d: HomeyDeviceSnapshot, on: boolean) => {
     if (busy) return;
+    setOnOverride((p) => ({ ...p, [d.id]: on }));
     setBusy(d.id);
     try {
       await setCap({ data: { deviceId: d.id, capability: "onoff", value: on } });
@@ -553,6 +603,7 @@ function LysTile({
   };
 
   const setDim = async (d: HomeyDeviceSnapshot, v: number) => {
+    setDimOverride((p) => ({ ...p, [d.id]: v }));
     setBusy(d.id);
     try {
       await setCap({ data: { deviceId: d.id, capability: "dim", value: v } });
@@ -561,6 +612,7 @@ function LysTile({
       setBusy(null);
     }
   };
+
 
   return (
     <>
@@ -621,8 +673,9 @@ function LysTile({
               <div className="text-sm text-white/50">Ingen Hue-lys koblet til Homey.</div>
             )}
             {hueLights.map((d) => {
-              const on = capBool(d, "onoff");
-              const dim = capNum(d, "dim");
+              const on = isOnFor(d);
+              const dim = dimFor(d);
+
               return (
                 <div key={d.id} className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
                   <div className="flex items-center justify-between">
@@ -667,11 +720,22 @@ function VarmepumpeTile({
 }) {
   const setCap = useServerFn(setLivingRoomDeviceCapability);
   const [busy, setBusy] = useState(false);
+  // Optimistiske overrides
+  const [onOv, setOnOv] = useState<boolean | null>(null);
+  const [targetOv, setTargetOv] = useState<number | null>(null);
+  const [modeOv, setModeOv] = useState<string | null>(null);
 
-  const isOn = capBool(device, "onoff");
-  const target = capNum(device, "target_temperature");
+  const snapOn = capBool(device, "onoff");
+  const snapTarget = capNum(device, "target_temperature");
+  const snapMode = capStr(device, "thermostat_mode");
+  useEffect(() => { if (onOv !== null && snapOn === onOv) setOnOv(null); }, [snapOn, onOv]);
+  useEffect(() => { if (targetOv !== null && snapTarget === targetOv) setTargetOv(null); }, [snapTarget, targetOv]);
+  useEffect(() => { if (modeOv !== null && snapMode === modeOv) setModeOv(null); }, [snapMode, modeOv]);
+
+  const isOn = onOv ?? snapOn;
+  const target = targetOv ?? snapTarget;
   const measured = capNum(device, "measure_temperature");
-  const mode = capStr(device, "thermostat_mode");
+  const mode = modeOv ?? snapMode;
   const ttMeta = device?.capabilities?.target_temperature;
   const tmMeta = device?.capabilities?.thermostat_mode;
   const modeValues: { id: string; title?: string }[] = Array.isArray(tmMeta?.values) ? tmMeta!.values! : [];
@@ -681,11 +745,16 @@ function VarmepumpeTile({
 
   const send = async (cap: string, value: any) => {
     if (!device || busy) return;
+    // Optimistisk
+    if (cap === "onoff") setOnOv(value as boolean);
+    else if (cap === "target_temperature") setTargetOv(value as number);
+    else if (cap === "thermostat_mode") setModeOv(value as string);
     setBusy(true);
     try {
       await setCap({ data: { deviceId: device.id, capability: cap, value } });
       onReload();
     } finally {
+
       setBusy(false);
     }
   };
@@ -1073,14 +1142,22 @@ function CalendarTile() {
                     </div>
                     <div className="text-[12px] font-semibold text-white leading-tight truncate">{e.title}</div>
                   </div>
-                  <div className="relative flex items-end justify-between mt-1">
-                    <div className="text-[15px] font-semibold text-white tabular-nums leading-none capitalize">
-                      {fd.big}
+                  <div className="relative flex items-end justify-between gap-2 mt-1">
+                    <div className="min-w-0 flex-1">
+                      <div className="text-[15px] font-semibold text-white tabular-nums leading-none capitalize">
+                        {fd.big}
+                      </div>
+                      {e.sub && (
+                        <div className="text-[10px] text-white/85 leading-snug mt-0.5 break-words">
+                          {e.sub}
+                        </div>
+                      )}
                     </div>
                     {e.time && (
-                      <div className="text-[10px] text-white/80 tabular-nums">{e.time.slice(0, 5)}</div>
+                      <div className="text-[10px] text-white/80 tabular-nums shrink-0">{e.time.slice(0, 5)}</div>
                     )}
                   </div>
+
                 </div>
               );
             })
@@ -1091,7 +1168,224 @@ function CalendarTile() {
   );
 }
 
+// ----- Lys kombinert (Stue + Spisestue i én boks) -----
+function LysCombinedTile({
+  groups, onReload,
+}: {
+  groups: { label: string; lights: HomeyDeviceSnapshot[] }[];
+  onReload: () => void;
+}) {
+  const setCap = useServerFn(setLivingRoomDeviceCapability);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [open, setOpen] = useState(false);
+  const [onOv, setOnOv] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    setOnOv((prev) => {
+      const next = { ...prev };
+      let changed = false;
+      for (const g of groups) for (const d of g.lights) {
+        if (next[d.id] !== undefined && capBool(d, "onoff") === next[d.id]) {
+          delete next[d.id]; changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+  }, [groups]);
+
+  const isOnFor = (d: HomeyDeviceSnapshot) => onOv[d.id] ?? capBool(d, "onoff");
+
+  const setGroup = async (g: { label: string; lights: HomeyDeviceSnapshot[] }, on: boolean) => {
+    if (busy) return;
+    setOnOv((p) => {
+      const n = { ...p };
+      for (const d of g.lights) n[d.id] = on;
+      return n;
+    });
+    setBusy(g.label);
+    try {
+      await Promise.all(
+        g.lights.map((d) =>
+          setCap({ data: { deviceId: d.id, capability: "onoff", value: on } }).catch(() => null),
+        ),
+      );
+      onReload();
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const toggleOne = async (d: HomeyDeviceSnapshot, on: boolean) => {
+    setOnOv((p) => ({ ...p, [d.id]: on }));
+    setBusy(d.id);
+    try {
+      await setCap({ data: { deviceId: d.id, capability: "onoff", value: on } });
+      onReload();
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  return (
+    <>
+      <Tile
+        title="Lys · Hue · Stue + Spisestue"
+        icon={<Lightbulb size={14} />}
+        accent="text-yellow-300"
+        onClick={() => setOpen(true)}
+      >
+        <div className="flex flex-col h-full gap-2 justify-center">
+          {groups.map((g) => {
+            const total = g.lights.length;
+            const onCount = g.lights.filter(isOnFor).length;
+            const allOn = total > 0 && onCount === total;
+            return (
+              <div
+                key={g.label}
+                className={`flex items-center gap-3 rounded-xl border p-2.5 transition ${
+                  onCount > 0
+                    ? "border-yellow-300/40 bg-yellow-300/5"
+                    : "border-white/10 bg-white/[0.02]"
+                }`}
+              >
+                <div
+                  className={`h-10 w-10 rounded-full flex items-center justify-center shrink-0 ${
+                    onCount > 0
+                      ? "bg-yellow-300/15 text-yellow-200 shadow-[0_0_18px_-4px_rgba(253,224,71,0.6)]"
+                      : "bg-white/[0.03] text-white/30"
+                  }`}
+                >
+                  <Lightbulb size={18} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-[11px] uppercase tracking-widest text-white/60">{g.label}</div>
+                  <div className="text-sm text-white tabular-nums">
+                    {onCount}<span className="text-white/30"> / {total}</span>
+                    <span className="text-white/40 text-[10px] ml-1.5">tente</span>
+                  </div>
+                </div>
+                <Switch
+                  checked={allOn}
+                  disabled={busy === g.label || total === 0}
+                  onCheckedChange={(v) => setGroup(g, v)}
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </div>
+            );
+          })}
+        </div>
+      </Tile>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="bg-[#0c0f15] border-white/10 text-white max-w-lg max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Hue · Stue + Spisestue</DialogTitle>
+            <DialogDescription className="text-white/50">Styr hver enkelt lampe</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 mt-2">
+            {groups.map((g) => (
+              <div key={g.label}>
+                <div className="text-[11px] uppercase tracking-widest text-white/50 mb-1.5">{g.label}</div>
+                <div className="space-y-2">
+                  {g.lights.length === 0 && (
+                    <div className="text-sm text-white/40 italic">Ingen Hue-lys</div>
+                  )}
+                  {g.lights.map((d) => (
+                    <div key={d.id} className="rounded-xl border border-white/10 bg-white/[0.03] p-3 flex items-center justify-between">
+                      <span className="text-sm truncate">{d.name}</span>
+                      <Switch
+                        checked={isOnFor(d)}
+                        disabled={busy === d.id}
+                        onCheckedChange={(v) => toggleOne(d, v)}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+// ----- Strøm (Power-by-the-Hour) -----
+function StromTile({ home }: { home: "borgen" | "hytta" }) {
+  const fetchPbth = useServerFn(getPowerByTheHour);
+  const [data, setData] = useState<any>(null);
+
+  useEffect(() => {
+    let c = false;
+    const load = () => {
+      fetchPbth()
+        .then((r: any) => { if (!c) setData(r); })
+        .catch(() => {});
+    };
+    load();
+    const id = setInterval(load, 60_000);
+    return () => { c = true; clearInterval(id); };
+  }, [fetchPbth]);
+
+  const h = data?.ok ? (home === "borgen" ? data.borgen?.highlights : data.hytta?.highlights) : null;
+  const found = data?.ok ? (home === "borgen" ? data.borgen?.found : data.hytta?.found) : false;
+
+  const fmtKr = (v?: number) => v == null ? "—" : `${v.toFixed(0)} kr`;
+  const fmtKwh = (v?: number) => v == null ? "—" : `${v.toFixed(1)} kWh`;
+  const fmtW = (v?: number) => v == null ? "—" : (v >= 1000 ? `${(v/1000).toFixed(2)} kW` : `${Math.round(v)} W`);
+
+  return (
+    <Tile title="Strøm · Forbruk" icon={<Zap size={14} />} accent="text-amber-300">
+      {!found ? (
+        <div className="text-xs text-white/40 h-full flex items-center justify-center text-center">
+          {data?.ok ? "Fant ingen Power-by-the-Hour-enhet" : "Henter…"}
+        </div>
+      ) : (
+        <div className="flex flex-col h-full gap-2">
+          <div className="flex items-end justify-between">
+            <div>
+              <div className="text-[10px] uppercase tracking-widest text-white/40">Nå</div>
+              <div className="text-3xl font-semibold text-white tabular-nums leading-none">
+                {fmtW(h?.consumptionNow)}
+              </div>
+            </div>
+            <div className="text-right">
+              <div className="text-[10px] uppercase tracking-widest text-white/40">Pris</div>
+              <div className="text-sm text-amber-200 tabular-nums">
+                {h?.priceNow != null ? `${h.priceNow.toFixed(2)} kr/kWh` : "—"}
+              </div>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-1.5 flex-1">
+            <div className="rounded-xl bg-white/[0.03] border border-white/10 p-2">
+              <div className="text-[9px] uppercase tracking-widest text-white/40">I dag</div>
+              <div className="text-sm text-white tabular-nums">{fmtKwh(h?.energyToday)}</div>
+              <div className="text-[10px] text-amber-200/80 tabular-nums">{fmtKr(h?.costToday)}</div>
+            </div>
+            <div className="rounded-xl bg-white/[0.03] border border-white/10 p-2">
+              <div className="text-[9px] uppercase tracking-widest text-white/40">I går</div>
+              <div className="text-sm text-white tabular-nums">{fmtKwh(h?.energyYesterday)}</div>
+              <div className="text-[10px] text-amber-200/80 tabular-nums">{fmtKr(h?.costYesterday)}</div>
+            </div>
+            <div className="rounded-xl bg-white/[0.03] border border-white/10 p-2">
+              <div className="text-[9px] uppercase tracking-widest text-white/40">Denne mnd</div>
+              <div className="text-sm text-white tabular-nums">{fmtKwh(h?.energyThisMonth)}</div>
+              <div className="text-[10px] text-amber-200/80 tabular-nums">{fmtKr(h?.costThisMonth)}</div>
+            </div>
+            <div className="rounded-xl bg-white/[0.03] border border-white/10 p-2">
+              <div className="text-[9px] uppercase tracking-widest text-white/40">I år</div>
+              <div className="text-sm text-white tabular-nums">{fmtKwh(h?.energyThisYear)}</div>
+              <div className="text-[10px] text-amber-200/80 tabular-nums">{fmtKr(h?.costThisYear)}</div>
+            </div>
+          </div>
+        </div>
+      )}
+    </Tile>
+  );
+}
+
 // ----- mini-tiles -----
+
 function MiniTile({ icon, label, value, sub, accent }:
   { icon: React.ReactNode; label: string; value: string; sub?: string; accent?: string }) {
   return (
@@ -1294,15 +1588,21 @@ function SmartDashbord() {
             </>
           ) : (
             <>
-              {/* Rad 1: Basseng + Lys Stue + Lys Spisestue */}
+              {/* Rad 1: Basseng + Lys (Stue+Spisestue) + Strøm */}
               <div className="col-span-4">
                 <BassengTile loc={loc} switchDevice={bassengSwitch} onReload={reload} />
               </div>
               <div className="col-span-4">
-                <LysTile loc={loc} hueLights={hueByRoom.stue} onReload={reload} zoneLabel="Stue" />
+                <LysCombinedTile
+                  groups={[
+                    { label: "Stue", lights: hueByRoom.stue },
+                    { label: "Spisestue", lights: hueByRoom.spisestue },
+                  ]}
+                  onReload={reload}
+                />
               </div>
               <div className="col-span-4">
-                <LysTile loc={loc} hueLights={hueByRoom.spisestue} onReload={reload} zoneLabel="Spisestue" />
+                <StromTile home="borgen" />
               </div>
               {/* Rad 2: Varmepumpe + UV + AQ */}
               <div className="col-span-4">
@@ -1310,6 +1610,7 @@ function SmartDashbord() {
               </div>
               <div className="col-span-4"><UvTile loc={loc} /></div>
               <div className="col-span-4"><AqiTile loc={loc} /></div>
+
               {/* Rad 3: Kalender + Leader */}
               <div className="col-span-6"><CalendarTile /></div>
               <div className="col-span-6"><LeaderTile /></div>
