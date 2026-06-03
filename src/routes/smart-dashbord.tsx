@@ -622,15 +622,19 @@ function LeaderTile() {
 
   useEffect(() => {
     let c = false;
-    Promise.all([
-      fetchG({ data: { owner: "arne" } }),
-      fetchG({ data: { owner: "rebekka" } }),
-    ]).then(([a, r]) => {
-      if (c) return;
-      setArne(a as Overview);
-      setRebekka(r as Overview);
-    }).catch(() => {});
-    return () => { c = true; };
+    const load = () => {
+      Promise.all([
+        fetchG({ data: { owner: "arne" } }),
+        fetchG({ data: { owner: "rebekka" } }),
+      ]).then(([a, r]) => {
+        if (c) return;
+        setArne(a as Overview);
+        setRebekka(r as Overview);
+      }).catch(() => {});
+    };
+    load();
+    const id = setInterval(load, 5 * 60 * 1000);
+    return () => { c = true; clearInterval(id); };
   }, [fetchG]);
 
   const today = osloDay(0);
