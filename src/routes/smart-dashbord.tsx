@@ -733,7 +733,6 @@ function SmartDashbord() {
 
   return (
     <div className="min-h-screen bg-[#0a0d13] text-white">
-      <SiteHeader />
       <main
         className="px-6 py-5"
         style={{
