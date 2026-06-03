@@ -15,6 +15,12 @@ type LocRow = { lat: number; lon: number; enabled: boolean };
 
 const BETWEEN_LOCATIONS_DELAY_MS = 1500;
 
+// Faste lokasjoner som alltid varmes, uavhengig av push-prefs.
+// Disse vises som hardkodede paneler på /pollen.
+const ALWAYS_WARM: Array<{ lat: number; lon: number }> = [
+  { lat: 59.91, lon: 9.07 }, // Hytta · Lyngdal i Numedal
+];
+
 function dedupeLocs(rows: LocRow[]): Array<{ lat: number; lon: number }> {
   const seen = new Map<string, { lat: number; lon: number }>();
   for (const r of rows) {
@@ -46,7 +52,7 @@ export const Route = createFileRoute("/api/public/hooks/open-meteo-warm")({
         // air-quality- og UV-lokasjoner. UV-cloud bruker samme core-cache;
         // skydekke hentes fra MET for å unngå flere Open-Meteo-hosts.
         const unionSeen = new Map<string, { lat: number; lon: number }>();
-        for (const l of [...aqLocs, ...uvLocs]) {
+        for (const l of [...aqLocs, ...uvLocs, ...ALWAYS_WARM]) {
           const k = `${l.lat.toFixed(3)},${l.lon.toFixed(3)}`;
           if (!unionSeen.has(k)) unionSeen.set(k, l);
         }
@@ -70,10 +76,16 @@ export const Route = createFileRoute("/api/public/hooks/open-meteo-warm")({
           await run("core", lat, lon, () => warmAirQualityPanel(lat, lon));
           if (i < unionLocs.length - 1) await pause();
         }
-        for (let i = 0; i < uvLocs.length; i++) {
-          const { lat, lon } = uvLocs[i];
+        const uvSeen = new Map<string, { lat: number; lon: number }>();
+        for (const l of [...uvLocs, ...ALWAYS_WARM]) {
+          const k = `${l.lat.toFixed(3)},${l.lon.toFixed(3)}`;
+          if (!uvSeen.has(k)) uvSeen.set(k, l);
+        }
+        const uvAllLocs = [...uvSeen.values()];
+        for (let i = 0; i < uvAllLocs.length; i++) {
+          const { lat, lon } = uvAllLocs[i];
           await run("uvcloud", lat, lon, () => warmUvCloudPanel(lat, lon));
-          if (i < uvLocs.length - 1) await pause();
+          if (i < uvAllLocs.length - 1) await pause();
         }
 
         return Response.json({
