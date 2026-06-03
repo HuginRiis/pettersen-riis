@@ -1557,19 +1557,22 @@ function StromTile({ home }: { home: "borgen" | "hytta" }) {
 type NetatmoTollnes = {
   noise: number | null;
   humBedroom: number | null;
+  rainHour: number | null;
   rainDay: number | null;
-  windNow: number | null;
+  windNow: number | null; // m/s
   windAngle: number | null;
-  gustNow: number | null;
+  gustNow: number | null; // m/s
 };
 function useNetatmoTollnes(): NetatmoTollnes {
   const fetchNet = useServerFn(getNetatmoWeatherStation);
   const [d, setD] = useState<NetatmoTollnes>({
-    noise: null, humBedroom: null, rainDay: null,
+    noise: null, humBedroom: null, rainHour: null, rainDay: null,
     windNow: null, windAngle: null, gustNow: null,
   });
   useEffect(() => {
     let c = false;
+    const kmhToMs = (v: number | undefined | null) =>
+      v == null || !Number.isFinite(v) ? null : Math.round((v / 3.6) * 10) / 10;
     const load = () => {
       fetchNet({ data: { stationMatch: "tollnes" } })
         .then((r: any) => {
@@ -1584,10 +1587,11 @@ function useNetatmoTollnes(): NetatmoTollnes {
           setD({
             noise: main?.metrics.noise ?? null,
             humBedroom: bed?.metrics.humidity ?? null,
+            rainHour: rain?.metrics.rainHour ?? rain?.metrics.rain ?? null,
             rainDay: rain?.metrics.rainDay ?? null,
-            windNow: wind?.metrics.windStrength ?? null,
+            windNow: kmhToMs(wind?.metrics.windStrength),
             windAngle: wind?.metrics.windAngle ?? null,
-            gustNow: wind?.metrics.gustStrength ?? null,
+            gustNow: kmhToMs(wind?.metrics.gustStrength),
           });
         })
         .catch(() => {});
@@ -1598,6 +1602,7 @@ function useNetatmoTollnes(): NetatmoTollnes {
   }, [fetchNet]);
   return d;
 }
+
 
 // ----- Compact UV tile (half size) -----
 const UV_CLOUDS_KEY = "pbth.smart.uvWithClouds";
