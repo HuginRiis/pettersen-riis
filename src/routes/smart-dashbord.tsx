@@ -1557,19 +1557,22 @@ function StromTile({ home }: { home: "borgen" | "hytta" }) {
 type NetatmoTollnes = {
   noise: number | null;
   humBedroom: number | null;
+  rainHour: number | null;
   rainDay: number | null;
-  windNow: number | null;
+  windNow: number | null; // m/s
   windAngle: number | null;
-  gustNow: number | null;
+  gustNow: number | null; // m/s
 };
 function useNetatmoTollnes(): NetatmoTollnes {
   const fetchNet = useServerFn(getNetatmoWeatherStation);
   const [d, setD] = useState<NetatmoTollnes>({
-    noise: null, humBedroom: null, rainDay: null,
+    noise: null, humBedroom: null, rainHour: null, rainDay: null,
     windNow: null, windAngle: null, gustNow: null,
   });
   useEffect(() => {
     let c = false;
+    const kmhToMs = (v: number | undefined | null) =>
+      v == null || !Number.isFinite(v) ? null : Math.round((v / 3.6) * 10) / 10;
     const load = () => {
       fetchNet({ data: { stationMatch: "tollnes" } })
         .then((r: any) => {
@@ -1584,10 +1587,11 @@ function useNetatmoTollnes(): NetatmoTollnes {
           setD({
             noise: main?.metrics.noise ?? null,
             humBedroom: bed?.metrics.humidity ?? null,
+            rainHour: rain?.metrics.rainHour ?? rain?.metrics.rain ?? null,
             rainDay: rain?.metrics.rainDay ?? null,
-            windNow: wind?.metrics.windStrength ?? null,
+            windNow: kmhToMs(wind?.metrics.windStrength),
             windAngle: wind?.metrics.windAngle ?? null,
-            gustNow: wind?.metrics.gustStrength ?? null,
+            gustNow: kmhToMs(wind?.metrics.gustStrength),
           });
         })
         .catch(() => {});
@@ -1598,6 +1602,7 @@ function useNetatmoTollnes(): NetatmoTollnes {
   }, [fetchNet]);
   return d;
 }
+
 
 // ----- Compact UV tile (half size) -----
 const UV_CLOUDS_KEY = "pbth.smart.uvWithClouds";
@@ -1795,8 +1800,8 @@ function AqiCompact({ loc }: { loc: typeof LOCS[LocId] }) {
   );
 }
 
-// ----- Rain tile (mm i dag, Tollnes) -----
-function RainTile({ rainDay }: { rainDay: number | null }) {
+// ----- Rain tile (mm i dag + siste time, Tollnes) -----
+function RainTile({ rainDay, rainHour }: { rainDay: number | null; rainHour: number | null }) {
   const mm = rainDay ?? 0;
   const intensity = Math.min(1, mm / 10); // 10mm = full
   const drops = Array.from({ length: 14 });
@@ -1831,7 +1836,10 @@ function RainTile({ rainDay }: { rainDay: number | null }) {
             <span className="text-sm text-white/40 ml-1">mm</span>
           </div>
           <div className="text-[10px] text-white/50 mt-1">
-            {mm < 0.1 ? "Tørt" : mm < 1 ? "Yr" : mm < 5 ? "Lett regn" : mm < 15 ? "Moderat" : "Kraftig"}
+            Siste time:{" "}
+            <span className="text-sky-200 tabular-nums">
+              {rainHour == null ? "—" : `${rainHour.toFixed(1).replace(".", ",")} mm`}
+            </span>
           </div>
         </div>
         <div className="relative z-10 self-end">
@@ -1842,6 +1850,7 @@ function RainTile({ rainDay }: { rainDay: number | null }) {
     </Tile>
   );
 }
+
 
 // ----- Wind tile (maks gust i dag, Tollnes) -----
 function WindTile({ windNow, gustNow, windAngle }: { windNow: number | null; gustNow: number | null; windAngle: number | null }) {
@@ -1881,16 +1890,21 @@ function WindTile({ windNow, gustNow, windAngle }: { windNow: number | null; gus
           )}
         </div>
         <div className="min-w-0 text-right">
-          <div className="text-[10px] uppercase tracking-widest text-white/40">Nå</div>
-          <div className="text-2xl font-semibold text-white tabular-nums leading-none">
-            {gustNow == null ? "—" : gustNow.toFixed(1).replace(".", ",")}
-            <span className="text-xs text-white/40 ml-1">m/s</span>
+          <div className="text-[9px] uppercase tracking-widest text-white/40">Vind nå</div>
+          <div className="text-xl font-semibold text-white tabular-nums leading-none">
+            {windNow == null ? "—" : windNow.toFixed(1).replace(".", ",")}
+            <span className="text-[10px] text-white/40 ml-1">m/s</span>
           </div>
-          <div className="text-[9px] uppercase tracking-widest text-white/40 mt-2">Maks i dag</div>
-          <div className="text-sm text-cyan-200 tabular-nums">
+          <div className="text-[9px] uppercase tracking-widest text-white/40 mt-1.5">Vindkast</div>
+          <div className="text-base text-cyan-200 tabular-nums leading-none">
+            {gustNow == null ? "—" : `${gustNow.toFixed(1).replace(".", ",")} m/s`}
+          </div>
+          <div className="text-[9px] uppercase tracking-widest text-white/40 mt-1.5">Maks i dag</div>
+          <div className="text-xs text-cyan-200/80 tabular-nums">
             {maxToday > 0 ? `${maxToday.toFixed(1).replace(".", ",")} m/s` : "—"}
           </div>
         </div>
+
       </div>
       <style>{`@keyframes pbthWindSpin{from{transform:rotate(0)}to{transform:rotate(360deg)}}`}</style>
     </Tile>
@@ -2152,8 +2166,9 @@ function SmartDashbord() {
               </div>
               <div className="col-span-2"><UvCompact loc={loc} /></div>
               <div className="col-span-2"><AqiCompact loc={loc} /></div>
-              <div className="col-span-2"><RainTile rainDay={tollnes.rainDay} /></div>
+              <div className="col-span-2"><RainTile rainDay={tollnes.rainDay} rainHour={tollnes.rainHour} /></div>
               <div className="col-span-2"><WindTile windNow={tollnes.windNow} gustNow={tollnes.gustNow} windAngle={tollnes.windAngle} /></div>
+
 
               {/* Rad 3: Kalender + Leader */}
               <div className="col-span-6"><CalendarTile /></div>
