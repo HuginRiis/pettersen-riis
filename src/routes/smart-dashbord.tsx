@@ -2338,6 +2338,29 @@ function SmartDashbord() {
     return devices.find((d) => d.id === bassengSwitchId) ?? null;
   }, [devices, bassengSwitchId]);
 
+  const hundeVannDevice = useMemo(() => {
+    return devices.find((d) => {
+      const n = d.name.toLowerCase();
+      return n.includes("dyr-2300") || (n.includes("vann") && n.includes("hund"));
+    }) ?? null;
+  }, [devices]);
+
+  const hundeCountdownSeconds = useMemo<number | null>(() => {
+    const cd = devices.find((d) => {
+      const n = d.name.toLowerCase();
+      return n.includes("vann til hunden") || (n.includes("countdown") && n.includes("hund"));
+    });
+    if (!cd) return null;
+    for (const [capId, cap] of Object.entries(cd.capabilities)) {
+      if (typeof cap?.value !== "number") continue;
+      const lc = capId.toLowerCase();
+      if (lc.includes("remaining") || lc.includes("time") || lc.includes("second") || lc.includes("countdown") || lc.includes("duration")) {
+        return Math.max(0, Math.round(cap.value as number));
+      }
+    }
+    return null;
+  }, [devices]);
+
   const gridStyle: React.CSSProperties = {
     zoom: settings.scale as any,
     columnGap: `${settings.gapX}px`,
