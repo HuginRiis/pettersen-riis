@@ -1328,6 +1328,7 @@ function LysCombinedTile({
 function StromTile({ home }: { home: "borgen" | "hytta" }) {
   const fetchPbth = useServerFn(getPowerByTheHour);
   const [data, setData] = useState<any>(null);
+  const [peakToday, setPeakToday] = useState<number>(0);
 
   useEffect(() => {
     let c = false;
@@ -1343,10 +1344,36 @@ function StromTile({ home }: { home: "borgen" | "hytta" }) {
 
   const h = data?.ok ? (home === "borgen" ? data.borgen?.highlights : data.hytta?.highlights) : null;
   const found = data?.ok ? (home === "borgen" ? data.borgen?.found : data.hytta?.found) : false;
+  const nowW = h?.consumptionNow ?? 0;
+  const nowKw = nowW / 1000;
 
-  const fmtKr = (v?: number) => v == null ? "—" : `${v.toFixed(0)} kr`;
-  const fmtKwh = (v?: number) => v == null ? "—" : `${v.toFixed(1)} kWh`;
-  const fmtW = (v?: number) => v == null ? "—" : (v >= 1000 ? `${(v/1000).toFixed(2)} kW` : `${Math.round(v)} W`);
+  // Track today's peak locally (persisted), reset on date change
+  const dayKey = useMemo(() => {
+    const d = new Date();
+    return `pbth_peak_${home}_${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+  }, [home]);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const stored = Number(localStorage.getItem(dayKey) ?? "0") || 0;
+      setPeakToday(stored);
+    } catch { /* */ }
+  }, [dayKey]);
+  useEffect(() => {
+    if (!found || nowKw <= 0) return;
+    if (nowKw > peakToday) {
+      setPeakToday(nowKw);
+      try { localStorage.setItem(dayKey, String(nowKw)); } catch { /* */ }
+    }
+  }, [nowKw, peakToday, dayKey, found]);
+
+  // Gauge math: arc from 0..gaugeMax kW
+  const gaugeMax = Math.max(5, Math.ceil(Math.max(peakToday, nowKw) * 1.1));
+  const pct = Math.min(1, Math.max(0, nowKw / gaugeMax));
+  const R = 38;
+  const C = 2 * Math.PI * R;
+  const dash = C * pct;
+  const arcColor = nowKw < 1 ? "#34d399" : nowKw < 3 ? "#fbbf24" : "#f87171";
 
   return (
     <Tile title="Strøm · Forbruk" icon={<Zap size={14} />} accent="text-amber-300">
@@ -1355,41 +1382,41 @@ function StromTile({ home }: { home: "borgen" | "hytta" }) {
           {data?.ok ? "Fant ingen Power-by-the-Hour-enhet" : "Henter…"}
         </div>
       ) : (
-        <div className="flex flex-col h-full gap-2">
-          <div className="flex items-end justify-between">
-            <div>
-              <div className="text-[10px] uppercase tracking-widest text-white/40">Nå</div>
-              <div className="text-3xl font-semibold text-white tabular-nums leading-none">
-                {fmtW(h?.consumptionNow)}
+        <div className="flex items-center gap-3 h-full">
+          {/* Gauge */}
+          <div className="relative shrink-0" style={{ width: 100, height: 100 }}>
+            <svg width="100" height="100" viewBox="0 0 100 100" className="-rotate-90">
+              <circle cx="50" cy="50" r={R} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="7" />
+              <circle
+                cx="50" cy="50" r={R}
+                fill="none"
+                stroke={arcColor}
+                strokeWidth="7"
+                strokeLinecap="round"
+                strokeDasharray={`${dash} ${C}`}
+                style={{ transition: "stroke-dasharray 0.6s ease, stroke 0.6s ease" }}
+              />
+            </svg>
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+              <div className="text-2xl font-semibold text-white tabular-nums leading-none">
+                {nowKw.toFixed(2)}
               </div>
-            </div>
-            <div className="text-right">
-              <div className="text-[10px] uppercase tracking-widest text-white/40">Pris</div>
-              <div className="text-sm text-amber-200 tabular-nums">
-                {h?.priceNow != null ? `${h.priceNow.toFixed(2)} kr/kWh` : "—"}
-              </div>
+              <div className="text-[9px] uppercase tracking-widest text-white/40 mt-1">kW nå</div>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-1.5 flex-1">
-            <div className="rounded-xl bg-white/[0.03] border border-white/10 p-2">
-              <div className="text-[9px] uppercase tracking-widest text-white/40">I dag</div>
-              <div className="text-sm text-white tabular-nums">{fmtKwh(h?.energyToday)}</div>
-              <div className="text-[10px] text-amber-200/80 tabular-nums">{fmtKr(h?.costToday)}</div>
+          {/* Stats */}
+          <div className="flex-1 min-w-0">
+            <div className="text-[10px] uppercase tracking-widest text-white/40">I dag</div>
+            <div className="text-xl text-white tabular-nums leading-tight">
+              {h?.energyToday != null ? `${h.energyToday.toFixed(1)} kWh` : "—"}
             </div>
-            <div className="rounded-xl bg-white/[0.03] border border-white/10 p-2">
-              <div className="text-[9px] uppercase tracking-widest text-white/40">I går</div>
-              <div className="text-sm text-white tabular-nums">{fmtKwh(h?.energyYesterday)}</div>
-              <div className="text-[10px] text-amber-200/80 tabular-nums">{fmtKr(h?.costYesterday)}</div>
+            <div className="text-[10px] uppercase tracking-widest text-white/40 mt-1.5">Topp i dag</div>
+            <div className="text-xl text-white tabular-nums leading-tight">
+              {peakToday > 0 ? `${peakToday.toFixed(1)} kW` : "—"}
             </div>
-            <div className="rounded-xl bg-white/[0.03] border border-white/10 p-2">
-              <div className="text-[9px] uppercase tracking-widest text-white/40">Denne mnd</div>
-              <div className="text-sm text-white tabular-nums">{fmtKwh(h?.energyThisMonth)}</div>
-              <div className="text-[10px] text-amber-200/80 tabular-nums">{fmtKr(h?.costThisMonth)}</div>
-            </div>
-            <div className="rounded-xl bg-white/[0.03] border border-white/10 p-2">
-              <div className="text-[9px] uppercase tracking-widest text-white/40">I år</div>
-              <div className="text-sm text-white tabular-nums">{fmtKwh(h?.energyThisYear)}</div>
-              <div className="text-[10px] text-amber-200/80 tabular-nums">{fmtKr(h?.costThisYear)}</div>
+            <div className="flex items-center gap-1.5 mt-1.5">
+              <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="text-[11px] text-emerald-300">live</span>
             </div>
           </div>
         </div>
@@ -1397,6 +1424,7 @@ function StromTile({ home }: { home: "borgen" | "hytta" }) {
     </Tile>
   );
 }
+
 
 // ----- mini-tiles -----
 
