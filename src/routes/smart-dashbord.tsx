@@ -1250,26 +1250,45 @@ function SmartDashbord() {
           className={`grid grid-cols-12 auto-rows-[220px] ${settings.bold ? "smart-bold-all" : ""}`}
           style={gridStyle}
         >
-          {/* Rad 1: Basseng / (Lys) / Varmepumpe */}
-          <div className={isHytta ? "col-span-6" : "col-span-4"}>
-            <BassengTile loc={loc} switchDevice={bassengSwitch} onReload={reload} />
-          </div>
-          {!isHytta && (
-            <div className="col-span-4">
-              <LysTile loc={loc} hueLights={hueLights} onReload={reload} />
-            </div>
+          {isHytta ? (
+            <>
+              {/* Rad 1: Basseng + Varmepumpe */}
+              <div className="col-span-6">
+                <BassengTile loc={loc} switchDevice={bassengSwitch} onReload={reload} />
+              </div>
+              <div className="col-span-6">
+                <VarmepumpeTile loc={loc} device={varmepumpe} onReload={reload} />
+              </div>
+              {/* Rad 2: UV + AQ */}
+              <div className="col-span-6"><UvTile loc={loc} /></div>
+              <div className="col-span-6"><AqiTile loc={loc} /></div>
+              {/* Rad 3: Kalender + Leader */}
+              <div className="col-span-6"><CalendarTile /></div>
+              <div className="col-span-6"><LeaderTile /></div>
+            </>
+          ) : (
+            <>
+              {/* Rad 1: Basseng + Lys Stue + Lys Spisestue */}
+              <div className="col-span-4">
+                <BassengTile loc={loc} switchDevice={bassengSwitch} onReload={reload} />
+              </div>
+              <div className="col-span-4">
+                <LysTile loc={loc} hueLights={hueByRoom.stue} onReload={reload} zoneLabel="Stue" />
+              </div>
+              <div className="col-span-4">
+                <LysTile loc={loc} hueLights={hueByRoom.spisestue} onReload={reload} zoneLabel="Spisestue" />
+              </div>
+              {/* Rad 2: Varmepumpe + UV + AQ */}
+              <div className="col-span-4">
+                <VarmepumpeTile loc={loc} device={varmepumpe} onReload={reload} />
+              </div>
+              <div className="col-span-4"><UvTile loc={loc} /></div>
+              <div className="col-span-4"><AqiTile loc={loc} /></div>
+              {/* Rad 3: Kalender + Leader */}
+              <div className="col-span-6"><CalendarTile /></div>
+              <div className="col-span-6"><LeaderTile /></div>
+            </>
           )}
-          <div className={isHytta ? "col-span-6" : "col-span-4"}>
-            <VarmepumpeTile loc={loc} device={varmepumpe} onReload={reload} />
-          </div>
-
-          {/* Rad 2-3: Kalender (stor) + UV + AQ + Leader */}
-          <div className="col-span-6 row-span-2">
-            <CalendarTile />
-          </div>
-          <div className="col-span-3"><UvTile loc={loc} /></div>
-          <div className="col-span-3"><AqiTile loc={loc} /></div>
-          <div className="col-span-6"><LeaderTile /></div>
         </div>
 
         {/* mini-rad nederst */}
