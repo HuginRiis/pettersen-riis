@@ -77,11 +77,23 @@ function isQlima(d: HomeyDeviceSnapshot): boolean {
   const h = `${d.driverUri ?? ""} ${d.name ?? ""}`.toLowerCase();
   return h.includes("qlima");
 }
+/** Generisk varmepumpe-match basert på navn / driver / klasse. */
+function isVarmepumpeLike(d: HomeyDeviceSnapshot): boolean {
+  const h = `${d.driverUri ?? ""} ${d.name ?? ""} ${(d as any)?.virtualClass ?? ""} ${(d as any)?.class ?? ""}`.toLowerCase();
+  if (h.includes("varmepump")) return true;
+  if (h.includes("heatpump") || h.includes("heat_pump")) return true;
+  if (h.includes("thermostat") && (h.includes("air") || h.includes("aircon"))) return true;
+  return false;
+}
 function isHyttaZoneName(name: string): boolean {
   return name.toLowerCase().includes("hytt");
 }
+function isSpisestueZoneName(name: string): boolean {
+  return name.toLowerCase().includes("spisestue") || name.toLowerCase().includes("spisestua");
+}
 function isStueZoneName(name: string): boolean {
   const n = name.toLowerCase();
+  if (isSpisestueZoneName(n)) return false;
   return n.includes("stue") || n.includes("stua");
 }
 
