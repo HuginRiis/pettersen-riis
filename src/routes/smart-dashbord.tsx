@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import {
   Wind, Sun, Zap, Lightbulb, Thermometer, Waves,
   Droplets, Gauge, CloudSun, Activity, Power, Settings2,
-  TrendingUp, TrendingDown, Minus, Cloud, CloudOff, Plus, Trophy, Footprints,
+  TrendingUp, TrendingDown, Minus, Cloud, CloudOff, Plus, Trophy,
 } from "lucide-react";
 import {
   AreaChart, Area, ResponsiveContainer,
@@ -19,6 +19,27 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
+import { Slider } from "@/components/ui/slider";
+
+// ----- shared settings (skala, bold, gap) -----
+type DashSettings = { scale: number; bold: boolean; gapX: number; gapY: number };
+const SETTINGS_KEY = "smartDash.settings.v1";
+const DEFAULT_SETTINGS: DashSettings = { scale: 1, bold: false, gapX: 16, gapY: 16 };
+
+function loadSettings(): DashSettings {
+  if (typeof window === "undefined") return DEFAULT_SETTINGS;
+  try {
+    const raw = window.localStorage.getItem(SETTINGS_KEY);
+    if (!raw) return DEFAULT_SETTINGS;
+    const p = JSON.parse(raw);
+    return {
+      scale: Math.min(1.6, Math.max(0.7, Number(p.scale) || 1)),
+      bold: !!p.bold,
+      gapX: Math.min(40, Math.max(0, Number(p.gapX) ?? 16)),
+      gapY: Math.min(40, Math.max(0, Number(p.gapY) ?? 16)),
+    };
+  } catch { return DEFAULT_SETTINGS; }
+}
 
 export const Route = createFileRoute("/smart-dashbord")({
   head: () => ({
@@ -518,65 +539,144 @@ function VarmepumpeTile({ loc }: { loc: typeof LOCS[LocId] }) {
   );
 }
 
-// ----- Arne vs Rebekka leader -----
+// ----- Arne vs Rebekka leader (Garmin "vinner-poeng" - samme logikk som Steintavle 2) -----
+type Daily = {
+  day: string;
+  steps: number | null;
+  resting_heart_rate: number | null;
+  active_kilocalories: number | null;
+  floors_climbed: number | null;
+  moderate_intensity_minutes: number | null;
+  vigorous_intensity_minutes: number | null;
+  body_battery_high: number | null;
+  stress_average: number | null;
+};
+type Sleep = {
+  day: string;
+  total_seconds: number | null;
+  deep_seconds: number | null;
+  rem_seconds: number | null;
+  sleep_score: number | null;
+  hrv_avg: number | null;
+  average_spo2: number | null;
+};
+type Overview = { daily: Daily[]; sleep: Sleep[] };
+
+function osloDay(offset = 0): string {
+  const d = new Date();
+  d.setUTCDate(d.getUTCDate() + offset);
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Oslo", year: "numeric", month: "2-digit", day: "2-digit",
+  }).format(d);
+}
+function pickDay<T extends { day: string }>(arr: T[] | undefined, day: string) {
+  return arr?.find((x) => x.day === day);
+}
+function countWins(a: Overview | null, r: Overview | null, day: string) {
+  if (!a || !r) return { a: 0, r: 0, total: 0 };
+  const aD = pickDay(a.daily, day), rD = pickDay(r.daily, day);
+  const aS = pickDay(a.sleep, day), rS = pickDay(r.sleep, day);
+  const intensity = (d?: Daily) =>
+    d ? (d.moderate_intensity_minutes ?? 0) + (d.vigorous_intensity_minutes ?? 0) : null;
+  const m: Array<{ a: any; r: any; hi: boolean }> = [
+    { a: aD?.steps, r: rD?.steps, hi: true },
+    { a: aS?.total_seconds, r: rS?.total_seconds, hi: true },
+    { a: aS?.deep_seconds, r: rS?.deep_seconds, hi: true },
+    { a: aS?.rem_seconds, r: rS?.rem_seconds, hi: true },
+    { a: aS?.sleep_score, r: rS?.sleep_score, hi: true },
+    { a: aD?.resting_heart_rate, r: rD?.resting_heart_rate, hi: false },
+    { a: aS?.hrv_avg, r: rS?.hrv_avg, hi: true },
+    { a: aS?.average_spo2, r: rS?.average_spo2, hi: true },
+    { a: aD?.body_battery_high, r: rD?.body_battery_high, hi: true },
+    { a: aD?.stress_average, r: rD?.stress_average, hi: false },
+    { a: intensity(aD), r: intensity(rD), hi: true },
+    { a: aD?.active_kilocalories, r: rD?.active_kilocalories, hi: true },
+    { a: aD?.floors_climbed, r: rD?.floors_climbed, hi: true },
+  ];
+  let aw = 0, rw = 0, t = 0;
+  for (const x of m) {
+    if (x.a == null || x.r == null || x.a === x.r) continue;
+    t++;
+    (x.hi ? x.a > x.r : x.a < x.r) ? aw++ : rw++;
+  }
+  return { a: aw, r: rw, total: t };
+}
+
 function LeaderTile() {
   const fetchG = useServerFn(getGarminOverview);
-  const [arne, setArne] = useState<number | null>(null);
-  const [rebekka, setRebekka] = useState<number | null>(null);
-  const [goalA, setGoalA] = useState<number | null>(null);
-  const [goalR, setGoalR] = useState<number | null>(null);
+  const [arne, setArne] = useState<Overview | null>(null);
+  const [rebekka, setRebekka] = useState<Overview | null>(null);
 
   useEffect(() => {
-    const today = new Date().toISOString().slice(0, 10);
-    const pick = (rows: any[] | undefined) => {
-      const r = rows?.find((d) => d.day === today) ?? rows?.[rows.length - 1];
-      return { steps: r?.steps ?? null, goal: r?.step_goal ?? null };
-    };
-    fetchG({ data: { owner: "arne" } }).then((r: any) => {
-      const p = pick(r?.daily); setArne(p.steps); setGoalA(p.goal);
+    let c = false;
+    Promise.all([
+      fetchG({ data: { owner: "arne" } }),
+      fetchG({ data: { owner: "rebekka" } }),
+    ]).then(([a, r]) => {
+      if (c) return;
+      setArne(a as Overview);
+      setRebekka(r as Overview);
     }).catch(() => {});
-    fetchG({ data: { owner: "rebekka" } }).then((r: any) => {
-      const p = pick(r?.daily); setRebekka(p.steps); setGoalR(p.goal);
-    }).catch(() => {});
+    return () => { c = true; };
   }, [fetchG]);
 
-  const aPct = arne != null && goalA ? Math.min(100, (arne / goalA) * 100) : 0;
-  const rPct = rebekka != null && goalR ? Math.min(100, (rebekka / goalR) * 100) : 0;
-  const leader = arne != null && rebekka != null
-    ? (arne === rebekka ? "Likt" : arne > rebekka ? "Arne" : "Rebekka") : "—";
-  const diff = arne != null && rebekka != null ? Math.abs(arne - rebekka) : null;
+  const today = osloDay(0);
+  const yest = osloDay(-1);
+  const wt = countWins(arne, rebekka, today);
+  const wy = countWins(arne, rebekka, yest);
+  const arneLeads = wt.a > wt.r;
+  const rebLeads  = wt.r > wt.a;
+  const leader = arneLeads ? "Arne" : rebLeads ? "Rebekka" : "Likt";
+  const aPct = wt.total ? (wt.a / wt.total) * 100 : 50;
+  const rPct = wt.total ? (wt.r / wt.total) * 100 : 50;
 
   return (
-    <Tile title="Skritt-duell · i dag" icon={<Trophy size={14} />} accent="text-violet-300">
-      <div className="flex items-center justify-between mb-3">
+    <Tile title="Vinner-poeng · Garmin" icon={<Trophy size={14} />} accent="text-violet-300">
+      <div className="flex items-center justify-between mb-2">
         <div>
-          <div className="text-[10px] uppercase tracking-widest text-white/40">Leder nå</div>
+          <div className="text-[10px] uppercase tracking-widest text-white/40">Leder i dag</div>
           <div className="text-lg font-medium text-white">{leader}</div>
         </div>
-        {diff != null && (
-          <div className="text-right">
-            <div className="text-[10px] uppercase tracking-widest text-white/40">Differanse</div>
-            <div className="text-sm tabular-nums text-violet-200">{diff.toLocaleString("nb-NO")}</div>
-          </div>
-        )}
-      </div>
-      {[
-        { name: "Arne", v: arne, g: goalA, pct: aPct, color: "from-sky-400 to-cyan-300" },
-        { name: "Rebekka", v: rebekka, g: goalR, pct: rPct, color: "from-pink-400 to-rose-300" },
-      ].map((p) => (
-        <div key={p.name} className="mb-2 last:mb-0">
-          <div className="flex items-center justify-between text-xs mb-1">
-            <span className="flex items-center gap-1.5 text-white/80"><Footprints size={11} />{p.name}</span>
-            <span className="tabular-nums text-white/70">
-              {p.v == null ? "—" : p.v.toLocaleString("nb-NO")}
-              {p.g ? <span className="text-white/30"> / {p.g.toLocaleString("nb-NO")}</span> : null}
-            </span>
-          </div>
-          <div className="h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
-            <div className={`h-full bg-gradient-to-r ${p.color}`} style={{ width: `${p.pct}%` }} />
+        <div className="text-right">
+          <div className="text-[10px] uppercase tracking-widest text-white/40">I går</div>
+          <div className="text-xs tabular-nums text-white/70">
+            {wy.a} <span className="text-white/30">–</span> {wy.r}
           </div>
         </div>
-      ))}
+      </div>
+
+      {/* delt bar */}
+      <div className="flex h-2 rounded-full overflow-hidden bg-white/[0.06] mb-3">
+        <div className="bg-gradient-to-r from-sky-400 to-cyan-300" style={{ width: `${aPct}%` }} />
+        <div className="bg-gradient-to-r from-pink-400 to-rose-300 ml-auto" style={{ width: `${rPct}%` }} />
+      </div>
+
+      {/* navn + score */}
+      <div className="grid grid-cols-2 gap-2">
+        <div className={`rounded-xl px-3 py-2 border transition ${
+          arneLeads ? "border-sky-300/50 bg-sky-400/10 shadow-[0_0_18px_-4px_rgba(56,189,248,0.6)]"
+                    : "border-white/10 bg-white/[0.03]"
+        }`}>
+          <div className="text-[9px] uppercase tracking-widest text-sky-200/70">Arne</div>
+          <div className="flex items-baseline justify-between mt-0.5">
+            <span className="text-2xl tabular-nums text-white" style={{ fontWeight: 600 }}>{wt.a}</span>
+            <span className="text-[10px] text-white/40">poeng</span>
+          </div>
+        </div>
+        <div className={`rounded-xl px-3 py-2 border transition ${
+          rebLeads ? "border-rose-300/50 bg-rose-400/10 shadow-[0_0_18px_-4px_rgba(244,114,182,0.6)]"
+                   : "border-white/10 bg-white/[0.03]"
+        }`}>
+          <div className="text-[9px] uppercase tracking-widest text-rose-200/70">Rebekka</div>
+          <div className="flex items-baseline justify-between mt-0.5">
+            <span className="text-2xl tabular-nums text-white" style={{ fontWeight: 600 }}>{wt.r}</span>
+            <span className="text-[10px] text-white/40">poeng</span>
+          </div>
+        </div>
+      </div>
+      <div className="text-[9px] text-white/30 mt-2 text-center">
+        13 metrikker · søvn, skritt, puls, HRV, stress, m.fl.
+      </div>
     </Tile>
   );
 }
@@ -601,12 +701,36 @@ function SmartDashbord() {
   const [locId, setLocId] = useState<LocId>("borgen");
   const loc = LOCS[locId];
 
+  // settings (skala, bold, gap) — lagres i localStorage
+  const [settings, setSettings] = useState<DashSettings>(DEFAULT_SETTINGS);
+  const [hydrated, setHydrated] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  useEffect(() => { setSettings(loadSettings()); setHydrated(true); }, []);
+  useEffect(() => {
+    if (!hydrated) return;
+    try { window.localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch {}
+  }, [settings, hydrated]);
+  const update = (p: Partial<DashSettings>) => setSettings((s) => ({ ...s, ...p }));
+
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 30_000);
     return () => clearInterval(id);
   }, []);
   const dateStr = now.toLocaleDateString("nb-NO", { weekday: "long", day: "numeric", month: "long" });
   const timeStr = now.toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit" });
+
+  // zoom skalerer både skrift OG element-størrelser, gap-pixler beholdes etter zoom
+  const gridStyle: React.CSSProperties = {
+    zoom: settings.scale as any,
+    columnGap: `${settings.gapX}px`,
+    rowGap: `${settings.gapY}px`,
+  };
+  const miniStyle: React.CSSProperties = {
+    zoom: settings.scale as any,
+    columnGap: `${settings.gapX}px`,
+    rowGap: `${settings.gapY}px`,
+    marginTop: `${settings.gapY}px`,
+  };
 
   return (
     <div className="min-h-screen bg-[#0a0d13] text-white">
@@ -640,14 +764,20 @@ function SmartDashbord() {
                 {LOCS[id].label}
               </button>
             ))}
-            <button className="h-9 w-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/70 hover:text-white">
+            <button
+              onClick={() => setSettingsOpen(true)}
+              className="h-9 w-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/70 hover:text-white"
+            >
               <Settings2 size={15} />
             </button>
           </div>
         </div>
 
         {/* bento grid */}
-        <div className="grid grid-cols-12 gap-4 auto-rows-[220px]">
+        <div
+          className={`grid grid-cols-12 auto-rows-[220px] ${settings.bold ? "smart-bold-all" : ""}`}
+          style={gridStyle}
+        >
           <div className="col-span-4"><StromTile loc={loc} /></div>
           <div className="col-span-4"><LysTile loc={loc} /></div>
           <div className="col-span-4"><VarmepumpeTile loc={loc} /></div>
@@ -659,7 +789,10 @@ function SmartDashbord() {
         </div>
 
         {/* mini-rad nederst */}
-        <div className="grid grid-cols-6 gap-3 mt-4">
+        <div
+          className={`grid grid-cols-6 ${settings.bold ? "smart-bold-all" : ""}`}
+          style={miniStyle}
+        >
           <MiniTile icon={<Droplets size={16} />} label="Luftfukt" value="42 %" sub="Stua" accent="text-sky-300" />
           <MiniTile icon={<CloudSun size={16} />} label="Ute" value="6.2°" sub={loc.label} accent="text-amber-300" />
           <MiniTile icon={<Gauge size={16} />} label="CO₂" value="612 ppm" sub="Soverom" accent="text-emerald-300" />
@@ -668,6 +801,70 @@ function SmartDashbord() {
           <MiniTile icon={<Wind size={16} />} label="Vind" value="3.1 m/s" sub="SW" accent="text-cyan-300" />
         </div>
       </main>
+
+      {/* Innstillinger */}
+      <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
+        <DialogContent className="bg-[#0f1320] border-white/10 text-white">
+          <DialogHeader>
+            <DialogTitle>Dashbord-innstillinger</DialogTitle>
+            <DialogDescription className="text-white/50">
+              Justér skriftstørrelse, vekt og avstand mellom boksene. Lagres lokalt på denne iPaden.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-5 mt-2">
+            <div>
+              <div className="flex items-center justify-between text-xs mb-2">
+                <span className="text-white/70">Skriftstørrelse</span>
+                <span className="tabular-nums text-white/50">{Math.round(settings.scale * 100)} %</span>
+              </div>
+              <Slider
+                min={70} max={160} step={5}
+                value={[Math.round(settings.scale * 100)]}
+                onValueChange={(v) => update({ scale: (v[0] ?? 100) / 100 })}
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-white/70">Fet skrift</span>
+              <Switch checked={settings.bold} onCheckedChange={(b) => update({ bold: b })} />
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between text-xs mb-2">
+                <span className="text-white/70">Horisontal avstand</span>
+                <span className="tabular-nums text-white/50">{settings.gapX} px</span>
+              </div>
+              <Slider
+                min={0} max={40} step={2}
+                value={[settings.gapX]}
+                onValueChange={(v) => update({ gapX: v[0] ?? 16 })}
+              />
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between text-xs mb-2">
+                <span className="text-white/70">Vertikal avstand</span>
+                <span className="tabular-nums text-white/50">{settings.gapY} px</span>
+              </div>
+              <Slider
+                min={0} max={40} step={2}
+                value={[settings.gapY]}
+                onValueChange={(v) => update({ gapY: v[0] ?? 16 })}
+              />
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <button
+                onClick={() => setSettings(DEFAULT_SETTINGS)}
+                className="text-xs text-white/50 hover:text-white/80 underline underline-offset-4"
+              >
+                Nullstill
+              </button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
