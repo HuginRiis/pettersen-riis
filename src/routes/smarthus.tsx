@@ -14,6 +14,7 @@ import { StuaConditionPanel } from "@/components/StuaConditionPanel";
 import { BassengPoolPanel } from "@/components/BassengPoolPanel";
 import { BassengPowerPanel } from "@/components/BassengPowerPanel";
 import { BassengHistoryChart } from "@/components/BassengHistoryChart";
+import { HundeVannPanel } from "@/components/HundeVannPanel";
 import { MowerPanel } from "@/components/MowerPanel";
 
 import { getLightIdleStatuses, type LightIdleZoneStatusRow } from "@/lib/light-idle-push.functions";
@@ -686,6 +687,34 @@ function SmarthusPage() {
   const soveromReadings = readRoom(soveromDevice);
   const bassengReadings = readRoom(bassengDevice);
 
+  // Hunde-vann: enhet i Homey heter "dyr-2300 vann hundene"
+  const hundeVannDevice = data.devices.find((d) => {
+    const n = d.name.toLowerCase();
+    return n.includes("dyr-2300") || (n.includes("vann") && n.includes("hund"));
+  });
+  const hundeVannOn =
+    hundeVannDevice && typeof hundeVannDevice.capabilities["onoff"]?.value === "boolean"
+      ? (hundeVannDevice.capabilities["onoff"].value as boolean)
+      : null;
+
+  // Countdown-timer "vann til hunden" — let etter numerisk capability med tid igjen
+  const countdownDevice = data.devices.find((d) => {
+    const n = d.name.toLowerCase();
+    return n.includes("vann til hunden") || (n.includes("countdown") && n.includes("hund"));
+  });
+  let countdownSeconds: number | null = null;
+  if (countdownDevice) {
+    for (const [capId, cap] of Object.entries(countdownDevice.capabilities)) {
+      if (typeof cap?.value !== "number") continue;
+      const lc = capId.toLowerCase();
+      if (lc.includes("remaining") || lc.includes("time") || lc.includes("second") || lc.includes("countdown") || lc.includes("duration")) {
+        countdownSeconds = Math.max(0, Math.round(cap.value as number));
+        break;
+      }
+    }
+  }
+
+
 
 
   const handleDisconnect = async () => {
@@ -740,14 +769,26 @@ function SmarthusPage() {
 
       {bassengDevice && (
         <>
-          <BassengPoolPanel
-            temperature={bassengReadings.temperature}
-            sourceName={bassengReadings.sourceName}
-          />
+          <section className="container mx-auto px-4 pt-4 sm:pt-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <BassengPoolPanel
+                temperature={bassengReadings.temperature}
+                sourceName={bassengReadings.sourceName}
+                inline
+              />
+              <HundeVannPanel
+                deviceId={hundeVannDevice?.id ?? null}
+                isOn={hundeVannOn}
+                countdownSeconds={countdownSeconds}
+                inline
+              />
+            </div>
+          </section>
           <BassengPowerPanel />
           <BassengHistoryChart />
         </>
       )}
+
 
       <StuaConditionPanel
         temperature={stuaTemp}
