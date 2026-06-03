@@ -19,6 +19,27 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
+import { Slider } from "@/components/ui/slider";
+
+// ----- shared settings (skala, bold, gap) -----
+type DashSettings = { scale: number; bold: boolean; gapX: number; gapY: number };
+const SETTINGS_KEY = "smartDash.settings.v1";
+const DEFAULT_SETTINGS: DashSettings = { scale: 1, bold: false, gapX: 16, gapY: 16 };
+
+function loadSettings(): DashSettings {
+  if (typeof window === "undefined") return DEFAULT_SETTINGS;
+  try {
+    const raw = window.localStorage.getItem(SETTINGS_KEY);
+    if (!raw) return DEFAULT_SETTINGS;
+    const p = JSON.parse(raw);
+    return {
+      scale: Math.min(1.6, Math.max(0.7, Number(p.scale) || 1)),
+      bold: !!p.bold,
+      gapX: Math.min(40, Math.max(0, Number(p.gapX) ?? 16)),
+      gapY: Math.min(40, Math.max(0, Number(p.gapY) ?? 16)),
+    };
+  } catch { return DEFAULT_SETTINGS; }
+}
 
 export const Route = createFileRoute("/smart-dashbord")({
   head: () => ({
