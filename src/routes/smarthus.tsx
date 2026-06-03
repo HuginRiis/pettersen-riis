@@ -686,6 +686,34 @@ function SmarthusPage() {
   const soveromReadings = readRoom(soveromDevice);
   const bassengReadings = readRoom(bassengDevice);
 
+  // Hunde-vann: enhet i Homey heter "dyr-2300 vann hundene"
+  const hundeVannDevice = data.devices.find((d) => {
+    const n = d.name.toLowerCase();
+    return n.includes("dyr-2300") || (n.includes("vann") && n.includes("hund"));
+  });
+  const hundeVannOn =
+    hundeVannDevice && typeof hundeVannDevice.capabilities["onoff"]?.value === "boolean"
+      ? (hundeVannDevice.capabilities["onoff"].value as boolean)
+      : null;
+
+  // Countdown-timer "vann til hunden" — let etter numerisk capability med tid igjen
+  const countdownDevice = data.devices.find((d) => {
+    const n = d.name.toLowerCase();
+    return n.includes("vann til hunden") || (n.includes("countdown") && n.includes("hund"));
+  });
+  let countdownSeconds: number | null = null;
+  if (countdownDevice) {
+    for (const [capId, cap] of Object.entries(countdownDevice.capabilities)) {
+      if (typeof cap?.value !== "number") continue;
+      const lc = capId.toLowerCase();
+      if (lc.includes("remaining") || lc.includes("time") || lc.includes("second") || lc.includes("countdown") || lc.includes("duration")) {
+        countdownSeconds = Math.max(0, Math.round(cap.value as number));
+        break;
+      }
+    }
+  }
+
+
 
 
   const handleDisconnect = async () => {
