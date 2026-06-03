@@ -5,7 +5,7 @@ import {
   Wind, Sun, Lightbulb, Thermometer, Waves,
   Droplets, Gauge, CloudSun, Activity, Power, Settings2,
   TrendingUp, TrendingDown, Minus, Cloud, CloudOff, Plus, Trophy, Home,
-  CalendarDays, Trash2, Mail, Cake, Bell,
+  CalendarDays, Trash2, Mail, Cake, Bell, Zap,
 } from "lucide-react";
 import {
   AreaChart, Area, ResponsiveContainer,
@@ -21,12 +21,14 @@ import {
   type HomeyZone,
 } from "@/lib/homey.functions";
 import { getGarbageOverview } from "@/lib/garbage-collection";
+import { getPowerByTheHour } from "@/lib/power-by-the-hour";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
+
 
 // ----- shared settings (skala, bold, gap) -----
 type DashSettings = { scale: number; bold: boolean; gapX: number; gapY: number };
