@@ -1670,17 +1670,50 @@ function UvCompact({ loc }: { loc: typeof LOCS[LocId] }) {
   const max = uv.uvMaxToday ?? 0;
   const pct = Math.min(100, (v / 11) * 100);
   const ring = `conic-gradient(rgb(251 191 36) ${pct}%, rgba(255,255,255,0.08) 0)`;
+  const cloudOpacity = withClouds && cloudPct != null ? Math.min(1, cloudPct / 100) : 0;
+  const cloudCount = withClouds && cloudPct != null ? Math.max(1, Math.round((cloudPct / 100) * 5)) : 0;
   return (
     <Tile title={`UV · ${loc.label}`} icon={<Sun size={14} />} accent="text-amber-400">
       <div className="flex flex-col h-full">
         <div className="flex items-center gap-3 flex-1 min-h-0">
-          <div className="relative h-16 w-16 rounded-full flex items-center justify-center shrink-0" style={{ background: ring }}>
+          <div className="relative h-16 w-16 rounded-full flex items-center justify-center shrink-0 overflow-hidden" style={{ background: ring }}>
+            {/* Sun rays glow when clear */}
+            {!withClouds && (
+              <div
+                className="absolute inset-[6px] rounded-full pointer-events-none"
+                style={{
+                  background: "radial-gradient(circle, rgba(251,191,36,0.55) 0%, rgba(251,191,36,0) 70%)",
+                  animation: "pbthUvSun 3s ease-in-out infinite",
+                }}
+              />
+            )}
             <div className="absolute inset-[4px] rounded-full bg-[#0c0f15] flex flex-col items-center justify-center">
               <div className="text-lg font-semibold text-white tabular-nums leading-none">
                 {uv.loading ? "—" : v.toFixed(1)}
               </div>
               <div className="text-[8px] uppercase tracking-widest text-white/40 mt-0.5">nå</div>
             </div>
+            {/* Drifting clouds overlay */}
+            {withClouds && Array.from({ length: cloudCount }).map((_, i) => {
+              const dur = 6 + (i % 3) * 2;
+              const delay = -(i * 1.7);
+              const top = 10 + ((i * 17) % 50);
+              const size = 14 + (i % 3) * 4;
+              return (
+                <div
+                  key={i}
+                  className="absolute pointer-events-none"
+                  style={{
+                    top: `${top}%`,
+                    left: "-30%",
+                    opacity: 0.35 + cloudOpacity * 0.55,
+                    animation: `pbthUvCloud ${dur}s linear ${delay}s infinite`,
+                  }}
+                >
+                  <Cloud size={size} className="text-white/90" strokeWidth={1.5} fill="rgba(255,255,255,0.5)" />
+                </div>
+              );
+            })}
           </div>
           <div className="min-w-0 flex-1">
             <div className="text-[9px] uppercase tracking-widest text-white/40">Maks</div>
@@ -1702,6 +1735,7 @@ function UvCompact({ loc }: { loc: typeof LOCS[LocId] }) {
           {withClouds ? "Med sky" : "Uten sky"}
         </button>
       </div>
+      <style>{`@keyframes pbthUvCloud{0%{transform:translateX(0)}100%{transform:translateX(280%)}}@keyframes pbthUvSun{0%,100%{opacity:0.7;transform:scale(1)}50%{opacity:1;transform:scale(1.08)}}`}</style>
     </Tile>
   );
 }
