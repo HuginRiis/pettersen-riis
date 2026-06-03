@@ -1890,36 +1890,52 @@ function RainTile({ rainDay, rainHour }: { rainDay: number | null; rainHour: num
 function WindTile({ windNow, gustNow, windAngle }: { windNow: number | null; gustNow: number | null; windAngle: number | null }) {
   const mm = useDailyMinMax("pbth.smart.gustMax", gustNow);
   const maxToday = Math.max(gustNow ?? 0, mm?.max ?? 0);
-  const speed = gustNow ?? windNow ?? 0; // km/h
+  const speed = gustNow ?? windNow ?? 0;
   const spinDur = speed > 0 ? Math.max(0.6, Math.min(6, 30 / speed)) : 6;
+  const dirLabel = (deg: number | null) => {
+    if (deg == null) return "—";
+    const dirs = ["N", "NØ", "Ø", "SØ", "S", "SV", "V", "NV"];
+    return dirs[Math.round(((deg % 360) + 360) % 360 / 45) % 8];
+  };
   return (
     <Tile title="Vind · Tollnes" icon={<Wind size={14} />} accent="text-cyan-300">
       <div className="relative h-full flex items-center justify-between gap-2 overflow-hidden">
-        {/* roterende vindrose */}
         <div className="relative h-20 w-20 shrink-0">
+          {/* statisk kompass-ring */}
           <div
-            className="absolute inset-0 rounded-full border border-cyan-300/20"
+            className="absolute inset-0 rounded-full border border-cyan-300/25"
             style={{ background: "radial-gradient(circle at 50% 50%, rgba(34,211,238,0.18), transparent 65%)" }}
           />
+          <div className="absolute inset-0 text-[8px] font-semibold text-cyan-100/70 select-none">
+            <span className="absolute top-0 left-1/2 -translate-x-1/2">N</span>
+            <span className="absolute bottom-0 left-1/2 -translate-x-1/2">S</span>
+            <span className="absolute left-0 top-1/2 -translate-y-1/2">V</span>
+            <span className="absolute right-0 top-1/2 -translate-y-1/2">Ø</span>
+          </div>
+          {/* roterende rotor */}
           <div
-            className="absolute inset-0 flex items-center justify-center"
+            className="absolute inset-1.5 flex items-center justify-center"
             style={{ animation: `pbthWindSpin ${spinDur}s linear infinite` }}
           >
-            <svg viewBox="0 0 40 40" className="h-16 w-16 text-cyan-300">
-              <g fill="currentColor" opacity="0.85">
-                <path d="M20 4 L24 18 L20 16 L16 18 Z" />
-                <path d="M36 20 L22 24 L24 20 L22 16 Z" />
-                <path d="M20 36 L16 22 L20 24 L24 22 Z" />
-                <path d="M4 20 L18 16 L16 20 L18 24 Z" />
+            <svg viewBox="0 0 40 40" className="h-14 w-14 text-cyan-300/70">
+              <g fill="currentColor">
+                <path d="M20 6 L22 18 L20 17 L18 18 Z" />
+                <path d="M34 20 L22 22 L23 20 L22 18 Z" />
+                <path d="M20 34 L18 22 L20 23 L22 22 Z" />
+                <path d="M6 20 L18 18 L17 20 L18 22 Z" />
               </g>
             </svg>
           </div>
+          {/* retningspil (himmelretning vinden kommer fra) */}
           {windAngle != null && (
             <div
-              className="absolute top-1 left-1/2 -translate-x-1/2 text-[9px] text-cyan-200/80"
-              style={{ transform: `translateX(-50%) rotate(${windAngle}deg)` }}
+              className="absolute inset-0 transition-transform duration-700"
+              style={{ transform: `rotate(${windAngle}deg)` }}
             >
-              ▲
+              <svg viewBox="0 0 40 40" className="h-full w-full">
+                <path d="M20 3 L24 11 L20 9 L16 11 Z" fill="#fef08a" stroke="#facc15" strokeWidth="0.5" />
+                <circle cx="20" cy="20" r="1.5" fill="#facc15" />
+              </svg>
             </div>
           )}
         </div>
@@ -1929,20 +1945,24 @@ function WindTile({ windNow, gustNow, windAngle }: { windNow: number | null; gus
             {windNow == null ? "—" : windNow.toFixed(1).replace(".", ",")}
             <span className="text-[10px] text-white/40 ml-1">m/s</span>
           </div>
-          <div className="text-[9px] uppercase tracking-widest text-white/40 mt-1.5">Vindkast</div>
-          <div className="text-base text-cyan-200 tabular-nums leading-none">
+          <div className="text-[9px] uppercase tracking-widest text-white/40 mt-1">Retning</div>
+          <div className="text-xs text-yellow-200 tabular-nums leading-none">
+            {dirLabel(windAngle)}{windAngle != null && <span className="text-white/40 ml-1">{Math.round(windAngle)}°</span>}
+          </div>
+          <div className="text-[9px] uppercase tracking-widest text-white/40 mt-1">Vindkast</div>
+          <div className="text-sm text-cyan-200 tabular-nums leading-none">
             {gustNow == null ? "—" : `${gustNow.toFixed(1).replace(".", ",")} m/s`}
           </div>
-          <div className="text-[9px] uppercase tracking-widest text-white/40 mt-1.5">Maks i dag</div>
-          <div className="text-xs text-cyan-200/80 tabular-nums">
+          <div className="text-[9px] uppercase tracking-widest text-white/40 mt-1">Maks i dag</div>
+          <div className="text-[11px] text-cyan-200/80 tabular-nums">
             {maxToday > 0 ? `${maxToday.toFixed(1).replace(".", ",")} m/s` : "—"}
           </div>
         </div>
-
       </div>
       <style>{`@keyframes pbthWindSpin{from{transform:rotate(0)}to{transform:rotate(360deg)}}`}</style>
     </Tile>
   );
+
 }
 
 // ----- mini-tiles -----
