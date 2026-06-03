@@ -6,6 +6,9 @@ import { UvCloudPanel } from "@/components/UvCloudPanel";
 import { useUserLocation, UserLocationBar } from "@/hooks/use-user-location";
 import heroImg from "@/assets/got-pollen.jpg";
 
+const BORGEN_TOLLNES = { lat: 59.1789, lon: 9.5732 };
+const HYTTA_NUMEDAL = { lat: 59.91, lon: 9.07 };
+
 export const Route = createFileRoute("/pollen")({
   head: () => ({
     meta: [
@@ -60,18 +63,15 @@ function PollenPage() {
             title="Akkurat nå i lufta"
           />
           <div className="grid lg:grid-cols-2 gap-6 mt-6">
-            {userLoc.ready && (
-              <AirQualityPanel
-                key={`aq-${userLoc.active.lat}-${userLoc.active.lon}`}
-                lat={userLoc.active.lat}
-                lon={userLoc.active.lon}
-                title={userLoc.active.label}
-                subtitle="AQI, UV, svevestøv, ozon og gasser"
-              />
-            )}
             <AirQualityPanel
-              lat={59.91}
-              lon={9.07}
+              lat={BORGEN_TOLLNES.lat}
+              lon={BORGEN_TOLLNES.lon}
+              title="Borgen · Tollnes, Skien"
+              subtitle="AQI, UV, svevestøv, ozon og gasser"
+            />
+            <AirQualityPanel
+              lat={HYTTA_NUMEDAL.lat}
+              lon={HYTTA_NUMEDAL.lon}
               title="Hytta · Lyngdal i Numedal"
               subtitle="Renere fjell-luft — sammenlign med byen"
             />
@@ -84,18 +84,15 @@ function PollenPage() {
             title="UV med og uten skydekke"
           />
           <div className="grid lg:grid-cols-2 gap-6 mt-6">
-            {userLoc.ready && (
-              <UvCloudPanel
-                key={`uv-${userLoc.active.lat}-${userLoc.active.lon}`}
-                lat={userLoc.active.lat}
-                lon={userLoc.active.lon}
-                title={userLoc.active.label}
-                subtitle="Klikk grafen for detaljert visning"
-              />
-            )}
             <UvCloudPanel
-              lat={59.91}
-              lon={9.07}
+              lat={BORGEN_TOLLNES.lat}
+              lon={BORGEN_TOLLNES.lon}
+              title="Borgen · Tollnes, Skien"
+              subtitle="Klikk grafen for detaljert visning"
+            />
+            <UvCloudPanel
+              lat={HYTTA_NUMEDAL.lat}
+              lon={HYTTA_NUMEDAL.lon}
               title="Hytta · Lyngdal i Numedal"
               subtitle="Klar himmel-UV vs faktisk UV"
             />
@@ -119,8 +116,8 @@ function PollenPage() {
               />
             )}
             <LivePollen
-              lat={59.91}
-              lon={9.07}
+              lat={HYTTA_NUMEDAL.lat}
+              lon={HYTTA_NUMEDAL.lon}
               title="Hytta · Lyngdal i Numedal"
               subtitle="Live pollen for Numedal — sesongen kommer 1–2 uker senere"
               naafRegion="indreOstlandet"
