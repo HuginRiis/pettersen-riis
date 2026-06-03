@@ -282,8 +282,11 @@ export function SiteHeader() {
   // så bruksfrekvens (hvis på), ellers original rekkefølge.
   const sortedLinks = (() => {
     const first = baseLinks.filter((l) => l.to === ALWAYS_FIRST);
-    const last = baseLinks.filter((l) => l.to === ALWAYS_LAST);
-    const rest = baseLinks.filter((l) => l.to !== ALWAYS_LAST && l.to !== ALWAYS_FIRST);
+    const lastUnordered = baseLinks.filter((l) => isAlwaysLast(l.to));
+    const last = ALWAYS_LAST_LIST
+      .map((p) => lastUnordered.find((l) => l.to === p))
+      .filter((x): x is NavLink => !!x);
+    const rest = baseLinks.filter((l) => !isAlwaysLast(l.to) && l.to !== ALWAYS_FIRST);
 
     const favSet = menuPrefs.favoritesEnabled ? new Set(menuPrefs.favorites) : new Set<string>();
     const favs = menuPrefs.favoritesEnabled
