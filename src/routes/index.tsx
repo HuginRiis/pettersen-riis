@@ -328,7 +328,7 @@ function Home() {
 
 
 
-          {showHall("/smarthus") && <HallCard to="/smarthus" title="Smartborg" desc="Lys, varme og varslere fra Homey." icon="🏰" image={hallSmarthus} locked={!isAuthed} badge={<HallBadgeStack><MowerStatusBadge inline /></HallBadgeStack>} />}
+          {showHall("/smarthus") && <HallCard to="/smarthus" title="Smarthus" desc="Lys, varme og varslere fra Homey." icon="🏰" image={hallSmarthus} locked={!isAuthed} badge={<HallBadgeStack><MowerStatusBadge inline /></HallBadgeStack>} />}
           {showHall("/lys") && <HallCard to="/lys" title="Lys" desc="Husets ild — tente lys og scener." icon="💡" image={hallLys} locked={!isAuthed} badge={<HallBadgeStack><LightsOnBadge inline /></HallBadgeStack>} />}
           {showHall("/varme") && <HallCard to="/varme" title="Varme & Klima" desc="Ovner, varmepumper og luftretning — borgen og hytta." icon="🔥" image={hallVarme} locked={!isAuthed} />}
           {showHall("/gressklipper") && <HallCard to="/gressklipper" title="Gressklipper" desc="Sileno-vokteren av plenen." icon="🌱" image={hallGressklipper} locked={!isAuthed} badge={<HallBadgeStack><GardenaStatusBadge inline /><GardenaBatteryBadge inline /><GardenaSignalBadge inline /></HallBadgeStack>} />}
