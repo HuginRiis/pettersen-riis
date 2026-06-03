@@ -307,19 +307,28 @@ export type Database = {
       }
       api_pause_flags: {
         Row: {
+          end_time: string
           paused: boolean
           source: string
+          start_time: string
           updated_at: string
+          window_enabled: boolean
         }
         Insert: {
+          end_time?: string
           paused?: boolean
           source: string
+          start_time?: string
           updated_at?: string
+          window_enabled?: boolean
         }
         Update: {
+          end_time?: string
           paused?: boolean
           source?: string
+          start_time?: string
           updated_at?: string
+          window_enabled?: boolean
         }
         Relationships: []
       }
