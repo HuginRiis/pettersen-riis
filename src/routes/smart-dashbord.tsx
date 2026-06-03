@@ -720,11 +720,22 @@ function VarmepumpeTile({
 }) {
   const setCap = useServerFn(setLivingRoomDeviceCapability);
   const [busy, setBusy] = useState(false);
+  // Optimistiske overrides
+  const [onOv, setOnOv] = useState<boolean | null>(null);
+  const [targetOv, setTargetOv] = useState<number | null>(null);
+  const [modeOv, setModeOv] = useState<string | null>(null);
 
-  const isOn = capBool(device, "onoff");
-  const target = capNum(device, "target_temperature");
+  const snapOn = capBool(device, "onoff");
+  const snapTarget = capNum(device, "target_temperature");
+  const snapMode = capStr(device, "thermostat_mode");
+  useEffect(() => { if (onOv !== null && snapOn === onOv) setOnOv(null); }, [snapOn, onOv]);
+  useEffect(() => { if (targetOv !== null && snapTarget === targetOv) setTargetOv(null); }, [snapTarget, targetOv]);
+  useEffect(() => { if (modeOv !== null && snapMode === modeOv) setModeOv(null); }, [snapMode, modeOv]);
+
+  const isOn = onOv ?? snapOn;
+  const target = targetOv ?? snapTarget;
   const measured = capNum(device, "measure_temperature");
-  const mode = capStr(device, "thermostat_mode");
+  const mode = modeOv ?? snapMode;
   const ttMeta = device?.capabilities?.target_temperature;
   const tmMeta = device?.capabilities?.thermostat_mode;
   const modeValues: { id: string; title?: string }[] = Array.isArray(tmMeta?.values) ? tmMeta!.values! : [];
@@ -734,11 +745,16 @@ function VarmepumpeTile({
 
   const send = async (cap: string, value: any) => {
     if (!device || busy) return;
+    // Optimistisk
+    if (cap === "onoff") setOnOv(value as boolean);
+    else if (cap === "target_temperature") setTargetOv(value as number);
+    else if (cap === "thermostat_mode") setModeOv(value as string);
     setBusy(true);
     try {
       await setCap({ data: { deviceId: device.id, capability: cap, value } });
       onReload();
     } finally {
+
       setBusy(false);
     }
   };
