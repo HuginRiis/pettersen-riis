@@ -105,7 +105,8 @@ export type WeatherModule = {
     pressure?: number;
     absolutePressure?: number;
     noise?: number;
-    rain?: number; // mm last hour
+    rain?: number; // mm "now" (live rate)
+    rainHour?: number; // mm last hour (sum_rain_1)
     rainDay?: number;
     windStrength?: number; // km/h
     windAngle?: number;
