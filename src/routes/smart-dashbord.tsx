@@ -1168,7 +1168,224 @@ function CalendarTile() {
   );
 }
 
+// ----- Lys kombinert (Stue + Spisestue i én boks) -----
+function LysCombinedTile({
+  groups, onReload,
+}: {
+  groups: { label: string; lights: HomeyDeviceSnapshot[] }[];
+  onReload: () => void;
+}) {
+  const setCap = useServerFn(setLivingRoomDeviceCapability);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [open, setOpen] = useState(false);
+  const [onOv, setOnOv] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    setOnOv((prev) => {
+      const next = { ...prev };
+      let changed = false;
+      for (const g of groups) for (const d of g.lights) {
+        if (next[d.id] !== undefined && capBool(d, "onoff") === next[d.id]) {
+          delete next[d.id]; changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+  }, [groups]);
+
+  const isOnFor = (d: HomeyDeviceSnapshot) => onOv[d.id] ?? capBool(d, "onoff");
+
+  const setGroup = async (g: { label: string; lights: HomeyDeviceSnapshot[] }, on: boolean) => {
+    if (busy) return;
+    setOnOv((p) => {
+      const n = { ...p };
+      for (const d of g.lights) n[d.id] = on;
+      return n;
+    });
+    setBusy(g.label);
+    try {
+      await Promise.all(
+        g.lights.map((d) =>
+          setCap({ data: { deviceId: d.id, capability: "onoff", value: on } }).catch(() => null),
+        ),
+      );
+      onReload();
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const toggleOne = async (d: HomeyDeviceSnapshot, on: boolean) => {
+    setOnOv((p) => ({ ...p, [d.id]: on }));
+    setBusy(d.id);
+    try {
+      await setCap({ data: { deviceId: d.id, capability: "onoff", value: on } });
+      onReload();
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  return (
+    <>
+      <Tile
+        title="Lys · Hue · Stue + Spisestue"
+        icon={<Lightbulb size={14} />}
+        accent="text-yellow-300"
+        onClick={() => setOpen(true)}
+      >
+        <div className="flex flex-col h-full gap-2 justify-center">
+          {groups.map((g) => {
+            const total = g.lights.length;
+            const onCount = g.lights.filter(isOnFor).length;
+            const allOn = total > 0 && onCount === total;
+            return (
+              <div
+                key={g.label}
+                className={`flex items-center gap-3 rounded-xl border p-2.5 transition ${
+                  onCount > 0
+                    ? "border-yellow-300/40 bg-yellow-300/5"
+                    : "border-white/10 bg-white/[0.02]"
+                }`}
+              >
+                <div
+                  className={`h-10 w-10 rounded-full flex items-center justify-center shrink-0 ${
+                    onCount > 0
+                      ? "bg-yellow-300/15 text-yellow-200 shadow-[0_0_18px_-4px_rgba(253,224,71,0.6)]"
+                      : "bg-white/[0.03] text-white/30"
+                  }`}
+                >
+                  <Lightbulb size={18} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-[11px] uppercase tracking-widest text-white/60">{g.label}</div>
+                  <div className="text-sm text-white tabular-nums">
+                    {onCount}<span className="text-white/30"> / {total}</span>
+                    <span className="text-white/40 text-[10px] ml-1.5">tente</span>
+                  </div>
+                </div>
+                <Switch
+                  checked={allOn}
+                  disabled={busy === g.label || total === 0}
+                  onCheckedChange={(v) => setGroup(g, v)}
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </div>
+            );
+          })}
+        </div>
+      </Tile>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="bg-[#0c0f15] border-white/10 text-white max-w-lg max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Hue · Stue + Spisestue</DialogTitle>
+            <DialogDescription className="text-white/50">Styr hver enkelt lampe</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 mt-2">
+            {groups.map((g) => (
+              <div key={g.label}>
+                <div className="text-[11px] uppercase tracking-widest text-white/50 mb-1.5">{g.label}</div>
+                <div className="space-y-2">
+                  {g.lights.length === 0 && (
+                    <div className="text-sm text-white/40 italic">Ingen Hue-lys</div>
+                  )}
+                  {g.lights.map((d) => (
+                    <div key={d.id} className="rounded-xl border border-white/10 bg-white/[0.03] p-3 flex items-center justify-between">
+                      <span className="text-sm truncate">{d.name}</span>
+                      <Switch
+                        checked={isOnFor(d)}
+                        disabled={busy === d.id}
+                        onCheckedChange={(v) => toggleOne(d, v)}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+// ----- Strøm (Power-by-the-Hour) -----
+function StromTile({ home }: { home: "borgen" | "hytta" }) {
+  const fetchPbth = useServerFn(getPowerByTheHour);
+  const [data, setData] = useState<any>(null);
+
+  useEffect(() => {
+    let c = false;
+    const load = () => {
+      fetchPbth()
+        .then((r: any) => { if (!c) setData(r); })
+        .catch(() => {});
+    };
+    load();
+    const id = setInterval(load, 60_000);
+    return () => { c = true; clearInterval(id); };
+  }, [fetchPbth]);
+
+  const h = data?.ok ? (home === "borgen" ? data.borgen?.highlights : data.hytta?.highlights) : null;
+  const found = data?.ok ? (home === "borgen" ? data.borgen?.found : data.hytta?.found) : false;
+
+  const fmtKr = (v?: number) => v == null ? "—" : `${v.toFixed(0)} kr`;
+  const fmtKwh = (v?: number) => v == null ? "—" : `${v.toFixed(1)} kWh`;
+  const fmtW = (v?: number) => v == null ? "—" : (v >= 1000 ? `${(v/1000).toFixed(2)} kW` : `${Math.round(v)} W`);
+
+  return (
+    <Tile title="Strøm · Forbruk" icon={<Zap size={14} />} accent="text-amber-300">
+      {!found ? (
+        <div className="text-xs text-white/40 h-full flex items-center justify-center text-center">
+          {data?.ok ? "Fant ingen Power-by-the-Hour-enhet" : "Henter…"}
+        </div>
+      ) : (
+        <div className="flex flex-col h-full gap-2">
+          <div className="flex items-end justify-between">
+            <div>
+              <div className="text-[10px] uppercase tracking-widest text-white/40">Nå</div>
+              <div className="text-3xl font-semibold text-white tabular-nums leading-none">
+                {fmtW(h?.consumptionNow)}
+              </div>
+            </div>
+            <div className="text-right">
+              <div className="text-[10px] uppercase tracking-widest text-white/40">Pris</div>
+              <div className="text-sm text-amber-200 tabular-nums">
+                {h?.priceNow != null ? `${h.priceNow.toFixed(2)} kr/kWh` : "—"}
+              </div>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-1.5 flex-1">
+            <div className="rounded-xl bg-white/[0.03] border border-white/10 p-2">
+              <div className="text-[9px] uppercase tracking-widest text-white/40">I dag</div>
+              <div className="text-sm text-white tabular-nums">{fmtKwh(h?.energyToday)}</div>
+              <div className="text-[10px] text-amber-200/80 tabular-nums">{fmtKr(h?.costToday)}</div>
+            </div>
+            <div className="rounded-xl bg-white/[0.03] border border-white/10 p-2">
+              <div className="text-[9px] uppercase tracking-widest text-white/40">I går</div>
+              <div className="text-sm text-white tabular-nums">{fmtKwh(h?.energyYesterday)}</div>
+              <div className="text-[10px] text-amber-200/80 tabular-nums">{fmtKr(h?.costYesterday)}</div>
+            </div>
+            <div className="rounded-xl bg-white/[0.03] border border-white/10 p-2">
+              <div className="text-[9px] uppercase tracking-widest text-white/40">Denne mnd</div>
+              <div className="text-sm text-white tabular-nums">{fmtKwh(h?.energyThisMonth)}</div>
+              <div className="text-[10px] text-amber-200/80 tabular-nums">{fmtKr(h?.costThisMonth)}</div>
+            </div>
+            <div className="rounded-xl bg-white/[0.03] border border-white/10 p-2">
+              <div className="text-[9px] uppercase tracking-widest text-white/40">I år</div>
+              <div className="text-sm text-white tabular-nums">{fmtKwh(h?.energyThisYear)}</div>
+              <div className="text-[10px] text-amber-200/80 tabular-nums">{fmtKr(h?.costThisYear)}</div>
+            </div>
+          </div>
+        </div>
+      )}
+    </Tile>
+  );
+}
+
 // ----- mini-tiles -----
+
 function MiniTile({ icon, label, value, sub, accent }:
   { icon: React.ReactNode; label: string; value: string; sub?: string; accent?: string }) {
   return (
