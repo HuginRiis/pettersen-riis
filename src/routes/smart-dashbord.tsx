@@ -410,10 +410,8 @@ function BassengTile({
   }, [points]);
 
   // Live status fra Homey
-  const onoffVal = switchDevice?.capabilities?.onoff;
-  const isOn = onoffVal === true;
-  const wattVal = switchDevice?.capabilities?.measure_power;
-  const watts = typeof wattVal === "number" ? wattVal : null;
+  const isOn = capBool(switchDevice, "onoff");
+  const watts = capNum(switchDevice, "measure_power");
 
   // sparkline – pool temp last 24h
   const sparkData = points.filter((p) => p.pool_temp != null).map((p) => ({ t: p.ts, v: p.pool_temp! }));
