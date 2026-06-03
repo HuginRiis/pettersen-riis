@@ -565,7 +565,7 @@ function LysTile({
   return (
     <>
       <Tile
-        title={`Lys · Hue · ${loc.label}`}
+        title={`Lys · Hue · ${zoneLabel ?? loc.label}`}
         icon={<Lightbulb size={14} />}
         accent="text-yellow-300"
         onClick={() => setOpen(true)}
