@@ -125,6 +125,9 @@ export function ApiCallLogPanel() {
   const fetchLog = useServerFn(getApiCallLog);
   const refresh = useServerFn(refreshApiSource);
   const purge = useServerFn(purgeApiCallLog);
+  const fetchPauseFlags = useServerFn(getApiPauseFlags);
+  const savePause = useServerFn(setApiSourcePaused);
+  const saveWindow = useServerFn(setApiSourceWindow);
   const appearance = useChartAppearance();
 
   const [data, setData] = useState<ApiCallSummary | null>(null);
@@ -135,6 +138,9 @@ export function ApiCallLogPanel() {
   const [expanded, setExpanded] = useState(false);
   const [purging, setPurging] = useState<number | null>(null);
   const [purgeMsg, setPurgeMsg] = useState<string | null>(null);
+  const [pauseFlags, setPauseFlags] = useState<Map<string, ApiPauseFlag>>(new Map());
+  const [pauseDraft, setPauseDraft] = useState<Map<string, { start: string; end: string }>>(new Map());
+  const [pauseBusy, setPauseBusy] = useState<string | null>(null);
 
   async function handlePurge(days: number) {
     const ok = window.confirm(
@@ -157,8 +163,11 @@ export function ApiCallLogPanel() {
   const load = async () => {
     setLoading(true);
     try {
-      const res = await fetchLog();
+      const [res, pf] = await Promise.all([fetchLog(), fetchPauseFlags()]);
       setData(res);
+      const m = new Map<string, ApiPauseFlag>();
+      for (const f of pf.flags) m.set(f.source, f);
+      setPauseFlags(m);
       setError(null);
     } catch (e: any) {
       setError(e?.message ?? "Klarte ikke laste logg");
@@ -166,6 +175,40 @@ export function ApiCallLogPanel() {
       setLoading(false);
     }
   };
+
+  const togglePaused = useCallback(async (source: string, paused: boolean) => {
+    setPauseBusy(source);
+    try {
+      await savePause({ data: { source, paused } });
+      await load();
+    } catch (e: any) {
+      setError(e?.message ?? "Pause feilet");
+    } finally {
+      setPauseBusy(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const saveSourceWindow = useCallback(
+    async (source: string, window_enabled: boolean, start_time: string, end_time: string) => {
+      setPauseBusy(source);
+      try {
+        await saveWindow({ data: { source, window_enabled, start_time, end_time } });
+        await load();
+        setPauseDraft((prev) => {
+          const next = new Map(prev);
+          next.delete(source);
+          return next;
+        });
+      } catch (e: any) {
+        setError(e?.message ?? "Lagring feilet");
+      } finally {
+        setPauseBusy(null);
+      }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    },
+    [],
+  );
 
   useEffect(() => {
     load();
