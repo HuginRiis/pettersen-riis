@@ -1329,6 +1329,8 @@ function StromTile({ home }: { home: "borgen" | "hytta" }) {
   const fetchPbth = useServerFn(getPowerByTheHour);
   const [data, setData] = useState<any>(null);
   const [peakToday, setPeakToday] = useState<number>(0);
+  const live = useTibberLive();
+  const liveHome = live.homes[home === "borgen" ? "tollnes" : "hytta"];
 
   useEffect(() => {
     let c = false;
@@ -1343,9 +1345,14 @@ function StromTile({ home }: { home: "borgen" | "hytta" }) {
   }, [fetchPbth]);
 
   const h = data?.ok ? (home === "borgen" ? data.borgen?.highlights : data.hytta?.highlights) : null;
-  const found = data?.ok ? (home === "borgen" ? data.borgen?.found : data.hytta?.found) : false;
-  const nowW = h?.consumptionNow ?? 0;
+  const pbthFound = data?.ok ? (home === "borgen" ? data.borgen?.found : data.hytta?.found) : false;
+  const liveW = liveHome?.reading?.power ?? null;
+  const isLive = (liveHome?.status === "live" || liveHome?.status === "stale") && liveW != null;
+  const found = pbthFound || isLive;
+  const nowW = liveW != null ? liveW : (h?.consumptionNow ?? 0);
   const nowKw = nowW / 1000;
+  const energyTodayKwh = liveHome?.reading?.accumulatedConsumption ?? h?.energyToday ?? null;
+  const liveMaxKw = liveHome?.reading?.maxPower != null ? liveHome.reading.maxPower / 1000 : null;
 
   // Track today's peak locally (persisted), reset on date change
   const dayKey = useMemo(() => {
