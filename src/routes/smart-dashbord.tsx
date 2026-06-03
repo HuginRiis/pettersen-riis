@@ -28,6 +28,10 @@ import {
 } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
+import arneHappy from "@/assets/arne-happy.png";
+import arneSad from "@/assets/arne-sad.png";
+import rebekkaHappy from "@/assets/rebekka-happy.png";
+import rebekkaSad from "@/assets/rebekka-sad.png";
 
 
 // ----- shared settings (skala, bold, gap) -----
