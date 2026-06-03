@@ -99,20 +99,24 @@ function UvTile({ loc }: { loc: typeof LOCS[LocId] }) {
 
   useEffect(() => {
     let c = false;
-    fetchUvCloud({ data: { lat: loc.lat, lon: loc.lon } })
-      .then((r: any) => {
-        if (c) return;
-        const h = r?.aq?.hourly;
-        if (h?.time) {
-          setCloudData({
-            time: h.time,
-            uv: h.uv_index ?? [],
-            uvClear: h.uv_index_clear_sky ?? [],
-          });
-        }
-      })
-      .catch(() => {});
-    return () => { c = true; };
+    const load = () => {
+      fetchUvCloud({ data: { lat: loc.lat, lon: loc.lon } })
+        .then((r: any) => {
+          if (c) return;
+          const h = r?.aq?.hourly;
+          if (h?.time) {
+            setCloudData({
+              time: h.time,
+              uv: h.uv_index ?? [],
+              uvClear: h.uv_index_clear_sky ?? [],
+            });
+          }
+        })
+        .catch(() => {});
+    };
+    load();
+    const id = setInterval(load, 5 * 60 * 1000);
+    return () => { c = true; clearInterval(id); };
   }, [fetchUvCloud, loc.lat, loc.lon]);
 
   // pick "now" value for the selected mode
@@ -215,10 +219,14 @@ function AqiTile({ loc }: { loc: typeof LOCS[LocId] }) {
   const [open, setOpen] = useState(false);
   useEffect(() => {
     let c = false;
-    fetchAq({ data: { lat: loc.lat, lon: loc.lon } })
-      .then((res: any) => { if (!c) setCurrent(res?.current ?? null); })
-      .catch(() => {});
-    return () => { c = true; };
+    const load = () => {
+      fetchAq({ data: { lat: loc.lat, lon: loc.lon } })
+        .then((res: any) => { if (!c) setCurrent(res?.current ?? null); })
+        .catch(() => {});
+    };
+    load();
+    const id = setInterval(load, 5 * 60 * 1000);
+    return () => { c = true; clearInterval(id); };
   }, [fetchAq, loc.lat, loc.lon]);
 
   const aqi = current?.european_aqi ?? null;
@@ -344,7 +352,13 @@ function BassengTile({ loc }: { loc: typeof LOCS[LocId] }) {
   const [points, setPoints] = useState<BassengHistoryPoint[]>([]);
   const [on, setOn] = useState(true);
   useEffect(() => {
-    fetch3({ data: { hours: 3 } }).then((r) => setPoints(r.points)).catch(() => {});
+    let c = false;
+    const load = () => {
+      fetch3({ data: { hours: 3 } }).then((r) => { if (!c) setPoints(r.points); }).catch(() => {});
+    };
+    load();
+    const id = setInterval(load, 5 * 60 * 1000);
+    return () => { c = true; clearInterval(id); };
   }, [fetch3]);
 
   const latest = useMemo(() => {
@@ -608,15 +622,19 @@ function LeaderTile() {
 
   useEffect(() => {
     let c = false;
-    Promise.all([
-      fetchG({ data: { owner: "arne" } }),
-      fetchG({ data: { owner: "rebekka" } }),
-    ]).then(([a, r]) => {
-      if (c) return;
-      setArne(a as Overview);
-      setRebekka(r as Overview);
-    }).catch(() => {});
-    return () => { c = true; };
+    const load = () => {
+      Promise.all([
+        fetchG({ data: { owner: "arne" } }),
+        fetchG({ data: { owner: "rebekka" } }),
+      ]).then(([a, r]) => {
+        if (c) return;
+        setArne(a as Overview);
+        setRebekka(r as Overview);
+      }).catch(() => {});
+    };
+    load();
+    const id = setInterval(load, 5 * 60 * 1000);
+    return () => { c = true; clearInterval(id); };
   }, [fetchG]);
 
   const today = osloDay(0);
