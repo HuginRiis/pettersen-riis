@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import {
   Wind, Sun, Zap, Lightbulb, Thermometer, Waves,
   Droplets, Gauge, CloudSun, Activity, Power, Settings2,
-  TrendingUp, TrendingDown, Minus, Cloud, CloudOff, Plus, Trophy, Footprints,
+  TrendingUp, TrendingDown, Minus, Cloud, CloudOff, Plus, Trophy,
 } from "lucide-react";
 import {
   AreaChart, Area, ResponsiveContainer,
