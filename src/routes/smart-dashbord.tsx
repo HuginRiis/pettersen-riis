@@ -1588,15 +1588,21 @@ function SmartDashbord() {
             </>
           ) : (
             <>
-              {/* Rad 1: Basseng + Lys Stue + Lys Spisestue */}
+              {/* Rad 1: Basseng + Lys (Stue+Spisestue) + Strøm */}
               <div className="col-span-4">
                 <BassengTile loc={loc} switchDevice={bassengSwitch} onReload={reload} />
               </div>
               <div className="col-span-4">
-                <LysTile loc={loc} hueLights={hueByRoom.stue} onReload={reload} zoneLabel="Stue" />
+                <LysCombinedTile
+                  groups={[
+                    { label: "Stue", lights: hueByRoom.stue },
+                    { label: "Spisestue", lights: hueByRoom.spisestue },
+                  ]}
+                  onReload={reload}
+                />
               </div>
               <div className="col-span-4">
-                <LysTile loc={loc} hueLights={hueByRoom.spisestue} onReload={reload} zoneLabel="Spisestue" />
+                <StromTile home="borgen" />
               </div>
               {/* Rad 2: Varmepumpe + UV + AQ */}
               <div className="col-span-4">
@@ -1604,6 +1610,7 @@ function SmartDashbord() {
               </div>
               <div className="col-span-4"><UvTile loc={loc} /></div>
               <div className="col-span-4"><AqiTile loc={loc} /></div>
+
               {/* Rad 3: Kalender + Leader */}
               <div className="col-span-6"><CalendarTile /></div>
               <div className="col-span-6"><LeaderTile /></div>
