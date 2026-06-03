@@ -52,7 +52,7 @@ export const Route = createFileRoute("/api/public/hooks/open-meteo-warm")({
         // air-quality- og UV-lokasjoner. UV-cloud bruker samme core-cache;
         // skydekke hentes fra MET for å unngå flere Open-Meteo-hosts.
         const unionSeen = new Map<string, { lat: number; lon: number }>();
-        for (const l of [...aqLocs, ...uvLocs]) {
+        for (const l of [...aqLocs, ...uvLocs, ...ALWAYS_WARM]) {
           const k = `${l.lat.toFixed(3)},${l.lon.toFixed(3)}`;
           if (!unionSeen.has(k)) unionSeen.set(k, l);
         }
