@@ -1142,14 +1142,22 @@ function CalendarTile() {
                     </div>
                     <div className="text-[12px] font-semibold text-white leading-tight truncate">{e.title}</div>
                   </div>
-                  <div className="relative flex items-end justify-between mt-1">
-                    <div className="text-[15px] font-semibold text-white tabular-nums leading-none capitalize">
-                      {fd.big}
+                  <div className="relative flex items-end justify-between gap-2 mt-1">
+                    <div className="min-w-0 flex-1">
+                      <div className="text-[15px] font-semibold text-white tabular-nums leading-none capitalize">
+                        {fd.big}
+                      </div>
+                      {e.sub && (
+                        <div className="text-[10px] text-white/85 leading-snug mt-0.5 break-words">
+                          {e.sub}
+                        </div>
+                      )}
                     </div>
                     {e.time && (
-                      <div className="text-[10px] text-white/80 tabular-nums">{e.time.slice(0, 5)}</div>
+                      <div className="text-[10px] text-white/80 tabular-nums shrink-0">{e.time.slice(0, 5)}</div>
                     )}
                   </div>
+
                 </div>
               );
             })
