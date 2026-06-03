@@ -51,6 +51,7 @@ const SOURCE_LABELS: Record<string, string> = {
   kassal: "Kassalapp",
   uv: "UV",
   "air-quality": "Luftkvalitet",
+  "open-meteo": "Open-Meteo (core)",
   other: "Andre",
 };
 
