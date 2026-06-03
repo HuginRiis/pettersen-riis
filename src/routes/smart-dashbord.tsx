@@ -1582,17 +1582,25 @@ function StromTile({ home }: { home: "borgen" | "hytta" }) {
 type NetatmoTollnes = {
   noise: number | null;
   humBedroom: number | null;
+  humStua: number | null;
+  co2Stua: number | null;
+  co2Bedroom: number | null;
+  co2BedroomName: string | null;
+  outTemp: number | null;
   rainHour: number | null;
   rainDay: number | null;
   windNow: number | null; // m/s
   windAngle: number | null;
   gustNow: number | null; // m/s
+  modules: WeatherModule[];
 };
 function useNetatmoTollnes(): NetatmoTollnes {
   const fetchNet = useServerFn(getNetatmoWeatherStation);
   const [d, setD] = useState<NetatmoTollnes>({
-    noise: null, humBedroom: null, rainHour: null, rainDay: null,
-    windNow: null, windAngle: null, gustNow: null,
+    noise: null, humBedroom: null, humStua: null, co2Stua: null,
+    co2Bedroom: null, co2BedroomName: null, outTemp: null,
+    rainHour: null, rainDay: null,
+    windNow: null, windAngle: null, gustNow: null, modules: [],
   });
   useEffect(() => {
     let c = false;
@@ -1604,19 +1612,29 @@ function useNetatmoTollnes(): NetatmoTollnes {
           if (c || !r?.ok) return;
           const modules: WeatherModule[] = r.modules ?? [];
           const main = modules.find((m) => m.type === "NAMain") ?? null;
-          const bed =
-            modules.find((m) => m.type === "NAModule4" && /sov|sove|bed/i.test(m.name)) ??
-            modules.find((m) => m.type === "NAModule4") ?? null;
+          // Arne/Rebekka soverom — match først, fall tilbake til høyeste CO2
+          const bedrooms = modules.filter((m) => m.type === "NAModule4");
+          const bedArne =
+            bedrooms.find((m) => /arne|rebek/i.test(m.name)) ??
+            bedrooms.find((m) => /sov|sove|bed/i.test(m.name)) ??
+            bedrooms[0] ?? null;
+          const outdoor = modules.find((m) => m.type === "NAModule1") ?? null;
           const rain = modules.find((m) => m.type === "NAModule3") ?? null;
           const wind = modules.find((m) => m.type === "NAModule2") ?? null;
           setD({
             noise: main?.metrics.noise ?? null,
-            humBedroom: bed?.metrics.humidity ?? null,
+            humBedroom: bedArne?.metrics.humidity ?? null,
+            humStua: main?.metrics.humidity ?? null,
+            co2Stua: main?.metrics.co2 ?? null,
+            co2Bedroom: bedArne?.metrics.co2 ?? null,
+            co2BedroomName: bedArne?.name ?? null,
+            outTemp: outdoor?.metrics.temperature ?? null,
             rainHour: rain?.metrics.rainHour ?? rain?.metrics.rain ?? null,
             rainDay: rain?.metrics.rainDay ?? null,
             windNow: kmhToMs(wind?.metrics.windStrength),
             windAngle: wind?.metrics.windAngle ?? null,
             gustNow: kmhToMs(wind?.metrics.gustStrength),
+            modules,
           });
         })
         .catch(() => {});
@@ -1627,6 +1645,7 @@ function useNetatmoTollnes(): NetatmoTollnes {
   }, [fetchNet]);
   return d;
 }
+
 
 
 // ----- Compact UV tile (half size) -----
@@ -1993,6 +2012,56 @@ function WindTile({ windNow, gustNow, windAngle }: { windNow: number | null; gus
 // ----- mini-tiles -----
 
 
+function NetatmoMetricList({
+  modules, metric, unit, digits,
+}: {
+  modules: WeatherModule[];
+  metric: "temperature" | "humidity" | "co2";
+  unit: string;
+  digits: number;
+}) {
+  const typeLabel = (t: string) =>
+    t === "NAMain" ? "Stua (hovedmodul)"
+    : t === "NAModule1" ? "Ute"
+    : t === "NAModule2" ? "Vind"
+    : t === "NAModule3" ? "Regn"
+    : t === "NAModule4" ? "Innemodul"
+    : t;
+  const rows = modules
+    .map((m) => {
+      const v = (m.metrics as any)[metric];
+      return typeof v === "number" && Number.isFinite(v) ? { m, v } : null;
+    })
+    .filter((r): r is { m: WeatherModule; v: number } => r !== null)
+    .sort((a, b) => b.v - a.v);
+  if (rows.length === 0) {
+    return <div className="text-xs text-white/40 italic">Ingen verdier tilgjengelig fra Netatmo.</div>;
+  }
+  const tone = (v: number): string => {
+    if (metric === "co2") {
+      if (v >= 1500) return "text-rose-300";
+      if (v >= 1000) return "text-amber-300";
+      return "text-emerald-300";
+    }
+    return "text-white";
+  };
+  return (
+    <div className="divide-y divide-white/5 rounded-lg border border-white/10 overflow-hidden">
+      {rows.map(({ m, v }) => (
+        <div key={m.id} className="flex items-center justify-between px-3 py-2 bg-white/[0.02]">
+          <div className="min-w-0">
+            <div className="text-sm text-white truncate">{m.name}</div>
+            <div className="text-[10px] uppercase tracking-widest text-white/40">{typeLabel(m.type)}</div>
+          </div>
+          <div className={`text-lg tabular-nums font-semibold ${tone(v)}`}>
+            {v.toFixed(digits).replace(".", ",")}{unit}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function MiniTile({ icon, label, value, sub, accent, detail }:
   { icon: React.ReactNode; label: string; value: string; sub?: string; accent?: string; detail?: React.ReactNode }) {
   const [open, setOpen] = useState(false);
@@ -2261,9 +2330,30 @@ function SmartDashbord() {
           className={`grid grid-cols-6 auto-rows-[80px] ${settings.bold ? "smart-bold-all" : ""}`}
           style={miniStyle}
         >
-          <MiniTile icon={<Droplets size={16} />} label="Luftfukt" value="42 %" sub="Stua" accent="text-sky-300" />
-          <MiniTile icon={<CloudSun size={16} />} label="Ute" value="6.2°" sub={loc.label} accent="text-amber-300" />
-          <MiniTile icon={<Gauge size={16} />} label="CO₂" value="612 ppm" sub="Soverom" accent="text-emerald-300" />
+          <MiniTile
+            icon={<Droplets size={16} />}
+            label="Luftfukt"
+            value={tollnes.humStua != null ? `${Math.round(tollnes.humStua)} %` : "—"}
+            sub="Stua"
+            accent="text-sky-300"
+            detail={<NetatmoMetricList modules={tollnes.modules} metric="humidity" unit="%" digits={0} />}
+          />
+          <MiniTile
+            icon={<CloudSun size={16} />}
+            label="Ute"
+            value={tollnes.outTemp != null ? `${tollnes.outTemp.toFixed(1).replace(".", ",")}°` : "—"}
+            sub={loc.label}
+            accent="text-amber-300"
+            detail={<NetatmoMetricList modules={tollnes.modules} metric="temperature" unit="°" digits={1} />}
+          />
+          <MiniTile
+            icon={<Gauge size={16} />}
+            label="CO₂"
+            value={tollnes.co2Bedroom != null ? `${tollnes.co2Bedroom} ppm` : "—"}
+            sub={tollnes.co2BedroomName ?? "Soverom"}
+            accent={tollnes.co2Bedroom != null && tollnes.co2Bedroom >= 1000 ? "text-rose-300" : "text-emerald-300"}
+            detail={<NetatmoMetricList modules={tollnes.modules} metric="co2" unit=" ppm" digits={0} />}
+          />
           <MiniTile
             icon={<Activity size={16} />}
             label="dB"
@@ -2275,12 +2365,20 @@ function SmartDashbord() {
             icon={<Droplets size={16} />}
             label="Luftfukt"
             value={tollnes.humBedroom != null ? `${Math.round(tollnes.humBedroom)} %` : "—"}
-            sub="Sov. Arne/Rebekka"
+            sub={tollnes.co2BedroomName ?? "Sov."}
             accent="text-violet-300"
+            detail={<NetatmoMetricList modules={tollnes.modules} metric="humidity" unit="%" digits={0} />}
           />
-
-          <MiniTile icon={<Wind size={16} />} label="Vind" value="3.1 m/s" sub="SW" accent="text-cyan-300" />
+          <MiniTile
+            icon={<Gauge size={16} />}
+            label="CO₂"
+            value={tollnes.co2Stua != null ? `${tollnes.co2Stua} ppm` : "—"}
+            sub="Stua"
+            accent={tollnes.co2Stua != null && tollnes.co2Stua >= 1000 ? "text-rose-300" : "text-emerald-300"}
+            detail={<NetatmoMetricList modules={tollnes.modules} metric="co2" unit=" ppm" digits={0} />}
+          />
         </div>
+
       </main>
 
 
