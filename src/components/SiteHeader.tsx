@@ -61,9 +61,11 @@ type NavLink = { to: RoutePath; label: string; public?: boolean };
 
 const HOMEY_BACKED_ROUTES: RoutePath[] = ["/smarthus", "/var", "/steintavle"];
 
-// Hjem skal alltid stå først, og Steintavle alltid sist — uavhengig av bruksstatistikk.
+// Hjem skal alltid stå først, og Steintavle / Steintavle 2 / Smarthus alltid sist — uavhengig av bruksstatistikk.
 const ALWAYS_FIRST: RoutePath = "/";
-const ALWAYS_LAST: RoutePath = "/steintavle";
+const ALWAYS_LAST_LIST: RoutePath[] = ["/steintavle", "/steintavle-2", "/smarthus"];
+const ALWAYS_LAST_SET = new Set<RoutePath>(ALWAYS_LAST_LIST);
+const isAlwaysLast = (p: RoutePath) => ALWAYS_LAST_SET.has(p);
 
 // Ikon for hver menyside (pollen håndteres separat med PollenIcon)
 const ROUTE_ICON: Partial<Record<RoutePath, React.ComponentType<{ size?: number; className?: string; color?: string; fill?: string; strokeWidth?: number }>>> = {
