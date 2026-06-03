@@ -95,6 +95,9 @@ export function BassengPoolPanel({
           <span>{MAX}°</span>
         </div>
       </div>
-    </section>
   );
+
+  if (inline) return inner;
+  return <section className="container mx-auto px-4 pt-4 sm:pt-6">{inner}</section>;
 }
+
