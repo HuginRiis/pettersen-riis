@@ -906,6 +906,7 @@ function LeaderTile() {
   const fetchG = useServerFn(getGarminOverview);
   const [arne, setArne] = useState<Overview | null>(null);
   const [rebekka, setRebekka] = useState<Overview | null>(null);
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
     let c = false;
@@ -934,8 +935,23 @@ function LeaderTile() {
   const aPct = wt.total ? (wt.a / wt.total) * 100 : 50;
   const rPct = wt.total ? (wt.r / wt.total) * 100 : 50;
 
+  // Forrige uke (7 dager: i går og 6 dager tilbake)
+  const weekDays = useMemo(() => Array.from({ length: 7 }, (_, i) => osloDay(-1 - i)), []);
+  const weekWins = useMemo(() => {
+    let a = 0, r = 0;
+    const perDay: Array<{ day: string; a: number; r: number }> = [];
+    for (const d of weekDays) {
+      const w = countWins(arne, rebekka, d);
+      perDay.push({ day: d, a: w.a, r: w.r });
+      if (w.a > w.r) a++;
+      else if (w.r > w.a) r++;
+    }
+    return { a, r, perDay };
+  }, [arne, rebekka, weekDays]);
+
   return (
-    <Tile title="Vinner-poeng · Garmin" icon={<Trophy size={14} />} accent="text-violet-300">
+    <>
+    <Tile title="Vinner-poeng · Garmin" icon={<Trophy size={14} />} accent="text-violet-300" onClick={() => setOpen(true)}>
       <div className="flex items-center justify-between mb-2">
         <div>
           <div className="text-[10px] uppercase tracking-widest text-white/40">Leder i dag</div>
@@ -990,6 +1006,70 @@ function LeaderTile() {
         13 metrikker · søvn, skritt, puls, HRV, stress, m.fl.
       </div>
     </Tile>
+
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogContent className="bg-[#0c0f15] border-white/10 text-white max-w-md">
+        <DialogHeader>
+          <DialogTitle>Vinner-poeng · Garmin</DialogTitle>
+          <DialogDescription className="text-white/50">I går og siste 7 dager</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4 mt-2">
+          {/* I går */}
+          <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
+            <div className="text-[10px] uppercase tracking-widest text-white/40 mb-1">I går</div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <img src={wy.a > wy.r ? arneHappy : wy.r > wy.a ? arneSad : arneHappy} alt="" className="w-10 h-10 object-contain" />
+                <div>
+                  <div className="text-xs text-sky-200/80">Arne</div>
+                  <div className="text-2xl font-semibold tabular-nums text-white">{wy.a}</div>
+                </div>
+              </div>
+              <div className="text-white/30">vs</div>
+              <div className="flex items-center gap-2">
+                <div className="text-right">
+                  <div className="text-xs text-rose-200/80">Rebekka</div>
+                  <div className="text-2xl font-semibold tabular-nums text-white">{wy.r}</div>
+                </div>
+                <img src={wy.r > wy.a ? rebekkaHappy : wy.a > wy.r ? rebekkaSad : rebekkaHappy} alt="" className="w-10 h-10 object-contain" />
+              </div>
+            </div>
+          </div>
+
+          {/* Forrige 7 dager */}
+          <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-[10px] uppercase tracking-widest text-white/40">Siste 7 dager</div>
+              <div className="text-sm tabular-nums">
+                <span className="text-sky-300">{weekWins.a}</span>
+                <span className="text-white/30 mx-1">–</span>
+                <span className="text-rose-300">{weekWins.r}</span>
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              {weekWins.perDay.map((d) => {
+                const total = Math.max(1, d.a + d.r);
+                const aW = (d.a / total) * 100;
+                const rW = (d.r / total) * 100;
+                const dt = new Date(d.day + "T00:00:00Z");
+                const lbl = dt.toLocaleDateString("nb-NO", { weekday: "short", day: "numeric", month: "short", timeZone: "Europe/Oslo" });
+                return (
+                  <div key={d.day} className="flex items-center gap-2 text-[11px]">
+                    <span className="w-20 text-white/50 capitalize">{lbl}</span>
+                    <div className="flex-1 h-2 rounded-full overflow-hidden bg-white/[0.06] flex">
+                      <div className="bg-sky-400" style={{ width: `${aW}%` }} />
+                      <div className="bg-rose-400 ml-auto" style={{ width: `${rW}%` }} />
+                    </div>
+                    <span className="w-12 text-right tabular-nums text-white/70">{d.a}–{d.r}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }
 
