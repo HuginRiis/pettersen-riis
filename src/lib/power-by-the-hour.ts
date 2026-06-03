@@ -17,6 +17,14 @@ export type PbthHomeData = {
   highlights: {
     priceNow?: number;
     consumptionNow?: number; // W
+    /** Topp-effekt registrert i dag (W). */
+    peakPowerToday?: number;
+    /** Snitt-effekt over siste 7 dager (W). */
+    avgPowerWeek?: number;
+    /** Snitt-effekt over inneværende måned (W). */
+    avgPowerThisMonth?: number;
+    /** Topp-effekt inneværende måned (W). */
+    peakPowerThisMonth?: number;
     costToday?: number;
     costYesterday?: number;
     costThisMonth?: number;
@@ -24,6 +32,8 @@ export type PbthHomeData = {
     costThisYear?: number;
     energyToday?: number; // kWh
     energyYesterday?: number;
+    energyThisWeek?: number;
+    energyLastWeek?: number;
     energyThisMonth?: number;
     energyLastMonth?: number;
     energyThisYear?: number;
@@ -164,11 +174,31 @@ function buildHomeData(device: HomeyDeviceSnapshot | null): PbthHomeData {
     return typeof v === "number" && Number.isFinite(v) ? v : undefined;
   };
 
+  // Defensive lookup: prøv flere id-er, returner første gyldige tall.
+  const firstNum = (...ids: string[]): number | undefined => {
+    for (const id of ids) {
+      const v = num(id);
+      if (v != null) return v;
+    }
+    return undefined;
+  };
+
+  // Fallback: scan etter capability-id som matcher gitt regex.
+  const matchNum = (re: RegExp): number | undefined => {
+    for (const id of Object.keys(device.capabilities)) {
+      if (re.test(id)) {
+        const v = num(id);
+        if (v != null) return v;
+      }
+    }
+    return undefined;
+  };
+
   return {
     matchedDeviceName: device.name,
     found: true,
     capabilities: caps,
-    highlights: buildHighlights(num),
+    highlights: buildHighlights(num, firstNum, matchNum),
   };
 }
 
@@ -176,14 +206,62 @@ const FALLBACK_RATE = 0.5; // kr/kWh — brukes når Power-by-the-Hour ikke har 
 
 function buildHighlights(
   num: (id: string) => number | undefined,
+  firstNum: (...ids: string[]) => number | undefined,
+  matchNum: (re: RegExp) => number | undefined,
 ): PbthHomeData["highlights"] {
   const energyToday = num("meter_kwh_this_day") ?? num("meter_consumption_today");
   const energyYesterday = num("meter_kwh_yesterday") ?? num("meter_consumption_yesterday");
+  const energyThisWeek = firstNum(
+    "meter_kwh_this_week",
+    "meter_consumption_this_week",
+  );
+  const energyLastWeek = firstNum(
+    "meter_kwh_last_week",
+    "meter_consumption_last_week",
+  );
   const energyThisMonth = num("meter_kwh_this_month") ?? num("meter_consumption_this_month");
   const energyLastMonth = num("meter_kwh_last_month") ?? num("meter_consumption_last_month");
   const energyThisYear = num("meter_kwh_this_year") ?? num("meter_consumption_this_year");
 
   const priceNow = num("meter_price_incl_vat") ?? num("meter_price_now");
+
+  // Topp-effekt i dag — PBTH bruker forskjellige navn. Verdi kan komme i W eller kW;
+  // vi normaliserer til W ved å sjekke størrelse.
+  const rawPeakToday = firstNum(
+    "meter_power_max_this_day",
+    "meter_power_max_today",
+    "meter_power_peak_today",
+    "meter_power_peak_this_day",
+    "meter_power.peak",
+  ) ?? matchNum(/^meter_power.*(max|peak).*(today|this_day|day)$/i);
+  const peakPowerToday =
+    rawPeakToday != null ? (rawPeakToday > 200 ? rawPeakToday : rawPeakToday * 1000) : undefined;
+
+  const rawPeakMonth = firstNum(
+    "meter_power_max_this_month",
+    "meter_power_peak_this_month",
+  ) ?? matchNum(/^meter_power.*(max|peak).*this_month$/i);
+  const peakPowerThisMonth =
+    rawPeakMonth != null ? (rawPeakMonth > 200 ? rawPeakMonth : rawPeakMonth * 1000) : undefined;
+
+  const rawAvgMonth = firstNum(
+    "meter_power_avg_this_month",
+  ) ?? matchNum(/^meter_power.*avg.*this_month$/i);
+  const avgPowerThisMonth =
+    rawAvgMonth != null ? (rawAvgMonth > 200 ? rawAvgMonth : rawAvgMonth * 1000) : undefined;
+
+  // Snitt-effekt siste uke: prøv egen capability, ellers regn ut fra kWh.
+  const rawAvgWeek = firstNum(
+    "meter_power_avg_this_week",
+    "meter_power_avg_last_week",
+  ) ?? matchNum(/^meter_power.*avg.*week$/i);
+  let avgPowerWeek: number | undefined =
+    rawAvgWeek != null ? (rawAvgWeek > 200 ? rawAvgWeek : rawAvgWeek * 1000) : undefined;
+  if (avgPowerWeek == null && energyLastWeek != null) {
+    avgPowerWeek = Math.round((energyLastWeek * 1000) / (7 * 24));
+  } else if (avgPowerWeek == null && energyThisWeek != null) {
+    avgPowerWeek = Math.round((energyThisWeek * 1000) / (7 * 24));
+  }
 
   const derive = (kwh?: number) =>
     kwh != null ? Math.round(kwh * FALLBACK_RATE * 100) / 100 : undefined;
@@ -191,6 +269,10 @@ function buildHighlights(
   return {
     priceNow,
     consumptionNow: num("meter_consumption") ?? num("meter_power") ?? num("measure_power"),
+    peakPowerToday,
+    peakPowerThisMonth,
+    avgPowerWeek,
+    avgPowerThisMonth,
     costToday: num("meter_cost_today") ?? derive(energyToday),
     costYesterday: num("meter_cost_yesterday") ?? derive(energyYesterday),
     costThisMonth: num("meter_cost_this_month") ?? derive(energyThisMonth),
@@ -198,6 +280,8 @@ function buildHighlights(
     costThisYear: num("meter_cost_this_year") ?? derive(energyThisYear),
     energyToday,
     energyYesterday,
+    energyThisWeek,
+    energyLastWeek,
     energyThisMonth,
     energyLastMonth,
     energyThisYear,

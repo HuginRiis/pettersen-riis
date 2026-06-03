@@ -1432,9 +1432,14 @@ function StromTile({ home }: { home: "borgen" | "hytta" }) {
   const nowW = liveW != null ? liveW : (h?.consumptionNow ?? 0);
   const nowKw = nowW / 1000;
   const energyTodayKwh = liveHome?.reading?.accumulatedConsumption ?? h?.energyToday ?? null;
-  const liveMaxKw = liveHome?.reading?.maxPower != null ? liveHome.reading.maxPower / 1000 : null;
+  const liveMaxW = liveHome?.reading?.maxPower != null ? liveHome.reading.maxPower : null;
+  // PBTH-rapportert topp i dag (W). Foretrekkes — Tibber Pulse maxPower kan ha
+  // glitch-spikes fra WebSocket-strømmen.
+  const pbthPeakW = h?.peakPowerToday ?? null;
+  const avgWeekW = h?.avgPowerWeek ?? null;
 
-  // Track today's peak locally (persisted), reset on date change
+  // Track today's peak locally som backup. Reset hvert døgn, og rens bort
+  // urealistiske spikes (>30 kW) hvis localStorage er korrupt.
   const dayKey = useMemo(() => {
     const d = new Date();
     return `pbth_peak_${home}_${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
@@ -1443,19 +1448,30 @@ function StromTile({ home }: { home: "borgen" | "hytta" }) {
     if (typeof window === "undefined") return;
     try {
       const stored = Number(localStorage.getItem(dayKey) ?? "0") || 0;
-      setPeakToday(stored);
+      // Filtrer ut korrupte verdier (over 30 kW = 30000 W ekvivalent)
+      const sane = stored > 30 ? 0 : stored;
+      if (sane !== stored) {
+        try { localStorage.removeItem(dayKey); } catch { /* */ }
+      }
+      setPeakToday(sane);
     } catch { /* */ }
   }, [dayKey]);
   useEffect(() => {
-    if (!found || nowKw <= 0) return;
+    if (!found || nowKw <= 0 || nowKw > 30) return;
     if (nowKw > peakToday) {
       setPeakToday(nowKw);
       try { localStorage.setItem(dayKey, String(nowKw)); } catch { /* */ }
     }
   }, [nowKw, peakToday, dayKey, found]);
 
+  // Velg beste kilde for "Topp i dag": PBTH > Pulse maxPower > lokalt sporet.
+  const peakTodayKw =
+    pbthPeakW != null ? pbthPeakW / 1000 :
+    liveMaxW != null ? liveMaxW / 1000 :
+    peakToday;
+
   // Gauge math: arc from 0..gaugeMax kW
-  const gaugeMax = Math.max(5, Math.ceil(Math.max(peakToday, nowKw) * 1.1));
+  const gaugeMax = Math.max(5, Math.ceil(Math.max(peakTodayKw, nowKw) * 1.1));
   const pct = Math.min(1, Math.max(0, nowKw / gaugeMax));
   const R = 38;
   const C = 2 * Math.PI * R;
@@ -1527,17 +1543,26 @@ function StromTile({ home }: { home: "borgen" | "hytta" }) {
           {/* Stats */}
           <div className="flex-1 min-w-0 relative z-10">
             <div className="text-[10px] uppercase tracking-widest text-white/40">I dag</div>
-            <div className="text-xl text-white tabular-nums leading-tight">
+            <div className="text-lg text-white tabular-nums leading-tight">
               {energyTodayKwh != null ? `${energyTodayKwh.toFixed(1)} kWh` : "—"}
             </div>
-            <div className="text-[10px] uppercase tracking-widest text-white/40 mt-1.5">Topp i dag</div>
-            <div className="text-xl text-white tabular-nums leading-tight">
-              {(() => {
-                const top = Math.max(peakToday, liveMaxKw ?? 0);
-                return top > 0 ? `${top.toFixed(1)} kW` : "—";
-              })()}
+            <div className="text-[10px] uppercase tracking-widest text-white/40 mt-1">Topp i dag</div>
+            <div className="text-lg text-white tabular-nums leading-tight">
+              {peakTodayKw > 0
+                ? peakTodayKw >= 1
+                  ? `${peakTodayKw.toFixed(2)} kW`
+                  : `${Math.round(peakTodayKw * 1000)} W`
+                : "—"}
             </div>
-            <div className="flex items-center gap-1.5 mt-1.5">
+            <div className="text-[10px] uppercase tracking-widest text-white/40 mt-1">Snitt uke</div>
+            <div className="text-lg text-white tabular-nums leading-tight">
+              {avgWeekW != null && avgWeekW > 0
+                ? avgWeekW >= 1000
+                  ? `${(avgWeekW / 1000).toFixed(2)} kW`
+                  : `${Math.round(avgWeekW)} W`
+                : "—"}
+            </div>
+            <div className="flex items-center gap-1.5 mt-1">
               <span className={`h-2 w-2 rounded-full ${isLive ? "bg-emerald-400 animate-pulse" : "bg-white/30"}`} />
               <span className={`text-[11px] ${isLive ? "text-emerald-300" : "text-white/40"}`}>{isLive ? "live" : "henter…"}</span>
             </div>
