@@ -1152,7 +1152,7 @@ function CalendarTile() {
                   </div>
                   <div className="relative">
                     <div className="text-[8px] uppercase tracking-widest text-white/70">
-                      {fd.small || (e.kind === "garbage" ? "Tømming" : e.kind === "mail" ? "Post" : "Hendelse")}
+                      {e.kind === "garbage" ? "Tømming" : e.kind === "mail" ? "Post" : "Hendelse"}
                     </div>
                     <div className="text-[12px] font-semibold text-white leading-tight truncate">{e.title}</div>
                   </div>
