@@ -14,6 +14,7 @@ import { StuaConditionPanel } from "@/components/StuaConditionPanel";
 import { BassengPoolPanel } from "@/components/BassengPoolPanel";
 import { BassengPowerPanel } from "@/components/BassengPowerPanel";
 import { BassengHistoryChart } from "@/components/BassengHistoryChart";
+import { HundeVannPanel } from "@/components/HundeVannPanel";
 import { MowerPanel } from "@/components/MowerPanel";
 
 import { getLightIdleStatuses, type LightIdleZoneStatusRow } from "@/lib/light-idle-push.functions";
