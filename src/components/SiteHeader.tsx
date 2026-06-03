@@ -41,6 +41,7 @@ type RoutePath =
   | "/stromkroniken"
   | "/varsler"
   | "/smarthus"
+  | "/smart-dashbord"
   | "/lys"
   | "/varme"
   | "/steintavle"
