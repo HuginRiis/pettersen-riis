@@ -1875,12 +1875,14 @@ function SmartDashbord() {
               <div className="col-span-4">
                 <StromTile home="borgen" />
               </div>
-              {/* Rad 2: Varmepumpe + UV + AQ */}
+              {/* Rad 2: Varmepumpe + UV + AQ + Regn + Vind (halv-størrelse) */}
               <div className="col-span-4">
                 <VarmepumpeTile loc={loc} device={varmepumpe} onReload={reload} />
               </div>
-              <div className="col-span-4"><UvTile loc={loc} /></div>
-              <div className="col-span-4"><AqiTile loc={loc} /></div>
+              <div className="col-span-2"><UvCompact loc={loc} /></div>
+              <div className="col-span-2"><AqiCompact loc={loc} /></div>
+              <div className="col-span-2"><RainTile rainDay={tollnes.rainDay} /></div>
+              <div className="col-span-2"><WindTile windNow={tollnes.windNow} gustNow={tollnes.gustNow} windAngle={tollnes.windAngle} /></div>
 
               {/* Rad 3: Kalender + Leader */}
               <div className="col-span-6"><CalendarTile /></div>
@@ -1897,12 +1899,25 @@ function SmartDashbord() {
           <MiniTile icon={<Droplets size={16} />} label="Luftfukt" value="42 %" sub="Stua" accent="text-sky-300" />
           <MiniTile icon={<CloudSun size={16} />} label="Ute" value="6.2°" sub={loc.label} accent="text-amber-300" />
           <MiniTile icon={<Gauge size={16} />} label="CO₂" value="612 ppm" sub="Soverom" accent="text-emerald-300" />
-          <MiniTile icon={<Activity size={16} />} label="dB" value="—" sub="Stua" accent="text-orange-300" />
-          <MiniTile icon={<Droplets size={16} />} label="Luftfukt" value="—" sub="Sov. Arne/Rebekka" accent="text-violet-300" />
+          <MiniTile
+            icon={<Activity size={16} />}
+            label="dB"
+            value={tollnes.noise != null ? `${Math.round(tollnes.noise)} dB` : "—"}
+            sub="Stua"
+            accent="text-orange-300"
+          />
+          <MiniTile
+            icon={<Droplets size={16} />}
+            label="Luftfukt"
+            value={tollnes.humBedroom != null ? `${Math.round(tollnes.humBedroom)} %` : "—"}
+            sub="Sov. Arne/Rebekka"
+            accent="text-violet-300"
+          />
 
           <MiniTile icon={<Wind size={16} />} label="Vind" value="3.1 m/s" sub="SW" accent="text-cyan-300" />
         </div>
       </main>
+
 
       {/* Innstillinger */}
       <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
