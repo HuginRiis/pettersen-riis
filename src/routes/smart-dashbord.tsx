@@ -1695,6 +1695,7 @@ function SmartDashbord() {
 
   // Homey snapshot (shared)
   const { devices, zones, reload } = useHomeySnapshot();
+  const tollnes = useNetatmoTollnes();
 
   // Basseng-bryter id fra notification_settings
   const [bassengSwitchId, setBassengSwitchId] = useState<string | null>(null);
