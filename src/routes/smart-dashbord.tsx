@@ -1800,8 +1800,8 @@ function AqiCompact({ loc }: { loc: typeof LOCS[LocId] }) {
   );
 }
 
-// ----- Rain tile (mm i dag, Tollnes) -----
-function RainTile({ rainDay }: { rainDay: number | null }) {
+// ----- Rain tile (mm i dag + siste time, Tollnes) -----
+function RainTile({ rainDay, rainHour }: { rainDay: number | null; rainHour: number | null }) {
   const mm = rainDay ?? 0;
   const intensity = Math.min(1, mm / 10); // 10mm = full
   const drops = Array.from({ length: 14 });
@@ -1836,7 +1836,10 @@ function RainTile({ rainDay }: { rainDay: number | null }) {
             <span className="text-sm text-white/40 ml-1">mm</span>
           </div>
           <div className="text-[10px] text-white/50 mt-1">
-            {mm < 0.1 ? "Tørt" : mm < 1 ? "Yr" : mm < 5 ? "Lett regn" : mm < 15 ? "Moderat" : "Kraftig"}
+            Siste time:{" "}
+            <span className="text-sky-200 tabular-nums">
+              {rainHour == null ? "—" : `${rainHour.toFixed(1).replace(".", ",")} mm`}
+            </span>
           </div>
         </div>
         <div className="relative z-10 self-end">
@@ -1847,6 +1850,7 @@ function RainTile({ rainDay }: { rainDay: number | null }) {
     </Tile>
   );
 }
+
 
 // ----- Wind tile (maks gust i dag, Tollnes) -----
 function WindTile({ windNow, gustNow, windAngle }: { windNow: number | null; gustNow: number | null; windAngle: number | null }) {
