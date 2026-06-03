@@ -1,15 +1,14 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import {
   Wind, Sun, Zap, Lightbulb, Thermometer, Waves,
   Droplets, Gauge, CloudSun, Activity, Power, Settings2,
-  TrendingUp, TrendingDown, Minus, Cloud, CloudOff, Plus, Trophy,
+  TrendingUp, TrendingDown, Minus, Cloud, CloudOff, Plus, Trophy, Home,
 } from "lucide-react";
 import {
   AreaChart, Area, ResponsiveContainer,
 } from "recharts";
-import { SiteHeader } from "@/components/SiteHeader";
 import { useUvSun } from "@/hooks/use-uv-sun";
 import { useTibberLive } from "@/hooks/useTibberLive";
 import { fetchAirQualityPanel, fetchUvCloudPanel } from "@/lib/air-quality-fetch.functions";
