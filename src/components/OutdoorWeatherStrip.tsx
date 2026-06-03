@@ -21,15 +21,7 @@ export function OutdoorWeatherStrip({
 }: { stationMatch?: string; label?: string } = {}) {
   const fetchData = useServerFn(getNetatmoWeatherStation);
   const cacheKey = `outdoor-strip:${stationMatch}`;
-  const [data, setData] = useState<OkData | null>(() => {
-    if (typeof window === "undefined") return null;
-    try {
-      const raw = localStorage.getItem(cacheKey);
-      return raw ? (JSON.parse(raw) as OkData) : null;
-    } catch {
-      return null;
-    }
-  });
+  const [data, setData] = useState<OkData | null>(null);
   const inFlight = useRef(false);
 
   const load = async () => {
@@ -50,6 +42,12 @@ export function OutdoorWeatherStrip({
   };
 
   useEffect(() => {
+    try {
+      const raw = localStorage.getItem(cacheKey);
+      if (raw) setData(JSON.parse(raw) as OkData);
+    } catch {
+      /* ignore */
+    }
     load();
     const id = setInterval(load, REFRESH_MS);
     return () => clearInterval(id);
