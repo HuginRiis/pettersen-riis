@@ -423,8 +423,13 @@ function BassengTile({
     return newest - oldest;
   }, [points]);
 
-  // Live status fra Homey
-  const isOn = capBool(switchDevice, "onoff");
+  // Live status fra Homey + optimistisk override
+  const snapOn = capBool(switchDevice, "onoff");
+  const [onLocal, setOnLocal] = useState<boolean | null>(null);
+  useEffect(() => {
+    if (onLocal !== null && snapOn === onLocal) setOnLocal(null);
+  }, [snapOn, onLocal]);
+  const isOn = onLocal ?? snapOn;
   const watts = capNum(switchDevice, "measure_power");
 
   // sparkline – pool temp last 24h
@@ -440,14 +445,18 @@ function BassengTile({
 
   const toggle = async (next: boolean) => {
     if (!switchDevice || busy) return;
+    setOnLocal(next); // umiddelbar UI
     setBusy(true);
     try {
       await setCap({ data: { deviceId: switchDevice.id, capability: "onoff", value: next } });
       onReload();
+    } catch {
+      setOnLocal(null);
     } finally {
       setBusy(false);
     }
   };
+
 
   return (
     <Tile
