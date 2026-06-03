@@ -5,7 +5,7 @@ import {
   Wind, Sun, Lightbulb, Thermometer, Waves,
   Droplets, Gauge, CloudSun, Activity, Power, Settings2,
   TrendingUp, TrendingDown, Minus, Cloud, CloudOff, Plus, Trophy, Home,
-  CalendarDays, Trash2, Mail, Cake, Bell, Zap, CloudRain,
+  CalendarDays, Trash2, Mail, Cake, Bell, Zap, CloudRain, PawPrint,
 } from "lucide-react";
 import {
   AreaChart, Area, ResponsiveContainer,
