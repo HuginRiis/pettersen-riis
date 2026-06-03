@@ -2447,9 +2447,12 @@ function SmartDashbord() {
             </>
           ) : (
             <>
-              {/* Rad 1: Basseng + Lys (Stue+Spisestue) + Strøm */}
-              <div className="col-span-4">
+              {/* Rad 1: Basseng + Hundevann + Lys (Stue+Spisestue) + Strøm */}
+              <div className="col-span-2">
                 <BassengTile loc={loc} switchDevice={bassengSwitch} onReload={reload} />
+              </div>
+              <div className="col-span-2">
+                <HundeTile device={hundeVannDevice} countdownSeconds={hundeCountdownSeconds} onReload={reload} />
               </div>
               <div className="col-span-4">
                 <LysCombinedTile
