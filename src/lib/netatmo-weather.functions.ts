@@ -164,6 +164,7 @@ function mapDevice(device: any): WeatherModule[] {
         absolutePressure: dd.AbsolutePressure,
         noise: dd.Noise,
         rain: dd.Rain,
+        rainHour: dd.sum_rain_1,
         rainDay: dd.sum_rain_24,
         windStrength: dd.WindStrength,
         windAngle: dd.WindAngle,
