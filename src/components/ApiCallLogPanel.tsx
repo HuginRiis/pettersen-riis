@@ -607,7 +607,103 @@ export function ApiCallLogPanel() {
                       cache {cache24}
                     </span>
                   </div>
+
+                  {/* Pause / tidsvindu per kilde */}
+                  {(() => {
+                    const flag = pauseFlags.get(src.id);
+                    const draft = pauseDraft.get(src.id);
+                    const start = draft?.start ?? flag?.start_time ?? "22:00";
+                    const end = draft?.end ?? flag?.end_time ?? "06:00";
+                    const winEnabled = Boolean(flag?.window_enabled);
+                    const fullPaused = Boolean(flag?.paused);
+                    const winActive = isWindowActiveNow(flag);
+                    const dirty = draft != null;
+                    const busy = pauseBusy === src.id;
+                    return (
+                      <div className="pl-5 flex items-center gap-2 flex-wrap text-[10px]">
+                        <span
+                          className={`inline-block w-1.5 h-1.5 rounded-full shrink-0 ${
+                            fullPaused || winActive
+                              ? "bg-destructive"
+                              : winEnabled
+                                ? "bg-yellow-500"
+                                : "bg-primary"
+                          }`}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => togglePaused(src.id, !fullPaused)}
+                          disabled={busy}
+                          className={
+                            "px-2 py-0.5 rounded border tracking-[0.15em] uppercase " +
+                            (fullPaused
+                              ? "border-destructive/60 text-destructive bg-destructive/10 hover:bg-destructive/20"
+                              : "border-border text-muted-foreground hover:bg-primary/10") +
+                            " disabled:opacity-40"
+                          }
+                          title="Full pause uavhengig av klokkeslett"
+                        >
+                          {fullPaused ? "■ Pauset" : "▶ Aktiv"}
+                        </button>
+                        <label className="flex items-center gap-1 text-muted-foreground">
+                          <input
+                            type="checkbox"
+                            checked={winEnabled}
+                            disabled={busy}
+                            onChange={(e) =>
+                              saveSourceWindow(src.id, e.target.checked, start, end)
+                            }
+                            className="h-3 w-3 accent-primary"
+                          />
+                          <span>Tidsvindu</span>
+                        </label>
+                        <input
+                          type="time"
+                          value={start}
+                          disabled={busy}
+                          onChange={(e) =>
+                            setPauseDraft((prev) => {
+                              const next = new Map(prev);
+                              next.set(src.id, { start: e.target.value, end });
+                              return next;
+                            })
+                          }
+                          className="bg-background border border-border rounded px-1.5 py-0.5 font-mono text-[10px]"
+                        />
+                        <span className="text-muted-foreground">–</span>
+                        <input
+                          type="time"
+                          value={end}
+                          disabled={busy}
+                          onChange={(e) =>
+                            setPauseDraft((prev) => {
+                              const next = new Map(prev);
+                              next.set(src.id, { start, end: e.target.value });
+                              return next;
+                            })
+                          }
+                          className="bg-background border border-border rounded px-1.5 py-0.5 font-mono text-[10px]"
+                        />
+                        {dirty && (
+                          <button
+                            type="button"
+                            onClick={() => saveSourceWindow(src.id, winEnabled, start, end)}
+                            disabled={busy}
+                            className="px-2 py-0.5 rounded border border-primary/50 text-primary tracking-[0.15em] uppercase hover:bg-primary/10 disabled:opacity-40"
+                          >
+                            {busy ? "Lagrer…" : "Lagre"}
+                          </button>
+                        )}
+                        {winActive && !fullPaused && (
+                          <span className="text-destructive tracking-[0.15em] uppercase">
+                            ⏰ Blokkert nå
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
+
 
                 {isOpen && (
                   <div className="border-t border-border bg-muted/20 px-3 py-2 space-y-2">
