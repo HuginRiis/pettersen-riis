@@ -17,17 +17,19 @@ export function BassengPoolPanel({
   title = "🏊 Bassengets vannspeil",
   temperature,
   sourceName,
+  inline = false,
 }: {
   title?: string;
   temperature: number | null;
   sourceName?: string | null;
+  inline?: boolean;
 }) {
   const meta = classify(temperature);
   const pct = temperature == null ? 0 : Math.max(0, Math.min(100, ((temperature - MIN) / (MAX - MIN)) * 100));
 
-  return (
-    <section className="container mx-auto px-4 pt-4 sm:pt-6">
-      <div className={`panel rounded-lg p-4 sm:p-6 relative overflow-hidden bg-gradient-to-br ${meta.ring} to-transparent`}>
+  const inner = (
+      <div className={`panel rounded-lg p-4 sm:p-6 relative overflow-hidden bg-gradient-to-br ${meta.ring} to-transparent h-full`}>
+
         <div className="flex items-start justify-between gap-3 mb-4 sm:mb-5 flex-wrap">
           <div className="min-w-0">
             <div className="text-[9px] sm:text-[10px] tracking-[0.25em] sm:tracking-[0.3em] text-muted-foreground uppercase mb-0.5 sm:mb-1">
