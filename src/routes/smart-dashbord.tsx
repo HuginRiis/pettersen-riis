@@ -613,7 +613,7 @@ function LysTile({
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="bg-[#0c0f15] border-white/10 text-white max-w-lg max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Hue · {loc.label}</DialogTitle>
+            <DialogTitle>Hue · {zoneLabel ?? loc.label}</DialogTitle>
             <DialogDescription className="text-white/50">Styr hver enkelt lampe</DialogDescription>
           </DialogHeader>
           <div className="space-y-2 mt-2">
