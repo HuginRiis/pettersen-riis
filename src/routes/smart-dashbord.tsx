@@ -219,10 +219,14 @@ function AqiTile({ loc }: { loc: typeof LOCS[LocId] }) {
   const [open, setOpen] = useState(false);
   useEffect(() => {
     let c = false;
-    fetchAq({ data: { lat: loc.lat, lon: loc.lon } })
-      .then((res: any) => { if (!c) setCurrent(res?.current ?? null); })
-      .catch(() => {});
-    return () => { c = true; };
+    const load = () => {
+      fetchAq({ data: { lat: loc.lat, lon: loc.lon } })
+        .then((res: any) => { if (!c) setCurrent(res?.current ?? null); })
+        .catch(() => {});
+    };
+    load();
+    const id = setInterval(load, 5 * 60 * 1000);
+    return () => { c = true; clearInterval(id); };
   }, [fetchAq, loc.lat, loc.lon]);
 
   const aqi = current?.european_aqi ?? null;
