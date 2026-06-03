@@ -41,6 +41,7 @@ type RoutePath =
   | "/stromkroniken"
   | "/varsler"
   | "/smarthus"
+  | "/smart-dashbord"
   | "/lys"
   | "/varme"
   | "/steintavle"
@@ -134,7 +135,7 @@ const navLinks: NavLink[] = [
   { to: "/vakttarnet", label: "Vakttårnet" },
   { to: "/ytelse", label: "Ytelse" },
   { to: "/hytta", label: "Hytta", public: true },
-  { to: "/smarthus", label: "Smartborg" },
+  { to: "/smarthus", label: "Smarthus" },
   { to: "/smart-dashbord", label: "Smart dashbord" },
   { to: "/lys", label: "Lys" },
   { to: "/varme", label: "Varme & Klima" },
