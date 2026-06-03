@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import {
   getApiCallLog,
@@ -6,6 +6,12 @@ import {
   type ApiCallSummary,
 } from "@/lib/api-call-log";
 import { purgeApiCallLog } from "@/lib/api-call-log-purge.functions";
+import {
+  getApiPauseFlags,
+  setApiSourcePaused,
+  setApiSourceWindow,
+  type ApiPauseFlag,
+} from "@/lib/api-pause.functions";
 import {
   ResponsiveContainer,
   ComposedChart,
@@ -18,6 +24,29 @@ import {
   CartesianGrid,
 } from "recharts";
 import { useChartAppearance } from "@/hooks/use-chart-appearance";
+
+function toMinutes(hhmm: string): number {
+  const [h, m] = hhmm.split(":").map((n) => Number(n) || 0);
+  return h * 60 + m;
+}
+
+function isWindowActiveNow(flag: ApiPauseFlag | undefined): boolean {
+  if (!flag?.window_enabled) return false;
+  const start = toMinutes(flag.start_time);
+  const end = toMinutes(flag.end_time);
+  if (start === end) return false;
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/Oslo",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(new Date());
+  const h = Number(parts.find((p) => p.type === "hour")?.value ?? "0");
+  const m = Number(parts.find((p) => p.type === "minute")?.value ?? "0");
+  const cur = h * 60 + m;
+  if (start < end) return cur >= start && cur < end;
+  return cur >= start || cur < end;
+}
 
 
 function triggerExplanation(
@@ -48,11 +77,13 @@ const SOURCE_LABELS: Record<string, string> = {
   spot: "Spotpris",
   lightning: "Lyn / radar",
   garbage: "Renovasjon",
-  kassal: "Kassalapp",
   uv: "UV · MET.no",
-  "air-quality": "Luftkvalitet",
   "open-meteo": "Open-Meteo (core)",
-  other: "Andre",
+  gardena: "Gardena",
+  garmin: "Garmin",
+  roborock: "Roborock",
+  posten: "Posten",
+  geoip: "GeoIP",
 };
 
 const INITIAL_VISIBLE = 5;
