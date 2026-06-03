@@ -61,9 +61,11 @@ type NavLink = { to: RoutePath; label: string; public?: boolean };
 
 const HOMEY_BACKED_ROUTES: RoutePath[] = ["/smarthus", "/var", "/steintavle"];
 
-// Hjem skal alltid stå først, og Steintavle alltid sist — uavhengig av bruksstatistikk.
+// Hjem skal alltid stå først, og Steintavle / Steintavle 2 / Smarthus alltid sist — uavhengig av bruksstatistikk.
 const ALWAYS_FIRST: RoutePath = "/";
-const ALWAYS_LAST: RoutePath = "/steintavle";
+const ALWAYS_LAST_LIST: RoutePath[] = ["/steintavle", "/steintavle-2", "/smarthus"];
+const ALWAYS_LAST_SET = new Set<RoutePath>(ALWAYS_LAST_LIST);
+const isAlwaysLast = (p: RoutePath) => ALWAYS_LAST_SET.has(p);
 
 // Ikon for hver menyside (pollen håndteres separat med PollenIcon)
 const ROUTE_ICON: Partial<Record<RoutePath, React.ComponentType<{ size?: number; className?: string; color?: string; fill?: string; strokeWidth?: number }>>> = {
@@ -280,8 +282,11 @@ export function SiteHeader() {
   // så bruksfrekvens (hvis på), ellers original rekkefølge.
   const sortedLinks = (() => {
     const first = baseLinks.filter((l) => l.to === ALWAYS_FIRST);
-    const last = baseLinks.filter((l) => l.to === ALWAYS_LAST);
-    const rest = baseLinks.filter((l) => l.to !== ALWAYS_LAST && l.to !== ALWAYS_FIRST);
+    const lastUnordered = baseLinks.filter((l) => isAlwaysLast(l.to));
+    const last = ALWAYS_LAST_LIST
+      .map((p) => lastUnordered.find((l) => l.to === p))
+      .filter((x): x is NavLink => !!x);
+    const rest = baseLinks.filter((l) => !isAlwaysLast(l.to) && l.to !== ALWAYS_FIRST);
 
     const favSet = menuPrefs.favoritesEnabled ? new Set(menuPrefs.favorites) : new Set<string>();
     const favs = menuPrefs.favoritesEnabled
@@ -401,7 +406,7 @@ export function SiteHeader() {
           {sortedLinks.map((l) => {
             const count = usage[l.to] ?? 0;
             const isFav = menuPrefs.favorites.includes(l.to);
-            const canFav = menuPrefs.favoritesEnabled && l.to !== ALWAYS_FIRST && l.to !== ALWAYS_LAST;
+            const canFav = menuPrefs.favoritesEnabled && l.to !== ALWAYS_FIRST && !isAlwaysLast(l.to);
             return (
               <span key={l.to} className={`inline-flex items-center gap-0.5${badgeSettings.fitOneLine ? " whitespace-nowrap" : ""}`}>
                 {canFav && (
@@ -544,7 +549,7 @@ export function SiteHeader() {
             {sortedLinks.map((l) => {
               const count = usage[l.to] ?? 0;
               const isFav = menuPrefs.favorites.includes(l.to);
-              const canFav = menuPrefs.favoritesEnabled && l.to !== ALWAYS_FIRST && l.to !== ALWAYS_LAST;
+              const canFav = menuPrefs.favoritesEnabled && l.to !== ALWAYS_FIRST && !isAlwaysLast(l.to);
               return (
                 <div key={l.to} className="flex items-center gap-0 border-b border-border last:border-0">
                   {canFav && (
