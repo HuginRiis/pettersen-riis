@@ -15,6 +15,12 @@ type LocRow = { lat: number; lon: number; enabled: boolean };
 
 const BETWEEN_LOCATIONS_DELAY_MS = 1500;
 
+// Faste lokasjoner som alltid varmes, uavhengig av push-prefs.
+// Disse vises som hardkodede paneler på /pollen.
+const ALWAYS_WARM: Array<{ lat: number; lon: number }> = [
+  { lat: 59.91, lon: 9.07 }, // Hytta · Lyngdal i Numedal
+];
+
 function dedupeLocs(rows: LocRow[]): Array<{ lat: number; lon: number }> {
   const seen = new Map<string, { lat: number; lon: number }>();
   for (const r of rows) {
