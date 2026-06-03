@@ -2280,9 +2280,30 @@ function SmartDashbord() {
           className={`grid grid-cols-6 auto-rows-[80px] ${settings.bold ? "smart-bold-all" : ""}`}
           style={miniStyle}
         >
-          <MiniTile icon={<Droplets size={16} />} label="Luftfukt" value="42 %" sub="Stua" accent="text-sky-300" />
-          <MiniTile icon={<CloudSun size={16} />} label="Ute" value="6.2°" sub={loc.label} accent="text-amber-300" />
-          <MiniTile icon={<Gauge size={16} />} label="CO₂" value="612 ppm" sub="Soverom" accent="text-emerald-300" />
+          <MiniTile
+            icon={<Droplets size={16} />}
+            label="Luftfukt"
+            value={tollnes.humStua != null ? `${Math.round(tollnes.humStua)} %` : "—"}
+            sub="Stua"
+            accent="text-sky-300"
+            detail={<NetatmoMetricList modules={tollnes.modules} metric="humidity" unit="%" digits={0} />}
+          />
+          <MiniTile
+            icon={<CloudSun size={16} />}
+            label="Ute"
+            value={tollnes.outTemp != null ? `${tollnes.outTemp.toFixed(1).replace(".", ",")}°` : "—"}
+            sub={loc.label}
+            accent="text-amber-300"
+            detail={<NetatmoMetricList modules={tollnes.modules} metric="temperature" unit="°" digits={1} />}
+          />
+          <MiniTile
+            icon={<Gauge size={16} />}
+            label="CO₂"
+            value={tollnes.co2Bedroom != null ? `${tollnes.co2Bedroom} ppm` : "—"}
+            sub={tollnes.co2BedroomName ?? "Soverom"}
+            accent={tollnes.co2Bedroom != null && tollnes.co2Bedroom >= 1000 ? "text-rose-300" : "text-emerald-300"}
+            detail={<NetatmoMetricList modules={tollnes.modules} metric="co2" unit=" ppm" digits={0} />}
+          />
           <MiniTile
             icon={<Activity size={16} />}
             label="dB"
@@ -2294,12 +2315,20 @@ function SmartDashbord() {
             icon={<Droplets size={16} />}
             label="Luftfukt"
             value={tollnes.humBedroom != null ? `${Math.round(tollnes.humBedroom)} %` : "—"}
-            sub="Sov. Arne/Rebekka"
+            sub={tollnes.co2BedroomName ?? "Sov."}
             accent="text-violet-300"
+            detail={<NetatmoMetricList modules={tollnes.modules} metric="humidity" unit="%" digits={0} />}
           />
-
-          <MiniTile icon={<Wind size={16} />} label="Vind" value="3.1 m/s" sub="SW" accent="text-cyan-300" />
+          <MiniTile
+            icon={<Gauge size={16} />}
+            label="CO₂"
+            value={tollnes.co2Stua != null ? `${tollnes.co2Stua} ppm` : "—"}
+            sub="Stua"
+            accent={tollnes.co2Stua != null && tollnes.co2Stua >= 1000 ? "text-rose-300" : "text-emerald-300"}
+            detail={<NetatmoMetricList modules={tollnes.modules} metric="co2" unit=" ppm" digits={0} />}
+          />
         </div>
+
       </main>
 
 
