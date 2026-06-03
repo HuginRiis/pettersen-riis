@@ -604,7 +604,7 @@ function LysTile({
               </>
             )}
             {total === 0 && (
-              <div className="text-[10px] text-white/40 mt-2">Fant ingen Hue-lys i Stua</div>
+              <div className="text-[10px] text-white/40 mt-2">Fant ingen Hue-lys{zoneLabel ? ` i ${zoneLabel}` : ""}</div>
             )}
           </div>
         </div>
