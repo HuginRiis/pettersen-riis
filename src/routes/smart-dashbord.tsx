@@ -1133,26 +1133,44 @@ function SmartDashbord() {
     return m;
   }, [zones]);
 
-  const hueLights = useMemo(() => {
-    if (locId !== "borgen") return [];
-    return devices.filter((d) => {
-      if (!isHueDevice(d)) return false;
+  // Hue-lys på Borgen, splittet i Stue og Spisestue
+  const hueByRoom = useMemo(() => {
+    if (locId !== "borgen") return { stue: [] as HomeyDeviceSnapshot[], spisestue: [] as HomeyDeviceSnapshot[] };
+    const stue: HomeyDeviceSnapshot[] = [];
+    const spisestue: HomeyDeviceSnapshot[] = [];
+    for (const d of devices) {
+      if (!isHueDevice(d)) continue;
       const zn = d.zone ? zoneNameById.get(d.zone) ?? "" : "";
-      const inStue = isStueZoneName(zn) || d.name.toLowerCase().includes("stue") || d.name.toLowerCase().includes("stua");
-      if (!inStue) return false;
-      const inHytta = isHyttaZoneName(zn);
-      return !inHytta;
-    });
+      if (isHyttaZoneName(zn)) continue;
+      const nm = d.name.toLowerCase();
+      const inSpisestue = isSpisestueZoneName(zn) || nm.includes("spisestue") || nm.includes("spisestua");
+      const inStue = !inSpisestue && (isStueZoneName(zn) || nm.includes("stue") || nm.includes("stua"));
+      if (inSpisestue) spisestue.push(d);
+      else if (inStue) stue.push(d);
+    }
+    return { stue, spisestue };
   }, [devices, zoneNameById, locId]);
 
   const varmepumpe = useMemo(() => {
     if (locId === "hytta") {
-      return devices.find((d) => isQlima(d)) ?? null;
+      return (
+        devices.find((d) => isQlima(d)) ??
+        devices.find((d) => {
+          if (!isVarmepumpeLike(d)) return false;
+          const zn = d.zone ? zoneNameById.get(d.zone) ?? "" : "";
+          return isHyttaZoneName(zn);
+        }) ?? null
+      );
     }
-    // Borgen: melcloud, må ikke være i hytta-sone
+    // Borgen: melcloud først, ellers en hvilken som helst varmepumpe-lik enhet utenfor hytta
     return (
       devices.find((d) => {
         if (!isMelcloud(d)) return false;
+        const zn = d.zone ? zoneNameById.get(d.zone) ?? "" : "";
+        return !isHyttaZoneName(zn);
+      }) ??
+      devices.find((d) => {
+        if (!isVarmepumpeLike(d)) return false;
         const zn = d.zone ? zoneNameById.get(d.zone) ?? "" : "";
         return !isHyttaZoneName(zn);
       }) ?? null
