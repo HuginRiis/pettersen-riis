@@ -1890,16 +1890,21 @@ function WindTile({ windNow, gustNow, windAngle }: { windNow: number | null; gus
           )}
         </div>
         <div className="min-w-0 text-right">
-          <div className="text-[10px] uppercase tracking-widest text-white/40">Nå</div>
-          <div className="text-2xl font-semibold text-white tabular-nums leading-none">
-            {gustNow == null ? "—" : gustNow.toFixed(1).replace(".", ",")}
-            <span className="text-xs text-white/40 ml-1">m/s</span>
+          <div className="text-[9px] uppercase tracking-widest text-white/40">Vind nå</div>
+          <div className="text-xl font-semibold text-white tabular-nums leading-none">
+            {windNow == null ? "—" : windNow.toFixed(1).replace(".", ",")}
+            <span className="text-[10px] text-white/40 ml-1">m/s</span>
           </div>
-          <div className="text-[9px] uppercase tracking-widest text-white/40 mt-2">Maks i dag</div>
-          <div className="text-sm text-cyan-200 tabular-nums">
+          <div className="text-[9px] uppercase tracking-widest text-white/40 mt-1.5">Vindkast</div>
+          <div className="text-base text-cyan-200 tabular-nums leading-none">
+            {gustNow == null ? "—" : `${gustNow.toFixed(1).replace(".", ",")} m/s`}
+          </div>
+          <div className="text-[9px] uppercase tracking-widest text-white/40 mt-1.5">Maks i dag</div>
+          <div className="text-xs text-cyan-200/80 tabular-nums">
             {maxToday > 0 ? `${maxToday.toFixed(1).replace(".", ",")} m/s` : "—"}
           </div>
         </div>
+
       </div>
       <style>{`@keyframes pbthWindSpin{from{transform:rotate(0)}to{transform:rotate(360deg)}}`}</style>
     </Tile>
