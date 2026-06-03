@@ -52,8 +52,9 @@ export const Route = createFileRoute("/api/public/hooks/open-meteo-warm")({
         const aqLocs = dedupeLocs((aq ?? []) as LocRow[]);
         const uvLocs = dedupeLocs((uv ?? []) as LocRow[]);
         const userPollenLocs: Array<{ lat: number; lon: number }> = ((userLocs ?? []) as any[])
-          .filter((r) => typeof r.lat === "number" && typeof r.lon === "number")
+          .filter((r) => r?.page === "pollen" && typeof r.lat === "number" && typeof r.lon === "number")
           .map((r) => ({ lat: r.lat, lon: r.lon }));
+
 
         // Én felles Open-Meteo core-varming dekker AQ + pollen for unionen av
         // air-quality-, UV- og aktive pollen-side-lokasjoner. UV-cloud bruker
