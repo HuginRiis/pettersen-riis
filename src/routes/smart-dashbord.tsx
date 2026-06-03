@@ -1389,9 +1389,39 @@ function StromTile({ home }: { home: "borgen" | "hytta" }) {
           {data?.ok ? "Fant ingen Power-by-the-Hour-enhet" : "Henter…"}
         </div>
       ) : (
-        <div className="flex items-center gap-3 h-full">
+        <div className="relative flex items-center gap-3 h-full overflow-hidden">
+          {/* Elektrisitets-animasjon: gnister + bolt */}
+          <div className="pointer-events-none absolute inset-0">
+            {Array.from({ length: 8 }).map((_, i) => {
+              const top = (i * 13) % 90;
+              const left = 10 + ((i * 17) % 80);
+              const dur = 1.6 + ((i * 7) % 5) / 3;
+              const delay = (i * 0.21) % 2;
+              return (
+                <span
+                  key={i}
+                  className="absolute block rounded-full bg-amber-300"
+                  style={{
+                    top: `${top}%`,
+                    left: `${left}%`,
+                    width: 2,
+                    height: 2,
+                    opacity: 0.35 + Math.min(0.5, nowKw / 6),
+                    boxShadow: "0 0 6px rgba(252,211,77,0.9)",
+                    animation: `pbthSpark ${dur}s ease-in-out ${delay}s infinite`,
+                  }}
+                />
+              );
+            })}
+            <Zap
+              size={48}
+              className="absolute right-2 top-1 text-amber-300/15"
+              style={{ animation: "pbthBolt 2.4s ease-in-out infinite" }}
+            />
+          </div>
+
           {/* Gauge */}
-          <div className="relative shrink-0" style={{ width: 100, height: 100 }}>
+          <div className="relative shrink-0 z-10" style={{ width: 100, height: 100 }}>
             <svg width="100" height="100" viewBox="0 0 100 100" className="-rotate-90">
               <circle cx="50" cy="50" r={R} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="7" />
               <circle
@@ -1401,7 +1431,10 @@ function StromTile({ home }: { home: "borgen" | "hytta" }) {
                 strokeWidth="7"
                 strokeLinecap="round"
                 strokeDasharray={`${dash} ${C}`}
-                style={{ transition: "stroke-dasharray 0.6s ease, stroke 0.6s ease" }}
+                style={{
+                  transition: "stroke-dasharray 0.6s ease, stroke 0.6s ease",
+                  filter: `drop-shadow(0 0 6px ${arcColor})`,
+                }}
               />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
@@ -1412,7 +1445,7 @@ function StromTile({ home }: { home: "borgen" | "hytta" }) {
             </div>
           </div>
           {/* Stats */}
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 relative z-10">
             <div className="text-[10px] uppercase tracking-widest text-white/40">I dag</div>
             <div className="text-xl text-white tabular-nums leading-tight">
               {energyTodayKwh != null ? `${energyTodayKwh.toFixed(1)} kWh` : "—"}
@@ -1429,6 +1462,10 @@ function StromTile({ home }: { home: "borgen" | "hytta" }) {
               <span className={`text-[11px] ${isLive ? "text-emerald-300" : "text-white/40"}`}>{isLive ? "live" : "henter…"}</span>
             </div>
           </div>
+          <style>{`
+            @keyframes pbthSpark{0%,100%{transform:translateY(0) scale(1);opacity:0.25}50%{transform:translateY(-6px) scale(1.6);opacity:1}}
+            @keyframes pbthBolt{0%,100%{opacity:0.1;transform:scale(1)}50%{opacity:0.35;transform:scale(1.08)}}
+          `}</style>
         </div>
       )}
     </Tile>
