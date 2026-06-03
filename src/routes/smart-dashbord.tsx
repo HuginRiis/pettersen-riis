@@ -85,6 +85,25 @@ function isStueZoneName(name: string): boolean {
   return n.includes("stue") || n.includes("stua");
 }
 
+// Read a capability value from a device snapshot
+function capVal(d: HomeyDeviceSnapshot | null | undefined, cap: string): string | number | boolean | null {
+  const m = d?.capabilities?.[cap];
+  if (!m) return null;
+  const v = m.value;
+  return v === undefined ? null : v;
+}
+function capNum(d: HomeyDeviceSnapshot | null | undefined, cap: string): number | null {
+  const v = capVal(d, cap);
+  return typeof v === "number" ? v : null;
+}
+function capBool(d: HomeyDeviceSnapshot | null | undefined, cap: string): boolean {
+  return capVal(d, cap) === true;
+}
+function capStr(d: HomeyDeviceSnapshot | null | undefined, cap: string): string | null {
+  const v = capVal(d, cap);
+  return typeof v === "string" ? v : null;
+}
+
 // Shared Homey snapshot hook (polled every 60s)
 function useHomeySnapshot() {
   const fetchSnap = useServerFn(getHomeySnapshot);
