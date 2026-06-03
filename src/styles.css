@@ -492,3 +492,7 @@ main .container {
 .recharts-default-tooltip .recharts-tooltip-item:nth-of-type(5n+4) * { color: var(--chart-series-4) !important; }
 .recharts-default-tooltip .recharts-tooltip-item:nth-of-type(5n+5),
 .recharts-default-tooltip .recharts-tooltip-item:nth-of-type(5n+5) * { color: var(--chart-series-5) !important; }
+
+/* Smart dashbord – bold-toggle som overstyrer alle font-weight-klasser i griden */
+.smart-bold-all,
+.smart-bold-all * { font-weight: 700 !important; }
