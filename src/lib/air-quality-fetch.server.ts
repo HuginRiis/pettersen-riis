@@ -107,6 +107,39 @@ export async function fetchOpenMeteoPollenData(lat: number, lon: number): Promis
 // Disse gjør de faktiske Open-Meteo-kallene og fyller cachen.
 // ---------------------------------------------------------------------------
 
+/**
+ * Ett enkelt Open-Meteo-kall for FLERE lokasjoner samtidig (multi-coord).
+ * Drastisk lavere risiko for 429 enn N separate kall — vi treffer API-et
+ * én gang per cron-tikk i stedet for én per lokasjon.
+ * Seeder per-lokasjon-cachen slik at etterfølgende warmOpenMeteoCore(lat,lon)
+ * blir cache-hit uten nye API-kall.
+ */
+export async function warmOpenMeteoCoreMulti(
+  locs: Array<{ lat: number; lon: number }>,
+): Promise<void> {
+  if (locs.length === 0) return;
+  const lats = locs.map((l) => l.lat).join(",");
+  const lons = locs.map((l) => l.lon).join(",");
+  const url =
+    `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lats}&longitude=${lons}` +
+    `&hourly=${CORE_HOURLY_FIELDS}&current=${CURRENT_FIELDS}` +
+    `&timezone=Europe%2FOslo&forecast_days=4`;
+  const res = await fetchWithBackoff("open-meteo", "open-meteo:core", url);
+  if (!res) throw new Error("Open-Meteo core er pauset eller i 429-backoff");
+  if (!res.ok) throw new Error(`Open-Meteo core ${res.status}`);
+  const body = await res.json();
+  // Multi-coord returnerer en array; single-coord returnerer et objekt.
+  const arr: any[] = Array.isArray(body) ? body : [body];
+  await Promise.all(
+    locs.map(async (loc, i) => {
+      const item = arr[i];
+      if (!item || !item.hourly) return;
+      const value: OpenMeteoCoreData = { hourly: item.hourly, current: item.current };
+      await setCached<OpenMeteoCoreData>(coreKey(loc.lat, loc.lon), value);
+    }),
+  );
+}
+
 async function warmOpenMeteoCore(lat: number, lon: number): Promise<OpenMeteoCoreData> {
   const key = coreKey(lat, lon);
   return withCache<OpenMeteoCoreData>(key, async () => {
