@@ -1820,17 +1820,44 @@ function WindTile({ windNow, gustNow, windAngle }: { windNow: number | null; gus
 // ----- mini-tiles -----
 
 
-function MiniTile({ icon, label, value, sub, accent }:
-  { icon: React.ReactNode; label: string; value: string; sub?: string; accent?: string }) {
+function MiniTile({ icon, label, value, sub, accent, detail }:
+  { icon: React.ReactNode; label: string; value: string; sub?: string; accent?: string; detail?: React.ReactNode }) {
+  const [open, setOpen] = useState(false);
   return (
-    <div className="rounded-2xl bg-white/[0.03] border border-white/10 p-3 flex items-center gap-3 h-full">
-      <div className={`h-9 w-9 rounded-full bg-white/5 flex items-center justify-center ${accent ?? "text-white/70"}`}>{icon}</div>
-      <div className="min-w-0">
-        <div className="text-[10px] uppercase tracking-widest text-white/40">{label}</div>
-        <div className="text-sm text-white tabular-nums truncate">{value}</div>
-        {sub && <div className="text-[10px] text-white/40">{sub}</div>}
-      </div>
-    </div>
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="text-left rounded-2xl bg-white/[0.03] border border-white/10 p-3 flex items-center gap-3 h-full hover:bg-white/[0.06] hover:border-white/20 active:scale-[0.98] transition"
+      >
+        <div className={`h-9 w-9 rounded-full bg-white/5 flex items-center justify-center ${accent ?? "text-white/70"}`}>{icon}</div>
+        <div className="min-w-0">
+          <div className="text-[10px] uppercase tracking-widest text-white/40">{label}</div>
+          <div className="text-sm text-white tabular-nums truncate">{value}</div>
+          {sub && <div className="text-[10px] text-white/40">{sub}</div>}
+        </div>
+      </button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="bg-[#0c0f15] border-white/10 text-white max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <span className={`h-7 w-7 rounded-full bg-white/5 flex items-center justify-center ${accent ?? "text-white/70"}`}>{icon}</span>
+              {label}
+            </DialogTitle>
+            <DialogDescription className="text-white/50">{sub ?? "Detaljer"}</DialogDescription>
+          </DialogHeader>
+          <div className="mt-2">
+            <div className={`text-4xl font-semibold tabular-nums ${accent ?? "text-white"}`}>{value}</div>
+            <div className="text-xs text-white/40 mt-1">{sub}</div>
+            {detail ? <div className="mt-4">{detail}</div> : (
+              <div className="mt-4 text-xs text-white/40 italic">
+                Sanntid fra sensoren. Historikk kommer her etter hvert.
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
