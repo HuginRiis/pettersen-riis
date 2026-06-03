@@ -1,19 +1,27 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import {
-  Wind, Sun, Zap, Lightbulb, Thermometer, Waves,
+  Wind, Sun, Lightbulb, Thermometer, Waves,
   Droplets, Gauge, CloudSun, Activity, Power, Settings2,
   TrendingUp, TrendingDown, Minus, Cloud, CloudOff, Plus, Trophy, Home,
+  CalendarDays, Trash2, Mail, Cake, Bell,
 } from "lucide-react";
 import {
   AreaChart, Area, ResponsiveContainer,
 } from "recharts";
 import { useUvSun } from "@/hooks/use-uv-sun";
-import { useTibberLive } from "@/hooks/useTibberLive";
 import { fetchAirQualityPanel, fetchUvCloudPanel } from "@/lib/air-quality-fetch.functions";
 import { getBassengHistory, type BassengHistoryPoint } from "@/lib/basseng-history.functions";
 import { getGarminOverview } from "@/lib/garmin.functions";
+import {
+  getHomeySnapshot,
+  setLivingRoomDeviceCapability,
+  type HomeyDeviceSnapshot,
+  type HomeyZone,
+} from "@/lib/homey.functions";
+import { getGarbageOverview } from "@/lib/garbage-collection";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
@@ -44,17 +52,82 @@ export const Route = createFileRoute("/smart-dashbord")({
   head: () => ({
     meta: [
       { title: "Smart dashbord | House Pettersen Riis" },
-      { name: "description", content: "Smart-hjem dashbord — luftkvalitet, UV, strøm, lys, varmepumpe og basseng på ett sted." },
+      { name: "description", content: "Smart-hjem dashbord — luftkvalitet, UV, lys, varmepumpe og basseng på ett sted." },
     ],
   }),
   component: SmartDashbord,
 });
 
 type LocId = "borgen" | "hytta";
-const LOCS: Record<LocId, { label: string; lat: number; lon: number; tibber: "tollnes" | "hytta" }> = {
-  borgen:  { label: "Borgen",  lat: 59.1789, lon: 9.5732, tibber: "tollnes" },
-  hytta:   { label: "Hytta",   lat: 59.91,   lon: 9.07,   tibber: "hytta"   },
+const LOCS: Record<LocId, { label: string; lat: number; lon: number }> = {
+  borgen:  { label: "Borgen",  lat: 59.1789, lon: 9.5732 },
+  hytta:   { label: "Hytta",   lat: 59.91,   lon: 9.07   },
 };
+
+// ===== Homey helpers =====
+function isHueDevice(d: HomeyDeviceSnapshot): boolean {
+  const haystack = `${d.driverUri ?? ""} ${d.name ?? ""}`.toLowerCase();
+  return /philips\.?hue|hue-zigbee|com\.athom\.hue/.test(haystack);
+}
+function isMelcloud(d: HomeyDeviceSnapshot): boolean {
+  const h = `${d.driverUri ?? ""} ${d.name ?? ""}`.toLowerCase();
+  return h.includes("melcloud") || h.includes("mitsubishi");
+}
+function isQlima(d: HomeyDeviceSnapshot): boolean {
+  const h = `${d.driverUri ?? ""} ${d.name ?? ""}`.toLowerCase();
+  return h.includes("qlima");
+}
+function isHyttaZoneName(name: string): boolean {
+  return name.toLowerCase().includes("hytt");
+}
+function isStueZoneName(name: string): boolean {
+  const n = name.toLowerCase();
+  return n.includes("stue") || n.includes("stua");
+}
+
+// Read a capability value from a device snapshot
+function capVal(d: HomeyDeviceSnapshot | null | undefined, cap: string): string | number | boolean | null {
+  const m = d?.capabilities?.[cap];
+  if (!m) return null;
+  const v = m.value;
+  return v === undefined ? null : v;
+}
+function capNum(d: HomeyDeviceSnapshot | null | undefined, cap: string): number | null {
+  const v = capVal(d, cap);
+  return typeof v === "number" ? v : null;
+}
+function capBool(d: HomeyDeviceSnapshot | null | undefined, cap: string): boolean {
+  return capVal(d, cap) === true;
+}
+function capStr(d: HomeyDeviceSnapshot | null | undefined, cap: string): string | null {
+  const v = capVal(d, cap);
+  return typeof v === "string" ? v : null;
+}
+
+// Shared Homey snapshot hook (polled every 60s)
+function useHomeySnapshot() {
+  const fetchSnap = useServerFn(getHomeySnapshot);
+  const [devices, setDevices] = useState<HomeyDeviceSnapshot[]>([]);
+  const [zones, setZones] = useState<HomeyZone[]>([]);
+  const [tick, setTick] = useState(0);
+  const reload = useCallback(() => setTick((t) => t + 1), []);
+  useEffect(() => {
+    let c = false;
+    const load = () => {
+      fetchSnap({ data: {} })
+        .then((r: any) => {
+          if (c || !r?.ok) return;
+          setDevices(r.devices ?? []);
+          setZones(r.zones ?? []);
+        })
+        .catch(() => {});
+    };
+    load();
+    const id = setInterval(load, 60_000);
+    return () => { c = true; clearInterval(id); };
+  }, [fetchSnap, tick]);
+  return { devices, zones, reload };
+}
 
 // ----- shared tile -----
 function Tile({
@@ -73,7 +146,7 @@ function Tile({
       onClick={onClick}
       className={`relative rounded-3xl bg-white/[0.03] border border-white/10 backdrop-blur-xl
                   shadow-[0_8px_30px_-12px_rgba(0,0,0,0.6)] overflow-hidden
-                  p-4 flex flex-col ${onClick ? "cursor-pointer hover:bg-white/[0.05] transition" : ""} ${className}`}
+                  p-4 flex flex-col h-full ${onClick ? "cursor-pointer hover:bg-white/[0.05] transition" : ""} ${className}`}
     >
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
@@ -119,7 +192,6 @@ function UvTile({ loc }: { loc: typeof LOCS[LocId] }) {
     return () => { c = true; clearInterval(id); };
   }, [fetchUvCloud, loc.lat, loc.lon]);
 
-  // pick "now" value for the selected mode
   const nowVal = useMemo(() => {
     if (!cloudData) return uv.uvNow ?? 0;
     const now = Date.now();
@@ -140,7 +212,7 @@ function UvTile({ loc }: { loc: typeof LOCS[LocId] }) {
   return (
     <>
       <Tile title={`UV-indeks · ${loc.label}`} icon={<Sun size={14} />} accent="text-amber-400" onClick={() => setOpen(true)}>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 h-full">
           <div className="relative h-24 w-24 rounded-full flex items-center justify-center" style={{ background: ring }}>
             <div className="absolute inset-[6px] rounded-full bg-[#0c0f15] flex flex-col items-center justify-center">
               <div className="text-2xl font-semibold text-white tabular-nums">
@@ -203,9 +275,6 @@ function UvTile({ loc }: { loc: typeof LOCS[LocId] }) {
               <div className="text-2xl font-semibold tabular-nums">{max.toFixed(1)}</div>
             </div>
           </div>
-          <div className="text-[11px] text-white/40 mt-3">
-            Klart-himmel-UV viser maks potensiell stråling. Med skydekke trekkes prognosert sky inn.
-          </div>
         </DialogContent>
       </Dialog>
     </>
@@ -251,7 +320,7 @@ function AqiTile({ loc }: { loc: typeof LOCS[LocId] }) {
   return (
     <>
       <Tile title={`Luftkvalitet · ${loc.label}`} icon={<Wind size={14} />} accent="text-emerald-400" onClick={() => setOpen(true)}>
-        <div className="flex items-end justify-between gap-3">
+        <div className="flex items-end justify-between gap-3 h-full">
           <div>
             <div className="text-4xl font-semibold text-white tabular-nums leading-none">
               {aqi == null ? "—" : Math.round(aqi)}
@@ -298,63 +367,23 @@ function AqiTile({ loc }: { loc: typeof LOCS[LocId] }) {
   );
 }
 
-// ----- Strøm tile -----
-function StromTile({ loc }: { loc: typeof LOCS[LocId] }) {
-  const live = useTibberLive();
-  const home = live.homes[loc.tibber];
-  const power = home.reading?.power ?? 0;
-  const today = home.reading?.accumulatedConsumption ?? null;
-  const max = home.reading?.maxPower ?? null;
-  const cap = 6000;
-  const pct = Math.min(100, (power / cap) * 100);
-  return (
-    <Tile title={`Strømforbruk · ${loc.label}`} icon={<Zap size={14} />} accent="text-orange-400">
-      <div className="flex items-center gap-4">
-        <div className="relative h-28 w-28">
-          <svg viewBox="0 0 100 100" className="-rotate-90">
-            <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="8" />
-            <circle cx="50" cy="50" r="42" fill="none" stroke="url(#strg)" strokeWidth="8" strokeLinecap="round"
-              strokeDasharray={`${(pct / 100) * 264} 264`} />
-            <defs>
-              <linearGradient id="strg" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0%" stopColor="#fb923c" /><stop offset="100%" stopColor="#f43f5e" />
-              </linearGradient>
-            </defs>
-          </svg>
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <div className="text-2xl font-semibold text-white tabular-nums leading-none">
-              {(power / 1000).toFixed(power < 1000 ? 2 : 1)}
-            </div>
-            <div className="text-[10px] uppercase tracking-widest text-white/40">kW nå</div>
-          </div>
-        </div>
-        <div className="flex-1 space-y-2">
-          <div>
-            <div className="text-[10px] uppercase tracking-widest text-white/40">I dag</div>
-            <div className="text-base text-white tabular-nums">{today == null ? "—" : `${today.toFixed(1)} kWh`}</div>
-          </div>
-          <div>
-            <div className="text-[10px] uppercase tracking-widest text-white/40">Topp i dag</div>
-            <div className="text-base text-white tabular-nums">{max == null ? "—" : `${(max / 1000).toFixed(1)} kW`}</div>
-          </div>
-          <div className={`text-[10px] ${home.status === "live" ? "text-emerald-400" : "text-white/40"}`}>
-            ● {home.status === "live" ? "live" : home.status}
-          </div>
-        </div>
-      </div>
-    </Tile>
-  );
-}
-
-// ----- Basseng tile (kompakt med trend-pil + on/off) -----
-function BassengTile({ loc }: { loc: typeof LOCS[LocId] }) {
+// ----- Basseng tile (kobling mot ekte Homey-bryter) -----
+function BassengTile({
+  loc, switchDevice, onReload,
+}: {
+  loc: typeof LOCS[LocId];
+  switchDevice: HomeyDeviceSnapshot | null;
+  onReload: () => void;
+}) {
   const fetch3 = useServerFn(getBassengHistory);
+  const setCap = useServerFn(setLivingRoomDeviceCapability);
   const [points, setPoints] = useState<BassengHistoryPoint[]>([]);
-  const [on, setOn] = useState(true);
+  const [busy, setBusy] = useState(false);
+
   useEffect(() => {
     let c = false;
     const load = () => {
-      fetch3({ data: { hours: 3 } }).then((r) => { if (!c) setPoints(r.points); }).catch(() => {});
+      fetch3({ data: { hours: 24 } }).then((r) => { if (!c) setPoints(r.points); }).catch(() => {});
     };
     load();
     const id = setInterval(load, 5 * 60 * 1000);
@@ -366,7 +395,6 @@ function BassengTile({ loc }: { loc: typeof LOCS[LocId] }) {
     return null;
   }, [points]);
 
-  // trend siste time
   const trend = useMemo(() => {
     if (points.length < 2) return 0;
     const cutoff = Date.now() - 60 * 60 * 1000;
@@ -381,6 +409,13 @@ function BassengTile({ loc }: { loc: typeof LOCS[LocId] }) {
     return newest - oldest;
   }, [points]);
 
+  // Live status fra Homey
+  const isOn = capBool(switchDevice, "onoff");
+  const watts = capNum(switchDevice, "measure_power");
+
+  // sparkline – pool temp last 24h
+  const sparkData = points.filter((p) => p.pool_temp != null).map((p) => ({ t: p.ts, v: p.pool_temp! }));
+
   const verdict =
     latest == null ? "—" :
     latest < 20 ? "Kjølig" : latest < 26 ? "Behagelig" :
@@ -389,105 +424,219 @@ function BassengTile({ loc }: { loc: typeof LOCS[LocId] }) {
   const TrendIcon = trend > 0.05 ? TrendingUp : trend < -0.05 ? TrendingDown : Minus;
   const trendColor = trend > 0.05 ? "text-emerald-400" : trend < -0.05 ? "text-sky-300" : "text-white/40";
 
+  const toggle = async (next: boolean) => {
+    if (!switchDevice || busy) return;
+    setBusy(true);
+    try {
+      await setCap({ data: { deviceId: switchDevice.id, capability: "onoff", value: next } });
+      onReload();
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <Tile
       title={`Basseng · ${loc.label}`}
       icon={<Waves size={14} />}
       accent="text-sky-400"
       action={
-        <Switch checked={on} onCheckedChange={setOn} onClick={(e) => e.stopPropagation()} />
+        switchDevice ? (
+          <Switch
+            checked={isOn}
+            disabled={busy}
+            onCheckedChange={toggle}
+            onClick={(e) => e.stopPropagation()}
+          />
+        ) : (
+          <span className="text-[10px] text-white/30">ingen bryter</span>
+        )
       }
     >
-      <div className="flex items-center justify-between h-full">
-        <div>
-          <div className="text-3xl font-semibold text-white tabular-nums leading-none">
-            {latest == null ? "—" : `${latest.toFixed(1)}°`}
+      <div className="flex flex-col h-full justify-between">
+        <div className="flex items-start justify-between">
+          <div>
+            <div className="text-4xl font-semibold text-white tabular-nums leading-none">
+              {latest == null ? "—" : `${latest.toFixed(1)}°`}
+            </div>
+            <div className="text-xs text-sky-300/80 mt-1">{isOn ? verdict : "Av"}</div>
+            <div className="text-[10px] uppercase tracking-widest text-white/40 mt-1">Vanntemperatur</div>
+            {watts != null && (
+              <div className="text-[10px] text-white/40 mt-1 tabular-nums">{Math.round(watts)} W</div>
+            )}
           </div>
-          <div className="text-xs text-sky-300/80 mt-1">{on ? verdict : "Av"}</div>
-          <div className="text-[10px] uppercase tracking-widest text-white/40 mt-1">Vanntemperatur</div>
+          <div className={`flex items-center gap-1.5 ${trendColor}`}>
+            <TrendIcon size={26} />
+            <div className="text-right">
+              <div className="text-sm tabular-nums">{trend > 0 ? "+" : ""}{trend.toFixed(2)}°</div>
+              <div className="text-[10px] text-white/40 uppercase tracking-widest">siste time</div>
+            </div>
+          </div>
         </div>
-        <div className={`flex items-center gap-1.5 ${trendColor}`}>
-          <TrendIcon size={28} />
-          <div className="text-right">
-            <div className="text-sm tabular-nums">{trend > 0 ? "+" : ""}{trend.toFixed(2)}°</div>
-            <div className="text-[10px] text-white/40 uppercase tracking-widest">siste time</div>
-          </div>
+        <div className="h-12 -mx-1">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={sparkData} margin={{ top: 2, bottom: 0, left: 0, right: 0 }}>
+              <defs>
+                <linearGradient id="bsg" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#38bdf8" stopOpacity={0.55} />
+                  <stop offset="100%" stopColor="#38bdf8" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <Area type="monotone" dataKey="v" stroke="#38bdf8" strokeWidth={1.5} fill="url(#bsg)" isAnimationActive={false} />
+            </AreaChart>
+          </ResponsiveContainer>
         </div>
       </div>
     </Tile>
   );
 }
 
-// ----- Lys (klikkbar) -----
-function LysTile({ loc }: { loc: typeof LOCS[LocId] }) {
+// ----- Lys (Hue via Homey) -----
+function LysTile({
+  loc, hueLights, onReload,
+}: {
+  loc: typeof LOCS[LocId];
+  hueLights: HomeyDeviceSnapshot[];
+  onReload: () => void;
+}) {
   const [open, setOpen] = useState(false);
-  const [scene, setScene] = useState("Kveld");
-  const [brightness, setBrightness] = useState(65);
-  const scenes = ["Kveld", "Film", "Lese", "Av"];
-  const rooms = ["Stua", "Kjøkken", "Soverom", "Gang", "Ute", "Kontor"];
+  const setCap = useServerFn(setLivingRoomDeviceCapability);
+  const [busy, setBusy] = useState<string | null>(null);
+
+  const total = hueLights.length;
+  const onCount = hueLights.filter((d) => capBool(d, "onoff")).length;
+  const dimAvg = (() => {
+    const dims = hueLights.map((d) => capNum(d, "dim")).filter((v): v is number => v != null);
+    if (!dims.length) return null;
+    return Math.round((dims.reduce((a, b) => a + b, 0) / dims.length) * 100);
+  })();
+
+  const allOn = total > 0 && onCount === total;
+
+  const setAll = async (on: boolean) => {
+    if (busy) return;
+    setBusy("__all");
+    try {
+      await Promise.all(
+        hueLights.map((d) =>
+          setCap({ data: { deviceId: d.id, capability: "onoff", value: on } }).catch(() => null),
+        ),
+      );
+      onReload();
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const toggleOne = async (d: HomeyDeviceSnapshot, on: boolean) => {
+    if (busy) return;
+    setBusy(d.id);
+    try {
+      await setCap({ data: { deviceId: d.id, capability: "onoff", value: on } });
+      onReload();
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const setDim = async (d: HomeyDeviceSnapshot, v: number) => {
+    setBusy(d.id);
+    try {
+      await setCap({ data: { deviceId: d.id, capability: "dim", value: v } });
+      onReload();
+    } finally {
+      setBusy(null);
+    }
+  };
+
   return (
     <>
-      <Tile title={`Lys · Stua · ${loc.label}`} icon={<Lightbulb size={14} />} accent="text-yellow-300" onClick={() => setOpen(true)}>
-        <div className="grid grid-cols-2 gap-2">
-          {scenes.map((s) => (
-            <button
-              key={s}
-              onClick={(e) => { e.stopPropagation(); setScene(s); }}
-              className={`rounded-xl border text-xs py-3 transition ${
-                s === scene
-                  ? "border-yellow-300/50 bg-yellow-300/10 text-yellow-200"
-                  : "border-white/10 bg-white/[0.02] text-white/70 hover:bg-white/[0.05]"
-              }`}
-            >{s}</button>
-          ))}
-        </div>
-        <div className="mt-3">
-          <div className="flex items-center justify-between text-[10px] text-white/40 uppercase tracking-widest mb-1">
-            <span>Lysstyrke</span><span className="text-white/70">{brightness}%</span>
+      <Tile
+        title={`Lys · Hue · ${loc.label}`}
+        icon={<Lightbulb size={14} />}
+        accent="text-yellow-300"
+        onClick={() => setOpen(true)}
+        action={
+          total > 0 ? (
+            <Switch
+              checked={allOn}
+              disabled={busy === "__all"}
+              onCheckedChange={setAll}
+              onClick={(e) => e.stopPropagation()}
+            />
+          ) : null
+        }
+      >
+        <div className="flex items-center gap-4 h-full">
+          <div className={`h-20 w-20 rounded-full flex items-center justify-center border transition ${
+            onCount > 0
+              ? "bg-yellow-300/15 border-yellow-300/50 shadow-[0_0_30px_-4px_rgba(253,224,71,0.7)]"
+              : "bg-white/[0.02] border-white/10"
+          }`}>
+            <Lightbulb size={32} className={onCount > 0 ? "text-yellow-200" : "text-white/30"} />
           </div>
-          <div className="h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
-            <div className="h-full bg-gradient-to-r from-yellow-200 to-amber-400" style={{ width: `${brightness}%` }} />
+          <div className="flex-1 min-w-0">
+            <div className="text-2xl font-semibold text-white tabular-nums">
+              {onCount}<span className="text-white/30 text-sm"> / {total}</span>
+            </div>
+            <div className="text-[10px] uppercase tracking-widest text-white/40 mt-0.5">tente Hue-lys</div>
+            {dimAvg != null && (
+              <>
+                <div className="flex items-center justify-between text-[10px] text-white/40 uppercase tracking-widest mt-3 mb-1">
+                  <span>Lysstyrke</span><span className="text-white/70 tabular-nums">{dimAvg}%</span>
+                </div>
+                <div className="h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
+                  <div className="h-full bg-gradient-to-r from-yellow-200 to-amber-400" style={{ width: `${dimAvg}%` }} />
+                </div>
+              </>
+            )}
+            {total === 0 && (
+              <div className="text-[10px] text-white/40 mt-2">Fant ingen Hue-lys i Stua</div>
+            )}
           </div>
         </div>
       </Tile>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="bg-[#0c0f15] border-white/10 text-white max-w-lg">
+        <DialogContent className="bg-[#0c0f15] border-white/10 text-white max-w-lg max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Lys · {loc.label}</DialogTitle>
-            <DialogDescription className="text-white/50">Styr scener og rom</DialogDescription>
+            <DialogTitle>Hue · {loc.label}</DialogTitle>
+            <DialogDescription className="text-white/50">Styr hver enkelt lampe</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 mt-2">
-            <div>
-              <div className="text-[10px] uppercase tracking-widest text-white/40 mb-2">Scener</div>
-              <div className="grid grid-cols-4 gap-2">
-                {scenes.map((s) => (
-                  <button key={s} onClick={() => setScene(s)}
-                    className={`rounded-xl border text-xs py-3 transition ${
-                      s === scene ? "border-yellow-300/50 bg-yellow-300/10 text-yellow-200" : "border-white/10 text-white/70"
-                    }`}>{s}</button>
-                ))}
-              </div>
-            </div>
-            <div>
-              <div className="flex items-center justify-between text-[10px] uppercase tracking-widest text-white/40 mb-2">
-                <span>Lysstyrke</span><span className="text-white/70">{brightness}%</span>
-              </div>
-              <input type="range" min={0} max={100} value={brightness}
-                onChange={(e) => setBrightness(Number(e.target.value))}
-                className="w-full accent-amber-400" />
-            </div>
-            <div>
-              <div className="text-[10px] uppercase tracking-widest text-white/40 mb-2">Rom</div>
-              <div className="grid grid-cols-3 gap-2">
-                {rooms.map((r) => (
-                  <div key={r} className="rounded-xl border border-white/10 bg-white/[0.03] p-3 text-sm flex items-center justify-between">
-                    <span>{r}</span>
-                    <Switch defaultChecked={r === "Stua"} />
+          <div className="space-y-2 mt-2">
+            {hueLights.length === 0 && (
+              <div className="text-sm text-white/50">Ingen Hue-lys koblet til Homey.</div>
+            )}
+            {hueLights.map((d) => {
+              const on = capBool(d, "onoff");
+              const dim = capNum(d, "dim");
+              return (
+                <div key={d.id} className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm truncate">{d.name}</span>
+                    <Switch
+                      checked={on}
+                      disabled={busy === d.id}
+                      onCheckedChange={(v) => toggleOne(d, v)}
+                    />
                   </div>
-                ))}
-              </div>
-            </div>
+                  {dim != null && (
+                    <div className="mt-2">
+                      <div className="flex items-center justify-between text-[10px] text-white/40 uppercase tracking-widest mb-1">
+                        <span>Lysstyrke</span><span className="text-white/70 tabular-nums">{Math.round(dim * 100)}%</span>
+                      </div>
+                      <Slider
+                        min={0}
+                        max={100}
+                        step={1}
+                        value={[Math.round(dim * 100)]}
+                        onValueChange={(v) => setDim(d, (v[0] ?? 0) / 100)}
+                      />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </DialogContent>
       </Dialog>
@@ -495,64 +644,113 @@ function LysTile({ loc }: { loc: typeof LOCS[LocId] }) {
   );
 }
 
-// ----- Varmepumpe -----
-function VarmepumpeTile({ loc }: { loc: typeof LOCS[LocId] }) {
-  const [on, setOn] = useState(true);
-  const [target, setTarget] = useState(22);
-  const [mode, setMode] = useState("Auto");
-  const modes = ["Varme", "Auto", "Vifte"];
+// ----- Varmepumpe (melcloud på Borgen, qlima på Hytta) -----
+function VarmepumpeTile({
+  loc, device, onReload,
+}: {
+  loc: typeof LOCS[LocId];
+  device: HomeyDeviceSnapshot | null;
+  onReload: () => void;
+}) {
+  const setCap = useServerFn(setLivingRoomDeviceCapability);
+  const [busy, setBusy] = useState(false);
+
+  const isOn = capBool(device, "onoff");
+  const target = capNum(device, "target_temperature");
+  const measured = capNum(device, "measure_temperature");
+  const mode = capStr(device, "thermostat_mode");
+  const ttMeta = device?.capabilities?.target_temperature;
+  const tmMeta = device?.capabilities?.thermostat_mode;
+  const modeValues: { id: string; title?: string }[] = Array.isArray(tmMeta?.values) ? tmMeta!.values! : [];
+  const tMin = typeof ttMeta?.min === "number" ? ttMeta.min : 16;
+  const tMax = typeof ttMeta?.max === "number" ? ttMeta.max : 30;
+  const tStep = typeof ttMeta?.step === "number" ? ttMeta.step : 1;
+
+  const send = async (cap: string, value: any) => {
+    if (!device || busy) return;
+    setBusy(true);
+    try {
+      await setCap({ data: { deviceId: device.id, capability: cap, value } });
+      onReload();
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const brand = loc.label === "Hytta" ? "Qlima" : "MELCloud";
+
   return (
     <Tile
-      title={`Varmepumpe · ${loc.label}`}
+      title={`Varmepumpe · ${brand} · ${loc.label}`}
       icon={<Thermometer size={14} />}
       accent="text-rose-400"
       action={
-        <div className="flex items-center gap-2">
-          <span className={`relative inline-flex h-2.5 w-2.5 rounded-full ${on ? "bg-rose-400" : "bg-white/20"}`}>
-            {on && <span className="absolute inset-0 rounded-full bg-rose-400 animate-ping opacity-60" />}
-          </span>
-          <Switch checked={on} onCheckedChange={setOn} />
-        </div>
+        device ? (
+          <div className="flex items-center gap-2">
+            <span className={`relative inline-flex h-2.5 w-2.5 rounded-full ${isOn ? "bg-rose-400" : "bg-white/20"}`}>
+              {isOn && <span className="absolute inset-0 rounded-full bg-rose-400 animate-ping opacity-60" />}
+            </span>
+            <Switch checked={isOn} disabled={busy} onCheckedChange={(v) => send("onoff", v)} />
+          </div>
+        ) : (
+          <span className="text-[10px] text-white/30">ikke funnet</span>
+        )
       }
     >
-      <div className="flex items-center gap-4">
-        <div className={`relative h-28 w-28 rounded-full flex items-center justify-center border transition ${
-          on ? "bg-gradient-to-br from-rose-500/30 to-transparent border-rose-400/50 shadow-[0_0_30px_-4px_rgba(244,63,94,0.6)]"
-             : "bg-white/[0.02] border-white/10"
-        }`}>
-          <div className="text-center">
-            <div className="text-[10px] uppercase tracking-widest text-rose-200/70">Mål</div>
-            <div className="text-3xl font-semibold text-white tabular-nums">{target}°</div>
-            <div className="text-[10px] text-white/40">nå 21.4°</div>
+      {!device ? (
+        <div className="text-xs text-white/50 h-full flex items-center justify-center">
+          Fant ingen {brand}-enhet i Homey.
+        </div>
+      ) : (
+        <div className="flex items-center gap-4 h-full">
+          <div className={`relative h-24 w-24 rounded-full flex items-center justify-center border transition ${
+            isOn ? "bg-gradient-to-br from-rose-500/30 to-transparent border-rose-400/50 shadow-[0_0_30px_-4px_rgba(244,63,94,0.6)]"
+                 : "bg-white/[0.02] border-white/10"
+          }`}>
+            <div className="text-center">
+              <div className="text-[10px] uppercase tracking-widest text-rose-200/70">Mål</div>
+              <div className="text-2xl font-semibold text-white tabular-nums">
+                {target != null ? `${target}°` : "—"}
+              </div>
+              {measured != null && (
+                <div className="text-[10px] text-white/40">nå {measured.toFixed(1)}°</div>
+              )}
+            </div>
+          </div>
+          <div className="flex-1 flex flex-col gap-2">
+            {target != null && (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => send("target_temperature", Math.max(tMin, target - tStep))}
+                  className="h-9 w-9 rounded-full border border-white/10 text-white/80 hover:bg-white/5 flex items-center justify-center"
+                  disabled={!isOn || busy}><Minus size={14} /></button>
+                <div className="flex-1 text-center text-sm tabular-nums">{target}°C</div>
+                <button
+                  onClick={() => send("target_temperature", Math.min(tMax, target + tStep))}
+                  className="h-9 w-9 rounded-full border border-white/10 text-white/80 hover:bg-white/5 flex items-center justify-center"
+                  disabled={!isOn || busy}><Plus size={14} /></button>
+              </div>
+            )}
+            {modeValues.length > 0 && (
+              <div className="grid grid-cols-3 gap-1">
+                {modeValues.slice(0, 6).map((m) => (
+                  <button key={m.id} onClick={() => send("thermostat_mode", m.id)} disabled={!isOn || busy}
+                    className={`text-[11px] py-1.5 rounded-lg border transition truncate ${
+                      m.id === mode && isOn
+                        ? "border-rose-400/40 bg-rose-400/10 text-rose-200"
+                        : "border-white/10 bg-white/[0.02] text-white/70 disabled:opacity-40"
+                    }`}>{m.title ?? m.id}</button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
-        <div className="flex-1 flex flex-col gap-2">
-          <div className="flex items-center gap-2">
-            <button onClick={() => setTarget((t) => Math.max(16, t - 1))}
-              className="h-9 w-9 rounded-full border border-white/10 text-white/80 hover:bg-white/5 flex items-center justify-center"
-              disabled={!on}><Minus size={14} /></button>
-            <div className="flex-1 text-center text-sm tabular-nums">{target}°C</div>
-            <button onClick={() => setTarget((t) => Math.min(30, t + 1))}
-              className="h-9 w-9 rounded-full border border-white/10 text-white/80 hover:bg-white/5 flex items-center justify-center"
-              disabled={!on}><Plus size={14} /></button>
-          </div>
-          <div className="grid grid-cols-3 gap-1">
-            {modes.map((m) => (
-              <button key={m} onClick={() => setMode(m)} disabled={!on}
-                className={`text-[11px] py-1.5 rounded-lg border transition ${
-                  m === mode && on
-                    ? "border-rose-400/40 bg-rose-400/10 text-rose-200"
-                    : "border-white/10 bg-white/[0.02] text-white/70 disabled:opacity-40"
-                }`}>{m}</button>
-            ))}
-          </div>
-        </div>
-      </div>
+      )}
     </Tile>
   );
 }
 
-// ----- Arne vs Rebekka leader (Garmin "vinner-poeng" - samme logikk som Steintavle 2) -----
+// ----- Garmin Vinner-poeng -----
 type Daily = {
   day: string;
   steps: number | null;
@@ -662,13 +860,11 @@ function LeaderTile() {
         </div>
       </div>
 
-      {/* delt bar */}
       <div className="flex h-2 rounded-full overflow-hidden bg-white/[0.06] mb-3">
         <div className="bg-gradient-to-r from-sky-400 to-cyan-300" style={{ width: `${aPct}%` }} />
         <div className="bg-gradient-to-r from-pink-400 to-rose-300 ml-auto" style={{ width: `${rPct}%` }} />
       </div>
 
-      {/* navn + score */}
       <div className="grid grid-cols-2 gap-2">
         <div className={`rounded-xl px-3 py-2 border transition ${
           arneLeads ? "border-sky-300/50 bg-sky-400/10 shadow-[0_0_18px_-4px_rgba(56,189,248,0.6)]"
@@ -698,11 +894,169 @@ function LeaderTile() {
   );
 }
 
+// ----- Kalender (i dag + neste dager) -----
+type CalEvent = {
+  date: string; // yyyy-mm-dd
+  kind: "garbage" | "agenda" | "mail";
+  title: string;
+  sub?: string;
+  time?: string | null;
+  color: string; // tw bg-* class fragment
+  icon: React.ReactNode;
+};
+
+function osloToday(): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Oslo", year: "numeric", month: "2-digit", day: "2-digit",
+  }).format(new Date());
+}
+function daysFromToday(date: string): number {
+  const today = osloToday();
+  const a = new Date(today + "T00:00:00Z").getTime();
+  const b = new Date(date + "T00:00:00Z").getTime();
+  return Math.round((b - a) / 86_400_000);
+}
+
+function CalendarTile() {
+  const fetchGarb = useServerFn(getGarbageOverview);
+  const [events, setEvents] = useState<CalEvent[]>([]);
+
+  useEffect(() => {
+    let c = false;
+    const load = async () => {
+      const evs: CalEvent[] = [];
+      try {
+        const g = await fetchGarb();
+        for (const p of g.pickups ?? []) {
+          const n = (p.fraksjonNavn ?? "").toLowerCase();
+          let color = "bg-emerald-400";
+          if (n.includes("rest")) color = "bg-zinc-400";
+          else if (n.includes("papir") || n.includes("pp")) color = "bg-blue-400";
+          else if (n.includes("plast")) color = "bg-amber-400";
+          else if (n.includes("glas") || n.includes("metall")) color = "bg-violet-400";
+          else if (n.includes("mat") || n.includes("bio")) color = "bg-emerald-400";
+          evs.push({
+            date: p.date,
+            kind: "garbage",
+            title: p.fraksjonNavn ?? "Søppel",
+            sub: "Tømming",
+            color,
+            icon: <Trash2 size={12} />,
+          });
+        }
+      } catch {}
+
+      try {
+        const today = osloToday();
+        const horizon = new Date(); horizon.setDate(horizon.getDate() + 30);
+        const horizonStr = horizon.toISOString().slice(0, 10);
+        const { data } = await supabase
+          .from("agenda_messages")
+          .select("subject, event_date, event_time, who")
+          .gte("event_date", today)
+          .lte("event_date", horizonStr)
+          .order("event_date", { ascending: true });
+        for (const a of (data ?? []) as any[]) {
+          evs.push({
+            date: a.event_date,
+            kind: "agenda",
+            title: a.subject,
+            sub: a.who ?? undefined,
+            time: a.event_time ?? null,
+            color: "bg-sky-400",
+            icon: <Bell size={12} />,
+          });
+        }
+      } catch {}
+
+      if (c) return;
+      evs.sort((a, b) =>
+        a.date === b.date
+          ? (a.time ?? "00:00").localeCompare(b.time ?? "00:00")
+          : a.date.localeCompare(b.date),
+      );
+      setEvents(evs);
+    };
+    load();
+    const id = setInterval(load, 10 * 60 * 1000);
+    return () => { c = true; clearInterval(id); };
+  }, [fetchGarb]);
+
+  const today = osloToday();
+  const todayEvents = events.filter((e) => e.date === today);
+  const upcoming = events.filter((e) => e.date > today).slice(0, 8);
+
+  const formatDay = (date: string): string => {
+    const d = daysFromToday(date);
+    if (d === 0) return "I dag";
+    if (d === 1) return "I morgen";
+    const dt = new Date(date + "T00:00:00Z");
+    return dt.toLocaleDateString("nb-NO", { weekday: "short", day: "numeric", month: "short", timeZone: "Europe/Oslo" });
+  };
+
+  return (
+    <Tile
+      title="Kalender · Det som skjer"
+      icon={<CalendarDays size={14} />}
+      accent="text-cyan-300"
+    >
+      <div className="flex flex-col h-full gap-3 overflow-hidden">
+        {/* I dag */}
+        <div>
+          <div className="text-[10px] uppercase tracking-widest text-white/40 mb-1.5">I dag</div>
+          {todayEvents.length === 0 ? (
+            <div className="text-xs text-white/40 italic">Ingenting planlagt</div>
+          ) : (
+            <div className="flex flex-wrap gap-1.5">
+              {todayEvents.map((e, i) => (
+                <div
+                  key={i}
+                  className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] bg-white/[0.05] border border-white/10"
+                >
+                  <span className={`inline-block h-2 w-2 rounded-full ${e.color}`} />
+                  <span className="text-white/90 truncate max-w-[140px]">{e.title}</span>
+                  {e.time && <span className="text-white/40 tabular-nums">{e.time.slice(0, 5)}</span>}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Kommende */}
+        <div className="flex-1 min-h-0 overflow-y-auto">
+          <div className="text-[10px] uppercase tracking-widest text-white/40 mb-1.5">Kommer</div>
+          {upcoming.length === 0 ? (
+            <div className="text-xs text-white/40 italic">Ingen planlagte hendelser de neste 30 dagene.</div>
+          ) : (
+            <ul className="space-y-1.5">
+              {upcoming.map((e, i) => (
+                <li key={i} className="flex items-center gap-2 rounded-lg bg-white/[0.03] border border-white/10 px-2.5 py-1.5">
+                  <span className={`inline-flex items-center justify-center h-6 w-6 rounded-full text-white ${e.color}/80`}>
+                    {e.icon}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs text-white truncate">{e.title}</div>
+                    {e.sub && <div className="text-[10px] text-white/40 truncate">{e.sub}</div>}
+                  </div>
+                  <div className="text-right">
+                    <div className="text-[11px] text-white/80 tabular-nums">{formatDay(e.date)}</div>
+                    {e.time && <div className="text-[10px] text-white/40 tabular-nums">{e.time.slice(0, 5)}</div>}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+    </Tile>
+  );
+}
+
 // ----- mini-tiles -----
 function MiniTile({ icon, label, value, sub, accent }:
   { icon: React.ReactNode; label: string; value: string; sub?: string; accent?: string }) {
   return (
-    <div className="rounded-2xl bg-white/[0.03] border border-white/10 p-3 flex items-center gap-3">
+    <div className="rounded-2xl bg-white/[0.03] border border-white/10 p-3 flex items-center gap-3 h-full">
       <div className={`h-9 w-9 rounded-full bg-white/5 flex items-center justify-center ${accent ?? "text-white/70"}`}>{icon}</div>
       <div className="min-w-0">
         <div className="text-[10px] uppercase tracking-widest text-white/40">{label}</div>
@@ -718,7 +1072,6 @@ function SmartDashbord() {
   const [locId, setLocId] = useState<LocId>("borgen");
   const loc = LOCS[locId];
 
-  // settings (skala, bold, gap) — lagres i localStorage
   const [settings, setSettings] = useState<DashSettings>(DEFAULT_SETTINGS);
   const [hydrated, setHydrated] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -736,7 +1089,68 @@ function SmartDashbord() {
   const dateStr = now.toLocaleDateString("nb-NO", { weekday: "long", day: "numeric", month: "long" });
   const timeStr = now.toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit" });
 
-  // zoom skalerer både skrift OG element-størrelser, gap-pixler beholdes etter zoom
+  // Homey snapshot (shared)
+  const { devices, zones, reload } = useHomeySnapshot();
+
+  // Basseng-bryter id fra notification_settings
+  const [bassengSwitchId, setBassengSwitchId] = useState<string | null>(null);
+  useEffect(() => {
+    let c = false;
+    const load = () => {
+      supabase
+        .from("notification_settings")
+        .select("value")
+        .eq("key", "basseng_automation")
+        .maybeSingle()
+        .then(({ data }) => {
+          if (c) return;
+          const v = (data?.value ?? {}) as any;
+          setBassengSwitchId(v.bassengSwitchId ?? null);
+        });
+    };
+    load();
+    const id = setInterval(load, 5 * 60 * 1000);
+    return () => { c = true; clearInterval(id); };
+  }, []);
+
+  // Compute per-location device picks
+  const zoneNameById = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const z of zones) m.set(z.id, z.name);
+    return m;
+  }, [zones]);
+
+  const hueLights = useMemo(() => {
+    if (locId !== "borgen") return [];
+    return devices.filter((d) => {
+      if (!isHueDevice(d)) return false;
+      const zn = d.zone ? zoneNameById.get(d.zone) ?? "" : "";
+      const inStue = isStueZoneName(zn) || d.name.toLowerCase().includes("stue") || d.name.toLowerCase().includes("stua");
+      if (!inStue) return false;
+      const inHytta = isHyttaZoneName(zn);
+      return !inHytta;
+    });
+  }, [devices, zoneNameById, locId]);
+
+  const varmepumpe = useMemo(() => {
+    if (locId === "hytta") {
+      return devices.find((d) => isQlima(d)) ?? null;
+    }
+    // Borgen: melcloud, må ikke være i hytta-sone
+    return (
+      devices.find((d) => {
+        if (!isMelcloud(d)) return false;
+        const zn = d.zone ? zoneNameById.get(d.zone) ?? "" : "";
+        return !isHyttaZoneName(zn);
+      }) ?? null
+    );
+  }, [devices, zoneNameById, locId]);
+
+  const bassengSwitch = useMemo(() => {
+    if (!bassengSwitchId) return null;
+    return devices.find((d) => d.id === bassengSwitchId) ?? null;
+  }, [devices, bassengSwitchId]);
+
   const gridStyle: React.CSSProperties = {
     zoom: settings.scale as any,
     columnGap: `${settings.gapX}px`,
@@ -748,6 +1162,8 @@ function SmartDashbord() {
     rowGap: `${settings.gapY}px`,
     marginTop: `${settings.gapY}px`,
   };
+
+  const isHytta = locId === "hytta";
 
   return (
     <div className="min-h-screen bg-[#0a0d13] text-white">
@@ -797,24 +1213,37 @@ function SmartDashbord() {
           </div>
         </div>
 
-        {/* bento grid */}
+        {/* bento grid – alle rader 220px, alle bokser samme høyde.
+            Kalender spenner 2 rader for å være "litt større". */}
         <div
           className={`grid grid-cols-12 auto-rows-[220px] ${settings.bold ? "smart-bold-all" : ""}`}
           style={gridStyle}
         >
-          <div className="col-span-4"><StromTile loc={loc} /></div>
-          <div className="col-span-4"><LysTile loc={loc} /></div>
-          <div className="col-span-4"><VarmepumpeTile loc={loc} /></div>
+          {/* Rad 1: Basseng / (Lys) / Varmepumpe */}
+          <div className={isHytta ? "col-span-6" : "col-span-4"}>
+            <BassengTile loc={loc} switchDevice={bassengSwitch} onReload={reload} />
+          </div>
+          {!isHytta && (
+            <div className="col-span-4">
+              <LysTile loc={loc} hueLights={hueLights} onReload={reload} />
+            </div>
+          )}
+          <div className={isHytta ? "col-span-6" : "col-span-4"}>
+            <VarmepumpeTile loc={loc} device={varmepumpe} onReload={reload} />
+          </div>
 
+          {/* Rad 2-3: Kalender (stor) + UV + AQ + Leader */}
+          <div className="col-span-6 row-span-2">
+            <CalendarTile />
+          </div>
           <div className="col-span-3"><UvTile loc={loc} /></div>
           <div className="col-span-3"><AqiTile loc={loc} /></div>
-          <div className="col-span-3"><BassengTile loc={loc} /></div>
-          <div className="col-span-3"><LeaderTile /></div>
+          <div className="col-span-6"><LeaderTile /></div>
         </div>
 
         {/* mini-rad nederst */}
         <div
-          className={`grid grid-cols-6 ${settings.bold ? "smart-bold-all" : ""}`}
+          className={`grid grid-cols-6 auto-rows-[80px] ${settings.bold ? "smart-bold-all" : ""}`}
           style={miniStyle}
         >
           <MiniTile icon={<Droplets size={16} />} label="Luftfukt" value="42 %" sub="Stua" accent="text-sky-300" />
