@@ -98,8 +98,11 @@ export const Route = createFileRoute("/api/public/hooks/open-meteo-warm")({
           duration_ms: Date.now() - started,
           aq_locations: aqLocs.length,
           uv_locations: uvLocs.length,
+          user_pollen_locations: userPollenLocs.length,
+          union_locations: unionLocs.length,
           results,
         });
+
       },
     },
   },
