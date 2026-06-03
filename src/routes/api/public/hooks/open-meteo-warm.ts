@@ -76,10 +76,16 @@ export const Route = createFileRoute("/api/public/hooks/open-meteo-warm")({
           await run("core", lat, lon, () => warmAirQualityPanel(lat, lon));
           if (i < unionLocs.length - 1) await pause();
         }
-        for (let i = 0; i < uvLocs.length; i++) {
-          const { lat, lon } = uvLocs[i];
+        const uvSeen = new Map<string, { lat: number; lon: number }>();
+        for (const l of [...uvLocs, ...ALWAYS_WARM]) {
+          const k = `${l.lat.toFixed(3)},${l.lon.toFixed(3)}`;
+          if (!uvSeen.has(k)) uvSeen.set(k, l);
+        }
+        const uvAllLocs = [...uvSeen.values()];
+        for (let i = 0; i < uvAllLocs.length; i++) {
+          const { lat, lon } = uvAllLocs[i];
           await run("uvcloud", lat, lon, () => warmUvCloudPanel(lat, lon));
-          if (i < uvLocs.length - 1) await pause();
+          if (i < uvAllLocs.length - 1) await pause();
         }
 
         return Response.json({
