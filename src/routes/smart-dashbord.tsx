@@ -1668,8 +1668,9 @@ function SmartDashbord() {
           <MiniTile icon={<Droplets size={16} />} label="Luftfukt" value="42 %" sub="Stua" accent="text-sky-300" />
           <MiniTile icon={<CloudSun size={16} />} label="Ute" value="6.2°" sub={loc.label} accent="text-amber-300" />
           <MiniTile icon={<Gauge size={16} />} label="CO₂" value="612 ppm" sub="Soverom" accent="text-emerald-300" />
-          <MiniTile icon={<Activity size={16} />} label="Pulse" value="—" sub="Tibber" accent="text-orange-300" />
-          <MiniTile icon={<Power size={16} />} label="Standby" value="148 W" sub="Bakgrunn" accent="text-violet-300" />
+          <MiniTile icon={<Activity size={16} />} label="dB" value="—" sub="Stua" accent="text-orange-300" />
+          <MiniTile icon={<Droplets size={16} />} label="Luftfukt" value="—" sub="Sov. Arne/Rebekka" accent="text-violet-300" />
+
           <MiniTile icon={<Wind size={16} />} label="Vind" value="3.1 m/s" sub="SW" accent="text-cyan-300" />
         </div>
       </main>
