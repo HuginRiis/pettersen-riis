@@ -19,6 +19,7 @@ const BETWEEN_LOCATIONS_DELAY_MS = 1500;
 // Disse vises som hardkodede paneler på /pollen.
 const ALWAYS_WARM: Array<{ lat: number; lon: number }> = [
   { lat: 59.91, lon: 9.07 }, // Hytta · Lyngdal i Numedal
+  { lat: 59.15673, lon: 9.63708 }, // Tollnes, Skien (Arne sin pollen-lokasjon)
 ];
 
 function dedupeLocs(rows: LocRow[]): Array<{ lat: number; lon: number }> {
