@@ -768,14 +768,26 @@ function SmarthusPage() {
 
       {bassengDevice && (
         <>
-          <BassengPoolPanel
-            temperature={bassengReadings.temperature}
-            sourceName={bassengReadings.sourceName}
-          />
+          <section className="container mx-auto px-4 pt-4 sm:pt-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <BassengPoolPanel
+                temperature={bassengReadings.temperature}
+                sourceName={bassengReadings.sourceName}
+                inline
+              />
+              <HundeVannPanel
+                deviceId={hundeVannDevice?.id ?? null}
+                isOn={hundeVannOn}
+                countdownSeconds={countdownSeconds}
+                inline
+              />
+            </div>
+          </section>
           <BassengPowerPanel />
           <BassengHistoryChart />
         </>
       )}
+
 
       <StuaConditionPanel
         temperature={stuaTemp}
