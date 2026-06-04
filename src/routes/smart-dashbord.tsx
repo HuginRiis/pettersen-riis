@@ -2189,7 +2189,8 @@ function WindTile({ windNow, gustNow, windAngle }: { windNow: number | null; gus
   const mm = useDailyMinMax("pbth.smart.gustMax", gustNow);
   const maxToday = Math.max(gustNow ?? 0, mm?.max ?? 0);
   const speed = gustNow ?? windNow ?? 0;
-  const spinDur = speed > 0 ? Math.max(0.6, Math.min(6, 30 / speed)) : 6;
+  // Mer aggressiv skalering: stille = nesten stopp, mye vind = veldig fort
+  const spinDur = speed > 0.1 ? Math.max(0.2, Math.min(8, 8 / (speed * speed * 0.15 + speed * 0.5 + 0.3))) : 12;
   const dirLabel = (deg: number | null) => {
     if (deg == null) return "—";
     const dirs = ["N", "NØ", "Ø", "SØ", "S", "SV", "V", "NV"];
