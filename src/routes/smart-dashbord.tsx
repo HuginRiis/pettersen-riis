@@ -772,13 +772,35 @@ function LysTile({
         }
       >
         <div className="flex items-center gap-4 h-full">
-          <div className={`h-20 w-20 rounded-full flex items-center justify-center border transition ${
-            onCount > 0
-              ? "bg-yellow-300/15 border-yellow-300/50 shadow-[0_0_30px_-4px_rgba(253,224,71,0.7)]"
-              : "bg-white/[0.02] border-white/10"
-          }`}>
-            <Lightbulb size={32} className={onCount > 0 ? "text-yellow-200" : "text-white/30"} />
-          </div>
+          {(() => {
+            const onRatio = total > 0 ? onCount / total : 0;
+            const dimRatio = dimAvg != null ? dimAvg / 100 : (onCount > 0 ? 1 : 0);
+            // 0 = nesten slukket, 1 = full glød. Krever både flere lamper OG høyere dim.
+            const intensity = Math.min(1, onRatio * (0.3 + 0.7 * dimRatio));
+            const glowPx = Math.round(8 + intensity * 38);
+            const glowAlpha = (0.25 + intensity * 0.75).toFixed(2);
+            const bgAlpha = (0.04 + intensity * 0.22).toFixed(2);
+            const borderAlpha = (0.12 + intensity * 0.5).toFixed(2);
+            const iconAlpha = 0.25 + intensity * 0.75;
+            return (
+              <div
+                className="h-20 w-20 rounded-full flex items-center justify-center border transition-all duration-500"
+                style={{
+                  background: `rgba(253,224,71,${bgAlpha})`,
+                  borderColor: `rgba(253,224,71,${borderAlpha})`,
+                  boxShadow: onCount > 0 ? `0 0 ${glowPx}px -2px rgba(253,224,71,${glowAlpha})` : "none",
+                }}
+              >
+                <Lightbulb
+                  size={32}
+                  style={{
+                    color: `rgba(254,240,138,${iconAlpha})`,
+                    filter: onCount > 0 ? `drop-shadow(0 0 ${Math.round(intensity * 10)}px rgba(253,224,71,${glowAlpha}))` : "none",
+                  }}
+                />
+              </div>
+            );
+          })()}
           <div className="flex-1 min-w-0">
             <div className="text-2xl font-semibold text-white tabular-nums">
               {onCount}<span className="text-white/30 text-sm"> / {total}</span>
