@@ -1386,11 +1386,15 @@ function CalendarTile() {
                   className={`relative overflow-hidden rounded-xl border border-white/10 p-2.5 flex flex-col justify-between
                               bg-gradient-to-br ${gradientFor(e)} shadow-[0_4px_18px_-6px_rgba(0,0,0,0.5)]`}
                 >
-                  <div className="absolute -top-3 -right-3 opacity-20 text-white">
-                    <div className="scale-[3]">{e.icon}</div>
+                  {/* stort, mykt bakgrunns-ikon */}
+                  <div className="absolute -top-2 -right-2 text-white pointer-events-none" style={{ opacity: 0.18 }}>
+                    {React.cloneElement(e.icon as React.ReactElement<{ size?: number; strokeWidth?: number }>, { size: 64, strokeWidth: 1.4 })}
                   </div>
-                  <div className="relative">
-                    <div className="text-[12px] font-semibold text-white leading-tight truncate">{e.title}</div>
+                  <div className="relative flex items-start gap-1.5">
+                    <span className="flex items-center justify-center h-5 w-5 rounded-full bg-white/25 text-white shrink-0 mt-0.5 shadow-[0_2px_6px_-1px_rgba(0,0,0,0.4)]">
+                      {React.cloneElement(e.icon as React.ReactElement<{ size?: number }>, { size: 12 })}
+                    </span>
+                    <div className="text-[12px] font-semibold text-white leading-tight truncate flex-1">{e.title}</div>
                   </div>
                   <div className="relative flex items-end justify-between gap-2 mt-1">
                     <div className="min-w-0 flex-1">
