@@ -1949,7 +1949,7 @@ function UvCompact({ loc }: { loc: typeof LOCS[LocId] }) {
               <div className="text-[8px] uppercase tracking-widest text-white/40 mt-0.5">nå</div>
             </div>
           </div>
-          <div className="min-w-0 flex-1">
+          <div className="min-w-0 flex-1 relative z-10">
             <div className="text-[9px] uppercase tracking-widest text-white/40">Maks</div>
             <div className="text-base font-medium text-white tabular-nums">{max.toFixed(1)}</div>
             {cloudPct != null && (
@@ -1959,17 +1959,21 @@ function UvCompact({ loc }: { loc: typeof LOCS[LocId] }) {
         </div>
         <button
           onClick={toggleClouds}
-          className={`mt-1.5 w-full text-[10px] py-1 rounded-md border transition flex items-center justify-center gap-1 ${
+          className={`relative z-20 mt-1.5 w-full text-[10px] py-1 rounded-md border transition flex items-center justify-center gap-1 backdrop-blur-sm ${
             withClouds
-              ? "bg-sky-400/15 border-sky-400/40 text-sky-200"
-              : "bg-amber-400/10 border-amber-400/30 text-amber-200"
+              ? "bg-sky-400/20 border-sky-400/40 text-sky-100"
+              : "bg-amber-400/15 border-amber-400/30 text-amber-100"
           }`}
         >
           {withClouds ? <Cloud size={10} /> : <CloudOff size={10} />}
           {withClouds ? "Med sky" : "Uten sky"}
         </button>
       </div>
-      <style>{`@keyframes pbthUvCloud{0%{transform:translateX(0)}100%{transform:translateX(280%)}}@keyframes pbthUvSun{0%,100%{opacity:0.7;transform:scale(1)}50%{opacity:1;transform:scale(1.08)}}`}</style>
+      <style>{`
+        @keyframes pbthUvCloud{0%{transform:translateX(0)}100%{transform:translateX(280%)}}
+        @keyframes pbthUvCloudWide{0%{transform:translateX(0)}100%{transform:translateX(600%)}}
+        @keyframes pbthUvSun{0%,100%{opacity:0.7;transform:scale(1)}50%{opacity:1;transform:scale(1.08)}}
+      `}</style>
     </Tile>
   );
 }
