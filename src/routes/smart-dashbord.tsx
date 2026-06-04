@@ -2153,7 +2153,7 @@ function RainTile({ rainDay, rainHour, windNow }: { rainDay: number | null; rain
             );
           })}
         </div>
-        <div className="pointer-events-none absolute left-0 right-0 bottom-0 h-px bg-sky-300/20" />
+        
         <div className="relative z-10">
           <div className="text-[10px] uppercase tracking-widest text-white/40">I dag</div>
           <div className="text-3xl font-semibold text-white tabular-nums leading-tight">
