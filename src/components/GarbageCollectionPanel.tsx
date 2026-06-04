@@ -305,7 +305,7 @@ export function GarbageCollectionPanel() {
                   >
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-2">
-                        <span className="text-base">{FRAKSJON_EMOJI[pref.fraksjon_id] ?? "🗑"}</span>
+                        <FraksjonIcon id={pref.fraksjon_id} navn={f.Navn} size={24} />
                         <span className="text-sm text-foreground">{f.Navn}</span>
                       </div>
                       <div className="flex items-center gap-2">
