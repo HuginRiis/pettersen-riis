@@ -1227,6 +1227,262 @@ function LeaderTile() {
   );
 }
 
+// ----- Roboter: Sileno (Gardena) + Roborock (Borgen) -----
+import { getGardenaSnapshot, controlGardenaMower } from "@/lib/gardena.functions";
+import { getRoborockSnapshot, sendRoborockCommand } from "@/lib/roborock.functions";
+import { Bot, Play, ParkingSquare, Home as HomeIcon, Pause, Loader2 } from "lucide-react";
+
+type GardenaSnap = Awaited<ReturnType<typeof getGardenaSnapshot>>;
+type RoborockSnap = Awaited<ReturnType<typeof getRoborockSnapshot>>;
+
+const MOWER_ACT_LABEL: Record<string, string> = {
+  PAUSED: "Pauset",
+  OK_CUTTING: "Klipper",
+  OK_CUTTING_TIMER_OVERRIDDEN: "Klipper",
+  OK_SEARCHING: "Søker dokk",
+  OK_LEAVING: "Forlater dokk",
+  OK_CHARGING: "Lader",
+  PARKED_TIMER: "Parkert",
+  PARKED_PARK_SELECTED: "Parkert",
+  PARKED_AUTOTIMER: "Parkert",
+  NONE: "Inaktiv",
+};
+const ROBO_STATE_LABEL: Record<number, string> = {
+  1: "Reiser seg", 2: "Lader (avbrutt)", 3: "Hviler", 4: "Fjernstyrt", 5: "Renser",
+  6: "Returnerer", 7: "Manuell", 8: "Lader", 9: "Ladefeil", 10: "Pauset",
+  11: "Sone-rens", 12: "Feil", 13: "Skrur av", 14: "Oppdaterer", 15: "Dokker",
+  16: "Marsjerer", 17: "Sone-rens", 18: "Rom-rens",
+  22: "Tømmer", 23: "Vasker mopp", 26: "Hjem for mopp",
+};
+
+function RobotsTile() {
+  const fetchG = useServerFn(getGardenaSnapshot);
+  const fetchR = useServerFn(getRoborockSnapshot);
+  const ctrlMower = useServerFn(controlGardenaMower);
+  const ctrlRobo = useServerFn(sendRoborockCommand);
+  const [gar, setGar] = useState<GardenaSnap | null>(null);
+  const [rob, setRob] = useState<RoborockSnap | null>(null);
+  const [open, setOpen] = useState<"sileno" | "borgen" | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
+
+  const load = useCallback(() => {
+    fetchG().then((r) => setGar(r)).catch(() => {});
+    fetchR().then((r) => setRob(r)).catch(() => {});
+  }, [fetchG, fetchR]);
+
+  useEffect(() => {
+    load();
+    const id = setInterval(load, 60_000);
+    return () => clearInterval(id);
+  }, [load]);
+
+  const mower = useMemo(() => {
+    const arr = gar?.mowers ?? [];
+    return arr.find((m) => /sileno/i.test(m.name ?? "")) ?? arr[0] ?? null;
+  }, [gar]);
+  const mowerSvcId = useMemo(() => mower?.raw.find((s) => s.type === "MOWER")?.id ?? null, [mower]);
+
+  const robo = useMemo(() => {
+    const devs = (rob?.ok ? rob.devices : []) ?? [];
+    return devs.find((d) => /borgen/i.test(d.name ?? "")) ?? devs[0] ?? null;
+  }, [rob]);
+
+  const mowerActLabel = mower?.activity
+    ? (MOWER_ACT_LABEL[mower.activity] ?? mower.activity.replaceAll("_", " ").toLowerCase())
+    : "—";
+  const mowerActive = !!mower?.activity && /CUTTING|LEAVING|SEARCHING/.test(mower.activity);
+
+  const roboStatus = (robo?.attribute ?? {}) as Record<string, unknown>;
+  const roboStateNum = (() => {
+    const s = roboStatus[121] ?? (roboStatus as any).state;
+    return typeof s === "number" ? s : typeof s === "string" && s !== "" && !Number.isNaN(Number(s)) ? Number(s) : null;
+  })();
+  const roboBatt = (() => {
+    const s = roboStatus[122] ?? (roboStatus as any).battery;
+    return typeof s === "number" ? s : typeof s === "string" && s !== "" && !Number.isNaN(Number(s)) ? Number(s) : null;
+  })();
+  const roboLabel = roboStateNum != null ? (ROBO_STATE_LABEL[roboStateNum] ?? `kode ${roboStateNum}`) : "—";
+  const roboActive = roboStateNum != null && [5, 6, 11, 15, 16, 17, 18].includes(roboStateNum);
+
+  const runMower = async (cmd: string, seconds?: number) => {
+    if (!mowerSvcId) return;
+    setBusy(`m:${cmd}`);
+    try { await ctrlMower({ data: { serviceId: mowerSvcId, command: cmd, seconds } }); }
+    finally { setBusy(null); setTimeout(load, 1500); }
+  };
+  const runRobo = async (method: string, params?: any[]) => {
+    if (!robo) return;
+    setBusy(`r:${method}`);
+    try { await ctrlRobo({ data: { duid: robo.duid, method, params: params ?? [] } }); }
+    finally { setBusy(null); setTimeout(load, 1500); }
+  };
+
+  return (
+    <>
+      <Tile title="Roboter · Borgen" icon={<Bot size={14} />} accent="text-emerald-300">
+        <div className="grid grid-cols-1 gap-2 h-full">
+          {/* Sileno */}
+          <button
+            type="button"
+            onClick={() => setOpen("sileno")}
+            className={`relative overflow-hidden rounded-xl border px-3 py-2 text-left transition ${
+              mowerActive
+                ? "border-emerald-300/50 bg-emerald-400/10 shadow-[0_0_20px_-4px_rgba(52,211,153,0.55)]"
+                : "border-white/10 bg-white/[0.03] hover:bg-white/[0.06]"
+            }`}
+          >
+            {mowerActive && (
+              <span className="absolute inset-0 pointer-events-none">
+                <span className="absolute -inset-x-2 top-1/2 h-px bg-gradient-to-r from-transparent via-emerald-300/60 to-transparent animate-pulse" />
+              </span>
+            )}
+            <div className="flex items-center gap-2">
+              <div className={`relative h-8 w-8 rounded-full flex items-center justify-center ${mowerActive ? "bg-emerald-400/15" : "bg-white/5"}`}>
+                {mowerActive && <span className="absolute inset-0 rounded-full bg-emerald-400/30 animate-ping" />}
+                <Bot size={15} className={mowerActive ? "text-emerald-300" : "text-white/70"} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-[9px] uppercase tracking-widest text-white/40">Sileno · Gressklipper</div>
+                <div className="text-sm text-white truncate">{mowerActLabel}</div>
+              </div>
+              <div className="text-right">
+                <div className="text-[9px] uppercase tracking-widest text-white/40">Bat</div>
+                <div className="text-xs tabular-nums text-white/80">{mower?.battery != null ? `${Math.round(mower.battery)}%` : "—"}</div>
+              </div>
+            </div>
+          </button>
+
+          {/* Roborock Borgen */}
+          <button
+            type="button"
+            onClick={() => setOpen("borgen")}
+            className={`relative overflow-hidden rounded-xl border px-3 py-2 text-left transition ${
+              roboActive
+                ? "border-sky-300/50 bg-sky-400/10 shadow-[0_0_20px_-4px_rgba(56,189,248,0.55)]"
+                : "border-white/10 bg-white/[0.03] hover:bg-white/[0.06]"
+            }`}
+          >
+            {roboActive && (
+              <span className="absolute inset-0 pointer-events-none">
+                <span className="absolute -inset-x-2 top-1/2 h-px bg-gradient-to-r from-transparent via-sky-300/60 to-transparent animate-pulse" />
+              </span>
+            )}
+            <div className="flex items-center gap-2">
+              <div className={`relative h-8 w-8 rounded-full flex items-center justify-center ${roboActive ? "bg-sky-400/15" : "bg-white/5"}`}>
+                {roboActive && <span className="absolute inset-0 rounded-full bg-sky-400/30 animate-ping" />}
+                <Bot size={15} className={`${roboActive ? "text-sky-300 animate-spin" : "text-white/70"}`} style={roboActive ? { animationDuration: "3s" } : undefined} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-[9px] uppercase tracking-widest text-white/40">Roborock · Borgen</div>
+                <div className="text-sm text-white truncate">{roboLabel}</div>
+              </div>
+              <div className="text-right">
+                <div className="text-[9px] uppercase tracking-widest text-white/40">Bat</div>
+                <div className="text-xs tabular-nums text-white/80">{roboBatt != null ? `${roboBatt}%` : "—"}</div>
+              </div>
+            </div>
+          </button>
+        </div>
+      </Tile>
+
+      <Dialog open={open === "sileno"} onOpenChange={(v) => !v && setOpen(null)}>
+        <DialogContent className="bg-[#0c0f15] border-white/10 text-white max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Sileno · Gressklipper</DialogTitle>
+            <DialogDescription className="text-white/50">
+              {mower?.name ?? "—"} · {mowerActLabel} · Bat {mower?.battery != null ? `${Math.round(mower.battery)}%` : "—"}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-3 gap-2 mt-2">
+            <button
+              type="button" disabled={!mowerSvcId || !!busy}
+              onClick={() => runMower("START_DONT_OVERRIDE")}
+              className="text-[10px] tracking-[0.2em] uppercase border border-emerald-400/40 bg-emerald-400/10 text-emerald-300 hover:bg-emerald-400/20 disabled:opacity-50 rounded px-2 py-2 flex items-center justify-center gap-1"
+            >
+              {busy === "m:START_DONT_OVERRIDE" ? <Loader2 size={12} className="animate-spin" /> : <Play size={12} />}
+              Start
+            </button>
+            <button
+              type="button" disabled={!mowerSvcId || !!busy}
+              onClick={() => runMower("PARK_UNTIL_NEXT_TASK")}
+              className="text-[10px] tracking-[0.2em] uppercase border border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 disabled:opacity-50 rounded px-2 py-2 flex items-center justify-center gap-1"
+            >
+              {busy === "m:PARK_UNTIL_NEXT_TASK" ? <Loader2 size={12} className="animate-spin" /> : <ParkingSquare size={12} />}
+              Park
+            </button>
+            <button
+              type="button" disabled={!mowerSvcId || !!busy}
+              onClick={() => runMower("PARK_UNTIL_FURTHER_NOTICE")}
+              className="text-[10px] tracking-[0.2em] uppercase border border-amber-400/40 bg-amber-400/10 text-amber-300 hover:bg-amber-400/20 disabled:opacity-50 rounded px-2 py-2 flex items-center justify-center gap-1"
+            >
+              {busy === "m:PARK_UNTIL_FURTHER_NOTICE" ? <Loader2 size={12} className="animate-spin" /> : <Pause size={12} />}
+              Park ∞
+            </button>
+          </div>
+          <div className="grid grid-cols-3 gap-2 mt-1">
+            {[60, 180, 360].map((mins) => (
+              <button
+                key={mins} type="button" disabled={!mowerSvcId || !!busy}
+                onClick={() => runMower("START_SECONDS_TO_OVERRIDE", mins * 60)}
+                className="text-[10px] tracking-[0.2em] uppercase border border-white/15 hover:border-primary/40 hover:text-primary disabled:opacity-50 rounded px-2 py-2 flex items-center justify-center gap-1"
+              >
+                {mins < 60 ? `${mins}m` : `${mins / 60}t`}
+              </button>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={open === "borgen"} onOpenChange={(v) => !v && setOpen(null)}>
+        <DialogContent className="bg-[#0c0f15] border-white/10 text-white max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Roborock · Borgen</DialogTitle>
+            <DialogDescription className="text-white/50">
+              {robo?.name ?? "—"} · {roboLabel} · Bat {roboBatt != null ? `${roboBatt}%` : "—"}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-2 gap-2 mt-2">
+            <button
+              type="button" disabled={!robo || !!busy}
+              onClick={() => runRobo("app_start")}
+              className="text-[10px] tracking-[0.2em] uppercase border border-emerald-400/40 bg-emerald-400/10 text-emerald-300 hover:bg-emerald-400/20 disabled:opacity-50 rounded px-2 py-2 flex items-center justify-center gap-1"
+            >
+              {busy === "r:app_start" ? <Loader2 size={12} className="animate-spin" /> : <Play size={12} />}
+              Start
+            </button>
+            <button
+              type="button" disabled={!robo || !!busy}
+              onClick={() => runRobo("app_pause")}
+              className="text-[10px] tracking-[0.2em] uppercase border border-amber-400/40 bg-amber-400/10 text-amber-300 hover:bg-amber-400/20 disabled:opacity-50 rounded px-2 py-2 flex items-center justify-center gap-1"
+            >
+              {busy === "r:app_pause" ? <Loader2 size={12} className="animate-spin" /> : <Pause size={12} />}
+              Pause
+            </button>
+            <button
+              type="button" disabled={!robo || !!busy}
+              onClick={() => runRobo("app_stop")}
+              className="text-[10px] tracking-[0.2em] uppercase border border-destructive/50 bg-destructive/10 text-destructive hover:bg-destructive/20 disabled:opacity-50 rounded px-2 py-2 flex items-center justify-center gap-1"
+            >
+              {busy === "r:app_stop" ? <Loader2 size={12} className="animate-spin" /> : <Pause size={12} />}
+              Stopp
+            </button>
+            <button
+              type="button" disabled={!robo || !!busy}
+              onClick={() => runRobo("app_charge")}
+              className="text-[10px] tracking-[0.2em] uppercase border border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 disabled:opacity-50 rounded px-2 py-2 flex items-center justify-center gap-1"
+            >
+              {busy === "r:app_charge" ? <Loader2 size={12} className="animate-spin" /> : <HomeIcon size={12} />}
+              Hjem
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+
+
 // ----- Kalender (i dag + neste dager) -----
 type CalEvent = {
   date: string; // yyyy-mm-dd
