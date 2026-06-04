@@ -2884,7 +2884,9 @@ function SmartDashbord() {
 
               {/* Rad 3: Kalender + Leader */}
               <div className="col-span-6"><CalendarTile /></div>
-              <div className="col-span-6"><LeaderTile /></div>
+              <div className="col-span-3"><LeaderTile /></div>
+              <div className="col-span-3"><RobotsTile /></div>
+
             </>
           )}
         </div>
