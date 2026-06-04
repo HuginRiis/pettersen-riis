@@ -56,6 +56,11 @@ type Overview = {
   error?: string;
 };
 
+import matavfallImg from "@/assets/garbage/matavfall.png";
+import restavfallImg from "@/assets/garbage/restavfall.png";
+import glassImg from "@/assets/garbage/glass.png";
+import metallPlastImg from "@/assets/garbage/metall-plast.png";
+
 const FRAKSJON_EMOJI: Record<number, string> = {
   1: "🗑",
   2: "📦",
@@ -65,6 +70,32 @@ const FRAKSJON_EMOJI: Record<number, string> = {
   6: "☣️",
   7: "♻️",
 };
+
+function fraksjonImage(navn: string | undefined): string | null {
+  const n = (navn ?? "").toLowerCase();
+  if (n.includes("mat")) return matavfallImg;
+  if (n.includes("rest")) return restavfallImg;
+  if (n.includes("plast") || (n.includes("metall") && !n.includes("glass"))) return metallPlastImg;
+  if (n.includes("glass") || n.includes("metall")) return glassImg;
+  return null;
+}
+
+function FraksjonIcon({ id, navn, size = 28 }: { id: number; navn?: string; size?: number }) {
+  const img = fraksjonImage(navn);
+  if (img) {
+    return (
+      <img
+        src={img}
+        alt=""
+        width={size}
+        height={size}
+        className="shrink-0 rounded-full object-cover"
+        style={{ width: size, height: size }}
+      />
+    );
+  }
+  return <span className="text-lg shrink-0">{FRAKSJON_EMOJI[id] ?? "🗑"}</span>;
+}
 
 function formatDateLabel(date: string, daysUntil: number): string {
   const [y, m, d] = date.split("-").map(Number);
