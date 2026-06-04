@@ -6,30 +6,7 @@ import {
   Droplets, Gauge, CloudSun, Activity, Power, Settings2,
   TrendingUp, TrendingDown, Minus, Cloud, CloudOff, Plus, Trophy, Home,
   CalendarDays, Trash2, Mail, Cake, Bell, Zap, CloudRain, PawPrint,
-  Newspaper, Apple, Wine, Milk, AlertTriangle, Recycle,
 } from "lucide-react";
-
-// Samme fraksjon-ikoner som brukes på Søppeltømming / bursdager / meldinger
-const GARBAGE_ICON_MAP: Record<number, React.ComponentType<{ size?: number; strokeWidth?: number }>> = {
-  1: Trash2,        // Restavfall
-  2: Newspaper,     // Papir
-  3: Apple,         // Matavfall
-  4: Wine,          // Glass/metall
-  5: Milk,          // Plast
-  6: AlertTriangle, // Farlig avfall
-  7: Recycle,       // Annet
-};
-function garbageIconFor(fraksjonId: number | undefined, name: string): React.ComponentType<{ size?: number; strokeWidth?: number }> {
-  if (fraksjonId != null && GARBAGE_ICON_MAP[fraksjonId]) return GARBAGE_ICON_MAP[fraksjonId];
-  const n = name.toLowerCase();
-  if (n.includes("rest")) return Trash2;
-  if (n.includes("papir") || n.includes("papp") || n.includes("pp")) return Newspaper;
-  if (n.includes("mat") || n.includes("bio")) return Apple;
-  if (n.includes("glas") || n.includes("metall")) return Wine;
-  if (n.includes("plast")) return Milk;
-  if (n.includes("farlig")) return AlertTriangle;
-  return Recycle;
-}
 import {
   AreaChart, Area, ResponsiveContainer,
 } from "recharts";
@@ -1291,14 +1268,13 @@ function CalendarTile() {
           else if (n.includes("plast")) color = "bg-amber-400";
           else if (n.includes("glas") || n.includes("metall")) color = "bg-violet-400";
           else if (n.includes("mat") || n.includes("bio")) color = "bg-emerald-400";
-          const Ico = garbageIconFor((p as any).fraksjonId, p.fraksjonNavn ?? "");
           evs.push({
             date: p.date,
             kind: "garbage",
             title: p.fraksjonNavn ?? "Søppel",
             sub: "Tømming",
             color,
-            icon: <Ico size={12} />,
+            icon: <Trash2 size={12} />,
           });
         }
       } catch {}
@@ -1923,55 +1899,40 @@ function UvCompact({ loc }: { loc: typeof LOCS[LocId] }) {
   return (
     <Tile title={`UV · ${loc.label}`} icon={<Sun size={14} />} accent="text-amber-400">
       <div className="relative flex flex-col h-full overflow-hidden">
-        {/* Realistiske skyer — multi-puff SVG med soft skygge, parallaks og varierte lag */}
+        {/* Skyer som driver over HELE boksen — variert størrelse, høyde og fart */}
         {withClouds && Array.from({ length: cloudCount }).map((_, i) => {
-          // Stor variasjon: noen små stratus i bakgrunnen, noen store cumulus i forgrunn
-          const isFront = i % 2 === 0;
-          const baseW = isFront ? 90 : 55;
-          const sizeBoost = Math.round(cloudOpacity * 60);
-          const w = baseW + sizeBoost + ((i * 13) % 35);
-          const h = Math.round(w * (0.52 + ((i * 7) % 18) / 100));
-          const dur = (isFront ? 26 : 42) + (i % 5) * 7 + ((i * 11) % 11);
-          const delay = -((i * 3.7) % dur);
-          const top = -6 + ((i * 23) % 92);
-          // Tetthet styrer hvitheten
-          const whiteTop = (0.78 + cloudOpacity * 0.2).toFixed(2);
-          const whiteBot = (0.42 + cloudOpacity * 0.35).toFixed(2);
-          const shadow = (0.18 + cloudOpacity * 0.22).toFixed(2);
-          const blur = isFront ? 0.4 : 1.6 + (i % 2) * 0.8;
-          const gradId = `uvCloudG-${loc.label}-${i}`;
+          // Mer naturlig: skystørrelse skalerer med skydekke (mer dekke → større skyer)
+          const baseSize = 20 + (i % 4) * 10;
+          const sizeBoost = Math.round(cloudOpacity * 28);
+          const size = baseSize + sizeBoost + ((i * 7) % 14);
+          const dur = 14 + (i % 5) * 6 + ((i * 11) % 9);
+          const delay = -((i * 2.9) % dur);
+          // skiktet over hele høyden, ikke bare topp
+          const top = -8 + ((i * 23) % 100);
+          // ekte sky-fyllingsfarge skalert med dekkegrad
+          const fillA = 0.35 + cloudOpacity * 0.45;
+          const strokeA = 0.55 + cloudOpacity * 0.35;
+          const z = i % 2 === 0 ? 5 : 1; // noen foran, noen bak
+          // svak blur for å myke konturer
+          const blur = ((i % 3) * 0.4).toFixed(1);
           return (
             <div
               key={i}
               className="absolute pointer-events-none"
               style={{
                 top: `${top}%`,
-                left: "-30%",
-                opacity: 0.55 + cloudOpacity * 0.4,
+                left: "-25%",
+                opacity: 0.45 + cloudOpacity * 0.45,
                 animation: `pbthUvCloudWide ${dur}s linear ${delay}s infinite`,
-                filter: `blur(${blur}px) drop-shadow(0 4px 6px rgba(15,23,42,${shadow}))`,
-                zIndex: isFront ? 5 : 1,
-                width: w,
-                height: h,
+                filter: `blur(${blur}px)`,
+                zIndex: z,
               }}
             >
-              <svg viewBox="0 0 200 110" width={w} height={h} preserveAspectRatio="none">
-                <defs>
-                  <radialGradient id={gradId} cx="50%" cy="35%" r="65%">
-                    <stop offset="0%" stopColor={`rgba(255,255,255,${whiteTop})`} />
-                    <stop offset="65%" stopColor={`rgba(245,248,255,${whiteBot})`} />
-                    <stop offset="100%" stopColor={`rgba(200,210,225,${(Number(whiteBot) * 0.6).toFixed(2)})`} />
-                  </radialGradient>
-                </defs>
-                {/* Flere overlappende puffer for naturlig kontur */}
-                <ellipse cx="55" cy="70" rx="45" ry="28" fill={`url(#${gradId})`} />
-                <ellipse cx="95" cy="50" rx="55" ry="38" fill={`url(#${gradId})`} />
-                <ellipse cx="140" cy="60" rx="42" ry="32" fill={`url(#${gradId})`} />
-                <ellipse cx="165" cy="75" rx="28" ry="20" fill={`url(#${gradId})`} />
-                <ellipse cx="80" cy="78" rx="35" ry="20" fill={`url(#${gradId})`} />
-                {/* Flat underkant */}
-                <ellipse cx="105" cy="92" rx="80" ry="10" fill={`rgba(180,190,205,${(Number(whiteBot) * 0.55).toFixed(2)})`} />
-              </svg>
+              <Cloud
+                size={size}
+                strokeWidth={1.2}
+                style={{ color: `rgba(255,255,255,${strokeA})`, fill: `rgba(255,255,255,${fillA})` }}
+              />
             </div>
           );
         })}
