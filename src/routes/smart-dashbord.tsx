@@ -2079,33 +2079,38 @@ function AqiCompact({ loc }: { loc: typeof LOCS[LocId] }) {
 }
 
 // ----- Rain tile (mm i dag + siste time, Tollnes) -----
-function RainTile({ rainDay, rainHour }: { rainDay: number | null; rainHour: number | null }) {
+function RainTile({ rainDay, rainHour, windNow }: { rainDay: number | null; rainHour: number | null; windNow?: number | null }) {
   const mm = rainDay ?? 0;
   const mmHour = rainHour ?? 0;
-  // intensitet basert på siste time (mer responsivt enn dagstotal)
-  const intensity = Math.min(1, Math.max(mmHour / 4, mm / 12));
-  const dropCount = Math.max(8, Math.round(10 + intensity * 28));
+  const wind = windNow ?? 0;
+  // Regner det NÅ? Kun siste-time-verdi bestemmer aktiv animasjon.
+  const isRaining = mmHour > 0.02;
+  // intensitet basert KUN på siste time – stopper med en gang regnet slutter
+  const intensity = isRaining ? Math.min(1, mmHour / 4) : 0;
+  // skrå (sidelengs) skalert med vind: ~12° ved vindstille, opp mot 55° i kraftig vind
+  const slant = Math.max(8, Math.min(55, 8 + wind * 4));
+  const horiz = Math.round(Math.tan((slant * Math.PI) / 180) * 180); // px sidelengs over 180px fall
+  const dropCount = isRaining ? Math.max(6, Math.round(6 + intensity * 38)) : 0;
   const drops = Array.from({ length: dropCount });
-  const splashCount = Math.max(3, Math.round(3 + intensity * 8));
+  const splashCount = isRaining ? Math.max(2, Math.round(2 + intensity * 10)) : 0;
   const splashes = Array.from({ length: splashCount });
   return (
     <Tile title="Regn · Tollnes" icon={<CloudRain size={14} />} accent="text-sky-300">
       <div className="relative h-full flex items-end justify-between gap-2 overflow-hidden">
-        {/* skygge øverst som "skyen" drypper fra */}
+        {/* skygge øverst som "skyen" drypper fra – tyngre når det regner mye */}
         <div
           className="pointer-events-none absolute -top-6 left-0 right-0 h-10"
           style={{
-            background:
-              "radial-gradient(ellipse at 50% 100%, rgba(148,163,184,0.28) 0%, rgba(148,163,184,0) 70%)",
+            background: `radial-gradient(ellipse at 50% 100%, rgba(148,163,184,${0.15 + intensity * 0.35}) 0%, rgba(148,163,184,0) 70%)`,
           }}
         />
-        {/* animerte regndråper med skrå retning */}
+        {/* animerte regndråper med skrå retning basert på vind */}
         <div className="pointer-events-none absolute inset-0">
           {drops.map((_, i) => {
             const left = (i * 7.3) % 100;
             const delay = -((i * 0.19) % 2);
-            const dur = 0.9 + ((i * 13) % 7) / 10;
-            const len = 8 + ((i * 5) % 16);
+            const dur = 0.8 + ((i * 13) % 7) / 10;
+            const len = 8 + ((i * 5) % 18) + Math.round(intensity * 6);
             return (
               <span
                 key={i}
@@ -2116,10 +2121,10 @@ function RainTile({ rainDay, rainHour }: { rainDay: number | null; rainHour: num
                   width: 1.6,
                   height: `${len}px`,
                   background:
-                    "linear-gradient(to bottom, rgba(186,230,253,0), rgba(125,211,252,0.85))",
+                    "linear-gradient(to bottom, rgba(186,230,253,0), rgba(125,211,252,0.9))",
                   opacity: 0.35 + intensity * 0.55,
-                  transform: "rotate(12deg)",
-                  animation: `pbthRainFall ${dur}s linear ${delay}s infinite`,
+                  transform: `rotate(${slant}deg)`,
+                  animation: `pbthRainFall_${Math.round(horiz)} ${dur}s linear ${delay}s infinite`,
                 }}
               />
             );
@@ -2141,13 +2146,13 @@ function RainTile({ rainDay, rainHour }: { rainDay: number | null; rainHour: num
                   width: 4,
                   height: 4,
                   opacity: 0.15 + intensity * 0.6,
-                  animation: `pbthRainSplash ${dur}s ease-out ${delay}s infinite`,
+                  animation: `pbthRainSplash 1.6s ease-out ${delay}s infinite`,
+                  animationDuration: `${dur}s`,
                 }}
               />
             );
           })}
         </div>
-        {/* "bakke"-stripe nederst */}
         <div className="pointer-events-none absolute left-0 right-0 bottom-0 h-px bg-sky-300/20" />
         <div className="relative z-10">
           <div className="text-[10px] uppercase tracking-widest text-white/40">I dag</div>
@@ -2160,19 +2165,23 @@ function RainTile({ rainDay, rainHour }: { rainDay: number | null; rainHour: num
             <span className="text-sky-200 tabular-nums">
               {rainHour == null ? "—" : `${rainHour.toFixed(1).replace(".", ",")} mm`}
             </span>
+            {!isRaining && rainHour != null && (
+              <span className="ml-1 text-white/30">· tørt</span>
+            )}
           </div>
         </div>
         <div className="relative z-10 self-end pb-4">
-          <Droplets size={36} className="text-sky-300/70" />
+          <Droplets size={36} className={isRaining ? "text-sky-300/70" : "text-white/20"} />
         </div>
       </div>
       <style>{`
-        @keyframes pbthRainFall{0%{transform:translateY(0) rotate(12deg);opacity:0}10%{opacity:1}90%{opacity:1}100%{transform:translateY(180px) rotate(12deg);opacity:0}}
+        @keyframes pbthRainFall_${Math.round(horiz)}{0%{transform:translate(0,0) rotate(${slant}deg);opacity:0}10%{opacity:1}90%{opacity:1}100%{transform:translate(${horiz}px,180px) rotate(${slant}deg);opacity:0}}
         @keyframes pbthRainSplash{0%{transform:scale(0.2);opacity:0.9}80%{transform:scale(2.4);opacity:0.15}100%{transform:scale(2.8);opacity:0}}
       `}</style>
     </Tile>
   );
 }
+
 
 
 // ----- Wind tile (maks gust i dag, Tollnes) -----
