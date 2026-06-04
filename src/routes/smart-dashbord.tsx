@@ -1767,7 +1767,11 @@ function StromTile({ home }: { home: "borgen" | "hytta" }) {
           <style>{`
             @keyframes pbthSpark{0%,100%{transform:translateY(0) scale(1);opacity:0.25}50%{transform:translateY(-6px) scale(1.6);opacity:1}}
             @keyframes pbthBolt{0%,100%{opacity:0.1;transform:scale(1)}50%{opacity:0.35;transform:scale(1.08)}}
+            @keyframes pbthArcPulse{0%,100%{filter:drop-shadow(0 0 4px ${arcColor})}50%{filter:drop-shadow(0 0 14px ${arcColor})}}
+            @keyframes pbthArcFlow{to{stroke-dashoffset:-${C}}}
+            @keyframes pbthValuePulse{0%,100%{text-shadow:0 0 0 transparent}50%{text-shadow:0 0 10px ${arcColor}}}
           `}</style>
+
         </div>
       )}
     </Tile>
