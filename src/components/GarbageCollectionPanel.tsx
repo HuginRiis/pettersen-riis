@@ -55,10 +55,27 @@ type Overview = {
   prefs: Pref[];
   error?: string;
 };
+const FRAKSJON_EMOJI: Record<number, string> = {
+  1: "🗑",
+  2: "📦",
+  3: "🥬",
+  4: "🍷",
+  5: "🥛",
+  6: "☣️",
+  7: "♻️",
+};
 
-function FraksjonIcon({ id, navn }: { id: number; navn?: string }) {
+function FraksjonIcon({ id, navn, size = 28 }: { id: number; navn?: string; size?: number }) {
   const emoji = FRAKSJON_EMOJI[id];
-  return <span className="text-2xl shrink-0" title={navn}>{emoji ?? "🗑"}</span>;
+  return (
+    <span
+      className="shrink-0 inline-block leading-none"
+      title={navn}
+      style={{ fontSize: size }}
+    >
+      {emoji ?? "🗑"}
+    </span>
+  );
 }
 
 function formatDateLabel(date: string, daysUntil: number): string {
