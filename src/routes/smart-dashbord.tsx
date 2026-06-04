@@ -1886,11 +1886,51 @@ function UvCompact({ loc }: { loc: typeof LOCS[LocId] }) {
   const pct = Math.min(100, (v / 11) * 100);
   const ring = `conic-gradient(rgb(251 191 36) ${pct}%, rgba(255,255,255,0.08) 0)`;
   const cloudOpacity = withClouds && cloudPct != null ? Math.min(1, cloudPct / 100) : 0;
-  const cloudCount = withClouds && cloudPct != null ? Math.max(1, Math.round((cloudPct / 100) * 5)) : 0;
+  // Antall skyer skalerer mer naturlig: lite 10% → 2 skyer, 100% → 9 skyer
+  const cloudCount = withClouds && cloudPct != null
+    ? Math.max(2, Math.round(2 + (cloudPct / 100) * 7))
+    : 0;
   return (
     <Tile title={`UV · ${loc.label}`} icon={<Sun size={14} />} accent="text-amber-400">
-      <div className="flex flex-col h-full">
-        <div className="flex items-center gap-3 flex-1 min-h-0">
+      <div className="relative flex flex-col h-full overflow-hidden">
+        {/* Skyer som driver over HELE boksen — variert størrelse, høyde og fart */}
+        {withClouds && Array.from({ length: cloudCount }).map((_, i) => {
+          // Mer naturlig: skystørrelse skalerer med skydekke (mer dekke → større skyer)
+          const baseSize = 20 + (i % 4) * 10;
+          const sizeBoost = Math.round(cloudOpacity * 28);
+          const size = baseSize + sizeBoost + ((i * 7) % 14);
+          const dur = 14 + (i % 5) * 6 + ((i * 11) % 9);
+          const delay = -((i * 2.9) % dur);
+          // skiktet over hele høyden, ikke bare topp
+          const top = -8 + ((i * 23) % 100);
+          // ekte sky-fyllingsfarge skalert med dekkegrad
+          const fillA = 0.35 + cloudOpacity * 0.45;
+          const strokeA = 0.55 + cloudOpacity * 0.35;
+          const z = i % 2 === 0 ? 5 : 1; // noen foran, noen bak
+          // svak blur for å myke konturer
+          const blur = ((i % 3) * 0.4).toFixed(1);
+          return (
+            <div
+              key={i}
+              className="absolute pointer-events-none"
+              style={{
+                top: `${top}%`,
+                left: "-25%",
+                opacity: 0.45 + cloudOpacity * 0.45,
+                animation: `pbthUvCloudWide ${dur}s linear ${delay}s infinite`,
+                filter: `blur(${blur}px)`,
+                zIndex: z,
+              }}
+            >
+              <Cloud
+                size={size}
+                strokeWidth={1.2}
+                style={{ color: `rgba(255,255,255,${strokeA})`, fill: `rgba(255,255,255,${fillA})` }}
+              />
+            </div>
+          );
+        })}
+        <div className="relative flex items-center gap-3 flex-1 min-h-0 z-10">
           <div className="relative h-16 w-16 rounded-full flex items-center justify-center shrink-0 overflow-hidden" style={{ background: ring }}>
             {/* Sun rays glow when clear */}
             {!withClouds && (
@@ -1908,27 +1948,6 @@ function UvCompact({ loc }: { loc: typeof LOCS[LocId] }) {
               </div>
               <div className="text-[8px] uppercase tracking-widest text-white/40 mt-0.5">nå</div>
             </div>
-            {/* Drifting clouds overlay */}
-            {withClouds && Array.from({ length: cloudCount }).map((_, i) => {
-              const dur = 6 + (i % 3) * 2;
-              const delay = -(i * 1.7);
-              const top = 10 + ((i * 17) % 50);
-              const size = 14 + (i % 3) * 4;
-              return (
-                <div
-                  key={i}
-                  className="absolute pointer-events-none"
-                  style={{
-                    top: `${top}%`,
-                    left: "-30%",
-                    opacity: 0.35 + cloudOpacity * 0.55,
-                    animation: `pbthUvCloud ${dur}s linear ${delay}s infinite`,
-                  }}
-                >
-                  <Cloud size={size} className="text-white/90" strokeWidth={1.5} fill="rgba(255,255,255,0.5)" />
-                </div>
-              );
-            })}
           </div>
           <div className="min-w-0 flex-1">
             <div className="text-[9px] uppercase tracking-widest text-white/40">Maks</div>
