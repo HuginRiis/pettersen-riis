@@ -1697,6 +1697,7 @@ function StromTile({ home }: { home: "borgen" | "hytta" }) {
           <div className="relative shrink-0 z-10" style={{ width: 100, height: 100 }}>
             <svg width="100" height="100" viewBox="0 0 100 100" className="-rotate-90">
               <circle cx="50" cy="50" r={R} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="7" />
+              {/* hoved-bue: pulserende glow */}
               <circle
                 cx="50" cy="50" r={R}
                 fill="none"
@@ -1707,16 +1708,35 @@ function StromTile({ home }: { home: "borgen" | "hytta" }) {
                 style={{
                   transition: "stroke-dasharray 0.6s ease, stroke 0.6s ease",
                   filter: `drop-shadow(0 0 6px ${arcColor})`,
+                  animation: "pbthArcPulse 2.2s ease-in-out infinite",
+                }}
+              />
+              {/* flytende energi-stripe oppå buen */}
+              <circle
+                cx="50" cy="50" r={R}
+                fill="none"
+                stroke="rgba(255,255,255,0.85)"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeDasharray={`6 ${Math.max(1, dash - 6)} 0 ${C}`}
+                style={{
+                  filter: `drop-shadow(0 0 4px ${arcColor})`,
+                  animation: `pbthArcFlow ${Math.max(1.2, 3 - Math.min(2.4, nowKw / 2))}s linear infinite`,
+                  opacity: pct > 0.02 ? 0.9 : 0,
                 }}
               />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <div className="text-2xl font-semibold text-white tabular-nums leading-none">
+              <div
+                className="text-2xl font-semibold text-white tabular-nums leading-none"
+                style={{ animation: "pbthValuePulse 2.2s ease-in-out infinite" }}
+              >
                 {nowKw.toFixed(2)}
               </div>
               <div className="text-[9px] uppercase tracking-widest text-white/40 mt-1">kW nå</div>
             </div>
           </div>
+
           {/* Stats */}
           <div className="flex-1 min-w-0 relative z-10">
             <div className="text-[10px] uppercase tracking-widest text-white/40">I dag</div>
@@ -1747,7 +1767,11 @@ function StromTile({ home }: { home: "borgen" | "hytta" }) {
           <style>{`
             @keyframes pbthSpark{0%,100%{transform:translateY(0) scale(1);opacity:0.25}50%{transform:translateY(-6px) scale(1.6);opacity:1}}
             @keyframes pbthBolt{0%,100%{opacity:0.1;transform:scale(1)}50%{opacity:0.35;transform:scale(1.08)}}
+            @keyframes pbthArcPulse{0%,100%{filter:drop-shadow(0 0 4px ${arcColor})}50%{filter:drop-shadow(0 0 14px ${arcColor})}}
+            @keyframes pbthArcFlow{to{stroke-dashoffset:-${C}}}
+            @keyframes pbthValuePulse{0%,100%{text-shadow:0 0 0 transparent}50%{text-shadow:0 0 10px ${arcColor}}}
           `}</style>
+
         </div>
       )}
     </Tile>
@@ -2153,7 +2177,7 @@ function RainTile({ rainDay, rainHour, windNow }: { rainDay: number | null; rain
             );
           })}
         </div>
-        <div className="pointer-events-none absolute left-0 right-0 bottom-0 h-px bg-sky-300/20" />
+        
         <div className="relative z-10">
           <div className="text-[10px] uppercase tracking-widest text-white/40">I dag</div>
           <div className="text-3xl font-semibold text-white tabular-nums leading-tight">
