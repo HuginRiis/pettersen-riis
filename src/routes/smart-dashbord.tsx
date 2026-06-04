@@ -1291,13 +1291,14 @@ function CalendarTile() {
           else if (n.includes("plast")) color = "bg-amber-400";
           else if (n.includes("glas") || n.includes("metall")) color = "bg-violet-400";
           else if (n.includes("mat") || n.includes("bio")) color = "bg-emerald-400";
+          const Ico = garbageIconFor((p as any).fraksjonId, p.fraksjonNavn ?? "");
           evs.push({
             date: p.date,
             kind: "garbage",
             title: p.fraksjonNavn ?? "Søppel",
             sub: "Tømming",
             color,
-            icon: <Trash2 size={12} />,
+            icon: <Ico size={12} />,
           });
         }
       } catch {}
