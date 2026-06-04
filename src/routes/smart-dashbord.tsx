@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState, useCallback } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import {
   Wind, Sun, Lightbulb, Thermometer, Waves,
@@ -772,13 +772,35 @@ function LysTile({
         }
       >
         <div className="flex items-center gap-4 h-full">
-          <div className={`h-20 w-20 rounded-full flex items-center justify-center border transition ${
-            onCount > 0
-              ? "bg-yellow-300/15 border-yellow-300/50 shadow-[0_0_30px_-4px_rgba(253,224,71,0.7)]"
-              : "bg-white/[0.02] border-white/10"
-          }`}>
-            <Lightbulb size={32} className={onCount > 0 ? "text-yellow-200" : "text-white/30"} />
-          </div>
+          {(() => {
+            const onRatio = total > 0 ? onCount / total : 0;
+            const dimRatio = dimAvg != null ? dimAvg / 100 : (onCount > 0 ? 1 : 0);
+            // 0 = nesten slukket, 1 = full glød. Krever både flere lamper OG høyere dim.
+            const intensity = Math.min(1, onRatio * (0.3 + 0.7 * dimRatio));
+            const glowPx = Math.round(8 + intensity * 38);
+            const glowAlpha = (0.25 + intensity * 0.75).toFixed(2);
+            const bgAlpha = (0.04 + intensity * 0.22).toFixed(2);
+            const borderAlpha = (0.12 + intensity * 0.5).toFixed(2);
+            const iconAlpha = 0.25 + intensity * 0.75;
+            return (
+              <div
+                className="h-20 w-20 rounded-full flex items-center justify-center border transition-all duration-500"
+                style={{
+                  background: `rgba(253,224,71,${bgAlpha})`,
+                  borderColor: `rgba(253,224,71,${borderAlpha})`,
+                  boxShadow: onCount > 0 ? `0 0 ${glowPx}px -2px rgba(253,224,71,${glowAlpha})` : "none",
+                }}
+              >
+                <Lightbulb
+                  size={32}
+                  style={{
+                    color: `rgba(254,240,138,${iconAlpha})`,
+                    filter: onCount > 0 ? `drop-shadow(0 0 ${Math.round(intensity * 10)}px rgba(253,224,71,${glowAlpha}))` : "none",
+                  }}
+                />
+              </div>
+            );
+          })()}
           <div className="flex-1 min-w-0">
             <div className="text-2xl font-semibold text-white tabular-nums">
               {onCount}<span className="text-white/30 text-sm"> / {total}</span>
@@ -1338,10 +1360,12 @@ function CalendarTile() {
             {todayEvents.slice(0, 3).map((e, i) => (
               <div
                 key={i}
-                className={`flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] bg-gradient-to-r ${gradientFor(e)} text-white/95`}
+                className={`flex items-center gap-1.5 rounded-full pl-1 pr-2 py-0.5 text-[10px] bg-gradient-to-r ${gradientFor(e)} text-white shadow-[0_2px_8px_-2px_rgba(0,0,0,0.4)]`}
               >
-                <span className="opacity-80">{e.icon}</span>
-                <span className="truncate max-w-[110px]">{e.title}</span>
+                <span className="flex items-center justify-center h-4 w-4 rounded-full bg-white/20 text-white shrink-0">
+                  {React.cloneElement(e.icon as React.ReactElement<{ size?: number }>, { size: 10 })}
+                </span>
+                <span className="truncate max-w-[110px] font-medium">{e.title}</span>
               </div>
             ))}
           </div>
@@ -1362,11 +1386,15 @@ function CalendarTile() {
                   className={`relative overflow-hidden rounded-xl border border-white/10 p-2.5 flex flex-col justify-between
                               bg-gradient-to-br ${gradientFor(e)} shadow-[0_4px_18px_-6px_rgba(0,0,0,0.5)]`}
                 >
-                  <div className="absolute -top-3 -right-3 opacity-20 text-white">
-                    <div className="scale-[3]">{e.icon}</div>
+                  {/* stort, mykt bakgrunns-ikon */}
+                  <div className="absolute -top-2 -right-2 text-white pointer-events-none" style={{ opacity: 0.18 }}>
+                    {React.cloneElement(e.icon as React.ReactElement<{ size?: number; strokeWidth?: number }>, { size: 64, strokeWidth: 1.4 })}
                   </div>
-                  <div className="relative">
-                    <div className="text-[12px] font-semibold text-white leading-tight truncate">{e.title}</div>
+                  <div className="relative flex items-start gap-1.5">
+                    <span className="flex items-center justify-center h-5 w-5 rounded-full bg-white/25 text-white shrink-0 mt-0.5 shadow-[0_2px_6px_-1px_rgba(0,0,0,0.4)]">
+                      {React.cloneElement(e.icon as React.ReactElement<{ size?: number }>, { size: 12 })}
+                    </span>
+                    <div className="text-[12px] font-semibold text-white leading-tight truncate flex-1">{e.title}</div>
                   </div>
                   <div className="relative flex items-end justify-between gap-2 mt-1">
                     <div className="min-w-0 flex-1">
@@ -1465,6 +1493,14 @@ function LysCombinedTile({
             const total = g.lights.length;
             const onCount = g.lights.filter(isOnFor).length;
             const allOn = total > 0 && onCount === total;
+            const dims = g.lights.map((d) => capNum(d, "dim")).filter((v): v is number => v != null);
+            const dimAvg = dims.length ? dims.reduce((a, b) => a + b, 0) / dims.length : (onCount > 0 ? 1 : 0);
+            const onRatio = total > 0 ? onCount / total : 0;
+            const intensity = Math.min(1, onRatio * (0.3 + 0.7 * dimAvg));
+            const glowPx = Math.round(4 + intensity * 22);
+            const glowAlpha = (0.25 + intensity * 0.7).toFixed(2);
+            const bgAlpha = (0.04 + intensity * 0.22).toFixed(2);
+            const iconAlpha = 0.25 + intensity * 0.75;
             return (
               <div
                 key={g.label}
@@ -1475,19 +1511,28 @@ function LysCombinedTile({
                 }`}
               >
                 <div
-                  className={`h-10 w-10 rounded-full flex items-center justify-center shrink-0 ${
-                    onCount > 0
-                      ? "bg-yellow-300/15 text-yellow-200 shadow-[0_0_18px_-4px_rgba(253,224,71,0.6)]"
-                      : "bg-white/[0.03] text-white/30"
-                  }`}
+                  className="h-10 w-10 rounded-full flex items-center justify-center shrink-0 transition-all duration-500"
+                  style={{
+                    background: `rgba(253,224,71,${bgAlpha})`,
+                    boxShadow: onCount > 0 ? `0 0 ${glowPx}px -2px rgba(253,224,71,${glowAlpha})` : "none",
+                  }}
                 >
-                  <Lightbulb size={18} />
+                  <Lightbulb
+                    size={18}
+                    style={{
+                      color: `rgba(254,240,138,${iconAlpha})`,
+                      filter: onCount > 0 ? `drop-shadow(0 0 ${Math.round(intensity * 6)}px rgba(253,224,71,${glowAlpha}))` : "none",
+                    }}
+                  />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-[11px] uppercase tracking-widest text-white/60">{g.label}</div>
                   <div className="text-sm text-white tabular-nums">
                     {onCount}<span className="text-white/30"> / {total}</span>
                     <span className="text-white/40 text-[10px] ml-1.5">tente</span>
+                    {dims.length > 0 && onCount > 0 && (
+                      <span className="text-white/40 text-[10px] ml-1.5">· {Math.round(dimAvg * 100)}%</span>
+                    )}
                   </div>
                 </div>
                 <Switch
@@ -1847,11 +1892,51 @@ function UvCompact({ loc }: { loc: typeof LOCS[LocId] }) {
   const pct = Math.min(100, (v / 11) * 100);
   const ring = `conic-gradient(rgb(251 191 36) ${pct}%, rgba(255,255,255,0.08) 0)`;
   const cloudOpacity = withClouds && cloudPct != null ? Math.min(1, cloudPct / 100) : 0;
-  const cloudCount = withClouds && cloudPct != null ? Math.max(1, Math.round((cloudPct / 100) * 5)) : 0;
+  // Antall skyer skalerer mer naturlig: lite 10% → 2 skyer, 100% → 9 skyer
+  const cloudCount = withClouds && cloudPct != null
+    ? Math.max(2, Math.round(2 + (cloudPct / 100) * 7))
+    : 0;
   return (
     <Tile title={`UV · ${loc.label}`} icon={<Sun size={14} />} accent="text-amber-400">
-      <div className="flex flex-col h-full">
-        <div className="flex items-center gap-3 flex-1 min-h-0">
+      <div className="relative flex flex-col h-full overflow-hidden">
+        {/* Skyer som driver over HELE boksen — variert størrelse, høyde og fart */}
+        {withClouds && Array.from({ length: cloudCount }).map((_, i) => {
+          // Mer naturlig: skystørrelse skalerer med skydekke (mer dekke → større skyer)
+          const baseSize = 20 + (i % 4) * 10;
+          const sizeBoost = Math.round(cloudOpacity * 28);
+          const size = baseSize + sizeBoost + ((i * 7) % 14);
+          const dur = 14 + (i % 5) * 6 + ((i * 11) % 9);
+          const delay = -((i * 2.9) % dur);
+          // skiktet over hele høyden, ikke bare topp
+          const top = -8 + ((i * 23) % 100);
+          // ekte sky-fyllingsfarge skalert med dekkegrad
+          const fillA = 0.35 + cloudOpacity * 0.45;
+          const strokeA = 0.55 + cloudOpacity * 0.35;
+          const z = i % 2 === 0 ? 5 : 1; // noen foran, noen bak
+          // svak blur for å myke konturer
+          const blur = ((i % 3) * 0.4).toFixed(1);
+          return (
+            <div
+              key={i}
+              className="absolute pointer-events-none"
+              style={{
+                top: `${top}%`,
+                left: "-25%",
+                opacity: 0.45 + cloudOpacity * 0.45,
+                animation: `pbthUvCloudWide ${dur}s linear ${delay}s infinite`,
+                filter: `blur(${blur}px)`,
+                zIndex: z,
+              }}
+            >
+              <Cloud
+                size={size}
+                strokeWidth={1.2}
+                style={{ color: `rgba(255,255,255,${strokeA})`, fill: `rgba(255,255,255,${fillA})` }}
+              />
+            </div>
+          );
+        })}
+        <div className="relative flex items-center gap-3 flex-1 min-h-0 z-10">
           <div className="relative h-16 w-16 rounded-full flex items-center justify-center shrink-0 overflow-hidden" style={{ background: ring }}>
             {/* Sun rays glow when clear */}
             {!withClouds && (
@@ -1869,29 +1954,8 @@ function UvCompact({ loc }: { loc: typeof LOCS[LocId] }) {
               </div>
               <div className="text-[8px] uppercase tracking-widest text-white/40 mt-0.5">nå</div>
             </div>
-            {/* Drifting clouds overlay */}
-            {withClouds && Array.from({ length: cloudCount }).map((_, i) => {
-              const dur = 6 + (i % 3) * 2;
-              const delay = -(i * 1.7);
-              const top = 10 + ((i * 17) % 50);
-              const size = 14 + (i % 3) * 4;
-              return (
-                <div
-                  key={i}
-                  className="absolute pointer-events-none"
-                  style={{
-                    top: `${top}%`,
-                    left: "-30%",
-                    opacity: 0.35 + cloudOpacity * 0.55,
-                    animation: `pbthUvCloud ${dur}s linear ${delay}s infinite`,
-                  }}
-                >
-                  <Cloud size={size} className="text-white/90" strokeWidth={1.5} fill="rgba(255,255,255,0.5)" />
-                </div>
-              );
-            })}
           </div>
-          <div className="min-w-0 flex-1">
+          <div className="min-w-0 flex-1 relative z-10">
             <div className="text-[9px] uppercase tracking-widest text-white/40">Maks</div>
             <div className="text-base font-medium text-white tabular-nums">{max.toFixed(1)}</div>
             {cloudPct != null && (
@@ -1901,17 +1965,21 @@ function UvCompact({ loc }: { loc: typeof LOCS[LocId] }) {
         </div>
         <button
           onClick={toggleClouds}
-          className={`mt-1.5 w-full text-[10px] py-1 rounded-md border transition flex items-center justify-center gap-1 ${
+          className={`relative z-20 mt-1.5 w-full text-[10px] py-1 rounded-md border transition flex items-center justify-center gap-1 backdrop-blur-sm ${
             withClouds
-              ? "bg-sky-400/15 border-sky-400/40 text-sky-200"
-              : "bg-amber-400/10 border-amber-400/30 text-amber-200"
+              ? "bg-sky-400/20 border-sky-400/40 text-sky-100"
+              : "bg-amber-400/15 border-amber-400/30 text-amber-100"
           }`}
         >
           {withClouds ? <Cloud size={10} /> : <CloudOff size={10} />}
           {withClouds ? "Med sky" : "Uten sky"}
         </button>
       </div>
-      <style>{`@keyframes pbthUvCloud{0%{transform:translateX(0)}100%{transform:translateX(280%)}}@keyframes pbthUvSun{0%,100%{opacity:0.7;transform:scale(1)}50%{opacity:1;transform:scale(1.08)}}`}</style>
+      <style>{`
+        @keyframes pbthUvCloud{0%{transform:translateX(0)}100%{transform:translateX(280%)}}
+        @keyframes pbthUvCloudWide{0%{transform:translateX(0)}100%{transform:translateX(600%)}}
+        @keyframes pbthUvSun{0%,100%{opacity:0.7;transform:scale(1)}50%{opacity:1;transform:scale(1.08)}}
+      `}</style>
     </Tile>
   );
 }
@@ -2013,32 +2081,74 @@ function AqiCompact({ loc }: { loc: typeof LOCS[LocId] }) {
 // ----- Rain tile (mm i dag + siste time, Tollnes) -----
 function RainTile({ rainDay, rainHour }: { rainDay: number | null; rainHour: number | null }) {
   const mm = rainDay ?? 0;
-  const intensity = Math.min(1, mm / 10); // 10mm = full
-  const drops = Array.from({ length: 14 });
+  const mmHour = rainHour ?? 0;
+  // intensitet basert på siste time (mer responsivt enn dagstotal)
+  const intensity = Math.min(1, Math.max(mmHour / 4, mm / 12));
+  const dropCount = Math.max(8, Math.round(10 + intensity * 28));
+  const drops = Array.from({ length: dropCount });
+  const splashCount = Math.max(3, Math.round(3 + intensity * 8));
+  const splashes = Array.from({ length: splashCount });
   return (
     <Tile title="Regn · Tollnes" icon={<CloudRain size={14} />} accent="text-sky-300">
       <div className="relative h-full flex items-end justify-between gap-2 overflow-hidden">
-        {/* animerte regndråper */}
+        {/* skygge øverst som "skyen" drypper fra */}
+        <div
+          className="pointer-events-none absolute -top-6 left-0 right-0 h-10"
+          style={{
+            background:
+              "radial-gradient(ellipse at 50% 100%, rgba(148,163,184,0.28) 0%, rgba(148,163,184,0) 70%)",
+          }}
+        />
+        {/* animerte regndråper med skrå retning */}
         <div className="pointer-events-none absolute inset-0">
           {drops.map((_, i) => {
             const left = (i * 7.3) % 100;
-            const delay = (i * 0.23) % 2;
-            const dur = 1.1 + ((i * 13) % 7) / 10;
+            const delay = -((i * 0.19) % 2);
+            const dur = 0.9 + ((i * 13) % 7) / 10;
+            const len = 8 + ((i * 5) % 16);
             return (
               <span
                 key={i}
-                className="absolute block w-[2px] rounded-full bg-sky-300/60"
+                className="absolute block rounded-full"
                 style={{
                   left: `${left}%`,
-                  top: "-12%",
-                  height: `${10 + ((i * 5) % 14)}px`,
-                  opacity: 0.25 + intensity * 0.6,
+                  top: "-14%",
+                  width: 1.6,
+                  height: `${len}px`,
+                  background:
+                    "linear-gradient(to bottom, rgba(186,230,253,0), rgba(125,211,252,0.85))",
+                  opacity: 0.35 + intensity * 0.55,
+                  transform: "rotate(12deg)",
                   animation: `pbthRainFall ${dur}s linear ${delay}s infinite`,
                 }}
               />
             );
           })}
         </div>
+        {/* splash-ringer på "bakken" */}
+        <div className="pointer-events-none absolute left-0 right-0 bottom-0 h-6">
+          {splashes.map((_, i) => {
+            const left = 4 + ((i * 13) % 92);
+            const delay = -((i * 0.27) % 1.8);
+            const dur = 1.4 + ((i * 7) % 5) / 5;
+            return (
+              <span
+                key={i}
+                className="absolute rounded-full border border-sky-300/70"
+                style={{
+                  left: `${left}%`,
+                  bottom: 2,
+                  width: 4,
+                  height: 4,
+                  opacity: 0.15 + intensity * 0.6,
+                  animation: `pbthRainSplash ${dur}s ease-out ${delay}s infinite`,
+                }}
+              />
+            );
+          })}
+        </div>
+        {/* "bakke"-stripe nederst */}
+        <div className="pointer-events-none absolute left-0 right-0 bottom-0 h-px bg-sky-300/20" />
         <div className="relative z-10">
           <div className="text-[10px] uppercase tracking-widest text-white/40">I dag</div>
           <div className="text-3xl font-semibold text-white tabular-nums leading-tight">
@@ -2052,11 +2162,14 @@ function RainTile({ rainDay, rainHour }: { rainDay: number | null; rainHour: num
             </span>
           </div>
         </div>
-        <div className="relative z-10 self-end">
+        <div className="relative z-10 self-end pb-4">
           <Droplets size={36} className="text-sky-300/70" />
         </div>
       </div>
-      <style>{`@keyframes pbthRainFall{0%{transform:translateY(0)}100%{transform:translateY(180px)}}`}</style>
+      <style>{`
+        @keyframes pbthRainFall{0%{transform:translateY(0) rotate(12deg);opacity:0}10%{opacity:1}90%{opacity:1}100%{transform:translateY(180px) rotate(12deg);opacity:0}}
+        @keyframes pbthRainSplash{0%{transform:scale(0.2);opacity:0.9}80%{transform:scale(2.4);opacity:0.15}100%{transform:scale(2.8);opacity:0}}
+      `}</style>
     </Tile>
   );
 }
