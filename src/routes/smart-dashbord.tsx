@@ -2114,20 +2114,23 @@ function RainTile({ rainDay, rainHour, windNow }: { rainDay: number | null; rain
   // skrå (sidelengs) skalert med vind: ~12° ved vindstille, opp mot 55° i kraftig vind
   const slant = Math.max(8, Math.min(55, 8 + wind * 4));
   const horiz = Math.round(Math.tan((slant * Math.PI) / 180) * 180); // px sidelengs over 180px fall
-  const dropCount = isRaining ? Math.max(6, Math.round(6 + intensity * 38)) : 0;
+  const dropCount = isRaining ? Math.max(6, Math.round(6 + intensity * 38)) : 3;
   const drops = Array.from({ length: dropCount });
   const splashCount = isRaining ? Math.max(2, Math.round(2 + intensity * 10)) : 0;
   const splashes = Array.from({ length: splashCount });
   return (
     <Tile title="Regn · Tollnes" icon={<CloudRain size={14} />} accent="text-sky-300">
       <div className="relative h-full flex items-end justify-between gap-2 overflow-hidden">
-        {/* skygge øverst som "skyen" drypper fra – tyngre når det regner mye */}
-        <div
-          className="pointer-events-none absolute -top-6 left-0 right-0 h-10"
-          style={{
-            background: `radial-gradient(ellipse at 50% 100%, rgba(148,163,184,${0.15 + intensity * 0.35}) 0%, rgba(148,163,184,0) 70%)`,
-          }}
-        />
+        {/* skygge øverst kun når det regner */}
+        {isRaining && (
+          <div
+            className="pointer-events-none absolute -top-6 left-0 right-0 h-10"
+            style={{
+              background: `radial-gradient(ellipse at 50% 100%, rgba(148,163,184,${0.15 + intensity * 0.35}) 0%, rgba(148,163,184,0) 70%)`,
+            }}
+          />
+        )}
+
         {/* animerte regndråper med skrå retning basert på vind */}
         <div className="pointer-events-none absolute inset-0">
           {drops.map((_, i) => {
