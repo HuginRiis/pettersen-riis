@@ -6,7 +6,30 @@ import {
   Droplets, Gauge, CloudSun, Activity, Power, Settings2,
   TrendingUp, TrendingDown, Minus, Cloud, CloudOff, Plus, Trophy, Home,
   CalendarDays, Trash2, Mail, Cake, Bell, Zap, CloudRain, PawPrint,
+  Newspaper, Apple, Wine, Milk, AlertTriangle, Recycle,
 } from "lucide-react";
+
+// Samme fraksjon-ikoner som brukes på Søppeltømming / bursdager / meldinger
+const GARBAGE_ICON_MAP: Record<number, React.ComponentType<{ size?: number; strokeWidth?: number }>> = {
+  1: Trash2,        // Restavfall
+  2: Newspaper,     // Papir
+  3: Apple,         // Matavfall
+  4: Wine,          // Glass/metall
+  5: Milk,          // Plast
+  6: AlertTriangle, // Farlig avfall
+  7: Recycle,       // Annet
+};
+function garbageIconFor(fraksjonId: number | undefined, name: string): React.ComponentType<{ size?: number; strokeWidth?: number }> {
+  if (fraksjonId != null && GARBAGE_ICON_MAP[fraksjonId]) return GARBAGE_ICON_MAP[fraksjonId];
+  const n = name.toLowerCase();
+  if (n.includes("rest")) return Trash2;
+  if (n.includes("papir") || n.includes("papp") || n.includes("pp")) return Newspaper;
+  if (n.includes("mat") || n.includes("bio")) return Apple;
+  if (n.includes("glas") || n.includes("metall")) return Wine;
+  if (n.includes("plast")) return Milk;
+  if (n.includes("farlig")) return AlertTriangle;
+  return Recycle;
+}
 import {
   AreaChart, Area, ResponsiveContainer,
 } from "recharts";
