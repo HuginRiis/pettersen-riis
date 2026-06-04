@@ -1487,6 +1487,14 @@ function LysCombinedTile({
             const total = g.lights.length;
             const onCount = g.lights.filter(isOnFor).length;
             const allOn = total > 0 && onCount === total;
+            const dims = g.lights.map((d) => capNum(d, "dim")).filter((v): v is number => v != null);
+            const dimAvg = dims.length ? dims.reduce((a, b) => a + b, 0) / dims.length : (onCount > 0 ? 1 : 0);
+            const onRatio = total > 0 ? onCount / total : 0;
+            const intensity = Math.min(1, onRatio * (0.3 + 0.7 * dimAvg));
+            const glowPx = Math.round(4 + intensity * 22);
+            const glowAlpha = (0.25 + intensity * 0.7).toFixed(2);
+            const bgAlpha = (0.04 + intensity * 0.22).toFixed(2);
+            const iconAlpha = 0.25 + intensity * 0.75;
             return (
               <div
                 key={g.label}
@@ -1497,19 +1505,28 @@ function LysCombinedTile({
                 }`}
               >
                 <div
-                  className={`h-10 w-10 rounded-full flex items-center justify-center shrink-0 ${
-                    onCount > 0
-                      ? "bg-yellow-300/15 text-yellow-200 shadow-[0_0_18px_-4px_rgba(253,224,71,0.6)]"
-                      : "bg-white/[0.03] text-white/30"
-                  }`}
+                  className="h-10 w-10 rounded-full flex items-center justify-center shrink-0 transition-all duration-500"
+                  style={{
+                    background: `rgba(253,224,71,${bgAlpha})`,
+                    boxShadow: onCount > 0 ? `0 0 ${glowPx}px -2px rgba(253,224,71,${glowAlpha})` : "none",
+                  }}
                 >
-                  <Lightbulb size={18} />
+                  <Lightbulb
+                    size={18}
+                    style={{
+                      color: `rgba(254,240,138,${iconAlpha})`,
+                      filter: onCount > 0 ? `drop-shadow(0 0 ${Math.round(intensity * 6)}px rgba(253,224,71,${glowAlpha}))` : "none",
+                    }}
+                  />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-[11px] uppercase tracking-widest text-white/60">{g.label}</div>
                   <div className="text-sm text-white tabular-nums">
                     {onCount}<span className="text-white/30"> / {total}</span>
                     <span className="text-white/40 text-[10px] ml-1.5">tente</span>
+                    {dims.length > 0 && onCount > 0 && (
+                      <span className="text-white/40 text-[10px] ml-1.5">· {Math.round(dimAvg * 100)}%</span>
+                    )}
                   </div>
                 </div>
                 <Switch
