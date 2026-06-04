@@ -2013,32 +2013,74 @@ function AqiCompact({ loc }: { loc: typeof LOCS[LocId] }) {
 // ----- Rain tile (mm i dag + siste time, Tollnes) -----
 function RainTile({ rainDay, rainHour }: { rainDay: number | null; rainHour: number | null }) {
   const mm = rainDay ?? 0;
-  const intensity = Math.min(1, mm / 10); // 10mm = full
-  const drops = Array.from({ length: 14 });
+  const mmHour = rainHour ?? 0;
+  // intensitet basert på siste time (mer responsivt enn dagstotal)
+  const intensity = Math.min(1, Math.max(mmHour / 4, mm / 12));
+  const dropCount = Math.max(8, Math.round(10 + intensity * 28));
+  const drops = Array.from({ length: dropCount });
+  const splashCount = Math.max(3, Math.round(3 + intensity * 8));
+  const splashes = Array.from({ length: splashCount });
   return (
     <Tile title="Regn · Tollnes" icon={<CloudRain size={14} />} accent="text-sky-300">
       <div className="relative h-full flex items-end justify-between gap-2 overflow-hidden">
-        {/* animerte regndråper */}
+        {/* skygge øverst som "skyen" drypper fra */}
+        <div
+          className="pointer-events-none absolute -top-6 left-0 right-0 h-10"
+          style={{
+            background:
+              "radial-gradient(ellipse at 50% 100%, rgba(148,163,184,0.28) 0%, rgba(148,163,184,0) 70%)",
+          }}
+        />
+        {/* animerte regndråper med skrå retning */}
         <div className="pointer-events-none absolute inset-0">
           {drops.map((_, i) => {
             const left = (i * 7.3) % 100;
-            const delay = (i * 0.23) % 2;
-            const dur = 1.1 + ((i * 13) % 7) / 10;
+            const delay = -((i * 0.19) % 2);
+            const dur = 0.9 + ((i * 13) % 7) / 10;
+            const len = 8 + ((i * 5) % 16);
             return (
               <span
                 key={i}
-                className="absolute block w-[2px] rounded-full bg-sky-300/60"
+                className="absolute block rounded-full"
                 style={{
                   left: `${left}%`,
-                  top: "-12%",
-                  height: `${10 + ((i * 5) % 14)}px`,
-                  opacity: 0.25 + intensity * 0.6,
+                  top: "-14%",
+                  width: 1.6,
+                  height: `${len}px`,
+                  background:
+                    "linear-gradient(to bottom, rgba(186,230,253,0), rgba(125,211,252,0.85))",
+                  opacity: 0.35 + intensity * 0.55,
+                  transform: "rotate(12deg)",
                   animation: `pbthRainFall ${dur}s linear ${delay}s infinite`,
                 }}
               />
             );
           })}
         </div>
+        {/* splash-ringer på "bakken" */}
+        <div className="pointer-events-none absolute left-0 right-0 bottom-0 h-6">
+          {splashes.map((_, i) => {
+            const left = 4 + ((i * 13) % 92);
+            const delay = -((i * 0.27) % 1.8);
+            const dur = 1.4 + ((i * 7) % 5) / 5;
+            return (
+              <span
+                key={i}
+                className="absolute rounded-full border border-sky-300/70"
+                style={{
+                  left: `${left}%`,
+                  bottom: 2,
+                  width: 4,
+                  height: 4,
+                  opacity: 0.15 + intensity * 0.6,
+                  animation: `pbthRainSplash ${dur}s ease-out ${delay}s infinite`,
+                }}
+              />
+            );
+          })}
+        </div>
+        {/* "bakke"-stripe nederst */}
+        <div className="pointer-events-none absolute left-0 right-0 bottom-0 h-px bg-sky-300/20" />
         <div className="relative z-10">
           <div className="text-[10px] uppercase tracking-widest text-white/40">I dag</div>
           <div className="text-3xl font-semibold text-white tabular-nums leading-tight">
@@ -2052,11 +2094,14 @@ function RainTile({ rainDay, rainHour }: { rainDay: number | null; rainHour: num
             </span>
           </div>
         </div>
-        <div className="relative z-10 self-end">
+        <div className="relative z-10 self-end pb-4">
           <Droplets size={36} className="text-sky-300/70" />
         </div>
       </div>
-      <style>{`@keyframes pbthRainFall{0%{transform:translateY(0)}100%{transform:translateY(180px)}}`}</style>
+      <style>{`
+        @keyframes pbthRainFall{0%{transform:translateY(0) rotate(12deg);opacity:0}10%{opacity:1}90%{opacity:1}100%{transform:translateY(180px) rotate(12deg);opacity:0}}
+        @keyframes pbthRainSplash{0%{transform:scale(0.2);opacity:0.9}80%{transform:scale(2.4);opacity:0.15}100%{transform:scale(2.8);opacity:0}}
+      `}</style>
     </Tile>
   );
 }
