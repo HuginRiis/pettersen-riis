@@ -1360,10 +1360,12 @@ function CalendarTile() {
             {todayEvents.slice(0, 3).map((e, i) => (
               <div
                 key={i}
-                className={`flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] bg-gradient-to-r ${gradientFor(e)} text-white/95`}
+                className={`flex items-center gap-1.5 rounded-full pl-1 pr-2 py-0.5 text-[10px] bg-gradient-to-r ${gradientFor(e)} text-white shadow-[0_2px_8px_-2px_rgba(0,0,0,0.4)]`}
               >
-                <span className="opacity-80">{e.icon}</span>
-                <span className="truncate max-w-[110px]">{e.title}</span>
+                <span className="flex items-center justify-center h-4 w-4 rounded-full bg-white/20 text-white shrink-0">
+                  {React.cloneElement(e.icon as React.ReactElement, { size: 10 })}
+                </span>
+                <span className="truncate max-w-[110px] font-medium">{e.title}</span>
               </div>
             ))}
           </div>
