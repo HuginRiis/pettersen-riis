@@ -1273,7 +1273,7 @@ function LeaderTile() {
 
   return (
     <>
-    <Tile title="Vinner-poeng · Garmin" icon={<Trophy size={14} />} accent="text-violet-300" onClick={() => setOpen(true)}>
+    <Tile title="" icon={<span />} accent="text-violet-300" onClick={() => setOpen(true)}>
       <div className="flex items-center justify-between mb-2">
         <div>
           <div className="text-[10px] uppercase tracking-widest text-white/40">Leder i dag</div>
@@ -1515,7 +1515,7 @@ function RobotsTile() {
 
   return (
     <>
-      <Tile title="Roboter · Borgen" icon={<Bot size={14} />} accent="text-emerald-300">
+      <Tile title="" icon={<span />} accent="text-emerald-300">
         <div className="grid grid-cols-1 gap-2 h-full">
           {/* Sileno */}
           <button
@@ -2216,8 +2216,8 @@ function LysCombinedTile({
   return (
     <>
       <Tile
-        title="Lys · Hue · alle rom"
-        icon={<Lightbulb size={14} />}
+        title=""
+        icon={<span />}
         accent="text-yellow-300"
         onClick={() => setOpen(true)}
       >
@@ -2382,7 +2382,7 @@ function StromTile({ home }: { home: "borgen" | "hytta" }) {
   const arcColor = nowKw < 1 ? "#34d399" : nowKw < 3 ? "#fbbf24" : "#f87171";
 
   return (
-    <Tile title="Strøm · Forbruk" icon={<Zap size={14} />} accent="text-amber-300">
+    <Tile title="" icon={<span />} accent="text-amber-300">
       {!found ? (
         <div className="text-xs text-white/40 h-full flex items-center justify-center text-center">
           {data?.ok ? "Fant ingen Power-by-the-Hour-enhet" : "Henter…"}
