@@ -54,6 +54,7 @@ type RoutePath =
   | "/decibel"
   | "/roborock"
   | "/planter"
+  | "/fly"
   | "/ytelse";
 
 
