@@ -3566,6 +3566,7 @@ function SmartDashbord() {
             sub="Stua"
             accent="text-sky-300"
             detail={<NetatmoMetricList modules={tollnes.modules} metric="humidity" unit="%" digits={0} />}
+            anim="humidity"
           />
           <MiniTile
             icon={<CloudSun size={16} />}
