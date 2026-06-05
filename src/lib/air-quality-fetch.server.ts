@@ -55,7 +55,19 @@ export type OpenMeteoPollenData = { hourly: any };
 type OpenMeteoCoreData = { hourly: any; current: any };
 
 const NOT_WARM_ERR = "Cache er ikke fylt enda — neste oppdatering kommer fra cron-jobben";
-const CACHE_TTL_MS = 30 * 60 * 1000;
+const CACHE_TTL_MS = 15 * 60 * 1000;
+
+// Paid Open-Meteo API. Når OPEN_METEO_API_KEY er satt bruker vi
+// customer-*.open-meteo.com med apikey-param (egen kvote, ingen IP-rate-limit).
+function aqApiBase(): string {
+  return process.env.OPEN_METEO_API_KEY
+    ? "https://customer-air-quality-api.open-meteo.com"
+    : "https://air-quality-api.open-meteo.com";
+}
+function apiKeyParam(): string {
+  const k = process.env.OPEN_METEO_API_KEY;
+  return k ? `&apikey=${encodeURIComponent(k)}` : "";
+}
 
 function aqKey(lat: number, lon: number) {
   return `aq:${lat.toFixed(3)},${lon.toFixed(3)}`;
