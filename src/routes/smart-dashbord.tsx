@@ -612,7 +612,6 @@ function HundeTile({
               {isOn ? "💧" : "○"}
             </div>
             <div className="text-xs text-sky-300/80 mt-1">{isOn == null ? "Ukjent" : isOn ? "Renner" : "Av"}</div>
-            <div className="text-[10px] uppercase tracking-widest text-white/40 mt-1">Drikkevann hunder</div>
           </div>
           <svg viewBox="0 0 120 80" className="w-20 h-14">
             <path
@@ -634,6 +633,7 @@ function HundeTile({
             )}
           </svg>
         </div>
+        <HundeVann24h deviceId={device?.id ?? null} currentOn={isOn} />
         {remaining != null && remaining > 0 && isOn && (
           <div className="relative">
             <div className="text-[10px] uppercase tracking-widest text-white/40">Skrur seg av om</div>
@@ -641,6 +641,7 @@ function HundeTile({
           </div>
         )}
       </div>
+
       <style>{`
         @keyframes hvDrop {
           0% { transform: translateY(0) scale(0.6); opacity: 0; }
