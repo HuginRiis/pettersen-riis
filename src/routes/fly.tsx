@@ -323,6 +323,15 @@ function LocationSection({ location }: { location: FlightLocationId }) {
           Ingen fly innenfor {settings?.searchRadiusKm ?? DEFAULT_SEARCH_RADIUS_KM} km nå.
         </p>
       )}
+      <div className="mb-3">
+        <FlightMap
+          center={{ lat: meta.lat, lon: meta.lon }}
+          label={meta.label}
+          radiusKm={settings?.searchRadiusKm ?? DEFAULT_SEARCH_RADIUS_KM}
+          flights={flights ?? []}
+        />
+      </div>
+
       {flights && flights.length > 0 && (
         <ul className="grid gap-2">
           {flights.map((f) => {
