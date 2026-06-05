@@ -3601,6 +3601,7 @@ function SmartDashbord() {
             sub={tollnes.co2BedroomName ?? "Sov."}
             accent="text-violet-300"
             detail={<NetatmoMetricList modules={tollnes.modules} metric="humidity" unit="%" digits={0} />}
+            anim="humidity"
           />
           <MiniTile
             icon={<Gauge size={16} />}
