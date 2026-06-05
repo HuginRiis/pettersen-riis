@@ -56,6 +56,12 @@ export type Flight = {
   trueTrack: number | null;
   verticalRateMs: number | null;
   squawk: string | null;
+  registration: string | null;
+  aircraftType: string | null;
+  description: string | null;
+  operator: string | null;
+  category: string | null;
+  emergency: string | null;
   // derived
   distanceKm: number;
   bearingDeg: number;
