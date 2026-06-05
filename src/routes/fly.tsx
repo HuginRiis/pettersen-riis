@@ -356,6 +356,18 @@ function LocationSection({ location }: { location: FlightLocationId }) {
                     if (f.registration) rows.push(["Registrering", regCountry ? `${f.registration} (${regCountry})` : f.registration]);
                     if (f.ownerCountry) rows.push(["Eierland", f.ownerCountry]);
                     if (f.originCountry && f.originCountry !== f.ownerCountry) rows.push(["Opprinnelse", f.originCountry]);
+                    if (f.routeFromName || f.routeToName) {
+                      if (f.routeFromName) rows.push(["Fra", f.routeFromName]);
+                      if (f.routeToName) rows.push(["Til", f.routeToName]);
+                    }
+                    if (f.firstFlightDate) {
+                      const d = new Date(f.firstFlightDate);
+                      const txt = isNaN(d.getTime())
+                        ? f.firstFlightDate
+                        : d.toLocaleDateString("nb-NO", { year: "numeric", month: "long", day: "numeric" });
+                      rows.push(["Først flydd", txt]);
+                    }
+                    if (f.built && !f.firstFlightDate) rows.push(["Bygget", f.built]);
                     if (f.squawk) rows.push(["Squawk", sqEx ? sqEx : `transponderkode ${f.squawk}`]);
                     if (f.category) rows.push(["Kategori", f.category]);
                     if (rows.length === 0) return null;
