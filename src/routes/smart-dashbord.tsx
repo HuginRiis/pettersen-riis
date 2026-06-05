@@ -1103,12 +1103,15 @@ function VarmepumpeTile({
       accent="text-rose-400"
       action={
         device ? (
-          <div className="flex items-center gap-2">
-            <span className={`relative inline-flex h-2.5 w-2.5 rounded-full ${isOn ? "bg-rose-400" : "bg-white/20"}`}>
-              {isOn && <span className="absolute inset-0 rounded-full bg-rose-400 animate-ping opacity-60" />}
-            </span>
-            <Switch checked={isOn} disabled={busy} onCheckedChange={(v) => send("onoff", v)} />
-          </div>
+          <button
+            type="button"
+            onClick={() => send("onoff", !isOn)}
+            disabled={busy}
+            title={isOn ? "Slå av" : "Slå på"}
+            className={`relative inline-flex h-3 w-3 rounded-full transition ${isOn ? "bg-rose-400" : "bg-white/20"}`}
+          >
+            {isOn && <span className="absolute inset-0 rounded-full bg-rose-400 animate-ping opacity-60" />}
+          </button>
         ) : (
           <span className="text-[10px] text-white/30">ikke funnet</span>
         )
