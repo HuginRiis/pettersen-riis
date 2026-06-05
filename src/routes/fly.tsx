@@ -324,9 +324,11 @@ function LocationSection({ location }: { location: FlightLocationId }) {
                     const typeFriendly = translateAircraftType(f.aircraftType);
                     const regCountry = registrationCountry(f.registration);
                     const sqEx = explainSquawk(f.squawk);
+                    const airline = translateAirline(f.callsign) ?? translateAirline(f.operator);
                     const extras = [
                       typeFriendly,
                       regCountry ? `${f.registration} → ${regCountry}` : null,
+                      airline ? `✈ ${airline}` : null,
                       sqEx,
                     ].filter(Boolean);
                     if (extras.length === 0) return null;
@@ -341,6 +343,25 @@ function LocationSection({ location }: { location: FlightLocationId }) {
                       {[f.description, f.operator].filter(Boolean).join(" · ")}
                     </div>
                   )}
+                  {(() => {
+                    const links = externalLookupLinks({ icao24: f.icao24, registration: f.registration });
+                    if (links.length === 0) return null;
+                    return (
+                      <div className="text-[10px] mt-1 flex flex-wrap gap-1.5">
+                        {links.map((l) => (
+                          <a
+                            key={l.label}
+                            href={l.url}
+                            target="_blank"
+                            rel="noreferrer noopener"
+                            className="px-1.5 py-0.5 rounded border border-border/60 text-muted-foreground hover:text-primary hover:border-primary/60"
+                          >
+                            {l.label} ↗
+                          </a>
+                        ))}
+                      </div>
+                    );
+                  })()}
                   {f.emergency && f.emergency !== "none" && (
                     <div className="text-[11px] text-rose-400 mt-0.5">⚠ {f.emergency}</div>
                   )}
