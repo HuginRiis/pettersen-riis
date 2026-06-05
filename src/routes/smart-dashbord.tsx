@@ -1341,13 +1341,13 @@ function RobotsTile() {
     if (!mowerSvcId) return;
     setBusy(`m:${cmd}`);
     try { await ctrlMower({ data: { serviceId: mowerSvcId, command: cmd, seconds } }); }
-    finally { setBusy(null); setTimeout(load, 1500); }
+    finally { setBusy(null); setTimeout(loadGardena, 1500); }
   };
   const runRobo = async (method: string, params?: any[]) => {
     if (!robo) return;
     setBusy(`r:${method}`);
     try { await ctrlRobo({ data: { duid: robo.duid, method, params: params ?? [] } }); }
-    finally { setBusy(null); setTimeout(load, 1500); }
+    finally { setBusy(null); setTimeout(loadRoborock, 1500); }
   };
 
   return (
