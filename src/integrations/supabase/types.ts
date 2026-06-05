@@ -704,6 +704,24 @@ export type Database = {
         }
         Relationships: []
       }
+      gardena_snapshot: {
+        Row: {
+          cache_key: string
+          data: Json
+          updated_at: string
+        }
+        Insert: {
+          cache_key: string
+          data: Json
+          updated_at?: string
+        }
+        Update: {
+          cache_key?: string
+          data?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       garmin_activities: {
         Row: {
           activity_name: string | null

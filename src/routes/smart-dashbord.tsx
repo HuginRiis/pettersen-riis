@@ -1402,7 +1402,7 @@ function LeaderTile() {
 
 // ----- Roboter: Sileno (Gardena via cron-cache) + Roborock (Borgen) -----
 import { getRoborockSnapshot, sendRoborockCommand } from "@/lib/roborock.functions";
-import { getGardenaSnapshot, controlGardenaMower } from "@/lib/gardena.functions";
+import { getCachedGardenaSnapshotFn, controlGardenaMower } from "@/lib/gardena.functions";
 import {
   getCachedGardena,
   setCachedGardena,
@@ -1441,7 +1441,7 @@ const ROBO_STATE_LABEL: Record<number, string> = {
 function RobotsTile() {
   const fetchR = useServerFn(getRoborockSnapshot);
   const ctrlRobo = useServerFn(sendRoborockCommand);
-  const fetchGardena = useServerFn(getGardenaSnapshot);
+  const fetchGardenaCached = useServerFn(getCachedGardenaSnapshotFn);
   const ctrlMower = useServerFn(controlGardenaMower);
   const [rob, setRob] = useState<RoborockSnap | null>(null);
   const [gardena, setGardena] = useState<GardenaSnap | null>(() => getCachedGardena());
@@ -1458,15 +1458,20 @@ function RobotsTile() {
     return () => clearInterval(id);
   }, [loadRoborock]);
 
-  // Gardena: les KUN fra delt cache (mates av cron hver 45 min).
-  // Ingen klient-fetch fra dashbordet — det forhindrer ekstra API-kall
-  // mot Husqvarna/Gardena når dashbordet står åpent.
+  // Gardena: les KUN fra delt server-cache (public.gardena_snapshot) som
+  // mates av gardena-poll-cron. Treffer aldri Husqvarna-API-et fra dashbordet.
   useEffect(() => {
     const unsub = subscribeGardena((s) => setGardena(s));
-    const cached = getCachedGardena();
-    if (cached) setGardena(cached);
+    fetchGardenaCached()
+      .then((res) => {
+        if (res?.snap) {
+          setGardena(res.snap as GardenaSnap);
+          setCachedGardena(res.snap as GardenaSnap);
+        }
+      })
+      .catch(() => {});
     return () => { unsub(); };
-  }, []);
+  }, [fetchGardenaCached]);
 
   const mower = useMemo(() => {
     const mowers = gardena?.ok ? gardena.mowers : [];
@@ -1507,7 +1512,9 @@ function RobotsTile() {
     } finally {
       setBusy(null);
       setTimeout(() => {
-        fetchGardena().then((s) => setCachedGardena(s)).catch(() => {});
+        fetchGardenaCached()
+          .then((res) => { if (res?.snap) setCachedGardena(res.snap as GardenaSnap); })
+          .catch(() => {});
       }, 2000);
     }
   };
