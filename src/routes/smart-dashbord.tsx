@@ -604,10 +604,11 @@ function HundeVann24h({ deviceId, currentOn }: { deviceId: string | null; curren
 
 
 function HundeTile({
-  device, countdownSeconds, onReload,
+  device, countdownSeconds, tellerValue, onReload,
 }: {
   device: HomeyDeviceSnapshot | null;
   countdownSeconds: number | null;
+  tellerValue: number | null;
   onReload: () => void;
 }) {
   const setCap = useServerFn(setLivingRoomDeviceCapability);
@@ -686,13 +687,21 @@ function HundeTile({
             ))}
           </div>
         )}
-        <div className="flex items-start justify-between relative">
+        <div className="flex items-start justify-between relative gap-2">
           <div>
             <div className="text-4xl font-semibold text-white tabular-nums leading-none">
               {isOn ? "💧" : "○"}
             </div>
             <div className="text-xs text-sky-300/80 mt-1">{isOn == null ? "Ukjent" : isOn ? "Renner" : "Av"}</div>
           </div>
+          {tellerValue != null && (
+            <div className="flex flex-col items-center justify-center self-center">
+              <div className="text-[9px] uppercase tracking-widest text-sky-300/70">Teller</div>
+              <div className="text-2xl font-semibold text-sky-400 tabular-nums leading-none">
+                {Number.isInteger(tellerValue) ? tellerValue : tellerValue.toFixed(1)}
+              </div>
+            </div>
+          )}
           <svg viewBox="0 0 120 80" className="w-20 h-14">
             <path
               d="M15 30 Q60 80 105 30 Z"
@@ -2928,6 +2937,24 @@ function SmartDashbord() {
     return null;
   }, [devices]);
 
+  const hundeTellerValue = useMemo<number | null>(() => {
+    const cd = devices.find((d) => {
+      const n = d.name.toLowerCase();
+      return n.includes("hundevann") && n.includes("teller");
+    });
+    if (!cd) return null;
+    let firstNum: number | null = null;
+    for (const [capId, cap] of Object.entries(cd.capabilities)) {
+      if (typeof cap?.value !== "number") continue;
+      const lc = capId.toLowerCase();
+      if (lc.includes("counter") || lc.includes("teller") || lc.includes("count")) {
+        return cap.value as number;
+      }
+      if (firstNum == null) firstNum = cap.value as number;
+    }
+    return firstNum;
+  }, [devices]);
+
   const gridStyle: React.CSSProperties = {
     zoom: settings.scale as any,
     columnGap: `${settings.gapX}px`,
@@ -3021,7 +3048,7 @@ function SmartDashbord() {
                 <BassengTile loc={loc} switchDevice={bassengSwitch} onReload={reload} />
               </div>
               <div className="col-span-2">
-                <HundeTile device={hundeVannDevice} countdownSeconds={hundeCountdownSeconds} onReload={reload} />
+                <HundeTile device={hundeVannDevice} countdownSeconds={hundeCountdownSeconds} tellerValue={hundeTellerValue} onReload={reload} />
               </div>
               <div className="col-span-4">
                 <LysCombinedTile
