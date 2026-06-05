@@ -206,6 +206,39 @@ function LocationSection({ location }: { location: FlightLocationId }) {
               />
             </label>
           </div>
+
+          <div className="mt-4">
+            <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2">
+              Info som skal være med i push-varselet
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {PUSH_FIELD_KEYS.map((k) => {
+                const active = settings.fields.includes(k);
+                return (
+                  <button
+                    key={k}
+                    type="button"
+                    onClick={() =>
+                      setSettings({
+                        ...settings,
+                        fields: active
+                          ? settings.fields.filter((x) => x !== k)
+                          : ([...settings.fields, k] as PushFieldKey[]),
+                      })
+                    }
+                    className={`px-2 py-1 rounded border text-[11px] tracking-wide ${
+                      active
+                        ? "border-primary/60 text-primary bg-primary/10"
+                        : "border-border text-muted-foreground"
+                    }`}
+                  >
+                    {active ? "✓ " : ""}{PUSH_FIELD_LABELS[k]}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           <div className="flex justify-end mt-3">
             <button
               onClick={() => void onSaveSettings()}
