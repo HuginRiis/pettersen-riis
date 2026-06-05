@@ -2056,7 +2056,12 @@ function LysCombinedTile({
         accent="text-yellow-300"
         onClick={() => setOpen(true)}
       >
-        <div className="flex flex-col h-full gap-1 overflow-y-auto pr-1">
+        <div
+          className="grid h-full gap-1 content-start"
+          style={{
+            gridTemplateColumns: `repeat(${Math.min(nonEmpty.length || 1, Math.ceil(Math.sqrt(nonEmpty.length || 1)))}, minmax(0, 1fr))`,
+          }}
+        >
           {nonEmpty.map((g) => {
             const total = g.lights.length;
             const onCount = g.lights.filter(isOnFor).length;
@@ -2065,25 +2070,25 @@ function LysCombinedTile({
             return (
               <div
                 key={g.label}
-                className={`flex items-center gap-2 rounded-lg border px-2 py-1 transition ${
+                className={`flex items-center gap-1.5 rounded-lg border px-1.5 py-1 transition min-w-0 ${
                   anyOn ? "border-yellow-300/40 bg-yellow-300/5" : "border-white/10 bg-white/[0.02]"
                 }`}
               >
                 <div
-                  className="h-6 w-6 rounded-full flex items-center justify-center shrink-0 transition-all"
+                  className="h-5 w-5 rounded-full flex items-center justify-center shrink-0 transition-all"
                   style={{
                     background: anyOn ? "rgba(253,224,71,0.18)" : "rgba(255,255,255,0.04)",
                     boxShadow: anyOn ? "0 0 10px -2px rgba(253,224,71,0.5)" : "none",
                   }}
                 >
                   <Lightbulb
-                    size={12}
+                    size={10}
                     style={{ color: anyOn ? "rgb(254,240,138)" : "rgba(255,255,255,0.35)" }}
                   />
                 </div>
                 <div className="flex-1 min-w-0 leading-tight">
-                  <div className="text-[12px] text-white/90 truncate">{g.label}</div>
-                  <div className="text-[10px] text-white/45 tabular-nums">
+                  <div className="text-[11px] text-white/90 truncate">{g.label}</div>
+                  <div className="text-[9px] text-white/45 tabular-nums truncate">
                     {onCount}/{total} · {formatLastChange(lastChanges[g.label])}
                   </div>
                 </div>
@@ -2100,6 +2105,7 @@ function LysCombinedTile({
             <div className="text-xs text-white/40 italic">Ingen Hue-lys funnet</div>
           )}
         </div>
+
       </Tile>
 
       <Dialog open={open} onOpenChange={setOpen}>
