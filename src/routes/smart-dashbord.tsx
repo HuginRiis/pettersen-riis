@@ -19,6 +19,7 @@ import { getGarminOverview } from "@/lib/garmin.functions";
 import {
   getHomeySnapshot,
   setLivingRoomDeviceCapability,
+  getHomeyDeviceInsight,
   type HomeyDeviceSnapshot,
   type HomeyZone,
 } from "@/lib/homey.functions";
