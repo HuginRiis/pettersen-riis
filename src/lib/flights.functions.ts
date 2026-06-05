@@ -8,6 +8,15 @@ const __load_push_server = createIsomorphicFn()
     Promise.resolve({} as unknown as typeof import("@/lib/flights-push.server")),
   );
 
+const __load_api_call_log_server = createIsomorphicFn()
+  .server((): Promise<typeof import("@/lib/api-call-log.server")> =>
+    import("@/lib/api-call-log.server"),
+  )
+  .client((): Promise<typeof import("@/lib/api-call-log.server")> =>
+    Promise.resolve({} as unknown as typeof import("@/lib/api-call-log.server")),
+  );
+
+
 export type FlightLocationId = "tollnes" | "hytta";
 
 export const FLIGHT_LOCATIONS: Record<
@@ -170,19 +179,23 @@ export const getNearbyFlights = createServerFn({ method: "GET" })
     location: (data?.location ?? "tollnes") as FlightLocationId,
   }))
   .handler(async ({ data }): Promise<FlightsResult> => {
-    const center = FLIGHT_LOCATIONS[data.location];
-    try {
-      const flights = await fetchFromOpenSky(center);
-      return { ok: true, flights, fetchedAt: new Date().toISOString(), source: "opensky" };
-    } catch (e1) {
+    const { withApiLog } = await __load_api_call_log_server();
+    return withApiLog("flights", `getNearbyFlights[${data.location}]`, async (): Promise<FlightsResult> => {
+      const center = FLIGHT_LOCATIONS[data.location];
       try {
-        const flights = await fetchFromAdsbLol(center);
-        return { ok: true, flights, fetchedAt: new Date().toISOString(), source: "adsb.lol" };
-      } catch (e2: any) {
-        return { ok: false, error: `OpenSky: ${(e1 as Error).message}. adsb.lol: ${e2?.message ?? "ukjent"}` };
+        const flights = await fetchFromOpenSky(center);
+        return { ok: true, flights, fetchedAt: new Date().toISOString(), source: "opensky" };
+      } catch (e1) {
+        try {
+          const flights = await fetchFromAdsbLol(center);
+          return { ok: true, flights, fetchedAt: new Date().toISOString(), source: "adsb.lol" };
+        } catch (e2: any) {
+          return { ok: false, error: `OpenSky: ${(e1 as Error).message}. adsb.lol: ${e2?.message ?? "ukjent"}` };
+        }
       }
-    }
+    })();
   });
+
 
 // ----- Push settings -----
 
