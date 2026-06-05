@@ -1698,6 +1698,8 @@ let livingRoomCache: { at: number; data: LivingRoomDevicesResult } | null = null
 const LIVING_ROOM_TTL_MS = 3 * 60_000;
 function invalidateLivingRoomCache() {
   livingRoomCache = null;
+  homeySnapshotCache = null;
+  homeySnapshotInflight = null;
 }
 
 export const getLivingRoomDevices = createServerFn({ method: "GET" }).handler(
