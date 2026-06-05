@@ -1402,7 +1402,7 @@ function LeaderTile() {
 
 // ----- Roboter: Sileno (Gardena via cron-cache) + Roborock (Borgen) -----
 import { getRoborockSnapshot, sendRoborockCommand } from "@/lib/roborock.functions";
-import { getGardenaSnapshot, controlGardenaMower } from "@/lib/gardena.functions";
+import { getCachedGardenaSnapshotFn, controlGardenaMower } from "@/lib/gardena.functions";
 import {
   getCachedGardena,
   setCachedGardena,
