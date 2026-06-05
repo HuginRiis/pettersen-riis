@@ -133,9 +133,9 @@ export async function warmOpenMeteoCoreMulti(
   const lats = locs.map((l) => l.lat).join(",");
   const lons = locs.map((l) => l.lon).join(",");
   const url =
-    `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lats}&longitude=${lons}` +
+    `${aqApiBase()}/v1/air-quality?latitude=${lats}&longitude=${lons}` +
     `&hourly=${CORE_HOURLY_FIELDS}&current=${CURRENT_FIELDS}` +
-    `&timezone=Europe%2FOslo&forecast_days=4`;
+    `&timezone=Europe%2FOslo&forecast_days=4${apiKeyParam()}`;
   const res = await fetchWithBackoff("open-meteo", "open-meteo:core", url);
   if (!res) throw new Error("Open-Meteo core er pauset eller i 429-backoff");
   if (!res.ok) throw new Error(`Open-Meteo core ${res.status}`);
