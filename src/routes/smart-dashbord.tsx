@@ -173,15 +173,19 @@ function Tile({
                   shadow-[0_8px_30px_-12px_rgba(0,0,0,0.6)] overflow-hidden
                   p-4 flex flex-col h-full ${onClick ? "cursor-pointer hover:bg-white/[0.05] transition" : ""} ${className}`}
     >
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <div className={`h-7 w-7 rounded-full bg-white/5 flex items-center justify-center ${accent ?? "text-white/80"}`}>
-            {icon}
-          </div>
-          <span className="text-[11px] uppercase tracking-[0.18em] text-white/60">{title}</span>
+      {(title || action) && (
+        <div className="flex items-center justify-between mb-3">
+          {title ? (
+            <div className="flex items-center gap-2">
+              <div className={`h-7 w-7 rounded-full bg-white/5 flex items-center justify-center ${accent ?? "text-white/80"}`}>
+                {icon}
+              </div>
+              <span className="text-[11px] uppercase tracking-[0.18em] text-white/60">{title}</span>
+            </div>
+          ) : <span />}
+          {action}
         </div>
-        {action}
-      </div>
+      )}
       <div className="flex-1 min-h-0">{children}</div>
     </div>
   );
