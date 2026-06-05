@@ -1396,7 +1396,6 @@ import {
   getCachedGardena,
   setCachedGardena,
   subscribeGardena,
-  getCachedGardenaAge,
 } from "@/lib/gardena-cache";
 import type { GardenaSnap } from "@/lib/gardena-cache";
 import { Bot, Play, ParkingSquare, Pause, Loader2, BatteryCharging, Home as HomeIcon } from "lucide-react";
@@ -1405,7 +1404,7 @@ import roboVacImg from "@/assets/icon-roborock-vacuum.png";
 
 type RoborockSnap = Awaited<ReturnType<typeof getRoborockSnapshot>>;
 
-const GARDENA_CACHE_TTL_MS = 45 * 60 * 1000; // matcher cron hver 45 min
+
 
 
 const MOWER_ACT_LABEL: Record<string, string> = {
@@ -1448,20 +1447,15 @@ function RobotsTile() {
     return () => clearInterval(id);
   }, [loadRoborock]);
 
-  // Gardena: bruk delt cache (mates av cron hver 45 min). Hent kun hvis cache er stale.
+  // Gardena: les KUN fra delt cache (mates av cron hver 45 min).
+  // Ingen klient-fetch fra dashbordet — det forhindrer ekstra API-kall
+  // mot Husqvarna/Gardena når dashbordet står åpent.
   useEffect(() => {
     const unsub = subscribeGardena((s) => setGardena(s));
     const cached = getCachedGardena();
-    const age = getCachedGardenaAge();
-    if (!cached || age > GARDENA_CACHE_TTL_MS) {
-      fetchGardena()
-        .then((s) => setCachedGardena(s))
-        .catch(() => {});
-    } else {
-      setGardena(cached);
-    }
+    if (cached) setGardena(cached);
     return () => { unsub(); };
-  }, [fetchGardena]);
+  }, []);
 
   const mower = useMemo(() => {
     const mowers = gardena?.ok ? gardena.mowers : [];
