@@ -8,8 +8,30 @@ const __load_push_server = createIsomorphicFn()
     Promise.resolve({} as unknown as typeof import("@/lib/flights-push.server")),
   );
 
-// Tollnes, Skien
-export const TOLLNES = { lat: 59.1789, lon: 9.5732 };
+export type FlightLocationId = "tollnes" | "hytta";
+
+export const FLIGHT_LOCATIONS: Record<
+  FlightLocationId,
+  { id: FlightLocationId; label: string; lat: number; lon: number; settingsKey: string }
+> = {
+  tollnes: {
+    id: "tollnes",
+    label: "Tollnes, Skien",
+    lat: 59.1789,
+    lon: 9.5732,
+    settingsKey: "flight_push",
+  },
+  hytta: {
+    id: "hytta",
+    label: "Hytta, Flesberg",
+    lat: 59.8733,
+    lon: 9.4297,
+    settingsKey: "flight_push_hytta",
+  },
+};
+
+// Backwards-compat alias used andre steder i koden
+export const TOLLNES = { lat: FLIGHT_LOCATIONS.tollnes.lat, lon: FLIGHT_LOCATIONS.tollnes.lon };
 export const SEARCH_RADIUS_KM = 50;
 
 export type Flight = {
@@ -55,18 +77,20 @@ function bearingDeg(a: { lat: number; lon: number }, b: { lat: number; lon: numb
   return (toDeg(Math.atan2(y, x)) + 360) % 360;
 }
 
-// 50 km bbox around Tollnes
-const DEG_LAT = SEARCH_RADIUS_KM / 111;
-const DEG_LON = SEARCH_RADIUS_KM / (111 * Math.cos((TOLLNES.lat * Math.PI) / 180));
-const BBOX = {
-  lamin: TOLLNES.lat - DEG_LAT,
-  lamax: TOLLNES.lat + DEG_LAT,
-  lomin: TOLLNES.lon - DEG_LON,
-  lomax: TOLLNES.lon + DEG_LON,
-};
+function bboxFor(center: { lat: number; lon: number }) {
+  const dLat = SEARCH_RADIUS_KM / 111;
+  const dLon = SEARCH_RADIUS_KM / (111 * Math.cos((center.lat * Math.PI) / 180));
+  return {
+    lamin: center.lat - dLat,
+    lamax: center.lat + dLat,
+    lomin: center.lon - dLon,
+    lomax: center.lon + dLon,
+  };
+}
 
-async function fetchFromOpenSky(): Promise<Flight[]> {
-  const url = `https://opensky-network.org/api/states/all?lamin=${BBOX.lamin}&lomin=${BBOX.lomin}&lamax=${BBOX.lamax}&lomax=${BBOX.lomax}`;
+async function fetchFromOpenSky(center: { lat: number; lon: number }): Promise<Flight[]> {
+  const b = bboxFor(center);
+  const url = `https://opensky-network.org/api/states/all?lamin=${b.lamin}&lomin=${b.lomin}&lamax=${b.lamax}&lomax=${b.lomax}`;
   const res = await fetch(url, {
     headers: { Accept: "application/json", "User-Agent": "house-riis-pettersen/1.0" },
   });
@@ -79,7 +103,7 @@ async function fetchFromOpenSky(): Promise<Flight[]> {
     const lon = s[5] as number | null;
     const lat = s[6] as number | null;
     if (!icao24 || lon == null || lat == null) continue;
-    const distanceKm = haversineKm(TOLLNES, { lat, lon });
+    const distanceKm = haversineKm(center, { lat, lon });
     if (distanceKm > SEARCH_RADIUS_KM) continue;
     out.push({
       icao24,
@@ -95,17 +119,16 @@ async function fetchFromOpenSky(): Promise<Flight[]> {
       geoAltitudeM: (s[13] as number | null) ?? null,
       squawk: (s[14] as string | null) ?? null,
       distanceKm,
-      bearingDeg: bearingDeg(TOLLNES, { lat, lon }),
+      bearingDeg: bearingDeg(center, { lat, lon }),
     });
   }
   out.sort((a, b) => a.distanceKm - b.distanceKm);
   return out;
 }
 
-async function fetchFromAdsbLol(): Promise<Flight[]> {
-  // Fallback: adsb.lol — gratis, ingen nøkkel, ofte mer komplett over Norge
+async function fetchFromAdsbLol(center: { lat: number; lon: number }): Promise<Flight[]> {
   const radiusNm = Math.round(SEARCH_RADIUS_KM / 1.852);
-  const url = `https://api.adsb.lol/v2/lat/${TOLLNES.lat}/lon/${TOLLNES.lon}/dist/${radiusNm}`;
+  const url = `https://api.adsb.lol/v2/lat/${center.lat}/lon/${center.lon}/dist/${radiusNm}`;
   const res = await fetch(url, {
     headers: { Accept: "application/json", "User-Agent": "house-riis-pettersen/1.0" },
   });
@@ -117,14 +140,14 @@ async function fetchFromAdsbLol(): Promise<Flight[]> {
     const lat = typeof a.lat === "number" ? a.lat : null;
     const lon = typeof a.lon === "number" ? a.lon : null;
     if (lat == null || lon == null) continue;
-    const distanceKm = haversineKm(TOLLNES, { lat, lon });
+    const distanceKm = haversineKm(center, { lat, lon });
     if (distanceKm > SEARCH_RADIUS_KM) continue;
     const altFt = typeof a.alt_baro === "number" ? a.alt_baro : (typeof a.alt_geom === "number" ? a.alt_geom : null);
     const spdKt = typeof a.gs === "number" ? a.gs : null;
     out.push({
       icao24: String(a.hex ?? "").toLowerCase(),
       callsign: ((a.flight as string | undefined) ?? "").trim() || null,
-      originCountry: (a.r as string | undefined) ?? null, // registration code, fallback
+      originCountry: (a.r as string | undefined) ?? null,
       longitude: lon,
       latitude: lat,
       baroAltitudeM: altFt != null ? Math.round(altFt * 0.3048) : null,
@@ -135,28 +158,31 @@ async function fetchFromAdsbLol(): Promise<Flight[]> {
       verticalRateMs: typeof a.baro_rate === "number" ? Math.round((a.baro_rate / 60) * 0.3048) : null,
       squawk: (a.squawk as string | undefined) ?? null,
       distanceKm,
-      bearingDeg: bearingDeg(TOLLNES, { lat, lon }),
+      bearingDeg: bearingDeg(center, { lat, lon }),
     });
   }
   out.sort((a, b) => a.distanceKm - b.distanceKm);
   return out;
 }
 
-export const getNearbyFlights = createServerFn({ method: "GET" }).handler(
-  async (): Promise<FlightsResult> => {
+export const getNearbyFlights = createServerFn({ method: "GET" })
+  .inputValidator((data: { location?: FlightLocationId } | undefined) => ({
+    location: (data?.location ?? "tollnes") as FlightLocationId,
+  }))
+  .handler(async ({ data }): Promise<FlightsResult> => {
+    const center = FLIGHT_LOCATIONS[data.location];
     try {
-      const flights = await fetchFromOpenSky();
+      const flights = await fetchFromOpenSky(center);
       return { ok: true, flights, fetchedAt: new Date().toISOString(), source: "opensky" };
     } catch (e1) {
       try {
-        const flights = await fetchFromAdsbLol();
+        const flights = await fetchFromAdsbLol(center);
         return { ok: true, flights, fetchedAt: new Date().toISOString(), source: "adsb.lol" };
       } catch (e2: any) {
         return { ok: false, error: `OpenSky: ${(e1 as Error).message}. adsb.lol: ${e2?.message ?? "ukjent"}` };
       }
     }
-  },
-);
+  });
 
 // ----- Push settings -----
 
@@ -176,36 +202,46 @@ const DEFAULT_SETTINGS: FlightPushSettings = {
   cooldownMinutes: 60,
 };
 
-export const getFlightPushSettings = createServerFn({ method: "GET" }).handler(
-  async (): Promise<FlightPushSettings> => {
+export const getFlightPushSettings = createServerFn({ method: "GET" })
+  .inputValidator((data: { location?: FlightLocationId } | undefined) => ({
+    location: (data?.location ?? "tollnes") as FlightLocationId,
+  }))
+  .handler(async ({ data }): Promise<FlightPushSettings> => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data } = await supabaseAdmin
+    const key = FLIGHT_LOCATIONS[data.location].settingsKey;
+    const { data: row } = await supabaseAdmin
       .from("notification_settings")
       .select("value")
-      .eq("key", "flight_push")
+      .eq("key", key)
       .maybeSingle();
-    const v = (data?.value as Partial<FlightPushSettings> | null) ?? null;
+    const v = (row?.value as Partial<FlightPushSettings> | null) ?? null;
     return { ...DEFAULT_SETTINGS, ...(v ?? {}) };
-  },
-);
+  });
 
 export const saveFlightPushSettings = createServerFn({ method: "POST" })
-  .inputValidator((data: FlightPushSettings) => data)
+  .inputValidator((data: { location?: FlightLocationId; settings: FlightPushSettings }) => ({
+    location: (data.location ?? "tollnes") as FlightLocationId,
+    settings: data.settings,
+  }))
   .handler(async ({ data }): Promise<{ ok: true }> => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const key = FLIGHT_LOCATIONS[data.location].settingsKey;
     await supabaseAdmin
       .from("notification_settings")
       .upsert(
-        { key: "flight_push", value: data as any, updated_at: new Date().toISOString() },
+        { key, value: data.settings as any, updated_at: new Date().toISOString() },
         { onConflict: "key" },
       );
     return { ok: true };
   });
 
-// Manuell push for ett valgt fly
 export const sendFlightPushManual = createServerFn({ method: "POST" })
-  .inputValidator((data: { icao24: string; recipient: string }) => data)
+  .inputValidator((data: { icao24: string; recipient: string; location?: FlightLocationId }) => ({
+    icao24: data.icao24,
+    recipient: data.recipient,
+    location: (data.location ?? "tollnes") as FlightLocationId,
+  }))
   .handler(async ({ data }): Promise<{ sent: number; errors: number; message: string }> => {
     const mod = await __load_push_server();
-    return mod.sendManualFlightPush(data.icao24, data.recipient);
+    return mod.sendManualFlightPush(data.icao24, data.recipient, data.location);
   });
