@@ -1983,14 +1983,9 @@ function formatLockTime(iso: string | null | undefined): string {
   if (!iso) return "—";
   const d = new Date(iso);
   if (isNaN(d.getTime())) return "—";
-  const today = new Date();
-  const sameDay = d.toDateString() === today.toDateString();
   const hh = String(d.getHours()).padStart(2, "0");
   const mm = String(d.getMinutes()).padStart(2, "0");
-  if (sameDay) return `${hh}:${mm}`;
-  const dd = String(d.getDate()).padStart(2, "0");
-  const mo = String(d.getMonth() + 1).padStart(2, "0");
-  return `${dd}.${mo} ${hh}:${mm}`;
+  return `${hh}:${mm}`;
 }
 
 function DoorsLockTile() {
@@ -2103,10 +2098,10 @@ function DoorsLockTile() {
               )}
             </div>
             <div className="min-w-0 flex-1">
-              <div className="text-[20px] font-semibold text-white tabular-nums leading-none truncate">
+              <div className="text-[14px] font-semibold text-white tabular-nums leading-none truncate">
                 {formatLockTime(lock?.lastUpdated)}
               </div>
-              <div className="text-[7px] tracking-[0.15em] text-white/60 uppercase mt-1 truncate">
+              <div className="text-[7px] tracking-[0.1em] text-white/60 uppercase mt-1 truncate">
                 Sist {locked ? "låst" : unknownLock ? "oppdatert" : "åpnet"}
               </div>
             </div>
