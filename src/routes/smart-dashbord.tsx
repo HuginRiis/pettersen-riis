@@ -39,6 +39,8 @@ import arneHappy from "@/assets/arne-happy.png";
 import arneSad from "@/assets/arne-sad.png";
 import rebekkaHappy from "@/assets/rebekka-happy.png";
 import rebekkaSad from "@/assets/rebekka-sad.png";
+import doorOpenImg from "@/assets/door-open.png";
+import doorClosedImg from "@/assets/door-closed.png";
 
 
 // ----- shared settings (skala, bold, gap) -----
