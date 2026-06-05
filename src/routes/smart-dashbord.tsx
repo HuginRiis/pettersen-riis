@@ -126,7 +126,7 @@ function capStr(d: HomeyDeviceSnapshot | null | undefined, cap: string): string 
   return typeof v === "string" ? v : null;
 }
 
-// Shared Homey snapshot hook (polled every 60s)
+// Shared Homey snapshot hook (polled every 10s)
 function useHomeySnapshot() {
   const fetchSnap = useServerFn(getHomeySnapshot);
   const [devices, setDevices] = useState<HomeyDeviceSnapshot[]>([]);
@@ -145,7 +145,7 @@ function useHomeySnapshot() {
         .catch(() => {});
     };
     load();
-    const id = setInterval(load, 60_000);
+    const id = setInterval(load, 10_000);
     return () => { c = true; clearInterval(id); };
   }, [fetchSnap, tick]);
   return { devices, zones, reload };
