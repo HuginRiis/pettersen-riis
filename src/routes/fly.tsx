@@ -220,7 +220,30 @@ function LocationSection({ location }: { location: FlightLocationId }) {
                 className="w-full bg-background border border-border/60 rounded px-2 py-1.5 tabular-nums"
               />
             </label>
+            <label className="text-xs">
+              <span className="block text-muted-foreground mb-1">Push fra (klokken)</span>
+              <input
+                type="time"
+                value={settings.allowStart ?? "07:00"}
+                onChange={(e) => setSettings({ ...settings, allowStart: e.target.value || "07:00" })}
+                className="w-full bg-background border border-border/60 rounded px-2 py-1.5 tabular-nums"
+              />
+            </label>
+            <label className="text-xs">
+              <span className="block text-muted-foreground mb-1">Push til (klokken)</span>
+              <input
+                type="time"
+                value={settings.allowEnd ?? "22:00"}
+                onChange={(e) => setSettings({ ...settings, allowEnd: e.target.value || "22:00" })}
+                className="w-full bg-background border border-border/60 rounded px-2 py-1.5 tabular-nums"
+              />
+            </label>
           </div>
+          <p className="text-[10px] text-muted-foreground mt-2">
+            Tidsvindu i norsk tid. Sett samme verdi i begge feltene for "alltid på". Vindu over midnatt støttes (f.eks. 22:00 → 07:00).
+          </p>
+
+
 
           <div className="mt-4">
             <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2">

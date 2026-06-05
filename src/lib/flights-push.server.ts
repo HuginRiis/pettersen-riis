@@ -31,6 +31,34 @@ function compass(deg: number): string {
   return dirs[Math.round(deg / 45) % 8];
 }
 
+function parseHHMM(s: string | undefined | null): number | null {
+  if (!s || typeof s !== "string") return null;
+  const m = s.match(/^(\d{1,2}):(\d{2})$/);
+  if (!m) return null;
+  const h = Number(m[1]), mi = Number(m[2]);
+  if (h < 0 || h > 23 || mi < 0 || mi > 59) return null;
+  return h * 60 + mi;
+}
+
+function isWithinAllowedWindow(start?: string, end?: string): boolean {
+  const s = parseHHMM(start);
+  const e = parseHHMM(end);
+  if (s == null || e == null) return true; // ingen begrensning
+  if (s === e) return true; // alltid på
+  // Klokkeslett i Europe/Oslo
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/Oslo",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(new Date());
+  const hh = Number(parts.find((p) => p.type === "hour")?.value ?? "0");
+  const mm = Number(parts.find((p) => p.type === "minute")?.value ?? "0");
+  const now = hh * 60 + mm;
+  return s < e ? now >= s && now < e : now >= s || now < e; // wrap-around
+}
+
+
 function formatFlight(
   f: Flight,
   locationLabel: string,
@@ -149,11 +177,15 @@ async function processForLocation(loc: FlightLocationId): Promise<{
     .maybeSingle();
   const cfg = (cfgRow?.value ?? null) as Partial<FlightPushSettings> | null;
   if (!cfg?.enabled) return { checked: 0, sent: 0, errors: 0, skipped: 1 };
+  if (!isWithinAllowedWindow(cfg.allowStart, cfg.allowEnd)) {
+    return { checked: 0, sent: 0, errors: 0, skipped: 1 };
+  }
 
   const maxDist = cfg.maxDistanceKm ?? 25;
   const maxAlt = cfg.maxAltitudeM ?? 5000;
   const cooldownMin = cfg.cooldownMinutes ?? 60;
   const recipient = cfg.recipient || "Alle";
+
 
   const r = await getNearbyFlights({ data: { location: loc } });
   if (!r.ok) return { checked: 0, sent: 0, errors: 1, skipped: 0 };

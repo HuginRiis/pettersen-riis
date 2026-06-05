@@ -388,6 +388,10 @@ export type FlightPushSettings = {
   maxDistanceKm: number;
   maxAltitudeM: number; // 0 = ingen grense
   cooldownMinutes: number;
+  // Tidsvindu (Europe/Oslo, HH:MM) når push KAN sendes. Like verdier = alltid på.
+  // Hvis allowEnd < allowStart håndteres det som over midnatt (f.eks. 22:00–07:00).
+  allowStart: string;
+  allowEnd: string;
   fields: PushFieldKey[];
 };
 
@@ -398,8 +402,11 @@ const DEFAULT_SETTINGS: FlightPushSettings = {
   maxDistanceKm: 25,
   maxAltitudeM: 5000,
   cooldownMinutes: 60,
+  allowStart: "07:00",
+  allowEnd: "22:00",
   fields: ["distance", "direction", "altitude", "speed", "origin", "registration", "registrationCountry", "type", "typeFriendly", "operator"],
 };
+
 
 export const getFlightPushSettings = createServerFn({ method: "GET" })
   .inputValidator((data: { location?: FlightLocationId } | undefined) => ({
