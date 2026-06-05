@@ -1863,67 +1863,109 @@ function CalendarTile() {
       accent="text-cyan-300"
     >
       <div className="flex flex-col h-full gap-2 overflow-hidden">
-        {/* I dag — kompakt chip-rad */}
-        {todayEvents.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 shrink-0">
-            <span className="text-[9px] uppercase tracking-widest text-white/40 self-center">I dag</span>
-            {todayEvents.slice(0, 2).map((e, i) => (
+        {/* 4 like store bokser: 2 i dag + 2 neste */}
+        <div className="grid grid-cols-2 gap-2 flex-1 min-h-0">
+          {/* I dag */}
+          {todayEvents.slice(0, 2).map((e, i) => {
+            const emoji = bigEmojiFor(e);
+            return (
               <div
-                key={i}
-                className={`flex items-center gap-1.5 rounded-full pl-1 pr-2 py-0.5 text-[10px] bg-gradient-to-r ${gradientFor(e)} text-white shadow-[0_2px_8px_-2px_rgba(0,0,0,0.4)]`}
+                key={`today-${i}`}
+                className={`relative overflow-hidden rounded-xl border border-white/10 p-2.5 flex items-center gap-2.5
+                            bg-gradient-to-br ${gradientFor(e)} shadow-[0_4px_18px_-6px_rgba(0,0,0,0.5)]`}
               >
-                <span className="flex items-center justify-center h-4 w-4 rounded-full bg-white/20 text-white shrink-0">
-                  {React.cloneElement(e.icon as React.ReactElement<{ size?: number }>, { size: 10 })}
-                </span>
-                <span className="truncate max-w-[110px] font-medium">{e.title}</span>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* 2 neste hendelser — store grafiske kort, stablet */}
-        <div className="grid grid-cols-1 gap-2 flex-1 min-h-0">
-          {upcoming.length === 0 ? (
-            <div className="flex items-center justify-center text-xs text-white/40 italic">
-              Ingen planlagte hendelser
-            </div>
-          ) : (
-            upcoming.map((e, i) => {
-              const fd = formatDayShort(e.date);
-              const emoji = bigEmojiFor(e);
-              return (
-                <div
-                  key={i}
-                  className={`relative overflow-hidden rounded-xl border border-white/10 p-3 flex items-center gap-3
-                              bg-gradient-to-br ${gradientFor(e)} shadow-[0_4px_18px_-6px_rgba(0,0,0,0.5)]`}
-                >
-                  {/* Stort fancy ikon */}
-                  <div className="relative flex items-center justify-center h-12 w-12 rounded-2xl bg-white/20 shrink-0 shadow-inner">
-                    {emoji ? (
-                      <span style={{ fontSize: 30, lineHeight: 1 }}>{emoji}</span>
-                    ) : (
-                      React.cloneElement(e.icon as React.ReactElement<{ size?: number; strokeWidth?: number }>, { size: 26, strokeWidth: 1.8 })
-                    )}
-                  </div>
-                  {/* Bakgrunns-ikon (svakt) */}
-                  <div className="absolute -bottom-3 -right-3 text-white pointer-events-none" style={{ opacity: 0.14 }}>
-                    {React.cloneElement(e.icon as React.ReactElement<{ size?: number; strokeWidth?: number }>, { size: 80, strokeWidth: 1.2 })}
-                  </div>
-                  <div className="relative min-w-0 flex-1">
-                    <div className="text-[13px] font-semibold text-white leading-tight truncate">{e.title}</div>
-                    <div className="text-[16px] font-semibold text-white tabular-nums leading-tight capitalize mt-0.5">
-                      {fd.big}
-                    </div>
-                    {e.sub && (
-                      <div className="text-[10px] text-white/80 leading-snug mt-0.5 truncate">{e.sub}</div>
-                    )}
-                  </div>
-                  {e.time && (
-                    <div className="relative text-[11px] text-white/85 tabular-nums shrink-0 self-start">{e.time.slice(0, 5)}</div>
+                <div className="relative flex items-center justify-center h-10 w-10 rounded-xl bg-white/20 shrink-0 shadow-inner">
+                  {emoji ? (
+                    <span style={{ fontSize: 24, lineHeight: 1 }}>{emoji}</span>
+                  ) : (
+                    React.cloneElement(e.icon as React.ReactElement<{ size?: number; strokeWidth?: number }>, { size: 22, strokeWidth: 1.8 })
                   )}
                 </div>
-              );
-            })
+                <div className="absolute -bottom-2 -right-2 text-white pointer-events-none" style={{ opacity: 0.12 }}>
+                  {React.cloneElement(e.icon as React.ReactElement<{ size?: number; strokeWidth?: number }>, { size: 60, strokeWidth: 1.2 })}
+                </div>
+                <div className="relative min-w-0 flex-1">
+                  <div className="text-[12px] font-semibold text-white leading-tight truncate">{e.title}</div>
+                  <div className="text-[13px] font-semibold text-white tabular-nums leading-tight capitalize mt-0.5">i dag</div>
+                  {e.sub && (
+                    <div className="text-[9px] text-white/80 leading-snug mt-0.5 truncate">{e.sub}</div>
+                  )}
+                </div>
+                {e.time && (
+                  <div className="relative text-[10px] text-white/85 tabular-nums shrink-0 self-start">{e.time.slice(0, 5)}</div>
+                )}
+              </div>
+            );
+          })}
+
+          {/* Fyll opp med tomme plasser hvis færre enn 2 i dag */}
+          {todayEvents.length === 0 && (
+            <>
+              <div className="rounded-xl border border-white/10 p-2.5 flex items-center justify-center bg-white/[0.02]">
+                <span className="text-[10px] text-white/30 italic">Ingen hendelser i dag</span>
+              </div>
+              <div className="rounded-xl border border-white/10 p-2.5 flex items-center justify-center bg-white/[0.02]">
+                <span className="text-[10px] text-white/30 italic">Ingen hendelser i dag</span>
+              </div>
+            </>
+          )}
+          {todayEvents.length === 1 && (
+            <div className="rounded-xl border border-white/10 p-2.5 flex items-center justify-center bg-white/[0.02]">
+              <span className="text-[10px] text-white/30 italic">Ingen flere</span>
+            </div>
+          )}
+
+          {/* Neste 2 */}
+          {upcoming.map((e, i) => {
+            const fd = formatDayShort(e.date);
+            const emoji = bigEmojiFor(e);
+            return (
+              <div
+                key={`up-${i}`}
+                className={`relative overflow-hidden rounded-xl border border-white/10 p-2.5 flex items-center gap-2.5
+                            bg-gradient-to-br ${gradientFor(e)} shadow-[0_4px_18px_-6px_rgba(0,0,0,0.5)]`}
+              >
+                <div className="relative flex items-center justify-center h-10 w-10 rounded-xl bg-white/20 shrink-0 shadow-inner">
+                  {emoji ? (
+                    <span style={{ fontSize: 24, lineHeight: 1 }}>{emoji}</span>
+                  ) : (
+                    React.cloneElement(e.icon as React.ReactElement<{ size?: number; strokeWidth?: number }>, { size: 22, strokeWidth: 1.8 })
+                  )}
+                </div>
+                <div className="absolute -bottom-2 -right-2 text-white pointer-events-none" style={{ opacity: 0.12 }}>
+                  {React.cloneElement(e.icon as React.ReactElement<{ size?: number; strokeWidth?: number }>, { size: 60, strokeWidth: 1.2 })}
+                </div>
+                <div className="relative min-w-0 flex-1">
+                  <div className="text-[12px] font-semibold text-white leading-tight truncate">{e.title}</div>
+                  <div className="text-[13px] font-semibold text-white tabular-nums leading-tight capitalize mt-0.5">
+                    {fd.big}
+                  </div>
+                  {e.sub && (
+                    <div className="text-[9px] text-white/80 leading-snug mt-0.5 truncate">{e.sub}</div>
+                  )}
+                </div>
+                {e.time && (
+                  <div className="relative text-[10px] text-white/85 tabular-nums shrink-0 self-start">{e.time.slice(0, 5)}</div>
+                )}
+              </div>
+            );
+          })}
+
+          {/* Fyll opp med tomme plasser hvis færre enn 2 neste */}
+          {upcoming.length === 0 && (
+            <>
+              <div className="rounded-xl border border-white/10 p-2.5 flex items-center justify-center bg-white/[0.02]">
+                <span className="text-[10px] text-white/30 italic">Ingen planlagte</span>
+              </div>
+              <div className="rounded-xl border border-white/10 p-2.5 flex items-center justify-center bg-white/[0.02]">
+                <span className="text-[10px] text-white/30 italic">Ingen planlagte</span>
+              </div>
+            </>
+          )}
+          {upcoming.length === 1 && (
+            <div className="rounded-xl border border-white/10 p-2.5 flex items-center justify-center bg-white/[0.02]">
+              <span className="text-[10px] text-white/30 italic">Ingen flere</span>
+            </div>
           )}
         </div>
       </div>
