@@ -344,6 +344,65 @@ export const getNearbyFlights = createServerFn({ method: "GET" })
                 }
               }
             } catch { /* best effort */ }
+            // OpenSky aircraft metadata — første flight-dato + byggeår
+            try {
+              const r = await fetch(`https://opensky-network.org/api/metadata/aircraft/icao/${encodeURIComponent(f.icao24)}`, {
+                headers: { Accept: "application/json", "User-Agent": "house-riis-pettersen/1.0" },
+                signal: AbortSignal.timeout(2500),
+              });
+              if (r.ok) {
+                const j = (await r.json()) as {
+                  firstFlightDate?: string;
+                  built?: string;
+                  manufacturerName?: string;
+                  model?: string;
+                  registration?: string;
+                  operator?: string;
+                  owner?: string;
+                };
+                if (!f.firstFlightDate && j.firstFlightDate) f.firstFlightDate = j.firstFlightDate.trim();
+                if (!f.built && j.built) f.built = j.built.trim();
+                if (!f.manufacturer && j.manufacturerName) f.manufacturer = j.manufacturerName.trim();
+                if (!f.typeFull && j.model) f.typeFull = j.model.trim();
+                if (!f.registration && j.registration) f.registration = j.registration.trim();
+                if (!f.operator && (j.operator || j.owner)) f.operator = (j.operator || j.owner)!.trim();
+              }
+            } catch { /* best effort */ }
+            // adsbdb.com /callsign — rutetabell (avgang/ankomst-flyplass)
+            if (f.callsign) {
+              try {
+                const cs = f.callsign.replace(/\s+/g, "");
+                const r = await fetch(`https://api.adsbdb.com/v0/callsign/${encodeURIComponent(cs)}`, {
+                  headers: { Accept: "application/json", "User-Agent": "house-riis-pettersen/1.0" },
+                  signal: AbortSignal.timeout(2500),
+                });
+                if (r.ok) {
+                  const j = (await r.json()) as {
+                    response?: {
+                      flightroute?: {
+                        origin?: { icao_code?: string; iata_code?: string; name?: string; municipality?: string; country_name?: string };
+                        destination?: { icao_code?: string; iata_code?: string; name?: string; municipality?: string; country_name?: string };
+                      };
+                    };
+                  };
+                  const fr = j.response?.flightroute;
+                  const fmt = (p?: { icao_code?: string; iata_code?: string; name?: string; municipality?: string; country_name?: string }) => {
+                    if (!p) return null;
+                    const place = [p.name, p.municipality].filter(Boolean).join(", ");
+                    const codes = [p.iata_code, p.icao_code].filter(Boolean).join("/");
+                    return [place || p.country_name, codes ? `(${codes})` : null].filter(Boolean).join(" ").trim() || null;
+                  };
+                  if (fr?.origin) {
+                    f.routeFromIcao = fr.origin.icao_code ?? null;
+                    f.routeFromName = fmt(fr.origin);
+                  }
+                  if (fr?.destination) {
+                    f.routeToIcao = fr.destination.icao_code ?? null;
+                    f.routeToName = fmt(fr.destination);
+                  }
+                }
+              } catch { /* best effort */ }
+            }
           }),
         );
       }
