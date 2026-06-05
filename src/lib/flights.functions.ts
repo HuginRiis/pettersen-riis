@@ -485,7 +485,7 @@ const DEFAULT_SETTINGS: FlightPushSettings = {
   cooldownMinutes: 60,
   allowStart: "07:00",
   allowEnd: "22:00",
-  fields: ["distance", "direction", "altitude", "speed", "origin", "registration", "registrationCountry", "type", "typeFriendly", "operator"],
+  fields: ["distance", "direction", "altitude", "speed", "origin", "registration", "registrationCountry", "type", "typeFriendly", "operator", "routeFrom", "routeTo"],
 };
 
 
