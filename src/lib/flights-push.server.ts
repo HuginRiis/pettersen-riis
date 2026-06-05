@@ -169,7 +169,7 @@ async function processForLocation(loc: FlightLocationId): Promise<{
       skipped++;
       continue;
     }
-    const { title, body } = formatFlight(f, meta.label);
+    const { title, body } = formatFlight(f, meta.label, cfg.fields ?? []);
     const payload = JSON.stringify({
       title,
       body,
