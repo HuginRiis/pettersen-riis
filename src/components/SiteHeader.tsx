@@ -123,6 +123,7 @@ const ROUTE_ICON_COLOR: Partial<Record<RoutePath, string>> = {
   "/decibel": "#f43f5e",
   "/roborock": "#a78bfa",
   "/planter": "#22c55e",
+  "/fly": "#38bdf8",
   "/ytelse": "#22d3ee",
 };
 
