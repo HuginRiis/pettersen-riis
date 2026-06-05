@@ -1972,68 +1972,60 @@ function DoorsLockTile() {
 
   return (
     <Tile
-      title="Dører & Yale"
+      title=""
       icon={<DoorClosed size={14} />}
       accent={openCount > 0 ? "text-orange-300" : "text-emerald-300"}
     >
       <style>{`
-        @keyframes door-swing {
-          0%, 100% { transform: rotateY(0deg); }
-          50% { transform: rotateY(-35deg); }
+        @keyframes door-sway {
+          0%, 100% { transform: rotate(-1.5deg); }
+          50% { transform: rotate(1.5deg); }
         }
         @keyframes lock-pulse {
           0%, 100% { filter: drop-shadow(0 0 4px currentColor); }
           50% { filter: drop-shadow(0 0 12px currentColor); }
         }
+        @keyframes door-glow {
+          0%, 100% { box-shadow: 0 0 20px -4px rgba(251,146,60,0.5), inset 0 0 30px rgba(251,146,60,0.15); }
+          50% { box-shadow: 0 0 32px -2px rgba(251,146,60,0.8), inset 0 0 40px rgba(251,146,60,0.25); }
+        }
       `}</style>
       <div className="flex flex-col h-full gap-2 overflow-hidden">
-        {/* Toppstripe: antall åpne / totalt + Yale-lås */}
+        {/* Toppstripe: stor dør-grafikk + tellere + Yale */}
         <div className="flex items-stretch gap-2 shrink-0">
           <div
-            className={`flex-1 rounded-xl border p-2 flex items-center gap-2 bg-gradient-to-br ${
+            className={`flex-1 rounded-xl border p-2 flex items-center gap-2 relative overflow-hidden bg-gradient-to-br ${
               openCount > 0
                 ? "from-orange-500/30 to-rose-600/20 border-orange-400/40"
                 : "from-emerald-500/20 to-teal-700/15 border-emerald-400/30"
             }`}
+            style={openCount > 0 ? { animation: "door-glow 2.4s ease-in-out infinite" } : undefined}
           >
-            <div
-              className="h-9 w-9 rounded-lg flex items-center justify-center bg-white/15"
-              style={{
-                perspective: 60,
-              }}
-            >
-              {openCount > 0 ? (
-                <DoorOpen
-                  size={22}
-                  className="text-orange-200"
-                  style={{
-                    transformOrigin: "left center",
-                    animation: "door-swing 1.8s ease-in-out infinite",
-                  }}
-                />
-              ) : (
-                <DoorClosed size={22} className="text-emerald-200" />
-              )}
+            <div className="h-14 w-14 shrink-0 flex items-center justify-center">
+              <img
+                src={openCount > 0 ? doorOpenImg : doorClosedImg}
+                alt={openCount > 0 ? "Åpen dør" : "Lukket dør"}
+                className="h-14 w-auto object-contain drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)]"
+                style={openCount > 0 ? {
+                  transformOrigin: "bottom center",
+                  animation: "door-sway 2.4s ease-in-out infinite",
+                } : undefined}
+              />
             </div>
             <div className="min-w-0">
-              <div className="text-[17px] font-semibold text-white tabular-nums leading-none">
-                {openCount}<span className="text-white/50 text-[12px]"> / {totalDoors}</span>
+              <div className="text-[20px] font-semibold text-white tabular-nums leading-none">
+                {openCount}<span className="text-white/50 text-[13px]"> / {totalDoors}</span>
               </div>
-              <div className="text-[9px] tracking-[0.2em] text-white/60 uppercase mt-0.5">
+              <div className="text-[9px] tracking-[0.2em] text-white/60 uppercase mt-1">
                 {allClosed ? "Alle lukket" : openCount > 0 ? "Åpne nå" : "Dører"}
               </div>
             </div>
           </div>
 
-          <div
-            className="flex-1 rounded-xl border border-white/10 p-2 flex items-center gap-2 bg-gradient-to-br from-zinc-700/30 to-zinc-900/30"
-          >
+          <div className="flex-1 rounded-xl border border-white/10 p-2 flex items-center gap-2 bg-gradient-to-br from-zinc-700/30 to-zinc-900/30">
             <div className="h-9 w-9 rounded-lg flex items-center justify-center bg-white/10">
               {locked ? (
-                <Lock
-                  size={22}
-                  style={{ color: lockColor, animation: "lock-pulse 2.4s ease-in-out infinite" }}
-                />
+                <Lock size={22} style={{ color: lockColor, animation: "lock-pulse 2.4s ease-in-out infinite" }} />
               ) : unknownLock ? (
                 <Lock size={22} style={{ color: lockColor, opacity: 0.5 }} />
               ) : (
@@ -2041,10 +2033,7 @@ function DoorsLockTile() {
               )}
             </div>
             <div className="min-w-0">
-              <div
-                className="text-[15px] font-semibold tabular-nums leading-none"
-                style={{ color: lockColor }}
-              >
+              <div className="text-[15px] font-semibold tabular-nums leading-none" style={{ color: lockColor }}>
                 {unknownLock ? "—" : locked ? "LÅST" : "ÅPEN"}
               </div>
               <div className="text-[9px] tracking-[0.2em] text-white/60 uppercase mt-0.5 truncate">
@@ -2054,40 +2043,35 @@ function DoorsLockTile() {
           </div>
         </div>
 
-        {/* Liste over åpne dører (eller siste statusliste) */}
-        <div className="flex-1 min-h-0 overflow-hidden">
+        {/* Liste over åpne dører — vis alle, kompakt grid */}
+        <div className="flex-1 min-h-0 overflow-y-auto pr-0.5">
           {openCount > 0 ? (
-            <ul className="space-y-1">
-              {openDoors.slice(0, 4).map((d) => (
-                <li
+            <div className="grid grid-cols-2 gap-1">
+              {openDoors.map((d) => (
+                <div
                   key={d.id}
-                  className="flex items-center gap-2 rounded-md bg-orange-500/15 border border-orange-400/30 px-2 py-1"
+                  className="flex items-center gap-1.5 rounded-md bg-orange-500/15 border border-orange-400/30 px-1.5 py-1"
                 >
-                  <DoorOpen
-                    size={14}
-                    className="text-orange-300 shrink-0"
-                    style={{
-                      transformOrigin: "left center",
-                      animation: "door-swing 1.8s ease-in-out infinite",
-                    }}
+                  <img
+                    src={doorOpenImg}
+                    alt=""
+                    className="h-6 w-auto object-contain shrink-0 drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]"
+                    style={{ transformOrigin: "bottom center", animation: "door-sway 2.4s ease-in-out infinite" }}
                   />
-                  <span className="text-[11px] text-white truncate flex-1">{d.name}</span>
-                  <span className="text-[9px] tracking-[0.15em] text-orange-200/80 uppercase shrink-0">
-                    {d.zoneName}
-                  </span>
-                </li>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[10px] text-white truncate leading-tight">{d.name}</div>
+                    <div className="text-[8px] tracking-[0.15em] text-orange-200/80 uppercase truncate">{d.zoneName}</div>
+                  </div>
+                </div>
               ))}
-              {openCount > 4 && (
-                <li className="text-[10px] text-white/50 text-center">+{openCount - 4} til</li>
-              )}
-            </ul>
+            </div>
           ) : totalDoors === 0 ? (
             <div className="h-full flex items-center justify-center text-[11px] text-white/40 italic">
               Ingen dørsensorer funnet
             </div>
           ) : (
             <div className="h-full flex flex-col items-center justify-center gap-1 text-emerald-300/80">
-              <DoorClosed size={28} strokeWidth={1.5} />
+              <img src={doorClosedImg} alt="Lukket" className="h-16 w-auto object-contain opacity-80" />
               <div className="text-[10px] tracking-[0.25em] uppercase">Alle dører lukket</div>
             </div>
           )}
