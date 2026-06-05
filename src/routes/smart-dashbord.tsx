@@ -3352,8 +3352,9 @@ function SmartDashbord() {
               {/* Rad 2: UV + AQ */}
               <div className="col-span-6"><UvTile loc={loc} /></div>
               <div className="col-span-6"><AqiTile loc={loc} /></div>
-              {/* Rad 3: Kalender + Leader */}
-              <div className="col-span-6"><CalendarTile /></div>
+              {/* Rad 3: Kalender + Dører + Leader + Robots */}
+              <div className="col-span-3"><CalendarTile /></div>
+              <div className="col-span-3"><DoorsLockTile /></div>
               <div className="col-span-3"><LeaderTile /></div>
               <div className="col-span-3"><RobotsTile /></div>
 
