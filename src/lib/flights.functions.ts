@@ -196,9 +196,13 @@ async function fetchFromAdsbLol(center: { lat: number; lon: number }, radiusKm: 
       operator: ((a.ownOp as string | undefined) ?? (a.owner as string | undefined) ?? "").trim() || null,
       category: ((a.category as string | undefined) ?? "").trim() || null,
       emergency: ((a.emergency as string | undefined) ?? "").trim() || null,
+      manufacturer: null,
+      typeFull: null,
+      ownerCountry: null,
       distanceKm,
       bearingDeg: bearingDeg(center, { lat, lon }),
     });
+
   }
   out.sort((a, b) => a.distanceKm - b.distanceKm);
   return out;
