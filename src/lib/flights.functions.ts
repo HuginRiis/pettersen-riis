@@ -203,11 +203,23 @@ export const getNearbyFlights = createServerFn({ method: "GET" })
     const { withApiLog } = await __load_api_call_log_server();
     return withApiLog("flights", `getNearbyFlights[${data.location}]`, async (): Promise<FlightsResult> => {
       const center = FLIGHT_LOCATIONS[data.location];
+      // Les ut konfigurert synlig radius for denne lokasjonen (default 50 km)
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { data: row } = await supabaseAdmin
+        .from("notification_settings")
+        .select("value")
+        .eq("key", FLIGHT_LOCATIONS[data.location].settingsKey)
+        .maybeSingle();
+      const raw = (row?.value as Partial<FlightPushSettings> | null)?.searchRadiusKm;
+      const radiusKm = Math.min(
+        MAX_SEARCH_RADIUS_KM,
+        Math.max(1, typeof raw === "number" && Number.isFinite(raw) ? raw : DEFAULT_SEARCH_RADIUS_KM),
+      );
       // Hent fra begge kilder parallelt og slå sammen — adsb.lol har rik metadata,
       // OpenSky fanger ofte små fly / GA som adsb.lol mangler (og motsatt).
       const [adsbRes, openskyRes] = await Promise.allSettled([
-        fetchFromAdsbLol(center),
-        fetchFromOpenSky(center),
+        fetchFromAdsbLol(center, radiusKm),
+        fetchFromOpenSky(center, radiusKm),
       ]);
       const adsb = adsbRes.status === "fulfilled" ? adsbRes.value : [];
       const opensky = openskyRes.status === "fulfilled" ? openskyRes.value : [];
