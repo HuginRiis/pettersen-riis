@@ -1319,7 +1319,7 @@ import {
   getCachedGardenaAge,
 } from "@/lib/gardena-cache";
 import type { GardenaSnap } from "@/lib/gardena-cache";
-import { Bot, Play, ParkingSquare, Pause, Loader2, BatteryCharging } from "lucide-react";
+import { Bot, Play, ParkingSquare, Pause, Loader2, BatteryCharging, Home as HomeIcon } from "lucide-react";
 import sileMowerImg from "@/assets/icon-sileno-mower.png";
 import roboVacImg from "@/assets/icon-roborock-vacuum.png";
 
