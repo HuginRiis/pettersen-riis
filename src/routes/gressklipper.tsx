@@ -25,6 +25,9 @@ function GressklipperRoute() {
         subtitle="Sanntid fra Gardena Smart System — alle statuser og kjøringer"
         image={heroImg}
       />
+      <section className="container mx-auto px-4 pt-10">
+        <MowerScene />
+      </section>
       <GardenaPanel />
     </PageShell>
   );
