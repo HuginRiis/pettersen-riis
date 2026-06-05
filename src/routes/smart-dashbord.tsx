@@ -1969,22 +1969,46 @@ function LysCombinedTile({
     });
   }, [groups]);
 
-  // Track last on/off transition per room based on aggregate onCount.
+  // Track last on/off transition per room. Seed from Homey capability lastUpdated
+  // so rooms that have been static (e.g. off all day) still show a real timestamp.
   useEffect(() => {
     const counts: Record<string, number> = {};
-    for (const g of groups) counts[g.label] = g.lights.filter((d) => capBool(d, "onoff")).length;
+    const latestTs: Record<string, { ts: number; on: boolean }> = {};
+    for (const g of groups) {
+      let onCount = 0;
+      let bestTs = 0;
+      let bestOn = false;
+      for (const d of g.lights) {
+        const on = capBool(d, "onoff");
+        if (on) onCount++;
+        const lu = d.capabilities?.onoff?.lastUpdated;
+        const t = lu ? new Date(lu).getTime() : 0;
+        if (t > bestTs) { bestTs = t; bestOn = on; }
+      }
+      counts[g.label] = onCount;
+      if (bestTs > 0) latestTs[g.label] = { ts: bestTs, on: onCount > 0 ? true : bestOn };
+    }
     const prev = prevOnCountRef.current;
+    const next = { ...lastChanges };
+    let changed = false;
+    // Seed from Homey timestamps when local value is missing or older
+    for (const label of Object.keys(latestTs)) {
+      const cur = next[label];
+      if (!cur || latestTs[label].ts > cur.ts) {
+        next[label] = latestTs[label];
+        changed = true;
+      }
+    }
+    // Override with locally observed transitions (more authoritative for "now")
     if (prev) {
-      let changed = false;
-      const next = { ...lastChanges };
       for (const label of Object.keys(counts)) {
         const before = prev[label] ?? 0;
         const now = counts[label];
         if (before === 0 && now > 0) { next[label] = { ts: Date.now(), on: true }; changed = true; }
         else if (before > 0 && now === 0) { next[label] = { ts: Date.now(), on: false }; changed = true; }
       }
-      if (changed) { setLastChanges(next); saveLastChanges(next); }
     }
+    if (changed) { setLastChanges(next); saveLastChanges(next); }
     prevOnCountRef.current = counts;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [groups]);
