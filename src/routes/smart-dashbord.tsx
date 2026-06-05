@@ -1228,12 +1228,11 @@ function LeaderTile() {
 }
 
 // ----- Roboter: Sileno (Gardena) + Roborock (Borgen) -----
-import { getGardenaSnapshot, controlGardenaMower } from "@/lib/gardena.functions";
 import { getRoborockSnapshot, sendRoborockCommand } from "@/lib/roborock.functions";
-import { Bot, Play, ParkingSquare, Home as HomeIcon, Pause, Loader2 } from "lucide-react";
+import { Bot, Play, ParkingSquare, Home as HomeIcon, Pause, Loader2, BatteryCharging } from "lucide-react";
 
-type GardenaSnap = Awaited<ReturnType<typeof getGardenaSnapshot>>;
 type RoborockSnap = Awaited<ReturnType<typeof getRoborockSnapshot>>;
+
 
 const MOWER_ACT_LABEL: Record<string, string> = {
   PAUSED: "Pauset",
