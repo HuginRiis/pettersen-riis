@@ -41,7 +41,10 @@ export const FLIGHT_LOCATIONS: Record<
 
 // Backwards-compat alias used andre steder i koden
 export const TOLLNES = { lat: FLIGHT_LOCATIONS.tollnes.lat, lon: FLIGHT_LOCATIONS.tollnes.lon };
-export const SEARCH_RADIUS_KM = 50;
+export const DEFAULT_SEARCH_RADIUS_KM = 50;
+export const MAX_SEARCH_RADIUS_KM = 250;
+/** @deprecated bruk innstillinger per lokasjon (searchRadiusKm) */
+export const SEARCH_RADIUS_KM = DEFAULT_SEARCH_RADIUS_KM;
 
 export type Flight = {
   icao24: string;
@@ -92,9 +95,9 @@ function bearingDeg(a: { lat: number; lon: number }, b: { lat: number; lon: numb
   return (toDeg(Math.atan2(y, x)) + 360) % 360;
 }
 
-function bboxFor(center: { lat: number; lon: number }) {
-  const dLat = SEARCH_RADIUS_KM / 111;
-  const dLon = SEARCH_RADIUS_KM / (111 * Math.cos((center.lat * Math.PI) / 180));
+function bboxFor(center: { lat: number; lon: number }, radiusKm: number) {
+  const dLat = radiusKm / 111;
+  const dLon = radiusKm / (111 * Math.cos((center.lat * Math.PI) / 180));
   return {
     lamin: center.lat - dLat,
     lamax: center.lat + dLat,
@@ -103,8 +106,8 @@ function bboxFor(center: { lat: number; lon: number }) {
   };
 }
 
-async function fetchFromOpenSky(center: { lat: number; lon: number }): Promise<Flight[]> {
-  const b = bboxFor(center);
+async function fetchFromOpenSky(center: { lat: number; lon: number }, radiusKm: number): Promise<Flight[]> {
+  const b = bboxFor(center, radiusKm);
   const url = `https://opensky-network.org/api/states/all?lamin=${b.lamin}&lomin=${b.lomin}&lamax=${b.lamax}&lomax=${b.lomax}`;
   const res = await fetch(url, {
     headers: { Accept: "application/json", "User-Agent": "house-riis-pettersen/1.0" },
@@ -119,7 +122,7 @@ async function fetchFromOpenSky(center: { lat: number; lon: number }): Promise<F
     const lat = s[6] as number | null;
     if (!icao24 || lon == null || lat == null) continue;
     const distanceKm = haversineKm(center, { lat, lon });
-    if (distanceKm > SEARCH_RADIUS_KM) continue;
+    if (distanceKm > radiusKm) continue;
     out.push({
       icao24,
       callsign: ((s[1] as string | null) ?? "").trim() || null,
@@ -147,8 +150,8 @@ async function fetchFromOpenSky(center: { lat: number; lon: number }): Promise<F
   return out;
 }
 
-async function fetchFromAdsbLol(center: { lat: number; lon: number }): Promise<Flight[]> {
-  const radiusNm = Math.round(SEARCH_RADIUS_KM / 1.852);
+async function fetchFromAdsbLol(center: { lat: number; lon: number }, radiusKm: number): Promise<Flight[]> {
+  const radiusNm = Math.max(1, Math.round(radiusKm / 1.852));
   const url = `https://api.adsb.lol/v2/lat/${center.lat}/lon/${center.lon}/dist/${radiusNm}`;
   const res = await fetch(url, {
     headers: { Accept: "application/json", "User-Agent": "house-riis-pettersen/1.0" },
@@ -162,7 +165,7 @@ async function fetchFromAdsbLol(center: { lat: number; lon: number }): Promise<F
     const lon = typeof a.lon === "number" ? a.lon : null;
     if (lat == null || lon == null) continue;
     const distanceKm = haversineKm(center, { lat, lon });
-    if (distanceKm > SEARCH_RADIUS_KM) continue;
+    if (distanceKm > radiusKm) continue;
     const altFt = typeof a.alt_baro === "number" ? a.alt_baro : (typeof a.alt_geom === "number" ? a.alt_geom : null);
     const spdKt = typeof a.gs === "number" ? a.gs : null;
     out.push({
@@ -200,11 +203,23 @@ export const getNearbyFlights = createServerFn({ method: "GET" })
     const { withApiLog } = await __load_api_call_log_server();
     return withApiLog("flights", `getNearbyFlights[${data.location}]`, async (): Promise<FlightsResult> => {
       const center = FLIGHT_LOCATIONS[data.location];
+      // Les ut konfigurert synlig radius for denne lokasjonen (default 50 km)
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { data: row } = await supabaseAdmin
+        .from("notification_settings")
+        .select("value")
+        .eq("key", FLIGHT_LOCATIONS[data.location].settingsKey)
+        .maybeSingle();
+      const raw = (row?.value as Partial<FlightPushSettings> | null)?.searchRadiusKm;
+      const radiusKm = Math.min(
+        MAX_SEARCH_RADIUS_KM,
+        Math.max(1, typeof raw === "number" && Number.isFinite(raw) ? raw : DEFAULT_SEARCH_RADIUS_KM),
+      );
       // Hent fra begge kilder parallelt og slå sammen — adsb.lol har rik metadata,
       // OpenSky fanger ofte små fly / GA som adsb.lol mangler (og motsatt).
       const [adsbRes, openskyRes] = await Promise.allSettled([
-        fetchFromAdsbLol(center),
-        fetchFromOpenSky(center),
+        fetchFromAdsbLol(center, radiusKm),
+        fetchFromOpenSky(center, radiusKm),
       ]);
       const adsb = adsbRes.status === "fulfilled" ? adsbRes.value : [];
       const opensky = openskyRes.status === "fulfilled" ? openskyRes.value : [];
@@ -287,6 +302,7 @@ export const PUSH_FIELD_LABELS: Record<PushFieldKey, string> = {
 export type FlightPushSettings = {
   enabled: boolean;
   recipient: string;
+  searchRadiusKm: number; // synlig radius på fly-siden
   maxDistanceKm: number;
   maxAltitudeM: number; // 0 = ingen grense
   cooldownMinutes: number;
@@ -296,6 +312,7 @@ export type FlightPushSettings = {
 const DEFAULT_SETTINGS: FlightPushSettings = {
   enabled: false,
   recipient: "Alle",
+  searchRadiusKm: DEFAULT_SEARCH_RADIUS_KM,
   maxDistanceKm: 25,
   maxAltitudeM: 5000,
   cooldownMinutes: 60,
