@@ -3382,8 +3382,9 @@ function SmartDashbord() {
               <div className="col-span-2"><WindTile windNow={tollnes.windNow} gustNow={tollnes.gustNow} windAngle={tollnes.windAngle} /></div>
 
 
-              {/* Rad 3: Kalender + Leader */}
-              <div className="col-span-6"><CalendarTile /></div>
+              {/* Rad 3: Kalender + Dører & Yale + Leader + Robots */}
+              <div className="col-span-3"><CalendarTile /></div>
+              <div className="col-span-3"><DoorsLockTile /></div>
               <div className="col-span-3"><LeaderTile /></div>
               <div className="col-span-3"><RobotsTile /></div>
 
