@@ -578,6 +578,36 @@ export type Database = {
         }
         Relationships: []
       }
+      flights_seen: {
+        Row: {
+          callsign: string | null
+          first_seen: string
+          icao24: string
+          last_notified_at: string | null
+          last_notified_distance_km: number | null
+          last_seen: string
+          origin_country: string | null
+        }
+        Insert: {
+          callsign?: string | null
+          first_seen?: string
+          icao24: string
+          last_notified_at?: string | null
+          last_notified_distance_km?: number | null
+          last_seen?: string
+          origin_country?: string | null
+        }
+        Update: {
+          callsign?: string | null
+          first_seen?: string
+          icao24?: string
+          last_notified_at?: string | null
+          last_notified_distance_km?: number | null
+          last_seen?: string
+          origin_country?: string | null
+        }
+        Relationships: []
+      }
       garbage_address: {
         Row: {
           address_text: string
