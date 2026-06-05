@@ -180,6 +180,7 @@ export type HomeyCapabilityMeta = {
   max?: number;
   step?: number;
   values?: HomeyCapabilityEnumValue[];
+  lastUpdated?: string | null;
 };
 
 export type HomeyDeviceSnapshot = {
