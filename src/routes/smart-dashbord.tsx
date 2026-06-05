@@ -2022,25 +2022,35 @@ function DoorsLockTile() {
             </div>
           </div>
 
-          <div className="flex-1 rounded-xl border border-white/10 p-2 flex items-center gap-2 bg-gradient-to-br from-zinc-700/30 to-zinc-900/30">
-            <div className="h-9 w-9 rounded-lg flex items-center justify-center bg-white/10">
+          <div
+            className={`flex-1 rounded-xl border p-2 flex items-center gap-2 relative overflow-hidden bg-gradient-to-br ${
+              unknownLock
+                ? "from-zinc-700/30 to-zinc-900/30 border-white/10"
+                : locked
+                  ? "from-emerald-500/25 to-teal-700/15 border-emerald-400/40"
+                  : "from-rose-500/30 to-orange-600/20 border-rose-400/40"
+            }`}
+            style={!unknownLock && !locked ? { animation: "door-glow 2.4s ease-in-out infinite" } : undefined}
+          >
+            <div className="h-14 w-14 shrink-0 rounded-xl flex items-center justify-center bg-black/30 border border-white/10 relative">
               {locked ? (
-                <Lock size={22} style={{ color: lockColor, animation: "lock-pulse 2.4s ease-in-out infinite" }} />
+                <Lock size={32} style={{ color: lockColor, animation: "lock-pulse 2.4s ease-in-out infinite" }} />
               ) : unknownLock ? (
-                <Lock size={22} style={{ color: lockColor, opacity: 0.5 }} />
+                <Lock size={32} style={{ color: lockColor, opacity: 0.5 }} />
               ) : (
-                <Unlock size={22} style={{ color: lockColor, animation: "lock-pulse 1.2s ease-in-out infinite" }} />
+                <Unlock size={32} style={{ color: lockColor, animation: "lock-pulse 1.2s ease-in-out infinite" }} />
               )}
             </div>
-            <div className="min-w-0">
-              <div className="text-[15px] font-semibold tabular-nums leading-none" style={{ color: lockColor }}>
-                {unknownLock ? "—" : locked ? "LÅST" : "ÅPEN"}
+            <div className="min-w-0 flex-1">
+              <div className="text-[20px] font-semibold text-white tabular-nums leading-none">
+                {formatLockTime(lock?.lastUpdated)}
               </div>
-              <div className="text-[9px] tracking-[0.2em] text-white/60 uppercase mt-0.5 truncate">
-                {lock?.brand === "yale" ? "Yale Doorman" : lock?.name ?? "Lås"}
+              <div className="text-[9px] tracking-[0.2em] text-white/60 uppercase mt-1">
+                Sist {locked ? "låst" : unknownLock ? "oppdatert" : "åpnet"}
               </div>
             </div>
           </div>
+
         </div>
 
         {/* Liste over åpne dører — vis alle, kompakt grid */}
