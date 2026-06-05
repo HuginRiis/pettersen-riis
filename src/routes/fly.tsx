@@ -267,7 +267,7 @@ function LocationSection({ location }: { location: FlightLocationId }) {
       {err && <p className="text-rose-400 text-sm">{err}</p>}
       {!err && flights && flights.length === 0 && (
         <p className="text-muted-foreground text-sm py-6 text-center">
-          Ingen fly innenfor {SEARCH_RADIUS_KM} km nå.
+          Ingen fly innenfor {settings?.searchRadiusKm ?? DEFAULT_SEARCH_RADIUS_KM} km nå.
         </p>
       )}
       {flights && flights.length > 0 && (
