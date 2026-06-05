@@ -207,29 +207,25 @@ function applyUvCorrection(hourly: any, current: any, cloudMap: Map<string, numb
   }
 }
 
-async function fetchMetCloudHourly(lat: number, lon: number): Promise<{ time: string[]; cloud_cover: number[] }> {
-  const url = `https://api.met.no/weatherapi/locationforecast/2.0/complete?lat=${lat}&lon=${lon}`;
-  const res = await loggedFetch("uv", "met:cloud-cover", url, {
-    headers: { "User-Agent": "riis.cc open-meteo warm (agenda@riis.cc)" },
-  });
-  if (!res.ok) return { time: [], cloud_cover: [] };
-  const json = (await res.json()) as {
-    properties?: {
-      timeseries?: Array<{
-        time: string;
-        data?: { instant?: { details?: { cloud_area_fraction?: number } } };
-      }>;
-    };
+// Skydekke fra Open-Meteo forecast API — all data på luftkvalitet/UV-panelene
+// kommer dermed fra Open-Meteo (ingen MET-avhengighet for UV-beregning).
+async function fetchOpenMeteoCloudHourly(
+  lat: number,
+  lon: number,
+): Promise<{ time: string[]; cloud_cover: number[] }> {
+  const base = process.env.OPEN_METEO_API_KEY
+    ? "https://customer-api.open-meteo.com"
+    : "https://api.open-meteo.com";
+  const url =
+    `${base}/v1/forecast?latitude=${lat}&longitude=${lon}` +
+    `&hourly=cloud_cover&timezone=Europe%2FOslo&forecast_days=4${apiKeyParam()}`;
+  const res = await fetchWithBackoff("open-meteo", "open-meteo:cloud", url);
+  if (!res || !res.ok) return { time: [], cloud_cover: [] };
+  const json = (await res.json()) as { hourly?: { time?: string[]; cloud_cover?: number[] } };
+  return {
+    time: json.hourly?.time ?? [],
+    cloud_cover: json.hourly?.cloud_cover ?? [],
   };
-  const time: string[] = [];
-  const cloud_cover: number[] = [];
-  for (const e of json.properties?.timeseries ?? []) {
-    const cloud = e.data?.instant?.details?.cloud_area_fraction;
-    if (typeof cloud !== "number") continue;
-    time.push(e.time.slice(0, 16));
-    cloud_cover.push(cloud);
-  }
-  return { time, cloud_cover };
 }
 
 export async function warmAirQualityPanel(lat: number, lon: number): Promise<void> {
@@ -247,7 +243,7 @@ export async function warmAirQualityPanel(lat: number, lon: number): Promise<voi
     }
     throw err;
   }
-  const fc = await fetchMetCloudHourly(lat, lon).catch(() => ({ time: [], cloud_cover: [] }));
+  const fc = await fetchOpenMeteoCloudHourly(lat, lon).catch(() => ({ time: [], cloud_cover: [] }));
   const cloudMap = buildCloudMap(fc);
   const hourly = pickFields(core.hourly, HOURLY_FIELDS.split(","));
   const current = { ...core.current };
@@ -265,7 +261,7 @@ export async function warmUvCloudPanel(lat: number, lon: number): Promise<void> 
   await withCache<UvCloudData>(key, async () => {
     const core = await warmOpenMeteoCore(lat, lon);
     const aqHourly = pickFields(core.hourly, ["uv_index", "uv_index_clear_sky"]);
-    const fcHourly = await fetchMetCloudHourly(lat, lon).catch(() => ({ time: [], cloud_cover: [] }));
+    const fcHourly = await fetchOpenMeteoCloudHourly(lat, lon).catch(() => ({ time: [], cloud_cover: [] }));
     const cloudMap = buildCloudMap(fcHourly);
     applyUvCorrection(aqHourly, null, cloudMap);
     return { aq: { hourly: aqHourly }, fc: { hourly: fcHourly } };
