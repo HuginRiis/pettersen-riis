@@ -3225,8 +3225,21 @@ function NetatmoMetricList({
   );
 }
 
-function MiniTile({ icon, label, value, sub, accent, detail }:
-  { icon: React.ReactNode; label: string; value: string; sub?: string; accent?: string; detail?: React.ReactNode }) {
+type MiniAnim = "humidity" | "temp" | "co2" | "noise";
+
+function MiniAnimOverlay({ kind }: { kind: MiniAnim }) {
+  // 3 elementer = 3 forsinkede partikler/ringer
+  return (
+    <div className={`mini-anim mini-anim-${kind}`} aria-hidden>
+      <span />
+      <span />
+      <span />
+    </div>
+  );
+}
+
+function MiniTile({ icon, label, value, sub, accent, detail, anim }:
+  { icon: React.ReactNode; label: string; value: string; sub?: string; accent?: string; detail?: React.ReactNode; anim?: MiniAnim }) {
   const [open, setOpen] = useState(false);
   return (
     <>
@@ -3235,13 +3248,17 @@ function MiniTile({ icon, label, value, sub, accent, detail }:
         onClick={() => setOpen(true)}
         className="text-left rounded-2xl bg-white/[0.03] border border-white/10 p-3 flex items-center gap-3 h-full hover:bg-white/[0.06] hover:border-white/20 active:scale-[0.98] transition"
       >
-        <div className={`h-9 w-9 rounded-full bg-white/5 flex items-center justify-center ${accent ?? "text-white/70"}`}>{icon}</div>
+        <div className={`relative h-9 w-9 rounded-full bg-white/5 flex items-center justify-center ${accent ?? "text-white/70"}`}>
+          {anim && <MiniAnimOverlay kind={anim} />}
+          <span className="relative z-10">{icon}</span>
+        </div>
         <div className="min-w-0">
           <div className="text-[10px] uppercase tracking-widest text-white/40">{label}</div>
           <div className="text-sm text-white tabular-nums truncate">{value}</div>
           {sub && <div className="text-[10px] text-white/40">{sub}</div>}
         </div>
       </button>
+
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="bg-[#0c0f15] border-white/10 text-white max-w-md">
           <DialogHeader>
