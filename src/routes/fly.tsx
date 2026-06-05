@@ -17,6 +17,7 @@ import {
   type FlightLocationId,
   type PushFieldKey,
 } from "@/lib/flights.functions";
+import { translateAircraftType, registrationCountry, explainSquawk } from "@/lib/flight-translations";
 
 const RECIPIENTS = ["Alle", "Arne", "Rebekka", "Arne & Rebekka", "Marita", "Nora", "Celine", "Mira"];
 
@@ -306,6 +307,22 @@ function LocationSection({ location }: { location: FlightLocationId }) {
                     {f.squawk && <span>sq {f.squawk}</span>}
                     <span className="opacity-50">{f.icao24}</span>
                   </div>
+                  {(() => {
+                    const typeFriendly = translateAircraftType(f.aircraftType);
+                    const regCountry = registrationCountry(f.registration);
+                    const sqEx = explainSquawk(f.squawk);
+                    const extras = [
+                      typeFriendly,
+                      regCountry ? `${f.registration} → ${regCountry}` : null,
+                      sqEx,
+                    ].filter(Boolean);
+                    if (extras.length === 0) return null;
+                    return (
+                      <div className="text-[11px] text-primary/70 mt-0.5">
+                        {extras.join(" · ")}
+                      </div>
+                    );
+                  })()}
                   {(f.description || f.operator) && (
                     <div className="text-[11px] text-muted-foreground/80 mt-0.5 truncate">
                       {[f.description, f.operator].filter(Boolean).join(" · ")}

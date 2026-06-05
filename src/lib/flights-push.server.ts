@@ -12,6 +12,7 @@ import {
   type FlightPushSettings,
   type FlightLocationId,
 } from "./flights.functions";
+import { translateAircraftType, registrationCountry, explainSquawk } from "./flight-translations";
 
 const VAPID_PUBLIC = process.env.VAPID_PUBLIC_KEY!;
 const VAPID_PRIVATE = process.env.VAPID_PRIVATE_KEY!;
@@ -51,10 +52,22 @@ function formatFlight(
     parts.push(`${fpm > 0 ? "↑" : fpm < 0 ? "↓" : "→"}${Math.abs(fpm)} ft/min`);
   }
   if (set.has("registration") && f.registration) parts.push(f.registration);
+  if (set.has("registrationCountry")) {
+    const c = registrationCountry(f.registration);
+    if (c) parts.push(`reg: ${c}`);
+  }
   if (set.has("type") && f.aircraftType) parts.push(f.aircraftType);
+  if (set.has("typeFriendly")) {
+    const t = translateAircraftType(f.aircraftType);
+    if (t) parts.push(t);
+  }
   if (set.has("description") && f.description) parts.push(f.description);
   if (set.has("operator") && f.operator) parts.push(f.operator);
   if (set.has("squawk") && f.squawk) parts.push(`sq ${f.squawk}`);
+  if (set.has("squawkExplained")) {
+    const e = explainSquawk(f.squawk);
+    if (e) parts.push(e);
+  }
   if (set.has("category") && f.category) parts.push(f.category);
   if (set.has("emergency") && f.emergency && f.emergency !== "none") parts.push(`⚠ ${f.emergency}`);
 

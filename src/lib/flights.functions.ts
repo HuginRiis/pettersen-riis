@@ -226,10 +226,13 @@ export const PUSH_FIELD_KEYS = [
   "verticalRate",
   "origin",
   "registration",
+  "registrationCountry",
   "type",
+  "typeFriendly",
   "description",
   "operator",
   "squawk",
+  "squawkExplained",
   "category",
   "emergency",
 ] as const;
@@ -243,10 +246,13 @@ export const PUSH_FIELD_LABELS: Record<PushFieldKey, string> = {
   verticalRate: "Stig-/synkrate",
   origin: "Opprinnelsesland",
   registration: "Registrering",
+  registrationCountry: "Reg → land (oversatt)",
   type: "Flytype (ICAO)",
+  typeFriendly: "Flytype (oversatt navn)",
   description: "Beskrivelse",
   operator: "Operatør/flyselskap",
   squawk: "Squawk",
+  squawkExplained: "Squawk (oversatt)",
   category: "Kategori",
   emergency: "Nødstatus",
 };
@@ -266,7 +272,7 @@ const DEFAULT_SETTINGS: FlightPushSettings = {
   maxDistanceKm: 25,
   maxAltitudeM: 5000,
   cooldownMinutes: 60,
-  fields: ["distance", "direction", "altitude", "speed", "origin", "registration", "type", "operator"],
+  fields: ["distance", "direction", "altitude", "speed", "origin", "registration", "registrationCountry", "type", "typeFriendly", "operator"],
 };
 
 export const getFlightPushSettings = createServerFn({ method: "GET" })
