@@ -252,7 +252,40 @@ export const getNearbyFlights = createServerFn({ method: "GET" })
         }
       }
       const flights = Array.from(byIcao.values()).sort((a, b) => a.distanceKm - b.distanceKm);
-      const source = adsb.length && opensky.length ? "adsb.lol+opensky" : adsb.length ? "adsb.lol" : "opensky";
+
+      // Berik fly som mangler registrering/type/operatør via hexdb.io (gratis, ingen nøkkel).
+      // Dette tar med små norske fly (LN-...) som ofte bare dukker opp via OpenSky.
+      const toEnrich = flights.filter((f) => !f.registration || !f.aircraftType || !f.operator).slice(0, 12);
+      if (toEnrich.length > 0) {
+        await Promise.allSettled(
+          toEnrich.map(async (f) => {
+            try {
+              const r = await fetch(`https://hexdb.io/api/v1/aircraft/${encodeURIComponent(f.icao24)}`, {
+                headers: { Accept: "application/json", "User-Agent": "house-riis-pettersen/1.0" },
+                signal: AbortSignal.timeout(2500),
+              });
+              if (!r.ok) return;
+              const j = (await r.json()) as {
+                Registration?: string;
+                ICAOTypeCode?: string;
+                Manufacturer?: string;
+                Type?: string;
+                RegisteredOwners?: string;
+              };
+              if (!f.registration && j.Registration) f.registration = j.Registration.trim();
+              if (!f.aircraftType && j.ICAOTypeCode) f.aircraftType = j.ICAOTypeCode.trim();
+              if (!f.description && (j.Manufacturer || j.Type)) {
+                f.description = [j.Manufacturer, j.Type].filter(Boolean).join(" ").trim() || null;
+              }
+              if (!f.operator && j.RegisteredOwners) f.operator = j.RegisteredOwners.trim();
+            } catch {
+              /* ignorer enkeltfeil — beste innsats */
+            }
+          }),
+        );
+      }
+
+      const source = adsb.length && opensky.length ? "adsb.lol+opensky+hexdb" : adsb.length ? "adsb.lol+hexdb" : "opensky+hexdb";
       return { ok: true, flights, fetchedAt: new Date().toISOString(), source };
     })();
   });
@@ -273,6 +306,7 @@ export const PUSH_FIELD_KEYS = [
   "typeFriendly",
   "description",
   "operator",
+  "airline",
   "squawk",
   "squawkExplained",
   "category",
@@ -293,6 +327,7 @@ export const PUSH_FIELD_LABELS: Record<PushFieldKey, string> = {
   typeFriendly: "Flytype (oversatt navn)",
   description: "Beskrivelse",
   operator: "Operatør/flyselskap",
+  airline: "Flyselskap (callsign-oversatt)",
   squawk: "Squawk",
   squawkExplained: "Squawk (oversatt)",
   category: "Kategori",

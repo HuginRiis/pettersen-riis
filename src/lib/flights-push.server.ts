@@ -12,7 +12,7 @@ import {
   type FlightPushSettings,
   type FlightLocationId,
 } from "./flights.functions";
-import { translateAircraftType, registrationCountry, explainSquawk } from "./flight-translations";
+import { translateAircraftType, registrationCountry, explainSquawk, translateAirline } from "./flight-translations";
 
 const VAPID_PUBLIC = process.env.VAPID_PUBLIC_KEY!;
 const VAPID_PRIVATE = process.env.VAPID_PRIVATE_KEY!;
@@ -63,6 +63,10 @@ function formatFlight(
   }
   if (set.has("description") && f.description) parts.push(f.description);
   if (set.has("operator") && f.operator) parts.push(f.operator);
+  if (set.has("airline")) {
+    const a = translateAirline(f.callsign) ?? translateAirline(f.operator);
+    if (a) parts.push(a);
+  }
   if (set.has("squawk") && f.squawk) parts.push(`sq ${f.squawk}`);
   if (set.has("squawkExplained")) {
     const e = explainSquawk(f.squawk);
