@@ -302,6 +302,7 @@ export const PUSH_FIELD_LABELS: Record<PushFieldKey, string> = {
 export type FlightPushSettings = {
   enabled: boolean;
   recipient: string;
+  searchRadiusKm: number; // synlig radius på fly-siden
   maxDistanceKm: number;
   maxAltitudeM: number; // 0 = ingen grense
   cooldownMinutes: number;
@@ -311,6 +312,7 @@ export type FlightPushSettings = {
 const DEFAULT_SETTINGS: FlightPushSettings = {
   enabled: false,
   recipient: "Alle",
+  searchRadiusKm: DEFAULT_SEARCH_RADIUS_KM,
   maxDistanceKm: 25,
   maxAltitudeM: 5000,
   cooldownMinutes: 60,
