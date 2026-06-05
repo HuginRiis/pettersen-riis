@@ -26,6 +26,9 @@ function StovsugerenPage() {
         subtitle="Roborock-knektene på Borgen og på hytta — alle detaljer, alle befalinger."
         image={heroImg}
       />
+      <section className="container mx-auto px-4 pt-10">
+        <VacuumScene />
+      </section>
       <StovsugerenPanel />
     </PageShell>
   );
