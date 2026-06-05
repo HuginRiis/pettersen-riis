@@ -218,12 +218,46 @@ export const getNearbyFlights = createServerFn({ method: "GET" })
 
 // ----- Push settings -----
 
+export const PUSH_FIELD_KEYS = [
+  "distance",
+  "direction",
+  "altitude",
+  "speed",
+  "verticalRate",
+  "origin",
+  "registration",
+  "type",
+  "description",
+  "operator",
+  "squawk",
+  "category",
+  "emergency",
+] as const;
+export type PushFieldKey = typeof PUSH_FIELD_KEYS[number];
+
+export const PUSH_FIELD_LABELS: Record<PushFieldKey, string> = {
+  distance: "Avstand",
+  direction: "Retning",
+  altitude: "Høyde",
+  speed: "Fart",
+  verticalRate: "Stig-/synkrate",
+  origin: "Opprinnelsesland",
+  registration: "Registrering",
+  type: "Flytype (ICAO)",
+  description: "Beskrivelse",
+  operator: "Operatør / eier",
+  squawk: "Squawk",
+  category: "Kategori",
+  emergency: "Nødstatus",
+};
+
 export type FlightPushSettings = {
   enabled: boolean;
   recipient: string;
   maxDistanceKm: number;
   maxAltitudeM: number; // 0 = ingen grense
   cooldownMinutes: number;
+  fields: PushFieldKey[];
 };
 
 const DEFAULT_SETTINGS: FlightPushSettings = {
@@ -232,6 +266,7 @@ const DEFAULT_SETTINGS: FlightPushSettings = {
   maxDistanceKm: 25,
   maxAltitudeM: 5000,
   cooldownMinutes: 60,
+  fields: ["distance", "direction", "altitude", "speed", "origin", "registration", "type", "operator"],
 };
 
 export const getFlightPushSettings = createServerFn({ method: "GET" })
