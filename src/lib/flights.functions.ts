@@ -23,9 +23,9 @@ export const FLIGHT_LOCATIONS: Record<
   },
   hytta: {
     id: "hytta",
-    label: "Hytta, Flesberg",
-    lat: 59.8733,
-    lon: 9.4297,
+    label: "Hytta, Lyngdal i Numedal",
+    lat: 59.9543,
+    lon: 9.4899,
     settingsKey: "flight_push_hytta",
   },
 };
