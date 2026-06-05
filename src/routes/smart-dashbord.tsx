@@ -2383,9 +2383,15 @@ function LysCombinedTile({
             return (
               <div
                 key={g.label}
-                className={`flex items-center gap-1.5 rounded-lg border px-1.5 py-1 transition min-w-0 ${
-                  anyOn ? "border-yellow-300/40 bg-yellow-300/5" : "border-white/10 bg-white/[0.02]"
+                className={`relative flex items-center gap-1.5 rounded-lg border px-1.5 py-1 transition min-w-0 ${
+                  anyOn ? "border-yellow-300/40 bg-yellow-300/5 lights-room-pulse" : "border-white/10 bg-white/[0.02]"
                 }`}
+                style={anyOn ? {
+                  // Jo flere lys på (av totalt i rommet), jo sterker pulserer boksen.
+                  ["--pulse-strength" as any]: (onCount / Math.max(total, 1)).toFixed(2),
+                  // Og jo flere lys, jo raskere puls (3s → 1.2s).
+                  ["--pulse-duration" as any]: `${(3 - 1.8 * (onCount / Math.max(total, 1))).toFixed(2)}s`,
+                } : undefined}
               >
                 <div
                   className="h-5 w-5 rounded-full flex items-center justify-center shrink-0 transition-all"
@@ -2413,6 +2419,7 @@ function LysCombinedTile({
                 />
               </div>
             );
+
           })}
           {nonEmpty.length === 0 && (
             <div className="text-xs text-white/40 italic">Ingen Hue-lys funnet</div>
@@ -3218,8 +3225,21 @@ function NetatmoMetricList({
   );
 }
 
-function MiniTile({ icon, label, value, sub, accent, detail }:
-  { icon: React.ReactNode; label: string; value: string; sub?: string; accent?: string; detail?: React.ReactNode }) {
+type MiniAnim = "humidity" | "temp" | "co2" | "noise";
+
+function MiniAnimOverlay({ kind }: { kind: MiniAnim }) {
+  // 3 elementer = 3 forsinkede partikler/ringer
+  return (
+    <div className={`mini-anim mini-anim-${kind}`} aria-hidden>
+      <span />
+      <span />
+      <span />
+    </div>
+  );
+}
+
+function MiniTile({ icon, label, value, sub, accent, detail, anim }:
+  { icon: React.ReactNode; label: string; value: string; sub?: string; accent?: string; detail?: React.ReactNode; anim?: MiniAnim }) {
   const [open, setOpen] = useState(false);
   return (
     <>
@@ -3228,13 +3248,17 @@ function MiniTile({ icon, label, value, sub, accent, detail }:
         onClick={() => setOpen(true)}
         className="text-left rounded-2xl bg-white/[0.03] border border-white/10 p-3 flex items-center gap-3 h-full hover:bg-white/[0.06] hover:border-white/20 active:scale-[0.98] transition"
       >
-        <div className={`h-9 w-9 rounded-full bg-white/5 flex items-center justify-center ${accent ?? "text-white/70"}`}>{icon}</div>
+        <div className={`relative h-9 w-9 rounded-full bg-white/5 flex items-center justify-center ${accent ?? "text-white/70"}`}>
+          {anim && <MiniAnimOverlay kind={anim} />}
+          <span className="relative z-10">{icon}</span>
+        </div>
         <div className="min-w-0">
           <div className="text-[10px] uppercase tracking-widest text-white/40">{label}</div>
           <div className="text-sm text-white tabular-nums truncate">{value}</div>
           {sub && <div className="text-[10px] text-white/40">{sub}</div>}
         </div>
       </button>
+
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="bg-[#0c0f15] border-white/10 text-white max-w-md">
           <DialogHeader>
@@ -3542,6 +3566,7 @@ function SmartDashbord() {
             sub="Stua"
             accent="text-sky-300"
             detail={<NetatmoMetricList modules={tollnes.modules} metric="humidity" unit="%" digits={0} />}
+            anim="humidity"
           />
           <MiniTile
             icon={<CloudSun size={16} />}
@@ -3550,6 +3575,7 @@ function SmartDashbord() {
             sub={loc.label}
             accent="text-amber-300"
             detail={<NetatmoMetricList modules={tollnes.modules} metric="temperature" unit="°" digits={1} />}
+            anim="temp"
           />
           <MiniTile
             icon={<Gauge size={16} />}
@@ -3558,6 +3584,7 @@ function SmartDashbord() {
             sub={tollnes.co2BedroomName ?? "Soverom"}
             accent={tollnes.co2Bedroom != null && tollnes.co2Bedroom >= 1000 ? "text-rose-300" : "text-emerald-300"}
             detail={<NetatmoMetricList modules={tollnes.modules} metric="co2" unit=" ppm" digits={0} />}
+            anim="co2"
           />
           <MiniTile
             icon={<Activity size={16} />}
@@ -3565,6 +3592,7 @@ function SmartDashbord() {
             value={tollnes.noise != null ? `${Math.round(tollnes.noise)} dB` : "—"}
             sub="Stua"
             accent="text-orange-300"
+            anim="noise"
           />
           <MiniTile
             icon={<Droplets size={16} />}
@@ -3573,6 +3601,7 @@ function SmartDashbord() {
             sub={tollnes.co2BedroomName ?? "Sov."}
             accent="text-violet-300"
             detail={<NetatmoMetricList modules={tollnes.modules} metric="humidity" unit="%" digits={0} />}
+            anim="humidity"
           />
           <MiniTile
             icon={<Gauge size={16} />}
@@ -3581,6 +3610,7 @@ function SmartDashbord() {
             sub="Stua"
             accent={tollnes.co2Stua != null && tollnes.co2Stua >= 1000 ? "text-rose-300" : "text-emerald-300"}
             detail={<NetatmoMetricList modules={tollnes.modules} metric="co2" unit=" ppm" digits={0} />}
+            anim="co2"
           />
         </div>
 

@@ -581,3 +581,106 @@ main .container {
   background: radial-gradient(ellipse at 50% 60%, rgba(255,255,255,0.06), transparent 65%);
   animation: vp-off-breathe 4.5s ease-in-out infinite;
 }
+
+/* ---- Lys-rom-pulse: jo flere lys på, jo sterker pulserer boksen ---- */
+@keyframes lights-room-pulse {
+  0%, 100% {
+    box-shadow:
+      0 0 calc(4px + var(--pulse-strength, 0) * 4px) 0 rgba(253, 224, 71, calc(0.12 + var(--pulse-strength, 0) * 0.18)),
+      inset 0 0 calc(2px + var(--pulse-strength, 0) * 6px) rgba(253, 224, 71, calc(0.05 + var(--pulse-strength, 0) * 0.12));
+  }
+  50% {
+    box-shadow:
+      0 0 calc(10px + var(--pulse-strength, 0) * 22px) 0 rgba(253, 224, 71, calc(0.22 + var(--pulse-strength, 0) * 0.45)),
+      inset 0 0 calc(4px + var(--pulse-strength, 0) * 12px) rgba(253, 224, 71, calc(0.1 + var(--pulse-strength, 0) * 0.28));
+  }
+}
+.lights-room-pulse {
+  animation: lights-room-pulse var(--pulse-duration, 3s) ease-in-out infinite;
+}
+
+/* ---- MiniTile-animasjoner i ikon-runding ---- */
+.mini-anim {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  border-radius: 9999px;
+}
+.mini-anim span {
+  position: absolute;
+  display: block;
+  will-change: transform, opacity;
+}
+
+/* Luftfukt: dråper som faller */
+@keyframes mini-drop {
+  0%   { transform: translateY(-110%); opacity: 0; }
+  20%  { opacity: 1; }
+  100% { transform: translateY(120%); opacity: 0; }
+}
+.mini-anim-humidity span {
+  top: 0;
+  width: 3px;
+  height: 6px;
+  border-radius: 0 0 3px 3px;
+  background: linear-gradient(180deg, rgba(125,211,252,0.0), rgba(125,211,252,0.95));
+  animation: mini-drop 2.4s linear infinite;
+}
+.mini-anim-humidity span:nth-child(1) { left: 22%; animation-delay: 0s; }
+.mini-anim-humidity span:nth-child(2) { left: 48%; animation-delay: 0.8s; }
+.mini-anim-humidity span:nth-child(3) { left: 72%; animation-delay: 1.6s; }
+
+/* Temperatur: varmebølger (eller cool glow) */
+@keyframes mini-heatwave {
+  0%   { transform: translateY(40%) scaleX(0.85); opacity: 0; }
+  30%  { opacity: 0.9; }
+  100% { transform: translateY(-60%) scaleX(1.15); opacity: 0; }
+}
+.mini-anim-temp span {
+  left: 18%;
+  right: 18%;
+  bottom: 18%;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, transparent, rgba(252,211,77,0.85), transparent);
+  animation: mini-heatwave 2.6s ease-out infinite;
+}
+.mini-anim-temp span:nth-child(2) { animation-delay: 0.85s; }
+.mini-anim-temp span:nth-child(3) { animation-delay: 1.7s; }
+
+/* CO2: stigende bobler */
+@keyframes mini-bubble {
+  0%   { transform: translateY(110%) scale(0.6); opacity: 0; }
+  25%  { opacity: 1; }
+  100% { transform: translateY(-110%) scale(1); opacity: 0; }
+}
+.mini-anim-co2 span {
+  bottom: 0;
+  width: 5px;
+  height: 5px;
+  border-radius: 9999px;
+  background: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.85), rgba(110,231,183,0.55) 60%, transparent 70%);
+  animation: mini-bubble 3s ease-in infinite;
+}
+.mini-anim-co2 span:nth-child(1) { left: 25%; animation-delay: 0s; }
+.mini-anim-co2 span:nth-child(2) { left: 50%; animation-delay: 1s; }
+.mini-anim-co2 span:nth-child(3) { left: 72%; animation-delay: 2s; }
+
+/* dB / støy: konsentriske ringer */
+@keyframes mini-ripple {
+  0%   { transform: translate(-50%, -50%) scale(0.4); opacity: 0.9; }
+  100% { transform: translate(-50%, -50%) scale(1.6); opacity: 0; }
+}
+.mini-anim-noise span {
+  top: 50%;
+  left: 50%;
+  width: 100%;
+  height: 100%;
+  border-radius: 9999px;
+  border: 1.5px solid rgba(253,186,116,0.7);
+  animation: mini-ripple 2.2s ease-out infinite;
+}
+.mini-anim-noise span:nth-child(2) { animation-delay: 0.75s; }
+.mini-anim-noise span:nth-child(3) { animation-delay: 1.5s; }
+
