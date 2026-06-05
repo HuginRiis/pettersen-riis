@@ -1949,6 +1949,25 @@ export const setLivingRoomDeviceCapability = createServerFn({ method: "POST" })
     }
   });
 
+export const getHomeyDeviceInsight = createServerFn({ method: "GET" })
+  .inputValidator((input: { deviceId: string; capability: string; resolution?: string }) => ({
+    resolution: "last24Hours",
+    ...input,
+  }))
+  .handler(async ({ data }): Promise<{ values: Array<{ t: string; v: number | boolean | null }>; error?: string }> => {
+    try {
+      const res = await fetchHomeyInsightsLog(data.deviceId, data.capability, data.resolution!);
+      if (!res || res.__error) return { values: [], error: res?.__error ?? "Ingen data" };
+      const raw: any[] = res?.values ?? res?.data ?? [];
+      const values = raw
+        .map((p: any) => ({ t: String(p.t ?? p.date ?? p.timestamp ?? ""), v: p.v ?? p.value ?? null }))
+        .filter((p) => p.t);
+      return { values };
+    } catch (e: any) {
+      return { values: [], error: e?.message ?? "Feil" };
+    }
+  });
+
 export const getTollnesCameraSnapshot = createServerFn({ method: "GET" }).handler(
   withApiLog("homey", "getTollnesCameraSnapshot", async (): Promise<CameraSnapshotResult> => {
     return await fetchHomeyCameraSnapshotByHint("tollnes");
