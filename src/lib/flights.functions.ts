@@ -435,6 +435,8 @@ export const PUSH_FIELD_KEYS = [
   "squawkExplained",
   "category",
   "emergency",
+  "routeFrom",
+  "routeTo",
 ] as const;
 export type PushFieldKey = typeof PUSH_FIELD_KEYS[number];
 
