@@ -3156,18 +3156,16 @@ function SmartDashbord() {
               <div className="col-span-2">
                 <HundeTile device={hundeVannDevice} countdownSeconds={hundeCountdownSeconds} tellerValue={hundeTellerValue} onReload={reload} />
               </div>
-              <div className="col-span-4">
+              <div className="col-span-6">
                 <LysCombinedTile
-                  groups={[
-                    { label: "Stue", lights: hueByRoom.stue },
-                    { label: "Spisestue", lights: hueByRoom.spisestue },
-                  ]}
+                  groups={hueRoomGroups}
                   onReload={reload}
                 />
               </div>
-              <div className="col-span-4">
+              <div className="col-span-2">
                 <StromTile home="borgen" />
               </div>
+
               {/* Rad 2: Varmepumpe + UV + AQ + Regn + Vind (halv-størrelse) */}
               <div className="col-span-4">
                 <VarmepumpeTile loc={loc} device={varmepumpe} onReload={reload} />
