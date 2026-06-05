@@ -586,6 +586,7 @@ export type Database = {
           last_notified_at: string | null
           last_notified_distance_km: number | null
           last_seen: string
+          location: string
           origin_country: string | null
         }
         Insert: {
@@ -595,6 +596,7 @@ export type Database = {
           last_notified_at?: string | null
           last_notified_distance_km?: number | null
           last_seen?: string
+          location?: string
           origin_country?: string | null
         }
         Update: {
@@ -604,6 +606,7 @@ export type Database = {
           last_notified_at?: string | null
           last_notified_distance_km?: number | null
           last_seen?: string
+          location?: string
           origin_country?: string | null
         }
         Relationships: []
