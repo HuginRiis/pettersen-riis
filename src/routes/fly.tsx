@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Plane, RefreshCw, Send, Save, Bell, BellOff, Navigation, MapPin } from "lucide-react";
+import { Plane, RefreshCw, Send, Save, Bell, BellOff, Navigation, MapPin, ChevronDown, ChevronUp } from "lucide-react";
 import { PageShell } from "@/components/PageShell";
 import {
   getNearbyFlights,
