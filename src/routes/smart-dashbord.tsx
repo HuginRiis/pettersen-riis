@@ -1380,7 +1380,7 @@ function RobotsTile() {
               </div>
               <div className="text-right">
                 <div className="text-[9px] uppercase tracking-widest text-white/40">Bat</div>
-                <div className="text-xs tabular-nums text-white/80">{mower?.battery != null ? `${Math.round(mower.battery)}%` : "—"}</div>
+                <div className="text-xs tabular-nums text-white/80">{displayBattery != null ? `${Math.round(displayBattery)}%` : "—"}</div>
               </div>
             </div>
           </button>
