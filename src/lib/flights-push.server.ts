@@ -149,11 +149,15 @@ async function processForLocation(loc: FlightLocationId): Promise<{
     .maybeSingle();
   const cfg = (cfgRow?.value ?? null) as Partial<FlightPushSettings> | null;
   if (!cfg?.enabled) return { checked: 0, sent: 0, errors: 0, skipped: 1 };
+  if (!isWithinAllowedWindow(cfg.allowStart, cfg.allowEnd)) {
+    return { checked: 0, sent: 0, errors: 0, skipped: 1 };
+  }
 
   const maxDist = cfg.maxDistanceKm ?? 25;
   const maxAlt = cfg.maxAltitudeM ?? 5000;
   const cooldownMin = cfg.cooldownMinutes ?? 60;
   const recipient = cfg.recipient || "Alle";
+
 
   const r = await getNearbyFlights({ data: { location: loc } });
   if (!r.ok) return { checked: 0, sent: 0, errors: 1, skipped: 0 };
