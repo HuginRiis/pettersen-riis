@@ -18,7 +18,8 @@ import {
   type FlightLocationId,
   type PushFieldKey,
 } from "@/lib/flights.functions";
-import { translateAircraftType, registrationCountry, explainSquawk, translateAirline, externalLookupLinks } from "@/lib/flight-translations";
+import { translateAircraftType, registrationCountry, explainSquawk, translateAirline } from "@/lib/flight-translations";
+
 
 const RECIPIENTS = ["Alle", "Arne", "Rebekka", "Arne & Rebekka", "Marita", "Nora", "Celine", "Mira"];
 
@@ -321,43 +322,27 @@ function LocationSection({ location }: { location: FlightLocationId }) {
                     <span className="opacity-50">{f.icao24}</span>
                   </div>
                   {(() => {
-                    const typeFriendly = translateAircraftType(f.aircraftType);
+                    const typeFriendly = translateAircraftType(f.aircraftType) ?? f.typeFull;
                     const regCountry = registrationCountry(f.registration);
                     const sqEx = explainSquawk(f.squawk);
                     const airline = translateAirline(f.callsign) ?? translateAirline(f.operator);
-                    const extras = [
-                      typeFriendly,
-                      regCountry ? `${f.registration} → ${regCountry}` : null,
-                      airline ? `✈ ${airline}` : null,
-                      sqEx,
-                    ].filter(Boolean);
-                    if (extras.length === 0) return null;
+                    const rows: Array<[string, string]> = [];
+                    if (f.operator || airline) rows.push(["Operatør", [f.operator, airline].filter(Boolean).join(" / ")]);
+                    if (typeFriendly || f.aircraftType) rows.push(["Flytype", [typeFriendly, f.aircraftType ? `(${f.aircraftType})` : null].filter(Boolean).join(" ")]);
+                    if (f.manufacturer && !typeFriendly?.toLowerCase().includes(f.manufacturer.toLowerCase())) rows.push(["Produsent", f.manufacturer]);
+                    if (f.registration) rows.push(["Registrering", regCountry ? `${f.registration} (${regCountry})` : f.registration]);
+                    if (f.ownerCountry) rows.push(["Eierland", f.ownerCountry]);
+                    if (f.originCountry && f.originCountry !== f.ownerCountry) rows.push(["Opprinnelse", f.originCountry]);
+                    if (f.squawk) rows.push(["Squawk", sqEx ? sqEx : `transponderkode ${f.squawk}`]);
+                    if (f.category) rows.push(["Kategori", f.category]);
+                    if (rows.length === 0) return null;
                     return (
-                      <div className="text-[11px] text-primary/70 mt-0.5">
-                        {extras.join(" · ")}
-                      </div>
-                    );
-                  })()}
-                  {(f.description || f.operator) && (
-                    <div className="text-[11px] text-muted-foreground/80 mt-0.5 truncate">
-                      {[f.description, f.operator].filter(Boolean).join(" · ")}
-                    </div>
-                  )}
-                  {(() => {
-                    const links = externalLookupLinks({ icao24: f.icao24, registration: f.registration });
-                    if (links.length === 0) return null;
-                    return (
-                      <div className="text-[10px] mt-1 flex flex-wrap gap-1.5">
-                        {links.map((l) => (
-                          <a
-                            key={l.label}
-                            href={l.url}
-                            target="_blank"
-                            rel="noreferrer noopener"
-                            className="px-1.5 py-0.5 rounded border border-border/60 text-muted-foreground hover:text-primary hover:border-primary/60"
-                          >
-                            {l.label} ↗
-                          </a>
+                      <div className="mt-1.5 text-[11px] grid grid-cols-[auto_1fr] gap-x-2 gap-y-0.5">
+                        {rows.map(([k, v]) => (
+                          <div key={k} className="contents">
+                            <span className="text-muted-foreground">{k}:</span>
+                            <span className="text-foreground/90">{v}</span>
+                          </div>
                         ))}
                       </div>
                     );
@@ -365,6 +350,7 @@ function LocationSection({ location }: { location: FlightLocationId }) {
                   {f.emergency && f.emergency !== "none" && (
                     <div className="text-[11px] text-rose-400 mt-0.5">⚠ {f.emergency}</div>
                   )}
+
                 </div>
                 <button
                   onClick={() => void onSendOne(f)}

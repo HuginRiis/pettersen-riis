@@ -65,10 +65,15 @@ export type Flight = {
   operator: string | null;
   category: string | null;
   emergency: string | null;
+  // berikende metadata (best-effort)
+  manufacturer: string | null;
+  typeFull: string | null;
+  ownerCountry: string | null;
   // derived
   distanceKm: number;
   bearingDeg: number;
 };
+
 
 export type FlightsResult =
   | { ok: false; error: string }
@@ -142,9 +147,13 @@ async function fetchFromOpenSky(center: { lat: number; lon: number }, radiusKm: 
       operator: null,
       category: (s[17] as string | null) ?? null,
       emergency: null,
+      manufacturer: null,
+      typeFull: null,
+      ownerCountry: null,
       distanceKm,
       bearingDeg: bearingDeg(center, { lat, lon }),
     });
+
   }
   out.sort((a, b) => a.distanceKm - b.distanceKm);
   return out;
@@ -187,9 +196,13 @@ async function fetchFromAdsbLol(center: { lat: number; lon: number }, radiusKm: 
       operator: ((a.ownOp as string | undefined) ?? (a.owner as string | undefined) ?? "").trim() || null,
       category: ((a.category as string | undefined) ?? "").trim() || null,
       emergency: ((a.emergency as string | undefined) ?? "").trim() || null,
+      manufacturer: null,
+      typeFull: null,
+      ownerCountry: null,
       distanceKm,
       bearingDeg: bearingDeg(center, { lat, lon }),
     });
+
   }
   out.sort((a, b) => a.distanceKm - b.distanceKm);
   return out;
@@ -253,37 +266,71 @@ export const getNearbyFlights = createServerFn({ method: "GET" })
       }
       const flights = Array.from(byIcao.values()).sort((a, b) => a.distanceKm - b.distanceKm);
 
-      // Berik fly som mangler registrering/type/operatør via hexdb.io (gratis, ingen nøkkel).
-      // Dette tar med små norske fly (LN-...) som ofte bare dukker opp via OpenSky.
-      const toEnrich = flights.filter((f) => !f.registration || !f.aircraftType || !f.operator).slice(0, 12);
+      // Berik fly med ekstra metadata fra hexdb.io og adsbdb.com (gratis, ingen nøkkel).
+      // Tar med små fly (LN-…) som ofte bare dukker opp via OpenSky.
+      const toEnrich = flights.slice(0, 15);
       if (toEnrich.length > 0) {
         await Promise.allSettled(
           toEnrich.map(async (f) => {
+            // hexdb.io
             try {
               const r = await fetch(`https://hexdb.io/api/v1/aircraft/${encodeURIComponent(f.icao24)}`, {
                 headers: { Accept: "application/json", "User-Agent": "house-riis-pettersen/1.0" },
                 signal: AbortSignal.timeout(2500),
               });
-              if (!r.ok) return;
-              const j = (await r.json()) as {
-                Registration?: string;
-                ICAOTypeCode?: string;
-                Manufacturer?: string;
-                Type?: string;
-                RegisteredOwners?: string;
-              };
-              if (!f.registration && j.Registration) f.registration = j.Registration.trim();
-              if (!f.aircraftType && j.ICAOTypeCode) f.aircraftType = j.ICAOTypeCode.trim();
-              if (!f.description && (j.Manufacturer || j.Type)) {
-                f.description = [j.Manufacturer, j.Type].filter(Boolean).join(" ").trim() || null;
+              if (r.ok) {
+                const j = (await r.json()) as {
+                  Registration?: string;
+                  ICAOTypeCode?: string;
+                  Manufacturer?: string;
+                  Type?: string;
+                  RegisteredOwners?: string;
+                };
+                if (!f.registration && j.Registration) f.registration = j.Registration.trim();
+                if (!f.aircraftType && j.ICAOTypeCode) f.aircraftType = j.ICAOTypeCode.trim();
+                if (!f.manufacturer && j.Manufacturer) f.manufacturer = j.Manufacturer.trim();
+                if (!f.typeFull && j.Type) f.typeFull = j.Type.trim();
+                if (!f.description && (j.Manufacturer || j.Type)) {
+                  f.description = [j.Manufacturer, j.Type].filter(Boolean).join(" ").trim() || null;
+                }
+                if (!f.operator && j.RegisteredOwners) f.operator = j.RegisteredOwners.trim();
               }
-              if (!f.operator && j.RegisteredOwners) f.operator = j.RegisteredOwners.trim();
-            } catch {
-              /* ignorer enkeltfeil — beste innsats */
-            }
+            } catch { /* best effort */ }
+            // adsbdb.com — ofte rikere "type" + eierland
+            try {
+              const r = await fetch(`https://api.adsbdb.com/v0/aircraft/${encodeURIComponent(f.icao24)}`, {
+                headers: { Accept: "application/json", "User-Agent": "house-riis-pettersen/1.0" },
+                signal: AbortSignal.timeout(2500),
+              });
+              if (r.ok) {
+                const j = (await r.json()) as {
+                  response?: {
+                    aircraft?: {
+                      type?: string;
+                      icao_type?: string;
+                      manufacturer?: string;
+                      registration?: string;
+                      registered_owner?: string;
+                      registered_owner_country_name?: string;
+                    };
+                  };
+                };
+                const a = j.response?.aircraft;
+                if (a) {
+                  if (!f.registration && a.registration) f.registration = a.registration.trim();
+                  if (!f.aircraftType && a.icao_type) f.aircraftType = a.icao_type.trim();
+                  if (!f.manufacturer && a.manufacturer) f.manufacturer = a.manufacturer.trim();
+                  if (!f.typeFull && a.type) f.typeFull = a.type.trim();
+                  if (!f.operator && a.registered_owner) f.operator = a.registered_owner.trim();
+                  if (!f.ownerCountry && a.registered_owner_country_name) f.ownerCountry = a.registered_owner_country_name.trim();
+                }
+              }
+            } catch { /* best effort */ }
           }),
         );
       }
+
+
 
       const source = adsb.length && opensky.length ? "adsb.lol+opensky+hexdb" : adsb.length ? "adsb.lol+hexdb" : "opensky+hexdb";
       return { ok: true, flights, fetchedAt: new Date().toISOString(), source };
