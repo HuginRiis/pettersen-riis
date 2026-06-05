@@ -687,13 +687,21 @@ function HundeTile({
             ))}
           </div>
         )}
-        <div className="flex items-start justify-between relative">
+        <div className="flex items-start justify-between relative gap-2">
           <div>
             <div className="text-4xl font-semibold text-white tabular-nums leading-none">
               {isOn ? "💧" : "○"}
             </div>
             <div className="text-xs text-sky-300/80 mt-1">{isOn == null ? "Ukjent" : isOn ? "Renner" : "Av"}</div>
           </div>
+          {tellerValue != null && (
+            <div className="flex flex-col items-center justify-center self-center">
+              <div className="text-[9px] uppercase tracking-widest text-sky-300/70">Teller</div>
+              <div className="text-2xl font-semibold text-sky-400 tabular-nums leading-none">
+                {Number.isInteger(tellerValue) ? tellerValue : tellerValue.toFixed(1)}
+              </div>
+            </div>
+          )}
           <svg viewBox="0 0 120 80" className="w-20 h-14">
             <path
               d="M15 30 Q60 80 105 30 Z"
