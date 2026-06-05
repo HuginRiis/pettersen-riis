@@ -1139,6 +1139,16 @@ function VarmepumpeTile({
             {target != null && (
               <div className="flex items-center gap-2">
                 <button
+                  onClick={() => send("onoff", !isOn)}
+                  disabled={busy}
+                  title={isOn ? "Slå av" : "Slå på"}
+                  className={`h-9 w-9 rounded-full border flex items-center justify-center transition ${
+                    isOn
+                      ? "border-rose-400/50 bg-rose-500/20 text-rose-200 shadow-[0_0_12px_-2px_rgba(244,63,94,0.6)]"
+                      : "border-white/10 bg-white/[0.02] text-white/50 hover:bg-white/5"
+                  }`}
+                ><Power size={14} /></button>
+                <button
                   onClick={() => send("target_temperature", Math.max(tMin, target - tStep))}
                   className="h-9 w-9 rounded-full border border-white/10 text-white/80 hover:bg-white/5 flex items-center justify-center"
                   disabled={!isOn || busy}><Minus size={14} /></button>
