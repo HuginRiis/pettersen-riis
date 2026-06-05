@@ -65,10 +65,15 @@ export type Flight = {
   operator: string | null;
   category: string | null;
   emergency: string | null;
+  // berikende metadata (best-effort)
+  manufacturer: string | null;
+  typeFull: string | null;
+  ownerCountry: string | null;
   // derived
   distanceKm: number;
   bearingDeg: number;
 };
+
 
 export type FlightsResult =
   | { ok: false; error: string }
