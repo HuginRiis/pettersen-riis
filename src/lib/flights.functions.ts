@@ -41,7 +41,10 @@ export const FLIGHT_LOCATIONS: Record<
 
 // Backwards-compat alias used andre steder i koden
 export const TOLLNES = { lat: FLIGHT_LOCATIONS.tollnes.lat, lon: FLIGHT_LOCATIONS.tollnes.lon };
-export const SEARCH_RADIUS_KM = 50;
+export const DEFAULT_SEARCH_RADIUS_KM = 50;
+export const MAX_SEARCH_RADIUS_KM = 250;
+/** @deprecated bruk innstillinger per lokasjon (searchRadiusKm) */
+export const SEARCH_RADIUS_KM = DEFAULT_SEARCH_RADIUS_KM;
 
 export type Flight = {
   icao24: string;
