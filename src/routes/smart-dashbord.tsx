@@ -1423,7 +1423,7 @@ function RobotsTile() {
           <DialogHeader>
             <DialogTitle>Sileno · Gressklipper</DialogTitle>
             <DialogDescription className="text-white/50">
-              {mower?.name ?? "—"} · {mowerActLabel} · Bat {mower?.battery != null ? `${Math.round(mower.battery)}%` : "—"}
+              {(homeyMower?.name ?? mower?.name) ?? "—"} · {mowerActLabel} · Bat {displayBattery != null ? `${Math.round(displayBattery)}%` : "—"}
             </DialogDescription>
           </DialogHeader>
           <div className="grid grid-cols-3 gap-2 mt-2">
