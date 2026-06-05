@@ -69,6 +69,12 @@ export type Flight = {
   manufacturer: string | null;
   typeFull: string | null;
   ownerCountry: string | null;
+  firstFlightDate: string | null; // ISO dato, første gang flydd
+  built: string | null; // byggeår
+  routeFromIcao: string | null;
+  routeFromName: string | null;
+  routeToIcao: string | null;
+  routeToName: string | null;
   // derived
   distanceKm: number;
   bearingDeg: number;
