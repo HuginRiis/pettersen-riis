@@ -3592,6 +3592,7 @@ function SmartDashbord() {
             value={tollnes.noise != null ? `${Math.round(tollnes.noise)} dB` : "—"}
             sub="Stua"
             accent="text-orange-300"
+            anim="noise"
           />
           <MiniTile
             icon={<Droplets size={16} />}
