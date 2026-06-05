@@ -147,9 +147,13 @@ async function fetchFromOpenSky(center: { lat: number; lon: number }, radiusKm: 
       operator: null,
       category: (s[17] as string | null) ?? null,
       emergency: null,
+      manufacturer: null,
+      typeFull: null,
+      ownerCountry: null,
       distanceKm,
       bearingDeg: bearingDeg(center, { lat, lon }),
     });
+
   }
   out.sort((a, b) => a.distanceKm - b.distanceKm);
   return out;
