@@ -1983,14 +1983,9 @@ function formatLockTime(iso: string | null | undefined): string {
   if (!iso) return "—";
   const d = new Date(iso);
   if (isNaN(d.getTime())) return "—";
-  const today = new Date();
-  const sameDay = d.toDateString() === today.toDateString();
   const hh = String(d.getHours()).padStart(2, "0");
   const mm = String(d.getMinutes()).padStart(2, "0");
-  if (sameDay) return `${hh}:${mm}`;
-  const dd = String(d.getDate()).padStart(2, "0");
-  const mo = String(d.getMonth() + 1).padStart(2, "0");
-  return `${dd}.${mo} ${hh}:${mm}`;
+  return `${hh}:${mm}`;
 }
 
 function DoorsLockTile() {
