@@ -3584,6 +3584,7 @@ function SmartDashbord() {
             sub={tollnes.co2BedroomName ?? "Soverom"}
             accent={tollnes.co2Bedroom != null && tollnes.co2Bedroom >= 1000 ? "text-rose-300" : "text-emerald-300"}
             detail={<NetatmoMetricList modules={tollnes.modules} metric="co2" unit=" ppm" digits={0} />}
+            anim="co2"
           />
           <MiniTile
             icon={<Activity size={16} />}
