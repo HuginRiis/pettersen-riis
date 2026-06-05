@@ -56,6 +56,12 @@ export type Flight = {
   trueTrack: number | null;
   verticalRateMs: number | null;
   squawk: string | null;
+  registration: string | null;
+  aircraftType: string | null;
+  description: string | null;
+  operator: string | null;
+  category: string | null;
+  emergency: string | null;
   // derived
   distanceKm: number;
   bearingDeg: number;
@@ -127,6 +133,12 @@ async function fetchFromOpenSky(center: { lat: number; lon: number }): Promise<F
       verticalRateMs: (s[11] as number | null) ?? null,
       geoAltitudeM: (s[13] as number | null) ?? null,
       squawk: (s[14] as string | null) ?? null,
+      registration: null,
+      aircraftType: null,
+      description: null,
+      operator: null,
+      category: (s[17] as string | null) ?? null,
+      emergency: null,
       distanceKm,
       bearingDeg: bearingDeg(center, { lat, lon }),
     });
@@ -156,7 +168,7 @@ async function fetchFromAdsbLol(center: { lat: number; lon: number }): Promise<F
     out.push({
       icao24: String(a.hex ?? "").toLowerCase(),
       callsign: ((a.flight as string | undefined) ?? "").trim() || null,
-      originCountry: (a.r as string | undefined) ?? null,
+      originCountry: null,
       longitude: lon,
       latitude: lat,
       baroAltitudeM: altFt != null ? Math.round(altFt * 0.3048) : null,
@@ -166,6 +178,12 @@ async function fetchFromAdsbLol(center: { lat: number; lon: number }): Promise<F
       trueTrack: typeof a.track === "number" ? a.track : null,
       verticalRateMs: typeof a.baro_rate === "number" ? Math.round((a.baro_rate / 60) * 0.3048) : null,
       squawk: (a.squawk as string | undefined) ?? null,
+      registration: ((a.r as string | undefined) ?? "").trim() || null,
+      aircraftType: ((a.t as string | undefined) ?? "").trim() || null,
+      description: ((a.desc as string | undefined) ?? "").trim() || null,
+      operator: ((a.ownOp as string | undefined) ?? (a.owner as string | undefined) ?? "").trim() || null,
+      category: ((a.category as string | undefined) ?? "").trim() || null,
+      emergency: ((a.emergency as string | undefined) ?? "").trim() || null,
       distanceKm,
       bearingDeg: bearingDeg(center, { lat, lon }),
     });
@@ -182,15 +200,16 @@ export const getNearbyFlights = createServerFn({ method: "GET" })
     const { withApiLog } = await __load_api_call_log_server();
     return withApiLog("flights", `getNearbyFlights[${data.location}]`, async (): Promise<FlightsResult> => {
       const center = FLIGHT_LOCATIONS[data.location];
+      // Prefer adsb.lol (rikere data: registrering, type, operatør)
       try {
-        const flights = await fetchFromOpenSky(center);
-        return { ok: true, flights, fetchedAt: new Date().toISOString(), source: "opensky" };
+        const flights = await fetchFromAdsbLol(center);
+        return { ok: true, flights, fetchedAt: new Date().toISOString(), source: "adsb.lol" };
       } catch (e1) {
         try {
-          const flights = await fetchFromAdsbLol(center);
-          return { ok: true, flights, fetchedAt: new Date().toISOString(), source: "adsb.lol" };
+          const flights = await fetchFromOpenSky(center);
+          return { ok: true, flights, fetchedAt: new Date().toISOString(), source: "opensky" };
         } catch (e2: any) {
-          return { ok: false, error: `OpenSky: ${(e1 as Error).message}. adsb.lol: ${e2?.message ?? "ukjent"}` };
+          return { ok: false, error: `adsb.lol: ${(e1 as Error).message}. OpenSky: ${e2?.message ?? "ukjent"}` };
         }
       }
     })();
@@ -199,12 +218,46 @@ export const getNearbyFlights = createServerFn({ method: "GET" })
 
 // ----- Push settings -----
 
+export const PUSH_FIELD_KEYS = [
+  "distance",
+  "direction",
+  "altitude",
+  "speed",
+  "verticalRate",
+  "origin",
+  "registration",
+  "type",
+  "description",
+  "operator",
+  "squawk",
+  "category",
+  "emergency",
+] as const;
+export type PushFieldKey = typeof PUSH_FIELD_KEYS[number];
+
+export const PUSH_FIELD_LABELS: Record<PushFieldKey, string> = {
+  distance: "Avstand",
+  direction: "Retning",
+  altitude: "Høyde",
+  speed: "Fart",
+  verticalRate: "Stig-/synkrate",
+  origin: "Opprinnelsesland",
+  registration: "Registrering",
+  type: "Flytype (ICAO)",
+  description: "Beskrivelse",
+  operator: "Operatør / eier",
+  squawk: "Squawk",
+  category: "Kategori",
+  emergency: "Nødstatus",
+};
+
 export type FlightPushSettings = {
   enabled: boolean;
   recipient: string;
   maxDistanceKm: number;
   maxAltitudeM: number; // 0 = ingen grense
   cooldownMinutes: number;
+  fields: PushFieldKey[];
 };
 
 const DEFAULT_SETTINGS: FlightPushSettings = {
@@ -213,6 +266,7 @@ const DEFAULT_SETTINGS: FlightPushSettings = {
   maxDistanceKm: 25,
   maxAltitudeM: 5000,
   cooldownMinutes: 60,
+  fields: ["distance", "direction", "altitude", "speed", "origin", "registration", "type", "operator"],
 };
 
 export const getFlightPushSettings = createServerFn({ method: "GET" })
@@ -228,7 +282,9 @@ export const getFlightPushSettings = createServerFn({ method: "GET" })
       .eq("key", key)
       .maybeSingle();
     const v = (row?.value as Partial<FlightPushSettings> | null) ?? null;
-    return { ...DEFAULT_SETTINGS, ...(v ?? {}) };
+    const merged = { ...DEFAULT_SETTINGS, ...(v ?? {}) };
+    if (!Array.isArray(merged.fields) || merged.fields.length === 0) merged.fields = DEFAULT_SETTINGS.fields;
+    return merged;
   });
 
 export const saveFlightPushSettings = createServerFn({ method: "POST" })

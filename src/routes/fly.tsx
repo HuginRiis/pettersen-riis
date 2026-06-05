@@ -10,9 +10,12 @@ import {
   sendFlightPushManual,
   FLIGHT_LOCATIONS,
   SEARCH_RADIUS_KM,
+  PUSH_FIELD_KEYS,
+  PUSH_FIELD_LABELS,
   type Flight,
   type FlightPushSettings,
   type FlightLocationId,
+  type PushFieldKey,
 } from "@/lib/flights.functions";
 
 const RECIPIENTS = ["Alle", "Arne", "Rebekka", "Arne & Rebekka", "Marita", "Nora", "Celine", "Mira"];
@@ -203,6 +206,39 @@ function LocationSection({ location }: { location: FlightLocationId }) {
               />
             </label>
           </div>
+
+          <div className="mt-4">
+            <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2">
+              Info som skal være med i push-varselet
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {PUSH_FIELD_KEYS.map((k) => {
+                const active = settings.fields.includes(k);
+                return (
+                  <button
+                    key={k}
+                    type="button"
+                    onClick={() =>
+                      setSettings({
+                        ...settings,
+                        fields: active
+                          ? settings.fields.filter((x) => x !== k)
+                          : ([...settings.fields, k] as PushFieldKey[]),
+                      })
+                    }
+                    className={`px-2 py-1 rounded border text-[11px] tracking-wide ${
+                      active
+                        ? "border-primary/60 text-primary bg-primary/10"
+                        : "border-border text-muted-foreground"
+                    }`}
+                  >
+                    {active ? "✓ " : ""}{PUSH_FIELD_LABELS[k]}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           <div className="flex justify-end mt-3">
             <button
               onClick={() => void onSaveSettings()}
@@ -262,8 +298,22 @@ function LocationSection({ location }: { location: FlightLocationId }) {
                     <span className="inline-flex items-center gap-1"><Navigation size={11} />{compass(f.trueTrack)}</span>
                     {altKm && <span>{altKm} km h</span>}
                     {spdKmh && <span>{spdKmh} km/t</span>}
+                    {f.verticalRateMs != null && f.verticalRateMs !== 0 && (
+                      <span>{f.verticalRateMs > 0 ? "↑" : "↓"}{Math.abs(Math.round(f.verticalRateMs * 196.85))} ft/min</span>
+                    )}
+                    {f.registration && <span className="font-mono">{f.registration}</span>}
+                    {f.aircraftType && <span>{f.aircraftType}</span>}
+                    {f.squawk && <span>sq {f.squawk}</span>}
                     <span className="opacity-50">{f.icao24}</span>
                   </div>
+                  {(f.description || f.operator) && (
+                    <div className="text-[11px] text-muted-foreground/80 mt-0.5 truncate">
+                      {[f.description, f.operator].filter(Boolean).join(" · ")}
+                    </div>
+                  )}
+                  {f.emergency && f.emergency !== "none" && (
+                    <div className="text-[11px] text-rose-400 mt-0.5">⚠ {f.emergency}</div>
+                  )}
                 </div>
                 <button
                   onClick={() => void onSendOne(f)}
