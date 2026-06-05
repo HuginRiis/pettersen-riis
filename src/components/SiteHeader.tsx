@@ -155,6 +155,7 @@ const navLinks: NavLink[] = [
   { to: "/decibel", label: "Decibelmåler", public: true },
   { to: "/roborock", label: "Roborock" },
   { to: "/planter", label: "Planter & Trær" },
+  { to: "/fly", label: "Fly i nærheten", public: true },
   { to: "/steintavle", label: "Steintavle" },
   { to: "/steintavle-2", label: "Steintavle 2" },
 ];
