@@ -200,15 +200,16 @@ export const getNearbyFlights = createServerFn({ method: "GET" })
     const { withApiLog } = await __load_api_call_log_server();
     return withApiLog("flights", `getNearbyFlights[${data.location}]`, async (): Promise<FlightsResult> => {
       const center = FLIGHT_LOCATIONS[data.location];
+      // Prefer adsb.lol (rikere data: registrering, type, operatør)
       try {
-        const flights = await fetchFromOpenSky(center);
-        return { ok: true, flights, fetchedAt: new Date().toISOString(), source: "opensky" };
+        const flights = await fetchFromAdsbLol(center);
+        return { ok: true, flights, fetchedAt: new Date().toISOString(), source: "adsb.lol" };
       } catch (e1) {
         try {
-          const flights = await fetchFromAdsbLol(center);
-          return { ok: true, flights, fetchedAt: new Date().toISOString(), source: "adsb.lol" };
+          const flights = await fetchFromOpenSky(center);
+          return { ok: true, flights, fetchedAt: new Date().toISOString(), source: "opensky" };
         } catch (e2: any) {
-          return { ok: false, error: `OpenSky: ${(e1 as Error).message}. adsb.lol: ${e2?.message ?? "ukjent"}` };
+          return { ok: false, error: `adsb.lol: ${(e1 as Error).message}. OpenSky: ${e2?.message ?? "ukjent"}` };
         }
       }
     })();
