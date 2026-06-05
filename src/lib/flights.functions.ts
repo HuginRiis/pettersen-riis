@@ -133,6 +133,12 @@ async function fetchFromOpenSky(center: { lat: number; lon: number }): Promise<F
       verticalRateMs: (s[11] as number | null) ?? null,
       geoAltitudeM: (s[13] as number | null) ?? null,
       squawk: (s[14] as string | null) ?? null,
+      registration: null,
+      aircraftType: null,
+      description: null,
+      operator: null,
+      category: (s[17] as string | null) ?? null,
+      emergency: null,
       distanceKm,
       bearingDeg: bearingDeg(center, { lat, lon }),
     });
