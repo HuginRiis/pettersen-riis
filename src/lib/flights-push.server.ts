@@ -30,20 +30,35 @@ function compass(deg: number): string {
   return dirs[Math.round(deg / 45) % 8];
 }
 
-function formatFlight(f: Flight, locationLabel: string): { title: string; body: string } {
+function formatFlight(
+  f: Flight,
+  locationLabel: string,
+  fields: FlightPushSettings["fields"],
+): { title: string; body: string } {
   const cs = f.callsign || f.icao24.toUpperCase();
-  const dist = f.distanceKm.toFixed(1);
-  const dir = f.trueTrack != null ? compass(f.trueTrack) : "?";
-  const altKm = f.baroAltitudeM != null ? (f.baroAltitudeM / 1000).toFixed(1) : null;
-  const spdKmh = f.velocityMs != null ? Math.round(f.velocityMs * 3.6) : null;
-  const origin = f.originCountry ? ` (${f.originCountry})` : "";
-  const parts: string[] = [`${dist} km fra ${locationLabel}`, `mot ${dir}`];
-  if (altKm) parts.push(`${altKm} km høyde`);
-  if (spdKmh) parts.push(`${spdKmh} km/t`);
-  return {
-    title: `✈️ ${cs}${origin}`,
-    body: parts.join(" · "),
-  };
+  const set = new Set(fields);
+  // Title: callsign (+ origin land hvis valgt)
+  const origin = set.has("origin") && f.originCountry ? ` (${f.originCountry})` : "";
+  const title = `✈️ ${cs}${origin}`;
+
+  const parts: string[] = [];
+  if (set.has("distance")) parts.push(`${f.distanceKm.toFixed(1)} km fra ${locationLabel}`);
+  if (set.has("direction") && f.trueTrack != null) parts.push(`mot ${compass(f.trueTrack)}`);
+  if (set.has("altitude") && f.baroAltitudeM != null) parts.push(`${(f.baroAltitudeM / 1000).toFixed(1)} km høyde`);
+  if (set.has("speed") && f.velocityMs != null) parts.push(`${Math.round(f.velocityMs * 3.6)} km/t`);
+  if (set.has("verticalRate") && f.verticalRateMs != null) {
+    const fpm = Math.round(f.verticalRateMs * 196.85);
+    parts.push(`${fpm > 0 ? "↑" : fpm < 0 ? "↓" : "→"}${Math.abs(fpm)} ft/min`);
+  }
+  if (set.has("registration") && f.registration) parts.push(f.registration);
+  if (set.has("type") && f.aircraftType) parts.push(f.aircraftType);
+  if (set.has("description") && f.description) parts.push(f.description);
+  if (set.has("operator") && f.operator) parts.push(f.operator);
+  if (set.has("squawk") && f.squawk) parts.push(`sq ${f.squawk}`);
+  if (set.has("category") && f.category) parts.push(f.category);
+  if (set.has("emergency") && f.emergency && f.emergency !== "none") parts.push(`⚠ ${f.emergency}`);
+
+  return { title, body: parts.join(" · ") };
 }
 
 async function sendOne(
