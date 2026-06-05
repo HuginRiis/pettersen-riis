@@ -3610,6 +3610,7 @@ function SmartDashbord() {
             sub="Stua"
             accent={tollnes.co2Stua != null && tollnes.co2Stua >= 1000 ? "text-rose-300" : "text-emerald-300"}
             detail={<NetatmoMetricList modules={tollnes.modules} metric="co2" unit=" ppm" digits={0} />}
+            anim="co2"
           />
         </div>
 
