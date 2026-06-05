@@ -1118,7 +1118,14 @@ function VarmepumpeTile({
             isOn ? "bg-gradient-to-br from-rose-500/30 to-transparent border-rose-400/50 shadow-[0_0_30px_-4px_rgba(244,63,94,0.6)]"
                  : "bg-white/[0.02] border-white/10"
           }`}>
-            <div className="text-center">
+            <Fan
+              size={104}
+              strokeWidth={1}
+              className={`absolute inset-0 m-auto text-rose-300/30 ${isOn ? "animate-spin" : ""}`}
+              style={isOn ? { animationDuration: "3s" } : undefined}
+              aria-hidden="true"
+            />
+            <div className="relative text-center">
               <div className="text-[10px] uppercase tracking-widest text-rose-200/70">Mål</div>
               <div className="text-2xl font-semibold text-white tabular-nums">
                 {target != null ? `${target}°` : "—"}
