@@ -498,7 +498,7 @@ main .container {
 .smart-bold-all * { font-weight: 700 !important; }
 
 /* ===== Smart Dashbord – Varmepumpe-modus animasjoner ===== */
-.vp-anim { position: absolute; inset: 0; pointer-events: none; overflow: hidden; border-radius: inherit; }
+.vp-anim { position: absolute; left: 0; right: 0; bottom: 0; height: 45%; pointer-events: none; overflow: hidden; border-radius: inherit; }
 .vp-anim span { position: absolute; display: inline-block; will-change: transform, opacity; }
 
 /* HEAT – stigende flammer */
