@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { getDoorsLocksSnapshot, setLockState, type DoorOrLockEntry } from "@/lib/homey.functions";
 import { Lock, Unlock, Loader2, Flame, DoorClosed } from "lucide-react";
 
-const REFRESH_MS = 20_000;
+const REFRESH_MS = 60_000;
 const MATCH = "utgangsdør"; // matcher "Utgangsdøren"
 
 function ago(iso: string | null): string {
