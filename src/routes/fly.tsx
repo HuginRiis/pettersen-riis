@@ -161,7 +161,7 @@ function LocationSection({ location }: { location: FlightLocationId }) {
             {settings.enabled ? <Bell size={16} className="text-primary" /> : <BellOff size={16} className="text-muted-foreground" />}
             <h3 className="text-sm uppercase tracking-wider text-primary">Automatisk varsling — {meta.label}</h3>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-6 gap-3">
             <button
               onClick={() => setSettings({ ...settings, enabled: !settings.enabled })}
               className={`px-3 py-2 rounded border text-xs uppercase tracking-wider ${
@@ -181,9 +181,21 @@ function LocationSection({ location }: { location: FlightLocationId }) {
               </select>
             </label>
             <label className="text-xs">
-              <span className="block text-muted-foreground mb-1">Maks avstand (km)</span>
+              <span className="block text-muted-foreground mb-1">Synlig radius (km)</span>
               <input
-                type="number" min={1} max={50}
+                type="number" min={1} max={MAX_SEARCH_RADIUS_KM} step={5}
+                value={settings.searchRadiusKm}
+                onChange={(e) => {
+                  const v = Math.min(MAX_SEARCH_RADIUS_KM, Math.max(1, Number(e.target.value) || DEFAULT_SEARCH_RADIUS_KM));
+                  setSettings({ ...settings, searchRadiusKm: v });
+                }}
+                className="w-full bg-background border border-border/60 rounded px-2 py-1.5 tabular-nums"
+              />
+            </label>
+            <label className="text-xs">
+              <span className="block text-muted-foreground mb-1">Push maks avstand (km)</span>
+              <input
+                type="number" min={1} max={MAX_SEARCH_RADIUS_KM}
                 value={settings.maxDistanceKm}
                 onChange={(e) => setSettings({ ...settings, maxDistanceKm: Number(e.target.value) || 25 })}
                 className="w-full bg-background border border-border/60 rounded px-2 py-1.5 tabular-nums"
