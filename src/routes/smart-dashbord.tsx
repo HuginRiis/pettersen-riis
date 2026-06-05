@@ -1578,18 +1578,7 @@ function RobotsTile() {
               </span>
             )}
             <div className="flex items-center gap-2">
-              <div className={`relative h-10 w-10 rounded-full flex items-center justify-center overflow-hidden ${roboActive ? "bg-sky-400/15 ring-1 ring-sky-300/40" : "bg-white/5"}`}>
-                {roboActive && <span className="absolute inset-0 rounded-full bg-sky-400/30 animate-ping" />}
-                <img
-                  src={roboVacImg}
-                  alt="Roborock støvsuger"
-                  width={40}
-                  height={40}
-                  loading="lazy"
-                  className={`relative h-9 w-9 object-contain ${roboActive ? "animate-spin" : ""}`}
-                  style={roboActive ? { animationDuration: "6s" } : undefined}
-                />
-              </div>
+              <VacuumMiniScene isActive={roboActive} size={44} className="ring-1 ring-white/10" />
               <div className="min-w-0 flex-1">
                 <div className="text-[9px] uppercase tracking-widest text-white/40">Roborock · Borgen</div>
                 <div className="text-sm text-white truncate">{roboLabel}</div>
