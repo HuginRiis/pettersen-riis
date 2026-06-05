@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { PageShell, PageHero } from "@/components/PageShell";
 import { StovsugerenPanel } from "@/components/StovsugerenPanel";
+import { VacuumScene } from "@/components/VacuumScene";
 import heroImg from "@/assets/got-stovsuger-hero.jpg";
 
 export const Route = createFileRoute("/stovsugeren")({
