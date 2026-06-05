@@ -496,3 +496,88 @@ main .container {
 /* Smart dashbord – bold-toggle som overstyrer alle font-weight-klasser i griden */
 .smart-bold-all,
 .smart-bold-all * { font-weight: 700 !important; }
+
+/* ===== Smart Dashbord – Varmepumpe-modus animasjoner ===== */
+.vp-anim { position: absolute; inset: 0; pointer-events: none; overflow: hidden; border-radius: inherit; }
+.vp-anim span { position: absolute; display: inline-block; will-change: transform, opacity; }
+
+/* HEAT – stigende flammer */
+@keyframes vp-flame-rise {
+  0%   { transform: translateY(110%) scale(0.6); opacity: 0; }
+  20%  { opacity: 0.9; }
+  100% { transform: translateY(-30%) scale(1.1); opacity: 0; }
+}
+.vp-heat span {
+  bottom: -10%;
+  width: 14px; height: 14px; border-radius: 50%;
+  background: radial-gradient(circle at 50% 40%, rgba(255,200,120,0.95), rgba(244,63,94,0.7) 55%, rgba(244,63,94,0) 75%);
+  filter: blur(1px);
+  animation: vp-flame-rise linear infinite;
+}
+
+/* COOL – fallende snøfnugg */
+@keyframes vp-snow-fall {
+  0%   { transform: translateY(-20%) rotate(0deg); opacity: 0; }
+  15%  { opacity: 0.9; }
+  100% { transform: translateY(120%) rotate(360deg); opacity: 0; }
+}
+.vp-cool span {
+  top: -10%;
+  width: 6px; height: 6px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(186,230,253,0.95), rgba(125,211,252,0.4) 70%, transparent);
+  box-shadow: 0 0 6px rgba(125,211,252,0.6);
+  animation: vp-snow-fall linear infinite;
+}
+
+/* DRY – fallende vanndråper */
+@keyframes vp-drop-fall {
+  0%   { transform: translateY(-15%) scaleY(0.6); opacity: 0; }
+  20%  { opacity: 0.85; }
+  90%  { opacity: 0.85; }
+  100% { transform: translateY(120%) scaleY(1.4); opacity: 0; }
+}
+.vp-dry span {
+  top: -10%;
+  width: 4px; height: 10px;
+  background: linear-gradient(180deg, rgba(165,243,252,0.95), rgba(34,211,238,0.4));
+  border-radius: 0 0 50% 50% / 0 0 60% 60%;
+  box-shadow: 0 0 4px rgba(34,211,238,0.55);
+  animation: vp-drop-fall linear infinite;
+}
+
+/* FAN – horisontale vindlinjer */
+@keyframes vp-wind-blow {
+  0%   { transform: translateX(-30%); opacity: 0; }
+  20%  { opacity: 0.8; }
+  80%  { opacity: 0.8; }
+  100% { transform: translateX(130%); opacity: 0; }
+}
+.vp-fan span {
+  left: 0;
+  height: 2px; width: 38px; border-radius: 2px;
+  background: linear-gradient(90deg, transparent, rgba(186,230,253,0.9), transparent);
+  animation: vp-wind-blow linear infinite;
+}
+
+/* AUTO – pulserende glow */
+@keyframes vp-auto-pulse {
+  0%, 100% { transform: scale(0.9); opacity: 0.35; }
+  50%      { transform: scale(1.15); opacity: 0.8; }
+}
+.vp-auto span {
+  inset: 20%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(167,139,250,0.5), transparent 65%);
+  animation: vp-auto-pulse 3.2s ease-in-out infinite;
+}
+
+/* OFF – sovende «pust» */
+@keyframes vp-off-breathe {
+  0%, 100% { opacity: 0.15; transform: scale(1); }
+  50%      { opacity: 0.35; transform: scale(1.04); }
+}
+.vp-off span {
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 60%, rgba(255,255,255,0.06), transparent 65%);
+  animation: vp-off-breathe 4.5s ease-in-out infinite;
+}
