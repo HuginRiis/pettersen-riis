@@ -226,7 +226,16 @@ export async function sendManualFlightPush(
   if (!r.ok) return { sent: 0, errors: 1, message: r.error };
   const flight = r.flights.find((f) => f.icao24.toLowerCase() === icao24.toLowerCase());
   if (!flight) return { sent: 0, errors: 0, message: "Fant ikke flyet i live-data lenger" };
-  const { title, body } = formatFlight(flight, meta.label);
+  const { data: cfgRow } = await supabaseAdmin
+    .from("notification_settings")
+    .select("value")
+    .eq("key", meta.settingsKey)
+    .maybeSingle();
+  const cfg = (cfgRow?.value ?? null) as Partial<FlightPushSettings> | null;
+  const fields = (cfg?.fields && cfg.fields.length
+    ? cfg.fields
+    : ["distance", "direction", "altitude", "speed", "origin", "registration", "type", "operator"]) as FlightPushSettings["fields"];
+  const { title, body } = formatFlight(flight, meta.label, fields);
   const payload = JSON.stringify({
     title,
     body,
