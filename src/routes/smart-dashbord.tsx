@@ -1412,6 +1412,8 @@ import type { GardenaSnap } from "@/lib/gardena-cache";
 import { Bot, Play, ParkingSquare, Pause, Loader2, BatteryCharging, Home as HomeIcon } from "lucide-react";
 import sileMowerImg from "@/assets/icon-sileno-mower.png";
 import roboVacImg from "@/assets/icon-roborock-vacuum.png";
+import { VacuumMiniScene } from "@/components/VacuumMiniScene";
+import { MowerMiniScene } from "@/components/MowerMiniScene";
 
 type RoborockSnap = Awaited<ReturnType<typeof getRoborockSnapshot>>;
 
