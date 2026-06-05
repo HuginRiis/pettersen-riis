@@ -8,6 +8,15 @@ const __load_push_server = createIsomorphicFn()
     Promise.resolve({} as unknown as typeof import("@/lib/flights-push.server")),
   );
 
+const __load_api_call_log_server = createIsomorphicFn()
+  .server((): Promise<typeof import("@/lib/api-call-log.server")> =>
+    import("@/lib/api-call-log.server"),
+  )
+  .client((): Promise<typeof import("@/lib/api-call-log.server")> =>
+    Promise.resolve({} as unknown as typeof import("@/lib/api-call-log.server")),
+  );
+
+
 export type FlightLocationId = "tollnes" | "hytta";
 
 export const FLIGHT_LOCATIONS: Record<
