@@ -19,6 +19,7 @@ import { getGarminOverview } from "@/lib/garmin.functions";
 import {
   getHomeySnapshot,
   setLivingRoomDeviceCapability,
+  getHomeyDeviceInsight,
   type HomeyDeviceSnapshot,
   type HomeyZone,
 } from "@/lib/homey.functions";
@@ -521,7 +522,87 @@ function BassengTile({
   );
 }
 
-// ----- Hunde-vann tile (samme stil som BassengTile) -----
+// ----- 24h on/off graf for hundevann -----
+function HundeVann24h({ deviceId, currentOn }: { deviceId: string | null; currentOn: boolean | null }) {
+  const fetchInsight = useServerFn(getHomeyDeviceInsight);
+  const [points, setPoints] = useState<Array<{ t: number; v: number }>>([]);
+
+  useEffect(() => {
+    if (!deviceId) return;
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const res = await fetchInsight({ data: { deviceId, capability: "onoff", resolution: "last24Hours" } });
+        if (cancelled) return;
+        const pts = (res.values ?? [])
+          .map((p) => ({ t: new Date(p.t).getTime(), v: p.v === true || p.v === 1 ? 1 : 0 }))
+          .filter((p) => Number.isFinite(p.t))
+          .sort((a, b) => a.t - b.t);
+        setPoints(pts);
+      } catch { /* ignore */ }
+    };
+    load();
+    const i = setInterval(load, 5 * 60_000);
+    return () => { cancelled = true; clearInterval(i); };
+  }, [deviceId, fetchInsight]);
+
+  const { onMs, pct, label, chart } = useMemo(() => {
+    const now = Date.now();
+    const start = now - 24 * 3600_000;
+    const series = points.length === 0 && currentOn != null
+      ? [{ t: start, v: currentOn ? 1 : 0 }]
+      : points.filter((p) => p.t >= start - 3600_000);
+    if (currentOn != null) series.push({ t: now, v: currentOn ? 1 : 0 });
+    let on = 0;
+    for (let i = 0; i < series.length - 1; i++) {
+      const a = series[i]; const b = series[i + 1];
+      const segStart = Math.max(a.t, start);
+      const segEnd = Math.min(b.t, now);
+      if (segEnd > segStart && a.v === 1) on += segEnd - segStart;
+    }
+    const totalMs = 24 * 3600_000;
+    const pct = Math.round((on / totalMs) * 100);
+    const h = Math.floor(on / 3600_000);
+    const m = Math.floor((on % 3600_000) / 60_000);
+    // build step chart sample points (1 per 15 min)
+    const buckets = 48;
+    const step = totalMs / buckets;
+    const chart: Array<{ x: number; v: number }> = [];
+    for (let i = 0; i < buckets; i++) {
+      const ts = start + i * step;
+      let state = 0;
+      for (let j = series.length - 1; j >= 0; j--) {
+        if (series[j].t <= ts) { state = series[j].v; break; }
+      }
+      chart.push({ x: i, v: state });
+    }
+    return { onMs: on, pct, label: `${h}t ${m}m`, chart };
+  }, [points, currentOn]);
+
+  return (
+    <div className="mt-2">
+      <div className="h-10 -mx-1">
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart data={chart} margin={{ top: 2, right: 2, left: 2, bottom: 0 }}>
+            <defs>
+              <linearGradient id="hvFill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#38bdf8" stopOpacity={0.6} />
+                <stop offset="100%" stopColor="#38bdf8" stopOpacity={0.05} />
+              </linearGradient>
+            </defs>
+            <Area type="stepAfter" dataKey="v" stroke="#38bdf8" strokeWidth={1.5} fill="url(#hvFill)" isAnimationActive={false} />
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
+      <div className="flex items-center justify-between mt-1">
+        <span className="text-[10px] uppercase tracking-widest text-white/40">Siste 24t på</span>
+        <span className="text-xs text-sky-300 tabular-nums">{label} · {pct}%</span>
+      </div>
+    </div>
+  );
+}
+
+
 function HundeTile({
   device, countdownSeconds, onReload,
 }: {
@@ -611,7 +692,6 @@ function HundeTile({
               {isOn ? "💧" : "○"}
             </div>
             <div className="text-xs text-sky-300/80 mt-1">{isOn == null ? "Ukjent" : isOn ? "Renner" : "Av"}</div>
-            <div className="text-[10px] uppercase tracking-widest text-white/40 mt-1">Drikkevann hunder</div>
           </div>
           <svg viewBox="0 0 120 80" className="w-20 h-14">
             <path
@@ -633,6 +713,7 @@ function HundeTile({
             )}
           </svg>
         </div>
+        <HundeVann24h deviceId={device?.id ?? null} currentOn={isOn} />
         {remaining != null && remaining > 0 && isOn && (
           <div className="relative">
             <div className="text-[10px] uppercase tracking-widest text-white/40">Skrur seg av om</div>
@@ -640,6 +721,7 @@ function HundeTile({
           </div>
         )}
       </div>
+
       <style>{`
         @keyframes hvDrop {
           0% { transform: translateY(0) scale(0.6); opacity: 0; }
