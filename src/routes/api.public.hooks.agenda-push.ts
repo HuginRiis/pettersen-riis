@@ -212,9 +212,17 @@ export const Route = createFileRoute("/api/public/hooks/agenda-push")({
           } catch (err) {
             console.error("[slow-page-push] failed", err);
           }
-          return new Response(JSON.stringify({ ok: true, agenda, checklist, garbage, birthdays, warranty, uv, weather, lightIdle, tibber, metAlerts, mailDelivery, garmin, garminPush, garminThresholds, plants, sensorSummary, sensorHistory, slowPage }), {
+          let flights = { checked: 0, sent: 0, errors: 0, skipped: 0 };
+          try {
+            const fmod = await import("@/lib/flights-push.server");
+            flights = await fmod.processFlightNotifications();
+          } catch (err) {
+            console.error("[flights-push] failed", err);
+          }
+          return new Response(JSON.stringify({ ok: true, agenda, checklist, garbage, birthdays, warranty, uv, weather, lightIdle, tibber, metAlerts, mailDelivery, garmin, garminPush, garminThresholds, plants, sensorSummary, sensorHistory, slowPage, flights }), {
             headers: { "Content-Type": "application/json" },
           });
+
         } catch (err) {
           console.error("[agenda-push] failed", err);
           return new Response(JSON.stringify({ ok: false, error: String(err) }), {
