@@ -6,6 +6,7 @@ import {
   Droplets, Gauge, CloudSun, Activity, Power, Settings2,
   TrendingUp, TrendingDown, Minus, Cloud, CloudOff, Plus, Trophy, Home,
   CalendarDays, Trash2, Mail, Cake, Bell, Zap, CloudRain, PawPrint,
+  DoorOpen, DoorClosed, Lock, Unlock,
 } from "lucide-react";
 import {
   AreaChart, Area, ResponsiveContainer,
@@ -20,8 +21,10 @@ import {
   getHomeySnapshot,
   setLivingRoomDeviceCapability,
   getHomeyDeviceInsight,
+  getDoorsLocksSnapshot,
   type HomeyDeviceSnapshot,
   type HomeyZone,
+  type DoorOrLockEntry,
 } from "@/lib/homey.functions";
 import { getGarbageOverview } from "@/lib/garbage-collection";
 import { getPowerByTheHour } from "@/lib/power-by-the-hour";
@@ -1811,8 +1814,8 @@ function CalendarTile() {
 
   const today = osloToday();
   const todayEvents = events.filter((e) => e.date === today);
-  // Maks 4 neste hendelser etter i dag
-  const upcoming = events.filter((e) => e.date > today).slice(0, 4);
+  // Kun de 2 neste hendelser etter i dag
+  const upcoming = events.filter((e) => e.date > today).slice(0, 2);
 
   // Grafisk gradient per type
   const gradientFor = (e: CalEvent): string => {
@@ -1829,6 +1832,19 @@ function CalendarTile() {
     return "from-sky-500/70 to-cyan-500/70";
   };
 
+  // Stort emoji for søppeltype
+  const bigEmojiFor = (e: CalEvent): string | null => {
+    if (e.kind !== "garbage") return null;
+    const t = e.title.toLowerCase();
+    if (t.includes("rest")) return "🗑️";
+    if (t.includes("papir") || t.includes("pp")) return "📦";
+    if (t.includes("plast")) return "🥛";
+    if (t.includes("glas") || t.includes("metall")) return "🍷";
+    if (t.includes("mat") || t.includes("bio")) return "🥬";
+    if (t.includes("hage")) return "🌿";
+    return "♻️";
+  };
+
   const formatDayShort = (date: string): { big: string; small: string } => {
     const d = daysFromToday(date);
     if (d === 0) return { big: "i dag", small: "" };
@@ -1842,7 +1858,7 @@ function CalendarTile() {
 
   return (
     <Tile
-      title="Kalender · Det som skjer"
+      title="Kalender · Neste 2"
       icon={<CalendarDays size={14} />}
       accent="text-cyan-300"
     >
@@ -1851,7 +1867,7 @@ function CalendarTile() {
         {todayEvents.length > 0 && (
           <div className="flex flex-wrap gap-1.5 shrink-0">
             <span className="text-[9px] uppercase tracking-widest text-white/40 self-center">I dag</span>
-            {todayEvents.slice(0, 3).map((e, i) => (
+            {todayEvents.slice(0, 2).map((e, i) => (
               <div
                 key={i}
                 className={`flex items-center gap-1.5 rounded-full pl-1 pr-2 py-0.5 text-[10px] bg-gradient-to-r ${gradientFor(e)} text-white shadow-[0_2px_8px_-2px_rgba(0,0,0,0.4)]`}
@@ -1865,50 +1881,215 @@ function CalendarTile() {
           </div>
         )}
 
-        {/* 4 neste hendelser — grafiske kort */}
-        <div className="grid grid-cols-2 gap-1.5 flex-1 min-h-0">
+        {/* 2 neste hendelser — store grafiske kort, stablet */}
+        <div className="grid grid-cols-1 gap-2 flex-1 min-h-0">
           {upcoming.length === 0 ? (
-            <div className="col-span-2 flex items-center justify-center text-xs text-white/40 italic">
+            <div className="flex items-center justify-center text-xs text-white/40 italic">
               Ingen planlagte hendelser
             </div>
           ) : (
             upcoming.map((e, i) => {
               const fd = formatDayShort(e.date);
+              const emoji = bigEmojiFor(e);
               return (
                 <div
                   key={i}
-                  className={`relative overflow-hidden rounded-xl border border-white/10 p-2.5 flex flex-col justify-between
+                  className={`relative overflow-hidden rounded-xl border border-white/10 p-3 flex items-center gap-3
                               bg-gradient-to-br ${gradientFor(e)} shadow-[0_4px_18px_-6px_rgba(0,0,0,0.5)]`}
                 >
-                  {/* stort, mykt bakgrunns-ikon */}
-                  <div className="absolute -top-2 -right-2 text-white pointer-events-none" style={{ opacity: 0.18 }}>
-                    {React.cloneElement(e.icon as React.ReactElement<{ size?: number; strokeWidth?: number }>, { size: 64, strokeWidth: 1.4 })}
-                  </div>
-                  <div className="relative flex items-start gap-1.5">
-                    <span className="flex items-center justify-center h-5 w-5 rounded-full bg-white/25 text-white shrink-0 mt-0.5 shadow-[0_2px_6px_-1px_rgba(0,0,0,0.4)]">
-                      {React.cloneElement(e.icon as React.ReactElement<{ size?: number }>, { size: 12 })}
-                    </span>
-                    <div className="text-[12px] font-semibold text-white leading-tight truncate flex-1">{e.title}</div>
-                  </div>
-                  <div className="relative flex items-end justify-between gap-2 mt-1">
-                    <div className="min-w-0 flex-1">
-                      <div className="text-[15px] font-semibold text-white tabular-nums leading-none capitalize">
-                        {fd.big}
-                      </div>
-                      {e.sub && (
-                        <div className="text-[10px] text-white/85 leading-snug mt-0.5 break-words">
-                          {e.sub}
-                        </div>
-                      )}
-                    </div>
-                    {e.time && (
-                      <div className="text-[10px] text-white/80 tabular-nums shrink-0">{e.time.slice(0, 5)}</div>
+                  {/* Stort fancy ikon */}
+                  <div className="relative flex items-center justify-center h-12 w-12 rounded-2xl bg-white/20 shrink-0 shadow-inner">
+                    {emoji ? (
+                      <span style={{ fontSize: 30, lineHeight: 1 }}>{emoji}</span>
+                    ) : (
+                      React.cloneElement(e.icon as React.ReactElement<{ size?: number; strokeWidth?: number }>, { size: 26, strokeWidth: 1.8 })
                     )}
                   </div>
-
+                  {/* Bakgrunns-ikon (svakt) */}
+                  <div className="absolute -bottom-3 -right-3 text-white pointer-events-none" style={{ opacity: 0.14 }}>
+                    {React.cloneElement(e.icon as React.ReactElement<{ size?: number; strokeWidth?: number }>, { size: 80, strokeWidth: 1.2 })}
+                  </div>
+                  <div className="relative min-w-0 flex-1">
+                    <div className="text-[13px] font-semibold text-white leading-tight truncate">{e.title}</div>
+                    <div className="text-[16px] font-semibold text-white tabular-nums leading-tight capitalize mt-0.5">
+                      {fd.big}
+                    </div>
+                    {e.sub && (
+                      <div className="text-[10px] text-white/80 leading-snug mt-0.5 truncate">{e.sub}</div>
+                    )}
+                  </div>
+                  {e.time && (
+                    <div className="relative text-[11px] text-white/85 tabular-nums shrink-0 self-start">{e.time.slice(0, 5)}</div>
+                  )}
                 </div>
               );
             })
+          )}
+        </div>
+      </div>
+    </Tile>
+  );
+}
+
+// ----- Dører & Yale-lås -----
+function DoorsLockTile() {
+  const fetchDoors = useServerFn(getDoorsLocksSnapshot);
+  const [doors, setDoors] = useState<DoorOrLockEntry[]>([]);
+  const [lock, setLock] = useState<DoorOrLockEntry | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    const load = async () => {
+      try {
+        const r = await fetchDoors();
+        if (!alive || !r.ok) return;
+        setDoors(r.doors ?? []);
+        const yale =
+          r.locks.find((l) => l.brand === "yale") ??
+          r.locks.find((l) => /doorman|yale/i.test(l.name)) ??
+          r.locks.find((l) => l.brand === "verisure") ??
+          r.locks[0] ?? null;
+        setLock(yale);
+      } catch {}
+    };
+    load();
+    const id = setInterval(load, 30_000);
+    return () => { alive = false; clearInterval(id); };
+  }, [fetchDoors]);
+
+  const openDoors = doors.filter((d) => d.contactOpen === true);
+  const totalDoors = doors.length;
+  const openCount = openDoors.length;
+  const allClosed = totalDoors > 0 && openCount === 0;
+
+  const locked = lock?.locked === true;
+  const unknownLock = !lock || lock.locked == null;
+  const lockColor = unknownLock
+    ? "var(--muted-foreground)"
+    : locked
+      ? "oklch(0.75 0.16 150)"
+      : "oklch(0.7 0.22 25)";
+
+  return (
+    <Tile
+      title="Dører & Yale"
+      icon={<DoorClosed size={14} />}
+      accent={openCount > 0 ? "text-orange-300" : "text-emerald-300"}
+    >
+      <style>{`
+        @keyframes door-swing {
+          0%, 100% { transform: rotateY(0deg); }
+          50% { transform: rotateY(-35deg); }
+        }
+        @keyframes lock-pulse {
+          0%, 100% { filter: drop-shadow(0 0 4px currentColor); }
+          50% { filter: drop-shadow(0 0 12px currentColor); }
+        }
+      `}</style>
+      <div className="flex flex-col h-full gap-2 overflow-hidden">
+        {/* Toppstripe: antall åpne / totalt + Yale-lås */}
+        <div className="flex items-stretch gap-2 shrink-0">
+          <div
+            className={`flex-1 rounded-xl border p-2 flex items-center gap-2 bg-gradient-to-br ${
+              openCount > 0
+                ? "from-orange-500/30 to-rose-600/20 border-orange-400/40"
+                : "from-emerald-500/20 to-teal-700/15 border-emerald-400/30"
+            }`}
+          >
+            <div
+              className="h-9 w-9 rounded-lg flex items-center justify-center bg-white/15"
+              style={{
+                perspective: 60,
+              }}
+            >
+              {openCount > 0 ? (
+                <DoorOpen
+                  size={22}
+                  className="text-orange-200"
+                  style={{
+                    transformOrigin: "left center",
+                    animation: "door-swing 1.8s ease-in-out infinite",
+                  }}
+                />
+              ) : (
+                <DoorClosed size={22} className="text-emerald-200" />
+              )}
+            </div>
+            <div className="min-w-0">
+              <div className="text-[17px] font-semibold text-white tabular-nums leading-none">
+                {openCount}<span className="text-white/50 text-[12px]"> / {totalDoors}</span>
+              </div>
+              <div className="text-[9px] tracking-[0.2em] text-white/60 uppercase mt-0.5">
+                {allClosed ? "Alle lukket" : openCount > 0 ? "Åpne nå" : "Dører"}
+              </div>
+            </div>
+          </div>
+
+          <div
+            className="flex-1 rounded-xl border border-white/10 p-2 flex items-center gap-2 bg-gradient-to-br from-zinc-700/30 to-zinc-900/30"
+          >
+            <div className="h-9 w-9 rounded-lg flex items-center justify-center bg-white/10">
+              {locked ? (
+                <Lock
+                  size={22}
+                  style={{ color: lockColor, animation: "lock-pulse 2.4s ease-in-out infinite" }}
+                />
+              ) : unknownLock ? (
+                <Lock size={22} style={{ color: lockColor, opacity: 0.5 }} />
+              ) : (
+                <Unlock size={22} style={{ color: lockColor, animation: "lock-pulse 1.2s ease-in-out infinite" }} />
+              )}
+            </div>
+            <div className="min-w-0">
+              <div
+                className="text-[15px] font-semibold tabular-nums leading-none"
+                style={{ color: lockColor }}
+              >
+                {unknownLock ? "—" : locked ? "LÅST" : "ÅPEN"}
+              </div>
+              <div className="text-[9px] tracking-[0.2em] text-white/60 uppercase mt-0.5 truncate">
+                {lock?.brand === "yale" ? "Yale Doorman" : lock?.name ?? "Lås"}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Liste over åpne dører (eller siste statusliste) */}
+        <div className="flex-1 min-h-0 overflow-hidden">
+          {openCount > 0 ? (
+            <ul className="space-y-1">
+              {openDoors.slice(0, 4).map((d) => (
+                <li
+                  key={d.id}
+                  className="flex items-center gap-2 rounded-md bg-orange-500/15 border border-orange-400/30 px-2 py-1"
+                >
+                  <DoorOpen
+                    size={14}
+                    className="text-orange-300 shrink-0"
+                    style={{
+                      transformOrigin: "left center",
+                      animation: "door-swing 1.8s ease-in-out infinite",
+                    }}
+                  />
+                  <span className="text-[11px] text-white truncate flex-1">{d.name}</span>
+                  <span className="text-[9px] tracking-[0.15em] text-orange-200/80 uppercase shrink-0">
+                    {d.zoneName}
+                  </span>
+                </li>
+              ))}
+              {openCount > 4 && (
+                <li className="text-[10px] text-white/50 text-center">+{openCount - 4} til</li>
+              )}
+            </ul>
+          ) : totalDoors === 0 ? (
+            <div className="h-full flex items-center justify-center text-[11px] text-white/40 italic">
+              Ingen dørsensorer funnet
+            </div>
+          ) : (
+            <div className="h-full flex flex-col items-center justify-center gap-1 text-emerald-300/80">
+              <DoorClosed size={28} strokeWidth={1.5} />
+              <div className="text-[10px] tracking-[0.25em] uppercase">Alle dører lukket</div>
+            </div>
           )}
         </div>
       </div>
@@ -3171,8 +3352,9 @@ function SmartDashbord() {
               {/* Rad 2: UV + AQ */}
               <div className="col-span-6"><UvTile loc={loc} /></div>
               <div className="col-span-6"><AqiTile loc={loc} /></div>
-              {/* Rad 3: Kalender + Leader */}
-              <div className="col-span-6"><CalendarTile /></div>
+              {/* Rad 3: Kalender + Dører + Leader + Robots */}
+              <div className="col-span-3"><CalendarTile /></div>
+              <div className="col-span-3"><DoorsLockTile /></div>
               <div className="col-span-3"><LeaderTile /></div>
               <div className="col-span-3"><RobotsTile /></div>
 
