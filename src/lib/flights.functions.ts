@@ -200,18 +200,45 @@ export const getNearbyFlights = createServerFn({ method: "GET" })
     const { withApiLog } = await __load_api_call_log_server();
     return withApiLog("flights", `getNearbyFlights[${data.location}]`, async (): Promise<FlightsResult> => {
       const center = FLIGHT_LOCATIONS[data.location];
-      // Prefer adsb.lol (rikere data: registrering, type, operatør)
-      try {
-        const flights = await fetchFromAdsbLol(center);
-        return { ok: true, flights, fetchedAt: new Date().toISOString(), source: "adsb.lol" };
-      } catch (e1) {
-        try {
-          const flights = await fetchFromOpenSky(center);
-          return { ok: true, flights, fetchedAt: new Date().toISOString(), source: "opensky" };
-        } catch (e2: any) {
-          return { ok: false, error: `adsb.lol: ${(e1 as Error).message}. OpenSky: ${e2?.message ?? "ukjent"}` };
+      // Hent fra begge kilder parallelt og slå sammen — adsb.lol har rik metadata,
+      // OpenSky fanger ofte små fly / GA som adsb.lol mangler (og motsatt).
+      const [adsbRes, openskyRes] = await Promise.allSettled([
+        fetchFromAdsbLol(center),
+        fetchFromOpenSky(center),
+      ]);
+      const adsb = adsbRes.status === "fulfilled" ? adsbRes.value : [];
+      const opensky = openskyRes.status === "fulfilled" ? openskyRes.value : [];
+
+      if (adsb.length === 0 && opensky.length === 0) {
+        const e1 = adsbRes.status === "rejected" ? (adsbRes.reason as Error)?.message ?? "ukjent" : "ingen treff";
+        const e2 = openskyRes.status === "rejected" ? (openskyRes.reason as Error)?.message ?? "ukjent" : "ingen treff";
+        if (adsbRes.status === "rejected" && openskyRes.status === "rejected") {
+          return { ok: false, error: `adsb.lol: ${e1}. OpenSky: ${e2}` };
         }
       }
+
+      // Slå sammen, foretrekk adsb.lol-record (rikere felter), men fyll inn manglende felter fra OpenSky.
+      const byIcao = new Map<string, Flight>();
+      for (const f of adsb) byIcao.set(f.icao24.toLowerCase(), f);
+      for (const f of opensky) {
+        const key = f.icao24.toLowerCase();
+        const existing = byIcao.get(key);
+        if (!existing) {
+          byIcao.set(key, f);
+        } else {
+          // Fyll inn felter som mangler på adsb.lol-record (særlig originCountry)
+          if (!existing.originCountry && f.originCountry) existing.originCountry = f.originCountry;
+          if (existing.callsign == null && f.callsign) existing.callsign = f.callsign;
+          if (existing.baroAltitudeM == null && f.baroAltitudeM != null) existing.baroAltitudeM = f.baroAltitudeM;
+          if (existing.velocityMs == null && f.velocityMs != null) existing.velocityMs = f.velocityMs;
+          if (existing.trueTrack == null && f.trueTrack != null) existing.trueTrack = f.trueTrack;
+          if (existing.verticalRateMs == null && f.verticalRateMs != null) existing.verticalRateMs = f.verticalRateMs;
+          if (!existing.squawk && f.squawk) existing.squawk = f.squawk;
+        }
+      }
+      const flights = Array.from(byIcao.values()).sort((a, b) => a.distanceKm - b.distanceKm);
+      const source = adsb.length && opensky.length ? "adsb.lol+opensky" : adsb.length ? "adsb.lol" : "opensky";
+      return { ok: true, flights, fetchedAt: new Date().toISOString(), source };
     })();
   });
 
