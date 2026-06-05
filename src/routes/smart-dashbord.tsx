@@ -440,13 +440,26 @@ function BassengTile({
   const isOn = onLocal ?? snapOn;
   const watts = capNum(switchDevice, "measure_power");
 
-  // sparkline – pool temp last 24h
-  const sparkData = points.filter((p) => p.pool_temp != null).map((p) => ({ t: p.ts, v: p.pool_temp! }));
+  // min/max pool temp last 24h
+  const { minT, maxT } = useMemo(() => {
+    let mn: number | null = null, mx: number | null = null;
+    for (const p of points) {
+      if (p.pool_temp == null) continue;
+      if (mn == null || p.pool_temp < mn) mn = p.pool_temp;
+      if (mx == null || p.pool_temp > mx) mx = p.pool_temp;
+    }
+    return { minT: mn, maxT: mx };
+  }, [points]);
 
-  const verdict =
-    latest == null ? "—" :
-    latest < 20 ? "Kjølig" : latest < 26 ? "Behagelig" :
-    latest < 30 ? "Varmt" : "Veldig varmt";
+  // total kWh oppvarming siste 24t (bucket = 10 min)
+  const kWh = useMemo(() => {
+    const bucketHours = 10 / 60;
+    let wh = 0;
+    for (const p of points) {
+      if (p.watts != null && p.watts > 0) wh += p.watts * bucketHours;
+    }
+    return wh / 1000;
+  }, [points]);
 
   const TrendIcon = trend > 0.05 ? TrendingUp : trend < -0.05 ? TrendingDown : Minus;
   const trendColor = trend > 0.05 ? "text-emerald-400" : trend < -0.05 ? "text-sky-300" : "text-white/40";
@@ -470,7 +483,7 @@ function BassengTile({
     <Tile
       title={`Basseng · ${loc.label}`}
       icon={<Waves size={14} />}
-      accent="text-sky-400"
+      accent="text-pink-300"
       action={
         switchDevice ? (
           <Switch
@@ -484,38 +497,92 @@ function BassengTile({
         )
       }
     >
-      <div className="flex flex-col h-full justify-between">
-        <div className="flex items-start justify-between">
+      <div className="flex flex-col h-full justify-between gap-2">
+        <div className="flex items-start justify-between gap-2">
           <div>
             <div className="text-4xl font-semibold text-white tabular-nums leading-none">
               {latest == null ? "—" : `${latest.toFixed(1)}°`}
             </div>
-            <div className="text-xs text-sky-300/80 mt-1">{isOn ? verdict : "Av"}</div>
-            <div className="text-[10px] uppercase tracking-widest text-white/40 mt-1">Vanntemperatur</div>
             {watts != null && (
               <div className="text-[10px] text-white/40 mt-1 tabular-nums">{Math.round(watts)} W</div>
             )}
           </div>
-          <div className={`flex items-center gap-1.5 ${trendColor}`}>
-            <TrendIcon size={26} />
-            <div className="text-right">
-              <div className="text-sm tabular-nums">{trend > 0 ? "+" : ""}{trend.toFixed(2)}°</div>
-              <div className="text-[10px] text-white/40 uppercase tracking-widest">siste time</div>
+
+          {/* Rosa basseng + pumpe-animasjon */}
+          <div className="flex items-center gap-1">
+            <svg viewBox="0 0 80 60" className="w-20 h-14">
+              <defs>
+                <radialGradient id="poolPink" cx="50%" cy="40%" r="60%">
+                  <stop offset="0%" stopColor="#fda4af" />
+                  <stop offset="100%" stopColor="#ec4899" />
+                </radialGradient>
+                <linearGradient id="poolWater" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#fbcfe8" />
+                  <stop offset="100%" stopColor="#f472b6" />
+                </linearGradient>
+              </defs>
+              {/* skyggebasseng (rand) */}
+              <ellipse cx="32" cy="44" rx="26" ry="9" fill="url(#poolPink)" opacity="0.45" />
+              <ellipse cx="32" cy="40" rx="26" ry="9" fill="url(#poolPink)" />
+              {/* vannflate */}
+              <ellipse cx="32" cy="38" rx="22" ry="7" fill="url(#poolWater)" />
+              {/* glitterbølger */}
+              <path d="M14 38 Q22 35 32 38 T50 38" fill="none" stroke="#fff" strokeWidth="0.6" opacity="0.7">
+                <animate attributeName="d" dur="3s" repeatCount="indefinite"
+                  values="M14 38 Q22 35 32 38 T50 38;M14 38 Q22 41 32 38 T50 38;M14 38 Q22 35 32 38 T50 38" />
+              </path>
+              {/* slange til pumpe */}
+              <path d="M54 40 Q60 40 62 36" fill="none" stroke="#ec4899" strokeWidth="1.5" opacity="0.7" />
+              {/* pumpe-boks */}
+              <rect x="60" y="22" width="14" height="14" rx="2" fill="#fb7185" stroke="#be185d" strokeWidth="0.6" />
+              {/* roterende hjul */}
+              <g transform="translate(67 29)">
+                <circle r="4" fill="#fff5f7" stroke="#be185d" strokeWidth="0.5" />
+                <g>
+                  <line x1="-3.5" y1="0" x2="3.5" y2="0" stroke="#ec4899" strokeWidth="1" strokeLinecap="round" />
+                  <line x1="0" y1="-3.5" x2="0" y2="3.5" stroke="#ec4899" strokeWidth="1" strokeLinecap="round" />
+                  <animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="1.2s" repeatCount="indefinite" />
+                </g>
+              </g>
+              {/* vanndråper fra pumpe tilbake */}
+              <g opacity="0.85">
+                <circle cx="67" cy="40" r="1.2" fill="#f472b6">
+                  <animate attributeName="cy" values="40;52;40" dur="1.4s" repeatCount="indefinite" />
+                  <animate attributeName="opacity" values="0;1;0" dur="1.4s" repeatCount="indefinite" />
+                </circle>
+                <circle cx="64" cy="42" r="0.9" fill="#fbcfe8">
+                  <animate attributeName="cy" values="42;54;42" dur="1.6s" begin="0.4s" repeatCount="indefinite" />
+                  <animate attributeName="opacity" values="0;1;0" dur="1.6s" begin="0.4s" repeatCount="indefinite" />
+                </circle>
+              </g>
+            </svg>
+            <div className={`flex flex-col items-end ${trendColor}`}>
+              <TrendIcon size={18} />
+              <div className="text-[10px] tabular-nums">{trend > 0 ? "+" : ""}{trend.toFixed(2)}°</div>
             </div>
           </div>
         </div>
-        <div className="h-12 -mx-1">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={sparkData} margin={{ top: 2, bottom: 0, left: 0, right: 0 }}>
-              <defs>
-                <linearGradient id="bsg" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#38bdf8" stopOpacity={0.55} />
-                  <stop offset="100%" stopColor="#38bdf8" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <Area type="monotone" dataKey="v" stroke="#38bdf8" strokeWidth={1.5} fill="url(#bsg)" isAnimationActive={false} />
-            </AreaChart>
-          </ResponsiveContainer>
+
+        {/* Min / Max / kWh */}
+        <div className="grid grid-cols-3 gap-1.5">
+          <div className="rounded-md bg-white/5 px-2 py-1.5">
+            <div className="text-[9px] uppercase tracking-widest text-white/40">Min 24t</div>
+            <div className="text-sm font-medium text-sky-300 tabular-nums">
+              {minT == null ? "—" : `${minT.toFixed(1)}°`}
+            </div>
+          </div>
+          <div className="rounded-md bg-white/5 px-2 py-1.5">
+            <div className="text-[9px] uppercase tracking-widest text-white/40">Max 24t</div>
+            <div className="text-sm font-medium text-pink-300 tabular-nums">
+              {maxT == null ? "—" : `${maxT.toFixed(1)}°`}
+            </div>
+          </div>
+          <div className="rounded-md bg-white/5 px-2 py-1.5">
+            <div className="text-[9px] uppercase tracking-widest text-white/40">Oppvarming</div>
+            <div className="text-sm font-medium text-amber-300 tabular-nums">
+              {kWh < 0.1 ? "0" : kWh.toFixed(kWh < 10 ? 2 : 1)} kWh
+            </div>
+          </div>
         </div>
       </div>
     </Tile>
