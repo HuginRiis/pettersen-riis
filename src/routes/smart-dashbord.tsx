@@ -3039,7 +3039,7 @@ function SmartDashbord() {
                 <BassengTile loc={loc} switchDevice={bassengSwitch} onReload={reload} />
               </div>
               <div className="col-span-2">
-                <HundeTile device={hundeVannDevice} countdownSeconds={hundeCountdownSeconds} onReload={reload} />
+                <HundeTile device={hundeVannDevice} countdownSeconds={hundeCountdownSeconds} tellerValue={hundeTellerValue} onReload={reload} />
               </div>
               <div className="col-span-4">
                 <LysCombinedTile
