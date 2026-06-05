@@ -20,8 +20,10 @@ import {
   getHomeySnapshot,
   setLivingRoomDeviceCapability,
   getHomeyDeviceInsight,
+  getDoorsLocksSnapshot,
   type HomeyDeviceSnapshot,
   type HomeyZone,
+  type DoorOrLockEntry,
 } from "@/lib/homey.functions";
 import { getGarbageOverview } from "@/lib/garbage-collection";
 import { getPowerByTheHour } from "@/lib/power-by-the-hour";
