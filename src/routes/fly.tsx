@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Plane, RefreshCw, Send, Save, Bell, BellOff, Navigation, MapPin } from "lucide-react";
+import { Plane, RefreshCw, Send, Save, Bell, BellOff, Navigation, MapPin, ChevronDown, ChevronUp } from "lucide-react";
 import { PageShell } from "@/components/PageShell";
 import {
   getNearbyFlights,
@@ -74,6 +74,7 @@ function LocationSection({ location }: { location: FlightLocationId }) {
   const [loading, setLoading] = useState(false);
 
   const [settings, setSettings] = useState<FlightPushSettings | null>(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [savingS, setSavingS] = useState(false);
   const [pickRecipient, setPickRecipient] = useState<string>("Alle");
   const [busyIcao, setBusyIcao] = useState<string | null>(null);
@@ -157,135 +158,150 @@ function LocationSection({ location }: { location: FlightLocationId }) {
       </div>
 
       {settings && (
-        <article className="panel rounded-lg p-4 mb-3">
-          <div className="flex items-center gap-2 mb-3">
+        <article className="panel rounded-lg p-3 mb-3">
+          <button
+            onClick={() => setSettingsOpen((o) => !o)}
+            className="w-full flex items-center gap-2"
+          >
             {settings.enabled ? <Bell size={16} className="text-primary" /> : <BellOff size={16} className="text-muted-foreground" />}
-            <h3 className="text-sm uppercase tracking-wider text-primary">Automatisk varsling — {meta.label}</h3>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-6 gap-3">
-            <button
-              onClick={() => setSettings({ ...settings, enabled: !settings.enabled })}
-              className={`px-3 py-2 rounded border text-xs uppercase tracking-wider ${
-                settings.enabled ? "border-primary/60 text-primary" : "border-border text-muted-foreground"
-              }`}
-            >
+            <span className="text-sm uppercase tracking-wider text-primary flex-1 text-left">
+              Automatisk varsling — {meta.label}
+            </span>
+            <span className="text-[10px] text-muted-foreground hidden sm:inline">
               {settings.enabled ? "På" : "Av"}
-            </button>
-            <label className="text-xs">
-              <span className="block text-muted-foreground mb-1">Mottaker</span>
-              <select
-                value={settings.recipient}
-                onChange={(e) => setSettings({ ...settings, recipient: e.target.value })}
-                className="w-full bg-background border border-border/60 rounded px-2 py-1.5"
-              >
-                {RECIPIENTS.map((r) => <option key={r} value={r}>{r}</option>)}
-              </select>
-            </label>
-            <label className="text-xs">
-              <span className="block text-muted-foreground mb-1">Synlig radius (km)</span>
-              <input
-                type="number" min={1} max={MAX_SEARCH_RADIUS_KM} step={5}
-                value={settings.searchRadiusKm}
-                onChange={(e) => {
-                  const v = Math.min(MAX_SEARCH_RADIUS_KM, Math.max(1, Number(e.target.value) || DEFAULT_SEARCH_RADIUS_KM));
-                  setSettings({ ...settings, searchRadiusKm: v });
-                }}
-                className="w-full bg-background border border-border/60 rounded px-2 py-1.5 tabular-nums"
-              />
-            </label>
-            <label className="text-xs">
-              <span className="block text-muted-foreground mb-1">Push maks avstand (km)</span>
-              <input
-                type="number" min={1} max={MAX_SEARCH_RADIUS_KM}
-                value={settings.maxDistanceKm}
-                onChange={(e) => setSettings({ ...settings, maxDistanceKm: Number(e.target.value) || 25 })}
-                className="w-full bg-background border border-border/60 rounded px-2 py-1.5 tabular-nums"
-              />
-            </label>
-            <label className="text-xs">
-              <span className="block text-muted-foreground mb-1">Maks høyde (m, 0=ingen)</span>
-              <input
-                type="number" min={0} max={20000} step={500}
-                value={settings.maxAltitudeM}
-                onChange={(e) => setSettings({ ...settings, maxAltitudeM: Number(e.target.value) || 0 })}
-                className="w-full bg-background border border-border/60 rounded px-2 py-1.5 tabular-nums"
-              />
-            </label>
-            <label className="text-xs">
-              <span className="block text-muted-foreground mb-1">Cooldown (min)</span>
-              <input
-                type="number" min={5} max={1440}
-                value={settings.cooldownMinutes}
-                onChange={(e) => setSettings({ ...settings, cooldownMinutes: Number(e.target.value) || 60 })}
-                className="w-full bg-background border border-border/60 rounded px-2 py-1.5 tabular-nums"
-              />
-            </label>
-            <label className="text-xs">
-              <span className="block text-muted-foreground mb-1">Push fra (klokken)</span>
-              <input
-                type="time"
-                value={settings.allowStart ?? "07:00"}
-                onChange={(e) => setSettings({ ...settings, allowStart: e.target.value || "07:00" })}
-                className="w-full bg-background border border-border/60 rounded px-2 py-1.5 tabular-nums"
-              />
-            </label>
-            <label className="text-xs">
-              <span className="block text-muted-foreground mb-1">Push til (klokken)</span>
-              <input
-                type="time"
-                value={settings.allowEnd ?? "22:00"}
-                onChange={(e) => setSettings({ ...settings, allowEnd: e.target.value || "22:00" })}
-                className="w-full bg-background border border-border/60 rounded px-2 py-1.5 tabular-nums"
-              />
-            </label>
-          </div>
-          <p className="text-[10px] text-muted-foreground mt-2">
-            Tidsvindu i norsk tid. Sett samme verdi i begge feltene for "alltid på". Vindu over midnatt støttes (f.eks. 22:00 → 07:00).
-          </p>
+              {settings.enabled && (
+                <> · {settings.recipient || "Alle"} · {settings.maxDistanceKm} km · {settings.allowStart ?? "07:00"}–{settings.allowEnd ?? "22:00"}</>
+              )}
+            </span>
+            {settingsOpen ? <ChevronUp size={16} className="text-muted-foreground" /> : <ChevronDown size={16} className="text-muted-foreground" />}
+          </button>
 
-
-
-          <div className="mt-4">
-            <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2">
-              Info som skal være med i push-varselet
-            </div>
-            <div className="flex flex-wrap gap-1.5">
-              {PUSH_FIELD_KEYS.map((k) => {
-                const active = settings.fields.includes(k);
-                return (
-                  <button
-                    key={k}
-                    type="button"
-                    onClick={() =>
-                      setSettings({
-                        ...settings,
-                        fields: active
-                          ? settings.fields.filter((x) => x !== k)
-                          : ([...settings.fields, k] as PushFieldKey[]),
-                      })
-                    }
-                    className={`px-2 py-1 rounded border text-[11px] tracking-wide ${
-                      active
-                        ? "border-primary/60 text-primary bg-primary/10"
-                        : "border-border text-muted-foreground"
-                    }`}
+          {settingsOpen && (
+            <div className="mt-3">
+              <div className="grid grid-cols-2 sm:grid-cols-6 gap-3">
+                <button
+                  onClick={() => setSettings({ ...settings, enabled: !settings.enabled })}
+                  className={`px-3 py-2 rounded border text-xs uppercase tracking-wider ${
+                    settings.enabled ? "border-primary/60 text-primary" : "border-border text-muted-foreground"
+                  }`}
+                >
+                  {settings.enabled ? "På" : "Av"}
+                </button>
+                <label className="text-xs">
+                  <span className="block text-muted-foreground mb-1">Mottaker</span>
+                  <select
+                    value={settings.recipient}
+                    onChange={(e) => setSettings({ ...settings, recipient: e.target.value })}
+                    className="w-full bg-background border border-border/60 rounded px-2 py-1.5"
                   >
-                    {active ? "✓ " : ""}{PUSH_FIELD_LABELS[k]}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+                    {RECIPIENTS.map((r) => <option key={r} value={r}>{r}</option>)}
+                  </select>
+                </label>
+                <label className="text-xs">
+                  <span className="block text-muted-foreground mb-1">Synlig radius (km)</span>
+                  <input
+                    type="number" min={1} max={MAX_SEARCH_RADIUS_KM} step={5}
+                    value={settings.searchRadiusKm}
+                    onChange={(e) => {
+                      const v = Math.min(MAX_SEARCH_RADIUS_KM, Math.max(1, Number(e.target.value) || DEFAULT_SEARCH_RADIUS_KM));
+                      setSettings({ ...settings, searchRadiusKm: v });
+                    }}
+                    className="w-full bg-background border border-border/60 rounded px-2 py-1.5 tabular-nums"
+                  />
+                </label>
+                <label className="text-xs">
+                  <span className="block text-muted-foreground mb-1">Push maks avstand (km)</span>
+                  <input
+                    type="number" min={1} max={MAX_SEARCH_RADIUS_KM}
+                    value={settings.maxDistanceKm}
+                    onChange={(e) => setSettings({ ...settings, maxDistanceKm: Number(e.target.value) || 25 })}
+                    className="w-full bg-background border border-border/60 rounded px-2 py-1.5 tabular-nums"
+                  />
+                </label>
+                <label className="text-xs">
+                  <span className="block text-muted-foreground mb-1">Maks høyde (m, 0=ingen)</span>
+                  <input
+                    type="number" min={0} max={20000} step={500}
+                    value={settings.maxAltitudeM}
+                    onChange={(e) => setSettings({ ...settings, maxAltitudeM: Number(e.target.value) || 0 })}
+                    className="w-full bg-background border border-border/60 rounded px-2 py-1.5 tabular-nums"
+                  />
+                </label>
+                <label className="text-xs">
+                  <span className="block text-muted-foreground mb-1">Cooldown (min)</span>
+                  <input
+                    type="number" min={5} max={1440}
+                    value={settings.cooldownMinutes}
+                    onChange={(e) => setSettings({ ...settings, cooldownMinutes: Number(e.target.value) || 60 })}
+                    className="w-full bg-background border border-border/60 rounded px-2 py-1.5 tabular-nums"
+                  />
+                </label>
+                <label className="text-xs">
+                  <span className="block text-muted-foreground mb-1">Push fra (klokken)</span>
+                  <input
+                    type="time"
+                    value={settings.allowStart ?? "07:00"}
+                    onChange={(e) => setSettings({ ...settings, allowStart: e.target.value || "07:00" })}
+                    className="w-full bg-background border border-border/60 rounded px-2 py-1.5 tabular-nums"
+                  />
+                </label>
+                <label className="text-xs">
+                  <span className="block text-muted-foreground mb-1">Push til (klokken)</span>
+                  <input
+                    type="time"
+                    value={settings.allowEnd ?? "22:00"}
+                    onChange={(e) => setSettings({ ...settings, allowEnd: e.target.value || "22:00" })}
+                    className="w-full bg-background border border-border/60 rounded px-2 py-1.5 tabular-nums"
+                  />
+                </label>
+              </div>
+              <p className="text-[10px] text-muted-foreground mt-2">
+                Tidsvindu i norsk tid. Sett samme verdi i begge feltene for "alltid på". Vindu over midnatt støttes (f.eks. 22:00 → 07:00).
+              </p>
 
-          <div className="flex justify-end mt-3">
-            <button
-              onClick={() => void onSaveSettings()}
-              disabled={savingS}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded border border-primary/60 text-primary text-xs uppercase tracking-wider hover:bg-primary/10 disabled:opacity-50"
-            >
-              <Save size={12} /> {savingS ? "Lagrer…" : "Lagre"}
-            </button>
-          </div>
+              <div className="mt-4">
+                <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2">
+                  Info som skal være med i push-varselet
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {PUSH_FIELD_KEYS.map((k) => {
+                    const active = settings.fields.includes(k);
+                    return (
+                      <button
+                        key={k}
+                        type="button"
+                        onClick={() =>
+                          setSettings({
+                            ...settings,
+                            fields: active
+                              ? settings.fields.filter((x) => x !== k)
+                              : ([...settings.fields, k] as PushFieldKey[]),
+                          })
+                        }
+                        className={`px-2 py-1 rounded border text-[11px] tracking-wide ${
+                          active
+                            ? "border-primary/60 text-primary bg-primary/10"
+                            : "border-border text-muted-foreground"
+                        }`}
+                      >
+                        {active ? "✓ " : ""}{PUSH_FIELD_LABELS[k]}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="flex justify-end mt-3">
+                <button
+                  onClick={() => void onSaveSettings()}
+                  disabled={savingS}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded border border-primary/60 text-primary text-xs uppercase tracking-wider hover:bg-primary/10 disabled:opacity-50"
+                >
+                  <Save size={12} /> {savingS ? "Lagrer…" : "Lagre"}
+                </button>
+              </div>
+            </div>
+          )}
         </article>
       )}
 
