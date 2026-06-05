@@ -6,6 +6,7 @@ import {
   Droplets, Gauge, CloudSun, Activity, Power, Settings2,
   TrendingUp, TrendingDown, Minus, Cloud, CloudOff, Plus, Trophy, Home,
   CalendarDays, Trash2, Mail, Cake, Bell, Zap, CloudRain, PawPrint,
+  DoorOpen, DoorClosed, Lock, Unlock,
 } from "lucide-react";
 import {
   AreaChart, Area, ResponsiveContainer,
