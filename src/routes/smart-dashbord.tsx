@@ -2928,6 +2928,24 @@ function SmartDashbord() {
     return null;
   }, [devices]);
 
+  const hundeTellerValue = useMemo<number | null>(() => {
+    const cd = devices.find((d) => {
+      const n = d.name.toLowerCase();
+      return n.includes("hundevann") && n.includes("teller");
+    });
+    if (!cd) return null;
+    let firstNum: number | null = null;
+    for (const [capId, cap] of Object.entries(cd.capabilities)) {
+      if (typeof cap?.value !== "number") continue;
+      const lc = capId.toLowerCase();
+      if (lc.includes("counter") || lc.includes("teller") || lc.includes("count")) {
+        return cap.value as number;
+      }
+      if (firstNum == null) firstNum = cap.value as number;
+    }
+    return firstNum;
+  }, [devices]);
+
   const gridStyle: React.CSSProperties = {
     zoom: settings.scale as any,
     columnGap: `${settings.gapX}px`,
