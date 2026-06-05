@@ -1102,17 +1102,7 @@ function VarmepumpeTile({
       icon={<Thermometer size={14} />}
       accent="text-rose-400"
       action={
-        device ? (
-          <button
-            type="button"
-            onClick={() => send("onoff", !isOn)}
-            disabled={busy}
-            title={isOn ? "Slå av" : "Slå på"}
-            className={`relative inline-flex h-3 w-3 rounded-full transition ${isOn ? "bg-rose-400" : "bg-white/20"}`}
-          >
-            {isOn && <span className="absolute inset-0 rounded-full bg-rose-400 animate-ping opacity-60" />}
-          </button>
-        ) : (
+        device ? null : (
           <span className="text-[10px] text-white/30">ikke funnet</span>
         )
       }
