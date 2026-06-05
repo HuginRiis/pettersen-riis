@@ -604,10 +604,11 @@ function HundeVann24h({ deviceId, currentOn }: { deviceId: string | null; curren
 
 
 function HundeTile({
-  device, countdownSeconds, onReload,
+  device, countdownSeconds, tellerValue, onReload,
 }: {
   device: HomeyDeviceSnapshot | null;
   countdownSeconds: number | null;
+  tellerValue: number | null;
   onReload: () => void;
 }) {
   const setCap = useServerFn(setLivingRoomDeviceCapability);
