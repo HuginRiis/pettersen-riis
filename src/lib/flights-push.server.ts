@@ -102,6 +102,8 @@ function formatFlight(
   }
   if (set.has("category") && f.category) parts.push(f.category);
   if (set.has("emergency") && f.emergency && f.emergency !== "none") parts.push(`⚠ ${f.emergency}`);
+  if (set.has("routeFrom") && f.routeFromName) parts.push(`fra ${f.routeFromName}`);
+  if (set.has("routeTo") && f.routeToName) parts.push(`til ${f.routeToName}`);
 
   return { title, body: parts.join(" · ") };
 }

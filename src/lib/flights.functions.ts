@@ -435,6 +435,8 @@ export const PUSH_FIELD_KEYS = [
   "squawkExplained",
   "category",
   "emergency",
+  "routeFrom",
+  "routeTo",
 ] as const;
 export type PushFieldKey = typeof PUSH_FIELD_KEYS[number];
 
@@ -456,6 +458,8 @@ export const PUSH_FIELD_LABELS: Record<PushFieldKey, string> = {
   squawkExplained: "Squawk (oversatt)",
   category: "Kategori",
   emergency: "Nødstatus",
+  routeFrom: "Rute: fra (avgangsflyplass)",
+  routeTo: "Rute: til (ankomstflyplass)",
 };
 
 export type FlightPushSettings = {
@@ -481,7 +485,7 @@ const DEFAULT_SETTINGS: FlightPushSettings = {
   cooldownMinutes: 60,
   allowStart: "07:00",
   allowEnd: "22:00",
-  fields: ["distance", "direction", "altitude", "speed", "origin", "registration", "registrationCountry", "type", "typeFriendly", "operator"],
+  fields: ["distance", "direction", "altitude", "speed", "origin", "registration", "registrationCountry", "type", "typeFriendly", "operator", "routeFrom", "routeTo"],
 };
 
 
