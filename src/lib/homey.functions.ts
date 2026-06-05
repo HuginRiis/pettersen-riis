@@ -180,6 +180,7 @@ export type HomeyCapabilityMeta = {
   max?: number;
   step?: number;
   values?: HomeyCapabilityEnumValue[];
+  lastUpdated?: string | null;
 };
 
 export type HomeyDeviceSnapshot = {
@@ -1040,6 +1041,8 @@ function extractCapabilityMeta(
     if (typeof capVal?.min === "number") entry.min = capVal.min;
     if (typeof capVal?.max === "number") entry.max = capVal.max;
     if (typeof capVal?.step === "number") entry.step = capVal.step;
+    const ts = pickCapTimestamp(capVal);
+    if (ts) entry.lastUpdated = ts;
     const valuesRaw = capVal?.values;
     if (Array.isArray(valuesRaw)) {
       const cleaned: HomeyCapabilityEnumValue[] = [];
