@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { PageShell, PageHero } from "@/components/PageShell";
 import { GardenaPanel } from "@/components/GardenaPanel";
+import { MowerScene } from "@/components/MowerScene";
 import heroImg from "@/assets/got-gressklipper.jpg";
 
 export const Route = createFileRoute("/gressklipper")({
