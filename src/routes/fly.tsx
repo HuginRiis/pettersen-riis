@@ -48,7 +48,7 @@ function FlyPage() {
             Fly i nærheten
           </h1>
           <p className="text-xs text-muted-foreground">
-            Live ADS-B innenfor {SEARCH_RADIUS_KM} km — separat push-varsling per sted.
+            Live ADS-B — justerbar synlig radius og separat push-varsling per sted.
           </p>
         </div>
       </header>
