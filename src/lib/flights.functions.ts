@@ -458,6 +458,8 @@ export const PUSH_FIELD_LABELS: Record<PushFieldKey, string> = {
   squawkExplained: "Squawk (oversatt)",
   category: "Kategori",
   emergency: "Nødstatus",
+  routeFrom: "Rute: fra (avgangsflyplass)",
+  routeTo: "Rute: til (ankomstflyplass)",
 };
 
 export type FlightPushSettings = {
