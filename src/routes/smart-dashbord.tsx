@@ -2098,10 +2098,10 @@ function DoorsLockTile() {
               )}
             </div>
             <div className="min-w-0 flex-1">
-              <div className="text-[20px] font-semibold text-white tabular-nums leading-none truncate">
+              <div className="text-[14px] font-semibold text-white tabular-nums leading-none truncate">
                 {formatLockTime(lock?.lastUpdated)}
               </div>
-              <div className="text-[7px] tracking-[0.15em] text-white/60 uppercase mt-1 truncate">
+              <div className="text-[7px] tracking-[0.1em] text-white/60 uppercase mt-1 truncate">
                 Sist {locked ? "låst" : unknownLock ? "oppdatert" : "åpnet"}
               </div>
             </div>
