@@ -1094,10 +1094,11 @@ function VarmepumpeTile({
   };
 
   const brand = loc.label === "Hytta" ? "Qlima" : "MELCloud";
+  const animKind = !isOn ? "off" : classifyVpMode(mode);
 
   return (
     <Tile
-      title={`Varmepumpe · ${brand} · ${loc.label}`}
+      title=""
       icon={<Thermometer size={14} />}
       accent="text-rose-400"
       action={
@@ -1118,8 +1119,9 @@ function VarmepumpeTile({
           Fant ingen {brand}-enhet i Homey.
         </div>
       ) : (
-        <div className="flex items-center gap-4 h-full">
-          <div className={`relative h-24 w-24 rounded-full flex items-center justify-center border transition ${
+        <div className="relative flex items-center gap-4 h-full">
+          <VpModeAnimation kind={animKind} />
+          <div className={`relative z-10 h-24 w-24 rounded-full flex items-center justify-center border transition ${
             isOn ? "bg-gradient-to-br from-rose-500/30 to-transparent border-rose-400/50 shadow-[0_0_30px_-4px_rgba(244,63,94,0.6)]"
                  : "bg-white/[0.02] border-white/10"
           }`}>
@@ -1133,7 +1135,7 @@ function VarmepumpeTile({
               )}
             </div>
           </div>
-          <div className="flex-1 flex flex-col gap-2">
+          <div className="relative z-10 flex-1 flex flex-col gap-2">
             {target != null && (
               <div className="flex items-center gap-2">
                 <button
@@ -1163,6 +1165,54 @@ function VarmepumpeTile({
         </div>
       )}
     </Tile>
+  );
+}
+
+type VpAnimKind = "heat" | "cool" | "dry" | "fan" | "auto" | "off";
+function classifyVpMode(mode: string | null | undefined): VpAnimKind {
+  const m = (mode ?? "").toLowerCase();
+  if (!m) return "auto";
+  if (m.includes("heat") || m.includes("varm")) return "heat";
+  if (m.includes("cool") || m.includes("kjøl") || m.includes("kjol")) return "cool";
+  if (m.includes("dry") || m.includes("dehum") || m.includes("avfukt") || m.includes("fukt")) return "dry";
+  if (m.includes("fan") || m.includes("vifte") || m.includes("blow")) return "fan";
+  if (m.includes("off")) return "off";
+  return "auto";
+}
+
+function VpModeAnimation({ kind }: { kind: VpAnimKind }) {
+  // Forhåndsberegnede posisjoner/forsinkelser så animasjonen virker organisk men deterministisk.
+  const config = useMemo(() => {
+    if (kind === "heat") return { count: 10, build: (i: number) => ({
+      left: `${6 + i * 9 + (i % 2) * 3}%`,
+      animationDuration: `${1.6 + (i % 4) * 0.35}s`,
+      animationDelay: `${(i * 0.18) % 2}s`,
+    })};
+    if (kind === "cool") return { count: 14, build: (i: number) => ({
+      left: `${4 + i * 7 + (i % 3) * 2}%`,
+      animationDuration: `${3.4 + (i % 5) * 0.6}s`,
+      animationDelay: `${(i * 0.27) % 3.5}s`,
+    })};
+    if (kind === "dry") return { count: 12, build: (i: number) => ({
+      left: `${5 + i * 8}%`,
+      animationDuration: `${1.8 + (i % 4) * 0.4}s`,
+      animationDelay: `${(i * 0.22) % 2.4}s`,
+    })};
+    if (kind === "fan") return { count: 7, build: (i: number) => ({
+      top: `${10 + i * 12}%`,
+      animationDuration: `${1.6 + (i % 3) * 0.3}s`,
+      animationDelay: `${(i * 0.2) % 1.6}s`,
+    })};
+    if (kind === "auto") return { count: 1, build: () => ({}) };
+    return { count: 1, build: () => ({}) }; // off
+  }, [kind]);
+
+  return (
+    <div className={`vp-anim vp-${kind}`} aria-hidden="true">
+      {Array.from({ length: config.count }).map((_, i) => (
+        <span key={i} style={config.build(i) as React.CSSProperties} />
+      ))}
+    </div>
   );
 }
 
