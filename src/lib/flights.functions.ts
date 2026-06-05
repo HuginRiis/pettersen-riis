@@ -245,7 +245,7 @@ export const PUSH_FIELD_LABELS: Record<PushFieldKey, string> = {
   registration: "Registrering",
   type: "Flytype (ICAO)",
   description: "Beskrivelse",
-  operator: "Operatør / eier",
+  operator: "Operatør/flyselskap",
   squawk: "Squawk",
   category: "Kategori",
   emergency: "Nødstatus",
