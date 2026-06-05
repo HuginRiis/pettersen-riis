@@ -1396,7 +1396,6 @@ import {
   getCachedGardena,
   setCachedGardena,
   subscribeGardena,
-  getCachedGardenaAge,
 } from "@/lib/gardena-cache";
 import type { GardenaSnap } from "@/lib/gardena-cache";
 import { Bot, Play, ParkingSquare, Pause, Loader2, BatteryCharging, Home as HomeIcon } from "lucide-react";
@@ -1405,7 +1404,7 @@ import roboVacImg from "@/assets/icon-roborock-vacuum.png";
 
 type RoborockSnap = Awaited<ReturnType<typeof getRoborockSnapshot>>;
 
-const GARDENA_CACHE_TTL_MS = 45 * 60 * 1000; // matcher cron hver 45 min
+
 
 
 const MOWER_ACT_LABEL: Record<string, string> = {
