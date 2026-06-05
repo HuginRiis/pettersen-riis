@@ -95,9 +95,9 @@ function bearingDeg(a: { lat: number; lon: number }, b: { lat: number; lon: numb
   return (toDeg(Math.atan2(y, x)) + 360) % 360;
 }
 
-function bboxFor(center: { lat: number; lon: number }) {
-  const dLat = SEARCH_RADIUS_KM / 111;
-  const dLon = SEARCH_RADIUS_KM / (111 * Math.cos((center.lat * Math.PI) / 180));
+function bboxFor(center: { lat: number; lon: number }, radiusKm: number) {
+  const dLat = radiusKm / 111;
+  const dLon = radiusKm / (111 * Math.cos((center.lat * Math.PI) / 180));
   return {
     lamin: center.lat - dLat,
     lamax: center.lat + dLat,
@@ -106,8 +106,8 @@ function bboxFor(center: { lat: number; lon: number }) {
   };
 }
 
-async function fetchFromOpenSky(center: { lat: number; lon: number }): Promise<Flight[]> {
-  const b = bboxFor(center);
+async function fetchFromOpenSky(center: { lat: number; lon: number }, radiusKm: number): Promise<Flight[]> {
+  const b = bboxFor(center, radiusKm);
   const url = `https://opensky-network.org/api/states/all?lamin=${b.lamin}&lomin=${b.lomin}&lamax=${b.lamax}&lomax=${b.lomax}`;
   const res = await fetch(url, {
     headers: { Accept: "application/json", "User-Agent": "house-riis-pettersen/1.0" },
@@ -122,7 +122,7 @@ async function fetchFromOpenSky(center: { lat: number; lon: number }): Promise<F
     const lat = s[6] as number | null;
     if (!icao24 || lon == null || lat == null) continue;
     const distanceKm = haversineKm(center, { lat, lon });
-    if (distanceKm > SEARCH_RADIUS_KM) continue;
+    if (distanceKm > radiusKm) continue;
     out.push({
       icao24,
       callsign: ((s[1] as string | null) ?? "").trim() || null,
@@ -150,8 +150,8 @@ async function fetchFromOpenSky(center: { lat: number; lon: number }): Promise<F
   return out;
 }
 
-async function fetchFromAdsbLol(center: { lat: number; lon: number }): Promise<Flight[]> {
-  const radiusNm = Math.round(SEARCH_RADIUS_KM / 1.852);
+async function fetchFromAdsbLol(center: { lat: number; lon: number }, radiusKm: number): Promise<Flight[]> {
+  const radiusNm = Math.max(1, Math.round(radiusKm / 1.852));
   const url = `https://api.adsb.lol/v2/lat/${center.lat}/lon/${center.lon}/dist/${radiusNm}`;
   const res = await fetch(url, {
     headers: { Accept: "application/json", "User-Agent": "house-riis-pettersen/1.0" },
@@ -165,7 +165,7 @@ async function fetchFromAdsbLol(center: { lat: number; lon: number }): Promise<F
     const lon = typeof a.lon === "number" ? a.lon : null;
     if (lat == null || lon == null) continue;
     const distanceKm = haversineKm(center, { lat, lon });
-    if (distanceKm > SEARCH_RADIUS_KM) continue;
+    if (distanceKm > radiusKm) continue;
     const altFt = typeof a.alt_baro === "number" ? a.alt_baro : (typeof a.alt_geom === "number" ? a.alt_geom : null);
     const spdKt = typeof a.gs === "number" ? a.gs : null;
     out.push({
