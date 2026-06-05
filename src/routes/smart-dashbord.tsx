@@ -1916,7 +1916,33 @@ function CalendarTile() {
   );
 }
 
-// ----- Lys kombinert (Stue + Spisestue i én boks) -----
+// ----- Lys kombinert (alle rom i én boks) -----
+const LYS_LAST_CHANGE_KEY = "smartDash.lysLastChange.v1";
+type LastChange = { ts: number; on: boolean };
+
+function loadLastChanges(): Record<string, LastChange> {
+  if (typeof window === "undefined") return {};
+  try { return JSON.parse(window.localStorage.getItem(LYS_LAST_CHANGE_KEY) || "{}") || {}; }
+  catch { return {}; }
+}
+function saveLastChanges(v: Record<string, LastChange>) {
+  if (typeof window === "undefined") return;
+  try { window.localStorage.setItem(LYS_LAST_CHANGE_KEY, JSON.stringify(v)); } catch { /* ignore */ }
+}
+function formatLastChange(lc: LastChange | undefined): string {
+  if (!lc) return "—";
+  const d = new Date(lc.ts);
+  const today = new Date();
+  const sameDay = d.toDateString() === today.toDateString();
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mm = String(d.getMinutes()).padStart(2, "0");
+  const verb = lc.on ? "På" : "Av";
+  if (sameDay) return `${verb} ${hh}:${mm}`;
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mo = String(d.getMonth() + 1).padStart(2, "0");
+  return `${verb} ${dd}.${mo} ${hh}:${mm}`;
+}
+
 function LysCombinedTile({
   groups, onReload,
 }: {
@@ -1927,6 +1953,8 @@ function LysCombinedTile({
   const [busy, setBusy] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
   const [onOv, setOnOv] = useState<Record<string, boolean>>({});
+  const [lastChanges, setLastChanges] = useState<Record<string, LastChange>>(() => loadLastChanges());
+  const prevOnCountRef = React.useRef<Record<string, number> | null>(null);
 
   useEffect(() => {
     setOnOv((prev) => {
@@ -1939,6 +1967,26 @@ function LysCombinedTile({
       }
       return changed ? next : prev;
     });
+  }, [groups]);
+
+  // Track last on/off transition per room based on aggregate onCount.
+  useEffect(() => {
+    const counts: Record<string, number> = {};
+    for (const g of groups) counts[g.label] = g.lights.filter((d) => capBool(d, "onoff")).length;
+    const prev = prevOnCountRef.current;
+    if (prev) {
+      let changed = false;
+      const next = { ...lastChanges };
+      for (const label of Object.keys(counts)) {
+        const before = prev[label] ?? 0;
+        const now = counts[label];
+        if (before === 0 && now > 0) { next[label] = { ts: Date.now(), on: true }; changed = true; }
+        else if (before > 0 && now === 0) { next[label] = { ts: Date.now(), on: false }; changed = true; }
+      }
+      if (changed) { setLastChanges(next); saveLastChanges(next); }
+    }
+    prevOnCountRef.current = counts;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [groups]);
 
   const isOnFor = (d: HomeyDeviceSnapshot) => onOv[d.id] ?? capBool(d, "onoff");
@@ -1974,59 +2022,45 @@ function LysCombinedTile({
     }
   };
 
+  const nonEmpty = groups.filter((g) => g.lights.length > 0);
+
   return (
     <>
       <Tile
-        title="Lys · Hue · Stue + Spisestue"
+        title="Lys · Hue · alle rom"
         icon={<Lightbulb size={14} />}
         accent="text-yellow-300"
         onClick={() => setOpen(true)}
       >
-        <div className="flex flex-col h-full gap-2 justify-center">
-          {groups.map((g) => {
+        <div className="flex flex-col h-full gap-1 overflow-hidden">
+          {nonEmpty.map((g) => {
             const total = g.lights.length;
             const onCount = g.lights.filter(isOnFor).length;
             const allOn = total > 0 && onCount === total;
-            const dims = g.lights.map((d) => capNum(d, "dim")).filter((v): v is number => v != null);
-            const dimAvg = dims.length ? dims.reduce((a, b) => a + b, 0) / dims.length : (onCount > 0 ? 1 : 0);
-            const onRatio = total > 0 ? onCount / total : 0;
-            const intensity = Math.min(1, onRatio * (0.3 + 0.7 * dimAvg));
-            const glowPx = Math.round(4 + intensity * 22);
-            const glowAlpha = (0.25 + intensity * 0.7).toFixed(2);
-            const bgAlpha = (0.04 + intensity * 0.22).toFixed(2);
-            const iconAlpha = 0.25 + intensity * 0.75;
+            const anyOn = onCount > 0;
             return (
               <div
                 key={g.label}
-                className={`flex items-center gap-3 rounded-xl border p-2.5 transition ${
-                  onCount > 0
-                    ? "border-yellow-300/40 bg-yellow-300/5"
-                    : "border-white/10 bg-white/[0.02]"
+                className={`flex items-center gap-2 rounded-lg border px-2 py-1 transition ${
+                  anyOn ? "border-yellow-300/40 bg-yellow-300/5" : "border-white/10 bg-white/[0.02]"
                 }`}
               >
                 <div
-                  className="h-10 w-10 rounded-full flex items-center justify-center shrink-0 transition-all duration-500"
+                  className="h-6 w-6 rounded-full flex items-center justify-center shrink-0 transition-all"
                   style={{
-                    background: `rgba(253,224,71,${bgAlpha})`,
-                    boxShadow: onCount > 0 ? `0 0 ${glowPx}px -2px rgba(253,224,71,${glowAlpha})` : "none",
+                    background: anyOn ? "rgba(253,224,71,0.18)" : "rgba(255,255,255,0.04)",
+                    boxShadow: anyOn ? "0 0 10px -2px rgba(253,224,71,0.5)" : "none",
                   }}
                 >
                   <Lightbulb
-                    size={18}
-                    style={{
-                      color: `rgba(254,240,138,${iconAlpha})`,
-                      filter: onCount > 0 ? `drop-shadow(0 0 ${Math.round(intensity * 6)}px rgba(253,224,71,${glowAlpha}))` : "none",
-                    }}
+                    size={12}
+                    style={{ color: anyOn ? "rgb(254,240,138)" : "rgba(255,255,255,0.35)" }}
                   />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-[11px] uppercase tracking-widest text-white/60">{g.label}</div>
-                  <div className="text-sm text-white tabular-nums">
-                    {onCount}<span className="text-white/30"> / {total}</span>
-                    <span className="text-white/40 text-[10px] ml-1.5">tente</span>
-                    {dims.length > 0 && onCount > 0 && (
-                      <span className="text-white/40 text-[10px] ml-1.5">· {Math.round(dimAvg * 100)}%</span>
-                    )}
+                <div className="flex-1 min-w-0 leading-tight">
+                  <div className="text-[12px] text-white/90 truncate">{g.label}</div>
+                  <div className="text-[10px] text-white/45 tabular-nums">
+                    {onCount}/{total} · {formatLastChange(lastChanges[g.label])}
                   </div>
                 </div>
                 <Switch
@@ -2038,23 +2072,26 @@ function LysCombinedTile({
               </div>
             );
           })}
+          {nonEmpty.length === 0 && (
+            <div className="text-xs text-white/40 italic">Ingen Hue-lys funnet</div>
+          )}
         </div>
       </Tile>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="bg-[#0c0f15] border-white/10 text-white max-w-lg max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Hue · Stue + Spisestue</DialogTitle>
+            <DialogTitle>Hue · alle rom</DialogTitle>
             <DialogDescription className="text-white/50">Styr hver enkelt lampe</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 mt-2">
-            {groups.map((g) => (
+            {nonEmpty.map((g) => (
               <div key={g.label}>
-                <div className="text-[11px] uppercase tracking-widest text-white/50 mb-1.5">{g.label}</div>
+                <div className="text-[11px] uppercase tracking-widest text-white/50 mb-1.5 flex items-center justify-between">
+                  <span>{g.label}</span>
+                  <span className="text-white/40 normal-case tracking-normal">{formatLastChange(lastChanges[g.label])}</span>
+                </div>
                 <div className="space-y-2">
-                  {g.lights.length === 0 && (
-                    <div className="text-sm text-white/40 italic">Ingen Hue-lys</div>
-                  )}
                   {g.lights.map((d) => (
                     <div key={d.id} className="rounded-xl border border-white/10 bg-white/[0.03] p-3 flex items-center justify-between">
                       <span className="text-sm truncate">{d.name}</span>
@@ -2933,23 +2970,24 @@ function SmartDashbord() {
     return m;
   }, [zones]);
 
-  // Hue-lys på Borgen, splittet i Stue og Spisestue
-  const hueByRoom = useMemo(() => {
-    if (locId !== "borgen") return { stue: [] as HomeyDeviceSnapshot[], spisestue: [] as HomeyDeviceSnapshot[] };
-    const stue: HomeyDeviceSnapshot[] = [];
-    const spisestue: HomeyDeviceSnapshot[] = [];
+  // Hue-lys på Borgen, gruppert per sone (alle rom)
+  const hueRoomGroups = useMemo<{ label: string; lights: HomeyDeviceSnapshot[] }[]>(() => {
+    if (locId !== "borgen") return [];
+    const byZone = new Map<string, HomeyDeviceSnapshot[]>();
     for (const d of devices) {
       if (!isHueDevice(d)) continue;
       const zn = d.zone ? zoneNameById.get(d.zone) ?? "" : "";
       if (isHyttaZoneName(zn)) continue;
-      const nm = d.name.toLowerCase();
-      const inSpisestue = isSpisestueZoneName(zn) || nm.includes("spisestue") || nm.includes("spisestua");
-      const inStue = !inSpisestue && (isStueZoneName(zn) || nm.includes("stue") || nm.includes("stua"));
-      if (inSpisestue) spisestue.push(d);
-      else if (inStue) stue.push(d);
+      const label = zn || "Uten sone";
+      const arr = byZone.get(label) ?? [];
+      arr.push(d);
+      byZone.set(label, arr);
     }
-    return { stue, spisestue };
+    return Array.from(byZone.entries())
+      .map(([label, lights]) => ({ label, lights }))
+      .sort((a, b) => b.lights.length - a.lights.length || a.label.localeCompare(b.label, "nb"));
   }, [devices, zoneNameById, locId]);
+
 
   const varmepumpe = useMemo(() => {
     if (locId === "hytta") {
@@ -3118,18 +3156,16 @@ function SmartDashbord() {
               <div className="col-span-2">
                 <HundeTile device={hundeVannDevice} countdownSeconds={hundeCountdownSeconds} tellerValue={hundeTellerValue} onReload={reload} />
               </div>
-              <div className="col-span-4">
+              <div className="col-span-6">
                 <LysCombinedTile
-                  groups={[
-                    { label: "Stue", lights: hueByRoom.stue },
-                    { label: "Spisestue", lights: hueByRoom.spisestue },
-                  ]}
+                  groups={hueRoomGroups}
                   onReload={reload}
                 />
               </div>
-              <div className="col-span-4">
+              <div className="col-span-2">
                 <StromTile home="borgen" />
               </div>
+
               {/* Rad 2: Varmepumpe + UV + AQ + Regn + Vind (halv-størrelse) */}
               <div className="col-span-4">
                 <VarmepumpeTile loc={loc} device={varmepumpe} onReload={reload} />
