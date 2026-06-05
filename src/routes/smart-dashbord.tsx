@@ -3575,6 +3575,7 @@ function SmartDashbord() {
             sub={loc.label}
             accent="text-amber-300"
             detail={<NetatmoMetricList modules={tollnes.modules} metric="temperature" unit="°" digits={1} />}
+            anim="temp"
           />
           <MiniTile
             icon={<Gauge size={16} />}
