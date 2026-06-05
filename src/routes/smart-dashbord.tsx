@@ -131,7 +131,9 @@ function capStr(d: HomeyDeviceSnapshot | null | undefined, cap: string): string 
   return typeof v === "string" ? v : null;
 }
 
-// Shared Homey snapshot hook (polled every 10s, bypass server cache for live dashboard state)
+// Shared Homey snapshot hook
+// - Poller hvert 60s (ikke 10s) og respekterer server-cache (force: false)
+// - Pauser polling når fanen er skjult; trigger én refresh når den blir synlig igjen
 function useHomeySnapshot() {
   const fetchSnap = useServerFn(getHomeySnapshot);
   const [devices, setDevices] = useState<HomeyDeviceSnapshot[]>([]);
@@ -141,7 +143,8 @@ function useHomeySnapshot() {
   useEffect(() => {
     let c = false;
     const load = () => {
-      fetchSnap({ data: { force: true } })
+      if (typeof document !== "undefined" && document.hidden) return;
+      fetchSnap({ data: {} })
         .then((r: any) => {
           if (c || !r?.ok) return;
           setDevices(r.devices ?? []);
@@ -150,8 +153,10 @@ function useHomeySnapshot() {
         .catch(() => {});
     };
     load();
-    const id = setInterval(load, 10_000);
-    return () => { c = true; clearInterval(id); };
+    const id = setInterval(load, 60_000);
+    const onVis = () => { if (!document.hidden) load(); };
+    document.addEventListener("visibilitychange", onVis);
+    return () => { c = true; clearInterval(id); document.removeEventListener("visibilitychange", onVis); };
   }, [fetchSnap, tick]);
   return { devices, zones, reload };
 }
@@ -2633,7 +2638,7 @@ function useNetatmoTollnes(): NetatmoTollnes {
         .catch(() => {});
     };
     load();
-    const id = setInterval(load, 2 * 60 * 1000);
+    const id = setInterval(load, 10 * 60 * 1000);
     return () => { c = true; clearInterval(id); };
   }, [fetchNet]);
   return d;

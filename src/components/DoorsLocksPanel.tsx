@@ -39,8 +39,8 @@ function BatteryFlame({ value, size = 11 }: { value: number; size?: number }) {
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { usePerUserPersistedState } from "@/hooks/use-per-user-persisted-state";
 
-const REFRESH_MS = 30_000;
-const ALARM_REFRESH_MS = 20_000;
+const REFRESH_MS = 60_000;
+const ALARM_REFRESH_MS = 60_000;
 
 type AlarmLogRow = {
   id: string;
