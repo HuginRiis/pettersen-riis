@@ -7,11 +7,11 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { loggedFetch } from "./api-call-log.server";
 import { isApiSourcePaused } from "./api-pause.server";
 
-const DEFAULT_TTL_MS = 30 * 60 * 1000; // 30 min
-// 429 uten Retry-After: vent 2t 5min. Lengre enn 2t for å garantert hoppe
-// over neste cron-vindu (cron kjører hvert ~30 min, offsett vekk fra :00).
-// Open-Meteo deler IP-rate-limits, og :00-grensen er spesielt utsatt.
-const BACKOFF_MS = 2 * 60 * 60 * 1000 + 5 * 60 * 1000;
+const DEFAULT_TTL_MS = 15 * 60 * 1000; // 15 min
+// Med betalt Open-Meteo-nøkkel (customer-API) har vi egen kvote og bør ikke
+// se 429 i normal drift. Holder en kort safety-backoff hvis det skulle skje,
+// så vi hopper kun over neste cron-tikk og prøver igjen ved tikket etter.
+const BACKOFF_MS = 10 * 60 * 1000;
 const KV_PREFIX = "open_meteo_cache:";
 const BACKOFF_PREFIX = "open_meteo_backoff:";
 

@@ -55,7 +55,19 @@ export type OpenMeteoPollenData = { hourly: any };
 type OpenMeteoCoreData = { hourly: any; current: any };
 
 const NOT_WARM_ERR = "Cache er ikke fylt enda — neste oppdatering kommer fra cron-jobben";
-const CACHE_TTL_MS = 30 * 60 * 1000;
+const CACHE_TTL_MS = 15 * 60 * 1000;
+
+// Paid Open-Meteo API. Når OPEN_METEO_API_KEY er satt bruker vi
+// customer-*.open-meteo.com med apikey-param (egen kvote, ingen IP-rate-limit).
+function aqApiBase(): string {
+  return process.env.OPEN_METEO_API_KEY
+    ? "https://customer-air-quality-api.open-meteo.com"
+    : "https://air-quality-api.open-meteo.com";
+}
+function apiKeyParam(): string {
+  const k = process.env.OPEN_METEO_API_KEY;
+  return k ? `&apikey=${encodeURIComponent(k)}` : "";
+}
 
 function aqKey(lat: number, lon: number) {
   return `aq:${lat.toFixed(3)},${lon.toFixed(3)}`;
@@ -121,9 +133,9 @@ export async function warmOpenMeteoCoreMulti(
   const lats = locs.map((l) => l.lat).join(",");
   const lons = locs.map((l) => l.lon).join(",");
   const url =
-    `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lats}&longitude=${lons}` +
+    `${aqApiBase()}/v1/air-quality?latitude=${lats}&longitude=${lons}` +
     `&hourly=${CORE_HOURLY_FIELDS}&current=${CURRENT_FIELDS}` +
-    `&timezone=Europe%2FOslo&forecast_days=4`;
+    `&timezone=Europe%2FOslo&forecast_days=4${apiKeyParam()}`;
   const res = await fetchWithBackoff("open-meteo", "open-meteo:core", url);
   if (!res) throw new Error("Open-Meteo core er pauset eller i 429-backoff");
   if (!res.ok) throw new Error(`Open-Meteo core ${res.status}`);
@@ -144,9 +156,9 @@ async function warmOpenMeteoCore(lat: number, lon: number): Promise<OpenMeteoCor
   const key = coreKey(lat, lon);
   return withCache<OpenMeteoCoreData>(key, async () => {
     const url =
-      `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}` +
+      `${aqApiBase()}/v1/air-quality?latitude=${lat}&longitude=${lon}` +
       `&hourly=${CORE_HOURLY_FIELDS}&current=${CURRENT_FIELDS}` +
-      `&timezone=Europe%2FOslo&forecast_days=4`;
+      `&timezone=Europe%2FOslo&forecast_days=4${apiKeyParam()}`;
     const res = await fetchWithBackoff("open-meteo", "open-meteo:core", url);
     if (!res) {
       const stale = getCached<OpenMeteoCoreData>(key);
