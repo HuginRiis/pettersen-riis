@@ -84,6 +84,8 @@ const SOURCE_LABELS: Record<string, string> = {
   roborock: "Roborock",
   posten: "Posten",
   geoip: "GeoIP",
+  flights: "Fly · OpenSky/adsb.lol",
+
 };
 
 const INITIAL_VISIBLE = 5;
