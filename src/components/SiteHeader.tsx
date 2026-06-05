@@ -93,6 +93,7 @@ const ROUTE_ICON: Partial<Record<RoutePath, React.ComponentType<{ size?: number;
   "/decibel": Volume2,
   "/roborock": Bot,
   "/planter": TreePine,
+  "/fly": Plane,
   "/ytelse": Gauge,
 };
 
