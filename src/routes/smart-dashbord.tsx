@@ -6,7 +6,7 @@ import {
   Droplets, Gauge, CloudSun, Activity, Power, Settings2,
   TrendingUp, TrendingDown, Minus, Cloud, CloudOff, Plus, Trophy, Home,
   CalendarDays, Trash2, Mail, Cake, Bell, Zap, CloudRain, PawPrint,
-  DoorOpen, DoorClosed, Lock, Unlock,
+  DoorOpen, DoorClosed, Lock, Unlock, Fan,
 } from "lucide-react";
 import {
   AreaChart, Area, ResponsiveContainer,
@@ -1102,17 +1102,7 @@ function VarmepumpeTile({
       icon={<Thermometer size={14} />}
       accent="text-rose-400"
       action={
-        device ? (
-          <button
-            type="button"
-            onClick={() => send("onoff", !isOn)}
-            disabled={busy}
-            title={isOn ? "Slå av" : "Slå på"}
-            className={`relative inline-flex h-3 w-3 rounded-full transition ${isOn ? "bg-rose-400" : "bg-white/20"}`}
-          >
-            {isOn && <span className="absolute inset-0 rounded-full bg-rose-400 animate-ping opacity-60" />}
-          </button>
-        ) : (
+        device ? null : (
           <span className="text-[10px] text-white/30">ikke funnet</span>
         )
       }
@@ -1128,7 +1118,14 @@ function VarmepumpeTile({
             isOn ? "bg-gradient-to-br from-rose-500/30 to-transparent border-rose-400/50 shadow-[0_0_30px_-4px_rgba(244,63,94,0.6)]"
                  : "bg-white/[0.02] border-white/10"
           }`}>
-            <div className="text-center">
+            <Fan
+              size={104}
+              strokeWidth={1}
+              className={`absolute inset-0 m-auto text-rose-300/30 ${isOn ? "animate-spin" : ""}`}
+              style={isOn ? { animationDuration: "3s" } : undefined}
+              aria-hidden="true"
+            />
+            <div className="relative text-center">
               <div className="text-[10px] uppercase tracking-widest text-rose-200/70">Mål</div>
               <div className="text-2xl font-semibold text-white tabular-nums">
                 {target != null ? `${target}°` : "—"}
