@@ -1512,7 +1512,9 @@ function RobotsTile() {
     } finally {
       setBusy(null);
       setTimeout(() => {
-        fetchGardena().then((s) => setCachedGardena(s)).catch(() => {});
+        fetchGardenaCached()
+          .then((res) => { if (res?.snap) setCachedGardena(res.snap as GardenaSnap); })
+          .catch(() => {});
       }, 2000);
     }
   };
