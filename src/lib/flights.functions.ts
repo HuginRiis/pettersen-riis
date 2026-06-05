@@ -179,19 +179,23 @@ export const getNearbyFlights = createServerFn({ method: "GET" })
     location: (data?.location ?? "tollnes") as FlightLocationId,
   }))
   .handler(async ({ data }): Promise<FlightsResult> => {
-    const center = FLIGHT_LOCATIONS[data.location];
-    try {
-      const flights = await fetchFromOpenSky(center);
-      return { ok: true, flights, fetchedAt: new Date().toISOString(), source: "opensky" };
-    } catch (e1) {
+    const { withApiLog } = await __load_api_call_log_server();
+    return withApiLog("flights", `getNearbyFlights[${data.location}]`, async (): Promise<FlightsResult> => {
+      const center = FLIGHT_LOCATIONS[data.location];
       try {
-        const flights = await fetchFromAdsbLol(center);
-        return { ok: true, flights, fetchedAt: new Date().toISOString(), source: "adsb.lol" };
-      } catch (e2: any) {
-        return { ok: false, error: `OpenSky: ${(e1 as Error).message}. adsb.lol: ${e2?.message ?? "ukjent"}` };
+        const flights = await fetchFromOpenSky(center);
+        return { ok: true, flights, fetchedAt: new Date().toISOString(), source: "opensky" };
+      } catch (e1) {
+        try {
+          const flights = await fetchFromAdsbLol(center);
+          return { ok: true, flights, fetchedAt: new Date().toISOString(), source: "adsb.lol" };
+        } catch (e2: any) {
+          return { ok: false, error: `OpenSky: ${(e1 as Error).message}. adsb.lol: ${e2?.message ?? "ukjent"}` };
+        }
       }
-    }
+    })();
   });
+
 
 // ----- Push settings -----
 
