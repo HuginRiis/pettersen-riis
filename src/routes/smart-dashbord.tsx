@@ -126,7 +126,7 @@ function capStr(d: HomeyDeviceSnapshot | null | undefined, cap: string): string 
   return typeof v === "string" ? v : null;
 }
 
-// Shared Homey snapshot hook (polled every 10s)
+// Shared Homey snapshot hook (polled every 10s, bypass server cache for live dashboard state)
 function useHomeySnapshot() {
   const fetchSnap = useServerFn(getHomeySnapshot);
   const [devices, setDevices] = useState<HomeyDeviceSnapshot[]>([]);
@@ -136,7 +136,7 @@ function useHomeySnapshot() {
   useEffect(() => {
     let c = false;
     const load = () => {
-      fetchSnap({ data: {} })
+      fetchSnap({ data: { force: true } })
         .then((r: any) => {
           if (c || !r?.ok) return;
           setDevices(r.devices ?? []);
@@ -486,12 +486,17 @@ function BassengTile({
       accent="text-pink-300"
       action={
         switchDevice ? (
-          <Switch
-            checked={isOn}
-            disabled={busy}
-            onCheckedChange={toggle}
-            onClick={(e) => e.stopPropagation()}
-          />
+          <div className="flex flex-col items-end gap-1" onClick={(e) => e.stopPropagation()}>
+            <Switch
+              checked={isOn}
+              disabled={busy}
+              onCheckedChange={toggle}
+            />
+            <div className={`flex items-center gap-1 text-[10px] tabular-nums ${trendColor}`} title="Endring siste time">
+              <TrendIcon size={12} />
+              <span>{trend > 0 ? "+" : ""}{trend.toFixed(2)}° / 1t</span>
+            </div>
+          </div>
         ) : (
           <span className="text-[10px] text-white/30">ingen bryter</span>
         )
@@ -556,10 +561,6 @@ function BassengTile({
                 </circle>
               </g>
             </svg>
-            <div className={`flex flex-col items-end ${trendColor}`}>
-              <TrendIcon size={18} />
-              <div className="text-[10px] tabular-nums">{trend > 0 ? "+" : ""}{trend.toFixed(2)}°</div>
-            </div>
           </div>
         </div>
 
