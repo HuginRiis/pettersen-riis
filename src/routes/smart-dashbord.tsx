@@ -2056,7 +2056,7 @@ function LysCombinedTile({
         accent="text-yellow-300"
         onClick={() => setOpen(true)}
       >
-        <div className="flex flex-col h-full gap-1 overflow-hidden">
+        <div className="flex flex-col h-full gap-1 overflow-y-auto pr-1">
           {nonEmpty.map((g) => {
             const total = g.lights.length;
             const onCount = g.lights.filter(isOnFor).length;
