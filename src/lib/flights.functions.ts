@@ -168,7 +168,7 @@ async function fetchFromAdsbLol(center: { lat: number; lon: number }): Promise<F
     out.push({
       icao24: String(a.hex ?? "").toLowerCase(),
       callsign: ((a.flight as string | undefined) ?? "").trim() || null,
-      originCountry: (a.r as string | undefined) ?? null,
+      originCountry: null,
       longitude: lon,
       latitude: lat,
       baroAltitudeM: altFt != null ? Math.round(altFt * 0.3048) : null,
@@ -178,6 +178,12 @@ async function fetchFromAdsbLol(center: { lat: number; lon: number }): Promise<F
       trueTrack: typeof a.track === "number" ? a.track : null,
       verticalRateMs: typeof a.baro_rate === "number" ? Math.round((a.baro_rate / 60) * 0.3048) : null,
       squawk: (a.squawk as string | undefined) ?? null,
+      registration: ((a.r as string | undefined) ?? "").trim() || null,
+      aircraftType: ((a.t as string | undefined) ?? "").trim() || null,
+      description: ((a.desc as string | undefined) ?? "").trim() || null,
+      operator: ((a.ownOp as string | undefined) ?? (a.owner as string | undefined) ?? "").trim() || null,
+      category: ((a.category as string | undefined) ?? "").trim() || null,
+      emergency: ((a.emergency as string | undefined) ?? "").trim() || null,
       distanceKm,
       bearingDeg: bearingDeg(center, { lat, lon }),
     });
