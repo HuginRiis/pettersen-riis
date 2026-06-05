@@ -7,10 +7,11 @@ import {
   getFlightPushSettings,
   saveFlightPushSettings,
   sendFlightPushManual,
+  FLIGHT_LOCATIONS,
+  SEARCH_RADIUS_KM,
   type Flight,
   type FlightPushSettings,
-  TOLLNES,
-  SEARCH_RADIUS_KM,
+  type FlightLocationId,
 } from "@/lib/flights.functions";
 
 const RECIPIENTS = ["Alle", "Arne", "Rebekka", "Arne & Rebekka", "Marita", "Nora", "Celine", "Mira"];
@@ -18,8 +19,8 @@ const RECIPIENTS = ["Alle", "Arne", "Rebekka", "Arne & Rebekka", "Marita", "Nora
 export const Route = createFileRoute("/fly")({
   head: () => ({
     meta: [
-      { title: "Fly i nærheten — Tollnes" },
-      { name: "description", content: "Live oversikt over fly innenfor 50 km av Tollnes, Skien." },
+      { title: "Fly i nærheten — Tollnes & Hytta" },
+      { name: "description", content: "Live oversikt over fly innenfor 50 km av Tollnes og Hytta." },
     ],
   }),
   component: FlyPage,
@@ -32,6 +33,28 @@ function compass(deg: number | null): string {
 }
 
 function FlyPage() {
+  return (
+    <div className="min-h-screen bg-background text-foreground">
+      <header className="container mx-auto px-4 pt-6 pb-3 flex items-center gap-3">
+        <Plane className="text-primary" />
+        <div className="flex-1">
+          <h1 className="text-display tracking-[0.18em] uppercase text-lg text-primary">
+            Fly i nærheten
+          </h1>
+          <p className="text-xs text-muted-foreground">
+            Live ADS-B innenfor {SEARCH_RADIUS_KM} km — separat push-varsling per sted.
+          </p>
+        </div>
+      </header>
+
+      <LocationSection location="tollnes" />
+      <LocationSection location="hytta" />
+    </div>
+  );
+}
+
+function LocationSection({ location }: { location: FlightLocationId }) {
+  const meta = FLIGHT_LOCATIONS[location];
   const fetchFlights = useServerFn(getNearbyFlights);
   const fetchSettings = useServerFn(getFlightPushSettings);
   const saveSettings = useServerFn(saveFlightPushSettings);
@@ -53,7 +76,7 @@ function FlyPage() {
     setLoading(true);
     setErr(null);
     try {
-      const r = await fetchFlights();
+      const r = await fetchFlights({ data: { location } });
       if (r.ok) {
         setFlights(r.flights);
         setFetchedAt(r.fetchedAt);
@@ -70,20 +93,20 @@ function FlyPage() {
 
   useEffect(() => {
     void load();
-    void fetchSettings().then((s) => {
+    void fetchSettings({ data: { location } }).then((s) => {
       setSettings(s);
       setPickRecipient(s.recipient || "Alle");
     });
     const t = setInterval(() => void load(), 30_000);
     return () => clearInterval(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [location]);
 
   async function onSaveSettings() {
     if (!settings) return;
     setSavingS(true);
     try {
-      await saveSettings({ data: settings });
+      await saveSettings({ data: { location, settings } });
       setToast("Innstillinger lagret");
       setTimeout(() => setToast(null), 2500);
     } catch (e: any) {
@@ -96,7 +119,7 @@ function FlyPage() {
   async function onSendOne(f: Flight) {
     setBusyIcao(f.icao24);
     try {
-      const r = await sendManual({ data: { icao24: f.icao24, recipient: pickRecipient } });
+      const r = await sendManual({ data: { icao24: f.icao24, recipient: pickRecipient, location } });
       setToast(`Sendt til ${pickRecipient}: ${r.sent} ok, ${r.errors} feil`);
       setTimeout(() => setToast(null), 3500);
     } catch (e: any) {
@@ -107,19 +130,16 @@ function FlyPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <header className="container mx-auto px-4 pt-6 pb-3 flex items-center gap-3">
-        <Plane className="text-primary" />
-        <div className="flex-1">
-          <h1 className="text-display tracking-[0.18em] uppercase text-lg text-primary">
-            Fly i nærheten
-          </h1>
-          <p className="text-xs text-muted-foreground">
-            Innenfor {SEARCH_RADIUS_KM} km av Tollnes ({TOLLNES.lat.toFixed(3)}, {TOLLNES.lon.toFixed(3)})
+    <section className="container mx-auto px-4 pb-8">
+      <div className="flex items-center gap-3 mt-4 mb-2">
+        <h2 className="text-sm uppercase tracking-[0.2em] text-primary flex-1">
+          {meta.label}
+          <span className="block text-[10px] normal-case tracking-normal text-muted-foreground mt-0.5">
+            {meta.lat.toFixed(3)}, {meta.lon.toFixed(3)}
             {source && <span> · kilde: {source}</span>}
             {fetchedAt && <span> · {new Date(fetchedAt).toLocaleTimeString("no-NO")}</span>}
-          </p>
-        </div>
+          </span>
+        </h2>
         <button
           onClick={() => void load()}
           disabled={loading}
@@ -127,78 +147,74 @@ function FlyPage() {
         >
           <RefreshCw size={12} className={loading ? "animate-spin" : ""} /> Oppdater
         </button>
-      </header>
+      </div>
 
-      {/* Settings */}
       {settings && (
-        <section className="container mx-auto px-4 pb-2">
-          <article className="panel rounded-lg p-4">
-            <div className="flex items-center gap-2 mb-3">
-              {settings.enabled ? <Bell size={16} className="text-primary" /> : <BellOff size={16} className="text-muted-foreground" />}
-              <h2 className="text-sm uppercase tracking-wider text-primary">Automatisk varsling</h2>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-              <button
-                onClick={() => setSettings({ ...settings, enabled: !settings.enabled })}
-                className={`px-3 py-2 rounded border text-xs uppercase tracking-wider ${
-                  settings.enabled ? "border-primary/60 text-primary" : "border-border text-muted-foreground"
-                }`}
+        <article className="panel rounded-lg p-4 mb-3">
+          <div className="flex items-center gap-2 mb-3">
+            {settings.enabled ? <Bell size={16} className="text-primary" /> : <BellOff size={16} className="text-muted-foreground" />}
+            <h3 className="text-sm uppercase tracking-wider text-primary">Automatisk varsling — {meta.label}</h3>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+            <button
+              onClick={() => setSettings({ ...settings, enabled: !settings.enabled })}
+              className={`px-3 py-2 rounded border text-xs uppercase tracking-wider ${
+                settings.enabled ? "border-primary/60 text-primary" : "border-border text-muted-foreground"
+              }`}
+            >
+              {settings.enabled ? "På" : "Av"}
+            </button>
+            <label className="text-xs">
+              <span className="block text-muted-foreground mb-1">Mottaker</span>
+              <select
+                value={settings.recipient}
+                onChange={(e) => setSettings({ ...settings, recipient: e.target.value })}
+                className="w-full bg-background border border-border/60 rounded px-2 py-1.5"
               >
-                {settings.enabled ? "På" : "Av"}
-              </button>
-              <label className="text-xs">
-                <span className="block text-muted-foreground mb-1">Mottaker</span>
-                <select
-                  value={settings.recipient}
-                  onChange={(e) => setSettings({ ...settings, recipient: e.target.value })}
-                  className="w-full bg-background border border-border/60 rounded px-2 py-1.5"
-                >
-                  {RECIPIENTS.map((r) => <option key={r} value={r}>{r}</option>)}
-                </select>
-              </label>
-              <label className="text-xs">
-                <span className="block text-muted-foreground mb-1">Maks avstand (km)</span>
-                <input
-                  type="number" min={1} max={50}
-                  value={settings.maxDistanceKm}
-                  onChange={(e) => setSettings({ ...settings, maxDistanceKm: Number(e.target.value) || 25 })}
-                  className="w-full bg-background border border-border/60 rounded px-2 py-1.5 tabular-nums"
-                />
-              </label>
-              <label className="text-xs">
-                <span className="block text-muted-foreground mb-1">Maks høyde (m, 0=ingen)</span>
-                <input
-                  type="number" min={0} max={20000} step={500}
-                  value={settings.maxAltitudeM}
-                  onChange={(e) => setSettings({ ...settings, maxAltitudeM: Number(e.target.value) || 0 })}
-                  className="w-full bg-background border border-border/60 rounded px-2 py-1.5 tabular-nums"
-                />
-              </label>
-              <label className="text-xs">
-                <span className="block text-muted-foreground mb-1">Cooldown (min)</span>
-                <input
-                  type="number" min={5} max={1440}
-                  value={settings.cooldownMinutes}
-                  onChange={(e) => setSettings({ ...settings, cooldownMinutes: Number(e.target.value) || 60 })}
-                  className="w-full bg-background border border-border/60 rounded px-2 py-1.5 tabular-nums"
-                />
-              </label>
-            </div>
-            <div className="flex justify-end mt-3">
-              <button
-                onClick={() => void onSaveSettings()}
-                disabled={savingS}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded border border-primary/60 text-primary text-xs uppercase tracking-wider hover:bg-primary/10 disabled:opacity-50"
-              >
-                <Save size={12} /> {savingS ? "Lagrer…" : "Lagre"}
-              </button>
-            </div>
-          </article>
-        </section>
+                {RECIPIENTS.map((r) => <option key={r} value={r}>{r}</option>)}
+              </select>
+            </label>
+            <label className="text-xs">
+              <span className="block text-muted-foreground mb-1">Maks avstand (km)</span>
+              <input
+                type="number" min={1} max={50}
+                value={settings.maxDistanceKm}
+                onChange={(e) => setSettings({ ...settings, maxDistanceKm: Number(e.target.value) || 25 })}
+                className="w-full bg-background border border-border/60 rounded px-2 py-1.5 tabular-nums"
+              />
+            </label>
+            <label className="text-xs">
+              <span className="block text-muted-foreground mb-1">Maks høyde (m, 0=ingen)</span>
+              <input
+                type="number" min={0} max={20000} step={500}
+                value={settings.maxAltitudeM}
+                onChange={(e) => setSettings({ ...settings, maxAltitudeM: Number(e.target.value) || 0 })}
+                className="w-full bg-background border border-border/60 rounded px-2 py-1.5 tabular-nums"
+              />
+            </label>
+            <label className="text-xs">
+              <span className="block text-muted-foreground mb-1">Cooldown (min)</span>
+              <input
+                type="number" min={5} max={1440}
+                value={settings.cooldownMinutes}
+                onChange={(e) => setSettings({ ...settings, cooldownMinutes: Number(e.target.value) || 60 })}
+                className="w-full bg-background border border-border/60 rounded px-2 py-1.5 tabular-nums"
+              />
+            </label>
+          </div>
+          <div className="flex justify-end mt-3">
+            <button
+              onClick={() => void onSaveSettings()}
+              disabled={savingS}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded border border-primary/60 text-primary text-xs uppercase tracking-wider hover:bg-primary/10 disabled:opacity-50"
+            >
+              <Save size={12} /> {savingS ? "Lagrer…" : "Lagre"}
+            </button>
+          </div>
+        </article>
       )}
 
-      {/* Manual recipient picker */}
-      <section className="container mx-auto px-4 py-2 flex items-center gap-2 text-xs">
+      <div className="flex items-center gap-2 text-xs mb-2">
         <span className="text-muted-foreground uppercase tracking-wider">Send manuell push til:</span>
         <select
           value={pickRecipient}
@@ -207,69 +223,66 @@ function FlyPage() {
         >
           {RECIPIENTS.map((r) => <option key={r} value={r}>{r}</option>)}
         </select>
-      </section>
+      </div>
 
-      {/* List */}
-      <section className="container mx-auto px-4 pb-10">
-        {err && <p className="text-rose-400 text-sm">{err}</p>}
-        {!err && flights && flights.length === 0 && (
-          <p className="text-muted-foreground text-sm py-8 text-center">
-            Ingen fly innenfor {SEARCH_RADIUS_KM} km nå.
-          </p>
-        )}
-        {flights && flights.length > 0 && (
-          <ul className="grid gap-2">
-            {flights.map((f) => {
-              const cs = f.callsign || f.icao24.toUpperCase();
-              const altKm = f.baroAltitudeM != null ? (f.baroAltitudeM / 1000).toFixed(1) : null;
-              const spdKmh = f.velocityMs != null ? Math.round(f.velocityMs * 3.6) : null;
-              return (
-                <li key={f.icao24} className="panel rounded-lg p-3 flex items-center gap-3">
-                  <div className="shrink-0 w-10 h-10 rounded-full border border-primary/40 flex items-center justify-center text-primary">
-                    <Plane size={18} style={{ transform: `rotate(${f.trueTrack ?? 0}deg)` }} />
+      {err && <p className="text-rose-400 text-sm">{err}</p>}
+      {!err && flights && flights.length === 0 && (
+        <p className="text-muted-foreground text-sm py-6 text-center">
+          Ingen fly innenfor {SEARCH_RADIUS_KM} km nå.
+        </p>
+      )}
+      {flights && flights.length > 0 && (
+        <ul className="grid gap-2">
+          {flights.map((f) => {
+            const cs = f.callsign || f.icao24.toUpperCase();
+            const altKm = f.baroAltitudeM != null ? (f.baroAltitudeM / 1000).toFixed(1) : null;
+            const spdKmh = f.velocityMs != null ? Math.round(f.velocityMs * 3.6) : null;
+            return (
+              <li key={f.icao24} className="panel rounded-lg p-3 flex items-center gap-3">
+                <div className="shrink-0 w-10 h-10 rounded-full border border-primary/40 flex items-center justify-center text-primary">
+                  <Plane size={18} style={{ transform: `rotate(${f.trueTrack ?? 0}deg)` }} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-semibold text-foreground">{cs}</span>
+                    {f.originCountry && (
+                      <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+                        {f.originCountry}
+                      </span>
+                    )}
+                    {f.onGround && (
+                      <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300">
+                        På bakken
+                      </span>
+                    )}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-semibold text-foreground">{cs}</span>
-                      {f.originCountry && (
-                        <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
-                          {f.originCountry}
-                        </span>
-                      )}
-                      {f.onGround && (
-                        <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300">
-                          På bakken
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-xs text-muted-foreground flex items-center gap-2 flex-wrap mt-0.5">
-                      <span className="inline-flex items-center gap-1"><MapPin size={11} />{f.distanceKm.toFixed(1)} km</span>
-                      <span className="inline-flex items-center gap-1"><Navigation size={11} />{compass(f.trueTrack)}</span>
-                      {altKm && <span>{altKm} km h</span>}
-                      {spdKmh && <span>{spdKmh} km/t</span>}
-                      <span className="opacity-50">{f.icao24}</span>
-                    </div>
+                  <div className="text-xs text-muted-foreground flex items-center gap-2 flex-wrap mt-0.5">
+                    <span className="inline-flex items-center gap-1"><MapPin size={11} />{f.distanceKm.toFixed(1)} km</span>
+                    <span className="inline-flex items-center gap-1"><Navigation size={11} />{compass(f.trueTrack)}</span>
+                    {altKm && <span>{altKm} km h</span>}
+                    {spdKmh && <span>{spdKmh} km/t</span>}
+                    <span className="opacity-50">{f.icao24}</span>
                   </div>
-                  <button
-                    onClick={() => void onSendOne(f)}
-                    disabled={busyIcao === f.icao24}
-                    className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-primary/60 text-primary text-[11px] uppercase tracking-wider hover:bg-primary/10 disabled:opacity-50"
-                    title={`Send push til ${pickRecipient}`}
-                  >
-                    <Send size={12} /> {busyIcao === f.icao24 ? "Sender…" : "Push"}
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </section>
+                </div>
+                <button
+                  onClick={() => void onSendOne(f)}
+                  disabled={busyIcao === f.icao24}
+                  className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-primary/60 text-primary text-[11px] uppercase tracking-wider hover:bg-primary/10 disabled:opacity-50"
+                  title={`Send push til ${pickRecipient}`}
+                >
+                  <Send size={12} /> {busyIcao === f.icao24 ? "Sender…" : "Push"}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
 
       {toast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 panel rounded px-4 py-2 text-sm shadow-lg">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 panel rounded px-4 py-2 text-sm shadow-lg z-50">
           {toast}
         </div>
       )}
-    </div>
+    </section>
   );
 }

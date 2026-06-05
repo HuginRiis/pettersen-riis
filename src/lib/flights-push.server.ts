@@ -1,14 +1,17 @@
 /**
- * Push-varslinger for fly i nærheten av Tollnes.
- * - Automatisk: kjøres fra agenda-push hooken; varsler én gang per icao24
- *   (med cooldown) når fly er innenfor brukerens grenser.
- * - Manuelt: bruker kan trigge push for et enkelt fly fra siden.
+ * Push-varslinger for fly i nærheten av Tollnes / Hytta.
  */
 import webpush from "web-push";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { logPushSend } from "./push-log.server";
 import { buildSubscriptionWhoOr } from "./push-recipients";
-import { getNearbyFlights, type Flight, type FlightPushSettings } from "./flights.functions";
+import {
+  getNearbyFlights,
+  FLIGHT_LOCATIONS,
+  type Flight,
+  type FlightPushSettings,
+  type FlightLocationId,
+} from "./flights.functions";
 
 const VAPID_PUBLIC = process.env.VAPID_PUBLIC_KEY!;
 const VAPID_PRIVATE = process.env.VAPID_PRIVATE_KEY!;
@@ -27,14 +30,14 @@ function compass(deg: number): string {
   return dirs[Math.round(deg / 45) % 8];
 }
 
-function formatFlight(f: Flight): { title: string; body: string } {
+function formatFlight(f: Flight, locationLabel: string): { title: string; body: string } {
   const cs = f.callsign || f.icao24.toUpperCase();
   const dist = f.distanceKm.toFixed(1);
   const dir = f.trueTrack != null ? compass(f.trueTrack) : "?";
   const altKm = f.baroAltitudeM != null ? (f.baroAltitudeM / 1000).toFixed(1) : null;
   const spdKmh = f.velocityMs != null ? Math.round(f.velocityMs * 3.6) : null;
   const origin = f.originCountry ? ` (${f.originCountry})` : "";
-  const parts: string[] = [`${dist} km`, `mot ${dir}`];
+  const parts: string[] = [`${dist} km fra ${locationLabel}`, `mot ${dir}`];
   if (altKm) parts.push(`${altKm} km høyde`);
   if (spdKmh) parts.push(`${spdKmh} km/t`);
   return {
@@ -100,18 +103,17 @@ async function pushToRecipient(
   return { sent, errors };
 }
 
-export async function processFlightNotifications(): Promise<{
+async function processForLocation(loc: FlightLocationId): Promise<{
   checked: number;
   sent: number;
   errors: number;
   skipped: number;
 }> {
-  ensureConfigured();
-
+  const meta = FLIGHT_LOCATIONS[loc];
   const { data: cfgRow } = await supabaseAdmin
     .from("notification_settings")
     .select("value")
-    .eq("key", "flight_push")
+    .eq("key", meta.settingsKey)
     .maybeSingle();
   const cfg = (cfgRow?.value ?? null) as Partial<FlightPushSettings> | null;
   if (!cfg?.enabled) return { checked: 0, sent: 0, errors: 0, skipped: 1 };
@@ -121,7 +123,7 @@ export async function processFlightNotifications(): Promise<{
   const cooldownMin = cfg.cooldownMinutes ?? 60;
   const recipient = cfg.recipient || "Alle";
 
-  const r = await getNearbyFlights();
+  const r = await getNearbyFlights({ data: { location: loc } });
   if (!r.ok) return { checked: 0, sent: 0, errors: 1, skipped: 0 };
 
   const candidates = r.flights.filter((f) => {
@@ -129,13 +131,13 @@ export async function processFlightNotifications(): Promise<{
     if (maxAlt > 0 && f.baroAltitudeM != null && f.baroAltitudeM > maxAlt) return false;
     return true;
   });
-
   if (candidates.length === 0) return { checked: 0, sent: 0, errors: 0, skipped: 0 };
 
   const icaos = candidates.map((c) => c.icao24);
   const { data: seenRows } = await supabaseAdmin
     .from("flights_seen")
     .select("icao24, last_notified_at")
+    .eq("location", loc)
     .in("icao24", icaos);
   const lastNotified = new Map<string, string | null>();
   for (const row of (seenRows ?? []) as Array<{ icao24: string; last_notified_at: string | null }>) {
@@ -152,11 +154,11 @@ export async function processFlightNotifications(): Promise<{
       skipped++;
       continue;
     }
-    const { title, body } = formatFlight(f);
+    const { title, body } = formatFlight(f, meta.label);
     const payload = JSON.stringify({
       title,
       body,
-      tag: `flight-${f.icao24}`,
+      tag: `flight-${loc}-${f.icao24}`,
       url: "/fly",
     });
     const res = await pushToRecipient(recipient, payload, title);
@@ -167,6 +169,7 @@ export async function processFlightNotifications(): Promise<{
       .from("flights_seen")
       .upsert(
         {
+          location: loc,
           icao24: f.icao24,
           callsign: f.callsign,
           origin_country: f.originCountry,
@@ -174,43 +177,45 @@ export async function processFlightNotifications(): Promise<{
           last_notified_at: new Date().toISOString(),
           last_notified_distance_km: f.distanceKm,
         } as any,
-        { onConflict: "icao24" },
-      );
-  }
-
-  // Oppdater last_seen for resten
-  const notNotified = candidates.filter((c) => !candidates.some((x) => x.icao24 === c.icao24 && lastNotified.has(c.icao24)));
-  if (notNotified.length > 0) {
-    await supabaseAdmin
-      .from("flights_seen")
-      .upsert(
-        notNotified.map((f) => ({
-          icao24: f.icao24,
-          callsign: f.callsign,
-          origin_country: f.originCountry,
-          last_seen: new Date().toISOString(),
-        })) as any,
-        { onConflict: "icao24", ignoreDuplicates: false },
+        { onConflict: "location,icao24" },
       );
   }
 
   return { checked: candidates.length, sent, errors, skipped };
 }
 
+export async function processFlightNotifications(): Promise<{
+  checked: number;
+  sent: number;
+  errors: number;
+  skipped: number;
+}> {
+  ensureConfigured();
+  const locs: FlightLocationId[] = ["tollnes", "hytta"];
+  let checked = 0, sent = 0, errors = 0, skipped = 0;
+  for (const l of locs) {
+    const r = await processForLocation(l);
+    checked += r.checked; sent += r.sent; errors += r.errors; skipped += r.skipped;
+  }
+  return { checked, sent, errors, skipped };
+}
+
 export async function sendManualFlightPush(
   icao24: string,
   recipient: string,
+  location: FlightLocationId = "tollnes",
 ): Promise<{ sent: number; errors: number; message: string }> {
   ensureConfigured();
-  const r = await getNearbyFlights();
+  const meta = FLIGHT_LOCATIONS[location];
+  const r = await getNearbyFlights({ data: { location } });
   if (!r.ok) return { sent: 0, errors: 1, message: r.error };
   const flight = r.flights.find((f) => f.icao24.toLowerCase() === icao24.toLowerCase());
   if (!flight) return { sent: 0, errors: 0, message: "Fant ikke flyet i live-data lenger" };
-  const { title, body } = formatFlight(flight);
+  const { title, body } = formatFlight(flight, meta.label);
   const payload = JSON.stringify({
     title,
     body,
-    tag: `flight-manual-${flight.icao24}-${Date.now()}`,
+    tag: `flight-manual-${location}-${flight.icao24}-${Date.now()}`,
     url: "/fly",
   });
   const res = await pushToRecipient(recipient || "Alle", payload, title);

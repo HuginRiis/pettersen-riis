@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Menu, X, LogOut, Crown, Swords, Shield, KeyRound, Home, Star, Flower2,
   Sun, Compass, CalendarDays, BellRing, Eye, Mountain, Lightbulb, Lamp, Flame, Zap,
   Receipt, Dumbbell, AlertTriangle, ScrollText, Globe, ChevronDown, ChevronRight,
-  TreePine, Coins, Bot, Wallet, Volume2, Settings, Gauge } from "lucide-react";
+  TreePine, Coins, Bot, Wallet, Volume2, Settings, Gauge, Plane } from "lucide-react";
 
 
 import { logoutFn } from "@/lib/auth.functions";
@@ -54,6 +54,7 @@ type RoutePath =
   | "/decibel"
   | "/roborock"
   | "/planter"
+  | "/fly"
   | "/ytelse";
 
 
@@ -92,6 +93,7 @@ const ROUTE_ICON: Partial<Record<RoutePath, React.ComponentType<{ size?: number;
   "/decibel": Volume2,
   "/roborock": Bot,
   "/planter": TreePine,
+  "/fly": Plane,
   "/ytelse": Gauge,
 };
 
@@ -121,6 +123,7 @@ const ROUTE_ICON_COLOR: Partial<Record<RoutePath, string>> = {
   "/decibel": "#f43f5e",
   "/roborock": "#a78bfa",
   "/planter": "#22c55e",
+  "/fly": "#38bdf8",
   "/ytelse": "#22d3ee",
 };
 
@@ -152,6 +155,7 @@ const navLinks: NavLink[] = [
   { to: "/decibel", label: "Decibelmåler", public: true },
   { to: "/roborock", label: "Roborock" },
   { to: "/planter", label: "Planter & Trær" },
+  { to: "/fly", label: "Fly i nærheten", public: true },
   { to: "/steintavle", label: "Steintavle" },
   { to: "/steintavle-2", label: "Steintavle 2" },
 ];
