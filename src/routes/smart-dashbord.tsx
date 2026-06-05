@@ -2638,7 +2638,7 @@ function useNetatmoTollnes(): NetatmoTollnes {
         .catch(() => {});
     };
     load();
-    const id = setInterval(load, 2 * 60 * 1000);
+    const id = setInterval(load, 10 * 60 * 1000);
     return () => { c = true; clearInterval(id); };
   }, [fetchNet]);
   return d;
