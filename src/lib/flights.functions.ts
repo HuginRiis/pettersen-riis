@@ -272,7 +272,7 @@ const DEFAULT_SETTINGS: FlightPushSettings = {
   maxDistanceKm: 25,
   maxAltitudeM: 5000,
   cooldownMinutes: 60,
-  fields: ["distance", "direction", "altitude", "speed", "origin", "registration", "type", "operator"],
+  fields: ["distance", "direction", "altitude", "speed", "origin", "registration", "registrationCountry", "type", "typeFriendly", "operator"],
 };
 
 export const getFlightPushSettings = createServerFn({ method: "GET" })
