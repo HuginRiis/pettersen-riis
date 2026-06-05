@@ -156,9 +156,9 @@ async function warmOpenMeteoCore(lat: number, lon: number): Promise<OpenMeteoCor
   const key = coreKey(lat, lon);
   return withCache<OpenMeteoCoreData>(key, async () => {
     const url =
-      `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}` +
+      `${aqApiBase()}/v1/air-quality?latitude=${lat}&longitude=${lon}` +
       `&hourly=${CORE_HOURLY_FIELDS}&current=${CURRENT_FIELDS}` +
-      `&timezone=Europe%2FOslo&forecast_days=4`;
+      `&timezone=Europe%2FOslo&forecast_days=4${apiKeyParam()}`;
     const res = await fetchWithBackoff("open-meteo", "open-meteo:core", url);
     if (!res) {
       const stale = getCached<OpenMeteoCoreData>(key);
