@@ -1856,7 +1856,7 @@ function CalendarTile() {
 
   return (
     <Tile
-      title="Kalender · Neste 2"
+      title=""
       icon={<CalendarDays size={14} />}
       accent="text-cyan-300"
     >
