@@ -298,8 +298,22 @@ function LocationSection({ location }: { location: FlightLocationId }) {
                     <span className="inline-flex items-center gap-1"><Navigation size={11} />{compass(f.trueTrack)}</span>
                     {altKm && <span>{altKm} km h</span>}
                     {spdKmh && <span>{spdKmh} km/t</span>}
+                    {f.verticalRateMs != null && f.verticalRateMs !== 0 && (
+                      <span>{f.verticalRateMs > 0 ? "↑" : "↓"}{Math.abs(Math.round(f.verticalRateMs * 196.85))} ft/min</span>
+                    )}
+                    {f.registration && <span className="font-mono">{f.registration}</span>}
+                    {f.aircraftType && <span>{f.aircraftType}</span>}
+                    {f.squawk && <span>sq {f.squawk}</span>}
                     <span className="opacity-50">{f.icao24}</span>
                   </div>
+                  {(f.description || f.operator) && (
+                    <div className="text-[11px] text-muted-foreground/80 mt-0.5 truncate">
+                      {[f.description, f.operator].filter(Boolean).join(" · ")}
+                    </div>
+                  )}
+                  {f.emergency && f.emergency !== "none" && (
+                    <div className="text-[11px] text-rose-400 mt-0.5">⚠ {f.emergency}</div>
+                  )}
                 </div>
                 <button
                   onClick={() => void onSendOne(f)}
