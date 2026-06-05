@@ -63,6 +63,10 @@ function formatFlight(
   }
   if (set.has("description") && f.description) parts.push(f.description);
   if (set.has("operator") && f.operator) parts.push(f.operator);
+  if (set.has("airline")) {
+    const a = translateAirline(f.callsign) ?? translateAirline(f.operator);
+    if (a) parts.push(a);
+  }
   if (set.has("squawk") && f.squawk) parts.push(`sq ${f.squawk}`);
   if (set.has("squawkExplained")) {
     const e = explainSquawk(f.squawk);
