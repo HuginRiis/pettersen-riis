@@ -35,7 +35,7 @@ function compass(deg: number | null): string {
 
 function FlyPage() {
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <PageShell>
       <header className="container mx-auto px-4 pt-6 pb-3 flex items-center gap-3">
         <Plane className="text-primary" />
         <div className="flex-1">
@@ -50,7 +50,7 @@ function FlyPage() {
 
       <LocationSection location="tollnes" />
       <LocationSection location="hytta" />
-    </div>
+    </PageShell>
   );
 }
 
