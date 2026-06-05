@@ -12,7 +12,7 @@ import {
   type FlightPushSettings,
   type FlightLocationId,
 } from "./flights.functions";
-import { translateAircraftType, registrationCountry, explainSquawk } from "./flight-translations";
+import { translateAircraftType, registrationCountry, explainSquawk, translateAirline } from "./flight-translations";
 
 const VAPID_PUBLIC = process.env.VAPID_PUBLIC_KEY!;
 const VAPID_PRIVATE = process.env.VAPID_PRIVATE_KEY!;
