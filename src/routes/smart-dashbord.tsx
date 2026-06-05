@@ -1309,11 +1309,23 @@ function LeaderTile() {
   );
 }
 
-// ----- Roboter: Sileno (Gardena) + Roborock (Borgen) -----
+// ----- Roboter: Sileno (Gardena via cron-cache) + Roborock (Borgen) -----
 import { getRoborockSnapshot, sendRoborockCommand } from "@/lib/roborock.functions";
-import { Bot, Play, ParkingSquare, Home as HomeIcon, Pause, Loader2, BatteryCharging } from "lucide-react";
+import { getGardenaSnapshot, controlGardenaMower } from "@/lib/gardena.functions";
+import {
+  getCachedGardena,
+  setCachedGardena,
+  subscribeGardena,
+  getCachedGardenaAge,
+} from "@/lib/gardena-cache";
+import type { GardenaSnap } from "@/lib/gardena-cache";
+import { Bot, Play, ParkingSquare, Pause, Loader2, BatteryCharging } from "lucide-react";
+import sileMowerImg from "@/assets/icon-sileno-mower.png";
+import roboVacImg from "@/assets/icon-roborock-vacuum.png";
 
 type RoborockSnap = Awaited<ReturnType<typeof getRoborockSnapshot>>;
+
+const GARDENA_CACHE_TTL_MS = 45 * 60 * 1000; // matcher cron hver 45 min
 
 
 const MOWER_ACT_LABEL: Record<string, string> = {
@@ -1323,9 +1335,9 @@ const MOWER_ACT_LABEL: Record<string, string> = {
   OK_SEARCHING: "Søker dokk",
   OK_LEAVING: "Forlater dokk",
   OK_CHARGING: "Lader",
-  PARKED_TIMER: "Parkert",
+  PARKED_TIMER: "Parkert (timer)",
   PARKED_PARK_SELECTED: "Parkert",
-  PARKED_AUTOTIMER: "Parkert",
+  PARKED_AUTOTIMER: "Parkert (auto)",
   NONE: "Inaktiv",
 };
 const ROBO_STATE_LABEL: Record<number, string> = {
@@ -1339,9 +1351,10 @@ const ROBO_STATE_LABEL: Record<number, string> = {
 function RobotsTile() {
   const fetchR = useServerFn(getRoborockSnapshot);
   const ctrlRobo = useServerFn(sendRoborockCommand);
-  const setCap = useServerFn(setLivingRoomDeviceCapability);
-  const { devices: homeyDevices, reload: reloadHomey } = useHomeySnapshot();
+  const fetchGardena = useServerFn(getGardenaSnapshot);
+  const ctrlMower = useServerFn(controlGardenaMower);
   const [rob, setRob] = useState<RoborockSnap | null>(null);
+  const [gardena, setGardena] = useState<GardenaSnap | null>(() => getCachedGardena());
   const [open, setOpen] = useState<"sileno" | "borgen" | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
 
@@ -1355,42 +1368,34 @@ function RobotsTile() {
     return () => clearInterval(id);
   }, [loadRoborock]);
 
-  // Homey-mower (Sileno) — eneste kilde for status, batteri og styring.
-  const homeyMower = useMemo(() => {
-    return homeyDevices.find((d) => {
-      const name = (d.name ?? "").toLowerCase();
-      const driver = (d.driverUri ?? "").toLowerCase();
-      return name.includes("sileno") || name.includes("gardena") || name.includes("gressklipper") ||
-             driver.includes("gardena") || driver.includes("husqvarna");
-    }) ?? null;
-  }, [homeyDevices]);
+  // Gardena: bruk delt cache (mates av cron hver 45 min). Hent kun hvis cache er stale.
+  useEffect(() => {
+    const unsub = subscribeGardena((s) => setGardena(s));
+    const cached = getCachedGardena();
+    const age = getCachedGardenaAge();
+    if (!cached || age > GARDENA_CACHE_TTL_MS) {
+      fetchGardena()
+        .then((s) => setCachedGardena(s))
+        .catch(() => {});
+    } else {
+      setGardena(cached);
+    }
+    return () => { unsub(); };
+  }, [fetchGardena]);
 
-  const mowerBattery = (() => {
-    const v = homeyMower?.capabilities["measure_battery"]?.value;
-    return typeof v === "number" ? v : null;
-  })();
-  const mowerCharging = (() => {
-    const v = homeyMower?.capabilities["charging"]?.value
-      ?? homeyMower?.capabilities["measure_charging"]?.value;
-    return typeof v === "boolean" ? v : null;
-  })();
-  const mowerStateStr = (() => {
-    const v = homeyMower?.capabilities["mower_state"]?.value;
-    return typeof v === "string" ? v : null;
-  })();
-  const mowerActivityStr = (() => {
-    const v = homeyMower?.capabilities["mower_activity"]?.value;
-    return typeof v === "string" ? v : null;
-  })();
-  // Prefer state for "Lader/Parkert", aktivitet for "Klipper/Søker"
-  const displayKey = mowerActivityStr ?? mowerStateStr;
+  const mower = useMemo(() => {
+    const mowers = gardena?.ok ? gardena.mowers : [];
+    return mowers.find((m) => /sileno/i.test(m.name ?? "")) ?? mowers[0] ?? null;
+  }, [gardena]);
+
+  const mowerSvcId = useMemo(() => mower?.raw.find((s) => s.type === "MOWER")?.id ?? null, [mower]);
+  const mowerBattery = mower?.battery ?? null;
+  const displayKey = mower?.activity ?? mower?.state ?? null;
   const mowerActLabel = displayKey
     ? (MOWER_ACT_LABEL[displayKey] ?? displayKey.replaceAll("_", " ").toLowerCase())
     : "—";
-  const mowerActive = !!displayKey && /CUTTING|LEAVING|MOWING/i.test(displayKey);
-  const mowerChargingNow = mowerCharging === true
-    || (mowerStateStr ? /CHARGING/i.test(mowerStateStr) : false)
-    || (mowerActivityStr ? /CHARGING/i.test(mowerActivityStr) : false);
+  const mowerActive = !!displayKey && /CUTTING|LEAVING/i.test(displayKey);
+  const mowerChargingNow = !!displayKey && /CHARGING/i.test(displayKey);
 
   const robo = useMemo(() => {
     const devs = (rob?.ok ? rob.devices : []) ?? [];
@@ -1409,16 +1414,16 @@ function RobotsTile() {
   const roboLabel = roboStateNum != null ? (ROBO_STATE_LABEL[roboStateNum] ?? `kode ${roboStateNum}`) : "—";
   const roboActive = roboStateNum != null && [5, 6, 11, 15, 16, 17, 18].includes(roboStateNum);
 
-  // Styr Sileno via Homey: setter mower_state-capability til kommando-streng
-  // (Gardena Homey-driver tar imot START_DONT_OVERRIDE / PARK_UNTIL_NEXT_TASK / etc.)
-  const runMower = async (cmd: string) => {
-    if (!homeyMower) return;
+  const runMower = async (cmd: string, seconds?: number) => {
+    if (!mowerSvcId) return;
     setBusy(`m:${cmd}`);
     try {
-      await setCap({ data: { deviceId: homeyMower.id, capability: "mower_state", value: cmd } });
+      await ctrlMower({ data: { serviceId: mowerSvcId, command: cmd, seconds } });
     } finally {
       setBusy(null);
-      setTimeout(reloadHomey, 1500);
+      setTimeout(() => {
+        fetchGardena().then((s) => setCachedGardena(s)).catch(() => {});
+      }, 2000);
     }
   };
   const runRobo = async (method: string, params?: any[]) => {
@@ -1448,9 +1453,16 @@ function RobotsTile() {
               </span>
             )}
             <div className="flex items-center gap-2">
-              <div className={`relative h-8 w-8 rounded-full flex items-center justify-center ${mowerActive ? "bg-emerald-400/15" : "bg-white/5"}`}>
+              <div className={`relative h-10 w-10 rounded-full flex items-center justify-center overflow-hidden ${mowerActive ? "bg-emerald-400/15 ring-1 ring-emerald-300/40" : "bg-white/5"}`}>
                 {mowerActive && <span className="absolute inset-0 rounded-full bg-emerald-400/30 animate-ping" />}
-                <Bot size={15} className={mowerActive ? "text-emerald-300" : "text-white/70"} />
+                <img
+                  src={sileMowerImg}
+                  alt="Sileno gressklipper"
+                  width={40}
+                  height={40}
+                  loading="lazy"
+                  className="relative h-9 w-9 object-contain"
+                />
               </div>
               <div className="min-w-0 flex-1">
                 <div className="text-[9px] uppercase tracking-widest text-white/40">Sileno · Gressklipper</div>
@@ -1482,9 +1494,17 @@ function RobotsTile() {
               </span>
             )}
             <div className="flex items-center gap-2">
-              <div className={`relative h-8 w-8 rounded-full flex items-center justify-center ${roboActive ? "bg-sky-400/15" : "bg-white/5"}`}>
+              <div className={`relative h-10 w-10 rounded-full flex items-center justify-center overflow-hidden ${roboActive ? "bg-sky-400/15 ring-1 ring-sky-300/40" : "bg-white/5"}`}>
                 {roboActive && <span className="absolute inset-0 rounded-full bg-sky-400/30 animate-ping" />}
-                <Bot size={15} className={`${roboActive ? "text-sky-300 animate-spin" : "text-white/70"}`} style={roboActive ? { animationDuration: "3s" } : undefined} />
+                <img
+                  src={roboVacImg}
+                  alt="Roborock støvsuger"
+                  width={40}
+                  height={40}
+                  loading="lazy"
+                  className={`relative h-9 w-9 object-contain ${roboActive ? "animate-spin" : ""}`}
+                  style={roboActive ? { animationDuration: "6s" } : undefined}
+                />
               </div>
               <div className="min-w-0 flex-1">
                 <div className="text-[9px] uppercase tracking-widest text-white/40">Roborock · Borgen</div>
@@ -1504,12 +1524,38 @@ function RobotsTile() {
           <DialogHeader>
             <DialogTitle>Sileno · Gressklipper</DialogTitle>
             <DialogDescription className="text-white/50">
-              {homeyMower?.name ?? "—"} · {mowerActLabel} · Bat {mowerBattery != null ? `${Math.round(mowerBattery)}%` : "—"}{mowerChargingNow ? " · lader" : ""}
+              {mower?.name ?? "—"} · {mowerActLabel} · Bat {mowerBattery != null ? `${Math.round(mowerBattery)}%` : "—"}{mowerChargingNow ? " · lader" : ""}
             </DialogDescription>
           </DialogHeader>
-          <div className="grid grid-cols-3 gap-2 mt-2">
+
+          <div className="grid grid-cols-2 gap-2 text-[11px] text-white/70 mt-1">
+            <div className="rounded border border-white/10 bg-white/[0.03] px-2 py-1.5">
+              <div className="text-[9px] uppercase tracking-widest text-white/40">Tilstand</div>
+              <div className="text-white/90">{mower?.state ?? "—"}</div>
+            </div>
+            <div className="rounded border border-white/10 bg-white/[0.03] px-2 py-1.5">
+              <div className="text-[9px] uppercase tracking-widest text-white/40">Aktivitet</div>
+              <div className="text-white/90">{mower?.activity ?? "—"}</div>
+            </div>
+            <div className="rounded border border-white/10 bg-white/[0.03] px-2 py-1.5">
+              <div className="text-[9px] uppercase tracking-widest text-white/40">Signal</div>
+              <div className="text-white/90">{mower?.rfLinkState ?? "—"}{mower?.rfLinkLevel != null ? ` · ${mower.rfLinkLevel}` : ""}</div>
+            </div>
+            <div className="rounded border border-white/10 bg-white/[0.03] px-2 py-1.5">
+              <div className="text-[9px] uppercase tracking-widest text-white/40">Driftstimer</div>
+              <div className="text-white/90">{mower?.operatingHours != null ? `${mower.operatingHours} t` : "—"}</div>
+            </div>
+            {mower?.lastErrorCode && mower.lastErrorCode.toLowerCase() !== "no_message" && (
+              <div className="col-span-2 rounded border border-amber-400/30 bg-amber-400/10 text-amber-200 px-2 py-1.5">
+                <div className="text-[9px] uppercase tracking-widest text-amber-300/70">Sist feil</div>
+                <div>{mower.lastErrorCode}</div>
+              </div>
+            )}
+          </div>
+
+          <div className="grid grid-cols-3 gap-2 mt-3">
             <button
-              type="button" disabled={!homeyMower || !!busy}
+              type="button" disabled={!mowerSvcId || !!busy}
               onClick={() => runMower("START_DONT_OVERRIDE")}
               className="text-[10px] tracking-[0.2em] uppercase border border-emerald-400/40 bg-emerald-400/10 text-emerald-300 hover:bg-emerald-400/20 disabled:opacity-50 rounded px-2 py-2 flex items-center justify-center gap-1"
             >
@@ -1517,7 +1563,7 @@ function RobotsTile() {
               Start
             </button>
             <button
-              type="button" disabled={!homeyMower || !!busy}
+              type="button" disabled={!mowerSvcId || !!busy}
               onClick={() => runMower("PARK_UNTIL_NEXT_TASK")}
               className="text-[10px] tracking-[0.2em] uppercase border border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 disabled:opacity-50 rounded px-2 py-2 flex items-center justify-center gap-1"
             >
@@ -1525,7 +1571,7 @@ function RobotsTile() {
               Park
             </button>
             <button
-              type="button" disabled={!homeyMower || !!busy}
+              type="button" disabled={!mowerSvcId || !!busy}
               onClick={() => runMower("PARK_UNTIL_FURTHER_NOTICE")}
               className="text-[10px] tracking-[0.2em] uppercase border border-amber-400/40 bg-amber-400/10 text-amber-300 hover:bg-amber-400/20 disabled:opacity-50 rounded px-2 py-2 flex items-center justify-center gap-1"
             >
@@ -1535,7 +1581,7 @@ function RobotsTile() {
           </div>
           <div className="grid grid-cols-1 gap-2 mt-1">
             <button
-              type="button" disabled={!homeyMower || !!busy}
+              type="button" disabled={!mowerSvcId || !!busy}
               onClick={() => runMower("RESUME_SCHEDULE")}
               className="text-[10px] tracking-[0.2em] uppercase border border-white/15 hover:border-primary/40 hover:text-primary disabled:opacity-50 rounded px-2 py-2 flex items-center justify-center gap-1"
             >
@@ -1545,6 +1591,7 @@ function RobotsTile() {
           </div>
         </DialogContent>
       </Dialog>
+
 
 
       <Dialog open={open === "borgen"} onOpenChange={(v) => !v && setOpen(null)}>
