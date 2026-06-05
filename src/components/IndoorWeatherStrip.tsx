@@ -28,15 +28,7 @@ export function IndoorWeatherStrip({
 }: { stationMatch?: string; label?: string } = {}) {
   const fetchData = useServerFn(getNetatmoWeatherStation);
   const cacheKey = `indoor-strip:${stationMatch}`;
-  const [data, setData] = useState<OkData | null>(() => {
-    if (typeof window === "undefined") return null;
-    try {
-      const raw = localStorage.getItem(cacheKey);
-      return raw ? (JSON.parse(raw) as OkData) : null;
-    } catch {
-      return null;
-    }
-  });
+  const [data, setData] = useState<OkData | null>(null);
   const inFlight = useRef(false);
 
   const load = async () => {
@@ -57,6 +49,12 @@ export function IndoorWeatherStrip({
   };
 
   useEffect(() => {
+    try {
+      const raw = localStorage.getItem(cacheKey);
+      setData(raw ? (JSON.parse(raw) as OkData) : null);
+    } catch {
+      setData(null);
+    }
     load();
     const id = setInterval(load, REFRESH_MS);
     return () => clearInterval(id);
