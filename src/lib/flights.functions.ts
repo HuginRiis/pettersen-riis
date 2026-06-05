@@ -282,7 +282,9 @@ export const getFlightPushSettings = createServerFn({ method: "GET" })
       .eq("key", key)
       .maybeSingle();
     const v = (row?.value as Partial<FlightPushSettings> | null) ?? null;
-    return { ...DEFAULT_SETTINGS, ...(v ?? {}) };
+    const merged = { ...DEFAULT_SETTINGS, ...(v ?? {}) };
+    if (!Array.isArray(merged.fields) || merged.fields.length === 0) merged.fields = DEFAULT_SETTINGS.fields;
+    return merged;
   });
 
 export const saveFlightPushSettings = createServerFn({ method: "POST" })
