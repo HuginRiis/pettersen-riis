@@ -74,6 +74,7 @@ function LocationSection({ location }: { location: FlightLocationId }) {
   const [loading, setLoading] = useState(false);
 
   const [settings, setSettings] = useState<FlightPushSettings | null>(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [savingS, setSavingS] = useState(false);
   const [pickRecipient, setPickRecipient] = useState<string>("Alle");
   const [busyIcao, setBusyIcao] = useState<string | null>(null);
