@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { PageShell, PageHero } from "@/components/PageShell";
 import { StovsugerenPanel } from "@/components/StovsugerenPanel";
+import { VacuumScene } from "@/components/VacuumScene";
 import heroImg from "@/assets/got-stovsuger-hero.jpg";
 
 export const Route = createFileRoute("/stovsugeren")({
@@ -25,6 +26,9 @@ function StovsugerenPage() {
         subtitle="Roborock-knektene på Borgen og på hytta — alle detaljer, alle befalinger."
         image={heroImg}
       />
+      <section className="container mx-auto px-4 pt-10">
+        <VacuumScene />
+      </section>
       <StovsugerenPanel />
     </PageShell>
   );

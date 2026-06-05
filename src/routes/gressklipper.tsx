@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { PageShell, PageHero } from "@/components/PageShell";
 import { GardenaPanel } from "@/components/GardenaPanel";
+import { MowerScene } from "@/components/MowerScene";
 import heroImg from "@/assets/got-gressklipper.jpg";
 
 export const Route = createFileRoute("/gressklipper")({
@@ -24,6 +25,9 @@ function GressklipperRoute() {
         subtitle="Sanntid fra Gardena Smart System — alle statuser og kjøringer"
         image={heroImg}
       />
+      <section className="container mx-auto px-4 pt-10">
+        <MowerScene />
+      </section>
       <GardenaPanel />
     </PageShell>
   );
