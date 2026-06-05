@@ -2383,9 +2383,15 @@ function LysCombinedTile({
             return (
               <div
                 key={g.label}
-                className={`flex items-center gap-1.5 rounded-lg border px-1.5 py-1 transition min-w-0 ${
-                  anyOn ? "border-yellow-300/40 bg-yellow-300/5" : "border-white/10 bg-white/[0.02]"
+                className={`relative flex items-center gap-1.5 rounded-lg border px-1.5 py-1 transition min-w-0 ${
+                  anyOn ? "border-yellow-300/40 bg-yellow-300/5 lights-room-pulse" : "border-white/10 bg-white/[0.02]"
                 }`}
+                style={anyOn ? {
+                  // Jo flere lys på (av totalt i rommet), jo sterker pulserer boksen.
+                  ["--pulse-strength" as any]: (onCount / Math.max(total, 1)).toFixed(2),
+                  // Og jo flere lys, jo raskere puls (3s → 1.2s).
+                  ["--pulse-duration" as any]: `${(3 - 1.8 * (onCount / Math.max(total, 1))).toFixed(2)}s`,
+                } : undefined}
               >
                 <div
                   className="h-5 w-5 rounded-full flex items-center justify-center shrink-0 transition-all"
@@ -2413,6 +2419,7 @@ function LysCombinedTile({
                 />
               </div>
             );
+
           })}
           {nonEmpty.length === 0 && (
             <div className="text-xs text-white/40 italic">Ingen Hue-lys funnet</div>
