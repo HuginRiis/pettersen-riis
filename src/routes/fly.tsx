@@ -19,6 +19,7 @@ import {
   type PushFieldKey,
 } from "@/lib/flights.functions";
 import { translateAircraftType, registrationCountry, explainSquawk, translateAirline } from "@/lib/flight-translations";
+import { FlightMap } from "@/components/FlightMap";
 
 
 const RECIPIENTS = ["Alle", "Arne", "Rebekka", "Arne & Rebekka", "Marita", "Nora", "Celine", "Mira"];
