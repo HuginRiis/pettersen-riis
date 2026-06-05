@@ -32,6 +32,7 @@ import { Route as LysRouteImport } from './routes/lys'
 import { Route as KvitteringerRouteImport } from './routes/kvitteringer'
 import { Route as HyttaRouteImport } from './routes/hytta'
 import { Route as GressklipperRouteImport } from './routes/gressklipper'
+import { Route as FlyRouteImport } from './routes/fly'
 import { Route as DecibelRouteImport } from './routes/decibel'
 import { Route as AgendaRouteImport } from './routes/agenda'
 import { Route as IndexRouteImport } from './routes/index'
@@ -167,6 +168,11 @@ const GressklipperRoute = GressklipperRouteImport.update({
   path: '/gressklipper',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FlyRoute = FlyRouteImport.update({
+  id: '/fly',
+  path: '/fly',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DecibelRoute = DecibelRouteImport.update({
   id: '/decibel',
   path: '/decibel',
@@ -276,6 +282,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/agenda': typeof AgendaRoute
   '/decibel': typeof DecibelRoute
+  '/fly': typeof FlyRoute
   '/gressklipper': typeof GressklipperRoute
   '/hytta': typeof HyttaRoute
   '/kvitteringer': typeof KvitteringerRoute
@@ -320,6 +327,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/agenda': typeof AgendaRoute
   '/decibel': typeof DecibelRoute
+  '/fly': typeof FlyRoute
   '/gressklipper': typeof GressklipperRoute
   '/hytta': typeof HyttaRoute
   '/kvitteringer': typeof KvitteringerRoute
@@ -365,6 +373,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/agenda': typeof AgendaRoute
   '/decibel': typeof DecibelRoute
+  '/fly': typeof FlyRoute
   '/gressklipper': typeof GressklipperRoute
   '/hytta': typeof HyttaRoute
   '/kvitteringer': typeof KvitteringerRoute
@@ -411,6 +420,7 @@ export interface FileRouteTypes {
     | '/'
     | '/agenda'
     | '/decibel'
+    | '/fly'
     | '/gressklipper'
     | '/hytta'
     | '/kvitteringer'
@@ -455,6 +465,7 @@ export interface FileRouteTypes {
     | '/'
     | '/agenda'
     | '/decibel'
+    | '/fly'
     | '/gressklipper'
     | '/hytta'
     | '/kvitteringer'
@@ -499,6 +510,7 @@ export interface FileRouteTypes {
     | '/'
     | '/agenda'
     | '/decibel'
+    | '/fly'
     | '/gressklipper'
     | '/hytta'
     | '/kvitteringer'
@@ -544,6 +556,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AgendaRoute: typeof AgendaRoute
   DecibelRoute: typeof DecibelRoute
+  FlyRoute: typeof FlyRoute
   GressklipperRoute: typeof GressklipperRoute
   HyttaRoute: typeof HyttaRoute
   KvitteringerRoute: typeof KvitteringerRoute
@@ -748,6 +761,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GressklipperRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/fly': {
+      id: '/fly'
+      path: '/fly'
+      fullPath: '/fly'
+      preLoaderRoute: typeof FlyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/decibel': {
       id: '/decibel'
       path: '/decibel'
@@ -888,6 +908,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AgendaRoute: AgendaRoute,
   DecibelRoute: DecibelRoute,
+  FlyRoute: FlyRoute,
   GressklipperRoute: GressklipperRoute,
   HyttaRoute: HyttaRoute,
   KvitteringerRoute: KvitteringerRoute,
