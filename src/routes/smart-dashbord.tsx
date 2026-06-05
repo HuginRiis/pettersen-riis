@@ -1260,22 +1260,53 @@ function RobotsTile() {
   const fetchR = useServerFn(getRoborockSnapshot);
   const ctrlMower = useServerFn(controlGardenaMower);
   const ctrlRobo = useServerFn(sendRoborockCommand);
+  const { devices: homeyDevices } = useHomeySnapshot();
   const [gar, setGar] = useState<GardenaSnap | null>(null);
   const [rob, setRob] = useState<RoborockSnap | null>(null);
   const [open, setOpen] = useState<"sileno" | "borgen" | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
 
-  const load = useCallback(() => {
+  // Gardena hentes kun for serviceId til kontroll-kommandoer (status leses fra Homey).
+  const loadGardena = useCallback(() => {
     fetchG().then((r) => setGar(r)).catch(() => {});
+  }, [fetchG]);
+  const loadRoborock = useCallback(() => {
     fetchR().then((r) => setRob(r)).catch(() => {});
-  }, [fetchG, fetchR]);
+  }, [fetchR]);
 
   useEffect(() => {
-    load();
-    const id = setInterval(load, 60_000);
+    loadGardena();
+    const id = setInterval(loadGardena, 10 * 60_000); // hver 10 min
     return () => clearInterval(id);
-  }, [load]);
+  }, [loadGardena]);
 
+  useEffect(() => {
+    loadRoborock();
+    const id = setInterval(loadRoborock, 60_000);
+    return () => clearInterval(id);
+  }, [loadRoborock]);
+
+  // Homey-mower (Sileno) — primær kilde for status og batteri
+  const homeyMower = useMemo(() => {
+    return homeyDevices.find((d) => {
+      const name = (d.name ?? "").toLowerCase();
+      const driver = (d.driverUri ?? "").toLowerCase();
+      return name.includes("sileno") || name.includes("gardena") || name.includes("gressklipper") ||
+             driver.includes("gardena") || driver.includes("husqvarna");
+    }) ?? null;
+  }, [homeyDevices]);
+
+  const homeyMowerBattery = (() => {
+    const v = homeyMower?.capabilities["measure_battery"]?.value;
+    return typeof v === "number" ? v : null;
+  })();
+  const homeyMowerActivity = (() => {
+    const v = homeyMower?.capabilities["mower_activity"]?.value
+      ?? homeyMower?.capabilities["mower_state"]?.value;
+    return typeof v === "string" ? v : null;
+  })();
+
+  // Gardena fallback (controls + initial fyll)
   const mower = useMemo(() => {
     const arr = gar?.mowers ?? [];
     return arr.find((m) => /sileno/i.test(m.name ?? "")) ?? arr[0] ?? null;
@@ -1287,10 +1318,12 @@ function RobotsTile() {
     return devs.find((d) => /borgen/i.test(d.name ?? "")) ?? devs[0] ?? null;
   }, [rob]);
 
-  const mowerActLabel = mower?.activity
-    ? (MOWER_ACT_LABEL[mower.activity] ?? mower.activity.replaceAll("_", " ").toLowerCase())
+  const displayActivity = homeyMowerActivity ?? mower?.activity ?? null;
+  const displayBattery = homeyMowerBattery ?? mower?.battery ?? null;
+  const mowerActLabel = displayActivity
+    ? (MOWER_ACT_LABEL[displayActivity] ?? displayActivity.replaceAll("_", " ").toLowerCase())
     : "—";
-  const mowerActive = !!mower?.activity && /CUTTING|LEAVING|SEARCHING/.test(mower.activity);
+  const mowerActive = !!displayActivity && /CUTTING|LEAVING|SEARCHING|MOWING/i.test(displayActivity);
 
   const roboStatus = (robo?.attribute ?? {}) as Record<string, unknown>;
   const roboStateNum = (() => {
