@@ -2970,23 +2970,24 @@ function SmartDashbord() {
     return m;
   }, [zones]);
 
-  // Hue-lys på Borgen, splittet i Stue og Spisestue
-  const hueByRoom = useMemo(() => {
-    if (locId !== "borgen") return { stue: [] as HomeyDeviceSnapshot[], spisestue: [] as HomeyDeviceSnapshot[] };
-    const stue: HomeyDeviceSnapshot[] = [];
-    const spisestue: HomeyDeviceSnapshot[] = [];
+  // Hue-lys på Borgen, gruppert per sone (alle rom)
+  const hueRoomGroups = useMemo<{ label: string; lights: HomeyDeviceSnapshot[] }[]>(() => {
+    if (locId !== "borgen") return [];
+    const byZone = new Map<string, HomeyDeviceSnapshot[]>();
     for (const d of devices) {
       if (!isHueDevice(d)) continue;
       const zn = d.zone ? zoneNameById.get(d.zone) ?? "" : "";
       if (isHyttaZoneName(zn)) continue;
-      const nm = d.name.toLowerCase();
-      const inSpisestue = isSpisestueZoneName(zn) || nm.includes("spisestue") || nm.includes("spisestua");
-      const inStue = !inSpisestue && (isStueZoneName(zn) || nm.includes("stue") || nm.includes("stua"));
-      if (inSpisestue) spisestue.push(d);
-      else if (inStue) stue.push(d);
+      const label = zn || "Uten sone";
+      const arr = byZone.get(label) ?? [];
+      arr.push(d);
+      byZone.set(label, arr);
     }
-    return { stue, spisestue };
+    return Array.from(byZone.entries())
+      .map(([label, lights]) => ({ label, lights }))
+      .sort((a, b) => b.lights.length - a.lights.length || a.label.localeCompare(b.label, "nb"));
   }, [devices, zoneNameById, locId]);
+
 
   const varmepumpe = useMemo(() => {
     if (locId === "hytta") {
