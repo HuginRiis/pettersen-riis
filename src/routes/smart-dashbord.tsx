@@ -1096,6 +1096,20 @@ function VarmepumpeTile({
   const brand = loc.label === "Hytta" ? "Qlima" : "MELCloud";
   const animKind = !isOn ? "off" : classifyVpMode(mode);
 
+  // Vifte-farge per modus
+  let fanColor = "text-white/20";
+  if (isOn) {
+    if (animKind === "heat") fanColor = "text-rose-300/40";
+    else if (animKind === "cool") fanColor = "text-sky-300/40";
+    else if (animKind === "dry") fanColor = "text-white/50";
+    else if (animKind === "fan") fanColor = "text-white/25";
+    else if (animKind === "auto") {
+      if (target != null && measured != null) {
+        fanColor = target > measured ? "text-rose-300/40" : target < measured ? "text-sky-300/40" : "text-white/30";
+      } else fanColor = "text-white/30";
+    }
+  }
+
   return (
     <Tile
       title=""
@@ -1121,10 +1135,11 @@ function VarmepumpeTile({
             <Fan
               size={104}
               strokeWidth={1}
-              className={`absolute inset-0 m-auto text-rose-300/30 ${isOn ? "animate-spin" : ""}`}
+              className={`absolute inset-0 m-auto ${fanColor} ${isOn ? "animate-spin" : ""}`}
               style={isOn ? { animationDuration: "3s" } : undefined}
               aria-hidden="true"
             />
+
             <div className="relative text-center">
               <div className="text-[10px] uppercase tracking-widest text-rose-200/70">Mål</div>
               <div className="text-2xl font-semibold text-white tabular-nums">
