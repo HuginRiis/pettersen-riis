@@ -171,34 +171,43 @@ async function warmOpenMeteoCore(lat: number, lon: number): Promise<OpenMeteoCor
   });
 }
 
-export async function warmAirQualityPanel(lat: number, lon: number): Promise<void> {
-  let core: OpenMeteoCoreData;
-  try {
-    core = await warmOpenMeteoCore(lat, lon);
-  } catch (err) {
-    // 429 / nettverksfeil: behold forrige vellykkede aq/pollen-cache uendret.
-    const [aqHit, pollenHit] = await Promise.all([
-      readCacheOnly<AqPanelData>(aqKey(lat, lon)),
-      readCacheOnly<OpenMeteoPollenData>(pollenKey(lat, lon)),
-    ]);
-    if (aqHit || pollenHit) {
-      console.warn("[open-meteo warm] core feilet, beholder forrige cache:", String((err as any)?.message ?? err));
-      return;
-    }
-    throw err;
-  }
-  await Promise.all([
-    setCached<AqPanelData>(aqKey(lat, lon), {
-      hourly: pickFields(core.hourly, HOURLY_FIELDS.split(",")),
-      current: core.current,
-    }),
-    setCached<OpenMeteoPollenData>(pollenKey(lat, lon), {
-      hourly: pickFields(core.hourly, POLLEN_FIELDS.split(",")),
-    }),
-  ]);
+// Standard UV-skydempingsformel (samme prinsipp som yr/MET):
+//   UV = UV_clear * (1 - 0.75 * (cloud/100)^3.4)
+// Open-Meteo air-quality sitt uv_index demper for hardt og gir ofte
+// urealistisk lave verdier (f.eks. 1.1 når reell UV er ~3). Vi regner
+// derfor UV på nytt fra uv_index_clear_sky + MET sitt skydekke.
+function uvAttenuated(clear: number, cloudPct: number | null | undefined): number {
+  if (typeof clear !== "number" || !isFinite(clear)) return clear;
+  if (typeof cloudPct !== "number" || !isFinite(cloudPct)) return clear;
+  const c = Math.max(0, Math.min(100, cloudPct)) / 100;
+  return clear * (1 - 0.75 * Math.pow(c, 3.4));
 }
 
-async function fetchMetCloudHourly(lat: number, lon: number): Promise<any> {
+function buildCloudMap(fc: { time: string[]; cloud_cover: number[] }): Map<string, number> {
+  const m = new Map<string, number>();
+  for (let i = 0; i < fc.time.length; i++) {
+    m.set(fc.time[i].slice(0, 13), fc.cloud_cover[i]);
+  }
+  return m;
+}
+
+function applyUvCorrection(hourly: any, current: any, cloudMap: Map<string, number>) {
+  const times: string[] = hourly?.time ?? [];
+  const clear: number[] = hourly?.uv_index_clear_sky ?? [];
+  if (times.length && clear.length) {
+    hourly.uv_index = times.map((t: string, i: number) => {
+      const cloud = cloudMap.get(t.slice(0, 13));
+      return uvAttenuated(clear[i], cloud ?? null);
+    });
+  }
+  if (current && typeof current.uv_index_clear_sky === "number") {
+    const key = String(current.time ?? "").slice(0, 13);
+    const cloud = cloudMap.get(key);
+    current.uv_index = uvAttenuated(current.uv_index_clear_sky, cloud ?? null);
+  }
+}
+
+async function fetchMetCloudHourly(lat: number, lon: number): Promise<{ time: string[]; cloud_cover: number[] }> {
   const url = `https://api.met.no/weatherapi/locationforecast/2.0/complete?lat=${lat}&lon=${lon}`;
   const res = await loggedFetch("uv", "met:cloud-cover", url, {
     headers: { "User-Agent": "riis.cc open-meteo warm (agenda@riis.cc)" },
@@ -223,12 +232,42 @@ async function fetchMetCloudHourly(lat: number, lon: number): Promise<any> {
   return { time, cloud_cover };
 }
 
+export async function warmAirQualityPanel(lat: number, lon: number): Promise<void> {
+  let core: OpenMeteoCoreData;
+  try {
+    core = await warmOpenMeteoCore(lat, lon);
+  } catch (err) {
+    const [aqHit, pollenHit] = await Promise.all([
+      readCacheOnly<AqPanelData>(aqKey(lat, lon)),
+      readCacheOnly<OpenMeteoPollenData>(pollenKey(lat, lon)),
+    ]);
+    if (aqHit || pollenHit) {
+      console.warn("[open-meteo warm] core feilet, beholder forrige cache:", String((err as any)?.message ?? err));
+      return;
+    }
+    throw err;
+  }
+  const fc = await fetchMetCloudHourly(lat, lon).catch(() => ({ time: [], cloud_cover: [] }));
+  const cloudMap = buildCloudMap(fc);
+  const hourly = pickFields(core.hourly, HOURLY_FIELDS.split(","));
+  const current = { ...core.current };
+  applyUvCorrection(hourly, current, cloudMap);
+  await Promise.all([
+    setCached<AqPanelData>(aqKey(lat, lon), { hourly, current }),
+    setCached<OpenMeteoPollenData>(pollenKey(lat, lon), {
+      hourly: pickFields(core.hourly, POLLEN_FIELDS.split(",")),
+    }),
+  ]);
+}
+
 export async function warmUvCloudPanel(lat: number, lon: number): Promise<void> {
   const key = uvKey(lat, lon);
   await withCache<UvCloudData>(key, async () => {
     const core = await warmOpenMeteoCore(lat, lon);
     const aqHourly = pickFields(core.hourly, ["uv_index", "uv_index_clear_sky"]);
     const fcHourly = await fetchMetCloudHourly(lat, lon).catch(() => ({ time: [], cloud_cover: [] }));
+    const cloudMap = buildCloudMap(fcHourly);
+    applyUvCorrection(aqHourly, null, cloudMap);
     return { aq: { hourly: aqHourly }, fc: { hourly: fcHourly } };
   });
 }
