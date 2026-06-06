@@ -208,6 +208,8 @@ export function SiteHeader() {
   const [webFavs, setWebFavs] = useState<{ id: string; who: string; label: string; url: string; icon: string }[]>([]);
   const [favOpen, setFavOpen] = useState(false);
   const [favOpenMobile, setFavOpenMobile] = useState(false);
+  const [openFolders, setOpenFolders] = useState<Record<string, boolean>>({});
+  const toggleFolder = (id: string) => setOpenFolders((s) => ({ ...s, [id]: !s[id] }));
   useEffect(() => {
     let cancelled = false;
     import("@/integrations/supabase/client").then(({ supabase }) => {
