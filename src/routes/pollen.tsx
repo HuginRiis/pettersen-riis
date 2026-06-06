@@ -125,6 +125,22 @@ function PollenPage() {
             />
           </div>
         </div>
+
+        <div>
+          <SectionHeader
+            eyebrow="Analyse & innsikt · Skien Tollnes"
+            title="Komplett luftkvalitetsdashbord"
+          />
+          <div className="mt-6">
+            <AirQualityDashboard
+              locationKey="borgen-tollnes"
+              lat={BORGEN_TOLLNES.lat}
+              lon={BORGEN_TOLLNES.lon}
+              title="Borgen · Tollnes, Skien"
+              subtitle="Historikk, trender, sesonger og korrelasjoner"
+            />
+          </div>
+        </div>
       </section>
     </PageShell>
   );
