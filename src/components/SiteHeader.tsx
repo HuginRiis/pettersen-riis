@@ -311,6 +311,23 @@ export function SiteHeader() {
     return [...first, ...favs, ...others, ...last];
   })();
 
+  // Kataloger: ekskluder sider som ligger i en katalog fra hovedlisten,
+  // og bygg topp/bunn-kataloger med sine resolverte NavLink-er.
+  const menuFolders = menuPrefs.menuFolders ?? [];
+  const folderPaths = new Set<string>();
+  for (const f of menuFolders) for (const p of f.items) folderPaths.add(p);
+  const flatLinks = sortedLinks.filter((l) => !folderPaths.has(l.to));
+  const linkByPath = new Map(baseLinks.map((l) => [l.to as string, l] as const));
+  const resolveFolder = (f: typeof menuFolders[number]) => ({
+    folder: f,
+    links: f.items
+      .map((p) => linkByPath.get(p))
+      .filter((x): x is NavLink => !!x),
+  });
+  const topFolders = menuFolders.filter((f) => f.position === "top").map(resolveFolder);
+  const bottomFolders = menuFolders.filter((f) => f.position === "bottom").map(resolveFolder);
+  const visibleSortedLinks = flatLinks;
+
   const handleLogout = async () => {
     try {
       await logoutFn();
