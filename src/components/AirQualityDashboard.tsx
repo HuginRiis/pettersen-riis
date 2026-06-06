@@ -306,7 +306,7 @@ export function AirQualityDashboard({ locationKey, lat, lon, title, subtitle }: 
               title="År-over-år · samme måned"
               subtitle={`${POLLUTANTS.find((p) => p.key === pollutant)?.label} per måned sammenlignet mellom år`}
             >
-              <YearOverYearChart data={yearOverYear} pollutant={pollutant} />
+              <YearOverYearChart data={yearOverYear as any} pollutant={pollutant} />
             </ChartCard>
           )}
 
