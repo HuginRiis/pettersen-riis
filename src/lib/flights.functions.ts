@@ -435,7 +435,13 @@ export const getNearbyFlights = createServerFn({ method: "GET" })
 
 
 
-      const source = adsb.length && opensky.length ? "adsb.lol+opensky+hexdb" : adsb.length ? "adsb.lol+hexdb" : "opensky+hexdb";
+      const parts = [
+        adsb.length ? "adsb.lol" : null,
+        adsbFi.length ? "adsb.fi" : null,
+        opensky.length ? "opensky" : null,
+        "hexdb",
+      ].filter(Boolean);
+      const source = parts.join("+");
       return { ok: true, flights, fetchedAt: new Date().toISOString(), source };
     })();
   });
