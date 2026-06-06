@@ -50,7 +50,7 @@ const LEAD_OPTIONS = [
   { value: 60, label: "60 min før" },
 ] as const;
 
-const WHO_OPTIONS = ["Alle", "Arne & Rebekka", "Arne", "Rebekka", "Marita", "Nora", "Celine", "Mira", "Isac"] as const;
+const WHO_OPTIONS = ["Alle", "Arne & Rebekka", "Arne", "Rebekka", "Marita", "Nora", "Celine", "Mira"] as const;
 
 function formatOsloTime(iso: string): string {
   return new Date(iso).toLocaleTimeString("nb-NO", {
