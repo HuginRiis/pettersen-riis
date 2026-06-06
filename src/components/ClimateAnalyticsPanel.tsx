@@ -46,6 +46,23 @@ function trendArrow(now: number | null, ref: number | null): { Icon: typeof Minu
   return { Icon: ArrowDown, color: "#7dd3fc", deltaTxt: d.toFixed(1) };
 }
 
+function compareText(now: number | null, ref: number | null, unit: string): { color: string; text: string } {
+  if (now == null || ref == null) return { color: "var(--muted-foreground)", text: "–" };
+  const d = now - ref;
+  if (Math.abs(d) < 0.2) return { color: "var(--muted-foreground)", text: "lik nå" };
+  const abs = Math.abs(d).toFixed(1);
+  if (d > 0) return { color: "#fb923c", text: `${abs}${unit} høyere enn nå` };
+  return { color: "#7dd3fc", text: `${abs}${unit} lavere enn nå` };
+}
+
+function trendRateText(perHour: number | null | undefined, unit: string): { color: string; text: string } {
+  if (perHour == null) return { color: "var(--muted-foreground)", text: "–" };
+  const abs = Math.abs(perHour).toFixed(2);
+  if (Math.abs(perHour) < 0.05) return { color: "var(--muted-foreground)", text: "stabil" };
+  if (perHour > 0) return { color: "#fb923c", text: `stiger ${abs}${unit}/t` };
+  return { color: "#7dd3fc", text: `synker ${abs}${unit}/t` };
+}
+
 function CompareBox({
   label,
   icon: Icon,
