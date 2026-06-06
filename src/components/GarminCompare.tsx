@@ -3,6 +3,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { ArrowUp, ArrowDown, Minus, Swords, Loader2, Crown, Flame, Settings2 } from "lucide-react";
 import { getGarminOverview } from "@/lib/garmin.functions";
 import { usePersistedState } from "@/hooks/use-persisted-state";
+import arnePortrait from "@/assets/arne-portrait.jpg";
+import rebekkaPortrait from "@/assets/rebekka-portrait.jpg";
 
 // Forklaringer per måling — vises når brukeren slår på "Vis forklaringer"
 const EXPLANATIONS: Record<string, string> = {
