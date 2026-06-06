@@ -2,12 +2,20 @@ import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getStoredWho } from "@/lib/push-client";
 
+export type MenuFolder = {
+  id: string;
+  name: string;
+  position: "top" | "bottom";
+  items: string[];
+};
+
 export type MenuPrefs = {
   sortByUsage: boolean;
   favoritesEnabled: boolean;
   favorites: string[];
   favoriteZones: string[];
   useGlobalLightScenes: boolean;
+  menuFolders: MenuFolder[];
 };
 
 const DEFAULTS: MenuPrefs = {
@@ -16,7 +24,25 @@ const DEFAULTS: MenuPrefs = {
   favorites: [],
   favoriteZones: [],
   useGlobalLightScenes: true,
+  menuFolders: [],
 };
+
+function coerceFolders(value: unknown): MenuFolder[] {
+  if (!Array.isArray(value)) return [];
+  const out: MenuFolder[] = [];
+  for (const raw of value) {
+    if (!raw || typeof raw !== "object") continue;
+    const v = raw as Record<string, unknown>;
+    const id = typeof v.id === "string" && v.id ? v.id : `f_${Math.random().toString(36).slice(2, 9)}`;
+    const name = typeof v.name === "string" ? v.name : "Katalog";
+    const position = v.position === "bottom" ? "bottom" : "top";
+    const items = Array.isArray(v.items)
+      ? (v.items as unknown[]).filter((x): x is string => typeof x === "string")
+      : [];
+    out.push({ id, name, position, items });
+  }
+  return out;
+}
 
 const EVT = "menu-prefs-updated";
 const LEGACY_KEY = "menu-prefs:v1";
