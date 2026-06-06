@@ -2853,9 +2853,13 @@ export type Database = {
           notified_fall_date_3: string | null
           notified_fall_date_6: string | null
           notified_fall_date_8: string | null
+          notified_peak_clear_date: string | null
+          notified_peak_cloud_date: string | null
           notify_fall_3: boolean
           notify_fall_6: boolean
           notify_fall_8: boolean
+          notify_peak_clear: boolean
+          notify_peak_cloud: boolean
           reached_date_3: string | null
           reached_date_6: string | null
           reached_date_8: string | null
@@ -2879,9 +2883,13 @@ export type Database = {
           notified_fall_date_3?: string | null
           notified_fall_date_6?: string | null
           notified_fall_date_8?: string | null
+          notified_peak_clear_date?: string | null
+          notified_peak_cloud_date?: string | null
           notify_fall_3?: boolean
           notify_fall_6?: boolean
           notify_fall_8?: boolean
+          notify_peak_clear?: boolean
+          notify_peak_cloud?: boolean
           reached_date_3?: string | null
           reached_date_6?: string | null
           reached_date_8?: string | null
@@ -2905,9 +2913,13 @@ export type Database = {
           notified_fall_date_3?: string | null
           notified_fall_date_6?: string | null
           notified_fall_date_8?: string | null
+          notified_peak_clear_date?: string | null
+          notified_peak_cloud_date?: string | null
           notify_fall_3?: boolean
           notify_fall_6?: boolean
           notify_fall_8?: boolean
+          notify_peak_clear?: boolean
+          notify_peak_cloud?: boolean
           reached_date_3?: string | null
           reached_date_6?: string | null
           reached_date_8?: string | null
