@@ -13,6 +13,7 @@ import {
 } from "recharts";
 import { useUvSun } from "@/hooks/use-uv-sun";
 import { useDailyMinMax } from "@/hooks/use-daily-minmax";
+import { useDailyMaxTime } from "@/hooks/use-daily-max-time";
 import { getNetatmoWeatherStation, type WeatherModule } from "@/lib/netatmo-weather.functions";
 import { fetchAirQualityPanel, fetchUvCloudPanel } from "@/lib/air-quality-fetch.functions";
 import { getBassengHistory, type BassengHistoryPoint } from "@/lib/basseng-history.functions";
