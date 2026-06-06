@@ -3581,6 +3581,9 @@ function SmartDashbord() {
             accent="text-sky-300"
             detail={<NetatmoMetricList modules={tollnes.modules} metric="humidity" unit="%" digits={0} />}
             anim="humidity"
+            numericValue={tollnes.humStua ?? null}
+            trackKey={`smart_mini_max_${locId}_humStua`}
+            formatMax={(n) => `${Math.round(n)} %`}
           />
           <MiniTile
             icon={<CloudSun size={16} />}
@@ -3590,6 +3593,9 @@ function SmartDashbord() {
             accent="text-amber-300"
             detail={<NetatmoMetricList modules={tollnes.modules} metric="temperature" unit="°" digits={1} />}
             anim="temp"
+            numericValue={tollnes.outTemp ?? null}
+            trackKey={`smart_mini_max_${locId}_outTemp`}
+            formatMax={(n) => `${n.toFixed(1).replace(".", ",")}°`}
           />
           <MiniTile
             icon={<Gauge size={16} />}
@@ -3599,6 +3605,9 @@ function SmartDashbord() {
             accent={tollnes.co2Bedroom != null && tollnes.co2Bedroom >= 1000 ? "text-rose-300" : "text-emerald-300"}
             detail={<NetatmoMetricList modules={tollnes.modules} metric="co2" unit=" ppm" digits={0} />}
             anim="co2"
+            numericValue={tollnes.co2Bedroom ?? null}
+            trackKey={`smart_mini_max_${locId}_co2Bedroom`}
+            formatMax={(n) => `${Math.round(n)} ppm`}
           />
           <MiniTile
             icon={<Activity size={16} />}
@@ -3607,6 +3616,9 @@ function SmartDashbord() {
             sub="Stua"
             accent="text-orange-300"
             anim="noise"
+            numericValue={tollnes.noise ?? null}
+            trackKey={`smart_mini_max_${locId}_noise`}
+            formatMax={(n) => `${Math.round(n)} dB`}
           />
           <MiniTile
             icon={<Droplets size={16} />}
@@ -3616,6 +3628,9 @@ function SmartDashbord() {
             accent="text-violet-300"
             detail={<NetatmoMetricList modules={tollnes.modules} metric="humidity" unit="%" digits={0} />}
             anim="humidity"
+            numericValue={tollnes.humBedroom ?? null}
+            trackKey={`smart_mini_max_${locId}_humBedroom`}
+            formatMax={(n) => `${Math.round(n)} %`}
           />
           <MiniTile
             icon={<Gauge size={16} />}
@@ -3625,6 +3640,9 @@ function SmartDashbord() {
             accent={tollnes.co2Stua != null && tollnes.co2Stua >= 1000 ? "text-rose-300" : "text-emerald-300"}
             detail={<NetatmoMetricList modules={tollnes.modules} metric="co2" unit=" ppm" digits={0} />}
             anim="co2"
+            numericValue={tollnes.co2Stua ?? null}
+            trackKey={`smart_mini_max_${locId}_co2Stua`}
+            formatMax={(n) => `${Math.round(n)} ppm`}
           />
         </div>
 
