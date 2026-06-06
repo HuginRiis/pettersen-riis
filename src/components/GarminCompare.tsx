@@ -202,6 +202,37 @@ export function GarminCompare() {
     return acc;
   }, { arne: 0, rebekka: 0 });
 
+  // 7-dagers snitt — separat fra valgt periode
+  const week = periodRange("last_week");
+  const a7 = aggDaily(inRange(arne?.daily, week.from, week.to));
+  const r7 = aggDaily(inRange(arne?.daily, week.from, week.to)); // placeholder, overwritten
+  const r7real = aggDaily(inRange(rebekka?.daily, week.from, week.to));
+  const aSleep7 = aggSleep(inRange(arne?.sleep, week.from, week.to));
+  const rSleep7 = aggSleep(inRange(rebekka?.sleep, week.from, week.to));
+  const rows7: Row[] = [
+    { label: "Skritt", arne: a7.steps ?? null, rebekka: r7real.steps ?? null, fmt: (n) => fmtNum(n), higherIsBetter: true },
+    { label: "Søvn", arne: aSleep7.total_seconds ?? null, rebekka: rSleep7.total_seconds ?? null, fmt: (n) => hoursMin(n), higherIsBetter: true },
+    { label: "Dyp søvn", arne: aSleep7.deep_seconds ?? null, rebekka: rSleep7.deep_seconds ?? null, fmt: (n) => hoursMin(n), higherIsBetter: true },
+    { label: "REM", arne: aSleep7.rem_seconds ?? null, rebekka: rSleep7.rem_seconds ?? null, fmt: (n) => hoursMin(n), higherIsBetter: true },
+    { label: "Søvnscore", arne: aSleep7.sleep_score ?? null, rebekka: rSleep7.sleep_score ?? null, fmt: (n) => fmtNum(n), higherIsBetter: true },
+    { label: "Hvilepuls", arne: a7.resting_heart_rate ?? null, rebekka: r7real.resting_heart_rate ?? null, fmt: (n) => fmtNum(n), higherIsBetter: false },
+    { label: "HRV", arne: aSleep7.hrv_avg ?? null, rebekka: rSleep7.hrv_avg ?? null, fmt: (n) => fmtNum(n), higherIsBetter: true },
+    { label: "BB", arne: a7.body_battery_high ?? null, rebekka: r7real.body_battery_high ?? null, fmt: (n) => fmtNum(n), higherIsBetter: true },
+    { label: "Stress", arne: a7.stress_average ?? null, rebekka: r7real.stress_average ?? null, fmt: (n) => fmtNum(n), higherIsBetter: false },
+    { label: "Intensitet", arne: a7._intensity, rebekka: r7real._intensity, fmt: (n) => fmtNum(n), higherIsBetter: true },
+    { label: "Kcal", arne: a7.active_kilocalories ?? null, rebekka: r7real.active_kilocalories ?? null, fmt: (n) => fmtNum(n), higherIsBetter: true },
+    { label: "Trapper", arne: a7.floors_climbed ?? null, rebekka: r7real.floors_climbed ?? null, fmt: (n) => fmtNum(n), higherIsBetter: true },
+  ];
+  void r7;
+  const wins7 = rows7.reduce((acc, row) => {
+    const w = winner(row);
+    if (w === "arne") acc.arne++;
+    else if (w === "rebekka") acc.rebekka++;
+    return acc;
+  }, { arne: 0, rebekka: 0 });
+  const leader7: "arne" | "rebekka" | "tie" =
+    wins7.arne > wins7.rebekka ? "arne" : wins7.rebekka > wins7.arne ? "rebekka" : "tie";
+
   // Top 5 highlights — shuffled "she slept X more than him"-style insights
   type Highlight = { text: string; winner: "arne" | "rebekka"; label: string };
   const highlights: Highlight[] = [];
