@@ -411,12 +411,106 @@ export async function processUvNotifications(): Promise<{
         .eq("id", p.id);
     }
 
+    // 3) Peak-varsler: send når dagens topp er nådd, per kilde (skyfri / med skydekke).
+    //    Vi sjekker hver kilde uavhengig av p.uv_source slik at brukeren kan
+    //    abonnere på begge samtidig.
+    const peakSources: Array<{
+      src: "clear_sky" | "with_clouds";
+      enabledCol: "notify_peak_clear" | "notify_peak_cloud";
+      sentCol: "notified_peak_clear_date" | "notified_peak_cloud_date";
+      tag: string;
+      label: string;
+    }> = [
+      {
+        src: "clear_sky",
+        enabledCol: "notify_peak_clear",
+        sentCol: "notified_peak_clear_date",
+        tag: "clear",
+        label: "skyfri",
+      },
+      {
+        src: "with_clouds",
+        enabledCol: "notify_peak_cloud",
+        sentCol: "notified_peak_cloud_date",
+        tag: "cloud",
+        label: "med skydekke",
+      },
+    ];
+
+    for (const ps of peakSources) {
+      if (!p[ps.enabledCol]) continue;
+      if (p[ps.sentCol] === today) continue;
+
+      const hourly = await fetchUvHourly(p.lat, p.lon, ps.src);
+      if (!hourly || !hourly.times.length) continue;
+
+      // Finn dagens (Oslo-dato = today) maks-time
+      let peakIdx = -1;
+      let peakVal = -1;
+      for (let i = 0; i < hourly.times.length; i++) {
+        const t = new Date(hourly.times[i]);
+        const oslo = new Date(t.toLocaleString("en-US", { timeZone: "Europe/Oslo" }));
+        const d = oslo.toISOString().slice(0, 10);
+        if (d !== today) continue;
+        const v = hourly.values[i];
+        if (typeof v !== "number") continue;
+        if (v > peakVal) {
+          peakVal = v;
+          peakIdx = i;
+        }
+      }
+      if (peakIdx < 0 || peakVal < 1) continue; // ingen meningsfull topp
+
+      const peakTime = new Date(hourly.times[peakIdx]).getTime();
+      const diffMin = (Date.now() - peakTime) / 60000;
+      // Send når vi er innenfor ±30 min av peak-timen
+      if (diffMin < -30 || diffMin > 90) continue;
+
+      const subs = await loadSubs(targetWho).catch(() => {
+        errors++;
+        return [] as Awaited<ReturnType<typeof loadSubs>>;
+      });
+      const peakHour = new Date(peakTime).toLocaleTimeString("nb-NO", {
+        hour: "2-digit",
+        minute: "2-digit",
+        timeZone: "Europe/Oslo",
+      });
+      const title = `☀️ UV-topp ${ps.label} — ${peakVal.toFixed(1)}`;
+      const payload = JSON.stringify({
+        title: `${locPrefix}${title}`,
+        body: `${p.label}: Dagens UV-topp (${ps.label}) er ${peakVal.toFixed(1)} kl ${peakHour}.`,
+        tag: `uv-peak-${ps.tag}-${p.location}-${today}`,
+        url: "/var",
+      });
+
+      for (const sub of subs) {
+        const ok = await sendOne(
+          {
+            endpoint: sub.endpoint as string,
+            p256dh: sub.p256dh as string,
+            auth: sub.auth as string,
+            who: (sub as any).who ?? null,
+          },
+          payload,
+          { feature: `uv-peak-${ps.tag}`, recipient: targetWho, title },
+        );
+        if (ok) sent++;
+        else errors++;
+      }
+
+      await supabaseAdmin
+        .from("uv_notification_prefs" as never)
+        .update({ [ps.sentCol]: today } as never)
+        .eq("id", p.id);
+    }
+
     if (Object.keys(reachedUpdates).length > 0) {
       await supabaseAdmin
         .from("uv_notification_prefs" as never)
         .update(reachedUpdates as never)
         .eq("id", p.id);
     }
+
   }
 
   return { checked, sent, errors, skipped };
