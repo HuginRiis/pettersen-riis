@@ -25,7 +25,10 @@ type UvPref = {
   notify_fall_6: boolean;
   notify_fall_8: boolean;
   uv_source: "clear_sky" | "with_clouds";
+  notify_peak_clear: boolean;
+  notify_peak_cloud: boolean;
 };
+
 
 
 type Forecast = {
@@ -47,7 +50,7 @@ const LEAD_OPTIONS = [
   { value: 60, label: "60 min før" },
 ] as const;
 
-const WHO_OPTIONS = ["Alle", "Arne & Rebekka", "Arne", "Rebekka", "Marita", "Nora", "Celine", "Mira", "Isac"] as const;
+const WHO_OPTIONS = ["Alle", "Arne & Rebekka", "Arne", "Rebekka", "Marita", "Nora", "Celine", "Mira"] as const;
 
 function formatOsloTime(iso: string): string {
   return new Date(iso).toLocaleTimeString("nb-NO", {
@@ -83,8 +86,9 @@ export function UvNotificationSettings() {
       const { data, error } = await supabase
         .from("uv_notification_prefs" as never)
         .select(
-          "id, location, label, enabled, recipient, fall_recipient, lead_minutes, notify_fall_3, notify_fall_6, notify_fall_8, uv_source",
+          "id, location, label, enabled, recipient, fall_recipient, lead_minutes, notify_fall_3, notify_fall_6, notify_fall_8, uv_source, notify_peak_clear, notify_peak_cloud",
         )
+
         .order("location");
 
       if (cancelled) return;
@@ -304,6 +308,30 @@ export function UvNotificationSettings() {
                   </Select>
                 </div>
               </div>
+
+              <div className="rounded-md border border-border/50 bg-muted/20 p-2 space-y-2">
+                <div className="text-[11px] text-muted-foreground">
+                  Varsle når dagens UV-topp er nådd:
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs">Topp (skyfri himmel)</span>
+                  <Switch
+                    checked={Boolean(p.notify_peak_clear)}
+                    disabled={!p.enabled || saving === p.id}
+                    onCheckedChange={(v) => update(p.id, { notify_peak_clear: v })}
+                  />
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs">Topp (med skydekke)</span>
+                  <Switch
+                    checked={Boolean(p.notify_peak_cloud)}
+                    disabled={!p.enabled || saving === p.id}
+                    onCheckedChange={(v) => update(p.id, { notify_peak_cloud: v })}
+                  />
+                </div>
+              </div>
+
+
 
 
 
