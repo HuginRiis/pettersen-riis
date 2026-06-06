@@ -171,6 +171,7 @@ function PushSettingsPage() {
       
       <SettingsBox id="sec-meny" title="🧭 Meny"><MenuPreferencesPanel /></SettingsBox>
       <SettingsBox id="sec-meny-synlig" title="👁 Meny — synlige sider"><MenuVisibilityPanel /></SettingsBox>
+      <SettingsBox id="sec-meny-kataloger" title="📁 Meny — kataloger"><MenuFoldersPanel /></SettingsBox>
       <SettingsBox id="sec-badges" title="🏷️ Topp-badges"><HeaderBadgeSettingsPanel /></SettingsBox>
       <SettingsBox id="sec-snarveier" title="⭐ Snarveier"><FavoritesManagerPanel /></SettingsBox>
       <SettingsBox id="sec-rom" title="🏠 Favoritt-rom"><FavoriteZonesPanel /></SettingsBox>
