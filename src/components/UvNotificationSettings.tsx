@@ -25,7 +25,10 @@ type UvPref = {
   notify_fall_6: boolean;
   notify_fall_8: boolean;
   uv_source: "clear_sky" | "with_clouds";
+  notify_peak_clear: boolean;
+  notify_peak_cloud: boolean;
 };
+
 
 
 type Forecast = {
