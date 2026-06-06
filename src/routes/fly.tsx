@@ -68,6 +68,7 @@ function LocationSection({ location }: { location: FlightLocationId }) {
   const saveSettings = useServerFn(saveFlightPushSettings);
   const sendManual = useServerFn(sendFlightPushManual);
 
+  const cacheKey = `fly_cache_v1::${location}`;
   const [flights, setFlights] = useState<Flight[] | null>(null);
   const [fetchedAt, setFetchedAt] = useState<string | null>(null);
   const [source, setSource] = useState<string | null>(null);
@@ -90,6 +91,12 @@ function LocationSection({ location }: { location: FlightLocationId }) {
         setFlights(r.flights);
         setFetchedAt(r.fetchedAt);
         setSource(r.source);
+        try {
+          localStorage.setItem(
+            cacheKey,
+            JSON.stringify({ flights: r.flights, fetchedAt: r.fetchedAt, source: r.source }),
+          );
+        } catch {}
       } else {
         setErr(r.error);
       }
@@ -101,6 +108,18 @@ function LocationSection({ location }: { location: FlightLocationId }) {
   }
 
   useEffect(() => {
+    // Hydrer fra localStorage så siste fly vises umiddelbart når siden åpnes.
+    try {
+      const raw = localStorage.getItem(cacheKey);
+      if (raw) {
+        const parsed = JSON.parse(raw) as { flights: Flight[]; fetchedAt: string; source: string };
+        if (parsed?.flights) {
+          setFlights(parsed.flights);
+          setFetchedAt(parsed.fetchedAt);
+          setSource(parsed.source);
+        }
+      }
+    } catch {}
     void load();
     void fetchSettings({ data: { location } }).then((s) => {
       setSettings(s);
