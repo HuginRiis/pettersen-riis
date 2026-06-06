@@ -2804,6 +2804,7 @@ export type Database = {
           favorites: string[]
           favorites_enabled: boolean
           id: string
+          menu_folders: Json
           sort_by_usage: boolean
           updated_at: string
           use_global_light_scenes: boolean
@@ -2815,6 +2816,7 @@ export type Database = {
           favorites?: string[]
           favorites_enabled?: boolean
           id?: string
+          menu_folders?: Json
           sort_by_usage?: boolean
           updated_at?: string
           use_global_light_scenes?: boolean
@@ -2826,6 +2828,7 @@ export type Database = {
           favorites?: string[]
           favorites_enabled?: boolean
           id?: string
+          menu_folders?: Json
           sort_by_usage?: boolean
           updated_at?: string
           use_global_light_scenes?: boolean
