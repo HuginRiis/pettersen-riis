@@ -660,8 +660,8 @@ function HourWeekdayHeatmap({ data, pollutant }: { data: number[][]; pollutant: 
           <div key={h} className="text-[8px] text-muted-foreground text-center">{h % 3 === 0 ? h : ""}</div>
         ))}
         {data.map((row, d) => (
-          <>
-            <div key={`l${d}`} className="text-[9px] text-muted-foreground pr-1 self-center">{days[d]}</div>
+          <Fragment key={`r${d}`}>
+            <div className="text-[9px] text-muted-foreground pr-1 self-center">{days[d]}</div>
             {row.map((v, h) => {
               const alpha = max > 0 ? v / max : 0;
               return (
@@ -673,7 +673,7 @@ function HourWeekdayHeatmap({ data, pollutant }: { data: number[][]; pollutant: 
                 />
               );
             })}
-          </>
+          </Fragment>
         ))}
       </div>
     </div>
