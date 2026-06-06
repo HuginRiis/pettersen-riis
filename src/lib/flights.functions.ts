@@ -253,31 +253,52 @@ export const getNearbyFlights = createServerFn({ method: "GET" })
       );
       // Hent fra begge kilder parallelt og slå sammen — adsb.lol har rik metadata,
       // OpenSky fanger ofte små fly / GA som adsb.lol mangler (og motsatt).
-      const [adsbRes, openskyRes] = await Promise.allSettled([
-        fetchFromAdsbLol(center, radiusKm),
+      const [adsbRes, adsbFiRes, openskyRes] = await Promise.allSettled([
+        fetchFromAdsbApi("adsb.lol", "https://api.adsb.lol", center, radiusKm),
+        fetchFromAdsbApi("adsb.fi", "https://opendata.adsb.fi/api", center, radiusKm),
         fetchFromOpenSky(center, radiusKm),
       ]);
       const adsb = adsbRes.status === "fulfilled" ? adsbRes.value : [];
+      const adsbFi = adsbFiRes.status === "fulfilled" ? adsbFiRes.value : [];
       const opensky = openskyRes.status === "fulfilled" ? openskyRes.value : [];
 
-      if (adsb.length === 0 && opensky.length === 0) {
+      if (adsb.length === 0 && adsbFi.length === 0 && opensky.length === 0) {
         const e1 = adsbRes.status === "rejected" ? (adsbRes.reason as Error)?.message ?? "ukjent" : "ingen treff";
-        const e2 = openskyRes.status === "rejected" ? (openskyRes.reason as Error)?.message ?? "ukjent" : "ingen treff";
-        if (adsbRes.status === "rejected" && openskyRes.status === "rejected") {
-          return { ok: false, error: `adsb.lol: ${e1}. OpenSky: ${e2}` };
+        const e2 = adsbFiRes.status === "rejected" ? (adsbFiRes.reason as Error)?.message ?? "ukjent" : "ingen treff";
+        const e3 = openskyRes.status === "rejected" ? (openskyRes.reason as Error)?.message ?? "ukjent" : "ingen treff";
+        if (adsbRes.status === "rejected" && adsbFiRes.status === "rejected" && openskyRes.status === "rejected") {
+          return { ok: false, error: `adsb.lol: ${e1}. adsb.fi: ${e2}. OpenSky: ${e3}` };
         }
       }
 
-      // Slå sammen, foretrekk adsb.lol-record (rikere felter), men fyll inn manglende felter fra OpenSky.
+      // Slå sammen — adsb.lol først (rikest metadata), så adsb.fi (fyller huller, ofte MLAT-treff), så OpenSky.
       const byIcao = new Map<string, Flight>();
       for (const f of adsb) byIcao.set(f.icao24.toLowerCase(), f);
+      for (const f of adsbFi) {
+        const key = f.icao24.toLowerCase();
+        const existing = byIcao.get(key);
+        if (!existing) {
+          byIcao.set(key, f);
+        } else {
+          if (!existing.registration && f.registration) existing.registration = f.registration;
+          if (!existing.aircraftType && f.aircraftType) existing.aircraftType = f.aircraftType;
+          if (!existing.description && f.description) existing.description = f.description;
+          if (!existing.operator && f.operator) existing.operator = f.operator;
+          if (!existing.category && f.category) existing.category = f.category;
+          if (existing.callsign == null && f.callsign) existing.callsign = f.callsign;
+          if (existing.baroAltitudeM == null && f.baroAltitudeM != null) existing.baroAltitudeM = f.baroAltitudeM;
+          if (existing.velocityMs == null && f.velocityMs != null) existing.velocityMs = f.velocityMs;
+          if (existing.trueTrack == null && f.trueTrack != null) existing.trueTrack = f.trueTrack;
+          if (existing.verticalRateMs == null && f.verticalRateMs != null) existing.verticalRateMs = f.verticalRateMs;
+          if (!existing.squawk && f.squawk) existing.squawk = f.squawk;
+        }
+      }
       for (const f of opensky) {
         const key = f.icao24.toLowerCase();
         const existing = byIcao.get(key);
         if (!existing) {
           byIcao.set(key, f);
         } else {
-          // Fyll inn felter som mangler på adsb.lol-record (særlig originCountry)
           if (!existing.originCountry && f.originCountry) existing.originCountry = f.originCountry;
           if (existing.callsign == null && f.callsign) existing.callsign = f.callsign;
           if (existing.baroAltitudeM == null && f.baroAltitudeM != null) existing.baroAltitudeM = f.baroAltitudeM;
