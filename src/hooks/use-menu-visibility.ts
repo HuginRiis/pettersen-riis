@@ -26,8 +26,10 @@ export const MENU_LINK_DEFS: { to: string; label: string }[] = [
   { to: "/agenda", label: "Søppel, bursdager og meldinger" },
   { to: "/push-varslinger", label: "Innstillinger" },
   { to: "/vakttarnet", label: "Vakttårnet" },
+  { to: "/ytelse", label: "Ytelse" },
   { to: "/hytta", label: "Hytta" },
-  { to: "/smarthus", label: "Smartborg" },
+  { to: "/smarthus", label: "Smarthus" },
+  { to: "/smart-dashbord", label: "Smart dashbord" },
   { to: "/lys", label: "Lys" },
   { to: "/varme", label: "Varme & Klima" },
   { to: "/gressklipper", label: "Gressklipper" },
@@ -38,10 +40,12 @@ export const MENU_LINK_DEFS: { to: string; label: string }[] = [
   { to: "/skatte-utregningen", label: "Skatte utregningen" },
   { to: "/trening", label: "Trening" },
   { to: "/varsler", label: "Farevarsler" },
-  { to: "/steintavle", label: "Steintavle" },
   { to: "/decibel", label: "Decibelmåler" },
   { to: "/roborock", label: "Roborock" },
   { to: "/planter", label: "Planter & Trær" },
+  { to: "/fly", label: "Fly i nærheten" },
+  { to: "/steintavle", label: "Steintavle" },
+  { to: "/steintavle-2", label: "Steintavle 2" },
 ];
 
 const DEFAULT_LINK_STATE: MenuLinkState = { enabled: true, users: [] };

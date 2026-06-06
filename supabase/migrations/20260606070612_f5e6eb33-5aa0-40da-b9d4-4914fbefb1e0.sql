@@ -1,0 +1,1 @@
+ALTER TABLE public.user_menu_prefs ADD COLUMN IF NOT EXISTS menu_folders jsonb NOT NULL DEFAULT '[]'::jsonb;

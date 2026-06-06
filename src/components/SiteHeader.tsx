@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Menu, X, LogOut, Crown, Swords, Shield, KeyRound, Home, Star, Flower2,
   Sun, Compass, CalendarDays, BellRing, Eye, Mountain, Lightbulb, Lamp, Flame, Zap,
   Receipt, Dumbbell, AlertTriangle, ScrollText, Globe, ChevronDown, ChevronRight,
-  TreePine, Coins, Bot, Wallet, Volume2, Settings, Gauge, Plane } from "lucide-react";
+  TreePine, Coins, Bot, Wallet, Volume2, Settings, Gauge, Plane, Folder } from "lucide-react";
 
 
 import { logoutFn } from "@/lib/auth.functions";
@@ -208,6 +208,8 @@ export function SiteHeader() {
   const [webFavs, setWebFavs] = useState<{ id: string; who: string; label: string; url: string; icon: string }[]>([]);
   const [favOpen, setFavOpen] = useState(false);
   const [favOpenMobile, setFavOpenMobile] = useState(false);
+  const [openFolders, setOpenFolders] = useState<Record<string, boolean>>({});
+  const toggleFolder = (id: string) => setOpenFolders((s) => ({ ...s, [id]: !s[id] }));
   useEffect(() => {
     let cancelled = false;
     import("@/integrations/supabase/client").then(({ supabase }) => {
@@ -310,6 +312,113 @@ export function SiteHeader() {
     }
     return [...first, ...favs, ...others, ...last];
   })();
+
+  // Kataloger: ekskluder sider som ligger i en katalog fra hovedlisten,
+  // og bygg topp/bunn-kataloger med sine resolverte NavLink-er.
+  const menuFolders = menuPrefs.menuFolders ?? [];
+  const folderPaths = new Set<string>();
+  for (const f of menuFolders) for (const p of f.items) folderPaths.add(p);
+  const flatLinks = sortedLinks.filter((l) => !folderPaths.has(l.to));
+  const linkByPath = new Map(baseLinks.map((l) => [l.to as string, l] as const));
+  const resolveFolder = (f: typeof menuFolders[number]) => ({
+    folder: f,
+    links: f.items
+      .map((p) => linkByPath.get(p))
+      .filter((x): x is NavLink => !!x),
+  });
+  const topFolders = menuFolders.filter((f) => f.position === "top").map(resolveFolder);
+  const bottomFolders = menuFolders.filter((f) => f.position === "bottom").map(resolveFolder);
+  const visibleSortedLinks = flatLinks;
+
+  const renderMobileRow = (l: NavLink, opts?: { indent?: boolean }) => {
+    const count = usage[l.to] ?? 0;
+    const isFav = menuPrefs.favorites.includes(l.to);
+    const canFav = menuPrefs.favoritesEnabled && l.to !== ALWAYS_FIRST && !isAlwaysLast(l.to);
+    return (
+      <div key={l.to} className={`flex items-center gap-0 border-b border-border last:border-0${opts?.indent ? " pl-3" : ""}`}>
+        {canFav && (
+          <button
+            type="button"
+            onClick={() => toggleFavorite(l.to)}
+            aria-label={isFav ? "Fjern favoritt" : "Legg til favoritt"}
+            className={`pl-1.5 pr-0 py-1.5 ${isFav ? "text-primary" : "text-muted-foreground/40"}`}
+          >
+            <Star size={13} fill={isFav ? "currentColor" : "none"} />
+          </button>
+        )}
+        <Link
+          to={l.to}
+          preload={HOMEY_BACKED_ROUTES.includes(l.to) ? false : undefined}
+          activeOptions={l.to === "/" ? { exact: true } : undefined}
+          onClick={() => { bump(l.to); setOpen(false); }}
+          className={`flex-1 pl-1 pr-2 py-2.5 tracking-wider uppercase text-muted-foreground hover:text-primary data-[status=active]:text-primary data-[status=active]:font-semibold flex items-center gap-2 text-xs${badgeSettings.fitOneLine ? " whitespace-nowrap overflow-hidden" : ""}`}
+          data-fit-one-line={badgeSettings.fitOneLine ? "1" : undefined}
+        >
+          {l.to === "/pollen"
+            ? <PollenIcon lat={pollenCoord.lat} lon={pollenCoord.lon} />
+            : ROUTE_ICON[l.to] ? (() => { const I = ROUTE_ICON[l.to]!; return <span style={{ color: ROUTE_ICON_COLOR[l.to], display: "inline-flex" }}><I size={15} strokeWidth={2.25} /></span>; })() : null}
+          <span className="flex-1">{l.label}</span>
+          <span data-fit-badges className="contents">
+          {count > 0 && menuPrefs.sortByUsage && showB("usage_count") && <UsageBadge count={count} />}
+          {l.to === "/" && showB("uv_hjem") && <UvBadge lat={BORGEN_COORD.lat} lon={BORGEN_COORD.lon} />}
+          {l.to === "/" && showB("temp_tollnes") && <TempBadge stationMatch="tollnes" storageKey="hdr.temp.tollnes" />}
+          {l.to === "/" && showB("temp_stua_tollnes") && <TempBadge stationMatch="tollnes" storageKey="hdr.temp.stua.tollnes" variant="indoor" />}
+          {l.to === "/hytta" && showB("uv_hytta") && <UvBadge lat={HYTTA_COORD.lat} lon={HYTTA_COORD.lon} />}
+          {l.to === "/hytta" && showB("temp_hytta") && <TempBadge stationMatch="hytta" storageKey="hdr.temp.hytta" />}
+          {l.to === "/hytta" && showB("temp_stua_hytta") && <TempBadge stationMatch="hytta" storageKey="hdr.temp.stua.hytta" variant="indoor" />}
+          {l.to === "/pollen" && showB("pollen") && <PollenBadge lat={pollenCoord.lat} lon={pollenCoord.lon} />}
+          {l.to === "/push-varslinger" && showB("push_today") && <PushTodayBadge inline />}
+          {l.to === "/lys" && showB("lights_on") && <LightsOnBadge inline />}
+          {l.to === "/var" && showB("weather_days") && <WeatherDaysBadge inline useGps lat={BORGEN_COORD.lat} lon={BORGEN_COORD.lon} startOffset={badgeSettings.weather.startOffset} days={badgeSettings.weather.days} showTemp={badgeSettings.weather.showTemp} />}
+          {l.to === "/var" && showB("weather_temp") && <CurrentTempBadge inline lat={BORGEN_COORD.lat} lon={BORGEN_COORD.lon} />}
+          {l.to === "/smarthus" && <>{showB("mower_status") && <MowerStatusBadge inline />}{showB("basseng_temp") && <BassengTempBadge inline />}</>}
+          {l.to === "/gressklipper" && <>{showB("gardena_status") && <GardenaStatusBadge inline />}{showB("gardena_battery") && <GardenaBatteryBadge inline />}{showB("gardena_signal") && <GardenaSignalBadge inline />}</>}
+          {l.to === "/stovsugeren" && <>{showB("roborock_hjemme_status") && <RoborockStatusBadge inline match="hjem" name="Hjemme" />}{showB("roborock_hytta_status") && <RoborockStatusBadge inline match="hytt" name="Hytta" />}</>}
+          {l.to === "/vakttarnet" && <>{showB("alarm_state") && <AlarmStateBadge inline />}{showB("utgangsdoren_lock") && <UtgangsdorenLockBadge inline />}</>}
+          {l.to === "/varsler" && showB("alerts_severity") && <AlertsSeverityBadge inline />}
+          {l.to === "/stromkroniken" && showB("power_vs_yesterday") && <PowerVsYesterdayBadge inline />}
+          {l.to === "/trening" && <>{showB("steps_arne") && <StepsTodayBadge inline owner="arne" />}{showB("steps_rebekka") && <StepsTodayBadge inline owner="rebekka" />}{showB("training_4w") && <TrainingLast4WeeksBadge inline owner="arne" />}{showB("training_4w_rebekka") && <TrainingLast4WeeksBadge inline owner="rebekka" />}</>}
+          {l.to === "/agenda" && showB("garbage_next") && <GarbageNextPickupBadge inline />}
+          {l.to === "/okonomi" && showB("budget_remaining") && <BudgetRemainingBadge inline />}
+          {l.to === "/okonomi" && showB("okonomi_brukt") && <OkonomiBruktBadge inline />}
+          {l.to === "/okonomi" && showB("okonomi_inntekt") && <OkonomiInntektBadge inline />}
+          {l.to === "/okonomi" && showB("okonomi_budsjett") && <OkonomiBudsjettBadge inline />}
+          {l.to === "/okonomi" && showB("okonomi_overskudd") && <OkonomiOverskuddBadge inline />}
+          {l.to === "/okonomi" && showB("okonomi_snitt_dag") && <OkonomiSnittPrDagBadge inline />}
+          {l.to === "/okonomi" && showB("okonomi_igjen_dag") && <OkonomiIgjenPrDagBadge inline />}
+          </span>
+        </Link>
+      </div>
+    );
+  };
+
+  const renderFolderGroup = (entry: { folder: typeof menuFolders[number]; links: NavLink[] }) => {
+    const { folder, links } = entry;
+    const open = !!openFolders[folder.id];
+    return (
+      <div key={folder.id} className="border-b border-border">
+        <button
+          type="button"
+          onClick={() => toggleFolder(folder.id)}
+          className="w-full px-2 py-2.5 text-xs tracking-wider uppercase text-muted-foreground hover:text-primary flex items-center gap-2"
+          aria-expanded={open}
+        >
+          <Folder size={14} className="text-primary/80" />
+          <span className="flex-1 text-left">{folder.name}</span>
+          <span className="text-[10px] opacity-60">{links.length}</span>
+          {open ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+        </button>
+        {open && (
+          <div className="pl-2 pb-1">
+            {links.length === 0 && (
+              <div className="px-3 py-2 text-[11px] text-muted-foreground italic">Tom katalog.</div>
+            )}
+            {links.map((l) => renderMobileRow(l, { indent: true }))}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   const handleLogout = async () => {
     try {
@@ -550,70 +659,9 @@ export function SiteHeader() {
                 </div>
               )}
             </div>
-            {sortedLinks.map((l) => {
-              const count = usage[l.to] ?? 0;
-              const isFav = menuPrefs.favorites.includes(l.to);
-              const canFav = menuPrefs.favoritesEnabled && l.to !== ALWAYS_FIRST && !isAlwaysLast(l.to);
-              return (
-                <div key={l.to} className="flex items-center gap-0 border-b border-border last:border-0">
-                  {canFav && (
-                    <button
-                      type="button"
-                      onClick={() => toggleFavorite(l.to)}
-                      aria-label={isFav ? "Fjern favoritt" : "Legg til favoritt"}
-                      className={`pl-1.5 pr-0 py-1.5 ${isFav ? "text-primary" : "text-muted-foreground/40"}`}
-                    >
-                      <Star size={13} fill={isFav ? "currentColor" : "none"} />
-                    </button>
-                  )}
-                  <Link
-                    to={l.to}
-                    preload={HOMEY_BACKED_ROUTES.includes(l.to) ? false : undefined}
-                    activeOptions={l.to === "/" ? { exact: true } : undefined}
-                    onClick={() => {
-                      bump(l.to);
-                      setOpen(false);
-                    }}
-                    className={`flex-1 pl-1 pr-2 py-2.5 tracking-wider uppercase text-muted-foreground hover:text-primary data-[status=active]:text-primary data-[status=active]:font-semibold flex items-center gap-2 text-xs${badgeSettings.fitOneLine ? " whitespace-nowrap overflow-hidden" : ""}`}
-                    data-fit-one-line={badgeSettings.fitOneLine ? "1" : undefined}
-                  >
-                    {l.to === "/pollen"
-                      ? <PollenIcon lat={pollenCoord.lat} lon={pollenCoord.lon} />
-                      : ROUTE_ICON[l.to] ? (() => { const I = ROUTE_ICON[l.to]!; return <span style={{ color: ROUTE_ICON_COLOR[l.to], display: "inline-flex" }}><I size={15} strokeWidth={2.25} /></span>; })() : null}
-                    <span className="flex-1">{l.label}</span>
-                    <span data-fit-badges className="contents">
-                    {count > 0 && menuPrefs.sortByUsage && showB("usage_count") && <UsageBadge count={count} />}
-                    {l.to === "/" && showB("uv_hjem") && <UvBadge lat={BORGEN_COORD.lat} lon={BORGEN_COORD.lon} />}
-                    {l.to === "/" && showB("temp_tollnes") && <TempBadge stationMatch="tollnes" storageKey="hdr.temp.tollnes" />}
-                    {l.to === "/" && showB("temp_stua_tollnes") && <TempBadge stationMatch="tollnes" storageKey="hdr.temp.stua.tollnes" variant="indoor" />}
-                    {l.to === "/hytta" && showB("uv_hytta") && <UvBadge lat={HYTTA_COORD.lat} lon={HYTTA_COORD.lon} />}
-                    {l.to === "/hytta" && showB("temp_hytta") && <TempBadge stationMatch="hytta" storageKey="hdr.temp.hytta" />}
-                    {l.to === "/hytta" && showB("temp_stua_hytta") && <TempBadge stationMatch="hytta" storageKey="hdr.temp.stua.hytta" variant="indoor" />}
-                    {l.to === "/pollen" && showB("pollen") && <PollenBadge lat={pollenCoord.lat} lon={pollenCoord.lon} />}
-                    {l.to === "/push-varslinger" && showB("push_today") && <PushTodayBadge inline />}
-                    {l.to === "/lys" && showB("lights_on") && <LightsOnBadge inline />}
-                    {l.to === "/var" && showB("weather_days") && <WeatherDaysBadge inline useGps lat={BORGEN_COORD.lat} lon={BORGEN_COORD.lon} startOffset={badgeSettings.weather.startOffset} days={badgeSettings.weather.days} showTemp={badgeSettings.weather.showTemp} />}
-                    {l.to === "/var" && showB("weather_temp") && <CurrentTempBadge inline lat={BORGEN_COORD.lat} lon={BORGEN_COORD.lon} />}
-                    {l.to === "/smarthus" && <>{showB("mower_status") && <MowerStatusBadge inline />}{showB("basseng_temp") && <BassengTempBadge inline />}</>}
-                    {l.to === "/gressklipper" && <>{showB("gardena_status") && <GardenaStatusBadge inline />}{showB("gardena_battery") && <GardenaBatteryBadge inline />}{showB("gardena_signal") && <GardenaSignalBadge inline />}</>}
-                    {l.to === "/stovsugeren" && <>{showB("roborock_hjemme_status") && <RoborockStatusBadge inline match="hjem" name="Hjemme" />}{showB("roborock_hytta_status") && <RoborockStatusBadge inline match="hytt" name="Hytta" />}</>}
-                    {l.to === "/vakttarnet" && <>{showB("alarm_state") && <AlarmStateBadge inline />}{showB("utgangsdoren_lock") && <UtgangsdorenLockBadge inline />}</>}
-                    {l.to === "/varsler" && showB("alerts_severity") && <AlertsSeverityBadge inline />}
-                    {l.to === "/stromkroniken" && showB("power_vs_yesterday") && <PowerVsYesterdayBadge inline />}
-                    {l.to === "/trening" && <>{showB("steps_arne") && <StepsTodayBadge inline owner="arne" />}{showB("steps_rebekka") && <StepsTodayBadge inline owner="rebekka" />}{showB("training_4w") && <TrainingLast4WeeksBadge inline owner="arne" />}{showB("training_4w_rebekka") && <TrainingLast4WeeksBadge inline owner="rebekka" />}</>}
-                    {l.to === "/agenda" && showB("garbage_next") && <GarbageNextPickupBadge inline />}
-                    {l.to === "/okonomi" && showB("budget_remaining") && <BudgetRemainingBadge inline />}
-                    {l.to === "/okonomi" && showB("okonomi_brukt") && <OkonomiBruktBadge inline />}
-                    {l.to === "/okonomi" && showB("okonomi_inntekt") && <OkonomiInntektBadge inline />}
-                    {l.to === "/okonomi" && showB("okonomi_budsjett") && <OkonomiBudsjettBadge inline />}
-                    {l.to === "/okonomi" && showB("okonomi_overskudd") && <OkonomiOverskuddBadge inline />}
-                    {l.to === "/okonomi" && showB("okonomi_snitt_dag") && <OkonomiSnittPrDagBadge inline />}
-                    {l.to === "/okonomi" && showB("okonomi_igjen_dag") && <OkonomiIgjenPrDagBadge inline />}
-                    </span>
-                  </Link>
-                </div>
-              );
-            })}
+            {topFolders.map(renderFolderGroup)}
+            {visibleSortedLinks.map((l) => renderMobileRow(l))}
+            {bottomFolders.map(renderFolderGroup)}
             {isAuthed ? (
               <button
                 onClick={() => {

@@ -1,21 +1,8 @@
 import { useMenuPrefs } from "@/hooks/use-menu-prefs";
+import { MENU_LINK_DEFS } from "@/hooks/use-menu-visibility";
 import { Star, ListOrdered } from "lucide-react";
 
-const ALL_LINKS: { to: string; label: string }[] = [
-  { to: "/var", label: "Vær" },
-  { to: "/pollen", label: "Pollen" },
-  { to: "/turer", label: "Ferden" },
-  { to: "/agenda", label: "Søppel, bursdager og meldinger" },
-  { to: "/push-varslinger", label: "Varslinger" },
-  { to: "/vakttarnet", label: "Vakttårnet" },
-  { to: "/hytta", label: "Hytta" },
-  { to: "/smarthus", label: "Smartborg" },
-  { to: "/lys", label: "Lys" },
-  { to: "/stromkroniken", label: "Strømkrøniken" },
-  { to: "/kvitteringer", label: "Kvitteringer" },
-  { to: "/trening", label: "Trening" },
-  { to: "/varsler", label: "Farevarsler" },
-];
+const ALL_LINKS = MENU_LINK_DEFS.filter((l) => l.to !== "/");
 
 export function MenuPreferencesPanel() {
   const { prefs, setSortByUsage, setFavoritesEnabled, toggleFavorite } = useMenuPrefs();

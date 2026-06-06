@@ -2,12 +2,20 @@ import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getStoredWho } from "@/lib/push-client";
 
+export type MenuFolder = {
+  id: string;
+  name: string;
+  position: "top" | "bottom";
+  items: string[];
+};
+
 export type MenuPrefs = {
   sortByUsage: boolean;
   favoritesEnabled: boolean;
   favorites: string[];
   favoriteZones: string[];
   useGlobalLightScenes: boolean;
+  menuFolders: MenuFolder[];
 };
 
 const DEFAULTS: MenuPrefs = {
@@ -16,7 +24,25 @@ const DEFAULTS: MenuPrefs = {
   favorites: [],
   favoriteZones: [],
   useGlobalLightScenes: true,
+  menuFolders: [],
 };
+
+function coerceFolders(value: unknown): MenuFolder[] {
+  if (!Array.isArray(value)) return [];
+  const out: MenuFolder[] = [];
+  for (const raw of value) {
+    if (!raw || typeof raw !== "object") continue;
+    const v = raw as Record<string, unknown>;
+    const id = typeof v.id === "string" && v.id ? v.id : `f_${Math.random().toString(36).slice(2, 9)}`;
+    const name = typeof v.name === "string" ? v.name : "Katalog";
+    const position = v.position === "bottom" ? "bottom" : "top";
+    const items = Array.isArray(v.items)
+      ? (v.items as unknown[]).filter((x): x is string => typeof x === "string")
+      : [];
+    out.push({ id, name, position, items });
+  }
+  return out;
+}
 
 const EVT = "menu-prefs-updated";
 const LEGACY_KEY = "menu-prefs:v1";
@@ -36,7 +62,7 @@ const cache = new Map<string, MenuPrefs>();
 async function loadFromDb(who: string): Promise<MenuPrefs> {
   const { data } = await supabase
     .from("user_menu_prefs")
-    .select("favorites, sort_by_usage, favorites_enabled, favorite_zones, use_global_light_scenes")
+    .select("favorites, sort_by_usage, favorites_enabled, favorite_zones, use_global_light_scenes, menu_folders")
     .eq("who", who)
     .maybeSingle();
   if (data) {
@@ -46,6 +72,7 @@ async function loadFromDb(who: string): Promise<MenuPrefs> {
       favoritesEnabled: data.favorites_enabled !== false,
       favoriteZones: Array.isArray((data as any).favorite_zones) ? ((data as any).favorite_zones as string[]) : [],
       useGlobalLightScenes: !!(data as any).use_global_light_scenes,
+      menuFolders: coerceFolders((data as any).menu_folders),
     };
   }
   // Migrate from legacy localStorage on first load (only for "me").
@@ -60,6 +87,7 @@ async function loadFromDb(who: string): Promise<MenuPrefs> {
           favoritesEnabled: parsed.favoritesEnabled ?? true,
           favoriteZones: Array.isArray(parsed.favoriteZones) ? parsed.favoriteZones : [],
           useGlobalLightScenes: parsed.useGlobalLightScenes ?? true,
+          menuFolders: coerceFolders((parsed as any).menuFolders),
         };
         await save(who, seeded);
         return seeded;
@@ -82,6 +110,7 @@ async function save(who: string, next: MenuPrefs) {
       favorites_enabled: next.favoritesEnabled,
       favorite_zones: next.favoriteZones,
       use_global_light_scenes: next.useGlobalLightScenes,
+      menu_folders: next.menuFolders as any,
       updated_at: new Date().toISOString(),
     } as any,
     { onConflict: "who" },
@@ -179,5 +208,104 @@ export function useMenuPrefs() {
     [update],
   );
 
-  return { prefs, setSortByUsage, setFavoritesEnabled, toggleFavorite, toggleFavoriteZone, setFavoriteZones, moveFavoriteZone, setUseGlobalLightScenes };
+  const setMenuFolders = useCallback(
+    (folders: MenuFolder[]) => update({ menuFolders: folders }),
+    [update],
+  );
+
+  const addMenuFolder = useCallback(
+    (name: string, position: "top" | "bottom" = "top") => {
+      const cur = cache.get(who) ?? prefs;
+      const folder: MenuFolder = {
+        id: `f_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`,
+        name: name.trim() || "Katalog",
+        position,
+        items: [],
+      };
+      update({ menuFolders: [...(cur.menuFolders ?? []), folder] });
+    },
+    [who, prefs, update],
+  );
+
+  const renameMenuFolder = useCallback(
+    (id: string, name: string) => {
+      const cur = cache.get(who) ?? prefs;
+      update({
+        menuFolders: (cur.menuFolders ?? []).map((f) =>
+          f.id === id ? { ...f, name: name.trim() || f.name } : f,
+        ),
+      });
+    },
+    [who, prefs, update],
+  );
+
+  const deleteMenuFolder = useCallback(
+    (id: string) => {
+      const cur = cache.get(who) ?? prefs;
+      update({ menuFolders: (cur.menuFolders ?? []).filter((f) => f.id !== id) });
+    },
+    [who, prefs, update],
+  );
+
+  const setMenuFolderPosition = useCallback(
+    (id: string, position: "top" | "bottom") => {
+      const cur = cache.get(who) ?? prefs;
+      update({
+        menuFolders: (cur.menuFolders ?? []).map((f) =>
+          f.id === id ? { ...f, position } : f,
+        ),
+      });
+    },
+    [who, prefs, update],
+  );
+
+  const toggleMenuFolderItem = useCallback(
+    (id: string, path: string) => {
+      const cur = cache.get(who) ?? prefs;
+      // Remove the path from any other folder first (a page belongs to one folder).
+      const cleaned = (cur.menuFolders ?? []).map((f) =>
+        f.id === id ? f : { ...f, items: f.items.filter((p) => p !== path) },
+      );
+      update({
+        menuFolders: cleaned.map((f) => {
+          if (f.id !== id) return f;
+          const has = f.items.includes(path);
+          return { ...f, items: has ? f.items.filter((p) => p !== path) : [...f.items, path] };
+        }),
+      });
+    },
+    [who, prefs, update],
+  );
+
+  const moveMenuFolder = useCallback(
+    (id: string, dir: -1 | 1) => {
+      const cur = cache.get(who) ?? prefs;
+      const arr = [...(cur.menuFolders ?? [])];
+      const idx = arr.findIndex((f) => f.id === id);
+      if (idx < 0) return;
+      const next = idx + dir;
+      if (next < 0 || next >= arr.length) return;
+      [arr[idx], arr[next]] = [arr[next], arr[idx]];
+      update({ menuFolders: arr });
+    },
+    [who, prefs, update],
+  );
+
+  return {
+    prefs,
+    setSortByUsage,
+    setFavoritesEnabled,
+    toggleFavorite,
+    toggleFavoriteZone,
+    setFavoriteZones,
+    moveFavoriteZone,
+    setUseGlobalLightScenes,
+    setMenuFolders,
+    addMenuFolder,
+    renameMenuFolder,
+    deleteMenuFolder,
+    setMenuFolderPosition,
+    toggleMenuFolderItem,
+    moveMenuFolder,
+  };
 }
