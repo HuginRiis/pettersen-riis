@@ -78,7 +78,7 @@ function CompareBox({
   unit?: string;
   tooltip?: string;
 }) {
-  const t = trendArrow(current, refValue);
+  const t = compareText(current, refValue, unit);
   return (
     <div
       className="rounded-xl p-3 backdrop-blur-md"
@@ -92,16 +92,15 @@ function CompareBox({
         <Icon size={11} className="text-[var(--gold)]" />
         <span className="text-[9px] tracking-[0.28em] uppercase text-muted-foreground">{label}</span>
       </div>
-      <div className="flex items-baseline gap-2">
+      <div className="flex items-baseline gap-2 flex-wrap">
         <span className="text-display tabular-nums text-2xl text-[var(--gold)]">
           {fmt(current, unit)}
         </span>
         <span
-          className="inline-flex items-center gap-0.5 text-[11px] tabular-nums"
+          className="text-[11px] tabular-nums"
           style={{ color: t.color }}
         >
-          <t.Icon size={11} />
-          {t.deltaTxt}{unit}
+          {t.text}
         </span>
       </div>
       <div className="text-[10px] text-muted-foreground mt-0.5 tabular-nums">
