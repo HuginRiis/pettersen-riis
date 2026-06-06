@@ -171,13 +171,18 @@ async function fetchFromOpenSky(center: { lat: number; lon: number }, radiusKm: 
   return out;
 }
 
-async function fetchFromAdsbLol(center: { lat: number; lon: number }, radiusKm: number): Promise<Flight[]> {
+async function fetchFromAdsbApi(
+  label: string,
+  baseUrl: string,
+  center: { lat: number; lon: number },
+  radiusKm: number,
+): Promise<Flight[]> {
   const radiusNm = Math.max(1, Math.round(radiusKm / 1.852));
-  const url = `https://api.adsb.lol/v2/lat/${center.lat}/lon/${center.lon}/dist/${radiusNm}`;
+  const url = `${baseUrl}/v2/lat/${center.lat}/lon/${center.lon}/dist/${radiusNm}`;
   const res = await fetch(url, {
     headers: { Accept: "application/json", "User-Agent": "house-riis-pettersen/1.0" },
   });
-  if (!res.ok) throw new Error(`adsb.lol ${res.status}`);
+  if (!res.ok) throw new Error(`${label} ${res.status}`);
   const json = (await res.json()) as { ac?: any[] };
   const ac = json.ac ?? [];
   const out: Flight[] = [];
