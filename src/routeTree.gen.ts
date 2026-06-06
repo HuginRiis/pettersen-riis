@@ -51,6 +51,7 @@ import { Route as ApiPublicHooksGardenaPollRouteImport } from './routes/api/publ
 import { Route as ApiPublicHooksEufyPollRouteImport } from './routes/api/public/hooks/eufy-poll'
 import { Route as ApiPublicHooksEufyRouteImport } from './routes/api/public/hooks/eufy'
 import { Route as ApiPublicHooksBackfillPbthHistoryRouteImport } from './routes/api.public.hooks.backfill-pbth-history'
+import { Route as ApiPublicHooksAirQualityHistoryDailyRouteImport } from './routes/api/public/hooks/air-quality-history-daily'
 import { Route as ApiPublicHooksAgendaPushRouteImport } from './routes/api.public.hooks.agenda-push'
 
 const YtelseRoute = YtelseRouteImport.update({
@@ -271,6 +272,12 @@ const ApiPublicHooksBackfillPbthHistoryRoute =
     path: '/api/public/hooks/backfill-pbth-history',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksAirQualityHistoryDailyRoute =
+  ApiPublicHooksAirQualityHistoryDailyRouteImport.update({
+    id: '/api/public/hooks/air-quality-history-daily',
+    path: '/api/public/hooks/air-quality-history-daily',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksAgendaPushRoute =
   ApiPublicHooksAgendaPushRouteImport.update({
     id: '/api/public/hooks/agenda-push',
@@ -312,6 +319,7 @@ export interface FileRoutesByFullPath {
   '/api/strava/callback': typeof ApiStravaCallbackRoute
   '/api/strava/start': typeof ApiStravaStartRoute
   '/api/public/hooks/agenda-push': typeof ApiPublicHooksAgendaPushRoute
+  '/api/public/hooks/air-quality-history-daily': typeof ApiPublicHooksAirQualityHistoryDailyRoute
   '/api/public/hooks/backfill-pbth-history': typeof ApiPublicHooksBackfillPbthHistoryRoute
   '/api/public/hooks/eufy': typeof ApiPublicHooksEufyRoute
   '/api/public/hooks/eufy-poll': typeof ApiPublicHooksEufyPollRoute
@@ -357,6 +365,7 @@ export interface FileRoutesByTo {
   '/api/strava/callback': typeof ApiStravaCallbackRoute
   '/api/strava/start': typeof ApiStravaStartRoute
   '/api/public/hooks/agenda-push': typeof ApiPublicHooksAgendaPushRoute
+  '/api/public/hooks/air-quality-history-daily': typeof ApiPublicHooksAirQualityHistoryDailyRoute
   '/api/public/hooks/backfill-pbth-history': typeof ApiPublicHooksBackfillPbthHistoryRoute
   '/api/public/hooks/eufy': typeof ApiPublicHooksEufyRoute
   '/api/public/hooks/eufy-poll': typeof ApiPublicHooksEufyPollRoute
@@ -403,6 +412,7 @@ export interface FileRoutesById {
   '/api/strava/callback': typeof ApiStravaCallbackRoute
   '/api/strava/start': typeof ApiStravaStartRoute
   '/api/public/hooks/agenda-push': typeof ApiPublicHooksAgendaPushRoute
+  '/api/public/hooks/air-quality-history-daily': typeof ApiPublicHooksAirQualityHistoryDailyRoute
   '/api/public/hooks/backfill-pbth-history': typeof ApiPublicHooksBackfillPbthHistoryRoute
   '/api/public/hooks/eufy': typeof ApiPublicHooksEufyRoute
   '/api/public/hooks/eufy-poll': typeof ApiPublicHooksEufyPollRoute
@@ -450,6 +460,7 @@ export interface FileRouteTypes {
     | '/api/strava/callback'
     | '/api/strava/start'
     | '/api/public/hooks/agenda-push'
+    | '/api/public/hooks/air-quality-history-daily'
     | '/api/public/hooks/backfill-pbth-history'
     | '/api/public/hooks/eufy'
     | '/api/public/hooks/eufy-poll'
@@ -495,6 +506,7 @@ export interface FileRouteTypes {
     | '/api/strava/callback'
     | '/api/strava/start'
     | '/api/public/hooks/agenda-push'
+    | '/api/public/hooks/air-quality-history-daily'
     | '/api/public/hooks/backfill-pbth-history'
     | '/api/public/hooks/eufy'
     | '/api/public/hooks/eufy-poll'
@@ -540,6 +552,7 @@ export interface FileRouteTypes {
     | '/api/strava/callback'
     | '/api/strava/start'
     | '/api/public/hooks/agenda-push'
+    | '/api/public/hooks/air-quality-history-daily'
     | '/api/public/hooks/backfill-pbth-history'
     | '/api/public/hooks/eufy'
     | '/api/public/hooks/eufy-poll'
@@ -586,6 +599,7 @@ export interface RootRouteChildren {
   ApiStravaCallbackRoute: typeof ApiStravaCallbackRoute
   ApiStravaStartRoute: typeof ApiStravaStartRoute
   ApiPublicHooksAgendaPushRoute: typeof ApiPublicHooksAgendaPushRoute
+  ApiPublicHooksAirQualityHistoryDailyRoute: typeof ApiPublicHooksAirQualityHistoryDailyRoute
   ApiPublicHooksBackfillPbthHistoryRoute: typeof ApiPublicHooksBackfillPbthHistoryRoute
   ApiPublicHooksEufyRoute: typeof ApiPublicHooksEufyRoute
   ApiPublicHooksEufyPollRoute: typeof ApiPublicHooksEufyPollRoute
@@ -894,6 +908,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksBackfillPbthHistoryRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/air-quality-history-daily': {
+      id: '/api/public/hooks/air-quality-history-daily'
+      path: '/api/public/hooks/air-quality-history-daily'
+      fullPath: '/api/public/hooks/air-quality-history-daily'
+      preLoaderRoute: typeof ApiPublicHooksAirQualityHistoryDailyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/agenda-push': {
       id: '/api/public/hooks/agenda-push'
       path: '/api/public/hooks/agenda-push'
@@ -938,6 +959,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiStravaCallbackRoute: ApiStravaCallbackRoute,
   ApiStravaStartRoute: ApiStravaStartRoute,
   ApiPublicHooksAgendaPushRoute: ApiPublicHooksAgendaPushRoute,
+  ApiPublicHooksAirQualityHistoryDailyRoute:
+    ApiPublicHooksAirQualityHistoryDailyRoute,
   ApiPublicHooksBackfillPbthHistoryRoute:
     ApiPublicHooksBackfillPbthHistoryRoute,
   ApiPublicHooksEufyRoute: ApiPublicHooksEufyRoute,
