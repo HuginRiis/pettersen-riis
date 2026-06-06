@@ -309,6 +309,30 @@ export function UvNotificationSettings() {
                 </div>
               </div>
 
+              <div className="rounded-md border border-border/50 bg-muted/20 p-2 space-y-2">
+                <div className="text-[11px] text-muted-foreground">
+                  Varsle når dagens UV-topp er nådd:
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs">Topp (skyfri himmel)</span>
+                  <Switch
+                    checked={Boolean(p.notify_peak_clear)}
+                    disabled={!p.enabled || saving === p.id}
+                    onCheckedChange={(v) => update(p.id, { notify_peak_clear: v })}
+                  />
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs">Topp (med skydekke)</span>
+                  <Switch
+                    checked={Boolean(p.notify_peak_cloud)}
+                    disabled={!p.enabled || saving === p.id}
+                    onCheckedChange={(v) => update(p.id, { notify_peak_cloud: v })}
+                  />
+                </div>
+              </div>
+
+
+
 
 
               <div className="pt-1">
