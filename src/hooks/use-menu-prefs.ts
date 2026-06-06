@@ -309,4 +309,3 @@ export function useMenuPrefs() {
     moveMenuFolder,
   };
 }
-}
