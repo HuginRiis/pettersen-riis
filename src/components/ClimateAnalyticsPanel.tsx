@@ -131,23 +131,21 @@ function MetricKPI({
 }) {
   let trendNode: React.ReactNode = null;
   if (trendPerHour != null) {
-    const t = trendArrow(trendPerHour, 0);
+    const t = trendRateText(trendPerHour, unit);
     trendNode = (
-      <span className="inline-flex items-center gap-0.5 text-[11px] tabular-nums" style={{ color: t.color }}>
-        <t.Icon size={11} />
-        {Math.abs(trendPerHour).toFixed(2)}{unit}/t
+      <span className="text-[11px] tabular-nums" style={{ color: t.color }}>
+        {t.text}
       </span>
     );
   } else if (prevValue !== undefined) {
-    const t = trendArrow(value, prevValue ?? null);
+    const t = compareText(value, prevValue ?? null, unit);
     trendNode = (
       <span
-        className="inline-flex items-center gap-0.5 text-[11px] tabular-nums"
+        className="text-[11px] tabular-nums"
         style={{ color: t.color }}
         title={`Forrige døgn: ${fmt(prevValue ?? null, unit)}`}
       >
-        <t.Icon size={11} />
-        {t.deltaTxt}{unit}
+        {t.text}
       </span>
     );
   }
