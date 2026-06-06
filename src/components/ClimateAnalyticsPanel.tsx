@@ -46,23 +46,6 @@ function trendArrow(now: number | null, ref: number | null): { Icon: typeof Minu
   return { Icon: ArrowDown, color: "#7dd3fc", deltaTxt: d.toFixed(1) };
 }
 
-function compareText(now: number | null, ref: number | null, unit: string): { color: string; text: string } {
-  if (now == null || ref == null) return { color: "var(--muted-foreground)", text: "–" };
-  const d = now - ref;
-  if (Math.abs(d) < 0.2) return { color: "var(--muted-foreground)", text: "lik nå" };
-  const abs = Math.abs(d).toFixed(1);
-  if (d > 0) return { color: "#fb923c", text: `${abs}${unit} høyere enn nå` };
-  return { color: "#7dd3fc", text: `${abs}${unit} lavere enn nå` };
-}
-
-function trendRateText(perHour: number | null | undefined, unit: string): { color: string; text: string } {
-  if (perHour == null) return { color: "var(--muted-foreground)", text: "–" };
-  const abs = Math.abs(perHour).toFixed(2);
-  if (Math.abs(perHour) < 0.05) return { color: "var(--muted-foreground)", text: "stabil" };
-  if (perHour > 0) return { color: "#fb923c", text: `stiger ${abs}${unit}/t` };
-  return { color: "#7dd3fc", text: `synker ${abs}${unit}/t` };
-}
-
 function CompareBox({
   label,
   icon: Icon,
@@ -78,7 +61,7 @@ function CompareBox({
   unit?: string;
   tooltip?: string;
 }) {
-  const t = compareText(current, refValue, unit);
+  const t = trendArrow(current, refValue);
   return (
     <div
       className="rounded-xl p-3 backdrop-blur-md"
@@ -92,15 +75,16 @@ function CompareBox({
         <Icon size={11} className="text-[var(--gold)]" />
         <span className="text-[9px] tracking-[0.28em] uppercase text-muted-foreground">{label}</span>
       </div>
-      <div className="flex items-baseline gap-2 flex-wrap">
+      <div className="flex items-baseline gap-2">
         <span className="text-display tabular-nums text-2xl text-[var(--gold)]">
           {fmt(current, unit)}
         </span>
         <span
-          className="text-[11px] tabular-nums"
+          className="inline-flex items-center gap-0.5 text-[11px] tabular-nums"
           style={{ color: t.color }}
         >
-          {t.text}
+          <t.Icon size={11} />
+          {t.deltaTxt}{unit}
         </span>
       </div>
       <div className="text-[10px] text-muted-foreground mt-0.5 tabular-nums">
@@ -131,21 +115,23 @@ function MetricKPI({
 }) {
   let trendNode: React.ReactNode = null;
   if (trendPerHour != null) {
-    const t = trendRateText(trendPerHour, unit);
+    const t = trendArrow(trendPerHour, 0);
     trendNode = (
-      <span className="text-[11px] tabular-nums" style={{ color: t.color }}>
-        {t.text}
+      <span className="inline-flex items-center gap-0.5 text-[11px] tabular-nums" style={{ color: t.color }}>
+        <t.Icon size={11} />
+        {Math.abs(trendPerHour).toFixed(2)}{unit}/t
       </span>
     );
   } else if (prevValue !== undefined) {
-    const t = compareText(value, prevValue ?? null, unit);
+    const t = trendArrow(value, prevValue ?? null);
     trendNode = (
       <span
-        className="text-[11px] tabular-nums"
+        className="inline-flex items-center gap-0.5 text-[11px] tabular-nums"
         style={{ color: t.color }}
         title={`Forrige døgn: ${fmt(prevValue ?? null, unit)}`}
       >
-        {t.text}
+        <t.Icon size={11} />
+        {t.deltaTxt}{unit}
       </span>
     );
   }
