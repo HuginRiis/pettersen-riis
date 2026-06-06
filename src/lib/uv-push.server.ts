@@ -262,7 +262,12 @@ export async function processUvNotifications(): Promise<{
     reached_date_6: string | null;
     reached_date_8: string | null;
     uv_source?: "clear_sky" | "with_clouds" | null;
+    notify_peak_clear?: boolean | null;
+    notify_peak_cloud?: boolean | null;
+    notified_peak_clear_date?: string | null;
+    notified_peak_cloud_date?: string | null;
   }>) {
+
     checked++;
     const lead = typeof p.lead_minutes === "number" ? p.lead_minutes : LEAD_MINUTES;
     const source = p.uv_source === "with_clouds" ? "with_clouds" : "clear_sky";
