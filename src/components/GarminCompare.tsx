@@ -308,6 +308,35 @@ export function GarminCompare() {
           })}
         </div>
 
+        {/* Leder siste 7 dager — portrett */}
+        {!loading && (wins7.arne > 0 || wins7.rebekka > 0) && (
+          <div className="rounded border border-amber-500/30 bg-black/30 p-3 flex items-center gap-3">
+            {leader7 === "tie" ? (
+              <div className="flex -space-x-3">
+                <img src={arnePortrait} alt="Arne" className="h-14 w-14 rounded-full object-cover border-2 border-slate-300/70 ring-2 ring-amber-400/40" />
+                <img src={rebekkaPortrait} alt="Rebekka" className="h-14 w-14 rounded-full object-cover border-2 border-rose-300/70 ring-2 ring-amber-400/40" />
+              </div>
+            ) : (
+              <img
+                src={leader7 === "arne" ? arnePortrait : rebekkaPortrait}
+                alt={leader7 === "arne" ? "Arne" : "Rebekka"}
+                className={`h-16 w-16 rounded-full object-cover border-2 ring-2 ring-amber-400/60 ${leader7 === "arne" ? "border-slate-300/80" : "border-rose-300/80"}`}
+              />
+            )}
+            <div className="flex-1 min-w-0">
+              <div className="text-[10px] uppercase tracking-[0.2em] text-amber-300 flex items-center gap-1.5" style={{ fontFamily: display }}>
+                <Crown size={12} /> LEDER · SISTE 7 DAGER (SNITT)
+              </div>
+              <div className="text-amber-100 font-semibold text-lg" style={{ fontFamily: display }}>
+                {leader7 === "tie" ? "Uavgjort" : leader7 === "arne" ? "Arne" : "Rebekka"}
+              </div>
+              <div className="text-[11px] text-muted-foreground tabular-nums">
+                Arne {wins7.arne} – {wins7.rebekka} Rebekka
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Score / banners */}
         <div className="grid grid-cols-2 gap-2">
           <div className={`rounded border ${wins.arne >= wins.rebekka ? "border-slate-300/60" : "border-slate-500/30"} bg-gradient-to-r from-slate-700/60 to-slate-900/70 px-3 py-2 flex items-center gap-2`}>
