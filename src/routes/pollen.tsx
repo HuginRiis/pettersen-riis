@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { PageShell, PageHero } from "@/components/PageShell";
 import { LivePollen } from "@/components/LivePollen";
 import { AirQualityPanel } from "@/components/AirQualityPanel";
+import { AirQualityDashboard } from "@/components/AirQualityDashboard";
 import { UvCloudPanel } from "@/components/UvCloudPanel";
 import { useUserLocation, UserLocationBar } from "@/hooks/use-user-location";
 import heroImg from "@/assets/got-pollen.jpg";
