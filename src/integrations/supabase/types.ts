@@ -137,6 +137,54 @@ export type Database = {
         }
         Relationships: []
       }
+      air_quality_history: {
+        Row: {
+          co: number | null
+          european_aqi: number | null
+          humidity: number | null
+          location_key: string
+          no2: number | null
+          o3: number | null
+          pm10: number | null
+          pm25: number | null
+          precipitation: number | null
+          so2: number | null
+          temperature: number | null
+          ts: string
+          wind_speed: number | null
+        }
+        Insert: {
+          co?: number | null
+          european_aqi?: number | null
+          humidity?: number | null
+          location_key: string
+          no2?: number | null
+          o3?: number | null
+          pm10?: number | null
+          pm25?: number | null
+          precipitation?: number | null
+          so2?: number | null
+          temperature?: number | null
+          ts: string
+          wind_speed?: number | null
+        }
+        Update: {
+          co?: number | null
+          european_aqi?: number | null
+          humidity?: number | null
+          location_key?: string
+          no2?: number | null
+          o3?: number | null
+          pm10?: number | null
+          pm25?: number | null
+          precipitation?: number | null
+          so2?: number | null
+          temperature?: number | null
+          ts?: string
+          wind_speed?: number | null
+        }
+        Relationships: []
+      }
       air_quality_notification_prefs: {
         Row: {
           aqi_threshold: number
