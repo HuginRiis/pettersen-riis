@@ -133,9 +133,11 @@ function PollenPage() {
           />
           <div className="mt-6">
             <AirQualityDashboard
+              locationKey="borgen-tollnes"
               lat={BORGEN_TOLLNES.lat}
               lon={BORGEN_TOLLNES.lon}
-              locationLabel="Borgen · Tollnes, Skien"
+              title="Borgen · Tollnes, Skien"
+              subtitle="Historikk, trender, sesonger og korrelasjoner"
             />
           </div>
         </div>
