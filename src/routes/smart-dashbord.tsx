@@ -3238,9 +3238,12 @@ function MiniAnimOverlay({ kind }: { kind: MiniAnim }) {
   );
 }
 
-function MiniTile({ icon, label, value, sub, accent, detail, anim }:
-  { icon: React.ReactNode; label: string; value: string; sub?: string; accent?: string; detail?: React.ReactNode; anim?: MiniAnim }) {
+function MiniTile({ icon, label, value, sub, accent, detail, anim, numericValue, trackKey, formatMax }:
+  { icon: React.ReactNode; label: string; value: string; sub?: string; accent?: string; detail?: React.ReactNode; anim?: MiniAnim; numericValue?: number | null; trackKey?: string; formatMax?: (n: number) => string }) {
   const [open, setOpen] = useState(false);
+  const daily = useDailyMaxTime(trackKey ?? "__none__", trackKey ? (numericValue ?? null) : null);
+  const maxStr = daily ? (formatMax ? formatMax(daily.max) : String(Math.round(daily.max))) : null;
+  const timeStr = daily ? new Date(daily.at).toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit" }) : null;
   return (
     <>
       <button
@@ -3252,10 +3255,15 @@ function MiniTile({ icon, label, value, sub, accent, detail, anim }:
           {anim && <MiniAnimOverlay kind={anim} />}
           <span className="relative z-10">{icon}</span>
         </div>
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <div className="text-[10px] uppercase tracking-widest text-white/40">{label}</div>
           <div className="text-sm text-white tabular-nums truncate">{value}</div>
-          {sub && <div className="text-[10px] text-white/40">{sub}</div>}
+          {sub && <div className="text-[10px] text-white/40 truncate">{sub}</div>}
+          {maxStr && timeStr && (
+            <div className="text-[9px] text-white/50 tabular-nums truncate mt-0.5">
+              ↑ {maxStr} <span className="text-white/30">kl {timeStr}</span>
+            </div>
+          )}
         </div>
       </button>
 
@@ -3271,6 +3279,11 @@ function MiniTile({ icon, label, value, sub, accent, detail, anim }:
           <div className="mt-2">
             <div className={`text-4xl font-semibold tabular-nums ${accent ?? "text-white"}`}>{value}</div>
             <div className="text-xs text-white/40 mt-1">{sub}</div>
+            {maxStr && timeStr && (
+              <div className="text-xs text-white/60 mt-2 tabular-nums">
+                Maks i dag: <span className="text-white">{maxStr}</span> kl {timeStr}
+              </div>
+            )}
             {detail ? <div className="mt-4">{detail}</div> : (
               <div className="mt-4 text-xs text-white/40 italic">
                 Sanntid fra sensoren. Historikk kommer her etter hvert.
