@@ -1536,17 +1536,30 @@ function RobotsTile() {
 
   // Gardena: les KUN fra delt server-cache (public.gardena_snapshot) som
   // mates av gardena-poll-cron. Treffer aldri Husqvarna-API-et fra dashbordet.
+  // Re-poller cachen hver time så både dashbord-flisen og meny-badges
+  // oppdateres jevnlig uten side-reload.
   useEffect(() => {
     const unsub = subscribeGardena((s) => setGardena(s));
-    fetchGardenaCached()
-      .then((res) => {
-        if (res?.snap) {
-          setGardena(res.snap as GardenaSnap);
-          setCachedGardena(res.snap as GardenaSnap);
-        }
-      })
-      .catch(() => {});
-    return () => { unsub(); };
+    const load = () => {
+      if (typeof document !== "undefined" && document.hidden) return;
+      fetchGardenaCached()
+        .then((res) => {
+          if (res?.snap) {
+            setGardena(res.snap as GardenaSnap);
+            setCachedGardena(res.snap as GardenaSnap);
+          }
+        })
+        .catch(() => {});
+    };
+    load();
+    const id = window.setInterval(load, 60 * 60 * 1000);
+    const onVis = () => { if (!document.hidden) load(); };
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      unsub();
+      window.clearInterval(id);
+      document.removeEventListener("visibilitychange", onVis);
+    };
   }, [fetchGardenaCached]);
 
   const mower = useMemo(() => {
