@@ -236,8 +236,10 @@ type InflightEntry<T> = {
 
 const HOMEY_TARGET_TTL_MS = 30 * 60_000;
 const HOMEY_SESSION_TTL_MS = 8 * 60_000;
-// Snapshot caches i 3 minutter — alle Homey-baserte sider deler denne.
-const HOMEY_SNAPSHOT_TTL_MS = 3 * 60_000;
+// Snapshot caches i 60 sekunder — matcher polling-intervallet på dashbord/lys-siden,
+// så på/av-endringer (også de gjort utenfor appen, f.eks. via Hue-app) vises innen ~1 min.
+// Cachen dedupliserer fortsatt samtidige iPad-polls slik at vi ikke hamrer Athom.
+const HOMEY_SNAPSHOT_TTL_MS = 60_000;
 
 let homeyTargetCache: CacheEntry<HomeyTarget | null> | null = null;
 let homeySessionCache: CacheEntry<HomeySessionContext> | null = null;
