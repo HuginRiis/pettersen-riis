@@ -431,6 +431,27 @@ export function GardenaPanel() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Auto-refresh fra Husqvarna/Gardena én gang per time mens siden er åpen.
+  // Respekterer nattevindu og pauser når fanen er skjult.
+  useEffect(() => {
+    const tick = () => {
+      if (typeof document !== "undefined" && document.hidden) return;
+      if (isGardenaNightWindow()) return;
+      void load(false);
+    };
+    const id = window.setInterval(tick, 60 * 60 * 1000);
+    const onVis = () => {
+      if (!document.hidden && !isGardenaCacheFresh() && !isGardenaNightWindow()) {
+        void load(false);
+      }
+    };
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      window.clearInterval(id);
+      document.removeEventListener("visibilitychange", onVis);
+    };
+  }, [load]);
+
   // Tikk-tikk for å vise nedtelling på Oppdater-knappen.
   useEffect(() => {
     const id = window.setInterval(() => {
