@@ -410,12 +410,16 @@ export async function fetchRoborockSnapshot(): Promise<RoborockSnapshot> {
   try {
     const auth = await loadAuth();
     if (!auth?.token || !auth?.rriot || !auth?.base_url || !auth?.device_id) {
+      console.warn(`[roborock] snapshot: trenger login — tokenSet=${!!auth?.token} rriotSet=${!!auth?.rriot} baseUrlSet=${!!auth?.base_url} deviceIdSet=${!!auth?.device_id}`);
       return { ok: false, needsLogin: true, devices: [], error: "Ikke innlogget. Send kode på e-post for å logge inn." };
     }
     const homeId = await getHomeId(auth.base_url, email, auth.device_id, auth.token);
+    console.log(`[roborock] snapshot: homeId=${homeId}`);
     const devices = await getDevices(auth.rriot, homeId);
+    console.log(`[roborock] snapshot: returning ${devices.length} device(s)`);
     return { ok: true, email, homeId, devices };
   } catch (e: any) {
+    console.error(`[roborock] snapshot failed:`, e?.message ?? e);
     return { ok: false, devices: [], error: e?.message ?? String(e) };
   }
 }
