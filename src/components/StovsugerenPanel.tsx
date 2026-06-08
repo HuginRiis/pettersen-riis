@@ -249,14 +249,23 @@ export function StovsugerenPanel() {
               hjem til tronen, eller hvil dem ved peisen.
             </p>
           </div>
-          <button
-            onClick={load}
-            disabled={loading}
-            className="hidden sm:inline-flex items-center gap-2 px-3 py-2 rounded border border-primary/40 text-primary text-[11px] tracking-[0.25em] uppercase hover:bg-primary/10 disabled:opacity-50"
-          >
-            {loading ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
-            Speid på nytt
-          </button>
+          <div className="hidden sm:flex flex-col gap-2">
+            <button
+              onClick={load}
+              disabled={loading}
+              className="inline-flex items-center gap-2 px-3 py-2 rounded border border-primary/40 text-primary text-[11px] tracking-[0.25em] uppercase hover:bg-primary/10 disabled:opacity-50"
+            >
+              {loading ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
+              Speid på nytt
+            </button>
+            <button
+              onClick={() => { setShowLogin((s) => !s); setInfo(null); }}
+              className="inline-flex items-center gap-2 px-3 py-2 rounded border border-border text-foreground/80 text-[11px] tracking-[0.25em] uppercase hover:border-primary/60 hover:text-foreground"
+            >
+              <KeyRound size={12} />
+              Logg inn på nytt
+            </button>
+          </div>
         </div>
       </article>
 
