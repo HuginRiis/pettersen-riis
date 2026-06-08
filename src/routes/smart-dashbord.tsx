@@ -1282,7 +1282,7 @@ function VarmepumpeTile({
             <Fan
               size={104}
               strokeWidth={1}
-              className={`absolute inset-0 m-auto -translate-x-1 ${fanColor} ${isOn ? "animate-spin" : ""}`}
+              className={`absolute inset-0 m-auto -translate-x-2 ${fanColor} ${isOn ? "animate-spin" : ""}`}
               style={isOn ? { animationDuration: "3s" } : undefined}
               aria-hidden="true"
             />
