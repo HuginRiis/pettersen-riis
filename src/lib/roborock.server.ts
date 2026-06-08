@@ -301,21 +301,27 @@ async function getDevices(rriot: Rriot, homeId: number | string): Promise<Roboro
   const r = await fetch(`${rriot.r.a}${path}`, {
     headers: { Authorization: hawkAuth(rriot, path) },
   });
-  const j: any = await r.json();
-  if (!j?.success || !j?.result) {
-    // Prøv v1
-    const path2 = `/user/homes/${homeId}`;
-    const r2 = await fetch(`${rriot.r.a}${path2}`, {
-      headers: { Authorization: hawkAuth(rriot, path2) },
-    });
-    const j2: any = await r2.json();
-    if (!j2?.success || !j2?.result) {
-      throw new Error(`getDevices feilet: ${j?.msg ?? j2?.msg ?? "ukjent"}`);
-    }
-    return mapDevices(j2.result);
-  }
-  return mapDevices(j.result);
+  const text = await r.text();
+  let j: any = null;
+  try { j = JSON.parse(text); } catch { /* ignore */ }
+  if (j?.success && j?.result) return mapDevices(j.result);
+
+  // Prøv v1
+  const path2 = `/user/homes/${homeId}`;
+  const r2 = await fetch(`${rriot.r.a}${path2}`, {
+    headers: { Authorization: hawkAuth(rriot, path2) },
+  });
+  const text2 = await r2.text();
+  let j2: any = null;
+  try { j2 = JSON.parse(text2); } catch { /* ignore */ }
+  if (j2?.success && j2?.result) return mapDevices(j2.result);
+
+  const detail =
+    j?.msg ?? j2?.msg ??
+    `v3 status=${r.status} body=${text.slice(0, 200)} | v1 status=${r2.status} body=${text2.slice(0, 200)}`;
+  throw new Error(`getDevices feilet: ${detail}`);
 }
+
 
 function mapDevices(result: any): RoborockDevice[] {
   const products: any[] = result.products ?? [];
