@@ -30,6 +30,7 @@ import { Route as PlanterRouteImport } from './routes/planter'
 import { Route as OkonomiRouteImport } from './routes/okonomi'
 import { Route as LysRouteImport } from './routes/lys'
 import { Route as KvitteringerRouteImport } from './routes/kvitteringer'
+import { Route as IphoneAppRouteImport } from './routes/iphone-app'
 import { Route as HyttaRouteImport } from './routes/hytta'
 import { Route as GressklipperRouteImport } from './routes/gressklipper'
 import { Route as FlyRouteImport } from './routes/fly'
@@ -157,6 +158,11 @@ const LysRoute = LysRouteImport.update({
 const KvitteringerRoute = KvitteringerRouteImport.update({
   id: '/kvitteringer',
   path: '/kvitteringer',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IphoneAppRoute = IphoneAppRouteImport.update({
+  id: '/iphone-app',
+  path: '/iphone-app',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HyttaRoute = HyttaRouteImport.update({
@@ -292,6 +298,7 @@ export interface FileRoutesByFullPath {
   '/fly': typeof FlyRoute
   '/gressklipper': typeof GressklipperRoute
   '/hytta': typeof HyttaRoute
+  '/iphone-app': typeof IphoneAppRoute
   '/kvitteringer': typeof KvitteringerRoute
   '/lys': typeof LysRoute
   '/okonomi': typeof OkonomiRoute
@@ -338,6 +345,7 @@ export interface FileRoutesByTo {
   '/fly': typeof FlyRoute
   '/gressklipper': typeof GressklipperRoute
   '/hytta': typeof HyttaRoute
+  '/iphone-app': typeof IphoneAppRoute
   '/kvitteringer': typeof KvitteringerRoute
   '/lys': typeof LysRoute
   '/okonomi': typeof OkonomiRoute
@@ -385,6 +393,7 @@ export interface FileRoutesById {
   '/fly': typeof FlyRoute
   '/gressklipper': typeof GressklipperRoute
   '/hytta': typeof HyttaRoute
+  '/iphone-app': typeof IphoneAppRoute
   '/kvitteringer': typeof KvitteringerRoute
   '/lys': typeof LysRoute
   '/okonomi': typeof OkonomiRoute
@@ -433,6 +442,7 @@ export interface FileRouteTypes {
     | '/fly'
     | '/gressklipper'
     | '/hytta'
+    | '/iphone-app'
     | '/kvitteringer'
     | '/lys'
     | '/okonomi'
@@ -479,6 +489,7 @@ export interface FileRouteTypes {
     | '/fly'
     | '/gressklipper'
     | '/hytta'
+    | '/iphone-app'
     | '/kvitteringer'
     | '/lys'
     | '/okonomi'
@@ -525,6 +536,7 @@ export interface FileRouteTypes {
     | '/fly'
     | '/gressklipper'
     | '/hytta'
+    | '/iphone-app'
     | '/kvitteringer'
     | '/lys'
     | '/okonomi'
@@ -572,6 +584,7 @@ export interface RootRouteChildren {
   FlyRoute: typeof FlyRoute
   GressklipperRoute: typeof GressklipperRoute
   HyttaRoute: typeof HyttaRoute
+  IphoneAppRoute: typeof IphoneAppRoute
   KvitteringerRoute: typeof KvitteringerRoute
   LysRoute: typeof LysRoute
   OkonomiRoute: typeof OkonomiRoute
@@ -761,6 +774,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof KvitteringerRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/iphone-app': {
+      id: '/iphone-app'
+      path: '/iphone-app'
+      fullPath: '/iphone-app'
+      preLoaderRoute: typeof IphoneAppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/hytta': {
       id: '/hytta'
       path: '/hytta'
@@ -932,6 +952,7 @@ const rootRouteChildren: RootRouteChildren = {
   FlyRoute: FlyRoute,
   GressklipperRoute: GressklipperRoute,
   HyttaRoute: HyttaRoute,
+  IphoneAppRoute: IphoneAppRoute,
   KvitteringerRoute: KvitteringerRoute,
   LysRoute: LysRoute,
   OkonomiRoute: OkonomiRoute,
