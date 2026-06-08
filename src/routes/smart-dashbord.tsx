@@ -4347,10 +4347,10 @@ export function SmartDashbord() {
               </div>
 
               {/* Rad 3: Kalender + Dører & Yale + Leader + Robots */}
-              <div className="col-span-3">
+              <div className="col-span-3 iphone-full-row">
                 <CalendarTile />
               </div>
-              <div className="col-span-3">
+              <div className="col-span-3 iphone-full-row">
                 <DoorsLockTile />
               </div>
               <div className="col-span-3">
@@ -4359,6 +4359,7 @@ export function SmartDashbord() {
               <div className="col-span-3">
                 <RobotsTile />
               </div>
+
             </>
           )}
         </div>
