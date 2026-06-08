@@ -4324,11 +4324,11 @@ export function SmartDashbord() {
             </>
           ) : (
             <>
-              {/* Rad 1: Basseng + Hundevann + Lys (Stue+Spisestue) + Strøm */}
-              <div className="col-span-2">
+              {/* Rad 1: Basseng + Hundevann + Lys (Stue+Spisestue) + Strøm Borgen + Strøm Hytta */}
+              <div className="col-span-2 iphone-tall">
                 <BassengTile loc={loc} switchDevice={bassengSwitch} onReload={reload} />
               </div>
-              <div className="col-span-2">
+              <div className="col-span-2 iphone-tall">
                 <HundeTile
                   device={hundeVannDevice}
                   countdownSeconds={hundeCountdownSeconds}
@@ -4336,11 +4336,14 @@ export function SmartDashbord() {
                   onReload={reload}
                 />
               </div>
-              <div className="col-span-6">
+              <div className="col-span-4">
                 <LysCombinedTile groups={hueRoomGroups} onReload={reload} />
               </div>
               <div className="col-span-2">
                 <StromTile home="borgen" />
+              </div>
+              <div className="col-span-2">
+                <StromTile home="hytta" />
               </div>
 
               {/* Rad 2: Varmepumpe + UV + AQ + Regn + Vind (halv-størrelse) */}
