@@ -251,16 +251,22 @@ function buildHighlights(
     rawAvgMonth != null ? (rawAvgMonth > 200 ? rawAvgMonth : rawAvgMonth * 1000) : undefined;
 
   // Snitt-effekt siste uke: prøv egen capability, ellers regn ut fra kWh.
+  // NB: bruk forrige hele uke når den finnes, ellers regn snitt over faktisk
+  // forløpte timer av denne uka (mandag 00:00 → nå) — ikke 168 timer, for da
+  // blir tallet sterkt undervurdert tidlig i uka.
   const rawAvgWeek = firstNum(
     "meter_power_avg_this_week",
     "meter_power_avg_last_week",
   ) ?? matchNum(/^meter_power.*avg.*week$/i);
   let avgPowerWeek: number | undefined =
     rawAvgWeek != null ? (rawAvgWeek > 200 ? rawAvgWeek : rawAvgWeek * 1000) : undefined;
-  if (avgPowerWeek == null && energyLastWeek != null) {
+  if (avgPowerWeek == null && energyLastWeek != null && energyLastWeek > 0) {
     avgPowerWeek = Math.round((energyLastWeek * 1000) / (7 * 24));
-  } else if (avgPowerWeek == null && energyThisWeek != null) {
-    avgPowerWeek = Math.round((energyThisWeek * 1000) / (7 * 24));
+  } else if (avgPowerWeek == null && energyThisWeek != null && energyThisWeek > 0) {
+    const now = new Date();
+    const dowMon = (now.getDay() + 6) % 7; // mandag=0
+    const elapsedH = dowMon * 24 + now.getHours() + now.getMinutes() / 60;
+    avgPowerWeek = Math.round((energyThisWeek * 1000) / Math.max(1, elapsedH));
   }
 
   const derive = (kwh?: number) =>
