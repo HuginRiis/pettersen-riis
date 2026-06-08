@@ -1488,6 +1488,7 @@ import type { GardenaSnap } from "@/lib/gardena-cache";
 import { Bot, Play, ParkingSquare, Pause, Loader2, BatteryCharging, Home as HomeIcon } from "lucide-react";
 import sileMowerImg from "@/assets/icon-sileno-mower.png";
 import roboVacImg from "@/assets/icon-roborock-vacuum.png";
+import { VacuumFX, MowerFX } from "@/components/RobotFX";
 
 type RoborockSnap = Awaited<ReturnType<typeof getRoborockSnapshot>>;
 
@@ -1634,8 +1635,9 @@ function RobotsTile() {
               </span>
             )}
             <div className="flex items-center gap-2">
-              <div className={`relative h-10 w-10 rounded-full flex items-center justify-center overflow-hidden ${mowerActive ? "bg-emerald-400/15 ring-1 ring-emerald-300/40" : "bg-white/5"}`}>
+              <div className={`relative h-10 w-10 rounded-full flex items-center justify-center ${mowerActive ? "bg-emerald-400/15 ring-1 ring-emerald-300/40" : "bg-white/5"}`}>
                 {mowerActive && <span className="absolute inset-0 rounded-full bg-emerald-400/30 animate-ping" />}
+                <MowerFX mode={mowerActive ? "mow" : "wind"} />
                 <img
                   src={sileMowerImg}
                   alt="Sileno gressklipper"
@@ -1675,8 +1677,9 @@ function RobotsTile() {
               </span>
             )}
             <div className="flex items-center gap-2">
-              <div className={`relative h-10 w-10 rounded-full flex items-center justify-center overflow-hidden ${roboActive ? "bg-sky-400/15 ring-1 ring-sky-300/40" : "bg-white/5"}`}>
+              <div className={`relative h-10 w-10 rounded-full flex items-center justify-center ${roboActive ? "bg-sky-400/15 ring-1 ring-sky-300/40" : "bg-white/5"}`}>
                 {roboActive && <span className="absolute inset-0 rounded-full bg-sky-400/30 animate-ping" />}
+                <VacuumFX mode={roboActive ? "suck" : "orbit"} />
                 <img
                   src={roboVacImg}
                   alt="Roborock støvsuger"
