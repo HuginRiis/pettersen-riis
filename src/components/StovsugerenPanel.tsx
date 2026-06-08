@@ -249,7 +249,7 @@ export function StovsugerenPanel() {
               hjem til tronen, eller hvil dem ved peisen.
             </p>
           </div>
-          <div className="hidden sm:flex flex-col gap-2">
+          <div className="flex flex-col gap-2 shrink-0">
             <button
               onClick={load}
               disabled={loading}
