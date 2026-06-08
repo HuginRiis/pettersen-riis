@@ -304,6 +304,7 @@ async function getDevices(rriot: Rriot, homeId: number | string): Promise<Roboro
   const text = await r.text();
   let j: any = null;
   try { j = JSON.parse(text); } catch { /* ignore */ }
+  console.log(`[roborock] GET ${path} status=${r.status} success=${j?.success} hasResult=${!!j?.result} bodyLen=${text.length}`);
   if (j?.success && j?.result) return mapDevices(j.result);
 
   // Prøv v1
@@ -314,31 +315,93 @@ async function getDevices(rriot: Rriot, homeId: number | string): Promise<Roboro
   const text2 = await r2.text();
   let j2: any = null;
   try { j2 = JSON.parse(text2); } catch { /* ignore */ }
+  console.log(`[roborock] GET ${path2} status=${r2.status} success=${j2?.success} hasResult=${!!j2?.result} bodyLen=${text2.length}`);
   if (j2?.success && j2?.result) return mapDevices(j2.result);
 
   const detail =
     j?.msg ?? j2?.msg ??
     `v3 status=${r.status} body=${text.slice(0, 200)} | v1 status=${r2.status} body=${text2.slice(0, 200)}`;
+  console.error(`[roborock] getDevices feilet: ${detail}`);
   throw new Error(`getDevices feilet: ${detail}`);
 }
 
 
+// Roborock returns deviceStatus either as numeric keys (121, 122, ...) or
+// as named keys (state, battery, ...). Sometimes only one of the two formats
+// is present per device. Normalize so both representations are always set.
+const STATUS_NUMERIC_TO_NAMED: Record<string, string> = {
+  "120": "error_code",
+  "121": "state",
+  "122": "battery",
+  "123": "fan_power",
+  "124": "water_box_mode",
+  "125": "main_brush_life",
+  "126": "side_brush_life",
+  "127": "filter_life",
+  "128": "additional_props",
+  "133": "charge_status",
+  "134": "drying_status",
+  "135": "offline_status",
+};
+const STATUS_NAMED_TO_NUMERIC: Record<string, string> = Object.fromEntries(
+  Object.entries(STATUS_NUMERIC_TO_NAMED).map(([n, name]) => [name, n]),
+);
+
+function normalizeDeviceStatus(raw: any): Record<string, unknown> | null {
+  if (!raw || typeof raw !== "object") return raw ?? null;
+  const out: Record<string, unknown> = { ...raw };
+  for (const [num, name] of Object.entries(STATUS_NUMERIC_TO_NAMED)) {
+    if (out[num] !== undefined && out[name] === undefined) out[name] = out[num];
+  }
+  for (const [name, num] of Object.entries(STATUS_NAMED_TO_NUMERIC)) {
+    if (out[name] !== undefined && out[num] === undefined) out[num] = out[name];
+  }
+  return out;
+}
+
 function mapDevices(result: any): RoborockDevice[] {
   const products: any[] = result.products ?? [];
   const productById = new Map<string, any>(products.map((p) => [p.id, p]));
-  const devices: any[] = [...(result.devices ?? []), ...(result.receivedDevices ?? [])];
-  return devices.map((d) => {
+  const rawDevices: any[] = [...(result.devices ?? []), ...(result.receivedDevices ?? [])];
+  const mapped: RoborockDevice[] = [];
+  const skipped: Array<{ index: number; reason: string; sample: any }> = [];
+
+  rawDevices.forEach((d, i) => {
+    if (!d || typeof d !== "object") {
+      skipped.push({ index: i, reason: "device entry not an object", sample: d });
+      return;
+    }
+    if (!d.duid) {
+      skipped.push({ index: i, reason: "missing duid", sample: { name: d.name, keys: Object.keys(d) } });
+      return;
+    }
     const p = productById.get(d.productId) ?? {};
-    return {
+    const attribute = normalizeDeviceStatus(d.deviceStatus);
+    mapped.push({
       duid: d.duid,
       name: d.name ?? "Roborock",
       online: !!d.online,
       productName: p.name,
       fv: d.fv,
-      attribute: d.deviceStatus ?? null,
+      attribute,
       localKey: d.localKey ?? d.localkey ?? undefined,
-    };
+    });
   });
+
+  console.log(
+    `[roborock] mapDevices: kept=${mapped.length} skipped=${skipped.length} ` +
+      `raw=${rawDevices.length} (devices=${result.devices?.length ?? 0}, received=${result.receivedDevices?.length ?? 0})`,
+  );
+  mapped.forEach((d) => {
+    const keys = d.attribute ? Object.keys(d.attribute).sort().join(",") : "(none)";
+    console.log(
+      `[roborock] device duid=${d.duid} name=${JSON.stringify(d.name)} online=${d.online} hasLocalKey=${!!d.localKey} statusKeys=[${keys}]`,
+    );
+  });
+  if (skipped.length) {
+    console.warn(`[roborock] skipped devices:`, JSON.stringify(skipped));
+  }
+  return mapped;
 }
 
 export async function fetchRoborockSnapshot(): Promise<RoborockSnapshot> {
@@ -347,12 +410,16 @@ export async function fetchRoborockSnapshot(): Promise<RoborockSnapshot> {
   try {
     const auth = await loadAuth();
     if (!auth?.token || !auth?.rriot || !auth?.base_url || !auth?.device_id) {
+      console.warn(`[roborock] snapshot: trenger login — tokenSet=${!!auth?.token} rriotSet=${!!auth?.rriot} baseUrlSet=${!!auth?.base_url} deviceIdSet=${!!auth?.device_id}`);
       return { ok: false, needsLogin: true, devices: [], error: "Ikke innlogget. Send kode på e-post for å logge inn." };
     }
     const homeId = await getHomeId(auth.base_url, email, auth.device_id, auth.token);
+    console.log(`[roborock] snapshot: homeId=${homeId}`);
     const devices = await getDevices(auth.rriot, homeId);
+    console.log(`[roborock] snapshot: returning ${devices.length} device(s)`);
     return { ok: true, email, homeId, devices };
   } catch (e: any) {
+    console.error(`[roborock] snapshot failed:`, e?.message ?? e);
     return { ok: false, devices: [], error: e?.message ?? String(e) };
   }
 }
