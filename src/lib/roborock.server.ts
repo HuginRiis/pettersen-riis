@@ -335,20 +335,42 @@ function mapDevices(result: any): RoborockDevice[] {
   });
 }
 
-export async function fetchRoborockSnapshot(): Promise<RoborockSnapshot> {
-  const email = process.env.ROBOROCK_EMAIL;
-  if (!email) return { ok: false, devices: [], error: "Mangler ROBOROCK_EMAIL" };
-  try {
-    const auth = await loadAuth();
-    if (!auth?.token || !auth?.rriot || !auth?.base_url || !auth?.device_id) {
-      return { ok: false, needsLogin: true, devices: [], error: "Ikke innlogget. Send kode på e-post for å logge inn." };
-    }
-    const homeId = await getHomeId(auth.base_url, email, auth.device_id, auth.token);
-    const devices = await getDevices(auth.rriot, homeId);
-    return { ok: true, email, homeId, devices };
-  } catch (e: any) {
-    return { ok: false, devices: [], error: e?.message ?? String(e) };
+// Enkel in-memory cache for å redusere antall kall mot Roborock-skyen.
+// Snapshot endres sjelden (enheter, online-status) — 5 min er nok ferskt.
+const SNAPSHOT_TTL_MS = 5 * 60 * 1000;
+let snapshotCache: { ts: number; data: RoborockSnapshot } | null = null;
+let inflight: Promise<RoborockSnapshot> | null = null;
+
+export function invalidateRoborockSnapshotCache() {
+  snapshotCache = null;
+}
+
+export async function fetchRoborockSnapshot(opts?: { force?: boolean }): Promise<RoborockSnapshot> {
+  const now = Date.now();
+  if (!opts?.force && snapshotCache && now - snapshotCache.ts < SNAPSHOT_TTL_MS) {
+    return snapshotCache.data;
   }
+  if (inflight) return inflight;
+  inflight = (async () => {
+    const email = process.env.ROBOROCK_EMAIL;
+    if (!email) return { ok: false, devices: [], error: "Mangler ROBOROCK_EMAIL" } as RoborockSnapshot;
+    try {
+      const auth = await loadAuth();
+      if (!auth?.token || !auth?.rriot || !auth?.base_url || !auth?.device_id) {
+        return { ok: false, needsLogin: true, devices: [], error: "Ikke innlogget. Send kode på e-post for å logge inn." } as RoborockSnapshot;
+      }
+      const homeId = await getHomeId(auth.base_url, email, auth.device_id, auth.token);
+      const devices = await getDevices(auth.rriot, homeId);
+      const data: RoborockSnapshot = { ok: true, email, homeId, devices };
+      snapshotCache = { ts: Date.now(), data };
+      return data;
+    } catch (e: any) {
+      return { ok: false, devices: [], error: e?.message ?? String(e) } as RoborockSnapshot;
+    } finally {
+      inflight = null;
+    }
+  })();
+  return inflight;
 }
 
 import { sendRoborockMqttCommand } from "@/lib/roborock-mqtt.server";
