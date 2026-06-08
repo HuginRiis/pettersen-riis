@@ -301,186 +301,53 @@ async function getDevices(rriot: Rriot, homeId: number | string): Promise<Roboro
   const r = await fetch(`${rriot.r.a}${path}`, {
     headers: { Authorization: hawkAuth(rriot, path) },
   });
-  const text = await r.text();
-  let j: any = null;
-  try { j = JSON.parse(text); } catch { /* ignore */ }
-  console.log(`[roborock] GET ${path} status=${r.status} success=${j?.success} hasResult=${!!j?.result} bodyLen=${text.length}`);
-  if (j?.success && j?.result) return mapDevices(j.result);
-
-  // Prøv v1
-  const path2 = `/user/homes/${homeId}`;
-  const r2 = await fetch(`${rriot.r.a}${path2}`, {
-    headers: { Authorization: hawkAuth(rriot, path2) },
-  });
-  const text2 = await r2.text();
-  let j2: any = null;
-  try { j2 = JSON.parse(text2); } catch { /* ignore */ }
-  console.log(`[roborock] GET ${path2} status=${r2.status} success=${j2?.success} hasResult=${!!j2?.result} bodyLen=${text2.length}`);
-  if (j2?.success && j2?.result) return mapDevices(j2.result);
-
-  const detail =
-    j?.msg ?? j2?.msg ??
-    `v3 status=${r.status} body=${text.slice(0, 200)} | v1 status=${r2.status} body=${text2.slice(0, 200)}`;
-  console.error(`[roborock] getDevices feilet: ${detail}`);
-  throw new Error(`getDevices feilet: ${detail}`);
-}
-
-
-// Roborock returns deviceStatus either as numeric keys (121, 122, ...) or
-// as named keys (state, battery, ...). Sometimes only one of the two formats
-// is present per device. Normalize so both representations are always set.
-const STATUS_NUMERIC_TO_NAMED: Record<string, string> = {
-  "120": "error_code",
-  "121": "state",
-  "122": "battery",
-  "123": "fan_power",
-  "124": "water_box_mode",
-  "125": "main_brush_life",
-  "126": "side_brush_life",
-  "127": "filter_life",
-  "128": "additional_props",
-  "133": "charge_status",
-  "134": "drying_status",
-  "135": "offline_status",
-};
-const STATUS_NAMED_TO_NUMERIC: Record<string, string> = Object.fromEntries(
-  Object.entries(STATUS_NUMERIC_TO_NAMED).map(([n, name]) => [name, n]),
-);
-
-function normalizeDeviceStatus(raw: any): Record<string, unknown> | null {
-  if (!raw || typeof raw !== "object") return raw ?? null;
-  const out: Record<string, unknown> = { ...raw };
-  for (const [num, name] of Object.entries(STATUS_NUMERIC_TO_NAMED)) {
-    if (out[num] !== undefined && out[name] === undefined) out[name] = out[num];
+  const j: any = await r.json();
+  if (!j?.success || !j?.result) {
+    // Prøv v1
+    const path2 = `/user/homes/${homeId}`;
+    const r2 = await fetch(`${rriot.r.a}${path2}`, {
+      headers: { Authorization: hawkAuth(rriot, path2) },
+    });
+    const j2: any = await r2.json();
+    if (!j2?.success || !j2?.result) {
+      throw new Error(`getDevices feilet: ${j?.msg ?? j2?.msg ?? "ukjent"}`);
+    }
+    return mapDevices(j2.result);
   }
-  for (const [name, num] of Object.entries(STATUS_NAMED_TO_NUMERIC)) {
-    if (out[name] !== undefined && out[num] === undefined) out[num] = out[name];
-  }
-  return out;
+  return mapDevices(j.result);
 }
 
 function mapDevices(result: any): RoborockDevice[] {
   const products: any[] = result.products ?? [];
   const productById = new Map<string, any>(products.map((p) => [p.id, p]));
-  const ownDevices: any[] = result.devices ?? [];
-  const receivedDevices: any[] = result.receivedDevices ?? [];
-  const rawDevices: any[] = [...ownDevices, ...receivedDevices];
-
-  console.log(
-    `[roborock] mapDevices INPUT: products=${products.length} ownDevices=${ownDevices.length} receivedDevices=${receivedDevices.length} totalRaw=${rawDevices.length}`,
-  );
-  console.log(
-    `[roborock] mapDevices RAW summary:`,
-    JSON.stringify(
-      rawDevices.map((d, i) => ({
-        i,
-        duid: d?.duid,
-        name: d?.name,
-        online: d?.online,
-        productId: d?.productId,
-        hasLocalKey: !!(d?.localKey ?? d?.localkey),
-        hasDeviceStatus: !!d?.deviceStatus,
-        deviceStatusKeys: d?.deviceStatus ? Object.keys(d.deviceStatus) : [],
-      })),
-    ),
-  );
-
-  const mapped: RoborockDevice[] = [];
-  const skipped: Array<{ index: number; reason: string; sample: any }> = [];
-
-  rawDevices.forEach((d, i) => {
-    if (!d || typeof d !== "object") {
-      const reason = "FILTER: device entry not an object";
-      console.warn(`[roborock] skip[${i}] ${reason}`, JSON.stringify(d));
-      skipped.push({ index: i, reason, sample: d });
-      return;
-    }
-    if (!d.duid) {
-      const reason = "FILTER: missing duid";
-      console.warn(`[roborock] skip[${i}] ${reason} name=${JSON.stringify(d.name)} keys=${Object.keys(d).join(",")}`);
-      skipped.push({ index: i, reason, sample: { name: d.name, keys: Object.keys(d) } });
-      return;
-    }
+  const devices: any[] = [...(result.devices ?? []), ...(result.receivedDevices ?? [])];
+  return devices.map((d) => {
     const p = productById.get(d.productId) ?? {};
-    const attribute = normalizeDeviceStatus(d.deviceStatus);
-    const dev: RoborockDevice = {
+    return {
       duid: d.duid,
       name: d.name ?? "Roborock",
       online: !!d.online,
       productName: p.name,
       fv: d.fv,
-      attribute,
+      attribute: d.deviceStatus ?? null,
       localKey: d.localKey ?? d.localkey ?? undefined,
     };
-    console.log(
-      `[roborock] keep[${i}] duid=${dev.duid} name=${JSON.stringify(dev.name)} online=${dev.online} productName=${JSON.stringify(dev.productName)} hasLocalKey=${!!dev.localKey} statusKeys=[${attribute ? Object.keys(attribute).sort().join(",") : "(none)"}]`,
-    );
-    mapped.push(dev);
   });
-
-  console.log(
-    `[roborock] mapDevices RESULT: kept=${mapped.length} skipped=${skipped.length} raw=${rawDevices.length}`,
-  );
-  console.log(
-    `[roborock] mapDevices FINAL list:`,
-    JSON.stringify(mapped.map((d) => ({ duid: d.duid, name: d.name, online: d.online, productName: d.productName }))),
-  );
-  if (skipped.length) {
-    console.warn(`[roborock] mapDevices SKIPPED detail:`, JSON.stringify(skipped));
-  }
-  return mapped;
 }
 
 export async function fetchRoborockSnapshot(): Promise<RoborockSnapshot> {
-  const t0 = Date.now();
-  console.log(`[roborock] fetchRoborockSnapshot START at ${new Date(t0).toISOString()}`);
   const email = process.env.ROBOROCK_EMAIL;
-  if (!email) {
-    console.error(`[roborock] snapshot ABORT: ROBOROCK_EMAIL env var missing`);
-    return { ok: false, devices: [], error: "Mangler ROBOROCK_EMAIL" };
-  }
+  if (!email) return { ok: false, devices: [], error: "Mangler ROBOROCK_EMAIL" };
   try {
     const auth = await loadAuth();
-    console.log(
-      `[roborock] snapshot auth: email=${auth?.email} deviceIdSet=${!!auth?.device_id} baseUrl=${auth?.base_url} tokenSet=${!!auth?.token} rriotSet=${!!auth?.rriot}`,
-    );
     if (!auth?.token || !auth?.rriot || !auth?.base_url || !auth?.device_id) {
-      console.warn(
-        `[roborock] snapshot NEEDS LOGIN — tokenSet=${!!auth?.token} rriotSet=${!!auth?.rriot} baseUrlSet=${!!auth?.base_url} deviceIdSet=${!!auth?.device_id}`,
-      );
-      return {
-        ok: false,
-        needsLogin: true,
-        devices: [],
-        error: "Ikke innlogget. Send kode på e-post for å logge inn.",
-      };
+      return { ok: false, needsLogin: true, devices: [], error: "Ikke innlogget. Send kode på e-post for å logge inn." };
     }
     const homeId = await getHomeId(auth.base_url, email, auth.device_id, auth.token);
-    console.log(`[roborock] snapshot: homeId=${homeId}`);
     const devices = await getDevices(auth.rriot, homeId);
-    console.log(`[roborock] snapshot DEVICE COUNT from API: ${devices.length}`);
-    console.log(
-      `[roborock] snapshot DEVICE NAMES+DUIDS:`,
-      JSON.stringify(devices.map((d) => ({ name: d.name, duid: d.duid, online: d.online }))),
-    );
-    // No filtering is applied here — every mapped device is forwarded to the UI.
-    console.log(`[roborock] snapshot FILTER: none (forwarding all ${devices.length} device(s) unchanged)`);
-    console.log(
-      `[roborock] snapshot FINAL payload to frontend:`,
-      JSON.stringify({ ok: true, email, homeId, deviceCount: devices.length, devices: devices.map((d) => ({ duid: d.duid, name: d.name, online: d.online, productName: d.productName, fv: d.fv, hasLocalKey: !!d.localKey, statusKeys: d.attribute ? Object.keys(d.attribute).sort() : [] })) }),
-    );
-    console.log(`[roborock] fetchRoborockSnapshot DONE in ${Date.now() - t0}ms`);
     return { ok: true, email, homeId, devices };
   } catch (e: any) {
-    const msg = e?.message ?? String(e);
-    const stack = e?.stack ?? "(no stack)";
-    console.error(
-      `[roborock] snapshot FAILED after ${Date.now() - t0}ms — this is what causes "Ravnen kom ikke fram" in UI`,
-    );
-    console.error(`[roborock] snapshot error message: ${msg}`);
-    console.error(`[roborock] snapshot error stack:\n${stack}`);
-    console.error(`[roborock] snapshot error raw:`, e);
-    return { ok: false, devices: [], error: msg };
+    return { ok: false, devices: [], error: e?.message ?? String(e) };
   }
 }
 

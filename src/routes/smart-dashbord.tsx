@@ -1751,7 +1751,7 @@ function RobotsTile() {
 
   useEffect(() => {
     loadRoborock();
-    const id = setInterval(loadRoborock, 5 * 60_000);
+    const id = setInterval(loadRoborock, 60_000);
     return () => clearInterval(id);
   }, [loadRoborock]);
 
