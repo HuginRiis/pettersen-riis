@@ -172,6 +172,7 @@ export function StovsugerenPanel() {
   const [busyCmd, setBusyCmd] = useState<string | null>(null);
   const [code, setCode] = useState("");
   const [info, setInfo] = useState<string | null>(null);
+  const [showLogin, setShowLogin] = useState(false);
 
   const load = async () => {
     setLoading(true);
