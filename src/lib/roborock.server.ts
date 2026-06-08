@@ -362,22 +362,48 @@ function normalizeDeviceStatus(raw: any): Record<string, unknown> | null {
 function mapDevices(result: any): RoborockDevice[] {
   const products: any[] = result.products ?? [];
   const productById = new Map<string, any>(products.map((p) => [p.id, p]));
-  const rawDevices: any[] = [...(result.devices ?? []), ...(result.receivedDevices ?? [])];
+  const ownDevices: any[] = result.devices ?? [];
+  const receivedDevices: any[] = result.receivedDevices ?? [];
+  const rawDevices: any[] = [...ownDevices, ...receivedDevices];
+
+  console.log(
+    `[roborock] mapDevices INPUT: products=${products.length} ownDevices=${ownDevices.length} receivedDevices=${receivedDevices.length} totalRaw=${rawDevices.length}`,
+  );
+  console.log(
+    `[roborock] mapDevices RAW summary:`,
+    JSON.stringify(
+      rawDevices.map((d, i) => ({
+        i,
+        duid: d?.duid,
+        name: d?.name,
+        online: d?.online,
+        productId: d?.productId,
+        hasLocalKey: !!(d?.localKey ?? d?.localkey),
+        hasDeviceStatus: !!d?.deviceStatus,
+        deviceStatusKeys: d?.deviceStatus ? Object.keys(d.deviceStatus) : [],
+      })),
+    ),
+  );
+
   const mapped: RoborockDevice[] = [];
   const skipped: Array<{ index: number; reason: string; sample: any }> = [];
 
   rawDevices.forEach((d, i) => {
     if (!d || typeof d !== "object") {
-      skipped.push({ index: i, reason: "device entry not an object", sample: d });
+      const reason = "FILTER: device entry not an object";
+      console.warn(`[roborock] skip[${i}] ${reason}`, JSON.stringify(d));
+      skipped.push({ index: i, reason, sample: d });
       return;
     }
     if (!d.duid) {
-      skipped.push({ index: i, reason: "missing duid", sample: { name: d.name, keys: Object.keys(d) } });
+      const reason = "FILTER: missing duid";
+      console.warn(`[roborock] skip[${i}] ${reason} name=${JSON.stringify(d.name)} keys=${Object.keys(d).join(",")}`);
+      skipped.push({ index: i, reason, sample: { name: d.name, keys: Object.keys(d) } });
       return;
     }
     const p = productById.get(d.productId) ?? {};
     const attribute = normalizeDeviceStatus(d.deviceStatus);
-    mapped.push({
+    const dev: RoborockDevice = {
       duid: d.duid,
       name: d.name ?? "Roborock",
       online: !!d.online,
@@ -385,21 +411,22 @@ function mapDevices(result: any): RoborockDevice[] {
       fv: d.fv,
       attribute,
       localKey: d.localKey ?? d.localkey ?? undefined,
-    });
+    };
+    console.log(
+      `[roborock] keep[${i}] duid=${dev.duid} name=${JSON.stringify(dev.name)} online=${dev.online} productName=${JSON.stringify(dev.productName)} hasLocalKey=${!!dev.localKey} statusKeys=[${attribute ? Object.keys(attribute).sort().join(",") : "(none)"}]`,
+    );
+    mapped.push(dev);
   });
 
   console.log(
-    `[roborock] mapDevices: kept=${mapped.length} skipped=${skipped.length} ` +
-      `raw=${rawDevices.length} (devices=${result.devices?.length ?? 0}, received=${result.receivedDevices?.length ?? 0})`,
+    `[roborock] mapDevices RESULT: kept=${mapped.length} skipped=${skipped.length} raw=${rawDevices.length}`,
   );
-  mapped.forEach((d) => {
-    const keys = d.attribute ? Object.keys(d.attribute).sort().join(",") : "(none)";
-    console.log(
-      `[roborock] device duid=${d.duid} name=${JSON.stringify(d.name)} online=${d.online} hasLocalKey=${!!d.localKey} statusKeys=[${keys}]`,
-    );
-  });
+  console.log(
+    `[roborock] mapDevices FINAL list:`,
+    JSON.stringify(mapped.map((d) => ({ duid: d.duid, name: d.name, online: d.online, productName: d.productName }))),
+  );
   if (skipped.length) {
-    console.warn(`[roborock] skipped devices:`, JSON.stringify(skipped));
+    console.warn(`[roborock] mapDevices SKIPPED detail:`, JSON.stringify(skipped));
   }
   return mapped;
 }
