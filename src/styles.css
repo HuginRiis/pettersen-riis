@@ -789,7 +789,8 @@ main .container {
   padding: 10px !important;
 }
 
-/* Round corners + safe-area bottom padding */
+/* Round corners + safe-area bottom padding + push content below status bar */
 .iphone-mode {
+  padding-top: 38px;
   padding-bottom: env(safe-area-inset-bottom, 0);
 }
