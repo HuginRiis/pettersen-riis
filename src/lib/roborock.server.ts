@@ -323,22 +323,82 @@ async function getDevices(rriot: Rriot, homeId: number | string): Promise<Roboro
 }
 
 
+// Roborock returns deviceStatus either as numeric keys (121, 122, ...) or
+// as named keys (state, battery, ...). Sometimes only one of the two formats
+// is present per device. Normalize so both representations are always set.
+const STATUS_NUMERIC_TO_NAMED: Record<string, string> = {
+  "120": "error_code",
+  "121": "state",
+  "122": "battery",
+  "123": "fan_power",
+  "124": "water_box_mode",
+  "125": "main_brush_life",
+  "126": "side_brush_life",
+  "127": "filter_life",
+  "128": "additional_props",
+  "133": "charge_status",
+  "134": "drying_status",
+  "135": "offline_status",
+};
+const STATUS_NAMED_TO_NUMERIC: Record<string, string> = Object.fromEntries(
+  Object.entries(STATUS_NUMERIC_TO_NAMED).map(([n, name]) => [name, n]),
+);
+
+function normalizeDeviceStatus(raw: any): Record<string, unknown> | null {
+  if (!raw || typeof raw !== "object") return raw ?? null;
+  const out: Record<string, unknown> = { ...raw };
+  for (const [num, name] of Object.entries(STATUS_NUMERIC_TO_NAMED)) {
+    if (out[num] !== undefined && out[name] === undefined) out[name] = out[num];
+  }
+  for (const [name, num] of Object.entries(STATUS_NAMED_TO_NUMERIC)) {
+    if (out[name] !== undefined && out[num] === undefined) out[num] = out[name];
+  }
+  return out;
+}
+
 function mapDevices(result: any): RoborockDevice[] {
   const products: any[] = result.products ?? [];
   const productById = new Map<string, any>(products.map((p) => [p.id, p]));
-  const devices: any[] = [...(result.devices ?? []), ...(result.receivedDevices ?? [])];
-  return devices.map((d) => {
+  const rawDevices: any[] = [...(result.devices ?? []), ...(result.receivedDevices ?? [])];
+  const mapped: RoborockDevice[] = [];
+  const skipped: Array<{ index: number; reason: string; sample: any }> = [];
+
+  rawDevices.forEach((d, i) => {
+    if (!d || typeof d !== "object") {
+      skipped.push({ index: i, reason: "device entry not an object", sample: d });
+      return;
+    }
+    if (!d.duid) {
+      skipped.push({ index: i, reason: "missing duid", sample: { name: d.name, keys: Object.keys(d) } });
+      return;
+    }
     const p = productById.get(d.productId) ?? {};
-    return {
+    const attribute = normalizeDeviceStatus(d.deviceStatus);
+    mapped.push({
       duid: d.duid,
       name: d.name ?? "Roborock",
       online: !!d.online,
       productName: p.name,
       fv: d.fv,
-      attribute: d.deviceStatus ?? null,
+      attribute,
       localKey: d.localKey ?? d.localkey ?? undefined,
-    };
+    });
   });
+
+  console.log(
+    `[roborock] mapDevices: kept=${mapped.length} skipped=${skipped.length} ` +
+      `raw=${rawDevices.length} (devices=${result.devices?.length ?? 0}, received=${result.receivedDevices?.length ?? 0})`,
+  );
+  mapped.forEach((d) => {
+    const keys = d.attribute ? Object.keys(d.attribute).sort().join(",") : "(none)";
+    console.log(
+      `[roborock] device duid=${d.duid} name=${JSON.stringify(d.name)} online=${d.online} hasLocalKey=${!!d.localKey} statusKeys=[${keys}]`,
+    );
+  });
+  if (skipped.length) {
+    console.warn(`[roborock] skipped devices:`, JSON.stringify(skipped));
+  }
+  return mapped;
 }
 
 export async function fetchRoborockSnapshot(): Promise<RoborockSnapshot> {
