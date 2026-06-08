@@ -199,7 +199,7 @@ export function StovsugerenPanel() {
     setBusy("verify"); setInfo(null);
     const r = await submitCode({ data: { code } });
     setBusy(null);
-    if (r.ok) { setInfo("Innloggingen er beseglet ✓"); setCode(""); await load(); }
+    if (r.ok) { setInfo("Innloggingen er beseglet ✓"); setCode(""); setShowLogin(false); await load(); }
     else setInfo(`Feil: ${r.error}`);
   };
 
@@ -207,7 +207,7 @@ export function StovsugerenPanel() {
     setBusy("password"); setInfo(null);
     const r = await passwordLogin();
     setBusy(null);
-    if (r.ok) { setInfo("Innlogget med passord ✓"); await load(); }
+    if (r.ok) { setInfo("Innlogget med passord ✓"); setShowLogin(false); await load(); }
     else setInfo(`Feil: ${r.error}`);
   };
 
