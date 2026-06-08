@@ -4046,7 +4046,7 @@ function MiniTile({
   );
 }
 
-function SmartDashbord() {
+export function SmartDashbord() {
   const [now, setNow] = useState(() => new Date());
   const [locId, setLocId] = useState<LocId>("borgen");
   const loc = LOCS[locId];

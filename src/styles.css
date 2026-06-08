@@ -711,3 +711,81 @@ main .container {
 }
 .animate-grass-toward { animation: grass-toward 1.6s ease-in infinite; }
 .animate-grass-sway   { animation: grass-sway   2.4s ease-in-out infinite; }
+
+/* ============= iPhone App overrides (portrait mobile) ============= */
+.iphone-mode main {
+  padding: 12px 10px !important;
+  background-image: radial-gradient(600px 400px at 0% -10%, rgba(56,189,248,0.10), transparent 60%),
+                    radial-gradient(500px 350px at 100% 0%, rgba(251,146,60,0.10), transparent 60%) !important;
+}
+/* Compact header */
+.iphone-mode main > div:first-child {
+  margin-bottom: 12px !important;
+  gap: 8px;
+}
+.iphone-mode main > div:first-child .text-2xl {
+  font-size: 1.05rem !important;
+  line-height: 1.2 !important;
+  margin-top: 2px !important;
+}
+.iphone-mode main > div:first-child .text-\[11px\] {
+  font-size: 9px !important;
+  letter-spacing: 0.2em !important;
+}
+.iphone-mode main > div:first-child > div:last-child {
+  gap: 6px !important;
+}
+.iphone-mode main > div:first-child button,
+.iphone-mode main > div:first-child a {
+  height: 32px;
+  min-height: 32px;
+  padding-inline: 8px;
+  font-size: 11px;
+}
+.iphone-mode main > div:first-child .h-9.w-9 {
+  height: 32px !important;
+  width: 32px !important;
+}
+
+/* Force single-column for main bento grid, 3-col for mini */
+.iphone-mode .grid-cols-12 {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  grid-auto-rows: 170px !important;
+  column-gap: 8px !important;
+  row-gap: 8px !important;
+}
+.iphone-mode .grid-cols-6 {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  grid-auto-rows: 72px !important;
+  column-gap: 8px !important;
+  row-gap: 8px !important;
+  margin-top: 8px !important;
+}
+
+/* Disable zoom from settings on iphone mode for predictable layout */
+.iphone-mode .grid-cols-12,
+.iphone-mode .grid-cols-6 {
+  zoom: 1 !important;
+}
+
+/* Make every top-level tile span the full 2 cols on iPhone by default,
+   but allow 1-col (half) for the smallest tiles */
+.iphone-mode .grid-cols-12 > div {
+  grid-column: span 2 / span 2 !important;
+}
+.iphone-mode .grid-cols-12 > .col-span-2,
+.iphone-mode .grid-cols-12 > .col-span-3 {
+  grid-column: span 1 / span 1 !important;
+}
+
+/* Slightly shrink padding inside cards for denser layout */
+.iphone-mode .grid-cols-12 .p-6,
+.iphone-mode .grid-cols-12 .p-5,
+.iphone-mode .grid-cols-12 .p-4 {
+  padding: 10px !important;
+}
+
+/* Round corners + safe-area bottom padding */
+.iphone-mode {
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
