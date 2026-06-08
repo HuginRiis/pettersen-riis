@@ -512,46 +512,8 @@ export function StovsugerenPanel() {
         </div>
       )}
 
-      {snap?.ok && snap.devices.length === 0 && (
-        <article className="panel rounded-xl p-5 border border-amber-500/40 space-y-2">
-          <div className="flex items-center gap-2 text-amber-300">
-            <AlertTriangle size={16} />
-            <h3 className="font-serif text-base">Ingen støvsugere i ravneposten</h3>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Roborock-skyen svarte, men returnerte ingen enheter for kontoen{snap.email ? ` (${snap.email})` : ""}.
-            Sjekk at knektene er knyttet til samme konto, eller prøv å logge inn på nytt.
-          </p>
-          <button
-            onClick={load}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded border border-primary/40 text-primary text-[11px] tracking-[0.25em] uppercase hover:bg-primary/10"
-          >
-            <RefreshCw size={12} /> Speid på nytt
-          </button>
-        </article>
-      )}
-
-      {snap && !snap.ok && !snap.needsLogin && (
-        <article className="panel rounded-xl p-5 border border-destructive/50 space-y-2">
-          <div className="flex items-center gap-2 text-destructive">
-            <AlertTriangle size={16} />
-            <h3 className="font-serif text-base">Ravnen kom ikke fram</h3>
-          </div>
-          <p className="text-xs text-muted-foreground break-words">
-            {snap.error ?? "Ukjent feil fra Roborock-skyen."}
-          </p>
-          <button
-            onClick={load}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded border border-primary/40 text-primary text-[11px] tracking-[0.25em] uppercase hover:bg-primary/10"
-          >
-            <RefreshCw size={12} /> Prøv igjen
-          </button>
-        </article>
-      )}
-
       {/* Login flow */}
       {snap && !snap.ok && snap.needsLogin && (
-
         <article className="panel rounded-xl p-5 border border-primary/30 space-y-3">
           <div className="flex items-center gap-2">
             <KeyRound className="text-primary" size={18} />
