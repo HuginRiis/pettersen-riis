@@ -2668,7 +2668,7 @@ function LysCombinedTile({
     <>
       <Tile title="" icon={<span />} accent="text-yellow-300" onClick={() => setOpen(true)}>
         <div
-          className="grid h-full gap-1 content-start"
+          className="grid h-full gap-1 content-start lys-combined-grid"
           style={{
             gridTemplateColumns: `repeat(${Math.min(nonEmpty.length || 1, Math.ceil(Math.sqrt(nonEmpty.length || 1)))}, minmax(0, 1fr))`,
           }}
