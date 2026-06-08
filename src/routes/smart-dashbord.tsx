@@ -1879,7 +1879,7 @@ function RobotsTile() {
               </div>
               <div className="min-w-0 flex-1">
                 <div className="text-[9px] uppercase tracking-widest text-white/40">Sileno · Gressklipper</div>
-                <div className="text-sm text-white truncate">{mowerActLabel}</div>
+                <div className="text-sm text-white truncate pl-4">{mowerActLabel}</div>
               </div>
               <div className="text-right flex items-center gap-1">
                 {mowerChargingNow && <BatteryCharging size={12} className="text-emerald-300" />}
