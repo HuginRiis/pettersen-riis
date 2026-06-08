@@ -172,6 +172,7 @@ export function StovsugerenPanel() {
   const [busyCmd, setBusyCmd] = useState<string | null>(null);
   const [code, setCode] = useState("");
   const [info, setInfo] = useState<string | null>(null);
+  const [showLogin, setShowLogin] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -198,7 +199,7 @@ export function StovsugerenPanel() {
     setBusy("verify"); setInfo(null);
     const r = await submitCode({ data: { code } });
     setBusy(null);
-    if (r.ok) { setInfo("Innloggingen er beseglet ✓"); setCode(""); await load(); }
+    if (r.ok) { setInfo("Innloggingen er beseglet ✓"); setCode(""); setShowLogin(false); await load(); }
     else setInfo(`Feil: ${r.error}`);
   };
 
@@ -206,7 +207,7 @@ export function StovsugerenPanel() {
     setBusy("password"); setInfo(null);
     const r = await passwordLogin();
     setBusy(null);
-    if (r.ok) { setInfo("Innlogget med passord ✓"); await load(); }
+    if (r.ok) { setInfo("Innlogget med passord ✓"); setShowLogin(false); await load(); }
     else setInfo(`Feil: ${r.error}`);
   };
 
@@ -248,14 +249,23 @@ export function StovsugerenPanel() {
               hjem til tronen, eller hvil dem ved peisen.
             </p>
           </div>
-          <button
-            onClick={load}
-            disabled={loading}
-            className="hidden sm:inline-flex items-center gap-2 px-3 py-2 rounded border border-primary/40 text-primary text-[11px] tracking-[0.25em] uppercase hover:bg-primary/10 disabled:opacity-50"
-          >
-            {loading ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
-            Speid på nytt
-          </button>
+          <div className="flex flex-col gap-2 shrink-0">
+            <button
+              onClick={load}
+              disabled={loading}
+              className="inline-flex items-center gap-2 px-3 py-2 rounded border border-primary/40 text-primary text-[11px] tracking-[0.25em] uppercase hover:bg-primary/10 disabled:opacity-50"
+            >
+              {loading ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
+              Speid på nytt
+            </button>
+            <button
+              onClick={() => { setShowLogin((s) => !s); setInfo(null); }}
+              className="inline-flex items-center gap-2 px-3 py-2 rounded border border-border text-foreground/80 text-[11px] tracking-[0.25em] uppercase hover:border-primary/60 hover:text-foreground"
+            >
+              <KeyRound size={12} />
+              Logg inn på nytt
+            </button>
+          </div>
         </div>
       </article>
 
@@ -513,7 +523,7 @@ export function StovsugerenPanel() {
       )}
 
       {/* Login flow */}
-      {snap && !snap.ok && snap.needsLogin && (
+      {((snap && !snap.ok && snap.needsLogin) || showLogin) && (
         <article className="panel rounded-xl p-5 border border-primary/30 space-y-3">
           <div className="flex items-center gap-2">
             <KeyRound className="text-primary" size={18} />
