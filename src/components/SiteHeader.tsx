@@ -42,6 +42,7 @@ type RoutePath =
   | "/varsler"
   | "/smarthus"
   | "/smart-dashbord"
+  | "/iphone-app"
   | "/lys"
   | "/varme"
   | "/steintavle"
