@@ -3820,62 +3820,66 @@ function WindTile({
   return (
     <Tile title="Vind · Tollnes" icon={<Wind size={14} />} accent="text-cyan-300">
       <div className="relative h-full flex items-center justify-between gap-2 overflow-hidden">
-        <div className="relative h-20 w-20 shrink-0">
-          {/* statisk kompass-ring */}
-          <div
-            className="absolute inset-0 rounded-full border border-cyan-300/25"
-            style={{ background: "radial-gradient(circle at 50% 50%, rgba(34,211,238,0.18), transparent 65%)" }}
-          />
-          <div className="absolute inset-0 text-[8px] font-semibold text-cyan-100/70 select-none">
-            <span className="absolute top-0 left-1/2 -translate-x-1/2">N</span>
-            <span className="absolute bottom-0 left-1/2 -translate-x-1/2">S</span>
-            <span className="absolute left-0 top-1/2 -translate-y-1/2">V</span>
-            <span className="absolute right-0 top-1/2 -translate-y-1/2">Ø</span>
+        {/* Venstre side: kompass + liten vindmølle under */}
+        <div className="flex flex-col items-center gap-1 shrink-0">
+          {/* kompass */}
+          <div className="relative h-20 w-20 -mt-2">
+            {/* statisk kompass-ring */}
+            <div
+              className="absolute inset-0 rounded-full border border-cyan-300/25"
+              style={{ background: "radial-gradient(circle at 50% 50%, rgba(34,211,238,0.18), transparent 65%)" }}
+            />
+            <div className="absolute inset-0 text-[8px] font-semibold text-cyan-100/70 select-none">
+              <span className="absolute top-0 left-1/2 -translate-x-1/2">N</span>
+              <span className="absolute bottom-0 left-1/2 -translate-x-1/2">S</span>
+              <span className="absolute left-0 top-1/2 -translate-y-1/2">V</span>
+              <span className="absolute right-0 top-1/2 -translate-y-1/2">Ø</span>
+            </div>
+            {/* roterende rotor */}
+            <div
+              className="absolute inset-1.5 flex items-center justify-center"
+              style={{ animation: `pbthWindSpin ${spinDur}s linear infinite` }}
+            >
+              <svg viewBox="0 0 40 40" className="h-14 w-14 text-cyan-300/70">
+                <g fill="currentColor">
+                  <path d="M20 6 L22 18 L20 17 L18 18 Z" />
+                  <path d="M34 20 L22 22 L23 20 L22 18 Z" />
+                  <path d="M20 34 L18 22 L20 23 L22 22 Z" />
+                  <path d="M6 20 L18 18 L17 20 L18 22 Z" />
+                </g>
+              </svg>
+            </div>
+            {/* retningspil (himmelretning vinden kommer fra) */}
+            {windAngle != null && (
+              <div
+                className="absolute inset-0 transition-transform duration-700"
+                style={{ transform: `rotate(${windAngle}deg)` }}
+              >
+                <svg viewBox="0 0 40 40" className="h-full w-full">
+                  <path d="M20 3 L24 11 L20 9 L16 11 Z" fill="#fef08a" stroke="#facc15" strokeWidth="0.5" />
+                  <circle cx="20" cy="20" r="1.5" fill="#facc15" />
+                </svg>
+              </div>
+            )}
           </div>
-          {/* roterende rotor */}
-          <div
-            className="absolute inset-1.5 flex items-center justify-center"
-            style={{ animation: `pbthWindSpin ${spinDur}s linear infinite` }}
-          >
-            <svg viewBox="0 0 40 40" className="h-14 w-14 text-cyan-300/70">
-              <g fill="currentColor">
-                <path d="M20 6 L22 18 L20 17 L18 18 Z" />
-                <path d="M34 20 L22 22 L23 20 L22 18 Z" />
-                <path d="M20 34 L18 22 L20 23 L22 22 Z" />
-                <path d="M6 20 L18 18 L17 20 L18 22 Z" />
+          {/* liten vindmølle under kompasset — 3 blader, spinner med vinden */}
+          <div className="relative h-8 w-6">
+            <svg viewBox="0 0 56 80" className="absolute inset-0 h-full w-full">
+              {/* tårn */}
+              <polygon points="26,30 30,30 32,76 24,76" fill="rgba(226,232,240,0.85)" stroke="rgba(34,211,238,0.35)" strokeWidth="0.5" />
+              {/* nacelle */}
+              <rect x="23" y="26" width="10" height="6" rx="2" fill="rgba(203,213,225,0.9)" stroke="rgba(34,211,238,0.4)" strokeWidth="0.5" />
+              {/* rotor — 3 blader */}
+              <g style={{ transformOrigin: "28px 28px", animation: `pbthWindSpin ${spinDur}s linear infinite` }}>
+                <g fill="rgba(165,243,252,0.95)" stroke="rgba(34,211,238,0.6)" strokeWidth="0.5">
+                  <path d="M28 28 L29 4 Q28 2 27 4 Z" />
+                  <path d="M28 28 L49 40 Q51 40 50 38 Z" transform="rotate(120 28 28)" />
+                  <path d="M28 28 L49 40 Q51 40 50 38 Z" transform="rotate(240 28 28)" />
+                </g>
+                <circle cx="28" cy="28" r="1.8" fill="#0e7490" />
               </g>
             </svg>
           </div>
-          {/* retningspil (himmelretning vinden kommer fra) */}
-          {windAngle != null && (
-            <div
-              className="absolute inset-0 transition-transform duration-700"
-              style={{ transform: `rotate(${windAngle}deg)` }}
-            >
-              <svg viewBox="0 0 40 40" className="h-full w-full">
-                <path d="M20 3 L24 11 L20 9 L16 11 Z" fill="#fef08a" stroke="#facc15" strokeWidth="0.5" />
-                <circle cx="20" cy="20" r="1.5" fill="#facc15" />
-              </svg>
-            </div>
-          )}
-        </div>
-        {/* liten vindmølle mellom kompass og tall — spinner med vinden */}
-        <div className="relative h-20 w-14 shrink-0 hidden xs:block sm:block">
-          <svg viewBox="0 0 56 80" className="absolute inset-0 h-full w-full">
-            {/* tårn */}
-            <polygon points="26,28 30,28 33,76 23,76" fill="rgba(226,232,240,0.85)" stroke="rgba(34,211,238,0.35)" strokeWidth="0.5" />
-            {/* nacelle */}
-            <rect x="22" y="24" width="12" height="8" rx="2" fill="rgba(203,213,225,0.9)" stroke="rgba(34,211,238,0.4)" strokeWidth="0.5" />
-            {/* rotor */}
-            <g style={{ transformOrigin: "28px 28px", animation: `pbthWindSpin ${spinDur}s linear infinite` }}>
-              <g fill="rgba(165,243,252,0.95)" stroke="rgba(34,211,238,0.6)" strokeWidth="0.5">
-                <path d="M28 28 L29 4 Q28 2 27 4 Z" />
-                <path d="M28 28 L49 40 Q51 40 50 38 Z" transform="rotate(120 28 28)" />
-                <path d="M28 28 L49 40 Q51 40 50 38 Z" transform="rotate(240 28 28)" />
-              </g>
-              <circle cx="28" cy="28" r="1.8" fill="#0e7490" />
-            </g>
-          </svg>
         </div>
         <div className="min-w-0 text-right">
           <div className="text-[9px] uppercase tracking-widest text-white/40">Vind nå</div>
