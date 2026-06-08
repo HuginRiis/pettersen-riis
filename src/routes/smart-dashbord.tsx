@@ -3859,6 +3859,24 @@ function WindTile({
             </div>
           )}
         </div>
+        {/* liten vindmølle mellom kompass og tall — spinner med vinden */}
+        <div className="relative h-20 w-14 shrink-0 hidden xs:block sm:block">
+          <svg viewBox="0 0 56 80" className="absolute inset-0 h-full w-full">
+            {/* tårn */}
+            <polygon points="26,28 30,28 33,76 23,76" fill="rgba(226,232,240,0.85)" stroke="rgba(34,211,238,0.35)" strokeWidth="0.5" />
+            {/* nacelle */}
+            <rect x="22" y="24" width="12" height="8" rx="2" fill="rgba(203,213,225,0.9)" stroke="rgba(34,211,238,0.4)" strokeWidth="0.5" />
+            {/* rotor */}
+            <g style={{ transformOrigin: "28px 28px", animation: `pbthWindSpin ${spinDur}s linear infinite` }}>
+              <g fill="rgba(165,243,252,0.95)" stroke="rgba(34,211,238,0.6)" strokeWidth="0.5">
+                <path d="M28 28 L29 4 Q28 2 27 4 Z" />
+                <path d="M28 28 L49 40 Q51 40 50 38 Z" transform="rotate(120 28 28)" />
+                <path d="M28 28 L49 40 Q51 40 50 38 Z" transform="rotate(240 28 28)" />
+              </g>
+              <circle cx="28" cy="28" r="1.8" fill="#0e7490" />
+            </g>
+          </svg>
+        </div>
         <div className="min-w-0 text-right">
           <div className="text-[9px] uppercase tracking-widest text-white/40">Vind nå</div>
           <div className="text-xl font-semibold text-white tabular-nums leading-none">
