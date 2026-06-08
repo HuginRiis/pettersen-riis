@@ -755,8 +755,8 @@ main .container {
   row-gap: 8px !important;
 }
 .iphone-mode .grid-cols-6 {
-  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-  grid-auto-rows: 72px !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  grid-auto-rows: 92px !important;
   column-gap: 8px !important;
   row-gap: 8px !important;
   margin-top: 8px !important;
@@ -781,6 +781,16 @@ main .container {
   grid-column: span 2 / span 2 !important;
 }
 
+/* Basseng + Hundevann: gjør litt høyere så all tekst får plass */
+.iphone-mode .grid-cols-12 > .iphone-tall {
+  grid-row: span 2 / span 2 !important;
+}
+
+/* Lys-flisen: tving 3 kolonner x 2 rader på iPhone, og gjør tile høyere */
+.iphone-mode .lys-combined-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  grid-auto-rows: minmax(0, 1fr) !important;
+}
 
 /* Slightly shrink padding inside cards for denser layout */
 .iphone-mode .grid-cols-12 .p-6,
@@ -794,3 +804,4 @@ main .container {
   padding-top: 38px;
   padding-bottom: env(safe-area-inset-bottom, 0);
 }
+
