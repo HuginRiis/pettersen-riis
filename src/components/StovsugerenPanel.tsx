@@ -523,7 +523,7 @@ export function StovsugerenPanel() {
       )}
 
       {/* Login flow */}
-      {snap && !snap.ok && snap.needsLogin && (
+      {((snap && !snap.ok && snap.needsLogin) || showLogin) && (
         <article className="panel rounded-xl p-5 border border-primary/30 space-y-3">
           <div className="flex items-center gap-2">
             <KeyRound className="text-primary" size={18} />
