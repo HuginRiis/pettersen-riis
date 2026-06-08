@@ -161,6 +161,7 @@ const navLinks: NavLink[] = [
   { to: "/fly", label: "Fly i nærheten", public: true },
   { to: "/steintavle", label: "Steintavle" },
   { to: "/steintavle-2", label: "Steintavle 2" },
+  { to: "/iphone-app", label: "iPhone App" },
 ];
 
 export function SiteHeader() {
