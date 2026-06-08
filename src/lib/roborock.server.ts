@@ -304,6 +304,7 @@ async function getDevices(rriot: Rriot, homeId: number | string): Promise<Roboro
   const text = await r.text();
   let j: any = null;
   try { j = JSON.parse(text); } catch { /* ignore */ }
+  console.log(`[roborock] GET ${path} status=${r.status} success=${j?.success} hasResult=${!!j?.result} bodyLen=${text.length}`);
   if (j?.success && j?.result) return mapDevices(j.result);
 
   // Prøv v1
@@ -314,11 +315,13 @@ async function getDevices(rriot: Rriot, homeId: number | string): Promise<Roboro
   const text2 = await r2.text();
   let j2: any = null;
   try { j2 = JSON.parse(text2); } catch { /* ignore */ }
+  console.log(`[roborock] GET ${path2} status=${r2.status} success=${j2?.success} hasResult=${!!j2?.result} bodyLen=${text2.length}`);
   if (j2?.success && j2?.result) return mapDevices(j2.result);
 
   const detail =
     j?.msg ?? j2?.msg ??
     `v3 status=${r.status} body=${text.slice(0, 200)} | v1 status=${r2.status} body=${text2.slice(0, 200)}`;
+  console.error(`[roborock] getDevices feilet: ${detail}`);
   throw new Error(`getDevices feilet: ${detail}`);
 }
 
