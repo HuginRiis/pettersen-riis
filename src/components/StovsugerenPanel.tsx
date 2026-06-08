@@ -275,6 +275,83 @@ export function StovsugerenPanel() {
         </div>
       )}
 
+      {/* Enkel oversikt — kontakt & feil */}
+      {snap && (
+        <article className="panel rounded-xl border border-border p-4 sm:p-5 space-y-3">
+          <div className="flex items-center gap-2">
+            <Shield size={14} className="text-primary" />
+            <h3 className="text-sm font-serif text-foreground tracking-wide">Oversikt</h3>
+          </div>
+
+          {!snap.ok ? (
+            <div className="flex items-start gap-2 rounded border border-destructive/50 bg-destructive/5 p-3">
+              <AlertTriangle size={14} className="text-destructive mt-0.5 shrink-0" />
+              <div className="text-xs text-foreground/90">
+                <div className="font-medium text-destructive">Mistet kontakt med Roborock-skyen</div>
+                <div className="text-muted-foreground mt-0.5">
+                  {snap.needsLogin ? "Trenger ny innlogging — bruk «Logg inn på nytt» øverst." : (snap.error ?? "Ukjent feil")}
+                </div>
+              </div>
+            </div>
+          ) : snap.devices.length === 0 ? (
+            <div className="flex items-start gap-2 rounded border border-amber-500/50 bg-amber-500/5 p-3">
+              <AlertTriangle size={14} className="text-amber-400 mt-0.5 shrink-0" />
+              <div className="text-xs text-foreground/90">
+                <div className="font-medium text-amber-300">Innlogget, men fant ingen støvsugere</div>
+                <div className="text-muted-foreground mt-0.5">Sjekk at de er knyttet til kontoen {snap.email ?? ""}.</div>
+              </div>
+            </div>
+          ) : (
+            <ul className="grid gap-2 sm:grid-cols-2">
+              {snap.devices.map((d) => {
+                const status = (d.attribute ?? {}) as Record<string, unknown>;
+                const errorCode = num(status[120]) ?? num(status.error_code);
+                const hasError = errorCode != null && errorCode !== 0;
+                const noStatus = !d.attribute || Object.keys(status).length === 0;
+                const tone = !d.online
+                  ? "border-muted-foreground/40 bg-muted/10"
+                  : hasError
+                  ? "border-destructive/50 bg-destructive/5"
+                  : noStatus
+                  ? "border-amber-500/40 bg-amber-500/5"
+                  : "border-primary/40 bg-primary/5";
+                const Icon = !d.online ? WifiOff : hasError ? AlertTriangle : noStatus ? AlertTriangle : Wifi;
+                const iconTone = !d.online
+                  ? "text-muted-foreground"
+                  : hasError
+                  ? "text-destructive"
+                  : noStatus
+                  ? "text-amber-400"
+                  : "text-primary";
+                const headline = !d.online
+                  ? "Offline — ingen kontakt"
+                  : hasError
+                  ? `Feilkode ${errorCode}`
+                  : noStatus
+                  ? "Tilkoblet, men ingen status mottatt"
+                  : "Alt OK";
+                return (
+                  <li key={d.duid} className={`rounded border ${tone} p-3`}>
+                    <div className="flex items-start gap-2">
+                      <Icon size={14} className={`${iconTone} mt-0.5 shrink-0`} />
+                      <div className="min-w-0 flex-1">
+                        <div className="text-sm font-serif text-foreground truncate">{d.name}</div>
+                        <div className={`text-[11px] mt-0.5 ${iconTone}`}>{headline}</div>
+                        <div className="text-[10px] font-mono text-muted-foreground/70 mt-1 break-all">
+                          id: {d.duid}
+                        </div>
+                      </div>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </article>
+      )}
+
+
+
       {/* Devices */}
       {snap?.ok && snap.devices.length > 0 && (
         <div className="grid gap-5 lg:grid-cols-2">
