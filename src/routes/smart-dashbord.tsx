@@ -2997,112 +2997,391 @@ function AqiCompact({ loc }: { loc: typeof LOCS[LocId] }) {
   );
 }
 
+// ----- Open-Meteo current weather (for backdrop når det er tørt) -----
+type CurrentWx = { code: number; cloud: number; isDay: boolean; temp: number | null };
+const _omCache: { ts: number; data: CurrentWx | null } = { ts: 0, data: null };
+function useOpenMeteoCurrent(lat: number, lon: number): CurrentWx | null {
+  const [wx, setWx] = useState<CurrentWx | null>(_omCache.data);
+  useEffect(() => {
+    let c = false;
+    const load = async () => {
+      try {
+        if (_omCache.data && Date.now() - _omCache.ts < 15 * 60_000) {
+          setWx(_omCache.data);
+          return;
+        }
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=weather_code,cloud_cover,is_day,temperature_2m&timezone=Europe%2FOslo`;
+        const r = await fetch(url, { headers: { Accept: "application/json" } });
+        if (!r.ok) return;
+        const j: any = await r.json();
+        const cur = j?.current ?? {};
+        const next: CurrentWx = {
+          code: Number(cur.weather_code ?? 0),
+          cloud: Number(cur.cloud_cover ?? 0),
+          isDay: cur.is_day === 1 || cur.is_day === true,
+          temp: typeof cur.temperature_2m === "number" ? cur.temperature_2m : null,
+        };
+        _omCache.ts = Date.now();
+        _omCache.data = next;
+        if (!c) setWx(next);
+      } catch { /* ignore */ }
+    };
+    load();
+    const id = setInterval(load, 15 * 60_000);
+    return () => { c = true; clearInterval(id); };
+  }, [lat, lon]);
+  return wx;
+}
+
+type WxKind = "clear" | "partlyCloudy" | "cloudy" | "fog" | "snow" | "thunder";
+function classifyWx(c: CurrentWx | null): WxKind {
+  if (!c) return "cloudy";
+  const k = c.code;
+  if (k >= 95) return "thunder";
+  if (k === 45 || k === 48) return "fog";
+  if ((k >= 71 && k <= 77) || k === 85 || k === 86) return "snow";
+  if (k === 0) return "clear";
+  if (k === 1 || k === 2) return "partlyCloudy";
+  if (k === 3) return "cloudy";
+  // Drizzle/rain-koder uten faktisk regn på stasjonen -> behandl som overskyet
+  return "cloudy";
+}
+
+// ----- Vær-backdrop (når det IKKE regner) -----
+function WeatherBackdrop({ kind, isDay }: { kind: WxKind; isDay: boolean }) {
+  if (kind === "clear") {
+    return (
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        {isDay ? (
+          <>
+            <div
+              className="absolute"
+              style={{
+                top: "8px", right: "14px", width: 64, height: 64, borderRadius: "9999px",
+                background: "radial-gradient(circle, #fde68a 0%, #fbbf24 45%, rgba(251,191,36,0) 75%)",
+                boxShadow: "0 0 40px 10px rgba(251,191,36,0.45)",
+                animation: "pbthSunPulse 4s ease-in-out infinite",
+              }}
+            />
+            {[0, 45, 90, 135, 180, 225, 270, 315].map((deg, i) => (
+              <span
+                key={i}
+                className="absolute"
+                style={{
+                  top: 40, right: 46, width: 28, height: 2,
+                  background: "linear-gradient(to right, rgba(253,224,71,0.85), rgba(253,224,71,0))",
+                  transformOrigin: "0% 50%",
+                  transform: `rotate(${deg}deg)`,
+                  animation: `pbthSunRay 3.6s ease-in-out ${(i * 0.12).toFixed(2)}s infinite`,
+                }}
+              />
+            ))}
+          </>
+        ) : (
+          <>
+            <div
+              className="absolute"
+              style={{
+                top: 12, right: 18, width: 52, height: 52, borderRadius: "9999px",
+                background: "radial-gradient(circle at 35% 35%, #f8fafc 0%, #cbd5e1 60%, #475569 100%)",
+                boxShadow: "0 0 30px 6px rgba(226,232,240,0.35)",
+              }}
+            />
+            {Array.from({ length: 14 }).map((_, i) => {
+              const left = (i * 13 + 7) % 95;
+              const top = (i * 9 + 5) % 70;
+              const dur = 2 + ((i * 7) % 5) / 2;
+              const delay = -((i * 0.41) % 3);
+              return (
+                <span
+                  key={i}
+                  className="absolute rounded-full bg-white"
+                  style={{
+                    left: `${left}%`, top: `${top}%`, width: 1.5, height: 1.5,
+                    opacity: 0.7,
+                    animation: `pbthStarTwinkle ${dur}s ease-in-out ${delay}s infinite`,
+                  }}
+                />
+              );
+            })}
+          </>
+        )}
+      </div>
+    );
+  }
+
+  if (kind === "partlyCloudy") {
+    return (
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        {isDay && (
+          <div
+            className="absolute"
+            style={{
+              top: 10, right: 60, width: 44, height: 44, borderRadius: "9999px",
+              background: "radial-gradient(circle, #fde68a 0%, #fbbf24 50%, rgba(251,191,36,0) 80%)",
+              boxShadow: "0 0 22px 6px rgba(251,191,36,0.35)",
+            }}
+          />
+        )}
+        <DriftCloud top={14} size={70} opacity={0.55} duration={48} delay={0} />
+        <DriftCloud top={48} size={50} opacity={0.4} duration={62} delay={-20} />
+      </div>
+    );
+  }
+
+  if (kind === "cloudy") {
+    return (
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <DriftCloud top={6} size={80} opacity={0.55} duration={52} delay={0} />
+        <DriftCloud top={32} size={64} opacity={0.45} duration={68} delay={-25} />
+        <DriftCloud top={58} size={56} opacity={0.35} duration={80} delay={-12} />
+      </div>
+    );
+  }
+
+  if (kind === "fog") {
+    return (
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div
+            key={i}
+            className="absolute left-0 right-0"
+            style={{
+              top: `${10 + i * 16}%`,
+              height: 14,
+              background: "linear-gradient(to right, rgba(203,213,225,0), rgba(203,213,225,0.55), rgba(203,213,225,0))",
+              filter: "blur(4px)",
+              animation: `pbthFogDrift ${22 + i * 6}s linear ${-i * 4}s infinite`,
+            }}
+          />
+        ))}
+      </div>
+    );
+  }
+
+  if (kind === "snow") {
+    const flakes = Array.from({ length: 28 });
+    return (
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        {flakes.map((_, i) => {
+          const left = (i * 7.3) % 100;
+          const dur = 5 + ((i * 11) % 7);
+          const delay = -((i * 0.37) % 6);
+          const size = 2 + ((i * 3) % 4);
+          const drift = (i % 2 === 0 ? 1 : -1) * (8 + ((i * 5) % 14));
+          return (
+            <span
+              key={i}
+              className="absolute rounded-full bg-white"
+              style={{
+                left: `${left}%`, top: "-8%", width: size, height: size,
+                opacity: 0.55 + (i % 3) * 0.15,
+                animation: `pbthSnowFall_${i % 6} ${dur}s linear ${delay}s infinite`,
+                ["--snowDrift" as any]: `${drift}px`,
+              }}
+            />
+          );
+        })}
+        <style>{`
+          ${[0,1,2,3,4,5].map((n) => `@keyframes pbthSnowFall_${n}{0%{transform:translate(0,0);opacity:0}10%{opacity:1}90%{opacity:1}100%{transform:translate(var(--snowDrift),200px);opacity:0}}`).join("")}
+        `}</style>
+      </div>
+    );
+  }
+
+  if (kind === "thunder") {
+    return (
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <DriftCloud top={6} size={84} opacity={0.7} duration={50} delay={0} dark />
+        <DriftCloud top={28} size={64} opacity={0.55} duration={62} delay={-18} dark />
+        <div
+          className="absolute inset-0"
+          style={{
+            background: "rgba(250,250,210,0)",
+            animation: "pbthLightning 6s ease-in-out 1s infinite",
+          }}
+        />
+      </div>
+    );
+  }
+  return null;
+}
+
+function DriftCloud({
+  top, size, opacity, duration, delay, dark = false,
+}: { top: number; size: number; opacity: number; duration: number; delay: number; dark?: boolean }) {
+  const color = dark ? "#475569" : "#cbd5e1";
+  return (
+    <div
+      className="absolute"
+      style={{
+        top, left: "-30%", width: size, height: size * 0.6, opacity,
+        animation: `pbthCloudDrift ${duration}s linear ${delay}s infinite`,
+      }}
+    >
+      <div className="relative w-full h-full">
+        <span className="absolute rounded-full" style={{ left: "10%", top: "30%", width: "55%", height: "70%", background: color, filter: "blur(0.5px)" }} />
+        <span className="absolute rounded-full" style={{ left: "30%", top: "5%", width: "45%", height: "75%", background: color, filter: "blur(0.5px)" }} />
+        <span className="absolute rounded-full" style={{ left: "50%", top: "25%", width: "50%", height: "75%", background: color, filter: "blur(0.5px)" }} />
+        <span className="absolute rounded-full" style={{ left: "0", top: "50%", width: "100%", height: "45%", background: color, filter: "blur(0.5px)" }} />
+      </div>
+    </div>
+  );
+}
+
 // ----- Rain tile (mm i dag + siste time, Tollnes) -----
-function RainTile({ rainDay, rainHour, windNow }: { rainDay: number | null; rainHour: number | null; windNow?: number | null }) {
+function RainTile({ rainDay, rainHour, windNow, outTemp }: { rainDay: number | null; rainHour: number | null; windNow?: number | null; outTemp?: number | null }) {
   const mm = rainDay ?? 0;
   const mmHour = rainHour ?? 0;
   const wind = windNow ?? 0;
   // Regner det NÅ? Kun siste-time-verdi bestemmer aktiv animasjon.
   const isRaining = mmHour > 0.02;
-  // intensitet basert KUN på siste time – stopper med en gang regnet slutter
-  const intensity = isRaining ? Math.min(1, mmHour / 4) : 0;
+  // Snø hvis under +1°C og det "regner" (kommer nedbør)
+  const isSnowing = isRaining && outTemp != null && outTemp < 1;
+  // intensitet basert på mm/t — kvadratrot-skalering så lett regn også er synlig
+  // 0.1 mm/t ≈ 0.16, 1 mm/t ≈ 0.5, 4 mm/t ≈ 1.0, kappes på 1
+  const intensity = isRaining ? Math.min(1, Math.sqrt(mmHour / 4)) : 0;
   // skrå (sidelengs) skalert med vind: ~12° ved vindstille, opp mot 55° i kraftig vind
   const slant = Math.max(8, Math.min(55, 8 + wind * 4));
   const horiz = Math.round(Math.tan((slant * Math.PI) / 180) * 180); // px sidelengs over 180px fall
-  const dropCount = isRaining ? Math.max(6, Math.round(6 + intensity * 38)) : 3;
+  const dropCount = isRaining ? Math.max(8, Math.round(8 + intensity * 70)) : 0;
   const drops = Array.from({ length: dropCount });
-  const splashCount = isRaining ? Math.max(2, Math.round(2 + intensity * 10)) : 0;
+  const splashCount = isRaining ? Math.max(3, Math.round(3 + intensity * 18)) : 0;
   const splashes = Array.from({ length: splashCount });
+  // Hastighet skalerer med intensitet: kraftig regn faller raskere
+  const baseDur = 1.3 - intensity * 0.7; // 1.3s lett -> 0.6s kraftig
+
+  const wx = useOpenMeteoCurrent(59.1789, 9.5732);
+  const wxKind = classifyWx(wx);
+  const showBackdrop = !isRaining;
+
   return (
     <Tile title="Regn · Tollnes" icon={<CloudRain size={14} />} accent="text-sky-300">
       <div className="relative h-full flex items-end justify-between gap-2 overflow-hidden">
-        {/* skygge øverst kun når det regner */}
+        {/* Vær-bakgrunn når det er tørt */}
+        {showBackdrop && <WeatherBackdrop kind={wxKind} isDay={wx?.isDay ?? true} />}
+
+        {/* mørk skybunn øverst kun når det regner/snør */}
         {isRaining && (
           <div
-            className="pointer-events-none absolute -top-6 left-0 right-0 h-10"
+            className="pointer-events-none absolute -top-6 left-0 right-0 h-12"
             style={{
-              background: `radial-gradient(ellipse at 50% 100%, rgba(148,163,184,${0.15 + intensity * 0.35}) 0%, rgba(148,163,184,0) 70%)`,
+              background: `radial-gradient(ellipse at 50% 100%, rgba(71,85,105,${0.25 + intensity * 0.5}) 0%, rgba(71,85,105,0) 75%)`,
             }}
           />
         )}
 
-        {/* animerte regndråper med skrå retning basert på vind */}
-        <div className="pointer-events-none absolute inset-0">
-          {drops.map((_, i) => {
-            const left = (i * 7.3) % 100;
-            const delay = -((i * 0.19) % 2);
-            const dur = 0.8 + ((i * 13) % 7) / 10;
-            const len = 8 + ((i * 5) % 18) + Math.round(intensity * 6);
-            return (
-              <span
-                key={i}
-                className="absolute block rounded-full"
-                style={{
-                  left: `${left}%`,
-                  top: "-14%",
-                  width: 1.6,
-                  height: `${len}px`,
-                  background:
-                    "linear-gradient(to bottom, rgba(186,230,253,0), rgba(125,211,252,0.9))",
-                  opacity: 0.35 + intensity * 0.55,
-                  transform: `rotate(${slant}deg)`,
-                  animation: `pbthRainFall_${Math.round(horiz)} ${dur}s linear ${delay}s infinite`,
-                }}
-              />
-            );
-          })}
-        </div>
-        {/* splash-ringer på "bakken" */}
-        <div className="pointer-events-none absolute left-0 right-0 bottom-0 h-6">
-          {splashes.map((_, i) => {
-            const left = 4 + ((i * 13) % 92);
-            const delay = -((i * 0.27) % 1.8);
-            const dur = 1.4 + ((i * 7) % 5) / 5;
-            return (
-              <span
-                key={i}
-                className="absolute rounded-full border border-sky-300/70"
-                style={{
-                  left: `${left}%`,
-                  bottom: 2,
-                  width: 4,
-                  height: 4,
-                  opacity: 0.15 + intensity * 0.6,
-                  animation: `pbthRainSplash 1.6s ease-out ${delay}s infinite`,
-                  animationDuration: `${dur}s`,
-                }}
-              />
-            );
-          })}
-        </div>
-        
+        {/* animerte regndråper / snøfnugg */}
+        {isRaining && !isSnowing && (
+          <div className="pointer-events-none absolute inset-0">
+            {drops.map((_, i) => {
+              const left = (i * 7.3) % 100;
+              const delay = -((i * 0.19) % baseDur);
+              const dur = baseDur + ((i * 13) % 5) / 20;
+              const len = 8 + ((i * 5) % 14) + Math.round(intensity * 10);
+              return (
+                <span
+                  key={i}
+                  className="absolute block rounded-full"
+                  style={{
+                    left: `${left}%`,
+                    top: "-14%",
+                    width: 1.4 + intensity * 0.6,
+                    height: `${len}px`,
+                    background: "linear-gradient(to bottom, rgba(186,230,253,0), rgba(125,211,252,0.95))",
+                    opacity: 0.45 + intensity * 0.5,
+                    transform: `rotate(${slant}deg)`,
+                    animation: `pbthRainFall_${Math.round(horiz)} ${dur}s linear ${delay}s infinite`,
+                  }}
+                />
+              );
+            })}
+          </div>
+        )}
+        {isSnowing && (
+          <div className="pointer-events-none absolute inset-0">
+            {Array.from({ length: Math.max(10, Math.round(10 + intensity * 28)) }).map((_, i) => {
+              const left = (i * 9.7) % 100;
+              const dur = 4 + ((i * 11) % 6);
+              const delay = -((i * 0.41) % 5);
+              const size = 2 + ((i * 3) % 4) + Math.round(intensity * 2);
+              const drift = (i % 2 === 0 ? 1 : -1) * (10 + ((i * 5) % 16));
+              return (
+                <span
+                  key={i}
+                  className="absolute rounded-full bg-white"
+                  style={{
+                    left: `${left}%`, top: "-8%", width: size, height: size,
+                    opacity: 0.65 + (i % 3) * 0.12,
+                    animation: `pbthSnowFall_${i % 6} ${dur}s linear ${delay}s infinite`,
+                    ["--snowDrift" as any]: `${drift}px`,
+                  }}
+                />
+              );
+            })}
+          </div>
+        )}
+        {/* splash-ringer på "bakken" — kun for regn, ikke snø */}
+        {isRaining && !isSnowing && (
+          <div className="pointer-events-none absolute left-0 right-0 bottom-0 h-6">
+            {splashes.map((_, i) => {
+              const left = 4 + ((i * 13) % 92);
+              const delay = -((i * 0.27) % 1.8);
+              const dur = Math.max(0.7, 1.6 - intensity * 0.5) + ((i * 7) % 5) / 10;
+              return (
+                <span
+                  key={i}
+                  className="absolute rounded-full border border-sky-300/80"
+                  style={{
+                    left: `${left}%`,
+                    bottom: 2,
+                    width: 4,
+                    height: 4,
+                    opacity: 0.25 + intensity * 0.6,
+                    animation: `pbthRainSplash ${dur}s ease-out ${delay}s infinite`,
+                  }}
+                />
+              );
+            })}
+          </div>
+        )}
+
         <div className="relative z-10">
           <div className="text-[10px] uppercase tracking-widest text-white/40">I dag</div>
-          <div className="text-3xl font-semibold text-white tabular-nums leading-tight">
+          <div className="text-3xl font-semibold text-white tabular-nums leading-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]">
             {rainDay == null ? "—" : mm.toFixed(1).replace(".", ",")}
             <span className="text-sm text-white/40 ml-1">mm</span>
           </div>
-          <div className="text-[10px] text-white/50 mt-1">
+          <div className="text-[10px] text-white/60 mt-1 drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]">
             Siste time:{" "}
             <span className="text-sky-200 tabular-nums">
               {rainHour == null ? "—" : `${rainHour.toFixed(1).replace(".", ",")} mm`}
             </span>
             {!isRaining && rainHour != null && (
-              <span className="ml-1 text-white/30">· tørt</span>
+              <span className="ml-1 text-white/40">· tørt</span>
             )}
+            {isSnowing && <span className="ml-1 text-white/60">· snø</span>}
           </div>
         </div>
         <div className="relative z-10 self-end pb-4">
-          <Droplets size={36} className={isRaining ? "text-sky-300/70" : "text-white/20"} />
+          <Droplets size={32} className={isRaining ? "text-sky-300/70" : "text-white/15"} />
         </div>
       </div>
       <style>{`
         @keyframes pbthRainFall_${Math.round(horiz)}{0%{transform:translate(0,0) rotate(${slant}deg);opacity:0}10%{opacity:1}90%{opacity:1}100%{transform:translate(${horiz}px,180px) rotate(${slant}deg);opacity:0}}
         @keyframes pbthRainSplash{0%{transform:scale(0.2);opacity:0.9}80%{transform:scale(2.4);opacity:0.15}100%{transform:scale(2.8);opacity:0}}
+        @keyframes pbthSunPulse{0%,100%{transform:scale(1);filter:brightness(1)}50%{transform:scale(1.06);filter:brightness(1.1)}}
+        @keyframes pbthSunRay{0%,100%{opacity:0.4;transform-origin:0% 50%;width:24px}50%{opacity:0.9;width:32px}}
+        @keyframes pbthCloudDrift{0%{transform:translateX(0)}100%{transform:translateX(260%)}}
+        @keyframes pbthFogDrift{0%{transform:translateX(-30%)}100%{transform:translateX(30%)}}
+        @keyframes pbthStarTwinkle{0%,100%{opacity:0.25}50%{opacity:0.95}}
+        @keyframes pbthLightning{0%,92%,100%{background:rgba(250,250,210,0)}93%{background:rgba(254,243,199,0.65)}94%{background:rgba(250,250,210,0)}95%{background:rgba(254,243,199,0.5)}96%{background:rgba(250,250,210,0)}}
+        ${[0,1,2,3,4,5].map((n) => `@keyframes pbthSnowFall_${n}{0%{transform:translate(0,0);opacity:0}10%{opacity:1}90%{opacity:1}100%{transform:translate(var(--snowDrift),200px);opacity:0}}`).join("")}
       `}</style>
     </Tile>
   );
 }
+
 
 
 
@@ -3567,7 +3846,7 @@ function SmartDashbord() {
               </div>
               <div className="col-span-2"><UvCompact loc={loc} /></div>
               <div className="col-span-2"><AqiCompact loc={loc} /></div>
-              <div className="col-span-2"><RainTile rainDay={tollnes.rainDay} rainHour={tollnes.rainHour} windNow={tollnes.windNow} /></div>
+              <div className="col-span-2"><RainTile rainDay={tollnes.rainDay} rainHour={tollnes.rainHour} windNow={tollnes.windNow} outTemp={tollnes.outTemp} /></div>
               <div className="col-span-2"><WindTile windNow={tollnes.windNow} gustNow={tollnes.gustNow} windAngle={tollnes.windAngle} /></div>
 
 
