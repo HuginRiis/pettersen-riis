@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import sileMowerImg from "@/assets/icon-sileno-mower.png";
+import { MowerFX } from "@/components/RobotFX";
 import { useServerFn } from "@tanstack/react-start";
 import { getGardenaSnapshot, controlGardenaMower } from "@/lib/gardena.functions";
 import { GardenaMap } from "@/components/GardenaMap";
@@ -137,6 +139,24 @@ function MowerCard({
           </span>
         )}
       </div>
+
+      {(() => {
+        const mowing = !!mower.activity && /CUTTING|LEAVING/i.test(mower.activity);
+        return (
+          <div className={`relative mx-auto h-28 w-28 rounded-full flex items-center justify-center ${mowing ? "bg-emerald-400/10 ring-1 ring-emerald-300/30 shadow-[0_0_28px_-6px_rgba(52,211,153,0.55)]" : "bg-white/[0.03] ring-1 ring-white/10"}`}>
+            {mowing && <span className="absolute inset-0 rounded-full bg-emerald-400/20 animate-ping" />}
+            <MowerFX mode={mowing ? "mow" : "wind"} />
+            <img
+              src={sileMowerImg}
+              alt={mower.name}
+              width={96}
+              height={96}
+              loading="lazy"
+              className="relative h-24 w-24 object-contain drop-shadow-[0_4px_10px_rgba(0,0,0,0.5)]"
+            />
+          </div>
+        );
+      })()}
 
       {actInfo && (
         <div className={`flex items-center gap-2 text-xs px-3 py-2 rounded border ${tone(actInfo.tone)}`}>

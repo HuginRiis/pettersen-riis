@@ -31,6 +31,8 @@ import {
   sendRoborockCommand,
 } from "@/lib/roborock.functions";
 import stovsugerArt from "@/assets/got-stovsuger.jpg";
+import roboVacImg from "@/assets/icon-roborock-vacuum.png";
+import { VacuumFX } from "@/components/RobotFX";
 
 type Snap = Awaited<ReturnType<typeof getRoborockSnapshot>>;
 
@@ -294,12 +296,26 @@ export function StovsugerenPanel() {
               >
                 <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/60 to-transparent" />
                 <header className="p-4 sm:p-5 flex items-start gap-3 border-b border-border/60">
-                  <div className="relative">
-                    <div className="absolute inset-0 rounded-full bg-primary/30 blur-xl animate-pulse" />
-                    <div className="relative w-12 h-12 rounded-full border border-primary/40 bg-card/80 flex items-center justify-center">
-                      <Bot className="text-primary" size={22} />
-                    </div>
-                  </div>
+                  {(() => {
+                    const active = state != null && [5, 6, 11, 15, 16, 17, 18].includes(state);
+                    return (
+                      <div className="relative">
+                        <div className="absolute inset-0 rounded-full bg-primary/30 blur-xl animate-pulse" />
+                        <div className={`relative w-16 h-16 rounded-full border ${active ? "border-sky-300/60 bg-sky-400/10" : "border-primary/40 bg-card/80"} flex items-center justify-center`}>
+                          <VacuumFX mode={active ? "suck" : "orbit"} />
+                          <img
+                            src={roboVacImg}
+                            alt={d.name}
+                            width={56}
+                            height={56}
+                            loading="lazy"
+                            className={`relative h-14 w-14 object-contain ${active ? "animate-spin" : ""}`}
+                            style={active ? { animationDuration: "6s" } : undefined}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })()}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <h3 className="text-lg font-serif text-foreground truncate">{d.name}</h3>
