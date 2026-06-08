@@ -1926,7 +1926,7 @@ function RobotsTile() {
               </div>
               <div className="min-w-0 flex-1">
                 <div className="text-[9px] uppercase tracking-widest text-white/40">Roborock · Borgen</div>
-                <div className="text-sm text-white truncate pl-3">{roboLabel}</div>
+                <div className="text-sm text-white truncate pl-4">{roboLabel}</div>
               </div>
               <div className="text-right">
                 <div className="text-[9px] uppercase tracking-widest text-white/40">Bat</div>
