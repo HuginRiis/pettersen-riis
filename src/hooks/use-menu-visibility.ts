@@ -46,6 +46,7 @@ export const MENU_LINK_DEFS: { to: string; label: string }[] = [
   { to: "/fly", label: "Fly i nærheten" },
   { to: "/steintavle", label: "Steintavle" },
   { to: "/steintavle-2", label: "Steintavle 2" },
+  { to: "/iphone-app", label: "iPhone App" },
 ];
 
 const DEFAULT_LINK_STATE: MenuLinkState = { enabled: true, users: [] };

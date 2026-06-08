@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Menu, X, LogOut, Crown, Swords, Shield, KeyRound, Home, Star, Flower2,
   Sun, Compass, CalendarDays, BellRing, Eye, Mountain, Lightbulb, Lamp, Flame, Zap,
   Receipt, Dumbbell, AlertTriangle, ScrollText, Globe, ChevronDown, ChevronRight,
-  TreePine, Coins, Bot, Wallet, Volume2, Settings, Gauge, Plane, Folder } from "lucide-react";
+  TreePine, Coins, Bot, Wallet, Volume2, Settings, Gauge, Plane, Folder, Smartphone } from "lucide-react";
 
 
 import { logoutFn } from "@/lib/auth.functions";
@@ -42,6 +42,7 @@ type RoutePath =
   | "/varsler"
   | "/smarthus"
   | "/smart-dashbord"
+  | "/iphone-app"
   | "/lys"
   | "/varme"
   | "/steintavle"
@@ -64,7 +65,7 @@ const HOMEY_BACKED_ROUTES: RoutePath[] = ["/smarthus", "/var", "/steintavle"];
 
 // Hjem skal alltid stå først, og Steintavle / Steintavle 2 / Smarthus alltid sist — uavhengig av bruksstatistikk.
 const ALWAYS_FIRST: RoutePath = "/";
-const ALWAYS_LAST_LIST: RoutePath[] = ["/steintavle", "/steintavle-2", "/smart-dashbord"];
+const ALWAYS_LAST_LIST: RoutePath[] = ["/steintavle", "/steintavle-2", "/smart-dashbord", "/iphone-app"];
 const ALWAYS_LAST_SET = new Set<RoutePath>(ALWAYS_LAST_LIST);
 const isAlwaysLast = (p: RoutePath) => ALWAYS_LAST_SET.has(p);
 
@@ -95,6 +96,7 @@ const ROUTE_ICON: Partial<Record<RoutePath, React.ComponentType<{ size?: number;
   "/planter": TreePine,
   "/fly": Plane,
   "/ytelse": Gauge,
+  "/iphone-app": Smartphone,
 };
 
 
@@ -125,6 +127,7 @@ const ROUTE_ICON_COLOR: Partial<Record<RoutePath, string>> = {
   "/planter": "#22c55e",
   "/fly": "#38bdf8",
   "/ytelse": "#22d3ee",
+  "/iphone-app": "#60a5fa",
 };
 
 
@@ -158,6 +161,7 @@ const navLinks: NavLink[] = [
   { to: "/fly", label: "Fly i nærheten", public: true },
   { to: "/steintavle", label: "Steintavle" },
   { to: "/steintavle-2", label: "Steintavle 2" },
+  { to: "/iphone-app", label: "iPhone App" },
 ];
 
 export function SiteHeader() {
