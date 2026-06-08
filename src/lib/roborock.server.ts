@@ -432,22 +432,55 @@ function mapDevices(result: any): RoborockDevice[] {
 }
 
 export async function fetchRoborockSnapshot(): Promise<RoborockSnapshot> {
+  const t0 = Date.now();
+  console.log(`[roborock] fetchRoborockSnapshot START at ${new Date(t0).toISOString()}`);
   const email = process.env.ROBOROCK_EMAIL;
-  if (!email) return { ok: false, devices: [], error: "Mangler ROBOROCK_EMAIL" };
+  if (!email) {
+    console.error(`[roborock] snapshot ABORT: ROBOROCK_EMAIL env var missing`);
+    return { ok: false, devices: [], error: "Mangler ROBOROCK_EMAIL" };
+  }
   try {
     const auth = await loadAuth();
+    console.log(
+      `[roborock] snapshot auth: email=${auth?.email} deviceIdSet=${!!auth?.device_id} baseUrl=${auth?.base_url} tokenSet=${!!auth?.token} rriotSet=${!!auth?.rriot}`,
+    );
     if (!auth?.token || !auth?.rriot || !auth?.base_url || !auth?.device_id) {
-      console.warn(`[roborock] snapshot: trenger login — tokenSet=${!!auth?.token} rriotSet=${!!auth?.rriot} baseUrlSet=${!!auth?.base_url} deviceIdSet=${!!auth?.device_id}`);
-      return { ok: false, needsLogin: true, devices: [], error: "Ikke innlogget. Send kode på e-post for å logge inn." };
+      console.warn(
+        `[roborock] snapshot NEEDS LOGIN — tokenSet=${!!auth?.token} rriotSet=${!!auth?.rriot} baseUrlSet=${!!auth?.base_url} deviceIdSet=${!!auth?.device_id}`,
+      );
+      return {
+        ok: false,
+        needsLogin: true,
+        devices: [],
+        error: "Ikke innlogget. Send kode på e-post for å logge inn.",
+      };
     }
     const homeId = await getHomeId(auth.base_url, email, auth.device_id, auth.token);
     console.log(`[roborock] snapshot: homeId=${homeId}`);
     const devices = await getDevices(auth.rriot, homeId);
-    console.log(`[roborock] snapshot: returning ${devices.length} device(s)`);
+    console.log(`[roborock] snapshot DEVICE COUNT from API: ${devices.length}`);
+    console.log(
+      `[roborock] snapshot DEVICE NAMES+DUIDS:`,
+      JSON.stringify(devices.map((d) => ({ name: d.name, duid: d.duid, online: d.online }))),
+    );
+    // No filtering is applied here — every mapped device is forwarded to the UI.
+    console.log(`[roborock] snapshot FILTER: none (forwarding all ${devices.length} device(s) unchanged)`);
+    console.log(
+      `[roborock] snapshot FINAL payload to frontend:`,
+      JSON.stringify({ ok: true, email, homeId, deviceCount: devices.length, devices: devices.map((d) => ({ duid: d.duid, name: d.name, online: d.online, productName: d.productName, fv: d.fv, hasLocalKey: !!d.localKey, statusKeys: d.attribute ? Object.keys(d.attribute).sort() : [] })) }),
+    );
+    console.log(`[roborock] fetchRoborockSnapshot DONE in ${Date.now() - t0}ms`);
     return { ok: true, email, homeId, devices };
   } catch (e: any) {
-    console.error(`[roborock] snapshot failed:`, e?.message ?? e);
-    return { ok: false, devices: [], error: e?.message ?? String(e) };
+    const msg = e?.message ?? String(e);
+    const stack = e?.stack ?? "(no stack)";
+    console.error(
+      `[roborock] snapshot FAILED after ${Date.now() - t0}ms — this is what causes "Ravnen kom ikke fram" in UI`,
+    );
+    console.error(`[roborock] snapshot error message: ${msg}`);
+    console.error(`[roborock] snapshot error stack:\n${stack}`);
+    console.error(`[roborock] snapshot error raw:`, e);
+    return { ok: false, devices: [], error: msg };
   }
 }
 
