@@ -1751,7 +1751,8 @@ function RobotsTile() {
 
   useEffect(() => {
     loadRoborock();
-    const id = setInterval(loadRoborock, 60_000);
+    // Roborock-skyen tåler dårlig hyppige spørringer; poll hvert 10. min.
+    const id = setInterval(loadRoborock, 10 * 60 * 1000);
     return () => clearInterval(id);
   }, [loadRoborock]);
 
