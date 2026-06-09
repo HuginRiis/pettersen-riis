@@ -3069,6 +3069,8 @@ function UvCompact({ loc }: { loc: (typeof LOCS)[LocId] }) {
     }
   });
   const [cloudPct, setCloudPct] = useState<number | null>(null);
+  const [precip, setPrecip] = useState<number>(0);
+  const [weatherCode, setWeatherCode] = useState<number | null>(null);
   const [uvLive, setUvLive] = useState<{ uv: number | null; uvClear: number | null }>({ uv: null, uvClear: null });
 
   useEffect(() => {
@@ -3108,7 +3110,11 @@ function UvCompact({ loc }: { loc: (typeof LOCS)[LocId] }) {
                 best = i;
               }
             }
-            if (best >= 0) setCloudPct(fh.cloud_cover[best] ?? null);
+            if (best >= 0) {
+              setCloudPct(fh.cloud_cover[best] ?? null);
+              setPrecip(fh.precipitation?.[best] ?? 0);
+              setWeatherCode(fh.weather_code?.[best] ?? null);
+            }
           }
         })
         .catch(() => {});
