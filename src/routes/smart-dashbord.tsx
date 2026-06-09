@@ -34,6 +34,7 @@ import {
   Lock,
   Unlock,
   Fan,
+  Moon,
 } from "lucide-react";
 import { AreaChart, Area, ResponsiveContainer } from "recharts";
 import { useUvSun } from "@/hooks/use-uv-sun";
