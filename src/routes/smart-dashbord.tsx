@@ -1695,6 +1695,7 @@ import { Bot, Play, ParkingSquare, Pause, Loader2, BatteryCharging, Home as Home
 import sileMowerImg from "@/assets/icon-sileno-mower.png";
 import roboVacImg from "@/assets/icon-roborock-vacuum.png";
 import { VacuumFX, MowerFX } from "@/components/RobotFX";
+import { FancyWeatherTile } from "@/components/FancyWeatherTile";
 
 type RoborockSnap = Awaited<ReturnType<typeof getRoborockSnapshot>>;
 
@@ -4557,7 +4558,13 @@ export function SmartDashbord() {
             formatMax={(n) => `${Math.round(n)} ppm`}
           />
         </div>
+
+        {/* Fancy værflis – kun synlig i iPhone-app (CSS skjuler på dashbord) */}
+        <div className="fancy-wx-wrap">
+          <FancyWeatherTile label={loc.label} lat={loc.lat} lon={loc.lon} />
+        </div>
       </main>
+
 
       {/* Innstillinger */}
       <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
