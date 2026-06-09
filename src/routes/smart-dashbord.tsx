@@ -4434,7 +4434,7 @@ export function SmartDashbord() {
                   onReload={reload}
                 />
               </div>
-              <div className="col-span-4">
+              <div className="col-span-4 iphone-lys-later">
                 <LysCombinedTile groups={hueRoomGroups} onReload={reload} />
               </div>
               <div className="col-span-2">

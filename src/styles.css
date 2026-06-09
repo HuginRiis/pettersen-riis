@@ -800,6 +800,11 @@ main .container {
   grid-auto-rows: minmax(0, 1fr) !important;
 }
 
+/* Flytt lys-flisen lengre ned på iPhone (etter rad 2, før rad 3) */
+.iphone-mode .iphone-lys-later {
+  order: 10;
+}
+
 /* Slightly shrink padding inside cards for denser layout */
 .iphone-mode .grid-cols-12 .p-6,
 .iphone-mode .grid-cols-12 .p-5,
