@@ -265,7 +265,7 @@ export async function warmUvCloudPanel(lat: number, lon: number): Promise<void> 
   await withCache<UvCloudData>(key, async () => {
     const core = await warmOpenMeteoCore(lat, lon);
     const aqHourly = pickFields(core.hourly, ["uv_index", "uv_index_clear_sky"]);
-    const fcHourly = await fetchOpenMeteoCloudHourly(lat, lon).catch(() => ({ time: [], cloud_cover: [] }));
+    const fcHourly = await fetchOpenMeteoCloudHourly(lat, lon).catch(() => ({ time: [], cloud_cover: [], precipitation: [], weather_code: [] }));
     const cloudMap = buildCloudMap(fcHourly);
     applyUvCorrection(aqHourly, null, cloudMap);
     return { aq: { hourly: aqHourly }, fc: { hourly: fcHourly } };
