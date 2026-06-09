@@ -212,19 +212,23 @@ function applyUvCorrection(hourly: any, current: any, cloudMap: Map<string, numb
 async function fetchOpenMeteoCloudHourly(
   lat: number,
   lon: number,
-): Promise<{ time: string[]; cloud_cover: number[] }> {
+): Promise<{ time: string[]; cloud_cover: number[]; precipitation: number[]; weather_code: number[] }> {
   const base = process.env.OPEN_METEO_API_KEY
     ? "https://customer-api.open-meteo.com"
     : "https://api.open-meteo.com";
   const url =
     `${base}/v1/forecast?latitude=${lat}&longitude=${lon}` +
-    `&hourly=cloud_cover&timezone=Europe%2FOslo&forecast_days=4${apiKeyParam()}`;
+    `&hourly=cloud_cover,precipitation,weather_code&timezone=Europe%2FOslo&forecast_days=4${apiKeyParam()}`;
   const res = await fetchWithBackoff("open-meteo", "open-meteo:cloud", url);
-  if (!res || !res.ok) return { time: [], cloud_cover: [] };
-  const json = (await res.json()) as { hourly?: { time?: string[]; cloud_cover?: number[] } };
+  if (!res || !res.ok) return { time: [], cloud_cover: [], precipitation: [], weather_code: [] };
+  const json = (await res.json()) as {
+    hourly?: { time?: string[]; cloud_cover?: number[]; precipitation?: number[]; weather_code?: number[] };
+  };
   return {
     time: json.hourly?.time ?? [],
     cloud_cover: json.hourly?.cloud_cover ?? [],
+    precipitation: json.hourly?.precipitation ?? [],
+    weather_code: json.hourly?.weather_code ?? [],
   };
 }
 
@@ -243,7 +247,7 @@ export async function warmAirQualityPanel(lat: number, lon: number): Promise<voi
     }
     throw err;
   }
-  const fc = await fetchOpenMeteoCloudHourly(lat, lon).catch(() => ({ time: [], cloud_cover: [] }));
+  const fc = await fetchOpenMeteoCloudHourly(lat, lon).catch(() => ({ time: [], cloud_cover: [], precipitation: [], weather_code: [] }));
   const cloudMap = buildCloudMap(fc);
   const hourly = pickFields(core.hourly, HOURLY_FIELDS.split(","));
   const current = { ...core.current };
@@ -261,7 +265,7 @@ export async function warmUvCloudPanel(lat: number, lon: number): Promise<void> 
   await withCache<UvCloudData>(key, async () => {
     const core = await warmOpenMeteoCore(lat, lon);
     const aqHourly = pickFields(core.hourly, ["uv_index", "uv_index_clear_sky"]);
-    const fcHourly = await fetchOpenMeteoCloudHourly(lat, lon).catch(() => ({ time: [], cloud_cover: [] }));
+    const fcHourly = await fetchOpenMeteoCloudHourly(lat, lon).catch(() => ({ time: [], cloud_cover: [], precipitation: [], weather_code: [] }));
     const cloudMap = buildCloudMap(fcHourly);
     applyUvCorrection(aqHourly, null, cloudMap);
     return { aq: { hourly: aqHourly }, fc: { hourly: fcHourly } };
