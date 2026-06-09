@@ -781,9 +781,10 @@ main .container {
   grid-column: span 2 / span 2 !important;
 }
 
-/* Basseng + Hundevann: gjør litt høyere så all tekst får plass */
+/* Basseng + Hundevann: kompakt høyde — bare så høy at all tekst får plass */
 .iphone-mode .grid-cols-12 > .iphone-tall {
-  grid-row: span 2 / span 2 !important;
+  grid-row: span 1 / span 1 !important;
+  height: 270px !important;
 }
 
 /* Lys-flisen: tving 3 kolonner x 2 rader på iPhone, og gjør tile høyere */
