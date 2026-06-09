@@ -247,7 +247,7 @@ export async function warmAirQualityPanel(lat: number, lon: number): Promise<voi
     }
     throw err;
   }
-  const fc = await fetchOpenMeteoCloudHourly(lat, lon).catch(() => ({ time: [], cloud_cover: [] }));
+  const fc = await fetchOpenMeteoCloudHourly(lat, lon).catch(() => ({ time: [], cloud_cover: [], precipitation: [], weather_code: [] }));
   const cloudMap = buildCloudMap(fc);
   const hourly = pickFields(core.hourly, HOURLY_FIELDS.split(","));
   const current = { ...core.current };
