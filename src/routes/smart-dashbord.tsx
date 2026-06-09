@@ -3144,62 +3144,110 @@ function UvCompact({ loc }: { loc: (typeof LOCS)[LocId] }) {
   const max = uv.uvMaxToday ?? 0;
   const pct = Math.min(100, (v / 11) * 100);
   const ring = `conic-gradient(rgb(251 191 36) ${pct}%, rgba(255,255,255,0.08) 0)`;
-  const cloudOpacity = withClouds && cloudPct != null ? Math.min(1, cloudPct / 100) : 0;
-  // Antall skyer skalerer mer naturlig: lite 10% → 2 skyer, 100% → 9 skyer
-  const cloudCount = withClouds && cloudPct != null ? Math.max(2, Math.round(2 + (cloudPct / 100) * 7)) : 0;
+
+  // Vær-tilstand: regn (WMO 51-67, 80-82, 95-99 ELLER precipitation>0.1mm)
+  const isRaining =
+    precip > 0.1 ||
+    (weatherCode != null &&
+      ((weatherCode >= 51 && weatherCode <= 67) ||
+        (weatherCode >= 80 && weatherCode <= 82) ||
+        (weatherCode >= 95 && weatherCode <= 99)));
+
+  // Dag/natt via sunrise/sunset
+  const now = Date.now();
+  const sr = uv.sunrise ? new Date(uv.sunrise).getTime() : null;
+  const ss = uv.sunset ? new Date(uv.sunset).getTime() : null;
+  const isNight = sr != null && ss != null ? now < sr || now > ss : false;
+
+  // Skyer: mengde og mørkhet basert på dekkegrad og regn
+  const cov = cloudPct ?? 0;
+  const cloudCount = withClouds ? (isRaining ? 7 : Math.max(1, Math.round(1 + (cov / 100) * 6))) : 0;
+  // Mørkhet: klart=hvitt, overskyet=lysegrått, regn=mørkt grått
+  const cloudGrey = isRaining ? 70 : cov >= 85 ? 170 : cov >= 60 ? 210 : 245;
+  const cloudFillA = isRaining ? 0.95 : 0.55 + (cov / 100) * 0.35;
+  const cloudStrokeA = isRaining ? 0.6 : 0.4 + (cov / 100) * 0.3;
+
+  // Vis sol/måne midt i himmelen kun når det IKKE regner
+  const showCelestial = !isRaining;
+  const showSunGlow = showCelestial && !isNight && cov < 50;
+
   return (
     <Tile title={`UV · ${loc.label}`} icon={<Sun size={14} />} accent="text-amber-400">
       <div className="relative flex flex-col h-full overflow-hidden">
-        {/* Skyer som driver over HELE boksen — variert størrelse, høyde og fart */}
+        {/* Skyer som driver over hele boksen — fluffy SVG cumulus */}
         {withClouds &&
           Array.from({ length: cloudCount }).map((_, i) => {
-            // Mer naturlig: skystørrelse skalerer med skydekke (mer dekke → større skyer)
-            const baseSize = 20 + (i % 4) * 10;
-            const sizeBoost = Math.round(cloudOpacity * 28);
-            const size = baseSize + sizeBoost + ((i * 7) % 14);
-            const dur = 14 + (i % 5) * 6 + ((i * 11) % 9);
+            const baseSize = 38 + (i % 4) * 14;
+            const sizeBoost = Math.round((cov / 100) * 22);
+            const size = baseSize + sizeBoost + ((i * 7) % 12);
+            const dur = (isRaining ? 22 : 16) + (i % 5) * 5 + ((i * 11) % 7);
             const delay = -((i * 2.9) % dur);
-            // skiktet over hele høyden, ikke bare topp
-            const top = -8 + ((i * 23) % 100);
-            // ekte sky-fyllingsfarge skalert med dekkegrad
-            const fillA = 0.35 + cloudOpacity * 0.45;
-            const strokeA = 0.55 + cloudOpacity * 0.35;
-            const z = i % 2 === 0 ? 5 : 1; // noen foran, noen bak
-            // svak blur for å myke konturer
-            const blur = ((i % 3) * 0.4).toFixed(1);
+            const top = -10 + ((i * 23) % 95);
+            const z = i % 2 === 0 ? 5 : 1;
+            const blur = (0.4 + (i % 3) * 0.3).toFixed(1);
+            const opacity = (isRaining ? 0.85 : 0.55 + (cov / 100) * 0.4);
             return (
               <div
                 key={i}
                 className="absolute pointer-events-none"
                 style={{
                   top: `${top}%`,
-                  left: "-25%",
-                  opacity: 0.45 + cloudOpacity * 0.45,
+                  left: "-30%",
+                  opacity,
                   animation: `pbthUvCloudWide ${dur}s linear ${delay}s infinite`,
                   filter: `blur(${blur}px)`,
                   zIndex: z,
                 }}
               >
-                <Cloud
-                  size={size}
-                  strokeWidth={1.2}
-                  style={{ color: `rgba(255,255,255,${strokeA})`, fill: `rgba(255,255,255,${fillA})` }}
-                />
+                <FluffyCloud size={size} grey={cloudGrey} fillA={cloudFillA} strokeA={cloudStrokeA} />
               </div>
             );
           })}
+
+        {/* Regndråper når det regner */}
+        {withClouds && isRaining &&
+          Array.from({ length: 14 }).map((_, i) => {
+            const left = (i * 7.3) % 100;
+            const dur = 0.9 + (i % 5) * 0.15;
+            const delay = -((i * 0.31) % dur);
+            return (
+              <div
+                key={`rd-${i}`}
+                className="absolute pointer-events-none"
+                style={{
+                  left: `${left}%`,
+                  top: "-10%",
+                  width: 1.5,
+                  height: 10,
+                  background: "linear-gradient(to bottom, rgba(180,210,255,0), rgba(180,210,255,0.7))",
+                  borderRadius: 1,
+                  animation: `pbthRainDrop ${dur}s linear ${delay}s infinite`,
+                  zIndex: 6,
+                }}
+              />
+            );
+          })}
+
         <div className="relative flex items-center gap-3 flex-1 min-h-0 z-10">
           <div
             className="relative h-16 w-16 rounded-full flex items-center justify-center shrink-0 overflow-hidden"
             style={{ background: ring }}
           >
-            {/* Sun rays glow when clear */}
-            {!withClouds && (
+            {/* Sol-glow når klart og dag */}
+            {!withClouds && !isNight && (
               <div
                 className="absolute inset-[6px] rounded-full pointer-events-none"
                 style={{
                   background: "radial-gradient(circle, rgba(251,191,36,0.55) 0%, rgba(251,191,36,0) 70%)",
                   animation: "pbthUvSun 3s ease-in-out infinite",
+                }}
+              />
+            )}
+            {!withClouds && isNight && (
+              <div
+                className="absolute inset-[6px] rounded-full pointer-events-none"
+                style={{
+                  background: "radial-gradient(circle, rgba(186,230,253,0.45) 0%, rgba(186,230,253,0) 70%)",
                 }}
               />
             )}
@@ -3213,7 +3261,13 @@ function UvCompact({ loc }: { loc: (typeof LOCS)[LocId] }) {
           <div className="min-w-0 flex-1 relative z-10">
             <div className="text-[9px] uppercase tracking-widest text-white/40">Maks</div>
             <div className="text-base font-medium text-white tabular-nums">{max.toFixed(1)}</div>
-            {cloudPct != null && <div className="text-[9px] text-white/40 mt-0.5">Sky {Math.round(cloudPct)}%</div>}
+            <div className="text-[9px] text-white/40 mt-0.5 flex items-center gap-1">
+              {withClouds && showCelestial && (
+                isNight ? <Moon size={9} className="text-sky-200" /> : <Sun size={9} className="text-amber-300" />
+              )}
+              {withClouds && isRaining && <CloudRain size={9} className="text-sky-300" />}
+              {cloudPct != null && <span>Sky {Math.round(cloudPct)}%</span>}
+            </div>
           </div>
         </div>
         <button
@@ -3232,8 +3286,39 @@ function UvCompact({ loc }: { loc: (typeof LOCS)[LocId] }) {
         @keyframes pbthUvCloud{0%{transform:translateX(0)}100%{transform:translateX(280%)}}
         @keyframes pbthUvCloudWide{0%{transform:translateX(0)}100%{transform:translateX(600%)}}
         @keyframes pbthUvSun{0%,100%{opacity:0.7;transform:scale(1)}50%{opacity:1;transform:scale(1.08)}}
+        @keyframes pbthRainDrop{0%{transform:translateY(0);opacity:0}10%{opacity:1}100%{transform:translateY(160px);opacity:0}}
       `}</style>
     </Tile>
+  );
+}
+
+// Fluffy cumulus-style sky med flere overlappende sirkler (mer realistisk enn lucide Cloud)
+function FluffyCloud({
+  size,
+  grey,
+  fillA,
+  strokeA,
+}: {
+  size: number;
+  grey: number;
+  fillA: number;
+  strokeA: number;
+}) {
+  const fill = `rgba(${grey},${grey},${grey},${fillA})`;
+  const stroke = `rgba(${Math.max(0, grey - 40)},${Math.max(0, grey - 40)},${Math.max(0, grey - 40)},${strokeA})`;
+  // Cumulus: stamme + 4 puffs på topp + base
+  return (
+    <svg width={size} height={size * 0.62} viewBox="0 0 100 62" style={{ display: "block" }}>
+      <g fill={fill} stroke={stroke} strokeWidth={0.8}>
+        <ellipse cx="50" cy="48" rx="44" ry="11" />
+        <circle cx="26" cy="38" r="14" />
+        <circle cx="44" cy="28" r="18" />
+        <circle cx="64" cy="26" r="16" />
+        <circle cx="80" cy="38" r="13" />
+        <circle cx="36" cy="40" r="13" />
+        <circle cx="58" cy="40" r="15" />
+      </g>
+    </svg>
   );
 }
 
