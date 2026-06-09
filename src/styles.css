@@ -813,3 +813,230 @@ main .container {
   padding-bottom: env(safe-area-inset-bottom, 0);
 }
 
+
+/* ============================================================
+   Fancy Weather Tile (kun synlig i iPhone-app)
+   ============================================================ */
+.fancy-wx-wrap { display: none; }
+.iphone-mode .fancy-wx-wrap { display: block; margin-top: 14px; }
+
+.fancy-wx {
+  position: relative;
+  border-radius: 22px;
+  overflow: hidden;
+  min-height: 360px;
+  color: #fff;
+  isolation: isolate;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.45), inset 0 0 0 1px rgba(255,255,255,0.06);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
+}
+.fancy-wx__bg { position: absolute; inset: 0; z-index: 0; overflow: hidden; }
+.fancy-wx__sky {
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, #3aa6ff 0%, #6bc1ff 55%, #b5e2ff 100%);
+  transition: background 800ms ease;
+}
+.fancy-wx--day.fancy-wx--clear .fancy-wx__sky { background: linear-gradient(180deg, #1e7fff 0%, #5fb7ff 50%, #ffd49a 100%); }
+.fancy-wx--day.fancy-wx--fair  .fancy-wx__sky { background: linear-gradient(180deg, #3a8ef0 0%, #7ec2ff 60%, #d6ecff 100%); }
+.fancy-wx--day.fancy-wx--cloudy .fancy-wx__sky { background: linear-gradient(180deg, #4e6478 0%, #7a8c9e 60%, #aab9c7 100%); }
+.fancy-wx--rain .fancy-wx__sky    { background: linear-gradient(180deg, #1f2a36 0%, #3a4a5c 60%, #556775 100%); }
+.fancy-wx--sleet .fancy-wx__sky   { background: linear-gradient(180deg, #2a3a48 0%, #54697a 60%, #8198a8 100%); }
+.fancy-wx--snow .fancy-wx__sky    { background: linear-gradient(180deg, #4a5a6a 0%, #8095a8 60%, #d3dde6 100%); }
+.fancy-wx--thunder .fancy-wx__sky { background: linear-gradient(180deg, #0e131a 0%, #2a2f3a 60%, #46505c 100%); }
+.fancy-wx--fog .fancy-wx__sky     { background: linear-gradient(180deg, #6a7480 0%, #97a3ad 60%, #c9d1d8 100%); }
+.fancy-wx--night .fancy-wx__sky   { background: linear-gradient(180deg, #050912 0%, #0e1830 50%, #1d2a4a 100%); }
+
+/* Sol */
+.fancy-wx__sun {
+  position: absolute; top: 28px; right: 32px;
+  width: 88px; height: 88px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #fff5b0 0%, #ffd24a 45%, #ff9b2c 100%);
+  box-shadow: 0 0 60px 18px rgba(255, 200, 80, 0.55), 0 0 140px 40px rgba(255, 180, 60, 0.25);
+  opacity: 0;
+  animation: fancyWxSunPulse 6s ease-in-out infinite;
+}
+.fancy-wx--day.fancy-wx--clear .fancy-wx__sun,
+.fancy-wx--day.fancy-wx--fair  .fancy-wx__sun { opacity: 1; }
+@keyframes fancyWxSunPulse {
+  0%,100% { transform: scale(1); filter: brightness(1); }
+  50%     { transform: scale(1.05); filter: brightness(1.08); }
+}
+
+/* Måne + stjerner */
+.fancy-wx__moon {
+  position: absolute; top: 30px; right: 36px;
+  width: 70px; height: 70px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #fdfbe6 0%, #e8e3c2 60%, #bcb59a 100%);
+  box-shadow: 0 0 40px 8px rgba(240, 235, 200, 0.35);
+  opacity: 0;
+}
+.fancy-wx--night .fancy-wx__moon { opacity: 1; }
+.fancy-wx__stars {
+  position: absolute; inset: 0; opacity: 0; pointer-events: none;
+  background-image:
+    radial-gradient(1px 1px at 12% 18%, #fff, transparent 60%),
+    radial-gradient(1px 1px at 28% 42%, #fff, transparent 60%),
+    radial-gradient(1.5px 1.5px at 47% 22%, #fff, transparent 60%),
+    radial-gradient(1px 1px at 65% 12%, #fff, transparent 60%),
+    radial-gradient(1px 1px at 78% 38%, #fff, transparent 60%),
+    radial-gradient(1px 1px at 88% 18%, #fff, transparent 60%),
+    radial-gradient(1.2px 1.2px at 18% 60%, #fff, transparent 60%),
+    radial-gradient(1px 1px at 55% 56%, #fff, transparent 60%);
+  animation: fancyWxTwinkle 4s ease-in-out infinite;
+}
+.fancy-wx--night .fancy-wx__stars { opacity: 0.85; }
+@keyframes fancyWxTwinkle {
+  0%,100% { opacity: 0.85; }
+  50%     { opacity: 0.45; }
+}
+
+/* Skyer */
+.fancy-wx__cloud {
+  position: absolute;
+  background: radial-gradient(ellipse at 30% 50%, rgba(255,255,255,0.95), rgba(255,255,255,0.7) 60%, rgba(255,255,255,0) 75%),
+              radial-gradient(ellipse at 70% 50%, rgba(255,255,255,0.9), rgba(255,255,255,0) 75%);
+  filter: blur(2px);
+  opacity: 0.85;
+  border-radius: 50%;
+}
+.fancy-wx__cloud--a { top: 24%; left: -25%; width: 240px; height: 90px; animation: fancyWxDrift 38s linear infinite; }
+.fancy-wx__cloud--b { top: 12%; left: -40%; width: 320px; height: 110px; opacity: 0.7; animation: fancyWxDrift 55s linear infinite; animation-delay: -18s; }
+.fancy-wx__cloud--c { top: 38%; left: -30%; width: 200px; height: 78px; opacity: 0.6; animation: fancyWxDrift 46s linear infinite; animation-delay: -8s; }
+@keyframes fancyWxDrift {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(180%); }
+}
+/* Mørkere skyer i regn/torden */
+.fancy-wx--rain .fancy-wx__cloud,
+.fancy-wx--thunder .fancy-wx__cloud,
+.fancy-wx--sleet .fancy-wx__cloud {
+  background: radial-gradient(ellipse at 30% 50%, rgba(60,72,86,0.95), rgba(60,72,86,0.7) 60%, rgba(60,72,86,0) 75%),
+              radial-gradient(ellipse at 70% 50%, rgba(40,52,66,0.9), rgba(40,52,66,0) 75%);
+  filter: blur(1.5px);
+}
+.fancy-wx--clear .fancy-wx__cloud--a { opacity: 0.45; }
+.fancy-wx--clear .fancy-wx__cloud--b,
+.fancy-wx--clear .fancy-wx__cloud--c { opacity: 0; }
+
+/* Regn */
+.fancy-wx__rain { position: absolute; inset: 0; pointer-events: none; }
+.fancy-wx__drop {
+  position: absolute; top: -10%;
+  width: 2px; height: 14px; border-radius: 2px;
+  background: linear-gradient(180deg, rgba(180,210,235,0.0), rgba(180,210,235,0.85));
+  animation: fancyWxRain 0.9s linear infinite;
+}
+@keyframes fancyWxRain {
+  0%   { transform: translateY(0) translateX(0); opacity: 0; }
+  10%  { opacity: 0.9; }
+  100% { transform: translateY(420px) translateX(-18px); opacity: 0; }
+}
+
+/* Snø */
+.fancy-wx__snow { position: absolute; inset: 0; pointer-events: none; }
+.fancy-wx__flake {
+  position: absolute; top: -8%;
+  background: radial-gradient(circle, #fff 0%, rgba(255,255,255,0.6) 60%, rgba(255,255,255,0) 100%);
+  border-radius: 50%;
+  animation: fancyWxSnow 8s linear infinite;
+}
+@keyframes fancyWxSnow {
+  0%   { transform: translateY(0) translateX(0) rotate(0deg); opacity: 0; }
+  10%  { opacity: 0.95; }
+  100% { transform: translateY(420px) translateX(30px) rotate(360deg); opacity: 0; }
+}
+
+/* Tåke */
+.fancy-wx__fog {
+  position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(180deg, rgba(255,255,255,0) 30%, rgba(255,255,255,0.35) 60%, rgba(255,255,255,0.55) 100%);
+  animation: fancyWxFog 9s ease-in-out infinite alternate;
+}
+@keyframes fancyWxFog {
+  from { transform: translateX(-6%); }
+  to   { transform: translateX(6%); }
+}
+
+/* Lyn */
+.fancy-wx__bolt {
+  position: absolute; inset: 0; pointer-events: none;
+  background: rgba(255,255,255,0);
+  animation: fancyWxBolt 6s ease-in-out infinite;
+}
+@keyframes fancyWxBolt {
+  0%, 92%, 100% { background: rgba(255,255,255,0); }
+  93%, 95%      { background: rgba(255,255,255,0.7); }
+  94%           { background: rgba(255,255,255,0.0); }
+}
+
+/* Innhold */
+.fancy-wx__content {
+  position: relative; z-index: 1;
+  padding: 18px 18px 16px;
+  display: flex; flex-direction: column; gap: 14px;
+  min-height: 360px;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.35);
+}
+.fancy-wx__top {
+  display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;
+}
+.fancy-wx__eyebrow {
+  font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
+  opacity: 0.78;
+}
+.fancy-wx__place { font-size: 22px; font-weight: 700; letter-spacing: 0.5px; }
+
+.fancy-wx__tabs {
+  display: inline-flex;
+  background: rgba(0,0,0,0.28);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 999px;
+  padding: 3px;
+  gap: 2px;
+}
+.fancy-wx__tab {
+  appearance: none; border: 0; background: transparent;
+  color: rgba(255,255,255,0.85);
+  font-size: 11px; font-weight: 600;
+  padding: 6px 10px; border-radius: 999px;
+  transition: all 180ms ease;
+}
+.fancy-wx__tab.is-active {
+  background: rgba(255,255,255,0.95);
+  color: #1c2330;
+  text-shadow: none;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+}
+
+.fancy-wx__main {
+  display: flex; align-items: center; gap: 16px;
+  margin-top: 4px;
+}
+.fancy-wx__emoji { font-size: 76px; line-height: 1; filter: drop-shadow(0 6px 12px rgba(0,0,0,0.35)); }
+.fancy-wx__big { display: flex; flex-direction: column; }
+.fancy-wx__temp { font-size: 64px; font-weight: 200; line-height: 1; letter-spacing: -2px; }
+.fancy-wx__tempmin { font-size: 22px; font-weight: 300; opacity: 0.7; margin-left: 8px; }
+.fancy-wx__desc { font-size: 14px; opacity: 0.9; margin-top: 4px; }
+
+.fancy-wx__hours {
+  margin-top: auto;
+  display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px;
+  background: rgba(0,0,0,0.22);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  padding: 10px 6px;
+  border-radius: 14px;
+}
+.fancy-wx__hour {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  font-size: 11px;
+}
+.fancy-wx__hourTime { opacity: 0.75; font-weight: 600; }
+.fancy-wx__hourIcon { font-size: 22px; line-height: 1; }
+.fancy-wx__hourTemp { font-weight: 600; font-size: 13px; }
+.fancy-wx__hourRain { font-size: 9px; color: #a9d8ff; }
+
+.fancy-wx__loading,
+.fancy-wx__error { opacity: 0.8; font-size: 13px; padding: 8px 0; }
+.fancy-wx__error { color: #ffd0d0; }
