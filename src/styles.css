@@ -851,89 +851,29 @@ main .container {
 .fancy-wx--fog .fancy-wx__sky     { background: linear-gradient(180deg, #6a7480 0%, #97a3ad 60%, #c9d1d8 100%); }
 .fancy-wx--night .fancy-wx__sky   { background: linear-gradient(180deg, #050912 0%, #0e1830 50%, #1d2a4a 100%); }
 
-/* Sol — realistisk skive med myk korona og roterende stråler */
+/* Sol */
 .fancy-wx__sun {
-  position: absolute; top: 30px; right: 34px;
-  width: 96px; height: 96px; border-radius: 50%;
-  background:
-    radial-gradient(circle at 38% 36%, #ffffff 0%, #fff6c9 18%, #ffd763 42%, #ff9a2b 78%, #ff7a14 100%);
-  box-shadow:
-    0 0 0 6px rgba(255, 220, 130, 0.18),
-    0 0 0 14px rgba(255, 200, 90, 0.10),
-    0 0 60px 22px rgba(255, 200, 80, 0.55),
-    0 0 160px 50px rgba(255, 170, 60, 0.28);
+  position: absolute; top: 28px; right: 32px;
+  width: 88px; height: 88px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #fff5b0 0%, #ffd24a 45%, #ff9b2c 100%);
+  box-shadow: 0 0 60px 18px rgba(255, 200, 80, 0.55), 0 0 140px 40px rgba(255, 180, 60, 0.25);
   opacity: 0;
   animation: fancyWxSunPulse 6s ease-in-out infinite;
 }
-.fancy-wx__sun::before {
-  /* korona */
-  content: ""; position: absolute; inset: -22px; border-radius: 50%;
-  background: radial-gradient(circle, rgba(255,225,140,0.55) 0%, rgba(255,200,100,0.25) 35%, rgba(255,180,80,0) 70%);
-  filter: blur(2px);
-  z-index: -1;
-}
-.fancy-wx__sun::after {
-  /* stråler */
-  content: ""; position: absolute; inset: -34px; border-radius: 50%;
-  background:
-    conic-gradient(from 0deg,
-      rgba(255,220,130,0) 0deg, rgba(255,220,130,0.55) 6deg, rgba(255,220,130,0) 12deg,
-      rgba(255,220,130,0) 38deg, rgba(255,220,130,0.5) 44deg, rgba(255,220,130,0) 50deg,
-      rgba(255,220,130,0) 76deg, rgba(255,220,130,0.55) 82deg, rgba(255,220,130,0) 88deg,
-      rgba(255,220,130,0) 114deg, rgba(255,220,130,0.5) 120deg, rgba(255,220,130,0) 126deg,
-      rgba(255,220,130,0) 152deg, rgba(255,220,130,0.55) 158deg, rgba(255,220,130,0) 164deg,
-      rgba(255,220,130,0) 190deg, rgba(255,220,130,0.5) 196deg, rgba(255,220,130,0) 202deg,
-      rgba(255,220,130,0) 228deg, rgba(255,220,130,0.55) 234deg, rgba(255,220,130,0) 240deg,
-      rgba(255,220,130,0) 266deg, rgba(255,220,130,0.5) 272deg, rgba(255,220,130,0) 278deg,
-      rgba(255,220,130,0) 304deg, rgba(255,220,130,0.55) 310deg, rgba(255,220,130,0) 316deg,
-      rgba(255,220,130,0) 342deg, rgba(255,220,130,0.5) 348deg, rgba(255,220,130,0) 354deg,
-      rgba(255,220,130,0) 360deg);
-  -webkit-mask: radial-gradient(circle, transparent 48%, #000 52%, #000 92%, transparent 100%);
-          mask: radial-gradient(circle, transparent 48%, #000 52%, #000 92%, transparent 100%);
-  filter: blur(0.5px);
-  opacity: 0.85;
-  animation: fancyWxSunSpin 60s linear infinite;
-  z-index: -1;
-}
 .fancy-wx--day.fancy-wx--clear .fancy-wx__sun,
 .fancy-wx--day.fancy-wx--fair  .fancy-wx__sun { opacity: 1; }
-/* delvis sol bak skyer */
-.fancy-wx--day.fancy-wx--cloudy .fancy-wx__sun { opacity: 0.55; }
 @keyframes fancyWxSunPulse {
   0%,100% { transform: scale(1); filter: brightness(1); }
-  50%     { transform: scale(1.04); filter: brightness(1.06); }
-}
-@keyframes fancyWxSunSpin {
-  to { transform: rotate(360deg); }
+  50%     { transform: scale(1.05); filter: brightness(1.08); }
 }
 
-/* Måne — realistisk med kratere og terminator-skygge */
+/* Måne + stjerner */
 .fancy-wx__moon {
   position: absolute; top: 30px; right: 36px;
-  width: 78px; height: 78px; border-radius: 50%;
-  background:
-    radial-gradient(circle at 70% 70%, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0) 55%),
-    radial-gradient(circle at 30% 28%, #ffffff 0%, #f3eed9 35%, #c9c2a4 70%, #8a8467 100%);
-  box-shadow:
-    inset -6px -8px 16px rgba(0,0,0,0.35),
-    inset 4px 4px 10px rgba(255,255,245,0.18),
-    0 0 36px 8px rgba(240, 235, 200, 0.35),
-    0 0 90px 22px rgba(220, 215, 180, 0.15);
+  width: 70px; height: 70px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #fdfbe6 0%, #e8e3c2 60%, #bcb59a 100%);
+  box-shadow: 0 0 40px 8px rgba(240, 235, 200, 0.35);
   opacity: 0;
-}
-.fancy-wx__moon::before,
-.fancy-wx__moon::after {
-  content: ""; position: absolute; border-radius: 50%;
-  background: radial-gradient(circle at 35% 35%, rgba(0,0,0,0.18), rgba(0,0,0,0.04) 70%, transparent 100%);
-  box-shadow: inset 1px 1px 2px rgba(255,255,255,0.18);
-}
-.fancy-wx__moon::before { width: 16px; height: 16px; top: 18px; left: 22px; }
-.fancy-wx__moon::after  { width: 10px; height: 10px; top: 42px; left: 14px;
-  box-shadow:
-    inset 1px 1px 2px rgba(255,255,255,0.18),
-    18px -6px 0 -2px rgba(0,0,0,0.10),
-    8px 14px 0 -3px rgba(0,0,0,0.10),
-    -4px 18px 0 -2px rgba(0,0,0,0.08);
 }
 .fancy-wx--night .fancy-wx__moon { opacity: 1; }
 .fancy-wx__stars {
@@ -955,77 +895,33 @@ main .container {
   50%     { opacity: 0.45; }
 }
 
-/* Skyer — fluffy cumulus med flere puffer, lys topp og skyggefull underside */
+/* Skyer */
 .fancy-wx__cloud {
   position: absolute;
-  /* mange puffer for organisk form */
-  background:
-    radial-gradient(ellipse 38% 70% at 20% 65%, rgba(255,255,255,0.98), rgba(255,255,255,0) 70%),
-    radial-gradient(ellipse 30% 80% at 38% 50%, rgba(255,255,255,1),    rgba(255,255,255,0) 72%),
-    radial-gradient(ellipse 34% 90% at 55% 42%, rgba(255,255,255,1),    rgba(255,255,255,0) 72%),
-    radial-gradient(ellipse 30% 75% at 72% 52%, rgba(255,255,255,0.98), rgba(255,255,255,0) 72%),
-    radial-gradient(ellipse 26% 60% at 86% 65%, rgba(255,255,255,0.95), rgba(255,255,255,0) 72%),
-    /* skyggefull underside */
-    radial-gradient(ellipse 60% 35% at 50% 95%, rgba(70,90,110,0.35), rgba(70,90,110,0) 75%);
-  filter: blur(0.6px) drop-shadow(0 6px 10px rgba(40,55,75,0.25));
-  opacity: 0.95;
+  background: radial-gradient(ellipse at 30% 50%, rgba(255,255,255,0.95), rgba(255,255,255,0.7) 60%, rgba(255,255,255,0) 75%),
+              radial-gradient(ellipse at 70% 50%, rgba(255,255,255,0.9), rgba(255,255,255,0) 75%);
+  filter: blur(2px);
+  opacity: 0.85;
+  border-radius: 50%;
 }
-.fancy-wx__cloud--a { top: 22%; left: -35%; width: 280px; height: 110px; animation: fancyWxDrift 70s linear infinite; }
-.fancy-wx__cloud--b { top:  8%; left: -50%; width: 360px; height: 130px; opacity: 0.82; animation: fancyWxDrift 95s linear infinite; animation-delay: -28s; transform: scale(1.05); }
-.fancy-wx__cloud--c { top: 40%; left: -40%; width: 220px; height: 90px;  opacity: 0.78; animation: fancyWxDrift 82s linear infinite; animation-delay: -14s; }
+.fancy-wx__cloud--a { top: 24%; left: -25%; width: 240px; height: 90px; animation: fancyWxDrift 38s linear infinite; }
+.fancy-wx__cloud--b { top: 12%; left: -40%; width: 320px; height: 110px; opacity: 0.7; animation: fancyWxDrift 55s linear infinite; animation-delay: -18s; }
+.fancy-wx__cloud--c { top: 38%; left: -30%; width: 200px; height: 78px; opacity: 0.6; animation: fancyWxDrift 46s linear infinite; animation-delay: -8s; }
 @keyframes fancyWxDrift {
   0%   { transform: translateX(0); }
-  100% { transform: translateX(220%); }
+  100% { transform: translateX(180%); }
 }
-
-/* Tykkere/mørkere skyer ved skyet vær — flere lag som dekker mer himmel */
-.fancy-wx--cloudy .fancy-wx__cloud--a,
-.fancy-wx--cloudy .fancy-wx__cloud--b,
-.fancy-wx--cloudy .fancy-wx__cloud--c { opacity: 1; }
-.fancy-wx--cloudy .fancy-wx__cloud {
-  background:
-    radial-gradient(ellipse 38% 70% at 20% 65%, rgba(225,232,240,0.98), rgba(225,232,240,0) 70%),
-    radial-gradient(ellipse 30% 80% at 38% 50%, rgba(225,232,240,1),    rgba(225,232,240,0) 72%),
-    radial-gradient(ellipse 34% 90% at 55% 42%, rgba(235,240,246,1),    rgba(235,240,246,0) 72%),
-    radial-gradient(ellipse 30% 75% at 72% 52%, rgba(225,232,240,0.98), rgba(225,232,240,0) 72%),
-    radial-gradient(ellipse 26% 60% at 86% 65%, rgba(215,222,232,0.95), rgba(215,222,232,0) 72%),
-    radial-gradient(ellipse 60% 40% at 50% 95%, rgba(60,75,95,0.5), rgba(60,75,95,0) 75%);
-}
-
-/* Mørkere, truende cumulonimbus i regn/torden/sludd */
+/* Mørkere skyer i regn/torden */
 .fancy-wx--rain .fancy-wx__cloud,
 .fancy-wx--thunder .fancy-wx__cloud,
 .fancy-wx--sleet .fancy-wx__cloud {
-  background:
-    radial-gradient(ellipse 38% 70% at 20% 65%, rgba(70,82,98,0.98), rgba(70,82,98,0) 70%),
-    radial-gradient(ellipse 30% 80% at 38% 50%, rgba(58,70,86,1),    rgba(58,70,86,0) 72%),
-    radial-gradient(ellipse 34% 90% at 55% 42%, rgba(78,90,106,1),   rgba(78,90,106,0) 72%),
-    radial-gradient(ellipse 30% 75% at 72% 52%, rgba(60,72,88,0.98), rgba(60,72,88,0) 72%),
-    radial-gradient(ellipse 26% 60% at 86% 65%, rgba(48,60,76,0.95), rgba(48,60,76,0) 72%),
-    radial-gradient(ellipse 60% 45% at 50% 98%, rgba(15,22,32,0.7), rgba(15,22,32,0) 75%);
-  filter: blur(0.6px) drop-shadow(0 8px 14px rgba(0,0,0,0.45));
-  opacity: 1;
+  background: radial-gradient(ellipse at 30% 50%, rgba(60,72,86,0.95), rgba(60,72,86,0.7) 60%, rgba(60,72,86,0) 75%),
+              radial-gradient(ellipse at 70% 50%, rgba(40,52,66,0.9), rgba(40,52,66,0) 75%);
+  filter: blur(1.5px);
 }
-.fancy-wx--thunder .fancy-wx__cloud {
-  background:
-    radial-gradient(ellipse 38% 70% at 20% 65%, rgba(40,48,60,1), rgba(40,48,60,0) 70%),
-    radial-gradient(ellipse 30% 80% at 38% 50%, rgba(30,38,50,1), rgba(30,38,50,0) 72%),
-    radial-gradient(ellipse 34% 90% at 55% 42%, rgba(50,58,72,1), rgba(50,58,72,0) 72%),
-    radial-gradient(ellipse 30% 75% at 72% 52%, rgba(34,42,54,1), rgba(34,42,54,0) 72%),
-    radial-gradient(ellipse 26% 60% at 86% 65%, rgba(24,30,42,1), rgba(24,30,42,0) 72%),
-    radial-gradient(ellipse 60% 45% at 50% 98%, rgba(0,0,0,0.8), rgba(0,0,0,0) 75%);
-}
-
-/* Klarvær: nesten ingen skyer */
-.fancy-wx--clear .fancy-wx__cloud--a { opacity: 0.35; }
+.fancy-wx--clear .fancy-wx__cloud--a { opacity: 0.45; }
 .fancy-wx--clear .fancy-wx__cloud--b,
 .fancy-wx--clear .fancy-wx__cloud--c { opacity: 0; }
-/* Lettskyet: litt mere */
-.fancy-wx--fair .fancy-wx__cloud--a { opacity: 0.7; }
-.fancy-wx--fair .fancy-wx__cloud--b { opacity: 0.45; }
-.fancy-wx--fair .fancy-wx__cloud--c { opacity: 0.3; }
-/* Natt: dempet lystone på skyer */
-.fancy-wx--night .fancy-wx__cloud { filter: blur(0.6px) brightness(0.55) drop-shadow(0 6px 10px rgba(0,0,0,0.5)); }
 
 /* Regn */
 .fancy-wx__rain { position: absolute; inset: 0; pointer-events: none; }
