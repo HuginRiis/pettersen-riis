@@ -337,7 +337,7 @@ function mapDevices(result: any): RoborockDevice[] {
 
 // Enkel in-memory cache for å redusere antall kall mot Roborock-skyen.
 // Snapshot endres sjelden (enheter, online-status) — 5 min er nok ferskt.
-const SNAPSHOT_TTL_MS = 5 * 60 * 1000;
+const SNAPSHOT_TTL_MS = 2 * 60 * 1000;
 let snapshotCache: { ts: number; data: RoborockSnapshot } | null = null;
 let inflight: Promise<RoborockSnapshot> | null = null;
 
