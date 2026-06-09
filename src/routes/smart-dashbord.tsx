@@ -1695,6 +1695,7 @@ import { Bot, Play, ParkingSquare, Pause, Loader2, BatteryCharging, Home as Home
 import sileMowerImg from "@/assets/icon-sileno-mower.png";
 import roboVacImg from "@/assets/icon-roborock-vacuum.png";
 import { VacuumFX, MowerFX } from "@/components/RobotFX";
+import { FancyWeatherTile } from "@/components/FancyWeatherTile";
 
 type RoborockSnap = Awaited<ReturnType<typeof getRoborockSnapshot>>;
 
