@@ -787,6 +787,7 @@ main .container {
   height: auto !important;
   min-height: 0 !important;
   align-self: start !important;
+  margin-bottom: 14px !important;
 }
 .iphone-mode .grid-cols-12 > .iphone-tall > article,
 .iphone-mode .grid-cols-12 > .iphone-tall > .panel {
