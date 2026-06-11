@@ -995,9 +995,10 @@ export function RoborockStatusBadge({ inline, match, name }: { inline?: boolean;
     info.tone === "error" ? "bg-rose-500/20 text-rose-300 border-rose-500/40" :
     "bg-sky-500/20 text-sky-300 border-sky-500/40";
   const cls = `px-1.5 h-[18px] rounded-full text-[10px] font-semibold inline-flex items-center justify-center border ${tone}`;
-  const battTxt = info.battery != null ? ` ${info.battery}%` : "";
+  const battTxt = info.battery != null ? (info.battery >= 100 ? " Fullt" : ` ${info.battery}%`) : "";
+  const battTitle = info.battery != null ? (info.battery >= 100 ? " Fullt ladet" : ` ${info.battery}%`) : "";
   return (
-    <span title={`${name}: ${info.label}${battTxt}`} className={inline ? `ml-1 ${cls}` : `absolute top-2 right-2 z-10 ${cls}`}>
+    <span title={`${name}: ${info.label}${battTitle}`} className={inline ? `ml-1 ${cls}` : `absolute top-2 right-2 z-10 ${cls}`}>
       {info.emoji}{name === "Hytta" ? "H" : "B"}{battTxt}
     </span>
   );
