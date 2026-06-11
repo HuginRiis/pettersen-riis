@@ -255,7 +255,7 @@ function HomeyDeviceCard({
   };
 
   const summary: Array<{ k: string; v: string | null }> = [
-    { k: "Batteri", v: typeof battery?.value === "number" ? (battery.value >= 100 ? "Fullt ladet" : `${battery.value}%`) : null },
+    { k: "Batteri", v: typeof battery?.value === "number" ? `${battery.value}%` : null },
     { k: "Tilstand", v: labelOf(stateCap) },
     { k: "Sug", v: labelOf(fanCap) },
     { k: "Mopp", v: labelOf(waterCap) },
@@ -279,7 +279,7 @@ function HomeyDeviceCard({
         )}
         {battery && typeof battery.value === "number" && (
           <span className="inline-flex items-center gap-1 text-[10px] text-foreground">
-            <Battery size={11} className="text-primary" /> {battery.value >= 100 ? "Fullt ladet" : `${battery.value}%`}
+            <Battery size={11} className="text-primary" /> {battery.value}%
           </span>
         )}
       </div>
@@ -511,7 +511,7 @@ export function RoborockPanel() {
                   <div className="grid grid-cols-2 gap-x-3 gap-y-1 mt-2 text-xs">
                     {battery != null && (
                       <span className="inline-flex items-center gap-1 text-foreground">
-                        <Battery size={12} className="text-primary" /> {battery >= 100 ? "Fullt ladet" : `${battery}%`}
+                        <Battery size={12} className="text-primary" /> {battery}%
                       </span>
                     )}
                     {state != null && (

@@ -824,6 +824,7 @@ main .container {
    Fancy Weather Tile (kun synlig i iPhone-app)
    ============================================================ */
 .fancy-wx-wrap { display: none; }
+.iphone-mode .fancy-wx-wrap { display: block; margin-top: 14px; }
 
 .fancy-wx {
   position: relative;
