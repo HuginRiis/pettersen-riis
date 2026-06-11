@@ -1933,7 +1933,7 @@ function RobotsTile() {
               </div>
               <div className="text-right">
                 <div className="text-[9px] uppercase tracking-widest text-white/40">Bat</div>
-                <div className="text-xs tabular-nums text-white/80">{roboBatt != null ? `${roboBatt}%` : "—"}</div>
+                <div className="text-xs tabular-nums text-white/80">{roboBatt == null ? "—" : roboBatt >= 100 ? "Fullt ladet" : `${roboBatt}%`}</div>
               </div>
             </div>
           </button>
@@ -2034,7 +2034,7 @@ function RobotsTile() {
           <DialogHeader>
             <DialogTitle>Roborock · Borgen</DialogTitle>
             <DialogDescription className="text-white/50">
-              {robo?.name ?? "—"} · {roboLabel} · Bat {roboBatt != null ? `${roboBatt}%` : "—"}
+              {robo?.name ?? "—"} · {roboLabel} · Bat {roboBatt == null ? "—" : roboBatt >= 100 ? "Fullt ladet" : `${roboBatt}%`}
             </DialogDescription>
           </DialogHeader>
           <div className="grid grid-cols-2 gap-2 mt-2">
