@@ -1803,10 +1803,15 @@ function RobotsTile() {
   const mowerActive = !!displayKey && /CUTTING|LEAVING/i.test(displayKey);
   const mowerChargingNow = !!displayKey && /CHARGING/i.test(displayKey);
 
+  const roboDevices = useMemo(() => (rob?.ok ? (rob.devices ?? []) : []), [rob]);
   const robo = useMemo(() => {
-    const devs = (rob?.ok ? rob.devices : []) ?? [];
+    const devs = roboDevices;
+    if (defaultRoboDuid) {
+      const m = devs.find((d) => d.duid === defaultRoboDuid);
+      if (m) return m;
+    }
     return devs.find((d) => /borgen/i.test(d.name ?? "")) ?? devs[0] ?? null;
-  }, [rob]);
+  }, [roboDevices, defaultRoboDuid]);
 
   const roboStatus = (robo?.attribute ?? {}) as Record<string, unknown>;
   const roboStateNum = (() => {
@@ -1817,7 +1822,13 @@ function RobotsTile() {
     const s = roboStatus[122] ?? (roboStatus as any).battery;
     return typeof s === "number" ? s : typeof s === "string" && s !== "" && !Number.isNaN(Number(s)) ? Number(s) : null;
   })();
-  const roboLabel = roboStateNum != null ? (ROBO_STATE_LABEL[roboStateNum] ?? `kode ${roboStateNum}`) : "—";
+  const roboIsCharging = roboStateNum === 8 || roboStateNum === 2;
+  const roboLabel =
+    roboIsCharging && roboBatt != null && roboBatt >= 100
+      ? "Fullladet"
+      : roboStateNum != null
+        ? (ROBO_STATE_LABEL[roboStateNum] ?? `kode ${roboStateNum}`)
+        : "—";
   const roboActive = roboStateNum != null && [5, 6, 11, 15, 16, 17, 18].includes(roboStateNum);
 
   const runMower = async (cmd: string, seconds?: number) => {
