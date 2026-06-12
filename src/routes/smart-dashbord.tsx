@@ -2044,11 +2044,35 @@ function RobotsTile() {
       <Dialog open={open === "borgen"} onOpenChange={(v) => !v && setOpen(null)}>
         <DialogContent className="bg-[#0c0f15] border-white/10 text-white max-w-sm">
           <DialogHeader>
-            <DialogTitle>Roborock · Borgen</DialogTitle>
+            <DialogTitle>Roborock · {robo?.name ?? "—"}</DialogTitle>
             <DialogDescription className="text-white/50">
               {robo?.name ?? "—"} · {roboLabel} · Bat {roboBatt != null ? `${roboBatt}%` : "—"}
             </DialogDescription>
           </DialogHeader>
+          {roboDevices.length > 1 && (
+            <div className="mt-2">
+              <div className="text-[9px] uppercase tracking-widest text-white/40 mb-1">Standard støvsuger</div>
+              <div className="flex flex-wrap gap-1.5">
+                {roboDevices.map((d) => {
+                  const active = (defaultRoboDuid ?? robo?.duid) === d.duid;
+                  return (
+                    <button
+                      key={d.duid}
+                      type="button"
+                      onClick={() => setDefaultRoboDuid(d.duid)}
+                      className={`text-[10px] tracking-[0.15em] uppercase rounded px-2 py-1 border transition ${
+                        active
+                          ? "border-sky-300/60 bg-sky-400/15 text-sky-200"
+                          : "border-white/15 bg-white/[0.03] text-white/70 hover:bg-white/[0.07]"
+                      }`}
+                    >
+                      {d.name}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-2 mt-2">
             <button
               type="button"
