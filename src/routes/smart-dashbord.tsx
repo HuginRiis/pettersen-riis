@@ -4559,10 +4559,6 @@ export function SmartDashbord() {
           />
         </div>
 
-        {/* Fancy værflis – kun synlig i iPhone-app (CSS skjuler på dashbord) */}
-        <div className="fancy-wx-wrap">
-          <FancyWeatherTile label={loc.label} lat={loc.lat} lon={loc.lon} />
-        </div>
       </main>
 
 
