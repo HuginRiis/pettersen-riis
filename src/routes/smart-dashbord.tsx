@@ -1744,6 +1744,7 @@ function RobotsTile() {
   const [gardena, setGardena] = useState<GardenaSnap | null>(() => getCachedGardena());
   const [open, setOpen] = useState<"sileno" | "borgen" | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const [defaultRoboDuid, setDefaultRoboDuid] = usePersistedState<string | null>("smart_robo_default_duid", null);
 
   const loadRoborock = useCallback(() => {
     fetchR()
