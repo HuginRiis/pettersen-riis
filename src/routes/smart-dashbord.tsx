@@ -1695,7 +1695,7 @@ import { Bot, Play, ParkingSquare, Pause, Loader2, BatteryCharging, Home as Home
 import sileMowerImg from "@/assets/icon-sileno-mower.png";
 import roboVacImg from "@/assets/icon-roborock-vacuum.png";
 import { VacuumFX, MowerFX } from "@/components/RobotFX";
-import { FancyWeatherTile } from "@/components/FancyWeatherTile";
+import { usePersistedState } from "@/hooks/use-persisted-state";
 
 type RoborockSnap = Awaited<ReturnType<typeof getRoborockSnapshot>>;
 
@@ -1744,6 +1744,7 @@ function RobotsTile() {
   const [gardena, setGardena] = useState<GardenaSnap | null>(() => getCachedGardena());
   const [open, setOpen] = useState<"sileno" | "borgen" | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const [defaultRoboDuid, setDefaultRoboDuid] = usePersistedState<string | null>("smart_robo_default_duid", null);
 
   const loadRoborock = useCallback(() => {
     fetchR()
@@ -1802,10 +1803,15 @@ function RobotsTile() {
   const mowerActive = !!displayKey && /CUTTING|LEAVING/i.test(displayKey);
   const mowerChargingNow = !!displayKey && /CHARGING/i.test(displayKey);
 
+  const roboDevices = useMemo(() => (rob?.ok ? (rob.devices ?? []) : []), [rob]);
   const robo = useMemo(() => {
-    const devs = (rob?.ok ? rob.devices : []) ?? [];
+    const devs = roboDevices;
+    if (defaultRoboDuid) {
+      const m = devs.find((d) => d.duid === defaultRoboDuid);
+      if (m) return m;
+    }
     return devs.find((d) => /borgen/i.test(d.name ?? "")) ?? devs[0] ?? null;
-  }, [rob]);
+  }, [roboDevices, defaultRoboDuid]);
 
   const roboStatus = (robo?.attribute ?? {}) as Record<string, unknown>;
   const roboStateNum = (() => {
@@ -1816,7 +1822,13 @@ function RobotsTile() {
     const s = roboStatus[122] ?? (roboStatus as any).battery;
     return typeof s === "number" ? s : typeof s === "string" && s !== "" && !Number.isNaN(Number(s)) ? Number(s) : null;
   })();
-  const roboLabel = roboStateNum != null ? (ROBO_STATE_LABEL[roboStateNum] ?? `kode ${roboStateNum}`) : "—";
+  const roboIsCharging = roboStateNum === 8 || roboStateNum === 2;
+  const roboLabel =
+    roboIsCharging && roboBatt != null && roboBatt >= 100
+      ? "Fullladet"
+      : roboStateNum != null
+        ? (ROBO_STATE_LABEL[roboStateNum] ?? `kode ${roboStateNum}`)
+        : "—";
   const roboActive = roboStateNum != null && [5, 6, 11, 15, 16, 17, 18].includes(roboStateNum);
 
   const runMower = async (cmd: string, seconds?: number) => {
@@ -2032,11 +2044,35 @@ function RobotsTile() {
       <Dialog open={open === "borgen"} onOpenChange={(v) => !v && setOpen(null)}>
         <DialogContent className="bg-[#0c0f15] border-white/10 text-white max-w-sm">
           <DialogHeader>
-            <DialogTitle>Roborock · Borgen</DialogTitle>
+            <DialogTitle>Roborock · {robo?.name ?? "—"}</DialogTitle>
             <DialogDescription className="text-white/50">
               {robo?.name ?? "—"} · {roboLabel} · Bat {roboBatt != null ? `${roboBatt}%` : "—"}
             </DialogDescription>
           </DialogHeader>
+          {roboDevices.length > 1 && (
+            <div className="mt-2">
+              <div className="text-[9px] uppercase tracking-widest text-white/40 mb-1">Standard støvsuger</div>
+              <div className="flex flex-wrap gap-1.5">
+                {roboDevices.map((d) => {
+                  const active = (defaultRoboDuid ?? robo?.duid) === d.duid;
+                  return (
+                    <button
+                      key={d.duid}
+                      type="button"
+                      onClick={() => setDefaultRoboDuid(d.duid)}
+                      className={`text-[10px] tracking-[0.15em] uppercase rounded px-2 py-1 border transition ${
+                        active
+                          ? "border-sky-300/60 bg-sky-400/15 text-sky-200"
+                          : "border-white/15 bg-white/[0.03] text-white/70 hover:bg-white/[0.07]"
+                      }`}
+                    >
+                      {d.name}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-2 mt-2">
             <button
               type="button"
@@ -4559,10 +4595,6 @@ export function SmartDashbord() {
           />
         </div>
 
-        {/* Fancy værflis – kun synlig i iPhone-app (CSS skjuler på dashbord) */}
-        <div className="fancy-wx-wrap">
-          <FancyWeatherTile label={loc.label} lat={loc.lat} lon={loc.lon} />
-        </div>
       </main>
 
 
