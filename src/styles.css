@@ -747,25 +747,20 @@ main .container {
   width: 32px !important;
 }
 
-/* Force single-column for main bento grid, 3-col for mini */
+/* Force 2-col for main bento grid på iPhone. Gaps/zoom uten !important slik at
+   innstillinger (Innstillinger-dialogen) fortsatt overstyrer fra inline-style. */
 .iphone-mode .grid-cols-12 {
   grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  grid-auto-rows: 170px !important;
-  column-gap: 8px !important;
-  row-gap: 8px !important;
+  grid-auto-rows: 150px !important;
+  column-gap: 8px;
+  row-gap: 8px;
 }
 .iphone-mode .grid-cols-6 {
   grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   grid-auto-rows: 92px !important;
-  column-gap: 8px !important;
-  row-gap: 8px !important;
-  margin-top: 8px !important;
-}
-
-/* Disable zoom from settings on iphone mode for predictable layout */
-.iphone-mode .grid-cols-12,
-.iphone-mode .grid-cols-6 {
-  zoom: 1 !important;
+  column-gap: 8px;
+  row-gap: 8px;
+  margin-top: 8px;
 }
 
 /* Make every top-level tile span the full 2 cols on iPhone by default,
@@ -781,17 +776,17 @@ main .container {
   grid-column: span 2 / span 2 !important;
 }
 
-/* Basseng + Hundevann: kompakt høyde — bare så høy at all tekst får plass */
+/* Basseng + Hundevann: samme høyde som strøm-flisene (én rad) — uten ekstra margin
+   slik at de fire første flisene danner et jevnt 2×2-rutenett. */
 .iphone-mode .grid-cols-12 > .iphone-tall {
   grid-row: span 1 / span 1 !important;
-  height: auto !important;
+  height: 100% !important;
   min-height: 0 !important;
-  align-self: start !important;
-  margin-bottom: 14px !important;
+  align-self: stretch !important;
 }
 .iphone-mode .grid-cols-12 > .iphone-tall > article,
 .iphone-mode .grid-cols-12 > .iphone-tall > .panel {
-  height: auto !important;
+  height: 100% !important;
   min-height: 0 !important;
 }
 
