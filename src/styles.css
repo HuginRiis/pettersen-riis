@@ -776,12 +776,12 @@ main .container {
   grid-column: span 2 / span 2 !important;
 }
 
-/* Basseng + Hundevann: 30 % høyere enn standard rad-høyde,
-   men behold avstand til neste rader. */
+/* Basseng + Hundevann: samme høyde som strøm-flisene (én rad) — uten ekstra margin
+   slik at de fire første flisene danner et jevnt 2×2-rutenett. */
 .iphone-mode .grid-cols-12 > .iphone-tall {
   grid-row: span 1 / span 1 !important;
-  min-height: 195px !important;          /* 150 px + 30 % */
-  height: auto !important;
+  height: 100% !important;
+  min-height: 0 !important;
   align-self: stretch !important;
 }
 .iphone-mode .grid-cols-12 > .iphone-tall > article,
