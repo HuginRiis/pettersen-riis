@@ -2115,16 +2115,8 @@ function RobotsTile() {
   );
 }
 
-// ----- Kalender (i dag + neste dager) -----
-type CalEvent = {
-  date: string; // yyyy-mm-dd
-  kind: "garbage" | "agenda" | "mail";
-  title: string;
-  sub?: string;
-  time?: string | null;
-  color: string; // tw bg-* class fragment
-  icon: React.ReactNode;
-};
+// ----- Kalender (siste 4 tømminger) -----
+
 
 function osloToday(): string {
   return new Intl.DateTimeFormat("en-CA", {
