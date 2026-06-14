@@ -158,6 +158,23 @@ const TAX_RULES: Record<number, TaxYearRules> = {
       { from: 1_410_750, rate: 0.177 },
     ],
   },
+  // 2026 — Skatteetaten/statsbudsjettet 2026 (vedtatt 18. desember 2025)
+  2026: {
+    personfradrag: 114_540,
+    minstefradragRate: 0.46,
+    minstefradragMax: 95_700,
+    trygdeavgiftRate: 0.076,
+    trygdeavgiftFribelop: 99_650,
+    trygdeavgiftOpptrapping: 0.25,
+    alminneligRate: 0.22,
+    trinn: [
+      { from: 226_100, rate: 0.017 },
+      { from: 318_300, rate: 0.040 },
+      { from: 725_050, rate: 0.137 },
+      { from: 980_100, rate: 0.168 },
+      { from: 1_467_200, rate: 0.178 },
+    ],
+  },
 };
 
 function rulesFor(year: number): TaxYearRules {
