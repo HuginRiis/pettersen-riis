@@ -2172,30 +2172,6 @@ function CalendarTile() {
         }
       } catch {}
 
-      try {
-        const today = osloToday();
-        const horizon = new Date();
-        horizon.setDate(horizon.getDate() + 30);
-        const horizonStr = horizon.toISOString().slice(0, 10);
-        const { data } = await supabase
-          .from("agenda_messages")
-          .select("subject, event_date, event_time, who")
-          .gte("event_date", today)
-          .lte("event_date", horizonStr)
-          .order("event_date", { ascending: true });
-        for (const a of (data ?? []) as any[]) {
-          evs.push({
-            date: a.event_date,
-            kind: "agenda",
-            title: a.subject,
-            sub: a.who ?? undefined,
-            time: a.event_time ?? null,
-            color: "bg-sky-400",
-            icon: <Bell size={12} />,
-          });
-        }
-      } catch {}
-
       if (c) return;
       evs.sort((a, b) =>
         a.date === b.date ? (a.time ?? "00:00").localeCompare(b.time ?? "00:00") : a.date.localeCompare(b.date),
@@ -2211,9 +2187,9 @@ function CalendarTile() {
   }, [fetchGarb]);
 
   const today = osloToday();
-  const todayEvents = events.filter((e) => e.date === today);
-  // Kun de 2 neste hendelser etter i dag
-  const upcoming = events.filter((e) => e.date > today).slice(0, 2);
+  // De 4 neste tømminger (inkl. i dag hvis det finnes)
+  const upcoming = events.filter((e) => e.kind === "garbage" && e.date >= today).slice(0, 4);
+
 
   // Grafisk gradient per type
   const gradientFor = (e: CalEvent): string => {
