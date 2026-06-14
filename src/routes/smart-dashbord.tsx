@@ -2145,62 +2145,17 @@ function daysFromToday(date: string): number {
 
 function CalendarTile() {
   const fetchGarb = useServerFn(getGarbageOverview);
-  const [events, setEvents] = useState<CalEvent[]>([]);
+  const [history, setHistory] = useState<
+    Array<{ fraksjonId: number; fraksjonNavn: string; date: string; daysUntil: number }>
+  >([]);
 
   useEffect(() => {
     let c = false;
     const load = async () => {
-      const evs: CalEvent[] = [];
       try {
         const g = await fetchGarb();
-        for (const p of g.pickups ?? []) {
-          const n = (p.fraksjonNavn ?? "").toLowerCase();
-          let color = "bg-emerald-400";
-          if (n.includes("rest")) color = "bg-zinc-400";
-          else if (n.includes("papir") || n.includes("pp")) color = "bg-blue-400";
-          else if (n.includes("plast")) color = "bg-amber-400";
-          else if (n.includes("glas") || n.includes("metall")) color = "bg-violet-400";
-          else if (n.includes("mat") || n.includes("bio")) color = "bg-emerald-400";
-          evs.push({
-            date: p.date,
-            kind: "garbage",
-            title: p.fraksjonNavn ?? "Søppel",
-            sub: "Tømming",
-            color,
-            icon: <Trash2 size={12} />,
-          });
-        }
+        if (!c) setHistory(g.history ?? []);
       } catch {}
-
-      try {
-        const today = osloToday();
-        const horizon = new Date();
-        horizon.setDate(horizon.getDate() + 30);
-        const horizonStr = horizon.toISOString().slice(0, 10);
-        const { data } = await supabase
-          .from("agenda_messages")
-          .select("subject, event_date, event_time, who")
-          .gte("event_date", today)
-          .lte("event_date", horizonStr)
-          .order("event_date", { ascending: true });
-        for (const a of (data ?? []) as any[]) {
-          evs.push({
-            date: a.event_date,
-            kind: "agenda",
-            title: a.subject,
-            sub: a.who ?? undefined,
-            time: a.event_time ?? null,
-            color: "bg-sky-400",
-            icon: <Bell size={12} />,
-          });
-        }
-      } catch {}
-
-      if (c) return;
-      evs.sort((a, b) =>
-        a.date === b.date ? (a.time ?? "00:00").localeCompare(b.time ?? "00:00") : a.date.localeCompare(b.date),
-      );
-      setEvents(evs);
     };
     load();
     const id = setInterval(load, 10 * 60 * 1000);
@@ -2210,30 +2165,18 @@ function CalendarTile() {
     };
   }, [fetchGarb]);
 
-  const today = osloToday();
-  const todayEvents = events.filter((e) => e.date === today);
-  // Kun de 2 neste hendelser etter i dag
-  const upcoming = events.filter((e) => e.date > today).slice(0, 2);
-
-  // Grafisk gradient per type
-  const gradientFor = (e: CalEvent): string => {
-    if (e.kind === "garbage") {
-      const t = e.title.toLowerCase();
-      if (t.includes("rest")) return "from-zinc-500/70 to-zinc-700/70";
-      if (t.includes("papir") || t.includes("pp")) return "from-blue-500/70 to-indigo-600/70";
-      if (t.includes("plast")) return "from-amber-400/70 to-orange-500/70";
-      if (t.includes("glas") || t.includes("metall")) return "from-violet-500/70 to-fuchsia-600/70";
-      if (t.includes("mat") || t.includes("bio")) return "from-emerald-500/70 to-green-700/70";
-      return "from-emerald-500/70 to-teal-600/70";
-    }
-    if (e.kind === "mail") return "from-amber-400/70 to-rose-500/70";
-    return "from-sky-500/70 to-cyan-500/70";
+  const gradientFor = (title: string): string => {
+    const t = title.toLowerCase();
+    if (t.includes("rest")) return "from-zinc-500/70 to-zinc-700/70";
+    if (t.includes("papir") || t.includes("pp")) return "from-blue-500/70 to-indigo-600/70";
+    if (t.includes("plast")) return "from-amber-400/70 to-orange-500/70";
+    if (t.includes("glas") || t.includes("metall")) return "from-violet-500/70 to-fuchsia-600/70";
+    if (t.includes("mat") || t.includes("bio")) return "from-emerald-500/70 to-green-700/70";
+    return "from-emerald-500/70 to-teal-600/70";
   };
 
-  // Stort emoji for søppeltype
-  const bigEmojiFor = (e: CalEvent): string | null => {
-    if (e.kind !== "garbage") return null;
-    const t = e.title.toLowerCase();
+  const bigEmojiFor = (title: string): string => {
+    const t = title.toLowerCase();
     if (t.includes("rest")) return "🗑️";
     if (t.includes("papir") || t.includes("pp")) return "📦";
     if (t.includes("plast")) return "🥛";
@@ -2243,136 +2186,98 @@ function CalendarTile() {
     return "♻️";
   };
 
-  const formatDayShort = (date: string): { big: string; small: string } => {
-    const d = daysFromToday(date);
-    if (d === 0) return { big: "i dag", small: "" };
-    if (d === 1) return { big: "i morgen", small: "" };
+  const formatDate = (date: string): string => {
     const dt = new Date(date + "T00:00:00Z");
     const day = dt.toLocaleDateString("nb-NO", { day: "numeric", timeZone: "Europe/Oslo" });
     const wd = dt.toLocaleDateString("nb-NO", { weekday: "short", timeZone: "Europe/Oslo" });
     const mon = dt.toLocaleDateString("nb-NO", { month: "short", timeZone: "Europe/Oslo" });
-    return { big: `${wd} ${day}. ${mon}`, small: "" };
+    return `${wd} ${day}. ${mon}`;
+  };
+
+  const daysAgo = (date: string): number => {
+    const today = osloToday();
+    const a = new Date(today + "T00:00:00Z").getTime();
+    const b = new Date(date + "T00:00:00Z").getTime();
+    return Math.round((a - b) / 86_400_000);
   };
 
   return (
-    <Tile title="" icon={<CalendarDays size={14} />} accent="text-cyan-300">
+    <Tile title="Søppeltømming" icon={<Trash2 size={14} />} accent="text-emerald-400">
       <div className="flex flex-col h-full gap-2 overflow-hidden">
-        {/* 4 like store bokser: 2 i dag + 2 neste */}
+        {/* 4 siste tømminger */}
         <div className="grid grid-cols-2 gap-2 flex-1 min-h-0">
-          {/* I dag */}
-          {todayEvents.slice(0, 2).map((e, i) => {
-            const emoji = bigEmojiFor(e);
+          {history.slice(0, 4).map((h, i) => {
+            const emoji = bigEmojiFor(h.fraksjonNavn);
+            const fd = formatDate(h.date);
+            const dAgo = daysAgo(h.date);
             return (
               <div
-                key={`today-${i}`}
+                key={`hist-${i}`}
                 className={`relative overflow-hidden rounded-xl border border-white/10 p-2.5 flex items-center gap-2.5
-                            bg-gradient-to-br ${gradientFor(e)} shadow-[0_4px_18px_-6px_rgba(0,0,0,0.5)]`}
+                            bg-gradient-to-br ${gradientFor(h.fraksjonNavn)} shadow-[0_4px_18px_-6px_rgba(0,0,0,0.5)]`}
               >
                 <div className="relative flex items-center justify-center h-10 w-10 rounded-xl bg-white/20 shrink-0 shadow-inner">
-                  {emoji ? (
-                    <span style={{ fontSize: 24, lineHeight: 1 }}>{emoji}</span>
-                  ) : (
-                    React.cloneElement(e.icon as React.ReactElement<{ size?: number; strokeWidth?: number }>, {
-                      size: 22,
-                      strokeWidth: 1.8,
-                    })
-                  )}
+                  <span style={{ fontSize: 24, lineHeight: 1 }}>{emoji}</span>
                 </div>
                 <div className="absolute -bottom-2 -right-2 text-white pointer-events-none" style={{ opacity: 0.12 }}>
-                  {React.cloneElement(e.icon as React.ReactElement<{ size?: number; strokeWidth?: number }>, {
-                    size: 60,
-                    strokeWidth: 1.2,
-                  })}
+                  <Trash2 size={60} strokeWidth={1.2} />
                 </div>
                 <div className="relative min-w-0 flex-1">
-                  <div className="text-[12px] font-semibold text-white leading-tight truncate">{e.title}</div>
+                  <div className="text-[12px] font-semibold text-white leading-tight truncate">{h.fraksjonNavn}</div>
                   <div className="text-[13px] font-semibold text-white tabular-nums leading-tight capitalize mt-0.5">
-                    i dag
+                    {fd}
                   </div>
-                  {e.sub && <div className="text-[9px] text-white/80 leading-snug mt-0.5 truncate">{e.sub}</div>}
+                  <div className="text-[9px] text-white/80 leading-snug mt-0.5 truncate">
+                    {dAgo === 0 ? "i dag" : dAgo === 1 ? "i går" : `${dAgo} dager siden`}
+                  </div>
                 </div>
-                {e.time && (
-                  <div className="relative text-[10px] text-white/85 tabular-nums shrink-0 self-start">
-                    {e.time.slice(0, 5)}
-                  </div>
-                )}
               </div>
             );
           })}
 
-          {/* Fyll opp med tomme plasser hvis færre enn 2 i dag */}
-          {todayEvents.length === 0 && (
+          {/* Fyll opp med tomme plasser */}
+          {history.length === 0 && (
             <>
               <div className="rounded-xl border border-white/10 p-2.5 flex items-center justify-center bg-white/[0.02]">
-                <span className="text-[10px] text-white/30 italic">Ingen hendelser i dag</span>
+                <span className="text-[10px] text-white/30 italic">Ingen historikk</span>
               </div>
               <div className="rounded-xl border border-white/10 p-2.5 flex items-center justify-center bg-white/[0.02]">
-                <span className="text-[10px] text-white/30 italic">Ingen hendelser i dag</span>
+                <span className="text-[10px] text-white/30 italic">Ingen historikk</span>
+              </div>
+              <div className="rounded-xl border border-white/10 p-2.5 flex items-center justify-center bg-white/[0.02]">
+                <span className="text-[10px] text-white/30 italic">Ingen historikk</span>
+              </div>
+              <div className="rounded-xl border border-white/10 p-2.5 flex items-center justify-center bg-white/[0.02]">
+                <span className="text-[10px] text-white/30 italic">Ingen historikk</span>
               </div>
             </>
           )}
-          {todayEvents.length === 1 && (
-            <div className="rounded-xl border border-white/10 p-2.5 flex items-center justify-center bg-white/[0.02]">
-              <span className="text-[10px] text-white/30 italic">Ingen flere</span>
-            </div>
-          )}
-
-          {/* Neste 2 */}
-          {upcoming.map((e, i) => {
-            const fd = formatDayShort(e.date);
-            const emoji = bigEmojiFor(e);
-            return (
-              <div
-                key={`up-${i}`}
-                className={`relative overflow-hidden rounded-xl border border-white/10 p-2.5 flex items-center gap-2.5
-                            bg-gradient-to-br ${gradientFor(e)} shadow-[0_4px_18px_-6px_rgba(0,0,0,0.5)]`}
-              >
-                <div className="relative flex items-center justify-center h-10 w-10 rounded-xl bg-white/20 shrink-0 shadow-inner">
-                  {emoji ? (
-                    <span style={{ fontSize: 24, lineHeight: 1 }}>{emoji}</span>
-                  ) : (
-                    React.cloneElement(e.icon as React.ReactElement<{ size?: number; strokeWidth?: number }>, {
-                      size: 22,
-                      strokeWidth: 1.8,
-                    })
-                  )}
-                </div>
-                <div className="absolute -bottom-2 -right-2 text-white pointer-events-none" style={{ opacity: 0.12 }}>
-                  {React.cloneElement(e.icon as React.ReactElement<{ size?: number; strokeWidth?: number }>, {
-                    size: 60,
-                    strokeWidth: 1.2,
-                  })}
-                </div>
-                <div className="relative min-w-0 flex-1">
-                  <div className="text-[12px] font-semibold text-white leading-tight truncate">{e.title}</div>
-                  <div className="text-[13px] font-semibold text-white tabular-nums leading-tight capitalize mt-0.5">
-                    {fd.big}
-                  </div>
-                  {e.sub && <div className="text-[9px] text-white/80 leading-snug mt-0.5 truncate">{e.sub}</div>}
-                </div>
-                {e.time && (
-                  <div className="relative text-[10px] text-white/85 tabular-nums shrink-0 self-start">
-                    {e.time.slice(0, 5)}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-
-          {/* Fyll opp med tomme plasser hvis færre enn 2 neste */}
-          {upcoming.length === 0 && (
+          {history.length === 1 && (
             <>
               <div className="rounded-xl border border-white/10 p-2.5 flex items-center justify-center bg-white/[0.02]">
-                <span className="text-[10px] text-white/30 italic">Ingen planlagte</span>
+                <span className="text-[10px] text-white/30 italic">Ingen eldre</span>
               </div>
               <div className="rounded-xl border border-white/10 p-2.5 flex items-center justify-center bg-white/[0.02]">
-                <span className="text-[10px] text-white/30 italic">Ingen planlagte</span>
+                <span className="text-[10px] text-white/30 italic">Ingen eldre</span>
+              </div>
+              <div className="rounded-xl border border-white/10 p-2.5 flex items-center justify-center bg-white/[0.02]">
+                <span className="text-[10px] text-white/30 italic">Ingen eldre</span>
               </div>
             </>
           )}
-          {upcoming.length === 1 && (
+          {history.length === 2 && (
+            <>
+              <div className="rounded-xl border border-white/10 p-2.5 flex items-center justify-center bg-white/[0.02]">
+                <span className="text-[10px] text-white/30 italic">Ingen eldre</span>
+              </div>
+              <div className="rounded-xl border border-white/10 p-2.5 flex items-center justify-center bg-white/[0.02]">
+                <span className="text-[10px] text-white/30 italic">Ingen eldre</span>
+              </div>
+            </>
+          )}
+          {history.length === 3 && (
             <div className="rounded-xl border border-white/10 p-2.5 flex items-center justify-center bg-white/[0.02]">
-              <span className="text-[10px] text-white/30 italic">Ingen flere</span>
+              <span className="text-[10px] text-white/30 italic">Ingen eldre</span>
             </div>
           )}
         </div>
