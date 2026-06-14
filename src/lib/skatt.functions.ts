@@ -99,85 +99,165 @@ const taxCalcSchema = z.object({
   notes: z.string().max(500).optional(),
 });
 
+// ---------------------------------------------------------------------------
+// Deterministisk skatteberegning basert på offisielle satser fra Skatteetaten.
+// Ingen AI involvert — alle satser, fradrag og trinn er hentet fra
+// Skatteetatens publiserte satsoversikter for de aktuelle inntektsårene:
+//   https://www.skatteetaten.no/satser/
+//   https://www.skatteetaten.no/satser/trinnskatt/
+//   https://www.skatteetaten.no/satser/minstefradrag/
+//   https://www.skatteetaten.no/satser/personfradrag/
+//   https://www.skatteetaten.no/satser/trygdeavgift-pa-lonnsinntekt/
+// Tallene under er for vanlige skatteytere (ikke Finnmark/Nord-Troms).
+// ---------------------------------------------------------------------------
+
+type TrinnBracket = { from: number; rate: number };
+type TaxYearRules = {
+  personfradrag: number;          // klasse 1
+  minstefradragRate: number;      // f.eks. 0.46
+  minstefradragMax: number;
+  trygdeavgiftRate: number;       // lønnsinntekt
+  trygdeavgiftFribelop: number;   // nedre grense
+  trygdeavgiftOpptrapping: number; // opptrappingssats
+  alminneligRate: number;         // 0.22
+  trinn: TrinnBracket[];          // sortert stigende
+};
+
+const TAX_RULES: Record<number, TaxYearRules> = {
+  // 2024 — Skatteetaten/statsbudsjettet 2024
+  2024: {
+    personfradrag: 88_250,
+    minstefradragRate: 0.46,
+    minstefradragMax: 104_450,
+    trygdeavgiftRate: 0.078,
+    trygdeavgiftFribelop: 99_650,
+    trygdeavgiftOpptrapping: 0.25,
+    alminneligRate: 0.22,
+    trinn: [
+      { from: 208_050, rate: 0.017 },
+      { from: 292_850, rate: 0.040 },
+      { from: 670_000, rate: 0.137 },
+      { from: 937_900, rate: 0.167 },
+      { from: 1_350_000, rate: 0.177 },
+    ],
+  },
+  // 2025 — Skatteetaten/statsbudsjettet 2025
+  2025: {
+    personfradrag: 108_550,
+    minstefradragRate: 0.46,
+    minstefradragMax: 92_000,
+    trygdeavgiftRate: 0.077,
+    trygdeavgiftFribelop: 99_650,
+    trygdeavgiftOpptrapping: 0.25,
+    alminneligRate: 0.22,
+    trinn: [
+      { from: 217_400, rate: 0.017 },
+      { from: 306_050, rate: 0.040 },
+      { from: 697_150, rate: 0.137 },
+      { from: 942_400, rate: 0.167 },
+      { from: 1_410_750, rate: 0.177 },
+    ],
+  },
+};
+
+function rulesFor(year: number): TaxYearRules {
+  if (TAX_RULES[year]) return TAX_RULES[year];
+  // Fallback: bruk nyeste kjente år
+  const years = Object.keys(TAX_RULES).map(Number).sort((a, b) => b - a);
+  return TAX_RULES[years[0]];
+}
+
+function calcTrinnskatt(personinntekt: number, trinn: TrinnBracket[]): { total: number; marginal: number } {
+  let total = 0;
+  let marginal = 0;
+  for (let i = 0; i < trinn.length; i++) {
+    const t = trinn[i];
+    const next = trinn[i + 1]?.from ?? Infinity;
+    if (personinntekt > t.from) {
+      const top = Math.min(personinntekt, next);
+      total += (top - t.from) * t.rate;
+      marginal = t.rate;
+    }
+  }
+  return { total, marginal };
+}
+
+function calcTrygdeavgift(personinntekt: number, r: TaxYearRules): { sum: number; marginal: number } {
+  if (personinntekt <= r.trygdeavgiftFribelop) return { sum: 0, marginal: 0 };
+  // Opptrappingsregel: trygdeavgift kan ikke overstige opptrapping * (personinntekt - fribeløp)
+  const full = personinntekt * r.trygdeavgiftRate;
+  const cap = (personinntekt - r.trygdeavgiftFribelop) * r.trygdeavgiftOpptrapping;
+  if (cap < full) return { sum: cap, marginal: r.trygdeavgiftOpptrapping };
+  return { sum: full, marginal: r.trygdeavgiftRate };
+}
+
 export const calculateNorwegianTax = createServerFn({ method: "POST" })
   .inputValidator((d) => taxCalcSchema.parse(d))
   .handler(async ({ data }) => {
-    const apiKey = process.env.LOVABLE_API_KEY;
-    if (!apiKey) throw new Error("LOVABLE_API_KEY mangler");
+    const r = rulesFor(data.year);
 
-    const prompt = `Du er norsk skatteekspert. Beregn estimert skatt for inntektsåret ${data.year} basert på offisielle norske skatteregler (Skatteetaten) for det året: trinnskatt, alminnelig inntekt 22%, trygdeavgift 7,7% (lønn), minstefradrag, personfradrag, evt. fradrag for fagforening, renter, pensjonsinnbetaling og andre fradrag.
+    // Personinntekt = bruttolønn (pensjonsinnbetaling reduserer IKKE personinntekt for lønnstaker,
+    // men gir fradrag i alminnelig inntekt via tjenestepensjonsordning til 2% – her tar vi det som
+    // generelt fradrag på linje med "andre fradrag").
+    const personinntekt = data.brutto;
 
-Inndata:
-- Bruttolønn: ${data.brutto} kr
-- Pensjonsinnbetaling (egen): ${data.pensjon} kr
-- Fagforeningskontingent: ${data.fagforening} kr
-- Rentefradrag (gjeldsrenter): ${data.renter} kr
-- Andre fradrag: ${data.andreFradrag} kr
-- Sivilstand: ${data.sivilstand}
-- Skatteklasse: ${data.skatteklasse}
-${data.notes ? `- Tilleggsinfo: ${data.notes}` : ""}
+    // Minstefradrag i lønn — prosent av bruttolønn, opp til årets makstak
+    const minstefradrag = Math.min(
+      Math.round(data.brutto * r.minstefradragRate),
+      r.minstefradragMax,
+    );
 
-Returner KUN JSON i dette formatet:
-{
-  "year": ${data.year},
-  "minstefradrag": 0,
-  "personfradrag": 0,
-  "alminneligInntekt": 0,
-  "skattAlminnelig": 0,
-  "trinnskatt": 0,
-  "trygdeavgift": 0,
-  "fradragSum": 0,
-  "totalSkatt": 0,
-  "marginalSkatt": 0,
-  "gjennomsnittSkattProsent": 0,
-  "nettoUtbetalt": 0,
-  "forklaring": "kort forklaring av trinnene"
-}
-Alle tall i NOK (heltall). Marginalskatt og gjennomsnittsprosent som tall (f.eks. 35.2).`;
+    // Personfradrag (klasse 2 ble fjernet fra 2018, men feltet beholdes for kompatibilitet)
+    const personfradrag = r.personfradrag;
 
-    const res = await loggedFetch("ai", "skatt", "https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-pro",
-        messages: [{ role: "user", content: prompt }],
-      }),
-    });
-    if (!res.ok) {
-      const txt = await res.text();
-      throw new Error(`AI-feil ${res.status}: ${txt.slice(0, 300)}`);
-    }
-    const json: any = await res.json();
-    const u = json?.usage ?? {};
-    await logAiSearch({
-      feature: "skatt",
-      query: `skatt ${data.year}`,
-      model: "google/gemini-2.5-pro",
-      authenticated: await isHouseAuthenticated(),
-      status: "ok",
-      promptTokens: u.prompt_tokens ?? null,
-      completionTokens: u.completion_tokens ?? null,
-      totalTokens: u.total_tokens ?? null,
-    });
-    const content: string = json?.choices?.[0]?.message?.content ?? "";
-    const cleaned = content.replace(/```json|```/g, "").trim();
-    const match = cleaned.match(/\{[\s\S]*\}/);
-    if (!match) throw new Error("Klarte ikke tolke svar fra AI");
-    const parsed = JSON.parse(match[0]);
-    return parsed as {
-      year: number;
-      minstefradrag: number;
-      personfradrag: number;
-      alminneligInntekt: number;
-      skattAlminnelig: number;
-      trinnskatt: number;
-      trygdeavgift: number;
-      fradragSum: number;
-      totalSkatt: number;
-      marginalSkatt: number;
-      gjennomsnittSkattProsent: number;
-      nettoUtbetalt: number;
-      forklaring: string;
+    // Fradrag mot alminnelig inntekt
+    const fradragSum =
+      minstefradrag +
+      personfradrag +
+      data.pensjon +
+      data.fagforening +
+      data.renter +
+      data.andreFradrag;
+
+    // Alminnelig inntekt = bruttolønn − fradrag (kan ikke bli negativ)
+    const alminneligInntekt = Math.max(0, data.brutto - fradragSum);
+    const skattAlminnelig = alminneligInntekt * r.alminneligRate;
+
+    // Trinnskatt på personinntekt
+    const { total: trinnskatt, marginal: trinnMarginal } = calcTrinnskatt(personinntekt, r.trinn);
+
+    // Trygdeavgift på personinntekt
+    const { sum: trygdeavgift, marginal: trygdMarginal } = calcTrygdeavgift(personinntekt, r);
+
+    const totalSkatt = skattAlminnelig + trinnskatt + trygdeavgift;
+    const nettoUtbetalt = data.brutto - totalSkatt;
+    const gjennomsnittSkattProsent = data.brutto > 0 ? (totalSkatt / data.brutto) * 100 : 0;
+    // Marginalskatt for neste lønnskrone = alminnelig (22 %) + trinn + trygd
+    const marginalSkatt = (r.alminneligRate + trinnMarginal + trygdMarginal) * 100;
+
+    const forklaring =
+      `Beregnet etter Skatteetatens satser for ${data.year}: ` +
+      `minstefradrag ${(r.minstefradragRate * 100).toFixed(0)}% av lønn (maks ${r.minstefradragMax.toLocaleString("nb-NO")} kr), ` +
+      `personfradrag ${r.personfradrag.toLocaleString("nb-NO")} kr, ` +
+      `alminnelig inntekt skattlagt med ${(r.alminneligRate * 100).toFixed(0)}%, ` +
+      `trinnskatt etter ${r.trinn.length} trinn, ` +
+      `trygdeavgift ${(r.trygdeavgiftRate * 100).toFixed(1).replace(".", ",")}% over fribeløp ${r.trygdeavgiftFribelop.toLocaleString("nb-NO")} kr (opptrappingssats ${(r.trygdeavgiftOpptrapping * 100).toFixed(0)}%).` +
+      (data.notes ? ` Merknad: ${data.notes}` : "");
+
+    return {
+      year: data.year,
+      minstefradrag: Math.round(minstefradrag),
+      personfradrag: Math.round(personfradrag),
+      alminneligInntekt: Math.round(alminneligInntekt),
+      skattAlminnelig: Math.round(skattAlminnelig),
+      trinnskatt: Math.round(trinnskatt),
+      trygdeavgift: Math.round(trygdeavgift),
+      fradragSum: Math.round(fradragSum),
+      totalSkatt: Math.round(totalSkatt),
+      marginalSkatt: Math.round(marginalSkatt * 10) / 10,
+      gjennomsnittSkattProsent: Math.round(gjennomsnittSkattProsent * 10) / 10,
+      nettoUtbetalt: Math.round(nettoUtbetalt),
+      forklaring,
     };
   });
 
