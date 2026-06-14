@@ -198,7 +198,6 @@ export async function getGarbageOverview(): Promise<{
   address: GarbageAddress | null;
   fraksjoner: Fraksjon[];
   pickups: Pickup[];
-  history: Pickup[];
   prefs: NotificationPref[];
   error?: string;
 }> {
@@ -217,7 +216,7 @@ export async function getGarbageOverview(): Promise<{
   const prefs = (prefsRows ?? []) as NotificationPref[];
 
   if (!addrRow) {
-    return { address: null, fraksjoner: [], pickups: [], history: [], prefs };
+    return { address: null, fraksjoner: [], pickups: [], prefs };
   }
 
   const addr = addrRow as GarbageAddress;
@@ -229,39 +228,28 @@ export async function getGarbageOverview(): Promise<{
 
     const horizonDays = 62; // ca. 2 måneder frem i tid
     const pickups: Pickup[] = [];
-    const history: Pickup[] = [];
     for (const entry of kalender) {
       const f = fMap.get(entry.FraksjonId);
       const navn = f?.Navn ?? `Fraksjon ${entry.FraksjonId}`;
       for (const dt of entry.Tommedatoer) {
         const date = dt.slice(0, 10);
         const daysUntil = diffDaysInOslo(date);
-        if (daysUntil >= 0 && daysUntil <= horizonDays) {
-          pickups.push({
-            fraksjonId: entry.FraksjonId,
-            fraksjonNavn: navn,
-            date,
-            daysUntil,
-          });
-        }
-        if (daysUntil < 0) {
-          history.push({
-            fraksjonId: entry.FraksjonId,
-            fraksjonNavn: navn,
-            date,
-            daysUntil,
-          });
-        }
+        if (daysUntil < 0 || daysUntil > horizonDays) continue;
+        pickups.push({
+          fraksjonId: entry.FraksjonId,
+          fraksjonNavn: navn,
+          date,
+          daysUntil,
+        });
       }
     }
 
     pickups.sort((a, b) => (a.date === b.date ? a.fraksjonId - b.fraksjonId : a.date.localeCompare(b.date)));
-    history.sort((a, b) => (a.date === b.date ? b.fraksjonId - a.fraksjonId : b.date.localeCompare(a.date)));
 
-    return { address: addr, fraksjoner, pickups, history: history.slice(0, 4), prefs };
+    return { address: addr, fraksjoner, pickups, prefs };
   } catch (err) {
     console.error("[garbage] henting feilet", err);
-    return { address: addr, fraksjoner: [], pickups: [], history: [], prefs, error: String(err) };
+    return { address: addr, fraksjoner: [], pickups: [], prefs, error: String(err) };
   }
 }
 
