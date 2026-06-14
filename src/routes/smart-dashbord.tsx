@@ -2172,30 +2172,6 @@ function CalendarTile() {
         }
       } catch {}
 
-      try {
-        const today = osloToday();
-        const horizon = new Date();
-        horizon.setDate(horizon.getDate() + 30);
-        const horizonStr = horizon.toISOString().slice(0, 10);
-        const { data } = await supabase
-          .from("agenda_messages")
-          .select("subject, event_date, event_time, who")
-          .gte("event_date", today)
-          .lte("event_date", horizonStr)
-          .order("event_date", { ascending: true });
-        for (const a of (data ?? []) as any[]) {
-          evs.push({
-            date: a.event_date,
-            kind: "agenda",
-            title: a.subject,
-            sub: a.who ?? undefined,
-            time: a.event_time ?? null,
-            color: "bg-sky-400",
-            icon: <Bell size={12} />,
-          });
-        }
-      } catch {}
-
       if (c) return;
       evs.sort((a, b) =>
         a.date === b.date ? (a.time ?? "00:00").localeCompare(b.time ?? "00:00") : a.date.localeCompare(b.date),
@@ -2211,9 +2187,9 @@ function CalendarTile() {
   }, [fetchGarb]);
 
   const today = osloToday();
-  const todayEvents = events.filter((e) => e.date === today);
-  // Kun de 2 neste hendelser etter i dag
-  const upcoming = events.filter((e) => e.date > today).slice(0, 2);
+  // De 4 neste tømminger (inkl. i dag hvis det finnes)
+  const upcoming = events.filter((e) => e.kind === "garbage" && e.date >= today).slice(0, 4);
+
 
   // Grafisk gradient per type
   const gradientFor = (e: CalEvent): string => {
@@ -2257,67 +2233,8 @@ function CalendarTile() {
   return (
     <Tile title="" icon={<CalendarDays size={14} />} accent="text-cyan-300">
       <div className="flex flex-col h-full gap-2 overflow-hidden">
-        {/* 4 like store bokser: 2 i dag + 2 neste */}
+        {/* De 4 neste søppeltømminger */}
         <div className="grid grid-cols-2 gap-2 flex-1 min-h-0">
-          {/* I dag */}
-          {todayEvents.slice(0, 2).map((e, i) => {
-            const emoji = bigEmojiFor(e);
-            return (
-              <div
-                key={`today-${i}`}
-                className={`relative overflow-hidden rounded-xl border border-white/10 p-2.5 flex items-center gap-2.5
-                            bg-gradient-to-br ${gradientFor(e)} shadow-[0_4px_18px_-6px_rgba(0,0,0,0.5)]`}
-              >
-                <div className="relative flex items-center justify-center h-10 w-10 rounded-xl bg-white/20 shrink-0 shadow-inner">
-                  {emoji ? (
-                    <span style={{ fontSize: 24, lineHeight: 1 }}>{emoji}</span>
-                  ) : (
-                    React.cloneElement(e.icon as React.ReactElement<{ size?: number; strokeWidth?: number }>, {
-                      size: 22,
-                      strokeWidth: 1.8,
-                    })
-                  )}
-                </div>
-                <div className="absolute -bottom-2 -right-2 text-white pointer-events-none" style={{ opacity: 0.12 }}>
-                  {React.cloneElement(e.icon as React.ReactElement<{ size?: number; strokeWidth?: number }>, {
-                    size: 60,
-                    strokeWidth: 1.2,
-                  })}
-                </div>
-                <div className="relative min-w-0 flex-1">
-                  <div className="text-[12px] font-semibold text-white leading-tight truncate">{e.title}</div>
-                  <div className="text-[13px] font-semibold text-white tabular-nums leading-tight capitalize mt-0.5">
-                    i dag
-                  </div>
-                  {e.sub && <div className="text-[9px] text-white/80 leading-snug mt-0.5 truncate">{e.sub}</div>}
-                </div>
-                {e.time && (
-                  <div className="relative text-[10px] text-white/85 tabular-nums shrink-0 self-start">
-                    {e.time.slice(0, 5)}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-
-          {/* Fyll opp med tomme plasser hvis færre enn 2 i dag */}
-          {todayEvents.length === 0 && (
-            <>
-              <div className="rounded-xl border border-white/10 p-2.5 flex items-center justify-center bg-white/[0.02]">
-                <span className="text-[10px] text-white/30 italic">Ingen hendelser i dag</span>
-              </div>
-              <div className="rounded-xl border border-white/10 p-2.5 flex items-center justify-center bg-white/[0.02]">
-                <span className="text-[10px] text-white/30 italic">Ingen hendelser i dag</span>
-              </div>
-            </>
-          )}
-          {todayEvents.length === 1 && (
-            <div className="rounded-xl border border-white/10 p-2.5 flex items-center justify-center bg-white/[0.02]">
-              <span className="text-[10px] text-white/30 italic">Ingen flere</span>
-            </div>
-          )}
-
-          {/* Neste 2 */}
           {upcoming.map((e, i) => {
             const fd = formatDayShort(e.date);
             const emoji = bigEmojiFor(e);
@@ -2350,32 +2267,17 @@ function CalendarTile() {
                   </div>
                   {e.sub && <div className="text-[9px] text-white/80 leading-snug mt-0.5 truncate">{e.sub}</div>}
                 </div>
-                {e.time && (
-                  <div className="relative text-[10px] text-white/85 tabular-nums shrink-0 self-start">
-                    {e.time.slice(0, 5)}
-                  </div>
-                )}
               </div>
             );
           })}
 
-          {/* Fyll opp med tomme plasser hvis færre enn 2 neste */}
           {upcoming.length === 0 && (
-            <>
-              <div className="rounded-xl border border-white/10 p-2.5 flex items-center justify-center bg-white/[0.02]">
-                <span className="text-[10px] text-white/30 italic">Ingen planlagte</span>
-              </div>
-              <div className="rounded-xl border border-white/10 p-2.5 flex items-center justify-center bg-white/[0.02]">
-                <span className="text-[10px] text-white/30 italic">Ingen planlagte</span>
-              </div>
-            </>
-          )}
-          {upcoming.length === 1 && (
-            <div className="rounded-xl border border-white/10 p-2.5 flex items-center justify-center bg-white/[0.02]">
-              <span className="text-[10px] text-white/30 italic">Ingen flere</span>
+            <div className="col-span-2 rounded-xl border border-white/10 p-2.5 flex items-center justify-center bg-white/[0.02]">
+              <span className="text-[10px] text-white/30 italic">Ingen planlagte tømminger</span>
             </div>
           )}
         </div>
+
       </div>
     </Tile>
   );
