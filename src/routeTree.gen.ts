@@ -34,6 +34,7 @@ import { Route as IphoneAppRouteImport } from './routes/iphone-app'
 import { Route as HyttaRouteImport } from './routes/hytta'
 import { Route as GressklipperRouteImport } from './routes/gressklipper'
 import { Route as FlyRouteImport } from './routes/fly'
+import { Route as EpostRouteImport } from './routes/epost'
 import { Route as DecibelRouteImport } from './routes/decibel'
 import { Route as AgendaRouteImport } from './routes/agenda'
 import { Route as IndexRouteImport } from './routes/index'
@@ -180,6 +181,11 @@ const FlyRoute = FlyRouteImport.update({
   path: '/fly',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EpostRoute = EpostRouteImport.update({
+  id: '/epost',
+  path: '/epost',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DecibelRoute = DecibelRouteImport.update({
   id: '/decibel',
   path: '/decibel',
@@ -295,6 +301,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/agenda': typeof AgendaRoute
   '/decibel': typeof DecibelRoute
+  '/epost': typeof EpostRoute
   '/fly': typeof FlyRoute
   '/gressklipper': typeof GressklipperRoute
   '/hytta': typeof HyttaRoute
@@ -342,6 +349,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/agenda': typeof AgendaRoute
   '/decibel': typeof DecibelRoute
+  '/epost': typeof EpostRoute
   '/fly': typeof FlyRoute
   '/gressklipper': typeof GressklipperRoute
   '/hytta': typeof HyttaRoute
@@ -390,6 +398,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/agenda': typeof AgendaRoute
   '/decibel': typeof DecibelRoute
+  '/epost': typeof EpostRoute
   '/fly': typeof FlyRoute
   '/gressklipper': typeof GressklipperRoute
   '/hytta': typeof HyttaRoute
@@ -439,6 +448,7 @@ export interface FileRouteTypes {
     | '/'
     | '/agenda'
     | '/decibel'
+    | '/epost'
     | '/fly'
     | '/gressklipper'
     | '/hytta'
@@ -486,6 +496,7 @@ export interface FileRouteTypes {
     | '/'
     | '/agenda'
     | '/decibel'
+    | '/epost'
     | '/fly'
     | '/gressklipper'
     | '/hytta'
@@ -533,6 +544,7 @@ export interface FileRouteTypes {
     | '/'
     | '/agenda'
     | '/decibel'
+    | '/epost'
     | '/fly'
     | '/gressklipper'
     | '/hytta'
@@ -581,6 +593,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AgendaRoute: typeof AgendaRoute
   DecibelRoute: typeof DecibelRoute
+  EpostRoute: typeof EpostRoute
   FlyRoute: typeof FlyRoute
   GressklipperRoute: typeof GressklipperRoute
   HyttaRoute: typeof HyttaRoute
@@ -802,6 +815,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FlyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/epost': {
+      id: '/epost'
+      path: '/epost'
+      fullPath: '/epost'
+      preLoaderRoute: typeof EpostRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/decibel': {
       id: '/decibel'
       path: '/decibel'
@@ -949,6 +969,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AgendaRoute: AgendaRoute,
   DecibelRoute: DecibelRoute,
+  EpostRoute: EpostRoute,
   FlyRoute: FlyRoute,
   GressklipperRoute: GressklipperRoute,
   HyttaRoute: HyttaRoute,
@@ -999,12 +1020,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}
