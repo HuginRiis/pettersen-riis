@@ -4,7 +4,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { Menu, X, LogOut, Crown, Swords, Shield, KeyRound, Home, Star, Flower2,
   Sun, Compass, CalendarDays, BellRing, Eye, Mountain, Lightbulb, Lamp, Flame, Zap,
   Receipt, Dumbbell, AlertTriangle, ScrollText, Globe, ChevronDown, ChevronRight,
-  TreePine, Coins, Bot, Wallet, Volume2, Settings, Gauge, Plane, Folder, Smartphone } from "lucide-react";
+  TreePine, Coins, Bot, Wallet, Volume2, Settings, Gauge, Plane, Folder, Smartphone, Horse } from "lucide-react";
+
 
 
 import { logoutFn } from "@/lib/auth.functions";
