@@ -18,6 +18,8 @@ export type EmailMessage = {
 
 export type EmailStats = {
   fetchedAt: string;
+  ok: boolean;
+  errorMessage?: string;
   total: number;
   unread: number;
   read: number;
@@ -34,6 +36,28 @@ export type EmailStats = {
   recentMessages: EmailMessage[];
   unreadMessages: EmailMessage[];
 };
+
+function emptyStats(now: Date, errorMessage?: string): EmailStats {
+  const perDay: { date: string; total: number; unread: number }[] = [];
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(startOfToday.getTime() - i * 24 * 3600 * 1000);
+    perDay.push({ date: d.toISOString().slice(0, 10), total: 0, unread: 0 });
+  }
+  return {
+    fetchedAt: now.toISOString(),
+    ok: !errorMessage,
+    errorMessage,
+    total: 0, unread: 0, read: 0, highImportance: 0, flagged: 0, withAttachments: 0,
+    today: 0, last7Days: 0, last30Days: 0,
+    perDay,
+    perHour: Array.from({ length: 24 }, (_, hour) => ({ hour, total: 0 })),
+    topSenders: [],
+    importantMessages: [],
+    recentMessages: [],
+    unreadMessages: [],
+  };
+}
 
 function scoreImportance(m: EmailMessage): number {
   let s = 0;
