@@ -131,6 +131,7 @@ const ROUTE_ICON_COLOR: Partial<Record<RoutePath, string>> = {
   "/fly": "#38bdf8",
   "/ytelse": "#22d3ee",
   "/iphone-app": "#60a5fa",
+  "/hest-og-kjerre-tur": "#a3e635",
 };
 
 
