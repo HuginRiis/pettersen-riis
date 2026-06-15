@@ -73,28 +73,31 @@ function scoreImportance(m: EmailMessage): number {
 }
 
 export const getEmailStats = createServerFn({ method: "GET" }).handler(async (): Promise<EmailStats> => {
-  const lovableKey = process.env.LOVABLE_API_KEY;
-  const connKey = process.env.MICROSOFT_OUTLOOK_API_KEY;
-  if (!lovableKey || !connKey) throw new Error("Mangler Outlook-tilkobling");
+  const now = new Date();
+  try {
+    const lovableKey = process.env.LOVABLE_API_KEY;
+    const connKey = process.env.MICROSOFT_OUTLOOK_API_KEY;
+    if (!lovableKey || !connKey) return emptyStats(now, "Mangler Outlook-tilkobling");
 
-  const headers = {
-    Authorization: `Bearer ${lovableKey}`,
-    "X-Connection-Api-Key": connKey,
-  };
+    const headers = {
+      Authorization: `Bearer ${lovableKey}`,
+      "X-Connection-Api-Key": connKey,
+    };
 
-  // Fetch the latest 250 inbox messages.
-  const select = "id,subject,from,receivedDateTime,isRead,importance,hasAttachments,bodyPreview,flag,webLink";
-  const url =
-    `${GATEWAY_URL}/me/mailFolders/inbox/messages` +
-    `?$top=250&$orderby=receivedDateTime desc&$select=${select}`;
+    // Hent inntil 100 siste meldinger (lavere for å unngå worker-timeout og store responser).
+    const select = "id,subject,from,receivedDateTime,isRead,importance,hasAttachments,bodyPreview,flag,webLink";
+    const url =
+      `${GATEWAY_URL}/me/mailFolders/inbox/messages` +
+      `?$top=100&$orderby=receivedDateTime desc&$select=${select}`;
 
-  const res = await fetch(url, { headers });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Outlook ${res.status}: ${text.slice(0, 300)}`);
-  }
-  const json: any = await res.json();
-  const raw: any[] = json.value ?? [];
+    const res = await fetch(url, { headers });
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      return emptyStats(now, `Outlook ${res.status}: ${text.slice(0, 200)}`);
+    }
+    const json: any = await res.json();
+    const raw: any[] = json.value ?? [];
+
 
   const messages: EmailMessage[] = raw.map((m) => ({
     id: m.id,
