@@ -99,6 +99,7 @@ const ROUTE_ICON: Partial<Record<RoutePath, React.ComponentType<{ size?: number;
   "/fly": Plane,
   "/ytelse": Gauge,
   "/iphone-app": Smartphone,
+  "/hest-og-kjerre-tur": Car,
 };
 
 
