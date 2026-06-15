@@ -60,7 +60,13 @@ function EpostPage() {
 
         {error && (
           <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-4 mb-4 text-sm">
-            <strong>Kunne ikke hente e-post:</strong> {(error as Error).message}
+            <strong>Kunne ikke hente e-post:</strong> {(error as Error)?.message || "Ukjent feil"}
+          </div>
+        )}
+
+        {data && !data.ok && data.errorMessage && (
+          <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-4 mb-4 text-sm">
+            <strong>Outlook svarte ikke som forventet:</strong> {data.errorMessage}
           </div>
         )}
 
