@@ -35,6 +35,7 @@ import {
   Unlock,
   Fan,
   Moon,
+  Car,
 } from "lucide-react";
 import { AreaChart, Area, ResponsiveContainer } from "recharts";
 import { useUvSun } from "@/hooks/use-uv-sun";
@@ -4300,6 +4301,14 @@ export function SmartDashbord() {
               className="h-9 w-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/70 hover:text-white transition"
             >
               <Home size={15} />
+            </Link>
+            <Link
+              to="/hest-og-kjerre-tur"
+              aria-label="Hest og kjerre tur"
+              title="Hest og kjerre tur"
+              className="h-9 w-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/70 hover:text-white transition"
+            >
+              <Car size={15} />
             </Link>
             {(Object.keys(LOCS) as LocId[]).map((id) => (
               <button

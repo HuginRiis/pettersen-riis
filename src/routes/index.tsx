@@ -68,6 +68,7 @@ import hallVarme from "@/assets/got-varme.jpg";
 import hallGressklipper from "@/assets/got-gressklipper.jpg";
 import hallStovsuger from "@/assets/got-stovsuger.jpg";
 import hallSkatt from "@/assets/got-skatt.jpg";
+import hallHest from "@/assets/jernhesten.jpg";
 
 // Halls available to anyone who steps into the courtyard (no password required)
 const PUBLIC_HALL_PATHS = new Set<string>(["/var", "/pollen", "/turer"]);
@@ -337,6 +338,7 @@ function Home() {
           {showHall("/skatte-utregningen") && <HallCard to="/skatte-utregningen" title="Skatte­utregningen" desc="Skatt og lønn — beregninger." icon="🪙" image={hallSkatt} locked={!isAuthed} />}
           {showHall("/steintavle") && <HallCard to="/steintavle" title="Steintavle" desc="Husets innskrifter og notater." icon="🪨" image={hallSteintavle} locked={!isAuthed} />}
           {showHall("/steintavle-2") && <HallCard to="/steintavle-2" title="Steintavle 2" desc="Stor visning — temperatur, regn og vind på borgen." icon="🪨" image={hallSteintavle} locked={!isAuthed} />}
+          {showHall("/hest-og-kjerre-tur") && <HallCard to="/hest-og-kjerre-tur" title="Hest og kjerre tur" desc="Statistikk og målinger fra turer med jernhesten." icon="🐎" image={hallHest} locked={!isAuthed} />}
           {showHall("/kvitteringer") && <HallCard to="/kvitteringer" title="Kvitteringer" desc="Husets kvitteringer, garanti og utgifter." icon="🧾" image={hallKvitteringer} locked={!isAuthed} />}
           {showHall("/okonomi") && <HallCard to="/okonomi" title="Husholdningens hvelv" desc="Budsjett og forbruk — Iron Bank of Braavos." icon="🏦" image={hallOkonomi} locked={!isAuthed} />}
           {showHall("/push-varslinger") && <HallCard to="/push-varslinger" title="Innstillinger" desc="Push-varsler og innstillinger for husets ravner." icon="🔔" image={hallVarslinger} locked={!isAuthed} badge={<HallBadgeStack><PushTodayBadge inline /></HallBadgeStack>} />}
@@ -667,7 +669,8 @@ function HallCard({
     | "/steintavle-2"
     | "/kvitteringer"
     | "/okonomi"
-    | "/push-varslinger";
+    | "/push-varslinger"
+    | "/hest-og-kjerre-tur";
 
   title: string;
   desc: string;
