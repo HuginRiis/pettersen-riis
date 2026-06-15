@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Menu, X, LogOut, Crown, Swords, Shield, KeyRound, Home, Star, Flower2,
   Sun, Compass, CalendarDays, BellRing, Eye, Mountain, Lightbulb, Lamp, Flame, Zap,
   Receipt, Dumbbell, AlertTriangle, ScrollText, Globe, ChevronDown, ChevronRight,
-  TreePine, Coins, Bot, Wallet, Volume2, Settings, Gauge, Plane, Folder, Smartphone, Mail } from "lucide-react";
+  TreePine, Coins, Bot, Wallet, Volume2, Settings, Gauge, Plane, Folder, Smartphone } from "lucide-react";
 
 
 import { logoutFn } from "@/lib/auth.functions";
@@ -56,8 +56,7 @@ type RoutePath =
   | "/roborock"
   | "/planter"
   | "/fly"
-  | "/ytelse"
-  | "/epost";
+  | "/ytelse";
 
 
 type NavLink = { to: RoutePath; label: string; public?: boolean };
@@ -98,7 +97,6 @@ const ROUTE_ICON: Partial<Record<RoutePath, React.ComponentType<{ size?: number;
   "/fly": Plane,
   "/ytelse": Gauge,
   "/iphone-app": Smartphone,
-  "/epost": Mail,
 };
 
 
@@ -130,7 +128,6 @@ const ROUTE_ICON_COLOR: Partial<Record<RoutePath, string>> = {
   "/fly": "#38bdf8",
   "/ytelse": "#22d3ee",
   "/iphone-app": "#60a5fa",
-  "/epost": "#0ea5e9",
 };
 
 
@@ -165,7 +162,6 @@ const navLinks: NavLink[] = [
   { to: "/steintavle", label: "Steintavle" },
   { to: "/steintavle-2", label: "Steintavle 2" },
   { to: "/iphone-app", label: "iPhone App" },
-  { to: "/epost", label: "E-post" },
 ];
 
 export function SiteHeader() {
