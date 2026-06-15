@@ -166,6 +166,7 @@ const navLinks: NavLink[] = [
   { to: "/steintavle", label: "Steintavle" },
   { to: "/steintavle-2", label: "Steintavle 2" },
   { to: "/iphone-app", label: "iPhone App" },
+  { to: "/hest-og-kjerre-tur", label: "Hest og kjerre tur" },
 ];
 
 export function SiteHeader() {
