@@ -27,7 +27,17 @@ type TabKey =
   | "befolkning"
   | "bil"
   | "bolig"
-  | "kpi";
+  | "kpi"
+  | "flytting"
+  | "innvandring"
+  | "husholdninger"
+  | "arbeidsledighet"
+  | "bef-endring"
+  | "tettsteder"
+  | "folke-beregnet"
+  | "kpi-mnd"
+  | "folke-alder"
+  | "gebyrer";
 
 const TABS: { key: TabKey; label: string; config: SsbExplorerConfig }[] = [
   {
