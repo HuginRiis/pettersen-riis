@@ -20,6 +20,7 @@ import { Route as StromkronikenRouteImport } from './routes/stromkroniken'
 import { Route as StovsugerenRouteImport } from './routes/stovsugeren'
 import { Route as Steintavle2RouteImport } from './routes/steintavle-2'
 import { Route as SteintavleRouteImport } from './routes/steintavle'
+import { Route as SsbStatistikkRouteImport } from './routes/ssb-statistikk'
 import { Route as SmarthusRouteImport } from './routes/smarthus'
 import { Route as SmartDashbordRouteImport } from './routes/smart-dashbord'
 import { Route as SkatteUtregningenRouteImport } from './routes/skatte-utregningen'
@@ -108,6 +109,11 @@ const Steintavle2Route = Steintavle2RouteImport.update({
 const SteintavleRoute = SteintavleRouteImport.update({
   id: '/steintavle',
   path: '/steintavle',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SsbStatistikkRoute = SsbStatistikkRouteImport.update({
+  id: '/ssb-statistikk',
+  path: '/ssb-statistikk',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SmarthusRoute = SmarthusRouteImport.update({
@@ -309,6 +315,7 @@ export interface FileRoutesByFullPath {
   '/skatte-utregningen': typeof SkatteUtregningenRoute
   '/smart-dashbord': typeof SmartDashbordRoute
   '/smarthus': typeof SmarthusRoute
+  '/ssb-statistikk': typeof SsbStatistikkRoute
   '/steintavle': typeof SteintavleRoute
   '/steintavle-2': typeof Steintavle2Route
   '/stovsugeren': typeof StovsugerenRoute
@@ -356,6 +363,7 @@ export interface FileRoutesByTo {
   '/skatte-utregningen': typeof SkatteUtregningenRoute
   '/smart-dashbord': typeof SmartDashbordRoute
   '/smarthus': typeof SmarthusRoute
+  '/ssb-statistikk': typeof SsbStatistikkRoute
   '/steintavle': typeof SteintavleRoute
   '/steintavle-2': typeof Steintavle2Route
   '/stovsugeren': typeof StovsugerenRoute
@@ -404,6 +412,7 @@ export interface FileRoutesById {
   '/skatte-utregningen': typeof SkatteUtregningenRoute
   '/smart-dashbord': typeof SmartDashbordRoute
   '/smarthus': typeof SmarthusRoute
+  '/ssb-statistikk': typeof SsbStatistikkRoute
   '/steintavle': typeof SteintavleRoute
   '/steintavle-2': typeof Steintavle2Route
   '/stovsugeren': typeof StovsugerenRoute
@@ -453,6 +462,7 @@ export interface FileRouteTypes {
     | '/skatte-utregningen'
     | '/smart-dashbord'
     | '/smarthus'
+    | '/ssb-statistikk'
     | '/steintavle'
     | '/steintavle-2'
     | '/stovsugeren'
@@ -500,6 +510,7 @@ export interface FileRouteTypes {
     | '/skatte-utregningen'
     | '/smart-dashbord'
     | '/smarthus'
+    | '/ssb-statistikk'
     | '/steintavle'
     | '/steintavle-2'
     | '/stovsugeren'
@@ -547,6 +558,7 @@ export interface FileRouteTypes {
     | '/skatte-utregningen'
     | '/smart-dashbord'
     | '/smarthus'
+    | '/ssb-statistikk'
     | '/steintavle'
     | '/steintavle-2'
     | '/stovsugeren'
@@ -595,6 +607,7 @@ export interface RootRouteChildren {
   SkatteUtregningenRoute: typeof SkatteUtregningenRoute
   SmartDashbordRoute: typeof SmartDashbordRoute
   SmarthusRoute: typeof SmarthusRoute
+  SsbStatistikkRoute: typeof SsbStatistikkRoute
   SteintavleRoute: typeof SteintavleRoute
   Steintavle2Route: typeof Steintavle2Route
   StovsugerenRoute: typeof StovsugerenRoute
@@ -702,6 +715,13 @@ declare module '@tanstack/react-router' {
       path: '/steintavle'
       fullPath: '/steintavle'
       preLoaderRoute: typeof SteintavleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ssb-statistikk': {
+      id: '/ssb-statistikk'
+      path: '/ssb-statistikk'
+      fullPath: '/ssb-statistikk'
+      preLoaderRoute: typeof SsbStatistikkRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/smarthus': {
@@ -963,6 +983,7 @@ const rootRouteChildren: RootRouteChildren = {
   SkatteUtregningenRoute: SkatteUtregningenRoute,
   SmartDashbordRoute: SmartDashbordRoute,
   SmarthusRoute: SmarthusRoute,
+  SsbStatistikkRoute: SsbStatistikkRoute,
   SteintavleRoute: SteintavleRoute,
   Steintavle2Route: Steintavle2Route,
   StovsugerenRoute: StovsugerenRoute,
@@ -999,12 +1020,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}
