@@ -80,8 +80,13 @@ export function SsbExplorer({ config }: { config: SsbExplorerConfig }) {
             continue;
           }
           if (v.code === config.xAxis) {
-            // x-axis: pick last 10 values (typically time)
-            sel[v.code] = v.values.slice(-10);
+            // x-axis: pick last 10 values (typically time), but include 2026 if present
+            const has2026 = v.values.includes("2026");
+            if (has2026) {
+              sel[v.code] = v.values.slice(-11);
+            } else {
+              sel[v.code] = v.values.slice(-10);
+            }
             continue;
           }
           if (v.code === config.series) {
@@ -412,6 +417,17 @@ function DimensionFilter({
             >
               <RefreshCw className="h-3 w-3" />
             </Button>
+            {variable.values.includes("2026") && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 px-2 text-xs border-amber-700/50 text-amber-300 hover:bg-amber-900/30"
+                onClick={() => onChange(["2026"])}
+                title="Bare 2026"
+              >
+                2026
+              </Button>
+            )}
           </div>
           <div className="max-h-48 overflow-auto rounded border border-zinc-800/60">
             {options.slice(0, 300).map((opt) => {
