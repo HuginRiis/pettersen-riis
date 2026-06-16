@@ -599,12 +599,16 @@ export async function syncOne(owner: GarminOwner, trigger: string): Promise<{
   const t0 = Date.now();
   let daily = 0, activities = 0, sleep = 0, intraday = 0;
   let error: string | undefined;
+  // Manuelt / kveldssync = "deep" backfill. Vanlig timeløp = lett "shallow".
+  const isDeep = trigger === "manual" || trigger === "cron-extra";
   try {
-    daily = await syncDaily(owner, 7);
-    activities = await syncActivities(owner, 7);
-    sleep = await syncSleep(owner, 7);
+    daily = await syncDaily(owner, isDeep ? 7 : 2);
+    sleep = await syncSleep(owner, isDeep ? 7 : 2);
     intraday = await syncIntraday(owner, 1);
-    await syncDevice(owner);
+    if (isDeep) {
+      activities = await syncActivities(owner, 7);
+      await syncDevice(owner);
+    }
   } catch (e) {
     error = (e as Error).message;
   }
