@@ -33,6 +33,8 @@ export type SsbExplorerConfig = {
   defaultSelection?: SsbSelection; // initial codes per dimension
   defaultSeriesTopN?: number;
   chart?: "line" | "bar";
+  /** Include all x-axis values >= this (e.g. "2010") instead of last N. */
+  xAxisFrom?: string;
 };
 
 const COLORS = [
