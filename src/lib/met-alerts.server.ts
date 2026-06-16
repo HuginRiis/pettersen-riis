@@ -94,7 +94,7 @@ const EXCLUDE_KEYWORDS = [
 
 type CacheEntry = { ts: number; data: TelemarkAlert[] };
 let cache: CacheEntry | null = null;
-const TTL_MS = 15 * 60 * 1000;
+const TTL_MS = 30 * 60 * 1000;
 
 async function fetchAlerts(): Promise<TelemarkAlert[]> {
   const res = await fetch("https://api.met.no/weatherapi/metalerts/2.0/current.json", {
