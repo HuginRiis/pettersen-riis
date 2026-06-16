@@ -56,7 +56,8 @@ type RoutePath =
   | "/roborock"
   | "/planter"
   | "/fly"
-  | "/ytelse";
+  | "/ytelse"
+  | "/ssb-statistikk";
 
 
 type NavLink = { to: RoutePath; label: string; public?: boolean };
@@ -97,6 +98,7 @@ const ROUTE_ICON: Partial<Record<RoutePath, React.ComponentType<{ size?: number;
   "/fly": Plane,
   "/ytelse": Gauge,
   "/iphone-app": Smartphone,
+  "/ssb-statistikk": BarChart3,
 };
 
 
@@ -128,6 +130,7 @@ const ROUTE_ICON_COLOR: Partial<Record<RoutePath, string>> = {
   "/fly": "#38bdf8",
   "/ytelse": "#22d3ee",
   "/iphone-app": "#60a5fa",
+  "/ssb-statistikk": "#f59e0b",
 };
 
 
@@ -162,6 +165,7 @@ const navLinks: NavLink[] = [
   { to: "/steintavle", label: "Steintavle" },
   { to: "/steintavle-2", label: "Steintavle 2" },
   { to: "/iphone-app", label: "iPhone App" },
+  { to: "/ssb-statistikk", label: "Norges-statistikk" },
 ];
 
 export function SiteHeader() {
