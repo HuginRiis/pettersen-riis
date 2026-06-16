@@ -33,8 +33,6 @@ export type SsbExplorerConfig = {
   defaultSelection?: SsbSelection; // initial codes per dimension
   defaultSeriesTopN?: number;
   chart?: "line" | "bar";
-  /** Include all x-axis values >= this (e.g. "2010") instead of last N. */
-  xAxisFrom?: string;
 };
 
 const COLORS = [
@@ -82,14 +80,12 @@ export function SsbExplorer({ config }: { config: SsbExplorerConfig }) {
             continue;
           }
           if (v.code === config.xAxis) {
-            if (config.xAxisFrom) {
-              // Include all values lexically >= xAxisFrom (works for "2010", "2010M01", etc.)
-              const from = config.xAxisFrom;
-              const filtered = v.values.filter((val) => val >= from);
-              sel[v.code] = filtered.length ? filtered : v.values.slice(-10);
+            // x-axis: pick last 10 values (typically time), but include 2026 if present
+            const has2026 = v.values.includes("2026");
+            if (has2026) {
+              sel[v.code] = v.values.slice(-11);
             } else {
-              const has2026 = v.values.includes("2026");
-              sel[v.code] = has2026 ? v.values.slice(-11) : v.values.slice(-10);
+              sel[v.code] = v.values.slice(-10);
             }
             continue;
           }
