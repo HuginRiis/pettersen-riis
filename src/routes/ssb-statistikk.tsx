@@ -51,13 +51,7 @@ const TABS: { key: TabKey; label: string; config: SsbExplorerConfig }[] = [
       xAxis: "Tid",
       series: "Fornavn",
       defaultSelection: {
-        Fornavn: [
-          "1EMMA",
-          "1NORA / NORAH",
-          "1OLIVIA",
-          "1SOFIE / SOPHIE",
-          "1EMILIA / EMELIA",
-        ],
+        Fornavn: ["1EMMA", "1NORA", "1OLIVIA", "1SOFIE", "1EMILIA"],
       },
       defaultSeriesTopN: 5,
     },
