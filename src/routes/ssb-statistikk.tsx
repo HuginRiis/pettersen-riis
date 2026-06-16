@@ -27,7 +27,17 @@ type TabKey =
   | "befolkning"
   | "bil"
   | "bolig"
-  | "kpi";
+  | "kpi"
+  | "flytting"
+  | "innvandring"
+  | "husholdninger"
+  | "arbeidsledighet"
+  | "bef-endring"
+  | "tettsteder"
+  | "folke-beregnet"
+  | "kpi-mnd"
+  | "folke-alder"
+  | "gebyrer";
 
 const TABS: { key: TabKey; label: string; config: SsbExplorerConfig }[] = [
   {
@@ -41,13 +51,7 @@ const TABS: { key: TabKey; label: string; config: SsbExplorerConfig }[] = [
       xAxis: "Tid",
       series: "Fornavn",
       defaultSelection: {
-        Fornavn: [
-          "1EMMA",
-          "1NORA / NORAH",
-          "1OLIVIA",
-          "1SOFIE / SOPHIE",
-          "1EMILIA / EMELIA",
-        ],
+        Fornavn: ["1EMMA", "1NORA", "1OLIVIA", "1SOFIE", "1EMILIA"],
       },
       defaultSeriesTopN: 5,
     },
@@ -143,6 +147,136 @@ const TABS: { key: TabKey; label: string; config: SsbExplorerConfig }[] = [
         "Prisendringer på alt fra mat til strøm. Den mest brukte SSB-statistikken i nyhetene.",
       xAxis: "Tid",
       series: "Konsumgrp",
+      defaultSeriesTopN: 4,
+    },
+  },
+  {
+    key: "flytting",
+    label: "Flytting",
+    config: {
+      tableId: "09588",
+      title: "Inn- og utflytting per region",
+      description:
+        "Hvor mange flytter inn og ut av hver kommune og fylke — og hvem har størst nettoinnflytting?",
+      xAxis: "Tid",
+      series: "ContentsCode",
+      defaultSeriesTopN: 4,
+    },
+  },
+  {
+    key: "innvandring",
+    label: "Innvandring",
+    config: {
+      tableId: "09817",
+      title: "Innvandrere og norskfødte med innvandrerforeldre",
+      description:
+        "Antall innvandrere etter landbakgrunn og kategori. Filtrer på region og landgruppe.",
+      xAxis: "Tid",
+      series: "InnvandrKat",
+      defaultSeriesTopN: 3,
+    },
+  },
+  {
+    key: "husholdninger",
+    label: "Husholdninger",
+    config: {
+      tableId: "11084",
+      title: "Husholdninger etter eierstatus",
+      description:
+        "Andel som eier vs leier bolig — fordelt på region og eierform (selveier, andelseier, leier).",
+      xAxis: "Tid",
+      series: "EierStatus",
+      defaultSeriesTopN: 4,
+    },
+  },
+  {
+    key: "arbeidsledighet",
+    label: "Arbeidsledighet",
+    config: {
+      tableId: "08517",
+      title: "Arbeidsledige etter kjønn og alder",
+      description:
+        "Registrerte arbeidsledige i Norge. Følg konjunkturene gjennom 50 år.",
+      xAxis: "Tid",
+      series: "Kjonn",
+      defaultSeriesTopN: 3,
+    },
+  },
+  {
+    key: "bef-endring",
+    label: "Fødte & døde",
+    config: {
+      tableId: "05803",
+      title: "Endringer i befolkningen",
+      description:
+        "Fødte, døde, ekteskap, skilsmisser og netto innvandring — Norges befolkningsdynamikk siden 1735.",
+      xAxis: "Tid",
+      series: "ContentsCode",
+      defaultSeriesTopN: 5,
+    },
+  },
+  {
+    key: "tettsteder",
+    label: "Tettsteder",
+    config: {
+      tableId: "04861",
+      title: "Areal og befolkning i tettsteder",
+      description:
+        "Hvor mange bor i tettsteder, og hvor stort er hvert tettsted? Filtrer på region.",
+      xAxis: "Tid",
+      series: "ContentsCode",
+      defaultSeriesTopN: 2,
+    },
+  },
+  {
+    key: "folke-beregnet",
+    label: "Folketall (prognose)",
+    config: {
+      tableId: "05231",
+      title: "Beregnet folkemengde",
+      description:
+        "SSBs framskrivinger og beregnede folketall per region.",
+      xAxis: "Tid",
+      series: "ContentsCode",
+      defaultSeriesTopN: 3,
+    },
+  },
+  {
+    key: "kpi-mnd",
+    label: "KPI månedlig",
+    config: {
+      tableId: "03013",
+      title: "Konsumprisindeksen — månedstall",
+      description:
+        "Detaljerte KPI-tall per måned. Følg inflasjonen tett, gruppe for gruppe.",
+      xAxis: "Tid",
+      series: "ContentsCode",
+      defaultSeriesTopN: 3,
+    },
+  },
+  {
+    key: "folke-alder",
+    label: "Folkemengde alder",
+    config: {
+      tableId: "05277",
+      title: "Folkemengde etter aldersgruppe",
+      description:
+        "Befolkningen brutt ned på aldersgrupper og kjønn — per kommune og fylke.",
+      xAxis: "Tid",
+      series: "Alder",
+      defaultSeriesTopN: 6,
+    },
+  },
+  {
+    key: "gebyrer",
+    label: "Kommunale gebyrer",
+    config: {
+      tableId: "12842",
+      title: "Kommunale gebyrer for bolig",
+      description:
+        "Hva betaler du i renovasjon, vann, avløp og feiing i din kommune?",
+      xAxis: "Tid",
+      series: "ContentsCode",
       defaultSeriesTopN: 4,
     },
   },
