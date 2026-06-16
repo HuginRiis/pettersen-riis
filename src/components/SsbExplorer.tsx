@@ -80,8 +80,13 @@ export function SsbExplorer({ config }: { config: SsbExplorerConfig }) {
             continue;
           }
           if (v.code === config.xAxis) {
-            // x-axis: pick last 10 values (typically time)
-            sel[v.code] = v.values.slice(-10);
+            // x-axis: pick last 10 values (typically time), but include 2026 if present
+            const has2026 = v.values.includes("2026");
+            if (has2026) {
+              sel[v.code] = v.values.slice(-11);
+            } else {
+              sel[v.code] = v.values.slice(-10);
+            }
             continue;
           }
           if (v.code === config.series) {
