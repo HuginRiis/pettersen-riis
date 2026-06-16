@@ -210,22 +210,41 @@ export async function syncDaily(owner: GarminOwner, daysBack = 30): Promise<numb
   // Hent kondisjon/treningsstatus kun for nyeste dag — verdiene endrer seg sjelden og er tunge å hente.
   const todayKey = daysAgo(0);
   const fitnessExtras = await fetchFitnessExtras(owner, todayKey);
+
+  // Hent eksisterende rader for å unngå dyre per-dag-kall (weight, HR-fallback)
+  // for dager vi allerede har data for. Sparer ~15-20 Garmin-kall per sync.
+  const sinceKey = daysAgo(daysBack);
+  const { data: existingRows } = await supabaseAdmin
+    .from("garmin_daily_stats")
+    .select("day, weight_kg, average_heart_rate")
+    .eq("owner", owner)
+    .gte("day", sinceKey);
+  const existing = new Map<string, { weight_kg: number | null; average_heart_rate: number | null }>();
+  for (const r of (existingRows ?? []) as Array<{ day: string; weight_kg: number | null; average_heart_rate: number | null }>) {
+    existing.set(r.day, { weight_kg: r.weight_kg, average_heart_rate: r.average_heart_rate });
+  }
+
   for (let i = 0; i <= daysBack; i++) {
     const day = daysAgo(i);
+    const prev = existing.get(day);
+    const isLatest = day === todayKey;
     try {
       const ds = await garminGet<DailySummary>(owner, `/usersummary-service/usersummary/daily/?calendarDate=${day}`);
       if (!ds) continue;
-      let weightKg: number | null = null;
-      try {
-        const w = await garminGet<{ dateWeightList?: Array<{ weight?: number }>; totalAverage?: { weight?: number } }>(
-          owner, `/weight-service/weight/dayview/${day}?includeAll=true`,
-        );
-        const grams = w?.totalAverage?.weight ?? w?.dateWeightList?.[0]?.weight ?? null;
-        if (typeof grams === "number" && grams > 0) weightKg = Math.round((grams / 1000) * 100) / 100;
-      } catch {}
+      let weightKg: number | null = prev?.weight_kg ?? null;
+      // Hent vekt kun hvis vi mangler den fra før, eller det er dagens dato.
+      if (weightKg == null || isLatest) {
+        try {
+          const w = await garminGet<{ dateWeightList?: Array<{ weight?: number }>; totalAverage?: { weight?: number } }>(
+            owner, `/weight-service/weight/dayview/${day}?includeAll=true`,
+          );
+          const grams = w?.totalAverage?.weight ?? w?.dateWeightList?.[0]?.weight ?? null;
+          if (typeof grams === "number" && grams > 0) weightKg = Math.round((grams / 1000) * 100) / 100;
+        } catch {}
+      }
       let avgHr: number | null = ds.averageHeartRateInBeatsPerMinute ?? ds.averageHeartRate ?? null;
-      if (!avgHr) {
-        // Garmin's userSummary mangler ofte snittpuls — regn ut fra dailyHeartRate
+      // HR-fallback: hopp over hvis vi allerede har en verdi i DB og det ikke er dagens dato.
+      if (!avgHr && (isLatest || prev?.average_heart_rate == null)) {
         try {
           const hr = await garminGet<{ heartRateValues?: Array<[number, number | null]> }>(
             owner, `/wellness-service/wellness/dailyHeartRate?date=${day}`,
@@ -236,7 +255,7 @@ export async function syncDaily(owner: GarminOwner, daysBack = 30): Promise<numb
           if (vals.length) avgHr = vals.reduce((a, b) => a + b, 0) / vals.length;
         } catch {}
       }
-      const isLatest = day === todayKey;
+      if (!avgHr && prev?.average_heart_rate != null) avgHr = prev.average_heart_rate;
       const row = {
         owner, day,
         steps: ds.totalSteps ?? null,
