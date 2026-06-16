@@ -417,6 +417,17 @@ function DimensionFilter({
             >
               <RefreshCw className="h-3 w-3" />
             </Button>
+            {variable.values.includes("2026") && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 px-2 text-xs border-amber-700/50 text-amber-300 hover:bg-amber-900/30"
+                onClick={() => onChange(["2026"])}
+                title="Bare 2026"
+              >
+                2026
+              </Button>
+            )}
           </div>
           <div className="max-h-48 overflow-auto rounded border border-zinc-800/60">
             {options.slice(0, 300).map((opt) => {
