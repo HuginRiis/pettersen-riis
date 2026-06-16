@@ -25,7 +25,7 @@ export async function fetchSsbMetadata(tableId: string): Promise<SsbMetadata> {
 
 export type SsbSelection = Record<string, string[]>; // dimensionCode -> selected values
 
-export type SsbDataPoint = Record<string, string> & { __value: number | null };
+export type SsbDataPoint = { __value: number | null; [dim: string]: string | number | null };
 
 export type SsbResult = {
   title: string;
