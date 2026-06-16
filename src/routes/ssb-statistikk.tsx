@@ -77,12 +77,13 @@ const TABS: { key: TabKey; label: string; config: SsbExplorerConfig }[] = [
     label: "Lønn",
     config: {
       tableId: "11423",
-      title: "Månedslønn — etter kjønn, desil og sektor",
+      title: "Månedslønn — etter kjønn, desil og sektor (2010–2026)",
       description:
-        "Gjennomsnittlig månedslønn for heltidsansatte. Filtrer på kjønn, sektor og lønnsdesil.",
+        "Gjennomsnittlig månedslønn for heltidsansatte fra 2010 og fram til siste tilgjengelige år (inkl. 2026 når SSB publiserer). Filtrer på kjønn, sektor og lønnsdesil.",
       xAxis: "Tid",
       series: "Kjonn",
       defaultSeriesTopN: 3,
+      xAxisFrom: "2010",
     },
   },
   {
