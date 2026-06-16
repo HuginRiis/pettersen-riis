@@ -110,14 +110,18 @@ export function withApiLog<T extends (...args: any[]) => Promise<any>>(
         result && typeof result === "object" && "cached" in result
           ? Boolean((result as { cached?: unknown }).cached)
           : false;
-      await recordApiCall({
-        source,
-        endpoint,
-        ok: true,
-        duration_ms: Date.now() - started,
-        cached,
-        metadata: path ? { path } : null,
-      });
+      // Hopp over logging av cache-treff — vi vil at api_call_log skal
+      // gjenspeile faktiske eksterne API-kall, ikke server-cache.
+      if (!cached) {
+        await recordApiCall({
+          source,
+          endpoint,
+          ok: true,
+          duration_ms: Date.now() - started,
+          cached: false,
+          metadata: path ? { path } : null,
+        });
+      }
       return result;
     } catch (err) {
       await recordApiCall({
