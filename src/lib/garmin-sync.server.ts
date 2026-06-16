@@ -350,8 +350,23 @@ type SleepDto = {
 
 export async function syncSleep(owner: GarminOwner, daysBack = 14): Promise<number> {
   let count = 0;
+  // Hopp over dager vi allerede har sleep_score for — sparer ~7 Garmin-kall per sync.
+  const sinceKey = daysAgo(daysBack);
+  const { data: existingRows } = await supabaseAdmin
+    .from("garmin_sleep")
+    .select("day, sleep_score")
+    .eq("owner", owner)
+    .gte("day", sinceKey);
+  const existing = new Set<string>(
+    ((existingRows ?? []) as Array<{ day: string; sleep_score: number | null }>)
+      .filter((r) => r.sleep_score != null)
+      .map((r) => r.day),
+  );
+  const todayKey = daysAgo(0);
   for (let i = 0; i <= daysBack; i++) {
     const day = daysAgo(i);
+    // Alltid hent dagens dag (kan oppdateres utover natten). Eldre dager: hopp hvis vi har dem.
+    if (day !== todayKey && existing.has(day)) continue;
     try {
       const s = await garminGet<SleepDto>(owner, `/wellness-service/wellness/dailySleepData?date=${day}`);
       const d = s?.dailySleepDTO;
