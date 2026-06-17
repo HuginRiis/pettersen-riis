@@ -247,10 +247,7 @@ function WeatherPage() {
 
           {/* HERO */}
           <header className="text-center pt-4 pb-2">
-            <div className="text-[11px] tracking-[0.25em] font-medium text-white/90 uppercase">
-              My Location
-            </div>
-            <h1 className="text-5xl font-light mt-1 drop-shadow-md">{userLoc.active.label}</h1>
+            <h1 className="text-lg font-medium tracking-wide text-white/90 mt-1 drop-shadow-md">{userLoc.active.label}</h1>
             <div className="text-[88px] leading-none font-thin mt-2 drop-shadow-lg tabular-nums">
               {currentHour ? `${Math.round(currentHour.temp)}°` : "—"}
             </div>
@@ -263,11 +260,9 @@ function WeatherPage() {
             {headline && <div className="text-sm text-white/90 mt-3">{headline}</div>}
           </header>
 
-          {/* Sted-bytter (kompakt) */}
-          <div className="rounded-2xl overflow-hidden bg-white/5 backdrop-blur-md border border-white/10">
-            <div className="p-3">
-              <UserLocationBar page="var" state={userLoc} />
-            </div>
+          {/* Sted-bytter (samme stil som øvrige fliser) */}
+          <div className="rounded-2xl overflow-hidden bg-white/10 backdrop-blur-xl border border-white/15 shadow-lg shadow-black/10">
+            <UserLocationBar page="var" state={userLoc} transparent />
           </div>
 
           {/* MET-VARSLER */}
