@@ -1,12 +1,12 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Link } from "@tanstack/react-router";
+import { Star, Clock, MapPin } from "lucide-react";
 import { getStoredWho } from "@/lib/push-client";
 import {
   reverseGeocode,
   searchPlaces,
   setDefaultLocation,
-  setNameForCurrentIp,
   type PlaceHit,
   type WhoName,
   type LocationPage,
@@ -23,39 +23,54 @@ type Props = {
   who: WhoName;
   onWhoChange: (who: WhoName) => void;
   active: ActiveLocation;
-  defaultLabel: string; // label of the saved default for this user (for "Tilbake til"-knapp)
+  defaultLabel: string;
   onChange: (loc: ActiveLocation) => void;
   onDefaultSaved?: (loc: ActiveLocation) => void;
-  /** When false (offentlig/utlogget), hide Arne/Rebekka-velgeren og deaktiver "Sett som default". */
   authenticated?: boolean;
-  /** Når true vises navnet kun som lesbar tekst — ingen velger, ingen "Vakt:"-etikett. */
   readOnlyWho?: boolean;
+  /** Når true: ingen egen bakgrunn/border (containeren utenfor styrer flis-stilen). */
+  transparent?: boolean;
 };
 
-const NAMES: WhoName[] = ["Arne", "Rebekka"];
+const MAX_RECENT = 6;
+const MAX_FAV = 12;
 
-/**
- * Stedssøk-widget for Vær og Pollen. Lar brukeren:
- * - Bytte hvem de er (Arne/Rebekka) — lagres pr IP
- * - Søke i Kartverkets stedsregister
- * - Velge et søkeresultat som aktivt sted (lokalt, midlertidig)
- * - Sette aktivt sted som ny default for (navn, IP, side)
- */
+function lsRead(key: string): ActiveLocation[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const v = JSON.parse(localStorage.getItem(key) || "[]");
+    return Array.isArray(v) ? v.filter((x) => x && typeof x.label === "string") : [];
+  } catch {
+    return [];
+  }
+}
+function lsWrite(key: string, list: ActiveLocation[]) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(key, JSON.stringify(list));
+  } catch { /* ignore */ }
+}
+function sameLoc(a: ActiveLocation, b: ActiveLocation) {
+  return a.label.trim().toLowerCase() === b.label.trim().toLowerCase();
+}
+
 export function LocationPicker({
   page,
   who,
-  onWhoChange,
   active,
   defaultLabel,
   onChange,
   onDefaultSaved,
   authenticated = false,
-  readOnlyWho = false,
+  transparent = false,
 }: Props) {
   const search = useServerFn(searchPlaces);
   const saveDefault = useServerFn(setDefaultLocation);
-  const saveName = useServerFn(setNameForCurrentIp);
+  
   const reverse = useServerFn(reverseGeocode);
+
+  const FAV_KEY = `loc:fav:${page}`;
+  const RECENT_KEY = `loc:recent:${page}`;
 
   const [query, setQuery] = useState("");
   const [hits, setHits] = useState<PlaceHit[] | null>(null);
@@ -65,17 +80,28 @@ export function LocationPicker({
   const [savedFlash, setSavedFlash] = useState(false);
   const [locating, setLocating] = useState(false);
   const [locateError, setLocateError] = useState<string | null>(null);
+  const [favorites, setFavorites] = useState<ActiveLocation[]>([]);
+  const [recents, setRecents] = useState<ActiveLocation[]>([]);
   const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
   const wrap = useRef<HTMLDivElement>(null);
   const [pushWho, setPushWho] = useState<string>("Alle");
 
-  // Hent valgt person fra varsling-systemet (samme som push-mottaker).
   useEffect(() => {
     setPushWho(getStoredWho());
     const onStorage = () => setPushWho(getStoredWho());
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);
   }, []);
+
+  useEffect(() => {
+    setFavorites(lsRead(FAV_KEY));
+    setRecents(lsRead(RECENT_KEY));
+  }, [FAV_KEY, RECENT_KEY]);
+
+  const isFavorite = useMemo(
+    () => favorites.some((f) => sameLoc(f, active)),
+    [favorites, active],
+  );
 
   // Debounced search
   useEffect(() => {
@@ -98,7 +124,6 @@ export function LocationPicker({
     }, 280);
   }, [query, search]);
 
-  // Close dropdown on outside click
   useEffect(() => {
     const onClick = (e: MouseEvent) => {
       if (!wrap.current) return;
@@ -108,11 +133,45 @@ export function LocationPicker({
     return () => document.removeEventListener("mousedown", onClick);
   }, []);
 
+  const pushRecent = (loc: ActiveLocation) => {
+    setRecents((prev) => {
+      const next = [loc, ...prev.filter((r) => !sameLoc(r, loc))].slice(0, MAX_RECENT);
+      lsWrite(RECENT_KEY, next);
+      return next;
+    });
+  };
+
   const handlePick = (h: PlaceHit) => {
-    onChange({ label: h.label, lat: h.lat, lon: h.lon });
+    const loc = { label: h.label, lat: h.lat, lon: h.lon };
+    onChange(loc);
+    pushRecent(loc);
     setQuery("");
     setHits(null);
     setOpen(false);
+  };
+
+  const handlePickStored = (loc: ActiveLocation) => {
+    onChange(loc);
+    pushRecent(loc);
+  };
+
+  const toggleFavorite = () => {
+    setFavorites((prev) => {
+      const exists = prev.some((f) => sameLoc(f, active));
+      const next = exists
+        ? prev.filter((f) => !sameLoc(f, active))
+        : [active, ...prev].slice(0, MAX_FAV);
+      lsWrite(FAV_KEY, next);
+      return next;
+    });
+  };
+
+  const removeFavorite = (loc: ActiveLocation) => {
+    setFavorites((prev) => {
+      const next = prev.filter((f) => !sameLoc(f, loc));
+      lsWrite(FAV_KEY, next);
+      return next;
+    });
   };
 
   const handleSetDefault = async () => {
@@ -130,20 +189,9 @@ export function LocationPicker({
       setSavedFlash(true);
       onDefaultSaved?.(active);
       setTimeout(() => setSavedFlash(false), 2200);
-    } catch {
-      // ignore — UI will simply not flash
-    } finally {
+    } catch { /* ignore */ }
+    finally {
       setSavingDefault(false);
-    }
-  };
-
-  const handleNameChange = async (newWho: WhoName) => {
-    if (newWho === who) return;
-    onWhoChange(newWho);
-    try {
-      await saveName({ data: { who: newWho } });
-    } catch {
-      /* fire-and-forget */
     }
   };
 
@@ -160,28 +208,21 @@ export function LocationPicker({
         const lon = pos.coords.longitude;
         try {
           const r = await reverse({ data: { lat, lon } });
-          onChange({ label: r.label, lat: r.lat, lon: r.lon });
+          const loc = { label: r.label, lat: r.lat, lon: r.lon };
+          onChange(loc);
+          pushRecent(loc);
         } catch {
-          onChange({
-            label: `${lat.toFixed(4)}°N ${lon.toFixed(4)}°Ø`,
-            lat,
-            lon,
-          });
+          onChange({ label: `${lat.toFixed(4)}°N ${lon.toFixed(4)}°Ø`, lat, lon });
         } finally {
           setLocating(false);
         }
       },
       (err) => {
         setLocating(false);
-        if (err.code === err.PERMISSION_DENIED) {
-          setLocateError("Posisjon avslått. Tillat plassering i nettleseren og prøv igjen.");
-        } else if (err.code === err.POSITION_UNAVAILABLE) {
-          setLocateError("Posisjon utilgjengelig akkurat nå.");
-        } else if (err.code === err.TIMEOUT) {
-          setLocateError("Tidsavbrudd ved henting av posisjon.");
-        } else {
-          setLocateError("Kunne ikke hente posisjon.");
-        }
+        if (err.code === err.PERMISSION_DENIED) setLocateError("Posisjon avslått.");
+        else if (err.code === err.POSITION_UNAVAILABLE) setLocateError("Posisjon utilgjengelig.");
+        else if (err.code === err.TIMEOUT) setLocateError("Tidsavbrudd.");
+        else setLocateError("Kunne ikke hente posisjon.");
       },
       { enableHighAccuracy: true, timeout: 10_000, maximumAge: 60_000 },
     );
@@ -190,26 +231,39 @@ export function LocationPicker({
   const isAtDefault =
     active.label.trim().toLowerCase() === defaultLabel.trim().toLowerCase();
 
+  const rootClass = transparent
+    ? "p-3 md:p-4"
+    : "panel rounded-lg p-4 md:p-5";
+
+  // Inputstil: tilpasses gjennomsiktig flis (lysere ramme/tekst på mørk bakgrunn).
+  const inputClass = transparent
+    ? "w-full rounded-md border border-white/15 bg-white/5 text-white placeholder:text-white/50 px-3 py-2 text-sm focus:outline-none focus:border-white/40"
+    : "w-full rounded-md border border-border bg-background/60 px-3 py-2 text-sm focus:outline-none focus:border-primary/60";
+  const chipBtnClass = transparent
+    ? "inline-flex items-center gap-1 px-2 py-1 rounded-full bg-white/10 hover:bg-white/20 border border-white/15 text-[11px] text-white/90 transition-colors"
+    : "inline-flex items-center gap-1 px-2 py-1 rounded-full bg-card hover:bg-card/80 border border-border text-[11px] text-foreground transition-colors";
+  const iconBtnClass = transparent
+    ? "px-2.5 py-2 rounded-md border border-white/15 bg-white/5 text-white hover:bg-white/15 transition-colors inline-flex items-center justify-center disabled:opacity-60"
+    : "px-2.5 py-2 rounded-md border border-border text-foreground hover:bg-card/60 transition-colors inline-flex items-center justify-center disabled:opacity-60";
+
   return (
-    <div className="panel rounded-lg p-4 md:p-5">
-      <div className="flex flex-wrap items-center gap-3 justify-between">
-        {/* Bruker-link — henter person fra varsling-systemet, lenker til /agenda for å endre */}
+    <div className={rootClass}>
+      {/* Topplinje: bruker + aktivt sted + favoritt-toggle */}
+      <div className="flex flex-wrap items-center gap-2 justify-between">
         {(() => {
           let label: string;
-          if (!authenticated) {
-            label = "Gjest";
-          } else if (!pushWho || pushWho === "Alle") {
-            label = "Velg bruker";
-          } else {
-            label = pushWho;
-          }
+          if (!authenticated) label = "Gjest";
+          else if (!pushWho || pushWho === "Alle") label = "Velg bruker";
+          else label = pushWho;
           return (
             <Link
               to="/agenda"
-              className="inline-flex items-center gap-2 text-xs uppercase tracking-wider text-primary hover:text-primary/80 transition-colors"
+              className={`inline-flex items-center gap-2 text-xs uppercase tracking-wider transition-colors ${
+                transparent ? "text-white/80 hover:text-white" : "text-primary hover:text-primary/80"
+              }`}
               title="Endre bruker på Agenda"
             >
-              <span className="text-[10px] tracking-[0.25em] uppercase text-muted-foreground">
+              <span className={`text-[10px] tracking-[0.25em] uppercase ${transparent ? "text-white/50" : "text-muted-foreground"}`}>
                 Bruker:
               </span>
               <span>{label}</span>
@@ -217,23 +271,35 @@ export function LocationPicker({
           );
         })()}
 
-        {/* Active location chip */}
-        <div className="flex items-center gap-2 text-sm">
-          <span className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground">
-            Sted:
-          </span>
-          <span className="text-primary text-display tracking-wider truncate max-w-[16rem]">
+        <div className="flex items-center gap-1.5 text-sm">
+          <MapPin size={12} className={transparent ? "text-white/60" : "text-muted-foreground"} />
+          <span className={`text-display tracking-wider truncate max-w-[14rem] ${transparent ? "text-white" : "text-primary"}`}>
             {active.label}
           </span>
-          {isAtDefault && (
-            <span className="text-[9px] uppercase tracking-[0.2em] text-muted-foreground border border-border rounded px-1.5 py-0.5">
-              Default
-            </span>
-          )}
+          <button
+            type="button"
+            onClick={toggleFavorite}
+            aria-label={isFavorite ? "Fjern fra favoritter" : "Legg til favoritter"}
+            title={isFavorite ? "Fjern favoritt" : "Legg til favoritt"}
+            className={`p-1 rounded transition-colors ${
+              transparent ? "hover:bg-white/10" : "hover:bg-card"
+            }`}
+          >
+            <Star
+              size={14}
+              className={
+                isFavorite
+                  ? "fill-yellow-400 text-yellow-400"
+                  : transparent
+                    ? "text-white/50"
+                    : "text-muted-foreground"
+              }
+            />
+          </button>
         </div>
       </div>
 
-      {/* Search row */}
+      {/* Søk + handlinger */}
       <div ref={wrap} className="relative mt-3">
         <div className="flex gap-2">
           <div className="relative flex-1">
@@ -242,11 +308,11 @@ export function LocationPicker({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onFocus={() => hits && setOpen(true)}
-              placeholder="Søk sted i Norge (Kartverket)…"
-              className="w-full rounded-md border border-border bg-background/60 px-3 py-2 text-sm focus:outline-none focus:border-primary/60"
+              placeholder="Søk sted i Norge…"
+              className={inputClass}
             />
             {searching && (
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] uppercase tracking-wider text-muted-foreground">
+              <span className={`absolute right-3 top-1/2 -translate-y-1/2 text-[10px] uppercase tracking-wider ${transparent ? "text-white/50" : "text-muted-foreground"}`}>
                 Søker…
               </span>
             )}
@@ -256,8 +322,8 @@ export function LocationPicker({
             disabled={locating}
             onClick={handleLocate}
             aria-label="Bruk min plassering"
-            className="px-2.5 py-2 rounded-md border border-border text-foreground hover:bg-card/60 transition-colors inline-flex items-center justify-center disabled:opacity-60"
-            title="Bruk min plassering (krever tillatelse i nettleseren)"
+            className={iconBtnClass}
+            title="Bruk min plassering"
           >
             <span aria-hidden className="text-base leading-none">{locating ? "⏳" : "📍"}</span>
           </button>
@@ -267,25 +333,24 @@ export function LocationPicker({
             onClick={handleSetDefault}
             className={`text-[10px] uppercase tracking-wider leading-tight px-2 py-1 rounded-md border transition-colors whitespace-normal text-center ${
               isAtDefault
-                ? "border-border text-muted-foreground cursor-not-allowed opacity-60"
+                ? transparent
+                  ? "border-white/15 text-white/40 cursor-not-allowed"
+                  : "border-border text-muted-foreground cursor-not-allowed opacity-60"
                 : savedFlash
-                  ? "border-primary text-primary bg-primary/10"
-                  : "border-primary/60 text-primary hover:bg-primary/10"
+                  ? transparent
+                    ? "border-white text-white bg-white/15"
+                    : "border-primary text-primary bg-primary/10"
+                  : transparent
+                    ? "border-white/40 text-white hover:bg-white/10"
+                    : "border-primary/60 text-primary hover:bg-primary/10"
             }`}
-            title={
-              isAtDefault
-                ? "Dette stedet er allerede standard"
-                : authenticated
-                  ? `Sett som standard for ${who} på denne IP-en`
-                  : "Sett som standard for denne IP-en"
-            }
           >
             {savingDefault ? "Lagrer…" : savedFlash ? "✓ Lagret" : (<><span className="block">Sett som</span><span className="block">standard</span></>)}
           </button>
         </div>
 
         {locateError && (
-          <div className="mt-2 text-[11px] text-destructive">{locateError}</div>
+          <div className={`mt-2 text-[11px] ${transparent ? "text-red-300" : "text-destructive"}`}>{locateError}</div>
         )}
 
         {open && hits && hits.length > 0 && (
@@ -299,8 +364,7 @@ export function LocationPicker({
               >
                 <div className="text-sm text-foreground">{h.label}</div>
                 <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                  {h.type}
-                  {h.fylke && ` · ${h.fylke}`}
+                  {h.type}{h.fylke && ` · ${h.fylke}`}
                 </div>
               </button>
             ))}
@@ -314,26 +378,67 @@ export function LocationPicker({
         )}
       </div>
 
-      {!isAtDefault && defaultLabel && (
-        <button
-          type="button"
-          onClick={() =>
-            onChange({
-              label: defaultLabel,
-              // We only have the label here — caller will reload default lat/lon
-              // via the parent's `defaultLoc` snapshot. To avoid a stale reset,
-              // we emit a sentinel by simply re-emitting with current lat/lon
-              // and letting the parent restore on next mount.
-              lat: active.lat,
-              lon: active.lon,
-            })
-          }
-          className="mt-3 text-[10px] uppercase tracking-[0.2em] text-muted-foreground hover:text-primary transition-colors"
-          // Hidden — actual "back to default" happens automatically on next mount.
-          style={{ display: "none" }}
-        >
-          ↩ Tilbake til {defaultLabel}
-        </button>
+      {/* Favoritter */}
+      {favorites.length > 0 && (
+        <div className="mt-3">
+          <div className={`flex items-center gap-1.5 text-[10px] uppercase tracking-[0.2em] mb-1.5 ${transparent ? "text-white/50" : "text-muted-foreground"}`}>
+            <Star size={10} className="fill-yellow-400 text-yellow-400" /> Favoritter
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {favorites.map((f) => (
+              <span key={`fav-${f.label}`} className="inline-flex items-center">
+                <button
+                  type="button"
+                  onClick={() => handlePickStored(f)}
+                  className={`${chipBtnClass} rounded-r-none pr-1.5`}
+                  title={`Bytt til ${f.label}`}
+                >
+                  {f.label}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => removeFavorite(f)}
+                  aria-label="Fjern favoritt"
+                  title="Fjern favoritt"
+                  className={`${chipBtnClass} rounded-l-none border-l-0 px-1.5`}
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Siste søk */}
+      {recents.length > 0 && (
+        <div className="mt-3">
+          <div className={`flex items-center justify-between mb-1.5`}>
+            <div className={`flex items-center gap-1.5 text-[10px] uppercase tracking-[0.2em] ${transparent ? "text-white/50" : "text-muted-foreground"}`}>
+              <Clock size={10} /> Siste søk
+            </div>
+            <button
+              type="button"
+              onClick={() => { setRecents([]); lsWrite(RECENT_KEY, []); }}
+              className={`text-[10px] uppercase tracking-wider ${transparent ? "text-white/40 hover:text-white/70" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              Tøm
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {recents.map((r) => (
+              <button
+                key={`recent-${r.label}`}
+                type="button"
+                onClick={() => handlePickStored(r)}
+                className={chipBtnClass}
+                title={`Bytt til ${r.label}`}
+              >
+                {r.label}
+              </button>
+            ))}
+          </div>
+        </div>
       )}
     </div>
   );

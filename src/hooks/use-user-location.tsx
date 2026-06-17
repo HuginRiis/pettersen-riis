@@ -118,10 +118,12 @@ export function UserLocationBar({
   page,
   state,
   readOnlyWho = false,
+  transparent = false,
 }: {
   page: LocationPage;
   state: ReturnType<typeof useUserLocation>;
   readOnlyWho?: boolean;
+  transparent?: boolean;
 }) {
   return (
     <LocationPicker
@@ -134,6 +136,7 @@ export function UserLocationBar({
       onDefaultSaved={(loc) => state.setDefaultLoc(loc)}
       authenticated={state.authenticated}
       readOnlyWho={readOnlyWho}
+      transparent={transparent}
     />
   );
 }
