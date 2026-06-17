@@ -10,6 +10,7 @@ import { useUvSun, uvLevel } from "@/hooks/use-uv-sun";
 import { usePerUserPersistedState } from "@/hooks/use-per-user-persisted-state";
 import {
   RainFX, SnowFX, CloudFX, WindFX, HeatwaveFX, HumidityFX, PressureFX, GustFX, SunFX, StarFX,
+  GlassPaneFX, glassKindFromSymbol,
 } from "@/components/weather/WeatherFX";
 import {
   Wind,
@@ -205,10 +206,27 @@ function WeatherPage() {
   const todayDay = skienDays?.[0];
   const condition = currentHour ? conditionFromSymbol(currentHour.symbol) : "—";
 
+  // Glassplate-overlay: velg effekt fra symbol + dag/natt
+  const isDay = useMemo(() => {
+    const h = now.getHours();
+    return h >= 6 && h < 20;
+  }, [now]);
+  const glassKind = useMemo(
+    () => glassKindFromSymbol(currentHour?.symbol ?? null, isDay),
+    [currentHour, isDay],
+  );
+  const glassIntensity = useMemo(() => {
+    const mm = currentHour?.precip ?? 0;
+    const pp = (currentHour?.precipProbability ?? 0) / 100;
+    return Math.max(0.4, Math.min(1, mm / 3 + pp * 0.6));
+  }, [currentHour]);
+
   return (
     <PageShell>
-      <div className={`min-h-screen bg-gradient-to-b ${bgGradient} transition-colors duration-1000`}>
-        <div className="max-w-3xl mx-auto px-4 pt-8 pb-16 space-y-4 text-white">
+      <div className={`min-h-screen bg-gradient-to-b ${bgGradient} transition-colors duration-1000 relative`}>
+        <GlassPaneFX kind={glassKind} intensity={glassIntensity} />
+        <div className="max-w-3xl mx-auto px-4 pt-8 pb-16 space-y-4 text-white relative z-10">
+
           {/* HERO */}
           <header className="text-center pt-4 pb-2">
             <div className="text-[11px] tracking-[0.25em] font-medium text-white/90 uppercase">

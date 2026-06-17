@@ -767,6 +767,38 @@ main .container {
 .animate-wx-gust      { animation: wx-gust-puff ease-out infinite; }
 .animate-wx-sparkle   { animation: wx-sparkle ease-in-out infinite; }
 
+/* ============= Glass pane overlay (whole weather page) ============= */
+@keyframes wx-glass-drip {
+  0%   { transform: translateY(-12vh) scaleY(0.85); opacity: 0; }
+  6%   { opacity: 0.95; }
+  94%  { opacity: 0.95; }
+  100% { transform: translateY(118vh) scaleY(1.25); opacity: 0; }
+}
+@keyframes wx-glass-bead {
+  0%, 100% { opacity: 0.55; transform: scale(1); }
+  50%      { opacity: 0.9;  transform: scale(1.08); }
+}
+@keyframes wx-flash {
+  0%, 90%, 100% { opacity: 0; }
+  92%, 94%      { opacity: 0.32; }
+  93%           { opacity: 0; }
+}
+@keyframes wx-fog-drift {
+  0%   { transform: translateX(-15%); opacity: 0.25; }
+  100% { transform: translateX(15%);  opacity: 0.5; }
+}
+@keyframes wx-shine-sweep {
+  0%   { transform: translateX(-60%) skewX(-18deg); opacity: 0; }
+  20%  { opacity: 0.45; }
+  80%  { opacity: 0.45; }
+  100% { transform: translateX(160%) skewX(-18deg); opacity: 0; }
+}
+.animate-wx-drip  { animation: wx-glass-drip cubic-bezier(.55,.05,.9,.4) infinite; }
+.animate-wx-bead  { animation: wx-glass-bead ease-in-out infinite; }
+.animate-wx-flash { animation: wx-flash linear infinite; }
+.animate-wx-fog   { animation: wx-fog-drift ease-in-out infinite alternate; }
+.animate-wx-shine { animation: wx-shine-sweep ease-in-out infinite; }
+
 /* ============= iPhone App overrides (portrait mobile) ============= */
 .iphone-mode main {
   padding: 12px 10px !important;
