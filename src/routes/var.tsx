@@ -94,7 +94,9 @@ type LocationState = {
 };
 
 function WeatherPage() {
-  const data = Route.useLoaderData() as Awaited<ReturnType<typeof getHomeySnapshot>>;
+  const loaderData = Route.useLoaderData() as { homey: Awaited<ReturnType<typeof getHomeySnapshot>>; netatmo: Awaited<ReturnType<typeof getNetatmoWeatherStation>> };
+  const data = loaderData.homey;
+  const netatmoData = loaderData.netatmo;
   const fetchAlerts = useServerFn(getTollnesAlerts);
   const userLoc = useUserLocation("var");
   const [alerts, setAlerts] = useState<AlertsResult | null>(null);
