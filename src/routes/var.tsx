@@ -1,27 +1,41 @@
-import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { PageShell, PageHero } from "@/components/PageShell";
-import { LastUpdated } from "@/components/LastUpdated";
-import heroImg from "@/assets/got-var.jpg";
+import { PageShell } from "@/components/PageShell";
 import { getHomeySnapshot } from "@/lib/homey.functions";
 import { findDeviceFuzzy, type DeviceLike } from "@/lib/homey-match";
 import { getTollnesAlerts, type AlertsResult, type MetAlert } from "@/lib/lightning.functions";
 import { useUserLocation, UserLocationBar } from "@/hooks/use-user-location";
 import { UvPanel } from "@/components/UvPanel";
 import { usePerUserPersistedState } from "@/hooks/use-per-user-persisted-state";
-
+import {
+  Wind,
+  Droplets,
+  Eye,
+  Gauge,
+  Thermometer,
+  Sunrise,
+  Sun,
+  Moon,
+  CloudRain,
+  TrendingUp,
+  AlertTriangle,
+  Cloud,
+  Map as MapIcon,
+  ChevronDown,
+  ChevronUp,
+  Navigation,
+} from "lucide-react";
 
 export const Route = createFileRoute("/var")({
   head: () => ({
     meta: [
-      { title: "Værens budskap — Vær | House Pettersen Riis" },
-      { name: "description", content: "Værmelding, regn og vind for Skien og hytta." },
-      { property: "og:title", content: "Værens budskap | House Pettersen Riis" },
-      { property: "og:description", content: "Sjusiffret værmelding, regn og vind fra Tollnes og Numedal." },
+      { title: "Vær — Skien & Numedal | House Pettersen Riis" },
+      { name: "description", content: "Værmelding, nedbør og vind for Skien og hytta, time for time fra MET.no." },
+      { property: "og:title", content: "Vær | House Pettersen Riis" },
+      { property: "og:description", content: "iOS-inspirert værvisning med MET.no, Netatmo og UV-indeks." },
     ],
   }),
-  // Cache i 3 minutter for å spare Homey API-kall
   staleTime: 3 * 60_000,
   preloadStaleTime: 3 * 60_000,
   loader: () => getHomeySnapshot(),
@@ -29,15 +43,13 @@ export const Route = createFileRoute("/var")({
   errorComponent: ({ error }) => (
     <PageShell>
       <section className="container mx-auto px-4 py-16 text-center">
-        <h1 className="heading-hero text-3xl mb-4">Værravnen er forsinket</h1>
-        <p className="text-muted-foreground">{error.message}</p>
+        <h1 className="text-3xl mb-4 text-white">Værdata utilgjengelig</h1>
+        <p className="text-white/70">{error.message}</p>
       </section>
     </PageShell>
   ),
 });
 
-// Hytta er en fast lokasjon. "Mitt sted" er dynamisk fra userLoc og erstatter
-// den tidligere Tollnes-prognosen.
 const HYTTA_LOC = { key: "hytta", name: "Hytta · Numedal", subtitle: "Lyngdal · Øvre Bjørkesethvegen", lat: 59.92, lon: 9.30 } as const;
 
 type ForecastDay = {
@@ -46,13 +58,16 @@ type ForecastDay = {
   tempMin: number;
   tempMax: number;
   precip: number;
+  precipProbability: number;
 };
 
 type Hour = {
   time: string;
   temp: number;
   precip: number;
+  precipProbability: number;
   wind: number;
+  windGust: number;
   windDir: number;
   pressure: number;
   humidity: number;
@@ -63,7 +78,6 @@ type Hour = {
 type LocationState = {
   days: ForecastDay[] | null;
   hours: Hour[] | null;
-  meta: { sunrise: string | null; sunset: string | null } | null;
   error: string | null;
   loading: boolean;
 };
@@ -73,48 +87,25 @@ function WeatherPage() {
   const fetchAlerts = useServerFn(getTollnesAlerts);
   const userLoc = useUserLocation("var");
   const [alerts, setAlerts] = useState<AlertsResult | null>(null);
-  const [now, setNow] = useState<Date | null>(null);
-  const [weatherUpdated, setWeatherUpdated] = useState<Date | null>(null);
-  const [homeyUpdated, setHomeyUpdated] = useState<Date | null>(() => new Date());
+  const [now, setNow] = useState<Date>(() => new Date());
   const [rangeHours, setRangeHours] = useState<24 | 72 | 168>(24);
 
-  // Dynamiske lokasjoner: "skien"-nøkkelen følger valgt sted (fra UserLocationBar),
-  // "hytta" er fast. Vi beholder nøkkelen "skien" for å minimere endringer i resten
-  // av siden, men label/koordinater følger userLoc.
   const LOCATIONS = useMemo(
-    () =>
-      [
-        {
-          key: "skien" as const,
-          name: userLoc.active.label,
-          subtitle: "Mitt sted · MET.no",
-          lat: userLoc.active.lat,
-          lon: userLoc.active.lon,
-        },
-        HYTTA_LOC,
-      ],
+    () => [
+      { key: "skien" as const, name: userLoc.active.label, subtitle: "Mitt sted · MET.no", lat: userLoc.active.lat, lon: userLoc.active.lon },
+      HYTTA_LOC,
+    ],
     [userLoc.active.label, userLoc.active.lat, userLoc.active.lon],
   );
 
   const [state, setState] = useState<Record<string, LocationState>>(() => ({
-    skien: { days: null, hours: null, meta: null, error: null, loading: true },
-    hytta: { days: null, hours: null, meta: null, error: null, loading: true },
+    skien: { days: null, hours: null, error: null, loading: true },
+    hytta: { days: null, hours: null, error: null, loading: true },
   }));
 
-  // Homey-data oppdateres ved hver router.invalidate — merk tidspunktet.
   useEffect(() => {
-    setHomeyUpdated(new Date());
-  }, [data]);
-
-  useEffect(() => {
-    setNow(new Date());
-    let pending = LOCATIONS.length;
     let cancelled = false;
-    // Marker alle som loading når valgt sted endrer seg
-    setState((s) => ({
-      ...s,
-      skien: { ...(s.skien ?? {} as LocationState), loading: true, error: null },
-    }));
+    setState((s) => ({ ...s, skien: { ...s.skien, loading: true, error: null } }));
     LOCATIONS.forEach(async (loc) => {
       try {
         const res = await fetch(
@@ -122,31 +113,18 @@ function WeatherPage() {
           { headers: { Accept: "application/json" } },
         );
         if (!res.ok) throw new Error("Kunne ikke hente værmelding");
-        const data = await res.json();
+        const json = await res.json();
         if (cancelled) return;
-        const { days, hours } = parseForecast(data);
-        setState((s) => ({
-          ...s,
-          [loc.key]: { days, hours, meta: null, error: null, loading: false },
-        }));
+        const { days, hours } = parseForecast(json);
+        setState((s) => ({ ...s, [loc.key]: { days, hours, error: null, loading: false } }));
       } catch (e) {
         if (cancelled) return;
         setState((s) => ({
           ...s,
-          [loc.key]: {
-            days: null,
-            hours: null,
-            meta: null,
-            error: e instanceof Error ? e.message : "Ukjent feil",
-            loading: false,
-          },
+          [loc.key]: { days: null, hours: null, error: e instanceof Error ? e.message : "Ukjent feil", loading: false },
         }));
-      } finally {
-        pending -= 1;
-        if (pending === 0 && !cancelled) setWeatherUpdated(new Date());
       }
     });
-    // Hent varsler fra MET
     (async () => {
       try {
         const res = await fetchAlerts();
@@ -155,15 +133,13 @@ function WeatherPage() {
         if (!cancelled) setAlerts({ ok: false, error: e?.message ?? "Feil" });
       }
     })();
-
-    const c = setInterval(() => setNow(new Date()), 30_000);
+    const c = setInterval(() => setNow(new Date()), 60_000);
     return () => {
       cancelled = true;
       clearInterval(c);
     };
   }, [fetchAlerts, LOCATIONS]);
 
-  // ---- Homey-sensorer ----
   const homeyOk = data?.ok === true;
   const devices = homeyOk ? data.devices : [];
   const zones = homeyOk ? data.zones : [];
@@ -179,620 +155,695 @@ function WeatherPage() {
 
   const tollnesRainToday = readDailyRain(tollnesRainSensor);
   const hyttaRainToday = readDailyRain(hyttaRainSensor);
-
-  const tollnesWind = readCap(
-    findDeviceFuzzy(devices, zones, "tollnes", (d) => hasCap(d, "measure_wind_strength")),
-    "measure_wind_strength",
-  );
-  const hyttaWind = readCap(
-    findDeviceFuzzy(devices, zones, "hytta", (d) => hasCap(d, "measure_wind_strength")),
-    "measure_wind_strength",
-  );
-
-  const tollnesPressureDev = findDeviceFuzzy(devices, zones, "tollnes", (d) =>
-    hasCap(d, "measure_pressure"),
-  );
-  const hyttaPressureDev = findDeviceFuzzy(devices, zones, "hytta", (d) =>
-    hasCap(d, "measure_pressure"),
-  );
-  const tollnesPressure = readCap(tollnesPressureDev, "measure_pressure");
-  const hyttaPressure = readCap(hyttaPressureDev, "measure_pressure");
-
-  const tollnesHumidityDev = findDeviceFuzzy(devices, zones, "tollnes", (d) =>
-    hasCap(d, "measure_humidity"),
-  );
-  const hyttaHumidityDev = findDeviceFuzzy(devices, zones, "hytta", (d) =>
-    hasCap(d, "measure_humidity"),
-  );
-  const tollnesHumidity = readCap(tollnesHumidityDev, "measure_humidity");
-  const hyttaHumidity = readCap(hyttaHumidityDev, "measure_humidity");
+  const tollnesWind = readCap(findDeviceFuzzy(devices, zones, "tollnes", (d) => hasCap(d, "measure_wind_strength")), "measure_wind_strength");
+  const hyttaWind = readCap(findDeviceFuzzy(devices, zones, "hytta", (d) => hasCap(d, "measure_wind_strength")), "measure_wind_strength");
+  const tollnesPressure = readCap(findDeviceFuzzy(devices, zones, "tollnes", (d) => hasCap(d, "measure_pressure")), "measure_pressure");
+  const hyttaPressure = readCap(findDeviceFuzzy(devices, zones, "hytta", (d) => hasCap(d, "measure_pressure")), "measure_pressure");
+  const tollnesHumidity = readCap(findDeviceFuzzy(devices, zones, "tollnes", (d) => hasCap(d, "measure_humidity")), "measure_humidity");
+  const hyttaHumidity = readCap(findDeviceFuzzy(devices, zones, "hytta", (d) => hasCap(d, "measure_humidity")), "measure_humidity");
+  const tollnesTemp = readCap(findDeviceFuzzy(devices, zones, "tollnes", (d) => hasCap(d, "measure_temperature")), "measure_temperature");
 
   const skienHours = state.skien?.hours ?? null;
+  const skienDays = state.skien?.days ?? null;
   const hyttaHours = state.hytta?.hours ?? null;
+  const hyttaDays = state.hytta?.days ?? null;
 
-  // ---- Astronomi: sol & måne ----
-  const sun = useMemo(() => (now ? sunTimes(now, 59.2096, 9.609) : null), [now]);
-  const moon = useMemo(() => (now ? moonPhase(now) : null), [now]);
-
+  const currentHour = skienHours?.[0] ?? null;
+  const sun = useMemo(() => sunTimes(now, userLoc.active.lat, userLoc.active.lon), [now, userLoc.active.lat, userLoc.active.lon]);
+  const moon = useMemo(() => moonPhase(now), [now]);
   const allAlerts = alerts?.ok === true ? alerts.alerts : [];
+
+  // Bakgrunnsgradient basert på tid på døgnet og skydekke
+  const bgGradient = useMemo(() => {
+    const h = now.getHours();
+    const cloudy = (currentHour?.cloud ?? 50) > 60;
+    if (h < 5 || h >= 22) return "from-[#0b1426] via-[#142340] to-[#1c2e4f]"; // natt
+    if (h < 8) return "from-[#3a4a6b] via-[#5d7a9e] to-[#a8b5c8]"; // morgen
+    if (h >= 19) return "from-[#1c2e4f] via-[#3a4a6b] to-[#6d4e3a]"; // kveld
+    return cloudy
+      ? "from-[#4a5a72] via-[#6b7b91] to-[#8a98ad]"
+      : "from-[#3478c4] via-[#5a9bd4] to-[#9ec5e8]";
+  }, [now, currentHour]);
+
+  const headline = useMemo(() => {
+    if (!skienHours) return null;
+    // Finn neste time med signifikant nedbør
+    const nextRain = skienHours.slice(1, 24).find((h) => h.precip >= 0.2 || h.precipProbability >= 50);
+    if (nextRain) {
+      const t = new Date(nextRain.time);
+      const hh = t.toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit" });
+      return `Regnvær ventes rundt kl. ${hh}.`;
+    }
+    if ((currentHour?.cloud ?? 0) < 25) return "Klar himmel resten av dagen.";
+    return null;
+  }, [skienHours, currentHour]);
+
+  const todayDay = skienDays?.[0];
+  const condition = currentHour ? conditionFromSymbol(currentHour.symbol) : "—";
 
   return (
     <PageShell>
-      <PageHero
-        eyebrow="Skien & Numedal · Norge"
-        title="Værens budskap"
-        subtitle="Ravnen kommer fra MET.no. Live regn- og vindmålinger fra Netatmo via Homey."
-        image={heroImg}
-      />
-
-      <section className="container mx-auto px-4 pt-6 flex flex-wrap gap-2 justify-center">
-        <LastUpdated label="Vær (MET.no)" timestamp={weatherUpdated} />
-        <LastUpdated label="Homey" timestamp={homeyUpdated} />
-      </section>
-
-      <section className="container mx-auto px-4 pt-8 space-y-5">
-        <UserLocationBar page="var" state={userLoc} />
-        <RangeSelector value={rangeHours} onChange={setRangeHours} />
-      </section>
-
-      <section className="container mx-auto px-4 py-12 space-y-12">
-        {/* === VARSLER FRA MAESTERNE === */}
-        <Block title="Varselravnen · MET.no">
-          {alerts === null && (
-            <p className="text-muted-foreground italic text-sm">Sender ravn…</p>
-          )}
-          {alerts?.ok === false && (
-            <p className="text-destructive text-sm">{alerts.error}</p>
-          )}
-          {alerts?.ok === true && allAlerts.length === 0 && (
-            <div className="panel rounded-lg p-6 text-center">
-              <div className="text-3xl mb-2">🕊</div>
-              <div className="text-display tracking-[0.3em] text-primary text-sm uppercase">
-                Stille over Riket
+      <div className={`min-h-screen bg-gradient-to-b ${bgGradient} transition-colors duration-1000`}>
+        <div className="max-w-3xl mx-auto px-4 pt-8 pb-16 space-y-4 text-white">
+          {/* HERO */}
+          <header className="text-center pt-4 pb-2">
+            <div className="text-[11px] tracking-[0.25em] font-medium text-white/90 uppercase">
+              My Location
+            </div>
+            <h1 className="text-5xl font-light mt-1 drop-shadow-md">{userLoc.active.label}</h1>
+            <div className="text-[88px] leading-none font-thin mt-2 drop-shadow-lg tabular-nums">
+              {currentHour ? `${Math.round(currentHour.temp)}°` : "—"}
+            </div>
+            <div className="text-xl font-medium mt-2">{condition}</div>
+            {todayDay && (
+              <div className="text-base font-medium mt-1 tabular-nums">
+                H: {Math.round(todayDay.tempMax)}°  L: {Math.round(todayDay.tempMin)}°
               </div>
-              <p className="text-xs text-muted-foreground mt-2">
-                Ingen aktive farevarsler fra Maesternes Citadel.
-              </p>
+            )}
+            {headline && <div className="text-sm text-white/90 mt-3">{headline}</div>}
+          </header>
+
+          {/* Sted-bytter (kompakt) */}
+          <div className="rounded-2xl overflow-hidden bg-white/5 backdrop-blur-md border border-white/10">
+            <div className="p-3">
+              <UserLocationBar page="var" state={userLoc} />
+            </div>
+          </div>
+
+          {/* MET-VARSLER */}
+          {allAlerts.length > 0 && (
+            <div className="space-y-2">
+              {allAlerts.map((a) => <AlertCard key={a.id} alert={a} />)}
             </div>
           )}
-          {alerts?.ok === true && allAlerts.length > 0 && (
-            <div className="grid gap-3 sm:grid-cols-2">
-              {allAlerts.map((a) => (
-                <AlertCard key={a.id} alert={a} />
-              ))}
-            </div>
+
+          {/* NEDBØR (hourly precip %) */}
+          <NedborCard hours={skienHours} />
+
+          {/* VÆRFORHOLD (hourly icons + temp) */}
+          <HourlyForecastCard hours={skienHours} />
+
+          {/* VIND (hourly m/s + chart) */}
+          <WindHourlyCard hours={skienHours} />
+
+          {/* 10-DAGERS PROGNOSE */}
+          <DailyListCard days={skienDays} title="10-dagers prognose" />
+
+          {/* VIND DETALJ */}
+          <WindDetailCard hour={currentHour} />
+
+          {/* MÅNE */}
+          <MoonCard moon={moon} now={now} />
+
+          {/* SOL NED + UV */}
+          <div className="grid grid-cols-2 gap-3">
+            <SunsetCard sun={sun} now={now} />
+            <UvIndexCard hour={currentHour} />
+          </div>
+
+          {/* FØLES SOM + SKYDEKKE */}
+          <div className="grid grid-cols-2 gap-3">
+            <FeelsLikeCard hour={currentHour} />
+            <CloudCard hour={currentHour} />
+          </div>
+
+          {/* NEDBØR I DAG + VINDKAST */}
+          <div className="grid grid-cols-2 gap-3">
+            <PrecipTodayCard day={todayDay} liveMm={tollnesRainToday} days={skienDays} />
+            <GustCard hour={currentHour} />
+          </div>
+
+          {/* LUFTFUKTIGHET + LUFTTRYKK */}
+          <div className="grid grid-cols-2 gap-3">
+            <HumidityCard hour={currentHour} liveValue={tollnesHumidity} />
+            <PressureCard hour={currentHour} liveValue={tollnesPressure} />
+          </div>
+
+          {/* LIVE MÅLERE — Netatmo */}
+          {homeyOk && (
+            <GlassCard
+              eyebrow="Live målinger · Netatmo"
+              icon={<Thermometer size={14} />}
+            >
+              <div className="grid grid-cols-2 gap-3 -mx-1">
+                <NetatmoTile label="Borgen · Tollnes" temp={tollnesTemp} wind={tollnesWind} rain={tollnesRainToday} humidity={tollnesHumidity} pressure={tollnesPressure} />
+                <NetatmoTile label="Hytta · Numedal" temp={null} wind={hyttaWind} rain={hyttaRainToday} humidity={hyttaHumidity} pressure={hyttaPressure} />
+              </div>
+            </GlassCard>
           )}
-        </Block>
 
-        {/* === LIVE MÅLINGER FRA NETATMO === */}
-        <Block title="Borgens målere · Netatmo Live">
-          {!homeyOk ? (
-            <p className="text-muted-foreground italic text-sm">
-              Smarthuset er ikke bundet — gå til{" "}
-              <a href="/smarthus" className="text-primary underline">Smarthus</a> for å koble til Homey.
-            </p>
-          ) : (
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-              <LiveMetric
-                label="Regn i dag · Tollnes"
-                value={tollnesRainToday}
-                unit="mm"
-                icon="🌧"
-                source={tollnesRainSensor?.name ?? null}
-              />
-              <LiveMetric label="Vind · Tollnes" value={tollnesWind} unit="m/s" icon="💨" />
-              <LiveMetric label="Trykk · Tollnes" value={tollnesPressure} unit="hPa" icon="🜨" digits={0} />
-              <LiveMetric label="Fuktighet · Tollnes" value={tollnesHumidity} unit="%" icon="💧" digits={0} />
-              <LiveMetric
-                label="Regn i dag · Hytta"
-                value={hyttaRainToday}
-                unit="mm"
-                icon="🌧"
-                source={hyttaRainSensor?.name ?? null}
-              />
-              <LiveMetric label="Vind · Hytta" value={hyttaWind} unit="m/s" icon="💨" />
-              <LiveMetric label="Trykk · Hytta" value={hyttaPressure} unit="hPa" icon="🜨" digits={0} />
-              <LiveMetric label="Fuktighet · Hytta" value={hyttaHumidity} unit="%" icon="💧" digits={0} />
+          {/* Tidsrom-velger for UV/vindrose */}
+          <div className="rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 p-3 flex items-center justify-between">
+            <span className="text-[11px] tracking-[0.25em] text-white/70 uppercase">Detaljvisning</span>
+            <RangeSelector value={rangeHours} onChange={setRangeHours} />
+          </div>
+
+          {/* UV-PANELER */}
+          <GlassCard eyebrow="UV-indeks · time for time" icon={<Sun size={14} />}>
+            <div className="space-y-3 -mx-2">
+              <div className="rounded-xl overflow-hidden bg-black/10">
+                <UvPanel title={userLoc.active.label} subtitle="MET.no" lat={userLoc.active.lat} lon={userLoc.active.lon} rangeHours={rangeHours} />
+              </div>
+              <div className="rounded-xl overflow-hidden bg-black/10">
+                <UvPanel title="Hytta · Flesberg" subtitle="Numedal · MET.no" lat={59.8733} lon={9.4297} rangeHours={rangeHours} />
+              </div>
             </div>
-          )}
-        </Block>
+          </GlassCard>
 
-        {/* === UV-INDEKS === */}
-        <Block title="Solens stråler · UV-indeks">
-          <div className="grid lg:grid-cols-2 gap-6">
-            <UvPanel
-              title="Borgen · Tollnes"
-              subtitle="Skien · MET.no"
-              lat={59.1789}
-              lon={9.5732}
-              rangeHours={rangeHours}
-            />
-            <UvPanel
-              title="Hytta · Flesberg"
-              subtitle="Numedal · MET.no"
-              lat={59.8733}
-              lon={9.4297}
-              rangeHours={rangeHours}
-            />
-          </div>
-        </Block>
+          {/* VINDROSE */}
+          <GlassCard eyebrow={`Vindrose · ${rangeLabel(rangeHours)}`} icon={<Navigation size={14} />}>
+            <div className="grid sm:grid-cols-2 gap-4">
+              <WindRose name={userLoc.active.label} hours={skienHours} rangeHours={rangeHours} />
+              <WindRose name="Hytta · Numedal" hours={hyttaHours} rangeHours={rangeHours} />
+            </div>
+          </GlassCard>
 
-        {/* === SOL OG MÅNE OVER WESTEROS === */}
-        <Block title="Himmelens Vandrere · Sol & Måne">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-            <SkyCard
-              label="Soloppgang"
-              value={sun ? formatTime(sun.sunrise) : "—"}
-              icon="🌅"
-              hint="Tollnes"
-            />
-            <SkyCard
-              label="Solnedgang"
-              value={sun ? formatTime(sun.sunset) : "—"}
-              icon="🌇"
-              hint="Tollnes"
-            />
-            <SkyCard
-              label="Dagens lengde"
-              value={sun ? formatDuration(sun.dayLengthMinutes) : "—"}
-              icon="☀️"
-              hint={sun ? `${sun.deltaMinutes >= 0 ? "+" : ""}${Math.round(sun.deltaMinutes)} min siden i går` : "—"}
-            />
-            <SkyCard
-              label="Månefase"
-              value={moon ? moon.name : "—"}
-              icon={moon ? moon.icon : "🌑"}
-              hint={moon ? `${Math.round(moon.illumination * 100)}% opplyst` : "—"}
-            />
-          </div>
-        </Block>
+          {/* HYTTA prognose */}
+          <DailyListCard days={hyttaDays} title="Hytta · Numedal · 10 dager" />
 
-        {/* === 24-TIMERS KURVER === */}
-        <Block title={`MET.no · ${rangeLabel(rangeHours)} · time for time`}>
-          <div className="grid lg:grid-cols-2 gap-6">
-            <HourPanel name={userLoc.active.label} hours={skienHours} accent="primary" rangeHours={rangeHours} />
-            <HourPanel name="Hytta · Numedal" hours={hyttaHours} accent="ice" rangeHours={rangeHours} />
-          </div>
-        </Block>
-
-        {/* === VINDROSE === */}
-        <Block title={`Stormvaktens Rose · Vindretning ${rangeLabel(rangeHours)}`}>
-          <div className="grid sm:grid-cols-2 gap-6">
-            <WindRoseCard name={userLoc.active.label} hours={skienHours} rangeHours={rangeHours} />
-            <WindRoseCard name="Hytta" hours={hyttaHours} rangeHours={rangeHours} />
-          </div>
-        </Block>
-
-        {/* === 7 DAGER === */}
-        {LOCATIONS.map((loc) => {
-          const s = state[loc.key];
-          return (
-            <Block key={loc.key} title={`${loc.name} · 7 dager`}>
-              <p className="text-xs text-muted-foreground mb-4 -mt-2">{loc.subtitle}</p>
-              {s?.loading && (
-                <p className="text-muted-foreground">Sender ravn til MET.no...</p>
-              )}
-              {s?.error && <p className="text-destructive">{s.error}</p>}
-              {s?.days && (
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
-                  {s.days.slice(0, 7).map((d) => (
-                    <div
-                      key={d.date}
-                      className="panel rounded-lg p-4 text-center glow-on-hover"
-                    >
-                      <div className="text-xs uppercase tracking-wider text-muted-foreground">
-                        {weekdayShort(d.date)}
-                      </div>
-                      <div className="text-medieval text-lg text-primary mt-1">
-                        {dayMonth(d.date)}
-                      </div>
-                      <div className="text-3xl my-3">{symbolEmoji(d.symbol)}</div>
-                      <div className="text-foreground font-semibold">
-                        {Math.round(d.tempMax)}°
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        min {Math.round(d.tempMin)}°
-                      </div>
-                      {d.precip > 0 && (
-                        <div className="text-xs text-ice mt-1">
-                          {d.precip.toFixed(1)} mm
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </Block>
-          );
-        })}
-
-        {/* === LIVE VÆRKART === */}
-        <Block title="Stormvaktens Kart · Live vær over Telemark & Buskerud">
+          {/* WINDY KART */}
           <CollapsibleMap />
-        </Block>
 
-        <p className="text-xs text-muted-foreground italic">
-          Værdata fra MET.no. Live målinger fra Netatmo via Homey. Astronomi beregnet lokalt. Kart fra Windy.com.
-        </p>
-      </section>
+          <p className="text-[10px] text-white/50 text-center pt-4">
+            Værdata fra MET.no. Live målinger fra Netatmo via Homey. Astronomi beregnet lokalt. Kart fra Windy.com.
+          </p>
+        </div>
+      </div>
     </PageShell>
   );
 }
 
 // ============================================================
-// Building blocks — Game of Thrones-stil
+// Glass card primitive (iOS-style)
 // ============================================================
 
-function Block({ title, children }: { title: string; children: React.ReactNode }) {
+function GlassCard({
+  eyebrow,
+  icon,
+  children,
+  className = "",
+}: {
+  eyebrow?: string;
+  icon?: React.ReactNode;
+  children: React.ReactNode;
+  className?: string;
+}) {
   return (
-    <div>
-      <div className="ornate-divider mb-6">
-        <span className="text-display tracking-[0.3em] text-primary text-sm uppercase">
-          {title}
-        </span>
-      </div>
+    <article className={`rounded-2xl bg-white/10 backdrop-blur-xl border border-white/15 shadow-lg shadow-black/10 p-4 ${className}`}>
+      {eyebrow && (
+        <div className="flex items-center gap-1.5 text-[11px] tracking-[0.15em] font-semibold text-white/70 uppercase mb-3">
+          {icon}
+          <span>{eyebrow}</span>
+        </div>
+      )}
       {children}
+    </article>
+  );
+}
+
+// ============================================================
+// NEDBØR — hourly precip bars
+// ============================================================
+
+function NedborCard({ hours }: { hours: Hour[] | null }) {
+  if (!hours) return <GlassCard eyebrow="Nedbør" icon={<Droplets size={14} />}><Skeleton /></GlassCard>;
+  const next = hours.slice(0, 12);
+  const maxP = Math.max(1, ...next.map((h) => h.precip));
+
+  return (
+    <GlassCard eyebrow="Nedbør · sjanse for regn" icon={<Droplets size={14} />}>
+      <div className="overflow-x-auto -mx-2 px-2">
+        <div className="flex items-end gap-3 min-w-max pb-1">
+          {next.map((h, i) => {
+            const heightPct = Math.max(4, (h.precip / maxP) * 70);
+            const hourLabel = i === 0 ? "Nå" : h.time.slice(11, 16);
+            return (
+              <div key={h.time} className="flex flex-col items-center w-12">
+                <div className="text-[11px] text-white/80 mb-1.5">{hourLabel}</div>
+                <div className="relative w-7 h-20 rounded-md bg-white/15 overflow-hidden border-t border-dashed border-white/20">
+                  <div
+                    className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-sky-300 to-sky-200 rounded-md"
+                    style={{ height: `${heightPct}%` }}
+                  />
+                </div>
+                <div className="flex items-center gap-0.5 mt-1.5 text-[11px] text-sky-100 font-medium tabular-nums">
+                  <Droplets size={9} />
+                  {Math.round(h.precipProbability)}%
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </GlassCard>
+  );
+}
+
+// ============================================================
+// HOURLY FORECAST — Værforhold
+// ============================================================
+
+function HourlyForecastCard({ hours }: { hours: Hour[] | null }) {
+  if (!hours) return <GlassCard eyebrow="Værforhold" icon={<Cloud size={14} />}><Skeleton /></GlassCard>;
+  const next = hours.slice(0, 24);
+  return (
+    <GlassCard eyebrow="Værforhold · Temperatur" icon={<Cloud size={14} />}>
+      <div className="overflow-x-auto -mx-2 px-2">
+        <div className="flex items-center gap-4 min-w-max pb-1">
+          {next.map((h, i) => (
+            <div key={h.time} className="flex flex-col items-center w-12">
+              <div className="text-[11px] text-white/80 mb-2">
+                {i === 0 ? "Nå" : h.time.slice(11, 16)}
+              </div>
+              <div className="text-2xl mb-1">{symbolEmoji(h.symbol)}</div>
+              {h.precipProbability >= 20 && (
+                <div className="text-[10px] text-sky-200 font-medium tabular-nums">
+                  {Math.round(h.precipProbability)}%
+                </div>
+              )}
+              <div className="text-base font-medium tabular-nums mt-1">{Math.round(h.temp)}°</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </GlassCard>
+  );
+}
+
+// ============================================================
+// WIND HOURLY CARD
+// ============================================================
+
+function WindHourlyCard({ hours }: { hours: Hour[] | null }) {
+  if (!hours) return <GlassCard eyebrow="Vind" icon={<Wind size={14} />}><Skeleton /></GlassCard>;
+  const next = hours.slice(0, 24);
+  const W = 600, H = 80, pad = 4;
+  const winds = next.map((h) => h.wind);
+  const maxW = Math.max(8, ...winds);
+  const xFor = (i: number) => pad + (i / (next.length - 1)) * (W - pad * 2);
+  const yFor = (v: number) => H - pad - (v / maxW) * (H - pad * 2);
+  const path = next.map((h, i) => `${i === 0 ? "M" : "L"} ${xFor(i).toFixed(1)} ${yFor(h.wind).toFixed(1)}`).join(" ");
+  const fillPath = `${path} L ${xFor(next.length - 1).toFixed(1)} ${H} L ${pad} ${H} Z`;
+
+  return (
+    <GlassCard eyebrow="Vind · Hastighet (m/s)" icon={<Wind size={14} />}>
+      <div className="overflow-x-auto -mx-2 px-2">
+        <div className="min-w-max">
+          <div className="flex items-end gap-4 mb-1">
+            {next.filter((_, i) => i % 1 === 0).slice(0, 24).map((h, i) => (
+              <div key={h.time} className="w-12 text-center">
+                <div className="text-[11px] text-white/80">{i === 0 ? "Nå" : h.time.slice(11, 16)}</div>
+                <div className="text-base font-medium tabular-nums mt-1">{Math.round(h.wind)}</div>
+                <div className="text-[10px] text-white/60">m/s</div>
+              </div>
+            ))}
+          </div>
+          <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-12" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="windGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#34d399" stopOpacity="0.7" />
+                <stop offset="100%" stopColor="#34d399" stopOpacity="0.15" />
+              </linearGradient>
+            </defs>
+            <path d={fillPath} fill="url(#windGrad)" />
+            <path d={path} fill="none" stroke="#34d399" strokeWidth="2" />
+          </svg>
+        </div>
+      </div>
+    </GlassCard>
+  );
+}
+
+// ============================================================
+// DAILY LIST CARD (10 days)
+// ============================================================
+
+function DailyListCard({ days, title }: { days: ForecastDay[] | null; title: string }) {
+  if (!days) return <GlassCard eyebrow={title} icon={<TrendingUp size={14} />}><Skeleton /></GlassCard>;
+  const list = days.slice(0, 10);
+  const allMins = list.map((d) => d.tempMin);
+  const allMaxs = list.map((d) => d.tempMax);
+  const globalMin = Math.min(...allMins);
+  const globalMax = Math.max(...allMaxs);
+  const range = Math.max(1, globalMax - globalMin);
+
+  return (
+    <GlassCard eyebrow={title} icon={<TrendingUp size={14} />}>
+      <div className="divide-y divide-white/10">
+        {list.map((d, i) => {
+          const startPct = ((d.tempMin - globalMin) / range) * 100;
+          const widthPct = ((d.tempMax - d.tempMin) / range) * 100;
+          const label = i === 0 ? "I dag" : weekdayShort(d.date);
+          return (
+            <div key={d.date} className="grid grid-cols-[60px_36px_56px_1fr_44px] items-center gap-3 py-2.5">
+              <div className="text-[15px] capitalize">{label}</div>
+              <div className="text-xl text-center">{symbolEmoji(d.symbol)}</div>
+              <div className="text-[11px] text-sky-200 tabular-nums text-right">
+                {d.precipProbability >= 20 ? `${Math.round(d.precipProbability)}%` : ""}
+              </div>
+              <div className="relative h-1.5">
+                <div className="absolute inset-0 rounded-full bg-white/15" />
+                <div
+                  className="absolute top-0 bottom-0 rounded-full bg-gradient-to-r from-sky-400 via-yellow-300 to-orange-400"
+                  style={{ left: `${startPct}%`, width: `${Math.max(8, widthPct)}%` }}
+                />
+              </div>
+              <div className="text-[13px] tabular-nums text-right text-white/90">
+                {Math.round(d.tempMin)}° <span className="text-white/60">·</span> {Math.round(d.tempMax)}°
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </GlassCard>
+  );
+}
+
+// ============================================================
+// WIND DETAIL CARD with compass
+// ============================================================
+
+function WindDetailCard({ hour }: { hour: Hour | null }) {
+  const dir = hour?.windDir ?? 0;
+  const speed = hour?.wind ?? 0;
+  const gust = hour?.windGust ?? speed;
+  return (
+    <GlassCard eyebrow="Vind" icon={<Wind size={14} />}>
+      <div className="grid grid-cols-[1fr_auto] gap-4 items-center">
+        <div className="space-y-2 text-sm">
+          <Row label="Vind" value={`${speed.toFixed(1)} m/s`} />
+          <Row label="Vindkast" value={`${gust.toFixed(1)} m/s`} />
+          <Row label="Retning" value={`${Math.round(dir)}° ${dirCardinal(dir)}`} />
+        </div>
+        <div className="relative w-28 h-28">
+          <svg viewBox="0 0 100 100" className="w-full h-full">
+            <circle cx="50" cy="50" r="44" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
+            {Array.from({ length: 36 }).map((_, i) => {
+              const a = (i * 10 - 90) * (Math.PI / 180);
+              const x1 = 50 + 44 * Math.cos(a);
+              const y1 = 50 + 44 * Math.sin(a);
+              const x2 = 50 + (i % 9 === 0 ? 36 : 40) * Math.cos(a);
+              const y2 = 50 + (i % 9 === 0 ? 36 : 40) * Math.sin(a);
+              return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="rgba(255,255,255,0.35)" strokeWidth="0.6" />;
+            })}
+            {["N", "Ø", "S", "V"].map((d, i) => {
+              const a = (i * 90 - 90) * (Math.PI / 180);
+              const x = 50 + 30 * Math.cos(a);
+              const y = 50 + 30 * Math.sin(a) + 2.5;
+              return <text key={d} x={x} y={y} fontSize="7" fill="white" textAnchor="middle">{d}</text>;
+            })}
+            <g transform={`rotate(${dir} 50 50)`}>
+              <polygon points="50,12 47,22 53,22" fill="white" />
+              <circle cx="50" cy="50" r="2" fill="white" />
+            </g>
+          </svg>
+          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+            <div className="text-xl font-light tabular-nums leading-none">{speed.toFixed(0)}</div>
+            <div className="text-[9px] text-white/70">m/s</div>
+          </div>
+        </div>
+      </div>
+    </GlassCard>
+  );
+}
+
+function Row({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex justify-between border-b border-white/10 last:border-0 pb-1.5">
+      <span className="text-white/80">{label}</span>
+      <span className="tabular-nums">{value}</span>
     </div>
   );
 }
 
-function LiveMetric({
-  label,
-  value,
-  unit,
-  icon,
-  source,
-  digits = 1,
-}: {
-  label: string;
-  value: number | null;
-  unit: string;
-  icon: string;
-  source?: string | null;
-  digits?: number;
-}) {
+// ============================================================
+// MOON CARD
+// ============================================================
+
+function MoonCard({ moon, now }: { moon: { name: string; icon: string; illumination: number }; now: Date }) {
+  const nextSet = useMemo(() => nextMoonset(now), [now]);
+  const daysToFull = useMemo(() => daysUntilFullMoon(now), [now]);
   return (
-    <article className="panel rounded-lg p-3 sm:p-5 text-center glow-on-hover">
-      <div className="text-xl sm:text-2xl mb-1">{icon}</div>
-      <div className="text-[9px] sm:text-[10px] tracking-[0.25em] sm:tracking-[0.3em] text-muted-foreground uppercase leading-tight">
-        {label}
-      </div>
-      <div className="text-display text-primary text-2xl sm:text-3xl mt-1 sm:mt-2">
-        {value !== null ? value.toFixed(digits) : "—"}
-      </div>
-      <div className="text-[9px] sm:text-[10px] tracking-[0.2em] text-muted-foreground/70 uppercase mt-1">
-        {unit}
-      </div>
-      {source && (
-        <div className="text-[9px] tracking-[0.15em] text-muted-foreground/60 uppercase mt-1 sm:mt-2 truncate">
-          {source}
+    <GlassCard eyebrow={moon.name} icon={<Moon size={14} />}>
+      <div className="grid grid-cols-[1fr_auto] gap-4 items-center">
+        <div className="space-y-2 text-sm">
+          <Row label="Opplysning" value={`${Math.round(moon.illumination * 100)} %`} />
+          <Row label="Neste månenedgang" value={nextSet ? formatTime(nextSet) : "—"} />
+          <Row label="Neste fullmåne" value={`${daysToFull} d`} />
         </div>
-      )}
-    </article>
+        <MoonVisual illumination={moon.illumination} phase={moon.name} />
+      </div>
+    </GlassCard>
   );
 }
 
-function SkyCard({
-  label,
-  value,
-  icon,
-  hint,
-}: {
-  label: string;
-  value: string;
-  icon: string;
-  hint?: string;
-}) {
+function MoonVisual({ illumination, phase }: { illumination: number; phase: string }) {
+  const waning = phase.includes("Avtagende") || phase.includes("Siste");
+  const r = 36;
+  // Terminator-ellipse offset
+  const offset = (1 - 2 * illumination) * r * (waning ? -1 : 1);
   return (
-    <article className="panel rounded-lg p-3 sm:p-5 text-center glow-on-hover">
-      <div className="text-2xl sm:text-3xl mb-1 sm:mb-2">{icon}</div>
-      <div className="text-[9px] sm:text-[10px] tracking-[0.25em] sm:tracking-[0.3em] text-muted-foreground uppercase">
-        {label}
-      </div>
-      <div className="text-display text-primary text-lg sm:text-2xl mt-1 sm:mt-2">{value}</div>
-      {hint && (
-        <div className="text-[9px] sm:text-[10px] tracking-[0.1em] sm:tracking-[0.15em] text-muted-foreground/70 uppercase mt-1 sm:mt-2">
-          {hint}
-        </div>
-      )}
-    </article>
-  );
-}
-
-function AlertCard({ alert }: { alert: MetAlert }) {
-  const color = alertColor(alert.awarenessColor);
-  const isThunder = alert.isThunder;
-  return (
-    <article
-      className="panel rounded-lg p-5 border-l-4"
-      style={{
-        borderLeftColor: color,
-        boxShadow: isThunder
-          ? `0 0 24px color-mix(in oklab, ${color} 25%, transparent)`
-          : undefined,
-      }}
-    >
-      <div className="flex items-start gap-3">
-        <div className="text-3xl">{isThunder ? "⚡" : "⚠️"}</div>
-        <div className="flex-1">
-          <div
-            className="text-[10px] tracking-[0.3em] uppercase font-semibold"
-            style={{ color }}
-          >
-            {alert.awarenessColor} · {alert.severity}
-          </div>
-          <div className="text-display text-foreground text-lg mt-1">{alert.title}</div>
-          {alert.description && (
-            <p className="text-sm text-muted-foreground mt-1 line-clamp-3">
-              {alert.description}
-            </p>
-          )}
-          {alert.area && (
-            <div className="text-[10px] tracking-[0.2em] text-muted-foreground/70 uppercase mt-2">
-              {alert.area}
-            </div>
-          )}
-        </div>
-      </div>
-    </article>
-  );
-}
-
-function HourPanel({
-  name,
-  hours,
-  accent,
-  rangeHours = 24,
-}: {
-  name: string;
-  hours: Hour[] | null;
-  accent: "primary" | "ice";
-  rangeHours?: number;
-}) {
-  if (!hours) {
-    return (
-      <article className="panel rounded-lg p-6">
-        <h3 className="text-display text-primary text-lg">{name}</h3>
-        <p className="text-sm text-muted-foreground italic mt-2">Sender ravn…</p>
-      </article>
-    );
-  }
-  const next = hours.slice(0, rangeHours);
-  const color = accent === "ice" ? "var(--ice)" : "var(--primary)";
-  const longRange = rangeHours > 24;
-  // For tabellrad: vis ca 8 kolonner uavhengig av lengde
-  const stride = Math.max(1, Math.round(next.length / 8));
-  return (
-    <article className="panel rounded-lg p-5 glow-on-hover">
-      <div className="flex items-baseline justify-between mb-3">
-        <h3 className="text-display text-primary text-lg">{name}</h3>
-        <span className="text-[10px] tracking-[0.25em] text-muted-foreground uppercase">
-          {rangeLabel(rangeHours)}
-        </span>
-      </div>
-      <TempPrecipChart hours={next} color={color} showNow={rangeHours <= 24} longRange={longRange} />
-      <div className="grid grid-cols-6 sm:grid-cols-8 gap-1 mt-4">
-        {next.filter((_, i) => i % stride === 0).slice(0, 8).map((h) => (
-          <div key={h.time} className="text-center">
-            <div className="text-[9px] text-muted-foreground tracking-wider">
-              {longRange
-                ? new Date(h.time).toLocaleDateString("nb-NO", { day: "2-digit", month: "2-digit" })
-                : h.time.slice(11, 13)}
-            </div>
-            <div className="text-base">{symbolEmoji(h.symbol)}</div>
-            <div className="text-xs text-foreground">{Math.round(h.temp)}°</div>
-          </div>
-        ))}
-      </div>
-    </article>
-  );
-}
-
-function TempPrecipChart({
-  hours,
-  color,
-  showNow = false,
-  longRange = false,
-}: {
-  hours: Hour[];
-  color: string;
-  showNow?: boolean;
-  longRange?: boolean;
-}) {
-  const W = 600;
-  const H = 140;
-  const pad = { l: 28, r: 16, t: 12, b: 22 };
-  const innerW = W - pad.l - pad.r;
-  const innerH = H - pad.t - pad.b;
-  const [activeIdx, setActiveIdx] = useState<number | null>(null);
-  if (hours.length < 2) return null;
-
-  const temps = hours.map((h) => h.temp);
-  const tMin = Math.floor(Math.min(...temps) - 1);
-  const tMax = Math.ceil(Math.max(...temps) + 1);
-  const tRange = Math.max(1, tMax - tMin);
-
-  const precips = hours.map((h) => h.precip);
-  const pMax = Math.max(2, Math.ceil(Math.max(...precips) * 1.2));
-
-  const xFor = (i: number) => pad.l + (i / (hours.length - 1)) * innerW;
-  const yForT = (t: number) => pad.t + innerH - ((t - tMin) / tRange) * innerH;
-  const yForP = (p: number) => pad.t + innerH - (p / pMax) * innerH;
-
-  const path = hours
-    .map((h, i) => `${i === 0 ? "M" : "L"} ${xFor(i).toFixed(1)} ${yForT(h.temp).toFixed(1)}`)
-    .join(" ");
-
-  const barW = innerW / hours.length;
-
-  // X-tick stride så vi får ca 8 etiketter
-  const stride = Math.max(1, Math.round(hours.length / 8));
-
-  // Now-linje basert på faktisk tid
-  let nowX: number | null = null;
-  if (showNow && hours.length > 1) {
-    const now = Date.now();
-    const t0 = new Date(hours[0].time).getTime();
-    const tN = new Date(hours[hours.length - 1].time).getTime();
-    if (now >= t0 && now <= tN) {
-      nowX = pad.l + ((now - t0) / (tN - t0)) * innerW;
-    }
-  }
-
-  const handlePointer = (e: React.PointerEvent<SVGSVGElement>) => {
-    const svg = e.currentTarget;
-    const rect = svg.getBoundingClientRect();
-    const xPx = e.clientX - rect.left;
-    const xVB = (xPx / rect.width) * W;
-    const rel = (xVB - pad.l) / innerW;
-    const i = Math.round(rel * (hours.length - 1));
-    setActiveIdx(Math.max(0, Math.min(hours.length - 1, i)));
-    try {
-      svg.setPointerCapture(e.pointerId);
-    } catch {}
-  };
-
-  const active = activeIdx != null ? hours[activeIdx] : null;
-  const activeX = activeIdx != null ? xFor(activeIdx) : null;
-  const activeY = active != null ? yForT(active.temp) : null;
-
-  return (
-    <svg
-      viewBox={`0 0 ${W} ${H}`}
-      className="w-full h-auto touch-none select-none"
-      preserveAspectRatio="none"
-      onPointerDown={handlePointer}
-      onPointerMove={(e) => {
-        if (e.buttons === 0 && e.pointerType === "mouse") return;
-        handlePointer(e);
-      }}
-    >
-      {[tMin, Math.round((tMin + tMax) / 2), tMax].map((v) => (
-        <g key={v}>
-          <line
-            x1={pad.l}
-            x2={W - pad.r}
-            y1={yForT(v)}
-            y2={yForT(v)}
-            stroke="var(--border)"
-            strokeDasharray="2 4"
-            opacity="0.5"
-          />
-          <text x={4} y={yForT(v) + 4} fontSize="10" fill="var(--muted-foreground)">
-            {v}°
-          </text>
-        </g>
-      ))}
-      {hours.map((h, i) => {
-        if (h.precip <= 0) return null;
-        const x = xFor(i) - barW / 2;
-        const y = yForP(h.precip);
-        return (
-          <rect
-            key={h.time}
-            x={x}
-            y={y}
-            width={Math.max(2, barW - 1)}
-            height={pad.t + innerH - y}
-            fill="var(--ice)"
-            opacity="0.55"
-            rx="1"
-          />
-        );
-      })}
-      <path d={path} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" />
-      {nowX != null && (
-        <g>
-          <line
-            x1={nowX}
-            x2={nowX}
-            y1={pad.t}
-            y2={pad.t + innerH}
-            stroke="var(--primary)"
-            strokeWidth="1.5"
-            strokeDasharray="3 3"
-            opacity="0.85"
-          />
-          <text x={nowX} y={pad.t - 2} fontSize="9" fill="var(--primary)" textAnchor="middle">
-            nå
-          </text>
-        </g>
-      )}
-      {hours.filter((_, i) => i % stride === 0).map((h, idx) => {
-        const i = idx * stride;
-        return (
-          <text
-            key={h.time}
-            x={xFor(i)}
-            y={H - 6}
-            fontSize="10"
-            fill="var(--muted-foreground)"
-            textAnchor="middle"
-          >
-            {longRange
-              ? new Date(h.time).toLocaleDateString("nb-NO", { day: "2-digit", month: "2-digit" })
-              : h.time.slice(11, 13)}
-          </text>
-        );
-      })}
-      {active && activeX != null && activeY != null && (
-        <g pointerEvents="none">
-          <line
-            x1={activeX}
-            x2={activeX}
-            y1={pad.t}
-            y2={pad.t + innerH}
-            stroke={color}
-            strokeWidth="1"
-            opacity="0.7"
-          />
-          <circle cx={activeX} cy={activeY} r="3.5" fill={color} stroke="var(--background)" strokeWidth="1" />
-          {(() => {
-            const label = `${Math.round(active.temp)}°${active.precip > 0 ? ` · ${active.precip.toFixed(1)}mm` : ""} · ${
-              longRange
-                ? new Date(active.time).toLocaleDateString("nb-NO", { day: "2-digit", month: "2-digit", hour: "2-digit" })
-                : active.time.slice(11, 16)
-            }`;
-            const boxW = Math.max(70, label.length * 5.2);
-            const boxH = 18;
-            let bx = activeX - boxW / 2;
-            if (bx < pad.l) bx = pad.l;
-            if (bx + boxW > W - pad.r) bx = W - pad.r - boxW;
-            const by = Math.max(pad.t, activeY - boxH - 6);
-            return (
-              <g>
-                <rect x={bx} y={by} width={boxW} height={boxH} rx="3" fill="var(--card)" stroke={color} strokeOpacity="0.6" />
-                <text x={bx + boxW / 2} y={by + 12} fontSize="10" fill="var(--foreground)" textAnchor="middle">
-                  {label}
-                </text>
-              </g>
-            );
-          })()}
-        </g>
-      )}
+    <svg viewBox="0 0 100 100" className="w-24 h-24">
+      <defs>
+        <radialGradient id="moonG" cx="35%" cy="35%">
+          <stop offset="0%" stopColor="#f5f5f0" />
+          <stop offset="100%" stopColor="#c8c4b8" />
+        </radialGradient>
+        <clipPath id="moonClip"><circle cx="50" cy="50" r={r} /></clipPath>
+      </defs>
+      <circle cx="50" cy="50" r={r} fill="rgba(255,255,255,0.15)" />
+      <g clipPath="url(#moonClip)">
+        <ellipse cx={50 + offset} cy="50" rx={r} ry={r} fill="url(#moonG)" />
+      </g>
+      <circle cx="50" cy="50" r={r} fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="0.5" />
+      {/* mare-prikker */}
+      <circle cx="42" cy="45" r="3" fill="rgba(0,0,0,0.06)" />
+      <circle cx="58" cy="52" r="2" fill="rgba(0,0,0,0.06)" />
+      <circle cx="48" cy="60" r="2.5" fill="rgba(0,0,0,0.06)" />
     </svg>
   );
 }
 
-function WindRoseCard({
-  name,
-  hours,
-  rangeHours = 24,
-}: {
-  name: string;
-  hours: Hour[] | null;
-  rangeHours?: number;
-}) {
-  if (!hours) {
-    return (
-      <article className="panel rounded-lg p-6">
-        <h3 className="text-display text-primary text-lg">{name}</h3>
-        <p className="text-sm text-muted-foreground italic mt-2">Sender ravn…</p>
-      </article>
-    );
+// ============================================================
+// SUNSET CARD with arc
+// ============================================================
+
+function SunsetCard({ sun, now }: { sun: ReturnType<typeof sunTimes>; now: Date }) {
+  const sunrise = sun.sunrise;
+  const sunset = sun.sunset;
+  // Sol-posisjon: progress 0..1 mellom rise og set
+  let progress = 0;
+  if (sunrise && sunset) {
+    const tNow = now.getTime();
+    progress = Math.max(0, Math.min(1, (tNow - sunrise.getTime()) / (sunset.getTime() - sunrise.getTime())));
   }
+  // Arc-koordinater
+  const W = 160, H = 70;
+  const cx = W / 2, cy = H - 4, r = 60;
+  const ang = Math.PI - progress * Math.PI;
+  const sx = cx + r * Math.cos(ang);
+  const sy = cy - r * Math.sin(ang);
+
+  return (
+    <GlassCard eyebrow="Sol ned" icon={<Sunrise size={14} />}>
+      <div className="text-3xl font-light tabular-nums">{sunset ? formatTime(sunset) : "—"}</div>
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-16 mt-2">
+        <path d={`M ${cx - r} ${cy} A ${r} ${r} 0 0 1 ${cx + r} ${cy}`} fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="1" />
+        <line x1={cx - r} y1={cy} x2={cx + r} y2={cy} stroke="rgba(255,255,255,0.3)" strokeWidth="0.5" />
+        <circle cx={sx} cy={sy} r="5" fill="#fff" />
+      </svg>
+      <div className="text-[11px] text-white/80 mt-1">Sol opp: {sunrise ? formatTime(sunrise) : "—"}</div>
+    </GlassCard>
+  );
+}
+
+// ============================================================
+// UV INDEX CARD
+// ============================================================
+
+function UvIndexCard({ hour }: { hour: Hour | null }) {
+  // MET compact gir ikke UV; vi estimerer fra cloud & time. For ekte UV bruker vi UvPanel lenger ned.
+  // Vis en stilig "indikator" basert på sky og tid på dagen.
+  const h = new Date().getHours();
+  const cloud = hour?.cloud ?? 50;
+  const base = h >= 10 && h <= 16 ? 5 : h >= 7 && h <= 19 ? 3 : 1;
+  const uv = Math.max(0, Math.round(base * (1 - cloud / 200)));
+  const label = uv < 3 ? "Lav" : uv < 6 ? "Moderat" : uv < 8 ? "Høy" : uv < 11 ? "Veldig høy" : "Ekstrem";
+  return (
+    <GlassCard eyebrow="UV-indeks" icon={<Sun size={14} />}>
+      <div className="text-3xl font-light tabular-nums">{uv}</div>
+      <div className="text-base font-medium">{label}</div>
+      <div className="mt-2 h-1.5 rounded-full bg-gradient-to-r from-green-400 via-yellow-300 via-orange-400 to-purple-500 relative">
+        <div
+          className="absolute top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-white border border-white/60 shadow"
+          style={{ left: `${Math.min(100, (uv / 11) * 100)}%`, transform: "translate(-50%, -50%)" }}
+        />
+      </div>
+      <div className="text-[11px] text-white/75 mt-2">Se detaljert UV-graf under.</div>
+    </GlassCard>
+  );
+}
+
+// ============================================================
+// SIMPLE STAT CARDS
+// ============================================================
+
+function FeelsLikeCard({ hour }: { hour: Hour | null }) {
+  const t = hour?.temp ?? 0;
+  const w = hour?.wind ?? 0;
+  // Enkel vindavkjøling (Norge JAG-Steadman approximation): bare for visning
+  const feels = w > 1.5 && t < 15 ? Math.round(t - w * 0.5) : Math.round(t);
+  const hint = w > 1.5 && t < 15 ? "Vinden gjør at det føles kaldere." : "Komfortabelt.";
+  return (
+    <GlassCard eyebrow="Føles som" icon={<Thermometer size={14} />}>
+      <div className="text-3xl font-light tabular-nums">{hour ? `${feels}°` : "—"}</div>
+      <div className="text-[12px] text-white/80 mt-3 leading-snug">{hint}</div>
+    </GlassCard>
+  );
+}
+
+function CloudCard({ hour }: { hour: Hour | null }) {
+  const c = Math.round(hour?.cloud ?? 0);
+  const label = c < 25 ? "Klar himmel" : c < 60 ? "Delvis skyet" : c < 85 ? "Skyet" : "Overskyet";
+  return (
+    <GlassCard eyebrow="Skydekke" icon={<Cloud size={14} />}>
+      <div className="text-3xl font-light tabular-nums">{hour ? `${c} %` : "—"}</div>
+      <div className="text-[12px] text-white/80 mt-3 leading-snug">{label}</div>
+    </GlassCard>
+  );
+}
+
+function PrecipTodayCard({ day, liveMm, days }: { day: ForecastDay | undefined; liveMm: number | null; days: ForecastDay[] | null }) {
+  const mm = liveMm ?? day?.precip ?? 0;
+  const nextRainDay = days?.slice(1, 7).find((d) => d.precip >= 0.2);
+  const hint = nextRainDay
+    ? `${nextRainDay.precip.toFixed(1)} mm ventes ${weekdayShort(nextRainDay.date)}.`
+    : "Tørt de neste dagene.";
+  return (
+    <GlassCard eyebrow="Nedbør" icon={<CloudRain size={14} />}>
+      <div className="text-3xl font-light tabular-nums">{mm.toFixed(mm < 10 ? 1 : 0)} mm</div>
+      <div className="text-sm text-white/85">I dag</div>
+      <div className="text-[12px] text-white/75 mt-2 leading-snug">{hint}</div>
+    </GlassCard>
+  );
+}
+
+function GustCard({ hour }: { hour: Hour | null }) {
+  const w = hour?.wind ?? 0;
+  const g = hour?.windGust ?? w;
+  return (
+    <GlassCard eyebrow="Vindkast" icon={<Wind size={14} />}>
+      <div className="text-3xl font-light tabular-nums">{g.toFixed(1)}</div>
+      <div className="text-sm text-white/85">m/s</div>
+      <div className="text-[12px] text-white/75 mt-2 leading-snug">Gjennomsnitt {w.toFixed(1)} m/s.</div>
+    </GlassCard>
+  );
+}
+
+function HumidityCard({ hour, liveValue }: { hour: Hour | null; liveValue: number | null }) {
+  const h = Math.round(liveValue ?? hour?.humidity ?? 0);
+  return (
+    <GlassCard eyebrow="Luftfuktighet" icon={<Droplets size={14} />}>
+      <div className="text-3xl font-light tabular-nums">{h} %</div>
+      <div className="text-[12px] text-white/75 mt-3 leading-snug">
+        Duggpunkt ca {Math.round((hour?.temp ?? 0) - (100 - h) / 5)}°.
+      </div>
+    </GlassCard>
+  );
+}
+
+function PressureCard({ hour, liveValue }: { hour: Hour | null; liveValue: number | null }) {
+  const p = liveValue ?? hour?.pressure ?? 0;
+  const min = 980, max = 1040;
+  const pct = Math.max(0, Math.min(1, (p - min) / (max - min)));
+  return (
+    <GlassCard eyebrow="Lufttrykk" icon={<Gauge size={14} />}>
+      <div className="relative h-16 mt-1">
+        <svg viewBox="0 0 100 50" className="w-full h-full">
+          <path d="M 10 45 A 40 40 0 0 1 90 45" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="2" />
+          {Array.from({ length: 21 }).map((_, i) => {
+            const a = Math.PI + (i / 20) * Math.PI;
+            const x1 = 50 + 38 * Math.cos(a);
+            const y1 = 45 + 38 * Math.sin(a);
+            const x2 = 50 + (i % 5 === 0 ? 32 : 35) * Math.cos(a);
+            const y2 = 45 + (i % 5 === 0 ? 32 : 35) * Math.sin(a);
+            return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="rgba(255,255,255,0.5)" strokeWidth="0.5" />;
+          })}
+          {(() => {
+            const a = Math.PI + pct * Math.PI;
+            const x = 50 + 36 * Math.cos(a);
+            const y = 45 + 36 * Math.sin(a);
+            return <line x1="50" y1="45" x2={x} y2={y} stroke="white" strokeWidth="1.5" strokeLinecap="round" />;
+          })()}
+        </svg>
+      </div>
+      <div className="text-center -mt-3">
+        <div className="text-2xl font-light tabular-nums">{Math.round(p)}</div>
+        <div className="text-[11px] text-white/70">hPa</div>
+      </div>
+      <div className="flex justify-between text-[10px] text-white/70 -mt-1">
+        <span>Lavt</span><span>Høyt</span>
+      </div>
+    </GlassCard>
+  );
+}
+
+// ============================================================
+// Netatmo tiles
+// ============================================================
+
+function NetatmoTile({
+  label, temp, wind, rain, humidity, pressure,
+}: {
+  label: string; temp: number | null; wind: number | null; rain: number | null; humidity: number | null; pressure: number | null;
+}) {
+  return (
+    <div className="rounded-xl bg-black/15 border border-white/10 p-3">
+      <div className="text-[11px] tracking-wider text-white/75 uppercase mb-2">{label}</div>
+      <div className="grid grid-cols-2 gap-y-1.5 text-[12px]">
+        {temp !== null && (<><span className="text-white/70">Temp</span><span className="text-right tabular-nums">{temp.toFixed(1)}°</span></>)}
+        <span className="text-white/70">Vind</span><span className="text-right tabular-nums">{wind !== null ? `${wind.toFixed(1)} m/s` : "—"}</span>
+        <span className="text-white/70">Regn i dag</span><span className="text-right tabular-nums">{rain !== null ? `${rain.toFixed(1)} mm` : "—"}</span>
+        <span className="text-white/70">Fukt</span><span className="text-right tabular-nums">{humidity !== null ? `${Math.round(humidity)} %` : "—"}</span>
+        <span className="text-white/70">Trykk</span><span className="text-right tabular-nums">{pressure !== null ? `${Math.round(pressure)} hPa` : "—"}</span>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// Alert card (iOS-style)
+// ============================================================
+
+function AlertCard({ alert }: { alert: MetAlert }) {
+  const color = alertColor(alert.awarenessColor);
+  return (
+    <div
+      className="rounded-2xl bg-white/10 backdrop-blur-xl border border-white/15 p-4 border-l-[6px]"
+      style={{ borderLeftColor: color }}
+    >
+      <div className="flex items-start gap-3">
+        <AlertTriangle size={20} style={{ color }} />
+        <div className="flex-1">
+          <div className="text-[11px] tracking-[0.2em] uppercase font-semibold" style={{ color }}>
+            {alert.awarenessColor} · {alert.severity}
+          </div>
+          <div className="text-base font-medium mt-1">{alert.title}</div>
+          {alert.description && <p className="text-[13px] text-white/85 mt-1 line-clamp-3">{alert.description}</p>}
+          {alert.area && <div className="text-[11px] text-white/70 mt-2">{alert.area}</div>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// Wind rose (light theme adapted)
+// ============================================================
+
+function WindRose({ name, hours, rangeHours }: { name: string; hours: Hour[] | null; rangeHours: number }) {
+  if (!hours) return <div className="text-white/70 italic text-sm">{name}: laster…</div>;
   const next = hours.slice(0, rangeHours);
-  // 8 hovedretninger
   const dirs = ["N", "NØ", "Ø", "SØ", "S", "SV", "V", "NV"];
   const buckets = new Array(8).fill(0).map(() => ({ count: 0, sumWind: 0 }));
   for (const h of next) {
@@ -804,40 +855,20 @@ function WindRoseCard({
   const maxWind = Math.max(...next.map((h) => h.wind));
   const avgWind = next.reduce((sum, h) => sum + h.wind, 0) / next.length;
   const dominantIdx = buckets.indexOf(buckets.reduce((a, b) => (b.count > a.count ? b : a)));
-
-  const cx = 100;
-  const cy = 100;
-  const rOuter = 80;
+  const cx = 100, cy = 100, rOuter = 80;
   return (
-    <article className="panel rounded-lg p-5 glow-on-hover">
-      <div className="flex items-baseline justify-between mb-3">
-        <h3 className="text-display text-primary text-lg">{name}</h3>
-        <span className="text-[10px] tracking-[0.25em] text-muted-foreground uppercase">
-          {rangeLabel(rangeHours)} · vindrose
-        </span>
-      </div>
-      <div className="grid grid-cols-[1fr_auto] gap-4 items-center">
+    <div className="rounded-xl bg-black/10 p-3">
+      <div className="text-[11px] text-white/80 uppercase tracking-wider mb-2">{name}</div>
+      <div className="grid grid-cols-[1fr_auto] gap-3 items-center">
         <svg viewBox="0 0 200 200" className="w-full max-w-[220px] mx-auto">
-          {/* Ringer */}
           {[0.33, 0.66, 1].map((f) => (
-            <circle
-              key={f}
-              cx={cx}
-              cy={cy}
-              r={rOuter * f}
-              fill="none"
-              stroke="var(--border)"
-              strokeDasharray="2 3"
-              opacity="0.5"
-            />
+            <circle key={f} cx={cx} cy={cy} r={rOuter * f} fill="none" stroke="rgba(255,255,255,0.25)" strokeDasharray="2 3" />
           ))}
-          {/* Akser N-S, E-W */}
-          <line x1={cx} y1={cy - rOuter} x2={cx} y2={cy + rOuter} stroke="var(--border)" opacity="0.4" />
-          <line x1={cx - rOuter} y1={cy} x2={cx + rOuter} y2={cy} stroke="var(--border)" opacity="0.4" />
-          {/* Sektorer */}
+          <line x1={cx} y1={cy - rOuter} x2={cx} y2={cy + rOuter} stroke="rgba(255,255,255,0.2)" />
+          <line x1={cx - rOuter} y1={cy} x2={cx + rOuter} y2={cy} stroke="rgba(255,255,255,0.2)" />
           {buckets.map((b, i) => {
             if (b.count === 0) return null;
-            const startAngle = i * 45 - 22.5 - 90; // North up
+            const startAngle = i * 45 - 22.5 - 90;
             const endAngle = startAngle + 45;
             const r = (b.count / maxCount) * rOuter;
             const a1 = (startAngle * Math.PI) / 180;
@@ -846,69 +877,135 @@ function WindRoseCard({
             const y1 = cy + r * Math.sin(a1);
             const x2 = cx + r * Math.cos(a2);
             const y2 = cy + r * Math.sin(a2);
-            const largeArc = 0;
-            const path = `M ${cx} ${cy} L ${x1.toFixed(1)} ${y1.toFixed(1)} A ${r} ${r} 0 ${largeArc} 1 ${x2.toFixed(1)} ${y2.toFixed(1)} Z`;
+            const path = `M ${cx} ${cy} L ${x1.toFixed(1)} ${y1.toFixed(1)} A ${r} ${r} 0 0 1 ${x2.toFixed(1)} ${y2.toFixed(1)} Z`;
             const intensity = b.sumWind / Math.max(1, b.count) / Math.max(1, maxWind);
-            return (
-              <path
-                key={i}
-                d={path}
-                fill="var(--primary)"
-                opacity={0.3 + intensity * 0.5}
-                stroke="var(--primary)"
-                strokeWidth="0.5"
-              />
-            );
+            return <path key={i} d={path} fill="#7dd3fc" opacity={0.4 + intensity * 0.5} stroke="#7dd3fc" strokeWidth="0.5" />;
           })}
-          {/* Retnings-labels */}
           {dirs.map((d, i) => {
             const angle = (i * 45 - 90) * (Math.PI / 180);
             const x = cx + (rOuter + 12) * Math.cos(angle);
             const y = cy + (rOuter + 12) * Math.sin(angle) + 3;
             return (
-              <text
-                key={d}
-                x={x}
-                y={y}
-                fontSize="10"
-                fill={i === dominantIdx ? "var(--primary)" : "var(--muted-foreground)"}
-                textAnchor="middle"
-                fontWeight={i === dominantIdx ? "700" : "400"}
-              >
+              <text key={d} x={x} y={y} fontSize="10" fill={i === dominantIdx ? "#fde68a" : "white"} textAnchor="middle" fontWeight={i === dominantIdx ? 700 : 400}>
                 {d}
               </text>
             );
           })}
         </svg>
-        <div className="space-y-3 text-center">
-          <div>
-            <div className="text-[10px] tracking-[0.25em] text-muted-foreground uppercase">
-              Snitt
-            </div>
-            <div className="text-display text-primary text-2xl">{avgWind.toFixed(1)}</div>
-            <div className="text-[10px] text-muted-foreground tracking-wider uppercase">m/s</div>
-          </div>
-          <div>
-            <div className="text-[10px] tracking-[0.25em] text-muted-foreground uppercase">
-              Maks
-            </div>
-            <div className="text-display text-foreground text-xl">{maxWind.toFixed(1)}</div>
-            <div className="text-[10px] text-muted-foreground tracking-wider uppercase">m/s</div>
-          </div>
-          <div>
-            <div className="text-[10px] tracking-[0.25em] text-muted-foreground uppercase">
-              Fra
-            </div>
-            <div className="text-display text-primary text-xl">{dirs[dominantIdx]}</div>
-          </div>
+        <div className="space-y-2 text-center text-xs">
+          <div><div className="text-white/70 uppercase tracking-wider text-[10px]">Snitt</div><div className="text-xl font-light tabular-nums">{avgWind.toFixed(1)}</div><div className="text-[10px] text-white/60">m/s</div></div>
+          <div><div className="text-white/70 uppercase tracking-wider text-[10px]">Maks</div><div className="text-base font-light tabular-nums">{maxWind.toFixed(1)}</div></div>
+          <div><div className="text-white/70 uppercase tracking-wider text-[10px]">Fra</div><div className="text-base font-light">{dirs[dominantIdx]}</div></div>
         </div>
       </div>
-    </article>
+    </div>
   );
 }
 
 // ============================================================
-// Helpers
+// Range selector (compact)
+// ============================================================
+
+function RangeSelector({ value, onChange }: { value: 24 | 72 | 168; onChange: (v: 24 | 72 | 168) => void }) {
+  const opts: { v: 24 | 72 | 168; label: string }[] = [
+    { v: 24, label: "24t" },
+    { v: 72, label: "3d" },
+    { v: 168, label: "7d" },
+  ];
+  return (
+    <div className="inline-flex rounded-md bg-black/20 p-0.5 gap-0.5">
+      {opts.map((o) => {
+        const active = value === o.v;
+        return (
+          <button key={o.v} onClick={() => onChange(o.v)}
+            className={"px-3 py-1 text-[11px] uppercase tracking-wider rounded transition-colors " + (active ? "bg-white text-slate-800" : "text-white/80")}
+          >
+            {o.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+// ============================================================
+// Collapsible Windy map (kept)
+// ============================================================
+
+const WINDY_OVERLAYS: { key: string; label: string; icon: string }[] = [
+  { key: "wind", label: "Vind", icon: "💨" },
+  { key: "rain", label: "Regn", icon: "🌧" },
+  { key: "rainAccu", label: "Akk. nedbør", icon: "☔" },
+  { key: "snowAccu", label: "Snø", icon: "❄️" },
+  { key: "temp", label: "Temperatur", icon: "🌡" },
+  { key: "clouds", label: "Skyer", icon: "☁️" },
+  { key: "thunder", label: "Torden", icon: "⚡" },
+  { key: "pressure", label: "Trykk", icon: "🜨" },
+  { key: "gust", label: "Vindkast", icon: "🌬" },
+  { key: "rh", label: "Fuktighet", icon: "💧" },
+  { key: "visibility", label: "Sikt", icon: "👁" },
+  { key: "fog", label: "Tåke", icon: "🌫" },
+  { key: "uvIndex", label: "UV-indeks", icon: "🔆" },
+  { key: "cape", label: "CAPE", icon: "🌩" },
+  { key: "satellite", label: "Satellitt", icon: "🛰" },
+  { key: "radar", label: "Radar", icon: "📡" },
+];
+
+function CollapsibleMap() {
+  const [open, setOpen] = usePerUserPersistedState<boolean>("var:windyMap", false);
+  return (
+    <GlassCard eyebrow="Live værkart · Windy" icon={<MapIcon size={14} />}>
+      <button type="button" onClick={() => setOpen((o) => !o)} className="w-full flex items-center justify-between text-sm">
+        <span>{open ? "Lukk kartet" : "Åpne live værkart"}</span>
+        {open ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+      </button>
+      {open && <WindyMap />}
+    </GlassCard>
+  );
+}
+
+function WindyMap() {
+  const [overlay, setOverlay] = useState("wind");
+  const src = useMemo(() => {
+    const params = new URLSearchParams({
+      lat: "59.6", lon: "9.2", detailLat: "59.21", detailLon: "9.61", zoom: "8",
+      level: "surface", overlay, product: "ecmwf", menu: "", message: "true",
+      marker: "", calendar: "now", pressure: "", type: "map", location: "coordinates",
+      detail: "true", metricWind: "m/s", metricTemp: "°C", radarRange: "-1",
+    });
+    return `https://embed.windy.com/embed2.html?${params.toString()}`;
+  }, [overlay]);
+  return (
+    <div className="mt-3">
+      <div className="flex flex-wrap gap-1.5 mb-3">
+        {WINDY_OVERLAYS.map((o) => {
+          const active = o.key === overlay;
+          return (
+            <button key={o.key} onClick={() => setOverlay(o.key)}
+              className={"px-2 py-1 rounded-md text-[11px] uppercase tracking-wider border transition-colors " + (active ? "bg-white text-slate-800 border-white" : "bg-white/5 border-white/20 text-white/80 hover:bg-white/10")}
+            >
+              <span className="mr-1">{o.icon}</span>{o.label}
+            </button>
+          );
+        })}
+      </div>
+      <div className="relative w-full overflow-hidden rounded-xl" style={{ aspectRatio: "16 / 11" }}>
+        <iframe key={overlay} title={`Windy — ${overlay}`} src={src} className="absolute inset-0 w-full h-full border-0" loading="lazy" referrerPolicy="no-referrer" allow="fullscreen" />
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// Skeleton
+// ============================================================
+
+function Skeleton() {
+  return <div className="h-16 rounded-lg bg-white/5 animate-pulse" />;
+}
+
+// ============================================================
+// Helpers (preserved)
 // ============================================================
 
 function rangeLabel(h: number): string {
@@ -917,100 +1014,36 @@ function rangeLabel(h: number): string {
   return "7 dager";
 }
 
-function RangeSelector({
-  value,
-  onChange,
-}: {
-  value: 24 | 72 | 168;
-  onChange: (v: 24 | 72 | 168) => void;
-}) {
-  const options: { v: 24 | 72 | 168; label: string }[] = [
-    { v: 24, label: "24 timer" },
-    { v: 72, label: "3 dager" },
-    { v: 168, label: "7 dager" },
-  ];
-  return (
-    <div className="flex justify-center">
-      <div
-        role="tablist"
-        aria-label="Tidsrom for værvarsel"
-        className="inline-flex rounded-md border border-border/60 bg-background/40 p-1 gap-1"
-      >
-        {options.map((o) => {
-          const active = value === o.v;
-          return (
-            <button
-              key={o.v}
-              role="tab"
-              aria-selected={active}
-              onClick={() => onChange(o.v)}
-              className={
-                "px-4 py-1.5 text-[11px] tracking-[0.25em] uppercase rounded transition-colors " +
-                (active
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:text-foreground")
-              }
-            >
-              {o.label}
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
 function alertColor(c: string): string {
   switch (c) {
-    case "red": return "oklch(0.55 0.22 25)";
-    case "orange": return "oklch(0.70 0.18 50)";
-    case "yellow": return "oklch(0.80 0.16 90)";
-    default: return "oklch(0.65 0.10 150)";
+    case "red": return "#ef4444";
+    case "orange": return "#fb923c";
+    case "yellow": return "#fde047";
+    default: return "#86efac";
   }
 }
 
 function hasCap(d: DeviceLike | null | undefined, cap: string): boolean {
   return typeof d?.capabilities?.[cap]?.value === "number";
 }
-
 function readCap(d: DeviceLike | null | undefined, cap: string): number | null {
   const v = d?.capabilities?.[cap]?.value;
   return typeof v === "number" ? v : null;
 }
-
 function hasAnyRainCap(d: DeviceLike | null | undefined): boolean {
   if (!d?.capabilities) return false;
   for (const k of Object.keys(d.capabilities)) {
-    if (k.toLowerCase().includes("rain") && typeof d.capabilities[k]?.value === "number") {
-      return true;
-    }
+    if (k.toLowerCase().includes("rain") && typeof d.capabilities[k]?.value === "number") return true;
   }
   return false;
 }
-
 function readDailyRain(d: DeviceLike | null | undefined): number | null {
   if (!d?.capabilities) return null;
   const caps = d.capabilities;
-  const priority = [
-    "meter_rain.today",
-    "meter_rain.daily",
-    "meter_rain.day",
-    "measure_rain.today",
-    "measure_rain.daily",
-    "measure_rain.day",
-    "meter_rain",
-    "measure_rain.24h",
-    "measure_rain.1h",
-    "measure_rain",
-  ];
-  for (const cap of priority) {
-    const v = caps[cap]?.value;
-    if (typeof v === "number") return v;
-  }
+  const priority = ["meter_rain.today","meter_rain.daily","meter_rain.day","measure_rain.today","measure_rain.daily","measure_rain.day","meter_rain","measure_rain.24h","measure_rain.1h","measure_rain"];
+  for (const cap of priority) { const v = caps[cap]?.value; if (typeof v === "number") return v; }
   for (const [k, val] of Object.entries(caps)) {
-    if (k.toLowerCase().includes("rain") && typeof val?.value === "number") {
-      return val.value as number;
-    }
+    if (k.toLowerCase().includes("rain") && typeof val?.value === "number") return val.value as number;
   }
   return null;
 }
@@ -1028,15 +1061,12 @@ function parseForecast(data: any): { days: ForecastDay[]; hours: Hour[] } {
     const temp = inst.air_temperature;
     if (typeof temp !== "number") continue;
     const symbol = next1?.summary?.symbol_code ?? next6?.summary?.symbol_code ?? null;
-    const precip =
-      next1?.details?.precipitation_amount ??
-      next6?.details?.precipitation_amount ??
-      0;
+    const precip = next1?.details?.precipitation_amount ?? next6?.details?.precipitation_amount ?? 0;
+    const precipProbability = next1?.details?.probability_of_precipitation ?? next6?.details?.probability_of_precipitation ?? 0;
     hours.push({
-      time,
-      temp,
-      precip,
+      time, temp, precip, precipProbability,
       wind: inst.wind_speed ?? 0,
+      windGust: inst.wind_speed_of_gust ?? inst.wind_speed ?? 0,
       windDir: inst.wind_from_direction ?? 0,
       pressure: inst.air_pressure_at_sea_level ?? 0,
       humidity: inst.relative_humidity ?? 0,
@@ -1045,19 +1075,17 @@ function parseForecast(data: any): { days: ForecastDay[]; hours: Hour[] } {
     });
     const existing = dayMap.get(date);
     if (!existing) {
-      dayMap.set(date, { date, tempMin: temp, tempMax: temp, symbol, precip });
+      dayMap.set(date, { date, tempMin: temp, tempMax: temp, symbol, precip, precipProbability });
     } else {
       existing.tempMin = Math.min(existing.tempMin, temp);
       existing.tempMax = Math.max(existing.tempMax, temp);
       existing.precip += precip;
+      existing.precipProbability = Math.max(existing.precipProbability, precipProbability);
       const hour = parseInt(time.slice(11, 13));
       if (hour >= 11 && hour <= 14 && symbol) existing.symbol = symbol;
     }
   }
-  return {
-    days: Array.from(dayMap.values()).sort((a, b) => a.date.localeCompare(b.date)),
-    hours,
-  };
+  return { days: Array.from(dayMap.values()).sort((a, b) => a.date.localeCompare(b.date)), hours };
 }
 
 function symbolEmoji(symbol: string | null): string {
@@ -1074,23 +1102,33 @@ function symbolEmoji(symbol: string | null): string {
   return "🌥";
 }
 
-function weekdayShort(iso: string) {
-  return new Date(iso + "T00:00:00").toLocaleDateString("nb-NO", { weekday: "short" });
+function conditionFromSymbol(symbol: string | null): string {
+  if (!symbol) return "—";
+  if (symbol.includes("clearsky")) return "Klart";
+  if (symbol.includes("fair")) return "Lettskyet";
+  if (symbol.includes("partlycloudy")) return "Delvis skyet";
+  if (symbol.includes("cloudy")) return "Skyet";
+  if (symbol.includes("snow")) return "Snø";
+  if (symbol.includes("sleet")) return "Sludd";
+  if (symbol.includes("thunder")) return "Tordenvær";
+  if (symbol.includes("rain")) return "Regn";
+  if (symbol.includes("fog")) return "Tåke";
+  return "Vekslende";
 }
-function dayMonth(iso: string) {
-  return new Date(iso + "T00:00:00").toLocaleDateString("nb-NO", { day: "numeric", month: "short" });
+
+function weekdayShort(iso: string) {
+  return new Date(iso + "T00:00:00").toLocaleDateString("nb-NO", { weekday: "short" }).replace(".", ".");
 }
 function formatTime(d: Date | null): string {
   if (!d) return "—";
   return d.toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit" });
 }
-function formatDuration(min: number): string {
-  const h = Math.floor(min / 60);
-  const m = Math.round(min % 60);
-  return `${h}t ${m}m`;
+function dirCardinal(deg: number): string {
+  const dirs = ["N", "NØ", "Ø", "SØ", "S", "SV", "V", "NV"];
+  return dirs[Math.round((deg % 360) / 45) % 8];
 }
 
-// --- Sun position (NOAA approximation) ---
+// --- Sun position ---
 function sunTimes(date: Date, lat: number, lon: number) {
   const today = computeSunForDate(date, lat, lon);
   const yesterday = computeSunForDate(new Date(date.getTime() - 86_400_000), lat, lon);
@@ -1101,13 +1139,11 @@ function sunTimes(date: Date, lat: number, lon: number) {
     deltaMinutes: today.dayLengthMinutes - yesterday.dayLengthMinutes,
   };
 }
-
 function computeSunForDate(date: Date, lat: number, lon: number) {
   const rad = Math.PI / 180;
   const y = date.getUTCFullYear();
   const m = date.getUTCMonth() + 1;
   const d = date.getUTCDate();
-  // Julian date for noon UTC
   const a = Math.floor((14 - m) / 12);
   const yy = y + 4800 - a;
   const mm = m + 12 * a - 3;
@@ -1132,15 +1168,14 @@ function computeSunForDate(date: Date, lat: number, lon: number) {
   return { sunrise, sunset, dayLengthMinutes };
 }
 
-// --- Moon phase ---
+// --- Moon ---
 function moonPhase(date: Date) {
   const synodic = 29.53058867;
-  const ref = Date.UTC(2000, 0, 6, 18, 14, 0); // Known new moon
+  const ref = Date.UTC(2000, 0, 6, 18, 14, 0);
   const days = (date.getTime() - ref) / 86_400_000;
   const phase = ((days % synodic) + synodic) % synodic;
   const illumination = (1 - Math.cos((2 * Math.PI * phase) / synodic)) / 2;
-  let name: string;
-  let icon: string;
+  let name: string, icon: string;
   if (phase < 1.84566) { name = "Nymåne"; icon = "🌑"; }
   else if (phase < 5.53699) { name = "Voksende månesigd"; icon = "🌒"; }
   else if (phase < 9.22831) { name = "Første kvarter"; icon = "🌓"; }
@@ -1152,117 +1187,25 @@ function moonPhase(date: Date) {
   else { name = "Nymåne"; icon = "🌑"; }
   return { name, icon, illumination };
 }
-
-// ============================================================
-// Windy live-kart med valgbare lag og tidslinje
-// ============================================================
-
-const WINDY_OVERLAYS: { key: string; label: string; icon: string }[] = [
-  { key: "wind", label: "Vind", icon: "💨" },
-  { key: "rain", label: "Regn", icon: "🌧" },
-  { key: "rainAccu", label: "Akk. nedbør", icon: "☔" },
-  { key: "snowAccu", label: "Snø", icon: "❄️" },
-  { key: "temp", label: "Temperatur", icon: "🌡" },
-  { key: "clouds", label: "Skyer", icon: "☁️" },
-  { key: "thunder", label: "Torden", icon: "⚡" },
-  { key: "pressure", label: "Trykk", icon: "🜨" },
-  { key: "gust", label: "Vindkast", icon: "🌬" },
-  { key: "rh", label: "Fuktighet", icon: "💧" },
-  { key: "waves", label: "Bølger", icon: "🌊" },
-  { key: "visibility", label: "Sikt", icon: "👁" },
-  { key: "fog", label: "Tåke", icon: "🌫" },
-  { key: "uvIndex", label: "UV-indeks", icon: "🔆" },
-  { key: "cape", label: "CAPE (uvær)", icon: "🌩" },
-  { key: "satellite", label: "Satellitt", icon: "🛰" },
-  { key: "radar", label: "Radar", icon: "📡" },
-];
-
-function CollapsibleMap() {
-  const [open, setOpen] = usePerUserPersistedState<boolean>("var:windyMap", false);
-  return (
-    <div className="space-y-3">
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        className="w-full panel rounded-lg p-4 flex items-center justify-between hover:bg-card/70 transition-colors"
-      >
-        <span className="text-display tracking-[0.2em] text-primary text-sm uppercase flex items-center gap-2">
-          <span>🗺</span>
-          {open ? "Lukk kartet" : "Åpne live værkart"}
-        </span>
-        <span className="text-muted-foreground text-xs">{open ? "▲" : "▼"}</span>
-      </button>
-      {open && <WindyMap />}
-    </div>
-  );
+function nextMoonset(now: Date): Date | null {
+  // Approksimasjon: månenedgang ca 50 min senere hver dag, basert på en kjent fullmåne-nedgang
+  // For ikon-formål — bruker tidspunkt mellom 21:00 og 02:00 forskjøvet med faseprogresjon
+  const synodic = 29.53058867;
+  const ref = Date.UTC(2000, 0, 6, 18, 14, 0);
+  const phase = (((now.getTime() - ref) / 86_400_000) % synodic + synodic) % synodic;
+  const offset = (phase / synodic) * 24 * 60; // minutter
+  const base = new Date(now);
+  base.setHours(20, 0, 0, 0);
+  const set = new Date(base.getTime() + offset * 60_000);
+  if (set < now) set.setDate(set.getDate() + 1);
+  return set;
 }
-
-function WindyMap() {
-  const [overlay, setOverlay] = useState<string>("wind");
-
-  const src = useMemo(() => {
-    const params = new URLSearchParams({
-      lat: "59.6",
-      lon: "9.2",
-      detailLat: "59.21",
-      detailLon: "9.61",
-      zoom: "8",
-      level: "surface",
-      overlay,
-      product: "ecmwf",
-      menu: "",
-      message: "true",
-      marker: "",
-      calendar: "now",
-      pressure: "",
-      type: "map",
-      location: "coordinates",
-      detail: "true",
-      metricWind: "m/s",
-      metricTemp: "°C",
-      radarRange: "-1",
-    });
-    return `https://embed.windy.com/embed2.html?${params.toString()}`;
-  }, [overlay]);
-
-  return (
-    <article className="panel rounded-lg p-2 sm:p-3 overflow-hidden">
-      <div className="flex flex-wrap gap-1.5 mb-3 px-1">
-        {WINDY_OVERLAYS.map((o) => {
-          const active = o.key === overlay;
-          return (
-            <button
-              key={o.key}
-              type="button"
-              onClick={() => setOverlay(o.key)}
-              className={
-                "px-2.5 py-1 rounded-md text-xs tracking-wider uppercase border transition-colors " +
-                (active
-                  ? "bg-primary/20 border-primary text-primary shadow-[0_0_12px_color-mix(in_oklab,var(--primary)_30%,transparent)]"
-                  : "bg-background/40 border-border text-muted-foreground hover:text-foreground hover:border-primary/50")
-              }
-              aria-pressed={active}
-            >
-              <span className="mr-1">{o.icon}</span>
-              {o.label}
-            </button>
-          );
-        })}
-      </div>
-      <div className="relative w-full overflow-hidden rounded-md" style={{ aspectRatio: "16 / 11" }}>
-        <iframe
-          key={overlay}
-          title={`Windy live værkart — ${overlay}`}
-          src={src}
-          className="absolute inset-0 w-full h-full border-0"
-          loading="lazy"
-          referrerPolicy="no-referrer"
-          allow="fullscreen"
-        />
-      </div>
-      <p className="text-[10px] tracking-[0.2em] text-muted-foreground/70 uppercase mt-2 text-center">
-        Kart fra Windy.com · Velg lag over · Tidslinje nederst i kartet
-      </p>
-    </article>
-  );
+function daysUntilFullMoon(now: Date): number {
+  const synodic = 29.53058867;
+  const ref = Date.UTC(2000, 0, 6, 18, 14, 0);
+  const phase = (((now.getTime() - ref) / 86_400_000) % synodic + synodic) % synodic;
+  const full = 14.77;
+  let d = full - phase;
+  if (d < 0) d += synodic;
+  return Math.round(d);
 }
