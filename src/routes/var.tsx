@@ -7,7 +7,6 @@ import { findDeviceFuzzy, type DeviceLike } from "@/lib/homey-match";
 import { getTollnesAlerts, type AlertsResult, type MetAlert } from "@/lib/lightning.functions";
 import { useUserLocation, UserLocationBar } from "@/hooks/use-user-location";
 import { UvPanel } from "@/components/UvPanel";
-import { WeatherScene } from "@/components/WeatherScene";
 import { usePerUserPersistedState } from "@/hooks/use-per-user-persisted-state";
 import {
   Wind,
@@ -202,19 +201,10 @@ function WeatherPage() {
   const todayDay = skienDays?.[0];
   const condition = currentHour ? conditionFromSymbol(currentHour.symbol) : "—";
 
-  const isNight = (() => {
-    const h = now.getHours();
-    if (sun?.sunrise && sun?.sunset) {
-      return now < sun.sunrise || now > sun.sunset;
-    }
-    return h < 6 || h >= 21;
-  })();
-
   return (
     <PageShell>
-      <div className={`relative min-h-screen bg-gradient-to-b ${bgGradient} transition-colors duration-1000 overflow-hidden`}>
-        <WeatherScene symbol={currentHour?.symbol ?? null} isNight={isNight} />
-        <div className="relative max-w-3xl mx-auto px-4 pt-8 pb-16 space-y-4 text-white" style={{ zIndex: 1 }}>
+      <div className={`min-h-screen bg-gradient-to-b ${bgGradient} transition-colors duration-1000`}>
+        <div className="max-w-3xl mx-auto px-4 pt-8 pb-16 space-y-4 text-white">
           {/* HERO */}
           <header className="text-center pt-4 pb-2">
             <div className="text-[11px] tracking-[0.25em] font-medium text-white/90 uppercase">
