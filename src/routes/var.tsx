@@ -316,14 +316,14 @@ function WeatherPage() {
             <PressureCard hour={currentHour} liveValue={tollnesPressure} />
           </div>
 
-          {/* LIVE MÅLERE — Netatmo */}
-          {homeyOk && (
+          {/* LIVE MÅLINGER — Netatmo */}
+          {(homeyOk || netatmoData?.ok === true) && (
             <GlassCard
               eyebrow="Live målinger · Netatmo"
               icon={<Thermometer size={14} />}
             >
               <div className="grid grid-cols-2 gap-3 -mx-1">
-                <NetatmoTile label="Borgen · Tollnes" temp={tollnesTemp} wind={tollnesWind} rain={tollnesRainToday} humidity={tollnesHumidity} pressure={tollnesPressure} />
+                <NetatmoTile label="Ute · Borgen · Tollnes" temp={borgenTemp} wind={tollnesWind} rain={tollnesRainToday} humidity={borgenHumidity} pressure={tollnesPressure} />
                 <NetatmoTile label="Hytta · Numedal" temp={hyttaTemp} wind={hyttaWind} rain={hyttaRainToday} humidity={hyttaHumidity} pressure={hyttaPressure} />
               </div>
             </GlassCard>
