@@ -712,6 +712,61 @@ main .container {
 .animate-grass-toward { animation: grass-toward 1.6s ease-in infinite; }
 .animate-grass-sway   { animation: grass-sway   2.4s ease-in-out infinite; }
 
+/* ============= Weather tile FX ============= */
+@keyframes wx-rain-fall {
+  0%   { transform: translateY(-20%) translateX(0);   opacity: 0; }
+  10%  { opacity: 0.85; }
+  90%  { opacity: 0.85; }
+  100% { transform: translateY(120%) translateX(6px); opacity: 0; }
+}
+@keyframes wx-snow-fall {
+  0%   { transform: translateY(-15%) translateX(0);   opacity: 0; }
+  15%  { opacity: 0.9; }
+  85%  { opacity: 0.9; }
+  100% { transform: translateY(120%) translateX(var(--sx,8px)); opacity: 0; }
+}
+@keyframes wx-cloud-drift {
+  0%   { transform: translateX(-30%); }
+  100% { transform: translateX(130%); }
+}
+@keyframes wx-wind-streak {
+  0%   { transform: translateX(-40%) scaleX(0.6); opacity: 0; }
+  20%  { opacity: 0.7; }
+  80%  { opacity: 0.7; }
+  100% { transform: translateX(140%) scaleX(1.1); opacity: 0; }
+}
+@keyframes wx-heatwave {
+  0%, 100% { transform: translateY(0) scaleX(1); opacity: 0.5; }
+  50%      { transform: translateY(-6px) scaleX(1.05); opacity: 0.85; }
+}
+@keyframes wx-droplet-rise {
+  0%   { transform: translateY(110%) scale(0.6); opacity: 0; }
+  30%  { opacity: 0.9; }
+  100% { transform: translateY(-20%) scale(1); opacity: 0; }
+}
+@keyframes wx-pressure-pulse {
+  0%, 100% { transform: scale(1);    opacity: 0.4; }
+  50%      { transform: scale(1.18); opacity: 0.8; }
+}
+@keyframes wx-gust-puff {
+  0%   { transform: translateX(-30%) scale(0.8); opacity: 0; }
+  30%  { opacity: 0.55; }
+  100% { transform: translateX(140%) scale(1.1); opacity: 0; }
+}
+@keyframes wx-sparkle {
+  0%, 100% { opacity: 0.2; transform: scale(0.8); }
+  50%      { opacity: 1;   transform: scale(1.2); }
+}
+.animate-wx-rain      { animation: wx-rain-fall linear infinite; }
+.animate-wx-snow      { animation: wx-snow-fall linear infinite; }
+.animate-wx-cloud     { animation: wx-cloud-drift linear infinite; }
+.animate-wx-wind      { animation: wx-wind-streak linear infinite; }
+.animate-wx-heatwave  { animation: wx-heatwave ease-in-out infinite; }
+.animate-wx-droplet   { animation: wx-droplet-rise ease-in infinite; }
+.animate-wx-pressure  { animation: wx-pressure-pulse ease-in-out infinite; }
+.animate-wx-gust      { animation: wx-gust-puff ease-out infinite; }
+.animate-wx-sparkle   { animation: wx-sparkle ease-in-out infinite; }
+
 /* ============= iPhone App overrides (portrait mobile) ============= */
 .iphone-mode main {
   padding: 12px 10px !important;
