@@ -261,7 +261,7 @@ function WeatherPage() {
           </header>
 
           {/* Sted-bytter (samme stil som øvrige fliser) */}
-          <div className="rounded-2xl overflow-hidden bg-white/10 backdrop-blur-xl border border-white/15 shadow-lg shadow-black/10">
+          <div className="rounded-2xl bg-white/10 backdrop-blur-xl border border-white/15 shadow-lg shadow-black/10">
             <UserLocationBar page="var" state={userLoc} transparent />
           </div>
 
