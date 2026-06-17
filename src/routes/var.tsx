@@ -635,7 +635,7 @@ function SunsetCard({ sun, now }: { sun: ReturnType<typeof sunTimes>; now: Date 
   const sy = cy - r * Math.sin(ang);
 
   return (
-    <GlassCard eyebrow="Sol ned" icon={<Sunrise size={14} />}>
+    <GlassCard eyebrow="Sol ned" icon={<Sunrise size={14} />} fx={<SunFX intensity={progress > 0 && progress < 1 ? 1 : 0.3} />}>
       <div className="text-3xl font-light tabular-nums">{sunset ? formatTime(sunset) : "—"}</div>
       <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-16 mt-2">
         <path d={`M ${cx - r} ${cy} A ${r} ${r} 0 0 1 ${cx + r} ${cy}`} fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="1" />
