@@ -436,7 +436,7 @@ function WindHourlyCard({ hours }: { hours: Hour[] | null }) {
   const fillPath = `${path} L ${xFor(next.length - 1).toFixed(1)} ${H} L ${pad} ${H} Z`;
 
   return (
-    <GlassCard eyebrow="Vind · Hastighet (m/s)" icon={<Wind size={14} />}>
+    <GlassCard eyebrow="Vind · Hastighet (m/s)" icon={<Wind size={14} />} fx={<WindFX intensity={Math.min(1, maxW / 12)} />}>
       <div className="overflow-x-auto -mx-2 px-2">
         <div className="min-w-max">
           <div className="flex items-end gap-4 mb-1">
