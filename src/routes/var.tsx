@@ -288,7 +288,7 @@ function WeatherPage() {
             >
               <div className="grid grid-cols-2 gap-3 -mx-1">
                 <NetatmoTile label="Borgen · Tollnes" temp={tollnesTemp} wind={tollnesWind} rain={tollnesRainToday} humidity={tollnesHumidity} pressure={tollnesPressure} />
-                <NetatmoTile label="Hytta · Numedal" temp={null} wind={hyttaWind} rain={hyttaRainToday} humidity={hyttaHumidity} pressure={hyttaPressure} />
+                <NetatmoTile label="Hytta · Numedal" temp={hyttaTemp} wind={hyttaWind} rain={hyttaRainToday} humidity={hyttaHumidity} pressure={hyttaPressure} />
               </div>
             </GlassCard>
           )}
