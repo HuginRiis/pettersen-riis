@@ -43,7 +43,13 @@ export const Route = createFileRoute("/var")({
   }),
   staleTime: 3 * 60_000,
   preloadStaleTime: 3 * 60_000,
-  loader: () => getHomeySnapshot(),
+  loader: async () => {
+    const homey = await getHomeySnapshot();
+    const netatmo = await getNetatmoWeatherStation({ data: { stationMatch: "tollnes" } }).catch(
+      (e) => ({ ok: false as const, error: e?.message ?? "Netatmo-feil" })
+    );
+    return { homey, netatmo };
+  },
   component: WeatherPage,
   errorComponent: ({ error }) => (
     <PageShell>
