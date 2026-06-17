@@ -13,6 +13,7 @@ import {
   RainFX, SnowFX, CloudFX, WindFX, HeatwaveFX, HumidityFX, PressureFX, GustFX, SunFX, StarFX,
   GlassPaneFX, glassKindFromSymbol, TileSplashFX,
 } from "@/components/weather/WeatherFX";
+import { WeatherVideoBackground } from "@/components/weather/WeatherVideoBackground";
 import {
   Wind,
   Droplets,
