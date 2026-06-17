@@ -373,3 +373,307 @@ export function StarFX({ intensity = 0.5, className = "" }: Common) {
     </div>
   );
 }
+
+/* ============================================================
+   GLASS PANE OVERLAY — covers the entire weather page like a
+   pane of glass with weather-appropriate effects.
+   ============================================================ */
+
+export type GlassKind =
+  | "rain" | "sleet" | "thunder" | "snow"
+  | "clear" | "fair" | "partly" | "cloudy"
+  | "fog" | "night" | "night-clear";
+
+export function GlassPaneFX({
+  kind,
+  intensity = 0.6,
+}: {
+  kind: GlassKind;
+  intensity?: number;
+}) {
+  const isWet = kind === "rain" || kind === "sleet" || kind === "thunder";
+  const isSnow = kind === "snow" || kind === "sleet";
+  const isClearDay = kind === "clear" || kind === "fair";
+  const isNight = kind === "night" || kind === "night-clear";
+  const isCloudy = kind === "cloudy" || kind === "partly";
+  const isFog = kind === "fog";
+  const isThunder = kind === "thunder";
+
+  // Static glass beads — randomly scattered "stuck" droplets
+  const beadCount = isWet ? Math.round(28 + intensity * 24) : 0;
+  const beads = useMemo(
+    () =>
+      Array.from({ length: beadCount }).map(() => ({
+        left: Math.random() * 100,
+        top: Math.random() * 100,
+        size: 2 + Math.random() * 5,
+        delay: Math.random() * 4,
+        dur: 3 + Math.random() * 4,
+      })),
+    [beadCount],
+  );
+
+  // Sliding drips down the glass
+  const dripCount = isWet ? Math.round(8 + intensity * 14) : 0;
+  const drips = useMemo(
+    () =>
+      Array.from({ length: dripCount }).map(() => ({
+        left: Math.random() * 100,
+        w: 3 + Math.random() * 4,
+        h: 10 + Math.random() * 28,
+        delay: -Math.random() * 9,
+        dur: 4 + Math.random() * 7,
+        op: 0.5 + Math.random() * 0.4,
+      })),
+    [dripCount],
+  );
+
+  // Snowflakes drifting across the pane
+  const snowCount = isSnow ? Math.round(22 + intensity * 18) : 0;
+  const snow = useMemo(
+    () =>
+      Array.from({ length: snowCount }).map(() => ({
+        left: Math.random() * 100,
+        size: 2 + Math.random() * 3,
+        delay: -Math.random() * 8,
+        dur: 7 + Math.random() * 8,
+        sx: (Math.random() * 60 - 30).toFixed(0) + "px",
+      })),
+    [snowCount],
+  );
+
+  // Stars at night
+  const starCount = isNight ? 36 : 0;
+  const stars = useMemo(
+    () =>
+      Array.from({ length: starCount }).map(() => ({
+        left: Math.random() * 100,
+        top: Math.random() * 70,
+        size: 1 + Math.random() * 2,
+        delay: Math.random() * 4,
+        dur: 2 + Math.random() * 3,
+      })),
+    [starCount],
+  );
+
+  // Drifting clouds for cloudy/fair
+  const cloudCount = isCloudy ? 4 : isClearDay ? 2 : 0;
+  const clouds = useMemo(
+    () =>
+      Array.from({ length: cloudCount }).map((_, i) => ({
+        top: 8 + (i * 70) / Math.max(1, cloudCount) + Math.random() * 8,
+        delay: -Math.random() * 60,
+        dur: 60 + Math.random() * 60,
+        scale: 1.2 + Math.random() * 1.4,
+        op: 0.18 + Math.random() * 0.18,
+      })),
+    [cloudCount],
+  );
+
+  return (
+    <div
+      className="pointer-events-none fixed inset-0 overflow-hidden"
+      aria-hidden
+      style={{ zIndex: 1 }}
+    >
+      {/* Subtle glass tint + soft top/bottom vignette */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background:
+            "linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.0) 30%, rgba(0,0,0,0.10) 100%)",
+        }}
+      />
+
+      {/* RAIN: beads + sliding drips */}
+      {isWet && (
+        <>
+          {beads.map((b, i) => (
+            <span
+              key={`b${i}`}
+              className="absolute rounded-full animate-wx-bead"
+              style={{
+                left: `${b.left}%`,
+                top: `${b.top}%`,
+                width: b.size,
+                height: b.size,
+                background:
+                  "radial-gradient(circle at 32% 28%, rgba(255,255,255,0.95) 0%, rgba(200,225,255,0.55) 55%, rgba(160,200,240,0.15) 100%)",
+                boxShadow:
+                  "inset -0.5px -0.5px 1px rgba(0,0,0,0.18), 0 0 1px rgba(255,255,255,0.5)",
+                animationDuration: `${b.dur}s`,
+                animationDelay: `${b.delay}s`,
+              }}
+            />
+          ))}
+          {drips.map((d, i) => (
+            <span
+              key={`d${i}`}
+              className="absolute animate-wx-drip"
+              style={{
+                left: `${d.left}%`,
+                top: 0,
+                width: d.w,
+                height: d.h,
+                borderRadius: 999,
+                background:
+                  "linear-gradient(180deg, rgba(220,235,255,0.15) 0%, rgba(220,235,255,0.55) 60%, rgba(255,255,255,0.95) 100%)",
+                boxShadow:
+                  "inset -0.5px -0.5px 1px rgba(0,0,0,0.2), 0 0 2px rgba(255,255,255,0.4)",
+                opacity: d.op,
+                animationDuration: `${d.dur}s`,
+                animationDelay: `${d.delay}s`,
+              }}
+            />
+          ))}
+        </>
+      )}
+
+      {/* SNOW */}
+      {isSnow &&
+        snow.map((f, i) => (
+          <span
+            key={`s${i}`}
+            className="absolute top-0 rounded-full bg-white animate-wx-snow"
+            style={{
+              left: `${f.left}%`,
+              width: f.size,
+              height: f.size,
+              opacity: 0.85,
+              boxShadow: "0 0 6px rgba(255,255,255,0.7)",
+              animationDuration: `${f.dur}s`,
+              animationDelay: `${f.delay}s`,
+              ["--sx" as any]: f.sx,
+            }}
+          />
+        ))}
+
+      {/* CLEAR DAY: sun glow + shine sweep */}
+      {isClearDay && (
+        <>
+          <div
+            className="absolute -top-32 -right-24 rounded-full"
+            style={{
+              width: 420,
+              height: 420,
+              background:
+                "radial-gradient(circle, rgba(255,225,150,0.45) 0%, rgba(255,200,110,0.18) 40%, transparent 70%)",
+              filter: "blur(8px)",
+            }}
+          />
+          <div
+            className="absolute top-0 bottom-0 w-[35%] animate-wx-shine"
+            style={{
+              left: 0,
+              background:
+                "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.10) 50%, transparent 100%)",
+              animationDuration: "14s",
+            }}
+          />
+        </>
+      )}
+
+      {/* CLOUDY / PARTLY: large drifting clouds */}
+      {(isCloudy || isClearDay) &&
+        clouds.map((c, i) => (
+          <svg
+            key={`c${i}`}
+            viewBox="0 0 64 28"
+            className="absolute animate-wx-cloud"
+            style={{
+              top: `${c.top}%`,
+              width: 260 * c.scale,
+              opacity: c.op,
+              animationDuration: `${c.dur}s`,
+              animationDelay: `${c.delay}s`,
+              filter: "blur(1.5px)",
+            }}
+          >
+            <path
+              d="M10 22 Q4 22 4 16 Q4 10 11 10 Q12 4 20 4 Q28 4 30 10 Q38 8 42 14 Q52 14 52 20 Q52 24 46 24 L12 24 Q10 24 10 22 Z"
+              fill="white"
+            />
+          </svg>
+        ))}
+
+      {/* FOG */}
+      {isFog && (
+        <>
+          {[0, 25, 50, 75].map((top, i) => (
+            <div
+              key={i}
+              className="absolute left-0 right-0 animate-wx-fog"
+              style={{
+                top: `${top}%`,
+                height: "30%",
+                background:
+                  "linear-gradient(180deg, transparent, rgba(255,255,255,0.18), transparent)",
+                filter: "blur(14px)",
+                animationDuration: `${10 + i * 3}s`,
+                animationDelay: `-${i * 2}s`,
+              }}
+            />
+          ))}
+        </>
+      )}
+
+      {/* NIGHT: stars + moon glow */}
+      {isNight && (
+        <>
+          <div
+            className="absolute top-12 left-12 rounded-full"
+            style={{
+              width: 120,
+              height: 120,
+              background:
+                "radial-gradient(circle, rgba(230,235,255,0.35) 0%, rgba(200,210,255,0.10) 45%, transparent 70%)",
+              filter: "blur(6px)",
+            }}
+          />
+          {stars.map((s, i) => (
+            <span
+              key={`st${i}`}
+              className="absolute rounded-full bg-white animate-wx-sparkle"
+              style={{
+                left: `${s.left}%`,
+                top: `${s.top}%`,
+                width: s.size,
+                height: s.size,
+                opacity: 0.7,
+                boxShadow: "0 0 4px rgba(255,255,255,0.8)",
+                animationDuration: `${s.dur}s`,
+                animationDelay: `${s.delay}s`,
+              }}
+            />
+          ))}
+        </>
+      )}
+
+      {/* THUNDER: rare full-screen flash */}
+      {isThunder && (
+        <div
+          className="absolute inset-0 animate-wx-flash"
+          style={{
+            background:
+              "radial-gradient(circle at 50% 30%, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.3) 30%, transparent 60%)",
+            animationDuration: "9s",
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+export function glassKindFromSymbol(symbol: string | null, isDay: boolean): GlassKind {
+  if (!symbol) return isDay ? "fair" : "night";
+  if (symbol.includes("thunder")) return "thunder";
+  if (symbol.includes("sleet")) return "sleet";
+  if (symbol.includes("snow")) return "snow";
+  if (symbol.includes("rain")) return "rain";
+  if (symbol.includes("fog")) return "fog";
+  if (symbol.includes("cloudy") && !symbol.includes("partly")) return "cloudy";
+  if (symbol.includes("partlycloudy")) return isDay ? "partly" : "night";
+  if (symbol.includes("fair")) return isDay ? "fair" : "night";
+  if (symbol.includes("clearsky")) return isDay ? "clear" : "night-clear";
+  return isDay ? "fair" : "night";
+}
