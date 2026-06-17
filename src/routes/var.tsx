@@ -518,7 +518,7 @@ function WindDetailCard({ hour }: { hour: Hour | null }) {
   const speed = hour?.wind ?? 0;
   const gust = hour?.windGust ?? speed;
   return (
-    <GlassCard eyebrow="Vind" icon={<Wind size={14} />}>
+    <GlassCard eyebrow="Vind" icon={<Wind size={14} />} fx={<WindFX intensity={Math.min(1, speed / 12)} />}>
       <div className="grid grid-cols-[1fr_auto] gap-4 items-center">
         <div className="space-y-2 text-sm">
           <Row label="Vind" value={`${speed.toFixed(1)} m/s`} />
