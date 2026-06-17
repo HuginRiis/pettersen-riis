@@ -397,7 +397,7 @@ function HourlyForecastCard({ hours }: { hours: Hour[] | null }) {
   if (!hours) return <GlassCard eyebrow="Værforhold" icon={<Cloud size={14} />}><Skeleton /></GlassCard>;
   const next = hours.slice(0, 24);
   return (
-    <GlassCard eyebrow="Værforhold · Temperatur" icon={<Cloud size={14} />}>
+    <GlassCard eyebrow="Værforhold · Temperatur" icon={<Cloud size={14} />} fx={<CloudFX intensity={0.4} />}>
       <div className="overflow-x-auto -mx-2 px-2">
         <div className="flex items-center gap-4 min-w-max pb-1">
           {next.map((h, i) => (
