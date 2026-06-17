@@ -5,6 +5,7 @@ import { PageShell } from "@/components/PageShell";
 import { getHomeySnapshot } from "@/lib/homey.functions";
 import { findDeviceFuzzy, type DeviceLike } from "@/lib/homey-match";
 import { getTollnesAlerts, type AlertsResult, type MetAlert } from "@/lib/lightning.functions";
+import { getNetatmoWeatherStation, type WeatherModule } from "@/lib/netatmo-weather.functions";
 import { useUserLocation, UserLocationBar } from "@/hooks/use-user-location";
 import { useUvSun, uvLevel } from "@/hooks/use-uv-sun";
 import { usePerUserPersistedState } from "@/hooks/use-per-user-persisted-state";
@@ -42,7 +43,13 @@ export const Route = createFileRoute("/var")({
   }),
   staleTime: 3 * 60_000,
   preloadStaleTime: 3 * 60_000,
-  loader: () => getHomeySnapshot(),
+  loader: async () => {
+    const homey = await getHomeySnapshot();
+    const netatmo = await getNetatmoWeatherStation({ data: { stationMatch: "tollnes" } }).catch(
+      (e) => ({ ok: false as const, error: e?.message ?? "Netatmo-feil" })
+    );
+    return { homey, netatmo };
+  },
   component: WeatherPage,
   errorComponent: ({ error }) => (
     <PageShell>
@@ -87,7 +94,9 @@ type LocationState = {
 };
 
 function WeatherPage() {
-  const data = Route.useLoaderData() as Awaited<ReturnType<typeof getHomeySnapshot>>;
+  const loaderData = Route.useLoaderData() as { homey: Awaited<ReturnType<typeof getHomeySnapshot>>; netatmo: Awaited<ReturnType<typeof getNetatmoWeatherStation>> };
+  const data = loaderData.homey;
+  const netatmoData = loaderData.netatmo;
   const fetchAlerts = useServerFn(getTollnesAlerts);
   const userLoc = useUserLocation("var");
   const [alerts, setAlerts] = useState<AlertsResult | null>(null);
@@ -167,6 +176,15 @@ function WeatherPage() {
   const hyttaHumidity = readCap(findDeviceFuzzy(devices, zones, "hytta", (d) => hasCap(d, "measure_humidity")), "measure_humidity");
   const tollnesTemp = readCap(findDeviceFuzzy(devices, zones, "tollnes", (d) => hasCap(d, "measure_temperature")), "measure_temperature");
   const hyttaTemp = readCap(findDeviceFuzzy(devices, zones, "hytta", (d) => hasCap(d, "measure_temperature")), "measure_temperature");
+
+  // Netatmo ute-modul (Nordre Lensmannsveg / Tollnes) — prioriteres for temp/fukt
+  const netatmoModules: WeatherModule[] = netatmoData?.ok === true ? netatmoData.modules : [];
+  const tollnesOutdoor = netatmoModules.find((m) => m.type === "NAModule1");
+  const tollnesNetatmoTemp = tollnesOutdoor?.metrics.temperature ?? null;
+  const tollnesNetatmoHumidity = tollnesOutdoor?.metrics.humidity ?? null;
+
+  const borgenTemp = tollnesNetatmoTemp ?? tollnesTemp;
+  const borgenHumidity = tollnesNetatmoHumidity ?? tollnesHumidity;
 
   const skienHours = state.skien?.hours ?? null;
   const skienDays = state.skien?.days ?? null;
@@ -298,14 +316,14 @@ function WeatherPage() {
             <PressureCard hour={currentHour} liveValue={tollnesPressure} />
           </div>
 
-          {/* LIVE MÅLERE — Netatmo */}
-          {homeyOk && (
+          {/* LIVE MÅLINGER — Netatmo */}
+          {(homeyOk || netatmoData?.ok === true) && (
             <GlassCard
               eyebrow="Live målinger · Netatmo"
               icon={<Thermometer size={14} />}
             >
               <div className="grid grid-cols-2 gap-3 -mx-1">
-                <NetatmoTile label="Borgen · Tollnes" temp={tollnesTemp} wind={tollnesWind} rain={tollnesRainToday} humidity={tollnesHumidity} pressure={tollnesPressure} />
+                <NetatmoTile label="Ute · Borgen · Tollnes" temp={borgenTemp} wind={tollnesWind} rain={tollnesRainToday} humidity={borgenHumidity} pressure={tollnesPressure} />
                 <NetatmoTile label="Hytta · Numedal" temp={hyttaTemp} wind={hyttaWind} rain={hyttaRainToday} humidity={hyttaHumidity} pressure={hyttaPressure} />
               </div>
             </GlassCard>
