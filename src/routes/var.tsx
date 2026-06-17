@@ -900,8 +900,10 @@ function FeelsLikeCard({ hour }: { hour: Hour | null }) {
   // Enkel vindavkjøling (Norge JAG-Steadman approximation): bare for visning
   const feels = w > 1.5 && t < 15 ? Math.round(t - w * 0.5) : Math.round(t);
   const hint = w > 1.5 && t < 15 ? "Vinden gjør at det føles kaldere." : "Komfortabelt.";
+  const cold = feels <= 5;
+  const fx = cold ? <SnowFX intensity={0.5} /> : feels >= 18 ? <HeatwaveFX intensity={1} /> : <HeatwaveFX intensity={-1} />;
   return (
-    <GlassCard eyebrow="Føles som" icon={<Thermometer size={14} />}>
+    <GlassCard eyebrow="Føles som" icon={<Thermometer size={14} />} fx={fx}>
       <div className="text-3xl font-light tabular-nums">{hour ? `${feels}°` : "—"}</div>
       <div className="text-[12px] text-white/80 mt-3 leading-snug">{hint}</div>
     </GlassCard>
@@ -911,8 +913,9 @@ function FeelsLikeCard({ hour }: { hour: Hour | null }) {
 function CloudCard({ hour }: { hour: Hour | null }) {
   const c = Math.round(hour?.cloud ?? 0);
   const label = c < 25 ? "Klar himmel" : c < 60 ? "Delvis skyet" : c < 85 ? "Skyet" : "Overskyet";
+  const fx = c < 25 ? <SunFX intensity={0.8} /> : <CloudFX intensity={Math.min(1, c / 100)} />;
   return (
-    <GlassCard eyebrow="Skydekke" icon={<Cloud size={14} />}>
+    <GlassCard eyebrow="Skydekke" icon={<Cloud size={14} />} fx={fx}>
       <div className="text-3xl font-light tabular-nums">{hour ? `${c} %` : "—"}</div>
       <div className="text-[12px] text-white/80 mt-3 leading-snug">{label}</div>
     </GlassCard>
