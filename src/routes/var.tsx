@@ -966,7 +966,7 @@ function PressureCard({ hour, liveValue }: { hour: Hour | null; liveValue: numbe
   const min = 980, max = 1040;
   const pct = Math.max(0, Math.min(1, (p - min) / (max - min)));
   return (
-    <GlassCard eyebrow="Lufttrykk" icon={<Gauge size={14} />}>
+    <GlassCard eyebrow="Lufttrykk" icon={<Gauge size={14} />} fx={<PressureFX intensity={pct} />}>
       <div className="relative h-16 mt-1">
         <svg viewBox="0 0 100 50" className="w-full h-full">
           <path d="M 10 45 A 40 40 0 0 1 90 45" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="2" />
