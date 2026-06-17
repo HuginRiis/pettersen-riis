@@ -255,11 +255,8 @@ function WeatherPage() {
           {/* MÅNE */}
           <MoonCard moon={moon} now={now} />
 
-          {/* SOL NED + UV */}
-          <div className="grid grid-cols-2 gap-3">
-            <SunsetCard sun={sun} now={now} />
-            <UvIndexCard hour={currentHour} />
-          </div>
+          {/* SOL */}
+          <SunsetCard sun={sun} now={now} />
 
           {/* FØLES SOM + SKYDEKKE */}
           <div className="grid grid-cols-2 gap-3">
