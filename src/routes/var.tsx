@@ -324,21 +324,26 @@ function GlassCard({
   icon,
   children,
   className = "",
+  fx,
 }: {
   eyebrow?: string;
   icon?: React.ReactNode;
   children: React.ReactNode;
   className?: string;
+  fx?: React.ReactNode;
 }) {
   return (
-    <article className={`rounded-2xl bg-white/10 backdrop-blur-xl border border-white/15 shadow-lg shadow-black/10 p-4 ${className}`}>
-      {eyebrow && (
-        <div className="flex items-center gap-1.5 text-[11px] tracking-[0.15em] font-semibold text-white/70 uppercase mb-3">
-          {icon}
-          <span>{eyebrow}</span>
-        </div>
-      )}
-      {children}
+    <article className={`relative overflow-hidden rounded-2xl bg-white/10 backdrop-blur-xl border border-white/15 shadow-lg shadow-black/10 p-4 ${className}`}>
+      {fx}
+      <div className="relative">
+        {eyebrow && (
+          <div className="flex items-center gap-1.5 text-[11px] tracking-[0.15em] font-semibold text-white/70 uppercase mb-3">
+            {icon}
+            <span>{eyebrow}</span>
+          </div>
+        )}
+        {children}
+      </div>
     </article>
   );
 }
