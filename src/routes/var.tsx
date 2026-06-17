@@ -177,6 +177,15 @@ function WeatherPage() {
   const tollnesTemp = readCap(findDeviceFuzzy(devices, zones, "tollnes", (d) => hasCap(d, "measure_temperature")), "measure_temperature");
   const hyttaTemp = readCap(findDeviceFuzzy(devices, zones, "hytta", (d) => hasCap(d, "measure_temperature")), "measure_temperature");
 
+  // Netatmo ute-modul (Nordre Lensmannsveg / Tollnes) — prioriteres for temp/fukt
+  const netatmoModules: WeatherModule[] = netatmoData?.ok === true ? netatmoData.modules : [];
+  const tollnesOutdoor = netatmoModules.find((m) => m.type === "NAModule1");
+  const tollnesNetatmoTemp = tollnesOutdoor?.metrics.temperature ?? null;
+  const tollnesNetatmoHumidity = tollnesOutdoor?.metrics.humidity ?? null;
+
+  const borgenTemp = tollnesNetatmoTemp ?? tollnesTemp;
+  const borgenHumidity = tollnesNetatmoHumidity ?? tollnesHumidity;
+
   const skienHours = state.skien?.hours ?? null;
   const skienDays = state.skien?.days ?? null;
   const hyttaHours = state.hytta?.hours ?? null;
