@@ -66,7 +66,7 @@ export function LocationPicker({
 }: Props) {
   const search = useServerFn(searchPlaces);
   const saveDefault = useServerFn(setDefaultLocation);
-  const saveName = useServerFn(setNameForCurrentIp);
+  
   const reverse = useServerFn(reverseGeocode);
 
   const FAV_KEY = `loc:fav:${page}`;
