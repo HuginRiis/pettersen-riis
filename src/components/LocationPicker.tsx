@@ -354,16 +354,16 @@ export function LocationPicker({
         )}
 
         {open && hits && hits.length > 0 && (
-          <div className="absolute left-0 right-0 mt-1 z-30 rounded-md border border-border bg-background shadow-lg max-h-72 overflow-y-auto">
+          <div className={`absolute left-0 right-0 mt-1 z-[100] rounded-xl border shadow-2xl max-h-72 overflow-y-auto ${transparent ? "border-white/20 bg-[#152238]/90 backdrop-blur-2xl" : "border-border bg-background"}`}>
             {hits.map((h, i) => (
               <button
                 key={`${h.label}-${i}`}
                 type="button"
                 onClick={() => handlePick(h)}
-                className="w-full text-left px-3 py-2 hover:bg-card/80 border-b border-border/40 last:border-0"
+                className={`w-full text-left px-3 py-2 border-b last:border-0 transition-colors ${transparent ? "hover:bg-white/10 border-white/10" : "hover:bg-card/80 border-border/40"}`}
               >
-                <div className="text-sm text-foreground">{h.label}</div>
-                <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                <div className={`text-sm ${transparent ? "text-sky-100" : "text-foreground"}`}>{h.label}</div>
+                <div className={`text-[10px] uppercase tracking-wider ${transparent ? "text-sky-300/70" : "text-muted-foreground"}`}>
                   {h.type}{h.fylke && ` · ${h.fylke}`}
                 </div>
               </button>
@@ -372,7 +372,7 @@ export function LocationPicker({
         )}
 
         {open && hits && hits.length === 0 && !searching && (
-          <div className="absolute left-0 right-0 mt-1 z-30 rounded-md border border-border bg-background px-3 py-2 text-xs text-muted-foreground italic">
+          <div className={`absolute left-0 right-0 mt-1 z-[100] rounded-xl border px-3 py-2 text-xs italic ${transparent ? "border-white/20 bg-[#152238]/90 backdrop-blur-2xl text-sky-200/80" : "border-border bg-background text-muted-foreground"}`}>
             Ingen treff i Kartverkets register.
           </div>
         )}
