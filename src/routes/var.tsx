@@ -11,7 +11,7 @@ import { useUvSun, uvLevel } from "@/hooks/use-uv-sun";
 import { usePerUserPersistedState } from "@/hooks/use-per-user-persisted-state";
 import {
   RainFX, SnowFX, CloudFX, WindFX, HeatwaveFX, HumidityFX, PressureFX, GustFX, SunFX, StarFX,
-  GlassPaneFX, glassKindFromSymbol,
+  GlassPaneFX, glassKindFromSymbol, TileSplashFX,
 } from "@/components/weather/WeatherFX";
 import {
   Wind,
@@ -262,6 +262,7 @@ function WeatherPage() {
 
           {/* Sted-bytter (samme stil som øvrige fliser) */}
           <div className="relative z-50 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/15 shadow-lg shadow-black/10">
+            <TileSplashFX kind={glassKind} intensity={glassIntensity} />
             <UserLocationBar page="var" state={userLoc} transparent />
           </div>
 

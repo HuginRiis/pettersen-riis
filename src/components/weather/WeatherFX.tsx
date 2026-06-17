@@ -664,6 +664,156 @@ export function GlassPaneFX({
   );
 }
 
+/* ============================================================
+   TILE SPLASH FX — droplets/snow/leaves that splash against the
+   top edge of a tile (e.g. the search tile). Render as a child
+   of a `relative` container; overlays full tile bounds and
+   spills slightly above it.
+   ============================================================ */
+export function TileSplashFX({
+  kind,
+  intensity = 0.6,
+}: {
+  kind: GlassKind;
+  intensity?: number;
+}) {
+  const isWet = kind === "rain" || kind === "sleet" || kind === "thunder";
+  const isSnow = kind === "snow" || kind === "sleet";
+  const isWindy = kind === "cloudy" || kind === "fog";
+
+  const dropCount = isWet ? Math.round(8 + intensity * 10) : 0;
+  const drops = useMemo(
+    () =>
+      Array.from({ length: dropCount }).map(() => ({
+        left: Math.random() * 100,
+        delay: -Math.random() * 2.2,
+        dur: 1.2 + Math.random() * 1.0,
+        w: 1.4 + Math.random() * 1.4,
+        h: 9 + Math.random() * 10,
+        sx: (Math.random() * 26 - 13).toFixed(0) + "px",
+      })),
+    [dropCount],
+  );
+
+  const ringCount = isWet ? Math.round(5 + intensity * 6) : 0;
+  const rings = useMemo(
+    () =>
+      Array.from({ length: ringCount }).map(() => ({
+        left: 4 + Math.random() * 92,
+        delay: -Math.random() * 2.2,
+        dur: 1.1 + Math.random() * 0.9,
+        w: 10 + Math.random() * 12,
+      })),
+    [ringCount],
+  );
+
+  const snowCount = isSnow ? Math.round(7 + intensity * 8) : 0;
+  const snow = useMemo(
+    () =>
+      Array.from({ length: snowCount }).map(() => ({
+        left: Math.random() * 100,
+        delay: -Math.random() * 4,
+        dur: 2.6 + Math.random() * 2.4,
+        size: 3 + Math.random() * 3,
+        sx: (Math.random() * 30 - 15).toFixed(0) + "px",
+      })),
+    [snowCount],
+  );
+
+  const leafCount = isWindy ? 3 : 0;
+  const leaves = useMemo(
+    () =>
+      Array.from({ length: leafCount }).map((_, i) => ({
+        top: 20 + i * 22 + Math.random() * 10,
+        delay: -Math.random() * 5,
+        dur: 5 + Math.random() * 3,
+      })),
+    [leafCount],
+  );
+
+  return (
+    <div
+      className="pointer-events-none absolute -inset-x-2 -top-6 bottom-0 overflow-visible"
+      aria-hidden
+    >
+      {/* Rain drops slamming into top edge */}
+      {isWet &&
+        drops.map((d, i) => (
+          <span
+            key={`sd${i}`}
+            className="absolute top-0 animate-wx-splash-drop"
+            style={{
+              left: `${d.left}%`,
+              width: d.w,
+              height: d.h,
+              borderRadius: 2,
+              background:
+                "linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(200,225,255,0.85) 70%, rgba(255,255,255,0.95) 100%)",
+              animationDuration: `${d.dur}s`,
+              animationDelay: `${d.delay}s`,
+              ["--sx" as any]: d.sx,
+            }}
+          />
+        ))}
+      {/* Splash rings on impact */}
+      {isWet &&
+        rings.map((r, i) => (
+          <span
+            key={`sr${i}`}
+            className="absolute animate-wx-splash-ring"
+            style={{
+              left: `${r.left}%`,
+              top: 22,
+              width: r.w,
+              height: 3,
+              borderRadius: 999,
+              borderBottom: "1px solid rgba(220,235,255,0.85)",
+              transformOrigin: "center",
+              animationDuration: `${r.dur}s`,
+              animationDelay: `${r.delay}s`,
+            }}
+          />
+        ))}
+      {/* Snowflakes landing on top edge */}
+      {isSnow &&
+        snow.map((s, i) => (
+          <span
+            key={`ss${i}`}
+            className="absolute top-0 rounded-full bg-white animate-wx-splash-snow"
+            style={{
+              left: `${s.left}%`,
+              width: s.size,
+              height: s.size,
+              boxShadow: "0 0 5px rgba(255,255,255,0.8)",
+              animationDuration: `${s.dur}s`,
+              animationDelay: `${s.delay}s`,
+              ["--sx" as any]: s.sx,
+            }}
+          />
+        ))}
+      {/* Wind-blown leaves drifting across */}
+      {isWindy &&
+        leaves.map((l, i) => (
+          <span
+            key={`sl${i}`}
+            className="absolute animate-wx-splash-leaf text-white/40"
+            style={{
+              top: `${l.top}%`,
+              left: 0,
+              width: 8,
+              height: 8,
+              borderRadius: "0 100% 0 100%",
+              background: "rgba(220,235,255,0.45)",
+              animationDuration: `${l.dur}s`,
+              animationDelay: `${l.delay}s`,
+              ["--sy" as any]: "0px",
+            }}
+          />
+        ))}
+    </div>
+  );
+}
+
 export function glassKindFromSymbol(symbol: string | null, isDay: boolean): GlassKind {
   if (!symbol) return isDay ? "fair" : "night";
   if (symbol.includes("thunder")) return "thunder";
