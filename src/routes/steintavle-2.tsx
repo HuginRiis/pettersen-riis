@@ -330,7 +330,7 @@ function Steintavle2Page() {
             accent="primary" sizes={sizes} bold={bold} showSub={showSub}
           />
           <BigCard
-            label="Ute · Borgen"
+            label="Ute · Borgen · Nordre Lensmannsveg"
             value={`${fmt(tempUte, 1)}°`}
             sub={humUte !== null ? `${Math.round(humUte)}% fukt` : undefined}
             accent="ice" sizes={sizes} bold={bold} showSub={showSub}
