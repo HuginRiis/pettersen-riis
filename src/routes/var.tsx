@@ -289,23 +289,8 @@ function WeatherPage() {
             </GlassCard>
           )}
 
-          {/* Tidsrom-velger for UV/vindrose */}
-          <div className="rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 p-3 flex items-center justify-between">
-            <span className="text-[11px] tracking-[0.25em] text-white/70 uppercase">Detaljvisning</span>
-            <RangeSelector value={rangeHours} onChange={setRangeHours} />
-          </div>
-
-          {/* UV-PANELER */}
-          <GlassCard eyebrow="UV-indeks · time for time" icon={<Sun size={14} />}>
-            <div className="space-y-3 -mx-2">
-              <div className="rounded-xl overflow-hidden bg-black/10">
-                <UvPanel title={userLoc.active.label} subtitle="MET.no" lat={userLoc.active.lat} lon={userLoc.active.lon} rangeHours={rangeHours} />
-              </div>
-              <div className="rounded-xl overflow-hidden bg-black/10">
-                <UvPanel title="Hytta · Flesberg" subtitle="Numedal · MET.no" lat={59.8733} lon={9.4297} rangeHours={rangeHours} />
-              </div>
-            </div>
-          </GlassCard>
+          {/* UV-indeks · iOS-style */}
+          <IosUvCard lat={userLoc.active.lat} lon={userLoc.active.lon} now={now} />
 
           {/* VINDROSE */}
           <GlassCard eyebrow={`Vindrose · ${rangeLabel(rangeHours)}`} icon={<Navigation size={14} />}>
