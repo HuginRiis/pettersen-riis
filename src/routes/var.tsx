@@ -9,6 +9,9 @@ import { useUserLocation, UserLocationBar } from "@/hooks/use-user-location";
 import { useUvSun, uvLevel } from "@/hooks/use-uv-sun";
 import { usePerUserPersistedState } from "@/hooks/use-per-user-persisted-state";
 import {
+  RainFX, SnowFX, CloudFX, WindFX, HeatwaveFX, HumidityFX, PressureFX, GustFX, SunFX, StarFX,
+} from "@/components/weather/WeatherFX";
+import {
   Wind,
   Droplets,
   Eye,
@@ -324,21 +327,26 @@ function GlassCard({
   icon,
   children,
   className = "",
+  fx,
 }: {
   eyebrow?: string;
   icon?: React.ReactNode;
   children: React.ReactNode;
   className?: string;
+  fx?: React.ReactNode;
 }) {
   return (
-    <article className={`rounded-2xl bg-white/10 backdrop-blur-xl border border-white/15 shadow-lg shadow-black/10 p-4 ${className}`}>
-      {eyebrow && (
-        <div className="flex items-center gap-1.5 text-[11px] tracking-[0.15em] font-semibold text-white/70 uppercase mb-3">
-          {icon}
-          <span>{eyebrow}</span>
-        </div>
-      )}
-      {children}
+    <article className={`relative overflow-hidden rounded-2xl bg-white/10 backdrop-blur-xl border border-white/15 shadow-lg shadow-black/10 p-4 ${className}`}>
+      {fx}
+      <div className="relative">
+        {eyebrow && (
+          <div className="flex items-center gap-1.5 text-[11px] tracking-[0.15em] font-semibold text-white/70 uppercase mb-3">
+            {icon}
+            <span>{eyebrow}</span>
+          </div>
+        )}
+        {children}
+      </div>
     </article>
   );
 }
@@ -353,7 +361,7 @@ function NedborCard({ hours }: { hours: Hour[] | null }) {
   const maxP = Math.max(1, ...next.map((h) => h.precip));
 
   return (
-    <GlassCard eyebrow="Nedbør · sjanse for regn" icon={<Droplets size={14} />}>
+    <GlassCard eyebrow="Nedbør · sjanse for regn" icon={<Droplets size={14} />} fx={<RainFX intensity={Math.min(1, maxP / 4)} />}>
       <div className="overflow-x-auto -mx-2 px-2">
         <div className="flex items-end gap-3 min-w-max pb-1">
           {next.map((h, i) => {
@@ -389,7 +397,7 @@ function HourlyForecastCard({ hours }: { hours: Hour[] | null }) {
   if (!hours) return <GlassCard eyebrow="Værforhold" icon={<Cloud size={14} />}><Skeleton /></GlassCard>;
   const next = hours.slice(0, 24);
   return (
-    <GlassCard eyebrow="Værforhold · Temperatur" icon={<Cloud size={14} />}>
+    <GlassCard eyebrow="Værforhold · Temperatur" icon={<Cloud size={14} />} fx={<CloudFX intensity={0.4} />}>
       <div className="overflow-x-auto -mx-2 px-2">
         <div className="flex items-center gap-4 min-w-max pb-1">
           {next.map((h, i) => (
@@ -428,7 +436,7 @@ function WindHourlyCard({ hours }: { hours: Hour[] | null }) {
   const fillPath = `${path} L ${xFor(next.length - 1).toFixed(1)} ${H} L ${pad} ${H} Z`;
 
   return (
-    <GlassCard eyebrow="Vind · Hastighet (m/s)" icon={<Wind size={14} />}>
+    <GlassCard eyebrow="Vind · Hastighet (m/s)" icon={<Wind size={14} />} fx={<WindFX intensity={Math.min(1, maxW / 12)} />}>
       <div className="overflow-x-auto -mx-2 px-2">
         <div className="min-w-max">
           <div className="flex items-end gap-4 mb-1">
@@ -510,7 +518,7 @@ function WindDetailCard({ hour }: { hour: Hour | null }) {
   const speed = hour?.wind ?? 0;
   const gust = hour?.windGust ?? speed;
   return (
-    <GlassCard eyebrow="Vind" icon={<Wind size={14} />}>
+    <GlassCard eyebrow="Vind" icon={<Wind size={14} />} fx={<WindFX intensity={Math.min(1, speed / 12)} />}>
       <div className="grid grid-cols-[1fr_auto] gap-4 items-center">
         <div className="space-y-2 text-sm">
           <Row label="Vind" value={`${speed.toFixed(1)} m/s`} />
@@ -566,7 +574,7 @@ function MoonCard({ moon, now }: { moon: { name: string; icon: string; illuminat
   const nextSet = useMemo(() => nextMoonset(now), [now]);
   const daysToFull = useMemo(() => daysUntilFullMoon(now), [now]);
   return (
-    <GlassCard eyebrow={moon.name} icon={<Moon size={14} />}>
+    <GlassCard eyebrow={moon.name} icon={<Moon size={14} />} fx={<StarFX />}>
       <div className="grid grid-cols-[1fr_auto] gap-4 items-center">
         <div className="space-y-2 text-sm">
           <Row label="Opplysning" value={`${Math.round(moon.illumination * 100)} %`} />
@@ -627,7 +635,7 @@ function SunsetCard({ sun, now }: { sun: ReturnType<typeof sunTimes>; now: Date 
   const sy = cy - r * Math.sin(ang);
 
   return (
-    <GlassCard eyebrow="Sol ned" icon={<Sunrise size={14} />}>
+    <GlassCard eyebrow="Sol ned" icon={<Sunrise size={14} />} fx={<SunFX intensity={progress > 0 && progress < 1 ? 1 : 0.3} />}>
       <div className="text-3xl font-light tabular-nums">{sunset ? formatTime(sunset) : "—"}</div>
       <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-16 mt-2">
         <path d={`M ${cx - r} ${cy} A ${r} ${r} 0 0 1 ${cx + r} ${cy}`} fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="1" />
@@ -695,7 +703,7 @@ function IosUvCard({ lat, lon, now }: { lat: number; lon: number; now: Date }) {
   const slice = displayHours.slice(0, 12);
 
   return (
-    <GlassCard eyebrow="UV-indeks" icon={<Sun size={14} />}>
+    <GlassCard eyebrow="UV-indeks" icon={<Sun size={14} />} fx={<SunFX intensity={Math.min(1, (uvNow ?? 0) / 8)} />}>
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
@@ -892,8 +900,10 @@ function FeelsLikeCard({ hour }: { hour: Hour | null }) {
   // Enkel vindavkjøling (Norge JAG-Steadman approximation): bare for visning
   const feels = w > 1.5 && t < 15 ? Math.round(t - w * 0.5) : Math.round(t);
   const hint = w > 1.5 && t < 15 ? "Vinden gjør at det føles kaldere." : "Komfortabelt.";
+  const cold = feels <= 5;
+  const fx = cold ? <SnowFX intensity={0.5} /> : feels >= 18 ? <HeatwaveFX intensity={1} /> : <HeatwaveFX intensity={-1} />;
   return (
-    <GlassCard eyebrow="Føles som" icon={<Thermometer size={14} />}>
+    <GlassCard eyebrow="Føles som" icon={<Thermometer size={14} />} fx={fx}>
       <div className="text-3xl font-light tabular-nums">{hour ? `${feels}°` : "—"}</div>
       <div className="text-[12px] text-white/80 mt-3 leading-snug">{hint}</div>
     </GlassCard>
@@ -903,8 +913,9 @@ function FeelsLikeCard({ hour }: { hour: Hour | null }) {
 function CloudCard({ hour }: { hour: Hour | null }) {
   const c = Math.round(hour?.cloud ?? 0);
   const label = c < 25 ? "Klar himmel" : c < 60 ? "Delvis skyet" : c < 85 ? "Skyet" : "Overskyet";
+  const fx = c < 25 ? <SunFX intensity={0.8} /> : <CloudFX intensity={Math.min(1, c / 100)} />;
   return (
-    <GlassCard eyebrow="Skydekke" icon={<Cloud size={14} />}>
+    <GlassCard eyebrow="Skydekke" icon={<Cloud size={14} />} fx={fx}>
       <div className="text-3xl font-light tabular-nums">{hour ? `${c} %` : "—"}</div>
       <div className="text-[12px] text-white/80 mt-3 leading-snug">{label}</div>
     </GlassCard>
@@ -918,7 +929,7 @@ function PrecipTodayCard({ day, liveMm, days }: { day: ForecastDay | undefined; 
     ? `${nextRainDay.precip.toFixed(1)} mm ventes ${weekdayShort(nextRainDay.date)}.`
     : "Tørt de neste dagene.";
   return (
-    <GlassCard eyebrow="Nedbør" icon={<CloudRain size={14} />}>
+    <GlassCard eyebrow="Nedbør" icon={<CloudRain size={14} />} fx={<RainFX intensity={Math.min(1, mm / 8)} />}>
       <div className="text-3xl font-light tabular-nums">{mm.toFixed(mm < 10 ? 1 : 0)} mm</div>
       <div className="text-sm text-white/85">I dag</div>
       <div className="text-[12px] text-white/75 mt-2 leading-snug">{hint}</div>
@@ -930,7 +941,7 @@ function GustCard({ hour }: { hour: Hour | null }) {
   const w = hour?.wind ?? 0;
   const g = hour?.windGust ?? w;
   return (
-    <GlassCard eyebrow="Vindkast" icon={<Wind size={14} />}>
+    <GlassCard eyebrow="Vindkast" icon={<Wind size={14} />} fx={<GustFX intensity={Math.min(1, g / 15)} />}>
       <div className="text-3xl font-light tabular-nums">{g.toFixed(1)}</div>
       <div className="text-sm text-white/85">m/s</div>
       <div className="text-[12px] text-white/75 mt-2 leading-snug">Gjennomsnitt {w.toFixed(1)} m/s.</div>
@@ -941,7 +952,7 @@ function GustCard({ hour }: { hour: Hour | null }) {
 function HumidityCard({ hour, liveValue }: { hour: Hour | null; liveValue: number | null }) {
   const h = Math.round(liveValue ?? hour?.humidity ?? 0);
   return (
-    <GlassCard eyebrow="Luftfuktighet" icon={<Droplets size={14} />}>
+    <GlassCard eyebrow="Luftfuktighet" icon={<Droplets size={14} />} fx={<HumidityFX intensity={h / 100} />}>
       <div className="text-3xl font-light tabular-nums">{h} %</div>
       <div className="text-[12px] text-white/75 mt-3 leading-snug">
         Duggpunkt ca {Math.round((hour?.temp ?? 0) - (100 - h) / 5)}°.
@@ -955,7 +966,7 @@ function PressureCard({ hour, liveValue }: { hour: Hour | null; liveValue: numbe
   const min = 980, max = 1040;
   const pct = Math.max(0, Math.min(1, (p - min) / (max - min)));
   return (
-    <GlassCard eyebrow="Lufttrykk" icon={<Gauge size={14} />}>
+    <GlassCard eyebrow="Lufttrykk" icon={<Gauge size={14} />} fx={<PressureFX intensity={pct} />}>
       <div className="relative h-16 mt-1">
         <svg viewBox="0 0 100 50" className="w-full h-full">
           <path d="M 10 45 A 40 40 0 0 1 90 45" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="2" />
