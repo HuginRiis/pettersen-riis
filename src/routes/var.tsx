@@ -6,7 +6,7 @@ import { getHomeySnapshot } from "@/lib/homey.functions";
 import { findDeviceFuzzy, type DeviceLike } from "@/lib/homey-match";
 import { getTollnesAlerts, type AlertsResult, type MetAlert } from "@/lib/lightning.functions";
 import { useUserLocation, UserLocationBar } from "@/hooks/use-user-location";
-import { UvPanel } from "@/components/UvPanel";
+import { useUvSun, uvLevel } from "@/hooks/use-uv-sun";
 import { usePerUserPersistedState } from "@/hooks/use-per-user-persisted-state";
 import {
   Wind,
@@ -255,11 +255,8 @@ function WeatherPage() {
           {/* MÅNE */}
           <MoonCard moon={moon} now={now} />
 
-          {/* SOL NED + UV */}
-          <div className="grid grid-cols-2 gap-3">
-            <SunsetCard sun={sun} now={now} />
-            <UvIndexCard hour={currentHour} />
-          </div>
+          {/* SOL */}
+          <SunsetCard sun={sun} now={now} />
 
           {/* FØLES SOM + SKYDEKKE */}
           <div className="grid grid-cols-2 gap-3">
@@ -292,23 +289,8 @@ function WeatherPage() {
             </GlassCard>
           )}
 
-          {/* Tidsrom-velger for UV/vindrose */}
-          <div className="rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 p-3 flex items-center justify-between">
-            <span className="text-[11px] tracking-[0.25em] text-white/70 uppercase">Detaljvisning</span>
-            <RangeSelector value={rangeHours} onChange={setRangeHours} />
-          </div>
-
-          {/* UV-PANELER */}
-          <GlassCard eyebrow="UV-indeks · time for time" icon={<Sun size={14} />}>
-            <div className="space-y-3 -mx-2">
-              <div className="rounded-xl overflow-hidden bg-black/10">
-                <UvPanel title={userLoc.active.label} subtitle="MET.no" lat={userLoc.active.lat} lon={userLoc.active.lon} rangeHours={rangeHours} />
-              </div>
-              <div className="rounded-xl overflow-hidden bg-black/10">
-                <UvPanel title="Hytta · Flesberg" subtitle="Numedal · MET.no" lat={59.8733} lon={9.4297} rangeHours={rangeHours} />
-              </div>
-            </div>
-          </GlassCard>
+          {/* UV-indeks · iOS-style */}
+          <IosUvCard lat={userLoc.active.lat} lon={userLoc.active.lon} now={now} />
 
           {/* VINDROSE */}
           <GlassCard eyebrow={`Vindrose · ${rangeLabel(rangeHours)}`} icon={<Navigation size={14} />}>
@@ -658,29 +640,245 @@ function SunsetCard({ sun, now }: { sun: ReturnType<typeof sunTimes>; now: Date 
 }
 
 // ============================================================
-// UV INDEX CARD
+// UV INDEX CARD — iOS Weather style
 // ============================================================
 
-function UvIndexCard({ hour }: { hour: Hour | null }) {
-  // MET compact gir ikke UV; vi estimerer fra cloud & time. For ekte UV bruker vi UvPanel lenger ned.
-  // Vis en stilig "indikator" basert på sky og tid på dagen.
-  const h = new Date().getHours();
-  const cloud = hour?.cloud ?? 50;
-  const base = h >= 10 && h <= 16 ? 5 : h >= 7 && h <= 19 ? 3 : 1;
-  const uv = Math.max(0, Math.round(base * (1 - cloud / 200)));
-  const label = uv < 3 ? "Lav" : uv < 6 ? "Moderat" : uv < 8 ? "Høy" : uv < 11 ? "Veldig høy" : "Ekstrem";
+function IosUvCard({ lat, lon, now }: { lat: number; lon: number; now: Date }) {
+  const { uvNow, uvMaxToday, uvMaxTimeToday, hours, loading, error } = useUvSun(lat, lon);
+  const level = uvNow != null ? uvLevel(uvNow) : null;
+
+  // Filter to today's hours (or first 14 forecast entries with UV)
+  const todayStr = now.toISOString().slice(0, 10);
+  const todayHours = hours.filter((h) => h.time.startsWith(todayStr));
+  const displayHours = todayHours.length >= 6 ? todayHours : hours.slice(0, 14);
+
+  // Current time position in chart (0..1)
+  const nowProgress = useMemo(() => {
+    if (displayHours.length < 2) return null;
+    const t0 = new Date(displayHours[0].time).getTime();
+    const tN = new Date(displayHours[displayHours.length - 1].time).getTime();
+    const n = now.getTime();
+    if (n < t0 || n > tN) return null;
+    return (n - t0) / (tN - t0);
+  }, [displayHours, now]);
+
+  // Description about UV levels today
+  const description = useMemo(() => {
+    if (!displayHours.length) return null;
+    const moderateOrHigher = displayHours.filter((h) => h.uv >= 3);
+    if (!moderateOrHigher.length) return "Lavt gjennom hele dagen.";
+    const start = moderateOrHigher[0].time;
+    const end = moderateOrHigher[moderateOrHigher.length - 1].time;
+    const startH = new Date(start).toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit" });
+    const endH = new Date(end).toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit" });
+    if (uvNow != null && uvNow < 3) {
+      return `Lavt gjennom resten av dagen. Moderat eller høyt nivå ble nådd fra kl. ${startH} til ${endH}.`;
+    }
+    return `Moderat eller høyt nivå fra kl. ${startH} til ${endH}.`;
+  }, [displayHours, uvNow]);
+
+  if (loading) {
+    return (
+      <GlassCard eyebrow="UV-indeks" icon={<Sun size={14} />}>
+        <Skeleton />
+      </GlassCard>
+    );
+  }
+  if (error) {
+    return (
+      <GlassCard eyebrow="UV-indeks" icon={<Sun size={14} />}>
+        <div className="text-sm text-white/70">{error}</div>
+      </GlassCard>
+    );
+  }
+
+  const slice = displayHours.slice(0, 12);
+
   return (
     <GlassCard eyebrow="UV-indeks" icon={<Sun size={14} />}>
-      <div className="text-3xl font-light tabular-nums">{uv}</div>
-      <div className="text-base font-medium">{label}</div>
-      <div className="mt-2 h-1.5 rounded-full bg-gradient-to-r from-green-400 via-yellow-300 via-orange-400 to-purple-500 relative">
-        <div
-          className="absolute top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-white border border-white/60 shadow"
-          style={{ left: `${Math.min(100, (uv / 11) * 100)}%`, transform: "translate(-50%, -50%)" }}
-        />
+      {/* Header */}
+      <div className="flex items-start justify-between">
+        <div>
+          <div className="flex items-baseline gap-2">
+            <span className="text-5xl font-light tabular-nums">{uvNow?.toFixed(0) ?? "—"}</span>
+            <span className="text-lg font-medium">{level?.label ?? ""}</span>
+          </div>
+          <div className="text-[11px] text-white/60 mt-1">UVI fra Verdens helseorganisasjon</div>
+        </div>
+        <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
+          <Sun size={20} className="text-yellow-300" />
+        </div>
       </div>
-      <div className="text-[11px] text-white/75 mt-2">Se detaljert UV-graf under.</div>
+
+      {/* Hourly UV numbers */}
+      {slice.length > 0 && (
+        <div className="flex justify-between mt-4 px-0.5">
+          {slice.map((h) => (
+            <div key={h.time} className="text-[11px] text-white/50 tabular-nums text-center flex-1">
+              {Math.round(h.uv)}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Chart */}
+      <UvIosChart hours={slice} nowProgress={nowProgress} />
+
+      {/* Now + description */}
+      {description && (
+        <div className="mt-3 border-t border-white/10 pt-3">
+          <div className="text-sm font-medium text-white/90">
+            Nå, {now.toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit" })}
+          </div>
+          <div className="text-[13px] text-white/75 mt-1 leading-snug">{description}</div>
+        </div>
+      )}
+
+      {/* Day comparison */}
+      <div className="mt-4 rounded-xl bg-black/15 p-3">
+        <div className="text-[11px] tracking-wider text-white/70 uppercase mb-2">Dagsforskjeller</div>
+        <div className="text-[13px] text-white/90 mb-2">
+          {uvMaxToday != null
+            ? `UV-strålingen nådde toppen på ${uvMaxToday.toFixed(0)} i dag.`
+            : "Ingen UV-data tilgjengelig."}
+        </div>
+        {uvMaxToday != null && uvMaxTimeToday && (
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-2">
+              <div className="flex-1 h-6 rounded bg-white/10 flex items-center px-2 relative overflow-hidden">
+                <div
+                  className="absolute inset-y-0 left-0 bg-yellow-400/30 rounded"
+                  style={{ width: `${Math.min(100, (uvMaxToday / 11) * 100)}%` }}
+                />
+                <span className="text-[11px] relative z-10">I dag</span>
+              </div>
+              <span className="text-lg font-light tabular-nums w-6 text-right">{uvMaxToday.toFixed(0)}</span>
+            </div>
+            {uvMaxTimeToday && (
+              <div className="text-[11px] text-white/50">
+                Topp kl. {new Date(uvMaxTimeToday).toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit" })}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </GlassCard>
+  );
+}
+
+function UvIosChart({ hours, nowProgress }: { hours: { time: string; uv: number }[]; nowProgress: number | null }) {
+  const W = 340;
+  const H = 130;
+  const padL = 70;
+  const padR = 20;
+  const padT = 16;
+  const padB = 18;
+  const chartW = W - padL - padR;
+  const chartH = H - padT - padB;
+  const maxUV = 11;
+  const n = hours.length;
+  if (n < 2) return null;
+
+  const stepX = chartW / (n - 1);
+  const pt = (i: number) => ({
+    x: padL + i * stepX,
+    y: padT + chartH - (hours[i].uv / maxUV) * chartH,
+  });
+
+  const points = hours
+    .map((_, i) => {
+      const p = pt(i);
+      return `${p.x.toFixed(1)},${p.y.toFixed(1)}`;
+    })
+    .join(" ");
+  const areaPath = `M${padL},${padT + chartH} L${points} L${padL + chartW},${padT + chartH} Z`;
+
+  // WHO level reference lines + labels
+  const levels = [
+    { uv: 3, label: "Moderat" },
+    { uv: 6, label: "Høyt nivå" },
+    { uv: 8, label: "Svært høy" },
+    { uv: 11, label: "Ekstremt nivå" },
+  ];
+
+  // X-axis ticks (pick ~4 evenly spaced)
+  const tickCount = 4;
+  const tickStep = Math.max(1, Math.floor((n - 1) / (tickCount - 1)));
+  const ticks: { time: string; idx: number }[] = [];
+  for (let i = 0; i < n; i += tickStep) ticks.push({ time: hours[i].time, idx: i });
+  if (ticks[ticks.length - 1].idx !== n - 1) ticks.push({ time: hours[n - 1].time, idx: n - 1 });
+
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-32 mt-1">
+      <defs>
+        <linearGradient id="uvAreaGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#fde047" stopOpacity="0.5" />
+          <stop offset="40%" stopColor="#f97316" stopOpacity="0.3" />
+          <stop offset="100%" stopColor="#22c55e" stopOpacity="0.1" />
+        </linearGradient>
+      </defs>
+
+      {/* Reference lines + left labels */}
+      {levels.map((l) => {
+        const y = padT + chartH - (l.uv / maxUV) * chartH;
+        return (
+          <g key={l.uv}>
+            <line x1={padL} x2={padL + chartW} y1={y} y2={y} stroke="rgba(255,255,255,0.1)" strokeWidth="0.5" />
+            <text x={padL - 4} y={y + 3} fontSize="7" fill="rgba(255,255,255,0.4)" textAnchor="end">
+              {l.label}
+            </text>
+          </g>
+        );
+      })}
+
+      {/* Y-axis numbers right */}
+      {[0, 3, 6, 8, 11].map((v) => {
+        const y = padT + chartH - (v / maxUV) * chartH;
+        return (
+          <text key={v} x={padL + chartW + 3} y={y + 3} fontSize="7" fill="rgba(255,255,255,0.3)" textAnchor="start">
+            {v}
+          </text>
+        );
+      })}
+
+      {/* X-axis time labels */}
+      {ticks.map((t, i) => {
+        const x = padL + t.idx * stepX;
+        return (
+          <text key={i} x={x} y={H - 3} fontSize="7" fill="rgba(255,255,255,0.35)" textAnchor="middle">
+            {t.time.slice(11, 16)}
+          </text>
+        );
+      })}
+
+      {/* Area fill */}
+      <path d={areaPath} fill="url(#uvAreaGrad)" />
+
+      {/* Line */}
+      <path d={`M${points}`} fill="none" stroke="#fde047" strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" />
+
+      {/* Now marker */}
+      {nowProgress != null && (
+        <>
+          <line
+            x1={padL + nowProgress * chartW}
+            x2={padL + nowProgress * chartW}
+            y1={padT}
+            y2={padT + chartH}
+            stroke="rgba(255,255,255,0.4)"
+            strokeWidth="0.8"
+            strokeDasharray="3 2"
+          />
+          {(() => {
+            const idx = Math.min(n - 1, Math.round(nowProgress * (n - 1)));
+            const h = hours[idx];
+            const x = padL + nowProgress * chartW;
+            const y = padT + chartH - (h.uv / maxUV) * chartH;
+            return <circle cx={x} cy={y} r="3" fill="white" />;
+          })()}
+        </>
+      )}
+    </svg>
   );
 }
 
