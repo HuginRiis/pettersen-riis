@@ -165,6 +165,7 @@ function WeatherPage() {
   const tollnesHumidity = readCap(findDeviceFuzzy(devices, zones, "tollnes", (d) => hasCap(d, "measure_humidity")), "measure_humidity");
   const hyttaHumidity = readCap(findDeviceFuzzy(devices, zones, "hytta", (d) => hasCap(d, "measure_humidity")), "measure_humidity");
   const tollnesTemp = readCap(findDeviceFuzzy(devices, zones, "tollnes", (d) => hasCap(d, "measure_temperature")), "measure_temperature");
+  const hyttaTemp = readCap(findDeviceFuzzy(devices, zones, "hytta", (d) => hasCap(d, "measure_temperature")), "measure_temperature");
 
   const skienHours = state.skien?.hours ?? null;
   const skienDays = state.skien?.days ?? null;
