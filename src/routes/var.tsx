@@ -242,9 +242,8 @@ function WeatherPage() {
 
   return (
     <PageShell>
-      <div className={`min-h-screen bg-gradient-to-b ${bgGradient} transition-colors duration-1000 relative`}>
+      <div className="min-h-screen relative">
         <WeatherVideoBackground kind={glassKind} />
-        <GlassPaneFX kind={glassKind} intensity={glassIntensity} />
         <div className="max-w-3xl mx-auto px-4 pt-8 pb-16 space-y-4 text-white relative z-10">
 
           {/* HERO */}
@@ -263,7 +262,7 @@ function WeatherPage() {
           </header>
 
           {/* Sted-bytter (samme stil som øvrige fliser) */}
-          <div className="relative z-50 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/15 shadow-lg shadow-black/10">
+          <div className="relative z-50 rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 shadow-lg shadow-black/10">
             <TileSplashFX kind={glassKind} intensity={glassIntensity} />
             <UserLocationBar page="var" state={userLoc} transparent />
           </div>
@@ -371,7 +370,7 @@ function GlassCard({
   fx?: React.ReactNode;
 }) {
   return (
-    <article className={`relative overflow-hidden rounded-2xl bg-white/10 backdrop-blur-xl border border-white/15 shadow-lg shadow-black/10 p-4 ${className}`}>
+    <article className={`relative overflow-hidden rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 shadow-lg shadow-black/10 p-4 ${className}`}>
       {fx}
       <div className="relative">
         {eyebrow && (
