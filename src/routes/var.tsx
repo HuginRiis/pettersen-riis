@@ -361,7 +361,7 @@ function NedborCard({ hours }: { hours: Hour[] | null }) {
   const maxP = Math.max(1, ...next.map((h) => h.precip));
 
   return (
-    <GlassCard eyebrow="Nedbør · sjanse for regn" icon={<Droplets size={14} />}>
+    <GlassCard eyebrow="Nedbør · sjanse for regn" icon={<Droplets size={14} />} fx={<RainFX intensity={Math.min(1, maxP / 4)} />}>
       <div className="overflow-x-auto -mx-2 px-2">
         <div className="flex items-end gap-3 min-w-max pb-1">
           {next.map((h, i) => {
