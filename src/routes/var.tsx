@@ -109,7 +109,7 @@ function WeatherPage() {
     LOCATIONS.forEach(async (loc) => {
       try {
         const res = await fetch(
-          `https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=${loc.lat}&lon=${loc.lon}`,
+          `https://api.met.no/weatherapi/locationforecast/2.0/complete?lat=${loc.lat}&lon=${loc.lon}`,
           { headers: { Accept: "application/json" } },
         );
         if (!res.ok) throw new Error("Kunne ikke hente værmelding");
