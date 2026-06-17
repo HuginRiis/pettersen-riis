@@ -574,7 +574,7 @@ function MoonCard({ moon, now }: { moon: { name: string; icon: string; illuminat
   const nextSet = useMemo(() => nextMoonset(now), [now]);
   const daysToFull = useMemo(() => daysUntilFullMoon(now), [now]);
   return (
-    <GlassCard eyebrow={moon.name} icon={<Moon size={14} />}>
+    <GlassCard eyebrow={moon.name} icon={<Moon size={14} />} fx={<StarFX />}>
       <div className="grid grid-cols-[1fr_auto] gap-4 items-center">
         <div className="space-y-2 text-sm">
           <Row label="Opplysning" value={`${Math.round(moon.illumination * 100)} %`} />
