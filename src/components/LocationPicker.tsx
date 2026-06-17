@@ -7,7 +7,6 @@ import {
   reverseGeocode,
   searchPlaces,
   setDefaultLocation,
-  setNameForCurrentIp,
   type PlaceHit,
   type WhoName,
   type LocationPage,
