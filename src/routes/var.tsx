@@ -372,7 +372,7 @@ function NedborCard({ hours }: { hours: Hour[] | null }) {
 
   return (
     <GlassCard eyebrow="Nedbør · sjanse for regn" icon={<Droplets size={14} />}>
-      <div className="overflow-x-auto -mx-2 px-2 scrollbar-hide">
+      <div className="overflow-x-auto -mx-2 px-2">
         <div className="flex items-end gap-3 min-w-max pb-1">
           {next.map((h, i) => {
             const heightPct = Math.max(4, (h.precip / maxP) * 70);
@@ -408,7 +408,7 @@ function HourlyForecastCard({ hours }: { hours: Hour[] | null }) {
   const next = hours.slice(0, 24);
   return (
     <GlassCard eyebrow="Værforhold · Temperatur" icon={<Cloud size={14} />}>
-      <div className="overflow-x-auto -mx-2 px-2 scrollbar-hide">
+      <div className="overflow-x-auto -mx-2 px-2">
         <div className="flex items-center gap-4 min-w-max pb-1">
           {next.map((h, i) => (
             <div key={h.time} className="flex flex-col items-center w-12">
@@ -447,7 +447,7 @@ function WindHourlyCard({ hours }: { hours: Hour[] | null }) {
 
   return (
     <GlassCard eyebrow="Vind · Hastighet (m/s)" icon={<Wind size={14} />}>
-      <div className="overflow-x-auto -mx-2 px-2 scrollbar-hide">
+      <div className="overflow-x-auto -mx-2 px-2">
         <div className="min-w-max">
           <div className="flex items-end gap-4 mb-1">
             {next.filter((_, i) => i % 1 === 0).slice(0, 24).map((h, i) => (
