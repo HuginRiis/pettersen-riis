@@ -952,7 +952,7 @@ function GustCard({ hour }: { hour: Hour | null }) {
 function HumidityCard({ hour, liveValue }: { hour: Hour | null; liveValue: number | null }) {
   const h = Math.round(liveValue ?? hour?.humidity ?? 0);
   return (
-    <GlassCard eyebrow="Luftfuktighet" icon={<Droplets size={14} />}>
+    <GlassCard eyebrow="Luftfuktighet" icon={<Droplets size={14} />} fx={<HumidityFX intensity={h / 100} />}>
       <div className="text-3xl font-light tabular-nums">{h} %</div>
       <div className="text-[12px] text-white/75 mt-3 leading-snug">
         Duggpunkt ca {Math.round((hour?.temp ?? 0) - (100 - h) / 5)}°.
