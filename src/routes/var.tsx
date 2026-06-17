@@ -941,7 +941,7 @@ function GustCard({ hour }: { hour: Hour | null }) {
   const w = hour?.wind ?? 0;
   const g = hour?.windGust ?? w;
   return (
-    <GlassCard eyebrow="Vindkast" icon={<Wind size={14} />}>
+    <GlassCard eyebrow="Vindkast" icon={<Wind size={14} />} fx={<GustFX intensity={Math.min(1, g / 15)} />}>
       <div className="text-3xl font-light tabular-nums">{g.toFixed(1)}</div>
       <div className="text-sm text-white/85">m/s</div>
       <div className="text-[12px] text-white/75 mt-2 leading-snug">Gjennomsnitt {w.toFixed(1)} m/s.</div>
