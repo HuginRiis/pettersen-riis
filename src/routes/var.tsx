@@ -11,9 +11,8 @@ import { useUvSun, uvLevel } from "@/hooks/use-uv-sun";
 import { usePerUserPersistedState } from "@/hooks/use-per-user-persisted-state";
 import {
   RainFX, SnowFX, CloudFX, WindFX, HeatwaveFX, HumidityFX, PressureFX, GustFX, SunFX, StarFX,
-  glassKindFromSymbol, TileSplashFX,
+  GlassPaneFX, glassKindFromSymbol, TileSplashFX,
 } from "@/components/weather/WeatherFX";
-import { WeatherVideoBackground } from "@/components/weather/WeatherVideoBackground";
 import {
   Wind,
   Droplets,
@@ -197,6 +196,17 @@ function WeatherPage() {
   const moon = useMemo(() => moonPhase(now), [now]);
   const allAlerts = alerts?.ok === true ? alerts.alerts : [];
 
+  // Bakgrunnsgradient basert på tid på døgnet og skydekke
+  const bgGradient = useMemo(() => {
+    const h = now.getHours();
+    const cloudy = (currentHour?.cloud ?? 50) > 60;
+    if (h < 5 || h >= 22) return "from-[#0b1426] via-[#142340] to-[#1c2e4f]"; // natt
+    if (h < 8) return "from-[#3a4a6b] via-[#5d7a9e] to-[#a8b5c8]"; // morgen
+    if (h >= 19) return "from-[#1c2e4f] via-[#3a4a6b] to-[#6d4e3a]"; // kveld
+    return cloudy
+      ? "from-[#4a5a72] via-[#6b7b91] to-[#8a98ad]"
+      : "from-[#3478c4] via-[#5a9bd4] to-[#9ec5e8]";
+  }, [now, currentHour]);
 
   const headline = useMemo(() => {
     if (!skienHours) return null;
@@ -230,9 +240,9 @@ function WeatherPage() {
   }, [currentHour]);
 
   return (
-    <PageShell transparentHeader>
-      <div className="min-h-screen relative">
-        <WeatherVideoBackground kind={glassKind} />
+    <PageShell>
+      <div className={`min-h-screen bg-gradient-to-b ${bgGradient} transition-colors duration-1000 relative`}>
+        <GlassPaneFX kind={glassKind} intensity={glassIntensity} />
         <div className="max-w-3xl mx-auto px-4 pt-8 pb-16 space-y-4 text-white relative z-10">
 
           {/* HERO */}
@@ -251,7 +261,7 @@ function WeatherPage() {
           </header>
 
           {/* Sted-bytter (samme stil som øvrige fliser) */}
-          <div className="relative z-50 rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 shadow-lg shadow-black/10">
+          <div className="relative z-50 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/15 shadow-lg shadow-black/10">
             <TileSplashFX kind={glassKind} intensity={glassIntensity} />
             <UserLocationBar page="var" state={userLoc} transparent />
           </div>
@@ -359,7 +369,7 @@ function GlassCard({
   fx?: React.ReactNode;
 }) {
   return (
-    <article className={`relative overflow-hidden rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 shadow-lg shadow-black/10 p-4 ${className}`}>
+    <article className={`relative overflow-hidden rounded-2xl bg-white/10 backdrop-blur-xl border border-white/15 shadow-lg shadow-black/10 p-4 ${className}`}>
       {fx}
       <div className="relative">
         {eyebrow && (

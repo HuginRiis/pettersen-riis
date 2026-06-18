@@ -168,7 +168,7 @@ const navLinks: NavLink[] = [
   { to: "/ssb-statistikk", label: "Norges-statistikk" },
 ];
 
-export function SiteHeader({ transparent = false }: { transparent?: boolean }) {
+export function SiteHeader() {
   const [open, setOpen] = useState(false);
   const mobileMenuRef = useRef<HTMLElement | null>(null);
 
@@ -446,7 +446,7 @@ export function SiteHeader({ transparent = false }: { transparent?: boolean }) {
   };
 
   return (
-    <header className={`sticky top-0 z-50 ${transparent ? 'bg-transparent border-b border-white/10' : 'backdrop-blur-md bg-background/80 border-b border-border'}`}>
+    <header className="sticky top-0 z-50 backdrop-blur-md bg-background/80 border-b border-border">
       <div className="container mx-auto px-4 py-3 flex items-center justify-between gap-4">
         <div className="flex items-center gap-3 shrink-0">
           <Link
@@ -631,7 +631,7 @@ export function SiteHeader({ transparent = false }: { transparent?: boolean }) {
       </div>
 
       {open && (
-        <nav ref={mobileMenuRef} className={`mobile-menu-popup border-t ${transparent ? 'border-white/10 bg-black/40 backdrop-blur-xl' : 'border-border bg-card/95 backdrop-blur'}`}>
+        <nav ref={mobileMenuRef} className="mobile-menu-popup border-t border-border bg-card/95 backdrop-blur">
           <div className="container mx-auto px-4 py-2 flex flex-col max-h-[calc(100vh-64px)] overflow-y-auto overscroll-contain">
 
             <div className="border-b border-border">
