@@ -116,7 +116,7 @@ function configFor(kind: GlassKind): SkyConfig {
       };
     default:
       return {
-        gradient: "linear-gradient(180deg, #4FA9E8 0%, #82C8F2 55%, #BFE3F6 100%)",
+        gradient: "linear-gradient(180deg, #2570A8 0%, #569FD4 55%, #8AC8EC 100%)",
         cloudOpacity: 0.4,
         cloudTint: "#ffffff",
         cloudSpeed: 75,
