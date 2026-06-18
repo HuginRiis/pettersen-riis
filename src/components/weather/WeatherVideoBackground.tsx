@@ -24,26 +24,26 @@ function configFor(kind: GlassKind): SkyConfig {
   switch (kind) {
     case "clear":
       return {
-        gradient: "linear-gradient(180deg, #4FA9E8 0%, #82C8F2 55%, #BFE3F6 100%)",
+        gradient: "linear-gradient(180deg, #2B7FC4 0%, #5BA5D9 55%, #8FC8EC 100%)",
         cloudOpacity: 0,
         cloudTint: "#ffffff",
-        cloudSpeed: 180,
+        cloudSpeed: 90,
         showSun: true,
       };
     case "fair":
       return {
-        gradient: "linear-gradient(180deg, #5AB0EA 0%, #8FCDF2 60%, #D6ECF8 100%)",
+        gradient: "linear-gradient(180deg, #3488CC 0%, #67AEE0 60%, #9BCFF0 100%)",
         cloudOpacity: 0.55,
         cloudTint: "#ffffff",
-        cloudSpeed: 140,
+        cloudSpeed: 75,
         showSun: true,
       };
     case "partly":
       return {
-        gradient: "linear-gradient(180deg, #6BB4E6 0%, #9CCFEE 55%, #DCEAF4 100%)",
+        gradient: "linear-gradient(180deg, #4A9BD6 0%, #7BBDE8 55%, #C0DDF0 100%)",
         cloudOpacity: 0.85,
         cloudTint: "#ffffff",
-        cloudSpeed: 110,
+        cloudSpeed: 60,
         showSun: true,
       };
     case "cloudy":
@@ -51,7 +51,7 @@ function configFor(kind: GlassKind): SkyConfig {
         gradient: "linear-gradient(180deg, #7B8A99 0%, #A4B2BF 60%, #C9D2DA 100%)",
         cloudOpacity: 1,
         cloudTint: "#f1f4f8",
-        cloudSpeed: 90,
+        cloudSpeed: 50,
         haze: 0.1,
       };
     case "rain":
@@ -59,7 +59,7 @@ function configFor(kind: GlassKind): SkyConfig {
         gradient: "linear-gradient(180deg, #46525E 0%, #677581 60%, #8A95A0 100%)",
         cloudOpacity: 1,
         cloudTint: "#cfd6dd",
-        cloudSpeed: 70,
+        cloudSpeed: 40,
         haze: 0.15,
       };
     case "sleet":
@@ -67,7 +67,7 @@ function configFor(kind: GlassKind): SkyConfig {
         gradient: "linear-gradient(180deg, #56636F 0%, #7B8893 60%, #A5AEB6 100%)",
         cloudOpacity: 1,
         cloudTint: "#dde3e9",
-        cloudSpeed: 65,
+        cloudSpeed: 38,
         haze: 0.18,
       };
     case "thunder":
@@ -75,7 +75,7 @@ function configFor(kind: GlassKind): SkyConfig {
         gradient: "linear-gradient(180deg, #2A2F3A 0%, #3B4250 55%, #565E6C 100%)",
         cloudOpacity: 1,
         cloudTint: "#9aa1ad",
-        cloudSpeed: 55,
+        cloudSpeed: 30,
         showLightning: true,
         haze: 0.2,
       };
@@ -84,7 +84,7 @@ function configFor(kind: GlassKind): SkyConfig {
         gradient: "linear-gradient(180deg, #8FA0B0 0%, #B6C3CE 55%, #DEE6ED 100%)",
         cloudOpacity: 1,
         cloudTint: "#ffffff",
-        cloudSpeed: 100,
+        cloudSpeed: 55,
         haze: 0.25,
       };
     case "fog":
@@ -92,7 +92,7 @@ function configFor(kind: GlassKind): SkyConfig {
         gradient: "linear-gradient(180deg, #A3ABB2 0%, #BFC6CC 55%, #D9DDE0 100%)",
         cloudOpacity: 0.6,
         cloudTint: "#ffffff",
-        cloudSpeed: 150,
+        cloudSpeed: 85,
         fog: true,
         haze: 0.35,
       };
@@ -101,7 +101,7 @@ function configFor(kind: GlassKind): SkyConfig {
         gradient: "linear-gradient(180deg, #0B1424 0%, #182338 55%, #243049 100%)",
         cloudOpacity: 0.7,
         cloudTint: "#2a3650",
-        cloudSpeed: 120,
+        cloudSpeed: 70,
         showMoon: true,
         showStars: true,
       };
@@ -110,7 +110,7 @@ function configFor(kind: GlassKind): SkyConfig {
         gradient: "linear-gradient(180deg, #060B1A 0%, #0F1A33 55%, #1B2745 100%)",
         cloudOpacity: 0,
         cloudTint: "#1f2a44",
-        cloudSpeed: 200,
+        cloudSpeed: 110,
         showMoon: true,
         showStars: true,
       };
@@ -119,7 +119,7 @@ function configFor(kind: GlassKind): SkyConfig {
         gradient: "linear-gradient(180deg, #4FA9E8 0%, #82C8F2 55%, #BFE3F6 100%)",
         cloudOpacity: 0.4,
         cloudTint: "#ffffff",
-        cloudSpeed: 140,
+        cloudSpeed: 75,
       };
   }
 }
