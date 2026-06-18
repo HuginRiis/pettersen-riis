@@ -775,6 +775,9 @@ main .container {
 .animate-wx-droplet   { animation: wx-droplet-rise ease-in infinite; }
 .animate-wx-pressure  { animation: wx-pressure-pulse ease-in-out infinite; }
 .animate-wx-gust      { animation: wx-gust-puff ease-out infinite; }
+.animate-wx-leaf      { animation: wx-leaf-fall ease-in infinite; }
+.animate-wx-tree-sway { animation: wx-tree-sway ease-in-out infinite; transform-origin: 50% 100%; }
+
 .animate-wx-sparkle   { animation: wx-sparkle ease-in-out infinite; }
 
 /* ============= Glass pane overlay (whole weather page) ============= */
