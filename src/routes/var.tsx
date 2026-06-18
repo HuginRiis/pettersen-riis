@@ -1054,35 +1054,99 @@ function SunsetCard({ sun, now }: { sun: ReturnType<typeof sunTimes>; now: Date 
     }
   }
   const gid = "sunset-arc";
+  // Solens høyeste punkt = midt mellom oppgang og nedgang
+  const peakP = (riseP + setP) / 2;
+  const peakX = peakP * W;
+  const peakTime = sunrise && sunset
+    ? new Date((sunrise.getTime() + sunset.getTime()) / 2)
+    : null;
+  const riseX = riseP * W;
+  const setX = setP * W;
+
+  // Natt-modus: solen er under horisonten
+  const night = !above;
+  const eyebrow = night ? "Måne · natt" : "Sol ned";
+  const headlineLabel = night
+    ? sunrise && now.getTime() < sunrise.getTime()
+      ? `Sol opp ${formatTime(sunrise)}`
+      : `Sol ned ${sunset ? formatTime(sunset) : "—"}`
+    : sunset ? formatTime(sunset) : "—";
 
   return (
-    <GlassCard eyebrow="Sol ned" icon={<Sunrise size={14} />} fx={<SunFX intensity={above ? 1 : 0.3} />}>
-      <div className="text-3xl font-light tabular-nums">{sunset ? formatTime(sunset) : "—"}</div>
+    <GlassCard
+      eyebrow={eyebrow}
+      icon={night ? <Moon size={14} /> : <Sunrise size={14} />}
+      fx={<SunFX intensity={above ? 1 : 0.3} />}
+    >
+      <div className="text-3xl font-light tabular-nums">{headlineLabel}</div>
       {remainingLabel && <div className="text-[11px] text-white/70 mt-0.5">{remainingLabel}</div>}
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-24 mt-2 overflow-visible">
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-28 mt-2 overflow-visible">
         <defs>
           <linearGradient id={`${gid}-sky`} x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0%" stopColor="rgba(80,120,180,0.45)" />
-            <stop offset="100%" stopColor="rgba(20,30,55,0.15)" />
+            {night ? (
+              <>
+                <stop offset="0%" stopColor="rgba(30,40,80,0.55)" />
+                <stop offset="100%" stopColor="rgba(10,15,35,0.2)" />
+              </>
+            ) : (
+              <>
+                <stop offset="0%" stopColor="rgba(80,120,180,0.45)" />
+                <stop offset="100%" stopColor="rgba(20,30,55,0.15)" />
+              </>
+            )}
           </linearGradient>
           <linearGradient id={`${gid}-stroke`} x1="0" x2="1" y1="0" y2="0">
-            <stop offset="0%" stopColor="rgba(255,255,255,0.35)" />
-            <stop offset="50%" stopColor="rgba(255,255,255,0.95)" />
-            <stop offset="100%" stopColor="rgba(255,200,140,0.6)" />
+            {night ? (
+              <>
+                <stop offset="0%" stopColor="rgba(180,200,255,0.35)" />
+                <stop offset="50%" stopColor="rgba(220,230,255,0.85)" />
+                <stop offset="100%" stopColor="rgba(150,170,220,0.5)" />
+              </>
+            ) : (
+              <>
+                <stop offset="0%" stopColor="rgba(255,255,255,0.35)" />
+                <stop offset="50%" stopColor="rgba(255,255,255,0.95)" />
+                <stop offset="100%" stopColor="rgba(255,200,140,0.6)" />
+              </>
+            )}
           </linearGradient>
           <radialGradient id={`${gid}-glow`} cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="rgba(255,255,255,0.95)" />
-            <stop offset="40%" stopColor="rgba(255,235,180,0.55)" />
-            <stop offset="100%" stopColor="rgba(255,200,120,0)" />
+            {night ? (
+              <>
+                <stop offset="0%" stopColor="rgba(220,230,255,0.85)" />
+                <stop offset="50%" stopColor="rgba(160,180,230,0.4)" />
+                <stop offset="100%" stopColor="rgba(120,140,200,0)" />
+              </>
+            ) : (
+              <>
+                <stop offset="0%" stopColor="rgba(255,255,255,0.95)" />
+                <stop offset="40%" stopColor="rgba(255,235,180,0.55)" />
+                <stop offset="100%" stopColor="rgba(255,200,120,0)" />
+              </>
+            )}
           </radialGradient>
         </defs>
         {/* Sky-fyll over horisont */}
         <rect x="0" y="0" width={W} height={horizonY} fill={`url(#${gid}-sky)`} rx="6" />
+        {/* Stjerner i natt-modus */}
+        {night && [
+          { x: 18, y: 12, r: 0.7, d: 0 },
+          { x: 42, y: 22, r: 0.5, d: 0.6 },
+          { x: 78, y: 8, r: 0.9, d: 1.1 },
+          { x: 118, y: 18, r: 0.6, d: 0.3 },
+          { x: 152, y: 28, r: 0.5, d: 1.4 },
+          { x: 180, y: 14, r: 0.8, d: 0.9 },
+          { x: 96, y: 36, r: 0.55, d: 1.7 },
+        ].map((s, i) => (
+          <circle
+            key={i} cx={s.x} cy={s.y} r={s.r} fill="rgba(255,255,255,0.85)"
+            style={{ animation: `wx-sun-pulse 3.4s ease-in-out ${s.d}s infinite`, transformOrigin: `${s.x}px ${s.y}px` }}
+          />
+        ))}
         {/* Grid */}
         {[0.25, 0.5, 0.75].map((p) => (
           <line key={p} x1={p * W} x2={p * W} y1="0" y2={H} stroke="rgba(255,255,255,0.12)" strokeWidth="0.5" strokeDasharray="1 2" />
         ))}
-        <line x1="0" x2={W} y1={peakY + 20} y2={peakY + 20} stroke="rgba(255,255,255,0.08)" strokeWidth="0.5" />
         {/* Horisont */}
         <line x1="0" x2={W} y1={horizonY} y2={horizonY} stroke="rgba(255,255,255,0.4)" strokeWidth="0.8" />
         {/* Bue */}
@@ -1098,23 +1162,61 @@ function SunsetCard({ sun, now }: { sun: ReturnType<typeof sunTimes>; now: Date 
             animation: "wx-arc-draw 1.6s ease-out 0.1s forwards",
           }}
         />
-        {/* Glød rundt solen */}
-        {above && (
+        {/* Peak-markør (solens høyeste punkt) */}
+        {peakTime && (
+          <g style={{ opacity: 0, animation: "wx-sun-in 0.8s ease-out 1.5s forwards" }}>
+            <line x1={peakX} x2={peakX} y1={peakY - 2} y2={peakY + 6} stroke="rgba(255,255,255,0.6)" strokeWidth="0.6" />
+            <circle cx={peakX} cy={peakY} r="1.6" fill="rgba(255,255,255,0.9)" />
+            <text x={peakX} y={peakY - 4} textAnchor="middle" fontSize="7" fill="rgba(255,255,255,0.9)" style={{ fontVariantNumeric: "tabular-nums" }}>
+              {formatTime(peakTime)}
+            </text>
+          </g>
+        )}
+        {/* Oppgang-/nedgang-merker */}
+        {sunrise && (
+          <g style={{ opacity: 0, animation: "wx-sun-in 0.8s ease-out 1.7s forwards" }}>
+            <circle cx={riseX} cy={horizonY} r="1.4" fill="rgba(255,255,255,0.85)" />
+            <text x={riseX} y={horizonY + 9} textAnchor="middle" fontSize="6.5" fill="rgba(255,255,255,0.75)" style={{ fontVariantNumeric: "tabular-nums" }}>
+              ↑ {formatTime(sunrise)}
+            </text>
+          </g>
+        )}
+        {sunset && (
+          <g style={{ opacity: 0, animation: "wx-sun-in 0.8s ease-out 1.9s forwards" }}>
+            <circle cx={setX} cy={horizonY} r="1.4" fill="rgba(255,200,140,0.9)" />
+            <text x={setX} y={horizonY + 9} textAnchor="middle" fontSize="6.5" fill="rgba(255,220,180,0.85)" style={{ fontVariantNumeric: "tabular-nums" }}>
+              ↓ {formatTime(sunset)}
+            </text>
+          </g>
+        )}
+        {/* Glød rundt sol/måne */}
+        <circle
+          cx={sx} cy={sy} r={night ? 11 : 14} fill={`url(#${gid}-glow)`}
+          style={{ animation: "wx-sun-pulse 2.6s ease-in-out infinite", transformOrigin: `${sx}px ${sy}px` }}
+        />
+        {/* Sol eller måne */}
+        {night ? (
+          <g
+            style={{
+              opacity: 0,
+              animation: "wx-sun-in 1.2s ease-out 1.1s forwards",
+              filter: "drop-shadow(0 0 5px rgba(200,215,255,0.8))",
+            }}
+          >
+            {/* Måne med skygge for halvmåne-effekt */}
+            <circle cx={sx} cy={sy} r="4.5" fill="#f3f6ff" />
+            <circle cx={sx + 1.8} cy={sy - 0.4} r="3.6" fill="rgba(20,28,55,0.85)" />
+          </g>
+        ) : (
           <circle
-            cx={sx} cy={sy} r="14" fill={`url(#${gid}-glow)`}
-            style={{ animation: "wx-sun-pulse 2.6s ease-in-out infinite", transformOrigin: `${sx}px ${sy}px` }}
+            cx={sx} cy={sy} r="4.5" fill="#fff"
+            style={{
+              opacity: 0,
+              animation: "wx-sun-in 1.2s ease-out 1.1s forwards",
+              filter: "drop-shadow(0 0 6px rgba(255,235,180,0.9))",
+            }}
           />
         )}
-        {/* Solen */}
-        <circle
-          cx={sx} cy={sy} r={above ? 4.5 : 2.2}
-          fill={above ? "#fff" : "rgba(255,255,255,0.55)"}
-          style={{
-            opacity: 0,
-            animation: "wx-sun-in 1.2s ease-out 1.1s forwards",
-            filter: above ? "drop-shadow(0 0 6px rgba(255,235,180,0.9))" : "none",
-          }}
-        />
       </svg>
       <div className="flex items-center justify-between text-[11px] text-white/80 mt-1">
         <span>Sol opp: {sunrise ? formatTime(sunrise) : "—"}</span>
