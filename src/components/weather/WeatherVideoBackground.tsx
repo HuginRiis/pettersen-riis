@@ -24,7 +24,7 @@ function configFor(kind: GlassKind): SkyConfig {
   switch (kind) {
     case "clear":
       return {
-        gradient: "linear-gradient(180deg, #2B7FC4 0%, #5BA5D9 55%, #8FC8EC 100%)",
+        gradient: "linear-gradient(180deg, #1A5A94 0%, #3A8BC4 55%, #6BB5E0 100%)",
         cloudOpacity: 0,
         cloudTint: "#ffffff",
         cloudSpeed: 90,
