@@ -308,7 +308,7 @@ export function LocationPicker({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onFocus={() => hits && setOpen(true)}
-              placeholder="Søk sted i Norge…"
+              placeholder="Søk sted i hele verden…"
               className={inputClass}
             />
             {searching && (
