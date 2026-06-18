@@ -513,8 +513,10 @@ export function ThunderFX({ intensity = 0.5, className = "" }: Common) {
             top: `${b.top}%`,
             width: 22 * b.scale,
             height: 22 * b.scale,
+            opacity: 0,
             animationDuration: `${b.dur}s`,
             animationDelay: `${b.delay}s`,
+            animationFillMode: "backwards",
             filter: `drop-shadow(0 0 6px hsla(${b.hue},100%,75%,0.9))`,
           }}
         >
