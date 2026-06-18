@@ -512,61 +512,86 @@ function HourLabel({ time, index }: { time: string; index: number }) {
   return <>{hh}</>;
 }
 
+function fmtWhen(iso: string) {
+  return new Date(iso).toLocaleString("nb-NO", { weekday: "short", hour: "2-digit", minute: "2-digit" });
+}
+
 function NedborPanel({ hours, maxP }: { hours: Hour[]; maxP: number }) {
+  const total = hours.reduce((s, h) => s + h.precip, 0);
+  const firstRain = hours.find((h) => h.precip >= 0.1);
+  const peakIdx = hours.reduce((best, h, i, arr) => (h.precip > arr[best].precip ? i : best), 0);
+  const peak = hours[peakIdx];
+  const summary = !firstRain
+    ? "Ingen nedbør ventet de neste 48 timene."
+    : `Regn fra ${fmtWhen(firstRain.time)} · mest ${peak.precip.toFixed(1)} mm rundt ${fmtWhen(peak.time)} · totalt ${total.toFixed(1)} mm`;
+
   return (
-    <div className="overflow-x-auto -mx-2 px-2">
-      <div className="flex items-end gap-2 min-w-max pb-1">
-        {hours.map((h, i) => {
-          const heightPct = Math.max(4, (h.precip / maxP) * 70);
-          return (
-            <div
-              key={h.time}
-              className="flex flex-col items-center w-10"
-              style={{ animation: `hourPop 0.45s cubic-bezier(.2,.8,.2,1) ${(0.45 + i * 0.05).toFixed(2)}s both` }}
-            >
-              <div className="text-[10px] text-white/80 mb-1">
-                <HourLabel time={h.time} index={i} />
+    <div className="space-y-2">
+      <div className="text-[12px] text-white/90">{summary}</div>
+      <div className="overflow-x-auto -mx-2 px-2">
+        <div className="flex items-end gap-2 min-w-max pb-1">
+          {hours.map((h, i) => {
+            const heightPct = Math.max(4, (h.precip / maxP) * 70);
+            return (
+              <div
+                key={h.time}
+                className="flex flex-col items-center w-10"
+                style={{ animation: `hourPop 0.45s cubic-bezier(.2,.8,.2,1) ${(0.45 + i * 0.05).toFixed(2)}s both` }}
+              >
+                <div className="text-[10px] text-white/80 mb-1">
+                  <HourLabel time={h.time} index={i} />
+                </div>
+                <div className="relative w-6 h-20 rounded-md bg-white/15 overflow-hidden border-t border-dashed border-white/20">
+                  <div
+                    className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-sky-300 to-sky-200 rounded-md"
+                    style={{ height: `${heightPct}%` }}
+                  />
+                </div>
+                <div className="flex items-center gap-0.5 mt-1 text-[10px] text-sky-100 font-medium tabular-nums">
+                  <Droplets size={8} />
+                  {Math.round(h.precipProbability)}%
+                </div>
               </div>
-              <div className="relative w-6 h-20 rounded-md bg-white/15 overflow-hidden border-t border-dashed border-white/20">
-                <div
-                  className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-sky-300 to-sky-200 rounded-md"
-                  style={{ height: `${heightPct}%` }}
-                />
-              </div>
-              <div className="flex items-center gap-0.5 mt-1 text-[10px] text-sky-100 font-medium tabular-nums">
-                <Droplets size={8} />
-                {Math.round(h.precipProbability)}%
-              </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
     </div>
   );
 }
 
 function VaerPanel({ hours }: { hours: Hour[] }) {
+  const temps = hours.map((h) => h.temp);
+  const tMin = Math.min(...temps);
+  const tMax = Math.max(...temps);
+  const warmIdx = temps.indexOf(tMax);
+  const coldIdx = temps.indexOf(tMin);
+  const summary = `Temp ${Math.round(tMin)}° – ${Math.round(tMax)}° · varmest ${fmtWhen(hours[warmIdx].time)} · kaldest ${fmtWhen(hours[coldIdx].time)}`;
+
   return (
-    <div className="overflow-x-auto -mx-2 px-2">
-      <div className="flex items-center gap-3 min-w-max pb-1">
-        {hours.map((h, i) => (
-          <div
-            key={h.time}
-            className="flex flex-col items-center w-10"
-            style={{ animation: `hourDrop 0.5s cubic-bezier(.2,.8,.2,1) ${(0.45 + i * 0.05).toFixed(2)}s both` }}
-          >
-            <div className="text-[10px] text-white/80 mb-1.5">
-              <HourLabel time={h.time} index={i} />
-            </div>
-            <div className="text-xl mb-0.5">{symbolEmoji(h.symbol)}</div>
-            {h.precipProbability >= 20 && (
-              <div className="text-[9px] text-sky-200 tabular-nums">
-                {Math.round(h.precipProbability)}%
+    <div className="space-y-2">
+      <div className="text-[12px] text-white/90">{summary}</div>
+      <div className="overflow-x-auto -mx-2 px-2">
+        <div className="flex items-center gap-3 min-w-max pb-1">
+          {hours.map((h, i) => (
+            <div
+              key={h.time}
+              className="flex flex-col items-center w-10"
+              style={{ animation: `hourDrop 0.5s cubic-bezier(.2,.8,.2,1) ${(0.45 + i * 0.05).toFixed(2)}s both` }}
+            >
+              <div className="text-[10px] text-white/80 mb-1.5">
+                <HourLabel time={h.time} index={i} />
               </div>
-            )}
-            <div className="text-sm font-medium tabular-nums mt-0.5">{Math.round(h.temp)}°</div>
-          </div>
-        ))}
+              <div className="text-xl mb-0.5">{symbolEmoji(h.symbol)}</div>
+              {h.precipProbability >= 20 && (
+                <div className="text-[9px] text-sky-200 tabular-nums">
+                  {Math.round(h.precipProbability)}%
+                </div>
+              )}
+              <div className="text-sm font-medium tabular-nums mt-0.5">{Math.round(h.temp)}°</div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -574,9 +599,17 @@ function VaerPanel({ hours }: { hours: Hour[] }) {
 
 function VindPanel({ hours, maxW }: { hours: Hour[]; maxW: number }) {
   const maxG = Math.max(maxW, ...hours.map((h) => h.windGust));
+  const peakIdx = hours.reduce((b, h, i, a) => (h.windGust > a[b].windGust ? i : b), 0);
+  const peak = hours[peakIdx];
+  const summary =
+    peak.windGust >= 10
+      ? `Sterkest kast ${Math.round(peak.windGust)} m/s rundt ${fmtWhen(peak.time)} · middelvind opp til ${Math.round(Math.max(...hours.map((h) => h.wind)))} m/s`
+      : `Rolig vind · maks ${Math.round(peak.windGust)} m/s neste 48 t`;
   return (
-    <div className="overflow-x-auto -mx-2 px-2">
-      <div className="flex items-end gap-2 min-w-max pb-1">
+    <div className="space-y-2">
+      <div className="text-[12px] text-white/90">{summary}</div>
+      <div className="overflow-x-auto -mx-2 px-2">
+        <div className="flex items-end gap-2 min-w-max pb-1">
         {hours.map((h, i) => {
           const heightPct = Math.max(4, (h.wind / maxG) * 70);
           const gustPct = Math.max(heightPct, (h.windGust / maxG) * 70);
@@ -622,6 +655,7 @@ function VindPanel({ hours, maxW }: { hours: Hour[]; maxW: number }) {
             </div>
           );
         })}
+        </div>
       </div>
       <div className="text-[10px] text-white/60 mt-1 px-1">■ vind &nbsp; ▒ kast (m/s)</div>
     </div>
