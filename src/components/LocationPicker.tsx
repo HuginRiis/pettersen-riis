@@ -373,7 +373,7 @@ export function LocationPicker({
 
         {open && hits && hits.length === 0 && !searching && (
           <div className={`absolute left-0 right-0 mt-1 z-[100] rounded-xl border px-3 py-2 text-xs italic ${transparent ? "border-white/20 bg-[#152238]/90 backdrop-blur-2xl text-sky-200/80" : "border-border bg-background text-muted-foreground"}`}>
-            Ingen treff i Kartverkets register.
+            Ingen treff. Prøv et annet stedsnavn.
           </div>
         )}
       </div>
