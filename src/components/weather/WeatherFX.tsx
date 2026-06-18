@@ -125,9 +125,9 @@ export function CloudFX({ intensity = 0.5, className = "" }: Common) {
 /* ---------------- WIND ---------------- */
 export function WindFX({ intensity = 0.5, className = "" }: Common) {
   const count = Math.max(4, Math.round(5 + intensity * 8));
-  // Higher intensity = faster (shorter duration)
-  const baseDur = 2.2;
-  const speedMult = 1 + intensity * 2.5; // 1x at calm, 3.5x at storm
+  // Calmer baseline: low wind drifts gently, storm wind zips fast
+  const baseDur = 3.8;
+  const speedMult = 0.6 + intensity * 1.8; // 0.6x at calm → 2.4x at storm
   const lines = useMemo(
     () =>
       Array.from({ length: count }).map((_, i) => ({
