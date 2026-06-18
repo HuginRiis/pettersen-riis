@@ -124,31 +124,42 @@ export function CloudFX({ intensity = 0.5, className = "" }: Common) {
 
 /* ---------------- WIND ---------------- */
 export function WindFX({ intensity = 0.5, className = "" }: Common) {
-  const count = Math.max(3, Math.round(3 + intensity * 5));
+  const count = Math.max(4, Math.round(5 + intensity * 8));
+  // Higher intensity = faster (shorter duration)
+  const baseDur = 2.2;
+  const speedMult = 1 + intensity * 2.5; // 1x at calm, 3.5x at storm
   const lines = useMemo(
     () =>
       Array.from({ length: count }).map((_, i) => ({
-        top: 18 + i * (70 / count) + Math.random() * 6,
-        delay: Math.random() * 2,
-        dur: 1.6 + Math.random() * 1.6,
-        w: 30 + Math.random() * 50,
+        top: 12 + i * (76 / count) + Math.random() * 8,
+        delay: Math.random() * 2.5,
+        dur: (baseDur / speedMult) * (0.7 + Math.random() * 0.6),
+        w: 18 + Math.random() * 40,
+        op: 0.35 + Math.random() * 0.45,
+        thin: 1 + Math.random() * 1.5,
+        angle: -2 + Math.random() * 4,
       })),
-    [count],
+    [count, speedMult],
   );
   return (
     <div className={`${wrap} ${className}`} aria-hidden>
       {lines.map((l, i) => (
         <span
           key={i}
-          className="absolute h-px animate-wx-wind"
+          className="absolute animate-wx-wind"
           style={{
             top: `${l.top}%`,
             left: 0,
             width: `${l.w}%`,
+            height: l.thin,
             background:
-              "linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.7) 50%, rgba(255,255,255,0) 100%)",
+              "linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.85) 40%, rgba(255,255,255,0.85) 60%, rgba(255,255,255,0) 100%)",
+            opacity: l.op,
             animationDuration: `${l.dur}s`,
             animationDelay: `${l.delay}s`,
+            transform: `rotate(${l.angle}deg)`,
+            borderRadius: 1,
+            filter: "blur(0.3px)",
           }}
         />
       ))}
