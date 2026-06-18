@@ -631,7 +631,7 @@ export function SiteHeader({ transparent = false }: { transparent?: boolean }) {
       </div>
 
       {open && (
-        <nav ref={mobileMenuRef} className="mobile-menu-popup border-t border-border bg-card/95 backdrop-blur">
+        <nav ref={mobileMenuRef} className={`mobile-menu-popup border-t ${transparent ? 'border-white/10 bg-black/40 backdrop-blur-xl' : 'border-border bg-card/95 backdrop-blur'}`}>
           <div className="container mx-auto px-4 py-2 flex flex-col max-h-[calc(100vh-64px)] overflow-y-auto overscroll-contain">
 
             <div className="border-b border-border">
