@@ -302,14 +302,14 @@ function WeatherPage() {
 
           {/* NEDBØR I DAG + VINDKAST */}
           <div className="grid grid-cols-2 gap-3">
-            <PrecipTodayCard day={todayDay} liveMm={tollnesRainToday} days={skienDays} />
+            <PrecipTodayCard day={todayDay} days={skienDays} />
             <GustCard hour={currentHour} />
           </div>
 
           {/* LUFTFUKTIGHET + LUFTTRYKK */}
           <div className="grid grid-cols-2 gap-3">
-            <HumidityCard hour={currentHour} liveValue={tollnesHumidity} />
-            <PressureCard hour={currentHour} liveValue={tollnesPressure} />
+            <HumidityCard hour={currentHour} />
+            <PressureCard hour={currentHour} />
           </div>
 
           {/* LIVE MÅLINGER — Netatmo */}
