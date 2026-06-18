@@ -276,10 +276,7 @@ function WeatherPage() {
           )}
 
           {/* ROTERENDE 48-TIMERS PROGNOSE: nedbør · værforhold · vind · lyn */}
-          <RotatingForecastCard
-            hours={skienHours}
-            location={{ name: userLoc.active.label, lat: userLoc.active.lat, lon: userLoc.active.lon }}
-          />
+          <RotatingForecastCard hours={skienHours} />
 
 
           {/* 10-DAGERS PROGNOSE */}
@@ -391,13 +388,9 @@ function GlassCard({
 
 type PanelKey = "nedbor" | "vaer" | "vind" | "lyn";
 
-type PanelLoc = { name: string; lat: number; lon: number };
-
-function RotatingForecastCard({ hours, location }: { hours: Hour[] | null; location: PanelLoc }) {
+function RotatingForecastCard({ hours }: { hours: Hour[] | null }) {
   const [panel, setPanel] = useState<PanelKey>("nedbor");
   const [paused, setPaused] = useState(false);
-  const [picked, setPicked] = useState<{ hour: Hour; index: number } | null>(null);
-  const [detail, setDetail] = useState<"choice" | "map" | "summary">("choice");
   const panels: { key: PanelKey; label: string; icon: React.ReactNode }[] = [
     { key: "nedbor", label: "Nedbør", icon: <Droplets size={14} /> },
     { key: "vaer", label: "Værforhold", icon: <Cloud size={14} /> },
@@ -406,7 +399,7 @@ function RotatingForecastCard({ hours, location }: { hours: Hour[] | null; locat
   ];
 
   useEffect(() => {
-    if (paused || picked) return;
+    if (paused) return;
     const id = setInterval(() => {
       setPanel((cur) => {
         const i = panels.findIndex((p) => p.key === cur);
@@ -414,7 +407,7 @@ function RotatingForecastCard({ hours, location }: { hours: Hour[] | null; locat
       });
     }, 7000);
     return () => clearInterval(id);
-  }, [paused, picked]);
+  }, [paused]);
 
   if (!hours)
     return (
@@ -436,22 +429,11 @@ function RotatingForecastCard({ hours, location }: { hours: Hour[] | null; locat
 
   const active = panels.find((p) => p.key === panel)!;
 
-  const handlePick = (hour: Hour, index: number) => {
-    setPicked({ hour, index });
-    setDetail("choice");
-    setPaused(true);
-  };
-  const closePick = () => {
-    setPicked(null);
-    setDetail("choice");
-    setPaused(false);
-  };
-
   return (
     <article
       className="relative overflow-hidden rounded-2xl bg-white/10 backdrop-blur-xl border border-white/15 shadow-lg shadow-black/10 p-4"
       onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => !picked && setPaused(false)}
+      onMouseLeave={() => setPaused(false)}
       onTouchStart={() => setPaused(true)}
     >
       {fx}
@@ -493,7 +475,6 @@ function RotatingForecastCard({ hours, location }: { hours: Hour[] | null; locat
           @keyframes hourDrop { 0% { opacity:0; transform: translateY(-18px) rotate(-8deg); } 70% { opacity:1; transform: translateY(2px) rotate(2deg); } 100% { opacity:1; transform: translateY(0) rotate(0); } }
           @keyframes pathDraw { 0% { stroke-dashoffset: 1200; opacity:0; } 30% { opacity:1; } 100% { stroke-dashoffset: 0; opacity:1; } }
           @keyframes barGrow { 0% { transform: scaleY(0); } 100% { transform: scaleY(1); } }
-          @keyframes detailFly { 0% { opacity:0; transform: scale(.92) translateY(8px); } 100% { opacity:1; transform: scale(1) translateY(0); } }
         `}</style>
         <div
           key={panel}
@@ -506,145 +487,13 @@ function RotatingForecastCard({ hours, location }: { hours: Hour[] | null; locat
             willChange: "transform, opacity, filter",
           }}
         >
-          {panel === "nedbor" && <NedborPanel hours={next48} maxP={maxRain} onPick={handlePick} />}
-          {panel === "vaer" && <VaerPanel hours={next48} onPick={handlePick} />}
-          {panel === "vind" && <VindPanel hours={next48} maxW={maxWind} onPick={handlePick} />}
-          {panel === "lyn" && <LynPanel hours={next48} onPick={handlePick} />}
+          {panel === "nedbor" && <NedborPanel hours={next48} maxP={maxRain} />}
+          {panel === "vaer" && <VaerPanel hours={next48} />}
+          {panel === "vind" && <VindPanel hours={next48} maxW={maxWind} />}
+          {panel === "lyn" && <LynPanel hours={next48} />}
         </div>
-
-        {picked && (
-          <DetailOverlay
-            panel={panel}
-            location={location}
-            hour={picked.hour}
-            index={picked.index}
-            mode={detail}
-            setMode={setDetail}
-            onClose={closePick}
-          />
-        )}
       </div>
     </article>
-  );
-}
-
-function DetailOverlay({
-  panel, location, hour, index, mode, setMode, onClose,
-}: {
-  panel: PanelKey;
-  location: PanelLoc;
-  hour: Hour;
-  index: number;
-  mode: "choice" | "map" | "summary";
-  setMode: (m: "choice" | "map" | "summary") => void;
-  onClose: () => void;
-}) {
-  const when = new Date(hour.time).toLocaleString("nb-NO", {
-    weekday: "short", hour: "2-digit", minute: "2-digit",
-  });
-  const title =
-    panel === "nedbor" ? "Nedbør" :
-    panel === "vaer" ? "Værforhold" :
-    panel === "vind" ? "Vind" : "Lyn & torden";
-
-  const summary = (() => {
-    if (panel === "nedbor") {
-      const mm = hour.precip.toFixed(1);
-      const pp = Math.round(hour.precipProbability);
-      const tone = hour.precip >= 2 ? "Kraftig nedbør" : hour.precip >= 0.5 ? "Moderat nedbør" : hour.precip > 0 ? "Lett nedbør" : "Tørt";
-      return [
-        `${tone} på ${location.name} ${when}.`,
-        `Forventet mengde: ${mm} mm med ${pp} % sannsynlighet.`,
-        hour.precip >= 1 ? "Ta med paraply eller regnjakke." : pp >= 50 ? "Det kan komme byger – ha regntøy tilgjengelig." : "Lite trolig at du trenger paraply.",
-      ].join(" ");
-    }
-    if (panel === "vaer") {
-      return [
-        `${conditionFromSymbol(hour.symbol)} på ${location.name} ${when}.`,
-        `Temperatur ${Math.round(hour.temp)}°, skydekke ${Math.round(hour.cloud)} %, luftfuktighet ${Math.round(hour.humidity)} %.`,
-        `Lufttrykk ${Math.round(hour.pressure)} hPa.`,
-      ].join(" ");
-    }
-    if (panel === "vind") {
-      const tone = hour.windGust >= 17 ? "Sterk kuling i kastene" : hour.windGust >= 11 ? "Frisk bris med kraftige kast" : hour.wind >= 6 ? "Lett til moderat vind" : "Stille vær";
-      return [
-        `${tone} på ${location.name} ${when}.`,
-        `Middelvind ${Math.round(hour.wind)} m/s, kast opp mot ${Math.round(hour.windGust)} m/s.`,
-        hour.windGust >= 15 ? "Sikre løse gjenstander ute." : "Greie forhold for utendørs aktivitet.",
-      ].join(" ");
-    }
-    const t = Math.round(hour.thunder);
-    return [
-      `Sannsynlighet for torden på ${location.name} ${when}: ${t} %.`,
-      t >= 50 ? "Høy risiko – hold deg innendørs ved torden." : t >= 20 ? "Moderat sjanse for lyn og torden." : "Liten sjanse for torden.",
-    ].join(" ");
-  })();
-
-  const mapSrc = `https://maps.google.com/maps?q=${location.lat},${location.lon}&z=11&hl=nb&output=embed`;
-
-  return (
-    <div
-      className="absolute inset-0 z-30 rounded-2xl bg-slate-950/75 backdrop-blur-md p-3 flex flex-col"
-      style={{ animation: "detailFly 0.25s ease-out both" }}
-      role="dialog"
-      aria-label={`${title} – detaljer`}
-    >
-      <div className="flex items-center justify-between mb-2">
-        <div className="text-[11px] uppercase tracking-[0.15em] text-white/80 font-semibold">
-          {title} · {location.name} · {index === 0 ? "Nå" : when}
-        </div>
-        <button
-          onClick={onClose}
-          className="h-7 w-7 rounded-full bg-white/15 hover:bg-white/25 text-white text-sm leading-none"
-          aria-label="Lukk"
-        >
-          ✕
-        </button>
-      </div>
-
-      {mode === "choice" && (
-        <div className="grid grid-cols-2 gap-2 flex-1">
-          <button
-            onClick={() => setMode("map")}
-            className="rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 p-4 flex flex-col items-center justify-center gap-2 transition"
-          >
-            <MapIcon size={28} className="text-sky-200" />
-            <div className="text-sm font-semibold text-white">Kart</div>
-            <div className="text-[11px] text-white/70 text-center">Vis {location.name} på kartet</div>
-          </button>
-          <button
-            onClick={() => setMode("summary")}
-            className="rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 p-4 flex flex-col items-center justify-center gap-2 transition"
-          >
-            <TrendingUp size={28} className="text-emerald-200" />
-            <div className="text-sm font-semibold text-white">Oppsummering</div>
-            <div className="text-[11px] text-white/70 text-center">Hva betyr dette for deg?</div>
-          </button>
-        </div>
-      )}
-
-      {mode === "map" && (
-        <div className="flex-1 flex flex-col gap-2 min-h-[220px]">
-          <iframe
-            title={`Kart over ${location.name}`}
-            src={mapSrc}
-            className="w-full flex-1 rounded-lg border border-white/15 bg-white/10"
-            loading="lazy"
-            referrerPolicy="no-referrer-when-downgrade"
-          />
-          <button onClick={() => setMode("choice")} className="text-[11px] text-white/70 hover:text-white self-start">← Tilbake</button>
-        </div>
-      )}
-
-      {mode === "summary" && (
-        <div className="flex-1 flex flex-col gap-2">
-          <div className="rounded-lg bg-white/10 border border-white/15 p-3 text-sm text-white/90 leading-relaxed">
-            {summary}
-          </div>
-          <button onClick={() => setMode("choice")} className="text-[11px] text-white/70 hover:text-white self-start">← Tilbake</button>
-        </div>
-      )}
-    </div>
   );
 }
 
@@ -663,20 +512,17 @@ function HourLabel({ time, index }: { time: string; index: number }) {
   return <>{hh}</>;
 }
 
-function NedborPanel({ hours, maxP, onPick }: { hours: Hour[]; maxP: number; onPick: (h: Hour, i: number) => void }) {
+function NedborPanel({ hours, maxP }: { hours: Hour[]; maxP: number }) {
   return (
     <div className="overflow-x-auto -mx-2 px-2">
       <div className="flex items-end gap-2 min-w-max pb-1">
         {hours.map((h, i) => {
           const heightPct = Math.max(4, (h.precip / maxP) * 70);
           return (
-            <button
-              type="button"
+            <div
               key={h.time}
-              onClick={() => onPick(h, i)}
-              className="flex flex-col items-center w-10 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 rounded"
+              className="flex flex-col items-center w-10"
               style={{ animation: `hourPop 0.45s cubic-bezier(.2,.8,.2,1) ${(0.45 + i * 0.05).toFixed(2)}s both` }}
-              aria-label={`Detaljer for ${h.time}`}
             >
               <div className="text-[10px] text-white/80 mb-1">
                 <HourLabel time={h.time} index={i} />
@@ -691,7 +537,7 @@ function NedborPanel({ hours, maxP, onPick }: { hours: Hour[]; maxP: number; onP
                 <Droplets size={8} />
                 {Math.round(h.precipProbability)}%
               </div>
-            </button>
+            </div>
           );
         })}
       </div>
@@ -699,18 +545,15 @@ function NedborPanel({ hours, maxP, onPick }: { hours: Hour[]; maxP: number; onP
   );
 }
 
-function VaerPanel({ hours, onPick }: { hours: Hour[]; onPick: (h: Hour, i: number) => void }) {
+function VaerPanel({ hours }: { hours: Hour[] }) {
   return (
     <div className="overflow-x-auto -mx-2 px-2">
       <div className="flex items-center gap-3 min-w-max pb-1">
         {hours.map((h, i) => (
-          <button
-            type="button"
+          <div
             key={h.time}
-            onClick={() => onPick(h, i)}
-            className="flex flex-col items-center w-10 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 rounded"
+            className="flex flex-col items-center w-10"
             style={{ animation: `hourDrop 0.5s cubic-bezier(.2,.8,.2,1) ${(0.45 + i * 0.05).toFixed(2)}s both` }}
-            aria-label={`Detaljer for ${h.time}`}
           >
             <div className="text-[10px] text-white/80 mb-1.5">
               <HourLabel time={h.time} index={i} />
@@ -722,14 +565,14 @@ function VaerPanel({ hours, onPick }: { hours: Hour[]; onPick: (h: Hour, i: numb
               </div>
             )}
             <div className="text-sm font-medium tabular-nums mt-0.5">{Math.round(h.temp)}°</div>
-          </button>
+          </div>
         ))}
       </div>
     </div>
   );
 }
 
-function VindPanel({ hours, maxW, onPick }: { hours: Hour[]; maxW: number; onPick: (h: Hour, i: number) => void }) {
+function VindPanel({ hours, maxW }: { hours: Hour[]; maxW: number }) {
   const maxG = Math.max(maxW, ...hours.map((h) => h.windGust));
   return (
     <div className="overflow-x-auto -mx-2 px-2">
@@ -739,13 +582,10 @@ function VindPanel({ hours, maxW, onPick }: { hours: Hour[]; maxW: number; onPic
           const gustPct = Math.max(heightPct, (h.windGust / maxG) * 70);
           const strong = h.wind >= 10;
           return (
-            <button
-              type="button"
+            <div
               key={h.time}
-              onClick={() => onPick(h, i)}
-              className="flex flex-col items-center w-10 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 rounded"
+              className="flex flex-col items-center w-10"
               style={{ animation: `hourSlide 0.45s cubic-bezier(.2,.8,.2,1) ${(0.45 + i * 0.05).toFixed(2)}s both` }}
-              aria-label={`Detaljer for ${h.time}`}
             >
               <div className="text-[10px] text-white/80 mb-1">
                 <HourLabel time={h.time} index={i} />
@@ -779,7 +619,7 @@ function VindPanel({ hours, maxW, onPick }: { hours: Hour[]; maxW: number; onPic
               >
                 ↓
               </div>
-            </button>
+            </div>
           );
         })}
       </div>
@@ -788,7 +628,7 @@ function VindPanel({ hours, maxW, onPick }: { hours: Hour[]; maxW: number; onPic
   );
 }
 
-function LynPanel({ hours, onPick }: { hours: Hour[]; onPick: (h: Hour, i: number) => void }) {
+function LynPanel({ hours }: { hours: Hour[] }) {
   const maxT = Math.max(5, ...hours.map((h) => h.thunder));
   const peakIdx = hours.reduce(
     (best, h, i, arr) => (h.thunder > arr[best].thunder ? i : best),
@@ -810,13 +650,10 @@ function LynPanel({ hours, onPick }: { hours: Hour[]; onPick: (h: Hour, i: numbe
             const pct = Math.max(3, (h.thunder / maxT) * 70);
             const hot = h.thunder >= 30;
             return (
-              <button
-                type="button"
+              <div
                 key={h.time}
-                onClick={() => onPick(h, i)}
-                className="flex flex-col items-center w-10 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 rounded"
+                className="flex flex-col items-center w-10"
                 style={{ animation: `hourPop 0.45s cubic-bezier(.2,.8,.2,1) ${(0.45 + i * 0.05).toFixed(2)}s both` }}
-                aria-label={`Detaljer for ${h.time}`}
               >
                 <div className="text-[10px] text-white/80 mb-1">
                   <HourLabel time={h.time} index={i} />
@@ -837,7 +674,7 @@ function LynPanel({ hours, onPick }: { hours: Hour[]; onPick: (h: Hour, i: numbe
                 <div className="text-[10px] text-yellow-100 font-medium tabular-nums mt-1">
                   {Math.round(h.thunder)}%
                 </div>
-              </button>
+              </div>
             );
           })}
         </div>
@@ -845,7 +682,6 @@ function LynPanel({ hours, onPick }: { hours: Hour[]; onPick: (h: Hour, i: numbe
     </div>
   );
 }
-
 
 
 
