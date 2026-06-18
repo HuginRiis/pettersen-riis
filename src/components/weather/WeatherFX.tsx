@@ -650,7 +650,7 @@ export function GlassPaneFX({
   );
 
   // Drifting clouds for cloudy/fair
-  const cloudCount = isCloudy ? 4 : isClearDay ? 2 : 0;
+  const cloudCount = isCloudy ? 4 : 0;
   const clouds = useMemo(
     () =>
       Array.from({ length: cloudCount }).map((_, i) => ({
