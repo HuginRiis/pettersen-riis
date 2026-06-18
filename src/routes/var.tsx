@@ -10,7 +10,7 @@ import { useUserLocation, UserLocationBar } from "@/hooks/use-user-location";
 import { useUvSun, uvLevel } from "@/hooks/use-uv-sun";
 import { usePerUserPersistedState } from "@/hooks/use-per-user-persisted-state";
 import {
-  RainFX, SnowFX, CloudFX, WindFX, HeatwaveFX, HumidityFX, PressureFX, GustFX, SunFX, StarFX,
+  RainFX, SnowFX, CloudFX, WindFX, HeatwaveFX, HumidityFX, PressureFX, GustFX, SunFX, StarFX, ThunderFX,
   GlassPaneFX, glassKindFromSymbol, TileSplashFX,
 } from "@/components/weather/WeatherFX";
 import {
