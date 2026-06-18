@@ -501,9 +501,9 @@ export function ThunderFX({ intensity = 0.5, className = "" }: Common) {
     return Array.from({ length: count }).map((_, i) => {
       const seed = (i + 1) * 9173 + Math.floor(Math.random() * 99991);
       const { main, branches } = makeBoltPath(seed, 9 + Math.floor(Math.random() * 4), 6);
-      const dur = Math.max(3.5, 6 + Math.random() * 6 - intensity * 2);
+      const dur = Math.max(4.5, 7 + Math.random() * 6 - intensity * 2);
       // Backwards fill + delay keeps bolts hidden when tile first opens
-      const delay = 1.4 + i * (1.8 + Math.random() * 1.6);
+      const delay = 2.2 + i * (1.8 + Math.random() * 1.6);
       return {
         left: 6 + (i / Math.max(1, count - 1)) * 84 + (Math.random() * 8 - 4),
         top: 2 + Math.random() * 10,
