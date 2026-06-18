@@ -982,8 +982,8 @@ function GustCard({ hour }: { hour: Hour | null }) {
   );
 }
 
-function HumidityCard({ hour, liveValue }: { hour: Hour | null; liveValue: number | null }) {
-  const h = Math.round(liveValue ?? hour?.humidity ?? 0);
+function HumidityCard({ hour }: { hour: Hour | null }) {
+  const h = Math.round(hour?.humidity ?? 0);
   return (
     <GlassCard eyebrow="Luftfuktighet" icon={<Droplets size={14} />} fx={<HumidityFX intensity={h / 100} />}>
       <div className="text-3xl font-light tabular-nums">{h} %</div>
