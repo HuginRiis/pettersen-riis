@@ -1315,6 +1315,10 @@ function parseForecast(data: any): { days: ForecastDay[]; hours: Hour[] } {
       pressure: inst.air_pressure_at_sea_level ?? 0,
       humidity: inst.relative_humidity ?? 0,
       cloud: inst.cloud_area_fraction ?? 0,
+      thunder:
+        next1?.details?.probability_of_thunder ??
+        next6?.details?.probability_of_thunder ??
+        (symbol && symbol.includes("thunder") ? 60 : 0),
       symbol,
     });
     const existing = dayMap.get(date);
