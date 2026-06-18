@@ -40,7 +40,7 @@ function configFor(kind: GlassKind): SkyConfig {
       };
     case "partly":
       return {
-        gradient: "linear-gradient(180deg, #4A9BD6 0%, #7BBDE8 55%, #C0DDF0 100%)",
+        gradient: "linear-gradient(180deg, #2A6FA0 0%, #5A9FD0 55%, #90C8E8 100%)",
         cloudOpacity: 0.85,
         cloudTint: "#ffffff",
         cloudSpeed: 60,
