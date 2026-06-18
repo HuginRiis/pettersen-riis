@@ -790,26 +790,21 @@ main .container {
   92%, 94%      { opacity: 0.32; }
   93%           { opacity: 0; }
 }
-/* Realistic lightning strike: long darkness, very brief sharp double-flash */
+/* Realistic lightning strike: long darkness, brief double-flash */
 @keyframes wx-bolt-strike {
   0%, 100%      { opacity: 0; filter: brightness(1); }
-  0.29%         { opacity: 0; }
-  0.30%         { opacity: 1; filter: brightness(1.9); }
-  0.55%         { opacity: 1; }
-  0.56%         { opacity: 0; }
-  1.40%         { opacity: 0; }
-  1.41%         { opacity: 0.9; }
-  1.60%         { opacity: 0.9; }
-  1.61%         { opacity: 0; }
+  0.5%          { opacity: 1; filter: brightness(1.8); }
+  1.2%          { opacity: 0; }
+  2.0%          { opacity: 0.85; }
+  2.8%          { opacity: 0; }
+  /* long dark gap until next strike */
 }
 @keyframes wx-sky-flash {
   0%, 100%      { opacity: 0; }
-  0.29%         { opacity: 0; }
-  0.30%, 0.55%  { opacity: 0.55; }
-  0.56%         { opacity: 0; }
-  1.40%         { opacity: 0; }
-  1.41%, 1.60%  { opacity: 0.38; }
-  1.61%         { opacity: 0; }
+  0.5%, 1.2%    { opacity: 0.55; }
+  1.6%          { opacity: 0; }
+  2.0%, 2.8%    { opacity: 0.4; }
+  3.2%          { opacity: 0; }
 }
 @keyframes wx-fog-drift {
   0%   { transform: translateX(-15%); opacity: 0.25; }
