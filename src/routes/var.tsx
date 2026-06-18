@@ -955,8 +955,8 @@ function CloudCard({ hour }: { hour: Hour | null }) {
   );
 }
 
-function PrecipTodayCard({ day, liveMm, days }: { day: ForecastDay | undefined; liveMm: number | null; days: ForecastDay[] | null }) {
-  const mm = liveMm ?? day?.precip ?? 0;
+function PrecipTodayCard({ day, days }: { day: ForecastDay | undefined; days: ForecastDay[] | null }) {
+  const mm = day?.precip ?? 0;
   const nextRainDay = days?.slice(1, 7).find((d) => d.precip >= 0.2);
   const hint = nextRainDay
     ? `${nextRainDay.precip.toFixed(1)} mm ventes ${weekdayShort(nextRainDay.date)}.`
