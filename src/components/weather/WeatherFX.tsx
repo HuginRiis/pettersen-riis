@@ -424,6 +424,69 @@ export function StarFX({ intensity = 0.5, className = "" }: Common) {
   );
 }
 
+/* ---------------- THUNDER / LIGHTNING ---------------- */
+export function ThunderFX({ intensity = 0.5, className = "" }: Common) {
+  // Flere bolter og raskere blits når sannsynligheten er høy
+  const bolts = useMemo(() => {
+    const count = Math.max(2, Math.round(2 + intensity * 4));
+    return Array.from({ length: count }).map((_, i) => ({
+      left: 8 + (i / Math.max(1, count - 1)) * 80 + (Math.random() * 10 - 5),
+      top: 4 + Math.random() * 18,
+      scale: 0.8 + Math.random() * 0.9,
+      delay: Math.random() * 3,
+      dur: 2.4 - intensity * 1.2 + Math.random() * 1.2,
+      hue: 50 + Math.random() * 12,
+    }));
+  }, [intensity]);
+  // En mørk skyer-stripe øverst gir torden-stemning
+  return (
+    <div className={`${wrap} ${className}`} aria-hidden>
+      <div
+        className="absolute inset-x-0 top-0 h-10"
+        style={{
+          background:
+            "linear-gradient(to bottom, rgba(20,20,40,0.45), rgba(20,20,40,0))",
+        }}
+      />
+      {/* Hele flisen blinker svakt (flash) */}
+      <div
+        className="absolute inset-0 animate-wx-flash"
+        style={{
+          background:
+            "radial-gradient(circle at 50% 20%, rgba(255,240,180,0.55), rgba(255,240,180,0) 60%)",
+          animationDuration: `${Math.max(1.6, 3.4 - intensity * 1.8)}s`,
+        }}
+      />
+      {bolts.map((b, i) => (
+        <svg
+          key={i}
+          viewBox="0 0 24 24"
+          className="absolute animate-wx-flash"
+          style={{
+            left: `${b.left}%`,
+            top: `${b.top}%`,
+            width: 22 * b.scale,
+            height: 22 * b.scale,
+            animationDuration: `${b.dur}s`,
+            animationDelay: `${b.delay}s`,
+            filter: `drop-shadow(0 0 6px hsla(${b.hue},100%,75%,0.9))`,
+          }}
+        >
+          <path
+            d="M13 2 L3 14 h7 l-1 8 L19 10 h-7 l1 -8 z"
+            fill={`hsla(${b.hue},100%,80%,1)`}
+            stroke="rgba(255,255,255,0.85)"
+            strokeWidth="0.6"
+            strokeLinejoin="round"
+          />
+        </svg>
+      ))}
+    </div>
+  );
+}
+
+
+
 /* ============================================================
    GLASS PANE OVERLAY — covers the entire weather page like a
    pane of glass with weather-appropriate effects.
