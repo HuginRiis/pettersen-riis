@@ -757,6 +757,16 @@ main .container {
   0%, 100% { opacity: 0.2; transform: scale(0.8); }
   50%      { opacity: 1;   transform: scale(1.2); }
 }
+@keyframes wx-leaf-fall {
+  0%   { transform: translate(0,0) rotate(0deg); opacity: 0; }
+  10%  { opacity: 1; }
+  100% { transform: translate(var(--lx, 120px), var(--ly, 80px)) rotate(var(--lr, 360deg)); opacity: 0; }
+}
+@keyframes wx-tree-sway {
+  0%, 100% { transform: rotate(calc(var(--sway, 2deg) * -1)); }
+  50%      { transform: rotate(var(--sway, 2deg)); }
+}
+
 .animate-wx-rain      { animation: wx-rain-fall linear infinite; }
 .animate-wx-snow      { animation: wx-snow-fall linear infinite; }
 .animate-wx-cloud     { animation: wx-cloud-drift linear infinite; }
@@ -765,6 +775,9 @@ main .container {
 .animate-wx-droplet   { animation: wx-droplet-rise ease-in infinite; }
 .animate-wx-pressure  { animation: wx-pressure-pulse ease-in-out infinite; }
 .animate-wx-gust      { animation: wx-gust-puff ease-out infinite; }
+.animate-wx-leaf      { animation: wx-leaf-fall ease-in infinite; }
+.animate-wx-tree-sway { animation: wx-tree-sway ease-in-out infinite; transform-origin: 50% 100%; }
+
 .animate-wx-sparkle   { animation: wx-sparkle ease-in-out infinite; }
 
 /* ============= Glass pane overlay (whole weather page) ============= */
