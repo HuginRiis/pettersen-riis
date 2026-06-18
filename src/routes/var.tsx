@@ -663,17 +663,20 @@ function HourLabel({ time, index }: { time: string; index: number }) {
   return <>{hh}</>;
 }
 
-function NedborPanel({ hours, maxP }: { hours: Hour[]; maxP: number }) {
+function NedborPanel({ hours, maxP, onPick }: { hours: Hour[]; maxP: number; onPick: (h: Hour, i: number) => void }) {
   return (
     <div className="overflow-x-auto -mx-2 px-2">
       <div className="flex items-end gap-2 min-w-max pb-1">
         {hours.map((h, i) => {
           const heightPct = Math.max(4, (h.precip / maxP) * 70);
           return (
-            <div
+            <button
+              type="button"
               key={h.time}
-              className="flex flex-col items-center w-10"
+              onClick={() => onPick(h, i)}
+              className="flex flex-col items-center w-10 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 rounded"
               style={{ animation: `hourPop 0.45s cubic-bezier(.2,.8,.2,1) ${(0.45 + i * 0.05).toFixed(2)}s both` }}
+              aria-label={`Detaljer for ${h.time}`}
             >
               <div className="text-[10px] text-white/80 mb-1">
                 <HourLabel time={h.time} index={i} />
@@ -688,9 +691,156 @@ function NedborPanel({ hours, maxP }: { hours: Hour[]; maxP: number }) {
                 <Droplets size={8} />
                 {Math.round(h.precipProbability)}%
               </div>
-            </div>
+            </button>
           );
         })}
+      </div>
+    </div>
+  );
+}
+
+function VaerPanel({ hours, onPick }: { hours: Hour[]; onPick: (h: Hour, i: number) => void }) {
+  return (
+    <div className="overflow-x-auto -mx-2 px-2">
+      <div className="flex items-center gap-3 min-w-max pb-1">
+        {hours.map((h, i) => (
+          <button
+            type="button"
+            key={h.time}
+            onClick={() => onPick(h, i)}
+            className="flex flex-col items-center w-10 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 rounded"
+            style={{ animation: `hourDrop 0.5s cubic-bezier(.2,.8,.2,1) ${(0.45 + i * 0.05).toFixed(2)}s both` }}
+            aria-label={`Detaljer for ${h.time}`}
+          >
+            <div className="text-[10px] text-white/80 mb-1.5">
+              <HourLabel time={h.time} index={i} />
+            </div>
+            <div className="text-xl mb-0.5">{symbolEmoji(h.symbol)}</div>
+            {h.precipProbability >= 20 && (
+              <div className="text-[9px] text-sky-200 tabular-nums">
+                {Math.round(h.precipProbability)}%
+              </div>
+            )}
+            <div className="text-sm font-medium tabular-nums mt-0.5">{Math.round(h.temp)}°</div>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function VindPanel({ hours, maxW, onPick }: { hours: Hour[]; maxW: number; onPick: (h: Hour, i: number) => void }) {
+  const maxG = Math.max(maxW, ...hours.map((h) => h.windGust));
+  return (
+    <div className="overflow-x-auto -mx-2 px-2">
+      <div className="flex items-end gap-2 min-w-max pb-1">
+        {hours.map((h, i) => {
+          const heightPct = Math.max(4, (h.wind / maxG) * 70);
+          const gustPct = Math.max(heightPct, (h.windGust / maxG) * 70);
+          const strong = h.wind >= 10;
+          return (
+            <button
+              type="button"
+              key={h.time}
+              onClick={() => onPick(h, i)}
+              className="flex flex-col items-center w-10 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 rounded"
+              style={{ animation: `hourSlide 0.45s cubic-bezier(.2,.8,.2,1) ${(0.45 + i * 0.05).toFixed(2)}s both` }}
+              aria-label={`Detaljer for ${h.time}`}
+            >
+              <div className="text-[10px] text-white/80 mb-1">
+                <HourLabel time={h.time} index={i} />
+              </div>
+              <div className="relative w-6 h-20 rounded-md bg-white/15 overflow-hidden border-t border-dashed border-white/20">
+                <div
+                  className="absolute bottom-0 left-0 right-0 bg-white/25 rounded-md origin-bottom"
+                  style={{
+                    height: `${gustPct}%`,
+                    animation: `barGrow 0.4s cubic-bezier(.2,.8,.2,1) ${(0.53 + i * 0.05).toFixed(2)}s both`,
+                  }}
+                />
+                <div
+                  className={`absolute bottom-0 left-0 right-0 rounded-md origin-bottom ${
+                    strong
+                      ? "bg-gradient-to-t from-emerald-500 via-emerald-300 to-emerald-100"
+                      : "bg-gradient-to-t from-emerald-400 to-emerald-200"
+                  }`}
+                  style={{
+                    height: `${heightPct}%`,
+                    animation: `barGrow 0.45s cubic-bezier(.2,.8,.2,1) ${(0.45 + i * 0.05).toFixed(2)}s both`,
+                  }}
+                />
+              </div>
+              <div className="text-[10px] text-emerald-100 font-medium tabular-nums mt-1">
+                {Math.round(h.wind)}
+              </div>
+              <div
+                className="text-[9px] text-white/60 leading-none"
+                style={{ transform: `rotate(${h.windDir}deg)`, display: "inline-block" }}
+              >
+                ↓
+              </div>
+            </button>
+          );
+        })}
+      </div>
+      <div className="text-[10px] text-white/60 mt-1 px-1">■ vind &nbsp; ▒ kast (m/s)</div>
+    </div>
+  );
+}
+
+function LynPanel({ hours, onPick }: { hours: Hour[]; onPick: (h: Hour, i: number) => void }) {
+  const maxT = Math.max(5, ...hours.map((h) => h.thunder));
+  const peakIdx = hours.reduce(
+    (best, h, i, arr) => (h.thunder > arr[best].thunder ? i : best),
+    0,
+  );
+  const peak = hours[peakIdx];
+  const peakTime = new Date(peak.time);
+  const peakLabel =
+    peak.thunder >= 5
+      ? `Høyeste sjanse ${Math.round(peak.thunder)} % rundt ${peakTime.toLocaleString("nb-NO", { weekday: "short", hour: "2-digit", minute: "2-digit" })}`
+      : "Ingen torden ventet de neste 48 timene.";
+
+  return (
+    <div className="space-y-2">
+      <div className="text-[12px] text-white/90">{peakLabel}</div>
+      <div className="overflow-x-auto -mx-2 px-2">
+        <div className="flex items-end gap-2 min-w-max pb-1">
+          {hours.map((h, i) => {
+            const pct = Math.max(3, (h.thunder / maxT) * 70);
+            const hot = h.thunder >= 30;
+            return (
+              <button
+                type="button"
+                key={h.time}
+                onClick={() => onPick(h, i)}
+                className="flex flex-col items-center w-10 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 rounded"
+                style={{ animation: `hourPop 0.45s cubic-bezier(.2,.8,.2,1) ${(0.45 + i * 0.05).toFixed(2)}s both` }}
+                aria-label={`Detaljer for ${h.time}`}
+              >
+                <div className="text-[10px] text-white/80 mb-1">
+                  <HourLabel time={h.time} index={i} />
+                </div>
+                <div className="relative w-6 h-20 rounded-md bg-white/15 overflow-hidden border-t border-dashed border-white/20">
+                  <div
+                    className={`absolute bottom-0 left-0 right-0 rounded-md ${
+                      hot
+                        ? "bg-gradient-to-t from-amber-500 via-yellow-300 to-yellow-100"
+                        : "bg-gradient-to-t from-indigo-400/70 to-indigo-200/70"
+                    }`}
+                    style={{ height: `${pct}%` }}
+                  />
+                  {hot && (
+                    <Zap size={10} className="absolute top-1 left-1/2 -translate-x-1/2 text-yellow-200" />
+                  )}
+                </div>
+                <div className="text-[10px] text-yellow-100 font-medium tabular-nums mt-1">
+                  {Math.round(h.thunder)}%
+                </div>
+              </button>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
