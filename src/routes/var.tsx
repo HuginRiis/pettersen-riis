@@ -605,7 +605,7 @@ function VindPanel({ hours, maxW }: { hours: Hour[]; maxW: number }) {
             </linearGradient>
           </defs>
           <path d={fillPath} fill="url(#windGrad48)" style={{ animation: `hourPop 0.6s ease-out ${(0.45 + hours.length * 0.04).toFixed(2)}s both` }} />
-          <path d={gustPath} fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="1" strokeDasharray="3 3" style={{ animation: `pathDraw 1.2s ease-out ${(0.55 + hours.length * 0.04).toFixed(2)}s both`, strokeDasharray: "1200" }} />
+          <path d={gustPath} fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="1" strokeDasharray="3 3" style={{ opacity: 0, animation: `hourPop 0.4s ease-out ${(0.7 + hours.length * 0.04).toFixed(2)}s both` }} />
           <path d={path} fill="none" stroke="#34d399" strokeWidth="2" style={{ animation: `pathDraw 1.2s ease-out ${(0.45 + hours.length * 0.04).toFixed(2)}s both`, strokeDasharray: "1200" }} />
         </svg>
         <div className="text-[10px] text-white/60 mt-1">— vind &nbsp; - - kast (m/s)</div>
