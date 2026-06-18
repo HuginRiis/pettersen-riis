@@ -474,6 +474,9 @@ function RotatingForecastCard({ hours }: { hours: Hour[] | null }) {
           @keyframes hourSlide { 0% { opacity:0; transform: translateX(24px); } 100% { opacity:1; transform: translateX(0); } }
           @keyframes hourDrop { 0% { opacity:0; transform: translateY(-18px) rotate(-8deg); } 70% { opacity:1; transform: translateY(2px) rotate(2deg); } 100% { opacity:1; transform: translateY(0) rotate(0); } }
           @keyframes pathDraw { 0% { stroke-dashoffset: 1200; opacity:0; } 30% { opacity:1; } 100% { stroke-dashoffset: 0; opacity:1; } }
+          @keyframes boltDraw { 0% { stroke-dashoffset: 600; opacity:0; filter: drop-shadow(0 0 0 #fff); } 10% { opacity:1; } 40% { stroke-dashoffset: 0; opacity:1; filter: drop-shadow(0 0 14px #fef3c7) drop-shadow(0 0 28px #fde68a); } 55% { opacity:.2; } 65% { opacity:1; filter: drop-shadow(0 0 18px #fff) drop-shadow(0 0 32px #fde68a); } 80% { opacity:.4; } 100% { stroke-dashoffset:0; opacity:.85; filter: drop-shadow(0 0 6px #fde68a); } }
+          @keyframes lightningFlash { 0%, 100% { opacity:0; } 35% { opacity:0; } 38% { opacity:.55; } 42% { opacity:.05; } 48% { opacity:.7; } 52% { opacity:.1; } 60% { opacity:.45; } 70% { opacity:0; } }
+          @keyframes boltFlicker { 0%,100% { opacity:.85; } 47% { opacity:.3; } 50% { opacity:1; } 53% { opacity:.4; } 56% { opacity:1; } }
         `}</style>
         <div
           key={panel}
@@ -634,42 +637,127 @@ function LynPanel({ hours }: { hours: Hour[] }) {
       ? `Høyeste sjanse ${Math.round(peak.thunder)} % rundt ${peakTime.toLocaleString("nb-NO", { weekday: "short", hour: "2-digit", minute: "2-digit" })}`
       : "Ingen torden ventet de neste 48 timene.";
 
+  // Velg topp-timer for lyn-nedslag (minst 3, maks 6)
+  const boltHours = hours
+    .map((h, i) => ({ i, p: h.thunder }))
+    .sort((a, b) => b.p - a.p)
+    .slice(0, 6)
+    .filter((x) => x.p > 0);
+  const bolts = boltHours.length >= 3
+    ? boltHours
+    : [0, Math.floor(hours.length / 3), Math.floor((hours.length * 2) / 3)]
+        .map((i) => ({ i, p: hours[i]?.thunder ?? 0 }));
+
+  const stride = 48; // 40px (w-10) + 8px gap-2
+  const svgW = Math.max(1, hours.length * stride);
+  const svgH = 150;
+
+  // Lag en jagget lynbane fra topp ned til en bar-x
+  function bolt(x: number, seed: number) {
+    const segs = 7;
+    let d = `M ${x + (seed % 5) - 8} 0`;
+    let y = 0;
+    let cx = x + (seed % 5) - 8;
+    for (let s = 1; s <= segs; s++) {
+      y = (svgH * s) / segs;
+      const jitter = ((seed * (s + 3)) % 22) - 11;
+      cx = x + jitter;
+      d += ` L ${cx} ${y}`;
+    }
+    return d;
+  }
+
   return (
     <div className="space-y-2">
       <div className="text-[12px] text-white/90">{peakLabel}</div>
       <div className="overflow-x-auto -mx-2 px-2">
-        <div className="flex items-end gap-2 min-w-max pb-1">
-          {hours.map((h, i) => {
-            const pct = Math.max(3, (h.thunder / maxT) * 70);
-            const hot = h.thunder >= 30;
-            return (
-              <div
-                key={h.time}
-                className="flex flex-col items-center w-10"
-                style={{ animation: `hourPop 0.45s cubic-bezier(.2,.8,.2,1) ${(0.45 + i * 0.05).toFixed(2)}s both` }}
-              >
-                <div className="text-[10px] text-white/80 mb-1">
-                  <HourLabel time={h.time} index={i} />
-                </div>
-                <div className="relative w-6 h-20 rounded-md bg-white/15 overflow-hidden border-t border-dashed border-white/20">
-                  <div
-                    className={`absolute bottom-0 left-0 right-0 rounded-md ${
-                      hot
-                        ? "bg-gradient-to-t from-amber-500 via-yellow-300 to-yellow-100"
-                        : "bg-gradient-to-t from-indigo-400/70 to-indigo-200/70"
-                    }`}
-                    style={{ height: `${pct}%` }}
+        <div className="relative min-w-max pb-1">
+          {/* Blink-bakgrunn */}
+          <div
+            className="pointer-events-none absolute inset-0 rounded-md"
+            style={{
+              background:
+                "radial-gradient(ellipse at 30% 20%, rgba(255,255,255,.9), rgba(255,255,255,0) 60%), radial-gradient(ellipse at 75% 30%, rgba(254,243,199,.7), rgba(255,255,255,0) 55%)",
+              mixBlendMode: "screen",
+              animation: "lightningFlash 2.8s ease-in-out 0.9s 2 both",
+            }}
+          />
+          {/* Lyn-overlegg */}
+          <svg
+            className="pointer-events-none absolute left-0 top-4"
+            width={svgW}
+            height={svgH}
+            viewBox={`0 0 ${svgW} ${svgH}`}
+            style={{ overflow: "visible" }}
+          >
+            {bolts.map((b, k) => {
+              const x = b.i * stride + 20; // midten av bar
+              const seed = (b.i + 1) * 13 + k * 7;
+              const delay = 0.9 + k * 0.18;
+              return (
+                <g key={`bolt-${b.i}-${k}`}>
+                  <path
+                    d={bolt(x, seed)}
+                    fill="none"
+                    stroke="rgba(255,255,255,0.35)"
+                    strokeWidth={6}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    style={{
+                      strokeDasharray: 600,
+                      animation: `boltDraw 1.1s cubic-bezier(.2,.8,.2,1) ${delay}s both, boltFlicker 2.4s ease-in-out ${delay + 1.1}s infinite`,
+                    }}
                   />
-                  {hot && (
-                    <Zap size={10} className="absolute top-1 left-1/2 -translate-x-1/2 text-yellow-200" />
-                  )}
+                  <path
+                    d={bolt(x, seed)}
+                    fill="none"
+                    stroke="#fffbeb"
+                    strokeWidth={1.6}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    style={{
+                      strokeDasharray: 600,
+                      animation: `boltDraw 1.1s cubic-bezier(.2,.8,.2,1) ${delay}s both, boltFlicker 2.4s ease-in-out ${delay + 1.1}s infinite`,
+                    }}
+                  />
+                </g>
+              );
+            })}
+          </svg>
+
+          <div className="relative flex items-end gap-2">
+            {hours.map((h, i) => {
+              const pct = Math.max(3, (h.thunder / maxT) * 70);
+              const hot = h.thunder >= 30;
+              return (
+                <div
+                  key={h.time}
+                  className="flex flex-col items-center w-10"
+                  style={{ animation: `hourPop 0.45s cubic-bezier(.2,.8,.2,1) ${(0.45 + i * 0.05).toFixed(2)}s both` }}
+                >
+                  <div className="text-[10px] text-white/80 mb-1">
+                    <HourLabel time={h.time} index={i} />
+                  </div>
+                  <div className="relative w-6 h-20 rounded-md bg-white/15 overflow-hidden border-t border-dashed border-white/20">
+                    <div
+                      className={`absolute bottom-0 left-0 right-0 rounded-md ${
+                        hot
+                          ? "bg-gradient-to-t from-amber-500 via-yellow-300 to-yellow-100"
+                          : "bg-gradient-to-t from-indigo-400/70 to-indigo-200/70"
+                      }`}
+                      style={{ height: `${pct}%` }}
+                    />
+                    {hot && (
+                      <Zap size={10} className="absolute top-1 left-1/2 -translate-x-1/2 text-yellow-200" />
+                    )}
+                  </div>
+                  <div className="text-[10px] text-yellow-100 font-medium tabular-nums mt-1">
+                    {Math.round(h.thunder)}%
+                  </div>
                 </div>
-                <div className="text-[10px] text-yellow-100 font-medium tabular-nums mt-1">
-                  {Math.round(h.thunder)}%
-                </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       </div>
     </div>
