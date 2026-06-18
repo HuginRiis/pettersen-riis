@@ -470,6 +470,10 @@ function RotatingForecastCard({ hours }: { hours: Hour[] | null }) {
           @keyframes panelFlyLeft  { 0% { opacity:0; transform: translateX(-120%) rotate(-6deg) scale(.9); } 60% { opacity:1; } 100% { opacity:1; transform: translateX(0) rotate(0) scale(1); } }
           @keyframes panelFlyUp    { 0% { opacity:0; transform: translateY(80%) scale(.92); filter: blur(6px); } 100% { opacity:1; transform: translateY(0) scale(1); filter: blur(0); } }
           @keyframes panelFlyZoom  { 0% { opacity:0; transform: scale(.6) rotate(-3deg); filter: blur(8px); } 100% { opacity:1; transform: scale(1) rotate(0); filter: blur(0); } }
+          @keyframes hourPop { 0% { opacity:0; transform: translateY(14px) scale(.7); filter: blur(4px); } 60% { opacity:1; transform: translateY(-2px) scale(1.05); filter: blur(0); } 100% { opacity:1; transform: translateY(0) scale(1); } }
+          @keyframes hourSlide { 0% { opacity:0; transform: translateX(24px); } 100% { opacity:1; transform: translateX(0); } }
+          @keyframes hourDrop { 0% { opacity:0; transform: translateY(-18px) rotate(-8deg); } 70% { opacity:1; transform: translateY(2px) rotate(2deg); } 100% { opacity:1; transform: translateY(0) rotate(0); } }
+          @keyframes pathDraw { 0% { stroke-dashoffset: 1200; opacity:0; } 30% { opacity:1; } 100% { stroke-dashoffset: 0; opacity:1; } }
         `}</style>
         <div
           key={panel}
@@ -514,7 +518,11 @@ function NedborPanel({ hours, maxP }: { hours: Hour[]; maxP: number }) {
         {hours.map((h, i) => {
           const heightPct = Math.max(4, (h.precip / maxP) * 70);
           return (
-            <div key={h.time} className="flex flex-col items-center w-10">
+            <div
+              key={h.time}
+              className="flex flex-col items-center w-10"
+              style={{ animation: `hourPop 0.45s cubic-bezier(.2,.8,.2,1) ${(0.45 + i * 0.05).toFixed(2)}s both` }}
+            >
               <div className="text-[10px] text-white/80 mb-1">
                 <HourLabel time={h.time} index={i} />
               </div>
@@ -541,7 +549,11 @@ function VaerPanel({ hours }: { hours: Hour[] }) {
     <div className="overflow-x-auto -mx-2 px-2">
       <div className="flex items-center gap-3 min-w-max pb-1">
         {hours.map((h, i) => (
-          <div key={h.time} className="flex flex-col items-center w-10">
+          <div
+            key={h.time}
+            className="flex flex-col items-center w-10"
+            style={{ animation: `hourDrop 0.5s cubic-bezier(.2,.8,.2,1) ${(0.45 + i * 0.05).toFixed(2)}s both` }}
+          >
             <div className="text-[10px] text-white/80 mb-1.5">
               <HourLabel time={h.time} index={i} />
             </div>
@@ -572,7 +584,11 @@ function VindPanel({ hours, maxW }: { hours: Hour[]; maxW: number }) {
       <div className="min-w-max">
         <div className="flex items-end gap-1 mb-1">
           {hours.map((h, i) => (
-            <div key={h.time} className="w-10 text-center">
+            <div
+              key={h.time}
+              className="w-10 text-center"
+              style={{ animation: `hourSlide 0.4s cubic-bezier(.2,.8,.2,1) ${(0.45 + i * 0.04).toFixed(2)}s both` }}
+            >
               <div className="text-[10px] text-white/80">
                 <HourLabel time={h.time} index={i} />
               </div>
@@ -588,9 +604,9 @@ function VindPanel({ hours, maxW }: { hours: Hour[]; maxW: number }) {
               <stop offset="100%" stopColor="#34d399" stopOpacity="0.15" />
             </linearGradient>
           </defs>
-          <path d={fillPath} fill="url(#windGrad48)" />
-          <path d={gustPath} fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="1" strokeDasharray="3 3" />
-          <path d={path} fill="none" stroke="#34d399" strokeWidth="2" />
+          <path d={fillPath} fill="url(#windGrad48)" style={{ animation: `hourPop 0.6s ease-out ${(0.45 + hours.length * 0.04).toFixed(2)}s both` }} />
+          <path d={gustPath} fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="1" strokeDasharray="3 3" style={{ opacity: 0, animation: `hourPop 0.4s ease-out ${(0.7 + hours.length * 0.04).toFixed(2)}s both` }} />
+          <path d={path} fill="none" stroke="#34d399" strokeWidth="2" style={{ animation: `pathDraw 1.2s ease-out ${(0.45 + hours.length * 0.04).toFixed(2)}s both`, strokeDasharray: "1200" }} />
         </svg>
         <div className="text-[10px] text-white/60 mt-1">— vind &nbsp; - - kast (m/s)</div>
       </div>
@@ -620,7 +636,11 @@ function LynPanel({ hours }: { hours: Hour[] }) {
             const pct = Math.max(3, (h.thunder / maxT) * 70);
             const hot = h.thunder >= 30;
             return (
-              <div key={h.time} className="flex flex-col items-center w-10">
+              <div
+                key={h.time}
+                className="flex flex-col items-center w-10"
+                style={{ animation: `hourPop 0.45s cubic-bezier(.2,.8,.2,1) ${(0.45 + i * 0.05).toFixed(2)}s both` }}
+              >
                 <div className="text-[10px] text-white/80 mb-1">
                   <HourLabel time={h.time} index={i} />
                 </div>
