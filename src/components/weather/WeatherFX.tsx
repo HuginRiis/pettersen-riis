@@ -124,15 +124,17 @@ export function CloudFX({ intensity = 0.5, className = "" }: Common) {
 
 /* ---------------- WIND ---------------- */
 export function WindFX({ intensity = 0.5, className = "" }: Common) {
-  const count = Math.max(4, Math.round(5 + intensity * 8));
+  const i = Math.max(0, Math.min(1, intensity));
+  const count = Math.max(4, Math.round(5 + i * 8));
   // Calmer baseline: low wind drifts gently, storm wind zips fast
   const baseDur = 3.8;
-  const speedMult = 0.6 + intensity * 1.8; // 0.6x at calm → 2.4x at storm
+  const speedMult = 0.6 + i * 1.8; // 0.6x at calm → 2.4x at storm
   const lines = useMemo(
     () =>
-      Array.from({ length: count }).map((_, i) => ({
-        top: 12 + i * (76 / count) + Math.random() * 8,
-        delay: Math.random() * 2.5,
+      Array.from({ length: count }).map((_, k) => ({
+        top: 12 + k * (76 / count) + Math.random() * 8,
+        // Positive, staggered delays so streaks fly IN after the panel switches
+        delay: 0.15 + k * 0.12 + Math.random() * 0.6,
         dur: (baseDur / speedMult) * (0.7 + Math.random() * 0.6),
         w: 18 + Math.random() * 40,
         op: 0.35 + Math.random() * 0.45,
@@ -141,11 +143,31 @@ export function WindFX({ intensity = 0.5, className = "" }: Common) {
       })),
     [count, speedMult],
   );
+
+  // Leaves — blown left → right by the wind (borrowed from GustFX)
+  const leafCount = Math.max(3, Math.round(3 + i * 14));
+  const leafDur = 3.2 - i * 1.8; // 3.2s → 1.4s
+  const leaves = useMemo(
+    () =>
+      Array.from({ length: leafCount }).map((_, k) => ({
+        startX: 8 + Math.random() * 25,
+        startY: 10 + Math.random() * 55,
+        lx: 40 + Math.random() * 140 + i * 80,
+        ly: 30 + Math.random() * 70,
+        lr: (Math.random() > 0.5 ? 1 : -1) * (180 + Math.random() * 360),
+        size: 5 + Math.random() * 4,
+        delay: 0.25 + k * 0.18 + Math.random() * 0.8,
+        dur: leafDur * (0.7 + Math.random() * 0.6),
+        hue: 28 + Math.random() * 30,
+      })),
+    [leafCount, leafDur, i],
+  );
+
   return (
     <div className={`${wrap} ${className}`} aria-hidden>
-      {lines.map((l, i) => (
+      {lines.map((l, k) => (
         <span
-          key={i}
+          key={`w${k}`}
           className="absolute animate-wx-wind"
           style={{
             top: `${l.top}%`,
@@ -157,9 +179,32 @@ export function WindFX({ intensity = 0.5, className = "" }: Common) {
             opacity: l.op,
             animationDuration: `${l.dur}s`,
             animationDelay: `${l.delay}s`,
+            animationFillMode: "backwards",
             transform: `rotate(${l.angle}deg)`,
             borderRadius: 1,
             filter: "blur(0.3px)",
+          }}
+        />
+      ))}
+      {leaves.map((lf, k) => (
+        <span
+          key={`l${k}`}
+          className="absolute animate-wx-leaf"
+          style={{
+            left: `${lf.startX}%`,
+            top: `${lf.startY}%`,
+            width: lf.size,
+            height: lf.size * 1.3,
+            background: `hsl(${lf.hue}, 70%, 55%)`,
+            borderRadius: "60% 10% 60% 10%",
+            opacity: 0.9,
+            animationDuration: `${lf.dur}s`,
+            animationDelay: `${lf.delay}s`,
+            animationFillMode: "backwards",
+            ["--lx" as any]: `${lf.lx}px`,
+            ["--ly" as any]: `${lf.ly}px`,
+            ["--lr" as any]: `${lf.lr}deg`,
+            boxShadow: "0 0 1px rgba(0,0,0,0.2)",
           }}
         />
       ))}
