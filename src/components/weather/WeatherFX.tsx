@@ -650,7 +650,7 @@ export function GlassPaneFX({
   );
 
   // Drifting clouds for cloudy/fair
-  const cloudCount = isCloudy ? 4 : isClearDay ? 2 : 0;
+  const cloudCount = isCloudy ? 4 : 0;
   const clouds = useMemo(
     () =>
       Array.from({ length: cloudCount }).map((_, i) => ({
@@ -741,17 +741,30 @@ export function GlassPaneFX({
           />
         ))}
 
-      {/* CLEAR DAY: sun glow + shine sweep */}
+      {/* CLEAR DAY: bright sun disc + glow + shine sweep */}
       {isClearDay && (
         <>
+          {/* Sun disc */}
           <div
-            className="absolute -top-32 -right-24 rounded-full"
+            className="absolute -top-12 -right-8 rounded-full animate-wx-glass-sun"
             style={{
-              width: 420,
-              height: 420,
+              width: 100,
+              height: 100,
               background:
-                "radial-gradient(circle, rgba(255,225,150,0.45) 0%, rgba(255,200,110,0.18) 40%, transparent 70%)",
-              filter: "blur(8px)",
+                "radial-gradient(circle at 35% 35%, #fff9d8 0%, #ffd24a 40%, #ff9b2c 100%)",
+              boxShadow:
+                "0 0 60px 20px rgba(255, 200, 80, 0.55), 0 0 140px 50px rgba(255, 180, 60, 0.3), inset 0 0 20px rgba(255,255,255,0.35)",
+            }}
+          />
+          {/* Large ambient glow */}
+          <div
+            className="absolute -top-40 -right-32 rounded-full"
+            style={{
+              width: 520,
+              height: 520,
+              background:
+                "radial-gradient(circle, rgba(255,230,160,0.6) 0%, rgba(255,210,130,0.32) 35%, rgba(255,190,100,0.12) 60%, transparent 75%)",
+              filter: "blur(12px)",
             }}
           />
           <div
@@ -759,7 +772,7 @@ export function GlassPaneFX({
             style={{
               left: 0,
               background:
-                "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.10) 50%, transparent 100%)",
+                "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.12) 50%, transparent 100%)",
               animationDuration: "14s",
             }}
           />
@@ -767,7 +780,7 @@ export function GlassPaneFX({
       )}
 
       {/* CLOUDY / PARTLY: large drifting clouds */}
-      {(isCloudy || isClearDay) &&
+      {isCloudy &&
         clouds.map((c, i) => (
           <svg
             key={`c${i}`}

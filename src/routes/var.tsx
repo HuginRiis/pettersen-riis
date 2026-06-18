@@ -198,10 +198,12 @@ function WeatherPage() {
   const moon = useMemo(() => moonPhase(now), [now]);
   const allAlerts = alerts?.ok === true ? alerts.alerts : [];
 
-  // Bakgrunnsgradient basert på tid på døgnet og skydekke
+  // Bakgrunnsgradient basert på tid på døgnet og skydekke / symbol
   const bgGradient = useMemo(() => {
     const h = now.getHours();
-    const cloudy = (currentHour?.cloud ?? 50) > 60;
+    const sym = currentHour?.symbol ?? "";
+    const isClearSymbol = sym.includes("clearsky") || sym.includes("fair");
+    const cloudy = !isClearSymbol && (currentHour?.cloud ?? 50) > 60;
     if (h < 5 || h >= 22) return "from-[#0b1426] via-[#142340] to-[#1c2e4f]"; // natt
     if (h < 8) return "from-[#3a4a6b] via-[#5d7a9e] to-[#a8b5c8]"; // morgen
     if (h >= 19) return "from-[#1c2e4f] via-[#3a4a6b] to-[#6d4e3a]"; // kveld
