@@ -572,44 +572,51 @@ function VaerPanel({ hours }: { hours: Hour[] }) {
 }
 
 function VindPanel({ hours, maxW }: { hours: Hour[]; maxW: number }) {
-  const W = 44 * hours.length, H = 60, pad = 4;
-  const xFor = (i: number) => pad + (i / Math.max(1, hours.length - 1)) * (W - pad * 2);
-  const yFor = (v: number) => H - pad - (v / maxW) * (H - pad * 2);
-  const path = hours.map((h, i) => `${i === 0 ? "M" : "L"} ${xFor(i).toFixed(1)} ${yFor(h.wind).toFixed(1)}`).join(" ");
-  const gustPath = hours.map((h, i) => `${i === 0 ? "M" : "L"} ${xFor(i).toFixed(1)} ${yFor(h.windGust).toFixed(1)}`).join(" ");
-  const fillPath = `${path} L ${xFor(hours.length - 1).toFixed(1)} ${H} L ${pad} ${H} Z`;
-
+  const maxG = Math.max(maxW, ...hours.map((h) => h.windGust));
   return (
     <div className="overflow-x-auto -mx-2 px-2">
-      <div className="min-w-max">
-        <div className="flex items-end gap-1 mb-1">
-          {hours.map((h, i) => (
+      <div className="flex items-end gap-2 min-w-max pb-1">
+        {hours.map((h, i) => {
+          const heightPct = Math.max(4, (h.wind / maxG) * 70);
+          const gustPct = Math.max(heightPct, (h.windGust / maxG) * 70);
+          const strong = h.wind >= 10;
+          return (
             <div
               key={h.time}
-              className="w-10 text-center"
-              style={{ animation: `hourSlide 0.4s cubic-bezier(.2,.8,.2,1) ${(0.45 + i * 0.04).toFixed(2)}s both` }}
+              className="flex flex-col items-center w-10"
+              style={{ animation: `hourSlide 0.45s cubic-bezier(.2,.8,.2,1) ${(0.45 + i * 0.05).toFixed(2)}s both` }}
             >
-              <div className="text-[10px] text-white/80">
+              <div className="text-[10px] text-white/80 mb-1">
                 <HourLabel time={h.time} index={i} />
               </div>
-              <div className="text-sm font-medium tabular-nums mt-0.5">{Math.round(h.wind)}</div>
-              <div className="text-[9px] text-white/60" style={{ transform: `rotate(${h.windDir}deg)`, display: "inline-block" }}>↓</div>
+              <div className="relative w-6 h-20 rounded-md bg-white/15 overflow-hidden border-t border-dashed border-white/20">
+                <div
+                  className="absolute bottom-0 left-0 right-0 bg-white/25 rounded-md"
+                  style={{ height: `${gustPct}%` }}
+                />
+                <div
+                  className={`absolute bottom-0 left-0 right-0 rounded-md ${
+                    strong
+                      ? "bg-gradient-to-t from-emerald-500 via-emerald-300 to-emerald-100"
+                      : "bg-gradient-to-t from-emerald-400 to-emerald-200"
+                  }`}
+                  style={{ height: `${heightPct}%` }}
+                />
+              </div>
+              <div className="text-[10px] text-emerald-100 font-medium tabular-nums mt-1">
+                {Math.round(h.wind)}
+              </div>
+              <div
+                className="text-[9px] text-white/60 leading-none"
+                style={{ transform: `rotate(${h.windDir}deg)`, display: "inline-block" }}
+              >
+                ↓
+              </div>
             </div>
-          ))}
-        </div>
-        <svg viewBox={`0 0 ${W} ${H}`} className="h-14" preserveAspectRatio="none" style={{ width: W }}>
-          <defs>
-            <linearGradient id="windGrad48" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#34d399" stopOpacity="0.7" />
-              <stop offset="100%" stopColor="#34d399" stopOpacity="0.15" />
-            </linearGradient>
-          </defs>
-          <path d={fillPath} fill="url(#windGrad48)" style={{ animation: `hourPop 0.6s ease-out ${(0.45 + hours.length * 0.04).toFixed(2)}s both` }} />
-          <path d={gustPath} fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="1" strokeDasharray="3 3" style={{ opacity: 0, animation: `hourPop 0.4s ease-out ${(0.7 + hours.length * 0.04).toFixed(2)}s both` }} />
-          <path d={path} fill="none" stroke="#34d399" strokeWidth="2" style={{ animation: `pathDraw 1.2s ease-out ${(0.45 + hours.length * 0.04).toFixed(2)}s both`, strokeDasharray: "1200" }} />
-        </svg>
-        <div className="text-[10px] text-white/60 mt-1">— vind &nbsp; - - kast (m/s)</div>
+          );
+        })}
       </div>
+      <div className="text-[10px] text-white/60 mt-1 px-1">■ vind &nbsp; ▒ kast (m/s)</div>
     </div>
   );
 }
