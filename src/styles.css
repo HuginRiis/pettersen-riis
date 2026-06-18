@@ -821,6 +821,12 @@ main .container {
 .animate-wx-flash { animation: wx-flash linear infinite; }
 .animate-wx-fog   { animation: wx-fog-drift ease-in-out infinite alternate; }
 .animate-wx-shine { animation: wx-shine-sweep ease-in-out infinite; }
+.animate-wx-glass-sun { animation: wx-glass-sun-pulse 4s ease-in-out infinite; }
+
+@keyframes wx-glass-sun-pulse {
+  0%, 100% { transform: scale(1); filter: brightness(1); }
+  50%      { transform: scale(1.06); filter: brightness(1.08); }
+}
 
 /* ============= Tile splash FX (top edge of search tile) ============= */
 @keyframes wx-splash-drop {
