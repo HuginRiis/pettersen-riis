@@ -32,7 +32,7 @@ type Props = {
   transparent?: boolean;
 };
 
-const MAX_RECENT = 6;
+const MAX_RECENT = 3;
 const MAX_FAV = 12;
 
 function lsRead(key: string): ActiveLocation[] {
