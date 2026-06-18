@@ -470,60 +470,95 @@ export function StarFX({ intensity = 0.5, className = "" }: Common) {
 }
 
 /* ---------------- THUNDER / LIGHTNING ---------------- */
+function makeBoltPath(seed: number, segments: number, jitter: number) {
+  let s = seed;
+  const rnd = () => {
+    s = (s * 9301 + 49297) % 233280;
+    return s / 233280;
+  };
+  const w = 24;
+  const h = 100;
+  let x = w / 2 + (rnd() - 0.5) * 4;
+  const pts: string[] = [`M ${x.toFixed(2)} 0`];
+  const branches: string[] = [];
+  for (let i = 1; i <= segments; i++) {
+    const ny = (i / segments) * h;
+    const nx = Math.max(2, Math.min(22, x + (rnd() - 0.5) * jitter));
+    pts.push(`L ${nx.toFixed(2)} ${ny.toFixed(2)}`);
+    if (i > 1 && i < segments - 1 && rnd() < 0.3) {
+      const bx = Math.max(0, Math.min(24, nx + (rnd() - 0.5) * jitter * 1.8));
+      const by = ny + 5 + rnd() * 10;
+      branches.push(`M ${nx.toFixed(2)} ${ny.toFixed(2)} L ${bx.toFixed(2)} ${by.toFixed(2)}`);
+    }
+    x = nx;
+  }
+  return { main: pts.join(" "), branches };
+}
+
 export function ThunderFX({ intensity = 0.5, className = "" }: Common) {
-  // Flere bolter og raskere blits når sannsynligheten er høy
   const bolts = useMemo(() => {
-    const count = Math.max(2, Math.round(2 + intensity * 4));
-    return Array.from({ length: count }).map((_, i) => ({
-      left: 8 + (i / Math.max(1, count - 1)) * 80 + (Math.random() * 10 - 5),
-      top: 4 + Math.random() * 18,
-      scale: 0.8 + Math.random() * 0.9,
-      delay: Math.random() * 3,
-      dur: 2.4 - intensity * 1.2 + Math.random() * 1.2,
-      hue: 50 + Math.random() * 12,
-    }));
+    const count = Math.max(2, Math.round(2 + intensity * 3));
+    return Array.from({ length: count }).map((_, i) => {
+      const seed = (i + 1) * 9173 + Math.floor(Math.random() * 99991);
+      const { main, branches } = makeBoltPath(seed, 9 + Math.floor(Math.random() * 4), 6);
+      const dur = Math.max(3.5, 6 + Math.random() * 6 - intensity * 2);
+      // Backwards fill + delay keeps bolts hidden when tile first opens
+      const delay = 1.4 + i * (1.8 + Math.random() * 1.6);
+      return {
+        left: 6 + (i / Math.max(1, count - 1)) * 84 + (Math.random() * 8 - 4),
+        top: 2 + Math.random() * 10,
+        scale: 0.85 + Math.random() * 0.7,
+        delay,
+        dur,
+        hue: 50 + Math.random() * 10,
+        main,
+        branches,
+      };
+    });
   }, [intensity]);
-  // En mørk skyer-stripe øverst gir torden-stemning
+
   return (
     <div className={`${wrap} ${className}`} aria-hidden>
       <div
-        className="absolute inset-x-0 top-0 h-10"
+        className="absolute inset-x-0 top-0 h-14"
         style={{
           background:
-            "linear-gradient(to bottom, rgba(20,20,40,0.45), rgba(20,20,40,0))",
-        }}
-      />
-      {/* Hele flisen blinker svakt (flash) */}
-      <div
-        className="absolute inset-0 animate-wx-flash"
-        style={{
-          background:
-            "radial-gradient(circle at 50% 20%, rgba(255,240,180,0.55), rgba(255,240,180,0) 60%)",
-          animationDuration: `${Math.max(1.6, 3.4 - intensity * 1.8)}s`,
+            "linear-gradient(to bottom, rgba(15,15,30,0.55), rgba(15,15,30,0))",
         }}
       />
       {bolts.map((b, i) => (
+        <div
+          key={`sky-${i}`}
+          className="absolute inset-0"
+          style={{
+            background: `radial-gradient(circle at ${b.left}% 25%, rgba(220,235,255,0.7), rgba(220,235,255,0) 55%)`,
+            opacity: 0,
+            animation: `wx-sky-flash ${b.dur}s linear ${b.delay}s infinite both`,
+            mixBlendMode: "screen",
+          }}
+        />
+      ))}
+      {bolts.map((b, i) => (
         <svg
           key={i}
-          viewBox="0 0 24 24"
-          className="absolute animate-wx-flash"
+          viewBox="0 0 24 100"
+          preserveAspectRatio="none"
+          className="absolute"
           style={{
             left: `${b.left}%`,
             top: `${b.top}%`,
-            width: 22 * b.scale,
-            height: 22 * b.scale,
-            animationDuration: `${b.dur}s`,
-            animationDelay: `${b.delay}s`,
-            filter: `drop-shadow(0 0 6px hsla(${b.hue},100%,75%,0.9))`,
+            width: 18 * b.scale,
+            height: 70 * b.scale,
+            opacity: 0,
+            animation: `wx-bolt-strike ${b.dur}s linear ${b.delay}s infinite both`,
+            filter: `drop-shadow(0 0 8px hsla(${b.hue},100%,80%,0.95)) drop-shadow(0 0 16px hsla(${b.hue},100%,70%,0.6))`,
           }}
         >
-          <path
-            d="M13 2 L3 14 h7 l-1 8 L19 10 h-7 l1 -8 z"
-            fill={`hsla(${b.hue},100%,80%,1)`}
-            stroke="rgba(255,255,255,0.85)"
-            strokeWidth="0.6"
-            strokeLinejoin="round"
-          />
+          <path d={b.main} fill="none" stroke={`hsla(${b.hue},100%,75%,0.45)`} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+          <path d={b.main} fill="none" stroke="rgba(255,255,255,0.98)" strokeWidth="0.9" strokeLinecap="round" strokeLinejoin="round" />
+          {b.branches.map((bp, j) => (
+            <path key={j} d={bp} fill="none" stroke="rgba(255,255,255,0.85)" strokeWidth="0.6" strokeLinecap="round" />
+          ))}
         </svg>
       ))}
     </div>
