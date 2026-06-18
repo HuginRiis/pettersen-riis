@@ -6,13 +6,15 @@ import { SiteFooter } from "./SiteFooter";
 export function PageShell({
   children,
   minimalHeader = false,
+  transparentHeader = false,
 }: {
   children: React.ReactNode;
   minimalHeader?: boolean;
+  transparentHeader?: boolean;
 }) {
   return (
     <div className="min-h-screen flex flex-col">
-      {minimalHeader ? <MinimalHeader /> : <SiteHeader />}
+      {minimalHeader ? <MinimalHeader /> : transparentHeader ? <SiteHeader transparent /> : <SiteHeader />}
       <main className="flex-1">{children}</main>
       <SiteFooter />
     </div>
