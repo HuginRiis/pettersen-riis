@@ -474,6 +474,7 @@ function RotatingForecastCard({ hours }: { hours: Hour[] | null }) {
           @keyframes hourSlide { 0% { opacity:0; transform: translateX(24px); } 100% { opacity:1; transform: translateX(0); } }
           @keyframes hourDrop { 0% { opacity:0; transform: translateY(-18px) rotate(-8deg); } 70% { opacity:1; transform: translateY(2px) rotate(2deg); } 100% { opacity:1; transform: translateY(0) rotate(0); } }
           @keyframes pathDraw { 0% { stroke-dashoffset: 1200; opacity:0; } 30% { opacity:1; } 100% { stroke-dashoffset: 0; opacity:1; } }
+          @keyframes barGrow { 0% { transform: scaleY(0); } 100% { transform: scaleY(1); } }
         `}</style>
         <div
           key={panel}
