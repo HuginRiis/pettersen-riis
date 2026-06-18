@@ -994,8 +994,8 @@ function HumidityCard({ hour }: { hour: Hour | null }) {
   );
 }
 
-function PressureCard({ hour, liveValue }: { hour: Hour | null; liveValue: number | null }) {
-  const p = liveValue ?? hour?.pressure ?? 0;
+function PressureCard({ hour }: { hour: Hour | null }) {
+  const p = hour?.pressure ?? 0;
   const min = 980, max = 1040;
   const pct = Math.max(0, Math.min(1, (p - min) / (max - min)));
   return (
