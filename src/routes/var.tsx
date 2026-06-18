@@ -549,7 +549,11 @@ function VaerPanel({ hours }: { hours: Hour[] }) {
     <div className="overflow-x-auto -mx-2 px-2">
       <div className="flex items-center gap-3 min-w-max pb-1">
         {hours.map((h, i) => (
-          <div key={h.time} className="flex flex-col items-center w-10">
+          <div
+            key={h.time}
+            className="flex flex-col items-center w-10"
+            style={{ animation: `hourDrop 0.5s cubic-bezier(.2,.8,.2,1) ${(0.45 + i * 0.05).toFixed(2)}s both` }}
+          >
             <div className="text-[10px] text-white/80 mb-1.5">
               <HourLabel time={h.time} index={i} />
             </div>
