@@ -478,9 +478,13 @@ function HourLabel({ time, index }: { time: string; index: number }) {
   if (index === 0) return <>Nå</>;
   const d = new Date(time);
   const hh = d.getHours().toString().padStart(2, "0");
-  if (hh === "00") {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const dayStart = new Date(d);
+  dayStart.setHours(0, 0, 0, 0);
+  if (dayStart.getTime() !== today.getTime()) {
     const wd = d.toLocaleDateString("nb-NO", { weekday: "short" });
-    return <>{wd.slice(0, 2)} 00</>;
+    return <>{wd.slice(0, 2)} {hh}</>;
   }
   return <>{hh}</>;
 }
