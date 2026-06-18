@@ -32,7 +32,7 @@ function configFor(kind: GlassKind): SkyConfig {
       };
     case "fair":
       return {
-        gradient: "linear-gradient(180deg, #3488CC 0%, #67AEE0 60%, #9BCFF0 100%)",
+        gradient: "linear-gradient(180deg, #1E6BA8 0%, #4A9BD4 60%, #7FC4E8 100%)",
         cloudOpacity: 0.55,
         cloudTint: "#ffffff",
         cloudSpeed: 75,
