@@ -599,9 +599,17 @@ function VaerPanel({ hours }: { hours: Hour[] }) {
 
 function VindPanel({ hours, maxW }: { hours: Hour[]; maxW: number }) {
   const maxG = Math.max(maxW, ...hours.map((h) => h.windGust));
+  const peakIdx = hours.reduce((b, h, i, a) => (h.windGust > a[b].windGust ? i : b), 0);
+  const peak = hours[peakIdx];
+  const summary =
+    peak.windGust >= 10
+      ? `Sterkest kast ${Math.round(peak.windGust)} m/s rundt ${fmtWhen(peak.time)} · middelvind opp til ${Math.round(Math.max(...hours.map((h) => h.wind)))} m/s`
+      : `Rolig vind · maks ${Math.round(peak.windGust)} m/s neste 48 t`;
   return (
-    <div className="overflow-x-auto -mx-2 px-2">
-      <div className="flex items-end gap-2 min-w-max pb-1">
+    <div className="space-y-2">
+      <div className="text-[12px] text-white/90">{summary}</div>
+      <div className="overflow-x-auto -mx-2 px-2">
+        <div className="flex items-end gap-2 min-w-max pb-1">
         {hours.map((h, i) => {
           const heightPct = Math.max(4, (h.wind / maxG) * 70);
           const gustPct = Math.max(heightPct, (h.windGust / maxG) * 70);
