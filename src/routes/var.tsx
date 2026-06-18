@@ -474,6 +474,7 @@ function RotatingForecastCard({ hours }: { hours: Hour[] | null }) {
           @keyframes hourSlide { 0% { opacity:0; transform: translateX(24px); } 100% { opacity:1; transform: translateX(0); } }
           @keyframes hourDrop { 0% { opacity:0; transform: translateY(-18px) rotate(-8deg); } 70% { opacity:1; transform: translateY(2px) rotate(2deg); } 100% { opacity:1; transform: translateY(0) rotate(0); } }
           @keyframes pathDraw { 0% { stroke-dashoffset: 1200; opacity:0; } 30% { opacity:1; } 100% { stroke-dashoffset: 0; opacity:1; } }
+          @keyframes barGrow { 0% { transform: scaleY(0); } 100% { transform: scaleY(1); } }
         `}</style>
         <div
           key={panel}
@@ -591,16 +592,22 @@ function VindPanel({ hours, maxW }: { hours: Hour[]; maxW: number }) {
               </div>
               <div className="relative w-6 h-20 rounded-md bg-white/15 overflow-hidden border-t border-dashed border-white/20">
                 <div
-                  className="absolute bottom-0 left-0 right-0 bg-white/25 rounded-md"
-                  style={{ height: `${gustPct}%` }}
+                  className="absolute bottom-0 left-0 right-0 bg-white/25 rounded-md origin-bottom"
+                  style={{
+                    height: `${gustPct}%`,
+                    animation: `barGrow 0.4s cubic-bezier(.2,.8,.2,1) ${(0.53 + i * 0.05).toFixed(2)}s both`,
+                  }}
                 />
                 <div
-                  className={`absolute bottom-0 left-0 right-0 rounded-md ${
+                  className={`absolute bottom-0 left-0 right-0 rounded-md origin-bottom ${
                     strong
                       ? "bg-gradient-to-t from-emerald-500 via-emerald-300 to-emerald-100"
                       : "bg-gradient-to-t from-emerald-400 to-emerald-200"
                   }`}
-                  style={{ height: `${heightPct}%` }}
+                  style={{
+                    height: `${heightPct}%`,
+                    animation: `barGrow 0.45s cubic-bezier(.2,.8,.2,1) ${(0.45 + i * 0.05).toFixed(2)}s both`,
+                  }}
                 />
               </div>
               <div className="text-[10px] text-emerald-100 font-medium tabular-nums mt-1">
