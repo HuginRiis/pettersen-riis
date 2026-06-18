@@ -84,6 +84,7 @@ type Hour = {
   pressure: number;
   humidity: number;
   cloud: number;
+  thunder: number;
   symbol: string | null;
 };
 
