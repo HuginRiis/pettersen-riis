@@ -584,7 +584,11 @@ function VindPanel({ hours, maxW }: { hours: Hour[]; maxW: number }) {
       <div className="min-w-max">
         <div className="flex items-end gap-1 mb-1">
           {hours.map((h, i) => (
-            <div key={h.time} className="w-10 text-center">
+            <div
+              key={h.time}
+              className="w-10 text-center"
+              style={{ animation: `hourSlide 0.4s cubic-bezier(.2,.8,.2,1) ${(0.45 + i * 0.04).toFixed(2)}s both` }}
+            >
               <div className="text-[10px] text-white/80">
                 <HourLabel time={h.time} index={i} />
               </div>
@@ -600,9 +604,9 @@ function VindPanel({ hours, maxW }: { hours: Hour[]; maxW: number }) {
               <stop offset="100%" stopColor="#34d399" stopOpacity="0.15" />
             </linearGradient>
           </defs>
-          <path d={fillPath} fill="url(#windGrad48)" />
-          <path d={gustPath} fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="1" strokeDasharray="3 3" />
-          <path d={path} fill="none" stroke="#34d399" strokeWidth="2" />
+          <path d={fillPath} fill="url(#windGrad48)" style={{ animation: `hourPop 0.6s ease-out ${(0.45 + hours.length * 0.04).toFixed(2)}s both` }} />
+          <path d={gustPath} fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="1" strokeDasharray="3 3" style={{ animation: `pathDraw 1.2s ease-out ${(0.55 + hours.length * 0.04).toFixed(2)}s both`, strokeDasharray: "1200" }} />
+          <path d={path} fill="none" stroke="#34d399" strokeWidth="2" style={{ animation: `pathDraw 1.2s ease-out ${(0.45 + hours.length * 0.04).toFixed(2)}s both`, strokeDasharray: "1200" }} />
         </svg>
         <div className="text-[10px] text-white/60 mt-1">— vind &nbsp; - - kast (m/s)</div>
       </div>
