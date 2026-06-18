@@ -275,14 +275,9 @@ function WeatherPage() {
             </div>
           )}
 
-          {/* NEDBØR (hourly precip %) */}
-          <NedborCard hours={skienHours} />
+          {/* ROTERENDE 48-TIMERS PROGNOSE: nedbør · værforhold · vind · lyn */}
+          <RotatingForecastCard hours={skienHours} />
 
-          {/* VÆRFORHOLD (hourly icons + temp) */}
-          <HourlyForecastCard hours={skienHours} />
-
-          {/* VIND (hourly m/s + chart) */}
-          <WindHourlyCard hours={skienHours} />
 
           {/* 10-DAGERS PROGNOSE */}
           <DailyListCard days={skienDays} title="10-dagers prognose" />
