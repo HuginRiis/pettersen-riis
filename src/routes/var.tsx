@@ -30,6 +30,7 @@ import {
   ChevronDown,
   ChevronUp,
   Navigation,
+  Zap,
 } from "lucide-react";
 
 export const Route = createFileRoute("/var")({
