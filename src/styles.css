@@ -762,10 +762,6 @@ main .container {
   10%  { opacity: 1; }
   100% { transform: translate(var(--lx, 120px), var(--ly, 80px)) rotate(var(--lr, 360deg)); opacity: 0; }
 }
-@keyframes wx-tree-sway {
-  0%, 100% { transform: rotate(calc(var(--sway, 2deg) * -1)); }
-  50%      { transform: rotate(var(--sway, 2deg)); }
-}
 
 .animate-wx-rain      { animation: wx-rain-fall linear infinite; }
 .animate-wx-snow      { animation: wx-snow-fall linear infinite; }
