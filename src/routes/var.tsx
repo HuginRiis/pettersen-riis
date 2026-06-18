@@ -655,6 +655,7 @@ function VindPanel({ hours, maxW }: { hours: Hour[]; maxW: number }) {
             </div>
           );
         })}
+        </div>
       </div>
       <div className="text-[10px] text-white/60 mt-1 px-1">■ vind &nbsp; ▒ kast (m/s)</div>
     </div>
