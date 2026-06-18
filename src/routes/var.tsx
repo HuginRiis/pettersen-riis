@@ -592,16 +592,22 @@ function VindPanel({ hours, maxW }: { hours: Hour[]; maxW: number }) {
               </div>
               <div className="relative w-6 h-20 rounded-md bg-white/15 overflow-hidden border-t border-dashed border-white/20">
                 <div
-                  className="absolute bottom-0 left-0 right-0 bg-white/25 rounded-md"
-                  style={{ height: `${gustPct}%` }}
+                  className="absolute bottom-0 left-0 right-0 bg-white/25 rounded-md origin-bottom"
+                  style={{
+                    height: `${gustPct}%`,
+                    animation: `barGrow 0.4s cubic-bezier(.2,.8,.2,1) ${(0.53 + i * 0.05).toFixed(2)}s both`,
+                  }}
                 />
                 <div
-                  className={`absolute bottom-0 left-0 right-0 rounded-md ${
+                  className={`absolute bottom-0 left-0 right-0 rounded-md origin-bottom ${
                     strong
                       ? "bg-gradient-to-t from-emerald-500 via-emerald-300 to-emerald-100"
                       : "bg-gradient-to-t from-emerald-400 to-emerald-200"
                   }`}
-                  style={{ height: `${heightPct}%` }}
+                  style={{
+                    height: `${heightPct}%`,
+                    animation: `barGrow 0.45s cubic-bezier(.2,.8,.2,1) ${(0.45 + i * 0.05).toFixed(2)}s both`,
+                  }}
                 />
               </div>
               <div className="text-[10px] text-emerald-100 font-medium tabular-nums mt-1">
