@@ -193,6 +193,8 @@ export function WeatherVideoBackground({ kind }: { kind: GlassKind }) {
       className="pointer-events-none fixed inset-0 overflow-hidden -z-10"
       style={{ background: cfg.gradient }}
     >
+      {/* Constant readability overlay — deep blue tint */}
+      <div className="absolute inset-0" style={{ background: "rgba(10, 30, 60, 0.28)" }} />
       {/* Stars (night) */}
       {cfg.showStars && <Stars />}
 
