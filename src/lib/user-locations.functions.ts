@@ -210,42 +210,95 @@ export const searchPlaces = createServerFn({ method: "GET" })
     return { q };
   })
   .handler(async ({ data }): Promise<{ hits: PlaceHit[] }> => {
+    const hits: PlaceHit[] = [];
+    const seen = new Set<string>();
+
+    // ── Strategi 1: Open-Meteo geocoding — dekker hele verden (GeoNames).
+    //    Ingen API-nøkkel, returnerer byer/tettsteder med koordinater og
+    //    administrativ inndeling. Brukes som primær søkekilde.
     try {
-      const url = new URL("https://ws.geonorge.no/stedsnavn/v1/navn");
-      url.searchParams.set("sok", data.q + "*");
-      url.searchParams.set("treffPerSide", "12");
-      url.searchParams.set("utkoordsys", "4258"); // EPSG:4258 = lat/lon WGS84-ekvivalent
-      const res = await fetch(url.toString(), {
+      const gUrl = new URL("https://geocoding-api.open-meteo.com/v1/search");
+      gUrl.searchParams.set("name", data.q);
+      gUrl.searchParams.set("count", "15");
+      gUrl.searchParams.set("language", "no");
+      gUrl.searchParams.set("format", "json");
+      const { fetchWithBackoff } = await __loadOpenMeteoCache();
+      const gRes = await fetchWithBackoff("geoip", "open-meteo:geocoding", gUrl.toString(), {
         headers: { Accept: "application/json" },
         signal: AbortSignal.timeout(6000),
       });
-      if (!res.ok) return { hits: [] };
-      const json = (await res.json()) as any;
-      const navn: any[] = Array.isArray(json?.navn) ? json.navn : [];
-      const hits: PlaceHit[] = [];
-      const seen = new Set<string>();
-      for (const n of navn) {
-        const lat = n?.representasjonspunkt?.nord;
-        const lon = n?.representasjonspunkt?.øst;
-        if (typeof lat !== "number" || typeof lon !== "number") continue;
-        const skriv = String(n?.skrivemåte ?? "").trim();
-        if (!skriv) continue;
-        const kommuner: any[] = Array.isArray(n?.kommuner) ? n.kommuner : [];
-        const kommune = kommuner[0]?.kommunenavn ?? "";
-        const fylker: any[] = Array.isArray(n?.fylker) ? n.fylker : [];
-        const fylke = fylker[0]?.fylkesnavn ?? "";
-        const type = String(n?.navneobjekttype ?? "");
-        const label = kommune ? `${skriv}, ${kommune}` : skriv;
-        const dedupKey = `${label}|${lat.toFixed(3)}|${lon.toFixed(3)}`;
-        if (seen.has(dedupKey)) continue;
-        seen.add(dedupKey);
-        hits.push({ label, full: skriv, kommune, fylke, type, lat, lon });
-        if (hits.length >= 10) break;
+      if (gRes?.ok) {
+        const gJson = (await gRes.json()) as any;
+        const results: any[] = Array.isArray(gJson?.results) ? gJson.results : [];
+        for (const r of results) {
+          const lat = Number(r?.latitude);
+          const lon = Number(r?.longitude);
+          if (!Number.isFinite(lat) || !Number.isFinite(lon)) continue;
+          const name = String(r?.name ?? "").trim();
+          if (!name) continue;
+          const admin = String(r?.admin1 ?? r?.admin2 ?? "").trim();
+          const country = String(r?.country ?? "").trim();
+          const parts = [name];
+          if (admin && admin.toLowerCase() !== name.toLowerCase()) parts.push(admin);
+          if (country && country.toLowerCase() !== name.toLowerCase()) parts.push(country);
+          const label = parts.join(", ");
+          const dedupKey = `${label}|${lat.toFixed(3)}|${lon.toFixed(3)}`;
+          if (seen.has(dedupKey)) continue;
+          seen.add(dedupKey);
+          hits.push({
+            label,
+            full: name,
+            kommune: admin,
+            fylke: country,
+            type: String(r?.feature_code ?? ""),
+            lat,
+            lon,
+          });
+        }
       }
-      return { hits };
     } catch {
-      return { hits: [] };
+      /* fall through til Kartverket */
     }
+
+    // ── Strategi 2: Kartverket — gir bydeler/grender i Norge som
+    //    Open-Meteo ikke har (f.eks. "Tollnes", "Borgen"). Legges til
+    //    etter Open-Meteo-treffene.
+    try {
+      const url = new URL("https://ws.geonorge.no/stedsnavn/v1/navn");
+      url.searchParams.set("sok", data.q + "*");
+      url.searchParams.set("treffPerSide", "10");
+      url.searchParams.set("utkoordsys", "4258");
+      const res = await fetch(url.toString(), {
+        headers: { Accept: "application/json" },
+        signal: AbortSignal.timeout(5000),
+      });
+      if (res.ok) {
+        const json = (await res.json()) as any;
+        const navn: any[] = Array.isArray(json?.navn) ? json.navn : [];
+        for (const n of navn) {
+          const lat = n?.representasjonspunkt?.nord;
+          const lon = n?.representasjonspunkt?.øst;
+          if (typeof lat !== "number" || typeof lon !== "number") continue;
+          const skriv = String(n?.skrivemåte ?? "").trim();
+          if (!skriv) continue;
+          const kommuner: any[] = Array.isArray(n?.kommuner) ? n.kommuner : [];
+          const kommune = kommuner[0]?.kommunenavn ?? "";
+          const fylker: any[] = Array.isArray(n?.fylker) ? n.fylker : [];
+          const fylke = fylker[0]?.fylkesnavn ?? "";
+          const type = String(n?.navneobjekttype ?? "");
+          const label = kommune ? `${skriv}, ${kommune}` : skriv;
+          const dedupKey = `${label}|${lat.toFixed(3)}|${lon.toFixed(3)}`;
+          if (seen.has(dedupKey)) continue;
+          seen.add(dedupKey);
+          hits.push({ label, full: skriv, kommune, fylke, type, lat, lon });
+          if (hits.length >= 20) break;
+        }
+      }
+    } catch {
+      /* ignore */
+    }
+
+    return { hits: hits.slice(0, 20) };
   });
 
 /**
