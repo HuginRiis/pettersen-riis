@@ -422,10 +422,10 @@ function RotatingForecastCard({ hours }: { hours: Hour[] | null }) {
   const maxThunder = Math.max(0, ...next48.map((h) => h.thunder));
 
   const fx =
-    panel === "nedbor" ? <RainFX intensity={Math.min(1, maxRain / 4)} /> :
+    panel === "nedbor" ? <HeavyRainFX intensity={Math.max(0.6, Math.min(1, maxRain / 3))} /> :
     panel === "vaer" ? <CloudFX intensity={0.4} /> :
-    panel === "vind" ? <WindFX intensity={Math.min(1, maxWind / 14)} /> :
-    <ThunderFX intensity={Math.min(1, Math.max(0.3, maxThunder / 60))} />;
+    panel === "vind" ? <LeavesFX intensity={Math.min(1, maxWind / 14)} /> :
+    <BoltsFX intensity={Math.min(1, Math.max(0.4, maxThunder / 60))} />;
 
   const active = panels.find((p) => p.key === panel)!;
 
@@ -493,6 +493,201 @@ function RotatingForecastCard({ hours }: { hours: Hour[] | null }) {
         </div>
       </div>
     </article>
+  );
+}
+
+/* ---------- Heavy rain across full tile ---------- */
+function HeavyRainFX({ intensity = 0.8 }: { intensity?: number }) {
+  const count = Math.max(40, Math.round(60 + intensity * 80));
+  const drops = useMemo(
+    () =>
+      Array.from({ length: count }).map((_, i) => ({
+        left: (i / count) * 100 + (Math.random() * 4 - 2),
+        delay: Math.random() * 1.4,
+        dur: 0.45 + Math.random() * 0.55,
+        h: 10 + Math.random() * 22,
+        op: 0.55 + Math.random() * 0.4,
+        w: 1 + Math.random() * 0.8,
+      })),
+    [count],
+  );
+  return (
+    <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
+      <style>{`
+        @keyframes heavyRainFall {
+          0% { transform: translate3d(0,-20%,0); opacity: 0; }
+          10% { opacity: 1; }
+          100% { transform: translate3d(0,120%,0); opacity: .9; }
+        }
+      `}</style>
+      {drops.map((d, i) => (
+        <span
+          key={i}
+          style={{
+            position: "absolute",
+            top: 0,
+            left: `${d.left}%`,
+            width: d.w,
+            height: d.h,
+            background:
+              "linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(190,225,255,0.95) 60%, rgba(150,210,255,1) 100%)",
+            borderRadius: 2,
+            opacity: d.op,
+            animation: `heavyRainFall ${d.dur}s linear ${d.delay}s infinite`,
+            transform: "rotate(8deg)",
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+/* ---------- Leaves blowing for wind ---------- */
+function LeavesFX({ intensity = 0.5 }: { intensity?: number }) {
+  const count = Math.max(6, Math.round(8 + intensity * 14));
+  const speedMult = 0.6 + intensity * 1.6;
+  const leaves = useMemo(
+    () =>
+      Array.from({ length: count }).map(() => ({
+        top: 8 + Math.random() * 78,
+        delay: -Math.random() * 8,
+        dur: (6 / speedMult) * (0.7 + Math.random() * 0.6),
+        size: 10 + Math.random() * 12,
+        rot: Math.floor(Math.random() * 360),
+        rotSpin: 180 + Math.floor(Math.random() * 540),
+        hue: 18 + Math.floor(Math.random() * 60), // brown-orange-yellow-green
+        sat: 50 + Math.floor(Math.random() * 35),
+        lit: 35 + Math.floor(Math.random() * 25),
+        sway: 8 + Math.random() * 20,
+        op: 0.75 + Math.random() * 0.25,
+      })),
+    [count, speedMult],
+  );
+  return (
+    <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
+      <style>{`
+        @keyframes leafBlow {
+          0% { transform: translate3d(-20%, 0, 0) rotate(0deg); }
+          50% { transform: translate3d(50%, var(--sway,12px), 0) rotate(180deg); }
+          100% { transform: translate3d(130%, 0, 0) rotate(360deg); }
+        }
+      `}</style>
+      {leaves.map((l, i) => (
+        <svg
+          key={i}
+          viewBox="0 0 24 24"
+          style={{
+            position: "absolute",
+            top: `${l.top}%`,
+            left: 0,
+            width: l.size,
+            height: l.size,
+            opacity: l.op,
+            animation: `leafBlow ${l.dur}s linear ${l.delay}s infinite`,
+            ["--sway" as any]: `${l.sway}px`,
+            filter: "drop-shadow(0 1px 1px rgba(0,0,0,0.25))",
+            transform: `rotate(${l.rot}deg)`,
+          }}
+        >
+          <path
+            d="M12 2 C7 4 3 8 3 13 C3 18 7 22 12 22 C12 18 10 14 7 12 C10 13 13 14 16 16 C20 14 21 9 19 5 C16 6 14 8 12 11 C12 8 12 5 12 2 Z"
+            fill={`hsl(${l.hue},${l.sat}%,${l.lit}%)`}
+            stroke={`hsl(${l.hue},${l.sat}%,${Math.max(15, l.lit - 18)}%)`}
+            strokeWidth="0.6"
+          />
+        </svg>
+      ))}
+    </div>
+  );
+}
+
+/* ---------- Thin lightning bolts from the top ---------- */
+function BoltsFX({ intensity = 0.6 }: { intensity?: number }) {
+  const count = Math.max(3, Math.round(3 + intensity * 4));
+  const bolts = useMemo(() => {
+    const makeBolt = (full: boolean) => {
+      // generate a jagged vertical path
+      const segs = 6 + Math.floor(Math.random() * 4);
+      const pts: string[] = [];
+      let x = 50;
+      const top = 0;
+      const bottom = full ? 100 : 45 + Math.random() * 12;
+      pts.push(`M ${x} ${top}`);
+      for (let s = 1; s <= segs; s++) {
+        const y = top + (bottom - top) * (s / segs);
+        x = 50 + (Math.random() * 24 - 12);
+        pts.push(`L ${x} ${y}`);
+      }
+      return pts.join(" ");
+    };
+    return Array.from({ length: count }).map((_, i) => {
+      const full = Math.random() < 0.3;
+      return {
+        left: 6 + (i / Math.max(1, count - 1)) * 88 + (Math.random() * 6 - 3),
+        d: makeBolt(full),
+        full,
+        delay: Math.random() * 4,
+        dur: 2.4 + Math.random() * 2.6,
+        w: full ? 22 : 18,
+      };
+    });
+  }, [count]);
+  return (
+    <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
+      <style>{`
+        @keyframes boltFlash {
+          0%, 92%, 100% { opacity: 0; }
+          93% { opacity: 1; }
+          94% { opacity: 0.1; }
+          95% { opacity: 1; }
+          97% { opacity: 0.2; }
+          98% { opacity: 0.9; }
+        }
+        @keyframes skyFlash {
+          0%, 92%, 100% { opacity: 0; }
+          93%, 95%, 98% { opacity: 1; }
+          94%, 96% { opacity: 0.15; }
+        }
+      `}</style>
+      <div
+        className="absolute inset-x-0 top-0 h-10"
+        style={{ background: "linear-gradient(to bottom, rgba(20,20,40,0.5), rgba(20,20,40,0))" }}
+      />
+      {bolts.map((b, i) => (
+        <div
+          key={i}
+          style={{
+            position: "absolute",
+            top: 0,
+            left: `${b.left}%`,
+            width: `${b.w}%`,
+            height: "100%",
+            transform: "translateX(-50%)",
+            animation: `boltFlash ${b.dur}s ease-out ${b.delay}s infinite`,
+          }}
+        >
+          <svg viewBox="0 0 100 100" preserveAspectRatio="none" style={{ width: "100%", height: "100%", overflow: "visible" }}>
+            <path
+              d={b.d}
+              fill="none"
+              stroke="rgba(255,255,255,0.98)"
+              strokeWidth="0.7"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              vectorEffect="non-scaling-stroke"
+              style={{ filter: "drop-shadow(0 0 6px rgba(200,220,255,0.95)) drop-shadow(0 0 14px rgba(160,190,255,0.7))" }}
+            />
+          </svg>
+        </div>
+      ))}
+      <div
+        className="absolute inset-0"
+        style={{
+          background: "radial-gradient(circle at 50% 20%, rgba(220,230,255,0.55), rgba(220,230,255,0) 65%)",
+          animation: `skyFlash ${3 + (1 - intensity) * 2}s ease-out infinite`,
+        }}
+      />
+    </div>
   );
 }
 
