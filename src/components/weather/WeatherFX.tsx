@@ -257,7 +257,7 @@ export function PressureFX({ intensity = 0.5, className = "" }: Common) {
   );
 }
 
-/* ---------------- GUST (windy tree with falling leaves) ---------------- */
+/* ---------------- GUST (flying leaves blowing right) ---------------- */
 export function GustFX({ intensity = 0.5, className = "" }: Common) {
   const i = Math.max(0, Math.min(1, intensity));
   // Straight wind streaks — more and faster with higher gusts
@@ -276,18 +276,16 @@ export function GustFX({ intensity = 0.5, className = "" }: Common) {
     [streakCount, streakDur],
   );
 
-  // Leaves — more and faster with higher gusts
+  // Leaves — blown from left to right by the wind
   const leafCount = Math.max(3, Math.round(3 + i * 14));
   const leafDur = 3.2 - i * 1.8; // 3.2s → 1.4s
-  const swayDur = 3.0 - i * 1.6;
-  const swayAmp = (1.5 + i * 4).toFixed(1) + "deg";
   const leaves = useMemo(
     () =>
       Array.from({ length: leafCount }).map(() => ({
-        // start near tree canopy (right side of tile)
-        startX: 60 + Math.random() * 18, // %
-        startY: 18 + Math.random() * 30, // %
-        lx: -(40 + Math.random() * 140 + i * 80), // drift left with wind
+        // start from left side, blown right by wind
+        startX: 8 + Math.random() * 25, // %
+        startY: 10 + Math.random() * 55, // %
+        lx: 40 + Math.random() * 140 + i * 80, // drift right with wind
         ly: 30 + Math.random() * 70,
         lr: (Math.random() > 0.5 ? 1 : -1) * (180 + Math.random() * 360),
         size: 5 + Math.random() * 4,
@@ -321,36 +319,7 @@ export function GustFX({ intensity = 0.5, className = "" }: Common) {
         />
       ))}
 
-      {/* Tree — bottom right, swaying with the wind */}
-      <div
-        className="absolute animate-wx-tree-sway"
-        style={{
-          right: "8%",
-          bottom: 0,
-          width: 78,
-          height: 92,
-          ["--sway" as any]: swayAmp,
-          animationDuration: `${swayDur}s`,
-        }}
-      >
-        <svg viewBox="0 0 80 96" width="78" height="92">
-          {/* trunk */}
-          <path
-            d="M38 96 L38 58 Q36 46 40 38 L42 38 Q46 48 42 58 L42 96 Z"
-            fill="rgba(120,80,50,0.85)"
-          />
-          {/* canopy */}
-          <g fill="rgba(110,170,110,0.85)" stroke="rgba(70,120,70,0.6)" strokeWidth="0.6">
-            <circle cx="40" cy="30" r="18" />
-            <circle cx="26" cy="36" r="13" />
-            <circle cx="54" cy="36" r="13" />
-            <circle cx="34" cy="20" r="11" />
-            <circle cx="48" cy="22" r="11" />
-          </g>
-        </svg>
-      </div>
-
-      {/* Falling/flying leaves */}
+      {/* Flying leaves blown right by wind */}
       {leaves.map((lf, k) => (
         <span
           key={`l${k}`}
