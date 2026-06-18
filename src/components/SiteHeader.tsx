@@ -168,7 +168,7 @@ const navLinks: NavLink[] = [
   { to: "/ssb-statistikk", label: "Norges-statistikk" },
 ];
 
-export function SiteHeader() {
+export function SiteHeader({ transparent = false }: { transparent?: boolean }) {
   const [open, setOpen] = useState(false);
   const mobileMenuRef = useRef<HTMLElement | null>(null);
 
