@@ -948,28 +948,88 @@ function MoonVisual({ illumination, phase }: { illumination: number; phase: stri
 function SunsetCard({ sun, now }: { sun: ReturnType<typeof sunTimes>; now: Date }) {
   const sunrise = sun.sunrise;
   const sunset = sun.sunset;
-  // Sol-posisjon: progress 0..1 mellom rise og set
-  let progress = 0;
-  if (sunrise && sunset) {
-    const tNow = now.getTime();
-    progress = Math.max(0, Math.min(1, (tNow - sunrise.getTime()) / (sunset.getTime() - sunrise.getTime())));
-  }
-  // Arc-koordinater
-  const W = 160, H = 70;
-  const cx = W / 2, cy = H - 4, r = 60;
-  const ang = Math.PI - progress * Math.PI;
-  const sx = cx + r * Math.cos(ang);
-  const sy = cy - r * Math.sin(ang);
+
+  // Sol-vinkel rundt jorda basert på reell tid på døgnet (lokal tid).
+  // kl 06 = høyre (0°), kl 12 = topp (90°), kl 18 = venstre (180°), kl 00 = bunn (270°)
+  const minutesOfDay = now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60;
+  const dayFraction = minutesOfDay / 1440;
+  const sunAngleDeg = ((dayFraction * 360) - 90 + 360) % 360;
+  const earthSpin = (dayFraction * 360) % 360;
+
+  const W = 180, H = 110;
+  const cx = W / 2, cy = H / 2;
+  const earthR = 22;
+  const orbitR = 42;
+  const ang = (sunAngleDeg * Math.PI) / 180;
+  const sx = cx + orbitR * Math.cos(ang);
+  const sy = cy - orbitR * Math.sin(ang);
+
+  const sunUp = !!(sunrise && sunset && now >= sunrise && now <= sunset);
 
   return (
-    <GlassCard eyebrow="Sol ned" icon={<Sunrise size={14} />} fx={<SunFX intensity={progress > 0 && progress < 1 ? 1 : 0.3} />}>
+    <GlassCard eyebrow="Sol ned" icon={<Sunrise size={14} />} fx={<SunFX intensity={sunUp ? 1 : 0.3} />}>
       <div className="text-3xl font-light tabular-nums">{sunset ? formatTime(sunset) : "—"}</div>
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-16 mt-2">
-        <path d={`M ${cx - r} ${cy} A ${r} ${r} 0 0 1 ${cx + r} ${cy}`} fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="1" />
-        <line x1={cx - r} y1={cy} x2={cx + r} y2={cy} stroke="rgba(255,255,255,0.3)" strokeWidth="0.5" />
-        <circle cx={sx} cy={sy} r="5" fill="#fff" />
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-24 mt-1">
+        <defs>
+          <radialGradient id="earthGrad" cx="35%" cy="35%" r="70%">
+            <stop offset="0%" stopColor="#7dd3fc" />
+            <stop offset="55%" stopColor="#2563eb" />
+            <stop offset="100%" stopColor="#0b1e3f" />
+          </radialGradient>
+          <radialGradient id="sunGrad" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="#fffbe6" />
+            <stop offset="60%" stopColor="#fbbf24" />
+            <stop offset="100%" stopColor="#f97316" />
+          </radialGradient>
+          <radialGradient id="sunGlow" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="#fbbf24" stopOpacity="0.55" />
+            <stop offset="100%" stopColor="#fbbf24" stopOpacity="0" />
+          </radialGradient>
+          <radialGradient id="nightShade" cx="80%" cy="50%" r="60%">
+            <stop offset="0%" stopColor="#000" stopOpacity="0" />
+            <stop offset="100%" stopColor="#000" stopOpacity="0.55" />
+          </radialGradient>
+        </defs>
+
+        {/* Orbit ring */}
+        <circle cx={cx} cy={cy} r={orbitR} fill="none" stroke="rgba(255,255,255,0.18)" strokeWidth="0.6" strokeDasharray="2 3" />
+
+        {/* Earth med sakte rotasjon */}
+        <g style={{ transformOrigin: `${cx}px ${cy}px`, transform: `rotate(${earthSpin}deg)`, transition: "transform 1s linear" }}>
+          <circle cx={cx} cy={cy} r={earthR} fill="url(#earthGrad)" />
+          <ellipse cx={cx - 6} cy={cy - 4} rx="5" ry="3" fill="#14532d" opacity="0.75" />
+          <ellipse cx={cx + 5} cy={cy + 2} rx="6" ry="4" fill="#166534" opacity="0.7" />
+          <ellipse cx={cx - 2} cy={cy + 7} rx="3" ry="2" fill="#15803d" opacity="0.7" />
+          <ellipse cx={cx + 8} cy={cy - 8} rx="2" ry="1.5" fill="#166534" opacity="0.6" />
+          <circle cx={cx} cy={cy} r={earthR} fill="none" stroke="rgba(186,230,253,0.4)" strokeWidth="1" />
+        </g>
+        {/* Nattskygge — peker bort fra sola */}
+        <g style={{ transformOrigin: `${cx}px ${cy}px`, transform: `rotate(${-sunAngleDeg}deg)` }}>
+          <circle cx={cx} cy={cy} r={earthR} fill="url(#nightShade)" />
+        </g>
+
+        {/* Sun glow */}
+        <circle cx={sx} cy={sy} r="14" fill="url(#sunGlow)">
+          <animate attributeName="r" values="12;16;12" dur="2.4s" repeatCount="indefinite" />
+        </circle>
+        {/* Sun */}
+        <circle cx={sx} cy={sy} r="6" fill="url(#sunGrad)">
+          <animate attributeName="r" values="5.5;6.8;5.5" dur="2.4s" repeatCount="indefinite" />
+        </circle>
+
+        {/* Klokke-markører */}
+        {[0, 6, 12, 18].map((h) => {
+          const a = (((h / 24) * 360 - 90 + 360) % 360) * (Math.PI / 180);
+          const mx = cx + (orbitR + 7) * Math.cos(a);
+          const my = cy - (orbitR + 7) * Math.sin(a);
+          return (
+            <text key={h} x={mx} y={my} fill="rgba(255,255,255,0.55)" fontSize="6" textAnchor="middle" dominantBaseline="middle">
+              {String(h).padStart(2, "0")}
+            </text>
+          );
+        })}
       </svg>
-      <div className="text-[11px] text-white/80 mt-1">Sol opp: {sunrise ? formatTime(sunrise) : "—"}</div>
+      <div className="text-[11px] text-white/80 -mt-1">Sol opp: {sunrise ? formatTime(sunrise) : "—"}</div>
     </GlassCard>
   );
 }
