@@ -302,14 +302,14 @@ function WeatherPage() {
 
           {/* NEDBØR I DAG + VINDKAST */}
           <div className="grid grid-cols-2 gap-3">
-            <PrecipTodayCard day={todayDay} liveMm={tollnesRainToday} days={skienDays} />
+            <PrecipTodayCard day={todayDay} days={skienDays} />
             <GustCard hour={currentHour} />
           </div>
 
           {/* LUFTFUKTIGHET + LUFTTRYKK */}
           <div className="grid grid-cols-2 gap-3">
-            <HumidityCard hour={currentHour} liveValue={tollnesHumidity} />
-            <PressureCard hour={currentHour} liveValue={tollnesPressure} />
+            <HumidityCard hour={currentHour} />
+            <PressureCard hour={currentHour} />
           </div>
 
           {/* LIVE MÅLINGER — Netatmo */}
@@ -955,8 +955,8 @@ function CloudCard({ hour }: { hour: Hour | null }) {
   );
 }
 
-function PrecipTodayCard({ day, liveMm, days }: { day: ForecastDay | undefined; liveMm: number | null; days: ForecastDay[] | null }) {
-  const mm = liveMm ?? day?.precip ?? 0;
+function PrecipTodayCard({ day, days }: { day: ForecastDay | undefined; days: ForecastDay[] | null }) {
+  const mm = day?.precip ?? 0;
   const nextRainDay = days?.slice(1, 7).find((d) => d.precip >= 0.2);
   const hint = nextRainDay
     ? `${nextRainDay.precip.toFixed(1)} mm ventes ${weekdayShort(nextRainDay.date)}.`
@@ -982,8 +982,8 @@ function GustCard({ hour }: { hour: Hour | null }) {
   );
 }
 
-function HumidityCard({ hour, liveValue }: { hour: Hour | null; liveValue: number | null }) {
-  const h = Math.round(liveValue ?? hour?.humidity ?? 0);
+function HumidityCard({ hour }: { hour: Hour | null }) {
+  const h = Math.round(hour?.humidity ?? 0);
   return (
     <GlassCard eyebrow="Luftfuktighet" icon={<Droplets size={14} />} fx={<HumidityFX intensity={h / 100} />}>
       <div className="text-3xl font-light tabular-nums">{h} %</div>
@@ -994,8 +994,8 @@ function HumidityCard({ hour, liveValue }: { hour: Hour | null; liveValue: numbe
   );
 }
 
-function PressureCard({ hour, liveValue }: { hour: Hour | null; liveValue: number | null }) {
-  const p = liveValue ?? hour?.pressure ?? 0;
+function PressureCard({ hour }: { hour: Hour | null }) {
+  const p = hour?.pressure ?? 0;
   const min = 980, max = 1040;
   const pct = Math.max(0, Math.min(1, (p - min) / (max - min)));
   return (
