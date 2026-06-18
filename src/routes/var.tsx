@@ -474,6 +474,9 @@ function RotatingForecastCard({ hours }: { hours: Hour[] | null }) {
           @keyframes hourSlide { 0% { opacity:0; transform: translateX(24px); } 100% { opacity:1; transform: translateX(0); } }
           @keyframes hourDrop { 0% { opacity:0; transform: translateY(-18px) rotate(-8deg); } 70% { opacity:1; transform: translateY(2px) rotate(2deg); } 100% { opacity:1; transform: translateY(0) rotate(0); } }
           @keyframes pathDraw { 0% { stroke-dashoffset: 1200; opacity:0; } 30% { opacity:1; } 100% { stroke-dashoffset: 0; opacity:1; } }
+          @keyframes boltDraw { 0% { stroke-dashoffset: 600; opacity:0; filter: drop-shadow(0 0 0 #fff); } 10% { opacity:1; } 40% { stroke-dashoffset: 0; opacity:1; filter: drop-shadow(0 0 14px #fef3c7) drop-shadow(0 0 28px #fde68a); } 55% { opacity:.2; } 65% { opacity:1; filter: drop-shadow(0 0 18px #fff) drop-shadow(0 0 32px #fde68a); } 80% { opacity:.4; } 100% { stroke-dashoffset:0; opacity:.85; filter: drop-shadow(0 0 6px #fde68a); } }
+          @keyframes lightningFlash { 0%, 100% { opacity:0; } 35% { opacity:0; } 38% { opacity:.55; } 42% { opacity:.05; } 48% { opacity:.7; } 52% { opacity:.1; } 60% { opacity:.45; } 70% { opacity:0; } }
+          @keyframes boltFlicker { 0%,100% { opacity:.85; } 47% { opacity:.3; } 50% { opacity:1; } 53% { opacity:.4; } 56% { opacity:1; } }
         `}</style>
         <div
           key={panel}
