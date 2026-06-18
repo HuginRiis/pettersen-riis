@@ -989,28 +989,141 @@ function MoonVisual({ illumination, phase }: { illumination: number; phase: stri
 function SunsetCard({ sun, now }: { sun: ReturnType<typeof sunTimes>; now: Date }) {
   const sunrise = sun.sunrise;
   const sunset = sun.sunset;
-  // Sol-posisjon: progress 0..1 mellom rise og set
-  let progress = 0;
-  if (sunrise && sunset) {
-    const tNow = now.getTime();
-    progress = Math.max(0, Math.min(1, (tNow - sunrise.getTime()) / (sunset.getTime() - sunrise.getTime())));
+  // Full døgn-progress 0..1 (sol under horisont = utenfor [riseP..setP])
+  const dayStart = new Date(now); dayStart.setHours(0, 0, 0, 0);
+  const dayMs = 24 * 3600 * 1000;
+  const nowP = (now.getTime() - dayStart.getTime()) / dayMs;
+  const riseP = sunrise ? (sunrise.getTime() - dayStart.getTime()) / dayMs : 0.25;
+  const setP = sunset ? (sunset.getTime() - dayStart.getTime()) / dayMs : 0.75;
+
+  const W = 200, H = 92;
+  const horizonY = 62;
+  const peakY = 14;
+  const dipY = 84;
+  // Sol-bue: sinus mellom riseP og setP
+  const sunPath = (() => {
+    const pts: string[] = [];
+    const N = 60;
+    for (let i = 0; i <= N; i++) {
+      const p = i / N;
+      const x = p * W;
+      let y: number;
+      if (p < riseP) {
+        const k = (p - riseP) / Math.max(0.001, riseP); // negativ
+        y = horizonY + Math.sin(-k * Math.PI) * (dipY - horizonY) * 0.6;
+      } else if (p > setP) {
+        const k = (p - setP) / Math.max(0.001, 1 - setP);
+        y = horizonY + Math.sin(k * Math.PI) * (dipY - horizonY) * 0.6;
+      } else {
+        const k = (p - riseP) / (setP - riseP);
+        y = horizonY - Math.sin(k * Math.PI) * (horizonY - peakY);
+      }
+      pts.push(`${x.toFixed(2)},${y.toFixed(2)}`);
+    }
+    return "M " + pts.join(" L ");
+  })();
+  // Sol-posisjon
+  let sx = 0, sy = horizonY, above = false;
+  {
+    const p = nowP;
+    sx = p * W;
+    if (p < riseP) {
+      const k = (p - riseP) / Math.max(0.001, riseP);
+      sy = horizonY + Math.sin(-k * Math.PI) * (dipY - horizonY) * 0.6;
+    } else if (p > setP) {
+      const k = (p - setP) / Math.max(0.001, 1 - setP);
+      sy = horizonY + Math.sin(k * Math.PI) * (dipY - horizonY) * 0.6;
+    } else {
+      const k = (p - riseP) / (setP - riseP);
+      sy = horizonY - Math.sin(k * Math.PI) * (horizonY - peakY);
+      above = true;
+    }
   }
-  // Arc-koordinater
-  const W = 160, H = 70;
-  const cx = W / 2, cy = H - 4, r = 60;
-  const ang = Math.PI - progress * Math.PI;
-  const sx = cx + r * Math.cos(ang);
-  const sy = cy - r * Math.sin(ang);
+  // Gjenstående dagslys
+  let remainingLabel = "";
+  if (sunrise && sunset) {
+    const t = now.getTime();
+    if (t < sunrise.getTime()) {
+      const m = Math.round((sunrise.getTime() - t) / 60000);
+      remainingLabel = `Sol opp om ${Math.floor(m / 60)} t, ${m % 60} min`;
+    } else if (t < sunset.getTime()) {
+      const m = Math.round((sunset.getTime() - t) / 60000);
+      remainingLabel = `Dagslys som gjenstår: ${Math.floor(m / 60)} t, ${m % 60} min`;
+    } else {
+      remainingLabel = "Solen har gått ned";
+    }
+  }
+  const gid = "sunset-arc";
 
   return (
-    <GlassCard eyebrow="Sol ned" icon={<Sunrise size={14} />} fx={<SunFX intensity={progress > 0 && progress < 1 ? 1 : 0.3} />}>
+    <GlassCard eyebrow="Sol ned" icon={<Sunrise size={14} />} fx={<SunFX intensity={above ? 1 : 0.3} />}>
       <div className="text-3xl font-light tabular-nums">{sunset ? formatTime(sunset) : "—"}</div>
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-16 mt-2">
-        <path d={`M ${cx - r} ${cy} A ${r} ${r} 0 0 1 ${cx + r} ${cy}`} fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="1" />
-        <line x1={cx - r} y1={cy} x2={cx + r} y2={cy} stroke="rgba(255,255,255,0.3)" strokeWidth="0.5" />
-        <circle cx={sx} cy={sy} r="5" fill="#fff" />
+      {remainingLabel && <div className="text-[11px] text-white/70 mt-0.5">{remainingLabel}</div>}
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-24 mt-2 overflow-visible">
+        <defs>
+          <linearGradient id={`${gid}-sky`} x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0%" stopColor="rgba(80,120,180,0.45)" />
+            <stop offset="100%" stopColor="rgba(20,30,55,0.15)" />
+          </linearGradient>
+          <linearGradient id={`${gid}-stroke`} x1="0" x2="1" y1="0" y2="0">
+            <stop offset="0%" stopColor="rgba(255,255,255,0.35)" />
+            <stop offset="50%" stopColor="rgba(255,255,255,0.95)" />
+            <stop offset="100%" stopColor="rgba(255,200,140,0.6)" />
+          </linearGradient>
+          <radialGradient id={`${gid}-glow`} cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="rgba(255,255,255,0.95)" />
+            <stop offset="40%" stopColor="rgba(255,235,180,0.55)" />
+            <stop offset="100%" stopColor="rgba(255,200,120,0)" />
+          </radialGradient>
+        </defs>
+        {/* Sky-fyll over horisont */}
+        <rect x="0" y="0" width={W} height={horizonY} fill={`url(#${gid}-sky)`} rx="6" />
+        {/* Grid */}
+        {[0.25, 0.5, 0.75].map((p) => (
+          <line key={p} x1={p * W} x2={p * W} y1="0" y2={H} stroke="rgba(255,255,255,0.12)" strokeWidth="0.5" strokeDasharray="1 2" />
+        ))}
+        <line x1="0" x2={W} y1={peakY + 20} y2={peakY + 20} stroke="rgba(255,255,255,0.08)" strokeWidth="0.5" />
+        {/* Horisont */}
+        <line x1="0" x2={W} y1={horizonY} y2={horizonY} stroke="rgba(255,255,255,0.4)" strokeWidth="0.8" />
+        {/* Bue */}
+        <path
+          d={sunPath}
+          fill="none"
+          stroke={`url(#${gid}-stroke)`}
+          strokeWidth="1.6"
+          strokeLinecap="round"
+          style={{
+            strokeDasharray: 600,
+            strokeDashoffset: 600,
+            animation: "wx-arc-draw 1.6s ease-out 0.1s forwards",
+          }}
+        />
+        {/* Glød rundt solen */}
+        {above && (
+          <circle
+            cx={sx} cy={sy} r="14" fill={`url(#${gid}-glow)`}
+            style={{ animation: "wx-sun-pulse 2.6s ease-in-out infinite", transformOrigin: `${sx}px ${sy}px` }}
+          />
+        )}
+        {/* Solen */}
+        <circle
+          cx={sx} cy={sy} r={above ? 4.5 : 2.2}
+          fill={above ? "#fff" : "rgba(255,255,255,0.55)"}
+          style={{
+            opacity: 0,
+            animation: "wx-sun-in 1.2s ease-out 1.1s forwards",
+            filter: above ? "drop-shadow(0 0 6px rgba(255,235,180,0.9))" : "none",
+          }}
+        />
       </svg>
-      <div className="text-[11px] text-white/80 mt-1">Sol opp: {sunrise ? formatTime(sunrise) : "—"}</div>
+      <div className="flex items-center justify-between text-[11px] text-white/80 mt-1">
+        <span>Sol opp: {sunrise ? formatTime(sunrise) : "—"}</span>
+        {sun.dayLengthMinutes ? (
+          <span className="text-white/60">
+            {Math.floor(sun.dayLengthMinutes / 60)} t {Math.round(sun.dayLengthMinutes % 60)} min
+          </span>
+        ) : null}
+      </div>
     </GlassCard>
   );
 }
