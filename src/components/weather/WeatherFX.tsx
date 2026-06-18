@@ -257,55 +257,125 @@ export function PressureFX({ intensity = 0.5, className = "" }: Common) {
   );
 }
 
-/* ---------------- GUST (sweeping puffs) ---------------- */
+/* ---------------- GUST (windy tree with falling leaves) ---------------- */
 export function GustFX({ intensity = 0.5, className = "" }: Common) {
-  const count = Math.max(2, Math.round(2 + intensity * 4));
-  const puffs = useMemo(
+  const i = Math.max(0, Math.min(1, intensity));
+  // Straight wind streaks — more and faster with higher gusts
+  const streakCount = Math.max(3, Math.round(4 + i * 8));
+  const streakDur = 1.6 - i * 1.0; // 1.6s calm → 0.6s storm
+  const streaks = useMemo(
     () =>
-      Array.from({ length: count }).map((_, i) => ({
-        top: 20 + i * (60 / count) + Math.random() * 8,
-        delay: Math.random() * 1.8,
-        dur: 1.4 + Math.random() * 1.2,
-        scale: 0.5 + Math.random() * 0.6,
+      Array.from({ length: streakCount }).map((_, k) => ({
+        top: 14 + k * (70 / streakCount) + Math.random() * 6,
+        delay: Math.random() * streakDur,
+        dur: streakDur * (0.75 + Math.random() * 0.5),
+        w: 22 + Math.random() * 38,
+        op: 0.45 + Math.random() * 0.4,
+        thin: 1 + Math.random() * 1.2,
       })),
-    [count],
+    [streakCount, streakDur],
   );
+
+  // Leaves — more and faster with higher gusts
+  const leafCount = Math.max(3, Math.round(3 + i * 14));
+  const leafDur = 3.2 - i * 1.8; // 3.2s → 1.4s
+  const swayDur = 3.0 - i * 1.6;
+  const swayAmp = (1.5 + i * 4).toFixed(1) + "deg";
+  const leaves = useMemo(
+    () =>
+      Array.from({ length: leafCount }).map(() => ({
+        // start near tree canopy (right side of tile)
+        startX: 60 + Math.random() * 18, // %
+        startY: 18 + Math.random() * 30, // %
+        lx: -(40 + Math.random() * 140 + i * 80), // drift left with wind
+        ly: 30 + Math.random() * 70,
+        lr: (Math.random() > 0.5 ? 1 : -1) * (180 + Math.random() * 360),
+        size: 5 + Math.random() * 4,
+        delay: -Math.random() * leafDur,
+        dur: leafDur * (0.7 + Math.random() * 0.6),
+        hue: 28 + Math.random() * 30, // warm autumn
+      })),
+    [leafCount, leafDur, i],
+  );
+
   return (
     <div className={`${wrap} ${className}`} aria-hidden>
-      {puffs.map((p, i) => (
-        <svg
-          key={i}
-          viewBox="0 0 48 12"
+      {/* Wind streaks — straight horizontal */}
+      {streaks.map((l, k) => (
+        <span
+          key={`s${k}`}
           className="absolute animate-wx-gust"
           style={{
-            top: `${p.top}%`,
+            top: `${l.top}%`,
             left: 0,
-            width: 60 * p.scale,
-            animationDuration: `${p.dur}s`,
-            animationDelay: `${p.delay}s`,
-            opacity: 0.6,
+            width: `${l.w}%`,
+            height: l.thin,
+            background:
+              "linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.85) 50%, rgba(255,255,255,0) 100%)",
+            opacity: l.op,
+            animationDuration: `${l.dur}s`,
+            animationDelay: `${l.delay}s`,
+            borderRadius: 1,
+            filter: "blur(0.3px)",
           }}
-        >
+        />
+      ))}
+
+      {/* Tree — bottom right, swaying with the wind */}
+      <div
+        className="absolute animate-wx-tree-sway"
+        style={{
+          right: "8%",
+          bottom: 0,
+          width: 78,
+          height: 92,
+          ["--sway" as any]: swayAmp,
+          animationDuration: `${swayDur}s`,
+        }}
+      >
+        <svg viewBox="0 0 80 96" width="78" height="92">
+          {/* trunk */}
           <path
-            d="M2 6 H22 Q28 6 28 3 Q28 1 26 1"
-            fill="none"
-            stroke="white"
-            strokeWidth="1.2"
-            strokeLinecap="round"
+            d="M38 96 L38 58 Q36 46 40 38 L42 38 Q46 48 42 58 L42 96 Z"
+            fill="rgba(120,80,50,0.85)"
           />
-          <path
-            d="M2 10 H30 Q38 10 38 7 Q38 5 36 5"
-            fill="none"
-            stroke="white"
-            strokeWidth="1.2"
-            strokeLinecap="round"
-            opacity="0.7"
-          />
+          {/* canopy */}
+          <g fill="rgba(110,170,110,0.85)" stroke="rgba(70,120,70,0.6)" strokeWidth="0.6">
+            <circle cx="40" cy="30" r="18" />
+            <circle cx="26" cy="36" r="13" />
+            <circle cx="54" cy="36" r="13" />
+            <circle cx="34" cy="20" r="11" />
+            <circle cx="48" cy="22" r="11" />
+          </g>
         </svg>
+      </div>
+
+      {/* Falling/flying leaves */}
+      {leaves.map((lf, k) => (
+        <span
+          key={`l${k}`}
+          className="absolute animate-wx-leaf"
+          style={{
+            left: `${lf.startX}%`,
+            top: `${lf.startY}%`,
+            width: lf.size,
+            height: lf.size * 1.3,
+            background: `hsl(${lf.hue}, 70%, 55%)`,
+            borderRadius: "60% 10% 60% 10%",
+            opacity: 0.9,
+            animationDuration: `${lf.dur}s`,
+            animationDelay: `${lf.delay}s`,
+            ["--lx" as any]: `${lf.lx}px`,
+            ["--ly" as any]: `${lf.ly}px`,
+            ["--lr" as any]: `${lf.lr}deg`,
+            boxShadow: "0 0 1px rgba(0,0,0,0.2)",
+          }}
+        />
       ))}
     </div>
   );
 }
+
 
 /* ---------------- SUN (rays + sparkles) ---------------- */
 export function SunFX({ intensity = 0.5, className = "" }: Common) {
