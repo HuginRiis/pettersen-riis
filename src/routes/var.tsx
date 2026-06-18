@@ -465,10 +465,28 @@ function RotatingForecastCard({ hours }: { hours: Hour[] | null }) {
           </div>
         </div>
 
-        {panel === "nedbor" && <NedborPanel hours={next48} maxP={maxRain} />}
-        {panel === "vaer" && <VaerPanel hours={next48} />}
-        {panel === "vind" && <VindPanel hours={next48} maxW={maxWind} />}
-        {panel === "lyn" && <LynPanel hours={next48} />}
+        <style>{`
+          @keyframes panelFlyRight { 0% { opacity:0; transform: translateX(120%) rotate(6deg) scale(.9); } 60% { opacity:1; } 100% { opacity:1; transform: translateX(0) rotate(0) scale(1); } }
+          @keyframes panelFlyLeft  { 0% { opacity:0; transform: translateX(-120%) rotate(-6deg) scale(.9); } 60% { opacity:1; } 100% { opacity:1; transform: translateX(0) rotate(0) scale(1); } }
+          @keyframes panelFlyUp    { 0% { opacity:0; transform: translateY(80%) scale(.92); filter: blur(6px); } 100% { opacity:1; transform: translateY(0) scale(1); filter: blur(0); } }
+          @keyframes panelFlyZoom  { 0% { opacity:0; transform: scale(.6) rotate(-3deg); filter: blur(8px); } 100% { opacity:1; transform: scale(1) rotate(0); filter: blur(0); } }
+        `}</style>
+        <div
+          key={panel}
+          style={{
+            animation:
+              panel === "nedbor" ? "panelFlyRight 0.6s cubic-bezier(.2,.8,.2,1) both" :
+              panel === "vaer"   ? "panelFlyLeft 0.6s cubic-bezier(.2,.8,.2,1) both" :
+              panel === "vind"   ? "panelFlyUp 0.55s cubic-bezier(.2,.8,.2,1) both" :
+                                   "panelFlyZoom 0.6s cubic-bezier(.2,.8,.2,1) both",
+            willChange: "transform, opacity, filter",
+          }}
+        >
+          {panel === "nedbor" && <NedborPanel hours={next48} maxP={maxRain} />}
+          {panel === "vaer" && <VaerPanel hours={next48} />}
+          {panel === "vind" && <VindPanel hours={next48} maxW={maxWind} />}
+          {panel === "lyn" && <LynPanel hours={next48} />}
+        </div>
       </div>
     </article>
   );
