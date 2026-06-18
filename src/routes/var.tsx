@@ -518,7 +518,11 @@ function NedborPanel({ hours, maxP }: { hours: Hour[]; maxP: number }) {
         {hours.map((h, i) => {
           const heightPct = Math.max(4, (h.precip / maxP) * 70);
           return (
-            <div key={h.time} className="flex flex-col items-center w-10">
+            <div
+              key={h.time}
+              className="flex flex-col items-center w-10"
+              style={{ animation: `hourPop 0.45s cubic-bezier(.2,.8,.2,1) ${(0.45 + i * 0.05).toFixed(2)}s both` }}
+            >
               <div className="text-[10px] text-white/80 mb-1">
                 <HourLabel time={h.time} index={i} />
               </div>
