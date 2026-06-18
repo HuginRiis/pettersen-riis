@@ -24,18 +24,18 @@ function configFor(kind: GlassKind): SkyConfig {
   switch (kind) {
     case "clear":
       return {
-        gradient: "linear-gradient(180deg, #4FA9E8 0%, #82C8F2 55%, #BFE3F6 100%)",
+        gradient: "linear-gradient(180deg, #2B7FC4 0%, #5BA5D9 55%, #8FC8EC 100%)",
         cloudOpacity: 0,
         cloudTint: "#ffffff",
-        cloudSpeed: 180,
+        cloudSpeed: 90,
         showSun: true,
       };
     case "fair":
       return {
-        gradient: "linear-gradient(180deg, #5AB0EA 0%, #8FCDF2 60%, #D6ECF8 100%)",
+        gradient: "linear-gradient(180deg, #3488CC 0%, #67AEE0 60%, #9BCFF0 100%)",
         cloudOpacity: 0.55,
         cloudTint: "#ffffff",
-        cloudSpeed: 140,
+        cloudSpeed: 75,
         showSun: true,
       };
     case "partly":
