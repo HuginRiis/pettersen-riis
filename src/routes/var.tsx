@@ -10,7 +10,7 @@ import { useUserLocation, UserLocationBar } from "@/hooks/use-user-location";
 import { useUvSun, uvLevel } from "@/hooks/use-uv-sun";
 import { usePerUserPersistedState } from "@/hooks/use-per-user-persisted-state";
 import {
-  RainFX, SnowFX, CloudFX, WindFX, HeatwaveFX, HumidityFX, PressureFX, GustFX, SunFX, StarFX,
+  RainFX, SnowFX, CloudFX, WindFX, HeatwaveFX, HumidityFX, PressureFX, GustFX, SunFX, StarFX, ThunderFX,
   GlassPaneFX, glassKindFromSymbol, TileSplashFX,
 } from "@/components/weather/WeatherFX";
 import {
@@ -30,6 +30,7 @@ import {
   ChevronDown,
   ChevronUp,
   Navigation,
+  Zap,
 } from "lucide-react";
 
 export const Route = createFileRoute("/var")({
@@ -83,6 +84,7 @@ type Hour = {
   pressure: number;
   humidity: number;
   cloud: number;
+  thunder: number;
   symbol: string | null;
 };
 
@@ -273,14 +275,9 @@ function WeatherPage() {
             </div>
           )}
 
-          {/* NEDBØR (hourly precip %) */}
-          <NedborCard hours={skienHours} />
+          {/* ROTERENDE 48-TIMERS PROGNOSE: nedbør · værforhold · vind · lyn */}
+          <RotatingForecastCard hours={skienHours} />
 
-          {/* VÆRFORHOLD (hourly icons + temp) */}
-          <HourlyForecastCard hours={skienHours} />
-
-          {/* VIND (hourly m/s + chart) */}
-          <WindHourlyCard hours={skienHours} />
 
           {/* 10-DAGERS PROGNOSE */}
           <DailyListCard days={skienDays} title="10-dagers prognose" />
@@ -383,6 +380,246 @@ function GlassCard({
     </article>
   );
 }
+
+// ============================================================
+// ROTERENDE 48-TIMERS PROGNOSE
+// Én flis som veksler mellom: Nedbør · Værforhold · Vind · Lyn
+// ============================================================
+
+type PanelKey = "nedbor" | "vaer" | "vind" | "lyn";
+
+function RotatingForecastCard({ hours }: { hours: Hour[] | null }) {
+  const [panel, setPanel] = useState<PanelKey>("nedbor");
+  const [paused, setPaused] = useState(false);
+  const panels: { key: PanelKey; label: string; icon: React.ReactNode }[] = [
+    { key: "nedbor", label: "Nedbør", icon: <Droplets size={14} /> },
+    { key: "vaer", label: "Værforhold", icon: <Cloud size={14} /> },
+    { key: "vind", label: "Vind", icon: <Wind size={14} /> },
+    { key: "lyn", label: "Lyn & torden", icon: <Zap size={14} /> },
+  ];
+
+  useEffect(() => {
+    if (paused) return;
+    const id = setInterval(() => {
+      setPanel((cur) => {
+        const i = panels.findIndex((p) => p.key === cur);
+        return panels[(i + 1) % panels.length].key;
+      });
+    }, 7000);
+    return () => clearInterval(id);
+  }, [paused]);
+
+  if (!hours)
+    return (
+      <GlassCard eyebrow="48-timersvarsel" icon={<TrendingUp size={14} />}>
+        <Skeleton />
+      </GlassCard>
+    );
+
+  const next48 = hours.slice(0, 48);
+  const maxRain = Math.max(1, ...next48.map((h) => h.precip));
+  const maxWind = Math.max(8, ...next48.map((h) => Math.max(h.wind, h.windGust)));
+  const maxThunder = Math.max(0, ...next48.map((h) => h.thunder));
+
+  const fx =
+    panel === "nedbor" ? <RainFX intensity={Math.min(1, maxRain / 4)} /> :
+    panel === "vaer" ? <CloudFX intensity={0.4} /> :
+    panel === "vind" ? <WindFX intensity={Math.min(1, maxWind / 14)} /> :
+    <ThunderFX intensity={Math.min(1, Math.max(0.3, maxThunder / 60))} />;
+
+  const active = panels.find((p) => p.key === panel)!;
+
+  return (
+    <article
+      className="relative overflow-hidden rounded-2xl bg-white/10 backdrop-blur-xl border border-white/15 shadow-lg shadow-black/10 p-4"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+      onTouchStart={() => setPaused(true)}
+    >
+      {fx}
+      <div className="relative">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-1.5 text-[11px] tracking-[0.15em] font-semibold text-white/80 uppercase">
+            {active.icon}
+            <span>{active.label} · neste 48 t</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            {panels.map((p) => (
+              <button
+                key={p.key}
+                onClick={() => setPanel(p.key)}
+                aria-label={p.label}
+                className={`h-1.5 rounded-full transition-all ${
+                  p.key === panel ? "w-6 bg-white" : "w-1.5 bg-white/40"
+                }`}
+              />
+            ))}
+          </div>
+        </div>
+
+        {panel === "nedbor" && <NedborPanel hours={next48} maxP={maxRain} />}
+        {panel === "vaer" && <VaerPanel hours={next48} />}
+        {panel === "vind" && <VindPanel hours={next48} maxW={maxWind} />}
+        {panel === "lyn" && <LynPanel hours={next48} />}
+      </div>
+    </article>
+  );
+}
+
+function HourLabel({ time, index }: { time: string; index: number }) {
+  if (index === 0) return <>Nå</>;
+  const d = new Date(time);
+  const hh = d.getHours().toString().padStart(2, "0");
+  if (hh === "00") {
+    const wd = d.toLocaleDateString("nb-NO", { weekday: "short" });
+    return <>{wd.slice(0, 2)} 00</>;
+  }
+  return <>{hh}</>;
+}
+
+function NedborPanel({ hours, maxP }: { hours: Hour[]; maxP: number }) {
+  return (
+    <div className="overflow-x-auto -mx-2 px-2">
+      <div className="flex items-end gap-2 min-w-max pb-1">
+        {hours.map((h, i) => {
+          const heightPct = Math.max(4, (h.precip / maxP) * 70);
+          return (
+            <div key={h.time} className="flex flex-col items-center w-10">
+              <div className="text-[10px] text-white/80 mb-1">
+                <HourLabel time={h.time} index={i} />
+              </div>
+              <div className="relative w-6 h-20 rounded-md bg-white/15 overflow-hidden border-t border-dashed border-white/20">
+                <div
+                  className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-sky-300 to-sky-200 rounded-md"
+                  style={{ height: `${heightPct}%` }}
+                />
+              </div>
+              <div className="flex items-center gap-0.5 mt-1 text-[10px] text-sky-100 font-medium tabular-nums">
+                <Droplets size={8} />
+                {Math.round(h.precipProbability)}%
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function VaerPanel({ hours }: { hours: Hour[] }) {
+  return (
+    <div className="overflow-x-auto -mx-2 px-2">
+      <div className="flex items-center gap-3 min-w-max pb-1">
+        {hours.map((h, i) => (
+          <div key={h.time} className="flex flex-col items-center w-10">
+            <div className="text-[10px] text-white/80 mb-1.5">
+              <HourLabel time={h.time} index={i} />
+            </div>
+            <div className="text-xl mb-0.5">{symbolEmoji(h.symbol)}</div>
+            {h.precipProbability >= 20 && (
+              <div className="text-[9px] text-sky-200 tabular-nums">
+                {Math.round(h.precipProbability)}%
+              </div>
+            )}
+            <div className="text-sm font-medium tabular-nums mt-0.5">{Math.round(h.temp)}°</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function VindPanel({ hours, maxW }: { hours: Hour[]; maxW: number }) {
+  const W = 44 * hours.length, H = 60, pad = 4;
+  const xFor = (i: number) => pad + (i / Math.max(1, hours.length - 1)) * (W - pad * 2);
+  const yFor = (v: number) => H - pad - (v / maxW) * (H - pad * 2);
+  const path = hours.map((h, i) => `${i === 0 ? "M" : "L"} ${xFor(i).toFixed(1)} ${yFor(h.wind).toFixed(1)}`).join(" ");
+  const gustPath = hours.map((h, i) => `${i === 0 ? "M" : "L"} ${xFor(i).toFixed(1)} ${yFor(h.windGust).toFixed(1)}`).join(" ");
+  const fillPath = `${path} L ${xFor(hours.length - 1).toFixed(1)} ${H} L ${pad} ${H} Z`;
+
+  return (
+    <div className="overflow-x-auto -mx-2 px-2">
+      <div className="min-w-max">
+        <div className="flex items-end gap-1 mb-1">
+          {hours.map((h, i) => (
+            <div key={h.time} className="w-10 text-center">
+              <div className="text-[10px] text-white/80">
+                <HourLabel time={h.time} index={i} />
+              </div>
+              <div className="text-sm font-medium tabular-nums mt-0.5">{Math.round(h.wind)}</div>
+              <div className="text-[9px] text-white/60" style={{ transform: `rotate(${h.windDir}deg)`, display: "inline-block" }}>↓</div>
+            </div>
+          ))}
+        </div>
+        <svg viewBox={`0 0 ${W} ${H}`} className="h-14" preserveAspectRatio="none" style={{ width: W }}>
+          <defs>
+            <linearGradient id="windGrad48" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#34d399" stopOpacity="0.7" />
+              <stop offset="100%" stopColor="#34d399" stopOpacity="0.15" />
+            </linearGradient>
+          </defs>
+          <path d={fillPath} fill="url(#windGrad48)" />
+          <path d={gustPath} fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="1" strokeDasharray="3 3" />
+          <path d={path} fill="none" stroke="#34d399" strokeWidth="2" />
+        </svg>
+        <div className="text-[10px] text-white/60 mt-1">— vind &nbsp; - - kast (m/s)</div>
+      </div>
+    </div>
+  );
+}
+
+function LynPanel({ hours }: { hours: Hour[] }) {
+  const maxT = Math.max(5, ...hours.map((h) => h.thunder));
+  const peakIdx = hours.reduce(
+    (best, h, i, arr) => (h.thunder > arr[best].thunder ? i : best),
+    0,
+  );
+  const peak = hours[peakIdx];
+  const peakTime = new Date(peak.time);
+  const peakLabel =
+    peak.thunder >= 5
+      ? `Høyeste sjanse ${Math.round(peak.thunder)} % rundt ${peakTime.toLocaleString("nb-NO", { weekday: "short", hour: "2-digit", minute: "2-digit" })}`
+      : "Ingen torden ventet de neste 48 timene.";
+
+  return (
+    <div className="space-y-2">
+      <div className="text-[12px] text-white/90">{peakLabel}</div>
+      <div className="overflow-x-auto -mx-2 px-2">
+        <div className="flex items-end gap-2 min-w-max pb-1">
+          {hours.map((h, i) => {
+            const pct = Math.max(3, (h.thunder / maxT) * 70);
+            const hot = h.thunder >= 30;
+            return (
+              <div key={h.time} className="flex flex-col items-center w-10">
+                <div className="text-[10px] text-white/80 mb-1">
+                  <HourLabel time={h.time} index={i} />
+                </div>
+                <div className="relative w-6 h-20 rounded-md bg-white/15 overflow-hidden border-t border-dashed border-white/20">
+                  <div
+                    className={`absolute bottom-0 left-0 right-0 rounded-md ${
+                      hot
+                        ? "bg-gradient-to-t from-amber-500 via-yellow-300 to-yellow-100"
+                        : "bg-gradient-to-t from-indigo-400/70 to-indigo-200/70"
+                    }`}
+                    style={{ height: `${pct}%` }}
+                  />
+                  {hot && (
+                    <Zap size={10} className="absolute top-1 left-1/2 -translate-x-1/2 text-yellow-200" />
+                  )}
+                </div>
+                <div className="text-[10px] text-yellow-100 font-medium tabular-nums mt-1">
+                  {Math.round(h.thunder)}%
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
 
 // ============================================================
 // NEDBØR — hourly precip bars
@@ -1313,6 +1550,10 @@ function parseForecast(data: any): { days: ForecastDay[]; hours: Hour[] } {
       pressure: inst.air_pressure_at_sea_level ?? 0,
       humidity: inst.relative_humidity ?? 0,
       cloud: inst.cloud_area_fraction ?? 0,
+      thunder:
+        next1?.details?.probability_of_thunder ??
+        next6?.details?.probability_of_thunder ??
+        (symbol && symbol.includes("thunder") ? 60 : 0),
       symbol,
     });
     const existing = dayMap.get(date);
