@@ -730,10 +730,10 @@ main .container {
   100% { transform: translateX(130%); }
 }
 @keyframes wx-wind-streak {
-  0%   { transform: translateX(-40%) scaleX(0.6); opacity: 0; }
-  20%  { opacity: 0.7; }
-  80%  { opacity: 0.7; }
-  100% { transform: translateX(140%) scaleX(1.1); opacity: 0; }
+  0%   { transform: translateX(-60%) scaleX(0.4); opacity: 0; }
+  15%  { opacity: 0.9; }
+  85%  { opacity: 0.9; }
+  100% { transform: translateX(160%) scaleX(1.0); opacity: 0; }
 }
 @keyframes wx-heatwave {
   0%, 100% { transform: translateY(0) scaleX(1); opacity: 0.5; }
