@@ -478,7 +478,8 @@ export function ThunderFX({ intensity = 0.5, className = "" }: Common) {
       left: 8 + (i / Math.max(1, count - 1)) * 80 + (Math.random() * 10 - 5),
       top: 4 + Math.random() * 18,
       scale: 0.8 + Math.random() * 0.9,
-      delay: Math.random() * 3,
+      // Skjul boltene til animasjonen faktisk slår inn — start mellom 0.8s og 3.5s
+      delay: 0.8 + Math.random() * 2.7,
       dur: 2.4 - intensity * 1.2 + Math.random() * 1.2,
       hue: 50 + Math.random() * 12,
     }));
