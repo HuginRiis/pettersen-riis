@@ -443,17 +443,25 @@ function RotatingForecastCard({ hours }: { hours: Hour[] | null }) {
             {active.icon}
             <span>{active.label} · neste 48 t</span>
           </div>
-          <div className="flex items-center gap-1.5">
-            {panels.map((p) => (
-              <button
-                key={p.key}
-                onClick={() => setPanel(p.key)}
-                aria-label={p.label}
-                className={`h-1.5 rounded-full transition-all ${
-                  p.key === panel ? "w-6 bg-white" : "w-1.5 bg-white/40"
-                }`}
-              />
-            ))}
+          <div className="flex items-center gap-1">
+            {panels.map((p) => {
+              const isActive = p.key === panel;
+              return (
+                <button
+                  key={p.key}
+                  onClick={() => setPanel(p.key)}
+                  aria-label={p.label}
+                  title={p.label}
+                  className={`inline-flex items-center justify-center h-7 w-7 rounded-full transition-all ${
+                    isActive
+                      ? "bg-white text-slate-900 shadow"
+                      : "bg-white/15 text-white/70 hover:bg-white/25 hover:text-white"
+                  }`}
+                >
+                  {p.icon}
+                </button>
+              );
+            })}
           </div>
         </div>
 
