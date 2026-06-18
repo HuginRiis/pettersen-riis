@@ -24,7 +24,7 @@ function configFor(kind: GlassKind): SkyConfig {
   switch (kind) {
     case "clear":
       return {
-        gradient: "linear-gradient(180deg, #2B7FC4 0%, #5BA5D9 55%, #8FC8EC 100%)",
+        gradient: "linear-gradient(180deg, #1A5A94 0%, #3A8BC4 55%, #6BB5E0 100%)",
         cloudOpacity: 0,
         cloudTint: "#ffffff",
         cloudSpeed: 90,
@@ -32,7 +32,7 @@ function configFor(kind: GlassKind): SkyConfig {
       };
     case "fair":
       return {
-        gradient: "linear-gradient(180deg, #3488CC 0%, #67AEE0 60%, #9BCFF0 100%)",
+        gradient: "linear-gradient(180deg, #1E6BA8 0%, #4A9BD4 60%, #7FC4E8 100%)",
         cloudOpacity: 0.55,
         cloudTint: "#ffffff",
         cloudSpeed: 75,
@@ -40,7 +40,7 @@ function configFor(kind: GlassKind): SkyConfig {
       };
     case "partly":
       return {
-        gradient: "linear-gradient(180deg, #4A9BD6 0%, #7BBDE8 55%, #C0DDF0 100%)",
+        gradient: "linear-gradient(180deg, #2A6FA0 0%, #5A9FD0 55%, #90C8E8 100%)",
         cloudOpacity: 0.85,
         cloudTint: "#ffffff",
         cloudSpeed: 60,
@@ -116,7 +116,7 @@ function configFor(kind: GlassKind): SkyConfig {
       };
     default:
       return {
-        gradient: "linear-gradient(180deg, #4FA9E8 0%, #82C8F2 55%, #BFE3F6 100%)",
+        gradient: "linear-gradient(180deg, #2570A8 0%, #569FD4 55%, #8AC8EC 100%)",
         cloudOpacity: 0.4,
         cloudTint: "#ffffff",
         cloudSpeed: 75,
@@ -193,6 +193,8 @@ export function WeatherVideoBackground({ kind }: { kind: GlassKind }) {
       className="pointer-events-none fixed inset-0 overflow-hidden -z-10"
       style={{ background: cfg.gradient }}
     >
+      {/* Constant readability overlay — deep blue tint */}
+      <div className="absolute inset-0" style={{ background: "rgba(10, 30, 60, 0.28)" }} />
       {/* Stars (night) */}
       {cfg.showStars && <Stars />}
 

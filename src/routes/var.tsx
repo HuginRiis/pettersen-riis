@@ -230,7 +230,7 @@ function WeatherPage() {
   }, [currentHour]);
 
   return (
-    <PageShell>
+    <PageShell transparentHeader>
       <div className="min-h-screen relative">
         <WeatherVideoBackground kind={glassKind} />
         <div className="max-w-3xl mx-auto px-4 pt-8 pb-16 space-y-4 text-white relative z-10">
