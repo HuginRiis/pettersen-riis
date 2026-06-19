@@ -393,7 +393,6 @@ type PanelKey = "nedbor" | "vaer" | "vind" | "lyn";
 function RotatingForecastCard({ hours }: { hours: Hour[] | null }) {
   const [panel, setPanel] = useState<PanelKey>("nedbor");
   const [paused, setPaused] = useState(false);
-  const [windIdx, setWindIdx] = useState(0);
   const panels: { key: PanelKey; label: string; icon: React.ReactNode }[] = [
     { key: "nedbor", label: "Nedbør", icon: <Droplets size={14} /> },
     { key: "vaer", label: "Værforhold", icon: <Cloud size={14} /> },
@@ -424,11 +423,10 @@ function RotatingForecastCard({ hours }: { hours: Hour[] | null }) {
   const maxWind = Math.max(8, ...next48.map((h) => Math.max(h.wind, h.windGust)));
   const maxThunder = Math.max(0, ...next48.map((h) => h.thunder));
 
-  const selectedWind = next48[windIdx]?.wind ?? 0;
   const fx =
     panel === "nedbor" ? <RainFX intensity={Math.min(1, maxRain / 4)} /> :
     panel === "vaer" ? <CloudFX intensity={0.4} /> :
-    panel === "vind" ? <WindFX intensity={Math.min(1, Math.max(0.05, selectedWind / 14))} /> :
+    panel === "vind" ? <WindFX intensity={Math.min(1, maxWind / 14)} /> :
     <ThunderFX intensity={Math.min(1, Math.max(0.3, maxThunder / 60))} />;
 
   const active = panels.find((p) => p.key === panel)!;
@@ -493,7 +491,7 @@ function RotatingForecastCard({ hours }: { hours: Hour[] | null }) {
         >
           {panel === "nedbor" && <NedborPanel hours={next48} maxP={maxRain} />}
           {panel === "vaer" && <VaerPanel hours={next48} />}
-          {panel === "vind" && <VindPanel hours={next48} maxW={maxWind} selectedIdx={windIdx} onSelect={(i) => { setWindIdx(i); setPaused(true); }} />}
+          {panel === "vind" && <VindPanel hours={next48} maxW={maxWind} />}
           {panel === "lyn" && <LynPanel hours={next48} />}
         </div>
       </div>
@@ -601,13 +599,14 @@ function VaerPanel({ hours }: { hours: Hour[] }) {
   );
 }
 
-function VindPanel({ hours, maxW, selectedIdx, onSelect }: { hours: Hour[]; maxW: number; selectedIdx: number; onSelect: (i: number) => void }) {
+function VindPanel({ hours, maxW }: { hours: Hour[]; maxW: number }) {
   const maxG = Math.max(maxW, ...hours.map((h) => h.windGust));
-  const sel = hours[selectedIdx] ?? hours[0];
   const peakIdx = hours.reduce((b, h, i, a) => (h.windGust > a[b].windGust ? i : b), 0);
   const peak = hours[peakIdx];
-  const selWhen = selectedIdx === 0 ? "nå" : fmtWhen(sel.time);
-  const summary = `${selWhen}: ${sel.wind.toFixed(1)} m/s · kast ${sel.windGust.toFixed(1)} m/s · sterkest ${Math.round(peak.windGust)} m/s ${fmtWhen(peak.time)}`;
+  const summary =
+    peak.windGust >= 10
+      ? `Sterkest kast ${Math.round(peak.windGust)} m/s rundt ${fmtWhen(peak.time)} · middelvind opp til ${Math.round(Math.max(...hours.map((h) => h.wind)))} m/s`
+      : `Rolig vind · maks ${Math.round(peak.windGust)} m/s neste 48 t`;
   return (
     <div className="space-y-2">
       <div className="text-[12px] text-white/90">{summary}</div>
@@ -617,16 +616,13 @@ function VindPanel({ hours, maxW, selectedIdx, onSelect }: { hours: Hour[]; maxW
           const heightPct = Math.max(4, (h.wind / maxG) * 70);
           const gustPct = Math.max(heightPct, (h.windGust / maxG) * 70);
           const strong = h.wind >= 10;
-          const isSel = i === selectedIdx;
           return (
-            <button
-              type="button"
+            <div
               key={h.time}
-              onClick={() => onSelect(i)}
-              className={`flex flex-col items-center w-10 rounded-md transition-all ${isSel ? "bg-white/15 ring-1 ring-white/40" : "hover:bg-white/5"}`}
+              className="flex flex-col items-center w-10"
               style={{ animation: `hourSlide 0.45s cubic-bezier(.2,.8,.2,1) ${(0.45 + i * 0.05).toFixed(2)}s both` }}
             >
-              <div className={`text-[10px] mb-1 ${isSel ? "text-white font-semibold" : "text-white/80"}`}>
+              <div className="text-[10px] text-white/80 mb-1">
                 <HourLabel time={h.time} index={i} />
               </div>
               <div className="relative w-6 h-20 rounded-md bg-white/15 overflow-hidden border-t border-dashed border-white/20">
@@ -649,7 +645,7 @@ function VindPanel({ hours, maxW, selectedIdx, onSelect }: { hours: Hour[]; maxW
                   }}
                 />
               </div>
-              <div className={`text-[10px] font-medium tabular-nums mt-1 ${isSel ? "text-white" : "text-emerald-100"}`}>
+              <div className="text-[10px] text-emerald-100 font-medium tabular-nums mt-1">
                 {Math.round(h.wind)}
               </div>
               <div
@@ -658,12 +654,12 @@ function VindPanel({ hours, maxW, selectedIdx, onSelect }: { hours: Hour[]; maxW
               >
                 ↓
               </div>
-            </button>
+            </div>
           );
         })}
         </div>
       </div>
-      <div className="text-[10px] text-white/60 mt-1 px-1">Trykk på en time for å se vinden animert · ■ vind ▒ kast (m/s)</div>
+      <div className="text-[10px] text-white/60 mt-1 px-1">■ vind &nbsp; ▒ kast (m/s)</div>
     </div>
   );
 }
