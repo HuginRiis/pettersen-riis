@@ -107,6 +107,7 @@ function WeatherPage() {
   const [alerts, setAlerts] = useState<AlertsResult | null>(null);
   const [now, setNow] = useState<Date>(() => new Date());
   const [rangeHours, setRangeHours] = useState<24 | 72 | 168>(24);
+  const [soundEnabled, setSoundEnabled] = usePerUserPersistedState<boolean>("var.tile.sound.enabled", false);
 
   const LOCATIONS = useMemo(
     () => [
