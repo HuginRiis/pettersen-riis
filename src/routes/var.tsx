@@ -31,7 +31,10 @@ import {
   ChevronUp,
   Navigation,
   Zap,
+  Volume2,
+  VolumeX,
 } from "lucide-react";
+import { useWeatherSound, type WeatherSoundKind } from "@/components/weather/useWeatherSound";
 
 export const Route = createFileRoute("/var")({
   head: () => ({
@@ -104,6 +107,7 @@ function WeatherPage() {
   const [alerts, setAlerts] = useState<AlertsResult | null>(null);
   const [now, setNow] = useState<Date>(() => new Date());
   const [rangeHours, setRangeHours] = useState<24 | 72 | 168>(24);
+  const [soundEnabled, setSoundEnabled] = usePerUserPersistedState<boolean>("var.tile.sound.enabled", false);
 
   const LOCATIONS = useMemo(
     () => [
@@ -249,6 +253,25 @@ function WeatherPage() {
         <GlassPaneFX kind={glassKind} intensity={glassIntensity} />
         <div className="max-w-3xl mx-auto px-4 pt-8 pb-16 space-y-4 text-white relative z-10">
 
+          {/* LYD-bryter for roterende vær-flis (øverst til venstre) */}
+          <div className="flex">
+            <button
+              type="button"
+              onClick={() => setSoundEnabled((v) => !v)}
+              aria-pressed={soundEnabled}
+              aria-label={soundEnabled ? "Slå av værlyd" : "Slå på værlyd"}
+              title={soundEnabled ? "Værlyd: på" : "Værlyd: av"}
+              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-medium backdrop-blur-xl border transition-all ${
+                soundEnabled
+                  ? "bg-white text-slate-900 border-white shadow"
+                  : "bg-white/10 text-white/80 border-white/15 hover:bg-white/20"
+              }`}
+            >
+              {soundEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />}
+              <span>Lyd</span>
+            </button>
+          </div>
+
           {/* HERO */}
           <header className="text-center pt-4 pb-2">
             <h1 className="text-lg font-medium tracking-wide text-white/90 mt-1 drop-shadow-md">{userLoc.active.label}</h1>
@@ -278,7 +301,7 @@ function WeatherPage() {
           )}
 
           {/* ROTERENDE 48-TIMERS PROGNOSE: nedbør · værforhold · vind · lyn */}
-          <RotatingForecastCard hours={skienHours} />
+          <RotatingForecastCard hours={skienHours} soundEnabled={soundEnabled} />
 
 
           {/* 10-DAGERS PROGNOSE */}
@@ -390,9 +413,10 @@ function GlassCard({
 
 type PanelKey = "nedbor" | "vaer" | "vind" | "lyn";
 
-function RotatingForecastCard({ hours }: { hours: Hour[] | null }) {
+function RotatingForecastCard({ hours, soundEnabled }: { hours: Hour[] | null; soundEnabled: boolean }) {
   const [panel, setPanel] = useState<PanelKey>("nedbor");
   const [paused, setPaused] = useState(false);
+  useWeatherSound(soundEnabled ? (panel as WeatherSoundKind) : null, soundEnabled);
   const panels: { key: PanelKey; label: string; icon: React.ReactNode }[] = [
     { key: "nedbor", label: "Nedbør", icon: <Droplets size={14} /> },
     { key: "vaer", label: "Værforhold", icon: <Cloud size={14} /> },
