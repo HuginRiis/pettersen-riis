@@ -424,10 +424,11 @@ function RotatingForecastCard({ hours }: { hours: Hour[] | null }) {
   const maxWind = Math.max(8, ...next48.map((h) => Math.max(h.wind, h.windGust)));
   const maxThunder = Math.max(0, ...next48.map((h) => h.thunder));
 
+  const selectedWind = next48[windIdx]?.wind ?? 0;
   const fx =
     panel === "nedbor" ? <RainFX intensity={Math.min(1, maxRain / 4)} /> :
     panel === "vaer" ? <CloudFX intensity={0.4} /> :
-    panel === "vind" ? <WindFX intensity={Math.min(1, maxWind / 14)} /> :
+    panel === "vind" ? <WindFX intensity={Math.min(1, Math.max(0.05, selectedWind / 14))} /> :
     <ThunderFX intensity={Math.min(1, Math.max(0.3, maxThunder / 60))} />;
 
   const active = panels.find((p) => p.key === panel)!;
