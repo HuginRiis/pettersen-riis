@@ -253,15 +253,7 @@ function WeatherPage() {
           <header className="text-center pt-4 pb-2">
             <h1 className="text-lg font-medium tracking-wide text-white/90 mt-1 drop-shadow-md">{userLoc.active.label}</h1>
             <div className="text-[88px] leading-none font-thin mt-2 drop-shadow-lg tabular-nums">
-              {(() => {
-                // Bruk live Netatmo ute-sensor når aktiv lokasjon er hjemme (Tollnes/Skien) — nær 59.18, 9.57
-                const dLat = Math.abs(userLoc.active.lat - 59.1789);
-                const dLon = Math.abs(userLoc.active.lon - 9.5732);
-                const nearHome = dLat < 0.15 && dLon < 0.25;
-                const liveTemp = nearHome && borgenTemp != null ? borgenTemp : null;
-                if (liveTemp != null) return `${Math.round(liveTemp)}°`;
-                return currentHour ? `${Math.round(currentHour.temp)}°` : "—";
-              })()}
+              {currentHour ? `${Math.round(currentHour.temp)}°` : "—"}
             </div>
             <div className="text-xl font-medium mt-2">{condition}</div>
             {todayDay && (
