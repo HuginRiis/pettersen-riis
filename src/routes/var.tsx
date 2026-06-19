@@ -393,6 +393,7 @@ type PanelKey = "nedbor" | "vaer" | "vind" | "lyn";
 function RotatingForecastCard({ hours }: { hours: Hour[] | null }) {
   const [panel, setPanel] = useState<PanelKey>("nedbor");
   const [paused, setPaused] = useState(false);
+  const [windIdx, setWindIdx] = useState(0);
   const panels: { key: PanelKey; label: string; icon: React.ReactNode }[] = [
     { key: "nedbor", label: "Nedbør", icon: <Droplets size={14} /> },
     { key: "vaer", label: "Værforhold", icon: <Cloud size={14} /> },
