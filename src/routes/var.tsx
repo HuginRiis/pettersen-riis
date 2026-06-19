@@ -301,7 +301,7 @@ function WeatherPage() {
           )}
 
           {/* ROTERENDE 48-TIMERS PROGNOSE: nedbør · værforhold · vind · lyn */}
-          <RotatingForecastCard hours={skienHours} />
+          <RotatingForecastCard hours={skienHours} soundEnabled={soundEnabled} />
 
 
           {/* 10-DAGERS PROGNOSE */}
