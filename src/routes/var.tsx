@@ -31,7 +31,10 @@ import {
   ChevronUp,
   Navigation,
   Zap,
+  Volume2,
+  VolumeX,
 } from "lucide-react";
+import { useWeatherSound, type WeatherSoundKind } from "@/components/weather/useWeatherSound";
 
 export const Route = createFileRoute("/var")({
   head: () => ({
