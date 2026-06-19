@@ -31,12 +31,21 @@ export type MailPref = {
   last_notified_for_date: string | null;
 };
 
+// In-memory cache for Posten delivery-days. Postlevering endrer seg svært sjelden,
+// så vi holder svaret i 30 minutter for å unngå å hamre Posten-API'et.
+const DELIVERY_CACHE_MS = 30 * 60 * 1000;
+const deliveryCache = new Map<string, { at: number; days: string[] }>();
+
 export async function fetchDeliveryDays(postalCode: string): Promise<string[]> {
+  const cached = deliveryCache.get(postalCode);
+  if (cached && Date.now() - cached.at < DELIVERY_CACHE_MS) return cached.days;
   const url = `https://www.posten.no/levering-av-post_/_/service/no.posten.website/delivery-days?postalCode=${encodeURIComponent(postalCode)}`;
   const res = await loggedFetch("posten", "delivery-days", url, { headers: { "User-Agent": "borgen-app/1.0", Accept: "application/json" } });
   if (!res.ok) throw new Error(`Posten API ${res.status}`);
   const json = (await res.json()) as { delivery_dates?: string[] };
-  return Array.isArray(json.delivery_dates) ? json.delivery_dates : [];
+  const days = Array.isArray(json.delivery_dates) ? json.delivery_dates : [];
+  deliveryCache.set(postalCode, { at: Date.now(), days });
+  return days;
 }
 
 function todayInOslo(): { y: number; m: number; d: number } {
