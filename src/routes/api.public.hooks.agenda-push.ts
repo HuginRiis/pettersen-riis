@@ -98,10 +98,18 @@ export const Route = createFileRoute("/api/public/hooks/agenda-push")({
           } catch (err) {
             console.error("[met-alert-push] failed", err);
           }
-          let mailDelivery = { checked: 0, sent: 0, errors: 0, skipped: 0 };
+          let mailDelivery: { checked: number; sent: number; errors: number; skipped: number | string } = { checked: 0, sent: 0, errors: 0, skipped: 0 };
           try {
-            const mdmod = await import("@/lib/mail-delivery-push.server");
-            mailDelivery = await mdmod.processMailDeliveryNotifications();
+            // Posten API: kjør kun 2 ganger i timen (minutt 00 og 30, Oslo-tid).
+            // Postleveringsdager endrer seg svært sjelden — ingen grunn til å spørre hvert minutt.
+            const osloPartsMd = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Oslo", minute: "2-digit", hour12: false }).formatToParts(new Date());
+            const osloMinMd = parseInt(osloPartsMd.find(p => p.type === "minute")?.value ?? "0", 10);
+            if (osloMinMd === 0 || osloMinMd === 30) {
+              const mdmod = await import("@/lib/mail-delivery-push.server");
+              mailDelivery = await mdmod.processMailDeliveryNotifications();
+            } else {
+              mailDelivery.skipped = "throttled-30m";
+            }
           } catch (err) {
             console.error("[mail-delivery-push] failed", err);
           }
