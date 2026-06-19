@@ -493,7 +493,7 @@ function RotatingForecastCard({ hours }: { hours: Hour[] | null }) {
         >
           {panel === "nedbor" && <NedborPanel hours={next48} maxP={maxRain} />}
           {panel === "vaer" && <VaerPanel hours={next48} />}
-          {panel === "vind" && <VindPanel hours={next48} maxW={maxWind} />}
+          {panel === "vind" && <VindPanel hours={next48} maxW={maxWind} selectedIdx={windIdx} onSelect={(i) => { setWindIdx(i); setPaused(true); }} />}
           {panel === "lyn" && <LynPanel hours={next48} />}
         </div>
       </div>
