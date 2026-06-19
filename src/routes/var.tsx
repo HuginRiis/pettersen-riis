@@ -413,7 +413,7 @@ function GlassCard({
 
 type PanelKey = "nedbor" | "vaer" | "vind" | "lyn";
 
-function RotatingForecastCard({ hours }: { hours: Hour[] | null }) {
+function RotatingForecastCard({ hours, soundEnabled }: { hours: Hour[] | null; soundEnabled: boolean }) {
   const [panel, setPanel] = useState<PanelKey>("nedbor");
   const [paused, setPaused] = useState(false);
   const panels: { key: PanelKey; label: string; icon: React.ReactNode }[] = [
