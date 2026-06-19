@@ -601,14 +601,13 @@ function VaerPanel({ hours }: { hours: Hour[] }) {
   );
 }
 
-function VindPanel({ hours, maxW }: { hours: Hour[]; maxW: number }) {
+function VindPanel({ hours, maxW, selectedIdx, onSelect }: { hours: Hour[]; maxW: number; selectedIdx: number; onSelect: (i: number) => void }) {
   const maxG = Math.max(maxW, ...hours.map((h) => h.windGust));
+  const sel = hours[selectedIdx] ?? hours[0];
   const peakIdx = hours.reduce((b, h, i, a) => (h.windGust > a[b].windGust ? i : b), 0);
   const peak = hours[peakIdx];
-  const summary =
-    peak.windGust >= 10
-      ? `Sterkest kast ${Math.round(peak.windGust)} m/s rundt ${fmtWhen(peak.time)} · middelvind opp til ${Math.round(Math.max(...hours.map((h) => h.wind)))} m/s`
-      : `Rolig vind · maks ${Math.round(peak.windGust)} m/s neste 48 t`;
+  const selWhen = selectedIdx === 0 ? "nå" : fmtWhen(sel.time);
+  const summary = `${selWhen}: ${sel.wind.toFixed(1)} m/s · kast ${sel.windGust.toFixed(1)} m/s · sterkest ${Math.round(peak.windGust)} m/s ${fmtWhen(peak.time)}`;
   return (
     <div className="space-y-2">
       <div className="text-[12px] text-white/90">{summary}</div>
@@ -618,13 +617,16 @@ function VindPanel({ hours, maxW }: { hours: Hour[]; maxW: number }) {
           const heightPct = Math.max(4, (h.wind / maxG) * 70);
           const gustPct = Math.max(heightPct, (h.windGust / maxG) * 70);
           const strong = h.wind >= 10;
+          const isSel = i === selectedIdx;
           return (
-            <div
+            <button
+              type="button"
               key={h.time}
-              className="flex flex-col items-center w-10"
+              onClick={() => onSelect(i)}
+              className={`flex flex-col items-center w-10 rounded-md transition-all ${isSel ? "bg-white/15 ring-1 ring-white/40" : "hover:bg-white/5"}`}
               style={{ animation: `hourSlide 0.45s cubic-bezier(.2,.8,.2,1) ${(0.45 + i * 0.05).toFixed(2)}s both` }}
             >
-              <div className="text-[10px] text-white/80 mb-1">
+              <div className={`text-[10px] mb-1 ${isSel ? "text-white font-semibold" : "text-white/80"}`}>
                 <HourLabel time={h.time} index={i} />
               </div>
               <div className="relative w-6 h-20 rounded-md bg-white/15 overflow-hidden border-t border-dashed border-white/20">
@@ -647,7 +649,7 @@ function VindPanel({ hours, maxW }: { hours: Hour[]; maxW: number }) {
                   }}
                 />
               </div>
-              <div className="text-[10px] text-emerald-100 font-medium tabular-nums mt-1">
+              <div className={`text-[10px] font-medium tabular-nums mt-1 ${isSel ? "text-white" : "text-emerald-100"}`}>
                 {Math.round(h.wind)}
               </div>
               <div
@@ -656,12 +658,12 @@ function VindPanel({ hours, maxW }: { hours: Hour[]; maxW: number }) {
               >
                 ↓
               </div>
-            </div>
+            </button>
           );
         })}
         </div>
       </div>
-      <div className="text-[10px] text-white/60 mt-1 px-1">■ vind &nbsp; ▒ kast (m/s)</div>
+      <div className="text-[10px] text-white/60 mt-1 px-1">Trykk på en time for å se vinden animert · ■ vind ▒ kast (m/s)</div>
     </div>
   );
 }
