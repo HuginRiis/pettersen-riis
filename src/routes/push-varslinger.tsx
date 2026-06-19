@@ -223,6 +223,14 @@ function PushSettingsPage() {
 
         <SettingsBox id="sec-vaerprefs" title="🔔 Vær av/på" inGrid><WeatherPrefsList /></SettingsBox>
 
+        <section id="sec-vaer-regler" className="md:col-span-2 scroll-mt-24">
+          <CollapsibleSection id="sec-vaer-regler" title="🪶 Værvaktens Ravner — vær-regler (regn, vind, snø, frost, torden, hete, tåke)">
+            <WeatherNotificationSettings />
+          </CollapsibleSection>
+        </section>
+
+
+
 
 
 
