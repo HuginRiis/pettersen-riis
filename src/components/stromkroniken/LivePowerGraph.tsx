@@ -211,21 +211,24 @@ export function LivePowerGraph() {
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={data} margin={{ top: 10, right: 12, left: -8, bottom: 0 }}>
               <defs>
-                <linearGradient id="grad-borgen" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={COLOR_BORGEN} stopOpacity={0.5} />
-                  <stop offset="60%" stopColor={COLOR_BORGEN} stopOpacity={0.15} />
-                  <stop offset="100%" stopColor={COLOR_BORGEN} stopOpacity={0.02} />
-                </linearGradient>
-                <linearGradient id="grad-hytta" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={COLOR_HYTTA} stopOpacity={0.45} />
-                  <stop offset="60%" stopColor={COLOR_HYTTA} stopOpacity={0.12} />
-                  <stop offset="100%" stopColor={COLOR_HYTTA} stopOpacity={0.02} />
-                </linearGradient>
-                <linearGradient id="grad-samlet" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={COLOR_TOTAL} stopOpacity={0.35} />
-                  <stop offset="60%" stopColor={COLOR_TOTAL} stopOpacity={0.08} />
+                <radialGradient id="grad-borgen" cx="50%" cy="0%" r="120%" fx="50%" fy="0%">
+                  <stop offset="0%" stopColor={COLOR_BORGEN} stopOpacity={0.55} />
+                  <stop offset="35%" stopColor={COLOR_BORGEN} stopOpacity={0.22} />
+                  <stop offset="70%" stopColor={COLOR_BORGEN} stopOpacity={0.06} />
+                  <stop offset="100%" stopColor={COLOR_BORGEN} stopOpacity={0.01} />
+                </radialGradient>
+                <radialGradient id="grad-hytta" cx="50%" cy="0%" r="120%" fx="50%" fy="0%">
+                  <stop offset="0%" stopColor={COLOR_HYTTA} stopOpacity={0.5} />
+                  <stop offset="35%" stopColor={COLOR_HYTTA} stopOpacity={0.18} />
+                  <stop offset="70%" stopColor={COLOR_HYTTA} stopOpacity={0.05} />
+                  <stop offset="100%" stopColor={COLOR_HYTTA} stopOpacity={0.01} />
+                </radialGradient>
+                <radialGradient id="grad-samlet" cx="50%" cy="0%" r="120%" fx="50%" fy="0%">
+                  <stop offset="0%" stopColor={COLOR_TOTAL} stopOpacity={0.4} />
+                  <stop offset="35%" stopColor={COLOR_TOTAL} stopOpacity={0.12} />
+                  <stop offset="70%" stopColor={COLOR_TOTAL} stopOpacity={0.04} />
                   <stop offset="100%" stopColor={COLOR_TOTAL} stopOpacity={0.01} />
-                </linearGradient>
+                </radialGradient>
               </defs>
               <CartesianGrid stroke={STROKE_GRID} strokeDasharray="3 5" vertical={false} />
               <XAxis
