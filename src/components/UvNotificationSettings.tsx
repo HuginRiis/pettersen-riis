@@ -278,6 +278,26 @@ export function UvNotificationSettings() {
 
               <div className="rounded-md border border-border/50 bg-muted/20 p-2 space-y-2">
                 <div className="text-[11px] text-muted-foreground">
+                  Varsle når UV stiger til nivå:
+                </div>
+                {([3, 6, 8] as const).map((lvl) => {
+                  const key = `notify_rise_${lvl}` as const;
+                  return (
+                    <div key={lvl} className="flex items-center justify-between gap-2">
+                      <span className="text-xs">UV {lvl} ({lvl === 3 ? "solkrem" : lvl === 6 ? "sterk" : "ekstrem"})</span>
+                      <Switch
+                        checked={Boolean(p[key])}
+                        disabled={!p.enabled || saving === p.id}
+                        onCheckedChange={(v) => update(p.id, { [key]: v } as Partial<UvPref>)}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="rounded-md border border-border/50 bg-muted/20 p-2 space-y-2">
+
+                <div className="text-[11px] text-muted-foreground">
                   Varsle også når UV faller under nivå (etter at nivået faktisk er nådd i dag):
                 </div>
                 {([8, 6, 3] as const).map((lvl) => {
