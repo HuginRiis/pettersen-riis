@@ -10,7 +10,7 @@ import {
   CartesianGrid,
   Legend,
 } from "recharts";
-import { Crown, Flame } from "lucide-react";
+import { Crown, Flame, Eye, EyeOff } from "lucide-react";
 import { getPulseHistory, type PulseHistoryPoint } from "@/lib/pulse-readings";
 import { useTibberLive } from "@/hooks/useTibberLive";
 
@@ -22,11 +22,12 @@ const RANGES: { key: RangeKey; label: string; hours: number; tickFmt: Intl.DateT
   { key: "5min", label: "5 min", hours: 5 / 60, tickFmt: { hour: "2-digit", minute: "2-digit" } },
 ];
 
-const COLOR_BORGEN = "#c9a84c"; // gold — Lannister
-const COLOR_HYTTA = "#5cbdb9"; // ice-teal — North
-const STROKE_GRID = "#3a2f1e";
+const COLOR_BORGEN = "#a68b3a"; // dempet gull mot svart
+const COLOR_HYTTA = "#4a9e9a"; // dempet ice-teal mot svart
+const COLOR_TOTAL = "#8b6d3e"; // bronse/sammensatt
+const STROKE_GRID = "#2a2218";
 
-type Row = { t: number; borgen: number | null; hytta: number | null };
+type Row = { t: number; borgen: number | null; hytta: number | null; samlet: number | null };
 
 function fmtTime(ts: number, opts: Intl.DateTimeFormatOptions) {
   return new Date(ts).toLocaleTimeString("nb-NO", { timeZone: "Europe/Oslo", ...opts });
@@ -37,16 +38,26 @@ function mergeSeries(borgen: PulseHistoryPoint[], hytta: PulseHistoryPoint[]): R
   for (const p of borgen) {
     if (p.watt == null) continue;
     const t = new Date(p.t).getTime();
-    const cur = map.get(t) ?? { t, borgen: null, hytta: null };
+    const cur = map.get(t) ?? { t, borgen: null, hytta: null, samlet: null };
     cur.borgen = p.watt;
     map.set(t, cur);
   }
   for (const p of hytta) {
     if (p.watt == null) continue;
     const t = new Date(p.t).getTime();
-    const cur = map.get(t) ?? { t, borgen: null, hytta: null };
+    const cur = map.get(t) ?? { t, borgen: null, hytta: null, samlet: null };
     cur.hytta = p.watt;
     map.set(t, cur);
+  }
+  // Beregn samlet der begge finnes
+  for (const row of map.values()) {
+    if (row.borgen != null && row.hytta != null) {
+      row.samlet = row.borgen + row.hytta;
+    } else if (row.borgen != null) {
+      row.samlet = row.borgen;
+    } else if (row.hytta != null) {
+      row.samlet = row.hytta;
+    }
   }
   return Array.from(map.values()).sort((a, b) => a.t - b.t);
 }
@@ -58,6 +69,11 @@ export function LivePowerGraph() {
   const [borgen, setBorgen] = useState<PulseHistoryPoint[]>([]);
   const [hytta, setHytta] = useState<PulseHistoryPoint[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Toggles for hver serie
+  const [showBorgen, setShowBorgen] = useState(true);
+  const [showHytta, setShowHytta] = useState(true);
+  const [showTotal, setShowTotal] = useState(false);
 
   const hours = RANGES.find((r) => r.key === range)!.hours;
 
@@ -84,12 +100,21 @@ export function LivePowerGraph() {
   const data = useMemo(() => {
     const rows = mergeSeries(borgen, hytta);
     const now = Date.now();
-    const liveRow: Row = { t: now, borgen: null, hytta: null };
+    const liveRow: Row = { t: now, borgen: null, hytta: null, samlet: null };
     const lb = live.homes.tollnes.reading?.power;
     const lh = live.homes.hytta.reading?.power;
     if (typeof lb === "number") liveRow.borgen = Math.round(lb);
     if (typeof lh === "number") liveRow.hytta = Math.round(lh);
-    if (liveRow.borgen != null || liveRow.hytta != null) rows.push(liveRow);
+    if (liveRow.borgen != null || liveRow.hytta != null) {
+      if (liveRow.borgen != null && liveRow.hytta != null) {
+        liveRow.samlet = liveRow.borgen + liveRow.hytta;
+      } else if (liveRow.borgen != null) {
+        liveRow.samlet = liveRow.borgen;
+      } else {
+        liveRow.samlet = liveRow.hytta!;
+      }
+      rows.push(liveRow);
+    }
     // Filter to window
     const since = now - hours * 3600 * 1000;
     return rows.filter((r) => r.t >= since);
@@ -108,9 +133,9 @@ export function LivePowerGraph() {
       className="rounded-lg p-5 sm:p-6 border space-y-4"
       style={{
         background:
-          "radial-gradient(circle at 20% 0%, rgba(201,168,76,0.08), transparent 60%), linear-gradient(180deg, #0b0905 0%, #110d06 100%)",
-        borderColor: "rgba(201,168,76,0.35)",
-        boxShadow: "0 12px 40px -16px rgba(201,168,76,0.25), inset 0 0 0 1px rgba(201,168,76,0.06)",
+          "radial-gradient(circle at 20% 0%, rgba(166,139,58,0.06), transparent 60%), linear-gradient(180deg, #0a0804 0%, #0e0a05 100%)",
+        borderColor: "rgba(166,139,58,0.28)",
+        boxShadow: "0 12px 40px -16px rgba(166,139,58,0.2), inset 0 0 0 1px rgba(166,139,58,0.04)",
       }}
     >
       <header className="flex items-start justify-between flex-wrap gap-3">
@@ -123,18 +148,18 @@ export function LivePowerGraph() {
           </div>
           <h2
             className="text-2xl sm:text-3xl mt-1 flex items-center gap-2"
-            style={{ color: "#f5e6b8", fontFamily: "Cinzel, 'Cormorant Garamond', serif", letterSpacing: "0.04em" }}
+            style={{ color: "#e8d9b0", fontFamily: "Cinzel, 'Cormorant Garamond', serif", letterSpacing: "0.04em" }}
           >
             <Crown size={22} style={{ color: COLOR_BORGEN }} /> Forbruk nå
           </h2>
-          <p className="text-xs mt-1" style={{ color: "rgba(245,230,184,0.6)" }}>
+          <p className="text-xs mt-1" style={{ color: "rgba(232,217,176,0.5)" }}>
             Borgen og Hytta — strømmens puls i sanntid
           </p>
         </div>
         <div className="text-right">
           <div
             className="text-3xl sm:text-4xl tabular-nums"
-            style={{ color: "#f5e6b8", fontFamily: "Cinzel, serif" }}
+            style={{ color: "#e8d9b0", fontFamily: "Cinzel, serif" }}
           >
             {Math.round(totalNow).toLocaleString("nb-NO")} <span className="text-base opacity-70">W</span>
           </div>
@@ -144,19 +169,42 @@ export function LivePowerGraph() {
         </div>
       </header>
 
+      {/* Toggle-rad for serier */}
+      <div className="flex flex-wrap gap-2">
+        <SeriesToggle
+          active={showBorgen}
+          onClick={() => setShowBorgen((v) => !v)}
+          label="Borgen"
+          color={COLOR_BORGEN}
+        />
+        <SeriesToggle
+          active={showHytta}
+          onClick={() => setShowHytta((v) => !v)}
+          label="Hytta"
+          color={COLOR_HYTTA}
+        />
+        <SeriesToggle
+          active={showTotal}
+          onClick={() => setShowTotal((v) => !v)}
+          label="Samlet"
+          color={COLOR_TOTAL}
+        />
+      </div>
+
       {/* Live legend with current watts per home */}
       <div className="flex flex-wrap gap-4 text-xs">
-        <LiveDot color={COLOR_BORGEN} label="Borgen" watt={liveBorgen} />
-        <LiveDot color={COLOR_HYTTA} label="Hytta" watt={liveHytta} />
+        {showBorgen && <LiveDot color={COLOR_BORGEN} label="Borgen" watt={liveBorgen} />}
+        {showHytta && <LiveDot color={COLOR_HYTTA} label="Hytta" watt={liveHytta} />}
+        {showTotal && <LiveDot color={COLOR_TOTAL} label="Samlet" watt={totalNow > 0 ? totalNow : null} />}
       </div>
 
       <div className="h-72 w-full">
         {loading && data.length === 0 ? (
-          <div className="h-full flex items-center justify-center text-xs" style={{ color: "rgba(245,230,184,0.5)" }}>
+          <div className="h-full flex items-center justify-center text-xs" style={{ color: "rgba(232,217,176,0.4)" }}>
             Spør ravnene om effekten…
           </div>
         ) : data.length === 0 ? (
-          <div className="h-full flex items-center justify-center text-xs" style={{ color: "rgba(245,230,184,0.5)" }}>
+          <div className="h-full flex items-center justify-center text-xs" style={{ color: "rgba(232,217,176,0.4)" }}>
             Ingen avlesninger i valgt vindu.
           </div>
         ) : (
@@ -164,12 +212,19 @@ export function LivePowerGraph() {
             <AreaChart data={data} margin={{ top: 10, right: 12, left: -8, bottom: 0 }}>
               <defs>
                 <linearGradient id="grad-borgen" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={COLOR_BORGEN} stopOpacity={0.55} />
+                  <stop offset="0%" stopColor={COLOR_BORGEN} stopOpacity={0.5} />
+                  <stop offset="60%" stopColor={COLOR_BORGEN} stopOpacity={0.15} />
                   <stop offset="100%" stopColor={COLOR_BORGEN} stopOpacity={0.02} />
                 </linearGradient>
                 <linearGradient id="grad-hytta" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor={COLOR_HYTTA} stopOpacity={0.45} />
+                  <stop offset="60%" stopColor={COLOR_HYTTA} stopOpacity={0.12} />
                   <stop offset="100%" stopColor={COLOR_HYTTA} stopOpacity={0.02} />
+                </linearGradient>
+                <linearGradient id="grad-samlet" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={COLOR_TOTAL} stopOpacity={0.35} />
+                  <stop offset="60%" stopColor={COLOR_TOTAL} stopOpacity={0.08} />
+                  <stop offset="100%" stopColor={COLOR_TOTAL} stopOpacity={0.01} />
                 </linearGradient>
               </defs>
               <CartesianGrid stroke={STROKE_GRID} strokeDasharray="3 5" vertical={false} />
@@ -177,13 +232,13 @@ export function LivePowerGraph() {
                 dataKey="t"
                 type="number"
                 domain={["dataMin", "dataMax"]}
-                tick={{ fill: "rgba(245,230,184,0.55)", fontSize: 10, fontFamily: "Cinzel, serif" }}
+                tick={{ fill: "rgba(232,217,176,0.45)", fontSize: 10, fontFamily: "Cinzel, serif" }}
                 tickFormatter={(v) => fmtTime(v, tickFmt)}
                 stroke={STROKE_GRID}
                 minTickGap={40}
               />
               <YAxis
-                tick={{ fill: "rgba(245,230,184,0.55)", fontSize: 10, fontFamily: "Cinzel, serif" }}
+                tick={{ fill: "rgba(232,217,176,0.45)", fontSize: 10, fontFamily: "Cinzel, serif" }}
                 stroke={STROKE_GRID}
                 width={52}
                 tickFormatter={(v) => `${Math.round(v / 100) / 10}k`}
@@ -191,11 +246,11 @@ export function LivePowerGraph() {
               />
               <Tooltip
                 contentStyle={{
-                  background: "#0b0905",
+                  background: "#0a0804",
                   border: `1px solid ${COLOR_BORGEN}`,
                   borderRadius: 4,
                   fontFamily: "Cinzel, serif",
-                  color: "#f5e6b8",
+                  color: "#e8d9b0",
                   fontSize: 12,
                 }}
                 labelFormatter={(v) => `Kl. ${fmtTime(Number(v), { hour: "2-digit", minute: "2-digit" })}`}
@@ -205,31 +260,49 @@ export function LivePowerGraph() {
                 ]}
               />
               <Legend
-                wrapperStyle={{ fontSize: 11, color: "#f5e6b8", fontFamily: "Cinzel, serif", letterSpacing: "0.15em", textTransform: "uppercase" }}
+                wrapperStyle={{ fontSize: 11, color: "#e8d9b0", fontFamily: "Cinzel, serif", letterSpacing: "0.15em", textTransform: "uppercase" }}
                 iconType="plainline"
               />
-              <Area
-                type="monotone"
-                dataKey="borgen"
-                name="Borgen"
-                stroke={COLOR_BORGEN}
-                strokeWidth={2}
-                fill="url(#grad-borgen)"
-                connectNulls
-                isAnimationActive={false}
-                dot={false}
-              />
-              <Area
-                type="monotone"
-                dataKey="hytta"
-                name="Hytta"
-                stroke={COLOR_HYTTA}
-                strokeWidth={2}
-                fill="url(#grad-hytta)"
-                connectNulls
-                isAnimationActive={false}
-                dot={false}
-              />
+              {showBorgen && (
+                <Area
+                  type="monotone"
+                  dataKey="borgen"
+                  name="Borgen"
+                  stroke={COLOR_BORGEN}
+                  strokeWidth={2}
+                  fill="url(#grad-borgen)"
+                  connectNulls
+                  isAnimationActive={false}
+                  dot={false}
+                />
+              )}
+              {showHytta && (
+                <Area
+                  type="monotone"
+                  dataKey="hytta"
+                  name="Hytta"
+                  stroke={COLOR_HYTTA}
+                  strokeWidth={2}
+                  fill="url(#grad-hytta)"
+                  connectNulls
+                  isAnimationActive={false}
+                  dot={false}
+                />
+              )}
+              {showTotal && (
+                <Area
+                  type="monotone"
+                  dataKey="samlet"
+                  name="Samlet"
+                  stroke={COLOR_TOTAL}
+                  strokeWidth={2}
+                  strokeDasharray="6 4"
+                  fill="url(#grad-samlet)"
+                  connectNulls
+                  isAnimationActive={false}
+                  dot={false}
+                />
+              )}
             </AreaChart>
           </ResponsiveContainer>
         )}
@@ -246,9 +319,9 @@ export function LivePowerGraph() {
               style={{
                 fontFamily: "Cinzel, serif",
                 background: active ? COLOR_BORGEN : "transparent",
-                color: active ? "#0b0905" : "rgba(245,230,184,0.7)",
-                border: `1px solid ${active ? COLOR_BORGEN : "rgba(201,168,76,0.35)"}`,
-                boxShadow: active ? "0 0 18px -2px rgba(201,168,76,0.6)" : "none",
+                color: active ? "#0a0804" : "rgba(232,217,176,0.6)",
+                border: `1px solid ${active ? COLOR_BORGEN : "rgba(166,139,58,0.3)"}`,
+                boxShadow: active ? "0 0 18px -2px rgba(166,139,58,0.5)" : "none",
               }}
             >
               {r.label}
@@ -257,6 +330,36 @@ export function LivePowerGraph() {
         })}
       </div>
     </article>
+  );
+}
+
+function SeriesToggle({
+  active,
+  onClick,
+  label,
+  color,
+}: {
+  active: boolean;
+  onClick: () => void;
+  label: string;
+  color: string;
+}) {
+  const Icon = active ? Eye : EyeOff;
+  return (
+    <button
+      onClick={onClick}
+      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] tracking-[0.2em] uppercase transition select-none"
+      style={{
+        fontFamily: "Cinzel, serif",
+        background: active ? `${color}15` : "transparent",
+        color: active ? color : "rgba(232,217,176,0.4)",
+        border: `1px solid ${active ? color : "rgba(232,217,176,0.15)"}`,
+        boxShadow: active ? `0 0 10px -2px ${color}40` : "none",
+      }}
+    >
+      <Icon size={12} />
+      {label}
+    </button>
   );
 }
 
@@ -269,7 +372,7 @@ function LiveDot({ color, label, watt }: { color: string; label: string; watt: n
       />
       <span
         className="tracking-[0.2em] uppercase text-[10px]"
-        style={{ color: "rgba(245,230,184,0.75)", fontFamily: "Cinzel, serif" }}
+        style={{ color: "rgba(232,217,176,0.65)", fontFamily: "Cinzel, serif" }}
       >
         {label}
       </span>
