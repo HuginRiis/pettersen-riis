@@ -106,6 +106,7 @@ const LEVELS = [
     column: "notified_date_8" as const,
     fallColumn: "notified_fall_date_8" as const,
     fallEnabledColumn: "notify_fall_8" as const,
+    riseEnabledColumn: "notify_rise_8" as const,
     title: (lead: number) =>
       lead <= 0 ? "☀️ Ekstrem UV nå" : `☀️ Ekstrem UV om ${lead} min — forbered deg`,
     body: (loc: string, uv: number, lead: number) =>
@@ -119,6 +120,7 @@ const LEVELS = [
     column: "notified_date_6" as const,
     fallColumn: "notified_fall_date_6" as const,
     fallEnabledColumn: "notify_fall_6" as const,
+    riseEnabledColumn: "notify_rise_6" as const,
     title: (lead: number) =>
       lead <= 0 ? "🧴 Sterk UV nå — styrk beskyttelsen" : `🧴 Sterk UV om ${lead} min — styrk beskyttelsen`,
     body: (loc: string, uv: number, lead: number) =>
@@ -132,6 +134,7 @@ const LEVELS = [
     column: "notified_date_3" as const,
     fallColumn: "notified_fall_date_3" as const,
     fallEnabledColumn: "notify_fall_3" as const,
+    riseEnabledColumn: "notify_rise_3" as const,
     title: (lead: number) => (lead <= 0 ? "🧴 På tide med solkrem" : `🧴 Solkrem om ${lead} min`),
     body: (loc: string, uv: number, lead: number) =>
       `${loc}: UV når ${uv.toFixed(1)} ${leadLabel(lead)}. Smør med SPF 30 på utsatt hud (DSA-anbefaling).`,
@@ -140,6 +143,7 @@ const LEVELS = [
       `${loc}: UV er nå ${uv.toFixed(1)} (under 3). Solkrem er ikke lenger nødvendig i dag.`,
   },
 ] as const;
+
 
 
 /**
