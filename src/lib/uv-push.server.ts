@@ -259,6 +259,10 @@ export async function processUvNotifications(): Promise<{
     notify_fall_3: boolean;
     notify_fall_6: boolean;
     notify_fall_8: boolean;
+    notify_rise_3: boolean;
+    notify_rise_6: boolean;
+    notify_rise_8: boolean;
+
     notified_fall_date_3: string | null;
     notified_fall_date_6: string | null;
     notified_fall_date_8: string | null;
