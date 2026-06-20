@@ -24,9 +24,13 @@ type UvPref = {
   notify_fall_3: boolean;
   notify_fall_6: boolean;
   notify_fall_8: boolean;
+  notify_rise_3: boolean;
+  notify_rise_6: boolean;
+  notify_rise_8: boolean;
   uv_source: "clear_sky" | "with_clouds";
   notify_peak_clear: boolean;
   notify_peak_cloud: boolean;
+
 };
 
 
