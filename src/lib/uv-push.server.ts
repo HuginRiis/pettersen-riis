@@ -307,6 +307,7 @@ export async function processUvNotifications(): Promise<{
     let trigger: (typeof LEVELS)[number] | null = null;
     for (const lvl of LEVELS) {
       if (uv >= lvl.threshold) {
+        if (!p[lvl.riseEnabledColumn]) continue;
         const last = p[lvl.column];
         if (last !== today) {
           trigger = lvl;
@@ -314,6 +315,7 @@ export async function processUvNotifications(): Promise<{
         }
       }
     }
+
 
     // 2) Finn høyeste nivå som er "falt under" i dag — krever at vi
     //    FAKTISK har vært oppe på nivået i dag (reached_date_X = today).
