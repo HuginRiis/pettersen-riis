@@ -244,9 +244,10 @@ export function HeatwaveFX({ intensity = 0.5, className = "" }: Common) {
   );
 }
 
-/* ---------------- HUMIDITY (rising droplets) ---------------- */
+/* ---------------- HUMIDITY (rising droplets + steam) ---------------- */
 export function HumidityFX({ intensity = 0.5, className = "" }: Common) {
-  const count = Math.max(4, Math.round(4 + intensity * 8));
+  const i = Math.max(0, Math.min(1, intensity));
+  const count = Math.max(4, Math.round(4 + i * 8));
   const drops = useMemo(
     () =>
       Array.from({ length: count }).map(() => ({
@@ -257,11 +258,46 @@ export function HumidityFX({ intensity = 0.5, className = "" }: Common) {
       })),
     [count],
   );
+
+  // Steam: more puffs and higher opacity with higher humidity.
+  const steamCount = Math.round(3 + i * 14);
+  const steamOpacity = 0.18 + i * 0.55;
+  // Rise distance: low humidity dies quickly (~25% of tile), high humidity drifts higher (~65%)
+  const steamRise = -(25 + i * 40);
+  const puffs = useMemo(
+    () =>
+      Array.from({ length: steamCount }).map(() => ({
+        left: 4 + Math.random() * 92,
+        delay: Math.random() * 4,
+        dur: 3.5 + Math.random() * 3,
+        size: 10 + Math.random() * 18,
+      })),
+    [steamCount],
+  );
+
   return (
     <div className={`${wrap} ${className}`} aria-hidden>
+      {puffs.map((p, i) => (
+        <span
+          key={`s${i}`}
+          className="absolute rounded-full animate-wx-steam"
+          style={{
+            left: `${p.left}%`,
+            bottom: 0,
+            width: p.size,
+            height: p.size,
+            background:
+              "radial-gradient(circle, rgba(255,255,255,0.85) 0%, rgba(220,235,255,0.45) 40%, rgba(220,235,255,0) 75%)",
+            animationDuration: `${p.dur}s`,
+            animationDelay: `${p.delay}s`,
+            ["--steam-opacity" as string]: steamOpacity.toFixed(2),
+            ["--steam-rise" as string]: `${steamRise}%`,
+          }}
+        />
+      ))}
       {drops.map((d, i) => (
         <span
-          key={i}
+          key={`d${i}`}
           className="absolute rounded-full animate-wx-droplet"
           style={{
             left: `${d.left}%`,
@@ -278,6 +314,7 @@ export function HumidityFX({ intensity = 0.5, className = "" }: Common) {
     </div>
   );
 }
+
 
 /* ---------------- PRESSURE (pulse rings) ---------------- */
 export function PressureFX({ intensity = 0.5, className = "" }: Common) {
