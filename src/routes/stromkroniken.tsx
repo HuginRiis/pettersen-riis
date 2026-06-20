@@ -48,6 +48,7 @@ import {
 import { getSpotPrices, type SpotPriceResult } from "@/lib/spot-price";
 import { getPowerByTheHour, type PbthResult, type PbthHomeData } from "@/lib/power-by-the-hour";
 import { useTibberLive, type TibberLiveHomeState } from "@/hooks/useTibberLive";
+import { LivePowerGraph } from "@/components/stromkroniken/LivePowerGraph";
 import stromImg from "@/assets/stromkroniken.jpg";
 
 export const Route = createFileRoute("/stromkroniken")({
@@ -151,6 +152,9 @@ function StromkronikenPage() {
       />
 
       <section className="container mx-auto px-4 py-10 max-w-6xl space-y-10">
+        {/* Sanntidsgraf — Borgen + Hytta, Game of Thrones-stil */}
+        <LivePowerGraph />
+
         {/* Live Pulse-banner — viser uavhengig av om historikk-API svarer */}
         {!live.loading && live.session?.ok && (
           <LivePulseBanner live={live} />
