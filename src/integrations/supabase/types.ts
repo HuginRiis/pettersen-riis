@@ -2860,6 +2860,9 @@ export type Database = {
           notify_fall_8: boolean
           notify_peak_clear: boolean
           notify_peak_cloud: boolean
+          notify_rise_3: boolean
+          notify_rise_6: boolean
+          notify_rise_8: boolean
           reached_date_3: string | null
           reached_date_6: string | null
           reached_date_8: string | null
@@ -2890,6 +2893,9 @@ export type Database = {
           notify_fall_8?: boolean
           notify_peak_clear?: boolean
           notify_peak_cloud?: boolean
+          notify_rise_3?: boolean
+          notify_rise_6?: boolean
+          notify_rise_8?: boolean
           reached_date_3?: string | null
           reached_date_6?: string | null
           reached_date_8?: string | null
@@ -2920,6 +2926,9 @@ export type Database = {
           notify_fall_8?: boolean
           notify_peak_clear?: boolean
           notify_peak_cloud?: boolean
+          notify_rise_3?: boolean
+          notify_rise_6?: boolean
+          notify_rise_8?: boolean
           reached_date_3?: string | null
           reached_date_6?: string | null
           reached_date_8?: string | null
