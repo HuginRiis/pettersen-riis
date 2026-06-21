@@ -13,6 +13,7 @@ import {
   RainFX, SnowFX, CloudFX, WindFX, HeatwaveFX, HumidityFX, PressureFX, GustFX, SunFX, StarFX, MoonFX, ThunderFX,
   GlassPaneFX, glassKindFromSymbol, TileSplashFX, InsideRainFX, CloudCoverFX,
 } from "@/components/weather/WeatherFX";
+import { SpaceWeatherCard } from "@/components/weather/SpaceWeatherCard";
 import {
   Wind,
   Droplets,
