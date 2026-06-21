@@ -156,6 +156,9 @@ export type ClimateHistoryResult =
 
 const CACHE_TTL_MS = 10 * 60_000;
 const cache = new Map<string, { at: number; data: ClimateHistoryResult }>();
+// Singleflight: parallelle forespørsler for samme stasjon deler én pågående
+// fetch i stedet for hver å fyre ~8 getmeasure-kall mot Netatmo.
+const inFlight = new Map<string, Promise<ClimateHistoryResult>>();
 
 async function netatmoFetch(url: string, token: string): Promise<any> {
   const res = await fetch(url, {
@@ -221,6 +224,10 @@ export const getNetatmoClimateHistory = createServerFn({ method: "GET" })
           d.ok && (!d.rooms || d.rooms.length === 0 || d.rooms.some((r) => Array.isArray((r as any).series24h)));
         if (c && Date.now() - c.at < CACHE_TTL_MS && c.data.ok && hasSeries(c.data)) return c.data;
 
+        // Singleflight — del en pågående henting for samme stasjon.
+        const existing = inFlight.get(key);
+        if (existing) return existing;
+
         const fallbackToDb = async (errMsg: string): Promise<ClimateHistoryResult> => {
           const snap = await loadDbSnapshot(key);
           if (snap && snap.ok) {
@@ -230,8 +237,21 @@ export const getNetatmoClimateHistory = createServerFn({ method: "GET" })
           return { ok: false, error: errMsg };
         };
 
-        try {
-          const token = await getAccessToken();
+        // Hvis DB-snapshot er fersk nok (<10 min, cron oppdaterer hvert 20. min,
+        // så dette dekker det meste mellom cron-kjøringer), bruk den i stedet for
+        // å spørre Netatmo på nytt fra et kald-startet worker-isolat.
+        const dbSnap = await loadDbSnapshot(key);
+        if (dbSnap && dbSnap.ok && (dbSnap as any).fetchedAt) {
+          const dbAt = Date.parse((dbSnap as any).fetchedAt);
+          if (Number.isFinite(dbAt) && Date.now() - dbAt < CACHE_TTL_MS && hasSeries(dbSnap)) {
+            cache.set(key, { at: Date.now(), data: dbSnap });
+            return dbSnap;
+          }
+        }
+
+        const promise = (async (): Promise<ClimateHistoryResult> => {
+          try {
+            const token = await getAccessToken();
           const stations = await netatmoFetch(
             `${NETATMO_BASE}/api/getstationsdata?get_favorites=false`,
             token,
@@ -574,6 +594,14 @@ export const getNetatmoClimateHistory = createServerFn({ method: "GET" })
 
         } catch (e: any) {
           return await fallbackToDb(e?.message ?? "Ukjent feil");
+        }
+        })();
+
+        inFlight.set(key, promise);
+        try {
+          return await promise;
+        } finally {
+          inFlight.delete(key);
         }
       },
     ),

@@ -21,10 +21,20 @@ const loadTokenStore = createIsomorphicFn()
         saveStoredRefreshToken: async () => {},
       } as unknown as typeof import("@/lib/netatmo-token-store.server")),
   );
+const loadAdmin = createIsomorphicFn()
+  .server((): Promise<typeof import("@/integrations/supabase/client.server")> =>
+    import("@/integrations/supabase/client.server"),
+  )
+  .client(
+    (): Promise<typeof import("@/integrations/supabase/client.server")> =>
+      Promise.resolve({ supabaseAdmin: null } as unknown as typeof import("@/integrations/supabase/client.server")),
+  );
 const { withApiLog } = await loadApiLog();
 const { loadStoredRefreshToken, saveStoredRefreshToken } = await loadTokenStore();
+const { supabaseAdmin } = await loadAdmin();
 
 const REFRESH_TOKEN_KEY = "netatmo_ws_refresh_token";
+const RAW_DEVICES_DB_KEY = "netatmo_ws_devices_raw";
 
 const NETATMO_BASE = "https://api.netatmo.com";
 
@@ -123,6 +133,7 @@ export type WeatherStationResult =
       modules: WeatherModule[];
       fetchedAt: string;
       availableStations: string[];
+      cached?: boolean;
     };
 
 function moduleLabel(type: string, name: string): string {
@@ -175,63 +186,130 @@ function mapDevice(device: any): WeatherModule[] {
   });
 }
 
-// Delt server-cache per stationMatch — Netatmo oppdaterer kun hvert 10. min,
-// så vi serverer samme svar til alle klienter (forsiden + Steintavlen + iPad)
-// i 10 minutter. Klient-"refresh" og manuelle besøk bypasser IKKE denne TTL —
-// vi treffer aldri api.netatmo.com oftere enn hvert 10. minutt per stasjon.
-const WEATHER_TTL_MS = 10 * 60_000;
-const weatherCache = new Map<string, { at: number; data: WeatherStationResult }>();
+// ===== Delt cache for RÅ getstationsdata-respons =====
+// Netatmo oppdaterer stasjonene hvert 10. min. Ett enkelt /getstationsdata-kall
+// returnerer ALLE devices på kontoen, så vi cacher det rå svaret én gang og
+// filtrerer per stationMatch i minnet. Dette unngår dobbelt forbruk når både
+// "tollnes" og "hytta" spørres samtidig (tidligere → 2 API-kall).
+//
+// Tre nivåer:
+//   1) In-memory (per worker-isolat) — raskest, 10 min TTL
+//   2) Singleflight — concurrent forespørsler deler én pågående fetch
+//   3) DB-snapshot i public.netatmo_climate_snapshot — overlever cold starts
+//      og brukes som fallback ved 429/feil
+const RAW_TTL_MS = 10 * 60_000;
+const RAW_STALE_FALLBACK_MS = 60 * 60_000; // ved 429 — server inntil 1 t gammelt
+let rawDevicesCache: { at: number; devices: any[] } | null = null;
+let rawDevicesInFlight: Promise<any[]> | null = null;
 
-async function fetchStations(token: string) {
+async function loadRawDevicesFromDb(): Promise<{ at: number; devices: any[] } | null> {
+  if (!supabaseAdmin) return null;
+  try {
+    const { data } = await supabaseAdmin
+      .from("netatmo_climate_snapshot" as any)
+      .select("data, updated_at")
+      .eq("cache_key", RAW_DEVICES_DB_KEY)
+      .maybeSingle();
+    if (!data) return null;
+    const payload = (data as any).data;
+    const updatedAt = (data as any).updated_at;
+    if (payload && Array.isArray(payload.devices) && updatedAt) {
+      return { at: Date.parse(updatedAt), devices: payload.devices };
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+async function saveRawDevicesToDb(devices: any[]): Promise<void> {
+  if (!supabaseAdmin) return;
+  try {
+    await supabaseAdmin
+      .from("netatmo_climate_snapshot" as any)
+      .upsert(
+        {
+          cache_key: RAW_DEVICES_DB_KEY,
+          data: { devices } as any,
+          updated_at: new Date().toISOString(),
+        } as any,
+        { onConflict: "cache_key" },
+      );
+  } catch {
+    /* best effort */
+  }
+}
+
+async function fetchStationsRaw(token: string): Promise<Response> {
   return fetch(`${NETATMO_BASE}/api/getstationsdata?get_favorites=false`, {
     headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
   });
 }
 
+/**
+ * Returnerer ferske devices fra Netatmo, eller fra DB hvis det er <10 min siden.
+ * Singleflight: parallelle kall deler én pågående henting.
+ */
+async function getDevices(): Promise<{ devices: any[]; fromCache: boolean }> {
+  // 1) In-memory fresh?
+  if (rawDevicesCache && Date.now() - rawDevicesCache.at < RAW_TTL_MS) {
+    return { devices: rawDevicesCache.devices, fromCache: true };
+  }
+  // 2) Pågående fetch? Del den.
+  if (rawDevicesInFlight) {
+    const devices = await rawDevicesInFlight;
+    return { devices, fromCache: true };
+  }
+  // 3) DB-snapshot fersk nok?
+  const dbSnap = await loadRawDevicesFromDb();
+  if (dbSnap && Date.now() - dbSnap.at < RAW_TTL_MS) {
+    rawDevicesCache = dbSnap;
+    return { devices: dbSnap.devices, fromCache: true };
+  }
+
+  // 4) Fetch fra Netatmo (singleflight)
+  rawDevicesInFlight = (async () => {
+    try {
+      let token = await getAccessToken();
+      let res = await fetchStationsRaw(token);
+      if (res.status === 401 || res.status === 403) {
+        tokenCache = null;
+        token = await getAccessToken();
+        res = await fetchStationsRaw(token);
+      }
+      if (!res.ok) {
+        const text = await res.text();
+        // 429 / annen feil — bruk siste DB-snapshot hvis tilgjengelig (selv om stale)
+        if (dbSnap && Date.now() - dbSnap.at < RAW_STALE_FALLBACK_MS) {
+          rawDevicesCache = dbSnap;
+          return dbSnap.devices;
+        }
+        if (rawDevicesCache && Date.now() - rawDevicesCache.at < RAW_STALE_FALLBACK_MS) {
+          return rawDevicesCache.devices;
+        }
+        throw new Error(`getstationsdata feilet (${res.status}): ${text.slice(0, 160)}`);
+      }
+      const json = (await res.json()) as any;
+      const devices: any[] = json?.body?.devices ?? [];
+      rawDevicesCache = { at: Date.now(), devices };
+      // Persistér til DB (best effort) så cold-start workers slipper å re-fetche.
+      void saveRawDevicesToDb(devices);
+      return devices;
+    } finally {
+      rawDevicesInFlight = null;
+    }
+  })();
+
+  const devices = await rawDevicesInFlight;
+  return { devices, fromCache: false };
+}
+
 export const getNetatmoWeatherStation = createServerFn({ method: "GET" })
   .inputValidator((data: { stationMatch?: string }) => data ?? {})
   .handler(withApiLog("netatmo", "getNetatmoWeatherStation", async ({ data }: { data: { stationMatch?: string } }): Promise<WeatherStationResult> => {
-    const cacheKey = (data?.stationMatch ?? "").toLowerCase().trim() || "__default";
-    const cached = weatherCache.get(cacheKey);
-    if (cached && Date.now() - cached.at < WEATHER_TTL_MS && cached.data.ok) {
-      return { ...cached.data, cached: true } as WeatherStationResult;
-    }
-
     try {
-      let token = await getAccessToken();
-      let res = await fetchStations(token);
-
-      // Netatmo svarer 401/403 "Invalid access token" hvis access-tokenen er
-      // ugyldig (f.eks. om refresh_token har blitt rotert av et annet eksemplar
-      // av samme worker). Nullstill cache og prøv én gang til med fersk token.
-      if (res.status === 401 || res.status === 403) {
-        tokenCache = null;
-        try {
-          token = await getAccessToken();
-          res = await fetchStations(token);
-        } catch (err) {
-          if (cached?.data.ok) return { ...cached.data, cached: true } as WeatherStationResult;
-          throw err;
-        }
-      }
-
-      if (!res.ok) {
-        const text = await res.text();
-        // 429 / fortsatt 401/403 → server forrige cache så lenge vi har den
-        if (cached?.data.ok) {
-          weatherCache.set(cacheKey, { at: Date.now() - WEATHER_TTL_MS + 60_000, data: cached.data });
-          return { ...cached.data, cached: true } as WeatherStationResult;
-        }
-        return {
-          ok: false,
-          error: `getstationsdata feilet (${res.status}): ${text.slice(0, 160)}`,
-        };
-      }
-
-      const json = (await res.json()) as any;
-      const devices: any[] = json?.body?.devices ?? [];
+      const { devices, fromCache } = await getDevices();
       if (devices.length === 0) {
-        if (cached?.data.ok) return { ...cached.data, cached: true } as WeatherStationResult;
         return { ok: false, error: "Fant ingen værstasjoner på kontoen" };
       }
 
@@ -265,15 +343,12 @@ export const getNetatmoWeatherStation = createServerFn({ method: "GET" })
         ok: true,
         stationName,
         modules,
-        fetchedAt: new Date().toISOString(),
+        fetchedAt: rawDevicesCache ? new Date(rawDevicesCache.at).toISOString() : new Date().toISOString(),
         availableStations,
+        cached: fromCache,
       };
-      weatherCache.set(cacheKey, { at: Date.now(), data: out });
       return out;
     } catch (e: any) {
-      // Behold forrige gode svar ved nettverksfeil / token-feil
-      if (cached?.data.ok) return { ...cached.data, cached: true } as WeatherStationResult;
       return { ok: false, error: e?.message ?? "Ukjent feil" };
     }
   }));
-
