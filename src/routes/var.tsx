@@ -13,6 +13,7 @@ import {
   RainFX, SnowFX, CloudFX, WindFX, HeatwaveFX, HumidityFX, PressureFX, GustFX, SunFX, StarFX, MoonFX, ThunderFX,
   GlassPaneFX, glassKindFromSymbol, TileSplashFX, InsideRainFX, CloudCoverFX,
 } from "@/components/weather/WeatherFX";
+import { SpaceWeatherCard } from "@/components/weather/SpaceWeatherCard";
 import {
   Wind,
   Droplets,
@@ -350,6 +351,10 @@ function WeatherPage() {
 
           {/* UV-indeks · iOS-style */}
           <IosUvCard lat={userLoc.active.lat} lon={userLoc.active.lon} now={now} />
+
+          {/* Romvær — solstormer, solvind, geomagnetiske stormer, nordlys, stråling */}
+          <SpaceWeatherCard />
+
 
           {/* VINDROSE */}
           <GlassCard eyebrow={`Vindrose · ${rangeLabel(rangeHours)}`} icon={<Navigation size={14} />}>
