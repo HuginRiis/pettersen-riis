@@ -448,10 +448,12 @@ function RotatingForecastCard({ hours, soundEnabled }: { hours: Hour[] | null; s
   const maxRain = Math.max(1, ...next48.map((h) => h.precip));
   const maxWind = Math.max(8, ...next48.map((h) => Math.max(h.wind, h.windGust)));
   const maxThunder = Math.max(0, ...next48.map((h) => h.thunder));
+  const avgCloud = next48.reduce((s, h) => s + (h.cloud ?? 0), 0) / Math.max(1, next48.length);
 
   const fx =
     panel === "nedbor" ? <RainFX intensity={Math.min(1, maxRain / 4)} /> :
     panel === "vaer" ? <CloudFX intensity={0.4} /> :
+    panel === "skydekke" ? <CloudCoverFX intensity={Math.min(1, avgCloud / 100)} /> :
     panel === "vind" ? <WindFX intensity={Math.min(1, maxWind / 14)} /> :
     <ThunderFX intensity={Math.min(1, Math.max(0.3, maxThunder / 60))} />;
 
