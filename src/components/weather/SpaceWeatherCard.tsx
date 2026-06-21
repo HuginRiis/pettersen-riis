@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Sun, Wind, Magnet, Sparkles, Radio } from "lucide-react";
+import { useEffect, useState, useCallback } from "react";
+import { Sun, Wind, Magnet, Sparkles, Radio, X } from "lucide-react";
 
 type SpaceData = {
   xrayClass: string | null; // f.eks "C1.2"
@@ -68,8 +68,6 @@ function useSpaceWeather(): SpaceData {
           const arr = await kpR.json();
           if (Array.isArray(arr) && arr.length > 0) {
             const last = arr[arr.length - 1];
-            // Nytt format: { time_tag, Kp, a_running, station_count }
-            // Gammelt format: ["time", "kp", ...]  med [0] som header
             let v: number = NaN;
             if (last && typeof last === "object" && !Array.isArray(last)) {
               v = parseFloat(last.Kp ?? last.kp_index ?? "");
@@ -83,7 +81,6 @@ function useSpaceWeather(): SpaceData {
         let rScale = 0, sScale = 0, gScale = 0;
         if (scalesR?.ok) {
           const j = await scalesR.json();
-          // strukturen: { "0": { R:{Scale,..}, S:{...}, G:{...}}, "-1":..., "1":..., "2":... }
           const today = j?.["0"];
           if (today) {
             rScale = parseInt(today.R?.Scale ?? "0") || 0;
@@ -117,12 +114,12 @@ function nordlysSannsynlighet(kp: number | null): { label: string; chance: numbe
 }
 
 function colorForLevel(lvl: number): string {
-  if (lvl <= 0) return "#5fd07a"; // grønn — rolig
+  if (lvl <= 0) return "#5fd07a";
   if (lvl <= 1) return "#a3d962";
-  if (lvl <= 2) return "#f7c93f"; // gul
-  if (lvl <= 3) return "#f59a3c"; // oransje
-  if (lvl <= 4) return "#ef5b4a"; // rød
-  return "#b14bff"; // ekstrem
+  if (lvl <= 2) return "#f7c93f";
+  if (lvl <= 3) return "#f59a3c";
+  if (lvl <= 4) return "#ef5b4a";
+  return "#b14bff";
 }
 
 function stralingBeskrivelse(rScale: number, sScale: number): string {
@@ -149,9 +146,89 @@ function stralingBeskrivelse(rScale: number, sScale: number): string {
   return "Ingen påvirkning";
 }
 
+// ============================================================
+// Detaljerte forklaringer basert på dagens data
+// ============================================================
+
+function xrayForklaring(klass: string | null, level: number): string {
+  if (!klass || level === 0) return "Ingen målbare røntgenutbrudd fra solen akkurat nå. Sola er rolig.";
+  const mag = parseFloat(klass.slice(1)) || 1;
+  const letter = klass[0]?.toUpperCase();
+  if (letter === "A") return `${klass} – svakt bakgrunnsutbrudd. Umerkelig for oss på jorda.`;
+  if (letter === "B") return `${klass} – svakt utbrudd. Ingen påvirkning av kommunikasjon.`;
+  if (letter === "C") return `${klass} – moderat røntgenutbrudd. Kan forårsake svake forstyrrelser på HF-radio, men mobilnett og internett påvirkes ikke.`;
+  if (letter === "M") {
+    if (mag >= 5) return `${klass} – et kraftig M-klasse røntgenutbrudd. Moderat radio blackout kan oppstå på solsiden av jorden.`;
+    return `${klass} – et ganske kraftig M-klasse røntgenutbrudd fra solen. Ikke ekstremt, men betydelig.`;
+  }
+  if (letter === "X") {
+    if (mag >= 10) return `${klass} – ekstremt kraftig røntgenutbrudd! Kraftig radio blackout over hele solsiden av jorden.`;
+    return `${klass} – kraftig røntgenutbrudd. Kraftig radio blackout og strålingsøkning.`;
+  }
+  return `${klass} – røntgenutbrudd fra solen.`;
+}
+
+function rScaleForklaring(r: number): string {
+  if (r === 0) return "Ingen radio blackout. All kommunikasjon fungerer normalt.";
+  if (r === 1) return "Svak radioforstyrrelse på HF-båndet (kortbølgeradio). Kan merkes av radioamatører, men vanlige mobilnett og internettbrukere merker ingenting.";
+  if (r === 2) return "Moderat radio blackout på solsiden av jorden. Kan påvirke kortbølgeradio og noen navigasjonssystemer, men vanlige mobilnett og internettbrukere merker normalt ingenting.";
+  if (r === 3) return "Kraftig radio blackout. HF-kommunikasjon nede i 1–2 timer på solsiden av jorden. Flytrafikk og nødkommunikasjon kan påvirkes.";
+  if (r === 4) return "Svært kraftig radio blackout. HF nede i timer. GPS-nøyaktighet redusert. Kommunikasjon med fly og skip i faresonen påvirkes.";
+  return "Ekstrem radio blackout. Total HF-blackout i opptil flere timer. GPS kan slå helt ut.";
+}
+
+function sScaleForklaring(s: number): string {
+  if (s === 0) return "Ingen økning i solpartikkelstråling. Normalt forhold for satellitter og romfart.";
+  if (s === 1) return "Svak strålingsøkning. Astronauter i rommet er litt mer utsatt, men satellitter påvirkes ikke merkbart.";
+  if (s === 2) return "Moderat strålingsstorm. Satellitter kan oppleve små problemer. Astronauter i rommet har økt strålingsdose.";
+  if (s === 3) return "Kraftig strålingsstorm. Satellitteknisk truet. Solpaneler på satellitter kan degradere. Astronauter bør søke beskyttelse.";
+  if (s === 4) return "Svært kraftig strålingsstorm. Satellitter kan gå offline. Omfattende skade på solcellepaneler.";
+  return "Ekstrem strålingsstorm. Permanent skade på satellitter. Astronauter i rommet er i stor fare.";
+}
+
+function gScaleForklaring(g: number, kp: number | null): string {
+  if (g === 0) {
+    if (kp == null) return "Ingen geomagnetisk storm registrert.";
+    if (kp < 3) return `Kp ${kp.toFixed(1)} – svært rolig geomagnetisk aktivitet. Det er derfor appen viser «ingen storm». Magnetfeltet er stabilt.`;
+    return `Kp ${kp.toFixed(1)} – noe urolig, men fortsatt under storm-nivå.`;
+  }
+  if (g === 1) return "Svak geomagnetisk storm (G1). Nordlys kan synes lavere enn vanlig. Små svingninger i kraftnettet.";
+  if (g === 2) return "Moderat geomagnetisk storm (G2). Kraftig nordlys. Transformatorer i høye breddegrader kan påvirkes.";
+  if (g === 3) return "Kraftig geomagnetisk storm (G3). Nordlys synlig langt sør. Satellittproblemer og kraftnettfeil kan oppstå.";
+  if (g === 4) return "Svært kraftig geomagnetisk storm (G4). Omfattende strømbrudd og satellittskader. Nordlys synlig i Sør-Europa.";
+  return "Ekstrem geomagnetisk storm (G5). Total kollaps av kraftnett i områder. Satellitter permanent skadet. Nordlys synlig på tropene.";
+}
+
+function solarWindForklaring(speed: number | null): string {
+  if (speed == null) return "Ingen data om solvind akkurat nå.";
+  if (speed < 350) return `${Math.round(speed)} km/s – relativt svak solvind. Roleg forhold med liten påvirkning på jordas magnetfelt.`;
+  if (speed < 450) return `${Math.round(speed)} km/s – normal solvindhastighet. Typisk for rolige perioder.`;
+  if (speed < 550) return `${Math.round(speed)} km/s – noe forhøyet solvind. Kan gi svak geomagnetisk aktivitet og nordlys hvis Kp stiger.`;
+  if (speed < 650) return `${Math.round(speed)} km/s – rask solvind. Økt sannsynlighet for nordlys og geomagnetiske forstyrrelser.`;
+  return `${Math.round(speed)} km/s – svært rask solvind! Kraftig påvirkning av magnetfeltet. Store nordlys kan oppstå.`;
+}
+
+function auroraForklaring(kp: number | null, chance: number, label: string): string {
+  if (kp == null) return "Ingen Kp-data tilgjengelig. Nordlyssannsynligheten er ukjent.";
+  let base = `Nordlys ${chance}% – ${label.toLowerCase()}, fordi Kp-indeksen er ${kp.toFixed(1)}.`;
+  if (kp < 2) base += " Magnetfeltet er svært rolig akkurat nå.";
+  else if (kp < 4) base += " Noe aktivitet, men lite forventet sør for Tromsø.";
+  else if (kp < 5) base += " Nordlys kan synes over store deler av landet ved klarvær.";
+  else if (kp < 7) base += " Gode sjanser for å se nordlys sør til Oslo-området!";
+  else base += " Kraftig nordlys kan synes over hele landet!";
+  return base;
+}
+
+// ============================================================
+// Hovedkomponent
+// ============================================================
+
 export function SpaceWeatherCard() {
   const d = useSpaceWeather();
   const aurora = nordlysSannsynlighet(d.kp);
+  const [openTile, setOpenTile] = useState<string | null>(null);
+
+  const close = useCallback(() => setOpenTile(null), []);
 
   const tiles = [
     {
@@ -229,9 +306,10 @@ export function SpaceWeatherCard() {
           {tiles.map((t, i) => {
             const color = colorForLevel(t.level);
             return (
-              <div
+              <button
                 key={t.key}
-                className={`relative overflow-hidden rounded-xl border border-white/10 bg-black/25 p-3 min-h-[110px] ${t.key === "rad" && tiles.length % 2 === 1 ? "col-span-2" : ""}`}
+                onClick={() => setOpenTile(t.key)}
+                className={`relative overflow-hidden rounded-xl border border-white/10 bg-black/25 p-3 min-h-[110px] text-left cursor-pointer hover:bg-black/35 transition-colors ${t.key === "rad" && tiles.length % 2 === 1 ? "col-span-2" : ""}`}
                 style={{ animation: `spaceFly 0.55s cubic-bezier(.2,.8,.2,1) ${(0.05 + i * 0.08).toFixed(2)}s both` }}
               >
                 <div className="absolute inset-0 pointer-events-none">{t.fx}</div>
@@ -245,19 +323,150 @@ export function SpaceWeatherCard() {
                     <div className="text-[10px] text-white/60 text-right">{t.detail}</div>
                   </div>
                 </div>
-              </div>
+              </button>
             );
           })}
         </div>
 
         <p className="mt-3 text-[10px] text-white/45 leading-snug">
-          Data fra NOAA Space Weather Prediction Center. Solstormer (røntgenklasse), solvind (DSCOVR),
-          geomagnetisk Kp-indeks og NOAA-skalaer for radio (R), stråling (S) og storm (G).
+          Trykk på en flis for detaljer. Data fra NOAA Space Weather Prediction Center.
         </p>
       </div>
+
+      {/* Detalj-modal */}
+      {openTile && (
+        <SpaceWeatherDetail
+          tile={openTile}
+          data={d}
+          aurora={aurora}
+          onClose={close}
+        />
+      )}
     </article>
   );
 }
+
+// ============================================================
+// Detalj-modal
+// ============================================================
+
+function SpaceWeatherDetail({ tile, data, aurora, onClose }: {
+  tile: string;
+  data: SpaceData;
+  aurora: { label: string; chance: number };
+  onClose: () => void;
+}) {
+  // Lukk ved Escape
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [onClose]);
+
+  const color = colorForLevel(
+    tile === "flare" ? data.xrayLevel
+    : tile === "wind" ? (data.solarWind == null ? 0 : data.solarWind > 700 ? 4 : data.solarWind > 550 ? 3 : data.solarWind > 450 ? 2 : 1)
+    : tile === "geo" ? (data.gScale > 0 ? data.gScale : Math.max(0, Math.floor((data.kp ?? 0) - 3)))
+    : tile === "aurora" ? (aurora.chance > 80 ? 4 : aurora.chance > 60 ? 3 : aurora.chance > 30 ? 2 : 1)
+    : Math.max(data.sScale, data.rScale)
+  );
+
+  const sections: Record<string, { title: string; lines: { label: string; value: string }[]; explanation: string }> = {
+    flare: {
+      title: "Solstormer",
+      lines: [
+        { label: "Røntgenklasse", value: data.xrayClass ?? "Ingen aktivitet" },
+        { label: "Nivå", value: data.xrayLevel === 0 ? "Rolig" : data.xrayLevel >= 4 ? "Ekstremt" : data.xrayLevel >= 3 ? "Kraftig" : data.xrayLevel >= 2 ? "Moderat" : "Svakt" },
+      ],
+      explanation: xrayForklaring(data.xrayClass, data.xrayLevel),
+    },
+    wind: {
+      title: "Solvind",
+      lines: [
+        { label: "Hastighet", value: data.solarWind != null ? `${Math.round(data.solarWind)} km/s` : "Ukjent" },
+        { label: "Tilstand", value: data.solarWind == null ? "Ingen data" : data.solarWind < 350 ? "Svak" : data.solarWind < 450 ? "Normal" : data.solarWind < 550 ? "Forhøyet" : data.solarWind < 650 ? "Rask" : "Svært rask" },
+      ],
+      explanation: solarWindForklaring(data.solarWind),
+    },
+    geo: {
+      title: "Geomagnetisk storm",
+      lines: [
+        { label: "Kp-indeks", value: data.kp != null ? data.kp.toFixed(1) : "Ukjent" },
+        { label: "NOAA G-skala", value: data.gScale > 0 ? `G${data.gScale}` : "Ingen storm" },
+      ],
+      explanation: gScaleForklaring(data.gScale, data.kp),
+    },
+    aurora: {
+      title: "Nordlys",
+      lines: [
+        { label: "Sannsynlighet", value: `${aurora.chance}%` },
+        { label: "Kp-indeks", value: data.kp != null ? data.kp.toFixed(1) : "Ukjent" },
+        { label: "Synlighet", value: aurora.label },
+      ],
+      explanation: auroraForklaring(data.kp, aurora.chance, aurora.label),
+    },
+    rad: {
+      title: "Stråling",
+      lines: [
+        { label: "Radio blackout (R)", value: data.rScale > 0 ? `R${data.rScale}` : "Ingen" },
+        { label: "Strålingsstorm (S)", value: data.sScale > 0 ? `S${data.sScale}` : "Ingen" },
+        { label: "Total påvirkning", value: Math.max(data.rScale, data.sScale) > 0 ? (data.rScale > data.sScale ? `Radio R${data.rScale}` : `Stråling S${data.sScale}`) : "Normal" },
+      ],
+      explanation: data.rScale > 0
+        ? rScaleForklaring(data.rScale)
+        : data.sScale > 0
+          ? sScaleForklaring(data.sScale)
+          : "Ingen økt stråling eller radioforstyrrelser registrert. Alt fungerer normalt.",
+    },
+  };
+
+  const s = sections[tile];
+  if (!s) return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+      <div
+        className="relative w-full max-w-md bg-[#0f172a]/95 backdrop-blur-2xl border-t sm:border border-white/20 sm:rounded-2xl rounded-t-2xl p-5 sm:p-6 shadow-2xl"
+        style={{ animation: "spaceFly 0.3s ease-out" }}
+      >
+        <button
+          onClick={onClose}
+          className="absolute top-3 right-3 p-1.5 rounded-full hover:bg-white/10 transition-colors text-white/60 hover:text-white"
+          aria-label="Lukk"
+        >
+          <X size={18} />
+        </button>
+
+        <div className="flex items-center gap-2 mb-4">
+          <div className="w-2 h-2 rounded-full" style={{ background: color }} />
+          <h3 className="text-base font-semibold text-white">{s.title}</h3>
+        </div>
+
+        <div className="space-y-3 mb-4">
+          {s.lines.map((line) => (
+            <div key={line.label} className="flex justify-between items-center py-2 border-b border-white/10">
+              <span className="text-sm text-white/60">{line.label}</span>
+              <span className="text-sm font-medium text-white tabular-nums">{line.value}</span>
+            </div>
+          ))}
+        </div>
+
+        <div className="rounded-xl bg-white/5 border border-white/10 p-4">
+          <p className="text-sm text-white/90 leading-relaxed">{s.explanation}</p>
+        </div>
+
+        <p className="mt-4 text-[10px] text-white/40 text-center">
+          Data fra NOAA Space Weather Prediction Center. Oppdatert kontinuerlig.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 
 // ============================================================
 // FX
