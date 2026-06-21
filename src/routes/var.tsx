@@ -352,6 +352,10 @@ function WeatherPage() {
           {/* UV-indeks · iOS-style */}
           <IosUvCard lat={userLoc.active.lat} lon={userLoc.active.lon} now={now} />
 
+          {/* Romvær — solstormer, solvind, geomagnetiske stormer, nordlys, stråling */}
+          <SpaceWeatherCard />
+
+
           {/* VINDROSE */}
           <GlassCard eyebrow={`Vindrose · ${rangeLabel(rangeHours)}`} icon={<Navigation size={14} />}>
             <div className="grid sm:grid-cols-2 gap-4">
