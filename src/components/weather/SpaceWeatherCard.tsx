@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { Sun, Wind, Magnet, Sparkles, Radio, X } from "lucide-react";
 
 type SpaceData = {
@@ -423,15 +424,18 @@ function SpaceWeatherDetail({ tile, data, aurora, onClose }: {
   const s = sections[tile];
   if (!s) return null;
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+      <style>{`
+        @keyframes spaceModalIn { 0% { opacity:0; transform: translateY(20px) scale(.96); } 100% { opacity:1; transform: translateY(0) scale(1); } }
+      `}</style>
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
       <div
-        className="relative w-full max-w-md bg-[#0f172a]/95 backdrop-blur-2xl border-t sm:border border-white/20 sm:rounded-2xl rounded-t-2xl p-5 sm:p-6 shadow-2xl"
-        style={{ animation: "spaceFly 0.3s ease-out" }}
+        className="relative w-full max-w-md bg-[#0f172a]/95 border-t sm:border border-white/20 sm:rounded-2xl rounded-t-2xl p-5 sm:p-6 shadow-2xl"
+        style={{ animation: "spaceModalIn 0.3s ease-out both" }}
       >
         <button
           onClick={onClose}
@@ -463,7 +467,8 @@ function SpaceWeatherDetail({ tile, data, aurora, onClose }: {
           Data fra NOAA Space Weather Prediction Center. Oppdatert kontinuerlig.
         </p>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
