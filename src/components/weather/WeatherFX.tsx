@@ -10,6 +10,45 @@ type Common = { intensity?: number; className?: string };
 
 const wrap = "pointer-events-none absolute inset-0 overflow-hidden";
 
+/* ---------------- INSIDE RAIN (drops inside the content box) ---------------- */
+export function InsideRainFX({ intensity = 0.5, className = "" }: Common) {
+  const i = Math.max(0, Math.min(1, intensity));
+  const count = Math.max(3, Math.round(4 + i * 12));
+  const drops = useMemo(
+    () =>
+      Array.from({ length: count }).map(() => ({
+        left: 10 + Math.random() * 80,
+        delay: Math.random() * 2,
+        dur: 1.2 + Math.random() * 1.4,
+        size: 2 + Math.random() * 2.5,
+        op: 0.35 + Math.random() * 0.35,
+      })),
+    [count],
+  );
+  return (
+    <div className={`pointer-events-none absolute inset-x-4 top-8 bottom-4 overflow-hidden ${className}`} aria-hidden>
+      {drops.map((d, idx) => (
+        <span
+          key={idx}
+          className="absolute animate-wx-inside-rain"
+          style={{
+            left: `${d.left}%`,
+            top: 0,
+            width: d.size,
+            height: d.size * 1.6,
+            borderRadius: "0 0 50% 50%",
+            background:
+              "linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(180,220,255,0.85) 60%, rgba(140,200,255,0.95) 100%)",
+            opacity: d.op,
+            animationDuration: `${d.dur}s`,
+            animationDelay: `${d.delay}s`,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
 /* ---------------- RAIN ---------------- */
 export function RainFX({ intensity = 0.5, className = "" }: Common) {
   const count = Math.max(6, Math.round(8 + intensity * 22));
