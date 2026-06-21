@@ -1539,9 +1539,12 @@ function PrecipTodayCard({ day, days }: { day: ForecastDay | undefined; days: Fo
     : "Tørt de neste dagene.";
   return (
     <GlassCard eyebrow="Nedbør" icon={<CloudRain size={14} />} fx={<RainFX intensity={Math.min(1, mm / 8)} />}>
-      <div className="text-3xl font-light tabular-nums">{mm.toFixed(mm < 10 ? 1 : 0)} mm</div>
-      <div className="text-sm text-white/85">I dag</div>
-      <div className="text-[12px] text-white/75 mt-2 leading-snug">{hint}</div>
+      <div className="relative">
+        <InsideRainFX intensity={Math.min(1, mm / 5)} />
+        <div className="text-3xl font-light tabular-nums">{mm.toFixed(mm < 10 ? 1 : 0)} mm</div>
+        <div className="text-sm text-white/85">I dag</div>
+        <div className="text-[12px] text-white/75 mt-2 leading-snug">{hint}</div>
+      </div>
     </GlassCard>
   );
 }
