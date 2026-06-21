@@ -1102,7 +1102,8 @@ function SunsetCard({ sun, now }: { sun: ReturnType<typeof sunTimes>; now: Date 
     <GlassCard
       eyebrow={eyebrow}
       icon={night ? <Moon size={14} /> : <Sunrise size={14} />}
-      fx={<SunFX intensity={above ? 1 : 0.3} />}
+      fx={night ? <MoonFX intensity={0.9} /> : <SunFX intensity={above ? 1 : 0.3} />}
+      className={night ? "bg-[#0a1024]/70 border-white/10 shadow-black/40" : ""}
     >
       <div className="text-3xl font-light tabular-nums">{headlineLabel}</div>
       {remainingLabel && <div className="text-[11px] text-white/70 mt-0.5">{remainingLabel}</div>}
