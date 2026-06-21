@@ -137,6 +137,33 @@ export function useWeatherSound(kind: WeatherSoundKind | null, enabled: boolean)
         cancelled = true;
         try { src.stop(); } catch {}
       });
+    } else if (kind === "skydekke") {
+      // Lav, dempet drone — som vind under et tungt skylag
+      const src = ctx.createBufferSource();
+      src.buffer = noiseBuffer;
+      src.loop = true;
+      const lp = ctx.createBiquadFilter();
+      lp.type = "lowpass";
+      lp.frequency.value = 260;
+      const g = ctx.createGain();
+      g.gain.value = 0.45;
+      src.connect(lp).connect(g).connect(master);
+      const osc = ctx.createOscillator();
+      osc.type = "sine";
+      osc.frequency.value = 90;
+      const og = ctx.createGain();
+      og.gain.value = 0.06;
+      osc.connect(og).connect(master);
+      // langsom LFO for "tyngde"
+      const lfo = ctx.createOscillator();
+      lfo.frequency.value = 0.08;
+      const lfoGain = ctx.createGain();
+      lfoGain.gain.value = 120;
+      lfo.connect(lfoGain).connect(lp.frequency);
+      src.start();
+      osc.start();
+      lfo.start();
+      stoppers.push(() => { try { src.stop(); } catch {} try { osc.stop(); } catch {} try { lfo.stop(); } catch {} });
     }
 
     nodesRef.current = {
