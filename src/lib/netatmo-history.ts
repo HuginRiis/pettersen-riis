@@ -595,6 +595,14 @@ export const getNetatmoClimateHistory = createServerFn({ method: "GET" })
         } catch (e: any) {
           return await fallbackToDb(e?.message ?? "Ukjent feil");
         }
+        })();
+
+        inFlight.set(key, promise);
+        try {
+          return await promise;
+        } finally {
+          inFlight.delete(key);
+        }
       },
     ),
   );
