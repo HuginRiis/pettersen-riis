@@ -18,8 +18,10 @@ type TokenCache = {
 };
 
 let tokenCache: TokenCache | null = null;
+let tokenInFlight: Promise<string> | null = null;
+let tokenCooldownUntil = 0;
 
-async function getAccessToken(): Promise<string> {
+async function refreshAccessToken(): Promise<string> {
   const clientId = process.env.NETATMO_CLIENT_ID;
   const clientSecret = process.env.NETATMO_CLIENT_SECRET;
   const initialRefresh = process.env.NETATMO_REFRESH_TOKEN;
@@ -28,12 +30,17 @@ async function getAccessToken(): Promise<string> {
     throw new Error("NETATMO_CLIENT_ID/SECRET/REFRESH_TOKEN mangler");
   }
 
-  if (tokenCache && tokenCache.expiresAt - Date.now() > 60_000) {
+  const stored = await loadStoredToken(REFRESH_TOKEN_KEY);
+  if (stored?.access_token && stored.expires_at && stored.expires_at - Date.now() > 60_000) {
+    tokenCache = {
+      accessToken: stored.access_token,
+      refreshToken: stored.refresh_token,
+      expiresAt: stored.expires_at,
+    };
     return tokenCache.accessToken;
   }
 
-  const stored = await loadStoredRefreshToken(REFRESH_TOKEN_KEY);
-  const refreshToken = tokenCache?.refreshToken ?? stored ?? initialRefresh;
+  const refreshToken = tokenCache?.refreshToken ?? stored?.refresh_token ?? initialRefresh;
 
   const res = await fetch(`${NETATMO_BASE}/oauth2/token`, {
     method: "POST",
@@ -48,6 +55,7 @@ async function getAccessToken(): Promise<string> {
 
   if (!res.ok) {
     const text = await res.text();
+    if (res.status === 429) tokenCooldownUntil = Date.now() + 10 * 60_000;
     throw new Error(`Netatmo token-feil (${res.status}): ${text.slice(0, 200)}`);
   }
 
@@ -63,9 +71,39 @@ async function getAccessToken(): Promise<string> {
     expiresAt: Date.now() + tok.expires_in * 1000,
   };
 
-  await saveStoredRefreshToken(REFRESH_TOKEN_KEY, tok.refresh_token);
+  await saveStoredToken(REFRESH_TOKEN_KEY, {
+    access_token: tokenCache.accessToken,
+    refresh_token: tokenCache.refreshToken,
+    expires_at: tokenCache.expiresAt,
+  });
 
   return tokenCache.accessToken;
+}
+
+async function getAccessToken(): Promise<string> {
+  if (tokenCache && tokenCache.expiresAt - Date.now() > 60_000) {
+    return tokenCache.accessToken;
+  }
+  if (tokenInFlight) return tokenInFlight;
+  if (Date.now() < tokenCooldownUntil) {
+    if (tokenCache?.accessToken) return tokenCache.accessToken;
+    const stored = await loadStoredToken(REFRESH_TOKEN_KEY);
+    if (stored?.access_token && stored.expires_at && stored.expires_at - Date.now() > 60_000) {
+      tokenCache = {
+        accessToken: stored.access_token,
+        refreshToken: stored.refresh_token,
+        expiresAt: stored.expires_at,
+      };
+      return tokenCache.accessToken;
+    }
+    throw new Error(
+      `Netatmo token-cooldown: prøver igjen om ${Math.ceil((tokenCooldownUntil - Date.now()) / 1000)}s`,
+    );
+  }
+  tokenInFlight = refreshAccessToken().finally(() => {
+    tokenInFlight = null;
+  });
+  return tokenInFlight;
 }
 
 export type NetatmoCameraResult =
