@@ -547,6 +547,128 @@ export function StarFX({ intensity = 0.5, className = "" }: Common) {
   );
 }
 
+/* ---------------- MOON FX (måne øverst til høyre + stjerner + Karlsvognen) ---------------- */
+export function MoonFX({ intensity = 0.5, className = "" }: Common) {
+  const stars = useMemo(
+    () =>
+      Array.from({ length: 22 }).map(() => ({
+        left: Math.random() * 100,
+        top: Math.random() * 75,
+        delay: Math.random() * 3,
+        dur: 1.8 + Math.random() * 2.4,
+        size: 0.8 + Math.random() * 1.8,
+        op: 0.45 + Math.random() * 0.45,
+      })),
+    [],
+  );
+
+  // Karlsvognen (Big Dipper) — 7 stjerner i prosent av viewBox 100x70
+  const bigDipper = [
+    { x: 8, y: 58, size: 2.4 },   // Alkaid
+    { x: 18, y: 52, size: 2.2 },  // Mizar
+    { x: 28, y: 47, size: 2.5 },  // Alioth
+    { x: 40, y: 45, size: 1.8 },  // Megrez
+    { x: 44, y: 60, size: 2.3 },  // Phecda
+    { x: 58, y: 62, size: 2.1 },  // Merak
+    { x: 56, y: 47, size: 2.6 },  // Dubhe
+  ];
+  const dipperLines: Array<[number, number]> = [
+    [0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [6, 3],
+  ];
+
+  return (
+    <div className={`${wrap} ${className}`} aria-hidden>
+      {/* Måne-glød øverst til høyre */}
+      <div
+        className="absolute -top-10 -right-10 w-40 h-40 rounded-full"
+        style={{
+          background:
+            "radial-gradient(circle, rgba(220,230,255,0.45) 0%, rgba(180,200,240,0.18) 40%, transparent 70%)",
+          filter: "blur(6px)",
+          opacity: 0.55 + intensity * 0.35,
+        }}
+      />
+      {/* Selve halvmånen */}
+      <svg
+        className="absolute top-3 right-3"
+        width="46"
+        height="46"
+        viewBox="0 0 46 46"
+        style={{ filter: "drop-shadow(0 0 8px rgba(200,215,255,0.7))" }}
+      >
+        <defs>
+          <radialGradient id="moonfx-body" cx="40%" cy="40%" r="60%">
+            <stop offset="0%" stopColor="#fefeff" />
+            <stop offset="70%" stopColor="#e6ebff" />
+            <stop offset="100%" stopColor="#b9c4e8" />
+          </radialGradient>
+        </defs>
+        <circle cx="23" cy="23" r="13" fill="url(#moonfx-body)" />
+        <circle cx="27" cy="21" r="10.5" fill="rgba(15,22,45,0.92)" />
+        <circle cx="18" cy="26" r="1.4" fill="rgba(160,175,210,0.55)" />
+        <circle cx="21" cy="20" r="0.9" fill="rgba(160,175,210,0.45)" />
+        <circle cx="16" cy="22" r="0.7" fill="rgba(160,175,210,0.4)" />
+      </svg>
+
+      {/* Spredte stjerner */}
+      {stars.map((s, i) => (
+        <span
+          key={`s-${i}`}
+          className="absolute rounded-full bg-white animate-wx-sparkle"
+          style={{
+            left: `${s.left}%`,
+            top: `${s.top}%`,
+            width: s.size,
+            height: s.size,
+            opacity: s.op,
+            boxShadow: "0 0 4px rgba(255,255,255,0.85)",
+            animationDuration: `${s.dur}s`,
+            animationDelay: `${s.delay}s`,
+          }}
+        />
+      ))}
+
+      {/* Karlsvognen — nede til venstre */}
+      <svg
+        className="absolute"
+        style={{ left: "4%", bottom: "6%", width: "58%", height: "44%" }}
+        viewBox="0 0 100 70"
+        preserveAspectRatio="none"
+      >
+        {dipperLines.map(([a, b], i) => (
+          <line
+            key={`l-${i}`}
+            x1={bigDipper[a].x}
+            y1={bigDipper[a].y}
+            x2={bigDipper[b].x}
+            y2={bigDipper[b].y}
+            stroke="rgba(190,210,255,0.35)"
+            strokeWidth="0.4"
+            strokeLinecap="round"
+          />
+        ))}
+        {bigDipper.map((st, i) => (
+          <g key={`bd-${i}`}>
+            <circle cx={st.x} cy={st.y} r={st.size * 1.6} fill="rgba(220,230,255,0.22)" />
+            <circle
+              cx={st.x}
+              cy={st.y}
+              r={st.size * 0.7}
+              fill="#ffffff"
+              className="animate-wx-sparkle"
+              style={{
+                filter: "drop-shadow(0 0 2px rgba(255,255,255,0.95))",
+                animationDuration: `${2.2 + (i % 3) * 0.6}s`,
+                animationDelay: `${(i * 0.25) % 2}s`,
+              }}
+            />
+          </g>
+        ))}
+      </svg>
+    </div>
+  );
+}
+
 /* ---------------- THUNDER / LIGHTNING ---------------- */
 function makeBoltPath(seed: number, segments: number, jitter: number) {
   let s = seed;
