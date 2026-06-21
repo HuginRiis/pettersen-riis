@@ -13,8 +13,7 @@ type SpaceData = {
   error: string | null;
 };
 
-const cache: { ts: number; data: Omit<SpaceData, "loading" | "error"> } | null = null;
-let memCache = cache;
+let memCache: { ts: number; data: Omit<SpaceData, "loading" | "error"> } | null = null;
 const TTL = 10 * 60 * 1000;
 
 function parseXrayClass(s: string | null | undefined): number {
