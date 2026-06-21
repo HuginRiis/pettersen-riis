@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 
-export type WeatherSoundKind = "nedbor" | "vaer" | "vind" | "lyn";
+export type WeatherSoundKind = "nedbor" | "vaer" | "vind" | "lyn" | "skydekke";
 
 /**
  * Procedural ambient sounds for the rotating weather tile.
