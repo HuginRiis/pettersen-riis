@@ -18,7 +18,9 @@ const loadTokenStore = createIsomorphicFn()
     (): Promise<typeof import("@/lib/netatmo-token-store.server")> =>
       Promise.resolve({
         loadStoredRefreshToken: async () => null,
+        loadStoredToken: async () => null,
         saveStoredRefreshToken: async () => {},
+        saveStoredToken: async () => {},
       } as unknown as typeof import("@/lib/netatmo-token-store.server")),
   );
 const loadAdmin = createIsomorphicFn()
