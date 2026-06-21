@@ -18,7 +18,9 @@ const loadTokenStore = createIsomorphicFn()
     (): Promise<typeof import("@/lib/netatmo-token-store.server")> =>
       Promise.resolve({
         loadStoredRefreshToken: async () => null,
+        loadStoredToken: async () => null,
         saveStoredRefreshToken: async () => {},
+        saveStoredToken: async () => {},
       } as unknown as typeof import("@/lib/netatmo-token-store.server")),
   );
 const loadAdmin = createIsomorphicFn()
@@ -30,7 +32,7 @@ const loadAdmin = createIsomorphicFn()
       Promise.resolve({ supabaseAdmin: null } as unknown as typeof import("@/integrations/supabase/client.server")),
   );
 const { withApiLog } = await loadApiLog();
-const { loadStoredRefreshToken, saveStoredRefreshToken } = await loadTokenStore();
+const { loadStoredToken, saveStoredToken } = await loadTokenStore();
 const { supabaseAdmin } = await loadAdmin();
 
 const REFRESH_TOKEN_KEY = "netatmo_ws_refresh_token";
@@ -45,8 +47,14 @@ type TokenCache = {
 };
 
 let tokenCache: TokenCache | null = null;
+let tokenInFlight: Promise<string> | null = null;
+// Når Netatmo svarer 429 på /oauth2/token (code 29 "Access temporarily
+// restricted") må vi backe av — ellers blir vi straffet enda lengre. Vi
+// holder en cooldown der vi enten serverer eksisterende tokenCache eller
+// kaster en pen feil i stedet for å hamre token-endepunktet.
+let tokenCooldownUntil = 0;
 
-async function getAccessToken(): Promise<string> {
+async function refreshAccessToken(): Promise<string> {
   const clientId = process.env.NETATMO_WS_CLIENT_ID;
   const clientSecret = process.env.NETATMO_WS_CLIENT_SECRET;
   const initialRefresh = process.env.NETATMO_WS_REFRESH_TOKEN;
@@ -55,14 +63,21 @@ async function getAccessToken(): Promise<string> {
     throw new Error("NETATMO_WS_CLIENT_ID/SECRET/REFRESH_TOKEN mangler");
   }
 
-  if (tokenCache && tokenCache.expiresAt - Date.now() > 60_000) {
+  // Foretrekk lagret token fra DB (overlever cold start), så cache,
+  // så initialToken fra env (kun første gang).
+  const stored = await loadStoredToken(REFRESH_TOKEN_KEY);
+  // Hvis DB allerede har en gyldig access_token (>60s igjen), bruk den
+  // direkte og hopp over /oauth2/token-kallet.
+  if (stored?.access_token && stored.expires_at && stored.expires_at - Date.now() > 60_000) {
+    tokenCache = {
+      accessToken: stored.access_token,
+      refreshToken: stored.refresh_token,
+      expiresAt: stored.expires_at,
+    };
     return tokenCache.accessToken;
   }
 
-  // Netatmo roterer refresh_token ved hver bruk. Foretrekk lagret token fra DB
-  // (overlever cold start), så cache, så initialToken fra env (kun første gang).
-  const stored = await loadStoredRefreshToken(REFRESH_TOKEN_KEY);
-  const refreshToken = tokenCache?.refreshToken ?? stored ?? initialRefresh;
+  const refreshToken = tokenCache?.refreshToken ?? stored?.refresh_token ?? initialRefresh;
 
   const res = await fetch(`${NETATMO_BASE}/oauth2/token`, {
     method: "POST",
@@ -77,6 +92,10 @@ async function getAccessToken(): Promise<string> {
 
   if (!res.ok) {
     const text = await res.text();
+    if (res.status === 429) {
+      // Netatmo: vent minst 10 min før vi prøver igjen.
+      tokenCooldownUntil = Date.now() + 10 * 60_000;
+    }
     throw new Error(`Netatmo WS token-feil (${res.status}): ${text.slice(0, 200)}`);
   }
 
@@ -92,11 +111,46 @@ async function getAccessToken(): Promise<string> {
     expiresAt: Date.now() + tok.expires_in * 1000,
   };
 
-  // Persister den roterte refresh-tokenen så neste cold start ikke faller tilbake
-  // til en utgått env-token.
-  await saveStoredRefreshToken(REFRESH_TOKEN_KEY, tok.refresh_token);
+  // Persistér både ny refresh-token OG access-token + utløp, slik at andre
+  // cold-start workers gjenbruker access-tokenen istedenfor å refreshe.
+  await saveStoredToken(REFRESH_TOKEN_KEY, {
+    access_token: tokenCache.accessToken,
+    refresh_token: tokenCache.refreshToken,
+    expires_at: tokenCache.expiresAt,
+  });
 
   return tokenCache.accessToken;
+}
+
+async function getAccessToken(): Promise<string> {
+  if (tokenCache && tokenCache.expiresAt - Date.now() > 60_000) {
+    return tokenCache.accessToken;
+  }
+  // Singleflight — parallelle kallere venter på samme refresh.
+  if (tokenInFlight) return tokenInFlight;
+
+  // Respekter cooldown etter 429
+  if (Date.now() < tokenCooldownUntil) {
+    if (tokenCache?.accessToken) return tokenCache.accessToken;
+    // Forsøk DB direkte uten å treffe token-endepunktet
+    const stored = await loadStoredToken(REFRESH_TOKEN_KEY);
+    if (stored?.access_token && stored.expires_at && stored.expires_at - Date.now() > 60_000) {
+      tokenCache = {
+        accessToken: stored.access_token,
+        refreshToken: stored.refresh_token,
+        expiresAt: stored.expires_at,
+      };
+      return tokenCache.accessToken;
+    }
+    throw new Error(
+      `Netatmo WS token-cooldown: prøver igjen om ${Math.ceil((tokenCooldownUntil - Date.now()) / 1000)}s`,
+    );
+  }
+
+  tokenInFlight = refreshAccessToken().finally(() => {
+    tokenInFlight = null;
+  });
+  return tokenInFlight;
 }
 
 export type WeatherModule = {
