@@ -412,7 +412,7 @@ function GlassCard({
 // Én flis som veksler mellom: Nedbør · Værforhold · Vind · Lyn
 // ============================================================
 
-type PanelKey = "nedbor" | "vaer" | "vind" | "lyn";
+type PanelKey = "nedbor" | "vaer" | "skydekke" | "vind" | "lyn";
 
 function RotatingForecastCard({ hours, soundEnabled }: { hours: Hour[] | null; soundEnabled: boolean }) {
   const [panel, setPanel] = useState<PanelKey>("nedbor");
