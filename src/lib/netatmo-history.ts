@@ -156,6 +156,9 @@ export type ClimateHistoryResult =
 
 const CACHE_TTL_MS = 10 * 60_000;
 const cache = new Map<string, { at: number; data: ClimateHistoryResult }>();
+// Singleflight: parallelle forespørsler for samme stasjon deler én pågående
+// fetch i stedet for hver å fyre ~8 getmeasure-kall mot Netatmo.
+const inFlight = new Map<string, Promise<ClimateHistoryResult>>();
 
 async function netatmoFetch(url: string, token: string): Promise<any> {
   const res = await fetch(url, {
