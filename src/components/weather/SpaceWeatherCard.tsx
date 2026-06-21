@@ -125,6 +125,30 @@ function colorForLevel(lvl: number): string {
   return "#b14bff"; // ekstrem
 }
 
+function stralingBeskrivelse(rScale: number, sScale: number): string {
+  if (rScale >= 1) {
+    const besk: Record<number, string> = {
+      1: "Sjelden HF-forstyrrelse",
+      2: "Sporadisk HF-brudd",
+      3: "HF nede 1–2 timer",
+      4: "HF nede i timer",
+      5: "Total HF-blackout",
+    };
+    return besk[rScale] ?? "Radioforstyrrelse";
+  }
+  if (sScale >= 1) {
+    const besk: Record<number, string> = {
+      1: "Astronauter utsatt",
+      2: "Satellitt-problemer",
+      3: "Satellitteknisk truet",
+      4: "Satellitter offline",
+      5: "Permanent satellittskade",
+    };
+    return besk[sScale] ?? "Strålingsøkning";
+  }
+  return "Ingen påvirkning";
+}
+
 export function SpaceWeatherCard() {
   const d = useSpaceWeather();
   const aurora = nordlysSannsynlighet(d.kp);
@@ -173,9 +197,9 @@ export function SpaceWeatherCard() {
     {
       key: "rad",
       title: "Stråling",
-      sub: "Satellitt · radio · strømnett",
+      sub: stralingBeskrivelse(d.rScale, d.sScale),
       value: d.sScale > 0 ? `S${d.sScale}` : d.rScale > 0 ? `R${d.rScale}` : "Rolig",
-      detail: d.rScale > 0 ? `Radioblackout R${d.rScale}` : d.sScale > 0 ? "Strålingstorm" : "Normal",
+      detail: d.rScale > 0 ? `Radioblackout R${d.rScale}` : d.sScale > 0 ? `Strålingstorm S${d.sScale}` : "Normal",
       level: Math.max(d.sScale, d.rScale),
       icon: <Radio size={14} />,
       fx: <RadiationFX intensity={Math.min(1, Math.max(d.sScale, d.rScale) / 5)} />,
