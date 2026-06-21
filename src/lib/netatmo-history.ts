@@ -7,7 +7,7 @@ const { withApiLog } = await __load_api_call_log_server();
 const __load_netatmo_token_store_server = createIsomorphicFn()
   .server((): Promise<typeof import("@/lib/netatmo-token-store.server")> => import("@/lib/netatmo-token-store.server"))
   .client((): Promise<typeof import("@/lib/netatmo-token-store.server")> => Promise.resolve({} as unknown as typeof import("@/lib/netatmo-token-store.server")));
-const { loadStoredRefreshToken, saveStoredRefreshToken } = await __load_netatmo_token_store_server();
+const { loadStoredToken, saveStoredToken } = await __load_netatmo_token_store_server();
 const __loadAdmin = createIsomorphicFn()
   .server((): Promise<typeof import("@/integrations/supabase/client.server")> =>
     import("@/integrations/supabase/client.server"),
