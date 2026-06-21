@@ -41,7 +41,7 @@ function useSpaceWeather(): SpaceData {
     (async () => {
       try {
         const [xrayR, windR, kpR, scalesR] = await Promise.all([
-          fetch("https://services.swpc.noaa.gov/products/summary/xray.json").catch(() => null),
+          fetch("https://services.swpc.noaa.gov/json/goes/primary/xray-flares-latest.json").catch(() => null),
           fetch("https://services.swpc.noaa.gov/products/summary/solar-wind-speed.json").catch(() => null),
           fetch("https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json").catch(() => null),
           fetch("https://services.swpc.noaa.gov/products/noaa-scales.json").catch(() => null),
@@ -50,24 +50,32 @@ function useSpaceWeather(): SpaceData {
         let xrayClass: string | null = null;
         if (xrayR?.ok) {
           const j = await xrayR.json();
-          xrayClass = j?.MaxClass ?? j?.Max ?? null;
+          const row = Array.isArray(j) ? j[0] : j;
+          xrayClass = row?.max_class ?? row?.current_class ?? null;
         }
         const xrayLevel = parseXrayClass(xrayClass);
 
         let solarWind: number | null = null;
         if (windR?.ok) {
           const j = await windR.json();
-          const v = parseFloat(j?.WindSpeed ?? j?.Speed ?? "");
+          const row = Array.isArray(j) ? j[j.length - 1] : j;
+          const v = parseFloat(row?.proton_speed ?? row?.WindSpeed ?? row?.Speed ?? "");
           solarWind = Number.isFinite(v) ? v : null;
         }
 
         let kp: number | null = null;
         if (kpR?.ok) {
           const arr = await kpR.json();
-          // arr[0] = header. siste rad = nyeste observasjon
-          if (Array.isArray(arr) && arr.length > 1) {
+          if (Array.isArray(arr) && arr.length > 0) {
             const last = arr[arr.length - 1];
-            const v = parseFloat(last?.[1]);
+            // Nytt format: { time_tag, Kp, a_running, station_count }
+            // Gammelt format: ["time", "kp", ...]  med [0] som header
+            let v: number = NaN;
+            if (last && typeof last === "object" && !Array.isArray(last)) {
+              v = parseFloat(last.Kp ?? last.kp_index ?? "");
+            } else if (Array.isArray(last)) {
+              v = parseFloat(last[1]);
+            }
             kp = Number.isFinite(v) ? v : null;
           }
         }
