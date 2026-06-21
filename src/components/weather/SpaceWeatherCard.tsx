@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { Sun, Wind, Magnet, Sparkles, Radio, X } from "lucide-react";
 
 type SpaceData = {
