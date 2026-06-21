@@ -13,7 +13,8 @@ const wrap = "pointer-events-none absolute inset-0 overflow-hidden";
 /* ---------------- INSIDE RAIN (drops inside the content box) ---------------- */
 export function InsideRainFX({ intensity = 0.5, className = "" }: Common) {
   const i = Math.max(0, Math.min(1, intensity));
-  const count = Math.max(3, Math.round(4 + i * 12));
+  // 0 dråper når intensitet = 0, ellers eskalerer raskt: 2 → 18
+  const count = i === 0 ? 0 : Math.max(2, Math.round(2 + i * 16));
   const drops = useMemo(
     () =>
       Array.from({ length: count }).map(() => ({
@@ -25,6 +26,7 @@ export function InsideRainFX({ intensity = 0.5, className = "" }: Common) {
       })),
     [count],
   );
+  if (count === 0) return null;
   return (
     <div className={`pointer-events-none absolute inset-x-4 top-8 bottom-4 overflow-hidden ${className}`} aria-hidden>
       {drops.map((d, idx) => (
