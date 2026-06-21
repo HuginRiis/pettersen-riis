@@ -26,6 +26,7 @@ import {
   TrendingUp,
   AlertTriangle,
   Cloud,
+  CloudFog,
   Map as MapIcon,
   ChevronDown,
   ChevronUp,
