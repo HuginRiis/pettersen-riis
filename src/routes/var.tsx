@@ -510,15 +510,17 @@ function RotatingForecastCard({ hours, soundEnabled }: { hours: Hour[] | null; s
           key={panel}
           style={{
             animation:
-              panel === "nedbor" ? "panelFlyRight 0.6s cubic-bezier(.2,.8,.2,1) both" :
-              panel === "vaer"   ? "panelFlyLeft 0.6s cubic-bezier(.2,.8,.2,1) both" :
-              panel === "vind"   ? "panelFlyUp 0.55s cubic-bezier(.2,.8,.2,1) both" :
-                                   "panelFlyZoom 0.6s cubic-bezier(.2,.8,.2,1) both",
+              panel === "nedbor"  ? "panelFlyRight 0.6s cubic-bezier(.2,.8,.2,1) both" :
+              panel === "vaer"    ? "panelFlyLeft 0.6s cubic-bezier(.2,.8,.2,1) both" :
+              panel === "skydekke"? "panelFlyUp 0.55s cubic-bezier(.2,.8,.2,1) both" :
+              panel === "vind"    ? "panelFlyUp 0.55s cubic-bezier(.2,.8,.2,1) both" :
+                                    "panelFlyZoom 0.6s cubic-bezier(.2,.8,.2,1) both",
             willChange: "transform, opacity, filter",
           }}
         >
           {panel === "nedbor" && <NedborPanel hours={next48} maxP={maxRain} />}
           {panel === "vaer" && <VaerPanel hours={next48} />}
+          {panel === "skydekke" && <SkydekkePanel hours={next48} />}
           {panel === "vind" && <VindPanel hours={next48} maxW={maxWind} />}
           {panel === "lyn" && <LynPanel hours={next48} />}
         </div>
