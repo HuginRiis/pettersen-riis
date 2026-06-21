@@ -629,6 +629,92 @@ function VaerPanel({ hours }: { hours: Hour[] }) {
   );
 }
 
+function SkydekkePanel({ hours }: { hours: Hour[] }) {
+  const next = hours.slice(0, 48);
+  const clouds = next.map((h) => Math.max(0, Math.min(100, h.cloud ?? 0)));
+  const avg = clouds.reduce((s, v) => s + v, 0) / Math.max(1, clouds.length);
+  const peakIdx = clouds.reduce((b, v, i) => (v > clouds[b] ? i : b), 0);
+  const clearIdx = clouds.reduce((b, v, i) => (v < clouds[b] ? i : b), 0);
+  const peak = next[peakIdx];
+  const clear = next[clearIdx];
+  const label = avg < 25 ? "Stort sett klart" : avg < 60 ? "Vekslende skydekke" : avg < 85 ? "Mye skyet" : "Tett overskyet";
+  const summary = `${label} · snitt ${Math.round(avg)} % · tettest ${Math.round(clouds[peakIdx])} % ${fmtWhen(peak.time)} · klarest ${Math.round(clouds[clearIdx])} % ${fmtWhen(clear.time)}`;
+
+  // SVG-graf
+  const W = Math.max(next.length * 22, 320);
+  const H = 90;
+  const xFor = (i: number) => 6 + (i / Math.max(1, next.length - 1)) * (W - 12);
+  const yFor = (v: number) => H - 8 - (v / 100) * (H - 16);
+  const pts = clouds.map((v, i) => `${xFor(i).toFixed(1)},${yFor(v).toFixed(1)}`);
+  const linePath = `M ${pts[0]} L ${pts.slice(1).join(" L ")}`;
+  const fillPath = `M ${xFor(0).toFixed(1)},${H - 8} L ${pts.join(" L ")} L ${xFor(clouds.length - 1).toFixed(1)},${H - 8} Z`;
+
+  return (
+    <div className="space-y-2">
+      <div className="text-[12px] text-white/90">{summary}</div>
+
+      <div className="flex items-baseline gap-3 px-1">
+        <div className="text-3xl font-semibold tabular-nums text-white">{Math.round(avg)}<span className="text-base text-white/70">%</span></div>
+        <div className="text-[11px] text-white/70">snitt skydekke neste 48 t</div>
+      </div>
+
+      <div className="overflow-x-auto -mx-2 px-2">
+        <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} preserveAspectRatio="none" className="block">
+          <defs>
+            <linearGradient id="cloudGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="rgba(20,24,35,0.85)" />
+              <stop offset="60%" stopColor="rgba(120,135,160,0.55)" />
+              <stop offset="100%" stopColor="rgba(220,230,245,0.05)" />
+            </linearGradient>
+          </defs>
+          {/* gridlinjer på 25/50/75 % */}
+          {[25, 50, 75].map((p) => (
+            <line key={p} x1={6} x2={W - 6} y1={yFor(p)} y2={yFor(p)} stroke="rgba(255,255,255,0.12)" strokeDasharray="3 4" />
+          ))}
+          <path d={fillPath} fill="url(#cloudGrad)" />
+          <path
+            d={linePath}
+            fill="none"
+            stroke="rgba(255,255,255,0.9)"
+            strokeWidth={1.5}
+            strokeLinejoin="round"
+            strokeLinecap="round"
+            style={{ strokeDasharray: 1200, strokeDashoffset: 1200, animation: "pathDraw 1.4s ease-out forwards" }}
+          />
+        </svg>
+      </div>
+
+      <div className="overflow-x-auto -mx-2 px-2">
+        <div className="flex items-end gap-2 min-w-max pb-1">
+          {next.map((h, i) => {
+            const v = clouds[i];
+            // mørk farge ved tett dekke
+            const l = Math.round(240 - v * 1.9); // 240 → 50
+            const col = `rgb(${l},${l},${Math.min(255, l + 10)})`;
+            return (
+              <div
+                key={h.time}
+                className="flex flex-col items-center w-10"
+                style={{ animation: `hourPop 0.45s cubic-bezier(.2,.8,.2,1) ${(0.4 + i * 0.04).toFixed(2)}s both` }}
+              >
+                <div className="text-[10px] text-white/80 mb-1"><HourLabel time={h.time} index={i} /></div>
+                <div className="relative w-6 h-16 rounded-md bg-white/10 overflow-hidden border-t border-dashed border-white/20">
+                  <div
+                    className="absolute bottom-0 left-0 right-0 rounded-md"
+                    style={{ height: `${Math.max(4, v)}%`, background: `linear-gradient(to top, ${col}, rgba(255,255,255,0.15))` }}
+                  />
+                </div>
+                <div className="text-[10px] text-white/85 font-medium tabular-nums mt-1">{Math.round(v)}%</div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
 function VindPanel({ hours, maxW }: { hours: Hour[]; maxW: number }) {
   const maxG = Math.max(maxW, ...hours.map((h) => h.windGust));
   const peakIdx = hours.reduce((b, h, i, a) => (h.windGust > a[b].windGust ? i : b), 0);
