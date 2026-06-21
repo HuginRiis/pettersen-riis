@@ -163,6 +163,80 @@ export function CloudFX({ intensity = 0.5, className = "" }: Common) {
   );
 }
 
+/* ---------------- CLOUD COVER (realistic layered sky) ---------------- */
+export function CloudCoverFX({ intensity = 0.5, className = "" }: Common) {
+  const i = Math.max(0, Math.min(1, intensity));
+  // 0 = blå klar himmel, 1 = mørk, tett dekke
+  const count = Math.round(6 + i * 14);
+  const blobs = useMemo(
+    () =>
+      Array.from({ length: count }).map((_, k) => {
+        const layer = k % 3; // 0=bak, 1=midt, 2=front
+        const baseTop = layer === 0 ? 4 : layer === 1 ? 18 : 38;
+        return {
+          top: baseTop + Math.random() * 28,
+          left: Math.random() * 120 - 10,
+          width: 140 + Math.random() * 220 + layer * 60,
+          height: 60 + Math.random() * 80 + layer * 20,
+          dur: 50 + Math.random() * 70 - layer * 8,
+          delay: -Math.random() * 80,
+          blur: 14 + layer * 6 + Math.random() * 8,
+          // mørkere skyer jo høyere intensitet og jo lenger fram
+          darkness: Math.min(0.95, 0.15 + i * (0.55 + layer * 0.15) + Math.random() * 0.1),
+          op: 0.45 + i * 0.45 + layer * 0.05,
+        };
+      }),
+    [count, i],
+  );
+
+  // himmelfarge bak skyene: klarblå → mørk grå/blå
+  const skyTop = `rgba(${Math.round(120 - i * 100)}, ${Math.round(170 - i * 140)}, ${Math.round(220 - i * 170)}, ${0.35 + i * 0.45})`;
+  const skyBot = `rgba(${Math.round(80 - i * 70)}, ${Math.round(110 - i * 95)}, ${Math.round(160 - i * 135)}, ${0.25 + i * 0.5})`;
+
+  return (
+    <div className={`${wrap} ${className}`} aria-hidden>
+      <div
+        className="absolute inset-0"
+        style={{ background: `linear-gradient(to bottom, ${skyTop}, ${skyBot})` }}
+      />
+      {blobs.map((b, k) => {
+        // sky-fargen: lys topp, mørk bunn — mørkere overall ved høy intensitet
+        const lightL = Math.round(255 - b.darkness * 150);
+        const darkL = Math.round(255 - b.darkness * 220);
+        const lightCol = `rgb(${lightL},${lightL},${Math.min(255, lightL + 8)})`;
+        const darkCol = `rgb(${darkL},${darkL},${Math.min(255, darkL + 12)})`;
+        return (
+          <div
+            key={k}
+            className="absolute rounded-full animate-wx-cloud"
+            style={{
+              top: `${b.top}%`,
+              left: `${b.left}%`,
+              width: b.width,
+              height: b.height,
+              background: `radial-gradient(ellipse at 50% 35%, ${lightCol} 0%, ${darkCol} 55%, rgba(0,0,0,0) 75%)`,
+              opacity: Math.min(1, b.op),
+              filter: `blur(${b.blur}px)`,
+              animationDuration: `${b.dur}s`,
+              animationDelay: `${b.delay}s`,
+              mixBlendMode: "normal",
+            }}
+          />
+        );
+      })}
+      {/* mørk underbelysning ved tungt dekke */}
+      {i > 0.6 && (
+        <div
+          className="absolute inset-0"
+          style={{
+            background: `radial-gradient(ellipse at 50% 110%, rgba(10,12,20,${(i - 0.6) * 1.2}) 0%, rgba(0,0,0,0) 60%)`,
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
 /* ---------------- WIND ---------------- */
 export function WindFX({ intensity = 0.5, className = "" }: Common) {
   const i = Math.max(0, Math.min(1, intensity));
