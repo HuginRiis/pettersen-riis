@@ -2184,6 +2184,7 @@ function moonPhase(date: Date) {
   const ref = Date.UTC(2000, 0, 6, 18, 14, 0);
   const days = (date.getTime() - ref) / 86_400_000;
   const phase = ((days % synodic) + synodic) % synodic;
+  const phaseFraction = phase / synodic; // 0=new, .25=first quarter, .5=full, .75=last
   const illumination = (1 - Math.cos((2 * Math.PI * phase) / synodic)) / 2;
   let name: string, icon: string;
   if (phase < 1.84566) { name = "Nymåne"; icon = "🌑"; }
@@ -2195,7 +2196,7 @@ function moonPhase(date: Date) {
   else if (phase < 23.99361) { name = "Siste kvarter"; icon = "🌗"; }
   else if (phase < 27.68493) { name = "Avtagende månesigd"; icon = "🌘"; }
   else { name = "Nymåne"; icon = "🌑"; }
-  return { name, icon, illumination };
+  return { name, icon, illumination, phaseFraction };
 }
 function nextMoonset(now: Date): Date | null {
   // Approksimasjon: månenedgang ca 50 min senere hver dag, basert på en kjent fullmåne-nedgang
