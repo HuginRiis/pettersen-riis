@@ -31,11 +31,15 @@ export function BassengHistoryChart() {
   const fetchHistory = useServerFn(getBassengHistory);
   const [points, setPoints] = useState<BassengHistoryPoint[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hours, setHours] = useState(24);
+  const hoursLabel =
+    hours === 24 ? "Siste døgn" : hours === 48 ? "Siste 2 døgn" : "Siste 4 døgn";
+
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    fetchHistory({ data: { hours: 24 } })
+    fetchHistory({ data: { hours } })
       .then((r) => {
         if (!cancelled) setPoints(r.points);
       })
@@ -48,7 +52,7 @@ export function BassengHistoryChart() {
     return () => {
       cancelled = true;
     };
-  }, [fetchHistory]);
+  }, [fetchHistory, hours]);
 
   const data = useMemo(
     () =>
@@ -91,8 +95,9 @@ export function BassengHistoryChart() {
         <div className="flex items-start justify-between gap-3 mb-3 flex-wrap">
           <div className="min-w-0">
             <div className="text-[9px] sm:text-[10px] tracking-[0.25em] sm:tracking-[0.3em] text-muted-foreground uppercase mb-0.5">
-              Siste døgn
+              {hoursLabel}
             </div>
+
             <h3 className="text-display text-primary text-sm sm:text-lg tracking-[0.2em] sm:tracking-[0.25em] uppercase flex items-center gap-2">
               <Thermometer size={14} className="text-[var(--gold)]" />
               Basseng — temperatur
