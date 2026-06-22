@@ -424,8 +424,8 @@ function GlassCard({
 type PanelKey = "nedbor" | "vaer" | "skydekke" | "vind" | "lyn";
 
 function RotatingForecastCard({ hours, soundEnabled }: { hours: Hour[] | null; soundEnabled: boolean }) {
-  const [panel, setPanel] = useState<PanelKey>("nedbor");
-  const [rangeHours, setRangeHours] = useState<24 | 48 | 96>(48);
+  const [panel, setPanel] = usePerUserPersistedState<PanelKey>("var:rotating:panel", "nedbor");
+  const [rangeHours, setRangeHours] = usePerUserPersistedState<24 | 48 | 96>("var:rotating:rangeHours", 48);
   useWeatherSound(soundEnabled ? (panel as WeatherSoundKind) : null, soundEnabled);
   const panels: { key: PanelKey; label: string; icon: React.ReactNode }[] = [
     { key: "nedbor", label: "Nedbør", icon: <Droplets size={14} /> },
