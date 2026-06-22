@@ -51,7 +51,7 @@ function useSpaceWeather(): SpaceData {
     (async () => {
       try {
         const [xrayR, windR, kpR, scalesR] = await Promise.all([
-          fetch("https://services.swpc.noaa.gov/json/goes/primary/xray-flares-latest.json").catch(() => null),
+          fetch("https://services.swpc.noaa.gov/json/goes/primary/xrays-6-hour.json").catch(() => null),
           fetch("https://services.swpc.noaa.gov/products/summary/solar-wind-speed.json").catch(() => null),
           fetch("https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json").catch(() => null),
           fetch("https://services.swpc.noaa.gov/products/noaa-scales.json").catch(() => null),
@@ -60,8 +60,13 @@ function useSpaceWeather(): SpaceData {
         let xrayClass: string | null = null;
         if (xrayR?.ok) {
           const j = await xrayR.json();
-          const row = Array.isArray(j) ? j[0] : j;
-          xrayClass = row?.max_class ?? row?.current_class ?? null;
+          // Velg siste måling på lang kanal (0.1-0.8 nm) — det er denne NOAA bruker for klasse
+          if (Array.isArray(j) && j.length > 0) {
+            const longChan = j.filter((r: any) => r.energy === "0.1-0.8nm");
+            const last = longChan[longChan.length - 1] ?? j[j.length - 1];
+            const flux = parseFloat(last?.flux ?? last?.observed_flux ?? "");
+            if (Number.isFinite(flux)) xrayClass = fluxToClass(flux);
+          }
         }
         const xrayLevel = parseXrayClass(xrayClass);
 
