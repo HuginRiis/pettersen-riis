@@ -112,7 +112,7 @@ function useSpaceWeather(refreshKey?: string): SpaceData {
       }
     })();
     return () => { cancelled = true; };
-  }, []);
+  }, [refreshKey]);
 
   return state;
 }
