@@ -356,6 +356,9 @@ function WeatherPage() {
           {/* Romvær — solstormer, solvind, geomagnetiske stormer, nordlys, stråling */}
           <SpaceWeatherCard />
 
+          {/* Luftkvalitet — PM2.5, PM10, NO2, O3, SO2, CO */}
+          <AirPollutionCard lat={userLoc.active.lat} lon={userLoc.active.lon} locationLabel={userLoc.active.label} />
+
 
           {/* VINDROSE */}
           <GlassCard eyebrow={`Vindrose · ${rangeLabel(rangeHours)}`} icon={<Navigation size={14} />}>
