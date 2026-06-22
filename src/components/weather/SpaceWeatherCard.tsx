@@ -238,8 +238,8 @@ function auroraForklaring(kp: number | null, chance: number, label: string): str
 // Hovedkomponent
 // ============================================================
 
-export function SpaceWeatherCard() {
-  const d = useSpaceWeather();
+export function SpaceWeatherCard({ refreshKey }: { refreshKey?: string } = {}) {
+  const d = useSpaceWeather(refreshKey);
   const aurora = nordlysSannsynlighet(d.kp);
   const [openTile, setOpenTile] = useState<string | null>(null);
 
