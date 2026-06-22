@@ -659,7 +659,7 @@ function VaerPanel({ hours }: { hours: Hour[] }) {
 }
 
 function SkydekkePanel({ hours }: { hours: Hour[] }) {
-  const next = hours.slice(0, 48);
+  const next = hours;
   const clouds = next.map((h) => Math.max(0, Math.min(100, h.cloud ?? 0)));
   const avg = clouds.reduce((s, v) => s + v, 0) / Math.max(1, clouds.length);
   const peakIdx = clouds.reduce((b, v, i) => (v > clouds[b] ? i : b), 0);
@@ -675,7 +675,7 @@ function SkydekkePanel({ hours }: { hours: Hour[] }) {
 
       <div className="flex items-baseline gap-3 px-1">
         <div className="text-3xl font-semibold tabular-nums text-white">{Math.round(avg)}<span className="text-base text-white/70">%</span></div>
-        <div className="text-[11px] text-white/70">snitt skydekke neste 48 t</div>
+        <div className="text-[11px] text-white/70">snitt skydekke neste {hours.length} t</div>
       </div>
 
       <div className="overflow-x-auto -mx-2 px-2">
