@@ -528,11 +528,11 @@ function RotatingForecastCard({ hours, soundEnabled }: { hours: Hour[] | null; s
             willChange: "transform, opacity, filter",
           }}
         >
-          {panel === "nedbor" && <NedborPanel hours={next48} maxP={maxRain} />}
-          {panel === "vaer" && <VaerPanel hours={next48} />}
-          {panel === "skydekke" && <SkydekkePanel hours={next48} />}
-          {panel === "vind" && <VindPanel hours={next48} maxW={maxWind} />}
-          {panel === "lyn" && <LynPanel hours={next48} />}
+          {panel === "nedbor" && <NedborPanel hours={nextHours} maxP={maxRain} />}
+          {panel === "vaer" && <VaerPanel hours={nextHours} />}
+          {panel === "skydekke" && <SkydekkePanel hours={nextHours} />}
+          {panel === "vind" && <VindPanel hours={nextHours} maxW={maxWind} />}
+          {panel === "lyn" && <LynPanel hours={nextHours} />}
         </div>
       </div>
     </article>
