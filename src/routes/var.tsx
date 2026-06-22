@@ -425,7 +425,6 @@ type PanelKey = "nedbor" | "vaer" | "skydekke" | "vind" | "lyn";
 
 function RotatingForecastCard({ hours, soundEnabled }: { hours: Hour[] | null; soundEnabled: boolean }) {
   const [panel, setPanel] = useState<PanelKey>("nedbor");
-  const [paused, setPaused] = useState(false);
   const [rangeHours, setRangeHours] = useState<24 | 48 | 96>(48);
   useWeatherSound(soundEnabled ? (panel as WeatherSoundKind) : null, soundEnabled);
   const panels: { key: PanelKey; label: string; icon: React.ReactNode }[] = [
@@ -435,17 +434,6 @@ function RotatingForecastCard({ hours, soundEnabled }: { hours: Hour[] | null; s
     { key: "vind", label: "Vind", icon: <Wind size={14} /> },
     { key: "lyn", label: "Lyn & torden", icon: <Zap size={14} /> },
   ];
-
-  useEffect(() => {
-    if (paused) return;
-    const id = setInterval(() => {
-      setPanel((cur) => {
-        const i = panels.findIndex((p) => p.key === cur);
-        return panels[(i + 1) % panels.length].key;
-      });
-    }, 7000);
-    return () => clearInterval(id);
-  }, [paused]);
 
   if (!hours)
     return (
@@ -472,9 +460,6 @@ function RotatingForecastCard({ hours, soundEnabled }: { hours: Hour[] | null; s
   return (
     <article
       className="relative overflow-hidden rounded-2xl bg-white/10 backdrop-blur-xl border border-white/15 shadow-lg shadow-black/10 p-4"
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
-      onTouchStart={() => setPaused(true)}
     >
       {fx}
       <div className="relative">
@@ -948,6 +933,118 @@ function WindHourlyCard({ hours }: { hours: Hour[] | null }) {
 // DAILY LIST CARD (10 days)
 // ============================================================
 
+function AnimatedWeatherIconStyles() {
+  return (
+    <style>{`
+      @keyframes wxSunPulse { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.08); opacity: .9; } }
+      @keyframes wxSunRays { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+      @keyframes wxCloudDrift { 0%,100% { transform: translateX(0); } 50% { transform: translateX(2px); } }
+      @keyframes wxRainFall { 0% { transform: translateY(-6px); opacity: 0; } 30% { opacity: 1; } 100% { transform: translateY(10px); opacity: 0; } }
+      @keyframes wxSnowFall { 0% { transform: translateY(-6px) rotate(0); opacity: 0; } 30% { opacity: 1; } 100% { transform: translateY(10px) rotate(180deg); opacity: 0; } }
+      @keyframes wxBoltFlash { 0%,70%,100% { opacity: .85; filter: drop-shadow(0 0 0 transparent); } 75%,85% { opacity: 1; filter: drop-shadow(0 0 4px #fde047); } }
+      @keyframes wxFogDrift { 0%,100% { transform: translateX(-2px); opacity: .7; } 50% { transform: translateX(2px); opacity: 1; } }
+      @keyframes wxWindFlow { 0% { stroke-dashoffset: 20; opacity: .4; } 50% { opacity: 1; } 100% { stroke-dashoffset: 0; opacity: .4; } }
+      @keyframes wxMoonGlow { 0%,100% { filter: drop-shadow(0 0 1px #fff8); } 50% { filter: drop-shadow(0 0 4px #fff); } }
+    `}</style>
+  );
+}
+
+function AnimatedWeatherIcon({ symbol, size = 36 }: { symbol: string | null; size?: number }) {
+  const s = symbol ?? "";
+  const isNight = s.includes("_night");
+  const hasThunder = s.includes("thunder");
+  const hasSnow = s.includes("snow");
+  const hasSleet = s.includes("sleet");
+  const hasRain = s.includes("rain") || s.includes("showers");
+  const hasFog = s.includes("fog");
+  const cloudy = s.includes("cloudy") || s.includes("partlycloudy") || hasRain || hasSnow || hasSleet || hasThunder;
+  const fair = s.includes("fair") || s.includes("partlycloudy");
+  const clear = s.includes("clearsky") || (!cloudy && !hasFog && s !== "");
+
+  return (
+    <svg viewBox="0 0 64 64" width={size} height={size} aria-hidden="true">
+      {/* Sun / Moon */}
+      {(clear || fair) && !isNight && (
+        <g style={{ transformOrigin: "22px 24px", animation: "wxSunPulse 3s ease-in-out infinite" }}>
+          <g style={{ transformOrigin: "22px 24px", animation: "wxSunRays 18s linear infinite" }}>
+            {Array.from({ length: 8 }).map((_, i) => {
+              const a = (i * 45) * Math.PI / 180;
+              const x1 = 22 + Math.cos(a) * 14;
+              const y1 = 24 + Math.sin(a) * 14;
+              const x2 = 22 + Math.cos(a) * 19;
+              const y2 = 24 + Math.sin(a) * 19;
+              return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="#fde047" strokeWidth="2" strokeLinecap="round" />;
+            })}
+          </g>
+          <circle cx="22" cy="24" r="9" fill="#fcd34d" stroke="#f59e0b" strokeWidth="1" />
+        </g>
+      )}
+      {(clear || fair) && isNight && (
+        <g style={{ animation: "wxMoonGlow 3s ease-in-out infinite" }}>
+          <circle cx="22" cy="22" r="10" fill="#fef9c3" />
+          <circle cx="26" cy="19" r="9" fill="hsl(220 35% 18%)" />
+        </g>
+      )}
+      {/* Cloud */}
+      {cloudy && (
+        <g style={{ animation: "wxCloudDrift 4s ease-in-out infinite" }}>
+          <ellipse cx="34" cy="32" rx="18" ry="10" fill="#e2e8f0" />
+          <circle cx="24" cy="30" r="7" fill="#e2e8f0" />
+          <circle cx="42" cy="28" r="8" fill="#f1f5f9" />
+        </g>
+      )}
+      {hasFog && !cloudy && (
+        <g style={{ animation: "wxFogDrift 4s ease-in-out infinite" }}>
+          <rect x="10" y="22" width="44" height="3" rx="1.5" fill="#cbd5e1" />
+          <rect x="14" y="30" width="40" height="3" rx="1.5" fill="#cbd5e1" opacity="0.85" />
+          <rect x="10" y="38" width="44" height="3" rx="1.5" fill="#cbd5e1" opacity="0.7" />
+        </g>
+      )}
+      {hasFog && cloudy && (
+        <g style={{ animation: "wxFogDrift 4s ease-in-out infinite" }}>
+          <rect x="14" y="44" width="36" height="2" rx="1" fill="#cbd5e1" opacity="0.7" />
+          <rect x="18" y="49" width="32" height="2" rx="1" fill="#cbd5e1" opacity="0.6" />
+        </g>
+      )}
+      {/* Rain */}
+      {hasRain && !hasSnow && (
+        <g>
+          {[18, 28, 38, 46].map((x, i) => (
+            <line key={i} x1={x} y1={42} x2={x - 2} y2={50} stroke="#38bdf8" strokeWidth="2" strokeLinecap="round"
+              style={{ transformOrigin: `${x}px 46px`, animation: `wxRainFall 1.1s ${i * 0.15}s linear infinite` }} />
+          ))}
+        </g>
+      )}
+      {/* Sleet (rain + flake) */}
+      {hasSleet && (
+        <g>
+          <line x1="20" y1="42" x2="18" y2="50" stroke="#38bdf8" strokeWidth="2" strokeLinecap="round"
+            style={{ animation: "wxRainFall 1.1s 0s linear infinite" }} />
+          <line x1="40" y1="42" x2="38" y2="50" stroke="#38bdf8" strokeWidth="2" strokeLinecap="round"
+            style={{ animation: "wxRainFall 1.1s 0.4s linear infinite" }} />
+          <text x="28" y="52" fontSize="9" fill="#e0f2fe" style={{ animation: "wxSnowFall 1.4s 0.2s linear infinite" }}>❄</text>
+        </g>
+      )}
+      {/* Snow */}
+      {hasSnow && !hasSleet && (
+        <g>
+          {[20, 32, 44].map((x, i) => (
+            <text key={i} x={x} y={52} fontSize="10" fill="#e0f2fe" textAnchor="middle"
+              style={{ animation: `wxSnowFall 1.6s ${i * 0.25}s linear infinite` }}>❄</text>
+          ))}
+        </g>
+      )}
+      {/* Thunder */}
+      {hasThunder && (
+        <polygon points="30,40 36,40 32,48 38,48 28,60 32,50 26,50" fill="#fde047" stroke="#f59e0b" strokeWidth="0.6"
+          style={{ animation: "wxBoltFlash 1.8s ease-in-out infinite" }} />
+      )}
+      {/* Wind hint when clear */}
+      {clear && !cloudy && !hasRain && !hasSnow && !hasFog && false}
+    </svg>
+  );
+}
+
 function DailyListCard({ days, title }: { days: ForecastDay[] | null; title: string }) {
   if (!days) return <GlassCard eyebrow={title} icon={<TrendingUp size={14} />}><Skeleton /></GlassCard>;
   const list = days.slice(0, 10);
@@ -959,15 +1056,16 @@ function DailyListCard({ days, title }: { days: ForecastDay[] | null; title: str
 
   return (
     <GlassCard eyebrow={title} icon={<TrendingUp size={14} />}>
+      <AnimatedWeatherIconStyles />
       <div className="divide-y divide-white/10">
         {list.map((d, i) => {
           const startPct = ((d.tempMin - globalMin) / range) * 100;
           const widthPct = ((d.tempMax - d.tempMin) / range) * 100;
           const label = i === 0 ? "I dag" : weekdayShort(d.date);
           return (
-            <div key={d.date} className="grid grid-cols-[60px_36px_56px_1fr_44px] items-center gap-3 py-2.5">
+            <div key={d.date} className="grid grid-cols-[60px_40px_56px_1fr_44px] items-center gap-3 py-2.5">
               <div className="text-[15px] capitalize">{label}</div>
-              <div className="text-xl text-center">{symbolEmoji(d.symbol)}</div>
+              <div className="flex items-center justify-center"><AnimatedWeatherIcon symbol={d.symbol} size={34} /></div>
               <div className="text-[11px] text-sky-200 tabular-nums text-right">
                 {d.precipProbability >= 20 ? `${Math.round(d.precipProbability)}%` : ""}
               </div>
