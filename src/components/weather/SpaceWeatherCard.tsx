@@ -36,7 +36,7 @@ function fluxToClass(flux: number): string {
   return `A${(flux / 1e-8).toFixed(1)}`;
 }
 
-function useSpaceWeather(): SpaceData {
+function useSpaceWeather(refreshKey?: string): SpaceData {
   const [state, setState] = useState<SpaceData>({
     xrayClass: null, xrayLevel: 0, solarWind: null, kp: null,
     rScale: 0, sScale: 0, gScale: 0, loading: true, error: null,
