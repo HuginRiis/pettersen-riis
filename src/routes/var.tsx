@@ -425,7 +425,6 @@ type PanelKey = "nedbor" | "vaer" | "skydekke" | "vind" | "lyn";
 
 function RotatingForecastCard({ hours, soundEnabled }: { hours: Hour[] | null; soundEnabled: boolean }) {
   const [panel, setPanel] = useState<PanelKey>("nedbor");
-  const [paused, setPaused] = useState(false);
   const [rangeHours, setRangeHours] = useState<24 | 48 | 96>(48);
   useWeatherSound(soundEnabled ? (panel as WeatherSoundKind) : null, soundEnabled);
   const panels: { key: PanelKey; label: string; icon: React.ReactNode }[] = [
@@ -435,17 +434,6 @@ function RotatingForecastCard({ hours, soundEnabled }: { hours: Hour[] | null; s
     { key: "vind", label: "Vind", icon: <Wind size={14} /> },
     { key: "lyn", label: "Lyn & torden", icon: <Zap size={14} /> },
   ];
-
-  useEffect(() => {
-    if (paused) return;
-    const id = setInterval(() => {
-      setPanel((cur) => {
-        const i = panels.findIndex((p) => p.key === cur);
-        return panels[(i + 1) % panels.length].key;
-      });
-    }, 7000);
-    return () => clearInterval(id);
-  }, [paused]);
 
   if (!hours)
     return (
