@@ -99,18 +99,28 @@ function cachedAtISO(expiresAt: number): string {
 export async function fetchAirQualityPanelData(lat: number, lon: number): Promise<AqPanelData & { cachedAt: string }> {
   const hit = await readCacheOnly<AqPanelData>(aqKey(lat, lon));
   if (hit) return { ...hit.value, cachedAt: cachedAtISO(hit.expiresAt) };
+  // On-demand warm når brukeren søker opp et nytt sted som cron ikke kjenner.
+  await warmAirQualityPanel(lat, lon);
+  const hit2 = await readCacheOnly<AqPanelData>(aqKey(lat, lon));
+  if (hit2) return { ...hit2.value, cachedAt: cachedAtISO(hit2.expiresAt) };
   throw new Error(NOT_WARM_ERR);
 }
 
 export async function fetchUvCloudPanelData(lat: number, lon: number): Promise<UvCloudData & { cachedAt: string }> {
   const hit = await readCacheOnly<UvCloudData>(uvKey(lat, lon));
   if (hit) return { ...hit.value, cachedAt: cachedAtISO(hit.expiresAt) };
+  await warmUvCloudPanel(lat, lon);
+  const hit2 = await readCacheOnly<UvCloudData>(uvKey(lat, lon));
+  if (hit2) return { ...hit2.value, cachedAt: cachedAtISO(hit2.expiresAt) };
   throw new Error(NOT_WARM_ERR);
 }
 
 export async function fetchOpenMeteoPollenData(lat: number, lon: number): Promise<OpenMeteoPollenData & { cachedAt: string }> {
   const hit = await readCacheOnly<OpenMeteoPollenData>(pollenKey(lat, lon));
   if (hit) return { ...hit.value, cachedAt: cachedAtISO(hit.expiresAt) };
+  await warmOpenMeteoPollen(lat, lon);
+  const hit2 = await readCacheOnly<OpenMeteoPollenData>(pollenKey(lat, lon));
+  if (hit2) return { ...hit2.value, cachedAt: cachedAtISO(hit2.expiresAt) };
   throw new Error(NOT_WARM_ERR);
 }
 
