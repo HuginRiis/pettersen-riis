@@ -505,6 +505,25 @@ function RotatingForecastCard({ hours, soundEnabled }: { hours: Hour[] | null; s
           </div>
         </div>
 
+        <div className="flex items-center gap-2 mb-3">
+          <span className="text-[10px] tracking-[0.1em] text-white/60 uppercase">Horisont</span>
+          {[24, 48, 96].map((h) => (
+            <button
+              key={h}
+              type="button"
+              onClick={() => setRangeHours(h as 24 | 48 | 96)}
+              aria-pressed={rangeHours === h}
+              className={`px-2 py-1 rounded-md text-[10px] font-medium transition-colors ${
+                rangeHours === h
+                  ? "bg-white text-slate-900 shadow"
+                  : "bg-white/10 text-white/80 hover:bg-white/20"
+              }`}
+            >
+              {h}t
+            </button>
+          ))}
+        </div>
+
         <style>{`
           @keyframes panelFlyRight { 0% { opacity:0; transform: translateX(120%) rotate(6deg) scale(.9); } 60% { opacity:1; } 100% { opacity:1; transform: translateX(0) rotate(0) scale(1); } }
           @keyframes panelFlyLeft  { 0% { opacity:0; transform: translateX(-120%) rotate(-6deg) scale(.9); } 60% { opacity:1; } 100% { opacity:1; transform: translateX(0) rotate(0) scale(1); } }
