@@ -195,25 +195,33 @@ export function AirPollutionCard({ lat, lon, locationLabel }: { lat: number; lon
           : "Svært høy — generelt helseråd, unngå anstrengelse ute."}
       </div>
 
+      <style>{`
+        @keyframes aqDust { 0% { transform: translate3d(-15%, var(--y,40%), 0); opacity:0; } 15% { opacity:.9; } 85% { opacity:.9; } 100% { transform: translate3d(115%, calc(var(--y,40%) - 8%), 0); opacity:0; } }
+        @keyframes aqRise { 0% { transform: translate3d(var(--x,30%), 115%, 0) scale(.6); opacity:0; } 25% { opacity:.75; } 75% { opacity:.75; } 100% { transform: translate3d(calc(var(--x,30%) + 10%), -25%, 0) scale(1); opacity:0; } }
+        @keyframes aqPuff { 0% { transform: translate(var(--x,20%), var(--y,60%)) scale(.4); opacity:0; } 35% { opacity:.55; } 70% { opacity:.55; } 100% { transform: translate(calc(var(--x,20%) + 25%), calc(var(--y,60%) - 35%)) scale(1.5); opacity:0; } }
+        @keyframes aqSun { 0%,100% { opacity:.3; transform: scale(1);} 50% { opacity:.7; transform: scale(1.2);} }
+      `}</style>
       <div className="grid grid-cols-3 gap-2">
         {ORDER.map((key) => {
           const v = d?.[key] ?? null;
           const lvl = classify(key, v);
           const color = colorForLevel(lvl);
+          const intensity = lvl < 0 ? 0 : lvl;
           return (
             <button
               key={key}
               onClick={() => setOpenTile(key)}
               className="relative overflow-hidden rounded-xl border border-white/10 bg-black/25 p-2.5 text-left cursor-pointer hover:bg-black/35 transition-colors min-h-[78px]"
             >
-              <div className="flex items-center justify-between text-[10px] uppercase tracking-wider text-white/60">
+              <PollutantFX poll={key} color={color} intensity={intensity} />
+              <div className="relative flex items-center justify-between text-[10px] uppercase tracking-wider text-white/60">
                 <span>{META[key].short}</span>
-                <span className="w-1.5 h-1.5 rounded-full" style={{ background: color }} />
+                <span className="w-1.5 h-1.5 rounded-full" style={{ background: color, boxShadow: `0 0 6px ${color}` }} />
               </div>
-              <div className="mt-1 text-xl font-light tabular-nums leading-tight" style={{ color }}>
+              <div className="relative mt-1 text-xl font-light tabular-nums leading-tight" style={{ color }}>
                 {state.loading ? "…" : formatValue(key, v)}
               </div>
-              <div className="text-[9px] text-white/50">{unitFor(key)} · {labelForLevel(lvl)}</div>
+              <div className="relative text-[9px] text-white/50">{unitFor(key)} · {labelForLevel(lvl)}</div>
             </button>
           );
         })}
