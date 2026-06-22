@@ -460,9 +460,6 @@ function RotatingForecastCard({ hours, soundEnabled }: { hours: Hour[] | null; s
   return (
     <article
       className="relative overflow-hidden rounded-2xl bg-white/10 backdrop-blur-xl border border-white/15 shadow-lg shadow-black/10 p-4"
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
-      onTouchStart={() => setPaused(true)}
     >
       {fx}
       <div className="relative">
