@@ -21,7 +21,7 @@ export type BassengHistoryResult = {
   hours: number;
 };
 
-const ALLOWED_HOURS = new Set([24, 72, 168]);
+const ALLOWED_HOURS = new Set([24, 48, 72, 96, 168]);
 
 export const getBassengHistory = createServerFn({ method: "GET" })
   .inputValidator((input: { hours?: number } | undefined) => ({
