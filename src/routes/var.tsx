@@ -481,7 +481,7 @@ function RotatingForecastCard({ hours, soundEnabled }: { hours: Hour[] | null; s
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-1.5 text-[11px] tracking-[0.15em] font-semibold text-white/80 uppercase">
             {active.icon}
-            <span>{active.label} · neste 48 t</span>
+            <span>{active.label} · neste {rangeHours} t</span>
           </div>
           <div className="flex items-center gap-1">
             {panels.map((p) => {
