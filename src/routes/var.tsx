@@ -785,7 +785,7 @@ function LynPanel({ hours }: { hours: Hour[] }) {
   const peakLabel =
     peak.thunder >= 5
       ? `Høyeste sjanse ${Math.round(peak.thunder)} % rundt ${peakTime.toLocaleString("nb-NO", { weekday: "short", hour: "2-digit", minute: "2-digit" })}`
-      : "Ingen torden ventet de neste 48 timene.";
+      : `Ingen torden ventet de neste ${hours.length} timene.`;
 
   return (
     <div className="space-y-2">
