@@ -716,7 +716,7 @@ function VindPanel({ hours, maxW }: { hours: Hour[]; maxW: number }) {
   const summary =
     peak.windGust >= 10
       ? `Sterkest kast ${Math.round(peak.windGust)} m/s rundt ${fmtWhen(peak.time)} · middelvind opp til ${Math.round(Math.max(...hours.map((h) => h.wind)))} m/s`
-      : `Rolig vind · maks ${Math.round(peak.windGust)} m/s neste 48 t`;
+      : `Rolig vind · maks ${Math.round(peak.windGust)} m/s neste ${hours.length} t`;
   return (
     <div className="space-y-2">
       <div className="text-[12px] text-white/90">{summary}</div>
