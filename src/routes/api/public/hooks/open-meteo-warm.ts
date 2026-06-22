@@ -21,6 +21,7 @@ const BETWEEN_LOCATIONS_DELAY_MS = 1500;
 const ALWAYS_WARM: Array<{ lat: number; lon: number }> = [
   { lat: 59.91, lon: 9.07 }, // Hytta · Lyngdal i Numedal
   { lat: 59.1789, lon: 9.5732 }, // Borgen · Tollnes, Skien
+  { lat: 59.2096, lon: 9.609 }, // Tollnes · værsiden fallback/søk
 ];
 
 function dedupeLocs(rows: LocRow[]): Array<{ lat: number; lon: number }> {
@@ -53,8 +54,8 @@ export const Route = createFileRoute("/api/public/hooks/open-meteo-warm")({
 
         const aqLocs = dedupeLocs((aq ?? []) as LocRow[]);
         const uvLocs = dedupeLocs((uv ?? []) as LocRow[]);
-        const userPollenLocs: Array<{ lat: number; lon: number }> = ((userLocs ?? []) as any[])
-          .filter((r) => r?.page === "pollen" && typeof r.lat === "number" && typeof r.lon === "number")
+        const userPageLocs: Array<{ lat: number; lon: number }> = ((userLocs ?? []) as any[])
+          .filter((r) => (r?.page === "pollen" || r?.page === "var") && typeof r.lat === "number" && typeof r.lon === "number")
           .map((r) => ({ lat: r.lat, lon: r.lon }));
 
 
@@ -64,7 +65,7 @@ export const Route = createFileRoute("/api/public/hooks/open-meteo-warm")({
         // UV-cloud varmes bare for UV-prefs + faste paneler, ikke gamle søkte
         // pollen-lokasjoner, så vi unngår unødige MET/Open-Meteo-avledede jobber.
         const unionSeen = new Map<string, { lat: number; lon: number }>();
-        for (const l of [...aqLocs, ...uvLocs, ...userPollenLocs, ...ALWAYS_WARM]) {
+        for (const l of [...aqLocs, ...uvLocs, ...userPageLocs, ...ALWAYS_WARM]) {
           const k = `${l.lat.toFixed(3)},${l.lon.toFixed(3)}`;
           if (!unionSeen.has(k)) unionSeen.set(k, l);
         }
@@ -121,7 +122,7 @@ export const Route = createFileRoute("/api/public/hooks/open-meteo-warm")({
           duration_ms: Date.now() - started,
           aq_locations: aqLocs.length,
           uv_locations: uvLocs.length,
-          user_pollen_locations: userPollenLocs.length,
+          user_page_locations: userPageLocs.length,
           union_locations: unionLocs.length,
           uvcloud_locations: uvCloudLocs.length,
           results,
