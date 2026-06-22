@@ -141,6 +141,114 @@ function formatValue(key: keyof Pollutants, v: number | null): string {
 function unitFor(key: keyof Pollutants): string {
   return key === "co" ? "mg/m³" : "µg/m³";
 }
+function PollutantFX({ poll, color, intensity }: { poll: keyof Pollutants; color: string; intensity: number }) {
+  // intensity 0..3 — flere/tettere partikler ved høyere nivå
+  const baseCount = poll === "pm2_5" || poll === "pm10" ? 7 : 5;
+  const count = baseCount + intensity * 2;
+  const opacity = 0.35 + intensity * 0.18;
+
+  // PM2.5 / PM10: drivende støvpartikler (mindre for 2.5, større for 10)
+  if (poll === "pm2_5" || poll === "pm10") {
+    const size = poll === "pm2_5" ? 2 : 3.2;
+    return (
+      <div className="pointer-events-none absolute inset-0 overflow-hidden" style={{ opacity }}>
+        {Array.from({ length: count }).map((_, i) => {
+          const y = 10 + ((i * 53) % 80);
+          const dur = 6 + ((i * 1.3) % 5);
+          const delay = -((i * 1.7) % dur);
+          return (
+            <span
+              key={i}
+              className="absolute rounded-full"
+              style={{
+                left: 0,
+                top: 0,
+                width: size,
+                height: size,
+                background: color,
+                boxShadow: `0 0 ${size * 2}px ${color}`,
+                ["--y" as any]: `${y}%`,
+                animation: `aqDust ${dur}s linear ${delay}s infinite`,
+              }}
+            />
+          );
+        })}
+      </div>
+    );
+  }
+
+  // O₃: sol + stigende ozon-bobler
+  if (poll === "o3") {
+    return (
+      <div className="pointer-events-none absolute inset-0 overflow-hidden" style={{ opacity }}>
+        <span
+          className="absolute"
+          style={{
+            top: -8,
+            right: -8,
+            width: 28,
+            height: 28,
+            borderRadius: "9999px",
+            background: `radial-gradient(circle, ${color} 0%, transparent 70%)`,
+            animation: "aqSun 4s ease-in-out infinite",
+          }}
+        />
+        {Array.from({ length: count }).map((_, i) => {
+          const x = 8 + ((i * 37) % 80);
+          const dur = 5 + ((i * 1.1) % 4);
+          const delay = -((i * 1.4) % dur);
+          const s = 3 + ((i * 1.3) % 3);
+          return (
+            <span
+              key={i}
+              className="absolute rounded-full"
+              style={{
+                left: 0,
+                top: 0,
+                width: s,
+                height: s,
+                background: color,
+                filter: "blur(0.5px)",
+                ["--x" as any]: `${x}%`,
+                animation: `aqRise ${dur}s ease-in ${delay}s infinite`,
+              }}
+            />
+          );
+        })}
+      </div>
+    );
+  }
+
+  // NO₂ / SO₂ / CO: røyk-/eksos-pust
+  return (
+    <div className="pointer-events-none absolute inset-0 overflow-hidden" style={{ opacity }}>
+      {Array.from({ length: count }).map((_, i) => {
+        const x = 5 + ((i * 41) % 70);
+        const y = 30 + ((i * 23) % 50);
+        const dur = 5 + ((i * 1.2) % 4);
+        const delay = -((i * 1.6) % dur);
+        const s = 8 + ((i * 2.1) % 8);
+        return (
+          <span
+            key={i}
+            className="absolute rounded-full"
+            style={{
+              left: 0,
+              top: 0,
+              width: s,
+              height: s,
+              background: `radial-gradient(circle, ${color} 0%, transparent 70%)`,
+              ["--x" as any]: `${x}%`,
+              ["--y" as any]: `${y}%`,
+              animation: `aqPuff ${dur}s ease-out ${delay}s infinite`,
+            }}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
 
 export function AirPollutionCard({ lat, lon, locationLabel }: { lat: number; lon: number; locationLabel: string }) {
   const fetcher = useServerFn(fetchAirQualityPanel);
@@ -195,25 +303,33 @@ export function AirPollutionCard({ lat, lon, locationLabel }: { lat: number; lon
           : "Svært høy — generelt helseråd, unngå anstrengelse ute."}
       </div>
 
+      <style>{`
+        @keyframes aqDust { 0% { transform: translate3d(-15%, var(--y,40%), 0); opacity:0; } 15% { opacity:.9; } 85% { opacity:.9; } 100% { transform: translate3d(115%, calc(var(--y,40%) - 8%), 0); opacity:0; } }
+        @keyframes aqRise { 0% { transform: translate3d(var(--x,30%), 115%, 0) scale(.6); opacity:0; } 25% { opacity:.75; } 75% { opacity:.75; } 100% { transform: translate3d(calc(var(--x,30%) + 10%), -25%, 0) scale(1); opacity:0; } }
+        @keyframes aqPuff { 0% { transform: translate(var(--x,20%), var(--y,60%)) scale(.4); opacity:0; } 35% { opacity:.55; } 70% { opacity:.55; } 100% { transform: translate(calc(var(--x,20%) + 25%), calc(var(--y,60%) - 35%)) scale(1.5); opacity:0; } }
+        @keyframes aqSun { 0%,100% { opacity:.3; transform: scale(1);} 50% { opacity:.7; transform: scale(1.2);} }
+      `}</style>
       <div className="grid grid-cols-3 gap-2">
         {ORDER.map((key) => {
           const v = d?.[key] ?? null;
           const lvl = classify(key, v);
           const color = colorForLevel(lvl);
+          const intensity = lvl < 0 ? 0 : lvl;
           return (
             <button
               key={key}
               onClick={() => setOpenTile(key)}
               className="relative overflow-hidden rounded-xl border border-white/10 bg-black/25 p-2.5 text-left cursor-pointer hover:bg-black/35 transition-colors min-h-[78px]"
             >
-              <div className="flex items-center justify-between text-[10px] uppercase tracking-wider text-white/60">
+              <PollutantFX poll={key} color={color} intensity={intensity} />
+              <div className="relative flex items-center justify-between text-[10px] uppercase tracking-wider text-white/60">
                 <span>{META[key].short}</span>
-                <span className="w-1.5 h-1.5 rounded-full" style={{ background: color }} />
+                <span className="w-1.5 h-1.5 rounded-full" style={{ background: color, boxShadow: `0 0 6px ${color}` }} />
               </div>
-              <div className="mt-1 text-xl font-light tabular-nums leading-tight" style={{ color }}>
+              <div className="relative mt-1 text-xl font-light tabular-nums leading-tight" style={{ color }}>
                 {state.loading ? "…" : formatValue(key, v)}
               </div>
-              <div className="text-[9px] text-white/50">{unitFor(key)} · {labelForLevel(lvl)}</div>
+              <div className="relative text-[9px] text-white/50">{unitFor(key)} · {labelForLevel(lvl)}</div>
             </button>
           );
         })}
