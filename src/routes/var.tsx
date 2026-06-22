@@ -1148,7 +1148,7 @@ function Row({ label, value }: { label: string; value: string }) {
 // MOON CARD
 // ============================================================
 
-function MoonCard({ moon, now }: { moon: { name: string; icon: string; illumination: number }; now: Date }) {
+function MoonCard({ moon, now }: { moon: { name: string; icon: string; illumination: number; phaseFraction: number }; now: Date }) {
   const nextSet = useMemo(() => nextMoonset(now), [now]);
   const daysToFull = useMemo(() => daysUntilFullMoon(now), [now]);
   return (
@@ -1159,35 +1159,51 @@ function MoonCard({ moon, now }: { moon: { name: string; icon: string; illuminat
           <Row label="Neste månenedgang" value={nextSet ? formatTime(nextSet) : "—"} />
           <Row label="Neste fullmåne" value={`${daysToFull} d`} />
         </div>
-        <MoonVisual illumination={moon.illumination} phase={moon.name} />
+        <MoonVisual phaseFraction={moon.phaseFraction} illumination={moon.illumination} />
       </div>
     </GlassCard>
   );
 }
 
-function MoonVisual({ illumination, phase }: { illumination: number; phase: string }) {
-  const waning = phase.includes("Avtagende") || phase.includes("Siste");
+function MoonVisual({ phaseFraction, illumination }: { phaseFraction: number; illumination: number }) {
   const r = 36;
-  // Terminator-ellipse offset
-  const offset = (1 - 2 * illumination) * r * (waning ? -1 : 1);
+  const cx = 50, cy = 50;
+  const p = phaseFraction;
+  const waxing = p < 0.5;
+  const gibbous = p > 0.25 && p < 0.75;
+  const rx = Math.max(0.01, Math.abs(Math.cos(2 * Math.PI * p)) * r);
+  // Outer arc: lit hemisphere (right for waxing, left for waning)
+  const outerSweep = waxing ? 1 : 0;
+  // Inner ellipse: same sweep for crescent (carves inward), opposite for gibbous (bulges outward)
+  const innerSweep = gibbous ? (waxing ? 0 : 1) : outerSweep;
+  const litPath = `M ${cx},${cy - r} A ${r},${r} 0 0,${outerSweep} ${cx},${cy + r} A ${rx},${r} 0 0,${innerSweep} ${cx},${cy - r} Z`;
   return (
-    <svg viewBox="0 0 100 100" className="w-24 h-24">
+    <svg viewBox="0 0 100 100" className="w-24 h-24" aria-label={`Måne ${Math.round(illumination * 100)} %`}>
       <defs>
         <radialGradient id="moonG" cx="35%" cy="35%">
-          <stop offset="0%" stopColor="#f5f5f0" />
+          <stop offset="0%" stopColor="#f8f7f0" />
           <stop offset="100%" stopColor="#c8c4b8" />
         </radialGradient>
-        <clipPath id="moonClip"><circle cx="50" cy="50" r={r} /></clipPath>
+        <radialGradient id="moonShadow" cx="50%" cy="50%">
+          <stop offset="0%" stopColor="#1a1a26" />
+          <stop offset="100%" stopColor="#0a0a14" />
+        </radialGradient>
+        <clipPath id="moonClip"><circle cx={cx} cy={cy} r={r} /></clipPath>
       </defs>
-      <circle cx="50" cy="50" r={r} fill="rgba(255,255,255,0.15)" />
+      {/* dark side */}
+      <circle cx={cx} cy={cy} r={r} fill="url(#moonShadow)" />
+      {/* lit portion */}
       <g clipPath="url(#moonClip)">
-        <ellipse cx={50 + offset} cy="50" rx={r} ry={r} fill="url(#moonG)" />
+        <path d={litPath} fill="url(#moonG)" />
       </g>
-      <circle cx="50" cy="50" r={r} fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="0.5" />
+      {/* rim */}
+      <circle cx={cx} cy={cy} r={r} fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="0.5" />
       {/* mare-prikker */}
-      <circle cx="42" cy="45" r="3" fill="rgba(0,0,0,0.06)" />
-      <circle cx="58" cy="52" r="2" fill="rgba(0,0,0,0.06)" />
-      <circle cx="48" cy="60" r="2.5" fill="rgba(0,0,0,0.06)" />
+      <g clipPath="url(#moonClip)" opacity="0.5">
+        <circle cx="42" cy="45" r="3" fill="rgba(0,0,0,0.18)" />
+        <circle cx="58" cy="52" r="2" fill="rgba(0,0,0,0.18)" />
+        <circle cx="48" cy="60" r="2.5" fill="rgba(0,0,0,0.18)" />
+      </g>
     </svg>
   );
 }
