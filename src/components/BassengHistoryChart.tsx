@@ -37,7 +37,7 @@ export function BassengHistoryChart() {
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    fetchHistory({ data: { hours } })
+    fetchHistory({ data: { hours: 24 } })
       .then((r) => {
         if (!cancelled) setPoints(r.points);
       })
@@ -50,7 +50,7 @@ export function BassengHistoryChart() {
     return () => {
       cancelled = true;
     };
-  }, [fetchHistory, hours]);
+  }, [fetchHistory]);
 
   const data = useMemo(
     () =>
@@ -93,7 +93,7 @@ export function BassengHistoryChart() {
         <div className="flex items-start justify-between gap-3 mb-3 flex-wrap">
           <div className="min-w-0">
             <div className="text-[9px] sm:text-[10px] tracking-[0.25em] sm:tracking-[0.3em] text-muted-foreground uppercase mb-0.5">
-              {hoursLabel}
+              Siste døgn
             </div>
 
             <h3 className="text-display text-primary text-sm sm:text-lg tracking-[0.2em] sm:tracking-[0.25em] uppercase flex items-center gap-2">
