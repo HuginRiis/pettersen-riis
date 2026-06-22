@@ -36,7 +36,7 @@ function fluxToClass(flux: number): string {
   return `A${(flux / 1e-8).toFixed(1)}`;
 }
 
-function useSpaceWeather(): SpaceData {
+function useSpaceWeather(refreshKey?: string): SpaceData {
   const [state, setState] = useState<SpaceData>({
     xrayClass: null, xrayLevel: 0, solarWind: null, kp: null,
     rScale: 0, sScale: 0, gScale: 0, loading: true, error: null,
@@ -112,7 +112,7 @@ function useSpaceWeather(): SpaceData {
       }
     })();
     return () => { cancelled = true; };
-  }, []);
+  }, [refreshKey]);
 
   return state;
 }
@@ -238,8 +238,8 @@ function auroraForklaring(kp: number | null, chance: number, label: string): str
 // Hovedkomponent
 // ============================================================
 
-export function SpaceWeatherCard() {
-  const d = useSpaceWeather();
+export function SpaceWeatherCard({ refreshKey }: { refreshKey?: string } = {}) {
+  const d = useSpaceWeather(refreshKey);
   const aurora = nordlysSannsynlighet(d.kp);
   const [openTile, setOpenTile] = useState<string | null>(null);
 
