@@ -31,9 +31,7 @@ export function BassengHistoryChart() {
   const fetchHistory = useServerFn(getBassengHistory);
   const [points, setPoints] = useState<BassengHistoryPoint[]>([]);
   const [loading, setLoading] = useState(true);
-  const [hours, setHours] = useState(24);
-  const hoursLabel =
-    hours === 24 ? "Siste døgn" : hours === 48 ? "Siste 2 døgn" : "Siste 4 døgn";
+
 
 
   useEffect(() => {
