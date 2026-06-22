@@ -14,6 +14,7 @@ import {
   GlassPaneFX, glassKindFromSymbol, TileSplashFX, InsideRainFX, CloudCoverFX,
 } from "@/components/weather/WeatherFX";
 import { SpaceWeatherCard } from "@/components/weather/SpaceWeatherCard";
+import { AirPollutionCard } from "@/components/weather/AirPollutionCard";
 import {
   Wind,
   Droplets,
