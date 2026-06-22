@@ -426,6 +426,7 @@ type PanelKey = "nedbor" | "vaer" | "skydekke" | "vind" | "lyn";
 function RotatingForecastCard({ hours, soundEnabled }: { hours: Hour[] | null; soundEnabled: boolean }) {
   const [panel, setPanel] = useState<PanelKey>("nedbor");
   const [paused, setPaused] = useState(false);
+  const [rangeHours, setRangeHours] = useState<24 | 48 | 96>(48);
   useWeatherSound(soundEnabled ? (panel as WeatherSoundKind) : null, soundEnabled);
   const panels: { key: PanelKey; label: string; icon: React.ReactNode }[] = [
     { key: "nedbor", label: "Nedbør", icon: <Droplets size={14} /> },
@@ -448,16 +449,16 @@ function RotatingForecastCard({ hours, soundEnabled }: { hours: Hour[] | null; s
 
   if (!hours)
     return (
-      <GlassCard eyebrow="48-timersvarsel" icon={<TrendingUp size={14} />}>
+      <GlassCard eyebrow="Værvarsel" icon={<TrendingUp size={14} />}>
         <Skeleton />
       </GlassCard>
     );
 
-  const next48 = hours.slice(0, 48);
-  const maxRain = Math.max(1, ...next48.map((h) => h.precip));
-  const maxWind = Math.max(8, ...next48.map((h) => Math.max(h.wind, h.windGust)));
-  const maxThunder = Math.max(0, ...next48.map((h) => h.thunder));
-  const avgCloud = next48.reduce((s, h) => s + (h.cloud ?? 0), 0) / Math.max(1, next48.length);
+  const nextHours = hours.slice(0, rangeHours);
+  const maxRain = Math.max(1, ...nextHours.map((h) => h.precip));
+  const maxWind = Math.max(8, ...nextHours.map((h) => Math.max(h.wind, h.windGust)));
+  const maxThunder = Math.max(0, ...nextHours.map((h) => h.thunder));
+  const avgCloud = nextHours.reduce((s, h) => s + (h.cloud ?? 0), 0) / Math.max(1, nextHours.length);
 
   const fx =
     panel === "nedbor" ? <RainFX intensity={Math.min(1, maxRain / 4)} /> :
