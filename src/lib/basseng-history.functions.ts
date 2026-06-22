@@ -21,7 +21,7 @@ export type BassengHistoryResult = {
   hours: number;
 };
 
-const ALLOWED_HOURS = new Set([24, 48, 72, 96, 168]);
+const ALLOWED_HOURS = new Set([24, 72, 168]);
 
 export const getBassengHistory = createServerFn({ method: "GET" })
   .inputValidator((input: { hours?: number } | undefined) => ({
@@ -44,8 +44,7 @@ export const getBassengHistory = createServerFn({ method: "GET" })
     })) as BassengHistoryPoint[];
 
     // Bucket til jevne intervaller for å holde grafen lesbar.
-    const bucketMinutes =
-      data.hours <= 24 ? 10 : data.hours <= 48 ? 20 : data.hours <= 96 ? 40 : 60;
+    const bucketMinutes = data.hours <= 24 ? 10 : data.hours <= 72 ? 30 : 60;
     const bucketMs = bucketMinutes * 60_000;
     const buckets = new Map<
       number,

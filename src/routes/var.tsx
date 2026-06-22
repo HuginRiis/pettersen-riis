@@ -426,6 +426,7 @@ type PanelKey = "nedbor" | "vaer" | "skydekke" | "vind" | "lyn";
 function RotatingForecastCard({ hours, soundEnabled }: { hours: Hour[] | null; soundEnabled: boolean }) {
   const [panel, setPanel] = useState<PanelKey>("nedbor");
   const [paused, setPaused] = useState(false);
+  const [rangeHours, setRangeHours] = useState<24 | 48 | 96>(48);
   useWeatherSound(soundEnabled ? (panel as WeatherSoundKind) : null, soundEnabled);
   const panels: { key: PanelKey; label: string; icon: React.ReactNode }[] = [
     { key: "nedbor", label: "Nedbør", icon: <Droplets size={14} /> },
@@ -448,16 +449,16 @@ function RotatingForecastCard({ hours, soundEnabled }: { hours: Hour[] | null; s
 
   if (!hours)
     return (
-      <GlassCard eyebrow="48-timersvarsel" icon={<TrendingUp size={14} />}>
+      <GlassCard eyebrow="Værvarsel" icon={<TrendingUp size={14} />}>
         <Skeleton />
       </GlassCard>
     );
 
-  const next48 = hours.slice(0, 48);
-  const maxRain = Math.max(1, ...next48.map((h) => h.precip));
-  const maxWind = Math.max(8, ...next48.map((h) => Math.max(h.wind, h.windGust)));
-  const maxThunder = Math.max(0, ...next48.map((h) => h.thunder));
-  const avgCloud = next48.reduce((s, h) => s + (h.cloud ?? 0), 0) / Math.max(1, next48.length);
+  const nextHours = hours.slice(0, rangeHours);
+  const maxRain = Math.max(1, ...nextHours.map((h) => h.precip));
+  const maxWind = Math.max(8, ...nextHours.map((h) => Math.max(h.wind, h.windGust)));
+  const maxThunder = Math.max(0, ...nextHours.map((h) => h.thunder));
+  const avgCloud = nextHours.reduce((s, h) => s + (h.cloud ?? 0), 0) / Math.max(1, nextHours.length);
 
   const fx =
     panel === "nedbor" ? <RainFX intensity={Math.min(1, maxRain / 4)} /> :
@@ -480,7 +481,7 @@ function RotatingForecastCard({ hours, soundEnabled }: { hours: Hour[] | null; s
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-1.5 text-[11px] tracking-[0.15em] font-semibold text-white/80 uppercase">
             {active.icon}
-            <span>{active.label} · neste 48 t</span>
+            <span>{active.label} · neste {rangeHours} t</span>
           </div>
           <div className="flex items-center gap-1">
             {panels.map((p) => {
@@ -502,6 +503,25 @@ function RotatingForecastCard({ hours, soundEnabled }: { hours: Hour[] | null; s
               );
             })}
           </div>
+        </div>
+
+        <div className="flex items-center gap-2 mb-3">
+          <span className="text-[10px] tracking-[0.1em] text-white/60 uppercase">Horisont</span>
+          {[24, 48, 96].map((h) => (
+            <button
+              key={h}
+              type="button"
+              onClick={() => setRangeHours(h as 24 | 48 | 96)}
+              aria-pressed={rangeHours === h}
+              className={`px-2 py-1 rounded-md text-[10px] font-medium transition-colors ${
+                rangeHours === h
+                  ? "bg-white text-slate-900 shadow"
+                  : "bg-white/10 text-white/80 hover:bg-white/20"
+              }`}
+            >
+              {h}t
+            </button>
+          ))}
         </div>
 
         <style>{`
@@ -527,11 +547,11 @@ function RotatingForecastCard({ hours, soundEnabled }: { hours: Hour[] | null; s
             willChange: "transform, opacity, filter",
           }}
         >
-          {panel === "nedbor" && <NedborPanel hours={next48} maxP={maxRain} />}
-          {panel === "vaer" && <VaerPanel hours={next48} />}
-          {panel === "skydekke" && <SkydekkePanel hours={next48} />}
-          {panel === "vind" && <VindPanel hours={next48} maxW={maxWind} />}
-          {panel === "lyn" && <LynPanel hours={next48} />}
+          {panel === "nedbor" && <NedborPanel hours={nextHours} maxP={maxRain} />}
+          {panel === "vaer" && <VaerPanel hours={nextHours} />}
+          {panel === "skydekke" && <SkydekkePanel hours={nextHours} />}
+          {panel === "vind" && <VindPanel hours={nextHours} maxW={maxWind} />}
+          {panel === "lyn" && <LynPanel hours={nextHours} />}
         </div>
       </div>
     </article>
@@ -563,7 +583,7 @@ function NedborPanel({ hours, maxP }: { hours: Hour[]; maxP: number }) {
   const peakIdx = hours.reduce((best, h, i, arr) => (h.precip > arr[best].precip ? i : best), 0);
   const peak = hours[peakIdx];
   const summary = !firstRain
-    ? "Ingen nedbør ventet de neste 48 timene."
+    ? `Ingen nedbør ventet de neste ${hours.length} timene.`
     : `Regn fra ${fmtWhen(firstRain.time)} · mest ${peak.precip.toFixed(1)} mm rundt ${fmtWhen(peak.time)} · totalt ${total.toFixed(1)} mm`;
 
   return (
@@ -639,7 +659,7 @@ function VaerPanel({ hours }: { hours: Hour[] }) {
 }
 
 function SkydekkePanel({ hours }: { hours: Hour[] }) {
-  const next = hours.slice(0, 48);
+  const next = hours;
   const clouds = next.map((h) => Math.max(0, Math.min(100, h.cloud ?? 0)));
   const avg = clouds.reduce((s, v) => s + v, 0) / Math.max(1, clouds.length);
   const peakIdx = clouds.reduce((b, v, i) => (v > clouds[b] ? i : b), 0);
@@ -655,7 +675,7 @@ function SkydekkePanel({ hours }: { hours: Hour[] }) {
 
       <div className="flex items-baseline gap-3 px-1">
         <div className="text-3xl font-semibold tabular-nums text-white">{Math.round(avg)}<span className="text-base text-white/70">%</span></div>
-        <div className="text-[11px] text-white/70">snitt skydekke neste 48 t</div>
+        <div className="text-[11px] text-white/70">snitt skydekke neste {hours.length} t</div>
       </div>
 
       <div className="overflow-x-auto -mx-2 px-2">
@@ -696,7 +716,7 @@ function VindPanel({ hours, maxW }: { hours: Hour[]; maxW: number }) {
   const summary =
     peak.windGust >= 10
       ? `Sterkest kast ${Math.round(peak.windGust)} m/s rundt ${fmtWhen(peak.time)} · middelvind opp til ${Math.round(Math.max(...hours.map((h) => h.wind)))} m/s`
-      : `Rolig vind · maks ${Math.round(peak.windGust)} m/s neste 48 t`;
+      : `Rolig vind · maks ${Math.round(peak.windGust)} m/s neste ${hours.length} t`;
   return (
     <div className="space-y-2">
       <div className="text-[12px] text-white/90">{summary}</div>
@@ -765,7 +785,7 @@ function LynPanel({ hours }: { hours: Hour[] }) {
   const peakLabel =
     peak.thunder >= 5
       ? `Høyeste sjanse ${Math.round(peak.thunder)} % rundt ${peakTime.toLocaleString("nb-NO", { weekday: "short", hour: "2-digit", minute: "2-digit" })}`
-      : "Ingen torden ventet de neste 48 timene.";
+      : `Ingen torden ventet de neste ${hours.length} timene.`;
 
   return (
     <div className="space-y-2">
