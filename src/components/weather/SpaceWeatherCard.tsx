@@ -27,6 +27,15 @@ function parseXrayClass(s: string | null | undefined): number {
   return lvl;
 }
 
+function fluxToClass(flux: number): string {
+  if (!Number.isFinite(flux) || flux <= 0) return "A0.0";
+  if (flux >= 1e-4) return `X${(flux / 1e-4).toFixed(1)}`;
+  if (flux >= 1e-5) return `M${(flux / 1e-5).toFixed(1)}`;
+  if (flux >= 1e-6) return `C${(flux / 1e-6).toFixed(1)}`;
+  if (flux >= 1e-7) return `B${(flux / 1e-7).toFixed(1)}`;
+  return `A${(flux / 1e-8).toFixed(1)}`;
+}
+
 function useSpaceWeather(): SpaceData {
   const [state, setState] = useState<SpaceData>({
     xrayClass: null, xrayLevel: 0, solarWind: null, kp: null,
