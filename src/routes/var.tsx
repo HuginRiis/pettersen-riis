@@ -354,7 +354,7 @@ function WeatherPage() {
           <IosUvCard lat={userLoc.active.lat} lon={userLoc.active.lon} now={now} />
 
           {/* Romvær — solstormer, solvind, geomagnetiske stormer, nordlys, stråling */}
-          <SpaceWeatherCard />
+          <SpaceWeatherCard refreshKey={`${userLoc.active.lat.toFixed(3)},${userLoc.active.lon.toFixed(3)}`} />
 
           {/* Luftkvalitet — PM2.5, PM10, NO2, O3, SO2, CO */}
           <AirPollutionCard lat={userLoc.active.lat} lon={userLoc.active.lon} locationLabel={userLoc.active.label} />
