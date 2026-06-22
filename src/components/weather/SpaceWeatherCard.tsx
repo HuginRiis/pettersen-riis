@@ -27,6 +27,15 @@ function parseXrayClass(s: string | null | undefined): number {
   return lvl;
 }
 
+function fluxToClass(flux: number): string {
+  if (!Number.isFinite(flux) || flux <= 0) return "A0.0";
+  if (flux >= 1e-4) return `X${(flux / 1e-4).toFixed(1)}`;
+  if (flux >= 1e-5) return `M${(flux / 1e-5).toFixed(1)}`;
+  if (flux >= 1e-6) return `C${(flux / 1e-6).toFixed(1)}`;
+  if (flux >= 1e-7) return `B${(flux / 1e-7).toFixed(1)}`;
+  return `A${(flux / 1e-8).toFixed(1)}`;
+}
+
 function useSpaceWeather(): SpaceData {
   const [state, setState] = useState<SpaceData>({
     xrayClass: null, xrayLevel: 0, solarWind: null, kp: null,
@@ -42,7 +51,7 @@ function useSpaceWeather(): SpaceData {
     (async () => {
       try {
         const [xrayR, windR, kpR, scalesR] = await Promise.all([
-          fetch("https://services.swpc.noaa.gov/json/goes/primary/xray-flares-latest.json").catch(() => null),
+          fetch("https://services.swpc.noaa.gov/json/goes/primary/xrays-6-hour.json").catch(() => null),
           fetch("https://services.swpc.noaa.gov/products/summary/solar-wind-speed.json").catch(() => null),
           fetch("https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json").catch(() => null),
           fetch("https://services.swpc.noaa.gov/products/noaa-scales.json").catch(() => null),
@@ -51,8 +60,13 @@ function useSpaceWeather(): SpaceData {
         let xrayClass: string | null = null;
         if (xrayR?.ok) {
           const j = await xrayR.json();
-          const row = Array.isArray(j) ? j[0] : j;
-          xrayClass = row?.max_class ?? row?.current_class ?? null;
+          // Velg siste måling på lang kanal (0.1-0.8 nm) — det er denne NOAA bruker for klasse
+          if (Array.isArray(j) && j.length > 0) {
+            const longChan = j.filter((r: any) => r.energy === "0.1-0.8nm");
+            const last = longChan[longChan.length - 1] ?? j[j.length - 1];
+            const flux = parseFloat(last?.flux ?? last?.observed_flux ?? "");
+            if (Number.isFinite(flux)) xrayClass = fluxToClass(flux);
+          }
         }
         const xrayLevel = parseXrayClass(xrayClass);
 
@@ -276,8 +290,8 @@ export function SpaceWeatherCard() {
       key: "rad",
       title: "Stråling",
       sub: stralingBeskrivelse(d.rScale, d.sScale),
-      value: d.sScale > 0 ? `S${d.sScale}` : d.rScale > 0 ? `R${d.rScale}` : "Rolig",
-      detail: d.rScale > 0 ? `Radioblackout R${d.rScale}` : d.sScale > 0 ? `Strålingstorm S${d.sScale}` : "Normal",
+      value: `R${d.rScale} · S${d.sScale}`,
+      detail: d.rScale === 0 && d.sScale === 0 ? "Normal" : d.rScale >= d.sScale ? `Radioblackout R${d.rScale}` : `Strålingstorm S${d.sScale}`,
       level: Math.max(d.sScale, d.rScale),
       icon: <Radio size={14} />,
       fx: <RadiationFX intensity={Math.min(1, Math.max(d.sScale, d.rScale) / 5)} />,
