@@ -583,7 +583,7 @@ function NedborPanel({ hours, maxP }: { hours: Hour[]; maxP: number }) {
   const peakIdx = hours.reduce((best, h, i, arr) => (h.precip > arr[best].precip ? i : best), 0);
   const peak = hours[peakIdx];
   const summary = !firstRain
-    ? "Ingen nedbør ventet de neste 48 timene."
+    ? `Ingen nedbør ventet de neste ${hours.length} timene.`
     : `Regn fra ${fmtWhen(firstRain.time)} · mest ${peak.precip.toFixed(1)} mm rundt ${fmtWhen(peak.time)} · totalt ${total.toFixed(1)} mm`;
 
   return (
