@@ -46,6 +46,7 @@ import { Route as ApiHomeyCallbackRouteImport } from './routes/api.homey.callbac
 import { Route as ApiPublicHooksStravaPollRouteImport } from './routes/api/public/hooks/strava-poll'
 import { Route as ApiPublicHooksSnapshotTibberDailyRouteImport } from './routes/api.public.hooks.snapshot-tibber-daily'
 import { Route as ApiPublicHooksSnapshotPulseRouteImport } from './routes/api.public.hooks.snapshot-pulse'
+import { Route as ApiPublicHooksRadonPollRouteImport } from './routes/api/public/hooks/radon-poll'
 import { Route as ApiPublicHooksOpenMeteoWarmRouteImport } from './routes/api/public/hooks/open-meteo-warm'
 import { Route as ApiPublicHooksNetatmoClimateRefreshRouteImport } from './routes/api/public/hooks/netatmo-climate-refresh'
 import { Route as ApiPublicHooksHomeySensorPollRouteImport } from './routes/api/public/hooks/homey-sensor-poll'
@@ -244,6 +245,11 @@ const ApiPublicHooksSnapshotPulseRoute =
     path: '/api/public/hooks/snapshot-pulse',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksRadonPollRoute = ApiPublicHooksRadonPollRouteImport.update({
+  id: '/api/public/hooks/radon-poll',
+  path: '/api/public/hooks/radon-poll',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicHooksOpenMeteoWarmRoute =
   ApiPublicHooksOpenMeteoWarmRouteImport.update({
     id: '/api/public/hooks/open-meteo-warm',
@@ -341,6 +347,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/homey-sensor-poll': typeof ApiPublicHooksHomeySensorPollRoute
   '/api/public/hooks/netatmo-climate-refresh': typeof ApiPublicHooksNetatmoClimateRefreshRoute
   '/api/public/hooks/open-meteo-warm': typeof ApiPublicHooksOpenMeteoWarmRoute
+  '/api/public/hooks/radon-poll': typeof ApiPublicHooksRadonPollRoute
   '/api/public/hooks/snapshot-pulse': typeof ApiPublicHooksSnapshotPulseRoute
   '/api/public/hooks/snapshot-tibber-daily': typeof ApiPublicHooksSnapshotTibberDailyRoute
   '/api/public/hooks/strava-poll': typeof ApiPublicHooksStravaPollRoute
@@ -389,6 +396,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/homey-sensor-poll': typeof ApiPublicHooksHomeySensorPollRoute
   '/api/public/hooks/netatmo-climate-refresh': typeof ApiPublicHooksNetatmoClimateRefreshRoute
   '/api/public/hooks/open-meteo-warm': typeof ApiPublicHooksOpenMeteoWarmRoute
+  '/api/public/hooks/radon-poll': typeof ApiPublicHooksRadonPollRoute
   '/api/public/hooks/snapshot-pulse': typeof ApiPublicHooksSnapshotPulseRoute
   '/api/public/hooks/snapshot-tibber-daily': typeof ApiPublicHooksSnapshotTibberDailyRoute
   '/api/public/hooks/strava-poll': typeof ApiPublicHooksStravaPollRoute
@@ -438,6 +446,7 @@ export interface FileRoutesById {
   '/api/public/hooks/homey-sensor-poll': typeof ApiPublicHooksHomeySensorPollRoute
   '/api/public/hooks/netatmo-climate-refresh': typeof ApiPublicHooksNetatmoClimateRefreshRoute
   '/api/public/hooks/open-meteo-warm': typeof ApiPublicHooksOpenMeteoWarmRoute
+  '/api/public/hooks/radon-poll': typeof ApiPublicHooksRadonPollRoute
   '/api/public/hooks/snapshot-pulse': typeof ApiPublicHooksSnapshotPulseRoute
   '/api/public/hooks/snapshot-tibber-daily': typeof ApiPublicHooksSnapshotTibberDailyRoute
   '/api/public/hooks/strava-poll': typeof ApiPublicHooksStravaPollRoute
@@ -488,6 +497,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/homey-sensor-poll'
     | '/api/public/hooks/netatmo-climate-refresh'
     | '/api/public/hooks/open-meteo-warm'
+    | '/api/public/hooks/radon-poll'
     | '/api/public/hooks/snapshot-pulse'
     | '/api/public/hooks/snapshot-tibber-daily'
     | '/api/public/hooks/strava-poll'
@@ -536,6 +546,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/homey-sensor-poll'
     | '/api/public/hooks/netatmo-climate-refresh'
     | '/api/public/hooks/open-meteo-warm'
+    | '/api/public/hooks/radon-poll'
     | '/api/public/hooks/snapshot-pulse'
     | '/api/public/hooks/snapshot-tibber-daily'
     | '/api/public/hooks/strava-poll'
@@ -584,6 +595,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/homey-sensor-poll'
     | '/api/public/hooks/netatmo-climate-refresh'
     | '/api/public/hooks/open-meteo-warm'
+    | '/api/public/hooks/radon-poll'
     | '/api/public/hooks/snapshot-pulse'
     | '/api/public/hooks/snapshot-tibber-daily'
     | '/api/public/hooks/strava-poll'
@@ -633,6 +645,7 @@ export interface RootRouteChildren {
   ApiPublicHooksHomeySensorPollRoute: typeof ApiPublicHooksHomeySensorPollRoute
   ApiPublicHooksNetatmoClimateRefreshRoute: typeof ApiPublicHooksNetatmoClimateRefreshRoute
   ApiPublicHooksOpenMeteoWarmRoute: typeof ApiPublicHooksOpenMeteoWarmRoute
+  ApiPublicHooksRadonPollRoute: typeof ApiPublicHooksRadonPollRoute
   ApiPublicHooksSnapshotPulseRoute: typeof ApiPublicHooksSnapshotPulseRoute
   ApiPublicHooksSnapshotTibberDailyRoute: typeof ApiPublicHooksSnapshotTibberDailyRoute
   ApiPublicHooksStravaPollRoute: typeof ApiPublicHooksStravaPollRoute
@@ -899,6 +912,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksSnapshotPulseRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/radon-poll': {
+      id: '/api/public/hooks/radon-poll'
+      path: '/api/public/hooks/radon-poll'
+      fullPath: '/api/public/hooks/radon-poll'
+      preLoaderRoute: typeof ApiPublicHooksRadonPollRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/open-meteo-warm': {
       id: '/api/public/hooks/open-meteo-warm'
       path: '/api/public/hooks/open-meteo-warm'
@@ -1012,6 +1032,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksNetatmoClimateRefreshRoute:
     ApiPublicHooksNetatmoClimateRefreshRoute,
   ApiPublicHooksOpenMeteoWarmRoute: ApiPublicHooksOpenMeteoWarmRoute,
+  ApiPublicHooksRadonPollRoute: ApiPublicHooksRadonPollRoute,
   ApiPublicHooksSnapshotPulseRoute: ApiPublicHooksSnapshotPulseRoute,
   ApiPublicHooksSnapshotTibberDailyRoute:
     ApiPublicHooksSnapshotTibberDailyRoute,
