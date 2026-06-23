@@ -424,7 +424,7 @@ export function RadonCard({ refreshKey }: { refreshKey?: string }) {
       {!data.loading && sorted.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {sorted.map((d) => (
-            <DeviceTile key={d.deviceId} dev={d} />
+            <DeviceTile key={d.deviceId} dev={d} fetchedAt={data.fetchedAt} />
           ))}
         </div>
       )}
