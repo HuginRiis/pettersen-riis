@@ -143,6 +143,7 @@ export function ApiCallLogPanel() {
   const [pauseFlags, setPauseFlags] = useState<Map<string, ApiPauseFlag>>(new Map());
   const [pauseDraft, setPauseDraft] = useState<Map<string, { start: string; end: string }>>(new Map());
   const [pauseBusy, setPauseBusy] = useState<string | null>(null);
+  const [selectedHourTs, setSelectedHourTs] = useState<string | null>(null);
 
   async function handlePurge(days: number) {
     const ok = window.confirm(
