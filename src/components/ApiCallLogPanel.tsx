@@ -411,7 +411,13 @@ export function ApiCallLogPanel() {
               </div>
               <div style={{ width: "100%", height: 200 }}>
                 <ResponsiveContainer>
-                  <ComposedChart data={chartData}>
+                  <ComposedChart
+                    data={chartData}
+                    onClick={(e: any) => {
+                      const ts = e?.activePayload?.[0]?.payload?._ts;
+                      if (ts) setSelectedHourTs(String(ts));
+                    }}
+                  >
                     <CartesianGrid
                       strokeDasharray="3 3"
                       stroke="color-mix(in oklab, var(--border) 40%, transparent)"
@@ -424,7 +430,7 @@ export function ApiCallLogPanel() {
                       allowDecimals={false}
                     />
                     <Tooltip
-                      trigger="click"
+                      trigger="hover"
                       contentStyle={{
                         background: "#1e293b",
                         border: "1px solid var(--border)",
@@ -443,6 +449,7 @@ export function ApiCallLogPanel() {
                         stackId="a"
                         fill={colorBySource.get(s) ?? appearance.series[i % appearance.series.length]}
                         name={SOURCE_LABELS[s] ?? s}
+                        cursor="pointer"
                       />
                     ))}
                     <Line
@@ -459,8 +466,77 @@ export function ApiCallLogPanel() {
                 </ResponsiveContainer>
               </div>
               <p className="text-[10px] text-muted-foreground/80 italic mt-2">
-                Hver søyle = én time. Den stiplede linjen viser totalt antall kall samme klokketime i går.
+                Klikk på en søyle for å se hvilke kilder som ringte i den timen — og hvordan den slo i går.
               </p>
+              {selectedHourTs && (() => {
+                const row = chartData.find((r) => String(r._ts) === selectedHourTs);
+                if (!row) return null;
+                const breakdown = chartSources
+                  .map((s) => ({ s, n: (row[s] as number) ?? 0 }))
+                  .filter((x) => x.n > 0)
+                  .sort((a, b) => b.n - a.n);
+                const todayN = breakdown.reduce((sum, x) => sum + x.n, 0);
+                const yestN = (row._yesterday as number) ?? 0;
+                const d = todayN - yestN;
+                const dPct = yestN > 0 ? Math.round((d / yestN) * 100) : null;
+                const hourLabel = new Date(selectedHourTs).toLocaleString("nb-NO", {
+                  weekday: "short", hour: "2-digit", minute: "2-digit",
+                });
+                return (
+                  <div className="mt-3 rounded border border-primary/40 bg-primary/5 p-3 text-xs animate-in fade-in slide-in-from-top-1">
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <div>
+                        <div className="text-[10px] tracking-[0.3em] uppercase text-primary">
+                          Detaljer · {hourLabel}
+                        </div>
+                        <div className="mt-1 text-foreground tabular-nums">
+                          <span className="font-medium">{todayN}</span> kall nå ·{" "}
+                          <span className="text-muted-foreground">{yestN} i går</span>{" "}
+                          <span
+                            className={
+                              "ml-1 px-1.5 py-0.5 rounded-sm border text-[10px] " +
+                              (d > 0
+                                ? "border-destructive/40 text-destructive bg-destructive/10"
+                                : d < 0
+                                  ? "border-primary/40 text-primary bg-primary/10"
+                                  : "border-border text-muted-foreground")
+                            }
+                          >
+                            {d > 0 ? "▲ flere" : d < 0 ? "▼ færre" : "= likt"} {Math.abs(d)}
+                            {dPct !== null ? ` (${dPct > 0 ? "+" : ""}${dPct}%)` : ""}
+                          </span>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedHourTs(null)}
+                        aria-label="Lukk detaljer"
+                        className="shrink-0 px-2 py-0.5 rounded border border-border/60 hover:border-primary hover:text-primary text-muted-foreground text-sm leading-none"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                    {breakdown.length === 0 ? (
+                      <div className="text-muted-foreground italic">Ingen kall registrert i denne timen.</div>
+                    ) : (
+                      <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1">
+                        {breakdown.map(({ s, n }) => (
+                          <li key={s} className="flex items-center gap-2">
+                            <span
+                              className="inline-block w-2 h-2 rounded-sm shrink-0"
+                              style={{ background: colorBySource.get(s) ?? "#888" }}
+                            />
+                            <span className="flex-1 truncate text-foreground/90">
+                              {SOURCE_LABELS[s] ?? s}
+                            </span>
+                            <span className="tabular-nums text-muted-foreground">{n}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
           );
         })()}
