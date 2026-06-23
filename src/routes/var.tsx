@@ -954,6 +954,9 @@ function AnimatedWeatherIconStyles() {
       @keyframes wxFogDrift { 0%,100% { transform: translateX(-2px); opacity: .7; } 50% { transform: translateX(2px); opacity: 1; } }
       @keyframes wxWindFlow { 0% { stroke-dashoffset: 20; opacity: .4; } 50% { opacity: 1; } 100% { stroke-dashoffset: 0; opacity: .4; } }
       @keyframes wxMoonGlow { 0%,100% { filter: drop-shadow(0 0 1px #fff8); } 50% { filter: drop-shadow(0 0 4px #fff); } }
+      @keyframes wxMoonFloat { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-3px) } }
+      @keyframes wxMoonHalo { 0%,100% { opacity: .75; transform: scale(1) } 50% { opacity: 1; transform: scale(1.08) } }
+      @keyframes wxMoonTwinkle { 0%,100% { opacity: .2; transform: scale(.8) } 50% { opacity: 1; transform: scale(1.2) } }
     `}</style>
   );
 }
