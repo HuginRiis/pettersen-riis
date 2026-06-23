@@ -201,19 +201,19 @@ function Sparkline({
   );
 }
 
-function DeviceTile({ dev }: { dev: VocDevice }) {
+function DeviceTile({ dev, fetchedAt }: { dev: VocDevice; fetchedAt: string | null }) {
   const [view, setView] = useState<"now" | "stats" | "h48" | "d14" | "info">("now");
   const level = vocLevel(dev.current);
   const intensity = Math.min(1, (dev.current ?? 0) / 2000);
   const fmt = (v: number | null | undefined) =>
     v == null || !Number.isFinite(v) ? "—" : Math.round(v).toString();
-  const updated = dev.lastUpdated
-    ? new Date(dev.lastUpdated).toLocaleString("nb-NO", {
-        weekday: "short",
-        hour: "2-digit",
-        minute: "2-digit",
-      })
-    : "—";
+  const fmtTime = (iso: string | null) =>
+    iso
+      ? new Date(iso).toLocaleString("nb-NO", { weekday: "short", hour: "2-digit", minute: "2-digit" })
+      : "—";
+  const sensorTs = fmtTime(dev.lastUpdated);
+  const fetchedTs = fmtTime(fetchedAt);
+
 
   const order: typeof view[] = ["now", "stats", "h48", "d14", "info"];
 
@@ -253,7 +253,7 @@ function DeviceTile({ dev }: { dev: VocDevice }) {
               <span className="text-xs text-white/60">{dev.unit || "ppb"}</span>
             </div>
             <div className="text-[11px] text-white/55 mt-1">{level.desc}</div>
-            <div className="text-[10px] text-white/40 mt-1">Oppdatert {updated}</div>
+            <div className="text-[10px] text-white/40 mt-1">Sist hentet {fetchedTs} · sensor {sensorTs}</div>
           </div>
         )}
 
@@ -357,7 +357,8 @@ export function VocCard({ refreshKey }: { refreshKey?: string }) {
     loading: boolean;
     error: string | null;
     devices: VocDevice[];
-  }>({ loading: true, error: null, devices: [] });
+    fetchedAt: string | null;
+  }>({ loading: true, error: null, devices: [], fetchedAt: null });
 
   useEffect(() => {
     let cancelled = false;
@@ -365,12 +366,13 @@ export function VocCard({ refreshKey }: { refreshKey?: string }) {
     fetchStatus()
       .then((r) => {
         if (cancelled) return;
-        setData({ loading: false, error: r.ok ? null : r.error ?? "Ukjent feil", devices: r.devices });
+        setData({ loading: false, error: r.ok ? null : r.error ?? "Ukjent feil", devices: r.devices, fetchedAt: r.fetchedAt ?? null });
       })
       .catch((e) => {
         if (cancelled) return;
-        setData({ loading: false, error: String(e?.message ?? e), devices: [] });
+        setData({ loading: false, error: String(e?.message ?? e), devices: [], fetchedAt: null });
       });
+
     return () => {
       cancelled = true;
     };
@@ -400,7 +402,7 @@ export function VocCard({ refreshKey }: { refreshKey?: string }) {
       {!data.loading && sorted.length > 0 && (
         <div className="grid grid-cols-1 gap-2">
           {sorted.map((d) => (
-            <DeviceTile key={d.deviceId} dev={d} />
+            <DeviceTile key={d.deviceId} dev={d} fetchedAt={data.fetchedAt} />
           ))}
         </div>
       )}
