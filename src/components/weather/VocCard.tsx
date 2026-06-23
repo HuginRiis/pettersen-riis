@@ -201,19 +201,19 @@ function Sparkline({
   );
 }
 
-function DeviceTile({ dev }: { dev: VocDevice }) {
+function DeviceTile({ dev, fetchedAt }: { dev: VocDevice; fetchedAt: string | null }) {
   const [view, setView] = useState<"now" | "stats" | "h48" | "d14" | "info">("now");
   const level = vocLevel(dev.current);
   const intensity = Math.min(1, (dev.current ?? 0) / 2000);
   const fmt = (v: number | null | undefined) =>
     v == null || !Number.isFinite(v) ? "—" : Math.round(v).toString();
-  const updated = dev.lastUpdated
-    ? new Date(dev.lastUpdated).toLocaleString("nb-NO", {
-        weekday: "short",
-        hour: "2-digit",
-        minute: "2-digit",
-      })
-    : "—";
+  const fmtTime = (iso: string | null) =>
+    iso
+      ? new Date(iso).toLocaleString("nb-NO", { weekday: "short", hour: "2-digit", minute: "2-digit" })
+      : "—";
+  const sensorTs = fmtTime(dev.lastUpdated);
+  const fetchedTs = fmtTime(fetchedAt);
+
 
   const order: typeof view[] = ["now", "stats", "h48", "d14", "info"];
 
