@@ -1168,7 +1168,7 @@ function MoonCard({ moon, now }: { moon: { name: string; icon: string; illuminat
       <div className="grid grid-cols-[1fr_auto] gap-4 items-center">
         <div className="space-y-2 text-sm">
           <Row label="Fase" value={`${moon.icon} ${moon.name}`} />
-          <Row label="Opplysning" value={`${Math.round(moon.illumination * 100)} %`} />
+          <Row label="Lyst" value={`${Math.round(moon.illumination * 100)} %`} />
           <Row label="Neste månenedgang" value={nextSet ? formatTime(nextSet) : "—"} />
           <Row label="Neste fullmåne" value={`${daysToFull} d`} />
         </div>
