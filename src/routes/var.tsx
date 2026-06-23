@@ -1168,7 +1168,7 @@ function MoonCard({ moon, now }: { moon: { name: string; icon: string; illuminat
       <div className="grid grid-cols-[1fr_auto] gap-4 items-center">
         <div className="space-y-2 text-sm">
           <Row label="Fase" value={`${moon.icon} ${moon.name}`} />
-          <Row label="Opplysning" value={`${Math.round(moon.illumination * 100)} %`} />
+          <Row label="Lyst" value={`${Math.round(moon.illumination * 100)} %`} />
           <Row label="Neste månenedgang" value={nextSet ? formatTime(nextSet) : "—"} />
           <Row label="Neste fullmåne" value={`${daysToFull} d`} />
         </div>
@@ -1193,7 +1193,7 @@ function MoonVisual({ phaseFraction, illumination }: { phaseFraction: number; il
     <div
       className="relative w-28 h-28"
       style={{ animation: "wxMoonFloat 6s ease-in-out infinite" }}
-      aria-label={`Måne ${Math.round(illumination * 100)} %`}
+      aria-label={`Måne, ${Math.round(illumination * 100)} % lyst`}
     >
       <div
         className="absolute inset-0 rounded-full pointer-events-none"
@@ -1210,18 +1210,18 @@ function MoonVisual({ phaseFraction, illumination }: { phaseFraction: number; il
 
       <svg viewBox="0 0 100 100" className="w-full h-full relative">
         <defs>
-          <radialGradient id="moonG" cx="35%" cy="35%">
-            <stop offset="0%" stopColor="#fffaf0" />
-            <stop offset="60%" stopColor="#f0ead8" />
-            <stop offset="100%" stopColor="#c8c4b8" />
+          <radialGradient id="moonG" cx="35%" cy="30%">
+            <stop offset="0%" stopColor="#ffffff" />
+            <stop offset="45%" stopColor="#fff5d6" />
+            <stop offset="100%" stopColor="#e8dfca" />
           </radialGradient>
           <radialGradient id="moonShadow" cx="50%" cy="50%">
-            <stop offset="0%" stopColor="#1c1c2a" />
-            <stop offset="100%" stopColor="#070710" />
+            <stop offset="0%" stopColor="#0c0c14" />
+            <stop offset="100%" stopColor="#020204" />
           </radialGradient>
           <radialGradient id="moonTerminator" cx="50%" cy="50%">
-            <stop offset="60%" stopColor="rgba(0,0,0,0)" />
-            <stop offset="100%" stopColor="rgba(0,0,0,0.35)" />
+            <stop offset="55%" stopColor="rgba(0,0,0,0)" />
+            <stop offset="100%" stopColor="rgba(0,0,0,0.25)" />
           </radialGradient>
           <clipPath id="moonClip"><circle cx={cx} cy={cy} r={r} /></clipPath>
         </defs>
@@ -1230,14 +1230,14 @@ function MoonVisual({ phaseFraction, illumination }: { phaseFraction: number; il
           <path d={litPath} fill="url(#moonG)" />
         </g>
         <circle cx={cx} cy={cy} r={r} fill="url(#moonTerminator)" clipPath="url(#moonClip)" />
-        <g clipPath="url(#moonClip)" opacity="0.55">
-          <circle cx="42" cy="45" r="3.5" fill="rgba(0,0,0,0.22)" />
-          <circle cx="58" cy="52" r="2.4" fill="rgba(0,0,0,0.20)" />
-          <circle cx="48" cy="62" r="2.8" fill="rgba(0,0,0,0.22)" />
-          <circle cx="38" cy="58" r="1.6" fill="rgba(0,0,0,0.18)" />
-          <circle cx="60" cy="40" r="1.4" fill="rgba(0,0,0,0.16)" />
+        <g clipPath="url(#moonClip)" opacity="0.45">
+          <circle cx="42" cy="45" r="3.5" fill="rgba(110,100,85,0.12)" />
+          <circle cx="58" cy="52" r="2.4" fill="rgba(110,100,85,0.10)" />
+          <circle cx="48" cy="62" r="2.8" fill="rgba(110,100,85,0.12)" />
+          <circle cx="38" cy="58" r="1.6" fill="rgba(110,100,85,0.08)" />
+          <circle cx="60" cy="40" r="1.4" fill="rgba(110,100,85,0.08)" />
         </g>
-        <circle cx={cx} cy={cy} r={r} fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="0.5" />
+        <circle cx={cx} cy={cy} r={r} fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth="0.5" />
       </svg>
     </div>
   );
