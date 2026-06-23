@@ -4,8 +4,9 @@ import { fetchVakttarnEvents, type VakttarnStats } from "@/lib/vakttarn-events.f
 import { Users, PawPrint, Car, Bell, Eye, Calendar, Camera } from "lucide-react";
 import {
   ResponsiveContainer,
-  BarChart,
+  ComposedChart,
   Bar,
+  Line,
   XAxis,
   YAxis,
   Tooltip,
