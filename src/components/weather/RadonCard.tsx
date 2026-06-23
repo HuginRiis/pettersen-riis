@@ -377,12 +377,13 @@ export function RadonCard({ refreshKey }: { refreshKey?: string }) {
     fetchStatus()
       .then((r) => {
         if (cancelled) return;
-        setData({ loading: false, error: r.ok ? null : r.error ?? "Ukjent feil", devices: r.devices });
+        setData({ loading: false, error: r.ok ? null : r.error ?? "Ukjent feil", devices: r.devices, fetchedAt: r.fetchedAt ?? null });
       })
       .catch((e) => {
         if (cancelled) return;
-        setData({ loading: false, error: String(e?.message ?? e), devices: [] });
+        setData({ loading: false, error: String(e?.message ?? e), devices: [], fetchedAt: null });
       });
+
     return () => {
       cancelled = true;
     };
