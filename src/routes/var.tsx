@@ -1161,9 +1161,10 @@ function MoonCard({ moon, now }: { moon: { name: string; icon: string; illuminat
   const nextSet = useMemo(() => nextMoonset(now), [now]);
   const daysToFull = useMemo(() => daysUntilFullMoon(now), [now]);
   return (
-    <GlassCard eyebrow={moon.name} icon={<Moon size={14} />} fx={<StarFX />}>
+    <GlassCard eyebrow="Månefase" icon={<Moon size={14} />} fx={<StarFX />}>
       <div className="grid grid-cols-[1fr_auto] gap-4 items-center">
         <div className="space-y-2 text-sm">
+          <Row label="Fase" value={`${moon.icon} ${moon.name}`} />
           <Row label="Opplysning" value={`${Math.round(moon.illumination * 100)} %`} />
           <Row label="Neste månenedgang" value={nextSet ? formatTime(nextSet) : "—"} />
           <Row label="Neste fullmåne" value={`${daysToFull} d`} />
@@ -1181,39 +1182,61 @@ function MoonVisual({ phaseFraction, illumination }: { phaseFraction: number; il
   const waxing = p < 0.5;
   const gibbous = p > 0.25 && p < 0.75;
   const rx = Math.max(0.01, Math.abs(Math.cos(2 * Math.PI * p)) * r);
-  // Outer arc: lit hemisphere (right for waxing, left for waning)
   const outerSweep = waxing ? 1 : 0;
-  // Inner ellipse: same sweep for crescent (carves inward), opposite for gibbous (bulges outward)
   const innerSweep = gibbous ? (waxing ? 0 : 1) : outerSweep;
   const litPath = `M ${cx},${cy - r} A ${r},${r} 0 0,${outerSweep} ${cx},${cy + r} A ${rx},${r} 0 0,${innerSweep} ${cx},${cy - r} Z`;
+  const glow = 0.35 + illumination * 0.65;
   return (
-    <svg viewBox="0 0 100 100" className="w-24 h-24" aria-label={`Måne ${Math.round(illumination * 100)} %`}>
-      <defs>
-        <radialGradient id="moonG" cx="35%" cy="35%">
-          <stop offset="0%" stopColor="#f8f7f0" />
-          <stop offset="100%" stopColor="#c8c4b8" />
-        </radialGradient>
-        <radialGradient id="moonShadow" cx="50%" cy="50%">
-          <stop offset="0%" stopColor="#1a1a26" />
-          <stop offset="100%" stopColor="#0a0a14" />
-        </radialGradient>
-        <clipPath id="moonClip"><circle cx={cx} cy={cy} r={r} /></clipPath>
-      </defs>
-      {/* dark side */}
-      <circle cx={cx} cy={cy} r={r} fill="url(#moonShadow)" />
-      {/* lit portion */}
-      <g clipPath="url(#moonClip)">
-        <path d={litPath} fill="url(#moonG)" />
-      </g>
-      {/* rim */}
-      <circle cx={cx} cy={cy} r={r} fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="0.5" />
-      {/* mare-prikker */}
-      <g clipPath="url(#moonClip)" opacity="0.5">
-        <circle cx="42" cy="45" r="3" fill="rgba(0,0,0,0.18)" />
-        <circle cx="58" cy="52" r="2" fill="rgba(0,0,0,0.18)" />
-        <circle cx="48" cy="60" r="2.5" fill="rgba(0,0,0,0.18)" />
-      </g>
-    </svg>
+    <div
+      className="relative w-28 h-28"
+      style={{ animation: "wxMoonFloat 6s ease-in-out infinite" }}
+      aria-label={`Måne ${Math.round(illumination * 100)} %`}
+    >
+      <div
+        className="absolute inset-0 rounded-full pointer-events-none"
+        style={{
+          background: `radial-gradient(circle at 50% 50%, rgba(255,247,220,${0.25 * glow}) 0%, rgba(255,247,220,${0.10 * glow}) 35%, transparent 70%)`,
+          animation: "wxMoonHalo 4s ease-in-out infinite",
+          filter: "blur(2px)",
+        }}
+      />
+      <span className="absolute" style={{ top: "10%", left: "8%", width: 2, height: 2, background: "#fff", borderRadius: "50%", animation: "wxMoonTwinkle 2.4s ease-in-out infinite", opacity: 0.8 }} />
+      <span className="absolute" style={{ top: "78%", left: "12%", width: 1.5, height: 1.5, background: "#fff", borderRadius: "50%", animation: "wxMoonTwinkle 3.1s ease-in-out infinite", animationDelay: "0.7s", opacity: 0.7 }} />
+      <span className="absolute" style={{ top: "18%", right: "6%", width: 2, height: 2, background: "#fff", borderRadius: "50%", animation: "wxMoonTwinkle 2.8s ease-in-out infinite", animationDelay: "1.2s", opacity: 0.8 }} />
+      <span className="absolute" style={{ top: "82%", right: "10%", width: 1.5, height: 1.5, background: "#fff", borderRadius: "50%", animation: "wxMoonTwinkle 3.6s ease-in-out infinite", animationDelay: "0.3s", opacity: 0.6 }} />
+
+      <svg viewBox="0 0 100 100" className="w-full h-full relative">
+        <defs>
+          <radialGradient id="moonG" cx="35%" cy="35%">
+            <stop offset="0%" stopColor="#fffaf0" />
+            <stop offset="60%" stopColor="#f0ead8" />
+            <stop offset="100%" stopColor="#c8c4b8" />
+          </radialGradient>
+          <radialGradient id="moonShadow" cx="50%" cy="50%">
+            <stop offset="0%" stopColor="#1c1c2a" />
+            <stop offset="100%" stopColor="#070710" />
+          </radialGradient>
+          <radialGradient id="moonTerminator" cx="50%" cy="50%">
+            <stop offset="60%" stopColor="rgba(0,0,0,0)" />
+            <stop offset="100%" stopColor="rgba(0,0,0,0.35)" />
+          </radialGradient>
+          <clipPath id="moonClip"><circle cx={cx} cy={cy} r={r} /></clipPath>
+        </defs>
+        <circle cx={cx} cy={cy} r={r} fill="url(#moonShadow)" />
+        <g clipPath="url(#moonClip)" style={{ animation: "wxMoonGlow 4s ease-in-out infinite" }}>
+          <path d={litPath} fill="url(#moonG)" />
+        </g>
+        <circle cx={cx} cy={cy} r={r} fill="url(#moonTerminator)" clipPath="url(#moonClip)" />
+        <g clipPath="url(#moonClip)" opacity="0.55">
+          <circle cx="42" cy="45" r="3.5" fill="rgba(0,0,0,0.22)" />
+          <circle cx="58" cy="52" r="2.4" fill="rgba(0,0,0,0.20)" />
+          <circle cx="48" cy="62" r="2.8" fill="rgba(0,0,0,0.22)" />
+          <circle cx="38" cy="58" r="1.6" fill="rgba(0,0,0,0.18)" />
+          <circle cx="60" cy="40" r="1.4" fill="rgba(0,0,0,0.16)" />
+        </g>
+        <circle cx={cx} cy={cy} r={r} fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="0.5" />
+      </svg>
+    </div>
   );
 }
 
