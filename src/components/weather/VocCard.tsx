@@ -58,10 +58,10 @@ function VocFX({ color, intensity }: { color: string; intensity: number }) {
       <div
         className="absolute"
         style={{
-          right: 18,
-          top: 18,
-          width: 52,
-          height: 52,
+          right: 30,
+          top: 30,
+          width: 104,
+          height: 104,
           borderRadius: "50%",
           background: `radial-gradient(circle, ${color}55 0%, transparent 70%)`,
           animation: "vocBreathe 3.6s ease-in-out infinite",
@@ -72,22 +72,22 @@ function VocFX({ color, intensity }: { color: string; intensity: number }) {
           key={`w${i}`}
           style={{
             position: "absolute",
-            right: 28,
-            top: 28,
-            width: 32,
-            height: 32,
+            right: 50,
+            top: 50,
+            width: 64,
+            height: 64,
             borderRadius: "50%",
-            border: `1px solid ${color}88`,
+            border: `1.5px solid ${color}88`,
             animation: `vocWave ${3 + i * 0.6}s ease-out ${i * 1}s infinite`,
           }}
         />
       ))}
       {Array.from({ length: dots }).map((_, i) => {
-        const left = 6 + ((i * 41) % 88);
+        const left = 10 + ((i * 34) % 70);
         const delay = (i * 0.35) % 4;
         const dur = 5 + ((i * 0.6) % 4);
-        const size = 2 + (i % 3);
-        const dx = (i % 2 === 0 ? 1 : -1) * (6 + (i % 5) * 3);
+        const size = 3 + (i % 3);
+        const dx = (i % 2 === 0 ? 1 : -1) * (5 + (i % 4) * 2);
         return (
           <div
             key={`g${i}`}
