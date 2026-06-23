@@ -4,8 +4,9 @@ import { fetchVakttarnEvents, type VakttarnStats } from "@/lib/vakttarn-events.f
 import { Users, PawPrint, Car, Bell, Eye, Calendar, Camera } from "lucide-react";
 import {
   ResponsiveContainer,
-  BarChart,
+  ComposedChart,
   Bar,
+  Line,
   XAxis,
   YAxis,
   Tooltip,
@@ -35,18 +36,33 @@ export function VakttarnEventsPanel() {
   const [range, setRange] = useState<Range>("day");
   const [date, setDate] = useState<string>(todayIso());
   const [stats, setStats] = useState<VakttarnStats | null>(null);
+  const [prevStats, setPrevStats] = useState<VakttarnStats | null>(null);
   const [loading, setLoading] = useState(false);
+  const [selectedBucket, setSelectedBucket] = useState<string | null>(null);
   const dedupeSec = 180;
+
+  // Beregn forrige periode (samme lengde): dag→i går, uke→forrige uke, måned→forrige måned
+  const prevDate = useMemo(() => {
+    const d = new Date(date + "T12:00:00Z");
+    if (range === "day") d.setUTCDate(d.getUTCDate() - 1);
+    else if (range === "week") d.setUTCDate(d.getUTCDate() - 7);
+    else d.setUTCMonth(d.getUTCMonth() - 1);
+    return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
+  }, [date, range]);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    fetchFn({ data: { range, date, dedupeWindowSec: dedupeSec } })
-      .then((s) => { if (!cancelled) setStats(s); })
+    setSelectedBucket(null);
+    Promise.all([
+      fetchFn({ data: { range, date, dedupeWindowSec: dedupeSec } }),
+      fetchFn({ data: { range, date: prevDate, dedupeWindowSec: dedupeSec } }),
+    ])
+      .then(([s, p]) => { if (!cancelled) { setStats(s); setPrevStats(p); } })
       .catch((e) => console.error("[vakttarn-events]", e))
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [range, date, dedupeSec, fetchFn]);
+  }, [range, date, prevDate, dedupeSec, fetchFn]);
 
   const total = useMemo(() => {
     if (!stats) return 0;
@@ -227,39 +243,168 @@ export function VakttarnEventsPanel() {
       )}
 
       {/* Chart */}
-      <div className="rounded-lg border border-border/40 bg-background/40 p-3">
-        <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground mb-2">
-          {range === "day"
-            ? "Vakthold time for time"
-            : range === "week"
-            ? "Ukens jakt"
-            : "Månedens kronikk"}
-        </div>
-        <div style={{ width: "100%", height: 220 }}>
-          <ResponsiveContainer>
-            <BarChart data={stats?.buckets ?? []}>
-              <CartesianGrid strokeDasharray="3 3" stroke="color-mix(in oklab, var(--border) 30%, transparent)" />
-              <XAxis dataKey="label" stroke="#ffffff" tick={{ fill: "#ffffff" }} fontSize={11} />
-              <YAxis stroke="#ffffff" tick={{ fill: "#ffffff" }} fontSize={11} allowDecimals={false} />
-              <Tooltip trigger="click"
-                contentStyle={{
-                  background: "#1e293b",
-                  border: "1px solid var(--border)",
-                  borderRadius: 6,
-                  fontSize: 12,
-                  color: "#ffffff",
-                }}
-                labelStyle={{ color: "#ffffff" }}
-                itemStyle={{ color: "#ffffff" }}
-              />
-              <Legend wrapperStyle={{ fontSize: 11, color: "#ffffff" }} />
-              {CATS.map((c) => (
-                <Bar key={c.key} dataKey={c.key} stackId="a" fill={c.color} name={c.label} />
-              ))}
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
+      {(() => {
+        const prevByLabel = new Map<string, number>();
+        for (const b of prevStats?.buckets ?? []) {
+          const prevTotal = CATS.reduce((s, c) => s + ((b as any)[c.key] ?? 0), 0);
+          prevByLabel.set(b.label, prevTotal);
+        }
+        const chartRows = (stats?.buckets ?? []).map((b) => ({
+          ...b,
+          _prev: prevByLabel.get(b.label) ?? 0,
+        }));
+        const prevTitle =
+          range === "day" ? "i går" : range === "week" ? "forrige uke" : "forrige måned";
+        const totalNow = chartRows.reduce(
+          (s, r) => s + CATS.reduce((a, c) => a + (((r as any)[c.key]) ?? 0), 0),
+          0,
+        );
+        const totalPrev = chartRows.reduce((s, r) => s + ((r as any)._prev ?? 0), 0);
+        const diff = totalNow - totalPrev;
+        const diffPct = totalPrev > 0 ? Math.round((diff / totalPrev) * 100) : null;
+        return (
+          <div className="rounded-lg border border-border/40 bg-background/40 p-3">
+            <div className="flex items-center justify-between gap-2 flex-wrap mb-2">
+              <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+                {range === "day"
+                  ? "Vakthold time for time"
+                  : range === "week"
+                  ? "Ukens jakt"
+                  : "Månedens kronikk"}{" "}
+                · linje = {prevTitle}
+              </div>
+              <div className="flex items-center gap-2 text-[10px] tabular-nums">
+                <span className="text-muted-foreground">
+                  Nå: <span className="text-foreground">{totalNow}</span>
+                </span>
+                <span className="text-muted-foreground">·</span>
+                <span className="text-muted-foreground">
+                  {prevTitle}: <span className="text-foreground">{totalPrev}</span>
+                </span>
+                <span
+                  className={
+                    "px-2 py-0.5 rounded-sm border " +
+                    (diff > 0
+                      ? "border-[#d4af37]/50 text-[#d4af37] bg-[#d4af37]/10"
+                      : diff < 0
+                        ? "border-[#7fb069]/50 text-[#7fb069] bg-[#7fb069]/10"
+                        : "border-border text-muted-foreground")
+                  }
+                >
+                  {diff > 0 ? "▲" : diff < 0 ? "▼" : "="} {Math.abs(diff)}
+                  {diffPct !== null ? ` (${diffPct > 0 ? "+" : ""}${diffPct}%)` : ""}
+                </span>
+              </div>
+            </div>
+            <div style={{ width: "100%", height: 220 }}>
+              <ResponsiveContainer>
+                <ComposedChart
+                  data={chartRows}
+                  onClick={(e: any) => {
+                    const label = e?.activeLabel;
+                    if (label) setSelectedBucket(String(label));
+                  }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="color-mix(in oklab, var(--border) 30%, transparent)" />
+                  <XAxis dataKey="label" stroke="#ffffff" tick={{ fill: "#ffffff" }} fontSize={11} />
+                  <YAxis stroke="#ffffff" tick={{ fill: "#ffffff" }} fontSize={11} allowDecimals={false} />
+                  <Tooltip
+                    trigger="hover"
+                    contentStyle={{
+                      background: "#1e293b",
+                      border: "1px solid var(--border)",
+                      borderRadius: 6,
+                      fontSize: 12,
+                      color: "#ffffff",
+                    }}
+                    labelStyle={{ color: "#ffffff" }}
+                    itemStyle={{ color: "#ffffff" }}
+                  />
+                  <Legend wrapperStyle={{ fontSize: 11, color: "#ffffff" }} />
+                  {CATS.map((c) => (
+                    <Bar key={c.key} dataKey={c.key} stackId="a" fill={c.color} name={c.label} cursor="pointer" />
+                  ))}
+                  <Line
+                    type="monotone"
+                    dataKey="_prev"
+                    stroke="#fbbf24"
+                    strokeWidth={2}
+                    strokeDasharray="4 3"
+                    dot={false}
+                    name={prevTitle}
+                    isAnimationActive={false}
+                  />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </div>
+            <p className="text-[10px] text-muted-foreground/80 italic mt-2">
+              Klikk på en søyle for å se kategorier og sammenligning mot {prevTitle}.
+            </p>
+            {selectedBucket && (() => {
+              const row = chartRows.find((r) => r.label === selectedBucket);
+              if (!row) return null;
+              const cats = CATS.map((c) => ({ c, n: ((row as any)[c.key] ?? 0) as number }));
+              const nowN = cats.reduce((s, x) => s + x.n, 0);
+              const prevN = ((row as any)._prev ?? 0) as number;
+              const d = nowN - prevN;
+              const dPct = prevN > 0 ? Math.round((d / prevN) * 100) : null;
+              return (
+                <div className="mt-3 rounded border border-primary/40 bg-primary/5 p-3 text-xs animate-in fade-in slide-in-from-top-1">
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div>
+                      <div className="text-[10px] tracking-[0.3em] uppercase text-primary">
+                        Detaljer · {selectedBucket}
+                      </div>
+                      <div className="mt-1 text-foreground tabular-nums">
+                        <span className="font-medium">{nowN}</span> hendelser ·{" "}
+                        <span className="text-muted-foreground">{prevN} {prevTitle}</span>{" "}
+                        <span
+                          className={
+                            "ml-1 px-1.5 py-0.5 rounded-sm border text-[10px] " +
+                            (d > 0
+                              ? "border-[#d4af37]/50 text-[#d4af37] bg-[#d4af37]/10"
+                              : d < 0
+                                ? "border-[#7fb069]/50 text-[#7fb069] bg-[#7fb069]/10"
+                                : "border-border text-muted-foreground")
+                          }
+                        >
+                          {d > 0 ? "▲ flere" : d < 0 ? "▼ færre" : "= likt"} {Math.abs(d)}
+                          {dPct !== null ? ` (${dPct > 0 ? "+" : ""}${dPct}%)` : ""}
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedBucket(null)}
+                      aria-label="Lukk detaljer"
+                      className="shrink-0 px-2 py-0.5 rounded border border-border/60 hover:border-primary hover:text-primary text-muted-foreground text-sm leading-none"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                  <ul className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {cats.map(({ c, n }) => (
+                      <li
+                        key={c.key}
+                        className="rounded border border-border/40 bg-background/40 px-2 py-1.5"
+                        style={{ borderColor: `${c.color}40` }}
+                      >
+                        <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                          <c.icon size={11} style={{ color: c.color }} />
+                          <span>{c.label}</span>
+                        </div>
+                        <div className="font-serif text-lg tabular-nums" style={{ color: c.color }}>
+                          {n}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              );
+            })()}
+          </div>
+        );
+      })()}
 
       {/* Recent feed */}
       {stats && stats.recent.length > 0 && (
