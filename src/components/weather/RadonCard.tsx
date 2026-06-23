@@ -285,7 +285,7 @@ function DeviceTile({ dev, fetchedAt }: { dev: RadonDevice; fetchedAt: string | 
               <span className="text-xs text-white/60">Bq/m³</span>
             </div>
             <div className="text-[11px] text-white/55 mt-1">{level.desc}</div>
-            <div className="text-[10px] text-white/40 mt-1">Oppdatert {updated}</div>
+            <div className="text-[10px] text-white/40 mt-1">Sist hentet {fetchedTs} · sensor {sensorTs}</div>
           </div>
         )}
 
