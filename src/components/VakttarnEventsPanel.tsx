@@ -36,18 +36,33 @@ export function VakttarnEventsPanel() {
   const [range, setRange] = useState<Range>("day");
   const [date, setDate] = useState<string>(todayIso());
   const [stats, setStats] = useState<VakttarnStats | null>(null);
+  const [prevStats, setPrevStats] = useState<VakttarnStats | null>(null);
   const [loading, setLoading] = useState(false);
+  const [selectedBucket, setSelectedBucket] = useState<string | null>(null);
   const dedupeSec = 180;
+
+  // Beregn forrige periode (samme lengde): dag→i går, uke→forrige uke, måned→forrige måned
+  const prevDate = useMemo(() => {
+    const d = new Date(date + "T12:00:00Z");
+    if (range === "day") d.setUTCDate(d.getUTCDate() - 1);
+    else if (range === "week") d.setUTCDate(d.getUTCDate() - 7);
+    else d.setUTCMonth(d.getUTCMonth() - 1);
+    return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
+  }, [date, range]);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    fetchFn({ data: { range, date, dedupeWindowSec: dedupeSec } })
-      .then((s) => { if (!cancelled) setStats(s); })
+    setSelectedBucket(null);
+    Promise.all([
+      fetchFn({ data: { range, date, dedupeWindowSec: dedupeSec } }),
+      fetchFn({ data: { range, date: prevDate, dedupeWindowSec: dedupeSec } }),
+    ])
+      .then(([s, p]) => { if (!cancelled) { setStats(s); setPrevStats(p); } })
       .catch((e) => console.error("[vakttarn-events]", e))
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [range, date, dedupeSec, fetchFn]);
+  }, [range, date, prevDate, dedupeSec, fetchFn]);
 
   const total = useMemo(() => {
     if (!stats) return 0;
