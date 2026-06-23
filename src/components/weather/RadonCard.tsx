@@ -64,23 +64,23 @@ function RadonAtomFX({ color, intensity }: { color: string; intensity: number })
         @keyframes radonFloat { 0%{transform:translateY(0) scale(.9);opacity:.2} 50%{opacity:.65} 100%{transform:translateY(-60px) scale(1.1);opacity:0} }
         @keyframes radonPulse { 0%,100%{opacity:.18;transform:scale(1)} 50%{opacity:.42;transform:scale(1.08)} }
       `}</style>
-      {/* Glow core */}
+      {/* Glow core — 2x size, moved inward */}
       <div
         className="absolute"
         style={{
-          right: 14,
-          top: 14,
-          width: 64,
-          height: 64,
+          right: 30,
+          top: 30,
+          width: 128,
+          height: 128,
           borderRadius: "50%",
           background: `radial-gradient(circle, ${color}66 0%, transparent 70%)`,
           animation: "radonPulse 3.2s ease-in-out infinite",
         }}
       />
-      {/* Orbiting electrons */}
+      {/* Orbiting electrons — 2x size */}
       <div
         className="absolute"
-        style={{ right: 30, top: 30, width: 32, height: 32 }}
+        style={{ right: 54, top: 54, width: 64, height: 64 }}
       >
         {[0, 60, 120].map((deg, i) => (
           <div
@@ -89,7 +89,7 @@ function RadonAtomFX({ color, intensity }: { color: string; intensity: number })
               position: "absolute",
               inset: 0,
               borderRadius: "50%",
-              border: `1px solid ${color}55`,
+              border: `1.5px solid ${color}55`,
               transform: `rotate(${deg}deg) scaleY(.42)`,
             }}
           />
@@ -101,14 +101,14 @@ function RadonAtomFX({ color, intensity }: { color: string; intensity: number })
               position: "absolute",
               left: "50%",
               top: "50%",
-              width: 4,
-              height: 4,
-              marginLeft: -2,
-              marginTop: -2,
+              width: 6,
+              height: 6,
+              marginLeft: -3,
+              marginTop: -3,
               borderRadius: "50%",
               background: color,
-              boxShadow: `0 0 6px ${color}`,
-              ["--r" as any]: "16px",
+              boxShadow: `0 0 8px ${color}`,
+              ["--r" as any]: "32px",
               animation: `${i % 2 === 0 ? "radonOrbitA" : "radonOrbitB"} ${2.4 + i * 0.4}s linear infinite`,
             }}
           />
@@ -116,17 +116,17 @@ function RadonAtomFX({ color, intensity }: { color: string; intensity: number })
       </div>
       {/* Rising gas particles */}
       {Array.from({ length: dots }).map((_, i) => {
-        const left = 8 + ((i * 37) % 84);
+        const left = 12 + ((i * 34) % 70);
         const delay = (i * 0.5) % 4;
         const dur = 4 + ((i * 0.7) % 3);
-        const size = 2 + (i % 3);
+        const size = 3 + (i % 3);
         return (
           <div
             key={`g${i}`}
             style={{
               position: "absolute",
               left: `${left}%`,
-              bottom: -6,
+              bottom: -8,
               width: size,
               height: size,
               borderRadius: "50%",
