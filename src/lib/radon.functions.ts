@@ -1,5 +1,18 @@
-import { createServerFn } from "@tanstack/react-start";
+import { createServerFn, createIsomorphicFn } from "@tanstack/react-start";
 import { getValidConnection, getHomeyRawSnapshot, fetchHomeyInsightsLog } from "@/lib/homey.functions";
+
+// Load withApiLog only on the server (samme mønster som homey.functions.ts)
+const loadApiLog = createIsomorphicFn()
+  .server((): Promise<typeof import("@/lib/api-call-log.server")> =>
+    import("@/lib/api-call-log.server"),
+  )
+  .client(
+    (): Promise<typeof import("@/lib/api-call-log.server")> =>
+      Promise.resolve({
+        withApiLog: (_g: string, _n: string, fn: any) => fn,
+      } as unknown as typeof import("@/lib/api-call-log.server")),
+  );
+const { withApiLog } = await loadApiLog();
 
 export type RadonSample = { t: string; v: number };
 
@@ -76,7 +89,8 @@ function dailyAggregate(points: RadonSample[], days: number): RadonSample[] {
   return out;
 }
 
-export const getRadonStatus = createServerFn({ method: "GET" }).handler(async (): Promise<RadonStatusResult> => {
+export const getRadonStatus = createServerFn({ method: "GET" }).handler(
+  withApiLog("homey", "getRadonStatus", async (): Promise<RadonStatusResult> => {
   const fetchedAt = new Date().toISOString();
   const conn = await getValidConnection();
   if (!conn) return { ok: false, error: "Ingen Homey-tilkobling", devices: [], fetchedAt };
@@ -140,5 +154,6 @@ export const getRadonStatus = createServerFn({ method: "GET" }).handler(async ()
     }),
   );
 
-  return { ok: true, devices: matched, fetchedAt };
-});
+    return { ok: true, devices: matched, fetchedAt };
+  }),
+);
