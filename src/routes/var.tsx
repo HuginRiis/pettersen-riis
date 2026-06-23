@@ -15,6 +15,7 @@ import {
 } from "@/components/weather/WeatherFX";
 import { SpaceWeatherCard } from "@/components/weather/SpaceWeatherCard";
 import { AirPollutionCard } from "@/components/weather/AirPollutionCard";
+import { RadonCard } from "@/components/weather/RadonCard";
 import {
   Wind,
   Droplets,
@@ -355,6 +356,9 @@ function WeatherPage() {
 
           {/* Romvær — solstormer, solvind, geomagnetiske stormer, nordlys, stråling */}
           <SpaceWeatherCard refreshKey={`${userLoc.active.lat.toFixed(3)},${userLoc.active.lon.toFixed(3)}`} />
+
+          {/* Radon — Airthings via Homey */}
+          <RadonCard refreshKey={`${userLoc.active.lat.toFixed(3)},${userLoc.active.lon.toFixed(3)}`} />
 
           {/* Luftkvalitet — PM2.5, PM10, NO2, O3, SO2, CO */}
           <AirPollutionCard lat={userLoc.active.lat} lon={userLoc.active.lon} locationLabel={userLoc.active.label} />
