@@ -367,7 +367,9 @@ export function RadonCard({ refreshKey }: { refreshKey?: string }) {
     loading: boolean;
     error: string | null;
     devices: RadonDevice[];
-  }>({ loading: true, error: null, devices: [] });
+    fetchedAt: string | null;
+  }>({ loading: true, error: null, devices: [], fetchedAt: null });
+
 
   useEffect(() => {
     let cancelled = false;
