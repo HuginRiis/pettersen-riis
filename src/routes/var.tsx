@@ -1193,7 +1193,7 @@ function MoonVisual({ phaseFraction, illumination }: { phaseFraction: number; il
     <div
       className="relative w-28 h-28"
       style={{ animation: "wxMoonFloat 6s ease-in-out infinite" }}
-      aria-label={`Måne ${Math.round(illumination * 100)} %`}
+      aria-label={`Måne, ${Math.round(illumination * 100)} % lyst`}
     >
       <div
         className="absolute inset-0 rounded-full pointer-events-none"
