@@ -239,7 +239,7 @@ function DeviceTile({ dev, fetchedAt }: { dev: RadonDevice; fetchedAt: string | 
       onClick={() =>
         setView((v) => (v === "now" ? "stats" : v === "stats" ? "chart" : v === "chart" ? "scale" : "now"))
       }
-      className="relative w-full text-left rounded-2xl border border-white/15 bg-white/10 overflow-hidden transition-colors backdrop-blur-xl shadow-lg shadow-black/10"
+      className="relative w-full text-left rounded-2xl border border-zinc-400/40 bg-zinc-800/75 overflow-hidden transition-colors backdrop-blur-xl shadow-lg shadow-black/10"
       style={{ minHeight: 180 }}
     >
       <RadonAtomFX color={level.color} intensity={intensity} />
