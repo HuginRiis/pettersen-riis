@@ -94,25 +94,38 @@ function RadonAtomFX({ color, intensity }: { color: string; intensity: number })
             }}
           />
         ))}
-        {[0, 1, 2].map((i) => (
-          <div
-            key={`e${i}`}
-            style={{
-              position: "absolute",
-              left: "50%",
-              top: "50%",
-              width: 6,
-              height: 6,
-              marginLeft: -3,
-              marginTop: -3,
-              borderRadius: "50%",
-              background: color,
-              boxShadow: `0 0 8px ${color}`,
-              ["--r" as any]: "32px",
-              animation: `${i % 2 === 0 ? "radonOrbitA" : "radonOrbitB"} ${2.4 + i * 0.4}s linear infinite`,
-            }}
-          />
-        ))}
+        {[0, 1, 2].map((i) => {
+          const tilt = [0, 60, 120][i];
+          return (
+            <div
+              key={`e${i}`}
+              style={{
+                position: "absolute",
+                inset: 0,
+                transform: `rotate(${tilt}deg) scaleY(.42)`,
+                pointerEvents: "none",
+              }}
+            >
+              <div
+                style={{
+                  position: "absolute",
+                  left: "50%",
+                  top: "50%",
+                  width: 6,
+                  height: 14,
+                  marginLeft: -3,
+                  marginTop: -7,
+                  borderRadius: "50%",
+                  background: color,
+                  boxShadow: `0 0 8px ${color}`,
+                  ["--r" as any]: "32px",
+                  animation: `${i % 2 === 0 ? "radonOrbitA" : "radonOrbitB"} ${2.4 + i * 0.4}s linear infinite`,
+                }}
+              />
+            </div>
+          );
+        })}
+
       </div>
       {/* Rising gas particles */}
       {Array.from({ length: dots }).map((_, i) => {
