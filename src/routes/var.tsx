@@ -1144,6 +1144,9 @@ function DailyLeafFX({ wind, seed }: { wind: number; seed: number }) {
       ))}
     </div>
   );
+}
+
+
 
 // ============================================================
 // WIND DETAIL CARD with compass
