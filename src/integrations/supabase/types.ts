@@ -1778,6 +1778,66 @@ export type Database = {
         }
         Relationships: []
       }
+      nsm_alerts: {
+        Row: {
+          created_at: string
+          external_id: string
+          fetched_at: string
+          id: string
+          notified: boolean
+          published_at: string | null
+          summary: string | null
+          title: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          external_id: string
+          fetched_at?: string
+          id?: string
+          notified?: boolean
+          published_at?: string | null
+          summary?: string | null
+          title: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          external_id?: string
+          fetched_at?: string
+          id?: string
+          notified?: boolean
+          published_at?: string | null
+          summary?: string | null
+          title?: string
+          url?: string
+        }
+        Relationships: []
+      }
+      nsm_notification_prefs: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          id: string
+          recipient: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          recipient: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          recipient?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       okonomi_accounts: {
         Row: {
           account_patterns: string[]
