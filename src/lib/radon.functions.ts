@@ -66,6 +66,29 @@ function pointsFromLog(log: any): RadonSample[] {
     })
     .filter((p): p is RadonSample => p !== null);
 }
+function hourlyAggregate(points: RadonSample[], hours: number): RadonSample[] {
+  const now = Date.now();
+  const hourMs = 3600000;
+  const buckets = new Map<number, { sum: number; n: number }>();
+  for (const p of points) {
+    const ts = new Date(p.t).getTime();
+    if (now - ts > hours * hourMs + hourMs) continue;
+    const key = Math.floor(ts / hourMs);
+    const b = buckets.get(key) ?? { sum: 0, n: 0 };
+    b.sum += p.v;
+    b.n += 1;
+    buckets.set(key, b);
+  }
+  const out: RadonSample[] = [];
+  const curHour = Math.floor(now / hourMs);
+  for (let i = hours - 1; i >= 0; i--) {
+    const key = curHour - i;
+    const b = buckets.get(key);
+    out.push({ t: new Date(key * hourMs).toISOString(), v: b ? b.sum / b.n : NaN });
+  }
+  return out;
+}
+
 
 function dailyAggregate(points: RadonSample[], days: number): RadonSample[] {
   const now = Date.now();
