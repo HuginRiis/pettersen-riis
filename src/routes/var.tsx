@@ -342,7 +342,7 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
     data, netatmoData, userLoc, alerts, now, bgGradient, glassKind, glassIntensity,
     currentHour, headline, todayDay, condition, borgenTemp, borgenHumidity,
     tollnesRainToday, hyttaRainToday, tollnesWind, hyttaWind, tollnesPressure, hyttaPressure,
-    tollnesTemp, hyttaTemp, skienHours, skienDays, hyttaHours, hyttaDays, moon, sun,
+    tollnesTemp, hyttaTemp, hyttaHumidity, skienHours, skienDays, hyttaHours, hyttaDays, moon, sun,
     rangeHours, setRangeHours, allAlerts, soundEnabled, setSoundEnabled,
   } = props;
 
