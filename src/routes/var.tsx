@@ -79,6 +79,7 @@ type ForecastDay = {
   tempMax: number;
   precip: number;
   precipProbability: number;
+  windMax: number;
 };
 
 type Hour = {
