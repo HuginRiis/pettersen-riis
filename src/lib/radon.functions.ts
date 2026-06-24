@@ -158,7 +158,7 @@ export const getRadonStatus = createServerFn({ method: "GET" }).handler(
         const [log31, log14, log48h] = await Promise.all([
           fetchHomeyInsightsLog(dev.deviceId, capId, "last31Days").catch(() => null),
           fetchHomeyInsightsLog(dev.deviceId, capId, "last14Days").catch(() => null),
-          fetchHomeyInsightsLog(dev.deviceId, capId, "last48Hours").catch(() => null),
+          fetchHomeyInsightsLog(dev.deviceId, capId, "last2Days").catch(() => null),
         ]);
         const pts31 = pointsFromLog(log31);
         if (pts31.length > 0) {
