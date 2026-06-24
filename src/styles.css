@@ -559,6 +559,12 @@ main .container {
 .tile-tone-0 [class*="bg-white/5"],
 .tile-tone-1 [class*="bg-white/5"] { background-color: oklch(0.20 0.02 260 / 0.06) !important; }
 
+/* Gjennomsiktighet på vær-fliser (styres av TileOpacity-knappen) */
+.tile-opacity {
+  opacity: var(--tile-opacity, 1);
+}
+
+
 /* Smart dashbord – bold-toggle som overstyrer alle font-weight-klasser i griden */
 .smart-bold-all,
 .smart-bold-all * { font-weight: 700 !important; }
