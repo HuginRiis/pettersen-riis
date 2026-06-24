@@ -618,7 +618,7 @@ export function SiteHeader() {
               onClick={() => setOpen(false)}
               aria-label="Innstillinger"
               title="Innstillinger"
-              className="text-primary p-2 rounded-md hover:bg-primary/10 transition flex items-center gap-1.5"
+              className={`p-2 rounded-md transition flex items-center gap-1.5 ${isWeather ? "text-white hover:bg-white/10" : "text-primary hover:bg-primary/10"}`}
             >
               <Settings size={20} />
               {showB("push_today") && <PushTodayBadge inline />}
