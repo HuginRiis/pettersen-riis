@@ -30,6 +30,8 @@ type Props = {
   readOnlyWho?: boolean;
   /** Når true: ingen egen bakgrunn/border (containeren utenfor styrer flis-stilen). */
   transparent?: boolean;
+  /** Når true: "Siste søk" vises som en knapp og må klikkes for å åpne listen. */
+  recentsCollapsed?: boolean;
 };
 
 const MAX_RECENT = 3;
@@ -63,6 +65,7 @@ export function LocationPicker({
   onDefaultSaved,
   authenticated = false,
   transparent = false,
+  recentsCollapsed = false,
 }: Props) {
   const search = useServerFn(searchPlaces);
   const saveDefault = useServerFn(setDefaultLocation);
@@ -82,6 +85,7 @@ export function LocationPicker({
   const [locateError, setLocateError] = useState<string | null>(null);
   const [favorites, setFavorites] = useState<ActiveLocation[]>([]);
   const [recents, setRecents] = useState<ActiveLocation[]>([]);
+  const [recentsOpen, setRecentsOpen] = useState(!recentsCollapsed);
   const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
   const wrap = useRef<HTMLDivElement>(null);
   const [pushWho, setPushWho] = useState<string>("Alle");
@@ -414,30 +418,40 @@ export function LocationPicker({
       {recents.length > 0 && (
         <div className="mt-3">
           <div className={`flex items-center justify-between mb-1.5`}>
-            <div className={`flex items-center gap-1.5 text-[10px] uppercase tracking-[0.2em] ${transparent ? "text-white/50" : "text-muted-foreground"}`}>
-              <Clock size={10} /> Siste søk
-            </div>
             <button
               type="button"
-              onClick={() => { setRecents([]); lsWrite(RECENT_KEY, []); }}
-              className={`text-[10px] uppercase tracking-wider ${transparent ? "text-white/40 hover:text-white/70" : "text-muted-foreground hover:text-foreground"}`}
+              onClick={() => setRecentsOpen((v) => !v)}
+              className={`flex items-center gap-1.5 text-[10px] uppercase tracking-[0.2em] ${transparent ? "text-white/50 hover:text-white" : "text-muted-foreground hover:text-foreground"}`}
+              aria-expanded={recentsOpen}
             >
-              Tøm
+              <Clock size={10} /> Siste søk
+              <span className={`text-[9px] opacity-70 transition-transform ${recentsOpen ? "rotate-90" : ""}`}>▶</span>
             </button>
-          </div>
-          <div className="flex flex-wrap gap-1.5">
-            {recents.map((r) => (
+            {recentsOpen && (
               <button
-                key={`recent-${r.label}`}
                 type="button"
-                onClick={() => handlePickStored(r)}
-                className={chipBtnClass}
-                title={`Bytt til ${r.label}`}
+                onClick={() => { setRecents([]); lsWrite(RECENT_KEY, []); }}
+                className={`text-[10px] uppercase tracking-wider ${transparent ? "text-white/40 hover:text-white/70" : "text-muted-foreground hover:text-foreground"}`}
               >
-                {r.label}
+                Tøm
               </button>
-            ))}
+            )}
           </div>
+          {recentsOpen && (
+            <div className="flex flex-wrap gap-1.5">
+              {recents.map((r) => (
+                <button
+                  key={`recent-${r.label}`}
+                  type="button"
+                  onClick={() => handlePickStored(r)}
+                  className={chipBtnClass}
+                  title={`Bytt til ${r.label}`}
+                >
+                  {r.label}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>

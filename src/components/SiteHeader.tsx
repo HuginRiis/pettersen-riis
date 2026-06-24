@@ -177,6 +177,8 @@ export function SiteHeader() {
   const router = useRouter();
   const { authenticated } = useAuthStatus();
   const isAuthed = authenticated === true;
+  const isWeather = router.state.location.pathname === "/var";
+
 
   // Hent hvilken bruker IP-en tilhører (Arne / Rebekka / …) for å scope tellinger.
   const fetchName = useServerFn(getNameForCurrentIp);
@@ -446,14 +448,18 @@ export function SiteHeader() {
   };
 
   return (
-    <header className="sticky top-0 z-50 backdrop-blur-md bg-background/80 border-b border-border">
+    <header className={`sticky top-0 z-50 ${isWeather ? "bg-transparent border-b border-transparent" : "backdrop-blur-md bg-background/80 border-b border-border"}`}>
       <div className="container mx-auto px-4 py-3 flex items-center justify-between gap-4">
         <div className="flex items-center gap-3 shrink-0">
           <Link
             to="/"
             aria-label="Hjem"
             title="Hjem"
-            className="group w-9 h-9 rounded-full border border-primary/40 flex items-center justify-center text-primary hover:shadow-[0_0_20px_var(--color-primary)] transition-shadow shrink-0"
+            className={`group w-9 h-9 rounded-full border flex items-center justify-center transition-shadow shrink-0 ${
+              isWeather
+                ? "border-white/40 text-white hover:shadow-[0_0_20px_rgba(255,255,255,0.45)]"
+                : "border-primary/40 text-primary hover:shadow-[0_0_20px_var(--color-primary)]"
+            }`}
           >
             <Home size={16} />
           </Link>
@@ -477,13 +483,13 @@ export function SiteHeader() {
             className="leading-tight text-left bg-transparent border-0 p-0 cursor-pointer"
             style={{ WebkitTapHighlightColor: "transparent" }}
           >
-            <div className="text-display text-sm tracking-[0.25em] text-primary flex items-center gap-1.5">
-              <Crown size={12} className="text-primary/80" />
+            <div className={`text-display text-sm tracking-[0.25em] flex items-center gap-1.5 ${isWeather ? "text-white" : "text-primary"}`}>
+              <Crown size={12} className={isWeather ? "text-white/80" : "text-primary/80"} />
               <span>HOUSE PETTERSEN RIIS</span>
-              <Swords size={12} className="text-primary/80" />
+              <Swords size={12} className={isWeather ? "text-white/80" : "text-primary/80"} />
             </div>
-            <div className="text-[10px] text-muted-foreground tracking-widest flex items-center gap-1.5">
-              <Shield size={9} className="text-muted-foreground/70" />
+            <div className={`text-[10px] tracking-widest flex items-center gap-1.5 ${isWeather ? "text-white/70" : "text-muted-foreground"}`}>
+              <Shield size={9} className={isWeather ? "text-white/60" : "text-muted-foreground/70"} />
               <span>OF SKIEN</span>
             </div>
           </button>
@@ -612,15 +618,19 @@ export function SiteHeader() {
               onClick={() => setOpen(false)}
               aria-label="Innstillinger"
               title="Innstillinger"
-              className="text-primary p-2 rounded-md hover:bg-primary/10 transition flex items-center gap-1.5"
+              className={`p-2 rounded-md transition flex items-center gap-1.5 ${isWeather ? "text-white hover:bg-white/10" : "text-primary hover:bg-primary/10"}`}
             >
               <Settings size={20} />
               {showB("push_today") && <PushTodayBadge inline />}
             </Link>
           )}
           <button
-            className={`relative text-primary p-2 rounded-md transition ${
-              open ? "" : "shadow-[0_0_10px_hsl(var(--primary)/0.55)] hover:shadow-[0_0_16px_hsl(var(--primary)/0.8)]"
+            className={`relative p-2 rounded-md transition ${
+              isWeather
+                ? "text-white"
+                : open
+                  ? "text-primary"
+                  : "text-primary shadow-[0_0_10px_hsl(var(--primary)/0.55)] hover:shadow-[0_0_16px_hsl(var(--primary)/0.8)]"
             }`}
             onClick={() => setOpen((v) => { if (!v) setFavOpenMobile(false); return !v; })}
             aria-label="Meny"

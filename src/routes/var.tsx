@@ -295,7 +295,7 @@ function WeatherPage() {
           {/* Sted-bytter (samme stil som øvrige fliser) */}
           <div className="relative z-50 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/15 shadow-lg shadow-black/10">
             <TileSplashFX kind={glassKind} intensity={glassIntensity} />
-            <UserLocationBar page="var" state={userLoc} transparent />
+            <UserLocationBar page="var" state={userLoc} transparent recentsCollapsed />
           </div>
 
           {/* MET-VARSLER */}
