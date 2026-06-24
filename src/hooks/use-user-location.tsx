@@ -119,13 +119,11 @@ export function UserLocationBar({
   state,
   readOnlyWho = false,
   transparent = false,
-  recentsCollapsed = false,
 }: {
   page: LocationPage;
   state: ReturnType<typeof useUserLocation>;
   readOnlyWho?: boolean;
   transparent?: boolean;
-  recentsCollapsed?: boolean;
 }) {
   return (
     <LocationPicker
@@ -139,7 +137,6 @@ export function UserLocationBar({
       authenticated={state.authenticated}
       readOnlyWho={readOnlyWho}
       transparent={transparent}
-      recentsCollapsed={recentsCollapsed}
     />
   );
 }
