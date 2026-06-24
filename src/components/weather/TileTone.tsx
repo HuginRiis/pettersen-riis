@@ -1,13 +1,14 @@
 import { createContext, useCallback, useContext } from "react";
 import { usePerUserPersistedState } from "@/hooks/use-per-user-persisted-state";
 
-export type TileTone = 0 | 1 | 2 | 3;
+export type TileTone = 0 | 1 | 2 | 3 | 4;
 
 const TONE_LABELS: Record<TileTone, string> = {
   0: "Lys grå",
   1: "Grå",
   2: "Medium grå",
   3: "Meget grå",
+  4: "Original",
 };
 
 
@@ -16,6 +17,7 @@ const TONE_ICONS: Record<TileTone, string> = {
   1: "⛅",
   2: "☁️",
   3: "🌑",
+  4: "🕰️",
 };
 
 
@@ -27,7 +29,7 @@ const TileToneContext = createContext<{
 export function TileToneProvider({ children }: { children: React.ReactNode }) {
   const [tone, setTone] = usePerUserPersistedState<TileTone>("var.tileTone", 3);
   const cycleTone = useCallback(() => {
-    setTone(((tone + 1) % 4) as TileTone);
+    setTone(((tone + 1) % 5) as TileTone);
   }, [tone, setTone]);
   return (
     <TileToneContext.Provider value={{ tone, cycleTone }}>
@@ -49,6 +51,9 @@ export function tileToneClasses(tone: TileTone): string {
     case 2:
       return "tile-tone-2 bg-slate-600/80 border-white/20 text-white";
     case 3:
+      return "tile-tone-3 bg-slate-800/90 border-white/15 text-white";
+    case 4:
+      return "tile-tone-4 bg-white/10 border-white/15 text-white";
     default:
       return "tile-tone-3 bg-slate-800/90 border-white/15 text-white";
   }
