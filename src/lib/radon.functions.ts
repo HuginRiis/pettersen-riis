@@ -146,6 +146,7 @@ export const getRadonStatus = createServerFn({ method: "GET" }).handler(
       max30: null,
       avg30: null,
       daily14: [],
+      hourly48: [],
     });
   }
 
