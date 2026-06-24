@@ -31,11 +31,11 @@ function vocLevel(v: number | null | undefined): {
     };
   if (v < 2000)
     return {
-      label: "Forhøyet",
+      label: "Moderat",
       color: "#fbbf24",
       ring: "rgba(251,191,36,.55)",
       bg: "rgba(251,191,36,.10)",
-      desc: "Forhøyet — luft ut og finn evt. kilde (rengjøringsmidler, maling, parfymer).",
+      desc: "Moderat — luft ut og finn evt. kilde (rengjøringsmidler, maling, parfymer).",
     };
   return {
     label: "Dårlig",
@@ -322,7 +322,7 @@ function DeviceTile({ dev, fetchedAt }: { dev: VocDevice; fetchedAt: string | nu
             </div>
             <div className="mt-1 grid grid-cols-1 gap-0.5">
               <ScaleRow color="#34d399" range="< 250" label="Bra" />
-              <ScaleRow color="#fbbf24" range="250 – 2000" label="Forhøyet" />
+              <ScaleRow color="#fbbf24" range="250 – 2000" label="Moderat" />
               <ScaleRow color="#f87171" range="> 2000" label="Dårlig" />
             </div>
           </div>
