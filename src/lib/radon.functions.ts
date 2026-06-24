@@ -155,9 +155,10 @@ export const getRadonStatus = createServerFn({ method: "GET" }).handler(
     matched.map(async (dev) => {
       try {
         const capId = "measure_radon";
-        const [log31, log14] = await Promise.all([
+        const [log31, log14, log48h] = await Promise.all([
           fetchHomeyInsightsLog(dev.deviceId, capId, "last31Days").catch(() => null),
           fetchHomeyInsightsLog(dev.deviceId, capId, "last14Days").catch(() => null),
+          fetchHomeyInsightsLog(dev.deviceId, capId, "last48Hours").catch(() => null),
         ]);
         const pts31 = pointsFromLog(log31);
         if (pts31.length > 0) {
@@ -173,6 +174,8 @@ export const getRadonStatus = createServerFn({ method: "GET" }).handler(
         }
         const pts14 = pointsFromLog(log14);
         dev.daily14 = dailyAggregate(pts14.length ? pts14 : pts31, 14);
+        const pts48 = pointsFromLog(log48h);
+        dev.hourly48 = hourlyAggregate(pts48.length ? pts48 : pts31, 48);
       } catch {
         // ignore
       }
