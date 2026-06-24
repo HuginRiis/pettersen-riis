@@ -281,6 +281,7 @@ function WeatherPage() {
         hyttaPressure={hyttaPressure}
         tollnesTemp={tollnesTemp}
         hyttaTemp={hyttaTemp}
+        hyttaHumidity={hyttaHumidity}
         skienHours={skienHours}
         skienDays={skienDays}
         hyttaHours={hyttaHours}
