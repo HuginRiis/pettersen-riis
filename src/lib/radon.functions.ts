@@ -27,6 +27,7 @@ export type RadonDevice = {
   max30: number | null;
   avg30: number | null;
   daily14: RadonSample[]; // dagsverdier (avg per dag) siste 14 dager
+  hourly48: RadonSample[]; // timesnitt siste 48 timer
 };
 
 export type RadonStatusResult = {
