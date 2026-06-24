@@ -5,10 +5,11 @@ export type TileTone = 0 | 1 | 2 | 3;
 
 const TONE_LABELS: Record<TileTone, string> = {
   0: "Lys grå",
-  1: "Medium grå",
-  2: "Mørk grå",
-  3: "Mørk",
+  1: "Grå",
+  2: "Medium grå",
+  3: "Meget grå",
 };
+
 
 const TONE_ICONS: Record<TileTone, string> = {
   0: "☀️",
@@ -16,6 +17,7 @@ const TONE_ICONS: Record<TileTone, string> = {
   2: "☁️",
   3: "🌑",
 };
+
 
 const TileToneContext = createContext<{
   tone: TileTone;
@@ -41,16 +43,17 @@ export function useTileTone() {
 export function tileToneClasses(tone: TileTone): string {
   switch (tone) {
     case 0:
-      return "tile-tone-0 bg-white/90 border-black/10 text-slate-900";
+      return "tile-tone-0 bg-slate-300/90 border-slate-500/20 text-slate-900";
     case 1:
-      return "tile-tone-1 bg-white/60 border-black/10 text-slate-900";
+      return "tile-tone-1 bg-slate-400/85 border-slate-600/20 text-slate-900";
     case 2:
-      return "tile-tone-2 bg-white/25 border-white/20 text-white";
+      return "tile-tone-2 bg-slate-600/80 border-white/20 text-white";
     case 3:
     default:
-      return "tile-tone-3 bg-white/10 border-white/15 text-white";
+      return "tile-tone-3 bg-slate-800/90 border-white/15 text-white";
   }
 }
+
 
 export function TileToneToggle() {
   const { tone, cycleTone } = useTileTone();
