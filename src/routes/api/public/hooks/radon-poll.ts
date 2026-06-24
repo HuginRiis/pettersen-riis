@@ -11,9 +11,19 @@ export const Route = createFileRoute("/api/public/hooks/radon-poll")({
           return new Response(
             JSON.stringify({
               ok: r.ok,
-              devices: r.devices.length,
               fetchedAt: r.fetchedAt,
               error: r.error,
+              devices: r.devices.map((d) => ({
+                name: d.name,
+                zone: d.zone,
+                current: d.current,
+                lastUpdated: d.lastUpdated,
+                hourly48: d.hourly48.length,
+                hourly48NonNaN: d.hourly48.filter((p) => Number.isFinite(p.v)).length,
+                hourly48Sample: d.hourly48.slice(0, 3),
+                daily14: d.daily14.length,
+                daily14NonNaN: d.daily14.filter((p) => Number.isFinite(p.v)).length,
+              })),
             }),
             { headers: { "Content-Type": "application/json" } },
           );
