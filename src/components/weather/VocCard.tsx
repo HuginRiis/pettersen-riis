@@ -224,7 +224,7 @@ function DeviceTile({ dev, fetchedAt }: { dev: VocDevice; fetchedAt: string | nu
         const i = order.indexOf(view);
         setView(order[(i + 1) % order.length]);
       }}
-      className="relative w-full text-left rounded-2xl border border-white/15 bg-white/10 overflow-hidden transition-colors backdrop-blur-xl shadow-lg shadow-black/10"
+      className="relative w-full text-left rounded-xl border border-white/10 bg-black/25 overflow-hidden transition-colors hover:bg-black/35"
       style={{ minHeight: 200 }}
     >
       <VocFX color={level.color} intensity={intensity} />
