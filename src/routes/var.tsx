@@ -306,7 +306,7 @@ type WeatherPageInnerProps = {
   alerts: AlertsResult | null;
   now: Date;
   bgGradient: string;
-  glassKind: string;
+  glassKind: GlassKind;
   glassIntensity: number;
   currentHour: Hour | null;
   headline: string | null;
@@ -314,14 +314,15 @@ type WeatherPageInnerProps = {
   condition: string;
   borgenTemp: number | null;
   borgenHumidity: number | null;
-  tollnesRainToday: number;
-  hyttaRainToday: number;
+  tollnesRainToday: number | null;
+  hyttaRainToday: number | null;
   tollnesWind: number | null;
   hyttaWind: number | null;
   tollnesPressure: number | null;
   hyttaPressure: number | null;
   tollnesTemp: number | null;
   hyttaTemp: number | null;
+  hyttaHumidity: number | null;
   skienHours: Hour[] | null;
   skienDays: ForecastDay[] | null;
   hyttaHours: Hour[] | null;
@@ -332,7 +333,7 @@ type WeatherPageInnerProps = {
   setRangeHours: (v: 24 | 72 | 168) => void;
   allAlerts: MetAlert[];
   soundEnabled: boolean;
-  setSoundEnabled: (v: boolean) => void;
+  setSoundEnabled: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
 function WeatherPageInner(props: WeatherPageInnerProps) {
