@@ -570,9 +570,7 @@ function RotatingForecastCard({ hours, soundEnabled }: { hours: Hour[] | null; s
   const active = panels.find((p) => p.key === panel)!;
 
   return (
-    <article
-      className="relative overflow-hidden rounded-2xl bg-white/10 backdrop-blur-xl border border-white/15 shadow-lg shadow-black/10 p-4"
-    >
+    <article className={toneCardCn()}>
       {fx}
       <div className="relative">
         <div className="flex items-center justify-between mb-3">
