@@ -30,6 +30,8 @@ type Props = {
   readOnlyWho?: boolean;
   /** Når true: ingen egen bakgrunn/border (containeren utenfor styrer flis-stilen). */
   transparent?: boolean;
+  /** Når true: "Siste søk" vises som en knapp og må klikkes for å åpne listen. */
+  recentsCollapsed?: boolean;
 };
 
 const MAX_RECENT = 3;
