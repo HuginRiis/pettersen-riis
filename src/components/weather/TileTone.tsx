@@ -25,9 +25,7 @@ const TileToneContext = createContext<{
 export function TileToneProvider({ children }: { children: React.ReactNode }) {
   const [tone, setTone] = usePerUserPersistedState<TileTone>("var.tileTone", 3);
   const cycleTone = useCallback(() => {
-    const next = ((tone + 1) % 4) as TileTone;
-    console.log("[TileTone] cycleTone", { current: tone, next });
-    setTone(next);
+    setTone(((tone + 1) % 4) as TileTone);
   }, [tone, setTone]);
   return (
     <TileToneContext.Provider value={{ tone, cycleTone }}>
