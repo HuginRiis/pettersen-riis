@@ -301,7 +301,7 @@ export function SpaceWeatherCard({ refreshKey }: { refreshKey?: string } = {}) {
   ];
 
   return (
-    <article className={`relative overflow-hidden rounded-2xl backdrop-blur-xl shadow-lg shadow-black/10 p-4 ${tileToneClasses(tone)}`}>
+    <article className={`relative overflow-hidden rounded-2xl backdrop-blur-xl shadow-lg shadow-black/10 p-4 tile-opacity ${tileToneClasses(tone)}`}>
       <style>{`
         @keyframes spaceFly { 0% { opacity:0; transform: translateY(20px) scale(.92); filter: blur(6px);} 100% { opacity:1; transform: translateY(0) scale(1); filter: blur(0);} }
         @keyframes flarePulse { 0%,100% { transform: scale(1); opacity: .7; } 50% { transform: scale(1.6); opacity: 1; } }
