@@ -4800,8 +4800,9 @@ export function SmartDashbord() {
                 <UvCompact loc={loc} />
               </div>
               <div className="col-span-2">
-                <AqiCompact loc={loc} />
+                <VocStuaTile />
               </div>
+
               <div className="col-span-2">
                 <RainTile
                   rainDay={tollnes.rainDay}
