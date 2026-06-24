@@ -13,6 +13,7 @@ import { FavoritesManagerPanel } from "@/components/FavoritesManagerPanel";
 import { LightScenesPanel } from "@/components/LightScenesPanel";
 import { FavoriteZonesPanel } from "@/components/FavoriteZonesPanel";
 import { MetAlertNotificationSettings } from "@/components/MetAlertNotificationSettings";
+import { NSMNotificationSettings } from "@/components/NSMNotificationSettings";
 import { LightIdleNotificationSettings } from "@/components/LightIdleNotificationSettings";
 import { UvNotificationSettings } from "@/components/UvNotificationSettings";
 import { AirQualityNotificationSettings } from "@/components/AirQualityNotificationSettings";
@@ -78,6 +79,7 @@ const TOC_ITEMS: { id: string; label: string; emoji: string }[] = [
   { id: "sec-scheduling", label: "Push-tidsplan", emoji: "⏰" },
   { id: "sec-tibber", label: "Tibber-cron", emoji: "⚡" },
   { id: "sec-farevarsel", label: "Farevarsel", emoji: "⚠️" },
+  { id: "sec-nsm", label: "NSM Sikkerhet (cyber)", emoji: "🛡️" },
   { id: "sec-klima", label: "Klima — for varmt/kaldt", emoji: "🌡️" },
   { id: "sec-basseng", label: "Basseng — temp-endring", emoji: "🏊" },
   { id: "sec-basseng-auto", label: "Basseng — automatikk (stue/watt/varmepumpe)", emoji: "♨️" },
@@ -180,6 +182,7 @@ function PushSettingsPage() {
       <SettingsBox id="sec-tibber" title="⚡ Tibber-cron"><TibberCronStatusPanel /></SettingsBox>
       <SettingsBox id="sec-okonomi" title="🪙 Husholdningens hvelv"><OkonomiSettingsPanel /></SettingsBox>
       <SettingsBox id="sec-farevarsel" title="⚠️ Vær farevarsel — av/på" accent="border-orange-500/40"><MetAlertNotificationSettings /></SettingsBox>
+      <SettingsBox id="sec-nsm" title="🛡️ NSM Sikkerhet — cybervarsler" accent="border-blue-500/40"><NSMNotificationSettings /></SettingsBox>
       <SettingsBox id="sec-klima" title="🌡️ Klima — for varmt / for kaldt (Borgen & Hytta)"><ClimateNotificationSettings /></SettingsBox>
       <SettingsBox id="sec-basseng" title="🏊 Basseng — varsel ved temperaturendring"><BassengNotificationSettings /></SettingsBox>
       <SettingsBox id="sec-basseng-auto" title="♨️ Basseng — automatikk (stue → bryter av + varmepumpe på)"><BassengAutomationSettings /></SettingsBox>
