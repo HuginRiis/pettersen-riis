@@ -224,8 +224,8 @@ function DeviceTile({ dev, fetchedAt }: { dev: VocDevice; fetchedAt: string | nu
         const i = order.indexOf(view);
         setView(order[(i + 1) % order.length]);
       }}
-      className="relative w-full text-left rounded-2xl border overflow-hidden transition-colors"
-      style={{ background: level.bg, borderColor: level.ring, minHeight: 200 }}
+      className="relative w-full text-left rounded-2xl border border-white/15 bg-white/10 overflow-hidden transition-colors backdrop-blur-xl shadow-lg shadow-black/10"
+      style={{ minHeight: 200 }}
     >
       <VocFX color={level.color} intensity={intensity} />
       <div className="relative p-3 flex flex-col gap-2 h-full">
@@ -382,11 +382,11 @@ export function VocCard({ refreshKey }: { refreshKey?: string }) {
   const sorted = useMemo(() => data.devices, [data.devices]);
 
   return (
-    <div className="rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm p-3">
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-1.5">
-          <Wind size={14} className="text-white/70" />
-          <span className="text-[11px] uppercase tracking-wider text-white/70">VOC · Airthings</span>
+    <div className="rounded-2xl bg-white/10 border border-white/15 backdrop-blur-xl shadow-lg shadow-black/10 p-4">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-1.5 text-[11px] tracking-[0.15em] font-semibold text-white/70 uppercase">
+          <Wind size={14} />
+          <span>VOC · Airthings</span>
         </div>
         <span className="text-[10px] text-white/40">Trykk for stats · 48t · 14d · info</span>
       </div>
