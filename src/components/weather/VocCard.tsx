@@ -354,6 +354,7 @@ function ScaleRow({ color, range, label }: { color: string; range: string; label
 
 export function VocCard({ refreshKey }: { refreshKey?: string }) {
   const fetchStatus = useServerFn(getVocStatus);
+  const { tone } = useTileTone();
   const [data, setData] = useState<{
     loading: boolean;
     error: string | null;
@@ -383,7 +384,7 @@ export function VocCard({ refreshKey }: { refreshKey?: string }) {
   const sorted = useMemo(() => data.devices, [data.devices]);
 
   return (
-    <div className="rounded-2xl bg-white/10 border border-white/15 backdrop-blur-xl shadow-lg shadow-black/10 p-4">
+    <div className={`rounded-2xl backdrop-blur-xl shadow-lg shadow-black/10 p-4 ${tileToneClasses(tone)}`}>
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-1.5 text-[11px] tracking-[0.15em] font-semibold text-white/70 uppercase">
           <Wind size={14} />
