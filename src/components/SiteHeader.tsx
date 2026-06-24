@@ -177,6 +177,8 @@ export function SiteHeader() {
   const router = useRouter();
   const { authenticated } = useAuthStatus();
   const isAuthed = authenticated === true;
+  const isWeather = router.state.location.pathname === "/var";
+
 
   // Hent hvilken bruker IP-en tilhører (Arne / Rebekka / …) for å scope tellinger.
   const fetchName = useServerFn(getNameForCurrentIp);
