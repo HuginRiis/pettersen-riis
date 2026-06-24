@@ -57,7 +57,8 @@ type RoutePath =
   | "/planter"
   | "/fly"
   | "/ytelse"
-  | "/ssb-statistikk";
+  | "/ssb-statistikk"
+  | "/nsm-sikkerhet";
 
 
 type NavLink = { to: RoutePath; label: string; public?: boolean };
@@ -99,6 +100,7 @@ const ROUTE_ICON: Partial<Record<RoutePath, React.ComponentType<{ size?: number;
   "/ytelse": Gauge,
   "/iphone-app": Smartphone,
   "/ssb-statistikk": BarChart3,
+  "/nsm-sikkerhet": Shield,
 };
 
 
@@ -131,6 +133,7 @@ const ROUTE_ICON_COLOR: Partial<Record<RoutePath, string>> = {
   "/ytelse": "#22d3ee",
   "/iphone-app": "#60a5fa",
   "/ssb-statistikk": "#f59e0b",
+  "/nsm-sikkerhet": "#3b82f6",
 };
 
 
@@ -158,6 +161,7 @@ const navLinks: NavLink[] = [
   { to: "/skatte-utregningen", label: "Skatte utregningen" },
   { to: "/trening", label: "Trening" },
   { to: "/varsler", label: "Farevarsler", public: true },
+  { to: "/nsm-sikkerhet", label: "NSM Sikkerhet", public: true },
   { to: "/decibel", label: "Decibelmåler", public: true },
   { to: "/roborock", label: "Roborock" },
   { to: "/planter", label: "Planter & Trær" },
