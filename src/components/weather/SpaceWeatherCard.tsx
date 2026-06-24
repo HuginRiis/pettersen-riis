@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { Sun, Wind, Magnet, Sparkles, Radio, X } from "lucide-react";
+import { useTileTone, tileToneClasses } from "./TileTone";
 
 type SpaceData = {
   xrayClass: string | null; // f.eks "C1.2"
@@ -240,6 +241,7 @@ function auroraForklaring(kp: number | null, chance: number, label: string): str
 
 export function SpaceWeatherCard({ refreshKey }: { refreshKey?: string } = {}) {
   const d = useSpaceWeather(refreshKey);
+  const { tone } = useTileTone();
   const aurora = nordlysSannsynlighet(d.kp);
   const [openTile, setOpenTile] = useState<string | null>(null);
 
@@ -299,7 +301,7 @@ export function SpaceWeatherCard({ refreshKey }: { refreshKey?: string } = {}) {
   ];
 
   return (
-    <article className="relative overflow-hidden rounded-2xl bg-white/10 backdrop-blur-xl border border-white/15 shadow-lg shadow-black/10 p-4">
+    <article className={`relative overflow-hidden rounded-2xl backdrop-blur-xl shadow-lg shadow-black/10 p-4 ${tileToneClasses(tone)}`}>
       <style>{`
         @keyframes spaceFly { 0% { opacity:0; transform: translateY(20px) scale(.92); filter: blur(6px);} 100% { opacity:1; transform: translateY(0) scale(1); filter: blur(0);} }
         @keyframes flarePulse { 0%,100% { transform: scale(1); opacity: .7; } 50% { transform: scale(1.6); opacity: 1; } }

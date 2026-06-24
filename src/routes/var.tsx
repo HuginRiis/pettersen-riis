@@ -11,7 +11,7 @@ import { useUvSun, uvLevel } from "@/hooks/use-uv-sun";
 import { usePerUserPersistedState } from "@/hooks/use-per-user-persisted-state";
 import {
   RainFX, SnowFX, CloudFX, WindFX, HeatwaveFX, HumidityFX, PressureFX, GustFX, SunFX, StarFX, MoonFX, ThunderFX,
-  GlassPaneFX, glassKindFromSymbol, TileSplashFX, InsideRainFX, CloudCoverFX,
+  GlassPaneFX, glassKindFromSymbol, type GlassKind, TileSplashFX, InsideRainFX, CloudCoverFX,
 } from "@/components/weather/WeatherFX";
 import { SpaceWeatherCard } from "@/components/weather/SpaceWeatherCard";
 import { AirPollutionCard } from "@/components/weather/AirPollutionCard";
@@ -40,6 +40,7 @@ import {
   VolumeX,
 } from "lucide-react";
 import { useWeatherSound, type WeatherSoundKind } from "@/components/weather/useWeatherSound";
+import { TileToneProvider, TileToneToggle, useTileTone, tileToneClasses } from "@/components/weather/TileTone";
 
 export const Route = createFileRoute("/var")({
   head: () => ({
@@ -254,13 +255,107 @@ function WeatherPage() {
   }, [currentHour]);
 
   return (
+    <TileToneProvider>
+      <WeatherPageInner
+        data={data}
+        netatmoData={netatmoData}
+        userLoc={userLoc}
+        state={state}
+        setState={setState}
+        alerts={alerts}
+        now={now}
+        bgGradient={bgGradient}
+        glassKind={glassKind}
+        glassIntensity={glassIntensity}
+        currentHour={currentHour}
+        headline={headline}
+        todayDay={todayDay}
+        condition={condition}
+        borgenTemp={borgenTemp}
+        borgenHumidity={borgenHumidity}
+        tollnesRainToday={tollnesRainToday}
+        hyttaRainToday={hyttaRainToday}
+        tollnesWind={tollnesWind}
+        hyttaWind={hyttaWind}
+        tollnesPressure={tollnesPressure}
+        hyttaPressure={hyttaPressure}
+        tollnesTemp={tollnesTemp}
+        hyttaTemp={hyttaTemp}
+        hyttaHumidity={hyttaHumidity}
+        skienHours={skienHours}
+        skienDays={skienDays}
+        hyttaHours={hyttaHours}
+        hyttaDays={hyttaDays}
+        moon={moon}
+        sun={sun}
+        rangeHours={rangeHours}
+        setRangeHours={setRangeHours}
+        allAlerts={allAlerts}
+        soundEnabled={soundEnabled}
+        setSoundEnabled={setSoundEnabled}
+      />
+    </TileToneProvider>
+  );
+}
+
+type WeatherPageInnerProps = {
+  data: Awaited<ReturnType<typeof getHomeySnapshot>>;
+  netatmoData: Awaited<ReturnType<typeof getNetatmoWeatherStation>>;
+  userLoc: ReturnType<typeof useUserLocation>;
+  state: Record<string, LocationState>;
+  setState: React.Dispatch<React.SetStateAction<Record<string, LocationState>>>;
+  alerts: AlertsResult | null;
+  now: Date;
+  bgGradient: string;
+  glassKind: GlassKind;
+  glassIntensity: number;
+  currentHour: Hour | null;
+  headline: string | null;
+  todayDay: ForecastDay | undefined;
+  condition: string;
+  borgenTemp: number | null;
+  borgenHumidity: number | null;
+  tollnesRainToday: number | null;
+  hyttaRainToday: number | null;
+  tollnesWind: number | null;
+  hyttaWind: number | null;
+  tollnesPressure: number | null;
+  hyttaPressure: number | null;
+  tollnesTemp: number | null;
+  hyttaTemp: number | null;
+  hyttaHumidity: number | null;
+  skienHours: Hour[] | null;
+  skienDays: ForecastDay[] | null;
+  hyttaHours: Hour[] | null;
+  hyttaDays: ForecastDay[] | null;
+  moon: { name: string; icon: string; illumination: number; phaseFraction: number };
+  sun: ReturnType<typeof sunTimes>;
+  rangeHours: 24 | 72 | 168;
+  setRangeHours: (v: 24 | 72 | 168) => void;
+  allAlerts: MetAlert[];
+  soundEnabled: boolean;
+  setSoundEnabled: React.Dispatch<React.SetStateAction<boolean>>;
+};
+
+function WeatherPageInner(props: WeatherPageInnerProps) {
+  const {
+    data, netatmoData, userLoc, alerts, now, bgGradient, glassKind, glassIntensity,
+    currentHour, headline, todayDay, condition, borgenTemp, borgenHumidity,
+    tollnesRainToday, hyttaRainToday, tollnesWind, hyttaWind, tollnesPressure, hyttaPressure,
+    tollnesTemp, hyttaTemp, hyttaHumidity, skienHours, skienDays, hyttaHours, hyttaDays, moon, sun,
+    rangeHours, setRangeHours, allAlerts, soundEnabled, setSoundEnabled,
+  } = props;
+
+  const homeyOk = data?.ok === true;
+
+  return (
     <PageShell>
       <div className={`min-h-screen bg-gradient-to-b ${bgGradient} transition-colors duration-1000 relative`}>
         <GlassPaneFX kind={glassKind} intensity={glassIntensity} />
         <div className="max-w-3xl mx-auto px-4 pt-8 pb-16 space-y-4 text-white relative z-10">
 
-          {/* LYD-bryter for roterende vær-flis (øverst til venstre) */}
-          <div className="flex">
+          {/* LYD + TONE brytere (øverst) */}
+          <div className="flex justify-between items-center">
             <button
               type="button"
               onClick={() => setSoundEnabled((v) => !v)}
@@ -276,6 +371,7 @@ function WeatherPage() {
               {soundEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />}
               <span>Lyd</span>
             </button>
+            <TileToneToggle />
           </div>
 
           {/* HERO */}
@@ -294,7 +390,7 @@ function WeatherPage() {
           </header>
 
           {/* Sted-bytter (samme stil som øvrige fliser) */}
-          <div className="relative z-50 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/15 shadow-lg shadow-black/10">
+          <div className={toneCardCn()}>
             <TileSplashFX kind={glassKind} intensity={glassIntensity} />
             <UserLocationBar page="var" state={userLoc} transparent />
           </div>
@@ -393,6 +489,12 @@ function WeatherPage() {
   );
 }
 
+function toneCardCn(extra = ""): string {
+  const { tone } = useTileTone();
+  return `relative overflow-hidden rounded-2xl backdrop-blur-xl shadow-lg shadow-black/10 p-4 ${tileToneClasses(tone)} ${extra}`;
+}
+
+
 // ============================================================
 // Glass card primitive (iOS-style)
 // ============================================================
@@ -411,7 +513,7 @@ function GlassCard({
   fx?: React.ReactNode;
 }) {
   return (
-    <article className={`relative overflow-hidden rounded-2xl bg-white/10 backdrop-blur-xl border border-white/15 shadow-lg shadow-black/10 p-4 ${className}`}>
+    <article className={toneCardCn(className)}>
       {fx}
       <div className="relative">
         {eyebrow && (
@@ -468,9 +570,7 @@ function RotatingForecastCard({ hours, soundEnabled }: { hours: Hour[] | null; s
   const active = panels.find((p) => p.key === panel)!;
 
   return (
-    <article
-      className="relative overflow-hidden rounded-2xl bg-white/10 backdrop-blur-xl border border-white/15 shadow-lg shadow-black/10 p-4"
-    >
+    <article className={toneCardCn()}>
       {fx}
       <div className="relative">
         <div className="flex items-center justify-between mb-3">
@@ -1925,7 +2025,7 @@ function AlertCard({ alert }: { alert: MetAlert }) {
   const color = alertColor(alert.awarenessColor);
   return (
     <div
-      className="rounded-2xl bg-white/10 backdrop-blur-xl border border-white/15 p-4 border-l-[6px]"
+      className={toneCardCn("border-l-[6px]")}
       style={{ borderLeftColor: color }}
     >
       <div className="flex items-start gap-3">

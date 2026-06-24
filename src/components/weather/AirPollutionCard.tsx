@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { useServerFn } from "@tanstack/react-start";
 import { Wind, X, Leaf, AlertCircle } from "lucide-react";
 import { fetchAirQualityPanel } from "@/lib/air-quality-fetch.functions";
+import { useTileTone, tileToneClasses } from "./TileTone";
 
 type Pollutants = {
   pm2_5: number | null;
@@ -252,6 +253,7 @@ function PollutantFX({ poll, color, intensity }: { poll: keyof Pollutants; color
 
 export function AirPollutionCard({ lat, lon, locationLabel }: { lat: number; lon: number; locationLabel: string }) {
   const fetcher = useServerFn(fetchAirQualityPanel);
+  const { tone } = useTileTone();
   const [state, setState] = useState<State>({ loading: true, error: null, data: null, fetchedAt: null });
   const [openTile, setOpenTile] = useState<keyof Pollutants | null>(null);
   const close = useCallback(() => setOpenTile(null), []);
@@ -288,7 +290,7 @@ export function AirPollutionCard({ lat, lon, locationLabel }: { lat: number; lon
   const worst = d ? Math.max(...ORDER.map((k) => classify(k, d[k]))) : -1;
 
   return (
-    <article className="relative overflow-hidden rounded-2xl bg-white/10 backdrop-blur-xl border border-white/15 shadow-lg shadow-black/10 p-4">
+    <article className={`relative overflow-hidden rounded-2xl backdrop-blur-xl shadow-lg shadow-black/10 p-4 ${tileToneClasses(tone)}`}>
       <div className="flex items-center gap-1.5 text-[11px] tracking-[0.15em] font-semibold text-white/70 uppercase mb-1">
         <Leaf size={14} />
         <span>Luftkvalitet</span>

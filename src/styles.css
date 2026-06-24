@@ -493,6 +493,72 @@ main .container {
 .recharts-default-tooltip .recharts-tooltip-item:nth-of-type(5n+5),
 .recharts-default-tooltip .recharts-tooltip-item:nth-of-type(5n+5) * { color: var(--chart-series-5) !important; }
 
+/* ===== Vær-siden — flis-tone (4 nivåer) ===== */
+.tile-tone-0 { --tile-fg: oklch(0.20 0.02 260); --tile-fg-muted: oklch(0.20 0.02 260 / 0.7); --tile-fg-subtle: oklch(0.20 0.02 260 / 0.5); --tile-bg-strong: oklch(0.20 0.02 260 / 0.12); --tile-border-inner: oklch(0.20 0.02 260 / 0.2); }
+.tile-tone-1 { --tile-fg: oklch(0.20 0.02 260); --tile-fg-muted: oklch(0.20 0.02 260 / 0.7); --tile-fg-subtle: oklch(0.20 0.02 260 / 0.5); --tile-bg-strong: oklch(0.20 0.02 260 / 0.15); --tile-border-inner: oklch(0.20 0.02 260 / 0.2); }
+.tile-tone-2 { --tile-fg: #ffffff; --tile-fg-muted: rgba(255,255,255,0.7); --tile-fg-subtle: rgba(255,255,255,0.5); --tile-bg-strong: rgba(255,255,255,0.2); --tile-border-inner: rgba(255,255,255,0.2); }
+.tile-tone-3 { --tile-fg: #ffffff; --tile-fg-muted: rgba(255,255,255,0.7); --tile-fg-subtle: rgba(255,255,255,0.5); --tile-bg-strong: rgba(255,255,255,0.15); --tile-border-inner: rgba(255,255,255,0.2); }
+
+.tile-tone-0 .tile-fg,
+.tile-tone-1 .tile-fg { color: var(--tile-fg) !important; }
+.tile-tone-0 .tile-fg-muted,
+.tile-tone-1 .tile-fg-muted { color: var(--tile-fg-muted) !important; }
+.tile-tone-0 .tile-fg-subtle,
+.tile-tone-1 .tile-fg-subtle { color: var(--tile-fg-subtle) !important; }
+.tile-tone-2 .tile-fg,
+.tile-tone-3 .tile-fg { color: var(--tile-fg) !important; }
+.tile-tone-2 .tile-fg-muted,
+.tile-tone-3 .tile-fg-muted { color: var(--tile-fg-muted) !important; }
+.tile-tone-2 .tile-fg-subtle,
+.tile-tone-3 .tile-fg-subtle { color: var(--tile-fg-subtle) !important; }
+
+/* Overskriv text-white/-opacitet på lysere toner for lesbarhet */
+.tile-tone-0 [class*="text-white/90"],
+.tile-tone-1 [class*="text-white/90"] { color: var(--tile-fg) !important; opacity: 0.9 !important; }
+.tile-tone-0 [class*="text-white/80"],
+.tile-tone-1 [class*="text-white/80"] { color: var(--tile-fg) !important; opacity: 0.8 !important; }
+.tile-tone-0 [class*="text-white/70"],
+.tile-tone-1 [class*="text-white/70"] { color: var(--tile-fg) !important; opacity: 0.7 !important; }
+.tile-tone-0 [class*="text-white/60"],
+.tile-tone-1 [class*="text-white/60"] { color: var(--tile-fg) !important; opacity: 0.6 !important; }
+.tile-tone-0 [class*="text-white/50"],
+.tile-tone-1 [class*="text-white/50"] { color: var(--tile-fg) !important; opacity: 0.5 !important; }
+.tile-tone-0 [class*="text-white/40"],
+.tile-tone-1 [class*="text-white/40"] { color: var(--tile-fg) !important; opacity: 0.4 !important; }
+.tile-tone-0 [class*="text-white/30"],
+.tile-tone-1 [class*="text-white/30"] { color: var(--tile-fg) !important; opacity: 0.3 !important; }
+.tile-tone-0 [class*="text-white"],
+.tile-tone-1 [class*="text-white"] { color: var(--tile-fg) !important; }
+
+.tile-tone-0 [class*="bg-white/15"],
+.tile-tone-1 [class*="bg-white/15"] { background-color: var(--tile-bg-strong) !important; }
+.tile-tone-0 [class*="bg-white/10"],
+.tile-tone-1 [class*="bg-white/10"] { background-color: var(--tile-bg-strong) !important; }
+.tile-tone-0 [class*="bg-white/20"],
+.tile-tone-1 [class*="bg-white/20"] { background-color: var(--tile-bg-strong) !important; }
+.tile-tone-0 [class*="bg-white/25"],
+.tile-tone-1 [class*="bg-white/25"] { background-color: var(--tile-bg-strong) !important; }
+.tile-tone-0 [class*="divide-white/10"],
+.tile-tone-1 [class*="divide-white/10"] { border-color: var(--tile-border-inner) !important; }
+.tile-tone-0 [class*="border-white/10"],
+.tile-tone-1 [class*="border-white/10"] { border-color: var(--tile-border-inner) !important; }
+.tile-tone-0 [class*="border-b border-white/10"],
+.tile-tone-1 [class*="border-b border-white/10"] { border-color: var(--tile-border-inner) !important; }
+.tile-tone-0 [class*="border-white/15"],
+.tile-tone-1 [class*="border-white/15"] { border-color: var(--tile-border-inner) !important; }
+.tile-tone-0 [class*="border-white/20"],
+.tile-tone-1 [class*="border-white/20"] { border-color: var(--tile-border-inner) !important; }
+
+/* Inverter svarte inner-fliser til lyse gråtoner på lys tone */
+.tile-tone-0 [class*="bg-black/25"],
+.tile-tone-1 [class*="bg-black/25"] { background-color: var(--tile-bg-strong) !important; }
+.tile-tone-0 [class*="bg-black/35"],
+.tile-tone-1 [class*="bg-black/35"] { background-color: oklch(0.20 0.02 260 / 0.18) !important; }
+.tile-tone-0 [class*="bg-black/15"],
+.tile-tone-1 [class*="bg-black/15"] { background-color: oklch(0.20 0.02 260 / 0.08) !important; }
+.tile-tone-0 [class*="bg-white/5"],
+.tile-tone-1 [class*="bg-white/5"] { background-color: oklch(0.20 0.02 260 / 0.06) !important; }
+
 /* Smart dashbord – bold-toggle som overstyrer alle font-weight-klasser i griden */
 .smart-bold-all,
 .smart-bold-all * { font-weight: 700 !important; }
