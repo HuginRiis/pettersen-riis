@@ -41,6 +41,7 @@ import {
 } from "lucide-react";
 import { useWeatherSound, type WeatherSoundKind } from "@/components/weather/useWeatherSound";
 import { TileToneProvider, TileToneToggle, useTileTone, tileToneClasses } from "@/components/weather/TileTone";
+import { TileOpacityProvider, TileOpacityToggle, useTileOpacity } from "@/components/weather/TileOpacity";
 
 export const Route = createFileRoute("/var")({
   head: () => ({
@@ -256,44 +257,46 @@ function WeatherPage() {
 
   return (
     <TileToneProvider>
-      <WeatherPageInner
-        data={data}
-        netatmoData={netatmoData}
-        userLoc={userLoc}
-        state={state}
-        setState={setState}
-        alerts={alerts}
-        now={now}
-        bgGradient={bgGradient}
-        glassKind={glassKind}
-        glassIntensity={glassIntensity}
-        currentHour={currentHour}
-        headline={headline}
-        todayDay={todayDay}
-        condition={condition}
-        borgenTemp={borgenTemp}
-        borgenHumidity={borgenHumidity}
-        tollnesRainToday={tollnesRainToday}
-        hyttaRainToday={hyttaRainToday}
-        tollnesWind={tollnesWind}
-        hyttaWind={hyttaWind}
-        tollnesPressure={tollnesPressure}
-        hyttaPressure={hyttaPressure}
-        tollnesTemp={tollnesTemp}
-        hyttaTemp={hyttaTemp}
-        hyttaHumidity={hyttaHumidity}
-        skienHours={skienHours}
-        skienDays={skienDays}
-        hyttaHours={hyttaHours}
-        hyttaDays={hyttaDays}
-        moon={moon}
-        sun={sun}
-        rangeHours={rangeHours}
-        setRangeHours={setRangeHours}
-        allAlerts={allAlerts}
-        soundEnabled={soundEnabled}
-        setSoundEnabled={setSoundEnabled}
-      />
+      <TileOpacityProvider>
+        <WeatherPageInner
+          data={data}
+          netatmoData={netatmoData}
+          userLoc={userLoc}
+          state={state}
+          setState={setState}
+          alerts={alerts}
+          now={now}
+          bgGradient={bgGradient}
+          glassKind={glassKind}
+          glassIntensity={glassIntensity}
+          currentHour={currentHour}
+          headline={headline}
+          todayDay={todayDay}
+          condition={condition}
+          borgenTemp={borgenTemp}
+          borgenHumidity={borgenHumidity}
+          tollnesRainToday={tollnesRainToday}
+          hyttaRainToday={hyttaRainToday}
+          tollnesWind={tollnesWind}
+          hyttaWind={hyttaWind}
+          tollnesPressure={tollnesPressure}
+          hyttaPressure={hyttaPressure}
+          tollnesTemp={tollnesTemp}
+          hyttaTemp={hyttaTemp}
+          hyttaHumidity={hyttaHumidity}
+          skienHours={skienHours}
+          skienDays={skienDays}
+          hyttaHours={hyttaHours}
+          hyttaDays={hyttaDays}
+          moon={moon}
+          sun={sun}
+          rangeHours={rangeHours}
+          setRangeHours={setRangeHours}
+          allAlerts={allAlerts}
+          soundEnabled={soundEnabled}
+          setSoundEnabled={setSoundEnabled}
+        />
+      </TileOpacityProvider>
     </TileToneProvider>
   );
 }
@@ -347,10 +350,14 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
   } = props;
 
   const homeyOk = data?.ok === true;
+  const { opacity } = useTileOpacity();
 
   return (
     <PageShell>
-      <div className={`min-h-screen bg-gradient-to-b ${bgGradient} transition-colors duration-1000 relative`}>
+      <div
+        className={`min-h-screen bg-gradient-to-b ${bgGradient} transition-colors duration-1000 relative`}
+        style={{ ["--tile-opacity" as string]: opacity / 100 }}
+      >
         <GlassPaneFX kind={glassKind} intensity={glassIntensity} />
         <div className="max-w-3xl mx-auto px-4 pt-8 pb-16 space-y-4 text-white relative z-10">
 
@@ -371,7 +378,10 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
               {soundEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />}
               <span>Lyd</span>
             </button>
-            <TileToneToggle />
+            <div className="flex items-center gap-2">
+              <TileOpacityToggle />
+              <TileToneToggle />
+            </div>
           </div>
 
           {/* HERO */}
@@ -491,7 +501,7 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
 
 function toneCardCn(extra = ""): string {
   const { tone } = useTileTone();
-  return `relative overflow-hidden rounded-2xl backdrop-blur-xl shadow-lg shadow-black/10 p-4 ${tileToneClasses(tone)} ${extra}`;
+  return `relative overflow-hidden rounded-2xl backdrop-blur-xl shadow-lg shadow-black/10 p-4 tile-opacity ${tileToneClasses(tone)} ${extra}`;
 }
 
 
