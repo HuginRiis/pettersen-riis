@@ -5,10 +5,11 @@ export type TileTone = 0 | 1 | 2 | 3;
 
 const TONE_LABELS: Record<TileTone, string> = {
   0: "Lys grå",
-  1: "Medium grå",
-  2: "Mørk grå",
-  3: "Mørk",
+  1: "Grå",
+  2: "Medium grå",
+  3: "Meget grå",
 };
+
 
 const TONE_ICONS: Record<TileTone, string> = {
   0: "☀️",
