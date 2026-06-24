@@ -85,6 +85,7 @@ export function LocationPicker({
   const [locateError, setLocateError] = useState<string | null>(null);
   const [favorites, setFavorites] = useState<ActiveLocation[]>([]);
   const [recents, setRecents] = useState<ActiveLocation[]>([]);
+  const [recentsOpen, setRecentsOpen] = useState(!recentsCollapsed);
   const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
   const wrap = useRef<HTMLDivElement>(null);
   const [pushWho, setPushWho] = useState<string>("Alle");
