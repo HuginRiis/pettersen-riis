@@ -175,7 +175,10 @@ export const getRadonStatus = createServerFn({ method: "GET" }).handler(
         const pts14 = pointsFromLog(log14);
         dev.daily14 = dailyAggregate(pts14.length ? pts14 : pts31, 14);
         const pts48 = pointsFromLog(log48h);
-        dev.hourly48 = hourlyAggregate(pts48.length ? pts48 : pts31, 48);
+        dev.hourly48 = hourlyAggregate(
+          pts48.length ? pts48 : pts14.length ? pts14 : pts31,
+          48,
+        );
       } catch {
         // ignore
       }
