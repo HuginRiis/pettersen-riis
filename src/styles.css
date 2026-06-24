@@ -549,6 +549,16 @@ main .container {
 .tile-tone-0 [class*="border-white/20"],
 .tile-tone-1 [class*="border-white/20"] { border-color: var(--tile-border-inner) !important; }
 
+/* Inverter svarte inner-fliser til lyse gråtoner på lys tone */
+.tile-tone-0 [class*="bg-black/25"],
+.tile-tone-1 [class*="bg-black/25"] { background-color: var(--tile-bg-strong) !important; }
+.tile-tone-0 [class*="bg-black/35"],
+.tile-tone-1 [class*="bg-black/35"] { background-color: oklch(0.20 0.02 260 / 0.18) !important; }
+.tile-tone-0 [class*="bg-black/15"],
+.tile-tone-1 [class*="bg-black/15"] { background-color: oklch(0.20 0.02 260 / 0.08) !important; }
+.tile-tone-0 [class*="bg-white/5"],
+.tile-tone-1 [class*="bg-white/5"] { background-color: oklch(0.20 0.02 260 / 0.06) !important; }
+
 /* Smart dashbord – bold-toggle som overstyrer alle font-weight-klasser i griden */
 .smart-bold-all,
 .smart-bold-all * { font-weight: 700 !important; }
