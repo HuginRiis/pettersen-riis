@@ -27,6 +27,7 @@ export type RadonDevice = {
   max30: number | null;
   avg30: number | null;
   daily14: RadonSample[]; // dagsverdier (avg per dag) siste 14 dager
+  hourly48: RadonSample[]; // timesnitt siste 48 timer
 };
 
 export type RadonStatusResult = {
@@ -65,6 +66,29 @@ function pointsFromLog(log: any): RadonSample[] {
     })
     .filter((p): p is RadonSample => p !== null);
 }
+function hourlyAggregate(points: RadonSample[], hours: number): RadonSample[] {
+  const now = Date.now();
+  const hourMs = 3600000;
+  const buckets = new Map<number, { sum: number; n: number }>();
+  for (const p of points) {
+    const ts = new Date(p.t).getTime();
+    if (now - ts > hours * hourMs + hourMs) continue;
+    const key = Math.floor(ts / hourMs);
+    const b = buckets.get(key) ?? { sum: 0, n: 0 };
+    b.sum += p.v;
+    b.n += 1;
+    buckets.set(key, b);
+  }
+  const out: RadonSample[] = [];
+  const curHour = Math.floor(now / hourMs);
+  for (let i = hours - 1; i >= 0; i--) {
+    const key = curHour - i;
+    const b = buckets.get(key);
+    out.push({ t: new Date(key * hourMs).toISOString(), v: b ? b.sum / b.n : NaN });
+  }
+  return out;
+}
+
 
 function dailyAggregate(points: RadonSample[], days: number): RadonSample[] {
   const now = Date.now();
@@ -122,6 +146,7 @@ export const getRadonStatus = createServerFn({ method: "GET" }).handler(
       max30: null,
       avg30: null,
       daily14: [],
+      hourly48: [],
     });
   }
 
@@ -130,9 +155,10 @@ export const getRadonStatus = createServerFn({ method: "GET" }).handler(
     matched.map(async (dev) => {
       try {
         const capId = "measure_radon";
-        const [log31, log14] = await Promise.all([
+        const [log31, log14, log48h] = await Promise.all([
           fetchHomeyInsightsLog(dev.deviceId, capId, "last31Days").catch(() => null),
           fetchHomeyInsightsLog(dev.deviceId, capId, "last14Days").catch(() => null),
+          fetchHomeyInsightsLog(dev.deviceId, capId, "last48Hours").catch(() => null),
         ]);
         const pts31 = pointsFromLog(log31);
         if (pts31.length > 0) {
@@ -148,6 +174,8 @@ export const getRadonStatus = createServerFn({ method: "GET" }).handler(
         }
         const pts14 = pointsFromLog(log14);
         dev.daily14 = dailyAggregate(pts14.length ? pts14 : pts31, 14);
+        const pts48 = pointsFromLog(log48h);
+        dev.hourly48 = hourlyAggregate(pts48.length ? pts48 : pts31, 48);
       } catch {
         // ignore
       }

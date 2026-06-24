@@ -155,7 +155,7 @@ function RadonAtomFX({ color, intensity }: { color: string; intensity: number })
   );
 }
 
-function Sparkline({ data, color }: { data: { t: string; v: number }[]; color: string }) {
+function Sparkline({ data, color, xFmt }: { data: { t: string; v: number }[]; color: string; xFmt?: (iso: string) => string }) {
   const vals = data.map((d) => d.v).filter((v) => Number.isFinite(v));
   if (vals.length === 0) {
     return (
@@ -234,7 +234,7 @@ function Sparkline({ data, color }: { data: { t: string; v: number }[]; color: s
       {[0, Math.floor(n / 2), n - 1].map((i) => {
         const d = data[i];
         if (!d) return null;
-        const label = new Date(d.t).toLocaleDateString("nb-NO", { day: "numeric", month: "short" });
+        const label = xFmt ? xFmt(d.t) : new Date(d.t).toLocaleDateString("nb-NO", { day: "numeric", month: "short" });
         return (
           <text key={`xl${i}`} x={xs[i]} y={h - 4} fontSize="9" fill="rgba(255,255,255,.5)" textAnchor="middle">
             {label}
@@ -246,7 +246,7 @@ function Sparkline({ data, color }: { data: { t: string; v: number }[]; color: s
 }
 
 function DeviceTile({ dev, fetchedAt }: { dev: RadonDevice; fetchedAt: string | null }) {
-  const [view, setView] = useState<"now" | "stats" | "chart" | "scale">("now");
+  const [view, setView] = useState<"now" | "stats" | "h48" | "chart" | "scale">("now");
   const level = radonLevel(dev.current);
   const intensity = Math.min(1, (dev.current ?? 0) / 300);
   const fmt = (v: number | null | undefined) =>
@@ -262,9 +262,11 @@ function DeviceTile({ dev, fetchedAt }: { dev: RadonDevice; fetchedAt: string | 
   return (
     <button
       type="button"
-      onClick={() =>
-        setView((v) => (v === "now" ? "stats" : v === "stats" ? "chart" : v === "chart" ? "scale" : "now"))
-      }
+      onClick={() => {
+        const order: typeof view[] = ["now", "stats", "h48", "chart", "scale"];
+        const i = order.indexOf(view);
+        setView(order[(i + 1) % order.length]);
+      }}
       className="relative w-full text-left rounded-xl border border-white/10 bg-black/25 overflow-hidden transition-colors hover:bg-black/35"
       style={{ minHeight: 180 }}
     >
@@ -324,6 +326,19 @@ function DeviceTile({ dev, fetchedAt }: { dev: RadonDevice; fetchedAt: string | 
           </div>
         )}
 
+        {view === "h48" && (
+          <div className="flex-1 flex flex-col">
+            <div className="text-[10px] uppercase tracking-wider text-white/50 mb-1">
+              48 timer · timesnitt
+            </div>
+            <Sparkline
+              data={dev.hourly48}
+              color={level.color}
+              xFmt={(iso) => new Date(iso).toLocaleString("nb-NO", { hour: "2-digit", day: "numeric" })}
+            />
+          </div>
+        )}
+
         {view === "chart" && (
           <div className="flex-1 flex flex-col">
             <div className="text-[10px] uppercase tracking-wider text-white/50 mb-1">
@@ -345,7 +360,7 @@ function DeviceTile({ dev, fetchedAt }: { dev: RadonDevice; fetchedAt: string | 
         )}
 
         <div className="flex gap-1 pt-1">
-          {["now", "stats", "chart", "scale"].map((k) => (
+          {["now", "stats", "h48", "chart", "scale"].map((k) => (
             <span
               key={k}
               className="h-0.5 flex-1 rounded-full"
@@ -417,7 +432,7 @@ export function RadonCard({ refreshKey }: { refreshKey?: string }) {
           <Atom size={14} />
           <span>Radon · Airthings</span>
         </div>
-        <span className="text-[10px] text-white/40">Trykk for min/maks · graf · skala</span>
+        <span className="text-[10px] text-white/40">Trykk for stats · 48t · 14d · skala</span>
       </div>
       {data.loading && (
         <div className="text-xs text-white/50 py-6 text-center">Henter radon-måling …</div>
