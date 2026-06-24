@@ -155,7 +155,7 @@ function RadonAtomFX({ color, intensity }: { color: string; intensity: number })
   );
 }
 
-function Sparkline({ data, color }: { data: { t: string; v: number }[]; color: string }) {
+function Sparkline({ data, color, xFmt }: { data: { t: string; v: number }[]; color: string; xFmt?: (iso: string) => string }) {
   const vals = data.map((d) => d.v).filter((v) => Number.isFinite(v));
   if (vals.length === 0) {
     return (
