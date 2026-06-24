@@ -38,6 +38,7 @@ import {
   Atom,
 } from "lucide-react";
 import { getRadonStatus, type RadonDevice } from "@/lib/radon.functions";
+import { getVocStatus, type VocDevice } from "@/lib/voc.functions";
 import { AreaChart, Area, ResponsiveContainer } from "recharts";
 import { useUvSun } from "@/hooks/use-uv-sun";
 import { useDailyMinMax } from "@/hooks/use-daily-minmax";
