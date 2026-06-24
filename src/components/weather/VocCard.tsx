@@ -278,7 +278,7 @@ function DeviceTile({ dev, fetchedAt }: { dev: VocDevice; fetchedAt: string | nu
       className="relative w-full text-left rounded-xl border border-white/10 bg-black/25 overflow-hidden transition-colors hover:bg-black/35"
       style={{ minHeight: 200 }}
     >
-      <VocFX color={level.color} intensity={intensity} />
+      <VocFX color={level.color} intensity={intensity} value={dev.current} />
       <div className="relative p-3 flex flex-col gap-2 h-full">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5">
