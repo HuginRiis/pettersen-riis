@@ -3202,9 +3202,8 @@ function VocStuaTile() {
   const lvl =
     v == null ? { color: "#a3a3a3", label: "—" }
     : v < 250 ? { color: "#34d399", label: "Bra" }
-    : v < 500 ? { color: "#fbbf24", label: "Forhøyet" }
-    : v < 1000 ? { color: "#fb923c", label: "Høyt" }
-    : { color: "#f87171", label: "Tiltak" };
+    : v < 2000 ? { color: "#fbbf24", label: "Moderat" }
+    : { color: "#f87171", label: "Dårlig" };
 
   return (
     <Tile title="VOC · Stua" icon={<Wind size={14} />} accent="text-emerald-300">
