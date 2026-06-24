@@ -4741,13 +4741,17 @@ export function SmartDashbord() {
               <div className="col-span-6">
                 <VarmepumpeTile loc={loc} device={varmepumpe} onReload={reload} />
               </div>
-              {/* Rad 2: UV + AQ */}
-              <div className="col-span-6">
+              {/* Rad 2: UV + VOC + Radon */}
+              <div className="col-span-4">
                 <UvTile loc={loc} />
               </div>
-              <div className="col-span-6">
-                <AqiTile loc={loc} />
+              <div className="col-span-4">
+                <VocStuaTile />
               </div>
+              <div className="col-span-4">
+                <RadonStuaTile />
+              </div>
+
               {/* Rad 3: Kalender + Dører + Leader + Robots */}
               <div className="col-span-3 iphone-full-row">
                 <CalendarTile />
