@@ -79,6 +79,7 @@ type ForecastDay = {
   tempMax: number;
   precip: number;
   precipProbability: number;
+  windMax: number;
 };
 
 type Hour = {
@@ -1075,8 +1076,9 @@ function DailyListCard({ days, title }: { days: ForecastDay[] | null; title: str
           const widthPct = ((d.tempMax - d.tempMin) / range) * 100;
           const label = i === 0 ? "I dag" : weekdayShort(d.date);
           return (
-            <div key={d.date} className="grid grid-cols-[60px_40px_56px_1fr_44px] items-center gap-3 py-2.5">
+            <div key={d.date} className="grid grid-cols-[60px_42px_40px_56px_1fr_44px] items-center gap-3 py-2.5">
               <div className="text-[15px] capitalize">{label}</div>
+              <DailyLeafFX wind={d.windMax} seed={i} />
               <div className="flex items-center justify-center"><AnimatedWeatherIcon symbol={d.symbol} size={34} /></div>
               <div className="text-[11px] text-sky-200 tabular-nums text-right">
                 {d.precipProbability >= 20 ? `${Math.round(d.precipProbability)}%` : ""}
@@ -1098,6 +1100,53 @@ function DailyListCard({ days, title }: { days: ForecastDay[] | null; title: str
     </GlassCard>
   );
 }
+
+function DailyLeafFX({ wind, seed }: { wind: number; seed: number }) {
+  // Leaf count scales with wind: 0 m/s → 0, 12+ m/s → 5
+  const count = Math.max(0, Math.min(5, Math.round(wind / 2.4)));
+  if (count === 0) {
+    return <div className="w-[42px] h-[34px]" aria-hidden />;
+  }
+  // Deterministic layout — no Math.random (avoids SSR hydration mismatch)
+  const leaves = Array.from({ length: count }, (_, i) => {
+    const t = (i + 1) / (count + 1);
+    const top = 4 + t * 22; // 4–26 px, evenly distributed → no overlap
+    const delay = (i * 0.55).toFixed(2);
+    const dur = (2.8 + ((seed + i) % 3) * 0.4).toFixed(2);
+    const size = 8 + ((seed + i) % 2) * 2;
+    const rot = 180 + ((seed * 37 + i * 53) % 180);
+    const dy = -6 + ((seed + i) % 3) * 4;
+    return { top, delay, dur, size, rot, dy, i };
+  });
+  return (
+    <div className="relative w-[42px] h-[34px] overflow-hidden" aria-hidden>
+      {leaves.map((l) => (
+        <span
+          key={l.i}
+          className="absolute animate-wx-leaf"
+          style={{
+            top: `${l.top}px`,
+            left: -10,
+            width: l.size,
+            height: l.size,
+            color: "#9ccc65",
+            animationDelay: `${l.delay}s`,
+            animationDuration: `${l.dur}s`,
+            ["--lx" as any]: "52px",
+            ["--ly" as any]: `${l.dy}px`,
+            ["--lr" as any]: `${l.rot}deg`,
+          }}
+        >
+          <svg viewBox="0 0 16 16" width={l.size} height={l.size} fill="currentColor">
+            <path d="M2 14 C 4 6, 10 2, 14 2 C 14 8, 10 14, 2 14 Z" />
+          </svg>
+        </span>
+      ))}
+    </div>
+  );
+}
+
+
 
 // ============================================================
 // WIND DETAIL CARD with compass
@@ -2135,13 +2184,15 @@ function parseForecast(data: any): { days: ForecastDay[]; hours: Hour[] } {
       symbol,
     });
     const existing = dayMap.get(date);
+    const wind = inst.wind_speed ?? 0;
     if (!existing) {
-      dayMap.set(date, { date, tempMin: temp, tempMax: temp, symbol, precip, precipProbability });
+      dayMap.set(date, { date, tempMin: temp, tempMax: temp, symbol, precip, precipProbability, windMax: wind });
     } else {
       existing.tempMin = Math.min(existing.tempMin, temp);
       existing.tempMax = Math.max(existing.tempMax, temp);
       existing.precip += precip;
       existing.precipProbability = Math.max(existing.precipProbability, precipProbability);
+      existing.windMax = Math.max(existing.windMax, wind);
       const hour = parseInt(time.slice(11, 13));
       if (hour >= 11 && hour <= 14 && symbol) existing.symbol = symbol;
     }
