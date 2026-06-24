@@ -40,6 +40,7 @@ import {
   VolumeX,
 } from "lucide-react";
 import { useWeatherSound, type WeatherSoundKind } from "@/components/weather/useWeatherSound";
+import { TileToneProvider, TileToneToggle, useTileTone, tileToneClasses } from "@/components/weather/TileTone";
 
 export const Route = createFileRoute("/var")({
   head: () => ({
