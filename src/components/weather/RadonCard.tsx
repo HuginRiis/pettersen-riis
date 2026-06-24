@@ -78,7 +78,10 @@ function RadonAtomFX({ color, intensity }: { color: string; intensity: number })
         }}
       />
       {/* Orbiting electrons — 2x size */}
-      <div className="absolute" style={{ right: 54, top: 54, width: 64, height: 64 }}>
+      <div
+        className="absolute"
+        style={{ right: 54, top: 54, width: 64, height: 64 }}
+      >
         {[0, 60, 120].map((deg, i) => (
           <div
             key={i}
@@ -142,7 +145,11 @@ function RadonAtomFX({ color, intensity }: { color: string; intensity: number })
 function Sparkline({ data, color }: { data: { t: string; v: number }[]; color: string }) {
   const vals = data.map((d) => d.v).filter((v) => Number.isFinite(v));
   if (vals.length === 0) {
-    return <div className="h-24 flex items-center justify-center text-xs text-white/40">Ingen historikk</div>;
+    return (
+      <div className="h-24 flex items-center justify-center text-xs text-white/40">
+        Ingen historikk
+      </div>
+    );
   }
   const min = Math.min(...vals);
   const max = Math.max(...vals);
@@ -157,7 +164,9 @@ function Sparkline({ data, color }: { data: { t: string; v: number }[]; color: s
   const innerH = h - padT - padB;
   const n = data.length;
   const xs = data.map((_, i) => padL + (n === 1 ? 0 : (i / (n - 1)) * innerW));
-  const ys = data.map((d) => (Number.isFinite(d.v) ? padT + innerH - ((d.v - min) / span) * innerH : null));
+  const ys = data.map((d) =>
+    Number.isFinite(d.v) ? padT + innerH - ((d.v - min) / span) * innerH : null,
+  );
   // Build path with gaps
   let path = "";
   let area = "";
@@ -227,11 +236,15 @@ function DeviceTile({ dev, fetchedAt }: { dev: RadonDevice; fetchedAt: string | 
   const [view, setView] = useState<"now" | "stats" | "chart" | "scale">("now");
   const level = radonLevel(dev.current);
   const intensity = Math.min(1, (dev.current ?? 0) / 300);
-  const fmt = (v: number | null | undefined) => (v == null || !Number.isFinite(v) ? "—" : Math.round(v).toString());
+  const fmt = (v: number | null | undefined) =>
+    v == null || !Number.isFinite(v) ? "—" : Math.round(v).toString();
   const fmtTime = (iso: string | null) =>
-    iso ? new Date(iso).toLocaleString("nb-NO", { weekday: "short", hour: "2-digit", minute: "2-digit" }) : "—";
+    iso
+      ? new Date(iso).toLocaleString("nb-NO", { weekday: "short", hour: "2-digit", minute: "2-digit" })
+      : "—";
   const sensorTs = fmtTime(dev.lastUpdated);
   const fetchedTs = fmtTime(fetchedAt);
+
 
   return (
     <button
@@ -239,7 +252,7 @@ function DeviceTile({ dev, fetchedAt }: { dev: RadonDevice; fetchedAt: string | 
       onClick={() =>
         setView((v) => (v === "now" ? "stats" : v === "stats" ? "chart" : v === "chart" ? "scale" : "now"))
       }
-      className="relative w-full text-left rounded-2xl border border-zinc-400/40 bg-zinc-800/75 overflow-hidden transition-colors backdrop-blur-xl shadow-lg shadow-black/10"
+      className="relative w-full text-left rounded-2xl border border-white/15 bg-white/10 overflow-hidden transition-colors backdrop-blur-xl shadow-lg shadow-black/10"
       style={{ minHeight: 180 }}
     >
       <RadonAtomFX color={level.color} intensity={intensity} />
@@ -247,7 +260,9 @@ function DeviceTile({ dev, fetchedAt }: { dev: RadonDevice; fetchedAt: string | 
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5">
             <Atom size={14} style={{ color: level.color }} />
-            <span className="text-[11px] uppercase tracking-wider text-white/70">{dev.zone ?? dev.name}</span>
+            <span className="text-[11px] uppercase tracking-wider text-white/70">
+              {dev.zone ?? dev.name}
+            </span>
           </div>
           <span
             className="text-[10px] px-1.5 py-0.5 rounded-full"
@@ -266,9 +281,7 @@ function DeviceTile({ dev, fetchedAt }: { dev: RadonDevice; fetchedAt: string | 
               <span className="text-xs text-white/60">Bq/m³</span>
             </div>
             <div className="text-[11px] text-white/55 mt-1">{level.desc}</div>
-            <div className="text-[10px] text-white/40 mt-1">
-              Sist hentet {fetchedTs} · sensor {sensorTs}
-            </div>
+            <div className="text-[10px] text-white/40 mt-1">Sist hentet {fetchedTs} · sensor {sensorTs}</div>
           </div>
         )}
 
@@ -286,7 +299,10 @@ function DeviceTile({ dev, fetchedAt }: { dev: RadonDevice; fetchedAt: string | 
               </div>
               <div>
                 <div className="text-[10px] text-white/50">Maks</div>
-                <div className="text-lg font-light tabular-nums" style={{ color: radonLevel(dev.max30).color }}>
+                <div
+                  className="text-lg font-light tabular-nums"
+                  style={{ color: radonLevel(dev.max30).color }}
+                >
                   {fmt(dev.max30)}
                 </div>
               </div>
@@ -297,7 +313,9 @@ function DeviceTile({ dev, fetchedAt }: { dev: RadonDevice; fetchedAt: string | 
 
         {view === "chart" && (
           <div className="flex-1 flex flex-col">
-            <div className="text-[10px] uppercase tracking-wider text-white/50 mb-1">14 dager · dagsnitt</div>
+            <div className="text-[10px] uppercase tracking-wider text-white/50 mb-1">
+              14 dager · dagsnitt
+            </div>
             <Sparkline data={dev.daily14} color={level.color} />
           </div>
         )}
@@ -348,18 +366,14 @@ export function RadonCard({ refreshKey }: { refreshKey?: string }) {
     fetchedAt: string | null;
   }>({ loading: true, error: null, devices: [], fetchedAt: null });
 
+
   useEffect(() => {
     let cancelled = false;
     setData((s) => ({ ...s, loading: true }));
     fetchStatus()
       .then((r) => {
         if (cancelled) return;
-        setData({
-          loading: false,
-          error: r.ok ? null : (r.error ?? "Ukjent feil"),
-          devices: r.devices,
-          fetchedAt: r.fetchedAt ?? null,
-        });
+        setData({ loading: false, error: r.ok ? null : r.error ?? "Ukjent feil", devices: r.devices, fetchedAt: r.fetchedAt ?? null });
       })
       .catch((e) => {
         if (cancelled) return;
@@ -392,12 +406,16 @@ export function RadonCard({ refreshKey }: { refreshKey?: string }) {
         </div>
         <span className="text-[10px] text-white/40">Trykk for min/maks · graf · skala</span>
       </div>
-      {data.loading && <div className="text-xs text-white/50 py-6 text-center">Henter radon-måling …</div>}
+      {data.loading && (
+        <div className="text-xs text-white/50 py-6 text-center">Henter radon-måling …</div>
+      )}
       {!data.loading && data.error && (
         <div className="text-xs text-red-300/80 py-4 text-center">Feil: {data.error}</div>
       )}
       {!data.loading && !data.error && sorted.length === 0 && (
-        <div className="text-xs text-white/50 py-4 text-center">Fant ingen radon-målere i Homey.</div>
+        <div className="text-xs text-white/50 py-4 text-center">
+          Fant ingen radon-målere i Homey.
+        </div>
       )}
       {!data.loading && sorted.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
