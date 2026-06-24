@@ -35,7 +35,9 @@ import {
   Unlock,
   Fan,
   Moon,
+  Atom,
 } from "lucide-react";
+import { getRadonStatus, type RadonDevice } from "@/lib/radon.functions";
 import { AreaChart, Area, ResponsiveContainer } from "recharts";
 import { useUvSun } from "@/hooks/use-uv-sun";
 import { useDailyMinMax } from "@/hooks/use-daily-minmax";
@@ -2913,6 +2915,257 @@ function StromTile({ home }: { home: "borgen" | "hytta" }) {
   );
 }
 
+// ----- Strøm kombinert (Borgen + Hytta i én flis) -----
+function StromRing({
+  label,
+  nowKw,
+  energyKwh,
+  isLive,
+}: {
+  label: string;
+  nowKw: number;
+  energyKwh: number | null;
+  isLive: boolean;
+}) {
+  const gaugeMax = Math.max(5, Math.ceil(nowKw * 1.4));
+  const pct = Math.min(1, Math.max(0, nowKw / gaugeMax));
+  const R = 30;
+  const C = 2 * Math.PI * R;
+  const dash = C * pct;
+  const arcColor = nowKw < 1 ? "#34d399" : nowKw < 3 ? "#fbbf24" : "#f87171";
+  return (
+    <div className="flex flex-col items-center justify-center gap-1 min-w-0 flex-1">
+      <div className="text-[10px] uppercase tracking-widest text-white/50">{label}</div>
+      <div className="relative" style={{ width: 78, height: 78 }}>
+        <svg width="78" height="78" viewBox="0 0 78 78" className="-rotate-90">
+          <circle cx="39" cy="39" r={R} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="6" />
+          <circle
+            cx="39"
+            cy="39"
+            r={R}
+            fill="none"
+            stroke={arcColor}
+            strokeWidth="6"
+            strokeLinecap="round"
+            strokeDasharray={`${dash} ${C}`}
+            style={{
+              transition: "stroke-dasharray 0.6s ease, stroke 0.6s ease",
+              filter: `drop-shadow(0 0 5px ${arcColor})`,
+              animation: "pbthArcPulse 2.2s ease-in-out infinite",
+            }}
+          />
+        </svg>
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <div className="text-base font-semibold text-white tabular-nums leading-none">
+            {nowKw.toFixed(2)}
+          </div>
+          <div className="text-[8px] uppercase tracking-widest text-white/40 mt-0.5">kW</div>
+        </div>
+      </div>
+      <div className="text-[10px] text-white/60 tabular-nums">
+        {energyKwh != null ? `${energyKwh.toFixed(1)} kWh` : "—"}
+      </div>
+      <div className="flex items-center gap-1">
+        <span className={`h-1.5 w-1.5 rounded-full ${isLive ? "bg-emerald-400 animate-pulse" : "bg-white/30"}`} />
+        <span className={`text-[9px] ${isLive ? "text-emerald-300" : "text-white/40"}`}>
+          {isLive ? "live" : "—"}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function StromCombinedTile() {
+  const fetchPbth = useServerFn(getPowerByTheHour);
+  const [data, setData] = useState<any>(null);
+  const live = useTibberLive();
+  useEffect(() => {
+    let c = false;
+    const load = () => {
+      fetchPbth().then((r: any) => { if (!c) setData(r); }).catch(() => {});
+    };
+    load();
+    const id = setInterval(load, 60_000);
+    return () => { c = true; clearInterval(id); };
+  }, [fetchPbth]);
+
+  const make = (home: "borgen" | "hytta") => {
+    const liveHome = live.homes[home === "borgen" ? "tollnes" : "hytta"];
+    const h = data?.ok ? (home === "borgen" ? data.borgen?.highlights : data.hytta?.highlights) : null;
+    const liveW = liveHome?.reading?.power ?? null;
+    const isLive = (liveHome?.status === "live" || liveHome?.status === "stale") && liveW != null;
+    const nowW = liveW != null ? liveW : (h?.consumptionNow ?? 0);
+    const energyTodayKwh = liveHome?.reading?.accumulatedConsumption ?? h?.energyToday ?? null;
+    return { nowKw: nowW / 1000, energyTodayKwh, isLive };
+  };
+  const b = make("borgen");
+  const hy = make("hytta");
+  const arcColor = "#fbbf24";
+
+  return (
+    <Tile title="Strøm" icon={<Zap size={14} />} accent="text-amber-300">
+      <div className="relative flex items-center justify-around h-full overflow-hidden">
+        <div className="pointer-events-none absolute inset-0">
+          {Array.from({ length: 6 }).map((_, i) => {
+            const top = (i * 17) % 90;
+            const left = 8 + ((i * 19) % 84);
+            const dur = 1.6 + ((i * 7) % 5) / 3;
+            const delay = (i * 0.25) % 2;
+            return (
+              <span
+                key={i}
+                className="absolute block rounded-full bg-amber-300"
+                style={{
+                  top: `${top}%`,
+                  left: `${left}%`,
+                  width: 2,
+                  height: 2,
+                  opacity: 0.35,
+                  boxShadow: "0 0 6px rgba(252,211,77,0.9)",
+                  animation: `pbthSpark ${dur}s ease-in-out ${delay}s infinite`,
+                }}
+              />
+            );
+          })}
+        </div>
+        <StromRing label="Borgen" nowKw={b.nowKw} energyKwh={b.energyTodayKwh} isLive={b.isLive} />
+        <div className="w-px h-16 bg-white/10 relative z-10" />
+        <StromRing label="Hytta" nowKw={hy.nowKw} energyKwh={hy.energyTodayKwh} isLive={hy.isLive} />
+        <style>{`
+          @keyframes pbthSpark{0%,100%{transform:translateY(0) scale(1);opacity:0.25}50%{transform:translateY(-6px) scale(1.6);opacity:1}}
+          @keyframes pbthArcPulse{0%,100%{filter:drop-shadow(0 0 4px ${arcColor})}50%{filter:drop-shadow(0 0 12px ${arcColor})}}
+        `}</style>
+      </div>
+    </Tile>
+  );
+}
+
+// ----- Radon (Stua) -----
+function RadonStuaTile() {
+  const fetchRadon = useServerFn(getRadonStatus);
+  const [devs, setDevs] = useState<RadonDevice[] | null>(null);
+  useEffect(() => {
+    let c = false;
+    const load = () => {
+      fetchRadon().then((r: any) => { if (!c && r?.ok) setDevs(r.devices); }).catch(() => {});
+    };
+    load();
+    const id = setInterval(load, 5 * 60_000);
+    return () => { c = true; clearInterval(id); };
+  }, [fetchRadon]);
+
+  const stua = useMemo(
+    () => devs?.find((d) => /rade?on\s*måler/i.test(d.name)) ?? devs?.find((d) => /stua/i.test(d.zone ?? "")) ?? null,
+    [devs],
+  );
+  const v = stua?.current ?? null;
+  const lvl =
+    v == null ? { color: "#a3a3a3", label: "—" }
+    : v < 100 ? { color: "#34d399", label: "Bra" }
+    : v < 200 ? { color: "#fbbf24", label: "Forhøyet" }
+    : v < 300 ? { color: "#fb923c", label: "Høyt" }
+    : { color: "#f87171", label: "Tiltak" };
+
+  return (
+    <Tile title="Radon · Stua" icon={<Atom size={14} />} accent="text-emerald-300">
+      <div className="relative flex items-center gap-3 h-full overflow-hidden">
+        <style>{`
+          @keyframes radonOrbitA { from{transform:rotate(0) translateX(var(--r)) rotate(0)} to{transform:rotate(360deg) translateX(var(--r)) rotate(-360deg)} }
+          @keyframes radonOrbitB { from{transform:rotate(0) translateX(var(--r)) rotate(0)} to{transform:rotate(-360deg) translateX(var(--r)) rotate(360deg)} }
+          @keyframes radonFloat { 0%{transform:translateY(0) scale(.9);opacity:.2} 50%{opacity:.6} 100%{transform:translateY(-50px) scale(1.1);opacity:0} }
+          @keyframes radonCorePulse { 0%,100%{opacity:.25;transform:scale(1)} 50%{opacity:.55;transform:scale(1.08)} }
+        `}</style>
+
+        {/* Atom-animasjon venstre */}
+        <div className="relative shrink-0" style={{ width: 100, height: 100 }}>
+          <div
+            className="absolute inset-0 rounded-full"
+            style={{
+              background: `radial-gradient(circle, ${lvl.color}66 0%, transparent 70%)`,
+              animation: "radonCorePulse 3.2s ease-in-out infinite",
+            }}
+          />
+          <div className="absolute" style={{ left: 18, top: 18, width: 64, height: 64 }}>
+            {[0, 60, 120].map((deg, i) => (
+              <div
+                key={i}
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  borderRadius: "50%",
+                  border: `1.5px solid ${lvl.color}66`,
+                  transform: `rotate(${deg}deg) scaleY(.42)`,
+                }}
+              />
+            ))}
+            {[0, 1, 2].map((i) => (
+              <div
+                key={`e${i}`}
+                style={{
+                  position: "absolute",
+                  left: "50%",
+                  top: "50%",
+                  width: 6,
+                  height: 6,
+                  marginLeft: -3,
+                  marginTop: -3,
+                  borderRadius: "50%",
+                  background: lvl.color,
+                  boxShadow: `0 0 8px ${lvl.color}`,
+                  ["--r" as any]: "32px",
+                  animation: `${i % 2 === 0 ? "radonOrbitA" : "radonOrbitB"} ${2.4 + i * 0.4}s linear infinite`,
+                }}
+              />
+            ))}
+          </div>
+          {/* Stigende gass-partikler */}
+          {Array.from({ length: 6 }).map((_, i) => {
+            const left = 10 + ((i * 17) % 80);
+            const delay = (i * 0.6) % 4;
+            const dur = 3.5 + ((i * 0.7) % 3);
+            const size = 3 + (i % 2);
+            return (
+              <div
+                key={`g${i}`}
+                style={{
+                  position: "absolute",
+                  left: `${left}%`,
+                  bottom: -6,
+                  width: size,
+                  height: size,
+                  borderRadius: "50%",
+                  background: lvl.color,
+                  filter: "blur(.5px)",
+                  opacity: 0.35,
+                  animation: `radonFloat ${dur}s ease-in ${delay}s infinite`,
+                }}
+              />
+            );
+          })}
+        </div>
+
+        {/* Tall + status */}
+        <div className="flex-1 min-w-0 relative z-10">
+          <div className="text-[10px] uppercase tracking-widest text-white/40">Nå</div>
+          <div className="text-2xl font-semibold text-white tabular-nums leading-tight">
+            {v != null ? Math.round(v) : "—"}
+            <span className="text-xs text-white/50 ml-1">Bq/m³</span>
+          </div>
+          <div className="text-xs mt-1" style={{ color: lvl.color }}>{lvl.label}</div>
+          {stua?.avg30 != null && (
+            <>
+              <div className="text-[10px] uppercase tracking-widest text-white/40 mt-2">Snitt 30 d</div>
+              <div className="text-sm text-white tabular-nums">{Math.round(stua.avg30)} Bq/m³</div>
+            </>
+          )}
+        </div>
+      </div>
+    </Tile>
+  );
+}
+
+
+
 // ----- Netatmo (Tollnes) shared hook -----
 type NetatmoTollnes = {
   noise: number | null;
@@ -4376,11 +4629,12 @@ export function SmartDashbord() {
                 <LysCombinedTile groups={hueRoomGroups} onReload={reload} />
               </div>
               <div className="col-span-2">
-                <StromTile home="borgen" />
+                <StromCombinedTile />
               </div>
               <div className="col-span-2">
-                <StromTile home="hytta" />
+                <RadonStuaTile />
               </div>
+
 
               {/* Rad 2: Varmepumpe + UV + AQ + Regn + Vind (halv-størrelse) */}
               <div className="col-span-4">
