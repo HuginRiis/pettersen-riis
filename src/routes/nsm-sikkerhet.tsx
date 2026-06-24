@@ -4,7 +4,7 @@ import { PageShell, PageHero } from "@/components/PageShell";
 import { ShieldAlert, ExternalLink, Loader2, RefreshCw } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { getLatestNsmAlerts, triggerNsmPoll, type NsmAlert } from "@/lib/nsm-alerts.functions";
-import heroImg from "@/assets/nsm-hero.jpg";
+import heroAsset from "@/assets/nsm-hero.jpg.asset.json";
 
 export const Route = createFileRoute("/nsm-sikkerhet")({
   head: () => ({
@@ -58,7 +58,7 @@ function NsmSikkerhetPage() {
         eyebrow="Borgens cyber-vakt"
         title="NSM Sikkerhet"
         subtitle="Nasjonal sikkerhetsmyndighets cybervarsler — sårbarheter, kritiske patcher og pågående hendelser."
-        image={heroImg}
+        image={heroAsset.url}
       />
 
       <section className="container mx-auto px-4 py-6">
