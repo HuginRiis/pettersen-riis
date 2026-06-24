@@ -350,10 +350,14 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
   } = props;
 
   const homeyOk = data?.ok === true;
+  const { opacity } = useTileOpacity();
 
   return (
     <PageShell>
-      <div className={`min-h-screen bg-gradient-to-b ${bgGradient} transition-colors duration-1000 relative`}>
+      <div
+        className={`min-h-screen bg-gradient-to-b ${bgGradient} transition-colors duration-1000 relative`}
+        style={{ ["--tile-opacity" as string]: opacity / 100 }}
+      >
         <GlassPaneFX kind={glassKind} intensity={glassIntensity} />
         <div className="max-w-3xl mx-auto px-4 pt-8 pb-16 space-y-4 text-white relative z-10">
 
