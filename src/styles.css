@@ -559,10 +559,11 @@ main .container {
 .tile-tone-0 [class*="bg-white/5"],
 .tile-tone-1 [class*="bg-white/5"] { background-color: oklch(0.20 0.02 260 / 0.06) !important; }
 
-/* Gjennomsiktighet på vær-fliser (styres av TileOpacity-knappen) */
-.tile-opacity {
-  opacity: var(--tile-opacity, 1);
-}
+/* Gjennomsiktighet på vær-flisers grå bakgrunn (styres av TileOpacity-knappen) */
+.tile-bg-0 { background-color: rgba(203, 213, 225, calc(var(--tile-opacity, 1) * 0.9)); }
+.tile-bg-1 { background-color: rgba(148, 163, 184, calc(var(--tile-opacity, 1) * 0.85)); }
+.tile-bg-2 { background-color: rgba(71, 85, 105, calc(var(--tile-opacity, 1) * 0.8)); }
+.tile-bg-3 { background-color: rgba(30, 41, 59, calc(var(--tile-opacity, 1) * 0.9)); }
 
 
 /* Smart dashbord – bold-toggle som overstyrer alle font-weight-klasser i griden */

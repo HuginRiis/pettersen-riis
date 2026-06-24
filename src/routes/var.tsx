@@ -501,7 +501,7 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
 
 function toneCardCn(extra = ""): string {
   const { tone } = useTileTone();
-  return `relative overflow-hidden rounded-2xl backdrop-blur-xl shadow-lg shadow-black/10 p-4 tile-opacity ${tileToneClasses(tone)} ${extra}`;
+  return `relative overflow-hidden rounded-2xl backdrop-blur-xl shadow-lg shadow-black/10 p-4 ${tileToneClasses(tone)} ${extra}`;
 }
 
 
