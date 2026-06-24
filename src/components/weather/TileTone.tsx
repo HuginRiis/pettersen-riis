@@ -43,14 +43,14 @@ export function useTileTone() {
 export function tileToneClasses(tone: TileTone): string {
   switch (tone) {
     case 0:
-      return "tile-tone-0 bg-slate-300/90 border-slate-500/20 text-slate-900";
+      return "tile-tone-0 tile-bg-0 border-slate-500/20 text-slate-900";
     case 1:
-      return "tile-tone-1 bg-slate-400/85 border-slate-600/20 text-slate-900";
+      return "tile-tone-1 tile-bg-1 border-slate-600/20 text-slate-900";
     case 2:
-      return "tile-tone-2 bg-slate-600/80 border-white/20 text-white";
+      return "tile-tone-2 tile-bg-2 border-white/20 text-white";
     case 3:
     default:
-      return "tile-tone-3 bg-slate-800/90 border-white/15 text-white";
+      return "tile-tone-3 tile-bg-3 border-white/15 text-white";
   }
 }
 
