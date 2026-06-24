@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { Sun, Wind, Magnet, Sparkles, Radio, X } from "lucide-react";
+import { useTileTone, tileToneClasses } from "./TileTone";
 
 type SpaceData = {
   xrayClass: string | null; // f.eks "C1.2"

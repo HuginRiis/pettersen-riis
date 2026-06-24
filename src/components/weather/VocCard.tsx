@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Wind } from "lucide-react";
 import { getVocStatus, type VocDevice, type VocSample } from "@/lib/voc.functions";
+import { useTileTone, tileToneClasses } from "./TileTone";
 
 // VOC nivåer (ppb) — basert på Airthings veiledning
 // <250 bra, 250-2000 forhøyet, >2000 dårlig

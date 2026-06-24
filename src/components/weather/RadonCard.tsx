@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Atom } from "lucide-react";
 import { getRadonStatus, type RadonDevice } from "@/lib/radon.functions";
+import { useTileTone, tileToneClasses } from "./TileTone";
 
 // Helsedirektoratet / WHO retningslinjer (Bq/m³):
 // <100 bra · 100-200 forhøyet · 200-300 høyt · >300 tiltak påkrevd
