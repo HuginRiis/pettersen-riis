@@ -1169,8 +1169,6 @@ function AnimatedWeatherIcon({ symbol, size = 36 }: { symbol: string | null; siz
 }
 
 function DailyListCard({ days, title }: { days: ForecastDay[] | null; title: string }) {
-  // Følger samme panel-valg som den rullerende flisen
-  const [panel] = usePerUserPersistedState<PanelKey>("var:rotating:panel", "nedbor");
   if (!days) return <GlassCard eyebrow={title} icon={<TrendingUp size={14} />}><Skeleton /></GlassCard>;
   const list = days.slice(0, 10);
   const allMins = list.map((d) => d.tempMin);
@@ -1178,8 +1176,6 @@ function DailyListCard({ days, title }: { days: ForecastDay[] | null; title: str
   const globalMin = Math.min(...allMins);
   const globalMax = Math.max(...allMaxs);
   const range = Math.max(1, globalMax - globalMin);
-  const maxPrecip = Math.max(1, ...list.map((d) => d.precip));
-  const maxWind = Math.max(4, ...list.map((d) => d.windMax));
 
   return (
     <GlassCard eyebrow={title} icon={<TrendingUp size={14} />}>
@@ -1190,17 +1186,12 @@ function DailyListCard({ days, title }: { days: ForecastDay[] | null; title: str
           const widthPct = ((d.tempMax - d.tempMin) / range) * 100;
           const label = i === 0 ? "I dag" : weekdayShort(d.date);
           return (
-            <div key={d.date} className="grid grid-cols-[60px_82px_56px_1fr_44px] items-center gap-3 py-2.5">
+            <div key={d.date} className="grid grid-cols-[60px_42px_40px_56px_1fr_44px] items-center gap-3 py-2.5">
               <div className="text-[15px] capitalize">{label}</div>
-              <DailyPanelFX panel={panel} day={d} seed={i} maxPrecip={maxPrecip} maxWind={maxWind} />
+              <DailyLeafFX wind={d.windMax} seed={i} />
+              <div className="flex items-center justify-center"><AnimatedWeatherIcon symbol={d.symbol} size={34} /></div>
               <div className="text-[11px] text-sky-200 tabular-nums text-right">
-                {panel === "vind"
-                  ? `${d.windMax.toFixed(0)} m/s`
-                  : panel === "nedbor"
-                  ? `${d.precip.toFixed(1)} mm`
-                  : d.precipProbability >= 20
-                  ? `${Math.round(d.precipProbability)}%`
-                  : ""}
+                {d.precipProbability >= 20 ? `${Math.round(d.precipProbability)}%` : ""}
               </div>
               <div className="relative h-1.5">
                 <div className="absolute inset-0 rounded-full bg-white/15" />
@@ -1217,152 +1208,6 @@ function DailyListCard({ days, title }: { days: ForecastDay[] | null; title: str
         })}
       </div>
     </GlassCard>
-  );
-}
-
-function DailyPanelFX({
-  panel,
-  day,
-  seed,
-  maxPrecip,
-  maxWind,
-}: {
-  panel: PanelKey;
-  day: ForecastDay;
-  seed: number;
-  maxPrecip: number;
-  maxWind: number;
-}) {
-  // "Værforhold" beholder dagens originale visning: løv + animert vær-ikon
-  if (panel === "vaer") {
-    return (
-      <div className="flex items-center gap-1">
-        <DailyLeafFX wind={day.windMax} seed={seed} />
-        <div className="flex items-center justify-center w-[40px]">
-          <AnimatedWeatherIcon symbol={day.symbol} size={34} />
-        </div>
-      </div>
-    );
-  }
-  if (panel === "vind") {
-    // Bare løv — flere blader = mer vind
-    return (
-      <div className="flex items-center justify-center w-[82px]">
-        <DailyLeafFX wind={day.windMax} seed={seed} />
-      </div>
-    );
-  }
-  if (panel === "nedbor") {
-    return <DailyRainFX precip={day.precip} maxPrecip={maxPrecip} seed={seed} />;
-  }
-  if (panel === "skydekke") {
-    return <DailyCloudFX symbol={day.symbol} seed={seed} />;
-  }
-  // lyn
-  return <DailyThunderFX symbol={day.symbol} seed={seed} />;
-}
-
-function DailyRainFX({ precip, maxPrecip, seed }: { precip: number; maxPrecip: number; seed: number }) {
-  const intensity = Math.min(1, precip / maxPrecip);
-  const drops = Math.round(2 + intensity * 12);
-  return (
-    <div className="relative w-[82px] h-[34px] overflow-hidden" aria-hidden>
-      <div className="absolute inset-x-1 top-1 h-3 rounded-full bg-slate-300/40" />
-      {Array.from({ length: drops }).map((_, i) => {
-        const left = 4 + ((i * 7 + seed * 3) % 74);
-        const delay = ((i * 0.17 + seed * 0.11) % 1.2).toFixed(2);
-        const dur = (0.9 + ((seed + i) % 5) * 0.1).toFixed(2);
-        return (
-          <span
-            key={i}
-            className="absolute animate-wx-rain"
-            style={{
-              left: `${left}px`,
-              top: 6,
-              width: 1.5,
-              height: 8,
-              background: "linear-gradient(180deg, rgba(125,211,252,0) 0%, #38bdf8 100%)",
-              borderRadius: 1,
-              animationDelay: `${delay}s`,
-              animationDuration: `${dur}s`,
-              ["--wx-rain-distance" as any]: "26px",
-            }}
-          />
-        );
-      })}
-    </div>
-  );
-}
-
-function DailyCloudFX({ symbol, seed }: { symbol: string | null; seed: number }) {
-  const s = symbol ?? "";
-  const cover = s.includes("clearsky")
-    ? 0.1
-    : s.includes("fair")
-    ? 0.3
-    : s.includes("partlycloudy")
-    ? 0.6
-    : s.includes("cloudy") || s.includes("rain") || s.includes("snow") || s.includes("thunder") || s.includes("fog")
-    ? 0.95
-    : 0.5;
-  const clouds = Math.max(1, Math.round(cover * 4));
-  return (
-    <div className="relative w-[82px] h-[34px] overflow-hidden" aria-hidden>
-      {Array.from({ length: clouds }).map((_, i) => {
-        const top = 4 + ((seed + i * 9) % 14);
-        const delay = ((i * 0.6 + seed * 0.3) % 3).toFixed(2);
-        const dur = (5 + ((seed + i) % 4)).toFixed(2);
-        const size = 14 + ((seed + i) % 3) * 4;
-        return (
-          <span
-            key={i}
-            className="absolute animate-wx-cloud"
-            style={{
-              top,
-              left: -size,
-              width: size,
-              height: size * 0.55,
-              borderRadius: 999,
-              background: "rgba(226,232,240,0.85)",
-              opacity: 0.4 + cover * 0.5,
-              animationDelay: `${delay}s`,
-              animationDuration: `${dur}s`,
-              ["--wx-cloud-distance" as any]: "110px",
-            }}
-          />
-        );
-      })}
-    </div>
-  );
-}
-
-function DailyThunderFX({ symbol, seed }: { symbol: string | null; seed: number }) {
-  const hasThunder = (symbol ?? "").includes("thunder");
-  return (
-    <div className="relative w-[82px] h-[34px] flex items-center justify-center overflow-hidden" aria-hidden>
-      <div
-        className="absolute inset-x-3 top-2 h-3 rounded-full"
-        style={{ background: "rgba(71,85,105,0.55)" }}
-      />
-      {hasThunder ? (
-        <svg
-          width="22"
-          height="28"
-          viewBox="0 0 22 28"
-          className="relative animate-wx-flash"
-          style={{ animationDuration: `${(1.4 + (seed % 4) * 0.2).toFixed(2)}s` }}
-        >
-          <polygon
-            points="12,2 4,16 10,16 7,26 18,12 12,12 14,2"
-            fill="#fde047"
-            stroke="#f59e0b"
-            strokeWidth="0.6"
-          />
-        </svg>
-      ) : (
-        <span className="text-[10px] text-white/40">—</span>
-      )}
-    </div>
   );
 }
 
