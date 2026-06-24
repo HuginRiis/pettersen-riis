@@ -38,6 +38,7 @@ import {
   Atom,
 } from "lucide-react";
 import { getRadonStatus, type RadonDevice } from "@/lib/radon.functions";
+import { getVocStatus, type VocDevice } from "@/lib/voc.functions";
 import { AreaChart, Area, ResponsiveContainer } from "recharts";
 import { useUvSun } from "@/hooks/use-uv-sun";
 import { useDailyMinMax } from "@/hooks/use-daily-minmax";
@@ -3178,6 +3179,144 @@ function RadonStuaTile() {
 }
 
 
+// ----- VOC (Stua) -----
+function VocStuaTile() {
+  const fetchVoc = useServerFn(getVocStatus);
+  const [devs, setDevs] = useState<VocDevice[] | null>(null);
+  useEffect(() => {
+    let c = false;
+    const load = () => {
+      fetchVoc().then((r: any) => { if (!c && r?.ok) setDevs(r.devices); }).catch(() => {});
+    };
+    load();
+    const id = setInterval(load, 5 * 60_000);
+    return () => { c = true; clearInterval(id); };
+  }, [fetchVoc]);
+
+  const stua = useMemo(
+    () => devs?.find((d) => /rade?on\s*måler/i.test(d.name)) ?? devs?.[0] ?? null,
+    [devs],
+  );
+  const v = stua?.current ?? null;
+  const unit = stua?.unit ?? "ppb";
+  const lvl =
+    v == null ? { color: "#a3a3a3", label: "—" }
+    : v < 250 ? { color: "#34d399", label: "Bra" }
+    : v < 500 ? { color: "#fbbf24", label: "Forhøyet" }
+    : v < 1000 ? { color: "#fb923c", label: "Høyt" }
+    : { color: "#f87171", label: "Tiltak" };
+
+  return (
+    <Tile title="VOC · Stua" icon={<Wind size={14} />} accent="text-emerald-300">
+      <div className="relative flex items-center gap-3 h-full overflow-hidden">
+        <style>{`
+          @keyframes vocDrift { 0%{transform:translate(0,0) scale(.8);opacity:.15} 40%{opacity:.6} 100%{transform:translate(var(--dx),var(--dy)) scale(1.2);opacity:0} }
+          @keyframes vocCorePulse { 0%,100%{opacity:.25;transform:scale(1)} 50%{opacity:.55;transform:scale(1.1)} }
+          @keyframes vocSpin { from{transform:rotate(0)} to{transform:rotate(360deg)} }
+        `}</style>
+
+        {/* Molekyl-animasjon */}
+        <div className="relative shrink-0" style={{ width: 100, height: 100 }}>
+          <div
+            className="absolute inset-0 rounded-full"
+            style={{
+              background: `radial-gradient(circle, ${lvl.color}55 0%, transparent 70%)`,
+              animation: "vocCorePulse 3.4s ease-in-out infinite",
+            }}
+          />
+          {/* Roterende molekyl */}
+          <div
+            className="absolute"
+            style={{
+              left: 30, top: 30, width: 40, height: 40,
+              animation: "vocSpin 9s linear infinite",
+            }}
+          >
+            {[0, 120, 240].map((deg) => (
+              <div
+                key={deg}
+                style={{
+                  position: "absolute",
+                  left: "50%",
+                  top: "50%",
+                  width: 10,
+                  height: 10,
+                  marginLeft: -5,
+                  marginTop: -5,
+                  borderRadius: "50%",
+                  background: lvl.color,
+                  boxShadow: `0 0 8px ${lvl.color}`,
+                  transform: `rotate(${deg}deg) translateY(-16px)`,
+                }}
+              />
+            ))}
+            <div
+              style={{
+                position: "absolute",
+                left: "50%", top: "50%",
+                width: 8, height: 8, marginLeft: -4, marginTop: -4,
+                borderRadius: "50%",
+                background: "#fff",
+                opacity: 0.85,
+                boxShadow: `0 0 6px ${lvl.color}`,
+              }}
+            />
+          </div>
+          {/* Drivende partikler */}
+          {Array.from({ length: 7 }).map((_, i) => {
+            const left = 8 + ((i * 19) % 84);
+            const top = 12 + ((i * 23) % 76);
+            const dx = (i % 2 === 0 ? 1 : -1) * (10 + (i * 4) % 18);
+            const dy = -(14 + (i * 5) % 20);
+            const delay = (i * 0.55) % 4;
+            const dur = 3.2 + ((i * 0.6) % 2.8);
+            const size = 3 + (i % 2);
+            return (
+              <div
+                key={`p${i}`}
+                style={{
+                  position: "absolute",
+                  left: `${left}%`,
+                  top: `${top}%`,
+                  width: size,
+                  height: size,
+                  borderRadius: "50%",
+                  background: lvl.color,
+                  filter: "blur(.5px)",
+                  opacity: 0.35,
+                  ["--dx" as any]: `${dx}px`,
+                  ["--dy" as any]: `${dy}px`,
+                  animation: `vocDrift ${dur}s ease-out ${delay}s infinite`,
+                }}
+              />
+            );
+          })}
+        </div>
+
+        {/* Tall + status */}
+        <div className="flex-1 min-w-0 relative z-10">
+          <div className="text-[10px] uppercase tracking-widest text-white/40">Nå</div>
+          <div className="text-2xl font-semibold text-white tabular-nums leading-tight">
+            {v != null ? Math.round(v) : "—"}
+            <span className="text-xs text-white/50 ml-1">{unit}</span>
+          </div>
+          <div className="text-xs mt-1" style={{ color: lvl.color }}>{lvl.label}</div>
+          {stua?.avg30 != null && (
+            <>
+              <div className="text-[10px] uppercase tracking-widest text-white/40 mt-2">Snitt 30 d</div>
+              <div className="text-sm text-white tabular-nums">{Math.round(stua.avg30)} {unit}</div>
+            </>
+          )}
+        </div>
+      </div>
+    </Tile>
+  );
+}
+
+
+
+
+
 
 // ----- Netatmo (Tollnes) shared hook -----
 type NetatmoTollnes = {
@@ -4602,13 +4741,17 @@ export function SmartDashbord() {
               <div className="col-span-6">
                 <VarmepumpeTile loc={loc} device={varmepumpe} onReload={reload} />
               </div>
-              {/* Rad 2: UV + AQ */}
-              <div className="col-span-6">
+              {/* Rad 2: UV + VOC + Radon */}
+              <div className="col-span-4">
                 <UvTile loc={loc} />
               </div>
-              <div className="col-span-6">
-                <AqiTile loc={loc} />
+              <div className="col-span-4">
+                <VocStuaTile />
               </div>
+              <div className="col-span-4">
+                <RadonStuaTile />
+              </div>
+
               {/* Rad 3: Kalender + Dører + Leader + Robots */}
               <div className="col-span-3 iphone-full-row">
                 <CalendarTile />
@@ -4657,8 +4800,9 @@ export function SmartDashbord() {
                 <UvCompact loc={loc} />
               </div>
               <div className="col-span-2">
-                <AqiCompact loc={loc} />
+                <VocStuaTile />
               </div>
+
               <div className="col-span-2">
                 <RainTile
                   rainDay={tollnes.rainDay}
