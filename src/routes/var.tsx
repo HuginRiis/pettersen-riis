@@ -11,7 +11,7 @@ import { useUvSun, uvLevel } from "@/hooks/use-uv-sun";
 import { usePerUserPersistedState } from "@/hooks/use-per-user-persisted-state";
 import {
   RainFX, SnowFX, CloudFX, WindFX, HeatwaveFX, HumidityFX, PressureFX, GustFX, SunFX, StarFX, MoonFX, ThunderFX,
-  GlassPaneFX, glassKindFromSymbol, TileSplashFX, InsideRainFX, CloudCoverFX,
+  GlassPaneFX, glassKindFromSymbol, type GlassKind, TileSplashFX, InsideRainFX, CloudCoverFX,
 } from "@/components/weather/WeatherFX";
 import { SpaceWeatherCard } from "@/components/weather/SpaceWeatherCard";
 import { AirPollutionCard } from "@/components/weather/AirPollutionCard";
