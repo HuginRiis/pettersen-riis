@@ -2025,7 +2025,7 @@ function AlertCard({ alert }: { alert: MetAlert }) {
   const color = alertColor(alert.awarenessColor);
   return (
     <div
-      className="rounded-2xl bg-white/10 backdrop-blur-xl border border-white/15 p-4 border-l-[6px]"
+      className={toneCardCn("border-l-[6px]")}
       style={{ borderLeftColor: color }}
     >
       <div className="flex items-start gap-3">
