@@ -255,13 +255,105 @@ function WeatherPage() {
   }, [currentHour]);
 
   return (
+    <TileToneProvider>
+      <WeatherPageInner
+        data={data}
+        netatmoData={netatmoData}
+        userLoc={userLoc}
+        state={state}
+        setState={setState}
+        alerts={alerts}
+        now={now}
+        bgGradient={bgGradient}
+        glassKind={glassKind}
+        glassIntensity={glassIntensity}
+        currentHour={currentHour}
+        headline={headline}
+        todayDay={todayDay}
+        condition={condition}
+        borgenTemp={borgenTemp}
+        borgenHumidity={borgenHumidity}
+        tollnesRainToday={tollnesRainToday}
+        hyttaRainToday={hyttaRainToday}
+        tollnesWind={tollnesWind}
+        hyttaWind={hyttaWind}
+        tollnesPressure={tollnesPressure}
+        hyttaPressure={hyttaPressure}
+        tollnesTemp={tollnesTemp}
+        hyttaTemp={hyttaTemp}
+        skienHours={skienHours}
+        skienDays={skienDays}
+        hyttaHours={hyttaHours}
+        hyttaDays={hyttaDays}
+        moon={moon}
+        sun={sun}
+        rangeHours={rangeHours}
+        setRangeHours={setRangeHours}
+        allAlerts={allAlerts}
+        soundEnabled={soundEnabled}
+        setSoundEnabled={setSoundEnabled}
+      />
+    </TileToneProvider>
+  );
+}
+
+type WeatherPageInnerProps = {
+  data: Awaited<ReturnType<typeof getHomeySnapshot>>;
+  netatmoData: Awaited<ReturnType<typeof getNetatmoWeatherStation>>;
+  userLoc: ReturnType<typeof useUserLocation>;
+  state: Record<string, LocationState>;
+  setState: React.Dispatch<React.SetStateAction<Record<string, LocationState>>>;
+  alerts: AlertsResult | null;
+  now: Date;
+  bgGradient: string;
+  glassKind: string;
+  glassIntensity: number;
+  currentHour: Hour | null;
+  headline: string | null;
+  todayDay: ForecastDay | undefined;
+  condition: string;
+  borgenTemp: number | null;
+  borgenHumidity: number | null;
+  tollnesRainToday: number;
+  hyttaRainToday: number;
+  tollnesWind: number | null;
+  hyttaWind: number | null;
+  tollnesPressure: number | null;
+  hyttaPressure: number | null;
+  tollnesTemp: number | null;
+  hyttaTemp: number | null;
+  skienHours: Hour[] | null;
+  skienDays: ForecastDay[] | null;
+  hyttaHours: Hour[] | null;
+  hyttaDays: ForecastDay[] | null;
+  moon: { name: string; icon: string; illumination: number; phaseFraction: number };
+  sun: ReturnType<typeof sunTimes>;
+  rangeHours: 24 | 72 | 168;
+  setRangeHours: (v: 24 | 72 | 168) => void;
+  allAlerts: MetAlert[];
+  soundEnabled: boolean;
+  setSoundEnabled: (v: boolean) => void;
+};
+
+function WeatherPageInner(props: WeatherPageInnerProps) {
+  const {
+    data, netatmoData, userLoc, alerts, now, bgGradient, glassKind, glassIntensity,
+    currentHour, headline, todayDay, condition, borgenTemp, borgenHumidity,
+    tollnesRainToday, hyttaRainToday, tollnesWind, hyttaWind, tollnesPressure, hyttaPressure,
+    tollnesTemp, hyttaTemp, skienHours, skienDays, hyttaHours, hyttaDays, moon, sun,
+    rangeHours, setRangeHours, allAlerts, soundEnabled, setSoundEnabled,
+  } = props;
+
+  const homeyOk = data?.ok === true;
+
+  return (
     <PageShell>
       <div className={`min-h-screen bg-gradient-to-b ${bgGradient} transition-colors duration-1000 relative`}>
         <GlassPaneFX kind={glassKind} intensity={glassIntensity} />
         <div className="max-w-3xl mx-auto px-4 pt-8 pb-16 space-y-4 text-white relative z-10">
 
-          {/* LYD-bryter for roterende vær-flis (øverst til venstre) */}
-          <div className="flex">
+          {/* LYD + TONE brytere (øverst) */}
+          <div className="flex justify-between items-center">
             <button
               type="button"
               onClick={() => setSoundEnabled((v) => !v)}
@@ -277,6 +369,7 @@ function WeatherPage() {
               {soundEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />}
               <span>Lyd</span>
             </button>
+            <TileToneToggle />
           </div>
 
           {/* HERO */}
@@ -295,7 +388,7 @@ function WeatherPage() {
           </header>
 
           {/* Sted-bytter (samme stil som øvrige fliser) */}
-          <div className="relative z-50 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/15 shadow-lg shadow-black/10">
+          <div className={toneCardCn()}>
             <TileSplashFX kind={glassKind} intensity={glassIntensity} />
             <UserLocationBar page="var" state={userLoc} transparent />
           </div>
@@ -393,6 +486,12 @@ function WeatherPage() {
     </PageShell>
   );
 }
+
+function toneCardCn(extra = ""): string {
+  const { tone } = useTileTone();
+  return `relative overflow-hidden rounded-2xl backdrop-blur-xl shadow-lg shadow-black/10 p-4 ${tileToneClasses(tone)} ${extra}`;
+}
+
 
 // ============================================================
 // Glass card primitive (iOS-style)
