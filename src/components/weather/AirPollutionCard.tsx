@@ -290,7 +290,7 @@ export function AirPollutionCard({ lat, lon, locationLabel }: { lat: number; lon
   const worst = d ? Math.max(...ORDER.map((k) => classify(k, d[k]))) : -1;
 
   return (
-    <article className={`relative overflow-hidden rounded-2xl backdrop-blur-xl shadow-lg shadow-black/10 p-4 ${tileToneClasses(tone)}`}>
+    <article className={`relative overflow-hidden rounded-2xl backdrop-blur-xl shadow-lg shadow-black/10 p-4 tile-opacity ${tileToneClasses(tone)}`}>
       <div className="flex items-center gap-1.5 text-[11px] tracking-[0.15em] font-semibold text-white/70 uppercase mb-1">
         <Leaf size={14} />
         <span>Luftkvalitet</span>
