@@ -1212,11 +1212,12 @@ function DailyListCard({ days, title }: { days: ForecastDay[] | null; title: str
 }
 
 function DailyLeafFX({ wind, seed }: { wind: number; seed: number }) {
-  // Leaf count scales with wind: 0 m/s → 0, 12+ m/s → 5
-  const count = Math.max(0, Math.min(5, Math.round(wind / 2.4)));
+  // Leaf count = floor(wind m/s). 0.9 → 0, 8.5 → 8 osv. Cap på 15.
+  const count = Math.max(0, Math.min(15, Math.floor(wind || 0)));
   if (count === 0) {
     return <div className="w-[42px] h-[34px]" aria-hidden />;
   }
+
   // Deterministic layout — no Math.random (avoids SSR hydration mismatch)
   const leaves = Array.from({ length: count }, (_, i) => {
     const t = (i + 1) / (count + 1);
