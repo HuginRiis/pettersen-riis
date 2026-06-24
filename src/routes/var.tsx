@@ -378,7 +378,10 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
               {soundEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />}
               <span>Lyd</span>
             </button>
-            <TileToneToggle />
+            <div className="flex items-center gap-2">
+              <TileOpacityToggle />
+              <TileToneToggle />
+            </div>
           </div>
 
           {/* HERO */}
