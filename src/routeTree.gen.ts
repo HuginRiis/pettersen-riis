@@ -29,6 +29,7 @@ import { Route as PushVarslingerRouteImport } from './routes/push-varslinger'
 import { Route as PollenRouteImport } from './routes/pollen'
 import { Route as PlanterRouteImport } from './routes/planter'
 import { Route as OkonomiRouteImport } from './routes/okonomi'
+import { Route as NsmSikkerhetRouteImport } from './routes/nsm-sikkerhet'
 import { Route as LysRouteImport } from './routes/lys'
 import { Route as KvitteringerRouteImport } from './routes/kvitteringer'
 import { Route as IphoneAppRouteImport } from './routes/iphone-app'
@@ -48,6 +49,7 @@ import { Route as ApiPublicHooksSnapshotTibberDailyRouteImport } from './routes/
 import { Route as ApiPublicHooksSnapshotPulseRouteImport } from './routes/api.public.hooks.snapshot-pulse'
 import { Route as ApiPublicHooksRadonPollRouteImport } from './routes/api/public/hooks/radon-poll'
 import { Route as ApiPublicHooksOpenMeteoWarmRouteImport } from './routes/api/public/hooks/open-meteo-warm'
+import { Route as ApiPublicHooksNsmPollRouteImport } from './routes/api/public/hooks/nsm-poll'
 import { Route as ApiPublicHooksNetatmoClimateRefreshRouteImport } from './routes/api/public/hooks/netatmo-climate-refresh'
 import { Route as ApiPublicHooksHomeySensorPollRouteImport } from './routes/api/public/hooks/homey-sensor-poll'
 import { Route as ApiPublicHooksGardenaPollRouteImport } from './routes/api/public/hooks/gardena-poll'
@@ -157,6 +159,11 @@ const OkonomiRoute = OkonomiRouteImport.update({
   path: '/okonomi',
   getParentRoute: () => rootRouteImport,
 } as any)
+const NsmSikkerhetRoute = NsmSikkerhetRouteImport.update({
+  id: '/nsm-sikkerhet',
+  path: '/nsm-sikkerhet',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LysRoute = LysRouteImport.update({
   id: '/lys',
   path: '/lys',
@@ -256,6 +263,11 @@ const ApiPublicHooksOpenMeteoWarmRoute =
     path: '/api/public/hooks/open-meteo-warm',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksNsmPollRoute = ApiPublicHooksNsmPollRouteImport.update({
+  id: '/api/public/hooks/nsm-poll',
+  path: '/api/public/hooks/nsm-poll',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicHooksNetatmoClimateRefreshRoute =
   ApiPublicHooksNetatmoClimateRefreshRouteImport.update({
     id: '/api/public/hooks/netatmo-climate-refresh',
@@ -313,6 +325,7 @@ export interface FileRoutesByFullPath {
   '/iphone-app': typeof IphoneAppRoute
   '/kvitteringer': typeof KvitteringerRoute
   '/lys': typeof LysRoute
+  '/nsm-sikkerhet': typeof NsmSikkerhetRoute
   '/okonomi': typeof OkonomiRoute
   '/planter': typeof PlanterRoute
   '/pollen': typeof PollenRoute
@@ -346,6 +359,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/gardena-poll': typeof ApiPublicHooksGardenaPollRoute
   '/api/public/hooks/homey-sensor-poll': typeof ApiPublicHooksHomeySensorPollRoute
   '/api/public/hooks/netatmo-climate-refresh': typeof ApiPublicHooksNetatmoClimateRefreshRoute
+  '/api/public/hooks/nsm-poll': typeof ApiPublicHooksNsmPollRoute
   '/api/public/hooks/open-meteo-warm': typeof ApiPublicHooksOpenMeteoWarmRoute
   '/api/public/hooks/radon-poll': typeof ApiPublicHooksRadonPollRoute
   '/api/public/hooks/snapshot-pulse': typeof ApiPublicHooksSnapshotPulseRoute
@@ -362,6 +376,7 @@ export interface FileRoutesByTo {
   '/iphone-app': typeof IphoneAppRoute
   '/kvitteringer': typeof KvitteringerRoute
   '/lys': typeof LysRoute
+  '/nsm-sikkerhet': typeof NsmSikkerhetRoute
   '/okonomi': typeof OkonomiRoute
   '/planter': typeof PlanterRoute
   '/pollen': typeof PollenRoute
@@ -395,6 +410,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/gardena-poll': typeof ApiPublicHooksGardenaPollRoute
   '/api/public/hooks/homey-sensor-poll': typeof ApiPublicHooksHomeySensorPollRoute
   '/api/public/hooks/netatmo-climate-refresh': typeof ApiPublicHooksNetatmoClimateRefreshRoute
+  '/api/public/hooks/nsm-poll': typeof ApiPublicHooksNsmPollRoute
   '/api/public/hooks/open-meteo-warm': typeof ApiPublicHooksOpenMeteoWarmRoute
   '/api/public/hooks/radon-poll': typeof ApiPublicHooksRadonPollRoute
   '/api/public/hooks/snapshot-pulse': typeof ApiPublicHooksSnapshotPulseRoute
@@ -412,6 +428,7 @@ export interface FileRoutesById {
   '/iphone-app': typeof IphoneAppRoute
   '/kvitteringer': typeof KvitteringerRoute
   '/lys': typeof LysRoute
+  '/nsm-sikkerhet': typeof NsmSikkerhetRoute
   '/okonomi': typeof OkonomiRoute
   '/planter': typeof PlanterRoute
   '/pollen': typeof PollenRoute
@@ -445,6 +462,7 @@ export interface FileRoutesById {
   '/api/public/hooks/gardena-poll': typeof ApiPublicHooksGardenaPollRoute
   '/api/public/hooks/homey-sensor-poll': typeof ApiPublicHooksHomeySensorPollRoute
   '/api/public/hooks/netatmo-climate-refresh': typeof ApiPublicHooksNetatmoClimateRefreshRoute
+  '/api/public/hooks/nsm-poll': typeof ApiPublicHooksNsmPollRoute
   '/api/public/hooks/open-meteo-warm': typeof ApiPublicHooksOpenMeteoWarmRoute
   '/api/public/hooks/radon-poll': typeof ApiPublicHooksRadonPollRoute
   '/api/public/hooks/snapshot-pulse': typeof ApiPublicHooksSnapshotPulseRoute
@@ -463,6 +481,7 @@ export interface FileRouteTypes {
     | '/iphone-app'
     | '/kvitteringer'
     | '/lys'
+    | '/nsm-sikkerhet'
     | '/okonomi'
     | '/planter'
     | '/pollen'
@@ -496,6 +515,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/gardena-poll'
     | '/api/public/hooks/homey-sensor-poll'
     | '/api/public/hooks/netatmo-climate-refresh'
+    | '/api/public/hooks/nsm-poll'
     | '/api/public/hooks/open-meteo-warm'
     | '/api/public/hooks/radon-poll'
     | '/api/public/hooks/snapshot-pulse'
@@ -512,6 +532,7 @@ export interface FileRouteTypes {
     | '/iphone-app'
     | '/kvitteringer'
     | '/lys'
+    | '/nsm-sikkerhet'
     | '/okonomi'
     | '/planter'
     | '/pollen'
@@ -545,6 +566,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/gardena-poll'
     | '/api/public/hooks/homey-sensor-poll'
     | '/api/public/hooks/netatmo-climate-refresh'
+    | '/api/public/hooks/nsm-poll'
     | '/api/public/hooks/open-meteo-warm'
     | '/api/public/hooks/radon-poll'
     | '/api/public/hooks/snapshot-pulse'
@@ -561,6 +583,7 @@ export interface FileRouteTypes {
     | '/iphone-app'
     | '/kvitteringer'
     | '/lys'
+    | '/nsm-sikkerhet'
     | '/okonomi'
     | '/planter'
     | '/pollen'
@@ -594,6 +617,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/gardena-poll'
     | '/api/public/hooks/homey-sensor-poll'
     | '/api/public/hooks/netatmo-climate-refresh'
+    | '/api/public/hooks/nsm-poll'
     | '/api/public/hooks/open-meteo-warm'
     | '/api/public/hooks/radon-poll'
     | '/api/public/hooks/snapshot-pulse'
@@ -611,6 +635,7 @@ export interface RootRouteChildren {
   IphoneAppRoute: typeof IphoneAppRoute
   KvitteringerRoute: typeof KvitteringerRoute
   LysRoute: typeof LysRoute
+  NsmSikkerhetRoute: typeof NsmSikkerhetRoute
   OkonomiRoute: typeof OkonomiRoute
   PlanterRoute: typeof PlanterRoute
   PollenRoute: typeof PollenRoute
@@ -644,6 +669,7 @@ export interface RootRouteChildren {
   ApiPublicHooksGardenaPollRoute: typeof ApiPublicHooksGardenaPollRoute
   ApiPublicHooksHomeySensorPollRoute: typeof ApiPublicHooksHomeySensorPollRoute
   ApiPublicHooksNetatmoClimateRefreshRoute: typeof ApiPublicHooksNetatmoClimateRefreshRoute
+  ApiPublicHooksNsmPollRoute: typeof ApiPublicHooksNsmPollRoute
   ApiPublicHooksOpenMeteoWarmRoute: typeof ApiPublicHooksOpenMeteoWarmRoute
   ApiPublicHooksRadonPollRoute: typeof ApiPublicHooksRadonPollRoute
   ApiPublicHooksSnapshotPulseRoute: typeof ApiPublicHooksSnapshotPulseRoute
@@ -793,6 +819,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OkonomiRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/nsm-sikkerhet': {
+      id: '/nsm-sikkerhet'
+      path: '/nsm-sikkerhet'
+      fullPath: '/nsm-sikkerhet'
+      preLoaderRoute: typeof NsmSikkerhetRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/lys': {
       id: '/lys'
       path: '/lys'
@@ -926,6 +959,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksOpenMeteoWarmRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/nsm-poll': {
+      id: '/api/public/hooks/nsm-poll'
+      path: '/api/public/hooks/nsm-poll'
+      fullPath: '/api/public/hooks/nsm-poll'
+      preLoaderRoute: typeof ApiPublicHooksNsmPollRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/netatmo-climate-refresh': {
       id: '/api/public/hooks/netatmo-climate-refresh'
       path: '/api/public/hooks/netatmo-climate-refresh'
@@ -995,6 +1035,7 @@ const rootRouteChildren: RootRouteChildren = {
   IphoneAppRoute: IphoneAppRoute,
   KvitteringerRoute: KvitteringerRoute,
   LysRoute: LysRoute,
+  NsmSikkerhetRoute: NsmSikkerhetRoute,
   OkonomiRoute: OkonomiRoute,
   PlanterRoute: PlanterRoute,
   PollenRoute: PollenRoute,
@@ -1031,6 +1072,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksHomeySensorPollRoute: ApiPublicHooksHomeySensorPollRoute,
   ApiPublicHooksNetatmoClimateRefreshRoute:
     ApiPublicHooksNetatmoClimateRefreshRoute,
+  ApiPublicHooksNsmPollRoute: ApiPublicHooksNsmPollRoute,
   ApiPublicHooksOpenMeteoWarmRoute: ApiPublicHooksOpenMeteoWarmRoute,
   ApiPublicHooksRadonPollRoute: ApiPublicHooksRadonPollRoute,
   ApiPublicHooksSnapshotPulseRoute: ApiPublicHooksSnapshotPulseRoute,
