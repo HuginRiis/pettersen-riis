@@ -360,7 +360,7 @@ function DeviceTile({ dev, fetchedAt }: { dev: RadonDevice; fetchedAt: string | 
         )}
 
         <div className="flex gap-1 pt-1">
-          {["now", "stats", "chart", "scale"].map((k) => (
+          {["now", "stats", "h48", "chart", "scale"].map((k) => (
             <span
               key={k}
               className="h-0.5 flex-1 rounded-full"
