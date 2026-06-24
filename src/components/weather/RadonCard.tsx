@@ -432,7 +432,7 @@ export function RadonCard({ refreshKey }: { refreshKey?: string }) {
           <Atom size={14} />
           <span>Radon · Airthings</span>
         </div>
-        <span className="text-[10px] text-white/40">Trykk for min/maks · graf · skala</span>
+        <span className="text-[10px] text-white/40">Trykk for stats · 48t · 14d · skala</span>
       </div>
       {data.loading && (
         <div className="text-xs text-white/50 py-6 text-center">Henter radon-måling …</div>
