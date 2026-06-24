@@ -46,15 +46,20 @@ function vocLevel(v: number | null | undefined): {
   };
 }
 
-function VocFX({ color, intensity }: { color: string; intensity: number }) {
+function VocFX({ color, intensity, value }: { color: string; intensity: number; value: number | null | undefined }) {
   const waves = 3;
   const dots = 8 + Math.round(intensity * 10);
+  // Spin-fart: <100 → 20s (veldig sakte), >2000 → 1.2s (veldig fort)
+  const v = value == null || !Number.isFinite(value) ? 0 : value;
+  const clamped = Math.max(100, Math.min(2000, v));
+  const spinDur = 20 - ((clamped - 100) / 1900) * 18.8; // 20s → 1.2s
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl">
       <style>{`
         @keyframes vocWave { 0%{transform:scale(.6);opacity:.55} 100%{transform:scale(2.2);opacity:0} }
         @keyframes vocDrift { 0%{transform:translate(0,0) scale(.8);opacity:.15} 40%{opacity:.55} 100%{transform:translate(var(--dx),-70px) scale(1.1);opacity:0} }
         @keyframes vocBreathe { 0%,100%{opacity:.25;transform:scale(1)} 50%{opacity:.5;transform:scale(1.1)} }
+        @keyframes vocSpin { from{transform:rotate(0)} to{transform:rotate(360deg)} }
       `}</style>
       <div
         className="absolute"
@@ -68,6 +73,51 @@ function VocFX({ color, intensity }: { color: string; intensity: number }) {
           animation: "vocBreathe 3.6s ease-in-out infinite",
         }}
       />
+      {/* Roterende molekyl — 3 dotter, fart skalert med verdi */}
+      <div
+        className="absolute"
+        style={{
+          right: 62,
+          top: 62,
+          width: 40,
+          height: 40,
+          animation: `vocSpin ${spinDur.toFixed(2)}s linear infinite`,
+        }}
+      >
+        {[0, 120, 240].map((deg) => (
+          <div
+            key={deg}
+            style={{
+              position: "absolute",
+              left: "50%",
+              top: "50%",
+              width: 10,
+              height: 10,
+              marginLeft: -5,
+              marginTop: -5,
+              borderRadius: "50%",
+              background: color,
+              boxShadow: `0 0 8px ${color}`,
+              transform: `rotate(${deg}deg) translateY(-16px)`,
+            }}
+          />
+        ))}
+        <div
+          style={{
+            position: "absolute",
+            left: "50%",
+            top: "50%",
+            width: 8,
+            height: 8,
+            marginLeft: -4,
+            marginTop: -4,
+            borderRadius: "50%",
+            background: "#fff",
+            opacity: 0.85,
+            boxShadow: `0 0 6px ${color}`,
+          }}
+        />
+      </div>
       {Array.from({ length: waves }).map((_, i) => (
         <div
           key={`w${i}`}
@@ -228,7 +278,7 @@ function DeviceTile({ dev, fetchedAt }: { dev: VocDevice; fetchedAt: string | nu
       className="relative w-full text-left rounded-xl border border-white/10 bg-black/25 overflow-hidden transition-colors hover:bg-black/35"
       style={{ minHeight: 200 }}
     >
-      <VocFX color={level.color} intensity={intensity} />
+      <VocFX color={level.color} intensity={intensity} value={dev.current} />
       <div className="relative p-3 flex flex-col gap-2 h-full">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5">
