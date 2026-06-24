@@ -625,8 +625,12 @@ export function SiteHeader() {
             </Link>
           )}
           <button
-            className={`relative text-primary p-2 rounded-md transition ${
-              open ? "" : "shadow-[0_0_10px_hsl(var(--primary)/0.55)] hover:shadow-[0_0_16px_hsl(var(--primary)/0.8)]"
+            className={`relative p-2 rounded-md transition ${
+              isWeather
+                ? "text-white"
+                : open
+                  ? "text-primary"
+                  : "text-primary shadow-[0_0_10px_hsl(var(--primary)/0.55)] hover:shadow-[0_0_16px_hsl(var(--primary)/0.8)]"
             }`}
             onClick={() => setOpen((v) => { if (!v) setFavOpenMobile(false); return !v; })}
             aria-label="Meny"
