@@ -493,12 +493,11 @@ main .container {
 .recharts-default-tooltip .recharts-tooltip-item:nth-of-type(5n+5),
 .recharts-default-tooltip .recharts-tooltip-item:nth-of-type(5n+5) * { color: var(--chart-series-5) !important; }
 
-/* ===== Vær-siden — flis-tone (5 nivåer) ===== */
+/* ===== Vær-siden — flis-tone (4 nivåer) ===== */
 .tile-tone-0 { --tile-fg: oklch(0.20 0.02 260); --tile-fg-muted: oklch(0.20 0.02 260 / 0.7); --tile-fg-subtle: oklch(0.20 0.02 260 / 0.5); --tile-bg-strong: oklch(0.20 0.02 260 / 0.12); --tile-border-inner: oklch(0.20 0.02 260 / 0.2); }
 .tile-tone-1 { --tile-fg: oklch(0.20 0.02 260); --tile-fg-muted: oklch(0.20 0.02 260 / 0.7); --tile-fg-subtle: oklch(0.20 0.02 260 / 0.5); --tile-bg-strong: oklch(0.20 0.02 260 / 0.15); --tile-border-inner: oklch(0.20 0.02 260 / 0.2); }
 .tile-tone-2 { --tile-fg: #ffffff; --tile-fg-muted: rgba(255,255,255,0.7); --tile-fg-subtle: rgba(255,255,255,0.5); --tile-bg-strong: rgba(255,255,255,0.2); --tile-border-inner: rgba(255,255,255,0.2); }
 .tile-tone-3 { --tile-fg: #ffffff; --tile-fg-muted: rgba(255,255,255,0.7); --tile-fg-subtle: rgba(255,255,255,0.5); --tile-bg-strong: rgba(255,255,255,0.15); --tile-border-inner: rgba(255,255,255,0.2); }
-.tile-tone-4 { --tile-fg: #ffffff; --tile-fg-muted: rgba(255,255,255,0.7); --tile-fg-subtle: rgba(255,255,255,0.5); --tile-bg-strong: rgba(255,255,255,0.1); --tile-border-inner: rgba(255,255,255,0.15); }
 
 .tile-tone-0 .tile-fg,
 .tile-tone-1 .tile-fg { color: var(--tile-fg) !important; }
@@ -507,14 +506,11 @@ main .container {
 .tile-tone-0 .tile-fg-subtle,
 .tile-tone-1 .tile-fg-subtle { color: var(--tile-fg-subtle) !important; }
 .tile-tone-2 .tile-fg,
-.tile-tone-3 .tile-fg,
-.tile-tone-4 .tile-fg { color: var(--tile-fg) !important; }
+.tile-tone-3 .tile-fg { color: var(--tile-fg) !important; }
 .tile-tone-2 .tile-fg-muted,
-.tile-tone-3 .tile-fg-muted,
-.tile-tone-4 .tile-fg-muted { color: var(--tile-fg-muted) !important; }
+.tile-tone-3 .tile-fg-muted { color: var(--tile-fg-muted) !important; }
 .tile-tone-2 .tile-fg-subtle,
-.tile-tone-3 .tile-fg-subtle,
-.tile-tone-4 .tile-fg-subtle { color: var(--tile-fg-subtle) !important; }
+.tile-tone-3 .tile-fg-subtle { color: var(--tile-fg-subtle) !important; }
 
 /* Overskriv text-white/-opacitet på lysere toner for lesbarhet */
 .tile-tone-0 [class*="text-white/90"],
