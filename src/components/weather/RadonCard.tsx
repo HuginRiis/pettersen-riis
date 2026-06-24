@@ -234,7 +234,7 @@ function Sparkline({ data, color, xFmt }: { data: { t: string; v: number }[]; co
       {[0, Math.floor(n / 2), n - 1].map((i) => {
         const d = data[i];
         if (!d) return null;
-        const label = new Date(d.t).toLocaleDateString("nb-NO", { day: "numeric", month: "short" });
+        const label = xFmt ? xFmt(d.t) : new Date(d.t).toLocaleDateString("nb-NO", { day: "numeric", month: "short" });
         return (
           <text key={`xl${i}`} x={xs[i]} y={h - 4} fontSize="9" fill="rgba(255,255,255,.5)" textAnchor="middle">
             {label}
