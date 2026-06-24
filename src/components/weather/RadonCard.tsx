@@ -262,9 +262,11 @@ function DeviceTile({ dev, fetchedAt }: { dev: RadonDevice; fetchedAt: string | 
   return (
     <button
       type="button"
-      onClick={() =>
-        setView((v) => (v === "now" ? "stats" : v === "stats" ? "chart" : v === "chart" ? "scale" : "now"))
-      }
+      onClick={() => {
+        const order: typeof view[] = ["now", "stats", "h48", "chart", "scale"];
+        const i = order.indexOf(view);
+        setView(order[(i + 1) % order.length]);
+      }}
       className="relative w-full text-left rounded-xl border border-white/10 bg-black/25 overflow-hidden transition-colors hover:bg-black/35"
       style={{ minHeight: 180 }}
     >
