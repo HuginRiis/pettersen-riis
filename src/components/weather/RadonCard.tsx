@@ -384,7 +384,7 @@ export function RadonCard({ refreshKey }: { refreshKey?: string }) {
   }, [data.devices]);
 
   return (
-    <div className="rounded-2xl bg-zinc-800/80 border border-zinc-400/40 backdrop-blur-xl shadow-lg shadow-black/10 p-4">
+    <div className="rounded-2xl bg-white/10 border border-white/15 backdrop-blur-xl shadow-lg shadow-black/10 p-4">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-1.5 text-[11px] tracking-[0.15em] font-semibold text-white/70 uppercase">
           <Atom size={14} />
