@@ -4629,11 +4629,12 @@ export function SmartDashbord() {
                 <LysCombinedTile groups={hueRoomGroups} onReload={reload} />
               </div>
               <div className="col-span-2">
-                <StromTile home="borgen" />
+                <StromCombinedTile />
               </div>
               <div className="col-span-2">
-                <StromTile home="hytta" />
+                <RadonStuaTile />
               </div>
+
 
               {/* Rad 2: Varmepumpe + UV + AQ + Regn + Vind (halv-størrelse) */}
               <div className="col-span-4">
