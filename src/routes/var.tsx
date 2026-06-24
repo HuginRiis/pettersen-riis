@@ -2136,13 +2136,15 @@ function parseForecast(data: any): { days: ForecastDay[]; hours: Hour[] } {
       symbol,
     });
     const existing = dayMap.get(date);
+    const wind = inst.wind_speed ?? 0;
     if (!existing) {
-      dayMap.set(date, { date, tempMin: temp, tempMax: temp, symbol, precip, precipProbability });
+      dayMap.set(date, { date, tempMin: temp, tempMax: temp, symbol, precip, precipProbability, windMax: wind });
     } else {
       existing.tempMin = Math.min(existing.tempMin, temp);
       existing.tempMax = Math.max(existing.tempMax, temp);
       existing.precip += precip;
       existing.precipProbability = Math.max(existing.precipProbability, precipProbability);
+      existing.windMax = Math.max(existing.windMax, wind);
       const hour = parseInt(time.slice(11, 13));
       if (hour >= 11 && hour <= 14 && symbol) existing.symbol = symbol;
     }
