@@ -326,6 +326,19 @@ function DeviceTile({ dev, fetchedAt }: { dev: RadonDevice; fetchedAt: string | 
           </div>
         )}
 
+        {view === "h48" && (
+          <div className="flex-1 flex flex-col">
+            <div className="text-[10px] uppercase tracking-wider text-white/50 mb-1">
+              48 timer · timesnitt
+            </div>
+            <Sparkline
+              data={dev.hourly48}
+              color={level.color}
+              xFmt={(iso) => new Date(iso).toLocaleString("nb-NO", { hour: "2-digit", day: "numeric" })}
+            />
+          </div>
+        )}
+
         {view === "chart" && (
           <div className="flex-1 flex flex-col">
             <div className="text-[10px] uppercase tracking-wider text-white/50 mb-1">
