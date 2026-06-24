@@ -246,7 +246,7 @@ function Sparkline({ data, color, xFmt }: { data: { t: string; v: number }[]; co
 }
 
 function DeviceTile({ dev, fetchedAt }: { dev: RadonDevice; fetchedAt: string | null }) {
-  const [view, setView] = useState<"now" | "stats" | "chart" | "scale">("now");
+  const [view, setView] = useState<"now" | "stats" | "h48" | "chart" | "scale">("now");
   const level = radonLevel(dev.current);
   const intensity = Math.min(1, (dev.current ?? 0) / 300);
   const fmt = (v: number | null | undefined) =>
