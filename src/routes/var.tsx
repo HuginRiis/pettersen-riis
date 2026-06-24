@@ -513,7 +513,7 @@ function GlassCard({
   fx?: React.ReactNode;
 }) {
   return (
-    <article className={`relative overflow-hidden rounded-2xl bg-white/10 backdrop-blur-xl border border-white/15 shadow-lg shadow-black/10 p-4 ${className}`}>
+    <article className={toneCardCn(className)}>
       {fx}
       <div className="relative">
         {eyebrow && (
