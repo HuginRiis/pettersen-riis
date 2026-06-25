@@ -422,7 +422,7 @@ export function FireFX({ intensity = 0.7, className = "" }: Common) {
             width: f.width,
             height: f.height,
             zIndex: f.z,
-            opacity: 0.75 + Math.random() * 0.2,
+            opacity: f.opacity,
             animationDuration: `${f.dur}s`,
             animationDelay: `${f.delay}s`,
             transformOrigin: "bottom center",
@@ -433,7 +433,7 @@ export function FireFX({ intensity = 0.7, className = "" }: Common) {
             style={{
               background: `radial-gradient(ellipse at 50% 20%, hsla(${f.hue + 15}, 100%, 80%, 0.95) 0%, hsla(${f.hue}, 95%, 60%, 0.85) 35%, hsla(${f.hue - 10}, 90%, 45%, 0.6) 70%, transparent 100%)`,
               borderRadius: "60% 60% 45% 45% / 80% 80% 35% 35%",
-              filter: `blur(${1 + Math.random()}px)`,
+              filter: `blur(${f.blur}px)`,
               boxShadow: `0 0 ${8 + i * 8}px hsla(${f.hue}, 100%, 55%, 0.6)`,
               animationDuration: `${f.dur * 0.8}s`,
               animationDelay: `${f.delay + 0.1}s`,
