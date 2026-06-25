@@ -2228,24 +2228,62 @@ function NetatmoTile({
 // Alert card (iOS-style)
 // ============================================================
 
+function alertFxFor(alert: MetAlert): React.ReactNode {
+  const k = `${alert.event} ${alert.title}`.toLowerCase();
+  const has = (...needles: string[]) => needles.some((n) => k.includes(n));
+  if (has("thunder", "torden", "lyn", "lightning")) return <ThunderFX intensity={0.9} />;
+  if (has("forest", "skogbrann", "wildfire", "brann")) return <HeatwaveFX intensity={0.9} />;
+  if (has("drought", "tørke")) return <HeatwaveFX intensity={0.7} />;
+  if (has("rain", "regn", "flood", "flom")) return <RainFX intensity={0.85} />;
+  if (has("snow", "snø", "blowing")) return <SnowFX intensity={0.85} />;
+  if (has("avalanche", "skred")) return <SnowFX intensity={0.7} />;
+  if (has("ice", "is ", "glatt", "icing")) return <SnowFX intensity={0.4} />;
+  if (has("wind", "vind", "gale", "storm", "kuling", "polar")) return <WindFX intensity={0.9} />;
+  if (has("fog", "tåke")) return <CloudFX intensity={0.9} />;
+  return <CloudFX intensity={0.6} />;
+}
+
 function AlertCard({ alert }: { alert: MetAlert }) {
   const color = alertColor(alert.awarenessColor);
+  const [open, setOpen] = usePerUserPersistedState<boolean>(
+    `var:alert-open:${alert.id}`,
+    false,
+  );
+  const fx = open ? alertFxFor(alert) : null;
   return (
     <div
-      className={toneCardCn("border-l-[6px]")}
+      className={toneCardCn("border-l-[6px] relative overflow-hidden p-0")}
       style={{ borderLeftColor: color }}
     >
-      <div className="flex items-start gap-3">
-        <AlertTriangle size={20} style={{ color }} />
-        <div className="flex-1">
+      {fx}
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        className="relative w-full flex items-start gap-3 text-left p-4 hover:bg-white/5 transition-colors"
+      >
+        <AlertTriangle size={20} style={{ color }} className="shrink-0 mt-0.5" />
+        <div className="flex-1 min-w-0">
           <div className="text-[11px] tracking-[0.2em] uppercase font-semibold" style={{ color }}>
             {alert.awarenessColor} · {alert.severity}
           </div>
           <div className="text-base font-medium mt-1">{alert.title}</div>
-          {alert.description && <p className="text-[13px] text-white/85 mt-1 line-clamp-3">{alert.description}</p>}
-          {alert.area && <div className="text-[11px] text-white/70 mt-2">{alert.area}</div>}
         </div>
-      </div>
+        <ChevronDown
+          size={18}
+          className={`shrink-0 mt-1 text-white/70 transition-transform ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+      {open && (
+        <div className="relative px-4 pb-4 pl-12 -mt-1">
+          {alert.description && (
+            <p className="text-[13px] text-white/85">{alert.description}</p>
+          )}
+          {alert.area && (
+            <div className="text-[11px] text-white/70 mt-2">{alert.area}</div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
