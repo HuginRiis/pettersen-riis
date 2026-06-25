@@ -85,6 +85,7 @@ export function RainFX({ intensity = 0.5, className = "" }: Common) {
             opacity: d.op,
             animationDuration: `${d.dur}s`,
             animationDelay: `${d.delay}s`,
+            animationFillMode: "backwards",
           }}
         />
       ))}
