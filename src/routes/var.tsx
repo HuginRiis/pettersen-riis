@@ -1191,9 +1191,12 @@ function DailyListCard({ days, hours, title }: { days: ForecastDay[] | null; hou
   if (panel === "nedbor" && hours && hours.length > 0) {
     return (
       <GlassCard eyebrow={title} icon={<Droplets size={14} />}>
+        <DailyRollInStyles />
         <div className="divide-y divide-white/10">
           {list.map((d, i) => (
-            <DailyRainRow key={d.date} day={d} hours={hours} index={i} />
+            <div key={d.date} className="wx-roll-in" style={{ animationDelay: `${i * 70}ms` }}>
+              <DailyRainRow day={d} hours={hours} index={i} />
+            </div>
           ))}
         </div>
       </GlassCard>
@@ -1212,9 +1215,12 @@ function DailyListCard({ days, hours, title }: { days: ForecastDay[] | null; hou
     );
     return (
       <GlassCard eyebrow={title} icon={<Wind size={14} />}>
+        <DailyRollInStyles />
         <div className="divide-y divide-white/10">
           {list.map((d, i) => (
-            <DailyWindRow key={d.date} day={d} hours={hours} index={i} globalMaxG={globalMaxG} />
+            <div key={d.date} className="wx-roll-in" style={{ animationDelay: `${i * 70}ms` }}>
+              <DailyWindRow day={d} hours={hours} index={i} globalMaxG={globalMaxG} />
+            </div>
           ))}
         </div>
       </GlassCard>
@@ -1232,6 +1238,8 @@ function DailyListCard({ days, hours, title }: { days: ForecastDay[] | null; hou
   return (
     <GlassCard eyebrow={title} icon={<TrendingUp size={14} />}>
       <AnimatedWeatherIconStyles />
+      <DailyRollInStyles />
+
       <div className="divide-y divide-white/10">
         {list.map((d, i) => {
           const startPct = ((d.tempMin - globalMin) / range) * 100;
