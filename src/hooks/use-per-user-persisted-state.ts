@@ -14,7 +14,7 @@ export function usePerUserPersistedState<T>(
 ): [T, React.Dispatch<React.SetStateAction<T>>] {
   const [who, setWho] = useState<string>("Alle");
   const [value, setValue] = useState<T>(initial);
-  const hydrated = useRef(false);
+  const [hydrated, setHydrated] = useState(false);
 
   // Hydrer fra localStorage (bruker who fra push-client)
   useEffect(() => {
@@ -24,7 +24,7 @@ export function usePerUserPersistedState<T>(
       const raw = localStorage.getItem(`${key}::${currentWho}`);
       if (raw !== null) setValue(JSON.parse(raw) as T);
     } catch {}
-    hydrated.current = true;
+    setHydrated(true);
   }, [key]);
 
   // Lytt etter who-endring (fra setStoredWho i andre faner) og in-tab endringer
