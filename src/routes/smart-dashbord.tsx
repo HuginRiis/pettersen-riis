@@ -3060,12 +3060,38 @@ function RadonStuaTile() {
     [devs],
   );
   const v = stua?.current ?? null;
-  const lvl =
-    v == null ? { color: "#a3a3a3", label: "—" }
-    : v < 100 ? { color: "#34d399", label: "Bra" }
-    : v < 200 ? { color: "#fbbf24", label: "Forhøyet" }
-    : v < 300 ? { color: "#fb923c", label: "Høyt" }
-    : { color: "#f87171", label: "Tiltak" };
+  // Glidende fargeovergang grønn → gul → oransje → rød (0/100/200/300 Bq/m³)
+  const lerpN = (a: number, b: number, t: number) => a + (b - a) * Math.max(0, Math.min(1, t));
+  const lerpHex = (c1: string, c2: string, t: number) => {
+    const p = (h: string) => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
+    const [r1, g1, b1] = p(c1); const [r2, g2, b2] = p(c2);
+    const r = Math.round(lerpN(r1, r2, t)); const g = Math.round(lerpN(g1, g2, t)); const b = Math.round(lerpN(b1, b2, t));
+    return `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
+  };
+  const radonSmoothColor = (val: number | null): string => {
+    if (val == null || !Number.isFinite(val)) return "#a3a3a3";
+    const stops: { x: number; c: string }[] = [
+      { x: 0, c: "#34d399" }, { x: 100, c: "#fbbf24" }, { x: 200, c: "#fb923c" }, { x: 300, c: "#f87171" },
+    ];
+    if (val <= 0) return stops[0].c;
+    if (val >= 300) return stops[3].c;
+    for (let i = 1; i < stops.length; i++) {
+      if (val <= stops[i].x) return lerpHex(stops[i - 1].c, stops[i].c, (val - stops[i - 1].x) / (stops[i].x - stops[i - 1].x));
+    }
+    return stops[3].c;
+  };
+  const label =
+    v == null ? "—"
+    : v < 100 ? "Bra"
+    : v < 200 ? "Forhøyet"
+    : v < 300 ? "Høyt"
+    : "Tiltak";
+  const lvl = { color: radonSmoothColor(v), label };
+  const vClamp = v == null || !Number.isFinite(v) ? 1 : Math.max(1, Math.min(300, v));
+  const speedT = Math.pow((vClamp - 1) / 299, 0.7); // 0..1, 0 = sakte, 1 = fort
+  const orbitDur = lerpN(14, 0.5, speedT);
+  const floatDur = lerpN(11, 1.4, speedT);
+  const pulseDur = lerpN(5.5, 1.2, speedT);
 
   return (
     <Tile title="Radon · Stua" icon={<Atom size={14} />} accent="text-emerald-300">
@@ -3083,7 +3109,7 @@ function RadonStuaTile() {
             className="absolute inset-0 rounded-full"
             style={{
               background: `radial-gradient(circle, ${lvl.color}66 0%, transparent 70%)`,
-              animation: "radonCorePulse 3.2s ease-in-out infinite",
+              animation: `radonCorePulse ${pulseDur.toFixed(2)}s ease-in-out infinite`,
             }}
           />
           <div className="absolute" style={{ left: 18, top: 18, width: 64, height: 64 }}>
@@ -3124,7 +3150,7 @@ function RadonStuaTile() {
                       background: lvl.color,
                       boxShadow: `0 0 8px ${lvl.color}`,
                       ["--r" as any]: "32px",
-                      animation: `${i % 2 === 0 ? "radonOrbitA" : "radonOrbitB"} ${2.4 + i * 0.4}s linear infinite`,
+                      animation: `${i % 2 === 0 ? "radonOrbitA" : "radonOrbitB"} ${(orbitDur * (1 + i * 0.15)).toFixed(2)}s linear infinite`,
                     }}
                   />
                 </div>
@@ -3136,7 +3162,7 @@ function RadonStuaTile() {
           {Array.from({ length: 6 }).map((_, i) => {
             const left = 10 + ((i * 17) % 80);
             const delay = (i * 0.6) % 4;
-            const dur = 3.5 + ((i * 0.7) % 3);
+            const dur = floatDur * (0.85 + ((i * 0.11) % 0.4));
             const size = 3 + (i % 2);
             return (
               <div
@@ -3151,7 +3177,7 @@ function RadonStuaTile() {
                   background: lvl.color,
                   filter: "blur(.5px)",
                   opacity: 0.35,
-                  animation: `radonFloat ${dur}s ease-in ${delay}s infinite`,
+                  animation: `radonFloat ${dur.toFixed(2)}s ease-in ${delay}s infinite`,
                 }}
               />
             );

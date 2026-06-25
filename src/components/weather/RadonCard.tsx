@@ -54,9 +54,47 @@ function radonLevel(v: number | null | undefined): {
   };
 }
 
-function RadonAtomFX({ color, intensity }: { color: string; intensity: number }) {
-  // intensity 0..1 — flere/raskere partikler ved høyere måling
-  const dots = 6 + Math.round(intensity * 8);
+// Glidende fargeovergang grønn → gul → oransje → rød basert på Bq/m³
+function lerp(a: number, b: number, t: number) {
+  return a + (b - a) * Math.max(0, Math.min(1, t));
+}
+function lerpHex(c1: string, c2: string, t: number) {
+  const p = (h: string) => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
+  const [r1, g1, b1] = p(c1);
+  const [r2, g2, b2] = p(c2);
+  const r = Math.round(lerp(r1, r2, t));
+  const g = Math.round(lerp(g1, g2, t));
+  const b = Math.round(lerp(b1, b2, t));
+  return `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
+}
+function radonColor(v: number | null | undefined): string {
+  if (v == null || !Number.isFinite(v)) return "#a3a3a3";
+  const stops: { x: number; c: string }[] = [
+    { x: 0, c: "#34d399" },
+    { x: 100, c: "#fbbf24" },
+    { x: 200, c: "#fb923c" },
+    { x: 300, c: "#f87171" },
+  ];
+  if (v <= stops[0].x) return stops[0].c;
+  if (v >= stops[stops.length - 1].x) return stops[stops.length - 1].c;
+  for (let i = 1; i < stops.length; i++) {
+    if (v <= stops[i].x) {
+      const t = (v - stops[i - 1].x) / (stops[i].x - stops[i - 1].x);
+      return lerpHex(stops[i - 1].c, stops[i].c, t);
+    }
+  }
+  return stops[stops.length - 1].c;
+}
+
+function RadonAtomFX({ color, value }: { color: string; value: number | null | undefined }) {
+  // Fartsskala: ~1 Bq/m³ → veldig sakte, ~300 → veldig fort. Eksponentiell for tydelig forskjell.
+  const v = value == null || !Number.isFinite(value) ? 1 : Math.max(1, Math.min(300, value));
+  const t = Math.pow((v - 1) / 299, 0.7); // 0..1, kraftigere stigning lavt
+  const orbitDur = lerp(14, 0.5, t); // sekunder per runde
+  const floatDur = lerp(11, 1.4, t);
+  const pulseDur = lerp(5.5, 1.2, t);
+  const intensity = t;
+  const dots = 6 + Math.round(intensity * 10);
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl">
       <style>{`
@@ -65,7 +103,7 @@ function RadonAtomFX({ color, intensity }: { color: string; intensity: number })
         @keyframes radonFloat { 0%{transform:translateY(0) scale(.9);opacity:.2} 50%{opacity:.65} 100%{transform:translateY(-60px) scale(1.1);opacity:0} }
         @keyframes radonPulse { 0%,100%{opacity:.18;transform:scale(1)} 50%{opacity:.42;transform:scale(1.08)} }
       `}</style>
-      {/* Glow core — 2x size, moved inward */}
+      {/* Glow core */}
       <div
         className="absolute"
         style={{
@@ -75,14 +113,11 @@ function RadonAtomFX({ color, intensity }: { color: string; intensity: number })
           height: 128,
           borderRadius: "50%",
           background: `radial-gradient(circle, ${color}66 0%, transparent 70%)`,
-          animation: "radonPulse 3.2s ease-in-out infinite",
+          animation: `radonPulse ${pulseDur.toFixed(2)}s ease-in-out infinite`,
         }}
       />
-      {/* Orbiting electrons — 2x size */}
-      <div
-        className="absolute"
-        style={{ right: 54, top: 54, width: 64, height: 64 }}
-      >
+      {/* Orbiting electrons */}
+      <div className="absolute" style={{ right: 54, top: 54, width: 64, height: 64 }}>
         {[0, 60, 120].map((deg, i) => (
           <div
             key={i}
@@ -120,19 +155,18 @@ function RadonAtomFX({ color, intensity }: { color: string; intensity: number })
                   background: color,
                   boxShadow: `0 0 8px ${color}`,
                   ["--r" as any]: "32px",
-                  animation: `${i % 2 === 0 ? "radonOrbitA" : "radonOrbitB"} ${2.4 + i * 0.4}s linear infinite`,
+                  animation: `${i % 2 === 0 ? "radonOrbitA" : "radonOrbitB"} ${(orbitDur * (1 + i * 0.15)).toFixed(2)}s linear infinite`,
                 }}
               />
             </div>
           );
         })}
-
       </div>
       {/* Rising gas particles */}
       {Array.from({ length: dots }).map((_, i) => {
         const left = 12 + ((i * 34) % 70);
         const delay = (i * 0.5) % 4;
-        const dur = 4 + ((i * 0.7) % 3);
+        const dur = floatDur * (0.85 + ((i * 0.11) % 0.4));
         const size = 3 + (i % 3);
         return (
           <div
@@ -147,7 +181,7 @@ function RadonAtomFX({ color, intensity }: { color: string; intensity: number })
               background: color,
               filter: "blur(.5px)",
               opacity: 0.3,
-              animation: `radonFloat ${dur}s ease-in ${delay}s infinite`,
+              animation: `radonFloat ${dur.toFixed(2)}s ease-in ${delay}s infinite`,
             }}
           />
         );
@@ -249,7 +283,7 @@ function Sparkline({ data, color, xFmt }: { data: { t: string; v: number }[]; co
 function DeviceTile({ dev, fetchedAt }: { dev: RadonDevice; fetchedAt: string | null }) {
   const [view, setView] = useState<"now" | "stats" | "h48" | "chart" | "scale">("now");
   const level = radonLevel(dev.current);
-  const intensity = Math.min(1, (dev.current ?? 0) / 300);
+  const smoothColor = radonColor(dev.current);
   const fmt = (v: number | null | undefined) =>
     v == null || !Number.isFinite(v) ? "—" : Math.round(v).toString();
   const fmtTime = (iso: string | null) =>
@@ -271,18 +305,18 @@ function DeviceTile({ dev, fetchedAt }: { dev: RadonDevice; fetchedAt: string | 
       className="relative w-full text-left rounded-xl border border-white/10 bg-black/25 overflow-hidden transition-colors hover:bg-black/35"
       style={{ minHeight: 180 }}
     >
-      <RadonAtomFX color={level.color} intensity={intensity} />
+      <RadonAtomFX color={smoothColor} value={dev.current} />
       <div className="relative p-3 flex flex-col gap-2 h-full">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5">
-            <Atom size={14} style={{ color: level.color }} />
+            <Atom size={14} style={{ color: smoothColor }} />
             <span className="text-[11px] uppercase tracking-wider text-white/70">
               {dev.zone ?? dev.name}
             </span>
           </div>
           <span
             className="text-[10px] px-1.5 py-0.5 rounded-full"
-            style={{ background: level.color + "22", color: level.color, border: `1px solid ${level.color}66` }}
+            style={{ background: smoothColor + "22", color: smoothColor, border: `1px solid ${smoothColor}66` }}
           >
             {level.label}
           </span>
@@ -291,7 +325,7 @@ function DeviceTile({ dev, fetchedAt }: { dev: RadonDevice; fetchedAt: string | 
         {view === "now" && (
           <div className="flex-1 flex flex-col justify-end">
             <div className="flex items-baseline gap-1">
-              <span className="text-4xl font-light text-white tabular-nums" style={{ color: level.color }}>
+              <span className="text-4xl font-light tabular-nums" style={{ color: smoothColor }}>
                 {fmt(dev.current)}
               </span>
               <span className="text-xs text-white/60">Bq/m³</span>
