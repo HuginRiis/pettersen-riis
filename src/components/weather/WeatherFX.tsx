@@ -54,20 +54,18 @@ export function InsideRainFX({ intensity = 0.5, className = "" }: Common) {
 /* ---------------- RAIN ---------------- */
 export function RainFX({ intensity = 0.5, className = "" }: Common) {
   const clamped = Math.max(0, Math.min(1, intensity));
-  // Sparse when dry, heavy when wet (3 → ~36 drops)
-  const count = Math.max(3, Math.round(3 + clamped * 33));
-  const drops = useMemo(
-    () =>
-      Array.from({ length: count }).map((_, i) => ({
-        left: (i / count) * 100 + (Math.random() * 6 - 3),
-        delay: Math.random() * 1.8,
-        // Faster fall when more intense
-        dur: 1.6 - clamped * 0.7 + Math.random() * 0.6,
-        h: 8 + Math.random() * 10,
-        op: 0.35 + clamped * 0.35 + Math.random() * 0.25,
-      })),
-    [count, clamped],
-  );
+  const drops = useMemo(() => {
+    // Dry spells: 12-15 random drops; escalates up to ~36 drops in heavy rain
+    const count = Math.round(12 + Math.random() * 4 + clamped * 22);
+    return Array.from({ length: count }).map((_, i) => ({
+      left: (i / count) * 100 + (Math.random() * 6 - 3),
+      delay: Math.random() * 1.8,
+      // Faster fall when more intense
+      dur: 1.6 - clamped * 0.7 + Math.random() * 0.6,
+      h: 8 + Math.random() * 10,
+      op: 0.35 + clamped * 0.35 + Math.random() * 0.25,
+    }));
+  }, [clamped]);
   return (
     <div className={`${wrap} ${className}`} aria-hidden>
       {drops.map((d, i) => (
