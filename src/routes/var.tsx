@@ -485,7 +485,7 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
           </GlassCard>
 
           {/* HYTTA prognose */}
-          <DailyListCard days={hyttaDays} title="Hytta · Numedal · 10 dager" />
+          <DailyListCard days={hyttaDays} hours={hyttaHours} title="Hytta · Numedal · 10 dager" />
 
           {/* WINDY KART */}
           <CollapsibleMap />
