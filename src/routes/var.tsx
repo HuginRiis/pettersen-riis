@@ -1248,7 +1248,7 @@ function DailyRainRow({ day, hours, index }: { day: ForecastDay; hours: Hour[]; 
       <div className="text-[15px] capitalize">{label}</div>
       <div className="flex items-end gap-[3px] h-7">
         {buckets.map((b, i) => {
-          const rainFill = b.precip > 0 ? Math.max(20, Math.min(100, b.precip * 60)) : 0;
+          const rainFill = b.precip > 0 ? Math.max(2, Math.min(100, (b.precip / 20) * 100)) : 0;
           const baseBg = b.isNight ? "rgba(255,255,255,0.18)" : "rgba(255,255,255,0.35)";
           return (
             <div
