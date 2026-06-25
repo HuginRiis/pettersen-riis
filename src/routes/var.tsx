@@ -1186,6 +1186,29 @@ function DailyListCard({ days, hours, title }: { days: ForecastDay[] | null; hou
     );
   }
 
+  // Vind-modus: graf med vind + vindkast per dag
+  if (panel === "vind" && hours && hours.length > 0) {
+    const globalMaxG = Math.max(
+      4,
+      ...list.map((d) =>
+        hours
+          .filter((h) => h.time.slice(0, 10) === d.date)
+          .reduce((m, h) => Math.max(m, h.windGust || h.wind || 0), 0),
+      ),
+    );
+    return (
+      <GlassCard eyebrow={title} icon={<Wind size={14} />}>
+        <div className="divide-y divide-white/10">
+          {list.map((d, i) => (
+            <DailyWindRow key={d.date} day={d} hours={hours} index={i} globalMaxG={globalMaxG} />
+          ))}
+        </div>
+      </GlassCard>
+    );
+  }
+
+
+
   const allMins = list.map((d) => d.tempMin);
   const allMaxs = list.map((d) => d.tempMax);
   const globalMin = Math.min(...allMins);
