@@ -3060,12 +3060,38 @@ function RadonStuaTile() {
     [devs],
   );
   const v = stua?.current ?? null;
-  const lvl =
-    v == null ? { color: "#a3a3a3", label: "—" }
-    : v < 100 ? { color: "#34d399", label: "Bra" }
-    : v < 200 ? { color: "#fbbf24", label: "Forhøyet" }
-    : v < 300 ? { color: "#fb923c", label: "Høyt" }
-    : { color: "#f87171", label: "Tiltak" };
+  // Glidende fargeovergang grønn → gul → oransje → rød (0/100/200/300 Bq/m³)
+  const lerpN = (a: number, b: number, t: number) => a + (b - a) * Math.max(0, Math.min(1, t));
+  const lerpHex = (c1: string, c2: string, t: number) => {
+    const p = (h: string) => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
+    const [r1, g1, b1] = p(c1); const [r2, g2, b2] = p(c2);
+    const r = Math.round(lerpN(r1, r2, t)); const g = Math.round(lerpN(g1, g2, t)); const b = Math.round(lerpN(b1, b2, t));
+    return `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
+  };
+  const radonSmoothColor = (val: number | null): string => {
+    if (val == null || !Number.isFinite(val)) return "#a3a3a3";
+    const stops: { x: number; c: string }[] = [
+      { x: 0, c: "#34d399" }, { x: 100, c: "#fbbf24" }, { x: 200, c: "#fb923c" }, { x: 300, c: "#f87171" },
+    ];
+    if (val <= 0) return stops[0].c;
+    if (val >= 300) return stops[3].c;
+    for (let i = 1; i < stops.length; i++) {
+      if (val <= stops[i].x) return lerpHex(stops[i - 1].c, stops[i].c, (val - stops[i - 1].x) / (stops[i].x - stops[i - 1].x));
+    }
+    return stops[3].c;
+  };
+  const label =
+    v == null ? "—"
+    : v < 100 ? "Bra"
+    : v < 200 ? "Forhøyet"
+    : v < 300 ? "Høyt"
+    : "Tiltak";
+  const lvl = { color: radonSmoothColor(v), label };
+  const vClamp = v == null || !Number.isFinite(v) ? 1 : Math.max(1, Math.min(300, v));
+  const speedT = Math.pow((vClamp - 1) / 299, 0.7); // 0..1, 0 = sakte, 1 = fort
+  const orbitDur = lerpN(14, 0.5, speedT);
+  const floatDur = lerpN(11, 1.4, speedT);
+  const pulseDur = lerpN(5.5, 1.2, speedT);
 
   return (
     <Tile title="Radon · Stua" icon={<Atom size={14} />} accent="text-emerald-300">
