@@ -380,9 +380,12 @@ export function FireFX({ intensity = 0.7, className = "" }: Common) {
         lightness: 50 + Math.random() * 15,
         skew: (Math.random() > 0.5 ? 1 : -1) * (2 + Math.random() * 6),
         z: 10 + Math.round(Math.random() * 20),
+        opacity: 0.75 + Math.random() * 0.2,
+        blur: 1 + Math.random(),
       };
     });
   }, [flameCount, i]);
+
 
   const emberCount = Math.max(6, Math.round(8 + i * 16));
   const embers = useMemo(() => {
