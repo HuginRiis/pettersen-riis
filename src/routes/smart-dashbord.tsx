@@ -3150,7 +3150,7 @@ function RadonStuaTile() {
                       background: lvl.color,
                       boxShadow: `0 0 8px ${lvl.color}`,
                       ["--r" as any]: "32px",
-                      animation: `${i % 2 === 0 ? "radonOrbitA" : "radonOrbitB"} ${2.4 + i * 0.4}s linear infinite`,
+                      animation: `${i % 2 === 0 ? "radonOrbitA" : "radonOrbitB"} ${(orbitDur * (1 + i * 0.15)).toFixed(2)}s linear infinite`,
                     }}
                   />
                 </div>
