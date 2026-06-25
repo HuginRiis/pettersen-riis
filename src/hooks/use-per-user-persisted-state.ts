@@ -59,14 +59,14 @@ export function usePerUserPersistedState<T>(
 
   // Skriv tilbake
   useEffect(() => {
-    if (!hydrated.current) return;
+    if (!hydrated) return;
     try {
       localStorage.setItem(`${key}::${who}`, JSON.stringify(value));
       window.dispatchEvent(
         new CustomEvent("per-user-persisted-change", { detail: { key, who, value } }),
       );
     } catch {}
-  }, [key, who, value]);
+  }, [key, who, value, hydrated]);
 
   return [value, setValue];
 }
