@@ -3109,7 +3109,7 @@ function RadonStuaTile() {
             className="absolute inset-0 rounded-full"
             style={{
               background: `radial-gradient(circle, ${lvl.color}66 0%, transparent 70%)`,
-              animation: "radonCorePulse 3.2s ease-in-out infinite",
+              animation: `radonCorePulse ${pulseDur.toFixed(2)}s ease-in-out infinite`,
             }}
           />
           <div className="absolute" style={{ left: 18, top: 18, width: 64, height: 64 }}>
