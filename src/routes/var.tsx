@@ -566,12 +566,16 @@ function RotatingForecastCard({ hours, soundEnabled }: { hours: Hour[] | null; s
 
   const nextHours = hours.slice(0, rangeHours);
   const maxRain = Math.max(1, ...nextHours.map((h) => h.precip));
+  const rawMaxRain = Math.max(0, ...nextHours.map((h) => h.precip));
+  const totalRain = nextHours.reduce((s, h) => s + Math.max(0, h.precip), 0);
+  // Sparse when dry (totalRain < 0.1mm), escalating up to heavy rain (~6mm peak or 20mm total)
+  const rainIntensity = Math.min(1, Math.max(rawMaxRain / 6, totalRain / 20));
   const maxWind = Math.max(8, ...nextHours.map((h) => Math.max(h.wind, h.windGust)));
   const maxThunder = Math.max(0, ...nextHours.map((h) => h.thunder));
   const avgCloud = nextHours.reduce((s, h) => s + (h.cloud ?? 0), 0) / Math.max(1, nextHours.length);
 
   const fx =
-    panel === "nedbor" ? <RainFX intensity={Math.min(1, maxRain / 4)} /> :
+    panel === "nedbor" ? <RainFX intensity={rainIntensity} /> :
     panel === "vaer" ? <CloudFX intensity={0.4} /> :
     panel === "skydekke" ? <CloudCoverFX intensity={Math.min(1, avgCloud / 100)} /> :
     panel === "vind" ? <WindFX intensity={Math.min(1, maxWind / 14)} /> :
