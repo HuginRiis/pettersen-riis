@@ -565,6 +565,16 @@ main .container {
 .tile-bg-2 { background-color: rgba(71, 85, 105, calc(var(--tile-opacity, 1) * 0.8)); }
 .tile-bg-3 { background-color: rgba(30, 41, 59, calc(var(--tile-opacity, 1) * 0.9)); }
 
+/* Skaler backdrop-blur og skygge med tile-opacity slik at stjerner, regn,
+   skyer og andre bakgrunnsanimasjoner faktisk synes igjennom flisene når
+   brukeren skrur ned gjennomsiktigheten. */
+.tile-bg-0, .tile-bg-1, .tile-bg-2, .tile-bg-3 {
+  backdrop-filter: blur(calc(var(--tile-opacity, 1) * 24px)) !important;
+  -webkit-backdrop-filter: blur(calc(var(--tile-opacity, 1) * 24px)) !important;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, calc(var(--tile-opacity, 1) * 0.1)),
+              0 4px 6px -4px rgba(0, 0, 0, calc(var(--tile-opacity, 1) * 0.1)) !important;
+}
+
 
 /* Smart dashbord – bold-toggle som overstyrer alle font-weight-klasser i griden */
 .smart-bold-all,
