@@ -1307,14 +1307,36 @@ function DailyRainRow({ day, hours, index }: { day: ForecastDay; hours: Hour[]; 
 function DailyWindRow({ day, hours, index, globalMaxG }: { day: ForecastDay; hours: Hour[]; index: number; globalMaxG: number }) {
   const label = index === 0 ? "I dag" : weekdayShort(day.date);
   const dayHours = hours.filter((h) => h.time.slice(0, 10) === day.date);
-  // Bygg 24 timesverdier (0..23). Mangler vi noen, fyll med null og hopp over i grafen.
-  const samples = Array.from({ length: 24 }, (_, hh) => {
+
+  // Bygg 24 timesverdier (0..23). Fyll manglende timer med nærmeste verdi så grafen
+  // strekker seg over hele døgnet (00–24), ikke bare der API-en har data.
+  const samples: ({ hh: number; wind: number; gust: number } | null)[] = Array.from({ length: 24 }, (_, hh) => {
     const h = dayHours.find((x) => parseInt(x.time.slice(11, 13)) === hh);
     return h ? { hh, wind: h.wind || 0, gust: h.windGust || h.wind || 0 } : null;
   });
-  const valid = samples.filter((s): s is { hh: number; wind: number; gust: number } => s !== null);
-  const maxWind = valid.reduce((m, s) => Math.max(m, s.wind), 0);
-  const maxGust = valid.reduce((m, s) => Math.max(m, s.gust), 0);
+  // Fyll hull fra venstre med første gyldige verdi, fra høyre med siste gyldige verdi.
+  let firstVal: { wind: number; gust: number } | null = null;
+  for (let i = 0; i < 24; i++) {
+    if (samples[i]) {
+      firstVal = samples[i]!;
+      break;
+    }
+  }
+  let lastVal: { wind: number; gust: number } | null = null;
+  for (let i = 23; i >= 0; i--) {
+    if (samples[i]) {
+      lastVal = samples[i]!;
+      break;
+    }
+  }
+  const filled = samples.map((s, hh) => {
+    if (s) return s;
+    const val = hh < 12 ? firstVal : lastVal;
+    return val ? { hh, wind: val.wind, gust: val.gust } : { hh, wind: 0, gust: 0 };
+  });
+
+  const maxWind = filled.reduce((m, s) => Math.max(m, s.wind), 0);
+  const maxGust = filled.reduce((m, s) => Math.max(m, s.gust), 0);
 
   const W = 220;
   const H = 36;
@@ -1338,8 +1360,8 @@ function DailyWindRow({ day, hours, index, globalMaxG }: { day: ForecastDay; hou
     return d;
   };
 
-  const gustPts = valid.map((s) => ({ hh: s.hh, v: s.gust }));
-  const windPts = valid.map((s) => ({ hh: s.hh, v: s.wind }));
+  const gustPts = filled.map((s) => ({ hh: s.hh, v: s.gust }));
+  const windPts = filled.map((s) => ({ hh: s.hh, v: s.wind }));
 
   return (
     <div className="grid grid-cols-[56px_42px_1fr_88px] items-center gap-3 py-2.5">
@@ -1347,10 +1369,12 @@ function DailyWindRow({ day, hours, index, globalMaxG }: { day: ForecastDay; hou
       <DailyLeafFX wind={maxWind} seed={index} />
       <div className="relative h-9">
         <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="w-full h-full overflow-visible">
-          {/* Natt-bånd: 00-06 og 22-24 */}
-          <rect x={0} y={0} width={x(6)} height={H} fill="rgba(255,255,255,0.10)" />
-          <rect x={x(22)} y={0} width={W - x(22)} height={H} fill="rgba(255,255,255,0.10)" />
-          {valid.length >= 2 && (
+          {/* Dag-bånd: 06–22 — lys grå */}
+          <rect x={x(6)} y={0} width={x(22) - x(6)} height={H} fill="rgba(255,255,255,0.22)" />
+          {/* Natt-bånd: 00–06 og 22–24 — mørkere grå */}
+          <rect x={0} y={0} width={x(6)} height={H} fill="rgba(0,0,0,0.28)" />
+          <rect x={x(22)} y={0} width={W - x(22)} height={H} fill="rgba(0,0,0,0.28)" />
+          {filled.length >= 2 && (
             <>
               <path d={toPath(gustPts, true)} fill="rgba(167,243,208,0.30)" />
               <path d={toPath(gustPts, false)} fill="none" stroke="#a7f3d0" strokeWidth="1.2" />
