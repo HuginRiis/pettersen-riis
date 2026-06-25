@@ -570,12 +570,18 @@ function RotatingForecastCard({ hours, soundEnabled }: { hours: Hour[] | null; s
   const maxThunder = Math.max(0, ...nextHours.map((h) => h.thunder));
   const avgCloud = nextHours.reduce((s, h) => s + (h.cloud ?? 0), 0) / Math.max(1, nextHours.length);
 
-  const fx =
-    panel === "nedbor" ? <RainFX intensity={Math.min(1, maxRain / 4)} /> :
-    panel === "vaer" ? <CloudFX intensity={0.4} /> :
-    panel === "skydekke" ? <CloudCoverFX intensity={Math.min(1, avgCloud / 100)} /> :
-    panel === "vind" ? <WindFX intensity={Math.min(1, maxWind / 14)} /> :
-    <ThunderFX intensity={Math.min(1, Math.max(0.3, maxThunder / 60))} />;
+  // Regn over hele flisen alltid — tettere når mer regn er meldt,
+  // men en liten yr selv ved opphold.
+  const rainIntensity = Math.max(0.12, Math.min(1, maxRain / 4));
+  const fx = (
+    <>
+      <RainFX intensity={rainIntensity} />
+      {panel === "vaer" && <CloudFX intensity={0.4} />}
+      {panel === "skydekke" && <CloudCoverFX intensity={Math.min(1, avgCloud / 100)} />}
+      {panel === "vind" && <WindFX intensity={Math.min(1, maxWind / 14)} />}
+      {panel === "lyn" && <ThunderFX intensity={Math.min(1, Math.max(0.3, maxThunder / 60))} />}
+    </>
+  );
 
   const active = panels.find((p) => p.key === panel)!;
 
