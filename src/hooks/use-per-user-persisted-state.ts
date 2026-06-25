@@ -27,7 +27,7 @@ export function usePerUserPersistedState<T>(
     hydrated.current = true;
   }, [key]);
 
-  // Lytt etter who-endring (fra setStoredWho i andre faner)
+  // Lytt etter who-endring (fra setStoredWho i andre faner) og in-tab endringer
   useEffect(() => {
     const onStorage = (e: StorageEvent) => {
       if (e.key === "agenda_push_who") {
@@ -41,16 +41,30 @@ export function usePerUserPersistedState<T>(
         }
       }
     };
+    const onLocal = (e: Event) => {
+      const ce = e as CustomEvent<{ key: string; who: string; value: unknown }>;
+      if (!ce.detail) return;
+      if (ce.detail.key === key && ce.detail.who === who) {
+        setValue(ce.detail.value as T);
+      }
+    };
     window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
+    window.addEventListener("per-user-persisted-change", onLocal as EventListener);
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener("per-user-persisted-change", onLocal as EventListener);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key]);
+  }, [key, who]);
 
   // Skriv tilbake
   useEffect(() => {
     if (!hydrated.current) return;
     try {
       localStorage.setItem(`${key}::${who}`, JSON.stringify(value));
+      window.dispatchEvent(
+        new CustomEvent("per-user-persisted-change", { detail: { key, who, value } }),
+      );
     } catch {}
   }, [key, who, value]);
 
