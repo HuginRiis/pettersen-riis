@@ -1168,18 +1168,35 @@ function AnimatedWeatherIcon({ symbol, size = 36 }: { symbol: string | null; siz
   );
 }
 
+function DailyRollInStyles() {
+  return (
+    <style>{`
+      @keyframes wx-roll-in {
+        0% { opacity: 0; transform: translateX(-24px); }
+        60% { opacity: 1; }
+        100% { opacity: 1; transform: translateX(0); }
+      }
+      .wx-roll-in { animation: wx-roll-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) both; }
+    `}</style>
+  );
+}
+
 function DailyListCard({ days, hours, title }: { days: ForecastDay[] | null; hours?: Hour[] | null; title: string }) {
   const [panel] = usePerUserPersistedState<PanelKey>("var:rotating:panel", "nedbor");
   if (!days) return <GlassCard eyebrow={title} icon={<TrendingUp size={14} />}><Skeleton /></GlassCard>;
   const list = days.slice(0, 10);
 
+
   // Nedbør-modus: bytt ut radene med 12 to-timers barer per dag
   if (panel === "nedbor" && hours && hours.length > 0) {
     return (
       <GlassCard eyebrow={title} icon={<Droplets size={14} />}>
+        <DailyRollInStyles />
         <div className="divide-y divide-white/10">
           {list.map((d, i) => (
-            <DailyRainRow key={d.date} day={d} hours={hours} index={i} />
+            <div key={d.date} className="wx-roll-in" style={{ animationDelay: `${i * 70}ms` }}>
+              <DailyRainRow day={d} hours={hours} index={i} />
+            </div>
           ))}
         </div>
       </GlassCard>
@@ -1198,9 +1215,12 @@ function DailyListCard({ days, hours, title }: { days: ForecastDay[] | null; hou
     );
     return (
       <GlassCard eyebrow={title} icon={<Wind size={14} />}>
+        <DailyRollInStyles />
         <div className="divide-y divide-white/10">
           {list.map((d, i) => (
-            <DailyWindRow key={d.date} day={d} hours={hours} index={i} globalMaxG={globalMaxG} />
+            <div key={d.date} className="wx-roll-in" style={{ animationDelay: `${i * 70}ms` }}>
+              <DailyWindRow day={d} hours={hours} index={i} globalMaxG={globalMaxG} />
+            </div>
           ))}
         </div>
       </GlassCard>
@@ -1218,13 +1238,15 @@ function DailyListCard({ days, hours, title }: { days: ForecastDay[] | null; hou
   return (
     <GlassCard eyebrow={title} icon={<TrendingUp size={14} />}>
       <AnimatedWeatherIconStyles />
+      <DailyRollInStyles />
+
       <div className="divide-y divide-white/10">
         {list.map((d, i) => {
           const startPct = ((d.tempMin - globalMin) / range) * 100;
           const widthPct = ((d.tempMax - d.tempMin) / range) * 100;
           const label = i === 0 ? "I dag" : weekdayShort(d.date);
           return (
-            <div key={d.date} className="grid grid-cols-[60px_42px_40px_56px_1fr_44px] items-center gap-3 py-2.5">
+            <div key={d.date} className="grid grid-cols-[60px_42px_40px_56px_1fr_44px] items-center gap-3 py-2.5 wx-roll-in" style={{ animationDelay: `${i * 70}ms` }}>
               <div className="text-[15px] capitalize">{label}</div>
               <DailyLeafFX wind={d.windMax} seed={i} />
               <div className="flex items-center justify-center"><AnimatedWeatherIcon symbol={d.symbol} size={34} /></div>
