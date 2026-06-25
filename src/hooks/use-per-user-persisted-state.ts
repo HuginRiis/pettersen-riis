@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { getStoredWho } from "@/lib/push-client";
 
 /**
@@ -14,7 +14,7 @@ export function usePerUserPersistedState<T>(
 ): [T, React.Dispatch<React.SetStateAction<T>>] {
   const [who, setWho] = useState<string>("Alle");
   const [value, setValue] = useState<T>(initial);
-  const hydrated = useRef(false);
+  const [hydrated, setHydrated] = useState(false);
 
   // Hydrer fra localStorage (bruker who fra push-client)
   useEffect(() => {
@@ -24,7 +24,7 @@ export function usePerUserPersistedState<T>(
       const raw = localStorage.getItem(`${key}::${currentWho}`);
       if (raw !== null) setValue(JSON.parse(raw) as T);
     } catch {}
-    hydrated.current = true;
+    setHydrated(true);
   }, [key]);
 
   // Lytt etter who-endring (fra setStoredWho i andre faner) og in-tab endringer
@@ -59,14 +59,14 @@ export function usePerUserPersistedState<T>(
 
   // Skriv tilbake
   useEffect(() => {
-    if (!hydrated.current) return;
+    if (!hydrated) return;
     try {
       localStorage.setItem(`${key}::${who}`, JSON.stringify(value));
       window.dispatchEvent(
         new CustomEvent("per-user-persisted-change", { detail: { key, who, value } }),
       );
     } catch {}
-  }, [key, who, value]);
+  }, [key, who, value, hydrated]);
 
   return [value, setValue];
 }
