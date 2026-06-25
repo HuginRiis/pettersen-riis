@@ -3177,7 +3177,7 @@ function RadonStuaTile() {
                   background: lvl.color,
                   filter: "blur(.5px)",
                   opacity: 0.35,
-                  animation: `radonFloat ${dur}s ease-in ${delay}s infinite`,
+                  animation: `radonFloat ${dur.toFixed(2)}s ease-in ${delay}s infinite`,
                 }}
               />
             );
