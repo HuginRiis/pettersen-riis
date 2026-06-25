@@ -10,7 +10,7 @@ import { useUserLocation, UserLocationBar } from "@/hooks/use-user-location";
 import { useUvSun, uvLevel } from "@/hooks/use-uv-sun";
 import { usePerUserPersistedState } from "@/hooks/use-per-user-persisted-state";
 import {
-  RainFX, SnowFX, CloudFX, WindFX, HeatwaveFX, FireFX, HumidityFX, PressureFX, GustFX, SunFX, StarFX, MoonFX, ThunderFX,
+  RainFX, SnowFX, CloudFX, WindFX, HeatwaveFX, HumidityFX, PressureFX, GustFX, SunFX, StarFX, MoonFX, ThunderFX,
   GlassPaneFX, glassKindFromSymbol, type GlassKind, TileSplashFX, InsideRainFX, CloudCoverFX,
 } from "@/components/weather/WeatherFX";
 import { SpaceWeatherCard } from "@/components/weather/SpaceWeatherCard";
@@ -2232,7 +2232,7 @@ function alertFxFor(alert: MetAlert): React.ReactNode {
   const k = `${alert.event} ${alert.title}`.toLowerCase();
   const has = (...needles: string[]) => needles.some((n) => k.includes(n));
   if (has("thunder", "torden", "lyn", "lightning")) return <ThunderFX intensity={0.9} />;
-  if (has("forest", "skogbrann", "wildfire", "brann")) return <FireFX intensity={0.9} />;
+  if (has("forest", "skogbrann", "wildfire", "brann")) return <HeatwaveFX intensity={0.9} />;
   if (has("drought", "tørke")) return <HeatwaveFX intensity={0.7} />;
   if (has("rain", "regn", "flood", "flom")) return <RainFX intensity={0.85} />;
   if (has("snow", "snø", "blowing")) return <SnowFX intensity={0.85} />;
