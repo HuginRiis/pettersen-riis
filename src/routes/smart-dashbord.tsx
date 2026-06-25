@@ -3162,7 +3162,7 @@ function RadonStuaTile() {
           {Array.from({ length: 6 }).map((_, i) => {
             const left = 10 + ((i * 17) % 80);
             const delay = (i * 0.6) % 4;
-            const dur = 3.5 + ((i * 0.7) % 3);
+            const dur = floatDur * (0.85 + ((i * 0.11) % 0.4));
             const size = 3 + (i % 2);
             return (
               <div
