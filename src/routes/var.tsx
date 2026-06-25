@@ -1168,10 +1168,24 @@ function AnimatedWeatherIcon({ symbol, size = 36 }: { symbol: string | null; siz
   );
 }
 
+function DailyRollInStyles() {
+  return (
+    <style>{`
+      @keyframes wx-roll-in {
+        0% { opacity: 0; transform: translateX(-24px); }
+        60% { opacity: 1; }
+        100% { opacity: 1; transform: translateX(0); }
+      }
+      .wx-roll-in { animation: wx-roll-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) both; }
+    `}</style>
+  );
+}
+
 function DailyListCard({ days, hours, title }: { days: ForecastDay[] | null; hours?: Hour[] | null; title: string }) {
   const [panel] = usePerUserPersistedState<PanelKey>("var:rotating:panel", "nedbor");
   if (!days) return <GlassCard eyebrow={title} icon={<TrendingUp size={14} />}><Skeleton /></GlassCard>;
   const list = days.slice(0, 10);
+
 
   // Nedbør-modus: bytt ut radene med 12 to-timers barer per dag
   if (panel === "nedbor" && hours && hours.length > 0) {
