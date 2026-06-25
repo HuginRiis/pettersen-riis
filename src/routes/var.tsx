@@ -2419,10 +2419,9 @@ function WindyMap() {
   const [overlay, setOverlay] = useState("wind");
   const src = useMemo(() => {
     const params = new URLSearchParams({
-      lat: "59.6", lon: "9.2", detailLat: "59.21", detailLon: "9.61", zoom: "8",
-      level: "surface", overlay, product: "ecmwf", menu: "", message: "true",
-      marker: "", calendar: "now", pressure: "", type: "map", location: "coordinates",
-      detail: "true", metricWind: "m/s", metricTemp: "°C", radarRange: "-1",
+      lat: "59.6", lon: "9.2", zoom: "8",
+      level: "surface", overlay, product: "ecmwf", menu: "", message: "", marker: "", calendar: "now", pressure: "", type: "map", location: "coordinates",
+      metricWind: "m/s", metricTemp: "°C", radarRange: "-1",
     });
     return `https://embed.windy.com/embed2.html?${params.toString()}`;
   }, [overlay]);
@@ -2440,7 +2439,7 @@ function WindyMap() {
           );
         })}
       </div>
-      <div className="relative w-full overflow-hidden rounded-xl" style={{ aspectRatio: "16 / 11" }}>
+      <div className="relative w-full overflow-hidden rounded-xl" style={{ aspectRatio: "4 / 3" }}>
         <iframe key={overlay} title={`Windy — ${overlay}`} src={src} className="absolute inset-0 w-full h-full border-0" loading="lazy" referrerPolicy="no-referrer" allow="fullscreen" />
       </div>
     </div>
