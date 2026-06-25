@@ -417,7 +417,7 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
 
 
           {/* 10-DAGERS PROGNOSE */}
-          <DailyListCard days={skienDays} title="10-dagers prognose" />
+          <DailyListCard days={skienDays} hours={skienHours} title="10-dagers prognose" />
 
           {/* VIND DETALJ */}
           <WindDetailCard hour={currentHour} />
@@ -485,7 +485,7 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
           </GlassCard>
 
           {/* HYTTA prognose */}
-          <DailyListCard days={hyttaDays} title="Hytta · Numedal · 10 dager" />
+          <DailyListCard days={hyttaDays} hours={hyttaHours} title="Hytta · Numedal · 10 dager" />
 
           {/* WINDY KART */}
           <CollapsibleMap />
@@ -1168,9 +1168,24 @@ function AnimatedWeatherIcon({ symbol, size = 36 }: { symbol: string | null; siz
   );
 }
 
-function DailyListCard({ days, title }: { days: ForecastDay[] | null; title: string }) {
+function DailyListCard({ days, hours, title }: { days: ForecastDay[] | null; hours?: Hour[] | null; title: string }) {
+  const [panel] = usePerUserPersistedState<PanelKey>("var:rotating:panel", "nedbor");
   if (!days) return <GlassCard eyebrow={title} icon={<TrendingUp size={14} />}><Skeleton /></GlassCard>;
   const list = days.slice(0, 10);
+
+  // Nedbør-modus: bytt ut radene med 12 to-timers barer per dag
+  if (panel === "nedbor" && hours && hours.length > 0) {
+    return (
+      <GlassCard eyebrow={title} icon={<Droplets size={14} />}>
+        <div className="divide-y divide-white/10">
+          {list.map((d, i) => (
+            <DailyRainRow key={d.date} day={d} hours={hours} index={i} />
+          ))}
+        </div>
+      </GlassCard>
+    );
+  }
+
   const allMins = list.map((d) => d.tempMin);
   const allMaxs = list.map((d) => d.tempMax);
   const globalMin = Math.min(...allMins);
@@ -1208,6 +1223,61 @@ function DailyListCard({ days, title }: { days: ForecastDay[] | null; title: str
         })}
       </div>
     </GlassCard>
+  );
+}
+
+function DailyRainRow({ day, hours, index }: { day: ForecastDay; hours: Hour[]; index: number }) {
+  const label = index === 0 ? "I dag" : weekdayShort(day.date);
+  // 12 buckets × 2 timer = 24 timer (00-02, 02-04, ..., 22-24)
+  const buckets = Array.from({ length: 12 }, (_, b) => {
+    const startHour = b * 2;
+    const slot = hours.filter((h) => {
+      if (h.time.slice(0, 10) !== day.date) return false;
+      const hh = parseInt(h.time.slice(11, 13));
+      return hh >= startHour && hh < startHour + 2;
+    });
+    // Natt = 22-06
+    const isNight = startHour < 6 || startHour >= 22;
+    const precip = slot.reduce((s, h) => s + (h.precip || 0), 0);
+    const prob = slot.reduce((m, h) => Math.max(m, h.precipProbability || 0), 0);
+    return { startHour, isNight, precip, prob };
+  });
+  const hasAnyHours = buckets.some((b) => b.precip > 0 || b.prob > 0);
+  return (
+    <div className="grid grid-cols-[56px_1fr_64px_56px] items-center gap-3 py-2.5">
+      <div className="text-[15px] capitalize">{label}</div>
+      <div className="flex items-end gap-[3px] h-7">
+        {buckets.map((b, i) => {
+          const rainFill = b.precip > 0 ? Math.max(20, Math.min(100, b.precip * 60)) : 0;
+          const baseBg = b.isNight ? "rgba(255,255,255,0.18)" : "rgba(255,255,255,0.35)";
+          return (
+            <div
+              key={i}
+              className="relative flex-1 h-full rounded-[2px] overflow-hidden"
+              style={{ background: baseBg }}
+              title={`${String(b.startHour).padStart(2, "0")}–${String(b.startHour + 2).padStart(2, "0")} · ${b.precip.toFixed(1)} mm · ${Math.round(b.prob)}%`}
+            >
+              {rainFill > 0 && (
+                <div
+                  className="absolute bottom-0 left-0 right-0 bg-sky-400"
+                  style={{ height: `${rainFill}%` }}
+                />
+              )}
+            </div>
+          );
+        })}
+      </div>
+      <div className="text-[13px] tabular-nums text-right text-white/90">
+        {hasAnyHours ? `${day.precip.toFixed(day.precip >= 10 ? 0 : 1)} mm` : <span className="text-white/40">0 mm</span>}
+      </div>
+      <div className="text-[13px] tabular-nums text-right">
+        {day.precipProbability >= 20 ? (
+          <span className="text-sky-300">💧 {Math.round(day.precipProbability)} %</span>
+        ) : (
+          <span className="text-white/40">{Math.round(day.precipProbability)} %</span>
+        )}
+      </div>
+    </div>
   );
 }
 
