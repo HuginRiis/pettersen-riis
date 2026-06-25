@@ -53,25 +53,29 @@ export function InsideRainFX({ intensity = 0.5, className = "" }: Common) {
 
 /* ---------------- RAIN ---------------- */
 export function RainFX({ intensity = 0.5, className = "" }: Common) {
-  const count = Math.max(6, Math.round(8 + intensity * 22));
+  const clamped = Math.max(0, Math.min(1, intensity));
+  // Sparse when dry, heavy when wet (3 → ~36 drops)
+  const count = Math.max(3, Math.round(3 + clamped * 33));
   const drops = useMemo(
     () =>
       Array.from({ length: count }).map((_, i) => ({
         left: (i / count) * 100 + (Math.random() * 6 - 3),
-        delay: Math.random() * 1.6,
-        dur: 0.9 + Math.random() * 0.9,
+        delay: Math.random() * 1.8,
+        // Faster fall when more intense
+        dur: 1.6 - clamped * 0.7 + Math.random() * 0.6,
         h: 8 + Math.random() * 10,
-        op: 0.45 + Math.random() * 0.45,
+        op: 0.35 + clamped * 0.35 + Math.random() * 0.25,
       })),
-    [count],
+    [count, clamped],
   );
   return (
     <div className={`${wrap} ${className}`} aria-hidden>
       {drops.map((d, i) => (
         <span
           key={i}
-          className="absolute top-0 animate-wx-rain"
+          className="absolute animate-wx-rain"
           style={{
+            top: 0,
             left: `${d.left}%`,
             width: 1.2,
             height: d.h,
