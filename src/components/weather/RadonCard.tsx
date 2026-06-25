@@ -283,7 +283,7 @@ function Sparkline({ data, color, xFmt }: { data: { t: string; v: number }[]; co
 function DeviceTile({ dev, fetchedAt }: { dev: RadonDevice; fetchedAt: string | null }) {
   const [view, setView] = useState<"now" | "stats" | "h48" | "chart" | "scale">("now");
   const level = radonLevel(dev.current);
-  const intensity = Math.min(1, (dev.current ?? 0) / 300);
+  const smoothColor = radonColor(dev.current);
   const fmt = (v: number | null | undefined) =>
     v == null || !Number.isFinite(v) ? "—" : Math.round(v).toString();
   const fmtTime = (iso: string | null) =>
@@ -305,7 +305,7 @@ function DeviceTile({ dev, fetchedAt }: { dev: RadonDevice; fetchedAt: string | 
       className="relative w-full text-left rounded-xl border border-white/10 bg-black/25 overflow-hidden transition-colors hover:bg-black/35"
       style={{ minHeight: 180 }}
     >
-      <RadonAtomFX color={level.color} intensity={intensity} />
+      <RadonAtomFX color={smoothColor} value={dev.current} />
       <div className="relative p-3 flex flex-col gap-2 h-full">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5">
