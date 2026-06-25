@@ -309,14 +309,14 @@ function DeviceTile({ dev, fetchedAt }: { dev: RadonDevice; fetchedAt: string | 
       <div className="relative p-3 flex flex-col gap-2 h-full">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5">
-            <Atom size={14} style={{ color: level.color }} />
+            <Atom size={14} style={{ color: smoothColor }} />
             <span className="text-[11px] uppercase tracking-wider text-white/70">
               {dev.zone ?? dev.name}
             </span>
           </div>
           <span
             className="text-[10px] px-1.5 py-0.5 rounded-full"
-            style={{ background: level.color + "22", color: level.color, border: `1px solid ${level.color}66` }}
+            style={{ background: smoothColor + "22", color: smoothColor, border: `1px solid ${smoothColor}66` }}
           >
             {level.label}
           </span>
@@ -325,7 +325,7 @@ function DeviceTile({ dev, fetchedAt }: { dev: RadonDevice; fetchedAt: string | 
         {view === "now" && (
           <div className="flex-1 flex flex-col justify-end">
             <div className="flex items-baseline gap-1">
-              <span className="text-4xl font-light text-white tabular-nums" style={{ color: level.color }}>
+              <span className="text-4xl font-light tabular-nums" style={{ color: smoothColor }}>
                 {fmt(dev.current)}
               </span>
               <span className="text-xs text-white/60">Bq/m³</span>
