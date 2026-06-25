@@ -1186,6 +1186,29 @@ function DailyListCard({ days, hours, title }: { days: ForecastDay[] | null; hou
     );
   }
 
+  // Vind-modus: graf med vind + vindkast per dag
+  if (panel === "vind" && hours && hours.length > 0) {
+    const globalMaxG = Math.max(
+      4,
+      ...list.map((d) =>
+        hours
+          .filter((h) => h.time.slice(0, 10) === d.date)
+          .reduce((m, h) => Math.max(m, h.windGust || h.wind || 0), 0),
+      ),
+    );
+    return (
+      <GlassCard eyebrow={title} icon={<Wind size={14} />}>
+        <div className="divide-y divide-white/10">
+          {list.map((d, i) => (
+            <DailyWindRow key={d.date} day={d} hours={hours} index={i} globalMaxG={globalMaxG} />
+          ))}
+        </div>
+      </GlassCard>
+    );
+  }
+
+
+
   const allMins = list.map((d) => d.tempMin);
   const allMaxs = list.map((d) => d.tempMax);
   const globalMin = Math.min(...allMins);
@@ -1280,6 +1303,69 @@ function DailyRainRow({ day, hours, index }: { day: ForecastDay; hours: Hour[]; 
     </div>
   );
 }
+
+function DailyWindRow({ day, hours, index, globalMaxG }: { day: ForecastDay; hours: Hour[]; index: number; globalMaxG: number }) {
+  const label = index === 0 ? "I dag" : weekdayShort(day.date);
+  const dayHours = hours.filter((h) => h.time.slice(0, 10) === day.date);
+  // Bygg 24 timesverdier (0..23). Mangler vi noen, fyll med null og hopp over i grafen.
+  const samples = Array.from({ length: 24 }, (_, hh) => {
+    const h = dayHours.find((x) => parseInt(x.time.slice(11, 13)) === hh);
+    return h ? { hh, wind: h.wind || 0, gust: h.windGust || h.wind || 0 } : null;
+  });
+  const valid = samples.filter((s): s is { hh: number; wind: number; gust: number } => s !== null);
+  const maxWind = valid.reduce((m, s) => Math.max(m, s.wind), 0);
+  const maxGust = valid.reduce((m, s) => Math.max(m, s.gust), 0);
+
+  const W = 220;
+  const H = 36;
+  const maxY = Math.max(4, globalMaxG);
+  const x = (hh: number) => (hh / 23) * W;
+  const y = (v: number) => H - (v / maxY) * (H - 4) - 2;
+
+  const toPath = (pts: { hh: number; v: number }[], close: boolean) => {
+    if (pts.length === 0) return "";
+    let d = `M ${x(pts[0].hh).toFixed(1)} ${y(pts[0].v).toFixed(1)}`;
+    for (let i = 1; i < pts.length; i++) {
+      const p0 = pts[i - 1];
+      const p1 = pts[i];
+      const mx = (x(p0.hh) + x(p1.hh)) / 2;
+      d += ` Q ${x(p0.hh).toFixed(1)} ${y(p0.v).toFixed(1)} ${mx.toFixed(1)} ${((y(p0.v) + y(p1.v)) / 2).toFixed(1)}`;
+      d += ` T ${x(p1.hh).toFixed(1)} ${y(p1.v).toFixed(1)}`;
+    }
+    if (close) {
+      d += ` L ${x(pts[pts.length - 1].hh).toFixed(1)} ${H} L ${x(pts[0].hh).toFixed(1)} ${H} Z`;
+    }
+    return d;
+  };
+
+  const gustPts = valid.map((s) => ({ hh: s.hh, v: s.gust }));
+  const windPts = valid.map((s) => ({ hh: s.hh, v: s.wind }));
+
+  return (
+    <div className="grid grid-cols-[56px_42px_1fr_88px] items-center gap-3 py-2.5">
+      <div className="text-[15px] capitalize">{label}</div>
+      <DailyLeafFX wind={maxWind} seed={index} />
+      <div className="relative h-9">
+        <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="w-full h-full overflow-visible">
+          {/* Natt-bånd: 00-06 og 22-24 */}
+          <rect x={0} y={0} width={x(6)} height={H} fill="rgba(255,255,255,0.10)" />
+          <rect x={x(22)} y={0} width={W - x(22)} height={H} fill="rgba(255,255,255,0.10)" />
+          {valid.length >= 2 && (
+            <>
+              <path d={toPath(gustPts, true)} fill="rgba(167,243,208,0.30)" />
+              <path d={toPath(gustPts, false)} fill="none" stroke="#a7f3d0" strokeWidth="1.2" />
+              <path d={toPath(windPts, false)} fill="none" stroke="#2dd4bf" strokeWidth="1.6" />
+            </>
+          )}
+        </svg>
+      </div>
+      <div className="text-[13px] tabular-nums text-right text-white/90">
+        {Math.round(maxWind)} <span className="text-white/60">({Math.round(maxGust)})</span> <span className="text-white/60 text-[11px]">m/s</span>
+      </div>
+    </div>
+  );
+}
+
 
 function DailyLeafFX({ wind, seed }: { wind: number; seed: number }) {
   // Leaf count = floor(wind m/s). 0.9 → 0, 8.5 → 8 osv. Cap på 15.
