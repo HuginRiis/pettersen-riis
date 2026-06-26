@@ -891,7 +891,7 @@ function HundeTile({
       accent="text-sky-300"
       action={
         device ? (
-          <Switch checked={isOn} disabled={busy} onCheckedChange={toggle} onClick={(e) => e.stopPropagation()} />
+          <Switch checked={isOn === true} disabled={busy} onCheckedChange={toggle} onClick={(e) => e.stopPropagation()} />
         ) : (
           <span className="text-[10px] text-white/30">ingen enhet</span>
         )
