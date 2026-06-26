@@ -236,25 +236,29 @@ function Sparkline({ data, color, xFmt, showAverage }: { data: { t: string; v: n
     }
   }
 
-  const ticks = [200, 100];
+  const thresholds = [
+    { value: 100, color: "#fbbf24", label: "100" },
+    { value: 200, color: "#fb923c", label: "200" },
+  ];
   return (
     <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-24">
-      {ticks.map((tv) => {
-        if (tv < min || tv > max) return null;
-        const y = padT + innerH - ((tv - min) / span) * innerH;
+      {thresholds.map((t) => {
+        const rawY = padT + innerH - ((t.value - min) / span) * innerH;
+        const y = Math.max(padT, Math.min(padT + innerH, rawY));
         return (
-          <g key={tv}>
+          <g key={t.value}>
             <line
               x1={padL}
               x2={w - padR}
               y1={y}
               y2={y}
-              stroke={tv >= 200 ? "#fb923c55" : "#fbbf2455"}
+              stroke={t.color}
               strokeDasharray="3 3"
               strokeWidth={1}
+              opacity={0.8}
             />
-            <text x={4} y={y + 3} fontSize="9" fill="rgba(255,255,255,.5)">
-              {tv}
+            <text x={w - padR + 2} y={y + 3} fontSize="9" fill={t.color} textAnchor="start" opacity={0.85}>
+              {t.label}
             </text>
           </g>
         );
