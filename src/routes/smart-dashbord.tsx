@@ -4650,11 +4650,22 @@ export function SmartDashbord() {
   }, [devices, bassengSwitchId]);
 
   const hundeVannDevice = useMemo(() => {
+    const matches = devices.filter((d) => {
+      if (!d.capabilities?.onoff) return false;
+      const n = d.name.toLowerCase();
+      return (
+        n.includes("eycr-2300") ||
+        n.includes("eycr 2300") ||
+        n.includes("dyr-2300") ||
+        n.includes("dyr 2300") ||
+        (n.includes("vann") && n.includes("hund"))
+      );
+    });
     return (
-      devices.find((d) => {
-        const n = d.name.toLowerCase();
-        return n.includes("dyr-2300") || (n.includes("vann") && n.includes("hund"));
-      }) ?? null
+      matches.find((d) => d.name.toLowerCase().includes("eycr")) ??
+      matches.find((d) => d.name.toLowerCase().includes("2300")) ??
+      matches[0] ??
+      null
     );
   }, [devices]);
 
