@@ -2260,14 +2260,14 @@ function AlertCard({ alert }: { alert: MetAlert }) {
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
-        className="relative w-full flex items-start gap-3 text-left p-4 hover:bg-white/5 transition-colors"
+        className="relative w-full flex items-start gap-3 text-left p-3 hover:bg-white/5 transition-colors"
       >
-        <AlertTriangle size={20} style={{ color }} className="shrink-0 mt-0.5" />
+        <AlertTriangle size={18} style={{ color }} className="shrink-0 mt-0.5" />
         <div className="flex-1 min-w-0">
-          <div className="text-[11px] tracking-[0.2em] uppercase font-semibold" style={{ color }}>
+          <div className="text-[10px] tracking-[0.2em] uppercase font-semibold" style={{ color }}>
             {alert.awarenessColor} · {alert.severity}
           </div>
-          <div className="text-base font-medium mt-1">{alert.title}</div>
+          <div className="text-sm font-medium mt-1">{alert.title}</div>
         </div>
         <ChevronDown
           size={18}
@@ -2275,12 +2275,12 @@ function AlertCard({ alert }: { alert: MetAlert }) {
         />
       </button>
       {open && (
-        <div className="relative px-4 pb-4 pl-12 -mt-1">
+        <div className="relative px-3 pb-3 pl-10 -mt-1">
           {alert.description && (
-            <p className="text-[13px] text-white/85">{alert.description}</p>
+            <p className="text-[12px] text-white/85">{alert.description}</p>
           )}
           {alert.area && (
-            <div className="text-[11px] text-white/70 mt-2">{alert.area}</div>
+            <div className="text-[10px] text-white/70 mt-1">{alert.area}</div>
           )}
         </div>
       )}
