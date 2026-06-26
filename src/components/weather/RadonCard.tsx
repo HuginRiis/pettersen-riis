@@ -192,6 +192,10 @@ function RadonAtomFX({ color, value }: { color: string; value: number | null | u
 
 function Sparkline({ data, color, xFmt, showAverage }: { data: { t: string; v: number }[]; color: string; xFmt?: (iso: string) => string; showAverage?: boolean }) {
   const vals = data.map((d) => d.v).filter((v) => Number.isFinite(v));
+  const avg =
+    showAverage && vals.length > 0
+      ? vals.reduce((a, b) => a + b, 0) / vals.length
+      : null;
   if (vals.length === 0) {
     return (
       <div className="h-24 flex items-center justify-center text-xs text-white/40">
@@ -210,6 +214,7 @@ function Sparkline({ data, color, xFmt, showAverage }: { data: { t: string; v: n
   const padB = 18;
   const innerW = w - padL - padR;
   const innerH = h - padT - padB;
+  const avgY = avg != null ? padT + innerH - ((avg - min) / span) * innerH : null;
   const n = data.length;
   const xs = data.map((_, i) => padL + (n === 1 ? 0 : (i / (n - 1)) * innerW));
   const ys = data.map((d) =>
