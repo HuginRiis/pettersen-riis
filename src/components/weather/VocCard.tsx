@@ -49,10 +49,10 @@ function vocLevel(v: number | null | undefined): {
 function VocFX({ color, intensity, value }: { color: string; intensity: number; value: number | null | undefined }) {
   const waves = 3;
   const dots = 8 + Math.round(intensity * 10);
-  // Spin-fart: <100 → 20s (veldig sakte), >2000 → 1.2s (veldig fort)
+  // Spin-fart: <100 → 13s (sakte), >2000 → 1.2s (veldig fort)
   const v = value == null || !Number.isFinite(value) ? 0 : value;
   const clamped = Math.max(100, Math.min(2000, v));
-  const spinDur = 20 - ((clamped - 100) / 1900) * 18.8; // 20s → 1.2s
+  const spinDur = 13 - ((clamped - 100) / 1900) * 11.8; // 13s → 1.2s
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl">
       <style>{`
