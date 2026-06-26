@@ -263,8 +263,23 @@ function Sparkline({ data, color, xFmt, showAverage }: { data: { t: string; v: n
           </g>
         );
       })}
-      <path d={area} fill={`${color}22`} />
       <path d={path} fill="none" stroke={color} strokeWidth={1.8} strokeLinejoin="round" strokeLinecap="round" />
+      {avgY != null && avg != null && (
+        <g>
+          <line
+            x1={padL}
+            x2={w - padR}
+            y1={avgY}
+            y2={avgY}
+            stroke="rgba(255,255,255,0.55)"
+            strokeDasharray="4 2"
+            strokeWidth={1.5}
+          />
+          <text x={padL + 2} y={avgY - 4} fontSize="9" fill="rgba(255,255,255,0.75)">
+            Snitt {Math.round(avg)}
+          </text>
+        </g>
+      )}
       {xs.map((x, i) => {
         const y = ys[i];
         if (y == null) return null;
