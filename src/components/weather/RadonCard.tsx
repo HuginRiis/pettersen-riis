@@ -190,8 +190,12 @@ function RadonAtomFX({ color, value }: { color: string; value: number | null | u
   );
 }
 
-function Sparkline({ data, color, xFmt }: { data: { t: string; v: number }[]; color: string; xFmt?: (iso: string) => string }) {
+function Sparkline({ data, color, xFmt, showAverage }: { data: { t: string; v: number }[]; color: string; xFmt?: (iso: string) => string; showAverage?: boolean }) {
   const vals = data.map((d) => d.v).filter((v) => Number.isFinite(v));
+  const avg =
+    showAverage && vals.length > 0
+      ? vals.reduce((a, b) => a + b, 0) / vals.length
+      : null;
   if (vals.length === 0) {
     return (
       <div className="h-24 flex items-center justify-center text-xs text-white/40">
@@ -210,14 +214,14 @@ function Sparkline({ data, color, xFmt }: { data: { t: string; v: number }[]; co
   const padB = 18;
   const innerW = w - padL - padR;
   const innerH = h - padT - padB;
+  const avgY = avg != null ? padT + innerH - ((avg - min) / span) * innerH : null;
   const n = data.length;
   const xs = data.map((_, i) => padL + (n === 1 ? 0 : (i / (n - 1)) * innerW));
   const ys = data.map((d) =>
     Number.isFinite(d.v) ? padT + innerH - ((d.v - min) / span) * innerH : null,
   );
-  // Build path with gaps
+  // Build line path with gaps
   let path = "";
-  let area = "";
   let started = false;
   for (let i = 0; i < n; i++) {
     if (ys[i] == null) {
@@ -226,14 +230,11 @@ function Sparkline({ data, color, xFmt }: { data: { t: string; v: number }[]; co
     }
     if (!started) {
       path += `M ${xs[i]} ${ys[i]}`;
-      area += `M ${xs[i]} ${padT + innerH} L ${xs[i]} ${ys[i]}`;
       started = true;
     } else {
       path += ` L ${xs[i]} ${ys[i]}`;
-      area += ` L ${xs[i]} ${ys[i]}`;
     }
   }
-  if (started) area += ` L ${xs[xs.length - 1]} ${padT + innerH} Z`;
 
   const ticks = [200, 100];
   return (
@@ -258,8 +259,23 @@ function Sparkline({ data, color, xFmt }: { data: { t: string; v: number }[]; co
           </g>
         );
       })}
-      <path d={area} fill={`${color}22`} />
       <path d={path} fill="none" stroke={color} strokeWidth={1.8} strokeLinejoin="round" strokeLinecap="round" />
+      {avgY != null && avg != null && (
+        <g>
+          <line
+            x1={padL}
+            x2={w - padR}
+            y1={avgY}
+            y2={avgY}
+            stroke="rgba(255,255,255,0.55)"
+            strokeDasharray="4 2"
+            strokeWidth={1.5}
+          />
+          <text x={padL + 2} y={avgY - 4} fontSize="9" fill="rgba(255,255,255,0.75)">
+            Snitt {Math.round(avg)}
+          </text>
+        </g>
+      )}
       {xs.map((x, i) => {
         const y = ys[i];
         if (y == null) return null;
@@ -369,6 +385,7 @@ function DeviceTile({ dev, fetchedAt }: { dev: RadonDevice; fetchedAt: string | 
             <Sparkline
               data={dev.hourly48}
               color={level.color}
+              showAverage
               xFmt={(iso) => new Date(iso).toLocaleString("nb-NO", { hour: "2-digit", day: "numeric" })}
             />
           </div>
