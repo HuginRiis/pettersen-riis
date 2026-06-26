@@ -44,6 +44,7 @@ import { Route as ApiStravaStartRouteImport } from './routes/api.strava.start'
 import { Route as ApiStravaCallbackRouteImport } from './routes/api.strava.callback'
 import { Route as ApiHomeyStartRouteImport } from './routes/api.homey.start'
 import { Route as ApiHomeyCallbackRouteImport } from './routes/api.homey.callback'
+import { Route as ApiPublicHooksVocPollRouteImport } from './routes/api/public/hooks/voc-poll'
 import { Route as ApiPublicHooksStravaPollRouteImport } from './routes/api/public/hooks/strava-poll'
 import { Route as ApiPublicHooksSnapshotTibberDailyRouteImport } from './routes/api.public.hooks.snapshot-tibber-daily'
 import { Route as ApiPublicHooksSnapshotPulseRouteImport } from './routes/api.public.hooks.snapshot-pulse'
@@ -234,6 +235,11 @@ const ApiHomeyCallbackRoute = ApiHomeyCallbackRouteImport.update({
   path: '/api/homey/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksVocPollRoute = ApiPublicHooksVocPollRouteImport.update({
+  id: '/api/public/hooks/voc-poll',
+  path: '/api/public/hooks/voc-poll',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicHooksStravaPollRoute =
   ApiPublicHooksStravaPollRouteImport.update({
     id: '/api/public/hooks/strava-poll',
@@ -365,6 +371,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/snapshot-pulse': typeof ApiPublicHooksSnapshotPulseRoute
   '/api/public/hooks/snapshot-tibber-daily': typeof ApiPublicHooksSnapshotTibberDailyRoute
   '/api/public/hooks/strava-poll': typeof ApiPublicHooksStravaPollRoute
+  '/api/public/hooks/voc-poll': typeof ApiPublicHooksVocPollRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -416,6 +423,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/snapshot-pulse': typeof ApiPublicHooksSnapshotPulseRoute
   '/api/public/hooks/snapshot-tibber-daily': typeof ApiPublicHooksSnapshotTibberDailyRoute
   '/api/public/hooks/strava-poll': typeof ApiPublicHooksStravaPollRoute
+  '/api/public/hooks/voc-poll': typeof ApiPublicHooksVocPollRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -468,6 +476,7 @@ export interface FileRoutesById {
   '/api/public/hooks/snapshot-pulse': typeof ApiPublicHooksSnapshotPulseRoute
   '/api/public/hooks/snapshot-tibber-daily': typeof ApiPublicHooksSnapshotTibberDailyRoute
   '/api/public/hooks/strava-poll': typeof ApiPublicHooksStravaPollRoute
+  '/api/public/hooks/voc-poll': typeof ApiPublicHooksVocPollRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -521,6 +530,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/snapshot-pulse'
     | '/api/public/hooks/snapshot-tibber-daily'
     | '/api/public/hooks/strava-poll'
+    | '/api/public/hooks/voc-poll'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -572,6 +582,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/snapshot-pulse'
     | '/api/public/hooks/snapshot-tibber-daily'
     | '/api/public/hooks/strava-poll'
+    | '/api/public/hooks/voc-poll'
   id:
     | '__root__'
     | '/'
@@ -623,6 +634,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/snapshot-pulse'
     | '/api/public/hooks/snapshot-tibber-daily'
     | '/api/public/hooks/strava-poll'
+    | '/api/public/hooks/voc-poll'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -675,6 +687,7 @@ export interface RootRouteChildren {
   ApiPublicHooksSnapshotPulseRoute: typeof ApiPublicHooksSnapshotPulseRoute
   ApiPublicHooksSnapshotTibberDailyRoute: typeof ApiPublicHooksSnapshotTibberDailyRoute
   ApiPublicHooksStravaPollRoute: typeof ApiPublicHooksStravaPollRoute
+  ApiPublicHooksVocPollRoute: typeof ApiPublicHooksVocPollRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -924,6 +937,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiHomeyCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/voc-poll': {
+      id: '/api/public/hooks/voc-poll'
+      path: '/api/public/hooks/voc-poll'
+      fullPath: '/api/public/hooks/voc-poll'
+      preLoaderRoute: typeof ApiPublicHooksVocPollRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/strava-poll': {
       id: '/api/public/hooks/strava-poll'
       path: '/api/public/hooks/strava-poll'
@@ -1079,6 +1099,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksSnapshotTibberDailyRoute:
     ApiPublicHooksSnapshotTibberDailyRoute,
   ApiPublicHooksStravaPollRoute: ApiPublicHooksStravaPollRoute,
+  ApiPublicHooksVocPollRoute: ApiPublicHooksVocPollRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

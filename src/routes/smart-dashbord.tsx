@@ -869,8 +869,14 @@ function HundeTile({
     setOnLocal(next);
     setBusy(true);
     try {
-      await setCap({ data: { deviceId: device.id, capability: "onoff", value: next } });
-      onReload();
+      const r = await setCap({ data: { deviceId: device.id, capability: "onoff", value: next } });
+      if (!r?.ok) {
+        setOnLocal(null);
+        return;
+      }
+      // Vent litt så Homey rekker å bruke verdien før vi henter snapshot på nytt
+      setTimeout(() => onReload(), 1500);
+      setTimeout(() => onReload(), 4000);
     } catch {
       setOnLocal(null);
     } finally {
@@ -885,7 +891,7 @@ function HundeTile({
       accent="text-sky-300"
       action={
         device ? (
-          <Switch checked={isOn} disabled={busy} onCheckedChange={toggle} onClick={(e) => e.stopPropagation()} />
+          <Switch checked={isOn === true} disabled={busy} onCheckedChange={toggle} onClick={(e) => e.stopPropagation()} />
         ) : (
           <span className="text-[10px] text-white/30">ingen enhet</span>
         )
