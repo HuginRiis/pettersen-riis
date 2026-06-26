@@ -190,7 +190,7 @@ function RadonAtomFX({ color, value }: { color: string; value: number | null | u
   );
 }
 
-function Sparkline({ data, color, xFmt }: { data: { t: string; v: number }[]; color: string; xFmt?: (iso: string) => string }) {
+function Sparkline({ data, color, xFmt, showAverage }: { data: { t: string; v: number }[]; color: string; xFmt?: (iso: string) => string; showAverage?: boolean }) {
   const vals = data.map((d) => d.v).filter((v) => Number.isFinite(v));
   if (vals.length === 0) {
     return (
