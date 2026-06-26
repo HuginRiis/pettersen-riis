@@ -322,7 +322,7 @@ function DeviceTile({ dev, fetchedAt }: { dev: RadonDevice; fetchedAt: string | 
       style={{ minHeight: 180 }}
     >
       <RadonAtomFX color={smoothColor} value={dev.current} />
-      <div className="relative p-3 flex flex-col gap-2 h-full">
+      <div className={`relative p-3 flex flex-col gap-2 h-full ${view !== "now" ? "pr-28" : ""}`}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5">
             <Atom size={14} style={{ color: smoothColor }} />
