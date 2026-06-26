@@ -399,18 +399,20 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
             {headline && <div className="text-sm text-white/90 mt-3">{headline}</div>}
           </header>
 
+          {/* Kompakte farevarsler — rett over søkeboksen */}
+          {allAlerts.length > 0 && (
+            <div className="grid grid-cols-2 gap-2">
+              {allAlerts.slice(0, 2).map((alert) => (
+                <AlertCompactTile key={alert.id} alert={alert} />
+              ))}
+            </div>
+          )}
+
           {/* Sted-bytter (samme stil som øvrige fliser) */}
           <div className={`${toneCardCn()} overflow-visible`}>
             <TileSplashFX kind={glassKind} intensity={glassIntensity} />
             <UserLocationBar page="var" state={userLoc} transparent />
           </div>
-
-          {/* MET-VARSLER */}
-          {allAlerts.length > 0 && (
-            <div className="space-y-2">
-              {allAlerts.map((a) => <AlertCard key={a.id} alert={a} />)}
-            </div>
-          )}
 
           {/* ROTERENDE 48-TIMERS PROGNOSE: nedbør · værforhold · vind · lyn */}
           <RotatingForecastCard hours={skienHours} soundEnabled={soundEnabled} />
