@@ -220,9 +220,8 @@ function Sparkline({ data, color, xFmt, showAverage }: { data: { t: string; v: n
   const ys = data.map((d) =>
     Number.isFinite(d.v) ? padT + innerH - ((d.v - min) / span) * innerH : null,
   );
-  // Build path with gaps
+  // Build line path with gaps
   let path = "";
-  let area = "";
   let started = false;
   for (let i = 0; i < n; i++) {
     if (ys[i] == null) {
@@ -231,14 +230,11 @@ function Sparkline({ data, color, xFmt, showAverage }: { data: { t: string; v: n
     }
     if (!started) {
       path += `M ${xs[i]} ${ys[i]}`;
-      area += `M ${xs[i]} ${padT + innerH} L ${xs[i]} ${ys[i]}`;
       started = true;
     } else {
       path += ` L ${xs[i]} ${ys[i]}`;
-      area += ` L ${xs[i]} ${ys[i]}`;
     }
   }
-  if (started) area += ` L ${xs[xs.length - 1]} ${padT + innerH} Z`;
 
   const ticks = [200, 100];
   return (
