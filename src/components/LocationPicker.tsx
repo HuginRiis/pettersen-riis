@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Link } from "@tanstack/react-router";
-import { Star, Clock, MapPin } from "lucide-react";
+import { Star, MapPin } from "lucide-react";
 import { getStoredWho } from "@/lib/push-client";
 import {
   reverseGeocode,
@@ -240,8 +240,8 @@ export function LocationPicker({
     ? "w-full rounded-md border border-white/15 bg-white/5 text-white placeholder:text-white/50 px-3 py-2 text-sm focus:outline-none focus:border-white/40"
     : "w-full rounded-md border border-border bg-background/60 px-3 py-2 text-sm focus:outline-none focus:border-primary/60";
   const chipBtnClass = transparent
-    ? "inline-flex items-center gap-1 px-2 py-1 rounded-full bg-white/10 hover:bg-white/20 border border-white/15 text-[11px] text-white/90 transition-colors"
-    : "inline-flex items-center gap-1 px-2 py-1 rounded-full bg-card hover:bg-card/80 border border-border text-[11px] text-foreground transition-colors";
+    ? "inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/15 text-[10px] leading-tight text-white/90 transition-colors"
+    : "inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-card hover:bg-card/80 border border-border text-[10px] leading-tight text-foreground transition-colors";
   const iconBtnClass = transparent
     ? "px-2.5 py-2 rounded-md border border-white/15 bg-white/5 text-white hover:bg-white/15 transition-colors inline-flex items-center justify-center disabled:opacity-60"
     : "px-2.5 py-2 rounded-md border border-border text-foreground hover:bg-card/60 transition-colors inline-flex items-center justify-center disabled:opacity-60";
@@ -384,16 +384,16 @@ export function LocationPicker({
           <div className={`flex items-center gap-1.5 text-[10px] uppercase tracking-[0.2em] mb-1.5 ${transparent ? "text-white/50" : "text-muted-foreground"}`}>
             <Star size={10} className="fill-yellow-400 text-yellow-400" /> Favoritter
           </div>
-          <div className="flex flex-wrap gap-1.5">
+          <div className="grid grid-cols-2 gap-2">
             {favorites.map((f) => (
-              <span key={`fav-${f.label}`} className="inline-flex items-center">
+              <span key={`fav-${f.label}`} className="flex items-stretch min-w-0">
                 <button
                   type="button"
                   onClick={() => handlePickStored(f)}
-                  className={`${chipBtnClass} rounded-r-none pr-1.5`}
+                  className={`${chipBtnClass} rounded-r-none pr-1 flex-1 min-w-0`}
                   title={`Bytt til ${f.label}`}
                 >
-                  {f.label}
+                  <span className="truncate">{f.label}</span>
                 </button>
                 <button
                   type="button"
@@ -405,37 +405,6 @@ export function LocationPicker({
                   ×
                 </button>
               </span>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Siste søk */}
-      {recents.length > 0 && (
-        <div className="mt-3">
-          <div className={`flex items-center justify-between mb-1.5`}>
-            <div className={`flex items-center gap-1.5 text-[10px] uppercase tracking-[0.2em] ${transparent ? "text-white/50" : "text-muted-foreground"}`}>
-              <Clock size={10} /> Siste søk
-            </div>
-            <button
-              type="button"
-              onClick={() => { setRecents([]); lsWrite(RECENT_KEY, []); }}
-              className={`text-[10px] uppercase tracking-wider ${transparent ? "text-white/40 hover:text-white/70" : "text-muted-foreground hover:text-foreground"}`}
-            >
-              Tøm
-            </button>
-          </div>
-          <div className="flex flex-wrap gap-1.5">
-            {recents.map((r) => (
-              <button
-                key={`recent-${r.label}`}
-                type="button"
-                onClick={() => handlePickStored(r)}
-                className={chipBtnClass}
-                title={`Bytt til ${r.label}`}
-              >
-                {r.label}
-              </button>
             ))}
           </div>
         </div>
