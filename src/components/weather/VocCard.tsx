@@ -49,10 +49,10 @@ function vocLevel(v: number | null | undefined): {
 function VocFX({ color, intensity, value }: { color: string; intensity: number; value: number | null | undefined }) {
   const waves = 3;
   const dots = 8 + Math.round(intensity * 10);
-  // Spin-fart: <100 → 20s (veldig sakte), >2000 → 1.2s (veldig fort)
+  // Spin-fart: <100 → 14s, >2000 → 0.9s
   const v = value == null || !Number.isFinite(value) ? 0 : value;
   const clamped = Math.max(100, Math.min(2000, v));
-  const spinDur = 20 - ((clamped - 100) / 1900) * 18.8; // 20s → 1.2s
+  const spinDur = 14 - ((clamped - 100) / 1900) * 13.1; // 14s → 0.9s
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl">
       <style>{`
@@ -70,7 +70,7 @@ function VocFX({ color, intensity, value }: { color: string; intensity: number; 
           height: 104,
           borderRadius: "50%",
           background: `radial-gradient(circle, ${color}55 0%, transparent 70%)`,
-          animation: "vocBreathe 3.6s ease-in-out infinite",
+          animation: "vocBreathe 2.6s ease-in-out infinite",
         }}
       />
       {/* Roterende molekyl — 3 dotter, fart skalert med verdi */}
@@ -129,14 +129,14 @@ function VocFX({ color, intensity, value }: { color: string; intensity: number; 
             height: 64,
             borderRadius: "50%",
             border: `1.5px solid ${color}88`,
-            animation: `vocWave ${3 + i * 0.6}s ease-out ${i * 1}s infinite`,
+            animation: `vocWave ${2.1 + i * 0.4}s ease-out ${i * 0.7}s infinite`,
           }}
         />
       ))}
       {Array.from({ length: dots }).map((_, i) => {
         const left = 10 + ((i * 34) % 70);
-        const delay = (i * 0.35) % 4;
-        const dur = 5 + ((i * 0.6) % 4);
+        const delay = (i * 0.25) % 3;
+        const dur = 3.5 + ((i * 0.4) % 3);
         const size = 3 + (i % 3);
         const dx = (i % 2 === 0 ? 1 : -1) * (5 + (i % 4) * 2);
         return (

@@ -90,9 +90,9 @@ function RadonAtomFX({ color, value }: { color: string; value: number | null | u
   // Fartsskala: ~1 Bq/m³ → veldig sakte, ~300 → veldig fort. Eksponentiell for tydelig forskjell.
   const v = value == null || !Number.isFinite(value) ? 1 : Math.max(1, Math.min(300, value));
   const t = Math.pow((v - 1) / 299, 0.7); // 0..1, kraftigere stigning lavt
-  const orbitDur = lerp(14, 0.5, t); // sekunder per runde
-  const floatDur = lerp(11, 1.4, t);
-  const pulseDur = lerp(5.5, 1.2, t);
+  const orbitDur = lerp(10, 0.4, t); // sekunder per runde
+  const floatDur = lerp(8, 1.1, t);
+  const pulseDur = lerp(3.8, 0.9, t);
   const intensity = t;
   const dots = 6 + Math.round(intensity * 10);
   return (

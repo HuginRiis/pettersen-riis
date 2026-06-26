@@ -3095,9 +3095,9 @@ function RadonStuaTile() {
   const lvl = { color: radonSmoothColor(v), label };
   const vClamp = v == null || !Number.isFinite(v) ? 1 : Math.max(1, Math.min(300, v));
   const speedT = Math.pow((vClamp - 1) / 299, 0.7); // 0..1, 0 = sakte, 1 = fort
-  const orbitDur = lerpN(14, 0.5, speedT);
-  const floatDur = lerpN(11, 1.4, speedT);
-  const pulseDur = lerpN(5.5, 1.2, speedT);
+  const orbitDur = lerpN(10, 0.4, speedT);
+  const floatDur = lerpN(8, 1.1, speedT);
+  const pulseDur = lerpN(3.8, 0.9, speedT);
 
   return (
     <Tile title="Radon · Stua" icon={<Atom size={14} />} accent="text-emerald-300">
@@ -3252,7 +3252,7 @@ function VocStuaTile() {
             className="absolute inset-0 rounded-full"
             style={{
               background: `radial-gradient(circle, ${lvl.color}55 0%, transparent 70%)`,
-              animation: "vocCorePulse 3.4s ease-in-out infinite",
+              animation: "vocCorePulse 2.4s ease-in-out infinite",
             }}
           />
           {/* Roterende molekyl */}
@@ -3260,7 +3260,7 @@ function VocStuaTile() {
             className="absolute"
             style={{
               left: 30, top: 30, width: 40, height: 40,
-              animation: "vocSpin 9s linear infinite",
+              animation: "vocSpin 6.5s linear infinite",
             }}
           >
             {[0, 120, 240].map((deg) => (
@@ -3299,8 +3299,8 @@ function VocStuaTile() {
             const top = 12 + ((i * 23) % 76);
             const dx = (i % 2 === 0 ? 1 : -1) * (10 + (i * 4) % 18);
             const dy = -(14 + (i * 5) % 20);
-            const delay = (i * 0.55) % 4;
-            const dur = 3.2 + ((i * 0.6) % 2.8);
+            const delay = (i * 0.38) % 3;
+            const dur = 2.2 + ((i * 0.4) % 2);
             const size = 3 + (i % 2);
             return (
               <div
