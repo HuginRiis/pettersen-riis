@@ -389,6 +389,7 @@ function DeviceTile({ dev, fetchedAt }: { dev: RadonDevice; fetchedAt: string | 
             <Sparkline
               data={dev.hourly48}
               color={level.color}
+              showAverage
               xFmt={(iso) => new Date(iso).toLocaleString("nb-NO", { hour: "2-digit", day: "numeric" })}
             />
           </div>
