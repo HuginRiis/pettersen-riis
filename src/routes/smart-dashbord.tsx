@@ -869,8 +869,14 @@ function HundeTile({
     setOnLocal(next);
     setBusy(true);
     try {
-      await setCap({ data: { deviceId: device.id, capability: "onoff", value: next } });
-      onReload();
+      const r = await setCap({ data: { deviceId: device.id, capability: "onoff", value: next } });
+      if (!r?.ok) {
+        setOnLocal(null);
+        return;
+      }
+      // Vent litt så Homey rekker å bruke verdien før vi henter snapshot på nytt
+      setTimeout(() => onReload(), 1500);
+      setTimeout(() => onReload(), 4000);
     } catch {
       setOnLocal(null);
     } finally {
