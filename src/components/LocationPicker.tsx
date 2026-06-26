@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Link } from "@tanstack/react-router";
-import { Star, Clock, MapPin } from "lucide-react";
+import { Star, MapPin } from "lucide-react";
 import { getStoredWho } from "@/lib/push-client";
 import {
   reverseGeocode,
