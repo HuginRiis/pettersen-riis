@@ -1,6 +1,19 @@
 import { useMemo } from "react";
 
 /**
+ * Deterministisk pseudo-random-generator for SSR/CLI-hydrering.
+ * Samme seed gir samme sekvens på server og klient.
+ */
+function seededRng(seed: number) {
+  let s = seed >>> 0;
+  if (s === 0) s = 12345;
+  return () => {
+    s = (s * 1664525 + 1013904223) >>> 0;
+    return s / 4294967296;
+  };
+}
+
+/**
  * Dekorative bakgrunns-animasjoner for værfliser.
  * Plasseres absolutt bak innholdet i en GlassCard (overflow-hidden).
  * Alle effekter er rene CSS-keyframes — ingen JS-loop.
@@ -247,39 +260,39 @@ export function WindFX({ intensity = 0.5, className = "" }: Common) {
   // Calmer baseline: low wind drifts gently, storm wind zips fast
   const baseDur = 3.8;
   const speedMult = 0.6 + i * 1.8; // 0.6x at calm → 2.4x at storm
-  const lines = useMemo(
-    () =>
-      Array.from({ length: count }).map((_, k) => ({
-        top: 12 + k * (76 / count) + Math.random() * 8,
-        // Positive, staggered delays so streaks fly IN after the panel switches
-        delay: 0.15 + k * 0.12 + Math.random() * 0.6,
-        dur: (baseDur / speedMult) * (0.7 + Math.random() * 0.6),
-        w: 18 + Math.random() * 40,
-        op: 0.35 + Math.random() * 0.45,
-        thin: 1 + Math.random() * 1.5,
-        angle: -2 + Math.random() * 4,
-      })),
-    [count, speedMult],
-  );
+  const lines = useMemo(() => {
+    const rng = seededRng(Math.floor(i * 100000));
+    return Array.from({ length: count }).map((_, k) => ({
+      top: 12 + k * (76 / count) + rng() * 8,
+      // Positive, staggered delays so streaks fly IN after the panel switches
+      delay: 0.15 + k * 0.12 + rng() * 0.6,
+      dur: (baseDur / speedMult) * (0.7 + rng() * 0.6),
+      w: 18 + rng() * 40,
+      op: 0.35 + rng() * 0.45,
+      thin: 1 + rng() * 1.5,
+      angle: -2 + rng() * 4,
+    }));
+  }, [count, speedMult, i]);
+
 
   // Leaves — blown left → right by the wind (borrowed from GustFX)
   const leafCount = Math.max(3, Math.round(3 + i * 14));
   const leafDur = 3.2 - i * 1.8; // 3.2s → 1.4s
-  const leaves = useMemo(
-    () =>
-      Array.from({ length: leafCount }).map((_, k) => ({
-        startX: 8 + Math.random() * 25,
-        startY: 10 + Math.random() * 55,
-        lx: 40 + Math.random() * 140 + i * 80,
-        ly: 30 + Math.random() * 70,
-        lr: (Math.random() > 0.5 ? 1 : -1) * (180 + Math.random() * 360),
-        size: 5 + Math.random() * 4,
-        delay: 0.25 + k * 0.18 + Math.random() * 0.8,
-        dur: leafDur * (0.7 + Math.random() * 0.6),
-        hue: 28 + Math.random() * 30,
-      })),
-    [leafCount, leafDur, i],
-  );
+  const leaves = useMemo(() => {
+    const rng = seededRng(Math.floor(i * 100000) + 1);
+    return Array.from({ length: leafCount }).map((_, k) => ({
+      startX: 8 + rng() * 25,
+      startY: 10 + rng() * 55,
+      lx: 40 + rng() * 140 + i * 80,
+      ly: 30 + rng() * 70,
+      lr: (rng() > 0.5 ? 1 : -1) * (180 + rng() * 360),
+      size: 5 + rng() * 4,
+      delay: 0.25 + k * 0.18 + rng() * 0.8,
+      dur: leafDur * (0.7 + rng() * 0.6),
+      hue: 28 + rng() * 30,
+    }));
+  }, [leafCount, leafDur, i]);
+
 
   return (
     <div className={`${wrap} ${className}`} aria-hidden>

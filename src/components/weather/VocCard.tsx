@@ -279,7 +279,7 @@ function DeviceTile({ dev, fetchedAt }: { dev: VocDevice; fetchedAt: string | nu
       style={{ minHeight: 200 }}
     >
       <VocFX color={level.color} intensity={intensity} value={dev.current} />
-      <div className="relative p-3 flex flex-col gap-2 h-full">
+      <div className={`relative p-3 flex flex-col gap-2 h-full ${view !== "now" ? "pr-28" : ""}`}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5">
             <Wind size={14} style={{ color: level.color }} />
