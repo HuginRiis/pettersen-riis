@@ -3095,7 +3095,7 @@ function RadonStuaTile() {
   const lvl = { color: radonSmoothColor(v), label };
   const vClamp = v == null || !Number.isFinite(v) ? 1 : Math.max(1, Math.min(300, v));
   const speedT = Math.pow((vClamp - 1) / 299, 0.7); // 0..1, 0 = sakte, 1 = fort
-  const orbitDur = lerpN(9, 0.5, speedT);
+  const orbitDur = lerpN(14, 0.5, speedT);
   const floatDur = lerpN(11, 1.4, speedT);
   const pulseDur = lerpN(5.5, 1.2, speedT);
 
@@ -3260,7 +3260,7 @@ function VocStuaTile() {
             className="absolute"
             style={{
               left: 30, top: 30, width: 40, height: 40,
-              animation: "vocSpin 6s linear infinite",
+              animation: "vocSpin 9s linear infinite",
             }}
           >
             {[0, 120, 240].map((deg) => (
