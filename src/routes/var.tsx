@@ -2245,7 +2245,7 @@ function alertFxFor(alert: MetAlert): React.ReactNode {
   return <CloudFX intensity={0.6} />;
 }
 
-function AlertCard({ alert }: { alert: MetAlert }) {
+function AlertCompactTile({ alert }: { alert: MetAlert }) {
   const color = alertColor(alert.awarenessColor);
   const [open, setOpen] = usePerUserPersistedState<boolean>(
     `var:alert-open:${alert.id}`,
@@ -2254,7 +2254,7 @@ function AlertCard({ alert }: { alert: MetAlert }) {
   const fx = open ? alertFxFor(alert) : null;
   return (
     <div
-      className={toneCardCn("border-l-[6px] relative overflow-hidden p-0")}
+      className={toneCardCn("border-l-[4px] relative overflow-hidden p-0")}
       style={{ borderLeftColor: color }}
     >
       {fx}
@@ -2262,27 +2262,25 @@ function AlertCard({ alert }: { alert: MetAlert }) {
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
-        className="relative w-full flex items-start gap-3 text-left p-3 hover:bg-white/5 transition-colors"
+        className="relative w-full flex items-center gap-2 text-left p-2 hover:bg-white/5 transition-colors"
       >
-        <AlertTriangle size={18} style={{ color }} className="shrink-0 mt-0.5" />
+        <AlertTriangle size={14} style={{ color }} className="shrink-0" />
         <div className="flex-1 min-w-0">
-          <div className="text-[10px] tracking-[0.2em] uppercase font-semibold" style={{ color }}>
-            {alert.awarenessColor} · {alert.severity}
-          </div>
-          <div className="text-sm font-medium mt-1">{alert.title}</div>
+          <div className="text-[9px] tracking-[0.15em] uppercase font-semibold text-white/70">Fare for</div>
+          <div className="text-[11px] font-medium leading-tight truncate">{alert.title}</div>
         </div>
         <ChevronDown
-          size={18}
-          className={`shrink-0 mt-1 text-white/70 transition-transform ${open ? "rotate-180" : ""}`}
+          size={14}
+          className={`shrink-0 text-white/70 transition-transform ${open ? "rotate-180" : ""}`}
         />
       </button>
       {open && (
-        <div className="relative px-3 pb-3 pl-10 -mt-1">
+        <div className="relative px-2 pb-2 pl-7 -mt-0.5">
           {alert.description && (
-            <p className="text-[12px] text-white/85">{alert.description}</p>
+            <p className="text-[11px] text-white/85">{alert.description}</p>
           )}
           {alert.area && (
-            <div className="text-[10px] text-white/70 mt-1">{alert.area}</div>
+            <div className="text-[9px] text-white/70 mt-1">{alert.area}</div>
           )}
         </div>
       )}
