@@ -1,7 +1,8 @@
-import { createContext, useContext, useState, useRef, useEffect } from "react";
+import { createContext, useContext, useState, useRef, useEffect, useMemo } from "react";
 import { usePerUserPersistedState } from "@/hooks/use-per-user-persisted-state";
 
 export type TileColor = string | null;
+export type TileGlass = "none" | "low" | "medium" | "full";
 
 export const TILE_COLOR_PALETTE: { id: string; label: string; value: string }[] = [
   // Blå nyanser
@@ -20,26 +21,60 @@ export const TILE_COLOR_PALETTE: { id: string; label: string; value: string }[] 
   { id: "zinc-800", label: "Kull", value: "rgba(39, 39, 42, 0.75)" },
 ];
 
+const GLASS_MULT: Record<TileGlass, number> = {
+  none: 1,
+  low: 0.65,
+  medium: 0.35,
+  full: 0.12,
+};
+
+const GLASS_LABEL: Record<TileGlass, string> = {
+  none: "Ingen glass",
+  low: "Litt glass",
+  medium: "Medium glass",
+  full: "Helt glass",
+};
+
+const GLASS_ORDER: TileGlass[] = ["none", "low", "medium", "full"];
+
+function applyGlass(color: string | null, glass: TileGlass): string | null {
+  if (!color) return null;
+  const m = color.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*([\d.]+))?\s*\)/i);
+  if (!m) return color;
+  const r = m[1], g = m[2], b = m[3];
+  const a = m[4] !== undefined ? parseFloat(m[4]) : 1;
+  const newA = Math.max(0, Math.min(1, a * GLASS_MULT[glass]));
+  return `rgba(${r}, ${g}, ${b}, ${newA.toFixed(3)})`;
+}
+
 const TileColorContext = createContext<{
   color: TileColor;
   setColor: (c: TileColor) => void;
-}>({ color: null, setColor: () => {} });
+  glass: TileGlass;
+  setGlass: (g: TileGlass) => void;
+  effectiveColor: TileColor;
+}>({ color: null, setColor: () => {}, glass: "none", setGlass: () => {}, effectiveColor: null });
 
 export function TileColorProvider({ children }: { children: React.ReactNode }) {
   const [color, setColor] = usePerUserPersistedState<TileColor>("var.tileColor", null);
+  const [glass, setGlass] = usePerUserPersistedState<TileGlass>("var.tileGlass", "none");
+  const effectiveColor = useMemo(() => applyGlass(color, glass), [color, glass]);
   return (
-    <TileColorContext.Provider value={{ color, setColor }}>
+    <TileColorContext.Provider value={{ color, setColor, glass, setGlass, effectiveColor }}>
       {children}
     </TileColorContext.Provider>
   );
 }
 
 export function useTileColor() {
-  return useContext(TileColorContext);
+  const ctx = useContext(TileColorContext);
+  // Bakoverkompatibel: `color` returnert er effektiv farge (med glass anvendt).
+  return { ...ctx, color: ctx.effectiveColor, rawColor: ctx.color };
 }
 
 export function TileColorToggle() {
-  const { color, setColor } = useTileColor();
+  const { rawColor, setColor } = useTileColor();
+  const color = rawColor;
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -109,5 +144,36 @@ export function TileColorToggle() {
         </div>
       )}
     </div>
+  );
+}
+
+export function TileGlassToggle() {
+  const { glass, setGlass } = useTileColor();
+  const cycle = () => {
+    const i = GLASS_ORDER.indexOf(glass);
+    setGlass(GLASS_ORDER[(i + 1) % GLASS_ORDER.length]);
+  };
+  // Visuell indikator: antall fylte prikker = glass-nivå
+  const level = GLASS_ORDER.indexOf(glass); // 0..3
+  return (
+    <button
+      type="button"
+      onClick={cycle}
+      aria-label={`Glass-effekt: ${GLASS_LABEL[glass]}. Klikk for å bytte.`}
+      title={GLASS_LABEL[glass]}
+      className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-medium backdrop-blur-xl border transition-all bg-white/10 text-white/80 border-white/15 hover:bg-white/20"
+    >
+      <span className="flex items-center gap-0.5">
+        {[0, 1, 2, 3].map((i) => (
+          <span
+            key={i}
+            className={`inline-block w-1.5 h-1.5 rounded-full ${
+              i <= level ? "bg-white/90" : "bg-white/25"
+            }`}
+          />
+        ))}
+      </span>
+      <span>Glass</span>
+    </button>
   );
 }
