@@ -89,6 +89,8 @@ type Hour = {
   time: string;
   temp: number;
   precip: number;
+  precipMin: number;
+  precipMax: number;
   precipProbability: number;
   wind: number;
   windGust: number;
@@ -697,6 +699,16 @@ function fmtWhen(iso: string) {
   return new Date(iso).toLocaleString("nb-NO", { weekday: "short", hour: "2-digit", minute: "2-digit" });
 }
 
+// Formater nedbør som Yr: "0,2" eller "0–0,2" (komma-desimal, bindestrek for range)
+function fmtPrecipYr(min: number, max: number): string {
+  const lo = Math.max(0, min ?? 0);
+  const hi = Math.max(0, max ?? 0);
+  const fmt = (v: number) => (v >= 10 ? v.toFixed(0) : v.toFixed(1)).replace(".", ",");
+  if (hi <= 0) return "";
+  if (Math.abs(hi - lo) < 0.05) return fmt(hi);
+  return `${fmt(lo)}–${fmt(hi)}`;
+}
+
 function NedborPanel({ hours, maxP }: { hours: Hour[]; maxP: number }) {
   const total = hours.reduce((s, h) => s + h.precip, 0);
   const firstRain = hours.find((h) => h.precip >= 0.1);
@@ -713,6 +725,7 @@ function NedborPanel({ hours, maxP }: { hours: Hour[]; maxP: number }) {
         <div className="flex items-end gap-2 min-w-max pb-1">
           {hours.map((h, i) => {
             const heightPct = Math.max(4, (h.precip / maxP) * 70);
+            const mmLabel = fmtPrecipYr(h.precipMin, h.precipMax);
             return (
               <div
                 key={h.time}
@@ -728,7 +741,10 @@ function NedborPanel({ hours, maxP }: { hours: Hour[]; maxP: number }) {
                     style={{ height: `${heightPct}%` }}
                   />
                 </div>
-                <div className="flex items-center gap-0.5 mt-1 text-[10px] text-sky-100 font-medium tabular-nums">
+                <div className="text-[9px] text-sky-200 tabular-nums mt-1 leading-tight min-h-[10px]">
+                  {mmLabel}
+                </div>
+                <div className="flex items-center gap-0.5 mt-0.5 text-[10px] text-sky-100 font-medium tabular-nums">
                   <Droplets size={8} />
                   {Math.round(h.precipProbability)}%
                 </div>
@@ -967,6 +983,7 @@ function NedborCard({ hours }: { hours: Hour[] | null }) {
           {next.map((h, i) => {
             const heightPct = Math.max(4, (h.precip / maxP) * 70);
             const hourLabel = i === 0 ? "Nå" : h.time.slice(11, 16);
+            const mmLabel = fmtPrecipYr(h.precipMin, h.precipMax);
             return (
               <div key={h.time} className="flex flex-col items-center w-12">
                 <div className="text-[11px] text-white/80 mb-1.5">{hourLabel}</div>
@@ -976,7 +993,10 @@ function NedborCard({ hours }: { hours: Hour[] | null }) {
                     style={{ height: `${heightPct}%` }}
                   />
                 </div>
-                <div className="flex items-center gap-0.5 mt-1.5 text-[11px] text-sky-100 font-medium tabular-nums">
+                <div className="text-[10px] text-sky-200 tabular-nums mt-1 leading-tight min-h-[12px]">
+                  {mmLabel}
+                </div>
+                <div className="flex items-center gap-0.5 mt-0.5 text-[11px] text-sky-100 font-medium tabular-nums">
                   <Droplets size={9} />
                   {Math.round(h.precipProbability)}%
                 </div>
@@ -2532,17 +2552,17 @@ function parseForecast(data: any): { days: ForecastDay[]; hours: Hour[] } {
     const temp = inst.air_temperature;
     if (typeof temp !== "number") continue;
     const symbol = next1?.summary?.symbol_code ?? next6?.summary?.symbol_code ?? null;
-    // MET.no gir både mean (precipitation_amount) og min/max. Yr viser typisk max
-    // når mean er 0 men det finnes en sannsynlighet for lett nedbør (f.eks. "0–0,2 mm").
-    // Vi bruker mean primært, men faller tilbake til max så vi ikke "skjuler" lett regn som Yr melder.
+    // MET.no gir både mean (precipitation_amount) og min/max — samme som Yr viser som "0–0,2 mm".
     const d1 = next1?.details ?? {};
     const d6 = next6?.details ?? {};
     const meanPrecip = d1.precipitation_amount ?? d6.precipitation_amount ?? 0;
-    const maxPrecip = d1.precipitation_amount_max ?? d6.precipitation_amount_max ?? 0;
-    const precip = meanPrecip > 0 ? meanPrecip : maxPrecip;
+    const minPrecip = d1.precipitation_amount_min ?? d6.precipitation_amount_min ?? meanPrecip;
+    const maxPrecip = d1.precipitation_amount_max ?? d6.precipitation_amount_max ?? meanPrecip;
+    // Bruk max som "har det regn?"-indikator slik Yr gjør, så lett nedbør ikke skjules.
+    const precip = Math.max(meanPrecip, maxPrecip);
     const precipProbability = d1.probability_of_precipitation ?? d6.probability_of_precipitation ?? 0;
     hours.push({
-      time, temp, precip, precipProbability,
+      time, temp, precip, precipMin: minPrecip, precipMax: maxPrecip, precipProbability,
       wind: inst.wind_speed ?? 0,
       windGust: inst.wind_speed_of_gust ?? inst.wind_speed ?? 0,
       windDir: inst.wind_from_direction ?? 0,
