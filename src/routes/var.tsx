@@ -1535,16 +1535,16 @@ function WindDetailCard({ hour }: { hour: Hour | null }) {
             <circle cx="50" cy="50" r="44" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
             {Array.from({ length: 36 }).map((_, i) => {
               const a = (i * 10 - 90) * (Math.PI / 180);
-              const x1 = 50 + 44 * Math.cos(a);
-              const y1 = 50 + 44 * Math.sin(a);
-              const x2 = 50 + (i % 9 === 0 ? 36 : 40) * Math.cos(a);
-              const y2 = 50 + (i % 9 === 0 ? 36 : 40) * Math.sin(a);
+              const x1 = Math.round((50 + 44 * Math.cos(a)) * 10) / 10;
+              const y1 = Math.round((50 + 44 * Math.sin(a)) * 10) / 10;
+              const x2 = Math.round((50 + (i % 9 === 0 ? 36 : 40) * Math.cos(a)) * 10) / 10;
+              const y2 = Math.round((50 + (i % 9 === 0 ? 36 : 40) * Math.sin(a)) * 10) / 10;
               return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="rgba(255,255,255,0.35)" strokeWidth="0.6" />;
             })}
             {["N", "Ø", "S", "V"].map((d, i) => {
               const a = (i * 90 - 90) * (Math.PI / 180);
-              const x = 50 + 30 * Math.cos(a);
-              const y = 50 + 30 * Math.sin(a) + 2.5;
+              const x = Math.round((50 + 30 * Math.cos(a)) * 10) / 10;
+              const y = Math.round((50 + 30 * Math.sin(a) + 2.5) * 10) / 10;
               return <text key={d} x={x} y={y} fontSize="7" fill="white" textAnchor="middle">{d}</text>;
             })}
             <g transform={`rotate(${dir} 50 50)`}>
