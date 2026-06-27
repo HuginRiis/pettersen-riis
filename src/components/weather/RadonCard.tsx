@@ -107,7 +107,7 @@ function RadonAtomFX({ color, value }: { color: string; value: number | null | u
       <div
         className="absolute"
         style={{
-          right: 30,
+          right: 60,
           top: 30,
           width: 128,
           height: 128,
@@ -117,7 +117,7 @@ function RadonAtomFX({ color, value }: { color: string; value: number | null | u
         }}
       />
       {/* Orbiting electrons */}
-      <div className="absolute" style={{ right: 54, top: 54, width: 64, height: 64 }}>
+      <div className="absolute" style={{ right: 84, top: 54, width: 64, height: 64 }}>
         {[0, 60, 120].map((deg, i) => (
           <div
             key={i}
@@ -242,7 +242,8 @@ function Sparkline({ data, color, xFmt, showAverage }: { data: { t: string; v: n
   ];
   return (
     <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-24">
-      {thresholds.map((t) => {
+      {/* Terskellinjer 100/200 skjules midlertidig til grafene er justert */}
+      {false && thresholds.map((t) => {
         const rawY = padT + innerH - ((t.value - min) / span) * innerH;
         const y = Math.max(padT, Math.min(padT + innerH, rawY));
         return (
