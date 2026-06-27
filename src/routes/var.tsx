@@ -89,6 +89,8 @@ type Hour = {
   time: string;
   temp: number;
   precip: number;
+  precipMin: number;
+  precipMax: number;
   precipProbability: number;
   wind: number;
   windGust: number;
