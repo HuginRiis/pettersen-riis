@@ -1309,6 +1309,9 @@ function DailyRainRow({ day, hours, index }: { day: ForecastDay; hours: Hour[]; 
       <div className="flex items-end gap-[3px] h-8">
         {buckets.map((b, i) => {
           const rainFill = b.precip > 0 ? Math.max(6, Math.min(100, (b.precip / 6) * 100)) : 0;
+          // Sannsynlighet vises som en lysere fyll bak mm-fyllet, slik at
+          // dager med 30–40 % sjanse men 0 mm fortsatt får synlig nivå.
+          const probFill = b.prob >= 10 ? Math.min(90, b.prob) : 0;
           const probAlpha = Math.max(0.12, Math.min(0.42, (b.prob / 100) * 0.42));
           const baseBg = b.isNight
             ? `rgba(148, 163, 184, ${probAlpha * 0.6 + 0.08})`
@@ -1321,6 +1324,17 @@ function DailyRainRow({ day, hours, index }: { day: ForecastDay; hours: Hour[]; 
               style={{ background: baseBg }}
               title={`${String(b.startHour).padStart(2, "0")}–${String(b.startHour + 2).padStart(2, "0")} · ${b.precip.toFixed(1)} mm · ${Math.round(b.prob)}%`}
             >
+              {probFill > 0 && (
+                <div
+                  className="absolute bottom-0 left-0 right-0 rounded-b-md"
+                  style={{
+                    height: `${probFill}%`,
+                    background: b.isNight
+                      ? "linear-gradient(to top, rgba(148,163,184,0.55) 0%, rgba(186,230,253,0.35) 100%)"
+                      : "linear-gradient(to top, rgba(56,189,248,0.55) 0%, rgba(186,230,253,0.35) 100%)",
+                  }}
+                />
+              )}
               {rainFill > 0 && (
                 <div
                   className="absolute bottom-0 left-0 right-0 rounded-b-md transition-all"
