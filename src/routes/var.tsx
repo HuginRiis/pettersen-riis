@@ -387,6 +387,7 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
             </button>
             <div className="flex items-center gap-2">
               <TileColorToggle />
+              <TileGlassToggle />
               <TileOpacityToggle />
               <TileToneToggle />
             </div>
