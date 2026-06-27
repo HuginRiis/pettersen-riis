@@ -1957,9 +1957,7 @@ function IosUvCard({ lat, lon, now }: { lat: number; lon: number; now: Date }) {
           </div>
           <div className="text-[11px] text-white/60 mt-1">UVI fra Verdens helseorganisasjon</div>
         </div>
-        <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
-          <Sun size={20} className="text-yellow-300" />
-        </div>
+        <UvOrb uv={uvNow ?? 0} color={level?.color ?? "#94a3b8"} />
       </div>
 
       {/* Hourly UV numbers */}
@@ -2015,6 +2013,77 @@ function IosUvCard({ lat, lon, now }: { lat: number; lon: number; now: Date }) {
         )}
       </div>
     </GlassCard>
+  );
+}
+
+/**
+ * Liten orb i UV-kortets hjørne. Animasjonens intensitet (pulshastighet,
+ * glød, antall stråler, fargemetning) skalerer med UV-verdien. Ved 0
+ * pulserer den fortsatt mildt for å vise at kortet er live.
+ */
+function UvOrb({ uv, color }: { uv: number; color: string }) {
+  // 0..1 intensitet (UV 0 → 0.0, UV 11+ → 1.0)
+  const t = Math.max(0, Math.min(1, uv / 11));
+  // Pulshastighet: 0 → 3.6s (rolig), 11 → 0.9s (rask)
+  const pulseDur = (3.6 - t * 2.7).toFixed(2) + "s";
+  // Glød-radius i px
+  const glow = (6 + t * 22).toFixed(1);
+  const glowSoft = (12 + t * 36).toFixed(1);
+  // Stråler vises fra UV ≥ 3
+  const showRays = uv >= 3;
+  const rayOpacity = Math.max(0, Math.min(1, (uv - 2) / 8));
+  // Indre kjerne — ved UV 0 er den blek/grålig, ellers fargen
+  const coreColor = uv < 0.5 ? "rgba(203, 213, 225, 0.85)" : color;
+
+  return (
+    <div className="relative w-10 h-10 flex items-center justify-center" aria-hidden>
+      {/* Ytre myk halo */}
+      <div
+        className="absolute inset-0 rounded-full"
+        style={{
+          background: `radial-gradient(circle, ${color} 0%, transparent 65%)`,
+          opacity: 0.15 + t * 0.4,
+          animation: `uvOrbHalo ${pulseDur} ease-in-out infinite`,
+        }}
+      />
+      {/* Roterende stråle-ring ved høyere UV */}
+      {showRays && (
+        <div
+          className="absolute inset-0 rounded-full"
+          style={{
+            background: `conic-gradient(from 0deg, transparent 0deg, ${color} 12deg, transparent 24deg, transparent 90deg, ${color} 102deg, transparent 114deg, transparent 180deg, ${color} 192deg, transparent 204deg, transparent 270deg, ${color} 282deg, transparent 294deg)`,
+            opacity: rayOpacity * 0.55,
+            animation: `uvOrbSpin ${(8 - t * 5).toFixed(2)}s linear infinite`,
+            maskImage: "radial-gradient(circle, transparent 35%, black 45%, black 70%, transparent 78%)",
+            WebkitMaskImage: "radial-gradient(circle, transparent 35%, black 45%, black 70%, transparent 78%)",
+          }}
+        />
+      )}
+      {/* Kjerne */}
+      <div
+        className="relative rounded-full"
+        style={{
+          width: 14 + t * 6,
+          height: 14 + t * 6,
+          background: `radial-gradient(circle at 35% 30%, color-mix(in oklab, ${coreColor} 100%, white 25%), ${coreColor})`,
+          boxShadow: `0 0 ${glow}px ${color}, 0 0 ${glowSoft}px color-mix(in oklab, ${color} 60%, transparent)`,
+          animation: `uvOrbPulse ${pulseDur} ease-in-out infinite`,
+        }}
+      />
+      <style>{`
+        @keyframes uvOrbPulse {
+          0%, 100% { transform: scale(1); filter: brightness(1); }
+          50% { transform: scale(${(1.08 + t * 0.18).toFixed(3)}); filter: brightness(${(1.1 + t * 0.4).toFixed(2)}); }
+        }
+        @keyframes uvOrbHalo {
+          0%, 100% { transform: scale(0.9); opacity: ${(0.12 + t * 0.3).toFixed(2)}; }
+          50% { transform: scale(${(1.1 + t * 0.25).toFixed(2)}); opacity: ${(0.25 + t * 0.5).toFixed(2)}; }
+        }
+        @keyframes uvOrbSpin {
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
+    </div>
   );
 }
 
