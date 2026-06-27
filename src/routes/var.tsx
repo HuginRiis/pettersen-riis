@@ -639,7 +639,7 @@ function RotatingForecastCard({ hours, soundEnabled }: { hours: Hour[] | null; s
                   : "bg-white/10 text-white/80 hover:bg-white/20"
               }`}
             >
-              {h}t
+              {h === 96 ? "10d" : `${h}t`}
             </button>
           ))}
         </div>
