@@ -561,17 +561,16 @@ export function GustFX({ intensity = 0.5, className = "" }: Common) {
 
 /* ---------------- SUN (rays + sparkles) ---------------- */
 export function SunFX({ intensity = 0.5, className = "" }: Common) {
-  const sparkles = useMemo(
-    () =>
-      Array.from({ length: 6 }).map(() => ({
-        left: Math.random() * 100,
-        top: Math.random() * 100,
-        delay: Math.random() * 2.4,
-        dur: 1.6 + Math.random() * 1.6,
-        size: 2 + Math.random() * 3,
-      })),
-    [],
-  );
+  const sparkles = useMemo(() => {
+    const rng = seededRng(123);
+    return Array.from({ length: 6 }).map(() => ({
+      left: rng() * 100,
+      top: rng() * 100,
+      delay: rng() * 2.4,
+      dur: 1.6 + rng() * 1.6,
+      size: 2 + rng() * 3,
+    }));
+  }, []);
   return (
     <div className={`${wrap} ${className}`} aria-hidden>
       <div
