@@ -389,7 +389,7 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
               <TileColorToggle />
               <TileGlassToggle />
               <TileOpacityToggle />
-              <TileToneToggle />
+              {!tileColor && <TileToneToggle />}
             </div>
           </div>
 
