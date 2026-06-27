@@ -2532,8 +2532,15 @@ function parseForecast(data: any): { days: ForecastDay[]; hours: Hour[] } {
     const temp = inst.air_temperature;
     if (typeof temp !== "number") continue;
     const symbol = next1?.summary?.symbol_code ?? next6?.summary?.symbol_code ?? null;
-    const precip = next1?.details?.precipitation_amount ?? next6?.details?.precipitation_amount ?? 0;
-    const precipProbability = next1?.details?.probability_of_precipitation ?? next6?.details?.probability_of_precipitation ?? 0;
+    // MET.no gir både mean (precipitation_amount) og min/max. Yr viser typisk max
+    // når mean er 0 men det finnes en sannsynlighet for lett nedbør (f.eks. "0–0,2 mm").
+    // Vi bruker mean primært, men faller tilbake til max så vi ikke "skjuler" lett regn som Yr melder.
+    const d1 = next1?.details ?? {};
+    const d6 = next6?.details ?? {};
+    const meanPrecip = d1.precipitation_amount ?? d6.precipitation_amount ?? 0;
+    const maxPrecip = d1.precipitation_amount_max ?? d6.precipitation_amount_max ?? 0;
+    const precip = meanPrecip > 0 ? meanPrecip : maxPrecip;
+    const precipProbability = d1.probability_of_precipitation ?? d6.probability_of_precipitation ?? 0;
     hours.push({
       time, temp, precip, precipProbability,
       wind: inst.wind_speed ?? 0,
