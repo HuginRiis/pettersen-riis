@@ -1957,9 +1957,7 @@ function IosUvCard({ lat, lon, now }: { lat: number; lon: number; now: Date }) {
           </div>
           <div className="text-[11px] text-white/60 mt-1">UVI fra Verdens helseorganisasjon</div>
         </div>
-        <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
-          <Sun size={20} className="text-yellow-300" />
-        </div>
+        <UvOrb uv={uvNow ?? 0} color={level?.color ?? "#94a3b8"} />
       </div>
 
       {/* Hourly UV numbers */}
