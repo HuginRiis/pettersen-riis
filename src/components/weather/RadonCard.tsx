@@ -107,17 +107,18 @@ function RadonAtomFX({ color, value }: { color: string; value: number | null | u
       <div
         className="absolute"
         style={{
-          right: 30,
+          left: "85%",
           top: 30,
           width: 128,
           height: 128,
+          transform: "translateX(-50%)",
           borderRadius: "50%",
           background: `radial-gradient(circle, ${color}66 0%, transparent 70%)`,
           animation: `radonPulse ${pulseDur.toFixed(2)}s ease-in-out infinite`,
         }}
       />
       {/* Orbiting electrons */}
-      <div className="absolute" style={{ right: 54, top: 54, width: 64, height: 64 }}>
+      <div className="absolute" style={{ left: "85%", top: 54, width: 64, height: 64, transform: "translateX(-50%)" }}>
         {[0, 60, 120].map((deg, i) => (
           <div
             key={i}
@@ -334,13 +335,13 @@ function DeviceTile({ dev, fetchedAt }: { dev: RadonDevice; fetchedAt: string | 
               {dev.zone ?? dev.name}
             </span>
           </div>
-          <span
-            className="text-[10px] px-1.5 py-0.5 rounded-full"
-            style={{ background: smoothColor + "22", color: smoothColor, border: `1px solid ${smoothColor}66` }}
-          >
-            {level.label}
-          </span>
         </div>
+        <span
+          className="absolute right-3 top-3 z-10 text-[10px] px-1.5 py-0.5 rounded-full"
+          style={{ background: smoothColor + "22", color: smoothColor, border: `1px solid ${smoothColor}66` }}
+        >
+          {level.label}
+        </span>
 
         {view === "now" && (
           <div className="flex-1 flex flex-col justify-end">
