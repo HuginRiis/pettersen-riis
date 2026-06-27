@@ -667,7 +667,7 @@ function RotatingForecastCard({ hours, soundEnabled }: { hours: Hour[] | null; s
             willChange: "transform, opacity, filter",
           }}
         >
-          {panel === "nedbor" && <NedborPanel hours={nextHours} />}
+          {panel === "nedbor" && <NedborPanel hours={nextHours} maxP={maxRain} />}
           {panel === "vaer" && <VaerPanel hours={nextHours} />}
           {panel === "skydekke" && <SkydekkePanel hours={nextHours} />}
           {panel === "vind" && <VindPanel hours={nextHours} maxW={maxWind} />}
@@ -697,49 +697,30 @@ function fmtWhen(iso: string) {
   return new Date(iso).toLocaleString("nb-NO", { weekday: "short", hour: "2-digit", minute: "2-digit" });
 }
 
-function NedborPanel({ hours }: { hours: Hour[] }) {
-  const groupBy = hours.length > 72 ? 2 : 1;
-  const slots = useMemo(() => {
-    const result: {
-      time: string;
-      total: number;
-      maxProb: number;
-      hours: Hour[];
-    }[] = [];
-    for (let i = 0; i < hours.length; i += groupBy) {
-      const chunk = hours.slice(i, i + groupBy);
-      const total = chunk.reduce((s, h) => s + Math.max(0, h.precip), 0);
-      const maxProb = Math.max(...chunk.map((h) => h.precipProbability));
-      result.push({ time: chunk[0]?.time ?? "", total, maxProb, hours: chunk });
-    }
-    return result;
-  }, [hours, groupBy]);
-
-  const maxSlotTotal = Math.max(0.1, ...slots.map((s) => s.total));
-  const totalRain = slots.reduce((s, slot) => s + slot.total, 0);
-  const peakSlot = slots.reduce((best, s) => (s.total > best.total ? s : best), slots[0]);
-  const firstRainSlot = slots.find((s) => s.total >= 0.1);
-  const summary = !firstRainSlot
+function NedborPanel({ hours, maxP }: { hours: Hour[]; maxP: number }) {
+  const total = hours.reduce((s, h) => s + h.precip, 0);
+  const firstRain = hours.find((h) => h.precip >= 0.1);
+  const peakIdx = hours.reduce((best, h, i, arr) => (h.precip > arr[best].precip ? i : best), 0);
+  const peak = hours[peakIdx];
+  const summary = !firstRain
     ? `Ingen nedbør ventet de neste ${hours.length} timene.`
-    : groupBy > 1
-      ? `Regn fra ${fmtWhen(firstRainSlot.time)} · maks ${peakSlot.total.toFixed(1)} mm per ${groupBy} t rundt ${fmtWhen(peakSlot.time)} · totalt ${totalRain.toFixed(1)} mm`
-      : `Regn fra ${fmtWhen(firstRainSlot.time)} · mest ${peakSlot.total.toFixed(1)} mm rundt ${fmtWhen(peakSlot.time)} · totalt ${totalRain.toFixed(1)} mm`;
+    : `Regn fra ${fmtWhen(firstRain.time)} · mest ${peak.precip.toFixed(1)} mm rundt ${fmtWhen(peak.time)} · totalt ${total.toFixed(1)} mm`;
 
   return (
     <div className="space-y-2">
       <div className="text-[12px] text-white/90">{summary}</div>
       <div className="overflow-x-auto -mx-2 px-2">
         <div className="flex items-end gap-2 min-w-max pb-1">
-          {slots.map((slot, i) => {
-            const heightPct = Math.max(4, (slot.total / maxSlotTotal) * 70);
+          {hours.map((h, i) => {
+            const heightPct = Math.max(4, (h.precip / maxP) * 70);
             return (
               <div
-                key={slot.time}
+                key={h.time}
                 className="flex flex-col items-center w-10"
                 style={{ animation: `hourPop 0.45s cubic-bezier(.2,.8,.2,1) ${(0.45 + i * 0.05).toFixed(2)}s both` }}
               >
                 <div className="text-[10px] text-white/80 mb-1">
-                  <HourLabel time={slot.time} index={i} />
+                  <HourLabel time={h.time} index={i} />
                 </div>
                 <div className="relative w-6 h-20 rounded-md bg-white/15 overflow-hidden border-t border-dashed border-white/20">
                   <div
@@ -748,15 +729,8 @@ function NedborPanel({ hours }: { hours: Hour[] }) {
                   />
                 </div>
                 <div className="flex items-center gap-0.5 mt-1 text-[10px] text-sky-100 font-medium tabular-nums">
-                  {slot.total >= 0.1 ? (
-                    <span>{slot.total.toFixed(1)} mm</span>
-                  ) : (
-                    <span className="text-white/40">0</span>
-                  )}
-                </div>
-                <div className="flex items-center gap-0.5 text-[9px] text-white/60 tabular-nums">
                   <Droplets size={8} />
-                  {Math.round(slot.maxProb)}%
+                  {Math.round(h.precipProbability)}%
                 </div>
               </div>
             );
@@ -1535,16 +1509,16 @@ function WindDetailCard({ hour }: { hour: Hour | null }) {
             <circle cx="50" cy="50" r="44" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
             {Array.from({ length: 36 }).map((_, i) => {
               const a = (i * 10 - 90) * (Math.PI / 180);
-              const x1 = Math.round((50 + 44 * Math.cos(a)) * 10) / 10;
-              const y1 = Math.round((50 + 44 * Math.sin(a)) * 10) / 10;
-              const x2 = Math.round((50 + (i % 9 === 0 ? 36 : 40) * Math.cos(a)) * 10) / 10;
-              const y2 = Math.round((50 + (i % 9 === 0 ? 36 : 40) * Math.sin(a)) * 10) / 10;
+              const x1 = 50 + 44 * Math.cos(a);
+              const y1 = 50 + 44 * Math.sin(a);
+              const x2 = 50 + (i % 9 === 0 ? 36 : 40) * Math.cos(a);
+              const y2 = 50 + (i % 9 === 0 ? 36 : 40) * Math.sin(a);
               return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="rgba(255,255,255,0.35)" strokeWidth="0.6" />;
             })}
             {["N", "Ø", "S", "V"].map((d, i) => {
               const a = (i * 90 - 90) * (Math.PI / 180);
-              const x = Math.round((50 + 30 * Math.cos(a)) * 10) / 10;
-              const y = Math.round((50 + 30 * Math.sin(a) + 2.5) * 10) / 10;
+              const x = 50 + 30 * Math.cos(a);
+              const y = 50 + 30 * Math.sin(a) + 2.5;
               return <text key={d} x={x} y={y} fontSize="7" fill="white" textAnchor="middle">{d}</text>;
             })}
             <g transform={`rotate(${dir} 50 50)`}>
@@ -1600,14 +1574,10 @@ function MoonVisual({ phaseFraction, illumination }: { phaseFraction: number; il
   const waxing = p < 0.5;
   const gibbous = p > 0.25 && p < 0.75;
   const rx = Math.max(0.01, Math.abs(Math.cos(2 * Math.PI * p)) * r);
-  const rxRounded = Math.round(rx * 100) / 100;
   const outerSweep = waxing ? 1 : 0;
   const innerSweep = gibbous ? (waxing ? 0 : 1) : outerSweep;
-  const litPath = `M ${cx},${cy - r} A ${r},${r} 0 0,${outerSweep} ${cx},${cy + r} A ${rxRounded},${r} 0 0,${innerSweep} ${cx},${cy - r} Z`;
-  const glow = Math.round((0.35 + illumination * 0.65) * 1000) / 1000;
-  const haloAlpha1 = Math.round(0.25 * glow * 1000) / 1000;
-  const haloAlpha2 = Math.round(0.10 * glow * 1000) / 1000;
-  const halo = `radial-gradient(circle at 50% 50%, rgba(255,247,220,${haloAlpha1}) 0%, rgba(255,247,220,${haloAlpha2}) 35%, transparent 70%)`;
+  const litPath = `M ${cx},${cy - r} A ${r},${r} 0 0,${outerSweep} ${cx},${cy + r} A ${rx},${r} 0 0,${innerSweep} ${cx},${cy - r} Z`;
+  const glow = 0.35 + illumination * 0.65;
   return (
     <div
       className="relative w-28 h-28"
@@ -1617,7 +1587,7 @@ function MoonVisual({ phaseFraction, illumination }: { phaseFraction: number; il
       <div
         className="absolute inset-0 rounded-full pointer-events-none"
         style={{
-          background: halo,
+          background: `radial-gradient(circle at 50% 50%, rgba(255,247,220,${0.25 * glow}) 0%, rgba(255,247,220,${0.10 * glow}) 35%, transparent 70%)`,
           animation: "wxMoonHalo 4s ease-in-out infinite",
           filter: "blur(2px)",
         }}

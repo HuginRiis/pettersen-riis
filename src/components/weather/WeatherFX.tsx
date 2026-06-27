@@ -561,16 +561,17 @@ export function GustFX({ intensity = 0.5, className = "" }: Common) {
 
 /* ---------------- SUN (rays + sparkles) ---------------- */
 export function SunFX({ intensity = 0.5, className = "" }: Common) {
-  const sparkles = useMemo(() => {
-    const rng = seededRng(123);
-    return Array.from({ length: 6 }).map(() => ({
-      left: rng() * 100,
-      top: rng() * 100,
-      delay: rng() * 2.4,
-      dur: 1.6 + rng() * 1.6,
-      size: 2 + rng() * 3,
-    }));
-  }, []);
+  const sparkles = useMemo(
+    () =>
+      Array.from({ length: 6 }).map(() => ({
+        left: Math.random() * 100,
+        top: Math.random() * 100,
+        delay: Math.random() * 2.4,
+        dur: 1.6 + Math.random() * 1.6,
+        size: 2 + Math.random() * 3,
+      })),
+    [],
+  );
   return (
     <div className={`${wrap} ${className}`} aria-hidden>
       <div
@@ -603,16 +604,17 @@ export function SunFX({ intensity = 0.5, className = "" }: Common) {
 
 /* ---------------- MOON (stars) ---------------- */
 export function StarFX({ intensity = 0.5, className = "" }: Common) {
-  const stars = useMemo(() => {
-    const rng = seededRng(42);
-    return Array.from({ length: 14 }).map(() => ({
-      left: rng() * 100,
-      top: rng() * 100,
-      delay: rng() * 3,
-      dur: 1.6 + rng() * 2.2,
-      size: 1 + rng() * 2,
-    }));
-  }, []);
+  const stars = useMemo(
+    () =>
+      Array.from({ length: 14 }).map(() => ({
+        left: Math.random() * 100,
+        top: Math.random() * 100,
+        delay: Math.random() * 3,
+        dur: 1.6 + Math.random() * 2.2,
+        size: 1 + Math.random() * 2,
+      })),
+    [],
+  );
   return (
     <div className={`${wrap} ${className}`} aria-hidden>
       {stars.map((s, i) => (
