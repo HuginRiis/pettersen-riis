@@ -575,6 +575,14 @@ main .container {
               0 4px 6px -4px rgba(0, 0, 0, calc(var(--tile-opacity, 1) * 0.1)) !important;
 }
 
+/* Brukervalgt flisfarge (TileColor) – overstyrer bakgrunnen på alle tile-bg-* */
+.has-tile-color .tile-bg-0,
+.has-tile-color .tile-bg-1,
+.has-tile-color .tile-bg-2,
+.has-tile-color .tile-bg-3 {
+  background-color: var(--tile-color-bg) !important;
+}
+
 
 /* Smart dashbord – bold-toggle som overstyrer alle font-weight-klasser i griden */
 .smart-bold-all,
