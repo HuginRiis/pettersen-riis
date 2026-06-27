@@ -1600,10 +1600,14 @@ function MoonVisual({ phaseFraction, illumination }: { phaseFraction: number; il
   const waxing = p < 0.5;
   const gibbous = p > 0.25 && p < 0.75;
   const rx = Math.max(0.01, Math.abs(Math.cos(2 * Math.PI * p)) * r);
+  const rxRounded = Math.round(rx * 100) / 100;
   const outerSweep = waxing ? 1 : 0;
   const innerSweep = gibbous ? (waxing ? 0 : 1) : outerSweep;
-  const litPath = `M ${cx},${cy - r} A ${r},${r} 0 0,${outerSweep} ${cx},${cy + r} A ${rx},${r} 0 0,${innerSweep} ${cx},${cy - r} Z`;
-  const glow = 0.35 + illumination * 0.65;
+  const litPath = `M ${cx},${cy - r} A ${r},${r} 0 0,${outerSweep} ${cx},${cy + r} A ${rxRounded},${r} 0 0,${innerSweep} ${cx},${cy - r} Z`;
+  const glow = Math.round((0.35 + illumination * 0.65) * 1000) / 1000;
+  const haloAlpha1 = Math.round(0.25 * glow * 1000) / 1000;
+  const haloAlpha2 = Math.round(0.10 * glow * 1000) / 1000;
+  const halo = `radial-gradient(circle at 50% 50%, rgba(255,247,220,${haloAlpha1}) 0%, rgba(255,247,220,${haloAlpha2}) 35%, transparent 70%)`;
   return (
     <div
       className="relative w-28 h-28"
@@ -1613,7 +1617,7 @@ function MoonVisual({ phaseFraction, illumination }: { phaseFraction: number; il
       <div
         className="absolute inset-0 rounded-full pointer-events-none"
         style={{
-          background: `radial-gradient(circle at 50% 50%, rgba(255,247,220,${0.25 * glow}) 0%, rgba(255,247,220,${0.10 * glow}) 35%, transparent 70%)`,
+          background: halo,
           animation: "wxMoonHalo 4s ease-in-out infinite",
           filter: "blur(2px)",
         }}
