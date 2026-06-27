@@ -1305,21 +1305,33 @@ function DailyRainRow({ day, hours, index }: { day: ForecastDay; hours: Hour[]; 
   return (
     <div className="grid grid-cols-[56px_1fr_64px_56px] items-center gap-3 py-2.5">
       <div className="text-[15px] capitalize">{label}</div>
-      <div className="flex items-end gap-[3px] h-7">
+      <div className="flex items-end gap-[3px] h-8">
         {buckets.map((b, i) => {
-          const rainFill = b.precip > 0 ? Math.max(2, Math.min(100, (b.precip / 20) * 100)) : 0;
-          const baseBg = b.isNight ? "rgba(255,255,255,0.18)" : "rgba(255,255,255,0.35)";
+          const rainFill = b.precip > 0 ? Math.max(6, Math.min(100, (b.precip / 6) * 100)) : 0;
+          const probAlpha = Math.max(0.12, Math.min(0.42, (b.prob / 100) * 0.42));
+          const baseBg = b.isNight
+            ? `rgba(148, 163, 184, ${probAlpha * 0.6 + 0.08})`
+            : `rgba(186, 230, 253, ${probAlpha + 0.08})`;
+          const intense = b.precip >= 2;
           return (
             <div
               key={i}
-              className="relative flex-1 h-full rounded-[2px] overflow-hidden"
+              className="relative flex-1 h-full rounded-md overflow-hidden ring-1 ring-white/10"
               style={{ background: baseBg }}
               title={`${String(b.startHour).padStart(2, "0")}–${String(b.startHour + 2).padStart(2, "0")} · ${b.precip.toFixed(1)} mm · ${Math.round(b.prob)}%`}
             >
               {rainFill > 0 && (
                 <div
-                  className="absolute bottom-0 left-0 right-0 bg-sky-400"
-                  style={{ height: `${rainFill}%` }}
+                  className="absolute bottom-0 left-0 right-0 rounded-b-md transition-all"
+                  style={{
+                    height: `${rainFill}%`,
+                    background: intense
+                      ? "linear-gradient(to top, #1d4ed8 0%, #3b82f6 60%, #60a5fa 100%)"
+                      : "linear-gradient(to top, #0284c7 0%, #38bdf8 70%, #7dd3fc 100%)",
+                    boxShadow: intense
+                      ? "inset 0 1px 0 rgba(255,255,255,0.4), 0 0 6px rgba(59,130,246,0.5)"
+                      : "inset 0 1px 0 rgba(255,255,255,0.35)",
+                  }}
                 />
               )}
             </div>
