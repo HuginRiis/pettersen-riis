@@ -257,7 +257,7 @@ function Sparkline({ data, color, xFmt, showAverage }: { data: { t: string; v: n
               strokeWidth={1}
               opacity={0.8}
             />
-            <text x={w - padR + 2} y={y + 3} fontSize="9" fill={t.color} textAnchor="start" opacity={0.85}>
+            <text x={padL + 2} y={y - 4} fontSize="9" fill={t.color} textAnchor="start" opacity={0.85}>
               {t.label}
             </text>
           </g>
