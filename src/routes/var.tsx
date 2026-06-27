@@ -1947,7 +1947,7 @@ function IosUvCard({ lat, lon, now }: { lat: number; lon: number; now: Date }) {
   const slice = displayHours.slice(0, 12);
 
   return (
-    <GlassCard eyebrow="UV-indeks" icon={<Sun size={14} />} fx={<SunFX intensity={Math.min(1, (uvNow ?? 0) / 8)} />}>
+    <GlassCard eyebrow="UV-indeks" icon={<Sun size={14} />} fx={null}>
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
