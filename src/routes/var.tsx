@@ -983,6 +983,7 @@ function NedborCard({ hours }: { hours: Hour[] | null }) {
           {next.map((h, i) => {
             const heightPct = Math.max(4, (h.precip / maxP) * 70);
             const hourLabel = i === 0 ? "Nå" : h.time.slice(11, 16);
+            const mmLabel = fmtPrecipYr(h.precipMin, h.precipMax);
             return (
               <div key={h.time} className="flex flex-col items-center w-12">
                 <div className="text-[11px] text-white/80 mb-1.5">{hourLabel}</div>
@@ -992,7 +993,10 @@ function NedborCard({ hours }: { hours: Hour[] | null }) {
                     style={{ height: `${heightPct}%` }}
                   />
                 </div>
-                <div className="flex items-center gap-0.5 mt-1.5 text-[11px] text-sky-100 font-medium tabular-nums">
+                <div className="text-[10px] text-sky-200 tabular-nums mt-1 leading-tight min-h-[12px]">
+                  {mmLabel}
+                </div>
+                <div className="flex items-center gap-0.5 mt-0.5 text-[11px] text-sky-100 font-medium tabular-nums">
                   <Droplets size={9} />
                   {Math.round(h.precipProbability)}%
                 </div>
