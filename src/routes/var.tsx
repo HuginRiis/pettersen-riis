@@ -699,6 +699,16 @@ function fmtWhen(iso: string) {
   return new Date(iso).toLocaleString("nb-NO", { weekday: "short", hour: "2-digit", minute: "2-digit" });
 }
 
+// Formater nedbør som Yr: "0,2" eller "0–0,2" (komma-desimal, bindestrek for range)
+function fmtPrecipYr(min: number, max: number): string {
+  const lo = Math.max(0, min ?? 0);
+  const hi = Math.max(0, max ?? 0);
+  const fmt = (v: number) => (v >= 10 ? v.toFixed(0) : v.toFixed(1)).replace(".", ",");
+  if (hi <= 0) return "";
+  if (Math.abs(hi - lo) < 0.05) return fmt(hi);
+  return `${fmt(lo)}–${fmt(hi)}`;
+}
+
 function NedborPanel({ hours, maxP }: { hours: Hour[]; maxP: number }) {
   const total = hours.reduce((s, h) => s + h.precip, 0);
   const firstRain = hours.find((h) => h.precip >= 0.1);
@@ -715,6 +725,7 @@ function NedborPanel({ hours, maxP }: { hours: Hour[]; maxP: number }) {
         <div className="flex items-end gap-2 min-w-max pb-1">
           {hours.map((h, i) => {
             const heightPct = Math.max(4, (h.precip / maxP) * 70);
+            const mmLabel = fmtPrecipYr(h.precipMin, h.precipMax);
             return (
               <div
                 key={h.time}
@@ -730,7 +741,10 @@ function NedborPanel({ hours, maxP }: { hours: Hour[]; maxP: number }) {
                     style={{ height: `${heightPct}%` }}
                   />
                 </div>
-                <div className="flex items-center gap-0.5 mt-1 text-[10px] text-sky-100 font-medium tabular-nums">
+                <div className="text-[9px] text-sky-200 tabular-nums mt-1 leading-tight min-h-[10px]">
+                  {mmLabel}
+                </div>
+                <div className="flex items-center gap-0.5 mt-0.5 text-[10px] text-sky-100 font-medium tabular-nums">
                   <Droplets size={8} />
                   {Math.round(h.precipProbability)}%
                 </div>
