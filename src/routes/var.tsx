@@ -42,7 +42,7 @@ import {
 import { useWeatherSound, type WeatherSoundKind } from "@/components/weather/useWeatherSound";
 import { TileToneProvider, TileToneToggle, useTileTone, tileToneClasses } from "@/components/weather/TileTone";
 import { TileOpacityProvider, TileOpacityToggle, useTileOpacity } from "@/components/weather/TileOpacity";
-import { TileColorProvider, TileColorToggle, useTileColor } from "@/components/weather/TileColor";
+import { TileColorProvider, TileColorToggle, TileGlassToggle, useTileColor } from "@/components/weather/TileColor";
 
 export const Route = createFileRoute("/var")({
   head: () => ({
@@ -387,6 +387,7 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
             </button>
             <div className="flex items-center gap-2">
               <TileColorToggle />
+              <TileGlassToggle />
               <TileOpacityToggle />
               <TileToneToggle />
             </div>
