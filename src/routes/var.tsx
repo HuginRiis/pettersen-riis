@@ -427,7 +427,7 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
 
 
           {/* 10-DAGERS PROGNOSE */}
-          <DailyListCard days={skienDays} hours={skienHours} title="10-dagers prognose" />
+          <DailyListCard days={skienDays} hours={skienHours} title={`${userLoc.active.label} · 10 dager`} />
 
           {/* VIND DETALJ */}
           <WindDetailCard hour={currentHour} />
