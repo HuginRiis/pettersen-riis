@@ -354,12 +354,16 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
 
   const homeyOk = data?.ok === true;
   const { opacity } = useTileOpacity();
+  const { color: tileColor } = useTileColor();
 
   return (
     <PageShell>
       <div
-        className={`min-h-screen bg-gradient-to-b ${bgGradient} transition-colors duration-1000 relative`}
-        style={{ ["--tile-opacity" as string]: opacity / 100 }}
+        className={`min-h-screen bg-gradient-to-b ${bgGradient} transition-colors duration-1000 relative ${tileColor ? "has-tile-color" : ""}`}
+        style={{
+          ["--tile-opacity" as string]: opacity / 100,
+          ...(tileColor ? { ["--tile-color-bg" as string]: tileColor } : {}),
+        }}
       >
         <GlassPaneFX kind={glassKind} intensity={glassIntensity} />
         <div className="max-w-3xl mx-auto px-4 pt-8 pb-16 space-y-4 text-white relative z-10">
@@ -382,6 +386,7 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
               <span>Lyd</span>
             </button>
             <div className="flex items-center gap-2">
+              <TileColorToggle />
               <TileOpacityToggle />
               <TileToneToggle />
             </div>
