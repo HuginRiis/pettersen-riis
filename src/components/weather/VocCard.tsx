@@ -53,7 +53,7 @@ function VocFX({ color, intensity, value }: { color: string; intensity: number; 
   const v = value == null || !Number.isFinite(value) ? 0 : value;
   const clamped = Math.max(100, Math.min(2000, v));
   const speedT = (clamped - 100) / 1900; // 0..1
-  const orbDur = 14 - speedT * 13.1; // 14s → 0.9s (legacy, brukes ikke lenger til molekyl)
+  void (14 - speedT * 13.1); // legacy spin duration (ubrukt)
   const orbCount = 5 + Math.round(speedT * 9); // 5..14 organiske partikler
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl">
