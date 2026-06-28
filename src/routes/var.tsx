@@ -2189,6 +2189,25 @@ function UvIosChart({ hours, nowProgress }: { hours: { time: string; uv: number 
       {/* Line */}
       <path d={`M${points}`} fill="none" stroke="url(#uvLineGrad)" strokeWidth="1.8" strokeLinejoin="round" strokeLinecap="round" />
 
+      {/* Per-time UV numbers — plassert rett over hver kurvepunkt */}
+      {hours.map((h, i) => {
+        const p = pt(i);
+        return (
+          <text
+            key={`uvn-${h.time}`}
+            x={p.x}
+            y={Math.max(8, p.y - 6)}
+            fontSize="7"
+            fill="rgba(255,255,255,0.7)"
+            textAnchor="middle"
+            className="tabular-nums"
+          >
+            {Math.round(h.uv)}
+          </text>
+        );
+      })}
+
+
       {/* Now marker */}
       {nowProgress != null && (
         <>
