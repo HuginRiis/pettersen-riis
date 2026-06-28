@@ -48,7 +48,7 @@ type RoutePath =
   | "/steintavle"
   | "/steintavle-2"
   | "/kvitteringer"
-  | "/okonomi"
+  
   | "/skatte-utregningen"
   | "/gressklipper"
   | "/stovsugeren"
