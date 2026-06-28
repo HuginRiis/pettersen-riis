@@ -43,6 +43,7 @@ import { useWeatherSound, type WeatherSoundKind } from "@/components/weather/use
 import { TileToneProvider, TileToneToggle, useTileTone, tileToneClasses } from "@/components/weather/TileTone";
 import { TileOpacityProvider, TileOpacityToggle, useTileOpacity } from "@/components/weather/TileOpacity";
 import { TileColorProvider, TileColorToggle, TileGlassToggle, useTileColor } from "@/components/weather/TileColor";
+import moonBlueAsset from "@/assets/moon-blue.png.asset.json";
 
 export const Route = createFileRoute("/var")({
   head: () => ({
@@ -1620,23 +1621,18 @@ function MoonVisual({ phaseFraction, illumination }: { phaseFraction: number; il
       <svg viewBox="0 0 100 100" className="w-full h-full relative">
         <defs>
           <radialGradient id="moonG" cx="50%" cy="50%">
-            <stop offset="0%" stopColor="#0c0c14" />
-            <stop offset="100%" stopColor="#020204" />
-          </radialGradient>
-          <radialGradient id="moonShadow" cx="40%" cy="40%" r="60%">
-            <stop offset="0%" stopColor="#fff6c8" />
-            <stop offset="60%" stopColor="#f5d97a" />
-            <stop offset="100%" stopColor="#d6b450" />
+            <stop offset="0%" stopColor="#0c0c14" stopOpacity="0.92" />
+            <stop offset="100%" stopColor="#020204" stopOpacity="0.95" />
           </radialGradient>
           <clipPath id="moonClip"><circle cx={cx} cy={cy} r={r} /></clipPath>
         </defs>
-        {/* Gul base (det som var svart) */}
-        <circle cx={cx} cy={cy} r={r} fill="url(#moonShadow)" />
-        {/* Svart lit-overlay (det som var gult) */}
+        {/* Blå måne-bilde som base */}
         <g clipPath="url(#moonClip)" style={{ animation: "wxMoonGlow 4s ease-in-out infinite" }}>
+          <image href={moonBlueAsset.url} x={cx - r} y={cy - r} width={r * 2} height={r * 2} preserveAspectRatio="xMidYMid slice" />
+          {/* Mørk skygge for fase */}
           <path d={litPath} fill="url(#moonG)" />
         </g>
-        <circle cx={cx} cy={cy} r={r} fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="0.5" />
+        <circle cx={cx} cy={cy} r={r} fill="none" stroke="rgba(170,210,255,0.35)" strokeWidth="0.5" />
       </svg>
     </div>
   );
@@ -1861,12 +1857,11 @@ function SunsetCard({ sun, now }: { sun: ReturnType<typeof sunTimes>; now: Date 
             style={{
               opacity: 0,
               animation: "wx-sun-in 1.2s ease-out 1.1s forwards",
-              filter: "drop-shadow(0 0 5px rgba(200,215,255,0.8))",
+              filter: "drop-shadow(0 0 6px rgba(120,200,255,0.85))",
             }}
           >
-            {/* Måne med skygge for halvmåne-effekt */}
-            <circle cx={sx} cy={sy} r="4.5" fill="#f3f6ff" />
-            <circle cx={sx + 1.8} cy={sy - 0.4} r="3.6" fill="rgba(20,28,55,0.85)" />
+            {/* Blå måne-bilde */}
+            <image href={moonBlueAsset.url} x={sx - 4.8} y={sy - 4.8} width={9.6} height={9.6} preserveAspectRatio="xMidYMid slice" />
           </g>
         ) : (
           <circle
