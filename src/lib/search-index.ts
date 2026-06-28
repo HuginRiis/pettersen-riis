@@ -157,13 +157,6 @@ export const SEARCH_INDEX: SearchEntry[] = [
     description: "Brodering / stein-tavle.",
     keywords: ["steintavle", "brodering", "pes"],
   },
-  {
-    title: "Decibel",
-    path: "/decibel",
-    section: "Vakttårnet",
-    description: "Decibel-måler / lyd.",
-    keywords: ["decibel", "lyd", "støy"],
-  },
 ];
 
 // Enkel scoring: navn/keyword-match veier mest, beskrivelse mindre.
