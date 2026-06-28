@@ -3244,7 +3244,7 @@ function VocStuaTile() {
     <Tile title="VOC · Stua" icon={<Wind size={14} />} accent="text-emerald-300">
       <div className="relative flex items-center gap-3 h-full overflow-hidden">
         <style>{`
-          @keyframes vocDrift { 0%{transform:translate(0,0) scale(.8);opacity:.15} 40%{opacity:.6} 100%{transform:translate(var(--dx),var(--dy)) scale(1.2);opacity:0} }
+          @keyframes vocRise { 0%{transform:translateY(0) scale(.8);opacity:.15} 40%{opacity:.6} 100%{transform:translateY(-90px) scale(1.2);opacity:0} }
           @keyframes vocCorePulse { 0%,100%{opacity:.25;transform:scale(1)} 50%{opacity:.55;transform:scale(1.1)} }
           @keyframes vocSpin { from{transform:rotate(0)} to{transform:rotate(360deg)} }
         `}</style>
