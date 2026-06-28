@@ -666,7 +666,6 @@ function HallCard({
     | "/steintavle"
     | "/steintavle-2"
     | "/kvitteringer"
-    | "/okonomi"
     | "/push-varslinger";
 
   title: string;
