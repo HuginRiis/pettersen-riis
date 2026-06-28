@@ -1629,7 +1629,7 @@ function MoonVisual({ phaseFraction, illumination }: { phaseFraction: number; il
         </defs>
         {/* Blå måne-bilde som base */}
         <g clipPath="url(#moonClip)" style={{ animation: "wxMoonGlow 4s ease-in-out infinite" }}>
-          <image href={moonBlueAsset.url} x={cx - r} y={cy - r} width={r * 2} height={r * 2} preserveAspectRatio="xMidYMid slice" />
+          <image href={moonRealAsset.url} x={cx - r} y={cy - r} width={r * 2} height={r * 2} preserveAspectRatio="xMidYMid slice" />
           {/* Mørk skygge for fase */}
           <path d={litPath} fill="url(#moonG)" />
         </g>
