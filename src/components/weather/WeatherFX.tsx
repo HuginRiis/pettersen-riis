@@ -68,8 +68,11 @@ export function InsideRainFX({ intensity = 0.5, className = "" }: Common) {
 export function RainFX({ intensity = 0.5, className = "" }: Common) {
   const clamped = Math.max(0, Math.min(1, intensity));
   const drops = useMemo(() => {
-    // Dry spells: 12-15 random drops; escalates up to ~36 drops in heavy rain
-    const count = Math.round(12 + Math.random() * 4 + clamped * 22);
+    // Opphold: 2–4 få drypp; når regnet starter eskalerer det raskt opp til ~40 drypp
+    const count = clamped === 0
+      ? Math.round(2 + Math.random() * 2)
+      : Math.round(4 + clamped * 36);
+
     return Array.from({ length: count }).map((_, i) => ({
       left: (i / count) * 100 + (Math.random() * 6 - 3),
       delay: Math.random() * 1.8,
