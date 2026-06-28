@@ -24,7 +24,7 @@ import { LoginNotificationSettings } from "@/components/LoginNotificationSetting
 import { SlowPageLoadNotificationSettings } from "@/components/SlowPageLoadNotificationSettings";
 import { AppearanceSettingsPanel } from "@/components/AppearanceSettingsPanel";
 
-import { OkonomiSettingsPanel } from "@/components/OkonomiSettingsPanel";
+
 import { HomeySensorSettings } from "@/components/HomeySensorSettings";
 import { ClimateNotificationSettings } from "@/components/ClimateNotificationSettings";
 import { BassengNotificationSettings } from "@/components/BassengNotificationSettings";
