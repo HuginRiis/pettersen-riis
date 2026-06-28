@@ -391,13 +391,6 @@ export function SiteHeader() {
           {l.to === "/stromkroniken" && showB("power_vs_yesterday") && <PowerVsYesterdayBadge inline />}
           {l.to === "/trening" && <>{showB("steps_arne") && <StepsTodayBadge inline owner="arne" />}{showB("steps_rebekka") && <StepsTodayBadge inline owner="rebekka" />}{showB("training_4w") && <TrainingLast4WeeksBadge inline owner="arne" />}{showB("training_4w_rebekka") && <TrainingLast4WeeksBadge inline owner="rebekka" />}</>}
           {l.to === "/agenda" && showB("garbage_next") && <GarbageNextPickupBadge inline />}
-          {l.to === "/okonomi" && showB("budget_remaining") && <BudgetRemainingBadge inline />}
-          {l.to === "/okonomi" && showB("okonomi_brukt") && <OkonomiBruktBadge inline />}
-          {l.to === "/okonomi" && showB("okonomi_inntekt") && <OkonomiInntektBadge inline />}
-          {l.to === "/okonomi" && showB("okonomi_budsjett") && <OkonomiBudsjettBadge inline />}
-          {l.to === "/okonomi" && showB("okonomi_overskudd") && <OkonomiOverskuddBadge inline />}
-          {l.to === "/okonomi" && showB("okonomi_snitt_dag") && <OkonomiSnittPrDagBadge inline />}
-          {l.to === "/okonomi" && showB("okonomi_igjen_dag") && <OkonomiIgjenPrDagBadge inline />}
           </span>
         </Link>
       </div>
