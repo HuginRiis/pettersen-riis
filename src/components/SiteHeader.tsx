@@ -93,7 +93,7 @@ const ROUTE_ICON: Partial<Record<RoutePath, React.ComponentType<{ size?: number;
   "/skatte-utregningen": Coins,
   "/gressklipper": Bot,
   "/stovsugeren": Bot,
-  "/decibel": Volume2,
+  
   "/roborock": Bot,
   "/planter": TreePine,
   "/fly": Plane,
