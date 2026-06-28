@@ -3098,6 +3098,7 @@ function RadonStuaTile() {
   const orbitDur = lerpN(10, 0.4, speedT);
   const floatDur = lerpN(8, 1.1, speedT);
   const pulseDur = lerpN(3.8, 0.9, speedT);
+  const dots = 8 + Math.round(speedT * 24);
 
   return (
     <Tile title="Radon · Stua" icon={<Atom size={14} />} accent="text-emerald-300">
@@ -3165,7 +3166,7 @@ function RadonStuaTile() {
 
           </div>
           {/* Stigende gass-partikler */}
-          {Array.from({ length: 6 }).map((_, i) => {
+          {Array.from({ length: dots }).map((_, i) => {
             const left = 10 + ((i * 17) % 80);
             const delay = (i * 0.6) % 4;
             const dur = floatDur * (0.85 + ((i * 0.11) % 0.4));
@@ -3182,7 +3183,7 @@ function RadonStuaTile() {
                   borderRadius: "50%",
                   background: lvl.color,
                   filter: "blur(.5px)",
-                  opacity: 0.35,
+                  opacity: 0.4,
                   animation: `radonFloat ${dur.toFixed(2)}s ease-in ${delay}s infinite`,
                 }}
               />
@@ -3231,6 +3232,8 @@ function VocStuaTile() {
   );
   const v = stua?.current ?? null;
   const unit = stua?.unit ?? "ppb";
+  const intensity = Math.min(1, (v ?? 0) / 2000);
+  const dots = 10 + Math.round(intensity * 24);
   const lvl =
     v == null ? { color: "#a3a3a3", label: "—" }
     : v < 250 ? { color: "#34d399", label: "Bra" }
@@ -3241,7 +3244,7 @@ function VocStuaTile() {
     <Tile title="VOC · Stua" icon={<Wind size={14} />} accent="text-emerald-300">
       <div className="relative flex items-center gap-3 h-full overflow-hidden">
         <style>{`
-          @keyframes vocDrift { 0%{transform:translate(0,0) scale(.8);opacity:.15} 40%{opacity:.6} 100%{transform:translate(var(--dx),var(--dy)) scale(1.2);opacity:0} }
+          @keyframes vocRise { 0%{transform:translateY(0) scale(.8);opacity:.15} 40%{opacity:.6} 100%{transform:translateY(-90px) scale(1.2);opacity:0} }
           @keyframes vocCorePulse { 0%,100%{opacity:.25;transform:scale(1)} 50%{opacity:.55;transform:scale(1.1)} }
           @keyframes vocSpin { from{transform:rotate(0)} to{transform:rotate(360deg)} }
         `}</style>
@@ -3293,12 +3296,9 @@ function VocStuaTile() {
               }}
             />
           </div>
-          {/* Drivende partikler */}
-          {Array.from({ length: 7 }).map((_, i) => {
+          {/* Stigende VOC-partikler */}
+          {Array.from({ length: dots }).map((_, i) => {
             const left = 8 + ((i * 19) % 84);
-            const top = 12 + ((i * 23) % 76);
-            const dx = (i % 2 === 0 ? 1 : -1) * (10 + (i * 4) % 18);
-            const dy = -(14 + (i * 5) % 20);
             const delay = (i * 0.38) % 3;
             const dur = 2.2 + ((i * 0.4) % 2);
             const size = 3 + (i % 2);
@@ -3308,16 +3308,14 @@ function VocStuaTile() {
                 style={{
                   position: "absolute",
                   left: `${left}%`,
-                  top: `${top}%`,
+                  bottom: -6,
                   width: size,
                   height: size,
                   borderRadius: "50%",
                   background: lvl.color,
                   filter: "blur(.5px)",
-                  opacity: 0.35,
-                  ["--dx" as any]: `${dx}px`,
-                  ["--dy" as any]: `${dy}px`,
-                  animation: `vocDrift ${dur}s ease-out ${delay}s infinite`,
+                  opacity: 0.4,
+                  animation: `vocRise ${dur}s ease-out ${delay}s infinite`,
                 }}
               />
             );
