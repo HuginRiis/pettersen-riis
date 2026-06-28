@@ -3232,6 +3232,8 @@ function VocStuaTile() {
   );
   const v = stua?.current ?? null;
   const unit = stua?.unit ?? "ppb";
+  const intensity = Math.min(1, (v ?? 0) / 2000);
+  const dots = 10 + Math.round(intensity * 24);
   const lvl =
     v == null ? { color: "#a3a3a3", label: "—" }
     : v < 250 ? { color: "#34d399", label: "Bra" }
