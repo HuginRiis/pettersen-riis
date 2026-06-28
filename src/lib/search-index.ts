@@ -106,14 +106,6 @@ export const SEARCH_INDEX: SearchEntry[] = [
     description: "Plante-database med vanning, stell, giftighet og fakta.",
     keywords: ["planter", "blomster", "tre", "vanning", "stell", "giftig", "spiselig"],
   },
-  // Økonomi
-  {
-    title: "Økonomi",
-    path: "/okonomi",
-    section: "Økonomi",
-    description: "Husholdningsøkonomi, kontoer, transaksjoner og budsjett.",
-    keywords: ["økonomi", "budsjett", "transaksjoner", "kontoer", "penger", "saldo", "nordea", "dnb"],
-  },
   {
     title: "Strøm / Tibber",
     path: "/stromkroniken",
