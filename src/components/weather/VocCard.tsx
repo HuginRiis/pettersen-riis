@@ -48,7 +48,7 @@ function vocLevel(v: number | null | undefined): {
 
 function VocFX({ color, intensity, value }: { color: string; intensity: number; value: number | null | undefined }) {
   const waves = 3;
-  const dots = 8 + Math.round(intensity * 10);
+  const dots = 10 + Math.round(intensity * 26);
   // Spin-fart: <100 → 14s, >2000 → 0.9s
   const v = value == null || !Number.isFinite(value) ? 0 : value;
   const clamped = Math.max(100, Math.min(2000, v));
@@ -151,7 +151,7 @@ function VocFX({ color, intensity, value }: { color: string; intensity: number; 
               borderRadius: "50%",
               background: color,
               filter: "blur(.6px)",
-              opacity: 0.35,
+              opacity: 0.45,
               ["--dx" as any]: `${dx}px`,
               animation: `vocDrift ${dur}s ease-in ${delay}s infinite`,
             }}

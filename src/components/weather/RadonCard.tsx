@@ -94,7 +94,7 @@ function RadonAtomFX({ color, value }: { color: string; value: number | null | u
   const floatDur = lerp(8, 1.1, t);
   const pulseDur = lerp(3.8, 0.9, t);
   const intensity = t;
-  const dots = 6 + Math.round(intensity * 10);
+  const dots = 8 + Math.round(intensity * 24);
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl">
       <style>{`
@@ -181,7 +181,7 @@ function RadonAtomFX({ color, value }: { color: string; value: number | null | u
               borderRadius: "50%",
               background: color,
               filter: "blur(.5px)",
-              opacity: 0.3,
+              opacity: 0.4,
               animation: `radonFloat ${dur.toFixed(2)}s ease-in ${delay}s infinite`,
             }}
           />
