@@ -2041,7 +2041,7 @@ function UvOrb({ uv, color }: { uv: number; color: string }) {
           className="absolute inset-0 rounded-full"
           style={{
             background: `conic-gradient(from 0deg, transparent 0deg, ${color} 12deg, transparent 24deg, transparent 90deg, ${color} 102deg, transparent 114deg, transparent 180deg, ${color} 192deg, transparent 204deg, transparent 270deg, ${color} 282deg, transparent 294deg)`,
-            opacity: rayOpacity * 0.55,
+            opacity: rayOpacity * 1.1,
             animation: `uvOrbSpin ${(8 - t * 5).toFixed(2)}s linear infinite`,
             maskImage: "radial-gradient(circle, transparent 35%, black 45%, black 70%, transparent 78%)",
             WebkitMaskImage: "radial-gradient(circle, transparent 35%, black 45%, black 70%, transparent 78%)",
