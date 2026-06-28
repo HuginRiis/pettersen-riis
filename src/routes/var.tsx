@@ -1960,19 +1960,9 @@ function IosUvCard({ lat, lon, now }: { lat: number; lon: number; now: Date }) {
         <UvOrb uv={uvNow ?? 0} color={level?.color ?? "#94a3b8"} />
       </div>
 
-      {/* Hourly UV numbers */}
-      {slice.length > 0 && (
-        <div className="flex justify-between mt-4 px-0.5">
-          {slice.map((h) => (
-            <div key={h.time} className="text-[11px] text-white/50 tabular-nums text-center flex-1">
-              {Math.round(h.uv)}
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Chart */}
+      {/* Chart (med tall over hver kurvepunkt) */}
       <UvIosChart hours={slice} nowProgress={nowProgress} />
+
 
       {/* Now + description */}
       {description && (
@@ -2092,7 +2082,7 @@ function UvIosChart({ hours, nowProgress }: { hours: { time: string; uv: number 
   const H = 130;
   const padL = 70;
   const padR = 20;
-  const padT = 16;
+  const padT = 28;
   const padB = 18;
   const chartW = W - padL - padR;
   const chartH = H - padT - padB;
@@ -2133,19 +2123,31 @@ function UvIosChart({ hours, nowProgress }: { hours: { time: string; uv: number 
     <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-32 mt-1">
       <defs>
         <linearGradient id="uvAreaGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#8E5BA6" stopOpacity="0.45" />
-          <stop offset="27%" stopColor="#C9484A" stopOpacity="0.45" />
-          <stop offset="54%" stopColor="#E07A3C" stopOpacity="0.45" />
-          <stop offset="73%" stopColor="#E9C547" stopOpacity="0.45" />
-          <stop offset="100%" stopColor="#6FBF73" stopOpacity="0.45" />
+          {/* Hard bands knyttet til UV-verdi (maxUV=11). Topp = UV 11, bunn = UV 0. */}
+          <stop offset="0%" stopColor="#8E5BA6" stopOpacity="0.5" />
+          <stop offset="18.18%" stopColor="#8E5BA6" stopOpacity="0.5" />
+          <stop offset="18.18%" stopColor="#C9484A" stopOpacity="0.5" />
+          <stop offset="40.9%" stopColor="#C9484A" stopOpacity="0.5" />
+          <stop offset="40.9%" stopColor="#E07A3C" stopOpacity="0.5" />
+          <stop offset="50%" stopColor="#E07A3C" stopOpacity="0.5" />
+          <stop offset="50%" stopColor="#E9C547" stopOpacity="0.5" />
+          <stop offset="72.73%" stopColor="#E9C547" stopOpacity="0.5" />
+          <stop offset="72.73%" stopColor="#6FBF73" stopOpacity="0.5" />
+          <stop offset="100%" stopColor="#6FBF73" stopOpacity="0.5" />
         </linearGradient>
         <linearGradient id="uvLineGrad" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="#8E5BA6" />
-          <stop offset="27%" stopColor="#C9484A" />
-          <stop offset="54%" stopColor="#E07A3C" />
-          <stop offset="73%" stopColor="#E9C547" />
+          <stop offset="18.18%" stopColor="#8E5BA6" />
+          <stop offset="18.18%" stopColor="#C9484A" />
+          <stop offset="40.9%" stopColor="#C9484A" />
+          <stop offset="40.9%" stopColor="#E07A3C" />
+          <stop offset="50%" stopColor="#E07A3C" />
+          <stop offset="50%" stopColor="#E9C547" />
+          <stop offset="72.73%" stopColor="#E9C547" />
+          <stop offset="72.73%" stopColor="#6FBF73" />
           <stop offset="100%" stopColor="#6FBF73" />
         </linearGradient>
+
       </defs>
 
       {/* Reference lines + left labels */}
@@ -2186,6 +2188,25 @@ function UvIosChart({ hours, nowProgress }: { hours: { time: string; uv: number 
 
       {/* Line */}
       <path d={`M${points}`} fill="none" stroke="url(#uvLineGrad)" strokeWidth="1.8" strokeLinejoin="round" strokeLinecap="round" />
+
+      {/* Per-time UV numbers — plassert rett over hver kurvepunkt */}
+      {hours.map((h, i) => {
+        const p = pt(i);
+        return (
+          <text
+            key={`uvn-${h.time}`}
+            x={p.x}
+            y={Math.max(8, p.y - 6)}
+            fontSize="7"
+            fill="rgba(255,255,255,0.7)"
+            textAnchor="middle"
+            className="tabular-nums"
+          >
+            {Math.round(h.uv)}
+          </text>
+        );
+      })}
+
 
       {/* Now marker */}
       {nowProgress != null && (
