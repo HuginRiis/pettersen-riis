@@ -118,7 +118,7 @@ const ROUTE_ICON_COLOR: Partial<Record<RoutePath, string>> = {
   "/varme": "#fb923c",
   "/stromkroniken": "#eab308",
   "/kvitteringer": "#94a3b8",
-  "/okonomi": "#d4af37",
+  
   "/trening": "#ef4444",
   "/varsler": "#dc2626",
   "/steintavle": "#cbd5e1",
