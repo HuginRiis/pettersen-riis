@@ -1956,7 +1956,7 @@ function IosUvCard({ lat, lon, now }: { lat: number; lon: number; now: Date }) {
       </div>
 
       {/* Chart (med tall over hver kurvepunkt) */}
-      <UvIosChart hours={slice} nowProgress={nowProgress} />
+      <UvIosChart hours={slice} nowProgress={nowProgress} uvNow={uvNow ?? 0} />
 
 
       {/* Now + description */}
@@ -2072,7 +2072,7 @@ function UvOrb({ uv, color }: { uv: number; color: string }) {
   );
 }
 
-function UvIosChart({ hours, nowProgress }: { hours: { time: string; uv: number }[]; nowProgress: number | null }) {
+function UvIosChart({ hours, nowProgress, uvNow }: { hours: { time: string; uv: number }[]; nowProgress: number | null; uvNow: number }) {
   const W = 340;
   const H = 130;
   const padL = 70;
