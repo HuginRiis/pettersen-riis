@@ -44,6 +44,7 @@ import { TileToneProvider, TileToneToggle, useTileTone, tileToneClasses } from "
 import { TileOpacityProvider, TileOpacityToggle, useTileOpacity } from "@/components/weather/TileOpacity";
 import { TileColorProvider, TileColorToggle, TileGlassToggle, useTileColor } from "@/components/weather/TileColor";
 import moonBlueAsset from "@/assets/moon-blue.png.asset.json";
+import moonRealAsset from "@/assets/moon-real.png.asset.json";
 
 export const Route = createFileRoute("/var")({
   head: () => ({
