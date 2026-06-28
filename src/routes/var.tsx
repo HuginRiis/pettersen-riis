@@ -1960,19 +1960,9 @@ function IosUvCard({ lat, lon, now }: { lat: number; lon: number; now: Date }) {
         <UvOrb uv={uvNow ?? 0} color={level?.color ?? "#94a3b8"} />
       </div>
 
-      {/* Hourly UV numbers */}
-      {slice.length > 0 && (
-        <div className="flex justify-between mt-4 px-0.5">
-          {slice.map((h) => (
-            <div key={h.time} className="text-[11px] text-white/50 tabular-nums text-center flex-1">
-              {Math.round(h.uv)}
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Chart */}
+      {/* Chart (med tall over hver kurvepunkt) */}
       <UvIosChart hours={slice} nowProgress={nowProgress} />
+
 
       {/* Now + description */}
       {description && (
