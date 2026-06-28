@@ -62,7 +62,7 @@ import hallStrom from "@/assets/stromkroniken.jpg";
 import hallSteintavle from "@/assets/got-brodering.jpg";
 import hallVarslinger from "@/assets/got-varslinger.jpg";
 import hallKvitteringer from "@/assets/got-kvitteringer.jpg";
-import hallOkonomi from "@/assets/got-okonomi.jpg";
+
 import hallLys from "@/assets/got-lys.jpg";
 import hallVarme from "@/assets/got-varme.jpg";
 import hallGressklipper from "@/assets/got-gressklipper.jpg";
