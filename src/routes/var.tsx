@@ -1334,6 +1334,23 @@ function DailyListCard({ days, hours, title }: { days: ForecastDay[] | null; hou
     );
   }
 
+  if (panel === "lyn" && hours && hours.length > 0) {
+    return (
+      <GlassCard eyebrow={title} icon={<Zap size={14} />}>
+        <DailyRollInStyles />
+        <div className="divide-y divide-white/10">
+          {list.map((d, i) => (
+            <div key={d.date} className="wx-roll-in" style={{ animationDelay: `${i * 70}ms` }}>
+              <DailyLynRow day={d} hours={hours} index={i} />
+            </div>
+          ))}
+        </div>
+      </GlassCard>
+    );
+  }
+
+
+
 
 
 
