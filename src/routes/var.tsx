@@ -861,6 +861,89 @@ function SkydekkePanel({ hours }: { hours: Hour[] }) {
   const label = avg < 25 ? "Stort sett klart" : avg < 60 ? "Vekslende skydekke" : avg < 85 ? "Mye skyet" : "Tett overskyet";
   const summary = `${label} · snitt ${Math.round(avg)} % · tettest ${Math.round(clouds[peakIdx])} % ${fmtWhen(peak.time)} · klarest ${Math.round(clouds[clearIdx])} % ${fmtWhen(clear.time)}`;
 
+  // 10-dagers-modus (>= 72 t): grupper per dag, vis sky-animasjon + 12 barer + dagssnitt
+  const tenDay = hours.length >= 72;
+
+  if (tenDay) {
+    const byDay = new Map<string, Hour[]>();
+    for (const h of next) {
+      const d = h.time.slice(0, 10);
+      if (!byDay.has(d)) byDay.set(d, []);
+      byDay.get(d)!.push(h);
+    }
+    const days = Array.from(byDay.entries()).map(([date, hrs]) => {
+      const cs = hrs.map((h) => Math.max(0, Math.min(100, h.cloud ?? 0)));
+      const dayAvg = cs.reduce((s, v) => s + v, 0) / Math.max(1, cs.length);
+      // 12 barer = 2-timers segmenter over døgnet
+      const bars: number[] = Array.from({ length: 12 }).map((_, b) => {
+        const seg = hrs.filter((h) => {
+          const hh = new Date(h.time).getHours();
+          return hh >= b * 2 && hh < (b + 1) * 2;
+        });
+        if (seg.length === 0) return dayAvg;
+        return seg.reduce((s, h) => s + Math.max(0, Math.min(100, h.cloud ?? 0)), 0) / seg.length;
+      });
+      return { date, dayAvg, bars };
+    });
+
+    return (
+      <div className="space-y-2">
+        <div className="text-[12px] text-white/90">{summary}</div>
+        <div className="flex items-baseline gap-3 px-1">
+          <div className="text-3xl font-semibold tabular-nums text-white">{Math.round(avg)}<span className="text-base text-white/70">%</span></div>
+          <div className="text-[11px] text-white/70">snitt skydekke neste {hours.length} t</div>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          {days.map((d, di) => {
+            const wd = new Date(d.date + "T12:00:00").toLocaleDateString("nb-NO", { weekday: "short", day: "2-digit" });
+            const intensity = Math.min(1, d.dayAvg / 100);
+            return (
+              <div
+                key={d.date}
+                className="flex items-center gap-2"
+                style={{ animation: `hourPop 0.45s cubic-bezier(.2,.8,.2,1) ${(0.35 + di * 0.08).toFixed(2)}s both` }}
+              >
+                <div className="text-[10px] text-white/80 w-12 shrink-0 tabular-nums uppercase">{wd}</div>
+                {/* Sky-animasjon — fastlåst boks til venstre, kan ikke renne ut */}
+                <div className="relative w-14 h-10 rounded-md overflow-hidden bg-white/5 border border-white/10 shrink-0">
+                  <CloudCoverFX intensity={intensity} />
+                </div>
+                {/* 12 barer — egen kolonne, isolert fra animasjonen */}
+                <div className="flex items-end gap-[2px] flex-1 h-10 relative isolate">
+                  {d.bars.map((v, bi) => {
+                    const l = Math.round(240 - v * 1.9);
+                    const col = `rgb(${l},${l},${Math.min(255, l + 10)})`;
+                    return (
+                      <div
+                        key={bi}
+                        className="flex-1 rounded-sm bg-white/10 relative overflow-hidden"
+                        style={{ height: "100%" }}
+                        title={`kl ${String(bi * 2).padStart(2, "0")}–${String(bi * 2 + 2).padStart(2, "0")} · ${Math.round(v)}%`}
+                      >
+                        <div
+                          className="absolute bottom-0 left-0 right-0"
+                          style={{
+                            height: `${Math.max(4, v)}%`,
+                            background: `linear-gradient(to top, ${col}, rgba(255,255,255,0.2))`,
+                          }}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+                {/* Dagsprosent til høyre */}
+                <div className="text-sm font-semibold tabular-nums text-white w-12 text-right shrink-0">
+                  {Math.round(d.dayAvg)}<span className="text-[10px] text-white/70">%</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-2">
       <div className="text-[12px] text-white/90">{summary}</div>
