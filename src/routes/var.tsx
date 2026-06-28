@@ -2123,19 +2123,31 @@ function UvIosChart({ hours, nowProgress }: { hours: { time: string; uv: number 
     <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-32 mt-1">
       <defs>
         <linearGradient id="uvAreaGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#8E5BA6" stopOpacity="0.45" />
-          <stop offset="27%" stopColor="#C9484A" stopOpacity="0.45" />
-          <stop offset="54%" stopColor="#E07A3C" stopOpacity="0.45" />
-          <stop offset="73%" stopColor="#E9C547" stopOpacity="0.45" />
-          <stop offset="100%" stopColor="#6FBF73" stopOpacity="0.45" />
+          {/* Hard bands knyttet til UV-verdi (maxUV=11). Topp = UV 11, bunn = UV 0. */}
+          <stop offset="0%" stopColor="#8E5BA6" stopOpacity="0.5" />
+          <stop offset="18.18%" stopColor="#8E5BA6" stopOpacity="0.5" />
+          <stop offset="18.18%" stopColor="#C9484A" stopOpacity="0.5" />
+          <stop offset="40.9%" stopColor="#C9484A" stopOpacity="0.5" />
+          <stop offset="40.9%" stopColor="#E07A3C" stopOpacity="0.5" />
+          <stop offset="50%" stopColor="#E07A3C" stopOpacity="0.5" />
+          <stop offset="50%" stopColor="#E9C547" stopOpacity="0.5" />
+          <stop offset="72.73%" stopColor="#E9C547" stopOpacity="0.5" />
+          <stop offset="72.73%" stopColor="#6FBF73" stopOpacity="0.5" />
+          <stop offset="100%" stopColor="#6FBF73" stopOpacity="0.5" />
         </linearGradient>
         <linearGradient id="uvLineGrad" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="#8E5BA6" />
-          <stop offset="27%" stopColor="#C9484A" />
-          <stop offset="54%" stopColor="#E07A3C" />
-          <stop offset="73%" stopColor="#E9C547" />
+          <stop offset="18.18%" stopColor="#8E5BA6" />
+          <stop offset="18.18%" stopColor="#C9484A" />
+          <stop offset="40.9%" stopColor="#C9484A" />
+          <stop offset="40.9%" stopColor="#E07A3C" />
+          <stop offset="50%" stopColor="#E07A3C" />
+          <stop offset="50%" stopColor="#E9C547" />
+          <stop offset="72.73%" stopColor="#E9C547" />
+          <stop offset="72.73%" stopColor="#6FBF73" />
           <stop offset="100%" stopColor="#6FBF73" />
         </linearGradient>
+
       </defs>
 
       {/* Reference lines + left labels */}
