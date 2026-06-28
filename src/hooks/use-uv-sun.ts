@@ -125,11 +125,12 @@ export function useUvSun(lat: number, lon: number): UvSunData {
  *  8–10 Veldig høy Rød     #D90011
  *  11+  Ekstrem    Fiolett #6846A2
  */
+// Yr-inspirert palett: grønn → gul → oransje → rød → fiolett
 export function uvLevel(uv: number): { label: string; color: string } {
-  if (uv < 3) return { label: "Lav", color: "#299501" };
-  if (uv < 6) return { label: "Moderat", color: "#F7E401" };
-  if (uv < 8) return { label: "Høy", color: "#F95901" };
-  if (uv < 11) return { label: "Veldig høy", color: "#D90011" };
-  return { label: "Ekstrem", color: "#6846A2" };
+  if (uv < 3) return { label: "Lav", color: "#6FBF73" };
+  if (uv < 6) return { label: "Moderat", color: "#E9C547" };
+  if (uv < 8) return { label: "Høy", color: "#E07A3C" };
+  if (uv < 11) return { label: "Veldig høy", color: "#C9484A" };
+  return { label: "Ekstrem", color: "#8E5BA6" };
 }
 
