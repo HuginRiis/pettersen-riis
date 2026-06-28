@@ -3166,7 +3166,7 @@ function RadonStuaTile() {
 
           </div>
           {/* Stigende gass-partikler */}
-          {Array.from({ length: 6 }).map((_, i) => {
+          {Array.from({ length: dots }).map((_, i) => {
             const left = 10 + ((i * 17) % 80);
             const delay = (i * 0.6) % 4;
             const dur = floatDur * (0.85 + ((i * 0.11) % 0.4));
@@ -3183,7 +3183,7 @@ function RadonStuaTile() {
                   borderRadius: "50%",
                   background: lvl.color,
                   filter: "blur(.5px)",
-                  opacity: 0.35,
+                  opacity: 0.4,
                   animation: `radonFloat ${dur.toFixed(2)}s ease-in ${delay}s infinite`,
                 }}
               />
