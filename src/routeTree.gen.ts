@@ -23,6 +23,7 @@ import { Route as SteintavleRouteImport } from './routes/steintavle'
 import { Route as SsbStatistikkRouteImport } from './routes/ssb-statistikk'
 import { Route as SmarthusRouteImport } from './routes/smarthus'
 import { Route as SmartDashbordRouteImport } from './routes/smart-dashbord'
+import { Route as SkydekkeRouteImport } from './routes/skydekke'
 import { Route as SkatteUtregningenRouteImport } from './routes/skatte-utregningen'
 import { Route as RoborockRouteImport } from './routes/roborock'
 import { Route as PushVarslingerRouteImport } from './routes/push-varslinger'
@@ -128,6 +129,11 @@ const SmarthusRoute = SmarthusRouteImport.update({
 const SmartDashbordRoute = SmartDashbordRouteImport.update({
   id: '/smart-dashbord',
   path: '/smart-dashbord',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SkydekkeRoute = SkydekkeRouteImport.update({
+  id: '/skydekke',
+  path: '/skydekke',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SkatteUtregningenRoute = SkatteUtregningenRouteImport.update({
@@ -338,6 +344,7 @@ export interface FileRoutesByFullPath {
   '/push-varslinger': typeof PushVarslingerRoute
   '/roborock': typeof RoborockRoute
   '/skatte-utregningen': typeof SkatteUtregningenRoute
+  '/skydekke': typeof SkydekkeRoute
   '/smart-dashbord': typeof SmartDashbordRoute
   '/smarthus': typeof SmarthusRoute
   '/ssb-statistikk': typeof SsbStatistikkRoute
@@ -390,6 +397,7 @@ export interface FileRoutesByTo {
   '/push-varslinger': typeof PushVarslingerRoute
   '/roborock': typeof RoborockRoute
   '/skatte-utregningen': typeof SkatteUtregningenRoute
+  '/skydekke': typeof SkydekkeRoute
   '/smart-dashbord': typeof SmartDashbordRoute
   '/smarthus': typeof SmarthusRoute
   '/ssb-statistikk': typeof SsbStatistikkRoute
@@ -443,6 +451,7 @@ export interface FileRoutesById {
   '/push-varslinger': typeof PushVarslingerRoute
   '/roborock': typeof RoborockRoute
   '/skatte-utregningen': typeof SkatteUtregningenRoute
+  '/skydekke': typeof SkydekkeRoute
   '/smart-dashbord': typeof SmartDashbordRoute
   '/smarthus': typeof SmarthusRoute
   '/ssb-statistikk': typeof SsbStatistikkRoute
@@ -497,6 +506,7 @@ export interface FileRouteTypes {
     | '/push-varslinger'
     | '/roborock'
     | '/skatte-utregningen'
+    | '/skydekke'
     | '/smart-dashbord'
     | '/smarthus'
     | '/ssb-statistikk'
@@ -549,6 +559,7 @@ export interface FileRouteTypes {
     | '/push-varslinger'
     | '/roborock'
     | '/skatte-utregningen'
+    | '/skydekke'
     | '/smart-dashbord'
     | '/smarthus'
     | '/ssb-statistikk'
@@ -601,6 +612,7 @@ export interface FileRouteTypes {
     | '/push-varslinger'
     | '/roborock'
     | '/skatte-utregningen'
+    | '/skydekke'
     | '/smart-dashbord'
     | '/smarthus'
     | '/ssb-statistikk'
@@ -654,6 +666,7 @@ export interface RootRouteChildren {
   PushVarslingerRoute: typeof PushVarslingerRoute
   RoborockRoute: typeof RoborockRoute
   SkatteUtregningenRoute: typeof SkatteUtregningenRoute
+  SkydekkeRoute: typeof SkydekkeRoute
   SmartDashbordRoute: typeof SmartDashbordRoute
   SmarthusRoute: typeof SmarthusRoute
   SsbStatistikkRoute: typeof SsbStatistikkRoute
@@ -788,6 +801,13 @@ declare module '@tanstack/react-router' {
       path: '/smart-dashbord'
       fullPath: '/smart-dashbord'
       preLoaderRoute: typeof SmartDashbordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/skydekke': {
+      id: '/skydekke'
+      path: '/skydekke'
+      fullPath: '/skydekke'
+      preLoaderRoute: typeof SkydekkeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/skatte-utregningen': {
@@ -1062,6 +1082,7 @@ const rootRouteChildren: RootRouteChildren = {
   PushVarslingerRoute: PushVarslingerRoute,
   RoborockRoute: RoborockRoute,
   SkatteUtregningenRoute: SkatteUtregningenRoute,
+  SkydekkeRoute: SkydekkeRoute,
   SmartDashbordRoute: SmartDashbordRoute,
   SmarthusRoute: SmarthusRoute,
   SsbStatistikkRoute: SsbStatistikkRoute,

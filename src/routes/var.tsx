@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { PageShell } from "@/components/PageShell";
@@ -664,17 +664,31 @@ function RotatingForecastCard({ hours, soundEnabled }: { hours: Hour[] | null; s
           <div className="flex items-center gap-1">
             {panels.map((p) => {
               const isActive = p.key === panel;
+              const className = `inline-flex items-center justify-center h-7 w-7 rounded-full transition-all ${
+                isActive
+                  ? "bg-white text-slate-900 shadow"
+                  : "bg-white/15 text-white/70 hover:bg-white/25 hover:text-white"
+              }`;
+              if (p.key === "skydekke") {
+                return (
+                  <Link
+                    key={p.key}
+                    to="/skydekke"
+                    aria-label={p.label}
+                    title={p.label}
+                    className={className}
+                  >
+                    {p.icon}
+                  </Link>
+                );
+              }
               return (
                 <button
                   key={p.key}
                   onClick={() => setPanel(p.key)}
                   aria-label={p.label}
                   title={p.label}
-                  className={`inline-flex items-center justify-center h-7 w-7 rounded-full transition-all ${
-                    isActive
-                      ? "bg-white text-slate-900 shadow"
-                      : "bg-white/15 text-white/70 hover:bg-white/25 hover:text-white"
-                  }`}
+                  className={className}
                 >
                   {p.icon}
                 </button>
