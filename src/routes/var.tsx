@@ -2012,12 +2012,12 @@ function UvOrb({ uv, color }: { uv: number; color: string }) {
   // Pulshastighet: 0 → 3.6s (rolig), 11 → 0.9s (rask)
   const pulseDur = (3.6 - t * 2.7).toFixed(2) + "s";
   // Glød-radius i px — 2.5x sterkere enn før
-  const glow = ((6 + t * 22) * 2.5).toFixed(1);
-  const glowSoft = ((12 + t * 36) * 2.5).toFixed(1);
+  const glow = ((8 + t * 24) * 2.5).toFixed(1);
+  const glowSoft = ((14 + t * 40) * 2.5).toFixed(1);
   // Ytre halo-opasitet
-  const haloOpacity = Math.min(0.95, 0.3 + t * 0.8);
-  const haloOpacityMid = Math.min(1.0, 0.5 + t * 1.0);
-  const haloOpacityLow = Math.min(1.0, 0.24 + t * 0.6);
+  const haloOpacity = Math.min(0.95, 0.5 + t * 0.45);
+  const haloOpacityMid = Math.min(1.0, 0.85 + t * 0.15);
+  const haloOpacityLow = Math.min(1.0, 0.4 + t * 0.55);
   // Stråler vises fra UV ≥ 3
   const showRays = uv >= 3;
   const rayOpacity = Math.max(0, Math.min(1, (uv - 2) / 8));
@@ -2062,7 +2062,7 @@ function UvOrb({ uv, color }: { uv: number; color: string }) {
       <style>{`
         @keyframes uvOrbPulse {
           0%, 100% { transform: scale(1); filter: brightness(1); }
-          50% { transform: scale(${(1.08 + t * 0.18).toFixed(3)}); filter: brightness(${(1.15 + t * 0.5).toFixed(2)}); }
+          50% { transform: scale(${(1.08 + t * 0.18).toFixed(3)}); filter: brightness(${(1.25 + t * 0.75).toFixed(2)}); }
         }
         @keyframes uvOrbHalo {
           0%, 100% { transform: scale(0.9); opacity: ${haloOpacityLow.toFixed(2)}; }
