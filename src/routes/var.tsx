@@ -440,7 +440,7 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
           <MoonCard moon={moon} now={now} />
 
           {/* SOL */}
-          <SunsetCard sun={sun} now={now} />
+          <SunsetCard sun={sun} now={now} moon={moon} />
 
           {/* FØLES SOM + SKYDEKKE */}
           <div className="grid grid-cols-2 gap-3">
