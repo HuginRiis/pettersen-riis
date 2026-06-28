@@ -2011,13 +2011,13 @@ function UvOrb({ uv, color }: { uv: number; color: string }) {
   const t = Math.max(0, Math.min(1, uv / 11));
   // Pulshastighet: 0 → 3.6s (rolig), 11 → 0.9s (rask)
   const pulseDur = (3.6 - t * 2.7).toFixed(2) + "s";
-  // Glød-radius i px — 2.5x sterkere enn før
-  const glow = ((8 + t * 24) * 2.5).toFixed(1);
-  const glowSoft = ((14 + t * 40) * 2.5).toFixed(1);
+  // Glød-radius i px — 5x sterkere enn før (doblet igjen)
+  const glow = ((8 + t * 24) * 5).toFixed(1);
+  const glowSoft = ((14 + t * 40) * 5).toFixed(1);
   // Ytre halo-opasitet
-  const haloOpacity = Math.min(0.95, 0.5 + t * 0.45);
-  const haloOpacityMid = Math.min(1.0, 0.85 + t * 0.15);
-  const haloOpacityLow = Math.min(1.0, 0.4 + t * 0.55);
+  const haloOpacity = Math.min(0.95, 0.6 + t * 0.35);
+  const haloOpacityMid = Math.min(1.0, 0.9 + t * 0.1);
+  const haloOpacityLow = Math.min(1.0, 0.5 + t * 0.5);
   // Stråler vises fra UV ≥ 3
   const showRays = uv >= 3;
   const rayOpacity = Math.max(0, Math.min(1, (uv - 2) / 8));
@@ -2041,7 +2041,7 @@ function UvOrb({ uv, color }: { uv: number; color: string }) {
           className="absolute inset-0 rounded-full"
           style={{
             background: `conic-gradient(from 0deg, transparent 0deg, ${color} 12deg, transparent 24deg, transparent 90deg, ${color} 102deg, transparent 114deg, transparent 180deg, ${color} 192deg, transparent 204deg, transparent 270deg, ${color} 282deg, transparent 294deg)`,
-            opacity: rayOpacity * 0.55,
+            opacity: rayOpacity * 1.1,
             animation: `uvOrbSpin ${(8 - t * 5).toFixed(2)}s linear infinite`,
             maskImage: "radial-gradient(circle, transparent 35%, black 45%, black 70%, transparent 78%)",
             WebkitMaskImage: "radial-gradient(circle, transparent 35%, black 45%, black 70%, transparent 78%)",
