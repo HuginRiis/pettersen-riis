@@ -360,6 +360,21 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
   const { opacity } = useTileOpacity();
   const { color: tileColor } = useTileColor();
 
+  // Scroll-drevet "shrink" på hero-header (sticky under toppmenyen)
+  const [heroT, setHeroT] = useState(0); // 0 = full, 1 = kollapset
+  useEffect(() => {
+    const SHRINK_PX = 120;
+    const onScroll = () => {
+      const y = window.scrollY || 0;
+      setHeroT(Math.max(0, Math.min(1, y / SHRINK_PX)));
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+  const collapsed = heroT > 0.5;
+
+
   return (
     <PageShell>
       <div
