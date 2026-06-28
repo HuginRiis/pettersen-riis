@@ -1853,18 +1853,39 @@ function SunsetCard({ sun, now, moon }: { sun: ReturnType<typeof sunTimes>; now:
           style={{ animation: "wx-sun-pulse 2.6s ease-in-out infinite", transformOrigin: `${sx}px ${sy}px` }}
         />
         {/* Sol eller måne */}
-        {night ? (
-          <g
-            style={{
-              opacity: 0,
-              animation: "wx-sun-in 1.2s ease-out 1.1s forwards",
-              filter: "drop-shadow(0 0 6px rgba(120,200,255,0.85))",
-            }}
-          >
-            {/* Blå måne-bilde */}
-            <image href={moonBlueAsset.url} x={sx - 4.8} y={sy - 4.8} width={9.6} height={9.6} preserveAspectRatio="xMidYMid slice" />
-          </g>
-        ) : (
+        {night ? (() => {
+          const mr = 6.5;
+          const p = moon.phaseFraction;
+          const waxing = p < 0.5;
+          const gibbous = p > 0.25 && p < 0.75;
+          const rx = Math.max(0.01, Math.abs(Math.cos(2 * Math.PI * p)) * mr);
+          const outerSweep = waxing ? 1 : 0;
+          const innerSweep = gibbous ? (waxing ? 0 : 1) : outerSweep;
+          const litPath = `M ${sx},${sy - mr} A ${mr},${mr} 0 0,${outerSweep} ${sx},${sy + mr} A ${rx},${mr} 0 0,${innerSweep} ${sx},${sy - mr} Z`;
+          const clipId = `${gid}-moonclip`;
+          const shadeId = `${gid}-moonshade`;
+          return (
+            <g
+              style={{
+                opacity: 0,
+                animation: "wx-sun-in 1.2s ease-out 1.1s forwards",
+                filter: "drop-shadow(0 0 5px rgba(220,230,255,0.7))",
+              }}
+            >
+              <defs>
+                <clipPath id={clipId}><circle cx={sx} cy={sy} r={mr} /></clipPath>
+                <radialGradient id={shadeId} cx="50%" cy="50%">
+                  <stop offset="0%" stopColor="#05060a" stopOpacity="0.95" />
+                  <stop offset="100%" stopColor="#01010a" stopOpacity="0.98" />
+                </radialGradient>
+              </defs>
+              <g clipPath={`url(#${clipId})`}>
+                <image href={moonRealAsset.url} x={sx - mr} y={sy - mr} width={mr * 2} height={mr * 2} preserveAspectRatio="xMidYMid slice" />
+                <path d={litPath} fill={`url(#${shadeId})`} />
+              </g>
+            </g>
+          );
+        })() : (
           <circle
             cx={sx} cy={sy} r="4.5" fill="#fff"
             style={{
