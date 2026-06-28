@@ -180,7 +180,7 @@ function PushSettingsPage() {
       <SettingsBox id="sec-scener" title="🎬 Lys-scener"><LightScenesPanel /></SettingsBox>
       <SettingsBox id="sec-scheduling" title="⏰ Push-tidsplan"><PushSchedulingSettings /></SettingsBox>
       <SettingsBox id="sec-tibber" title="⚡ Tibber-cron"><TibberCronStatusPanel /></SettingsBox>
-      <SettingsBox id="sec-okonomi" title="🪙 Husholdningens hvelv"><OkonomiSettingsPanel /></SettingsBox>
+      
       <SettingsBox id="sec-farevarsel" title="⚠️ Vær farevarsel — av/på" accent="border-orange-500/40"><MetAlertNotificationSettings /></SettingsBox>
       <SettingsBox id="sec-nsm" title="🛡️ NSM Sikkerhet — cybervarsler" accent="border-blue-500/40"><NSMNotificationSettings /></SettingsBox>
       <SettingsBox id="sec-klima" title="🌡️ Klima — for varmt / for kaldt (Borgen & Hytta)"><ClimateNotificationSettings /></SettingsBox>
