@@ -3098,6 +3098,7 @@ function RadonStuaTile() {
   const orbitDur = lerpN(10, 0.4, speedT);
   const floatDur = lerpN(8, 1.1, speedT);
   const pulseDur = lerpN(3.8, 0.9, speedT);
+  const dots = 8 + Math.round(speedT * 24);
 
   return (
     <Tile title="Radon · Stua" icon={<Atom size={14} />} accent="text-emerald-300">
