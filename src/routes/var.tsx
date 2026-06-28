@@ -2132,10 +2132,19 @@ function UvIosChart({ hours, nowProgress }: { hours: { time: string; uv: number 
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-32 mt-1">
       <defs>
-        <linearGradient id="uvAreaGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#fde047" stopOpacity="0.5" />
-          <stop offset="40%" stopColor="#f97316" stopOpacity="0.3" />
-          <stop offset="100%" stopColor="#22c55e" stopOpacity="0.1" />
+        <linearGradient id="uvAreaGrad" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stopColor="#6FBF73" stopOpacity="0.45" />
+          <stop offset="27%" stopColor="#E9C547" stopOpacity="0.45" />
+          <stop offset="54%" stopColor="#E07A3C" stopOpacity="0.45" />
+          <stop offset="73%" stopColor="#C9484A" stopOpacity="0.45" />
+          <stop offset="100%" stopColor="#8E5BA6" stopOpacity="0.45" />
+        </linearGradient>
+        <linearGradient id="uvLineGrad" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stopColor="#6FBF73" />
+          <stop offset="27%" stopColor="#E9C547" />
+          <stop offset="54%" stopColor="#E07A3C" />
+          <stop offset="73%" stopColor="#C9484A" />
+          <stop offset="100%" stopColor="#8E5BA6" />
         </linearGradient>
       </defs>
 
