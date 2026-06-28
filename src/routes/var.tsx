@@ -1318,6 +1318,24 @@ function DailyListCard({ days, hours, title }: { days: ForecastDay[] | null; hou
     );
   }
 
+  // Skydekke-modus: 12 to-timers barer per dag som viser %-tildekke + animerte skyer til venstre
+  if (panel === "skydekke" && hours && hours.length > 0) {
+    return (
+      <GlassCard eyebrow={title} icon={<Cloud size={14} />}>
+        <DailyRollInStyles />
+        <div className="divide-y divide-white/10">
+          {list.map((d, i) => (
+            <div key={d.date} className="wx-roll-in" style={{ animationDelay: `${i * 70}ms` }}>
+              <DailyCloudRow day={d} hours={hours} index={i} />
+            </div>
+          ))}
+        </div>
+      </GlassCard>
+    );
+  }
+
+
+
 
 
   const allMins = list.map((d) => d.tempMin);
