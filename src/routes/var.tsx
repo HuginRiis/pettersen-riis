@@ -1996,6 +1996,42 @@ function IosUvCard({ lat, lon, now }: { lat: number; lon: number; now: Date }) {
             )}
           </div>
         )}
+
+        {/* Hourly UV mini-chart showing how high levels have been today */}
+        {displayHours.length > 0 && (
+          <div className="mt-3">
+            <div className="text-[11px] text-white/60 mb-1.5">
+              Dagens UV-forløp
+            </div>
+            <div className="flex items-end gap-0.5 h-16">
+              {displayHours.map((h, i) => {
+                const uv = h.uv;
+                const isPeak = uvMaxToday != null && Math.abs(uv - uvMaxToday) < 0.01;
+                const pct = Math.min(100, Math.max(4, (uv / 11) * 100));
+                const { color } = uvLevel(uv);
+                return (
+                  <div
+                    key={h.time}
+                    className="flex-1 flex flex-col items-center gap-0.5"
+                    title={`${new Date(h.time).toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit" })} — UV ${uv.toFixed(1)}`}
+                  >
+                    <div
+                      className={`w-full rounded-t-sm ${isPeak ? "ring-1 ring-white/80" : ""}`}
+                      style={{ height: `${pct}%`, backgroundColor: color, opacity: isPeak ? 0.85 : 0.5 }}
+                    />
+                    <span className="text-[8px] text-white/40 leading-none">
+                      {new Date(h.time).toLocaleTimeString("nb-NO", { hour: "2-digit" })}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="flex items-center justify-between mt-1.5">
+              <span className="text-[10px] text-white/50">Lavt</span>
+              <span className="text-[10px] text-white/50">Høyt</span>
+            </div>
+          </div>
+        )}
       </div>
     </GlassCard>
   );
