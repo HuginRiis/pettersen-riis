@@ -3296,12 +3296,9 @@ function VocStuaTile() {
               }}
             />
           </div>
-          {/* Drivende partikler */}
-          {Array.from({ length: 7 }).map((_, i) => {
+          {/* Stigende VOC-partikler */}
+          {Array.from({ length: dots }).map((_, i) => {
             const left = 8 + ((i * 19) % 84);
-            const top = 12 + ((i * 23) % 76);
-            const dx = (i % 2 === 0 ? 1 : -1) * (10 + (i * 4) % 18);
-            const dy = -(14 + (i * 5) % 20);
             const delay = (i * 0.38) % 3;
             const dur = 2.2 + ((i * 0.4) % 2);
             const size = 3 + (i % 2);
@@ -3311,16 +3308,14 @@ function VocStuaTile() {
                 style={{
                   position: "absolute",
                   left: `${left}%`,
-                  top: `${top}%`,
+                  bottom: -6,
                   width: size,
                   height: size,
                   borderRadius: "50%",
                   background: lvl.color,
                   filter: "blur(.5px)",
-                  opacity: 0.35,
-                  ["--dx" as any]: `${dx}px`,
-                  ["--dy" as any]: `${dy}px`,
-                  animation: `vocDrift ${dur}s ease-out ${delay}s infinite`,
+                  opacity: 0.4,
+                  animation: `vocRise ${dur}s ease-out ${delay}s infinite`,
                 }}
               />
             );
