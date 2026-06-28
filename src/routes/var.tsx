@@ -2185,7 +2185,7 @@ function UvIosChart({ hours, nowProgress }: { hours: { time: string; uv: number 
       <path d={areaPath} fill="url(#uvAreaGrad)" />
 
       {/* Line */}
-      <path d={`M${points}`} fill="none" stroke="#fde047" strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" />
+      <path d={`M${points}`} fill="none" stroke="url(#uvLineGrad)" strokeWidth="1.8" strokeLinejoin="round" strokeLinecap="round" />
 
       {/* Now marker */}
       {nowProgress != null && (
