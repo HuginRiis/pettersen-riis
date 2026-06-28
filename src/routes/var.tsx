@@ -1447,6 +1447,97 @@ function DailyRainRow({ day, hours, index }: { day: ForecastDay; hours: Hour[]; 
   );
 }
 
+function DailyCloudRow({ day, hours, index }: { day: ForecastDay; hours: Hour[]; index: number }) {
+  const label = index === 0 ? "I dag" : weekdayShort(day.date);
+  // 12 buckets × 2 timer
+  const buckets = Array.from({ length: 12 }, (_, b) => {
+    const startHour = b * 2;
+    const slot = hours.filter((h) => {
+      if (h.time.slice(0, 10) !== day.date) return false;
+      const hh = parseInt(h.time.slice(11, 13));
+      return hh >= startHour && hh < startHour + 2;
+    });
+    const isNight = startHour < 6 || startHour >= 22;
+    const cloud = slot.length > 0
+      ? slot.reduce((s, h) => s + (h.cloud || 0), 0) / slot.length
+      : 0;
+    return { startHour, isNight, cloud };
+  });
+  const dayHours = hours.filter((h) => h.time.slice(0, 10) === day.date);
+  const avgCloud = dayHours.length > 0
+    ? dayHours.reduce((s, h) => s + (h.cloud || 0), 0) / dayHours.length
+    : 0;
+  // 0–3 små animerte skyer basert på snitt skydekke
+  const cloudCount = avgCloud < 15 ? 0 : avgCloud < 40 ? 1 : avgCloud < 75 ? 2 : 3;
+  const cloudOpacity = Math.max(0.25, Math.min(0.85, avgCloud / 100));
+
+  return (
+    <div className="grid grid-cols-[56px_46px_1fr_56px] items-center gap-3 py-2.5">
+      <div className="text-[15px] capitalize">{label}</div>
+      <div className="relative w-[46px] h-9 overflow-hidden" aria-hidden>
+        {Array.from({ length: cloudCount }, (_, i) => {
+          const top = 2 + i * 10;
+          const dur = 6 + i * 1.5;
+          const delay = (i * 0.7).toFixed(2);
+          const scale = 0.7 + i * 0.15;
+          return (
+            <div
+              key={i}
+              className="absolute"
+              style={{
+                top: `${top}px`,
+                left: "-14px",
+                opacity: cloudOpacity,
+                animation: `dailyCloudDrift ${dur}s ease-in-out ${delay}s infinite alternate`,
+                transform: `scale(${scale})`,
+              }}
+            >
+              <svg width="28" height="14" viewBox="0 0 28 14">
+                <ellipse cx="8" cy="9" rx="7" ry="4" fill="rgba(226,232,240,0.9)" />
+                <ellipse cx="15" cy="6" rx="6" ry="5" fill="rgba(241,245,249,0.95)" />
+                <ellipse cx="21" cy="9" rx="6" ry="4" fill="rgba(226,232,240,0.9)" />
+              </svg>
+            </div>
+          );
+        })}
+        <style>{`@keyframes dailyCloudDrift { 0% { transform: translateX(0) scale(var(--s,1)); } 100% { transform: translateX(14px); } }`}</style>
+      </div>
+      <div className="flex items-end gap-[3px] h-8">
+        {buckets.map((b, i) => {
+          const fill = Math.max(4, Math.min(100, b.cloud));
+          const baseBg = b.isNight
+            ? "rgba(30, 41, 59, 0.35)"
+            : "rgba(148, 163, 184, 0.18)";
+          const grad = b.isNight
+            ? "linear-gradient(to top, rgba(71,85,105,0.85) 0%, rgba(148,163,184,0.85) 100%)"
+            : "linear-gradient(to top, rgba(148,163,184,0.85) 0%, rgba(226,232,240,0.95) 100%)";
+          return (
+            <div
+              key={i}
+              className="relative flex-1 h-full rounded-md overflow-hidden ring-1 ring-white/10"
+              style={{ background: baseBg }}
+              title={`${String(b.startHour).padStart(2, "0")}–${String(b.startHour + 2).padStart(2, "0")} · ${Math.round(b.cloud)} %`}
+            >
+              <div
+                className="absolute bottom-0 left-0 right-0 rounded-b-md transition-all"
+                style={{
+                  height: `${fill}%`,
+                  background: grad,
+                  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.35)",
+                }}
+              />
+            </div>
+          );
+        })}
+      </div>
+      <div className="text-[13px] tabular-nums text-right text-white/90">
+        {Math.round(avgCloud)} <span className="text-white/60 text-[11px]">%</span>
+      </div>
+    </div>
+  );
+}
+
+
 function DailyWindRow({ day, hours, index, globalMaxG }: { day: ForecastDay; hours: Hour[]; index: number; globalMaxG: number }) {
   const label = index === 0 ? "I dag" : weekdayShort(day.date);
   const dayHours = hours.filter((h) => h.time.slice(0, 10) === day.date);
