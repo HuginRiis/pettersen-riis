@@ -1554,6 +1554,102 @@ function DailyCloudRow({ day, hours, index }: { day: ForecastDay; hours: Hour[];
   );
 }
 
+function DailyLynRow({ day, hours, index }: { day: ForecastDay; hours: Hour[]; index: number }) {
+  const label = index === 0 ? "I dag" : weekdayShort(day.date);
+  const buckets = Array.from({ length: 12 }, (_, b) => {
+    const startHour = b * 2;
+    const slot = hours.filter((h) => {
+      if (h.time.slice(0, 10) !== day.date) return false;
+      const hh = parseInt(h.time.slice(11, 13));
+      return hh >= startHour && hh < startHour + 2;
+    });
+    const isNight = startHour < 6 || startHour >= 22;
+    const thunder = slot.length > 0
+      ? slot.reduce((m, h) => Math.max(m, h.thunder || 0), 0)
+      : 0;
+    return { startHour, isNight, thunder };
+  });
+  const dayHours = hours.filter((h) => h.time.slice(0, 10) === day.date);
+  const avgThunder = dayHours.length > 0
+    ? dayHours.reduce((m, h) => Math.max(m, h.thunder || 0), 0)
+    : 0;
+  const boltCount = avgThunder < 5 ? 0 : avgThunder < 25 ? 1 : avgThunder < 55 ? 2 : 3;
+
+  return (
+    <div className="grid grid-cols-[56px_46px_1fr_56px] items-center gap-3 py-2.5">
+      <div className="text-[15px] capitalize">{label}</div>
+      <div className="relative w-[46px] h-9 overflow-hidden" aria-hidden>
+        {Array.from({ length: boltCount }, (_, i) => {
+          const top = 2 + i * 8;
+          const left = 4 + i * 10;
+          const dur = 1.4 + i * 0.5;
+          const delay = (i * 0.35).toFixed(2);
+          const scale = 0.8 + i * 0.15;
+          return (
+            <div
+              key={i}
+              className="absolute"
+              style={{
+                top: `${top}px`,
+                left: `${left}px`,
+                transform: `scale(${scale})`,
+                animation: `dailyBoltFlash ${dur}s ease-in-out ${delay}s infinite`,
+                filter: "drop-shadow(0 0 4px rgba(250,204,21,0.85))",
+              }}
+            >
+              <svg width="12" height="20" viewBox="0 0 12 20">
+                <path d="M7 0 L0 12 L4 12 L2 20 L12 7 L7 7 L9 0 Z" fill="#fde047" stroke="#fbbf24" strokeWidth="0.5" />
+              </svg>
+            </div>
+          );
+        })}
+        <style>{`@keyframes dailyBoltFlash { 0%,40%,100% { opacity: 0.15; } 50%,55% { opacity: 1; } 60% { opacity: 0.3; } 70% { opacity: 0.95; } }`}</style>
+      </div>
+      <div className="flex items-end gap-[3px] h-8">
+        {buckets.map((b, i) => {
+          const fill = b.thunder > 0 ? Math.max(6, Math.min(100, b.thunder)) : 0;
+          const baseBg = b.isNight
+            ? "rgba(30, 27, 75, 0.45)"
+            : "rgba(71, 85, 105, 0.22)";
+          const hot = b.thunder >= 40;
+          const grad = hot
+            ? "linear-gradient(to top, #b45309 0%, #f59e0b 50%, #fde047 100%)"
+            : "linear-gradient(to top, #4338ca 0%, #818cf8 60%, #c7d2fe 100%)";
+          return (
+            <div
+              key={i}
+              className="relative flex-1 h-full rounded-md overflow-hidden ring-1 ring-white/10"
+              style={{ background: baseBg }}
+              title={`${String(b.startHour).padStart(2, "0")}–${String(b.startHour + 2).padStart(2, "0")} · ${Math.round(b.thunder)} %`}
+            >
+              {fill > 0 && (
+                <div
+                  className="absolute bottom-0 left-0 right-0 rounded-b-md transition-all"
+                  style={{
+                    height: `${fill}%`,
+                    background: grad,
+                    boxShadow: hot
+                      ? "inset 0 1px 0 rgba(255,255,255,0.5), 0 0 6px rgba(250,204,21,0.6)"
+                      : "inset 0 1px 0 rgba(255,255,255,0.35)",
+                  }}
+                />
+              )}
+            </div>
+          );
+        })}
+      </div>
+      <div className="text-[13px] tabular-nums text-right">
+        {avgThunder >= 5 ? (
+          <span className="text-amber-300">⚡ {Math.round(avgThunder)} %</span>
+        ) : (
+          <span className="text-white/40">{Math.round(avgThunder)} %</span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+
 
 function DailyWindRow({ day, hours, index, globalMaxG }: { day: ForecastDay; hours: Hour[]; index: number; globalMaxG: number }) {
   const label = index === 0 ? "I dag" : weekdayShort(day.date);
