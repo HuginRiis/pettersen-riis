@@ -126,7 +126,7 @@ const ROUTE_ICON_COLOR: Partial<Record<RoutePath, string>> = {
   "/skatte-utregningen": "#d4af37",
   "/gressklipper": "#10b981",
   "/stovsugeren": "#38bdf8",
-  "/decibel": "#f43f5e",
+  
   "/roborock": "#a78bfa",
   "/planter": "#22c55e",
   "/fly": "#38bdf8",
