@@ -2011,13 +2011,13 @@ function UvOrb({ uv, color }: { uv: number; color: string }) {
   const t = Math.max(0, Math.min(1, uv / 11));
   // Pulshastighet: 0 → 3.6s (rolig), 11 → 0.9s (rask)
   const pulseDur = (3.6 - t * 2.7).toFixed(2) + "s";
-  // Glød-radius i px — 2.5x sterkere enn før
-  const glow = ((8 + t * 24) * 2.5).toFixed(1);
-  const glowSoft = ((14 + t * 40) * 2.5).toFixed(1);
+  // Glød-radius i px — 5x sterkere enn før (doblet igjen)
+  const glow = ((8 + t * 24) * 5).toFixed(1);
+  const glowSoft = ((14 + t * 40) * 5).toFixed(1);
   // Ytre halo-opasitet
-  const haloOpacity = Math.min(0.95, 0.5 + t * 0.45);
-  const haloOpacityMid = Math.min(1.0, 0.85 + t * 0.15);
-  const haloOpacityLow = Math.min(1.0, 0.4 + t * 0.55);
+  const haloOpacity = Math.min(0.95, 0.6 + t * 0.35);
+  const haloOpacityMid = Math.min(1.0, 0.9 + t * 0.1);
+  const haloOpacityLow = Math.min(1.0, 0.5 + t * 0.5);
   // Stråler vises fra UV ≥ 3
   const showRays = uv >= 3;
   const rayOpacity = Math.max(0, Math.min(1, (uv - 2) / 8));
