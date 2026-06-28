@@ -1942,7 +1942,7 @@ function IosUvCard({ lat, lon, now }: { lat: number; lon: number; now: Date }) {
   const slice = displayHours.slice(0, 12);
 
   return (
-    <GlassCard eyebrow="UV-indeks" icon={<Sun size={14} />} fx={null}>
+    <GlassCard eyebrow="UV-indeks" icon={<Sun size={14} />} fx={null} className="overflow-visible">
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
@@ -2011,9 +2011,13 @@ function UvOrb({ uv, color }: { uv: number; color: string }) {
   const t = Math.max(0, Math.min(1, uv / 11));
   // Pulshastighet: 0 → 3.6s (rolig), 11 → 0.9s (rask)
   const pulseDur = (3.6 - t * 2.7).toFixed(2) + "s";
-  // Glød-radius i px
-  const glow = (6 + t * 22).toFixed(1);
-  const glowSoft = (12 + t * 36).toFixed(1);
+  // Glød-radius i px — 2.5x sterkere enn før
+  const glow = ((8 + t * 24) * 2.5).toFixed(1);
+  const glowSoft = ((14 + t * 40) * 2.5).toFixed(1);
+  // Ytre halo-opasitet
+  const haloOpacity = Math.min(0.95, 0.5 + t * 0.45);
+  const haloOpacityMid = Math.min(1.0, 0.85 + t * 0.15);
+  const haloOpacityLow = Math.min(1.0, 0.4 + t * 0.55);
   // Stråler vises fra UV ≥ 3
   const showRays = uv >= 3;
   const rayOpacity = Math.max(0, Math.min(1, (uv - 2) / 8));
@@ -2021,13 +2025,13 @@ function UvOrb({ uv, color }: { uv: number; color: string }) {
   const coreColor = uv < 0.5 ? "rgba(203, 213, 225, 0.85)" : color;
 
   return (
-    <div className="relative w-10 h-10 flex items-center justify-center" aria-hidden>
+    <div className="relative w-10 h-10 flex items-center justify-center -mt-6" aria-hidden>
       {/* Ytre myk halo */}
       <div
         className="absolute inset-0 rounded-full"
         style={{
           background: `radial-gradient(circle, ${color} 0%, transparent 65%)`,
-          opacity: 0.15 + t * 0.4,
+          opacity: haloOpacity,
           animation: `uvOrbHalo ${pulseDur} ease-in-out infinite`,
         }}
       />
@@ -2058,11 +2062,11 @@ function UvOrb({ uv, color }: { uv: number; color: string }) {
       <style>{`
         @keyframes uvOrbPulse {
           0%, 100% { transform: scale(1); filter: brightness(1); }
-          50% { transform: scale(${(1.08 + t * 0.18).toFixed(3)}); filter: brightness(${(1.1 + t * 0.4).toFixed(2)}); }
+          50% { transform: scale(${(1.08 + t * 0.18).toFixed(3)}); filter: brightness(${(1.25 + t * 0.75).toFixed(2)}); }
         }
         @keyframes uvOrbHalo {
-          0%, 100% { transform: scale(0.9); opacity: ${(0.12 + t * 0.3).toFixed(2)}; }
-          50% { transform: scale(${(1.1 + t * 0.25).toFixed(2)}); opacity: ${(0.25 + t * 0.5).toFixed(2)}; }
+          0%, 100% { transform: scale(0.9); opacity: ${haloOpacityLow.toFixed(2)}; }
+          50% { transform: scale(${(1.1 + t * 0.25).toFixed(2)}); opacity: ${haloOpacityMid.toFixed(2)}; }
         }
         @keyframes uvOrbSpin {
           to { transform: rotate(360deg); }
