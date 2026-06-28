@@ -52,7 +52,7 @@ type RoutePath =
   | "/skatte-utregningen"
   | "/gressklipper"
   | "/stovsugeren"
-  | "/decibel"
+  
   | "/roborock"
   | "/planter"
   | "/fly"
