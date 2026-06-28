@@ -79,51 +79,46 @@ function VocFX({ color, intensity, value }: { color: string; intensity: number; 
           animation: "vocBreathe 2.6s ease-in-out infinite",
         }}
       />
-      {/* Roterende molekyl — 3 dotter, fart skalert med verdi */}
+      {/* Organiske glødende partikler — flyter random rundt, fortere ved høyere verdi */}
       <div
         className="absolute"
-        style={{
-          right: 62,
-          top: 62,
-          width: 40,
-          height: 40,
-          animation: `vocSpin ${spinDur.toFixed(2)}s linear infinite`,
-        }}
+        style={{ right: 30, top: 30, width: 104, height: 104 }}
       >
-        {[0, 120, 240].map((deg) => (
-          <div
-            key={deg}
-            style={{
-              position: "absolute",
-              left: "50%",
-              top: "50%",
-              width: 10,
-              height: 10,
-              marginLeft: -5,
-              marginTop: -5,
-              borderRadius: "50%",
-              background: color,
-              boxShadow: `0 0 8px ${color}`,
-              transform: `rotate(${deg}deg) translateY(-16px)`,
-            }}
-          />
-        ))}
-        <div
-          style={{
-            position: "absolute",
-            left: "50%",
-            top: "50%",
-            width: 8,
-            height: 8,
-            marginLeft: -4,
-            marginTop: -4,
-            borderRadius: "50%",
-            background: "#fff",
-            opacity: 0.85,
-            boxShadow: `0 0 6px ${color}`,
-          }}
-        />
+        {Array.from({ length: orbCount }).map((_, i) => {
+          // Deterministisk pseudo-random per index
+          const a = Math.sin(i * 12.9898) * 43758.5453;
+          const b = Math.sin(i * 78.233) * 12345.678;
+          const rx = (a - Math.floor(a)); // 0..1
+          const ry = (b - Math.floor(b));
+          const left = 15 + rx * 70; // % innenfor 104px boks
+          const top = 15 + ry * 70;
+          const size = 4 + ((i * 1.7) % 5); // 4..9px
+          const orbit = (i % 3) + 1;
+          const baseDur = 6 - speedT * 5; // 6s → 1s
+          const dur = baseDur + (i % 4) * 0.4;
+          const delay = -((i * 0.37) % 3);
+          const pulseDur = 1.8 - speedT * 1.2 + (i % 3) * 0.3;
+          return (
+            <div
+              key={i}
+              style={{
+                position: "absolute",
+                left: `${left}%`,
+                top: `${top}%`,
+                width: size,
+                height: size,
+                marginLeft: -size / 2,
+                marginTop: -size / 2,
+                borderRadius: "50%",
+                background: color,
+                boxShadow: `0 0 ${6 + size}px ${color}, 0 0 ${2 + size / 2}px ${color}`,
+                animation: `vocOrbit${orbit} ${dur.toFixed(2)}s ease-in-out ${delay.toFixed(2)}s infinite, vocPulse ${pulseDur.toFixed(2)}s ease-in-out ${delay.toFixed(2)}s infinite`,
+              }}
+            />
+          );
+        })}
       </div>
+
       {Array.from({ length: waves }).map((_, i) => (
         <div
           key={`w${i}`}
