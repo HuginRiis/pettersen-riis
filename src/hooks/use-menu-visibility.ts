@@ -40,7 +40,7 @@ export const MENU_LINK_DEFS: { to: string; label: string }[] = [
   { to: "/skatte-utregningen", label: "Skatte utregningen" },
   { to: "/trening", label: "Trening" },
   { to: "/varsler", label: "Farevarsler" },
-  { to: "/decibel", label: "Decibelmåler" },
+  
   { to: "/roborock", label: "Roborock" },
   { to: "/planter", label: "Planter & Trær" },
   { to: "/fly", label: "Fly i nærheten" },
