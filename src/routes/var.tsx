@@ -1980,12 +1980,12 @@ function IosUvCard({ lat, lon, now }: { lat: number; lon: number; now: Date }) {
         {uvMaxToday != null && uvMaxTimeToday && (
           <div className="space-y-1.5">
             <div className="flex items-center gap-2">
-              <div className="flex-1 h-6 rounded bg-white/10 flex items-center px-2 relative overflow-hidden">
+              <div className="flex-1 h-8 rounded bg-white/10 flex items-center px-2 relative overflow-hidden">
                 <div
-                  className="absolute inset-y-0 left-0 bg-yellow-400/30 rounded"
-                  style={{ width: `${Math.min(100, (uvMaxToday / 11) * 100)}%` }}
+                  className="absolute inset-y-0 left-0 rounded"
+                  style={{ width: `${Math.min(100, (uvMaxToday / 11) * 100)}%`, backgroundColor: uvLevel(uvMaxToday).color, opacity: 0.55 }}
                 />
-                <span className="text-[11px] relative z-10">I dag</span>
+                <span className="text-[11px] relative z-10 font-medium text-white/90">I dag</span>
               </div>
               <span className="text-lg font-light tabular-nums w-6 text-right">{uvMaxToday.toFixed(0)}</span>
             </div>
