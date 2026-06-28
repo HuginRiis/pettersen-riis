@@ -44,13 +44,6 @@ export const HEADER_BADGE_DEFS: { id: string; label: string }[] = [
   { id: "training_4w_rebekka", label: "Trening siste 4 uker (Rebekka) · meny: Trening" },
   { id: "usage_count", label: "Bruks-teller · meny: alle (når sortering på bruk er på)" },
   { id: "garbage_next", label: "Neste søppeltømming · meny: Agenda" },
-  { id: "budget_remaining", label: "Budsjett igjen · meny: Husholdningens hvelv" },
-  { id: "okonomi_brukt", label: "Brukt denne måned · meny: Husholdningens hvelv" },
-  { id: "okonomi_inntekt", label: "Inntekt denne måned · meny: Husholdningens hvelv" },
-  { id: "okonomi_budsjett", label: "Budsjett totalt · meny: Husholdningens hvelv" },
-  { id: "okonomi_overskudd", label: "Overskudd · meny: Husholdningens hvelv" },
-  { id: "okonomi_snitt_dag", label: "Snitt brukt pr dag · meny: Husholdningens hvelv" },
-  { id: "okonomi_igjen_dag", label: "Igjen pr dag til lønn · meny: Husholdningens hvelv" },
 ];
 
 export const DEFAULT_HEADER_BADGE_SETTINGS: HeaderBadgeSettings = {

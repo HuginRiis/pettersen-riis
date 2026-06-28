@@ -28,7 +28,6 @@ import { Route as RoborockRouteImport } from './routes/roborock'
 import { Route as PushVarslingerRouteImport } from './routes/push-varslinger'
 import { Route as PollenRouteImport } from './routes/pollen'
 import { Route as PlanterRouteImport } from './routes/planter'
-import { Route as OkonomiRouteImport } from './routes/okonomi'
 import { Route as NsmSikkerhetRouteImport } from './routes/nsm-sikkerhet'
 import { Route as LysRouteImport } from './routes/lys'
 import { Route as KvitteringerRouteImport } from './routes/kvitteringer'
@@ -36,7 +35,6 @@ import { Route as IphoneAppRouteImport } from './routes/iphone-app'
 import { Route as HyttaRouteImport } from './routes/hytta'
 import { Route as GressklipperRouteImport } from './routes/gressklipper'
 import { Route as FlyRouteImport } from './routes/fly'
-import { Route as DecibelRouteImport } from './routes/decibel'
 import { Route as AgendaRouteImport } from './routes/agenda'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as HooksLogPulseRouteImport } from './routes/hooks.log-pulse'
@@ -155,11 +153,6 @@ const PlanterRoute = PlanterRouteImport.update({
   path: '/planter',
   getParentRoute: () => rootRouteImport,
 } as any)
-const OkonomiRoute = OkonomiRouteImport.update({
-  id: '/okonomi',
-  path: '/okonomi',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const NsmSikkerhetRoute = NsmSikkerhetRouteImport.update({
   id: '/nsm-sikkerhet',
   path: '/nsm-sikkerhet',
@@ -193,11 +186,6 @@ const GressklipperRoute = GressklipperRouteImport.update({
 const FlyRoute = FlyRouteImport.update({
   id: '/fly',
   path: '/fly',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DecibelRoute = DecibelRouteImport.update({
-  id: '/decibel',
-  path: '/decibel',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AgendaRoute = AgendaRouteImport.update({
@@ -324,7 +312,6 @@ const ApiPublicHooksAgendaPushRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/agenda': typeof AgendaRoute
-  '/decibel': typeof DecibelRoute
   '/fly': typeof FlyRoute
   '/gressklipper': typeof GressklipperRoute
   '/hytta': typeof HyttaRoute
@@ -332,7 +319,6 @@ export interface FileRoutesByFullPath {
   '/kvitteringer': typeof KvitteringerRoute
   '/lys': typeof LysRoute
   '/nsm-sikkerhet': typeof NsmSikkerhetRoute
-  '/okonomi': typeof OkonomiRoute
   '/planter': typeof PlanterRoute
   '/pollen': typeof PollenRoute
   '/push-varslinger': typeof PushVarslingerRoute
@@ -376,7 +362,6 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/agenda': typeof AgendaRoute
-  '/decibel': typeof DecibelRoute
   '/fly': typeof FlyRoute
   '/gressklipper': typeof GressklipperRoute
   '/hytta': typeof HyttaRoute
@@ -384,7 +369,6 @@ export interface FileRoutesByTo {
   '/kvitteringer': typeof KvitteringerRoute
   '/lys': typeof LysRoute
   '/nsm-sikkerhet': typeof NsmSikkerhetRoute
-  '/okonomi': typeof OkonomiRoute
   '/planter': typeof PlanterRoute
   '/pollen': typeof PollenRoute
   '/push-varslinger': typeof PushVarslingerRoute
@@ -429,7 +413,6 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/agenda': typeof AgendaRoute
-  '/decibel': typeof DecibelRoute
   '/fly': typeof FlyRoute
   '/gressklipper': typeof GressklipperRoute
   '/hytta': typeof HyttaRoute
@@ -437,7 +420,6 @@ export interface FileRoutesById {
   '/kvitteringer': typeof KvitteringerRoute
   '/lys': typeof LysRoute
   '/nsm-sikkerhet': typeof NsmSikkerhetRoute
-  '/okonomi': typeof OkonomiRoute
   '/planter': typeof PlanterRoute
   '/pollen': typeof PollenRoute
   '/push-varslinger': typeof PushVarslingerRoute
@@ -483,7 +465,6 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/agenda'
-    | '/decibel'
     | '/fly'
     | '/gressklipper'
     | '/hytta'
@@ -491,7 +472,6 @@ export interface FileRouteTypes {
     | '/kvitteringer'
     | '/lys'
     | '/nsm-sikkerhet'
-    | '/okonomi'
     | '/planter'
     | '/pollen'
     | '/push-varslinger'
@@ -535,7 +515,6 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/agenda'
-    | '/decibel'
     | '/fly'
     | '/gressklipper'
     | '/hytta'
@@ -543,7 +522,6 @@ export interface FileRouteTypes {
     | '/kvitteringer'
     | '/lys'
     | '/nsm-sikkerhet'
-    | '/okonomi'
     | '/planter'
     | '/pollen'
     | '/push-varslinger'
@@ -587,7 +565,6 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/agenda'
-    | '/decibel'
     | '/fly'
     | '/gressklipper'
     | '/hytta'
@@ -595,7 +572,6 @@ export interface FileRouteTypes {
     | '/kvitteringer'
     | '/lys'
     | '/nsm-sikkerhet'
-    | '/okonomi'
     | '/planter'
     | '/pollen'
     | '/push-varslinger'
@@ -640,7 +616,6 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AgendaRoute: typeof AgendaRoute
-  DecibelRoute: typeof DecibelRoute
   FlyRoute: typeof FlyRoute
   GressklipperRoute: typeof GressklipperRoute
   HyttaRoute: typeof HyttaRoute
@@ -648,7 +623,6 @@ export interface RootRouteChildren {
   KvitteringerRoute: typeof KvitteringerRoute
   LysRoute: typeof LysRoute
   NsmSikkerhetRoute: typeof NsmSikkerhetRoute
-  OkonomiRoute: typeof OkonomiRoute
   PlanterRoute: typeof PlanterRoute
   PollenRoute: typeof PollenRoute
   PushVarslingerRoute: typeof PushVarslingerRoute
@@ -825,13 +799,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PlanterRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/okonomi': {
-      id: '/okonomi'
-      path: '/okonomi'
-      fullPath: '/okonomi'
-      preLoaderRoute: typeof OkonomiRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/nsm-sikkerhet': {
       id: '/nsm-sikkerhet'
       path: '/nsm-sikkerhet'
@@ -879,13 +846,6 @@ declare module '@tanstack/react-router' {
       path: '/fly'
       fullPath: '/fly'
       preLoaderRoute: typeof FlyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/decibel': {
-      id: '/decibel'
-      path: '/decibel'
-      fullPath: '/decibel'
-      preLoaderRoute: typeof DecibelRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/agenda': {
@@ -1048,7 +1008,6 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AgendaRoute: AgendaRoute,
-  DecibelRoute: DecibelRoute,
   FlyRoute: FlyRoute,
   GressklipperRoute: GressklipperRoute,
   HyttaRoute: HyttaRoute,
@@ -1056,7 +1015,6 @@ const rootRouteChildren: RootRouteChildren = {
   KvitteringerRoute: KvitteringerRoute,
   LysRoute: LysRoute,
   NsmSikkerhetRoute: NsmSikkerhetRoute,
-  OkonomiRoute: OkonomiRoute,
   PlanterRoute: PlanterRoute,
   PollenRoute: PollenRoute,
   PushVarslingerRoute: PushVarslingerRoute,

@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Menu, X, LogOut, Crown, Swords, Shield, KeyRound, Home, Star, Flower2,
   Sun, Compass, CalendarDays, BellRing, Eye, Mountain, Lightbulb, Lamp, Flame, Zap,
   Receipt, Dumbbell, AlertTriangle, ScrollText, Globe, ChevronDown, ChevronRight,
-  TreePine, Coins, Bot, Wallet, Volume2, Settings, Gauge, Plane, Folder, Smartphone, BarChart3 } from "lucide-react";
+  TreePine, Coins, Bot, Settings, Gauge, Plane, Folder, Smartphone, BarChart3 } from "lucide-react";
 
 
 import { logoutFn } from "@/lib/auth.functions";
@@ -19,7 +19,7 @@ import { useMenuPrefs } from "@/hooks/use-menu-prefs";
 import { getNetatmoWeatherStation } from "@/lib/netatmo-weather.functions";
 import { getNetatmoLiveTrend } from "@/lib/netatmo-history";
 import { useLastGood } from "@/hooks/use-last-good";
-import { PushTodayBadge, LightsOnBadge, WeatherDaysBadge, AlarmStateBadge, AlertsSeverityBadge, PowerVsYesterdayBadge, TrainingLast4WeeksBadge, UtgangsdorenLockBadge, StepsTodayBadge, MowerStatusBadge, BassengTempBadge, CurrentTempBadge, GarbageNextPickupBadge, GardenaStatusBadge, GardenaBatteryBadge, GardenaSignalBadge, RoborockStatusBadge, BudgetRemainingBadge, OkonomiBruktBadge, OkonomiInntektBadge, OkonomiBudsjettBadge, OkonomiOverskuddBadge, OkonomiSnittPrDagBadge, OkonomiIgjenPrDagBadge } from "@/components/HallBadges";
+import { PushTodayBadge, LightsOnBadge, WeatherDaysBadge, AlarmStateBadge, AlertsSeverityBadge, PowerVsYesterdayBadge, TrainingLast4WeeksBadge, UtgangsdorenLockBadge, StepsTodayBadge, MowerStatusBadge, BassengTempBadge, CurrentTempBadge, GarbageNextPickupBadge, GardenaStatusBadge, GardenaBatteryBadge, GardenaSignalBadge, RoborockStatusBadge } from "@/components/HallBadges";
 import { useHeaderBadgeSettings, isBadgeVisible } from "@/hooks/use-header-badge-settings";
 import { useMenuVisibility, isMenuLinkVisible } from "@/hooks/use-menu-visibility";
 import { fetchOpenMeteoPollen } from "@/lib/air-quality-fetch.functions";
@@ -48,11 +48,11 @@ type RoutePath =
   | "/steintavle"
   | "/steintavle-2"
   | "/kvitteringer"
-  | "/okonomi"
+  
   | "/skatte-utregningen"
   | "/gressklipper"
   | "/stovsugeren"
-  | "/decibel"
+  
   | "/roborock"
   | "/planter"
   | "/fly"
@@ -85,7 +85,7 @@ const ROUTE_ICON: Partial<Record<RoutePath, React.ComponentType<{ size?: number;
   "/varme": Flame,
   "/stromkroniken": Zap,
   "/kvitteringer": Receipt,
-  "/okonomi": Wallet,
+  
   "/trening": Dumbbell,
   "/varsler": AlertTriangle,
   "/steintavle": ScrollText,
@@ -93,7 +93,7 @@ const ROUTE_ICON: Partial<Record<RoutePath, React.ComponentType<{ size?: number;
   "/skatte-utregningen": Coins,
   "/gressklipper": Bot,
   "/stovsugeren": Bot,
-  "/decibel": Volume2,
+  
   "/roborock": Bot,
   "/planter": TreePine,
   "/fly": Plane,
@@ -118,7 +118,7 @@ const ROUTE_ICON_COLOR: Partial<Record<RoutePath, string>> = {
   "/varme": "#fb923c",
   "/stromkroniken": "#eab308",
   "/kvitteringer": "#94a3b8",
-  "/okonomi": "#d4af37",
+  
   "/trening": "#ef4444",
   "/varsler": "#dc2626",
   "/steintavle": "#cbd5e1",
@@ -126,7 +126,7 @@ const ROUTE_ICON_COLOR: Partial<Record<RoutePath, string>> = {
   "/skatte-utregningen": "#d4af37",
   "/gressklipper": "#10b981",
   "/stovsugeren": "#38bdf8",
-  "/decibel": "#f43f5e",
+  
   "/roborock": "#a78bfa",
   "/planter": "#22c55e",
   "/fly": "#38bdf8",
@@ -157,12 +157,12 @@ const navLinks: NavLink[] = [
   { to: "/stovsugeren", label: "Støvsugeren" },
   { to: "/stromkroniken", label: "Strømkrøniken" },
   { to: "/kvitteringer", label: "Kvitteringer" },
-  { to: "/okonomi", label: "Husholdningens hvelv" },
+  
   { to: "/skatte-utregningen", label: "Skatte utregningen" },
   { to: "/trening", label: "Trening" },
   { to: "/varsler", label: "Farevarsler", public: true },
   { to: "/nsm-sikkerhet", label: "NSM Sikkerhet", public: true },
-  { to: "/decibel", label: "Decibelmåler", public: true },
+  
   { to: "/roborock", label: "Roborock" },
   { to: "/planter", label: "Planter & Trær" },
   { to: "/fly", label: "Fly i nærheten", public: true },
@@ -292,8 +292,7 @@ export function SiteHeader() {
   // Visitors outside the gate only see public halls; authed users see everything.
   const menuVisibility = useMenuVisibility();
   const baseLinks = (isAuthed ? navLinks : navLinks.filter((l) => l.public))
-    .filter((l) => isMenuLinkVisible(menuVisibility, l.to, who))
-    .filter((l) => l.to !== "/okonomi" || who === "Arne");
+    .filter((l) => isMenuLinkVisible(menuVisibility, l.to, who));
 
 
   // Sorter: Hjem alltid først, Steintavle alltid sist, deretter favoritter (hvis på),
@@ -391,13 +390,6 @@ export function SiteHeader() {
           {l.to === "/stromkroniken" && showB("power_vs_yesterday") && <PowerVsYesterdayBadge inline />}
           {l.to === "/trening" && <>{showB("steps_arne") && <StepsTodayBadge inline owner="arne" />}{showB("steps_rebekka") && <StepsTodayBadge inline owner="rebekka" />}{showB("training_4w") && <TrainingLast4WeeksBadge inline owner="arne" />}{showB("training_4w_rebekka") && <TrainingLast4WeeksBadge inline owner="rebekka" />}</>}
           {l.to === "/agenda" && showB("garbage_next") && <GarbageNextPickupBadge inline />}
-          {l.to === "/okonomi" && showB("budget_remaining") && <BudgetRemainingBadge inline />}
-          {l.to === "/okonomi" && showB("okonomi_brukt") && <OkonomiBruktBadge inline />}
-          {l.to === "/okonomi" && showB("okonomi_inntekt") && <OkonomiInntektBadge inline />}
-          {l.to === "/okonomi" && showB("okonomi_budsjett") && <OkonomiBudsjettBadge inline />}
-          {l.to === "/okonomi" && showB("okonomi_overskudd") && <OkonomiOverskuddBadge inline />}
-          {l.to === "/okonomi" && showB("okonomi_snitt_dag") && <OkonomiSnittPrDagBadge inline />}
-          {l.to === "/okonomi" && showB("okonomi_igjen_dag") && <OkonomiIgjenPrDagBadge inline />}
           </span>
         </Link>
       </div>
@@ -576,13 +568,6 @@ export function SiteHeader() {
                   {l.to === "/stromkroniken" && showB("power_vs_yesterday") && <PowerVsYesterdayBadge inline />}
                   {l.to === "/trening" && <>{showB("steps_arne") && <StepsTodayBadge inline owner="arne" />}{showB("steps_rebekka") && <StepsTodayBadge inline owner="rebekka" />}{showB("training_4w") && <TrainingLast4WeeksBadge inline owner="arne" />}{showB("training_4w_rebekka") && <TrainingLast4WeeksBadge inline owner="rebekka" />}</>}
                   {l.to === "/agenda" && showB("garbage_next") && <GarbageNextPickupBadge inline />}
-                  {l.to === "/okonomi" && showB("budget_remaining") && <BudgetRemainingBadge inline />}
-                  {l.to === "/okonomi" && showB("okonomi_brukt") && <OkonomiBruktBadge inline />}
-                  {l.to === "/okonomi" && showB("okonomi_inntekt") && <OkonomiInntektBadge inline />}
-                  {l.to === "/okonomi" && showB("okonomi_budsjett") && <OkonomiBudsjettBadge inline />}
-                  {l.to === "/okonomi" && showB("okonomi_overskudd") && <OkonomiOverskuddBadge inline />}
-                  {l.to === "/okonomi" && showB("okonomi_snitt_dag") && <OkonomiSnittPrDagBadge inline />}
-                  {l.to === "/okonomi" && showB("okonomi_igjen_dag") && <OkonomiIgjenPrDagBadge inline />}
                 </Link>
               </span>
             );
