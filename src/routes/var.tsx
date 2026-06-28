@@ -1643,7 +1643,7 @@ function MoonVisual({ phaseFraction, illumination }: { phaseFraction: number; il
 // SUNSET CARD with arc
 // ============================================================
 
-function SunsetCard({ sun, now }: { sun: ReturnType<typeof sunTimes>; now: Date }) {
+function SunsetCard({ sun, now, moon }: { sun: ReturnType<typeof sunTimes>; now: Date; moon: { name: string; icon: string; illumination: number; phaseFraction: number } }) {
   const sunrise = sun.sunrise;
   const sunset = sun.sunset;
   // Full døgn-progress 0..1 (sol under horisont = utenfor [riseP..setP])
