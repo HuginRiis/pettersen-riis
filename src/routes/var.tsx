@@ -619,8 +619,8 @@ function RotatingForecastCard({ hours, soundEnabled }: { hours: Hour[] | null; s
   const [rangeHours, setRangeHours] = usePerUserPersistedState<24 | 48 | 96>("var:rotating:rangeHours", 48);
   useWeatherSound(soundEnabled ? (panel as WeatherSoundKind) : null, soundEnabled);
   const panels: { key: PanelKey; label: string; icon: React.ReactNode }[] = [
-    { key: "nedbor", label: "Nedbør", icon: <Droplets size={14} /> },
     { key: "vaer", label: "Værforhold", icon: <Cloud size={14} /> },
+    { key: "nedbor", label: "Nedbør", icon: <Droplets size={14} /> },
     { key: "skydekke", label: "Skydekke", icon: <CloudFog size={14} /> },
     { key: "vind", label: "Vind", icon: <Wind size={14} /> },
     { key: "lyn", label: "Lyn & torden", icon: <Zap size={14} /> },
