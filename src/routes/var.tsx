@@ -412,20 +412,59 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
             </div>
           </div>
 
-          {/* HERO */}
-          <header className="text-center pt-4 pb-2">
-            <h1 className="text-lg font-medium tracking-wide text-white/90 mt-1 drop-shadow-md">{userLoc.active.label}</h1>
-            <div className="text-[88px] leading-none font-thin mt-2 drop-shadow-lg tabular-nums">
-              {currentHour ? `${Math.round(currentHour.temp)}°` : "—"}
-            </div>
-            <div className="text-xl font-medium mt-2">{condition}</div>
-            {todayDay && (
-              <div className="text-base font-medium mt-1 tabular-nums">
-                H: {Math.round(todayDay.tempMax)}°  L: {Math.round(todayDay.tempMin)}°
+          {/* HERO — sticky under toppmenyen, krymper når man scroller */}
+          <div
+            className={`sticky top-[56px] z-30 -mx-4 px-4 transition-all duration-200 ${
+              collapsed
+                ? "backdrop-blur-xl bg-black/20 border-b border-white/10 shadow-lg"
+                : ""
+            }`}
+          >
+            <header
+              className="text-center transition-all duration-200 ease-out"
+              style={{
+                paddingTop: `${16 - heroT * 12}px`,
+                paddingBottom: `${8 - heroT * 4}px`,
+              }}
+            >
+              <h1
+                className="font-medium tracking-wide text-white/90 drop-shadow-md transition-all duration-200"
+                style={{ fontSize: `${18 - heroT * 4}px`, marginTop: `${4 - heroT * 4}px` }}
+              >
+                {userLoc.active.label}
+              </h1>
+              <div
+                className="leading-none font-thin drop-shadow-lg tabular-nums transition-all duration-200"
+                style={{
+                  fontSize: `${88 - heroT * 60}px`,
+                  marginTop: `${8 - heroT * 6}px`,
+                  display: "inline-block",
+                }}
+              >
+                {currentHour ? `${Math.round(currentHour.temp)}°` : "—"}
               </div>
-            )}
-            {headline && <div className="text-sm text-white/90 mt-3">{headline}</div>}
-          </header>
+              <div
+                className="font-medium transition-all duration-200"
+                style={{
+                  fontSize: `${20 - heroT * 6}px`,
+                  marginTop: `${8 - heroT * 6}px`,
+                  display: collapsed ? "inline-block" : "block",
+                  marginLeft: collapsed ? 8 : 0,
+                }}
+              >
+                {collapsed ? `| ${condition}` : condition}
+              </div>
+              {todayDay && !collapsed && (
+                <div className="text-base font-medium mt-1 tabular-nums">
+                  H: {Math.round(todayDay.tempMax)}°  L: {Math.round(todayDay.tempMin)}°
+                </div>
+              )}
+              {headline && !collapsed && (
+                <div className="text-sm text-white/90 mt-3">{headline}</div>
+              )}
+            </header>
+          </div>
+
 
           {/* Kompakte farevarsler — rett over søkeboksen */}
           {allAlerts.length > 0 && (
