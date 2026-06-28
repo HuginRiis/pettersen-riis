@@ -52,15 +52,21 @@ function VocFX({ color, intensity, value }: { color: string; intensity: number; 
   // Spin-fart: <100 → 14s, >2000 → 0.9s
   const v = value == null || !Number.isFinite(value) ? 0 : value;
   const clamped = Math.max(100, Math.min(2000, v));
-  const spinDur = 14 - ((clamped - 100) / 1900) * 13.1; // 14s → 0.9s
+  const speedT = (clamped - 100) / 1900; // 0..1
+  const orbDur = 14 - speedT * 13.1; // 14s → 0.9s (legacy, brukes ikke lenger til molekyl)
+  const orbCount = 5 + Math.round(speedT * 9); // 5..14 organiske partikler
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl">
       <style>{`
         @keyframes vocWave { 0%{transform:scale(.6);opacity:.55} 100%{transform:scale(2.2);opacity:0} }
         @keyframes vocDrift { 0%{transform:translate(0,0) scale(.8);opacity:.15} 40%{opacity:.55} 100%{transform:translate(var(--dx),-70px) scale(1.1);opacity:0} }
         @keyframes vocBreathe { 0%,100%{opacity:.25;transform:scale(1)} 50%{opacity:.5;transform:scale(1.1)} }
-        @keyframes vocSpin { from{transform:rotate(0)} to{transform:rotate(360deg)} }
+        @keyframes vocOrbit1 { 0%{transform:translate(0,0) scale(1)} 25%{transform:translate(18px,-14px) scale(1.15)} 50%{transform:translate(-6px,-22px) scale(.9)} 75%{transform:translate(-20px,8px) scale(1.1)} 100%{transform:translate(0,0) scale(1)} }
+        @keyframes vocOrbit2 { 0%{transform:translate(0,0) scale(1)} 25%{transform:translate(-16px,12px) scale(1.1)} 50%{transform:translate(8px,20px) scale(.85)} 75%{transform:translate(22px,-6px) scale(1.2)} 100%{transform:translate(0,0) scale(1)} }
+        @keyframes vocOrbit3 { 0%{transform:translate(0,0) scale(.95)} 33%{transform:translate(14px,16px) scale(1.2)} 66%{transform:translate(-18px,-10px) scale(.9)} 100%{transform:translate(0,0) scale(.95)} }
+        @keyframes vocPulse { 0%,100%{opacity:.5;filter:blur(1px)} 50%{opacity:.95;filter:blur(0)} }
       `}</style>
+
       <div
         className="absolute"
         style={{
