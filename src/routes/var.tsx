@@ -2082,7 +2082,7 @@ function UvIosChart({ hours, nowProgress }: { hours: { time: string; uv: number 
   const H = 130;
   const padL = 70;
   const padR = 20;
-  const padT = 16;
+  const padT = 28;
   const padB = 18;
   const chartW = W - padL - padR;
   const chartH = H - padT - padB;
