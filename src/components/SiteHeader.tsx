@@ -162,7 +162,7 @@ const navLinks: NavLink[] = [
   { to: "/trening", label: "Trening" },
   { to: "/varsler", label: "Farevarsler", public: true },
   { to: "/nsm-sikkerhet", label: "NSM Sikkerhet", public: true },
-  { to: "/decibel", label: "Decibelmåler", public: true },
+  
   { to: "/roborock", label: "Roborock" },
   { to: "/planter", label: "Planter & Trær" },
   { to: "/fly", label: "Fly i nærheten", public: true },
