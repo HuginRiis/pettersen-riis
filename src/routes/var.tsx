@@ -1414,9 +1414,12 @@ function DailyRainRow({ day, hours, index }: { day: ForecastDay; hours: Hour[]; 
     return { startHour, isNight, precip, prob };
   });
   const hasAnyHours = buckets.some((b) => b.precip > 0 || b.prob > 0);
-  // Animasjon: kun på dager med regn, intensitet skalert mot total mm
+  // Animasjon: doblet antall dråper på regnværsdager, med tilfeldig variasjon (seeded for SSR)
   const dayPrecip = day.precip || 0;
-  const dropCount = dayPrecip <= 0 ? 0 : dayPrecip < 1 ? 4 : dayPrecip < 4 ? 8 : dayPrecip < 10 ? 14 : 20;
+  const baseCount = dayPrecip <= 0 ? 0 : dayPrecip < 1 ? 4 : dayPrecip < 4 ? 8 : dayPrecip < 10 ? 14 : 20;
+  const countSeed = (day.date.charCodeAt(8) * 131 + day.date.charCodeAt(9) * 17 + 999) >>> 0;
+  const countJitter = Math.round(((countSeed % 1000) / 1000) * baseCount * 0.5);
+  const dropCount = Math.min(40, baseCount * 2 + countJitter);
   const dropDur = dayPrecip < 1 ? 1.6 : dayPrecip < 4 ? 1.1 : dayPrecip < 10 ? 0.75 : 0.5;
   return (
     <div className="grid grid-cols-[52px_46px_1fr_56px] items-center gap-2 py-2.5">
