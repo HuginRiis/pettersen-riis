@@ -39,6 +39,8 @@ import {
 } from "lucide-react";
 import { getRadonStatus, type RadonDevice } from "@/lib/radon.functions";
 import { getVocStatus, type VocDevice } from "@/lib/voc.functions";
+import { RadonCard } from "@/components/weather/RadonCard";
+import { VocCard } from "@/components/weather/VocCard";
 import { AreaChart, Area, ResponsiveContainer } from "recharts";
 import { useUvSun } from "@/hooks/use-uv-sun";
 import { useDailyMinMax } from "@/hooks/use-daily-minmax";
