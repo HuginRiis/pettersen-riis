@@ -4843,9 +4843,10 @@ export function SmartDashbord() {
               <div className="col-span-2">
                 <UvCompact loc={loc} />
               </div>
-              <div className="col-span-2">
-                <VocStuaTile />
+              <div className="col-span-2 row-span-2">
+                <VocCard />
               </div>
+
 
               <div className="col-span-2">
                 <RainTile
