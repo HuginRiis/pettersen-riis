@@ -644,7 +644,7 @@ function RotatingForecastCard({ hours, soundEnabled }: { hours: Hour[] | null; s
   const avgCloud = nextHours.reduce((s, h) => s + (h.cloud ?? 0), 0) / Math.max(1, nextHours.length);
 
   const fx =
-    panel === "nedbor" ? <RainFX intensity={rainIntensity} dryMultiplier={2} /> :
+    panel === "nedbor" ? <RainFX intensity={rainIntensity} /> :
     panel === "vaer" ? <CloudFX intensity={0.4} /> :
     panel === "skydekke" ? <CloudCoverFX intensity={Math.min(1, avgCloud / 100)} /> :
     panel === "vind" ? <WindFX intensity={Math.min(1, maxWind / 14)} /> :
@@ -1907,6 +1907,14 @@ function MoonCard({ moon, now }: { moon: { name: string; icon: string; illuminat
 }
 
 function MoonVisual({ phaseFraction, illumination }: { phaseFraction: number; illumination: number }) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  // Unngå SSR-hydreringsfeil pga. tidspunkt-avhengig månefase
+  if (!mounted) {
+    return <div className="relative w-28 h-28" aria-hidden />;
+  }
+
   const r = 36;
   const cx = 50, cy = 50;
   const p = phaseFraction;
@@ -1915,7 +1923,7 @@ function MoonVisual({ phaseFraction, illumination }: { phaseFraction: number; il
   const rx = Math.max(0.01, Math.abs(Math.cos(2 * Math.PI * p)) * r);
   const outerSweep = waxing ? 1 : 0;
   const innerSweep = gibbous ? (waxing ? 0 : 1) : outerSweep;
-  const litPath = `M ${cx},${cy - r} A ${r},${r} 0 0,${outerSweep} ${cx},${cy + r} A ${rx},${r} 0 0,${innerSweep} ${cx},${cy - r} Z`;
+  const litPath = `M ${cx},${cy - r} A ${r},${r} 0 0,${outerSweep} ${cx},${cy + r} A ${rx.toFixed(2)},${r} 0 0,${innerSweep} ${cx},${cy - r} Z`;
   const glow = 0.35 + illumination * 0.65;
   return (
     <div
@@ -1926,7 +1934,7 @@ function MoonVisual({ phaseFraction, illumination }: { phaseFraction: number; il
       <div
         className="absolute inset-0 rounded-full pointer-events-none"
         style={{
-          background: `radial-gradient(circle at 50% 50%, rgba(255,247,220,${0.25 * glow}) 0%, rgba(255,247,220,${0.10 * glow}) 35%, transparent 70%)`,
+          background: `radial-gradient(circle at 50% 50%, rgba(255,247,220,${(0.25 * glow).toFixed(4)}) 0%, rgba(255,247,220,${(0.10 * glow).toFixed(4)}) 35%, transparent 70%)`,
           animation: "wxMoonHalo 4s ease-in-out infinite",
           filter: "blur(2px)",
         }}

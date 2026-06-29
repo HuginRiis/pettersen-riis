@@ -64,16 +64,16 @@ export function InsideRainFX({ intensity = 0.5, className = "" }: Common) {
   );
 }
 
-type RainFXProps = Common & { dryMultiplier?: number };
+type RainFXProps = Common & { dryDrops?: number };
 
 /* ---------------- RAIN ---------------- */
-export function RainFX({ intensity = 0.5, dryMultiplier = 1, className = "" }: RainFXProps) {
+export function RainFX({ intensity = 0.5, dryDrops = 14, className = "" }: RainFXProps) {
   const clamped = Math.max(0, Math.min(1, intensity));
   const drops = useMemo(() => {
     const rng = seededRng(123456 + Math.round(clamped * 1000));
-    // Opphold: 2–4 få drypp (kan dobles); når regnet starter eskalerer det raskt opp til ~40 drypp
+    // Opphold: ~13–15 drypp (seede random). Når regnet starter eskalerer det raskt opp til ~40 drypp
     const count = clamped === 0
-      ? Math.round((2 + rng() * 2) * dryMultiplier)
+      ? Math.max(13, Math.min(15, Math.round(dryDrops + (rng() - 0.5) * 2)))
       : Math.round(4 + clamped * 36);
 
     return Array.from({ length: count }).map((_, i) => ({
@@ -84,7 +84,7 @@ export function RainFX({ intensity = 0.5, dryMultiplier = 1, className = "" }: R
       h: 8 + rng() * 10,
       op: 0.35 + clamped * 0.35 + rng() * 0.25,
     }));
-  }, [clamped, dryMultiplier]);
+  }, [clamped, dryDrops]);
   return (
     <div className={`${wrap} ${className}`} aria-hidden>
       {drops.map((d, i) => (
@@ -567,17 +567,16 @@ export function GustFX({ intensity = 0.5, className = "" }: Common) {
 
 /* ---------------- SUN (rays + sparkles) ---------------- */
 export function SunFX({ intensity = 0.5, className = "" }: Common) {
-  const sparkles = useMemo(
-    () =>
-      Array.from({ length: 6 }).map(() => ({
-        left: Math.random() * 100,
-        top: Math.random() * 100,
-        delay: Math.random() * 2.4,
-        dur: 1.6 + Math.random() * 1.6,
-        size: 2 + Math.random() * 3,
-      })),
-    [],
-  );
+  const sparkles = useMemo(() => {
+    const rng = seededRng(7788 + Math.floor(intensity * 100000));
+    return Array.from({ length: 6 }).map(() => ({
+      left: rng() * 100,
+      top: rng() * 100,
+      delay: rng() * 2.4,
+      dur: 1.6 + rng() * 1.6,
+      size: 2 + rng() * 3,
+    }));
+  }, [intensity]);
   return (
     <div className={`${wrap} ${className}`} aria-hidden>
       <div
