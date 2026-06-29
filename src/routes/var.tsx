@@ -1414,12 +1414,9 @@ function DailyRainRow({ day, hours, index }: { day: ForecastDay; hours: Hour[]; 
     return { startHour, isNight, precip, prob };
   });
   const hasAnyHours = buckets.some((b) => b.precip > 0 || b.prob > 0);
-  // Animasjon: doblet antall dråper på regnværsdager, med tilfeldig variasjon (seeded for SSR)
+  // Animasjon: kun på dager med regn, intensitet skalert mot total mm
   const dayPrecip = day.precip || 0;
-  const baseCount = dayPrecip <= 0 ? 0 : dayPrecip < 1 ? 4 : dayPrecip < 4 ? 8 : dayPrecip < 10 ? 14 : 20;
-  const countSeed = (day.date.charCodeAt(8) * 131 + day.date.charCodeAt(9) * 17 + 999) >>> 0;
-  const countJitter = Math.round(((countSeed % 1000) / 1000) * baseCount * 0.5);
-  const dropCount = Math.min(40, baseCount * 2 + countJitter);
+  const dropCount = dayPrecip <= 0 ? 0 : dayPrecip < 1 ? 4 : dayPrecip < 4 ? 8 : dayPrecip < 10 ? 14 : 20;
   const dropDur = dayPrecip < 1 ? 1.6 : dayPrecip < 4 ? 1.1 : dayPrecip < 10 ? 0.75 : 0.5;
   return (
     <div className="grid grid-cols-[52px_46px_1fr_56px] items-center gap-2 py-2.5">
@@ -1848,16 +1845,16 @@ function WindDetailCard({ hour }: { hour: Hour | null }) {
             <circle cx="50" cy="50" r="44" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
             {Array.from({ length: 36 }).map((_, i) => {
               const a = (i * 10 - 90) * (Math.PI / 180);
-              const x1 = (50 + 44 * Math.cos(a)).toFixed(2);
-              const y1 = (50 + 44 * Math.sin(a)).toFixed(2);
-              const x2 = (50 + (i % 9 === 0 ? 36 : 40) * Math.cos(a)).toFixed(2);
-              const y2 = (50 + (i % 9 === 0 ? 36 : 40) * Math.sin(a)).toFixed(2);
+              const x1 = 50 + 44 * Math.cos(a);
+              const y1 = 50 + 44 * Math.sin(a);
+              const x2 = 50 + (i % 9 === 0 ? 36 : 40) * Math.cos(a);
+              const y2 = 50 + (i % 9 === 0 ? 36 : 40) * Math.sin(a);
               return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="rgba(255,255,255,0.35)" strokeWidth="0.6" />;
             })}
             {["N", "Ø", "S", "V"].map((d, i) => {
               const a = (i * 90 - 90) * (Math.PI / 180);
-              const x = (50 + 30 * Math.cos(a)).toFixed(2);
-              const y = (50 + 30 * Math.sin(a) + 2.5).toFixed(2);
+              const x = 50 + 30 * Math.cos(a);
+              const y = 50 + 30 * Math.sin(a) + 2.5;
               return <text key={d} x={x} y={y} fontSize="7" fill="white" textAnchor="middle">{d}</text>;
             })}
             <g transform={`rotate(${dir} 50 50)`}>
@@ -1907,14 +1904,6 @@ function MoonCard({ moon, now }: { moon: { name: string; icon: string; illuminat
 }
 
 function MoonVisual({ phaseFraction, illumination }: { phaseFraction: number; illumination: number }) {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-
-  // Unngå SSR-hydreringsfeil pga. tidspunkt-avhengig månefase
-  if (!mounted) {
-    return <div className="relative w-28 h-28" aria-hidden />;
-  }
-
   const r = 36;
   const cx = 50, cy = 50;
   const p = phaseFraction;
@@ -1923,7 +1912,7 @@ function MoonVisual({ phaseFraction, illumination }: { phaseFraction: number; il
   const rx = Math.max(0.01, Math.abs(Math.cos(2 * Math.PI * p)) * r);
   const outerSweep = waxing ? 1 : 0;
   const innerSweep = gibbous ? (waxing ? 0 : 1) : outerSweep;
-  const litPath = `M ${cx},${cy - r} A ${r},${r} 0 0,${outerSweep} ${cx},${cy + r} A ${rx.toFixed(2)},${r} 0 0,${innerSweep} ${cx},${cy - r} Z`;
+  const litPath = `M ${cx},${cy - r} A ${r},${r} 0 0,${outerSweep} ${cx},${cy + r} A ${rx},${r} 0 0,${innerSweep} ${cx},${cy - r} Z`;
   const glow = 0.35 + illumination * 0.65;
   return (
     <div
@@ -1934,7 +1923,7 @@ function MoonVisual({ phaseFraction, illumination }: { phaseFraction: number; il
       <div
         className="absolute inset-0 rounded-full pointer-events-none"
         style={{
-          background: `radial-gradient(circle at 50% 50%, rgba(255,247,220,${(0.25 * glow).toFixed(4)}) 0%, rgba(255,247,220,${(0.10 * glow).toFixed(4)}) 35%, transparent 70%)`,
+          background: `radial-gradient(circle at 50% 50%, rgba(255,247,220,${0.25 * glow}) 0%, rgba(255,247,220,${0.10 * glow}) 35%, transparent 70%)`,
           animation: "wxMoonHalo 4s ease-in-out infinite",
           filter: "blur(2px)",
         }}
