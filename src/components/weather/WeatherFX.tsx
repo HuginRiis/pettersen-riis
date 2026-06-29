@@ -64,14 +64,16 @@ export function InsideRainFX({ intensity = 0.5, className = "" }: Common) {
   );
 }
 
+type RainFXProps = Common & { dryMultiplier?: number };
+
 /* ---------------- RAIN ---------------- */
-export function RainFX({ intensity = 0.5, className = "" }: Common) {
+export function RainFX({ intensity = 0.5, dryMultiplier = 1, className = "" }: RainFXProps) {
   const clamped = Math.max(0, Math.min(1, intensity));
   const drops = useMemo(() => {
     const rng = seededRng(123456 + Math.round(clamped * 1000));
-    // Opphold: 4–8 få drypp; når regnet starter eskalerer det raskt opp til ~40 drypp
+    // Opphold: 2–4 få drypp (kan dobles); når regnet starter eskalerer det raskt opp til ~40 drypp
     const count = clamped === 0
-      ? Math.round(4 + rng() * 4)
+      ? Math.round((2 + rng() * 2) * dryMultiplier)
       : Math.round(4 + clamped * 36);
 
     return Array.from({ length: count }).map((_, i) => ({
@@ -82,7 +84,7 @@ export function RainFX({ intensity = 0.5, className = "" }: Common) {
       h: 8 + rng() * 10,
       op: 0.35 + clamped * 0.35 + rng() * 0.25,
     }));
-  }, [clamped]);
+  }, [clamped, dryMultiplier]);
   return (
     <div className={`${wrap} ${className}`} aria-hidden>
       {drops.map((d, i) => (
