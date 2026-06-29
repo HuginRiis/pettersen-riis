@@ -1414,9 +1414,38 @@ function DailyRainRow({ day, hours, index }: { day: ForecastDay; hours: Hour[]; 
     return { startHour, isNight, precip, prob };
   });
   const hasAnyHours = buckets.some((b) => b.precip > 0 || b.prob > 0);
+  // Animasjon: kun på dager med regn, intensitet skalert mot total mm
+  const dayPrecip = day.precip || 0;
+  const dropCount = dayPrecip <= 0 ? 0 : dayPrecip < 1 ? 4 : dayPrecip < 4 ? 8 : dayPrecip < 10 ? 14 : 20;
+  const dropDur = dayPrecip < 1 ? 1.6 : dayPrecip < 4 ? 1.1 : dayPrecip < 10 ? 0.75 : 0.5;
   return (
-    <div className="grid grid-cols-[56px_1fr_64px_56px] items-center gap-3 py-2.5">
+    <div className="grid grid-cols-[52px_46px_1fr_56px] items-center gap-2 py-2.5">
       <div className="text-[15px] capitalize">{label}</div>
+      <div className="relative w-[46px] h-9 overflow-hidden" aria-hidden>
+        {Array.from({ length: dropCount }, (_, i) => {
+          const left = (i * 37) % 44;
+          const delay = ((i * 0.13) % dropDur).toFixed(2);
+          const len = dayPrecip < 4 ? 6 : dayPrecip < 10 ? 9 : 12;
+          const op = dayPrecip < 1 ? 0.55 : 0.85;
+          return (
+            <span
+              key={i}
+              className="absolute rounded-full"
+              style={{
+                left: `${left}px`,
+                top: 0,
+                width: 1.5,
+                height: len,
+                background: "linear-gradient(to bottom, rgba(186,230,253,0) 0%, rgba(125,211,252,0.95) 60%, rgba(56,189,248,1) 100%)",
+                opacity: op,
+                animation: `dailyRainDrop ${dropDur}s linear ${delay}s infinite`,
+                filter: "drop-shadow(0 0 2px rgba(56,189,248,0.6))",
+              }}
+            />
+          );
+        })}
+        <style>{`@keyframes dailyRainDrop { 0% { transform: translateY(-12px); opacity: 0; } 15% { opacity: var(--rd-op,0.9); } 85% { opacity: var(--rd-op,0.9); } 100% { transform: translateY(40px); opacity: 0; } }`}</style>
+      </div>
       <div className="flex items-end gap-[3px] h-8">
         {buckets.map((b, i) => {
           const rainFill = b.precip > 0 ? Math.max(6, Math.min(100, (b.precip / 6) * 100)) : 0;
@@ -1450,15 +1479,17 @@ function DailyRainRow({ day, hours, index }: { day: ForecastDay; hours: Hour[]; 
           );
         })}
       </div>
-      <div className="text-[13px] tabular-nums text-right text-white/90">
-        {hasAnyHours ? `${day.precip.toFixed(day.precip >= 10 ? 0 : 1)} mm` : <span className="text-white/40">0 mm</span>}
-      </div>
-      <div className="text-[13px] tabular-nums text-right">
-        {day.precipProbability >= 20 ? (
-          <span className="text-sky-300">💧 {Math.round(day.precipProbability)} %</span>
-        ) : (
-          <span className="text-white/40">{Math.round(day.precipProbability)} %</span>
-        )}
+      <div className="text-right leading-tight">
+        <div className="text-[13px] tabular-nums text-white/90">
+          {hasAnyHours ? `${day.precip.toFixed(day.precip >= 10 ? 0 : 1)} mm` : <span className="text-white/40">0 mm</span>}
+        </div>
+        <div className="text-[11px] tabular-nums">
+          {day.precipProbability >= 20 ? (
+            <span className="text-sky-300">💧 {Math.round(day.precipProbability)}%</span>
+          ) : (
+            <span className="text-white/40">{Math.round(day.precipProbability)}%</span>
+          )}
+        </div>
       </div>
     </div>
   );
