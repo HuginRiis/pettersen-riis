@@ -607,17 +607,17 @@ export function SunFX({ intensity = 0.5, className = "" }: Common) {
 
 /* ---------------- MOON (stars) ---------------- */
 export function StarFX({ intensity = 0.5, className = "" }: Common) {
-  const stars = useMemo(
-    () =>
-      Array.from({ length: 14 }).map(() => ({
-        left: Math.random() * 100,
-        top: Math.random() * 100,
-        delay: Math.random() * 3,
-        dur: 1.6 + Math.random() * 2.2,
-        size: 1 + Math.random() * 2,
-      })),
-    [],
-  );
+  const seed = Math.floor(intensity * 100000) + 7;
+  const stars = useMemo(() => {
+    const rng = seededRng(seed);
+    return Array.from({ length: 14 }).map(() => ({
+      left: rng() * 100,
+      top: rng() * 100,
+      delay: rng() * 3,
+      dur: 1.6 + rng() * 2.2,
+      size: 1 + rng() * 2,
+    }));
+  }, [seed]);
   return (
     <div className={`${wrap} ${className}`} aria-hidden>
       {stars.map((s, i) => (
