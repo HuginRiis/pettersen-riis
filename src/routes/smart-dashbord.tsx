@@ -4787,12 +4787,13 @@ export function SmartDashbord() {
               <div className="col-span-4">
                 <UvTile loc={loc} />
               </div>
-              <div className="col-span-4">
-                <VocStuaTile />
+              <div className="col-span-4 row-span-2">
+                <VocCard />
               </div>
-              <div className="col-span-4">
-                <RadonStuaTile />
+              <div className="col-span-4 row-span-2">
+                <RadonCard />
               </div>
+
 
               {/* Rad 3: Kalender + Dører + Leader + Robots */}
               <div className="col-span-3 iphone-full-row">
