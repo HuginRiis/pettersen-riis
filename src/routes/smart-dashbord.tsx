@@ -39,8 +39,6 @@ import {
 } from "lucide-react";
 import { getRadonStatus, type RadonDevice } from "@/lib/radon.functions";
 import { getVocStatus, type VocDevice } from "@/lib/voc.functions";
-import { RadonCard } from "@/components/weather/RadonCard";
-import { VocCard } from "@/components/weather/VocCard";
 import { AreaChart, Area, ResponsiveContainer } from "recharts";
 import { useUvSun } from "@/hooks/use-uv-sun";
 import { useDailyMinMax } from "@/hooks/use-daily-minmax";
@@ -4787,13 +4785,12 @@ export function SmartDashbord() {
               <div className="col-span-4">
                 <UvTile loc={loc} />
               </div>
-              <div className="col-span-4 row-span-2">
-                <VocCard />
+              <div className="col-span-4">
+                <VocStuaTile />
               </div>
-              <div className="col-span-4 row-span-2">
-                <RadonCard />
+              <div className="col-span-4">
+                <RadonStuaTile />
               </div>
-
 
               {/* Rad 3: Kalender + Dører + Leader + Robots */}
               <div className="col-span-3 iphone-full-row">
@@ -4830,10 +4827,9 @@ export function SmartDashbord() {
               <div className="col-span-2">
                 <StromCombinedTile />
               </div>
-              <div className="col-span-2 row-span-2">
-                <RadonCard />
+              <div className="col-span-2">
+                <RadonStuaTile />
               </div>
-
 
 
               {/* Rad 2: Varmepumpe + UV + AQ + Regn + Vind (halv-størrelse) */}
@@ -4843,10 +4839,9 @@ export function SmartDashbord() {
               <div className="col-span-2">
                 <UvCompact loc={loc} />
               </div>
-              <div className="col-span-2 row-span-2">
-                <VocCard />
+              <div className="col-span-2">
+                <VocStuaTile />
               </div>
-
 
               <div className="col-span-2">
                 <RainTile
