@@ -3240,87 +3240,116 @@ function VocStuaTile() {
     : v < 2000 ? { color: "#fbbf24", label: "Moderat" }
     : { color: "#f87171", label: "Dårlig" };
 
+  // Samme fart/intensitet-skalering som på vær siden (VocFX)
+  const vClamp = Math.max(100, Math.min(2000, v ?? 0));
+  const speedT = (vClamp - 100) / 1900; // 0..1
+  const orbCount = 5 + Math.round(speedT * 9); // 5..14 organiske partikler
+  const waves = 3;
+
   return (
     <Tile title="VOC · Stua" icon={<Wind size={14} />} accent="text-emerald-300">
       <div className="relative flex items-center gap-3 h-full overflow-hidden">
         <style>{`
-          @keyframes vocRise { 0%{transform:translateY(0) scale(.8);opacity:.15} 40%{opacity:.6} 100%{transform:translateY(-90px) scale(1.2);opacity:0} }
-          @keyframes vocCorePulse { 0%,100%{opacity:.25;transform:scale(1)} 50%{opacity:.55;transform:scale(1.1)} }
-          @keyframes vocSpin { from{transform:rotate(0)} to{transform:rotate(360deg)} }
+          @keyframes vocWave { 0%{transform:scale(.6);opacity:.55} 100%{transform:scale(2.2);opacity:0} }
+          @keyframes vocDrift { 0%{transform:translate(0,0) scale(.8);opacity:.15} 40%{opacity:.55} 100%{transform:translate(var(--dx),-70px) scale(1.1);opacity:0} }
+          @keyframes vocBreathe { 0%,100%{opacity:.25;transform:scale(1)} 50%{opacity:.5;transform:scale(1.1)} }
+          @keyframes vocOrbit1 { 0%{transform:translate(0,0) scale(1)} 25%{transform:translate(18px,-14px) scale(1.15)} 50%{transform:translate(-6px,-22px) scale(.9)} 75%{transform:translate(-20px,8px) scale(1.1)} 100%{transform:translate(0,0) scale(1)} }
+          @keyframes vocOrbit2 { 0%{transform:translate(0,0) scale(1)} 25%{transform:translate(-16px,12px) scale(1.1)} 50%{transform:translate(8px,20px) scale(.85)} 75%{transform:translate(22px,-6px) scale(1.2)} 100%{transform:translate(0,0) scale(1)} }
+          @keyframes vocOrbit3 { 0%{transform:translate(0,0) scale(.95)} 33%{transform:translate(14px,16px) scale(1.2)} 66%{transform:translate(-18px,-10px) scale(.9)} 100%{transform:translate(0,0) scale(.95)} }
+          @keyframes vocPulse { 0%,100%{opacity:.5;filter:blur(1px)} 50%{opacity:.95;filter:blur(0)} }
         `}</style>
 
-        {/* Molekyl-animasjon */}
+        {/* VOC-animasjon (samme som vær siden) */}
         <div className="relative shrink-0" style={{ width: 100, height: 100 }}>
+          {/* Pustende glow */}
           <div
             className="absolute inset-0 rounded-full"
             style={{
               background: `radial-gradient(circle, ${lvl.color}55 0%, transparent 70%)`,
-              animation: "vocCorePulse 2.4s ease-in-out infinite",
+              animation: "vocBreathe 2.6s ease-in-out infinite",
             }}
           />
-          {/* Roterende molekyl */}
-          <div
-            className="absolute"
-            style={{
-              left: 30, top: 30, width: 40, height: 40,
-              animation: "vocSpin 6.5s linear infinite",
-            }}
-          >
-            {[0, 120, 240].map((deg) => (
-              <div
-                key={deg}
-                style={{
-                  position: "absolute",
-                  left: "50%",
-                  top: "50%",
-                  width: 10,
-                  height: 10,
-                  marginLeft: -5,
-                  marginTop: -5,
-                  borderRadius: "50%",
-                  background: lvl.color,
-                  boxShadow: `0 0 8px ${lvl.color}`,
-                  transform: `rotate(${deg}deg) translateY(-16px)`,
-                }}
-              />
-            ))}
+          {/* Organiske partikler */}
+          <div className="absolute inset-0">
+            {Array.from({ length: orbCount }).map((_, i) => {
+              const a = Math.sin(i * 12.9898) * 43758.5453;
+              const b = Math.sin(i * 78.233) * 12345.678;
+              const rx = a - Math.floor(a);
+              const ry = b - Math.floor(b);
+              const left = 15 + rx * 70;
+              const top = 15 + ry * 70;
+              const size = 4 + ((i * 1.7) % 5);
+              const orbit = (i % 3) + 1;
+              const baseDur = 6 - speedT * 5;
+              const dur = baseDur + (i % 4) * 0.4;
+              const delay = -((i * 0.37) % 3);
+              const pulseDur = 1.8 - speedT * 1.2 + (i % 3) * 0.3;
+              return (
+                <div
+                  key={`o${i}`}
+                  style={{
+                    position: "absolute",
+                    left: `${left}%`,
+                    top: `${top}%`,
+                    width: size,
+                    height: size,
+                    marginLeft: -size / 2,
+                    marginTop: -size / 2,
+                    borderRadius: "50%",
+                    background: lvl.color,
+                    boxShadow: `0 0 ${6 + size}px ${lvl.color}, 0 0 ${2 + size / 2}px ${lvl.color}`,
+                    animation: `vocOrbit${orbit} ${dur.toFixed(2)}s ease-in-out ${delay.toFixed(2)}s infinite, vocPulse ${pulseDur.toFixed(2)}s ease-in-out ${delay.toFixed(2)}s infinite`,
+                  }}
+                />
+              );
+            })}
+          </div>
+          {/* Ekspanderende bølger */}
+          {Array.from({ length: waves }).map((_, i) => (
             <div
+              key={`w${i}`}
               style={{
                 position: "absolute",
-                left: "50%", top: "50%",
-                width: 8, height: 8, marginLeft: -4, marginTop: -4,
+                left: "50%",
+                top: "50%",
+                width: 50,
+                height: 50,
+                marginLeft: -25,
+                marginTop: -25,
                 borderRadius: "50%",
-                background: "#fff",
-                opacity: 0.85,
-                boxShadow: `0 0 6px ${lvl.color}`,
+                border: `1.5px solid ${lvl.color}88`,
+                animation: `vocWave ${2.1 + i * 0.4}s ease-out ${i * 0.7}s infinite`,
               }}
             />
-          </div>
-          {/* Stigende VOC-partikler */}
+          ))}
+          {/* Stigende drift-prikker */}
           {Array.from({ length: dots }).map((_, i) => {
-            const left = 8 + ((i * 19) % 84);
-            const delay = (i * 0.38) % 3;
-            const dur = 2.2 + ((i * 0.4) % 2);
-            const size = 3 + (i % 2);
+            const left = 10 + ((i * 34) % 70);
+            const delay = (i * 0.25) % 3;
+            const dur = 3.5 + ((i * 0.4) % 3);
+            const size = 3 + (i % 3);
+            const dx = (i % 2 === 0 ? 1 : -1) * (5 + (i % 4) * 2);
             return (
               <div
-                key={`p${i}`}
+                key={`g${i}`}
                 style={{
                   position: "absolute",
                   left: `${left}%`,
-                  bottom: -6,
+                  bottom: -8,
                   width: size,
                   height: size,
                   borderRadius: "50%",
                   background: lvl.color,
-                  filter: "blur(.5px)",
-                  opacity: 0.4,
-                  animation: `vocRise ${dur}s ease-out ${delay}s infinite`,
+                  filter: "blur(.6px)",
+                  opacity: 0.45,
+                  ["--dx" as any]: `${dx}px`,
+                  animation: `vocDrift ${dur}s ease-in ${delay}s infinite`,
                 }}
               />
             );
           })}
         </div>
+
 
         {/* Tall + status */}
         <div className="flex-1 min-w-0 relative z-10">
