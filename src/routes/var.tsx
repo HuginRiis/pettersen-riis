@@ -1414,9 +1414,12 @@ function DailyRainRow({ day, hours, index }: { day: ForecastDay; hours: Hour[]; 
     return { startHour, isNight, precip, prob };
   });
   const hasAnyHours = buckets.some((b) => b.precip > 0 || b.prob > 0);
-  // Animasjon: kun på dager med regn, intensitet skalert mot total mm
+  // Animasjon: doblet antall dråper på regnværsdager, med tilfeldig variasjon (seeded for SSR)
   const dayPrecip = day.precip || 0;
-  const dropCount = dayPrecip <= 0 ? 0 : dayPrecip < 1 ? 4 : dayPrecip < 4 ? 8 : dayPrecip < 10 ? 14 : 20;
+  const baseCount = dayPrecip <= 0 ? 0 : dayPrecip < 1 ? 4 : dayPrecip < 4 ? 8 : dayPrecip < 10 ? 14 : 20;
+  const countSeed = (day.date.charCodeAt(8) * 131 + day.date.charCodeAt(9) * 17 + 999) >>> 0;
+  const countJitter = Math.round(((countSeed % 1000) / 1000) * baseCount * 0.5);
+  const dropCount = Math.min(40, baseCount * 2 + countJitter);
   const dropDur = dayPrecip < 1 ? 1.6 : dayPrecip < 4 ? 1.1 : dayPrecip < 10 ? 0.75 : 0.5;
   return (
     <div className="grid grid-cols-[52px_46px_1fr_56px] items-center gap-2 py-2.5">
@@ -1845,16 +1848,16 @@ function WindDetailCard({ hour }: { hour: Hour | null }) {
             <circle cx="50" cy="50" r="44" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
             {Array.from({ length: 36 }).map((_, i) => {
               const a = (i * 10 - 90) * (Math.PI / 180);
-              const x1 = 50 + 44 * Math.cos(a);
-              const y1 = 50 + 44 * Math.sin(a);
-              const x2 = 50 + (i % 9 === 0 ? 36 : 40) * Math.cos(a);
-              const y2 = 50 + (i % 9 === 0 ? 36 : 40) * Math.sin(a);
+              const x1 = (50 + 44 * Math.cos(a)).toFixed(2);
+              const y1 = (50 + 44 * Math.sin(a)).toFixed(2);
+              const x2 = (50 + (i % 9 === 0 ? 36 : 40) * Math.cos(a)).toFixed(2);
+              const y2 = (50 + (i % 9 === 0 ? 36 : 40) * Math.sin(a)).toFixed(2);
               return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="rgba(255,255,255,0.35)" strokeWidth="0.6" />;
             })}
             {["N", "Ø", "S", "V"].map((d, i) => {
               const a = (i * 90 - 90) * (Math.PI / 180);
-              const x = 50 + 30 * Math.cos(a);
-              const y = 50 + 30 * Math.sin(a) + 2.5;
+              const x = (50 + 30 * Math.cos(a)).toFixed(2);
+              const y = (50 + 30 * Math.sin(a) + 2.5).toFixed(2);
               return <text key={d} x={x} y={y} fontSize="7" fill="white" textAnchor="middle">{d}</text>;
             })}
             <g transform={`rotate(${dir} 50 50)`}>
