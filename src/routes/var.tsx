@@ -644,7 +644,7 @@ function RotatingForecastCard({ hours, soundEnabled }: { hours: Hour[] | null; s
   const avgCloud = nextHours.reduce((s, h) => s + (h.cloud ?? 0), 0) / Math.max(1, nextHours.length);
 
   const fx =
-    panel === "nedbor" ? <RainFX intensity={rainIntensity} /> :
+    panel === "nedbor" ? <RainFX intensity={rainIntensity} dryMultiplier={2} /> :
     panel === "vaer" ? <CloudFX intensity={0.4} /> :
     panel === "skydekke" ? <CloudCoverFX intensity={Math.min(1, avgCloud / 100)} /> :
     panel === "vind" ? <WindFX intensity={Math.min(1, maxWind / 14)} /> :
