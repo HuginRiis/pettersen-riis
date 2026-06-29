@@ -3106,8 +3106,8 @@ function RadonStuaTile() {
         <style>{`
           @keyframes radonOrbitA { from{transform:rotate(0) translateX(var(--r)) rotate(0)} to{transform:rotate(360deg) translateX(var(--r)) rotate(-360deg)} }
           @keyframes radonOrbitB { from{transform:rotate(0) translateX(var(--r)) rotate(0)} to{transform:rotate(-360deg) translateX(var(--r)) rotate(360deg)} }
-          @keyframes radonFloat { 0%{transform:translateY(0) scale(.9);opacity:.2} 50%{opacity:.6} 100%{transform:translateY(-50px) scale(1.1);opacity:0} }
-          @keyframes radonCorePulse { 0%,100%{opacity:.25;transform:scale(1)} 50%{opacity:.55;transform:scale(1.08)} }
+          @keyframes radonFloat { 0%{transform:translateY(0) scale(.9);opacity:.2} 50%{opacity:.65} 100%{transform:translateY(-60px) scale(1.1);opacity:0} }
+          @keyframes radonPulse { 0%,100%{opacity:.18;transform:scale(1)} 50%{opacity:.42;transform:scale(1.08)} }
         `}</style>
 
         {/* Atom-animasjon venstre */}
@@ -3116,9 +3116,10 @@ function RadonStuaTile() {
             className="absolute inset-0 rounded-full"
             style={{
               background: `radial-gradient(circle, ${lvl.color}66 0%, transparent 70%)`,
-              animation: `radonCorePulse ${pulseDur.toFixed(2)}s ease-in-out infinite`,
+              animation: `radonPulse ${pulseDur.toFixed(2)}s ease-in-out infinite`,
             }}
           />
+
           <div className="absolute" style={{ left: 18, top: 18, width: 64, height: 64 }}>
             {[0, 60, 120].map((deg, i) => (
               <div
