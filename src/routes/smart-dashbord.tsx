@@ -4830,9 +4830,10 @@ export function SmartDashbord() {
               <div className="col-span-2">
                 <StromCombinedTile />
               </div>
-              <div className="col-span-2">
-                <RadonStuaTile />
+              <div className="col-span-2 row-span-2">
+                <RadonCard />
               </div>
+
 
 
               {/* Rad 2: Varmepumpe + UV + AQ + Regn + Vind (halv-størrelse) */}
