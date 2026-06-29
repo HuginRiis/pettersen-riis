@@ -68,18 +68,19 @@ export function InsideRainFX({ intensity = 0.5, className = "" }: Common) {
 export function RainFX({ intensity = 0.5, className = "" }: Common) {
   const clamped = Math.max(0, Math.min(1, intensity));
   const drops = useMemo(() => {
-    // Opphold: 2–4 få drypp; når regnet starter eskalerer det raskt opp til ~40 drypp
+    const rng = seededRng(123456 + Math.round(clamped * 1000));
+    // Opphold: 4–8 få drypp; når regnet starter eskalerer det raskt opp til ~40 drypp
     const count = clamped === 0
-      ? Math.round(2 + Math.random() * 2)
+      ? Math.round(4 + rng() * 4)
       : Math.round(4 + clamped * 36);
 
     return Array.from({ length: count }).map((_, i) => ({
-      left: (i / count) * 100 + (Math.random() * 6 - 3),
-      delay: Math.random() * 1.8,
+      left: (i / count) * 100 + (rng() * 6 - 3),
+      delay: rng() * 1.8,
       // Faster fall when more intense
-      dur: 1.6 - clamped * 0.7 + Math.random() * 0.6,
-      h: 8 + Math.random() * 10,
-      op: 0.35 + clamped * 0.35 + Math.random() * 0.25,
+      dur: 1.6 - clamped * 0.7 + rng() * 0.6,
+      h: 8 + rng() * 10,
+      op: 0.35 + clamped * 0.35 + rng() * 0.25,
     }));
   }, [clamped]);
   return (
