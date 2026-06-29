@@ -1423,10 +1423,17 @@ function DailyRainRow({ day, hours, index }: { day: ForecastDay; hours: Hour[]; 
       <div className="text-[15px] capitalize">{label}</div>
       <div className="relative w-[46px] h-9 overflow-hidden" aria-hidden>
         {Array.from({ length: dropCount }, (_, i) => {
-          const left = (i * 37) % 44;
-          const delay = ((i * 0.13) % dropDur).toFixed(2);
-          const len = dayPrecip < 4 ? 6 : dayPrecip < 10 ? 9 : 12;
-          const op = dayPrecip < 1 ? 0.55 : 0.85;
+          // Seeded random fra dato + index for naturlig spredning uten hydration-mismatch
+          const seed = (day.date.charCodeAt(8) * 131 + day.date.charCodeAt(9) * 17 + i * 2654435761) >>> 0;
+          const r1 = ((seed % 1000) / 1000);
+          const r2 = (((seed >>> 7) % 1000) / 1000);
+          const r3 = (((seed >>> 13) % 1000) / 1000);
+          const left = (r1 * 44).toFixed(2);
+          const dur = (dropDur * (0.7 + r2 * 0.6)).toFixed(2);
+          const delay = (r3 * dropDur * 1.5).toFixed(2);
+          const baseLen = dayPrecip < 4 ? 6 : dayPrecip < 10 ? 9 : 12;
+          const len = (baseLen * (0.75 + r2 * 0.5)).toFixed(1);
+          const op = (dayPrecip < 1 ? 0.5 : 0.75) + r3 * 0.2;
           return (
             <span
               key={i}
@@ -1435,10 +1442,10 @@ function DailyRainRow({ day, hours, index }: { day: ForecastDay; hours: Hour[]; 
                 left: `${left}px`,
                 top: 0,
                 width: 1.5,
-                height: len,
+                height: `${len}px`,
                 background: "linear-gradient(to bottom, rgba(186,230,253,0) 0%, rgba(125,211,252,0.95) 60%, rgba(56,189,248,1) 100%)",
-                opacity: op,
-                animation: `dailyRainDrop ${dropDur}s linear ${delay}s infinite`,
+                opacity: op.toFixed(2),
+                animation: `dailyRainDrop ${dur}s linear ${delay}s infinite`,
                 filter: "drop-shadow(0 0 2px rgba(56,189,248,0.6))",
               }}
             />
