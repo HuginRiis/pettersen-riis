@@ -71,9 +71,21 @@ import doorOpenImg from "@/assets/door-open.png";
 import doorClosedImg from "@/assets/door-closed.png";
 
 // ----- shared settings (skala, bold, gap) -----
-type DashSettings = { scale: number; bold: boolean; gapX: number; gapY: number };
+type DashSettings = {
+  scale: number;
+  bold: boolean;
+  gapX: number;
+  gapY: number;
+  vpDeviceId: { borgen: string | null; hytta: string | null };
+};
 const SETTINGS_KEY = "smartDash.settings.v1";
-const DEFAULT_SETTINGS: DashSettings = { scale: 1, bold: false, gapX: 16, gapY: 16 };
+const DEFAULT_SETTINGS: DashSettings = {
+  scale: 1,
+  bold: false,
+  gapX: 16,
+  gapY: 16,
+  vpDeviceId: { borgen: null, hytta: null },
+};
 
 function loadSettings(): DashSettings {
   if (typeof window === "undefined") return DEFAULT_SETTINGS;
@@ -81,16 +93,22 @@ function loadSettings(): DashSettings {
     const raw = window.localStorage.getItem(SETTINGS_KEY);
     if (!raw) return DEFAULT_SETTINGS;
     const p = JSON.parse(raw);
+    const vp = p.vpDeviceId && typeof p.vpDeviceId === "object" ? p.vpDeviceId : {};
     return {
       scale: Math.min(1.6, Math.max(0.7, Number(p.scale) || 1)),
       bold: !!p.bold,
       gapX: Math.min(40, Math.max(0, Number(p.gapX) ?? 16)),
       gapY: Math.min(40, Math.max(0, Number(p.gapY) ?? 16)),
+      vpDeviceId: {
+        borgen: typeof vp.borgen === "string" ? vp.borgen : null,
+        hytta: typeof vp.hytta === "string" ? vp.hytta : null,
+      },
     };
   } catch {
     return DEFAULT_SETTINGS;
   }
 }
+
 
 export const Route = createFileRoute("/smart-dashbord")({
   head: () => ({
@@ -124,15 +142,22 @@ function isQlima(d: HomeyDeviceSnapshot): boolean {
   const h = `${d.driverUri ?? ""} ${d.name ?? ""}`.toLowerCase();
   return h.includes("qlima");
 }
+function isSensibo(d: HomeyDeviceSnapshot): boolean {
+  const h = `${d.driverUri ?? ""} ${d.name ?? ""}`.toLowerCase();
+  return h.includes("sensibo");
+}
 /** Generisk varmepumpe-match basert på navn / driver / klasse. */
 function isVarmepumpeLike(d: HomeyDeviceSnapshot): boolean {
   const h =
     `${d.driverUri ?? ""} ${d.name ?? ""} ${(d as any)?.virtualClass ?? ""} ${(d as any)?.class ?? ""}`.toLowerCase();
   if (h.includes("varmepump")) return true;
   if (h.includes("heatpump") || h.includes("heat_pump")) return true;
+  if (h.includes("sensibo")) return true;
+  if (h.includes("qlima") || h.includes("melcloud") || h.includes("mitsubishi")) return true;
   if (h.includes("thermostat") && (h.includes("air") || h.includes("aircon"))) return true;
   return false;
 }
+
 function isHyttaZoneName(name: string): boolean {
   return name.toLowerCase().includes("hytt");
 }
@@ -1355,14 +1380,164 @@ function VarmepumpeTile({
                 ))}
               </div>
             )}
+            <VpExtraControls device={device} busy={busy} isOn={!!isOn} onSend={send} />
           </div>
+
         </div>
       )}
     </Tile>
   );
 }
 
+/** Detekterer fan-speed, swing og boost/eco på en hvilken som helst varmepumpe-driver. */
+function VpExtraControls({
+  device,
+  busy,
+  isOn,
+  onSend,
+}: {
+  device: HomeyDeviceSnapshot;
+  busy: boolean;
+  isOn: boolean;
+  onSend: (cap: string, value: any) => void;
+}) {
+  const caps = device.capabilities ?? {};
+  const findCap = (test: (id: string) => boolean) => {
+    for (const id of Object.keys(caps)) {
+      if (test(id.toLowerCase())) return id;
+    }
+    return null;
+  };
+
+  const fanCapId = findCap(
+    (id) =>
+      (id.includes("fan") || id.includes("vifte")) &&
+      !id.includes("swing") &&
+      !id.includes("vane") &&
+      !id.includes("alarm"),
+  );
+  const swingCapId = findCap((id) => id.includes("swing") || id.includes("vane"));
+  const boostCapId = findCap((id) => id.includes("boost"));
+  const ecoCapId = findCap((id) => id.includes("eco") || id.includes("economy"));
+
+  const fanMeta = fanCapId ? caps[fanCapId] : null;
+  const swingMeta = swingCapId ? caps[swingCapId] : null;
+  const boostMeta = boostCapId ? caps[boostCapId] : null;
+  const ecoMeta = ecoCapId ? caps[ecoCapId] : null;
+
+  const fanValues: { id: string; title?: string }[] = Array.isArray(fanMeta?.values) ? fanMeta!.values! : [];
+  const swingValues: { id: string; title?: string }[] = Array.isArray(swingMeta?.values) ? swingMeta!.values! : [];
+  const fanIsNumber = typeof fanMeta?.value === "number" && fanValues.length === 0;
+  const fanMin = typeof fanMeta?.min === "number" ? fanMeta.min : 1;
+  const fanMax = typeof fanMeta?.max === "number" ? fanMeta.max : 5;
+  const fanStep = typeof fanMeta?.step === "number" ? fanMeta.step : 1;
+
+  if (!fanCapId && !swingCapId && !boostCapId && !ecoCapId) return null;
+
+  return (
+    <div className="flex flex-wrap gap-1.5 items-center">
+      {fanCapId && fanValues.length > 0 && (
+        <select
+          aria-label="Viftehastighet"
+          disabled={!isOn || busy}
+          value={String(fanMeta?.value ?? "")}
+          onChange={(e) => onSend(fanCapId, e.target.value)}
+          className="text-[11px] py-1 px-2 rounded-lg border border-white/10 bg-white/[0.04] text-white/80 disabled:opacity-40 focus:outline-none"
+        >
+          <option value="" disabled>
+            Vifte
+          </option>
+          {fanValues.map((v) => (
+            <option key={v.id} value={v.id} className="bg-[#0f1320]">
+              {v.title ?? v.id}
+            </option>
+          ))}
+        </select>
+      )}
+      {fanCapId && fanIsNumber && (
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => onSend(fanCapId, Math.max(fanMin, (fanMeta!.value as number) - fanStep))}
+            disabled={!isOn || busy}
+            className="h-7 w-7 rounded-full border border-white/10 text-white/80 hover:bg-white/5 flex items-center justify-center disabled:opacity-40"
+          >
+            <Minus size={12} />
+          </button>
+          <span className="text-[11px] tabular-nums text-white/70 min-w-[2.5rem] text-center">
+            Vifte {String(fanMeta!.value)}
+          </span>
+          <button
+            onClick={() => onSend(fanCapId, Math.min(fanMax, (fanMeta!.value as number) + fanStep))}
+            disabled={!isOn || busy}
+            className="h-7 w-7 rounded-full border border-white/10 text-white/80 hover:bg-white/5 flex items-center justify-center disabled:opacity-40"
+          >
+            <Plus size={12} />
+          </button>
+        </div>
+      )}
+      {swingCapId && swingValues.length > 0 && (
+        <select
+          aria-label="Vingeretning"
+          disabled={!isOn || busy}
+          value={String(swingMeta?.value ?? "")}
+          onChange={(e) => onSend(swingCapId, e.target.value)}
+          className="text-[11px] py-1 px-2 rounded-lg border border-white/10 bg-white/[0.04] text-white/80 disabled:opacity-40 focus:outline-none"
+        >
+          <option value="" disabled>
+            Swing
+          </option>
+          {swingValues.map((v) => (
+            <option key={v.id} value={v.id} className="bg-[#0f1320]">
+              {v.title ?? v.id}
+            </option>
+          ))}
+        </select>
+      )}
+      {swingCapId && swingValues.length === 0 && typeof swingMeta?.value === "boolean" && (
+        <button
+          onClick={() => onSend(swingCapId, !swingMeta!.value)}
+          disabled={!isOn || busy}
+          className={`text-[11px] py-1 px-2 rounded-lg border transition disabled:opacity-40 ${
+            swingMeta!.value
+              ? "border-rose-400/40 bg-rose-400/10 text-rose-200"
+              : "border-white/10 bg-white/[0.02] text-white/70"
+          }`}
+        >
+          Swing
+        </button>
+      )}
+      {boostCapId && (
+        <button
+          onClick={() => onSend(boostCapId, !boostMeta?.value)}
+          disabled={!isOn || busy}
+          className={`text-[11px] py-1 px-2 rounded-lg border transition disabled:opacity-40 ${
+            boostMeta?.value
+              ? "border-orange-400/40 bg-orange-400/10 text-orange-200"
+              : "border-white/10 bg-white/[0.02] text-white/70"
+          }`}
+        >
+          Boost
+        </button>
+      )}
+      {ecoCapId && (
+        <button
+          onClick={() => onSend(ecoCapId, !ecoMeta?.value)}
+          disabled={!isOn || busy}
+          className={`text-[11px] py-1 px-2 rounded-lg border transition disabled:opacity-40 ${
+            ecoMeta?.value
+              ? "border-emerald-400/40 bg-emerald-400/10 text-emerald-200"
+              : "border-white/10 bg-white/[0.02] text-white/70"
+          }`}
+        >
+          Eco
+        </button>
+      )}
+    </div>
+  );
+}
+
 type VpAnimKind = "heat" | "cool" | "dry" | "fan" | "auto" | "off";
+
 function classifyVpMode(mode: string | null | undefined): VpAnimKind {
   const m = (mode ?? "").toLowerCase();
   if (!m) return "auto";
@@ -4644,7 +4819,23 @@ export function SmartDashbord() {
       .sort((a, b) => b.lights.length - a.lights.length || a.label.localeCompare(b.label, "nb"));
   }, [devices, zoneNameById, locId]);
 
+  // Alle varmepumpe-lignende enheter for nåværende lokasjon (brukes i innstillinger)
+  const vpCandidates = useMemo(() => {
+    return devices
+      .filter((d) => isVarmepumpeLike(d))
+      .filter((d) => {
+        const zn = d.zone ? (zoneNameById.get(d.zone) ?? "") : "";
+        return locId === "hytta" ? isHyttaZoneName(zn) || isQlima(d) : !isHyttaZoneName(zn);
+      })
+      .sort((a, b) => a.name.localeCompare(b.name, "nb"));
+  }, [devices, zoneNameById, locId]);
+
   const varmepumpe = useMemo(() => {
+    const overrideId = settings.vpDeviceId[locId];
+    if (overrideId) {
+      const found = devices.find((d) => d.id === overrideId);
+      if (found) return found;
+    }
     if (locId === "hytta") {
       return (
         devices.find((d) => isQlima(d)) ??
@@ -4670,7 +4861,9 @@ export function SmartDashbord() {
       }) ??
       null
     );
-  }, [devices, zoneNameById, locId]);
+  }, [devices, zoneNameById, locId, settings.vpDeviceId]);
+
+
 
   const bassengSwitch = useMemo(() => {
     if (!bassengSwitchId) return null;
@@ -5038,6 +5231,44 @@ export function SmartDashbord() {
                 onValueChange={(v) => update({ gapY: v[0] ?? 16 })}
               />
             </div>
+
+            <div className="pt-2 border-t border-white/10">
+              <div className="flex items-center justify-between text-xs mb-2">
+                <span className="text-white/70">Varmepumpe ({loc.label})</span>
+                <span className="text-white/40 text-[10px]">{vpCandidates.length} funnet</span>
+              </div>
+              <select
+                value={settings.vpDeviceId[locId] ?? ""}
+                onChange={(e) =>
+                  update({
+                    vpDeviceId: { ...settings.vpDeviceId, [locId]: e.target.value || null },
+                  })
+                }
+                className="w-full text-xs py-2 px-3 rounded-lg border border-white/10 bg-white/[0.04] text-white/90 focus:outline-none"
+              >
+                <option value="">Automatisk (anbefalt)</option>
+                {vpCandidates.map((d) => {
+                  const brand = isSensibo(d)
+                    ? "Sensibo"
+                    : isMelcloud(d)
+                      ? "MELCloud"
+                      : isQlima(d)
+                        ? "Qlima"
+                        : "Annet";
+                  const zn = d.zone ? zoneNameById.get(d.zone) ?? "" : "";
+                  return (
+                    <option key={d.id} value={d.id} className="bg-[#0f1320]">
+                      {brand} · {d.name}
+                      {zn ? ` (${zn})` : ""}
+                    </option>
+                  );
+                })}
+              </select>
+              <p className="text-[10px] text-white/40 mt-1.5">
+                Velg hvilken varmepumpe-enhet som vises på dashbordet for denne lokasjonen.
+              </p>
+            </div>
+
 
             <div className="flex justify-end pt-2">
               <button
