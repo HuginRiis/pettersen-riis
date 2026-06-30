@@ -5098,7 +5098,7 @@ export function SmartDashbord() {
 
               {/* Rad 2: Varmepumpe + UV + AQ + Regn + Vind (halv-størrelse) */}
               <div className="col-span-4">
-                <VarmepumpeTile loc={loc} device={varmepumpe} onReload={reload} />
+                <VarmepumpeTile loc={loc} device={varmepumpe} onReload={reload} candidates={vpCandidates} selectedId={settings.vpDeviceId[locId]} onSelect={(id) => update({ vpDeviceId: { ...settings.vpDeviceId, [locId]: id } })} />
               </div>
               <div className="col-span-2">
                 <UvCompact loc={loc} />
