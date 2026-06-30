@@ -71,9 +71,21 @@ import doorOpenImg from "@/assets/door-open.png";
 import doorClosedImg from "@/assets/door-closed.png";
 
 // ----- shared settings (skala, bold, gap) -----
-type DashSettings = { scale: number; bold: boolean; gapX: number; gapY: number };
+type DashSettings = {
+  scale: number;
+  bold: boolean;
+  gapX: number;
+  gapY: number;
+  vpDeviceId: { borgen: string | null; hytta: string | null };
+};
 const SETTINGS_KEY = "smartDash.settings.v1";
-const DEFAULT_SETTINGS: DashSettings = { scale: 1, bold: false, gapX: 16, gapY: 16 };
+const DEFAULT_SETTINGS: DashSettings = {
+  scale: 1,
+  bold: false,
+  gapX: 16,
+  gapY: 16,
+  vpDeviceId: { borgen: null, hytta: null },
+};
 
 function loadSettings(): DashSettings {
   if (typeof window === "undefined") return DEFAULT_SETTINGS;
@@ -81,16 +93,22 @@ function loadSettings(): DashSettings {
     const raw = window.localStorage.getItem(SETTINGS_KEY);
     if (!raw) return DEFAULT_SETTINGS;
     const p = JSON.parse(raw);
+    const vp = p.vpDeviceId && typeof p.vpDeviceId === "object" ? p.vpDeviceId : {};
     return {
       scale: Math.min(1.6, Math.max(0.7, Number(p.scale) || 1)),
       bold: !!p.bold,
       gapX: Math.min(40, Math.max(0, Number(p.gapX) ?? 16)),
       gapY: Math.min(40, Math.max(0, Number(p.gapY) ?? 16)),
+      vpDeviceId: {
+        borgen: typeof vp.borgen === "string" ? vp.borgen : null,
+        hytta: typeof vp.hytta === "string" ? vp.hytta : null,
+      },
     };
   } catch {
     return DEFAULT_SETTINGS;
   }
 }
+
 
 export const Route = createFileRoute("/smart-dashbord")({
   head: () => ({
