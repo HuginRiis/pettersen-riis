@@ -1225,11 +1225,18 @@ function VarmepumpeTile({
   loc,
   device,
   onReload,
+  candidates = [],
+  selectedId = null,
+  onSelect,
 }: {
   loc: (typeof LOCS)[LocId];
   device: HomeyDeviceSnapshot | null;
   onReload: () => void;
+  candidates?: HomeyDeviceSnapshot[];
+  selectedId?: string | null;
+  onSelect?: (id: string | null) => void;
 }) {
+
   const setCap = useServerFn(setLivingRoomDeviceCapability);
   const [busy, setBusy] = useState(false);
   // Optimistiske overrides
