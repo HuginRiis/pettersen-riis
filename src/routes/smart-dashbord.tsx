@@ -1312,7 +1312,37 @@ function VarmepumpeTile({
           Fant ingen {brand}-enhet i Homey.
         </div>
       ) : (
-        <div className="relative flex items-center gap-4 h-full">
+        <div className="relative flex flex-col h-full">
+          {candidates.length > 1 && (
+            <div className="relative z-20 flex flex-wrap gap-1 mb-2">
+              {candidates.map((c) => {
+                const brandName = isSensibo(c)
+                  ? "Sensibo"
+                  : isMelcloud(c)
+                    ? "MELCloud"
+                    : isQlima(c)
+                      ? "Qlima"
+                      : c.name;
+                const active = c.id === device.id;
+                return (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => onSelect?.(active ? null : c.id)}
+                    title={c.name}
+                    className={`text-[10px] px-2 py-1 rounded-full border transition ${
+                      active
+                        ? "border-rose-400/50 bg-rose-500/20 text-rose-100 shadow-[0_0_10px_-2px_rgba(244,63,94,0.5)]"
+                        : "border-white/10 bg-white/[0.03] text-white/60 hover:bg-white/[0.07]"
+                    }`}
+                  >
+                    {brandName}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+          <div className="relative flex items-center gap-4 flex-1">
           <VpModeAnimation kind={animKind} />
           <div
             className={`relative z-10 h-24 w-24 rounded-full flex items-center justify-center border transition ${
@@ -1321,6 +1351,7 @@ function VarmepumpeTile({
                 : "bg-white/[0.02] border-white/10"
             }`}
           >
+
             <Fan
               size={104}
               strokeWidth={1}
