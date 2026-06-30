@@ -4669,7 +4669,23 @@ export function SmartDashbord() {
       .sort((a, b) => b.lights.length - a.lights.length || a.label.localeCompare(b.label, "nb"));
   }, [devices, zoneNameById, locId]);
 
+  // Alle varmepumpe-lignende enheter for nåværende lokasjon (brukes i innstillinger)
+  const vpCandidates = useMemo(() => {
+    return devices
+      .filter((d) => isVarmepumpeLike(d))
+      .filter((d) => {
+        const zn = d.zone ? (zoneNameById.get(d.zone) ?? "") : "";
+        return locId === "hytta" ? isHyttaZoneName(zn) || isQlima(d) : !isHyttaZoneName(zn);
+      })
+      .sort((a, b) => a.name.localeCompare(b.name, "nb"));
+  }, [devices, zoneNameById, locId]);
+
   const varmepumpe = useMemo(() => {
+    const overrideId = settings.vpDeviceId[locId];
+    if (overrideId) {
+      const found = devices.find((d) => d.id === overrideId);
+      if (found) return found;
+    }
     if (locId === "hytta") {
       return (
         devices.find((d) => isQlima(d)) ??
@@ -4695,7 +4711,9 @@ export function SmartDashbord() {
       }) ??
       null
     );
-  }, [devices, zoneNameById, locId]);
+  }, [devices, zoneNameById, locId, settings.vpDeviceId]);
+
+
 
   const bassengSwitch = useMemo(() => {
     if (!bassengSwitchId) return null;
