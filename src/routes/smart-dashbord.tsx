@@ -1389,7 +1389,155 @@ function VarmepumpeTile({
   );
 }
 
+/** Detekterer fan-speed, swing og boost/eco på en hvilken som helst varmepumpe-driver. */
+function VpExtraControls({
+  device,
+  busy,
+  isOn,
+  onSend,
+}: {
+  device: HomeyDeviceSnapshot;
+  busy: boolean;
+  isOn: boolean;
+  onSend: (cap: string, value: any) => void;
+}) {
+  const caps = device.capabilities ?? {};
+  const findCap = (test: (id: string) => boolean) => {
+    for (const id of Object.keys(caps)) {
+      if (test(id.toLowerCase())) return id;
+    }
+    return null;
+  };
+
+  const fanCapId = findCap(
+    (id) =>
+      (id.includes("fan") || id.includes("vifte")) &&
+      !id.includes("swing") &&
+      !id.includes("vane") &&
+      !id.includes("alarm"),
+  );
+  const swingCapId = findCap((id) => id.includes("swing") || id.includes("vane"));
+  const boostCapId = findCap((id) => id.includes("boost"));
+  const ecoCapId = findCap((id) => id.includes("eco") || id.includes("economy"));
+
+  const fanMeta = fanCapId ? caps[fanCapId] : null;
+  const swingMeta = swingCapId ? caps[swingCapId] : null;
+  const boostMeta = boostCapId ? caps[boostCapId] : null;
+  const ecoMeta = ecoCapId ? caps[ecoCapId] : null;
+
+  const fanValues: { id: string; title?: string }[] = Array.isArray(fanMeta?.values) ? fanMeta!.values! : [];
+  const swingValues: { id: string; title?: string }[] = Array.isArray(swingMeta?.values) ? swingMeta!.values! : [];
+  const fanIsNumber = typeof fanMeta?.value === "number" && fanValues.length === 0;
+  const fanMin = typeof fanMeta?.min === "number" ? fanMeta.min : 1;
+  const fanMax = typeof fanMeta?.max === "number" ? fanMeta.max : 5;
+  const fanStep = typeof fanMeta?.step === "number" ? fanMeta.step : 1;
+
+  if (!fanCapId && !swingCapId && !boostCapId && !ecoCapId) return null;
+
+  return (
+    <div className="flex flex-wrap gap-1.5 items-center">
+      {fanCapId && fanValues.length > 0 && (
+        <select
+          aria-label="Viftehastighet"
+          disabled={!isOn || busy}
+          value={String(fanMeta?.value ?? "")}
+          onChange={(e) => onSend(fanCapId, e.target.value)}
+          className="text-[11px] py-1 px-2 rounded-lg border border-white/10 bg-white/[0.04] text-white/80 disabled:opacity-40 focus:outline-none"
+        >
+          <option value="" disabled>
+            Vifte
+          </option>
+          {fanValues.map((v) => (
+            <option key={v.id} value={v.id} className="bg-[#0f1320]">
+              {v.title ?? v.id}
+            </option>
+          ))}
+        </select>
+      )}
+      {fanCapId && fanIsNumber && (
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => onSend(fanCapId, Math.max(fanMin, (fanMeta!.value as number) - fanStep))}
+            disabled={!isOn || busy}
+            className="h-7 w-7 rounded-full border border-white/10 text-white/80 hover:bg-white/5 flex items-center justify-center disabled:opacity-40"
+          >
+            <Minus size={12} />
+          </button>
+          <span className="text-[11px] tabular-nums text-white/70 min-w-[2.5rem] text-center">
+            Vifte {String(fanMeta!.value)}
+          </span>
+          <button
+            onClick={() => onSend(fanCapId, Math.min(fanMax, (fanMeta!.value as number) + fanStep))}
+            disabled={!isOn || busy}
+            className="h-7 w-7 rounded-full border border-white/10 text-white/80 hover:bg-white/5 flex items-center justify-center disabled:opacity-40"
+          >
+            <Plus size={12} />
+          </button>
+        </div>
+      )}
+      {swingCapId && swingValues.length > 0 && (
+        <select
+          aria-label="Vingeretning"
+          disabled={!isOn || busy}
+          value={String(swingMeta?.value ?? "")}
+          onChange={(e) => onSend(swingCapId, e.target.value)}
+          className="text-[11px] py-1 px-2 rounded-lg border border-white/10 bg-white/[0.04] text-white/80 disabled:opacity-40 focus:outline-none"
+        >
+          <option value="" disabled>
+            Swing
+          </option>
+          {swingValues.map((v) => (
+            <option key={v.id} value={v.id} className="bg-[#0f1320]">
+              {v.title ?? v.id}
+            </option>
+          ))}
+        </select>
+      )}
+      {swingCapId && swingValues.length === 0 && typeof swingMeta?.value === "boolean" && (
+        <button
+          onClick={() => onSend(swingCapId, !swingMeta!.value)}
+          disabled={!isOn || busy}
+          className={`text-[11px] py-1 px-2 rounded-lg border transition disabled:opacity-40 ${
+            swingMeta!.value
+              ? "border-rose-400/40 bg-rose-400/10 text-rose-200"
+              : "border-white/10 bg-white/[0.02] text-white/70"
+          }`}
+        >
+          Swing
+        </button>
+      )}
+      {boostCapId && (
+        <button
+          onClick={() => onSend(boostCapId, !boostMeta?.value)}
+          disabled={!isOn || busy}
+          className={`text-[11px] py-1 px-2 rounded-lg border transition disabled:opacity-40 ${
+            boostMeta?.value
+              ? "border-orange-400/40 bg-orange-400/10 text-orange-200"
+              : "border-white/10 bg-white/[0.02] text-white/70"
+          }`}
+        >
+          Boost
+        </button>
+      )}
+      {ecoCapId && (
+        <button
+          onClick={() => onSend(ecoCapId, !ecoMeta?.value)}
+          disabled={!isOn || busy}
+          className={`text-[11px] py-1 px-2 rounded-lg border transition disabled:opacity-40 ${
+            ecoMeta?.value
+              ? "border-emerald-400/40 bg-emerald-400/10 text-emerald-200"
+              : "border-white/10 bg-white/[0.02] text-white/70"
+          }`}
+        >
+          Eco
+        </button>
+      )}
+    </div>
+  );
+}
+
 type VpAnimKind = "heat" | "cool" | "dry" | "fan" | "auto" | "off";
+
 function classifyVpMode(mode: string | null | undefined): VpAnimKind {
   const m = (mode ?? "").toLowerCase();
   if (!m) return "auto";
