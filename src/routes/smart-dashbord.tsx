@@ -142,15 +142,22 @@ function isQlima(d: HomeyDeviceSnapshot): boolean {
   const h = `${d.driverUri ?? ""} ${d.name ?? ""}`.toLowerCase();
   return h.includes("qlima");
 }
+function isSensibo(d: HomeyDeviceSnapshot): boolean {
+  const h = `${d.driverUri ?? ""} ${d.name ?? ""}`.toLowerCase();
+  return h.includes("sensibo");
+}
 /** Generisk varmepumpe-match basert på navn / driver / klasse. */
 function isVarmepumpeLike(d: HomeyDeviceSnapshot): boolean {
   const h =
     `${d.driverUri ?? ""} ${d.name ?? ""} ${(d as any)?.virtualClass ?? ""} ${(d as any)?.class ?? ""}`.toLowerCase();
   if (h.includes("varmepump")) return true;
   if (h.includes("heatpump") || h.includes("heat_pump")) return true;
+  if (h.includes("sensibo")) return true;
+  if (h.includes("qlima") || h.includes("melcloud") || h.includes("mitsubishi")) return true;
   if (h.includes("thermostat") && (h.includes("air") || h.includes("aircon"))) return true;
   return false;
 }
+
 function isHyttaZoneName(name: string): boolean {
   return name.toLowerCase().includes("hytt");
 }
