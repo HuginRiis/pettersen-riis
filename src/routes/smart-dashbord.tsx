@@ -5232,6 +5232,44 @@ export function SmartDashbord() {
               />
             </div>
 
+            <div className="pt-2 border-t border-white/10">
+              <div className="flex items-center justify-between text-xs mb-2">
+                <span className="text-white/70">Varmepumpe ({loc.label})</span>
+                <span className="text-white/40 text-[10px]">{vpCandidates.length} funnet</span>
+              </div>
+              <select
+                value={settings.vpDeviceId[locId] ?? ""}
+                onChange={(e) =>
+                  update({
+                    vpDeviceId: { ...settings.vpDeviceId, [locId]: e.target.value || null },
+                  })
+                }
+                className="w-full text-xs py-2 px-3 rounded-lg border border-white/10 bg-white/[0.04] text-white/90 focus:outline-none"
+              >
+                <option value="">Automatisk (anbefalt)</option>
+                {vpCandidates.map((d) => {
+                  const brand = isSensibo(d)
+                    ? "Sensibo"
+                    : isMelcloud(d)
+                      ? "MELCloud"
+                      : isQlima(d)
+                        ? "Qlima"
+                        : "Annet";
+                  const zn = d.zone ? zoneNameById.get(d.zone) ?? "" : "";
+                  return (
+                    <option key={d.id} value={d.id} className="bg-[#0f1320]">
+                      {brand} · {d.name}
+                      {zn ? ` (${zn})` : ""}
+                    </option>
+                  );
+                })}
+              </select>
+              <p className="text-[10px] text-white/40 mt-1.5">
+                Velg hvilken varmepumpe-enhet som vises på dashbordet for denne lokasjonen.
+              </p>
+            </div>
+
+
             <div className="flex justify-end pt-2">
               <button
                 onClick={() => setSettings(DEFAULT_SETTINGS)}
