@@ -1380,7 +1380,9 @@ function VarmepumpeTile({
                 ))}
               </div>
             )}
+            <VpExtraControls device={device} busy={busy} isOn={!!isOn} onSend={send} />
           </div>
+
         </div>
       )}
     </Tile>
