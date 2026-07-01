@@ -1418,8 +1418,22 @@ function DailyRainRow({ day, hours, index }: { day: ForecastDay; hours: Hour[]; 
   const dayPrecip = day.precip || 0;
   const dropCount = dayPrecip <= 0 ? 0 : dayPrecip < 1 ? 4 : dayPrecip < 4 ? 8 : dayPrecip < 10 ? 14 : 20;
   const dropDur = dayPrecip < 1 ? 1.6 : dayPrecip < 4 ? 1.1 : dayPrecip < 10 ? 0.75 : 0.5;
+  const rowRef = useRef<HTMLDivElement | null>(null);
+  const [filled, setFilled] = useState(false);
+  useEffect(() => {
+    const el = rowRef.current;
+    if (!el) return;
+    if (typeof IntersectionObserver === "undefined") { setFilled(true); return; }
+    const io = new IntersectionObserver((entries) => {
+      for (const e of entries) {
+        if (e.isIntersecting) { setFilled(true); io.disconnect(); break; }
+      }
+    }, { threshold: 0.35 });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
   return (
-    <div className="grid grid-cols-[52px_46px_1fr_56px] items-center gap-2 py-2.5">
+    <div ref={rowRef} className="grid grid-cols-[52px_46px_1fr_56px] items-center gap-2 py-2.5">
       <div className="text-[15px] capitalize">{label}</div>
       <div className="relative w-[46px] h-9 overflow-hidden" aria-hidden>
         {Array.from({ length: dropCount }, (_, i) => {
@@ -1470,9 +1484,10 @@ function DailyRainRow({ day, hours, index }: { day: ForecastDay; hours: Hour[]; 
             >
               {rainFill > 0 && (
                 <div
-                  className="absolute bottom-0 left-0 right-0 rounded-b-md transition-all"
+                  className="absolute bottom-0 left-0 right-0 rounded-b-md"
                   style={{
-                    height: `${rainFill}%`,
+                    height: `${filled ? rainFill : 0}%`,
+                    transition: "height 10s cubic-bezier(0.22, 1, 0.36, 1)",
                     background: intense
                       ? "linear-gradient(to top, #1d4ed8 0%, #3b82f6 60%, #60a5fa 100%)"
                       : "linear-gradient(to top, #0284c7 0%, #38bdf8 70%, #7dd3fc 100%)",
@@ -1486,6 +1501,7 @@ function DailyRainRow({ day, hours, index }: { day: ForecastDay; hours: Hour[]; 
           );
         })}
       </div>
+
       <div className="text-right leading-tight">
         <div className="text-[13px] tabular-nums text-white/90">
           {hasAnyHours ? `${day.precip.toFixed(day.precip >= 10 ? 0 : 1)} mm` : <span className="text-white/40">0 mm</span>}
