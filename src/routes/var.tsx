@@ -1529,7 +1529,7 @@ function DailyCloudRow({ day, hours, index }: { day: ForecastDay; hours: Hour[];
   const cloudOpacity = Math.max(0.12, Math.min(0.75, 0.2 + coverage * 0.55));
 
   // Mørkere farge ved høyere skydekke (lys grå → mørk grå/blå)
-  const dark = Math.round(55 + coverage * 140); // 55 (tett) → 195 (klart)
+  const dark = Math.round(195 - coverage * 140); // 195 (klart) → 55 (tett)
   const baseFill = `rgba(${dark + 25},${dark + 30},${dark + 35},0.92)`;
   const midFill = `rgba(${dark + 45},${dark + 50},${dark + 55},0.96)`;
   const shadowFill = `rgba(${dark},${dark + 5},${dark + 10},0.92)`;
