@@ -237,8 +237,9 @@ export function LocationPicker({
 
   // Inputstil: tilpasses gjennomsiktig flis (lysere ramme/tekst på mørk bakgrunn).
   const inputClass = transparent
-    ? "w-full rounded-md border border-white/15 bg-white/5 text-white placeholder:text-white/50 px-3 py-2 text-sm focus:outline-none focus:border-white/40"
-    : "w-full rounded-md border border-border bg-background/60 px-3 py-2 text-sm focus:outline-none focus:border-primary/60";
+    ? "w-full rounded-md border border-white/15 bg-white/5 text-white placeholder:text-white/50 px-3 py-2 text-base focus:outline-none focus:border-white/40"
+    : "w-full rounded-md border border-border bg-background/60 px-3 py-2 text-base focus:outline-none focus:border-primary/60";
+
   const chipBtnClass = transparent
     ? "inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/15 text-[10px] leading-tight text-white/90 transition-colors"
     : "inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-card hover:bg-card/80 border border-border text-[10px] leading-tight text-foreground transition-colors";
