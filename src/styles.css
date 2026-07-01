@@ -873,7 +873,7 @@ main .container {
   100% { transform: translateY(var(--steam-rise, -55%)) scale(1.8); opacity: 0; filter: blur(6px); }
 }
 
-.animate-wx-rain      { animation: wx-rain-fall linear infinite; }
+.animate-wx-rain      { animation: wx-rain-fall linear infinite; will-change: transform, opacity; }
 .animate-wx-snow      { animation: wx-snow-fall linear infinite; }
 .animate-wx-cloud     { animation: wx-cloud-drift linear infinite; }
 .animate-wx-cloud-cross { animation: wx-cloud-cross linear infinite; }
