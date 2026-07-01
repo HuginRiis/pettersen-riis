@@ -1572,11 +1572,12 @@ function DailyCloudRow({ day, hours, index }: { day: ForecastDay; hours: Hour[];
 
   // Seed pr dag så clouds har unik random-fordeling pr rad
   const seed = index * 131 + Math.round(avgCloud);
+  const rainy = day.precipProbability >= 20 || day.precip >= 0.2;
 
   return (
     <div className="relative grid grid-cols-[56px_1fr_56px] items-center gap-3 py-2.5">
       {/* Skyer drifter over hele raden */}
-      <DriftingClouds intensity={Math.min(1, avgCloud / 100)} seed={seed} className="rounded-md" />
+      <DriftingClouds intensity={Math.min(1, avgCloud / 100)} seed={seed} className="rounded-md" rainy={rainy} />
 
       <div className="relative z-10 text-[15px] capitalize">{label}</div>
       <div className="relative z-10 flex items-end gap-[3px] h-8">
