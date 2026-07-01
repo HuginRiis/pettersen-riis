@@ -1502,7 +1502,7 @@ function DailyRainRow({ day, hours, index }: { day: ForecastDay; hours: Hour[]; 
   );
 }
 
-function DriftingClouds({ intensity, seed = 0, className = "" }: { intensity: number; seed?: number; className?: string }) {
+function DriftingClouds({ intensity, seed = 0, className = "", rainy = false }: { intensity: number; seed?: number; className?: string; rainy?: boolean }) {
   const i = Math.max(0, Math.min(1, intensity));
   const count = Math.round(2 + i * 6);
   const clouds = useMemo(() => {
@@ -1541,7 +1541,7 @@ function DriftingClouds({ intensity, seed = 0, className = "" }: { intensity: nu
         >
           <path
             d="M10 22 Q4 22 4 16 Q4 10 11 10 Q12 4 20 4 Q28 4 30 10 Q38 8 42 14 Q52 14 52 20 Q52 24 46 24 L12 24 Q10 24 10 22 Z"
-            fill="white"
+            fill={rainy ? "#334155" : "white"}
           />
         </svg>
       ))}
