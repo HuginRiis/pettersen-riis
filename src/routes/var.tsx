@@ -38,6 +38,8 @@ import {
   Zap,
   Volume2,
   VolumeX,
+  Search as SearchIcon,
+  ChevronRight,
 } from "lucide-react";
 import { useWeatherSound, type WeatherSoundKind } from "@/components/weather/useWeatherSound";
 import { TileToneProvider, TileToneToggle, useTileTone, tileToneClasses } from "@/components/weather/TileTone";
