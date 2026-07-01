@@ -828,6 +828,10 @@ main .container {
   0%   { transform: translateX(-30%); }
   100% { transform: translateX(130%); }
 }
+@keyframes wx-cloud-cross {
+  0%   { left: -40%; }
+  100% { left: 120%; }
+}
 @keyframes wx-wind-streak {
   0%   { transform: translateX(-60%) scaleX(0.4); opacity: 0; }
   15%  { opacity: 0.9; }
