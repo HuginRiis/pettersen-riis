@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { PageShell } from "@/components/PageShell";
@@ -38,6 +38,8 @@ import {
   Zap,
   Volume2,
   VolumeX,
+  Search as SearchIcon,
+  ChevronRight,
 } from "lucide-react";
 import { useWeatherSound, type WeatherSoundKind } from "@/components/weather/useWeatherSound";
 import { TileToneProvider, TileToneToggle, useTileTone, tileToneClasses } from "@/components/weather/TileTone";
@@ -475,11 +477,25 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
             </div>
           )}
 
-          {/* Sted-bytter (samme stil som øvrige fliser) */}
-          <div className={`${toneCardCn()} overflow-visible relative z-40`}>
+          {/* Søke-knapp → åpner favoritt-siden med animert vær pr sted */}
+          <Link
+            to="/var/favoritter"
+            className={`${toneCardCn()} relative z-40 flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors`}
+          >
             <TileSplashFX kind={glassKind} intensity={glassIntensity} />
-            <UserLocationBar page="var" state={userLoc} transparent />
-          </div>
+            <div className="relative z-10 flex items-center gap-3 w-full">
+              <div className="w-10 h-10 rounded-full bg-white/10 border border-white/15 flex items-center justify-center">
+                <SearchIcon size={18} className="text-white" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-[10px] tracking-[0.25em] uppercase text-white/60">Søk sted</div>
+                <div className="text-sm text-white/90 truncate">
+                  {userLoc.active.label} · alle favoritter med animert vær
+                </div>
+              </div>
+              <ChevronRight size={18} className="text-white/60" />
+            </div>
+          </Link>
 
           {/* ROTERENDE 48-TIMERS PROGNOSE: nedbør · værforhold · vind · lyn */}
           <RotatingForecastCard hours={skienHours} soundEnabled={soundEnabled} />
