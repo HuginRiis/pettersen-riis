@@ -828,6 +828,10 @@ main .container {
   0%   { transform: translateX(-30%); }
   100% { transform: translateX(130%); }
 }
+@keyframes wx-cloud-cross {
+  0%   { left: -40%; }
+  100% { left: 120%; }
+}
 @keyframes wx-wind-streak {
   0%   { transform: translateX(-60%) scaleX(0.4); opacity: 0; }
   15%  { opacity: 0.9; }
@@ -871,6 +875,7 @@ main .container {
 .animate-wx-rain      { animation: wx-rain-fall linear infinite; }
 .animate-wx-snow      { animation: wx-snow-fall linear infinite; }
 .animate-wx-cloud     { animation: wx-cloud-drift linear infinite; }
+.animate-wx-cloud-cross { animation: wx-cloud-cross linear infinite; }
 .animate-wx-wind      { animation: wx-wind-streak linear infinite; }
 .animate-wx-heatwave  { animation: wx-heatwave ease-in-out infinite; }
 .animate-wx-droplet   { animation: wx-droplet-rise ease-in infinite; }
