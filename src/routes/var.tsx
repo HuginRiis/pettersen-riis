@@ -11,7 +11,7 @@ import { useUvSun, uvLevel } from "@/hooks/use-uv-sun";
 import { usePerUserPersistedState } from "@/hooks/use-per-user-persisted-state";
 import {
   RainFX, SnowFX, CloudFX, WindFX, HeatwaveFX, HumidityFX, PressureFX, GustFX, SunFX, StarFX, MoonFX, ThunderFX,
-  GlassPaneFX, glassKindFromSymbol, type GlassKind, TileSplashFX, CloudCoverFX, seededRng,
+  GlassPaneFX, glassKindFromSymbol, type GlassKind, TileSplashFX, CloudCoverFX,
 } from "@/components/weather/WeatherFX";
 import { SpaceWeatherCard } from "@/components/weather/SpaceWeatherCard";
 import { AirPollutionCard } from "@/components/weather/AirPollutionCard";
@@ -1522,62 +1522,42 @@ function DailyCloudRow({ day, hours, index }: { day: ForecastDay; hours: Hour[];
   const avgCloud = dayHours.length > 0
     ? dayHours.reduce((s, h) => s + (h.cloud || 0), 0) / dayHours.length
     : 0;
-
-  // Skydekke: flere, større og mørkere skyer jo høyere dekke
-  const coverage = Math.max(0, Math.min(1, avgCloud / 100));
-  const cloudCount = coverage < 0.12 ? 0 : coverage < 0.32 ? 1 : coverage < 0.55 ? 2 : coverage < 0.78 ? 3 : 4;
-  const cloudOpacity = Math.max(0.12, Math.min(0.75, 0.2 + coverage * 0.55));
-
-  // Mørkere farge ved høyere skydekke (lys grå → mørk grå/blå)
-  const dark = Math.round(195 - coverage * 140); // 195 (klart) → 55 (tett)
-  const baseFill = `rgba(${dark + 25},${dark + 30},${dark + 35},0.92)`;
-  const midFill = `rgba(${dark + 45},${dark + 50},${dark + 55},0.96)`;
-  const shadowFill = `rgba(${dark},${dark + 5},${dark + 10},0.92)`;
-
-  // Seeded random fra dato + index for naturlig spredning uten hydration-mismatch
-  const seed = day.date.split("-").reduce((s, p) => (s * 37 + parseInt(p, 10)) >>> 0, index + 1);
-  const rng = seededRng(seed);
-  const clouds = Array.from({ length: cloudCount }, (_, i) => {
-    const layer = i % 2;
-    return {
-      top: 4 + rng() * 52,
-      left: -25 + rng() * 120,
-      width: 70 + rng() * 110 + layer * 40,
-      dur: 22 + rng() * 18,
-      delay: -rng() * 20,
-      scale: 0.75 + rng() * 0.5,
-    };
-  });
+  // 0–3 små animerte skyer basert på snitt skydekke
+  const cloudCount = avgCloud < 15 ? 0 : avgCloud < 40 ? 1 : avgCloud < 75 ? 2 : 3;
+  const cloudOpacity = Math.max(0.25, Math.min(0.85, avgCloud / 100));
 
   return (
-    <div className="relative grid grid-cols-[56px_1fr_56px] items-center gap-3 py-2.5 overflow-hidden">
-      {/* Skydekke-animasjon over hele raden */}
-      <div className="absolute inset-0 overflow-hidden" aria-hidden>
-        <style>{`@keyframes dailyCloudDrift { 0% { transform: translateX(-30px) scale(var(--s,1)); } 100% { transform: translateX(30px) scale(var(--s,1)); } }`}</style>
-        {clouds.map((c, i) => (
-          <div
-            key={i}
-            className="absolute animate-wx-cloud"
-            style={{
-              top: `${c.top}%`,
-              left: `${c.left}%`,
-              opacity: cloudOpacity,
-              animation: `dailyCloudDrift ${c.dur}s ease-in-out infinite alternate`,
-              animationDelay: `${c.delay}s`,
-              ["--s" as any]: c.scale,
-            }}
-          >
-            <svg width={c.width} height={c.width * 0.42} viewBox="0 0 28 14">
-              <ellipse cx="8" cy="9" rx="7" ry="4" fill={shadowFill} />
-              <ellipse cx="15" cy="6" rx="6" ry="5" fill={midFill} />
-              <ellipse cx="21" cy="9" rx="6" ry="4" fill={baseFill} />
-            </svg>
-          </div>
-        ))}
+    <div className="grid grid-cols-[56px_46px_1fr_56px] items-center gap-3 py-2.5">
+      <div className="text-[15px] capitalize">{label}</div>
+      <div className="relative w-[46px] h-9 overflow-hidden" aria-hidden>
+        {Array.from({ length: cloudCount }, (_, i) => {
+          const top = 2 + i * 10;
+          const dur = 6 + i * 1.5;
+          const delay = (i * 0.7).toFixed(2);
+          const scale = 0.7 + i * 0.15;
+          return (
+            <div
+              key={i}
+              className="absolute"
+              style={{
+                top: `${top}px`,
+                left: "-14px",
+                opacity: cloudOpacity,
+                animation: `dailyCloudDrift ${dur}s ease-in-out ${delay}s infinite alternate`,
+                transform: `scale(${scale})`,
+              }}
+            >
+              <svg width="28" height="14" viewBox="0 0 28 14">
+                <ellipse cx="8" cy="9" rx="7" ry="4" fill="rgba(226,232,240,0.9)" />
+                <ellipse cx="15" cy="6" rx="6" ry="5" fill="rgba(241,245,249,0.95)" />
+                <ellipse cx="21" cy="9" rx="6" ry="4" fill="rgba(226,232,240,0.9)" />
+              </svg>
+            </div>
+          );
+        })}
+        <style>{`@keyframes dailyCloudDrift { 0% { transform: translateX(0) scale(var(--s,1)); } 100% { transform: translateX(14px); } }`}</style>
       </div>
-
-      <div className="relative z-10 text-[15px] capitalize">{label}</div>
-      <div className="relative z-10 flex items-end gap-[3px] h-8">
+      <div className="flex items-end gap-[3px] h-8">
         {buckets.map((b, i) => {
           const fill = Math.max(4, Math.min(100, b.cloud));
           const baseBg = b.isNight
@@ -1605,13 +1585,12 @@ function DailyCloudRow({ day, hours, index }: { day: ForecastDay; hours: Hour[];
           );
         })}
       </div>
-      <div className="relative z-10 text-[13px] tabular-nums text-right text-white/90">
+      <div className="text-[13px] tabular-nums text-right text-white/90">
         {Math.round(avgCloud)} <span className="text-white/60 text-[11px]">%</span>
       </div>
     </div>
   );
 }
-
 
 function DailyLynRow({ day, hours, index }: { day: ForecastDay; hours: Hour[]; index: number }) {
   const label = index === 0 ? "I dag" : weekdayShort(day.date);
@@ -1866,16 +1845,16 @@ function WindDetailCard({ hour }: { hour: Hour | null }) {
             <circle cx="50" cy="50" r="44" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
             {Array.from({ length: 36 }).map((_, i) => {
               const a = (i * 10 - 90) * (Math.PI / 180);
-              const x1 = (50 + 44 * Math.cos(a)).toFixed(1);
-              const y1 = (50 + 44 * Math.sin(a)).toFixed(1);
-              const x2 = (50 + (i % 9 === 0 ? 36 : 40) * Math.cos(a)).toFixed(1);
-              const y2 = (50 + (i % 9 === 0 ? 36 : 40) * Math.sin(a)).toFixed(1);
+              const x1 = 50 + 44 * Math.cos(a);
+              const y1 = 50 + 44 * Math.sin(a);
+              const x2 = 50 + (i % 9 === 0 ? 36 : 40) * Math.cos(a);
+              const y2 = 50 + (i % 9 === 0 ? 36 : 40) * Math.sin(a);
               return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="rgba(255,255,255,0.35)" strokeWidth="0.6" />;
             })}
             {["N", "Ø", "S", "V"].map((d, i) => {
               const a = (i * 90 - 90) * (Math.PI / 180);
-              const x = (50 + 30 * Math.cos(a)).toFixed(1);
-              const y = (50 + 30 * Math.sin(a) + 2.5).toFixed(1);
+              const x = 50 + 30 * Math.cos(a);
+              const y = 50 + 30 * Math.sin(a) + 2.5;
               return <text key={d} x={x} y={y} fontSize="7" fill="white" textAnchor="middle">{d}</text>;
             })}
             <g transform={`rotate(${dir} 50 50)`}>
@@ -1933,7 +1912,7 @@ function MoonVisual({ phaseFraction, illumination }: { phaseFraction: number; il
   const rx = Math.max(0.01, Math.abs(Math.cos(2 * Math.PI * p)) * r);
   const outerSweep = waxing ? 1 : 0;
   const innerSweep = gibbous ? (waxing ? 0 : 1) : outerSweep;
-  const litPath = `M ${cx.toFixed(1)},${(cy - r).toFixed(1)} A ${r.toFixed(1)},${r.toFixed(1)} 0 0,${outerSweep} ${cx.toFixed(1)},${(cy + r).toFixed(1)} A ${rx.toFixed(1)},${r.toFixed(1)} 0 0,${innerSweep} ${cx.toFixed(1)},${(cy - r).toFixed(1)} Z`;
+  const litPath = `M ${cx},${cy - r} A ${r},${r} 0 0,${outerSweep} ${cx},${cy + r} A ${rx},${r} 0 0,${innerSweep} ${cx},${cy - r} Z`;
   const glow = 0.35 + illumination * 0.65;
   return (
     <div
