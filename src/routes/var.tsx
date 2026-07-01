@@ -2598,10 +2598,11 @@ function FeelsLikeCard({ hour }: { hour: Hour | null }) {
 
 function CloudCard({ hour }: { hour: Hour | null }) {
   const c = Math.round(hour?.cloud ?? 0);
+  const rainy = (hour?.precipProbability ?? 0) >= 20 || (hour?.precip ?? 0) >= 0.2;
   const label = c < 25 ? "Klar himmel" : c < 60 ? "Delvis skyet" : c < 85 ? "Skyet" : "Overskyet";
   const fx = c < 25
     ? <SunFX intensity={0.8} />
-    : <DriftingClouds intensity={Math.min(1, c / 100)} seed={c + 7} />;
+    : <DriftingClouds intensity={Math.min(1, c / 100)} seed={c + 7} rainy={rainy} />;
   return (
     <GlassCard eyebrow="Skydekke" icon={<Cloud size={14} />} fx={fx}>
       <div className="text-3xl font-light tabular-nums">{hour ? `${c} %` : "—"}</div>
