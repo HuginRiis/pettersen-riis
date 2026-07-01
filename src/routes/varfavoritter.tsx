@@ -6,7 +6,7 @@ import { FancyWeatherTile } from "@/components/FancyWeatherTile";
 import { UserLocationBar, useUserLocation } from "@/hooks/use-user-location";
 import type { ActiveLocation } from "@/components/LocationPicker";
 
-export const Route = createFileRoute("/var/favoritter")({
+export const Route = createFileRoute("/varfavoritter")({
   head: () => ({
     meta: [
       { title: "Værfavoritter | House Pettersen Riis" },

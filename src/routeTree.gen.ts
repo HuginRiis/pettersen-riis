@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as YtelseRouteImport } from './routes/ytelse'
 import { Route as VarslerRouteImport } from './routes/varsler'
 import { Route as VarmeRouteImport } from './routes/varme'
+import { Route as VarfavoritterRouteImport } from './routes/varfavoritter'
 import { Route as VarRouteImport } from './routes/var'
 import { Route as VakttarnetRouteImport } from './routes/vakttarnet'
 import { Route as TurerRouteImport } from './routes/turer'
@@ -37,7 +38,6 @@ import { Route as GressklipperRouteImport } from './routes/gressklipper'
 import { Route as FlyRouteImport } from './routes/fly'
 import { Route as AgendaRouteImport } from './routes/agenda'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as VarFavoritterRouteImport } from './routes/var.favoritter'
 import { Route as HooksLogPulseRouteImport } from './routes/hooks.log-pulse'
 import { Route as ApiStravaStartRouteImport } from './routes/api.strava.start'
 import { Route as ApiStravaCallbackRouteImport } from './routes/api.strava.callback'
@@ -72,6 +72,11 @@ const VarslerRoute = VarslerRouteImport.update({
 const VarmeRoute = VarmeRouteImport.update({
   id: '/varme',
   path: '/varme',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VarfavoritterRoute = VarfavoritterRouteImport.update({
+  id: '/varfavoritter',
+  path: '/varfavoritter',
   getParentRoute: () => rootRouteImport,
 } as any)
 const VarRoute = VarRouteImport.update({
@@ -198,11 +203,6 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
-} as any)
-const VarFavoritterRoute = VarFavoritterRouteImport.update({
-  id: '/favoritter',
-  path: '/favoritter',
-  getParentRoute: () => VarRoute,
 } as any)
 const HooksLogPulseRoute = HooksLogPulseRouteImport.update({
   id: '/hooks/log-pulse',
@@ -340,12 +340,12 @@ export interface FileRoutesByFullPath {
   '/trening': typeof TreningRoute
   '/turer': typeof TurerRoute
   '/vakttarnet': typeof VakttarnetRoute
-  '/var': typeof VarRouteWithChildren
+  '/var': typeof VarRoute
+  '/varfavoritter': typeof VarfavoritterRoute
   '/varme': typeof VarmeRoute
   '/varsler': typeof VarslerRoute
   '/ytelse': typeof YtelseRoute
   '/hooks/log-pulse': typeof HooksLogPulseRoute
-  '/var/favoritter': typeof VarFavoritterRoute
   '/api/homey/callback': typeof ApiHomeyCallbackRoute
   '/api/homey/start': typeof ApiHomeyStartRoute
   '/api/strava/callback': typeof ApiStravaCallbackRoute
@@ -391,12 +391,12 @@ export interface FileRoutesByTo {
   '/trening': typeof TreningRoute
   '/turer': typeof TurerRoute
   '/vakttarnet': typeof VakttarnetRoute
-  '/var': typeof VarRouteWithChildren
+  '/var': typeof VarRoute
+  '/varfavoritter': typeof VarfavoritterRoute
   '/varme': typeof VarmeRoute
   '/varsler': typeof VarslerRoute
   '/ytelse': typeof YtelseRoute
   '/hooks/log-pulse': typeof HooksLogPulseRoute
-  '/var/favoritter': typeof VarFavoritterRoute
   '/api/homey/callback': typeof ApiHomeyCallbackRoute
   '/api/homey/start': typeof ApiHomeyStartRoute
   '/api/strava/callback': typeof ApiStravaCallbackRoute
@@ -443,12 +443,12 @@ export interface FileRoutesById {
   '/trening': typeof TreningRoute
   '/turer': typeof TurerRoute
   '/vakttarnet': typeof VakttarnetRoute
-  '/var': typeof VarRouteWithChildren
+  '/var': typeof VarRoute
+  '/varfavoritter': typeof VarfavoritterRoute
   '/varme': typeof VarmeRoute
   '/varsler': typeof VarslerRoute
   '/ytelse': typeof YtelseRoute
   '/hooks/log-pulse': typeof HooksLogPulseRoute
-  '/var/favoritter': typeof VarFavoritterRoute
   '/api/homey/callback': typeof ApiHomeyCallbackRoute
   '/api/homey/start': typeof ApiHomeyStartRoute
   '/api/strava/callback': typeof ApiStravaCallbackRoute
@@ -497,11 +497,11 @@ export interface FileRouteTypes {
     | '/turer'
     | '/vakttarnet'
     | '/var'
+    | '/varfavoritter'
     | '/varme'
     | '/varsler'
     | '/ytelse'
     | '/hooks/log-pulse'
-    | '/var/favoritter'
     | '/api/homey/callback'
     | '/api/homey/start'
     | '/api/strava/callback'
@@ -548,11 +548,11 @@ export interface FileRouteTypes {
     | '/turer'
     | '/vakttarnet'
     | '/var'
+    | '/varfavoritter'
     | '/varme'
     | '/varsler'
     | '/ytelse'
     | '/hooks/log-pulse'
-    | '/var/favoritter'
     | '/api/homey/callback'
     | '/api/homey/start'
     | '/api/strava/callback'
@@ -599,11 +599,11 @@ export interface FileRouteTypes {
     | '/turer'
     | '/vakttarnet'
     | '/var'
+    | '/varfavoritter'
     | '/varme'
     | '/varsler'
     | '/ytelse'
     | '/hooks/log-pulse'
-    | '/var/favoritter'
     | '/api/homey/callback'
     | '/api/homey/start'
     | '/api/strava/callback'
@@ -650,7 +650,8 @@ export interface RootRouteChildren {
   TreningRoute: typeof TreningRoute
   TurerRoute: typeof TurerRoute
   VakttarnetRoute: typeof VakttarnetRoute
-  VarRoute: typeof VarRouteWithChildren
+  VarRoute: typeof VarRoute
+  VarfavoritterRoute: typeof VarfavoritterRoute
   VarmeRoute: typeof VarmeRoute
   VarslerRoute: typeof VarslerRoute
   YtelseRoute: typeof YtelseRoute
@@ -697,6 +698,13 @@ declare module '@tanstack/react-router' {
       path: '/varme'
       fullPath: '/varme'
       preLoaderRoute: typeof VarmeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/varfavoritter': {
+      id: '/varfavoritter'
+      path: '/varfavoritter'
+      fullPath: '/varfavoritter'
+      preLoaderRoute: typeof VarfavoritterRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/var': {
@@ -874,13 +882,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/var/favoritter': {
-      id: '/var/favoritter'
-      path: '/favoritter'
-      fullPath: '/var/favoritter'
-      preLoaderRoute: typeof VarFavoritterRouteImport
-      parentRoute: typeof VarRoute
-    }
     '/hooks/log-pulse': {
       id: '/hooks/log-pulse'
       path: '/hooks/log-pulse'
@@ -1024,16 +1025,6 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface VarRouteChildren {
-  VarFavoritterRoute: typeof VarFavoritterRoute
-}
-
-const VarRouteChildren: VarRouteChildren = {
-  VarFavoritterRoute: VarFavoritterRoute,
-}
-
-const VarRouteWithChildren = VarRoute._addFileChildren(VarRouteChildren)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AgendaRoute: AgendaRoute,
@@ -1059,7 +1050,8 @@ const rootRouteChildren: RootRouteChildren = {
   TreningRoute: TreningRoute,
   TurerRoute: TurerRoute,
   VakttarnetRoute: VakttarnetRoute,
-  VarRoute: VarRouteWithChildren,
+  VarRoute: VarRoute,
+  VarfavoritterRoute: VarfavoritterRoute,
   VarmeRoute: VarmeRoute,
   VarslerRoute: VarslerRoute,
   YtelseRoute: YtelseRoute,
