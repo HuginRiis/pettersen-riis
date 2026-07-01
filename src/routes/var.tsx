@@ -1522,71 +1522,40 @@ function DailyCloudRow({ day, hours, index }: { day: ForecastDay; hours: Hour[];
   const avgCloud = dayHours.length > 0
     ? dayHours.reduce((s, h) => s + (h.cloud || 0), 0) / dayHours.length
     : 0;
-  // 0–4 animerte skyer basert på snitt skydekke. Mørkere når skyene er tettere.
-  const cloudCount = avgCloud < 12 ? 0 : avgCloud < 35 ? 1 : avgCloud < 60 ? 2 : avgCloud < 82 ? 3 : 4;
-  const heaviness = Math.min(1, avgCloud / 100); // 0 lys hvit, 1 tung grå
-  // deterministisk pseudo-tilfeldig (stabil mellom SSR og klient)
-  const rand = (n: number) => {
-    const x = Math.sin((index + 1) * 999.13 + n * 37.7) * 43758.5453;
-    return x - Math.floor(x);
-  };
+  // 0–3 små animerte skyer basert på snitt skydekke
+  const cloudCount = avgCloud < 15 ? 0 : avgCloud < 40 ? 1 : avgCloud < 75 ? 2 : 3;
+  const cloudOpacity = Math.max(0.25, Math.min(0.85, avgCloud / 100));
 
   return (
-    <div className="grid grid-cols-[56px_54px_1fr_56px] items-center gap-3 py-2.5">
+    <div className="grid grid-cols-[56px_46px_1fr_56px] items-center gap-3 py-2.5">
       <div className="text-[15px] capitalize">{label}</div>
-      <div className="relative w-[54px] h-9 overflow-hidden" aria-hidden>
+      <div className="relative w-[46px] h-9 overflow-hidden" aria-hidden>
         {Array.from({ length: cloudCount }, (_, i) => {
-          const top = 1 + i * 7 + rand(i) * 3;
-          const dur = 7 + rand(i + 10) * 6;
-          const delay = -(rand(i + 20) * 8).toFixed(2);
-          const scale = 0.75 + rand(i + 30) * 0.4;
-          // fargetoner — jo tettere jo mørkere/gråere
-          const light = Math.round(252 - heaviness * 60);
-          const mid = Math.round(232 - heaviness * 80);
-          const dark = Math.round(190 - heaviness * 110);
-          const topCol = `rgb(${light},${light},${Math.min(255, light + 4)})`;
-          const midCol = `rgb(${mid},${mid + 2},${Math.min(255, mid + 8)})`;
-          const botCol = `rgba(${dark},${dark + 3},${dark + 14},0.92)`;
-          const alpha = 0.55 + heaviness * 0.4;
-          // en sky = flere puffs + underskygge for volum
+          const top = 2 + i * 10;
+          const dur = 6 + i * 1.5;
+          const delay = (i * 0.7).toFixed(2);
+          const scale = 0.7 + i * 0.15;
           return (
             <div
               key={i}
               className="absolute"
               style={{
                 top: `${top}px`,
-                left: "-18px",
-                opacity: alpha,
-                animation: `dailyCloudDrift ${dur.toFixed(2)}s ease-in-out ${delay}s infinite alternate`,
-                transform: `scale(${scale.toFixed(2)})`,
-                filter: "drop-shadow(0 1px 1px rgba(15,23,42,0.35))",
+                left: "-14px",
+                opacity: cloudOpacity,
+                animation: `dailyCloudDrift ${dur}s ease-in-out ${delay}s infinite alternate`,
+                transform: `scale(${scale})`,
               }}
             >
-              <svg width="34" height="18" viewBox="0 0 34 18">
-                <defs>
-                  <radialGradient id={`dc-${index}-${i}`} cx="50%" cy="30%" r="70%">
-                    <stop offset="0%" stopColor={topCol} />
-                    <stop offset="55%" stopColor={midCol} />
-                    <stop offset="100%" stopColor={botCol} />
-                  </radialGradient>
-                </defs>
-                {/* underskygge */}
-                <ellipse cx="17" cy="14.5" rx="14" ry="2.2" fill={botCol} opacity="0.35" />
-                {/* puffs */}
-                <circle cx="8" cy="11" r="5" fill={`url(#dc-${index}-${i})`} />
-                <circle cx="13" cy="7.5" r="5.5" fill={`url(#dc-${index}-${i})`} />
-                <circle cx="19" cy="6.5" r="6" fill={`url(#dc-${index}-${i})`} />
-                <circle cx="25" cy="8.5" r="5" fill={`url(#dc-${index}-${i})`} />
-                <circle cx="28" cy="12" r="4.5" fill={`url(#dc-${index}-${i})`} />
-                {/* flat bunn */}
-                <rect x="6" y="11" width="24" height="4" rx="2" fill={`url(#dc-${index}-${i})`} />
-                {/* highlight */}
-                <ellipse cx="15" cy="5.5" rx="4" ry="1.6" fill="rgba(255,255,255,0.55)" />
+              <svg width="28" height="14" viewBox="0 0 28 14">
+                <ellipse cx="8" cy="9" rx="7" ry="4" fill="rgba(226,232,240,0.9)" />
+                <ellipse cx="15" cy="6" rx="6" ry="5" fill="rgba(241,245,249,0.95)" />
+                <ellipse cx="21" cy="9" rx="6" ry="4" fill="rgba(226,232,240,0.9)" />
               </svg>
             </div>
           );
         })}
-        <style>{`@keyframes dailyCloudDrift { 0% { transform: translateX(0) scale(var(--s,1)); } 100% { transform: translateX(18px); } }`}</style>
+        <style>{`@keyframes dailyCloudDrift { 0% { transform: translateX(0) scale(var(--s,1)); } 100% { transform: translateX(14px); } }`}</style>
       </div>
       <div className="flex items-end gap-[3px] h-8">
         {buckets.map((b, i) => {

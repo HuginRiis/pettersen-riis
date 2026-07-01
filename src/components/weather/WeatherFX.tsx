@@ -185,101 +185,65 @@ export function CloudFX({ intensity = 0.5, className = "" }: Common) {
 /* ---------------- CLOUD COVER (realistic layered sky) ---------------- */
 export function CloudCoverFX({ intensity = 0.5, className = "" }: Common) {
   const i = Math.max(0, Math.min(1, intensity));
-  // Antall skyer: 1 sky ved klar himmel, opp til 15 ved 100 % dekke
-  const count = Math.max(1, Math.round(1 + i * 14));
-  // Delt varighet per sky-loop. Skyene bruker første halvdel til å krysse tilen,
-  // andre halvdel venter de utenfor til høyre → gir tydelig "helt ut" ved lav
-  // intensitet. Med økende antall staggrer de tettere og overlapper.
-  const dur = 26;
-  const uid = useMemo(() => `cc${Math.floor(Math.random() * 1e6)}`, []);
-
-  const clouds = useMemo(
+  // 0 = blå klar himmel, 1 = mørk, tett dekke
+  const count = Math.round(6 + i * 14);
+  const blobs = useMemo(
     () =>
       Array.from({ length: count }).map((_, k) => {
         const layer = k % 3; // 0=bak, 1=midt, 2=front
-        // 4 vertikale baner så nabo-skyer ikke stables på hverandre
-        const laneCount = Math.min(4, Math.max(2, Math.round(2 + i * 2)));
-        const lane = k % laneCount;
-        const laneTop = 4 + lane * (72 / laneCount) + Math.random() * 6;
-        // Bredde: økes med intensitet. Ved i=1 dekker en enkelt sky ~55–75 %
-        // av tilen, og med mange skyer i vifte dekker de hele bredden.
-        const wPct = 32 + i * 32 + Math.random() * 18 + layer * 4;
-        const hPct = 26 + Math.random() * 14 + layer * 6 + i * 10;
-        const puffs = Array.from({ length: 4 + Math.floor(Math.random() * 4) }).map(() => ({
-          cx: 10 + Math.random() * 80,
-          cy: 20 + Math.random() * 50,
-          r: 22 + Math.random() * 30,
-        }));
+        const baseTop = layer === 0 ? 4 : layer === 1 ? 18 : 38;
         return {
-          layer,
-          top: laneTop,
-          wPct,
-          hPct,
-          delay: -(k * dur) / count - Math.random() * 0.6,
-          blur: 3 + layer * 1.5 + Math.random() * 3,
-          darkness: Math.min(0.95, 0.1 + i * (0.5 + layer * 0.18) + Math.random() * 0.08),
-          op: Math.min(1, 0.6 + i * 0.35 + layer * 0.05),
-          puffs,
+          top: baseTop + Math.random() * 28,
+          left: Math.random() * 120 - 10,
+          width: 140 + Math.random() * 220 + layer * 60,
+          height: 60 + Math.random() * 80 + layer * 20,
+          dur: 50 + Math.random() * 70 - layer * 8,
+          delay: -Math.random() * 80,
+          blur: 14 + layer * 6 + Math.random() * 8,
+          // mørkere skyer jo høyere intensitet og jo lenger fram
+          darkness: Math.min(0.95, 0.15 + i * (0.55 + layer * 0.15) + Math.random() * 0.1),
+          op: 0.45 + i * 0.45 + layer * 0.05,
         };
       }),
     [count, i],
   );
 
+  // himmelfarge bak skyene: klarblå → mørk grå/blå
   const skyTop = `rgba(${Math.round(120 - i * 100)}, ${Math.round(170 - i * 140)}, ${Math.round(220 - i * 170)}, ${0.35 + i * 0.45})`;
   const skyBot = `rgba(${Math.round(80 - i * 70)}, ${Math.round(110 - i * 95)}, ${Math.round(160 - i * 135)}, ${0.25 + i * 0.5})`;
 
   return (
-    <div className={`${wrap} ${className}`} aria-hidden style={{ containerType: "inline-size" }}>
+    <div className={`${wrap} ${className}`} aria-hidden>
       <div
         className="absolute inset-0"
         style={{ background: `linear-gradient(to bottom, ${skyTop}, ${skyBot})` }}
       />
-      <style>{`
-        @keyframes ${uid}-cross {
-          0%   { transform: translateX(-110%); }
-          50%  { transform: translateX(100cqw); }
-          100% { transform: translateX(100cqw); }
-        }
-      `}</style>
-      {clouds.map((c, k) => {
-        const lightL = Math.round(255 - c.darkness * 130);
-        const midL = Math.round(235 - c.darkness * 170);
-        const darkL = Math.round(180 - c.darkness * 160);
-        const gid = `${uid}-g${k}`;
+      {blobs.map((b, k) => {
+        // sky-fargen: lys topp, mørk bunn — mørkere overall ved høy intensitet
+        const lightL = Math.round(255 - b.darkness * 150);
+        const darkL = Math.round(255 - b.darkness * 220);
+        const lightCol = `rgb(${lightL},${lightL},${Math.min(255, lightL + 8)})`;
+        const darkCol = `rgb(${darkL},${darkL},${Math.min(255, darkL + 12)})`;
         return (
-          <svg
+          <div
             key={k}
-            viewBox="0 0 100 90"
-            preserveAspectRatio="none"
-            className="absolute"
+            className="absolute rounded-full animate-wx-cloud"
             style={{
-              top: `${c.top}%`,
-              left: 0,
-              width: `${c.wPct}cqw`,
-              height: `${c.hPct}%`,
-              opacity: c.op,
-              filter: `blur(${c.blur}px) drop-shadow(0 4px 6px rgba(10,15,25,${0.25 + c.darkness * 0.35}))`,
-              animation: `${uid}-cross ${dur}s linear infinite`,
-              animationDelay: `${c.delay}s`,
-              overflow: "visible",
-              willChange: "transform",
+              top: `${b.top}%`,
+              left: `${b.left}%`,
+              width: b.width,
+              height: b.height,
+              background: `radial-gradient(ellipse at 50% 35%, ${lightCol} 0%, ${darkCol} 55%, rgba(0,0,0,0) 75%)`,
+              opacity: Math.min(1, b.op),
+              filter: `blur(${b.blur}px)`,
+              animationDuration: `${b.dur}s`,
+              animationDelay: `${b.delay}s`,
+              mixBlendMode: "normal",
             }}
-          >
-            <defs>
-              <radialGradient id={gid} cx="45%" cy="30%" r="75%">
-                <stop offset="0%" stopColor={`rgb(${lightL},${lightL},${Math.min(255, lightL + 6)})`} />
-                <stop offset="55%" stopColor={`rgb(${midL},${midL},${Math.min(255, midL + 10)})`} />
-                <stop offset="100%" stopColor={`rgb(${darkL},${darkL},${Math.min(255, darkL + 14)})`} />
-              </radialGradient>
-            </defs>
-            <ellipse cx="50" cy="72" rx="42" ry="6" fill={`rgb(${darkL},${darkL},${Math.min(255, darkL + 14)})`} opacity="0.55" />
-            {c.puffs.map((p, pi) => (
-              <circle key={pi} cx={p.cx} cy={p.cy} r={p.r} fill={`url(#${gid})`} />
-            ))}
-            <ellipse cx="42" cy="24" rx="22" ry="6" fill="rgba(255,255,255,0.35)" />
-          </svg>
+          />
         );
       })}
+      {/* mørk underbelysning ved tungt dekke */}
       {i > 0.6 && (
         <div
           className="absolute inset-0"
@@ -291,8 +255,6 @@ export function CloudCoverFX({ intensity = 0.5, className = "" }: Common) {
     </div>
   );
 }
-
-
 
 /* ---------------- WIND ---------------- */
 export function WindFX({ intensity = 0.5, className = "" }: Common) {
