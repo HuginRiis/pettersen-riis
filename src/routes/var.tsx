@@ -1522,80 +1522,40 @@ function DailyCloudRow({ day, hours, index }: { day: ForecastDay; hours: Hour[];
   const avgCloud = dayHours.length > 0
     ? dayHours.reduce((s, h) => s + (h.cloud || 0), 0) / dayHours.length
     : 0;
-
-  // Seed for deterministisk animasjon (lik på server/klient)
-  const seed =
-    ((day.date.charCodeAt(8) * 131 + day.date.charCodeAt(9) * 17 + index * 2654435761) >>> 0) + 1;
-  const rng = (n: number) => {
-    let s = seed;
-    for (let k = 0; k < n; k++) s = (s * 1664525 + 1013904223) >>> 0;
-    return s / 4294967296;
-  };
-
-  // 0-100% skydekke → 0-6 skyer som fyller stadig mer av 46x36-området
-  const cloudCount = avgCloud < 10 ? 0 : avgCloud < 35 ? 1 : avgCloud < 55 ? 2 : avgCloud < 75 ? 3 : avgCloud < 90 ? 4 : 5;
-  // mørkere og mer ugjennomsiktig jo høyere dekke
-  const cloudOpacity = Math.max(0.35, Math.min(0.95, avgCloud / 100 + 0.15));
-  const cover = avgCloud / 100;
+  // 0–3 små animerte skyer basert på snitt skydekke
+  const cloudCount = avgCloud < 15 ? 0 : avgCloud < 40 ? 1 : avgCloud < 75 ? 2 : 3;
+  const cloudOpacity = Math.max(0.25, Math.min(0.85, avgCloud / 100));
 
   return (
     <div className="grid grid-cols-[56px_46px_1fr_56px] items-center gap-3 py-2.5">
       <div className="text-[15px] capitalize">{label}</div>
-      <div className="relative w-[46px] h-9 overflow-hidden rounded-md" aria-hidden>
-        {/* bakgrunn: lys blå/grå tone som blir mørkere grå ved tett dekke */}
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              cover > 0.85
-                ? `linear-gradient(to bottom, rgba(75,85,99,1), rgba(55,65,80,1))`
-                : `linear-gradient(to bottom, rgba(148,163,184,${0.2 + cover * 0.3}), rgba(200,210,220,${0.15 + cover * 0.25}))`,
-          }}
-        />
-        {/* animerte skyer — flere og større etter hvert som dekke øker */}
+      <div className="relative w-[46px] h-9 overflow-hidden" aria-hidden>
         {Array.from({ length: cloudCount }, (_, i) => {
-          const r1 = rng(i * 3 + 1);
-          const r2 = rng(i * 3 + 2);
-          const r3 = rng(i * 3 + 3);
-          const top = 2 + r1 * 22;
-          const left = -18 + r2 * 44;
-          const dur = 5 + i * 1.2 + r1 * 3;
-          const delay = (i * 0.4 + r3 * 0.8).toFixed(2);
-          const scale = 0.55 + i * 0.18 + r2 * 0.35 + cover * 0.4;
-          const dark = Math.min(0.95, 0.3 + cover * 0.6 + r3 * 0.1);
-          const lightL = Math.round(255 - dark * 150);
-          const darkL = Math.round(255 - dark * 210);
+          const top = 2 + i * 10;
+          const dur = 6 + i * 1.5;
+          const delay = (i * 0.7).toFixed(2);
+          const scale = 0.7 + i * 0.15;
           return (
             <div
               key={i}
               className="absolute"
               style={{
                 top: `${top}px`,
-                left: `${left}px`,
+                left: "-14px",
                 opacity: cloudOpacity,
                 animation: `dailyCloudDrift ${dur}s ease-in-out ${delay}s infinite alternate`,
                 transform: `scale(${scale})`,
               }}
             >
-              <svg width="34" height="18" viewBox="0 0 34 18">
-                <ellipse cx="10" cy="11" rx="9" ry="5" fill={`rgb(${darkL},${darkL},${Math.min(255, darkL + 10)})`} />
-                <ellipse cx="18" cy="7" rx="8" ry="6" fill={`rgb(${lightL},${lightL},${Math.min(255, lightL + 8)})`} />
-                <ellipse cx="26" cy="11" rx="8" ry="5" fill={`rgb(${darkL},${darkL},${Math.min(255, darkL + 10)})`} />
+              <svg width="28" height="14" viewBox="0 0 28 14">
+                <ellipse cx="8" cy="9" rx="7" ry="4" fill="rgba(226,232,240,0.9)" />
+                <ellipse cx="15" cy="6" rx="6" ry="5" fill="rgba(241,245,249,0.95)" />
+                <ellipse cx="21" cy="9" rx="6" ry="4" fill="rgba(226,232,240,0.9)" />
               </svg>
             </div>
           );
         })}
-        {/* ved 100% skydekke: hele 46x36-området tildekket av mørk grå sky */}
-        {cover >= 0.98 && (
-          <div
-            className="absolute inset-0"
-            style={{
-              background: "linear-gradient(to bottom, rgba(60,68,82,0.95) 0%, rgba(45,52,64,0.98) 100%)",
-              borderRadius: "4px",
-            }}
-          />
-        )}
-        <style>{`@keyframes dailyCloudDrift { 0% { transform: translateX(0) scale(var(--s,1)); } 100% { transform: translateX(10px); } }`}</style>
+        <style>{`@keyframes dailyCloudDrift { 0% { transform: translateX(0) scale(var(--s,1)); } 100% { transform: translateX(14px); } }`}</style>
       </div>
       <div className="flex items-end gap-[3px] h-8">
         {buckets.map((b, i) => {
@@ -1631,7 +1591,6 @@ function DailyCloudRow({ day, hours, index }: { day: ForecastDay; hours: Hour[];
     </div>
   );
 }
-
 
 function DailyLynRow({ day, hours, index }: { day: ForecastDay; hours: Hour[]; index: number }) {
   const label = index === 0 ? "I dag" : weekdayShort(day.date);

@@ -186,26 +186,23 @@ export function CloudFX({ intensity = 0.5, className = "" }: Common) {
 export function CloudCoverFX({ intensity = 0.5, className = "" }: Common) {
   const i = Math.max(0, Math.min(1, intensity));
   // 0 = blå klar himmel, 1 = mørk, tett dekke
-  // flere og større skyer for å dekke mer av flisen
-  const count = Math.round(10 + i * 24);
+  const count = Math.round(6 + i * 14);
   const blobs = useMemo(
     () =>
       Array.from({ length: count }).map((_, k) => {
         const layer = k % 3; // 0=bak, 1=midt, 2=front
-        // lavere plassering = tettere dekke
-        const baseTop = layer === 0 ? 2 : layer === 1 ? 14 : 34;
+        const baseTop = layer === 0 ? 4 : layer === 1 ? 18 : 38;
         return {
-          top: baseTop + Math.random() * 32,
-          left: Math.random() * 140 - 20,
-          // større skyer jo høyere intensitet
-          width: 180 + Math.random() * 260 + layer * 80 + i * 120,
-          height: 70 + Math.random() * 100 + layer * 30 + i * 40,
-          dur: 40 + Math.random() * 60 - layer * 8,
+          top: baseTop + Math.random() * 28,
+          left: Math.random() * 120 - 10,
+          width: 140 + Math.random() * 220 + layer * 60,
+          height: 60 + Math.random() * 80 + layer * 20,
+          dur: 50 + Math.random() * 70 - layer * 8,
           delay: -Math.random() * 80,
-          blur: 10 + layer * 5 + Math.random() * 6,
+          blur: 14 + layer * 6 + Math.random() * 8,
           // mørkere skyer jo høyere intensitet og jo lenger fram
-          darkness: Math.min(0.98, 0.25 + i * (0.65 + layer * 0.12) + Math.random() * 0.08),
-          op: 0.55 + i * 0.4 + layer * 0.06,
+          darkness: Math.min(0.95, 0.15 + i * (0.55 + layer * 0.15) + Math.random() * 0.1),
+          op: 0.45 + i * 0.45 + layer * 0.05,
         };
       }),
     [count, i],
@@ -223,12 +220,10 @@ export function CloudCoverFX({ intensity = 0.5, className = "" }: Common) {
       />
       {blobs.map((b, k) => {
         // sky-fargen: lys topp, mørk bunn — mørkere overall ved høy intensitet
-        const lightL = Math.round(255 - b.darkness * 130);
-        const darkL = Math.round(255 - b.darkness * 210);
+        const lightL = Math.round(255 - b.darkness * 150);
+        const darkL = Math.round(255 - b.darkness * 220);
         const lightCol = `rgb(${lightL},${lightL},${Math.min(255, lightL + 8)})`;
         const darkCol = `rgb(${darkL},${darkL},${Math.min(255, darkL + 12)})`;
-        // ved 100% dekke fyller skyene mer av gradienten (mindre transparent utkant)
-        const edgeStop = i > 0.9 ? 85 : i > 0.7 ? 80 : 75;
         return (
           <div
             key={k}
@@ -238,7 +233,7 @@ export function CloudCoverFX({ intensity = 0.5, className = "" }: Common) {
               left: `${b.left}%`,
               width: b.width,
               height: b.height,
-              background: `radial-gradient(ellipse at 50% 35%, ${lightCol} 0%, ${darkCol} 55%, rgba(0,0,0,0) ${edgeStop}%)`,
+              background: `radial-gradient(ellipse at 50% 35%, ${lightCol} 0%, ${darkCol} 55%, rgba(0,0,0,0) 75%)`,
               opacity: Math.min(1, b.op),
               filter: `blur(${b.blur}px)`,
               animationDuration: `${b.dur}s`,
@@ -253,24 +248,13 @@ export function CloudCoverFX({ intensity = 0.5, className = "" }: Common) {
         <div
           className="absolute inset-0"
           style={{
-            background: `radial-gradient(ellipse at 50% 110%, rgba(10,12,20,${(i - 0.6) * 1.4}) 0%, rgba(0,0,0,0) 60%)`,
-          }}
-        />
-      )}
-      {/* ved 100% skydekke: solid mørk grå overflate som dekker hele flisen */}
-      {i > 0.92 && (
-        <div
-          className="absolute inset-0"
-          style={{
-            background: `linear-gradient(to bottom, rgba(55,65,80,${(i - 0.92) * 8.5}) 0%, rgba(40,45,55,${(i - 0.92) * 9.5}) 100%)`,
-            mixBlendMode: "multiply",
+            background: `radial-gradient(ellipse at 50% 110%, rgba(10,12,20,${(i - 0.6) * 1.2}) 0%, rgba(0,0,0,0) 60%)`,
           }}
         />
       )}
     </div>
   );
 }
-
 
 /* ---------------- WIND ---------------- */
 export function WindFX({ intensity = 0.5, className = "" }: Common) {
