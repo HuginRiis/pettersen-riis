@@ -476,7 +476,7 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
           )}
 
           {/* Sted-bytter (samme stil som øvrige fliser) */}
-          <div className={`${toneCardCn()} overflow-visible`}>
+          <div className={`${toneCardCn()} overflow-visible relative z-40`}>
             <TileSplashFX kind={glassKind} intensity={glassIntensity} />
             <UserLocationBar page="var" state={userLoc} transparent />
           </div>
