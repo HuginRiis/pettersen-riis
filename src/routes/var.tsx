@@ -1502,6 +1502,53 @@ function DailyRainRow({ day, hours, index }: { day: ForecastDay; hours: Hour[]; 
   );
 }
 
+function DriftingClouds({ intensity, seed = 0, className = "" }: { intensity: number; seed?: number; className?: string }) {
+  const i = Math.max(0, Math.min(1, intensity));
+  const count = Math.round(2 + i * 6);
+  const clouds = useMemo(() => {
+    // deterministisk pseudorandom pr seed, så det ikke re-shuffles hver render
+    let s = (seed * 9301 + 49297) % 233280 || 1;
+    const rnd = () => {
+      s = (s * 9301 + 49297) % 233280;
+      return s / 233280;
+    };
+    return Array.from({ length: count }, (_, k) => ({
+      top: rnd() * 78,           // tilfeldig høyde i hele flisen
+      width: 32 + rnd() * 58,    // px
+      dur: 14 + rnd() * 22,      // s
+      delay: -rnd() * 40,        // negativ → tilfeldig utgangspunkt
+      opacity: 0.35 + i * 0.45 + rnd() * 0.15,
+      blur: rnd() * 1.2,
+      key: k,
+    }));
+  }, [count, seed, i]);
+  if (count === 0) return null;
+  return (
+    <div className={`absolute inset-0 overflow-hidden pointer-events-none ${className}`} aria-hidden>
+      {clouds.map((c) => (
+        <svg
+          key={c.key}
+          viewBox="0 0 64 28"
+          className="absolute animate-wx-cloud-cross"
+          style={{
+            top: `${c.top}%`,
+            width: c.width,
+            opacity: Math.min(0.9, c.opacity),
+            animationDuration: `${c.dur}s`,
+            animationDelay: `${c.delay}s`,
+            filter: `blur(${c.blur.toFixed(2)}px)`,
+          }}
+        >
+          <path
+            d="M10 22 Q4 22 4 16 Q4 10 11 10 Q12 4 20 4 Q28 4 30 10 Q38 8 42 14 Q52 14 52 20 Q52 24 46 24 L12 24 Q10 24 10 22 Z"
+            fill="white"
+          />
+        </svg>
+      ))}
+    </div>
+  );
+}
+
 function DailyCloudRow({ day, hours, index }: { day: ForecastDay; hours: Hour[]; index: number }) {
   const label = index === 0 ? "I dag" : weekdayShort(day.date);
   // 12 buckets × 2 timer
@@ -1522,42 +1569,17 @@ function DailyCloudRow({ day, hours, index }: { day: ForecastDay; hours: Hour[];
   const avgCloud = dayHours.length > 0
     ? dayHours.reduce((s, h) => s + (h.cloud || 0), 0) / dayHours.length
     : 0;
-  // 0–3 små animerte skyer basert på snitt skydekke
-  const cloudCount = avgCloud < 15 ? 0 : avgCloud < 40 ? 1 : avgCloud < 75 ? 2 : 3;
-  const cloudOpacity = Math.max(0.25, Math.min(0.85, avgCloud / 100));
+
+  // Seed pr dag så clouds har unik random-fordeling pr rad
+  const seed = index * 131 + Math.round(avgCloud);
 
   return (
-    <div className="grid grid-cols-[56px_46px_1fr_56px] items-center gap-3 py-2.5">
-      <div className="text-[15px] capitalize">{label}</div>
-      <div className="relative w-[46px] h-9 overflow-hidden" aria-hidden>
-        {Array.from({ length: cloudCount }, (_, i) => {
-          const top = 2 + i * 10;
-          const dur = 6 + i * 1.5;
-          const delay = (i * 0.7).toFixed(2);
-          const scale = 0.7 + i * 0.15;
-          return (
-            <div
-              key={i}
-              className="absolute"
-              style={{
-                top: `${top}px`,
-                left: "-14px",
-                opacity: cloudOpacity,
-                animation: `dailyCloudDrift ${dur}s ease-in-out ${delay}s infinite alternate`,
-                transform: `scale(${scale})`,
-              }}
-            >
-              <svg width="28" height="14" viewBox="0 0 28 14">
-                <ellipse cx="8" cy="9" rx="7" ry="4" fill="rgba(226,232,240,0.9)" />
-                <ellipse cx="15" cy="6" rx="6" ry="5" fill="rgba(241,245,249,0.95)" />
-                <ellipse cx="21" cy="9" rx="6" ry="4" fill="rgba(226,232,240,0.9)" />
-              </svg>
-            </div>
-          );
-        })}
-        <style>{`@keyframes dailyCloudDrift { 0% { transform: translateX(0) scale(var(--s,1)); } 100% { transform: translateX(14px); } }`}</style>
-      </div>
-      <div className="flex items-end gap-[3px] h-8">
+    <div className="relative grid grid-cols-[56px_1fr_56px] items-center gap-3 py-2.5">
+      {/* Skyer drifter over hele raden */}
+      <DriftingClouds intensity={Math.min(1, avgCloud / 100)} seed={seed} className="rounded-md" />
+
+      <div className="relative z-10 text-[15px] capitalize">{label}</div>
+      <div className="relative z-10 flex items-end gap-[3px] h-8">
         {buckets.map((b, i) => {
           const fill = Math.max(4, Math.min(100, b.cloud));
           const baseBg = b.isNight
@@ -1585,12 +1607,13 @@ function DailyCloudRow({ day, hours, index }: { day: ForecastDay; hours: Hour[];
           );
         })}
       </div>
-      <div className="text-[13px] tabular-nums text-right text-white/90">
+      <div className="relative z-10 text-[13px] tabular-nums text-right text-white/90">
         {Math.round(avgCloud)} <span className="text-white/60 text-[11px]">%</span>
       </div>
     </div>
   );
 }
+
 
 function DailyLynRow({ day, hours, index }: { day: ForecastDay; hours: Hour[]; index: number }) {
   const label = index === 0 ? "I dag" : weekdayShort(day.date);
