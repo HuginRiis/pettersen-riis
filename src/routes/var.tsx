@@ -1502,7 +1502,7 @@ function DailyRainRow({ day, hours, index }: { day: ForecastDay; hours: Hour[]; 
   );
 }
 
-function DriftingClouds({ intensity, seed = 0, className = "" }: { intensity: number; seed?: number; className?: string }) {
+function DriftingClouds({ intensity, seed = 0, className = "", rainy = false }: { intensity: number; seed?: number; className?: string; rainy?: boolean }) {
   const i = Math.max(0, Math.min(1, intensity));
   const count = Math.round(2 + i * 6);
   const clouds = useMemo(() => {
@@ -1541,7 +1541,7 @@ function DriftingClouds({ intensity, seed = 0, className = "" }: { intensity: nu
         >
           <path
             d="M10 22 Q4 22 4 16 Q4 10 11 10 Q12 4 20 4 Q28 4 30 10 Q38 8 42 14 Q52 14 52 20 Q52 24 46 24 L12 24 Q10 24 10 22 Z"
-            fill="white"
+            fill={rainy ? "#334155" : "white"}
           />
         </svg>
       ))}
@@ -1572,11 +1572,12 @@ function DailyCloudRow({ day, hours, index }: { day: ForecastDay; hours: Hour[];
 
   // Seed pr dag så clouds har unik random-fordeling pr rad
   const seed = index * 131 + Math.round(avgCloud);
+  const rainy = day.precipProbability >= 20 || day.precip >= 0.2;
 
   return (
     <div className="relative grid grid-cols-[56px_1fr_56px] items-center gap-3 py-2.5">
       {/* Skyer drifter over hele raden */}
-      <DriftingClouds intensity={Math.min(1, avgCloud / 100)} seed={seed} className="rounded-md" />
+      <DriftingClouds intensity={Math.min(1, avgCloud / 100)} seed={seed} className="rounded-md" rainy={rainy} />
 
       <div className="relative z-10 text-[15px] capitalize">{label}</div>
       <div className="relative z-10 flex items-end gap-[3px] h-8">
@@ -2597,10 +2598,11 @@ function FeelsLikeCard({ hour }: { hour: Hour | null }) {
 
 function CloudCard({ hour }: { hour: Hour | null }) {
   const c = Math.round(hour?.cloud ?? 0);
+  const rainy = (hour?.precipProbability ?? 0) >= 20 || (hour?.precip ?? 0) >= 0.2;
   const label = c < 25 ? "Klar himmel" : c < 60 ? "Delvis skyet" : c < 85 ? "Skyet" : "Overskyet";
   const fx = c < 25
     ? <SunFX intensity={0.8} />
-    : <DriftingClouds intensity={Math.min(1, c / 100)} seed={c + 7} />;
+    : <DriftingClouds intensity={Math.min(1, c / 100)} seed={c + 7} rainy={rainy} />;
   return (
     <GlassCard eyebrow="Skydekke" icon={<Cloud size={14} />} fx={fx}>
       <div className="text-3xl font-light tabular-nums">{hour ? `${c} %` : "—"}</div>
