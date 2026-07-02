@@ -151,13 +151,7 @@ function FavoritesPage() {
     <PageShell>
       <div className={`min-h-screen bg-gradient-to-b ${bg} transition-colors duration-1000 relative`}>
         <div className="max-w-3xl mx-auto px-4 pt-8 pb-16 space-y-4 text-white relative z-10">
-          <div className="flex items-center justify-between">
-            <Link
-              to="/var"
-              className="inline-flex items-center gap-1.5 text-sm text-white/90 hover:text-white transition-colors"
-            >
-              <ArrowLeft size={16} /> Tilbake til vær
-            </Link>
+          <div className="flex items-center justify-end">
             <div className="inline-flex items-center gap-1.5 text-[10px] tracking-[0.25em] uppercase text-white/60">
               <Star size={11} className="fill-yellow-400 text-yellow-400" /> Favoritter
             </div>
