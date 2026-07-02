@@ -16,7 +16,10 @@ export type ActiveLocation = {
   label: string;
   lat: number;
   lon: number;
+  /** Hvordan stedet ble valgt — brukes av indikator for å skille GPS/pil fra favoritter. */
+  source?: "gps" | "favorite" | "search";
 };
+
 
 type Props = {
   page: LocationPage;
