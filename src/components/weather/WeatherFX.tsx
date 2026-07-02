@@ -1075,7 +1075,7 @@ export function GlassPaneFX({
               animationDuration: "7s",
             }}
           />
-          <ThunderFX intensity={Math.max(0.7, intensity)} className="!fixed inset-0" />
+          <ThunderFX intensity={Math.max(0.7, intensity)} />
         </>
       )}
     </div>
