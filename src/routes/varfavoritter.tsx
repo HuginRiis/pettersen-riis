@@ -1,5 +1,6 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+
 import { ArrowLeft, Star } from "lucide-react";
 import { PageShell } from "@/components/PageShell";
 import { FancyWeatherTile } from "@/components/FancyWeatherTile";
