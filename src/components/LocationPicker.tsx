@@ -165,6 +165,7 @@ export function LocationPicker({
         ? prev.filter((f) => !sameLoc(f, active))
         : [active, ...prev].slice(0, MAX_FAV);
       lsWrite(FAV_KEY, next);
+      try { window.dispatchEvent(new CustomEvent("loc-favs-changed", { detail: { page } })); } catch { /* ignore */ }
       return next;
     });
   };
@@ -173,6 +174,7 @@ export function LocationPicker({
     setFavorites((prev) => {
       const next = prev.filter((f) => !sameLoc(f, loc));
       lsWrite(FAV_KEY, next);
+      try { window.dispatchEvent(new CustomEvent("loc-favs-changed", { detail: { page } })); } catch { /* ignore */ }
       return next;
     });
   };
