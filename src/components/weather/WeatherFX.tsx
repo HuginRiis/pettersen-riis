@@ -801,31 +801,31 @@ export function GlassPaneFX({
   const isFog = kind === "fog";
   const isThunder = kind === "thunder";
 
-  // Static glass beads — randomly scattered "stuck" droplets
-  const beadCount = isWet ? Math.round(28 + intensity * 24) : 0;
+  // Static glass beads — randomly scattered "stuck" droplets (små, realistiske)
+  const beadCount = isWet ? Math.round(32 + intensity * 28) : 0;
   const beads = useMemo(
     () =>
       Array.from({ length: beadCount }).map(() => ({
         left: Math.random() * 100,
         top: Math.random() * 100,
-        size: 2 + Math.random() * 5,
+        size: 1 + Math.random() * 2.5,
         delay: Math.random() * 4,
         dur: 3 + Math.random() * 4,
       })),
     [beadCount],
   );
 
-  // Sliding drips down the glass
+  // Sliding drips down the glass (tynnere/mindre)
   const dripCount = isWet ? Math.round(8 + intensity * 14) : 0;
   const drips = useMemo(
     () =>
       Array.from({ length: dripCount }).map(() => ({
         left: Math.random() * 100,
-        w: 3 + Math.random() * 4,
-        h: 10 + Math.random() * 28,
+        w: 1.5 + Math.random() * 2,
+        h: 8 + Math.random() * 20,
         delay: -Math.random() * 9,
         dur: 4 + Math.random() * 7,
-        op: 0.5 + Math.random() * 0.4,
+        op: 0.45 + Math.random() * 0.35,
       })),
     [dripCount],
   );
@@ -1064,16 +1064,19 @@ export function GlassPaneFX({
         </>
       )}
 
-      {/* THUNDER: rare full-screen flash */}
+      {/* THUNDER: full-screen flash + faktiske lyn-slag */}
       {isThunder && (
-        <div
-          className="absolute inset-0 animate-wx-flash"
-          style={{
-            background:
-              "radial-gradient(circle at 50% 30%, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.3) 30%, transparent 60%)",
-            animationDuration: "9s",
-          }}
-        />
+        <>
+          <div
+            className="absolute inset-0 animate-wx-flash"
+            style={{
+              background:
+                "radial-gradient(circle at 50% 30%, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.3) 30%, transparent 60%)",
+              animationDuration: "7s",
+            }}
+          />
+          <ThunderFX intensity={Math.max(0.7, intensity)} />
+        </>
       )}
     </div>
   );
