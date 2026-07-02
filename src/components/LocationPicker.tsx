@@ -32,6 +32,8 @@ type Props = {
   transparent?: boolean;
   /** Når true: skjul 📍-knapp og "Sett som standard"-knapp. */
   hideActions?: boolean;
+  /** Overskrift/etikett som vises øverst i boksen. */
+  title?: string;
 };
 
 const MAX_RECENT = 3;
