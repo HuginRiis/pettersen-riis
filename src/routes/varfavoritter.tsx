@@ -75,6 +75,7 @@ function FavoritesPage() {
   const reverse = useServerFn(reverseGeocode);
   const [favs, setFavs] = useState<ActiveLocation[]>([]);
   const [autoLocated, setAutoLocated] = useState(false);
+  const { tone } = useTileTone();
 
   const pickLocation = (loc: ActiveLocation, source: ActiveLocation["source"] = "favorite") => {
     try {
