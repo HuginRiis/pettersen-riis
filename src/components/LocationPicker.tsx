@@ -151,7 +151,7 @@ export function LocationPicker({
   };
 
   const handlePick = (h: PlaceHit) => {
-    const loc = { label: h.label, lat: h.lat, lon: h.lon };
+    const loc = { label: h.label, lat: h.lat, lon: h.lon, source: "search" as const };
     onChange(loc);
     pushRecent(loc);
     setQuery("");
@@ -160,8 +160,8 @@ export function LocationPicker({
   };
 
   const handlePickStored = (loc: ActiveLocation) => {
-    onChange(loc);
-    pushRecent(loc);
+    onChange({ ...loc, source: "favorite" as const });
+    pushRecent({ ...loc, source: "favorite" as const });
   };
 
   const toggleFavorite = () => {
