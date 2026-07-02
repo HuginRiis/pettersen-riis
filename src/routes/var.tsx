@@ -448,8 +448,8 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
                   marginTop: `${8 - heroT * 6}px`,
                   display: collapsed ? "inline-block" : "block",
                   marginLeft: collapsed ? 8 : 0,
-                  opacity: `${Math.max(0, 1 - heroT * 5)}`,
-                  maxHeight: heroT > 0.22 ? 0 : `${24}px`,
+                  opacity: heroT > 0 ? 0 : 1,
+                  maxHeight: heroT > 0 ? 0 : `${24}px`,
                 }}
               >
                 {condition}
@@ -457,7 +457,7 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
               {todayDay && (
                 <div
                   className="text-base font-medium mt-1 tabular-nums transition-all duration-200 overflow-hidden"
-                  style={{ opacity: `${Math.max(0, 1 - heroT * 5)}`, maxHeight: heroT > 0.22 ? 0 : "24px" }}
+                  style={{ opacity: heroT > 0 ? 0 : 1, maxHeight: heroT > 0 ? 0 : "24px" }}
                 >
                   H: {Math.round(todayDay.tempMax)}°  L: {Math.round(todayDay.tempMin)}°
                 </div>
@@ -465,7 +465,7 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
               {headline && (
                 <div
                   className="text-sm text-white/90 mt-3 transition-all duration-200 overflow-hidden"
-                  style={{ opacity: `${Math.max(0, 1 - heroT * 5)}`, maxHeight: heroT > 0.22 ? 0 : "40px" }}
+                  style={{ opacity: heroT > 0 ? 0 : 1, maxHeight: heroT > 0 ? 0 : "40px" }}
                 >
                   {headline}
                 </div>
@@ -2393,7 +2393,7 @@ function SunsetCard({ sun, now, moon }: { sun: ReturnType<typeof sunTimes>; now:
     >
       <div className="text-3xl font-light tabular-nums" suppressHydrationWarning>{headlineLabel}</div>
       {remainingLabel && <div className="text-[11px] text-white/70 mt-0.5" suppressHydrationWarning>{remainingLabel}</div>}
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-28 mt-2 overflow-visible">
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-28 mt-2 overflow-visible" suppressHydrationWarning>
         <defs>
           <linearGradient id={`${gid}-sky`} x1="0" x2="0" y1="0" y2="1">
             {night ? (
@@ -2551,7 +2551,7 @@ function SunsetCard({ sun, now, moon }: { sun: ReturnType<typeof sunTimes>; now:
           />
         )}
       </svg>
-      <div className="flex items-center justify-between text-[11px] text-white/80 mt-1">
+      <div className="flex items-center justify-between text-[11px] text-white/80 mt-1" suppressHydrationWarning>
         <span>Sol opp: {sunrise ? formatTime(sunrise) : "—"}</span>
         {sun.dayLengthMinutes ? (
           <span className="text-white/60">
