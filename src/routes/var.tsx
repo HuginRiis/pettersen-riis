@@ -393,7 +393,7 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
-  const collapsed = heroT > 0.5;
+  
 
 
   return (
