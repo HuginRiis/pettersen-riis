@@ -2229,7 +2229,7 @@ function MoonCard({ moon, now }: { moon: { name: string; icon: string; illuminat
   const daysToFull = useMemo(() => daysUntilFullMoon(now), [now]);
   return (
     <GlassCard eyebrow="Månefase" icon={<Moon size={14} />} fx={<StarFX />}>
-      <div className="grid grid-cols-[1fr_auto] gap-4 items-center">
+      <div className="grid grid-cols-[1fr_auto] gap-4 items-center" suppressHydrationWarning>
         <div className="space-y-2 text-sm">
           <Row label="Fase" value={`${moon.icon} ${moon.name}`} />
           <Row label="Lyst" value={`${Math.round(moon.illumination * 100)} %`} />
