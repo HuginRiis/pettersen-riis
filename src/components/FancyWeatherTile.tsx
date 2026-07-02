@@ -6,10 +6,12 @@ type Hour = {
   precip: number;
   wind: number;
   symbol: string | null;
+  thunderProb: number;
 };
 
 type Day = {
   date: string;
+  thunderProb: number;
   tempMin: number;
   tempMax: number;
   precip: number;
