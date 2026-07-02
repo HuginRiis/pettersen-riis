@@ -267,10 +267,12 @@ function WeatherPage() {
     const h = now.getHours();
     return h >= 6 && h < 20;
   }, [now]);
-  const glassKind = useMemo(
-    () => glassKindFromSymbol(currentHour?.symbol ?? null, isDay),
-    [currentHour, isDay],
-  );
+  const glassKind = useMemo(() => {
+    const base = glassKindFromSymbol(currentHour?.symbol ?? null, isDay);
+    // Vis tordenvær-effekt (lyn/flash) så snart det er >2% sjanse for torden
+    if ((currentHour?.thunder ?? 0) > 2) return "thunder";
+    return base;
+  }, [currentHour, isDay]);
   const glassIntensity = useMemo(() => {
     const mm = currentHour?.precip ?? 0;
     const pp = (currentHour?.precipProbability ?? 0) / 100;
