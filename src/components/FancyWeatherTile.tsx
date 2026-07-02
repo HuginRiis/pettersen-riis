@@ -6,10 +6,12 @@ type Hour = {
   precip: number;
   wind: number;
   symbol: string | null;
+  thunderProb: number;
 };
 
 type Day = {
   date: string;
+  thunderProb: number;
   tempMin: number;
   tempMax: number;
   precip: number;
@@ -40,7 +42,7 @@ export function FancyWeatherTile({ label, lat, lon }: Props) {
     (async () => {
       try {
         const res = await fetch(
-          `https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=${lat}&lon=${lon}`,
+          `https://api.met.no/weatherapi/locationforecast/2.0/complete?lat=${lat}&lon=${lon}`,
           { headers: { Accept: "application/json" } },
         );
         if (!res.ok) throw new Error("Kunne ikke hente værmelding");
@@ -61,7 +63,8 @@ export function FancyWeatherTile({ label, lat, lon }: Props) {
 
   const symbol = active?.symbol ?? null;
   const isNight = isNightNow(symbol);
-  const mood = symbolMood(symbol);
+  const baseMood = symbolMood(symbol);
+  const mood = (active?.thunderProb ?? 0) > 2 ? "thunder" : baseMood;
 
   // Gjennomsnittlig vind for valgt periode → styrer skyfart
   const avgWind = useMemo(() => {
@@ -258,12 +261,17 @@ function parse(data: any): Day[] {
       next6?.details?.precipitation_amount ??
       0;
     const wind = inst.wind_speed ?? 0;
+    const thunderProb =
+      next1?.details?.probability_of_thunder ??
+      next6?.details?.probability_of_thunder ??
+      0;
     const date = time.slice(0, 10);
-    const hour: Hour = { time, temp, precip, wind, symbol };
+    const hour: Hour = { time, temp, precip, wind, symbol, thunderProb };
     const existing = map.get(date);
     if (!existing) {
       map.set(date, {
         date,
+        thunderProb,
         tempMin: temp,
         tempMax: temp,
         precip,
@@ -274,6 +282,7 @@ function parse(data: any): Day[] {
       existing.tempMin = Math.min(existing.tempMin, temp);
       existing.tempMax = Math.max(existing.tempMax, temp);
       existing.precip += precip;
+      existing.thunderProb = Math.max(existing.thunderProb, thunderProb);
       const h = parseInt(time.slice(11, 13));
       if (h >= 11 && h <= 14 && symbol) existing.symbol = symbol;
       existing.hours.push(hour);
@@ -294,6 +303,7 @@ function pickActive(days: Day[], tab: TabKey): Day | null {
   const hours = picks.flatMap((d) => d.hours);
   return {
     date: picks[0].date,
+    thunderProb: Math.max(...picks.map((d) => d.thunderProb)),
     tempMin: Math.min(...picks.map((d) => d.tempMin)),
     tempMax: Math.max(...picks.map((d) => d.tempMax)),
     precip: picks.reduce((s, d) => s + d.precip, 0),
