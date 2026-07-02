@@ -1078,10 +1078,11 @@ main .container {
 .iphone-mode .fancy-wx-wrap { display: block; margin-top: 14px; }
 
 .fancy-wx {
+  --wx-wind: 1;
   position: relative;
   border-radius: 22px;
   overflow: hidden;
-  min-height: 360px;
+  min-height: 220px;
   color: #fff;
   isolation: isolate;
   box-shadow: 0 12px 40px rgba(0,0,0,0.45), inset 0 0 0 1px rgba(255,255,255,0.06);
@@ -1156,9 +1157,9 @@ main .container {
   opacity: 0.85;
   border-radius: 50%;
 }
-.fancy-wx__cloud--a { top: 24%; left: -25%; width: 240px; height: 90px; animation: fancyWxDrift 38s linear infinite; }
-.fancy-wx__cloud--b { top: 12%; left: -40%; width: 320px; height: 110px; opacity: 0.7; animation: fancyWxDrift 55s linear infinite; animation-delay: -18s; }
-.fancy-wx__cloud--c { top: 38%; left: -30%; width: 200px; height: 78px; opacity: 0.6; animation: fancyWxDrift 46s linear infinite; animation-delay: -8s; }
+.fancy-wx__cloud--a { top: 20%; left: -25%; width: 200px; height: 78px; animation: fancyWxDrift calc(38s / var(--wx-wind)) linear infinite; }
+.fancy-wx__cloud--b { top: 8%;  left: -40%; width: 260px; height: 92px; opacity: 0.7; animation: fancyWxDrift calc(55s / var(--wx-wind)) linear infinite; animation-delay: -18s; }
+.fancy-wx__cloud--c { top: 34%; left: -30%; width: 170px; height: 66px; opacity: 0.6; animation: fancyWxDrift calc(46s / var(--wx-wind)) linear infinite; animation-delay: -8s; }
 @keyframes fancyWxDrift {
   0%   { transform: translateX(0); }
   100% { transform: translateX(180%); }
@@ -1178,15 +1179,36 @@ main .container {
 /* Regn */
 .fancy-wx__rain { position: absolute; inset: 0; pointer-events: none; }
 .fancy-wx__drop {
-  position: absolute; top: -10%;
-  width: 2px; height: 14px; border-radius: 2px;
-  background: linear-gradient(180deg, rgba(180,210,235,0.0), rgba(180,210,235,0.85));
+  position: absolute; top: -12%;
+  width: 2px; height: 12px; border-radius: 2px;
+  background: linear-gradient(180deg, rgba(180,210,235,0.0), rgba(180,210,235,0.9));
   animation: fancyWxRain 0.9s linear infinite;
 }
 @keyframes fancyWxRain {
   0%   { transform: translateY(0) translateX(0); opacity: 0; }
-  10%  { opacity: 0.9; }
-  100% { transform: translateY(420px) translateX(-18px); opacity: 0; }
+  10%  { opacity: 0.95; }
+  95%  { opacity: 0.95; }
+  100% { transform: translateY(240px) translateX(-10px); opacity: 0; }
+}
+
+/* Regn-plask i bunn av flisen */
+.fancy-wx__splashes {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 14px;
+  pointer-events: none;
+}
+.fancy-wx__splash {
+  position: absolute; bottom: 2px;
+  width: 10px; height: 4px; border-radius: 50%;
+  border: 1px solid rgba(200,225,240,0.7);
+  border-top-color: transparent; border-bottom-color: transparent;
+  transform: scale(0);
+  opacity: 0;
+  animation: fancyWxSplash 1s ease-out infinite;
+}
+@keyframes fancyWxSplash {
+  0%   { transform: scaleX(0.2) scaleY(0.4); opacity: 0; }
+  30%  { transform: scaleX(1) scaleY(1); opacity: 0.9; }
+  100% { transform: scaleX(1.6) scaleY(0.2); opacity: 0; }
 }
 
 /* Snø */
@@ -1200,7 +1222,7 @@ main .container {
 @keyframes fancyWxSnow {
   0%   { transform: translateY(0) translateX(0) rotate(0deg); opacity: 0; }
   10%  { opacity: 0.95; }
-  100% { transform: translateY(420px) translateX(30px) rotate(360deg); opacity: 0; }
+  100% { transform: translateY(260px) translateX(30px) rotate(360deg); opacity: 0; }
 }
 
 /* Tåke */
@@ -1214,24 +1236,42 @@ main .container {
   to   { transform: translateX(6%); }
 }
 
-/* Lyn */
+/* Lyn — full-flate blitz */
 .fancy-wx__bolt {
   position: absolute; inset: 0; pointer-events: none;
   background: rgba(255,255,255,0);
-  animation: fancyWxBolt 6s ease-in-out infinite;
+  animation: fancyWxBolt 5s ease-in-out infinite;
 }
 @keyframes fancyWxBolt {
-  0%, 92%, 100% { background: rgba(255,255,255,0); }
-  93%, 95%      { background: rgba(255,255,255,0.7); }
-  94%           { background: rgba(255,255,255,0.0); }
+  0%, 82%, 100%    { background: rgba(255,255,255,0); }
+  83%, 85%, 89%    { background: rgba(255,255,255,0.75); }
+  84%, 87%         { background: rgba(255,255,255,0); }
+}
+/* Selve lyn-figuren */
+.fancy-wx__boltShape {
+  position: absolute;
+  top: 8%;
+  right: 22%;
+  width: 46px;
+  height: 92px;
+  pointer-events: none;
+  opacity: 0;
+  filter: drop-shadow(0 0 12px rgba(255,255,180,0.9)) drop-shadow(0 0 22px rgba(255,240,150,0.6));
+  animation: fancyWxBoltShape 5s ease-in-out infinite;
+}
+@keyframes fancyWxBoltShape {
+  0%, 82%, 100%   { opacity: 0; }
+  83%, 85%, 89%   { opacity: 1; }
+  84%, 87%        { opacity: 0; }
+  90%, 99%        { opacity: 0; }
 }
 
 /* Innhold */
 .fancy-wx__content {
   position: relative; z-index: 1;
-  padding: 18px 18px 16px;
-  display: flex; flex-direction: column; gap: 14px;
-  min-height: 360px;
+  padding: 14px 16px 14px;
+  display: flex; flex-direction: column; gap: 10px;
+  min-height: 220px;
   text-shadow: 0 1px 2px rgba(0,0,0,0.35);
 }
 .fancy-wx__top {
@@ -1241,8 +1281,8 @@ main .container {
   font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
   opacity: 0.78;
 }
-.fancy-wx__place { font-size: 22px; font-weight: 700; letter-spacing: 0.5px; transition: padding-top 0.2s ease; }
-.has-position-badge .fancy-wx__place { padding-top: 28px; }
+.fancy-wx__place { font-size: 18px; font-weight: 700; letter-spacing: 0.5px; transition: padding-top 0.2s ease; }
+.has-position-badge .fancy-wx__place { padding-top: 24px; }
 
 /* Pulsing glow on selected favorite tile */
 @keyframes tile-pulse {
@@ -1266,7 +1306,7 @@ main .container {
   appearance: none; border: 0; background: transparent;
   color: rgba(255,255,255,0.85);
   font-size: 11px; font-weight: 600;
-  padding: 6px 10px; border-radius: 999px;
+  padding: 5px 9px; border-radius: 999px;
   transition: all 180ms ease;
 }
 .fancy-wx__tab.is-active {
@@ -1277,14 +1317,15 @@ main .container {
 }
 
 .fancy-wx__main {
-  display: flex; align-items: center; gap: 16px;
-  margin-top: 4px;
+  display: flex; align-items: center; gap: 14px;
+  margin-top: auto;
+  margin-bottom: 4px;
 }
-.fancy-wx__emoji { font-size: 76px; line-height: 1; filter: drop-shadow(0 6px 12px rgba(0,0,0,0.35)); }
+.fancy-wx__emoji { font-size: 56px; line-height: 1; filter: drop-shadow(0 6px 12px rgba(0,0,0,0.35)); }
 .fancy-wx__big { display: flex; flex-direction: column; }
-.fancy-wx__temp { font-size: 64px; font-weight: 200; line-height: 1; letter-spacing: -2px; }
-.fancy-wx__tempmin { font-size: 22px; font-weight: 300; opacity: 0.7; margin-left: 8px; }
-.fancy-wx__desc { font-size: 14px; opacity: 0.9; margin-top: 4px; }
+.fancy-wx__temp { font-size: 48px; font-weight: 200; line-height: 1; letter-spacing: -1.5px; }
+.fancy-wx__tempmin { font-size: 18px; font-weight: 300; opacity: 0.7; margin-left: 6px; }
+.fancy-wx__desc { font-size: 13px; opacity: 0.9; margin-top: 4px; }
 
 .fancy-wx__hours {
   margin-top: auto;

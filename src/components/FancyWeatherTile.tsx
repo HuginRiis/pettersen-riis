@@ -63,8 +63,22 @@ export function FancyWeatherTile({ label, lat, lon }: Props) {
   const isNight = isNightNow(symbol);
   const mood = symbolMood(symbol);
 
+  // Gjennomsnittlig vind for valgt periode → styrer skyfart
+  const avgWind = useMemo(() => {
+    if (!active?.hours?.length) return 3;
+    const s = active.hours.reduce((a, h) => a + (h.wind || 0), 0);
+    return s / active.hours.length;
+  }, [active]);
+  // Kartlegg vind (m/s) til hastighetsmultiplikator (1 = normal, 3 = veldig fort)
+  const windMult = Math.min(4, Math.max(0.5, 1 + avgWind / 6));
+
+  const tileStyle = { ["--wx-wind" as any]: windMult } as React.CSSProperties;
+
   return (
-    <div className={`fancy-wx fancy-wx--${mood} ${isNight ? "fancy-wx--night" : "fancy-wx--day"}`}>
+    <div
+      className={`fancy-wx fancy-wx--${mood} ${isNight ? "fancy-wx--night" : "fancy-wx--day"}`}
+      style={tileStyle}
+    >
       <div className="fancy-wx__bg">
         {/* lag — kjøres alltid, CSS skjuler etter mood */}
         <div className="fancy-wx__sky" />
@@ -74,12 +88,19 @@ export function FancyWeatherTile({ label, lat, lon }: Props) {
         <div className="fancy-wx__cloud fancy-wx__cloud--a" />
         <div className="fancy-wx__cloud fancy-wx__cloud--b" />
         <div className="fancy-wx__cloud fancy-wx__cloud--c" />
-        {(mood === "rain" || mood === "sleet") && <RainLayer drops={28} />}
-        {mood === "snow" && <SnowLayer flakes={32} />}
+        {(mood === "rain" || mood === "sleet") && (
+          <>
+            <RainLayer drops={22} />
+            <SplashLayer count={10} />
+          </>
+        )}
+        {mood === "snow" && <SnowLayer flakes={26} />}
         {mood === "thunder" && (
           <>
-            <RainLayer drops={28} />
+            <RainLayer drops={22} />
+            <SplashLayer count={10} />
             <div className="fancy-wx__bolt" />
+            <BoltShape />
           </>
         )}
         {mood === "fog" && <div className="fancy-wx__fog" />}
@@ -112,45 +133,62 @@ export function FancyWeatherTile({ label, lat, lon }: Props) {
         {error && <div className="fancy-wx__error">{error}</div>}
 
         {active ? (
-          <>
-            <div className="fancy-wx__main">
-              <div className="fancy-wx__emoji">{symbolEmoji(symbol)}</div>
-              <div className="fancy-wx__big">
-                <div className="fancy-wx__temp">
-                  {Math.round(active.tempMax)}°
-                  <span className="fancy-wx__tempmin">
-                    / {Math.round(active.tempMin)}°
-                  </span>
-                </div>
-                <div className="fancy-wx__desc">
-                  {symbolText(symbol)}
-                  {active.precip > 0.1 && (
-                    <span> · {active.precip.toFixed(1)} mm</span>
-                  )}
-                </div>
+          <div className="fancy-wx__main">
+            <div className="fancy-wx__emoji">{symbolEmoji(symbol)}</div>
+            <div className="fancy-wx__big">
+              <div className="fancy-wx__temp">
+                {Math.round(active.tempMax)}°
+                <span className="fancy-wx__tempmin">
+                  / {Math.round(active.tempMin)}°
+                </span>
+              </div>
+              <div className="fancy-wx__desc">
+                {symbolText(symbol)}
+                {active.precip > 0.1 && (
+                  <span> · {active.precip.toFixed(1)} mm</span>
+                )}
               </div>
             </div>
-
-            <div className="fancy-wx__hours">
-              {pickHours(active.hours).map((h) => (
-                <div key={h.time} className="fancy-wx__hour">
-                  <div className="fancy-wx__hourTime">
-                    {tab === "today" ? h.time.slice(11, 13) : weekdayHour(h.time)}
-                  </div>
-                  <div className="fancy-wx__hourIcon">{symbolEmoji(h.symbol)}</div>
-                  <div className="fancy-wx__hourTemp">{Math.round(h.temp)}°</div>
-                  {h.precip > 0.1 && (
-                    <div className="fancy-wx__hourRain">{h.precip.toFixed(1)}</div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </>
+          </div>
         ) : (
           <div className="fancy-wx__loading">Henter vær…</div>
         )}
       </div>
     </div>
+  );
+}
+
+function SplashLayer({ count }: { count: number }) {
+  return (
+    <div className="fancy-wx__splashes">
+      {Array.from({ length: count }).map((_, i) => {
+        const left = (i / count) * 100 + Math.random() * 4;
+        const delay = Math.random() * 1.4;
+        const dur = 0.9 + Math.random() * 0.6;
+        return (
+          <span
+            key={i}
+            className="fancy-wx__splash"
+            style={{
+              left: `${left}%`,
+              animationDelay: `${delay}s`,
+              animationDuration: `${dur}s`,
+            }}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+function BoltShape() {
+  return (
+    <svg className="fancy-wx__boltShape" viewBox="0 0 100 200" preserveAspectRatio="xMidYMid meet" aria-hidden>
+      <polygon
+        points="55,0 20,110 45,110 30,200 80,80 55,80 75,0"
+        fill="#fffbe0"
+      />
+    </svg>
   );
 }
 
