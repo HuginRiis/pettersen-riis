@@ -93,15 +93,15 @@ export function FancyWeatherTile({ label, lat, lon }: Props) {
         <div className="fancy-wx__cloud fancy-wx__cloud--c" />
         {(mood === "rain" || mood === "sleet") && (
           <>
-            <RainLayer drops={22} />
-            <SplashLayer count={10} />
+            <RainLayer drops={70} />
+            <SplashLayer count={14} />
           </>
         )}
-        {mood === "snow" && <SnowLayer flakes={26} />}
+        {mood === "snow" && <SnowLayer flakes={34} />}
         {mood === "thunder" && (
           <>
-            <RainLayer drops={22} />
-            <SplashLayer count={10} />
+            <RainLayer drops={70} />
+            <SplashLayer count={14} />
             <div className="fancy-wx__bolt" />
             <BoltShape />
           </>
