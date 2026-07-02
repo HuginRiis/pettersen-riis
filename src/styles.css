@@ -1299,14 +1299,15 @@ main .container {
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border-radius: 999px;
-  padding: 3px;
-  gap: 2px;
+  padding: 2px;
+  gap: 1px;
+  margin-right: 36px;
 }
 .fancy-wx__tab {
   appearance: none; border: 0; background: transparent;
   color: rgba(255,255,255,0.85);
-  font-size: 11px; font-weight: 600;
-  padding: 5px 9px; border-radius: 999px;
+  font-size: 10px; font-weight: 600;
+  padding: 4px 7px; border-radius: 999px;
   transition: all 180ms ease;
 }
 .fancy-wx__tab.is-active {
@@ -1317,15 +1318,15 @@ main .container {
 }
 
 .fancy-wx__main {
-  display: flex; align-items: center; gap: 14px;
-  margin-top: auto;
-  margin-bottom: 4px;
+  display: flex; align-items: center; gap: 10px;
+  margin-top: 6px;
+  margin-bottom: 0;
 }
-.fancy-wx__emoji { font-size: 56px; line-height: 1; filter: drop-shadow(0 6px 12px rgba(0,0,0,0.35)); }
+.fancy-wx__emoji { font-size: 46px; line-height: 1; filter: drop-shadow(0 6px 12px rgba(0,0,0,0.35)); }
 .fancy-wx__big { display: flex; flex-direction: column; }
-.fancy-wx__temp { font-size: 48px; font-weight: 200; line-height: 1; letter-spacing: -1.5px; }
-.fancy-wx__tempmin { font-size: 18px; font-weight: 300; opacity: 0.7; margin-left: 6px; }
-.fancy-wx__desc { font-size: 13px; opacity: 0.9; margin-top: 4px; }
+.fancy-wx__temp { font-size: 40px; font-weight: 200; line-height: 1; letter-spacing: -1.5px; }
+.fancy-wx__tempmin { font-size: 16px; font-weight: 300; opacity: 0.7; margin-left: 6px; }
+.fancy-wx__desc { font-size: 12px; opacity: 0.9; margin-top: 2px; }
 
 .fancy-wx__hours {
   margin-top: auto;
