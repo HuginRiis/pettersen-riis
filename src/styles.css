@@ -1097,7 +1097,7 @@ main .container {
 .fancy-wx--day.fancy-wx--clear .fancy-wx__sky { background: linear-gradient(180deg, #1e7fff 0%, #5fb7ff 50%, #ffd49a 100%); }
 .fancy-wx--day.fancy-wx--fair  .fancy-wx__sky { background: linear-gradient(180deg, #3a8ef0 0%, #7ec2ff 60%, #d6ecff 100%); }
 .fancy-wx--day.fancy-wx--cloudy .fancy-wx__sky { background: linear-gradient(180deg, #4e6478 0%, #7a8c9e 60%, #aab9c7 100%); }
-.fancy-wx--rain .fancy-wx__sky    { background: linear-gradient(180deg, #1f2a36 0%, #3a4a5c 60%, #556775 100%); }
+.fancy-wx--rain .fancy-wx__sky    { background: linear-gradient(180deg, #2b3a4a 0%, #43586c 45%, #6b8296 100%); }
 .fancy-wx--sleet .fancy-wx__sky   { background: linear-gradient(180deg, #2a3a48 0%, #54697a 60%, #8198a8 100%); }
 .fancy-wx--snow .fancy-wx__sky    { background: linear-gradient(180deg, #4a5a6a 0%, #8095a8 60%, #d3dde6 100%); }
 .fancy-wx--thunder .fancy-wx__sky { background: linear-gradient(180deg, #0e131a 0%, #2a2f3a 60%, #46505c 100%); }
@@ -1151,44 +1151,46 @@ main .container {
 /* Skyer */
 .fancy-wx__cloud {
   position: absolute;
-  background: radial-gradient(ellipse at 30% 50%, rgba(255,255,255,0.95), rgba(255,255,255,0.7) 60%, rgba(255,255,255,0) 75%),
-              radial-gradient(ellipse at 70% 50%, rgba(255,255,255,0.9), rgba(255,255,255,0) 75%);
-  filter: blur(2px);
-  opacity: 0.85;
+  background: radial-gradient(ellipse at 30% 50%, rgba(255,255,255,0.95), rgba(255,255,255,0.6) 55%, rgba(255,255,255,0) 78%),
+              radial-gradient(ellipse at 70% 55%, rgba(255,255,255,0.9), rgba(255,255,255,0) 78%);
+  filter: blur(6px);
+  opacity: 0.9;
   border-radius: 50%;
 }
-.fancy-wx__cloud--a { top: 20%; left: -25%; width: 200px; height: 78px; animation: fancyWxDrift calc(38s / var(--wx-wind)) linear infinite; }
-.fancy-wx__cloud--b { top: 8%;  left: -40%; width: 260px; height: 92px; opacity: 0.7; animation: fancyWxDrift calc(55s / var(--wx-wind)) linear infinite; animation-delay: -18s; }
-.fancy-wx__cloud--c { top: 34%; left: -30%; width: 170px; height: 66px; opacity: 0.6; animation: fancyWxDrift calc(46s / var(--wx-wind)) linear infinite; animation-delay: -8s; }
+.fancy-wx__cloud--a { top: 14%; left: -30%; width: 320px; height: 130px; animation: fancyWxDrift calc(42s / var(--wx-wind)) linear infinite; }
+.fancy-wx__cloud--b { top: -4%; left: -50%; width: 420px; height: 170px; opacity: 0.75; animation: fancyWxDrift calc(60s / var(--wx-wind)) linear infinite; animation-delay: -18s; }
+.fancy-wx__cloud--c { top: 40%; left: -35%; width: 280px; height: 110px; opacity: 0.65; animation: fancyWxDrift calc(50s / var(--wx-wind)) linear infinite; animation-delay: -8s; }
 @keyframes fancyWxDrift {
   0%   { transform: translateX(0); }
-  100% { transform: translateX(180%); }
+  100% { transform: translateX(200%); }
 }
 /* Mørkere skyer i regn/torden */
 .fancy-wx--rain .fancy-wx__cloud,
 .fancy-wx--thunder .fancy-wx__cloud,
 .fancy-wx--sleet .fancy-wx__cloud {
-  background: radial-gradient(ellipse at 30% 50%, rgba(60,72,86,0.95), rgba(60,72,86,0.7) 60%, rgba(60,72,86,0) 75%),
-              radial-gradient(ellipse at 70% 50%, rgba(40,52,66,0.9), rgba(40,52,66,0) 75%);
-  filter: blur(1.5px);
+  background: radial-gradient(ellipse at 30% 50%, rgba(80,94,110,0.95), rgba(80,94,110,0.55) 55%, rgba(80,94,110,0) 78%),
+              radial-gradient(ellipse at 70% 55%, rgba(55,68,82,0.9), rgba(55,68,82,0) 78%);
+  filter: blur(8px);
+  opacity: 0.95;
 }
 .fancy-wx--clear .fancy-wx__cloud--a { opacity: 0.45; }
 .fancy-wx--clear .fancy-wx__cloud--b,
 .fancy-wx--clear .fancy-wx__cloud--c { opacity: 0; }
 
 /* Regn */
-.fancy-wx__rain { position: absolute; inset: 0; pointer-events: none; }
+.fancy-wx__rain { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
 .fancy-wx__drop {
-  position: absolute; top: -12%;
-  width: 2px; height: 12px; border-radius: 2px;
-  background: linear-gradient(180deg, rgba(180,210,235,0.0), rgba(180,210,235,0.9));
-  animation: fancyWxRain 0.9s linear infinite;
+  position: absolute; top: -20%;
+  width: 1px; height: 18px; border-radius: 1px;
+  background: linear-gradient(180deg, rgba(220,232,245,0) 0%, rgba(220,232,245,0.85) 100%);
+  transform: rotate(10deg);
+  animation: fancyWxRain 0.75s linear infinite;
 }
 @keyframes fancyWxRain {
-  0%   { transform: translateY(0) translateX(0); opacity: 0; }
-  10%  { opacity: 0.95; }
-  95%  { opacity: 0.95; }
-  100% { transform: translateY(240px) translateX(-10px); opacity: 0; }
+  0%   { transform: translate3d(0,0,0) rotate(10deg); opacity: 0; }
+  10%  { opacity: 0.9; }
+  95%  { opacity: 0.9; }
+  100% { transform: translate3d(-40px, 260px, 0) rotate(10deg); opacity: 0; }
 }
 
 /* Regn-plask i bunn av flisen */
