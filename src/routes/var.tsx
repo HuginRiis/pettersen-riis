@@ -604,6 +604,10 @@ function LocationDots({
 }) {
   const [favs, setFavs] = useState<ActiveLocation[]>([]);
   const reverse = useServerFn(reverseGeocode);
+  // -1 = GPS, 0..n-1 = favoritt-index. null = ingen forhåndsvisning.
+  const [previewIndex, setPreviewIndex] = useState<number | null>(null);
+  const itemsRef = useRef<Array<HTMLButtonElement | null>>([]);
+  const barRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setFavs(readFavs());
@@ -651,17 +655,99 @@ function LocationDots({
     if (fav) userLoc.setActive({ ...fav, source: "favorite" });
   };
 
+  const commitSelection = (idx: number | null) => {
+    if (idx === null) return;
+    if (idx === -1) selectGps();
+    else selectFav(idx);
+  };
+
+  // Finn nærmeste dot/pil basert på x-koordinat (fungerer også når fingeren
+  // dras ut av selve knappen, så lenge man er innenfor stripen).
+  const hitTest = (clientX: number, clientY: number): number | null => {
+    // Direkte treff først
+    for (let i = 0; i < itemsRef.current.length; i++) {
+      const el = itemsRef.current[i];
+      if (!el) continue;
+      const r = el.getBoundingClientRect();
+      if (clientX >= r.left && clientX <= r.right && clientY >= r.top - 20 && clientY <= r.bottom + 20) {
+        return i === 0 ? -1 : i - 1;
+      }
+    }
+    // Fallback: nærmeste senter i x, dersom vi er innenfor bar-en vertikalt (+padding)
+    const bar = barRef.current?.getBoundingClientRect();
+    if (!bar) return null;
+    if (clientY < bar.top - 40 || clientY > bar.bottom + 40) return null;
+    let bestIdx = -1;
+    let bestDist = Infinity;
+    for (let i = 0; i < itemsRef.current.length; i++) {
+      const el = itemsRef.current[i];
+      if (!el) continue;
+      const r = el.getBoundingClientRect();
+      const cx = (r.left + r.right) / 2;
+      const d = Math.abs(clientX - cx);
+      if (d < bestDist) {
+        bestDist = d;
+        bestIdx = i;
+      }
+    }
+    return bestIdx < 0 ? null : bestIdx === 0 ? -1 : bestIdx - 1;
+  };
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
+    const idx = hitTest(e.clientX, e.clientY);
+    if (idx !== null) setPreviewIndex(idx);
+  };
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (previewIndex === null) return;
+    const idx = hitTest(e.clientX, e.clientY);
+    if (idx !== null && idx !== previewIndex) setPreviewIndex(idx);
+  };
+  const handlePointerEnd = (e: React.PointerEvent) => {
+    if (previewIndex === null) return;
+    const idx = hitTest(e.clientX, e.clientY) ?? previewIndex;
+    commitSelection(idx);
+    setPreviewIndex(null);
+  };
+  const handlePointerCancel = () => setPreviewIndex(null);
+
+  const previewLabel = (() => {
+    if (previewIndex === null) return null;
+    if (previewIndex === -1) return "Min posisjon";
+    return favs[previewIndex]?.label ?? null;
+  })();
+
   return (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-4 py-2.5 rounded-full bg-black/40 backdrop-blur-xl border border-white/10 shadow-lg">
+    <div
+      ref={barRef}
+      className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-4 py-2.5 rounded-full bg-black/40 backdrop-blur-xl border border-white/10 shadow-lg touch-none select-none"
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerEnd}
+      onPointerCancel={handlePointerCancel}
+      onPointerLeave={(e) => {
+        // Hvis brukeren slipper utenfor: behold preview til pointerup skjer.
+        // Ingenting her.
+        void e;
+      }}
+    >
+      {previewLabel && (
+        <div className="absolute -top-10 left-1/2 -translate-x-1/2 whitespace-nowrap px-3 py-1.5 rounded-lg bg-black/80 backdrop-blur-xl border border-white/15 text-white text-xs font-medium shadow-lg pointer-events-none">
+          {previewLabel}
+          <div className="absolute left-1/2 -translate-x-1/2 -bottom-1 w-2 h-2 rotate-45 bg-black/80 border-r border-b border-white/15" />
+        </div>
+      )}
       <button
+        ref={(el) => { itemsRef.current[0] = el; }}
         type="button"
-        onClick={selectGps}
         aria-label="Min posisjon"
         title="Min posisjon"
         className={`rounded-full transition-all ${
-          isGpsActive
-            ? "bg-white/90 text-slate-900 scale-110 shadow-[0_0_12px_rgba(255,255,255,0.6)]"
-            : "text-white/70 hover:text-white hover:bg-white/20"
+          previewIndex === -1
+            ? "bg-white text-slate-900 scale-125 shadow-[0_0_14px_rgba(255,255,255,0.8)]"
+            : isGpsActive
+              ? "bg-white/90 text-slate-900 scale-110 shadow-[0_0_12px_rgba(255,255,255,0.6)]"
+              : "text-white/70 hover:text-white hover:bg-white/20"
         }`}
       >
         <Navigation size={20} className="p-1" />
@@ -669,15 +755,20 @@ function LocationDots({
       <div className="flex items-center gap-2.5">
         {favs.map((fav, i) => {
           const isActive = i === activeFavIndex;
+          const isPreview = previewIndex === i;
           return (
             <button
               key={i}
+              ref={(el) => { itemsRef.current[i + 1] = el; }}
               type="button"
-              onClick={() => selectFav(i)}
               aria-label={fav.label}
               title={fav.label}
               className={`w-3 h-3 rounded-full transition-all ${
-                isActive ? "bg-white scale-125 shadow-[0_0_10px_rgba(255,255,255,0.7)]" : "bg-white/40 hover:bg-white/70"
+                isPreview
+                  ? "bg-white scale-150 shadow-[0_0_12px_rgba(255,255,255,0.9)]"
+                  : isActive
+                    ? "bg-white scale-125 shadow-[0_0_10px_rgba(255,255,255,0.7)]"
+                    : "bg-white/40 hover:bg-white/70"
               }`}
             />
           );
