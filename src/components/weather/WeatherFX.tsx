@@ -1,4 +1,17 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
+
+/**
+ * Alle FX-komponenter bruker Math.random() ved rendering, noe som gir
+ * hydration-mismatch mellom SSR og klient. React kaster da hele treet og
+ * rebuilder — det gir stygg hakking første sekundet på siden. Vi gater
+ * derfor alle FX bak en klient-mount slik at SSR sender tomt og klienten
+ * bygger dem én gang etter hydration.
+ */
+function useMounted() {
+  const [m, setM] = useState(false);
+  useEffect(() => setM(true), []);
+  return m;
+}
 
 /**
  * Deterministisk pseudo-random-generator for SSR/CLI-hydrering.
@@ -25,6 +38,8 @@ const wrap = "pointer-events-none absolute inset-0 overflow-hidden";
 
 /* ---------------- INSIDE RAIN (drops inside the content box) ---------------- */
 export function InsideRainFX({ intensity = 0.5, className = "" }: Common) {
+  const _mounted = useMounted();
+  if (!_mounted) return null;
   const i = Math.max(0, Math.min(1, intensity));
   // 0 dråper når intensitet = 0, ellers eskalerer raskt: 2 → 18
   const count = i === 0 ? 0 : Math.max(2, Math.round(2 + i * 16));
@@ -66,6 +81,8 @@ export function InsideRainFX({ intensity = 0.5, className = "" }: Common) {
 
 /* ---------------- RAIN ---------------- */
 export function RainFX({ intensity = 0.5, className = "" }: Common) {
+  const _mounted = useMounted();
+  if (!_mounted) return null;
   const clamped = Math.max(0, Math.min(1, intensity));
   const drops = useMemo(() => {
     // Opphold: 2–4 få drypp; når regnet starter eskalerer det raskt opp til ~40 drypp
@@ -109,6 +126,8 @@ export function RainFX({ intensity = 0.5, className = "" }: Common) {
 
 /* ---------------- SNOW ---------------- */
 export function SnowFX({ intensity = 0.5, className = "" }: Common) {
+  const _mounted = useMounted();
+  if (!_mounted) return null;
   const count = Math.max(8, Math.round(10 + intensity * 18));
   const flakes = useMemo(
     () =>
@@ -144,6 +163,8 @@ export function SnowFX({ intensity = 0.5, className = "" }: Common) {
 
 /* ---------------- CLOUDS ---------------- */
 export function CloudFX({ intensity = 0.5, className = "" }: Common) {
+  const _mounted = useMounted();
+  if (!_mounted) return null;
   const count = Math.max(2, Math.round(2 + intensity * 4));
   const clouds = useMemo(
     () =>
@@ -184,6 +205,8 @@ export function CloudFX({ intensity = 0.5, className = "" }: Common) {
 
 /* ---------------- CLOUD COVER (realistic layered sky) ---------------- */
 export function CloudCoverFX({ intensity = 0.5, className = "" }: Common) {
+  const _mounted = useMounted();
+  if (!_mounted) return null;
   const i = Math.max(0, Math.min(1, intensity));
   // 0 = blå klar himmel, 1 = mørk, tett dekke
   const count = Math.round(6 + i * 14);
@@ -258,6 +281,8 @@ export function CloudCoverFX({ intensity = 0.5, className = "" }: Common) {
 
 /* ---------------- WIND ---------------- */
 export function WindFX({ intensity = 0.5, className = "" }: Common) {
+  const _mounted = useMounted();
+  if (!_mounted) return null;
   const i = Math.max(0, Math.min(1, intensity));
   const count = Math.max(4, Math.round(5 + i * 8));
   // Calmer baseline: low wind drifts gently, storm wind zips fast
@@ -348,6 +373,8 @@ export function WindFX({ intensity = 0.5, className = "" }: Common) {
 
 /* ---------------- HEATWAVE ---------------- */
 export function HeatwaveFX({ intensity = 0.5, className = "" }: Common) {
+  const _mounted = useMounted();
+  if (!_mounted) return null;
   const cold = intensity < 0;
   const color = cold ? "rgba(170,210,255,0.55)" : "rgba(255,200,120,0.55)";
   const bands = useMemo(
@@ -380,6 +407,8 @@ export function HeatwaveFX({ intensity = 0.5, className = "" }: Common) {
 
 /* ---------------- HUMIDITY (rising droplets + steam) ---------------- */
 export function HumidityFX({ intensity = 0.5, className = "" }: Common) {
+  const _mounted = useMounted();
+  if (!_mounted) return null;
   const i = Math.max(0, Math.min(1, intensity));
   const count = Math.max(4, Math.round(4 + i * 8));
   const drops = useMemo(
@@ -452,6 +481,8 @@ export function HumidityFX({ intensity = 0.5, className = "" }: Common) {
 
 /* ---------------- PRESSURE (pulse rings) ---------------- */
 export function PressureFX({ intensity = 0.5, className = "" }: Common) {
+  const _mounted = useMounted();
+  if (!_mounted) return null;
   const rings = [0, 0.6, 1.2];
   const color = intensity > 0.6 ? "rgba(255,180,140,0.45)" : intensity < 0.4 ? "rgba(140,200,255,0.45)" : "rgba(255,255,255,0.4)";
   return (
@@ -475,6 +506,8 @@ export function PressureFX({ intensity = 0.5, className = "" }: Common) {
 
 /* ---------------- GUST (flying leaves blowing right) ---------------- */
 export function GustFX({ intensity = 0.5, className = "" }: Common) {
+  const _mounted = useMounted();
+  if (!_mounted) return null;
   const i = Math.max(0, Math.min(1, intensity));
   // Straight wind streaks — more and faster with higher gusts
   const streakCount = Math.max(3, Math.round(4 + i * 8));
@@ -564,6 +597,8 @@ export function GustFX({ intensity = 0.5, className = "" }: Common) {
 
 /* ---------------- SUN (rays + sparkles) ---------------- */
 export function SunFX({ intensity = 0.5, className = "" }: Common) {
+  const _mounted = useMounted();
+  if (!_mounted) return null;
   const sparkles = useMemo(
     () =>
       Array.from({ length: 6 }).map(() => ({
@@ -607,6 +642,8 @@ export function SunFX({ intensity = 0.5, className = "" }: Common) {
 
 /* ---------------- MOON (stars) ---------------- */
 export function StarFX({ intensity = 0.5, className = "" }: Common) {
+  const _mounted = useMounted();
+  if (!_mounted) return null;
   const stars = useMemo(() => {
     const rng = seededRng(42);
     return Array.from({ length: 14 }).map(() => ({
@@ -641,6 +678,8 @@ export function StarFX({ intensity = 0.5, className = "" }: Common) {
 
 /* ---------------- MOON FX (måne øverst til høyre) ---------------- */
 export function MoonFX({ intensity = 0.5, className = "" }: Common) {
+  const _mounted = useMounted();
+  if (!_mounted) return null;
   return (
     <div className={`${wrap} ${className}`} aria-hidden>
       {/* Måne-glød øverst til høyre */}
@@ -705,6 +744,8 @@ function makeBoltPath(seed: number, segments: number, jitter: number) {
 }
 
 export function ThunderFX({ intensity = 0.5, className = "" }: Common) {
+  const _mounted = useMounted();
+  if (!_mounted) return null;
   const bolts = useMemo(() => {
     const count = Math.max(2, Math.round(2 + intensity * 3));
     return Array.from({ length: count }).map((_, i) => {
@@ -793,6 +834,8 @@ export function GlassPaneFX({
   kind: GlassKind;
   intensity?: number;
 }) {
+  const _mounted = useMounted();
+  if (!_mounted) return null;
   const isWet = kind === "rain" || kind === "sleet" || kind === "thunder";
   const isSnow = kind === "snow" || kind === "sleet";
   const isClearDay = kind === "clear" || kind === "fair";
@@ -1095,6 +1138,8 @@ export function TileSplashFX({
   kind: GlassKind;
   intensity?: number;
 }) {
+  const _mounted = useMounted();
+  if (!_mounted) return null;
   const isWet = kind === "rain" || kind === "sleet" || kind === "thunder";
   const isSnow = kind === "snow" || kind === "sleet";
   const isWindy = kind === "cloudy" || kind === "fog";
