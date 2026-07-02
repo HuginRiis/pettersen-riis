@@ -257,6 +257,11 @@ export function LocationPicker({
 
   return (
     <div className={rootClass}>
+      {title && (
+        <div className={`text-[10px] uppercase tracking-[0.25em] mb-2 ${transparent ? "text-white/50" : "text-muted-foreground"}`}>
+          {title}
+        </div>
+      )}
       {/* Topplinje: bruker + aktivt sted + favoritt-toggle */}
       <div className="flex flex-wrap items-center gap-2 justify-between">
         {(() => {
