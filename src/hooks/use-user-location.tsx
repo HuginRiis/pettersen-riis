@@ -86,23 +86,26 @@ export function useUserLocation(page: LocationPage): UserLocationState & {
         if (cancelled) return;
         const loc = { label: r.place_label, lat: r.lat, lon: r.lon };
         setDefaultLoc(loc);
-        // Sjekk pending pick (satt av f.eks. favoritt-siden) — overstyrer default én gang.
-        let pending: ActiveLocation | null = null;
+        // Sist valgte sted (lagret i localStorage av favoritt-siden eller søk)
+        // — overstyrer default og består mellom økter, slik at man alltid
+        // ser samme sted når man åpner igjen.
+        let chosen: ActiveLocation | null = null;
         if (typeof window !== "undefined") {
           try {
-            const raw = sessionStorage.getItem(`loc:pending:${page}`);
+            const raw = localStorage.getItem(`loc:chosen:${page}`);
             if (raw) {
               const p = JSON.parse(raw);
               if (p && typeof p.label === "string" && typeof p.lat === "number" && typeof p.lon === "number") {
-                pending = { label: p.label, lat: p.lat, lon: p.lon };
+                chosen = { label: p.label, lat: p.lat, lon: p.lon };
               }
-              sessionStorage.removeItem(`loc:pending:${page}`);
             }
+            // Ryd opp gammel session-nøkkel om den finnes.
+            sessionStorage.removeItem(`loc:pending:${page}`);
           } catch {
             // ignore
           }
         }
-        setActive(pending ?? loc);
+        setActive(chosen ?? loc);
       } catch {
         // keep fallback
       } finally {
@@ -115,6 +118,20 @@ export function useUserLocation(page: LocationPage): UserLocationState & {
   }, [who, page, fetchDefault, authenticated, authLoading]);
 
 
+  const persistAndSetActive = (loc: ActiveLocation) => {
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem(
+          `loc:chosen:${page}`,
+          JSON.stringify({ label: loc.label, lat: loc.lat, lon: loc.lon }),
+        );
+      } catch {
+        // ignore
+      }
+    }
+    setActive(loc);
+  };
+
   return {
     who,
     active,
@@ -122,7 +139,7 @@ export function useUserLocation(page: LocationPage): UserLocationState & {
     ready,
     authenticated: authenticated === true,
     setWho,
-    setActive,
+    setActive: persistAndSetActive,
     setDefaultLoc,
   };
 }
@@ -136,11 +153,13 @@ export function UserLocationBar({
   state,
   readOnlyWho = false,
   transparent = false,
+  hideActions = false,
 }: {
   page: LocationPage;
   state: ReturnType<typeof useUserLocation>;
   readOnlyWho?: boolean;
   transparent?: boolean;
+  hideActions?: boolean;
 }) {
   return (
     <LocationPicker
@@ -154,6 +173,7 @@ export function UserLocationBar({
       authenticated={state.authenticated}
       readOnlyWho={readOnlyWho}
       transparent={transparent}
+      hideActions={hideActions}
     />
   );
 }
