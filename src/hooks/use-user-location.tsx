@@ -86,7 +86,23 @@ export function useUserLocation(page: LocationPage): UserLocationState & {
         if (cancelled) return;
         const loc = { label: r.place_label, lat: r.lat, lon: r.lon };
         setDefaultLoc(loc);
-        setActive(loc); // alltid start på default ved (re)mount / bytte vakt
+        // Sjekk pending pick (satt av f.eks. favoritt-siden) — overstyrer default én gang.
+        let pending: ActiveLocation | null = null;
+        if (typeof window !== "undefined") {
+          try {
+            const raw = sessionStorage.getItem(`loc:pending:${page}`);
+            if (raw) {
+              const p = JSON.parse(raw);
+              if (p && typeof p.label === "string" && typeof p.lat === "number" && typeof p.lon === "number") {
+                pending = { label: p.label, lat: p.lat, lon: p.lon };
+              }
+              sessionStorage.removeItem(`loc:pending:${page}`);
+            }
+          } catch {
+            // ignore
+          }
+        }
+        setActive(pending ?? loc);
       } catch {
         // keep fallback
       } finally {
@@ -97,6 +113,7 @@ export function useUserLocation(page: LocationPage): UserLocationState & {
       cancelled = true;
     };
   }, [who, page, fetchDefault, authenticated, authLoading]);
+
 
   return {
     who,

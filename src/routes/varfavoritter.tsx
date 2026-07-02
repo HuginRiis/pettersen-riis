@@ -1,5 +1,6 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+
 import { ArrowLeft, Star } from "lucide-react";
 import { PageShell } from "@/components/PageShell";
 import { FancyWeatherTile } from "@/components/FancyWeatherTile";
@@ -48,7 +49,35 @@ function useBgGradient() {
 function FavoritesPage() {
   const userLoc = useUserLocation("var");
   const bg = useBgGradient();
+  const navigate = useNavigate();
   const [favs, setFavs] = useState<ActiveLocation[]>([]);
+
+  const pickLocation = (loc: ActiveLocation) => {
+    try {
+      sessionStorage.setItem(
+        "loc:pending:var",
+        JSON.stringify({ label: loc.label, lat: loc.lat, lon: loc.lon }),
+      );
+    } catch {
+      // ignore
+    }
+    navigate({ to: "/var" });
+  };
+
+  // Når brukeren søker/velger et nytt sted i søkeboksen: send det som pending
+  // pick og naviger tilbake til vær-siden i stedet for å bare oppdatere aktivt
+  // sted lokalt.
+  const barState = useMemo(
+    () => ({
+      ...userLoc,
+      setActive: (loc: ActiveLocation) => pickLocation(loc),
+    }),
+    // pickLocation er stabil i denne komponenten
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [userLoc.who, userLoc.active, userLoc.defaultLoc, userLoc.ready, userLoc.authenticated],
+  );
+
+
 
   useEffect(() => {
     setFavs(readFavs());
@@ -91,7 +120,7 @@ function FavoritesPage() {
           </div>
 
           <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl overflow-visible relative z-40">
-            <UserLocationBar page="var" state={userLoc} transparent />
+            <UserLocationBar page="var" state={barState} transparent />
           </div>
 
           {rows.length === 0 ? (
@@ -101,9 +130,18 @@ function FavoritesPage() {
           ) : (
             <div className="space-y-3">
               {rows.map((f) => (
-                <FancyWeatherTile key={f.label} label={f.label} lat={f.lat} lon={f.lon} />
+                <button
+                  key={f.label}
+                  type="button"
+                  onClick={() => pickLocation(f)}
+                  className="block w-full text-left rounded-2xl overflow-hidden focus:outline-none focus:ring-2 focus:ring-white/40 transition-transform active:scale-[0.99]"
+                  aria-label={`Åpne vær for ${f.label}`}
+                >
+                  <FancyWeatherTile label={f.label} lat={f.lat} lon={f.lon} />
+                </button>
               ))}
             </div>
+
           )}
         </div>
       </div>
