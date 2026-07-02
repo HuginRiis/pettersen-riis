@@ -406,30 +406,7 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
         <GlassPaneFX kind={glassKind} intensity={glassIntensity} />
         <div className="max-w-3xl mx-auto px-4 pt-8 pb-16 space-y-4 text-white relative z-10">
 
-          {/* LYD + TONE brytere (øverst) */}
-          <div className="flex justify-between items-center">
-            <button
-              type="button"
-              onClick={() => setSoundEnabled((v) => !v)}
-              aria-pressed={soundEnabled}
-              aria-label={soundEnabled ? "Slå av værlyd" : "Slå på værlyd"}
-              title={soundEnabled ? "Værlyd: på" : "Værlyd: av"}
-              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-medium backdrop-blur-xl border transition-all ${
-                soundEnabled
-                  ? "bg-white text-slate-900 border-white shadow"
-                  : "bg-white/10 text-white/80 border-white/15 hover:bg-white/20"
-              }`}
-            >
-              {soundEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />}
-              <span>Lyd</span>
-            </button>
-            <div className="flex items-center gap-2">
-              <TileColorToggle />
-              <TileGlassToggle />
-              <TileOpacityToggle />
-              {!tileColor && <TileToneToggle />}
-            </div>
-          </div>
+          {/* Innstillinger er flyttet til menyknappen nederst til høyre */}
 
           {/* HERO — sticky under toppmenyen, krymper når man scroller */}
           <div
