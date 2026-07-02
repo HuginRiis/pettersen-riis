@@ -158,7 +158,7 @@ function FavoritesPage() {
           </div>
 
           <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl overflow-visible relative z-40">
-            <UserLocationBar page="var" state={userLoc} transparent hideActions />
+            <UserLocationBar page="var" state={userLoc} transparent hideActions title="Min posisjon" />
           </div>
 
           {rows.length === 0 ? (
