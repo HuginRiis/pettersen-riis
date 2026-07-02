@@ -19,6 +19,17 @@ export const TILE_COLOR_PALETTE: { id: string; label: string; value: string }[] 
   { id: "gray-400", label: "Grå", value: "rgba(156, 163, 175, 0.65)" },
   { id: "gray-600", label: "Mørk grå", value: "rgba(75, 85, 99, 0.7)" },
   { id: "zinc-800", label: "Kull", value: "rgba(39, 39, 42, 0.75)" },
+  // 10 nye farger
+  { id: "emerald", label: "Smaragd", value: "rgba(16, 185, 129, 0.55)" },
+  { id: "green", label: "Grønn", value: "rgba(34, 197, 94, 0.55)" },
+  { id: "lime", label: "Lime", value: "rgba(132, 204, 22, 0.55)" },
+  { id: "yellow", label: "Gul", value: "rgba(234, 179, 8, 0.55)" },
+  { id: "amber", label: "Rav", value: "rgba(245, 158, 11, 0.6)" },
+  { id: "orange", label: "Oransje", value: "rgba(249, 115, 22, 0.6)" },
+  { id: "red", label: "Rød", value: "rgba(239, 68, 68, 0.6)" },
+  { id: "rose", label: "Rose", value: "rgba(244, 63, 94, 0.6)" },
+  { id: "pink", label: "Rosa", value: "rgba(236, 72, 153, 0.55)" },
+  { id: "purple", label: "Lilla", value: "rgba(168, 85, 247, 0.6)" },
 ];
 
 const GLASS_MULT: Record<TileGlass, number> = {
