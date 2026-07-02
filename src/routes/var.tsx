@@ -780,7 +780,99 @@ function LocationDots({
   );
 }
 
+function WeatherMenuButton({
+  soundEnabled,
+  setSoundEnabled,
+}: {
+  soundEnabled: boolean;
+  setSoundEnabled: React.Dispatch<React.SetStateAction<boolean>>;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onClick = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    window.addEventListener("mousedown", onClick);
+    return () => window.removeEventListener("mousedown", onClick);
+  }, [open]);
+
+  return (
+    <div ref={ref} className="fixed bottom-6 right-6 z-50">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-label="Værmeny"
+        aria-expanded={open}
+        title="Værmeny"
+        className="w-12 h-12 rounded-full bg-black/40 backdrop-blur-xl border border-white/10 shadow-lg flex items-center justify-center text-white/80 hover:text-white hover:bg-black/55 active:scale-95 transition-all"
+      >
+        <span className="flex flex-col gap-[5px]" aria-hidden="true">
+          <span className="flex items-center gap-[5px]">
+            <span className="w-1 h-1 rounded-full bg-current" />
+            <span className="w-[18px] h-[2px] rounded-full bg-current" />
+          </span>
+          <span className="flex items-center gap-[5px]">
+            <span className="w-1 h-1 rounded-full bg-current" />
+            <span className="w-[18px] h-[2px] rounded-full bg-current" />
+          </span>
+          <span className="flex items-center gap-[5px]">
+            <span className="w-1 h-1 rounded-full bg-current" />
+            <span className="w-[18px] h-[2px] rounded-full bg-current" />
+          </span>
+        </span>
+      </button>
+
+      {open && (
+        <div className="absolute bottom-14 right-0 p-2 rounded-2xl bg-black/50 backdrop-blur-xl border border-white/10 shadow-2xl flex flex-col gap-2 min-w-[168px]">
+          <div className="flex items-center justify-between px-2 py-1.5">
+            <span className="text-xs text-white/70">Værlyd</span>
+            <button
+              type="button"
+              onClick={() => setSoundEnabled((v) => !v)}
+              aria-pressed={soundEnabled}
+              className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-medium transition-all ${
+                soundEnabled
+                  ? "bg-white text-slate-900"
+                  : "bg-white/10 text-white/80 hover:bg-white/20"
+              }`}
+            >
+              {soundEnabled ? <Volume2 size={12} /> : <VolumeX size={12} />}
+              <span>{soundEnabled ? "På" : "Av"}</span>
+            </button>
+          </div>
+
+          <div className="h-px bg-white/10 mx-2" />
+
+          <div className="flex flex-col gap-1.5 px-2 py-1">
+            <span className="text-[10px] text-white/50 uppercase tracking-wider">Flis-stil</span>
+            <div className="flex items-center gap-2">
+              <TileColorToggle />
+              <TileGlassToggle />
+              <TileOpacityToggle />
+              <TileToneToggle />
+            </div>
+          </div>
+
+          <div className="h-px bg-white/10 mx-2" />
+
+          <Link
+            to="/varfavoritter"
+            className="flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm text-white/80 hover:text-white hover:bg-white/10 transition-colors"
+          >
+            <SearchIcon size={14} />
+            <span>Søk / favoritter</span>
+          </Link>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function toneCardCn(extra = ""): string {
+
   const { tone } = useTileTone();
   return `relative overflow-hidden rounded-2xl backdrop-blur-xl shadow-lg shadow-black/10 p-4 ${tileToneClasses(tone)} ${extra}`;
 }
