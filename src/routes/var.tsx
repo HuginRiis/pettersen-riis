@@ -619,56 +619,65 @@ function LocationDots({
     };
   }, []);
 
-  const slots = useMemo(
-    () => [{ label: "Min posisjon", type: "gps" as const }, ...favs],
-    [favs],
-  );
+  const activeFavIndex = useMemo(() => {
+    if (userLoc.active.source === "gps") return -1;
+    return favs.findIndex((f) => f.label === userLoc.active.label);
+  }, [favs, userLoc.active]);
 
-  const activeIndex = useMemo(() => {
-    const favIndex = favs.findIndex((f) => f.label === userLoc.active.label);
-    return favIndex >= 0 ? favIndex + 1 : 0;
-  }, [favs, userLoc.active.label]);
+  const isGpsActive = userLoc.active.source === "gps";
 
-  const select = (index: number) => {
-    if (index === 0) {
-      if (typeof navigator === "undefined" || !navigator.geolocation) return;
-      navigator.geolocation.getCurrentPosition(
-        async (pos) => {
-          const lat = pos.coords.latitude;
-          const lon = pos.coords.longitude;
-          try {
-            const r = await reverse({ data: { lat, lon } });
-            userLoc.setActive({ label: r.label, lat: r.lat, lon: r.lon });
-          } catch {
-            userLoc.setActive({ label: `${lat.toFixed(3)}°N ${lon.toFixed(3)}°Ø`, lat, lon });
-          }
-        },
-        () => {
-          // ignore denied
-        },
-        { enableHighAccuracy: true, timeout: 10_000, maximumAge: 5 * 60_000 },
-      );
-    } else {
-      const fav = favs[index - 1];
-      if (fav) userLoc.setActive(fav);
-    }
+  const selectGps = () => {
+    if (typeof navigator === "undefined" || !navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const lat = pos.coords.latitude;
+        const lon = pos.coords.longitude;
+        try {
+          const r = await reverse({ data: { lat, lon } });
+          userLoc.setActive({ label: r.label, lat: r.lat, lon: r.lon, source: "gps" });
+        } catch {
+          userLoc.setActive({ label: `${lat.toFixed(3)}°N ${lon.toFixed(3)}°Ø`, lat, lon, source: "gps" });
+        }
+      },
+      () => {
+        // ignore denied
+      },
+      { enableHighAccuracy: true, timeout: 10_000, maximumAge: 5 * 60_000 },
+    );
+  };
+
+  const selectFav = (index: number) => {
+    const fav = favs[index];
+    if (fav) userLoc.setActive({ ...fav, source: "favorite" });
   };
 
   return (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/35 backdrop-blur-xl border border-white/10 shadow-lg">
-      <Navigation size={14} className="text-white/90" />
-      <div className="flex items-center gap-1.5">
-        {slots.map((slot, i) => {
-          const isActive = i === activeIndex;
+    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 px-4 py-2 rounded-full bg-black/40 backdrop-blur-xl border border-white/10 shadow-lg">
+      <button
+        type="button"
+        onClick={selectGps}
+        aria-label="Min posisjon"
+        title="Min posisjon"
+        className={`rounded-full transition-all ${
+          isGpsActive
+            ? "bg-white/90 text-slate-900 scale-110 shadow-[0_0_10px_rgba(255,255,255,0.55)]"
+            : "text-white/70 hover:text-white hover:bg-white/20"
+        }`}
+      >
+        <Navigation size={18} className="p-1" />
+      </button>
+      <div className="flex items-center gap-2">
+        {favs.map((fav, i) => {
+          const isActive = i === activeFavIndex;
           return (
             <button
               key={i}
               type="button"
-              onClick={() => select(i)}
-              aria-label={slot.label}
-              title={slot.label}
-              className={`w-2 h-2 rounded-full transition-all ${
-                isActive ? "bg-white scale-125 shadow-[0_0_6px_rgba(255,255,255,0.6)]" : "bg-white/40 hover:bg-white/70"
+              onClick={() => selectFav(i)}
+              aria-label={fav.label}
+              title={fav.label}
+              className={`w-2.5 h-2.5 rounded-full transition-all ${
+                isActive ? "bg-white scale-125 shadow-[0_0_8px_rgba(255,255,255,0.6)]" : "bg-white/40 hover:bg-white/70"
               }`}
             />
           );
