@@ -1269,9 +1269,9 @@ main .container {
 /* Innhold */
 .fancy-wx__content {
   position: relative; z-index: 1;
-  padding: 18px 18px 16px;
-  display: flex; flex-direction: column; gap: 14px;
-  min-height: 360px;
+  padding: 14px 16px 14px;
+  display: flex; flex-direction: column; gap: 10px;
+  min-height: 220px;
   text-shadow: 0 1px 2px rgba(0,0,0,0.35);
 }
 .fancy-wx__top {
@@ -1281,8 +1281,8 @@ main .container {
   font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
   opacity: 0.78;
 }
-.fancy-wx__place { font-size: 22px; font-weight: 700; letter-spacing: 0.5px; transition: padding-top 0.2s ease; }
-.has-position-badge .fancy-wx__place { padding-top: 28px; }
+.fancy-wx__place { font-size: 18px; font-weight: 700; letter-spacing: 0.5px; transition: padding-top 0.2s ease; }
+.has-position-badge .fancy-wx__place { padding-top: 24px; }
 
 /* Pulsing glow on selected favorite tile */
 @keyframes tile-pulse {
@@ -1306,7 +1306,7 @@ main .container {
   appearance: none; border: 0; background: transparent;
   color: rgba(255,255,255,0.85);
   font-size: 11px; font-weight: 600;
-  padding: 6px 10px; border-radius: 999px;
+  padding: 5px 9px; border-radius: 999px;
   transition: all 180ms ease;
 }
 .fancy-wx__tab.is-active {
@@ -1317,14 +1317,15 @@ main .container {
 }
 
 .fancy-wx__main {
-  display: flex; align-items: center; gap: 16px;
-  margin-top: 4px;
+  display: flex; align-items: center; gap: 14px;
+  margin-top: auto;
+  margin-bottom: 4px;
 }
-.fancy-wx__emoji { font-size: 76px; line-height: 1; filter: drop-shadow(0 6px 12px rgba(0,0,0,0.35)); }
+.fancy-wx__emoji { font-size: 56px; line-height: 1; filter: drop-shadow(0 6px 12px rgba(0,0,0,0.35)); }
 .fancy-wx__big { display: flex; flex-direction: column; }
-.fancy-wx__temp { font-size: 64px; font-weight: 200; line-height: 1; letter-spacing: -2px; }
-.fancy-wx__tempmin { font-size: 22px; font-weight: 300; opacity: 0.7; margin-left: 8px; }
-.fancy-wx__desc { font-size: 14px; opacity: 0.9; margin-top: 4px; }
+.fancy-wx__temp { font-size: 48px; font-weight: 200; line-height: 1; letter-spacing: -1.5px; }
+.fancy-wx__tempmin { font-size: 18px; font-weight: 300; opacity: 0.7; margin-left: 6px; }
+.fancy-wx__desc { font-size: 13px; opacity: 0.9; margin-top: 4px; }
 
 .fancy-wx__hours {
   margin-top: auto;
