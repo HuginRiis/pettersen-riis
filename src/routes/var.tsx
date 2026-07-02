@@ -2004,10 +2004,10 @@ function WindDetailCard({ hour }: { hour: Hour | null }) {
             <circle cx="50" cy="50" r="44" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
             {Array.from({ length: 36 }).map((_, i) => {
               const a = (i * 10 - 90) * (Math.PI / 180);
-              const x1 = 50 + 44 * Math.cos(a);
-              const y1 = 50 + 44 * Math.sin(a);
-              const x2 = 50 + (i % 9 === 0 ? 36 : 40) * Math.cos(a);
-              const y2 = 50 + (i % 9 === 0 ? 36 : 40) * Math.sin(a);
+              const x1 = (50 + 44 * Math.cos(a)).toFixed(1);
+              const y1 = (50 + 44 * Math.sin(a)).toFixed(1);
+              const x2 = (50 + (i % 9 === 0 ? 36 : 40) * Math.cos(a)).toFixed(1);
+              const y2 = (50 + (i % 9 === 0 ? 36 : 40) * Math.sin(a)).toFixed(1);
               return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="rgba(255,255,255,0.35)" strokeWidth="0.6" />;
             })}
             {["N", "Ø", "S", "V"].map((d, i) => {
