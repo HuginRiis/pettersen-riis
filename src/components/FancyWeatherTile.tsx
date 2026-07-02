@@ -201,13 +201,17 @@ function RainLayer({ drops }: { drops: number }) {
       {Array.from({ length: drops }).map((_, i) => {
         const left = (i / drops) * 100 + Math.random() * 2;
         const delay = Math.random() * 1.2;
-        const dur = 0.65 + Math.random() * 0.5;
+        const dur = 0.55 + Math.random() * 0.35;
+        const len = 14 + Math.random() * 18;
+        const op = 0.55 + Math.random() * 0.35;
         return (
           <span
             key={i}
             className="fancy-wx__drop"
             style={{
               left: `${left}%`,
+              height: `${len}px`,
+              opacity: op,
               animationDelay: `${delay}s`,
               animationDuration: `${dur}s`,
             }}
