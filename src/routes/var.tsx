@@ -381,131 +381,89 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
   const { tone } = useTileTone();
 
 
-  // Scroll-drevet "shrink" på hero-header (sticky under toppmenyen) — rAF for jevn animasjon
-  const [heroT, setHeroT] = useState(0); // 0 = full, 1 = kollapset
+  // Scroll-drevet "collapsed" på hero-header — kun én boolean, CSS gjør resten (ingen per-frame reflow)
+  const [collapsed, setCollapsed] = useState(false);
   useEffect(() => {
-    const SHRINK_PX = 140;
-    let raf = 0;
+    const ENTER = 80; // px scroll før kollaps
+    const EXIT = 40;  // hysteresis for å unngå flimring
     let ticking = false;
+    let cur = false;
     const update = () => {
       ticking = false;
       const y = window.scrollY || 0;
-      const raw = Math.max(0, Math.min(1, y / SHRINK_PX));
-      // ease-in-out for jevnere kurve
-      const eased = raw < 0.5 ? 2 * raw * raw : 1 - Math.pow(-2 * raw + 2, 2) / 2;
-      setHeroT(eased);
+      const next = cur ? y > EXIT : y > ENTER;
+      if (next !== cur) {
+        cur = next;
+        setCollapsed(next);
+      }
     };
     const onScroll = () => {
       if (!ticking) {
         ticking = true;
-        raf = requestAnimationFrame(update);
+        requestAnimationFrame(update);
       }
     };
     update();
     window.addEventListener("scroll", onScroll, { passive: true });
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      cancelAnimationFrame(raf);
-    };
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
-  const collapsed = heroT > 0.6;
-  const fadeOut = Math.max(0, 1 - heroT * 1.6); // 1→0 mens vi kollapser
-  const fadeIn = Math.max(0, (heroT - 0.55) / 0.45); // 0→1 nær kollapset
-
-
-  return (
-    <PageShell>
-      <div
-        className={`min-h-screen bg-gradient-to-b ${bgGradient} transition-colors duration-1000 relative ${tileColor ? "has-tile-color" : ""}`}
-        style={{
-          ["--tile-opacity" as string]: opacity / 100,
-          ...(tileColor ? { ["--tile-color-bg" as string]: tileColor } : {}),
-        }}
-      >
-        <GlassPaneFX kind={glassKind} intensity={glassIntensity} />
-        <div className="max-w-3xl mx-auto px-4 pt-8 pb-16 space-y-4 text-white relative z-10">
-
-          {/* Innstillinger er flyttet til menyknappen nederst til høyre */}
-
+...
           {/* HERO — sticky under toppmenyen, krymper når man scroller */}
           <div
-            className="sticky top-[56px] z-30 -mx-4 px-4"
-            style={{
-              backdropFilter: heroT > 0.05 ? `blur(${(heroT * 16).toFixed(1)}px)` : undefined,
-              WebkitBackdropFilter: heroT > 0.05 ? `blur(${(heroT * 16).toFixed(1)}px)` : undefined,
-              backgroundColor: `rgba(0,0,0,${(heroT * 0.22).toFixed(3)})`,
-              borderBottom: `1px solid rgba(255,255,255,${(heroT * 0.1).toFixed(3)})`,
-              boxShadow: heroT > 0.5 ? `0 4px 12px rgba(0,0,0,${(heroT * 0.25).toFixed(3)})` : "none",
-              willChange: "backdrop-filter, background-color",
-            }}
+            className={`sticky top-[56px] z-30 -mx-4 px-4 transition-[background-color,box-shadow,border-color] duration-300 ease-out ${
+              collapsed
+                ? "bg-black/30 border-b border-white/10 shadow-[0_4px_12px_rgba(0,0,0,0.25)]"
+                : "bg-transparent border-b border-transparent"
+            }`}
           >
             <header
-              className="text-center"
-              style={{
-                paddingTop: `${16 - heroT * 12}px`,
-                paddingBottom: `${8 - heroT * 4}px`,
-                willChange: "padding",
-              }}
+              className={`text-center overflow-hidden transition-[padding] duration-300 ease-out ${
+                collapsed ? "py-2" : "pt-4 pb-2"
+              }`}
             >
               <h1
-                className="font-medium tracking-wide text-white/90 drop-shadow-md"
-                style={{
-                  fontSize: `${18 - heroT * 4}px`,
-                  marginTop: `${4 - heroT * 4}px`,
-                  willChange: "font-size",
-                }}
+                className={`font-medium tracking-wide text-white/90 drop-shadow-md transition-[font-size,margin] duration-300 ease-out ${
+                  collapsed ? "text-sm mt-0" : "text-lg mt-1"
+                }`}
               >
                 {userLoc.active.label}
               </h1>
               <div
-                className="leading-none font-thin drop-shadow-lg tabular-nums"
+                className={`leading-none font-thin drop-shadow-lg tabular-nums inline-block transition-transform duration-300 ease-out origin-top ${
+                  collapsed ? "scale-[0.32]" : "scale-100"
+                }`}
                 style={{
-                  fontSize: `${88 - heroT * 60}px`,
-                  marginTop: `${8 - heroT * 6}px`,
-                  display: "inline-block",
-                  willChange: "font-size",
+                  fontSize: "88px",
+                  marginTop: collapsed ? -28 : 8,
+                  willChange: "transform",
                 }}
               >
                 {currentHour ? `${Math.round(currentHour.temp)}°` : "—"}
               </div>
               <div
-                className="font-medium"
-                style={{
-                  fontSize: `${20 - heroT * 6}px`,
-                  marginTop: `${8 - heroT * 6}px`,
-                  display: collapsed ? "inline-block" : "block",
-                  marginLeft: collapsed ? 8 : 0,
-                  willChange: "font-size",
-                }}
+                className={`font-medium transition-[font-size,margin] duration-300 ease-out ${
+                  collapsed ? "text-sm ml-2 inline-block mt-0" : "text-xl block mt-2"
+                }`}
               >
                 {collapsed ? `| ${condition}` : condition}
               </div>
-              {todayDay && (
-                <div
-                  className="text-base font-medium mt-1 tabular-nums overflow-hidden"
-                  style={{
-                    opacity: fadeOut,
-                    maxHeight: `${fadeOut * 28}px`,
-                    marginTop: `${fadeOut * 4}px`,
-                    pointerEvents: collapsed ? "none" : undefined,
-                  }}
-                >
-                  H: {Math.round(todayDay.tempMax)}°  L: {Math.round(todayDay.tempMin)}°
+              <div
+                className={`grid transition-[grid-template-rows,opacity,margin] duration-300 ease-out ${
+                  collapsed ? "grid-rows-[0fr] opacity-0 mt-0" : "grid-rows-[1fr] opacity-100 mt-1"
+                }`}
+                aria-hidden={collapsed}
+              >
+                <div className="overflow-hidden">
+                  {todayDay && (
+                    <div className="text-base font-medium tabular-nums">
+                      H: {Math.round(todayDay.tempMax)}°  L: {Math.round(todayDay.tempMin)}°
+                    </div>
+                  )}
+                  {headline && (
+                    <div className="text-sm text-white/90 mt-3">{headline}</div>
+                  )}
                 </div>
-              )}
-              {headline && (
-                <div
-                  className="text-sm text-white/90 overflow-hidden"
-                  style={{
-                    opacity: fadeOut,
-                    maxHeight: `${fadeOut * 40}px`,
-                    marginTop: `${fadeOut * 12}px`,
-                    pointerEvents: collapsed ? "none" : undefined,
-                  }}
-                >
-                  {headline}
-                </div>
-              )}
+              </div>
             </header>
           </div>
 
