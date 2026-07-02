@@ -302,6 +302,7 @@ function pickActive(days: Day[], tab: TabKey): Day | null {
   const hours = picks.flatMap((d) => d.hours);
   return {
     date: picks[0].date,
+    thunderProb: Math.max(...picks.map((d) => d.thunderProb)),
     tempMin: Math.min(...picks.map((d) => d.tempMin)),
     tempMax: Math.max(...picks.map((d) => d.tempMax)),
     precip: picks.reduce((s, d) => s + d.precip, 0),
