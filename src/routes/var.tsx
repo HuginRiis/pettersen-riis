@@ -591,8 +591,90 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
             Værdata fra MET.no. Live målinger fra Netatmo via Homey. Astronomi beregnet lokalt. Kart fra Windy.com.
           </p>
         </div>
+        <LocationDots userLoc={userLoc} />
       </div>
     </PageShell>
+  );
+}
+
+function LocationDots({
+  userLoc,
+}: {
+  userLoc: ReturnType<typeof useUserLocation>;
+}) {
+  const [favs, setFavs] = useState<ActiveLocation[]>([]);
+  const reverse = useServerFn(reverseGeocode);
+
+  useEffect(() => {
+    setFavs(readFavs());
+    const refresh = () => setFavs(readFavs());
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === FAV_KEY) refresh();
+    };
+    window.addEventListener("storage", onStorage);
+    window.addEventListener("loc-favs-changed", refresh);
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener("loc-favs-changed", refresh);
+    };
+  }, []);
+
+  const slots = useMemo(
+    () => [{ label: "Min posisjon", type: "gps" as const }, ...favs],
+    [favs],
+  );
+
+  const activeIndex = useMemo(() => {
+    const favIndex = favs.findIndex((f) => f.label === userLoc.active.label);
+    return favIndex >= 0 ? favIndex + 1 : 0;
+  }, [favs, userLoc.active.label]);
+
+  const select = (index: number) => {
+    if (index === 0) {
+      if (typeof navigator === "undefined" || !navigator.geolocation) return;
+      navigator.geolocation.getCurrentPosition(
+        async (pos) => {
+          const lat = pos.coords.latitude;
+          const lon = pos.coords.longitude;
+          try {
+            const r = await reverse({ data: { lat, lon } });
+            userLoc.setActive({ label: r.label, lat: r.lat, lon: r.lon });
+          } catch {
+            userLoc.setActive({ label: `${lat.toFixed(3)}°N ${lon.toFixed(3)}°Ø`, lat, lon });
+          }
+        },
+        () => {
+          // ignore denied
+        },
+        { enableHighAccuracy: true, timeout: 10_000, maximumAge: 5 * 60_000 },
+      );
+    } else {
+      const fav = favs[index - 1];
+      if (fav) userLoc.setActive(fav);
+    }
+  };
+
+  return (
+    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/35 backdrop-blur-xl border border-white/10 shadow-lg">
+      <Navigation size={14} className="text-white/90" />
+      <div className="flex items-center gap-1.5">
+        {slots.map((slot, i) => {
+          const isActive = i === activeIndex;
+          return (
+            <button
+              key={i}
+              type="button"
+              onClick={() => select(i)}
+              aria-label={slot.label}
+              title={slot.label}
+              className={`w-2 h-2 rounded-full transition-all ${
+                isActive ? "bg-white scale-125 shadow-[0_0_6px_rgba(255,255,255,0.6)]" : "bg-white/40 hover:bg-white/70"
+              }`}
+            />
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
