@@ -871,11 +871,10 @@ function WeatherMenuButton({
   );
 }
 
-function toneCardCn(extra = ""): string {
-
-  const { tone } = useTileTone();
+function toneCardCn(tone: TileTone, extra = ""): string {
   return `relative overflow-hidden rounded-2xl backdrop-blur-xl shadow-lg shadow-black/10 p-4 ${tileToneClasses(tone)} ${extra}`;
 }
+
 
 
 // ============================================================
