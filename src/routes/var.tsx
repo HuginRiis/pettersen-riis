@@ -376,6 +376,8 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
   const homeyOk = data?.ok === true;
   const { opacity } = useTileOpacity();
   const { color: tileColor } = useTileColor();
+  const { tone } = useTileTone();
+
 
   // Scroll-drevet "shrink" på hero-header (sticky under toppmenyen)
   const [heroT, setHeroT] = useState(0); // 0 = full, 1 = kollapset
@@ -495,7 +497,7 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
           {/* Søke-knapp → åpner favoritt-siden med animert vær pr sted */}
           <Link
             to="/varfavoritter"
-            className={`${toneCardCn()} relative z-40 flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors`}
+            className={`${toneCardCn(tone)} relative z-40 flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors`}
           >
             <TileSplashFX kind={glassKind} intensity={glassIntensity} />
             <div className="relative z-10 flex items-center gap-3 w-full">
@@ -920,7 +922,9 @@ type PanelKey = "nedbor" | "vaer" | "skydekke" | "vind" | "lyn";
 function RotatingForecastCard({ hours, soundEnabled }: { hours: Hour[] | null; soundEnabled: boolean }) {
   const [panel, setPanel] = usePerUserPersistedState<PanelKey>("var:rotating:panel", "nedbor");
   const [rangeHours, setRangeHours] = usePerUserPersistedState<24 | 48 | 96>("var:rotating:rangeHours", 48);
+  const { tone } = useTileTone();
   useWeatherSound(soundEnabled ? (panel as WeatherSoundKind) : null, soundEnabled);
+
   const panels: { key: PanelKey; label: string; icon: React.ReactNode }[] = [
     { key: "vaer", label: "Værforhold", icon: <Cloud size={14} /> },
     { key: "nedbor", label: "Nedbør", icon: <Droplets size={14} /> },
@@ -956,7 +960,7 @@ function RotatingForecastCard({ hours, soundEnabled }: { hours: Hour[] | null; s
   const active = panels.find((p) => p.key === panel)!;
 
   return (
-    <article className={toneCardCn()}>
+    <article className={toneCardCn(tone)}>
       {fx}
       <div className="relative">
         <div className="flex items-center justify-between mb-3">
