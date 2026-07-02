@@ -410,57 +410,59 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
 
           {/* Innstillinger er flyttet til menyknappen nederst til høyre */}
 
-          {/* HERO — sticky under toppmenyen, krymper når man scroller */}
+          {/* HERO — sticky under toppmenyen. Full hero forsvinner opp, mini-header zoomer frem */}
           <div
-            className={`sticky top-[56px] z-30 -mx-4 px-4 transition-all duration-200 ${
-              collapsed
+            className={`sticky top-[56px] z-30 -mx-4 px-4 relative overflow-hidden transition-all duration-200 ease-out ${
+              heroT > 0
                 ? "backdrop-blur-xl bg-black/20 border-b border-white/10 shadow-lg"
                 : ""
             }`}
+            style={{ height: `${240 - heroT * 192}px` }}
           >
-            <header
-              className="text-center transition-all duration-200 ease-out"
+            {/* Full hero — forsvinner oppover */}
+            <div
+              className="absolute inset-x-0 top-0 pt-4 pb-2 text-center transition-transform duration-200 ease-out"
               style={{
-                paddingTop: `${16 - heroT * 12}px`,
-                paddingBottom: `${8 - heroT * 4}px`,
+                transform: `translateY(${-heroT * 80}px)`,
+                opacity: 1 - heroT,
               }}
             >
-              <h1
-                className="font-medium tracking-wide text-white/90 drop-shadow-md transition-all duration-200"
-                style={{ fontSize: `${18 - heroT * 4}px`, marginTop: `${4 - heroT * 4}px` }}
-              >
+              <h1 className="font-medium tracking-wide text-white/90 drop-shadow-md text-lg">
                 {userLoc.active.label}
               </h1>
-              <div
-                className="leading-none font-thin drop-shadow-lg tabular-nums transition-all duration-200"
-                style={{
-                  fontSize: `${88 - heroT * 60}px`,
-                  marginTop: `${8 - heroT * 6}px`,
-                  display: "inline-block",
-                }}
-              >
+              <div className="leading-none font-thin drop-shadow-lg tabular-nums text-[88px]">
                 {currentHour ? `${Math.round(currentHour.temp)}°` : "—"}
               </div>
-              <div
-                className="font-medium transition-all duration-200"
-                style={{
-                  fontSize: `${20 - heroT * 6}px`,
-                  marginTop: `${8 - heroT * 6}px`,
-                  display: collapsed ? "inline-block" : "block",
-                  marginLeft: collapsed ? 8 : 0,
-                }}
-              >
-                {collapsed ? `| ${condition}` : condition}
+              <div className="font-medium text-xl mt-2">
+                {condition}
               </div>
-              {todayDay && !collapsed && (
+              {todayDay && (
                 <div className="text-base font-medium mt-1 tabular-nums">
                   H: {Math.round(todayDay.tempMax)}°  L: {Math.round(todayDay.tempMin)}°
                 </div>
               )}
-              {headline && !collapsed && (
+              {headline && (
                 <div className="text-sm text-white/90 mt-3">{headline}</div>
               )}
-            </header>
+            </div>
+
+            {/* Mini header — zoomer frem */}
+            <div
+              className="absolute inset-x-0 top-0 h-full flex items-center justify-center gap-2 transition-transform duration-200 ease-out"
+              style={{
+                transform: `scale(${0.85 + heroT * 0.15})`,
+                opacity: heroT,
+                pointerEvents: heroT > 0 ? "auto" : "none",
+              }}
+            >
+              <span className="font-medium tracking-wide text-white/90 drop-shadow-md text-sm">
+                {userLoc.active.label}
+              </span>
+              <span className="text-2xl font-thin tabular-nums drop-shadow-lg">
+                {currentHour ? `${Math.round(currentHour.temp)}°` : "—"}
+              </span>
+              <span className="font-medium text-white/90">| {condition}</span>
+            </div>
           </div>
 
 
