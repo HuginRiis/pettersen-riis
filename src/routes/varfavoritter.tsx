@@ -71,7 +71,7 @@ function FavoritesPage() {
     try {
       localStorage.setItem(
         CHOSEN_KEY,
-        JSON.stringify({ label: loc.label, lat: loc.lat, lon: loc.lon }),
+        JSON.stringify({ label: loc.label, lat: loc.lat, lon: loc.lon, source: "favorite" }),
       );
     } catch {
       // ignore
