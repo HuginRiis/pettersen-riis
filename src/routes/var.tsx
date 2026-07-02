@@ -652,7 +652,7 @@ function LocationDots({
   };
 
   return (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 px-4 py-2 rounded-full bg-black/40 backdrop-blur-xl border border-white/10 shadow-lg">
+    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-4 py-2.5 rounded-full bg-black/40 backdrop-blur-xl border border-white/10 shadow-lg">
       <button
         type="button"
         onClick={selectGps}
@@ -660,13 +660,13 @@ function LocationDots({
         title="Min posisjon"
         className={`rounded-full transition-all ${
           isGpsActive
-            ? "bg-white/90 text-slate-900 scale-110 shadow-[0_0_10px_rgba(255,255,255,0.55)]"
+            ? "bg-white/90 text-slate-900 scale-110 shadow-[0_0_12px_rgba(255,255,255,0.6)]"
             : "text-white/70 hover:text-white hover:bg-white/20"
         }`}
       >
-        <Navigation size={18} className="p-1" />
+        <Navigation size={20} className="p-1" />
       </button>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2.5">
         {favs.map((fav, i) => {
           const isActive = i === activeFavIndex;
           return (
@@ -676,8 +676,8 @@ function LocationDots({
               onClick={() => selectFav(i)}
               aria-label={fav.label}
               title={fav.label}
-              className={`w-2.5 h-2.5 rounded-full transition-all ${
-                isActive ? "bg-white scale-125 shadow-[0_0_8px_rgba(255,255,255,0.6)]" : "bg-white/40 hover:bg-white/70"
+              className={`w-3 h-3 rounded-full transition-all ${
+                isActive ? "bg-white scale-125 shadow-[0_0_10px_rgba(255,255,255,0.7)]" : "bg-white/40 hover:bg-white/70"
               }`}
             />
           );
