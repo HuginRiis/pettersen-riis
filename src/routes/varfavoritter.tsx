@@ -49,7 +49,21 @@ function useBgGradient() {
 function FavoritesPage() {
   const userLoc = useUserLocation("var");
   const bg = useBgGradient();
+  const navigate = useNavigate();
   const [favs, setFavs] = useState<ActiveLocation[]>([]);
+
+  const pickLocation = (loc: ActiveLocation) => {
+    try {
+      sessionStorage.setItem(
+        "loc:pending:var",
+        JSON.stringify({ label: loc.label, lat: loc.lat, lon: loc.lon }),
+      );
+    } catch {
+      // ignore
+    }
+    navigate({ to: "/var" });
+  };
+
 
   useEffect(() => {
     setFavs(readFavs());
