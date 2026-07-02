@@ -169,9 +169,8 @@ function FavoritesPage() {
             <div className="space-y-3">
               {rows.map((f, i) => {
                 const isMyPosition = i === 0;
-                const isSelected = i === 0;
                 return (
-                  <div key={f.label} className={`relative rounded-2xl overflow-hidden ${isSelected ? "fav-tile-pulse" : ""}`}>
+                  <div key={f.label} className="relative rounded-2xl overflow-hidden">
                     {isMyPosition && (
                       <div className="absolute top-3 left-3 z-10 pointer-events-none text-[10px] tracking-[0.25em] uppercase text-white/80 bg-black/20 px-2 py-1 rounded-full">
                         Min posisjon
@@ -183,7 +182,7 @@ function FavoritesPage() {
                       className="block w-full text-left rounded-2xl overflow-hidden focus:outline-none focus:ring-2 focus:ring-white/40 transition-transform active:scale-[0.99]"
                       aria-label={`Åpne vær for ${f.label}`}
                     >
-                      <FancyWeatherTile label={f.label} lat={f.lat} lon={f.lon} className={isMyPosition ? "first-position-tile" : ""} />
+                      <FancyWeatherTile label={f.label} lat={f.lat} lon={f.lon} />
                     </button>
                   </div>
                 );

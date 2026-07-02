@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo } from "react";
 
 /**
  * Deterministisk pseudo-random-generator for SSR/CLI-hydrering.
@@ -11,12 +11,6 @@ function seededRng(seed: number) {
     s = (s * 1664525 + 1013904223) >>> 0;
     return s / 4294967296;
   };
-}
-
-export function useClientOnly() {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-  return mounted;
 }
 
 /**
@@ -571,17 +565,15 @@ export function GustFX({ intensity = 0.5, className = "" }: Common) {
 /* ---------------- SUN (rays + sparkles) ---------------- */
 export function SunFX({ intensity = 0.5, className = "" }: Common) {
   const sparkles = useMemo(
-    () => {
-      const rng = seededRng(Math.floor(intensity * 100000) + 7);
-      return Array.from({ length: 6 }).map(() => ({
-        left: rng() * 100,
-        top: rng() * 100,
-        delay: rng() * 2.4,
-        dur: 1.6 + rng() * 1.6,
-        size: 2 + rng() * 3,
-      }));
-    },
-    [intensity],
+    () =>
+      Array.from({ length: 6 }).map(() => ({
+        left: Math.random() * 100,
+        top: Math.random() * 100,
+        delay: Math.random() * 2.4,
+        dur: 1.6 + Math.random() * 1.6,
+        size: 2 + Math.random() * 3,
+      })),
+    [],
   );
   return (
     <div className={`${wrap} ${className}`} aria-hidden>
@@ -801,8 +793,6 @@ export function GlassPaneFX({
   kind: GlassKind;
   intensity?: number;
 }) {
-  const mounted = useClientOnly();
-  if (!mounted) return null;
   const isWet = kind === "rain" || kind === "sleet" || kind === "thunder";
   const isSnow = kind === "snow" || kind === "sleet";
   const isClearDay = kind === "clear" || kind === "fair";
@@ -1102,8 +1092,6 @@ export function TileSplashFX({
   kind: GlassKind;
   intensity?: number;
 }) {
-  const mounted = useClientOnly();
-  if (!mounted) return null;
   const isWet = kind === "rain" || kind === "sleet" || kind === "thunder";
   const isSnow = kind === "snow" || kind === "sleet";
   const isWindy = kind === "cloudy" || kind === "fog";

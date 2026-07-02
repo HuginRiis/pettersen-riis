@@ -13,7 +13,7 @@ import { reverseGeocode } from "@/lib/user-locations.functions";
 import type { ActiveLocation } from "@/components/LocationPicker";
 import {
   RainFX, SnowFX, CloudFX, WindFX, HeatwaveFX, HumidityFX, PressureFX, GustFX, SunFX, StarFX, MoonFX, ThunderFX,
-  GlassPaneFX, glassKindFromSymbol, type GlassKind, TileSplashFX, CloudCoverFX, useClientOnly,
+  GlassPaneFX, glassKindFromSymbol, type GlassKind, TileSplashFX, CloudCoverFX,
 } from "@/components/weather/WeatherFX";
 import { SpaceWeatherCard } from "@/components/weather/SpaceWeatherCard";
 import { AirPollutionCard } from "@/components/weather/AirPollutionCard";
@@ -135,7 +135,7 @@ function WeatherPage() {
   const fetchAlerts = useServerFn(getTollnesAlerts);
   const userLoc = useUserLocation("var");
   const [alerts, setAlerts] = useState<AlertsResult | null>(null);
-  const [now, setNow] = useState<Date>(() => new Date("2000-01-01T12:00:00Z"));
+  const [now, setNow] = useState<Date>(() => new Date());
   const [rangeHours, setRangeHours] = useState<24 | 72 | 168>(24);
   const [soundEnabled, setSoundEnabled] = usePerUserPersistedState<boolean>("var.tile.sound.enabled", false);
 
@@ -154,7 +154,6 @@ function WeatherPage() {
 
   useEffect(() => {
     let cancelled = false;
-    setNow(new Date());
     setState((s) => ({ ...s, skien: { ...s.skien, loading: true, error: null } }));
     LOCATIONS.forEach(async (loc) => {
       try {
@@ -711,10 +710,9 @@ function GlassCard({
   className?: string;
   fx?: React.ReactNode;
 }) {
-  const mounted = useClientOnly();
   return (
     <article className={toneCardCn(className)}>
-      {mounted ? fx : null}
+      {fx}
       <div className="relative">
         {eyebrow && (
           <div className="flex items-center gap-1.5 text-[11px] tracking-[0.15em] font-semibold text-white/70 uppercase mb-3">
