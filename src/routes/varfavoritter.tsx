@@ -178,7 +178,7 @@ function FavoritesPage() {
                     )}
                     <button
                       type="button"
-                      onClick={() => pickLocation(f)}
+                      onClick={() => pickLocation(f, isMyPosition ? "gps" : "favorite")}
                       className="block w-full text-left rounded-2xl overflow-hidden focus:outline-none focus:ring-2 focus:ring-white/40 transition-transform active:scale-[0.99]"
                       aria-label={`Åpne vær for ${f.label}`}
                     >
