@@ -96,7 +96,7 @@ export function useUserLocation(page: LocationPage): UserLocationState & {
             if (raw) {
               const p = JSON.parse(raw);
               if (p && typeof p.label === "string" && typeof p.lat === "number" && typeof p.lon === "number") {
-                chosen = { label: p.label, lat: p.lat, lon: p.lon };
+                chosen = { label: p.label, lat: p.lat, lon: p.lon, source: p.source };
               }
             }
             // Ryd opp gammel session-nøkkel om den finnes.
