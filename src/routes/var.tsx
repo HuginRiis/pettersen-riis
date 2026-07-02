@@ -2267,6 +2267,7 @@ function MoonVisual({ phaseFraction, illumination }: { phaseFraction: number; il
           animation: "wxMoonHalo 4s ease-in-out infinite",
           filter: "blur(2px)",
         }}
+        suppressHydrationWarning
       />
       <span className="absolute" style={{ top: "10%", left: "8%", width: 2, height: 2, background: "#fff", borderRadius: "50%", animation: "wxMoonTwinkle 2.4s ease-in-out infinite", opacity: 0.8 }} />
       <span className="absolute" style={{ top: "78%", left: "12%", width: 1.5, height: 1.5, background: "#fff", borderRadius: "50%", animation: "wxMoonTwinkle 3.1s ease-in-out infinite", animationDelay: "0.7s", opacity: 0.7 }} />
